@@ -16,6 +16,7 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, resolve } from 'node:path';
 
+import type { SiteProfile } from './types.ts';
 import { forgeHome, sitesFile } from './vault.ts';
 
 /** A named reference to one operator-owned site profile. */
@@ -121,8 +122,10 @@ export class SitesStore {
 	/**
 	 * Resolve a name to its reference and loaded profile. The profile path
 	 * is resolved relative to the registry file (absolute paths pass through).
+	 * The parsed shape is the SiteProfile contract — the loader validates the
+	 * essentials at consume time (scaffold/WpClient assert url + collections).
 	 */
-	async resolve( name: string ): Promise<{ ref: SiteRef; profile: Record<string, unknown> }> {
+	async resolve( name: string ): Promise<{ ref: SiteRef; profile: SiteProfile }> {
 		const registry = await this.read();
 		const ref = registry.sites[ name ];
 		if ( ref === undefined ) {
@@ -135,9 +138,9 @@ export class SitesStore {
 		} catch {
 			throw new SitesError( `Profile not found for site ${ name }: ${ path }` );
 		}
-		let profile: Record<string, unknown>;
+		let profile: SiteProfile;
 		try {
-			profile = JSON.parse( raw ) as Record<string, unknown>;
+			profile = JSON.parse( raw ) as SiteProfile;
 		} catch {
 			throw new SitesError( `Profile for site ${ name } is not valid JSON: ${ path }` );
 		}

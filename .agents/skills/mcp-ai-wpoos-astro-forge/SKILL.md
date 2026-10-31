@@ -38,6 +38,12 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `lib/sites.ts` | Phase 3.4 multi-site registry (`sites.json`) — named profile refs + default flag |
 | `lib/github.ts` | Phase 3.2 octokit deploy — private-by-default repo create, git-data commit/push, sanitized errors |
 | `lib/deploy-config.ts` | Phase 3.3 generated pipeline — deploy.yml/rebuild.yml + fail-closed `verify-dispatch.mjs` |
+| `lib/wizard.ts` | Phase 4 setup_wizard — analyze → register → scaffold → build → git init → pipeline |
+| `lib/ssrf.ts` | URL guard — private/literal-range refusal, registry allowlist + `NVOOS_FORGE_OPEN_ANALYZE` opt-in, CLI-only loopback exemption |
+| `lib/project-files.ts` | Shared source collector for pushes (CLI deploy + `github_commit` tool) |
+| `mcp/` | Phase 4 MCP surface (095 dual-era pattern): single-source `registry.ts` (zod + annotations + write flags; router/full modes), `bff.ts` (rate limit → Host/Origin → fail-closed write auth), `stdio.ts`, 7 tool slices |
+| `scripts/forge-mcp.mjs` | MCP Streamable HTTP entry (`FORGE_MCP_PORT`, default 8472) |
+| `server.json` | 061-pattern MCP registry metadata (`io.github.nvdigitalsolutions/nvoos-astro-forge`) — NOT in the npm `files` |
 | `scripts/forge.mjs` | CLI (Node ≥ 22.6 — native TS type stripping, zero build step) |
 | `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 wire fixture — the Phase 0 CI stand-in for WordPress Playground |
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
@@ -154,6 +160,18 @@ wired. The workflow runs on `paths: examples/nvoos-astro-forge/**`.
   own emission). Use value-shaped classes (`[^[:space:]"']{4,}` in GNU
   grep, `[^'"\n]{4,}` in JS) so `.env.example` placeholders and scaffold.ts
   stay clean while real values still trip.
+- **SDK v2 registerTool + zod 4.6 (cost a full session 2026-10-31):** the
+  SDK's deprecated raw-shape overload (`ZodRawShape = Record<string,
+  z.ZodType>`) expects a zod classic surface that zod 4.6 no longer
+  provides — raw shapes fail with `$ZodType`-missing-`_def` errors. The
+  non-deprecated overload accepts a zod INSTANCE typed as the SDK's
+  exported structural `StandardSchemaWithJSON`; type the registry field as
+  that, never as `z.ZodTypeAny`/raw shapes. The `ToolCallback` generic is a
+  conditional type plain function expressions cannot satisfy even when the
+  return type is provably assignable (probe it!) — register through a
+  cast to an exact `(name, config, cb) => unknown` signature. And the SDK
+  imports types from `zod/v4` — keep the mcp files importing `z` from
+  `'zod/v4'` so type identities line up.
 
 ## Template contract (FORGE markers)
 
@@ -225,7 +243,13 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   survive GitHub's dispatch delivery. Publish: `@nvdigitalsolutions/nvoos-
   astro-forge`, tag `nvoos-astro-forge-v*` → `publish-astro-forge.yml`
   (provenance). Secret grep gates in CI + the e2e credential-hygiene walk.
-  Then Phase 4 (wizard) + the `/mcp` tool surface (096 §1).
+- **Phase 4 — core shipped 2026-10-31:** `forge wizard` (one command, URL
+  → built + deploy-ready) and the `/mcp` surface (see §2.8): 21-tool v1
+  catalog over the single-source registry, `NVOOS_FORGE_MODE=router|full`
+  (3 meta-tools vs full), dual-era Streamable HTTP (`forge-mcp.mjs`) +
+  stdio (`nvoos-forge-mcp-stdio`), rate limit + Host/Origin + fail-closed
+  write auth, SSRF-guarded fetches. Remaining: registry publication
+  (owner), the Playground demo blueprint, and the §3.3 long-tail slices.
 
 ## Repo conventions
 

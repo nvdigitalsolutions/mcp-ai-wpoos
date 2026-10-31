@@ -18,22 +18,20 @@
 // Requires Node >= 22.6 (native TypeScript type stripping).
 // ---------------------------------------------------------------------------
 
-import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { readFile, stat, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { emitDeployConfig } from '../lib/deploy-config.ts';
 import { analyzeSite, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
-import { createOctokitClient, GitHubDeploy, MAX_FILES, MAX_TOTAL_BYTES } from '../lib/github.ts';
+import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
+import { collectProjectFiles, slugify } from '../lib/project-files.ts';
 import { scaffold } from '../lib/scaffold.ts';
 import { SitesStore } from '../lib/sites.ts';
 import { maskSecret, Vault } from '../lib/vault.ts';
+import { setupWizard } from '../lib/wizard.ts';
 import { WpClient } from '../lib/wp-client.ts';
 
 const DEPLOY_MODES = [ 'github-pages', 'cloudflare-pages', 'velocity' ];
-/** Directories a forged project never deploys (build/runtime artifacts). */
-const SKIP_DIRS = new Set( [ 'node_modules', 'dist', '.astro', '.git' ] );
-/** Binary extensions that must not be read as UTF-8. */
-const BINARY_EXTENSIONS = new Set( [ 'png', 'jpg', 'jpeg', 'webp', 'avif', 'gif', 'ico', 'woff', 'woff2', 'ttf', 'eot', 'mp4', 'webm', 'pdf' ] );
 
 function usage() {
 	console.error( 'usage:' );
@@ -46,6 +44,7 @@ function usage() {
 	console.error( '  node scripts/forge.mjs vault set <name>   (value on stdin — never argv)' );
 	console.error( '  node scripts/forge.mjs vault delete <name>' );
 	console.error( '  node scripts/forge.mjs vault list' );
+	console.error( '  node scripts/forge.mjs wizard <url> --target <dir> [--name <name>] [--to <mode>] [--build]' );
 	console.error( '  node scripts/forge.mjs deploy <site.json|name> --target <dir> --to <github-pages|cloudflare-pages|velocity> [--repo <name>] [--org <org>] [--public] [--cloudflare-project <name>]' );
 	process.exit( 2 );
 }
@@ -378,47 +377,6 @@ async function checkProfile( profile ) {
 	return clean;
 }
 
-// -- deploy helpers ----------------------------------------------------------
-
-function slugify( value ) {
-	return (
-		value
-			.toLowerCase()
-			.replace( /^https?:\/\//, '' )
-			.replace( /[^a-z0-9]+/g, '-' )
-			.replace( /^-+|-+$/g, '' )
-			.slice( 0, 40 ) || 'forge-site'
-	);
-}
-
-async function collectProjectFiles( root ) {
-	const files = {};
-	let total = 0;
-	async function walk( dir ) {
-		for ( const entry of await readdir( dir, { withFileTypes: true } ) ) {
-			const full = join( dir, entry.name );
-			if ( entry.isDirectory() ) {
-				if ( SKIP_DIRS.has( entry.name ) ) continue;
-				await walk( full );
-				continue;
-			}
-			const extension = entry.name.split( '.' ).pop()?.toLowerCase() ?? '';
-			if ( BINARY_EXTENSIONS.has( extension ) ) continue;
-			const content = await readFile( full, 'utf8' );
-			total += Buffer.byteLength( content, 'utf8' );
-			if ( Object.keys( files ).length + 1 > MAX_FILES ) {
-				throw new Error( `Payload exceeds the ${ MAX_FILES }-file guard — is the target a forge project?` );
-			}
-			if ( total > MAX_TOTAL_BYTES ) {
-				throw new Error( `Payload exceeds the ${ Math.round( MAX_TOTAL_BYTES / 1024 / 1024 ) } MB guard.` );
-			}
-			files[ relative( root, full ).split( '\\' ).join( '/' ) ] = content;
-		}
-	}
-	await walk( root );
-	return files;
-}
-
 // -- dispatch ----------------------------------------------------------------
 
 const argv = process.argv.slice( 2 );
@@ -433,10 +391,55 @@ switch ( argv[ 0 ] ) {
 	case 'vault':
 		await runVault( argv.slice( 1 ) );
 		break;
+	case 'wizard':
+		await runWizard( argv.slice( 1 ) );
+		break;
 	case 'deploy':
 		await runDeploy( argv.slice( 1 ) );
 		break;
 	default:
 		await runScaffold( argv );
 		break;
+}
+
+async function runWizard( rest ) {
+	const args = { url: undefined, target: undefined, name: undefined, mode: 'github-pages', build: false, cloudflareProject: undefined };
+	for ( let i = 0; i < rest.length; i++ ) {
+		const arg = rest[ i ];
+		if ( arg === '--target' ) args.target = rest[ ++i ];
+		else if ( arg === '--name' ) args.name = rest[ ++i ];
+		else if ( arg === '--to' ) args.mode = rest[ ++i ];
+		else if ( arg === '--build' ) args.build = true;
+		else if ( arg === '--cloudflare-project' ) args.cloudflareProject = rest[ ++i ];
+		else if ( ! arg.startsWith( '--' ) && ! args.url ) args.url = arg;
+		else usage();
+	}
+	if ( ! args.url || ! args.target ) usage();
+	if ( ! DEPLOY_MODES.includes( args.mode ) ) {
+		console.error( `Unknown deploy mode "${ args.mode }" — use one of: ${ DEPLOY_MODES.join( ', ' ) }` );
+		process.exit( 2 );
+	}
+	try {
+		const result = await setupWizard( {
+			url: args.url,
+			targetDir: args.target,
+			name: args.name,
+			mode: args.mode,
+			cloudflareProject: args.cloudflareProject,
+			build: args.build,
+			// Local-dev opt-in only — the MCP surface never sets this.
+			allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
+		} );
+		console.log( `\u2713 Wizard complete — site "${ result.siteName }" -> ${ result.targetDir }` );
+		console.log( `  built: ${ result.built }, git: ${ result.gitInitialized ? 'initialized' : 'skipped' }` );
+		for ( const file of result.deployFiles ) {
+			console.log( `  + ${ file }` );
+		}
+		for ( const warning of result.warnings ) {
+			console.warn( `\u26a0 ${ warning }` );
+		}
+	} catch ( error ) {
+		console.error( error instanceof Error ? error.message : error );
+		process.exitCode = 1;
+	}
 }
