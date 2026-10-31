@@ -85,6 +85,39 @@ Same env vars, different shells — Claude Desktop (`claude_desktop_config.json`
 On Windows hosts, some clients need the `cmd` wrapper:
 `"command": "cmd", "args": ["/c", "npx", "-y", "@nvdigitalsolutions/nvoos-mcp-bridge@latest"]`.
 
+### Manager-session sites (NV Astro storefront)
+
+Some NV surfaces split write auth: the storefront MCP
+(`https://astro.nvoos.cloud/mcp`) serves reads publicly, accepts
+`NVOOS_MCP_TOKEN` for design writes, and **requires a manager session
+cookie for contract writes** (`cms_*`, `media_upload`). Give the bridge
+login credentials and it obtains the session for you — no cookie copying,
+no re-login dance:
+
+```jsonc
+"nvoos-astro": {
+  "source": "custom",
+  "command": {
+    "path": "npx",
+    "args": ["-y", "@nvdigitalsolutions/nvoos-mcp-bridge@latest"],
+    "env": {
+      "MCP_AI_BASE_URL":        "https://astro.nvoos.cloud/mcp",
+      "MCP_AI_TOKEN":           "<NVOOS_MCP_TOKEN>",
+      "MCP_AI_LOGIN_URL":       "https://astro.nvoos.cloud/api/auth/login",
+      "MCP_AI_LOGIN_EMAIL":     "manager@your-domain.com",
+      "MCP_AI_LOGIN_PASSWORD":  "<password>"
+    }
+  }
+}
+```
+
+At startup the bridge POSTs `{ "email": "…", "password": "…" }` to
+`MCP_AI_LOGIN_URL`, attaches the returned session cookies to every upstream
+request, and re-establishes the session once when a request answers 401/403
+or the cookies near expiry. The account needs the backend `manage_astro`
+capability. Keep the password out of shared settings files (editor secret
+store, or a dedicated manager account).
+
 ---
 
 ## Configuration
@@ -100,6 +133,11 @@ All configuration is environment variables — **never** put tokens in `args`
 | `MCP_AI_TOKEN` | ⚠️ | — | Bearer credential (`cred_xxxxx.SECRET` or operator `op_xxxxx.SECRET`); unauthenticated if unset |
 | `MCP_AI_HOST_HEADER` | | — | Override the HTTP `Host` header (sites that canonical-redirect on Host behind proxies/tunnels) |
 | `MCP_AI_HTTP_TIMEOUT` | | `120000` | Request timeout in ms |
+| `MCP_AI_COOKIE` | | — | Static `Cookie` header for every upstream request (manual-session escape hatch; wins over the login bootstrap) |
+| `MCP_AI_LOGIN_URL` | | — | Login endpoint that answers with `Set-Cookie` session headers (must be same-origin with `MCP_AI_BASE_URL`) |
+| `MCP_AI_LOGIN_EMAIL` | | — | Login credential — default body is `{ email, password }` |
+| `MCP_AI_LOGIN_PASSWORD` | | — | Login credential |
+| `MCP_AI_LOGIN_BODY` | | — | Raw JSON body override for the login POST (wins over the email/password pair) |
 | `MCP_AI_ENV_FILE` | | `~/.nvoos-bridge.env` | Env file for secrets (see below) |
 
 ### `nvoos-mcp-ssh` (SSH variant)
@@ -131,6 +169,16 @@ per-project overrides still work.
 - Reads one JSON-RPC 2.0 object per stdin line, POSTs it to the endpoint
   (`Authorization: Bearer …`), writes the response as one stdout line.
 - **Notifications** (no `id`) get no response, ever.
+- **Streamable HTTP:** the relay advertises both media types
+  (`Accept: application/json, text/event-stream`) and transparently unwraps
+  SSE-framed responses (`event: message` + `data: <json>`) — SDK-v2 servers
+  such as the NV Astro storefront answer in SSE whenever the client accepts
+  it.
+- **Session bootstrap (opt-in):** with `MCP_AI_LOGIN_URL` (or `MCP_AI_COOKIE`)
+  configured, the bridge logs in at startup, attaches the session cookie to
+  every request, and re-establishes the session once on an upstream 401/403
+  or near cookie expiry. Without session env vars the relay stays a fully
+  transparent transport (HTTP statuses pass through untouched).
 - All diagnostics go to **stderr** — stdout carries MCP messages only.
 - On stdin EOF, in-flight requests drain before exit.
 - The SSH tunnel is torn down when the relay exits — including on hard kill

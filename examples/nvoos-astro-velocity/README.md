@@ -97,7 +97,9 @@ Connect:
 // 1. NV oOS assistant — Remote Sites → MCP Server connection
 { "url": "https://astro.nvoos.cloud/mcp", "auth_type": "bearer", "token": "<NVOOS_MCP_TOKEN>" }
 // then attach it as an assistant MCP App (connection_ref); tools bridge as
-// mcp_app_astro_* in chat. Allowlist the host in Security Center.
+// mcp_app_astro_* in chat. Allowlist the host in Security Center. (Bearer
+// unlocks design writes only — contract writes still need a manager session,
+// so a header-auth connection carrying the Cookie is the cms-write variant.)
 
 // 2. Claude Desktop / generic client
 { "mcpServers": { "nvoos-astro": { "url": "https://astro.nvoos.cloud/mcp", "headers": { "Authorization": "Bearer <NVOOS_MCP_TOKEN>" } } } }
@@ -106,6 +108,22 @@ Connect:
 
 // 4. Local coding agent (same registry over stdio, from this repo)
 npm run mcp:stdio
+
+// 5. Zed / Claude Desktop / Cursor via the published npx bridge — the bridge
+//    logs in with MCP_AI_LOGIN_* at startup, attaches the session cookies to
+//    every request, and re-establishes the session on 401/403 or expiry, so
+//    contract writes work with zero manual cookie handling
+{ "mcpServers": { "nvoos-astro": {
+  "command": "npx",
+  "args": ["-y", "@nvdigitalsolutions/nvoos-mcp-bridge@latest"],
+  "env": {
+    "MCP_AI_BASE_URL": "https://astro.nvoos.cloud/mcp",
+    "MCP_AI_TOKEN": "<NVOOS_MCP_TOKEN>",
+    "MCP_AI_LOGIN_URL": "https://astro.nvoos.cloud/api/auth/login",
+    "MCP_AI_LOGIN_EMAIL": "manager@your-domain.com",
+    "MCP_AI_LOGIN_PASSWORD": "<password>"
+  }
+} } }
 ```
 
 Runtime state (token overrides, runtime themes, snapshots) is process-local
