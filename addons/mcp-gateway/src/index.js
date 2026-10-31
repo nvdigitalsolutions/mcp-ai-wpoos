@@ -24,7 +24,10 @@ import { adminRouter } from './admin/router.js';
 import { mcpRouter, discoveryHandler } from './routes/mcp.js';
 import { oauthRouter } from './routes/oauth.js';
 
-export const VERSION = '0.1.1';
+// Must track `package.json` `version` — the deploy-verification runbook
+// (`docs/operations/deployment/mcp-gateway-velocity-setup.md` §7) keys off
+// `/health` reporting this value.
+export const VERSION = '0.2.0';
 
 /**
  * Build the gateway app.
