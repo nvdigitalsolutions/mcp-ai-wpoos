@@ -35,10 +35,16 @@ const COLOR_VALUE_RE = /^(?:#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\b|rgba?\(|h
 
 /** CSS custom properties whose names hint at a semantic palette role. */
 const VAR_ROLE_HINTS: Record<string, RegExp> = {
-	accent: /accent|primary|brand|highlight/i,
-	'accent-ink': /accent-ink|on-accent|on-primary/i,
-	surface: /background|surface|bg|canvas/i,
-	text: /foreground|text|ink|body|copy|font/i,
+	// On-accent text is accent-ink material — checked BEFORE accent so
+	// `--wc-primary-text` never becomes the body text or the accent itself.
+	'accent-ink': /(?:accent|primary)[-_]?(?:text|ink)\b|on-(?:accent|primary)/i,
+	// accent|primary|brand as a standalone name segment — but never when
+	// followed by -text/-ink/-on (those belong to accent-ink).
+	accent: /(?:^|[-_])(?:accent|primary|brand)(?=$|[-_](?!text|ink|on))|highlight/i,
+	surface: /background|surface|bg\b|canvas/i,
+	// A `-text` segment is body text UNLESS it hangs off a color-role word
+	// (primary/secondary/accent/on-…) — those are on-accent text.
+	text: /(?<![-_](?:primary|secondary|accent|on|danger|success|warning|info))[-_]text(?:$|[-_])|foreground|content[-_]?text|body[-_]?text|text[-_]?color|(?:^|[-_])ink(?:$|[-_])/i,
 	'field.border': /border|stroke|outline/i,
 };
 
@@ -177,6 +183,17 @@ function colorDeclarationCounts(cssText: string, property: string): Map<string, 
 	return counts;
 }
 
+/**
+ * Single-value color parsing. NOTE: `String.match()` with a /g regex drops
+ * capture groups — every group access below must go through matchAll (the
+ * first real-customer run produced #NaNNaNNaN from an rgba() variable).
+ */
+function firstColorMatch(regex: RegExp, value: string): RegExpExecArray | null {
+	const matches = value.matchAll(regex);
+	const first = matches.next();
+	return first.done ? null : first.value;
+}
+
 /** Harvest semantic CSS custom properties whose values are colors. */
 function harvestCssVars(cssText: string): Record<string, string> {
 	const vars: Record<string, string> = {};
@@ -186,15 +203,21 @@ function harvestCssVars(cssText: string): Record<string, string> {
 		if (!COLOR_VALUE_RE.test(value)) {
 			continue;
 		}
-		const hexMatch = value.match(HEX_RE);
-		const rgbMatch = value.match(RGB_RE);
-		const hslMatch = value.match(HSL_RE);
+		const hexMatch = firstColorMatch(HEX_RE, value);
+		const rgbMatch = firstColorMatch(RGB_RE, value);
+		const hslMatch = firstColorMatch(HSL_RE, value);
+		let hex: string | null = null;
 		if (hexMatch) {
-			vars[name] = expandHex(hexMatch[0].toLowerCase());
+			hex = expandHex(hexMatch[0].toLowerCase());
 		} else if (rgbMatch) {
-			vars[name] = rgbToHex(Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3]));
+			hex = rgbToHex(Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3]));
 		} else if (hslMatch) {
-			vars[name] = hslToHex(Number(hslMatch[1]), Number(hslMatch[2]), Number(hslMatch[3]));
+			hex = hslToHex(Number(hslMatch[1]), Number(hslMatch[2]), Number(hslMatch[3]));
+		}
+		// Defense in depth: never let a malformed value (e.g. NaN channels
+		// from a nested var() reference) become a role.
+		if (hex && /^#[0-9a-f]{6}$/i.test(hex)) {
+			vars[name] = hex;
 		}
 	}
 	return vars;
