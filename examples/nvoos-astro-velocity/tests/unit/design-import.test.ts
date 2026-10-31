@@ -99,6 +99,46 @@ describe('analyzer', () => {
 		expect(designLanguage.tokensDraft.semantic['accent-ink']).toBeUndefined();
 	});
 
+	it('parses rgba() CSS variables without NaN channels (the /g capture bug)', () => {
+		// Regression: String.match() with a /g regex drops capture groups, so
+		// rgba() variables produced #NaNNaNNaN roles on the first live run.
+		const css = ':root { --wc-primary: rgba(114, 14, 236, 1); --wc-form-border-color: rgba(32, 7, 7, 0.8); }';
+		const { designLanguage } = analyzeDesignLanguage('<body></body>', [css], {
+			url: 'https://example.com/',
+			mode: 'wordpress',
+			fetchedAt: '2026-10-31T00:00:00.000Z',
+		});
+		expect(designLanguage.palette.roles.accent?.value).toBe('#720eec');
+		expect(designLanguage.palette.roles['field.border']?.value).toBe('#200707');
+		expect(JSON.stringify(designLanguage.palette)).not.toContain('NaN');
+	});
+
+	it('labels on-accent text vars as accent-ink, never body text or accent', () => {
+		// Regression: --wc-primary-text is the text ON the accent; the old
+		// hint table grabbed it for `text` (and `primary` for `accent`).
+		const css = ':root { --wc-primary: #720eec; --wc-primary-text: #fcfbfe; --wc-content-text: #333333; --wc-content-bg: #ffffff; }';
+		const { designLanguage } = analyzeDesignLanguage('<body></body>', [css], {
+			url: 'https://example.com/',
+			mode: 'wordpress',
+			fetchedAt: '2026-10-31T00:00:00.000Z',
+		});
+		expect(designLanguage.palette.roles.accent?.value).toBe('#720eec');
+		expect(designLanguage.palette.roles['accent-ink']?.value).toBe('#fcfbfe');
+		expect(designLanguage.palette.roles['accent-ink']?.source).toBe('css:--wc-primary-text');
+		expect(designLanguage.palette.roles.text?.value).toBe('#333333');
+	});
+
+	it('never lets malformed var values become roles', () => {
+		const css = ':root { --brand-accent: rgb(var(--missing), 0, 0); }';
+		const { designLanguage } = analyzeDesignLanguage('<body></body>', [css], {
+			url: 'https://example.com/',
+			mode: 'generic',
+			fetchedAt: '2026-10-31T00:00:00.000Z',
+		});
+		expect(JSON.stringify(designLanguage.palette)).not.toContain('NaN');
+		expect(designLanguage.palette.roles.accent).toBeUndefined();
+	});
+
 	it('normalizes rgb, hsl, and short-hex values to six-digit hex', () => {
 		const css = '.a { color: rgb(255, 0, 0); color: rgb(255,0,0); } .b { background-color: hsl(120, 100%, 25%); background-color: hsl(120,100%,25%); } .c { color: #abc; color: #abc; }';
 		const { designLanguage } = analyzeDesignLanguage('<body></body>', [css], {
