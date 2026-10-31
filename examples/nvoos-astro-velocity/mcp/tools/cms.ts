@@ -121,7 +121,7 @@ export function registerCmsTools(server: McpServer): void {
 		{
 			title: 'List CMS documents',
 			description:
-				'List a collection from the commerce contract (paginated envelope: docs, totals, page). Read-only.',
+				'List a collection from the commerce contract (paginated envelope: docs, totals, page). Read-only. The status filter (draft/any) requires the manager session cookie.',
 			annotations: READ_ONLY_TOOL,
 			inputSchema: z.object({
 				collection: collectionSchema,
@@ -129,6 +129,7 @@ export function registerCmsTools(server: McpServer): void {
 				limit: z.number().int().positive().max(MAX_LIMIT).optional(),
 				where: whereSchema,
 				sort: z.string().optional(),
+				status: z.enum(['publish', 'draft', 'any']).optional(),
 			}),
 		},
 		async (args) => {
@@ -136,16 +137,29 @@ export function registerCmsTools(server: McpServer): void {
 			if (!base) {
 				return errorResult(NO_BASE, { error: 'no_commerce_base' });
 			}
+			// Draft listings are manage-gated upstream — fail fast without the
+			// manager cookie, and forward it so the backend can re-resolve the
+			// session (the cookie-auth REST pitfall).
+			const wantsDrafts = args.status !== undefined && args.status !== 'publish';
+			const cookie = managerCookie();
+			if (wantsDrafts && !cookie) {
+				return errorResult('cms_list with status draft/any requires a manager session cookie', {
+					error: 'manager_session_required',
+				});
+			}
 			const query = buildCollectionQuery({
 				page: args.page,
 				limit: args.limit,
 				where: args.where as WhereClause | undefined,
 				sort: args.sort as SortValue | undefined,
+				status: args.status,
 			});
 			const url = `${joinPath(base, args.collection)}${query ? `?${query}` : ''}`;
 			let res: Response;
 			try {
-				res = await fetch(url, { headers: { accept: 'application/json' } });
+				res = await fetch(url, {
+					headers: { accept: 'application/json', ...(cookie ? { cookie } : {}) },
+				});
 			} catch (error) {
 				return errorResult(`cms_list failed: ${(error as Error).message}`, {
 					error: 'request_failed',
@@ -201,9 +215,15 @@ export function registerCmsTools(server: McpServer): void {
 						limit: 1,
 						where: { slug: { equals: args.slug ?? '' } } as WhereClause,
 					})}`;
+			// Forward the manager cookie when present — the backend hides
+			// draft documents from cookie-less reads (single GET 404s), so
+			// managers need their session on this call to see drafts.
+			const cookie = managerCookie();
 			let res: Response;
 			try {
-				res = await fetch(url, { headers: { accept: 'application/json' } });
+				res = await fetch(url, {
+					headers: { accept: 'application/json', ...(cookie ? { cookie } : {}) },
+				});
 			} catch (error) {
 				return errorResult(`cms_get failed: ${(error as Error).message}`, {
 					error: 'request_failed',

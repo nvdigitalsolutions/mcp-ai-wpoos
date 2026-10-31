@@ -104,6 +104,8 @@ export function buildCollectionQuery(
 		limit?: number;
 		where?: WhereClause;
 		sort?: SortValue;
+		/** Publication status filter (publish | draft | any). Manager-only for non-publish. */
+		status?: string;
 	} = {}
 ): string {
 	const q = new URLSearchParams();
@@ -115,6 +117,9 @@ export function buildCollectionQuery(
 	}
 	if (params.sort) {
 		q.set('sort', params.sort);
+	}
+	if (params.status && params.status !== 'publish') {
+		q.set('status', params.status);
 	}
 	const where = buildWhereParams(params.where ?? {});
 	return where ? `${q.toString()}&${where}` : q.toString();

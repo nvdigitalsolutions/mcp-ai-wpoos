@@ -104,6 +104,7 @@ And remove the `/api` prefix from each endpoint URL (since `funiq/v1` already in
 | `rating` | Post meta | Float 0–5 |
 | `isBestseller`/`isFeatured` | Post meta | Boolean |
 | `createdAt`/`updatedAt` | `post_date`/`post_modified` | |
+| `status` | `post_status` | `publish` (default) or `draft` — drafts are excluded from the public listing; the `status` body field on POST/PUT accepts the same two values |
 
 ---
 
@@ -117,7 +118,7 @@ with it.
 
 | Method | Path | Auth |
 |--------|------|------|
-| `GET` | `/products[?page=&limit=&where=...&sort=...]` | Public |
+| `GET` | `/products[?page=&limit=&where=...&sort=...&status=...]` | Public — `status=draft`/`any` require `manage_astro` |
 | `GET` | `/products/{id}` | Public |
 | `POST` | `/products` | `manage_astro` |
 | `PUT` | `/products/{id}` | `manage_astro` |
@@ -202,6 +203,23 @@ curl -X POST https://yoursite.com/wp-json/nvoos-commerce/v1/products \
   -H "Content-Type: application/json" \
   -H "X-WP-Nonce: YOUR_NONCE" \
   -d '{"name":"New Product","price":29.99}'
+
+# Create a DRAFT product — excluded from the public listing (status body
+# field accepts draft|publish; default publish, the legacy behaviour)
+curl -X POST https://yoursite.com/wp-json/nvoos-commerce/v1/products \
+  -H "Content-Type: application/json" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -d '{"name":"Unreleased Product","price":19.99,"status":"draft"}'
+
+# List drafts (manage_astro required; publish is the default filter)
+curl -H "X-WP-Nonce: YOUR_NONCE" \
+  "https://yoursite.com/wp-json/nvoos-commerce/v1/products?status=draft"
+
+# Publish a draft via PUT
+curl -X PUT https://yoursite.com/wp-json/nvoos-commerce/v1/products/42 \
+  -H "Content-Type: application/json" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -d '{"status":"publish"}'
 ```
 
 **Paginated response shape** (Payload-compatible):

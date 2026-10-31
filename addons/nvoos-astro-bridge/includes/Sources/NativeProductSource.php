@@ -41,18 +41,26 @@ class NativeProductSource implements ProductSource {
 	}
 
 	/**
-	 * List published native products.
+	 * List native products.
 	 *
-	 * @param int                                 $page  1-based page.
-	 * @param int                                 $limit Docs per page.
-	 * @param array<string, array<string, mixed>> $where Normalized where clause.
-	 * @param string|null                         $sort  Raw sort param.
+	 * Drafts are excluded from the default (public) listing and only
+	 * included when the caller explicitly asks for them ('draft' or 'any') —
+	 * the REST controller gates those values behind the manage capability.
+	 *
+	 * @param int                                 $page   1-based page.
+	 * @param int                                 $limit  Docs per page.
+	 * @param array<string, array<string, mixed>> $where  Normalized where clause.
+	 * @param string|null                         $sort   Raw sort param.
+	 * @param string|null                         $status Publication status filter
+	 *                                                    ('publish', 'draft', 'any').
 	 * @return array{docs: array<int, array<string, mixed>>, total: int}
 	 */
-	public function list_products( int $page, int $limit, array $where, ?string $sort ): array {
+	public function list_products( int $page, int $limit, array $where, ?string $sort, ?string $status = null ): array {
+		$post_status = 'any' === $status ? array( 'publish', 'draft' ) : ( $status ?: 'publish' );
+
 		$args = array(
 			'post_type'      => Schema::CPT_PRODUCT,
-			'post_status'    => 'publish',
+			'post_status'    => $post_status,
 			'paged'          => $page,
 			'posts_per_page' => $limit,
 			'orderby'        => 'date',
@@ -94,6 +102,10 @@ class NativeProductSource implements ProductSource {
 	/**
 	 * Create a native product.
 	 *
+	 * The optional `status` body field accepts 'draft' or 'publish' (default
+	 * 'publish' — the legacy behaviour, kept for backward compatibility).
+	 * Draft products are excluded from the public listing.
+	 *
 	 * @param array<string, mixed> $data Request body fields.
 	 * @return array<string, mixed>|WP_Error
 	 */
@@ -103,7 +115,7 @@ class NativeProductSource implements ProductSource {
 				'post_type'    => Schema::CPT_PRODUCT,
 				'post_title'   => sanitize_text_field( $data['name'] ?? '' ),
 				'post_content' => wp_kses_post( $data['description'] ?? '' ),
-				'post_status'  => 'publish',
+				'post_status'  => $this->normalize_status( $data ),
 			),
 			true
 		);
@@ -148,6 +160,7 @@ class NativeProductSource implements ProductSource {
 				'ID'           => $id,
 				'post_title'   => isset( $data['name'] ) ? sanitize_text_field( $data['name'] ) : $post->post_title,
 				'post_content' => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : $post->post_content,
+				'post_status'  => isset( $data['status'] ) ? $this->normalize_status( $data ) : $post->post_status,
 			)
 		);
 
@@ -275,6 +288,20 @@ class NativeProductSource implements ProductSource {
 	// -----------------------------------------------------------------------
 	// Writes.
 	// -----------------------------------------------------------------------
+
+	/**
+	 * Resolve the requested publication status.
+	 *
+	 * Only 'draft' and 'publish' are accepted (the contract exposes the same
+	 * two values); anything else — including an absent field — defaults to
+	 * 'publish' so legacy callers keep the old behaviour.
+	 *
+	 * @param array<string, mixed> $data Request body fields.
+	 * @return string 'draft' or 'publish'.
+	 */
+	private function normalize_status( array $data ): string {
+		return 'draft' === ( $data['status'] ?? null ) ? 'draft' : 'publish';
+	}
 
 	/**
 	 * Save product meta fields from request data.

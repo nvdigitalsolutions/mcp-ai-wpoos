@@ -56,6 +56,9 @@ class ProductTransformer {
 			'createdAt'    => $post->post_date,
 			'updatedAt'    => $post->post_modified,
 			'source'       => Schema::SOURCE_NATIVE,
+			// Publication status ('publish' | 'draft') — drafts stay out of
+			// the public listing and are only reachable with manage access.
+			'status'       => $post->post_status,
 		);
 	}
 
