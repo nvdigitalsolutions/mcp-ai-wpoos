@@ -197,11 +197,13 @@ npm run mcp                        # http://127.0.0.1:8472/mcp (FORGE_MCP_PORT t
 npx nvoos-forge-mcp-stdio
 ```
 
-- **Tool catalog (v1, 21 tools + 3 meta-tools):** `forge_help` /
+- **Tool catalog (v1, 29 tools + 3 meta-tools):** `forge_help` /
   `forge_plan` / `forge_status` (the `NVOOS_FORGE_MODE=router` surface),
-  `site_add|test|list|get|remove|set_default`, `site_analyze`,
+  `site_add|test|list|get|update|remove|set_default`, `site_analyze`,
   `scaffold_project|status`, `tokens_apply`, `scaffold_package`,
-  `rebuild_config`, `rebuild_trigger`, `github_create_repo|commit|status`,
+  `content_audit`, `content_preview`, `redirects_generate`, `media_audit`,
+  `collections_generate`, `rebuild_config`, `rebuild_trigger`,
+  `preview_token`, `webhook_verify`, `github_create_repo|commit|status`,
   `deploy_config`, `setup_wizard`.
 - **Single-source registry** (`mcp/registry.ts`): every tool declares a
   zod schema, explicit MCP annotations (read-only/destructive/open-world),
