@@ -73,3 +73,32 @@ test( 'GET /health/full requires auth', async () => {
 	assert.strictEqual( res.status, 401 );
 	await close();
 } );
+
+test( 'PUBLIC_SITE_SLUGS hides private sites from public /health', async () => {
+	const config = makeConfig();
+	config.sites = new Map( [
+		[ 'site-a', { slug: 'site-a', url: 'https://a.example.com/wp-json/mcp-ai/v1/mcp', token: 'op_a.SECRET' } ],
+		[ 'site-b', { slug: 'site-b', url: 'https://b.example.com/wp-json/mcp-ai/v1/mcp', token: 'op_b.SECRET' } ],
+	] );
+	config.publicSlugs = new Set( [ 'site-a' ] );
+	recordSiteHealth( 'site-b', false, 'upstream timeout' );
+
+	const { baseUrl, close } = await startTestServer( createApp( { config } ) );
+
+	// Public view: site-b is invisible, and its degradation must not flip
+	// the public status.
+	const publicBody = await ( await fetch( `${ baseUrl }/health` ) ).json();
+	assert.strictEqual( publicBody.status, 'ok' );
+	assert.deepStrictEqual( publicBody.sites, { 'site-a': 'ok' } );
+
+	// Keyed full view: every site, including the private one.
+	const fullBody = await ( await fetch( `${ baseUrl }/health/full`, {
+		headers: { Authorization: `Bearer ${ KEY }` },
+	} ) ).json();
+	assert.strictEqual( fullBody.sites[ 'site-a' ].status, 'ok' );
+	assert.strictEqual( fullBody.sites[ 'site-b' ].status, 'degraded' );
+	await close();
+
+	// Restore for other tests.
+	recordSiteHealth( 'site-b', true );
+} );

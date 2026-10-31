@@ -13,6 +13,11 @@
  *   GATEWAY_PUBLIC_KEYS_PREVIOUS   Same format; accepted during key rotation
  *                                  windows (warns once, like the worker's
  *                                  *_PREVIOUS tokens).
+ *   PUBLIC_SITE_SLUGS              Comma-separated slugs visible on the
+ *                                  public /health endpoint (privacy filter
+ *                                  for private client sites). Unset or `*` =
+ *                                  all configured sites (legacy behaviour);
+ *                                  /health/full always reports every site.
  *   NVOOS_SITE_<SLUG>_URL          Upstream site MCP endpoint, full URL incl.
  *                                  /wp-json/mcp-ai/v1/mcp. Slug uppercased,
  *                                  hyphens → underscores.
@@ -189,11 +194,34 @@ export function parseKeyMap( raw ) {
 }
 
 /**
+ * Parse PUBLIC_SITE_SLUGS — the privacy filter for the public /health
+ * endpoint. Absent, empty, or `*` means "all configured sites" (legacy
+ * behaviour); otherwise a Set of the slugs the public endpoint may show.
+ *
+ * @param {string} raw Raw env value.
+ * @return {Set<string>|null} Slug set, or null for "all".
+ */
+export function parsePublicSlugs( raw ) {
+	const trimmed = String( raw || '' ).trim();
+	if ( ! trimmed || '*' === trimmed ) {
+		return null;
+	}
+	const slugs = new Set(
+		trimmed
+			.split( ',' )
+			.map( ( slug ) => slug.trim() )
+			.filter( Boolean )
+	);
+	return slugs.size ? slugs : null;
+}
+
+/**
  * Load and validate the full gateway configuration from an env object.
  * Collects errors rather than throwing so every problem is reported at once.
  *
  * @param {object} env Env object (defaults to process.env).
- * @return {object} `{ keys, previousKeys, sites, errors }`.
+ * @return {object} `{ keys, previousKeys, sites, publicSlugs, errors,
+ *                   warnings }` plus the governance fields.
  */
 export function loadConfig( env = process.env ) {
 	const errors = [];
@@ -261,6 +289,21 @@ export function loadConfig( env = process.env ) {
 		);
 	}
 
+	// ── Public /health privacy filter ───────────────────────────────
+	// Unknown slugs are warnings, not errors: a typo hides sites (the safe
+	// direction) and must never take the public fleet surface down.
+	const publicSlugs = parsePublicSlugs( env.PUBLIC_SITE_SLUGS );
+	const warnings = [];
+	if ( publicSlugs ) {
+		for ( const slug of publicSlugs ) {
+			if ( ! sites.has( slug ) ) {
+				warnings.push(
+					`PUBLIC_SITE_SLUGS lists "${ slug }" which is not a configured site — the public /health will not show it.`
+				);
+			}
+		}
+	}
+
 	// ── OAuth 2.1 resource server (opt-in, inert unless configured) ──
 	const oauth = parseOAuthConfig( env, errors );
 
@@ -284,6 +327,7 @@ export function loadConfig( env = process.env ) {
 		keys,
 		previousKeys,
 		sites,
+		publicSlugs,
 		oauth,
 		quotas,
 		policy,
@@ -295,6 +339,7 @@ export function loadConfig( env = process.env ) {
 		auditSinkUrl,
 		auditSinkSecret,
 		errors,
+		warnings,
 	};
 }
 

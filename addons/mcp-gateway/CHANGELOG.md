@@ -9,6 +9,13 @@
   `.claude-plugin/plugin.json` manifest got the same bump; and the health
   test now asserts `/health` reports the `package.json` version instead of
   pinning a hardcoded string.
+- Add `PUBLIC_SITE_SLUGS` — a privacy filter for the public `/health`
+  endpoint: comma-separated slugs visible without auth (`*` or unset = all
+  configured sites, the legacy behaviour). Private client sites stay
+  invisible to unauthenticated callers and their degradation no longer
+  flips the public status; `/health/full` always reports every site.
+  Unknown slugs are logged as boot warnings, never fatal — a typo hides
+  sites (the safe direction) and must not take the fleet surface down.
 
 Follow-ups (later phases): Auth0 tenant provisioning (RFC 8414 + DCR +
 PKCE, scopes, consent); scripted PKCE end-to-end + ChatGPT "Add custom MCP

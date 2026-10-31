@@ -38,6 +38,12 @@ export const VERSION = '0.2.0';
  */
 export function createApp( overrides = {} ) {
 	const cfg = assertConfig( overrides.config || loadConfig() );
+	// Non-fatal config warnings (e.g. PUBLIC_SITE_SLUGS typos) are logged,
+	// never fatal — a misconfigured privacy filter must not take the fleet
+	// surface down.
+	for ( const warning of cfg.warnings || [] ) {
+		console.warn( `[config] ${ warning }` );
+	}
 
 	const app = express();
 	app.set( 'gatewayConfig', cfg );
