@@ -261,3 +261,31 @@ a {
 	color: var(--forge-muted);
 	font-size: 0.875rem;
 }
+
+/* Search (Pagefind). */
+.search-form {
+	margin: 1.5rem 0;
+}
+
+.search-input {
+	width: 100%;
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius);
+	font: inherit;
+}
+
+.search-excerpt {
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+}
+
+.search-excerpt mark {
+	background: var(--forge-surface-alt);
+	color: var(--forge-accent);
+}
+
+.search-status {
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+}

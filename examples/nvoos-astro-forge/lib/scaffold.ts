@@ -98,6 +98,9 @@ function collectionLiteral(collection: WpCollection, indent = '\t'): string {
 	if (collection.kind) {
 		lines.push(`${indent}kind: ${tsString(collection.kind)},`);
 	}
+	if (collection.source) {
+		lines.push(`${indent}source: ${tsString(collection.source)},`);
+	}
 	if (collection.authMode) {
 		lines.push(`${indent}authMode: ${tsString(collection.authMode)},`);
 	}

@@ -33,6 +33,7 @@ export interface CollectionAnalysis {
 	slug: string;
 	restBase: string;
 	kind: 'post' | 'page' | 'product';
+	source?: 'wp' | 'payload';
 	count: number;
 	/** The collection would be optional — the source may be absent on some sites. */
 	optional: boolean;
@@ -122,7 +123,12 @@ export async function analyzeSite(client: WpClient): Promise<DiscoveryReport> {
 	}
 
 	// Candidate collections: the standard three, plus any CPT with a rest base.
-	const candidates: Array<{ slug: string; restBase: string; kind: CollectionAnalysis['kind'] }> = [];
+	const candidates: Array<{
+		slug: string;
+		restBase: string;
+		kind: CollectionAnalysis['kind'];
+		source?: 'wp' | 'payload';
+	}> = [];
 	if (report.postTypes.post) {
 		candidates.push({ slug: 'posts', restBase: `wp/v2/${report.postTypes.post.restBase}`, kind: 'post' });
 	}
@@ -135,10 +141,28 @@ export async function analyzeSite(client: WpClient): Promise<DiscoveryReport> {
 			restBase: report.woocommerce ? 'wc/v3/products' : `wp/v2/${report.postTypes.product.restBase}`,
 			kind: 'product',
 		});
+	} else if (report.woocommerce === false && root.namespaces?.some((ns) => ns.startsWith('nvoos-commerce'))) {
+		// The nvoos-astro-bridge envelope is the only product surface.
+		candidates.push({
+			slug: 'products',
+			restBase: 'nvoos-commerce/v1/products',
+			kind: 'product',
+			source: 'payload',
+		});
 	}
 
 	for (const candidate of candidates) {
 		try {
+			if (candidate.source === 'payload') {
+				// Envelope pagination: totalDocs lives in the body, no headers.
+				const { body } = await client.get<{ totalDocs?: number }>(candidate.restBase, {
+					page: '1',
+					limit: '1',
+				});
+				const count = Number(body.totalDocs ?? 0);
+				report.collections.push({ ...candidate, count, optional: count === 0 });
+				continue;
+			}
 			const { headers } = await client.get(candidate.restBase, { page: '1', per_page: '1' });
 			const count = Number(headers.get('x-wp-total') ?? '0');
 			report.collections.push({ ...candidate, count, optional: count === 0 });
@@ -220,6 +244,7 @@ export function profileFromDiscovery(report: DiscoveryReport): SiteProfile {
 		fields: FIELDS[analysis.kind],
 		embed: analysis.kind !== 'product',
 		kind: analysis.kind,
+		source: analysis.source,
 		authMode: analysis.kind === 'product' && analysis.restBase.startsWith('wc/') ? 'wc-consumer' : undefined,
 		optional: analysis.optional,
 		exclude: analysis.kind === 'page' && report.junkPages.length > 0 ? report.junkPages : undefined,

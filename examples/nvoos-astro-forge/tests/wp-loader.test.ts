@@ -348,4 +348,101 @@ describe('createWpLoader load()', () => {
 		expect(store.entries[0].data.featuredImage).toBe('https://fixture.test/uploads/501.png');
 		expect(mediaRequests.some((p) => p.includes('/media/501'))).toBe(true);
 	});
+
+	it('maps the nvoos-commerce/v1 envelope into the stable shape', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader({
+			site: PROFILE,
+			collection: {
+				...COLLECTION,
+				restBase: 'nvoos-commerce/v1/products',
+				kind: 'product',
+				source: 'payload',
+			},
+		});
+		const fetchImpl = async (): Promise<Response> =>
+			new Response(
+				JSON.stringify({
+					docs: [
+						{
+							id: 301,
+							name: 'Aurora 3-Seater Sofa',
+							price: 1299,
+							oldPrice: 1499,
+							description: '<p>Deep and cloud-soft.</p>',
+							category: { name: 'Sofas' },
+							image: 'https://fixture.test/a.png',
+							statuses: [{ name: 'In Stock' }],
+							createdAt: '2026-09-10 10:00:00',
+							updatedAt: '2026-10-20 09:30:00',
+						},
+					],
+					totalDocs: 1,
+					totalPages: 1,
+					page: 1,
+				}),
+				{ status: 200, headers: { 'content-type': 'application/json' } }
+			);
+
+		const originalFetch = globalThis.fetch;
+		(globalThis as { fetch: typeof fetch }).fetch = fetchImpl as typeof fetch;
+		try {
+			await loader.load(fakeContext(store));
+		} finally {
+			(globalThis as { fetch: typeof fetch }).fetch = originalFetch;
+		}
+
+		const data = store.entries[0].data;
+		expect(store.entries[0].id).toBe('301');
+		expect(data.title).toBe('Aurora 3-Seater Sofa');
+		expect(data.slug).toBe('aurora-3-seater-sofa');
+		expect(data.price).toBe('1299');
+		expect(data.regularPrice).toBe('1499'); // oldPrice = the strike-through
+		expect(data.salePrice).toBe('1299'); // price < oldPrice → on sale
+		expect(data.categories).toEqual(['Sofas']);
+		expect(data.stockStatus).toBe('In Stock');
+		expect(data.featuredImage).toBe('https://fixture.test/a.png');
+		expect(store.entries[0].rendered?.html).toBe('<p>Deep and cloud-soft.</p>');
+	});
+
+	it('paginates the payload envelope and flags truncation at the cap', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const warnings: string[] = [];
+		const context = {
+			...fakeContext(store),
+			logger: { warn: (message: string) => warnings.push(message), info: () => {} },
+		} as unknown as LoaderContext;
+		const loader = createWpLoader({
+			site: PROFILE,
+			collection: {
+				...COLLECTION,
+				restBase: 'nvoos-commerce/v1/products',
+				kind: 'product',
+				source: 'payload',
+				perPage: 1,
+				maxPages: 1,
+			},
+		});
+		const doc = (id: number) => ({ id, name: `Doc ${id}`, price: 10, createdAt: '2026-01-01 00:00:00' });
+		const fetchImpl = async (input: string | URL | Request): Promise<Response> => {
+			const url = new URL(String(input));
+			const page = Number(url.searchParams.get('page') ?? '1');
+			return new Response(
+				JSON.stringify({ docs: [doc(page)], totalDocs: 2, totalPages: 2, page }),
+				{ status: 200, headers: { 'content-type': 'application/json' } }
+			);
+		};
+
+		const originalFetch = globalThis.fetch;
+		(globalThis as { fetch: typeof fetch }).fetch = fetchImpl as typeof fetch;
+		try {
+			await loader.load(context);
+		} finally {
+			(globalThis as { fetch: typeof fetch }).fetch = originalFetch;
+		}
+
+		expect(store.entries).toHaveLength(1); // cap stopped the fetch
+		expect(store.entries[0].data.truncated).toBe(true);
+		expect(warnings.some((w) => w.includes('incomplete'))).toBe(true);
+	});
 });

@@ -90,6 +90,9 @@ cd customer-frontend && npm install && npm run build
 - `kind: "product"` enables commerce extraction — wc/v3 flat documents
   (price/stock/sku/images/categories) via `WP_WC_CONSUMER_KEY`/`_SECRET` in
   `.env`, or wp/v2 CPTs (no commerce fields; featured media resolved by ID).
+- `source: "payload"` reads the `nvoos-commerce/v1` envelope served by the
+  nvoos-astro-bridge (body pagination `{ docs, totalDocs, totalPages }`,
+  flat documents with `price`/`oldPrice` sale semantics).
 - `exclude` filters junk/system slugs; `frontPage` renders the WordPress
   static front page at `/` (single canonical URL); `optional: true` lets a
   source be absent (empty collection, warning, not a failed build).
@@ -100,6 +103,7 @@ cd customer-frontend && npm install && npm run build
 ### SEO surfaces (generated per site)
 
 - `/feed.xml` (RSS 2.0), `/404.html`, `/sitemap.xml`, `/robots.txt`.
+- `/search/` — client-side full-text search (Pagefind, indexed post-build).
 - `/redirects.json` — the structured 301 map from the WP URL structure to the
   generated one; the post-build step materializes the host-agnostic
   `dist/_redirects` (Netlify/Cloudflare/static-server compatible).

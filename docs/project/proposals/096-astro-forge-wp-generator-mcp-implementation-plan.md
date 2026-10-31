@@ -184,6 +184,60 @@ woo-count fallback, junk heuristics; profile drafting) + e2e 11/11
 (optimized `/_astro/*.webp` srcset in the listing, CDN passthrough,
 `forge analyze` against the fixture server drafting the full profile).
 
+### 2.5 Phase 1d status — Pagefind search + Payload-envelope variant, shipped 2026-10-31
+
+- **Search (Pagefind):** the template's build chains
+  `astro build && postbuild && pagefind --site dist`; `/search/` is a thin
+  shell that lazily imports the runtime on first input (debounced, results
+  with excerpts/marks). e2e asserts the emitted `pagefind/` runtime +
+  entry manifest.
+- **Payload-envelope collections** (`source: 'payload'`): the loader reads
+  the `nvoos-commerce/v1` bridge envelope — body pagination
+  (`{ docs, totalDocs, totalPages }`, `page`/`limit` params, no `_fields`),
+  flat documents mapped to the stable shape (`name` → title, slugified;
+  `oldPrice` = strike-through regular price → sale when it differs from
+  `price`; `image(s)`, single `category`, named `statuses`). Discovery
+  offers the payload candidate when the namespace is advertised and no
+  product CPT exists.
+
+**Validation:** 68 unit tests (payload extraction incl. oldPrice sale
+mapping + slugify, envelope pagination + truncation, discovery payload
+candidate) + e2e 12/12 (Pagefind runtime + index asserted in the built
+output).
+
+### 2.6 Phase 2 status — bridge plugin core, shipped 2026-10-31
+
+The standalone companion plugin landed as **`plugins/nvoos-forge-bridge`**
+(Q4 naming amendment: the literal `nvoos-astro-bridge` slug already belongs
+to the velocity Payload bridge in `addons/nvoos-astro-bridge` — two plugins
+cannot share a slug; the new plugin keeps Q4's intent: standalone,
+wp.org-installable on any customer site):
+
+- **Rebuild webhook** — every post/page/product/term save + front-page/title
+  option change schedules one debounced, HMAC-signed
+  `repository_dispatch` POST (10-minute transient debounce, in-request
+  static-flag dedupe, sent on shutdown — the velocity `RebuildWebhook`
+  pattern with its `send_pending()`/`reset_pending()` test seams). The
+  `X-Forge-Signature: sha256=<hex>` header lets the CI pipeline fail closed
+  on spoofed triggers.
+- **Inbound trigger** — `POST /wp-json/nvoos-forge/v1/rebuild` accepts only
+  signature-verified requests (constant-time `hash_equals`).
+- **Preview tokens** — editors+ mint single-use, 15-minute tokens via REST;
+  stored hashed (wp_hash) in a transient, returned once, consumed on verify.
+- **Health** — redacted endpoint (versions, booleans, webhook host only).
+- **Settings page** (Settings → Forge Bridge, nonce + `manage_options`) with
+  write-only token/secret fields; **uninstall.php** removes options +
+  transients.
+- **wp.org packaging**: readme.txt, GPLv3 LICENSE, own phpcs standard
+  (WPCS + PHPCompatibilityWP, PHP 7.4 floor), own PHPUnit 9.6 + wp-phpunit
+  suite (23 tests / 60 assertions, **green on WP 6.9 and WP 7.1** locally in
+  Docker), `.github/workflows/phpunit-forge-bridge.yml` (phpcs + PHPUnit on
+  downloaded core, mirroring the content-graph precedent).
+
+**Remaining in Phase 2:** the Plugin Check (PCP) gate + listing assets
+(`mcp-ai-wpoos-wporg-submission` skill), and the CI-side signature
+verification in the Forge deploy pipeline (Phase 3).
+
 ---
 
 ## 3. Phase 1 — Storefront template (~2 wks)

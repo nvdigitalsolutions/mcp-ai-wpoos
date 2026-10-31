@@ -12,7 +12,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -265,6 +265,17 @@ describe('forge e2e — emitted site', () => {
 		expect(redirects).toContain('/fjord-merino-sweater/\t/posts/1/fjord-merino-sweater/\t301');
 		expect(redirects).toContain('/about/\t/\t301');
 		expect(redirects).toContain('/product/fjord-merino-sweater/\t/products/101/fjord-merino-sweater/\t301');
+	});
+
+	it('indexes the site with Pagefind for client-side search', async () => {
+		const search = await readFile(path.join(workDir, 'dist', 'search', 'index.html'), 'utf8');
+		expect(search).toContain("import('/pagefind/pagefind.js')");
+		expect(search).toContain('Searching…');
+		// The post-build indexer emitted the runtime + fragment index.
+		await expect(stat(path.join(workDir, 'dist', 'pagefind', 'pagefind.js'))).resolves.toBeTruthy();
+		await expect(
+			stat(path.join(workDir, 'dist', 'pagefind', 'pagefind-entry.json'))
+		).resolves.toBeTruthy();
 	});
 
 	it('site_analyze drafts a scaffold-ready profile from the fixture', async () => {

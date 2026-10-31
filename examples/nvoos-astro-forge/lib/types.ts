@@ -28,6 +28,12 @@ export interface WpCollection {
 	 */
 	kind?: 'post' | 'page' | 'product';
 	/**
+	 * Wire format: 'wp' (wp/v2 + wc/v3, default) or 'payload' — the
+	 * nvoos-commerce/v1 envelope served by the nvoos-astro-bridge
+	 * ({ docs, totalDocs, totalPages, page } pagination, flat documents).
+	 */
+	source?: 'wp' | 'payload';
+	/**
 	 * Auth source for the generated project: application passwords
 	 * (default) or WooCommerce consumer key/secret (wc/v3 endpoints).
 	 */

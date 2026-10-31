@@ -212,6 +212,35 @@ export function createWpFixtureData() {
 				featured_media: 501,
 			},
 		],
+		/** Payload-envelope products (nvoos-commerce/v1 — the bridge wire shape). */
+		payloadProducts: [
+			{
+				id: 301,
+				name: 'Aurora 3-Seater Sofa',
+				price: 1299,
+				oldPrice: 1499,
+				description: '<p>A deep, cloud-soft three-seater with a solid oak base.</p>',
+				category: { id: 1, name: 'Sofas' },
+				image: `${ORIGIN}/wp-content/uploads/product-a.png`,
+				images: [`${ORIGIN}/wp-content/uploads/product-a.png`],
+				statuses: [{ id: 1, name: 'In Stock' }],
+				createdAt: '2026-09-10 10:00:00',
+				updatedAt: '2026-10-20 09:30:00',
+				status: 'publish',
+			},
+			{
+				id: 302,
+				name: 'Birch Side Table',
+				price: 240,
+				description: '<p>Turned birch, oiled finish.</p>',
+				category: { id: 2, name: 'Tables' },
+				image: `${ORIGIN}/wp-content/uploads/product-b.png`,
+				statuses: [{ id: 2, name: 'Out of Stock' }],
+				createdAt: '2026-09-11 10:00:00',
+				updatedAt: '2026-09-11 10:00:00',
+				status: 'publish',
+			},
+		],
 		/** Media documents for featured_media resolution. */
 		media: {
 			501: { source_url: `${ORIGIN}/wp-content/uploads/media-501.png` },
@@ -281,6 +310,23 @@ export function createWpFixtureServer(port = PORT) {
 		if (path === '/wp-json/wp/v2/product') {
 			const { slice, headers } = paginate(data.wpProducts);
 			json(res, slice, headers);
+			return;
+		}
+		if (path === '/wp-json/nvoos-commerce/v1/products') {
+			const limit = Number(url.searchParams.get('limit') ?? '100');
+			const pageNum = Number(url.searchParams.get('page') ?? '1');
+			const total = data.payloadProducts.length;
+			const totalPages = Math.max(1, Math.ceil(total / limit));
+			const slice = data.payloadProducts.slice((pageNum - 1) * limit, pageNum * limit);
+			json(res, {
+				docs: slice,
+				totalDocs: total,
+				limit,
+				totalPages,
+				page: pageNum,
+				hasNextPage: pageNum < totalPages,
+				hasPrevPage: pageNum > 1,
+			});
 			return;
 		}
 		const mediaMatch = path.match(/^\/wp-json\/wp\/v2\/media\/(\d+)$/);
