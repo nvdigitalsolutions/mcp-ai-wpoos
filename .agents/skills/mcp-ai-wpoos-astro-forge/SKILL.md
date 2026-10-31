@@ -39,7 +39,7 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
 | `templates/blog/` | The production template (posts/pages, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens) |
 | `tests/` | `wp-client` / `sanitize` / `wp-loader` / `scaffold` unit suites + `forge-e2e.test.ts` (exit gate) |
-| `.github/workflows/astro-forge.yml` | CI: typecheck + unit + e2e on Node 22 |
+| `.github/workflows/astro-forge.yml` | CI: typecheck + unit + e2e on Node 24 (Astro 7 needs ≥ 22.23.4 — the runner's latest 22.x is one patch short) |
 
 ## Dev loop (hermetic — no live site needed)
 

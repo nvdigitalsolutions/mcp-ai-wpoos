@@ -28,7 +28,10 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Astro 7 requires Node >= 22.23.4 — the latest 22.x on the runner
+          # (22.23.3) is one patch short, so pin the 24 line (local dev
+          # parity, and the forge CLI's native type stripping is >= 22.6).
+          node-version: 24
           cache: npm
           cache-dependency-path: examples/nvoos-astro-forge/package-lock.json
 
