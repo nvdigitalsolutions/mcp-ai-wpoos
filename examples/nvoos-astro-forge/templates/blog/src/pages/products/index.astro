@@ -1,0 +1,58 @@
+---
+// /products/ — the storefront catalog listing.
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const products = await getCollection('products');
+const truncated = products.some((product) => product.data.truncated);
+const pageUrl = Astro.site ? new URL('/products/', Astro.site).href : undefined;
+---
+
+<Base title="Products" description="The catalog." canonical={pageUrl}>
+	<h1>Products</h1>
+	{truncated && (
+		<p class="notice">
+			This build is incomplete: the source collection exceeded its page cap. Raise
+			<code>maxPages</code> in the site profile and rebuild.
+		</p>
+	)}
+	<ul class="post-list product-grid">
+				{products.map((product) => {
+					// Woo sets `price` to the sale price when on sale — sale state
+					// is salePrice vs regularPrice, not vs price.
+					const onSale = product.data.salePrice && product.data.regularPrice
+						? product.data.salePrice !== product.data.regularPrice
+						: false;
+					return (
+						<li>
+							<a class="product-card" href={`/products/${product.id}/${product.data.slug}/`}>
+								{product.data.featuredImage && (
+									<img
+										class="product-thumb"
+										src={product.data.featuredImage}
+										alt=""
+										loading="lazy"
+										decoding="async"
+									/>
+								)}
+								<span class="product-title">{product.data.title}</span>
+								{product.data.price && (
+									<span class="product-price">
+										{onSale ? (
+											<>
+												<s>{product.data.regularPrice}</s> {product.data.salePrice}
+											</>
+										) : (
+											product.data.price
+										)}
+									</span>
+								)}
+								{product.data.categories && (
+									<span class="product-categories">{product.data.categories.join(', ')}</span>
+								)}
+							</a>
+						</li>
+					);
+				})}
+	</ul>
+</Base>

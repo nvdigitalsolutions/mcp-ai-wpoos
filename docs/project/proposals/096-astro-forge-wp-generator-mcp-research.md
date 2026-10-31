@@ -50,6 +50,31 @@ Gap-filling pass run before implementing the Phase 0 spike (`examples/nvoos-astr
   `X-WP-TotalPages`, `_fields`/`_embed` honoured), standing in for the
   WordPress Playground fixture until the bridge-plugin phase (096 §4).
 
+**Phase 1a learnings (verified in code + live 2026-10-31):**
+
+- **Woo sets `price` to the sale price while on sale** — sale state is
+  `salePrice !== regularPrice`, never `salePrice !== price` (the first cut
+  rendered no strike-through at all). Display: strike `regular_price`, show
+  `sale_price` (wc/v3 docs + live check).
+- **`wc/v3` requires consumer keys** (401 without them); wp/v2 product CPTs
+  stay public but carry no commerce fields (meta is ACF-only on the live
+  pilot). Both wire shapes share one loader via `kind: 'product'` — the
+  stable entry shape is what the template binds to.
+- **`_embed` does not guarantee media** — the live wp/v2/product responses
+  returned empty `_embedded`, so `featured_media` IDs are resolved via
+  `wp/v2/media/{id}?_fields=source_url` with **bounded concurrency (5)**;
+  an image miss is never a build failure.
+- **Optional collections** (`optional: true`) tolerate a 404 as an empty
+  collection with a warning; auth failures stay fatal — a missing CPT must
+  not kill a build, missing credentials must.
+- **Template pages that bind collections must be pruned by the scaffold**
+  when the profile omits the collection, and every remaining consumer
+  (sitemap endpoint) must gate on the manifest — an undefined
+  `getCollection()` fails the build.
+- **The WordPress static front page** (`page_on_front` + `show_on_front`)
+  maps to `frontPage` in the profile; it renders at `/` and is skipped by
+  the slug route + sitemap — one canonical URL per the §0 SEO rule.
+
 ---
 
 ## 1. Competitor & ecosystem survey

@@ -1,14 +1,18 @@
 ---
-// /{slug}/ — one WordPress page.
+// /{slug}/ — one WordPress page. The static front page (manifest.frontPage)
+// renders at `/` instead, so it is skipped here to keep one canonical URL.
 import Base from '../layouts/Base.astro';
+import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
 	const pages = await getCollection('pages');
-	return pages.map((page) => ({
-		params: { slug: page.data.slug },
-		props: { page },
-	}));
+	return pages
+		.filter((page) => page.data.slug !== manifest.frontPage)
+		.map((page) => ({
+			params: { slug: page.data.slug },
+			props: { page },
+		}));
 }
 
 const { page } = Astro.props;

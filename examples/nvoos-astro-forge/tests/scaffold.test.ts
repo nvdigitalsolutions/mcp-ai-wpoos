@@ -111,6 +111,57 @@ describe('scaffold — production blog template', () => {
 		const config = await readFile(path.join(target, 'src/content.config.ts'), 'utf8');
 		expect(config).toContain('posts: defineCollection');
 		expect(config).toContain('products: defineCollection');
+
+		// Manifest carries the site identity for the template chrome.
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.name).toBe('Example Store');
+	});
+
+	it('keeps the storefront pages when the profile declares products', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'shop');
+		await scaffold({
+			profile: {
+				...PROFILE,
+				collections: [
+					...PROFILE.collections,
+					{
+						slug: 'catalog',
+						restBase: 'wc/v3/products',
+						fields: ['id', 'name'],
+						kind: 'product',
+					},
+				],
+			},
+			targetDir: target,
+			template: 'blog',
+		});
+		await expect(stat(path.join(target, 'src/pages/products/index.astro'))).resolves.toBeTruthy();
+	});
+
+	it('prunes the storefront pages for a blog-only profile', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'blog');
+		await scaffold({
+			profile: { ...PROFILE, collections: PROFILE.collections.filter((c) => c.slug !== 'products') },
+			targetDir: target,
+			template: 'blog',
+		});
+		await expect(stat(path.join(target, 'src/pages/products/index.astro'))).rejects.toThrow();
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.collections).toHaveLength(1);
+	});
+
+	it('records the front page slug in the manifest', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'front');
+		await scaffold({
+			profile: { ...PROFILE, frontPage: 'home' },
+			targetDir: target,
+			template: 'blog',
+		});
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.frontPage).toBe('home');
 	});
 });
 
@@ -147,14 +198,52 @@ describe('scaffold — safety guards', () => {
 });
 
 describe('renderContentConfig', () => {
-	it('emits env-driven site URL and the auth block', () => {
+	it('emits env-driven site URL and both auth blocks', () => {
 		const out = renderContentConfig(PROFILE);
 		expect(out).toContain("import.meta.env.WP_SITE_URL ?? 'https://shop.example.com'");
-		expect(out).toContain('const auth: WpAuth | undefined =');
+		expect(out).toContain('const applicationAuth: WpAuth | undefined =');
+		expect(out).toContain('const wcAuth: WpAuth | undefined =');
 		expect(out).toContain("type: 'basic'");
-		expect(out).toContain('site.collections.push(postsCollection, productsCollection);');
 		expect(out).toContain('export const collections = {');
 		expect(out).toContain("replace(/\\/+$/, '')");
+	});
+
+	it('wires wc-consumer collections to the Woo auth env', () => {
+		const profile: SiteProfile = {
+			...PROFILE,
+			collections: [
+				...PROFILE.collections,
+				{
+					slug: 'products',
+					restBase: 'wc/v3/products',
+					fields: ['id', 'name', 'price'],
+					kind: 'product',
+					authMode: 'wc-consumer',
+				},
+			],
+		};
+		const out = renderContentConfig(profile);
+		expect(out).toContain("authMode: 'wc-consumer',");
+		expect(out).toContain('collection: productsCollection, auth: wcAuth');
+		expect(out).toContain('collection: postsCollection, auth: applicationAuth');
+	});
+
+	it('emits exclude and optional flags', () => {
+		const profile: SiteProfile = {
+			...PROFILE,
+			collections: [
+				{
+					slug: 'pages',
+					restBase: 'wp/v2/pages',
+					fields: ['id', 'title'],
+					exclude: ['lost-password', 'checkout'],
+					optional: true,
+				},
+			],
+		};
+		const out = renderContentConfig(profile);
+		expect(out).toContain("exclude: ['lost-password', 'checkout'],");
+		expect(out).toContain('optional: true,');
 	});
 
 	it('normalises trailing slashes on the profile URL', () => {

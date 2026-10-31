@@ -8,8 +8,9 @@ output. The pilot customer is a WooCommerce storefront (Proposal 098 has
 already extracted its design language — the tokens feed the template's
 `--forge-*` variables).
 
-> This is Phase 0 (the generation core). Phases 1–3 (CLI polish, WooCommerce
-> collections, `/mcp` integration + deploy) follow Proposal 096 §5.
+> This is Phase 0 + Phase 1a (the generation core + Woo collections).
+> Remaining Phase 1 (RSS/404/search, `site_analyze`, `tokens_apply` at
+> scaffold, `/mcp` surface) and Phases 2–4 follow Proposal 096 §5.
 > Design-language application (Proposal 098 `design_theme` output) lands on
 > top of the generated `--forge-*` tokens.
 
@@ -17,14 +18,15 @@ already extracted its design language — the tokens feed the template's
 
 | Path | Role |
 | --- | --- |
-| `lib/types.ts` | `SiteProfile` / `WpCollection` contracts (allowlisted URLs only) |
+| `lib/types.ts` | `SiteProfile` / `WpCollection` contracts — `exclude`, `kind`, `authMode`, `optional`, `frontPage` (allowlisted URLs only) |
 | `lib/wp-client.ts` | WP REST client — pagination via `X-WP-TotalPages`, `_fields` pruning + `_embed`, typed errors, explicit truncation |
-| `lib/wp-loader.ts` | The Astro content-layer loader (digest = `modified_gmt`, sanitized `rendered.html`, deletions propagate) |
+| `lib/wp-loader.ts` | The Astro content-layer loader — wc/v3 commerce extraction, wp/v2 featured-media resolution, optional sources |
 | `lib/sanitize.ts` | Versioned `sanitize-html` allowlist — the XSS gate before `set:html` |
-| `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate |
+| `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate + storefront-page pruning |
 | `scripts/forge.mjs` | CLI: `node scripts/forge.mjs <site.json> --target <dir> [--template blog] [--check]` (Node ≥ 22.6) |
-| `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 wire fixture (`:8473`) — stands in for WordPress Playground in CI |
-| `templates/blog/` | The production blog template (Astro 7, ADS-default tokens) |
+| `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 + wc/v3 wire fixture (`:8473`) — stands in for WordPress Playground in CI |
+| `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
+| `templates/blog/` | The production template — posts/pages/products, static front page, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens |
 | `tests/` | Unit tests (`npm test`) + the exit-gate e2e (`npm run test:e2e`) |
 
 ## Dev loop
@@ -62,6 +64,30 @@ node scripts/forge.mjs site.json --target ./customer-frontend --check
 node scripts/forge.mjs site.json --target ./customer-frontend
 cd customer-frontend && npm install && npm run build
 ```
+
+### Storefront profiles (Phase 1a)
+
+```json
+{
+	"url": "https://shop.example.com",
+	"name": "Example Store",
+	"frontPage": "home",
+	"collections": [
+		{ "slug": "pages", "restBase": "wp/v2/pages", "fields": ["id", "title", "slug", "content"],
+		  "embed": true, "exclude": ["checkout", "lost-password"] },
+		{ "slug": "products", "restBase": "wc/v3/products", "kind": "product",
+		  "authMode": "wc-consumer", "fields": ["id", "name", "slug", "permalink", "description",
+		  "price", "regular_price", "sale_price", "stock_status", "sku", "images", "categories"] }
+	]
+}
+```
+
+- `kind: "product"` enables commerce extraction — wc/v3 flat documents
+  (price/stock/sku/images/categories) via `WP_WC_CONSUMER_KEY`/`_SECRET` in
+  `.env`, or wp/v2 CPTs (no commerce fields; featured media resolved by ID).
+- `exclude` filters junk/system slugs; `frontPage` renders the WordPress
+  static front page at `/` (single canonical URL); `optional: true` lets a
+  source be absent (empty collection, warning, not a failed build).
 
 ## Safety invariants (Proposal 096 §2)
 

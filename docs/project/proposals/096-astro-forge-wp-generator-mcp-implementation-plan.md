@@ -107,6 +107,36 @@ built HTML. Build learnings that cost fixes are recorded in the research doc
 §0 (Astro 7 spread-params-as-strings, line-anchored marker rewriting,
 dir-basename copy filter, template-literal regex escaping, truncation math).
 
+### 2.2 Phase 1a status — Woo collections + storefront, shipped 2026-10-31
+
+The Woo/storefront slice of Phase 1 is live in the same package:
+
+- **Commerce loader** (`kind: 'product'`): wc/v3 flat documents —
+  price/regular_price/sale_price/stock_status/sku/images/categories — via
+  `WP_WC_CONSUMER_KEY`/`_SECRET` (authMode `wc-consumer`, HTTP Basic), or
+  wp/v2 product CPTs (no commerce fields; `featured_media` resolved by ID
+  with bounded concurrency when `_embed` has none).
+- **Storefront template pages**: `/products/` listing (sale = strike-through
+  regular price — Woo sets `price` to the sale price, so sale state is
+  `salePrice !== regularPrice`, never `!== price`) + `/products/{id}/{slug}/`
+  detail with `Product` JSON-LD (Offer + availability), stock badge, SKU.
+- **Static front page**: profile `frontPage` slug renders the page at `/`;
+  `[slug]` and the sitemap skip it — one canonical URL (the 096 §0 SEO rule).
+- **Excludes**: per-collection `exclude` slugs filter junk/system pages.
+- **Optional collections**: `optional: true` tolerates an absent source
+  (404 → empty collection + warning, auth failures still fatal).
+- **Scaffold pruning**: profiles without a `products` collection get the
+  storefront pages removed (no undefined-collection build failures); the
+  sitemap endpoint is manifest-driven for the same reason.
+- **Site identity**: `Base.astro` reads the brand name from `nvoos.json`.
+
+**Validation:** 48 unit tests + e2e 8/8 (front page, catalog prices/sales,
+Product JSON-LD, no duplicate front-page URL). **Live forge (pilot
+customer, 2026-10-31): 49 pages built from the production site** — 2 posts,
+14 content pages (10 system/auth slugs excluded), 31 products, zero XSS
+vectors in built HTML, brand chrome correct. Commerce data (prices) awaits
+Woo REST consumer keys from the customer (env-only, never in-repo).
+
 ---
 
 ## 3. Phase 1 — Storefront template (~2 wks)

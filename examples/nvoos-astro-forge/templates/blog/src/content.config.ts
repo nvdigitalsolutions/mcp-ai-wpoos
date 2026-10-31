@@ -15,9 +15,13 @@ import type { SiteProfile, WpCollection, WpAuth } from './forge/types.ts';
 const siteUrl = (import.meta.env.WP_SITE_URL ?? 'http://127.0.0.1:8473').replace(/\/+$/, '');
 const siteName = 'Forge Site';
 
-const auth: WpAuth | undefined =
+const applicationAuth: WpAuth | undefined =
 	import.meta.env.WP_APPLICATION_USER && import.meta.env.WP_APPLICATION_PASSWORD
 		? { type: 'basic', username: import.meta.env.WP_APPLICATION_USER, password: import.meta.env.WP_APPLICATION_PASSWORD }
+		: undefined;
+const wcAuth: WpAuth | undefined =
+	import.meta.env.WP_WC_CONSUMER_KEY && import.meta.env.WP_WC_CONSUMER_SECRET
+		? { type: 'basic', username: import.meta.env.WP_WC_CONSUMER_KEY, password: import.meta.env.WP_WC_CONSUMER_SECRET }
 		: undefined;
 
 const site: SiteProfile = { url: siteUrl, name: siteName, collections: [] };
@@ -39,10 +43,36 @@ const pagesCollection: WpCollection = {
 	perPage: 100,
 	maxPages: 50,
 };
-site.collections.push(postsCollection, pagesCollection);
+const productsCollection: WpCollection = {
+	slug: 'products',
+	restBase: 'wc/v3/products',
+	fields: [
+		'id',
+		'name',
+		'slug',
+		'permalink',
+		'date_created_gmt',
+		'date_modified_gmt',
+		'description',
+		'short_description',
+		'price',
+		'regular_price',
+		'sale_price',
+		'stock_status',
+		'sku',
+		'images',
+		'categories',
+	],
+	kind: 'product',
+	authMode: 'wc-consumer',
+	optional: true,
+	perPage: 100,
+	maxPages: 50,
+};
 
 export const collections = {
-	posts: defineCollection({ loader: createWpLoader({ site, collection: postsCollection, auth }) }),
-	pages: defineCollection({ loader: createWpLoader({ site, collection: pagesCollection, auth }) }),
+	posts: defineCollection({ loader: createWpLoader({ site, collection: postsCollection, auth: applicationAuth }) }),
+	pages: defineCollection({ loader: createWpLoader({ site, collection: pagesCollection, auth: applicationAuth }) }),
+	products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: wcAuth }) }),
 };
 // FORGE:collections-end

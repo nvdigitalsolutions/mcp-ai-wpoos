@@ -1,6 +1,14 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getCollection } from 'astro:content';
+import manifest from '../../nvoos.json';
+import { getCollection, render } from 'astro:content';
+
+// A WordPress static front page (page_on_front) renders at `/`; otherwise
+// the template falls back to the blog-style home.
+const frontPageSlug = manifest.frontPage;
+const pages = await getCollection('pages');
+const frontPage = frontPageSlug ? pages.find((page) => page.data.slug === frontPageSlug) : undefined;
+const frontContent = frontPage ? await render(frontPage) : undefined;
 
 const posts = (await getCollection('posts'))
 	.filter((post) => post.data.date)
@@ -9,30 +17,35 @@ const truncated = posts.some((post) => post.data.truncated);
 const latest = posts.slice(0, 3);
 ---
 
-<Base
-	title="Home"
-	description="A frontend generated from WordPress — the source site stays the CMS."
->
-	<section class="hero">
-		<h1>Welcome</h1>
-		<p>This frontend is generated from WordPress content with the NV oOS Astro Forge.</p>
-	</section>
-	{truncated && (
-		<p class="notice">
-			This build is incomplete: the source collection exceeded its page cap. Raise
-			<code>maxPages</code> in the site profile and rebuild.
-		</p>
+<Base title="Home">
+	{frontPage && frontContent ? (
+		<div class="post-body">
+			<frontContent.Content />
+		</div>
+	) : (
+		<>
+			<section class="hero">
+				<h1>Welcome</h1>
+				<p>This frontend is generated from WordPress content with the NV oOS Astro Forge.</p>
+			</section>
+			{truncated && (
+				<p class="notice">
+					This build is incomplete: the source collection exceeded its page cap. Raise
+					<code>maxPages</code> in the site profile and rebuild.
+				</p>
+			)}
+			<section>
+				<h2>Latest posts</h2>
+				<ul class="post-list">
+					{latest.map((post) => (
+						<li>
+							<a href={`/posts/${post.id}/${post.data.slug}/`}>{post.data.title}</a>
+							<time datetime={post.data.date}>{post.data.date.slice(0, 10)}</time>
+						</li>
+					))}
+				</ul>
+				<p><a href="/posts/">All posts</a></p>
+			</section>
+		</>
 	)}
-	<section>
-		<h2>Latest posts</h2>
-		<ul class="post-list">
-			{latest.map((post) => (
-				<li>
-					<a href={`/posts/${post.id}/${post.data.slug}/`}>{post.data.title}</a>
-					<time datetime={post.data.date}>{post.data.date.slice(0, 10)}</time>
-				</li>
-			))}
-		</ul>
-		<p><a href="/posts/">All posts</a></p>
-	</section>
 </Base>

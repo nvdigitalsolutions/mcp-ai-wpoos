@@ -73,6 +73,9 @@ function run(cwd: string, command: string, args: string[], env: Record<string, s
 const PROFILE: SiteProfile = {
 	url: 'https://fixture.test/', // overridden by WP_SITE_URL at build time
 	name: 'Fixture Wares',
+	// The fixture's About page becomes the static front page — the home
+	// renders page content, and /about/ must disappear (one canonical URL).
+	frontPage: 'about',
 	collections: [
 		{
 			slug: 'posts',
@@ -85,6 +88,29 @@ const PROFILE: SiteProfile = {
 			restBase: 'wp/v2/pages',
 			fields: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
 			embed: true,
+		},
+		{
+			slug: 'products',
+			restBase: 'wc/v3/products',
+			fields: [
+				'id',
+				'name',
+				'slug',
+				'permalink',
+				'date_created_gmt',
+				'date_modified_gmt',
+				'description',
+				'short_description',
+				'price',
+				'regular_price',
+				'sale_price',
+				'stock_status',
+				'sku',
+				'images',
+				'categories',
+			],
+			kind: 'product',
+			authMode: 'wc-consumer',
 		},
 	],
 };
@@ -120,29 +146,66 @@ describe('forge e2e — scaffold → check → build', () => {
 		const result = run(workDir, 'npm', ['run', 'build'], {
 			WP_SITE_URL: origin,
 			ASTRO_SITE: origin,
+			// The fixture ignores auth; these exercise the wc-consumer env wiring.
+			WP_WC_CONSUMER_KEY: 'ck_test',
+			WP_WC_CONSUMER_SECRET: 'cs_test',
 		});
 		expect(result.status, `astro build failed:\n${result.stdout}\n${result.stderr}`).toBe(0);
 	}, 300_000);
 });
 
 describe('forge e2e — emitted site', () => {
-	it('renders posts, pages, sitemap and robots', async () => {
+	it('renders posts, the front page, sitemap and robots', async () => {
 		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
-		expect(index).toContain('Fjord merino sweater, first look');
+		// The About page is the static front page — its content renders at `/`,
+		// with the site name in the chrome.
+		expect(index).toContain('Fixture Wares is the hermetic test storefront.');
+		expect(index).toContain('<title>Fixture Wares</title>');
+		// ...and /about/ must not exist as a second URL for the same content.
+		await expect(readFile(path.join(workDir, 'dist', 'about', 'index.html'), 'utf8')).rejects.toThrow();
 
 		const posts = await readFile(path.join(workDir, 'dist', 'posts', 'index.html'), 'utf8');
+		expect(posts).toContain('Fjord merino sweater, first look');
 		expect(posts).toContain('Care guide: wool, cashmere and linen');
 		expect(posts).toContain('Stitch pattern: honeycomb rib');
 
-		const page = await readFile(path.join(workDir, 'dist', 'about', 'index.html'), 'utf8');
-		expect(page).toContain('Fixture Wares is the hermetic test storefront.');
-
 		const sitemap = await readFile(path.join(workDir, 'dist', 'sitemap.xml'), 'utf8');
 		expect(sitemap).toContain('/posts/1/fjord-merino-sweater/');
-		expect(sitemap).toContain('/about/');
+		expect(sitemap).toContain('/products/101/fjord-merino-sweater/');
+		expect(sitemap).not.toContain('/about/');
 
 		const robots = await readFile(path.join(workDir, 'dist', 'robots.txt'), 'utf8');
 		expect(robots).toContain(`Sitemap: ${origin}/sitemap.xml`);
+	});
+
+	it('renders the storefront listing with prices, sales and categories', async () => {
+		const listing = await readFile(path.join(workDir, 'dist', 'products', 'index.html'), 'utf8');
+		expect(listing).toContain('Fjord Merino Sweater');
+		expect(listing).toContain('120.00');
+		expect(listing).toContain('Harbor Linen Shirt');
+		expect(listing).toContain('<s>110.00</s>'); // sale: regular struck through
+		expect(listing).toContain('90.00');
+		expect(listing).toContain('Knitwear');
+	});
+
+	it('renders product details with commerce data and Product JSON-LD', async () => {
+		const detail = await readFile(
+			path.join(workDir, 'dist', 'products', '101', 'fjord-merino-sweater', 'index.html'),
+			'utf8'
+		);
+		expect(detail).toContain('SKU FJ-101');
+		expect(detail).toContain('In stock');
+		expect(detail).toContain('Three-ply merino, expedition weight.');
+		expect(detail).toContain('application/ld+json');
+		expect(detail).toContain('Product');
+		expect(detail).toContain('120.00');
+		expect(detail).toContain('InStock');
+
+		const outOfStock = await readFile(
+			path.join(workDir, 'dist', 'products', '102', 'harbor-linen-shirt', 'index.html'),
+			'utf8'
+		);
+		expect(outOfStock).toContain('outofstock');
 	});
 
 	it('kills every XSS vector in rendered WordPress HTML', async () => {

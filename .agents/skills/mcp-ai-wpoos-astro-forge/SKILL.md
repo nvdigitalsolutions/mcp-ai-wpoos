@@ -107,6 +107,20 @@ wired. The workflow runs on `paths: examples/nvoos-astro-forge/**`.
 - **`--overwrite` re-scaffold is destructive** — it `rm`s the target
   including `node_modules` (reinstall after). An empty target dir is safe to
   scaffold into; a non-empty non-forge dir is refused without `overwrite: true`.
+- **Woo sets `price` to the sale price while on sale** — sale state is
+  `salePrice !== regularPrice`, never `salePrice !== price` (the first cut
+  rendered no strike-throughs at all). wc/v3 needs consumer keys (401
+  without); wp/v2 product CPTs stay public but have no commerce fields —
+  both shapes share one loader via `kind: 'product'`.
+- **`_embed` does not guarantee media** — resolve `featured_media` IDs via
+  `wp/v2/media/{id}?_fields=source_url` with bounded concurrency (5); an
+  image miss is never a build failure.
+- **Template pages binding collections must be scaffold-pruned** when the
+  profile omits the collection, and every remaining consumer (the sitemap
+  endpoint) gates on `nvoos.json` — an undefined `getCollection()` fails
+  the build.
+- **The WP static front page** maps to profile `frontPage` — rendered at
+  `/`, skipped by the slug route + sitemap (one canonical URL).
 - **The scaffold CLI is operator-run and has no rate limiting** — rate
   limiting/retry belongs on the future MCP surface, not the CLI.
 
@@ -140,9 +154,14 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,
   sanitizer, scaffold CLI, blog template, hermetic fixture, CI exit gate.
-- **Phase 1:** Woo `wc/v3` + Payload-envelope (`nvoos-commerce/v1`) collection
-  variants, full `site_analyze` discovery (CPTs/SEO plugin/Woo/REST lockdown),
-  RSS/404/search (Pagefind), `tokens_apply` at scaffold time (ADS DTCG in).
+- **Phase 1a — shipped 2026-10-31**: Woo collections (`kind: 'product'`,
+  wc/v3 + wp/v2 shapes, wc-consumer auth env), storefront template pages
+  (`/products/` + detail, Product JSON-LD), static front page (`frontPage`),
+  per-collection `exclude`, `optional` sources, scaffold page pruning, brand
+  name from `nvoos.json`. Live pilot forge: 49 pages from production.
+- **Phase 1b (remaining):** RSS/404/search (Pagefind), full `site_analyze`
+  discovery (CPTs/SEO plugin/Woo/REST lockdown), `tokens_apply` at scaffold
+  time (ADS DTCG in).
 - **Phase 2:** `nvoos-astro-bridge` plugin — HMAC-fail-closed rebuild
   webhook, preview tokens, wp.org checklist (see `mcp-ai-wpoos-wporg-submission`).
 - **Phase 3–4:** publishing + multi-site, wizard + packaging (octokit deploy,
