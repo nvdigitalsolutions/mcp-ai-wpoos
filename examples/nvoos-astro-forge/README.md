@@ -1,4 +1,4 @@
-# nvoos-astro-forge — WP → Astro frontend generator (Proposal 096, Phases 0–3)
+# nvoos-astro-forge — WP → Astro frontend generator (Proposal 096, Phases 0–4)
 
 Turns a WordPress/WooCommerce site into a native **Astro 7** headless
 frontend. WordPress stays the CMS; the generated project pulls content
@@ -8,11 +8,11 @@ output. The pilot customer is a WooCommerce storefront (Proposal 098 has
 already extracted its design language — the tokens feed the template's
 `--forge-*` variables).
 
-> Phases 0–1d (generation core, Woo collections, SEO/media/search) and
-> Phase 2 (the `nvoos-forge-bridge` companion plugin) are shipped. Phase 3
-> landed here: the credential vault, multi-site registry, GitHub deploy, and
-> the generated deploy pipeline. Phase 4 (wizard + `/mcp` surface) follows
-> Proposal 096 §5–6.
+> Phases 0–3 (generation core, Woo collections, SEO/media/search, bridge
+> plugin, vault + deploy + multi-site) and Phase 4 (the `setup_wizard` and
+> the `/mcp` tool surface) are shipped. Remaining: the registry publication
+> (owner action — `server.json` is ready) and the §3.3 long-tail tool
+> slices.
 
 ## Layout
 
@@ -181,6 +181,42 @@ proof (freshness window + constant-time compare) before building.
 The vault is AES-256-GCM per entry (wrong key or tampering fails closed);
 `NVOOS_FORGE_VAULT_PLAINTEXT=1` is the documented 0600-file fallback for
 fixtures only.
+
+## Phase 4 — the wizard and the MCP surface
+
+```sh
+# One command: URL → analyzed → registered → scaffolded → built → git →
+# deploy pipeline. (Local dev sites need NVOOS_FORGE_ALLOW_LOOPBACK=1.)
+node scripts/forge.mjs wizard https://shop.example.com \
+  --target ./customer-frontend --build
+
+# The MCP server — dual-era Streamable HTTP (team mode) …
+npm run mcp                        # http://127.0.0.1:8472/mcp (FORGE_MCP_PORT to change)
+
+# … or the stdio entry for coding agents (npx nvoos-forge-mcp-stdio).
+npx nvoos-forge-mcp-stdio
+```
+
+- **Tool catalog (v1, 21 tools + 3 meta-tools):** `forge_help` /
+  `forge_plan` / `forge_status` (the `NVOOS_FORGE_MODE=router` surface),
+  `site_add|test|list|get|remove|set_default`, `site_analyze`,
+  `scaffold_project|status`, `tokens_apply`, `scaffold_package`,
+  `rebuild_config`, `rebuild_trigger`, `github_create_repo|commit|status`,
+  `deploy_config`, `setup_wizard`.
+- **Single-source registry** (`mcp/registry.ts`): every tool declares a
+  zod schema, explicit MCP annotations (read-only/destructive/open-world),
+  and a write flag — CI fails when any is missing.
+- **Write tools fail closed:** a bearer `NVOOS_FORGE_MCP_TOKEN` is
+  required (timing-safe compare); unset = every write is refused with
+  401 `-32001`. Reads pass unauthenticated. Rate limiting, Host/Origin
+  validation, and per-IP audit logging wrap every request.
+- **SSRF-guarded fetches:** `site_analyze` accepts registry hosts, or any
+  host under the `NVOOS_FORGE_OPEN_ANALYZE=1` opt-in — private/reserved/
+  literal-IP ranges are always refused (`lib/ssrf.ts`). Scaffold targets
+  are confined to `NVOOS_FORGE_WORKDIR`.
+- **Registry entry** (061 pattern): `server.json` — the MCP registry
+  metadata (`io.github.nvdigitalsolutions/nvoos-astro-forge`); it is NOT
+  part of the npm package.
 
 ## Research basis
 

@@ -298,6 +298,54 @@ CLI smoke (site add/list/remove, vault set/list) green on Windows.
 secrets/targets per deployed site (repo secrets, Cloudflare project,
 Velocity mirror); then Phase 4 (wizard + `/mcp` surface, §6).
 
+### 2.8 Phase 4 status — wizard + /mcp surface, shipped 2026-10-31
+
+- **`setup_wizard` (6.1):** `lib/wizard.ts` + `forge.mjs wizard <url>` —
+  analyze → register (profile drafted under `<home>/profiles/`) → scaffold
+  → optional `--build` → git init (initial commit only with a configured
+  git identity) → emit the Phase 3.3 pipeline. The MCP `setup_wizard` tool
+  shares the same function with workdir confinement.
+- **MCP surface (6.2/6.3):** `mcp/` (the 095 dual-era pattern) —
+  single-source `registry.ts` (name → zod schema + annotations + write
+  flag + handler; the CI coverage test fails when any is missing),
+  `NVOOS_FORGE_MODE=router` serves exactly the 3 meta-tools
+  (`forge_help`/`forge_plan`/`forge_status`), full serves the 21-tool v1
+  catalog. `bff.ts` mounts Streamable HTTP with rate limit → Host/Origin →
+  fail-closed write auth (`NVOOS_FORGE_MCP_TOKEN`, timing-safe) → the SDK;
+  `stdio.ts` is the coding-agent entry. Registry metadata (061 pattern):
+  `server.json` (`io.github.nvdigitalsolutions/nvoos-astro-forge`, stdio
+  transport, env-var declarations) — registry metadata, excluded from the
+  npm `files`.
+- **SSRF guard (096 §2.4):** `lib/ssrf.ts` — every fetch-capable tool
+  refuses non-http(s) URLs, embedded credentials, and private/reserved/
+  literal-IP ranges (IPv4 + IPv6); the fetch policy is the registry
+  allowlist plus the `NVOOS_FORGE_OPEN_ANALYZE=1` opt-in for open-world
+  analyze. The CLI adds the documented `NVOOS_FORGE_ALLOW_LOOPBACK=1`
+  local-dev exemption (loopback ONLY) — the MCP surface never sets it.
+- **Tool slices:** sites (add/test/list/get/remove/set-default — profiles
+  drafted on `site_add`, credentials never in profiles), discovery
+  (`site_analyze`), scaffold (`scaffold_project` with workdir confinement,
+  `scaffold_status`, `tokens_apply` over the FORGE:tokens markers with
+  contrast warnings, `scaffold_package` zip via fflate), rebuild
+  (`rebuild_config`, `rebuild_trigger` — signed POST to the bridge's
+  inbound route with vault-held URL/secret), github (`github_create_repo`
+  private-by-default, `github_commit` git-data push, redacted
+  `github_status`), deploy (`deploy_config`, `setup_wizard`).
+
+**Validation:** 147 unit tests (handshake conformance over a real socket
+in BOTH wire eras + ladder rejections, the write-auth 401/200 gate, the
+registry coverage gate, handler units, the SSRF range table) + e2e 14/14 —
+the wizard leg runs URL → built → git → pipeline against the hermetic
+fixture (the Playground stand-in) with a loopback opt-in, and the
+credential-hygiene walk covers the MCP-era outputs. Typecheck clean;
+live smoke: `/mcp` discover + tools/list (21 tools) over a real socket.
+
+**Remaining:** the registry-entry publication (owner action — `server.json`
+is ready), a Playground demo blueprint (the `mcp-ai-wpoos-playground-demos`
+skill harness), and the §3.3 long-tail slices (content_audit,
+content_preview, redirects_generate, media_audit, preview_token,
+webhook_verify, site_update, collections_generate) as follow-on waves.
+
 ---
 
 ## 3. Phase 1 — Storefront template (~2 wks)

@@ -75,7 +75,9 @@ jobs:
           PATTERNS='ghp_|github_pat_|npm_[A-Za-z0-9]{20,}|NVOOS_FORGE_VAULT_KEY=[^[:space:]"'\'']{4,}|WP_APPLICATION_PASSWORD=[^[:space:]"'\'']{4,}'
           hits=$(grep -rInE "${PATTERNS}" \
             examples/nvoos-astro-forge/lib \
+            examples/nvoos-astro-forge/mcp \
             examples/nvoos-astro-forge/scripts/forge.mjs \
+            examples/nvoos-astro-forge/scripts/forge-mcp.mjs \
             examples/nvoos-astro-forge/templates || true)
           if [ -n "${hits}" ]; then
             echo "::error::Credential patterns found in forge sources:"
