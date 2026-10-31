@@ -62,6 +62,8 @@ export interface Product {
 	promotion: Promotion | null;
 	createdAt: string;
 	updatedAt: string;
+	/** Publication status — 'publish' | 'draft' (native) or any WP post status (woo). */
+	status?: string;
 }
 
 /** Category document (mirrors the bridge CategoryTransformer output). */

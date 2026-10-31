@@ -14,6 +14,7 @@ const TOKEN = 'tool-test-token';
 interface RecordedRequest {
 	method: string;
 	path: string;
+	query?: string;
 	body: string;
 	cookie?: string;
 	contentType?: string;
@@ -24,6 +25,8 @@ let stub: Server;
 let stubBase = '';
 let mainPort = 0;
 let deadPort = 0;
+let openPort = 0;
+let designPort = 0;
 const servers: Server[] = [];
 
 async function freePort(): Promise<number> {
@@ -60,6 +63,7 @@ beforeAll(async () => {
 		recorded.push({
 			method: req.method ?? '',
 			path: url.pathname,
+			query: url.search,
 			body: rawBody,
 			cookie: req.headers.cookie,
 			contentType: req.headers['content-type'],
@@ -124,6 +128,34 @@ beforeAll(async () => {
 	deadPort = await listen({
 		NVOOS_API_BASE: `http://127.0.0.1:${unused}`,
 		NVOOS_SSR_API_ORIGIN: undefined,
+	});
+
+	// Local design source for design_analyze (Proposal 098): a tiny HTML page
+	// with a semantic accent token. The open-world mount opts into private-host
+	// fetches via NVOOS_MCP_FETCH_ALLOW_PRIVATE=1 — the explicit local-dev gate.
+	designPort = await freePort();
+	const designServer = createServer((req, res) => {
+		if (req.url === '/') {
+			res.writeHead(200, { 'content-type': 'text/html' });
+			res.end(
+				'<html><head><link rel="stylesheet" href="/site.css"></head><body class="card"><button class="btn">Buy</button></body></html>'
+			);
+			return;
+		}
+		if (req.url === '/site.css') {
+			res.writeHead(200, { 'content-type': 'text/css' });
+			res.end(':root { --color-accent: #0f6b4f; --color-background: #f7f3ee; } .card { border-radius: 8px; }');
+			return;
+		}
+		res.writeHead(404);
+		res.end();
+	});
+	await new Promise<void>((resolve) => designServer.listen(designPort, '127.0.0.1', resolve));
+	openPort = await listen({
+		NVOOS_API_BASE: stubBase,
+		NVOOS_SSR_API_ORIGIN: undefined,
+		NVOOS_MCP_TOKEN: TOKEN,
+		NVOOS_MCP_FETCH_ALLOW_PRIVATE: '1',
 	});
 });
 
@@ -238,6 +270,21 @@ describe('cms tools over the stub backend', () => {
 		expect(textOf(message)).toContain('not found');
 	});
 
+	it('cms_get forwards the manager cookie when present (draft reads)', async () => {
+		recorded.length = 0;
+		const { message } = await call(
+			mainPort,
+			'cms_get',
+			{ collection: 'products', id: 1 },
+			{ authorization: `Bearer ${TOKEN}`, cookie: 'session=manager-cookie' }
+		);
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBeUndefined();
+		const get = recorded.find((entry) => entry.method === 'GET' && entry.path === '/products/1');
+		expect(get).toBeDefined();
+		expect(get?.cookie).toContain('session=manager-cookie');
+	});
+
 	it('cms_create without a manager cookie fails with the manager-session error', async () => {
 		const { message } = await call(
 			mainPort,
@@ -265,6 +312,149 @@ describe('cms tools over the stub backend', () => {
 		expect(post).toBeDefined();
 		expect(post?.cookie).toContain('session=manager-cookie');
 		expect(reqBody(post?.body ?? '{}')).toEqual({ name: 'New Product' });
+	});
+
+	it('cms_list with a draft status without a manager cookie fails fast', async () => {
+		recorded.length = 0;
+		const { message } = await call(
+			mainPort,
+			'cms_list',
+			{ collection: 'products', status: 'draft' },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBe(true);
+		expect(textOf(message)).toContain('manager session');
+		expect(recorded).toHaveLength(0);
+	});
+
+	it('cms_list with a draft status and a manager cookie forwards the filter', async () => {
+		recorded.length = 0;
+		const { message } = await call(
+			mainPort,
+			'cms_list',
+			{ collection: 'products', status: 'draft' },
+			{ authorization: `Bearer ${TOKEN}`, cookie: 'session=manager-cookie' }
+		);
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBeUndefined();
+		const list = recorded.find((entry) => entry.method === 'GET' && entry.path === '/products');
+		expect(list).toBeDefined();
+		expect(list?.cookie).toContain('session=manager-cookie');
+		expect(list?.query).toContain('status=draft');
+	});
+});
+
+describe('design import tool (Proposal 098)', () => {
+	it('design_analyze analyzes a local page when the private-host opt-in is set', async () => {
+		const { message } = await call(
+			openPort,
+			'design_analyze',
+			{ url: `http://127.0.0.1:${designPort}/` },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBeUndefined();
+		const payload = message.result?.structuredContent as {
+			source?: { mode?: string };
+			designLanguage?: { palette?: { roles?: Record<string, { value: string; confidence: string }> } };
+		};
+		expect(payload.source?.mode).toBe('generic');
+		expect(payload.designLanguage?.palette?.roles?.accent).toMatchObject({
+			value: '#0f6b4f',
+			confidence: 'high',
+		});
+	});
+
+	it('design_analyze blocks private hosts without the opt-in', async () => {
+		const { message } = await call(
+			mainPort,
+			'design_analyze',
+			{ url: `http://127.0.0.1:${designPort}/` },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBe(true);
+		expect(textOf(message)).toContain('blocked_private_host');
+	});
+
+	it('design_plan builds a storefront plan from a provided analysis (no fetch)', async () => {
+		const analysis = {
+			source: { url: 'https://example.com/', mode: 'generic', fetchedAt: 'now' },
+			designLanguage: {
+				concept: 'test palette',
+				palette: {
+					roles: {
+						accent: { value: '#0f6b4f', confidence: 'high', source: 'css:--color-accent' },
+						surface: { value: '#faf6f1', confidence: 'high', source: 'css:--color-background' },
+						text: { value: '#2b2b2b', confidence: 'high', source: 'css:--color-text' },
+					},
+					unassigned: [],
+				},
+				typography: { families: [{ family: 'Inter', weight: 1 }], scalePx: [16] },
+				spacing: { scalePx: [8] },
+				radii: { valuesPx: [6] },
+				shadows: { count: 0, samples: [] },
+				components: { vocabulary: { card: 1 } },
+				tokensDraft: { semantic: { accent: '#0f6b4f' } },
+				adaptationBrief: { keep: [], replace: [], remix: [], licensingNote: 'x', attribution: ['x'] },
+			},
+		};
+		const { message } = await call(
+			mainPort,
+			'design_plan',
+			{ analysis, content_hint: 'storefront' },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBeUndefined();
+		expect(message.result?.structuredContent?.contentHint).toBe('storefront');
+		expect(message.result?.structuredContent?.provider).toBe('deterministic');
+	});
+
+	it('design_theme dry_run previews without creating a theme', async () => {
+		const { message } = await call(
+			openPort,
+			'design_theme',
+			{ url: `http://127.0.0.1:${designPort}/`, name: 'dry-run-demo', dry_run: true },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBeUndefined();
+		expect(message.result?.structuredContent?.applied).toBe(false);
+		expect((message.result?.structuredContent?.audit as { passed?: boolean } | undefined)?.passed).toBe(true);
+	});
+
+	it('design_theme creates a runtime theme (write gate: bearer token)', async () => {
+		const { message } = await call(
+			openPort,
+			'design_theme',
+			{ url: `http://127.0.0.1:${designPort}/`, name: 'imported-mcp-demo' },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBeUndefined();
+		expect(message.result?.structuredContent?.applied).toBe(true);
+		expect(message.result?.structuredContent?.name).toBe('imported-mcp-demo');
+	});
+
+	it('design_compare reports no changes against its own snapshot', async () => {
+		const analyzed = await call(
+			openPort,
+			'design_analyze',
+			{ url: `http://127.0.0.1:${designPort}/` },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(analyzed.message.error).toBeUndefined();
+		const { message } = await call(
+			openPort,
+			'design_compare',
+			{ url: `http://127.0.0.1:${designPort}/`, snapshot: analyzed.message.result?.structuredContent },
+			{ authorization: `Bearer ${TOKEN}` }
+		);
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBeUndefined();
+		expect(message.result?.structuredContent?.summary).toBe('no changes');
 	});
 });
 

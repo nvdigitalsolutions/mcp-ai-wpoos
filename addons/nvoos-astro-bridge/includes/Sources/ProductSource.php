@@ -34,15 +34,17 @@ interface ProductSource {
 	public function is_available(): bool;
 
 	/**
-	 * List published products (one page).
+	 * List products (one page).
 	 *
-	 * @param int                                 $page  1-based page.
-	 * @param int                                 $limit Docs per page.
-	 * @param array<string, array<string, mixed>> $where Normalized where clause.
-	 * @param string|null                         $sort  Raw sort param.
+	 * @param int                                 $page   1-based page.
+	 * @param int                                 $limit  Docs per page.
+	 * @param array<string, array<string, mixed>> $where  Normalized where clause.
+	 * @param string|null                         $sort   Raw sort param.
+	 * @param string|null                         $status Publication status filter:
+	 *                                                    'publish' (default), 'draft', or 'any'.
 	 * @return array{docs: array<int, array<string, mixed>>, total: int}
 	 */
-	public function list_products( int $page, int $limit, array $where, ?string $sort ): array;
+	public function list_products( int $page, int $limit, array $where, ?string $sort, ?string $status = null ): array;
 
 	/**
 	 * Fetch one product document by ID, or null when missing/not owned.

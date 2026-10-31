@@ -104,6 +104,10 @@ const EXPECTED_TOOLS = [
 	'theme_apply',
 	'theme_delete',
 	'contrast_check',
+	'design_analyze',
+	'design_compare',
+	'design_plan',
+	'design_theme',
 	'cms_list',
 	'cms_get',
 	'cms_create',
@@ -212,13 +216,23 @@ describe('nvoos-astro-mcp HTTP conformance', () => {
 		expect(byName.get('tokens_set')?.annotations?.idempotentHint).toBe(true);
 		expect(byName.get('rebuild_trigger')?.annotations?.idempotentHint).toBe(true);
 		// Every tool declares all four hints (spec defaults are pessimistic).
+		// The open-world exceptions (Proposal 098): the design-import tools
+		// fetch external URLs and declare it; every other tool is
+		// closed-domain.
+		const OPEN_WORLD_TOOLS = new Set(['design_analyze', 'design_compare', 'design_plan', 'design_theme']);
 		for (const tool of message.result?.tools ?? []) {
 			expect(tool.annotations, `missing annotations on ${tool.name}`).toBeDefined();
 			expect(tool.annotations?.readOnlyHint, `missing readOnlyHint on ${tool.name}`).toBeDefined();
 			expect(tool.annotations?.destructiveHint, `missing destructiveHint on ${tool.name}`).toBeDefined();
 			expect(tool.annotations?.idempotentHint, `missing idempotentHint on ${tool.name}`).toBeDefined();
-			expect(tool.annotations?.openWorldHint, `missing openWorldHint on ${tool.name}`).toBe(false);
+			if (OPEN_WORLD_TOOLS.has(tool.name)) {
+				expect(tool.annotations?.openWorldHint, `${tool.name} must declare openWorldHint`).toBe(true);
+			} else {
+				expect(tool.annotations?.openWorldHint, `missing openWorldHint on ${tool.name}`).toBe(false);
+			}
 		}
+		// The open-world write still declares read-only false.
+		expect(byName.get('design_theme')?.annotations?.readOnlyHint).toBe(false);
 	});
 
 	it('resolves preview_url origins from the request Host (no more localhost-only)', async () => {

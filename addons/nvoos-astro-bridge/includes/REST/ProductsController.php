@@ -120,11 +120,22 @@ class ProductsController extends BaseController {
 		$where = WhereClause::normalize( $request->get_param( 'where' ) );
 		$sort  = $request->get_param( 'sort' ) ? (string) $request->get_param( 'sort' ) : null;
 
+		// The public listing stays publish-only; requesting drafts (or 'any')
+		// requires the manage capability (enforced here — the route's
+		// permission callback must remain __return_true for the public case).
+		$status = (string) ( $request->get_param( 'status' ) ?: 'publish' );
+		if ( 'publish' !== $status ) {
+			$permission = $this->item_permissions_check( $request );
+			if ( is_wp_error( $permission ) ) {
+				return $permission;
+			}
+		}
+
 		$docs  = array();
 		$total = 0;
 
 		foreach ( ProductSources::active() as $source ) {
-			$result = $source->list_products( $page, $limit, $where, $sort );
+			$result = $source->list_products( $page, $limit, $where, $sort, $status );
 			$docs   = array_merge( $docs, $result['docs'] );
 			$total += $result['total'];
 		}
@@ -199,6 +210,20 @@ class ProductsController extends BaseController {
 				'Product not found.',
 				array( 'status' => 404 )
 			);
+		}
+
+		// Drafts are manage-only: public single reads answer 404 so the
+		// existence of unreleased products (names, pricing, copy) never
+		// leaks to the public catalog surface.
+		if ( 'publish' !== ( $doc['status'] ?? 'publish' ) ) {
+			$permission = $this->item_permissions_check( $request );
+			if ( is_wp_error( $permission ) ) {
+				return new WP_Error(
+					'astro_not_found',
+					'Product not found.',
+					array( 'status' => 404 )
+				);
+			}
 		}
 
 		return rest_ensure_response( $doc );
@@ -280,14 +305,14 @@ class ProductsController extends BaseController {
 	 */
 	public function get_collection_params(): array {
 		return array(
-			'page'  => array(
+			'page'   => array(
 				'description'       => 'Current page of the collection.',
 				'type'              => 'integer',
 				'default'           => 1,
 				'minimum'           => 1,
 				'sanitize_callback' => 'absint',
 			),
-			'limit' => array(
+			'limit'  => array(
 				'description'       => 'Maximum number of items to return.',
 				'type'              => 'integer',
 				'default'           => 10,
@@ -295,17 +320,27 @@ class ProductsController extends BaseController {
 				'maximum'           => 100,
 				'sanitize_callback' => 'absint',
 			),
-			'where' => array(
+			'where'  => array(
 				'description'       => 'Payload-style where clause.',
 				'type'              => 'object',
 				'default'           => array(),
 				'sanitize_callback' => array( $this, 'sanitize_where' ),
 			),
-			'sort'  => array(
+			'sort'   => array(
 				'description'       => 'Sort order: date (default), -date, price, -price, rating, -rating, name, -name.',
 				'type'              => 'string',
 				'default'           => 'date',
 				'sanitize_callback' => 'sanitize_text_field',
+			),
+			'status' => array(
+				'description' => 'Publication status filter: publish (default), draft, or any. Non-publish values require the manage capability.',
+				'type'        => 'string',
+				'default'     => 'publish',
+				// No explicit sanitize_callback: the typed arg falls back to
+				// rest_parse_request_arg, which validates the enum BEFORE
+				// sanitising (an explicit callback skips schema validation —
+				// has_valid_params only runs validate_callbacks).
+				'enum'        => array( 'publish', 'draft', 'any' ),
 			),
 		);
 	}

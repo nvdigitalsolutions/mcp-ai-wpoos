@@ -17,14 +17,27 @@ import { resolveBase } from '../../src/lib/commerce/client';
  * The spec defaults are deliberately pessimistic (readOnlyHint false,
  * destructiveHint true), so every tool declares its hints explicitly —
  * clients (Zed, NV oOS assistants, ChatGPT read-only mode) gate on these.
- * openWorldHint is false everywhere: this server's domain is closed (a
- * fixed tool set against one commerce contract).
+ * openWorldHint is false for every closed-domain tool; the one exception is
+ * `design_analyze` (Proposal 098), which fetches external URLs under an
+ * SSRF-safe guard and declares the open-world hint.
  */
 export const READ_ONLY_TOOL: ToolAnnotations = {
 	readOnlyHint: true,
 	destructiveHint: false,
 	idempotentHint: false,
 	openWorldHint: false,
+};
+export const OPEN_WORLD_READ_TOOL: ToolAnnotations = {
+	readOnlyHint: true,
+	destructiveHint: false,
+	idempotentHint: false,
+	openWorldHint: true,
+};
+export const OPEN_WORLD_WRITE_TOOL: ToolAnnotations = {
+	readOnlyHint: false,
+	destructiveHint: false,
+	idempotentHint: false,
+	openWorldHint: true,
 };
 export const WRITE_TOOL: ToolAnnotations = {
 	readOnlyHint: false,
