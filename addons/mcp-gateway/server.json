@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.nvdigitalsolutions/nvoos-mcp-gateway",
   "title": "NV oOS Gateway",
-  "description": "Streamable HTTP MCP gateway exposing your NV oOS fleet — self-mutating REST APIs — behind one API key, with per-tool quotas, declarative policy rules, W3C trace propagation, and a fleet audit sink.",
+  	"description": "Streamable HTTP MCP gateway for NV oOS fleets — one API key, namespaced tools, quotas and policy.",
   "websiteUrl": "https://mcp.nvoos.pro/",
   "repository": {
     "url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
