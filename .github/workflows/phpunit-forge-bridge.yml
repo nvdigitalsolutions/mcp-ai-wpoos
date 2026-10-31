@@ -228,9 +228,11 @@ jobs:
           echo "::endgroup::"
 
           # PCP emits one "FILE: <path>" header plus a JSON array per file
-          # with findings (chunked stream, not a single array). Strip the
-          # headers, then slurp the remaining arrays into one.
-          sed -e '/^FILE: /d' /tmp/pcp-report.json > /tmp/pcp-report-parsed.json
+          # with findings (chunked stream, not a single array). On a run with
+          # ZERO findings the report contains only a "Success: ..." status
+          # line instead of JSON — keep only lines that start with "[" so
+          # jq slurps either shape (a clean run slurps to zero).
+          grep '^\[' /tmp/pcp-report.json > /tmp/pcp-report-parsed.json || true
 
           ERRORS=$(jq -s '[.[][] | select(.type=="ERROR")] | length' /tmp/pcp-report-parsed.json)
           WARNINGS=$(jq -s '[.[][] | select(.type=="WARNING")] | length' /tmp/pcp-report-parsed.json)
