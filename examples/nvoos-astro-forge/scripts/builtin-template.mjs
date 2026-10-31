@@ -22,6 +22,7 @@ export async function createBuiltinTemplateFixture(rootDir) {
 
 	await mkdir(path.join(templateDir, 'src', 'pages'), { recursive: true });
 	await mkdir(path.join(templateDir, 'src', 'forge'), { recursive: true });
+	await mkdir(path.join(templateDir, 'src', 'styles'), { recursive: true });
 
 	// Vendor the REAL forge libs so the fixture content.config.ts is a real loader.
 	for (const file of ['types.ts', 'wp-client.ts', 'sanitize.ts', 'wp-loader.ts']) {
@@ -63,6 +64,13 @@ export async function createBuiltinTemplateFixture(rootDir) {
 	);
 
 	await writeFile(path.join(templateDir, 'src', 'pages', 'index.astro'), '<h1>Fixture</h1>\n', 'utf8');
+
+	// The scaffold rewrites the token span — the fixture must carry the markers.
+	await writeFile(
+		path.join(templateDir, 'src', 'styles', 'global.css'),
+		['/* FORGE:tokens */', ':root {', '\t--forge-accent: #0f6b4f;', '}', '/* FORGE:tokens-end */', ''].join('\n'),
+		'utf8'
+	);
 
 	return templateDir;
 }

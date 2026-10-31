@@ -1,8 +1,10 @@
 /* ---------------------------------------------------------------------------
    Design tokens — the Forge pipeline applies a site's design language
    (Proposal 098 output) over these defaults. Defaults match the ADS core
-   layer (examples/nvoos-astro-velocity/src/tokens/).
+   layer (examples/nvoos-astro-velocity/src/tokens/). The span between the
+   FORGE:tokens markers is rewritten by `tokens_apply` at scaffold time.
    --------------------------------------------------------------------------- */
+/* FORGE:tokens */
 :root {
 	--forge-ink: #1a1a1a;
 	--forge-muted: #6b6b6b;
@@ -16,6 +18,7 @@
 	--forge-space: 1rem;
 	--forge-measure: 72ch;
 }
+/* FORGE:tokens-end */
 
 * {
 	box-sizing: border-box;

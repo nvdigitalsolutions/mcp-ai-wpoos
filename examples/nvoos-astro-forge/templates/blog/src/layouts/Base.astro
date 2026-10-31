@@ -23,6 +23,7 @@ const pageUrl = canonical ?? (Astro.site ? new URL(Astro.url.pathname, Astro.sit
 		<title>{fullTitle}</title>
 		{description && <meta name="description" content={description} />}
 		{pageUrl && <link rel="canonical" href={pageUrl} />}
+		<link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />
 		<meta name="robots" content="index, follow" />
 	</head>
 	<body>

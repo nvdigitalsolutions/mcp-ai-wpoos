@@ -26,7 +26,8 @@ already extracted its design language — the tokens feed the template's
 | `scripts/forge.mjs` | CLI: `node scripts/forge.mjs <site.json> --target <dir> [--template blog] [--check]` (Node ≥ 22.6) |
 | `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 + wc/v3 wire fixture (`:8473`) — stands in for WordPress Playground in CI |
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
-| `templates/blog/` | The production template — posts/pages/products, static front page, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens |
+| `templates/blog/` | The production template — posts/pages/products, static front page, RSS, 404, 301 redirect map, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens |
+| `lib/contrast.ts` | WCAG 2.2 contrast math — the token gate warns on AA failures at scaffold time |
 | `tests/` | Unit tests (`npm test`) + the exit-gate e2e (`npm run test:e2e`) |
 
 ## Dev loop
@@ -88,6 +89,23 @@ cd customer-frontend && npm install && npm run build
 - `exclude` filters junk/system slugs; `frontPage` renders the WordPress
   static front page at `/` (single canonical URL); `optional: true` lets a
   source be absent (empty collection, warning, not a failed build).
+- `tokens` applies the 098 design language over the `--forge-*` defaults at
+  scaffold time (`{ "accent": "#720eec", ... }`); the scaffold warns when
+  rendered pairs fail WCAG AA (SC 1.4.3) — warnings, never blocks.
+
+### SEO surfaces (generated per site)
+
+- `/feed.xml` (RSS 2.0), `/404.html`, `/sitemap.xml`, `/robots.txt`.
+- `/redirects.json` — the structured 301 map from the WP URL structure to the
+  generated one; the post-build step materializes the host-agnostic
+  `dist/_redirects` (Netlify/Cloudflare/static-server compatible).
+
+## License
+
+MIT via `LICENSE` + `NOTICE` (owner decision 096 Q7 — mirrors the 092 Q8
+storefront split). The scaffold ships the NOTICE into every generated
+project; generated sites are the customer's own. `private: true` until
+Phase 3 publishing.
 
 ## Safety invariants (Proposal 096 §2)
 

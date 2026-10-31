@@ -168,3 +168,11 @@ Total ~8–10 weeks, each phase a shippable PR. Phases 0–2 parallelize with 09
 - **Q4 — Bridge plugin track:** standalone wp.org plugin `plugins/nvoos-astro-bridge` (recommended — installable on any client site), vs bundling into funiq-bridge.
 - **Q5 — Deploy targets:** Velocity mirror recipe + Cloudflare Pages first (recommended — matches the operated fleet), Vercel/Netlify configs later or never.
 - **Q6 — Credential vault:** OS-keychain/encrypted-file vault as the only credential path (recommended), with gitignored-0600 plaintext config as a documented fallback only.
+- **Q7 — Forge licensing (decided 2026-10-31, mirrors 092 Q8):**
+  `examples/nvoos-astro-forge/` (generator, template, vendored libs) is **MIT**
+  via its own `LICENSE` + `NOTICE` carve-out inside the GPL-3.0-or-later
+  repo; generated sites are the customer's own (independent-work content via
+  REST; the scaffold ships the NOTICE carrying the MIT notice + the
+  generated-output rule); the Phase 2 bridge plugin follows the existing
+  bridge's proprietary/GPL split; `private: true` until Phase 3 publishing,
+  at which point the MIT license governs the published artifact.
