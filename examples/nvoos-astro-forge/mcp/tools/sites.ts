@@ -181,4 +181,37 @@ export const SITE_TOOLS: ToolDef[] = [
 			}
 		},
 	},
+	{
+		name: 'site_update',
+		title: 'Refresh a registered site (re-analyze, or re-point its URL)',
+		description:
+			'Re-run the discovery pass for a registered site and rewrite its drafted profile (the registry reference keeps its creation timestamp). With a new URL, the site is re-pointed and re-analyzed at that URL — the new URL must be a plain http(s) hostname (private/literal ranges refused). The old profile is replaced in the forge home.',
+		schema: z.object( { name: NAME, url: z.string().url().optional() } ),
+		annotations: OPEN_WORLD_WRITE_TOOL,
+		write: true,
+		handler: async ( args, env ) => {
+			const { name, url } = args as { name: string; url?: string };
+			try {
+				const store = new SitesStore( env.homeDir );
+				const { ref } = await store.resolve( name );
+				const targetUrl = url ?? ref.url;
+				assertSafeHttpUrl( targetUrl );
+				const report = await analyzeSite( new WpClient( { baseUrl: targetUrl.replace( /\/+$/, '' ) } ) );
+				const profile: SiteProfile = profileFromDiscovery( report );
+				profile.url = targetUrl.replace( /\/+$/, '' );
+				const profilePath = ref.profile;
+				const { writeFile } = await import( 'node:fs/promises' );
+				await writeFile( profilePath, `${ JSON.stringify( profile, null, '\t' ) }\n`, 'utf8' );
+				await store.add( name, { url: profile.url, profile: profilePath } );
+				return text( `Updated site "${ name }" -> ${ profile.url } (profile rewritten: ${ profilePath }).`, {
+					name,
+					url: profile.url,
+					profilePath,
+					collections: profile.collections.map( ( collection ) => collection.slug ),
+				} );
+			} catch ( error ) {
+				return errorResult( error instanceof Error ? error.message : String( error ) );
+			}
+		},
+	},
 ];

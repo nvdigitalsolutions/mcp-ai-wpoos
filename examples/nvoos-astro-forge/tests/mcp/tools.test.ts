@@ -13,10 +13,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { SITE_TOOLS } from '../../mcp/tools/sites.ts';
 import { DISCOVERY_TOOLS } from '../../mcp/tools/discovery.ts';
 import { SCAFFOLD_TOOLS } from '../../mcp/tools/scaffold.ts';
+import { CONTENT_TOOLS } from '../../mcp/tools/content.ts';
 import { REBUILD_TOOLS } from '../../mcp/tools/rebuild.ts';
 import { GITHUB_TOOLS } from '../../mcp/tools/github.ts';
 import { DEPLOY_TOOLS } from '../../mcp/tools/deploy.ts';
 import type { ToolEnv, ToolResult } from '../../mcp/tool-def.ts';
+import { Vault } from '../../lib/vault.ts';
+import { createHmac } from 'node:crypto';
 
 let env: ToolEnv;
 
@@ -26,9 +29,15 @@ beforeEach( async () => {
 } );
 
 function tool( name: string ) {
-	const found = [ ...SITE_TOOLS, ...DISCOVERY_TOOLS, ...SCAFFOLD_TOOLS, ...REBUILD_TOOLS, ...GITHUB_TOOLS, ...DEPLOY_TOOLS ].find(
-		( entry ) => entry.name === name
-	);
+	const found = [
+		...SITE_TOOLS,
+		...DISCOVERY_TOOLS,
+		...SCAFFOLD_TOOLS,
+		...CONTENT_TOOLS,
+		...REBUILD_TOOLS,
+		...GITHUB_TOOLS,
+		...DEPLOY_TOOLS,
+	].find( ( entry ) => entry.name === name );
 	if ( ! found ) {
 		throw new Error( `unknown tool ${ name }` );
 	}
@@ -98,6 +107,55 @@ describe( 'scaffold tools', () => {
 		const result = await call( 'tokens_apply', { target, tokens: { accent: '#123456' } } );
 		expect( result.isError ).toBe( true );
 		expect( result.content[ 0 ].text ).toMatch( /FORGE:tokens/ );
+	} );
+} );
+
+describe( 'long-tail tools (fail-closed paths)', () => {
+	it( 'site_update fails cleanly for an unknown site', async () => {
+		const result = await call( 'site_update', { name: 'ghost' } );
+		expect( result.isError ).toBe( true );
+	} );
+
+	it( 'content tools fail cleanly for an unknown site (before any network)', async () => {
+		for ( const name of [ 'content_audit', 'content_preview', 'redirects_generate', 'media_audit', 'collections_generate' ] ) {
+			const args = name === 'content_preview' ? { site: 'ghost', collection: 'posts', slug: 'x' } : { site: 'ghost' };
+			const result = await call( name, args );
+			expect( result.isError, name ).toBe( true );
+		}
+	} );
+
+	it( 'preview_token fails closed without vault credentials', async () => {
+		const result = await call( 'preview_token', { site: 'ghost' } );
+		expect( result.isError ).toBe( true );
+	} );
+
+	it( 'webhook_verify fails closed without the shared secret', async () => {
+		const result = await call( 'webhook_verify', { payload: '{}' } );
+		expect( result.isError ).toBe( true );
+		expect( result.content[ 0 ].text ).toMatch( /forge_webhook_secret/ );
+	} );
+
+	it( 'webhook_verify verifies both proofs with the vault secret (constant-time)', async () => {
+		process.env.NVOOS_FORGE_VAULT_KEY = 'test-key';
+		try {
+			const vault = new Vault( { dir: env.homeDir } );
+			await vault.set( 'forge_webhook_secret', 'shared-secret' );
+
+			const payload = '{"action":"rebuild"}';
+			const headerSig = 'sha256=' + createHmac( 'sha256', 'shared-secret' ).update( payload ).digest( 'hex' );
+			const time = 1700000000;
+			const nonce = 'deadbeef';
+			const payloadSig = createHmac( 'sha256', 'shared-secret' ).update( `${ time }.${ nonce }` ).digest( 'hex' );
+
+			const valid = await call( 'webhook_verify', { payload, signature: headerSig, time, nonce, payloadSignature: payloadSig } );
+			expect( valid.isError ).toBeUndefined();
+			expect( valid.structuredContent ).toEqual( { headerValid: true, payloadValid: true } );
+
+			const invalid = await call( 'webhook_verify', { payload, signature: 'sha256=' + '0'.repeat( 64 ), time, nonce, payloadSignature: payloadSig } );
+			expect( invalid.structuredContent ).toEqual( { headerValid: false, payloadValid: true } );
+		} finally {
+			delete process.env.NVOOS_FORGE_VAULT_KEY;
+		}
 	} );
 } );
 

@@ -39,6 +39,8 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `lib/github.ts` | Phase 3.2 octokit deploy — private-by-default repo create, git-data commit/push, sanitized errors |
 | `lib/deploy-config.ts` | Phase 3.3 generated pipeline — deploy.yml/rebuild.yml + fail-closed `verify-dispatch.mjs` |
 | `lib/wizard.ts` | Phase 4 setup_wizard — analyze → register → scaffold → build → git init → pipeline |
+| `lib/content-scan.ts` | §3.3 content audit scanner (htmlparser2 — embeds/alt/hosts/shortcode artifacts + unprocessed brackets) |
+| `lib/redirects.ts` | §3.3 live 301-map generator (the template's exact rules, computed from REST) |
 | `lib/ssrf.ts` | URL guard — private/literal-range refusal, registry allowlist + `NVOOS_FORGE_OPEN_ANALYZE` opt-in, CLI-only loopback exemption |
 | `lib/project-files.ts` | Shared source collector for pushes (CLI deploy + `github_commit` tool) |
 | `mcp/` | Phase 4 MCP surface (095 dual-era pattern): single-source `registry.ts` (zod + annotations + write flags; router/full modes), `bff.ts` (rate limit → Host/Origin → fail-closed write auth), `stdio.ts`, 7 tool slices |
@@ -244,12 +246,15 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   astro-forge`, tag `nvoos-astro-forge-v*` → `publish-astro-forge.yml`
   (provenance). Secret grep gates in CI + the e2e credential-hygiene walk.
 - **Phase 4 — core shipped 2026-10-31:** `forge wizard` (one command, URL
-  → built + deploy-ready) and the `/mcp` surface (see §2.8): 21-tool v1
-  catalog over the single-source registry, `NVOOS_FORGE_MODE=router|full`
-  (3 meta-tools vs full), dual-era Streamable HTTP (`forge-mcp.mjs`) +
-  stdio (`nvoos-forge-mcp-stdio`), rate limit + Host/Origin + fail-closed
-  write auth, SSRF-guarded fetches. Remaining: registry publication
-  (owner), the Playground demo blueprint, and the §3.3 long-tail slices.
+  → built + deploy-ready) and the `/mcp` surface (see §2.8): 29-tool v1
+  catalog (incl. the §3.3 long-tail slices — content_audit/preview,
+  redirects_generate, media_audit, collections_generate, site_update,
+  preview_token, webhook_verify) over the single-source registry,
+  `NVOOS_FORGE_MODE=router|full` (3 meta-tools vs full), dual-era
+  Streamable HTTP (`forge-mcp.mjs`) + stdio (`nvoos-forge-mcp-stdio`),
+  rate limit + Host/Origin + fail-closed write auth, SSRF-guarded fetches.
+  Remaining: registry publication (owner) and the Playground demo
+  blueprint.
 
 ## Repo conventions
 

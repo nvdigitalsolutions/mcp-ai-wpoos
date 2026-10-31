@@ -322,29 +322,37 @@ Velocity mirror); then Phase 4 (wizard + `/mcp` surface, §6).
   allowlist plus the `NVOOS_FORGE_OPEN_ANALYZE=1` opt-in for open-world
   analyze. The CLI adds the documented `NVOOS_FORGE_ALLOW_LOOPBACK=1`
   local-dev exemption (loopback ONLY) — the MCP surface never sets it.
-- **Tool slices:** sites (add/test/list/get/remove/set-default — profiles
-  drafted on `site_add`, credentials never in profiles), discovery
-  (`site_analyze`), scaffold (`scaffold_project` with workdir confinement,
-  `scaffold_status`, `tokens_apply` over the FORGE:tokens markers with
-  contrast warnings, `scaffold_package` zip via fflate), rebuild
-  (`rebuild_config`, `rebuild_trigger` — signed POST to the bridge's
-  inbound route with vault-held URL/secret), github (`github_create_repo`
-  private-by-default, `github_commit` git-data push, redacted
-  `github_status`), deploy (`deploy_config`, `setup_wizard`).
+- **Tool slices:** sites (add/test/list/get/**update**/remove/set-default —
+  profiles drafted on `site_add`, re-drafted on `site_update`, credentials
+  never in profiles), discovery (`site_analyze`), scaffold
+  (`scaffold_project` with workdir confinement, `scaffold_status`,
+  `tokens_apply` over the FORGE:tokens markers with contrast warnings,
+  `scaffold_package` zip via fflate), **content (the §3.3 long-tail —
+  `content_audit` via a real htmlparser2 pass: embeds, shortcode
+  artifacts + unprocessed brackets, complexity; `content_preview` through
+  the versioned sanitizer with a before/after XSS report;
+  `redirects_generate` live 301 map with the template's exact rules;
+  `media_audit` host/alt aggregation; `collections_generate` the typed
+  loader config via `renderContentConfig`/`rewriteContentConfig`)**, rebuild
+  (`rebuild_config`, `rebuild_trigger`, **`preview_token` minted via the
+  bridge route with vault-held site credentials, `webhook_verify` a
+  constant-time local diagnostic for both proofs**), github
+  (`github_create_repo` private-by-default, `github_commit` git-data push,
+  redacted `github_status`), deploy (`deploy_config`, `setup_wizard`).
 
-**Validation:** 147 unit tests (handshake conformance over a real socket
+**Validation:** 160 unit tests (handshake conformance over a real socket
 in BOTH wire eras + ladder rejections, the write-auth 401/200 gate, the
-registry coverage gate, handler units, the SSRF range table) + e2e 14/14 —
-the wizard leg runs URL → built → git → pipeline against the hermetic
-fixture (the Playground stand-in) with a loopback opt-in, and the
+registry coverage gate, handler units, the SSRF range table, content-scan
+and redirect-map units) + e2e 15/15 — the wizard leg runs URL → built → git
+→ pipeline against the hermetic fixture (the Playground stand-in) with a
+loopback opt-in, the long-tail leg exercises the content tools against the
+fixture (which now honours wp/v2 `slug` filtering), and the
 credential-hygiene walk covers the MCP-era outputs. Typecheck clean;
-live smoke: `/mcp` discover + tools/list (21 tools) over a real socket.
+live smoke: `/mcp` discover + tools/list over a real socket.
 
 **Remaining:** the registry-entry publication (owner action — `server.json`
-is ready), a Playground demo blueprint (the `mcp-ai-wpoos-playground-demos`
-skill harness), and the §3.3 long-tail slices (content_audit,
-content_preview, redirects_generate, media_audit, preview_token,
-webhook_verify, site_update, collections_generate) as follow-on waves.
+is ready) and a Playground demo blueprint (the `mcp-ai-wpoos-playground-demos`
+skill harness).
 
 ---
 

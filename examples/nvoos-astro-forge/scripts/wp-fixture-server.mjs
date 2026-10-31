@@ -79,6 +79,7 @@ export function createWpFixtureData() {
 				content: {
 					rendered: [
 						'<figure class="wp-block-image"><img src="https://fixture.test/care.jpg" alt="Folded knits" width="800" height="450" loading="lazy" /><figcaption>Folded knits, ready to store.</figcaption></figure>',
+						`<img src="${ORIGIN}/wp-content/uploads/care-local.jpg" alt="Local care image" />`,
 						'<blockquote class="wp-block-quote"><p>Cold water and flat drying keep fibres alive for decades.</p></blockquote>',
 						'<table><thead><tr><th>Fibre</th><th>Wash</th></tr></thead><tbody><tr><td>Wool</td><td>Cold, wool cycle</td></tr><tr><td>Linen</td><td>Warm, gentle</td></tr></tbody></table>',
 					].join(''),
@@ -268,6 +269,11 @@ export function createWpFixtureServer(port = PORT) {
 			return { slice, headers: { 'x-wp-total': String(all.length), 'x-wp-totalpages': String(totalPages) } };
 		};
 
+		// wp/v2 honours `slug` as a collection query param — the fixture
+		// mirrors that (the content tools filter by slug).
+		const slug = url.searchParams.get('slug');
+		const bySlug = (all) => (slug ? all.filter((entry) => entry.slug === slug) : all);
+
 		if (path === '/health') {
 			res.writeHead(200, { 'content-type': 'text/plain' });
 			res.end('ok');
@@ -282,12 +288,12 @@ export function createWpFixtureServer(port = PORT) {
 			return;
 		}
 		if (path === '/wp-json/wp/v2/posts') {
-			const { slice, headers } = paginate(data.posts);
+			const { slice, headers } = paginate(bySlug(data.posts));
 			json(res, slice, headers);
 			return;
 		}
 		if (path === '/wp-json/wp/v2/pages') {
-			const { slice, headers } = paginate(data.pages);
+			const { slice, headers } = paginate(bySlug(data.pages));
 			json(res, slice, headers);
 			return;
 		}
@@ -303,7 +309,7 @@ export function createWpFixtureServer(port = PORT) {
 			return;
 		}
 		if (path === '/wp-json/wc/v3/products') {
-			const { slice, headers } = paginate(data.wooProducts);
+			const { slice, headers } = paginate(bySlug(data.wooProducts));
 			json(res, slice, headers);
 			return;
 		}
