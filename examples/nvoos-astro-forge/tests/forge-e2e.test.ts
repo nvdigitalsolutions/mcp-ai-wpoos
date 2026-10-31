@@ -342,3 +342,53 @@ describe('forge e2e — emitted site', () => {
 		expect(hits, `credential patterns leaked into generated files: ${hits.join(', ')}`).toEqual([]);
 	});
 });
+
+describe('forge e2e — setup_wizard (Phase 4 exit: URL → built, deploy-ready)', () => {
+	it('runs the wizard against the hermetic fixture end-to-end', async () => {
+		const wizardHome = await mkdtemp(path.join(os.tmpdir(), 'forge-wizard-home-'));
+		const wizardTarget = await mkdtemp(path.join(os.tmpdir(), 'forge-wizard-site-'));
+		const result = run(
+			FORGE_ROOT,
+			'node',
+			[
+				path.join(FORGE_ROOT, 'scripts', 'forge.mjs'),
+				'wizard',
+				origin + '/',
+				'--target',
+				wizardTarget,
+				'--name',
+				'fixture-wizard',
+				'--build',
+			],
+			{ NVOOS_FORGE_HOME: wizardHome, NVOOS_FORGE_ALLOW_LOOPBACK: '1' }
+		);
+		expect(result.status, `forge wizard failed:\n${result.stdout}\n${result.stderr}`).toBe(0);
+
+		// Scaffolded + manifest (the wizard normalizes trailing slashes).
+		const manifest = JSON.parse(await readFile(path.join(wizardTarget, 'nvoos.json'), 'utf8'));
+		expect(manifest.url).toBe(origin);
+
+		// Built.
+		await expect(readFile(path.join(wizardTarget, 'dist', 'index.html'), 'utf8')).resolves.toContain('Fixture Wares');
+
+		// git-initialized.
+		await expect(stat(path.join(wizardTarget, '.git'))).resolves.toBeDefined();
+
+		// Deploy pipeline emitted (Phase 3.3 file set).
+		await expect(readFile(path.join(wizardTarget, '.github', 'workflows', 'deploy.yml'), 'utf8')).resolves.toContain('configure-pages');
+		await expect(readFile(path.join(wizardTarget, '.github', 'workflows', 'rebuild.yml'), 'utf8')).resolves.toContain('repository_dispatch');
+		await expect(readFile(path.join(wizardTarget, 'scripts', 'verify-dispatch.mjs'), 'utf8')).resolves.toContain('timingSafeEqual');
+
+		// Registered in the multi-site registry with a drafted profile.
+		const sites = JSON.parse(await readFile(path.join(wizardHome, 'sites.json'), 'utf8'));
+		expect(sites.sites['fixture-wizard']).toBeDefined();
+		expect(sites.default).toBe('fixture-wizard');
+
+		// The wizard build ran without consumer keys — values never baked.
+		const builtIndex = await readFile(path.join(wizardTarget, 'dist', 'index.html'), 'utf8');
+		expect(builtIndex).not.toMatch(/ck_test|cs_test/);
+
+		await rm(wizardHome, { recursive: true, force: true });
+		await rm(wizardTarget, { recursive: true, force: true });
+	}, 600_000);
+});
