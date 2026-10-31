@@ -34,6 +34,15 @@ Tests cover: configuration gating, debounce/dedupe, HMAC signing +
 verification, the outbound POST contract (intercepted, zero network), REST
 routes, capability gates, token single-use/expiry, and health redaction.
 
+## wp.org readiness
+
+The `plugin-check` job in `.github/workflows/phpunit-forge-bridge.yml` runs
+the WordPress.org Plugin Check gate against the ZIP-shaped plugin tree
+(ERRORs block the PR); the shipping shape is defined by `.distignore` (keep
+the two exclusion lists in sync). Listing assets (screenshots captured via
+`bin/capture-nvoos-forge-bridge-screenshots.js`, icon/banner artwork TODO)
+and the SVN upload runbook live in `.wordpress-org/`.
+
 ## License
 
 GPLv3 or later — see `LICENSE`.
