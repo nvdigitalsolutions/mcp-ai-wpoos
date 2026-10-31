@@ -24,15 +24,21 @@ Environment (see `.env.example`):
 | --- | --- |
 | `WP_SITE_URL` | WordPress source (defaults to the hermetic fixture `http://127.0.0.1:8473`) |
 | `WP_APPLICATION_USER` / `WP_APPLICATION_PASSWORD` | Optional Application Passwords for private content — never committed |
+| `WP_WC_CONSUMER_KEY` / `WP_WC_CONSUMER_SECRET` | Optional WooCommerce REST keys for `wc/v3` collections (Woo → Settings → Advanced → REST API) |
 | `ASTRO_SITE` | Canonical host for sitemap/robots/canonical URLs |
 
 ## What gets generated
 
-- `/` — hero + latest posts
+- `/` — the WordPress static front page (`manifest.frontPage`) when set;
+  otherwise a blog-style home with the latest posts
 - `/posts/` — all posts (sorted by date, descending)
 - `/posts/{id}/{slug}/` — post detail with sanitized WordPress HTML, canonical
   link, and `BlogPosting` JSON-LD
-- `/{slug}/` — WordPress pages
+- `/products/` + `/products/{id}/{slug}/` — the storefront catalog: prices
+  (sale = strike-through regular), stock, SKU, categories, `Product` JSON-LD
+  (the pages are pruned by the scaffold when the profile has no products)
+- `/{slug}/` — WordPress pages (the front page slug is skipped to keep one
+  canonical URL)
 - `/sitemap.xml`, `/robots.txt`
 
 ## Safety invariants (Proposal 096 §2.4)

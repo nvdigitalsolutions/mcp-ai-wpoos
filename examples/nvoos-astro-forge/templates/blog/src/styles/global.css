@@ -176,6 +176,72 @@ a {
 	margin-bottom: 1rem;
 }
 
+/* Storefront product cards. */
+.product-grid {
+	grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.product-grid li {
+	padding: 0;
+	overflow: hidden;
+}
+
+.product-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	text-decoration: none;
+	color: var(--forge-ink);
+}
+
+.product-thumb {
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	background: var(--forge-line);
+}
+
+.product-title {
+	font-weight: 600;
+	padding: 0 0.75rem;
+}
+
+.product-price {
+	padding: 0 0.75rem 0.75rem;
+	color: var(--forge-accent);
+	font-weight: 700;
+}
+
+.product-price s {
+	color: var(--forge-muted);
+	font-weight: 400;
+}
+
+.product-price-large {
+	font-size: 1.25rem;
+}
+
+.product-categories {
+	padding: 0 0.75rem 0.75rem;
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+}
+
+.product-stock {
+	margin-left: 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 400;
+}
+
+.product-stock-muted {
+	color: var(--forge-muted);
+	text-transform: capitalize;
+}
+
+.product header span {
+	display: block;
+}
+
 .post header {
 	border-bottom: 1px solid var(--forge-line);
 	margin-bottom: 1.5rem;

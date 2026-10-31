@@ -142,6 +142,60 @@ export function createWpFixtureData() {
 				content: { rendered: '<p>Write to <a href="mailto:hello@fixture.test">hello@fixture.test</a>.</p>' },
 			},
 		],
+		/** WooCommerce wc/v3 flat documents — prices, stock, images, categories. */
+		wooProducts: [
+			{
+				id: 101,
+				name: 'Fjord Merino Sweater',
+				slug: 'fjord-merino-sweater',
+				permalink: `${ORIGIN}/product/fjord-merino-sweater/`,
+				date_created_gmt: '2026-10-10T00:00:00',
+				date_modified_gmt: '2026-10-12T00:00:00',
+				description: '<p>Three-ply merino, expedition weight.</p>',
+				short_description: 'Three-ply merino.',
+				price: '120.00',
+				regular_price: '120.00',
+				sale_price: '',
+				stock_status: 'instock',
+				sku: 'FJ-101',
+				images: [{ src: `${ORIGIN}/wp-content/uploads/product-a.png` }],
+				categories: [{ name: 'Knitwear' }],
+			},
+			{
+				id: 102,
+				name: 'Harbor Linen Shirt',
+				slug: 'harbor-linen-shirt',
+				permalink: `${ORIGIN}/product/harbor-linen-shirt/`,
+				date_created_gmt: '2026-10-11T00:00:00',
+				date_modified_gmt: '2026-10-11T00:00:00',
+				description: '<p>Washed linen, relaxed cut.</p>',
+				short_description: 'Washed linen.',
+				price: '90.00',
+				regular_price: '110.00',
+				sale_price: '90.00',
+				stock_status: 'outofstock',
+				sku: 'HB-102',
+				images: [{ src: `${ORIGIN}/wp-content/uploads/product-b.png` }],
+				categories: [{ name: 'Shirts' }],
+			},
+		],
+		/** wp/v2 product CPT documents — no commerce fields, featured_media IDs. */
+		wpProducts: [
+			{
+				id: 201,
+				date_gmt: '2026-10-01T00:00:00',
+				modified_gmt: '2026-10-01T00:00:00',
+				title: { rendered: 'Plain CPT Product' },
+				slug: 'plain-cpt-product',
+				link: `${ORIGIN}/product/plain-cpt-product/`,
+				content: { rendered: '<p>A product without commerce fields.</p>' },
+				featured_media: 501,
+			},
+		],
+		/** Media documents for featured_media resolution. */
+		media: {
+			501: { source_url: `${ORIGIN}/wp-content/uploads/media-501.png` },
+		},
 	};
 }
 
@@ -186,6 +240,27 @@ export function createWpFixtureServer(port = PORT) {
 		if (path === '/wp-json/wp/v2/pages') {
 			const { slice, headers } = paginate(data.pages);
 			json(res, slice, headers);
+			return;
+		}
+		if (path === '/wp-json/wc/v3/products') {
+			const { slice, headers } = paginate(data.wooProducts);
+			json(res, slice, headers);
+			return;
+		}
+		if (path === '/wp-json/wp/v2/product') {
+			const { slice, headers } = paginate(data.wpProducts);
+			json(res, slice, headers);
+			return;
+		}
+		const mediaMatch = path.match(/^\/wp-json\/wp\/v2\/media\/(\d+)$/);
+		if (mediaMatch) {
+			const doc = data.media[Number(mediaMatch[1])];
+			if (doc) {
+				json(res, doc);
+			} else {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'rest_post_invalid_id', message: 'Invalid media ID.' }));
+			}
 			return;
 		}
 		if (path.startsWith('/wp-content/uploads/')) {

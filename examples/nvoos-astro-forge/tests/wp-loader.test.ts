@@ -193,4 +193,159 @@ describe('createWpLoader load()', () => {
 		expect(store.entries[0].data.truncated).toBe(true);
 		expect(warnings.some((w) => w.includes('incomplete'))).toBe(true);
 	});
+
+	it('extracts the wc/v3 commerce shape (price/stock/sku/images/categories)', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader({
+			site: PROFILE,
+			collection: { ...COLLECTION, restBase: 'wc/v3/products', kind: 'product' },
+		});
+		const fetchImpl = cannedFetch([
+			{
+				id: 7,
+				name: 'Woo Sweater',
+				slug: 'woo-sweater',
+				permalink: 'https://fixture.test/product/woo-sweater/',
+				date_created_gmt: '2026-10-01T00:00:00',
+				date_modified_gmt: '2026-10-02T00:00:00',
+				description: '<p>Body</p><script>alert(1)</script>',
+				short_description: '<p>Short</p>',
+				price: '89.99',
+				regular_price: '99.99',
+				sale_price: '89.99',
+				stock_status: 'instock',
+				sku: 'WS-7',
+				images: [{ src: 'https://fixture.test/a.png' }],
+				categories: [{ name: 'Knitwear' }],
+			},
+		]);
+
+		const originalFetch = globalThis.fetch;
+		(globalThis as { fetch: typeof fetch }).fetch = fetchImpl as typeof fetch;
+		try {
+			await loader.load(fakeContext(store));
+		} finally {
+			(globalThis as { fetch: typeof fetch }).fetch = originalFetch;
+		}
+
+		const data = store.entries[0].data;
+		expect(data.title).toBe('Woo Sweater');
+		expect(data.link).toBe('https://fixture.test/product/woo-sweater/');
+		expect(data.price).toBe('89.99');
+		expect(data.regularPrice).toBe('99.99');
+		expect(data.salePrice).toBe('89.99');
+		expect(data.stockStatus).toBe('instock');
+		expect(data.sku).toBe('WS-7');
+		expect(data.categories).toEqual(['Knitwear']);
+		expect(data.images).toEqual(['https://fixture.test/a.png']);
+		expect(data.featuredImage).toBe('https://fixture.test/a.png');
+		expect(store.entries[0].rendered?.html).toBe('<p>Body</p>');
+	});
+
+	it('skips entries whose slug is excluded', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader({
+			site: PROFILE,
+			collection: { ...COLLECTION, exclude: ['login-customizer'] },
+		});
+		const fetchImpl = cannedFetch([
+			{ id: 1, title: { rendered: 'Keep' }, slug: 'keep', content: { rendered: '<p>x</p>' } },
+			{
+				id: 2,
+				title: { rendered: 'Junk' },
+				slug: 'login-customizer',
+				content: { rendered: '<p>x</p>' },
+			},
+		]);
+
+		const originalFetch = globalThis.fetch;
+		(globalThis as { fetch: typeof fetch }).fetch = fetchImpl as typeof fetch;
+		try {
+			await loader.load(fakeContext(store));
+		} finally {
+			(globalThis as { fetch: typeof fetch }).fetch = originalFetch;
+		}
+
+		expect(store.entries).toHaveLength(1);
+		expect(store.entries[0].data.slug).toBe('keep');
+	});
+
+	it('tolerates a missing optional source as an empty collection', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const warnings: string[] = [];
+		const context = {
+			...fakeContext(store),
+			logger: { warn: (message: string) => warnings.push(message), info: () => {} },
+		} as unknown as LoaderContext;
+		const loader = createWpLoader({
+			site: PROFILE,
+			collection: { ...COLLECTION, restBase: 'wc/v3/products', optional: true },
+		});
+		const fetchImpl = async (): Promise<Response> =>
+			new Response('{}', { status: 404, headers: { 'content-type': 'application/json' } });
+
+		const originalFetch = globalThis.fetch;
+		(globalThis as { fetch: typeof fetch }).fetch = fetchImpl as typeof fetch;
+		try {
+			await loader.load(context);
+		} finally {
+			(globalThis as { fetch: typeof fetch }).fetch = originalFetch;
+		}
+
+		expect(store.entries).toHaveLength(0);
+		expect(store.cleared).toBe(true);
+		expect(warnings.some((w) => w.includes('optional'))).toBe(true);
+	});
+
+	it('still fails on auth errors for optional sources', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader({
+			site: PROFILE,
+			collection: { ...COLLECTION, restBase: 'wc/v3/products', optional: true },
+		});
+		const fetchImpl = async (): Promise<Response> =>
+			new Response('{}', { status: 401, headers: { 'content-type': 'application/json' } });
+
+		const originalFetch = globalThis.fetch;
+		(globalThis as { fetch: typeof fetch }).fetch = fetchImpl as typeof fetch;
+		try {
+			await expect(loader.load(fakeContext(store))).rejects.toMatchObject({ code: 'wp_auth_required' });
+		} finally {
+			(globalThis as { fetch: typeof fetch }).fetch = originalFetch;
+		}
+	});
+
+	it('resolves featured media by ID when _embed has none', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader({
+			site: PROFILE,
+			collection: { ...COLLECTION, restBase: 'wp/v2/product' },
+		});
+		const mediaRequests: string[] = [];
+		const fetchImpl = async (input: string | URL | Request): Promise<Response> => {
+			const url = new URL(String(input));
+			mediaRequests.push(url.pathname);
+			if (url.pathname.includes('/media/')) {
+				return new Response(JSON.stringify({ source_url: 'https://fixture.test/uploads/501.png' }), {
+					status: 200,
+					headers: { 'content-type': 'application/json' },
+				});
+			}
+			return new Response(
+				JSON.stringify([{ id: 9, title: { rendered: 'P' }, slug: 'p', content: { rendered: '<p>x</p>' }, featured_media: 501 }]),
+				{ status: 200, headers: { 'content-type': 'application/json', 'x-wp-totalpages': '1' } }
+			);
+		};
+
+		const originalFetch = globalThis.fetch;
+		(globalThis as { fetch: typeof fetch }).fetch = fetchImpl as typeof fetch;
+		try {
+			await loader.load(fakeContext(store));
+		} finally {
+			(globalThis as { fetch: typeof fetch }).fetch = originalFetch;
+		}
+
+		expect(store.entries[0].data.featuredImage).toBe('https://fixture.test/uploads/501.png');
+		expect(mediaRequests.some((p) => p.includes('/media/501'))).toBe(true);
+	});
 });

@@ -20,6 +20,20 @@ export interface WpCollection {
 	perPage?: number;
 	/** Hard cap on pages per build (defense against runaway catalogs). */
 	maxPages?: number;
+	/** Slug allowlist filter — junk/system pages stay out of the build. */
+	exclude?: string[];
+	/**
+	 * Content semantics: 'post' | 'page' | 'product'.
+	 * 'product' enables commerce extraction (price/stock/sku/images).
+	 */
+	kind?: 'post' | 'page' | 'product';
+	/**
+	 * Auth source for the generated project: application passwords
+	 * (default) or WooCommerce consumer key/secret (wc/v3 endpoints).
+	 */
+	authMode?: 'application-password' | 'wc-consumer';
+	/** A 404/empty source is tolerated (warn + empty collection), not fatal. */
+	optional?: boolean;
 }
 
 /** One operator-configured WordPress site. */
@@ -28,6 +42,8 @@ export interface SiteProfile {
 	url: string;
 	/** Display name (discovery fills it when absent). */
 	name?: string;
+	/** Page slug to render at `/` (the WordPress static front page). */
+	frontPage?: string;
 	/** Collections to wire into the generated project. */
 	collections: WpCollection[];
 }

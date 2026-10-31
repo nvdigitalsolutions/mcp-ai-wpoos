@@ -10,12 +10,15 @@
 //   - keys entries by the WP post ID (stable across slug edits)
 //   - digests the `modified_gmt` so unchanged entries skip re-render work
 //   - clears the store up front so deleted posts disappear from the build
+//   - supports WooCommerce sources: wc/v3 flat documents (price/stock/sku/
+//     images/categories) via `kind: 'product'`, or wp/v2 CPTs (no commerce
+//     fields, featured media resolved by ID when `_embed` has none)
 // ---------------------------------------------------------------------------
 
 import type { Loader, LoaderContext } from 'astro/loaders';
 import { z } from 'astro/zod';
 
-import { WpClient } from './wp-client.ts';
+import { WpClient, WpClientError } from './wp-client.ts';
 import type { SiteProfile, WpAuth, WpCollection } from './types.ts';
 import { sanitizeHtml } from './sanitize.ts';
 
@@ -24,74 +27,139 @@ export interface WpLoaderOptions {
 	site: SiteProfile;
 	/** The collection this loader instance serves. */
 	collection: WpCollection;
-	/** Auth for private sites — never written into the scaffolded project. */
+	/** Auth for private sources — never written into the scaffolded project. */
 	auth?: WpAuth;
 }
 
+/** Stable, framework-agnostic entry shape across wp/v2 and wc/v3. */
+const schema = z.object({
+	id: z.number(),
+	title: z.string(),
+	slug: z.string(),
+	date: z.string(),
+	modified: z.string(),
+	excerpt: z.string().optional(),
+	link: z.string().optional(),
+	author: z.string().optional(),
+	featuredImage: z.string().optional(),
+	price: z.string().optional(),
+	regularPrice: z.string().optional(),
+	salePrice: z.string().optional(),
+	stockStatus: z.string().optional(),
+	sku: z.string().optional(),
+	categories: z.array(z.string()).optional(),
+	images: z.array(z.string()).optional(),
+	/** True when the page cap stopped the fetch before the end (096: never silent truncation). */
+	truncated: z.boolean().optional(),
+});
+
+/** Run an async map over items with bounded concurrency (politeness). */
+async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+	const out: R[] = new Array(items.length);
+	let next = 0;
+	const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+		while (next < items.length) {
+			const index = next++;
+			out[index] = await fn(items[index]);
+		}
+	});
+	await Promise.all(workers);
+	return out;
+}
+
 /**
- * Astro content-layer loader over one WordPress REST collection.
- *
- * The entry shape is deliberately stable and framework-agnostic:
- * `{ id, title, slug, date, modified, excerpt, content, link, author, featuredImage }`.
+ * Astro content-layer loader over one WordPress/WooCommerce REST collection.
  */
 export function createWpLoader(options: WpLoaderOptions): Loader {
 	const { site, collection, auth } = options;
-
-	const schema = z.object({
-		id: z.number(),
-		title: z.string(),
-		slug: z.string(),
-		date: z.string(),
-		modified: z.string(),
-		excerpt: z.string().optional(),
-		link: z.string().optional(),
-		author: z.string().optional(),
-		featuredImage: z.string().optional(),
-		/** True when the page cap stopped the fetch before the end (096: never silent truncation). */
-		truncated: z.boolean().optional(),
-	});
+	const kind = collection.kind ?? 'post';
 
 	return {
 		name: 'nvoos-wp',
 		schema,
 		load: async (context: LoaderContext) => {
 			const client = WpClient.fromProfile(site, { auth });
-			const { entries, truncated } = await client.fetchAll(collection.restBase, {
-				perPage: collection.perPage,
-				maxPages: collection.maxPages,
-				fields: collection.fields,
-				embed: collection.embed,
-			});
+
+			let fetched;
+			try {
+				fetched = await client.fetchAll(collection.restBase, {
+					perPage: collection.perPage,
+					maxPages: collection.maxPages,
+					fields: collection.fields,
+					embed: collection.embed,
+				});
+			} catch (error) {
+				// An explicitly optional source may be absent (e.g. a store
+				// without products) — empty collection, not a failed build.
+				if (collection.optional && error instanceof WpClientError && error.code === 'wp_not_found') {
+					context.store.clear();
+					context.logger.warn(
+						`[nvoos-wp] ${collection.slug}: source not found (marked optional) — empty collection.`
+					);
+					return;
+				}
+				throw error;
+			}
+			const { entries, truncated } = fetched;
 
 			// Deletions in WP must disappear from the next build.
 			context.store.clear();
 
+			// wp/v2 without `_embed`: resolve featured images by ID —
+			// bounded concurrency, and an image miss is never a build failure.
+			const mediaUrls = new Map<number, string>();
+			const mediaIds = new Set<number>();
 			for (const entry of entries) {
+				const fm = entry.featured_media;
+				if (typeof fm === 'number' && fm > 0 && !extractFeaturedImage(entry)) {
+					mediaIds.add(fm);
+				}
+			}
+			await mapLimit([...mediaIds], 5, async (id) => {
+				try {
+					const { body } = await client.get<{ source_url?: string }>(`wp/v2/media/${id}`, {
+						_fields: 'source_url',
+					});
+					if (typeof body.source_url === 'string') {
+						mediaUrls.set(id, body.source_url);
+					}
+				} catch {
+					// Bonus field — never fatal.
+				}
+			});
+
+			for (const entry of entries) {
+				if (collection.exclude?.includes(String(entry.slug ?? ''))) {
+					continue;
+				}
 				const id = String(entry.id ?? entry.slug);
-				const modified = String(entry.modified_gmt ?? entry.modified ?? entry.date_gmt ?? entry.date ?? '');
-				const rawHtml = extractHtml(entry.content);
-				const rawExcerpt = extractHtml(entry.excerpt);
-				const featured = extractFeaturedImage(entry);
-				const titleField = entry.title as { rendered?: unknown } | undefined;
-				const embedded = entry._embedded as { author?: Array<{ name?: unknown }> } | undefined;
-				const authorName = embedded?.author?.[0]?.name;
+				const raw = extractRaw(entry, kind);
+				const modified = raw.modified || raw.date;
+				const featured = raw.featuredImage ?? mediaUrls.get(Number(entry.featured_media));
 
 				context.store.set({
 					id,
 					data: {
 						id: Number(entry.id),
-						title: String(titleField?.rendered ?? ''),
-						slug: String(entry.slug ?? ''),
-						date: String(entry.date_gmt ?? entry.date ?? ''),
+						title: raw.title,
+						slug: raw.slug,
+						date: raw.date,
 						modified,
-						excerpt: rawExcerpt ? sanitizeHtml(rawExcerpt) : undefined,
-						link: typeof entry.link === 'string' ? entry.link : undefined,
-						author: authorName ? String(authorName) : undefined,
+						excerpt: raw.excerpt ? sanitizeHtml(raw.excerpt) : undefined,
+						link: raw.link,
+						author: raw.author,
 						featuredImage: featured,
+						price: raw.price,
+						regularPrice: raw.regularPrice,
+						salePrice: raw.salePrice,
+						stockStatus: raw.stockStatus,
+						sku: raw.sku,
+						categories: raw.categories,
+						images: raw.images,
 						truncated: truncated ? true : undefined,
 					},
 					digest: context.generateDigest(modified),
-					rendered: { html: sanitizeHtml(rawHtml) },
+					rendered: { html: sanitizeHtml(raw.html) },
 				});
 			}
 
@@ -102,6 +170,83 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 			}
 		},
 	};
+}
+
+interface RawEntry {
+	title: string;
+	slug: string;
+	date: string;
+	modified: string;
+	html: string;
+	excerpt?: string;
+	link?: string;
+	author?: string;
+	featuredImage?: string;
+	price?: string;
+	regularPrice?: string;
+	salePrice?: string;
+	stockStatus?: string;
+	sku?: string;
+	categories?: string[];
+	images?: string[];
+}
+
+/** Normalize one raw document into the stable entry shape. */
+function extractRaw(entry: Record<string, unknown>, kind: WpCollection['kind']): RawEntry {
+	// wc/v3 flat documents (product kind).
+	const title = typeof entry.name === 'string' ? entry.name : extractHtml(entry.title);
+	const html = typeof entry.description === 'string' ? entry.description : extractHtml(entry.content);
+	const excerpt =
+		typeof entry.short_description === 'string' ? entry.short_description : extractHtml(entry.excerpt);
+	const date = String(
+		entry.date_created_gmt ?? entry.date_created ?? entry.date_gmt ?? entry.date ?? ''
+	);
+	const modified = String(entry.date_modified_gmt ?? entry.date_modified ?? entry.modified_gmt ?? entry.modified ?? date);
+	const embedded = entry._embedded as { author?: Array<{ name?: unknown }> } | undefined;
+
+	const wcImages = Array.isArray(entry.images)
+		? entry.images
+				.map((image) => (image && typeof image === 'object' && 'src' in image ? String(image.src) : ''))
+				.filter(Boolean)
+		: [];
+	const wcCategories = Array.isArray(entry.categories)
+		? entry.categories
+				.map((category) => (category && typeof category === 'object' && 'name' in category ? String(category.name) : ''))
+				.filter(Boolean)
+		: [];
+
+	return {
+		title: title || String(entry.id ?? ''),
+		slug: String(entry.slug ?? ''),
+		date,
+		modified,
+		html,
+		excerpt: excerpt || undefined,
+		link: typeof entry.permalink === 'string' ? entry.permalink : typeof entry.link === 'string' ? entry.link : undefined,
+		author: embedded?.author?.[0]?.name ? String(embedded.author[0].name) : undefined,
+		featuredImage: extractFeaturedImage(entry) ?? wcImages[0],
+		price: extractCommerce(entry, ['price']),
+		regularPrice: extractCommerce(entry, ['regular_price']),
+		salePrice: extractCommerce(entry, ['sale_price']),
+		stockStatus: extractCommerce(entry, ['stock_status']),
+		sku: extractCommerce(entry, ['sku']),
+		categories: wcCategories.length > 0 ? wcCategories : undefined,
+		images: wcImages.length > 0 ? wcImages : undefined,
+	};
+}
+
+/** Commerce fields are additive — read them when present, skip otherwise. */
+function extractCommerce(entry: Record<string, unknown>, keys: string[]): string | undefined {
+	for (const key of keys) {
+		const value = entry[key];
+		if (typeof value === 'string' && value.length > 0) {
+			return value;
+		}
+		if (typeof value === 'number') {
+			return String(value);
+		}
+	}
+	return undefined;
 }
 
 /** Extract rendered HTML from a wp/v2 `content`/`excerpt` object. */
@@ -119,7 +264,7 @@ function extractHtml(field: unknown): string {
 function extractFeaturedImage(entry: Record<string, unknown>): string | undefined {
 	const media = (entry._embedded as Record<string, unknown> | undefined)?.['wp:featuredmedia'];
 	if (Array.isArray(media) && media.length > 0) {
-		const source = media[0]?.source_url;
+		const source = media[0]?.['source_url'];
 		if (typeof source === 'string' && source.length > 0) {
 			return source;
 		}
