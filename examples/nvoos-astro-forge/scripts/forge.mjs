@@ -45,6 +45,7 @@ function usage() {
 	console.error( '  node scripts/forge.mjs vault delete <name>' );
 	console.error( '  node scripts/forge.mjs vault list' );
 	console.error( '  node scripts/forge.mjs wizard <url> --target <dir> [--name <name>] [--to <mode>] [--build]' );
+	console.error( '  node scripts/forge.mjs deploy-config <site.json|name> --target <dir> --to <mode> [--site-url <url>] [--cloudflare-project <name>]' );
 	console.error( '  node scripts/forge.mjs deploy <site.json|name> --target <dir> --to <github-pages|cloudflare-pages|velocity> [--repo <name>] [--org <org>] [--public] [--cloudflare-project <name>]' );
 	process.exit( 2 );
 }
@@ -394,12 +395,57 @@ switch ( argv[ 0 ] ) {
 	case 'wizard':
 		await runWizard( argv.slice( 1 ) );
 		break;
+	case 'deploy-config':
+		await runDeployConfig( argv.slice( 1 ) );
+		break;
 	case 'deploy':
 		await runDeploy( argv.slice( 1 ) );
 		break;
 	default:
-		await runScaffold( argv );
+		// The documented `forge` subcommand word is optional — strip it when
+		// present so `forge <site.json|name> --target …` parses like the
+		// bare form.
+		await runScaffold( argv[ 0 ] === 'forge' ? argv.slice( 1 ) : argv );
 		break;
+}
+
+/** Emit the deploy pipeline into a scaffolded target (no network, no token). */
+async function runDeployConfig( rest ) {
+	const args = { profileRef: undefined, target: undefined, mode: 'github-pages', siteUrl: undefined, cloudflareProject: undefined };
+	for ( let i = 0; i < rest.length; i++ ) {
+		const arg = rest[ i ];
+		if ( arg === '--target' ) args.target = rest[ ++i ];
+		else if ( arg === '--to' ) args.mode = rest[ ++i ];
+		else if ( arg === '--site-url' ) args.siteUrl = rest[ ++i ];
+		else if ( arg === '--cloudflare-project' ) args.cloudflareProject = rest[ ++i ];
+		else if ( ! arg.startsWith( '--' ) && ! args.profileRef ) args.profileRef = arg;
+		else usage();
+	}
+	if ( ! args.target ) usage();
+	if ( ! DEPLOY_MODES.includes( args.mode ) ) {
+		console.error( `Unknown deploy mode "${ args.mode }" — use one of: ${ DEPLOY_MODES.join( ', ' ) }` );
+		process.exit( 2 );
+	}
+	let siteUrl = args.siteUrl;
+	if ( ! siteUrl && args.profileRef ) {
+		const profile = await loadProfile( args.profileRef );
+		siteUrl = String( profile.url ?? '' );
+	}
+	try {
+		const emitted = await emitDeployConfig( args.target, {
+			mode: args.mode,
+			siteUrl,
+			cloudflareProject: args.cloudflareProject,
+		} );
+		console.log( `\u2713 Emitted the deploy pipeline into ${ args.target }:` );
+		for ( const file of emitted.files ) {
+			console.log( `  + ${ file }` );
+		}
+		console.log( 'Next: configure the repo secrets (FORGE_WEBHOOK_SECRET, target-specific) and push.' );
+	} catch ( error ) {
+		console.error( error instanceof Error ? error.message : error );
+		process.exitCode = 1;
+	}
 }
 
 async function runWizard( rest ) {
