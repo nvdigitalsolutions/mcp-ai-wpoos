@@ -312,7 +312,7 @@ implementation plan for the full worked example, and the sibling skill
 ## Case study: food-beverage
 
 `addons/pro/includes/tools/food-beverage/` (2026-10-08, 21 tools, 56 files,
-+17.4k lines): Surf Club Midigama F&B management — M-01…M-21 metric engine,
++17.4k lines): a coastal venue's F&B management — M-01…M-21 metric engine,
 R-01…R-13 report builder, Drive + CSV adapters, menu-engineering quadrants,
 drafts-only output. Validation: phpcs clean; standalone smoke harness
 reproduces 20/20 workbook Check-totals values (covers, revenues, cost %s,

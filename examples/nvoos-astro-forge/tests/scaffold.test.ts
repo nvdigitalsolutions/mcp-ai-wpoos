@@ -15,8 +15,8 @@ import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
 
 const PROFILE: SiteProfile = {
-	url: 'https://myyco.com/',
-	name: 'MYYCO',
+	url: 'https://shop.example.com/',
+	name: 'Example Store',
 	collections: [
 		{
 			slug: 'posts',
@@ -55,7 +55,7 @@ describe('scaffold — built-in template fixture', () => {
 		// Manifest.
 		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
 		expect(manifest.generator).toBe('nvoos-astro-forge');
-		expect(manifest.url).toBe('https://myyco.com');
+		expect(manifest.url).toBe('https://shop.example.com');
 		expect(manifest.collections).toHaveLength(2);
 		expect(manifest.collections[1].restBase).toBe('wp/v2/product');
 		expect(result.collections).toEqual(['posts', 'products']);
@@ -74,7 +74,7 @@ describe('scaffold — built-in template fixture', () => {
 
 		// Rewritten content config.
 		const config = await readFile(path.join(target, 'src/content.config.ts'), 'utf8');
-		expect(config).toContain("const siteUrl = (import.meta.env.WP_SITE_URL ?? 'https://myyco.com')");
+		expect(config).toContain("const siteUrl = (import.meta.env.WP_SITE_URL ?? 'https://shop.example.com')");
 		expect(config).toContain("restBase: 'wp/v2/product'");
 		expect(config).toContain("slug: 'products'");
 		expect(config).toContain('// FORGE:collections-end');
@@ -88,7 +88,7 @@ describe('scaffold — built-in template fixture', () => {
 
 		// Env example carries the URL, never secrets.
 		const envExample = await readFile(path.join(target, '.env.example'), 'utf8');
-		expect(envExample).toContain('WP_SITE_URL=https://myyco.com');
+		expect(envExample).toContain('WP_SITE_URL=https://shop.example.com');
 		expect(envExample).toContain('WP_APPLICATION_PASSWORD=');
 	});
 });
@@ -149,7 +149,7 @@ describe('scaffold — safety guards', () => {
 describe('renderContentConfig', () => {
 	it('emits env-driven site URL and the auth block', () => {
 		const out = renderContentConfig(PROFILE);
-		expect(out).toContain("import.meta.env.WP_SITE_URL ?? 'https://myyco.com'");
+		expect(out).toContain("import.meta.env.WP_SITE_URL ?? 'https://shop.example.com'");
 		expect(out).toContain('const auth: WpAuth | undefined =');
 		expect(out).toContain("type: 'basic'");
 		expect(out).toContain('site.collections.push(postsCollection, productsCollection);');
@@ -158,8 +158,8 @@ describe('renderContentConfig', () => {
 	});
 
 	it('normalises trailing slashes on the profile URL', () => {
-		const out = renderContentConfig({ ...PROFILE, url: 'https://myyco.com///' });
-		expect(out).toContain("'https://myyco.com'");
+		const out = renderContentConfig({ ...PROFILE, url: 'https://shop.example.com///' });
+		expect(out).toContain("'https://shop.example.com'");
 	});
 
 	it('ignores marker names mentioned in prose (line-anchored matching)', () => {
@@ -171,7 +171,7 @@ describe('renderContentConfig', () => {
 		].join('\n');
 		const out = rewriteContentConfig(source, PROFILE);
 		expect(out).toContain('// Header comment mentioning FORGE:site in prose.');
-		expect(out).toContain("'https://myyco.com'");
+		expect(out).toContain("'https://shop.example.com'");
 		expect(out).toContain('// FORGE:collections-end');
 		expect(out).not.toContain('OLD');
 	});

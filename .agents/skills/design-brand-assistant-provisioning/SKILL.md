@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-brand-assistant-provisioning
-description: Provision a client-brand AI assistant in the NV oOS Pro Toolkit — brand intake, system-prompt authoring, tool selection, an idempotent provisioning script, credentials, and end-to-end verification. Use when creating a brand manager or social media assistant for a client brand (e.g. Aerlinn), onboarding a new brand into the Design Stack, replicating an existing brand assistant, or updating a brand assistant's prompt, tools, or campaign copy.
+description: Provision a client-brand AI assistant in the NV oOS Pro Toolkit — brand intake, system-prompt authoring, tool selection, an idempotent provisioning script, credentials, and end-to-end verification. Use when creating a brand manager or social media assistant for a client brand (e.g. a fashion label), onboarding a new brand into the Design Stack, replicating an existing brand assistant, or updating a brand assistant's prompt, tools, or campaign copy.
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
@@ -16,8 +16,9 @@ verified meta keys, credentials, JSON-RPC — live in
 brand layer on top: what goes **into** the assistant and how to keep it
 maintainable.
 
-Canonical example: the **Aerlinn Brand Manager** — `projects/aerlinn/` in
-the Design Stack repo, assistant ID 931 on the Design Stack deployment.
+Canonical example: a **Brand Manager** for a client label —
+`projects/<brand>/` in the Design Stack repo (assistant IDs are
+deployment-specific).
 
 ## When to use this skill
 
@@ -25,7 +26,7 @@ Trigger when ANY of the following is true:
 
 - "Create a brand manager for <client>" or "make an assistant for <brand>".
 - Onboarding a new client brand for social content, campaigns, or publishing.
-- Replicating an existing brand assistant ("do the same exercise for Pandora").
+- Replicating an existing brand assistant ("do the same exercise for another brand").
 - Updating a brand assistant's system prompt, tool set, or campaign copy.
 
 Do NOT use for: generic assistant CRUD and meta keys (→
@@ -48,7 +49,7 @@ Gather from the user, from web research (`web_search_validated`,
 
 - **Identity** — exact name casing, tagline, positioning, sub-brands.
 - **CTA** — the ONE canonical contact line, verbatim (e.g.
-  "DM us or email hello@aerlinn.com"). No other contact details exist.
+  "DM us or email hello@example-brand.com"). No other contact details exist.
 - **Voice** — tone rules plus a never-list (no hype, no urgency, no invented
   facts, no discounts for luxury brands).
 - **Visual direction** — palette, style, on-image copy rules.
@@ -70,21 +71,21 @@ numbered responsibilities → campaign copy embedded verbatim → campaign
 mechanics (pacing, pillar map, per-post visual concepts) → platform playbook
 → tool workflow pipeline → guardrails.
 
-Gotchas (all verified on the Aerlinn assistant):
+Gotchas (all verified on a real brand assistant):
 
 - The assistant **cannot read the project folder** — embed all canonical
   copy in the prompt itself.
 - Angle-bracket tokens like `<tagline>` are **stripped by content
-  sanitization** between storage and the model (observed: "AERLINN —
-  <tagline>." arrived as "AERLINN — ."). Use parentheses: `(tagline)`.
+  sanitization** between storage and the model (observed: "<BRAND> —
+  <tagline>." arrived as "<BRAND> — ."). Use parentheses: `(tagline)`.
 - Keep **one source of truth**: `assistant-system-prompt.md` is the
   human-readable copy; `create-assistant.php` embeds the same text in the
   PHP prompt string. Header comments in both files say they must stay in sync.
-- Prompt size is cost: the Aerlinn prompt is ~34K prompt tokens per call
+- Prompt size is cost: a real brand prompt is ~34K prompt tokens per call
   (~$0.02 on `gemini-2.5-flash`). Move long archives (research, past
   captions) to the Paper Store (collection `<brand>-content`) and reference
   the collection in the prompt instead of pasting content.
-- Match the brand's casing exactly (AERLINN, LUXESEEK) and use American
+- Match the brand's casing exactly (BRANDNAME, PARTNERBRAND) and use American
   English unless the brand says otherwise.
 
 ## Step 3 — Model & tools
@@ -161,7 +162,7 @@ Settings → AI → MCP Servers → Add Remote Server (or `context_servers` in
 
 - **Prompt/campaign change** — edit `assistant-system-prompt.md` AND the
   prompt string in `create-assistant.php`, re-run the script (idempotent).
-- **New brand, same shape** — copy the Aerlinn folder, swap the intake docs
+- **New brand, same shape** — copy the `<brand>` folder, swap the intake docs
   and prompt, re-run.
 - **Token rotation** — `wp mcp-ai credential revoke <id> <cred-id>`, then
   `credential issue` a fresh token and update Zed.
