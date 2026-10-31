@@ -14,7 +14,7 @@ Fires a signed GitHub repository_dispatch when content changes so an Astro Forge
 
 The NV oOS Forge Bridge is the WordPress half of the Astro Forge freshness loop (Proposal 096): WordPress stays the CMS, and this plugin tells the build pipeline when content moved.
 
-* **Rebuild webhook** — every post, page, product, term, or front-page setting change schedules one debounced, HMAC-signed `repository_dispatch` POST (10-minute debounce, in-request dedupe). The CI pipeline verifies the `X-Forge-Signature: sha256=…` header and fails closed on spoofed triggers. Disabled until configured.
+* **Rebuild webhook** — every post, page, product, term, or front-page setting change schedules one debounced, HMAC-signed `repository_dispatch` POST (10-minute debounce, in-request dedupe). The request carries the `X-Forge-Signature: sha256=…` header AND a self-verifying signature inside the payload (HMAC over `time.nonce`), so the CI pipeline fails closed on spoofed or stale triggers. Disabled until configured.
 * **Inbound rebuild trigger** — `POST /wp-json/nvoos-forge/v1/rebuild` accepts only requests carrying a valid signature, so external systems can request a rebuild with proof of the shared secret.
 * **Preview tokens** — `POST /wp-json/nvoos-forge/v1/preview-tokens` (editors+) mints a single-use, 15-minute bearer token; `GET …/preview-tokens/verify?token=…` consumes it. Tokens are stored hashed, never in plaintext.
 * **Health** — `GET /wp-json/nvoos-forge/v1/health` returns a redacted status (versions, booleans, the webhook host) — never tokens, secrets, or full URLs.
@@ -48,7 +48,7 @@ Only after you configure it. The rebuild webhook sends one signed POST to the Gi
 This plugin connects to the GitHub API (`https://api.github.com`, or the custom dispatches URL you configure) to trigger a rebuild of your generated frontend.
 
 * **What and when:** one `repository_dispatch` POST per content change, debounced to once every 10 minutes, sent server-to-server on the WordPress shutdown hook.
-* **What is sent:** the repository dispatch payload (event type and your site URL). The request is signed with the `X-Forge-Signature: sha256=…` header using the shared secret you configure.
+* **What is sent:** the repository dispatch payload (event type, your site URL, and a timestamp/nonce/signature proof the build pipeline re-verifies). The request is also signed with the `X-Forge-Signature: sha256=…` header using the shared secret you configure.
 * **No account data is collected or tracked**, and nothing is sent unless you have enabled the webhook and saved a dispatches URL, token, and secret.
 * **GitHub Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **GitHub Privacy Statement:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement

@@ -50,3 +50,36 @@ jobs:
       - name: E2E exit gate (fixture WP → scaffold → check → build → asserts)
         run: npm run test:e2e
         working-directory: examples/nvoos-astro-forge
+
+  # ===========================================================================
+  # Secret grep gates (Phase 3.5) — the forge package and its generated
+  # output must never carry credential material. Synthetic strings in tests/
+  # and the hermetic fixture server's demo credentials are intentionally out
+  # of scope (documented fixtures, not real secrets).
+  # ===========================================================================
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan forge sources for credential patterns
+        run: |
+          set -euo pipefail
+          # Patterns: GitHub PATs, npm tokens, vault keys with values,
+          # application-password assignments with values. The value classes
+          # require at least 4 real characters ([:space:] includes the
+          # newline after an empty `=`; the quote directly after `=` in
+          # scaffold.ts is excluded too), so empty assignments and the
+          # literal emission in scaffold.ts never match.
+          PATTERNS='ghp_|github_pat_|npm_[A-Za-z0-9]{20,}|NVOOS_FORGE_VAULT_KEY=[^[:space:]"'\'']{4,}|WP_APPLICATION_PASSWORD=[^[:space:]"'\'']{4,}'
+          hits=$(grep -rInE "${PATTERNS}" \
+            examples/nvoos-astro-forge/lib \
+            examples/nvoos-astro-forge/scripts/forge.mjs \
+            examples/nvoos-astro-forge/templates || true)
+          if [ -n "${hits}" ]; then
+            echo "::error::Credential patterns found in forge sources:"
+            echo "${hits}"
+            exit 1
+          fi
+          echo "Forge source scan clean."

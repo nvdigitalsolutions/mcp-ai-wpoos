@@ -1,10 +1,36 @@
 {
-	"name": "nvoos-astro-forge",
+	"name": "@nvdigitalsolutions/nvoos-astro-forge",
 	"version": "0.1.0",
-	"private": true,
 	"license": "MIT",
-	"description": "Proposal 096 — WP→Astro generation: REST client, content-layer loader, sanitizer, blog template, scaffold CLI",
+	"description": "Proposal 096 — WP→Astro generation: REST client, content-layer loader, sanitizer, blog template, scaffold CLI, deploy pipeline",
 	"type": "module",
+	"bin": {
+		"nvoos-forge": "./scripts/forge.mjs"
+	},
+	"files": [
+		"lib",
+		"scripts",
+		"templates",
+		"LICENSE",
+		"NOTICE",
+		"README.md"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+		"directory": "examples/nvoos-astro-forge"
+	},
+	"keywords": [
+		"wordpress",
+		"astro",
+		"headless",
+		"static-site",
+		"generator",
+		"woocommerce"
+	],
 	"scripts": {
 		"test": "vitest run --exclude tests/forge-e2e.test.ts",
 		"test:e2e": "vitest run tests/forge-e2e.test.ts",
@@ -17,6 +43,7 @@
 		"node": ">=22.6.0"
 	},
 	"dependencies": {
+		"octokit": "^5.0.5",
 		"sanitize-html": "^2.18.1"
 	},
 	"devDependencies": {

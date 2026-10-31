@@ -119,6 +119,18 @@ class Test_Forge_Bridge_Webhook extends WP_UnitTestCase {
 		$signature = $request['args']['headers']['X-Forge-Signature'];
 		$this->assertStringStartsWith( 'sha256=', $signature );
 		$this->assertTrue( Rebuild_Webhook::verify( $request['args']['body'], $signature ) );
+
+		// The payload carries its own proof (Phase 3.3 contract): HMAC over
+		// "<time>.<nonce>" — GitHub's dispatch delivery re-serializes the body,
+		// so the generated pipeline re-verifies this value.
+		$payload = $body['client_payload'];
+		$this->assertArrayHasKey( 'time', $payload );
+		$this->assertArrayHasKey( 'nonce', $payload );
+		$this->assertMatchesRegularExpression( '/^[0-9a-f]{24}$/', $payload['nonce'] );
+		$this->assertSame(
+			hash_hmac( 'sha256', $payload['time'] . '.' . $payload['nonce'], 'shared-secret' ),
+			$payload['signature']
+		);
 	}
 
 	/**
@@ -171,6 +183,20 @@ class Test_Forge_Bridge_Webhook extends WP_UnitTestCase {
 		$this->assertFalse( Rebuild_Webhook::verify( $payload, 'sha256=' . str_repeat( '0', 64 ) ) );
 		$this->assertFalse( Rebuild_Webhook::verify( $payload, '' ) );
 		$this->assertFalse( Rebuild_Webhook::verify( $payload, 'garbage' ) );
+	}
+
+	/**
+	 * The payload signature is the documented canonical string and fails
+	 * closed without a secret.
+	 */
+	public function test_payload_signature_contract(): void {
+		update_option( Settings::OPTION_REBUILD_SECRET, 'shared-secret' );
+		$this->assertSame(
+			hash_hmac( 'sha256', '1700000000.deadbeef', 'shared-secret' ),
+			Rebuild_Webhook::payload_signature( '1700000000', 'deadbeef' )
+		);
+		delete_option( Settings::OPTION_REBUILD_SECRET );
+		$this->assertSame( '', Rebuild_Webhook::payload_signature( '1700000000', 'deadbeef' ) );
 	}
 
 	/**

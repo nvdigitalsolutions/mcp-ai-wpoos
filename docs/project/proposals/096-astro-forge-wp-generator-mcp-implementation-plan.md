@@ -238,6 +238,66 @@ wp.org-installable on any customer site):
 (`mcp-ai-wpoos-wporg-submission` skill), and the CI-side signature
 verification in the Forge deploy pipeline (Phase 3).
 
+### 2.7 Phase 3 status — vault, GitHub deploy, deploy configs, multi-site, shipped 2026-10-31
+
+- **`vault.ts` (3.1):** AES-256-GCM per-entry credential store under the
+  forge home (`~/.nvoos-forge/vault.json`, `NVOOS_FORGE_HOME` override), key
+  derived from `NVOOS_FORGE_VAULT_KEY` (any passphrase → SHA-256 → 256-bit
+  key); entry name as AAD; a wrong key or any tampering fails the GCM auth
+  tag (fail closed). `NVOOS_FORGE_VAULT_PLAINTEXT=1` is the documented 0600
+  fallback (gitignored home, mode-flag recorded in the file so mixed-mode
+  opens are refused). `maskSecret()` is the only display path. CLI: `forge
+  vault set|delete|list` (secrets on stdin, never argv).
+- **`github.ts` (3.2):** octokit deploy client over a mockable structural
+  subset — `createRepo` (private by default, org support), git-data
+  `commitFiles` (blobs → tree → commit with parent when the branch exists →
+  forced ref update; 1000-file / 32 MB guards), `login()`, redacted
+  `RepoResult`/`CommitResult`, and `sanitizeGitHubError` (status + body
+  message only — headers and query strings never leak). Per-invocation auth
+  (`GITHUB_TOKEN` env → vault `github`), never persisted, masked in CLI
+  output.
+- **`deploy-config.ts` (3.3):** adapter-generic generated pipeline —
+  `deploy.yml` (push/manual/`workflow_call`; build + mode steps for
+  `github-pages` / `cloudflare-pages` / `velocity` connected-repo mirror),
+  `rebuild.yml` (thin `repository_dispatch` wrapper), and the standalone
+  `scripts/verify-dispatch.mjs` — the **CI-side signature verification**
+  from the Phase 2 remainder. The bridge plugin now signs `client_payload`
+  itself (HMAC over `<time>.<nonce>` via `payload_signature()`; additive —
+  the `X-Forge-Signature` header stays) because GitHub's dispatch delivery
+  re-serializes the body and headers don't reach the workflow. The verifier
+  re-checks event type, secret presence, a 10-minute freshness window, and
+  a constant-time compare — stale/mismatched dispatches never build. The
+  verifier is executed for real in the unit suite (6 fail-closed cases).
+- **`sites.ts` (3.4):** multi-site registry (`sites.json` in the forge home
+  — name → { url, profile path, created }, default flag; no credentials).
+  CLI: `forge site add|remove|list|use`; `forge forge <name>` and
+  `forge deploy <name>` resolve by registry when the ref isn't a file path.
+  The two-site round-trip (add → list → default → use → resolve → remove)
+  is a unit test — the phase-exit agency-demo shape, hermetic.
+- **Secret gates (3.5):** a `secret-scan` job in `astro-forge.yml` greps the
+  forge sources (lib/scripts/templates — tests and the fixture server's
+  demo credentials are out of scope) for PAT/npm-token/vault-key/
+  app-password patterns, and a new e2e assertion walks the scaffolded
+  source + built `dist/` for the same patterns (the build runs with demo
+  consumer keys in the env — values must never be baked).
+- **Publishing:** package flipped to `@nvdigitalsolutions/nvoos-astro-forge`
+  (`bin`, `files`, `publishConfig.access: public`);
+  `.github/workflows/publish-astro-forge.yml` publishes with provenance on
+  `nvoos-astro-forge-v*` tags after the full exit gate.
+- **Bridge plugin (Phase 2 follow-on):** `client_payload` carries
+  `time`/`nonce`/`signature` (additive; contract documented in readme.txt +
+  README.md); suite grew to 24 tests / 66 assertions (green on WP latest in
+  Docker), phpcs clean.
+
+**Validation:** 110 unit tests (vault fail-closed, github commit/push +
+redaction, deploy-config emission + executed verifier, sites round-trip) +
+e2e 13/13 (the added credential-hygiene walk included); typecheck clean;
+CLI smoke (site add/list/remove, vault set/list) green on Windows.
+
+**Remaining in Phase 3:** CI-run validation of this PR; the owner-side
+secrets/targets per deployed site (repo secrets, Cloudflare project,
+Velocity mirror); then Phase 4 (wizard + `/mcp` surface, §6).
+
 ---
 
 ## 3. Phase 1 — Storefront template (~2 wks)

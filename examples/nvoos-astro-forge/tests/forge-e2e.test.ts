@@ -314,4 +314,31 @@ describe('forge e2e — emitted site', () => {
 		expect(detail).toContain('blockquote');
 		expect(detail).toContain('alt="Folded knits"');
 	});
+
+	it('generated source and dist carry no credential patterns (Phase 3.5)', async () => {
+		// The build runs with the fixture's demo consumer keys in the env;
+		// values must never be baked into the scaffolded source or the built
+		// output — only env references are allowed.
+		const { readdir } = await import('node:fs/promises');
+		const patterns = /ghp_|github_pat_|ck_test|cs_test|NVOOS_FORGE_VAULT_KEY=[^'"\n]{4,}|WP_APPLICATION_PASSWORD=[^'"\n]{4,}/;
+		const skipDirs = new Set(['node_modules', '.git', '.astro']);
+		const hits: string[] = [];
+		async function walk(dir: string) {
+			for (const entry of await readdir(dir, { withFileTypes: true })) {
+				const full = path.join(dir, entry.name);
+				if (entry.isDirectory()) {
+					if (!skipDirs.has(entry.name)) {
+						await walk(full);
+					}
+					continue;
+				}
+				const content = await readFile(full, 'utf8');
+				if (patterns.test(content)) {
+					hits.push(full);
+				}
+			}
+		}
+		await walk(workDir);
+		expect(hits, `credential patterns leaked into generated files: ${hits.join(', ')}`).toEqual([]);
+	});
 });
