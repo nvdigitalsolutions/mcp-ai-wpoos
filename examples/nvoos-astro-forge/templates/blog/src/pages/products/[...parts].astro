@@ -2,6 +2,7 @@
 // /products/{id}/{slug}/ — one product, with commerce data when the source
 // exposes it (wc/v3). Sanitized description HTML; Product JSON-LD.
 import Base from '../../layouts/Base.astro';
+import SmartImage from '../../components/SmartImage.astro';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -51,7 +52,7 @@ const jsonLd = {
 			{product.data.sku && <span>SKU {product.data.sku}</span>}
 		</header>
 		{product.data.featuredImage && (
-			<img class="featured" src={product.data.featuredImage} alt="" loading="lazy" decoding="async" />
+			<SmartImage class="featured" src={product.data.featuredImage} sizes="(min-width: 48rem) 72ch, 100vw" />
 		)}
 		{product.data.price && (
 			<p class="product-price product-price-large">

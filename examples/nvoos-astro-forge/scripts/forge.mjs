@@ -1,24 +1,31 @@
 #!/usr/bin/env node
 // ---------------------------------------------------------------------------
-// forge.mjs — the Forge CLI (Proposal 096 Phase 0).
+// forge.mjs — the Forge CLI (Proposal 096).
 //
+//   node scripts/forge.mjs analyze <url> [--write <site.json>]
 //   node scripts/forge.mjs <site.json> --target <dir> [--template blog] [--check]
 //
-// <site.json> is an operator-written SiteProfile (allowlisted URL + collections).
-// `--check` performs a live fetch against the source to report collection
-// sizes and flag truncation under the configured maxPages — a build must
-// never silently ship a partial catalog (096 §2.2).
+// `analyze` performs the polite discovery pass (site_analyze) — post types,
+// counts, front page, junk pages, Woo/SEO presence — and prints a summary
+// plus a draft site profile. <site.json> is an operator-written SiteProfile
+// (allowlisted URL + collections). `--check` performs a live fetch against
+// the source to report collection sizes and flag truncation under the
+// configured maxPages — a build must never silently ship a partial catalog
+// (096 §2.2).
 //
 // Requires Node >= 22.6 (native TypeScript type stripping).
 // ---------------------------------------------------------------------------
 
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 
+import { analyzeSite, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { scaffold } from '../lib/scaffold.ts';
 import { WpClient } from '../lib/wp-client.ts';
 
 function usage() {
-	console.error('usage: node scripts/forge.mjs <site.json> --target <dir> [--template <name|path>] [--overwrite] [--check]');
+	console.error('usage:');
+	console.error('  node scripts/forge.mjs analyze <url> [--write <site.json>]');
+	console.error('  node scripts/forge.mjs <site.json> --target <dir> [--template <name|path>] [--overwrite] [--check]');
 	process.exit(2);
 }
 
@@ -70,32 +77,69 @@ async function checkProfile(profile) {
 	return clean;
 }
 
-const args = parseArgs(process.argv.slice(2));
+const argv = process.argv.slice(2);
 
-let profile;
-try {
-	profile = JSON.parse(await readFile(args.profilePath, 'utf8'));
-} catch (error) {
-	console.error(`Cannot read profile ${args.profilePath}: ${error instanceof Error ? error.message : error}`);
-	process.exit(1);
-}
-if (!profile.url || !Array.isArray(profile.collections) || profile.collections.length === 0) {
-	console.error('site.json must contain { url, collections: [...] }');
-	process.exit(1);
+// analyze mode: `forge.mjs analyze <url> [--write <path>]`.
+if (argv[0] === 'analyze') {
+	await runAnalyze(argv.slice(1));
+} else {
+	await runScaffold(argv);
 }
 
-if (args.check) {
-	const clean = await checkProfile(profile);
-	console.log(clean ? 'All collections fit within their page caps.' : 'Some collections exceed their caps — raise maxPages in the profile.');
-	process.exit(clean ? 0 : 1);
+async function runAnalyze(rest) {
+	const url = rest[0];
+	let writePath;
+	for (let i = 1; i < rest.length; i++) {
+		if (rest[i] === '--write') writePath = rest[++i];
+		else usage();
+	}
+	if (!url || !/^https?:\/\//.test(url)) usage();
+
+	const report = await analyzeSite(new WpClient({ baseUrl: url.replace(/\/+$/, '') }));
+	console.log(renderReport(report));
+	const profile = profileFromDiscovery(report);
+	const profileJson = `${JSON.stringify(profile, null, '\t')}\n`;
+	if (writePath) {
+		await writeFile(writePath, profileJson, 'utf8');
+		console.log(`\u2713 Draft profile written to ${writePath} — review excludes/frontPage, then scaffold.`);
+	} else {
+		console.log('--- draft site.json ---');
+		console.log(profileJson.trimEnd());
+	}
+	// Graceful exit — process.exit() races undici's teardown on Windows and
+	// dies with the libuv UV_HANDLE_CLOSING assertion (0xC0000409).
 }
 
-const result = await scaffold({ profile, targetDir: args.target, template: args.template, overwrite: args.overwrite });
-console.log(`\u2713 Scaffolded ${result.collections.length} collection(s) into ${result.targetDir}`);
-for (const collection of result.manifest.collections) {
-	console.log(`  - ${collection.slug} <- ${collection.restBase}`);
+async function runScaffold(argv) {
+	const args = parseArgs(argv);
+
+	let profile;
+	try {
+		profile = JSON.parse(await readFile(args.profilePath, 'utf8'));
+	} catch (error) {
+		console.error(`Cannot read profile ${args.profilePath}: ${error instanceof Error ? error.message : error}`);
+		process.exit(1);
+	}
+	if (!profile.url || !Array.isArray(profile.collections) || profile.collections.length === 0) {
+		console.error('site.json must contain { url, collections: [...] }');
+		process.exit(1);
+	}
+
+	if (args.check) {
+		const clean = await checkProfile(profile);
+		console.log(clean ? 'All collections fit within their page caps.' : 'Some collections exceed their caps — raise maxPages in the profile.');
+		// Graceful exit — see the analyze branch (Windows libuv teardown).
+		process.exitCode = clean ? 0 : 1;
+		return;
+	}
+
+	const result = await scaffold({ profile, targetDir: args.target, template: args.template, overwrite: args.overwrite });
+	console.log(`\u2713 Scaffolded ${result.collections.length} collection(s) into ${result.targetDir}`);
+	for (const collection of result.manifest.collections) {
+		console.log(`  - ${collection.slug} <- ${collection.restBase}`);
+	}
+	for (const warning of result.warnings) {
+		console.warn(`\u26a0 ${warning}`);
+	}
+	console.log('Next: cd into the project, `npm install`, `npm run dev` (or `npm run build`).');
 }
-for (const warning of result.warnings) {
-	console.warn(`\u26a0 ${warning}`);
-}
-console.log('Next: cd into the project, `npm install`, `npm run dev` (or `npm run build`).');

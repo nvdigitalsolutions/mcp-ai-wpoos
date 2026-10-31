@@ -1,6 +1,7 @@
 ---
 // /products/ — the storefront catalog listing.
 import Base from '../../layouts/Base.astro';
+import SmartImage from '../../components/SmartImage.astro';
 import { getCollection } from 'astro:content';
 
 const products = await getCollection('products');
@@ -27,12 +28,10 @@ const pageUrl = Astro.site ? new URL('/products/', Astro.site).href : undefined;
 						<li>
 							<a class="product-card" href={`/products/${product.id}/${product.data.slug}/`}>
 								{product.data.featuredImage && (
-									<img
+									<SmartImage
 										class="product-thumb"
 										src={product.data.featuredImage}
-										alt=""
-										loading="lazy"
-										decoding="async"
+										sizes="(min-width: 48rem) 14rem, 100vw"
 									/>
 								)}
 								<span class="product-title">{product.data.title}</span>

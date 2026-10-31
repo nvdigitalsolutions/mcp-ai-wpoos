@@ -190,6 +190,16 @@ describe('forge e2e — emitted site', () => {
 		expect(listing).toContain('Knitwear');
 	});
 
+	it('optimizes same-host images and passes CDN images through', async () => {
+		const listing = await readFile(path.join(workDir, 'dist', 'products', 'index.html'), 'utf8');
+		// Same-host WP images go through Astro Image (hashed local assets).
+		expect(listing).toMatch(/src="\/_astro\/[^"]+\.(webp|avif)"/);
+		expect(listing).toContain('srcset=');
+		// External CDN hosts are never transformed — plain passthrough, no
+		// build failure.
+		expect(listing).toContain('https://cdn.fixture.test/product-c.png');
+	});
+
 	it('renders product details with commerce data and Product JSON-LD', async () => {
 		const detail = await readFile(
 			path.join(workDir, 'dist', 'products', '101', 'fjord-merino-sweater', 'index.html'),
@@ -255,6 +265,35 @@ describe('forge e2e — emitted site', () => {
 		expect(redirects).toContain('/fjord-merino-sweater/\t/posts/1/fjord-merino-sweater/\t301');
 		expect(redirects).toContain('/about/\t/\t301');
 		expect(redirects).toContain('/product/fjord-merino-sweater/\t/products/101/fjord-merino-sweater/\t301');
+	});
+
+	it('site_analyze drafts a scaffold-ready profile from the fixture', async () => {
+		const discoveredPath = path.join(workDir, 'discovered.json');
+		// Direct node spawn (no shell) — shell quoting mangles Windows paths.
+		const result = spawnSync(
+			process.execPath,
+			[path.join(FORGE_ROOT, 'scripts', 'forge.mjs'), 'analyze', origin, '--write', discoveredPath],
+			{ cwd: FORGE_ROOT, encoding: 'utf8', timeout: 60_000 }
+		);
+		const stdout = result.stdout ?? '';
+		const stderr = result.stderr ?? '';
+		expect(result.status, `forge analyze failed:\n${stdout}\n${stderr}`).toBe(0);
+		expect(stdout).toContain('Fixture Wares');
+		expect(stdout).toContain('WooCommerce');
+
+		const profile = JSON.parse(await readFile(discoveredPath, 'utf8'));
+		expect(profile.frontPage).toBe('about');
+		expect(profile.collections.map((collection: { slug: string }) => collection.slug)).toEqual([
+			'posts',
+			'pages',
+			'products',
+		]);
+		const products = profile.collections.find(
+			(collection: { slug: string }) => collection.slug === 'products'
+		);
+		expect(products.restBase).toBe('wc/v3/products');
+		expect(products.authMode).toBe('wc-consumer');
+		expect(products.fields).toContain('regular_price');
 	});
 
 	it('renders the care-guide rich content (tables, figures, quotes)', async () => {

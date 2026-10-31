@@ -77,4 +77,7 @@ export interface WpRoot {
 	description: string;
 	url: string;
 	namespaces: string[];
+	/** Static front page config ('page' + page_on_front ID). */
+	show_on_front?: string;
+	page_on_front?: number;
 }

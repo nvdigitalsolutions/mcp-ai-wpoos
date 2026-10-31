@@ -23,7 +23,8 @@ already extracted its design language — the tokens feed the template's
 | `lib/wp-loader.ts` | The Astro content-layer loader — wc/v3 commerce extraction, wp/v2 featured-media resolution, optional sources |
 | `lib/sanitize.ts` | Versioned `sanitize-html` allowlist — the XSS gate before `set:html` |
 | `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate + storefront-page pruning |
-| `scripts/forge.mjs` | CLI: `node scripts/forge.mjs <site.json> --target <dir> [--template blog] [--check]` (Node ≥ 22.6) |
+| `scripts/forge.mjs` | CLI: `analyze <url> [--write]` (site_analyze) + `node scripts/forge.mjs <site.json> --target <dir> [--template blog] [--check]` (Node ≥ 22.6) |
+| `lib/discovery.ts` | `site_analyze` — root/types/counts/front-page/junk/Woo/SEO probes → draft site.json |
 | `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 + wc/v3 wire fixture (`:8473`) — stands in for WordPress Playground in CI |
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
 | `templates/blog/` | The production template — posts/pages/products, static front page, RSS, 404, 301 redirect map, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens |
@@ -57,6 +58,9 @@ cat > site.json <<'EOF'
   ]
 }
 EOF
+
+# 1. Discover — one command drafts the profile (site_analyze).
+node scripts/forge.mjs analyze https://shop.example.com --write site.json
 
 # 2. Check the source first — a build must never silently truncate.
 node scripts/forge.mjs site.json --target ./customer-frontend --check
@@ -99,6 +103,13 @@ cd customer-frontend && npm install && npm run build
 - `/redirects.json` — the structured 301 map from the WP URL structure to the
   generated one; the post-build step materializes the host-agnostic
   `dist/_redirects` (Netlify/Cloudflare/static-server compatible).
+
+### Media pipeline
+
+Same-host WordPress images flow through **Astro Image** (`SmartImage.astro` —
+responsive WebP/AVIF via `widths`/`sizes`/`inferSize`, lazy): the config
+allowlists the WP host from `WP_SITE_URL ?? nvoos.json`. Images on any other
+host (CDNs, external) pass through as plain `<img>` — never a build failure.
 
 ## License
 
