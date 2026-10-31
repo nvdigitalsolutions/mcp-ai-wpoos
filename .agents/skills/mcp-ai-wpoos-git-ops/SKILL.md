@@ -68,6 +68,26 @@ Four rules, each from a session that cost a recovery:
   tracking branch pushes — `gh pr view` keeps showing the stale `head_sha`.
   After the owner merges, run the stacked-PR recipe above and open a fresh
   PR for the delta (PRs #7302 → #7303).
+- **Multiple linked worktrees exist — aim every git command.** Other
+  agents keep `git worktree add` checkouts (see `git worktree list`). A
+  `git cherry-pick` run from the wrong directory acts on the wrong
+  worktree (2026-10-31: one silently no-op'd in the main worktree while
+  the target was a linked one — caught by the "cherry-pick is now empty"
+  message). Check `git rev-parse --show-toplevel` first, or use
+  `git -C <abs-worktree-path>` for any command aimed at another worktree.
+- **Dirty shared worktree + moved base → `git worktree add`, never a
+  checkout.** When `origin/alpha-working` advanced and other agents'
+  uncommitted files block `git checkout -b` ("would be overwritten by
+  checkout"), don't stash their work: `git worktree add ../<name> -b
+  <branch> origin/alpha-working`, then operate there via `git -C` (and
+  `npm pack <abs-dir>` rather than `--prefix`). `git worktree remove`
+  when done — the shared checkout was never touched.
+- **De-stack a PR without `reset --hard`:** move the branch back with
+  `git reset --mixed <parent>` (worktree untouched), restore only your own
+  paths with `git restore --worktree -- <your-paths>` (a file you created
+  becomes untracked again — plain `rm`), then
+  `git push --force-with-lease`. Other agents' unstaged edits survive
+  byte-for-byte. Verified 2026-10-31 de-stacking PR #7325.
 
 ## Windows reserved-name artifacts (learned 2026-10-29)
 
@@ -91,6 +111,11 @@ can appear in the repo root. Two failure modes follow:
 
 ## gh CLI gotchas
 
+- **`git archive` strips `package.json` and `bin/` repo-wide** — the root
+  `.gitattributes` export-ignores them (meant for the plugin's release
+  zips). Never `git archive <rev> packages/<pkg>` to extract package
+  content (silently incomplete tar) — copy from a worktree checkout
+  instead.
 - `gh workflow run <name>` **404s unless the workflow file exists on the
   default branch (`main`)** — for `alpha-working`-only workflows dispatch via
   the API (`POST /actions/workflows/<id>/dispatches` with `ref=alpha-working`)

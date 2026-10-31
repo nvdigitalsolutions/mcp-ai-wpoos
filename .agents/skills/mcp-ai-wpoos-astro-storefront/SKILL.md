@@ -18,6 +18,7 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 | Storefront source | `examples/nvoos-astro-velocity/` | Astro SSR + prerendered catalog, React islands (cart badge, gallery), View Transitions |
 | Sync workflow | `.github/workflows/sync-nvoos-astro-velocity.yml` | Builds + tests, then rebuilds for the mirror |
 | Public mirror | `nvdigitalsolutions/nvoos-astro-velocity` (PUBLIC) | Assembled deploy tree (Astro `dist/` + server shim) — zero licensed bytes |
+| Production backend | `nvoos.pro` (WP + WooCommerce, bridge addon live at `/wp-json/nvoos-commerce/v1`) | The app's `/api/*` proxy target — `/api/auth/login` lands here and `canManage` users resolve to `https://nvoos.pro/wp-admin/admin.php?page=astro-cms` |
 
 ## Contract rules (CI-enforced — never weaken)
 
@@ -429,6 +430,27 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   excluded) and is excluded from the base `phpcs.xml.dist` scan. A dedicated
   step in `.github/workflows/php-linting.yml` enforces the addon ruleset on
   every PR/push.
+- **Bridge npm publish track (`packages/nvoos-mcp-bridge`, learned
+  2026-10-31):** published via `.github/workflows/npm-publish-nvoos-mcp-bridge.yml`
+  (dispatch: version + `alpha`/`latest` tag + dry-run; gates = byte-sync
+  drift, node:test suite, pack dry-run, then `npm publish --provenance`).
+  - **Version forensics first:** `npm view @nvdigitalsolutions/nvoos-mcp-bridge time`
+    before bumping — the 23-package wave published CI-side without
+    committing, so the repo's `package.json` can lag the registry
+    (`0.1.0-alpha.4` was taken while the repo still said alpha.3).
+  - **Auth ladder:** npm `E404` on PUT = token lacks write permission on
+    the scope (rotate the `NPM_TOKEN` repo secret — it 404s rather than
+    403s to hide package existence); `E403 "cannot publish over the
+    previously published versions"` = version collision, auth is fine;
+    `EOTP` = classic/publish token on an auth-and-writes account — an
+    **Automation** token bypasses OTP, otherwise publish with `--otp`.
+  - **Local pack quirks (Windows):** `npm --prefix <dir> pack` hangs when
+    invoked from inside the repo (workspace root wins over prefix) — use
+    the folder-spec form `npm pack <abs-dir> --dry-run`. `git archive`
+    cannot extract the package either (repo `.gitattributes` export-ignores
+    `package.json` and `bin/` at every level) — copy from a worktree
+    checkout instead. Local publish: `npm publish <abs-dir> --access public
+    --tag latest` (skips CI-only provenance).
 
 ## Standards this app is built to (research-backed)
 
