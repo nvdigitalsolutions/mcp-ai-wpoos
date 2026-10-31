@@ -1,0 +1,50 @@
+---
+// SmartImage — optimize same-host WordPress images with Astro Image
+// (responsive WebP/AVIF, lazy), and pass through anything else (CDN hosts,
+// external domains) as a plain <img>. The same-host decision mirrors the
+// env-first rule in content.config.ts, so the build can never fail on a
+// remote image the config doesn't allowlist.
+import { Image } from 'astro:assets';
+import manifest from '../../nvoos.json';
+
+interface Props {
+	src?: string;
+	alt?: string;
+	class?: string;
+	sizes?: string;
+}
+
+const { src, alt = '', class: className, sizes } = Astro.props;
+
+function safeHost(url?: string): string | undefined {
+	if (!url) {
+		return undefined;
+	}
+	try {
+		return new URL(url).hostname;
+	} catch {
+		return undefined;
+	}
+}
+
+const effectiveSite = (import.meta.env.WP_SITE_URL ?? manifest.url).replace(/\/+$/, '');
+const wpHost = safeHost(effectiveSite);
+const imageHost = safeHost(src);
+// Narrowed through a local so the <Image> branch always sees a string.
+const optimizedSrc = src && wpHost && imageHost === wpHost ? src : undefined;
+---
+
+{optimizedSrc ? (
+	<Image
+		src={optimizedSrc}
+		alt={alt}
+		class={className}
+		widths={[480, 768, 1200]}
+		sizes={sizes ?? '100vw'}
+		inferSize
+		loading="lazy"
+		decoding="async"
+	/>
+) : (
+	<img src={src} alt={alt} class={className} loading="lazy" decoding="async" />
+)}

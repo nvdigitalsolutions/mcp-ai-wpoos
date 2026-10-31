@@ -1,6 +1,7 @@
 ---
 // /posts/{id}/{slug}/ — one WordPress post, rendered through the Forge sanitizer.
 import Base from '../../layouts/Base.astro';
+import SmartImage from '../../components/SmartImage.astro';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -35,7 +36,7 @@ const jsonLd = {
 			{post.data.author && <span> by {post.data.author}</span>}
 		</header>
 		{post.data.featuredImage && (
-			<img class="featured" src={post.data.featuredImage} alt="" loading="lazy" decoding="async" />
+			<SmartImage class="featured" src={post.data.featuredImage} sizes="(min-width: 48rem) 72ch, 100vw" />
 		)}
 		<div class="post-body">
 			<Content />

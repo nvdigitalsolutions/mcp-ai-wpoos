@@ -72,7 +72,6 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
  */
 export function createWpLoader(options: WpLoaderOptions): Loader {
 	const { site, collection, auth } = options;
-	const kind = collection.kind ?? 'post';
 
 	return {
 		name: 'nvoos-wp',
@@ -133,7 +132,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 					continue;
 				}
 				const id = String(entry.id ?? entry.slug);
-				const raw = extractRaw(entry, kind);
+				const raw = extractRaw(entry);
 				const modified = raw.modified || raw.date;
 				const featured = raw.featuredImage ?? mediaUrls.get(Number(entry.featured_media));
 
@@ -192,7 +191,7 @@ interface RawEntry {
 }
 
 /** Normalize one raw document into the stable entry shape. */
-function extractRaw(entry: Record<string, unknown>, kind: WpCollection['kind']): RawEntry {
+function extractRaw(entry: Record<string, unknown>): RawEntry {
 	// wc/v3 flat documents (product kind).
 	const title = typeof entry.name === 'string' ? entry.name : extractHtml(entry.title);
 	const html = typeof entry.description === 'string' ? entry.description : extractHtml(entry.content);

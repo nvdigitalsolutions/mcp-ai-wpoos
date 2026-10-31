@@ -40,11 +40,14 @@ export function createWpFixtureData() {
 			name: 'Fixture Wares',
 			description: 'Hermetic WordPress fixture for the Astro Forge e2e loop.',
 			url: ORIGIN,
-			namespaces: ['wp/v2', 'oembed/1.0'],
+			namespaces: ['wp/v2', 'wc/v3', 'oembed/1.0'],
+			show_on_front: 'page',
+			page_on_front: 11,
 		},
 		postTypes: {
 			post: { name: 'Posts', rest_base: 'posts' },
 			page: { name: 'Pages', rest_base: 'pages' },
+			product: { name: 'Products', rest_base: 'product' },
 		},
 		posts: [
 			{
@@ -178,6 +181,23 @@ export function createWpFixtureData() {
 				images: [{ src: `${ORIGIN}/wp-content/uploads/product-b.png` }],
 				categories: [{ name: 'Shirts' }],
 			},
+			{
+				id: 103,
+				name: 'External CDN Cap',
+				slug: 'external-cdn-cap',
+				permalink: `${ORIGIN}/product/external-cdn-cap/`,
+				date_created_gmt: '2026-10-12T00:00:00',
+				date_modified_gmt: '2026-10-12T00:00:00',
+				description: '<p>Image served from a CDN host — SmartImage passes it through.</p>',
+				short_description: 'CDN image.',
+				price: '25.00',
+				regular_price: '25.00',
+				sale_price: '',
+				stock_status: 'instock',
+				sku: 'EC-103',
+				images: [{ src: 'https://cdn.fixture.test/product-c.png' }],
+				categories: [{ name: 'Accessories' }],
+			},
 		],
 		/** wp/v2 product CPT documents — no commerce fields, featured_media IDs. */
 		wpProducts: [
@@ -240,6 +260,17 @@ export function createWpFixtureServer(port = PORT) {
 		if (path === '/wp-json/wp/v2/pages') {
 			const { slice, headers } = paginate(data.pages);
 			json(res, slice, headers);
+			return;
+		}
+		const pageMatch = path.match(/^\/wp-json\/wp\/v2\/pages\/(\d+)$/);
+		if (pageMatch) {
+			const doc = data.pages.find((page) => page.id === Number(pageMatch[1]));
+			if (doc) {
+				json(res, { slug: doc.slug });
+			} else {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'rest_post_invalid_id', message: 'Invalid page ID.' }));
+			}
 			return;
 		}
 		if (path === '/wp-json/wc/v3/products') {

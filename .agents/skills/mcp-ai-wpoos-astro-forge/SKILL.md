@@ -39,7 +39,7 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
 | `templates/blog/` | The production template (posts/pages, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens) |
 | `tests/` | `wp-client` / `sanitize` / `wp-loader` / `scaffold` unit suites + `forge-e2e.test.ts` (exit gate) |
-| `.github/workflows/astro-forge.yml` | CI: typecheck + unit + e2e on Node 22 |
+| `.github/workflows/astro-forge.yml` | CI: typecheck + unit + e2e on Node 24 (Astro 7 needs ≥ 22.23.4 — the runner's latest 22.x is one patch short) |
 
 ## Dev loop (hermetic — no live site needed)
 
@@ -127,6 +127,13 @@ wired. The workflow runs on `paths: examples/nvoos-astro-forge/**`.
 - **Token rewrites must keep their FORGE markers** and cover every token
   the template block defines (layout tokens included) — see the
   `/* FORGE:tokens */` span contract below.
+- **`inferSize` is required on Astro Image for remote sources** —
+  `widths`/`sizes` alone fail the build with `missing-image-dimension`.
+  The domain allowlist mirrors the content layer's env-first rule, and
+  SmartImage degrades to a plain `<img>` for non-allowlisted hosts (a CDN
+  image must never fail a build).
+- **`process.exit()` races undici teardown on Windows** (0xC0000409) —
+  graceful `exitCode` + natural drain in the CLI.
 - **The scaffold CLI is operator-run and has no rate limiting** — rate
   limiting/retry belongs on the future MCP surface, not the CLI.
 
@@ -171,8 +178,14 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   (098 design language over the `--forge-*` markers + WCAG contrast gate
   warnings), SEO suite (`/feed.xml`, `/404.html`, `/redirects.json` →
   `dist/_redirects` post-build).
-- **Phase 1c (remaining):** search (Pagefind), full `site_analyze` discovery
-  (CPTs/SEO plugin/Woo/REST lockdown), media pipeline (Astro Image).
+- **Phase 1c — shipped 2026-10-31:** `site_analyze` (`forge.mjs analyze
+  <url> [--write site.json]` — types/counts/front-page/junk/Woo/SEO/lockdown
+  probes, wc/v3-auth count fallback; live-verified against the pilot — all
+  ten junk pages found automatically) + the media pipeline (SmartImage:
+  Astro Image with `inferSize` for same-host images, CDN passthrough).
+- **Phase 1d (remaining):** search (Pagefind), Payload-envelope
+  (`nvoos-commerce/v1`) collection variant. Then Phases 2–4 (bridge webhook,
+  publishing/deploy, wizard) and the `/mcp` tool surface (096 §1).
 - **Phase 2:** `nvoos-astro-bridge` plugin — HMAC-fail-closed rebuild
   webhook, preview tokens, wp.org checklist (see `mcp-ai-wpoos-wporg-submission`).
 - **Phase 3–4:** publishing + multi-site, wizard + packaging (octokit deploy,

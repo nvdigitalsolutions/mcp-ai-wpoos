@@ -92,6 +92,28 @@ Gap-filling pass run before implementing the Phase 0 spike (`examples/nvoos-astr
   dependency-free luminance math (21-line `lib/contrast.ts`) beats pulling a
   color library into the scaffold path.
 
+**Phase 1c learnings (verified in code + live 2026-10-31):**
+
+- **Astro Image needs intrinsic dimensions for remote sources** —
+  `widths`/`sizes` alone fail the build with `missing-image-dimension`;
+  the `inferSize` prop makes Astro fetch dimensions at build time (the
+  Astro Image remote-images reference).
+- **The domain allowlist must mirror the content layer's env-first rule**
+  (`WP_SITE_URL ?? manifest.url` in both astro.config.mjs and SmartImage),
+  and the component must degrade to a plain `<img>` for any non-allowlisted
+  host — a CDN-hosted image must never fail a build.
+- **`process.exit()` races undici's teardown on Windows** — the CLI died
+  with exit code 0xC0000409 (`Assertion failed: !(handle->flags &
+  UV_HANDLE_CLOSING)`) after a successful analyze. Let the event loop drain
+  (exitCode + return) instead.
+- **Junk-page heuristics reproduce operator curation** — a modest slug
+  blocklist + `manage-profile*` prefixes found all ten manually excluded
+  pages on the live pilot; keep it a list the operator reviews, not a
+  decision made silently.
+- **wc/v3 auth failures must not kill discovery** — count products through
+  the public wp/v2 CPT when wc/v3 returns 401/403, and keep wc/v3 as the
+  profile restBase (env consumer keys unlock prices later).
+
 ---
 
 ## 1. Competitor & ecosystem survey

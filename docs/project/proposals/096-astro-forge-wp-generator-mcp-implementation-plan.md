@@ -159,6 +159,31 @@ Woo REST consumer keys from the customer (env-only, never in-repo).
 NOTICE ship, marker gates) + e2e 9/9 (baked accent CSS, RSS items/guids,
 404, redirect map with the front-page and product entries).
 
+### 2.4 Phase 1c status — site_analyze + media pipeline, shipped 2026-10-31
+
+- **`site_analyze`** (`lib/discovery.ts` + `forge.mjs analyze <url>
+  [--write site.json]`): one polite pass (~6 requests) — root doc, post
+  types, per-collection counts, the static front page slug, junk-page
+  heuristics (system/auth slugs + `manage-profile*` prefixes), Woo
+  detection with a wc/v3 auth probe (falls back to the wp/v2 CPT count
+  when consumer keys are required — never fails analysis), REST-lockdown
+  detection, and SEO-plugin detection (namespace-root deduped). Output:
+  a summary + a scaffold-ready draft profile.
+  **Live validation:** the draft profile reproduces the hand-built pilot
+  profile — all three collections, `/home/` front page, and all ten
+  manually excluded junk pages found automatically.
+- **Media pipeline** (`SmartImage.astro` + config `image.domains`):
+  same-host WordPress images flow through Astro Image (responsive
+  WebP/AVIF via `widths`/`sizes`/`inferSize`, lazy); the domain allowlist
+  derives from `WP_SITE_URL ?? nvoos.json` (the content layer's env-first
+  rule). Any other host (CDNs, external) passes through as a plain
+  `<img>` — a remote image can never fail the build.
+
+**Validation:** 66 unit tests (discovery canned-backend incl. lockdown,
+woo-count fallback, junk heuristics; profile drafting) + e2e 11/11
+(optimized `/_astro/*.webp` srcset in the listing, CDN passthrough,
+`forge analyze` against the fixture server drafting the full profile).
+
 ---
 
 ## 3. Phase 1 — Storefront template (~2 wks)
