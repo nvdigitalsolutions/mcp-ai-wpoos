@@ -1,0 +1,26 @@
+---
+// /{slug}/ — one WordPress page.
+import Base from '../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+	const pages = await getCollection('pages');
+	return pages.map((page) => ({
+		params: { slug: page.data.slug },
+		props: { page },
+	}));
+}
+
+const { page } = Astro.props;
+const { Content } = await render(page);
+const pageUrl = Astro.site ? new URL(`/${page.data.slug}/`, Astro.site).href : undefined;
+---
+
+<Base title={page.data.title} canonical={pageUrl}>
+	<article class="post">
+		<h1>{page.data.title}</h1>
+		<div class="post-body">
+			<Content />
+		</div>
+	</article>
+</Base>

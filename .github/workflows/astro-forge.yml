@@ -1,0 +1,49 @@
+name: Astro Forge
+
+# Proposal 096 Phase 0 — nvoos-astro-forge (WP → Astro generator core).
+# Unit suite + typecheck, then the exit gate e2e: hermetic WP fixture server
+# → scaffold → npm install → astro check + astro build → HTML asserts.
+# The fixture server speaks the real wp/v2 wire shapes and stands in for the
+# WordPress Playground fixture until the bridge-plugin phase.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-astro-forge/**'
+      - '.github/workflows/astro-forge.yml'
+  pull_request:
+    paths:
+      - 'examples/nvoos-astro-forge/**'
+      - '.github/workflows/astro-forge.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: examples/nvoos-astro-forge/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+        working-directory: examples/nvoos-astro-forge
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: examples/nvoos-astro-forge
+
+      - name: Unit tests
+        run: npm test
+        working-directory: examples/nvoos-astro-forge
+
+      - name: E2E exit gate (fixture WP → scaffold → check → build → asserts)
+        run: npm run test:e2e
+        working-directory: examples/nvoos-astro-forge

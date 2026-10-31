@@ -4,6 +4,54 @@ Companion to `096-astro-forge-wp-generator-mcp-proposal.md` §2. All sources ver
 
 ---
 
+## 0. Phase 0 build research (verified 2026-10-31)
+
+Gap-filling pass run before implementing the Phase 0 spike (`examples/nvoos-astro-forge/`). Load-bearing findings:
+
+- **Astro 7 loader contract** ([content-loader-reference](https://docs.astro.build/en/reference/content-loader-reference/) + [content-layer-deep-dive](https://astro.build/blog/content-layer-deep-dive/)): a loader is `{ name, load({ store, logger, parseData, generateDigest }) }`; entries land via `store.set({ id, data, digest, rendered: { html } })`; **the digest must be a string that changes when the data changes** — `generateDigest(updated_gmt)` is the canonical pattern (whoooop.co.uk's CMS loader + pawcode.de's PocketBase loader both do exactly this); loaders run in parallel at build/dev; `glob()`/`file()` are the built-ins and custom loaders are first-class. The forge loader is therefore a *digest-disciplined paginated REST reader*, nothing more.
+- **Woo auth contract unchanged** ([woocommerce.github.io v3 docs](https://woocommerce.github.io/woocommerce-rest-api-docs/v3.html)): `wc/v3` still uses HTTP Basic with consumer key/secret; products paginate via `per_page`/`page` with `category` etc. filters. The forge client needs one auth seam: basic (Woo) vs none (public wp/v2) vs application-password bearer for private content.
+- **XSS at the boundary is the settled standard** ([XSS in Astro: set:html advisory](https://vibeappscanner.com/vulnerability-in/xss-astro)): "Use sanitize-html or DOMPurify before passing content to set:html"; wp-headless-kit's `sanitizeHtml(html, { allowTags?, allowAttrs? })` allowlist shape and the djmixoftheweek PR (allowlist wide enough for headings/images/lists/tables, scripts + event handlers + `javascript:` URLs stripped) are the reference implementations. The forge sanitizer ships a versioned allowlist, never a pass-through.
+- **SEO = URL-level canonical preservation** ([WPPoland headless SEO patterns](https://wppoland.com/en/seo-patterns-for-headless-wordpress/), [gautamkhorana WP→Astro migration](https://gautamkhorana.com/blog/wordpress-to-astro-migration-seo/)): preserve canonical URLs at the URL level (not the slug), 301-redirect anything that changes with no chains longer than one hop, render meta/JSON-LD server-side, and keep internal links, canonicals, sitemap entries, and redirects pointing at the same URL form. This lands as the template's sitemap/robots/canonical discipline, not a bolt-on.
+
+**Phase 0 implementation learnings (verified in code 2026-10-31, astro 7.4.4):**
+
+- **Astro 7 spread params are flat slash-joined strings, not arrays.**
+  `getStaticPaths` for `src/pages/posts/[...parts].astro` must return
+  `params: { parts: '1/slug' }` — the route generator uses the params value
+  as the path segment directly (`dist/core/routing/generator.js`
+  `getParameter`) and the validator requires `typeof value === 'string'`
+  (`dist/core/routing/internal/validation.js`). An array value fails the
+  build with `GetStaticPathsInvalidRouteParam`.
+- **`astro check` on a generated project needs `@types/sanitize-html` and
+  `@types/node` in the template devDeps** (the vendored `sanitize.ts` and
+  `wp-client.ts` typecheck under the language server). Astro's base tsconfig
+  already sets `allowImportingTsExtensions` + bundler resolution, so vendored
+  `.ts`-extension imports need no extra flags.
+- **Template rewriting must be line-anchored.** Naive `indexOf('// FORGE:site')`
+  matches prose that mentions the marker inside a header comment and mangles
+  the config. Match marker lines with `trim() === '// FORGE:site'` only.
+- **Template-copy filters must exclude by directory basename.** A
+  `/(node_modules|dist|\.astro)$/` path regex also matches every `*.astro`
+  page file (the `\.astro$` branch) — the scaffold silently dropped all
+  pages. Filter on `path.basename(src)` ∈ {node_modules, dist, .astro}.
+- **Emitting a regex literal through a JS template literal needs the
+  backslash doubled** (`\/+$/` — otherwise `\/` is an identity escape that
+  emits `//`, turning the emitted line into a comment and breaking the parse).
+- **Node ≥ 22.6 native type stripping runs the CLI with zero build step** —
+  `scripts/forge.mjs` imports the `.ts` libs directly, provided relative
+  imports use explicit `.ts` extensions and the TS is erasable-only.
+- **Truncation must compare page-with-remaining, not page-count:**
+  `truncated = page === maxPages && page < totalPages` — a catalog that ends
+  exactly at the cap is complete, not truncated.
+- **`sanitize-html` `allowedIframeHostnames` strips the disallowed `src` but
+  keeps the inert `<iframe>` tag** — assert on `src` absence, not tag absence.
+- **The Phase 0 CI fixture is the hermetic wp/v2 wire server**
+  (`scripts/wp-fixture-server.mjs` — JSON bodies + `X-WP-Total`/
+  `X-WP-TotalPages`, `_fields`/`_embed` honoured), standing in for the
+  WordPress Playground fixture until the bridge-plugin phase (096 §4).
+
+---
+
 ## 1. Competitor & ecosystem survey
 
 ### 1.1 `vapvarun/wp-astro-mcp` — the only real WP+Astro+MCP generator
