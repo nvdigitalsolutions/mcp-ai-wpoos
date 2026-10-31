@@ -343,6 +343,74 @@ describe('forge e2e — emitted site', () => {
 	});
 });
 
+describe('forge e2e — long-tail content tools against the fixture', () => {
+	it('audits, previews, maps redirects, and renders configs from a registered site', async () => {
+		const { mkdir, writeFile, rm } = await import('node:fs/promises');
+		const { SitesStore } = await import('../lib/sites.ts');
+		const { SITE_TOOLS } = await import('../mcp/tools/sites.ts');
+		const { CONTENT_TOOLS } = await import('../mcp/tools/content.ts');
+		const home = await mkdtemp(path.join(os.tmpdir(), 'forge-content-home-'));
+		try {
+			// Seed the registry directly — the loopback exemption is CLI-only
+			// by design, so site_add (the MCP surface) refuses 127.0.0.1.
+			await mkdir(path.join(home, 'profiles'), { recursive: true });
+			const profilePath = path.join(home, 'profiles', 'fixture.json');
+			await writeFile(profilePath, JSON.stringify({ ...PROFILE, url: origin }), 'utf8');
+			const sites = new SitesStore(home);
+			await sites.add('fixture-e2e', { url: origin, profile: profilePath });
+
+			const env = { homeDir: home, workDir: path.join(home, 'projects'), openAnalyze: true };
+			const tool = (name: string) =>
+				[...SITE_TOOLS, ...CONTENT_TOOLS].find((entry) => entry.name === name)!.handler;
+
+			// content_preview — the sanitizer kills every XSS vector.
+			const preview = await tool('content_preview')({ site: 'fixture-e2e', collection: 'posts', slug: 'xss-trap' }, env);
+			expect(preview.isError).toBeUndefined();
+			const previewData = preview.structuredContent as { before: { scripts: number; handlers: number; javascriptUrls: number }; after: { scripts: number; handlers: number; javascriptUrls: number } };
+			expect(previewData.before.scripts).toBeGreaterThan(0);
+			expect(previewData.after.scripts).toBe(0);
+			expect(previewData.after.handlers).toBe(0);
+			expect(previewData.after.javascriptUrls).toBe(0);
+
+			// content_audit — embed hosts aggregate across entries.
+			const audit = await tool('content_audit')({ site: 'fixture-e2e', limit: 10 }, env);
+			expect(audit.isError).toBeUndefined();
+			const auditData = audit.structuredContent as { entries: unknown[]; aggregate: { embeds: string[]; unprocessedShortcodes: string[] } };
+			expect(auditData.entries.length).toBeGreaterThan(0);
+			expect(auditData.aggregate.embeds).toContain('www.youtube-nocookie.com');
+			expect(auditData.aggregate.unprocessedShortcodes).toEqual([]);
+
+			// redirects_generate — sane single-hop map.
+			const redirects = await tool('redirects_generate')({ site: 'fixture-e2e' }, env);
+			expect(redirects.isError).toBeUndefined();
+			const redirectData = redirects.structuredContent as { redirects: Array<{ from: string; to: string; status: number }>; scanned: number };
+			expect(redirectData.scanned).toBeGreaterThan(0);
+			for (const entry of redirectData.redirects) {
+				expect(entry.status).toBe(301);
+				expect(entry.from).not.toBe(entry.to);
+				expect(entry.to.endsWith('/')).toBe(true);
+			}
+
+			// media_audit — the care-guide images are found.
+			const media = await tool('media_audit')({ site: 'fixture-e2e', limit: 25 }, env);
+			expect(media.isError).toBeUndefined();
+			const mediaData = media.structuredContent as { totals: { total: number; sameHost: number } };
+			expect(mediaData.totals.total).toBeGreaterThan(0);
+			expect(mediaData.totals.sameHost).toBeGreaterThan(0);
+
+			// collections_generate — the typed loader config block.
+			const config = await tool('collections_generate')({ site: 'fixture-e2e' }, env);
+			expect(config.isError).toBeUndefined();
+			const configData = config.structuredContent as { block: string };
+			expect(configData.block).toContain('wp/v2/posts');
+			expect(configData.block).toContain('wc/v3/products');
+			expect(configData.block).toContain('defineCollection');
+		} finally {
+			await rm(home, { recursive: true, force: true });
+		}
+	});
+});
+
 describe('forge e2e — setup_wizard (Phase 4 exit: URL → built, deploy-ready)', () => {
 	it('runs the wizard against the hermetic fixture end-to-end', async () => {
 		const wizardHome = await mkdtemp(path.join(os.tmpdir(), 'forge-wizard-home-'));
