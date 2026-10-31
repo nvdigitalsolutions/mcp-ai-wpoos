@@ -15,9 +15,9 @@ if ( ! defined( 'NVOOS_FORGE_BRIDGE_PATH' ) ) {
 }
 require_once NVOOS_FORGE_BRIDGE_PATH . 'includes/class-nvoos-forge-bridge-settings.php';
 
-$options = \NvoosForgeBridge\Settings::option_keys();
-foreach ( $options as $option ) {
-	delete_option( $option );
+$nvoos_forge_bridge_options = \NvoosForgeBridge\Settings::option_keys();
+foreach ( $nvoos_forge_bridge_options as $nvoos_forge_bridge_option ) {
+	delete_option( $nvoos_forge_bridge_option );
 }
 delete_transient( 'nvoos_forge_bridge_webhook_sent' );
 delete_transient( 'nvoos_forge_bridge_preview_tokens' );

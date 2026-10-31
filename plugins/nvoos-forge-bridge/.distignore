@@ -1,0 +1,37 @@
+# Files and directories to exclude from wp.org distribution.
+# Only production PHP, assets, and documentation should ship.
+# Keep in sync with the `plugin-check` job in
+# .github/workflows/phpunit-forge-bridge.yml.
+
+# Development
+/.git
+/.gitignore
+/.github
+/node_modules
+/composer.json
+/composer.lock
+/phpcs.xml.dist
+/phpunit.xml.dist
+/.phpunit.cache
+/.phpunit.result.cache
+
+# Tests
+/tests
+
+# Vendor — dev-only (phpcs + phpunit). The plugin autoloads its own classes
+# from includes/, so nothing here is required at runtime.
+/vendor
+
+# Docs — the wp.org readme is readme.txt; the developer README stays in-repo.
+/README.md
+/WPORG-REVIEW-*.md
+/CHANGELOG.md
+/CONTRIBUTING.md
+
+# wp.org SVN assets — uploaded to plugins.svn.wordpress.org, not shipped in the ZIP
+/.wordpress-org
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db

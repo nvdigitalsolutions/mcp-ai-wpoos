@@ -1,8 +1,8 @@
 === NV oOS Forge Bridge ===
-Contributors: nvdigitalsolutions
+Contributors: vsamtani
 Tags: headless, rebuild, webhook, astro, ci
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 0.1.0
 License: GPLv3 or later
@@ -38,6 +38,29 @@ Post, page, product, and term saves/deletions, plus changes to the front-page, s
 = Are my credentials exposed? =
 
 The token and secret are write-only in the settings UI (never echoed), excluded from the health endpoint, and never logged.
+
+= Does this plugin call any external services? =
+
+Only after you configure it. The rebuild webhook sends one signed POST to the GitHub API host you entered (by default `https://api.github.com`) per debounce window, from your server, containing the repository dispatch payload. Nothing is sent until the URL, token, and shared secret are saved, and no data is ever sent to the browser.
+
+== External Services ==
+
+This plugin connects to the GitHub API (`https://api.github.com`, or the custom dispatches URL you configure) to trigger a rebuild of your generated frontend.
+
+* **What and when:** one `repository_dispatch` POST per content change, debounced to once every 10 minutes, sent server-to-server on the WordPress shutdown hook.
+* **What is sent:** the repository dispatch payload (event type and your site URL). The request is signed with the `X-Forge-Signature: sha256=…` header using the shared secret you configure.
+* **No account data is collected or tracked**, and nothing is sent unless you have enabled the webhook and saved a dispatches URL, token, and secret.
+* **GitHub Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* **GitHub Privacy Statement:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
+
+== Source Code ==
+
+The uncompiled source of this plugin lives in the public repository at https://github.com/nvdigitalsolutions/mcp-ai-wpoos under `plugins/nvoos-forge-bridge/`. The plugin ships no compiled assets; everything in the package is the readable source.
+
+== Screenshots ==
+
+1. Settings page for the rebuild webhook before configuration — the warning notice explains that content changes do not trigger rebuilds yet.
+2. Settings page after configuring the GitHub dispatches URL, token, and HMAC secret — credentials are write-only, shown masked.
 
 == Changelog ==
 
