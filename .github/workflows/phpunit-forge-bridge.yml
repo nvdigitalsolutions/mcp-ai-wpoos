@@ -1,0 +1,103 @@
+# PHPUnit + phpcs for the standalone NV oOS Forge Bridge plugin
+# (plugins/nvoos-forge-bridge — own composer.json, own PHPUnit 9.6 config,
+# wp-phpunit from its own vendor). Mirrors phpunit-content-graph.yml: the
+# plugin's test suite pairs with a downloaded WordPress core; no root-vendor
+# dependency. The WP-CLI fallback step guards the setup-php flake.
+
+name: PHPUnit Forge Bridge
+
+on:
+  push:
+    branches:
+      - main
+      - alpha-working
+    paths:
+      - 'plugins/nvoos-forge-bridge/**'
+      - '.github/workflows/phpunit-forge-bridge.yml'
+  pull_request:
+    paths:
+      - 'plugins/nvoos-forge-bridge/**'
+      - '.github/workflows/phpunit-forge-bridge.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      WP_CORE_DIR: /tmp/wordpress
+      WP_TESTS_DIR: ${{ github.workspace }}/plugins/nvoos-forge-bridge/vendor/wp-phpunit/wp-phpunit
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, mysqli
+          tools: composer:v2, wp-cli
+
+      - name: Ensure WP-CLI is available
+        # setup-php's `tools: wp-cli` fails intermittently without failing
+        # the step (see the content-graph precedent).
+        run: |
+          if ! command -v wp >/dev/null 2>&1; then
+            curl -sSLo wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+            chmod +x wp-cli.phar
+            sudo mv wp-cli.phar /usr/local/bin/wp
+          fi
+          wp --version
+
+      - name: Install plugin Composer dependencies
+        working-directory: plugins/nvoos-forge-bridge
+        run: composer install --no-interaction --prefer-dist
+
+      - name: PHP CodeSniffer (own standard)
+        working-directory: plugins/nvoos-forge-bridge
+        run: vendor/bin/phpcs --standard=phpcs.xml.dist .
+
+      - name: Download WordPress core
+        run: |
+          wp core download --version=latest --skip-content --path="${WP_CORE_DIR}"
+
+      - name: Configure WordPress test suite
+        run: |
+          cat > "${WP_TESTS_DIR}/wp-tests-config.php" <<'PHP'
+          <?php
+          define( 'ABSPATH', '/tmp/wordpress/' );
+          define( 'DB_NAME', 'wordpress_test' );
+          define( 'DB_USER', 'wordpress' );
+          define( 'DB_PASSWORD', 'wordpress' );
+          define( 'DB_HOST', '127.0.0.1' );
+          define( 'DB_CHARSET', 'utf8' );
+          define( 'DB_COLLATE', '' );
+          define( 'WP_TESTS_DOMAIN', 'example.org' );
+          define( 'WP_TESTS_EMAIL', 'admin@example.org' );
+          define( 'WP_TESTS_TITLE', 'Test Blog' );
+          define( 'WP_PHP_BINARY', 'php' );
+          $table_prefix = 'wptests_';
+          PHP
+
+      - name: Run PHPUnit
+        working-directory: plugins/nvoos-forge-bridge
+        run: |
+          vendor/bin/phpunit -c phpunit.xml.dist --no-coverage

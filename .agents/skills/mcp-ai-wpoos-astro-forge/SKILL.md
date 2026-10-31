@@ -188,11 +188,19 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   (nvoos-commerce/v1 envelope — body pagination, `oldPrice` sale semantics,
   slugify for missing slugs; discovery offers the payload candidate when
   the namespace is advertised and no product CPT exists).
-- **Phase 2 (next):** the bridge plugin — HMAC rebuild webhook → GitHub
-  dispatch, single-use preview tokens, redacted health endpoint (Q4
-  standalone wp.org plugin; the existing `addons/nvoos-astro-bridge`
-  RebuildWebhook class is the reference). Then Phases 3–4 (publishing/
-  deploy, wizard) and the `/mcp` tool surface (096 §1).
+- **Phase 2 — core shipped 2026-10-31:** the standalone companion plugin
+  **`plugins/nvoos-forge-bridge`** (Q4 naming amendment — `nvoos-astro-bridge`
+  was taken by the velocity bridge addon): signed, debounced rebuild
+  webhook (X-Forge-Signature, `send_pending()`/`reset_pending()` seams),
+  inbound signature-verified `/rebuild` route, single-use hashed preview
+  tokens, redacted health, settings page with write-only secrets,
+  uninstall.php, own phpcs + PHPUnit (23/23 green on WP 6.9 + 7.1 in Docker)
+  + `.github/workflows/phpunit-forge-bridge.yml`. Remaining: PCP gate +
+  listing assets, and CI-side signature verification (Phase 3).
+- **Phase 3 (next):** publishing/deploy — npm publish of the forge package,
+  octokit GitHub deploy for generated sites, the CI-side of the signature
+  loop, multi-site management. Then Phase 4 (wizard) + the `/mcp` tool
+  surface (096 §1).
 - **Phase 2:** `nvoos-astro-bridge` plugin — HMAC-fail-closed rebuild
   webhook, preview tokens, wp.org checklist (see `mcp-ai-wpoos-wporg-submission`).
 - **Phase 3–4:** publishing + multi-site, wizard + packaging (octokit deploy,

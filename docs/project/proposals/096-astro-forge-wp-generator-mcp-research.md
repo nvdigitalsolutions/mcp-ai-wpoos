@@ -131,6 +131,28 @@ Gap-filling pass run before implementing the Phase 0 spike (`examples/nvoos-astr
 - **Envelope documents carry no slug** — derive deterministically via
   slugify(name) so URLs stay stable between builds.
 
+**Phase 2 learnings (verified in code 2026-10-31):**
+
+- **The wp.org bridge is the inbound/outbound signature pair** — the site
+  SIGNS the outbound dispatch payload (X-Forge-Signature over the raw JSON
+  body) and the CI verifies with the shared secret; the inbound
+  `/rebuild` route verifies the same way (constant-time `hash_equals`,
+  fail closed on malformed headers). One secret, two directions.
+- **The debounce pattern ports cleanly** — static in-request flag + 10-minute
+  transient + shutdown send (`send_pending()`/`reset_pending()` seams) —
+  the Cloudways double-fire fix from the velocity bridge carries over
+  unchanged.
+- **Preview tokens store hashes, return once** — a transient maps
+  `wp_hash(token)` → expiry; verification iterates + consumes with
+  `hash_equals`; the raw value never persists.
+- **Standalone-plugin PHPUnit needs `suffix=".php"` in the testsuite** —
+  PHPUnit 9's default `Test.php` suffix discovers nothing in a
+  `test-*.php`-named suite (`No tests executed!`).
+- **Testing a settings save handler**: throw from the `wp_redirect` filter
+  (before the header() call) to catch the redirect as `WPDieException` —
+  calling the handler directly otherwise dies on "headers already sent"
+  under `failOnWarning`.
+
 ---
 
 ## 1. Competitor & ecosystem survey
