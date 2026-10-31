@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-universalisation
-description: "Rework an existing NV oOS Pro toolkit from a single-tenant demo into a universal product — currency-neutral schema with legacy aliases, a Tenant Profile + token renderer shared across the two assistant-delivery surfaces (packs via Portability vs blueprints via Blueprint Installer), demo-mode inversion, a universal single-folder ingestor (header-alias dictionary + dry_run + JSON), report export to CSV/PDF (DomPDF vs html_to_pdf choice), the add-a-tool drift checklist (TOOLS_LIST, coverage manifest, admin tool list, presets), and the re-seed-on-settings-save gotcha. Use when asked to 'universalise', 'de-demo', 'multi-tenant', 're-tenant', 'remove LKR/Surf Club', 'point the toolkit at a single Drive folder', 'export reports as CSV/PDF', or 'avoid re-installing assistants on save'. First case study: food-beverage (F&B Management, 2026-10-16). Complements mcp-ai-wpoos-toolkit-creation (build new) and mcp-ai-wpoos-toolkit-audit (harden existing)."
+description: "Rework an existing NV oOS Pro toolkit from a single-tenant demo into a universal product — currency-neutral schema with legacy aliases, a Tenant Profile + token renderer shared across the two assistant-delivery surfaces (packs via Portability vs blueprints via Blueprint Installer), demo-mode inversion, a universal single-folder ingestor (header-alias dictionary + dry_run + JSON), report export to CSV/PDF (DomPDF vs html_to_pdf choice), the add-a-tool drift checklist (TOOLS_LIST, coverage manifest, admin tool list, presets), and the re-seed-on-settings-save gotcha. Use when asked to 'universalise', 'de-demo', 'multi-tenant', 're-tenant', 'remove the legacy venue/currency hardcoding', 'point the toolkit at a single Drive folder', 'export reports as CSV/PDF', or 'avoid re-installing assistants on save'. First case study: food-beverage (F&B Management, 2026-10-16). Complements mcp-ai-wpoos-toolkit-creation (build new) and mcp-ai-wpoos-toolkit-audit (harden existing)."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -38,9 +38,9 @@ same checklist on the next vertical.
 Before changing anything, map every place a single venue/currency/schema is
 assumed. Grep the toolkit folder + the assistant surfaces for:
 
-- venue name + country ("Surf Club", "Midigama", "Sri Lanka")
+- venue name + locale ("The Venue", "Example Town", "Example Country")
 - currency strings ("LKR", and column keys `*_lkr`)
-- character/brand nouns from the demo ("Rella", "Sanda", "deity")
+- character/brand nouns from the demo ("<character>", "<name>", "<noun>")
 - demo fallback defaults (`demo_mode => true`, a `DEMO_*` constant used as a
   silent fallback in a `workbook_id()`-style accessor)
 
@@ -255,7 +255,7 @@ assistants. Root causes to eliminate:
 
 ## Case study: food-beverage
 
-- **Input**: a Surf Club Midigama / LKR demo (17 tables `1.0…17.0` + 21 metrics
+- **Input**: a single-venue / legacy-currency demo (17 tables `1.0…17.0` + 21 metrics
   + 13 reports + 4 A1–A4 assistants), hard-coded venue + currency in column names
   and prompts, `demo_mode => true`, silent `DEMO_WORKBOOK_ID` fallback.
 - **Output**: currency-neutral canonical schema (legacy `*_lkr` aliases),
