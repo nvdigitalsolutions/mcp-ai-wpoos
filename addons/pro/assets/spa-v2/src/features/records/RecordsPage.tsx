@@ -97,6 +97,55 @@ function formatValue( value: unknown ): string {
 	return String( value );
 }
 
+/** Format an ISO date for the fallback detail grid (unparseable stays raw). */
+function formatDetailDate( iso: string ): string {
+	if ( ! iso ) {
+		return '—';
+	}
+	const parsed = new Date( iso );
+	return Number.isNaN( parsed.getTime() ) ? iso : parsed.toLocaleString();
+}
+
+interface DetailItem {
+	key: string;
+	label: string;
+	value: string;
+}
+
+/**
+ * Detail fields for an expanded record.
+ *
+ * Entities whose schema ships columns (CRM, PM, professions) render those.
+ * Content/commerce entities ship no private `_*` meta schema (see the Records
+ * REST controller), so without a fallback their expanded rows would render an
+ * empty grid — expand into the core wp/v2 fields plus any meta that exists.
+ */
+function buildDetailItems(
+	entity: RecordEntityConfig | null,
+	record: RecordSummary
+): DetailItem[] {
+	const columns = entity?.columns ?? [];
+	if ( columns.length > 0 ) {
+		return columns.map( ( column ) => ( {
+			key: `column-${ column.key }`,
+			label: column.label,
+			value: formatValue( record.meta[ column.key ] ),
+		} ) );
+	}
+	const items: DetailItem[] = [
+		{ key: 'title', label: __( 'Title', 'nvoos-pro-spa' ), value: formatValue( record.title ) },
+		{ key: 'date', label: __( 'Date', 'nvoos-pro-spa' ), value: formatDetailDate( record.date ) },
+		{ key: 'status', label: __( 'Status', 'nvoos-pro-spa' ), value: formatValue( record.status ) },
+		{ key: 'id', label: __( 'ID', 'nvoos-pro-spa' ), value: formatValue( record.id ) },
+	];
+	for ( const [ key, value ] of Object.entries( record.meta ) ) {
+		if ( value !== null && value !== undefined && value !== '' ) {
+			items.push( { key: `meta-${ key }`, label: key, value: formatValue( value ) } );
+		}
+	}
+	return items;
+}
+
 /** Keep only the entities of one command-center group (undefined = all). */
 export function filterEntitiesByGroup(
 	entities: RecordEntityConfig[],
@@ -455,10 +504,10 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 							</p>
 						) : selected ? (
 							<dl className="nvoos-pro-spa-records-detail__grid">
-								{ entity?.columns.map( ( column ) => (
-									<div key={ column.key } className="nvoos-pro-spa-records-detail__item">
-										<dt>{ column.label }</dt>
-										<dd>{ formatValue( selected.meta[ column.key ] ) }</dd>
+								{ buildDetailItems( entity, selected ).map( ( item ) => (
+									<div key={ item.key } className="nvoos-pro-spa-records-detail__item">
+										<dt>{ item.label }</dt>
+										<dd>{ item.value }</dd>
 									</div>
 								) ) }
 							</dl>
@@ -541,7 +590,7 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 			) }
 
 			{ effectiveRemoteSite && (
-				<p className="nvoos-pro-spa-settings__hint" role="status">
+				<p className="nvoos-pro-spa-settings__hint nvoos-pro-spa-settings__hint--page" role="status">
 					{ __( 'Browsing a remote site — read-only. Create and Research are hidden.', 'nvoos-pro-spa' ) }
 				</p>
 			) }
@@ -656,29 +705,31 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 								value={ formTitle }
 								onChange={ ( event ) => setFormTitle( event.target.value ) }
 							/>
-							<dl className="nvoos-pro-spa-records-detail__grid">
-								{ entity.columns.map( ( column ) => (
-									<div key={ column.key } className="nvoos-pro-spa-records-detail__item">
-										<dt>
-											<label htmlFor={ `records-form-${ column.key }` }>{ column.label }</label>
-										</dt>
-										<dd>
-											<input
-												id={ `records-form-${ column.key }` }
-												type="text"
-												className="nvoos-pro-spa-records-search__input"
-												value={ formFields[ column.key ] ?? '' }
-												onChange={ ( event ) =>
-													setFormFields( ( prev ) => ( {
-														...prev,
-														[ column.key ]: event.target.value,
-													} ) )
-												}
-											/>
-										</dd>
-									</div>
-								) ) }
-							</dl>
+								{ entity.columns.length > 0 && (
+									<dl className="nvoos-pro-spa-records-detail__grid">
+										{ entity.columns.map( ( column ) => (
+											<div key={ column.key } className="nvoos-pro-spa-records-detail__item">
+												<dt>
+													<label htmlFor={ `records-form-${ column.key }` }>{ column.label }</label>
+												</dt>
+												<dd>
+													<input
+														id={ `records-form-${ column.key }` }
+														type="text"
+														className="nvoos-pro-spa-records-search__input"
+														value={ formFields[ column.key ] ?? '' }
+														onChange={ ( event ) =>
+															setFormFields( ( prev ) => ( {
+																...prev,
+																[ column.key ]: event.target.value,
+															} ) )
+														}
+													/>
+												</dd>
+											</div>
+										) ) }
+									</dl>
+								) }
 							<div className="nvoos-pro-spa-records-search">
 								<button type="submit" className="nvoos-pro-spa-page__retry" disabled={ createBusy }>
 									{ createBusy ? __( 'Creating…', 'nvoos-pro-spa' ) : __( 'Create record', 'nvoos-pro-spa' ) }
