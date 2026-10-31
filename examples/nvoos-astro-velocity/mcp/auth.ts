@@ -16,6 +16,7 @@ export const WRITE_TOOLS = new Set([
 	'theme_create',
 	'theme_apply',
 	'theme_delete',
+	'design_theme',
 	'cms_create',
 	'cms_update',
 	'cms_delete',

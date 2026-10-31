@@ -72,7 +72,7 @@ test('assistant rebrand loop over /mcp from a real browser', async ({ page }) =>
 
 	const call = async (name: string, args: Record<string, unknown> = {}) => {
 		const result = await page.evaluate(
-			async ({ name: tool, args: toolArgs, body, headers }) => {
+			async ({ name: tool, body, headers }) => {
 				const res = await fetch('/mcp', {
 					method: 'POST',
 					headers: { ...headers, 'Mcp-Name': tool },
@@ -107,7 +107,9 @@ test('assistant rebrand loop over /mcp from a real browser', async ({ page }) =>
 	const before = await call('tokens_get', {});
 	expect(before.error).toBeUndefined();
 	const beforeTheme = before.result?.structuredContent?.active_theme;
-	expect(['light', 'dark', 'example-brand']).toContain(beforeTheme);
+	// Any valid theme name — the parallel design-import spec creates runtime
+	// themes too, so the active theme is shared state.
+	expect(beforeTheme).toMatch(/^[a-z0-9-]+$/);
 	const beforeAccent = before.result?.structuredContent?.semantic?.accent;
 	expect(beforeAccent).toMatch(/^#/);
 
@@ -116,6 +118,8 @@ test('assistant rebrand loop over /mcp from a real browser', async ({ page }) =>
 
 	const applied = await call('tokens_set', { changes: { accent: '#1d4ed8' } });
 	expect(applied.result?.structuredContent?.applied).toBe(true);
+	const snapshotId = (applied.result?.structuredContent as { snapshot_id?: string } | undefined)?.snapshot_id;
+	expect(snapshotId).toBeDefined();
 
 	const after = await call('tokens_get', {});
 	expect(after.result?.structuredContent?.semantic?.accent).toBe('#1d4ed8');
@@ -124,8 +128,9 @@ test('assistant rebrand loop over /mcp from a real browser', async ({ page }) =>
 	const contrast = await call('contrast_check', { fg: '#ffffff', bg: '#1d4ed8' });
 	expect(contrast.result?.structuredContent?.aaNormal).toBe(true);
 
-	// Rollback restores the value captured before the apply.
-	const rollback = await call('tokens_rollback', {});
+	// Rollback restores the value captured before the apply — the explicit
+	// snapshot_id makes this immune to parallel specs interleaving writes.
+	const rollback = await call('tokens_rollback', { snapshot_id: snapshotId });
 	expect(rollback.error).toBeUndefined();
 	const restored = await call('tokens_get', {});
 	expect(restored.result?.structuredContent?.semantic?.accent).toBe(beforeAccent);

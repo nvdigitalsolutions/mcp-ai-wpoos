@@ -33,6 +33,8 @@ describe('auth helpers', () => {
 		expect(WRITE_TOOLS.has('theme_apply')).toBe(true);
 		// Proposal 095 Phase 3/4.3 — the CMS + ops slices join the write gate.
 		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'cms_create' } })).toBe(true);
+		// Proposal 098 — design_theme writes runtime themes.
+		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'design_theme' } })).toBe(true);
 		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'rebuild_trigger' } })).toBe(true);
 		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'screenshot' } })).toBe(true);
 		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'cms_list' } })).toBe(false);

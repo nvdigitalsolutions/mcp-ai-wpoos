@@ -157,12 +157,22 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   the Linux CI `npm run build` at `build:mcp` (PR #7303). Use the esbuild JS
   API (`import { build } from 'esbuild'`) — it resolves the platform binary
   itself; `scripts/build-mcp.mjs` was rewritten this way.
-- **21 tools** (`SERVER_VERSION` 0.2.0): design (10 — `tokens_get/set/import_dtcg/rollback`,
-  `theme_*`, `contrast_check`; bulk writes transactional: validate → dry-run
+- **25 tools** (`SERVER_VERSION` 0.2.0): design (14 — `tokens_get/set/import_dtcg/rollback`,
+  `theme_*`, `contrast_check`, `design_analyze/compare/plan/theme`; bulk writes transactional: validate → dry-run
   diff → snapshot → all-or-nothing), CMS (6 — `cms_list/get/create/update/delete`,
   `media_upload` over `commerce/client.ts`, collection allowlist, `limit` ≤ 100),
   ops (5 — `site_status`, `preview_url`, `rebuild_trigger`, `screenshot`,
   `nds_export` — the NDS DTCG document + mapping report for the 4.2 round-trip).
+  The design-import tools (Proposal 098) fetch a source URL (Astro theme repo,
+  WordPress site, or any website) and extract its design language — palette
+  roles, typography, spacing, component vocabulary, concept prose, and an
+  inspired-by adaptation brief — via `src/lib/design-import/` (SSRF-safe
+  fetcher + deterministic analyzer + WP theme.json/GitHub-tree source modes +
+  re-extraction diff + adaptation plan + theme emission with a WCAG audit).
+  Never a clone: no source CSS/markup/copy or assets are copied; only token
+  data + prose. The open-world tools (`openWorldHint: true`, handshake-pinned):
+  `design_analyze`, `design_compare`, `design_plan`, `design_theme`;
+  `design_theme` is write-gated (bearer or manager session).
   Every mutating design write (`tokens_set`, `tokens_import_dtcg`,
   `theme_create`, `theme_apply`, `theme_delete`) echoes the pre-write
   `snapshot_id` it captured, so `tokens_rollback` can undo exactly that write
@@ -172,8 +182,9 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 - **Tool annotations + titles (2026-10-31):** every tool carries a `title`
   and spec `annotations` (`readOnlyHint`/`destructiveHint`/`idempotentHint`/
   `openWorldHint` — presets in `mcp/tools/util.ts`: `READ_ONLY_TOOL`,
-  `WRITE_TOOL`, `IDEMPOTENT_WRITE_TOOL`, `DESTRUCTIVE_WRITE_TOOL`;
-  `openWorldHint` stays false everywhere — no tool mutates external state).
+  `WRITE_TOOL`, `IDEMPOTENT_WRITE_TOOL`, `DESTRUCTIVE_WRITE_TOOL`,
+  `OPEN_WORLD_READ_TOOL`; `openWorldHint` stays false everywhere EXCEPT
+  `design_analyze`, which fetches external URLs and declares it).
   Pinned by `tests/mcp/handshake.test.ts`. `preview_url` / `screenshot`
   resolve their origin as `NVOOS_STOREFRONT_ORIGIN` → inbound request Host
   (scheme from `X-Forwarded-Proto`, then socket TLS) → `http://localhost:4321`;
@@ -204,7 +215,11 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   (`NVOOS_MCP_HOSTS` **must** include the public hostname — default is
   localhost-only), audit line per write call. `screenshot` is opt-in
   (`NVOOS_MCP_SCREENSHOT=1`) and path-only input (SSRF-safe by construction,
-  per MCP Security Best Practices).
+  per MCP Security Best Practices). `design_analyze` target URLs go through
+  the `src/lib/design-import/fetcher.ts` SSRF guard (scheme allowlist, no
+  credential URLs, DNS-resolved private/reserved rejection per redirect hop,
+  caps + timeouts); private hosts (e.g. a local dev site) require
+  `NVOOS_MCP_FETCH_ALLOW_PRIVATE=1` — never set it on the public mount.
 - **Env snapshot discipline:** `createAstroMcpNodeHandler` snapshots its env,
   and `serve.mjs` passes a pre-rewrite snapshot — serve rewrites
   `NVOOS_SSR_API_ORIGIN` to the loopback BFF origin for the SSR commerce
@@ -465,7 +480,7 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## References
 
-- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 097 (cross-surface token sharing) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
+- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
 - `examples/nvoos-astro-velocity/README.md` (architecture, env, commands)
 - `addons/nvoos-astro-bridge/README.md` (REST surface, data map)
 - Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`

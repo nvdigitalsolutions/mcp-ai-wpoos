@@ -34,6 +34,9 @@ export default defineConfig({
 				// The MCP manager-session gate verifies cookies against the
 				// contract auth surface (fixture /auth/me).
 				NVOOS_SSR_API_ORIGIN: 'http://localhost:8123/wp-json/nvoos-commerce/v1',
+				// The design-import e2e analyzes a loopback design source —
+				// private-host fetches are opt-in and dev-mount only (Proposal 098).
+				NVOOS_MCP_FETCH_ALLOW_PRIVATE: '1',
 			},
 		},
 	],
