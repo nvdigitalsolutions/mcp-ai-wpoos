@@ -185,7 +185,20 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   the manager cookie** (backend enforces `manage_astro` anyway — fail fast
   with a useful error). Same-origin browser requests (Origin host == the
   Host-validated request host) bypass the Origin allowlist — that is what
-  the /manage Design tab rides on. Per-IP rate limit (429 `-32029`,
+  the /manage Design tab rides on. **Zero-cookie coding-agent recipe:** the
+  published bridge package (`npx -y @nvdigitalsolutions/nvoos-mcp-bridge@latest`,
+  0.1.0-alpha.5+) accepts `MCP_AI_LOGIN_URL` + `MCP_AI_LOGIN_EMAIL`/
+  `_PASSWORD` (or a raw `MCP_AI_LOGIN_BODY` override) and bootstraps the
+  manager session itself — POSTs `{ email, password }` to `/api/auth/login`
+  at startup, attaches the captured cookies to every upstream request, and
+  re-establishes the session once on 401/403 or near expiry. `MCP_AI_COOKIE`
+  is the static-cookie escape hatch. Canonical source: `bin/mcp-bridge.js`
+  (byte-synced into `packages/nvoos-mcp-bridge`; tests in
+  `packages/nvoos-mcp-bridge/test/session.test.js`). The relay advertises
+  both Streamable HTTP media types and unwraps SSE-framed responses — the
+  astro `/mcp` answers every request in SSE when the client accepts it
+  (verified live 2026-10-31: handshake + `tools/list` + `cms_create`/`cms_delete`
+  roundtrip against astro.nvoos.cloud). Per-IP rate limit (429 `-32029`,
   `NVOOS_MCP_RATE_MAX`/`_WINDOW_MS`, default 120/min), Host/Origin allowlists
   (`NVOOS_MCP_HOSTS` **must** include the public hostname — default is
   localhost-only), audit line per write call. `screenshot` is opt-in

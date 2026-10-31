@@ -61,6 +61,11 @@ function startFakeMcp( opts = {} ) {
 				result: { echo: payload },
 			};
 			const send = () => {
+				if ( opts.sse ) {
+					res.writeHead( opts.status || 200, { 'Content-Type': 'text/event-stream' } );
+					res.end( `event: message\ndata: ${ JSON.stringify( envelope ) }\n\n` );
+					return;
+				}
 				res.writeHead( opts.status || 200, { 'Content-Type': 'application/json' } );
 				if ( opts.empty ) {
 					res.end();
@@ -290,6 +295,57 @@ test( 'relay: drains in-flight request after stdin closes', async () => {
 		const { code } = await bridge.exit;
 		assert.strictEqual( code, 0 );
 	} );
+} );
+
+test( 'relay: Accept advertises both Streamable HTTP media types (SDK v2 handshake)', async () => {
+	await withRelay( {}, async ( bridge, mcp ) => {
+		send( bridge.child, { jsonrpc: '2.0', method: 'initialize', params: {}, id: 30 } );
+		await waitForLine( bridge.lines, ( l ) => l.includes( '"id":30' ) );
+		assert.strictEqual(
+			mcp.requests[ 0 ].headers.accept,
+			'application/json, text/event-stream'
+		);
+	} );
+} );
+
+test( 'relay: SSE-framed upstream responses are unwrapped transparently', async () => {
+	await withRelay( { mcp: { sse: true } }, async ( bridge ) => {
+		send( bridge.child, { jsonrpc: '2.0', method: 'tools/list', params: {}, id: 31 } );
+		const line = JSON.parse( await waitForLine( bridge.lines, ( l ) => l.includes( '"id":31' ) ) );
+		assert.strictEqual( line.result.echo.method, 'tools/list' );
+	} );
+} );
+
+// ── Unit tests (direct require — safe: main() only runs as entry point) ─────
+
+const { parseResponseBody } = require( RELAY );
+
+test( 'relay unit: parseResponseBody reads plain JSON bodies', () => {
+	assert.deepStrictEqual(
+		parseResponseBody( '{"jsonrpc":"2.0","id":1}', 'application/json' ),
+		{ jsonrpc: '2.0', id: 1 }
+	);
+} );
+
+test( 'relay unit: parseResponseBody unwraps SSE event data', () => {
+	const payload = parseResponseBody(
+		'event: message\ndata: {"jsonrpc":"2.0","id":2,"result":{}}\n\n',
+		'text/event-stream'
+	);
+	assert.deepStrictEqual( payload, { jsonrpc: '2.0', id: 2, result: {} } );
+} );
+
+test( 'relay unit: parseResponseBody keeps the last JSON event and skips keep-alives', () => {
+	const payload = parseResponseBody(
+		': keep-alive\n\nevent: message\ndata: {"first":1}\n\nevent: message\ndata: {"last":2}\n\n',
+		'text/event-stream'
+	);
+	assert.deepStrictEqual( payload, { last: 2 } );
+} );
+
+test( 'relay unit: parseResponseBody returns null for non-JSON bodies', () => {
+	assert.strictEqual( parseResponseBody( 'this is not json', 'application/json' ), null );
+	assert.strictEqual( parseResponseBody( 'event: message\ndata: nope\n\n', 'text/event-stream' ), null );
 } );
 
 test( 'dispatcher: no args selects the HTTPS relay, "ssh" selects the SSH variant', async () => {
