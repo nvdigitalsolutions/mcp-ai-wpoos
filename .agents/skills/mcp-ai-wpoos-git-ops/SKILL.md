@@ -88,6 +88,20 @@ Four rules, each from a session that cost a recovery:
   becomes untracked again — plain `rm`), then
   `git push --force-with-lease`. Other agents' unstaged edits survive
   byte-for-byte. Verified 2026-10-31 de-stacking PR #7325.
+- **Sibling PRs editing the same file (the #7348 ↔ #7349 case, 2026-11-01):**
+  two open PRs touch the same docs file in overlapping hunks; the later one
+  merges first and the earlier one reports merge conflicts at merge time.
+  Fix: `git fetch origin` → `git checkout <branch>` →
+  `GIT_EDITOR=true git rebase --autostash origin/alpha-working`, resolve by
+  **keeping both PRs' intents** (the merged PR's new text usually wins for
+  shared lines; your PR's unique additions stay), then
+  `git push --force-with-lease`. A successful rebase replay is proof the
+  conflict is gone — by construction the branch is ahead of the base.
+- **Local `.git/info/exclude` can silently block deliberate files.** The
+  main worktree ignores `*.png`/`*.jpg` (per-worktree media guard, not repo
+  config). `git add` then fails with "ignored by one of your .gitignore
+  files" — run `git check-ignore -v <path>` to find the rule and `git add -f`
+  when the file is deliberate (gateway logo assets, PR #7349).
 
 ## Windows reserved-name artifacts (learned 2026-10-29)
 
@@ -108,6 +122,22 @@ can appear in the repo root. Two failure modes follow:
   `powershell -NoProfile -ExecutionPolicy Bypass -File` — inline `-Command`
   calls get the backslashes mangled by the sh layer. Never stage it —
   explicit staging (above) keeps it out of commits.
+
+## Windows sh-shell gotchas (learned 2026-11-01, gateway session)
+
+- The terminal runs **sh, not cmd**: `copy` does not exist — use `cp`;
+  `del`/`ren` are `rm`/`mv`.
+- **`powershell -Command` inline strings get `$var` interpolated away by the
+  sh layer** (every `$i` vanished → parser errors). Write a `.ps1` file and
+  run `powershell -NoProfile -ExecutionPolicy Bypass -File`, or do it in
+  node instead (e.g. JPEG/PNG dimension sniffing from the file header — no
+  deps needed).
+- `findstr /C:"..."` quoting breaks under sh — pipe to node for filtering
+  or use the terminal tool's `tail_lines`.
+- `node --test <directory>` does **not** recurse on this setup (runs one
+  file) — pass explicit files or the package's `npm test` script.
+- Windows-reserved names: see the `nul`-artifact section above (same
+  `powershell -File` pattern applies).
 
 ## gh CLI gotchas
 
