@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Fix the `VERSION` constant in `src/index.js` — the 0.2.0 bump updated
+  `package.json` but missed the constant, so `/health` reported 0.1.1 and
+  the deploy-verification runbook could not tell builds apart. The constant
+  now carries a comment requiring it to track `package.json`; the
+  `.claude-plugin/plugin.json` manifest got the same bump; and the health
+  test now asserts `/health` reports the `package.json` version instead of
+  pinning a hardcoded string.
+
 Follow-ups (later phases): Auth0 tenant provisioning (RFC 8414 + DCR +
 PKCE, scopes, consent); scripted PKCE end-to-end + ChatGPT "Add custom MCP
 server" test; registry re-publish via `mcp-publisher` (0.2.0 metadata);
