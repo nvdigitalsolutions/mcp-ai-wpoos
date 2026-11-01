@@ -43,6 +43,13 @@
  *   GATEWAY_OAUTH_RESOURCE         RFC 8707 resource identifier — the
  *                                  canonical audience for access tokens
  *                                  (default https://mcp.nvoos.pro).
+ *   GATEWAY_OAUTH_DEFAULT_SITES    Optional fallback: comma-separated site
+ *                                  slugs granted to a valid OAuth token
+ *                                  that carries no `site:<slug>` scope.
+ *                                  ChatGPT's connector requests only the
+ *                                  AS's OIDC scopes, never resource scopes —
+ *                                  without this fallback such tokens get
+ *                                  403 insufficient_scope. Unset = reject.
  *   TOOL_QUOTAS                    Per-tool quotas, compact form:
  *                                  `<pattern>:<rate>/<window>:<burst>` —
  *                                  e.g. `delete_post:5/1h:2,woo_*:60/1m:*`.
@@ -103,17 +110,21 @@ export function issuerUrl( issuer, path ) {
  *
  * @param {object} env    Env object.
  * @param {string[]} errors Shared error collector.
- * @return {object} `{ enabled, issuer, jwksUri, resource }`.
+ * @return {object} `{ enabled, issuer, jwksUri, resource, defaultSites }`.
  */
 export function parseOAuthConfig( env, errors ) {
 	const rawIssuer = String( env.GATEWAY_OAUTH_ISSUER || '' ).trim();
 	if ( ! rawIssuer ) {
-		return { enabled: false, issuer: '', jwksUri: '', resource: DEFAULT_OAUTH_RESOURCE };
+		return { enabled: false, issuer: '', jwksUri: '', resource: DEFAULT_OAUTH_RESOURCE, defaultSites: [] };
 	}
 
 	const issuer = normalizeIssuer( rawIssuer );
 	const resource = String( env.GATEWAY_OAUTH_RESOURCE || '' ).trim() || DEFAULT_OAUTH_RESOURCE;
 	const jwksUri = String( env.GATEWAY_OAUTH_JWKS_URI || '' ).trim() || issuerUrl( issuer, '.well-known/jwks.json' );
+	const defaultSites = String( env.GATEWAY_OAUTH_DEFAULT_SITES || '' )
+		.split( ',' )
+		.map( ( slug ) => slug.trim().toLowerCase() )
+		.filter( Boolean );
 
 	for ( const [ label, value ] of [
 		[ 'GATEWAY_OAUTH_ISSUER', issuer ],
@@ -130,7 +141,7 @@ export function parseOAuthConfig( env, errors ) {
 		}
 	}
 
-	return { enabled: true, issuer, jwksUri, resource };
+	return { enabled: true, issuer, jwksUri, resource, defaultSites };
 }
 
 /**
@@ -306,6 +317,13 @@ export function loadConfig( env = process.env ) {
 
 	// ── OAuth 2.1 resource server (opt-in, inert unless configured) ──
 	const oauth = parseOAuthConfig( env, errors );
+	if ( oauth.enabled ) {
+		for ( const slug of oauth.defaultSites ) {
+			if ( ! sites.has( slug ) ) {
+				errors.push( `GATEWAY_OAUTH_DEFAULT_SITES references unconfigured site "${ slug }".` );
+			}
+		}
+	}
 
 	// ── Per-tool quotas (Proposal 094, Phase 1) ─────────────────────
 	const quotas = parseToolQuotas( env.TOOL_QUOTAS, errors );
