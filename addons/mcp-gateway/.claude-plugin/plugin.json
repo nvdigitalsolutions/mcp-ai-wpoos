@@ -1,8 +1,8 @@
 {
 	"name": "nvoos-mcp-gateway",
 	"displayName": "NV oOS Gateway",
-	"version": "0.2.0",
-	"description": "Fleet-scoped MCP server for NV oOS WordPress sites — one API key, every bound site; tools appear namespaced as <site-slug>.<tool>.",
+	"version": "0.2.1",
+	"description": "Fleet-scoped MCP server for NV oOS WordPress sites — one API key, every bound site; tools appear namespaced as <site-slug>_<tool>.",
 	"author": {
 		"name": "NV Digital Solutions",
 		"url": "https://nvdigitalsolutions.com"

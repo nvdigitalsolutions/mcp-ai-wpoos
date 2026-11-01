@@ -177,7 +177,7 @@ test( 'multi-site tools/list merges and prefixes; upstream token is header-only'
 	const res = await post( baseUrl, { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }, KEY_MULTI );
 	const body = await res.json();
 	const names = body.result.tools.map( ( t ) => t.name ).sort();
-	assert.deepStrictEqual( names, [ 'site-a.make_site_a', 'site-b.make_site_b' ] );
+	assert.deepStrictEqual( names, [ 'site-a_make_site_a', 'site-b_make_site_b' ] );
 	assert.deepStrictEqual( body.result._meta.gateway.sites, [ 'site-a', 'site-b' ] );
 
 	assert.strictEqual( siteA.requests[ 0 ].auth, 'Bearer op_site_a.SECRET' );
@@ -195,11 +195,28 @@ test( 'tools/call reverse-maps the prefix and passes the result through', async 
 
 	const res = await post(
 		baseUrl,
-		{ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'site-a.make_site_a', arguments: {} } },
+		{ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'site-a_make_site_a', arguments: {} } },
 		KEY_MULTI
 	);
 	const body = await res.json();
 	assert.strictEqual( body.id, 3 );
+	assert.strictEqual( body.result.content[ 0 ].text, 'site-a ran make_site_a' );
+	assert.strictEqual( siteA.requests[ 0 ].body.params.name, 'make_site_a' );
+
+	await close();
+	await siteA.close();
+} );
+
+test( 'tools/call accepts legacy dot-prefixed names from pre-0.2.1 listings', async () => {
+	const siteA = await startFakeSite( 'site-a' );
+	const { baseUrl, close } = await startTestServer( createApp( { config: gatewayConfig( { 'site-a': siteA } ) } ) );
+
+	const res = await post(
+		baseUrl,
+		{ jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: 'site-a.make_site_a', arguments: {} } },
+		KEY_MULTI
+	);
+	const body = await res.json();
 	assert.strictEqual( body.result.content[ 0 ].text, 'site-a ran make_site_a' );
 	assert.strictEqual( siteA.requests[ 0 ].body.params.name, 'make_site_a' );
 
@@ -253,7 +270,7 @@ test( 'a failing upstream degrades tools/list instead of failing it', async () =
 
 	const res = await post( baseUrl, { jsonrpc: '2.0', id: 6, method: 'tools/list', params: {} }, KEY_MULTI );
 	const body = await res.json();
-	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a.make_site_a' ] );
+	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a_make_site_a' ] );
 	assert.ok( body.result._meta.gateway.errors[ 'site-b' ], 'failed site must be reported in _meta' );
 
 	// The health registry must now show the degraded site.
@@ -294,7 +311,7 @@ test( 'batch requests return an array of responses', async () => {
 	const body = await res.json();
 	assert.strictEqual( body.length, 2, 'the notification contributes no response' );
 	assert.strictEqual( body[ 0 ].result && Object.keys( body[ 0 ].result ).length, 0 );
-	assert.strictEqual( body[ 1 ].result.tools[ 0 ].name, 'site-a.make_site_a' );
+	assert.strictEqual( body[ 1 ].result.tools[ 0 ].name, 'site-a_make_site_a' );
 
 	await close();
 	await siteA.close();
@@ -353,11 +370,11 @@ test( 'tools/list appends a background-run hint to long-running tools', async ()
 	).json();
 	const byName = Object.fromEntries( body.result.tools.map( ( t ) => [ t.name, t ] ) );
 
-	const hinted = byName[ 'site-a.deep_research' ].description;
+	const hinted = byName[ 'site-a_deep_research' ].description;
 	assert.match( hinted, /run_mode/ );
 	assert.match( hinted, /background/ );
 	assert.ok( hinted.startsWith( 'Research topic.' ), 'the upstream description is preserved' );
-	assert.doesNotMatch( byName[ 'site-a.make_site_a' ].description, /run_mode/ );
+	assert.doesNotMatch( byName[ 'site-a_make_site_a' ].description, /run_mode/ );
 
 	await close();
 	await siteA.close();

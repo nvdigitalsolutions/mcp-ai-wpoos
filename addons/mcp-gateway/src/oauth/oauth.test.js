@@ -164,7 +164,7 @@ test( 'static keys keep working alongside OAuth', async () => {
 	const body = await (
 		await post( baseUrl, { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }, STATIC_KEY )
 	).json();
-	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a.make_site_a' ] );
+	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a_make_site_a' ] );
 
 	await close();
 	await site.close();
@@ -187,7 +187,7 @@ test( 'a valid OAuth token is scoped to its site:<slug> grants', async () => {
 	const body = await (
 		await post( baseUrl, { jsonrpc: '2.0', id: 3, method: 'tools/list', params: {} }, token )
 	).json();
-	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a.make_site_a' ] );
+	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a_make_site_a' ] );
 
 	await close();
 	await site.close();

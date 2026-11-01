@@ -4,8 +4,15 @@
  * The MCP spec does not define aggregation semantics, so a gateway owning
  * several upstream sites must keep tool names unique. Industry practice
  * (AgentGateway, mcp-proxy, Gravitee) prefixes the source identifier:
- * `tools/list` returns `site-a.create_post`, `tools/call` reverse-maps it.
+ * `tools/list` returns `site-a_create_post`, `tools/call` reverse-maps it.
  * Prefixing by construction makes collisions impossible.
+ *
+ * The separator is `_` (underscore) because the MCP tool-name grammar is
+ * `^[a-zA-Z0-9_-]{1,64}$` — dots are not permitted. OpenAI connectors
+ * (ChatGPT/Codex) normalize illegal names, which silently renamed the old
+ * `site-a.create_post` form to `site-a_create_post` client-side (live,
+ * 2026-11-01). Legacy dot-prefixed names are still accepted on `tools/call`
+ * for clients holding pre-0.2.1 listings.
  */
 
 /**
@@ -18,7 +25,7 @@
 export function prefixTool( slug, tool ) {
 	return {
 		...tool,
-		name: `${ slug }.${ tool.name }`,
+		name: `${ slug }_${ tool.name }`,
 		_meta: { ...( tool._meta || {} ), gateway: { site: slug } },
 	};
 }
@@ -26,16 +33,45 @@ export function prefixTool( slug, tool ) {
 /**
  * Split a possibly-prefixed tool name.
  *
- * @param {string} name Tool name as sent by the client.
+ * Accepts the current underscore form (`slug_tool`) and the legacy dot form
+ * (`slug.tool`, pre-0.2.1). With a `slugs` set the slug must be configured —
+ * the longest configured slug wins so `demo2_x` never parses as site `demo`
+ * + tool `2_x`.
+ *
+ * @param {string}       name  Tool name as sent by the client.
+ * @param {Set<string>}  [slugs] Known site slugs (undefined = accept any
+ *                              dot prefix; legacy callers).
  * @return {{slug: string, tool: string}|null} Slug + bare tool name, or null
- *                                             when the name carries no dot.
+ *                                             when the name carries no valid
+ *                                             prefix.
  */
-export function splitToolName( name ) {
-	const idx = String( name ).indexOf( '.' );
-	if ( idx <= 0 || idx === name.length - 1 ) {
-		return null;
+export function splitToolName( name, slugs ) {
+	const str = String( name );
+
+	// Legacy dot form — kept callable for clients with cached listings.
+	const idx = str.indexOf( '.' );
+	if ( idx > 0 && idx < str.length - 1 ) {
+		const slug = str.slice( 0, idx );
+		if ( ! slugs || slugs.has( slug ) ) {
+			return { slug, tool: str.slice( idx + 1 ) };
+		}
 	}
-	return { slug: name.slice( 0, idx ), tool: name.slice( idx + 1 ) };
+
+	// Current underscore form: longest configured slug prefix wins.
+	if ( slugs ) {
+		let best = null;
+		for ( const slug of slugs ) {
+			const prefix = `${ slug }_`;
+			if ( str.startsWith( prefix ) && ( ! best || slug.length > best.slug.length ) ) {
+				best = { slug, tool: str.slice( prefix.length ) };
+			}
+		}
+		if ( best ) {
+			return best;
+		}
+	}
+
+	return null;
 }
 
 /**
@@ -46,8 +82,7 @@ export function splitToolName( name ) {
  * @return {boolean}
  */
 export function isNamespacedFor( name, slugs ) {
-	const parts = splitToolName( name );
-	return null !== parts && slugs.has( parts.slug );
+	return null !== splitToolName( name, slugs );
 }
 
 /**
