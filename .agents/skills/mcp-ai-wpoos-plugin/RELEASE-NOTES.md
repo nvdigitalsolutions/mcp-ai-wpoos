@@ -1,4 +1,4 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.14)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.15)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
@@ -6,6 +6,15 @@ Operational content stays in SKILL.md; append new per-version sections here.
 ---
 
 ---
+
+## Astro Forge Ships, Design-Language Import, Gateway Live on the MCP Registry (v1.2.15)
+
+- **Astro Forge is the generator sibling of the 092/095 storefront** (Proposal 096, PRs #7335–#7344) — `examples/nvoos-astro-forge` turns any WP/Woo site into an Astro 7 frontend (loader-first, webhook → rebuild freshness). Operational: auth lives in the **vault** (`~/.nvoos-forge/vault.json`, AES-256-GCM, `NVOOS_FORGE_VAULT_KEY`; `forge vault set` reads secrets on stdin never argv); the `/mcp` surface fails closed without `NVOOS_FORGE_MCP_TOKEN` (401 `-32001`); the SSRF guard needs `NVOOS_FORGE_OPEN_ANALYZE=1` for arbitrary hosts (loopback is CLI-only). The companion plugin **`plugins/nvoos-forge-bridge` 0.1.0** is a sub-project (own track): HMAC-signed rebuild webhooks (`X-Forge-Signature`, constant-time), 15-minute preview tokens, own PHPUnit workflow.
+- **Gateway is live on the official MCP Registry** (PRs #7345–#7349) — `io.github.nvdigitalsolutions/nvoos-mcp-gateway` v0.2.0. Ops lessons: the runtime `VERSION` marker must track `package.json` (the health test now enforces it — a live 0.2.0 build once reported 0.1.1); registry descriptions cap at 100 chars; set `PUBLIC_SITE_SLUGS=demo` in the Velocity env so the unauthenticated `/health` stops advertising private client slugs (typo'd slugs warn at boot, never fatal).
+- **The npx MCP bridge can now drive session-gated write surfaces** (PR #7328, npm 0.1.0-alpha.5) — `MCP_AI_LOGIN_URL` + `MCP_AI_LOGIN_EMAIL`/`_PASSWORD` bootstrap a manager session (cookies attached to every upstream request, one 401/403 re-establishment). SDK-v2 servers need the dual-media-type `Accept` header; SSE-framed responses get unwrapped.
+- **Console brands from the WordPress site title** (PR #7321) — `siteName` flows through `WP_MCP_AI_Pro_SPA_Config::build()`; the nav logo + tab title render the first three words with the `NV oOS Complete` fallback.
+- **NDS addon DTCG importer** (PR #7322) — `prepare()` + all-or-nothing `import()`, 256 KB cap, `{core.x}` references rejected; the admin import surface + 10-test suite ship **without an addon version bump** (0.3.0 stays).
+- **Skills:** two new coding-time skills (`astro-forge`, `gateway-ops` — 79 → 81) and a client-reference scrub across seven design/mcp skills (PR #7336).
 
 ## Astro Storefront Lands, Bridge Rename + /manage Cookie-Auth Restored, F&B Multi-Connection, Gateway Policy Layer (v1.2.14)
 

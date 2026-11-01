@@ -52,12 +52,20 @@ export function healthRouter() {
 	// ── Public, minimal ────────────────────────────────────────────
 	router.get( '/health', ( _req, res ) => {
 		const cfg = res.app.get( 'gatewayConfig' );
+		// Privacy filter: PUBLIC_SITE_SLUGS limits which slugs the public
+		// endpoint reports — private client sites stay invisible to
+		// unauthenticated callers. The keyed /health/full view below is
+		// unaffected and always reports every site.
+		const publicSlugs = cfg.publicSlugs || null;
+		const isPublic = ( slug ) => null === publicSlugs || publicSlugs.has( slug );
 		const sites = {};
 		for ( const [ slug, entry ] of siteHealth ) {
-			sites[ slug ] = entry.status;
+			if ( isPublic( slug ) ) {
+				sites[ slug ] = entry.status;
+			}
 		}
 		for ( const slug of cfg.sites.keys() ) {
-			if ( ! ( slug in sites ) ) {
+			if ( isPublic( slug ) && ! ( slug in sites ) ) {
 				sites[ slug ] = 'ok'; // never contacted yet
 			}
 		}

@@ -473,7 +473,7 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                     features={features}
                     capabilities={runtime.user.capabilities}
                   >
-                    <RecordsPage group="crm" />
+                    <RecordsPage group="crm" allowRemote />
                   </RequireGate>
                 }
               />
@@ -485,7 +485,7 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                     features={features}
                     capabilities={runtime.user.capabilities}
                   >
-                    <RecordsPage group="pm" />
+                    <RecordsPage group="pm" allowRemote />
                   </RequireGate>
                 }
               />
@@ -497,7 +497,7 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                     features={features}
                     capabilities={runtime.user.capabilities}
                   >
-                    <RecordsPage group="professions" />
+                    <RecordsPage group="professions" allowRemote />
                   </RequireGate>
                 }
               />
@@ -509,7 +509,7 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                     features={features}
                     capabilities={runtime.user.capabilities}
                   >
-                    <RecordsPage group="calendar" />
+                    <RecordsPage group="calendar" allowRemote />
                   </RequireGate>
                 }
               />
@@ -521,7 +521,7 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                     features={features}
                     capabilities={runtime.user.capabilities}
                   >
-                    <RecordsPage group="fnb" />
+                    <RecordsPage group="fnb" allowRemote />
                   </RequireGate>
                 }
               />

@@ -6,6 +6,7 @@
 		"surface": { "$type": "color", "$value": "#ffffff", "$description": "Primary surface (matches the legacy --nv-surface)" },
 		"surface-alt": { "$type": "color", "$value": "#f5f5f4", "$description": "Alternate surface (matches the legacy --nv-surface-alt)" },
 		"line": { "$type": "color", "$value": "#e4e4e2", "$description": "Hairline/border (matches the legacy --nv-line)" },
+		"line-strong": { "$type": "color", "$value": "#767676", "$description": "Strong border for form fields (SC 1.4.11 3:1). Additive — not referenced by legacy aliases, so the 092 look is preserved." },
 		"accent": { "$type": "color", "$value": "#0f6b4f", "$description": "Brand accent (matches the legacy --nv-accent)" },
 		"accent-ink": { "$type": "color", "$value": "#ffffff", "$description": "Text on accent (matches the legacy --nv-accent-ink)" },
 		"danger": { "$type": "color", "$value": "#b3261e", "$description": "Danger/promo (matches the legacy --nv-danger)" }

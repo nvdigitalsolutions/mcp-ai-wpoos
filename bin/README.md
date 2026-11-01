@@ -56,6 +56,11 @@ channel (what Zed's context server client speaks) to the NV oOS MCP endpoint.
 | `MCP_AI_HOST_HEADER` | unset | Override the HTTP `Host` header for tunnelled/proxied endpoints |
 | `MCP_AI_HTTP_TIMEOUT` | `120000` | Request timeout in ms |
 | `MCP_AI_BRIDGE_NAME` | unset | Declares this bridge's identity — stamped as the `X-MCP-Bridge-Name` header and surfaced by the site's `mcp_server_info` tool / `list_mcp_tools` `_meta` block (purely informational). Set it to the Zed `context_servers` key, e.g. `nvoos-ideabits-gateway-basic` |
+| `MCP_AI_COOKIE` | unset | Static `Cookie` header for every upstream request (manual-session escape hatch; wins over the login bootstrap) |
+| `MCP_AI_LOGIN_URL` | unset | Login endpoint that answers with `Set-Cookie` session headers — must be same-origin with `MCP_AI_BASE_URL` (e.g. `https://astro.nvoos.cloud/api/auth/login`) |
+| `MCP_AI_LOGIN_EMAIL` | unset | Login credential — default body is `{ email, password }` |
+| `MCP_AI_LOGIN_PASSWORD` | unset | Login credential |
+| `MCP_AI_LOGIN_BODY` | unset | Raw JSON body override for the login POST (wins over the email/password pair) |
 
 Notifications (JSON-RPC messages without an `id`) are forwarded but never
 answered on stdout, per the MCP spec.

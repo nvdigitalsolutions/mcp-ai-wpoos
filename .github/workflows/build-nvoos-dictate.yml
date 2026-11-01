@@ -8,7 +8,11 @@
 # universal .app bundle (both CPU slices — the Intel slice under Rosetta 2)
 # on the runner's Aqua session — the runtime verification of the macOS port
 # that is possible without macOS hardware (TCC-gated paths still need a
-# human on real hardware; see docs/ptt-matrix-macos.md).
+# human on real hardware; see docs/ptt-matrix-macos.md). The windows-bundle
+# job below is the Windows counterpart: it builds the complete feature
+# union as a debug exe, boot-smokes it, and uploads it as a downloadable
+# artifact, so every push leaves a current Windows binary alongside the
+# macOS universal .app.
 
 name: Build NV oOS Dictation
 
@@ -333,7 +337,96 @@ jobs:
           name: nvoos-dictate-macos-app
           path: /tmp/nvoos-dictate-macos-universal.zip
           if-no-files-found: warn
-          retention-days: 7
+          # Long retention: these artifacts are the always-current download
+          # path between tagged releases (public-repo max is 90 days).
+          retention-days: 90
+
+
+  # Windows counterpart of boot-smoke: build the COMPLETE feature union
+  # (every opt-in surface — STT engines, VAD, camera/vision, browser agent,
+  # MCP) as a debug exe and upload it as a downloadable artifact, so every
+  # push to the app leaves a current Windows binary alongside the macOS
+  # universal .app. A partial build would silently boot with the missing
+  # surface "not compiled", so the union is the only honest artifact for
+  # humans to test. whisper.cpp needs CMake + libclang (real bindgen on
+  # MSVC — WHISPER_DONT_GENERATE_BINDINGS is Linux-only), and the
+  # VS-bundled CMake is not on PATH by default, so both come from
+  # Chocolatey. Engine weights are never compiled in — they download at
+  # runtime into %APPDATA%/nvoos-dictate/models/ (the ~56 MB exe is a
+  # correct, complete build).
+  windows-bundle:
+    name: Windows debug exe (complete features) + boot smoke
+    runs-on: windows-latest
+    env:
+      # bindgen's libclang discovery (choco installs LLVM here).
+      LIBCLANG_PATH: 'C:\Program Files\LLVM\bin'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # choco writes to the machine PATH, which already-started steps don't
+      # re-read — GITHUB_PATH makes the tools visible to the build step.
+      - name: Install CMake + LLVM (whisper.cpp bindgen)
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y --no-progress
+          choco install llvm -y --no-progress
+          'C:\Program Files\CMake\bin' | Out-File -FilePath $env:GITHUB_PATH -Append
+          'C:\Program Files\LLVM\bin' | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      # Same key as the rust job's Windows leg — the target/ tree is shared,
+      # so default-feature artifacts reuse; the union adds its own entries.
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            examples/nvoos-dictate/src-tauri/target
+          key: nvoos-dictate-cargo-${{ runner.os }}-${{ hashFiles('examples/nvoos-dictate/src-tauri/Cargo.lock') }}
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Generate icons
+        run: node scripts/gen-icons.mjs
+
+      # tauri build runs beforeBuildCommand (npm run build = webview dist,
+      # required by generate_context!) automatically. --no-bundle skips the
+      # installer/MSI + WebView2 bootstrap (the runner ships system
+      # WebView2); the feature list is the same complete union as the local
+      # hand-off build.
+      - name: Build debug exe (complete feature union)
+        run: npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp
+
+      # Boot residency gate: the GUI must survive startup on the runner's
+      # desktop session (catches crash-at-boot regressions in the Windows
+      # surface — hotkey hook, webview, single-instance guard).
+      - name: Boot smoke (30 s residency)
+        run: |
+          $exe = 'src-tauri\target\debug\nvoos-dictate.exe'
+          if (-not (Test-Path $exe)) { echo "exe missing: $exe"; exit 1 }
+          $p = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 30
+          if ($p.HasExited) { echo "app exited before the 30 s mark (code $($p.ExitCode))"; exit 1 }
+          echo "boot OK — process alive after 30 s (pid $($p.Id))"
+          Stop-Process -Id $p.Id -Force
+
+      # The always-current Windows download, mirroring the macOS universal
+      # .app artifact. Debug + ad-hoc: SmartScreen may warn on first run.
+      - name: Upload testable exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvoos-dictate-windows-exe
+          # upload-artifact resolves from the workspace root, not the
+          # defaults.run.working-directory.
+          path: examples/nvoos-dictate/src-tauri/target/debug/nvoos-dictate.exe
+          if-no-files-found: error
+          retention-days: 90
 
 
   frontend:

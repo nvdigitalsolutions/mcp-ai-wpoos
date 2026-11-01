@@ -425,6 +425,9 @@ class WP_MCP_AI_Pro_SPA_Config {
 			// Server-side feature availability (Proposal 084 Phase 0) — the
 			// map gate-driving surfaces consume instead of guessing from URLs.
 			'features'     => WP_MCP_AI_Feature_Flags::all(),
+			// WordPress site title (blogname) — branding surfaces render its
+			// first few words and fall back to the product name client-side.
+			'siteName'     => get_bloginfo( 'name' ),
 		);
 
 		// Populate mention types if the resolver is available.

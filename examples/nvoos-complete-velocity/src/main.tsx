@@ -25,8 +25,10 @@ import {
   fetchCurrentUser,
   fetchFeatureMap,
   fetchSessionNonce,
+  fetchSiteName,
   UnauthorizedError,
 } from './runtime-config';
+import { brandText } from './brand';
 import { installFetchWrapper } from './fetch-wrapper';
 import { confirmMagicLink, logoutFromWordPress } from './login';
 import { LoginScreen } from './console/LoginScreen';
@@ -90,8 +92,17 @@ function Console(): JSX.Element {
       const { user, nonce: effectiveNonce } = await fetchCurrentUser(nonce);
       // Feature map fails open — never block boot on optional surfaces.
       const features = await fetchFeatureMap(effectiveNonce);
+      // Site title fails open too ('' → branding surfaces fall back to the
+      // product name). It also feeds the browser tab title.
+      const siteName = await fetchSiteName();
+      document.title = brandText(siteName);
 
-      window.NVOOS_PRO_SPA = buildConsoleRuntime({ nonce: effectiveNonce, user, features });
+      window.NVOOS_PRO_SPA = buildConsoleRuntime({
+        nonce: effectiveNonce,
+        user,
+        features,
+        siteName,
+      });
       setBoot({ phase: 'ready' });
     } catch (error) {
       if (error instanceof UnauthorizedError) {

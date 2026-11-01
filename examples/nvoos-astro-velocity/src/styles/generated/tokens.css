@@ -7,6 +7,7 @@
 	--ads-core-palette-surface: #ffffff;
 	--ads-core-palette-surface-alt: #f5f5f4;
 	--ads-core-palette-line: #e4e4e2;
+	--ads-core-palette-line-strong: #767676;
 	--ads-core-palette-accent: #0f6b4f;
 	--ads-core-palette-accent-ink: #ffffff;
 	--ads-core-palette-danger: #b3261e;
@@ -35,7 +36,7 @@
 	--ads-component-btn-padding-x: 1rem;
 	--ads-component-card-gap: 0.4rem;
 	--ads-component-card-radius: 8px;
-	--ads-component-field-border: #e4e4e2;
+	--ads-component-field-border: #767676;
 	--ads-component-field-radius: 8px;
 	--ads-component-field-padding-y: 0.5rem;
 }
@@ -46,6 +47,7 @@
 	--ads-semantic-surface: #ffffff;
 	--ads-semantic-surface-alt: #f5f5f4;
 	--ads-semantic-line: #e4e4e2;
+	--ads-semantic-line-strong: #767676;
 	--ads-semantic-accent: #0f6b4f;
 	--ads-semantic-accent-ink: #ffffff;
 	--ads-semantic-danger: #b3261e;
@@ -60,6 +62,7 @@
 @property --ads-semantic-surface { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
 @property --ads-semantic-surface-alt { syntax: '<color>'; inherits: true; initial-value: #f5f5f4; }
 @property --ads-semantic-line { syntax: '<color>'; inherits: true; initial-value: #e4e4e2; }
+@property --ads-semantic-line-strong { syntax: '<color>'; inherits: true; initial-value: #767676; }
 @property --ads-semantic-accent { syntax: '<color>'; inherits: true; initial-value: #0f6b4f; }
 @property --ads-semantic-accent-ink { syntax: '<color>'; inherits: true; initial-value: #ffffff; }
 @property --ads-semantic-danger { syntax: '<color>'; inherits: true; initial-value: #b3261e; }
@@ -70,6 +73,7 @@
 	--ads-semantic-surface: #141414;
 	--ads-semantic-surface-alt: #1f1f1f;
 	--ads-semantic-line: #2e2e2e;
+	--ads-semantic-line-strong: #8a8a8a;
 	--ads-semantic-accent: #3d9c7d;
 	--ads-semantic-accent-ink: #0b0f0d;
 	--ads-semantic-danger: #ff6b5e;

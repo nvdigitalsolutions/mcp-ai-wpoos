@@ -1,0 +1,77 @@
+---
+// /products/{id}/{slug}/ — one product, with commerce data when the source
+// exposes it (wc/v3). Sanitized description HTML; Product JSON-LD.
+import Base from '../../layouts/Base.astro';
+import SmartImage from '../../components/SmartImage.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+	const products = await getCollection('products');
+	// Astro 7 spread params are flat slash-joined strings, not arrays.
+	return products.map((product) => ({
+		params: { parts: `${product.id}/${product.data.slug}` },
+		props: { product },
+	}));
+}
+
+const { product } = Astro.props;
+const { Content } = await render(product);
+const pageUrl = Astro.site ? new URL(`/products/${product.id}/${product.data.slug}/`, Astro.site).href : undefined;
+// Woo sets `price` to the sale price when on sale — sale state is
+// salePrice vs regularPrice, not vs price.
+const onSale = product.data.salePrice && product.data.regularPrice
+	? product.data.salePrice !== product.data.regularPrice
+	: false;
+const offers = product.data.price
+	? {
+			'@type': 'Offer' as const,
+			price: onSale ? product.data.salePrice : product.data.price,
+			priceCurrency: 'USD',
+			availability:
+				product.data.stockStatus === 'instock'
+					? 'https://schema.org/InStock'
+					: 'https://schema.org/OutOfStock',
+			url: pageUrl,
+		}
+	: undefined;
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'Product',
+	name: product.data.title,
+	image: product.data.featuredImage,
+	description: product.data.excerpt,
+	sku: product.data.sku,
+	...(offers ? { offers } : {}),
+};
+---
+
+<Base title={product.data.title} description={product.data.excerpt} canonical={pageUrl}>
+	<article class="post product">
+		<header>
+			<h1>{product.data.title}</h1>
+			{product.data.sku && <span>SKU {product.data.sku}</span>}
+		</header>
+		{product.data.featuredImage && (
+			<SmartImage class="featured" src={product.data.featuredImage} sizes="(min-width: 48rem) 72ch, 100vw" />
+		)}
+		{product.data.price && (
+			<p class="product-price product-price-large">
+				{onSale ? (
+					<>
+						<s>{product.data.regularPrice}</s> {product.data.salePrice}
+					</>
+				) : (
+					product.data.price
+				)}
+				{product.data.stockStatus === 'instock' && <span class="product-stock">In stock</span>}
+				{product.data.stockStatus && product.data.stockStatus !== 'instock' && (
+					<span class="product-stock product-stock-muted">{product.data.stockStatus}</span>
+				)}
+			</p>
+		)}
+		<div class="post-body">
+			<Content />
+		</div>
+	</article>
+	<script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
+</Base>

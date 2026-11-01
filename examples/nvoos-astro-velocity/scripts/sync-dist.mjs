@@ -54,6 +54,9 @@ cpSync(join(HERE, 'serve.mjs'), join(STAGE, 'scripts', 'serve.mjs'));
 cpSync(join(HERE, 'lib'), join(STAGE, 'scripts', 'lib'), { recursive: true });
 cpSync(join(ROOT, 'README.md'), join(STAGE, 'README.md'));
 cpSync(join(ROOT, 'LICENSE'), join(STAGE, 'LICENSE'));
+// Third-party attribution for the committed /manage bundle — ship it with
+// the MIT grant so the public mirror carries both (owner decision Q8).
+cpSync(join(ROOT, 'NOTICE'), join(STAGE, 'NOTICE'));
 
 console.log(`[sync-dist] mirror tree assembled in ${STAGE}`);
 

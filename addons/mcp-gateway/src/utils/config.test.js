@@ -4,7 +4,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadConfig, parseOAuthConfig, normalizeIssuer, issuerUrl } from './config.js';
+import { loadConfig, parseOAuthConfig, parsePublicSlugs, normalizeIssuer, issuerUrl } from './config.js';
 
 test( 'OAuth is inert when GATEWAY_OAUTH_ISSUER is unset', () => {
 	const cfg = loadConfig( { AUTH_MODE: 'open' } );
@@ -64,4 +64,40 @@ test( 'loadConfig carries OAuth errors through to assert-time', () => {
 	const cfg = loadConfig( { GATEWAY_OAUTH_ISSUER: 'garbage' } );
 	assert.equal( cfg.oauth.enabled, true, 'parsing continues but the error blocks boot' );
 	assert.ok( cfg.errors.some( ( error ) => error.includes( 'GATEWAY_OAUTH_ISSUER' ) ) );
+} );
+
+test( 'parsePublicSlugs: unset, empty, and * mean all configured sites', () => {
+	assert.equal( parsePublicSlugs( undefined ), null );
+	assert.equal( parsePublicSlugs( '' ), null );
+	assert.equal( parsePublicSlugs( ' * ' ), null );
+} );
+
+test( 'parsePublicSlugs splits and trims a comma list', () => {
+	assert.deepEqual( parsePublicSlugs( ' demo, sascha ,demo' ), new Set( [ 'demo', 'sascha' ] ) );
+} );
+
+test( 'PUBLIC_SITE_SLUGS unknown slugs warn without failing boot', () => {
+	const cfg = loadConfig( {
+		AUTH_MODE: 'open',
+		PUBLIC_SITE_SLUGS: 'ghost',
+		GATEWAY_PUBLIC_KEYS: 'key-1234567890abcdef=demo',
+		NVOOS_SITE_DEMO_URL: 'https://demo.example.com/wp-json/mcp-ai/v1/mcp',
+		NVOOS_SITE_DEMO_TOKEN: 'op_demo.SECRET',
+	} );
+	assert.deepEqual( cfg.errors, [] );
+	assert.ok( cfg.warnings.some( ( warning ) => warning.includes( '"ghost"' ) ) );
+	assert.deepEqual( cfg.publicSlugs, new Set( [ 'ghost' ] ) );
+} );
+
+test( 'PUBLIC_SITE_SLUGS matching configured sites warns nothing', () => {
+	const cfg = loadConfig( {
+		AUTH_MODE: 'open',
+		PUBLIC_SITE_SLUGS: 'demo',
+		GATEWAY_PUBLIC_KEYS: 'key-1234567890abcdef=demo',
+		NVOOS_SITE_DEMO_URL: 'https://demo.example.com/wp-json/mcp-ai/v1/mcp',
+		NVOOS_SITE_DEMO_TOKEN: 'op_demo.SECRET',
+	} );
+	assert.deepEqual( cfg.errors, [] );
+	assert.deepEqual( cfg.warnings, [] );
+	assert.deepEqual( cfg.publicSlugs, new Set( [ 'demo' ] ) );
 } );

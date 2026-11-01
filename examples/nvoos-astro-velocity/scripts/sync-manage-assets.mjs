@@ -5,9 +5,14 @@
 // loads.
 //
 // The CMS SPA source lives in addons/nvoos-astro-bridge/src (shared with the
-// backend plugin's wp-admin build). The standalone esbuild target bundles
-// @wordpress/* + React so the SPA runs on the storefront origin with no
-// backend admin script chain. The CI grep gate only scans src/, so the
+// backend plugin's wp-admin build) and is MIT-licensed
+// (addons/nvoos-astro-bridge/src/LICENSE, owner decision Q8) — the carve-out
+// that makes copying the standalone build into this MIT-licensed app legal.
+// The bridge's PROPRIETARY PHP plugin side never flows through this script.
+// The standalone esbuild target bundles
+// @wordpress/* (GPL-2.0-or-later) + React (MIT) so the SPA runs on the
+// storefront origin with no backend admin script chain; attribution lives in
+// the app's NOTICE. The CI grep gate only scans src/, so the
 // built bytes in public/ are exempt — and the bundle contains no brand
 // strings anyway (zero-`funiq` check runs in CI).
 //

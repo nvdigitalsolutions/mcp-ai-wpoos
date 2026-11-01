@@ -3,10 +3,44 @@
 **Companion to:** `095-astro-design-system-mcp-proposal.md` (design, options, decisions) · `095-astro-design-system-mcp-research.md` (verified sources)
 **Date:** 2026-10-30
 **Ground rules (092/058 conventions, carried forward):**
-- The Astro app binds only to the Payload envelope (`nvoos-commerce/v1` via same-origin `/api/*`). No WP-specific endpoints in `src/` — the CI grep gate (`tests/unit/contract-grep.test.ts`) keeps enforcing this, including inside `mcp/`.
-- Generated artifacts (`src/styles/generated/tokens.css`, `src/lib/tokens.ts`) are **committed**; CI fails on drift (same discipline as the tracked JS bundles).
+- The Astro app binds only to the Payload envelope (`nvoos-commerce/v1` via same-origin `/api/*`). No WP-specific endpoints in `src/` — the CI grep gate (`tests/unit/contract-grep.test.ts`) keeps enforcing this, and as of the 2026-10-30 gap-closure pass it also scans `mcp/`.
+- Generated artifacts (`src/styles/generated/tokens.css`, `src/lib/tokens.generated.ts`) are **committed**; CI fails on drift (same discipline as the tracked JS bundles).
 - Every bulk token write is transactional: validate → dry-run → preview → all-or-nothing → rollback snapshot (058 §3.4).
 - Hermetic loop only: `scripts/fixture-server.mjs` (`:8123`) for contract/media; no live site needed.
+
+---
+
+## Status & standards refresh (2026-10-30 — gap-closure pass)
+
+Shipped in the gap-closure cluster (PR stacked on #7318):
+
+| Gap | Where it landed |
+|---|---|
+| P1 contrast gate | `tests/unit/contrast-audit.test.ts` — WCAG 2.2 pairs per theme + coverage meta-tests (every semantic/component color must be gated or documented). 2026-10-30: `field.border` moved to the new additive `line-strong` token (light #767676 / dark #8a8a8a) and is now gated at SC 1.4.11; `line` is documented-ungated (decorative hairline, SC 1.4.11 covers only identifying parts) |
+| P3.1 CMS slice | `mcp/tools/cms.ts` — `cms_list/get/create/update/delete` + `media_upload` over the commerce contract (collection allowlist, `limit` ≤ 100, manager-cookie-gated writes, backend 401/404 passthrough as `isError`) |
+| P3.2 ops slice | `mcp/tools/ops.ts` — `site_status`, `preview_url`, `rebuild_trigger` (env-configured webhook, disabled when unset) |
+| P4.3 screenshot | `screenshot` tool in `mcp/tools/ops.ts` — opt-in (`NVOOS_MCP_SCREENSHOT=1`), path-only input (SSRF-safe by construction), viewport-capped PNG |
+| P4 durability | `src/lib/tokens/persistence.ts` + `TokenService({ persistPath })` — atomic (tmp+rename) state file, fail-safe load, persist-after-commit only; env `NVOOS_MCP_STATE_FILE` |
+| Security checklist | rate limiter (`mcp/ratelimit.ts`, 429 `-32029`), audit log line per write call, `mcp/` added to the contract grep gate, request context (`mcp/context.ts`, AsyncLocalStorage), same-origin Origin pass-through for browser clients |
+| P3.3 rebrand loop | `tests/mcp/rebrand-loop.test.ts` (hermetic HTTP loop) **+ `tests/e2e/rebrand-loop.spec.ts`** (real-browser loop + the /manage Design tab, manager-cookie auth over /mcp, fixture manager seam) |
+| P4.1 `/manage` Design tab | `addons/nvoos-astro-bridge` — `DesignView.tsx` + `mcp-client.ts` (SPA is an MCP client over same-origin `/mcp`, manager cookie), System nav section, shipped in `public/manage-assets/` via the standalone build + sync loop |
+| P4.2 NDS round-trip | App side: `nds_export` tool (ADS semantic → NDS DTCG doc + mapping report). NDS side: `addons/nvoos-design-system/includes/class-nvoos-nds-dtcg-importer.php` (prepare/apply split, all-or-nothing, 256 KB cap, reference rejection) + admin import surface + 10-test PHPUnit suite |
+| Tool count | 21 tools total (10 design + 6 cms + 5 ops) — handshake `tools/list` assertion updated; `SERVER_VERSION` 0.2.0 |
+| BFF env bug | `serve.mjs` snapshots env for the MCP handler BEFORE its SSR-origin rewrite (`NVOOS_SSR_API_ORIGIN` → loopback), and `createAstroMcpNodeHandler` snapshots its env — without both, every manager-cookie write 401'd (incident 2026-10-30, regression test in `tests/mcp/handshake.test.ts`) |
+| Tool annotations + titles (2026-10-31) | Every tool carries a `title` + spec `annotations` (`readOnlyHint`/`destructiveHint`/`idempotentHint`/`openWorldHint`, presets in `mcp/tools/util.ts`) so MCP clients (Zed, NV oOS assistants) render/gate the registry natively — pinned in `tests/mcp/handshake.test.ts` |
+| Preview origin (2026-10-31) | `preview_url`/`screenshot` no longer hardcode `localhost:4321` — `storefrontOrigin()` resolves `NVOOS_STOREFRONT_ORIGIN` → request Host (scheme via `X-Forwarded-Proto`, then socket TLS) → local dev fallback; `requestOrigin()` in `mcp/bff.ts`, pinned by `tests/unit/storefront-origin.test.ts` |
+
+Still open: only **3.4 live verification** — the NV oOS Remote Sites → MCP Server connection recipe is documented (app README + ops skill) but needs a live NV oOS install to verify end-to-end; plus the optional NDS WP 7.1 WooCommerce-stub skip-gate fix (pre-existing, unrelated to this track).
+
+### Standards applied (researched 2026-10-30, with sources)
+
+- **MCP Security Best Practices** (`modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices.md`) → SSRF section drove the `screenshot`/`preview_url` design: **path-only input, never a URL** (no arbitrary fetch targets = no SSRF surface, per OWASP SSRF Prevention Cheat Sheet linked from the same doc); state-handle hygiene → snapshot IDs are non-deterministic (`Date.now()+random`) and server-side only; local-server section → stdio serves the same registry (no extra privileged path).
+- **MCP Streamable HTTP spec** (2025-06-18 / 2026-07-28 transport pages) → single endpoint serving POST+GET, Host validation against DNS rebinding, Origin validation for browser clients, `MCP-Protocol-Version` → 400 on mismatch, session-agnostic serving — all already in `mcp/bff.ts`; the spec's "servers SHOULD implement proper authentication for all connections" is honored with the fail-closed write gate while reads stay public by design.
+- **SEP-2243** (HTTP header standardization) → the modern-era `MCP-Protocol-Version` / `Mcp-Method` / `Mcp-Name` headers served + tested (`tests/mcp/handshake.test.ts`).
+- **Astro Integration API** (`docs.astro.build` → `astro:build:done`) → the /mcp bundle fix (PR #7318): the documented extension point for post-build output work, invocation-agnostic — vs an npm `postbuild` script which only fires when npm drives the build (npm docs, lifecycle scripts).
+- **WCAG 2.2** — SC 1.4.3 (4.5:1 normal text) and SC 1.4.11 (3:1 UI/large text) are the audit thresholds, pinned per pair in `tests/unit/contrast-audit.test.ts`.
+- **DTCG 2025.10** (W3C Design Tokens Community Group) with the documented ADS extension of cross-file references — unchanged from P0.
+- **MCP tool annotations** (2026-07-28 tool schema: `annotations` + `title` fields) → the headline 2026 best practice for tool registries (client-side gating/rendering without parsing descriptions; the spec defaults every hint to `true` when absent — the pessimistic default — so every tool here sets them explicitly). Never emulate via description tags — clients do not parse those.
 
 ---
 
@@ -157,25 +191,26 @@ Workflow: all new gates join the existing `sync-nvoos-astro-velocity.yml` test s
 
 ## 8. Adding an MCP tool — the drift checklist (repo convention, applied)
 
-For every new tool added to `mcp/`:
-1. `mcp/server.ts` registry entry with description + input schema (Standard Schema).
-2. Capability flag/decision recorded in the tool's docblock (read vs write; which auth gates).
-3. Unit test in `tests/unit/mcp-tools.test.ts` (success + failure + transactional path where applicable).
-4. Handshake listing assertion updated in `tests/mcp/handshake.test.ts` (tools/list contains it; schema matches).
+For every new tool added to `mcp/` (applied in the 2026-10-30 pass):
+1. `mcp/server.ts` registry entry with description + input schema (Standard Schema) — `registerCmsTools` / `registerOpsTools` factories in `mcp/tools/`.
+2. Capability flag/decision recorded in the tool's docblock (read vs write; which auth gates — design writes = bearer OR manager; contract writes = manager cookie).
+3. Unit test in `tests/unit/mcp-tools.test.ts` (success + failure + gate path) against a stub contract server.
+4. Handshake listing assertion updated in `tests/mcp/handshake.test.ts` (tools/list contains it; schema matches) — `EXPECTED_TOOLS` now lists all 20.
 5. Auth matrix row in `tests/mcp/auth.test.ts` (no-token, read-token, manager, non-manager).
 6. Catalog table update in this plan + the proposal §3.3 tool table.
-7. e2e touch point if user-visible (rebrand loop or theme spec).
+7. Assistant-loop touch point in `tests/mcp/rebrand-loop.test.ts` (hermetic, fixture-server-backed).
 
 ## 9. Security checklist (carried from the `wp-security-*` skills + MCP spec)
 
-- [ ] `Origin` validated when present; Host validation on (`@modelcontextprotocol/node`); `NVOOS_MCP_ORIGINS` allowlist for browser clients.
-- [ ] Bearer compare constant-time; token only from env, never committed; Vault-recorded (NV oOS side: Remote Sites encryption at rest).
-- [ ] Write tools double-gated (bearer + `manage_astro`); read tools expose only public contract data.
-- [ ] DTCG validation before ANY token write (CSS-injection surface): per-type checks, size caps, reference resolution, reject-with-report.
-- [ ] Path traversal guards on token/theme names (no `..`, absolute paths, or slashes); file writes confined to `src/tokens/` (stdio mode).
-- [ ] Rate limiting on `/mcp` (reuse the BFF's per-route patterns; writes additionally no-cache + audited).
-- [ ] Tool-execution telemetry + activity log lines for every MCP call (plugin-side bridged tools already emit telemetry).
-- [ ] Contract grep gate extended to `mcp/` (no WP-specific endpoints).
+- [x] `Origin` validated when present; Host validation on (`@modelcontextprotocol/node`); `NVOOS_MCP_ORIGINS` allowlist for browser clients.
+- [x] Bearer compare constant-time; token only from env, never committed; Vault-recorded (NV oOS side: Remote Sites encryption at rest).
+- [x] Write tools double-gated (bearer + `manage_astro`); read tools expose only public contract data. **2026-10-30 refinement:** contract mutations (`cms_*` writes, `media_upload`) additionally require a manager session cookie at the tool level — the backend enforces it anyway, and failing fast gives the assistant a useful error instead of a passthrough 401.
+- [x] DTCG validation before ANY token write (CSS-injection surface): per-type checks, size caps (`MAX_FILE_BYTES`), reference resolution, reject-with-report.
+- [x] Path traversal guards on token/theme names (no `..`, absolute paths, or slashes); theme names `[a-z0-9-]+`; file writes confined to the configured state path (atomic tmp+rename).
+- [x] Rate limiting on `/mcp` — in-memory fixed-window per IP (`NVOOS_MCP_RATE_MAX`/`NVOOS_MCP_RATE_WINDOW_MS`, defaults 120/min), 429 JSON-RPC `-32029` before any handler work (denial-of-service + write-amplification guard; documented as per-instance, not fleet-wide).
+- [x] Tool-execution telemetry + activity log lines for every MCP write call (`[mcp] audit tool=… via=… ip=…`); plugin-side bridged tools already emit telemetry.
+- [x] Contract grep gate extended to `mcp/` (no WP-specific endpoints).
+- [x] Same-origin browser requests bypass the Origin allowlist only when the Origin host matches the Host-validated request host (the /manage Design tab path); cross-origin browsers still require `NVOOS_MCP_ORIGINS`.
 
 ## 10. Effort & sequencing
 

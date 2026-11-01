@@ -84,6 +84,276 @@ docs + skills:
 
 **Exit:** one `forge scaffold` command → `astro check && astro build` green in CI against the fixture; loader unit tests green; `< 2 min` scaffold on the fixture.
 
+### 2.1 Phase 0 status — shipped 2026-10-31 (PR to `alpha-working`)
+
+The generation core is live in `examples/nvoos-astro-forge/` as a **CLI-first
+package** (the MCP tool surface from §1 lands in Phase 1+ — the CLI is the
+standalone delivery seam, per the `docs-hub`/`content-graph` standalone-plugin
+precedent):
+
+| Plan item | Shipped as | Notes |
+|---|---|---|
+| 0.1 `wp-client.ts` | `lib/wp-client.ts` | Pagination via `X-WP-TotalPages`, `_fields`/`_embed`, typed `WpClientError` codes, explicit `truncated` flag. Rate limiting deferred to the MCP surface (CLI is operator-run) |
+| 0.2 `wp-loader.ts` | `lib/wp-loader.ts` | Astro 7 content-layer loader: ID-keyed entries, `generateDigest(modified_gmt)`, sanitized `rendered.html`, `store.clear()` propagates deletions, truncation warning |
+| 0.3 Discovery | partial — `forge.mjs --check` | Root doc + per-collection size-vs-cap report; full `site_analyze` (CPTs, SEO plugin, Woo, REST lockdown) stays in Phase 1 |
+| 0.4 Blog template | `templates/blog/` | index/posts listing/post detail/page/sitemap/robots, canonical + `BlogPosting` JSON-LD, `--forge-*` tokens defaulting to the ADS core palette (098 output applies over them). 404/RSS/Pagefind search deferred to Phase 1 |
+| 0.5 `scaffold_project` | `lib/scaffold.ts` + `scripts/forge.mjs` | Template copy (dir-basename filter), FORGE-marker line-anchored rewrite, `nvoos.json` manifest, `.env.example`, gitignore gate (`dist/`/`.astro/` never pushed), overwrite guard that refuses non-forge dirs |
+| 0.6 CI fixture | `scripts/wp-fixture-server.mjs` + `.github/workflows/astro-forge.yml` | Hermetic wp/v2 wire server (real headers/params) stands in for the WordPress Playground blueprint until Phase 2; e2e = fixture → scaffold → `npm install` → `astro check` + `astro build` → HTML asserts (XSS dead, SEO wired) |
+
+**Exit-gate result (local, 2026-10-31):** 38 unit tests green · typecheck clean ·
+e2e 6/6 green — scaffolded blog passes `astro check` + `astro build` against
+the fixture and emits 9 pages; `alert`/`onerror`/`javascript:` count = 0 in
+built HTML. Build learnings that cost fixes are recorded in the research doc
+§0 (Astro 7 spread-params-as-strings, line-anchored marker rewriting,
+dir-basename copy filter, template-literal regex escaping, truncation math).
+
+### 2.2 Phase 1a status — Woo collections + storefront, shipped 2026-10-31
+
+The Woo/storefront slice of Phase 1 is live in the same package:
+
+- **Commerce loader** (`kind: 'product'`): wc/v3 flat documents —
+  price/regular_price/sale_price/stock_status/sku/images/categories — via
+  `WP_WC_CONSUMER_KEY`/`_SECRET` (authMode `wc-consumer`, HTTP Basic), or
+  wp/v2 product CPTs (no commerce fields; `featured_media` resolved by ID
+  with bounded concurrency when `_embed` has none).
+- **Storefront template pages**: `/products/` listing (sale = strike-through
+  regular price — Woo sets `price` to the sale price, so sale state is
+  `salePrice !== regularPrice`, never `!== price`) + `/products/{id}/{slug}/`
+  detail with `Product` JSON-LD (Offer + availability), stock badge, SKU.
+- **Static front page**: profile `frontPage` slug renders the page at `/`;
+  `[slug]` and the sitemap skip it — one canonical URL (the 096 §0 SEO rule).
+- **Excludes**: per-collection `exclude` slugs filter junk/system pages.
+- **Optional collections**: `optional: true` tolerates an absent source
+  (404 → empty collection + warning, auth failures still fatal).
+- **Scaffold pruning**: profiles without a `products` collection get the
+  storefront pages removed (no undefined-collection build failures); the
+  sitemap endpoint is manifest-driven for the same reason.
+- **Site identity**: `Base.astro` reads the brand name from `nvoos.json`.
+
+**Validation:** 48 unit tests + e2e 8/8 (front page, catalog prices/sales,
+Product JSON-LD, no duplicate front-page URL). **Live forge (pilot
+customer, 2026-10-31): 49 pages built from the production site** — 2 posts,
+14 content pages (10 system/auth slugs excluded), 31 products, zero XSS
+vectors in built HTML, brand chrome correct. Commerce data (prices) awaits
+Woo REST consumer keys from the customer (env-only, never in-repo).
+
+### 2.3 Phase 1b status — license + tokens_apply + SEO, shipped 2026-10-31
+
+- **License (owner decision Q7 — mirrors 092 Q8):** the forge package is
+  **MIT** via `LICENSE` + `NOTICE` inside the GPL-3.0-or-later repo; the
+  scaffold ships the NOTICE (MIT notice + generated-output rule) into every
+  generated project; `private: true` until Phase 3 publishing.
+- **`tokens_apply`:** profile `tokens` (098 design-language output) merges
+  over the `--forge-*` defaults between the line-anchored
+  `/* FORGE:tokens */` markers; the manifest records the applied tokens; a
+  dependency-free WCAG 2.2 contrast gate (`lib/contrast.ts`) warns (never
+  blocks) when ink/surface or accent-ink/accent fail SC 1.4.3 — the CLI
+  prints the warnings.
+- **SEO suite:** `/feed.xml` (RSS 2.0, linked from the chrome), branded
+  `/404.html`, and `/redirects.json` — the structured 301 map from the WP
+  URL structure to the generated one (single-hop, front-page → `/`).
+  `scripts/postbuild.mjs` materializes the host-agnostic `dist/_redirects`
+  (Netlify/Cloudflare/static-server compatible).
+
+**Validation:** 61 unit tests (contrast known-pairs, token rewrite/merge,
+NOTICE ship, marker gates) + e2e 9/9 (baked accent CSS, RSS items/guids,
+404, redirect map with the front-page and product entries).
+
+### 2.4 Phase 1c status — site_analyze + media pipeline, shipped 2026-10-31
+
+- **`site_analyze`** (`lib/discovery.ts` + `forge.mjs analyze <url>
+  [--write site.json]`): one polite pass (~6 requests) — root doc, post
+  types, per-collection counts, the static front page slug, junk-page
+  heuristics (system/auth slugs + `manage-profile*` prefixes), Woo
+  detection with a wc/v3 auth probe (falls back to the wp/v2 CPT count
+  when consumer keys are required — never fails analysis), REST-lockdown
+  detection, and SEO-plugin detection (namespace-root deduped). Output:
+  a summary + a scaffold-ready draft profile.
+  **Live validation:** the draft profile reproduces the hand-built pilot
+  profile — all three collections, `/home/` front page, and all ten
+  manually excluded junk pages found automatically.
+- **Media pipeline** (`SmartImage.astro` + config `image.domains`):
+  same-host WordPress images flow through Astro Image (responsive
+  WebP/AVIF via `widths`/`sizes`/`inferSize`, lazy); the domain allowlist
+  derives from `WP_SITE_URL ?? nvoos.json` (the content layer's env-first
+  rule). Any other host (CDNs, external) passes through as a plain
+  `<img>` — a remote image can never fail the build.
+
+**Validation:** 66 unit tests (discovery canned-backend incl. lockdown,
+woo-count fallback, junk heuristics; profile drafting) + e2e 11/11
+(optimized `/_astro/*.webp` srcset in the listing, CDN passthrough,
+`forge analyze` against the fixture server drafting the full profile).
+
+### 2.5 Phase 1d status — Pagefind search + Payload-envelope variant, shipped 2026-10-31
+
+- **Search (Pagefind):** the template's build chains
+  `astro build && postbuild && pagefind --site dist`; `/search/` is a thin
+  shell that lazily imports the runtime on first input (debounced, results
+  with excerpts/marks). e2e asserts the emitted `pagefind/` runtime +
+  entry manifest.
+- **Payload-envelope collections** (`source: 'payload'`): the loader reads
+  the `nvoos-commerce/v1` bridge envelope — body pagination
+  (`{ docs, totalDocs, totalPages }`, `page`/`limit` params, no `_fields`),
+  flat documents mapped to the stable shape (`name` → title, slugified;
+  `oldPrice` = strike-through regular price → sale when it differs from
+  `price`; `image(s)`, single `category`, named `statuses`). Discovery
+  offers the payload candidate when the namespace is advertised and no
+  product CPT exists.
+
+**Validation:** 68 unit tests (payload extraction incl. oldPrice sale
+mapping + slugify, envelope pagination + truncation, discovery payload
+candidate) + e2e 12/12 (Pagefind runtime + index asserted in the built
+output).
+
+### 2.6 Phase 2 status — bridge plugin core, shipped 2026-10-31
+
+The standalone companion plugin landed as **`plugins/nvoos-forge-bridge`**
+(Q4 naming amendment: the literal `nvoos-astro-bridge` slug already belongs
+to the velocity Payload bridge in `addons/nvoos-astro-bridge` — two plugins
+cannot share a slug; the new plugin keeps Q4's intent: standalone,
+wp.org-installable on any customer site):
+
+- **Rebuild webhook** — every post/page/product/term save + front-page/title
+  option change schedules one debounced, HMAC-signed
+  `repository_dispatch` POST (10-minute transient debounce, in-request
+  static-flag dedupe, sent on shutdown — the velocity `RebuildWebhook`
+  pattern with its `send_pending()`/`reset_pending()` test seams). The
+  `X-Forge-Signature: sha256=<hex>` header lets the CI pipeline fail closed
+  on spoofed triggers.
+- **Inbound trigger** — `POST /wp-json/nvoos-forge/v1/rebuild` accepts only
+  signature-verified requests (constant-time `hash_equals`).
+- **Preview tokens** — editors+ mint single-use, 15-minute tokens via REST;
+  stored hashed (wp_hash) in a transient, returned once, consumed on verify.
+- **Health** — redacted endpoint (versions, booleans, webhook host only).
+- **Settings page** (Settings → Forge Bridge, nonce + `manage_options`) with
+  write-only token/secret fields; **uninstall.php** removes options +
+  transients.
+- **wp.org packaging**: readme.txt, GPLv3 LICENSE, own phpcs standard
+  (WPCS + PHPCompatibilityWP, PHP 7.4 floor), own PHPUnit 9.6 + wp-phpunit
+  suite (23 tests / 60 assertions, **green on WP 6.9 and WP 7.1** locally in
+  Docker), `.github/workflows/phpunit-forge-bridge.yml` (phpcs + PHPUnit on
+  downloaded core, mirroring the content-graph precedent).
+
+**Remaining in Phase 2:** the Plugin Check (PCP) gate + listing assets
+(`mcp-ai-wpoos-wporg-submission` skill), and the CI-side signature
+verification in the Forge deploy pipeline (Phase 3).
+
+### 2.7 Phase 3 status — vault, GitHub deploy, deploy configs, multi-site, shipped 2026-10-31
+
+- **`vault.ts` (3.1):** AES-256-GCM per-entry credential store under the
+  forge home (`~/.nvoos-forge/vault.json`, `NVOOS_FORGE_HOME` override), key
+  derived from `NVOOS_FORGE_VAULT_KEY` (any passphrase → SHA-256 → 256-bit
+  key); entry name as AAD; a wrong key or any tampering fails the GCM auth
+  tag (fail closed). `NVOOS_FORGE_VAULT_PLAINTEXT=1` is the documented 0600
+  fallback (gitignored home, mode-flag recorded in the file so mixed-mode
+  opens are refused). `maskSecret()` is the only display path. CLI: `forge
+  vault set|delete|list` (secrets on stdin, never argv).
+- **`github.ts` (3.2):** octokit deploy client over a mockable structural
+  subset — `createRepo` (private by default, org support), git-data
+  `commitFiles` (blobs → tree → commit with parent when the branch exists →
+  forced ref update; 1000-file / 32 MB guards), `login()`, redacted
+  `RepoResult`/`CommitResult`, and `sanitizeGitHubError` (status + body
+  message only — headers and query strings never leak). Per-invocation auth
+  (`GITHUB_TOKEN` env → vault `github`), never persisted, masked in CLI
+  output.
+- **`deploy-config.ts` (3.3):** adapter-generic generated pipeline —
+  `deploy.yml` (push/manual/`workflow_call`; build + mode steps for
+  `github-pages` / `cloudflare-pages` / `velocity` connected-repo mirror),
+  `rebuild.yml` (thin `repository_dispatch` wrapper), and the standalone
+  `scripts/verify-dispatch.mjs` — the **CI-side signature verification**
+  from the Phase 2 remainder. The bridge plugin now signs `client_payload`
+  itself (HMAC over `<time>.<nonce>` via `payload_signature()`; additive —
+  the `X-Forge-Signature` header stays) because GitHub's dispatch delivery
+  re-serializes the body and headers don't reach the workflow. The verifier
+  re-checks event type, secret presence, a 10-minute freshness window, and
+  a constant-time compare — stale/mismatched dispatches never build. The
+  verifier is executed for real in the unit suite (6 fail-closed cases).
+- **`sites.ts` (3.4):** multi-site registry (`sites.json` in the forge home
+  — name → { url, profile path, created }, default flag; no credentials).
+  CLI: `forge site add|remove|list|use`; `forge forge <name>` and
+  `forge deploy <name>` resolve by registry when the ref isn't a file path.
+  The two-site round-trip (add → list → default → use → resolve → remove)
+  is a unit test — the phase-exit agency-demo shape, hermetic.
+- **Secret gates (3.5):** a `secret-scan` job in `astro-forge.yml` greps the
+  forge sources (lib/scripts/templates — tests and the fixture server's
+  demo credentials are out of scope) for PAT/npm-token/vault-key/
+  app-password patterns, and a new e2e assertion walks the scaffolded
+  source + built `dist/` for the same patterns (the build runs with demo
+  consumer keys in the env — values must never be baked).
+- **Publishing:** package flipped to `@nvdigitalsolutions/nvoos-astro-forge`
+  (`bin`, `files`, `publishConfig.access: public`);
+  `.github/workflows/publish-astro-forge.yml` publishes with provenance on
+  `nvoos-astro-forge-v*` tags after the full exit gate.
+- **Bridge plugin (Phase 2 follow-on):** `client_payload` carries
+  `time`/`nonce`/`signature` (additive; contract documented in readme.txt +
+  README.md); suite grew to 24 tests / 66 assertions (green on WP latest in
+  Docker), phpcs clean.
+
+**Validation:** 110 unit tests (vault fail-closed, github commit/push +
+redaction, deploy-config emission + executed verifier, sites round-trip) +
+e2e 13/13 (the added credential-hygiene walk included); typecheck clean;
+CLI smoke (site add/list/remove, vault set/list) green on Windows.
+
+**Remaining in Phase 3:** CI-run validation of this PR; the owner-side
+secrets/targets per deployed site (repo secrets, Cloudflare project,
+Velocity mirror); then Phase 4 (wizard + `/mcp` surface, §6).
+
+### 2.8 Phase 4 status — wizard + /mcp surface, shipped 2026-10-31
+
+- **`setup_wizard` (6.1):** `lib/wizard.ts` + `forge.mjs wizard <url>` —
+  analyze → register (profile drafted under `<home>/profiles/`) → scaffold
+  → optional `--build` → git init (initial commit only with a configured
+  git identity) → emit the Phase 3.3 pipeline. The MCP `setup_wizard` tool
+  shares the same function with workdir confinement.
+- **MCP surface (6.2/6.3):** `mcp/` (the 095 dual-era pattern) —
+  single-source `registry.ts` (name → zod schema + annotations + write
+  flag + handler; the CI coverage test fails when any is missing),
+  `NVOOS_FORGE_MODE=router` serves exactly the 3 meta-tools
+  (`forge_help`/`forge_plan`/`forge_status`), full serves the 21-tool v1
+  catalog. `bff.ts` mounts Streamable HTTP with rate limit → Host/Origin →
+  fail-closed write auth (`NVOOS_FORGE_MCP_TOKEN`, timing-safe) → the SDK;
+  `stdio.ts` is the coding-agent entry. Registry metadata (061 pattern):
+  `server.json` (`io.github.nvdigitalsolutions/nvoos-astro-forge`, stdio
+  transport, env-var declarations) — registry metadata, excluded from the
+  npm `files`.
+- **SSRF guard (096 §2.4):** `lib/ssrf.ts` — every fetch-capable tool
+  refuses non-http(s) URLs, embedded credentials, and private/reserved/
+  literal-IP ranges (IPv4 + IPv6); the fetch policy is the registry
+  allowlist plus the `NVOOS_FORGE_OPEN_ANALYZE=1` opt-in for open-world
+  analyze. The CLI adds the documented `NVOOS_FORGE_ALLOW_LOOPBACK=1`
+  local-dev exemption (loopback ONLY) — the MCP surface never sets it.
+- **Tool slices:** sites (add/test/list/get/**update**/remove/set-default —
+  profiles drafted on `site_add`, re-drafted on `site_update`, credentials
+  never in profiles), discovery (`site_analyze`), scaffold
+  (`scaffold_project` with workdir confinement, `scaffold_status`,
+  `tokens_apply` over the FORGE:tokens markers with contrast warnings,
+  `scaffold_package` zip via fflate), **content (the §3.3 long-tail —
+  `content_audit` via a real htmlparser2 pass: embeds, shortcode
+  artifacts + unprocessed brackets, complexity; `content_preview` through
+  the versioned sanitizer with a before/after XSS report;
+  `redirects_generate` live 301 map with the template's exact rules;
+  `media_audit` host/alt aggregation; `collections_generate` the typed
+  loader config via `renderContentConfig`/`rewriteContentConfig`)**, rebuild
+  (`rebuild_config`, `rebuild_trigger`, **`preview_token` minted via the
+  bridge route with vault-held site credentials, `webhook_verify` a
+  constant-time local diagnostic for both proofs**), github
+  (`github_create_repo` private-by-default, `github_commit` git-data push,
+  redacted `github_status`), deploy (`deploy_config`, `setup_wizard`).
+
+**Validation:** 160 unit tests (handshake conformance over a real socket
+in BOTH wire eras + ladder rejections, the write-auth 401/200 gate, the
+registry coverage gate, handler units, the SSRF range table, content-scan
+and redirect-map units) + e2e 15/15 — the wizard leg runs URL → built → git
+→ pipeline against the hermetic fixture (the Playground stand-in) with a
+loopback opt-in, the long-tail leg exercises the content tools against the
+fixture (which now honours wp/v2 `slug` filtering), and the
+credential-hygiene walk covers the MCP-era outputs. Typecheck clean;
+live smoke: `/mcp` discover + tools/list over a real socket.
+
+**Remaining:** the registry-entry publication (owner action — `server.json`
+is ready) and a Playground demo blueprint (the `mcp-ai-wpoos-playground-demos`
+skill harness).
+
 ---
 
 ## 3. Phase 1 — Storefront template (~2 wks)

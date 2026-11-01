@@ -370,14 +370,16 @@ export function DashboardsPage(): JSX.Element {
 
 			{ dashboard && data && (
 				<>
-					<dl className="nvoos-pro-spa-records-detail__grid">
-						{ dashboard.metrics.map( ( metric ) => (
-							<div key={ metric.key } className="nvoos-pro-spa-records-detail__item">
-								<dt>{ metric.label }</dt>
-								<dd>{ formatMetric( data[ metric.key ], metric.format ) }</dd>
-							</div>
-						) ) }
-					</dl>
+					{ dashboard.metrics.length > 0 && (
+						<dl className="nvoos-pro-spa-records-detail__grid">
+							{ dashboard.metrics.map( ( metric ) => (
+								<div key={ metric.key } className="nvoos-pro-spa-records-detail__item">
+									<dt>{ metric.label }</dt>
+									<dd>{ formatMetric( data[ metric.key ], metric.format ) }</dd>
+								</div>
+							) ) }
+						</dl>
+					) }
 
 					{ ( () => {
 						const charts = ( dashboard.charts ?? [] )

@@ -16,9 +16,11 @@
  * groups back to plain icon links (with tooltips) so no surface is lost.
  */
 
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import type { ProSpaUser } from '@nvoos/pro-spa-v2/api/config';
+import { readProSpaConfig, type ProSpaUser } from '@nvoos/pro-spa-v2/api/config';
+
+import { brandText } from '../brand';
 
 import {
   CONSOLE_NAV_GROUPS,
@@ -79,6 +81,11 @@ export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
   const [groupPrefs, setGroupPrefs] = useState<Record<string, boolean>>(readGroupPrefs);
   const [signingOut, setSigningOut] = useState(false);
   const location = useLocation();
+
+  // Brand the rail with the first few words of the WordPress site title,
+  // falling back to the product name whenever the title is unavailable.
+  const runtime = useMemo(() => readProSpaConfig(), []);
+  const logoText = useMemo(() => brandText(runtime?.siteName), [runtime]);
 
   const handleSignOut = async (): Promise<void> => {
     if (signingOut) {
@@ -180,7 +187,7 @@ export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
         >
           {collapsed ? '▶' : '◀'}
         </button>
-        {!collapsed && <span className="nvoos-console-nav__logo">NV oOS Complete</span>}
+        {!collapsed && <span className="nvoos-console-nav__logo">{logoText}</span>}
       </div>
 
       <nav className="nvoos-console-nav__list" aria-label="Pages">

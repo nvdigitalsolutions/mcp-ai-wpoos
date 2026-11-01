@@ -35,7 +35,16 @@ interface JsonRpcResult {
 		protocolVersion?: string;
 		supportedVersions?: string[];
 		resultType?: string;
-		tools?: Array<{ name: string }>;
+		tools?: Array<{
+			name: string;
+			title?: string;
+			annotations?: {
+				readOnlyHint?: boolean;
+				destructiveHint?: boolean;
+				idempotentHint?: boolean;
+				openWorldHint?: boolean;
+			};
+		}>;
 		content?: Array<{ type: string; text: string }>;
 		structuredContent?: { applied?: boolean; diff?: unknown };
 	};
@@ -95,6 +104,21 @@ const EXPECTED_TOOLS = [
 	'theme_apply',
 	'theme_delete',
 	'contrast_check',
+	'design_analyze',
+	'design_compare',
+	'design_plan',
+	'design_theme',
+	'cms_list',
+	'cms_get',
+	'cms_create',
+	'cms_update',
+	'cms_delete',
+	'media_upload',
+	'site_status',
+	'preview_url',
+	'rebuild_trigger',
+	'screenshot',
+	'nds_export',
 ];
 
 describe('nvoos-astro-mcp HTTP conformance', () => {
@@ -166,6 +190,67 @@ describe('nvoos-astro-mcp HTTP conformance', () => {
 		}
 	});
 
+	it('publishes tool annotations per the MCP spec (2025-06-18)', async () => {
+		const { status, message } = await rpc(
+			{
+				jsonrpc: '2.0',
+				id: 41,
+				method: 'tools/list',
+				params: { ...modernEnvelope() },
+			},
+			modernHeaders('tools/list')
+		);
+		expect(status).toBe(200);
+		const byName = new Map((message.result?.tools ?? []).map((tool) => [tool.name, tool]));
+		// Reads declare themselves read-only and non-destructive.
+		expect(byName.get('site_status')?.annotations).toEqual({
+			readOnlyHint: true,
+			destructiveHint: false,
+			idempotentHint: false,
+			openWorldHint: false,
+		});
+		// Deletes declare the destructive hint.
+		expect(byName.get('cms_delete')?.annotations?.destructiveHint).toBe(true);
+		expect(byName.get('theme_delete')?.annotations?.destructiveHint).toBe(true);
+		// Retry-safe writes declare the idempotent hint.
+		expect(byName.get('tokens_set')?.annotations?.idempotentHint).toBe(true);
+		expect(byName.get('rebuild_trigger')?.annotations?.idempotentHint).toBe(true);
+		// Every tool declares all four hints (spec defaults are pessimistic).
+		// The open-world exceptions (Proposal 098): the design-import tools
+		// fetch external URLs and declare it; every other tool is
+		// closed-domain.
+		const OPEN_WORLD_TOOLS = new Set(['design_analyze', 'design_compare', 'design_plan', 'design_theme']);
+		for (const tool of message.result?.tools ?? []) {
+			expect(tool.annotations, `missing annotations on ${tool.name}`).toBeDefined();
+			expect(tool.annotations?.readOnlyHint, `missing readOnlyHint on ${tool.name}`).toBeDefined();
+			expect(tool.annotations?.destructiveHint, `missing destructiveHint on ${tool.name}`).toBeDefined();
+			expect(tool.annotations?.idempotentHint, `missing idempotentHint on ${tool.name}`).toBeDefined();
+			if (OPEN_WORLD_TOOLS.has(tool.name)) {
+				expect(tool.annotations?.openWorldHint, `${tool.name} must declare openWorldHint`).toBe(true);
+			} else {
+				expect(tool.annotations?.openWorldHint, `missing openWorldHint on ${tool.name}`).toBe(false);
+			}
+		}
+		// The open-world write still declares read-only false.
+		expect(byName.get('design_theme')?.annotations?.readOnlyHint).toBe(false);
+	});
+
+	it('resolves preview_url origins from the request Host (no more localhost-only)', async () => {
+		const { status, message } = await rpc(
+			{
+				jsonrpc: '2.0',
+				id: 42,
+				method: 'tools/call',
+				params: { name: 'preview_url', arguments: { path: '/products' }, ...modernEnvelope() },
+			},
+			modernHeaders('tools/call', 'preview_url')
+		);
+		expect(status).toBe(200);
+		expect(message.error).toBeUndefined();
+		const text = (message.result?.content ?? []).map((entry) => entry.text).join('');
+		expect(text).toContain(`http://127.0.0.1:${PORT}/products`);
+	});
+
 	it('calls a read tool end-to-end over the modern dialect', async () => {
 		const { status, message } = await rpc(
 			{
@@ -195,6 +280,72 @@ describe('nvoos-astro-mcp HTTP conformance', () => {
 		);
 		expect(status).toBe(401);
 		expect(message.error?.code).toBe(-32001);
+	});
+
+	it('allows same-origin browser requests (the /manage Design tab)', async () => {
+		const { status } = await rpc(
+			{
+				jsonrpc: '2.0',
+				id: 60,
+				method: 'tools/list',
+				params: { ...modernEnvelope() },
+			},
+			{ ...modernHeaders('tools/list'), origin: `http://127.0.0.1:${PORT}` }
+		);
+		expect(status).toBe(200);
+	});
+
+	it('rejects cross-origin browser requests when no origin allowlist is set', async () => {
+		const { status } = await rpc(
+			{
+				jsonrpc: '2.0',
+				id: 61,
+				method: 'tools/list',
+				params: { ...modernEnvelope() },
+			},
+			{ ...modernHeaders('tools/list'), origin: 'https://evil.example' }
+		);
+		expect(status).toBeGreaterThanOrEqual(400);
+	});
+
+	it('snapshots the env at construction (caller mutations do not leak into auth)', async () => {
+		const token = 'snapshot-token';
+		const env: Record<string, string | undefined> = {
+			NVOOS_MCP_TOKEN: token,
+			NVOOS_SSR_API_ORIGIN: 'http://localhost:8123/wp-json/nvoos-commerce/v1',
+		};
+		const handler = createAstroMcpNodeHandler(env);
+		// serve.mjs rewrites NVOOS_SSR_API_ORIGIN after boot (loopback BFF
+		// origin for the SSR client) — the handler must keep its snapshot.
+		env.NVOOS_MCP_TOKEN = 'mutated';
+		const authed = createServer((req, res) => {
+			void handler(req, res);
+		});
+		await new Promise<void>((resolve) => authed.listen(4393, '127.0.0.1', resolve));
+		try {
+			const response = await fetch('http://127.0.0.1:4393/mcp', {
+				method: 'POST',
+				headers: {
+					accept: 'application/json, text/event-stream',
+					'content-type': 'application/json',
+					authorization: `Bearer ${token}`,
+					...modernHeaders('tools/call', 'tokens_set'),
+				},
+				body: JSON.stringify({
+					jsonrpc: '2.0',
+					id: 62,
+					method: 'tools/call',
+					params: {
+						name: 'tokens_set',
+						arguments: { changes: { accent: '#0f6b4f' } },
+						...modernEnvelope(),
+					},
+				}),
+			});
+			expect(response.status).toBe(200);
+		} finally {
+			await new Promise<void>((resolve) => authed.close(() => resolve()));
+		}
 	});
 
 	it('allows write tools with a valid bearer token', async () => {

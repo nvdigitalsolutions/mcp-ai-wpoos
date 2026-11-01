@@ -45,6 +45,9 @@ export function Sidebar({ activeSlug, onSelect }: SidebarProps) {
 	const visibleAccess = NAV.filter(
 		(entry) => entry.section === 'access' && isNavEntryVisible(entry)
 	);
+	const visibleSystem = NAV.filter(
+		(entry) => entry.section === 'system' && isNavEntryVisible(entry)
+	);
 
 	return (
 		<nav aria-label="Astro CMS">
@@ -71,6 +74,21 @@ export function Sidebar({ activeSlug, onSelect }: SidebarProps) {
 						Access
 					</div>
 					{visibleAccess.map((entry) => renderButton(entry.slug, entry.label))}
+				</>
+			)}
+			{visibleSystem.length > 0 && (
+				<>
+					<div
+						style={{
+							padding: '16px 16px 4px',
+							fontSize: 11,
+							textTransform: 'uppercase',
+							opacity: 0.7,
+						}}
+					>
+						System
+					</div>
+					{visibleSystem.map((entry) => renderButton(entry.slug, entry.label))}
 				</>
 			)}
 		</nav>

@@ -44,7 +44,7 @@ class WooProductSource implements ProductSource {
 	}
 
 	/**
-	 * List published Woo products (one page).
+	 * List Woo products (one page).
 	 *
 	 * The list runs on WP_Query over the `product` post type (with WC's own
 	 * pricing/rating meta keys) rather than WC_Product_Query: WC's data
@@ -52,13 +52,15 @@ class WooProductSource implements ProductSource {
 	 * supports both natively. Documents are hydrated through the WC CRUD
 	 * layer (wc_get_product) so reads keep WC's caching + property mapping.
 	 *
-	 * @param int                                 $page  1-based page.
-	 * @param int                                 $limit Docs per page.
-	 * @param array<string, array<string, mixed>> $where Normalized where clause.
-	 * @param string|null                         $sort  Raw sort param.
+	 * @param int                                 $page   1-based page.
+	 * @param int                                 $limit  Docs per page.
+	 * @param array<string, array<string, mixed>> $where  Normalized where clause.
+	 * @param string|null                         $sort   Raw sort param.
+	 * @param string|null                         $status Publication status filter
+	 *                                                    ('publish', 'draft', 'any').
 	 * @return array{docs: array<int, array<string, mixed>>, total: int}
 	 */
-	public function list_products( int $page, int $limit, array $where, ?string $sort ): array {
+	public function list_products( int $page, int $limit, array $where, ?string $sort, ?string $status = null ): array {
 		if ( ! $this->is_available() ) {
 			return array(
 				'docs'  => array(),
@@ -66,9 +68,11 @@ class WooProductSource implements ProductSource {
 			);
 		}
 
+		$post_status = 'any' === $status ? array( 'publish', 'draft' ) : ( $status ?: 'publish' );
+
 		$args = array(
 			'post_type'      => 'product',
-			'post_status'    => 'publish',
+			'post_status'    => $post_status,
 			'paged'          => $page,
 			'posts_per_page' => $limit,
 			'orderby'        => 'date',
@@ -285,6 +289,7 @@ class WooProductSource implements ProductSource {
 			'rating'       => $this->nullable_float( $product->get_average_rating() ),
 			'isBestseller' => $this->is_bestseller( $product ),
 			'isFeatured'   => (bool) $product->get_featured(),
+			'status'       => get_post_status( $id ) ?: '',
 			// PWA fields (URLs).
 			'image'        => $image_id ? ( wp_get_attachment_url( $image_id ) ?: '' ) : '',
 			'images'       => array_values(
@@ -445,8 +450,9 @@ class WooProductSource implements ProductSource {
 	/**
 	 * Apply contract fields onto a WC_Product.
 	 *
-	 * On create, required fields are defaulted (name, price, publish
-	 * status); on update only provided fields are touched.
+	 * On create, required fields are defaulted (name, price, status —
+	 * 'publish' unless the body requests 'draft'); on update only provided
+	 * fields are touched.
 	 *
 	 * @param WC_Product           $product Product object.
 	 * @param array<string, mixed> $data  Request body fields.
@@ -458,9 +464,11 @@ class WooProductSource implements ProductSource {
 			$product->set_name( sanitize_text_field( $data['name'] ?? '' ) );
 		}
 		if ( $is_new ) {
-			$product->set_status( 'publish' );
+			$product->set_status( 'draft' === ( $data['status'] ?? null ) ? 'draft' : 'publish' );
 			$product->set_reviews_allowed( true );
 			$product->set_stock_status( 'instock' );
+		} elseif ( isset( $data['status'] ) ) {
+			$product->set_status( 'draft' === $data['status'] ? 'draft' : 'publish' );
 		}
 		if ( isset( $data['description'] ) ) {
 			$product->set_description( wp_kses_post( $data['description'] ) );

@@ -5,6 +5,7 @@
 	"surface": { "$type": "color", "$value": "{core.palette.surface}" },
 	"surface-alt": { "$type": "color", "$value": "{core.palette.surface-alt}" },
 	"line": { "$type": "color", "$value": "{core.palette.line}" },
+	"line-strong": { "$type": "color", "$value": "{core.palette.line-strong}", "$description": "Strong form-field border (SC 1.4.11). Additive." },
 	"accent": { "$type": "color", "$value": "{core.palette.accent}" },
 	"accent-ink": { "$type": "color", "$value": "{core.palette.accent-ink}" },
 	"danger": { "$type": "color", "$value": "{core.palette.danger}" },

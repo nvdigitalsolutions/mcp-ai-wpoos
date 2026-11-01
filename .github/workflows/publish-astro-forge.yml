@@ -1,0 +1,53 @@
+# Publish the nvoos-astro-forge package to npm (Phase 3 publishing).
+# Tag-driven: pushing `nvoos-astro-forge-vX.Y.Z` runs the full exit gate
+# (typecheck + unit + e2e) and publishes with provenance. The owner creates
+# tags; the npm token lives in the NPM_TOKEN secret.
+
+name: Publish Astro Forge
+
+on:
+  push:
+    tags:
+      - 'nvoos-astro-forge-v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+          cache-dependency-path: examples/nvoos-astro-forge/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+        working-directory: examples/nvoos-astro-forge
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: examples/nvoos-astro-forge
+
+      - name: Unit tests
+        run: npm test
+        working-directory: examples/nvoos-astro-forge
+
+      - name: E2E exit gate
+        run: npm run test:e2e
+        working-directory: examples/nvoos-astro-forge
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        working-directory: examples/nvoos-astro-forge
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Built assets — never commit these (the Forge gitignore gate).
+dist/
+.astro/
+
+# Local environment (credentials live here, never in git).
+.env

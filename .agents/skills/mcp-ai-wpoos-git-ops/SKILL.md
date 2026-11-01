@@ -68,6 +68,40 @@ Four rules, each from a session that cost a recovery:
   tracking branch pushes — `gh pr view` keeps showing the stale `head_sha`.
   After the owner merges, run the stacked-PR recipe above and open a fresh
   PR for the delta (PRs #7302 → #7303).
+- **Multiple linked worktrees exist — aim every git command.** Other
+  agents keep `git worktree add` checkouts (see `git worktree list`). A
+  `git cherry-pick` run from the wrong directory acts on the wrong
+  worktree (2026-10-31: one silently no-op'd in the main worktree while
+  the target was a linked one — caught by the "cherry-pick is now empty"
+  message). Check `git rev-parse --show-toplevel` first, or use
+  `git -C <abs-worktree-path>` for any command aimed at another worktree.
+- **Dirty shared worktree + moved base → `git worktree add`, never a
+  checkout.** When `origin/alpha-working` advanced and other agents'
+  uncommitted files block `git checkout -b` ("would be overwritten by
+  checkout"), don't stash their work: `git worktree add ../<name> -b
+  <branch> origin/alpha-working`, then operate there via `git -C` (and
+  `npm pack <abs-dir>` rather than `--prefix`). `git worktree remove`
+  when done — the shared checkout was never touched.
+- **De-stack a PR without `reset --hard`:** move the branch back with
+  `git reset --mixed <parent>` (worktree untouched), restore only your own
+  paths with `git restore --worktree -- <your-paths>` (a file you created
+  becomes untracked again — plain `rm`), then
+  `git push --force-with-lease`. Other agents' unstaged edits survive
+  byte-for-byte. Verified 2026-10-31 de-stacking PR #7325.
+- **Sibling PRs editing the same file (the #7348 ↔ #7349 case, 2026-11-01):**
+  two open PRs touch the same docs file in overlapping hunks; the later one
+  merges first and the earlier one reports merge conflicts at merge time.
+  Fix: `git fetch origin` → `git checkout <branch>` →
+  `GIT_EDITOR=true git rebase --autostash origin/alpha-working`, resolve by
+  **keeping both PRs' intents** (the merged PR's new text usually wins for
+  shared lines; your PR's unique additions stay), then
+  `git push --force-with-lease`. A successful rebase replay is proof the
+  conflict is gone — by construction the branch is ahead of the base.
+- **Local `.git/info/exclude` can silently block deliberate files.** The
+  main worktree ignores `*.png`/`*.jpg` (per-worktree media guard, not repo
+  config). `git add` then fails with "ignored by one of your .gitignore
+  files" — run `git check-ignore -v <path>` to find the rule and `git add -f`
+  when the file is deliberate (gateway logo assets, PR #7349).
 
 ## Windows reserved-name artifacts (learned 2026-10-29)
 
@@ -89,8 +123,29 @@ can appear in the repo root. Two failure modes follow:
   calls get the backslashes mangled by the sh layer. Never stage it —
   explicit staging (above) keeps it out of commits.
 
+## Windows sh-shell gotchas (learned 2026-11-01, gateway session)
+
+- The terminal runs **sh, not cmd**: `copy` does not exist — use `cp`;
+  `del`/`ren` are `rm`/`mv`.
+- **`powershell -Command` inline strings get `$var` interpolated away by the
+  sh layer** (every `$i` vanished → parser errors). Write a `.ps1` file and
+  run `powershell -NoProfile -ExecutionPolicy Bypass -File`, or do it in
+  node instead (e.g. JPEG/PNG dimension sniffing from the file header — no
+  deps needed).
+- `findstr /C:"..."` quoting breaks under sh — pipe to node for filtering
+  or use the terminal tool's `tail_lines`.
+- `node --test <directory>` does **not** recurse on this setup (runs one
+  file) — pass explicit files or the package's `npm test` script.
+- Windows-reserved names: see the `nul`-artifact section above (same
+  `powershell -File` pattern applies).
+
 ## gh CLI gotchas
 
+- **`git archive` strips `package.json` and `bin/` repo-wide** — the root
+  `.gitattributes` export-ignores them (meant for the plugin's release
+  zips). Never `git archive <rev> packages/<pkg>` to extract package
+  content (silently incomplete tar) — copy from a worktree checkout
+  instead.
 - `gh workflow run <name>` **404s unless the workflow file exists on the
   default branch (`main`)** — for `alpha-working`-only workflows dispatch via
   the API (`POST /actions/workflows/<id>/dispatches` with `ref=alpha-working`)

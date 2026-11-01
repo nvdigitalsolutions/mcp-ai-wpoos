@@ -135,6 +135,29 @@
     //   }
     // },
 
+    // NV Astro storefront MCP — /mcp on the headless storefront
+    // (examples/nvoos-astro-velocity, Proposals 092/095). Reads are public;
+    // design writes use the NVOOS_MCP_TOKEN bearer; contract writes (cms_*,
+    // media_upload) require a manager session. The published bridge package
+    // handles the session itself: it POSTs MCP_AI_LOGIN_EMAIL/PASSWORD to
+    // MCP_AI_LOGIN_URL at startup, attaches the returned cookies to every
+    // upstream request, and re-establishes the session on 401/403 or expiry
+    // — no manual cookie copying ever.
+    // "nvoos-astro": {
+    //   "source": "custom",
+    //   "command": {
+    //     "path": "npx",
+    //     "args": ["-y", "@nvdigitalsolutions/nvoos-mcp-bridge@latest"],
+    //     "env": {
+    //       "MCP_AI_BASE_URL":       "https://astro.nvoos.cloud/mcp",
+    //       "MCP_AI_TOKEN":          "…",
+    //       "MCP_AI_LOGIN_URL":      "https://astro.nvoos.cloud/api/auth/login",
+    //       "MCP_AI_LOGIN_EMAIL":    "manager@…",
+    //       "MCP_AI_LOGIN_PASSWORD": "…"
+    //     }
+    //   }
+    // },
+
     // Hermes Agent (Nous Research) running on a remote box — Zed drives it
     // through its WebUI API via bin/hermes-mcp-server.js (tools:
     // hermes_chat, hermes_list_sessions, hermes_session_detail). Keep the

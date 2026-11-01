@@ -18,9 +18,17 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 | Storefront source | `examples/nvoos-astro-velocity/` | Astro SSR + prerendered catalog, React islands (cart badge, gallery), View Transitions |
 | Sync workflow | `.github/workflows/sync-nvoos-astro-velocity.yml` | Builds + tests, then rebuilds for the mirror |
 | Public mirror | `nvdigitalsolutions/nvoos-astro-velocity` (PUBLIC) | Assembled deploy tree (Astro `dist/` + server shim) — zero licensed bytes |
+| Production backend | `nvoos.pro` (WP + WooCommerce, bridge addon live at `/wp-json/nvoos-commerce/v1`) | The app's `/api/*` proxy target — `/api/auth/login` lands here and `canManage` users resolve to `https://nvoos.pro/wp-admin/admin.php?page=astro-cms` |
 
 ## Contract rules (CI-enforced — never weaken)
 
+- **Licensing split (owner decision Q8, drafted 2026-10-31):** the app is
+  MIT; `addons/nvoos-astro-bridge/src/` (the admin SPA) is MIT via its own
+  `src/LICENSE` carve-out; the bridge PHP plugin remains proprietary.
+  `public/manage-assets/` ships in the public mirror, so never build it
+  from non-MIT bridge source. The app's `NOTICE` records the bundled
+  GPL-2.0-or-later `@wordpress/*` components; `sync-dist.mjs` ships
+  `NOTICE` to the mirror.
 - The Astro app binds **only** to the Payload envelope (`nvoos-commerce/v1`
   REST namespace alias). Never call WP-specific endpoints from `src/`.
 - The word **"funiq" is banned from `examples/nvoos-astro-velocity/src/`**
@@ -48,6 +56,10 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
   `from_name()`), `WooTaxonomy` (pa_brand/pa_color/product_cat/stock-status
   mapping), `WhereClause`/`SortClause` (shared operators).
   `ProductsController` is a thin delegator — the contract never changes.
+- **Draft support (PR #7331):** create/update accept
+  `status: 'draft' | 'publish'` (default publish —
+  `NativeProductSource::normalize_status()`); listings accept `status=any` to
+  include drafts. Internal/test products ride this via the MCP `cms_*` tools.
 - **Woo availability check is `class_exists('WooCommerce') &&
   function_exists('wc_get_product')`** — the repo's test bootstrap defines a
   stub `WooCommerce` class when the plugin is absent, so class_exists alone
@@ -132,9 +144,15 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ### nvoos-astro-mcp (`/mcp`)
 
-- `mcp/` (`auth.ts`, `bff.ts`, `server.ts`, `stdio.ts`, `tools/design.ts`);
-  `npm run build:mcp` bundles `bff.ts` → `dist/mcp-entry.mjs`, which
-  `scripts/serve.mjs` mounts at `/mcp` (deliberately NOT under `/api/*`).
+- `mcp/` (`auth.ts`, `bff.ts`, `context.ts`, `ratelimit.ts`, `server.ts`,
+  `stdio.ts`, `tools/{design,cms,ops,util}.ts`); the shared bundler
+  `scripts/lib/mcp-build.mjs` writes `dist/mcp-entry.mjs` (which
+  `scripts/serve.mjs` mounts at `/mcp`, deliberately NOT under `/api/*`).
+  Two call sites: `npm run build:mcp` (dev/manual — `scripts/build-mcp.mjs`
+  CLI wrapper) and the `nvoos-astro-mcp-build` Astro integration in
+  `astro.config.mjs`, whose `astro:build:done` hook rebuilds the bundle
+  after every `astro build` (astro wipes `dist/`, so a pre-build step in the
+  npm chain would be erased — the 2026-10-30 /mcp outage).
   `npm run mcp:stdio` serves the same tools over stdio for local profiles.
 - **Never spawn `node` against `node_modules/esbuild/bin/esbuild`
   (2026-10-30):** esbuild's install fallback can replace that file with the
@@ -143,26 +161,124 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   the Linux CI `npm run build` at `build:mcp` (PR #7303). Use the esbuild JS
   API (`import { build } from 'esbuild'`) — it resolves the platform binary
   itself; `scripts/build-mcp.mjs` was rewritten this way.
-- **10 design tools** (`tokens_get/set/import_dtcg/rollback`, `theme_*`,
-  `contrast_check`); bulk writes are transactional (validate → dry-run diff →
-  snapshot → all-or-nothing). State is **process-local** — durability is the
-  TODO'd Phase 4 (`/manage` Design tab + NDS round-trip).
-- **Auth is fail-closed:** write tools require bearer `NVOOS_MCP_TOKEN`
-  (timing-safe) or a manager session (`canManage` via `/auth/me`); reads are
-  open. Env: `NVOOS_MCP_TOKEN`, `NVOOS_MCP_HOSTS`, `NVOOS_MCP_ORIGINS`.
+- **25 tools** (`SERVER_VERSION` 0.2.0): design (14 — `tokens_get/set/import_dtcg/rollback`,
+  `theme_*`, `contrast_check`, `design_analyze/compare/plan/theme`; bulk writes transactional: validate → dry-run
+  diff → snapshot → all-or-nothing), CMS (6 — `cms_list/get/create/update/delete`,
+  `media_upload` over `commerce/client.ts`, collection allowlist, `limit` ≤ 100),
+  ops (5 — `site_status`, `preview_url`, `rebuild_trigger`, `screenshot`,
+  `nds_export` — the NDS DTCG document + mapping report for the 4.2 round-trip).
+  The design-import tools (Proposal 098) fetch a source URL (Astro theme repo,
+  WordPress site, or any website) and extract its design language — palette
+  roles, typography, spacing, component vocabulary, concept prose, and an
+  inspired-by adaptation brief — via `src/lib/design-import/` (SSRF-safe
+  fetcher + deterministic analyzer + WP theme.json/GitHub-tree source modes +
+  re-extraction diff + adaptation plan + theme emission with a WCAG audit).
+  Never a clone: no source CSS/markup/copy or assets are copied; only token
+  data + prose. The open-world tools (`openWorldHint: true`, handshake-pinned):
+  `design_analyze`, `design_compare`, `design_plan`, `design_theme`;
+  `design_theme` is write-gated (bearer or manager session).
+  Every mutating design write (`tokens_set`, `tokens_import_dtcg`,
+  `theme_create`, `theme_apply`, `theme_delete`) echoes the pre-write
+  `snapshot_id` it captured, so `tokens_rollback` can undo exactly that write
+  (not just the latest snapshot).
+  Tool handlers read the request cookie/env through `mcp/context.ts`
+  (AsyncLocalStorage set in `bff.ts`).
+- **Tool annotations + titles (2026-10-31):** every tool carries a `title`
+  and spec `annotations` (`readOnlyHint`/`destructiveHint`/`idempotentHint`/
+  `openWorldHint` — presets in `mcp/tools/util.ts`: `READ_ONLY_TOOL`,
+  `WRITE_TOOL`, `IDEMPOTENT_WRITE_TOOL`, `DESTRUCTIVE_WRITE_TOOL`,
+  `OPEN_WORLD_READ_TOOL`; `openWorldHint` stays false everywhere EXCEPT
+  `design_analyze`, which fetches external URLs and declares it).
+  Pinned by `tests/mcp/handshake.test.ts`. `preview_url` / `screenshot`
+  resolve their origin as `NVOOS_STOREFRONT_ORIGIN` → inbound request Host
+  (scheme from `X-Forwarded-Proto`, then socket TLS) → `http://localhost:4321`;
+  `requestOrigin()` lives in `mcp/bff.ts`, tool-side resolution in
+  `storefrontOrigin()` (`mcp/tools/ops.ts`), pinned by
+  `tests/unit/storefront-origin.test.ts` + the mcp-tools preview tests.
+- **Auth is fail-closed, split by surface:** reads open; design writes accept
+  bearer `NVOOS_MCP_TOKEN` (timing-safe) OR a manager session (`canManage`
+  via `/auth/me`); **contract writes (`cms_*` writes, `media_upload`) require
+  the manager cookie** (backend enforces `manage_astro` anyway — fail fast
+  with a useful error). Same-origin browser requests (Origin host == the
+  Host-validated request host) bypass the Origin allowlist — that is what
+  the /manage Design tab rides on. **Zero-cookie coding-agent recipe:** the
+  published bridge package (`npx -y @nvdigitalsolutions/nvoos-mcp-bridge@latest`,
+  0.1.0-alpha.5+) accepts `MCP_AI_LOGIN_URL` + `MCP_AI_LOGIN_EMAIL`/
+  `_PASSWORD` (or a raw `MCP_AI_LOGIN_BODY` override) and bootstraps the
+  manager session itself — POSTs `{ email, password }` to `/api/auth/login`
+  at startup, attaches the captured cookies to every upstream request, and
+  re-establishes the session once on 401/403 or near expiry. `MCP_AI_COOKIE`
+  is the static-cookie escape hatch. Canonical source: `bin/mcp-bridge.js`
+  (byte-synced into `packages/nvoos-mcp-bridge`; tests in
+  `packages/nvoos-mcp-bridge/test/session.test.js`). The relay advertises
+  both Streamable HTTP media types and unwraps SSE-framed responses — the
+  astro `/mcp` answers every request in SSE when the client accepts it
+  (verified live 2026-10-31: handshake + `tools/list` + `cms_create`/`cms_delete`
+  roundtrip against astro.nvoos.cloud). Per-IP rate limit (429 `-32029`,
+  `NVOOS_MCP_RATE_MAX`/`_WINDOW_MS`, default 120/min), Host/Origin allowlists
+  (`NVOOS_MCP_HOSTS` **must** include the public hostname — default is
+  localhost-only), audit line per write call. `screenshot` is opt-in
+  (`NVOOS_MCP_SCREENSHOT=1`) and path-only input (SSRF-safe by construction,
+  per MCP Security Best Practices). `design_analyze` target URLs go through
+  the `src/lib/design-import/fetcher.ts` SSRF guard (scheme allowlist, no
+  credential URLs, DNS-resolved private/reserved rejection per redirect hop,
+  caps + timeouts); private hosts (e.g. a local dev site) require
+  `NVOOS_MCP_FETCH_ALLOW_PRIVATE=1` — never set it on the public mount.
+- **Env snapshot discipline:** `createAstroMcpNodeHandler` snapshots its env,
+  and `serve.mjs` passes a pre-rewrite snapshot — serve rewrites
+  `NVOOS_SSR_API_ORIGIN` to the loopback BFF origin for the SSR commerce
+  client, and without the snapshot the manager-session check pointed at the
+  BFF itself (every manager write 401; incident 2026-10-30, pinned by a
+  handshake regression test). Boot paths that only set `NVOOS_TARGET_SITE`
+  (the CI smoke step boots the BFF before Playwright, which **reuses** it,
+  so the `playwright.config.ts` env never applies; the Velocity activation
+  notes likewise) get the contract base seeded by `seedMcpEnv`
+  (`scripts/lib/mcp-env.mjs`) — without it every manager write 401s and
+  `cms_*` reports `no_commerce_base` (incident 2026-10-31, pinned by the
+  rebrand-loop e2e + `tests/unit/mcp-env.test.ts`). Explicit
+  `NVOOS_SSR_API_ORIGIN` / `NVOOS_API_BASE` always win.
+- **Durability:** token/theme runtime state persists across restarts when
+  `NVOOS_MCP_STATE_FILE` is set (atomic tmp+rename writes,
+  `src/lib/tokens/persistence.ts`); otherwise process-local.
+- **The /manage Design System tab** (`addons/nvoos-astro-bridge`:
+  `DesignView.tsx` + `src/lib/mcp-client.ts`) is itself an MCP client — it
+  posts to the same-origin `/mcp` with the manager cookie (no extra REST
+  surface). Ships via `npm run build:standalone` → `scripts/sync-manage-assets.mjs`
+  → committed `public/manage-assets/` (two-bundle drift gate).
+- **NDS round-trip (4.2):** `nds_export` (app) emits the NDS DTCG shape;
+  `addons/nvoos-design-system` gained `class-nvoos-nds-dtcg-importer.php`
+  (static `prepare()` + all-or-nothing `import()`, 256 KB cap, rejects
+  `{core.x}` references) + an admin import surface. Mapping table lives in
+  `mcp/tools/ops.ts` (`ADS_TO_NDS`; accent-ink/danger/focus-ring reported
+  unmapped — NDS has no equivalents).
 - **Dual-era wire serving** (modern 2026-07-28 + 2025 stateless fallback) —
   all wire shapes, the validation ladder, and the `registerTool` factory
   gotcha live in the `mcp-ai-sdk-v2-server-ops` skill; conformance tests in
   `tests/mcp/handshake.test.ts` cover both eras + the write-auth gate.
+- The hermetic assistant loop lives in `tests/mcp/rebrand-loop.test.ts`
+  (fixture server on :8131: tokens_get → dry-run → apply → contrast →
+  rollback → cms_list); the browser loop + the Design tab live in
+  `tests/e2e/rebrand-loop.spec.ts` (fixture manager seam:
+  `nvoos_fixture_manager=1` cookie grants `canManage`);
+  `tests/unit/contrast-audit.test.ts` is the WCAG 2.2 gate (SC 1.4.3 4.5:1 /
+  SC 1.4.11 3:1 per pair, with coverage meta-tests; `field.border` now rides
+  the additive `line-strong` token).
 
 ### Known TODOs (annotated `TODO(095-*)` in code)
 
-- `astro build` **empties `dist/` AFTER `build:mcp`**, erasing
-  `dist/mcp-entry.mjs` from production builds — a `sync-dist.mjs` post-build
-  step is still owed.
-- Phase 1: dark-theme contrast audit; Phase 3: CMS tool slice (`cms.ts`
-  over `commerce/client.ts`) + `screenshot` tool; Phase 4: `/manage` Design
-  tab + durable NDS round-trip.
+- ~~`astro build` empties `dist/` AFTER `build:mcp`, erasing
+  `dist/mcp-entry.mjs` from production builds~~ — fixed 2026-10-30 via the
+  `nvoos-astro-mcp-build` integration (`astro:build:done` →
+  `scripts/lib/mcp-build.mjs`); the npm `build` chain no longer runs
+  `build:mcp` pre-build.
+- ~~Phase 1 contrast audit; Phase 3 CMS/ops slices + screenshot; Phase 4
+  durability~~ — all closed 2026-10-30 (gap-closure cluster). Also closed in
+  the follow-up cluster: the /manage Design tab (4.1), the NDS importer +
+  `nds_export` round-trip (4.2), the `field.border` SC 1.4.11 fix
+  (`line-strong`), and the browser rebrand e2e. **Remaining:** the 3.4 NV
+  oOS connection recipe needs live-install verification (documented in the
+  app README + this skill); optionally the NDS WP 7.1 WooCommerce-stub
+  skip-gate fix (pre-existing, unrelated).
 - Cross-surface sharing of these tokens (NDS addon + Pro SPA v2 palettes) is
   scoped in Proposal 097.
 
@@ -333,6 +449,27 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   excluded) and is excluded from the base `phpcs.xml.dist` scan. A dedicated
   step in `.github/workflows/php-linting.yml` enforces the addon ruleset on
   every PR/push.
+- **Bridge npm publish track (`packages/nvoos-mcp-bridge`, learned
+  2026-10-31):** published via `.github/workflows/npm-publish-nvoos-mcp-bridge.yml`
+  (dispatch: version + `alpha`/`latest` tag + dry-run; gates = byte-sync
+  drift, node:test suite, pack dry-run, then `npm publish --provenance`).
+  - **Version forensics first:** `npm view @nvdigitalsolutions/nvoos-mcp-bridge time`
+    before bumping — the 23-package wave published CI-side without
+    committing, so the repo's `package.json` can lag the registry
+    (`0.1.0-alpha.4` was taken while the repo still said alpha.3).
+  - **Auth ladder:** npm `E404` on PUT = token lacks write permission on
+    the scope (rotate the `NPM_TOKEN` repo secret — it 404s rather than
+    403s to hide package existence); `E403 "cannot publish over the
+    previously published versions"` = version collision, auth is fine;
+    `EOTP` = classic/publish token on an auth-and-writes account — an
+    **Automation** token bypasses OTP, otherwise publish with `--otp`.
+  - **Local pack quirks (Windows):** `npm --prefix <dir> pack` hangs when
+    invoked from inside the repo (workspace root wins over prefix) — use
+    the folder-spec form `npm pack <abs-dir> --dry-run`. `git archive`
+    cannot extract the package either (repo `.gitattributes` export-ignores
+    `package.json` and `bin/` at every level) — copy from a worktree
+    checkout instead. Local publish: `npm publish <abs-dir> --access public
+    --tag latest` (skips CI-only provenance).
 
 ## Standards this app is built to (research-backed)
 
@@ -347,9 +484,9 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## References
 
-- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 097 (cross-surface token sharing) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
+- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
 - `examples/nvoos-astro-velocity/README.md` (architecture, env, commands)
 - `addons/nvoos-astro-bridge/README.md` (REST surface, data map)
-- Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`
+- Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`, `mcp-ai-wpoos-astro-forge` (the generator that turns a WP/Woo site into an Astro frontend — this skill covers the serving side)
 - Related: Proposal 085 + appendix (contract invariant, Strangler Fig),
   Proposal 090 (Laravel backend flip — the storefront survives it unchanged).

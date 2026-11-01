@@ -78,7 +78,7 @@ export interface NavGate {
 export interface NavEntry extends NavGate {
 	slug: NavSlug;
 	label: string;
-	section: 'catalog' | 'access';
+	section: 'catalog' | 'access' | 'system';
 }
 
 /** Catalogue-driven nav (the console's CONSOLE_NAV_GROUPS pattern). */
@@ -91,6 +91,7 @@ export const NAV: NavEntry[] = [
 	{ slug: 'promotions', label: 'Promotions', section: 'catalog', readOnlyAware: true },
 	{ slug: 'promocodes', label: 'Promocodes', section: 'catalog', readOnlyAware: true },
 	{ slug: 'managers', label: 'Managers', section: 'access' },
+	{ slug: 'design', label: 'Design System', section: 'system' },
 ];
 
 /**
