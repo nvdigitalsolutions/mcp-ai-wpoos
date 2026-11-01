@@ -86,9 +86,9 @@ All CRM entities are managed through the **`toolkit_cpt`** MCP tool. Use the app
 
 | Field | Type | Description | Example |
 |---|---|---|---|
-| `first_name` | string | Lead's first name | `"Scher"` |
-| `last_name` | string | Lead's last name | `"Jill"` |
-| `email` | string | Contact email address | `"jill.scher@cbiz.com"` |
+| `first_name` | string | Lead's first name | `"Jane"` |
+| `last_name` | string | Lead's last name | `"Doe"` |
+| `email` | string | Contact email address | `"jane.doe@example.com"` |
 | `phone` | string | Contact phone number | `""` |
 | `source` | string | Lead source channel | `"email"`, `"webform"`, `"referral"`, `"upwork"` |
 | `lead_status` | string | Current lead status | `"new"`, `"contacted"`, `"qualified"`, `"disqualified"` |
@@ -198,7 +198,7 @@ toolkit_cpt(action: "get_schema", post_type: "mcp_ai_lead")
 { "action": "list_items", "post_type": "mcp_ai_lead", "orderby": "date", "order": "DESC", "per_page": 20 }
 
 // Search leads by email:
-{ "action": "list_items", "post_type": "mcp_ai_lead", "search": "jill.scher@cbiz.com" }
+{ "action": "list_items", "post_type": "mcp_ai_lead", "search": "jane.doe@example.com" }
 
 // Filter by meta field:
 { "action": "list_items", "post_type": "mcp_ai_lead", "filters": [{ "key": "lead_status", "value": "new" }] }
@@ -350,7 +350,7 @@ Weekly pipeline review:
 
 ```json
 // Find all leads from a specific company domain:
-{ "action": "list_items", "post_type": "mcp_ai_lead", "search": "@cbiz.com" }
+{ "action": "list_items", "post_type": "mcp_ai_lead", "search": "@example.com" }
 
 // Find all activities for a lead:
 { "action": "list_items", "post_type": "mcp_ai_crm_activity",
@@ -388,7 +388,7 @@ WRONG — creating a deal without linking to a lead
 
 RIGHT — always link deals to their source lead
 { "action": "create_item", "post_type": "mcp_ai_deal",
-  "fields": { "lead_id": "12398", "deal_name": "CBIZ - Audit Automation",
+  "fields": { "lead_id": "12398", "deal_name": "Acme Corp - Audit Automation",
   "pipeline_stage": "scoping", "amount": "0", "currency": "USD", "deal_owner": "1",
   "win_probability": "0.1" } }
 
@@ -399,7 +399,7 @@ WRONG — logging an activity without related_type or related_id
 
 RIGHT — always link activities to their parent entity
 { "action": "create_item", "post_type": "mcp_ai_crm_activity",
-  "fields": { "title": "Discovery call with Jill Scher (Lead #12398)",
+  "fields": { "title": "Discovery call with Jane Doe (Lead #12398)",
   "activity_type": "call", "related_type": "lead", "related_id": "12398" } }
 
 WRONG — skipping pipeline stages
