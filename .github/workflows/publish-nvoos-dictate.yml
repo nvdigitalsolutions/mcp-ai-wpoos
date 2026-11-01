@@ -1,15 +1,20 @@
-# Release: build + publish the NV oOS Dictation desktop app via tauri-action.
+# Release: build + publish the NV oOS Dictation desktop app.
 #
-# Tag `nvoos-dictate-v*` to cut a release. tauri-action builds NSIS/MSI on
+# Tag `nvoos-dictate-v*` to cut a release. The publish job builds NSIS/MSI on
 # Windows and a single UNIVERSAL .app/.dmg on macOS (arm64 + x86_64 — the
-# Swift sidecar is lipo'd universal and staged first), attaches the
-# artifacts to a GitHub release, and generates the updater's static JSON
-# feed. Signing requires the
-# TAURI_SIGNING_PRIVATE_KEY repository secret (minisign); without it the
-# release is unsigned and SmartScreen/Gatekeeper will warn (documented in
-# README). macOS notarization additionally requires the Apple Developer
-# secrets below (see docs/macos-port-plan.md §12) — without them the macOS
-# artifacts are ad-hoc signed only.
+# Swift sidecar is lipo'd universal and staged first), uploads the bundles as
+# workflow artifacts, and the release job attaches them to a draft GitHub
+# release plus the updater's static latest.json feed. The release step uses
+# softprops/action-gh-release — the same GITHUB_TOKEN pattern the oOS WP.org
+# workflow uses (tauri-action's octokit release creation 403s with "Resource
+# not accessible by integration" in this repo, so tauri-action is used for
+# nothing but the build, which is done here with the tauri CLI directly).
+#
+# Signing requires the TAURI_SIGNING_PRIVATE_KEY repository secret (minisign);
+# without it the release is unsigned and SmartScreen/Gatekeeper will warn
+# (documented in README). macOS notarization additionally requires the Apple
+# Developer secrets below (see docs/macos-port-plan.md §12) — without them
+# the macOS artifacts are ad-hoc signed only.
 
 name: Publish NV oOS Dictation
 
@@ -19,11 +24,8 @@ on:
       - 'nvoos-dictate-v*'
   workflow_dispatch:
 
-# tauri-action creates the GitHub release and uploads the Windows + macOS
-# artifacts using the GITHUB_TOKEN. The repo's default token permissions
-# are read-only, so release creation needs an explicit contents:write
-# grant — without it tauri-action fails with "Resource not accessible by
-# integration" after the bundles are built.
+# Release creation + asset upload use the GITHUB_TOKEN; the repo's default
+# token permissions are read-only, so grant contents:write explicitly.
 permissions:
   contents: write
 
@@ -43,7 +45,7 @@ jobs:
     env:
       # Pinned by the matrix; beforeBundleCommand (build:helper) reads it so
       # the Swift sidecar (universal on macOS) is staged over the
-      # externalBin stub even when it re-runs inside tauri-action.
+      # externalBin stub when it re-runs inside `tauri build`.
       NVOOS_HELPER_ARCH: ${{ matrix.helperArch }}
     steps:
       - uses: actions/checkout@v4
@@ -71,18 +73,15 @@ jobs:
         working-directory: examples/nvoos-dictate
         run: node scripts/gen-icons.mjs
 
-      # macOS: tauri-action runs the configured beforeBundleCommand
-      # (npm run build:helper), which builds the ScreenCaptureKit sidecar
-      # as a universal binary (NVOOS_HELPER_ARCH=universal — per-slice
-      # scratch builds + lipo) and stages it over the externalBin stub —
-      # the real binary is therefore signed and embedded inside the .app.
-
-      - name: Build and publish
-        uses: tauri-apps/tauri-action@v0
+      # tauri build runs beforeBuildCommand (npm run build = webview dist,
+      # required by generate_context!) and beforeBundleCommand
+      # (build:helper = Swift sidecar, lipo'd universal via
+      # NVOOS_HELPER_ARCH=universal and staged over the externalBin stub)
+      # automatically, so the .app/.dmg embed both CPU slices.
+      - name: Build bundles
+        working-directory: examples/nvoos-dictate
+        run: npm run tauri -- build ${{ matrix.args }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Optional: minisign private key for updater artifacts.
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           # macOS signing + notarization (Apple Developer Program required).
           # Missing secrets = ad-hoc signed, unnotarized artifacts.
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -91,11 +90,92 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      # upload-artifact resolves paths from the workspace root, not the
+      # step working-directory.
+      - name: Upload bundles (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
         with:
-          tagName: nvoos-dictate-v__VERSION__
-          releaseName: 'NV oOS Dictation v__VERSION__'
-          releaseBody: 'See the app README and CHANGELOG for details. Unsigned builds may trigger SmartScreen / Gatekeeper.'
-          releaseDraft: true
+          name: nvoos-dictate-bundles-${{ matrix.platform }}
+          path: |
+            examples/nvoos-dictate/src-tauri/target/release/bundle/msi/*.msi
+            examples/nvoos-dictate/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload bundles (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvoos-dictate-bundles-${{ matrix.platform }}
+          path: examples/nvoos-dictate/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Create GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    # workflow_dispatch runs on a branch ref — only tag pushes cut releases.
+    if: startsWith(github.ref, 'refs/tags/nvoos-dictate-v')
+    steps:
+      - name: Set version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#nvoos-dictate-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download bundles
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nvoos-dictate-bundles-*
+          path: artifacts/
+          merge-multiple: true
+
+      # The in-app updater polls
+      # https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/
+      #   nvoos-dictate-v{{current_version}}/latest.json
+      # (tauri.conf.json). Build it from the real artifact names so the URLs
+      # always match; signatures stay empty until minisign signing is set up.
+      - name: Build updater feed (latest.json)
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          NSIS="$(find artifacts -maxdepth 1 -name '*.exe' -print -quit)"
+          DMG="$(find artifacts -maxdepth 1 -name '*.dmg' -print -quit)"
+          BASE="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/${GITHUB_REF_NAME}"
+          jq -n \
+            --arg version "$VERSION" \
+            --arg pub_date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg win "$BASE/$(basename "$NSIS")" \
+            --arg mac "$BASE/$(basename "$DMG")" \
+            '{version: $version,
+              notes: "See the app README and CHANGELOG for details. Unsigned builds may trigger SmartScreen / Gatekeeper.",
+              pub_date: $pub_date,
+              platforms: {
+                "windows-x86_64": {signature: "", url: $win},
+                "darwin-aarch64": {signature: "", url: $mac},
+                "darwin-x86_64": {signature: "", url: $mac}
+              }}' > latest.json
+          cat latest.json
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "NV oOS Dictation v${{ steps.version.outputs.version }}"
+          body: |
+            ## NV oOS Dictation v${{ steps.version.outputs.version }}
+
+            Windows installer (NSIS + MSI) and a universal macOS DMG
+            (Apple Silicon + Intel, macOS 13+).
+
+            **Unsigned builds** — SmartScreen on Windows and Gatekeeper on
+            macOS may warn; on macOS use right-click → Open.
+
+            See the [app README](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/alpha-working/examples/nvoos-dictate) for details.
+          draft: true
           prerelease: false
-          projectPath: examples/nvoos-dictate
-          args: ${{ matrix.args }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            artifacts/*
+            latest.json
