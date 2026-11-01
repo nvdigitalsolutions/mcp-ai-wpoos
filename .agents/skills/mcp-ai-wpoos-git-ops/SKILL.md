@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-git-ops
-description: Git/GitHub workflow discipline for the mcp-ai-wpoos repo — PRs against `alpha-working` with owner-merge, commit style, staged commits (no `git add -A`), the stacked-PR rebase recipe for when a parent PR gets squash-merged, shared-worktree discipline for the multi-agent repo (check the branch before committing, never `reset --hard` over other agents' unstaged edits, `--autostash` rebases), conflict verification via `git merge-tree`, and gh CLI gotchas (`gh workflow run` 404 on non-default branches, long PHP lint checks). Use when creating/rebasing/fixing PRs, resolving PR conflicts, or dispatching workflows.
+description: Git/GitHub workflow discipline for the mcp-ai-wpoos repo — PRs against `alpha-working` with owner-merge, commit style, staged commits (no `git add -A`), the stacked-PR rebase recipe for when a parent PR gets squash-merged, the alpha-working → main squash-sync recipe (resolve-all-to-alpha, sweep index-only leftovers, tree-identity verification), shared-worktree discipline for the multi-agent repo (check the branch before committing, never `reset --hard` over other agents' unstaged edits, `--autostash` rebases), conflict verification via `git merge-tree`, and gh CLI gotchas (`gh workflow run` 404 on non-default branches, long PHP lint checks). Use when creating/rebasing/fixing PRs, resolving PR conflicts, syncing alpha-working to main, or dispatching workflows.
 ---
 
 # mcp-ai-wpoos — Git & PR ops
@@ -45,6 +45,52 @@ git push --force-with-lease origin <branch>
   `gh pr view <n> --json mergeable,mergeStateStatus` (`MERGEABLE`).
 - GitHub Docs reference: "Managing stacked pull requests" /
   "Troubleshooting stacked pull requests" (`gh stack rebase` alternative).
+
+## alpha-working → main squash-sync (the release-sync recipe)
+
+`main` mirrors `alpha-working` through periodic "Merge alpha-working into
+main (squashed)" PRs (#7310, #7317, #7369 — head `merge/alpha-to-main-sync-*`,
+base `main`). The acceptance test is **tree identity**: after the merge,
+`git diff --stat origin/main origin/alpha-working` must be empty. Build
+artifacts always resolve to **alpha-working's copies** (the #7117 "keep
+alpha-working ZIP copies" convention — main's own workflows regenerate them
+post-merge anyway).
+
+```bash
+git fetch origin alpha-working main
+git checkout -b merge/alpha-to-main-sync-<ver> origin/main
+git merge --squash origin/alpha-working
+```
+
+1. **Expect a large conflict set.** Main's squashed history makes many files
+   "both added"/"both modified" (skills, `.context/*`, docs) and main's build
+   workflows add their own artifacts (SPA addon ZIP rebuilds, console `dist/`
+   chunk-hash rotations, stale previous-version ZIPs). Main-line *twin* PRs
+   (dictate fixes #7352/#7355/#7357) are tree-identical to their alpha twins
+   and merge cleanly — never hand-merge them.
+2. **Resolve everything to alpha's tree:** `git checkout origin/alpha-working -- .`
+   stages alpha's version of every path and clears all conflicts.
+3. **Sweep the leftovers — step 2 is not enough.** Two silent keepers survive:
+   - modify/delete auto-resolutions: main modified a file alpha deleted, and
+     `git merge --squash` keeps main's copy **without conflict**;
+   - index-only files: paths in main's tree that alpha never had (old-hash
+     `dist/` chunks, stale build ZIPs) stay staged by the checkout.
+   Enumerate with `git diff --cached --name-only origin/alpha-working`; for
+   each path, if it exists in alpha (`git cat-file -e origin/alpha-working:<path>`)
+   re-checkout it, otherwise `git rm --ignore-unmatch` it. The 1.2.15 sync
+   left 97 such files (78 old-hash console chunks + 19 stale 1.2.13 ZIPs).
+4. **Verify before committing:** `git diff --stat origin/alpha-working` empty
+   and `git diff --name-only --diff-filter=U` empty (tree identity).
+5. Commit: `Merge alpha-working into main (squashed)` — **no skip-ci
+   markers** (a marker in the squashed message suppresses every main
+   workflow, and this push is what triggers the rebuilds).
+6. Push, open the PR against **`main`** (the `chore/merge-alpha-working-into-main`
+   branch is v1.1.49-era and stale — use a fresh name), squash-merge to one
+   commit, then re-verify tree identity against the new `origin/main`.
+
+Ownership: sync PRs are owner-merged (agents create + prepare them; ask
+before merging one yourself). A docs catch-up pass usually triggers the
+sync.
 
 ## Shared worktree discipline (multi-agent repo, learned 2026-10-30)
 
