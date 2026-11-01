@@ -186,6 +186,22 @@ The GitHub macOS runner is the remote Mac. The full remote loop:
   `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`,
   `APPLE_PASSWORD`, `APPLE_TEAM_ID`) → tag `nvoos-dictate-v*`
   (`publish-nvoos-dictate.yml`).
+- **Release pipeline (v1.2.15 hardening, PRs #7351/#7353/#7354/#7356):** the
+  workflow carries `permissions: contents: write`; bundles build with the
+  **tauri CLI directly** (`npm run tauri -- build <args>`) and the release
+  job cuts the draft release with `softprops/action-gh-release@v2` —
+  tauri-action's octokit path fails with `Resource not accessible by
+  integration` even with write permissions. The macOS leg exports
+  `APPLE_*` to `$GITHUB_ENV` **only when the signing secrets actually
+  exist** — GitHub substitutes missing secrets as empty strings and the
+  tauri CLI treats set-but-empty vars as "signing configured" (empty
+  keychain import failure); without them the build runs ad-hoc.
+  **Tag-triggered runs evaluate the workflow file from the tag's commit** —
+  after a workflow fix, move the tag to the new tip and re-push to re-run.
+  The `windows-bundle` job builds the complete feature-union debug exe
+  (CMake + LLVM via Chocolatey, `LIBCLANG_PATH`) with a 30 s
+  boot-residency gate and uploads `nvoos-dictate-windows-exe`; both app
+  artifacts retain 90 days.
 
 Remote-Mac landscape (2026-10): **Cirrus CI shut down 2026-06-01**
 (Cirrus Labs joined OpenAI) — do not recommend it. Docker/QEMU macOS
