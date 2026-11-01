@@ -369,6 +369,24 @@ return array(
 		'profession_tags'       => array( 'researcher', 'analyst', 'journalist' ),
 		'risk_level'            => 'info',
 	),
+	'research_status'                    => array(
+		'toolkit'               => 'research_discovery',
+		'pattern_compatibility' => array( 'sequential' ),
+		'profession_tags'       => array( 'researcher', 'analyst', 'journalist' ),
+		'risk_level'            => 'info',
+	),
+	'research_result'                    => array(
+		'toolkit'               => 'research_discovery',
+		'pattern_compatibility' => array( 'sequential' ),
+		'profession_tags'       => array( 'researcher', 'analyst', 'journalist' ),
+		'risk_level'            => 'info',
+	),
+	'research_cancel'                    => array(
+		'toolkit'               => 'research_discovery',
+		'pattern_compatibility' => array( 'sequential' ),
+		'profession_tags'       => array( 'researcher', 'analyst', 'journalist' ),
+		'risk_level'            => 'info',
+	),
 	'client_summarize_text'              => array(
 		'toolkit'               => 'research_discovery',
 		'pattern_compatibility' => array( 'sequential', 'peer_to_peer' ),

@@ -1700,6 +1700,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'add_model_config'                   => 'external-tools',
 				'discover_new_models'                => 'external-tools',
 				'deep_research'                      => 'external-tools',
+				'research_status'                    => 'external-tools',
+				'research_result'                    => 'external-tools',
+				'research_cancel'                    => 'external-tools',
 				'create_text_embeddings'             => 'external-tools',
 				// OpenAI API Integration - Phase 2 Tools.
 				'semantic_content_search'            => 'external-tools',
@@ -2369,6 +2372,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-recommended-datasets.php',
 				// Deep Research tool.
 				'WP_MCP_AI_Tool_Deep_Research'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-deep-research.php',
+				// Deep Research background job companion tools.
+				'WP_MCP_AI_Tool_Research_Status'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-status.php',
+				'WP_MCP_AI_Tool_Research_Result'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-result.php',
+				'WP_MCP_AI_Tool_Research_Cancel'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-cancel.php',
 				// Excel and Spreadsheet Tools - AI-powered formula generation.
 				'WP_MCP_AI_Tool_Pro_Excel'                 => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-pro-excel.php',
 				// Erlang C queuing-theory tools (Base).

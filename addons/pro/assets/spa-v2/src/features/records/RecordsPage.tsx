@@ -23,6 +23,7 @@ import {
 	RECORDS_PER_PAGE,
 	type RecordEntityConfig,
 	type RecordSummary,
+	type ResearchSuggestion,
 } from '../../api/records';
 import { SitePicker } from '../commerce/SitePicker';
 
@@ -280,14 +281,12 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 	const [ researchQuery, setResearchQuery ] = useState( '' );
 	const [ researchBusy, setResearchBusy ] = useState< boolean >( false );
 	const [ researchError, setResearchError ] = useState< string | null >( null );
-	const [ suggestion, setSuggestion ] = useState< {
-		title: string;
-		fields: Record< string, string >;
-	} | null >( null );
+	const [ suggestion, setSuggestion ] = useState< ResearchSuggestion | null >( null );
 	const [ formTitle, setFormTitle ] = useState( '' );
 	const [ formFields, setFormFields ] = useState< Record< string, string > >( {} );
 	const [ createBusy, setCreateBusy ] = useState< boolean >( false );
 	const [ notice, setNotice ] = useState< string | null >( null );
+	const [ noticeIsWarning, setNoticeIsWarning ] = useState< boolean >( false );
 
 	const entity = useMemo(
 		() => entities.find( ( e ) => e.key === entityKey ) ?? entities[ 0 ] ?? null,
@@ -419,6 +418,18 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 				setSuggestion( result );
 				setFormTitle( result.title );
 				setFormFields( { ...result.fields } );
+				// A partial research pass (failed quality checks, reasoning
+				// fallback, truncation) still yields suggested fields — tell
+				// the user to review them instead of treating them as verified.
+				if ( result.researchStatus === 'partial' ) {
+					setNotice(
+						__(
+							'Research completed with warnings — review the suggested fields before saving.',
+							'nvoos-pro-spa'
+						)
+					);
+					setNoticeIsWarning( true );
+				}
 				setResearchBusy( false );
 			} )
 			.catch( ( err: unknown ) => {
@@ -439,6 +450,7 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 			.then( () => {
 				setCreateBusy( false );
 				setNotice( __( 'Record created.', 'nvoos-pro-spa' ) );
+				setNoticeIsWarning( false );
 				setSuggestion( null );
 				setResearchQuery( '' );
 				// New records are ordered by date desc, so they land on page 1.
@@ -682,7 +694,15 @@ export function RecordsPage( { group, allowRemote = false }: RecordsPageProps ):
 					) }
 
 					{ notice && (
-						<p className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--success" role="status">
+						<p
+							className={
+								'nvoos-pro-spa-page__message ' +
+								( noticeIsWarning
+									? 'nvoos-pro-spa-page__message--warning'
+									: 'nvoos-pro-spa-page__message--success' )
+							}
+							role="status"
+						>
 							{ notice }
 						</p>
 					) }

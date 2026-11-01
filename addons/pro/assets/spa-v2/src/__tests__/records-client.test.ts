@@ -132,6 +132,12 @@ describe( 'RecordsClient', () => {
 					Promise.resolve( {
 						title: 'Acme Ltd',
 						fields: { _company_industry: 'manufacturing' },
+						research_status: 'partial',
+						research_warnings: [ 'report_failed_quality_checks', 'used_reasoning_fallback' ],
+						research_validation: {
+							passed: false,
+							issues: [ 'drafting_notes_detected' ],
+						},
 					} ),
 			} as Response );
 		} ) as unknown as typeof fetch;
@@ -141,6 +147,31 @@ describe( 'RecordsClient', () => {
 		expect( calls[ 0 ].body ).toMatchObject( { query: 'acme ltd' } );
 		expect( result.title ).toBe( 'Acme Ltd' );
 		expect( result.fields._company_industry ).toBe( 'manufacturing' );
+		expect( result.researchStatus ).toBe( 'partial' );
+		expect( result.researchWarnings ).toEqual( [ 'report_failed_quality_checks', 'used_reasoning_fallback' ] );
+		expect( result.researchValidation ).toEqual( {
+			passed: false,
+			issues: [ 'drafting_notes_detected' ],
+		} );
+	} );
+
+	it( 'defaults research diagnostics when the server omits them', async () => {
+		global.fetch = vi.fn( () =>
+			Promise.resolve( {
+				ok: true,
+				status: 200,
+				json: () =>
+					Promise.resolve( {
+						title: 'Acme Ltd',
+						fields: {},
+					} ),
+			} as Response )
+		) as unknown as typeof fetch;
+		const client = new RecordsClient( { schemaEndpoint: SCHEMA, wpBase: WP_BASE, nonce: 'n' } );
+		const result = await client.research( COMPANY, 'acme ltd' );
+		expect( result.researchStatus ).toBe( 'complete' );
+		expect( result.researchWarnings ).toEqual( [] );
+		expect( result.researchValidation ).toEqual( { passed: true, issues: [] } );
 	} );
 
 	it( 'POSTs a reviewed record to wp/v2 with the meta fields', async () => {

@@ -19,6 +19,7 @@
 	--nvoos-danger: #d63638;
 	--nvoos-success: #00a32a;
 	--nvoos-warning: #f0c33c;
+	--nvoos-warning-text: #996800;
 	--nvoos-selected-bg: #e5e5ff;
 }
 
@@ -33,6 +34,7 @@
 	--nvoos-primary: #4f94d4;
 	--nvoos-primary-hover: #72aee6;
 	--nvoos-danger: #f86363;
+	--nvoos-warning-text: #f0c33c;
 	--nvoos-selected-bg: #2a2a4a;
 }
 
@@ -48,6 +50,7 @@
 		--nvoos-primary: #4f94d4;
 		--nvoos-primary-hover: #72aee6;
 		--nvoos-danger: #f86363;
+		--nvoos-warning-text: #f0c33c;
 		--nvoos-selected-bg: #2a2a4a;
 	}
 }
@@ -7795,6 +7798,10 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 
 .nvoos-pro-spa-page__message--success {
 	color: var(--nvoos-positive, #008a20);
+}
+
+.nvoos-pro-spa-page__message--warning {
+	color: var(--nvoos-warning-text, #996800);
 }
 
 /* =========================================================================
