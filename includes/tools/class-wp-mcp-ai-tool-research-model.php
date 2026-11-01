@@ -445,8 +445,8 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	protected function get_research_model( $provider, $settings ) {
 		switch ( $provider ) {
 			case 'openai':
-				// Use GPT-4 or better for research.
-				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
+				// Prefer the configured default, else the current flagship research-grade model.
+				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-5.6-sol';
 
 			case 'gemini':
 				// Use Gemini Pro for research.

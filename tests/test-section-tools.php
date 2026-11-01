@@ -54,6 +54,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		// Check for known fields.
 		// Federation & Mesh settings moved to the Advanced section (enable_mesh, enable_federation).
 		$this->assertArrayHasKey( 'web_search_provider', $fields );
+		$this->assertArrayHasKey( 'deep_research_model', $fields );
 		$this->assertArrayHasKey( 'enable_varnish_purge', $fields );
 		$this->assertArrayHasKey( 'enable_ai_media_library', $fields );
 		$this->assertArrayHasKey( 'enable_ai_comments_moderation', $fields );

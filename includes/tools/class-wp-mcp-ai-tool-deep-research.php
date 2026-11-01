@@ -818,8 +818,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Providers in the exclude list are skipped so retry walks advance down the chain.
 		if ( ! in_array( 'openai', $exclude_providers, true ) && ! empty( $settings['openai_api_key'] ) && class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$client = new WP_MCP_AI_OpenAI_Client();
-			// Prefer gpt-4o for research (multimodal, fast, cost-effective) or fall back to configured default.
-			$model = ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
+			// Prefer the configured default, else the current flagship research-grade model (1M context).
+			$model = ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-5.6-sol';
 			return array(
 				'client'   => $client,
 				'provider' => 'openai',

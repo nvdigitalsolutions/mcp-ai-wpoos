@@ -114,6 +114,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					),
 					'default'     => 'duckduckgo',
 				),
+				'deep_research_model'                    => array(
+					'type'        => 'select',
+					'label'       => __( 'Deep Research Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Model used by the deep_research tool for multi-step web research and report synthesis (provider:model format, the industry-standard SMART_LLM pattern). Leave as Auto to walk the provider preference chain. Prefer long-context models: research reports need room for many sources plus synthesis.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						''                              => __( 'Auto (provider preference chain)', 'mcp-ai-wpoos' ),
+						'openai:gpt-5.6-sol'            => __( 'OpenAI — GPT-5.6 Sol (Recommended)', 'mcp-ai-wpoos' ),
+						'openai:gpt-5.6-terra'          => __( 'OpenAI — GPT-5.6 Terra (Balanced)', 'mcp-ai-wpoos' ),
+						'openai:gpt-5.4'                => __( 'OpenAI — GPT-5.4 (1M Context)', 'mcp-ai-wpoos' ),
+						'gemini:gemini-3.1-pro-preview' => __( 'Gemini — 3.1 Pro Preview (1M Context)', 'mcp-ai-wpoos' ),
+						'anthropic:claude-opus-4.5'     => __( 'Anthropic — Claude Opus 4.5', 'mcp-ai-wpoos' ),
+						'deepseek:deepseek-flash'       => __( 'DeepSeek — V4.1 Flash (1M Context)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => '',
+				),
 				'enable_varnish_purge'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Varnish Purge Tool', 'mcp-ai-wpoos' ),
@@ -1010,7 +1025,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'configuration',
 					'label'  => __( 'Configuration', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
-					'fields' => array( 'web_search_provider', 'brave_search_api_key', 'tavily_api_key', 'enable_varnish_purge', 'attention_routing_enabled', 'attention_routing_min_tools', 'attention_routing_top_k', 'group_email_capability', 'group_email_max_recipients', 'search_gmail_capability', 'search_gmail_max_results', 'search_drive_capability', 'search_drive_max_results' ),
+					'fields' => array( 'web_search_provider', 'deep_research_model', 'brave_search_api_key', 'tavily_api_key', 'enable_varnish_purge', 'attention_routing_enabled', 'attention_routing_min_tools', 'attention_routing_top_k', 'group_email_capability', 'group_email_max_recipients', 'search_gmail_capability', 'search_gmail_max_results', 'search_drive_capability', 'search_drive_max_results' ),
 				),
 				'document_generation' => array(
 					'id'     => 'document_generation',
