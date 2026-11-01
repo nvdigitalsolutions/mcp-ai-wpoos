@@ -95,23 +95,39 @@ Symptom: `tools/list` → `_meta.gateway.errors.<slug>: "upstream error (401)"`
 
 Live state: the gateway is **OAuth-configured** — Auth0 tenant
 `https://nvoos.us.auth0.com` wired via `GATEWAY_OAUTH_ISSUER` /
-`GATEWAY_OAUTH_JWKS_URI` / `GATEWAY_OAUTH_RESOURCE=https://mcp.nvoos.pro`.
+`GATEWAY_OAUTH_JWKS_URI` / `GATEWAY_OAUTH_RESOURCE=https://mcp.nvoos.pro`
+(+ `GATEWAY_OAUTH_DEFAULT_SITES=demo`, PR #7373).
 `GET /.well-known/oauth-protected-resource` (root + `/mcp` variant) serves the
 RFC 9728 document; unauth 401s carry
 `WWW-Authenticate: Bearer, resource_metadata="…", scope="site:read site:demo …"`.
-Static keys keep working (dual mode). ChatGPT walkthrough (Phase 4) pending.
+Static keys keep working (dual mode). **ChatGPT connector LIVE 2026-11-01** —
+Phase 4 walkthrough completed (see the connector notes below).
 
 - **Auth0 checklist** (Phase 1, done live): create API with
-  **Identifier = `https://mcp.nvoos.pro`** (this is the token `aud`; a
-  missing API → “Invalid audience” at the consent step), add permissions
-  `site:read` / `site:<slug>` per site (colon names allowed). **DCR toggle:
-  Dashboard → Settings → Advanced → “Dynamic Application Registration”** —
-  the docs’ “Settings → Applications” path is stale (cost a search round
-  live). Smoke: `POST https://<tenant>/oidc/register` → 400
+  **Identifier = `https://mcp.nvoos.pro`** (canonical token `aud`), add
+  permissions `site:read` / `site:<slug>` per site (colon names allowed).
+  **ChatGPT needs a second API with Identifier = the full server URL
+  `https://mcp.nvoos.pro/mcp`** — the connector binds `resource` to the
+  path-insertion metadata URL (RFC 9728 §3.3) and Auth0 matches it exactly
+  (missing → error page `access_denied : Service not found: …`).
+  **DCR toggle: Dashboard → Settings → Advanced → “Dynamic Application
+  Registration”** — the docs’ “Settings → Applications” path is stale (cost a
+  search round live). Smoke: `POST https://<tenant>/oidc/register` → 400
   “dynamic client registration is disabled” when off, **201 + client_id**
   when on (Auth0 issues a client_secret even for `none` auth — harmless).
   API alternative `flags.enable_dynamic_client_registration` unverified —
   a tenant-flags PATCH 400'd live for another flag; use the dashboard.
+- **DCR’d clients get NO connections** → authorize fails with
+  `invalid_request : no connections enabled for the client`. Fix (verified
+  live 2026-11-01): promote the DB connection to a domain connection via
+  the Management API — `PATCH /api/v2/connections/<con_…>` with
+  `{"is_domain_connection":true}` — which enables it for every app
+  including DCR ones (the dashboard “Enable Application Connections”
+  tenant toggle did NOT take in this tenant). Management API access:
+  reuse the auto-created **“Auth0 Management API (Test Application)”**
+  (pre-authorized; secret in its Settings) or create an M2M app — gotcha:
+  the client-grant must target the **Management API** (`audience
+  https://<tenant>/api/v2/`), not the gateway API.
 - **Auth0 serves RFC 8414** at `/.well-known/oauth-authorization-server`
   (separate from the OIDC `openid-configuration` document) with
   `registration_endpoint` + `code_challenge_methods_supported: ["S256","plain"]`
@@ -136,10 +152,23 @@ Static keys keep working (dual mode). ChatGPT walkthrough (Phase 4) pending.
   `invalid_token`, short/unknown static keys → 401, `/admin/*` +
   `/health/full` unauth → 401, `http` → 301 https, TLS valid (WE1),
   helmet headers + HSTS present, Auth0 JWKS has no private material.
-- **Phase 4 walkthrough** (manual): ChatGPT → MCP servers → add
-  `https://mcp.nvoos.pro/mcp` → connector discovers (RFC 9728 → RFC 8414) →
-  DCR → Auth0 consent (scopes: `site:demo` etc.) → tools appear namespaced.
-  “Invalid audience” at consent = the API identifier is missing/typo’d.
+- **Phase 4 walkthrough — DONE live 2026-11-01** (owner-verified connect):
+  ChatGPT → MCP servers → add `https://mcp.nvoos.pro/mcp` → DCR (fresh
+  client per attempt) → authorize → Auth0 consent → tools appear namespaced.
+  Connector quirks (all verified live): it requests ALL AS-metadata scopes
+  (Auth0's OIDC set, never `site:*`) and requires an exact match in the
+  token response (else `OAUTH_SCOPES_MISMATCH`) → post-login Action
+  `api.accessToken.addScope(...)` for the OIDC set, wrapped in try/catch (an
+  unguarded throw breaks EVERY tenant login with the generic “service
+  outage” page); scope-less tokens fall back to
+  `GATEWAY_OAUTH_DEFAULT_SITES` (PR #7373).
+- **Free diagnostics (no dashboard needed)**: the authorize endpoint is a
+  probe — its error pages expand to “TECHNICAL DETAILS” naming the cause
+  (`Service not found: …`, `no connections enabled…`, `Unknown client…`);
+  a session-less browser reproduces server-side failures (client/browser
+  issues show the “couldn't find your session” template instead).
+  DCR without `redirect_uris` → 400 payload error when DCR is on (proves
+  the toggle without creating a client).
 
 ## Registry publishing (mcp-publisher)
 

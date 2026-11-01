@@ -1,7 +1,7 @@
 # Proposal 099 — ChatGPT OAuth 2.1 Connector for the MCP Gateway
 
 **Date:** 2026-11-01
-**Status:** IN PROGRESS — Phases 0–3 SHIPPED 2026-11-01 (Auth0 tenant + DCR live, PKCE e2e harness PR #7362, gateway env wired, security probes clean). Remaining: Phase 4 ChatGPT walkthrough + Phase 5 registry re-publish / docs flip.
+**Status:** IN PROGRESS — Phases 0–4 SHIPPED 2026-11-01 (Auth0 tenant + DCR live, PKCE e2e harness PR #7362, gateway env wired incl. `GATEWAY_OAUTH_DEFAULT_SITES` PR #7373, live ChatGPT connect owner-verified). Remaining: Phase 5 registry re-publish / docs flip.
 **Estimated Effort:** 3–4 dev-days (Phases 0–5) + ~1 day maintainer Auth0 provisioning
 **Priority:** MEDIUM — closes the last "blocked" line in the gateway directory-submission pack
 **Related:** [055-nvoos-mcp-gateway-proposal.md](./055-nvoos-mcp-gateway-proposal.md),
@@ -231,7 +231,7 @@ ChatGPT connector                        Auth0 (AS)                      NV oOS 
   gateway pointed at the fake AS; negative cases (bad signature, wrong aud,
   missing scope → 403 `insufficient_scope`, expired token).
 
-### Phase 4 — Live ChatGPT walkthrough (0.5–1 d)
+### Phase 4 — Live ChatGPT walkthrough (0.5–1 d) — DONE 2026-11-01 (owner-verified connect; Auth0 fixes: `/mcp` API identifier, DB connection promoted to domain connection, OIDC-scope post-login Action)
 
 - Manual run of "Add custom MCP server" with the production endpoint;
   record the consent UX, any connector quirks, and a namespaced
@@ -261,7 +261,7 @@ ChatGPT connector                        Auth0 (AS)                      NV oOS 
 1. ✅ **DONE 2026-11-01** — Auth0 tenant + consent copy approved (D1, D4).
 2. ✅ **DONE** — `site:<slug>` scope vocabulary created on the Auth0 API (D2).
 3. ✅ **DONE** — dual-mode verified live: static keys + OAuth both green (D3).
-4. ⏳ **Pending** — Phase 4 live walkthrough against production with the
+4. ✅ **DONE 2026-11-01** — Phase 4 live walkthrough against production with the
    demo scope (D5/D7).
 
 ---
