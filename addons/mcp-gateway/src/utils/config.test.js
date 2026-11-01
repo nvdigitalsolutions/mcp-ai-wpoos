@@ -43,6 +43,37 @@ test( 'GATEWAY_OAUTH_JWKS_URI and GATEWAY_OAUTH_RESOURCE override the defaults',
 	assert.deepEqual( cfg.errors, [] );
 } );
 
+test( 'GATEWAY_OAUTH_DEFAULT_SITES parses slugs and rejects unknown sites', () => {
+	const errors = [];
+	const oauth = parseOAuthConfig(
+		{ GATEWAY_OAUTH_ISSUER: 'https://auth.example.com', GATEWAY_OAUTH_DEFAULT_SITES: ' demo, ideabits ,, sascha ' },
+		errors
+	);
+	assert.deepEqual( oauth.defaultSites, [ 'demo', 'ideabits', 'sascha' ] );
+	assert.deepEqual( errors, [] );
+
+	const ok = loadConfig( {
+		AUTH_MODE: 'open',
+		GATEWAY_OAUTH_ISSUER: 'https://auth.example.com',
+		GATEWAY_OAUTH_DEFAULT_SITES: 'demo',
+		GATEWAY_PUBLIC_KEYS: 'key-1234567890abcdef=demo',
+		NVOOS_SITE_DEMO_URL: 'https://demo.example.com/wp-json/mcp-ai/v1/mcp',
+		NVOOS_SITE_DEMO_TOKEN: 'op_demo.SECRET',
+	} );
+	assert.deepEqual( ok.oauth.defaultSites, [ 'demo' ] );
+	assert.deepEqual( ok.errors, [] );
+
+	const bad = loadConfig( {
+		AUTH_MODE: 'open',
+		GATEWAY_OAUTH_ISSUER: 'https://auth.example.com',
+		GATEWAY_OAUTH_DEFAULT_SITES: 'demo,ghost',
+		GATEWAY_PUBLIC_KEYS: 'key-1234567890abcdef=demo',
+		NVOOS_SITE_DEMO_URL: 'https://demo.example.com/wp-json/mcp-ai/v1/mcp',
+		NVOOS_SITE_DEMO_TOKEN: 'op_demo.SECRET',
+	} );
+	assert.ok( bad.errors.some( ( error ) => error.includes( 'GATEWAY_OAUTH_DEFAULT_SITES' ) ) );
+} );
+
 test( 'invalid OAuth URLs are collected as config errors', () => {
 	const errors = [];
 	parseOAuthConfig( { GATEWAY_OAUTH_ISSUER: 'not a url' }, errors );

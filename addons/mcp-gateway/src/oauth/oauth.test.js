@@ -217,6 +217,35 @@ test( 'a token without site scopes gets 403 insufficient_scope', async () => {
 	await jwks.close();
 } );
 
+test( 'a token without site scopes falls back to GATEWAY_OAUTH_DEFAULT_SITES when configured', async () => {
+	const site = await startFakeSite();
+	const { publicKey, privateKey } = generateKeyPairSync( 'rsa', { modulusLength: 2048 } );
+	const jwk = publicKey.export( { format: 'jwk' } );
+	jwk.kid = 'oauth-key';
+	jwk.alg = 'RS256';
+	jwk.use = 'sig';
+	const jwks = await startJwksServer( jwk );
+
+	const oauth = {
+		enabled: true,
+		issuer: 'https://auth.example.com/',
+		jwksUri: jwks.jwksUri,
+		resource: 'https://mcp.nvoos.pro',
+		defaultSites: [ 'site-a' ],
+	};
+	const { baseUrl, close } = await startTestServer( createApp( { config: buildConfig( { site, oauth } ) } ) );
+
+	const token = signJwt( validPayload( { scope: 'openid profile' } ), privateKey );
+	const res = await post( baseUrl, { jsonrpc: '2.0', id: 5, method: 'tools/list', params: {} }, token );
+	assert.strictEqual( res.status, 200 );
+	const body = await res.json();
+	assert.match( body.result.tools[ 0 ].name, /make_site_a/ );
+
+	await close();
+	await site.close();
+	await jwks.close();
+} );
+
 test( 'a tampered token gets 401 with the RFC 9728 challenge', async () => {
 	const site = await startFakeSite();
 	const { publicKey, privateKey } = generateKeyPairSync( 'rsa', { modulusLength: 2048 } );

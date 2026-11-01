@@ -56,6 +56,7 @@ Deployment target: **Cloudways Velocity** (managed Node hosting) at
 | `GATEWAY_OAUTH_ISSUER` | no | OAuth 2.1 authorization server issuer (e.g. Auth0 tenant). Setting it turns the gateway into an RFC 9728 protected resource — see the OAuth section below |
 | `GATEWAY_OAUTH_JWKS_URI` | no | JWKS override (default: issuer's `/.well-known/jwks.json`) |
 | `GATEWAY_OAUTH_RESOURCE` | no | RFC 8707 resource identifier / token audience (default `https://mcp.nvoos.pro`) |
+| `GATEWAY_OAUTH_DEFAULT_SITES` | no | Fallback slugs for a valid OAuth token that carries no `site:<slug>` scope (ChatGPT's connector requests only AS-level OIDC scopes). Unset = such tokens get 403 `insufficient_scope` |
 | `TRUST_PROXY` | yes on Velocity | `1` — NGINX sets X-Forwarded-For |
 | `ALLOWED_ORIGINS` | no | Comma-separated CORS origins for browser-based clients |
 | `MAX_JSON_BODY` | no | Body limit (default `1mb`) |
@@ -197,6 +198,21 @@ resource **alongside** static keys:
 Authorization server: any OAuth 2.1 AS with RFC 8414 metadata + JWKS
 (Auth0 is the platform convention). Dynamic client registration (RFC 7591)
 belongs to the AS, not the gateway.
+
+**ChatGPT connector notes** (verified against the live production setup,
+2026-11-01):
+
+- The Auth0 API identifier must equal the full MCP server URL, e.g.
+  `https://mcp.nvoos.pro/mcp` — ChatGPT binds `resource` to the
+  path-insertion metadata URL (RFC 9728 §3.3), and Auth0 matches it
+  exactly.
+- ChatGPT requests ALL scopes from the AS `scopes_supported` and expects
+  an exact match in the token response (else `OAUTH_SCOPES_MISMATCH`) —
+  a post-login Action (`api.accessToken.addScope`) grants the OIDC set.
+- None of those scopes are `site:*`, so pair the deployment with
+  `GATEWAY_OAUTH_DEFAULT_SITES=<public-slug>` (e.g. `demo`) or the token
+  is rejected 403 `insufficient_scope`. Explicit `site:<slug>` scopes in a
+  token always win over the fallback.
 
 ## Development
 
