@@ -142,6 +142,7 @@
     "uglify-js": "^3.17.4"
   },
   "overrides": {
+    "glob@^10": "14.0.2",
     "qs": ">=6.16.1 <7",
     "follow-redirects": ">=1.16.2 <2",
     "yauzl": ">=3.2.1",
