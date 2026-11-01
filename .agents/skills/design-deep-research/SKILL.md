@@ -108,6 +108,35 @@ deep_research {
 }
 ```
 
+### Model Selection (operational, 2026-11-01)
+
+`deep_research` resolves its model **independently** of the assistant's chat
+provider (the `SMART_LLM` pattern from GPT Researcher). Selection order:
+
+1. **`deep_research_model` setting** — configure in **NV oOS → Tools →
+   Configuration → Deep Research Model** (added 2026-11-01, PR #7376).
+   Format is `provider:model` (industry-standard `SMART_LLM` convention),
+   e.g. `deepseek:deepseek-flash`, `gemini:gemini-3.1-pro-preview`,
+   `openai:gpt-5.6-sol`, or `Auto`.
+2. **Provider preference chain** (when Auto/unset): OpenAI first (any
+   configured OpenAI key wins, using `openai_default_model` or the
+   hardcoded fallback), then Gemini → Anthropic → Cloudflare → … →
+   DeepSeek near the end. **This is why a site whose chat default is
+   `deepseek` still researches with OpenAI** — the assistant's chat
+   provider never governs this tool.
+3. Stale-model trap: the hardcoded OpenAI fallback used to be `gpt-4.1`
+   (June-2024 knowledge cutoff — reports framed "as of June 2024" and
+   fumbled recent terminology like MCP). It is `gpt-5.6-sol` as of
+   PR #7376; still, set the dedicated model per site for consistent
+   quality.
+
+Troubleshooting live quality issues: if a report looks stale or flubs
+recent terms, check which model ran (the report/Codex summary names it)
+and set `deep_research_model` explicitly — do not assume the assistant
+provider applies. `include_site_content: true` returning "no local site
+content" just means the site has little content; the web report is
+unaffected.
+
 ## `semantic_content_search` — Site Knowledge Retrieval
 
 Search your own WordPress content (posts, pages, products) by meaning, not just keywords. Uses vector embeddings for semantic matching.
