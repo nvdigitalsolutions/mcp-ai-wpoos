@@ -83,9 +83,13 @@ npx -y @nvdigitalsolutions/nvoos-mcp-bridge
   per-consumer by the operator (never embedded in metadata). The earlier
   assumption that static-key remotes were rejected was wrong: the registry
   accepts bearer-authenticated public remotes.
-- **ChatGPT native MCP connector** — still blocked: requires OAuth. Until
-  then the ChatGPT route is the `addons/chatgpt-plugin` package (per-site
-  bridge, experimental).
+- **ChatGPT native MCP connector** — ✅ OAuth LIVE 2026-11-01: Auth0
+  tenant (`https://nvoos.us.auth0.com`) + DCR + scopes provisioned, gateway
+  env wired (`GATEWAY_OAUTH_ISSUER` / `_JWKS_URI` / `_RESOURCE`), RFC 9728
+  metadata + 401 challenges verified, security probe suite clean (see
+  [Proposal 099](../../project/proposals/099-chatgpt-oauth-mcp-connector-proposal.md)).
+  Remaining: the Phase 4 live “Add custom MCP server” walkthrough.
+  `addons/chatgpt-plugin` remains the legacy per-site bridge.
 
 ## Open items before submitting
 

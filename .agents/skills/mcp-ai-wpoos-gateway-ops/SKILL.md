@@ -110,15 +110,21 @@ Static keys keep working (dual mode). ChatGPT walkthrough (Phase 4) pending.
   live). Smoke: `POST https://<tenant>/oidc/register` → 400
   “dynamic client registration is disabled” when off, **201 + client_id**
   when on (Auth0 issues a client_secret even for `none` auth — harmless).
-  API alternative: `PATCH /api/v2/tenants/settings` with
-  `flags.enable_dynamic_client_registration: true`.
+  API alternative `flags.enable_dynamic_client_registration` unverified —
+  a tenant-flags PATCH 400'd live for another flag; use the dashboard.
 - **Auth0 serves RFC 8414** at `/.well-known/oauth-authorization-server`
   (separate from the OIDC `openid-configuration` document) with
   `registration_endpoint` + `code_challenge_methods_supported: ["S256","plain"]`
   — S256 presence is the OpenAI requirement; “plain” is Auth0-default and
-  harmless. Optional hardening:
-  `PATCH /api/v2/tenants/settings {"flags":{"disable_implicit_grant":true}}`
-  (the gateway only uses `authorization_code`).
+  harmless (PKCE never reaches the gateway — it only validates bearer
+  tokens).
+- **Implicit-grant hardening (done 2026-11-01)**: `disable_implicit_grant`
+  is NOT a writable tenant flag — `PATCH /api/v2/tenants/settings` with
+  `flags.disable_implicit_grant` → 400 “Additional properties not allowed”
+  (verified atomic: no other flag changed). The real lever is per
+  application: **Application → Settings → Advanced → Grant Types**. Exposure
+  is nil in practice anyway: DCR’d clients register `authorization_code`
+  only, and the gateway never uses the implicit flow.
 - **PKCE harness**: `node --test --test-concurrency=1 src/oauth/pkce-e2e.test.js`
   (PR #7362) — fake AS + full ChatGPT-connector flow, 7 tests; the OAuth group
   (`pkce-e2e` + `jwt` + `oauth` + `resource-server`) is 27/27. Gotcha: the
