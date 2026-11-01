@@ -1,0 +1,2 @@
+import{r as e}from"./index-D83A2Sxq.js";import{t}from"./wp-i18n-C072j7CM.js";import{t as n}from"./SettingsForm-DPZUaFJt.js";var r=e();function i(){return(0,r.jsx)(n,{title:t(`Settings`,`nvoos-pro-spa`),subtitle:t(`Site-wide NV oOS configuration.`,`nvoos-pro-spa`)})}export{i as SettingsPage};
+//# sourceMappingURL=SettingsPage-CS-I3wlZ.js.map

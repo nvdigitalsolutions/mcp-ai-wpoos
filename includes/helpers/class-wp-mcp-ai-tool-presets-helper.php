@@ -152,6 +152,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Search & research.
 					'web_search',
 					'deep_research',
+					'research_status',
+					'research_result',
+					'research_cancel',
 					'semantic_content_search',
 					// AI image generation.
 					'generate_openai_image',

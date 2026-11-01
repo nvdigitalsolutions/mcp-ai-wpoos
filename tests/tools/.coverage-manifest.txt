@@ -258,7 +258,10 @@ wp-mcp-ai-tool-query-remote-site
 wp-mcp-ai-tool-recall-memory
 wp-mcp-ai-tool-record-reflection
 wp-mcp-ai-tool-reliefweb-reports
+wp-mcp-ai-tool-research-cancel
 wp-mcp-ai-tool-research-model
+wp-mcp-ai-tool-research-result
+wp-mcp-ai-tool-research-status
 wp-mcp-ai-tool-resize-image
 wp-mcp-ai-tool-responsive-image-validator
 wp-mcp-ai-tool-retrieve-agent-memory

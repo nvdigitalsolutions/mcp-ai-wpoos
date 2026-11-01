@@ -344,6 +344,7 @@ class WP_MCP_AI_Deep_Research_Enhancements_Test extends WP_UnitTestCase {
 		$report = $method->invoke(
 			$this->tool,
 			'Test topic',
+			'standard',
 			$analysis,
 			$search_results,
 			true,
@@ -375,6 +376,7 @@ class WP_MCP_AI_Deep_Research_Enhancements_Test extends WP_UnitTestCase {
 		$report = $method->invoke(
 			$this->tool,
 			'Test topic',
+			'standard',
 			$analysis,
 			$search_results,
 			true

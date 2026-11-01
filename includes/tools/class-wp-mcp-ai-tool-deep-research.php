@@ -52,9 +52,13 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Maximum number of search queries to perform.
 	 *
+	 * This is a safety ceiling; the effective per-run count is derived from
+	 * the requested depth (basic 1, standard 3, comprehensive 6) and can be
+	 * lowered via the `wp_mcp_ai_deep_research_max_queries` filter.
+	 *
 	 * @var int
 	 */
-	const MAX_SEARCH_QUERIES = 3;
+	const MAX_SEARCH_QUERIES = 6;
 
 	/**
 	 * Maximum results per search query.
@@ -93,8 +97,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'when_to_use'     => __( 'Producing a cited multi-source research report on a topic through iterative web search and AI analysis.', 'mcp-ai-wpoos' ),
 			'when_not_to_use' => __( 'For a quick single search use web_search; for site-specific knowledge use semantic_content_search.', 'mcp-ai-wpoos' ),
-			'related_tools'   => array( 'web_search', 'semantic_content_search', 'store_agent_context' ),
-			'notes'           => __( 'Depth is basic, standard, or comprehensive; run_mode=background uses cron and results are cached for one hour.', 'mcp-ai-wpoos' ),
+			'related_tools'   => array( 'web_search', 'semantic_content_search', 'store_agent_context', 'research_status', 'research_result', 'research_cancel' ),
+			'notes'           => __( 'Depth is basic, standard, or comprehensive; run_mode=background uses cron and results are cached for one hour. Background jobs are polled with research_status, read with research_result, and stopped with research_cancel. Reports carry a status (complete/partial), validation results, warnings, pages read, and elapsed time.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -300,7 +304,12 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$prior_memory = $this->recall_prior_research( $topic, $memory_agent_id, $context );
 		}
 
-		// Step 1: Perform web searches to gather information.
+		// Track elapsed time for budget enforcement and diagnostics.
+		$start_time = microtime( true );
+
+		// Step 1: Perform web searches to gather information. The gathered
+		// evidence is persisted between stages so a failed synthesis or a
+		// validation retry never repeats the (network-bound) searches.
 		$search_results = $this->gather_information( $topic, $depth, $focus_areas, $context );
 
 		if ( is_wp_error( $search_results ) ) {
@@ -313,27 +322,35 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$site_content = $this->gather_site_content( $topic, $focus_areas, $context );
 		}
 
+		// Step 1c: Read full pages for the top sources so the synthesis works
+		// from primary material instead of search snippets alone. Bounded by
+		// depth, page count, and the elapsed-time budget; always optional.
+		$pages = $this->read_source_pages( $search_results['sources'] ?? array(), $depth, $start_time );
+
 		// Step 2: Analyze findings with AI (now including site content and prior memory).
-		$analysis_result = $this->analyze_findings( $topic, $search_results, $depth, $focus_areas, $include_sources, $context, $site_content, $prior_memory );
+		// The analysis stage validates the draft report and retries once when
+		// quality checks fail before giving up with an explicit partial result.
+		$analysis_result = $this->analyze_findings( $topic, $search_results, $depth, $focus_areas, $include_sources, $context, $site_content, $prior_memory, $pages, $start_time );
 
 		if ( is_wp_error( $analysis_result ) ) {
 			return $analysis_result;
 		}
 
-		// Step 3: Build final research report.
-		$research_report = $this->build_research_report( $topic, $analysis_result, $search_results, $include_sources, $site_content );
+		// Step 3: Build final research report (with completion diagnostics).
+		$research_report = $this->build_research_report( $topic, $depth, $analysis_result, $search_results, $include_sources, $site_content, $start_time, $pages );
 
 		// Step 4: Store research in agent memory if requested.
 		if ( $store_to_memory && $memory_agent_id ) {
 			$this->persist_research( $topic, $depth, $research_report, $memory_agent_id, $context );
 		}
 
-		// Cache the results for 1 hour — but never cache an empty report:
-		// caching a failed generation would poison the cache for the TTL window.
+		// Cache the results for 1 hour — but never cache a failed generation:
+		// caching a partial/empty report would poison the cache for the TTL
+		// window.
 		if ( WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			$report_word_count = isset( $research_report['word_count'] ) ? absint( $research_report['word_count'] ) : 0;
 
-			if ( $report_word_count > 0 ) {
+			if ( $report_word_count > 0 && 'complete' === ( $research_report['status'] ?? 'partial' ) ) {
 				$cache_key = $this->get_cache_key( $topic, $depth, $focus_areas );
 				$cache_ttl = HOUR_IN_SECONDS;
 
@@ -351,10 +368,11 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			} elseif ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				WP_MCP_AI_Logger::log_event(
 					'deep_research_cache_skipped',
-					'Deep research report was not cached because it is empty.',
+					'Deep research report was not cached because it is empty or partial.',
 					array(
-						'topic' => $topic,
-						'depth' => $depth,
+						'topic'  => $topic,
+						'depth'  => $depth,
+						'status' => $research_report['status'] ?? 'unknown',
 					)
 				);
 			}
@@ -368,8 +386,13 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				array(
 					'topic'                => $topic,
 					'depth'                => $depth,
+					'status'               => $research_report['status'] ?? 'unknown',
 					'sources_used'         => count( $research_report['sources'] ?? array() ),
+					'pages_read'           => absint( $research_report['pages_read'] ?? 0 ),
 					'word_count'           => str_word_count( $research_report['report'] ?? '' ),
+					'validation_passed'    => $research_report['validation']['passed'] ?? false,
+					'warnings'             => $research_report['warnings'] ?? array(),
+					'elapsed_seconds'      => $research_report['elapsed_seconds'] ?? 0,
 					'site_content_matches' => count( $site_content ),
 					'prior_memory_items'   => count( $prior_memory ),
 					'stored_to_memory'     => $store_to_memory && $memory_agent_id,
@@ -401,21 +424,28 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			);
 		}
 
+		// Evidence is persisted between stages: when a previous run already
+		// gathered (and stored) search results for this exact topic/depth/
+		// focus-area combination, reuse them instead of repeating the
+		// network-bound searches.
+		$cache_key = $this->get_cache_key( $topic, $depth, $focus_areas );
+		$evidence  = $this->get_stored_evidence( $cache_key );
+
+		if ( ! empty( $evidence['results'] ) ) {
+			$evidence['reused'] = true;
+			return $evidence;
+		}
+
 		// Generate search queries based on depth and focus areas.
 		$search_queries = $this->generate_search_queries( $topic, $depth, $focus_areas );
 
-		$all_results = array();
-		$all_sources = array();
+		$all_results    = array();
+		$all_sources    = array();
+		$failed_queries = array();
 
 		foreach ( $search_queries as $query ) {
-			// Execute web search.
-			$search_result = $web_search_tool->execute(
-				array(
-					'query'       => $query,
-					'max_results' => self::MAX_RESULTS_PER_QUERY,
-				),
-				$context
-			);
+			// Execute web search with one targeted retry on transient failure.
+			$search_result = $this->execute_web_search_with_retry( $web_search_tool, $query, $context );
 
 			if ( is_wp_error( $search_result ) ) {
 				// Log the error but continue with other searches.
@@ -428,6 +458,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 						)
 					);
 				}
+				$failed_queries[] = $query;
 				continue;
 			}
 
@@ -449,18 +480,95 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( empty( $all_results ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_search_results',
-				__( 'No web search results found for the research topic.', 'mcp-ai-wpoos' )
+				__( 'No web search results found for the research topic.', 'mcp-ai-wpoos' ),
+				array(
+					'status'         => 502,
+					'failed_queries' => $failed_queries,
+				)
 			);
 		}
 
-		// Deduplicate sources by URL.
+		// Deduplicate sources by URL and cap per-domain dominance.
 		$all_sources = $this->deduplicate_sources( $all_sources );
 
-		return array(
-			'results' => $all_results,
-			'sources' => $all_sources,
-			'queries' => $search_queries,
+		$evidence = array(
+			'results'        => $all_results,
+			'sources'        => $all_sources,
+			'queries'        => $search_queries,
+			'failed_queries' => $failed_queries,
+			'reused'         => false,
 		);
+
+		// Persist the evidence so later stages (and background reruns) do not
+		// need to repeat the searches.
+		$this->store_evidence( $cache_key, $evidence );
+
+		return $evidence;
+	}
+
+	/**
+	 * Execute a single web search query with one targeted retry.
+	 *
+	 * @param object $tool    Web search tool instance.
+	 * @param string $query   Search query.
+	 * @param array  $context Execution context.
+	 * @return array|WP_Error Search results or error.
+	 */
+	protected function execute_web_search_with_retry( $tool, $query, $context ) {
+		/**
+		 * Filter the number of extra search attempts per query (default 1).
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $retries Extra attempts after the first failure.
+		 */
+		$retries = (int) apply_filters( 'wp_mcp_ai_deep_research_search_retries', 1 );
+		$retries = max( 0, min( $retries, 3 ) );
+
+		$result = $tool->execute(
+			array(
+				'query'       => $query,
+				'max_results' => self::MAX_RESULTS_PER_QUERY,
+			),
+			$context
+		);
+
+		$remaining = $retries;
+		while ( $remaining > 0 && is_wp_error( $result ) ) {
+			$result = $tool->execute(
+				array(
+					'query'       => $query,
+					'max_results' => self::MAX_RESULTS_PER_QUERY,
+				),
+				$context
+			);
+			--$remaining;
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Retrieve previously persisted search evidence for a research run.
+	 *
+	 * @param string $cache_key Cache key for the topic/depth/focus-area set.
+	 * @return array Evidence array (empty when nothing stored).
+	 */
+	protected function get_stored_evidence( $cache_key ) {
+		$stored = get_transient( 'wp_mcp_ai_dr_evidence_' . $cache_key );
+
+		return is_array( $stored ) ? $stored : array();
+	}
+
+	/**
+	 * Persist search evidence so later stages can reuse it.
+	 *
+	 * @param string $cache_key Cache key for the topic/depth/focus-area set.
+	 * @param array  $evidence  Evidence array.
+	 * @return void
+	 */
+	protected function store_evidence( $cache_key, $evidence ) {
+		set_transient( 'wp_mcp_ai_dr_evidence_' . $cache_key, $evidence, HOUR_IN_SECONDS );
 	}
 
 	/**
@@ -477,10 +585,13 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Main query.
 		$queries[] = $topic;
 
-		// Determine number of additional queries based on depth.
-		$num_queries = 'basic' === $depth ? 1 : ( 'comprehensive' === $depth ? 3 : 2 );
+		// Determine number of additional queries based on depth. Depth is made
+		// measurable: basic covers the topic only, standard adds overview and
+		// focus-area subquestions, comprehensive adds evidence-oriented queries
+		// (official documentation, data, and counter-evidence).
+		$num_queries = 'basic' === $depth ? 1 : ( 'comprehensive' === $depth ? 6 : 3 );
 
-		// Add focus area queries.
+		// Add focus area queries (subquestions).
 		if ( ! empty( $focus_areas ) ) {
 			foreach ( $focus_areas as $area ) {
 				if ( count( $queries ) >= $num_queries ) {
@@ -491,31 +602,59 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// Add depth-specific queries.
+		if ( count( $queries ) < $num_queries && 'comprehensive' === $depth ) {
+			$queries[] = $topic . ' official documentation';
+		}
 		if ( count( $queries ) < $num_queries ) {
 			if ( 'comprehensive' === $depth ) {
-				$queries[] = $topic . ' research latest developments';
+				$queries[] = $topic . ' statistics and data';
 			} elseif ( 'standard' === $depth ) {
 				$queries[] = $topic . ' overview';
 			}
 		}
+		if ( count( $queries ) < $num_queries ) {
+			if ( 'comprehensive' === $depth ) {
+				$queries[] = $topic . ' limitations criticism controversy';
+			} elseif ( 'standard' === $depth ) {
+				$queries[] = $topic . ' key facts and figures';
+			}
+		}
+		if ( 'comprehensive' === $depth && count( $queries ) < $num_queries ) {
+			$queries[] = $topic . ' history and background';
+		}
+		if ( 'comprehensive' === $depth && count( $queries ) < $num_queries ) {
+			$queries[] = $topic . ' latest developments news';
+		}
 
-		return array_slice( $queries, 0, min( self::MAX_SEARCH_QUERIES, $num_queries ) );
+		/**
+		 * Filter the maximum number of search queries per research run.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $max_queries Default 6 (the class constant).
+		 */
+		$max_queries = (int) apply_filters( 'wp_mcp_ai_deep_research_max_queries', self::MAX_SEARCH_QUERIES );
+		$max_queries = max( 1, min( $max_queries, 12 ) );
+
+		return array_slice( $queries, 0, min( $max_queries, $num_queries ) );
 	}
 
 	/**
 	 * Analyze findings using AI.
 	 *
-	 * @param string $topic          Research topic.
-	 * @param array  $search_results Search results.
-	 * @param string $depth          Research depth.
-	 * @param array  $focus_areas    Focus areas.
-	 * @param bool   $include_sources Whether to include sources.
-	 * @param array  $context        Execution context.
-	 * @param array  $site_content   Local site/vector-store content matches.
-	 * @param array  $prior_memory   Prior research recalled from agent memory.
+	 * @param string     $topic          Research topic.
+	 * @param array      $search_results Search results.
+	 * @param string     $depth          Research depth.
+	 * @param array      $focus_areas    Focus areas.
+	 * @param bool       $include_sources Whether to include sources.
+	 * @param array      $context        Execution context.
+	 * @param array      $site_content   Local site/vector-store content matches.
+	 * @param array      $prior_memory   Prior research recalled from agent memory.
+	 * @param array      $pages          Full-page content read from top sources.
+	 * @param float|null $start_time     Monotonic start time for budget checks.
 	 * @return array|WP_Error Analysis result or error.
 	 */
-	protected function analyze_findings( $topic, $search_results, $depth, $focus_areas, $include_sources, $context, $site_content = array(), $prior_memory = array() ) {
+	protected function analyze_findings( $topic, $search_results, $depth, $focus_areas, $include_sources, $context, $site_content = array(), $prior_memory = array(), $pages = array(), $start_time = null ) {
 		/**
 		 * Filter the maximum number of provider attempts for report generation.
 		 *
@@ -533,6 +672,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$excluded_providers  = array();
 		$last_error          = null;
 		$retry_larger_budget = false;
+		$validation_feedback = array();
+		$last_valid_content  = null;
 
 		for ( $attempt = 0; $attempt < $max_attempts; $attempt++ ) {
 			// Get AI client and model, skipping providers that already failed.
@@ -554,7 +695,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$model    = $ai_setup['model'];
 
 			// Build analysis prompt.
-			$prompt = $this->build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content, $prior_memory );
+			$prompt = $this->build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content, $prior_memory, $pages, $validation_feedback );
 
 			// Build messages array.
 			$messages = array(
@@ -627,7 +768,9 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 			// Reasoning fallback: DeepSeek-style reasoning models may return the
 			// chain of thought in reasoning_content with an empty final content.
-			// Use the reasoning as the report when it is all we have.
+			// Use the reasoning as the report when it is all we have — but run
+			// the quality checks on it so callers see whether the fallback is
+			// actually usable as a report.
 			if ( '' === $content && ! empty( $result['reasoning_content'] ) && is_string( $result['reasoning_content'] ) ) {
 				$content = trim( $result['reasoning_content'] );
 
@@ -643,12 +786,16 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					);
 				}
 
+				$validation = $this->validate_report_content( $content, $depth, $include_sources );
+
 				return array(
 					'content'                 => $content,
 					'provider'                => $provider,
 					'model'                   => $model,
 					'used_reasoning_fallback' => true,
 					'attempts'                => $attempt + 1,
+					'validated'               => $validation['passed'],
+					'validation_issues'       => $validation['issues'],
 				);
 			}
 
@@ -664,12 +811,16 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				if ( '' !== $content ) {
 					// Even after the larger budget the provider truncated: return
 					// what we have with an explicit flag instead of a silent cut.
+					$validation = $this->validate_report_content( $content, $depth, $include_sources );
+
 					return array(
-						'content'   => $content,
-						'provider'  => $provider,
-						'model'     => $model,
-						'truncated' => true,
-						'attempts'  => $attempt + 1,
+						'content'           => $content,
+						'provider'          => $provider,
+						'model'             => $model,
+						'truncated'         => true,
+						'attempts'          => $attempt + 1,
+						'validated'         => $validation['passed'],
+						'validation_issues' => $validation['issues'],
 					);
 				}
 
@@ -695,12 +846,74 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				continue;
 			}
 
+			// Report validation gate: a non-empty completion can still be
+			// drafting notes, a cut-off fragment, or a report without usable
+			// citations. Validate before accepting it as complete.
+			$validation = $this->validate_report_content( $content, $depth, $include_sources );
+
+			if ( ! $validation['passed'] ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'deep_research_validation_failed',
+						'Deep research draft failed quality checks.',
+						array(
+							'topic'    => $topic,
+							'provider' => $provider,
+							'model'    => $model,
+							'attempt'  => $attempt + 1,
+							'issues'   => $validation['issues'],
+						)
+					);
+				}
+
+				// Remember the draft so a failed retry can still salvage it.
+				$last_valid_content = array(
+					'content'  => $content,
+					'provider' => $provider,
+					'model'    => $model,
+					'attempts' => $attempt + 1,
+					'issues'   => $validation['issues'],
+				);
+
+				// Retry the synthesis once with explicit feedback, unless out
+				// of attempts or over the elapsed-time budget.
+				if ( ( $attempt + 1 ) < $max_attempts && ! $this->time_budget_exceeded( $start_time ) ) {
+					$validation_feedback = $validation['issues'];
+					continue;
+				}
+
+				return array(
+					'content'           => $content,
+					'provider'          => $provider,
+					'model'             => $model,
+					'attempts'          => $attempt + 1,
+					'validated'         => false,
+					'validation_issues' => $validation['issues'],
+				);
+			}
+
 			// Success.
 			return array(
-				'content'  => $content,
-				'provider' => $provider,
-				'model'    => $model,
-				'attempts' => $attempt + 1,
+				'content'           => $content,
+				'provider'          => $provider,
+				'model'             => $model,
+				'attempts'          => $attempt + 1,
+				'validated'         => true,
+				'validation_issues' => array(),
+			);
+		}
+
+		// All attempts exhausted. When a non-empty draft existed, return it
+		// with its validation outcome instead of discarding the work — the
+		// report builder marks it as a partial result.
+		if ( null !== $last_valid_content ) {
+			return array(
+				'content'           => $last_valid_content['content'],
+				'provider'          => $last_valid_content['provider'],
+				'model'             => $last_valid_content['model'],
+				'attempts'          => $last_valid_content['attempts'],
+				'validated'         => false,
+				'validation_issues' => $last_valid_content['issues'],
 			);
 		}
 
@@ -754,6 +967,321 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return '';
+	}
+
+	/**
+	 * Validate a generated report before it is marked complete.
+	 *
+	 * Structural quality checks (industry-standard pre-acceptance gate):
+	 * minimum length, drafting-note detection, abrupt endings, section
+	 * presence, and citation presence. Failing drafts trigger one
+	 * feedback-driven rewrite in analyze_findings; when the rewrite still
+	 * fails, the report is returned as an explicit partial result.
+	 *
+	 * @param string $content         Report content.
+	 * @param string $depth           Research depth (affects thresholds).
+	 * @param bool   $include_sources Whether citations were requested.
+	 * @return array Shape: array( 'passed' => bool, 'issues' => string[] ).
+	 */
+	protected function validate_report_content( $content, $depth, $include_sources ) {
+		$issues  = array();
+		$content = is_string( $content ) ? trim( $content ) : '';
+
+		/**
+		 * Filter to disable report validation entirely.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param bool $enabled Default true.
+		 */
+		if ( ! (bool) apply_filters( 'wp_mcp_ai_deep_research_enable_validation', true ) ) {
+			return array(
+				'passed' => true,
+				'issues' => array(),
+			);
+		}
+
+		if ( '' === $content ) {
+			return array(
+				'passed' => false,
+				'issues' => array( 'empty_report' ),
+			);
+		}
+
+		// 1. Minimum length per depth.
+		$min_words = (int) apply_filters( 'wp_mcp_ai_deep_research_min_words', $this->get_min_words_for_depth( $depth ) );
+		if ( str_word_count( $content ) < $min_words ) {
+			$issues[] = 'below_min_word_count';
+		}
+
+		// 2. Drafting notes / placeholders (the model is still planning, not
+		// reporting).
+		/**
+		 * Filter the drafting-note detection patterns.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param string[] $patterns PCRE patterns.
+		 */
+		$drafting_patterns = (array) apply_filters(
+			'wp_mcp_ai_deep_research_drafting_markers',
+			array(
+				"/I'll (write|draft|research|outline)/i",
+				'/let me (research|check|look|draft|write)/i',
+				'/to be (completed|continued|written)/i',
+				'/(^|\s)TBD(\s|$)/i',
+				'/(^|\s)TODO(\s|$)/i',
+				'/draft (outline|notes|version)/i',
+				'/as of my (knowledge|training) cutoff/i',
+				"/I (do not|don't) have (access to|information about)/i",
+				"/unfortunately I (cannot|can't)/i",
+				'/here (is|are) (a|some) (draft|preliminary|initial)/i',
+			)
+		);
+		foreach ( $drafting_patterns as $pattern ) {
+			if ( is_string( $pattern ) && '' !== $pattern && preg_match( $pattern, $content ) ) {
+				$issues[] = 'drafting_notes_detected';
+				break;
+			}
+		}
+
+		// 3. Abrupt endings: trailing ellipsis, dangling list punctuation, a
+		// dangling section label, or a tail with no sentence punctuation.
+		$tail      = trim( substr( $content, -120 ) );
+		$last_char = substr( $tail, -1 );
+		$abrupt    = false;
+		if ( '…' === $last_char || '...' === substr( $tail, -3 ) ) {
+			$abrupt = true;
+		} elseif ( preg_match( '/[:;\-•]\s*$/', $tail ) ) {
+			$abrupt = true;
+		} elseif ( preg_match( '/(sources|references|notes|bibliography)\s*:\s*$/i', $tail ) ) {
+			$abrupt = true;
+		} elseif ( ! preg_match( '/[.!?]/', $tail ) ) {
+			$abrupt = true;
+		}
+		if ( $abrupt ) {
+			$issues[] = 'abrupt_ending';
+		}
+
+		// 4. Section presence: the report must contain a reasonable number of
+		// the sections prompted for its depth.
+		$expected_words = 'comprehensive' === $depth
+			? array( 'Executive Summary', 'Background', 'Findings', 'Analysis', 'Conclusion' )
+			: ( 'standard' === $depth
+				? array( 'Overview', 'Findings', 'Analysis', 'Conclusion' )
+				: array( 'Summary', 'Key Points' ) );
+		$matched        = 0;
+		foreach ( $expected_words as $word ) {
+			if ( preg_match( '/^\s*(?:#{1,6}\s*|\d+[.)]\s*)?' . preg_quote( $word, '/' ) . '/im', $content ) ) {
+				++$matched;
+			}
+		}
+		$min_sections = (int) apply_filters( 'wp_mcp_ai_deep_research_min_sections', 'basic' === $depth ? 1 : 2 );
+		if ( $matched < $min_sections ) {
+			$issues[] = 'missing_sections';
+		}
+
+		// 5. Citations: when sources were requested, claims must carry
+		// [n]-style citations (or at least reference the gathered URLs).
+		if ( $include_sources && (bool) apply_filters( 'wp_mcp_ai_deep_research_require_citations', true ) ) {
+			if ( ! preg_match( '/\[\d+\]/', $content ) ) {
+				$issues[] = 'missing_citations';
+			}
+		}
+
+		return array(
+			'passed' => empty( $issues ),
+			'issues' => $issues,
+		);
+	}
+
+	/**
+	 * Minimum word count for a report at the given depth.
+	 *
+	 * @param string $depth Research depth.
+	 * @return int Minimum words.
+	 */
+	protected function get_min_words_for_depth( $depth ) {
+		switch ( $depth ) {
+			case 'comprehensive':
+				return 250;
+			case 'standard':
+				return 120;
+			case 'basic':
+			default:
+				return 40;
+		}
+	}
+
+	/**
+	 * Whether the elapsed-time budget has been exceeded.
+	 *
+	 * A null start time disables the budget (used by unit tests and by
+	 * callers that do not track elapsed time).
+	 *
+	 * @param float|null $start_time Monotonic start time from microtime().
+	 * @return bool True when the budget is exceeded.
+	 */
+	protected function time_budget_exceeded( $start_time ) {
+		if ( null === $start_time ) {
+			return false;
+		}
+
+		/**
+		 * Filter the elapsed-time budget in seconds for a research run.
+		 *
+		 * The budget gates optional stages (page reads, validation retries);
+		 * it never aborts the core synthesis once search evidence exists.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $seconds Default 90.
+		 */
+		$budget = (int) apply_filters( 'wp_mcp_ai_deep_research_time_budget', 90 );
+		if ( $budget <= 0 ) {
+			return false;
+		}
+
+		return ( microtime( true ) - (float) $start_time ) >= (float) $budget;
+	}
+
+	/**
+	 * Number of source pages to read per depth.
+	 *
+	 * @param string $depth Research depth.
+	 * @return int Maximum pages.
+	 */
+	protected function get_max_pages_for_depth( $depth ) {
+		switch ( $depth ) {
+			case 'comprehensive':
+				return 5;
+			case 'standard':
+				return 2;
+			case 'basic':
+			default:
+				return 0;
+		}
+	}
+
+	/**
+	 * Read full page content for the top sources.
+	 *
+	 * Primary-source material beats search snippets for synthesis quality.
+	 * The reads are bounded by depth, a per-page character cap, and the
+	 * elapsed-time budget; failures degrade to snippets gracefully.
+	 *
+	 * @param array      $sources    Deduplicated sources (url/title/snippet).
+	 * @param string     $depth      Research depth.
+	 * @param float|null $start_time Monotonic start time for budget checks.
+	 * @return array Shape: array(
+	 *     'pages' => array[], 'read' => int, 'failed' => int,
+	 *     'skipped' => int, 'budget_exceeded' => bool ).
+	 */
+	protected function read_source_pages( $sources, $depth, $start_time = null ) {
+		$stats = array(
+			'pages'           => array(),
+			'read'            => 0,
+			'failed'          => 0,
+			'skipped'         => 0,
+			'budget_exceeded' => false,
+		);
+
+		/**
+		 * Filter the maximum number of pages to read per research run.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $max_pages Depth default: basic 0, standard 2, comprehensive 5.
+		 */
+		$max_pages = (int) apply_filters( 'wp_mcp_ai_deep_research_max_pages', $this->get_max_pages_for_depth( $depth ) );
+		$max_pages = max( 0, min( $max_pages, 10 ) );
+
+		if ( $max_pages <= 0 || empty( $sources ) || ! is_array( $sources ) ) {
+			return $stats;
+		}
+
+		if ( $this->time_budget_exceeded( $start_time ) ) {
+			$stats['budget_exceeded'] = true;
+			return $stats;
+		}
+
+		/**
+		 * Filter the maximum characters kept per fetched page.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $max_chars Default 6000.
+		 */
+		$max_chars = (int) apply_filters( 'wp_mcp_ai_deep_research_page_max_chars', 6000 );
+		$max_chars = max( 500, $max_chars );
+
+		$read = 0;
+		foreach ( $sources as $source ) {
+			if ( $read >= $max_pages || $this->time_budget_exceeded( $start_time ) ) {
+				break;
+			}
+			if ( empty( $source['url'] ) ) {
+				continue;
+			}
+
+			$url = esc_url_raw( $source['url'] );
+			if ( ! $url || ! preg_match( '#^https?://#i', $url ) ) {
+				++$stats['skipped'];
+				continue;
+			}
+
+			// SSRF defence in depth: the URL guard validates first and
+			// wp_safe_remote_get blocks private/loopback addresses again.
+			if ( class_exists( 'WP_MCP_AI_Url_Guard' ) ) {
+				$guard = WP_MCP_AI_Url_Guard::validate( $url );
+				if ( is_wp_error( $guard ) ) {
+					++$stats['skipped'];
+					continue;
+				}
+			}
+
+			$response = wp_safe_remote_get(
+				$url,
+				array(
+					'timeout'     => 15,
+					'redirection' => 3,
+					'user-agent'  => 'NV-oOS-Deep-Research/1.0',
+				)
+			);
+			++$read;
+
+			if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+				++$stats['failed'];
+				continue;
+			}
+
+			$content_type = (string) wp_remote_retrieve_header( $response, 'content-type' );
+			if ( '' !== $content_type && false === stripos( $content_type, 'html' ) ) {
+				++$stats['skipped'];
+				continue;
+			}
+
+			$text = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( (string) wp_remote_retrieve_body( $response ) ) ) );
+			if ( '' === $text ) {
+				++$stats['skipped'];
+				continue;
+			}
+
+			if ( strlen( $text ) > $max_chars ) {
+				$text = substr( $text, 0, $max_chars ) . '…';
+			}
+
+			$stats['pages'][] = array(
+				'url'     => $url,
+				'title'   => isset( $source['title'] ) ? sanitize_text_field( $source['title'] ) : '',
+				'content' => $text,
+			);
+		}
+
+		$stats['read']            = count( $stats['pages'] );
+		$stats['budget_exceeded'] = $this->time_budget_exceeded( $start_time );
+
+		return $stats;
 	}
 
 	/**
@@ -1128,9 +1656,11 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param bool   $include_sources Whether to include sources.
 	 * @param array  $site_content   Local site/vector-store content matches.
 	 * @param array  $prior_memory   Prior research recalled from agent memory.
+	 * @param array  $pages          Full-page content read from top sources.
+	 * @param array  $validation_feedback Issues from the previous draft (retry).
 	 * @return string Analysis prompt.
 	 */
-	protected function build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content = array(), $prior_memory = array() ) {
+	protected function build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content = array(), $prior_memory = array(), $pages = array(), $validation_feedback = array() ) {
 		$prompt = sprintf(
 			/* translators: %s: research topic */
 			__( 'Research Topic: %s', 'mcp-ai-wpoos' ) . "\n\n",
@@ -1180,6 +1710,23 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			++$source_index;
 		}
 
+		// Include full page content read from the top sources (primary material).
+		if ( ! empty( $pages ) ) {
+			$prompt .= "\n" . __( 'Full page content retrieved from the top sources (primary material — prefer these over snippets):', 'mcp-ai-wpoos' ) . "\n\n";
+			foreach ( $pages as $index => $page ) {
+				if ( empty( $page['content'] ) ) {
+					continue;
+				}
+				/* translators: %d: page number */
+				$title   = ! empty( $page['title'] ) ? $page['title'] : sprintf( __( 'Page %d', 'mcp-ai-wpoos' ), $index + 1 );
+				$prompt .= sprintf( '[Page %d] %s', $index + 1, $title ) . "\n";
+				if ( ! empty( $page['url'] ) ) {
+					$prompt .= $page['url'] . "\n";
+				}
+				$prompt .= $page['content'] . "\n\n";
+			}
+		}
+
 		// Include local site content from semantic search / vector store.
 		if ( ! empty( $site_content ) ) {
 			$prompt .= "\n" . __( 'Relevant content from this site\'s knowledge base:', 'mcp-ai-wpoos' ) . "\n\n";
@@ -1219,8 +1766,20 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$prompt .= __( '2. Key Points', 'mcp-ai-wpoos' ) . "\n";
 		}
 
-		if ( $include_sources ) {
-			$prompt .= "\n" . __( 'Important: Reference sources using [1], [2], etc. notation when making claims.', 'mcp-ai-wpoos' ) . "\n";
+		// Quality rules (citations, claim provenance, completeness).
+		$prompt .= "\n" . __( 'CRITICAL RULES:', 'mcp-ai-wpoos' ) . "\n";
+		$prompt .= __( '- Reference sources using [1], [2], etc. notation for EVERY factual claim (the numbers refer to the [n] entries above).', 'mcp-ai-wpoos' ) . "\n";
+		$prompt .= __( '- Prefer official documentation and primary sources; say when a claim rests only on search snippets.', 'mcp-ai-wpoos' ) . "\n";
+		$prompt .= __( '- Clearly distinguish documented capabilities, observed behavior, and unknown/unverified claims.', 'mcp-ai-wpoos' ) . "\n";
+		$prompt .= __( '- Never include drafting notes, TODOs, placeholders, or meta-commentary. Complete every section and end with a full conclusion.', 'mcp-ai-wpoos' ) . "\n";
+
+		// Feedback from a previous failed draft (validation retry).
+		if ( ! empty( $validation_feedback ) ) {
+			$prompt .= "\n" . __( 'YOUR PREVIOUS DRAFT FAILED QUALITY CHECKS with these problems:', 'mcp-ai-wpoos' ) . "\n";
+			foreach ( $validation_feedback as $issue ) {
+				$prompt .= '- ' . $issue . "\n";
+			}
+			$prompt .= __( 'Rewrite the complete report addressing every problem above. Do not repeat drafting notes or partial content.', 'mcp-ai-wpoos' ) . "\n";
 		}
 
 		return $prompt;
@@ -1229,22 +1788,60 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Build final research report.
 	 *
-	 * @param string $topic          Research topic.
-	 * @param array  $analysis       Analysis result.
-	 * @param array  $search_results Search results.
-	 * @param bool   $include_sources Whether to include sources.
-	 * @param array  $site_content   Local site content matches used in research.
+	 * @param string     $topic          Research topic.
+	 * @param string     $depth          Research depth.
+	 * @param array      $analysis       Analysis result.
+	 * @param array      $search_results Search results.
+	 * @param bool       $include_sources Whether to include sources.
+	 * @param array      $site_content   Local site content matches used in research.
+	 * @param float|null $start_time     Monotonic start time for elapsed diagnostics.
+	 * @param array      $pages          Page-read stats (read/failed/skipped/budget).
 	 * @return array Research report.
 	 */
-	protected function build_research_report( $topic, $analysis, $search_results, $include_sources, $site_content = array() ) {
+	protected function build_research_report( $topic, $depth, $analysis, $search_results, $include_sources, $site_content = array(), $start_time = null, $pages = array() ) {
+		$warnings = array();
+		$status   = 'complete';
+
+		$validation = array(
+			'passed' => isset( $analysis['validated'] ) ? (bool) $analysis['validated'] : true,
+			'issues' => isset( $analysis['validation_issues'] ) ? $analysis['validation_issues'] : array(),
+		);
+
+		if ( ! $validation['passed'] ) {
+			$status     = 'partial';
+			$warnings[] = 'report_failed_quality_checks';
+		}
+
+		if ( ! empty( $analysis['used_reasoning_fallback'] ) ) {
+			$warnings[] = 'used_reasoning_fallback';
+		}
+		if ( ! empty( $analysis['truncated'] ) ) {
+			$warnings[] = 'report_truncated_by_provider';
+		}
+		if ( ! empty( $search_results['failed_queries'] ) ) {
+			$warnings[] = 'some_search_queries_failed';
+		}
+		if ( ! empty( $pages['budget_exceeded'] ) ) {
+			$warnings[] = 'time_budget_exceeded_before_page_reads';
+		}
+		if ( $this->time_budget_exceeded( $start_time ) ) {
+			$status     = 'partial';
+			$warnings[] = 'time_budget_exceeded';
+		}
+
 		$report = array(
-			'topic'      => $topic,
-			'report'     => $analysis['content'],
-			'provider'   => $analysis['provider'],
-			'model'      => $analysis['model'],
-			'timestamp'  => time(),
-			'cached'     => false,
-			'word_count' => str_word_count( $analysis['content'] ),
+			'topic'           => $topic,
+			'depth'           => $depth,
+			'report'          => $analysis['content'],
+			'provider'        => $analysis['provider'],
+			'model'           => $analysis['model'],
+			'timestamp'       => time(),
+			'cached'          => false,
+			'word_count'      => str_word_count( $analysis['content'] ),
+			'status'          => $status,
+			'warnings'        => $warnings,
+			'validation'      => $validation,
+			'elapsed_seconds' => null !== $start_time ? round( microtime( true ) - (float) $start_time, 2 ) : 0,
 		);
 
 		// Surface generation metadata so callers can see fallback/retry state.
@@ -1267,9 +1864,14 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$report['source_count'] = 0;
 		}
 
-		// Add metadata.
+		// Add metadata and diagnostics.
 		$report['queries_used']       = ! empty( $search_results['queries'] ) ? $search_results['queries'] : array();
+		$report['failed_queries']     = ! empty( $search_results['failed_queries'] ) ? $search_results['failed_queries'] : array();
+		$report['evidence_reused']    = ! empty( $search_results['reused'] );
 		$report['site_content_count'] = count( $site_content );
+		$report['pages_read']         = isset( $pages['read'] ) ? absint( $pages['read'] ) : 0;
+		$report['pages_failed']       = isset( $pages['failed'] ) ? absint( $pages['failed'] ) : 0;
+		$report['pages_skipped']      = isset( $pages['skipped'] ) ? absint( $pages['skipped'] ) : 0;
 
 		return $report;
 	}
@@ -1469,7 +2071,11 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	}
 
 	/**
-	 * Deduplicate sources by URL.
+	 * Deduplicate sources by URL, then cap per-domain dominance.
+	 *
+	 * Search engines frequently return multiple pages (or mirrors) from the
+	 * same site for one query. Capping per-domain keeps the evidence base
+	 * diverse so the synthesis does not over-weight a single publisher.
 	 *
 	 * @param array $sources Array of sources.
 	 * @return array Deduplicated sources.
@@ -1493,7 +2099,43 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$unique[]    = $source;
 		}
 
-		return $unique;
+		/**
+		 * Filter the maximum sources kept per domain (0 disables the cap).
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $per_domain_max Default 2.
+		 */
+		$per_domain_max = (int) apply_filters( 'wp_mcp_ai_deep_research_max_sources_per_domain', 2 );
+		if ( $per_domain_max <= 0 ) {
+			return $unique;
+		}
+
+		$domain_counts = array();
+		$capped        = array();
+		foreach ( $unique as $source ) {
+			$host = wp_parse_url( $source['url'], PHP_URL_HOST );
+			$host = is_string( $host ) ? strtolower( preg_replace( '/^www\./', '', $host ) ) : '';
+
+			// Unknown hosts are kept as-is (cannot establish domain identity).
+			if ( '' === $host ) {
+				$capped[] = $source;
+				continue;
+			}
+
+			if ( ! isset( $domain_counts[ $host ] ) ) {
+				$domain_counts[ $host ] = 0;
+			}
+
+			if ( $domain_counts[ $host ] >= $per_domain_max ) {
+				continue;
+			}
+
+			++$domain_counts[ $host ];
+			$capped[] = $source;
+		}
+
+		return $capped;
 	}
 
 	/**
@@ -1513,20 +2155,24 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// Generate unique job ID.
 		$job_id = 'deep_research_' . md5( $topic . microtime( true ) );
 
-		// Schedule single event.
+		// Schedule single event. The argument array is nested: cron spreads
+		// event args positionally into the handler, and the handler's first
+		// parameter is the whole job-parameter array.
 		$scheduled = wp_schedule_single_event(
 			time() + 10, // Run in 10 seconds.
 			'wp_mcp_ai_deep_research_background',
 			array(
-				'job_id'               => $job_id,
-				'topic'                => $topic,
-				'depth'                => $depth,
-				'focus_areas'          => $focus_areas,
-				'include_sources'      => $include_sources,
-				'user_id'              => $user_id,
-				'include_site_content' => $include_site_content,
-				'memory_agent_id'      => $memory_agent_id,
-				'store_to_memory'      => $store_to_memory,
+				array(
+					'job_id'               => $job_id,
+					'topic'                => $topic,
+					'depth'                => $depth,
+					'focus_areas'          => $focus_areas,
+					'include_sources'      => $include_sources,
+					'user_id'              => $user_id,
+					'include_site_content' => $include_site_content,
+					'memory_agent_id'      => $memory_agent_id,
+					'store_to_memory'      => $store_to_memory,
+				),
 			)
 		);
 
@@ -1552,7 +2198,9 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$job_status = array(
 			'job_id'     => $job_id,
 			'topic'      => $topic,
+			'depth'      => $depth,
 			'status'     => 'scheduled',
+			'progress'   => 'scheduled',
 			'created_at' => time(),
 			'user_id'    => $user_id,
 		);
@@ -1591,6 +2239,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'job_id'     => $job_id,
 			'topic'      => $topic,
 			'status'     => 'running',
+			'progress'   => 'running',
 			'started_at' => time(),
 			'user_id'    => $user_id,
 		);
@@ -1616,12 +2265,20 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Update job with results.
 		$job_status['status']       = is_wp_error( $result ) ? 'failed' : 'completed';
+		$job_status['progress']     = $job_status['status'];
 		$job_status['completed_at'] = time();
 
 		if ( is_wp_error( $result ) ) {
 			$job_status['error'] = $result->get_error_message();
 		} else {
 			$job_status['result'] = $result;
+
+			// Surface partial completions explicitly so job readers know the
+			// report passed quality checks or was returned as-is.
+			if ( is_array( $result ) && 'partial' === ( $result['status'] ?? '' ) ) {
+				$job_status['partial']  = true;
+				$job_status['warnings'] = $result['warnings'] ?? array();
+			}
 		}
 
 		set_transient( 'wp_mcp_ai_research_job_' . $job_id, $job_status, DAY_IN_SECONDS );

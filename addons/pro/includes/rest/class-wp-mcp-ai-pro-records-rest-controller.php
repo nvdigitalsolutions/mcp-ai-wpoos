@@ -865,6 +865,11 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 			);
 		}
 
+		// Surface the research pass's reliability diagnostics so callers can
+		// tell a validated report apart from a partial one (drafting notes,
+		// reasoning fallback, truncation, time-budget exhaustion).
+		$research_diagnostics = $this->build_research_diagnostics( $result );
+
 		// Step 2 — map the report onto the entity's schema fields.
 		$extractor_file = WP_MCP_AI_PRO_PATH . 'includes/rest/class-wp-mcp-ai-pro-records-research-extractor.php';
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Records_Research_Extractor' ) && file_exists( $extractor_file ) ) {
@@ -896,11 +901,85 @@ class WP_MCP_AI_Pro_Records_REST_Controller {
 
 		return rest_ensure_response(
 			array(
-				'entity' => $entity_key,
-				'query'  => $query,
-				'title'  => $title,
-				'fields' => $fields,
+				'entity'              => $entity_key,
+				'query'               => $query,
+				'title'               => $title,
+				'fields'              => $fields,
+				'research_status'     => $research_diagnostics['status'],
+				'research_warnings'   => $research_diagnostics['warnings'],
+				'research_validation' => $research_diagnostics['validation'],
 			)
+		);
+	}
+
+	/**
+	 * Map a deep_research result onto the reliability diagnostics the records
+	 * research response surfaces (status, warnings, validation).
+	 *
+	 * Public so the PHPUnit suite can exercise the mapping without a provider.
+	 * Legacy/stub results without the newer keys default to the pre-diagnostics
+	 * semantics: a non-empty report is treated as complete.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array|mixed $result deep_research report array.
+	 * @return array Shape: array(
+	 *     'status'     => string  'complete'|'partial',
+	 *     'warnings'   => string[],
+	 *     'validation' => array( 'passed' => bool, 'issues' => string[] ),
+	 * ).
+	 */
+	public function build_research_diagnostics( $result ) {
+		$result = is_array( $result ) ? $result : array();
+
+		$status = isset( $result['status'] ) && 'partial' === $result['status'] ? 'partial' : 'complete';
+
+		$warnings = array();
+		if ( ! empty( $result['warnings'] ) && is_array( $result['warnings'] ) ) {
+			foreach ( $result['warnings'] as $warning ) {
+				if ( ! is_string( $warning ) ) {
+					continue;
+				}
+				// sanitize_text_field strips <script> elements together with
+				// their content — re-check emptiness after sanitising.
+				$clean = sanitize_text_field( $warning );
+				if ( '' !== $clean ) {
+					$warnings[] = $clean;
+				}
+			}
+		}
+		$warnings = array_values( array_unique( $warnings ) );
+
+		$validation_passed = true;
+		if ( isset( $result['validation']['passed'] ) ) {
+			$validation_passed = (bool) $result['validation']['passed'];
+		} elseif ( 'partial' === $status ) {
+			// A partial report without an explicit validation block is
+			// unverified by definition — never claim it passed.
+			$validation_passed = false;
+		}
+
+		$issues = array();
+		if ( ! empty( $result['validation']['issues'] ) && is_array( $result['validation']['issues'] ) ) {
+			foreach ( $result['validation']['issues'] as $issue ) {
+				if ( ! is_string( $issue ) ) {
+					continue;
+				}
+				$clean = sanitize_text_field( $issue );
+				if ( '' !== $clean ) {
+					$issues[] = $clean;
+				}
+			}
+		}
+		$issues = array_values( array_unique( $issues ) );
+
+		return array(
+			'status'     => $status,
+			'warnings'   => $warnings,
+			'validation' => array(
+				'passed' => $validation_passed,
+				'issues' => $issues,
+			),
 		);
 	}
 

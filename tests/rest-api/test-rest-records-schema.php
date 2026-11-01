@@ -250,7 +250,7 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 		);
 		update_post_meta( $post_id, '_wp_mcp_ai_profession_category', 'technical' );
 
-		$request  = new WP_REST_Request( 'GET', '/wp/v2/mcp_ai_profession/' . $post_id );
+		$request = new WP_REST_Request( 'GET', '/wp/v2/mcp_ai_profession/' . $post_id );
 		$request->set_param( 'context', 'edit' );
 		$request->set_param( '_fields', 'id,title,meta' );
 		$response = rest_do_request( $request );
@@ -426,5 +426,87 @@ class WP_MCP_AI_Pro_Records_REST_Controller_Test extends WP_UnitTestCase {
 		$result = $extractor->parse_fields_json( 'no json here', $allowed );
 		$this->assertWPError( $result );
 		$this->assertSame( 'records_invalid_extraction', $result->get_error_code() );
+	}
+
+	/**
+	 * The diagnostics mapping reports a complete research pass cleanly.
+	 */
+	public function test_research_diagnostics_complete_result() {
+		$controller  = new WP_MCP_AI_Pro_Records_REST_Controller();
+		$diagnostics = $controller->build_research_diagnostics(
+			array(
+				'report'     => 'Acme Ltd is a manufacturing company.',
+				'status'     => 'complete',
+				'warnings'   => array(),
+				'validation' => array(
+					'passed' => true,
+					'issues' => array(),
+				),
+			)
+		);
+
+		$this->assertSame( 'complete', $diagnostics['status'] );
+		$this->assertSame( array(), $diagnostics['warnings'] );
+		$this->assertTrue( $diagnostics['validation']['passed'] );
+		$this->assertSame( array(), $diagnostics['validation']['issues'] );
+	}
+
+	/**
+	 * The diagnostics mapping surfaces partial results with warnings and
+	 * validation issues, sanitized and deduplicated.
+	 */
+	public function test_research_diagnostics_partial_result() {
+		$controller  = new WP_MCP_AI_Pro_Records_REST_Controller();
+		$diagnostics = $controller->build_research_diagnostics(
+			array(
+				'report'     => "I'll draft a report later.",
+				'status'     => 'partial',
+				'warnings'   => array( 'report_failed_quality_checks', 'report_failed_quality_checks', '<script>alert(1)</script>' ),
+				'validation' => array(
+					'passed' => false,
+					'issues' => array( 'drafting_notes_detected', 'drafting_notes_detected' ),
+				),
+			)
+		);
+
+		$this->assertSame( 'partial', $diagnostics['status'] );
+		$this->assertSame( array( 'report_failed_quality_checks' ), $diagnostics['warnings'] );
+		$this->assertFalse( $diagnostics['validation']['passed'] );
+		$this->assertSame( array( 'drafting_notes_detected' ), $diagnostics['validation']['issues'] );
+	}
+
+	/**
+	 * Legacy/stub results without diagnostics keys default to the
+	 * pre-diagnostics semantics: a non-empty report is treated as complete.
+	 */
+	public function test_research_diagnostics_legacy_result_defaults() {
+		$controller  = new WP_MCP_AI_Pro_Records_REST_Controller();
+		$diagnostics = $controller->build_research_diagnostics(
+			array(
+				'report'  => 'Acme Ltd is a manufacturing company based in London.',
+				'sources' => array(),
+			)
+		);
+
+		$this->assertSame( 'complete', $diagnostics['status'] );
+		$this->assertSame( array(), $diagnostics['warnings'] );
+		$this->assertTrue( $diagnostics['validation']['passed'] );
+	}
+
+	/**
+	 * A partial status without a validation block is never reported as passed.
+	 */
+	public function test_research_diagnostics_partial_without_validation_block() {
+		$controller  = new WP_MCP_AI_Pro_Records_REST_Controller();
+		$diagnostics = $controller->build_research_diagnostics(
+			array(
+				'report'   => 'Incomplete',
+				'status'   => 'partial',
+				'warnings' => array( 'used_reasoning_fallback' ),
+			)
+		);
+
+		$this->assertSame( 'partial', $diagnostics['status'] );
+		$this->assertFalse( $diagnostics['validation']['passed'] );
 	}
 }

@@ -352,12 +352,15 @@ if ( ! function_exists( 'wp_mcp_ai_deep_research_background_handler' ) ) {
 		}
 
 		// Extract job parameters.
-		$job_id          = isset( $args['job_id'] ) ? sanitize_text_field( $args['job_id'] ) : '';
-		$topic           = isset( $args['topic'] ) ? sanitize_text_field( $args['topic'] ) : '';
-		$depth           = isset( $args['depth'] ) ? sanitize_key( $args['depth'] ) : 'standard';
-		$focus_areas     = isset( $args['focus_areas'] ) && is_array( $args['focus_areas'] ) ? $args['focus_areas'] : array();
-		$include_sources = isset( $args['include_sources'] ) ? (bool) $args['include_sources'] : true;
-		$user_id         = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
+		$job_id               = isset( $args['job_id'] ) ? sanitize_text_field( $args['job_id'] ) : '';
+		$topic                = isset( $args['topic'] ) ? sanitize_text_field( $args['topic'] ) : '';
+		$depth                = isset( $args['depth'] ) ? sanitize_key( $args['depth'] ) : 'standard';
+		$focus_areas          = isset( $args['focus_areas'] ) && is_array( $args['focus_areas'] ) ? $args['focus_areas'] : array();
+		$include_sources      = isset( $args['include_sources'] ) ? (bool) $args['include_sources'] : true;
+		$user_id              = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
+		$include_site_content = isset( $args['include_site_content'] ) ? (bool) $args['include_site_content'] : true;
+		$memory_agent_id      = isset( $args['memory_agent_id'] ) ? $args['memory_agent_id'] : '';
+		$store_to_memory      = isset( $args['store_to_memory'] ) ? (bool) $args['store_to_memory'] : false;
 
 		if ( empty( $job_id ) || empty( $topic ) ) {
 			WP_MCP_AI_Logger::log_error(
@@ -367,7 +370,9 @@ if ( ! function_exists( 'wp_mcp_ai_deep_research_background_handler' ) ) {
 			return;
 		}
 
-		// Execute the research via the tool's static method.
+		// Execute the research via the tool's static method. Forward every
+		// scheduling parameter — dropping them silently degrades background
+		// runs relative to immediate ones.
 		if ( class_exists( 'WP_MCP_AI_Tool_Deep_Research' ) ) {
 			WP_MCP_AI_Tool_Deep_Research::execute_background_research(
 				$job_id,
@@ -375,7 +380,10 @@ if ( ! function_exists( 'wp_mcp_ai_deep_research_background_handler' ) ) {
 				$depth,
 				$focus_areas,
 				$include_sources,
-				$user_id
+				$user_id,
+				$include_site_content,
+				$memory_agent_id,
+				$store_to_memory
 			);
 		}
 	}

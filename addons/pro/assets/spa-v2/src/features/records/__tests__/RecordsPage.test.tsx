@@ -199,3 +199,31 @@ describe( 'RecordsPage expanded-record detail', () => {
 		expect( detail.getByText( 'ID' ) ).toBeInTheDocument();
 	} );
 } );
+
+describe( 'RecordsPage research notice', () => {
+	it( 'shows a review warning when the research pass is partial', async () => {
+		setRuntime();
+		setFetchRoutes( {
+			'/records/schema': { entities: { profession: PROFESSION_ENTITY } },
+			'/wp/v2/mcp_ai_profession': [],
+			'/records/profession/research': {
+				title: 'Acme Ltd',
+				fields: {},
+				research_status: 'partial',
+				research_warnings: [ 'report_failed_quality_checks' ],
+				research_validation: { passed: false, issues: [ 'drafting_notes_detected' ] },
+			},
+		} );
+
+		render( <RecordsPage group="professions" /> );
+
+		const input = await screen.findByPlaceholderText( 'e.g. Acme Ltd, London' );
+		fireEvent.change( input, { target: { value: 'acme ltd' } } );
+		fireEvent.click( screen.getByRole( 'button', { name: 'Research' } ) );
+
+		await screen.findByText(
+			'Research completed with warnings — review the suggested fields before saving.'
+		);
+		expect( screen.getByDisplayValue( 'Acme Ltd' ) ).toBeInTheDocument();
+	} );
+} );
