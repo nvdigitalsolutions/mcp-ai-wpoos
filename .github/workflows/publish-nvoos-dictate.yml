@@ -152,18 +152,24 @@ jobs:
       #   nvoos-dictate-v{{current_version}}/latest.json
       # (tauri.conf.json). Build it from the real artifact names so the URLs
       # always match; signatures stay empty until minisign signing is set up.
+      # upload-artifact stores a multi-directory bundle with its subpaths
+      # (msi/…, nsis/…), so search recursively and fail loudly when an
+      # expected bundle is missing. GitHub normalizes asset names to dots
+      # in the download URL, so the feed URLs use the same form.
       - name: Build updater feed (latest.json)
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
-          NSIS="$(find artifacts -maxdepth 1 -name '*.exe' -print -quit)"
-          DMG="$(find artifacts -maxdepth 1 -name '*.dmg' -print -quit)"
+          NSIS="$(find artifacts -name '*.exe' -print -quit)"
+          DMG="$(find artifacts -name '*.dmg' -print -quit)"
+          [ -n "$NSIS" ] || { echo "no NSIS exe found in artifacts"; exit 1; }
+          [ -n "$DMG" ] || { echo "no DMG found in artifacts"; exit 1; }
           BASE="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/${GITHUB_REF_NAME}"
           jq -n \
             --arg version "$VERSION" \
             --arg pub_date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --arg win "$BASE/$(basename "$NSIS")" \
-            --arg mac "$BASE/$(basename "$DMG")" \
+            --arg win "$BASE/$(basename "$NSIS" | tr ' ' '.')" \
+            --arg mac "$BASE/$(basename "$DMG" | tr ' ' '.')" \
             '{version: $version,
               notes: "See the app README and CHANGELOG for details. Unsigned builds may trigger SmartScreen / Gatekeeper.",
               pub_date: $pub_date,
@@ -193,5 +199,7 @@ jobs:
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            artifacts/*
+            artifacts/**/*.exe
+            artifacts/**/*.msi
+            artifacts/**/*.dmg
             latest.json
