@@ -5,9 +5,9 @@ description: "Operational guide for the three recurring NV oOS maintenance track
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.14"
-  plugin-version-tested: "1.2.14"
-  last-updated: "2026-10-30"
+  plugin-version: "1.2.15"
+  plugin-version-tested: "1.2.15"
+  last-updated: "2026-11-01"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -865,7 +865,15 @@ previous window — the user will usually want it back-dated.
   `docs/project/plans/v1.1.98-docs-catch-up.md`,
   `docs/project/plans/v1.1.99-docs-catch-up.md`,
   `docs/project/plans/1.2.11-docs-catch-up.md`,
-  `docs/project/plans/1.2.13-docs-catch-up.md` (latest executed — the
+  `docs/project/plans/1.2.15-docs-catch-up.md` (this pass — the
+1.2.15 pass over PRs #7308–#7363: Astro Forge Phases 0–4 (#7335–#7344, Proposal 096 — the MIT-licensed `examples/nvoos-astro-forge` generator, the 29-tool `/mcp` surface, and the new standalone `plugins/nvoos-forge-bridge` 0.1.0 sub-project), the Proposal 098 design-language import (#7331/#7334 — open-world `design_*` tools, bridge draft/publish products), the Proposal 095 completion (#7318/#7320/#7322/#7323/#7325 — CMS/ops slices + NDS DTCG round-trip + the Design tab + the bridge SPA MIT carve-out), console site-title branding + Records remote browsing (#7321/#7324/#7326/#7327/#7330), the npx-bridge manager-session bootstrap (#7328, 0.1.0-alpha.5), the gateway registry publish (#7345–#7349 — version-marker fix, `PUBLIC_SITE_SLUGS`), Proposal 099 + the PKCE e2e harness (#7361/#7362), the dictate release fixes (#7351/#7353/#7354/#7356 + main twins #7352/#7355/#7357), and the dependency sweeps (#7308/#7311/#7360). New scope rules executed: the #6787 uncovered-PR rule (#7308 — merged 13 min before the #7309 catch-up); main-line twins build-classified; a worktree branch-switch mid-pass → the linked-worktree recipe (`git worktree add -b … origin/alpha-working`, edit there, never the shared tree); the proposals-README registration stays deferred when the shared file carries another agent's uncommitted edits. A5 fired again: the README repo-map skill row was 76 while AGENTS.md/copilot-instructions were 81 in-window — the fold-in owed (plus the missing five names); FOR_REVIEWERS 76 → 81. Skill reconciliations beyond frontmatter: the #7336 client-scrub touched only the Zed copies — the six bundled copies of design-crm/design-email-marketing/design-seo-content (base + CG-AI platform) still carried client identifiers, the scrub ported in-pass (base pairs byte-identical); and the dictation-app skill gained the v1.2.15 release-pipeline hardening bullet (tauri CLI + softprops, conditional Apple signing env, tag-tree workflow evaluation, the Windows exe job). The 1.2.14 pass's v1.2.2 "demotion" had left the full entry in the Release History (13 full entries + the table row) — this pass removed BOTH v1.2.2 and v1.2.3 full entries to restore the 12-row invariant. OI-1: group-35 extension (+2 `@since 0.2.0` in the new `class-nvoos-nds-dtcg-importer.php` while the addon ships 0.3.0; the in-window NDS admin-page/plugin additions carry no tags — recorded as an addon-level missing-tags note) + a sub-project convention note (`plugins/nvoos-forge-bridge` carries no `@since` tags — own track). Tool count unchanged (~355/~1,378/~1,732), skill count 79 → 81, zero catalog diff, no addon bumps, and the stale 1.2.13 build-set removal (30 files — 9 + 2 + 19))
+
+Preceding windows:
+  `docs/project/plans/1.2.14-docs-catch-up.md` (executed — the
+1.2.14 pass over PRs #7261–#7307: the Astro storefront + bridge rename + cookie-auth restoration (Proposals 092/095, #7274–#7307), F&B multi-connection Drive routing (Proposal 093, #7263/#7266/#7268), the gateway policy layer (Proposal 094, #7269 — addon 0.2.0), Google Workspace fallback + the settings grant (#7265/#7267), the commerce subtabs (#7262/#7264), the front-end asset-leak guards + OKF order fix (#7271/#7275), the dependency advisories (#7273/#7288), and three new skills (astro-storefront, git-ops, sdk-v2-server-ops — 76 → 79). Zero tool-count change, zero catalog diff, no addon bumps (bridge rename 1.0.1 + gateway 0.2.0 recorded), and the stale 1.2.12 build-set removal (30 files))
+
+Preceding windows:
+  `docs/project/plans/1.2.13-docs-catch-up.md` (executed — the
 1.2.13 pass over PRs #7239–#7260: the Dify parity gap-fill (#7246/#7247, Proposal 091 — the workflow DSL codec + routes + CLI + Pro SPA panel, prompt versioning lite, the `lib/core` ProviderRouter fallback chains with assistant-meta precedence, the `gen_ai.*` spans + opt-in OTLP exporter, the annotation store, and the +1 Pro `export_annotation_dataset` with the #7256 preset/manifest fold-in), the console pagination + loading states (#7239/#7255 — true totals, the `/approvals` pending-depth envelope, keep-previous-data busy states) and admin-only gating (#7259), `GET /mcp-ai/v1/session/me` + the Breeze cache integration + the console stale-nonce fix (#7257), the OAuth `rawurlencode()` + bare-URL fallback (#7240/#7242), the Drive auto-fallback (#7244), the Remote Sites assistant-scoping wave (#7258 — 12 families, CG-Pro mirrors), the OTLP endpoint deny-list (#7251), and Proposal 092 (#7260, docs-only). New scope rules executed: the `[Unreleased]` conversion (#7260's pre-staged docs entry); the RELEASE-NOTES "unreleased — post-1.2.12" section conversion + the Zed/base-bundled plugin-skill byte-identical re-sync (the in-window PRs touched only the Zed copy); the toolkit-audit class 11 addition. OI-1: group 60 extension (+1 `2.4.0` in the Pro remote-site-manager) + the CG-AI Embeddings `1.1.0` ×3 sub-project convention note; `@since 1.2.13` ×110 correctly pre-tagged in-window. Tool count +1 Pro → ~355/~1,378/~1,732, skill count 76 unchanged, zero catalog diff, no addon bumps, and the stale 1.2.11 build-set removal (30 files — 9 + 2 + 19))
 
 Preceding windows:
