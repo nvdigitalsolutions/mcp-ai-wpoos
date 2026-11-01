@@ -352,7 +352,7 @@ test( 'PKCE flow end-to-end: discovery → DCR → code → token → namespaced
 	try {
 		const { status, body } = await chatgptFlow( harness );
 		assert.equal( status, 200 );
-		assert.deepEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a.site_a_read' ] );
+		assert.deepEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a_site_a_read' ] );
 		assert.ok( ! body.result._meta?.gateway?.errors, 'no gateway errors expected' );
 	} finally {
 		await harness.close();
@@ -492,7 +492,7 @@ test( 'static keys keep working alongside the OAuth flow (dual mode)', async () 
 		} );
 		assert.equal( res.status, 200 );
 		const body = await res.json();
-		assert.deepEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a.site_a_read' ] );
+		assert.deepEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a_site_a_read' ] );
 	} finally {
 		await harness.close();
 	}

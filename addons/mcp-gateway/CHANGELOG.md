@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Rename the tool-namespacing separator from `.` to `_`
+  (`demo.get_environment_status` → `demo_get_environment_status`): the MCP
+  tool-name grammar forbids dots, and OpenAI connectors (ChatGPT/Codex)
+  normalize illegal names client-side, silently breaking the call
+  round-trip. `tools/call` still accepts legacy dot-prefixed names from
+  pre-0.2.1 listings (longest configured slug wins on underscore splits).
+  Version bump to 0.2.1.
+
 - Fix the `VERSION` constant in `src/index.js` — the 0.2.0 bump updated
   `package.json` but missed the constant, so `/health` reported 0.1.1 and
   the deploy-verification runbook could not tell builds apart. The constant

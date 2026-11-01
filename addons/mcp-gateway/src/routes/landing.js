@@ -35,7 +35,7 @@ const PAGE = `<!doctype html>
 	<p>
 		A public, fleet-scoped <strong>Model Context Protocol</strong> endpoint for the
 		NV oOS (Open Operator System) WordPress platform. One key, every bound site:
-		tools appear namespaced as <code>&lt;site-slug&gt;.&lt;tool&gt;</code>.
+		tools appear namespaced as <code>&lt;site-slug&gt;_&lt;tool&gt;</code>.
 	</p>
 	<h2>Endpoint</h2>
 	<pre>POST /mcp   (JSON-RPC 2.0 · streamable HTTP · MCP 2026-07-28)

@@ -1,6 +1,6 @@
 {
 	"name": "design-mcp-gateway",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "NV oOS MCP Gateway — public, fleet-scoped MCP endpoint (streamable HTTP) proxying NV oOS sites (self-mutating REST APIs) with API-key auth, per-tool quotas, policy rules, W3C trace propagation, and a fleet audit sink",
 	"license": "GPL-3.0-or-later",
 	"type": "module",

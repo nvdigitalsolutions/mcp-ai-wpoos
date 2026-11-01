@@ -6,7 +6,7 @@
 A public, fleet-scoped **Model Context Protocol** endpoint for the
 [NV oOS (Open Operator System)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
 WordPress platform. One API key, every bound site — tools appear namespaced
-as `<site-slug>.<tool>`.
+as `<site-slug>_<tool>`.
 
 The gateway is an **MCP aggregating proxy** speaking streamable HTTP
 (MCP 2026-07-28): it authenticates callers with a public API key, forwards
@@ -132,10 +132,14 @@ recorded calls (argument keys only) and diffs it against the live policy.
 - `SHADOW_POLICY` evaluates in parallel and logs — never enforces.
 
 ## Tool namespacing
-- `tools/list` merges every site bound to the key and prefixes names:
-  `site-a.create_post`, `site-b.woo_get_products`.
-- `tools/call` accepts the prefixed name (always) or a bare name when the
-  key is bound to exactly one site (passthrough mode).
+- `tools/list` merges every site bound to the key and prefixes names with
+  an underscore separator: `site-a_create_post`, `site-b_woo_get_products`.
+  (The underscore is deliberate — the MCP tool-name grammar forbids dots,
+  and OpenAI connectors normalize illegal names, breaking dot-prefixed
+  round-trips.)
+- `tools/call` accepts the prefixed name (always), a legacy dot-prefixed
+  name from pre-0.2.1 listings, or a bare name when the key is bound to
+  exactly one site (passthrough mode).
 - A failing upstream degrades the list to a `_meta.gateway.errors` entry
   instead of failing the whole call.
 - v1 aggregation limitation: `resources/*` and `prompts/*` use the first

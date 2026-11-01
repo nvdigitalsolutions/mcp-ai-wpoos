@@ -7,7 +7,7 @@
  *   - `initialize` / `ping`          answered gateway-level (stateless).
  *   - `notifications/*`              forwarded to every bound site, no reply.
  *   - `tools/list`                   fan-out to bound sites; tool names
- *                                    prefixed `<site-slug>.`; a failing site
+ *                                    prefixed `<site-slug>_`; a failing site
  *                                    degrades to _meta instead of failing
  *                                    the whole list.
  *   - `tools/call`                   reverse-maps the prefix, forwards to the
@@ -200,7 +200,7 @@ function respondInitialize( req, id, params ) {
 				version: req.app.get( 'gatewayVersion' ),
 			},
 			instructions:
-				'Tools are namespaced as <site-slug>.<tool>. Call tools/list to see the surface bound to your key.',
+				'Tools are namespaced as <site-slug>_<tool>. Call tools/list to see the surface bound to your key.',
 		},
 	};
 }
@@ -368,7 +368,7 @@ async function dispatch( ctx, msg ) {
 			let slug;
 			let toolName = name;
 			if ( isNamespacedFor( name, boundSlugs ) ) {
-				const parts = splitToolName( name );
+				const parts = splitToolName( name, boundSlugs );
 				slug = parts.slug;
 				toolName = parts.tool;
 			} else if ( 1 === ctx.sites.length ) {
@@ -377,7 +377,7 @@ async function dispatch( ctx, msg ) {
 				return rpcError(
 					id,
 					-32602,
-					`Tool name must be namespaced "<site-slug>.<tool>" — this key is bound to: ${ ctx.sites.join( ', ' ) }.`
+					`Tool name must be namespaced "<site-slug>_<tool>" — this key is bound to: ${ ctx.sites.join( ', ' ) }.`
 				);
 			}
 
