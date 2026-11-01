@@ -17,6 +17,15 @@ on:
   push:
     tags:
       - 'nvoos-dictate-v*'
+  workflow_dispatch:
+
+# tauri-action creates the GitHub release and uploads the Windows + macOS
+# artifacts using the GITHUB_TOKEN. The repo's default token permissions
+# are read-only, so release creation needs an explicit contents:write
+# grant — without it tauri-action fails with "Resource not accessible by
+# integration" after the bundles are built.
+permissions:
+  contents: write
 
 jobs:
   publish:
