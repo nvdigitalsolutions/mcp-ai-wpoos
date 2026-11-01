@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-gateway-ops
-description: Operational guide for the NV oOS MCP Gateway (addons/mcp-gateway → mirror nvoos-mcp-gateway → Cloudways Velocity at mcp.nvoos.pro, issue #6902). Covers the live site-slug map, public-key management (GATEWAY_PUBLIC_KEYS syntax, rotation, the PUBLIC_SITE_SLUGS privacy filter), the upstream-401 token re-mint loop, deploy verification (version marker, 0.2.0 fingerprints, stale-deploy recovery), registry publishing via mcp-publisher (100-char description cap, device-flow expiry, verification URLs), the directory-submission pack + demo-key rule, asset shipping, and the test gotchas. Use when operating the gateway, debugging gateway auth/upstream errors, deploying to Velocity, or continuing the MCP directory submissions.
+description: Operational guide for the NV oOS MCP Gateway (addons/mcp-gateway → mirror nvoos-mcp-gateway → Cloudways Velocity at mcp.nvoos.pro, issue #6902). Covers the live site-slug map, public-key management (GATEWAY_PUBLIC_KEYS syntax, rotation, the PUBLIC_SITE_SLUGS privacy filter), the upstream-401 token re-mint loop, deploy verification (version marker, 0.2.0 fingerprints, stale-deploy recovery), the OAuth 2.1 / ChatGPT connector track (Auth0 tenant provisioning, DCR, PKCE harness, security probes, Proposal 099), registry publishing via mcp-publisher (100-char description cap, device-flow expiry, verification URLs), the directory-submission pack + demo-key rule, asset shipping, and the test gotchas. Use when operating the gateway, debugging gateway auth/upstream errors, deploying to Velocity, working the ChatGPT OAuth connector, or continuing the MCP directory submissions.
 ---
 
 # mcp-ai-wpoos — Gateway ops
@@ -22,6 +22,8 @@ description: Operational guide for the NV oOS MCP Gateway (addons/mcp-gateway �
 | `console` | `https://console.nvoos.cloud` | (not bound at time of writing) |
 
 - `PUBLIC_SITE_SLUGS=demo` — public `/health` reports only `demo`; `/health/full` (keyed) reports every site.
+- **OAuth 2.1 is configured** (Auth0 tenant `https://nvoos.us.auth0.com`) —
+  see the OAuth section below; static keys + OAuth coexist.
 - Demo key (published in directory listings, **never in the repo**): bound to `demo` only, allowlisted `get_environment_status` + `deep_research`.
 - Client sites carry their **own** public keys (one key may bind both ideabits+sascha when the same client owns them).
 
@@ -88,6 +90,50 @@ Symptom: `tools/list` → `_meta.gateway.errors.<slug>: "upstream error (401)"`
   `gh workflow run sync-mcp-gateway.yml --ref alpha-working`.
 - **Env edit pitfall**: paste-append, never replace the whole env set — the
   replace dropped three site-var groups in one session (2026-11-01).
+
+## OAuth 2.1 / ChatGPT connector (Proposal 099, Phases 0–3 shipped 2026-11-01)
+
+Live state: the gateway is **OAuth-configured** — Auth0 tenant
+`https://nvoos.us.auth0.com` wired via `GATEWAY_OAUTH_ISSUER` /
+`GATEWAY_OAUTH_JWKS_URI` / `GATEWAY_OAUTH_RESOURCE=https://mcp.nvoos.pro`.
+`GET /.well-known/oauth-protected-resource` (root + `/mcp` variant) serves the
+RFC 9728 document; unauth 401s carry
+`WWW-Authenticate: Bearer, resource_metadata="…", scope="site:read site:demo …"`.
+Static keys keep working (dual mode). ChatGPT walkthrough (Phase 4) pending.
+
+- **Auth0 checklist** (Phase 1, done live): create API with
+  **Identifier = `https://mcp.nvoos.pro`** (this is the token `aud`; a
+  missing API → “Invalid audience” at the consent step), add permissions
+  `site:read` / `site:<slug>` per site (colon names allowed). **DCR toggle:
+  Dashboard → Settings → Advanced → “Dynamic Application Registration”** —
+  the docs’ “Settings → Applications” path is stale (cost a search round
+  live). Smoke: `POST https://<tenant>/oidc/register` → 400
+  “dynamic client registration is disabled” when off, **201 + client_id**
+  when on (Auth0 issues a client_secret even for `none` auth — harmless).
+  API alternative: `PATCH /api/v2/tenants/settings` with
+  `flags.enable_dynamic_client_registration: true`.
+- **Auth0 serves RFC 8414** at `/.well-known/oauth-authorization-server`
+  (separate from the OIDC `openid-configuration` document) with
+  `registration_endpoint` + `code_challenge_methods_supported: ["S256","plain"]`
+  — S256 presence is the OpenAI requirement; “plain” is Auth0-default and
+  harmless. Optional hardening:
+  `PATCH /api/v2/tenants/settings {"flags":{"disable_implicit_grant":true}}`
+  (the gateway only uses `authorization_code`).
+- **PKCE harness**: `node --test --test-concurrency=1 src/oauth/pkce-e2e.test.js`
+  (PR #7362) — fake AS + full ChatGPT-connector flow, 7 tests; the OAuth group
+  (`pkce-e2e` + `jwt` + `oauth` + `resource-server`) is 27/27. Gotcha: the
+  fake AS uses `express.urlencoded` — never re-read the stream in handlers
+  (`end` never fires → hang); form fields arrive parsed in `req.body`.
+- **Security probes** (all rejected live 2026-11-01): `alg:none` → 401,
+  attacker-signed RS256 with an unknown `kid` → 401 `unknown_kid` (the
+  gateway trusts only the AS JWKS), HS256 alg-confusion → 401
+  `invalid_token`, short/unknown static keys → 401, `/admin/*` +
+  `/health/full` unauth → 401, `http` → 301 https, TLS valid (WE1),
+  helmet headers + HSTS present, Auth0 JWKS has no private material.
+- **Phase 4 walkthrough** (manual): ChatGPT → MCP servers → add
+  `https://mcp.nvoos.pro/mcp` → connector discovers (RFC 9728 → RFC 8414) →
+  DCR → Auth0 consent (scopes: `site:demo` etc.) → tools appear namespaced.
+  “Invalid audience” at consent = the API identifier is missing/typo’d.
 
 ## Registry publishing (mcp-publisher)
 
