@@ -367,20 +367,36 @@ vulnerable until alpha-working merges — call that out and recommend the merge.
   `-H "Accept: application/vnd.github.raw"` (see Step 2B).
 - The root `package-lock.json` carries a stale `version` until regen — the
   diff will always include that sync line; do not hand-edit it out.
-- **npm version vs lockfile format (2026-10-30, multer run):** the repo's
-  lockfiles are tab-indented (npm 10/11 output). A local **npm 12** regen
-  rewrites EVERY line with 2-space indent — `git diff --stat` shows
-  ~11k/11k churn. Regen with `npx -y npm@11.3.0 install
-  --package-lock-only --ignore-scripts --no-audit --no-fund` instead. Also:
-  Windows npm writes CRLF — strip with `sed -i 's/\r$//'` before staging
-  (`.gitattributes` pins `eol=lf`), and expect npm 11 to drop the `libc`
-  platform markers newer regens added (~79 lines per lockfile) — benign
-  metadata-only churn, note it in the PR. `npm ci --dry-run` still passes.
+- **npm version vs lockfile format (updated 2026-11-01, follow-redirects
+  run):** committed lockfiles are now a MIX — tab-indented and 2-space
+  (npm 12 era) trees coexist; npm 11.3.0 preserves each file's existing
+  indentation, while local npm 12 rewrites tab-indented files wholesale
+  (~11k/11k churn). Regen with `npx -y npm@11.3.0 install
+  --package-lock-only --ignore-scripts --no-audit --no-fund` (add
+  `--legacy-peer-deps` for addons/pro). Windows npm writes CRLF — strip
+  with `sed -i 's/\r$//'` before staging (`.gitattributes` pins
+  `eol=lf`); npm 11 may drop the `libc` platform markers newer regens
+  added (~79 lines per lockfile) — benign metadata-only churn. A clean
+  regen's diff per tree is ~6 lines (the version entry only); anything
+  larger means the wrong npm major or an injected dep (next bullet).
+- **Never regen with `--prefix` — cd into the tree (2026-11-01):**
+  `npx npm@11.3.0 install --package-lock-only --prefix <tree>` injected a
+  bogus `"mcp-ai-wpoos": "file:../.."` into that tree's `package.json`
+  dependencies plus the repo-root package's full dep tree into its lockfile
+  (~5.7k lines in saas-controller). Run the regen from inside each tree
+  directory instead (cd-style is immune). Expected shape per tree:
+  2-line `package.json` + ~6-line lockfile diff.
 - `npm ci --dry-run` does not touch node_modules; it only proves
   `package.json`/lockfile consistency — the real install happens in CI.
 
 ## References
 
+- PR #7360 — executed 2026-11-01 sweep: follow-redirects floor
+  `>=1.16.1 <2` → `>=1.16.2 <2` in 5 manifests (GHSA-mrwp-f3q8-3g9p,
+  alerts 1582/1586/1589/1592/1600, dismissed `fix_started`). minimatch
+  GHSA-g3hv-75wg-m249 (18 alerts, no backports — only 11.0.1 patched) and
+  glob GHSA-3g3m-2fjr-6pw4 (3 alerts, only 14.0.2 patched) deferred to
+  issues #7358/#7359 with `tolerable_risk` dismissals.
 - PR #6931 — executed 2026-10-06 sweep: 14 packages bumped via **bounded
   in-major overrides** across 17 manifest trees (axios ≥1.20.0 <2, brace-expansion@^1
   ≥1.1.21 <2, source-map-js ≥1.2.2 <2, dompurify, proxy-addr ≥2.0.8 <3,
