@@ -5,9 +5,9 @@ description: "End-to-end playbook for creating a new NV oOS Pro toolkit under ad
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.99"
-  plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-17"
+  plugin-version: "1.2.15"
+  plugin-version-tested: "1.2.15"
+  last-updated: "2026-11-01"
 ---
 
 # NV oOS Pro Toolkit Creation Loop
