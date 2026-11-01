@@ -78,18 +78,34 @@ jobs:
       # (build:helper = Swift sidecar, lipo'd universal via
       # NVOOS_HELPER_ARCH=universal and staged over the externalBin stub)
       # automatically, so the .app/.dmg embed both CPU slices.
-      - name: Build bundles
-        working-directory: examples/nvoos-dictate
-        run: npm run tauri -- build ${{ matrix.args }}
+      # The tauri CLI treats SET-but-empty Apple env vars as "signing
+      # configured" and dies in codesign ("failed to import keychain
+      # certificate") — this repo has no Apple secrets yet, so export
+      # them only when present. Missing secrets = ad-hoc signing (the
+      # same path the CI boot-smoke builds use successfully).
+      - name: Configure Apple signing env (macOS only)
+        if: runner.os == 'macOS'
+        shell: bash
         env:
-          # macOS signing + notarization (Apple Developer Program required).
-          # Missing secrets = ad-hoc signed, unnotarized artifacts.
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ] && [ -n "$APPLE_SIGNING_IDENTITY" ]; then
+            echo "Apple signing secrets present — exporting to the job environment."
+            for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+              echo "$v=${!v}" >> "$GITHUB_ENV"
+            done
+          else
+            echo "No Apple signing secrets — ad-hoc signing only."
+          fi
+
+      - name: Build bundles
+        working-directory: examples/nvoos-dictate
+        run: npm run tauri -- build ${{ matrix.args }}
 
       # upload-artifact resolves paths from the workspace root, not the
       # step working-directory.
