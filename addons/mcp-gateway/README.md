@@ -155,7 +155,8 @@ recorded calls (argument keys only) and diffs it against the live policy.
   budget); upstream tokens are header-only and never appear in responses,
   logs, or errors.
 - Auth: static API keys in v1; OAuth 2.1 (RFC 8414 + dynamic client
-  registration) is the documented upgrade path.
+  registration) is the ChatGPT-connector path — live on the production
+  gateway since 2026-11-01 (Auth0 tenant, Proposal 099).
 
 ## Claude Code plugin
 
@@ -171,7 +172,7 @@ Enabling the plugin prompts for the gateway API key (stored securely as a
 sensitive `userConfig` option) and substitutes it into the MCP server's
 `Authorization` header.
 
-## OAuth 2.1 resource server (opt-in)
+## OAuth 2.1 resource server (opt-in per deployment; live on mcp.nvoos.pro)
 
 With `GATEWAY_OAUTH_ISSUER` set, the gateway acts as an RFC 9728 protected
 resource **alongside** static keys:

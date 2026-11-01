@@ -1,7 +1,7 @@
 # Proposal 099 — ChatGPT OAuth 2.1 Connector for the MCP Gateway
 
 **Date:** 2026-11-01
-**Status:** PROPOSED — awaiting owner decisions (D1–D5)
+**Status:** IN PROGRESS — Phases 0–3 SHIPPED 2026-11-01 (Auth0 tenant + DCR live, PKCE e2e harness PR #7362, gateway env wired, security probes clean). Remaining: Phase 4 ChatGPT walkthrough + Phase 5 registry re-publish / docs flip.
 **Estimated Effort:** 3–4 dev-days (Phases 0–5) + ~1 day maintainer Auth0 provisioning
 **Priority:** MEDIUM — closes the last "blocked" line in the gateway directory-submission pack
 **Related:** [055-nvoos-mcp-gateway-proposal.md](./055-nvoos-mcp-gateway-proposal.md),
@@ -206,25 +206,25 @@ ChatGPT connector                        Auth0 (AS)                      NV oOS 
 
 ## Phased Implementation Plan
 
-### Phase 0 — Verification & fixtures (0.5 d)
+### Phase 0 — Verification & fixtures (0.5 d) — DONE (fixtures shipped inside PR #7362)
 
 - Re-read `src/oauth/*` + tests; pin the ChatGPT connector spec and Auth0
   free-tier feature set (DCR + PKCE availability).
 - Scaffold the fake-AS fixture for the e2e harness (RFC 8414 metadata +
   JWKS + token endpoint, in-process).
 
-### Phase 1 — Auth0 provisioning (maintainer, ~1 d, D1/D4)
+### Phase 1 — Auth0 provisioning (maintainer, ~1 d, D1/D4) — DONE 2026-11-01 (tenant `nvoos.us.auth0.com`, API identifier `https://mcp.nvoos.pro`, DCR on, scopes `site:read` / `site:<slug>`)
 
 - Create the tenant; register the resource (`aud`), enable DCR, author the
   consent copy; produce the issuer + JWKS URIs and the tenant checklist.
 
-### Phase 2 — Gateway wiring & live verification (0.5 d)
+### Phase 2 — Gateway wiring & live verification (0.5 d) — DONE (env set on Velocity; well-known 200, 401 challenge, static keys green)
 
 - Set the three env vars on Velocity; redeploy; verify: well-known 200,
   401 `WWW-Authenticate` challenge, static keys still green, public
   `/health` unchanged (gateway-ops deploy ladder).
 
-### Phase 3 — Scripted PKCE end-to-end (1–1.5 d)
+### Phase 3 — Scripted PKCE end-to-end (1–1.5 d) — DONE (`src/oauth/pkce-e2e.test.js`, 7 tests; OAuth group 27/27)
 
 - `addons/mcp-gateway/bin/oauth-e2e.js` (or a `node:test` suite): discovery
   → DCR → authorize → PKCE S256 → token → `initialize`/`tools/list` with the
@@ -258,10 +258,10 @@ ChatGPT connector                        Auth0 (AS)                      NV oOS 
 
 ## Decision Required
 
-1. **Approve** the Auth0 tenant + consent copy (D1, D4).
-2. **Approve** `site:<slug>` as the public scope vocabulary (D2).
-3. **Approve** dual-mode (static keys + OAuth) with no migration (D3).
-4. **Approve** the Phase 4 live walkthrough against production with the
+1. ✅ **DONE 2026-11-01** — Auth0 tenant + consent copy approved (D1, D4).
+2. ✅ **DONE** — `site:<slug>` scope vocabulary created on the Auth0 API (D2).
+3. ✅ **DONE** — dual-mode verified live: static keys + OAuth both green (D3).
+4. ⏳ **Pending** — Phase 4 live walkthrough against production with the
    demo scope (D5/D7).
 
 ---
