@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.14
+Stable tag: 1.2.15
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.15 - November 01, 2026 =
+
+Bumped to 1.2.15 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The Astro Forge WP→Astro generator ships end-to-end (Proposal 096, MIT — the content-layer loader, versioned sanitizer, scaffold CLI, WooCommerce storefront template, site_analyze, the 29-tool /mcp surface, and the companion standalone plugin nvoos-forge-bridge 0.1.0). The design-language import pipeline lands (Proposal 098 — inspired-by, never a clone) with draft/publish bridge products; Proposal 095 completes (CMS/ops slices, NDS DTCG round-trip, the /manage Design tab); the console brands from the WordPress site title with Records remote browsing; the npx MCP bridge gains manager-session bootstrap (0.1.0-alpha.5); the MCP gateway goes live on the official MCP Registry (0.2.0 + the PUBLIC_SITE_SLUGS privacy filter); Proposal 099 ships as docs with a 7-test PKCE e2e harness; the dictate release pipeline is fixed end-to-end. Dependencies: multer 2.5.0, the 2026-10-30 sweep (44 alerts), follow-redirects floor 1.16.2. Tool count unchanged: ~355 base + ~1,378 Pro (~1,732 total; live registry authoritative). Coding-time skills 79 → 81. Stale 1.2.13 build ZIPs removed.
 
 = 1.2.14 - October 30, 2026 =
 
