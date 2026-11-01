@@ -88,7 +88,8 @@ npx -y @nvdigitalsolutions/nvoos-mcp-bridge
   env wired (`GATEWAY_OAUTH_ISSUER` / `_JWKS_URI` / `_RESOURCE`), RFC 9728
   metadata + 401 challenges verified, security probe suite clean (see
   [Proposal 099](../../project/proposals/099-chatgpt-oauth-mcp-connector-proposal.md)).
-  Remaining: the Phase 4 live “Add custom MCP server” walkthrough.
+  Phase 4 “Add custom MCP server” walkthrough completed 2026-11-01 —
+  ChatGPT connects via Auth0 and tools surface namespaced (`demo.*`).
   `addons/chatgpt-plugin` remains the legacy per-site bridge.
 
 ## Open items before submitting
