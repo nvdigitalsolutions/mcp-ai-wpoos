@@ -146,6 +146,7 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 			'openai_speech_format',
 			'orchestration_preset',
 			'web_search_provider',
+			'deep_research_model',
 			'group_email_capability',
 			'group_email_max_recipients',
 			'enable_varnish_purge',
