@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<ruleset name="nvoos-forge-bridge">
+	<description>NV oOS Forge Bridge coding standard (WPCS + PSR-4 file names).</description>
+
+	<arg name="extensions" value="php"/>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/tests/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+
+	<rule ref="WordPress"/>
+	<rule ref="PHPCompatibilityWP"/>
+	<config name="minimum_supported_wp_version" value="6.0"/>
+	<config name="testVersion" value="7.4-"/>
+
+	<rule ref="WordPress.Files.FileName">
+		<properties>
+			<property name="strict_class_file_names" value="false"/>
+		</properties>
+	</rule>
+</ruleset>

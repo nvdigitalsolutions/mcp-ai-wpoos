@@ -370,7 +370,7 @@ SITE-WIDE:
   "@context": "https://schema.org/",
   "@type": "Product",
   "name": "Carolina Herrera Good Girl Eau de Parfum – 80ml",
-  "image": "https://theparfumerie.lk/wp-content/uploads/...jpg",
+  "image": "https://yourstore.example/wp-content/uploads/...jpg",
   "description": "Luxury eau de parfum with notes of...",
   "sku": "CH-GG-EDP-80",
   "brand": {
@@ -379,8 +379,8 @@ SITE-WIDE:
   },
   "offers": {
     "@type": "Offer",
-    "url": "https://theparfumerie.lk/shop/carolina-herrera/good-girl-edp-80ml/",
-    "priceCurrency": "LKR",
+    "url": "https://yourstore.example/shop/carolina-herrera/good-girl-edp-80ml/",
+    "priceCurrency": "USD",
     "price": "27500",
     "availability": "https://schema.org/InStock",
     "itemCondition": "https://schema.org/NewCondition"

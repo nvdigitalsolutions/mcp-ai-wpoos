@@ -5,9 +5,9 @@ description: "End-to-end playbook for creating a new NV oOS Pro toolkit under ad
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.1.99"
-  plugin-version-tested: "1.1.99"
-  last-updated: "2026-10-17"
+  plugin-version: "1.2.15"
+  plugin-version-tested: "1.2.15"
+  last-updated: "2026-11-01"
 ---
 
 # NV oOS Pro Toolkit Creation Loop
@@ -312,7 +312,7 @@ implementation plan for the full worked example, and the sibling skill
 ## Case study: food-beverage
 
 `addons/pro/includes/tools/food-beverage/` (2026-10-08, 21 tools, 56 files,
-+17.4k lines): Surf Club Midigama F&B management — M-01…M-21 metric engine,
++17.4k lines): a coastal venue's F&B management — M-01…M-21 metric engine,
 R-01…R-13 report builder, Drive + CSV adapters, menu-engineering quadrants,
 drafts-only output. Validation: phpcs clean; standalone smoke harness
 reproduces 20/20 workbook Check-totals values (covers, revenues, cost %s,

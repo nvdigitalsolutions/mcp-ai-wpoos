@@ -14,12 +14,12 @@ Architecturally, the project has undergone a major framework extraction: the AI 
 The repo is a **monorepo** containing:
 - The **base plugin** (GPLv3, ships to WordPress.org) — `mcp-ai-wpoos.php` + `includes/`
 - A **Pro addon** (commercial/proprietary) — `addons/pro/`
-- **30 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.4.0, MCP Gateway v0.1.1, Checkout API v0.1.2)
+- **30 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.4.0, MCP Gateway v0.2.0, Checkout API v0.1.2)
 - The **extracted AI engine** (framework-agnostic, Hexagonal Architecture) — `lib/core/`
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.2.14 (October 2026)
+**Current version:** 1.2.15 (November 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,732 (~355 base + ~1,378 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -266,7 +266,7 @@ The project currently employs:
 - **GitHub Copilot** — inline suggestions and code completion
 - **OpenAI Codex** — prototyping and exploration
 - **BMAD Agents** — 6 internal workflow agents (`.bmad/agents/*.yaml`) running inside NV oOS assistants
-- **Zed Agent Skills** — 76 coding-time skills (`.agents/skills/`: 20 wp-* WordPress plugin development patterns + 36 design-* skills + 20 mcp-ai-* operational guides incl. mcp-ai-wpoos-plugin)
+- **Zed Agent Skills** — 81 coding-time skills (`.agents/skills/`: 20 wp-* WordPress plugin development patterns + 36 design-* skills + 25 mcp-ai-* operational guides incl. mcp-ai-wpoos-plugin)
 
 See [AI-Assisted Development](../developer/AI_ASSISTED_DEVELOPMENT.md) for full transparency about the tools, workflow, and what this means for code review.
 

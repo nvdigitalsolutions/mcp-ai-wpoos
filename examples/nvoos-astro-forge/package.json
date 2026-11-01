@@ -1,0 +1,65 @@
+{
+	"name": "@nvdigitalsolutions/nvoos-astro-forge",
+	"version": "0.1.0",
+	"license": "MIT",
+	"description": "Proposal 096 — WP→Astro generation: REST client, content-layer loader, sanitizer, blog template, scaffold CLI, deploy pipeline",
+	"type": "module",
+	"bin": {
+		"nvoos-forge": "./scripts/forge.mjs",
+		"nvoos-forge-mcp": "./scripts/forge-mcp.mjs",
+		"nvoos-forge-mcp-stdio": "./mcp/stdio.ts"
+	},
+	"files": [
+		"lib",
+		"mcp",
+		"scripts",
+		"templates",
+		"LICENSE",
+		"NOTICE",
+		"README.md"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git",
+		"directory": "examples/nvoos-astro-forge"
+	},
+	"keywords": [
+		"wordpress",
+		"astro",
+		"headless",
+		"static-site",
+		"generator",
+		"woocommerce"
+	],
+	"scripts": {
+		"test": "vitest run --exclude tests/forge-e2e.test.ts",
+		"test:e2e": "vitest run tests/forge-e2e.test.ts",
+		"test:all": "vitest run",
+		"typecheck": "tsc --noEmit",
+		"mcp": "node scripts/forge-mcp.mjs",
+		"fixture:wp": "node scripts/wp-fixture-server.mjs",
+		"forge": "node scripts/forge.mjs"
+	},
+	"engines": {
+		"node": ">=22.6.0"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/node": "^2.1.2",
+		"@modelcontextprotocol/server": "^2.4.0",
+		"fflate": "^0.8.3",
+		"htmlparser2": "^12.0.0",
+		"octokit": "^5.0.5",
+		"sanitize-html": "^2.18.1",
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@types/node": "^26.6.6",
+		"@types/sanitize-html": "^2.16.2",
+		"astro": "^7.4.4",
+		"typescript": "^6.0.3",
+		"vitest": "^5.0.5"
+	}
+}

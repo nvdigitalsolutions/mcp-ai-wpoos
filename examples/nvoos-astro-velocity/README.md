@@ -59,6 +59,77 @@ every other surface; manager sign-in is the contract's own REST auth flow.
 | `NVOOS_CURRENCY` | build/runtime | Price formatting + JSON-LD (default `USD`) |
 | `PORT` | `serve.mjs` | Listen port (Velocity injects it) |
 
+## MCP assistant surface (`/mcp`)
+
+`nvoos-astro-mcp` serves 21 tools over Streamable HTTP at `/mcp` (bundled into
+`dist/mcp-entry.mjs` on `astro:build:done`). Every tool carries a
+human-readable `title` and spec `annotations` (readOnly/destructive/idempotent/
+openWorld hints) so MCP clients — Zed, NV oOS assistants, Claude — can render
+and gate the registry without scraping descriptions:
+
+- **Design (10)** — `tokens_get/set/import_dtcg/rollback`, `theme_*`,
+  `contrast_check` (WCAG 2.2 AA/AAA levels). Every mutating design write
+  echoes its pre-write `snapshot_id`, so `tokens_rollback` can undo exactly
+  that write (no argument rolls back to the latest snapshot).
+- **CMS (6)** — `cms_list/get/create/update/delete`, `media_upload` over the
+  commerce contract (collection allowlist, `limit` ≤ 100; writes require a
+  manager session cookie — the backend enforces `manage_astro`).
+- **Ops (5)** — `site_status`, `preview_url`, `rebuild_trigger` (webhook env),
+  `screenshot` (opt-in `NVOOS_MCP_SCREENSHOT=1`, path-only input),
+  `nds_export` (the NDS DTCG document for the Design System round-trip).
+
+Auth is fail-closed: reads are public; design writes accept an
+`Authorization: Bearer <NVOOS_MCP_TOKEN>` **or** a manager session cookie;
+contract writes (cms_* writes, media_upload) require the manager cookie.
+Host/Origin allowlists (DNS-rebinding guards), a per-IP rate limit, and audit
+log lines sit in front of the handler. The /manage **Design System tab** is
+itself an MCP client over the same-origin endpoint (manager cookie).
+
+`preview_url` / `screenshot` resolve the storefront origin as
+`NVOOS_STOREFRONT_ORIGIN` → the inbound request Host (scheme from
+`X-Forwarded-Proto`, then socket TLS state) → `http://localhost:4321` (local
+dev fallback). Set the env override when the request Host is rewritten by a
+proxy.
+
+Connect:
+
+```jsonc
+// 1. NV oOS assistant — Remote Sites → MCP Server connection
+{ "url": "https://astro.nvoos.cloud/mcp", "auth_type": "bearer", "token": "<NVOOS_MCP_TOKEN>" }
+// then attach it as an assistant MCP App (connection_ref); tools bridge as
+// mcp_app_astro_* in chat. Allowlist the host in Security Center. (Bearer
+// unlocks design writes only — contract writes still need a manager session,
+// so a header-auth connection carrying the Cookie is the cms-write variant.)
+
+// 2. Claude Desktop / generic client
+{ "mcpServers": { "nvoos-astro": { "url": "https://astro.nvoos.cloud/mcp", "headers": { "Authorization": "Bearer <NVOOS_MCP_TOKEN>" } } } }
+
+// 3. Manager browser session — sign in at /manage; the session cookie gates writes.
+
+// 4. Local coding agent (same registry over stdio, from this repo)
+npm run mcp:stdio
+
+// 5. Zed / Claude Desktop / Cursor via the published npx bridge — the bridge
+//    logs in with MCP_AI_LOGIN_* at startup, attaches the session cookies to
+//    every request, and re-establishes the session on 401/403 or expiry, so
+//    contract writes work with zero manual cookie handling
+{ "mcpServers": { "nvoos-astro": {
+  "command": "npx",
+  "args": ["-y", "@nvdigitalsolutions/nvoos-mcp-bridge@latest"],
+  "env": {
+    "MCP_AI_BASE_URL": "https://astro.nvoos.cloud/mcp",
+    "MCP_AI_TOKEN": "<NVOOS_MCP_TOKEN>",
+    "MCP_AI_LOGIN_URL": "https://astro.nvoos.cloud/api/auth/login",
+    "MCP_AI_LOGIN_EMAIL": "manager@your-domain.com",
+    "MCP_AI_LOGIN_PASSWORD": "<password>"
+  }
+} } }
+```
+
+Runtime state (token overrides, runtime themes, snapshots) is process-local
+unless `NVOOS_MCP_STATE_FILE` points at a writable path (atomic persistence).
+See the deployment doc for the full env matrix.
+
 ## Development
 
 ```bash
@@ -136,3 +207,10 @@ runs its normal `npm install` (build is a no-op — `dist/` is prebuilt).
 ## License
 
 MIT — see `LICENSE`.
+
+The committed `/manage` admin bundle (`public/manage-assets/`) is built from
+`addons/nvoos-astro-bridge/src`, which carries its own MIT grant
+(`src/LICENSE` there — owner decision Q8). Bundled third-party components
+(`@wordpress/*`, React, TanStack Query, zod) keep their licenses; see
+`NOTICE` for attribution. The proprietary bridge PHP plugin is not part of
+this app or its public mirror.

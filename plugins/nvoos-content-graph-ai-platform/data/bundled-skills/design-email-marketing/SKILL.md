@@ -143,7 +143,7 @@ Section 5: REMINDERS
   ● Complimentary gift wrapping
   ● E-gift vouchers available (link)
 
-FOOTER CTA: "Follow us on Instagram @theparfumerie.lk"
+FOOTER CTA: "Follow us on Instagram @yourbrand"
 ```
 
 ## Promotional Email Sequence
@@ -324,7 +324,7 @@ WRONG:
 - Sending a 2,000-word newsletter with 8 CTAs
 - Blasting "Happy Women's Day" to male subscribers
 - No unsubscribe link (illegal in most jurisdictions)
-- Sending from "noreply@theparfumerie.lk" (kills engagement)
+- Sending from "noreply@yourbrand.example" (kills engagement)
 - SMS at 11 PM (anger + opt-outs)
 
 RIGHT:

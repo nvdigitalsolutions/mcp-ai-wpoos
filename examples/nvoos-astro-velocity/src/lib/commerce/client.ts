@@ -59,7 +59,7 @@ type CollectionSlug =
  *   render fetches localhost:8123 and 500s (incident 2026-10-29).
  * - Build time (getStaticPaths): no request URL, so NVOOS_API_BASE applies.
  */
-function resolveBase(requestUrl: string | URL | undefined): string {
+export function resolveBase(requestUrl: string | URL | undefined): string {
 	const ssrOrigin = process.env.NVOOS_SSR_API_ORIGIN;
 	if (ssrOrigin) {
 		return `${ssrOrigin.replace(/\/+$/, '')}/api`;
@@ -76,7 +76,7 @@ function resolveBase(requestUrl: string | URL | undefined): string {
 	);
 }
 
-function joinPath(base: string, path: string): string {
+export function joinPath(base: string, path: string): string {
 	return `${base}/${path}`;
 }
 
@@ -104,6 +104,8 @@ export function buildCollectionQuery(
 		limit?: number;
 		where?: WhereClause;
 		sort?: SortValue;
+		/** Publication status filter (publish | draft | any). Manager-only for non-publish. */
+		status?: string;
 	} = {}
 ): string {
 	const q = new URLSearchParams();
@@ -115,6 +117,9 @@ export function buildCollectionQuery(
 	}
 	if (params.sort) {
 		q.set('sort', params.sort);
+	}
+	if (params.status && params.status !== 'publish') {
+		q.set('status', params.status);
 	}
 	const where = buildWhereParams(params.where ?? {});
 	return where ? `${q.toString()}&${where}` : q.toString();

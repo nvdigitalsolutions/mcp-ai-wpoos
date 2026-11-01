@@ -1,0 +1,87 @@
+name: Astro Forge
+
+# Proposal 096 Phase 0 — nvoos-astro-forge (WP → Astro generator core).
+# Unit suite + typecheck, then the exit gate e2e: hermetic WP fixture server
+# → scaffold → npm install → astro check + astro build → HTML asserts.
+# The fixture server speaks the real wp/v2 wire shapes and stands in for the
+# WordPress Playground fixture until the bridge-plugin phase.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-astro-forge/**'
+      - '.github/workflows/astro-forge.yml'
+  pull_request:
+    paths:
+      - 'examples/nvoos-astro-forge/**'
+      - '.github/workflows/astro-forge.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # Astro 7 requires Node >= 22.23.4 — the latest 22.x on the runner
+          # (22.23.3) is one patch short, so pin the 24 line (local dev
+          # parity, and the forge CLI's native type stripping is >= 22.6).
+          node-version: 24
+          cache: npm
+          cache-dependency-path: examples/nvoos-astro-forge/package-lock.json
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+        working-directory: examples/nvoos-astro-forge
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: examples/nvoos-astro-forge
+
+      - name: Unit tests
+        run: npm test
+        working-directory: examples/nvoos-astro-forge
+
+      - name: E2E exit gate (fixture WP → scaffold → check → build → asserts)
+        run: npm run test:e2e
+        working-directory: examples/nvoos-astro-forge
+
+  # ===========================================================================
+  # Secret grep gates (Phase 3.5) — the forge package and its generated
+  # output must never carry credential material. Synthetic strings in tests/
+  # and the hermetic fixture server's demo credentials are intentionally out
+  # of scope (documented fixtures, not real secrets).
+  # ===========================================================================
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan forge sources for credential patterns
+        run: |
+          set -euo pipefail
+          # Patterns: GitHub PATs, npm tokens, vault keys with values,
+          # application-password assignments with values. The value classes
+          # require at least 4 real characters ([:space:] includes the
+          # newline after an empty `=`; the quote directly after `=` in
+          # scaffold.ts is excluded too), so empty assignments and the
+          # literal emission in scaffold.ts never match.
+          PATTERNS='ghp_|github_pat_|npm_[A-Za-z0-9]{20,}|NVOOS_FORGE_VAULT_KEY=[^[:space:]"'\'']{4,}|WP_APPLICATION_PASSWORD=[^[:space:]"'\'']{4,}'
+          hits=$(grep -rInE "${PATTERNS}" \
+            examples/nvoos-astro-forge/lib \
+            examples/nvoos-astro-forge/mcp \
+            examples/nvoos-astro-forge/scripts/forge.mjs \
+            examples/nvoos-astro-forge/scripts/forge-mcp.mjs \
+            examples/nvoos-astro-forge/templates || true)
+          if [ -n "${hits}" ]; then
+            echo "::error::Credential patterns found in forge sources:"
+            echo "${hits}"
+            exit 1
+          fi
+          echo "Forge source scan clean."

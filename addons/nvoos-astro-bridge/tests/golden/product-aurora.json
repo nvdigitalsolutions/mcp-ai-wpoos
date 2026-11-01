@@ -42,6 +42,7 @@
 			"startDate": "2026-10-01",
 			"endDate": "2026-11-30",
 			"active": true
-		}
+		},
+		"status": "publish"
 	}
 }

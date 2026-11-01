@@ -136,6 +136,7 @@ class TestTransformerGolden extends WP_UnitTestCase {
 				'endDate'     => $output['promotion']['endDate'],
 				'active'      => $output['promotion']['active'],
 			),
+			'status'       => $output['status'],
 		);
 	}
 

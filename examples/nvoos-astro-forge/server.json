@@ -1,0 +1,59 @@
+{
+	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+	"name": "io.github.nvdigitalsolutions/nvoos-astro-forge",
+	"title": "NV oOS Astro Forge",
+	"description": "MCP-driven generation of headless Astro frontends for WordPress/WooCommerce sites: analyze, scaffold, theme, deploy, and rebuild — the Proposal 096 tool surface.",
+	"websiteUrl": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/main/examples/nvoos-astro-forge",
+	"repository": {
+		"url": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
+		"source": "github",
+		"subfolder": "examples/nvoos-astro-forge"
+	},
+	"version": "0.1.0",
+	"packages": [
+		{
+			"registryType": "npm",
+			"registryBaseUrl": "https://registry.npmjs.org",
+			"identifier": "@nvdigitalsolutions/nvoos-astro-forge",
+			"version": "0.1.0",
+			"runtimeHint": "npx",
+			"transport": { "type": "stdio" },
+			"command": "nvoos-forge-mcp-stdio",
+			"environmentVariables": [
+				{
+					"name": "NVOOS_FORGE_MCP_TOKEN",
+					"description": "Bearer token required for write tools (site_add, scaffold_project, deploy, wizard…). Unset = writes fail closed.",
+					"isRequired": false,
+					"isSecret": true
+				},
+				{
+					"name": "NVOOS_FORGE_HOME",
+					"description": "Forge home directory (sites registry, vault, profiles). Default ~/.nvoos-forge",
+					"isRequired": false
+				},
+				{
+					"name": "NVOOS_FORGE_VAULT_KEY",
+					"description": "Vault encryption passphrase for stored credentials (GitHub tokens, webhook secrets)",
+					"isRequired": false,
+					"isSecret": true
+				},
+				{
+					"name": "NVOOS_FORGE_MODE",
+					"description": "Tool surface: router (3 meta-tools) or full (the whole catalog). Default full.",
+					"default": "full"
+				},
+				{
+					"name": "NVOOS_FORGE_OPEN_ANALYZE",
+					"description": "Opt-in: allow site_analyze on URLs outside the registered allowlist (SSRF guard still applies)",
+					"default": "0"
+				}
+			]
+		}
+	],
+	"_meta": {
+		"io.modelcontextprotocol.registry/publisher-provided": {
+			"tool": "publish-astro-forge",
+			"version": "1.0.0"
+		}
+	}
+}

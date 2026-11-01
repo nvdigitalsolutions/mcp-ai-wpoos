@@ -1,11 +1,15 @@
 // ---------------------------------------------------------------------------
 // bff.ts — Streamable HTTP mount for the storefront BFF (Proposal 095 §3.3).
 // Bundled by scripts/build-mcp.mjs into dist/mcp-entry.mjs; scripts/serve.mjs
-// routes /mcp here. Host/Origin validation (MCP spec DNS-rebinding guards)
-// + the write-tool authorization gate run before the SDK handler.
+// routes /mcp here. Request pipeline (in order): the per-IP rate-limit gate
+// (Proposal 095 hardening), Host/Origin validation (MCP spec DNS-rebinding
+// guards), and the fail-closed write-tool authorization gate — then the SDK
+// handler runs inside mcpRequestContext so tool code can read the request
+// cookie/env. Write calls that pass auth are audit-logged.
 //
-// TODO(095-Phase-4): durable design state — the /manage Design tab plus the
-// NDS round-trip through the commerce contract — lands in a follow-up.
+// TODO(095-Phase-4): the /manage Design tab and the NDS round-trip through
+// the commerce contract land in a follow-up (issue #7319); durable design
+// state itself shipped via NVOOS_MCP_STATE_FILE (src/lib/tokens/persistence.ts).
 // ---------------------------------------------------------------------------
 
 import { createMcpHandler } from '@modelcontextprotocol/server';
@@ -16,7 +20,9 @@ import {
 } from '@modelcontextprotocol/node';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buildServer } from './server';
-import { authorizeRequest } from './auth';
+import { authorizeRequest, firstHeaderValue, isWriteToolCall } from './auth';
+import { mcpRequestContext } from './context';
+import { createRateLimiter } from './ratelimit';
 
 interface McpEnv {
 	NVOOS_MCP_TOKEN?: string;
@@ -24,6 +30,9 @@ interface McpEnv {
 	NVOOS_MCP_ORIGINS?: string;
 	NVOOS_SSR_API_ORIGIN?: string;
 	NVOOS_API_BASE?: string;
+	NVOOS_MCP_RATE_MAX?: string;
+	NVOOS_MCP_RATE_WINDOW_MS?: string;
+	NVOOS_STOREFRONT_ORIGIN?: string;
 }
 
 function allowedHosts(env: McpEnv): string[] {
@@ -55,10 +64,68 @@ async function readBody(req: IncomingMessage): Promise<unknown> {
 	}
 }
 
+const DEFAULT_RATE_MAX = 120;
+const DEFAULT_RATE_WINDOW_MS = 60000;
+
+function positiveInt(value: string | undefined, fallback: number): number {
+	const parsed = Number.parseInt(value ?? '', 10);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function toolNameFrom(body: unknown): string {
+	const name = (body as { params?: { name?: unknown } } | null)?.params?.name;
+	return typeof name === 'string' ? name : 'unknown';
+}
+
+/**
+ * Same-origin pass-through for browser clients: when the Origin header's
+ * hostname matches the (already Host-validated) request host, the request is
+ * same-origin and safe by construction — the /manage Design tab posts here
+ * with the manager cookie and no explicit Origin allowlist entry.
+ * Cross-origin browser clients still require NVOOS_MCP_ORIGINS.
+ */
+function isSameOrigin(req: IncomingMessage): boolean {
+	const origin = firstHeaderValue(req.headers.origin);
+	if (!origin) return false;
+	try {
+		const originHost = new URL(origin).hostname.toLowerCase();
+		const host = (firstHeaderValue(req.headers.host) ?? '').split(':')[0].toLowerCase();
+		return originHost === host;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * The inbound request origin (scheme + Host) for tool code that needs the
+ * storefront's own URL (preview_url / screenshot). The Host header has
+ * already passed hostHeaderValidation; the scheme honours a proxy's
+ * X-Forwarded-Proto first (Velocity terminates TLS) and the socket
+ * encryption state second. Undefined when the request carries no Host.
+ */
+function requestOrigin(req: IncomingMessage): string | undefined {
+	const host = firstHeaderValue(req.headers.host);
+	if (!host) return undefined;
+	const forwarded = firstHeaderValue(req.headers['x-forwarded-proto']);
+	// IncomingMessage.socket is typed as net.Socket; encrypted only exists
+	// on a TLS socket (https servers). Duck-typed so astro check stays green.
+	const encrypted = (req.socket as { encrypted?: boolean }).encrypted === true;
+	const proto = (forwarded ? forwarded.split(',')[0].trim().toLowerCase() : '') || (encrypted ? 'https' : 'http');
+	try {
+		return new URL(`${proto}://${host}`).origin;
+	} catch {
+		return undefined;
+	}
+}
+
 /**
  * Build the `(req, res) => Promise<void>` handler served at /mcp.
  */
 export function createAstroMcpNodeHandler(env: McpEnv = process.env) {
+	// Snapshot at construction: callers (serve.mjs) mutate process.env after
+	// boot (the SSR-origin rewrite), and auth must keep reading the env the
+	// handler was configured with (2026-10-30 manager-session 401 incident).
+	const effectiveEnv: McpEnv = { ...env };
 	const handler = createMcpHandler(() => buildServer(), {
 		legacy: 'stateless',
 		onerror: (error) => {
@@ -68,12 +135,33 @@ export function createAstroMcpNodeHandler(env: McpEnv = process.env) {
 	const nodeHandler = toNodeHandler(handler);
 	const validateHost = hostHeaderValidation(allowedHosts(env));
 	const validateOrigin = originValidation(allowedOrigins(env));
+	const limiter = createRateLimiter({
+		max: positiveInt(env.NVOOS_MCP_RATE_MAX, DEFAULT_RATE_MAX),
+		windowMs: positiveInt(env.NVOOS_MCP_RATE_WINDOW_MS, DEFAULT_RATE_WINDOW_MS),
+	});
+	// Tool handlers read this store via getMcpRequestContext(); merge the
+	// ambient process env so a caller-supplied override never hides the rest.
+	const contextEnv: Record<string, string | undefined> = { ...process.env, ...env };
 
 	return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+		const ip = req.socket.remoteAddress ?? 'unknown';
+		if (!limiter.allow(ip)) {
+			if (!res.headersSent) {
+				res.writeHead(429, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+			}
+			res.end(
+				JSON.stringify({
+					jsonrpc: '2.0',
+					error: { code: -32029, message: 'rate limit exceeded' },
+					id: null,
+				})
+			);
+			return;
+		}
 		if (!validateHost(req, res)) return;
-		if (!validateOrigin(req, res)) return;
+		if (!isSameOrigin(req) && !validateOrigin(req, res)) return;
 		const body = await readBody(req);
-		const auth = await authorizeRequest(req, body, env);
+		const auth = await authorizeRequest(req, body, effectiveEnv);
 		if (!auth.ok) {
 			if (!res.headersSent) {
 				res.writeHead(401, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -87,6 +175,17 @@ export function createAstroMcpNodeHandler(env: McpEnv = process.env) {
 			);
 			return;
 		}
-		await nodeHandler(req, res, body);
+		if (isWriteToolCall(body)) {
+			const via = auth.bearer ? 'bearer' : auth.manager ? 'manager' : 'unknown';
+			console.log(`[mcp] audit tool=${toolNameFrom(body)} via=${via} ip=${ip}`);
+		}
+		await mcpRequestContext.run(
+			{
+				cookie: firstHeaderValue(req.headers.cookie),
+				origin: requestOrigin(req),
+				env: contextEnv,
+			},
+			() => nodeHandler(req, res, body)
+		);
 	};
 }

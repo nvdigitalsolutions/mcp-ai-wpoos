@@ -81,6 +81,9 @@ for (const golden of goldens) {
 			: null,
 		createdAt: golden.createdAt,
 		updatedAt: golden.updatedAt,
+		// Publication status — carried verbatim from the golden fields so the
+		// app fixtures stay semantically identical to the transformer output.
+		status: fields.status,
 	};
 	byId.set(golden.fixtureId, composed);
 }

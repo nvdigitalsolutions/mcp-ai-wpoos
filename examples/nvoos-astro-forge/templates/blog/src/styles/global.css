@@ -1,0 +1,291 @@
+/* ---------------------------------------------------------------------------
+   Design tokens — the Forge pipeline applies a site's design language
+   (Proposal 098 output) over these defaults. Defaults match the ADS core
+   layer (examples/nvoos-astro-velocity/src/tokens/). The span between the
+   FORGE:tokens markers is rewritten by `tokens_apply` at scaffold time.
+   --------------------------------------------------------------------------- */
+/* FORGE:tokens */
+:root {
+	--forge-ink: #1a1a1a;
+	--forge-muted: #6b6b6b;
+	--forge-surface: #ffffff;
+	--forge-surface-alt: #f5f5f4;
+	--forge-line: #e4e4e2;
+	--forge-accent: #0f6b4f;
+	--forge-accent-ink: #ffffff;
+	--forge-radius: 8px;
+	--forge-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--forge-space: 1rem;
+	--forge-measure: 72ch;
+}
+/* FORGE:tokens-end */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	font-family: var(--forge-font);
+	line-height: 1.6;
+	color: var(--forge-ink);
+	background: var(--forge-surface);
+}
+
+a {
+	color: var(--forge-accent);
+}
+
+.site-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 1rem clamp(1rem, 4vw, 2rem);
+	border-bottom: 1px solid var(--forge-line);
+}
+
+.site-header .brand {
+	font-weight: 700;
+	text-decoration: none;
+	color: var(--forge-ink);
+}
+
+.site-header nav {
+	display: flex;
+	gap: 1rem;
+}
+
+.site-main {
+	max-width: var(--forge-measure);
+	margin: 0 auto;
+	padding: 2rem clamp(1rem, 4vw, 2rem);
+}
+
+.site-footer {
+	max-width: var(--forge-measure);
+	margin: 2rem auto 0;
+	padding: 1rem clamp(1rem, 4vw, 2rem);
+	border-top: 1px solid var(--forge-line);
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+}
+
+.hero {
+	padding: 2rem 0;
+	border-bottom: 1px solid var(--forge-line);
+	margin-bottom: 2rem;
+}
+
+.hero h1 {
+	font-size: clamp(1.75rem, 4vw, 2.5rem);
+	line-height: 1.2;
+	margin: 0 0 0.5rem;
+}
+
+.post-list {
+	list-style: none;
+	padding: 0;
+	display: grid;
+	gap: 1rem;
+}
+
+.post-list li {
+	padding: 1rem;
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius);
+	background: var(--forge-surface-alt);
+}
+
+.post-list time {
+	display: block;
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+}
+
+.notice {
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--forge-accent);
+	border-radius: var(--forge-radius);
+	background: var(--forge-surface-alt);
+}
+
+/* Post/page body — WordPress content rendered through the Forge sanitizer. */
+.post-body img {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius);
+}
+
+.post-body figcaption {
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+	text-align: center;
+}
+
+.post-body blockquote {
+	margin: 1.5rem 0;
+	padding: 0.5rem 1rem;
+	border-left: 4px solid var(--forge-accent);
+	background: var(--forge-surface-alt);
+}
+
+.post-body table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 1.5rem 0;
+}
+
+.post-body th,
+.post-body td {
+	border: 1px solid var(--forge-line);
+	padding: 0.5rem;
+	text-align: left;
+}
+
+.post-body pre {
+	background: var(--forge-surface-alt);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius);
+	padding: 1rem;
+	overflow-x: auto;
+}
+
+.post-body code {
+	font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+	font-size: 0.9em;
+}
+
+.post-body iframe {
+	max-width: 100%;
+	aspect-ratio: 16 / 9;
+	height: auto;
+}
+
+.post-body .alignwide {
+	margin-left: -2rem;
+	margin-right: -2rem;
+}
+
+.post-body .aligncenter {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.featured {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius);
+	margin-bottom: 1rem;
+}
+
+/* Storefront product cards. */
+.product-grid {
+	grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.product-grid li {
+	padding: 0;
+	overflow: hidden;
+}
+
+.product-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	text-decoration: none;
+	color: var(--forge-ink);
+}
+
+.product-thumb {
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	background: var(--forge-line);
+}
+
+.product-title {
+	font-weight: 600;
+	padding: 0 0.75rem;
+}
+
+.product-price {
+	padding: 0 0.75rem 0.75rem;
+	color: var(--forge-accent);
+	font-weight: 700;
+}
+
+.product-price s {
+	color: var(--forge-muted);
+	font-weight: 400;
+}
+
+.product-price-large {
+	font-size: 1.25rem;
+}
+
+.product-categories {
+	padding: 0 0.75rem 0.75rem;
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+}
+
+.product-stock {
+	margin-left: 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 400;
+}
+
+.product-stock-muted {
+	color: var(--forge-muted);
+	text-transform: capitalize;
+}
+
+.product header span {
+	display: block;
+}
+
+.post header {
+	border-bottom: 1px solid var(--forge-line);
+	margin-bottom: 1.5rem;
+	padding-bottom: 1rem;
+}
+
+.post header h1 {
+	margin: 0 0 0.5rem;
+	line-height: 1.2;
+}
+
+.post header time,
+.post header span {
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+}
+
+/* Search (Pagefind). */
+.search-form {
+	margin: 1.5rem 0;
+}
+
+.search-input {
+	width: 100%;
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius);
+	font: inherit;
+}
+
+.search-excerpt {
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+}
+
+.search-excerpt mark {
+	background: var(--forge-surface-alt);
+	color: var(--forge-accent);
+}
+
+.search-status {
+	color: var(--forge-muted);
+	font-size: 0.875rem;
+}

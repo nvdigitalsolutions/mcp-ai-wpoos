@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
 import react from '@astrojs/react';
+import mcpBuildIntegration from './scripts/lib/mcp-build-integration.mjs';
 
 // ---------------------------------------------------------------------------
 // Proposal 092 — NV-authored headless storefront.
@@ -35,5 +36,10 @@ export default defineConfig({
 		],
 	},
 
-	integrations: [react()],
+	integrations: [
+		react(),
+		// Rebuilds dist/mcp-entry.mjs on astro:build:done — astro build
+		// wipes dist/, so the /mcp bundle must be written after it finishes.
+		mcpBuildIntegration(),
+	],
 });

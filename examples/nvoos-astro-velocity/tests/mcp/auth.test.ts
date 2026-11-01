@@ -31,6 +31,15 @@ describe('auth helpers', () => {
 		expect(isWriteToolCall({ method: 'tools/list', params: {} })).toBe(false);
 		expect(isWriteToolCall(undefined)).toBe(false);
 		expect(WRITE_TOOLS.has('theme_apply')).toBe(true);
+		// Proposal 095 Phase 3/4.3 — the CMS + ops slices join the write gate.
+		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'cms_create' } })).toBe(true);
+		// Proposal 098 — design_theme writes runtime themes.
+		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'design_theme' } })).toBe(true);
+		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'rebuild_trigger' } })).toBe(true);
+		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'screenshot' } })).toBe(true);
+		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'cms_list' } })).toBe(false);
+		expect(isWriteToolCall({ method: 'tools/call', params: { name: 'site_status' } })).toBe(false);
+		expect(WRITE_TOOLS.has('media_upload')).toBe(true);
 	});
 
 	it('verifies manager sessions via the contract auth endpoint', async () => {

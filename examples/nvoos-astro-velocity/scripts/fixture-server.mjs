@@ -156,6 +156,8 @@ const server = createServer((req, res) => {
 			return send(res, 200, { nonce: 'fixture-nonce' });
 		}
 		if (segments[1] === 'register' || segments[1] === 'login') {
+			// Mirror the bridge: login sets a session cookie.
+			res.setHeader('set-cookie', 'nvoos_fixture_session=1; Path=/; HttpOnly');
 			return send(res, 200, { id: 1, email: 'shopper@example.com', name: 'Fixture Shopper' });
 		}
 		if (segments[1] === 'logout') {
@@ -166,13 +168,18 @@ const server = createServer((req, res) => {
 			if (!req.headers.cookie) {
 				return send(res, 401, { code: 'rest_forbidden', message: 'Not signed in.' });
 			}
+			// The manager flag cookie unlocks the /manage surfaces the way the
+			// real bridge's manage_astro cap does (e2e seam, Proposal 095 4.1).
+			const isManager = /(?:^|;\s*)nvoos_fixture_manager=1(?:;|$)/.test(
+				String(req.headers.cookie ?? '')
+			);
 			return send(res, 200, {
 				id: 1,
 				email: 'shopper@example.com',
 				name: 'Fixture Shopper',
-				canManage: false,
+				canManage: isManager,
 				adminUrl: '',
-				capabilities: ['read'],
+				capabilities: isManager ? ['read', 'manage_astro'] : ['read'],
 				readOnlyCollections: [],
 			});
 		}

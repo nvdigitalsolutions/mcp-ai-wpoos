@@ -1,0 +1,46 @@
+---
+// /posts/{id}/{slug}/ — one WordPress post, rendered through the Forge sanitizer.
+import Base from '../../layouts/Base.astro';
+import SmartImage from '../../components/SmartImage.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('posts');
+	// Astro 7 spread params are flat slash-joined strings, not arrays.
+	return posts.map((post) => ({
+		params: { parts: `${post.id}/${post.data.slug}` },
+		props: { post },
+	}));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const pageUrl = Astro.site ? new URL(`/posts/${post.id}/${post.data.slug}/`, Astro.site).href : undefined;
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'BlogPosting',
+	headline: post.data.title,
+	datePublished: post.data.date,
+	dateModified: post.data.modified,
+	url: pageUrl,
+	...(post.data.author ? { author: { '@type': 'Person', name: post.data.author } } : {}),
+	...(post.data.featuredImage ? { image: post.data.featuredImage } : {}),
+};
+---
+
+<Base title={post.data.title} description={post.data.excerpt} canonical={pageUrl}>
+	<article class="post">
+		<header>
+			<h1>{post.data.title}</h1>
+			<time datetime={post.data.date}>{post.data.date.slice(0, 10)}</time>
+			{post.data.author && <span> by {post.data.author}</span>}
+		</header>
+		{post.data.featuredImage && (
+			<SmartImage class="featured" src={post.data.featuredImage} sizes="(min-width: 48rem) 72ch, 100vw" />
+		)}
+		<div class="post-body">
+			<Content />
+		</div>
+	</article>
+	<script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
+</Base>

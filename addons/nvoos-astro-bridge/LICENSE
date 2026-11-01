@@ -1,4 +1,4 @@
-Funiq Bridge — Proprietary License
+nvoos-astro-bridge — Proprietary License
 
 Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com)
 All rights reserved.
@@ -13,3 +13,14 @@ a license, you are not authorized to use this software.
 
 For licensing inquiries, contact:
   https://nvdigitalsolutions.com/wpoos/license
+
+---
+
+Scope: this license covers the WordPress plugin (the main plugin file and
+`includes/`), the build tooling, and everything else in this addon EXCEPT
+the React admin SPA source in `src/`. That directory is licensed separately
+under the MIT License (`src/LICENSE`) because its standalone build ships
+inside the public, MIT-licensed Astro storefront and its public mirror
+(Proposal 092, owner decision Q8). MIT code in `src/` may be incorporated
+into this proprietary plugin; the MIT grant for `src/` itself remains in
+force for anyone receiving those files under it.

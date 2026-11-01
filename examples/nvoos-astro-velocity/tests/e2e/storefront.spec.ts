@@ -42,17 +42,25 @@ test('color filter narrows the grid via server query params', async ({ page }) =
 });
 
 test('promo-code field validates against the contract (Q5)', async ({ page }) => {
+	// The island is client:visible — under parallel local load (Windows box,
+	// 2 workers) hydration can lag past the default budgets; give it room
+	// rather than racing the clock (Linux CI is unaffected).
+	test.setTimeout(90_000);
 	await page.goto('/products/1/aurora-3-seater-sofa/');
 
 	const field = page.getByLabel('Promo code');
 	await field.scrollIntoViewIfNeeded();
+	// Wait for the client:visible island to hydrate before interacting
+	// (deterministic signal — the click-retry pattern cannot tell an
+	// unhydrated island from a slow response under parallel local load).
+	await expect(page.locator('.promo-field[data-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
 	await field.fill('SUMMER10');
 
 	const apply = page.getByRole('button', { name: 'Apply' });
 	await expect(async () => {
 		await apply.click();
 		await expect(page.getByRole('status')).toContainText('SUMMER10 applied');
-	}).toPass();
+	}).toPass({ timeout: 30_000 });
 
 	await expect(page.getByRole('status')).toContainText('10% off');
 });

@@ -104,6 +104,7 @@ And remove the `/api` prefix from each endpoint URL (since `funiq/v1` already in
 | `rating` | Post meta | Float 0–5 |
 | `isBestseller`/`isFeatured` | Post meta | Boolean |
 | `createdAt`/`updatedAt` | `post_date`/`post_modified` | |
+| `status` | `post_status` | `publish` (default) or `draft` — drafts are excluded from the public listing; the `status` body field on POST/PUT accepts the same two values |
 
 ---
 
@@ -117,7 +118,7 @@ with it.
 
 | Method | Path | Auth |
 |--------|------|------|
-| `GET` | `/products[?page=&limit=&where=...&sort=...]` | Public |
+| `GET` | `/products[?page=&limit=&where=...&sort=...&status=...]` | Public — `status=draft`/`any` require `manage_astro` |
 | `GET` | `/products/{id}` | Public |
 | `POST` | `/products` | `manage_astro` |
 | `PUT` | `/products/{id}` | `manage_astro` |
@@ -202,6 +203,23 @@ curl -X POST https://yoursite.com/wp-json/nvoos-commerce/v1/products \
   -H "Content-Type: application/json" \
   -H "X-WP-Nonce: YOUR_NONCE" \
   -d '{"name":"New Product","price":29.99}'
+
+# Create a DRAFT product — excluded from the public listing (status body
+# field accepts draft|publish; default publish, the legacy behaviour)
+curl -X POST https://yoursite.com/wp-json/nvoos-commerce/v1/products \
+  -H "Content-Type: application/json" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -d '{"name":"Unreleased Product","price":19.99,"status":"draft"}'
+
+# List drafts (manage_astro required; publish is the default filter)
+curl -H "X-WP-Nonce: YOUR_NONCE" \
+  "https://yoursite.com/wp-json/nvoos-commerce/v1/products?status=draft"
+
+# Publish a draft via PUT
+curl -X PUT https://yoursite.com/wp-json/nvoos-commerce/v1/products/42 \
+  -H "Content-Type: application/json" \
+  -H "X-WP-Nonce: YOUR_NONCE" \
+  -d '{"status":"publish"}'
 ```
 
 **Paginated response shape** (Payload-compatible):
@@ -328,6 +346,25 @@ npm run build:standalone
 ### PHP autoloading
 
 The addon uses PSR-4 autoloading via `spl_autoload_register` (no Composer `vendor/` required at runtime). If you have Composer available, run `composer install` for dev tooling.
+
+---
+
+## License
+
+Split license (Proposal 092, owner decision Q8):
+
+- **The WordPress plugin** (main plugin file, `includes/`, build tooling) —
+  **proprietary** (`LICENSE`). Self-hosted distribution only; not
+  wp.org-compatible.
+- **The React admin SPA source in `src/`** — **MIT** (`src/LICENSE`). This
+  carve-out exists because the standalone build
+  (`build/standalone/astro-admin.{js,css}`) is committed to the MIT-licensed
+  Astro storefront (`examples/nvoos-astro-velocity/public/manage-assets/`)
+  and shipped in its public mirror — the source of bytes published under
+  MIT must itself be MIT.
+- Bundled third-party packages (`@wordpress/*`, React) keep their own
+  licenses (GPL-2.0-or-later / MIT); attribution lives in the storefront's
+  `NOTICE`.
 
 ### Code standards
 

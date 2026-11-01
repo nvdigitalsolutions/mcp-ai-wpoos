@@ -31,6 +31,8 @@ monitoring) as the public, fleet-scoped MCP endpoint at
    | `TRUST_PROXY` | yes | `1` (NGINX in front) |
    | `AUTH_MODE` | yes | `strict` |
    | `GATEWAY_PUBLIC_KEYS` | **yes** | `demo-key=site-a,site-b;internal-key=site-c` (see §3) |
+   | `GATEWAY_PUBLIC_KEYS_PREVIOUS` | no | Previous key map during rotation (see §3) |
+   | `PUBLIC_SITE_SLUGS` | **recommended** | Comma-separated slugs shown on the public `/health` endpoint — e.g. `demo` — so private client sites stay invisible to unauthenticated callers. Unset or `*` = all configured sites. `/health/full` always reports every site. |
    | `NVOOS_SITE_<SLUG>_URL` | per site | Full upstream URL incl. `/wp-json/mcp-ai/v1/mcp` |
    | `NVOOS_SITE_<SLUG>_TOKEN` | per site | Fleet Operator token (see §2) |
    | `ALLOWED_ORIGINS` | no | Comma-separated origins for browser clients |
@@ -90,12 +92,17 @@ Map keys to site slugs in `GATEWAY_PUBLIC_KEYS`
 
 ## 5. Monitoring & Alerts
 
-- Uptime check on `GET /health` (no auth, minimal data).
+- Uptime check on `GET /health` (no auth, minimal data). On fleets that
+  bind private client sites, set `PUBLIC_SITE_SLUGS` to the public slugs
+  (e.g. `demo`) so the unauthenticated endpoint does not advertise private
+  slugs; the keyed `/health/full` always reports every site.
 - In-fleet option: the media worker's status module monitors the gateway as
-  a synthetic-only external target — `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health`
-  plus `STATUS_GATEWAY_SYNTHETIC=1` (probes `/health` through the SSRF
-  guard; HMAC-signed webhook/email alerts on confirmed transitions; the
-  worker's public `/status` page needs `STATUS_PUBLIC_PAGE=1`).
+  a synthetic-only external target — `STATUS_ENABLED=1`,
+  `STATUS_EXTERNAL_TARGETS=gateway=https://mcp.nvoos.pro/health`, and
+  `STATUS_SYNTHETIC_ENABLED=1` (probes `/health` through the SSRF guard;
+  HMAC-signed webhook/email alerts on confirmed transitions via
+  `STATUS_ALERT_WEBHOOKS` + `STATUS_ALERT_WEBHOOK_SECRET`; the worker's
+  public `/status` page needs `STATUS_PUBLIC_PAGE=1`).
 - Alert on 5xx spikes and on `429` counts (rate limiting misconfiguration
   shows up here first).
 - Watch logs for `[Auth]` warnings (previous-key use, short keys) and
@@ -114,7 +121,7 @@ official MCP Registry:
 - [x] Example config (Claude Desktop + Zed via `nvoos-mcp-bridge`)
 - [x] Landing page: `https://mcp.nvoos.pro/`
 - [x] GitHub repo: `nvdigitalsolutions/nvoos-mcp-gateway` (public) — ships `LICENSE` (GPL-3.0-or-later) and a `license` field in `package.json`
-- [ ] Logo + one-line description (NV oOS branding)
+- [x] Logo + one-line description (NV oOS branding) — `addons/mcp-gateway/assets/nvoos-logo.png` (512×512), served at `https://mcp.nvoos.pro/assets/nvoos-logo.png` after the sync + auto-deploy
 - [ ] Uptime monitor on `/health`
 - [ ] Demo tool that succeeds end-to-end: the `demo` key currently allowlists only `deep_research`, which needs a web-search provider key on the demo site — allowlist a self-contained read-only tool (e.g. `get_environment_status`) or configure a search provider before reviewers probe it
 

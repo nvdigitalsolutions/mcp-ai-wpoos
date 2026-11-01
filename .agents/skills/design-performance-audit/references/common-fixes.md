@@ -124,7 +124,7 @@ the user reports "the menu flashes on the page".
 Root cause: on the very first layout the linked Elementor CSS has not been
 applied yet, so the nav `<ul>` renders as an unstyled block with ALL
 `.elementor-nav-menu--dropdown` sub-menus VISIBLE — the header renders at its
-expanded height (measured 1202px on kayaherbhouse.com) and then collapses to
+expanded height (measured 1202px on a Flatsome client site) and then collapses to
 its final height (~170px) when the CSS lands. On PSI's throttled cold run the
 intermediate state persists for seconds and gets painted = the CLS. JupiterX
 sticky headers render a second header template (same menu pattern) inside the
@@ -140,7 +140,7 @@ cold. Also verify with the HTML: two `<header data-elementor-id>` templates
 inside one `.jupiterx-header` wrapper + a `wp-custom-css` rule hiding one of
 them.
 
-**Flatsome does NOT exhibit this** (VERIFIED theparfumerie.lk 2026-10-29):
+**Flatsome does NOT exhibit this** (VERIFIED on a live Flatsome site 2026-10-29):
 ~10 stylesheets, mobile menu `mfp-hide` already `display:none` at frame 1,
 header stable at its final height from the first frame, mega dropdowns
 `display:table` + absolute (no layout impact). Skip the fix on Flatsome; keep
@@ -212,7 +212,7 @@ competes with the LCP for download priority. Detection: grep the HTML for
   declaration. See `templates/optimization-snippet.php` block 2.
 - **`swap` alone does NOT fix font CLS** — the shift is the fallback text
   occupying a different width than the webfont. Fix with metric-matched
-  fallback faces (`size-adjust`), VERIFIED 2026-10-29 on kayaherbhouse.com:
+  fallback faces (`size-adjust`), VERIFIED 2026-10-29 on a Flatsome client site:
   1. Measure the webfont vs the system fallback with fontTools (avg advance
      over the ACTUAL strings rendered — all-caps menu text, accented chars).
   2. Declare fallback faces: one with
