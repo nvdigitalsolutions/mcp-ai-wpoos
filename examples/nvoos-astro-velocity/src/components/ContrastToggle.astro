@@ -1,0 +1,68 @@
+---
+// ---------------------------------------------------------------------------
+// ContrastToggle — high-contrast axis (Proposal 104, Accessible Starter
+// pattern). Independent of the theme: sets data-contrast="high" on <html>,
+// which overrides muted text → full ink and line → line-strong (the WCAG
+// 2.2 contrast axes already in the ADS semantic layer).
+// ---------------------------------------------------------------------------
+---
+<button
+	class="contrast-toggle"
+	type="button"
+	data-contrast-toggle
+	aria-label="Toggle high contrast"
+	aria-pressed="false"
+>
+	<span data-contrast-label>Contrast</span>
+</button>
+
+<style>
+	.contrast-toggle {
+		border: 1px solid var(--nv-line);
+		background: transparent;
+		color: var(--nv-ink);
+		font: inherit;
+		font-size: 0.85rem;
+		padding: 0.25rem 0.6rem;
+		border-radius: var(--nv-radius);
+		cursor: pointer;
+	}
+</style>
+
+<script>
+	import { applyContrast, persistContrast } from '../lib/theme/theme';
+
+	function current(): 'standard' | 'high' {
+		try {
+			return localStorage.getItem('nvoos-contrast') === 'high' ? 'high' : 'standard';
+		} catch {
+			return 'standard';
+		}
+	}
+
+	function sync(): void {
+		const high = current() === 'high';
+		applyContrast(high ? 'high' : 'standard');
+		document
+			.querySelector<HTMLButtonElement>('[data-contrast-toggle]')
+			?.setAttribute('aria-pressed', String(high));
+		const label = document.querySelector('[data-contrast-label]');
+		if (label) {
+			label.textContent = high ? 'High contrast' : 'Contrast';
+		}
+	}
+
+	// Bundled scripts run once per FULL load — delegate the click on document
+	// (survives the ClientRouter swap) and re-sync on every swap, mirroring
+	// the ThemeToggle pattern (Proposal 104 Defect A).
+	document.addEventListener('click', (event) => {
+		const target = event.target as Element | null;
+		if (target?.closest('[data-contrast-toggle]')) {
+			persistContrast(current() === 'high' ? 'standard' : 'high', localStorage);
+			sync();
+		}
+	});
+
+	document.addEventListener('astro:after-swap', sync);
+	sync();
+</script>

@@ -12,6 +12,7 @@ import { ClientRouter } from 'astro:transitions';
 import CartBadge from '../islands/CartBadge';
 import ManageLink from '../islands/ManageLink';
 import ThemeToggle from '../components/ThemeToggle.astro';
+import ContrastToggle from '../components/ContrastToggle.astro';
 import '../styles/generated/tokens.css';
 import '../styles/global.css';
 
@@ -53,21 +54,43 @@ const {
 		}
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 		<script is:inline>
-			// ADS no-FOUC theme boot (Proposal 095): set data-theme before first
-			// paint so dark/brand themes never flash (Starlight pattern).
+			// ADS no-FOUC theme boot (Proposal 095/104): apply the stored theme
+			// + contrast axis before first paint, then RE-APPLY on every
+			// client-side navigation — Astro's ClientRouter swaps the <html>
+			// element (attributes included) and head scripts run only once,
+			// so without the after-swap listener the theme resets to light on
+			// page 2 (Proposal 104 Defect A; Astro docs' dark-mode pattern).
 			(function () {
-				let stored = null;
-				try {
-					stored = localStorage.getItem('nvoos-theme');
-				} catch { /* storage unavailable */ }
-				const theme =
-					stored ||
-					(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
-						? 'light'
-						: 'dark');
-				if (theme && theme !== 'light') {
-					document.documentElement.setAttribute('data-theme', theme);
-				}
+				const KEY = 'nvoos-theme';
+				const CKEY = 'nvoos-contrast';
+				const stored = (key) => {
+					try {
+						return localStorage.getItem(key);
+					} catch { /* storage unavailable */ }
+					return null;
+				};
+				const apply = () => {
+					let theme = stored(KEY);
+					if (!theme) {
+						theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+							? 'light'
+							: 'dark';
+					}
+					if (theme === 'light') {
+						document.documentElement.removeAttribute('data-theme');
+					} else {
+						document.documentElement.setAttribute('data-theme', theme);
+					}
+					document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
+					if (stored(CKEY) === 'high') {
+						document.documentElement.setAttribute('data-contrast', 'high');
+					} else {
+						document.documentElement.removeAttribute('data-contrast');
+					}
+				};
+				apply();
+				// document survives the swap; the element does not.
+				document.addEventListener('astro:after-swap', apply);
 			})();
 		</script>
 		<ClientRouter />
@@ -86,6 +109,7 @@ const {
 			<div class="container site-header__inner">
 				<a class="site-header__brand" href="/">NV Store</a>
 				<nav class="site-nav" aria-label="Primary">
+					<a href="/products/">Products</a>
 					<a href="/categories/">Categories</a>
 					<a href="/brands/">Brands</a>
 					<a href="/promotions/">Promotions</a>
@@ -93,6 +117,7 @@ const {
 				</nav>
 				<CartBadge client:load transition:persist />
 				<ThemeToggle />
+				<ContrastToggle />
 				<ManageLink client:load />
 			</div>
 		</header>

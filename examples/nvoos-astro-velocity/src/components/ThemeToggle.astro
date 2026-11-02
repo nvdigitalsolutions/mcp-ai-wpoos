@@ -1,21 +1,53 @@
 ---
 // ---------------------------------------------------------------------------
-// ThemeToggle — ADS theme switcher (Proposal 095). Vanilla JS (no island
-// hydration): cycles light → dark → example-brand and persists the choice
-// under the nvoos-theme storage key read by the BaseLayout no-FOUC script.
+// ThemeToggle — ADS theme switcher (Proposal 095, hardened by 104).
+//
+// State source is localStorage (via the theme module), NEVER the DOM
+// attribute — the attribute is wiped on every ClientRouter swap while the
+// storage value survives. Behaviour:
+//   - ≤ 3 themes (light + dark + ≤ 1 brand): single-button cycle
+//   - > 3 themes: button opens a role=menu list (bento/Starlight pattern)
+// The theme list derives from the ADS bundle (lib/theme/registry), not a
+// hardcoded array — brand themes created via /mcp show up on the next build.
 // ---------------------------------------------------------------------------
+
+import { ALL_THEMES } from '../lib/theme/registry';
+
+const cycleOnly = ALL_THEMES.length <= 3;
 ---
-<button
-	class="theme-toggle"
-	type="button"
-	data-theme-toggle
-	aria-label="Switch colour theme"
->
-	<span data-theme-label>Theme</span>
-</button>
+<div class="theme-toggle" data-theme-toggle-root>
+	<button
+		type="button"
+		data-theme-toggle
+		aria-pressed="false"
+		aria-haspopup={cycleOnly ? undefined : 'menu'}
+	>
+		<span data-theme-label>Theme</span>
+	</button>
+	{!cycleOnly && (
+		<ul class="theme-toggle__menu" role="menu" aria-label="Colour theme" hidden data-theme-menu>
+			{ALL_THEMES.map((theme) => (
+				<li role="none">
+					<button
+						type="button"
+						role="menuitemradio"
+						aria-checked="false"
+						data-theme-choice={theme}
+					>
+						{theme}
+					</button>
+				</li>
+			))}
+		</ul>
+	)}
+</div>
 
 <style>
 	.theme-toggle {
+		position: relative;
+	}
+
+	.theme-toggle button {
 		border: 1px solid var(--nv-line);
 		background: transparent;
 		color: var(--nv-ink);
@@ -25,36 +57,109 @@
 		border-radius: var(--nv-radius);
 		cursor: pointer;
 	}
+
+	.theme-toggle__menu {
+		position: absolute;
+		top: calc(100% + 0.35rem);
+		right: 0;
+		margin: 0;
+		padding: 0.35rem;
+		list-style: none;
+		background: var(--nv-surface);
+		border: 1px solid var(--nv-line);
+		border-radius: var(--nv-radius);
+		box-shadow: 0 6px 18px rgb(0 0 0 / 0.15);
+		z-index: 50;
+		min-width: 10rem;
+	}
+
+	.theme-toggle__menu[hidden] {
+		display: none;
+	}
+
+	.theme-toggle__menu li + li {
+		margin-top: 0.15rem;
+	}
+
+	.theme-toggle__menu button {
+		display: block;
+		width: 100%;
+		text-align: left;
+		border: none;
+		border-radius: calc(var(--nv-radius) / 2);
+		padding: 0.35rem 0.6rem;
+	}
+
+	.theme-toggle__menu button[aria-checked='true'] {
+		background: var(--nv-surface-alt);
+		font-weight: 600;
+	}
 </style>
 
 <script>
-	const THEMES = ['light', 'dark', 'example-brand'];
-	const STORAGE_KEY = 'nvoos-theme';
+	import { ALL_THEMES, nextTheme } from '../lib/theme/registry';
+	import { applyTheme, persistTheme, resolveStoredTheme } from '../lib/theme/theme';
+
+	const cycleOnly = ALL_THEMES.length <= 3;
+
+	function mediaQuery(): MediaQueryList | null {
+		return typeof window !== 'undefined' && window.matchMedia
+			? window.matchMedia('(prefers-color-scheme: light)')
+			: null;
+	}
 
 	function currentTheme(): string {
-		return document.documentElement.getAttribute('data-theme') || 'light';
+		return resolveStoredTheme(localStorage, mediaQuery(), ALL_THEMES);
 	}
 
-	function applyTheme(theme: string): void {
-		if (theme === 'light') {
-			document.documentElement.removeAttribute('data-theme');
-		} else {
-			document.documentElement.setAttribute('data-theme', theme);
+	function syncAll(): void {
+		const theme = currentTheme();
+		const label = document.querySelector('[data-theme-label]');
+		if (label) {
+			label.textContent = theme;
 		}
-		try {
-			localStorage.setItem(STORAGE_KEY, theme);
-		} catch {
-			/* storage unavailable */
-		}
-	}
-
-	document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach((button) => {
-		button.addEventListener('click', () => {
-			const index = THEMES.indexOf(currentTheme());
-			const next = THEMES[(index + 1) % THEMES.length];
-			applyTheme(next);
-			const label = button.querySelector<HTMLElement>('[data-theme-label]');
-			if (label) label.textContent = next;
+		document.querySelectorAll<HTMLElement>('[data-theme-choice]').forEach((item) => {
+			item.setAttribute('aria-checked', String(item.dataset.themeChoice === theme));
 		});
+		document
+			.querySelector<HTMLButtonElement>('[data-theme-toggle]')
+			?.setAttribute('aria-pressed', String(theme !== 'light'));
+	}
+
+	function choose(theme: string): void {
+		applyTheme(theme);
+		persistTheme(theme, localStorage);
+		syncAll();
+		const menu = document.querySelector<HTMLElement>('[data-theme-menu]');
+		if (menu) {
+			menu.hidden = true;
+		}
+	}
+
+	// Bundled scripts run once per FULL load and are NOT re-executed on
+	// client-side navigation (the ClientRouter replaces the body) — so clicks
+	// are delegated on document (which survives the swap) and state is
+	// re-synced on every swap. The layout boot re-applies the attribute;
+	// reading storage here keeps ordering irrelevant.
+	document.addEventListener('click', (event) => {
+		const target = event.target as Element | null;
+		if (target?.closest<HTMLButtonElement>('[data-theme-toggle]')) {
+			if (cycleOnly) {
+				choose(nextTheme(currentTheme(), ALL_THEMES));
+				return;
+			}
+			const menu = document.querySelector<HTMLElement>('[data-theme-menu]');
+			if (menu) {
+				menu.hidden = !menu.hidden;
+			}
+			return;
+		}
+		const choice = target?.closest<HTMLButtonElement>('[data-theme-choice]');
+		if (choice) {
+			choose(choice.dataset.themeChoice ?? 'light');
+		}
 	});
+
+	document.addEventListener('astro:after-swap', syncAll);
+	syncAll();
 </script>

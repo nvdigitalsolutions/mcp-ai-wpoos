@@ -43,10 +43,13 @@
 | `PORT` | no | **Injected by Velocity** — do not set manually. A committed/manual `.env` `PORT` (observed: 3025) must match the routing target or pages won't be served. |
 | `NVOOS_PROXY_CACHE` / `NVOOS_PROXY_CACHE_MAX_TTL` | no | Micro-cache kill-switch / TTL cap (default enabled, 300 s) |
 
-`NVOOS_API_BASE` is a **build-time only** variable (CI) — the runtime binds
-to the same-origin `/api/*` proxy and needs no origin config. Since PR #7284
-the request URL takes priority over any baked `NVOOS_API_BASE` at runtime
-(regression: SSR pages 500ed fetching the baked fixture origin).
+`NVOOS_API_BASE` is a **build-time only** variable (CI/dev fixture loop) —
+the runtime binds to the same-origin `/api/*` proxy and needs no origin
+config. Since PR #7284 the request URL takes priority over any baked
+`NVOOS_API_BASE` at runtime (regression: SSR pages 500ed fetching the baked
+fixture origin). **Proposal 104:** no route fetches at build anymore (the
+PDP prerender was dropped), so the mirror rebuild runs with NO
+`NVOOS_API_BASE` — `npm run build:prod-sim` is the CI-pinned hermetic gate.
 
 ## `/mcp` assistant surface (Proposal 095)
 
@@ -66,6 +69,7 @@ to stay secure — on Velocity:
 | `NVOOS_SSR_API_ORIGIN` | no | Origin the server uses to verify manager sessions (`/auth/me`) and to resolve contract calls from tools; falls back to `NVOOS_API_BASE` |
 | `NVOOS_MCP_SCREENSHOT` | no | Opt-in `screenshot` tool. Off by default — the browser binary + headless launch cost only makes sense where an assistant does visual verification |
 | `NVOOS_REBUILD_WEBHOOK_URL` (+ `_TOKEN`) | no | Enables the `rebuild_trigger` tool. Point it at the mirror sync `repository_dispatch` URL (repo-scoped PAT as `_TOKEN`) or any rebuild webhook; the tool errors when unset |
+| `NVOOS_REVALIDATE_TOKEN` | no | Shared secret for `POST /internal/revalidate/` — tag-based purge of the in-process Astro route cache (Proposal 104 Q3). Unset disables the route (503). Per-instance only: fleet-wide invalidation remains the mirror redeploy loop |
 | `NVOOS_STOREFRONT_ORIGIN` | no | Override for the origin `preview_url` / `screenshot` render (http/https only). Defaults to the inbound request Host (scheme from `X-Forwarded-Proto`, then socket TLS state), so behind Velocity it usually needs no value; set it only when a proxy rewrites the Host |
 
 Auth model: reads are public; design writes accept the bearer token **or** a

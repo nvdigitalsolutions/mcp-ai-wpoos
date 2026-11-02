@@ -1,4 +1,4 @@
-import { defineConfig } from 'astro/config';
+import { defineConfig, memoryCache } from 'astro/config';
 import node from '@astrojs/node';
 import react from '@astrojs/react';
 import mcpBuildIntegration from './scripts/lib/mcp-build-integration.mjs';
@@ -6,16 +6,18 @@ import mcpBuildIntegration from './scripts/lib/mcp-build-integration.mjs';
 // ---------------------------------------------------------------------------
 // Proposal 092 — NV-authored headless storefront.
 //
-// Rendering model (hybrid):
-//   - PDPs are prerendered at build time over the full catalog.
+// Rendering model (hybrid, revised by Proposal 104 §3.2):
+//   - PDPs are on-demand SSR with route caching (Astro 7 route cache:
+//     memoryCache provider + per-page tags) — build-time prerendering was
+//     dropped because the hermetic mirror build baked fixture data (Defect B).
 //   - PLPs, home, and dynamic pockets are on-demand SSR with Cache-Control
 //     headers (see src/lib/commerce/client.ts) so the CDN caches them.
 //   - Marketing pages are static markdown.
 //
-// The runtime binds ONLY to the same-origin /api/* proxy; the build binds to
-// NVOOS_API_BASE (full base URL of the NV commerce contract). Neither this
-// file nor src/ may mention backend-specific URLs — the CI grep gate
-// (tests/unit/contract-grep.test.ts) enforces it.
+// The runtime binds ONLY to the same-origin /api/* proxy; the build no
+// longer binds to anything (fully hermetic — only ASTRO_SITE is needed).
+// Neither this file nor src/ may mention backend-specific URLs — the CI
+// grep gate (tests/unit/contract-grep.test.ts) enforces it.
 // ---------------------------------------------------------------------------
 
 export default defineConfig({
@@ -26,6 +28,16 @@ export default defineConfig({
 	trailingSlash: 'always',
 
 	adapter: node({ mode: 'standalone' }),
+
+	// Proposal 104 §3.2 / D-series: Astro 7 route caching. Config-level
+	// defaults merge with per-page Astro.cache.set (tags accumulate). The
+	// in-process provider covers SSR compute; the CDN's s-maxage header is
+	// the edge layer. Invalidation: webhook → redeploy (Velocity) / tag
+	// purge within a deploy (optional /internal/revalidate, owner Q3).
+	cache: { provider: memoryCache() },
+	routeRules: {
+		'/products/[...path]': { maxAge: 300, swr: 600, tags: ['products'] },
+	},
 
 	// The runtime /_image endpoint fetches absolute same-origin hrefs; the
 	// site host must be allowlisted. Deriving it from ASTRO_SITE keeps test

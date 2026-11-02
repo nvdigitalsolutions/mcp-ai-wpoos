@@ -7,13 +7,29 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
 	testDir: './tests/e2e',
-	fullyParallel: true,
 	retries: process.env.CI ? 1 : 0,
 	reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
 	use: {
 		baseURL: 'http://localhost:4321',
 		trace: 'on-first-retry',
 	},
+	// Proposal 104 note: design-import + rebrand-loop mutate the shared
+	// in-process MCP token state (apply/rollback). They run in their own
+	// single-worker, serial project so parallel theme/specs cannot interleave
+	// with their assertions. Everything else stays fully parallel.
+	projects: [
+		{
+			name: 'default',
+			fullyParallel: true,
+			testIgnore: /(design-import|rebrand-loop)\.spec\.ts/,
+		},
+		{
+			name: 'stateful-mcp',
+			fullyParallel: false,
+			workers: 1,
+			testMatch: /(design-import|rebrand-loop)\.spec\.ts/,
+		},
+	],
 	webServer: [
 		{
 			command: 'node scripts/fixture-server.mjs',

@@ -473,18 +473,42 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## Standards this app is built to (research-backed)
 
-- **Hybrid rendering** — prerender the catalog at build; SSR the dynamic
-  pockets (stock, promos). This is the 2026 Astro headless-commerce standard.
+- **On-demand SSR for commerce pages + route caching** (Proposal 104 §3.2 —
+  supersedes 092's build-time PDP prerender): Hydrogen's own guidance is
+  "default to SSR for commerce pages"; the Astro 7 route cache
+  (`memoryCache` provider + `Astro.cache.set` tags + config `routeRules`)
+  is the ISR-equivalent, and the mirror build is now fully hermetic
+  (`npm run build:prod-sim` — no `NVOOS_API_BASE`).
 - **Astro Image** for automatic WebP/AVIF + lazy loading via the runtime
   endpoint (above).
-- **SEO**: canonical single product URL, `Product` JSON-LD in initial HTML
-  with SKU-aligned IDs, `/sitemap.xml`, robots, cache headers + revalidation —
-  verified by the JS-disabled crawlability spec and Lighthouse gates
-  (perf ≥ 0.8, a11y ≥ 0.9, best-practices ≥ 0.9, seo ≥ 0.95).
+- **SEO**: canonical single product URL, real 301s for slug drift, `Product`
+  JSON-LD in initial HTML with SKU-aligned IDs, `/sitemap.xml`, robots,
+  cache headers + revalidation — verified by the JS-disabled crawlability
+  spec, the axe-core e2e gate (D6) and Lighthouse gates (perf ≥ 0.8,
+  a11y ≥ 0.9, best-practices ≥ 0.9, seo ≥ 0.95).
+- **Theme runtime (Proposal 104)**: `src/lib/theme/` is the client theme
+  module — localStorage is truth, application is idempotent, and the boot
+  **re-applies on `astro:after-swap`** (head scripts run once; the
+  ClientRouter swaps the whole `<html>` element, wiping `data-theme`).
+  Bundled component scripts are NOT re-executed on SPA navigation — Theme/
+  ContrastToggle use document-level delegation + after-swap re-sync.
+  `color-scheme` is applied alongside `data-theme` (browser UI parity); a
+  high-contrast axis (`data-contrast="high"`) rides the existing
+  `line-strong` token.
+- **BFF security headers (D12)**: CSP per response with SHA-256 hashes of
+  every inline script (no blanket `unsafe-inline`; inline `on*` handlers
+  are forbidden in src — see the category PLP's delegated auto-submit).
+- **Approved owner items (2026-11-02)**: Q3 — `POST /internal/revalidate/`
+  (bearer `NVOOS_REVALIDATE_TOKEN`, tag-based purge of the in-process route
+  cache; trailing slash is canonical, unset token = 503). Q5 —
+  `GET /og/product/{id}.png` branded OG cards (satori + resvg + Inter via
+  Fontsource, ADS tokens, day-long cache; render failures 302 to the
+  product image); PDPs point `og:image` at it. Fixture server appends a
+  synthetic draft (id 9901) at boot — goldens stay byte-identical.
 
 ## References
 
-- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
+- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · **Proposal 104** (runtime hardening: `-proposal.md`, `-research.md`, `-implementation-plan.md`, `-ecosystem-repo-analysis.md`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
 - `examples/nvoos-astro-velocity/README.md` (architecture, env, commands)
 - `addons/nvoos-astro-bridge/README.md` (REST surface, data map)
 - Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`, `mcp-ai-wpoos-astro-forge` (the generator that turns a WP/Woo site into an Astro frontend — this skill covers the serving side)

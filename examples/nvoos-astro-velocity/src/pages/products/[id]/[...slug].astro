@@ -1,12 +1,15 @@
 ---
 // ---------------------------------------------------------------------------
-// PDP — prerendered for the FULL catalog at build time (getStaticPaths over
-// the paginated products collection at limit=100). Zero-JS by default; the
-// gallery/add-to-cart/promo islands hydrate lazily. JSON-LD (Product/Offer/
-// AggregateRating/BreadcrumbList) is in the initial HTML (P3/D10).
+// PDP — on-demand SSR (Proposal 104 §3.2, replacing the 092 §5.4 build-time
+// prerender). Rationale: a prerendered catalog is only correct when it is
+// stable at deploy time, and the mirror's hermetic build bakes fixture data
+// — every live product URL 404'd (Proposal 104 Defect B). SSR against the
+// same-origin /api/* proxy renders the live catalog, enables REAL 301s for
+// slug drift, and carries Astro route caching (tags: products, product-<id>).
 //
-// Slug behavior: the id is the canonical key; unknown slugs 404 (crawlers
-// learn the canonical via the canonical tag — prerendered pages cannot 301).
+// Zero-JS by default: the gallery/add-to-cart/promo islands hydrate lazily.
+// JSON-LD (Product/Offer/AggregateRating/BreadcrumbList) is in the initial
+// HTML (P3/D10) — unchanged by the rendering-model switch.
 // ---------------------------------------------------------------------------
 
 import BaseLayout from '../../../layouts/BaseLayout.astro';
@@ -14,33 +17,50 @@ import GalleryLightbox, { type GalleryEntry } from '../../../islands/GalleryLigh
 import AddToCartButton from '../../../islands/AddToCartButton';
 import PromoCodeField from '../../../islands/PromoCodeField';
 import ProductCard from '../../../components/ProductCard.astro';
-import { getAllProducts } from '../../../lib/commerce/client';
+import { getProduct, getProducts } from '../../../lib/commerce/client';
+import { isPublished } from '../../../lib/commerce/publish';
 import { normalizeProductMedia, sanitizeDescription } from '../../../lib/commerce/normalize';
 import { formatPrice, resolveCurrency } from '../../../lib/commerce/money';
-import { categoryPath, slugify, absoluteUrl } from '../../../lib/url';
-import { breadcrumbJsonLd, productJsonLd } from '../../../lib/seo/jsonld';
+import { categoryPath, productPath, slugify, absoluteUrl } from '../../../lib/url';
+import { jsonLdFor } from '../../../lib/seo/jsonld';
 import { metaForProduct } from '../../../lib/seo/meta';
 import { fixedImage, renderOrigin, responsiveImage } from '../../../lib/images';
 
-export const prerender = true;
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=600'
+);
 
-export async function getStaticPaths() {
-	// Build-time fetches bind to NVOOS_API_BASE (fixtures in CI/dev).
-	const products = await getAllProducts(undefined);
-	return products.map((product) => ({
-		params: { id: String(product.id), slug: slugify(product.name) },
-		props: { product, allProducts: products },
-	}));
+const id = Number(Astro.params.id ?? 0);
+if (!Number.isInteger(id) || id <= 0) {
+	return new Response('Not found', { status: 404 });
 }
 
-const { product: raw, allProducts } = Astro.props as {
-	product: import('../../../lib/commerce/types').Product;
-	allProducts: import('../../../lib/commerce/types').Product[];
-};
+const raw = await getProduct(id, Astro.url);
+// Publication guard: a draft (or non-publish WP status) 404s to storefront
+// visitors even when the id is guessed — the Cactus "filter everywhere" rule.
+if (!raw || !isPublished(raw)) {
+	return new Response('Product not found', { status: 404 });
+}
+
+// Canonical-slug convergence: SSR makes real 301s possible (the prerendered
+// page could not redirect; it could only note the canonical).
+const requestedSlug = String(Astro.params.slug ?? '').replace(/\/+$/, '');
+if (requestedSlug !== slugify(raw.name)) {
+	return Astro.redirect(productPath(id, raw.name), 301);
+}
+
+if (Astro.cache.enabled) {
+	Astro.cache.set({ maxAge: 300, swr: 600, tags: ['products', `product-${id}`] });
+}
 
 const product = normalizeProductMedia(raw);
 const site = Astro.site ?? new URL('https://store.nvoos.cloud');
 const meta = metaForProduct(product, site);
+// Branded OG card (Proposal 104 Q5) — the og:image slot points at the
+// on-demand satori render; crawlability of the card is covered by the
+// OG route e2e, and render failures fall back to the product image.
+const ogImage = absoluteUrl(site, `/og/product/${product.id}.png`);
 
 // Breadcrumb trail: Home → Category → Product (JSON-LD + visible).
 const breadcrumbs = [
@@ -55,24 +75,31 @@ const breadcrumbs = [
 		: []),
 ];
 
-// Related: same category, newest first, exclude self (computed at build).
-const related = allProducts
-	.filter(
-		(candidate) =>
-			candidate.id !== product.id &&
-			product.category !== null &&
-			candidate.category?.id === product.category.id
-	)
-	.slice(0, 8)
-	.map(normalizeProductMedia);
+// Related: same category, newest first, exclude self — request-time, not a
+// whole-catalog build prop. Publication-filtered.
+const related = product.category
+	? (
+		await getProducts(Astro.url, {
+			page: 1,
+			limit: 8,
+			where: { category: { equals: product.category.id } },
+			sort: '-date',
+		})
+	).docs
+		.filter((candidate) => candidate.id !== product.id && isPublished(candidate))
+		.map(normalizeProductMedia)
+	: [];
 
-const jsonld = [
-	productJsonLd(product, site, resolveCurrency()),
-	breadcrumbJsonLd(breadcrumbs),
-];
+const jsonld = jsonLdFor({
+	type: 'Product',
+	product,
+	site,
+	currency: resolveCurrency(),
+	breadcrumb: breadcrumbs,
+});
 
-// Gallery entries — runtime-optimized via the /_image endpoint so the
-// prerendered PDP build never fetches remote bytes.
+// Gallery entries — runtime-optimized via the /_image endpoint so the PDP
+// build never fetches remote bytes.
 const origin = renderOrigin(Astro.url, Astro.site);
 const gallery: GalleryEntry[] = [product.image, ...product.images]
 	.filter(Boolean)
@@ -91,7 +118,7 @@ const gallery: GalleryEntry[] = [product.image, ...product.images]
 	title={meta.title}
 	description={meta.description}
 	canonical={meta.canonical}
-	image={meta.og.image}
+	image={ogImage}
 	jsonld={jsonld}
 >
 	<nav class="breadcrumbs" aria-label="Breadcrumb">

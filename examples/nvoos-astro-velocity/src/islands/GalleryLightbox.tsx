@@ -53,6 +53,8 @@ export default function GalleryLightbox({ entries, alt }: Props) {
 							key={entry.thumb.src}
 							className={index === active ? 'gallery__thumb is-active' : 'gallery__thumb'}
 							onClick={() => setActive(index)}
+							role="tab"
+							aria-selected={index === active}
 							aria-label={`Show image ${index + 1} of ${entries.length}`}
 						>
 							<img

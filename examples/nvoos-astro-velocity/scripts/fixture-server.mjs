@@ -42,6 +42,36 @@ const COLLECTIONS = {
 	promocodes,
 };
 
+// Proposal 104 §2.6 — a synthetic DRAFT product, appended at boot and never
+// written to tests/fixtures/ (the golden JSON is the bridge contract and
+// stays byte-identical). Exercises the storefront publication guard
+// end-to-end: PDP 404s, listings/sitemap exclude it.
+products.push({
+	id: 9901,
+	name: 'Unreleased Prototype Sofa',
+	price: 999,
+	oldPrice: null,
+	description: '<p>Draft fixture — must never render publicly.</p>',
+	category: categories[0] ?? null,
+	brand: brands[0] ?? null,
+	colors: [],
+	width: 200,
+	height: 85,
+	depth: 95,
+	rating: null,
+	isBestseller: false,
+	isFeatured: false,
+	image: null,
+	images: [],
+	imageId: null,
+	imagesIds: [],
+	statuses: [],
+	promotion: null,
+	createdAt: '2026-11-02T00:00:00Z',
+	updatedAt: '2026-11-02T00:00:00Z',
+	status: 'draft',
+});
+
 function envelope(docs, page, limit) {
 	const total = docs.length;
 	const pages = limit > 0 ? Math.ceil(total / limit) : 1;
@@ -219,7 +249,14 @@ const server = createServer((req, res) => {
 	}
 
 	const sort = url.searchParams.get('sort') ?? 'date';
-	const docs = segments[0] === 'products' ? filterProducts(where, sort) : collection;
+	let docs = segments[0] === 'products' ? filterProducts(where, sort) : collection;
+
+	// Mirror the bridge's listing default: publish-only unless status=any
+	// (manager preview). The synthetic draft (Proposal 104 §2.6) exercises
+	// the storefront-side publication guard end-to-end.
+	if (url.searchParams.get('status') !== 'any') {
+		docs = docs.filter((doc) => doc.status === undefined || doc.status === 'publish');
+	}
 
 	return send(res, 200, envelope(docs, page, limit), {
 		'cache-control': 'public, s-maxage=300, stale-while-revalidate=60',

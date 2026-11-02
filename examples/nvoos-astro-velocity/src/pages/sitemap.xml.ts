@@ -10,6 +10,7 @@
 
 import type { APIRoute } from 'astro';
 import { getAllCategories, getAllBrands, getAllColors, getAllProducts } from '../lib/commerce/client';
+import { isPublished } from '../lib/commerce/publish';
 import { toIsoDate } from '../lib/commerce/normalize';
 import { categoryPath, brandPath, colorPath, productPath, absoluteUrl } from '../lib/url';
 
@@ -29,6 +30,7 @@ export const GET: APIRoute = async ({ site, url }) => {
 		{ loc: absoluteUrl(base, '/terms/') },
 		{ loc: absoluteUrl(base, '/promotions/') },
 		{ loc: absoluteUrl(base, '/promocodes/') },
+		{ loc: absoluteUrl(base, '/products/') },
 		{ loc: absoluteUrl(base, '/categories/') },
 		{ loc: absoluteUrl(base, '/brands/') },
 		{ loc: absoluteUrl(base, '/colors/') },
@@ -41,10 +43,12 @@ export const GET: APIRoute = async ({ site, url }) => {
 		...colors.map((color) => ({
 			loc: absoluteUrl(base, colorPath(color.id, color.name)),
 		})),
-		...products.map((product) => ({
-			loc: absoluteUrl(base, productPath(product.id, product.name)),
-			lastmod: toIsoDate(product.updatedAt) ?? undefined,
-		})),
+		...products
+			.filter(isPublished) // draft discipline (104 §2.1) — never advertise drafts
+			.map((product) => ({
+				loc: absoluteUrl(base, productPath(product.id, product.name)),
+				lastmod: toIsoDate(product.updatedAt) ?? undefined,
+			})),
 	];
 
 	const xml = [

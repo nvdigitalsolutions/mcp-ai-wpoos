@@ -19,12 +19,44 @@
 	--nv-space: var(--ads-semantic-space);
 }
 
+/* Browser-provided UI follows color-scheme (scrollbars, form controls,
+   autofill — web.dev color-scheme rule). The JS boot sets the exact per-
+   theme value via style.colorScheme; these rules are the no-JS fallback. */
+:root {
+	color-scheme: light;
+}
+
+[data-theme='dark'] {
+	color-scheme: dark;
+}
+
+/* High-contrast axis (Proposal 104): full-ink muted text and strong borders,
+   built from the existing ADS semantic tokens (muted → ink, line →
+   line-strong). No new token values; the pairs are WCAG-gated upstream. */
+[data-contrast='high'] {
+	--nv-muted: var(--nv-ink);
+	--nv-line: var(--ads-semantic-line-strong);
+}
+
 * {
 	box-sizing: border-box;
 }
 
 html {
 	scroll-behavior: smooth;
+}
+
+/* Reduced-motion kill switch (Proposal 104 — Accessible Starter pattern):
+   every animation/transition off when the visitor asks; View Transitions
+   remain functional (navigation, not animation). */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
 }
 
 body {

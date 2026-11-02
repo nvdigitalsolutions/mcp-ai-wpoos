@@ -13,7 +13,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
 
 const sources = readTokenSources();
-const { css, ts, bundle, report } = buildTokens(sources);
+const { css, ts, bundle, tailwind, report } = buildTokens(sources);
 
 if (report.warnings.length > 0) {
 	console.warn('[build-tokens] warnings:');
@@ -30,4 +30,7 @@ mkdirSync(join(ROOT, 'src', 'styles', 'generated'), { recursive: true });
 writeFileSync(join(ROOT, 'src', 'styles', 'generated', 'tokens.css'), css);
 writeFileSync(join(ROOT, 'src', 'lib', 'tokens.generated.ts'), ts);
 writeFileSync(join(ROOT, 'src', 'tokens', 'bundle.generated.json'), bundle);
-console.log('[build-tokens] wrote tokens.css, tokens.generated.ts, bundle.generated.json');
+writeFileSync(join(ROOT, 'src', 'styles', 'generated', 'tokens-tailwind.css'), tailwind);
+console.log(
+	'[build-tokens] wrote tokens.css, tokens.generated.ts, bundle.generated.json, tokens-tailwind.css'
+);

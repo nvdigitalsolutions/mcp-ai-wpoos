@@ -1,18 +1,76 @@
 // ---------------------------------------------------------------------------
-// JSON-LD generators — Proposal 092 §5.3 / D10.
+// JSON-LD generators — Proposal 092 §5.3 / D10, extended by 104 P3 (D5).
 //
 // Pure functions returning schema.org-compatible objects. They are rendered
 // server-side into each route's initial <head> (never client-injected) and
 // unit-tested for structural validity. Industry baseline: Product + Offer +
-// BreadcrumbList + Organization are the core four e-commerce types.
+// BreadcrumbList + Organization are the core four e-commerce types; 104 adds
+// the kind-typed builder (ScrewFast metadata.ts pattern) — new code paths
+// construct schema-dts-typed blocks so vocabulary drift (offers,
+// aggregateRating, breadcrumb) fails `astro check`.
 // ---------------------------------------------------------------------------
 
+import type {
+	WithContext,
+	CollectionPage as SchemaCollectionPage,
+} from 'schema-dts';
 import type { Product, Promotion } from '../commerce/types';
 import { absoluteUrl } from '../url';
 
 export interface BreadcrumbItem {
 	name: string;
 	url: string;
+}
+
+/** The kind union drives the head — no hand-written schema.org at call sites. */
+export type StructuredKind =
+	| {
+			type: 'Product';
+			product: Product;
+			site: string | URL;
+			currency: string;
+			breadcrumb: BreadcrumbItem[];
+	  }
+	| {
+			type: 'CollectionPage';
+			name: string;
+			url: string;
+			breadcrumb: BreadcrumbItem[];
+	  };
+
+/** The one builder every route calls. */
+export function jsonLdFor(kind: StructuredKind): Record<string, unknown>[] {
+	if (kind.type === 'Product') {
+		// The Product generator is the pinned 092 implementation; the
+		// CollectionPage path below carries the schema-dts-typed vocabulary
+		// check (D5) that new kinds must follow.
+		return [productJsonLd(kind.product, kind.site, kind.currency), breadcrumbJsonLd(kind.breadcrumb)];
+	}
+	const page: WithContext<SchemaCollectionPage> = {
+		'@context': 'https://schema.org',
+		'@type': 'CollectionPage',
+		name: kind.name,
+		url: kind.url,
+		breadcrumb: {
+			'@type': 'BreadcrumbList',
+			itemListElement: kind.breadcrumb.map((item, index) => ({
+				'@type': 'ListItem',
+				position: index + 1,
+				name: item.name,
+				item: item.url,
+			})),
+		},
+	};
+	return [page as unknown as Record<string, unknown>];
+}
+
+/** Thin wrapper for PLP call sites. */
+export function collectionPageJsonLd(args: {
+	name: string;
+	url: string;
+	breadcrumb: BreadcrumbItem[];
+}): Record<string, unknown> {
+	return jsonLdFor({ type: 'CollectionPage', ...args })[0]!;
 }
 
 /** Product + Offer (+ AggregateRating when the contract provides a rating). */
