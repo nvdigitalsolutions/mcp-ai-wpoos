@@ -255,7 +255,31 @@ Concretely:
   (locales), repo-page generation (explicit non-goal), the Code Mode tool
   pattern (§3.6) if the surface exceeds ~35 tools.
 
-## 8. Open questions for the owner
+## 8. Related in-repo systems (existing toolkits to reuse)
+
+None of the NV oOS toolkits build Astro pages — they are WordPress-plugin
+tool surfaces with their own registration/auth models — but several are
+directly useful to the phases above, as **patterns and backend plumbing**:
+
+| In-repo system | Location | Relevance to this plan |
+|---|---|---|
+| Base content tools (`create_post`, `save_post`, `get_post_revisions`, `search_content`, `seo_analyze_content`, `moderate_content`, `content_freshness_checker`, …) | `includes/tools/class-wp-mcp-ai-tool-*.php` | The reference implementation for WP content CRUD, revisions and SEO analysis. The content slice's writes must go through the **bridge envelope** (`manage_astro`, actor/approval semantics, cache purge), not raw base tools — the base tools prove the backend capability exists today, they lack the storefront governance layer (G4/G13) |
+| Site Creator Toolkit (`generate_landing_page`, `create_homepage_layout`, section/widget builders, `save_site_template`, `manage_template_versions`, `generate_site_plan`, …) | `addons/pro/includes/tools/site-creator-toolkit/` | **Not usable for the Astro storefront** (output is Elementor/WP pages, widgets, theme PHP) — but its section taxonomy + template versioning map 1:1 onto the block model (DECISION-2) and G6 revisions; its research/planning tools are the manual work done for this doc. Note: README claims more than is implemented (status: in progress) |
+| Media toolkit (`create_media_template`, `cleanup_orphaned_media`, `scan_orphaned_media`, …) | `addons/pro/includes/tools/media/` | G11 — alt-text/metadata discipline and media hygiene for the `media_upload` slice |
+| Multilingual toolkit (`auto_translate_content`, `translation_memory_search`, `translation_quality_check`, `multilingual_seo_audit`) | `addons/pro/includes/tools/multilingual/` | G10 — the locale model to copy if/when the envelope gains locales |
+| Orchestration (Pro Schedule Manager, workflows) | `addons/pro/includes/tools/orchestration/` | G8 — scheduled publishing (`publishAt`) can ride the existing schedule engine on the backend |
+| Analytics toolkit | `addons/pro/includes/tools/analytics/` | G9 — the data layer for any future merchandising dashboards (read-only slice, not content embedding) |
+| E-commerce toolkit (Woo/Shopify) | `addons/pro/includes/tools/ecommerce/` | Parity reference for the bridge's `native`/`woo` product sources and the existing `cms_*` write semantics |
+| Capture toolkit (screenshots) | `addons/pro/includes/tools/capture/` | G5 — automated visual verification of preview URLs in QA flows |
+| `ai-tool-builder`, `research`, `social-media`, `email-marketing`, `paper-store` | `addons/pro/includes/tools/*` | Surrounding editorial loop: tool scaffolding, draft research, distribution after approval — useful once Phase 1 lands |
+
+Key architectural point: the content slice lives in the **Astro app's `/mcp`
+(TypeScript, `mcp/tools/`) + the bridge PHP addon** — the Pro toolkits are a
+different surface (NV oOS plugin registry, capability-gated toolkit settings).
+Reuse is pattern-level and backend-side; code-level reuse is limited to the
+bridge's own `PostTypeController` conventions.
+
+## 9. Open questions for the owner
 
 1. Should `content_create` ever allow direct `publish` for a manager session,
    or is everything `pending`-by-construction with publication as a separate
