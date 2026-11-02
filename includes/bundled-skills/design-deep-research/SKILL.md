@@ -142,6 +142,18 @@ Key diagnostic fields on every report:
 verify the report before acting on it** — and never treat a partial as a
 finished deliverable without telling the user.
 
+**Thinking-model recovery (DeepSeek V4/V3.2 and other reasoning models):** when
+the output budget is consumed by chain-of-thought, the provider returns empty
+`content` with `reasoning_content` populated — the old behaviour surfaced the
+CoT as a `partial` report immediately. The tool now retries with a multiplied
+budget (`wp_mcp_ai_deep_research_reasoning_budget_multiplier`, default ×4,
+capped at 32768 tokens, one retry by default) and, for stop-finish
+reasoning-only outputs, one explicit "write the report now" continuation
+retry. The reasoning text is only used as the report when both recoveries are
+exhausted (flagged with `used_reasoning_fallback`). DeepSeek synthesis runs at
+temperature 1.0 / top_p 1.0 per the vendor's V4 guidance (filterable via
+`wp_mcp_ai_deep_research_temperature`).
+
 A single search query is not comprehensive research: `standard` runs three
 queries and reads two full pages; `comprehensive` runs six queries and reads
 five pages.

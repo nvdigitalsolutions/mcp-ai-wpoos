@@ -261,7 +261,11 @@ class Test_Tool_Deep_Research extends WP_UnitTestCase {
 		$this->assertSame( 'gemini', $result['provider'] );
 		$this->assertSame( 2, $result['attempts'] );
 		$this->assertSame( 1, count( $first_client->calls ) );
-		$this->assertSame( 1, count( $second_client->calls ) );
+		// The gemini output fails the quality checks (too short, no sections),
+		// so the default 3-attempt ladder spends the last attempt on a
+		// feedback rewrite against the same provider before salvaging the
+		// draft. The exhausted fake errors out on that rewrite.
+		$this->assertSame( 2, count( $second_client->calls ) );
 	}
 
 	/**
@@ -311,7 +315,9 @@ class Test_Tool_Deep_Research extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertStringContainsString( 'Complete report', $result['content'] );
-		$this->assertSame( 2, count( $client->calls ) );
+		// Truncation retry (doubled budget) + the validation-feedback rewrite
+		// that follows because the short test fixture fails the quality checks.
+		$this->assertSame( 3, count( $client->calls ) );
 		$this->assertSame( 2000, $client->calls[0]['options']['max_tokens'] );
 		$this->assertSame( 4000, $client->calls[1]['options']['max_tokens'] );
 	}
