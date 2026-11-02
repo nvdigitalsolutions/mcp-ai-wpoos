@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The `version` fields in `plugin.json` and `.codex-plugin/plugin.json` MUST be
 bumped in lockstep with every release.
 
+## [0.2.0] — 2026-11-02
+
+### Added
+
+- Phase 3 submission metadata in `plugin.json` per the live OpenAI field
+  reference: full `interface` block (listing URLs, starter prompts,
+  capabilities), `onboardingSkill`, `review` test cases (5 positive + 3
+  negative), `commerce: false`, and `publication.release_notes`.
+- Submission assets: `assets/logo.png` + `assets/icon.png` (512×512 brand
+  mark, reused from the MCP gateway's listing assets).
+
+### Notes
+
+- `privacyPolicyURL`/`termsOfServiceURL` point at
+  `nvdigitalsolutions.github.io/nvoos-chatgpt-plugin/` — those Pages must
+  exist before the public submission; the mirror repo is the publisher host.
+- Test-case tool names are drafted against the base tool registry and must
+  be re-verified after the portal's Scan Tools step against `nvoos.pro`.
+
 ## [0.1.0] — 2026-10-03
 
 ### Added

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — NV oOS Site Bridge</title>
+<style>
+	:root { color-scheme: light dark; }
+	body { margin: 0; font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.65; color: #1c2333; background: #f6f7fb; }
+	main { max-width: 46rem; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+	h1 { margin: 0 0 .35rem; font-size: 1.9rem; }
+	.meta { color: #4a5568; margin-bottom: 2rem; font-size: .9rem; }
+	h2 { font-size: 1.15rem; margin-top: 1.9rem; }
+	p, li { color: #333a49; }
+	a { color: #2456c4; }
+	.back { display: inline-block; margin-top: 2.5rem; font-size: .9rem; }
+	@media (prefers-color-scheme: dark) {
+		body { background: #10141f; color: #e6e9f2; }
+		p, li { color: #a7b0c2; }
+		.meta { color: #7a8394; }
+	}
+</style>
+</head>
+<body>
+<main>
+	<h1>Privacy Policy</h1>
+	<p class="meta"><strong>NV oOS Site Bridge</strong> · Last updated: November 2, 2026</p>
+
+	<p>This policy explains what personal data is involved when you use the <strong>NV oOS Site Bridge</strong> plugin ("the Plugin") in ChatGPT or Codex. The Plugin is published by <strong>NV Digital Solutions</strong> ("we", "us"). It connects to a WordPress site running NV oOS (Open Operator System) operated by us — the connected site named in the Plugin's listing ("the connected site").</p>
+
+	<h2>1. What the Plugin is</h2>
+	<p>The Plugin lets ChatGPT or Codex call tools on the connected site's MCP endpoint (site health and environment reports, content search and publishing, WooCommerce store operations, and site administration). It does not run its own server and stores nothing itself.</p>
+
+	<h2>2. Data involved when you use the Plugin</h2>
+	<ul>
+		<li><strong>Account linking (OAuth 2.1).</strong> When you link your account, you are redirected to our identity provider (Auth0, operated by Auth0 Inc.) where you sign in and consent to scopes such as <code>site:read</code> and <code>content:write</code>. Auth0 issues an access token that the connected site uses to identify your linked account. Auth0's privacy practices apply to the sign-in step.</li>
+		<li><strong>Profile fields.</strong> To help ChatGPT label and distinguish connected accounts, the connected site may return your profile's display fields (name, email, nickname) through its profile tool, alongside a stable opaque profile identifier.</li>
+		<li><strong>Prompts and tool inputs.</strong> The messages and tool arguments you send in ChatGPT or Codex are transmitted to the connected site so your requests can be fulfilled. OpenAI's privacy policy applies to your conversation with ChatGPT or Codex.</li>
+		<li><strong>Tool responses.</strong> The connected site returns only the data your linked account is allowed to access (for example, posts and pages you can read, health reports, or store records). Responses may include content and metadata from the connected site; they do not include other users' private messages, emails, or credentials.</li>
+	</ul>
+
+	<h2>3. How data is used</h2>
+	<p>Data is used solely to fulfil your requests: authenticate you, enforce your account's permissions on the connected site, execute the tool calls you make, and return their results to ChatGPT or Codex. We do not sell personal data and do not use Plugin data for advertising.</p>
+
+	<h2>4. Storage and retention</h2>
+	<ul>
+		<li><strong>The Plugin</strong> stores no personal data.</li>
+		<li><strong>The connected site</strong> is a WordPress site operated by us; it processes and retains data according to its own data practices, which are available on the connected site itself.</li>
+		<li><strong>Auth0</strong> stores identity and sign-in information according to its own policies and our tenant configuration.</li>
+		<li><strong>OpenAI</strong> processes your ChatGPT or Codex conversation according to OpenAI's policies.</li>
+	</ul>
+
+	<h2>5. Sharing</h2>
+	<p>We do not share Plugin data with third parties except the service providers necessary to operate it (our hosting, identity provider Auth0, and OpenAI, which operates the ChatGPT and Codex surfaces).</p>
+
+	<h2>6. Cookies and tracking</h2>
+	<p>This website sets no cookies and runs no analytics or tracking scripts.</p>
+
+	<h2>7. Your rights</h2>
+	<p>Depending on your jurisdiction you may have rights to access, correct, or delete your personal data, or to object to or restrict processing. To exercise them, contact us through the support channel below; account data stored on the connected site is also governed by that site's own privacy notice.</p>
+
+	<h2>8. Changes</h2>
+	<p>We may update this policy as the Plugin evolves. The "Last updated" date above indicates the current version.</p>
+
+	<h2>9. Contact</h2>
+	<p>Publisher: NV Digital Solutions — <a href="https://github.com/nvdigitalsolutions">github.com/nvdigitalsolutions</a><br>
+	Support: <a href="https://github.com/nvdigitalsolutions/nvoos-chatgpt-plugin/issues">github.com/nvdigitalsolutions/nvoos-chatgpt-plugin/issues</a></p>
+
+	<p><a class="back" href="./">← Back to the plugin listing</a></p>
+</main>
+</body>
+</html>

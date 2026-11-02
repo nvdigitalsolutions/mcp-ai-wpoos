@@ -59,6 +59,7 @@ try {
 			return !parts.includes( 'dist' ) &&
 				!parts.includes( 'node_modules' ) &&
 				!parts.includes( '.git' ) &&
+				!parts.includes( 'docs' ) &&
 				!parts.some( ( p ) => p === '.env' || p.startsWith( '.env.' ) );
 		},
 	} );
