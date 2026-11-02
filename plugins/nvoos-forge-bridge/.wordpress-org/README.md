@@ -8,10 +8,10 @@ plugins.svn.wordpress.org. It never ships inside the plugin ZIP
 
 | File | Status | Notes |
 |---|---|---|
-| `assets/icon-128x128.png` | TODO — manual artwork | Required for the directory listing. See "Artwork" below. |
-| `assets/icon-256x256.png` | TODO — manual artwork | Retina variant of the icon. |
-| `assets/banner-772x250.png` | TODO — manual artwork | Optional but expected; shown on the plugin page. |
-| `assets/banner-1544x500.png` | TODO — manual artwork | Retina variant of the banner. |
+| `assets/icon-128x128.png` | ✅ generated (2026-11-02) | Gemini 3.1 flash-image master → sharp. |
+| `assets/icon-256x256.png` | ✅ generated (2026-11-02) | Retina variant of the icon. |
+| `assets/banner-772x250.png` | ✅ generated (2026-11-02) | Center-cropped 3.088:1 strip. |
+| `assets/banner-1544x500.png` | ✅ generated (2026-11-02) | Retina variant of the banner. |
 | `assets/screenshot-1.png` | ✅ captured | Settings page before configuration (warning notice). |
 | `assets/screenshot-2.png` | ✅ captured | Settings page after configuring + saving (success notice, masked credentials). |
 
@@ -61,14 +61,29 @@ change and nothing else (`git diff --stat` after staging).
 
 ## Artwork (icon + banner)
 
-Manual design work — a forge/hammer glyph on the NV brand palette, sized:
+Forge/hammer glyph on the NV brand palette (ADS core: accent `#0f6b4f`, ink
+`#1a1a1a`, surface `#ffffff`), AI-generated with Gemini 3.1 flash-image
+(hammer striking an anvil, white glyph + amber sparks on deep green) and
+verified by vision analysis (no text, crisp at small sizes, crop-safe banner
+edges). Regenerate + re-derive via:
 
-- `source/` masters: 1024×1024 icon, 1344×768 banner
-- Icon: 128×128 and 256×256 PNGs
-- Banner: 772×250 and 1544×500 PNGs
+```bash
+# 1. Generate masters with the Gemini MCP tool (1:1 icon, 16:9 banner),
+#    then process the returned URLs:
+node bin/process-nvoos-forge-bridge-artwork.js <icon-url> <banner-url>
+```
+
+Outputs (all PNG):
+
+- `source/icon-1024x1024.png`, `source/banner-master.png` — masters
+- `icon-128x128.png`, `icon-256x256.png`
+- `banner-772x250.png`, `banner-1544x500.png` (center-cropped strip)
 
 ## SVN upload runbook (post-submission)
 
+0. Build the release ZIP: `python bin/build-nvoos-forge-bridge.py --version 0.1.0`
+   → `build/nvoos-forge-bridge-v0.1.0.zip` (13 files, top-level folder,
+   forward-slash entries).
 1. `svn co https://plugins.svn.wordpress.org/nvoos-forge-bridge` (once).
 2. Copy the plugin ZIP contents into `trunk/` and tag it
    `tags/0.1.0/` (Guideline 3 — trunk + tag per release).
@@ -76,6 +91,8 @@ Manual design work — a forge/hammer glyph on the NV brand palette, sized:
 4. Assets-only SVN commits do NOT change plugin visibility — the plugin
    goes public on the first `trunk/` code commit.
 5. Commit per release, not per change (Guideline 14).
+6. Re-run the PCP gate + `WPORG-REVIEW-18POINT-SIGNOFF.md` before every
+   re-upload (version sweep: header, constant, readme Stable tag, POT).
 
 The full 18-guideline checklist and reviewer-reply playbook live in
 `.agents/skills/mcp-ai-wpoos-wporg-submission/SKILL.md`.

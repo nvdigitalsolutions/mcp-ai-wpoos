@@ -116,10 +116,16 @@ class Test_Forge_Bridge_Rest extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Minting requires edit_posts.
+	 * Minting requires edit_pages (editors+; authors with edit_posts only
+	 * are rejected).
 	 */
 	public function test_mint_requires_capability(): void {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+		$response = $this->server->dispatch( new WP_REST_Request( 'POST', '/nvoos-forge/v1/preview-tokens' ) );
+		$this->assertSame( 403, $response->get_status() );
+
+		// Authors hold edit_posts but not edit_pages — still rejected.
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'author' ) ) );
 		$response = $this->server->dispatch( new WP_REST_Request( 'POST', '/nvoos-forge/v1/preview-tokens' ) );
 		$this->assertSame( 403, $response->get_status() );
 	}
@@ -134,7 +140,7 @@ class Test_Forge_Bridge_Rest extends WP_UnitTestCase {
 		$token = $response->get_data()['token'];
 		$this->assertMatchesRegularExpression( '/^[0-9a-f]{64}$/', $token );
 
-		$verify = new WP_REST_Request( 'GET', '/nvoos-forge/v1/preview-tokens/verify' );
+		$verify = new WP_REST_Request( 'POST', '/nvoos-forge/v1/preview-tokens/verify' );
 		$verify->set_param( 'token', $token );
 		$first = $this->server->dispatch( $verify );
 		$this->assertSame( 200, $first->get_status() );
@@ -146,10 +152,21 @@ class Test_Forge_Bridge_Rest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Verification is POST-only — a GET is not routed (consumption is a
+	 * state change and must not ride on a cacheable method).
+	 */
+	public function test_verify_rejects_get(): void {
+		$response = $this->server->dispatch(
+			new WP_REST_Request( 'GET', '/nvoos-forge/v1/preview-tokens/verify' )
+		);
+		$this->assertSame( 404, $response->get_status() );
+	}
+
+	/**
 	 * Garbage tokens fail closed.
 	 */
 	public function test_preview_token_rejects_junk(): void {
-		$verify = new WP_REST_Request( 'GET', '/nvoos-forge/v1/preview-tokens/verify' );
+		$verify = new WP_REST_Request( 'POST', '/nvoos-forge/v1/preview-tokens/verify' );
 		$verify->set_param( 'token', 'not-a-token' );
 		$response = $this->server->dispatch( $verify );
 		$this->assertSame( 403, $response->get_status() );

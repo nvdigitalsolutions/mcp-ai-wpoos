@@ -171,6 +171,89 @@ class Test_Forge_Bridge_Webhook extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Revisions never schedule a dispatch (the revision insert fires the
+	 * real save_post hook; the handler must skip it).
+	 */
+	public function test_revision_is_skipped(): void {
+		$this->configure();
+		$post_id = self::factory()->post->create();
+
+		// The parent publish scheduled a pending send — clear it so only the
+		// revision's own hook outcome is observed.
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		$this->assertNotFalse( wp_save_post_revision( $post_id ) );
+		Rebuild_Webhook::send_pending();
+		$this->assertSame( array(), $this->captured );
+	}
+
+	/**
+	 * Autosaves never schedule a dispatch (the autosave insert fires the
+	 * real save_post hook; the handler must skip it).
+	 */
+	public function test_autosave_is_skipped(): void {
+		$this->configure();
+		$post_id = self::factory()->post->create();
+
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		$this->assertNotFalse(
+			wp_create_post_autosave(
+				array(
+					'post_ID'      => $post_id,
+					'post_type'    => 'post',
+					'post_content' => 'drafting',
+				)
+			)
+		);
+		Rebuild_Webhook::send_pending();
+		$this->assertSame( array(), $this->captured );
+	}
+
+	/**
+	 * Auto-drafts never schedule a dispatch (the insert fires the real
+	 * save_post hook; the handler must skip it).
+	 */
+	public function test_auto_draft_is_skipped(): void {
+		$this->configure();
+		self::factory()->post->create( array( 'post_status' => 'auto-draft' ) );
+
+		Rebuild_Webhook::send_pending();
+		$this->assertSame( array(), $this->captured );
+	}
+
+	/**
+	 * A publish schedules exactly one dispatch via the real save_post hook.
+	 */
+	public function test_publish_schedules_dispatch(): void {
+		$this->configure();
+		self::factory()->post->create( array( 'post_status' => 'publish' ) );
+
+		Rebuild_Webhook::send_pending();
+		$this->assertCount( 1, $this->captured );
+	}
+
+	/**
+	 * Trashing a post schedules a dispatch (content visibly changed) via the
+	 * real trashed_post hook.
+	 */
+	public function test_trash_schedules_dispatch(): void {
+		$this->configure();
+		$post_id = self::factory()->post->create( array( 'post_status' => 'publish' ) );
+
+		// The publish scheduled a pending send — clear it so the trash hook
+		// is observed in isolation.
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		wp_trash_post( $post_id );
+		Rebuild_Webhook::send_pending();
+		$this->assertCount( 1, $this->captured );
+	}
+
+	/**
 	 * HMAC verification fails closed on tampered payloads and junk.
 	 */
 	public function test_verify_fails_closed(): void {
