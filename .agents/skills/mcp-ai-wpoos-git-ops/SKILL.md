@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-git-ops
-description: Git/GitHub workflow discipline for the mcp-ai-wpoos repo — PRs against `alpha-working` with owner-merge, commit style, staged commits (no `git add -A`), the stacked-PR rebase recipe for when a parent PR gets squash-merged, the alpha-working → main squash-sync recipe (resolve-all-to-alpha, sweep index-only leftovers, tree-identity verification), shared-worktree discipline for the multi-agent repo (check the branch before committing, never `reset --hard` over other agents' unstaged edits, `--autostash` rebases), conflict verification via `git merge-tree`, and gh CLI gotchas (`gh workflow run` 404 on non-default branches, long PHP lint checks). Use when creating/rebasing/fixing PRs, resolving PR conflicts, syncing alpha-working to main, or dispatching workflows.
+description: Git/GitHub workflow discipline for the mcp-ai-wpoos repo — PRs against `alpha-working`, staged commits (no `git add -A`), the stacked-PR rebase recipe for when a parent PR gets squash-merged, the alpha-working → main squash-sync recipe (resolve-all-to-alpha, tree-identity verification), shared-worktree discipline for the multi-agent repo (never `reset --hard` over other agents' unstaged edits, `--autostash` rebases), and gh CLI gotchas (`gh workflow run` 404 on non-default branches). Use when creating/rebasing/fixing PRs, resolving PR conflicts, syncing alpha-working to main, or dispatching workflows.
 ---
 
 # mcp-ai-wpoos — Git & PR ops

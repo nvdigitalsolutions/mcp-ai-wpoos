@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dependabot-loop
-description: "Operational guide for the NV oOS Dependabot alert triage-and-remediation loop: querying open alerts via gh api, separating stale from genuinely vulnerable lockfile entries (default-branch forensics), deciding between safe in-major override bumps, scoped overrides, or deferred major migrations (npm pack signature diffing), regenerating the 13-lockfile tree, rebuilding the tracked JS bundles that lockfile movement stales, dismissing alerts with the right reason, GitHub issue housekeeping, and triaging the known CI failure modes. Use when asked to fix dependabot alerts, close out dependabot issues, bump vulnerable npm packages, or resume a dependabot session."
+description: "Operational guide for the NV oOS Dependabot alert triage-and-remediation loop: querying open alerts via gh api, separating stale from genuinely vulnerable lockfile entries, deciding between safe in-major override bumps, scoped overrides, or deferred major migrations (npm pack signature diffing), regenerating the 13-lockfile tree, rebuilding staled tracked JS bundles, and dismissing alerts with the right reason. Use when asked to fix dependabot alerts, close out dependabot issues, bump vulnerable npm packages, or resume a dependabot session."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos

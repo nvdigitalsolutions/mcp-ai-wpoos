@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-ingestion
-description: "Open-format data ingestion for NV oOS Pro toolkits — the reusable pattern behind the F&B data-ingestion track (Proposal 078). Covers structural (header) matching over filename mapping, the configurable table_map + header-matcher + name-guess resolution order and the slug-first regression, the multi-format loader (CSV/TSV/JSON/JSONL/XLSX/ODS/PDF/photo), the Observation + terminology-map layer (vitals/FHIR analogue) with raw preservation, dedupe/retention/out-of-band banding, complete-by-default/resumable (offset) imports, and the read-only ingest-review dashboard anatomy (edit_posts review vs manage_options write, dry-run-first). Use when adding or extending data ingestion to a toolkit, ingesting heterogeneous owner files, wiring XLSX/PDF/photo imports, building an ingest/review dashboard, or debugging partial/truncated imports."
+description: "Open-format data ingestion for NV oOS Pro toolkits — the F&B data-ingestion pattern (Proposal 078). Covers structural header matching over filename mapping, the table_map + header-matcher + name-guess resolution order, the multi-format loader (CSV/TSV/JSON/JSONL/XLSX/ODS/PDF/photo), the Observation + terminology-map layer, dedupe/retention/out-of-band banding, complete-by-default/resumable imports, and the read-only ingest-review dashboard. Use when adding or extending data ingestion to a toolkit, ingesting heterogeneous owner files, wiring XLSX/PDF/photo imports, building an ingest/review dashboard, or debugging partial/truncated imports."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos

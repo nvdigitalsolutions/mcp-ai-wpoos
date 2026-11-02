@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-universalisation
-description: "Rework an existing NV oOS Pro toolkit from a single-tenant demo into a universal product — currency-neutral schema with legacy aliases, a Tenant Profile + token renderer shared across the two assistant-delivery surfaces (packs via Portability vs blueprints via Blueprint Installer), demo-mode inversion, a universal single-folder ingestor (header-alias dictionary + dry_run + JSON), report export to CSV/PDF (DomPDF vs html_to_pdf choice), the add-a-tool drift checklist (TOOLS_LIST, coverage manifest, admin tool list, presets), and the re-seed-on-settings-save gotcha. Use when asked to 'universalise', 'de-demo', 'multi-tenant', 're-tenant', 'remove the legacy venue/currency hardcoding', 'point the toolkit at a single Drive folder', 'export reports as CSV/PDF', or 'avoid re-installing assistants on save'. First case study: food-beverage (F&B Management, 2026-10-16). Complements mcp-ai-wpoos-toolkit-creation (build new) and mcp-ai-wpoos-toolkit-audit (harden existing)."
+description: "Rework an existing NV oOS Pro toolkit from a single-tenant demo into a universal product — currency-neutral schema with legacy aliases, a Tenant Profile + token renderer, a universal single-folder ingestor, CSV/PDF report export, the add-a-tool drift checklist, and the re-seed-on-settings-save gotcha. Use when asked to 'universalise', 'de-demo', 'multi-tenant', 'remove the legacy venue/currency hardcoding', 'point the toolkit at a single Drive folder', 'export reports as CSV/PDF', or 'avoid re-installing assistants on save'. Complements mcp-ai-wpoos-toolkit-creation and mcp-ai-wpoos-toolkit-audit."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos

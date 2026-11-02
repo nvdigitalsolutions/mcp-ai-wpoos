@@ -370,6 +370,15 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
   changelog's Versioning line (never post-hoc edit an executed release entry).
 - **Leave historical per-version count lines untouched** — old release entries
   keep the counts they shipped with.
+- **Verify the Zed skill-catalog description budget after any skill
+  addition.** Zed injects the sum of every `description:` frontmatter field
+  (`.agents/skills/` + `~/.agents/skills/`) into the model context and
+  silently drops the alphabetical tail past ~50 KB (2026-11-02:
+  `wp-security-secrets` + `wp-utf8-text` were dropped at ~51 KB; fixed by
+  trimming the 21 largest NV-authored descriptions to ~46.3 KB — never
+  curated `wp-*` descriptions, and keep `includes/bundled-skills/` mirrors
+  byte-identical). Ship ~400–600-byte descriptions for new skills and
+  re-sum the catalog after every skill addition.
 
 ### A6. Validation
 

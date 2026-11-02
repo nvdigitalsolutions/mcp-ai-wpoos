@@ -69,6 +69,8 @@ Independent of the coding-time agents above, the plugin also exposes **Agent Ski
 
 **Skill size budget (learned 2026-10-29):** Zed loads each `SKILL.md` in full on every trigger and silently stops loading skills above ~100 KB (a 115 KB skill failed to appear in the skill catalog). Keep `SKILL.md` files lean — industry guidance is under ~500 lines — and split growing sections into `reference/` files the agent reads on demand, leaving a pointer table in `SKILL.md`.
 
+**Skill catalog description budget (learned 2026-11-02):** Zed also caps the total size of the skill catalog it injects into the model context — the sum of every `description:` frontmatter field across `.agents/skills/` + `~/.agents/skills/` must stay under ~50 KB, or Zed silently omits the alphabetical tail (the `wp-security-secrets` + `wp-utf8-text` skills were dropped at ~51 KB; trimming the oversized NV-authored descriptions brought the catalog to ~46.3 KB). Keep new `description:` fields short (~400–600 bytes), and re-check the total with a quick byte-sum before adding skills.
+
 When extending Agent Skills, see §6 ("Updating Agent Configuration") below for the file-update checklist.
 
 ---

@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-model-foundry
-description: "Operational guide for the NV oOS Model Foundry (Proposal 067) — the cluster fine-tuning flywheel. Phase 1 shipped: the Corpus Foundry (Pro addon, addons/pro/includes/model-foundry/) — consent-gated, deduplicated, PII-scrubbed corpus exporters (trajectory_v1, preference_v1, docs_v1) with deterministic holdout splits and R12 provenance manifests. Covers the governance contract, row schemas, output layout, filter seams, the registration pattern for foundry tool slices, how to add a new exporter, and the test/validation gates. Use when extending the Corpus Foundry, debugging corpus exports, wiring a new data source, or continuing Phases 2–6 (train-worker, registry/serving, eval gate, fleet sharing)."
+description: "Operational guide for the NV oOS Model Foundry (Proposal 067). Phase 1 shipped: the Corpus Foundry (Pro addon, addons/pro/includes/model-foundry/) — consent-gated, deduplicated, PII-scrubbed corpus exporters (trajectory_v1, preference_v1, docs_v1). Covers the governance contract, row schemas, filter seams, the registration pattern for foundry tool slices, how to add a new exporter, and the test/validation gates. Use when extending the Corpus Foundry, debugging corpus exports, wiring a new data source, or continuing Phases 2–6 (train-worker, registry/serving, eval gate, fleet sharing)."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
