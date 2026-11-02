@@ -1,13 +1,13 @@
 // ---------------------------------------------------------------------------
-// Commerce fetch layer — Proposal 092 §5.2 / D4 / D12.
+// Commerce fetch layer — Proposal 092 §5.2 / D4 / D12, revised by 104 §3.2.
 //
-// - Build time: binds to NVOOS_API_BASE (full base URL of the NV commerce
-//   contract). Required for getStaticPaths prerendering; CI and local
-//   builds point it at the fixture server (scripts/fixture-server.mjs).
 // - Runtime SSR: binds to the same-origin /api/* proxy (relative URLs) —
 //   zero origin config; the T1 backend flip is a serve.mjs env change only.
-// - Envelope validation is strict: a malformed response is a loud error,
-//   never a silently empty catalog.
+// - Build time: no routes fetch at build anymore (the 092 PDP prerender was
+//   dropped in 104), so NVOOS_API_BASE is now a dev/CI-only fixture handle
+//   kept for the hermetic local build loop.
+// - Envelope validation is strict (zod v4, D3): a malformed response is a
+//   loud error, never a silently empty catalog.
 //
 // Caching: explicit Cache-Control headers are set by routes (D4); this layer
 // adds a tiny per-process memo for repeated reads within one render. The
@@ -29,6 +29,7 @@ import type {
 	Status,
 	WhereClause,
 } from './types';
+import { z } from 'zod';
 
 /** Bridge-enforced ceiling on `limit` (verified in the REST controller). */
 export const MAX_LIMIT = 100;
@@ -135,21 +136,24 @@ async function fetchJson(url: string): Promise<unknown> {
 	return res.json();
 }
 
-/** Strict envelope validation — loud failure on contract drift (P5). */
+/** Strict envelope validation — loud failure on contract drift (P5).
+ *  zod v4 parse (D3): typed narrowing at call sites, prefixed errors that
+ *  name the collection — a malformed response is a loud error, never a
+ *  silently empty catalog. */
+const envelopeSchema = z.object({
+	docs: z.array(z.unknown()),
+	totalDocs: z.number(),
+	totalPages: z.number(),
+	page: z.number(),
+});
+
 function assertEnvelope<T>(data: unknown, collection: string): PaginatedCollection<T> {
-	if (!data || typeof data !== 'object') {
-		throw new Error(`[${collection}] envelope is not an object`);
-	}
-	const d = data as Record<string, unknown>;
-	if (!Array.isArray(d.docs)) {
-		throw new Error(`[${collection}] envelope missing docs array`);
-	}
-	if (
-		typeof d.totalDocs !== 'number' ||
-		typeof d.totalPages !== 'number' ||
-		typeof d.page !== 'number'
-	) {
-		throw new Error(`[${collection}] envelope missing pagination fields`);
+	const result = envelopeSchema.safeParse(data);
+	if (!result.success) {
+		const issues = result.error.issues
+			.map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+			.join('; ');
+		throw new Error(`[${collection}] envelope invalid — ${issues}`);
 	}
 	return data as PaginatedCollection<T>;
 }

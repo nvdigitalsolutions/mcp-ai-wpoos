@@ -5,9 +5,10 @@
 // Boots scripts/fixture-server.mjs (:8123) and scripts/serve.mjs (:4321,
 // NVOOS_TARGET_SITE → fixtures), then asserts:
 //   - /                  renders the storefront shell
-//   - a prerendered PDP  carries JSON-LD in the initial HTML (P3)
+//   - an SSR PDP         carries JSON-LD in the initial HTML (P3, 104 §3.2)
+//   - unknown ids 404    (104 publication/SSR guard)
 //   - /api/products      proxies to the NV commerce contract (envelope)
-//   - /sitemap.xml       lists the prerendered catalog
+//   - /sitemap.xml       lists the catalog
 // ---------------------------------------------------------------------------
 
 import { spawn } from 'node:child_process';
@@ -34,13 +35,15 @@ const fixtureServer = alreadyUp
 			stdio: 'inherit',
 		});
 
-const appServer = alreadyUp
+	const appServer = alreadyUp
 	? null
 	: spawn(process.execPath, ['scripts/serve.mjs'], {
 			env: {
 				...process.env,
 				PORT: '4321',
 				NVOOS_TARGET_SITE: 'http://localhost:8123',
+				// Q3 (Proposal 104 §4.1): the same-deploy cache invalidation seam.
+				NVOOS_REVALIDATE_TOKEN: 'smoke-revalidate-secret',
 			},
 			stdio: 'inherit',
 		});
@@ -52,10 +55,61 @@ const checks = [
 		assert: (body) => body.includes('NV Store'),
 	},
 	{
-		name: 'prerendered PDP with JSON-LD (P3)',
+		name: 'SSR PDP with JSON-LD (P3)',
 		url: 'http://localhost:4321/products/1/aurora-3-seater-sofa/',
 		assert: (body) =>
 			body.includes('application/ld+json') && body.includes('Aurora 3-Seater Sofa'),
+	},
+	{
+		name: 'unknown product id → 404 (104)',
+		url: 'http://localhost:4321/products/999999/whatever/',
+		assert: (_body, res) => res.status === 404,
+	},
+	{
+		name: 'draft product id → 404 (104 publication guard)',
+		url: 'http://localhost:4321/products/9901/unreleased-prototype-sofa/',
+		assert: (_body, res) => res.status === 404,
+	},
+	{
+		name: 'sitemap excludes drafts (104)',
+		url: 'http://localhost:4321/sitemap.xml',
+		assert: (body) => !body.includes('/products/9901/'),
+	},
+	{
+		name: 'og card renders a PNG (104 Q5)',
+		url: 'http://localhost:4321/og/product/1.png',
+		assert: (_body, res) =>
+			res.status === 200 &&
+			String(res.headers.get('content-type')).startsWith('image/png'),
+	},
+	{
+		name: 'revalidate rejects a bad bearer (104 Q3)',
+		url: 'http://localhost:4321/internal/revalidate/',
+		method: 'POST',
+		headers: { authorization: 'Bearer wrong' },
+		assert: (_body, res) => res.status === 401,
+	},
+	{
+		name: 'revalidate purges tags with the shared secret (104 Q3)',
+		url: 'http://localhost:4321/internal/revalidate/',
+		method: 'POST',
+		headers: { authorization: 'Bearer smoke-revalidate-secret' },
+		body: JSON.stringify({ tags: ['products'] }),
+		assert: (_body, res) => res.status === 200,
+	},
+	{
+		name: 'wrong slug → 301 to canonical (104)',
+		url: 'http://localhost:4321/products/1/wrong-slug/',
+		// fetch follows redirects by default — assert the 301 itself.
+		redirect: 'manual',
+		assert: (_body, res) =>
+			res.status === 301 &&
+			String(res.headers.get('location') ?? '').includes('/products/1/aurora-3-seater-sofa/'),
+	},
+	{
+		name: 'all-products PLP renders (104 P3)',
+		url: 'http://localhost:4321/products/',
+		assert: (body) => body.includes('/products/1/') && body.includes('All products'),
 	},
 	{
 		name: 'contract proxy envelope (/api/products)',
@@ -117,7 +171,12 @@ try {
 
 	for (const check of checks) {
 		try {
-			const res = await fetch(check.url);
+			const res = await fetch(check.url, {
+				redirect: check.redirect ?? 'follow',
+				method: check.method ?? 'GET',
+				headers: check.headers,
+				body: check.body,
+			});
 			const body = await res.text();
 			const pass = check.assert(body, res);
 			console.log(`${pass ? 'PASS' : 'FAIL'}  ${check.name}  (${res.status})`);

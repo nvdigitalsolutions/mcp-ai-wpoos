@@ -4,18 +4,26 @@
 // The contract has no slug field, so routes are id-keyed with an
 // informational slugified-name suffix: /products/{id}/{slug}/. The id is
 // the canonical key; the suffix keeps URLs human/SEO-readable. Canonical
-// tags (not 301s) cover slug drift on prerendered pages.
+// tags cover slug drift on prerendered pages; SSR pages 301 instead (104).
 // ---------------------------------------------------------------------------
 
-/** Slugify a name for URL suffixes. */
+import limax from 'limax';
+
+/** Slugify a name for URL suffixes.
+ *
+ * limax (D4 — AstroWind's own slugger) transliterates per Unicode, so
+ * international product names get correct ASCII slugs (`Café Crème` →
+ * `cafe-creme`) where the old regex dropped diacritics entirely. Apostrophes
+ * are dropped (not separated) to keep historical URLs stable; the 80-char
+ * cap and the `'item'` fallback are preserved from the original contract.
+ */
 export function slugify(name: string): string {
-	return name
-		.toLowerCase()
-		.trim()
-		.replace(/['\u2019]/g, '')
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-+|-+$/g, '')
-		.slice(0, 80) || 'item';
+	return (
+		limax(name, {
+			separator: '-',
+			separateApostrophes: false,
+		}).slice(0, 80) || 'item'
+	);
 }
 
 export function productPath(id: number, name: string): string {

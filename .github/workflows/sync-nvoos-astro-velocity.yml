@@ -166,10 +166,15 @@ jobs:
       - name: Assemble mirror tree
         working-directory: examples/nvoos-astro-velocity
         env:
-          NVOOS_API_BASE: http://localhost:8123/wp-json/nvoos-commerce/v1
           # Canonical host for the production artifact. Overridable per
           # dispatch (client_payload.astro_site) and per repo variable
           # (ASTRO_SITE); defaults to the live storefront host.
+          #
+          # INVARIANT (Proposal 104 §2.5): the prod artifact must never bake
+          # a build-time commerce base — with SSR PDPs the build is fully
+          # hermetic and commerce binds to the runtime /api/* proxy only.
+          # (The 092 prerender model baked the fixture server here, so the
+          # mirror shipped fixture PDPs and every live product URL 404'd.)
           ASTRO_SITE: ${{ github.event.client_payload.astro_site || vars.ASTRO_SITE || 'https://astro.nvoos.cloud' }}
         run: |
           # Production artifact: canonical tags + /_image hrefs must use the

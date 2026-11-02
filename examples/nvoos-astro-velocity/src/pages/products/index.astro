@@ -1,0 +1,163 @@
+---
+// ---------------------------------------------------------------------------
+// All-products PLP — on-demand SSR with CDN cache headers (Proposal 104 P3).
+//
+// Fills the catalog-browse gap: shoppers get a full-catalog entry point
+// mirroring the category PLP's proven pattern (filters: category/brand/
+// color + q + sort + pagination). Filtered permutations carry
+// noindex,follow (crawl-budget discipline); the canonical is /products/.
+// A11y (Accessible Starter bar): the color group is a fieldset/legend and
+// every control has a visible label.
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductGrid from '../../components/ProductGrid.astro';
+import Pagination from '../../components/Pagination.astro';
+import {
+	getAllBrands,
+	getAllCategories,
+	getAllColors,
+	getProducts,
+	PAGE_SIZE,
+} from '../../lib/commerce/client';
+import type { SortValue, WhereClause } from '../../lib/commerce/types';
+import { normalizeProductMedia } from '../../lib/commerce/normalize';
+import { absoluteUrl } from '../../lib/url';
+import { collectionPageJsonLd } from '../../lib/seo/jsonld';
+import { pageTitle, plainExcerpt } from '../../lib/seo/meta';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+if (Astro.cache.enabled) {
+	Astro.cache.set({ maxAge: 300, swr: 60, tags: ['products'] });
+}
+
+const categories = await getAllCategories(Astro.url);
+const colors = await getAllColors(Astro.url);
+const brands = await getAllBrands(Astro.url);
+
+const url = Astro.url;
+const selectedCategory = Number(url.searchParams.get('category')) || null;
+const selectedColors = url.searchParams.getAll('color').map(Number).filter(Boolean);
+const selectedBrand = Number(url.searchParams.get('brand')) || null;
+const sort = (url.searchParams.get('sort') as SortValue | null) ?? 'date';
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const q = url.searchParams.get('q')?.trim() ?? '';
+
+const where: WhereClause = {};
+if (selectedCategory) {
+	where.category = { equals: selectedCategory };
+}
+if (selectedColors.length > 0) {
+	where.colors = { in: selectedColors };
+}
+if (selectedBrand) {
+	where.brand = { equals: selectedBrand };
+}
+if (q) {
+	where.name = { like: q };
+}
+
+const data = await getProducts(Astro.url, { page, limit: PAGE_SIZE, where, sort });
+const products = data.docs.map(normalizeProductMedia);
+
+const hasFilters =
+	selectedCategory !== null ||
+	selectedColors.length > 0 ||
+	selectedBrand !== null ||
+	page > 1 ||
+	q !== '';
+
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const canonical = absoluteUrl(site, '/products/');
+const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
+---
+
+<BaseLayout
+	title={pageTitle('All products', q ? `Search: ${q}` : undefined)}
+	description={plainExcerpt('Browse the full product catalog.')}
+	canonical={canonical}
+	jsonld={[
+		collectionPageJsonLd({
+			name: 'All products',
+			url: canonical,
+			breadcrumb: [{ name: 'Home', url: absoluteUrl(site, '/') }],
+		}),
+	]}
+>
+	<slot name="head">
+		{hasFilters && <meta name="robots" content="noindex, follow" />}
+	</slot>
+
+	<nav class="breadcrumbs" aria-label="Breadcrumb">
+		<a href="/">Home</a> {' / '} <span>Products</span>
+	</nav>
+
+	<h1>All products</h1>
+
+	<div class="plp">
+		<aside class="filters" aria-label="Filters">
+			<form method="get" action={url.pathname}>
+				<div class="field">
+					<label for="plp-category">Category</label>
+					<select name="category" id="plp-category">
+						<option value="">All categories</option>
+						{categories.map((category) => (
+							<option value={category.id} selected={selectedCategory === category.id}>
+								{category.name}
+							</option>
+						))}
+					</select>
+				</div>
+				<div class="field">
+					<label for="plp-brand">Brand</label>
+					<select name="brand" id="plp-brand">
+						<option value="">All brands</option>
+						{brands.map((brand) => (
+							<option value={brand.id} selected={selectedBrand === brand.id}>
+								{brand.name}
+							</option>
+						))}
+					</select>
+				</div>
+				<fieldset class="field">
+					<legend>Filter by colour</legend>
+					{colors.map((color) => (
+						<label class="filter-chip">
+							<input
+								type="checkbox"
+								name="color"
+								value={color.id}
+								checked={selectedColors.includes(color.id)}
+							/>
+							<span class="swatch" style={`background:${color.hexCode || '#ccc'}`} />
+							{color.name}
+						</label>
+					))}
+				</fieldset>
+				<div class="field">
+					<label for="plp-sort">Sort</label>
+					<select name="sort" id="plp-sort">
+						<option value="date" selected={sort === 'date'}>Newest</option>
+						<option value="-price" selected={sort === '-price'}>Price: low to high</option>
+						<option value="price" selected={sort === 'price'}>Price: high to low</option>
+						<option value="-rating" selected={sort === '-rating'}>Top rated</option>
+						<option value="name" selected={sort === 'name'}>Name A–Z</option>
+					</select>
+				</div>
+				<div class="field">
+					<label for="plp-q">Search</label>
+					<input type="search" name="q" id="plp-q" value={q} />
+				</div>
+				<button type="submit" class="btn">Apply</button>
+			</form>
+		</aside>
+		<section>
+			<ProductGrid products={products} />
+			<Pagination page={page} totalPages={data.totalPages} baseUrl={baseHref} />
+		</section>
+	</div>
+</BaseLayout>

@@ -37,6 +37,7 @@ import {
 	requestOrigin,
 	stripDomainFromSetCookie,
 } from './lib/proxy-headers.mjs';
+import { wrapWithSecurityHeaders } from './lib/security-headers.mjs';
 import { seedMcpEnv } from './lib/mcp-env.mjs';
 
 const PORT = Number(process.env.PORT) || 4321;
@@ -272,12 +273,14 @@ function route(req, res) {
 	}
 
 	// Astro handles everything else (pages, /manage, /_astro assets, sitemap,
-	// robots).
-	return astroHandler(req, res, () => {
-		if (!res.headersSent) {
-			res.writeHead(404, { 'content-type': 'text/plain' });
+	// robots). HTML documents get security headers whose CSP is computed from
+	// the actual inline scripts (Proposal 104 D12 — no blanket unsafe-inline).
+	const secured = wrapWithSecurityHeaders(res);
+	return astroHandler(req, secured, () => {
+		if (!secured.headersSent) {
+			secured.writeHead(404, { 'content-type': 'text/plain' });
 		}
-		res.end('Not found');
+		secured.end('Not found');
 	});
 }
 

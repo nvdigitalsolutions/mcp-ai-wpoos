@@ -11,7 +11,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = join(HERE, '..', '..');
 
 describe('ADS token generator', () => {
-	const { css, ts, bundle, report } = buildTokens(readTokenSources());
+	const { css, ts, bundle, tailwind, report } = buildTokens(readTokenSources());
 
 	it('validates cleanly', () => {
 		expect(report.errors).toEqual([]);
@@ -21,9 +21,22 @@ describe('ADS token generator', () => {
 		const committedCss = readFileSync(join(APP_ROOT, 'src', 'styles', 'generated', 'tokens.css'), 'utf8');
 		const committedTs = readFileSync(join(APP_ROOT, 'src', 'lib', 'tokens.generated.ts'), 'utf8');
 		const committedBundle = readFileSync(join(APP_ROOT, 'src', 'tokens', 'bundle.generated.json'), 'utf8');
+		const committedTailwind = readFileSync(join(APP_ROOT, 'src', 'styles', 'generated', 'tokens-tailwind.css'), 'utf8');
 		expect(css).toBe(committedCss);
 		expect(ts).toBe(committedTs);
 		expect(bundle).toBe(committedBundle);
+		expect(tailwind).toBe(committedTailwind);
+	});
+
+	it('emits the Tailwind v4 bridge over the semantic layer (Proposal 104 D3)', () => {
+		expect(tailwind).toContain('@theme inline {');
+		expect(tailwind).toContain('--color-ads-accent: var(--ads-semantic-accent);');
+		expect(tailwind).toContain('--color-ads-surface: var(--ads-semantic-surface);');
+		expect(tailwind).toContain('--font-ads: var(--ads-semantic-font);');
+		expect(tailwind).toContain('--radius-ads: var(--ads-semantic-radius);');
+		expect(tailwind).toContain('--spacing-ads: var(--ads-semantic-space);');
+		// The bridge references the semantic layer — it never bakes raw values.
+		expect(tailwind).not.toContain('#0f6b4f');
 	});
 
 	it('semantic light values equal the legacy 092 palette (zero visual drift)', () => {

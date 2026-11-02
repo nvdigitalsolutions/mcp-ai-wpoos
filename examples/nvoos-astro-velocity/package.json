@@ -12,6 +12,7 @@
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro check && npm run build:manage && astro build",
+		"build:prod-sim": "node scripts/build-prod-sim.mjs",
 		"build:fixtures": "node scripts/build-hermetic.mjs",
 		"build:manage": "node scripts/sync-manage-assets.mjs",
 		"build:mcp": "node scripts/build-mcp.mjs",
@@ -35,18 +36,24 @@
 	"dependencies": {
 		"@astrojs/node": "^11.1.9",
 		"@astrojs/react": "^7.1.2",
+		"@fontsource/inter": "^5.3.0",
 		"@modelcontextprotocol/node": "^2.0.0",
 		"@modelcontextprotocol/server": "^2.0.0",
 		"@nanostores/react": "^2.0.1",
+		"@resvg/resvg-js": "^2.6.2",
 		"astro": "^7.4.4",
+		"limax": "^4.2.3",
 		"nanostores": "^1.5.5",
 		"react": "^19.3.1",
 		"react-dom": "^19.3.1",
 		"sanitize-html": "^2.18.1",
+		"satori": "^0.63.2",
+		"schema-dts": "^2.1.0",
 		"zod": "^4.0.0"
 	},
 	"devDependencies": {
 		"@astrojs/check": "^0.9.12",
+		"@axe-core/playwright": "^4.14.0",
 		"@eslint/js": "^10.0.1",
 		"@lhci/cli": "^0.15.1",
 		"@playwright/test": "^1.64.1",

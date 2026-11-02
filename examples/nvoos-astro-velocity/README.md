@@ -28,13 +28,32 @@ every other surface; manager sign-in is the contract's own REST auth flow.
 
 | Surface | Rendering |
 |---|---|
-| PDP (`/products/{id}/{slug}/`) | **Prerendered** for the full catalog at build time |
+| PDP (`/products/{id}/{slug}/`) | **On-demand SSR** with route caching (Proposal 104 — the 092 build-time prerender baked fixture data into the mirror; SSR renders the live catalog, enables real 301s for slug drift, and publishes 404s for drafts) |
+| All-products PLP (`/products/` + filters) | On-demand SSR, `s-maxage=300` (Proposal 104 P3) |
 | PLP (`/categories|brands|colors/{id}/{slug}/` + filters) | On-demand SSR, `s-maxage=300` (prerendered page-1s were dropped — a static page would ignore filter query strings) |
 | Home / promotions / promocodes / search | SSR, cached |
 | Cart badge, gallery, promo-code field, add-to-cart, account | React islands (`client:idle` / `client:visible` / `client:load` on account) |
 | `/manage` (Astro CMS) | SSR shell + `ManageGate` island (sign-in gate → injected CMS bundle); `noindex` |
 | About / terms | Static markdown |
-| Sitemap / robots | SSR endpoints (the sitemap integration cannot list SSR'd PLP bases, so a custom endpoint generates the full map) |
+| Sitemap / robots | SSR endpoints (the sitemap integration cannot list SSR'd PLP bases, so a custom endpoint generates the full map; drafts are filtered by the 104 publication predicate) |
+
+### Theme runtime (Proposal 104)
+
+- `src/lib/theme/` is the client theme module: `localStorage` is the source
+  of truth, application is idempotent (`data-theme` + `color-scheme` set
+  atomically), and the layout boot **re-applies on every client-side
+  navigation** via `astro:after-swap` — Astro's ClientRouter swaps the whole
+  `<html>` element, so without the listener the theme reset to light on page
+  2 (Defect A).
+- The theme list derives from the ADS bundle (`src/lib/theme/registry.ts` →
+  `tokens.generated.ts`), not a hardcoded array; ≤ 3 themes = single-button
+  cycle, more = `role=menu` picker.
+- A high-contrast axis (`data-contrast="high"` → `ContrastToggle`) remaps
+  muted text to ink and lines to `line-strong`; reduced-motion is respected
+  via a global `prefers-reduced-motion` kill switch.
+- BFF security headers (Proposal 104 D12): CSP is computed per response with
+  SHA-256 hashes of every inline script (never a blanket `unsafe-inline`);
+  static assets pass through unbuffered.
 
 ## Contract rules (CI-enforced)
 
@@ -52,12 +71,24 @@ every other surface; manager sign-in is the contract's own REST auth flow.
 
 | Variable | Used by | Purpose |
 |---|---|---|
-| `NVOOS_API_BASE` | build (CI) | Full base URL of the commerce contract for `getStaticPaths` |
+| `NVOOS_API_BASE` | build (dev/CI only) | Full base URL of the commerce contract for the hermetic local build loop (no route fetches at build anymore — Proposal 104) |
 | `NVOOS_TARGET_SITE` | `serve.mjs` (runtime) | Backend origin for the `/api` and `/media` proxies |
 | `PUBLIC_API_BASE` | islands (dev only) | Client-side API base when `astro dev` has no BFF |
 | `ASTRO_SITE` | build/runtime | Canonical host for sitemap, robots, canonical/OG tags |
 | `NVOOS_CURRENCY` | build/runtime | Price formatting + JSON-LD (default `USD`) |
 | `PORT` | `serve.mjs` | Listen port (Velocity injects it) |
+| `NVOOS_REVALIDATE_TOKEN` | `serve.mjs` (runtime) | Shared secret for `POST /internal/revalidate/` (tag-based cache purge, Proposal 104 Q3) — unset disables the route (503) |
+
+`npm run build:prod-sim` runs the production-parity build with `NVOOS_API_BASE`
+**unset** — the CI-enforced mirror invariant (a build-time commerce base baked
+fixture data into prod; Proposal 104 Defect B).
+
+### Open Graph cards (Proposal 104 Q5)
+
+`GET /og/product/{id}.png` renders a per-product branded OG card (satori +
+resvg, ADS semantic tokens, Inter via Fontsource) and caches it for a day.
+PDPs point `og:image` at it; render failures redirect to the product image —
+an OG card never breaks the page.
 
 ## MCP assistant surface (`/mcp`)
 
