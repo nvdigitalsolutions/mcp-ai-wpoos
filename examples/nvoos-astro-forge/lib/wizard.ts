@@ -1,14 +1,16 @@
 // ---------------------------------------------------------------------------
 // wizard.ts — setup_wizard: one command from URL to deployed (096 §6.1).
 //
-//   analyze → register site → scaffold → build (optional) → git init →
-//   emit deploy pipeline.
+//   analyze → preset (suggested/confirmed, 104 §4.3) → register site →
+//   scaffold → build (optional) → git init → emit deploy pipeline.
 //
 // The MCP `setup_wizard` tool and the CLI `forge wizard` command share this
 // function. Every step is individually tolerant: an unreachable source
 // fails the wizard (a profile without content is worse than no profile), a
 // failed build returns `built: false` with warnings (never throws), and the
 // deploy config emission is the same adapter-generic Phase 3.3 pipeline.
+// Interactive prompts (clack) arrive through the optional `ui` hooks, so
+// the shared path stays non-interactive for the MCP surface.
 // ---------------------------------------------------------------------------
 
 import { spawnSync } from 'node:child_process';
@@ -16,12 +18,27 @@ import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { emitDeployConfig, type DeployMode } from './deploy-config.ts';
-import { analyzeSite, profileFromDiscovery } from './discovery.ts';
+import { analyzeSite, profileFromDiscovery, type DiscoveryReport } from './discovery.ts';
+import { applyPresetToProfile, PRESETS, suggestPreset, type PresetName, type RenderMode } from './presets.ts';
 import { scaffold } from './scaffold.ts';
 import { SitesStore } from './sites.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
 import type { SiteProfile } from './types.ts';
 import { WpClient } from './wp-client.ts';
+
+/**
+ * Interactive prompt hooks (Proposal 104 §4.3). The CLI wires these to
+ * @clack/prompts; the MCP surface leaves them unset so setup_wizard stays
+ * non-interactive and the preset falls back to suggestPreset().
+ */
+export interface WizardUi {
+	/** Ask which preset to use — null cancels the wizard. */
+	selectPreset?: (suggested: PresetName, report: DiscoveryReport) => Promise<PresetName | null>;
+	/** Ask static vs ssr (storefront preset only, 104 Q4) — null cancels. */
+	selectRender?: (suggested: RenderMode, preset: PresetName) => Promise<RenderMode | null>;
+	/** Final go/no-go before scaffolding — false cancels the wizard. */
+	confirmScaffold?: (preset: PresetName, targetDir: string) => Promise<boolean>;
+}
 
 export interface WizardOptions {
 	/** The WordPress source URL (https://…). */
@@ -36,6 +53,23 @@ export interface WizardOptions {
 	cloudflareProject?: string;
 	/** Template name or path (default 'blog'). */
 	template?: string;
+	/**
+	 * Preset (104 §4.3). Absent → suggested from the site_analyze report
+	 * (Woo/products detected → 'storefront'), or chosen interactively via
+	 * ui.selectPreset when provided.
+	 */
+	preset?: PresetName;
+	/**
+	 * Rendering model (104 Q4). Absent → the preset's default ('static');
+	 * the storefront preset offers the choice via ui.selectRender.
+	 */
+	render?: RenderMode;
+	/** Enable the per-post OG cards surface (104 §4.8 / Q5). */
+	ogImages?: boolean;
+	/** Interactive prompt hooks (CLI only). */
+	ui?: WizardUi;
+	/** Emit the AGENTS.md/.context stubs (default true; --no-agents flips it). */
+	agents?: boolean;
 	/** Run npm install + astro build before finishing (CI/e2e use this). */
 	build?: boolean;
 	/** Skip registry registration (callers managing their own registry). */
@@ -81,7 +115,37 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 
 	// 1. Discover — the polite site_analyze pass.
 	const report = await analyzeSite( new WpClient( { baseUrl: options.url.replace( /\/+$/, '' ) } ) );
-	const profile = profileFromDiscovery( report );
+
+	// 1b. Preset (104 §4.3): explicit → use it; otherwise suggest from the
+	//     report and offer the interactive choice through the CLI ui hooks.
+	const suggested = suggestPreset( report );
+	let preset: PresetName = options.preset ?? suggested;
+	if ( ! options.preset && options.ui?.selectPreset ) {
+		const chosen = await options.ui.selectPreset( suggested, report );
+		if ( chosen === null ) {
+			throw new Error( 'Wizard cancelled.' );
+		}
+		preset = chosen;
+	}
+	if ( ! options.preset && options.ui?.confirmScaffold ) {
+		const proceed = await options.ui.confirmScaffold( preset, options.targetDir );
+		if ( ! proceed ) {
+			throw new Error( 'Wizard cancelled.' );
+		}
+	}
+
+	const profile = applyPresetToProfile( profileFromDiscovery( report ), preset );
+
+	// 1c. Render mode (104 Q4): explicit flag wins; the storefront preset
+	//     offers the interactive choice; every non-TTY path stays 'static'.
+	let render: RenderMode = options.render ?? 'static';
+	if ( ! options.render && preset === 'storefront' && options.ui?.selectRender ) {
+		const chosen = await options.ui.selectRender( 'static', preset );
+		if ( chosen === null ) {
+			throw new Error( 'Wizard cancelled.' );
+		}
+		render = chosen;
+	}
 	profile.url = options.url.replace( /\/+$/, '' );
 	if ( options.name ) {
 		profile.name = options.name;
@@ -107,7 +171,15 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 	try {
 		await stat( join( options.targetDir, 'nvoos.json' ) );
 	} catch {
-		await scaffold( { profile, targetDir: options.targetDir, template: options.template } );
+		await scaffold( {
+			profile,
+			targetDir: options.targetDir,
+			template: options.template ?? PRESETS[ preset ].template,
+			preset,
+			render,
+			surfaces: options.ogImages ? { ogImages: true } : undefined,
+			agents: options.agents,
+		} );
 		scaffolded = true;
 	}
 

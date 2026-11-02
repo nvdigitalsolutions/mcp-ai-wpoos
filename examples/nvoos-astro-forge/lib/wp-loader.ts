@@ -17,6 +17,7 @@
 
 import type { Loader, LoaderContext } from 'astro/loaders';
 import { z } from 'astro/zod';
+import limax from 'limax';
 
 import { WpClient, WpClientError } from './wp-client.ts';
 import type { SiteProfile, WpAuth, WpCollection } from './types.ts';
@@ -196,7 +197,10 @@ interface RawEntry {
 }
 
 /** Normalize one raw document into the stable entry shape. */
-function extractRaw(entry: Record<string, unknown>): RawEntry {
+/** Map one wp/v2 or wc/v3 document into the stable entry shape. Exported
+ * for the on-demand product route (104 Q4) — the SSR render path shares
+ * the loader's extraction so static and dynamic PDPs stay identical. */
+export function extractRaw(entry: Record<string, unknown>): RawEntry {
 	// wc/v3 flat documents (product kind).
 	const title = typeof entry.name === 'string' ? entry.name : extractHtml(entry.title);
 	const html = typeof entry.description === 'string' ? entry.description : extractHtml(entry.content);
@@ -386,13 +390,21 @@ export function extractPayloadRaw(entry: Record<string, unknown>): RawEntry {
 	};
 }
 
-/** Deterministic slug for envelope documents that carry none. */
+/**
+ * Deterministic slug for envelope documents that carry none (D4 — limax).
+ * Transliterates ("Café Crème" → "cafe-creme"), normalizes underscores
+ * to dashes (the pre-limax rule), caps at 80 chars, and falls back to
+ * "item" for empty input — the same rule the velocity side applies, so
+ * both tracks slug identically.
+ */
 export function slugify(value: string): string {
-	return value
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-+|-+$/g, '')
+	// separateApostrophes: false matches the velocity-side rule (apostrophes
+	// dropped, not separated) — one canonical slug algorithm across both
+	// tracks (Proposal 104 D4).
+	const slug = limax(value, { tone: false, separateApostrophes: false })
+		.replace(/_+/g, '-')
 		.slice(0, 80);
+	return slug || 'item';
 }
 
 /** Extract rendered HTML from a wp/v2 `content`/`excerpt` object. */

@@ -10,9 +10,12 @@ already extracted its design language — the tokens feed the template's
 
 > Phases 0–3 (generation core, Woo collections, SEO/media/search, bridge
 > plugin, vault + deploy + multi-site) and Phase 4 (the `setup_wizard` and
-> the `/mcp` tool surface) are shipped. Remaining: the registry publication
-> (owner action — `server.json` is ready) and the §3.3 long-tail tool
-> slices.
+> the `/mcp` tool surface) are shipped. **Proposal 104 Phase 4** (the
+> storefront runtime-hardening pass) landed the preset wizard, the agent
+> stubs, typed copy tables, the `kind`-typed SEO builder, the theme-module
+> port and the Tailwind token bridge — see “Presets” and “Phase 4 template
+> additions” below. Remaining: the registry publication (owner action —
+> `server.json` is ready) and the §3.3 long-tail tool slices.
 
 ## Layout
 
@@ -22,8 +25,9 @@ already extracted its design language — the tokens feed the template's
 | `lib/wp-client.ts` | WP REST client — pagination via `X-WP-TotalPages`, `_fields` pruning + `_embed`, typed errors, explicit truncation |
 | `lib/wp-loader.ts` | The Astro content-layer loader — wc/v3 commerce extraction, wp/v2 featured-media resolution, optional sources |
 | `lib/sanitize.ts` | Versioned `sanitize-html` allowlist — the XSS gate before `set:html` |
-| `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate + storefront-page pruning |
-| `scripts/forge.mjs` | CLI: `analyze <url> [--write]` (site_analyze) + `node scripts/forge.mjs <site.json> --target <dir> [--template blog] [--check]` (Node ≥ 22.6) |
+| `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate + storefront-page pruning + preset surfaces + agent stubs + render variant (Q4) + OG endpoint (Q5) |
+| `lib/presets.ts` | 104 §4.3 preset registry — `blog` / `storefront` / `minimal` descriptors (render mode + surfaces incl. `ogImages`), `suggestPreset()`, `applyPresetToProfile()` |
+| `scripts/forge.mjs` | CLI on **commander** + **@clack/prompts**: `analyze`, `wizard [--preset …] [--render …]`, `site`, `vault`, `deploy-config`, `deploy`, scaffold (`--preset`, `--render`, `--og-images`, `--no-agents`) — plain JS, Node ≥ 22.6 |
 | `lib/discovery.ts` | `site_analyze` — root/types/counts/front-page/junk/Woo/SEO probes → draft site.json |
 | `lib/vault.ts` | Phase 3.1 credential store — AES-256-GCM entries under `~/.nvoos-forge/vault.json`, key from `NVOOS_FORGE_VAULT_KEY`, masked output |
 | `lib/sites.ts` | Phase 3.4 multi-site registry — named profile refs + default flag in `~/.nvoos-forge/sites.json` |
@@ -31,7 +35,7 @@ already extracted its design language — the tokens feed the template's
 | `lib/deploy-config.ts` | Phase 3.3 generated pipeline — deploy.yml + rebuild.yml + the fail-closed `verify-dispatch.mjs` |
 | `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 + wc/v3 wire fixture (`:8473`) — stands in for WordPress Playground in CI |
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
-| `templates/blog/` | The production template — posts/pages/products, static front page, RSS, 404, 301 redirect map, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens |
+| `templates/blog/` | The production template — posts/pages/products, static front page, RSS, 404, 301 redirect map, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens, typed copy tables, theme module, `lib/seo.ts`, Tailwind token bridge, the inert `_ssr` product route (Q4) and `_og` card endpoint (Q5) |
 | `lib/contrast.ts` | WCAG 2.2 contrast math — the token gate warns on AA failures at scaffold time |
 | `tests/` | Unit tests (`npm test`) + the exit-gate e2e (`npm run test:e2e`) |
 
@@ -185,10 +189,17 @@ fixtures only.
 ## Phase 4 — the wizard and the MCP surface
 
 ```sh
-# One command: URL → analyzed → registered → scaffolded → built → git →
-# deploy pipeline. (Local dev sites need NVOOS_FORGE_ALLOW_LOOPBACK=1.)
+# One command: URL → analyzed → preset → registered → scaffolded → built →
+# git → deploy pipeline. (Local dev sites need NVOOS_FORGE_ALLOW_LOOPBACK=1.)
 node scripts/forge.mjs wizard https://shop.example.com \
   --target ./customer-frontend --build
+
+# …with an explicit preset (otherwise suggested from the analysis),
+# a render variant, and per-post OG cards.
+node scripts/forge.mjs wizard https://shop.example.com \
+  --target ./customer-frontend --preset minimal --no-agents
+node scripts/forge.mjs wizard https://shop.example.com \
+  --target ./customer-frontend --preset storefront --render ssr --og-images
 
 # The MCP server — dual-era Streamable HTTP (team mode) …
 npm run mcp                        # http://127.0.0.1:8472/mcp (FORGE_MCP_PORT to change)
@@ -219,6 +230,93 @@ npx nvoos-forge-mcp-stdio
 - **Registry entry** (061 pattern): `server.json` — the MCP registry
   metadata (`io.github.nvdigitalsolutions/nvoos-astro-forge`); it is NOT
   part of the npm package.
+
+### Presets (Proposal 104 §4.3)
+
+```sh
+# Explicit preset on the scaffold command…
+node scripts/forge.mjs site.json --target ./customer-frontend --preset storefront
+
+# …or through the wizard, where the preset is auto-suggested from the
+# site_analyze report (Woo/products detected → storefront). On a TTY the
+# wizard asks via @clack/prompts (select/confirm/text/spinner, cancellable);
+# in CI/e2e the suggestion is applied deterministically, no prompts.
+node scripts/forge.mjs wizard https://shop.example.com --target ./customer-frontend --preset blog
+```
+
+| Preset | Template | Collections | Surfaces |
+| --- | --- | --- | --- |
+| `blog` | `blog` | as discovered (the Phase 0 default) | search, feed, sitemap |
+| `storefront` | `blog` | blog + products (`wc/v3`, consumer-key auth) + front page | search, feed, sitemap |
+| `minimal` | `blog` | posts/pages only | feed, sitemap — **no search** (page + Pagefind step + nav link pruned) |
+
+### Render variant (Proposal 104 Q4 — `--render static|ssr`)
+
+```sh
+node scripts/forge.mjs site.json --target ./customer-frontend --render ssr
+# wizard: the storefront preset prompts static-vs-ssr on a TTY; non-TTY stays static
+```
+
+- `static` (default) — today's template, untouched.
+- `ssr` — the static product pages are swapped for the on-demand route
+  (`/products/{id}/{slug}/`), `astro.config.mjs` gets `output: 'server'` +
+  `@astrojs/node` standalone. The route fetches ONE product from the site's
+  REST at request time (same client + auth env as the content layer),
+  sanitizes the description, emits `Product` JSON-LD in the initial HTML,
+  404s unknown ids, 301s slug drift to the canonical URL, and sends
+  `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
+  Everything else (home, posts, pages, PLP, search, SEO endpoints) stays
+  build-time static — mirroring the velocity PDP-on-demand model — so
+  Pagefind/sitemap/robots keep working.
+
+### Per-post OG cards (Proposal 104 §4.8 / Q5 — `--og-images`)
+
+Opt-in surface, OFF by default (default scaffolds stay zero-dep for OG).
+When on, the scaffold ships `src/pages/og/[slug].png.ts` — build-time cards
+for every post (the Cactus pattern) branded from the `--forge-*` tokens,
+rendered with `satori` + `@resvg/resvg-js` + `@fontsource/inter` (deps
+injected into the generated package.json only when the flag is on). Post
+pages point `og:image` at the card; render failures warn and fall back to
+a plain card — never a build failure.
+
+### Surface toggles
+
+`feed` / `sitemap` are declared on every preset (all shipped presets keep
+them on). When toggled off at scaffold time the corresponding endpoints are
+pruned and the chrome adjusts: the nav drops the search link, the head
+drops the RSS link, and `robots.txt` drops its sitemap pointer.
+
+## Research basis
+### Phase 4 template additions (Proposal 104)
+
+Every scaffold ships, unless `--no-agents`:
+
+- **`AGENTS.md` + `.context/README.md`** (4.4) — project layout, commands, the
+  storefront-runtime-contract pointer, “content lives in `src/content/`,
+  config in `nvoos.json`”, plus the customer-context hook directory. Both
+  are collected by `lib/project-files.ts` — CLI deploy and the
+  `github_commit` tool push them.
+- **Typed copy tables** (`src/copy/`) (4.5) — `en.ts` is the reference table
+  (nav labels, footer, aria labels, empty states); a second locale is added
+  as another `Copy`-typed table and a missing key fails `astro check`. The
+  zero-dependency floor; the Paraglide upgrade path is documented in the
+  template README.
+- **`src/lib/seo.ts`** (4.6) — `kind`-typed `jsonLdFor('WebPage'|'BlogPosting'|'Product')`
+  + `breadcrumbList()`, typed with `schema-dts`, with the `<` → `\u003c`
+  escape; the posts/products pages consume it and the e2e gate pins the output.
+- **`src/lib/theme/`** (4.2) — the velocity runtime theme module port
+  (`theme.ts` + `registry.ts`, pure — no Astro imports), the documented port
+  target for runtime theming (104 Q4: define-only, the boot script + toggle
+  land later).
+- **`src/styles/tokens-tailwind.css`** (4.7) — an `@theme inline` bridge over
+  the `--forge-*` tokens; “import only if/when you add Tailwind v4; unused by
+  default”. Ships byte-identical (no FORGE markers).
+
+Generated projects must satisfy the **storefront runtime contract**
+(Proposal 104) — see “Storefront runtime contract” in the template README:
+no-FOUC theming + `astro:after-swap` re-apply + `color-scheme` sync, PDP
+canonical + 301 slug convergence, `Product` JSON-LD in initial HTML, cache
+headers + tags on commerce routes.
 
 ## Research basis
 

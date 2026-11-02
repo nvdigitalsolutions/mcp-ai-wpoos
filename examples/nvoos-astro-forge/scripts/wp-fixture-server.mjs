@@ -313,9 +313,36 @@ export function createWpFixtureServer(port = PORT) {
 			json(res, slice, headers);
 			return;
 		}
+		// Single-product detail routes (Proposal 104 Q4 — the SSR product
+		// route fetches one document at request time; the shapes mirror the
+		// collection documents so both render paths stay identical).
+		const wooProductMatch = path.match(/^\/wp-json\/wc\/v3\/products\/(\d+)$/);
+		if (wooProductMatch) {
+			const doc = data.wooProducts.find((product) => product.id === Number(wooProductMatch[1]));
+			if (doc) {
+				json(res, doc);
+			} else {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'woocommerce_rest_product_invalid_id', message: 'Invalid product ID.' }));
+			}
+			return;
+		}
 		if (path === '/wp-json/wp/v2/product') {
 			const { slice, headers } = paginate(data.wpProducts);
 			json(res, slice, headers);
+			return;
+		}
+		const wpProductMatch = path.match(/^\/wp-json\/wp\/v2\/product\/(\d+)$/);
+		if (wpProductMatch) {
+			const doc = data.wpProducts.find((product) => product.id === Number(wpProductMatch[1]));
+			if (doc) {
+				// _embed carries the featured media, mirroring wp/v2 collections.
+				const sourceUrl = data.media[doc.featured_media]?.source_url;
+				json(res, sourceUrl ? { ...doc, _embedded: { 'wp:featuredmedia': [{ source_url: sourceUrl }] } } : doc);
+			} else {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'rest_post_invalid_id', message: 'Invalid product ID.' }));
+			}
 			return;
 		}
 		if (path === '/wp-json/nvoos-commerce/v1/products') {
@@ -333,6 +360,17 @@ export function createWpFixtureServer(port = PORT) {
 				hasNextPage: pageNum < totalPages,
 				hasPrevPage: pageNum > 1,
 			});
+			return;
+		}
+		const payloadProductMatch = path.match(/^\/wp-json\/nvoos-commerce\/v1\/products\/(\d+)$/);
+		if (payloadProductMatch) {
+			const doc = data.payloadProducts.find((product) => product.id === Number(payloadProductMatch[1]));
+			if (doc) {
+				json(res, doc);
+			} else {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'not_found', message: 'Product not found.' }));
+			}
 			return;
 		}
 		const mediaMatch = path.match(/^\/wp-json\/wp\/v2\/media\/(\d+)$/);

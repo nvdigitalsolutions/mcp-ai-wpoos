@@ -9,22 +9,26 @@
 // ---------------------------------------------------------------------------
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 const distDir = resolve(process.cwd(), 'dist');
-const mapPath = resolve(distDir, 'redirects.json');
-const targetPath = resolve(distDir, '_redirects');
+// Static builds emit into dist/; server builds (--render ssr) put the
+// prerendered documents under dist/client/ — materialize _redirects next
+// to whichever map exists.
+const candidates = [resolve(distDir, 'redirects.json'), resolve(distDir, 'client', 'redirects.json')];
+const mapPath = candidates.find((candidate) => existsSync(candidate));
 
-if (!existsSync(mapPath)) {
+if (!mapPath) {
 	console.log('[forge-postbuild] no redirects.json — skipping _redirects.');
 	process.exit(0);
 }
+const targetPath = resolve(dirname(mapPath), '_redirects');
 
 try {
 	const entries = JSON.parse(readFileSync(mapPath, 'utf8'));
 	const lines = entries.map((entry) => `${entry.from}\t${entry.to}\t${entry.status}`).join('\n');
 	writeFileSync(targetPath, `${lines}\n`, 'utf8');
-	console.log(`[forge-postbuild] wrote ${entries.length} redirect(s) to dist/_redirects.`);
+	console.log(`[forge-postbuild] wrote ${entries.length} redirect(s) to ${targetPath}.`);
 } catch (error) {
 	console.error(`[forge-postbuild] failed: ${error instanceof Error ? error.message : error}`);
 	process.exit(1);

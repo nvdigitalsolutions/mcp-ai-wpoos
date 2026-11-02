@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config';
+// FORGE:adapter-import
 import manifest from './nvoos.json';
 
 // The canonical host for SEO surfaces (sitemap, robots, canonical links).
@@ -14,6 +15,7 @@ const wpHost = wpUrl ? new URL(wpUrl).hostname : '';
 
 export default defineConfig({
 	site,
+	// FORGE:render-config
 	image: {
 		domains: wpHost ? [wpHost] : [],
 	},

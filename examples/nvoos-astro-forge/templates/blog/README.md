@@ -62,6 +62,72 @@ site's design language (Proposal 098 output) over these variables at scaffold
 time — content is re-themed, never re-cloned — and warns when the rendered
 ink/surface and accent-ink/accent pairs fail WCAG AA (SC 1.4.3).
 
+## Storefront runtime contract (Proposal 104)
+
+Every generated project must satisfy these four behaviours (Proposal 104,
+`docs/project/proposals/104-astro-storefront-runtime-hardening-implementation-plan.md`
+§4.2):
+
+1. **Theming** — a no-FOUC boot script in the layout `<head>`, theme
+   re-applied on `astro:after-swap` (client-side navigation), and
+   `color-scheme` kept in sync with the theme. The pure runtime module is
+   `src/lib/theme/theme.ts` (+ `registry.ts`) — the canonical port target;
+   the boot script and toggle get wired when runtime theming lands
+   (Proposal 104 Q4, define-only today).
+2. **PDP canonical + 301 slug convergence** — every product page exposes one
+   canonical URL, and old/incorrect slugs converge via a 301.
+3. **Product JSON-LD in initial HTML** — the PDP ships `Product` structured
+   data in the first response, built by `src/lib/seo.ts`
+   (`jsonLdFor('Product', …)`).
+4. **Cache headers + tags on commerce routes** — `/products/*` routes send
+   cache headers with invalidation tags.
+
+`AGENTS.md` (scaffolded with every project; skip with `--no-agents`) points
+agent sessions at this section.
+
+## Typed copy tables (`src/copy/`)
+
+UI strings live in typed copy tables, not inline: `src/copy/en.ts` is the
+reference table (nav labels, footer, aria labels, empty states),
+`src/copy/index.ts` derives `Copy = typeof en` and exports `useCopy()`.
+The completeness gate is the type itself: a second locale is added as
+another `Copy`-typed table — a missing key fails `astro check` in the
+generated project. When a customer needs real multi-locale routing and
+tree-shaken messages, the forge emits `@inlang/paraglide-js` wiring instead
+(Proposal 104 D9); the table keys map 1:1 onto message files, so the
+migration is mechanical. The zero-dependency tables remain the default.
+
+## SEO builder (`src/lib/seo.ts`)
+
+`jsonLdFor(kind, input)` covers `WebPage | BlogPosting | Product` (plus a
+`breadcrumbList()` helper), typed with `schema-dts` so a malformed document
+fails `astro check` instead of silently shipping; `renderJsonLd()` applies
+the `<` → `\u003c` escape for `<script type="application/ld+json">` tags.
+The posts and products detail pages consume it — the e2e gate pins the
+`BlogPosting` + `Product` output.
+
+## Tailwind bridge (`src/styles/tokens-tailwind.css`)
+
+Ships unused by default: an `@theme inline` mapping of the `--forge-*` tokens
+onto Tailwind v4 utility tokens. Import it only if/when Tailwind v4 is added
+to the project — zero build impact otherwise, and the scaffold copies it
+byte-identical (it deliberately carries no FORGE markers).
+
+## Render variant + OG cards (Proposal 104 Q4/Q5 — scaffold-time)
+
+- **Static (default)** — this template, untouched. The scaffold removes the
+  FORGE config markers and the inert `_ssr`/`_og` directories.
+- **SSR (`--render ssr`)** — the scaffold swaps the static product pages for
+  the on-demand `src/pages/products/[id]/[...slug].astro` route (fetch,
+  sanitize, `Product` JSON-LD, 404/301, cache headers) and writes
+  `output: 'server'` + the `@astrojs/node` standalone adapter into
+  `astro.config.mjs`. Everything else stays build-time static.
+- **OG cards (`--og-images`)** — the scaffold ships
+  `src/pages/og/[slug].png.ts` (build-time per-post cards, branded from the
+  `--forge-*` tokens, `satori` + `@resvg/resvg-js` + `@fontsource/inter`,
+  injected into `package.json` only when the flag is on) and post pages
+  point `og:image` at the card. Render failures warn + fall back.
+
 ## License
 
 The Forge template and vendored libraries are MIT (`NOTICE` at the project

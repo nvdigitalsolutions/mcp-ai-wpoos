@@ -2,7 +2,10 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import manifest from '../../nvoos.json';
 
-/** /feed.xml — RSS 2.0 over the posts collection. */
+/** /feed.xml — RSS 2.0 over the posts collection. Prerendered in both
+ * render modes (the feed is build-time content, not on-demand). */
+export const prerender = true;
+
 export const GET: APIRoute = async ({ site }) => {
 	const posts = (await getCollection('posts'))
 		.filter((post) => post.data.date)

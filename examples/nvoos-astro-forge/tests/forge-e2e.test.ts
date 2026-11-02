@@ -411,6 +411,161 @@ describe('forge e2e — long-tail content tools against the fixture', () => {
 	});
 });
 
+describe('forge e2e — Proposal 104 Phase 4 artifacts', () => {
+	it('emits the agent stubs, copy tables, seo builder and theme module', async () => {
+		const agents = await readFile(path.join(workDir, 'AGENTS.md'), 'utf8');
+		expect(agents).toContain('nvoos.json');
+		expect(agents).toContain('Storefront runtime contract');
+		await expect(stat(path.join(workDir, '.context', 'README.md'))).resolves.toBeTruthy();
+
+		await expect(stat(path.join(workDir, 'src', 'copy', 'en.ts'))).resolves.toBeTruthy();
+		await expect(stat(path.join(workDir, 'src', 'copy', 'index.ts'))).resolves.toBeTruthy();
+		await expect(stat(path.join(workDir, 'src', 'lib', 'seo.ts'))).resolves.toBeTruthy();
+		await expect(stat(path.join(workDir, 'src', 'lib', 'theme', 'theme.ts'))).resolves.toBeTruthy();
+		await expect(stat(path.join(workDir, 'src', 'lib', 'theme', 'registry.ts'))).resolves.toBeTruthy();
+	} );
+
+	it('ships tokens-tailwind.css byte-identical (no marker rewrites)', async () => {
+		const templateFile = await readFile(
+			path.join(FORGE_ROOT, 'templates', 'blog', 'src', 'styles', 'tokens-tailwind.css'),
+			'utf8'
+		);
+		const scaffolded = await readFile(path.join(workDir, 'src', 'styles', 'tokens-tailwind.css'), 'utf8');
+		expect(scaffolded).toBe(templateFile);
+	} );
+
+	it('the new builder still pins BlogPosting + Product JSON-LD in dist', async () => {
+		const post = await readFile(
+			path.join(workDir, 'dist', 'posts', '4', 'studio-notes-autumn', 'index.html'),
+			'utf8'
+		);
+		expect(post).toContain('"BlogPosting"');
+		expect(post).toContain('application/ld+json');
+		const product = await readFile(
+			path.join(workDir, 'dist', 'products', '101', 'fjord-merino-sweater', 'index.html'),
+			'utf8'
+		);
+		expect(product).toContain('"Product"');
+		expect(product).toContain('InStock');
+	} );
+} );
+
+describe('forge e2e — minimal preset scaffold (Proposal 104 §4.3)', () => {
+	it('scaffolds the minimal preset and passes astro check + build', async () => {
+		const minimalDir = await mkdtemp(path.join(os.tmpdir(), 'forge-minimal-'));
+		try {
+			await scaffold({ profile: PROFILE, targetDir: minimalDir, template: 'blog', preset: 'minimal' });
+
+			// Surface pruning: no search page, no products, pagefind dropped.
+			await expect(stat(path.join(minimalDir, 'src', 'pages', 'search.astro'))).rejects.toThrow();
+			await expect(stat(path.join(minimalDir, 'src', 'pages', 'products'))).rejects.toThrow();
+			const pkg = JSON.parse(await readFile(path.join(minimalDir, 'package.json'), 'utf8'));
+			expect(pkg.scripts.build).not.toContain('pagefind');
+			const manifest = JSON.parse(await readFile(path.join(minimalDir, 'nvoos.json'), 'utf8'));
+			expect(manifest.surfaces).toEqual({ search: false, feed: true, sitemap: true, ogImages: false });
+
+			const install = run(minimalDir, 'npm', ['install', '--no-audit', '--no-fund']);
+			expect(install.status, `npm install failed:\n${install.stderr}`).toBe(0);
+			const check = run(minimalDir, 'npm', ['run', 'check'], { WP_SITE_URL: origin });
+			expect(check.status, `astro check failed:\n${check.stdout}\n${check.stderr}`).toBe(0);
+			const build = run(minimalDir, 'npm', ['run', 'build'], { WP_SITE_URL: origin, ASTRO_SITE: origin });
+			expect(build.status, `astro build failed:\n${build.stdout}\n${build.stderr}`).toBe(0);
+
+			// No search/products surfaces in dist; the front page still renders
+			// and the nav no longer links to search.
+			await expect(readFile(path.join(minimalDir, 'dist', 'search', 'index.html'), 'utf8')).rejects.toThrow();
+			await expect(readFile(path.join(minimalDir, 'dist', 'products', 'index.html'), 'utf8')).rejects.toThrow();
+			const index = await readFile(path.join(minimalDir, 'dist', 'index.html'), 'utf8');
+			expect(index).toContain('Fixture Wares is the hermetic test storefront.');
+			expect(index).not.toContain('href="/search/"');
+		} finally {
+			await rm(minimalDir, { recursive: true, force: true });
+		}
+	}, 600_000);
+} );
+
+describe('forge e2e — SSR render variant (Proposal 104 Q4 + Q5)', () => {
+	it('scaffolds --render ssr with OG cards, builds, and serves the product route', async () => {
+		const ssrDir = await mkdtemp(path.join(os.tmpdir(), 'forge-ssr-'));
+		let serverProc: ReturnType<typeof spawn> | undefined;
+		try {
+			await scaffold({
+				profile: PROFILE,
+				targetDir: ssrDir,
+				template: 'blog',
+				render: 'ssr',
+				surfaces: { ogImages: true },
+			});
+
+			// Variant selection: the static product pages are gone, the
+			// on-demand route + server config are in, and the OG endpoint
+			// shipped with the injected deps.
+			await expect(stat(path.join(ssrDir, 'src', 'pages', 'products', '[...parts].astro'))).rejects.toThrow();
+			await expect(stat(path.join(ssrDir, 'src', 'pages', 'products', '[id]', '[...slug].astro'))).resolves.toBeTruthy();
+			const config = await readFile(path.join(ssrDir, 'astro.config.mjs'), 'utf8');
+			expect(config).toContain("import node from '@astrojs/node';");
+			expect(config).toContain("output: 'server'");
+			await expect(stat(path.join(ssrDir, 'src', 'pages', 'og', '[slug].png.ts'))).resolves.toBeTruthy();
+			const pkg = JSON.parse(await readFile(path.join(ssrDir, 'package.json'), 'utf8'));
+			expect(pkg.devDependencies?.satori).toBeDefined();
+
+			const install = run(ssrDir, 'npm', ['install', '--no-audit', '--no-fund']);
+			expect(install.status, `npm install failed:\n${install.stderr}`).toBe(0);
+			const check = run(ssrDir, 'npm', ['run', 'check'], { WP_SITE_URL: origin });
+			expect(check.status, `astro check failed:\n${check.stdout}\n${check.stderr}`).toBe(0);
+			const build = run(ssrDir, 'npm', ['run', 'build'], {
+				WP_SITE_URL: origin,
+				ASTRO_SITE: origin,
+				WP_WC_CONSUMER_KEY: 'ck_test',
+				WP_WC_CONSUMER_SECRET: 'cs_test',
+			});
+			expect(build.status, `astro build failed:\n${build.stdout}\n${build.stderr}`).toBe(0);
+
+			// Build-time OG cards + prerendered SEO surfaces live under
+			// dist/client in server-output mode.
+			await expect(stat(path.join(ssrDir, 'dist', 'client', 'og', 'fjord-merino-sweater.png'))).resolves.toBeTruthy();
+			await expect(stat(path.join(ssrDir, 'dist', 'client', 'sitemap.xml'))).resolves.toBeTruthy();
+
+			// Serve the standalone build and hit the on-demand route.
+			const port = await freePort();
+			serverProc = spawn(process.execPath, [path.join(ssrDir, 'dist', 'server', 'entry.mjs')], {
+				env: {
+					...process.env,
+					HOST: '127.0.0.1',
+					PORT: String(port),
+					WP_SITE_URL: origin,
+					WP_WC_CONSUMER_KEY: 'ck_test',
+					WP_WC_CONSUMER_SECRET: 'cs_test',
+				},
+				stdio: 'pipe',
+			});
+			await waitForHealth(`http://127.0.0.1:${port}/`);
+
+			// 200 + Product JSON-LD in the initial HTML + the cache contract.
+			const ok = await fetch(`http://127.0.0.1:${port}/products/101/fjord-merino-sweater/`, { redirect: 'manual' });
+			expect(ok.status).toBe(200);
+			const html = await ok.text();
+			expect(html).toContain('application/ld+json');
+			expect(html).toContain('"Product"');
+			expect(html).toContain('Fjord Merino Sweater');
+			expect(html).toContain('120.00');
+			expect(ok.headers.get('cache-control')).toBe('public, s-maxage=300, stale-while-revalidate=600');
+
+			// 301 slug convergence.
+			const moved = await fetch(`http://127.0.0.1:${port}/products/101/old-slug/`, { redirect: 'manual' });
+			expect(moved.status).toBe(301);
+			expect(moved.headers.get('location')).toContain('/products/101/fjord-merino-sweater/');
+
+			// 404 unknown ids.
+			const missing = await fetch(`http://127.0.0.1:${port}/products/999/nope/`, { redirect: 'manual' });
+			expect(missing.status).toBe(404);
+		} finally {
+			serverProc?.kill();
+			await rm(ssrDir, { recursive: true, force: true });
+		}
+	}, 600_000);
+} );
+
 describe('forge e2e — setup_wizard (Phase 4 exit: URL → built, deploy-ready)', () => {
 	it('runs the wizard against the hermetic fixture end-to-end', async () => {
 		const wizardHome = await mkdtemp(path.join(os.tmpdir(), 'forge-wizard-home-'));
@@ -438,6 +593,15 @@ describe('forge e2e — setup_wizard (Phase 4 exit: URL → built, deploy-ready)
 
 		// Built.
 		await expect(readFile(path.join(wizardTarget, 'dist', 'index.html'), 'utf8')).resolves.toContain('Fixture Wares');
+
+		// The non-interactive wizard suggested the storefront preset (the
+		// fixture advertises Woo) — product pages survive, agent stubs emit.
+		await expect(stat(path.join(wizardTarget, 'src', 'pages', 'products', 'index.astro'))).resolves.toBeTruthy();
+		await expect(stat(path.join(wizardTarget, 'AGENTS.md'))).resolves.toBeTruthy();
+		const wizardManifest = JSON.parse(await readFile(path.join(wizardTarget, 'nvoos.json'), 'utf8'));
+		expect(wizardManifest.surfaces).toEqual({ search: true, feed: true, sitemap: true, ogImages: false });
+		expect(wizardManifest.render).toBe('static'); // non-TTY wizard stays static
+		expect(wizardManifest.collections.map((collection: { slug: string }) => collection.slug)).toContain('products');
 
 		// git-initialized.
 		await expect(stat(path.join(wizardTarget, '.git'))).resolves.toBeDefined();

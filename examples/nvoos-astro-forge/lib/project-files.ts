@@ -13,6 +13,14 @@ import { MAX_FILES, MAX_TOTAL_BYTES } from './github.ts';
 /** Directories a forged project never deploys (build/runtime artifacts). */
 export const SKIP_DIRS = new Set( [ 'node_modules', 'dist', '.astro', '.git' ] );
 
+/**
+ * Agent stub files every scaffold emits (104 §4.4) — these must always ship
+ * (CLI deploy + the github_commit tool collect them). The walker includes
+ * them by construction: AGENTS.md sits at the root and .context/ is not a
+ * SKIP_DIRS entry; the list exists as the explicit contract + unit-test pin.
+ */
+export const AGENT_STUB_FILES = [ 'AGENTS.md', '.context/README.md' ] as const;
+
 /** Binary extensions that must not be read as UTF-8. */
 export const BINARY_EXTENSIONS = new Set( [
 	'png', 'jpg', 'jpeg', 'webp', 'avif', 'gif', 'ico',
