@@ -289,6 +289,15 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
 
 ## Repo conventions
 
+- **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to
+  the public repo `nvdigitalsolutions/nvoos-astro-forge` by
+  `.github/workflows/sync-nvoos-astro-forge.yml` (flat history,
+  force-pushed; the whole MIT subtree ships — `dist/` is gitignored).
+  Activation: public repo + the `NVOOS_ASTRO_FORGE_REPO_TOKEN` secret
+  (contents:write) + one workflow_dispatch backfill. Never commit to the
+  mirror directly. The npm `repository` field still points at the monorepo
+  directory (provenance source of truth).
+
 - PRs against `alpha-working`, owner-merge; explicit-path staging (`git add
   <file>`, never `-A`) — see `mcp-ai-wpoos-git-ops`.
 - Adding a skill updates the inventories: `AGENTS.md` (2 spots) +

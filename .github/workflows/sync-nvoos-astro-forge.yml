@@ -1,0 +1,44 @@
+name: Sync nvoos-astro-forge
+
+# One-way mirror of the Astro Forge generator (Proposal 096) to the PUBLIC
+# repo nvdigitalsolutions/nvoos-astro-forge — the consumer-facing checkout
+# of the npm package @nvdigitalsolutions/nvoos-astro-forge.
+#
+# Pure MIT source (owner decision Q7) — the whole subtree ships, tests and
+# dev tooling included. dist/ is gitignored and built at publish time, so
+# it never appears here.
+#
+# Mirror history is intentionally flat (one commit per sync, force-pushed).
+# Never commit to the mirror directly.
+#
+# Activation (owner steps, one-time):
+#   1. Create the repo nvdigitalsolutions/nvoos-astro-forge (public, MIT).
+#   2. Add a repo-scoped token with contents:write on the mirror as the
+#      repository secret NVOOS_ASTRO_FORGE_REPO_TOKEN.
+#   3. Run this workflow once via workflow_dispatch (backfills the mirror).
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-astro-forge/**'
+      - '.github/workflows/sync-nvoos-astro-forge.yml'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=examples/nvoos-astro-forge --branch=forge-mirror-split
+
+      - name: Push to nvoos-astro-forge
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.NVOOS_ASTRO_FORGE_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-astro-forge.git forge-mirror-split:main --force
