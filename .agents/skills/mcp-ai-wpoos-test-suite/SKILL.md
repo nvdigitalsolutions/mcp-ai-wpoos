@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 85 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, init-time post-insert $wp_rewrite warnings, wp-phpunit _delete_all_posts boot wiping, queue-worker failure contract, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 85 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, static-registry leaks, fallback-autoloader masking, queue-worker failure contract, and more — see the patterns section). Covers the cluster-by-cluster PR workflow and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos

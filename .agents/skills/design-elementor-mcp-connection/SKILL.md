@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-elementor-mcp-connection
-description: Connect and manage Elementor MCP servers as "MCP Apps" on NV oOS assistants — official Elementor MCP (application passwords, permission inheritance, enable/revoke flows), third-party Elementor MCP plugins, the Pro MCP Apps metabox/slash-command/REST surfaces, the Remote Sites "MCP Server" connection type with assistant connection_ref references, auth-type mapping (basic vs header vs oauth), the host allowlist (Security Center setting, constant, filter), tool discovery/bridging into chat, and troubleshooting (allowlist 403s, restricted hosts, protocol fallback, negative discovery cache, same-site in-process bridge, missing connection_ref). Use when connecting an assistant to Elementor MCP, creating a Remote Sites MCP Server connection, using /mcp-app, fixing Test Connection or Discover Tools failures, allowlisting an Elementor host, or debugging bridged elementor_* tools missing from chat.
+description: Connect and manage Elementor MCP servers as "MCP Apps" on NV oOS assistants — official Elementor MCP (application passwords, enable/revoke flows), the Pro MCP Apps metabox/slash-command/REST surfaces, the Remote Sites "MCP Server" connection type, auth-type mapping (basic vs header vs oauth), the host allowlist, and troubleshooting (allowlist 403s, restricted hosts, protocol fallback, negative discovery cache, missing connection_ref). Use when connecting an assistant to Elementor MCP, creating a Remote Sites MCP Server connection, using /mcp-app, fixing Test Connection or Discover Tools failures, allowlisting an Elementor host, or debugging bridged elementor_* tools missing from chat.
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill

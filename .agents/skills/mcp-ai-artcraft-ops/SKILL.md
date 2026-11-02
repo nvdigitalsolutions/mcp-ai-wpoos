@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-artcraft-ops
-description: "Operational guide for the ArtCraft MCP integration — the community Python rebuild (C:\\Users\\rasta\\artcraft-mcp-py\\artcraft_mcp_server.py) that replaces the broken upstream artcraft-mcp.exe, the live api.storyteller.ai/v1 API map (required headers, cookie auth, endpoint schemas), the upstream bug/PR trail (issues #1/#3, PR #2), the reverse-engineering playbook (browser capture, cookie injection, schema fishing via validation errors, handshake replay, Windows MITM kit), and the generic MCP-protocol debugging playbook (snake_case servers, the shim pattern, 'missing field protocolVersion' diagnosis). Use when working on ArtCraft MCP tools, debugging an artcraft server connection, extending the Python rebuild, or diagnosing any third-party MCP handshake failure."
+description: "Operational guide for the ArtCraft MCP integration — the community Python rebuild (C:\\Users\\rasta\\artcraft-mcp-py\\artcraft_mcp_server.py), the live api.storyteller.ai/v1 API map, the reverse-engineering playbook (browser capture, cookie injection, schema fishing, handshake replay), and the generic MCP-protocol debugging playbook (snake_case servers, the shim pattern, 'missing field protocolVersion' diagnosis). Use when working on ArtCraft MCP tools, debugging an artcraft server connection, extending the Python rebuild, or diagnosing any third-party MCP handshake failure."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
