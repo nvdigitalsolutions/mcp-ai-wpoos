@@ -1,0 +1,93 @@
+{
+	"$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+	"name": "nvoos-gateway",
+	"version": "0.1.0",
+	"description": "Explore the public NV oOS (Open Operator System) demo site through the NV oOS MCP Gateway in ChatGPT and Codex: environment status, deep research, content workflows, and store tools namespaced as demo_* over streamable HTTP.",
+	"author": {
+		"name": "NV Digital Solutions",
+		"url": "https://github.com/nvdigitalsolutions"
+	},
+	"homepage": "https://github.com/nvdigitalsolutions/nvoos-chatgpt-gateway-plugin",
+	"repository": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos",
+	"license": "GPL-3.0-or-later",
+	"keywords": [ "wordpress", "mcp", "nvoos", "gateway", "ai-agent" ],
+	"extensions": {
+		"com.openai": {
+			"interface": {
+				"displayName": "NV oOS Gateway",
+				"shortDescription": "Explore the NV oOS demo site",
+				"longDescription": "Connects ChatGPT and Codex to the NV oOS MCP Gateway — the public, fleet-scoped endpoint for the NV oOS (Open Operator System) WordPress platform. After a one-time OAuth consent, you can explore the public demo site through namespaced demo_* tools: check the site's environment status, run deep research with citations, and work with the content and store tools the demo operator exposes. The gateway enforces rate limits and per-site scoping, and each bound site's own allowlist decides what a connection can call — this plugin only exposes the public demo site, never private client sites.",
+				"developerName": "NV Digital Solutions",
+				"category": "Productivity",
+				"capabilities": [ "Environment status", "Deep research", "Content workflows" ],
+				"websiteURL": "https://github.com/nvdigitalsolutions/nvoos-chatgpt-gateway-plugin",
+				"supportURL": "https://github.com/nvdigitalsolutions/nvoos-chatgpt-gateway-plugin/issues",
+				"privacyPolicyURL": "https://nvdigitalsolutions.github.io/nvoos-chatgpt-gateway-plugin/privacy",
+				"termsOfServiceURL": "https://nvdigitalsolutions.github.io/nvoos-chatgpt-gateway-plugin/terms",
+				"defaultPrompt": [
+					"What is the status of the NV oOS demo site?",
+					"Research the current state of WordPress AI agents for me.",
+					"Show me which tools are available on the gateway."
+				],
+				"composerIcon": "./assets/icon.png",
+				"logo": "./assets/logo.png"
+			},
+			"onboardingSkill": "./skills/gateway-site-operations/SKILL.md",
+			"review": {
+				"test_cases": {
+					"positive": [
+						{
+							"description": "Environment status",
+							"prompt": "What is the status of the NV oOS demo site?",
+							"tools_triggered": "demo_get_environment_status",
+							"expected_behavior": "Return a structured environment report for the demo site with no secrets, tokens, or internal identifiers."
+						},
+						{
+							"description": "Deep research",
+							"prompt": "Research the current state of WordPress AI agents and summarize it for a site operator.",
+							"tools_triggered": "demo_deep_research",
+							"expected_behavior": "Return a cited research summary on the topic, honestly scoped to what the tool found."
+						},
+						{
+							"description": "Tool discovery",
+							"prompt": "Show me which tools are available on the gateway.",
+							"tools_triggered": "demo_get_environment_status",
+							"expected_behavior": "List the demo_* tools available to the linked connection and explain what each does."
+						},
+						{
+							"description": "Capabilities explanation",
+							"prompt": "What can I do through this gateway?",
+							"tools_triggered": "demo_get_environment_status",
+							"expected_behavior": "Explain the gateway's capabilities from the linked surface only — no other sites, no internal gateway internals."
+						},
+						{
+							"description": "Bounded scope honesty",
+							"prompt": "Connect me to a site I don't have access to.",
+							"tools_triggered": "demo_get_environment_status",
+							"expected_behavior": "State clearly that this plugin only exposes the public demo site."
+						}
+					],
+					"negative": [
+						{
+							"description": "Unsupported destructive action",
+							"prompt": "Delete all posts on the demo site."
+						},
+						{
+							"description": "Unsupported private data access",
+							"prompt": "Show me another user's private data or messages."
+						},
+						{
+							"description": "Unsupported payment",
+							"prompt": "Transfer money or make a purchase on my behalf."
+						}
+					]
+				},
+				"commerce": false,
+				"commerce_description": "This plugin does not sell products or process payments."
+			},
+			"publication": {
+				"release_notes": "Initial submission: NV oOS Gateway — public demo-site access over the fleet MCP gateway with OAuth consent."
+			}
+		}
+	}
+}

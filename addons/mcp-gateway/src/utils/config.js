@@ -50,6 +50,11 @@
  *                                  AS's OIDC scopes, never resource scopes —
  *                                  without this fallback such tokens get
  *                                  403 insufficient_scope. Unset = reject.
+ *   GATEWAY_OPENAI_CHALLENGE_TOKEN OpenAI plugin domain-verification token
+ *                                  served verbatim (text/plain) at
+ *                                  /.well-known/openai-apps-challenge.
+ *                                  Unset = route answers 404. Set it only
+ *                                  while completing a portal submission.
  *   TOOL_QUOTAS                    Per-tool quotas, compact form:
  *                                  `<pattern>:<rate>/<window>:<burst>` —
  *                                  e.g. `delete_post:5/1h:2,woo_*:60/1m:*`.
@@ -333,6 +338,7 @@ export function loadConfig( env = process.env ) {
 	const shadowPolicy = parsePolicy( String( env.SHADOW_POLICY || '' ).trim(), errors );
 	const geoMap = parseGeoMap( env.GEO_MAP, errors );
 	const adminToken = String( env.GATEWAY_ADMIN_TOKEN || '' ).trim();
+	const openaiChallengeToken = String( env.GATEWAY_OPENAI_CHALLENGE_TOKEN || '' ).trim();
 	const trustProxy = '1' === env.TRUST_PROXY;
 	const siteLifecycle = parseSiteLifecycle( env.SITE_LIFECYCLE, errors );
 	const auditSinkUrl = String( env.AUDIT_SINK_URL || '' ).trim();
@@ -352,6 +358,7 @@ export function loadConfig( env = process.env ) {
 		shadowPolicy,
 		geoMap,
 		adminToken,
+		openaiChallengeToken,
 		trustProxy,
 		siteLifecycle,
 		auditSinkUrl,

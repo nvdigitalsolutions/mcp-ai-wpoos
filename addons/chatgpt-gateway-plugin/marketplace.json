@@ -1,0 +1,20 @@
+{
+	"name": "nvoos-chatgpt-gateway-plugin",
+	"interface": {
+		"displayName": "NV oOS Gateway"
+	},
+	"plugins": [
+		{
+			"name": "nvoos-gateway",
+			"source": {
+				"source": "local",
+				"path": "./"
+			},
+			"policy": {
+				"installation": "AVAILABLE",
+				"authentication": "ON_INSTALL"
+			},
+			"category": "Productivity"
+		}
+	]
+}

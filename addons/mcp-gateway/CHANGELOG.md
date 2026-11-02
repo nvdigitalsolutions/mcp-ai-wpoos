@@ -1,5 +1,17 @@
 # Changelog — NV oOS MCP Gateway
 
+## [0.3.0] — 2026-11-02
+
+- Add the OpenAI plugin domain-verification route:
+  `GET /.well-known/openai-apps-challenge` serves
+  `GATEWAY_OPENAI_CHALLENGE_TOKEN` verbatim as `text/plain` (no JSON, no
+  trailing newline, `Cache-Control: no-store`) and answers 404 while the
+  token is unset — the surface is inert until a portal submission needs it
+  (Proposal 101, Phase A).
+- Align the `VERSION` constant with `package.json` at 0.3.0 — the 0.2.1
+  separator-rename bump updated `package.json` but missed the constant, so
+  `/health` reported 0.2.0 and the mirror health test would have failed.
+
 ## Unreleased
 
 - Rename the tool-namespacing separator from `.` to `_`

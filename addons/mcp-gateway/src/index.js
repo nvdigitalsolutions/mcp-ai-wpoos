@@ -23,11 +23,12 @@ import { landingRouter } from './routes/landing.js';
 import { adminRouter } from './admin/router.js';
 import { mcpRouter, discoveryHandler } from './routes/mcp.js';
 import { oauthRouter } from './routes/oauth.js';
+import { challengeRouter } from './routes/challenge.js';
 
 // Must track `package.json` `version` — the deploy-verification runbook
 // (`docs/operations/deployment/mcp-gateway-velocity-setup.md` §7) keys off
 // `/health` reporting this value.
-export const VERSION = '0.2.0';
+export const VERSION = '0.3.0';
 
 /**
  * Build the gateway app.
@@ -78,6 +79,10 @@ export function createApp( overrides = {} ) {
 	// ── OAuth 2.1 well-known (public, RFC 9728) ──────────────────
 	// Inert (404) until GATEWAY_OAUTH_ISSUER is configured.
 	app.use( oauthRouter() );
+
+	// ── OpenAI plugin domain-verification challenge (public) ─────
+	// Inert (404) until GATEWAY_OPENAI_CHALLENGE_TOKEN is configured.
+	app.use( challengeRouter() );
 
 	// Static assets (landing page icon). Same origin, cache-friendly.
 	app.use(
