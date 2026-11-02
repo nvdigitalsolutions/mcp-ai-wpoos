@@ -221,6 +221,47 @@ export async function getAll<T>(
 	return [...first.docs, ...rest.flatMap((p) => p.docs)];
 }
 
+/** Fetch one page of a collection, degrading a 404 to null.
+ *
+ * For AUXILIARY reads only (the home-page stat counts): a 404 here means
+ * the backend predates this collection (deployment version skew — e.g. the
+ * bridge plugin on the backend lacks a newer endpoint). An absent stat must
+ * not fail the whole render. Malformed envelopes and other statuses still
+ * throw loudly (P5 discipline is untouched). Null results are not memoized
+ * so a later backend deploy becomes visible on the next render.
+ */
+export async function getCollectionOrNull<T>(
+	collection: CollectionSlug,
+	requestUrl: string | URL | undefined,
+	params: {
+		page?: number;
+		limit?: number;
+		where?: WhereClause;
+		sort?: SortValue;
+	} = {}
+): Promise<PaginatedCollection<T> | null> {
+	const query = buildCollectionQuery(params);
+	const suffix = query ? `?${query}` : '';
+	const url = joinPath(resolveBase(requestUrl), collection) + suffix;
+
+	const hit = memo.get(url) as PaginatedCollection<T> | undefined;
+	if (hit) {
+		return hit;
+	}
+
+	const res = await fetch(url, { headers: { accept: 'application/json' } });
+	if (res.status === 404) {
+		return null;
+	}
+	if (!res.ok) {
+		throw new Error(`Commerce API ${res.status} for ${url}`);
+	}
+	const data = await res.json();
+	const validated = assertEnvelope<T>(data, collection);
+	memo.set(url, validated);
+	return validated;
+}
+
 /** Fetch a single product by ID (SSR fallback + 404 handling). */
 export async function getProduct(
 	id: number,

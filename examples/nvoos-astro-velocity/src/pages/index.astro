@@ -17,16 +17,15 @@ import ProductGrid from '../components/ProductGrid.astro';
 import HomeStats from '../islands/HomeStats';
 import StackExplorer from '../islands/StackExplorer';
 import {
-	getBrands,
-	getCategories,
+	getCollectionOrNull,
 	getGlobal,
-	getPosts,
 	getProducts,
 } from '../lib/commerce/client';
 import { normalizeProductMedia } from '../lib/commerce/normalize';
 import { organizationJsonLd, webSiteJsonLd } from '../lib/seo/jsonld';
 import { pageTitle } from '../lib/seo/meta';
 import { absoluteUrl } from '../lib/url';
+import type { Brand, Category, ContentDoc } from '../lib/commerce/types';
 import type { Banner as BannerData } from '../lib/commerce/types';
 import '../styles/home.css';
 
@@ -41,9 +40,15 @@ const [banner, newest, topRated, categoryMeta, brandMeta, postMeta] =
 		getGlobal('banner', Astro.url),
 		getProducts(Astro.url, { page: 1, limit: 50, sort: 'date' }),
 		getProducts(Astro.url, { page: 1, limit: 50, sort: '-rating' }),
-		getCategories(Astro.url, { page: 1, limit: 1 }),
-		getBrands(Astro.url, { page: 1, limit: 1 }),
-		getPosts(Astro.url, { page: 1, limit: 1 }),
+		// The auxiliary stat counts degrade to null on a 404 so a backend
+		// that predates one of these collections (deployment version skew)
+		// shows "—" instead of 500ing the landing page.
+		getCollectionOrNull<Category>('categories', Astro.url, { page: 1, limit: 1 }),
+		getCollectionOrNull<Brand>('brands', Astro.url, { page: 1, limit: 1 }),
+		getCollectionOrNull<ContentDoc>('content/posts', Astro.url, {
+			page: 1,
+			limit: 1,
+		}),
 	]);
 
 const normalizeList = (list: typeof newest.docs) =>
@@ -59,9 +64,9 @@ const fallback = normalizeList(newest.docs.slice(0, 8));
 
 const liveCounts = {
 	products: newest.totalDocs,
-	categories: categoryMeta.totalDocs,
-	brands: brandMeta.totalDocs,
-	posts: postMeta.totalDocs,
+	categories: categoryMeta?.totalDocs ?? null,
+	brands: brandMeta?.totalDocs ?? null,
+	posts: postMeta?.totalDocs ?? null,
 };
 
 const site = Astro.site ?? new URL('https://store.nvoos.cloud');

@@ -3,6 +3,7 @@ import {
 	buildCollectionQuery,
 	buildWhereParams,
 	getCollection,
+	getCollectionOrNull,
 	getAll,
 	getShop,
 	getThemePolicy,
@@ -106,6 +107,66 @@ describe('getCollection / getAll', () => {
 		await expect(getCollection<Product>('products', requestUrl)).rejects.toThrow(
 			/502/
 		);
+	});
+
+	describe('getCollectionOrNull (auxiliary reads)', () => {
+		const homeUrl = new URL('https://store.example/');
+
+		it('returns the validated envelope when the endpoint exists', async () => {
+			vi.stubGlobal(
+				'fetch',
+				vi.fn(async () =>
+					new Response(
+						JSON.stringify({
+							docs: [],
+							totalDocs: 3,
+							limit: 1,
+							totalPages: 1,
+							page: 1,
+							hasNextPage: false,
+							hasPrevPage: false,
+						}),
+						{ status: 200 }
+					)
+				)
+			);
+			const data = await getCollectionOrNull<{ id: number }>(
+				'content/posts',
+				homeUrl,
+				{ limit: 1 }
+			);
+			expect(data?.totalDocs).toBe(3);
+		});
+
+		it('degrades a 404 to null (backend predates the collection)', async () => {
+			vi.stubGlobal(
+				'fetch',
+				vi.fn(async () => new Response('{}', { status: 404 }))
+			);
+			await expect(
+				getCollectionOrNull<{ id: number }>('content/posts', homeUrl)
+			).resolves.toBeNull();
+		});
+
+		it('still throws on other failures and malformed envelopes', async () => {
+			vi.stubGlobal(
+				'fetch',
+				vi.fn(async () => new Response('{}', { status: 502 }))
+			);
+			await expect(
+				getCollectionOrNull<{ id: number }>('content/posts', homeUrl)
+			).rejects.toThrow(/502/);
+
+			vi.stubGlobal(
+				'fetch',
+				vi.fn(async () =>
+					new Response(JSON.stringify({ items: [] }), { status: 200 })
+				)
+			);
+			await expect(
+				getCollectionOrNull<{ id: number }>('content/posts', homeUrl)
+			).rejects.toThrow(/envelope/);
+		});
 	});
 
 	it('accumulates all pages for getAll', async () => {
