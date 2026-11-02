@@ -439,6 +439,7 @@ export const api = {
   updateSettings: (settings: Settings) => invoke<Settings>('update_settings', { settings }),
   getStatus: () => invoke<StatusInfo>('get_status'),
   	checkSpa: (url: string) => invoke<SpaCheck>('check_spa', { url }),
+  	openNvoosConsole: () => invoke<void>('open_nvoos_console'),
   getDiagnostics: () => invoke<DiagnosticsInfo>('get_diagnostics'),
   listInputDevices: () => invoke<string[]>('list_input_devices'),
   restartMicrophone: () => invoke<DiagnosticsInfo['mic']>('restart_microphone'),

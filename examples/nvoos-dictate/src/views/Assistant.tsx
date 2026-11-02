@@ -1,18 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api, type Settings } from '../lib/ipc';
 
 /**
- * NV oOS — the Complete Velocity console.
+ * NV oOS — the Complete Velocity console launcher.
  *
- * The configured "Default Complete Velocity URL" is rendered in a single
- * sandboxed iframe. Every NV oOS surface (assistant, chat, toolkits,
- * schedule, media, documents, …) is wrapped inside the
- * nvoos-complete-velocity console, so the hub's earlier per-addon surface
- * discovery and sub-tabs were retired: one frame, one origin, and tab
- * switches inside the app never reload the console.
+ * The console opens in its own top-level window rather than an embedded
+ * iframe: its WordPress sign-in is cookie-based, and embedded frames are a
+ * third-party context where WebView2 refuses to store cookies — the login
+ * fails with a misleading "Invalid username or password". A first-party
+ * window is the same context as a browser tab, so sign-in works normally.
  */
 export default function AssistantView() {
   const [url, setUrl] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -25,6 +25,15 @@ export default function AssistantView() {
     })();
   }, []);
 
+  const open = useCallback(async () => {
+    setError(null);
+    try {
+      await api.openNvoosConsole();
+    } catch (e) {
+      setError(String(e));
+    }
+  }, []);
+
   if (!url) {
     return (
       <section className="card">
@@ -32,21 +41,29 @@ export default function AssistantView() {
         <p className="muted">
           No Complete Velocity URL is configured. Set the{' '}
           <strong>Default Complete Velocity URL</strong> under{' '}
-          <strong>Settings → NV oOS</strong> and the console will appear here.
+          <strong>Settings → NV oOS</strong> and the console will open from here.
         </p>
       </section>
     );
   }
 
   return (
-    <div className="nvoos-hub">
-      <iframe
-        className="assistant-frame"
-        title="NV oOS Complete Velocity"
-        src={url}
-        sandbox="allow-scripts allow-same-origin allow-forms"
-        referrerPolicy="no-referrer"
-      />
-    </div>
+    <section className="card">
+      <h2>NV oOS Console</h2>
+      <p className="muted">
+        The console opens in its own window at <strong>{url}</strong> — a first-party context, so
+        its WordPress sign-in works exactly like a browser tab.
+      </p>
+      {error && (
+        <p className="muted" style={{ color: 'var(--danger)' }}>
+          {error}
+        </p>
+      )}
+      <div className="btn-row">
+        <button className="btn" onClick={() => void open()}>
+          Open NV oOS Console
+        </button>
+      </div>
+    </section>
   );
 }

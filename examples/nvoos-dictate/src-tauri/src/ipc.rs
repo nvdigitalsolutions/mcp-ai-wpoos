@@ -185,7 +185,8 @@ fn validate_spa_url(raw: &str) -> AppResult<String> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return Err(AppError::NotConfigured(
-            "No Pro SPA URL is configured (Settings > NV oOS > Assistant tab URL)".into(),
+            "No Complete Velocity URL is configured (Settings → NV oOS → Default Complete Velocity URL)"
+                .into(),
         ));
     }
     let https_ok = trimmed.starts_with("https://");
@@ -193,7 +194,8 @@ fn validate_spa_url(raw: &str) -> AppResult<String> {
         trimmed.starts_with("http://localhost") || trimmed.starts_with("http://127.0.0.1");
     if !https_ok && !localhost_ok {
         return Err(AppError::Other(
-            "Pro SPA URL must use https:// (http://localhost allowed for development)".into(),
+            "Complete Velocity URL must use https:// (http://localhost allowed for development)"
+                .into(),
         ));
     }
     Ok(trimmed.trim_end_matches('/').to_string())
@@ -229,6 +231,18 @@ pub async fn check_spa(url: String) -> AppResult<SpaCheck> {
             message: format!("unreachable: {e}"),
         }),
     }
+}
+
+/// Open (or refocus) the NV oOS Complete Velocity console in its own
+/// first-party window. The console's cookie-based WordPress sign-in needs a
+/// top-level context — WebView2 blocks third-party cookies for cross-site
+/// iframes, so embedding the console in the main window breaks sign-in
+/// (masked by the console as "Invalid username or password").
+#[tauri::command]
+pub fn open_nvoos_console(app: tauri::AppHandle, state: State<'_, AppState>) -> AppResult<()> {
+    let settings = state.settings_snapshot();
+    let url = validate_spa_url(&settings.spa.url)?;
+    crate::ensure_nvoos_console_window(&app, &url)
 }
 
 /// Whether the resident vision loop is currently running.
