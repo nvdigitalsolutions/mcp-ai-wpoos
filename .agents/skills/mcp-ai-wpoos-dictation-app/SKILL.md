@@ -1,20 +1,22 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks (Proposals 073/075/076), the screen-OCR snippet track (Proposal 100, features snippet/snippet-onnx), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, or screen OCR.
+description: Operational guide for the NV oOS Cognition desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks (Proposals 073/075/076), the screen-OCR snippet track (Proposal 100, features snippet/snippet-onnx), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, or screen OCR.
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
-  app-version: "0.2.0"
+  app-version: "0.3.0"
   proposal: "067"
   pr: "7043"
   last-updated: "2026-11-02"
 ---
-# NV oOS Dictation App — Build, Engines, and Verification Guide
+# NV oOS Cognition App — Build, Engines, and Verification Guide
 
 Operational guide for `examples/nvoos-dictate` (Proposal 067, PR #7011):
 a local-first push-to-talk dictation + meeting transcription desktop app
-with the NV oOS plugin as the optional AI-enrichment backend.
+with the NV oOS plugin as the optional AI-enrichment backend. The product
+brand is **NV oOS Cognition** (v0.3.0 rebrand); technical identifiers stay
+`nvoos-dictate` (crate, binary, updater tags, data dirs) — see Proposal 103.
 
 ## When to use this skill
 
@@ -115,7 +117,7 @@ examples/nvoos-dictate/
 pubkey). Without it the app panics at boot:
 
 ```
-error while running NV oOS Dictation: PluginInitialization("updater",
+error while running NV oOS Cognition: PluginInitialization("updater",
 "Error deserializing 'plugins.updater' within your Tauri configuration:
 invalid type: null, expected struct Config")
 ```
@@ -172,7 +174,7 @@ The GitHub macOS runner is the remote Mac. The full remote loop:
   universal DMG via publish-nvoos-dictate.yml; targeted builds land under
   `src-tauri/target/<triple>/debug/bundle/macos/`
   (`universal-apple-darwin` for universal), not `target/debug/`.
-- **Interactive:** run the `NV oOS Dictation — macOS interactive session`
+- **Interactive:** run the `NV oOS Cognition — macOS interactive session`
   workflow (`workflow_dispatch`) — builds the bundle, runs
   `scripts/macos-matrix-remote.sh` (the automatable subset of
   `docs/ptt-matrix-macos.md`: bundle surface, sidecar `--check`, boot
@@ -215,7 +217,7 @@ Platform pitfalls that already cost CI runs:
 
 - **Tauri v2 keeps the Cargo binary name as the bundle executable** —
   `Contents/MacOS/nvoos-dictate`, NOT productName
-  (`Contents/MacOS/NV oOS Dictation` does not exist). Discover it with
+  (`Contents/MacOS/NV oOS Cognition` does not exist). Discover it with
   `find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -u+x ! -name
   '*helper*' -print -quit` or read `CFBundleExecutable`.
 - **`screencapture -x` produces no image on GitHub macOS runners** —
@@ -853,6 +855,20 @@ Electron-world standard for cookie-authenticated third-party surfaces
 - **CSP** — the main window no longer carries `frame-src` (no iframes
   remain). The console window loads a remote URL, which is governed by the
   console's own headers/CSP, not the app's.
+- **Direct composer delivery** — when the console window is open and an app
+  window is foreground, dictation inserts into the console's chat composer
+  via `console_window.eval(...)` using the React-safe native value setter +
+  a bubbling `input` event (a plain `textarea.value` assignment desyncs
+  React state) with a 2 s retry; otherwise it falls back to an OS-level
+  Ctrl+V paste through a real `VK_V` `keybd_event` (`enigo` unicode
+  injection is ignored by Chromium/WebView2). A "no speech detected"
+  result never pastes silence. The composer is resolved by
+  `querySelector('textarea')` — if the console changes its DOM, scope the
+  selector to the composer class.
+- **PTT liveness** — the LL-hook fallback keys off the event-driven
+  `LAST_EVENT_MS` inside `hook_proc` (timer-driven heartbeats can't detect
+  delivery stalls), and `open_nvoos_console` is `async` (a sync command
+  that opens a window deadlocks the main thread).
 
 ### Reachability probe (`check_spa` IPC) — the two hard rules
 
@@ -1027,6 +1043,22 @@ New this session (2026-11-02): **screen OCR snippet (Proposal 100)** —
   `cargo test` 117 default / 122 snippet / 126 snippet-onnx, `npm run build`.
   The complete-build union and `verify_complete_build.ps1` now include
   `snippet,snippet-onnx`.
+
+New this session (2026-11-02): **rebrand to NV oOS Cognition v0.3.0 +
+  public mirror** — the product name, window titles, macOS `.app` paths,
+  CI workflow names and the publish release title move to the Cognition
+  brand; technical identifiers stay `nvoos-dictate` (crate, binary,
+  updater tags `nvoos-dictate-v*`, `%APPDATA%/nvoos-dictate`, keychain
+  targets) for updater/keychain/data-dir continuity (Proposal 103). The
+  publish workflow no longer runs `scripts/gen-icons.mjs` — that script
+  emits placeholder art and would overwrite the committed brand icons in
+  every release bundle; it is bootstrap-only. `examples/nvoos-dictate` is
+  mirrored one-way to the public repo
+  `nvdigitalsolutions/nvoos-cognition` by
+  `.github/workflows/sync-nvoos-cognition.yml` (subtree split + force
+  push; the owner must add the `NVOOS_COGNITION_REPO_TOKEN` secret and
+  dispatch once to backfill). The mirror carries the proprietary
+  `LICENSE.txt` — source-visible, not open-source.
 
 ## Related skills
 
