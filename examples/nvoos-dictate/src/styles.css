@@ -7,8 +7,11 @@
   --border: #2c2c3e;
   --text: #e8e8f0;
   --muted: #9a9ab0;
-  --accent: #f59e42;
-  --accent-2: #7c5cff;
+  /* Brand accents follow the app icon (nvoos-icon.svg): cyan #25cbe7 +
+     purple #713cec. The purple is lightened to #9d7bff so accent-colored
+     text keeps AA contrast on the dark background (raw icon purple is 3.2:1). */
+  --accent: #25cbe7;
+  --accent-2: #9d7bff;
   --ok: #3ecf8e;
   --warn: #f5c542;
   --danger: #ff5c5c;
@@ -60,7 +63,7 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
 .version {
