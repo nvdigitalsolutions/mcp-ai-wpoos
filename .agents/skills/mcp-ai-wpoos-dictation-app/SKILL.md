@@ -1056,8 +1056,10 @@ New this session (2026-11-02): **rebrand to NV oOS Cognition v0.3.0 +
   mirrored one-way to the public repo
   `nvdigitalsolutions/nvoos-cognition` by
   `.github/workflows/sync-nvoos-cognition.yml` (subtree split + force
-  push; the owner must add the `NVOOS_COGNITION_REPO_TOKEN` secret and
-  dispatch once to backfill). The mirror carries the proprietary
+  push; the `NVOOS_COGNITION_REPO_TOKEN` repo secret was added by the
+  owner on 2026-11-02 — until the PR merges the workflow file exists only
+  on the feature branch, so the backfill dispatch uses the filename-form
+  Actions API against that ref). The mirror carries the proprietary
   `LICENSE.txt` — source-visible, not open-source.
 
 ## Related skills
