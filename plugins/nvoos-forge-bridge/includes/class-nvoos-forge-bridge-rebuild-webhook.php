@@ -51,7 +51,9 @@ final class Rebuild_Webhook {
 	 * @return void
 	 */
 	public static function init(): void {
-		add_action( 'save_post', array( self::class, 'on_content_changed' ) );
+		add_action( 'save_post', array( self::class, 'on_post_changed' ), 10, 1 );
+		add_action( 'delete_post', array( self::class, 'on_post_changed' ), 10, 1 );
+		add_action( 'trashed_post', array( self::class, 'on_post_changed' ), 10, 1 );
 		add_action( 'created_term', array( self::class, 'on_content_changed' ) );
 		add_action( 'edited_term', array( self::class, 'on_content_changed' ) );
 		add_action( 'delete_term', array( self::class, 'on_content_changed' ) );
@@ -59,7 +61,24 @@ final class Rebuild_Webhook {
 	}
 
 	/**
-	 * Post/term save hook.
+	 * Post save/delete/trash hook — skips revision, autosave, and auto-draft
+	 * noise so editing never wastes a dispatch on content that does not ship.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return void
+	 */
+	public static function on_post_changed( $post_id ): void {
+		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+			return;
+		}
+		if ( 'auto-draft' === get_post_status( $post_id ) ) {
+			return;
+		}
+		self::schedule( 'content' );
+	}
+
+	/**
+	 * Term save hook.
 	 *
 	 * @return void
 	 */

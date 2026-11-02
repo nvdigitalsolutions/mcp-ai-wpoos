@@ -175,9 +175,15 @@ jobs:
             --exclude='./.phpunit.cache' \
             --exclude='./.phpunit.result.cache' \
             --exclude='./README.md' \
+            --exclude='./WPORG-REVIEW-*.md' \
+            --exclude='./CHANGELOG.md' \
+            --exclude='./CONTRIBUTING.md' \
             --exclude='./.wordpress-org' \
             --exclude='./.gitignore' \
             --exclude='./.distignore' \
+            --exclude='*.log' \
+            --exclude='./.DS_Store' \
+            --exclude='./Thumbs.db' \
             . | tar -C /tmp/plugin-src/nvoos-forge-bridge -xf -
           ls -la /tmp/plugin-src/nvoos-forge-bridge/
 

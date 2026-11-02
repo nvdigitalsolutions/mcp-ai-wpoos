@@ -1,6 +1,6 @@
 === NV oOS Forge Bridge ===
 Contributors: vsamtani
-Tags: headless, rebuild, webhook, astro, ci
+Tags: headless, rebuild, webhook, automation, static-site
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
@@ -14,9 +14,9 @@ Fires a signed GitHub repository_dispatch when content changes so an Astro Forge
 
 The NV oOS Forge Bridge is the WordPress half of the Astro Forge freshness loop (Proposal 096): WordPress stays the CMS, and this plugin tells the build pipeline when content moved.
 
-* **Rebuild webhook** — every post, page, product, term, or front-page setting change schedules one debounced, HMAC-signed `repository_dispatch` POST (10-minute debounce, in-request dedupe). The request carries the `X-Forge-Signature: sha256=…` header AND a self-verifying signature inside the payload (HMAC over `time.nonce`), so the CI pipeline fails closed on spoofed or stale triggers. Disabled until configured.
+* **Rebuild webhook** — every post, page, product, or term save/trash/delete, plus front-page setting changes, schedules one debounced, HMAC-signed `repository_dispatch` POST (10-minute debounce, in-request dedupe). Autosaves, revisions, and auto-drafts are ignored — a rebuild is never wasted on content that does not ship. The request carries the `X-Forge-Signature: sha256=…` header AND a self-verifying signature inside the payload (HMAC over `time.nonce`), so the CI pipeline fails closed on spoofed or stale triggers. Disabled until configured.
 * **Inbound rebuild trigger** — `POST /wp-json/nvoos-forge/v1/rebuild` accepts only requests carrying a valid signature, so external systems can request a rebuild with proof of the shared secret.
-* **Preview tokens** — `POST /wp-json/nvoos-forge/v1/preview-tokens` (editors+) mints a single-use, 15-minute bearer token; `GET …/preview-tokens/verify?token=…` consumes it. Tokens are stored hashed, never in plaintext.
+* **Preview tokens** — `POST /wp-json/nvoos-forge/v1/preview-tokens` (editors and above) mints a single-use, 15-minute bearer token; `POST …/preview-tokens/verify` with the token consumes it. Tokens are stored hashed, never in plaintext.
 * **Health** — `GET /wp-json/nvoos-forge/v1/health` returns a redacted status (versions, booleans, the webhook host) — never tokens, secrets, or full URLs.
 
 == Installation ==
@@ -33,7 +33,7 @@ No. Without an enabled flag, URL, token, and secret, every hook is a no-op.
 
 = What triggers a rebuild? =
 
-Post, page, product, and term saves/deletions, plus changes to the front-page, site-title, and tagline options — all debounced to one dispatch per 10 minutes.
+Post, page, product, and term saves, trashes, and deletions, plus changes to the front-page, site-title, and tagline options — all debounced to one dispatch per 10 minutes. Autosaves, revisions, and auto-drafts never trigger.
 
 = Are my credentials exposed? =
 
@@ -65,4 +65,4 @@ The uncompiled source of this plugin lives in the public repository at https://g
 == Changelog ==
 
 = 0.1.0 =
-* Initial release: signed rebuild webhook, inbound rebuild trigger, preview tokens, redacted health endpoint.
+* Initial release: signed rebuild webhook (autosave/revision/auto-draft skip, trash + delete hooks), inbound rebuild trigger, single-use preview tokens (editors+, POST-only verify), redacted health endpoint.
