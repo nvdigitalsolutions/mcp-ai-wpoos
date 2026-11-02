@@ -418,6 +418,24 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   plus the wired `feed`/`sitemap` surface pruning. The storefront runtime
   contract lives in the template README — velocity-side phases (P1–P3)
   are the sibling track in the 104 plan.
+- **Proposals 105 §4 + 106 P2 — shipped 2026-11-03 (the forge half):**
+  `--theme-policy auto|light|dark|brand:<slug>` preset (invalid → clack
+  error exit 2; default `auto`) baking `policy.generated.ts` in the
+  scaffold; **canonical** `templates/blog/src/lib/theme/policy.ts` (the
+  velocity storefront mirrors the ladder — keep logic identical; velocity
+  adds `contrastForced`/`storedContrast` and live-doc reads); template
+  `ThemeToggle` with forced-mode disable + delegated handlers
+  (`astro:after-swap` sync). **Hybrid local content (106 P2)**: the posts +
+  pages collections merge a local `glob()` (`src/content/posts|pages/*.mdx`)
+  with the WP loaders **inside `createWpLoader`** — Astro 7.4.4 has no
+  loaders-array, WP wins on store-id collision, network-level failures
+  degrade to local-only with a warning (HTTP errors still fail; products
+  never degrade); `@astrojs/mdx ^8.1.2` required for the mdx glob.
+  SEO-meta passthrough: `rank_math_title`/`rank_math_description` →
+  `yoast_head_json` (absent-plugin tolerant) in the posts/pages fields;
+  `seoTitle ?? title` precedence in the templates; `Article`/`BlogPosting`/
+  `WebPage` JSON-LD parity with velocity. Demo seed post ships in
+  `src/content/posts/` — forged sites build offline with no WP connection.
 
 ## Repo conventions
 

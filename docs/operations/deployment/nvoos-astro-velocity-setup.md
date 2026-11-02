@@ -130,6 +130,65 @@ Prerendered catalog pages update at build. The bridge's `RebuildWebhook`
 
 SSR paths (PLP/home) revalidate within `s-maxage` between builds anyway.
 
+Theme policy changes (Proposal 105) ride the same loop: a successful
+`PATCH /globals/theme` fires the rebuild webhook, so prerendered pages
+re-bake the policy; SSR pages pick the new policy up within 60 s
+(`s-maxage=60` on the doc) plus the SSR cache revision (cache entries carry
+`policy.updatedAt`).
+
+## Theme policy (Proposal 105)
+
+The bridge serves the owner-set theming policy at `GET /globals/theme`
+(public) / `PATCH /globals/theme` (`manage_astro`):
+
+```json
+{ "policy": "auto", "contrast": "auto", "defaultTheme": "dark",
+  "updatedAt": "2026-11-03T09:00:00Z", "$extensions": {} }
+```
+
+- `policy`: `auto | light | dark | brand:<slug>` — forced values disable the
+  storefront theme switcher (next-themes/Foxi behaviour); `auto` = visitor
+  preference → system → `defaultTheme`.
+- `contrast`: `auto | standard | high` — governs the high-contrast axis.
+- Unknown `brand:<slug>` fails open to `auto` (never bricks rendering); the
+  slug must exist in the storefront's ADS theme registry (`/mcp` `theme_*`).
+- Edit from the /manage settings ("Theme policy" section) or the REST route.
+- MCP `theme_apply` is preview-only in production under a forced policy
+  (set `NVOOS_THEME_PREVIEW=1` to preview; the policy stays the serving
+  authority).
+
+## Content, variants, checkout (Proposal 106)
+
+- `GET/POST /content/pages` + `GET/POST /content/posts` (writes gated) serve
+  WP pages/posts with `contentRendered` (builder caveat: pages authored in
+  Elementor/WPBakery render only while the builder is active) and Rank
+  Math/Yoast SEO meta passthrough. Storefront routes: `/pages/{id}/{slug}`,
+  `/blog/`, `/blog/{id}/{slug}`. Hybrid local content: `src/content/**`
+  renders when no envelope doc matches (WP wins on slug collision).
+- Variants: Woo variable products carry an additive `variants` array on
+  single-doc GETs (simple products have no key); listings stay flat.
+- Checkout: `GET /globals/shop` (checkout URL + display currency); the cart
+  page links out to Woo's checkout with the comma-form add-to-cart URL
+  (simple products; variant lines show a note until the T1 cart resource).
+
+## Shopify → WP headless migration (Proposal 106 runbook)
+
+1. **P0 Import** — official WooCommerce "Migrate & Import from Shopify" tool
+   (or Shopify Data Migrator for redirects/webhook sync); dry-run first;
+   export the Shopify URL-redirect list.
+2. **P1 Envelope** — set `funiq_bridge_products_source = woo`; run bridge
+   PHPUnit + `sync:bridge-fixtures` (format-only diff).
+3. **P2 Brand** — `design_analyze` the Shopify storefront (Proposal 098) →
+   ADS theme; `PATCH /globals/theme` to force it (or `auto`).
+4. **P3 Redirects** — Shopify redirect export → forge `redirects.json` /
+   Woo redirects; handle-only URLs resolve via the content/products slug
+   lookups; verify with the crawl gate + LHCI.
+5. **P4 Commerce** — `PATCH /globals/shop` with the Woo checkout URL; cart
+   handoff verified end-to-end.
+6. **P5 Content** — pages/blog served via `content/*`; forged site parity.
+7. **P6 Launch** — full gates: JS-disabled crawl spec, axe, LHCI, prod-sim
+   build, mirror rebuild; A/B cutover per the routing section below.
+
 ## A/B coexistence routing (owner decision Q1: keep A/B)
 
 The licensed PWA app (`nvoos-funiq-velocity`) stays live as rollback. Once
