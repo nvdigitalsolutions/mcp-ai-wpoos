@@ -4,10 +4,15 @@
 //! every global-hotkey app on Windows uses (parley#462, Handy, 2KSpeak);
 //! without a message loop the hook silently never fires.
 //!
-//! Heartbeat discipline: the hook thread updates a timestamp every loop tick
-//! (50 ms), and the fallback `GetAsyncKeyState` poller only takes over when
-//! that heartbeat goes stale (Windows can silently stop delivering
-//! `WH_KEYBOARD_LL` events while a Chromium window has focus).
+//! Heartbeat discipline: two timestamps, two jobs. The loop-driven
+//! `HEARTBEAT_MS` (updated every loop tick, 50 ms) proves the hook THREAD is
+//! alive — the Diagnostics page reads it. The event-driven `LAST_EVENT_MS`
+//! (updated inside `hook_proc` on every delivered key event) proves the
+//! system is actually DELIVERING low-level events; the fallback
+//! `GetAsyncKeyState` poller engages only when delivery stops (Windows can
+//! silently stop delivering `WH_KEYBOARD_LL` events while a Chromium window
+//! has focus — the hook thread keeps ticking happily, which is why the
+//! loop-driven heartbeat alone is not a valid delivery signal).
 //!
 //! Swallow discipline: an armed PTT press consumes BOTH its key-down and the
 //! matching key-up (the 2KSpeak technique). Consuming only the key-up while
@@ -49,6 +54,10 @@ use crate::error::{AppError, AppResult};
 static EVENT_TX: OnceLock<Mutex<Option<Sender<HotkeyEvent>>>> = OnceLock::new();
 static PTT_VK: AtomicU16 = AtomicU16::new(VK_RMENU.0);
 static HEARTBEAT_MS: AtomicU64 = AtomicU64::new(0);
+/// Timestamp of the last hook callback invocation — i.e. the last time the
+/// system actually delivered a low-level keyboard event to us. Drives the
+/// fallback poller's staleness decision.
+static LAST_EVENT_MS: AtomicU64 = AtomicU64::new(0);
 static PTT_DOWN: AtomicBool = AtomicBool::new(false);
 /// True between a swallowed PTT key-down and its matching key-up. Every
 /// swallow must cover the whole down..up pair: a swallowed up without a
@@ -74,6 +83,19 @@ pub fn vk_for_name(name: &str) -> Option<u16> {
         "rctrl" | "rightctrl" | "rightcontrol" => Some(VK_RCONTROL.0),
         _ => None,
     }
+}
+
+/// Milliseconds since the hook last received a delivered key event.
+/// `u64::MAX` before the hook has ever been called. This is the delivery
+/// signal the fallback poller keys on — unlike the loop heartbeat, it goes
+/// stale when Windows stops delivering `WH_KEYBOARD_LL` events (a known
+/// Chromium-focus behavior) even though the hook thread keeps ticking.
+pub fn last_event_age_ms() -> u64 {
+    let last = LAST_EVENT_MS.load(Ordering::Relaxed);
+    if last == 0 {
+        return u64::MAX;
+    }
+    now_ms().saturating_sub(last)
 }
 
 /// Milliseconds since the hook thread's last heartbeat. `u64::MAX` before
@@ -108,6 +130,9 @@ unsafe extern "system" fn hook_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -
     }
     let kb = unsafe { &*(lparam.0 as *const KBDLLHOOKSTRUCT) };
     HOOK_CALLS.fetch_add(1, Ordering::Relaxed);
+    // Event-driven liveness: every delivered event proves the LL delivery
+    // path is working right now.
+    LAST_EVENT_MS.store(now_ms(), Ordering::Relaxed);
     let vk = kb.vkCode as u16;
     let ptt = PTT_VK.load(Ordering::Relaxed);
     let message = wparam.0 as u32;
