@@ -13,6 +13,10 @@
 name: NPM Deprecate
 
 on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - '.github/workflows/npm-deprecate.yml'
   workflow_dispatch:
     inputs:
       package:
@@ -42,6 +46,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Deprecate versions
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           for v in ${{ inputs.versions }}; do
             echo "Deprecating ${{ inputs.package }}@$v"
