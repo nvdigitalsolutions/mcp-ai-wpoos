@@ -1056,11 +1056,18 @@ New this session (2026-11-02): **rebrand to NV oOS Cognition v0.3.0 +
   mirrored one-way to the public repo
   `nvdigitalsolutions/nvoos-cognition` by
   `.github/workflows/sync-nvoos-cognition.yml` (subtree split + force
-  push; the `NVOOS_COGNITION_REPO_TOKEN` repo secret was added by the
-  owner on 2026-11-02 — until the PR merges the workflow file exists only
-  on the feature branch, so the backfill dispatch uses the filename-form
-  Actions API against that ref). The mirror carries the proprietary
-  `LICENSE.txt` — source-visible, not open-source.
+  push; backfilled 2026-11-02, run #3 success). The mirror carries the
+  proprietary `LICENSE.txt` — source-visible, not open-source.
+  **Mirror token recipe (activation or rotation):** a repo-scoped
+  fine-grained PAT — resource owner `nvdigitalsolutions`, only the
+  `nvoos-cognition` repo, Contents: read+write — stored as
+  `NVOOS_COGNITION_REPO_TOKEN`. Push-step diagnostics: `Invalid username
+  or token` means the token VALUE is bad (expired/truncated/wrong kind);
+  a correctly-shaped token with the wrong repo scope says `Repository not
+  found` instead. First-backfill notes: the `fetch-depth: 0` monorepo
+  checkout takes ~15–25 min on ubuntu runners, and the mirror API's
+  `pushed_at` updates immediately while `size` lags — verify a sync by
+  `pushed_at` plus a root `contents/` listing.
 
 ## Related skills
 
