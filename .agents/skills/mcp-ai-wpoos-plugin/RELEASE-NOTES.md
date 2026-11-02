@@ -1,4 +1,4 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.15)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.16)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
@@ -6,6 +6,15 @@ Operational content stays in SKILL.md; append new per-version sections here.
 ---
 
 ---
+
+## Deep-Research Reliability + Job Tools, Abilities MCP Adapter Interop, Gateway OAuth Go-Live (v1.2.16)
+
+- **`deep_research` hardening + three new base job tools** (PRs #7376/#7377/#7384) — reports must pass a validation gate (finished answer, supported findings, usable citations; one retry-with-feedback, then explicit `status: partial`); depth is measurable (`basic` 1/0, `standard` 3/2, `comprehensive` 6/5 — `wp_mcp_ai_deep_research_max_queries` caps it, `queries_used` reports it); evidence persists between search and synthesis. The new `research_status`/`research_result`/`research_cancel` tools drive background jobs (24 h expiry). The **`deep_research_model`** setting (Tools → Configuration, `provider:model` + Auto) now exists; the hardcoded `gpt-4.1` fallback is `gpt-5.6-sol`. Thinking-model ops lesson: DeepSeek thinking-mode shares the token budget with the answer — reasoning-only output retries with a ×4 budget (cap 32,768) before falling back (the same ladder ships as the Pro research `WP_MCP_AI_Tool_Research_Completion` trait).
+- **Abilities bridge ↔ official MCP Adapter interop** (PR #7383) — `execute_callback` returns the raw `WP_Error` (adapter marks `isError: true`; the legacy `{success:false}` envelope stays behind `wp_mcp_ai_ability_wp_error_passthrough`); annotation mapping is pessimistic — un-flagged tools advertise `destructiveHint: true`. Ops lesson: Elementor 4.3+ registers `__return_false` on `mcp_adapter_create_default_server` (disables the adapter's default server) — the `mcp_adapter_init` custom-server pattern is the verified workaround.
+- **Gateway OAuth 2.1 / ChatGPT connector live** (PRs #7373/#7375/#7381, Proposal 099 Phases 0–4) — Auth0 `nvoos.us.auth0.com`, dual-mode with static keys. Ops: `GATEWAY_OAUTH_DEFAULT_SITES` grants fallback slugs to OAuth tokens without a `site:<slug>` scope (ChatGPT requests all AS-metadata scopes; unknown slugs fail boot, explicit scopes win); `tools/list` now emits `_`-namespaced names (`demo_get_environment_status` — dots are illegal in the MCP grammar and ChatGPT mangles them); the OpenAI challenge route serves behind `GATEWAY_OPENAI_CHALLENGE_TOKEN` (404 until set). Gateway **0.3.0** — the version constant is aligned with `package.json` again.
+- **New addons** — `chatgpt-gateway-plugin` 0.1.0 (Proposal 101 — the public-directory entry locked to `https://mcp.nvoos.pro/mcp`, `demo_*` skills, canonical-URL validate gate); chatgpt-plugin → 0.2.0 (full submission metadata, #7379).
+- **Sub-projects** — dictate → **NV oOS Cognition v0.3.0** (#7387: user-facing rebrand only — `nvoos-dictate` identifiers stay for updater/keychain continuity; `sync-nvoos-cognition.yml` mirror); the Assistant tab opens the console in a first-party window (WebView2 blocks third-party cookies — the iframe sign-in root-fix, #7386); on-device screen OCR (#7380). Forge Bridge wp.org pass (#7388: POST-only verify, `edit_pages` minting, delete/trash hooks, 30/30) + forge npm 0.1.1 (#7391: esbuild `dist/` bins).
+- **Zed skill-catalog budget** (#7378) — the summed `description:` frontmatter must stay under ~50 KB or Zed silently drops the alphabetical tail; currently ~46.3 KB. Re-sum after every skill addition.
 
 ## Astro Forge Ships, Design-Language Import, Gateway Live on the MCP Registry (v1.2.15)
 
