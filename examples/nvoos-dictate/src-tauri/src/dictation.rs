@@ -615,6 +615,16 @@ fn finalize_inner(
             }
         }
 
+        // Never paste silence: an empty transcript is almost always a
+        // microphone problem, and silently pasting nothing reads as "RAlt did
+        // nothing". Surface it instead — the overlay capsule shows the error.
+        if final_text.trim().is_empty() {
+            return Err(crate::error::AppError::Other(
+                "No speech detected — is the microphone muted, unplugged, or set to the wrong device? (Settings → Microphone)"
+                    .into(),
+            ));
+        }
+
         // Deterministic console targeting: when the NV oOS console window is
         // foreground, the user intends to talk with the active assistant —
         // focus the chat composer before pasting so the text lands there
