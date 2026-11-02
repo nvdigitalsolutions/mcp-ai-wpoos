@@ -28,7 +28,10 @@ const BRIDGE_GOLDEN = resolve(
 
 function loadGoldens() {
 	const files = readdirSync(BRIDGE_GOLDEN).filter((file) => /^product-.*\.json$/.test(file));
-	return files.map((file) => JSON.parse(readFileSync(join(BRIDGE_GOLDEN, file), 'utf8')));
+	return files.map((file) => ({
+		file,
+		golden: JSON.parse(readFileSync(join(BRIDGE_GOLDEN, file), 'utf8')),
+	}));
 }
 
 const goldens = loadGoldens();
@@ -41,7 +44,18 @@ const productsPath = join(APP_FIXTURES, 'products.json');
 const products = JSON.parse(readFileSync(productsPath, 'utf8'));
 const byId = new Map(products.map((doc) => [doc.id, doc]));
 
-for (const golden of goldens) {
+for (const { file, golden } of goldens) {
+	// Only transformer-ENVELOPE snapshots (fields/refs/fixtureId/media) belong
+	// in the app fixtures. Raw document goldens (e.g. the variable-product
+	// snapshot) must NOT match the product-* glob — rename them (the
+	// `woo-variable-product.json` convention) instead of forcing a shape here.
+	if (!golden || typeof golden.fields !== 'object' || golden.fields === null) {
+		throw new Error(
+			`[sync-bridge-fixtures] ${file} is not a transformer-envelope snapshot ` +
+				'(missing fields/refs/fixtureId). Rename it so it no longer matches ' +
+				'product-*.json — only envelope goldens flow into the app fixtures.'
+		);
+	}
 	const refs = golden.refs ?? {};
 	const fields = golden.fields;
 	// Compose in the contract's canonical key order so regenerated fixtures

@@ -235,7 +235,7 @@ class TestWooProductVariants extends WP_Test_REST_TestCase {
 		$this->assertNotNull( $doc );
 		$this->assertSame( 'Aurora Sofa', $doc['name'] );
 
-		$golden = $this->load_golden( 'product-woo-variable.json' );
+		$golden = $this->load_golden( 'woo-variable-product.json' );
 
 		$this->assertSame(
 			$this->normalize_golden_variants( $golden['variants'] ),
