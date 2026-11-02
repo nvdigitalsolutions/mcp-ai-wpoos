@@ -1130,20 +1130,20 @@ function NvoosTab({
           onChange={(e) => patchNvoos(onPatch, settings, { site_url: e.target.value })}
         />
       </label>
-      					<label className="row">
-      						<span>Default SPA URL (legacy fallback)</span>
-      						<input
-      							type="text"
-      							value={settings.spa.url}
-      							placeholder="https://chat.nvoos.cloud — or your site's [nvoos_pro_spa] page"
-      							onChange={(e) => onPatch({ spa: { ...settings.spa, url: e.target.value } })}
-      						/>
-      					</label>
-      					<p className="muted">
-      						The NV oOS tab discovers its surfaces from this site (assistant, chat, toolkit…)
-      						and shows one sub-tab per installed addon. This URL is only used as a fallback when
-      						the site cannot be reached or has no Pro SPA endpoint.
-      					</p>
+      <label className="row">
+        <span>Default Complete Velocity URL</span>
+        <input
+          type="text"
+          value={settings.spa.url}
+          placeholder="https://console.nvoos.cloud"
+          onChange={(e) => onPatch({ spa: { ...settings.spa, url: e.target.value } })}
+        />
+      </label>
+      <p className="muted">
+        The NV oOS tab embeds the Complete Velocity console at this URL. All assistant, chat,
+        toolkit, and addon surfaces live inside it — no separate per-addon URLs or sub-tabs are
+        needed.
+      </p>
       <label className="row">
         <span>Assistant ID (optional — uses site default)</span>
         <input

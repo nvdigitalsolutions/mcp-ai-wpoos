@@ -23,7 +23,7 @@ with the NV oOS plugin as the optional AI-enrichment backend.
 - Changing the deterministic cleanup pipeline (golden fixtures are the backstop)
 - Wiring the Embedded addon remote-STT fallback or its auth
 - Running the benchmark harness (`transcribe_file`) or the model downloader
-- Embedding the hosted Pro SPA in the Assistant tab, or changing its reachability probe / CSP
+- Embedding the Complete Velocity console in the Assistant tab, or changing its reachability probe / CSP
 - Producing a "complete" hand-off exe (the full feature union, not just STT flags)
 - Continuing P2 (loopback + PTT matrix), P4/P5 ports, or distribution
 - Verifying the macOS port from CI or a remote Mac (boot smoke, interactive SSH session, VNC options)
@@ -809,11 +809,11 @@ decode e2e tests.
 
 A third frontend surface (in addition to the chat SPA and the dictation
 main window): a new **Assistant** tab in the dictate app that embeds the
-hosted NV oOS Pro SPA — the same connect-to-any-backend surface as
-`examples/nvoos-pro-spa-vite` — in an `<iframe>`. This is the "Option 1"
-(hosted iframe) alternative to vendoring spa-v2 into the dictate app, which
-collides with React-version/dependency/CSP/network-model conflicts and is
-nearly always the wrong choice.
+NV oOS **Complete Velocity console** (`nvoos-complete-velocity`, e.g.
+`https://console.nvoos.cloud`) in an `<iframe>`. Every NV oOS surface
+(assistant, chat, toolkits, schedule, media, …) is wrapped inside the
+console, so the earlier per-addon surface discovery (`spa-surfaces`
+endpoint, sub-tabs) was retired — one frame, one origin.
 
 ### Why a frame, not a native mount
 
@@ -829,8 +829,9 @@ WordPress.
 ### Wiring (all shipped)
 
 - **Setting** — `Settings.spa.url` (`config.rs` `SpaConfig`; serde-default,
-  backward-compatible). The Settings → NV oOS tab exposes "Assistant tab URL".
-- **View** — `views/Assistant.tsx` renders a sandboxed iframe
+  backward-compatible). The Settings → NV oOS tab exposes
+  "Default Complete Velocity URL".
+- **View** — `views/Assistant.tsx` renders a single sandboxed iframe
   (`allow-scripts allow-same-origin allow-forms`, `referrerPolicy no-referrer`)
   and a "not configured" hint when the URL is empty. Reads the URL via the
   existing `get_settings` IPC.
