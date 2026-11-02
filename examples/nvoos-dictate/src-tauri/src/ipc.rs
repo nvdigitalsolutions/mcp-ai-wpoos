@@ -238,8 +238,15 @@ pub async fn check_spa(url: String) -> AppResult<SpaCheck> {
 /// top-level context — WebView2 blocks third-party cookies for cross-site
 /// iframes, so embedding the console in the main window breaks sign-in
 /// (masked by the console as "Invalid username or password").
+///
+/// MUST be async: window creation dispatches to the main thread and waits;
+/// a sync command runs ON the main thread and would deadlock the whole
+/// IPC surface (Settings then hangs on "Loading settings…").
 #[tauri::command]
-pub fn open_nvoos_console(app: tauri::AppHandle, state: State<'_, AppState>) -> AppResult<()> {
+pub async fn open_nvoos_console(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> AppResult<()> {
     let settings = state.settings_snapshot();
     let url = validate_spa_url(&settings.spa.url)?;
     crate::ensure_nvoos_console_window(&app, &url)

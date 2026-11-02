@@ -116,16 +116,22 @@ pub fn ensure_nvoos_console_window(app: &tauri::AppHandle, raw_url: &str) -> App
         let _ = window.destroy();
     }
 
-    let guard_origin = origin;
+    let guard_origin = origin.clone();
     let opener_nav = app.clone();
     let opener_popup = app.clone();
+    tracing::info!("console window: building for {guard_origin}");
     let _ =
         tauri::WebviewWindowBuilder::new(app, "nvoos-console", tauri::WebviewUrl::External(url))
             .title("NV oOS Console")
             .inner_size(1200.0, 800.0)
             .min_inner_size(720.0, 520.0)
             .on_navigation(move |u| {
-                if navigation_allowed(&guard_origin, u) {
+                let allowed = navigation_allowed(&guard_origin, u);
+                tracing::info!(
+                    "console window: navigation {u} origin={} allowed={allowed}",
+                    u.origin().ascii_serialization()
+                );
+                if allowed {
                     return true;
                 }
                 let _ = opener_nav.opener().open_url(u.to_string(), None::<String>);
@@ -137,7 +143,11 @@ pub fn ensure_nvoos_console_window(app: &tauri::AppHandle, raw_url: &str) -> App
                     .open_url(u.to_string(), None::<String>);
                 tauri::webview::NewWindowResponse::Deny
             })
-            .build();
+            .build()
+            .map_err(|e| {
+                AppError::Other(format!("failed to open the NV oOS console window: {e}"))
+            })?;
+    tracing::info!("console window: built for {origin}");
     Ok(())
 }
 
