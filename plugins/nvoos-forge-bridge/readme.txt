@@ -8,11 +8,11 @@ Stable tag: 0.1.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Fires a signed GitHub repository_dispatch when content changes so an Astro Forge frontend rebuilds automatically. Mints single-use preview tokens.
+Signed, debounced rebuild webhook when WordPress content changes: works with GitHub Actions, Netlify, Vercel, or any CI. Mints preview tokens.
 
 == Description ==
 
-The NV oOS Forge Bridge is the WordPress half of the Astro Forge freshness loop (Proposal 096): WordPress stays the CMS, and this plugin tells the build pipeline when content moved.
+NV oOS Forge Bridge is the WordPress half of a CMS-to-CI rebuild loop, and it works standalone. WordPress stays the CMS; the plugin tells your build pipeline when content moved. Any pipeline that can consume a GitHub `repository_dispatch` (or a signed webhook) is a valid counterpart — GitHub Actions, Netlify, Vercel, or a custom CI — including the NV oOS Astro Forge generator, which uses this plugin as its reference bridge.
 
 * **Rebuild webhook** — every post, page, product, or term save/trash/delete, plus front-page setting changes, schedules one debounced, HMAC-signed `repository_dispatch` POST (10-minute debounce, in-request dedupe). Autosaves, revisions, and auto-drafts are ignored — a rebuild is never wasted on content that does not ship. The request carries the `X-Forge-Signature: sha256=…` header AND a self-verifying signature inside the payload (HMAC over `time.nonce`), so the CI pipeline fails closed on spoofed or stale triggers. Disabled until configured.
 * **Inbound rebuild trigger** — `POST /wp-json/nvoos-forge/v1/rebuild` accepts only requests carrying a valid signature, so external systems can request a rebuild with proof of the shared secret.
@@ -30,6 +30,10 @@ The NV oOS Forge Bridge is the WordPress half of the Astro Forge freshness loop 
 = Does it send anything before it is configured? =
 
 No. Without an enabled flag, URL, token, and secret, every hook is a no-op.
+
+= Does it require the NV oOS Astro Forge? =
+
+No. The contract is a signed GitHub `repository_dispatch` plus a shared HMAC secret — nothing Astro-specific. Any build pipeline that consumes it (GitHub Actions, Netlify, Vercel, custom CI) works with this plugin. The NV oOS Astro Forge is the reference consumer, not a requirement.
 
 = What triggers a rebuild? =
 

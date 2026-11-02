@@ -232,10 +232,26 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   webhook (X-Forge-Signature, `send_pending()`/`reset_pending()` seams),
   inbound signature-verified `/rebuild` route, single-use hashed preview
   tokens, redacted health, settings page with write-only secrets,
-  uninstall.php, own phpcs + PHPUnit (24/24 on WP latest in Docker; the
-  payload now also carries a self-verifying `time`/`nonce`/`signature`
-  proof — `payload_signature()`) + `.github/workflows/phpunit-forge-bridge.yml`
+  uninstall.php, own phpcs + PHPUnit + `.github/workflows/phpunit-forge-bridge.yml`
   with the PCP gate, `.distignore`, and `.wordpress-org/` listing assets.
+  **Standalone framing (2026-11-02):** the plugin's contract is a signed
+  `repository_dispatch` + shared HMAC secret — ANY consumer works (GitHub
+  Actions, Netlify, Vercel, custom CI); the forge is the reference consumer,
+  not a requirement. The payload's self-verifying `time`/`nonce`/`signature`
+  proof (`payload_signature()`) exists because the `X-Forge-Signature`
+  header does not survive GitHub's dispatch delivery.
+  **wp.org readiness pass (PR #7388, pending merge):** pre-review fixes —
+  `/preview-tokens/verify` is POST-only (state-changing GET removed, pinned
+  by a GET-404 test), autosave/revision/auto-draft saves are skipped in
+  `save_post`, `delete_post` + `trashed_post` hooks added, minting requires
+  `edit_pages` (editors+, matches docs), tags `headless, rebuild, webhook,
+  automation, static-site` (no framework names). Gates: PCP 0 errors/
+  0 warnings, phpcs clean, `php -l` clean, PHPUnit 30/30 (75 assertions)
+  on WP latest. Tooling: artwork via Gemini +
+  `bin/process-nvoos-forge-bridge-artwork.js`; ZIP builder
+  `bin/build-nvoos-forge-bridge.py` (Python zipfile, shape assertions, the
+  ZIP itself is never committed); 18-point signoff
+  `WPORG-REVIEW-18POINT-SIGNOFF.md` (excluded from the ZIP).
 - **Phase 3 — shipped 2026-10-31:** vault + multi-site + GitHub deploy +
   generated pipeline (see `-implementation-plan.md` §2.7): `forge vault` /
   `forge site` / `forge deploy` commands; repos private by default;
@@ -274,3 +290,7 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
 - Related skills: `mcp-ai-wpoos-astro-storefront` (the serving side — bridge,
   /mcp, tokens), `mcp-ai-wpoos-playground-demos` (the Phase 2 Playground
   fixture replacement), `mcp-ai-wpoos-git-ops`.
+- The bridge plugin: `plugins/nvoos-forge-bridge` — **standalone** (any
+  `repository_dispatch` consumer works; the forge is the reference
+  consumer). Its wp.org submission track and review conventions live in
+  the `mcp-ai-wpoos-wporg-submission` skill.
