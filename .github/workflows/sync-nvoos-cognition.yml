@@ -1,0 +1,50 @@
+name: Sync nvoos-cognition
+
+# One-way mirror of the NV oOS Cognition desktop app (examples/nvoos-dictate)
+# to the public repo nvdigitalsolutions/nvoos-cognition — the same
+# subtree-split + force-push pattern as the media-worker mirror
+# (sync-media-worker.yml).
+#
+# The mirror repo history is intentionally flat (one commit per sync,
+# force-pushed). Never commit to the mirror directly; the monorepo copy at
+# examples/nvoos-dictate is the source of truth. The mirror carries the
+# app's proprietary LICENSE.txt (LicenseRef-Proprietary) — it is a
+# source-visible but NOT open-source distribution.
+#
+# The app's technical identifiers stay `nvoos-dictate` (crate, binary,
+# updater tags, data dirs) while the product brand is NV oOS Cognition —
+# see docs/project/proposals/103-nvoos-cognition-rebrand-proposal.md.
+#
+# Activation (owner steps, one-time):
+#   1. Create the repo nvdigitalsolutions/nvoos-cognition (public).
+#   2. Add a repo-scoped deploy token as the repository secret
+#      NVOOS_COGNITION_REPO_TOKEN.
+#   3. Run this workflow once via workflow_dispatch (backfills the mirror).
+#   4. Verify the mirror's README renders (brand name, features list).
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-dictate/**'
+  # Manual runs let you force a sync without waiting for a merge (first-run
+  # verification after adding the token, backfills, etc.).
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=examples/nvoos-dictate --branch=nvoos-cognition-split
+
+      - name: Push to nvoos-cognition
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.NVOOS_COGNITION_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-cognition.git nvoos-cognition-split:main --force
