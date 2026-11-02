@@ -360,6 +360,34 @@ carries its own review-artifact convention next to the docs-hub one:
   empty tokens). The `phpcs:ignore` must sit on the line ABOVE the
   `} catch (...)` line — the error reports at the `T_CATCH` token.
 
+### forge-bridge — first pre-submission pass (PR #7388, 2026-11-02)
+
+The fourth standalone plugin (`plugins/nvoos-forge-bridge` — Q4 naming:
+`nvoos-astro-bridge` was taken by the velocity storefront addon).
+**Standalone framing:** the signed `repository_dispatch` contract works with
+any CI (GitHub Actions, Netlify, Vercel, custom); the Astro Forge generator
+is the reference consumer, not a requirement. Pass results:
+
+- **PCP: 0 errors / 0 warnings** (no allowlist needed); phpcs 0; `php -l`
+  clean; PHPUnit 30/30 (75 assertions) on WP latest.
+- **Reviewer-proofing applied pre-submission (don't let these regress):**
+  `/preview-tokens/verify` is POST-only (no state-changing GET — pinned by
+  a GET-404 test); the `save_post` handler skips autosaves, revisions, and
+  auto-drafts; `delete_post` + `trashed_post` hooks added (the readme
+  already promised deletions); token minting requires `edit_pages` (matches
+  the documented editors+); tags avoid framework names (`headless, rebuild,
+  webhook, automation, static-site`).
+- **Packaging:** `.distignore` ↔ CI staging tri-sync (incl.
+  `WPORG-REVIEW-*.md`); ZIP built by `bin/build-nvoos-forge-bridge.py`
+  (Python zipfile — forward slashes, top-level folder, shape assertions;
+  the built ZIP is never committed); artwork generated via Gemini +
+  `bin/process-nvoos-forge-bridge-artwork.js`; signoff convention
+  `WPORG-REVIEW-18POINT-SIGNOFF.md` (ZIP-excluded).
+- **Local recipes:** the PCP run reuses the docs-hub isolated variant
+  (small tree, tar-staged on the host); PHPUnit runs in a one-off cli
+  container with the wp-tests-config written into a `/tmp` copy of the
+  plugin (never the bind mount).
+
 ### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
 
 Docs Hub added the ported commerce stack (upsell card after the settings

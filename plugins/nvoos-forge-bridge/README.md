@@ -1,8 +1,11 @@
 # NV oOS Forge Bridge
 
-The WordPress half of the **Astro Forge** freshness loop (Proposal 096):
-WordPress stays the CMS, and this plugin tells the build pipeline when
-content moved — signed, debounced, and fail-closed.
+A standalone WordPress plugin that signs content changes into a CMS-to-CI
+rebuild loop. WordPress stays the CMS; the plugin tells your build pipeline
+when content moved — signed, debounced, and fail-closed. Any
+`repository_dispatch` consumer works (GitHub Actions, Netlify, Vercel,
+custom CI); the NV oOS **Astro Forge** (Proposal 096) is the reference
+consumer, not a requirement.
 
 ## What it does
 
@@ -12,6 +15,21 @@ content moved — signed, debounced, and fail-closed.
 | Inbound trigger | `POST /wp-json/nvoos-forge/v1/rebuild` — accepted only with a valid signature over the body. |
 | Preview tokens | `POST /wp-json/nvoos-forge/v1/preview-tokens` (editors+) mints a single-use, 15-minute token; `POST /wp-json/nvoos-forge/v1/preview-tokens/verify` consumes it (POST-only — verification is a state change). Stored hashed only. |
 | Health | `GET /wp-json/nvoos-forge/v1/health` — redacted (versions, booleans, webhook host). |
+
+## Consumers
+
+The wire contract is a signed GitHub `repository_dispatch` POST plus a
+shared HMAC secret — nothing Astro-specific:
+
+- **NV oOS Astro Forge** (`nvoos-astro-forge`) — the reference consumer;
+  its generated pipeline re-verifies the payload proof.
+- **GitHub Actions** — a `repository_dispatch` workflow that verifies the
+  `X-Forge-Signature` header and rebuilds.
+- **Netlify / Vercel / custom CI** — a small receiver that forwards
+  verified dispatches to their build hooks works the same way.
+
+Unconfigured, the plugin is a complete no-op: it only ever speaks to the
+dispatches URL you set (default `https://api.github.com`).
 
 ## Configuration
 
