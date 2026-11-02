@@ -1,0 +1,44 @@
+name: Deprecate npm version
+
+# Dispatchable npm deprecation helper — uses the repo's NPM_TOKEN secret so
+# deprecations can be run from the terminal without local npm auth.
+#
+# Usage:
+#   gh api -X POST "repos/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/deprecate-npm-version.yml/dispatches" \
+#     -f ref=alpha-working \
+#     -f "inputs[package]=@scope/pkg" -f "inputs[version]=0.1.0" \
+#     -f "inputs[message]=Broken bins - use 0.1.1"
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package name (e.g. @nvdigitalsolutions/nvoos-astro-forge)'
+        required: true
+        type: string
+      version:
+        description: 'Version to deprecate (e.g. 0.1.0)'
+        required: true
+        type: string
+      message:
+        description: 'Deprecation message shown to installers'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deprecate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Deprecate ${{ inputs.package }}@${{ inputs.version }}
+        run: npm deprecate "${{ inputs.package }}@${{ inputs.version }}" "${{ inputs.message }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
