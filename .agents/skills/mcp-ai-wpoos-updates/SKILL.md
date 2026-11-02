@@ -126,6 +126,16 @@ weekly (or on demand), independent of any release.
   table (newest first). Full per-release detail lives in `CHANGELOG.md` only —
   the README never grows past 12 detailed entries. (Adopted 2026-09-22 to stop
   the README's duplicated changelog blocks from growing unboundedly.)
+- **GitHub release bodies carry the same `## 📜 Release History` top section.**
+  Each `nvdigital-oos-v*` release body starts with `## 📜 Release History` +
+  `### vX.Y.Z — Date`, then that release's own CHANGELOG detail (the
+  `## [X.Y.Z]` section with its `### Category` headings demoted to `####`),
+  then the generic package/install sections. Both generators (`release.yml`
+  and `build-nvdigital-oos-wporg.yml`) insert the CHANGELOG section
+  automatically when it exists at run time (a one-line fallback otherwise),
+  and the catch-up pass refreshes the new release's body with the final
+  CHANGELOG detail via `gh release edit --notes-file` — the body never lags
+  the README Release History entry. (Adopted 2026-11-03.)
 - **The README carries TWO current-release glance surfaces, and both move in
   every pass.** The top header block (`**Version:**` + `**Release Date:**` +
   the `**🆕 vX.Y.Z Highlights:**` paragraph under the badges) is a separate
