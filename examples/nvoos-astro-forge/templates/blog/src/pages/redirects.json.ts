@@ -7,9 +7,11 @@ import manifest from '../../nvoos.json';
  * to the generated one (Proposal 096 §0 SEO rule: preserve URLs at the URL
  * level; everything that moved gets a single-hop redirect).
  *
- * `scripts/postbuild.mjs` materializes the host-agnostic `dist/_redirects`
- * from this document after `astro build`.
+ * Prerendered in both render modes — `scripts/postbuild.mjs` materializes
+ * the host-agnostic `dist/_redirects` from this document after `astro build`.
  */
+export const prerender = true;
+
 export const GET: APIRoute = async () => {
 	const redirects: Array<{ from: string; to: string; status: 301 }> = [];
 	const push = (source: string, target: string) => {
@@ -35,7 +37,12 @@ export const GET: APIRoute = async () => {
 
 	const hasProducts = manifest.collections.some((collection) => collection.slug === 'products');
 	if (hasProducts) {
-		const products = await getCollection('products');
+		// `astro check` types getCollection against the declared collections;
+		// products only exists in storefront scaffolds. The manifest gate
+		// keeps this call unreachable otherwise, and the routing fields used
+		// here (id/slug/link) exist on every collection shape — the cast
+		// documents exactly that.
+		const products = await getCollection('products' as 'posts');
 		for (const product of products) {
 			const source = pathnameOf(product.data.link);
 			if (!source) continue;

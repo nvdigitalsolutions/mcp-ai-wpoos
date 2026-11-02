@@ -1,19 +1,30 @@
 #!/usr/bin/env node
 // ---------------------------------------------------------------------------
-// forge.mjs — the Forge CLI (Proposal 096).
+// forge.mjs — the Forge CLI (Proposal 096; commander + @clack/prompts since
+// Proposal 104 §4.3).
 //
 //   node scripts/forge.mjs analyze <url> [--write <site.json>]
-//   node scripts/forge.mjs forge <site.json|name> --target <dir> [--check]
+//   node scripts/forge.mjs [forge] <site.json|name> --target <dir> [--check]
 //   node scripts/forge.mjs site add|remove|list|use …
 //   node scripts/forge.mjs vault set|delete|list …
 //   node scripts/forge.mjs deploy <site.json|name> --target <dir> --to <mode>
+//   node scripts/forge.mjs wizard <url> --target <dir> [--preset …] [--build]
 //
-// `analyze` performs the polite discovery pass (site_analyze). `forge`
-// scaffolds the Astro project from an operator-written SiteProfile (by file
-// path, or by name when registered via `site add`). `deploy` scaffolds if
-// needed, emits the deploy pipeline (Phase 3.3), creates a PRIVATE repo by
-// default, and pushes the source with per-invocation auth (GITHUB_TOKEN env
-// or the vault entry `github` — never persisted, always masked in output).
+// `analyze` performs the polite discovery pass (site_analyze). The scaffold
+// command (bare or the explicit `forge` word) materializes the Astro project
+// from an operator-written SiteProfile (by file path, or by name when
+// registered via `site add`). `deploy` scaffolds if needed, emits the deploy
+// pipeline (Phase 3.3), creates a PRIVATE repo by default, and pushes the
+// source with per-invocation auth (GITHUB_TOKEN env or the vault entry
+// `github` — never persisted, always masked in output).
+//
+// `wizard` gains `--preset blog|storefront|minimal` (104 §4.3); without it
+// the preset is suggested from the site_analyze report — interactively via
+// @clack/prompts on a TTY, deterministically (suggestPreset) otherwise, so
+// CI/e2e runs stay non-interactive.
+//
+// This file is PLAIN JavaScript — `.mjs` gets NO type stripping: `import
+// type` and inline `type` specifiers are syntax errors here.
 //
 // Requires Node >= 22.6 (native TypeScript type stripping).
 // ---------------------------------------------------------------------------
@@ -21,9 +32,13 @@
 import { readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
+import { Command } from 'commander';
+
 import { emitDeployConfig } from '../lib/deploy-config.ts';
 import { analyzeSite, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
+import { PRESETS, PRESET_NAMES, RENDER_MODES } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
 import { scaffold } from '../lib/scaffold.ts';
 import { SitesStore } from '../lib/sites.ts';
@@ -33,59 +48,26 @@ import { WpClient } from '../lib/wp-client.ts';
 
 const DEPLOY_MODES = [ 'github-pages', 'cloudflare-pages', 'velocity' ];
 
-function usage() {
-	console.error( 'usage:' );
-	console.error( '  node scripts/forge.mjs analyze <url> [--write <site.json>]' );
-	console.error( '  node scripts/forge.mjs forge <site.json|name> --target <dir> [--template <name|path>] [--overwrite] [--check]' );
-	console.error( '  node scripts/forge.mjs site add <name> <profile.json> [--url <url>] [--default]' );
-	console.error( '  node scripts/forge.mjs site remove <name>' );
-	console.error( '  node scripts/forge.mjs site list' );
-	console.error( '  node scripts/forge.mjs site use <name>' );
-	console.error( '  node scripts/forge.mjs vault set <name>   (value on stdin — never argv)' );
-	console.error( '  node scripts/forge.mjs vault delete <name>' );
-	console.error( '  node scripts/forge.mjs vault list' );
-	console.error( '  node scripts/forge.mjs wizard <url> --target <dir> [--name <name>] [--to <mode>] [--build]' );
-	console.error( '  node scripts/forge.mjs deploy-config <site.json|name> --target <dir> --to <mode> [--site-url <url>] [--cloudflare-project <name>]' );
-	console.error( '  node scripts/forge.mjs deploy <site.json|name> --target <dir> --to <github-pages|cloudflare-pages|velocity> [--repo <name>] [--org <org>] [--public] [--cloudflare-project <name>]' );
+function fail( message ) {
+	console.error( message );
 	process.exit( 2 );
 }
 
-// -- argument parsing --------------------------------------------------------
-
-function parseForgeArgs( argv ) {
-	const args = { profileRef: undefined, target: undefined, template: undefined, overwrite: false, check: false };
-	for ( let i = 0; i < argv.length; i++ ) {
-		const arg = argv[ i ];
-		if ( arg === '--target' ) args.target = argv[ ++i ];
-		else if ( arg === '--template' ) args.template = argv[ ++i ];
-		else if ( arg === '--overwrite' ) args.overwrite = true;
-		else if ( arg === '--check' ) args.check = true;
-		else if ( ! arg.startsWith( '--' ) && ! args.profileRef ) args.profileRef = arg;
-		else usage();
-	}
-	if ( ! args.profileRef || ! args.target ) usage();
-	return args;
+function failDeployMode( mode ) {
+	fail( `Unknown deploy mode "${ mode }" — use one of: ${ DEPLOY_MODES.join( ', ' ) }` );
 }
 
-function parseDeployArgs( argv ) {
-	const args = { profileRef: undefined, target: undefined, mode: 'github-pages', repo: undefined, org: undefined, isPublic: false, cloudflareProject: undefined };
-	for ( let i = 0; i < argv.length; i++ ) {
-		const arg = argv[ i ];
-		if ( arg === '--target' ) args.target = argv[ ++i ];
-		else if ( arg === '--to' ) args.mode = argv[ ++i ];
-		else if ( arg === '--repo' ) args.repo = argv[ ++i ];
-		else if ( arg === '--org' ) args.org = argv[ ++i ];
-		else if ( arg === '--cloudflare-project' ) args.cloudflareProject = argv[ ++i ];
-		else if ( arg === '--public' ) args.isPublic = true;
-		else if ( ! arg.startsWith( '--' ) && ! args.profileRef ) args.profileRef = arg;
-		else usage();
-	}
-	if ( ! args.profileRef || ! args.target ) usage();
-	if ( ! DEPLOY_MODES.includes( args.mode ) ) {
-		console.error( `Unknown deploy mode "${ args.mode }" — use one of: ${ DEPLOY_MODES.join( ', ' ) }` );
-		process.exit( 2 );
-	}
-	return args;
+function failPreset( preset ) {
+	fail( `Unknown preset "${ preset }" — use one of: ${ PRESET_NAMES.join( ', ' ) }` );
+}
+
+function failRender( render ) {
+	fail( `Unknown render mode "${ render }" — use one of: ${ RENDER_MODES.join( ', ' ) }` );
+}
+
+/** clack prompts only make sense on a real terminal — never in CI/e2e. */
+function isInteractive() {
+	return Boolean( process.stdin.isTTY && process.stdout.isTTY );
 }
 
 // -- profile resolution ------------------------------------------------------
@@ -125,22 +107,18 @@ function assertProfile( profile ) {
 
 // -- modes -------------------------------------------------------------------
 
-async function runAnalyze( rest ) {
-	const url = rest[ 0 ];
-	let writePath;
-	for ( let i = 1; i < rest.length; i++ ) {
-		if ( rest[ i ] === '--write' ) writePath = rest[ ++i ];
-		else usage();
+async function runAnalyze( url, options ) {
+	if ( ! url || ! /^https?:\/\//.test( url ) ) {
+		fail( 'analyze needs an https?:// URL.' );
 	}
-	if ( ! url || ! /^https?:\/\//.test( url ) ) usage();
 
 	const report = await analyzeSite( new WpClient( { baseUrl: url.replace( /\/+$/, '' ) } ) );
 	console.log( renderReport( report ) );
 	const profile = profileFromDiscovery( report );
 	const profileJson = `${ JSON.stringify( profile, null, '\t' ) }\n`;
-	if ( writePath ) {
-		await writeFile( writePath, profileJson, 'utf8' );
-		console.log( `\u2713 Draft profile written to ${ writePath } — review excludes/frontPage, then scaffold.` );
+	if ( options.write ) {
+		await writeFile( options.write, profileJson, 'utf8' );
+		console.log( `\u2713 Draft profile written to ${ options.write } — review excludes/frontPage, then scaffold.` );
 	} else {
 		console.log( '--- draft site.json ---' );
 		console.log( profileJson.trimEnd() );
@@ -149,106 +127,114 @@ async function runAnalyze( rest ) {
 	// dies with the libuv UV_HANDLE_CLOSING assertion (0xC0000409).
 }
 
-async function runSite( rest ) {
-	const command = rest[ 0 ];
+async function runSiteAdd( name, profilePath, options ) {
+	if ( ! name || ! profilePath ) {
+		fail( 'site add needs <name> <profile.json>.' );
+	}
+	let url = options.url;
+	const isDefault = options.default === true;
+	const profile = JSON.parse( await readFile( profilePath, 'utf8' ) );
+	if ( ! url && profile.url ) url = profile.url;
+	if ( ! url ) {
+		console.error( 'No URL — pass --url <url> or include "url" in the profile.' );
+		process.exit( 1 );
+	}
 	const sites = new SitesStore();
-	if ( command === 'add' ) {
-		const name = rest[ 1 ];
-		const profilePath = rest[ 2 ];
-		if ( ! name || ! profilePath ) usage();
-		let url;
-		let isDefault = false;
-		for ( let i = 3; i < rest.length; i++ ) {
-			if ( rest[ i ] === '--url' ) url = rest[ ++i ];
-			else if ( rest[ i ] === '--default' ) isDefault = true;
-			else usage();
-		}
-		const profile = JSON.parse( await readFile( profilePath, 'utf8' ) );
-		if ( ! url && profile.url ) url = profile.url;
-		if ( ! url ) {
-			console.error( 'No URL — pass --url <url> or include "url" in the profile.' );
-			process.exit( 1 );
-		}
-		await sites.add( name, { url, profile: profilePath }, { isDefault } );
-		console.log( `\u2713 Registered site "${ name }" -> ${ url } (${ profilePath })` );
-		return;
-	}
-	if ( command === 'remove' ) {
-		const name = rest[ 1 ];
-		if ( ! name ) usage();
-		await sites.remove( name );
-		console.log( `\u2713 Removed site "${ name }".` );
-		return;
-	}
-	if ( command === 'list' ) {
-		const listed = await sites.list();
-		const defaultName = await sites.defaultName();
-		if ( Object.keys( listed ).length === 0 ) {
-			console.log( 'No registered sites.' );
-			return;
-		}
-		for ( const [ name, ref ] of Object.entries( listed ) ) {
-			console.log( `${ name === defaultName ? '*' : ' '} ${ name } -> ${ ref.url } (${ ref.profile })` );
-		}
-		return;
-	}
-	if ( command === 'use' ) {
-		const name = rest[ 1 ];
-		if ( ! name ) usage();
-		await sites.setDefault( name );
-		console.log( `\u2713 Default site is now "${ name }".` );
-		return;
-	}
-	usage();
+	await sites.add( name, { url, profile: profilePath }, { isDefault } );
+	console.log( `\u2713 Registered site "${ name }" -> ${ url } (${ profilePath })` );
 }
 
-async function runVault( rest ) {
-	const command = rest[ 0 ];
+async function runSiteRemove( name ) {
+	if ( ! name ) {
+		fail( 'site remove needs <name>.' );
+	}
+	await ( new SitesStore() ).remove( name );
+	console.log( `\u2713 Removed site "${ name }".` );
+}
+
+async function runSiteList() {
+	const sites = new SitesStore();
+	const listed = await sites.list();
+	const defaultName = await sites.defaultName();
+	if ( Object.keys( listed ).length === 0 ) {
+		console.log( 'No registered sites.' );
+		return;
+	}
+	for ( const [ name, ref ] of Object.entries( listed ) ) {
+		console.log( `${ name === defaultName ? '*' : ' ' } ${ name } -> ${ ref.url } (${ ref.profile })` );
+	}
+}
+
+async function runSiteUse( name ) {
+	if ( ! name ) {
+		fail( 'site use needs <name>.' );
+	}
+	await ( new SitesStore() ).setDefault( name );
+	console.log( `\u2713 Default site is now "${ name }".` );
+}
+
+async function runVaultSet( name ) {
+	if ( ! name ) {
+		fail( 'vault set needs <name>.' );
+	}
 	const vault = new Vault();
-	if ( command === 'set' ) {
-		const name = rest[ 1 ];
-		if ( ! name ) usage();
-		// The secret arrives on stdin (never argv, never the shell history).
-		const value = ( await new Promise( ( resolvePromise ) => {
-			let input = '';
-			process.stdin.setEncoding( 'utf8' );
-			process.stdin.on( 'data', ( chunk ) => ( input += chunk ) );
-			process.stdin.on( 'end', () => resolvePromise( input.replace( /[\r\n]+$/, '' ) ) );
-			process.stdin.resume();
-		} ) );
-		if ( ! value ) {
-			console.error( 'No value on stdin — nothing stored.' );
-			process.exit( 1 );
-		}
-		await vault.set( name, value );
-		console.log( `\u2713 Stored vault entry "${ name }" (${ maskSecret( value ) }).` );
-		return;
+	// The secret arrives on stdin (never argv, never the shell history).
+	const value = await new Promise( ( resolvePromise ) => {
+		let input = '';
+		process.stdin.setEncoding( 'utf8' );
+		process.stdin.on( 'data', ( chunk ) => ( input += chunk ) );
+		process.stdin.on( 'end', () => resolvePromise( input.replace( /[\r\n]+$/, '' ) ) );
+		process.stdin.resume();
+	} );
+	if ( ! value ) {
+		console.error( 'No value on stdin — nothing stored.' );
+		process.exit( 1 );
 	}
-	if ( command === 'delete' ) {
-		const name = rest[ 1 ];
-		if ( ! name ) usage();
-		await vault.delete( name );
-		console.log( `\u2713 Deleted vault entry "${ name }".` );
-		return;
-	}
-	if ( command === 'list' ) {
-		console.log( ( await vault.list() ).join( '\n' ) || '(empty)' );
-		return;
-	}
-	usage();
+	await vault.set( name, value );
+	console.log( `\u2713 Stored vault entry "${ name }" (${ maskSecret( value ) }).` );
 }
 
-async function runDeploy( argv ) {
-	const args = parseDeployArgs( argv );
-	const profile = await loadProfile( args.profileRef );
+async function runVaultDelete( name ) {
+	if ( ! name ) {
+		fail( 'vault delete needs <name>.' );
+	}
+	await ( new Vault() ).delete( name );
+	console.log( `\u2713 Deleted vault entry "${ name }".` );
+}
+
+async function runVaultList() {
+	console.log( ( await new Vault().list() ).join( '\n' ) || '(empty)' );
+}
+
+async function runDeploy( profileRef, options ) {
+	const mode = options.to ?? 'github-pages';
+	if ( ! DEPLOY_MODES.includes( mode ) ) {
+		failDeployMode( mode );
+	}
+	if ( options.preset && ! PRESET_NAMES.includes( options.preset ) ) {
+		failPreset( options.preset );
+	}
+	if ( options.render && ! RENDER_MODES.includes( options.render ) ) {
+		failRender( options.render );
+	}
+	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
 
 	// 1. Scaffold (idempotent — an existing forge project is reused).
+	//    The preset (when passed) applies its collection profile + surfaces
+	//    inside scaffold() — no pre-application needed here.
 	try {
-		await stat( join( args.target, 'nvoos.json' ) );
-		console.log( `\u2713 Target ${ args.target } is already a forge project — reusing.` );
+		await stat( join( options.target, 'nvoos.json' ) );
+		console.log( `\u2713 Target ${ options.target } is already a forge project — reusing.` );
 	} catch {
-		const result = await scaffold( { profile, targetDir: args.target } );
+		const result = await scaffold( {
+			profile,
+			targetDir: options.target,
+			preset: options.preset,
+			render: options.render,
+			surfaces: options.ogImages ? { ogImages: true } : undefined,
+			agents: options.agents,
+		} );
 		console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 		for ( const warning of result.warnings ) {
 			console.warn( `\u26a0 ${ warning }` );
@@ -257,10 +243,10 @@ async function runDeploy( argv ) {
 
 	// 2. Emit the deploy pipeline (adapter-generic — rebuild wrapper, deploy
 	//    workflow, and the fail-closed dispatch verifier).
-	const emitted = await emitDeployConfig( args.target, {
-		mode: args.mode,
+	const emitted = await emitDeployConfig( options.target, {
+		mode,
 		siteUrl: String( profile.url ),
-		cloudflareProject: args.cloudflareProject,
+		cloudflareProject: options.cloudflareProject,
 	} );
 	for ( const file of emitted.files ) {
 		console.log( `  + ${ file }` );
@@ -276,19 +262,19 @@ async function runDeploy( argv ) {
 	console.log( `\u2713 GitHub auth: ${ maskSecret( token ) } (per-invocation, not persisted)` );
 
 	// 4. Collect the source payload (binary + build artifacts excluded).
-	const files = await collectProjectFiles( args.target );
+	const files = await collectProjectFiles( options.target );
 
 	// 5. Create (private by default) + push.
 	const deploy = new GitHubDeploy( await createOctokitClient( token ) );
-	const repoName = args.repo ?? slugify( String( profile.name ?? profile.url ) );
-	const owner = args.org;
+	const repoName = options.repo ?? slugify( String( profile.name ?? profile.url ) );
+	const owner = options.org;
 	let repoResult;
 	try {
 		repoResult = await deploy.createRepo( {
 			name: repoName,
 			description: `Generated frontend for ${ String( profile.url ) } (NV oOS Astro Forge).`,
 			org: owner,
-			isPrivate: ! args.isPublic,
+			isPrivate: ! options.public,
 		} );
 	} catch ( error ) {
 		// The repo may already exist — reuse it (user account only) when the
@@ -319,19 +305,27 @@ async function runDeploy( argv ) {
 			message: 'Forge: generated site (Phase 3 deploy)',
 		} );
 		console.log( `\u2713 Pushed ${ pushed.files } files -> ${ pushed.owner }/${ pushed.repo }@${ pushed.branch } (${ pushed.commitSha.slice( 0, 8 ) })` );
-		console.log( `Next: configure repo secrets (FORGE_WEBHOOK_SECRET${ args.mode === 'velocity' ? ', VELOCITY_*' : '' }${ args.mode === 'cloudflare-pages' ? ', CLOUDFLARE_*' : '' }) and enable the Pages/mirror target.` );
+		console.log( `Next: configure repo secrets (FORGE_WEBHOOK_SECRET${ mode === 'velocity' ? ', VELOCITY_*' : '' }${ mode === 'cloudflare-pages' ? ', CLOUDFLARE_*' : '' }) and enable the Pages/mirror target.` );
 	} catch ( error ) {
 		console.error( error instanceof Error ? error.message : error );
 		process.exitCode = 1;
 	}
 }
 
-async function runScaffold( argv ) {
-	const args = parseForgeArgs( argv );
-	const profile = await loadProfile( args.profileRef );
+async function runScaffold( profileRef, options ) {
+	if ( ! options.target ) {
+		fail( '--target <dir> is required.' );
+	}
+	if ( options.preset && ! PRESET_NAMES.includes( options.preset ) ) {
+		failPreset( options.preset );
+	}
+	if ( options.render && ! RENDER_MODES.includes( options.render ) ) {
+		failRender( options.render );
+	}
+	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
 
-	if ( args.check ) {
+	if ( options.check ) {
 		const clean = await checkProfile( profile );
 		console.log( clean ? 'All collections fit within their page caps.' : 'Some collections exceed their caps — raise maxPages in the profile.' );
 		// Graceful exit — see the analyze branch (Windows libuv teardown).
@@ -339,7 +333,17 @@ async function runScaffold( argv ) {
 		return;
 	}
 
-	const result = await scaffold( { profile, targetDir: args.target, template: args.template, overwrite: args.overwrite } );
+	// scaffold() applies the preset's collection profile + surface toggles.
+	const result = await scaffold( {
+		profile,
+		targetDir: options.target,
+		template: options.template,
+		overwrite: options.overwrite === true,
+		preset: options.preset,
+		render: options.render,
+		surfaces: options.ogImages ? { ogImages: true } : undefined,
+		agents: options.agents,
+	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 	for ( const collection of result.manifest.collections ) {
 		console.log( `  - ${ collection.slug } <- ${ collection.restBase }` );
@@ -378,66 +382,24 @@ async function checkProfile( profile ) {
 	return clean;
 }
 
-// -- dispatch ----------------------------------------------------------------
-
-const argv = process.argv.slice( 2 );
-
-switch ( argv[ 0 ] ) {
-	case 'analyze':
-		await runAnalyze( argv.slice( 1 ) );
-		break;
-	case 'site':
-		await runSite( argv.slice( 1 ) );
-		break;
-	case 'vault':
-		await runVault( argv.slice( 1 ) );
-		break;
-	case 'wizard':
-		await runWizard( argv.slice( 1 ) );
-		break;
-	case 'deploy-config':
-		await runDeployConfig( argv.slice( 1 ) );
-		break;
-	case 'deploy':
-		await runDeploy( argv.slice( 1 ) );
-		break;
-	default:
-		// The documented `forge` subcommand word is optional — strip it when
-		// present so `forge <site.json|name> --target …` parses like the
-		// bare form.
-		await runScaffold( argv[ 0 ] === 'forge' ? argv.slice( 1 ) : argv );
-		break;
-}
-
 /** Emit the deploy pipeline into a scaffolded target (no network, no token). */
-async function runDeployConfig( rest ) {
-	const args = { profileRef: undefined, target: undefined, mode: 'github-pages', siteUrl: undefined, cloudflareProject: undefined };
-	for ( let i = 0; i < rest.length; i++ ) {
-		const arg = rest[ i ];
-		if ( arg === '--target' ) args.target = rest[ ++i ];
-		else if ( arg === '--to' ) args.mode = rest[ ++i ];
-		else if ( arg === '--site-url' ) args.siteUrl = rest[ ++i ];
-		else if ( arg === '--cloudflare-project' ) args.cloudflareProject = rest[ ++i ];
-		else if ( ! arg.startsWith( '--' ) && ! args.profileRef ) args.profileRef = arg;
-		else usage();
+async function runDeployConfig( profileRef, options ) {
+	const mode = options.to ?? 'github-pages';
+	if ( ! DEPLOY_MODES.includes( mode ) ) {
+		failDeployMode( mode );
 	}
-	if ( ! args.target ) usage();
-	if ( ! DEPLOY_MODES.includes( args.mode ) ) {
-		console.error( `Unknown deploy mode "${ args.mode }" — use one of: ${ DEPLOY_MODES.join( ', ' ) }` );
-		process.exit( 2 );
-	}
-	let siteUrl = args.siteUrl;
-	if ( ! siteUrl && args.profileRef ) {
-		const profile = await loadProfile( args.profileRef );
+	let siteUrl = options.siteUrl;
+	if ( ! siteUrl && profileRef ) {
+		const profile = await loadProfile( profileRef );
 		siteUrl = String( profile.url ?? '' );
 	}
 	try {
-		const emitted = await emitDeployConfig( args.target, {
-			mode: args.mode,
+		const emitted = await emitDeployConfig( options.target, {
+			mode,
 			siteUrl,
-			cloudflareProject: args.cloudflareProject,
+			cloudflareProject: options.cloudflareProject,
 		} );
-		console.log( `\u2713 Emitted the deploy pipeline into ${ args.target }:` );
+		console.log( `\u2713 Emitted the deploy pipeline into ${ options.target }:` );
 		for ( const file of emitted.files ) {
 			console.log( `  + ${ file }` );
 		}
@@ -448,34 +410,97 @@ async function runDeployConfig( rest ) {
 	}
 }
 
-async function runWizard( rest ) {
-	const args = { url: undefined, target: undefined, name: undefined, mode: 'github-pages', build: false, cloudflareProject: undefined };
-	for ( let i = 0; i < rest.length; i++ ) {
-		const arg = rest[ i ];
-		if ( arg === '--target' ) args.target = rest[ ++i ];
-		else if ( arg === '--name' ) args.name = rest[ ++i ];
-		else if ( arg === '--to' ) args.mode = rest[ ++i ];
-		else if ( arg === '--build' ) args.build = true;
-		else if ( arg === '--cloudflare-project' ) args.cloudflareProject = rest[ ++i ];
-		else if ( ! arg.startsWith( '--' ) && ! args.url ) args.url = arg;
-		else usage();
+async function runWizard( url, options ) {
+	const mode = options.to ?? 'github-pages';
+	if ( ! DEPLOY_MODES.includes( mode ) ) {
+		failDeployMode( mode );
 	}
-	if ( ! args.url || ! args.target ) usage();
-	if ( ! DEPLOY_MODES.includes( args.mode ) ) {
-		console.error( `Unknown deploy mode "${ args.mode }" — use one of: ${ DEPLOY_MODES.join( ', ' ) }` );
-		process.exit( 2 );
+	if ( options.preset && ! PRESET_NAMES.includes( options.preset ) ) {
+		failPreset( options.preset );
 	}
+	if ( options.render && ! RENDER_MODES.includes( options.render ) ) {
+		failRender( options.render );
+	}
+	// Interactive target prompt (clack text) when the flag is missing on a
+	// TTY; a hard error otherwise (the old CLI required it, and CI does).
+	let target = options.target;
+	if ( ! target && isInteractive() ) {
+		const answer = await text( {
+			message: 'Where should the project be scaffolded?',
+			placeholder: './customer-frontend',
+		} );
+		if ( isCancel( answer ) ) {
+			console.log( 'Wizard cancelled.' );
+			process.exitCode = 0;
+			return;
+		}
+		target = String( answer ?? '' ).trim();
+	}
+	if ( ! target ) {
+		fail( '--target <dir> is required.' );
+	}
+
+	// Interactive preset + render choice and the final confirm (clack
+	// select/confirm). Non-TTY (CI/e2e) runs stay deterministic:
+	// suggestPreset() picks the preset, the render stays 'static', no
+	// prompts.
+	const ui = isInteractive()
+		? {
+				selectPreset: async ( suggested, report ) => {
+					const chosen = await select( {
+						message: `Preset (suggested: ${ suggested }${ report.woocommerce ? ' — WooCommerce detected' : '' }):`,
+						initialValue: suggested,
+						options: PRESET_NAMES.map( ( name ) => ( {
+							value: name,
+							label: name,
+							hint: PRESETS[ name ].description,
+						} ) ),
+					} );
+					if ( isCancel( chosen ) ) return null;
+					return chosen;
+				},
+				selectRender: async ( suggested, preset ) => {
+					// Only the storefront preset offers the choice (104 Q4) —
+					// blogs stay static unless --render says otherwise.
+					const chosen = await select( {
+						message: `Render mode for the ${ preset } preset:`,
+						initialValue: suggested,
+						options: [
+							{ value: 'static', label: 'static', hint: 'prerendered product pages (the default)' },
+							{ value: 'ssr', label: 'ssr', hint: 'on-demand product route + server output' },
+						],
+					} );
+					if ( isCancel( chosen ) ) return null;
+					return chosen;
+				},
+				confirmScaffold: async ( preset, targetDir ) => {
+					const ok = await confirm( {
+						message: `Scaffold the ${ preset } preset into ${ targetDir }?`,
+					} );
+					return ok === true;
+				},
+			}
+		: undefined;
+
+	const s = isInteractive() ? spinner() : undefined;
 	try {
+		if ( s ) s.start( 'Running the setup wizard…' );
 		const result = await setupWizard( {
-			url: args.url,
-			targetDir: args.target,
-			name: args.name,
-			mode: args.mode,
-			cloudflareProject: args.cloudflareProject,
-			build: args.build,
+			url,
+			targetDir: target,
+			name: options.name,
+			mode,
+			cloudflareProject: options.cloudflareProject,
+			build: options.build === true,
+			preset: options.preset,
+			render: options.render,
+			ogImages: options.ogImages === true,
+			agents: options.agents,
+			ui,
 			// Local-dev opt-in only — the MCP surface never sets this.
 			allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
 		} );
+		if ( s ) s.stop( 'Setup wizard complete.' );
 		console.log( `\u2713 Wizard complete — site "${ result.siteName }" -> ${ result.targetDir }` );
 		console.log( `  built: ${ result.built }, git: ${ result.gitInitialized ? 'initialized' : 'skipped' }` );
 		for ( const file of result.deployFiles ) {
@@ -485,7 +510,168 @@ async function runWizard( rest ) {
 			console.warn( `\u26a0 ${ warning }` );
 		}
 	} catch ( error ) {
+		if ( s ) s.stop( 'Setup wizard failed.' );
+		if ( error instanceof Error && error.message === 'Wizard cancelled.' ) {
+			console.log( 'Wizard cancelled.' );
+			process.exitCode = 0;
+			return;
+		}
 		console.error( error instanceof Error ? error.message : error );
 		process.exitCode = 1;
 	}
 }
+
+// -- program -----------------------------------------------------------------
+
+const pkg = JSON.parse( await readFile( new URL( '../package.json', import.meta.url ), 'utf8' ) );
+const program = new Command();
+
+program
+	.name( 'nvoos-forge' )
+	.description( 'Proposal 096 — the WP→Astro generator CLI (analyze, scaffold, wizard, site, vault, deploy).' )
+	.version( pkg.version );
+
+program
+	.command( 'analyze' )
+	.description( 'discover a WordPress site and draft a site.json (site_analyze)' )
+	.argument( '<url>', 'the WordPress URL (https://…)' )
+	.option( '--write <path>', 'write the draft profile to a file' )
+	.action( async ( url, options ) => {
+		await runAnalyze( url, options );
+	} );
+
+program
+	.command( 'wizard' )
+	.description( 'one command: URL → analyze → preset → scaffold → build (opt) → git → pipeline' )
+	.argument( '<url>', 'the WordPress URL (https://…)' )
+	.option( '--target <dir>', 'scaffold target directory (prompted on a TTY when missing)' )
+	.option( '--name <name>', 'registry site name (default: derived from the hostname)' )
+	.option( '--to <mode>', 'deploy mode', 'github-pages' )
+	.option( '--preset <name>', 'blog | storefront | minimal (default: suggested from the analysis)' )
+	.option( '--render <mode>', 'static | ssr (default: static; prompted for storefront on a TTY)' )
+	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
+	.option( '--build', 'run npm install + astro build before finishing' )
+	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
+	.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
+	.action( async ( url, options ) => {
+		await runWizard( url, options );
+	} );
+
+program
+	.command( 'deploy-config' )
+	.description( 'emit the deploy pipeline into a scaffolded target (no network, no token)' )
+	.argument( '[profileRef]', 'site.json path or registered site name (for the site URL)' )
+	.requiredOption( '--target <dir>', 'scaffold target directory' )
+	.option( '--to <mode>', 'deploy mode', 'github-pages' )
+	.option( '--site-url <url>', 'site URL override' )
+	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
+	.action( async ( profileRef, options ) => {
+		await runDeployConfig( profileRef, options );
+	} );
+
+program
+	.command( 'deploy' )
+	.description( 'scaffold if needed, emit the pipeline, create a private repo, push' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'scaffold target directory' )
+	.option( '--to <mode>', 'deploy mode', 'github-pages' )
+	.option( '--repo <name>', 'repository name (default: slugified site name)' )
+	.option( '--org <org>', 'create the repository under an organization' )
+	.option( '--public', 'make the repository public (default: private)' )
+	.option( '--preset <name>', 'blog | storefront | minimal (applied when scaffolding)' )
+	.option( '--render <mode>', 'static | ssr (applied when scaffolding)' )
+	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
+	.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
+	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
+	.action( async ( profileRef, options ) => {
+		await runDeploy( profileRef, options );
+	} );
+
+const siteCommand = program
+	.command( 'site' )
+	.description( 'manage registered sites (the multi-site registry)' );
+siteCommand
+	.command( 'add' )
+	.description( 'register a profile under a name' )
+	.argument( '<name>' )
+	.argument( '<profilePath>', 'path to the site.json profile' )
+	.option( '--url <url>', 'site URL (defaults to the profile\'s url)' )
+	.option( '--default', 'make this the default site' )
+	.action( async ( name, profilePath, options ) => {
+		await runSiteAdd( name, profilePath, options );
+	} );
+siteCommand
+	.command( 'remove' )
+	.description( 'remove a registered site' )
+	.argument( '<name>' )
+	.action( async ( name ) => {
+		await runSiteRemove( name );
+	} );
+siteCommand
+	.command( 'list' )
+	.description( 'list registered sites' )
+	.action( async () => {
+		await runSiteList();
+	} );
+siteCommand
+	.command( 'use' )
+	.description( 'set the default site' )
+	.argument( '<name>' )
+	.action( async ( name ) => {
+		await runSiteUse( name );
+	} );
+
+const vaultCommand = program
+	.command( 'vault' )
+	.description( 'manage the credential vault (AES-256-GCM)' );
+vaultCommand
+	.command( 'set' )
+	.description( 'store a secret (value on stdin — never argv)' )
+	.argument( '<name>' )
+	.action( async ( name ) => {
+		await runVaultSet( name );
+	} );
+vaultCommand
+	.command( 'delete' )
+	.description( 'delete a vault entry' )
+	.argument( '<name>' )
+	.action( async ( name ) => {
+		await runVaultDelete( name );
+	} );
+vaultCommand
+	.command( 'list' )
+	.description( 'list vault entry names' )
+	.action( async () => {
+		await runVaultList();
+	} );
+
+/** Shared scaffold options — the default command and the `forge` alias. */
+function scaffoldOptions( cmd ) {
+	return cmd
+		.argument( '<profileRef>', 'site.json path or registered site name' )
+		.option( '--target <dir>', 'scaffold target directory' )
+		.option( '--template <nameOrPath>', 'built-in template name or a directory path' )
+		.option( '--preset <name>', 'blog | storefront | minimal' )
+		.option( '--render <mode>', 'static | ssr (default: the preset\'s render mode, static)' )
+		.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
+		.option( '--overwrite', 'replace a non-forge target directory' )
+		.option( '--check', 'verify collection sizes against the page caps (no scaffold)' )
+		.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' );
+}
+
+// The scaffold is the DEFAULT command (`isDefault`), so the bare form
+// `node scripts/forge.mjs site.json --target <dir> …` and the explicit
+// `forge` word parse identically — and the scaffold options are scoped to
+// this command (program-level options would shadow the wizard/deploy
+// subcommands' own --target flags).
+const forgeCommand = program
+	.command( 'forge', { isDefault: true } )
+	.description( 'scaffold the Astro project (the default command)' );
+scaffoldOptions( forgeCommand ).action( async ( profileRef, options ) => {
+	if ( ! profileRef ) {
+		fail( 'Missing <site.json|name> — see --help.' );
+	}
+	await runScaffold( profileRef, options );
+} );
+
+await program.parseAsync( process.argv );

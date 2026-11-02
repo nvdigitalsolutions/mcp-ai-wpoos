@@ -1,0 +1,143 @@
+// ---------------------------------------------------------------------------
+// presets.ts — forge presets (Proposal 104 §4.3, D8): one command-line
+// choice maps onto a template + a default collection profile + surface
+// toggles, mirroring the Accessible Starter CLI pattern.
+//
+//   - `blog`       — today's default: posts, pages, search, feeds.
+//   - `storefront` — blog + the products catalog + the static front page.
+//   - `minimal`    — posts/pages only (the home and page routes consume the
+//                    pages collection), no search surface.
+//
+// `suggestPreset()` derives the default from a site_analyze report (Woo or
+// product content detected → 'storefront', otherwise 'blog'). The wizard
+// auto-suggests from it; `applyPresetToProfile()` applies the collection
+// profile. Erasable-only TS (no enums/namespaces) — forge.mjs imports this
+// file under Node native type stripping.
+// ---------------------------------------------------------------------------
+
+import type { DiscoveryReport } from './discovery.ts';
+import type { SiteProfile, WpCollection } from './types.ts';
+
+export const PRESET_NAMES = ['blog', 'storefront', 'minimal'] as const;
+export type PresetName = (typeof PRESET_NAMES)[number];
+
+export const RENDER_MODES = ['static', 'ssr'] as const;
+export type RenderMode = (typeof RENDER_MODES)[number];
+
+/** Surfaces a preset toggles at scaffold time. */
+export interface PresetSurfaces {
+	/** /search/ page + post-build Pagefind index. */
+	search: boolean;
+	/** /feed.xml RSS. */
+	feed: boolean;
+	/** /sitemap.xml (+ the robots.txt sitemap pointer). */
+	sitemap: boolean;
+	/**
+	 * Per-post build-time OG cards (104 §4.8 / Q5, the Cactus pattern) —
+	 * ships the satori/resvg endpoint + injected devDeps + og:image wiring.
+	 * OFF by default: default scaffolds stay zero-dep for OG.
+	 */
+	ogImages: boolean;
+}
+
+export interface ForgePreset {
+	name: PresetName;
+	/** Built-in template name (or path) the preset scaffolds from. */
+	template: string;
+	/**
+	 * Rendering model (104 Q4): 'static' is today's template; 'ssr' swaps
+	 * the static product pages for an on-demand route + server output.
+	 */
+	render: RenderMode;
+	/** Surface toggles applied to the generated project. */
+	surfaces: PresetSurfaces;
+	/** One-line description for CLI prompts. */
+	description: string;
+}
+
+export const PRESETS: Record<PresetName, ForgePreset> = {
+	blog: {
+		name: 'blog',
+		template: 'blog',
+		render: 'static',
+		surfaces: { search: true, feed: true, sitemap: true, ogImages: false },
+		description: 'Blog: posts, pages, search, feeds (the Phase 0 default).',
+	},
+	storefront: {
+		name: 'storefront',
+		template: 'blog',
+		render: 'static',
+		surfaces: { search: true, feed: true, sitemap: true, ogImages: false },
+		description: 'Storefront: blog + products catalog + static front page.',
+	},
+	minimal: {
+		name: 'minimal',
+		template: 'blog',
+		render: 'static',
+		surfaces: { search: false, feed: true, sitemap: true, ogImages: false },
+		description: 'Minimal: posts and pages only, no search.',
+	},
+};
+
+/**
+ * Suggest a preset from a site_analyze report: WooCommerce or any product
+ * collection detected → 'storefront', otherwise the blog default.
+ */
+export function suggestPreset(report: Pick<DiscoveryReport, 'woocommerce' | 'collections'>): PresetName {
+	const hasProducts =
+		report.woocommerce === true || report.collections.some((collection) => collection.kind === 'product');
+	return hasProducts ? 'storefront' : 'blog';
+}
+
+/** The standard wc/v3 products collection a storefront profile defaults to. */
+const STOREFRONT_PRODUCTS: WpCollection = {
+	slug: 'products',
+	restBase: 'wc/v3/products',
+	fields: [
+		'id',
+		'name',
+		'slug',
+		'permalink',
+		'date_created_gmt',
+		'date_modified_gmt',
+		'description',
+		'short_description',
+		'price',
+		'regular_price',
+		'sale_price',
+		'stock_status',
+		'sku',
+		'images',
+		'categories',
+	],
+	kind: 'product',
+	authMode: 'wc-consumer',
+	optional: true,
+};
+
+/**
+ * Apply a preset to a drafted profile (the wizard's collection-profile
+ * step). 'minimal' drops commerce collections — posts/pages stay because
+ * the home, page and sitemap routes consume them; 'storefront' ensures a
+ * products collection exists (wc/v3 with consumer-key auth); 'blog' is the
+ * identity.
+ */
+export function applyPresetToProfile(profile: SiteProfile, preset: PresetName): SiteProfile {
+	switch (preset) {
+		case 'minimal':
+			return {
+				...profile,
+				collections: profile.collections.filter(
+					(collection) => collection.slug === 'posts' || collection.slug === 'pages'
+				),
+			};
+		case 'storefront':
+			if (profile.collections.some((collection) => collection.slug === 'products')) {
+				return profile;
+			}
+			return { ...profile, collections: [...profile.collections, { ...STOREFRONT_PRODUCTS }] };
+		case 'blog':
+		default:
+			return profile;
+	}
+}

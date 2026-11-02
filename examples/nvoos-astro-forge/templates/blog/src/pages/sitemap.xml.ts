@@ -2,15 +2,21 @@ import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import manifest from '../../nvoos.json';
 
-/** /sitemap.xml — every generated URL, self-referential (never the WP origin). */
+/** /sitemap.xml — every generated URL, self-referential (never the WP origin).
+ * Prerendered in both render modes. */
+export const prerender = true;
+
 export const GET: APIRoute = async ({ site }) => {
 	const posts = await getCollection('posts');
 	const pages = await getCollection('pages');
 	// The products pages are pruned by the scaffold when the profile has no
 	// products collection — mirror that here so the endpoint never references
-	// an undefined collection.
+	// an undefined collection. `astro check` types getCollection against the
+	// declared collections, so the cast documents that products exists only
+	// in storefront scaffolds (the manifest gate keeps the call unreachable
+	// otherwise; id/slug are common to every collection shape).
 	const hasProducts = manifest.collections.some((collection) => collection.slug === 'products');
-	const products = hasProducts ? await getCollection('products') : [];
+	const products = hasProducts ? await getCollection('products' as 'posts') : [];
 	const frontPageSlug = manifest.frontPage;
 
 	const urls = [

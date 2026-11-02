@@ -33,7 +33,8 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `lib/wp-client.ts` | WP REST client — `X-WP-TotalPages` pagination, typed `WpClientError` codes |
 | `lib/wp-loader.ts` | Astro 7 content-layer loader (`createWpLoader`) |
 | `lib/sanitize.ts` | `SANITIZE_VERSION` + allowlist + `sanitizeHtml()` |
-| `lib/scaffold.ts` | Template copy, FORGE-marker rewrite, manifest, gates |
+| `lib/scaffold.ts` | Template copy, FORGE-marker rewrite, manifest, gates, preset surfaces, agent stubs |
+| `lib/presets.ts` | 104 §4.3 preset registry — `blog`/`storefront`/`minimal` descriptors, `suggestPreset()`, `applyPresetToProfile()` |
 | `lib/vault.ts` | Phase 3.1 credential store — AES-256-GCM per-entry (`~/.nvoos-forge/vault.json`), `NVOOS_FORGE_VAULT_KEY` passphrase, plaintext opt-in, `maskSecret` |
 | `lib/sites.ts` | Phase 3.4 multi-site registry (`sites.json`) — named profile refs + default flag |
 | `lib/github.ts` | Phase 3.2 octokit deploy — private-by-default repo create, git-data commit/push, sanitized errors |
@@ -46,10 +47,10 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `mcp/` | Phase 4 MCP surface (095 dual-era pattern): single-source `registry.ts` (zod + annotations + write flags; router/full modes), `bff.ts` (rate limit → Host/Origin → fail-closed write auth), `stdio.ts`, 7 tool slices |
 | `scripts/forge-mcp.mjs` | MCP Streamable HTTP entry (`FORGE_MCP_PORT`, default 8472) |
 | `server.json` | 061-pattern MCP registry metadata (`io.github.nvdigitalsolutions/nvoos-astro-forge`) — NOT in the npm `files` |
-| `scripts/forge.mjs` | CLI (Node ≥ 22.6 — native TS type stripping, zero build step) |
-| `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 wire fixture — the Phase 0 CI stand-in for WordPress Playground |
+| `scripts/forge.mjs` | CLI on **commander** + **@clack/prompts** (104 §4.3) — `analyze`, `wizard [--preset …]`, `site`, `vault`, `deploy-config`, `deploy`, scaffold (`--preset`, `--no-agents`); plain JS, Node ≥ 22.6 native TS type stripping |
+| `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 + wc/v3 wire fixture — the Phase 0 CI stand-in for WordPress Playground (single-product detail routes for the Q4 SSR path) |
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
-| `templates/blog/` | The production template (posts/pages, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens) |
+| `templates/blog/` | The production template (posts/pages, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens) + the 104 additions: `src/lib/theme/` (runtime theme module port), `src/copy/` (typed copy tables), `src/lib/seo.ts` (kind-typed JSON-LD), `src/styles/tokens-tailwind.css` (Tailwind v4 bridge, unused by default), the inert `src/pages/products/_ssr/[...slug].astro` (Q4 on-demand route) and `src/pages/_og/[slug].png.ts` (Q5 OG cards) |
 | `tests/` | `wp-client` / `sanitize` / `wp-loader` / `scaffold` unit suites + `forge-e2e.test.ts` (exit gate) |
 | `.github/workflows/astro-forge.yml` | CI: typecheck + unit + e2e on Node 24 (Astro 7 needs ≥ 22.23.4 — the runner's latest 22.x is one patch short) |
 
@@ -58,9 +59,9 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 ```sh
 cd examples/nvoos-astro-forge
 npm install
-npm test                 # 38 unit tests (client, sanitizer, loader, scaffold)
+npm test                 # 215 unit tests (client, sanitizer, loader, scaffold, presets, theme, seo, copy, …)
 npm run typecheck
-npm run test:e2e         # exit gate: fixture WP → scaffold → npm install → astro check + build → HTML asserts (~40s, registry access for the generated project's install)
+npm run test:e2e         # exit gate: fixture WP → scaffold → npm install → astro check + build → HTML asserts (~3 min, registry access for the generated projects' installs)
 node scripts/wp-fixture-server.mjs   # :8473 — real wp/v2 wire shapes
 node scripts/forge.mjs site.json --target ./out --check   # live source check (root doc + per-collection size-vs-cap)
 node scripts/forge.mjs site.json --target ./out           # scaffold the project
@@ -73,6 +74,9 @@ node scripts/forge.mjs site.json --target ./out           # scaffold the project
 3. Scaffold → `cd <target> && npm install && npm run build` with `ASTRO_SITE` set.
 4. Design language (098 `design_theme` output) applies over the template's `--forge-*` tokens in `src/styles/global.css` — content is re-themed, never re-cloned.
 
+Pick a preset with `--preset blog|storefront|minimal` (or let the wizard
+suggest one from the analysis — Woo/products detected → `storefront`).
+
 ## The exit gate (CI-enforced)
 
 `tests/forge-e2e.test.ts` boots the fixture server on an ephemeral port,
@@ -80,7 +84,15 @@ scaffolds the **production** template, `npm install`s the generated project,
 runs `astro check` + `astro build`, then asserts on `dist/`: posts/pages
 rendered, `alert`/`onerror`/`javascript:` count = 0 in the xss-trap post,
 allowlisted embeds survive, canonical + `BlogPosting` JSON-LD + sitemap/robots
-wired. The workflow runs on `paths: examples/nvoos-astro-forge/**`.
+wired. The 104 extensions assert the agent stubs, copy tables, `lib/seo.ts`,
+the theme module and the byte-identical `tokens-tailwind.css`, run the
+**minimal preset** through its own install + `astro check` + build, and run
+the **SSR variant** (Q4/Q5: `--render ssr` + `--og-images`) through
+install + check + build, then serve `dist/server/entry.mjs` and assert the
+live PDP (200 + `Product` JSON-LD + cache header, 301 slug convergence,
+404) and the built OG cards. The wizard run exercises the non-TTY
+`suggestPreset` path. The workflow runs on
+`paths: examples/nvoos-astro-forge/**`.
 
 ## Gotchas (each cost a fix 2026-10-31 — do not re-hit)
 
@@ -151,6 +163,87 @@ wired. The workflow runs on `paths: examples/nvoos-astro-forge/**`.
 - **`forge.mjs` is plain JS, never TS syntax** — `.mjs` gets NO type
   stripping: `import type` and inline `type` specifiers are syntax errors
   there (strip them; the runtime DEPLOY_MODES check carries the constraint).
+  Same rule for the 104 CLI additions: **commander** parses args, and the
+  **@clack/prompts** named exports (`select`/`confirm`/`text`/`spinner`/
+  `isCancel`) import from a plain ESM package — no TS anywhere.
+- **Program-level commander options are GLOBAL — they shadow subcommand
+  flags of the same name** (commander parses program options from anywhere
+  in argv before dispatching). The scaffold is therefore the
+  `isDefault: true` subcommand (`forge`): `forge.mjs site.json --target X`
+  and `forge.mjs forge site.json --target X` parse identically, and the
+  wizard/deploy subcommands keep their own `--target`. Never declare
+  `--target`/`--preset` at program level again.
+- **The wizard's clack prompts must stay TTY-gated** — `forge wizard`
+  without `--preset` prompts via `select`/`confirm` only when
+  `process.stdin.isTTY && process.stdout.isTTY`; otherwise
+  `suggestPreset(site_analyze(...))` applies deterministically (the e2e
+  wizard run depends on this — it spawns with piped stdio). The shared
+  `setupWizard()` stays non-interactive for the MCP surface: prompt hooks
+  arrive through the optional `ui` parameter (`selectPreset`/
+  `confirmScaffold`), never directly in wizard.ts.
+- **`scaffold()` applies the preset itself** (collection filter + surface
+  pruning + manifest `surfaces` flag) — callers must not pre-apply
+  `applyPresetToProfile` or a `preset`-scaffold forgets the filter (the
+  minimal e2e caught this). Wizard.ts still pre-applies so the REGISTERED
+  profile JSON reflects the preset; the re-application in scaffold is
+  idempotent.
+- **`getCollection()` on a pruned collection breaks `astro check`** — the
+  minimal preset drops the products collection, so the sitemap/redirects
+  endpoints type-error on `getCollection('products')`. They keep the
+  `manifest.collections` runtime gate and call
+  `getCollection('products' as 'posts')` with the routing-fields comment —
+  the cast documents that only id/slug/link are consumed. (The pages
+  themselves stay scaffold-pruned as before.)
+- **`limax` is vendored into generated projects** — `wp-loader.ts` imports
+  it (D4 slug rule: transliteration, underscore→dash, 80-char cap,
+  `'item'` fallback), so `templates/blog/package.json` must list it in
+  `dependencies` or payload-source scaffolds fail to build. Same for
+  `schema-dts` in the template devDeps (`astro check` on `src/lib/seo.ts`)
+  — and in the FORGE devDeps, because the forge tests import the template
+  files directly under `tsc --noEmit`.
+- **Copy tables derive the completeness gate from the SHAPE, not literal
+  strings** — `en.ts` must NOT be `as const`, or `Copy = typeof en` locks
+  literal types and a second locale's different strings fail typecheck
+  (only identical text would pass). The gate is: missing/extra keys fail
+  `astro check`; string values are free.
+- **Astro 7 server mode no longer prerenders `getStaticPaths` pages** —
+  the build warns `getStaticPaths() ignored in dynamic page` and turns them
+  on-demand. The `--render ssr` scaffold therefore injects
+  `export const prerender = true;` into the static chrome (home, pages,
+  posts, PLP, search — `addPrerender()` in scaffold.ts, inserted right
+  after the opening frontmatter fence, never double-injected) so only the
+  PDP is on-demand and Pagefind/sitemap keep working; the OG endpoint
+  carries the flag in the template itself.
+- **`pagefind --site dist` breaks server builds** — the prerendered HTML
+  lives under `dist/client/` in server-output mode; the ssr scaffold
+  rewrites the build script to `pagefind --site dist/client`, and
+  `postbuild.mjs` materializes `_redirects` next to whichever redirects
+  map exists (`dist/` or `dist/client/`).
+- **Inert template files live in underscore dirs, renamed at scaffold
+  time** — `products/_ssr/` becomes `products/[id]/` (the on-demand route)
+  and `_og/` becomes `og/` (OG cards) only when selected; otherwise they
+  are pruned. Astro skips underscore dirs under `src/pages/`, so both stay
+  route-less in the template. Keep the rename SOURCE a sibling of the
+  target: `_ssr/[...slug].astro` (not `_ssr/[id]/[...slug].astro`) — on
+  Windows, renaming `_ssr` → `[id]` when `_ssr` contains a `[id]` child
+  nests it to `[id]/[id]/...`.
+- **OG deps are injected, never templated** — `satori`/
+  `@resvg/resvg-js`/`@fontsource/inter` are added to the GENERATED
+  package.json only when `ogImages` is on (default scaffolds stay zero-dep
+  for OG); versions are pinned in `OG_DEV_DEPENDENCIES` (scaffold.ts). The
+  OG endpoint resolves fonts via `createRequire` against
+  `@fontsource/inter/files/inter-latin-{400,700}-normal.woff`; card tokens
+  are baked from the applied `--forge-*` values (line-anchored
+  `FORGE:og-tokens` span). A render failure warns + falls back — never a
+  build failure.
+- **The manifest writes explicit loader defaults** — `source` and
+  `authMode` are always emitted (`'wp'` / `'application-password'` when
+  unset) so the JSON's inferred type keeps both keys and the SSR route can
+  read `productsRef.source`/`authMode` under `astro check`. Dropping the
+  defaults makes those keys vanish from the type.
+- **`--render ssr` + blog-only profiles** — the products tree is pruned
+  first (collection-driven); the ssr swap is guarded on `hasProducts` so
+  the inert `_ssr` dir never survives a blog-only scaffold.
 - **Node strip-only mode bans parameter properties** —
   `constructor(private readonly x)` fails with
   `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` at CLI runtime even though vitest
@@ -197,6 +290,13 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   ready upsell during the rebuild.
 - Forge today: posts/pages collections can be forged live against the
   customer's site. Woo products need Phase 1's `wc/v3` collection.
+- **Runtime theming port target (104 §4.2):** `templates/blog/src/lib/theme/`
+  is the canonical port of the velocity theme module (`theme.ts` +
+  `registry.ts`, pure — no Astro imports). The boot script + toggle land in
+  the template layout when runtime theming ships (104 Q4 define-only); the
+  forge registry variant derives brand themes from the template's own
+  `--forge-*` token block, mirroring how velocity derives them from the
+  generated ADS bundle.
 - Keep the customer's name and URL out of skills and generated code — the
   design tokens alone are the deliverable (the 098 recreation loop is
   concept-adaptation, never cloning).
@@ -295,6 +395,21 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   rate limit + Host/Origin + fail-closed write auth, SSRF-guarded fetches.
   Remaining: registry publication (owner) and the Playground demo
   blueprint.
+- **Proposal 104 Phase 4 — shipped 2026-11-02 (the forge half):** preset
+  wizard (commander + clack; `blog`/`storefront`/`minimal`,
+  `suggestPreset` from `site_analyze`, TTY-gated prompts), agent stubs
+  (`AGENTS.md` + `.context/`, `--no-agents`), typed copy tables
+  (`src/copy/`, the completeness gate is the type), kind-typed SEO util
+  (`src/lib/seo.ts` over `schema-dts`, `<`→`\u003c` escape), theme module
+  port (`src/lib/theme/`), Tailwind v4 token bridge
+  (`tokens-tailwind.css`), limax slugs (D4). **Q4 + Q5 approved + shipped
+  2026-11-02:** the render variant (`--render static|ssr` — on-demand PDP,
+  server output via `@astrojs/node`, prerendered chrome, cache headers,
+  301 slug convergence; wizard prompt for storefront) and per-post OG
+  cards (`--og-images`, satori/resvg/@fontsource injected only when on),
+  plus the wired `feed`/`sitemap` surface pruning. The storefront runtime
+  contract lives in the template README — velocity-side phases (P1–P3)
+  are the sibling track in the 104 plan.
 
 ## Repo conventions
 
@@ -319,7 +434,9 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
 - `examples/nvoos-astro-forge/README.md` (layout, quick start, invariants)
 - Proposal 096 trio (`docs/project/proposals/096-*`) · Proposal 098 (design
   language import — the theme input) · Proposal 092/095 (the storefront +
-  ADS the template borrows from)
+  ADS the template borrows from) · Proposal 104 (storefront runtime
+  hardening — the forge-half deliverables: presets, agent stubs, copy
+  tables, `lib/seo.ts`, theme port, Tailwind bridge, limax slugs)
 - Related skills: `mcp-ai-wpoos-astro-storefront` (the serving side — bridge,
   /mcp, tokens), `mcp-ai-wpoos-playground-demos` (the Phase 2 Playground
   fixture replacement), `mcp-ai-wpoos-git-ops`.

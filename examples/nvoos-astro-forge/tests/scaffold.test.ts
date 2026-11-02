@@ -9,7 +9,8 @@ import { pathToFileURL } from 'node:url';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { scaffold, renderContentConfig, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
+import { FORGE_ROOT, renderAstroConfig, rewriteOgTokens, scaffold, renderContentConfig, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -308,7 +309,7 @@ describe('renderContentConfig', () => {
 		const source = [
 			'// Header comment mentioning FORGE:site in prose.',
 			'// FORGE:site',
-			'const siteUrl = \'OLD\';',
+			"const siteUrl = 'OLD';",
 			'// FORGE:collections-end',
 		].join('\n');
 		const out = rewriteContentConfig(source, PROFILE);
@@ -318,3 +319,249 @@ describe('renderContentConfig', () => {
 		expect(out).not.toContain('OLD');
 	});
 });
+
+describe('scaffold — agent stubs (Proposal 104 §4.4)', () => {
+	it('emits AGENTS.md + .context/README.md by default', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'site');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' });
+
+		const agents = await readFile(path.join(target, 'AGENTS.md'), 'utf8');
+		expect(agents).toContain('src/content.config.ts');
+		expect(agents).toContain('nvoos.json');
+		expect(agents).toContain('Storefront runtime contract');
+		expect(agents).toContain('npm run build');
+
+		const context = await readFile(path.join(target, '.context', 'README.md'), 'utf8');
+		expect(context).toContain('customer context');
+	} );
+
+	it( 'omits both stubs with agents: false (--no-agents)', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'lean');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog', agents: false });
+		await expect(stat(path.join(target, 'AGENTS.md'))).rejects.toThrow();
+		await expect(stat(path.join(target, '.context'))).rejects.toThrow();
+	} );
+
+	it( 'collectProjectFiles ships the stubs (deploy + github_commit payload)', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'pushed');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' });
+		const files = await collectProjectFiles(target);
+		for ( const stub of AGENT_STUB_FILES ) {
+			expect( files[stub] ).toBeDefined();
+		}
+		expect( files['AGENTS.md'] ).toContain( 'nvoos-astro-forge' );
+	} );
+} );
+
+describe( 'scaffold — preset surfaces (Proposal 104 §4.3)', () => {
+	it( 'blog/storefront keep the search surface and flag it in the manifest', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'blog');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog', preset: 'storefront' });
+		await expect(stat(path.join(target, 'src', 'pages', 'search.astro'))).resolves.toBeTruthy();
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.surfaces).toEqual({ search: true, feed: true, sitemap: true, ogImages: false });
+		const pkg = JSON.parse(await readFile(path.join(target, 'package.json'), 'utf8'));
+		expect(pkg.scripts.build).toContain('pagefind');
+	} );
+
+	it( 'minimal prunes the search page, the pagefind step, and flags the manifest', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'minimal');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog', preset: 'minimal' });
+		await expect(stat(path.join(target, 'src', 'pages', 'search.astro'))).rejects.toThrow();
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.surfaces).toEqual({ search: false, feed: true, sitemap: true, ogImages: false });
+		const pkg = JSON.parse(await readFile(path.join(target, 'package.json'), 'utf8'));
+		expect(pkg.scripts.build).toBe('astro build && node scripts/postbuild.mjs');
+	} );
+} );
+
+describe( 'scaffold — tokens-tailwind.css (Proposal 104 §4.7)', () => {
+	it( 'survives scaffold byte-identical (no FORGE markers, no rewrites)', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'site');
+		await scaffold({
+			profile: { ...PROFILE, tokens: { accent: '#0b5f4e' } },
+			targetDir: target,
+			template: 'blog',
+		} );
+		const templateFile = await readFile(
+			path.join(FORGE_ROOT, 'templates', 'blog', 'src', 'styles', 'tokens-tailwind.css'),
+			'utf8'
+		);
+		const scaffolded = await readFile(path.join(target, 'src', 'styles', 'tokens-tailwind.css'), 'utf8');
+		expect(scaffolded).toBe(templateFile);
+		expect(scaffolded).not.toContain('FORGE:tokens'); // no rewrite markers inside
+		expect(scaffolded).toContain('--color-forge-accent: var(--forge-accent);');
+	} );
+} );
+
+describe( 'renderAstroConfig (Proposal 104 Q4)', () => {
+	const TEMPLATE_CONFIG = [
+		"import { defineConfig } from 'astro/config';",
+		'// FORGE:adapter-import',
+		"import manifest from './nvoos.json';",
+		'',
+		'export default defineConfig({',
+		'	site,',
+		'	// FORGE:render-config',
+		'	image: {',
+		'		domains: [],',
+		'	},',
+		'});',
+	].join('\n');
+
+	it( 'static removes both markers (the config is untouched)', () => {
+		const out = renderAstroConfig(TEMPLATE_CONFIG, 'static');
+		expect(out).not.toContain('FORGE');
+		expect(out).not.toContain('@astrojs/node');
+		expect(out).not.toContain("output: 'server'");
+		expect(out).toContain("import { defineConfig } from 'astro/config';");
+	} );
+
+	it( 'ssr wires the adapter import + server output', () => {
+		const out = renderAstroConfig(TEMPLATE_CONFIG, 'ssr');
+		expect(out).toContain("import node from '@astrojs/node';");
+		expect(out).toContain("\toutput: 'server',");
+		expect(out).toContain("\tadapter: node({ mode: 'standalone' }),");
+		expect(out).not.toContain('FORGE');
+	} );
+
+	it( 'fails loudly when the markers are missing', () => {
+		expect(() => renderAstroConfig('export default defineConfig({});', 'static')).toThrow(/FORGE:adapter-import/);
+	} );
+} );
+
+describe( 'scaffold — render variant (Proposal 104 Q4)', () => {
+	it( 'ssr swaps the static product pages for the on-demand route and rewrites the config', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'ssr');
+		const profile: SiteProfile = {
+			...PROFILE,
+			collections: [
+				...PROFILE.collections.filter((c) => c.slug !== 'products'),
+				{
+					slug: 'products',
+					restBase: 'wc/v3/products',
+					fields: ['id', 'name'],
+					kind: 'product',
+					authMode: 'wc-consumer',
+				},
+			],
+		};
+		await scaffold({ profile, targetDir: target, template: 'blog', render: 'ssr' });
+
+		await expect(stat(path.join(target, 'src', 'pages', 'products', '[...parts].astro'))).rejects.toThrow();
+		await expect(stat(path.join(target, 'src', 'pages', 'products', '_ssr'))).rejects.toThrow();
+		await expect(stat(path.join(target, 'src', 'pages', 'products', '[id]', '[...slug].astro'))).resolves.toBeTruthy();
+		const config = await readFile(path.join(target, 'astro.config.mjs'), 'utf8');
+		expect(config).toContain("import node from '@astrojs/node';");
+		expect(config).toContain("output: 'server'");
+		const pkg = JSON.parse(await readFile(path.join(target, 'package.json'), 'utf8'));
+		expect(pkg.scripts.build).toContain('pagefind --site dist/client');
+		// The static chrome stays build-time static — only the PDP is on-demand.
+		const postsPage = await readFile(path.join(target, 'src', 'pages', 'posts', '[...parts].astro'), 'utf8');
+		expect(postsPage).toContain('export const prerender = true;');
+		const productRoute = await readFile(path.join(target, 'src', 'pages', 'products', '[id]', '[...slug].astro'), 'utf8');
+		expect(productRoute).toContain('export const prerender = false;');
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.render).toBe('ssr');
+		expect(manifest.collections.find((c: { slug: string }) => c.slug === 'products').authMode).toBe('wc-consumer');
+	} );
+
+	it( 'static keeps the static pages and prunes the inert _ssr dir', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'static');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' });
+		await expect(stat(path.join(target, 'src', 'pages', 'products', '[...parts].astro'))).resolves.toBeTruthy();
+		await expect(stat(path.join(target, 'src', 'pages', 'products', '[id]'))).rejects.toThrow();
+		await expect(stat(path.join(target, 'src', 'pages', 'products', '_ssr'))).rejects.toThrow();
+		const config = await readFile(path.join(target, 'astro.config.mjs'), 'utf8');
+		expect(config).not.toContain("output: 'server'");
+		expect(config).not.toContain('@astrojs/node');
+		const postsPage = await readFile(path.join(target, 'src', 'pages', 'posts', '[...parts].astro'), 'utf8');
+		expect(postsPage).not.toContain('export const prerender = true;'); // static chrome untouched
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.render).toBe('static');
+	} );
+
+	it( 'ssr with a blog-only profile prunes the whole products tree', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'blog-ssr');
+		await scaffold({
+			profile: { ...PROFILE, collections: PROFILE.collections.filter((c) => c.slug !== 'products') },
+			targetDir: target,
+			template: 'blog',
+			render: 'ssr',
+		} );
+		await expect(stat(path.join(target, 'src', 'pages', 'products'))).rejects.toThrow();
+	} );
+} );
+
+describe( 'scaffold — ogImages surface (Proposal 104 §4.8 / Q5)', () => {
+	it( 'off (default): no OG endpoint, no injected deps, no og:image flag', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'plain');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' });
+		await expect(stat(path.join(target, 'src', 'pages', 'og'))).rejects.toThrow();
+		await expect(stat(path.join(target, 'src', 'pages', '_og'))).rejects.toThrow();
+		const pkg = JSON.parse(await readFile(path.join(target, 'package.json'), 'utf8'));
+		expect(pkg.devDependencies?.satori).toBeUndefined();
+		expect(pkg.devDependencies?.['@resvg/resvg-js']).toBeUndefined();
+		expect(pkg.devDependencies?.['@fontsource/inter']).toBeUndefined();
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.surfaces.ogImages).toBe(false);
+	} );
+
+	it( 'on: ships the endpoint, bakes the tokens, injects the devDeps, flags the manifest', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'og');
+		await scaffold({
+			profile: { ...PROFILE, tokens: { accent: '#0b5f4e' } },
+			targetDir: target,
+			template: 'blog',
+			surfaces: { ogImages: true },
+		} );
+		await expect(stat(path.join(target, 'src', 'pages', '_og'))).rejects.toThrow();
+		const endpoint = await readFile(path.join(target, 'src', 'pages', 'og', '[slug].png.ts'), 'utf8');
+		expect(endpoint).toContain("const OG_ACCENT = \"#0b5f4e\";");
+		expect(endpoint).toContain("const OG_INK = \"#1a1a1a\";");
+		expect(endpoint).toContain("const OG_SURFACE = \"#ffffff\";");
+		expect(endpoint).not.toContain('FORGE:og-tokens');
+		const pkg = JSON.parse(await readFile(path.join(target, 'package.json'), 'utf8'));
+		expect(pkg.devDependencies?.satori).toBe('^0.63.2');
+		expect(pkg.devDependencies?.['@resvg/resvg-js']).toBe('^2.6.2');
+		expect(pkg.devDependencies?.['@fontsource/inter']).toBe('^5.3.0');
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.surfaces.ogImages).toBe(true);
+	} );
+
+	it( 'fails loudly when the OG token markers are missing', () => {
+		expect(() => rewriteOgTokens('const x = 1;', {})).toThrow(/FORGE:og-tokens/);
+	} );
+} );
+
+describe( 'scaffold — feed/sitemap surface pruning (104 follow-up)', () => {
+	it( 'prunes the endpoints and flags the manifest when toggled off', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'lean-seo');
+		await scaffold({
+			profile: PROFILE,
+			targetDir: target,
+			template: 'blog',
+			surfaces: { feed: false, sitemap: false },
+		} );
+		await expect(stat(path.join(target, 'src', 'pages', 'feed.xml.ts'))).rejects.toThrow();
+		await expect(stat(path.join(target, 'src', 'pages', 'sitemap.xml.ts'))).rejects.toThrow();
+		await expect(stat(path.join(target, 'src', 'pages', 'robots.txt.ts'))).resolves.toBeTruthy();
+		// robots.txt.ts gates its sitemap pointer on the manifest flag.
+		const robots = await readFile(path.join(target, 'src', 'pages', 'robots.txt.ts'), 'utf8');
+		expect(robots).toContain("manifest.surfaces?.sitemap !== false");
+		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
+		expect(manifest.surfaces).toEqual({ search: true, feed: false, sitemap: false, ogImages: false });
+	} );
+} );

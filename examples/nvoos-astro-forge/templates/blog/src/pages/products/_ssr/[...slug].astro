@@ -1,0 +1,118 @@
+---
+// /products/{id}/{slug}/ — the on-demand product route (Proposal 104 Q4,
+// --render ssr). Scaffolded in place of the static [...parts].astro when
+// the render mode is 'ssr'; this directory is inert in static mode (Astro
+// skips underscore-prefixed dirs under src/pages/).
+//
+// Fetches ONE product from the site's REST at request time (the same
+// client + auth env the content layer uses), sanitizes the description,
+// emits Product JSON-LD in the initial HTML, 404s unknown ids, and 301s
+// requested slugs that differ from the canonical one. Astro 7 spread
+// params are flat slash-joined strings — normalize before comparing.
+import Base from '../../../layouts/Base.astro';
+import SmartImage from '../../../components/SmartImage.astro';
+import { jsonLdFor, renderJsonLd } from '../../../lib/seo.ts';
+import { WpClient, WpClientError } from '../../../forge/wp-client.ts';
+import { sanitizeHtml } from '../../../forge/sanitize.ts';
+import { extractPayloadRaw, extractRaw, slugify } from '../../../forge/wp-loader.ts';
+import type { WpAuth } from '../../../forge/types.ts';
+import manifest from '../../../../nvoos.json';
+
+export const prerender = false;
+
+const requestedSlug = (Astro.params.slug ?? '').replace(/\/+$/, '');
+const numericId = Number(Astro.params.id);
+const productsRef = manifest.collections.find((collection) => collection.slug === 'products');
+
+if (!productsRef || !Number.isFinite(numericId) || numericId < 1) {
+	return new Response('Not found', { status: 404 });
+}
+
+// The same env-first auth the content layer uses — never any literal secret.
+const wcAuth: WpAuth | undefined =
+	import.meta.env.WP_WC_CONSUMER_KEY && import.meta.env.WP_WC_CONSUMER_SECRET
+		? { type: 'basic', username: import.meta.env.WP_WC_CONSUMER_KEY, password: import.meta.env.WP_WC_CONSUMER_SECRET }
+		: undefined;
+const applicationAuth: WpAuth | undefined =
+	import.meta.env.WP_APPLICATION_USER && import.meta.env.WP_APPLICATION_PASSWORD
+		? { type: 'basic', username: import.meta.env.WP_APPLICATION_USER, password: import.meta.env.WP_APPLICATION_PASSWORD }
+		: undefined;
+const auth = productsRef.source === 'payload' ? undefined : productsRef.authMode === 'wc-consumer' ? wcAuth : applicationAuth;
+
+const siteUrl = (import.meta.env.WP_SITE_URL ?? manifest.url ?? '').replace(/\/+$/, '');
+const client = new WpClient({ baseUrl: siteUrl, auth });
+
+let entry: Record<string, unknown>;
+try {
+	const { body } = await client.get<Record<string, unknown>>(`${productsRef.restBase}/${numericId}`, {
+		_embed: '1',
+	});
+	entry = body ?? {};
+} catch (error) {
+	if (error instanceof WpClientError && (error.code === 'wp_not_found' || error.code === 'wp_auth_required')) {
+		return new Response('Not found', { status: 404 });
+	}
+	return new Response('Upstream error', { status: 502 });
+}
+
+const raw = productsRef.source === 'payload' ? extractPayloadRaw(entry) : extractRaw(entry);
+const canonicalSlug = raw.slug || slugify(raw.title);
+if (!canonicalSlug || requestedSlug !== canonicalSlug) {
+	return Astro.redirect(`/products/${numericId}/${canonicalSlug}/`, 301);
+}
+
+const pageUrl = Astro.site ? new URL(`/products/${numericId}/${canonicalSlug}/`, Astro.site).href : undefined;
+// Woo sets `price` to the sale price when on sale — sale state is
+// salePrice vs regularPrice, not vs price (mirrors the static PDP).
+const onSale = raw.salePrice && raw.regularPrice ? raw.salePrice !== raw.regularPrice : false;
+const offers = raw.price
+	? {
+			price: onSale ? String(raw.salePrice) : raw.price,
+			priceCurrency: 'USD',
+			availability:
+				raw.stockStatus === 'instock'
+					? ('https://schema.org/InStock' as const)
+					: ('https://schema.org/OutOfStock' as const),
+			url: pageUrl,
+		}
+	: undefined;
+const jsonLd = jsonLdFor('Product', {
+	name: raw.title,
+	image: raw.featuredImage,
+	description: raw.excerpt,
+	sku: raw.sku,
+	...(offers ? { offers } : {}),
+});
+
+// Cache the rendered product — the bridge webhook invalidates on change.
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+---
+
+<Base title={raw.title} description={raw.excerpt} canonical={pageUrl}>
+	<article class="post product">
+		<header>
+			<h1>{raw.title}</h1>
+			{raw.sku && <span>SKU {raw.sku}</span>}
+		</header>
+		{raw.featuredImage && (
+			<SmartImage class="featured" src={raw.featuredImage} sizes="(min-width: 48rem) 72ch, 100vw" />
+		)}
+		{raw.price && (
+			<p class="product-price product-price-large">
+				{onSale ? (
+					<>
+						<s>{raw.regularPrice}</s> {raw.salePrice}
+					</>
+				) : (
+					raw.price
+				)}
+				{raw.stockStatus === 'instock' && <span class="product-stock">In stock</span>}
+				{raw.stockStatus && raw.stockStatus !== 'instock' && (
+					<span class="product-stock product-stock-muted">{raw.stockStatus}</span>
+				)}
+			</p>
+		)}
+		<div class="post-body" set:html={sanitizeHtml(raw.html)} />
+	</article>
+	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
+</Base>

@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { createWpLoader } from '../lib/wp-loader.ts';
+import { createWpLoader, slugify } from '../lib/wp-loader.ts';
 import type { SiteProfile } from '../lib/types.ts';
 import type { LoaderContext } from 'astro/loaders';
 
@@ -446,3 +446,29 @@ describe('createWpLoader load()', () => {
 		expect(warnings.some((w) => w.includes('incomplete'))).toBe(true);
 	});
 });
+
+describe( 'slugify (D4 — limax, matches the velocity rule)', () => {
+	it( 'transliterates accents', () => {
+		expect( slugify( 'Café Crème' ) ).toBe( 'cafe-creme' );
+		expect( slugify( 'Ångström Über' ) ).toBe( 'angstroem-ueber' );
+	} );
+
+	it( 'keeps the plain ASCII behavior', () => {
+		expect( slugify( 'Aurora 3-Seater Sofa' ) ).toBe( 'aurora-3-seater-sofa' );
+		expect( slugify( 'hello_world  ' ) ).toBe( 'hello-world' );
+	} );
+
+	it( 'drops apostrophes, never separates them (velocity parity)', () => {
+		expect( slugify( "Lena's Chair!" ) ).toBe( 'lenas-chair' );
+	} );
+
+	it( 'caps at 80 characters', () => {
+		const long = 'x'.repeat( 120 );
+		expect( slugify( long ) ).toBe( 'x'.repeat( 80 ) );
+	} );
+
+	it( 'falls back to "item" for empty input', () => {
+		expect( slugify( '' ) ).toBe( 'item' );
+		expect( slugify( '---' ) ).toBe( 'item' );
+	} );
+} );

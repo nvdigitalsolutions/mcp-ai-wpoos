@@ -4,6 +4,7 @@
 import Base from '../../layouts/Base.astro';
 import SmartImage from '../../components/SmartImage.astro';
 import { getCollection, render } from 'astro:content';
+import { jsonLdFor, renderJsonLd } from '../../lib/seo.ts';
 
 export async function getStaticPaths() {
 	const products = await getCollection('products');
@@ -24,25 +25,22 @@ const onSale = product.data.salePrice && product.data.regularPrice
 	: false;
 const offers = product.data.price
 	? {
-			'@type': 'Offer' as const,
 			price: onSale ? product.data.salePrice : product.data.price,
 			priceCurrency: 'USD',
 			availability:
 				product.data.stockStatus === 'instock'
-					? 'https://schema.org/InStock'
-					: 'https://schema.org/OutOfStock',
+					? ('https://schema.org/InStock' as const)
+					: ('https://schema.org/OutOfStock' as const),
 			url: pageUrl,
 		}
 	: undefined;
-const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'Product',
+const jsonLd = jsonLdFor('Product', {
 	name: product.data.title,
 	image: product.data.featuredImage,
 	description: product.data.excerpt,
 	sku: product.data.sku,
 	...(offers ? { offers } : {}),
-};
+});
 ---
 
 <Base title={product.data.title} description={product.data.excerpt} canonical={pageUrl}>
@@ -73,5 +71,5 @@ const jsonLd = {
 			<Content />
 		</div>
 	</article>
-	<script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
+	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
 </Base>
