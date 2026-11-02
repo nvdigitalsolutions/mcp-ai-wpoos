@@ -1,20 +1,34 @@
 ---
 // ---------------------------------------------------------------------------
-// Home — SSR with CDN cache headers (D4). Featured/bestsellers are filtered
-// from the newest + top-rated pages; the banner/carousel come from the
-// globals endpoints. JSON-LD: Organization + WebSite (industry baseline).
+// Home — the explainer landing page + commerce pockets (D4).
+//
+// The hero and the "What is this app?" / "Explore the stack" sections
+// describe the storefront itself; the stats and stack-explorer islands make
+// it live (real contract totals, active theme, live contract read). The
+// featured/bestsellers grids are filtered from the newest + top-rated pages
+// and only render once the catalog actually has products. JSON-LD:
+// Organization + WebSite (industry baseline).
 // ---------------------------------------------------------------------------
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Banner from '../components/Banner.astro';
 import Carousel from '../components/Carousel.astro';
 import ProductGrid from '../components/ProductGrid.astro';
-import { getGlobal, getProducts } from '../lib/commerce/client';
+import HomeStats from '../islands/HomeStats';
+import StackExplorer from '../islands/StackExplorer';
+import {
+	getBrands,
+	getCategories,
+	getGlobal,
+	getPosts,
+	getProducts,
+} from '../lib/commerce/client';
 import { normalizeProductMedia } from '../lib/commerce/normalize';
 import { organizationJsonLd, webSiteJsonLd } from '../lib/seo/jsonld';
 import { pageTitle } from '../lib/seo/meta';
 import { absoluteUrl } from '../lib/url';
 import type { Banner as BannerData } from '../lib/commerce/types';
+import '../styles/home.css';
 
 // Home is dynamic (globals/promotions change) — cacheable, not prerendered.
 Astro.response.headers.set(
@@ -22,11 +36,15 @@ Astro.response.headers.set(
 	'public, s-maxage=300, stale-while-revalidate=60'
 );
 
-const [banner, newest, topRated] = await Promise.all([
-	getGlobal('banner', Astro.url),
-	getProducts(Astro.url, { page: 1, limit: 50, sort: 'date' }),
-	getProducts(Astro.url, { page: 1, limit: 50, sort: '-rating' }),
-]);
+const [banner, newest, topRated, categoryMeta, brandMeta, postMeta] =
+	await Promise.all([
+		getGlobal('banner', Astro.url),
+		getProducts(Astro.url, { page: 1, limit: 50, sort: 'date' }),
+		getProducts(Astro.url, { page: 1, limit: 50, sort: '-rating' }),
+		getCategories(Astro.url, { page: 1, limit: 1 }),
+		getBrands(Astro.url, { page: 1, limit: 1 }),
+		getPosts(Astro.url, { page: 1, limit: 1 }),
+	]);
 
 const normalizeList = (list: typeof newest.docs) =>
 	list.map(normalizeProductMedia);
@@ -39,24 +57,101 @@ const bestsellers = normalizeList(
 );
 const fallback = normalizeList(newest.docs.slice(0, 8));
 
+const liveCounts = {
+	products: newest.totalDocs,
+	categories: categoryMeta.totalDocs,
+	brands: brandMeta.totalDocs,
+	posts: postMeta.totalDocs,
+};
+
 const site = Astro.site ?? new URL('https://store.nvoos.cloud');
 const bannerData = banner as BannerData | null;
+const hasCatalog = newest.totalDocs > 0;
 ---
 
 <BaseLayout
 	title={pageTitle()}
-	description="NV Store — the NV-authored headless storefront."
+	description="NV Store — the NV-authored, MIT-licensed headless storefront: server-rendered Astro, one stable commerce contract, and live design themes."
 	canonical={absoluteUrl(site, '/')}
 	jsonld={[organizationJsonLd('NV Store', site), webSiteJsonLd('NV Store', site)]}
 >
+	<section class="hero">
+		<h1 class="hero__title">NV Store</h1>
+		<p class="hero__lede">
+			An open-source, headless storefront. Astro renders the pages, one
+			stable contract feeds the catalog, and design tokens let the whole
+			store re-theme live — even from an AI assistant.
+		</p>
+		<div class="hero__cta">
+			<a class="btn" href="/products/">Browse products</a>
+			<a class="btn btn--ghost" href="#what-is-this-app">How it works</a>
+		</div>
+	</section>
+
 	<Banner banner={bannerData} />
 	<Carousel />
-	<section>
-		<h2>Featured</h2>
-		<ProductGrid products={featured.length > 0 ? featured : fallback} />
+
+	<section class="about" id="what-is-this-app" aria-labelledby="about-heading">
+		<h2 id="about-heading">What is this app?</h2>
+		<div class="about-grid">
+			<article class="about-card">
+				<h3>Headless &amp; server-rendered</h3>
+				<p>
+					Astro renders every page on the server and ships minimal
+					JavaScript: complete HTML for crawlers and slow connections,
+					tiny interactive islands for everyone else.
+				</p>
+			</article>
+			<article class="about-card">
+				<h3>One contract, any backend</h3>
+				<p>
+					A Payload-shaped REST envelope feeds the whole storefront
+					through the same-origin <code>/api/*</code> proxy — WordPress
+					today, any backend tomorrow.
+				</p>
+			</article>
+			<article class="about-card">
+				<h3>Themed by design tokens</h3>
+				<p>
+					A DTCG token layer drives every color and type decision, with
+					light, dark, high-contrast, and runtime brand themes.
+				</p>
+			</article>
+			<article class="about-card">
+				<h3>Controllable by AI</h3>
+				<p>
+					The built-in <code>/mcp</code> surface (25 tools) lets an AI
+					assistant manage the catalog, themes, and content — audited and
+					fail-closed.
+				</p>
+			</article>
+		</div>
 	</section>
-	<section>
-		<h2>Bestsellers</h2>
-		<ProductGrid products={bestsellers.length > 0 ? bestsellers : fallback} />
+
+	<section aria-labelledby="stats-heading">
+		<h2 id="stats-heading" class="sr-only">Live store stats</h2>
+		<HomeStats counts={liveCounts} client:visible />
 	</section>
+
+	<section class="explore" aria-labelledby="explore-heading">
+		<h2 id="explore-heading">Explore the stack</h2>
+		<StackExplorer client:visible />
+	</section>
+
+	{
+		hasCatalog && (
+			<>
+				<section>
+					<h2>Featured</h2>
+					<ProductGrid products={featured.length > 0 ? featured : fallback} />
+				</section>
+				<section>
+					<h2>Bestsellers</h2>
+					<ProductGrid
+						products={bestsellers.length > 0 ? bestsellers : fallback}
+					/>
+				</section>
+			</>
+		)
+	}
 </BaseLayout>

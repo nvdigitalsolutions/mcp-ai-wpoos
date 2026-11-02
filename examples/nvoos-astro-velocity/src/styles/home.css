@@ -1,0 +1,161 @@
+/* ---------------------------------------------------------------------------
+ * Home page styles — hero, explainer cards, live stats and the stack
+ * explorer island. Token-driven (--nv-* aliases over the ADS layer), so the
+ * page re-skins automatically with runtime themes and the high-contrast axis.
+ * ------------------------------------------------------------------------- */
+
+.hero {
+	padding-block: 3rem 1.5rem;
+	max-width: 46rem;
+}
+
+.hero__title {
+	font-size: clamp(2.4rem, 6vw, 4rem);
+	line-height: 1.05;
+	margin: 0 0 0.75rem;
+}
+
+.hero__lede {
+	font-size: 1.2rem;
+	color: var(--nv-muted);
+	max-width: 38rem;
+}
+
+.hero__cta {
+	display: flex;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+	margin-top: 1.5rem;
+}
+
+/* Explainer cards -------------------------------------------------------- */
+
+.about {
+	margin-block: 2.5rem;
+}
+
+.about-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.about-card {
+	border: 1px solid var(--nv-line);
+	border-radius: var(--nv-radius);
+	padding: 1.25rem;
+	background: var(--nv-surface);
+}
+
+.about-card h3 {
+	margin: 0 0 0.5rem;
+	font-size: 1.05rem;
+}
+
+.about-card p {
+	margin: 0;
+	color: var(--nv-muted);
+	font-size: 0.95rem;
+}
+
+.about-card code,
+.stack-explorer [role='tabpanel'] code {
+	background: var(--nv-surface-alt);
+	border-radius: 4px;
+	padding: 0.1rem 0.3rem;
+}
+
+/* Live stats band (HomeStats island) ------------------------------------- */
+
+.home-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 1rem;
+	margin: 2.5rem 0 0;
+	padding: 1.5rem;
+	border: 1px solid var(--nv-line);
+	border-radius: var(--nv-radius);
+	background: var(--nv-surface-alt);
+}
+
+.home-stats__item {
+	text-align: center;
+}
+
+.home-stats dt {
+	font-size: 0.85rem;
+	color: var(--nv-muted);
+}
+
+.home-stats dd {
+	margin: 0.25rem 0 0;
+	font-size: 2rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Stack explorer (StackExplorer island) ----------------------------------- */
+
+.explore {
+	margin-block: 2.5rem;
+}
+
+.stack-explorer {
+	border: 1px solid var(--nv-line);
+	border-radius: var(--nv-radius);
+	overflow: hidden;
+}
+
+.stack-explorer [role='tablist'] {
+	display: flex;
+	overflow-x: auto;
+	border-bottom: 1px solid var(--nv-line);
+	background: var(--nv-surface-alt);
+}
+
+.stack-explorer [role='tab'] {
+	appearance: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	background: transparent;
+	color: var(--nv-muted);
+	font: inherit;
+	font-size: 0.95rem;
+	padding: 0.85rem 1rem;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.stack-explorer [role='tab']:hover {
+	color: var(--nv-ink);
+}
+
+.stack-explorer [role='tab'][aria-selected='true'] {
+	color: var(--nv-ink);
+	border-bottom-color: var(--nv-accent);
+	font-weight: 600;
+}
+
+.stack-explorer [role='tab']:focus-visible {
+	outline: 2px solid var(--nv-accent);
+	outline-offset: -2px;
+}
+
+.stack-explorer [role='tabpanel'] {
+	padding: 1.25rem;
+	color: var(--nv-muted);
+}
+
+.stack-explorer [role='tabpanel'] p:first-child {
+	margin-top: 0;
+}
+
+.stack-explorer [role='tabpanel'] p:last-child {
+	margin-bottom: 0;
+}
+
+.stack-live {
+	color: var(--nv-ink);
+	font-weight: 600;
+}
