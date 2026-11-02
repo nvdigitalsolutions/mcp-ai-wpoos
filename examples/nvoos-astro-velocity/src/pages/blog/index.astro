@@ -11,13 +11,14 @@
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Pagination from '../../components/Pagination.astro';
-import { getPosts, getThemePolicy } from '../../lib/commerce/client';
+import { getCollectionOrNull, getThemePolicy } from '../../lib/commerce/client';
 import { isPublished } from '../../lib/commerce/publish';
 import { getCollection } from 'astro:content';
 import { mergePostsDesc, type PostEntryLike } from '../../lib/content/merge';
 import { collectionPageJsonLd } from '../../lib/seo/jsonld';
 import { pageTitle, plainExcerpt } from '../../lib/seo/meta';
 import { absoluteUrl } from '../../lib/url';
+import type { ContentDoc } from '../../lib/commerce/types';
 
 Astro.response.headers.set(
 	'Cache-Control',
@@ -43,8 +44,14 @@ if (Astro.cache.enabled) {
 const url = Astro.url;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 
-const envelope = await getPosts(Astro.url, { page, limit: BLOG_PAGE_SIZE });
-const published = envelope.docs.filter(isPublished);
+// A 404 here means the backend predates the content endpoints (deployment
+// version skew) — degrade to an empty state instead of 500ing the listing.
+const envelope = await getCollectionOrNull<ContentDoc>('content/posts', Astro.url, {
+	page,
+	limit: BLOG_PAGE_SIZE,
+});
+const backendUnavailable = envelope === null;
+const published = envelope ? envelope.docs.filter(isPublished) : [];
 
 // Local posts merge into page 1 only (documented L2 semantics).
 const localEntries =
@@ -104,7 +111,11 @@ const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
 
 	{
 		items.length === 0 && (
-			<p>No posts yet — check back soon.</p>
+			<p>
+				{backendUnavailable
+					? 'The journal is coming soon.'
+					: 'No posts yet — check back soon.'}
+			</p>
 		)
 	}
 
@@ -119,5 +130,5 @@ const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
 		))}
 	</ul>
 
-	<Pagination page={page} totalPages={envelope.totalPages} baseUrl={baseHref} />
+	<Pagination page={page} totalPages={envelope?.totalPages ?? 1} baseUrl={baseHref} />
 </BaseLayout>
