@@ -51,7 +51,7 @@ fn run_mcp_stdio() {
     let dictate = std::sync::Arc::new(
         |_hint: Option<String>| -> nvoos_dictate_lib::error::AppResult<String> {
             Err(nvoos_dictate_lib::error::AppError::Unsupported(
-                "dictation requires the NV oOS Dictation desktop app to be running (the headless \
+                "dictation requires the NV oOS Cognition desktop app to be running (the headless \
              MCP server cannot capture the PTT hotkey). Start the app and connect via Remote \
              Sites — see docs/remote-sites-recipe.md."
                     .into(),

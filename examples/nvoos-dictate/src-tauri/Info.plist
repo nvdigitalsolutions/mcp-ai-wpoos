@@ -6,6 +6,6 @@
 	     Microphone access triggers the TCC prompt; without this key the app
 	     crashes on first capture (macOS 10.14+). -->
 	<key>NSMicrophoneUsageDescription</key>
-	<string>NV oOS Dictation uses the microphone for push-to-talk dictation and meeting recording. Audio is processed on-device and never stored without your consent.</string>
+	<string>NV oOS Cognition uses the microphone for push-to-talk dictation and meeting recording. Audio is processed on-device and never stored without your consent.</string>
 </dict>
 </plist>

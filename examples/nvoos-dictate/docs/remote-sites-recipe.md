@@ -25,7 +25,7 @@ wiring this up end-to-end:
 
 ## Recipe (target state)
 
-1. Install and start **NV oOS Dictation** (it must stay running).
+1. Install and start **NV oOS Cognition** (it must stay running).
 2. In Settings → NV oOS, confirm the app is connected to the site.
 3. In the plugin: **Pro → Remote Sites → Add** → type "MCP Server", URL
    `http://localhost:<port>/mcp` (streamable HTTP).

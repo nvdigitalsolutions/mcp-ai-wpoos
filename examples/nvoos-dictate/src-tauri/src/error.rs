@@ -1,4 +1,4 @@
-//! Central error type for the NV oOS Dictation core.
+//! Central error type for the NV oOS Cognition core.
 //!
 //! Every fallible core operation returns `AppResult<T>`. IPC handlers map
 //! these to serializable strings — error messages must never carry secrets

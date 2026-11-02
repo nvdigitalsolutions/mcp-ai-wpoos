@@ -1,7 +1,7 @@
 Valid-License-Identifier: LicenseRef-Proprietary
 License-Text:
 
-NV oOS Dictation — Proprietary License
+NV oOS Cognition — Proprietary License
 ======================================
 
 Copyright (c) 2025-2026 NV Digital Solutions (https://nvdigitalsolutions.com).

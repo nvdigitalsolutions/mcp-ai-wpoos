@@ -1,4 +1,4 @@
-// Snippet OCR for NV oOS Dictation (Proposal 100, M3).
+// Snippet OCR for NV oOS Cognition (Proposal 100, M3).
 //
 // Two one-shot operations speaking the helper's existing NDJSON stdout
 // protocol (the long-lived `capture` audio stream is untouched):

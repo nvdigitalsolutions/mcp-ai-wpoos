@@ -1,4 +1,4 @@
-# Release: build + publish the NV oOS Dictation desktop app.
+# Release: build + publish the NV oOS Cognition desktop app.
 #
 # Tag `nvoos-dictate-v*` to cut a release. The publish job builds NSIS/MSI on
 # Windows and a single UNIVERSAL .app/.dmg on macOS (arm64 + x86_64 — the
@@ -16,7 +16,7 @@
 # Developer secrets below (see docs/macos-port-plan.md §12) — without them
 # the macOS artifacts are ad-hoc signed only.
 
-name: Publish NV oOS Dictation
+name: Publish NV oOS Cognition
 
 on:
   push:
@@ -69,10 +69,12 @@ jobs:
         working-directory: examples/nvoos-dictate
         run: npm ci
 
-      - name: Generate icons
-        working-directory: examples/nvoos-dictate
-        run: node scripts/gen-icons.mjs
-
+      # The brand icons are COMMITTED under src-tauri/icons (generated once
+      # from the brand SVG via `npm run tauri icon`). Do NOT regenerate them
+      # here: scripts/gen-icons.mjs produces placeholder art for first-time
+      # scaffolding only and would overwrite the brand icons in every
+      # release bundle.
+      - name: Install frontend dependencies
       # tauri build runs beforeBuildCommand (npm run build = webview dist,
       # required by generate_context!) and beforeBundleCommand
       # (build:helper = Swift sidecar, lipo'd universal via
@@ -184,9 +186,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "NV oOS Dictation v${{ steps.version.outputs.version }}"
+          name: "NV oOS Cognition v${{ steps.version.outputs.version }}"
           body: |
-            ## NV oOS Dictation v${{ steps.version.outputs.version }}
+            ## NV oOS Cognition v${{ steps.version.outputs.version }}
 
             Windows installer (NSIS + MSI) and a universal macOS DMG
             (Apple Silicon + Intel, macOS 13+).
