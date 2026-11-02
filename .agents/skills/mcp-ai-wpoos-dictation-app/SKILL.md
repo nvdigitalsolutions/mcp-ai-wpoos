@@ -23,7 +23,7 @@ with the NV oOS plugin as the optional AI-enrichment backend.
 - Changing the deterministic cleanup pipeline (golden fixtures are the backstop)
 - Wiring the Embedded addon remote-STT fallback or its auth
 - Running the benchmark harness (`transcribe_file`) or the model downloader
-- Embedding the Complete Velocity console in the Assistant tab, or changing its reachability probe / CSP
+- Opening the Complete Velocity console window, or changing its navigation guard / CSP
 - Producing a "complete" hand-off exe (the full feature union, not just STT flags)
 - Continuing P2 (loopback + PTT matrix), P4/P5 ports, or distribution
 - Verifying the macOS port from CI or a remote Mac (boot smoke, interactive SSH session, VNC options)
@@ -805,45 +805,54 @@ chunked path. **Deferred:** GUI file-picker (needs `tauri-plugin-dialog`), a
 `transcripts.media` DB column (no consumer), and media fixtures for
 decode e2e tests.
 
-## Assistant SPA tab (embedded hosted Pro SPA) + reachability probe
+## NV oOS Console window (first-party) + reachability probe
 
 A third frontend surface (in addition to the chat SPA and the dictation
-main window): a new **Assistant** tab in the dictate app that embeds the
+main window): a new **Assistant** tab in the dictate app that opens the
 NV oOS **Complete Velocity console** (`nvoos-complete-velocity`, e.g.
-`https://console.nvoos.cloud`) in an `<iframe>`. Every NV oOS surface
-(assistant, chat, toolkits, schedule, media, …) is wrapped inside the
-console, so the earlier per-addon surface discovery (`spa-surfaces`
-endpoint, sub-tabs) was retired — one frame, one origin.
+`https://console.nvoos.cloud`) **in its own top-level window**. Every NV
+oOS surface (assistant, chat, toolkits, schedule, media, …) is wrapped
+inside the console, so the earlier per-addon surface discovery
+(`spa-surfaces` endpoint, sub-tabs) was retired — one window, one origin.
 
-### Why a frame, not a native mount
+### Why a dedicated window, not an iframe
 
-`nvoos-pro-spa-vite` mounts spa-v2 sources directly via a Vite alias and
-does its own `window.NVOOS_PRO_SPA` bootstrap + fetch/auth wrapper. Reproducing
-that inside the dictate app means porting a second full React app (spa-v2's
-`@ai-sdk/react`, `zustand`, `react-router-dom`, `cytoscape`, `jquery`, …) and
-breaking the dictate app's "no remote content, no network" webview model. The
-iframe sidesteps all of it: the SPA's connect screen, auth modes, and SSE chat
-run inside the frame's own origin; the dictate webview never talks to
-WordPress.
+The first attempt embedded the console in an `<iframe>` inside the main
+window. That breaks the console's sign-in: `login.ts` replays WordPress'
+cookie flow (test-cookie GET → credential POST → auth cookies on a
+redirect), and embedded frames are a **third-party context** — WebView2
+blocks third-party cookies by design (Microsoft WebView2Feedback
+#1665/#2013; no toggle), so the test cookie never sticks and the login
+screen masks the real "cookies are blocked" error as the uniform
+"Invalid username or password.". A top-level window is first-party — the
+same context as a browser tab — so cookie auth, and everything downstream
+of it (REST session bootstrap, SSE), just works. This mirrors the
+Electron-world standard for cookie-authenticated third-party surfaces
+(OAuth/SSO flows get their own BrowserWindow).
 
 ### Wiring (all shipped)
 
 - **Setting** — `Settings.spa.url` (`config.rs` `SpaConfig`; serde-default,
   backward-compatible). The Settings → NV oOS tab exposes
   "Default Complete Velocity URL".
-- **View** — `views/Assistant.tsx` renders a single sandboxed iframe
-  (`allow-scripts allow-same-origin allow-forms`, `referrerPolicy no-referrer`)
-  and a "not configured" hint when the URL is empty. Reads the URL via the
-  existing `get_settings` IPC.
+- **Launcher** — `views/Assistant.tsx` shows the configured URL and an
+  "Open NV oOS Console" button → `open_nvoos_console` IPC →
+  `ensure_nvoos_console_window` (`lib.rs`): creates or refocuses the
+  `nvoos-console` window (`WebviewUrl::External`). If the configured URL
+  changed, the window is destroyed and rebuilt (the navigation guard is
+  bound to the old origin).
+- **Navigation guard** — `on_navigation` allows only the configured
+  console origin; foreign origins open in the system browser via the
+  opener plugin. `on_new_window` denies popups and opens them externally
+  (Tauri 1.3 advisory: never let a remote-content window roam freely).
+  The window's capability `capabilities/console.json` is `core:default`
+  with **no `remote` block** — the console page can never call app IPC.
 - **Status card** — `StatusInfo.spa_configured` + `spa_url` (from `get_status`)
-  drive an "Assistant (Pro SPA)" row on the Home System card (configured badge
-  + URL).
-- **CSP** — `tauri.conf.json` `security.csp` gained `frame-src https:`. It is
-  HTTPS-any (NOT a pinned host) because the URL is user-configurable and
-  unknown at bundle time; a single-host lock needs a dynamic-CSP/navigation-
-  handler change. Cookie-mode login inside the iframe can be flaky (third-party
-  cookie / SameSite rules) — bearer/guest/wp-application-password modes are
-  more iframe-friendly.
+  drive an "NV oOS" row on the Home System card (configured badge + URL +
+  reachability probe).
+- **CSP** — the main window no longer carries `frame-src` (no iframes
+  remain). The console window loads a remote URL, which is governed by the
+  console's own headers/CSP, not the app's.
 
 ### Reachability probe (`check_spa` IPC) — the two hard rules
 
@@ -992,9 +1001,9 @@ two before merging the port.
 
 New this session (2026-10-13): **FastConformer STT engine** (the `nemo_ctc`
 slot, `fastconformer` feature, registry id
-`sherpa-onnx-nemo-ctc-en-conformer-large`) and the **Assistant SPA tab**
-(hosted-Pro-SPA iframe + `Settings.spa.url` + the Rust-side `check_spa`
-reachability probe + `frame-src https:` CSP). See the two sections above for
+`sherpa-onnx-nemo-ctc-en-conformer-large`) and the **NV oOS console window**
+(`Settings.spa.url` + `open_nvoos_console` + origin-locked navigation guard
++ the Rust-side `check_spa` reachability probe). See the two sections above for
 full detail. Gates green on the reference PC: `cargo check`/`clippy
 --all-targets -- -D warnings`/`fmt --check` (default + `fastconformer`),
 `cargo test --lib` 107 passed (incl. 4 `validate_spa_url` tests), `npm run

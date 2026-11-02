@@ -615,8 +615,52 @@ fn finalize_inner(
             }
         }
 
-        // Paste (Stage-1 or polished text — never blocked by provider failure).
-        state.paste.paste(&final_text)?;
+        // Never paste silence: an empty transcript is almost always a
+        // microphone problem, and silently pasting nothing reads as "RAlt did
+        // nothing". Surface it instead — the overlay capsule shows the error.
+        if final_text.trim().is_empty() {
+            return Err(crate::error::AppError::Other(
+                "No speech detected — is the microphone muted, unplugged, or set to the wrong device? (Settings → Microphone)"
+                    .into(),
+            ));
+        }
+
+        // Deterministic console delivery: the NV oOS console is this app's
+        // own webview. When the console window is open and the user is
+        // dictating "at the app" (any of our windows foreground — including
+        // watching the Status area), insert the text straight into the
+        // console's chat composer instead of relying on OS focus + Ctrl+V.
+        // React-safe: the native value setter + a bubbling input event drives
+        // the controlled component; no OS foreground requirement.
+        #[cfg(windows)]
+        let delivered_to_console = {
+            if crate::util::win_foreground::foreground_is_own_window() {
+                if let Some(console_window) = app.get_webview_window("nvoos-console") {
+                    let js = format!(
+                        "(function(){{var text={};var t0=Date.now();function trySet(){{var el=document.querySelector('textarea');if(el){{var setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(el,text);el.dispatchEvent(new Event('input',{{bubbles:true}}));el.focus();return}}if(Date.now()-t0<2000){{setTimeout(trySet,100)}}}}trySet();}})()",
+                        serde_json::to_string(&final_text).unwrap_or_else(|_| "\"\"".into())
+                    );
+                    match console_window.eval(&js) {
+                        Ok(()) => Some(true),
+                        Err(e) => {
+                            tracing::warn!("console composer delivery eval failed: {e}");
+                            Some(false)
+                        }
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        };
+        #[cfg(not(windows))]
+        let delivered_to_console: Option<bool> = None;
+
+        if delivered_to_console != Some(true) {
+            // Paste (Stage-1 or polished text — never blocked by provider failure).
+            state.paste.paste(&final_text)?;
+        }
 
         let e2e_ms = started.elapsed().as_millis() as i64;
 
