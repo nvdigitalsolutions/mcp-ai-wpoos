@@ -1,9 +1,11 @@
 ---
-// /{slug}/ — one WordPress page. The static front page (manifest.frontPage)
-// renders at `/` instead, so it is skipped here to keep one canonical URL.
+// /{slug}/ — one WordPress page (or a local MDX page from src/content/pages/).
+// The static front page (manifest.frontPage) renders at `/` instead, so it is
+// skipped here to keep one canonical URL.
 import Base from '../layouts/Base.astro';
 import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
+import { jsonLdFor, renderJsonLd } from '../lib/seo.ts';
 
 export async function getStaticPaths() {
 	const pages = await getCollection('pages');
@@ -18,13 +20,22 @@ export async function getStaticPaths() {
 const { page } = Astro.props;
 const { Content } = await render(page);
 const pageUrl = Astro.site ? new URL(`/${page.data.slug}/`, Astro.site).href : undefined;
+// SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
+const seoTitle = page.data.seoTitle ?? page.data.title;
+const seoDescription = page.data.seoDescription ?? page.data.excerpt;
+const jsonLd = jsonLdFor('WebPage', {
+	url: pageUrl,
+	title: seoTitle,
+	description: seoDescription,
+});
 ---
 
-<Base title={page.data.title} canonical={pageUrl}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl}>
 	<article class="post">
 		<h1>{page.data.title}</h1>
 		<div class="post-body">
 			<Content />
 		</div>
 	</article>
+	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
 </Base>

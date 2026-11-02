@@ -76,6 +76,11 @@ export function createWpFixtureData() {
 				slug: 'care-guide',
 				link: `${ORIGIN}/care-guide/`,
 				excerpt: { rendered: '<p>How to wash, store and repair natural fibres.</p>' },
+				// Yoast-style SEO meta — the loader's fallback path (106 §1.2).
+				yoast_head_json: {
+					title: 'Care guide for wool, cashmere and linen — the studio journal',
+					description: 'Wash, store and repair natural fibres the studio way.',
+				},
 				content: {
 					rendered: [
 						'<figure class="wp-block-image"><img src="https://fixture.test/care.jpg" alt="Folded knits" width="800" height="450" loading="lazy" /><figcaption>Folded knits, ready to store.</figcaption></figure>',
@@ -106,6 +111,9 @@ export function createWpFixtureData() {
 				slug: 'studio-notes-autumn',
 				link: `${ORIGIN}/studio-notes-autumn/`,
 				excerpt: { rendered: '<p>Moss, bark and bone: the autumn palette board.</p>' },
+				// Rank Math-style SEO meta — the loader's primary path (106 §1.2).
+				rank_math_title: 'Studio Notes: The Autumn Palette — a curated journal',
+				rank_math_description: 'Moss, bark and bone: the autumn palette, curated by the studio.',
 				content: {
 					rendered:
 						'<p>Moss, bark and bone.</p><iframe src="https://www.youtube-nocookie.com/embed/abc123" title="Palette film" width="560" height="315" frameborder="0" allowfullscreen></iframe>',
@@ -133,6 +141,7 @@ export function createWpFixtureData() {
 				slug: 'about',
 				link: `${ORIGIN}/about/`,
 				excerpt: { rendered: '' },
+				rank_math_title: 'About Fixture Wares',
 				content: { rendered: '<p>Fixture Wares is the hermetic test storefront.</p>' },
 			},
 			{

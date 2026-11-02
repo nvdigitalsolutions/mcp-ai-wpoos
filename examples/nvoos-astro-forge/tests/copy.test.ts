@@ -31,6 +31,8 @@ describe( 'copy tables', () => {
 		expect( en.nav.posts ).toBe( 'Posts' );
 		expect( en.nav.search ).toBe( 'Search' );
 		expect( en.footer.generatedBy ).toContain( 'NV oOS Astro Forge' );
+		expect( en.theme.label ).toBe( 'Theme' );
+		expect( en.theme.forcedNote ).toContain( 'policy' );
 		expect( en.search.placeholder ).toContain( 'Search' );
 		expect( en.search.searching ).toBeTruthy();
 		expect( en.search.noResults ).toBeTruthy();
@@ -43,6 +45,7 @@ describe( 'copy tables', () => {
 		const fr: Copy = {
 			nav: { primaryLabel: 'Principale', home: 'Accueil', products: 'Produits', posts: 'Articles', search: 'Rechercher' },
 			footer: { generatedBy: 'Généré par NV oOS Astro Forge.' },
+			theme: { label: 'Thème', forcedNote: 'Le thème est défini par la politique du site.' },
 			search: { placeholder: 'Rechercher…', searching: 'Recherche…', noResults: 'Aucun résultat.', unavailable: 'Recherche indisponible.' },
 		};
 		expect( fr.nav.home ).toBe( 'Accueil' );

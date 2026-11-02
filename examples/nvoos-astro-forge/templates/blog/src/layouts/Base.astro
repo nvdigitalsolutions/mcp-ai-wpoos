@@ -2,6 +2,8 @@
 import '../styles/global.css';
 import manifest from '../../nvoos.json';
 import { useCopy } from '../copy/index.ts';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 
 interface Props {
 	title: string;
@@ -17,6 +19,9 @@ const fullTitle = title === 'Home' ? siteTitle : `${title} — ${siteTitle}`;
 const pageUrl = canonical ?? (Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined);
 const hasSearch = manifest.surfaces?.search !== false;
 const hasFeed = manifest.surfaces?.feed !== false;
+// The baked policy rides to the client as inert JSON (Proposal 105 §4) —
+// the boot script and the theme toggle both read this node.
+const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
 ---
 
 <!doctype html>
@@ -31,6 +36,93 @@ const hasFeed = manifest.surfaces?.feed !== false;
 		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
 		{ogImage && <meta property="og:image" content={ogImage} />}
 		<meta name="robots" content="index, follow" />
+		<script id="forge-theme-policy" type="application/json" data-theme-policy is:inline set:html={policyJson}></script>
+		<script is:inline>
+			// Proposal 105 §4 no-FOUC policy boot: policy first, storage second.
+			// Forced light/dark/brand skip the stored preference entirely; the
+			// auto ladder runs stored → media → defaultTheme. Mirrors
+			// src/lib/theme/policy.ts (keep the two ladders in sync).
+			(function () {
+				var KEY = 'nvoos-theme';
+				var CKEY = 'nvoos-contrast';
+				// The forge registry: 'light' is implicit, 'dark' is the only
+				// named theme today — brand slugs therefore fail open to auto.
+				var REGISTRY = ['dark'];
+				var node = document.getElementById('forge-theme-policy');
+				var doc = null;
+				try {
+					doc = JSON.parse(node ? node.textContent : 'null');
+				} catch (error) {
+					doc = null;
+				}
+				if (!doc || typeof doc !== 'object') {
+					doc = {};
+				}
+				var policy = typeof doc.policy === 'string' ? doc.policy : 'auto';
+				var contrast = typeof doc.contrast === 'string' ? doc.contrast : 'auto';
+				var defaultTheme = doc.defaultTheme === 'light' ? 'light' : 'dark';
+
+				var stored = function (key) {
+					try {
+						return localStorage.getItem(key);
+					} catch (error) {
+						return null;
+					}
+				};
+
+				var theme = null;
+				var forced = false;
+				if (policy.indexOf('brand:') === 0) {
+					var slug = policy.slice(6);
+					if (REGISTRY.indexOf(slug) !== -1) {
+						theme = slug;
+						forced = true;
+					}
+				}
+				if (!forced && (policy === 'light' || policy === 'dark')) {
+					theme = policy;
+					forced = true;
+				}
+				if (!forced) {
+					var saved = stored(KEY);
+					if (saved && (saved === 'light' || REGISTRY.indexOf(saved) !== -1)) {
+						theme = saved;
+					} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+						theme = 'light';
+					} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+						theme = 'dark';
+					} else {
+						theme = defaultTheme;
+					}
+				}
+
+				var mode = 'standard';
+				if (contrast === 'high' || contrast === 'standard') {
+					mode = contrast;
+				} else if (stored(CKEY) === 'high') {
+					mode = 'high';
+				}
+
+				var apply = function () {
+					var root = document.documentElement;
+					if (theme === 'light') {
+						root.removeAttribute('data-theme');
+					} else if (theme) {
+						root.setAttribute('data-theme', theme);
+					}
+					root.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
+					if (mode === 'high') {
+						root.setAttribute('data-contrast', 'high');
+					} else {
+						root.removeAttribute('data-contrast');
+					}
+				};
+				// Forced mode never writes storage — the policy owns the theme.
+				apply();
+				// The document survives the swap; the element does not.
+				document.addEventListener('astro:after-swap', apply);
+			})();
+		</script>
 	</head>
 	<body>
 		<header class="site-header">
@@ -43,6 +135,7 @@ const hasFeed = manifest.surfaces?.feed !== false;
 				<a href="/posts/">{copy.nav.posts}</a>
 				{hasSearch && <a href="/search/">{copy.nav.search}</a>}
 			</nav>
+			<ThemeToggle />
 		</header>
 		<main class="site-main">
 			<slot />

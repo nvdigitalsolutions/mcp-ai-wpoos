@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { applyPresetToProfile, PRESETS, PRESET_NAMES, RENDER_MODES, suggestPreset } from '../lib/presets.ts';
+import { applyPresetToProfile, DEFAULT_THEME_POLICY, isValidThemePolicy, PRESETS, PRESET_NAMES, RENDER_MODES, suggestPreset } from '../lib/presets.ts';
 import type { DiscoveryReport } from '../lib/discovery.ts';
 import type { SiteProfile } from '../lib/types.ts';
 
@@ -102,5 +102,33 @@ describe( 'applyPresetToProfile', () => {
 		expect( products.authMode ).toBe( 'wc-consumer' );
 		expect( products.optional ).toBe( true );
 		expect( products.fields ).toContain( 'regular_price' );
+	} );
+} );
+
+describe( 'theme policy (Proposal 105 §4)', () => {
+	it( 'defaults to auto', () => {
+		expect( DEFAULT_THEME_POLICY ).toBe( 'auto' );
+	} );
+
+	it( 'accepts the enum values', () => {
+		expect( isValidThemePolicy( 'auto' ) ).toBe( true );
+		expect( isValidThemePolicy( 'light' ) ).toBe( true );
+		expect( isValidThemePolicy( 'dark' ) ).toBe( true );
+	} );
+
+	it( 'accepts a brand slug matching the a-z0-9- regex', () => {
+		expect( isValidThemePolicy( 'brand:lenas-chair' ) ).toBe( true );
+		expect( isValidThemePolicy( 'brand:brand-x-2' ) ).toBe( true );
+	} );
+
+	it( 'rejects malformed brand slugs, unknown values and non-strings', () => {
+		expect( isValidThemePolicy( 'brand:' ) ).toBe( false );
+		expect( isValidThemePolicy( 'brand:Lenas' ) ).toBe( false );
+		expect( isValidThemePolicy( 'brand:foo_bar' ) ).toBe( false );
+		expect( isValidThemePolicy( 'brand:foo bar' ) ).toBe( false );
+		expect( isValidThemePolicy( 'sepia' ) ).toBe( false );
+		expect( isValidThemePolicy( '' ) ).toBe( false );
+		expect( isValidThemePolicy( undefined ) ).toBe( false );
+		expect( isValidThemePolicy( 42 ) ).toBe( false );
 	} );
 } );

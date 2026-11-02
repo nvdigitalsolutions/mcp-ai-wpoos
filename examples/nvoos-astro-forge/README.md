@@ -115,6 +115,20 @@ cd customer-frontend && npm install && npm run build
 - `/redirects.json` — the structured 301 map from the WP URL structure to the
   generated one; the post-build step materializes the host-agnostic
   `dist/_redirects` (Netlify/Cloudflare/static-server compatible).
+- SEO meta rides the REST fields: Rank Math (`rank_math_title` /
+  `rank_math_description`) → Yoast (`yoast_head_json`) → the WP
+  title/excerpt fallback, wired into `<title>`, the meta description and
+  the JSON-LD (Proposal 106 §1.2; absent plugins never break a build).
+
+### Hybrid local content (Proposal 106 P2)
+
+Every scaffold ships `src/content/posts/` + `src/content/pages/` — local
+`.mdx` files (frontmatter: `title`, `description`, `date`, `draft`) merge
+under the WP posts/pages collections: **WP wins on collision, local fills
+the gaps, drafts never ship**. The example post makes a forged site
+build-and-render even with **no WordPress connection** — a network-level
+failure degrades to local-only with a loud loader warning (HTTP-level
+errors still fail the build).
 
 ### Media pipeline
 
@@ -234,15 +248,21 @@ npx nvoos-forge-mcp-stdio
 ### Presets (Proposal 104 §4.3)
 
 ```sh
-# Explicit preset on the scaffold command…
+node scripts/forge.mjs site.json --target ./customer-frontend --preset blog       # default
 node scripts/forge.mjs site.json --target ./customer-frontend --preset storefront
-
-# …or through the wizard, where the preset is auto-suggested from the
-# site_analyze report (Woo/products detected → storefront). On a TTY the
-# wizard asks via @clack/prompts (select/confirm/text/spinner, cancellable);
-# in CI/e2e the suggestion is applied deterministically, no prompts.
-node scripts/forge.mjs wizard https://shop.example.com --target ./customer-frontend --preset blog
+node scripts/forge.mjs site.json --target ./customer-frontend --preset minimal
+node scripts/forge.mjs site.json --target ./customer-frontend --theme-policy dark # 105 §4
 ```
+
+- `--preset` picks blog/storefront/minimal (collection profile + surface
+  toggles); the wizard suggests one from the site_analyze report (Woo/products
+  detected → storefront; on a TTY it asks via @clack/prompts, in CI/e2e the
+  suggestion applies deterministically).
+- `--theme-policy auto|light|dark|brand:<slug>` (default `auto`) bakes the
+  site-level theme decision into `src/lib/theme/policy.generated.ts` — the
+  layout boot applies the policy before any stored preference (forced modes
+  disable the theme toggle), and the pure ladder lives in
+  `src/lib/theme/policy.ts` (Proposal 105 §4).
 
 | Preset | Template | Collections | Surfaces |
 | --- | --- | --- | --- |

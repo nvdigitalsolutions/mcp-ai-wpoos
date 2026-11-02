@@ -16,6 +16,13 @@ import {
 	THEME_STORAGE_KEY,
 } from '../templates/blog/src/lib/theme/theme.ts';
 import { ALL_THEMES, nextTheme } from '../templates/blog/src/lib/theme/registry.ts';
+import {
+	DEFAULT_POLICY_DOC,
+	isValidPolicyValue,
+	parsePolicyDoc,
+	resolvePolicyTheme,
+	type PolicyDoc,
+} from '../templates/blog/src/lib/theme/policy.ts';
 
 /** Minimal HTMLElement double — the module only touches these surfaces. */
 function fakeRoot(): HTMLElement {
@@ -146,5 +153,111 @@ describe( 'registry (forge variant)', () => {
 		expect( nextTheme( 'light', registry ) ).toBe( 'dark' );
 		expect( nextTheme( 'dark', registry ) ).toBe( 'brand-x' );
 		expect( nextTheme( 'brand-x', registry ) ).toBe( 'light' );
+	} );
+} );
+
+// --------------------------------------------------------------------------
+// Theme policy (Proposal 105 §3) — the forge-canonical module the velocity
+// storefront mirrors. The ladder: forced brand (registry-validated) /
+// light / dark; auto → stored → media → defaultTheme; contrast forced
+// standard/high or auto → stored high → standard.
+// --------------------------------------------------------------------------
+
+const BRAND_REGISTRY = ['light', 'dark', 'lenas-chair'];
+
+function doc( overrides: Partial<PolicyDoc> = {} ): PolicyDoc {
+	return { ...DEFAULT_POLICY_DOC, ...overrides };
+}
+
+describe( 'isValidPolicyValue / parsePolicyDoc', () => {
+	it( 'validates the enum + brand-slug regex', () => {
+		expect( isValidPolicyValue( 'auto' ) ).toBe( true );
+		expect( isValidPolicyValue( 'light' ) ).toBe( true );
+		expect( isValidPolicyValue( 'dark' ) ).toBe( true );
+		expect( isValidPolicyValue( 'brand:lenas-chair' ) ).toBe( true );
+		expect( isValidPolicyValue( 'brand:' ) ).toBe( false );
+		expect( isValidPolicyValue( 'brand:Lenas' ) ).toBe( false );
+		expect( isValidPolicyValue( 'sepia' ) ).toBe( false );
+	} );
+
+	it( 'parses a valid doc verbatim (updatedAt + $extensions survive)', () => {
+		const raw = {
+			policy: 'dark',
+			contrast: 'high',
+			defaultTheme: 'light',
+			updatedAt: '2026-11-03T09:00:00Z',
+			$extensions: {},
+		};
+		expect( parsePolicyDoc( raw ) ).toEqual( raw );
+	} );
+
+	it( 'is lenient: bad shapes and bad values fall back to the default doc', () => {
+		expect( parsePolicyDoc( null ) ).toEqual( DEFAULT_POLICY_DOC );
+		expect( parsePolicyDoc( 'auto' ) ).toEqual( DEFAULT_POLICY_DOC );
+		expect( parsePolicyDoc( { policy: 'sepia', contrast: 'neon', defaultTheme: 'blue' } ) ).toEqual( DEFAULT_POLICY_DOC );
+	} );
+} );
+
+describe( 'resolvePolicyTheme — the ladder', () => {
+	it( 'forced light ignores the stored preference', () => {
+		expect( resolvePolicyTheme( doc( { policy: 'light' } ), 'dark', false, BRAND_REGISTRY ) ).toEqual( {
+			theme: 'light',
+			contrast: 'standard',
+			forced: true,
+		} );
+	} );
+
+	it( 'forced dark ignores the stored preference', () => {
+		expect( resolvePolicyTheme( doc( { policy: 'dark' } ), 'light', true, BRAND_REGISTRY ) ).toEqual( {
+			theme: 'dark',
+			contrast: 'standard',
+			forced: true,
+		} );
+	} );
+
+	it( 'a registered brand slug forces the brand theme', () => {
+		expect( resolvePolicyTheme( doc( { policy: 'brand:lenas-chair' } ), 'dark', false, BRAND_REGISTRY ) ).toEqual( {
+			theme: 'lenas-chair',
+			contrast: 'standard',
+			forced: true,
+		} );
+	} );
+
+	it( 'an unknown brand slug fails open to the auto ladder', () => {
+		const resolved = resolvePolicyTheme( doc( { policy: 'brand:nope' } ), 'dark', false, BRAND_REGISTRY );
+		expect( resolved.forced ).toBe( false );
+		expect( resolved.theme ).toBe( 'dark' ); // stored wins under auto
+	} );
+
+	it( 'auto honours a stored registered theme', () => {
+		expect( resolvePolicyTheme( doc(), 'lenas-chair', false, BRAND_REGISTRY ).theme ).toBe( 'lenas-chair' );
+		expect( resolvePolicyTheme( doc(), 'light', false, BRAND_REGISTRY ).theme ).toBe( 'light' );
+	} );
+
+	it( 'auto ignores an unregistered stored value', () => {
+		const resolved = resolvePolicyTheme( doc(), 'sepia', true, BRAND_REGISTRY );
+		expect( resolved.theme ).toBe( 'light' ); // media light
+		expect( resolved.forced ).toBe( false );
+	} );
+
+	it( 'auto falls back to the media query', () => {
+		expect( resolvePolicyTheme( doc(), null, true, BRAND_REGISTRY ).theme ).toBe( 'light' );
+		expect( resolvePolicyTheme( doc(), null, false, BRAND_REGISTRY ).theme ).toBe( 'dark' );
+	} );
+
+	it( 'auto falls back to defaultTheme when no media API exists', () => {
+		expect( resolvePolicyTheme( doc(), null, null, BRAND_REGISTRY ).theme ).toBe( 'dark' ); // the default
+		expect( resolvePolicyTheme( doc( { defaultTheme: 'light' } ), null, null, BRAND_REGISTRY ).theme ).toBe( 'light' );
+	} );
+
+	it( 'contrast forced standard/high beats the stored axis', () => {
+		expect( resolvePolicyTheme( doc( { contrast: 'high' } ), null, null, BRAND_REGISTRY, 'standard' ).contrast ).toBe( 'high' );
+		expect( resolvePolicyTheme( doc( { contrast: 'standard' } ), null, null, BRAND_REGISTRY, 'high' ).contrast ).toBe( 'standard' );
+	} );
+
+	it( 'contrast auto uses the stored high axis, else standard', () => {
+		expect( resolvePolicyTheme( doc(), null, null, BRAND_REGISTRY, 'high' ).contrast ).toBe( 'high' );
+		expect( resolvePolicyTheme( doc(), null, null, BRAND_REGISTRY, 'standard' ).contrast ).toBe( 'standard' );
+		expect( resolvePolicyTheme( doc(), null, null, BRAND_REGISTRY, null ).contrast ).toBe( 'standard' );
 	} );
 } );

@@ -30,7 +30,12 @@ const site: SiteProfile = { url: siteUrl, name: siteName, collections: [] };
 const postsCollection: WpCollection = {
 	slug: 'posts',
 	restBase: 'wp/v2/posts',
-	fields: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
+	// Rank Math + Yoast meta are optional fields — absent plugins/fields are
+	// tolerated by the loader, never a build failure (Proposal 106 §1.2).
+	fields: [
+		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+		'rank_math_title', 'rank_math_description', 'yoast_head_json',
+	],
 	embed: true,
 	perPage: 100,
 	maxPages: 50,
@@ -38,7 +43,10 @@ const postsCollection: WpCollection = {
 const pagesCollection: WpCollection = {
 	slug: 'pages',
 	restBase: 'wp/v2/pages',
-	fields: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
+	fields: [
+		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+		'rank_math_title', 'rank_math_description', 'yoast_head_json',
+	],
 	embed: true,
 	perPage: 100,
 	maxPages: 50,
@@ -71,8 +79,25 @@ const productsCollection: WpCollection = {
 };
 
 export const collections = {
-	posts: defineCollection({ loader: createWpLoader({ site, collection: postsCollection, auth: applicationAuth }) }),
-	pages: defineCollection({ loader: createWpLoader({ site, collection: pagesCollection, auth: applicationAuth }) }),
+	// Hybrid local (106 P2): the local MDX glob merges under the WP entries —
+	// WP wins on collision, local fills the gaps, and an unreachable source
+	// degrades to local-only (demo-runnable with no WP connection).
+	posts: defineCollection({
+		loader: createWpLoader({
+			site,
+			collection: postsCollection,
+			auth: applicationAuth,
+			local: { pattern: '**/*.mdx', base: './src/content/posts' },
+		}),
+	}),
+	pages: defineCollection({
+		loader: createWpLoader({
+			site,
+			collection: pagesCollection,
+			auth: applicationAuth,
+			local: { pattern: '**/*.mdx', base: './src/content/pages' },
+		}),
+	}),
 	products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: wcAuth }) }),
 };
 // FORGE:collections-end

@@ -23,6 +23,7 @@ describe( 'jsonLdFor — BlogPosting', () => {
 		const doc = jsonLdFor( 'BlogPosting', {
 			url: 'https://example.com/posts/1/hello/',
 			headline: 'Hello',
+			description: 'A hello post.',
 			datePublished: '2026-10-01',
 			dateModified: '2026-10-02',
 			author: 'Ada',
@@ -32,6 +33,7 @@ describe( 'jsonLdFor — BlogPosting', () => {
 			'@context': 'https://schema.org',
 			'@type': 'BlogPosting',
 			headline: 'Hello',
+			description: 'A hello post.',
 			datePublished: '2026-10-01',
 			dateModified: '2026-10-02',
 			url: 'https://example.com/posts/1/hello/',
@@ -46,6 +48,25 @@ describe( 'jsonLdFor — BlogPosting', () => {
 			'@context': 'https://schema.org',
 			'@type': 'BlogPosting',
 			headline: 'Bare',
+		} );
+	} );
+} );
+
+describe( 'jsonLdFor — Article (the BlogPosting base shape, 106 parity)', () => {
+	it( 'emits the article fields and drops absent ones', () => {
+		const doc = jsonLdFor( 'Article', {
+			headline: 'An article',
+			description: 'About things.',
+			datePublished: '2026-10-01',
+			url: 'https://example.com/posts/1/an-article/',
+		} );
+		expect( doc ).toEqual( {
+			'@context': 'https://schema.org',
+			'@type': 'Article',
+			headline: 'An article',
+			description: 'About things.',
+			datePublished: '2026-10-01',
+			url: 'https://example.com/posts/1/an-article/',
 		} );
 	} );
 } );

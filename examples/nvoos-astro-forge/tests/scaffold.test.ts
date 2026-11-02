@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { FORGE_ROOT, renderAstroConfig, rewriteOgTokens, scaffold, renderContentConfig, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { FORGE_ROOT, renderAstroConfig, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -563,5 +563,79 @@ describe( 'scaffold — feed/sitemap surface pruning (104 follow-up)', () => {
 		expect(robots).toContain("manifest.surfaces?.sitemap !== false");
 		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
 		expect(manifest.surfaces).toEqual({ search: true, feed: false, sitemap: false, ogImages: false });
+	} );
+} );
+
+describe( 'scaffold — theme policy (Proposal 105 §4)', () => {
+	it( 'bakes the default auto policy and ships the policy module verbatim', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'policy-auto');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' });
+
+		const generated = await readFile(path.join(target, 'src', 'lib', 'theme', 'policy.generated.ts'), 'utf8');
+		expect(generated).toContain("policy: 'auto',");
+		expect(generated).toContain("contrast: 'auto',");
+		expect(generated).toContain("defaultTheme: 'dark',");
+		// The policy module is the canonical copy — byte-identical to the template.
+		const templatePolicy = await readFile(
+			path.join(FORGE_ROOT, 'templates', 'blog', 'src', 'lib', 'theme', 'policy.ts'),
+			'utf8'
+		);
+		const scaffolded = await readFile(path.join(target, 'src', 'lib', 'theme', 'policy.ts'), 'utf8');
+		expect(scaffolded).toBe(templatePolicy);
+	} );
+
+	it( 'bakes the chosen policy (--theme-policy dark) with a scaffold timestamp', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'policy-dark');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog', themePolicy: 'dark' });
+
+		const generated = await readFile(path.join(target, 'src', 'lib', 'theme', 'policy.generated.ts'), 'utf8');
+		expect(generated).toContain("policy: 'dark',");
+		expect(generated).toMatch(/updatedAt: '\d{4}-\d{2}-\d{2}T/);
+		// The layout boot + toggle read the policy node.
+		const base = await readFile(path.join(target, 'src', 'layouts', 'Base.astro'), 'utf8');
+		expect(base).toContain('forge-theme-policy');
+		expect(base).toContain('data-theme-policy');
+		await expect(stat(path.join(target, 'src', 'components', 'ThemeToggle.astro'))).resolves.toBeTruthy();
+	} );
+
+	it( 'falls back to auto with a warning for an invalid policy', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'policy-bad');
+		const result = await scaffold({ profile: PROFILE, targetDir: target, template: 'blog', themePolicy: 'brand:Bad_Slug!' });
+		expect(result.warnings.join('\n')).toContain('Unknown theme policy');
+		const generated = await readFile(path.join(target, 'src', 'lib', 'theme', 'policy.generated.ts'), 'utf8');
+		expect(generated).toContain("policy: 'auto',");
+	} );
+
+	it( 'renders the generated stub in repo style (tabs + single quotes)', () => {
+		const out = renderPolicyGenerated('brand:lenas-chair', '2026-11-03T09:00:00Z');
+		expect(out).toContain("\tpolicy: 'brand:lenas-chair',");
+		expect(out).toContain("\tupdatedAt: '2026-11-03T09:00:00Z',");
+		expect(out).toContain("import type { PolicyDoc } from './policy.ts';");
+		expect(out).toContain('\t$extensions: {},');
+	} );
+} );
+
+describe( 'scaffold — hybrid local content (Proposal 106 P2)', () => {
+	it( 'wires the local MDX glob under the posts/pages loaders (WP wins, local fills)', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'hybrid');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' });
+
+		const config = await readFile(path.join(target, 'src', 'content.config.ts'), 'utf8');
+		expect(config).toContain("local: { pattern: '**/*.mdx', base: './src/content/posts' }");
+		// The demo seed ships with every scaffold.
+		const example = await readFile(path.join(target, 'src', 'content', 'posts', 'hello-world.mdx'), 'utf8');
+		expect(example).toContain('Hello from the forge');
+		await expect(stat(path.join(target, 'src', 'content', 'pages'))).resolves.toBeTruthy();
+	} );
+
+	it( 'keeps non-hybrid collections on the plain WP loader', () => {
+		const out = renderContentConfig(PROFILE);
+		expect(out).toContain('collection: postsCollection, auth: applicationAuth, local: { pattern:');
+		// The products collection (no local source) stays plain.
+		expect(out).toContain('products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: applicationAuth }) })');
 	} );
 } );

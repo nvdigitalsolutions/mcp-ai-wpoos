@@ -24,6 +24,33 @@ export type PresetName = (typeof PRESET_NAMES)[number];
 export const RENDER_MODES = ['static', 'ssr'] as const;
 export type RenderMode = (typeof RENDER_MODES)[number];
 
+/**
+ * Theme policy (Proposal 105 §4) — the site-level theme decision baked into
+ * the generated project at scaffold time (`--theme-policy`). 'brand:<slug>'
+ * forces a brand theme (slug `^[a-z0-9-]+$`); the forge registry is static
+ * light/dark today, so brand slugs fail open to 'auto' at runtime until
+ * brand themes land (the template's policy module owns that ladder).
+ */
+export const THEME_POLICY_MODES = ['auto', 'light', 'dark'] as const;
+export const DEFAULT_THEME_POLICY = 'auto';
+export const THEME_POLICY_SLUG_REGEX = /^[a-z0-9-]+$/;
+export type ThemePolicyValue = (typeof THEME_POLICY_MODES)[number] | `brand:${string}`;
+
+/** Validate a --theme-policy value (the enum + the brand-slug regex). */
+export function isValidThemePolicy(value: unknown): value is ThemePolicyValue {
+	if (typeof value !== 'string') {
+		return false;
+	}
+	if ((THEME_POLICY_MODES as readonly string[]).includes(value)) {
+		return true;
+	}
+	if (value.startsWith('brand:')) {
+		const slug = value.slice('brand:'.length);
+		return slug.length > 0 && THEME_POLICY_SLUG_REGEX.test(slug);
+	}
+	return false;
+}
+
 /** Surfaces a preset toggles at scaffold time. */
 export interface PresetSurfaces {
 	/** /search/ page + post-build Pagefind index. */

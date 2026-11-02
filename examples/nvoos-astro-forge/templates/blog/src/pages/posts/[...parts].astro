@@ -18,9 +18,13 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 const pageUrl = Astro.site ? new URL(`/posts/${post.id}/${post.data.slug}/`, Astro.site).href : undefined;
+// SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
+const seoTitle = post.data.seoTitle ?? post.data.title;
+const seoDescription = post.data.seoDescription ?? post.data.excerpt;
 const jsonLd = jsonLdFor('BlogPosting', {
 	url: pageUrl,
-	headline: post.data.title,
+	headline: seoTitle,
+	description: seoDescription,
 	datePublished: post.data.date,
 	dateModified: post.data.modified,
 	author: post.data.author,
@@ -33,7 +37,7 @@ const ogImage =
 		: undefined;
 ---
 
-<Base title={post.data.title} description={post.data.excerpt} canonical={pageUrl} ogImage={ogImage}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl} ogImage={ogImage}>
 	<article class="post">
 		<header>
 			<h1>{post.data.title}</h1>

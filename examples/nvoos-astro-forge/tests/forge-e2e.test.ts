@@ -82,13 +82,19 @@ const PROFILE: SiteProfile = {
 		{
 			slug: 'posts',
 			restBase: 'wp/v2/posts',
-			fields: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
+			fields: [
+				'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+				'rank_math_title', 'rank_math_description', 'yoast_head_json',
+			],
 			embed: true,
 		},
 		{
 			slug: 'pages',
 			restBase: 'wp/v2/pages',
-			fields: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
+			fields: [
+				'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+				'rank_math_title', 'rank_math_description', 'yoast_head_json',
+			],
 			embed: true,
 		},
 		{
@@ -157,7 +163,7 @@ describe('forge e2e — scaffold → check → build', () => {
 });
 
 describe('forge e2e — emitted site', () => {
-	it('renders posts, the front page, sitemap and robots', async () => {
+	it( 'renders posts, the front page, sitemap and robots', async () => {
 		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
 		// The About page is the static front page — its content renders at `/`,
 		// with the site name in the chrome.
@@ -170,10 +176,13 @@ describe('forge e2e — emitted site', () => {
 		expect(posts).toContain('Fjord merino sweater, first look');
 		expect(posts).toContain('Care guide: wool, cashmere and linen');
 		expect(posts).toContain('Stitch pattern: honeycomb rib');
+		// The hybrid-local demo post merges under the WP entries (106 P2).
+		expect(posts).toContain('Hello from the forge');
 
 		const sitemap = await readFile(path.join(workDir, 'dist', 'sitemap.xml'), 'utf8');
 		expect(sitemap).toContain('/posts/1/fjord-merino-sweater/');
 		expect(sitemap).toContain('/products/101/fjord-merino-sweater/');
+		expect(sitemap).toContain('/posts/hello-world/hello-world/');
 		expect(sitemap).not.toContain('/about/');
 
 		const robots = await readFile(path.join(workDir, 'dist', 'robots.txt'), 'utf8');
@@ -237,9 +246,18 @@ describe('forge e2e — emitted site', () => {
 	});
 
 	it('applies the design tokens, RSS, 404 and the redirect map', async () => {
-		// tokens_apply: the accent override is baked into the built CSS.
+		// tokens_apply: the accent override is baked into the built CSS. The
+		// theme-policy additions (105) pushed the bundle past Astro's inline
+		// threshold, so the tokens now ship in the linked stylesheet — resolve
+		// the href and assert there (or inline when the bundle is small again).
 		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
-		expect(index).toContain('--forge-accent:#0b5f4e');
+		const cssHref = /href="(\/_astro\/[^"]+\.css)"/.exec(index)?.[1];
+		if (cssHref) {
+			const css = await readFile(path.join(workDir, 'dist', cssHref.replace(/^\//, '')), 'utf8');
+			expect(css).toContain('--forge-accent:#0b5f4e');
+		} else {
+			expect(index).toContain('--forge-accent:#0b5f4e');
+		}
 		expect(index).toContain('type="application/rss+xml"');
 
 		const feed = await readFile(path.join(workDir, 'dist', 'feed.xml'), 'utf8');
@@ -411,8 +429,118 @@ describe('forge e2e — long-tail content tools against the fixture', () => {
 	});
 });
 
-describe('forge e2e — Proposal 104 Phase 4 artifacts', () => {
-	it('emits the agent stubs, copy tables, seo builder and theme module', async () => {
+describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2)', () => {
+	it( 'the default scaffold bakes auto and wires the policy boot + toggle', async () => {
+		const generated = await readFile(
+			path.join(workDir, 'src', 'lib', 'theme', 'policy.generated.ts'),
+			'utf8'
+		);
+		expect(generated).toContain("policy: 'auto',");
+		await expect(stat(path.join(workDir, 'src', 'lib', 'theme', 'policy.ts'))).resolves.toBeTruthy();
+		await expect(stat(path.join(workDir, 'src', 'components', 'ThemeToggle.astro'))).resolves.toBeTruthy();
+
+		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
+		// The inert policy JSON node + the no-FOUC boot ladder ship in the head.
+		expect(index).toContain('data-theme-policy');
+		expect(index).toContain('"policy":"auto"');
+		expect(index).toContain('forge-theme-policy');
+		expect(index).toContain('astro:after-swap');
+		expect(index).toContain('data-theme-toggle');
+	} );
+
+	it( 'scaffolding with --theme-policy dark bakes the forced policy', async () => {
+		const darkDir = await mkdtemp(path.join(os.tmpdir(), 'forge-dark-'));
+		try {
+			await scaffold({ profile: PROFILE, targetDir: darkDir, template: 'blog', themePolicy: 'dark' });
+			const generated = await readFile(
+				path.join(darkDir, 'src', 'lib', 'theme', 'policy.generated.ts'),
+				'utf8'
+			);
+			expect(generated).toContain("policy: 'dark',");
+			// The boot ladder enforces the forced theme before any stored value.
+			const base = await readFile(path.join(darkDir, 'src', 'layouts', 'Base.astro'), 'utf8');
+			expect(base).toContain('forge-theme-policy');
+			expect(base).toContain('policy === \'light\' || policy === \'dark\'');
+		} finally {
+			await rm(darkDir, { recursive: true, force: true });
+		}
+	} );
+
+	it( 'the CLI rejects malformed --theme-policy values with the clack error', async () => {
+		const profilePath = path.join(workDir, 'cli-policy-profile.json');
+		await (await import('node:fs/promises')).writeFile(profilePath, JSON.stringify(PROFILE), 'utf8');
+		for (const bad of ['sepia', 'brand:', 'brand:Bad_Slug']) {
+			const result = spawnSync(
+				process.execPath,
+				[path.join(FORGE_ROOT, 'scripts', 'forge.mjs'), profilePath, '--target', path.join(workDir, 'cli-policy-out'), '--theme-policy', bad],
+				{ cwd: FORGE_ROOT, encoding: 'utf8', timeout: 60_000 }
+			);
+			expect(result.status, `expected exit 2 for "${bad}"`).toBe(2);
+			expect(`${result.stderr ?? ''}`).toContain('Unknown theme policy');
+		}
+	} );
+
+	it( 'renders SEO meta from Rank Math + Yoast on the post/page routes', async () => {
+		// Rank Math title lands in <title> + the BlogPosting headline (106 §1.2).
+		const rankPost = await readFile(
+			path.join(workDir, 'dist', 'posts', '4', 'studio-notes-autumn', 'index.html'),
+			'utf8'
+		);
+		expect(rankPost).toContain('Studio Notes: The Autumn Palette — a curated journal — Fixture Wares');
+		expect(rankPost).toContain('"BlogPosting"');
+		expect(rankPost).toContain('Moss, bark and bone: the autumn palette, curated by the studio.');
+
+		// Yoast title via the fallback path.
+		const yoastPost = await readFile(
+			path.join(workDir, 'dist', 'posts', '2', 'care-guide', 'index.html'),
+			'utf8'
+		);
+		expect(yoastPost).toContain('Care guide for wool, cashmere and linen — the studio journal — Fixture Wares');
+
+		// Pages carry WebPage JSON-LD (velocity parity).
+		const contact = await readFile(path.join(workDir, 'dist', 'contact', 'index.html'), 'utf8');
+		expect(contact).toContain('"WebPage"');
+		expect(contact).toContain('application/ld+json');
+	} );
+
+	it( 'a forged blog builds and renders with NO WP connection (the demo path)', async () => {
+		const offlineDir = await mkdtemp(path.join(os.tmpdir(), 'forge-offline-'));
+		try {
+			// Blog-only: posts + pages (the products collection needs WP auth).
+			await scaffold({
+				profile: { ...PROFILE, collections: PROFILE.collections.filter((collection) => collection.slug !== 'products') },
+				targetDir: offlineDir,
+				template: 'blog',
+			});
+			const install = run(offlineDir, 'npm', ['install', '--no-audit', '--no-fund']);
+			expect(install.status, `npm install failed:\n${install.stderr}`).toBe(0);
+			// A dead endpoint — the hybrid loader degrades to local-only with a
+			// warning instead of failing the build (never silent: it logs).
+			// (Port 59999: connection refused — avoid undici's reserved ports.)
+			const build = run(offlineDir, 'npm', ['run', 'build'], {
+				WP_SITE_URL: 'http://127.0.0.1:59999/',
+				ASTRO_SITE: 'https://demo.example.com',
+			});
+			expect(build.status, `offline build failed:\n${build.stdout}\n${build.stderr}`).toBe(0);
+			expect(build.stdout).toContain('serving local content only');
+
+			// The demo post renders; the WP fixture posts do not.
+			const detail = await readFile(
+				path.join(offlineDir, 'dist', 'posts', 'hello-world', 'hello-world', 'index.html'),
+				'utf8'
+			);
+			expect(detail).toContain('Hello from the forge');
+			expect(detail).toContain('"BlogPosting"');
+			const listing = await readFile(path.join(offlineDir, 'dist', 'posts', 'index.html'), 'utf8');
+			expect(listing).not.toContain('Fjord merino sweater');
+		} finally {
+			await rm(offlineDir, { recursive: true, force: true });
+		}
+	}, 600_000);
+} );
+
+describe( 'forge e2e — Proposal 104 Phase 4 artifacts', () => {
+it( 'emits the agent stubs, copy tables, seo builder and theme module', async () => {
 		const agents = await readFile(path.join(workDir, 'AGENTS.md'), 'utf8');
 		expect(agents).toContain('nvoos.json');
 		expect(agents).toContain('Storefront runtime contract');
