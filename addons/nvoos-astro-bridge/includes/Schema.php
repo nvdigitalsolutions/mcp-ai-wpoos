@@ -81,10 +81,25 @@ final class Schema {
 	public const TERM_META_IMAGE_ID = '_funiq_image_id';
 
 	// -----------------------------------------------------------------------
-	// Option names (globals — banner & carousel).
+	// Option names (globals — banner, carousel, theme policy, shop).
 	// -----------------------------------------------------------------------
 	public const OPTION_BANNER   = 'funiq_banner';
 	public const OPTION_CAROUSEL = 'funiq_carousel';
+
+	/**
+	 * Theme policy option name (Proposal 105) — the storefront theme ladder
+	 * doc (policy / contrast / defaultTheme / updatedAt / $extensions).
+	 * Read through the `funiq_bridge_theme_policy` filter at runtime (the
+	 * product-source pattern — the stored value is the default, a filter can
+	 * override per request).
+	 */
+	public const OPTION_THEME_POLICY = 'funiq_bridge_theme_policy';
+
+	/**
+	 * Shop globals option name (Proposal 106 §1.3) — checkout/cart URLs and
+	 * the currency display hint for the storefront checkout handoff.
+	 */
+	public const OPTION_SHOP = 'funiq_bridge_shop';
 
 	/**
 	 * Product source mode — `native` (default: the built-in CPTs),
@@ -153,6 +168,45 @@ final class Schema {
 	public static function carousel_defaults(): array {
 		return array(
 			'carousel' => array(),
+		);
+	}
+
+	/**
+	 * Default values for the theme policy option (Proposal 105 §1).
+	 *
+	 * `$extensions` is always an empty object in v1 (reserved for
+	 * Proposal 097); `updatedAt` is the SSR cache-key component and is
+	 * re-stamped server-side on every PATCH.
+	 *
+	 * @return array{policy: string, contrast: string, defaultTheme: string, updatedAt: string, $extensions: array<string, mixed>}
+	 */
+	public static function theme_policy_defaults(): array {
+		return array(
+			'policy'       => 'auto',
+			'contrast'     => 'auto',
+			'defaultTheme' => 'dark',
+			'updatedAt'    => gmdate( 'c' ),
+			'$extensions'  => array(),
+		);
+	}
+
+	/**
+	 * Default values for the shop globals option (Proposal 106 §1.3).
+	 *
+	 * Checkout/cart URLs derive from the site home URL; the currency comes
+	 * from WooCommerce when it is active (USD otherwise). The currency
+	 * symbol is a display hint for the storefront — no currency conversion
+	 * happens bridge-side.
+	 *
+	 * @return array{checkoutUrl: string, cartUrl: string, currency: string, currencySymbol: string, updatedAt: string}
+	 */
+	public static function shop_defaults(): array {
+		return array(
+			'checkoutUrl'    => home_url( '/checkout/' ),
+			'cartUrl'        => home_url( '/cart/' ),
+			'currency'       => ( class_exists( 'WooCommerce' ) && function_exists( 'get_woocommerce_currency' ) ) ? get_woocommerce_currency() : 'USD',
+			'currencySymbol' => '$',
+			'updatedAt'      => gmdate( 'c' ),
 		);
 	}
 

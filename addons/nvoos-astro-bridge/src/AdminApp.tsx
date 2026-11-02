@@ -12,6 +12,7 @@ import { ListView } from './components/ListView';
 import { EditForm } from './components/EditForm';
 import { ManagersView } from './components/ManagersView';
 import { DesignView } from './components/DesignView';
+import { SettingsView } from './components/SettingsView';
 import { collections } from './config/collections';
 import { defaultSlug, isCollectionWritable, isNavEntryVisible, navEntryFor } from './auth/permissions';
 import type { NavSlug } from './types';
@@ -49,7 +50,9 @@ export function AdminApp() {
 
 	return (
 		<Layout sidebar={<Sidebar activeSlug={activeSlug} onSelect={handleSelect} />}>
-			{activeSlug === 'design' ? (
+			{activeSlug === 'settings' ? (
+				<SettingsView />
+			) : activeSlug === 'design' ? (
 				<DesignView />
 			) : activeSlug === 'managers' || !activeCollection ? (
 				<ManagersView />

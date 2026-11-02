@@ -121,5 +121,29 @@ export type CollectionSlug =
 	| 'promotions'
 	| 'promocodes';
 
-/** Sidebar navigation targets — collections plus the managers and design sections. */
-export type NavSlug = CollectionSlug | 'managers' | 'design';
+/** Sidebar navigation targets — collections plus the managers, design and settings sections. */
+export type NavSlug = CollectionSlug | 'managers' | 'design' | 'settings';
+
+/**
+ * Theme policy document (Proposal 105 §1) — the storefront theme ladder
+ * served by GET/PATCH /globals/theme.
+ */
+export interface ThemePolicy {
+	policy: string;
+	contrast: 'auto' | 'standard' | 'high';
+	defaultTheme: 'light' | 'dark';
+	updatedAt: string;
+	$extensions?: Record<string, unknown>;
+}
+
+/**
+ * Shop globals document (Proposal 106 §1.3) — checkout handoff + currency
+ * display hints served by GET/PATCH /globals/shop.
+ */
+export interface ShopGlobals {
+	checkoutUrl: string;
+	cartUrl: string;
+	currency: string;
+	currencySymbol: string;
+	updatedAt: string;
+}

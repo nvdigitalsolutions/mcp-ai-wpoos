@@ -22,10 +22,14 @@ use NvoosAstroBridge\REST\{
 	ColorsController,
 	ManagersController,
 	MediaController,
+	PagesController,
+	PostsController,
 	ProductsController,
 	PromocodesController,
 	PromotionsController,
+	ShopGlobalsController,
 	StatusesController,
+	ThemePolicyController,
 };
 use NvoosAstroBridge\Admin\AdminPage;
 
@@ -174,6 +178,10 @@ final class Plugin {
 			new AuthController(),
 			new MediaController(),
 			new ManagersController(),
+			new PagesController(),
+			new PostsController(),
+			new ThemePolicyController(),
+			new ShopGlobalsController(),
 		);
 
 		foreach ( $controllers as $controller ) {
@@ -262,6 +270,12 @@ final class Plugin {
 		if ( false === get_option( Schema::OPTION_CAROUSEL ) ) {
 			add_option( Schema::OPTION_CAROUSEL, Schema::carousel_defaults() );
 		}
+		if ( false === get_option( Schema::OPTION_THEME_POLICY ) ) {
+			add_option( Schema::OPTION_THEME_POLICY, Schema::theme_policy_defaults() );
+		}
+		if ( false === get_option( Schema::OPTION_SHOP ) ) {
+			add_option( Schema::OPTION_SHOP, Schema::shop_defaults() );
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -317,6 +331,12 @@ final class Plugin {
 		}
 		if ( false === get_option( Schema::OPTION_CAROUSEL ) ) {
 			add_option( Schema::OPTION_CAROUSEL, Schema::carousel_defaults() );
+		}
+		if ( false === get_option( Schema::OPTION_THEME_POLICY ) ) {
+			add_option( Schema::OPTION_THEME_POLICY, Schema::theme_policy_defaults() );
+		}
+		if ( false === get_option( Schema::OPTION_SHOP ) ) {
+			add_option( Schema::OPTION_SHOP, Schema::shop_defaults() );
 		}
 
 		// Add capabilities.
