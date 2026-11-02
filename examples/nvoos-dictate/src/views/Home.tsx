@@ -539,7 +539,7 @@ export default function Home({ status, dictate, onRefresh }: Props) {
             </span>
           </li>
           <li>
-            						<span>NV oOS</span>
+            <span>NV oOS</span>
             <span className="row">
               <span className={badge(!!status?.spa_configured)}>
                 {status?.spa_configured ? status?.spa_url || 'configured' : 'not configured'}
@@ -549,7 +549,7 @@ export default function Home({ status, dictate, onRefresh }: Props) {
                   className="btn ghost"
                   disabled={spaChecking}
                   onClick={() => void checkSpa()}
-                  title="Probe whether the configured SPA origin answers"
+                  title="Probe whether the configured Complete Velocity console answers"
                 >
                   {spaChecking ? 'Checking…' : 'Check'}
                 </button>
@@ -558,7 +558,7 @@ export default function Home({ status, dictate, onRefresh }: Props) {
           </li>
           {spaCheck && (
             <li>
-              <span>SPA reachability</span>
+              <span>Complete Velocity reachability</span>
               <span className={badge(spaCheck.ok)}>{spaCheck.message}</span>
             </li>
           )}

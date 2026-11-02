@@ -489,8 +489,9 @@ impl Default for UiConfig {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
 pub struct SpaConfig {
-    /// Full URL of a hosted Pro SPA (e.g. `https://chat.nvoos.cloud`) or a
-    /// WordPress page that renders the `[nvoos_pro_spa]` shortcode.
+    /// Full URL of the NV oOS Complete Velocity console (e.g.
+    /// `https://console.nvoos.cloud`). The Assistant tab embeds this single
+    /// surface — every NV oOS addon UI lives inside the console.
     pub url: String,
 }
 
