@@ -101,6 +101,16 @@ export interface Settings {
   spa: {
     url: string;
   };
+  snippet: {
+    enabled: boolean;
+    hotkey: string;
+    engine: string; // auto | winrt | sidecar | onnx | vlm_fallback
+    language: string;
+    vlm_fallback: boolean;
+    auto_paste: boolean;
+    cleanup_profile: string; // off | ocr | full_stage1
+    retain_history: boolean;
+  };
 }
 
 export interface StatusInfo {
@@ -129,6 +139,9 @@ export interface StatusInfo {
   polish: string;
   spa_configured: boolean;
   spa_url: string;
+  snippet_available: boolean;
+  snippet_engine: string;
+  snippet_hotkey: string;
 }
 
 export interface SpaCheck {
@@ -156,6 +169,26 @@ export interface TranscriptRow {
   e2e_ms: number;
   created_at: string;
   media: string;
+}
+
+export interface SnippetRow {
+  id: number;
+  text_raw: string;
+  text_clean: string;
+  engine: string;
+  language: string;
+  region_w: number;
+  region_h: number;
+  ocr_ms: number;
+  created_at: string;
+}
+
+export interface SnippetModelStatus {
+  id: string;
+  label: string;
+  size_mb: number;
+  license: string;
+  installed: boolean;
 }
 
 export interface MeetingRow {
@@ -336,6 +369,23 @@ export interface DiagnosticsInfo {
     confirmation_required: boolean;
     last_error: string | null;
   };
+  snippet: {
+    available: boolean;
+    enabled: boolean;
+    hotkey: string;
+    engine: string;
+    language: string;
+    phase: string;
+    ocr_languages: string[];
+    captures: number;
+    recognitions: number;
+    last_ocr_ms: number;
+    errors: number;
+    last_error: string | null;
+    last_region: { x: number; y: number; w: number; h: number } | null;
+    models: SnippetModelStatus[];
+    onnx_available: boolean;
+  };
   last_dictation: {
     window_ms: number;
     utterance_ms: number;
@@ -360,6 +410,22 @@ export type DictateEvent =
   | { state: 'done'; text: string; raw: string; provider: string; e2e_ms: number }
   | { state: 'error'; message: string }
   | { state: 'cancelled' };
+
+export type SnippetEvent =
+  | {
+      state: 'frame';
+      image: string;
+      frame_w: number;
+      frame_h: number;
+      origin_x: number;
+      origin_y: number;
+      preview_w: number;
+      preview_h: number;
+    }
+  | { state: 'done'; text: string; engine: string; ocr_ms: number; pasted: boolean }
+  | { state: 'error'; message: string }
+  | { state: 'cancelled' }
+  | { state: 'idle' };
 
 export interface PermissionInfo {
   kind: 'microphone' | 'accessibility' | 'input_monitoring' | 'screen_recording';
@@ -448,6 +514,18 @@ export const api = {
   pickMediaFile: () => invoke<string | null>('pick_media_file'),
   cancelDictation: () => invoke<void>('cancel_dictation'),
 
+  snippetAvailable: () => invoke<boolean>('snippet_available'),
+  snippetRegionSelected: (x: number, y: number, w: number, h: number) =>
+    invoke<void>('snippet_region_selected', { x, y, w, h }),
+  snippetCancel: () => invoke<void>('snippet_cancel'),
+  listSnippets: (limit = 100, offset = 0) =>
+    invoke<SnippetRow[]>('list_snippets', { limit, offset }),
+  deleteSnippet: (id: number) => invoke<void>('delete_snippet', { id }),
+  getSnippetModels: () => invoke<SnippetModelStatus[]>('get_snippet_models'),
+  downloadSnippetModel: (pack: string, force = false) =>
+    invoke<string>('download_snippet_model', { pack, force }),
+  listOcrLanguages: () => invoke<string[]>('list_ocr_languages'),
+
   getPermissions: () => invoke<PermissionInfo[]>('get_permissions'),
   requestPermission: (kind: string) =>
     invoke<PermissionInfo>('request_permission', { kind }),
@@ -458,6 +536,10 @@ export const api = {
 
 export function onDictateEvent(handler: (event: DictateEvent) => void): Promise<UnlistenFn> {
   return listen<DictateEvent>('dictate://state', (e) => handler(e.payload));
+}
+
+export function onSnippetEvent(handler: (event: SnippetEvent) => void): Promise<UnlistenFn> {
+  return listen<SnippetEvent>('snippet://state', (e) => handler(e.payload));
 }
 
 export function onModelProgress(
@@ -473,9 +555,11 @@ export function onMediaProgress(handler: (progress: MediaProgress) => void): Pro
   return listen<MediaProgress>('media://progress', (e) => handler(e.payload));
 }
 
-/** Which webview window is this? (overlay = focusless PTT capsule) */
-export function windowKind(): 'main' | 'overlay' {
-  return new URLSearchParams(window.location.search).get('window') === 'overlay'
-    ? 'overlay'
-    : 'main';
+/** Which webview window is this? (overlay = focusless PTT capsule,
+ * snippet = full-screen OCR selection overlay) */
+export function windowKind(): 'main' | 'overlay' | 'snippet' {
+  const q = new URLSearchParams(window.location.search).get('window');
+  if (q === 'overlay') return 'overlay';
+  if (q === 'snippet') return 'snippet';
+  return 'main';
 }

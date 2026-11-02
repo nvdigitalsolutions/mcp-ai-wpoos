@@ -494,6 +494,54 @@ pub struct SpaConfig {
     pub url: String,
 }
 
+/// Screen-to-text snippet OCR (Proposal 100). Platform-native engines are
+/// the zero-download default; the RapidOCR ONNX pack is opt-in.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct SnippetConfig {
+    /// Master switch.
+    pub enabled: bool,
+    /// Global chord (e.g. `Win+Shift+T` on Windows, `Command+Shift+T` on
+    /// macOS). Empty = disabled. Never the PTT hotkey (validated at
+    /// registration).
+    pub hotkey: String,
+    /// `auto` (platform native with ONNX fallback) | `winrt` | `sidecar` |
+    /// `onnx` | `vlm_fallback`.
+    pub engine: String,
+    /// BCP-47-ish language: Windows OCR language on WinRT/Vision, pack id
+    /// (`en`, …) on ONNX. Empty = OS default.
+    pub language: String,
+    /// Opt-in VLM re-recognition for noisy regions (M5; local providers only).
+    pub vlm_fallback: bool,
+    /// Paste into the previously focused app after copying (dictation parity).
+    pub auto_paste: bool,
+    /// `off` | `ocr` (dedicated OCR profile) | `full_stage1` (speech rules).
+    pub cleanup_profile: String,
+    /// Persist snippet results to the local history table (off by default —
+    /// OCR text can contain anything on screen).
+    pub retain_history: bool,
+}
+
+impl Default for SnippetConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            #[cfg(windows)]
+            hotkey: "Win+Shift+T".to_string(),
+            #[cfg(target_os = "macos")]
+            hotkey: "Command+Shift+T".to_string(),
+            #[cfg(all(not(windows), not(target_os = "macos")))]
+            hotkey: String::new(),
+            engine: "auto".to_string(),
+            language: String::new(),
+            vlm_fallback: false,
+            auto_paste: true,
+            cleanup_profile: "ocr".to_string(),
+            retain_history: false,
+        }
+    }
+}
+
 /// The complete persisted settings blob.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
@@ -512,6 +560,7 @@ pub struct Settings {
     pub privacy: PrivacyConfig,
     pub ui: UiConfig,
     pub spa: SpaConfig,
+    pub snippet: SnippetConfig,
 }
 
 impl Settings {

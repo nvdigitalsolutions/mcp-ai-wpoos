@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "snippet",
+  "description": "Full-screen snippet-OCR selection overlay (Proposal 100). It renders a scaled preview of the frozen frame and reports a selection rect. Least privilege: core IPC only; it can never touch the network, files, or clipboard on its own — the Rust core owns capture, recognition, and delivery.",
+  "windows": ["snippet"],
+  "permissions": [
+    "core:default"
+  ]
+}

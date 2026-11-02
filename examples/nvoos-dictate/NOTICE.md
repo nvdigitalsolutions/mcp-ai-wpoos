@@ -18,10 +18,12 @@ boundary is maintained.
 The application may download and load third-party model weights at runtime
 (never bundled in the installer); each carries its own license and is
 downloaded at first use: Parakeet (CC-BY-4.0), Whisper (MIT), Moonshine
-(MIT), Silero VAD (MIT), and the YOLO object-detector weights (AGPL-3.0,
-Ultralytics). The optional vision label-polish layer talks to your local
-LM Studio / Ollama server as a separate process — no model code is embedded
-or redistributed by this application.
+(MIT), Silero VAD (MIT), the YOLO object-detector weights (AGPL-3.0,
+Ultralytics), and the optional RapidOCR / PP-OCR screen-OCR weights
+(Apache-2.0, PaddleOCR — see `src-tauri/src/snippet/models.rs`). The
+optional vision label-polish layer talks to your local LM Studio / Ollama
+server as a separate process — no model code is embedded or redistributed
+by this application.
 
 For licensing enquiries: licensing@nvdigitalsolutions.com
 

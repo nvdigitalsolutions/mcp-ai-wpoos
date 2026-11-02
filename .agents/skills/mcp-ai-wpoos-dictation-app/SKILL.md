@@ -1,14 +1,14 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks (Proposals 073/075/076), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, or VLM relabeling.
+description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks (Proposals 073/075/076), the screen-OCR snippet track (Proposal 100, features snippet/snippet-onnx), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, or screen OCR.
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
   app-version: "0.2.0"
   proposal: "067"
   pr: "7043"
-  last-updated: "2026-10-14"
+  last-updated: "2026-11-02"
 ---
 # NV oOS Dictation App — Build, Engines, and Verification Guide
 
@@ -27,16 +27,17 @@ with the NV oOS plugin as the optional AI-enrichment backend.
 - Producing a "complete" hand-off exe (the full feature union, not just STT flags)
 - Continuing P2 (loopback + PTT matrix), P4/P5 ports, or distribution
 - Verifying the macOS port from CI or a remote Mac (boot smoke, interactive SSH session, VNC options)
+- Building/debugging **screen OCR** (Proposal 100, features `snippet`/`snippet-onnx`)
 
 ## Layout
 
 ```
 examples/nvoos-dictate/
-├── src/                  # React webview (Settings/History/Meetings/Overlay)
+├── src/                  # React webview (Settings/History/Meetings/Overlay/Snippet)
 ├── src-tauri/            # the Rust crate (manifest lives HERE, not at app root)
-│   ├── src/{audio,stt,cleanup,nvoos,hotkey,paste,meetings,mcp,storage}
+│   ├── src/{audio,stt,cleanup,nvoos,hotkey,paste,meetings,mcp,storage,snippet}
 │   ├── tests/            # integration tests (must stay under src-tauri/tests!)
-│   ├── examples/         # transcribe_file.rs (WER/e2e_ms) + download_model.rs
+│   ├── examples/         # transcribe_file.rs + download_model.rs + snippet_ocr_probe.rs
 │   └── capabilities/ + icons/
 ├── docs/decisions/       # ADRs 0001 (paste strategy), 0002 (MCP transport), 0003 (engines)
 └── e2e/                  # Playwright (webview UI)
@@ -61,8 +62,8 @@ examples/nvoos-dictate/
   co-link because the vendored whisper-rs-sys compiles whisper.cpp with
   the static CRT /MT, matching sherpa-onnx's prebuilt libs).
   **"Complete" build** (every opt-in surface) is the union of all
-  feature-gated modules — engines + vision + agent + mcp:
-  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp`.
+  feature-gated modules — engines + vision + agent + mcp + snippet OCR:
+  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx`.
   **Trap — a build that omits a feature silently boots with that surface
   "not compiled", not an error.** `vision` (YOLO detection/tracking + camera
   preview + VLM label-polish) and `agent` (browser control) are each
@@ -135,6 +136,8 @@ cargo test            # default (mock/embedded)
 cargo test --features vision   # 94 lib (+9 vision/tracker/polish tests)
 cargo test --features mcp       # +4 toolbox tests
 cargo test --features parakeet  # 46 lib (+1 tar.bz2 extraction test)
+cargo test --features snippet   # 122 lib (+ snippet capture/selection/OCR tests)
+cargo test --features snippet-onnx  # 126 lib (+ RapidOCR decode tests)
 ```
 
 Native feature compile checks: `parakeet`, `whisper`, `moonshine`,
@@ -613,6 +616,60 @@ download `yolo11n.pt` from
 `python -c "from ultralytics import YOLO; YOLO('yolo11n.pt').export(format='onnx', opset=12, imgsz=640)"`.
 No `onnxslim` = the simplifier step logs a non-fatal warning.
 
+## Snippet OCR — screen-to-text (Proposal 100, features `snippet`/`snippet-onnx`)
+
+The "OCR push-to-talk": hotkey (default **Win+Shift+T** on Windows, ⌘⇧T
+on macOS — registered via `tauri-plugin-global-shortcut`, **never** the PTT
+`win_hook`; a one-shot chord needs no swallow discipline) → GDI virtual-
+screen freeze (in-memory only, never disk) → full-screen **pointer-owning**
+`snippet` window (unlike the focusless overlay capsule) renders a scaled
+preview data-URI → drag/Shift-move/Esc → crop the full-res frame in Rust →
+recognize on the `nvoos-snippet` worker → OCR cleanup profile
+(`cleanup::run_ocr_deterministic`) → clipboard → optional auto-paste.
+Engine dispatch: WinRT on Windows, Apple Vision via the sidecar on macOS,
+RapidOCR-ONNX as portable/fallback, local-VLM fallback deferred.
+
+- **WinRT leg (verified live on the reference PC, ~35 ms):**
+  `snippet/ocr_winrt.rs`. Raw BGRA → `SoftwareBitmap` goes through the
+  sanctioned **DataWriter/InMemoryRandomAccessStream/DataReader** path
+  (`DataReader::LoadAsync` BEFORE `ReadBuffer`); `IMemoryBufferByteAccess`
+  QI is compile-blocked by windows-rs's interface-hierarchy check and a
+  direct `Buffer::cast` fails E_NOINTERFACE at runtime — do not re-try
+  either. Language packs via `AvailableRecognizerLanguages` (needs the
+  `Foundation_Collections` feature); "no OCR languages installed" offers
+  the ONNX download instead of dead-ending.
+- **GDI capture (`snippet/capture.rs`, windows 0.58 shapes):**
+  `CreateDIBSection` returns `Result<HBITMAP>`, `BitBlt` returns
+  `Result<()>`, `biCompression: u32` (= `BI_RGB.0`), `SelectObject`/
+  `DeleteObject` take handles (HBITMAP → HGDIOBJ via `From`). **Copy the
+  DIB bits out before `DeleteObject`** — the bitmap owns the memory;
+  `from_raw_parts` would double-free. Virtual-screen metrics
+  (`SM_*VIRTUALSCREEN`) handle negative multi-monitor origins; Tauri sets
+  PerMonitorV2 DPI awareness.
+- **ONNX leg (`snippet/ocr_onnx.rs`, verified ~90–120 ms/shot):**
+  hand-rolled DBNet det + SVTR rec on the pinned `ort` rc.9. **BGR channel
+  order** (PaddleOCR `img_mode: BGR` — RGB yields all-blank output).
+  Decode: class 0 = CTC blank, `class i → dict[i-1]` (official exports
+  carry one extra GTC/NRTR-head token). **No ×8 width quantization** for
+  the rec input (it clips trailing glyphs); expand det boxes unclip-style
+  (~6% + 3 px) or edge characters get cut. Pack catalogue
+  (`snippet/models.rs`, pinned SHA-256): det from the official RapidOCR
+  ModelScope export; rec + dict from the **monkt** HF mirror — the official
+  ModelScope rec export's dynamic height axis produces all-blank output on
+  ort rc.9, the fixed-height (48) monkt export does not; the monkt dict is
+  byte-identical to the official `ppocrv5_en_dict.txt`.
+- **macOS (CI-verified only — Swift can't build on Windows):** the helper
+  gained one-shot `screenshot` + `ocr` subcommands (`Snipper.swift`;
+  SCScreenshotManager on 14+, `CGWindowListCreateImage` on 13, Vision
+  `.accurate`); sidecar protocol stays v1 with additive `image`/`ocr_result`
+  frames; `--check` smokes Vision on a generated bitmap.
+- **Debug tooling:** `snippet_ocr_probe` example — `--engine winrt|onnx|
+  onnx-raw|download` (raw dumps argmax indices for mapping forensics;
+  download exercises the production pack downloader). Fixture images via
+  PowerShell System.Drawing (the same trick as the SAPI-TTS fixtures).
+- **Hotkey isolation:** a git diff touching `src/hotkey/` invalidates the
+  snippet work — the chord rides the global-shortcut plugin on purpose.
+
 **Vision label polish (Proposal 076):** the stock `yolov11n` is a
 closed-vocabulary 80-class COCO model, so it mislabels arbitrary objects
 (a pen → "knife"). The opt-in VLM polish layer fixes this: when
@@ -944,6 +1001,22 @@ build`. The complete debug exe is the full feature union
 `fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp` — NOT just
 the STT flags; see the "complete build" note in Build & run. PR #7047 tracks
 the code change (branch `add/fastconformer-engine-and-assistant-spa-tab`).
+
+New this session (2026-11-02): **screen OCR snippet (Proposal 100)** —
+  features `snippet` (capture + selection overlay + platform-native engines,
+  implies `dep:image`) and `snippet-onnx` (RapidOCR ONNX, shares the ort pin),
+  the `snippet/` module (capture/ocr_winrt/ocr_onnx/models/controller), the
+  pointer-owning full-screen `snippet` window + capability, WinRT end-to-end
+  verified live (~35 ms with word boxes), the ONNX pipeline verified live
+  (~90–120 ms, BGR + blank-offset decode), the pinned pack catalogue, the
+  OCR cleanup profile, snippet history (append-only migration), the
+  `snippet_ocr_probe` spike example, and the Swift sidecar `screenshot`/`ocr`
+  subcommands (CI-verified). See "Snippet OCR" above for the full set of
+  gotchas (DataWriter path, DIB ownership, monkt-vs-official exports).
+  Gates green: fmt, clippy (default + `snippet` + `snippet-onnx`),
+  `cargo test` 117 default / 122 snippet / 126 snippet-onnx, `npm run build`.
+  The complete-build union and `verify_complete_build.ps1` now include
+  `snippet,snippet-onnx`.
 
 ## Related skills
 

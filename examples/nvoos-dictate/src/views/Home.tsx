@@ -584,6 +584,16 @@ export default function Home({ status, dictate, onRefresh }: Props) {
               </span>
             </li>
           )}
+          {status?.snippet_available && (
+            <li>
+              <span>Screen OCR</span>
+              <span className={badge(!!status?.snippet_hotkey)}>
+                {status?.snippet_hotkey
+                  ? `${status.snippet_hotkey} · ${status.snippet_engine}`
+                  : 'available (no hotkey set)'}
+              </span>
+            </li>
+          )}
           <li>
             <span>NV oOS credential</span>
             <span className={badge(!!status?.nvoos_credential_stored)}>
@@ -613,7 +623,9 @@ export default function Home({ status, dictate, onRefresh }: Props) {
         <p className="muted">
           Push-to-talk only — no always-on listening. Dictation audio lives in a short in-memory
           window and is never written to disk. Meeting recordings are transcribed then deleted
-          unless you opt into retention. Telemetry is permanently disabled.
+          unless you opt into retention. Screen OCR freezes the screen in memory only — the
+          frame is dropped on selection or cancel and never touches disk. Telemetry is
+          permanently disabled.
         </p>
       </section>
     </div>

@@ -36,6 +36,20 @@ pub struct TranscriptRow {
     pub media: String,
 }
 
+/// A snippet OCR history row, as serialized to the webview.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SnippetRow {
+    pub id: i64,
+    pub text_raw: String,
+    pub text_clean: String,
+    pub engine: String,
+    pub language: String,
+    pub region_w: i64,
+    pub region_h: i64,
+    pub ocr_ms: i64,
+    pub created_at: String,
+}
+
 /// A meeting transcript row.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct MeetingRow {
@@ -85,6 +99,68 @@ impl Db {
         Ok(Self {
             conn: Mutex::new(conn),
         })
+    }
+
+    // ---- snippets -------------------------------------------------------
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn insert_snippet(
+        &self,
+        text_raw: &str,
+        text_clean: &str,
+        engine: &str,
+        language: &str,
+        region_w: u32,
+        region_h: u32,
+        ocr_ms: u64,
+    ) -> AppResult<i64> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO snippets (text_raw, text_clean, engine, language, region_w, region_h, ocr_ms)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                text_raw,
+                text_clean,
+                engine,
+                language,
+                region_w as i64,
+                region_h as i64,
+                ocr_ms as i64
+            ],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    pub fn list_snippets(&self, limit: i64, offset: i64) -> AppResult<Vec<SnippetRow>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, text_raw, text_clean, engine, language, region_w, region_h, ocr_ms, created_at
+             FROM snippets
+             ORDER BY id DESC
+             LIMIT ?1 OFFSET ?2",
+        )?;
+        let rows = stmt
+            .query_map(params![limit, offset], |r| {
+                Ok(SnippetRow {
+                    id: r.get(0)?,
+                    text_raw: r.get(1)?,
+                    text_clean: r.get(2)?,
+                    engine: r.get(3)?,
+                    language: r.get(4)?,
+                    region_w: r.get(5)?,
+                    region_h: r.get(6)?,
+                    ocr_ms: r.get(7)?,
+                    created_at: r.get(8)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
+    pub fn delete_snippet(&self, id: i64) -> AppResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM snippets WHERE id = ?1", params![id])?;
+        Ok(())
     }
 
     // ---- transcripts -----------------------------------------------------

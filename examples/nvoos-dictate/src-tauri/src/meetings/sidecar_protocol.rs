@@ -12,11 +12,25 @@
 //! {"type":"chunk","seq":1,"sample_rate":16000,"channels":1,"pcm16":"<base64>"}
 //! {"type":"stopped"}
 //! {"type":"error","message":"…"}
+//! // Snippet OCR (Proposal 100) — additive one-shot frames, same protocol v1:
+//! {"type":"image","png":"<base64>","width":1920,"height":1080}
+//! {"type":"ocr_result","text":"…","words":[{"string":"hi","x":1.0,"y":2.0,"w":30.0,"h":18.0}]}
 //! ```
 
 use serde::Deserialize;
 
 pub const PROTOCOL_VERSION: u32 = 1;
+
+/// One word box in an OCR result (pixel coordinates of the image that was
+/// recognized).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct SidecarOcrWord {
+    pub string: String,
+    pub x: f32,
+    pub y: f32,
+    pub w: f32,
+    pub h: f32,
+}
 
 /// One line parsed from the helper's stdout.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -34,6 +48,18 @@ pub enum SidecarFrame {
         sample_rate: u32,
         channels: u16,
         pcm16: String,
+    },
+    /// Snippet OCR: a frozen-screen screenshot (base64 PNG).
+    Image {
+        png: String,
+        width: u32,
+        height: u32,
+    },
+    /// Snippet OCR: a Vision recognition result.
+    OcrResult {
+        text: String,
+        #[serde(default)]
+        words: Vec<SidecarOcrWord>,
     },
     Stopped,
     Error {
@@ -162,5 +188,40 @@ mod tests {
             ),
             Some(SidecarFrame::Chunk { seq: 7, .. })
         ));
+    }
+
+    #[test]
+    fn parses_snippet_ocr_frames() {
+        assert_eq!(
+            parse_line(r#"{"type":"image","png":"AA==","width":1920,"height":1080}"#),
+            Some(SidecarFrame::Image {
+                png: "AA==".into(),
+                width: 1920,
+                height: 1080,
+            })
+        );
+        assert_eq!(
+            parse_line(
+                r#"{"type":"ocr_result","text":"hello","words":[{"string":"hi","x":1.0,"y":2.0,"w":30.0,"h":18.0}]}"#
+            ),
+            Some(SidecarFrame::OcrResult {
+                text: "hello".into(),
+                words: vec![SidecarOcrWord {
+                    string: "hi".into(),
+                    x: 1.0,
+                    y: 2.0,
+                    w: 30.0,
+                    h: 18.0,
+                }],
+            })
+        );
+        // `words` is optional (older/partial results).
+        assert_eq!(
+            parse_line(r#"{"type":"ocr_result","text":"hello"}"#),
+            Some(SidecarFrame::OcrResult {
+                text: "hello".into(),
+                words: vec![],
+            })
+        );
     }
 }

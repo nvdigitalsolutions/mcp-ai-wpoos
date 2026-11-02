@@ -16,6 +16,7 @@ pub mod meetings;
 pub mod nvoos;
 pub mod paste;
 pub mod permissions;
+pub mod snippet;
 pub mod state;
 pub mod storage;
 pub mod stt;
@@ -38,6 +39,31 @@ fn ensure_overlay(app: &tauri::AppHandle) {
     )
     .title("")
     .inner_size(480.0, 120.0)
+    .resizable(false)
+    .decorations(false)
+    .transparent(true)
+    .always_on_top(true)
+    .skip_taskbar(true)
+    .focused(false)
+    .visible(false)
+    .build();
+}
+
+/// Create the snippet selection window (Proposal 100): the inverse of the
+/// dictation capsule — a pointer-owning, full-screen, transparent overlay
+/// that renders the frozen frame and reports a selection. Created hidden;
+/// the controller sizes it to the virtual screen on arm.
+fn ensure_snippet_window(app: &tauri::AppHandle) {
+    if app.get_webview_window("snippet").is_some() {
+        return;
+    }
+    let _ = tauri::WebviewWindowBuilder::new(
+        app,
+        "snippet",
+        tauri::WebviewUrl::App("index.html?window=snippet".into()),
+    )
+    .title("")
+    .inner_size(640.0, 480.0)
     .resizable(false)
     .decorations(false)
     .transparent(true)
@@ -82,11 +108,13 @@ pub fn run() {
             let handle = app.handle().clone();
             state::setup(&handle)?;
             ensure_overlay(&handle);
+            ensure_snippet_window(&handle);
 
             // Load persisted settings into state and start the core graph.
             let app_state = handle.state::<state::AppState>();
             let _ = app_state.reload_settings();
             dictation::DictationController::spawn(handle.clone())?;
+            snippet::controller::SnippetController::start(&handle)?;
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -148,6 +176,14 @@ pub fn run() {
             ipc::summarize_media,
             ipc::pick_media_file,
             ipc::cancel_dictation,
+            ipc::snippet_available,
+            ipc::snippet_cancel,
+            ipc::snippet_region_selected,
+            ipc::list_snippets,
+            ipc::delete_snippet,
+            ipc::get_snippet_models,
+            ipc::download_snippet_model,
+            ipc::list_ocr_languages,
             ipc::get_permissions,
             ipc::request_permission,
             ipc::open_system_settings,
