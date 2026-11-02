@@ -195,6 +195,18 @@ can appear in the repo root. Two failure modes follow:
   between two of your `git status` checks (the proposals README went from
   unstaged to staged mid-session). Commit with explicit pathspecs even when
   you staged explicitly — foreign staged files can never ride along.
+- **A foreign staged file blocks `git cherry-pick`** — the merge machinery
+  requires a clean index (unstaged edits on unrelated paths are fine; ANY
+  staged file refuses with "your local changes would be overwritten by
+  cherry-pick"). Workaround that never touches the other agent's staging:
+  `git diff <parent> <commit> | git apply --check -` (prove it first), then
+  `git diff <parent> <commit> | git apply -` + an explicit-pathspec commit.
+- **The owner can merge before your last push lands** — the squash then
+  captures the pre-push head and your fix misses the merge (the #7389
+  follow-up was exactly this). Before assuming "branch head = merged",
+  verify the merged blob (`MSYS_NO_PATHCONV=1 git show
+  origin/<base>:<path>`); carry any delta in a fresh PR from the updated
+  base.
 - **MSYS mangles `rev:path` colons even inside double quotes** —
   `git show "branch:path"` becomes `branch;path` and fails as ambiguous.
   Use `MSYS_NO_PATHCONV=1 git show "branch:path"`.
@@ -209,6 +221,19 @@ can appear in the repo root. Two failure modes follow:
   filename form of the workflow id accepts any ref —
   `gh api -X POST "repos/<o>/<r>/actions/workflows/<file>.yml/dispatches"
   -f ref=<branch>` (reinforces the `gh workflow run` 404 gotcha below).
+  **BUT the workflow must be REGISTERED** (2026-11-02, npm-deprecate.yml):
+  a dispatch-ONLY workflow on a non-default ref 404s on dispatch even via
+  the API form — GitHub never registers it because no push event ever runs
+  it. Fix: give it a self-referential push trigger
+  (`push: branches: [main, alpha-working], paths:
+  ['.github/workflows/<file>.yml']`) and guard the real step with
+  `if: github.event_name == 'workflow_dispatch'` — then dispatch on
+  `ref=alpha-working` succeeds.
+- **`gh api -F` treats values starting with `@` as file paths** — a scope
+  name like `inputs[package]=@nvdigitalsolutions/...` fails with
+  `error parsing "inputs[package]" value: open nvdigitalsolutions/...`.
+  Use `--input -` with a JSON body on stdin instead:
+  `gh api --method POST "<endpoint>" --input - <<'JSON' … JSON`.
 
 ## gh CLI gotchas
 
@@ -217,10 +242,12 @@ can appear in the repo root. Two failure modes follow:
   zips). Never `git archive <rev> packages/<pkg>` to extract package
   content (silently incomplete tar) — copy from a worktree checkout
   instead.
-- `gh workflow run <name>` **404s unless the workflow file exists on the
-  default branch (`main`)** — for `alpha-working`-only workflows dispatch via
-  the API (`POST /actions/workflows/<id>/dispatches` with `ref=alpha-working`)
-  or push a trigger.
+- `gh workflow run <name> --ref <branch>` resolves and dispatches against
+  `<branch>` even when the workflow file is NOT on the default branch
+  (verified 2026-11-02 — dispatched a branch-only sync workflow this way).
+  The 404-on-default-branch behaviour still applies to the no-`--ref` form;
+  the API filename form (`POST /actions/workflows/<file>/dispatches` with
+  `ref=<branch>`) remains the fallback.
 - `gh pr checks <n>` shows queued runs; the repo-wide **PHP Linting workflow
   takes ~20–30 minutes** — don't retry or "fix" it while it's simply running.
 - After a forced push, GitHub recomputes conflict status automatically;

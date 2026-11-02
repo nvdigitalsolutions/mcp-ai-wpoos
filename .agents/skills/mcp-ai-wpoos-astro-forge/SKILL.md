@@ -272,10 +272,19 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   built at publish time; `FORGE_ROOT` (`new URL('..', import.meta.url)` from
   `lib/scaffold.ts`) resolves identically from `dist/` since the bundles
   sit at the package root. Verify before publishing: `npm pack`, install
-  the tarball in a scratch dir, run `node_modules/.bin/nvoos-forge`. Local
-  npm is not authed on this machine — deprecations need the owner or a CI
-  step. 0.1.0 (broken bins) stays deprecated once 0.1.1 is live. Secret
-  grep gates in CI + the e2e credential-hygiene walk.
+  the tarball in a scratch dir, run `node_modules/.bin/nvoos-forge`.
+  **Registry lag (2026-11-02):** npm processes publishes async — the CLI
+  prints the `+ pkg@ver` line then "Your package is being processed and
+  may take a few minutes to become available"; `npm view` keeps showing
+  the OLD packument (even after several minutes) and the version endpoint
+  404s until processing lands. Verify with `npm view --prefer-online` or a
+  direct `curl` of the packument; wait for `modified` to move.
+  **Deprecations:** local npm is not authed on this machine — use the
+  generic dispatch-only `npm-deprecate.yml` workflow (package/versions/
+  message inputs; dispatch via the API JSON-body form with
+  `ref=alpha-working`). 0.1.0 (broken bins) and the accidental
+  `0.0.0-stage` are deprecated (2026-11-02) — use 0.1.1. Secret grep
+  gates in CI + the e2e credential-hygiene walk.
 - **Phase 4 — core shipped 2026-10-31:** `forge wizard` (one command, URL
   → built + deploy-ready) and the `/mcp` surface (see §2.8): 29-tool v1
   catalog (incl. the §3.3 long-tail slices — content_audit/preview,
