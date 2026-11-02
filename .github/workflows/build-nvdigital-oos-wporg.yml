@@ -295,6 +295,29 @@ jobs:
             VERSION="${{ inputs.version }}"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_date=$(date -u '+%B %d, %Y')" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          VERSION_ESCAPED=$(echo "$VERSION" | sed 's/\./\\./g')
+          NOTES=$(awk "
+            /^(=|##) *\[?${VERSION_ESCAPED}\]?/ { found=1; next }
+            found && /^(=|##) *\[?[0-9]+\.[0-9]+\.[0-9]+/ { exit }
+            found { print }
+          " CHANGELOG.md | sed 's/^### /#### /')
+          if [ -z "$NOTES" ]; then
+            NOTES="Release version ${VERSION}. See CHANGELOG.md for details."
+          fi
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -309,7 +332,11 @@ jobs:
           tag_name: nvdigital-oos-v${{ steps.version.outputs.version }}
           name: "NV Digital Open Operator System (oOS) v${{ steps.version.outputs.version }}"
           body: |
-            ## NV Digital Open Operator System (oOS) v${{ steps.version.outputs.version }}
+            ## 📜 Release History
+
+            ### v${{ steps.version.outputs.version }} — ${{ steps.version.outputs.release_date }}
+
+            ${{ steps.release_notes.outputs.notes }}
 
             WordPress.org submission packages with compliant text domains.
 

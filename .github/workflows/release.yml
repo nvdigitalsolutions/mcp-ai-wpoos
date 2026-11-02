@@ -966,7 +966,7 @@ jobs:
             /^(=|##) *\[?${VERSION_ESCAPED}\]?/ { found=1; next }
             found && /^(=|##) *\[?[0-9]+\.[0-9]+\.[0-9]+/ { exit }
             found { print }
-          " CHANGELOG.md | sed '/^$/d' | head -50)
+          " CHANGELOG.md | sed '/^$/d' | sed 's/^### /#### /' | head -50)
           
           if [ -z "$NOTES" ]; then
             NOTES="Release version ${VERSION}. See CHANGELOG.md for details."
@@ -977,6 +977,7 @@ jobs:
             echo "notes<<EOF"
             echo "$NOTES"
             echo "EOF"
+            echo "release_date=$(date -u '+%B %d, %Y')"
           } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
@@ -984,8 +985,10 @@ jobs:
         with:
           name: "${{ env.PLUGIN_NAME }} v${{ needs.build.outputs.version }}"
           body: |
-            ## ${{ env.PLUGIN_NAME }} v${{ needs.build.outputs.version }}
-            
+            ## 📜 Release History
+
+            ### v${{ needs.build.outputs.version }} — ${{ steps.release_notes.outputs.release_date }}
+
             ${{ steps.release_notes.outputs.notes }}
             
             ---
