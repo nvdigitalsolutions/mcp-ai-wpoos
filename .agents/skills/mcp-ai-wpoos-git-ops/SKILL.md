@@ -101,7 +101,14 @@ Four rules, each from a session that cost a recovery:
   `git log --oneline -1` before `git add`/`commit` — a commit lands on
   whatever branch is checked out, and the worktree may have been switched
   under you (a build fix once landed on another agent's
-  `feat/mcp-sdk-skill-updates`).
+  `feat/mcp-sdk-skill-updates`). **The merged-PR variant (2026-11-03, the
+  #7400 CI hotfix):** once your PR squash-merges, the shared worktree is
+  often left sitting on `alpha-working` — a follow-up fix committed
+  without re-checking lands directly on the mainline. When fixing CI on a
+  just-merged PR, either re-verify the branch first or deliberately
+  commit to a `fix/` branch + PR; a direct mainline hotfix (e.g. `cb9158501f`,
+  the #7400 fixture-sync crash fix) should still be recorded by a small
+  follow-up PR for the audit trail.
 - **Recovering a stray commit:** cherry-pick it onto your branch, then
   restore the foreign branch with `git reset --mixed <its-old-head>` +
   `git restore --worktree -- <only-the-files-you-touched>`. **Never
