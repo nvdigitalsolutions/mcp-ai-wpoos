@@ -436,6 +436,25 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   `seoTitle ?? title` precedence in the templates; `Article`/`BlogPosting`/
   `WebPage` JSON-LD parity with velocity. Demo seed post ships in
   `src/content/posts/` — forged sites build offline with no WP connection.
+  **Implementation gotchas (2026-11-03 session — each cost a fix):**
+  - **Astro 7.4.4 `defineCollection` accepts a SINGLE loader** — there is
+    no loaders-array merge (verified against `node_modules/astro/dist/content/`
+    `config.d.ts` + `content-layer.js`). The hybrid merge is implemented
+    INSIDE `createWpLoader` (glob first → WP second → local re-added only
+    where WP produced no id) — WP wins on collision by construction.
+  - **Hybrid collections need a schema `.transform()`** — local frontmatter
+    goes through Astro's `parseData` validation, so the collection schema
+    must accept it; the transform normalizes (Date→ISO,
+    `description`→`excerpt`, slug fallback) so template pages keep `string`
+    types with no optional-handling churn.
+  - **Offline tolerance is scoped**: network-level failures (TypeError)
+    degrade to local-only for the hybrid posts/pages collections; HTTP
+    errors (auth/404/5xx) and non-hybrid collections (products) still fail
+    the build — 096 never-silent-truncation.
+  - **The e2e token assertion must resolve the built stylesheet href** —
+    template additions push the CSS bundle past Astro's inline threshold,
+    so asserting the token in the built CSS requires following the
+    stylesheet link (assertion adapted, gate unchanged).
 
 ## Repo conventions
 

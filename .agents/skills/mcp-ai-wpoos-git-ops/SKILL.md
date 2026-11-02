@@ -108,8 +108,23 @@ Four rules, each from a session that cost a recovery:
   `git reset --hard` in a shared worktree** — it wipes other agents'
   uncommitted tracked edits (e.g. a modified `SKILL.md`).
 - **Rebasing with foreign unstaged edits present:** plain `git rebase`
-  refuses ("You have unstaged changes"); use `git rebase --autostash` — it
-  stashes only tracked changes and pops them back.
+  refuses ("You have unstaged changes"); `git rebase --autostash` stashes
+  only tracked changes and pops them back. **Safer variant (2026-11-03,
+  astro 105/106 session):** when only a couple of foreign tracked files
+  block the rebase, stash exactly those paths —
+  `git stash push -m "foreign-agent-work-preserved" -- <path1> <path2>` —
+  rebase, then `git stash pop` immediately. Autostash sweeps the *whole*
+  shared worktree into a stash (other agents' edits included); the targeted
+  stash keeps every unrelated file live on disk.
+- **"Skipped previously applied commit" during rebase = the parent PR was
+  squash-merged already.** `git merge-base --is-ancestor <old-commit>
+  origin/alpha-working` is the WRONG test for this — a squash merge creates
+  a new commit hash, so the old head is never an ancestor. The rebase's
+  skip message (and `gh pr close` answering "can't be closed because it was
+  already merged") are the reliable signals. When it happens: pop any
+  targeted stash, abandon the now-identical branch, and branch the new work
+  off `origin/alpha-working` directly (2026-11-03: PR #7395 was already
+  merged; the rebase skip revealed it).
 - **Merged PRs freeze their head.** A squash-merged (closed) PR stops
   tracking branch pushes — `gh pr view` keeps showing the stale `head_sha`.
   After the owner merges, run the stacked-PR recipe above and open a fresh

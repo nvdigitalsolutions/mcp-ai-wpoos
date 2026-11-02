@@ -1459,6 +1459,40 @@ the changed files is the substantive gate; plan CI waits accordingly.
  red ✗ tool line in the Set up PHP step, not the step that died. Any new
  workflow using setup-php `tools: wp-cli` should include this fallback step.
 
+69. **`wp_http_validate_url` rejects valid URLs in the Docker test runner
+    (astro bridge, 2026-11-03).** The runner's DNS resolution makes core's
+    URL validator reject legitimate https URLs. Symptom: shop/checkout URL
+    validation in REST tests fails on values that pass on live sites. Fix:
+    validate with `filter_var( $url, FILTER_VALIDATE_URL )` + an
+    `https?://` scheme whitelist instead of `wp_http_validate_url` (the Pro
+    schedule-manager suite documents the same gotcha).
+
+70. **Auth-gate tests: use subscriber → 403, not anonymous (astro bridge,
+    2026-11-03).** The root test bootstrap injects a valid admin auth
+    cookie, and the bridge's REST cookie-restore path re-authenticates it —
+    anonymous assertions are nondeterministic. Assert the gate with a
+    subscriber (logged in, wrong capability) for a stable 403.
+
+71. **The test DB persists across runs — pre-delete pinned synthetic posts.
+    ** Synthetic fixture posts with fixed ids (the astro bridge draft id
+    9902) linger between runs and silently turn id-collision assertions
+    flaky. Fix: `wp_delete_post( 9902, true )` in `setUp()` before
+    re-creating the fixture.
+
+72. **Woo price reads use the CRUD method, not a standalone function.
+    ** There is no `wc_get_price()`; variant/product pricing is
+    `$product->get_price()` / `$variation->get_price()`. Attribute labels go
+    through `wc_attribute_label()` (the `pa_*` taxonomy slug is not the
+    label).
+
+73. **Astro bridge dual-matrix volumes (2026-11-03).** The WP 7.1 suite runs
+    against the shared core volume (DB `wordpress_test_astro_wp71`); the
+    WP 6.9 matrix needs its own fresh volume (`astro-wp69-core`, DB
+    `wordpress_test_astro`). The Linux vendor volume
+    (`astro-105106-vendor`: PHPUnit 11.5.56 + wp-phpunit 7.0.2, patches
+    applied) is reusable across bridge clusters — host/container vendor
+    pruning is safe after it exists.
+
  ## Production fix vs test fix
 
 - **Fix production** when the test exposes a genuine bug: unsafe coercion

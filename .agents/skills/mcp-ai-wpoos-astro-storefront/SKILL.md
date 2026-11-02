@@ -546,6 +546,27 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 - **Policy e2e isolation**: theme-policy specs run on a second fixture/BFF
   pair (8124/4322, `NVOOS_THEME_POLICY_TTL=0`) so PATCH→render is
   deterministic without racing the shared fixture's theme assertions.
+- **Implementation gotchas (2026-11-03 session — each cost a fix):**
+  - **Astro 7 `Astro.cache` has no entry-key args** — the memory-cache key
+    is URL-based. The policy revision rides the cache entry's **`etag`**
+    option (`Astro.cache.set({ ..., etag: policy.updatedAt })`); production
+    invalidation stays the rebuild→redeploy loop.
+  - **Playwright 1.64 has no per-project `webServer`** — isolated
+    fixture/BFF pairs (the policy e2e) go in the **top-level** `webServer`
+    array of `playwright.config.ts`, each with its own ports.
+  - **Stray node processes on Windows survive shell exit** and poison
+    `reuseExistingServer` (fixture/BFF/Playwright servers).
+    `scripts/cleanup-stray-servers.mjs` kills them before test runs.
+  - **Manage-assets cross-cluster sync**: when the bridge SPA changes,
+    `npm run build` here rebuilds `public/manage-assets/astro-admin.js`
+    from the bridge's standalone build — commit src + bundle **together**
+    (the two-bundle drift gate fails the PR otherwise). An uncommitted
+    bridge SPA change mid-session makes the local build overwrite the
+    committed bundle — restore it until the bridge cluster commits.
+  - `NVOOS_THEME_POLICY_TTL` (default 60 s, `0` disables) is the policy-TTL
+    seam; mirrors the `NVOOS_PROXY_CACHE=0` precedent.
+  - Pre-existing `Pagination.astro` bug fixed in this session: `??page=N`
+    double question mark (`url.search` already carries `?`).
 
 ## References
 
