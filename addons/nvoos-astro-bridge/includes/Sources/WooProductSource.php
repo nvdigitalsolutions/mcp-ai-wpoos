@@ -17,7 +17,10 @@ namespace NvoosAstroBridge\Sources;
 
 use NvoosAstroBridge\Schema;
 use WC_Product;
+use WC_Product_Attribute;
 use WC_Product_Simple;
+use WC_Product_Variable;
+use WC_Product_Variation;
 use WP_Error;
 
 /**
@@ -102,6 +105,9 @@ class WooProductSource implements ProductSource {
 	/**
 	 * Fetch one Woo product document.
 	 *
+	 * Variable products hydrate the `variants` array (Proposal 106 §1.1);
+	 * simple products carry no `variants` key at all.
+	 *
 	 * @param int $id Product ID.
 	 * @return array<string, mixed>|null
 	 */
@@ -113,7 +119,7 @@ class WooProductSource implements ProductSource {
 		if ( ! $product instanceof WC_Product || 'product' !== get_post_type( $id ) ) {
 			return null;
 		}
-		return $this->transform( $product );
+		return $this->transform( $product, true );
 	}
 
 	/**
@@ -257,10 +263,15 @@ class WooProductSource implements ProductSource {
 	/**
 	 * Transform a WC_Product into a Payload-shaped product document.
 	 *
-	 * @param WC_Product $product Product object.
+	 * Listings stay flat (no `variants` key — the Payload pattern); single
+	 * documents of variable products gain the §1.1 `variants` array when
+	 * `$with_variants` is true.
+	 *
+	 * @param WC_Product $product       Product object.
+	 * @param bool       $with_variants Hydrate variants for variable products.
 	 * @return array<string, mixed>
 	 */
-	public function transform( WC_Product $product ): array {
+	public function transform( WC_Product $product, bool $with_variants = false ): array {
 		$id          = $product->get_id();
 		$image_id    = (int) $product->get_image_id() ?: null;
 		$gallery_ids = array_values( array_filter( array_map( 'intval', $product->get_gallery_image_ids() ) ) );
@@ -274,7 +285,7 @@ class WooProductSource implements ProductSource {
 		$date_creat = $product->get_date_created();
 		$date_mod   = $product->get_date_modified();
 
-		return array(
+		$doc = array(
 			'id'           => $id,
 			'name'         => $product->get_name(),
 			'price'        => $price,
@@ -311,6 +322,83 @@ class WooProductSource implements ProductSource {
 			'updatedAt'    => $date_mod ? $date_mod->date( 'Y-m-d H:i:s' ) : '',
 			'source'       => Schema::SOURCE_WOO,
 		);
+
+		if ( $with_variants && $product instanceof WC_Product_Variable ) {
+			$doc['variants'] = $this->transform_variants( $product );
+		}
+
+		return $doc;
+	}
+
+	/**
+	 * Hydrate the variants array for a variable product (Proposal 106 §1.1).
+	 *
+	 * Children hydrate through wc_get_product (WC's caching + property
+	 * mapping); attributes follow the parent's get_attributes() order and
+	 * are emitted as { name, value } with the human-readable term name for
+	 * taxonomy attributes. `oldPrice` is the regular price while on sale,
+	 * else null; `stock` is the managed stock quantity or null; `image` is
+	 * the variation image with the parent image as fallback ('' when none).
+	 *
+	 * Only reachable when WooCommerce is loaded — the method is called from
+	 * transform() behind the WC_Product_Variable instanceof check, and the
+	 * public entry points no-op via is_available() when Woo is absent.
+	 *
+	 * @param WC_Product_Variable $product Variable product.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function transform_variants( WC_Product_Variable $product ): array {
+		$parent_attrs = $product->get_attributes();
+		$parent_image = (int) $product->get_image_id() ?: null;
+
+		$variants = array();
+		foreach ( $product->get_children() as $child_id ) {
+			$variation = wc_get_product( (int) $child_id );
+			if ( ! $variation instanceof WC_Product_Variation ) {
+				continue;
+			}
+
+			$variation_attrs = $variation->get_variation_attributes();
+
+			$attributes = array();
+			foreach ( $parent_attrs as $attribute ) {
+				if ( ! $attribute instanceof WC_Product_Attribute ) {
+					continue;
+				}
+				$key = 'attribute_' . sanitize_title( $attribute->get_name() );
+				if ( ! array_key_exists( $key, $variation_attrs ) ) {
+					continue;
+				}
+				$value = (string) $variation_attrs[ $key ];
+				if ( $attribute->is_taxonomy() && '' !== $value ) {
+					$term = get_term_by( 'slug', $value, $attribute->get_taxonomy() );
+					if ( $term && ! is_wp_error( $term ) ) {
+						$value = $term->name;
+					}
+				}
+				$attributes[] = array(
+					'name'  => function_exists( 'wc_attribute_label' )
+						? wc_attribute_label( $attribute->get_name() )
+						: $attribute->get_name(),
+					'value' => $value,
+				);
+			}
+
+			$image_id = (int) $variation->get_image_id() ?: $parent_image;
+			$stock    = $variation->get_stock_quantity();
+
+			$variants[] = array(
+				'id'         => (int) $variation->get_id(),
+				'sku'        => (string) $variation->get_sku(),
+				'price'      => (float) $variation->get_price(),
+				'oldPrice'   => $variation->is_on_sale() ? (float) $variation->get_regular_price() : null,
+				'stock'      => ( '' !== $stock && null !== $stock ) ? (int) $stock : null,
+				'attributes' => $attributes,
+				'image'      => $image_id ? ( wp_get_attachment_url( $image_id ) ?: '' ) : '',
+			);
+		}
+
+		return $variants;
 	}
 
 	/**

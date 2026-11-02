@@ -15,9 +15,10 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import GalleryLightbox, { type GalleryEntry } from '../../../islands/GalleryLightbox';
 import AddToCartButton from '../../../islands/AddToCartButton';
+import VariantSelector from '../../../islands/VariantSelector';
 import PromoCodeField from '../../../islands/PromoCodeField';
 import ProductCard from '../../../components/ProductCard.astro';
-import { getProduct, getProducts } from '../../../lib/commerce/client';
+import { getProduct, getProducts, getThemePolicy } from '../../../lib/commerce/client';
 import { isPublished } from '../../../lib/commerce/publish';
 import { normalizeProductMedia, sanitizeDescription } from '../../../lib/commerce/normalize';
 import { formatPrice, resolveCurrency } from '../../../lib/commerce/money';
@@ -50,8 +51,19 @@ if (requestedSlug !== slugify(raw.name)) {
 	return Astro.redirect(productPath(id, raw.name), 301);
 }
 
+// Theme policy revision rides the cache entry (Proposal 105 §3): the ETag
+// carries the doc's updatedAt so a policy PATCH restamps every cached entry
+// (tag list unchanged). Production invalidation stays the rebuild→redeploy
+// loop; this covers the same-process e2e/dev surface.
+const policy = await getThemePolicy(Astro.url);
+
 if (Astro.cache.enabled) {
-	Astro.cache.set({ maxAge: 300, swr: 600, tags: ['products', `product-${id}`] });
+	Astro.cache.set({
+		maxAge: 300,
+		swr: 600,
+		tags: ['products', `product-${id}`],
+		etag: policy.updatedAt,
+	});
 }
 
 const product = normalizeProductMedia(raw);
@@ -154,11 +166,14 @@ const gallery: GalleryEntry[] = [product.image, ...product.images]
 				)
 			}
 			{product.rating !== null && <p>Rating: {product.rating.toFixed(1)} / 5</p>}
-			<p class="pdp__price">
-				{formatPrice(product.price)}
-				{product.oldPrice !== null && product.oldPrice > product.price && (
-					<span class="pdp__old-price">{formatPrice(product.oldPrice)}</span>
-				)}
+			<p class="pdp__price" data-price-root>
+				<span data-variant-price>{formatPrice(product.price)}</span>
+				<span class="pdp__old-price" data-variant-old-price
+					hidden={product.oldPrice === null || product.oldPrice <= product.price}>
+					{product.oldPrice !== null && product.oldPrice > product.price
+						? formatPrice(product.oldPrice)
+						: ''}
+				</span>
 			</p>
 			{
 				product.colors.length > 0 && (
@@ -171,6 +186,17 @@ const gallery: GalleryEntry[] = [product.image, ...product.images]
 							/>
 						))}
 					</p>
+				)
+			}
+			{
+				product.variants && product.variants.length > 0 && (
+					<VariantSelector
+						productId={product.id}
+						basePrice={product.price}
+						baseOldPrice={product.oldPrice}
+						variants={product.variants}
+						client:load
+					/>
 				)
 			}
 			<AddToCartButton

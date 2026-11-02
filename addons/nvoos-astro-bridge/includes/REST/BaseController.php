@@ -140,4 +140,62 @@ abstract class BaseController extends WP_REST_Controller {
 
 		return $response;
 	}
+
+	/**
+	 * Route-specific cache override for the globals/theme + globals/shop
+	 * documents (Proposals 105/106 §1) — `public, s-maxage=60,
+	 * stale-while-revalidate=15` instead of the B1 hook's 300/60.
+	 *
+	 * Registered by ThemePolicyController + ShopGlobalsController on
+	 * `rest_post_dispatch` at priority 20 — after the B1 filter (10) — so
+	 * the short TTL wins for those routes. The same public/authenticated
+	 * guards as B1 apply: per-session or error responses are never marked
+	 * cacheable.
+	 *
+	 * @param \WP_REST_Response $response REST response (possibly not ours).
+	 * @param \WP_REST_Server   $server   REST server instance.
+	 * @param \WP_REST_Request  $request  Original request.
+	 * @return \WP_REST_Response
+	 */
+	public static function set_short_cache_headers_on_public_gets( $response, $server, $request ) {
+		if ( 'GET' !== $request->get_method() || ! ( $response instanceof \WP_REST_Response ) ) {
+			return $response;
+		}
+
+		$route = $request->get_route();
+		$short = false;
+		foreach ( array( 'globals/theme', 'globals/shop' ) as $base ) {
+			if (
+				0 === strpos( $route, '/' . \NvoosAstroBridge\Schema::REST_NAMESPACE . '/' . $base )
+				|| 0 === strpos( $route, '/' . \NvoosAstroBridge\Schema::REST_NAMESPACE_NV . '/' . $base )
+			) {
+				$short = true;
+				break;
+			}
+		}
+		if ( ! $short ) {
+			return $response;
+		}
+
+		$status = $response->get_status();
+		if ( $status < 200 || $status >= 300 ) {
+			return $response;
+		}
+
+		// Never mark authenticated responses public (the same guard as B1).
+		if ( is_user_logged_in() ) {
+			return $response;
+		}
+
+		$response->header( 'Cache-Control', 'public, s-maxage=60, stale-while-revalidate=15' );
+
+		// ETag from the serialized body — the doc hash the storefront uses
+		// for conditional revalidation.
+		$body = wp_json_encode( $response->get_data() );
+		if ( is_string( $body ) ) {
+			$response->header( 'ETag', '"' . md5( $body ) . '"' );
+		}
+
+		return $response;
+	}
 }

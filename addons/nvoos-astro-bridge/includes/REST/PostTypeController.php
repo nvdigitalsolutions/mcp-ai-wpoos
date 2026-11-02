@@ -120,16 +120,7 @@ abstract class PostTypeController extends BaseController {
 		$page  = max( 1, (int) ( $request->get_param( 'page' ) ?: 1 ) );
 		$limit = max( 1, min( 100, (int) ( $request->get_param( 'limit' ) ?: 100 ) ) );
 
-		$query = new WP_Query(
-			array(
-				'post_type'      => $this->post_type(),
-				'post_status'    => 'publish',
-				'paged'          => $page,
-				'posts_per_page' => $limit,
-				'orderby'        => 'date',
-				'order'          => 'DESC',
-			)
-		);
+		$query = new WP_Query( $this->listing_args( $request, $page, $limit ) );
 
 		$docs = array();
 		foreach ( $query->posts as $post ) {
@@ -138,6 +129,29 @@ abstract class PostTypeController extends BaseController {
 
 		return rest_ensure_response(
 			$this->paginatedResponse( $docs, (int) $query->found_posts, $page, $limit )
+		);
+	}
+
+	/**
+	 * Build the WP_Query args for the public listing.
+	 *
+	 * Publish-only, date desc — the contract's public listing semantics.
+	 * Child controllers override this to add `where` handling (simple
+	 * WP_Query args, not the source layer) — Proposal 106 §3.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @param int             $page    1-based page.
+	 * @param int             $limit   Docs per page.
+	 * @return array<string, mixed>
+	 */
+	protected function listing_args( WP_REST_Request $request, int $page, int $limit ): array {
+		return array(
+			'post_type'      => $this->post_type(),
+			'post_status'    => 'publish',
+			'paged'          => $page,
+			'posts_per_page' => $limit,
+			'orderby'        => 'date',
+			'order'          => 'DESC',
 		);
 	}
 

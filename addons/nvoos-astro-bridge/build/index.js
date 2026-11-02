@@ -103,7 +103,7 @@ var AstroAdmin = (() => {
   });
 
   // src/index.tsx
-  var import_element6 = __toESM(require_element(), 1);
+  var import_element8 = __toESM(require_element(), 1);
 
   // node_modules/@tanstack/query-core/build/modern/subscribable.js
   var Subscribable = class {
@@ -2965,7 +2965,7 @@ var AstroAdmin = (() => {
   }
 
   // src/AdminApp.tsx
-  var import_element5 = __toESM(require_element(), 1);
+  var import_element7 = __toESM(require_element(), 1);
 
   // src/components/Layout.tsx
   var import_jsx_runtime3 = __toESM(require_jsx_runtime2(), 1);
@@ -2997,7 +2997,9 @@ var AstroAdmin = (() => {
     { slug: "statuses", label: "Statuses", section: "catalog", readOnlyAware: true },
     { slug: "promotions", label: "Promotions", section: "catalog", readOnlyAware: true },
     { slug: "promocodes", label: "Promocodes", section: "catalog", readOnlyAware: true },
-    { slug: "managers", label: "Managers", section: "access" }
+    { slug: "managers", label: "Managers", section: "access" },
+    { slug: "design", label: "Design System", section: "system" },
+    { slug: "settings", label: "Settings", section: "system" }
   ];
   function isNavEntryVisible(entry) {
     return !entry.capability || can(entry.capability);
@@ -3045,6 +3047,9 @@ var AstroAdmin = (() => {
     const visibleAccess = NAV.filter(
       (entry) => entry.section === "access" && isNavEntryVisible(entry)
     );
+    const visibleSystem = NAV.filter(
+      (entry) => entry.section === "system" && isNavEntryVisible(entry)
+    );
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("nav", { "aria-label": "Astro CMS", children: [
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { style: { padding: "0 16px 16px", fontWeight: 700, fontSize: 16 }, children: "Astro CMS" }),
       visibleCatalog.map(
@@ -3068,6 +3073,21 @@ var AstroAdmin = (() => {
           }
         ),
         visibleAccess.map((entry) => renderButton(entry.slug, entry.label))
+      ] }),
+      visibleSystem.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          "div",
+          {
+            style: {
+              padding: "16px 16px 4px",
+              fontSize: 11,
+              textTransform: "uppercase",
+              opacity: 0.7
+            },
+            children: "System"
+          }
+        ),
+        visibleSystem.map((entry) => renderButton(entry.slug, entry.label))
       ] })
     ] });
   }
@@ -23873,6 +23893,843 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
     ] });
   }
 
+  // src/components/DesignView.tsx
+  var import_element5 = __toESM(require_element(), 1);
+
+  // src/lib/mcp-client.ts
+  async function mcpCall(tool, args = {}) {
+    const response = await fetch("/mcp", {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        "MCP-Protocol-Version": "2026-07-28",
+        "Mcp-Method": "tools/call",
+        "Mcp-Name": tool
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: crypto.randomUUID(),
+        method: "tools/call",
+        params: {
+          name: tool,
+          arguments: args,
+          _meta: {
+            "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+            "io.modelcontextprotocol/clientCapabilities": {}
+          }
+        }
+      })
+    });
+    if (response.status === 401) {
+      throw new Error("write tools require a manager session \u2014 sign in again");
+    }
+    if (!response.ok) {
+      throw new Error(response.statusText || `HTTP ${response.status}`);
+    }
+    const envelope = await response.json();
+    if (envelope.error) {
+      throw new Error(envelope.error.message || "MCP tool call failed");
+    }
+    const result = envelope.result;
+    if (result?.structuredContent != null) {
+      return result.structuredContent;
+    }
+    const first = result?.content?.[0];
+    if (typeof first?.text === "string") {
+      return JSON.parse(first.text);
+    }
+    return result;
+  }
+
+  // src/components/DesignView.tsx
+  var import_jsx_runtime15 = __toESM(require_jsx_runtime2(), 1);
+  var HEX_RE = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+  var BUTTON_STYLE2 = {
+    padding: "6px 12px",
+    border: "1px solid #007cba",
+    borderRadius: 3,
+    background: "#007cba",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: 13
+  };
+  var DISABLED_STYLE = {
+    ...BUTTON_STYLE2,
+    opacity: 0.6,
+    cursor: "default"
+  };
+  function ReportLine({ result }) {
+    const errors = result.report?.errors ?? [];
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { style: { fontSize: 12, color: result.applied ? "#1e7e34" : "#b32d2e" }, children: [
+      "Applied: ",
+      result.applied === true ? "yes" : "no",
+      errors.length > 0 ? ` \u2014 ${errors.join("; ")}` : ""
+    ] });
+  }
+  function Badge({ pass, label }) {
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+      "span",
+      {
+        style: {
+          display: "inline-block",
+          padding: "2px 8px",
+          marginRight: 4,
+          borderRadius: 10,
+          fontSize: 11,
+          color: "#fff",
+          background: pass ? "#1e7e34" : "#b32d2e"
+        },
+        children: [
+          label,
+          ": ",
+          pass ? "pass" : "fail"
+        ]
+      }
+    );
+  }
+  function TokenRow({ name, value, onSaved }) {
+    const [draft, setDraft] = (0, import_element5.useState)(value);
+    const [saving, setSaving] = (0, import_element5.useState)(false);
+    const [error62, setError] = (0, import_element5.useState)(null);
+    const [result, setResult] = (0, import_element5.useState)(null);
+    (0, import_element5.useEffect)(() => {
+      setDraft(value);
+    }, [value]);
+    const handleSave = async () => {
+      setSaving(true);
+      setError(null);
+      setResult(null);
+      try {
+        const applied = await mcpCall("tokens_set", {
+          changes: { [name]: draft }
+        });
+        setResult(applied);
+        if (applied.applied === true) {
+          onSaved();
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setSaving(false);
+      }
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("tr", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("td", { style: { fontWeight: 600 }, children: name }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("td", { children: [
+        value,
+        HEX_RE.test(value) && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          "span",
+          {
+            "aria-hidden": "true",
+            style: {
+              display: "inline-block",
+              width: 14,
+              height: 14,
+              marginLeft: 8,
+              verticalAlign: "middle",
+              background: value,
+              border: "1px solid #ccc",
+              borderRadius: 2
+            }
+          }
+        )
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("td", { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", gap: 8 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+            "input",
+            {
+              type: "text",
+              "aria-label": `Value for ${name}`,
+              className: "regular-text",
+              value: draft,
+              onChange: (event) => setDraft(event.target.value),
+              disabled: saving,
+              style: { flex: 1, maxWidth: 220 }
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+            "button",
+            {
+              type: "button",
+              onClick: handleSave,
+              disabled: saving,
+              style: saving ? DISABLED_STYLE : BUTTON_STYLE2,
+              children: saving ? "Saving\u2026" : "Save"
+            }
+          )
+        ] }),
+        result && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { marginTop: 4 }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ReportLine, { result }) }),
+        error62 && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { marginTop: 4, color: "red", fontSize: 12 }, children: error62 })
+      ] })
+    ] });
+  }
+  function DesignView() {
+    const [semantic, setSemantic] = (0, import_element5.useState)(null);
+    const [activeTheme, setActiveTheme] = (0, import_element5.useState)(null);
+    const [themes, setThemes] = (0, import_element5.useState)([]);
+    const [loading, setLoading] = (0, import_element5.useState)(true);
+    const [loadError, setLoadError] = (0, import_element5.useState)(null);
+    const [applying, setApplying] = (0, import_element5.useState)(null);
+    const [applyError, setApplyError] = (0, import_element5.useState)(null);
+    const [applyMessage, setApplyMessage] = (0, import_element5.useState)(null);
+    const [importText, setImportText] = (0, import_element5.useState)("");
+    const [importing, setImporting] = (0, import_element5.useState)(false);
+    const [importResult, setImportResult] = (0, import_element5.useState)(null);
+    const [importError, setImportError] = (0, import_element5.useState)(null);
+    const [rollingBack, setRollingBack] = (0, import_element5.useState)(false);
+    const [rollbackError, setRollbackError] = (0, import_element5.useState)(null);
+    const [rollbackMessage, setRollbackMessage] = (0, import_element5.useState)(null);
+    const [fg, setFg] = (0, import_element5.useState)("#ffffff");
+    const [bg, setBg] = (0, import_element5.useState)("#1a1a1a");
+    const [checking, setChecking] = (0, import_element5.useState)(false);
+    const [contrast, setContrast] = (0, import_element5.useState)(null);
+    const [contrastError, setContrastError] = (0, import_element5.useState)(null);
+    const [exporting, setExporting] = (0, import_element5.useState)(false);
+    const [ndsExport, setNdsExport] = (0, import_element5.useState)(null);
+    const [exportError, setExportError] = (0, import_element5.useState)(null);
+    const fetchData = async () => {
+      const [tokensResult, themesResult] = await Promise.all([
+        mcpCall("tokens_get", { include_groups: false }),
+        mcpCall("theme_list", {})
+      ]);
+      setSemantic(tokensResult.semantic ?? {});
+      setActiveTheme(tokensResult.active_theme ?? themesResult.active ?? null);
+      setThemes(themesResult.themes ?? []);
+    };
+    (0, import_element5.useEffect)(() => {
+      let cancelled = false;
+      setLoading(true);
+      setLoadError(null);
+      fetchData().catch((error62) => {
+        if (!cancelled) {
+          setLoadError(error62.message);
+        }
+      }).finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+    const refresh = async () => {
+      try {
+        await fetchData();
+      } catch (error62) {
+        setLoadError(error62.message);
+      }
+    };
+    const handleApplyTheme = async (name) => {
+      setApplying(name);
+      setApplyError(null);
+      setApplyMessage(null);
+      try {
+        const result = await mcpCall("theme_apply", { name });
+        setApplyMessage(
+          result.message ?? (result.ok ? `Active theme is now ${name}.` : "Theme not applied.")
+        );
+        await refresh();
+      } catch (error62) {
+        setApplyError(error62.message);
+      } finally {
+        setApplying(null);
+      }
+    };
+    const handleImport = async () => {
+      setImporting(true);
+      setImportError(null);
+      setImportResult(null);
+      try {
+        const result = await mcpCall("tokens_import_dtcg", {
+          json: importText
+        });
+        setImportResult(result);
+        if (result.applied === true) {
+          await refresh();
+        }
+      } catch (error62) {
+        setImportError(error62.message);
+      } finally {
+        setImporting(false);
+      }
+    };
+    const handleRollback = async () => {
+      setRollingBack(true);
+      setRollbackError(null);
+      setRollbackMessage(null);
+      try {
+        const result = await mcpCall("tokens_rollback", {});
+        setRollbackMessage(
+          result.message ?? (result.ok ? "Rolled back to the latest snapshot." : "Rollback failed.")
+        );
+        await refresh();
+      } catch (error62) {
+        setRollbackError(error62.message);
+      } finally {
+        setRollingBack(false);
+      }
+    };
+    const handleContrast = async () => {
+      setChecking(true);
+      setContrastError(null);
+      try {
+        const result = await mcpCall("contrast_check", { fg, bg });
+        setContrast(result);
+      } catch (error62) {
+        setContrast(null);
+        setContrastError(error62.message);
+      } finally {
+        setChecking(false);
+      }
+    };
+    const handleExport = async () => {
+      setExporting(true);
+      setExportError(null);
+      try {
+        const result = await mcpCall("nds_export", {});
+        setNdsExport(result);
+      } catch (error62) {
+        setExportError(error62.message);
+      } finally {
+        setExporting(false);
+      }
+    };
+    const handleDownload = () => {
+      if (!ndsExport) {
+        return;
+      }
+      const blob = new Blob([JSON.stringify(ndsExport, null, 2)], {
+        type: "application/json"
+      });
+      const url2 = URL.createObjectURL(blob);
+      const anchor2 = document.createElement("a");
+      anchor2.href = url2;
+      anchor2.download = "nds-tokens.json";
+      anchor2.click();
+      URL.revokeObjectURL(url2);
+    };
+    if (loading) {
+      return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { children: "Loading design tokens\u2026" });
+    }
+    const tokenEntries = semantic ? Object.entries(semantic) : [];
+    return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("h2", { style: { marginTop: 0 }, children: "Design System" }),
+      loadError && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { style: { color: "red" }, children: loadError }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { marginBottom: 24 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("h3", { style: { marginBottom: 8 }, children: "Theme" }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("p", { style: { marginTop: 0 }, children: [
+          "Active theme: ",
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("strong", { children: activeTheme ?? "unknown" })
+        ] }),
+        themes.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { children: "No themes listed." }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { display: "flex", flexWrap: "wrap", gap: 8 }, children: themes.map((theme) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+          "button",
+          {
+            type: "button",
+            onClick: () => handleApplyTheme(theme.name),
+            disabled: applying !== null,
+            style: theme.name === activeTheme ? { ...BUTTON_STYLE2, background: "#1e7e34", borderColor: "#1e7e34" } : applying !== null ? DISABLED_STYLE : BUTTON_STYLE2,
+            children: applying === theme.name ? "Applying\u2026" : theme.name
+          },
+          theme.name
+        )) }),
+        applyMessage && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { style: { color: "#1e7e34", fontSize: 13 }, children: applyMessage }),
+        applyError && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { style: { color: "red", fontSize: 13 }, children: applyError })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { marginBottom: 24 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("h3", { style: { marginBottom: 8 }, children: "Token controls" }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { minWidth: 280, flex: 1 }, children: [
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+              "label",
+              {
+                style: { display: "block", marginBottom: 4, fontWeight: 600 },
+                htmlFor: "dtcg-import",
+                children: "Import DTCG JSON"
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+              "textarea",
+              {
+                id: "dtcg-import",
+                className: "regular-text",
+                rows: 4,
+                style: { width: "100%", boxSizing: "border-box" },
+                placeholder: '{"groups": {...}, "themes": {...}}',
+                value: importText,
+                onChange: (event) => setImportText(event.target.value)
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { marginTop: 8, display: "flex", gap: 8, alignItems: "center" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: handleImport,
+                  disabled: importing || importText.trim() === "",
+                  style: importing || importText.trim() === "" ? DISABLED_STYLE : BUTTON_STYLE2,
+                  children: importing ? "Importing\u2026" : "Import"
+                }
+              ),
+              importResult && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ReportLine, { result: importResult }),
+              importError && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { style: { color: "red", fontSize: 12 }, children: importError })
+            ] })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("label", { style: { display: "block", marginBottom: 4, fontWeight: 600 }, children: "Rollback" }),
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: handleRollback,
+                disabled: rollingBack,
+                style: rollingBack ? DISABLED_STYLE : BUTTON_STYLE2,
+                children: rollingBack ? "Rolling back\u2026" : "Rollback to last snapshot"
+              }
+            ),
+            rollbackMessage && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { style: { color: "#1e7e34", fontSize: 12, marginTop: 8 }, children: rollbackMessage }),
+            rollbackError && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { style: { color: "red", fontSize: 12, marginTop: 8 }, children: rollbackError })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("label", { style: { display: "block", marginBottom: 4, fontWeight: 600 }, children: "Contrast checker" }),
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: [
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+                "input",
+                {
+                  type: "text",
+                  "aria-label": "Foreground color",
+                  className: "regular-text",
+                  style: { width: 90 },
+                  value: fg,
+                  onChange: (event) => setFg(event.target.value)
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+                "input",
+                {
+                  type: "text",
+                  "aria-label": "Background color",
+                  className: "regular-text",
+                  style: { width: 90 },
+                  value: bg,
+                  onChange: (event) => setBg(event.target.value)
+                }
+              ),
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+                "button",
+                {
+                  type: "button",
+                  onClick: handleContrast,
+                  disabled: checking,
+                  style: checking ? DISABLED_STYLE : BUTTON_STYLE2,
+                  children: checking ? "Checking\u2026" : "Check"
+                }
+              )
+            ] }),
+            contrast && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { marginTop: 8, fontSize: 13 }, children: [
+              "Ratio: ",
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("strong", { children: contrast.ratio }),
+              " ",
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Badge, { pass: contrast.aaNormal, label: "AA" }),
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Badge, { pass: contrast.aaLarge, label: "AA large" }),
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Badge, { pass: contrast.aaaNormal, label: "AAA" })
+            ] }),
+            contrastError && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { style: { color: "red", fontSize: 12, marginTop: 8 }, children: contrastError })
+          ] }),
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { children: [
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("label", { style: { display: "block", marginBottom: 4, fontWeight: 600 }, children: "NDS export" }),
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+              "button",
+              {
+                type: "button",
+                onClick: handleExport,
+                disabled: exporting,
+                style: exporting ? DISABLED_STYLE : BUTTON_STYLE2,
+                children: exporting ? "Exporting\u2026" : "Export NDS tokens"
+              }
+            ),
+            exportError && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { style: { color: "red", fontSize: 12, marginTop: 8 }, children: exportError })
+          ] })
+        ] }),
+        ndsExport && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { style: { marginTop: 16 }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+            "textarea",
+            {
+              readOnly: true,
+              className: "regular-text",
+              rows: 10,
+              style: {
+                width: "100%",
+                boxSizing: "border-box",
+                fontFamily: "monospace",
+                fontSize: 12
+              },
+              value: JSON.stringify(ndsExport, null, 2)
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { marginTop: 8 }, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("button", { type: "button", onClick: handleDownload, style: BUTTON_STYLE2, children: "Download nds-tokens.json" }) })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("h3", { style: { marginBottom: 8 }, children: "Semantic tokens" }),
+      tokenEntries.length === 0 && !loadError && /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("p", { children: "No semantic tokens resolved." }),
+      tokenEntries.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+        "table",
+        {
+          className: "wp-list-table widefat fixed striped",
+          style: { width: "100%" },
+          children: [
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("thead", { children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("tr", { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("th", { style: { width: 200 }, children: "Name" }),
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("th", { children: "Value" }),
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("th", { style: { width: 380 }, children: "Override" })
+            ] }) }),
+            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("tbody", { children: tokenEntries.map(([name, value]) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+              TokenRow,
+              {
+                name,
+                value,
+                onSaved: () => {
+                  void refresh();
+                }
+              },
+              name
+            )) })
+          ]
+        }
+      )
+    ] });
+  }
+
+  // src/components/SettingsView.tsx
+  var import_element6 = __toESM(require_element(), 1);
+  var import_jsx_runtime16 = __toESM(require_jsx_runtime2(), 1);
+  var PRESETS = ["auto", "light", "dark", "brand"];
+  var BUTTON_STYLE3 = {
+    padding: "6px 12px",
+    border: "1px solid #007cba",
+    borderRadius: 3,
+    background: "#007cba",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: 13
+  };
+  var DISABLED_STYLE2 = {
+    ...BUTTON_STYLE3,
+    opacity: 0.6,
+    cursor: "default"
+  };
+  var FIELD_LABEL = {
+    display: "block",
+    marginBottom: 4,
+    fontWeight: 600
+  };
+  var FIELD_GROUP = {
+    marginBottom: 16
+  };
+  function splitPolicy(policy) {
+    if (policy.startsWith("brand:")) {
+      return { preset: "brand", brandSlug: policy.slice(6) };
+    }
+    if (policy === "light" || policy === "dark") {
+      return { preset: policy, brandSlug: "" };
+    }
+    return { preset: "auto", brandSlug: "" };
+  }
+  function StatusLine({ message, error: error62 }) {
+    if (error62) {
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { color: "red", fontSize: 12, marginTop: 8 }, children: error62 });
+    }
+    if (message) {
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { color: "#1e7e34", fontSize: 12, marginTop: 8 }, children: message });
+    }
+    return null;
+  }
+  function SettingsView() {
+    const [loading, setLoading] = (0, import_element6.useState)(true);
+    const [loadError, setLoadError] = (0, import_element6.useState)(null);
+    const [policy, setPolicy] = (0, import_element6.useState)(null);
+    const [preset, setPreset] = (0, import_element6.useState)("auto");
+    const [brandSlug, setBrandSlug] = (0, import_element6.useState)("");
+    const [contrast, setContrast] = (0, import_element6.useState)("auto");
+    const [defaultTheme, setDefaultTheme] = (0, import_element6.useState)("dark");
+    const [savingTheme, setSavingTheme] = (0, import_element6.useState)(false);
+    const [themeMessage, setThemeMessage] = (0, import_element6.useState)(null);
+    const [themeError, setThemeError] = (0, import_element6.useState)(null);
+    const [shop, setShop] = (0, import_element6.useState)(null);
+    const [checkoutUrl, setCheckoutUrl] = (0, import_element6.useState)("");
+    const [cartUrl, setCartUrl] = (0, import_element6.useState)("");
+    const [currency, setCurrency] = (0, import_element6.useState)("USD");
+    const [currencySymbol, setCurrencySymbol] = (0, import_element6.useState)("$");
+    const [savingShop, setSavingShop] = (0, import_element6.useState)(false);
+    const [shopMessage, setShopMessage] = (0, import_element6.useState)(null);
+    const [shopError, setShopError] = (0, import_element6.useState)(null);
+    (0, import_element6.useEffect)(() => {
+      let cancelled = false;
+      setLoading(true);
+      setLoadError(null);
+      const load = async () => {
+        const [themeDoc, shopDoc] = await Promise.all([
+          request("globals/theme"),
+          request("globals/shop")
+        ]);
+        if (cancelled) {
+          return;
+        }
+        setPolicy(themeDoc);
+        setPreset(splitPolicy(themeDoc.policy).preset);
+        setBrandSlug(splitPolicy(themeDoc.policy).brandSlug);
+        setContrast(themeDoc.contrast);
+        setDefaultTheme(themeDoc.defaultTheme);
+        setShop(shopDoc);
+        setCheckoutUrl(shopDoc.checkoutUrl);
+        setCartUrl(shopDoc.cartUrl);
+        setCurrency(shopDoc.currency);
+        setCurrencySymbol(shopDoc.currencySymbol);
+      };
+      load().catch((error62) => {
+        if (!cancelled) {
+          setLoadError(error62.message);
+        }
+      }).finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+    const saveTheme = async () => {
+      setSavingTheme(true);
+      setThemeError(null);
+      setThemeMessage(null);
+      try {
+        const nextPolicy = preset === "brand" ? `brand:${brandSlug.trim()}` : preset;
+        const updated = await request("globals/theme", {
+          method: "PATCH",
+          data: {
+            policy: nextPolicy,
+            contrast,
+            defaultTheme
+          }
+        });
+        setPolicy(updated);
+        setThemeMessage("Theme policy saved.");
+      } catch (error62) {
+        setThemeError(error62.message);
+      } finally {
+        setSavingTheme(false);
+      }
+    };
+    const saveShop = async () => {
+      setSavingShop(true);
+      setShopError(null);
+      setShopMessage(null);
+      try {
+        const updated = await request("globals/shop", {
+          method: "PATCH",
+          data: {
+            checkoutUrl,
+            cartUrl,
+            currency,
+            currencySymbol
+          }
+        });
+        setShop(updated);
+        setShopMessage("Shop settings saved.");
+      } catch (error62) {
+        setShopError(error62.message);
+      } finally {
+        setSavingShop(false);
+      }
+    };
+    if (loading) {
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { children: "Loading settings\u2026" });
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("h2", { style: { marginTop: 0 }, children: "Settings" }),
+      loadError && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { color: "red" }, children: loadError }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("section", { "aria-label": "Theme policy", style: { marginBottom: 32 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("h3", { style: { marginBottom: 8 }, children: "Theme policy" }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("p", { style: { marginTop: 0, fontSize: 13, opacity: 0.8 }, children: [
+          "Controls how the storefront resolves light/dark. Last saved by the store:",
+          " ",
+          policy?.updatedAt ?? "unknown"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: FIELD_GROUP, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { style: FIELD_LABEL, children: "Policy preset" }),
+          PRESETS.map((value) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+            "label",
+            {
+              style: { display: "block", marginBottom: 4, fontSize: 13 },
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+                  "input",
+                  {
+                    type: "radio",
+                    name: "theme-policy-preset",
+                    value,
+                    checked: preset === value,
+                    onChange: () => setPreset(value)
+                  }
+                ),
+                value === "auto" && " Auto (system preference)",
+                value === "light" && " Force light",
+                value === "dark" && " Force dark",
+                value === "brand" && " Brand theme"
+              ]
+            },
+            value
+          ))
+        ] }),
+        preset === "brand" && /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: FIELD_GROUP, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("label", { style: FIELD_LABEL, htmlFor: "theme-policy-brand-slug", children: "Brand slug" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+            "input",
+            {
+              id: "theme-policy-brand-slug",
+              type: "text",
+              className: "regular-text",
+              value: brandSlug,
+              onChange: (event) => setBrandSlug(event.target.value),
+              placeholder: "aurora-home",
+              style: { maxWidth: 260 }
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { marginTop: 4, fontSize: 12, opacity: 0.8 }, children: "Names come from the storefront's ADS registry \u2014 an unknown slug falls back to auto." })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: FIELD_GROUP, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("label", { style: FIELD_LABEL, htmlFor: "theme-policy-contrast", children: "Contrast" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+            "select",
+            {
+              id: "theme-policy-contrast",
+              value: contrast,
+              onChange: (event) => setContrast(
+                event.target.value
+              ),
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("option", { value: "auto", children: "auto" }),
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("option", { value: "standard", children: "standard" }),
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("option", { value: "high", children: "high" })
+              ]
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: FIELD_GROUP, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("label", { style: FIELD_LABEL, htmlFor: "theme-policy-default-theme", children: "Default theme" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+            "select",
+            {
+              id: "theme-policy-default-theme",
+              value: defaultTheme,
+              onChange: (event) => setDefaultTheme(
+                event.target.value
+              ),
+              children: [
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("option", { value: "light", children: "light" }),
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("option", { value: "dark", children: "dark" })
+              ]
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+            "button",
+            {
+              type: "button",
+              onClick: saveTheme,
+              disabled: savingTheme,
+              style: savingTheme ? DISABLED_STYLE2 : BUTTON_STYLE3,
+              children: savingTheme ? "Saving\u2026" : "Save theme policy"
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(StatusLine, { message: themeMessage, error: themeError })
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("section", { "aria-label": "Shop checkout", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("h3", { style: { marginBottom: 8 }, children: "Shop checkout" }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("p", { style: { marginTop: 0, fontSize: 13, opacity: 0.8 }, children: [
+          "Checkout handoff targets for the storefront cart. Last saved by the store: ",
+          shop?.updatedAt ?? "unknown"
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: FIELD_GROUP, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("label", { style: FIELD_LABEL, htmlFor: "shop-checkout-url", children: "Checkout URL" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+            "input",
+            {
+              id: "shop-checkout-url",
+              type: "url",
+              className: "regular-text",
+              value: checkoutUrl,
+              onChange: (event) => setCheckoutUrl(event.target.value),
+              style: { maxWidth: 420 }
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: FIELD_GROUP, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("label", { style: FIELD_LABEL, htmlFor: "shop-cart-url", children: "Cart URL" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+            "input",
+            {
+              id: "shop-cart-url",
+              type: "url",
+              className: "regular-text",
+              value: cartUrl,
+              onChange: (event) => setCartUrl(event.target.value),
+              style: { maxWidth: 420 }
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: FIELD_GROUP, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("label", { style: FIELD_LABEL, htmlFor: "shop-currency", children: "Currency (ISO code)" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+            "input",
+            {
+              id: "shop-currency",
+              type: "text",
+              className: "regular-text",
+              value: currency,
+              onChange: (event) => setCurrency(event.target.value.toUpperCase()),
+              style: { maxWidth: 90 }
+            }
+          )
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: FIELD_GROUP, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("label", { style: FIELD_LABEL, htmlFor: "shop-currency-symbol", children: "Currency symbol" }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+            "input",
+            {
+              id: "shop-currency-symbol",
+              type: "text",
+              className: "regular-text",
+              value: currencySymbol,
+              onChange: (event) => setCurrencySymbol(event.target.value),
+              style: { maxWidth: 90 }
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("p", { style: { marginTop: 4, fontSize: 12, opacity: 0.8 }, children: "Display hint only \u2014 no conversion happens in the CMS." })
+        ] }),
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: { display: "flex", gap: 8, alignItems: "center" }, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+            "button",
+            {
+              type: "button",
+              onClick: saveShop,
+              disabled: savingShop,
+              style: savingShop ? DISABLED_STYLE2 : BUTTON_STYLE3,
+              children: savingShop ? "Saving\u2026" : "Save shop settings"
+            }
+          ),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(StatusLine, { message: shopMessage, error: shopError })
+        ] })
+      ] })
+    ] });
+  }
+
   // src/config/collections.ts
   var collections = [
     {
@@ -23978,11 +24835,11 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   ];
 
   // src/AdminApp.tsx
-  var import_jsx_runtime15 = __toESM(require_jsx_runtime2(), 1);
+  var import_jsx_runtime17 = __toESM(require_jsx_runtime2(), 1);
   function AdminApp() {
-    const [activeSlug, setActiveSlug] = (0, import_element5.useState)(() => defaultSlug());
-    const [editingId, setEditingId] = (0, import_element5.useState)(null);
-    const [creating, setCreating] = (0, import_element5.useState)(false);
+    const [activeSlug, setActiveSlug] = (0, import_element7.useState)(() => defaultSlug());
+    const [editingId, setEditingId] = (0, import_element7.useState)(null);
+    const [creating, setCreating] = (0, import_element7.useState)(false);
     const activeCollection = collections.find((c) => c.slug === activeSlug);
     const handleEdit = (id) => {
       setEditingId(id);
@@ -24004,7 +24861,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
       setActiveSlug(slug);
       handleBack();
     };
-    return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Layout, { sidebar: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(Sidebar, { activeSlug, onSelect: handleSelect }), children: activeSlug === "managers" || !activeCollection ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ManagersView, {}) : editingId !== null || creating ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Layout, { sidebar: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Sidebar, { activeSlug, onSelect: handleSelect }), children: activeSlug === "settings" ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SettingsView, {}) : activeSlug === "design" ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(DesignView, {}) : activeSlug === "managers" || !activeCollection ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ManagersView, {}) : editingId !== null || creating ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
       EditForm,
       {
         config: activeCollection,
@@ -24012,7 +24869,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
         readOnly: !isCollectionWritable(activeCollection.slug),
         onBack: handleBack
       }
-    ) : /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+    ) : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
       ListView,
       {
         config: activeCollection,
@@ -24023,7 +24880,7 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   }
 
   // src/index.tsx
-  var import_jsx_runtime16 = __toESM(require_jsx_runtime2(), 1);
+  var import_jsx_runtime18 = __toESM(require_jsx_runtime2(), 1);
   var queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -24034,9 +24891,9 @@ Set the \`cycles\` parameter to \`"ref"\` to resolve cyclical schemas with defs.
   });
   var rootEl = document.getElementById("astro-admin-root");
   if (rootEl) {
-    const root = (0, import_element6.createRoot)(rootEl);
+    const root = (0, import_element8.createRoot)(rootEl);
     root.render(
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(AdminApp, {}) })
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(AdminApp, {}) })
     );
   }
 })();

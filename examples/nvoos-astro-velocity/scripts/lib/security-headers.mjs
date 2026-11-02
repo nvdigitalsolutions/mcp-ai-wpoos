@@ -30,8 +30,8 @@ export function buildCsp(html) {
 		if (/\bsrc\s*=/.test(attrs)) {
 			continue; // external module — covered by 'self'
 		}
-		if (/application\/ld\+json/.test(attrs)) {
-			continue; // data block, not executable
+		if (/application\/(ld\+json|json)/.test(attrs)) {
+			continue; // data block, not executable (JSON-LD + the 105 policy tag)
 		}
 		const content = match[2] ?? '';
 		if (!content.trim()) {

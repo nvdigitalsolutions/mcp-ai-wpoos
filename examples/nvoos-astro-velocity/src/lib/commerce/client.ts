@@ -21,14 +21,18 @@ import type {
 	Carousel,
 	Category,
 	ColorRef,
+	ContentDoc,
 	PaginatedCollection,
 	Product,
 	Promocode,
 	Promotion,
+	ShopDoc,
 	SortValue,
 	Status,
 	WhereClause,
 } from './types';
+import { parsePolicyDoc, type ThemePolicy } from '../theme/policy';
+import { generatedPolicyDoc } from '../theme/policy.generated';
 import { z } from 'zod';
 
 /** Bridge-enforced ceiling on `limit` (verified in the REST controller). */
@@ -44,7 +48,9 @@ type CollectionSlug =
 	| 'colors'
 	| 'statuses'
 	| 'promotions'
-	| 'promocodes';
+	| 'promocodes'
+	| 'content/pages'
+	| 'content/posts';
 
 /** Resolve the base URL.
  *
@@ -278,6 +284,148 @@ export async function getGlobal(
 		return null;
 	}
 	return (await res.json()) as Banner | Carousel;
+}
+
+// ---------------------------------------------------------------------------
+// Theme policy + shop globals (Proposals 105/106) — short in-process TTLs so
+// repeated reads within one render stay cheap while a PATCH is visible to the
+// next render within the TTL window. Failures return the build-baked default
+// doc and are never cached (a down backend must not stick).
+// ---------------------------------------------------------------------------
+
+/** Runtime TTL override (seconds; ≤ 0 disables the memo) — the e2e seam that
+ *  makes PATCH→render deterministic in a single long-lived process. Default
+ *  60 s (105 §3). Read per call so a serve.mjs env change applies live. */
+function policyTtlMs(): number {
+	const value = Number(process.env.NVOOS_THEME_POLICY_TTL);
+	if (Number.isFinite(value) && value >= 0) {
+		return value * 1000;
+	}
+	return 60_000;
+}
+
+const globalsMemo = new Map<string, { doc: unknown; expires: number }>();
+
+/** Fetch the theme-policy doc (105 §1) through the resolved base, 60 s TTL,
+ *  default doc on failure. */
+export async function getThemePolicy(
+	requestUrl: string | URL | undefined
+): Promise<ThemePolicy> {
+	const now = Date.now();
+	let base: string;
+	try {
+		base = resolveBase(requestUrl);
+	} catch {
+		// Build-time hermetic path (no request URL, no NVOOS_API_BASE) — the
+		// baked fallback keeps the render alive (104 §2.5 invariant).
+		return generatedPolicyDoc;
+	}
+	const key = `${base}/globals/theme`;
+	const hit = globalsMemo.get(key);
+	if (hit && hit.expires > now) {
+		return hit.doc as ThemePolicy;
+	}
+	try {
+		const res = await fetch(key, { headers: { accept: 'application/json' } });
+		if (!res.ok) {
+			throw new Error(`Commerce API ${res.status} for ${key}`);
+		}
+		const doc = parsePolicyDoc(await res.json());
+		globalsMemo.set(key, { doc, expires: now + policyTtlMs() });
+		return doc;
+	} catch {
+		return generatedPolicyDoc;
+	}
+}
+
+/** Fallback shop doc — fail closed: an empty checkoutUrl disables the
+ *  handoff link in the cart (106 §4). */
+export const DEFAULT_SHOP_DOC: ShopDoc = {
+	checkoutUrl: '',
+	cartUrl: '',
+	currency: 'USD',
+	currencySymbol: '$',
+	updatedAt: '',
+};
+
+/** Fetch the shop globals doc (106 §1.3) through the resolved base, 60 s TTL,
+ *  default doc on failure. */
+export async function getShop(requestUrl: string | URL | undefined): Promise<ShopDoc> {
+	const now = Date.now();
+	let base: string;
+	try {
+		base = resolveBase(requestUrl);
+	} catch {
+		return DEFAULT_SHOP_DOC;
+	}
+	const key = `${base}/globals/shop`;
+	const hit = globalsMemo.get(key);
+	if (hit && hit.expires > now) {
+		return hit.doc as ShopDoc;
+	}
+	try {
+		const res = await fetch(key, { headers: { accept: 'application/json' } });
+		if (!res.ok) {
+			throw new Error(`Commerce API ${res.status} for ${key}`);
+		}
+		const doc = (await res.json()) as ShopDoc;
+		globalsMemo.set(key, { doc, expires: now + 60_000 });
+		return doc;
+	} catch {
+		return DEFAULT_SHOP_DOC;
+	}
+}
+
+// ---------------------------------------------------------------------------
+// CMS content (106 §1.2 — content/pages + content/posts).
+// ---------------------------------------------------------------------------
+
+export const getPages = (
+	requestUrl: string | URL | undefined,
+	params: Parameters<typeof getCollection>[2] = {}
+) => getCollection<ContentDoc>('content/pages', requestUrl, params);
+
+export const getPosts = (
+	requestUrl: string | URL | undefined,
+	params: Parameters<typeof getCollection>[2] = {}
+) => getCollection<ContentDoc>('content/posts', requestUrl, params);
+
+export const getAllPages = (requestUrl: string | URL | undefined) =>
+	getAll<ContentDoc>('content/pages', requestUrl);
+
+export const getAllPosts = (requestUrl: string | URL | undefined) =>
+	getAll<ContentDoc>('content/posts', requestUrl);
+
+/** Fetch a single page by ID (SSR + 404 handling — the getProduct pattern). */
+export async function getPage(
+	id: number,
+	requestUrl: string | URL | undefined
+): Promise<ContentDoc | null> {
+	const url = joinPath(resolveBase(requestUrl), `content/pages/${id}`);
+	const res = await fetch(url, { headers: { accept: 'application/json' } });
+	if (res.status === 404) {
+		return null;
+	}
+	if (!res.ok) {
+		throw new Error(`Commerce API ${res.status} for ${url}`);
+	}
+	return (await res.json()) as ContentDoc;
+}
+
+/** Fetch a single post by ID (SSR + 404 handling). */
+export async function getPost(
+	id: number,
+	requestUrl: string | URL | undefined
+): Promise<ContentDoc | null> {
+	const url = joinPath(resolveBase(requestUrl), `content/posts/${id}`);
+	const res = await fetch(url, { headers: { accept: 'application/json' } });
+	if (res.status === 404) {
+		return null;
+	}
+	if (!res.ok) {
+		throw new Error(`Commerce API ${res.status} for ${url}`);
+	}
+	return (await res.json()) as ContentDoc;
 }
 
 /** Fetch all products for getStaticPaths (build-time, hermetic fixtures). */

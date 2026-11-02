@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
 // FORGE:adapter-import
 import manifest from './nvoos.json';
 
@@ -15,6 +16,9 @@ const wpHost = wpUrl ? new URL(wpUrl).hostname : '';
 
 export default defineConfig({
 	site,
+	// Hybrid local content (Proposal 106 P2): the src/content/*.mdx glob
+	// collections need the MDX integration.
+	integrations: [mdx()],
 	// FORGE:render-config
 	image: {
 		domains: wpHost ? [wpHost] : [],

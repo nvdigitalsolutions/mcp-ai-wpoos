@@ -1,6 +1,11 @@
 // ---------------------------------------------------------------------------
 // CartView island — full cart rendering (client-only state). The cart page
 // shell is server-rendered; lines hydrate from the nanostores cart.
+//
+// Proposal 106 §4 — checkout handoff: simple-product lines build the Woo
+// checkout URL (`?add-to-cart=1,2` comma form) and hand off with an absolute
+// link (no BFF proxy); variant lines are excluded with an honest note; the
+// cart clears on click so the handoff is one-shot.
 // ---------------------------------------------------------------------------
 
 import { useEffect } from 'react';
@@ -14,22 +19,40 @@ import {
 } from '../lib/store/cart';
 import type { CartLine } from '../lib/store/cart';
 import { formatPrice } from '../lib/commerce/money';
+import { buildCheckoutUrl } from '../lib/commerce/checkout';
+import type { ShopDoc } from '../lib/commerce/types';
 
-export default function CartView() {
+interface Props {
+	/** The shop globals doc fetched server-side (106 §1.3). */
+	shop: ShopDoc;
+}
+
+export default function CartView({ shop }: Props) {
 	const lines = useStore(cartLines);
 
 	useEffect(() => {
 		loadCartFromStorage();
+		// Hydration signal for e2e (under parallel load a seeded cart must be
+		// loaded before the handoff assertions run).
+		document.querySelector('[data-cart-root]')?.setAttribute('data-hydrated', 'true');
 	}, []);
 
 	const entries: CartLine[] = Object.values(lines);
+	const plan = buildCheckoutUrl(shop, entries);
 
 	if (entries.length === 0) {
-		return <p>Your cart is empty.</p>;
+		return (
+			<div className="cart" data-cart-root>
+				<p>Your cart is empty.</p>
+				<button type="button" className="btn" disabled data-cart-checkout>
+					Checkout on WooCommerce
+				</button>
+			</div>
+		);
 	}
 
 	return (
-		<div className="cart">
+		<div className="cart" data-cart-root>
 			<ul className="cart__lines">
 				{entries.map((line) => (
 					<li key={line.productId} className="cart__line">
@@ -38,6 +61,11 @@ export default function CartView() {
 						)}
 						<div className="cart__line-info">
 							<span className="cart__line-name">{line.name}</span>
+							{line.attributes && line.attributes.length > 0 && (
+								<span className="cart__line-variant">
+									{line.attributes.map((attribute) => attribute.value).join(' / ')}
+								</span>
+							)}
 							<span>{formatPrice(line.price)}</span>
 						</div>
 						<div className="cart__line-qty">
@@ -70,12 +98,29 @@ export default function CartView() {
 					{formatPrice(entries.reduce((sum, line) => sum + line.price * line.qty, 0))}
 				</strong>
 			</p>
+			{plan.url ? (
+				<a
+					className="btn"
+					href={plan.url}
+					data-cart-checkout
+					onClick={() => clearCart()}
+				>
+					Checkout on WooCommerce
+				</a>
+			) : (
+				<button type="button" className="btn" disabled data-cart-checkout>
+					Checkout on WooCommerce
+				</button>
+			)}
+			{plan.variantCount > 0 && (
+				<p className="cart__note" data-cart-variant-note>
+					Variant items are excluded from this checkout — variant checkout opens
+					in the next release.
+				</p>
+			)}
 			<button type="button" className="btn btn--ghost" onClick={clearCart}>
 				Clear cart
 			</button>
-			<p className="cart__note">
-				Checkout is not available in this store yet — the cart is display-only.
-			</p>
 		</div>
 	);
 }

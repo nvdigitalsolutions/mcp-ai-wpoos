@@ -1,0 +1,162 @@
+---
+// ---------------------------------------------------------------------------
+// ThemeToggle — forge theme switcher (Proposal 104 §4.2 wired by 105 §4).
+//
+// State source is localStorage (via the theme module), NEVER the DOM
+// attribute — the attribute is re-applied by the layout boot on every
+// navigation. The site-level policy doc (the inline `[data-theme-policy]`
+// JSON in the layout head) forces the theme when set to light/dark or a
+// registered brand: the control disables, shows the forced name, and the
+// delegated click handler refuses to cycle (no new bindings — the 104
+// Defect A lesson).
+// ---------------------------------------------------------------------------
+
+import { ALL_THEMES } from '../lib/theme/registry';
+import { useCopy } from '../copy/index.ts';
+
+const copy = useCopy();
+---
+<div class="theme-toggle">
+	<button type="button" data-theme-toggle aria-pressed="false">
+		<span data-theme-label>{copy.theme.label}</span>
+	</button>
+	<p class="theme-toggle__note" hidden data-theme-forced-note>{copy.theme.forcedNote}</p>
+</div>
+
+<style>
+	.theme-toggle {
+		position: relative;
+	}
+
+	.theme-toggle button {
+		border: 1px solid var(--forge-line);
+		background: transparent;
+		color: var(--forge-ink);
+		font: inherit;
+		font-size: 0.85rem;
+		padding: 0.25rem 0.6rem;
+		border-radius: var(--forge-radius);
+		cursor: pointer;
+	}
+
+	.theme-toggle button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.theme-toggle__note {
+		position: absolute;
+		top: calc(100% + 0.35rem);
+		right: 0;
+		margin: 0;
+		padding: 0.35rem 0.6rem;
+		font-size: 0.75rem;
+		background: var(--forge-surface-alt);
+		border: 1px solid var(--forge-line);
+		border-radius: var(--forge-radius);
+		white-space: nowrap;
+	}
+
+	.theme-toggle__note[hidden] {
+		display: none;
+	}
+</style>
+
+<script>
+	import { ALL_THEMES, nextTheme } from '../lib/theme/registry';
+	import { applyTheme, persistTheme, resolveStoredTheme } from '../lib/theme/theme';
+
+	const cycleOnly = ALL_THEMES.length <= 3;
+
+	function mediaQuery(): MediaQueryList | null {
+		return typeof window !== 'undefined' && window.matchMedia
+			? window.matchMedia('(prefers-color-scheme: light)')
+			: null;
+	}
+
+	function currentTheme(): string {
+		return resolveStoredTheme(localStorage, mediaQuery(), ALL_THEMES);
+	}
+
+	/** Read the baked policy from the inline JSON the layout emits. */
+	function policyState(): { forced: boolean; theme: string | null } {
+		const node = document.getElementById('forge-theme-policy');
+		let doc: Record<string, unknown> | null = null;
+		try {
+			doc = JSON.parse(node ? (node.textContent ?? 'null') : 'null');
+		} catch {
+			doc = null;
+		}
+		const policy = typeof doc?.policy === 'string' ? doc.policy : 'auto';
+		if (policy === 'light' || policy === 'dark') {
+			return { forced: true, theme: policy };
+		}
+		if (policy.startsWith('brand:')) {
+			const slug = policy.slice('brand:'.length);
+			if ((ALL_THEMES as readonly string[]).includes(slug)) {
+				return { forced: true, theme: slug };
+			}
+		}
+		return { forced: false, theme: null };
+	}
+
+	function syncAll(): void {
+		const { forced, theme: forcedTheme } = policyState();
+		const toggle = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+		const label = document.querySelector('[data-theme-label]');
+		const note = document.querySelector<HTMLElement>('[data-theme-forced-note]');
+		if (forced && forcedTheme) {
+			if (toggle) {
+				toggle.disabled = true;
+				toggle.setAttribute('aria-disabled', 'true');
+				toggle.setAttribute('aria-pressed', 'false');
+			}
+			if (label) {
+				label.textContent = forcedTheme;
+			}
+			if (note) {
+				note.hidden = false;
+			}
+			return;
+		}
+		if (toggle) {
+			toggle.disabled = false;
+			toggle.removeAttribute('aria-disabled');
+		}
+		if (note) {
+			note.hidden = true;
+		}
+		const theme = currentTheme();
+		if (label) {
+			label.textContent = theme;
+		}
+		if (toggle) {
+			toggle.setAttribute('aria-pressed', String(theme !== 'light'));
+		}
+	}
+
+	function choose(theme: string): void {
+		// The policy owns the theme when forced — never write storage over it.
+		if (policyState().forced) {
+			return;
+		}
+		applyTheme(theme);
+		persistTheme(theme, localStorage);
+		syncAll();
+	}
+
+	// Bundled scripts run once per FULL load — delegate on document (which
+	// survives navigation swaps) and re-sync state on every swap, mirroring
+	// the velocity ThemeToggle pattern (Proposal 104 Defect A).
+	document.addEventListener('click', (event) => {
+		const target = event.target as Element | null;
+		if (target?.closest<HTMLButtonElement>('[data-theme-toggle]')) {
+			if (cycleOnly && !policyState().forced) {
+				choose(nextTheme(currentTheme(), ALL_THEMES));
+			}
+		}
+	});
+
+	document.addEventListener('astro:after-swap', syncAll);
+	syncAll();
+</script>

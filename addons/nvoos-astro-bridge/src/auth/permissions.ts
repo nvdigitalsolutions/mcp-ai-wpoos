@@ -92,6 +92,7 @@ export const NAV: NavEntry[] = [
 	{ slug: 'promocodes', label: 'Promocodes', section: 'catalog', readOnlyAware: true },
 	{ slug: 'managers', label: 'Managers', section: 'access' },
 	{ slug: 'design', label: 'Design System', section: 'system' },
+	{ slug: 'settings', label: 'Settings', section: 'system' },
 ];
 
 /**

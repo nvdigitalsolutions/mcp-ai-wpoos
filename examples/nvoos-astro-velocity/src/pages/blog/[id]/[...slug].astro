@@ -1,0 +1,109 @@
+---
+// ---------------------------------------------------------------------------
+// Blog post detail — Proposal 106 §2 (content/posts + hybrid local).
+//
+// Envelope post by id (301 to the canonical slug on drift — the 104 PDP
+// pattern); local MDX posts render when the envelope has no doc with the
+// requested id (local posts live under /blog/0/<slug>/). BlogPosting
+// JSON-LD; s-maxage=300; cache tags ['content','posts'] + policy revision.
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getPost, getThemePolicy } from '../../../lib/commerce/client';
+import { isPublished } from '../../../lib/commerce/publish';
+import { toIsoDate } from '../../../lib/commerce/normalize';
+import { getCollection } from 'astro:content';
+import { localBySlug } from '../../../lib/content/merge';
+import { blogPostingJsonLd, breadcrumbJsonLd } from '../../../lib/seo/jsonld';
+import { pageTitle, plainExcerpt } from '../../../lib/seo/meta';
+import { absoluteUrl } from '../../../lib/url';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=600'
+);
+
+const id = Number(Astro.params.id ?? 0);
+const requestedSlug = String(Astro.params.slug ?? '').replace(/\/+$/, '');
+
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const policy = await getThemePolicy(Astro.url);
+
+if (Astro.cache.enabled) {
+	Astro.cache.set({
+		maxAge: 300,
+		swr: 600,
+		tags: ['content', 'posts'],
+		etag: policy.updatedAt,
+	});
+}
+
+// Envelope first (L2): a matching published post renders; a draft never
+// falls through to local content (publication discipline, 104 §2.1).
+const envelope = Number.isInteger(id) && id > 0 ? await getPost(id, Astro.url) : null;
+if (envelope && !isPublished(envelope)) {
+	return new Response('Post not found', { status: 404 });
+}
+if (envelope && requestedSlug !== envelope.slug) {
+	return Astro.redirect(`/blog/${id}/${envelope.slug}/`, 301);
+}
+
+// Hybrid-local fallback (O-4): no envelope post with this id — render the
+// local MDX post whose slug matches the URL tail.
+const localPosts = await getCollection('posts', (entry) => !entry.data.draft);
+const local = envelope ? null : localBySlug(localPosts, requestedSlug);
+if (!envelope && !local) {
+	return new Response('Post not found', { status: 404 });
+}
+
+const title = envelope
+	? envelope.seoTitle || pageTitle(envelope.title)
+	: pageTitle(local?.data.title ?? requestedSlug);
+const description = envelope
+	? envelope.seoDescription || plainExcerpt(envelope.excerpt || envelope.contentRendered)
+	: (local?.data.description ?? '');
+const canonical = envelope
+	? absoluteUrl(site, `/blog/${id}/${envelope.slug}/`)
+	: absoluteUrl(site, `/blog/0/${local?.id ?? requestedSlug}/`);
+const html = envelope
+	? envelope.contentRendered || envelope.content
+	: (local?.rendered?.html ?? '');
+const datePublished = envelope
+	? toIsoDate(envelope.createdAt) ?? undefined
+	: local?.data.date?.toISOString();
+const dateModified = envelope ? toIsoDate(envelope.updatedAt) ?? undefined : undefined;
+const jsonld = [
+	blogPostingJsonLd({
+		title: envelope ? envelope.title : (local?.data.title ?? ''),
+		url: canonical,
+		description: plainExcerpt(
+			envelope ? envelope.excerpt || envelope.contentRendered : description,
+			300
+		),
+		datePublished,
+		dateModified,
+		image: envelope?.featuredImage ?? undefined,
+	}),
+	breadcrumbJsonLd([
+		{ name: 'Home', url: absoluteUrl(site, '/') },
+		{ name: 'Blog', url: absoluteUrl(site, '/blog/') },
+		{ name: envelope ? envelope.title : (local?.data.title ?? ''), url: canonical },
+	]),
+];
+---
+
+<BaseLayout
+	title={title}
+	description={description}
+	canonical={canonical}
+	jsonld={jsonld}
+>
+	<nav class="breadcrumbs" aria-label="Breadcrumb">
+		<a href="/">Home</a> {' / '} <a href="/blog/">Blog</a> {' / '}{' '}
+		<span>{envelope ? envelope.title : local?.data.title}</span>
+	</nav>
+	<article>
+		<h1>{envelope ? envelope.title : local?.data.title}</h1>
+		<div class="content-body" set:html={html} />
+	</article>
+</BaseLayout>

@@ -15,6 +15,7 @@
 //     fields, featured media resolved by ID when `_embed` has none)
 // ---------------------------------------------------------------------------
 
+import { glob } from 'astro/loaders';
 import type { Loader, LoaderContext } from 'astro/loaders';
 import { z } from 'astro/zod';
 import limax from 'limax';
@@ -30,29 +31,90 @@ export interface WpLoaderOptions {
 	collection: WpCollection;
 	/** Auth for private sources — never written into the scaffolded project. */
 	auth?: WpAuth;
+	/**
+	 * Hybrid local content (Proposal 106 P2): a local MDX glob merged under
+	 * the WP entries. Local fills the gaps; WP wins on store-id collision. A
+	 * network-level WP failure (no connection at all) degrades to local-only
+	 * with a loud warning — HTTP-level errors still fail the build (096:
+	 * never silent truncation).
+	 */
+	local?: HybridLocalSource;
+	/** Test seam — the local loader factory (defaults to astro's glob()). */
+	localLoaderFactory?: (source: HybridLocalSource) => Loader;
 }
 
-/** Stable, framework-agnostic entry shape across wp/v2 and wc/v3. */
-const schema = z.object({
-	id: z.number(),
-	title: z.string(),
-	slug: z.string(),
-	date: z.string(),
-	modified: z.string(),
-	excerpt: z.string().optional(),
-	link: z.string().optional(),
-	author: z.string().optional(),
-	featuredImage: z.string().optional(),
-	price: z.string().optional(),
-	regularPrice: z.string().optional(),
-	salePrice: z.string().optional(),
-	stockStatus: z.string().optional(),
-	sku: z.string().optional(),
-	categories: z.array(z.string()).optional(),
-	images: z.array(z.string()).optional(),
-	/** True when the page cap stopped the fetch before the end (096: never silent truncation). */
-	truncated: z.boolean().optional(),
-});
+/** A local MDX glob merged under the WP entries (106 P2 hybrid local). */
+export interface HybridLocalSource {
+	/** Glob pattern relative to `base` (the standard astro glob() shape). */
+	pattern: string;
+	/** Base directory, resolved against the Astro project root (e.g. './src/content/posts'). */
+	base: string;
+}
+
+/**
+ * The canonical content-layer schema — one schema serves the WP loader and
+ * the local MDX glob (Proposal 106 P2): WP documents and local frontmatter
+ * parse into the SAME stable shape. Local frontmatter (`title`,
+ * `description`, `date`, `draft`) is normalized in the transform — `date`
+ * accepts YAML Date instances and strings, `slug` falls back to the entry
+ * id (the filename slug), `description` fills `excerpt` when the source has
+ * none. Unknown keys are stripped; the transform output is what template
+ * pages type against, so their fields stay `string` (no page churn).
+ */
+export const contentSchema = z
+	.object({
+		id: z.union([z.number(), z.string()]).optional(),
+		title: z.string().optional(),
+		slug: z.string().optional(),
+		date: z.union([z.string(), z.date()]).optional(),
+		modified: z.string().optional(),
+		excerpt: z.string().optional(),
+		description: z.string().optional(),
+		draft: z.boolean().optional(),
+		link: z.string().optional(),
+		author: z.string().optional(),
+		featuredImage: z.string().optional(),
+		/** Rank Math title (rank_math_title) or the Yoast fallback (yoast_head_json.title). */
+		seoTitle: z.string().optional(),
+		/** Rank Math description or the Yoast fallback (yoast_head_json.description). */
+		seoDescription: z.string().optional(),
+		price: z.string().optional(),
+		regularPrice: z.string().optional(),
+		salePrice: z.string().optional(),
+		stockStatus: z.string().optional(),
+		sku: z.string().optional(),
+		categories: z.array(z.string()).optional(),
+		images: z.array(z.string()).optional(),
+		/** True when the page cap stopped the fetch before the end (096: never silent truncation). */
+		truncated: z.boolean().optional(),
+	})
+	.transform((raw) => {
+		const date = raw.date instanceof Date ? raw.date.toISOString() : (raw.date ?? '');
+		const id = raw.id;
+		return {
+			id,
+			title: raw.title ?? '',
+			slug: raw.slug ?? (typeof id === 'number' ? String(id) : id) ?? '',
+			date,
+			modified: raw.modified ?? date,
+			excerpt: raw.excerpt ?? raw.description,
+			description: raw.description,
+			draft: raw.draft,
+			link: raw.link,
+			author: raw.author,
+			featuredImage: raw.featuredImage,
+			seoTitle: raw.seoTitle,
+			seoDescription: raw.seoDescription,
+			price: raw.price,
+			regularPrice: raw.regularPrice,
+			salePrice: raw.salePrice,
+			stockStatus: raw.stockStatus,
+			sku: raw.sku,
+			categories: raw.categories,
+			images: raw.images,
+			truncated: raw.truncated,
+		};
+	});
 
 /** Run an async map over items with bounded concurrency (politeness). */
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -72,11 +134,11 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
  * Astro content-layer loader over one WordPress/WooCommerce REST collection.
  */
 export function createWpLoader(options: WpLoaderOptions): Loader {
-	const { site, collection, auth } = options;
+	const { site, collection, auth, local } = options;
 
-	return {
+	const loader: Loader = {
 		name: 'nvoos-wp',
-		schema,
+		schema: contentSchema,
 		load: async (context: LoaderContext) => {
 			const client = WpClient.fromProfile(site, { auth });
 
@@ -154,6 +216,8 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 						link: raw.link,
 						author: raw.author,
 						featuredImage: featured,
+						seoTitle: raw.seoTitle,
+						seoDescription: raw.seoDescription,
 						price: raw.price,
 						regularPrice: raw.regularPrice,
 						salePrice: raw.salePrice,
@@ -175,6 +239,75 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 			}
 		},
 	};
+
+	if (!local) {
+		return loader;
+	}
+
+	// Hybrid local (106 P2): the local glob loads first, the WP loader second
+	// (its clear() + re-set leaves the store WP-owned), then local entries are
+	// re-set where WP produced nothing — WP wins on collision, local fills
+	// the gaps. Drafts never ship (the 106 frontmatter contract).
+	const localLoader = (options.localLoaderFactory ?? defaultLocalLoader)(local);
+	return {
+		name: 'nvoos-wp',
+		schema: contentSchema,
+		load: async (context: LoaderContext) => {
+			await localLoader.load(context);
+			const localEntries = context.store
+				.entries()
+				.filter(([, entry]) => !isDraftEntry(entry));
+			let wpIds = new Set<string>();
+			try {
+				await loader.load(context);
+				// The ids WP just set — the collision set the merge honours.
+				wpIds = new Set(context.store.entries().map(([id]) => id));
+			} catch (error) {
+				// Network-level failures = no WP connection at all (refused, DNS):
+				// degrade to local-only with a loud warning so a forged site stays
+				// demo-runnable. HTTP-level errors (auth, 404, 5xx) still fail the
+				// build — a reachable-but-misconfigured source is never silent.
+				if (!isOfflineError(error)) {
+					throw error;
+				}
+				context.logger.warn(
+					`[nvoos-wp] ${collection.slug}: WordPress unreachable (${error instanceof Error ? error.message : String(error)}) — serving local content only.`
+				);
+			}
+			for (const [id, entry] of localEntries) {
+				if (wpIds.has(id)) {
+					continue; // WP wins on collision.
+				}
+				// The schema transform cannot see the store id — local
+				// frontmatter carries no slug, so fill it from the glob id
+				// (the filename slug) to keep the id/slug route shape. The
+				// digest gets a stable prefix so the store re-writes the
+				// entry once (same-digest re-sets are skipped) and later
+				// incremental builds still dedupe unchanged files.
+				const data = entry.data as Record<string, unknown>;
+				context.store.set({
+					...entry,
+					digest: entry.digest !== undefined ? `local:${String(entry.digest)}` : undefined,
+					data: { ...data, slug: (typeof data.slug === 'string' && data.slug) || id },
+				});
+			}
+		},
+	};
+}
+
+/** The production local loader — astro's glob() over the source dir. */
+function defaultLocalLoader(source: HybridLocalSource): Loader {
+	return glob({ pattern: source.pattern, base: source.base });
+}
+
+/** A local entry with draft: true never ships (the 106 frontmatter contract). */
+export function isDraftEntry(entry: { data?: Record<string, unknown> }): boolean {
+	return entry.data?.draft === true;
+}
+
+/** Network-level fetch failures = "no WP connection" (ECONNREFUSED, DNS…). */
+export function isOfflineError(error: unknown): boolean {
+	return error instanceof TypeError && !(error instanceof WpClientError);
 }
 
 interface RawEntry {
@@ -187,6 +320,8 @@ interface RawEntry {
 	link?: string;
 	author?: string;
 	featuredImage?: string;
+	seoTitle?: string;
+	seoDescription?: string;
 	price?: string;
 	regularPrice?: string;
 	salePrice?: string;
@@ -223,6 +358,8 @@ export function extractRaw(entry: Record<string, unknown>): RawEntry {
 				.filter(Boolean)
 		: [];
 
+	const seo = extractSeoMeta(entry);
+
 	return {
 		title: title || String(entry.id ?? ''),
 		slug: String(entry.slug ?? ''),
@@ -233,6 +370,8 @@ export function extractRaw(entry: Record<string, unknown>): RawEntry {
 		link: typeof entry.permalink === 'string' ? entry.permalink : typeof entry.link === 'string' ? entry.link : undefined,
 		author: embedded?.author?.[0]?.name ? String(embedded.author[0].name) : undefined,
 		featuredImage: extractFeaturedImage(entry) ?? wcImages[0],
+		seoTitle: seo.seoTitle,
+		seoDescription: seo.seoDescription,
 		price: extractCommerce(entry, ['price']),
 		regularPrice: extractCommerce(entry, ['regular_price']),
 		salePrice: extractCommerce(entry, ['sale_price']),
@@ -241,6 +380,29 @@ export function extractRaw(entry: Record<string, unknown>): RawEntry {
 		categories: wcCategories.length > 0 ? wcCategories : undefined,
 		images: wcImages.length > 0 ? wcImages : undefined,
 	};
+}
+
+/**
+ * SEO meta from the REST document (Proposal 106 §1.2 discipline): Rank Math
+ * `rank_math_title`/`rank_math_description` first, then the Yoast
+ * `yoast_head_json` object. Every field is optional — plugins/fields absent
+ * from the response must never crash the loader (conditional include).
+ */
+function extractSeoMeta(entry: Record<string, unknown>): { seoTitle?: string; seoDescription?: string } {
+	const rankTitle = extractText(entry.rank_math_title);
+	const rankDescription = extractText(entry.rank_math_description);
+	const yoast = (entry.yoast_head_json ?? {}) as Record<string, unknown>;
+	const yoastTitle = extractText(yoast.title);
+	const yoastDescription = extractText(yoast.description) ?? extractText(yoast.og_description);
+	return {
+		seoTitle: rankTitle ?? yoastTitle,
+		seoDescription: rankDescription ?? yoastDescription,
+	};
+}
+
+/** A non-empty string field, or undefined (absent fields are never fatal). */
+function extractText(value: unknown): string | undefined {
+	return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
 /** Commerce fields are additive — read them when present, skip otherwise. */
@@ -309,6 +471,8 @@ async function loadPayloadEntries(
 				link: raw.link,
 				author: raw.author,
 				featuredImage: raw.featuredImage,
+				seoTitle: raw.seoTitle,
+				seoDescription: raw.seoDescription,
 				price: raw.price,
 				regularPrice: raw.regularPrice,
 				salePrice: raw.salePrice,
@@ -372,6 +536,10 @@ export function extractPayloadRaw(entry: Record<string, unknown>): RawEntry {
 		? String((entry.statuses[0] as { name?: unknown })?.name ?? '')
 		: undefined;
 
+	// The envelope already carries the SEO meta (106 §1.2 contract).
+	const seoTitle = extractText(entry.seoTitle);
+	const seoDescription = extractText(entry.seoDescription);
+
 	return {
 		title,
 		slug: slugify(title),
@@ -380,6 +548,8 @@ export function extractPayloadRaw(entry: Record<string, unknown>): RawEntry {
 		html,
 		link: undefined,
 		featuredImage: featured,
+		seoTitle,
+		seoDescription,
 		price,
 		regularPrice,
 		salePrice,

@@ -6,6 +6,12 @@
 // header (with the cart badge island) and footer. View Transitions use the
 // opt-in ClientRouter; the analytics forwarding hook (R4/D9) fires
 // astro:page-load so tag managers work despite client-side navigation.
+//
+// Proposal 105 §3: the theme-policy doc is inlined as an is:inline JSON data
+// block (data-theme-policy). The boot ladder applies a FORCED policy before
+// storage (forced wins), keeps color-scheme in sync, and re-applies on every
+// astro:after-swap (104 Defect A). The resolution runs server-side (registry
+// known) so the raw boot script stays registry-free.
 // ---------------------------------------------------------------------------
 
 import { ClientRouter } from 'astro:transitions';
@@ -13,6 +19,9 @@ import CartBadge from '../islands/CartBadge';
 import ManageLink from '../islands/ManageLink';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import ContrastToggle from '../components/ContrastToggle.astro';
+import { getThemePolicy } from '../lib/commerce/client';
+import { resolvePolicyTheme } from '../lib/theme/policy';
+import { ALL_THEMES } from '../lib/theme/registry';
 import '../styles/generated/tokens.css';
 import '../styles/global.css';
 
@@ -31,6 +40,18 @@ const {
 	image,
 	jsonld = [],
 } = Astro.props;
+
+// Live policy for SSR renders (getThemePolicy falls back to the build-baked
+// policy.generated.ts doc on any failure — never break a render). The
+// resolved result (stored/media = null) carries the FORCED ladder steps; the
+// boot script re-runs the auto ladder against real storage + media.
+const policyDoc = await getThemePolicy(Astro.url);
+const resolved = resolvePolicyTheme(policyDoc, null, null, ALL_THEMES);
+const policyPayload = JSON.stringify({
+	doc: policyDoc,
+	resolved,
+	registry: ALL_THEMES,
+});
 ---
 
 <!doctype html>
@@ -53,13 +74,20 @@ const {
 			))
 		}
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<!-- Theme-policy payload (105 §3): JSON data block, no event handlers —
+		     the boot script and the toggles read it via [data-theme-policy]. -->
+		<script type="application/json" data-theme-policy set:html={policyPayload} />
 		<script is:inline>
-			// ADS no-FOUC theme boot (Proposal 095/104): apply the stored theme
-			// + contrast axis before first paint, then RE-APPLY on every
+			// ADS no-FOUC theme boot (Proposal 095/104/105): resolve the theme
+			// + contrast axes before first paint, then RE-APPLY on every
 			// client-side navigation — Astro's ClientRouter swaps the <html>
 			// element (attributes included) and head scripts run only once,
 			// so without the after-swap listener the theme resets to light on
 			// page 2 (Proposal 104 Defect A; Astro docs' dark-mode pattern).
+			//
+			// Policy ladder (105 §3): a FORCED policy theme wins over storage;
+			// auto keeps the 104 ladder (storage → media → defaultTheme).
+			// Contrast mirrors it (forced axis or stored → standard).
 			(function () {
 				const KEY = 'nvoos-theme';
 				const CKEY = 'nvoos-contrast';
@@ -69,12 +97,30 @@ const {
 					} catch { /* storage unavailable */ }
 					return null;
 				};
+				const readPolicy = () => {
+					try {
+						const node = document.querySelector('script[data-theme-policy]');
+						return node ? JSON.parse(node.textContent || 'null') : null;
+					} catch { /* malformed policy payload */ }
+					return null;
+				};
 				const apply = () => {
-					let theme = stored(KEY);
+					const policy = readPolicy();
+					const doc = policy && policy.doc ? policy.doc : { defaultTheme: 'dark', contrast: 'auto' };
+					const resolved = policy && policy.resolved ? policy.resolved : null;
+					const registry = policy && Array.isArray(policy.registry) ? policy.registry : [];
+					let theme = null;
+					if (resolved && resolved.forced) {
+						theme = resolved.theme;
+					} else {
+						const saved = stored(KEY);
+						if (saved === 'light' || registry.indexOf(saved) !== -1) {
+							theme = saved;
+						}
+					}
 					if (!theme) {
-						theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
-							? 'light'
-							: 'dark';
+						const media = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)');
+						theme = media ? (media.matches ? 'light' : 'dark') : (doc.defaultTheme || 'dark');
 					}
 					if (theme === 'light') {
 						document.documentElement.removeAttribute('data-theme');
@@ -82,7 +128,13 @@ const {
 						document.documentElement.setAttribute('data-theme', theme);
 					}
 					document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
-					if (stored(CKEY) === 'high') {
+					const contrast =
+						resolved && resolved.contrastForced
+							? resolved.contrast
+							: stored(CKEY) === 'high'
+								? 'high'
+								: 'standard';
+					if (contrast === 'high') {
 						document.documentElement.setAttribute('data-contrast', 'high');
 					} else {
 						document.documentElement.removeAttribute('data-contrast');
@@ -112,6 +164,7 @@ const {
 					<a href="/products/">Products</a>
 					<a href="/categories/">Categories</a>
 					<a href="/brands/">Brands</a>
+					<a href="/blog/">Blog</a>
 					<a href="/promotions/">Promotions</a>
 					<a href="/account/">Account</a>
 				</nav>

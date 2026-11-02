@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 import { emitDeployConfig, type DeployMode } from './deploy-config.ts';
 import { analyzeSite, profileFromDiscovery, type DiscoveryReport } from './discovery.ts';
-import { applyPresetToProfile, PRESETS, suggestPreset, type PresetName, type RenderMode } from './presets.ts';
+import { applyPresetToProfile, isValidThemePolicy, PRESETS, suggestPreset, DEFAULT_THEME_POLICY, type PresetName, type RenderMode } from './presets.ts';
 import { scaffold } from './scaffold.ts';
 import { SitesStore } from './sites.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
@@ -36,6 +36,8 @@ export interface WizardUi {
 	selectPreset?: (suggested: PresetName, report: DiscoveryReport) => Promise<PresetName | null>;
 	/** Ask static vs ssr (storefront preset only, 104 Q4) — null cancels. */
 	selectRender?: (suggested: RenderMode, preset: PresetName) => Promise<RenderMode | null>;
+	/** Ask the theme policy (105 §4, default 'auto') — null cancels. */
+	selectThemePolicy?: (suggested: string) => Promise<string | null>;
 	/** Final go/no-go before scaffolding — false cancels the wizard. */
 	confirmScaffold?: (preset: PresetName, targetDir: string) => Promise<boolean>;
 }
@@ -66,6 +68,11 @@ export interface WizardOptions {
 	render?: RenderMode;
 	/** Enable the per-post OG cards surface (104 §4.8 / Q5). */
 	ogImages?: boolean;
+	/**
+	 * Theme policy baked into the scaffold (105 §4):
+	 * auto | light | dark | brand:<slug>. Default 'auto'.
+	 */
+	themePolicy?: string;
 	/** Interactive prompt hooks (CLI only). */
 	ui?: WizardUi;
 	/** Emit the AGENTS.md/.context stubs (default true; --no-agents flips it). */
@@ -146,6 +153,20 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 		}
 		render = chosen;
 	}
+
+	// 1d. Theme policy (105 §4): explicit flag wins; the interactive choice
+	//     defaults to 'auto'; every non-TTY path stays 'auto'.
+	let themePolicy: string = options.themePolicy ?? DEFAULT_THEME_POLICY;
+	if ( ! options.themePolicy && options.ui?.selectThemePolicy ) {
+		const chosen = await options.ui.selectThemePolicy( themePolicy );
+		if ( chosen === null ) {
+			throw new Error( 'Wizard cancelled.' );
+		}
+		if ( ! isValidThemePolicy( chosen ) ) {
+			throw new Error( `Invalid theme policy "${ chosen }" — use auto, light, dark or brand:<slug>.` );
+		}
+		themePolicy = chosen;
+	}
 	profile.url = options.url.replace( /\/+$/, '' );
 	if ( options.name ) {
 		profile.name = options.name;
@@ -179,6 +200,7 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 			render,
 			surfaces: options.ogImages ? { ogImages: true } : undefined,
 			agents: options.agents,
+			themePolicy,
 		} );
 		scaffolded = true;
 	}

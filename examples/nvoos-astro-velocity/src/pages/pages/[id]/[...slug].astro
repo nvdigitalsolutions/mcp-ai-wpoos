@@ -1,0 +1,103 @@
+---
+// ---------------------------------------------------------------------------
+// CMS page detail — Proposal 106 §2 (content/pages + hybrid local).
+//
+// On-demand SSR (the 104 rendering model): the envelope doc wins; when the
+// envelope has no page with the requested id, the local MDX collection
+// (src/content/pages/) fills the gap by slug — the O-4 fallback that keeps
+// /pages/<id>/about|terms/ working with no backend. Real 301s for slug
+// drift (the 104 PDP pattern), WebPage JSON-LD, s-maxage=300 and cache tags
+// ['content','pages'] with the policy revision on the entry.
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getPage, getThemePolicy } from '../../../lib/commerce/client';
+import { isPublished } from '../../../lib/commerce/publish';
+import { getCollection } from 'astro:content';
+import { localBySlug } from '../../../lib/content/merge';
+import { webPageJsonLd } from '../../../lib/seo/jsonld';
+import { pageTitle, plainExcerpt } from '../../../lib/seo/meta';
+import { absoluteUrl } from '../../../lib/url';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=600'
+);
+
+const id = Number(Astro.params.id ?? 0);
+const requestedSlug = String(Astro.params.slug ?? '').replace(/\/+$/, '');
+
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const policy = await getThemePolicy(Astro.url);
+
+if (Astro.cache.enabled) {
+	Astro.cache.set({
+		maxAge: 300,
+		swr: 600,
+		tags: ['content', 'pages'],
+		etag: policy.updatedAt,
+	});
+}
+
+const home = { name: 'Home', url: absoluteUrl(site, '/') };
+
+// Envelope first (L2): a matching published doc renders; a draft never
+// falls through to local content (publication discipline, 104 §2.1).
+const envelope = Number.isInteger(id) && id > 0 ? await getPage(id, Astro.url) : null;
+if (envelope && !isPublished(envelope)) {
+	return new Response('Page not found', { status: 404 });
+}
+if (envelope) {
+	if (requestedSlug !== envelope.slug) {
+		return Astro.redirect(`/pages/${id}/${envelope.slug}/`, 301);
+	}
+}
+
+// Hybrid-local fallback (O-4): no envelope doc with this id — render the
+// local page whose slug matches the URL tail.
+const localPages = await getCollection('pages', (entry) => !entry.data.draft);
+const local = envelope ? null : localBySlug(localPages, requestedSlug);
+if (!envelope && !local) {
+	return new Response('Page not found', { status: 404 });
+}
+
+// One view shape for both sources — the template below branches on nothing.
+const title = envelope
+	? envelope.seoTitle || pageTitle(envelope.title)
+	: pageTitle(local?.data.title ?? requestedSlug);
+const description = envelope
+	? envelope.seoDescription || plainExcerpt(envelope.excerpt || envelope.contentRendered)
+	: (local?.data.description ?? '');
+const canonical = envelope
+	? absoluteUrl(site, `/pages/${id}/${envelope.slug}/`)
+	: absoluteUrl(site, `/pages/0/${local?.id ?? requestedSlug}/`);
+const html = envelope
+	? envelope.contentRendered || envelope.content
+	: (local?.rendered?.html ?? '');
+const jsonld = [
+	webPageJsonLd({
+		name: envelope ? envelope.title : (local?.data.title ?? ''),
+		url: canonical,
+		description: plainExcerpt(
+			envelope ? envelope.excerpt || envelope.contentRendered : description,
+			300
+		),
+		breadcrumb: [home, { name: envelope ? envelope.title : (local?.data.title ?? ''), url: canonical }],
+	}),
+];
+---
+
+<BaseLayout
+	title={title}
+	description={description}
+	canonical={canonical}
+	jsonld={jsonld}
+>
+	<nav class="breadcrumbs" aria-label="Breadcrumb">
+		<a href="/">Home</a> {' / '} <span>{envelope ? envelope.title : local?.data.title}</span>
+	</nav>
+	<article>
+		<h1>{envelope ? envelope.title : local?.data.title}</h1>
+		<div class="content-body" set:html={html} />
+	</article>
+</BaseLayout>

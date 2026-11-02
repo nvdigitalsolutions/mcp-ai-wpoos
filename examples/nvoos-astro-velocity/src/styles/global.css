@@ -328,3 +328,122 @@ a:hover {
 	justify-content: center;
 	margin-block: 2rem;
 }
+
+/* CMS content (106 §2) — minimal prose container for contentRendered /
+   local MDX pages and posts. */
+.content-body {
+	max-width: 46rem;
+}
+
+.content-body h2 {
+	margin-top: 1.5rem;
+}
+
+.content-body img {
+	border-radius: var(--nv-radius);
+}
+
+.content-body blockquote {
+	margin-inline: 0;
+	padding-inline: 1rem;
+	border-left: 3px solid var(--nv-line-strong);
+	color: var(--nv-muted);
+}
+
+.content-body code {
+	background: var(--nv-surface-alt);
+	border-radius: 4px;
+	padding: 0.1rem 0.3rem;
+}
+
+/* Blog listing (106 §2) */
+.blog-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.blog-list li + li {
+	margin-top: 1.25rem;
+	padding-top: 1.25rem;
+	border-top: 1px solid var(--nv-line);
+}
+
+.blog-list h2 {
+	margin: 0 0 0.25rem;
+	font-size: var(--ads-semantic-type-size-lg, 1.15rem);
+}
+
+.blog-list a {
+	text-decoration: none;
+}
+
+/* Variant selector (106 §1.1) */
+.variant-selector {
+	margin-block: 1rem;
+}
+
+.variant-group {
+	border: none;
+	padding: 0;
+	margin: 0 0 0.75rem;
+}
+
+.variant-group legend {
+	font-weight: 600;
+	margin-bottom: 0.35rem;
+}
+
+.variant-options {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.variant-option {
+	position: relative;
+}
+
+.variant-option input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.variant-option span {
+	display: inline-block;
+	border: 1px solid var(--nv-line);
+	border-radius: var(--nv-radius);
+	padding: 0.35rem 0.75rem;
+	cursor: pointer;
+	font-size: 0.9rem;
+}
+
+.variant-option input:focus-visible + span {
+	outline: 2px solid var(--nv-accent);
+	outline-offset: 2px;
+}
+
+.variant-option input:checked + span {
+	border-color: var(--nv-accent);
+	background: var(--nv-accent);
+	color: var(--nv-accent-ink);
+}
+
+.variant-option input:disabled + span {
+	color: var(--nv-muted);
+	text-decoration: line-through;
+	cursor: not-allowed;
+}
+
+/* Cart handoff (106 §4) */
+.cart__line-variant {
+	display: block;
+	color: var(--nv-muted);
+	font-size: 0.85rem;
+}
+
+.cart__note {
+	color: var(--nv-muted);
+	font-size: 0.9rem;
+}

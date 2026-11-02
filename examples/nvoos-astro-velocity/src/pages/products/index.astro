@@ -18,6 +18,7 @@ import {
 	getAllCategories,
 	getAllColors,
 	getProducts,
+	getThemePolicy,
 	PAGE_SIZE,
 } from '../../lib/commerce/client';
 import type { SortValue, WhereClause } from '../../lib/commerce/types';
@@ -31,8 +32,12 @@ Astro.response.headers.set(
 	'public, s-maxage=300, stale-while-revalidate=60'
 );
 
+// Theme policy revision rides the cache entry (Proposal 105 §3) — see the
+// PDP for the rationale; tags stay unchanged.
+const policy = await getThemePolicy(Astro.url);
+
 if (Astro.cache.enabled) {
-	Astro.cache.set({ maxAge: 300, swr: 60, tags: ['products'] });
+	Astro.cache.set({ maxAge: 300, swr: 60, tags: ['products'], etag: policy.updatedAt });
 }
 
 const categories = await getAllCategories(Astro.url);

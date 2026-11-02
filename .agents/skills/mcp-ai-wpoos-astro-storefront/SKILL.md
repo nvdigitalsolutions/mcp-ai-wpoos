@@ -506,6 +506,68 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   product image); PDPs point `og:image` at it. Fixture server appends a
   synthetic draft (id 9901) at boot — goldens stay byte-identical.
 
+## Proposals 105 + 106 surfaces (2026-11-03)
+
+- **Bridge theme policy (105)**: `GET/PATCH /globals/theme` —
+  `{ policy: auto|light|dark|brand:<slug>, contrast: auto|standard|high,
+  defaultTheme: light|dark, updatedAt, $extensions }`; PATCH manage-gated,
+  `s-maxage=60`, fires the rebuild webhook. Storefront ladder (one module,
+  `src/lib/theme/policy.ts`): policy → stored pref → system → defaultTheme;
+  forced modes disable the toggles (aria-disabled + note). Prerendered pages
+  bake the policy (`scripts/build-policy.mjs` → `policy.generated.ts`,
+  drift-gated by `check-policy`); SSR reads per request (60 s TTL,
+  `NVOOS_THEME_POLICY_TTL=0` to disable) and cache entries carry
+  `etag: policy.updatedAt`. Unknown brand slugs fail open to `auto`. MCP
+  `theme_apply` is preview-only under a forced policy (`NVOOS_THEME_PREVIEW=1`).
+  The forge template mirrors the ladder (canonical copy in the forge
+  template — keep logic identical; documented divergences: velocity adds
+  `contrastForced`/`storedContrast` and live-doc reads).
+- **CMS content (106)**: `content/pages` + `content/posts` (PostTypeController
+  seam; `contentRendered` = `the_content` output with raw fallback; Rank
+  Math `rank_math_title`/`rank_math_description` → Yoast meta → title/excerpt
+  fallback; `where[slug|category]`; drafts excluded — synthetic draft id
+  9902). Routes `/pages/{id}/{slug}`, `/blog/`, `/blog/{id}/{slug}` (301
+  canonicals, WebPage/CollectionPage/BlogPosting JSON-LD, `['content',…]`
+  cache tags). **Hybrid local**: `src/content.config.ts` globs
+  `src/content/posts|pages/*.md` (NOT mdx — the astro:jsx renderer probes
+  React islands and logs per-render errors; forge has no islands so it uses
+  mdx); `src/lib/content/merge.ts` — envelope wins on slug collision,
+  local fills gaps (L2).
+- **Variants (106)**: additive `variants[]` on single-doc GETs only (woo mode;
+  `WooProductSource` hydrates `WC_Product_Variable` children); listings flat.
+  PDP `VariantSelector` island (radio semantics, sold-out disabled, price +
+  JSON-LD `Offer[]` follow selection); cart lines carry `variantId` +
+  `attributes`.
+- **Checkout handoff (106)**: `GET/PATCH /globals/shop` (`checkoutUrl` from
+  `home_url('/checkout/')`, display currency; `s-maxage=60`);
+  `buildCheckoutUrl()` (pure) → comma-form `?add-to-cart=1,2` for simple
+  lines, variant lines excluded with a note (T1 Laravel cart resource owns
+  variant checkout). No BFF change — absolute link to the WP frontend.
+- **Policy e2e isolation**: theme-policy specs run on a second fixture/BFF
+  pair (8124/4322, `NVOOS_THEME_POLICY_TTL=0`) so PATCH→render is
+  deterministic without racing the shared fixture's theme assertions.
+- **Implementation gotchas (2026-11-03 session — each cost a fix):**
+  - **Astro 7 `Astro.cache` has no entry-key args** — the memory-cache key
+    is URL-based. The policy revision rides the cache entry's **`etag`**
+    option (`Astro.cache.set({ ..., etag: policy.updatedAt })`); production
+    invalidation stays the rebuild→redeploy loop.
+  - **Playwright 1.64 has no per-project `webServer`** — isolated
+    fixture/BFF pairs (the policy e2e) go in the **top-level** `webServer`
+    array of `playwright.config.ts`, each with its own ports.
+  - **Stray node processes on Windows survive shell exit** and poison
+    `reuseExistingServer` (fixture/BFF/Playwright servers).
+    `scripts/cleanup-stray-servers.mjs` kills them before test runs.
+  - **Manage-assets cross-cluster sync**: when the bridge SPA changes,
+    `npm run build` here rebuilds `public/manage-assets/astro-admin.js`
+    from the bridge's standalone build — commit src + bundle **together**
+    (the two-bundle drift gate fails the PR otherwise). An uncommitted
+    bridge SPA change mid-session makes the local build overwrite the
+    committed bundle — restore it until the bridge cluster commits.
+  - `NVOOS_THEME_POLICY_TTL` (default 60 s, `0` disables) is the policy-TTL
+    seam; mirrors the `NVOOS_PROXY_CACHE=0` precedent.
+  - Pre-existing `Pagination.astro` bug fixed in this session: `??page=N`
+    double question mark (`url.search` already carries `?`).
+
 ## References
 
 - Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · **Proposal 104** (runtime hardening: `-proposal.md`, `-research.md`, `-implementation-plan.md`, `-ecosystem-repo-analysis.md`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`

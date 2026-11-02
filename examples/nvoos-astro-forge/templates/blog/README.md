@@ -70,10 +70,14 @@ Every generated project must satisfy these four behaviours (Proposal 104,
 
 1. **Theming** — a no-FOUC boot script in the layout `<head>`, theme
    re-applied on `astro:after-swap` (client-side navigation), and
-   `color-scheme` kept in sync with the theme. The pure runtime module is
-   `src/lib/theme/theme.ts` (+ `registry.ts`) — the canonical port target;
-   the boot script and toggle get wired when runtime theming lands
-   (Proposal 104 Q4, define-only today).
+   `color-scheme` kept in sync with the theme. The pure runtime modules are
+   `src/lib/theme/theme.ts` (+ `registry.ts`) — the canonical port target.
+   **Wired since Proposal 105 §4:** the boot script + `ThemeToggle` are in
+   the layout, driven by the baked policy (`src/lib/theme/policy.generated.ts`,
+   `--theme-policy` at scaffold time) — forced light/dark/brand apply before
+   any stored preference and disable the toggle; `auto` runs stored → media →
+   `defaultTheme` (`src/lib/theme/policy.ts`, the forge-canonical ladder the
+   velocity storefront mirrors).
 2. **PDP canonical + 301 slug convergence** — every product page exposes one
    canonical URL, and old/incorrect slugs converge via a 301.
 3. **Product JSON-LD in initial HTML** — the PDP ships `Product` structured
@@ -99,12 +103,14 @@ migration is mechanical. The zero-dependency tables remain the default.
 
 ## SEO builder (`src/lib/seo.ts`)
 
-`jsonLdFor(kind, input)` covers `WebPage | BlogPosting | Product` (plus a
-`breadcrumbList()` helper), typed with `schema-dts` so a malformed document
-fails `astro check` instead of silently shipping; `renderJsonLd()` applies
-the `<` → `\u003c` escape for `<script type="application/ld+json">` tags.
-The posts and products detail pages consume it — the e2e gate pins the
-`BlogPosting` + `Product` output.
+`jsonLdFor(kind, input)` covers `WebPage | BlogPosting | Article | Product`
+(plus a `breadcrumbList()` helper), typed with `schema-dts` so a malformed
+document fails `astro check` instead of silently shipping; `renderJsonLd()`
+applies the `<` → `\u003c` escape for `<script type="application/ld+json">`
+tags. The posts detail pages emit `BlogPosting`, the pages emit `WebPage`,
+and the product detail pages emit `Product` (Proposal 106 JSON-LD parity) —
+the e2e gate pins all three. Posts/pages titles + descriptions prefer the
+source SEO meta (Rank Math → Yoast → title/excerpt).
 
 ## Tailwind bridge (`src/styles/tokens-tailwind.css`)
 
@@ -112,6 +118,16 @@ Ships unused by default: an `@theme inline` mapping of the `--forge-*` tokens
 onto Tailwind v4 utility tokens. Import it only if/when Tailwind v4 is added
 to the project — zero build impact otherwise, and the scaffold copies it
 byte-identical (it deliberately carries no FORGE markers).
+
+## Hybrid local content (Proposal 106 P2)
+
+`src/content/posts/` + `src/content/pages/` hold local `.mdx` files
+(frontmatter: `title`, `description`, `date`, `draft`) that merge under the
+WordPress collections: **WP wins on collision, local fills the gaps, drafts
+never ship**. The example post makes a scaffolded site build and render with
+**no WordPress connection** — a network-level failure degrades to local-only
+with a loud loader warning (HTTP-level errors still fail the build, never
+silent truncation).
 
 ## Render variant + OG cards (Proposal 104 Q4/Q5 — scaffold-time)
 

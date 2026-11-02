@@ -38,7 +38,7 @@ import { Command } from 'commander';
 import { emitDeployConfig } from '../lib/deploy-config.ts';
 import { analyzeSite, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
-import { PRESETS, PRESET_NAMES, RENDER_MODES } from '../lib/presets.ts';
+import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
 import { scaffold } from '../lib/scaffold.ts';
 import { SitesStore } from '../lib/sites.ts';
@@ -63,6 +63,31 @@ function failPreset( preset ) {
 
 function failRender( render ) {
 	fail( `Unknown render mode "${ render }" — use one of: ${ RENDER_MODES.join( ', ' ) }` );
+}
+
+function failThemePolicy( policy ) {
+	fail( `Unknown theme policy "${ policy }" — use one of: auto, light, dark, brand:<slug> (slug: a-z0-9-, e.g. brand:lenas-chair)` );
+}
+
+/** The clack-side policy validator mirrors presets.ts (the slug regex pair). */
+const THEME_POLICY_SLUG_REGEX = /^[a-z0-9-]+$/;
+
+function assertThemePolicy( policy ) {
+	if ( policy !== undefined && ! isValidThemePolicy( policy ) ) {
+		failThemePolicy( policy );
+	}
+	if ( policy === undefined ) {
+		return undefined;
+	}
+	// brand:<slug> — the slug half is re-checked here so a malformed value
+	// fails with the clack message even if the enum half passed.
+	if ( policy.startsWith( 'brand:' ) ) {
+		const slug = policy.slice( 'brand:'.length );
+		if ( ! slug || ! THEME_POLICY_SLUG_REGEX.test( slug ) ) {
+			failThemePolicy( policy );
+		}
+	}
+	return policy;
 }
 
 /** clack prompts only make sense on a real terminal — never in CI/e2e. */
@@ -217,6 +242,7 @@ async function runDeploy( profileRef, options ) {
 	if ( options.render && ! RENDER_MODES.includes( options.render ) ) {
 		failRender( options.render );
 	}
+	assertThemePolicy( options.themePolicy );
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
 
@@ -234,6 +260,7 @@ async function runDeploy( profileRef, options ) {
 			render: options.render,
 			surfaces: options.ogImages ? { ogImages: true } : undefined,
 			agents: options.agents,
+			themePolicy: options.themePolicy,
 		} );
 		console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 		for ( const warning of result.warnings ) {
@@ -322,6 +349,7 @@ async function runScaffold( profileRef, options ) {
 	if ( options.render && ! RENDER_MODES.includes( options.render ) ) {
 		failRender( options.render );
 	}
+	assertThemePolicy( options.themePolicy );
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
 
@@ -343,6 +371,7 @@ async function runScaffold( profileRef, options ) {
 		render: options.render,
 		surfaces: options.ogImages ? { ogImages: true } : undefined,
 		agents: options.agents,
+		themePolicy: options.themePolicy,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 	for ( const collection of result.manifest.collections ) {
@@ -421,6 +450,7 @@ async function runWizard( url, options ) {
 	if ( options.render && ! RENDER_MODES.includes( options.render ) ) {
 		failRender( options.render );
 	}
+	assertThemePolicy( options.themePolicy );
 	// Interactive target prompt (clack text) when the flag is missing on a
 	// TTY; a hard error otherwise (the old CLI required it, and CI does).
 	let target = options.target;
@@ -473,6 +503,33 @@ async function runWizard( url, options ) {
 					if ( isCancel( chosen ) ) return null;
 					return chosen;
 				},
+				selectThemePolicy: async ( suggested ) => {
+					// The site-level theme decision (105 §4), default auto.
+					const chosen = await select( {
+						message: 'Theme policy (site-level; auto respects the visitor preference):',
+						initialValue: suggested,
+						options: [
+							{ value: 'auto', label: 'auto', hint: 'stored preference → system → default (the default)' },
+							{ value: 'light', label: 'light', hint: 'forced light — the toggle disables' },
+							{ value: 'dark', label: 'dark', hint: 'forced dark — the toggle disables' },
+							{ value: 'brand', label: 'brand:<slug>', hint: 'force a registered brand theme' },
+						],
+					} );
+					if ( isCancel( chosen ) ) return null;
+					if ( chosen === 'brand' ) {
+						const slugAnswer = await text( {
+							message: 'Brand theme slug (a-z0-9-):',
+							placeholder: 'lenas-chair',
+						} );
+						if ( isCancel( slugAnswer ) ) return null;
+						const slug = String( slugAnswer ?? '' ).trim();
+						if ( ! slug || ! THEME_POLICY_SLUG_REGEX.test( slug ) ) {
+							fail( `Invalid brand slug "${ slug }" — must match a-z0-9- (e.g. lenas-chair).` );
+						}
+						return `brand:${ slug }`;
+					}
+					return chosen;
+				},
 				confirmScaffold: async ( preset, targetDir ) => {
 					const ok = await confirm( {
 						message: `Scaffold the ${ preset } preset into ${ targetDir }?`,
@@ -496,6 +553,7 @@ async function runWizard( url, options ) {
 			render: options.render,
 			ogImages: options.ogImages === true,
 			agents: options.agents,
+			themePolicy: options.themePolicy,
 			ui,
 			// Local-dev opt-in only — the MCP surface never sets this.
 			allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
@@ -549,6 +607,7 @@ program
 	.option( '--to <mode>', 'deploy mode', 'github-pages' )
 	.option( '--preset <name>', 'blog | storefront | minimal (default: suggested from the analysis)' )
 	.option( '--render <mode>', 'static | ssr (default: static; prompted for storefront on a TTY)' )
+	.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (default: auto)' )
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
 	.option( '--build', 'run npm install + astro build before finishing' )
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
@@ -580,6 +639,7 @@ program
 	.option( '--public', 'make the repository public (default: private)' )
 	.option( '--preset <name>', 'blog | storefront | minimal (applied when scaffolding)' )
 	.option( '--render <mode>', 'static | ssr (applied when scaffolding)' )
+	.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (applied when scaffolding)' )
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
 	.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
@@ -653,6 +713,7 @@ function scaffoldOptions( cmd ) {
 		.option( '--template <nameOrPath>', 'built-in template name or a directory path' )
 		.option( '--preset <name>', 'blog | storefront | minimal' )
 		.option( '--render <mode>', 'static | ssr (default: the preset\'s render mode, static)' )
+		.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (default: auto)' )
 		.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
 		.option( '--overwrite', 'replace a non-forge target directory' )
 		.option( '--check', 'verify collection sizes against the page caps (no scaffold)' )

@@ -64,6 +64,25 @@ export interface Product {
 	updatedAt: string;
 	/** Publication status — 'publish' | 'draft' (native) or any WP post status (woo). */
 	status?: string;
+	/** Variable-product children (106 §1.1) — single-doc GETs only, listings stay flat. */
+	variants?: ProductVariant[];
+}
+
+/** One attribute/value pair on a variant (ordered as the option order). */
+export interface ProductVariantAttribute {
+	name: string;
+	value: string;
+}
+
+/** Product variant (106 §1.1) — absent `variants` = simple product. */
+export interface ProductVariant {
+	id: number;
+	sku: string;
+	price: number;
+	oldPrice: number | null;
+	stock: number | null;
+	attributes: ProductVariantAttribute[];
+	image: string | null;
 }
 
 /** Category document (mirrors the bridge CategoryTransformer output). */
@@ -104,6 +123,35 @@ export interface Carousel {
 		image: string;
 		promotion: Promotion | null;
 	}>;
+}
+
+/** CMS content document (106 §1.2 — content/pages + content/posts). */
+export interface ContentDoc {
+	id: number;
+	slug: string;
+	title: string;
+	excerpt: string;
+	/** Raw post content (as stored upstream). */
+	content: string;
+	/** `the_content`-filtered HTML (falls back to `content` when empty). */
+	contentRendered: string;
+	type: 'page' | 'post';
+	featuredImage: string | null;
+	seoTitle: string;
+	seoDescription: string;
+	category: TermRef | null;
+	createdAt: string;
+	updatedAt: string;
+	status?: string;
+}
+
+/** Shop globals document (106 §1.3 — globals/shop). */
+export interface ShopDoc {
+	checkoutUrl: string;
+	cartUrl: string;
+	currency: string;
+	currencySymbol: string;
+	updatedAt: string;
 }
 
 /** Auth payloads (bridge B4 — owner decision Q5: accounts in v1). */

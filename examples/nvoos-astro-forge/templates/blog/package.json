@@ -11,6 +11,7 @@
 		"check": "astro check"
 	},
 	"dependencies": {
+		"@astrojs/mdx": "^8.1.2",
 		"@astrojs/node": "^11.1.9",
 		"astro": "^7.4.4",
 		"limax": "^4.2.3",

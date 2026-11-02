@@ -1,6 +1,6 @@
 ---
 // ---------------------------------------------------------------------------
-// ThemeToggle — ADS theme switcher (Proposal 095, hardened by 104).
+// ThemeToggle — ADS theme switcher (Proposal 095, hardened by 104 + 105).
 //
 // State source is localStorage (via the theme module), NEVER the DOM
 // attribute — the attribute is wiped on every ClientRouter swap while the
@@ -9,6 +9,13 @@
 //   - > 3 themes: button opens a role=menu list (bento/Starlight pattern)
 // The theme list derives from the ADS bundle (lib/theme/registry), not a
 // hardcoded array — brand themes created via /mcp show up on the next build.
+//
+// Proposal 105 §3: when the theme POLICY is forced (light/dark/brand), the
+// toggle disables (aria-disabled), the menu stays hidden, the label shows
+// the forced theme name and a visible note explains the override. The guard
+// lives inside the EXISTING document-delegated handler (no new bindings —
+// the 104 Defect A lesson); the policy payload is read from the inline
+// [data-theme-policy] JSON rendered by the layout.
 // ---------------------------------------------------------------------------
 
 import { ALL_THEMES } from '../lib/theme/registry';
@@ -40,6 +47,7 @@ const cycleOnly = ALL_THEMES.length <= 3;
 			))}
 		</ul>
 	)}
+	<span class="theme-toggle__note" data-theme-forced-note hidden>Theme is set by the store</span>
 </div>
 
 <style>
@@ -56,6 +64,11 @@ const cycleOnly = ALL_THEMES.length <= 3;
 		padding: 0.25rem 0.6rem;
 		border-radius: var(--nv-radius);
 		cursor: pointer;
+	}
+
+	.theme-toggle button:disabled {
+		cursor: not-allowed;
+		opacity: 0.65;
 	}
 
 	.theme-toggle__menu {
@@ -94,6 +107,19 @@ const cycleOnly = ALL_THEMES.length <= 3;
 		background: var(--nv-surface-alt);
 		font-weight: 600;
 	}
+
+	.theme-toggle__note {
+		position: absolute;
+		top: calc(100% + 0.35rem);
+		right: 0;
+		font-size: 0.75rem;
+		color: var(--nv-muted);
+		white-space: nowrap;
+	}
+
+	.theme-toggle__note[hidden] {
+		display: none;
+	}
 </style>
 
 <script>
@@ -112,18 +138,62 @@ const cycleOnly = ALL_THEMES.length <= 3;
 		return resolveStoredTheme(localStorage, mediaQuery(), ALL_THEMES);
 	}
 
+	/** The policy payload inlined by the layout (Proposal 105 §3). */
+	function readPolicy(): { resolved?: { forced?: boolean; theme?: string } } | null {
+		try {
+			const node = document.querySelector('script[data-theme-policy]');
+			if (!node) {
+				return null;
+			}
+			return JSON.parse(node.textContent || 'null');
+		} catch {
+			/* malformed policy payload */
+		}
+		return null;
+	}
+
+	/** The forced theme, or null when the policy leaves the choice open. */
+	function forcedTheme(): string | null {
+		const resolved = readPolicy()?.resolved;
+		if (!resolved || !resolved.forced) {
+			return null;
+		}
+		return resolved.theme ?? null;
+	}
+
 	function syncAll(): void {
-		const theme = currentTheme();
+		const forced = forcedTheme();
+		const toggle = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+		const note = document.querySelector<HTMLElement>('[data-theme-forced-note]');
+		const menu = document.querySelector<HTMLElement>('[data-theme-menu]');
+		const theme = forced ?? currentTheme();
 		const label = document.querySelector('[data-theme-label]');
 		if (label) {
 			label.textContent = theme;
 		}
+		if (toggle) {
+			toggle.setAttribute('aria-pressed', String(theme !== 'light'));
+			if (forced) {
+				toggle.disabled = true;
+				toggle.setAttribute('aria-disabled', 'true');
+				toggle.removeAttribute('aria-haspopup');
+			} else {
+				toggle.disabled = false;
+				toggle.removeAttribute('aria-disabled');
+				if (!cycleOnly) {
+					toggle.setAttribute('aria-haspopup', 'menu');
+				}
+			}
+		}
+		if (menu && forced) {
+			menu.hidden = true;
+		}
+		if (note) {
+			note.hidden = !forced;
+		}
 		document.querySelectorAll<HTMLElement>('[data-theme-choice]').forEach((item) => {
 			item.setAttribute('aria-checked', String(item.dataset.themeChoice === theme));
 		});
-		document
-			.querySelector<HTMLButtonElement>('[data-theme-toggle]')
-			?.setAttribute('aria-pressed', String(theme !== 'light'));
 	}
 
 	function choose(theme: string): void {
@@ -142,6 +212,10 @@ const cycleOnly = ALL_THEMES.length <= 3;
 	// re-synced on every swap. The layout boot re-applies the attribute;
 	// reading storage here keeps ordering irrelevant.
 	document.addEventListener('click', (event) => {
+		// Forced policy guard (105 §3): the store owns the theme.
+		if (forcedTheme()) {
+			return;
+		}
 		const target = event.target as Element | null;
 		if (target?.closest<HTMLButtonElement>('[data-theme-toggle]')) {
 			if (cycleOnly) {

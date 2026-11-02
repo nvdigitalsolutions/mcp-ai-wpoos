@@ -61,10 +61,18 @@ export interface DiscoveryReport {
 	seoPlugins: string[];
 }
 
-/** Standard field pruning per kind — the anti-N+1 discipline. */
+/** Standard field pruning per kind — the anti-N+1 discipline.
+ * Posts/pages carry the optional SEO-meta fields (Rank Math + Yoast) —
+ * absent plugins/fields are tolerated by the loader (106 §1.2). */
 const FIELDS: Record<CollectionAnalysis['kind'], string[]> = {
-	post: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
-	page: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
+	post: [
+		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+		'rank_math_title', 'rank_math_description', 'yoast_head_json',
+	],
+	page: [
+		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+		'rank_math_title', 'rank_math_description', 'yoast_head_json',
+	],
 	product: [
 		'id',
 		'name',

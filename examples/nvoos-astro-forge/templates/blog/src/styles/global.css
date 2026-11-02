@@ -20,6 +20,25 @@
 }
 /* FORGE:tokens-end */
 
+/* -------------------------------------------------------------------------
+   Runtime theming (Proposal 104/105): the theme boot applies data-theme /
+   data-contrast on <html>; these overrides ride on top of the (possibly
+   tokens_apply-rewritten) :root block. `light` is implicit (absent
+   data-theme) — the dark palette mirrors the ADS dark layer.
+   ------------------------------------------------------------------------- */
+[data-theme='dark'] {
+	--forge-ink: #f5f5f4;
+	--forge-muted: #a3a3a3;
+	--forge-surface: #171717;
+	--forge-surface-alt: #262626;
+	--forge-line: #3f3f3f;
+}
+
+[data-contrast='high'] {
+	--forge-muted: var(--forge-ink);
+	--forge-line: var(--forge-ink);
+}
+
 * {
 	box-sizing: border-box;
 }

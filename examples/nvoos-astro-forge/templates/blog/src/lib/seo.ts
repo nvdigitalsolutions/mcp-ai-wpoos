@@ -9,6 +9,7 @@
 // ---------------------------------------------------------------------------
 
 import type {
+	Article,
 	BlogPosting,
 	BreadcrumbList,
 	Offer,
@@ -17,7 +18,7 @@ import type {
 	WithContext,
 } from 'schema-dts';
 
-export type StructuredKind = 'WebPage' | 'BlogPosting' | 'Product';
+export type StructuredKind = 'WebPage' | 'BlogPosting' | 'Article' | 'Product';
 
 /** One schema.org Offer — the only offer shape the template renders. */
 export interface OfferInput {
@@ -36,6 +37,18 @@ export interface WebPageInput {
 export interface BlogPostingInput {
 	url?: string;
 	headline?: string;
+	description?: string;
+	datePublished?: string;
+	dateModified?: string;
+	author?: string;
+	image?: string;
+}
+
+/** The Article base shape (BlogPosting is the article subtype posts use). */
+export interface ArticleInput {
+	url?: string;
+	headline?: string;
+	description?: string;
 	datePublished?: string;
 	dateModified?: string;
 	author?: string;
@@ -53,11 +66,12 @@ export interface ProductInput {
 
 export function jsonLdFor(kind: 'WebPage', input: WebPageInput): WithContext<WebPage>;
 export function jsonLdFor(kind: 'BlogPosting', input: BlogPostingInput): WithContext<BlogPosting>;
+export function jsonLdFor(kind: 'Article', input: ArticleInput): WithContext<Article>;
 export function jsonLdFor(kind: 'Product', input: ProductInput): WithContext<Product>;
 export function jsonLdFor(
 	kind: StructuredKind,
-	input: WebPageInput | BlogPostingInput | ProductInput
-): WithContext<WebPage | BlogPosting | Product> {
+	input: WebPageInput | BlogPostingInput | ArticleInput | ProductInput
+): WithContext<WebPage | BlogPosting | Article | Product> {
 	switch (kind) {
 		case 'WebPage': {
 			const page = input as WebPageInput;
@@ -76,11 +90,27 @@ export function jsonLdFor(
 				'@context': 'https://schema.org',
 				'@type': 'BlogPosting',
 				...(post.headline ? { headline: post.headline } : {}),
+				...(post.description ? { description: post.description } : {}),
 				...(post.datePublished ? { datePublished: post.datePublished } : {}),
 				...(post.dateModified ? { dateModified: post.dateModified } : {}),
 				...(post.url ? { url: post.url } : {}),
 				...(post.author ? { author: { '@type': 'Person', name: post.author } } : {}),
 				...(post.image ? { image: post.image } : {}),
+			};
+			return doc;
+		}
+		case 'Article': {
+			const article = input as ArticleInput;
+			const doc: WithContext<Article> = {
+				'@context': 'https://schema.org',
+				'@type': 'Article',
+				...(article.headline ? { headline: article.headline } : {}),
+				...(article.description ? { description: article.description } : {}),
+				...(article.datePublished ? { datePublished: article.datePublished } : {}),
+				...(article.dateModified ? { dateModified: article.dateModified } : {}),
+				...(article.url ? { url: article.url } : {}),
+				...(article.author ? { author: { '@type': 'Person', name: article.author } } : {}),
+				...(article.image ? { image: article.image } : {}),
 			};
 			return doc;
 		}
