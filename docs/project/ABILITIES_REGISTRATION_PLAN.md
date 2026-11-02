@@ -1,10 +1,27 @@
 # Plan: Register ~1,000 NV oOS Tools as WordPress Abilities
 
-> **Version:** 1.0 · **Date:** 2026-07-02 · **Status:** Draft for Review
+> **Version:** 1.1 · **Date:** 2026-07-02 · **Status:** Draft for Review — interop verified 2026-11-02
 >
 > **Goal:** Make every NV oOS tool discoverable by any MCP client through the
 > official WordPress Abilities API → MCP Adapter pipeline, while keeping the
 > existing NV oOS MCP endpoint fully operational as a superset.
+>
+> **2026-11-02 status update:** The pipeline was verified end-to-end in the
+> Docker test env (WP 7.1.4 + mcp-adapter 0.7.1 + NV oOS 1.2.15). The
+> `nvoos/*` abilities are discoverable and executable through the official
+> adapter's default server and its three meta-tools, and through a custom
+> server registered on `mcp_adapter_init` (the Elementor-proof pattern —
+> Elementor 4.3+ disables the adapter's default server via the
+> `mcp_adapter_create_default_server` filter). Open question #3 is resolved:
+> WP_Error returns are handled natively by both the adapter (isError) and
+> the core REST run controller, so the bridge now passes them through raw
+> (`wp_mcp_ai_ability_wp_error_passthrough`, default on). The adapter's
+> model also evolved since this plan was drafted: the default server exposes
+> abilities through three meta-tools (layered discovery, not per-ability
+> tools/list entries), supports dual-era schemas (2025-11-25 + 2026-07-28),
+> and adds a WP-CLI STDIO transport. See
+> docs/features/abilities-api.md#verified-interop-with-the-official-mcp-adapter
+> for the full verification record and repeatable test recipe.
 
 ---
 
@@ -535,8 +552,10 @@ optionally delegating to it.
 ## 8. Open Questions
 
 1. **Should the bridge execute callback re-use the tool instance or create a new one per call?**
-   - *Recommendation:* Re-use the instance. Tools are stateless between calls.
-     The `$context` array is built fresh each time from `get_current_user_id()`.
+   - *Status:* **RESOLVED (2026-11-02)** — the bridge re-resolves the tool from
+     the registry lazily on first call (`build_execute_callback()`), which is
+     the recommendation's safer variant: no cross-call instance retention, no
+     eager tool loading during `wp_abilities_api_init`.
    - *Risk:* If a tool caches state internally (bug), it could leak across calls.
      Audit existing tools for accidental instance-state caching.
 
@@ -549,9 +568,21 @@ optionally delegating to it.
      The `output_schema` can be generic for dynamic tools.
 
 3. **Should the NV oOS `execute()` method be modified to accept a flag indicating "called via Ability"?**
-   - This lets tools adapt behavior (e.g., different logging, different error
-     format). Add `'ability_context' => true` to the `$context` array.
-   - *Recommendation:* Yes, add the flag. It's minimal and provides flexibility.
+   - *Status:* **RESOLVED (2026-11-02)** — implemented; the bridge builds a
+     fresh `$context` per call with `user_id`, `ability_context`, and
+     `is_ability_call` (`WP_MCP_AI_Ability_Bridge::build_execute_callback()`),
+     and the tool instance is re-resolved from the registry lazily on first
+     call. Tools can read `$context['is_ability_call']` to adapt behaviour.
+
+3b. **How does the Abilities API handle `WP_Error` returns from `execute_callback`?**
+   - *Status:* **RESOLVED (2026-11-02, verified live).** The core REST run
+     controller (`WP_REST_Abilities_V1_Run_Controller::execute_ability()`)
+     detects `is_wp_error( $result )` and returns it as a REST error body
+     (HTTP 500 unless the error data carries a `status`). The official MCP
+     Adapter marks the tool result `isError: true` and surfaces the message.
+     The bridge therefore returns the raw `WP_Error` by default; the legacy
+     `{success, message, code}` array envelope remains available behind the
+     `wp_mcp_ai_ability_wp_error_passthrough` filter.
 
 4. **Do we need a `composer.json` dependency on `wordpress/abilities-api`?**
    - For pre-6.9 sites using Composer: yes, as a `suggest` (not `require`, since
