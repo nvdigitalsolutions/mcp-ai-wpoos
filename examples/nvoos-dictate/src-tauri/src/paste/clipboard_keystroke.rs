@@ -11,9 +11,12 @@
 
 use std::time::Duration;
 
+#[cfg(not(windows))]
 use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 
-use crate::error::{AppError, AppResult};
+#[cfg(not(windows))]
+use crate::error::AppError;
+use crate::error::AppResult;
 use crate::paste::backend::PasteBackend;
 
 pub struct ClipboardKeystrokeBackend {
@@ -57,6 +60,31 @@ impl PasteBackend for ClipboardKeystrokeBackend {
     }
 }
 
+/// Inject the paste keystroke into the focused window.
+///
+/// Windows: a REAL Ctrl+V (VK_CONTROL + VK_V via keybd_event). WebView2 and
+/// Chromium strictly match the native Ctrl+V accelerator, so a unicode-
+/// character injection (`enigo::Key::Unicode('v')` with Ctrl held) is ignored
+/// by Chromium-based surfaces — native edit controls (Notepad etc.) accept it,
+/// which is why dictation worked everywhere except the NV oOS console window.
+/// Other platforms keep the enigo path (macOS uses the CGEvent backend).
+#[cfg(windows)]
+fn inject_ctrl_v() -> AppResult<()> {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{keybd_event, KEYEVENTF_KEYUP, VK_CONTROL};
+
+    // 'V' has no named VIRTUAL_KEY constant in the windows crate; 0x56 is VK_V.
+    const VK_V: u8 = 0x56;
+
+    unsafe {
+        keybd_event(VK_CONTROL.0 as u8, 0, Default::default(), 0);
+        keybd_event(VK_V, 0, Default::default(), 0);
+        keybd_event(VK_V, 0, KEYEVENTF_KEYUP, 0);
+        keybd_event(VK_CONTROL.0 as u8, 0, KEYEVENTF_KEYUP, 0);
+    }
+    Ok(())
+}
+
+#[cfg(not(windows))]
 fn inject_ctrl_v() -> AppResult<()> {
     let mut enigo = Enigo::new(&Settings::default())
         .map_err(|e| AppError::Paste(format!("input backend init failed: {e}")))?;
