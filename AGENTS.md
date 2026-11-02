@@ -2,7 +2,7 @@
 
 > This document is the single source of truth for every AI coding agent that operates in this repository. It describes who they are, what they can do, which context files they load, and how they coordinate.
 >
-> Last reviewed: **August 15, 2026** · Version: **1.12**
+> Last reviewed: **November 3, 2026** · Version: **1.13** (added the parallel-implementation-cluster coordination pattern, §4)
 
 ### Related Files
 
@@ -235,6 +235,18 @@ Not every change requires the full 10-phase workflow:
 | **Small Feature** | Orchestrator, Developer, QA | 0, 4, 5, 6, 7, 9 |
 | **Medium Feature** | Orchestrator, Researcher, Developer, QA | 0, 1–7, 9 |
 | **Major Feature** | Full 6-agent team | 0–9 |
+
+### Parallel implementation clusters (the 105/106 pattern)
+
+When one proposal spans several surfaces (e.g. Proposals 105 + 106 across the bridge addon, the velocity storefront, and the forge), run **parallel sub-agents on disjoint write scopes** with a coordinator integrating at the end. Verified 2026-11-03 (PR #7400: 4 cluster commits, all gates green). The rules:
+
+1. **The coordinator fixes the contract first.** Exact envelope shapes, file inventories, validation commands, and pitfalls go into the implementation-plan doc(s) BEFORE spawning — every agent implements against the same frozen contract, so cross-surface parity (fixture server ↔ bridge REST, template copies ↔ storefront modules) holds by construction.
+2. **Split write scopes by surface, not by proposal.** Proposals share files within a surface (`Plugin.php`, `client.ts`, `content.config.ts`), so splitting by proposal causes conflicts. Disjoint surface scopes (bridge / velocity / forge) make parallel editing in the shared worktree safe; the coordinator alone touches shared files (docs, skills, workflows).
+3. **Prompts must be fully self-contained.** Sub-agents see no conversation history — include: repo path, the plan-doc file paths to read first, the exact write scope, the baseline test counts to preserve, the repo pitfalls that apply, an explicit "do NOT run git" instruction, and "ignore the foreign uncommitted files in the worktree".
+4. **Each agent validates its own gates; the coordinator re-validates the seams.** Agents run their full suites and report exact numbers. The coordinator then checks what tests cannot see: the fixture/golden parity, generated-artifact drift gates, canonical twin files (e.g. the two `policy.ts` copies), and the cross-cluster bundles (e.g. `public/manage-assets/` must be regenerated from a changed bridge SPA — commit source + bundle together).
+5. **The coordinator owns the git work.** Explicit-path staging per cluster, commits ordered so each leaves the tree coherent — contract first (bridge), then consumers (velocity), then the generator (forge), then docs — one branch, one PR against `alpha-working`. Foreign in-flight files are never staged.
+6. **Deviation reports are fed back into skills.** Every agent reports files changed, exact validation output, anything not run, and deviations with justification; the coordinator folds the reusable gotchas into the ops skills as a follow-up commit — otherwise they die in the session transcript.
+7. **Unassigned plan items are the coordinator's.** Phase items not delegated to any surface agent (e.g. 105's MCP preview semantics) are implemented and validated by the coordinator before committing, never dropped silently.
 
 ---
 
