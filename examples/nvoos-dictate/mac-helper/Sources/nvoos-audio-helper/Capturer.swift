@@ -14,6 +14,8 @@ enum HelperError: LocalizedError {
     case noDisplay
     case shareableContentUnavailable
     case streamConfigurationFailed(String)
+    case screenshotFailed
+    case imageDecodeFailed
 
     var errorDescription: String? {
         switch self {
@@ -23,6 +25,10 @@ enum HelperError: LocalizedError {
             return "ScreenCaptureKit content unavailable (Screen Recording permission?)"
         case .streamConfigurationFailed(let message):
             return "stream configuration failed: \(message)"
+        case .screenshotFailed:
+            return "screenshot capture failed (Screen Recording permission?)"
+        case .imageDecodeFailed:
+            return "image decode failed"
         }
     }
 }

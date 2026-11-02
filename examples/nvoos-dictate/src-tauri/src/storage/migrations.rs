@@ -42,5 +42,22 @@ pub fn migrations() -> Migrations<'static> {
         // Appended (never insert mid-list): `rusqlite_migration` keys applied
         // migrations by position, so reordering breaks existing databases.
         M::up("ALTER TABLE transcripts ADD COLUMN media TEXT NOT NULL DEFAULT '';"),
+        // Snippet OCR history (Proposal 100). Off by default (`retain_history`);
+        // the table is created unconditionally so enabling the setting never
+        // needs a migration.
+        M::up(
+            "CREATE TABLE snippets (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                text_raw   TEXT NOT NULL,
+                text_clean TEXT NOT NULL,
+                engine     TEXT NOT NULL DEFAULT '',
+                language   TEXT NOT NULL DEFAULT '',
+                region_w   INTEGER NOT NULL DEFAULT 0,
+                region_h   INTEGER NOT NULL DEFAULT 0,
+                ocr_ms     INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX idx_snippets_created ON snippets(created_at);",
+        ),
     ])
 }

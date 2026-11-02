@@ -31,6 +31,13 @@ name = "agent_probe"
 path = "examples/agent_probe.rs"
 required-features = ["agent"]
 
+# Screenshot-OCR de-risk spike (Proposal 100, M0): WinRT OcrEngine leg
+# (default features) + RapidOCR-ONNX leg (behind `snippet-onnx`).
+[[example]]
+name = "snippet_ocr_probe"
+path = "examples/snippet_ocr_probe.rs"
+required-features = ["snippet"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -119,6 +126,18 @@ windows = { version = "0.58", features = [
   "Win32_System_Threading",
   "Win32_UI_Input_KeyboardAndMouse",
   "Win32_UI_WindowsAndMessaging",
+  # Snippet OCR (Proposal 100): GDI virtual-screen freeze + the WinRT
+  # Windows.Media.Ocr stack (PowerToys Text Extractor's engine). Feature
+  # names are namespace-derived (Media_Ocr = Windows.Media.Ocr); a missing
+  # feature surfaces as "cannot find module" at compile time.
+  "Win32_Graphics_Gdi",
+  "Win32_System_WinRT",
+  "Foundation",
+  "Foundation_Collections",
+  "Globalization",
+  "Graphics_Imaging",
+  "Storage_Streams",
+  "Media_Ocr",
 ] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
@@ -165,6 +184,15 @@ camera = ["dep:nokhwa", "dep:image"]
 vision = ["camera", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
 # Browser agent (dictated web control) — Phase 1 adds the CDP client.
 agent = ["dep:chromiumoxide", "dep:futures"]
+# Screen-to-text snippet OCR (Proposal 100): frozen-screen region capture,
+# the selection overlay, and the platform-native OCR engines (Windows.Media.Ocr
+# on Windows, Apple Vision via the existing mac-helper sidecar). `image`
+# covers the in-memory preview PNG + crop encoding (never written to disk).
+snippet = ["dep:image"]
+# Portable RapidOCR (PP-OCR det+rec) ONNX backend for `snippet` — shares the
+# ort/ort-sys/ndarray16 pins with `vision` (rapid-ocr-rs is NOT used: it pulls
+# its own ort version and would drift the rc.9 pin).
+snippet-onnx = ["snippet", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
 
 [patch.crates-io]
 whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

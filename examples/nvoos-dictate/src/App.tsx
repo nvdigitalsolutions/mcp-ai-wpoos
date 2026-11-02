@@ -6,6 +6,7 @@ import SettingsView from './views/Settings';
 import HistoryView from './views/History';
 import MeetingsView from './views/Meetings';
 import OverlayView from './views/Overlay';
+import SnippetView from './views/Snippet';
 import DiagnosticsView from './views/Diagnostics';
 
 type Tab = 'home' | 'assistant' | 'history' | 'meetings' | 'diagnostics' | 'settings';
@@ -37,6 +38,12 @@ export default function App() {
 
   if (kind === 'overlay') {
     return <OverlayView event={dictate} />;
+  }
+
+  // The snippet selection overlay is self-contained (its own event listener
+  // inside SnippetView); it never polls status.
+  if (kind === 'snippet') {
+    return <SnippetView />;
   }
 
   return (

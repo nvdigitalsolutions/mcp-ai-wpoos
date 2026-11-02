@@ -94,7 +94,12 @@ impl From<keyring::Error> for AppError {
     }
 }
 
-#[cfg(feature = "vision")]
+#[cfg(any(
+    feature = "vision",
+    feature = "moonshine",
+    feature = "silero-vad",
+    feature = "snippet-onnx"
+))]
 impl From<ort::Error> for AppError {
     fn from(e: ort::Error) -> Self {
         AppError::Model(e.to_string())

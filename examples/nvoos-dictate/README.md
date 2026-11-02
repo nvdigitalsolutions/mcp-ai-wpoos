@@ -34,6 +34,14 @@ repo root for the full design).
   relabels detection boxes with a local vision-language model (LM Studio /
   Ollama serving Qwen2.5-VL) for accurate names instead of generic COCO labels.
   Pixels never leave the machine; no facial recognition or identity.
+- **Screen OCR** (feature `snippet`, Proposal 100) — press **Win+Shift+T**
+  (macOS: ⌘⇧T) anywhere to freeze the screen, drag a region over it, and
+  the text in that region lands on the clipboard (optionally auto-pasted),
+  entirely on-device. Native engines need **no model download**:
+  Windows OCR (WinRT, the PowerToys Text Extractor engine) on Windows,
+  Apple Vision (Live Text) via the bundled sidecar on macOS. An opt-in
+  RapidOCR (PP-OCR) ONNX backend (`snippet-onnx`) adds multilingual packs.
+  The frozen frame lives in memory only — never written to disk.
 - **Meeting transcription** — explicit record (mic + system audio on
   Windows via WASAPI loopback), local transcription, audio deleted after
   unless you opt into retention.
@@ -86,6 +94,8 @@ cargo build --release --features silero-vad         # neural Silero VAD (model: 
 cargo build --release --features mcp                # local MCP stdio server (nvoos-dictate --mcp)
 cargo build --release --features camera             # live webcam preview (nokhwa)
 cargo build --release --features vision             # object detection + tracking (implies camera)
+cargo build --release --features snippet            # screen OCR (native engines, zero-download)
+cargo build --release --features snippet-onnx       # + RapidOCR (PP-OCR) ONNX packs (implies snippet)
 ```
 
 - **parakeet** — API verified against sherpa-onnx 1.13.8 (the crate's own
@@ -135,6 +145,8 @@ Exposes `get_dictation_history`, `get_dictionary`, `transcribe_meeting`;
 ```bash
 cargo test                          # golden cleanup, storage, nvoos validation
 cargo test --features mcp           # + MCP tool handler tests
+cargo test --features snippet       # + snippet capture/OCR/selection tests
+cargo test --features snippet-onnx  # + RapidOCR decode tests
 cargo run --example transcribe_file -- path/to/audio.m4a --engine whisper
 npm run build                       # webview typecheck + build
 npm run test:ui                     # Playwright smoke (dev server on :1420)

@@ -311,6 +311,78 @@ export default function DiagnosticsView() {
       </section>
 
       <section className="card">
+        <h2>Screen OCR (snippet)</h2>
+        {info.snippet.available ? (
+          <ul className="kv">
+            <li>
+              <span>Compiled / enabled</span>
+              <span className={badge(info.snippet.enabled)}>
+                {info.snippet.enabled ? 'enabled' : 'compiled, disabled'}
+              </span>
+            </li>
+            <li>
+              <span>Hotkey / engine</span>
+              <span>
+                {info.snippet.hotkey || '(disabled)'} · {info.snippet.engine}
+                {info.snippet.language ? ` · ${info.snippet.language}` : ''}
+              </span>
+            </li>
+            <li>
+              <span>State</span>
+              <span className={badge(info.snippet.phase === 'idle')}>
+                {info.snippet.phase}
+              </span>
+            </li>
+            <li>
+              <span>Captures / recognitions</span>
+              <span>
+                {info.snippet.captures} / {info.snippet.recognitions}
+              </span>
+            </li>
+            <li>
+              <span>Last recognition</span>
+              <span>{info.snippet.last_ocr_ms} ms</span>
+            </li>
+            {info.snippet.ocr_languages.length > 0 && (
+              <li>
+                <span>Windows OCR languages</span>
+                <span>{info.snippet.ocr_languages.join(', ')}</span>
+              </li>
+            )}
+            {info.snippet.errors > 0 && (
+              <li>
+                <span>Errors</span>
+                <span className="badge warn">
+                  {info.snippet.errors} — {info.snippet.last_error ?? 'unknown'}
+                </span>
+              </li>
+            )}
+          </ul>
+        ) : (
+          <p className="muted">Screen OCR is not compiled into this build.</p>
+        )}
+        {info.snippet.available && info.snippet.onnx_available && (
+          <>
+            <h3>RapidOCR language packs</h3>
+            <ul className="kv">
+              {info.snippet.models.map((m) => (
+                <li key={m.id}>
+                  <span>{m.label}</span>
+                  <span className={badge(m.installed)}>
+                    {m.installed ? 'installed' : `not installed (${m.size_mb} MB)`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="muted">
+              Snippet OCR runs entirely on-device — the frozen frame never leaves memory and is
+              never written to disk.
+            </p>
+          </>
+        )}
+      </section>
+
+      <section className="card">
         <h2>Browser agent</h2>
         {info.agent.available ? (
           <ul className="kv">

@@ -18,8 +18,12 @@ $markers = @(
     @{ name = "camera (nokhwa)"; re = "nokhwa" },
     @{ name = "agent";           re = "nvoos-agent" },
     @{ name = "mcp";             re = "mcp" },
+    @{ name = "snippet (OCR)";   re = "snippet" },
     @{ name = "Assistant SPA";   re = "Assistant" },
-    @{ name = "moonshine (should be ABSENT)"; re = "moonshine" }
+    # The plain "moonshine" token also matches sherpa-onnx's own model-zoo
+    # strings (it supports the Moonshine model family), so assert on the
+    # app-specific engine error text instead.
+    @{ name = "moonshine engine (should be ABSENT)"; re = "the moonshine engine is a documented spike" }
 )
 
 Write-Output ("Exe size: {0:N1} MB" -f ($bytes.Length / 1MB))

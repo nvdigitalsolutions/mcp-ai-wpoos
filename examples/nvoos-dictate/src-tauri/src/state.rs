@@ -108,6 +108,9 @@ pub struct AppState {
     /// Resident browser-agent controller. The `AgentController` is always
     /// present (type-stable); its driver only runs behind the `agent` feature.
     pub agent: crate::agent::controller::AgentController,
+    /// Resident snippet-OCR controller (Proposal 100). Always present
+    /// (type-stable); capture/engines run behind the `snippet` features.
+    pub snippet: std::sync::Arc<crate::snippet::controller::SnippetController>,
     /// Resident STT engine (swapped on settings change).
     pub engine: RwLock<Option<Arc<dyn SttEngine>>>,
     pub paste: Arc<dyn PasteBackend>,
@@ -125,6 +128,7 @@ impl AppState {
             camera: Mutex::new(None),
             vision: Mutex::new(None),
             agent: crate::agent::controller::AgentController::new(),
+            snippet: std::sync::Arc::new(crate::snippet::controller::SnippetController::new()),
             engine: RwLock::new(None),
             paste: platform_backend(),
             recorder: Arc::new(MeetingRecorder::new(16000)),

@@ -50,6 +50,12 @@ pub struct StatusInfo {
     pub spa_configured: bool,
     /// The configured Pro SPA URL (empty when unset).
     pub spa_url: String,
+    /// Whether snippet OCR (Proposal 100) is compiled into this build.
+    pub snippet_available: bool,
+    /// The active snippet engine id (`winrt` | `sidecar` | `onnx` | `auto`).
+    pub snippet_engine: String,
+    /// The configured snippet hotkey (empty = disabled).
+    pub snippet_hotkey: String,
 }
 
 /// Reject commands invoked from any window other than the main one.
@@ -134,6 +140,9 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         polish: polish_summary(&settings),
         spa_configured: !settings.spa.url.trim().is_empty(),
         spa_url: settings.spa.url.clone(),
+        snippet_available: crate::snippet::available(),
+        snippet_engine: settings.snippet.engine.clone(),
+        snippet_hotkey: settings.snippet.hotkey.clone(),
     })
 }
 
@@ -247,6 +256,7 @@ pub struct DiagnosticsInfo {
     pub credentials: CredentialDiagnostics,
     pub vision: VisionDiagnostics,
     pub agent: AgentDiagnostics,
+    pub snippet: SnippetDiagnostics,
     pub last_dictation: Option<crate::dictation::LastDictationStats>,
 }
 
@@ -347,6 +357,28 @@ pub struct AgentDiagnostics {
     pub last_error: Option<String>,
 }
 
+/// Snippet OCR health (Proposal 100), mirroring the vision block.
+#[derive(Debug, Clone, Serialize)]
+pub struct SnippetDiagnostics {
+    pub available: bool,
+    pub enabled: bool,
+    pub hotkey: String,
+    pub engine: String,
+    pub language: String,
+    pub phase: String,
+    /// Installed Windows OCR languages (winrt) / empty elsewhere.
+    pub ocr_languages: Vec<String>,
+    pub captures: u64,
+    pub recognitions: u64,
+    pub last_ocr_ms: u64,
+    pub errors: u64,
+    pub last_error: Option<String>,
+    pub last_region: Option<crate::snippet::RegionRect>,
+    /// ONNX language packs + install state (empty without `snippet-onnx`).
+    pub models: Vec<crate::snippet::models::SnippetModelStatus>,
+    pub onnx_available: bool,
+}
+
 /// Full troubleshooting snapshot: hook health, capture device + live level,
 /// engine/model install state, credential presence, and the most recent
 /// dictation attempt's measured levels. No secrets ever leave the core.
@@ -415,6 +447,7 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
         },
         vision: vision_diagnostics(&state, &settings),
         agent: agent_diagnostics(&state, &settings),
+        snippet: snippet_diagnostics(&state, &settings),
         last_dictation: crate::dictation::last_dictation_stats(),
     })
 }
@@ -483,6 +516,33 @@ fn agent_diagnostics(state: &AppState, settings: &Settings) -> AgentDiagnostics 
         max_steps: settings.agent.max_steps,
         confirmation_required: settings.agent.confirmation_required,
         last_error: snap.last_error,
+    }
+}
+
+/// Build the snippet OCR diagnostics snapshot.
+fn snippet_diagnostics(state: &AppState, settings: &Settings) -> SnippetDiagnostics {
+    let controller = &state.snippet;
+    let phase = format!("{:?}", controller.phase()).to_lowercase();
+    #[cfg(all(windows, feature = "snippet"))]
+    let ocr_languages = crate::snippet::ocr_winrt::list_languages();
+    #[cfg(not(all(windows, feature = "snippet")))]
+    let ocr_languages = Vec::new();
+    SnippetDiagnostics {
+        available: crate::snippet::available(),
+        enabled: settings.snippet.enabled,
+        hotkey: settings.snippet.hotkey.clone(),
+        engine: settings.snippet.engine.clone(),
+        language: settings.snippet.language.clone(),
+        phase,
+        ocr_languages,
+        captures: controller.captures(),
+        recognitions: controller.recognitions(),
+        last_ocr_ms: controller.last_ocr_ms(),
+        errors: controller.error_count(),
+        last_error: controller.last_error(),
+        last_region: controller.last_region(),
+        models: crate::snippet::models::status_list(&state.models_dir()),
+        onnx_available: crate::snippet::onnx_available(),
     }
 }
 
@@ -1272,6 +1332,109 @@ pub async fn pick_media_file(window: tauri::Window) -> AppResult<Option<String>>
 pub fn cancel_dictation() {
     // No-op placeholder: cancellation is driven by the Esc hotkey. Kept as a
     // command so the overlay UI has a stable button surface.
+}
+
+// ---- Snippet OCR (Proposal 100) ------------------------------------------
+
+/// Whether snippet OCR is compiled into this build.
+#[tauri::command]
+pub fn snippet_available() -> bool {
+    crate::snippet::available()
+}
+
+/// The selection overlay reports its region (virtual-screen pixels). Called
+/// **from the snippet window** — deliberately NOT main-window-gated, but
+/// validated: only accepted while a frozen frame is active, and the rect is
+/// clamped inside the controller.
+#[tauri::command]
+pub fn snippet_region_selected(
+    state: State<'_, AppState>,
+    x: i32,
+    y: i32,
+    w: u32,
+    h: u32,
+) -> AppResult<()> {
+    let rect = crate::snippet::RegionRect { x, y, w, h };
+    if rect.w == 0 || rect.h == 0 {
+        return Err(AppError::Other("empty selection".into()));
+    }
+    state.snippet.commit(&state.app, rect)
+}
+
+/// The selection overlay cancels (Esc / right-click). Called from the
+/// snippet window.
+#[tauri::command]
+pub fn snippet_cancel(state: State<'_, AppState>) -> AppResult<()> {
+    state.snippet.cancel(&state.app);
+    Ok(())
+}
+
+/// Snippet OCR history rows (only populated when `retain_history` is on).
+#[tauri::command]
+pub fn list_snippets(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    limit: Option<i64>,
+    offset: Option<i64>,
+) -> AppResult<Vec<crate::storage::db::SnippetRow>> {
+    main_window_only(&window)?;
+    state.db.list_snippets(
+        limit.unwrap_or(100).clamp(1, 500),
+        offset.unwrap_or(0).max(0),
+    )
+}
+
+/// Delete one snippet history row.
+#[tauri::command]
+pub fn delete_snippet(window: tauri::Window, state: State<'_, AppState>, id: i64) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.db.delete_snippet(id)
+}
+
+/// The RapidOCR language-pack catalogue with install state.
+#[tauri::command]
+pub fn get_snippet_models(
+    state: State<'_, AppState>,
+) -> Vec<crate::snippet::models::SnippetModelStatus> {
+    crate::snippet::models::status_list(&state.models_dir())
+}
+
+/// Download a RapidOCR language pack (streaming + SHA-256 verified).
+#[tauri::command]
+pub async fn download_snippet_model(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    pack: String,
+    force: bool,
+) -> AppResult<String> {
+    main_window_only(&window)?;
+    let spec = crate::snippet::models::find(&pack)
+        .ok_or_else(|| AppError::Model(format!("unknown OCR language pack '{pack}'")))?;
+    let dir = state.models_dir();
+    let app = state.app.clone();
+    let pack_id = pack.clone();
+    let progress = move |fraction: f64| {
+        let _ = app.emit(
+            "model://progress",
+            serde_json::json!({ "engine": "snippet_ocr", "model": pack_id, "fraction": fraction }),
+        );
+    };
+    let path = crate::snippet::models::download(spec, &dir, force, progress).await?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// Installed Windows OCR recognizer languages (BCP-47 tags) for the
+/// Settings dropdown. Empty on non-Windows.
+#[tauri::command]
+pub fn list_ocr_languages() -> Vec<String> {
+    #[cfg(all(windows, feature = "snippet"))]
+    {
+        crate::snippet::ocr_winrt::list_languages()
+    }
+    #[cfg(not(all(windows, feature = "snippet")))]
+    {
+        Vec::new()
+    }
 }
 
 #[cfg(test)]
