@@ -102,6 +102,92 @@ Abilities are discoverable through the MCP adapter:
 }
 ```
 
+## Verified Interop with the Official MCP Adapter
+
+**Verified 2026-11-02** in the Docker test env: WP 7.1.4 + mcp-adapter 0.7.1
+(installed from wp.org) + NV oOS 1.2.15. `discover-abilities` on the adapter's
+default server returns **33 `nvoos/*` abilities**; `get-ability-info` returns
+full input/output schemas; `execute-ability` runs tools with the canonical
+envelope and `structuredContent`.
+
+**Verified facts:**
+
+- **Exposure model.** The adapter's default server exposes abilities through
+  three meta-tools (`discover-abilities`, `get-ability-info`,
+  `execute-ability`) — not as individual `tools/list` entries. The bridge's
+  `meta.mcp.public => true` flag is exactly what the default server requires.
+- **Elementor conflict.** Elementor 4.3+ adds `__return_false` on the
+  `mcp_adapter_create_default_server` filter — its built-in MCP composer
+  disables the adapter's default server. On Elementor sites, NV oOS abilities
+  are only reachable through a **custom server** registered on
+  `mcp_adapter_init` (the Elementor-proof pattern, verified working) or by
+  re-enabling the filter.
+- **WP_Error semantics.** A raw `WP_Error` from `execute_callback` is handled
+  natively on both paths: the adapter marks the tool result `isError: true`,
+  and the core Abilities REST run controller returns a REST error body. The
+  bridge therefore passes `WP_Error` through unconverted (filter:
+  `wp_mcp_ai_ability_wp_error_passthrough`, default on). The legacy
+  `{success, message, code}` envelope remains available behind the filter.
+- **Annotation pessimism.** Per the MCP spec and the official annotation
+  guidance (set all four hints explicitly; assume destructive when unproven),
+  un-flagged tools advertise `destructiveHint: true` instead of making an
+  unverified non-destructive claim. Read-only and `reversible` tools are the
+  only ones advertised as non-destructive.
+- **Transports.** HTTP sessions require `initialize` → `Mcp-Session-Id` header;
+  the adapter also serves a WP-CLI STDIO transport
+  (`wp mcp-adapter serve --user=admin --server=...`), verified working.
+
+**Repeatable verification recipe** (Docker env, port 8000):
+
+```bash
+# App password for Basic auth (dev-application-passwords mu-plugin enables it).
+APP_PW=$(docker compose run --rm wp-cli user application-password create 1 interop --porcelain)
+
+# 1. Initialize and capture the session.
+curl -s -D /tmp/mcp-h.txt -o /dev/null -X POST \
+  http://localhost:8000/wp-json/mcp/mcp-adapter-default-server \
+  -u "admin:$APP_PW" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"probe","version":"1.0"}}}'
+SESSION=$(grep -i mcp-session-id /tmp/mcp-h.txt | awk '{print $2}' | tr -d '\r')
+
+# 2. Discover abilities (expect nvoos/* entries).
+curl -s -X POST http://localhost:8000/wp-json/mcp/mcp-adapter-default-server \
+  -u "admin:$APP_PW" -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: $SESSION" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"mcp-adapter-discover-abilities","arguments":{}}}'
+
+# 3. Execute an ability (isError:true marks failures since the WP_Error fix).
+curl -s -X POST http://localhost:8000/wp-json/mcp/mcp-adapter-default-server \
+  -u "admin:$APP_PW" -H "Content-Type: application/json" \
+  -H "Mcp-Session-Id: $SESSION" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"nvoos/get-site-summary","parameters":{}}}}'
+```
+
+**Custom-server pattern (Elementor-proof)** — register on `mcp_adapter_init`:
+
+```php
+add_action( 'plugins_loaded', function () {
+	if ( ! class_exists( 'WP\MCP\Core\McpAdapter' ) ) {
+		return;
+	}
+	add_action( 'mcp_adapter_init', function ( $adapter ) {
+		$adapter->create_server(
+			'nvoos-server', 'mcp', 'nvoos', 'NV oOS Tools',
+			'Direct NV oOS tool exposure', '1.0.0',
+			array( WP\MCP\Transport\HttpTransport::class ),
+			WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler::class,
+			null,
+			array( 'nvoos/get-site-summary', 'nvoos/get-post' ),
+			array(), array()
+		);
+	} );
+} );
+```
+
+This exposes `nvoos-get-site-summary` and `nvoos-get-post` as first-class MCP
+network tools at `/wp-json/mcp/nvoos` with full schemas — independent of the
+adapter's default-server toggle.
+
 ## Selective Adoption
 
 The Abilities API is designed for **selective adoption** — tools opt in by implementing `WP_MCP_AI_Tool_Ability_Interface`. Existing tools continue to work without modification. New tools can register abilities alongside their existing `get_definition()` method.

@@ -125,10 +125,35 @@ class WP_MCP_AI_Ability_Bridge {
 			do_action( 'wp_mcp_ai_after_ability_execute', 'nvoos/' . str_replace( '_', '-', $slug ), $slug, $input_array, $result, $duration );
 
 			if ( is_wp_error( $result ) ) {
+				/**
+				 * Return the raw WP_Error so downstream consumers apply native
+				 * error semantics. Verified live (2026-11-02, WP 7.1 +
+				 * mcp-adapter 0.7.1): the core Abilities REST run controller
+				 * converts it to a proper REST error response, and the official
+				 * MCP Adapter marks the tool result `isError: true`. The legacy
+				 * structured-array envelope made MCP clients see failures as
+				 * successful tool results.
+				 *
+				 * Disable this filter to restore the legacy
+				 * `{success, message, code}` envelope for consumers that
+				 * expect it.
+				 *
+				 * @since 2.0.0
+				 *
+				 * @param bool     $passthrough Whether to return the raw WP_Error.
+				 * @param WP_Error $result      The execution error.
+				 * @param string   $slug        The tool slug being executed.
+				 */
+				if ( apply_filters( 'wp_mcp_ai_ability_wp_error_passthrough', true, $result, $slug ) ) {
+					return $result;
+				}
+
 				return array(
+					// phpcs:ignore WPMCPAI.Tools.CanonicalReturnEnvelope -- Deliberate BC fallback: this envelope only returns when the wp_mcp_ai_ability_wp_error_passthrough filter is disabled; the default path returns the raw WP_Error above.
 					'success' => false,
 					'message' => $result->get_error_message(),
 					'code'    => $result->get_error_code(),
+					'data'    => $result->get_error_data(),
 				);
 			}
 
@@ -173,9 +198,12 @@ class WP_MCP_AI_Ability_Bridge {
 	/**
 	 * Map NV oOS capability flags to MCP annotations.
 	 *
-	 * Industry best practice (per MCP spec, Stacklok, sunpeak.ai): set all
-	 * four hints explicitly. Unset annotations default pessimistically
-	 * (potentially destructive, non-idempotent, closed-world).
+	 * Industry best practice: set all four hints explicitly (sunpeak.ai),
+	 * and default pessimistically for anything unproven — the MCP spec
+	 * instructs clients to assume a tool may be destructive when the hint
+	 * is absent, so claiming `destructiveHint: false` for a tool without
+	 * flags would be an unverified safety claim. Only read-only and
+	 * explicitly reversible tools are advertised as non-destructive.
 	 *
 	 * @since 2.0.0
 	 *
@@ -183,15 +211,27 @@ class WP_MCP_AI_Ability_Bridge {
 	 * @return array<string, bool> MCP annotation array.
 	 */
 	private static function map_annotations( array $flags ) {
+		$read_only  = in_array( 'read-only', $flags, true );
+		$reversible = in_array( 'reversible', $flags, true );
+
+		$explicit_destructive = in_array( 'irreversible', $flags, true )
+			|| in_array( 'data-destruction', $flags, true )
+			|| in_array( 'destructive', $flags, true );
+
+		$mutating = in_array( 'write', $flags, true )
+			|| in_array( 'state-changing', $flags, true )
+			|| in_array( 'external-communication', $flags, true );
+
+		$destructive = ! $read_only
+			&& ( $explicit_destructive || ( $mutating && ! $reversible ) || empty( $flags ) );
+
 		return array(
-			'readOnlyHint'    => in_array( 'read-only', $flags, true ),
-			'destructiveHint' => in_array( 'irreversible', $flags, true )
-				|| in_array( 'data-destruction', $flags, true ),
-			'idempotentHint'  => in_array( 'idempotent', $flags, true )
-				|| in_array( 'read-only', $flags, true ),
+			'readOnlyHint'    => $read_only,
+			'destructiveHint' => $destructive,
+			'idempotentHint'  => $read_only || in_array( 'idempotent', $flags, true ),
 			'openWorldHint'   => in_array( 'external-api', $flags, true )
-				|| in_array( 'network-dependent', $flags, true )
-				|| in_array( 'long-running', $flags, true ),
+			|| in_array( 'network-dependent', $flags, true )
+			|| in_array( 'long-running', $flags, true ),
 		);
 	}
 
