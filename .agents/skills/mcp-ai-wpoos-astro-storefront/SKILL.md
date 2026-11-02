@@ -568,6 +568,45 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   - Pre-existing `Pagination.astro` bug fixed in this session: `??page=N`
     double question mark (`url.search` already carries `?`).
 
+## Home page + MCP scope notes (2026-11-03)
+
+- **The home page (`src/pages/index.astro`) is an explainer landing page +
+  commerce pockets.** Hero + "What is this app?" cards + live stats + the
+  stack explorer render first; Featured/Bestsellers (`ProductGrid`) only
+  render when `hasCatalog` (`newest.totalDocs > 0`) — prod ran an empty
+  catalog, so the explainer covers the empty state and the pockets appear
+  automatically once products exist. `src/styles/home.css` is page-scoped
+  CSS (imported in the frontmatter), token-driven via the `--nv-*` aliases.
+- **Islands:** `HomeStats.tsx` (count-up counters; server HTML carries the
+  real totals via `data-count` so no-JS visitors see them; animation gated
+  on `prefers-reduced-motion`) and `StackExplorer.tsx` (WAI-ARIA tabs with
+  arrow/Home/End keys; contract tab does ONE live `fetch('/api/products?limit=1')`
+  on first activation; design tab reads `data-theme`/`data-contrast` from
+  `<html>` and re-syncs on `astro:after-swap`). Both are `client:visible`
+  with the `data-hydrated` marker; `tests/e2e/home.spec.ts` covers no-JS SEO,
+  count-up, and tab keyboard + live reads (fixture counts: 8 products,
+  3 categories, 2 brands, 3 published posts — draft 9902 excluded).
+- **Homepage SSR fan-out:** the page makes six contract round-trips (banner,
+  newest, top-rated, categories, brands, posts — `newest.totalDocs` doubles
+  as the product count; don't add a 7th products fetch). Under full-suite
+  parallel load the shared fixture can be slow before the first byte — the
+  no-JS home spec gives the h1 assertion a 30 s budget.
+- **React self-cancelling effect (cost a debugging session):** a
+  `useEffect` whose deps include the state it sets (`contract.status`),
+  with a `cancelled` cleanup flag, cancels the in-flight fetch the moment
+  the `'loading'` update re-runs the effect — the panel spins forever.
+  Trigger one-shot fetches from the activation dep alone and guard with a
+  `useRef`, or use the updater-function form.
+- **MCP scope — pages are repo work:** the `/mcp` surface (25 tools) can
+  write commerce collections (`cms_*` allowlist: products, categories,
+  brands, colors, media, promotions, promocodes — **NOT** `content/pages` /
+  `content/posts`, those come from WordPress via the bridge), control
+  themes/tokens, import design language, and run ops. It **cannot** build
+  or edit pages, and there are no chart/dashboard tools in the app — page
+  changes are `.astro`/island source edits shipped via the mirror workflow.
+  On prod mounts, `screenshot` and `rebuild_trigger` are opt-in/disabled
+  (check `site_status` first).
+
 ## References
 
 - Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · **Proposal 104** (runtime hardening: `-proposal.md`, `-research.md`, `-implementation-plan.md`, `-ecosystem-repo-analysis.md`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
