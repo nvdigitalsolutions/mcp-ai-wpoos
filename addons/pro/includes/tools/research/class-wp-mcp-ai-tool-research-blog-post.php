@@ -27,6 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once __DIR__ . '/trait-wp-mcp-ai-tool-research-template-analysis.php';
 require_once __DIR__ . '/trait-wp-mcp-ai-tool-research-content-normalization.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-tool-research-completion.php';
 
 // Load the Content_Media trait from the base plugin.
 if ( ! trait_exists( 'WP_MCP_AI_Tool_Content_Media' ) ) {
@@ -55,6 +56,7 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 	use WP_MCP_AI_Tool_Research_Template_Analysis;
 	use WP_MCP_AI_Tool_Content_Media;
 	use WP_MCP_AI_Tool_Research_Content_Normalization;
+	use WP_MCP_AI_Tool_Research_Completion;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -1053,38 +1055,16 @@ class WP_MCP_AI_Tool_Research_Blog_Post implements WP_MCP_AI_Tool_Interface, WP_
 			return $client;
 		}
 
-		$result = $client->create_chat_completion(
+		// Make the API call with thinking-model-aware recovery.
+		return $this->perform_research_completion(
+			$client,
 			$messages,
+			$provider,
+			$model,
 			array(
-				'model'       => $model,
 				'temperature' => 0.7,
 				'max_tokens'  => 8000,
 			)
-		);
-
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-
-		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from AI provider.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		// Some providers (e.g. Gemini) return message content as an array of
-		// parts instead of a plain string. Flatten it so downstream parsers
-		// can safely run string functions on it.
-		$content = $result['choices'][0]['message']['content'];
-		if ( is_array( $content ) ) {
-			$content = $this->normalize_content_parts( $content );
-		}
-
-		return array(
-			'content'  => $content,
-			'provider' => $provider,
-			'model'    => $model,
 		);
 	}
 

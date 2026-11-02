@@ -664,16 +664,37 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		 *
 		 * @since 1.2.0
 		 *
-		 * @param int $max_attempts Default 2.
+		 * @param int $max_attempts Default 3 (thinking-model recovery consumes
+		 *                          attempts — the budget retry and the
+		 *                          continuation retry each need one).
 		 */
-		$max_attempts = (int) apply_filters( 'wp_mcp_ai_deep_research_max_attempts', 2 );
+		$max_attempts = (int) apply_filters( 'wp_mcp_ai_deep_research_max_attempts', 3 );
 		$max_attempts = max( 1, $max_attempts );
 
-		$excluded_providers  = array();
-		$last_error          = null;
-		$retry_larger_budget = false;
-		$validation_feedback = array();
-		$last_valid_content  = null;
+		/**
+		 * Filter the number of budget-extension retries when a thinking model
+		 * exhausts its output budget during chain-of-thought (empty `content`
+		 * with `finish_reason=length` and non-empty `reasoning_content`).
+		 *
+		 * Industry standard (DeepSeek thinking-mode docs): `max_tokens` is
+		 * shared between the chain of thought and the final answer, so the
+		 * correct recovery is retrying with a larger budget — not accepting
+		 * the reasoning text as the report.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $max_retries Default 1.
+		 */
+		$max_reasoning_retries = (int) apply_filters( 'wp_mcp_ai_deep_research_reasoning_budget_retries', 1 );
+		$max_reasoning_retries = max( 0, $max_reasoning_retries );
+
+		$excluded_providers       = array();
+		$last_error               = null;
+		$retry_larger_budget      = false;
+		$validation_feedback      = array();
+		$last_valid_content       = null;
+		$reasoning_budget_retries = 0;
+		$continue_after_reasoning = false;
 
 		for ( $attempt = 0; $attempt < $max_attempts; $attempt++ ) {
 			// Get AI client and model, skipping providers that already failed.
@@ -695,7 +716,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$model    = $ai_setup['model'];
 
 			// Build analysis prompt.
-			$prompt = $this->build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content, $prior_memory, $pages, $validation_feedback );
+			$prompt                   = $this->build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content, $prior_memory, $pages, $validation_feedback, $continue_after_reasoning );
+			$continue_after_reasoning = false;
 
 			// Build messages array.
 			$messages = array(
@@ -709,22 +731,72 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				),
 			);
 
-			// When retrying after finish_reason=length truncation, double the
-			// token budget so the model can complete the report.
+			// When retrying after finish_reason=length truncation, grow the
+			// token budget so the model can complete the report. Plain
+			// truncation doubles the budget; thinking-model budget exhaustion
+			// uses a larger multiplier because reasoning models share the
+			// output budget between chain-of-thought and the final answer.
 			$max_tokens = $this->get_max_tokens_for_depth( $depth );
 			if ( $retry_larger_budget ) {
-				$max_tokens *= 2;
+				if ( $reasoning_budget_retries > 0 ) {
+					/**
+					 * Filter the budget multiplier for thinking-model budget
+					 * exhaustion retries.
+					 *
+					 * @since 1.2.0
+					 *
+					 * @param int $multiplier Default 4 (2000 → 8000 → capped).
+					 */
+					$multiplier  = (int) apply_filters( 'wp_mcp_ai_deep_research_reasoning_budget_multiplier', 4 );
+					$multiplier  = max( 2, $multiplier );
+					$max_tokens *= $multiplier ** $reasoning_budget_retries;
+				} else {
+					$max_tokens *= 2;
+				}
+
+				/**
+				 * Filter the absolute ceiling for retry token budgets.
+				 *
+				 * @since 1.2.0
+				 *
+				 * @param int $ceiling Default 32768.
+				 */
+				$ceiling    = (int) apply_filters( 'wp_mcp_ai_deep_research_max_tokens_ceiling', 32768 );
+				$max_tokens = min( $max_tokens, max( 1000, $ceiling ) );
+			}
+
+			// Provider temperature guidance: DeepSeek's V4 reasoning models
+			// collapse their chain of thought at low temperatures (the vendor
+			// recommends 1.0), while factual synthesis elsewhere benefits from
+			// a low temperature.
+			$temperature = 'deepseek' === $provider ? 1.0 : 0.3;
+
+			/**
+			 * Filter the synthesis temperature for report generation.
+			 *
+			 * @since 1.2.0
+			 *
+			 * @param float  $temperature Provider-aware default (1.0 for
+			 *                            DeepSeek reasoning models, else 0.3).
+			 * @param string $provider    Provider id.
+			 * @param string $model       Model identifier.
+			 */
+			$temperature = (float) apply_filters( 'wp_mcp_ai_deep_research_temperature', $temperature, $provider, $model );
+
+			$completion_options = array(
+				'model'       => $model,
+				'temperature' => $temperature,
+				'max_tokens'  => $max_tokens,
+			);
+
+			// DeepSeek V4 guidance also recommends top_p=1.0 for reasoning
+			// models; other providers keep their own defaults.
+			if ( 'deepseek' === $provider ) {
+				$completion_options['top_p'] = 1.0;
 			}
 
 			// Call AI.
-			$result = $client->create_chat_completion(
-				$messages,
-				array(
-					'model'       => $model,
-					'temperature' => 0.3, // Low temperature for factual research.
-					'max_tokens'  => $max_tokens,
-				)
-			);
+			$result = $client->create_chat_completion( $messages, $completion_options );
 
 			if ( is_wp_error( $result ) ) {
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -766,13 +838,80 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				$finish_reason = sanitize_key( (string) $result['choices'][0]['finish_reason'] );
 			}
 
-			// Reasoning fallback: DeepSeek-style reasoning models may return the
-			// chain of thought in reasoning_content with an empty final content.
-			// Use the reasoning as the report when it is all we have — but run
-			// the quality checks on it so callers see whether the fallback is
-			// actually usable as a report.
+			// Reasoning-only completions (thinking-mode models): the chain of
+			// thought arrived but no final report was emitted. Two
+			// industry-standard recoveries before falling back:
+			//
+			// 1. finish_reason=length → the output budget was consumed by
+			// thinking (DeepSeek thinking mode shares max_tokens between
+			// chain-of-thought and the answer). Retry the same provider
+			// with a multiplied budget instead of accepting the CoT.
+			// 2. Otherwise → salvage the reasoning as a last-resort draft
+			// and retry once with an explicit report-writing instruction.
+			//
+			// Only when those are exhausted is the reasoning text returned
+			// as the report, flagged and quality-checked so callers see it
+			// is not a finished deliverable.
 			if ( '' === $content && ! empty( $result['reasoning_content'] ) && is_string( $result['reasoning_content'] ) ) {
-				$content = trim( $result['reasoning_content'] );
+				$reasoning = trim( $result['reasoning_content'] );
+
+				if ( 'length' === $finish_reason && $reasoning_budget_retries < $max_reasoning_retries && ! $this->time_budget_exceeded( $start_time ) ) {
+					++$reasoning_budget_retries;
+					$retry_larger_budget = true;
+
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'deep_research_reasoning_budget_retry',
+							'Deep research retrying with a larger budget: the thinking model exhausted the output budget before writing the report.',
+							array(
+								'topic'    => $topic,
+								'provider' => $provider,
+								'model'    => $model,
+								'retry'    => $reasoning_budget_retries,
+							)
+						);
+					}
+
+					continue;
+				}
+
+				$reasoning_validation = $this->validate_report_content( $reasoning, $depth, $include_sources );
+
+				// Salvage the reasoning as the last-resort draft, then ask
+				// once more for the finished report before giving up on it.
+				if ( ( $attempt + 1 ) < $max_attempts && ! $this->time_budget_exceeded( $start_time ) ) {
+					$last_valid_content = array(
+						'content'                 => $reasoning,
+						'provider'                => $provider,
+						'model'                   => $model,
+						'attempts'                => $attempt + 1,
+						'issues'                  => $reasoning_validation['issues'],
+						'used_reasoning_fallback' => true,
+					);
+
+					$validation_feedback      = $reasoning_validation['issues'];
+					$continue_after_reasoning = true;
+
+					// The continuation attempt gets a larger budget when the
+					// model was cut off mid-thought.
+					if ( 'length' === $finish_reason ) {
+						$retry_larger_budget = true;
+					}
+
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'deep_research_reasoning_continuation',
+							'Deep research received only reasoning output; retrying with an explicit report-writing instruction.',
+							array(
+								'topic'    => $topic,
+								'provider' => $provider,
+								'model'    => $model,
+							)
+						);
+					}
+
+					continue;
+				}
 
 				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 					WP_MCP_AI_Logger::log_event(
@@ -786,16 +925,14 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					);
 				}
 
-				$validation = $this->validate_report_content( $content, $depth, $include_sources );
-
 				return array(
-					'content'                 => $content,
+					'content'                 => $reasoning,
 					'provider'                => $provider,
 					'model'                   => $model,
 					'used_reasoning_fallback' => true,
 					'attempts'                => $attempt + 1,
-					'validated'               => $validation['passed'],
-					'validation_issues'       => $validation['issues'],
+					'validated'               => $reasoning_validation['passed'],
+					'validation_issues'       => $reasoning_validation['issues'],
 				);
 			}
 
@@ -907,7 +1044,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		// with its validation outcome instead of discarding the work — the
 		// report builder marks it as a partial result.
 		if ( null !== $last_valid_content ) {
-			return array(
+			$salvaged = array(
 				'content'           => $last_valid_content['content'],
 				'provider'          => $last_valid_content['provider'],
 				'model'             => $last_valid_content['model'],
@@ -915,6 +1052,12 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'validated'         => false,
 				'validation_issues' => $last_valid_content['issues'],
 			);
+
+			if ( ! empty( $last_valid_content['used_reasoning_fallback'] ) ) {
+				$salvaged['used_reasoning_fallback'] = true;
+			}
+
+			return $salvaged;
 		}
 
 		// All attempts exhausted: return an actionable error that still carries
@@ -1064,15 +1207,25 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		// 4. Section presence: the report must contain a reasonable number of
-		// the sections prompted for its depth.
-		$expected_words = 'comprehensive' === $depth
-			? array( 'Executive Summary', 'Background', 'Findings', 'Analysis', 'Conclusion' )
+		// the sections prompted for its depth. Matching tolerates markdown
+		// heading prefixes (#, **, __), numbered headings, and the prompt's
+		// own heading variants ("Main Findings", "Key Findings",
+		// "Background and Context", "Implications and Recommendations").
+		$expected_sections = 'comprehensive' === $depth
+			? array(
+				'Executive Summary',
+				'Background(?: and Context)?',
+				'(?:Key )?Findings',
+				'Analysis(?: and Insights)?',
+				'Implications(?: and Recommendations)?',
+				'Conclusion',
+			)
 			: ( 'standard' === $depth
-				? array( 'Overview', 'Findings', 'Analysis', 'Conclusion' )
+				? array( 'Overview', '(?:Main )?Findings', 'Analysis', 'Conclusion' )
 				: array( 'Summary', 'Key Points' ) );
-		$matched        = 0;
-		foreach ( $expected_words as $word ) {
-			if ( preg_match( '/^\s*(?:#{1,6}\s*|\d+[.)]\s*)?' . preg_quote( $word, '/' ) . '/im', $content ) ) {
+		$matched           = 0;
+		foreach ( $expected_sections as $section_pattern ) {
+			if ( preg_match( '/^\s*(?:#{1,6}\s*|\d+[.)]\s*)*(?:[*_]{1,2}\s*)?' . $section_pattern . '\b/im', $content ) ) {
 				++$matched;
 			}
 		}
@@ -1093,6 +1246,37 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'passed' => empty( $issues ),
 			'issues' => $issues,
 		);
+	}
+
+	/**
+	 * Human-readable guidance for a validation issue slug.
+	 *
+	 * The rewrite prompt lists both the machine-readable slug (so operators
+	 * can map failures back to the validator) and this instruction (so the
+	 * model knows exactly what to fix).
+	 *
+	 * @param string $issue Issue slug from validate_report_content().
+	 * @return string Guidance sentence (falls back to the slug).
+	 */
+	protected function validation_issue_guidance( $issue ) {
+		$issue = sanitize_key( (string) $issue );
+
+		switch ( $issue ) {
+			case 'empty_report':
+				return __( 'The report body is empty. Write the full report.', 'mcp-ai-wpoos' );
+			case 'below_min_word_count':
+				return __( 'The report is far too short for the requested depth. Expand every section with substantive analysis.', 'mcp-ai-wpoos' );
+			case 'drafting_notes_detected':
+				return __( 'The output contains drafting notes, planning language, or placeholders instead of a finished report. Remove all meta-commentary and write the complete report.', 'mcp-ai-wpoos' );
+			case 'abrupt_ending':
+				return __( 'The report ends abruptly (cut-off sentence, dangling heading, or trailing ellipsis). Finish the final section and end with a complete concluding sentence.', 'mcp-ai-wpoos' );
+			case 'missing_sections':
+				return __( 'Required section headings are missing or not written as headings. Use the exact numbered heading structure from the instructions.', 'mcp-ai-wpoos' );
+			case 'missing_citations':
+				return __( 'Every factual claim must carry a [n] citation referring to the numbered sources above.', 'mcp-ai-wpoos' );
+			default:
+				return $issue;
+		}
 	}
 
 	/**
@@ -1658,9 +1842,12 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @param array  $prior_memory   Prior research recalled from agent memory.
 	 * @param array  $pages          Full-page content read from top sources.
 	 * @param array  $validation_feedback Issues from the previous draft (retry).
+	 * @param bool   $continue_after_reasoning The previous attempt returned only
+	 *                                          chain-of-thought reasoning; instruct
+	 *                                          the model to write the report now.
 	 * @return string Analysis prompt.
 	 */
-	protected function build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content = array(), $prior_memory = array(), $pages = array(), $validation_feedback = array() ) {
+	protected function build_analysis_prompt( $topic, $search_results, $depth, $focus_areas, $include_sources, $site_content = array(), $prior_memory = array(), $pages = array(), $validation_feedback = array(), $continue_after_reasoning = false ) {
 		$prompt = sprintf(
 			/* translators: %s: research topic */
 			__( 'Research Topic: %s', 'mcp-ai-wpoos' ) . "\n\n",
@@ -1773,13 +1960,22 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$prompt .= __( '- Clearly distinguish documented capabilities, observed behavior, and unknown/unverified claims.', 'mcp-ai-wpoos' ) . "\n";
 		$prompt .= __( '- Never include drafting notes, TODOs, placeholders, or meta-commentary. Complete every section and end with a full conclusion.', 'mcp-ai-wpoos' ) . "\n";
 
-		// Feedback from a previous failed draft (validation retry).
+		// Feedback from a previous failed draft (validation retry). Each line
+		// carries the machine-readable issue slug plus a human instruction
+		// so the model knows exactly what to repair.
 		if ( ! empty( $validation_feedback ) ) {
 			$prompt .= "\n" . __( 'YOUR PREVIOUS DRAFT FAILED QUALITY CHECKS with these problems:', 'mcp-ai-wpoos' ) . "\n";
 			foreach ( $validation_feedback as $issue ) {
-				$prompt .= '- ' . $issue . "\n";
+				$slug    = sanitize_key( (string) $issue );
+				$prompt .= '- ' . $slug . ': ' . $this->validation_issue_guidance( $issue ) . "\n";
 			}
 			$prompt .= __( 'Rewrite the complete report addressing every problem above. Do not repeat drafting notes or partial content.', 'mcp-ai-wpoos' ) . "\n";
+		}
+
+		// The previous attempt produced only chain-of-thought reasoning and
+		// no report: ask for the finished deliverable directly.
+		if ( $continue_after_reasoning ) {
+			$prompt .= "\n" . __( 'IMPORTANT: Your previous response contained only reasoning, not the report. Produce the finished report NOW as your answer: write every numbered section in full and end with a complete conclusion. Do not narrate your process.', 'mcp-ai-wpoos' ) . "\n";
 		}
 
 		return $prompt;

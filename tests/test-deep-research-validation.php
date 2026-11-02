@@ -32,6 +32,10 @@ class Test_Deep_Research_Validation extends WP_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_deep_research_time_budget' );
 		remove_all_filters( 'wp_mcp_ai_deep_research_max_pages' );
 		remove_all_filters( 'wp_mcp_ai_deep_research_max_sources_per_domain' );
+		remove_all_filters( 'wp_mcp_ai_deep_research_reasoning_budget_retries' );
+		remove_all_filters( 'wp_mcp_ai_deep_research_reasoning_budget_multiplier' );
+		remove_all_filters( 'wp_mcp_ai_deep_research_max_tokens_ceiling' );
+		remove_all_filters( 'wp_mcp_ai_deep_research_temperature' );
 		parent::tearDown();
 	}
 
@@ -493,6 +497,252 @@ class Test_Deep_Research_Validation extends WP_UnitTestCase {
 		$this->assertTrue( $result['used_reasoning_fallback'] );
 		$this->assertArrayHasKey( 'validated', $result );
 		$this->assertFalse( $result['validated'] );
+	}
+
+	/**
+	 * Thinking-model budget exhaustion (empty content + reasoning + length)
+	 * retries with a multiplied budget instead of returning the CoT.
+	 */
+	public function test_reasoning_length_budget_retry_then_complete() {
+		$client = $this->fake_client(
+			array(
+				array(
+					'choices'           => array(
+						array(
+							'message'       => array(
+								'role'    => 'assistant',
+								'content' => '',
+							),
+							'finish_reason' => 'length',
+						),
+					),
+					'finish_reason'     => 'length',
+					'reasoning_content' => 'First I will examine the sources. The frost dates suggest planting windows in autumn.',
+				),
+				$this->completion( $this->complete_report() ),
+			)
+		);
+
+		$harness = $this->make_harness(
+			array(
+				array(
+					'provider' => 'deepseek',
+					'model'    => 'deepseek-flash',
+					'client'   => $client,
+				),
+			)
+		);
+
+		$result = $harness->run_analysis( 'garden frost dates', $this->search_results_fixture() );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['validated'] );
+		$this->assertArrayNotHasKey( 'used_reasoning_fallback', $result );
+		$this->assertSame( 2, count( $client->calls ) );
+		$this->assertSame( 2000, $client->calls[0]['options']['max_tokens'] );
+		// Default reasoning-budget multiplier of 4: 2000 × 4 = 8000.
+		$this->assertSame( 8000, $client->calls[1]['options']['max_tokens'] );
+	}
+
+	/**
+	 * When the budget retry also fails, a continuation retry runs before the
+	 * reasoning is returned as an explicit fallback with its validation
+	 * outcome.
+	 */
+	public function test_reasoning_budget_retries_exhausted_returns_fallback() {
+		$reasoning_only = array(
+			'choices'           => array(
+				array(
+					'message'       => array(
+						'role'    => 'assistant',
+						'content' => '',
+					),
+					'finish_reason' => 'length',
+				),
+			),
+			'finish_reason'     => 'length',
+			'reasoning_content' => 'First I will examine the sources. The frost dates suggest planting windows in autumn.',
+		);
+
+		$client = $this->fake_client(
+			array(
+				$reasoning_only,
+				$reasoning_only,
+			)
+		);
+
+		$harness = $this->make_harness(
+			array(
+				array(
+					'provider' => 'deepseek',
+					'model'    => 'deepseek-flash',
+					'client'   => $client,
+				),
+			)
+		);
+
+		$result = $harness->run_analysis( 'garden frost dates', $this->search_results_fixture() );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['used_reasoning_fallback'] );
+		$this->assertFalse( $result['validated'] );
+		$this->assertStringContainsString( 'planting windows', $result['content'] );
+		// Attempt 0 (initial) → attempt 1 (×4 budget) → attempt 2
+		// (continuation, ×4 budget, then provider exhausted) → salvage.
+		$this->assertSame( 3, count( $client->calls ) );
+		$this->assertSame( 8000, $client->calls[1]['options']['max_tokens'] );
+		$this->assertSame( 8000, $client->calls[2]['options']['max_tokens'] );
+		$this->assertStringContainsString( 'only reasoning', $client->calls[2]['messages'][1]['content'] );
+	}
+
+	/**
+	 * A length-truncated reasoning attempt followed by a stop-finish
+	 * reasoning-only attempt walks both recovery rungs before completing.
+	 */
+	public function test_reasoning_length_then_stop_uses_continuation_retry() {
+		$client = $this->fake_client(
+			array(
+				array(
+					'choices'           => array(
+						array(
+							'message'       => array(
+								'role'    => 'assistant',
+								'content' => '',
+							),
+							'finish_reason' => 'length',
+						),
+					),
+					'finish_reason'     => 'length',
+					'reasoning_content' => 'First I will examine the sources and cross-check them.',
+				),
+				array(
+					'choices'           => array(
+						array(
+							'message'       => array(
+								'role'    => 'assistant',
+								'content' => '',
+							),
+							'finish_reason' => 'stop',
+						),
+					),
+					'finish_reason'     => 'stop',
+					'reasoning_content' => 'Let me think about the frost dates and what they mean for planting.',
+				),
+				$this->completion( $this->complete_report() ),
+			)
+		);
+
+		$harness = $this->make_harness(
+			array(
+				array(
+					'provider' => 'deepseek',
+					'model'    => 'deepseek-flash',
+					'client'   => $client,
+				),
+			)
+		);
+
+		$result = $harness->run_analysis( 'garden frost dates', $this->search_results_fixture() );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['validated'] );
+		$this->assertArrayNotHasKey( 'used_reasoning_fallback', $result );
+		$this->assertSame( 3, count( $client->calls ) );
+		$this->assertSame( 2000, $client->calls[0]['options']['max_tokens'] );
+		$this->assertSame( 8000, $client->calls[1]['options']['max_tokens'] );
+		$this->assertStringContainsString( 'only reasoning', $client->calls[2]['messages'][1]['content'] );
+	}
+
+	/**
+	 * A stop-finish reasoning-only completion triggers a continuation retry
+	 * that asks the model to write the report, and succeeds.
+	 */
+	public function test_reasoning_stop_triggers_continuation_retry() {
+		$client = $this->fake_client(
+			array(
+				array(
+					'choices'           => array(
+						array(
+							'message'       => array(
+								'role'    => 'assistant',
+								'content' => '',
+							),
+							'finish_reason' => 'stop',
+						),
+					),
+					'finish_reason'     => 'stop',
+					'reasoning_content' => 'Let me think about the frost dates and what they mean for planting.',
+				),
+				$this->completion( $this->complete_report() ),
+			)
+		);
+
+		$harness = $this->make_harness(
+			array(
+				array(
+					'provider' => 'deepseek',
+					'model'    => 'deepseek-flash',
+					'client'   => $client,
+				),
+			)
+		);
+
+		$result = $harness->run_analysis( 'garden frost dates', $this->search_results_fixture() );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['validated'] );
+		$this->assertArrayNotHasKey( 'used_reasoning_fallback', $result );
+		$this->assertSame( 2, count( $client->calls ) );
+
+		// The continuation prompt asks for the finished report and carries
+		// the validation feedback slugs from the reasoning-only draft.
+		$second_prompt = $client->calls[1]['messages'][1]['content'];
+		$this->assertStringContainsString( 'only reasoning', $second_prompt );
+		$this->assertStringContainsString( 'missing_citations', $second_prompt );
+		$this->assertStringContainsString( 'FAILED QUALITY CHECKS', $second_prompt );
+	}
+
+	/**
+	 * Bold markdown headings are accepted by the section detector.
+	 */
+	public function test_validation_accepts_bold_markdown_headings() {
+		$report = str_replace(
+			array( '## Overview', '## Main Findings', '## Analysis', '## Conclusion' ),
+			array( '**Overview**', '**Main Findings**', '**Analysis**', '**Conclusion**' ),
+			$this->complete_report()
+		);
+
+		$harness = $this->make_harness();
+		$result  = $harness->run_validation( $report );
+
+		$this->assertTrue( $result['passed'] );
+		$this->assertEmpty( $result['issues'] );
+	}
+
+	/**
+	 * The prompt's own comprehensive heading variants count as sections.
+	 */
+	public function test_validation_accepts_prompt_heading_variants() {
+		$section_text = 'This section presents the evidence gathered from the available sources, explains what the sources agree on, and notes where the current literature leaves important questions unanswered [1]. The claims made here rest on the cited material rather than on assumption, and each point is cross-checked against at least one independent source where the evidence permits it.';
+
+		$report = '## Executive Summary'
+			. "\n" . $section_text
+			. "\n\n" . '## Background and Context'
+			. "\n" . $section_text
+			. "\n\n" . '## Key Findings'
+			. "\n" . $section_text
+			. "\n\n" . '## Analysis and Insights'
+			. "\n" . $section_text
+			. "\n\n" . '## Implications and Recommendations'
+			. "\n" . $section_text
+			. "\n\n" . '## Conclusion'
+			. "\n" . 'The report concludes with a full sentence about the topic, and the final paragraph ends cleanly.';
+
+		$harness = $this->make_harness();
+		$result  = $harness->run_validation( $report, 'comprehensive' );
+
+		$this->assertTrue( $result['passed'] );
+		$this->assertEmpty( $result['issues'] );
 	}
 
 	// -------------------------------------------------------------------------

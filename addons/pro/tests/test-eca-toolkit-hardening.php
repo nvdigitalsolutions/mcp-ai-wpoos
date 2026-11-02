@@ -207,7 +207,10 @@ class Test_ECA_Toolkit_Hardening extends WP_UnitTestCase {
 
 		$this->assertNotInstanceOf( 'WP_Error', $result );
 		$this->assertIsString( $result['content'] );
-		$this->assertSame( 'Part one.Part two.', $result['content'] );
+		// The shared completion trait flattens parts with a "\n\n" join
+		// (the normalization trait's contract, identical across the research
+		// tools) instead of the legacy no-separator concatenation.
+		$this->assertSame( "Part one.\n\nPart two.", $result['content'] );
 	}
 
 	/**
