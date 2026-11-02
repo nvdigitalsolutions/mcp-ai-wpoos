@@ -260,7 +260,22 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   payload proof exists because the `X-Forge-Signature` header does not
   survive GitHub's dispatch delivery. Publish: `@nvdigitalsolutions/nvoos-
   astro-forge`, tag `nvoos-astro-forge-v*` → `publish-astro-forge.yml`
-  (provenance). Secret grep gates in CI + the e2e credential-hygiene walk.
+  (provenance). **Publishing lesson (2026-11-02):** 0.1.0 shipped with the
+  raw `.ts`/`.mjs` sources as bin targets — fine from a checkout (Node
+  native type stripping) but broken from an installed package: Node refuses
+  type stripping under `node_modules/`
+  (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`). 0.1.1 fixes it by
+  shipping esbuild-bundled `dist/` entries (`scripts/prepare-dist.mjs` via
+  `prepublishOnly`; `outExtension: { '.js': '.mjs' }`; no `banner` — the
+  sources carry their own shebangs and esbuild preserves them, a banner
+  would double the line and break the ESM parse). `dist/` is gitignored and
+  built at publish time; `FORGE_ROOT` (`new URL('..', import.meta.url)` from
+  `lib/scaffold.ts`) resolves identically from `dist/` since the bundles
+  sit at the package root. Verify before publishing: `npm pack`, install
+  the tarball in a scratch dir, run `node_modules/.bin/nvoos-forge`. Local
+  npm is not authed on this machine — deprecations need the owner or a CI
+  step. 0.1.0 (broken bins) stays deprecated once 0.1.1 is live. Secret
+  grep gates in CI + the e2e credential-hygiene walk.
 - **Phase 4 — core shipped 2026-10-31:** `forge wizard` (one command, URL
   → built + deploy-ready) and the `/mcp` surface (see §2.8): 29-tool v1
   catalog (incl. the §3.3 long-tail slices — content_audit/preview,

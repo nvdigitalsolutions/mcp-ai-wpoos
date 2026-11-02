@@ -1,19 +1,20 @@
 {
 	"name": "@nvdigitalsolutions/nvoos-astro-forge",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"license": "MIT",
 	"description": "Proposal 096 — WP→Astro generation: REST client, content-layer loader, sanitizer, blog template, scaffold CLI, deploy pipeline",
 	"type": "module",
 	"bin": {
-		"nvoos-forge": "./scripts/forge.mjs",
-		"nvoos-forge-mcp": "./scripts/forge-mcp.mjs",
-		"nvoos-forge-mcp-stdio": "./mcp/stdio.ts"
+		"nvoos-forge": "./dist/forge.mjs",
+		"nvoos-forge-mcp": "./dist/forge-mcp.mjs",
+		"nvoos-forge-mcp-stdio": "./dist/forge-mcp-stdio.mjs"
 	},
 	"files": [
 		"lib",
 		"mcp",
 		"scripts",
 		"templates",
+		"dist",
 		"LICENSE",
 		"NOTICE",
 		"README.md"
@@ -41,7 +42,8 @@
 		"typecheck": "tsc --noEmit",
 		"mcp": "node scripts/forge-mcp.mjs",
 		"fixture:wp": "node scripts/wp-fixture-server.mjs",
-		"forge": "node scripts/forge.mjs"
+		"forge": "node scripts/forge.mjs",
+		"prepublishOnly": "node scripts/prepare-dist.mjs"
 	},
 	"engines": {
 		"node": ">=22.6.0"
@@ -59,6 +61,7 @@
 		"@types/node": "^26.6.6",
 		"@types/sanitize-html": "^2.16.2",
 		"astro": "^7.4.4",
+		"esbuild": "^0.28.0",
 		"typescript": "^6.0.3",
 		"vitest": "^5.0.5"
 	}
