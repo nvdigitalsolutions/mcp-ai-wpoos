@@ -185,6 +185,31 @@ can appear in the repo root. Two failure modes follow:
 - Windows-reserved names: see the `nul`-artifact section above (same
   `powershell -File` pattern applies).
 
+## Pathspec commits, shared-index races, workflow YAML (learned 2026-11-02, Cognition rebrand session)
+
+- **`git commit -- <paths>` traps:** options (`-m`) must come BEFORE the
+  `--` separator — `git commit -m "msg" -- <paths>`; after `--` they are
+  parsed as pathspecs. New **untracked** files must be `git add`-ed first:
+  the pathspec commit form only covers tracked/staged paths.
+- **The shared index can change mid-session.** Another agent can stage files
+  between two of your `git status` checks (the proposals README went from
+  unstaged to staged mid-session). Commit with explicit pathspecs even when
+  you staged explicitly — foreign staged files can never ride along.
+- **MSYS mangles `rev:path` colons even inside double quotes** —
+  `git show "branch:path"` becomes `branch;path` and fails as ambiguous.
+  Use `MSYS_NO_PATHCONV=1 git show "branch:path"`.
+- **Fuzzy file edits can splice YAML silently.** A fuzzy edit on a workflow
+  YAML duplicated a step mapping (left a `- name:` with no `run`/`uses`);
+  only the PR's workflow-parse check caught it. After editing any
+  `.github/workflows/*.yml`, re-read the **branch blob**
+  (`MSYS_NO_PATHCONV=1 git show <branch>:<file>`) and parse-validate with
+  `node -e` + `js-yaml` (available in the repo root's node_modules) — assert
+  every step has `run` or `uses`. Cheap insurance before pushing.
+- **Dispatching a workflow that exists only on a non-default branch:** the
+  filename form of the workflow id accepts any ref —
+  `gh api -X POST "repos/<o>/<r>/actions/workflows/<file>.yml/dispatches"
+  -f ref=<branch>` (reinforces the `gh workflow run` 404 gotcha below).
+
 ## gh CLI gotchas
 
 - **`git archive` strips `package.json` and `bin/` repo-wide** — the root

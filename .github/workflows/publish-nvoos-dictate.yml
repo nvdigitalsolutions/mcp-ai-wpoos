@@ -74,7 +74,6 @@ jobs:
       # here: scripts/gen-icons.mjs produces placeholder art for first-time
       # scaffolding only and would overwrite the brand icons in every
       # release bundle.
-      - name: Install frontend dependencies
       # tauri build runs beforeBuildCommand (npm run build = webview dist,
       # required by generate_context!) and beforeBundleCommand
       # (build:helper = Swift sidecar, lipo'd universal via
