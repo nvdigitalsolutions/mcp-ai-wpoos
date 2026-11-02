@@ -843,6 +843,15 @@ previous window — the user will usually want it back-dated.
 - Every claim (paths, counts, versions) is verified against the actual PRs.
 - Never commit to `alpha-working` directly; branch + PR; exclude unrelated
   working-tree noise from commits.
+- **`git commit` commits the WHOLE index, not just the paths you just
+  `git add`ed.** When the shared tree carries another agent's pre-staged
+  changes (the 1.2.16 pass swept a staged proposals-README edit into its
+  version-bump commit), verify every commit's file list
+  (`git --no-pager show --stat HEAD`) before pushing — and rebuild the
+  history if a foreign change slipped in (reset to `origin/alpha-working`,
+  cherry-pick the clean commits, re-apply the contaminated one via
+  `git checkout <sha> -- <paths>`, then restore the foreign staged content
+  to the index from the saved tree).
 - **README anchor links**: after any `README.md` edit that touches headings or
   the TOC, run `python3 bin/validate-readme-anchors.py` (also enforced by the
   `link-check.yml` CI job). TOC links use GitHub's visible slug form: emoji
