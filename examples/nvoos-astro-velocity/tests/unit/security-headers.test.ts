@@ -44,6 +44,15 @@ describe('buildCsp', () => {
 		expect(csp).toContain("script-src 'self'");
 		expect(csp).not.toContain("'sha256-");
 	});
+
+	it('skips application/json data blocks (the 105 theme-policy tag)', () => {
+		const html = [
+			'<script>console.log(1)</script>',
+			'<script type="application/json" data-theme-policy>{"doc":{"policy":"auto"}}</script>',
+		].join('');
+		const hashes = (buildCsp(html).match(/'sha256-[^']+'/g) ?? []).length;
+		expect(hashes).toBe(1); // the JSON data block contributes no hash
+	});
 });
 
 describe('static security headers', () => {

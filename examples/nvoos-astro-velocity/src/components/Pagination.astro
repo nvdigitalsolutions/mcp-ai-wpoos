@@ -11,7 +11,10 @@ const { page, totalPages, baseUrl } = Astro.props;
 const pageHref = (target: number): string => {
 	const url = new URL(baseUrl, 'https://nvoos.invalid/');
 	url.searchParams.set('page', String(target));
-	return `${url.pathname}${url.search ? `?${url.search}` : ''}`;
+	// `url.search` already carries the leading `?` — prepending another would
+	// emit `??page=N` (surfaced by the 106 paginated blog listing; the PLPs
+	// never rendered a second page before).
+	return `${url.pathname}${url.search}`;
 };
 ---
 

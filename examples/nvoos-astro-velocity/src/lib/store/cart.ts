@@ -2,9 +2,14 @@
 // Cart store — display-only client state for v1 (no checkout in the
 // contract; owner decision Q5 covers auth, not payments). Persisted to
 // localStorage; hydrates into the CartBadge island.
+//
+// Proposal 106: line items gain the variant identity (Saleor research —
+// checkout references VARIANT ids), and the per-product variant selection
+// persists alongside so it survives client-side navigation (Defect A class).
 // ---------------------------------------------------------------------------
 
 import { atom, map } from 'nanostores';
+import type { ProductVariantAttribute } from '../commerce/types';
 
 export interface CartLine {
 	productId: number;
@@ -12,12 +17,27 @@ export interface CartLine {
 	price: number;
 	image: string;
 	qty: number;
+	/** Selected variant id — absent = simple-product line (106 §1.1). */
+	variantId?: number;
+	/** The variant's ordered attributes (106 §1.1). */
+	attributes?: ProductVariantAttribute[];
+}
+
+/** The persisted variant selection for one product (keyed by productId). */
+export interface SelectedVariant {
+	variantId: number;
+	price: number;
+	attributes: ProductVariantAttribute[];
 }
 
 const STORAGE_KEY = 'nvoos-cart-v1';
+const SELECTION_STORAGE_KEY = 'nvoos-selected-variants';
 
 export const cartLines = map<Record<number, CartLine>>({});
 export const cartCount = atom<number>(0);
+
+/** Per-product selected variants — survives client-side navigation. */
+export const selectedVariants = atom<Record<number, SelectedVariant>>({});
 
 function recalculate(): void {
 	let count = 0;
@@ -93,5 +113,49 @@ export function loadCartFromStorage(): void {
 	} catch {
 		// Corrupt storage — start clean.
 		clearCart();
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Variant selection (106 §1.1) — the PDP selector persists its pick so the
+// AddToCart island and a later client-side return to the PDP see it.
+// ---------------------------------------------------------------------------
+
+function persistSelection(): void {
+	if (typeof localStorage !== 'undefined') {
+		try {
+			localStorage.setItem(SELECTION_STORAGE_KEY, JSON.stringify(selectedVariants.get()));
+		} catch {
+			// Storage full/blocked — selection survives in memory only.
+		}
+	}
+}
+
+export function selectVariant(productId: number, selection: SelectedVariant): void {
+	selectedVariants.set({ ...selectedVariants.get(), [productId]: selection });
+	persistSelection();
+}
+
+export function clearSelectedVariant(productId: number): void {
+	const next = { ...selectedVariants.get() };
+	delete next[productId];
+	selectedVariants.set(next);
+	persistSelection();
+}
+
+/** Restore variant selections from localStorage — called from islands. */
+export function loadSelectedVariantsFromStorage(): void {
+	if (typeof localStorage === 'undefined') {
+		return;
+	}
+	try {
+		const raw = localStorage.getItem(SELECTION_STORAGE_KEY);
+		if (!raw) {
+			return;
+		}
+		selectedVariants.set(JSON.parse(raw) as Record<number, SelectedVariant>);
+	} catch {
+		// Corrupt storage — start clean.
+		selectedVariants.set({});
 	}
 }

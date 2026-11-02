@@ -4,6 +4,8 @@ import {
 	buildWhereParams,
 	getCollection,
 	getAll,
+	getShop,
+	getThemePolicy,
 	MAX_LIMIT,
 } from '../../src/lib/commerce/client';
 import type { Product } from '../../src/lib/commerce/types';
@@ -209,5 +211,134 @@ describe('base resolution (resolveBase precedence)', () => {
 		const url = String(fetchMock.mock.calls[0][0]);
 		expect(url).toContain('http://127.0.0.1:4321/api/products');
 		expect(url).not.toContain('store.example');
+	});
+});
+
+describe('getThemePolicy (105 §3)', () => {
+	// Each test uses a UNIQUE host: the policy memo is module-level and keyed
+	// by the resolved base, so shared URLs would leak entries across tests.
+	const policyDoc = {
+		policy: 'dark',
+		contrast: 'auto',
+		defaultTheme: 'dark',
+		updatedAt: '2026-11-03T09:00:00Z',
+		$extensions: {},
+	};
+
+	beforeEach(() => {
+		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.unstubAllEnvs();
+	});
+
+	it('fetches globals/theme through the same-origin base (precedence)', async () => {
+		const requestUrl = new URL('https://policy-precedence.example/shop/');
+		vi.stubEnv('NVOOS_API_BASE', 'http://localhost:8123/wp-json/nvoos-commerce/v1');
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL) =>
+				new Response(JSON.stringify(policyDoc), { status: 200 })
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		const doc = await getThemePolicy(requestUrl);
+		expect(doc.policy).toBe('dark');
+		const url = String(fetchMock.mock.calls[0][0]);
+		expect(url).toBe('https://policy-precedence.example/api/globals/theme');
+	});
+
+	it('memoizes the doc for 60 s (one fetch across renders)', async () => {
+		const requestUrl = new URL('https://policy-memo.example/shop/');
+		vi.useFakeTimers();
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL) =>
+				new Response(JSON.stringify(policyDoc), { status: 200 })
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		await getThemePolicy(requestUrl);
+		vi.advanceTimersByTime(30_000);
+		await getThemePolicy(requestUrl);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+
+		// Expiry re-fetches.
+		vi.advanceTimersByTime(31_000);
+		await getThemePolicy(requestUrl);
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+
+	it('returns the default doc on fetch failure and does not cache it', async () => {
+		const requestUrl = new URL('https://policy-failure.example/shop/');
+		const fetchMock = vi.fn(async () => new Response('{}', { status: 502 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		const first = await getThemePolicy(requestUrl);
+		expect(first.policy).toBe('auto');
+		await getThemePolicy(requestUrl);
+		expect(fetchMock).toHaveBeenCalledTimes(2); // failures never memoize
+	});
+
+	it('parses malformed bodies leniently', async () => {
+		const requestUrl = new URL('https://policy-malformed.example/shop/');
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => new Response('{"policy": 42}', { status: 200 }))
+		);
+		const doc = await getThemePolicy(requestUrl);
+		expect(doc.policy).toBe('auto');
+	});
+});
+
+describe('getShop (106 §1.3)', () => {
+	const shopDoc = {
+		checkoutUrl: 'https://nvoos.pro/checkout/',
+		cartUrl: 'https://nvoos.pro/cart/',
+		currency: 'USD',
+		currencySymbol: '$',
+		updatedAt: '2026-11-03T09:00:00Z',
+	};
+
+	beforeEach(() => {
+		vi.unstubAllGlobals();
+		vi.unstubAllEnvs();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.unstubAllEnvs();
+	});
+
+	it('fetches globals/shop through the resolved base and memoizes 60 s', async () => {
+		const requestUrl = new URL('https://shop-memo.example/cart/');
+		vi.useFakeTimers();
+		const fetchMock = vi.fn(
+			async (_input: RequestInfo | URL) =>
+				new Response(JSON.stringify(shopDoc), { status: 200 })
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		const shop = await getShop(requestUrl);
+		expect(shop.checkoutUrl).toBe('https://nvoos.pro/checkout/');
+		const url = String(fetchMock.mock.calls[0][0]);
+		expect(url).toBe('https://shop-memo.example/api/globals/shop');
+
+		await getShop(requestUrl);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		vi.advanceTimersByTime(61_000);
+		await getShop(requestUrl);
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+
+	it('fails closed to the default doc on failure', async () => {
+		const requestUrl = new URL('https://shop-failure.example/cart/');
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => new Response('{}', { status: 404 }))
+		);
+		const shop = await getShop(requestUrl);
+		expect(shop.checkoutUrl).toBe('');
 	});
 });

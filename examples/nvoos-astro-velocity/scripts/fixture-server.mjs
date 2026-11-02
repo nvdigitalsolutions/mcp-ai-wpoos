@@ -42,6 +42,240 @@ const COLLECTIONS = {
 	promocodes,
 };
 
+// ---------------------------------------------------------------------------
+// Proposal 106 §1.1 — a variable product fixture. Variants ride the
+// SINGLE-doc route only (the Payload pattern: listings stay flat) and are
+// kept OUT of the products array, so tests/fixtures/products.json stays
+// byte-identical to the bridge goldens (the 9901-draft discipline).
+// ---------------------------------------------------------------------------
+const productVariants = {
+	3: [
+		{
+			id: 301,
+			sku: 'HLC-COMP-OAK',
+			price: 749,
+			oldPrice: 799,
+			stock: 4,
+			attributes: [{ name: 'Size', value: 'Compact' }],
+			image: 'http://localhost:8000/wp-content/uploads/2026/10/halo-chair.jpg',
+		},
+		{
+			id: 302,
+			sku: 'HLC-STD-OAK',
+			price: 799,
+			oldPrice: 899,
+			stock: 0,
+			attributes: [{ name: 'Size', value: 'Standard' }],
+			image: 'http://localhost:8000/wp-content/uploads/2026/10/halo-chair.jpg',
+		},
+		{
+			id: 303,
+			sku: 'HLC-LRG-OAK',
+			price: 849,
+			oldPrice: null,
+			stock: 2,
+			attributes: [{ name: 'Size', value: 'Large' }],
+			image: 'http://localhost:8000/wp-content/uploads/2026/10/halo-chair-2.jpg',
+		},
+	],
+};
+
+// ---------------------------------------------------------------------------
+// Proposal 105 §1 — the theme-policy doc. GET is public; PATCH mutates the
+// in-memory copy through the manager seam (the nvoos_fixture_manager cookie,
+// mirroring /auth/me) and re-stamps updatedAt — the SSR cache-key component.
+// ---------------------------------------------------------------------------
+let themePolicy = {
+	policy: 'auto',
+	contrast: 'auto',
+	defaultTheme: 'dark',
+	updatedAt: '2026-11-03T09:00:00Z',
+	$extensions: {},
+};
+
+const POLICY_VALUES = ['auto', 'light', 'dark'];
+const BRAND_SLUG_RE = /^brand:[a-z0-9-]+$/;
+const CONTRAST_VALUES = ['auto', 'standard', 'high'];
+const DEFAULT_THEME_VALUES = ['light', 'dark'];
+
+function isManagerRequest(req) {
+	return /(?:^|;\s*)nvoos_fixture_manager=1(?:;|$)/.test(String(req.headers.cookie ?? ''));
+}
+
+function patchThemePolicy(body) {
+	const patch = {};
+	if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+		return { error: { code: 'astro_theme_policy_invalid_body', message: 'Expected a JSON object.' } };
+	}
+	for (const [key, value] of Object.entries(body)) {
+		if (key === 'policy') {
+			if (typeof value !== 'string' || (!POLICY_VALUES.includes(value) && !BRAND_SLUG_RE.test(value))) {
+				return { error: { code: 'astro_theme_policy_invalid_policy', message: 'policy must be auto | light | dark | brand:<slug>.' } };
+			}
+			patch.policy = value;
+		} else if (key === 'contrast') {
+			if (!CONTRAST_VALUES.includes(value)) {
+				return { error: { code: 'astro_theme_policy_invalid_contrast', message: 'contrast must be auto | standard | high.' } };
+			}
+			patch.contrast = value;
+		} else if (key === 'defaultTheme') {
+			if (!DEFAULT_THEME_VALUES.includes(value)) {
+				return { error: { code: 'astro_theme_policy_invalid_default_theme', message: 'defaultTheme must be light | dark.' } };
+			}
+			patch.defaultTheme = value;
+		} else {
+			return { error: { code: 'astro_theme_policy_invalid_field', message: `Unknown field: ${key}` } };
+		}
+	}
+	themePolicy = {
+		...themePolicy,
+		...patch,
+		updatedAt: new Date().toISOString(),
+	};
+	return { doc: themePolicy };
+}
+
+// ---------------------------------------------------------------------------
+// Proposal 106 §1.3 — the shop globals doc (checkout handoff).
+// ---------------------------------------------------------------------------
+const shop = {
+	checkoutUrl: 'https://nvoos.pro/checkout/',
+	cartUrl: 'https://nvoos.pro/cart/',
+	currency: 'USD',
+	currencySymbol: '$',
+	updatedAt: '2026-11-03T09:00:00Z',
+};
+
+// ---------------------------------------------------------------------------
+// Proposal 106 §1.2 — CMS content fixtures (content/pages + content/posts).
+// Inline (not tests/fixtures/*.json): the golden fixtures are the bridge
+// product contract and stay byte-identical; the synthetic draft 9902 pins
+// publish-only listings end to end.
+// ---------------------------------------------------------------------------
+const contentPages = [
+	{
+		id: 21,
+		slug: 'about',
+		title: 'About',
+		excerpt: 'About the NV Store.',
+		content: '<p>Raw about content.</p>',
+		contentRendered: '<p>The <strong>NV Store</strong> is an NV-authored, MIT-licensed headless storefront.</p>',
+		type: 'page',
+		featuredImage: null,
+		seoTitle: 'About | NV Store',
+		seoDescription: 'About the NV Store — an NV-authored, MIT-licensed Astro storefront.',
+		category: null,
+		createdAt: '2026-09-10 10:00:00',
+		updatedAt: '2026-10-20 09:30:00',
+		status: 'publish',
+	},
+	{
+		id: 22,
+		slug: 'delivery',
+		title: 'Delivery',
+		excerpt: 'Delivery information.',
+		content: '<p>Raw delivery content.</p>',
+		contentRendered: '<p>Free delivery over $500. Standard orders ship in 2-4 working days.</p>',
+		type: 'page',
+		featuredImage: null,
+		seoTitle: 'Delivery | NV Store',
+		seoDescription: 'Delivery information for the NV Store.',
+		category: null,
+		createdAt: '2026-09-12 10:00:00',
+		updatedAt: '2026-10-18 09:00:00',
+		status: 'publish',
+	},
+];
+
+const contentPosts = [
+	{
+		id: 101,
+		slug: 'autumn-lookbook',
+		title: 'Autumn Lookbook 2026',
+		excerpt: 'Our autumn selection, in one look.',
+		content: '<p>Raw lookbook content.</p>',
+		contentRendered: '<p>Our autumn lookbook pairs warm terracotta tones with solid oak.</p>',
+		type: 'post',
+		featuredImage: null,
+		seoTitle: 'Autumn Lookbook 2026 | NV Store',
+		seoDescription: 'Our autumn selection, in one look.',
+		category: { id: 3, name: 'Lookbooks' },
+		createdAt: '2026-10-01 10:00:00',
+		updatedAt: '2026-10-15 09:00:00',
+		status: 'publish',
+	},
+	{
+		id: 102,
+		slug: 'caring-for-oak',
+		title: 'Caring for Oak Furniture',
+		excerpt: 'A two-minute care guide.',
+		content: '<p>Raw care-guide content.</p>',
+		contentRendered: '<p>Oil your oak twice a year and keep it out of direct sunlight.</p>',
+		type: 'post',
+		featuredImage: null,
+		seoTitle: 'Caring for Oak Furniture | NV Store',
+		seoDescription: 'A two-minute care guide for oak furniture.',
+		category: { id: 4, name: 'Guides' },
+		createdAt: '2026-10-05 10:00:00',
+		updatedAt: '2026-10-12 10:00:00',
+		status: 'publish',
+	},
+	{
+		id: 103,
+		slug: 'studio-notes-november',
+		title: 'Studio Notes: November',
+		excerpt: 'What the studio is working on.',
+		content: '<p>Raw studio-notes content.</p>',
+		contentRendered: '<p>November brings a new wool range and a smaller-footprint daybed.</p>',
+		type: 'post',
+		featuredImage: null,
+		seoTitle: 'Studio Notes: November | NV Store',
+		seoDescription: 'What the studio is working on this November.',
+		category: { id: 3, name: 'Lookbooks' },
+		createdAt: '2026-10-20 10:00:00',
+		updatedAt: '2026-10-26 08:00:00',
+		status: 'publish',
+	},
+	{
+		id: 9902,
+		slug: 'unreleased-draft-post',
+		title: 'Unreleased Draft Post',
+		excerpt: 'Draft fixture.',
+		content: '<p>Draft content.</p>',
+		contentRendered: '<p>Draft fixture — must never render publicly.</p>',
+		type: 'post',
+		featuredImage: null,
+		seoTitle: '',
+		seoDescription: '',
+		category: { id: 3, name: 'Lookbooks' },
+		createdAt: '2026-11-01 10:00:00',
+		updatedAt: '2026-11-01 10:00:00',
+		status: 'draft',
+	},
+];
+
+const CONTENT_COLLECTIONS = {
+	'content/pages': contentPages,
+	'content/posts': contentPosts,
+};
+
+/** where[slug][equals] / where[category][equals] for content listings. */
+function filterContent(docs, where) {
+	let out = [...docs];
+	for (const [field, operators] of Object.entries(where ?? {})) {
+		for (const [operator, value] of Object.entries(operators)) {
+			if (operator !== 'equals') continue;
+			if (field === 'slug') {
+				out = out.filter((doc) => doc.slug === String(value));
+			}
+			if (field === 'category') {
+				out = out.filter((doc) => doc.category && doc.category.id === Number(value));
+			}
+		}
+	}
+	return out;
+}
+
 // Proposal 104 §2.6 — a synthetic DRAFT product, appended at boot and never
 // written to tests/fixtures/ (the golden JSON is the bridge contract and
 // stays byte-identical). Exercises the storefront publication guard
@@ -168,6 +402,36 @@ const server = createServer((req, res) => {
 	if (segments[0] === 'globals') {
 		if (segments[1] === 'banner') return send(res, 200, banner);
 		if (segments[1] === 'carousel') return send(res, 200, carousel);
+		if (segments[1] === 'shop') return send(res, 200, shop);
+		if (segments[1] === 'theme') {
+			if (req.method === 'GET') return send(res, 200, themePolicy);
+			if (req.method === 'PATCH') {
+				// Manager seam (105 §1): manage_astro → the manager cookie.
+				if (!isManagerRequest(req)) {
+					return send(res, 403, { code: 'rest_forbidden', message: 'manage_astro required.' });
+				}
+				let raw = '';
+				req.setEncoding('utf8');
+				req.on('data', (chunk) => {
+					raw += chunk;
+				});
+				req.on('end', () => {
+					let body = null;
+					try {
+						body = raw ? JSON.parse(raw) : {};
+					} catch {
+						return send(res, 400, { code: 'astro_theme_policy_invalid_body', message: 'Body must be JSON.' });
+					}
+					const result = patchThemePolicy(body);
+					if (result.error) {
+						return send(res, 400, result.error);
+					}
+					return send(res, 200, result.doc);
+				});
+				return;
+			}
+			return send(res, 405, { code: 'fixture_method_not_allowed' });
+		}
 		return send(res, 404, { code: 'fixture_not_found' });
 	}
 
@@ -216,6 +480,42 @@ const server = createServer((req, res) => {
 		return send(res, 404, { code: 'fixture_not_found' });
 	}
 
+	// Content collections (106 §1.2) — listings + single docs.
+	const contentCollection = CONTENT_COLLECTIONS[`${segments[0]}/${segments[1]}`];
+	if (contentCollection) {
+		if (segments.length >= 3) {
+			const id = Number(segments[2]);
+			const doc = contentCollection.find((item) => item.id === id);
+			if (!doc) return send(res, 404, { code: 'fixture_not_found' });
+			return send(res, 200, doc);
+		}
+		const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+		const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 10));
+		const where = {};
+		for (const [key, value] of url.searchParams.entries()) {
+			const match = /^where\[(.+)\]\[(.+)\]$/.exec(key);
+			if (!match) continue;
+			const [, field, operator] = match;
+			where[field] = where[field] ?? {};
+			if (where[field][operator] === undefined) {
+				where[field][operator] = value;
+			} else if (Array.isArray(where[field][operator])) {
+				where[field][operator].push(value);
+			} else {
+				where[field][operator] = [where[field][operator], value];
+			}
+		}
+		let docs = filterContent(contentCollection, where);
+		// Publish-only listings (drafts excluded — the 9902 pin), unless the
+		// manager preview passes status=any.
+		if (url.searchParams.get('status') !== 'any') {
+			docs = docs.filter((doc) => doc.status === undefined || doc.status === 'publish');
+		}
+		return send(res, 200, envelope(docs, page, limit), {
+			'cache-control': 'public, s-maxage=300, stale-while-revalidate=60',
+		});
+	}
+
 	// Collections.
 	const collection = COLLECTIONS[segments[0]];
 	if (!collection) {
@@ -226,6 +526,10 @@ const server = createServer((req, res) => {
 		const id = Number(segments[1]);
 		const doc = collection.find((item) => item.id === id);
 		if (!doc) return send(res, 404, { code: 'fixture_not_found' });
+		// 106 §1.1: variants ride the single-doc route only (listings stay flat).
+		if (collection === products && productVariants[id]) {
+			return send(res, 200, { ...doc, variants: productVariants[id] });
+		}
 		return send(res, 200, doc);
 	}
 

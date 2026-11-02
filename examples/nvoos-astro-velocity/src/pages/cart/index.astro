@@ -1,11 +1,16 @@
 ---
 // Cart page — server shell + client-hydrated CartView island.
+// The shop globals doc (106 §1.3) is fetched server-side and passed to the
+// island so the checkout handoff URL is backend-authored, never baked.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CartView from '../../islands/CartView';
+import { getShop } from '../../lib/commerce/client';
 import { pageTitle } from '../../lib/seo/meta';
+
+const shop = await getShop(Astro.url);
 ---
 
 <BaseLayout title={pageTitle('Cart')}>
 	<h1>Cart</h1>
-	<CartView client:load />
+	<CartView client:load shop={shop} />
 </BaseLayout>

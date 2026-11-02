@@ -17,17 +17,33 @@ export default defineConfig({
 	// in-process MCP token state (apply/rollback). They run in their own
 	// single-worker, serial project so parallel theme/specs cannot interleave
 	// with their assertions. Everything else stays fully parallel.
+	//
+	// Proposal 105 note: theme-policy PATCHes the shared fixture policy doc,
+	// which would race every other spec's theme assertions — so it runs
+	// serial against its OWN fixture + BFF pair (ports 8124/4322) with the
+	// policy memo disabled (NVOOS_THEME_POLICY_TTL=0) so a PATCH is visible
+	// to the very next SSR render in the same long-lived process.
 	projects: [
 		{
 			name: 'default',
 			fullyParallel: true,
-			testIgnore: /(design-import|rebrand-loop)\.spec\.ts/,
+			testIgnore: /(design-import|rebrand-loop|theme-policy)\.spec\.ts/,
 		},
 		{
 			name: 'stateful-mcp',
 			fullyParallel: false,
 			workers: 1,
 			testMatch: /(design-import|rebrand-loop)\.spec\.ts/,
+		},
+		{
+			name: 'theme-policy',
+			fullyParallel: false,
+			workers: 1,
+			testMatch: /theme-policy\.spec\.ts/,
+			use: {
+				baseURL: 'http://localhost:4322',
+				trace: 'on-first-retry',
+			},
 		},
 	],
 	webServer: [
@@ -53,6 +69,30 @@ export default defineConfig({
 				// The design-import e2e analyzes a loopback design source —
 				// private-host fetches are opt-in and dev-mount only (Proposal 098).
 				NVOOS_MCP_FETCH_ALLOW_PRIVATE: '1',
+			},
+		},
+		// The theme-policy spec PATCHes the policy doc, which would race every
+		// other spec's theme assertions — so it runs serial against its OWN
+		// fixture + BFF pair (ports 8124/4322) with the policy memo disabled
+		// (NVOOS_THEME_POLICY_TTL=0) so a PATCH is visible to the very next
+		// SSR render in the same long-lived process.
+		{
+			command: 'node scripts/fixture-server.mjs',
+			port: 8124,
+			reuseExistingServer: true,
+			stdout: 'ignore',
+			env: { ...process.env, PORT: '8124' },
+		},
+		{
+			command: 'node scripts/serve.mjs',
+			port: 4322,
+			reuseExistingServer: true,
+			stdout: 'ignore',
+			env: {
+				...process.env,
+				PORT: '4322',
+				NVOOS_TARGET_SITE: 'http://localhost:8124',
+				NVOOS_THEME_POLICY_TTL: '0',
 			},
 		},
 	],

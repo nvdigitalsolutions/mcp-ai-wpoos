@@ -76,13 +76,21 @@ export function toIsoDate(value: string): string | null {
 	return date.toISOString();
 }
 
-/** Normalize every media field on a product (used at the fetch edge). */
+/** Normalize every media field on a product (used at the fetch edge).
+ *  Variant images (106 §1.1) get the same /media/* rewrite. */
 export function normalizeProductMedia<T extends { image: string; images: string[] }>(
 	product: T
 ): T {
-	return {
+	const next: T & { variants?: Array<{ image: string | null } & Record<string, unknown>> } = {
 		...product,
 		image: normalizeMediaUrl(product.image),
 		images: product.images.map(normalizeMediaUrl),
 	};
+	if (Array.isArray(next.variants)) {
+		next.variants = next.variants.map((variant) => ({
+			...variant,
+			image: variant.image ? normalizeMediaUrl(variant.image) : variant.image,
+		}));
+	}
+	return next;
 }

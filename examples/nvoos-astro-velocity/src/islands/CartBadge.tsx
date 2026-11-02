@@ -16,9 +16,10 @@ export default function CartBadge() {
 	}, []);
 
 	return (
-		<a href="/cart/" className="cart-badge" aria-label={`Cart, ${count} item${count === 1 ? '' : 's'}`}>
-			<span aria-hidden="true">Cart</span>
+		<a href="/cart/" className="cart-badge">
+			<span>Cart</span>
 			{count > 0 && <span className="cart-badge__count">{count}</span>}
+			<span className="sr-only">item{count === 1 ? '' : 's'}</span>
 		</a>
 	);
 }
