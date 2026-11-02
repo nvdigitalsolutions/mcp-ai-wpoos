@@ -625,29 +625,42 @@ fn finalize_inner(
             ));
         }
 
-        // Deterministic console targeting: when the NV oOS console window is
-        // foreground, the user intends to talk with the active assistant —
-        // focus the chat composer before pasting so the text lands there
-        // regardless of where the last click inside the console was. The eval
-        // only moves focus; delivery stays the OS-level Ctrl+V (robust across
-        // console versions).
+        // Deterministic console delivery: the NV oOS console is this app's
+        // own webview. When the console window is open and the user is
+        // dictating "at the app" (any of our windows foreground — including
+        // watching the Status area), insert the text straight into the
+        // console's chat composer instead of relying on OS focus + Ctrl+V.
+        // React-safe: the native value setter + a bubbling input event drives
+        // the controlled component; no OS foreground requirement.
         #[cfg(windows)]
-        if crate::util::win_foreground::foreground_is_console_window() {
-            if let Some(console_window) = app.get_webview_window("nvoos-console") {
-                let focused = console_window
-                    .eval("document.querySelector('textarea')?.focus()")
-                    .is_ok();
-                tracing::debug!("console composer focus eval ok={focused}");
-                if focused {
-                    // Let the page-level focus settle before the synthesized
-                    // Ctrl+V lands.
-                    std::thread::sleep(std::time::Duration::from_millis(60));
+        let delivered_to_console = {
+            if crate::util::win_foreground::foreground_is_own_window() {
+                if let Some(console_window) = app.get_webview_window("nvoos-console") {
+                    let js = format!(
+                        "(function(){{var text={};var t0=Date.now();function trySet(){{var el=document.querySelector('textarea');if(el){{var setter=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;setter.call(el,text);el.dispatchEvent(new Event('input',{{bubbles:true}}));el.focus();return}}if(Date.now()-t0<2000){{setTimeout(trySet,100)}}}}trySet();}})()",
+                        serde_json::to_string(&final_text).unwrap_or_else(|_| "\"\"".into())
+                    );
+                    match console_window.eval(&js) {
+                        Ok(()) => Some(true),
+                        Err(e) => {
+                            tracing::warn!("console composer delivery eval failed: {e}");
+                            Some(false)
+                        }
+                    }
+                } else {
+                    None
                 }
+            } else {
+                None
             }
-        }
+        };
+        #[cfg(not(windows))]
+        let delivered_to_console: Option<bool> = None;
 
-        // Paste (Stage-1 or polished text — never blocked by provider failure).
-        state.paste.paste(&final_text)?;
+        if delivered_to_console != Some(true) {
+            // Paste (Stage-1 or polished text — never blocked by provider failure).
+            state.paste.paste(&final_text)?;
+        }
 
         let e2e_ms = started.elapsed().as_millis() as i64;
 

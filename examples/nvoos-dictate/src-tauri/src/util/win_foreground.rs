@@ -82,11 +82,20 @@ fn foreground_own_window_category() -> Option<AppCategory> {
     }
 }
 
-/// Whether the foreground window is our own NV oOS console window — the
-/// dictate app's deterministic chat target (focus the console composer
-/// before pasting).
-pub fn foreground_is_console_window() -> bool {
-    foreground_own_window_category().is_some()
+/// Whether the foreground window belongs to this app (main, console, overlay,
+/// or snippet). Used for deterministic console delivery: when the user is
+/// "at the app" — including watching its Status area — and the console window
+/// is open, dictation targets the console composer.
+pub fn foreground_is_own_window() -> bool {
+    unsafe {
+        let hwnd: HWND = GetForegroundWindow();
+        if hwnd.0.is_null() {
+            return false;
+        }
+        let mut pid: u32 = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid as *mut u32));
+        pid != 0 && pid == GetCurrentProcessId()
+    }
 }
 
 /// Pure mapping from our own window titles to a cleanup category
