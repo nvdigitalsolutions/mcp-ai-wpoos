@@ -388,6 +388,33 @@ is the reference consumer, not a requirement. Pass results:
   container with the wp-tests-config written into a `/tmp` copy of the
   plugin (never the bind mount).
 
+### forge-bridge — submission state (2026-11-03)
+
+Readiness PRs merged (#7388 + #7390 standalone framing). The submission ZIP
+is hosted on a GitHub release (no standalone mirror repo yet): tag
+`nvoos-forge-bridge-v0.1.0` → add-form Plugin URL
+`https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvoos-forge-bridge-v0.1.0/nvoos-forge-bridge-v0.1.0.zip`
+(sha256 `491704670abfc781511c9612100ace9b75f0b80a19cf4cd1b3963385f20b21b9`).
+CI evidence: the `plugin-check` job passed on both PRs with
+`Plugin Check ERRORS=0, WARNINGS=0` (runs 41456964217, 41458449391).
+
+Drafted add-form fields:
+
+- **Plugin name:** `NV oOS Forge Bridge` — request slug `nvoos-forge-bridge`
+  (the form derives `nv-oos-forge-bridge` from the name; the slug must match
+  the ZIP folder / text domain — a mismatch is a TextDomainMismatch review
+  category).
+- **Plugin description:** "Signed, debounced rebuild webhook when WordPress
+  content changes: works with GitHub Actions, Netlify, Vercel, or any CI.
+  Mints preview tokens." (under the 150-char limit).
+- **Additional Information:** slug request first; standalone framing (any
+  `repository_dispatch` consumer works, the forge is the reference consumer
+  only); the single server-to-server POST to the GitHub API is sent only
+  after enable + URL + token + secret are saved and nothing is sent to
+  browsers (matches `== External Services ==`); no premium/upsells; validation
+  numbers (PCP 0/0, phpcs 0, PHPUnit 30/30) + source link
+  `github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/alpha-working/plugins/nvoos-forge-bridge`.
+
 ### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
 
 Docs Hub added the ported commerce stack (upsell card after the settings

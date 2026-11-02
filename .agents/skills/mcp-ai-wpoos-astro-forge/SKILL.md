@@ -240,7 +240,8 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   not a requirement. The payload's self-verifying `time`/`nonce`/`signature`
   proof (`payload_signature()`) exists because the `X-Forge-Signature`
   header does not survive GitHub's dispatch delivery.
-  **wp.org readiness pass (PR #7388, pending merge):** pre-review fixes —
+  **wp.org readiness pass (PR #7388, merged 2026-11-02; standalone-framing
+  follow-up #7390):** pre-review fixes —
   `/preview-tokens/verify` is POST-only (state-changing GET removed, pinned
   by a GET-404 test), autosave/revision/auto-draft saves are skipped in
   `save_post`, `delete_post` + `trashed_post` hooks added, minting requires
@@ -252,6 +253,13 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
   `bin/build-nvoos-forge-bridge.py` (Python zipfile, shape assertions, the
   ZIP itself is never committed); 18-point signoff
   `WPORG-REVIEW-18POINT-SIGNOFF.md` (excluded from the ZIP).
+  **Submission state (2026-11-03):** the `plugin-check` CI job passed on both
+  PRs (`Plugin Check ERRORS=0, WARNINGS=0` — runs 41456964217 / 41458449391).
+  GitHub release `nvoos-forge-bridge-v0.1.0` hosts the submission ZIP + sha256
+  (no standalone mirror repo yet) — the add-form Plugin URL:
+  `https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvoos-forge-bridge-v0.1.0/nvoos-forge-bridge-v0.1.0.zip`.
+  The drafted add-form copy (name, short description, Additional Information)
+  lives in the wporg-submission skill's forge-bridge section.
 - **Phase 3 — shipped 2026-10-31:** vault + multi-site + GitHub deploy +
   generated pipeline (see `-implementation-plan.md` §2.7): `forge vault` /
   `forge site` / `forge deploy` commands; repos private by default;
