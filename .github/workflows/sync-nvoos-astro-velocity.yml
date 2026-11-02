@@ -125,6 +125,11 @@ jobs:
         env:
           NVOOS_TARGET_SITE: http://localhost:8123
           PORT: '4321'
+          # Q3 revalidation seam (Proposal 104 §4.1): smoke REUSES this
+          # pre-booted BFF, so the token must be set here at boot — the
+          # spawn path inside smoke.mjs never runs in CI. Must match the
+          # bearer used by the smoke checks ('smoke-revalidate-secret').
+          NVOOS_REVALIDATE_TOKEN: 'smoke-revalidate-secret'
           # Dev-mount opt-in: the design-import e2e analyzes a loopback
           # design source. Playwright REUSES this pre-booted server (the
           # playwright.config.ts env never applies on the reuse path — see
