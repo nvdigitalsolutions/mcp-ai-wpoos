@@ -253,3 +253,67 @@ flowchart TD
   pattern (multi-site, policy-filtered tools) — complementary, not replaced.
 - `.agents/skills/mcp-ai-wpoos-plugin/SKILL.md` — operational guide for the
   plugin's MCP bridge.
+
+---
+
+## 7. Live-docs refresh (2026-11-02)
+
+Re-checked against the live OpenAI portal docs
+(`plugins/deploy/submission`, `plugins/deploy/app-review`,
+`plugins/build/auth`, the Agent Plugins `mcp.schema.json`) before starting
+Phase 3. Deltas vs. the 2026-10-03 snapshot above:
+
+1. **Submission flow.** Upload ZIP → automated metadata checks → connect
+   **exactly one** MCP server per plugin (domain-verification challenge at
+   `/.well-known/openai-apps-challenge`, plain text, challenge base = an
+   HTTPS origin on the MCP hostname or eligible parent) → Scan Tools →
+   review details → submit → approve → publish. Metadata/skill changes need
+   a new ZIP; hosted tool changes only need a rescan. **Origin lock:** a
+   scheme/host/port change = a new plugin; only the endpoint path can change
+   across versions.
+2. **ZIP hygiene.** The portal rejects `test_credentials` and
+   `reviewer_instructions` in the package (reviewer access goes in the
+   dashboard form), lifecycle hooks / `apps` references, nonempty server
+   `headers`, and API-key-only auth (the portal has no API-key connection
+   flow; OAuth `provided`/`dcr`/`cimd` are the supported methods).
+3. **Field limits (live reference).** `displayName` ≤30, `shortDescription`
+   ≤30, `longDescription` ≤4000, `developerName` ≤80, ≤20 capabilities of
+   ≤120 chars, ≤3 `defaultPrompt`s of ≤128 chars; all four listing URLs
+   (`websiteURL`, `supportURL`, `privacyPolicyURL`, `termsOfServiceURL`)
+   required for MCP review; icons square ≥48px, ≤5 MiB, ≤4096px,
+   PNG/JPEG/WebP/SVG; `review.test_cases` = exactly 5 positive (each with
+   `tools_triggered` + `expected_behavior`) + 3 negative (`description` +
+   `prompt`); `demo_recording_url` required; `commerce` in `review`, not
+   `publication`; `publication.countries`/`release_notes`/`translations`.
+4. **CIMD details.** ChatGPT's production CIMD publishes both
+   `token_endpoint_auth_methods_supported` (plural) and the legacy singular
+   `token_endpoint_auth_method: "private_key_jwt"`; stable CIMD URL
+   `https://chatgpt.com/oauth/client.json` applies when the AS meets RFC
+   9207 issuer identification. The Agent Plugins `mcp.schema.json` has **no
+   OAuth extension keys** — the portal's OAuth settings live in its connect
+   panel / OpenAI-specific package extensions, not the portable schema.
+5. **Profile tool contract.** Response must carry `structuredContent` (top
+   level, matching `outputSchema`) **and** the same JSON in a text content
+   item, `isError: false`; `id` must be opaque, stable across refresh/
+   reconnect/email change, never reassigned. Confirmed repo-side:
+   `nvoos_get_profile` advertises `_meta["openai/profile"]` + `outputSchema`
+   when OAuth is configured.
+6. **Annotation definitions (verbatim).** `readOnlyHint: true` only when the
+   tool never modifies state; `destructiveHint: true` when irreversible
+   (delete/overwrite/send/revoke); `openWorldHint: true` when touching the
+   public internet or open-ended external entities (a bounded private
+   account is NOT open-world). Optional `idempotentHint` now exists.
+7. **Top rejection reasons.** Unreachable MCP server with the reviewer
+   credentials; test-case mismatches; undisclosed user-related data (strip
+   session/trace/request IDs, timestamps, internal account IDs, auth
+   secrets); annotation/hint mismatches. Reviewer accounts must work with
+   no MFA and from outside any private network. EU-data-residency projects
+   cannot submit MCP plugins (use global residency). Publisher needs
+   verified identity + `api.apps.write`/`api.apps.read`.
+8. **Actions taken this pass.** `plugin.json` + `.codex-plugin/plugin.json`
+   bumped to 0.2.0 (lockstep), full `interface`/`review`/`publication`
+   blocks added per the live schema, `assets/logo.png` + `assets/icon.png`
+   (512×512 brand mark) added, CHANGELOG updated, `bin/validate.mjs` green.
+   Open: privacy/terms Pages at the mirror host, `demo_recording_url`,
+   portal OAuth registration fields, test-case verification after Scan
+   Tools, and the publisher-identity + reviewer-account items.
