@@ -615,6 +615,27 @@ fn finalize_inner(
             }
         }
 
+        // Deterministic console targeting: when the NV oOS console window is
+        // foreground, the user intends to talk with the active assistant —
+        // focus the chat composer before pasting so the text lands there
+        // regardless of where the last click inside the console was. The eval
+        // only moves focus; delivery stays the OS-level Ctrl+V (robust across
+        // console versions).
+        #[cfg(windows)]
+        if crate::util::win_foreground::foreground_is_console_window() {
+            if let Some(console_window) = app.get_webview_window("nvoos-console") {
+                let focused = console_window
+                    .eval("document.querySelector('textarea')?.focus()")
+                    .is_ok();
+                tracing::debug!("console composer focus eval ok={focused}");
+                if focused {
+                    // Let the page-level focus settle before the synthesized
+                    // Ctrl+V lands.
+                    std::thread::sleep(std::time::Duration::from_millis(60));
+                }
+            }
+        }
+
         // Paste (Stage-1 or polished text — never blocked by provider failure).
         state.paste.paste(&final_text)?;
 

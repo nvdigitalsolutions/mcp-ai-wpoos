@@ -82,6 +82,13 @@ fn foreground_own_window_category() -> Option<AppCategory> {
     }
 }
 
+/// Whether the foreground window is our own NV oOS console window — the
+/// dictate app's deterministic chat target (focus the console composer
+/// before pasting).
+pub fn foreground_is_console_window() -> bool {
+    foreground_own_window_category().is_some()
+}
+
 /// Pure mapping from our own window titles to a cleanup category
 /// (case-insensitive).
 fn classify_own_window_title(title: &str) -> Option<AppCategory> {
