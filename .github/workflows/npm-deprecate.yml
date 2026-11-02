@@ -1,0 +1,51 @@
+# Generic npm deprecation runner — dispatch-only.
+#
+# Deprecates versions of an NV oOS npm package using the NPM_TOKEN secret
+# (local machines are not npm-authenticated; the token never leaves CI).
+#
+# Usage (any ref — the workflow file must exist on the dispatched ref):
+#   gh api -X POST "repos/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/npm-deprecate.yml/dispatches" \
+#     -f ref=<ref> \
+#     -F 'inputs[package]=@nvdigitalsolutions/nvoos-astro-forge' \
+#     -F 'inputs[versions]=0.1.0 0.0.0-stage' \
+#     -F 'inputs[message]=Superseded — use 0.1.1'
+
+name: NPM Deprecate
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package name (scope-prefixed)'
+        required: true
+        type: string
+      versions:
+        description: 'Space-separated versions to deprecate'
+        required: true
+        type: string
+      message:
+        description: 'Deprecation message'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deprecate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Deprecate versions
+        run: |
+          for v in ${{ inputs.versions }}; do
+            echo "Deprecating ${{ inputs.package }}@$v"
+            npm deprecate "${{ inputs.package }}@$v" "${{ inputs.message }}"
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
