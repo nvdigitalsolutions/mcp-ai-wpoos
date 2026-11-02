@@ -1,4 +1,4 @@
-# CI: build + test the NV oOS Dictation companion app
+# CI: build + test the NV oOS Cognition companion app
 #
 # Mirrors the repo's standalone-plugin workflow shape. The default cargo
 # feature set (mock engine) needs no C++ toolchain, so this job runs
@@ -14,7 +14,7 @@
 # artifact, so every push leaves a current Windows binary alongside the
 # macOS universal .app.
 
-name: Build NV oOS Dictation
+name: Build NV oOS Cognition
 
 on:
   push:
@@ -222,13 +222,13 @@ jobs:
       # + notarized universal DMG instead.
       - name: Package .app for download
         run: |
-          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Cognition.app"
           ditto -c -k --sequesterRsrc --keepParent "$APP" /tmp/nvoos-dictate-macos-universal.zip
           ls -lh /tmp/nvoos-dictate-macos-universal.zip
 
       - name: Inspect bundle (Info.plist + entitlements + universal slices)
         run: |
-          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Cognition.app"
           test -d "$APP" || { echo "bundle missing: $APP"; ls -R src-tauri/target/universal-apple-darwin/debug/bundle 2>/dev/null || true; exit 1; }
           plutil -p "$APP/Contents/Info.plist"
           echo "--- entitlements (debug build = ad-hoc signed) ---"
@@ -251,7 +251,7 @@ jobs:
       # helper and pick the remaining executable.
       - name: Boot the app (native arm64 slice, 30 s residency)
         run: |
-          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Cognition.app"
           BIN="$(find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -u+x ! -name '*helper*' -print -quit)"
           if [[ -z "$BIN" ]]; then echo "no executable in $APP/Contents/MacOS"; ls -la "$APP/Contents/MacOS"; exit 1; fi
           echo "launching $BIN (native)"
@@ -263,7 +263,7 @@ jobs:
               echo "app exited before the 30 s mark (native) — boot log:"
               cat /tmp/nvoos-boot-native.log
               echo "--- unified log (last 2 min, best effort) ---"
-              log show --last 2m --predicate 'processImagePath CONTAINS "NV oOS Dictation"' 2>/dev/null | tail -40 || true
+              log show --last 2m --predicate 'processImagePath CONTAINS "NV oOS Cognition"' 2>/dev/null | tail -40 || true
               exit 1
             fi
           done
@@ -287,7 +287,7 @@ jobs:
       # get to booting the x86_64 slice users on Intel Macs will run.
       - name: Boot the app (Intel slice under Rosetta, 30 s residency)
         run: |
-          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Cognition.app"
           # Tear down the native instance cleanly first — the single-instance
           # guard must not redirect this boot to a dying process.
           pkill -f "$APP/Contents/MacOS" 2>/dev/null || true
@@ -306,7 +306,7 @@ jobs:
               echo "app exited before the 30 s mark (rosetta) — boot log:"
               cat /tmp/nvoos-boot-rosetta.log
               echo "--- unified log (last 2 min, best effort) ---"
-              log show --last 2m --predicate 'processImagePath CONTAINS "NV oOS Dictation"' 2>/dev/null | tail -40 || true
+              log show --last 2m --predicate 'processImagePath CONTAINS "NV oOS Cognition"' 2>/dev/null | tail -40 || true
               exit 1
             fi
           done
@@ -316,7 +316,7 @@ jobs:
       - name: Stop the app
         if: always()
         run: |
-          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Dictation.app"
+          APP="src-tauri/target/universal-apple-darwin/debug/bundle/macos/NV oOS Cognition.app"
           pkill -f "$APP/Contents/MacOS" 2>/dev/null || true
 
       - name: Upload boot evidence

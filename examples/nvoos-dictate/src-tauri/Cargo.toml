@@ -1,7 +1,7 @@
 [package]
 name = "nvoos-dictate"
-version = "0.2.0"
-description = "NV oOS Dictation — local-first push-to-talk dictation and meeting transcription companion for the NV oOS WordPress plugin."
+version = "0.3.0"
+description = "NV oOS Cognition — local-first push-to-talk dictation, screen OCR and meeting transcription companion for the NV oOS WordPress plugin."
 authors = ["NV Digital Solutions"]
 edition = "2021"
 license = "proprietary"

@@ -1,4 +1,4 @@
-# NV oOS Dictation — macOS Port: Implementation Plan
+# NV oOS Cognition — macOS Port: Implementation Plan
 
 **Status:** In progress — phases M0–M6 implemented on `feat/nvoos-dictate-macos-port` (code complete, unverified on macOS hardware); M7 publish wiring done (universal build M7.5 shipped — single arm64+x86_64 DMG); M8 matrix pending first signed builds
 **Date:** 2026-10-12 (implementation started)
@@ -161,7 +161,7 @@ pane.
 
 | # | File(s) | Change |
 |---|---|---|
-| M1.1 | `src-tauri/Info.plist` | `NSMicrophoneUsageDescription` ("NV oOS Dictation uses the microphone for push-to-talk dictation and meeting recording. Audio is processed on-device and never stored without your consent.") — Tauri merges this file automatically |
+| M1.1 | `src-tauri/Info.plist` | `NSMicrophoneUsageDescription` ("NV oOS Cognition uses the microphone for push-to-talk dictation and meeting recording. Audio is processed on-device and never stored without your consent.") — Tauri merges this file automatically |
 | M1.2 | `src-tauri/entitlements.plist` (new) | `com.apple.security.device.audio-input` (+ `com.apple.security.cs.allow-unsigned-executable-memory` if whisper/ort demand it — verify); wired via `bundle.macOS.entitlements` + `hardenedRuntime: true` |
 | M1.3 | `src-tauri/src/permissions/` (new module) | `PermissionStatus { kind, granted, promptable }` for Microphone (stream-open attempt → map TCC denial to a readable error), Accessibility (`AXIsProcessTrusted`), Input Monitoring (`CGPreflightListenEventAccess`), Screen Recording (`CGPreflightScreenCaptureAccess`); `request_*` fns |
 | M1.4 | `src/` wizard step | macOS-only step: four rows (state icon, request button, "Open System Settings" deep link — `x-apple.systempreferences:com.apple.preference.security?Privacy_<Microphone|Accessibility|ListenEvent|ScreenCapture>` via `tauri-plugin-opener`), re-check on window focus (permissions change while the app runs) |

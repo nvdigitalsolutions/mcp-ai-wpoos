@@ -1,4 +1,4 @@
-# NV oOS Dictation
+# NV oOS Cognition
 
 Local-first push-to-talk dictation and meeting transcription for Windows —
 the NV oOS ecosystem's desktop companion (Resonant-style UX, your own AI
@@ -62,7 +62,7 @@ toolchain (Visual Studio Build Tools).
 
 ```bash
 npm install
-node scripts/gen-icons.mjs      # regenerates placeholder icons
+node scripts/gen-icons.mjs      # bootstrap placeholders only — committed brand icons are authoritative
 npm run tauri dev               # dev app (hot reload)
 
 # Release build (NSIS + MSI)
@@ -202,7 +202,7 @@ npm run tauri build             # signed .app + .dmg (notarization needs
 ```
 
 For unsigned local builds, clear Gatekeeper quarantine before first launch:
-`xattr -dr com.apple.quarantine "NV oOS Dictation.app"`. Keychain entries
+xattr -dr com.apple.quarantine "NV oOS Cognition.app". Keychain entries
 created by unsigned dev builds can re-prompt (the ACL binds to the code
 signature).
 
@@ -226,7 +226,7 @@ The GitHub Actions runner is the remote Mac:
   desktop, and uploads the app zipped as run artifact
   `nvoos-dictate-macos-app` plus boot evidence. Release tags publish a
   single signed + notarized universal DMG.
-- **Interactive sessions:** run the `NV oOS Dictation — macOS interactive
+- **Interactive sessions:** run the `NV oOS Cognition — macOS interactive
   session` workflow (manual `workflow_dispatch`) to build the app, run
   `scripts/macos-matrix-remote.sh` (the automatable subset of
   `docs/ptt-matrix-macos.md`), and hold the runner open for SSH (tmate).

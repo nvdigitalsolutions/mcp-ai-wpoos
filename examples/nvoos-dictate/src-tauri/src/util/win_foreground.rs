@@ -128,7 +128,7 @@ mod tests {
 
     #[test]
     fn other_own_windows_stay_unclassified() {
-        assert_eq!(classify_own_window_title("NV oOS Dictation"), None);
+        assert_eq!(classify_own_window_title("NV oOS Cognition"), None);
         assert_eq!(classify_own_window_title(""), None);
         assert_eq!(classify_own_window_title("overlay"), None);
     }

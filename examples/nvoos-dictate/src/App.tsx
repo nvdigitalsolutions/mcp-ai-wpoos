@@ -51,7 +51,7 @@ export default function App() {
       <header className="topbar">
         <div className="brand">
           <span className="brand-dot" aria-hidden />
-          NV oOS Dictation
+          NV oOS Cognition
           <span className="version">{status ? `v${status.version}` : ''}</span>
         </div>
         <nav className="tabs" aria-label="Sections">

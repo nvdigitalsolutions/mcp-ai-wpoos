@@ -1,4 +1,4 @@
-# NV oOS Dictation — Licensing Notice
+# NV oOS Cognition — Licensing Notice
 
 **This application is proprietary software owned by NV Digital Solutions.**
 

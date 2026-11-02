@@ -1,4 +1,4 @@
-//! NV oOS Dictation — library entry point (Tauri mobile-ready split).
+//! NV oOS Cognition — library entry point (Tauri mobile-ready split).
 
 pub mod agent;
 pub mod audio;
@@ -268,7 +268,7 @@ pub fn run() {
 
     builder
         .run(tauri::generate_context!())
-        .expect("error while running NV oOS Dictation");
+        .expect("error while running NV oOS Cognition");
 }
 
 #[cfg(test)]
