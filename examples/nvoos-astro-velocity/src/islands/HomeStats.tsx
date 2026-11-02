@@ -12,9 +12,9 @@ import { useEffect, useState } from 'react';
 
 interface Counts {
 	products: number;
-	categories: number;
-	brands: number;
-	posts: number;
+	categories: number | null;
+	brands: number | null;
+	posts: number | null;
 }
 
 interface Props {
@@ -48,13 +48,15 @@ export default function HomeStats({ counts }: Props) {
 	);
 }
 
-function StatItem({ label, target }: { label: string; target: number }) {
+function StatItem({ label, target }: { label: string; target: number | null }) {
 	// Start at the target so the server HTML (and any no-JS render) shows the
 	// real number; hydration state matches and the effect animates from zero.
-	const [value, setValue] = useState(target);
+	// A null target (endpoint not deployed on the backend yet) renders "—"
+	// on both sides and never animates.
+	const [value, setValue] = useState<number | null>(target);
 
 	useEffect(() => {
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+		if (target === null || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 			return;
 		}
 		setValue(0);
@@ -76,7 +78,9 @@ function StatItem({ label, target }: { label: string; target: number }) {
 	return (
 		<div className="home-stats__item">
 			<dt>{label}</dt>
-			<dd data-count={target}>{value.toLocaleString('en-US')}</dd>
+			<dd data-count={target === null ? undefined : target}>
+				{value === null ? '—' : value.toLocaleString('en-US')}
+			</dd>
 		</div>
 	);
 }
