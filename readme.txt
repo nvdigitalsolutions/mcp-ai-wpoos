@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.15
+Stable tag: 1.2.16
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.16 - November 02, 2026 =
+
+Bumped to 1.2.16 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The deep-research reliability pass lands (report validation gate, measurable depth, staged evidence, richer diagnostics) with three new base job tools (research_status/research_result/research_cancel), the new deep_research_model setting, and the thinking-model recovery ladder shared across the ten Pro research tools; the Abilities bridge verifies against the official MCP Adapter (raw WP_Error passthrough, pessimistic destructive hints). The gateway's ChatGPT OAuth connector goes live (Proposal 099 Phases 0–4) with the GATEWAY_OAUTH_DEFAULT_SITES fallback and spec-compliant underscore tool names; gateway 0.3.0 adds the OpenAI challenge route; the new chatgpt-gateway-plugin addon 0.1.0 ships (Proposal 101) and the chatgpt-plugin addon moves to 0.2.0. Sub-projects: the dictate app rebrands to NV oOS Cognition v0.3.0 with the first-party console window and on-device screen OCR; Forge Bridge completes its wp.org pre-submission pass and forge npm ships 0.1.1. Dependencies: glob 9/11/13 copies → 14.0.2 via scoped overrides. Tool count: ~358 base + ~1,378 Pro (~1,735 total; +3 base; live registry authoritative). Coding-time skills 81. Stale 1.2.14 build ZIPs removed.
 
 = 1.2.15 - November 01, 2026 =
 

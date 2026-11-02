@@ -5,9 +5,9 @@ description: "Operational guide for the NV oOS Dependabot alert triage-and-remed
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.15"
-  plugin-version-tested: "1.2.15"
-  last-updated: "2026-11-01"
+  plugin-version: "1.2.16"
+  plugin-version-tested: "1.2.16"
+  last-updated: "2026-11-02"
 ---
 
 # NV oOS Dependabot Loop — Alert Triage, Safe Bumps & Dismissal
@@ -208,6 +208,28 @@ streaming. The entire 2.x line is vulnerable (no backport), so the only fix is
 the `@ai-sdk/react` 1.x → 2.x migration — file a tracking issue instead
 (Step 9). Never ship an override you have not verified against the consumer's
 call sites.
+
+Case study — a verified-safe cross-major bump that SHIPPED (the 2026-11-01
+glob run, PR #7367, GHSA-3g3m-2fjr-6pw4): the advisory's patched range (`>= 14.0.2`)
+excluded the whole installed 9/10/11/13 line, so this was a cross-major override
+in five manifests (`glob@^10`/`^11`/`^13` → 14.0.2). It shipped because the
+proof was strong:
+
+1. A **165-case behavior harness** across `globSync` + callback APIs (options
+dot, ignore, nocase, mark, windowsPathsNoEscape, win32/posix, backslash
+patterns, consumer-style patterns) diffed **zero** between 10.5.0 / 11.1.0 /
+13.0.6 and 14.0.2.
+2. The export surface was identical for everything consumers import (`glob`,
+`globSync`, `sync`, `hasMagic`, `Glob`, `escape`, `unescape` — incl. jest's
+interop `glob.glob.sync`), verified per consumer (rimraf 5, js-beautify,
+mjml-cli, @jest/reporters 30.x).
+3. `npm ci --dry-run` passed in all 5 trees and no tracked JS bundle embeds
+the affected majors.
+
+**Peer-installed-copy gotcha specific to this run:** six `peer: true`
+glob@10.5.0 copies under saas-controller's auto-installed jest peer subtree
+were immune to npm overrides (overrides skip peer-installed chains) — they were
+never alerted, are dev-only tooling, and were documented in issue #7359.
 
 Case study — a verified-safe cross-major bump that SHIPPED (the 2026-10-01
 nodemailer run, PR #6833): the advisory's patched range (`>= 10.0.9`) excluded
