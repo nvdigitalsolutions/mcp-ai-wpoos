@@ -17,12 +17,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once dirname( __DIR__ ) . '/research/trait-wp-mcp-ai-tool-research-completion.php';
 
 /**
  * Generate Research Report Tool Class
  */
 class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Research_Completion;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -983,44 +985,16 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			return $client;
 		}
 
-		// Make the API call.
-		$result = $client->create_chat_completion(
+		// Make the API call with thinking-model-aware recovery.
+		return $this->perform_research_completion(
+			$client,
 			$messages,
+			$provider,
+			$model,
 			array(
-				'model'       => $model,
 				'temperature' => 0.3, // Low temperature for factual, accurate content.
 				'max_tokens'  => 4000, // Allow for detailed reports.
 			)
-		);
-
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-
-		// Extract the content from the response. Gemini normalizes
-		// message.content as an array of {type,text} parts and
-		// OpenAI-compatible gateways (DeepSeek, vLLM) can do the same, so
-		// flatten it before it reaches the JSON parser below.
-		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from AI provider.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		$content = $this->flatten_response_content( $result['choices'][0]['message']['content'] );
-
-		if ( '' === $content ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_response',
-				__( 'AI provider returned an empty response.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		return array(
-			'content'  => $content,
-			'provider' => $provider,
-			'model'    => $model,
 		);
 	}
 

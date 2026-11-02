@@ -273,7 +273,10 @@ class Test_Orchestration_Toolkit_Hardening extends WP_UnitTestCase {
 
 		$this->assertNotInstanceOf( 'WP_Error', $result );
 		$this->assertIsString( $result['content'] );
-		$this->assertSame( 'Part one.Part two.', $result['content'] );
+		// The shared completion trait flattens parts with a "\n\n" join
+		// (the normalization trait's contract, identical across the research
+		// tools) instead of the legacy no-separator concatenation.
+		$this->assertSame( "Part one.\n\nPart two.", $result['content'] );
 	}
 
 	/**
@@ -308,7 +311,9 @@ class Test_Orchestration_Toolkit_Hardening extends WP_UnitTestCase {
 		remove_filter( 'pre_http_request', array( $this, 'openai_empty_mock' ), 10 );
 
 		$this->assertInstanceOf( 'WP_Error', $result );
-		$this->assertSame( 'wp_mcp_ai_invalid_response', $result->get_error_code() );
+		// The shared completion trait surfaces the specific empty-completion
+		// code (the old inline path used the generic invalid_response).
+		$this->assertSame( 'wp_mcp_ai_empty_completion', $result->get_error_code() );
 	}
 
 	/**

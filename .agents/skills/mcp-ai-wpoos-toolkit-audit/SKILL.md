@@ -154,6 +154,26 @@ own reviewable cluster. First completed cluster: **document-generation**
     option names, and pin the denial with a test asserting the forbidden
     error code **even for an admin** and that the option is never written.
 
+12. **Thinking-model completions without recovery — empty research output on
+    DeepSeek reasoning models.** Thinking-mode models share `max_tokens`
+    between chain-of-thought and the answer, so a low hardcoded budget
+    (`max_tokens` 2000–4000) can be fully consumed by reasoning: the provider
+    returns empty `content` with `reasoning_content` populated and
+    `finish_reason: length`, and a tool that reads `content` alone returns
+    `invalid_response` or hands a CoT blob to a JSON parser. Audit every
+    `create_chat_completion()` call site in a research/content toolkit for:
+    hardcoded low temperatures on DeepSeek (vendor V4 guidance is 1.0 / top_p
+    1.0 — low temperatures collapse the reasoning trace), no `finish_reason`
+    inspection, no `reasoning_content` handling, and no budget retry. The
+    canonical fix is the shared trait
+    `WP_MCP_AI_Tool_Research_Completion`
+    (`addons/pro/includes/tools/research/trait-wp-mcp-ai-tool-research-completion.php`,
+    filters `wp_mcp_ai_research_completion_*`): provider-aware sampling,
+    a ×4 budget retry on length truncation, a continuation retry for
+    stop-finish reasoning-only outputs, a flagged last-resort reasoning
+    fallback, and content-part flattening. New research tools must call
+    `perform_research_completion()` instead of hand-rolling the completion.
+
 ## Scan procedure
 
 Use the grep tool with the **full project-rooted glob** — a bare

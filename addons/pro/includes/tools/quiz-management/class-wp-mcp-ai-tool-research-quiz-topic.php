@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once dirname( __DIR__ ) . '/research/trait-wp-mcp-ai-tool-research-completion.php';
+
 /**
  * Research Quiz Topic Tool
  *
@@ -23,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Research_Completion;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -669,32 +672,16 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 			return $client;
 		}
 
-		// Make the API call.
-		$result = $client->create_chat_completion(
+		// Make the API call with thinking-model-aware recovery.
+		return $this->perform_research_completion(
+			$client,
 			$messages,
+			$provider,
+			$model,
 			array(
-				'model'       => $model,
 				'temperature' => 0.3, // Low temperature for factual, educational content.
 				'max_tokens'  => 4000, // Allow for more questions.
 			)
-		);
-
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-
-		// Extract the content from the response.
-		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from AI provider.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		return array(
-			'content'  => $result['choices'][0]['message']['content'],
-			'provider' => $provider,
-			'model'    => $model,
 		);
 	}
 
