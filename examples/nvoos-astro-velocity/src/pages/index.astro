@@ -2,12 +2,12 @@
 // ---------------------------------------------------------------------------
 // Home — the explainer landing page + commerce pockets (D4).
 //
-// The hero and the "What is this app?" / "Explore the stack" sections
-// describe the storefront itself; the stats and stack-explorer islands make
-// it live (real contract totals, active theme, live contract read). The
-// featured/bestsellers grids are filtered from the newest + top-rated pages
-// and only render once the catalog actually has products. JSON-LD:
-// Organization + WebSite (industry baseline).
+// The hero and the "What is this app?" / "Explore the stack" / "Take the
+// tour" sections describe the storefront itself; the stats and stack-explorer
+// islands make it live (real contract totals, active theme, live contract
+// read). The featured/bestsellers grids are filtered from the newest +
+// top-rated pages and only render once the catalog actually has products.
+// JSON-LD: Organization + WebSite (industry baseline).
 // ---------------------------------------------------------------------------
 
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -83,13 +83,14 @@ const hasCatalog = newest.totalDocs > 0;
 	<section class="hero">
 		<h1 class="hero__title">NV Store</h1>
 		<p class="hero__lede">
-			An open-source, headless storefront. Astro renders the pages, one
-			stable contract feeds the catalog, and design tokens let the whole
-			store re-theme live — even from an AI assistant.
+			An open-source, headless storefront demo: Astro renders the pages,
+			WordPress and WooCommerce feed one stable contract, and a live design
+			system re-themes the whole store — even from an AI assistant over MCP.
 		</p>
 		<div class="hero__cta">
 			<a class="btn" href="/products/">Browse products</a>
 			<a class="btn btn--ghost" href="#what-is-this-app">How it works</a>
+			<a class="btn btn--ghost" href="#tour">Take the tour</a>
 		</div>
 	</section>
 
@@ -108,10 +109,11 @@ const hasCatalog = newest.totalDocs > 0;
 				</p>
 			</article>
 			<article class="about-card">
-				<h3>One contract, any backend</h3>
+				<h3>One contract, two backends</h3>
 				<p>
-					A Payload-shaped REST envelope feeds the whole storefront
-					through the same-origin <code>/api/*</code> proxy — WordPress
+					A Payload-shaped REST envelope (<code>nvoos-commerce/v1</code>)
+					feeds the whole storefront through the same-origin{' '}
+					<code>/api/*</code> proxy — WordPress and WooCommerce catalogs
 					today, any backend tomorrow.
 				</p>
 			</article>
@@ -119,15 +121,32 @@ const hasCatalog = newest.totalDocs > 0;
 				<h3>Themed by design tokens</h3>
 				<p>
 					A DTCG token layer drives every color and type decision, with
-					light, dark, high-contrast, and runtime brand themes.
+					light, dark, high-contrast, and runtime brand themes — plus an
+					optional server-side theme policy for fleet-wide control.
+				</p>
+			</article>
+			<article class="about-card">
+				<h3>A component library</h3>
+				<p>
+					An accessibility-first UI kit — accordion, dialog, combobox,
+					tabs — styled from the same tokens, with a living gallery at{' '}
+					<a href="/components/">/components/</a>.
+				</p>
+			</article>
+			<article class="about-card">
+				<h3>Content, posts &amp; pages</h3>
+				<p>
+					A governed content engine: blog posts and pages with Portable
+					Text blocks, SEO fields, scheduled publishing, and signed
+					preview links for drafts.
 				</p>
 			</article>
 			<article class="about-card">
 				<h3>Controllable by AI</h3>
 				<p>
-					The built-in <code>/mcp</code> surface (25 tools) lets an AI
-					assistant manage the catalog, themes, and content — audited and
-					fail-closed.
+					The built-in <code>/mcp</code> surface (35 tools) lets an AI
+					assistant manage the catalog, publish content, re-theme the
+					store, and configure checkout — audited and fail-closed.
 				</p>
 			</article>
 		</div>
@@ -141,6 +160,36 @@ const hasCatalog = newest.totalDocs > 0;
 	<section class="explore" aria-labelledby="explore-heading">
 		<h2 id="explore-heading">Explore the stack</h2>
 		<StackExplorer client:visible />
+	</section>
+
+	<section class="tour" id="tour" aria-labelledby="tour-heading">
+		<h2 id="tour-heading">Take the tour</h2>
+		<ul class="tour-grid">
+			<li class="tour-card">
+				<a href="/components/">
+					<h3>Component library</h3>
+					<p>The accessibility-first UI kit in a living gallery.</p>
+				</a>
+			</li>
+			<li class="tour-card">
+				<a href="/tokens/">
+					<h3>Design tokens</h3>
+					<p>The full DTCG token reference — colors, type, spacing.</p>
+				</a>
+			</li>
+			<li class="tour-card">
+				<a href="/blog/">
+					<h3>Blog &amp; content</h3>
+					<p>Posts and pages served by the content engine.</p>
+				</a>
+			</li>
+			<li class="tour-card">
+				<a href="/manage/">
+					<h3>Astro CMS</h3>
+					<p>The standalone admin — catalog, content, and design.</p>
+				</a>
+			</li>
+		</ul>
 	</section>
 
 	{

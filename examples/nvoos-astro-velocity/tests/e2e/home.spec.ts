@@ -35,6 +35,12 @@ test.describe('home — no JS', () => {
 			/\/$/
 		);
 
+		// Footer surfaces the app version (single source: src/lib/version.ts)
+		// and the active-theme badge's server default (light).
+		const footer = page.locator('.site-footer');
+		await expect(footer).toContainText('NV Store v0.4.0');
+		await expect(footer).toContainText('Theme: light');
+
 		const blocks = await page
 			.locator('script[type="application/ld+json"]')
 			.allTextContents();
@@ -64,6 +70,20 @@ test('stats island counts up to the server values', async ({ page }) => {
 			await expect(dd).toHaveText(target.toLocaleString('en-US'));
 		}
 	}).toPass();
+});
+
+test('footer theme badge tracks the active theme and its version', async ({ page }) => {
+	await page.goto('/');
+
+	const badge = page.locator('[data-theme-badge]');
+	await expect(badge).toHaveText('Theme: light');
+
+	// Cycle light → dark (core mode, no version) → example-brand (v1.0.0).
+	const toggle = page.locator('[data-theme-toggle]');
+	await toggle.click();
+	await expect(badge).toHaveText('Theme: dark');
+	await toggle.click();
+	await expect(badge).toHaveText('Theme: example-brand v1.0.0');
 });
 
 test('stack explorer tabs are keyboard-accessible with live reads', async ({ page }) => {
