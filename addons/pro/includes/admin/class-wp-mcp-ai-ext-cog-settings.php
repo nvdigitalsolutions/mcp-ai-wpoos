@@ -250,9 +250,10 @@ class WP_MCP_AI_Ext_Cog_Settings {
 				'description' => __( 'Model used by ext_cog_analyze_sensory_input when model=auto.', 'mcp-ai-wpoos' ),
 				'options'     => array(
 					'auto'                 => __( 'Auto (use assistant\'s provider)', 'mcp-ai-wpoos' ),
-					'gpt-4.1'              => 'GPT-4o',
+					'gpt-6.1-sol'          => 'GPT-6.1 Sol (Recommended)',
+					'gpt-4.1'              => 'GPT-4.1 (Deprecated)',
 					'gpt-4-vision-preview' => 'GPT-4 Vision Preview',
-					'gemini-3.6-flash'     => 'Gemini 3.6 Flash',
+					'gemini-3.8-flash'     => 'Gemini 3.8 Flash',
 					'gemini-3.1-pro'       => 'Gemini 3.1 Pro',
 				),
 			)
@@ -397,7 +398,7 @@ class WP_MCP_AI_Ext_Cog_Settings {
 			? max( 100, min( 10240, absint( $input['ext_cog_max_capture_size_kb'] ) ) )
 			: 2048;
 
-		$allowed_models                      = array( 'auto', 'gpt-4.1', 'gpt-4-vision-preview', 'gemini-3.6-flash', 'gemini-3.1-pro' );
+		$allowed_models                      = array( 'auto', 'gpt-6.1-sol', 'gpt-4.1', 'gpt-4-vision-preview', 'gemini-3.8-flash', 'gemini-3.1-pro' );
 			$submitted_model                 = isset( $input['ext_cog_vision_model'] ) ? $input['ext_cog_vision_model'] : 'auto';
 			$current['ext_cog_vision_model'] = in_array( $submitted_model, $allowed_models, true )
 				? sanitize_text_field( $submitted_model )

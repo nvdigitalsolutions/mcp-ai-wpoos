@@ -542,7 +542,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$draft_models = array(
 				'openai'       => 'gpt-6-luna',
 				'gemini'       => 'gemini-3.5-flash-lite',
-				'anthropic'    => 'claude-haiku-4-5',
+				'anthropic'    => 'claude-haiku-5-5',
 				'deepseek'     => 'deepseek-flash',
 				'ollama'       => 'llama3.2:3b',
 				'huggingface'  => 'microsoft/phi-4-mini-instruct',
@@ -551,7 +551,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 				'cloudflare'   => '@cf/meta/llama-3.2-3b-instruct',
 				'baseten'      => 'llama-3.2-3b-instruct',
 				'digitalocean' => 'llama-3.2-3b-instruct',
-				'kimi'         => 'kimi-k2.6',
+				'kimi'         => 'kimi-k3.1-pro',
 				'zai'          => 'glm-5.3-flash',
 				'openrouter'   => 'openai/gpt-4.1-mini',
 				'embedded'     => 'llama-3.2-3b-instruct',
@@ -569,7 +569,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			 */
 			$draft_models = apply_filters( 'wp_mcp_ai_draft_models', $draft_models, $provider );
 
-			$model = isset( $draft_models[ $provider ] ) ? $draft_models[ $provider ] : 'gpt-4o-mini';
+			$model = isset( $draft_models[ $provider ] ) ? $draft_models[ $provider ] : 'gpt-6-luna';
 
 			return array(
 				'model'    => $model,
@@ -593,8 +593,8 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 */
 		public function get_verification_model_for_provider( string $provider ): array {
 			$verification_models = array(
-				'openai'       => 'gpt-4.1',
-				'gemini'       => 'gemini-3.1-pro',
+				'openai'       => 'gpt-6.1-sol',
+				'gemini'       => 'gemini-4-argon',
 				'anthropic'    => 'claude-opus-5-5',
 				'deepseek'     => 'deepseek-flash',
 				'ollama'       => 'qwen2.5:72b',
@@ -604,7 +604,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 				'cloudflare'   => '@cf/meta/llama-3.3-70b-instruct',
 				'baseten'      => 'llama-3.3-70b-instruct',
 				'digitalocean' => 'llama-3.3-70b-instruct',
-				'kimi'         => 'kimi-k3',
+				'kimi'         => 'kimi-k3.1-pro',
 				'zai'          => 'glm-5.3',
 				'openrouter'   => 'anthropic/claude-sonnet-5',
 				'embedded'     => 'qwen2.5-72b-instruct',
@@ -622,7 +622,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			 */
 			$verification_models = apply_filters( 'wp_mcp_ai_verification_models', $verification_models, $provider );
 
-			$model = isset( $verification_models[ $provider ] ) ? $verification_models[ $provider ] : 'gpt-4.1';
+			$model = isset( $verification_models[ $provider ] ) ? $verification_models[ $provider ] : 'gpt-6.1-sol';
 
 			return array(
 				'model'    => $model,

@@ -481,6 +481,15 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.0001, // $0.10/1M.
 				'output_cost_per_1k' => 0.0005, // $0.50/1M.
 			),
+			// OpenAI GPT-6.1 Sol / Terra (November 2026 refresh).
+			'gpt-6.1-sol'                                  => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M.
+				'output_cost_per_1k' => 0.01,   // $10.00/1M.
+			),
+			'gpt-6.1-terra'                                => array(
+				'input_cost_per_1k'  => 0.001,  // $1.00/1M.
+				'output_cost_per_1k' => 0.005,  // $5.00/1M.
+			),
 			// OpenAI GPT-5.6 series (July 2026). Sol/Terra/Luna tiers.
 			'gpt-5.6-sol'                                  => array(
 				'input_cost_per_1k'  => 0.004, // $4.00/1M (promo through Nov 21, 2026; standard $5).
@@ -562,10 +571,6 @@ class WP_MCP_AI_Usage_Tracker {
 			'gpt-4.1-mini'                                 => array(
 				'input_cost_per_1k'  => 0.0004, // $0.40/1M.
 				'output_cost_per_1k' => 0.0016, // $1.60/1M.
-			),
-			'gpt-4.1-nano'                                 => array(
-				'input_cost_per_1k'  => 0.0001, // $0.10/1M.
-				'output_cost_per_1k' => 0.0004, // $0.40/1M.
 			),
 			// OpenAI GPT-4o series.
 			'gpt-4o'                                       => array(
@@ -659,6 +664,16 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.00075, // $0.75/1M intro through Dec 31, 2026.
 				'output_cost_per_1k' => 0.00375, // $3.75/1M intro through Dec 31, 2026.
 			),
+			// Gemini 4 Argon (October 13, 2026 GA — flagship).
+			'gemini-4-argon'                               => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M intro through Nov 30, 2026 (standard $4.00 from Dec 1).
+				'output_cost_per_1k' => 0.01,   // $10.00/1M intro (standard $20.00 from Dec 1).
+			),
+			// Gemini Nano Banana 2.1 (October 6, 2026 GA).
+			'gemini-nano-banana-2.1'                       => array(
+				'input_cost_per_1k'  => 0.0015, // $1.50/1M (text/image/video).
+				'output_cost_per_1k' => 0.03,   // $30.00/1M images ($0.0336 per 1K image).
+			),
 			// Anthropic Claude Fable 5.1 / Mythos 5 / Opus 5 (July-September 2026).
 			'claude-fable-5.1'                             => array(
 				'input_cost_per_1k'  => 0.01,
@@ -726,6 +741,11 @@ class WP_MCP_AI_Usage_Tracker {
 			'claude-haiku-4-5-20251001'                    => array(
 				'input_cost_per_1k'  => 0.001,
 				'output_cost_per_1k' => 0.005,
+			),
+			// Claude Haiku 5.5 (November 2026 refresh).
+			'claude-haiku-5-5'                             => array(
+				'input_cost_per_1k'  => 0.0001, // From $0.10/1M.
+				'output_cost_per_1k' => 0.0005, // From $0.50/1M.
 			),
 			'claude-opus-4-5'                              => array(
 				'input_cost_per_1k'  => 0.005,
@@ -922,8 +942,8 @@ class WP_MCP_AI_Usage_Tracker {
 				'output_cost_per_1k' => 0.0044, // $4.40 per 1M tokens.
 			),
 			'glm-5.3-flash'                                => array(
-				'input_cost_per_1k'  => 0.00008, // $0.08 per 1M tokens.
-				'output_cost_per_1k' => 0.00025, // $0.25 per 1M tokens.
+				'input_cost_per_1k'  => 0.00015, // $0.15 per 1M tokens (corrected November 2026).
+				'output_cost_per_1k' => 0.0005,  // $0.50 per 1M tokens (corrected November 2026).
 			),
 			'glm-5.3-flashx'                               => array(
 				'input_cost_per_1k'  => 0.00037, // $0.37 per 1M tokens.
@@ -951,6 +971,10 @@ class WP_MCP_AI_Usage_Tracker {
 			),
 			// Kimi (Moonshot AI) direct models (as of September 2026).
 			// See: https://platform.moonshot.ai/docs/pricing/chat.
+			'kimi-k3.1-pro'                                => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M (cache hit $0.20).
+				'output_cost_per_1k' => 0.01,   // $10.00/1M.
+			),
 			'kimi-k3'                                      => array(
 				'input_cost_per_1k'  => 0.003,  // $3.00/1M (cache hit $0.30).
 				'output_cost_per_1k' => 0.015,  // $15.00/1M.

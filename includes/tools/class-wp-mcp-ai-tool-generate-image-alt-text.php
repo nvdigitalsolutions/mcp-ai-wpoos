@@ -403,7 +403,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 			$image_content = base64_encode( $image_data ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 		}
 
-		$model = isset( $settings['default_gemini_model'] ) && ! empty( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+		$model = isset( $settings['default_gemini_model'] ) && ! empty( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-3.5-flash-lite';
 		$request_body = array(
 			'contents' => array(
 				array(

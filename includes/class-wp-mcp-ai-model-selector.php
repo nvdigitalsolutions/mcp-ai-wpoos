@@ -255,7 +255,7 @@ class WP_MCP_AI_Model_Selector {
 		if ( false !== strpos( $model_lower, 'gpt' ) || false !== strpos( $model_lower, 'o1' ) ) {
 			// If on a mini/nano model and request is too large, try gpt-4.1.
 			if ( false !== strpos( $model_lower, 'mini' ) && $total_tokens <= 30000 ) {
-				return 'gpt-4.1';
+				return 'gpt-6.1-sol';
 			}
 
 			// For very large requests (> 30k tokens), fallback to configured high-capacity model or Gemini.
@@ -264,7 +264,7 @@ class WP_MCP_AI_Model_Selector {
 			}
 
 			// Otherwise, fallback to gpt-4.1.
-			return 'gpt-4.1';
+			return 'gpt-6.1-sol';
 		}
 
 		// Gemini models already have high TPM limits (1M), unlikely to hit this.
@@ -339,8 +339,8 @@ class WP_MCP_AI_Model_Selector {
 			return sanitize_text_field( $settings['high_token_fallback_model'] );
 		}
 
-		// Default to gemini-2.5-flash which has high token capacity.
-		return 'gemini-2.5-flash';
+		// Default to gemini-3.5-flash-lite which has high token capacity (1M).
+		return 'gemini-3.5-flash-lite';
 	}
 
 	/**
@@ -412,8 +412,8 @@ class WP_MCP_AI_Model_Selector {
 			return sanitize_text_field( $settings['high_token_fallback_model'] );
 		}
 
-		// Default to gemini-2.5-flash which has high token capacity.
-		return 'gemini-2.5-flash';
+		// Default to gemini-3.5-flash-lite which has high token capacity (1M).
+		return 'gemini-3.5-flash-lite';
 	}
 
 	/**
@@ -642,7 +642,7 @@ class WP_MCP_AI_Model_Selector {
 		 *
 		 * @param string $model Default light model identifier.
 		 */
-		return apply_filters( 'wp_mcp_ai_default_light_model', 'gpt-4.1-mini' );
+		return apply_filters( 'wp_mcp_ai_default_light_model', 'gpt-6-luna' );
 	}
 
 	/**
@@ -656,6 +656,6 @@ class WP_MCP_AI_Model_Selector {
 		 *
 		 * @param string $model Default advanced model identifier.
 		 */
-		return apply_filters( 'wp_mcp_ai_default_advanced_model', 'gpt-4.1' );
+		return apply_filters( 'wp_mcp_ai_default_advanced_model', 'gpt-6.1-sol' );
 	}
 }

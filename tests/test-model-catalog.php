@@ -136,15 +136,16 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			}
 		}
 
-		$user_pinned_active = array( 'gpt-4.1', 'gpt-4o-mini', 'gpt-4.1-mini' );
+		$user_pinned_active = array( 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-6-sol', 'gpt-6-luna', 'gpt-6.1-sol', 'gpt-6.1-terra' );
 		foreach ( $user_pinned_active as $id ) {
 			$this->assertArrayHasKey( $id, $status_by_name, "User-pinned id {$id} must exist in catalog." );
 			$this->assertSame( 'active', $status_by_name[ $id ], "User-pinned id {$id} must remain ACTIVE." );
 		}
 
-		// OpenAI announced retirements for these pinned ids (shutdown 2026-10-23) —
-		// they stay servable (deprecated) with a documented successor until sunset.
-		$user_pinned_deprecated = array( 'gpt-4o', 'gpt-4.1-nano' );
+		// OpenAI announced retirements for these pinned ids (GPT-4 series,
+		// 2026-10-14 notice, shutdown 2027-01-14) — they stay servable
+		// (deprecated) with a documented successor until sunset.
+		$user_pinned_deprecated = array( 'gpt-4o', 'gpt-4.1', 'gpt-4o-mini', 'gpt-4.1-mini' );
 		foreach ( $user_pinned_deprecated as $id ) {
 			$this->assertArrayHasKey( $id, $status_by_name, "User-pinned id {$id} must exist in catalog." );
 			$this->assertSame( 'deprecated', $status_by_name[ $id ], "User-pinned id {$id} must stay DEPRECATED (servable) with a successor." );
@@ -177,6 +178,8 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			'gemini-3-pro-preview',
 			'gemini-2.5-flash-image',
 			'gemini-live-2.5-flash-preview',
+			'gpt-4.1-nano',
+			'nvidia/nemotron-3-super-120b-a12b',
 			'claude-3-opus-20240229',
 			'claude-mythos-preview',
 			'claude-3-5-sonnet-20241022',
@@ -286,19 +289,26 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 		WP_MCP_AI_Model_Rate_Limits_CCT::flush_catalog_cache();
 		$entries = WP_MCP_AI_Model_Rate_Limits_CCT::get_default_model_data();
 		$active  = array();
+		$deprecated = array();
 		foreach ( $entries as $entry ) {
 			$status = isset( $entry['status'] ) ? $entry['status'] : 'active';
 			if ( 'active' === $status ) {
 				$active[] = $entry['model_name'];
+			} elseif ( 'deprecated' === $status ) {
+				$deprecated[] = $entry['model_name'];
 			}
 		}
 
 		// These keys mirror the fallback dropdowns in the admin Providers section.
+		// Keys whose models are deprecated keep a "(Deprecated)" label in the
+		// dropdown; they must still exist in the catalog.
 		$dropdown_keys = array(
 			// OpenAI fallback list.
 			'gpt-6-astra',
 			'gpt-6-sol',
 			'gpt-6-luna',
+			'gpt-6.1-sol',
+			'gpt-6.1-terra',
 			'gpt-5.6-sol',
 			'gpt-5.6-terra',
 			'gpt-5.6-luna',
@@ -317,8 +327,10 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			'claude-opus-4-7',
 			'claude-opus-4-6',
 			'claude-sonnet-4-6',
+			'claude-haiku-5-5',
 			'claude-haiku-4-5',
 			// Gemini fallback list.
+			'gemini-4-argon',
 			'gemini-3.8-flash',
 			'gemini-3.7-flash',
 			'gemini-3.6-flash',
@@ -330,6 +342,7 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			// DeepSeek fallback list.
 			'deepseek-flash',
 			// Kimi fallback list.
+			'kimi-k3.1-pro',
 			'kimi-k3',
 			'kimi-k2.7-code',
 			'kimi-k2.6',
@@ -340,8 +353,26 @@ class Test_Model_Catalog extends WP_UnitTestCase {
 			'glm-5.2',
 		);
 
+		// Deprecated-but-servable models stay in the dropdowns with a
+		// "(Deprecated)" label; every other dropdown id must be active.
+		$dropdown_deprecated = array(
+			'gpt-4.1',
+			'gpt-4.1-mini',
+			'gpt-4o-mini',
+			'gemini-3.7-flash',
+			'gemini-3.5-flash',
+			'gemini-2.5-pro',
+			'gemini-2.5-flash',
+			'kimi-k2.7-code',
+			'kimi-k2.6',
+		);
+
 		foreach ( $dropdown_keys as $id ) {
-			$this->assertContains( $id, $active, "Dropdown id {$id} must be present and active in the catalog." );
+			if ( in_array( $id, $dropdown_deprecated, true ) ) {
+				$this->assertContains( $id, $deprecated, "Dropdown id {$id} must exist as a deprecated (servable) entry in the catalog." );
+			} else {
+				$this->assertContains( $id, $active, "Dropdown id {$id} must be present and active in the catalog." );
+			}
 		}
 	}
 }

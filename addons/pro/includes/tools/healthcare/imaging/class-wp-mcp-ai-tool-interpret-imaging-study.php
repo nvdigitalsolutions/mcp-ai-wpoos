@@ -138,7 +138,7 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 				),
 				'include_pixel_preview' => array(
 					'type'        => 'boolean',
-					'description' => __( 'When true, extract a single representative grayscale frame from the DICOM file and include it in the AI vision request. Requires a vision-capable model (e.g. gpt-4.1, gemini-2.5-flash). Default: false.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'When true, extract a single representative grayscale frame from the DICOM file and include it in the AI vision request. Requires a vision-capable model (e.g. gpt-6.1-sol, gemini-3.8-flash). Default: false.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 				'instance_uid'          => array(
@@ -439,17 +439,17 @@ class WP_MCP_AI_Tool_Interpret_Imaging_Study implements WP_MCP_AI_Tool_Interface
 				if ( ! empty( $settings['openai_default_model'] ) ) {
 					return $settings['openai_default_model'];
 				}
-				return 'gpt-4.1';
+				return 'gpt-6.1-sol';
 
 			case 'gemini':
 				if ( ! empty( $settings['gemini_default_model'] ) ) {
 					return $settings['gemini_default_model'];
 				}
-				// gemini-2.5-flash supports vision; flash is fine for metadata-only.
-				return $require_vision ? 'gemini-2.5-flash' : 'gemini-2.5-flash';
+				// gemini-3.5-flash-lite supports vision and 1M context.
+				return 'gemini-3.5-flash-lite';
 
 			case 'anthropic':
-				return 'claude-sonnet-5';
+				return 'claude-sonnet-5-5';
 
 			default:
 				return new WP_Error(

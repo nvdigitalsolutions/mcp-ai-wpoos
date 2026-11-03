@@ -329,13 +329,13 @@ class WP_MCP_AI_Tool_Draft_Lead_Reply implements WP_MCP_AI_Tool_Interface, WP_MC
 	private function get_ai_model( $provider, $settings ) {
 		switch ( $provider ) {
 			case 'openai':
-				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
+				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-6.1-sol';
 			case 'gemini':
-				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
+				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3.5-flash-lite';
 			case 'anthropic':
 				return 'claude-sonnet-4-5-20250929';
 			default:
-				return 'gpt-4.1';
+				return 'gpt-6.1-sol';
 		}
 	}
 

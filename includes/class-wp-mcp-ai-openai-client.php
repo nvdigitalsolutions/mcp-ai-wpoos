@@ -141,7 +141,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 */
 		public static function get_image_fallback_chat_model() {
 				$settings      = WP_MCP_AI_Admin_Settings::get_settings();
-				$default_model = isset( $settings['default_model'] ) ? sanitize_text_field( $settings['default_model'] ) : 'gpt-4.1';
+				$default_model = isset( $settings['default_model'] ) ? sanitize_text_field( $settings['default_model'] ) : 'gpt-6.1-sol';
 
 				// Use the site's configured default chat model if it is a GPT
 				// family model that can use the image_generation tool.
@@ -151,7 +151,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return $default_model;
 			}
 
-				return 'gpt-4.1';
+				return 'gpt-6.1-sol';
 		}
 
 				/**

@@ -64,7 +64,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		// 2026 Standard: 2.5x multiplier (was 2.0x) - AI models now handle more context efficiently.
 		'high_resource'      => array(
 			'multiplier'      => 2.5,
-			'preferred_model' => 'gpt-4.1',
+			'preferred_model' => 'gpt-6.1-sol',
 			'description'     => 'Complex operations requiring extensive processing and large outputs',
 			'tools'           => array(
 				'run_crawl4ai_job',
@@ -239,7 +239,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		// 2026 Standard: 1.8x multiplier (was 1.5x) - More sophisticated content generation.
 		'content_creation'   => array(
 			'multiplier'      => 1.8,
-			'preferred_model' => 'gpt-4.1',
+			'preferred_model' => 'gpt-6.1-sol',
 			'description'     => 'Content creation and management operations',
 			'tools'           => array(
 				'save_post',
@@ -377,7 +377,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		// 2026 Standard: 2.0x multiplier - Complex multi-agent operations.
 		'agent_coordination' => array(
 			'multiplier'      => 2.0,
-			'preferred_model' => 'gpt-4.1',
+			'preferred_model' => 'gpt-6.1-sol',
 			'description'     => 'Multi-agent orchestration and coordination operations',
 			'tools'           => array(
 				'create_agent_team',

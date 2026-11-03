@@ -1845,9 +1845,9 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				return $settings['default_model'];
 			}
 
-			// Provider-specific fallbacks (September 2026).
+			// Provider-specific fallbacks (November 2026 refresh).
 			$fallbacks = array(
-				'openai'      => 'gpt-4.1',
+				'openai'      => 'gpt-6.1-sol',
 				'anthropic'   => 'claude-sonnet-5-5',
 				'gemini'      => 'gemini-3.8-flash',
 				'ollama'      => 'llama4',
@@ -1856,7 +1856,7 @@ if ( ! class_exists( 'WP_MCP_AI_Onboarding_Wizard' ) ) {
 				'huggingface' => 'meta-llama/Llama-4-8B-Instruct',
 			);
 
-			return isset( $fallbacks[ $default_provider ] ) ? $fallbacks[ $default_provider ] : 'gpt-4.1';
+			return isset( $fallbacks[ $default_provider ] ) ? $fallbacks[ $default_provider ] : 'gpt-6.1-sol';
 		}
 
 		// -------------------------------------------------------------------------

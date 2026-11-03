@@ -1209,7 +1209,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		);
 
 		$options = array(
-			'model'           => 'gpt-4.1',
+			'model'           => 'gpt-6.1-sol',
 			'temperature'     => 0.3, // Low temperature for factual analysis.
 			'max_tokens'      => 1500,
 			'response_format' => array( 'type' => 'json_object' ),

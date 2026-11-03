@@ -508,3 +508,83 @@ catalog; the post-sunset refresh adds their migration entries (the
   this month.
 - `plugins/nvoos-content-graph-ai/` mirrors (catalog, UsageTracker, realtime
   client) were flagged, not edited.
+
+## This Month's Changes (November 2026)
+
+Full refresh as of 2026-11-03 (catalog version 2026.11.03, 251 models across 18
+providers — up from 238). Sources: OpenAI deprecations page + model pages
+(fetched 2026-11-03), Anthropic model deprecations page, Google Gemini
+deprecations + changelog, NVIDIA NIM catalog, Cloudflare Workers AI pricing
+page, Kimi model list + pricing, Z.AI pricing pages, TypeSafe Jev releases.
+
+### New Models Added to Catalog
+| Model | Provider | Notes |
+|---|---|---|
+| `gpt-6.1-sol` | openai | $2/$10 per 1M, 1.05M ctx. New advanced-tier default. |
+| `gpt-6.1-terra` | openai | $1/$5 per 1M, 1.05M ctx. |
+| `gpt-image-2.5-sunburst`, `gpt-image-2.5-flare` | openai | Image models; $8/$30 image + $5 text. |
+| `claude-haiku-5-5` | anthropic | $0.10/$0.50 per 1M, 1M ctx. |
+| `gemini-4-argon` | gemini | Flagship GA. $2/$10 intro through Nov 30 → $4/$20 from Dec 1, 1M ctx. |
+| `gemini-nano-banana-2.1` | gemini | October 2026 GA image model; $1.50 in / $30 images out. New `gemini_image_model` default. |
+| `nvidia/nemotron-3.5-super-vl-120b-a12b` | nvidia | $0.06/$0.35 per 1M. |
+| `nvidia/nemotron-3.5-lightning-30b-a3b` | nvidia | $0.06/$0.20 per 1M. |
+| `@cf/deepseek-ai/deepseek-v4.1-flash-1017` | cloudflare | $0.30/$1.20 per 1M. |
+| `@cf/qwen/qwen3.8-27b` | cloudflare | $0.45/$3.20 per 1M, 262K ctx. |
+| `@cf/ibm-granite/granite-4.0-h-micro` | cloudflare | $0.017/$0.112 per 1M, 131K ctx. |
+| `kimi-k3.1-pro` | kimi | $2/$10 per 1M. |
+| `kimi-k2.7-code-highspeed` | kimi | High-speed code variant. |
+| `jev-1.14.0` | typesafe | Jev decision-provider release; `jev-latest`/`jev-preview` notes updated. |
+
+### Status Changes / Removals
+| Model | Change | Reason |
+|---|---|---|
+| `gpt-4o`, `gpt-4o-mini`, `gpt-4.1`, `gpt-4.1-mini` | Deprecated | OpenAI shutdown 2027-01-14 → `gpt-6-luna`. |
+| `gpt-4.1-nano` | Removed | Sunset 2026-10-23 passed. |
+| `claude-haiku-4-5-20251001` | Back to active | Anthropic page still lists it active. |
+| `gemini-3.5-flash`, `gemini-3.7-flash` | Deprecated | Auto-route to 3.6/3.8 flash. |
+| `gemini-2.5-pro`, `gemini-2.5-flash` | Deprecated | Route Dec 1 to 3.8-flash / 3.5-flash-lite. |
+| `gemini-3.1-flash-image` | Deprecated | Nano Banana 2 superseded by `gemini-nano-banana-2.1`. |
+| `nvidia/nemotron-3-super-120b-a12b` | Removed | Retired 2026-10-19 → `nvidia/nemotron-3.5-super-vl-120b-a12b`. |
+| `kimi-k2.6`, `kimi-k2.7-code`, `kimi-k2.7-code-highspeed` | Deprecated | K2 series sunset 2026-12-31. |
+
+### Default Changes
+| Setting | Old | New |
+|---|---|---|
+| `default_model` (+ `get_default_model()`) | `gpt-4.1` | `gpt-6.1-sol` |
+| Model selector light default | `gpt-4.1-mini` | `gpt-6-luna` |
+| Model selector advanced default | `gpt-4.1` | `gpt-6.1-sol` |
+| `gemini_image_model` + Gemini client/tool defaults | `gemini-3.1-flash-image` | `gemini-nano-banana-2.1` |
+| High-token fallback | `gemini-2.5-flash` | `gemini-3.5-flash-lite` |
+| Kimi client `DEFAULT_MODEL` + dropdowns | k2-era | current k3.1-pro line |
+| Swept fallbacks | 31× `gemini-2.5-flash`, 48× `gpt-4.1` | `gemini-3.5-flash-lite` / `gpt-6.1-sol` |
+
+### Pricing Fixes
+| Model | Old | New | Notes |
+|---|---|---|---|
+| `glm-5.3-flash` | $0.08/$0.25 | $0.15/$0.50 | Z.AI pricing page. |
+| Anthropic Sonnet 5.5 / Fable 5.1 / Mythos 5.1 / Haiku 5.5 context | 200K | 1M | Corrected per Anthropic docs. |
+
+### Migration Map Fixes
+| Legacy ID | Old Target | New Target |
+|---|---|---|
+| `gpt-4.1-nano` | — | `gpt-5.6-luna` |
+| `nvidia/nemotron-3-super-120b-a12b` | — | `nvidia/nemotron-3.5-super-vl-120b-a12b` |
+
+### Deferred (still servable — no migration entries yet)
+`gpt-4o`, `gpt-4o-mini`, `gpt-4.1`, `gpt-4.1-mini` stay deprecated-with-sunset
+(2027-01-14) in the catalog; the post-sunset refresh adds their migration
+entries.
+
+### Notes
+- Fallback sweep covered production `includes/` + `addons/pro/includes/` files
+  only; `lib/core/`, `plugins/*` mirrors, and test fixtures were excluded per
+  track boundaries.
+- Test drift fixed in `test-model-catalog`, `test-model-rate-limits-cct`,
+  `test-admin-settings`, `test-cost-calculator`, `test-kimi-client`,
+  `test-kimi-integration`, `test-model-selector`, `test-onboarding-wizard`,
+  `test-image-tool-settings`. Model sweep: 554 tests + adjacent batches green.
+- Pre-existing cross-file isolation quirk (not this track):
+  `test-gemini-tool-token-tracking` and `test-lm-studio-client` fail when batched
+  after client tests whose `tearDown()` deletes `wp_mcp_ai_settings`; each passes
+  in isolation.
+- `plugins/nvoos-content-graph-*` mirrors flagged, not edited.

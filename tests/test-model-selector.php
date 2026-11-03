@@ -14,9 +14,9 @@
 class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 	/**
-	 * Test that light tasks route to gpt-4.1-mini.
+	 * Test that light tasks route to gpt-6-luna.
 	 */
-	public function test_light_task_routes_to_mini() {
+	public function test_light_task_routes_to_luna() {
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -26,13 +26,13 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 		$model = WP_MCP_AI_Model_Selector::select_model( $messages, array() );
 
-		$this->assertEquals( 'gpt-4.1-mini', $model, 'Simple question should route to gpt-4.1-mini' );
+		$this->assertEquals( 'gpt-6-luna', $model, 'Simple question should route to gpt-6-luna' );
 	}
 
 	/**
-	 * Test that complex keywords trigger gpt-4.1.
+	 * Test that complex keywords trigger gpt-6.1-sol.
 	 */
-	public function test_complex_keywords_route_to_gpt4o() {
+	public function test_complex_keywords_route_to_sol() {
 		$complex_prompts = array(
 			'Please provide a detailed analysis of the current economic situation.',
 			'Write a comprehensive guide on machine learning.',
@@ -51,14 +51,14 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 			$model = WP_MCP_AI_Model_Selector::select_model( $messages, array() );
 
-			$this->assertEquals( 'gpt-4.1', $model, "Complex prompt should route to gpt-4.1: {$prompt}" );
+			$this->assertEquals( 'gpt-6.1-sol', $model, "Complex prompt should route to gpt-6.1-sol: {$prompt}" );
 		}
 	}
 
 	/**
-	 * Test that long content triggers gpt-4.1.
+	 * Test that long content triggers gpt-6.1-sol.
 	 */
-	public function test_long_content_routes_to_gpt4o() {
+	public function test_long_content_routes_to_sol() {
 		// Generate a long message (over 4000 tokens = ~16000 chars).
 		$long_text = str_repeat( 'This is a long document with lots of content. ', 400 );
 
@@ -71,7 +71,7 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 		$model = WP_MCP_AI_Model_Selector::select_model( $messages, array() );
 
-		$this->assertEquals( 'gpt-4.1', $model, 'Long content should route to gpt-4.1' );
+		$this->assertEquals( 'gpt-6.1-sol', $model, 'Long content should route to gpt-6.1-sol' );
 	}
 
 	/**
@@ -95,9 +95,9 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that use_advanced_model flag triggers gpt-4.1.
+	 * Test that use_advanced_model flag triggers gpt-6.1-sol.
 	 */
-	public function test_advanced_flag_routes_to_gpt4o() {
+	public function test_advanced_flag_routes_to_sol() {
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -111,13 +111,13 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 		$model = WP_MCP_AI_Model_Selector::select_model( $messages, $options );
 
-		$this->assertEquals( 'gpt-4.1', $model, 'use_advanced_model flag should route to gpt-4.1' );
+		$this->assertEquals( 'gpt-6.1-sol', $model, 'use_advanced_model flag should route to gpt-6.1-sol' );
 	}
 
 	/**
-	 * Test that multiple tools trigger gpt-4.1.
+	 * Test that multiple tools trigger gpt-6.1-sol.
 	 */
-	public function test_multiple_tools_route_to_gpt4o() {
+	public function test_multiple_tools_route_to_sol() {
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -136,13 +136,13 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 		$model = WP_MCP_AI_Model_Selector::select_model( $messages, $options );
 
-		$this->assertEquals( 'gpt-4.1', $model, 'Multiple tools should route to gpt-4.1' );
+		$this->assertEquals( 'gpt-6.1-sol', $model, 'Multiple tools should route to gpt-6.1-sol' );
 	}
 
 	/**
-	 * Test that structured output triggers gpt-4.1.
+	 * Test that structured output triggers gpt-6.1-sol.
 	 */
-	public function test_structured_output_routes_to_gpt4o() {
+	public function test_structured_output_routes_to_sol() {
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -158,7 +158,7 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 		$model = WP_MCP_AI_Model_Selector::select_model( $messages, $options );
 
-		$this->assertEquals( 'gpt-4.1', $model, 'Structured output should route to gpt-4.1' );
+		$this->assertEquals( 'gpt-6.1-sol', $model, 'Structured output should route to gpt-6.1-sol' );
 	}
 
 	/**
@@ -178,7 +178,7 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 		$model = WP_MCP_AI_Model_Selector::select_model( $messages, $options );
 
-		$this->assertEquals( 'gpt-4.1-mini', $model, 'Disabled auto-routing should always return default light model' );
+		$this->assertEquals( 'gpt-6-luna', $model, 'Disabled auto-routing should always return default light model' );
 	}
 
 	/**
@@ -206,7 +206,7 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 		$model = WP_MCP_AI_Model_Selector::select_model( $messages, array() );
 
-		$this->assertEquals( 'gpt-4.1', $model, 'Should analyze latest user message for complexity' );
+		$this->assertEquals( 'gpt-6.1-sol', $model, 'Should analyze latest user message for complexity' );
 	}
 
 	/**
@@ -233,6 +233,6 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 
 		$model = WP_MCP_AI_Model_Selector::select_model( $messages, array() );
 
-		$this->assertEquals( 'gpt-4.1', $model, 'Complex keywords in multipart message should route to gpt-4.1' );
+		$this->assertEquals( 'gpt-6.1-sol', $model, 'Complex keywords in multipart message should route to gpt-6.1-sol' );
 	}
 }

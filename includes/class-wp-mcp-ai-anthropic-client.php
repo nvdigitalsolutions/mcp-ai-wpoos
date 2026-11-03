@@ -401,7 +401,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			$result = $this->create_chat_completion(
 				$test_messages,
 				array(
-					'model'      => $this->get_model() ? $this->get_model() : 'claude-haiku-4-5',
+					'model'      => $this->get_model() ? $this->get_model() : 'claude-haiku-5-5',
 					'max_tokens' => 10,
 				)
 			);
@@ -437,7 +437,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				array(
 					'id'             => 'claude-sonnet-5-5',
 					'name'           => __( 'Claude Sonnet 5.5 (September 2026 - default)', 'mcp-ai-wpoos' ),
-					'context_window' => 200000,
+					'context_window' => 1000000,
 				),
 				array(
 					'id'             => 'claude-opus-5',
@@ -447,7 +447,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				array(
 					'id'             => 'claude-fable-5.1',
 					'name'           => __( 'Claude Fable 5.1 (September 2026 - top tier)', 'mcp-ai-wpoos' ),
-					'context_window' => 200000,
+					'context_window' => 1000000,
 				),
 				array(
 					'id'             => 'claude-mythos-5-1',
@@ -485,8 +485,13 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					'context_window' => 1000000,
 				),
 				array(
+					'id'             => 'claude-haiku-5-5',
+					'name'           => __( 'Claude Haiku 5.5 (fastest)', 'mcp-ai-wpoos' ),
+					'context_window' => 1000000,
+				),
+				array(
 					'id'             => 'claude-haiku-4-5',
-					'name'           => __( 'Claude Haiku 4.5 (fastest)', 'mcp-ai-wpoos' ),
+					'name'           => __( 'Claude Haiku 4.5 (legacy)', 'mcp-ai-wpoos' ),
 					'context_window' => 200000,
 				),
 				array(

@@ -282,7 +282,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'label'       => __( 'Default Advanced Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default AI model for complex tasks. Overrides the wp_mcp_ai_default_advanced_model filter. Default: gpt-4.1', 'mcp-ai-wpoos' ),
 					'default'     => '',
-					'placeholder' => 'gpt-4.1',
+					'placeholder' => 'gpt-6.1-sol',
 				),
 				'filter_max_agentic_iterations'         => array(
 					'type'        => 'number',

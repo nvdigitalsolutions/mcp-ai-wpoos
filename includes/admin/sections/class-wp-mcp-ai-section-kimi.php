@@ -75,12 +75,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 					'label'       => __( 'Default Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Select the default Kimi model to use.', 'mcp-ai-wpoos' ),
 					'options'     => array(
+						'kimi-k3.1-pro'            => __( 'Kimi K3.1 Pro (3T MoE, 1M Context, Recommended)', 'mcp-ai-wpoos' ),
 						'kimi-k3'                  => __( 'Kimi K3 (2.8T MoE, 1M Context, Open Weights)', 'mcp-ai-wpoos' ),
-						'kimi-k2.7-code'           => __( 'Kimi K2.7 Code (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-						'kimi-k2.7-code-highspeed' => __( 'Kimi K2.7 Code High-Speed (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-						'kimi-k2.6'                => __( 'Kimi K2.6 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
+						'kimi-k2.7-code'           => __( 'Kimi K2.7 Code (Multimodal, 256K, Deprecated)', 'mcp-ai-wpoos' ),
+						'kimi-k2.7-code-highspeed' => __( 'Kimi K2.7 Code High-Speed (Multimodal, 256K, Deprecated)', 'mcp-ai-wpoos' ),
+						'kimi-k2.6'                => __( 'Kimi K2.6 (Multimodal, 256K, Deprecated)', 'mcp-ai-wpoos' ),
 					),
-					'default'     => 'kimi-k3',
+					'default'     => 'kimi-k3.1-pro',
 				),
 				'kimi_base_url'    => array(
 					'type'        => 'text',
@@ -150,10 +151,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 		 */
 		public static function get_available_models() {
 			return array(
+				'kimi-k3.1-pro'            => __( 'Kimi K3.1 Pro (3T MoE, 1M Context, Recommended)', 'mcp-ai-wpoos' ),
 				'kimi-k3'                  => __( 'Kimi K3 (2.8T MoE, 1M Context, Open Weights)', 'mcp-ai-wpoos' ),
-				'kimi-k2.7-code'           => __( 'Kimi K2.7 Code (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-				'kimi-k2.7-code-highspeed' => __( 'Kimi K2.7 Code High-Speed (Multimodal, 256K)', 'mcp-ai-wpoos' ),
-				'kimi-k2.6'                => __( 'Kimi K2.6 (Multimodal, 256K)', 'mcp-ai-wpoos' ),
+				'kimi-k2.7-code'           => __( 'Kimi K2.7 Code (Multimodal, 256K, Deprecated)', 'mcp-ai-wpoos' ),
+				'kimi-k2.7-code-highspeed' => __( 'Kimi K2.7 Code High-Speed (Multimodal, 256K, Deprecated)', 'mcp-ai-wpoos' ),
+				'kimi-k2.6'                => __( 'Kimi K2.6 (Multimodal, 256K, Deprecated)', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -178,7 +180,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Kimi' ) ) {
 			// Model.
 			if ( isset( $input['kimi_model'] ) ) {
 				$allowed_models          = array_keys( self::get_available_models() );
-				$sanitized['kimi_model'] = in_array( $input['kimi_model'], $allowed_models, true ) ? $input['kimi_model'] : 'kimi-k3';
+				$sanitized['kimi_model'] = in_array( $input['kimi_model'], $allowed_models, true ) ? $input['kimi_model'] : 'kimi-k3.1-pro';
 			}
 
 			// Base URL.

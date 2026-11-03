@@ -321,7 +321,7 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 
 		$sanitized = $section->sanitize_settings( $input );
 
-		$this->assertEquals( 'kimi-k3', $sanitized['kimi_model'] );
+		$this->assertEquals( 'kimi-k3.1-pro', $sanitized['kimi_model'] );
 	}
 
 	/**
@@ -396,6 +396,7 @@ class Test_Kimi_Integration extends WP_UnitTestCase {
 	public function test_available_models_list() {
 		$models = WP_MCP_AI_Section_Kimi::get_available_models();
 
+		$this->assertArrayHasKey( 'kimi-k3.1-pro', $models );
 		$this->assertArrayHasKey( 'kimi-k3', $models );
 		$this->assertArrayHasKey( 'kimi-k2.7-code', $models );
 		$this->assertArrayHasKey( 'kimi-k2.7-code-highspeed', $models );

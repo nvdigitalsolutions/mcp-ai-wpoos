@@ -450,7 +450,7 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 			case 'gemini':
 				// Use Gemini Pro for research.
-				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
+				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3.5-flash-lite';
 
 			case 'anthropic':
 				// Use Claude Sonnet for research.

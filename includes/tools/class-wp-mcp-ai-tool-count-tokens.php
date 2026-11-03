@@ -388,7 +388,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		try {
 			// Determine the encoding to use based on model.
-			$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'gpt-4.1';
+			$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'gpt-6.1-sol';
 
 			// Get the appropriate encoder for the model.
 			$encoder = $this->get_tiktoken_encoder_for_model( $model );

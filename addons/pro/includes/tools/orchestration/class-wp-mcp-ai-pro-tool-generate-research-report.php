@@ -1107,10 +1107,10 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		switch ( $provider ) {
 			case 'openai':
 				// Prefer GPT-4 for research if available.
-				return isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-4.1';
+				return isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-6.1-sol';
 
 			case 'gemini':
-				return isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+				return isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-3.5-flash-lite';
 
 			case 'anthropic':
 				return isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5';
@@ -1140,7 +1140,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 				return ! empty( $settings['digitalocean_model'] ) ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct';
 
 			case 'kimi':
-				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k2.7-code';
+				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k3.1-pro';
 
 			case 'baseten':
 				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';

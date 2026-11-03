@@ -176,6 +176,12 @@ class WP_MCP_AI_Model_Service {
 		// GPT-6 Astra (flagship - Sep 2026) - limited preview, computer use.
 		$models['gpt-6-astra'] = 'GPT-6 Astra (Limited Preview)';
 
+		// GPT-6.1 series (November 2026 refresh).
+		$models['gpt-6.1-sol']   = 'GPT-6.1 Sol (Recommended)';
+		$models['gpt-6.1-terra'] = 'GPT-6.1 Terra (Visual/Computer Use)';
+		$models['gpt-6-sol']     = 'GPT-6 Sol';
+		$models['gpt-6-luna']    = 'GPT-6 Luna (Lowest Cost)';
+
 		// GPT-5.6 series (flagship - Jul 2026) - Sol/Terra/Luna tiers, 1M+ context.
 		$models['gpt-5.6-sol']   = 'GPT-5.6 Sol (Flagship)';
 		$models['gpt-5.6-terra'] = 'GPT-5.6 Terra (Balanced)';
@@ -262,12 +268,11 @@ class WP_MCP_AI_Model_Service {
 		// GPT-4.1 series (multimodal - vision capable).
 		$models['gpt-4.1']            = 'GPT-4.1 (1M Context, Coding)';
 		$models['gpt-4.1-mini']       = 'GPT-4.1 Mini';
-		$models['gpt-4.1-nano']       = 'GPT-4.1 Nano';
 		$models['gpt-4.1-turbo']      = 'GPT-4.1 Turbo';
 		$models['gpt-4.1-2025-04-14'] = 'GPT-4.1 (Apr 2025)';
 
 		// GPT-4o series (multimodal - vision capable) - retiring Feb 2026 from ChatGPT, API still available.
-		$models['gpt-4.1']           = 'GPT-4o (Retiring)';
+		$models['gpt-4o']           = 'GPT-4o (Deprecated Jan 2027)';
 		$models['gpt-4o-mini']       = 'GPT-4o Mini';
 		$models['gpt-4o-2024-11-20'] = 'GPT-4o (Nov 2024)';
 		$models['gpt-4o-2024-08-06'] = 'GPT-4o (Aug 2024)';
@@ -296,10 +301,13 @@ class WP_MCP_AI_Model_Service {
 		$models = array();
 
 		// Claude Mythos 5 / Fable 5.1 / Opus 5 (Jul-Sep 2026).
-		$models['claude-mythos-5']  = 'Claude Mythos 5 (Invitation-only) - Most Capable';
-		$models['claude-fable-5.1'] = 'Claude Fable 5.1 (Sep 2026) - Top Tier';
-		$models['claude-opus-5']    = 'Claude Opus 5 (Jul 2026) - Flagship';
-		$models['claude-sonnet-5']  = 'Claude Sonnet 5 (Jun 2026) - Default';
+		$models['claude-mythos-5']   = 'Claude Mythos 5 (Invitation-only) - Most Capable';
+		$models['claude-fable-5.1']  = 'Claude Fable 5.1 (Sep 2026) - Top Tier';
+		$models['claude-opus-5-5']   = 'Claude Opus 5.5 (Sep 2026) - Flagship';
+		$models['claude-sonnet-5-5'] = 'Claude Sonnet 5.5 (Sep 2026) - Recommended';
+		$models['claude-haiku-5-5']  = 'Claude Haiku 5.5 - Fastest';
+		$models['claude-opus-5']     = 'Claude Opus 5 (Jul 2026)';
+		$models['claude-sonnet-5']   = 'Claude Sonnet 5 (Jun 2026)';
 
 		// Claude 4.7 series (multimodal - vision capable) - Latest flagship (Apr 2026).
 		$models['claude-opus-4-7'] = 'Claude Opus 4.7 (Apr 2026) - Flagship';
@@ -350,22 +358,25 @@ class WP_MCP_AI_Model_Service {
 		$models             = array();
 		$requires_image_gen = isset( $args['requires_image_gen'] ) ? $args['requires_image_gen'] : false;
 
+		// Gemini 4 Argon (October 13, 2026 GA - flagship).
+		$models['gemini-4-argon'] = 'Gemini 4 Argon (Flagship)';
+
 		// Gemini 3.8/3.7/3.6 Flash (Jul-Sep 2026 - latest GA workhorses).
 		$models['gemini-3.8-flash']      = 'Gemini 3.8 Flash (Recommended)';
-		$models['gemini-3.7-flash']      = 'Gemini 3.7 Flash';
+		$models['gemini-3.7-flash']      = 'Gemini 3.7 Flash (Deprecated)';
 		$models['gemini-3.6-flash']      = 'Gemini 3.6 Flash';
 		$models['gemini-3.5-flash-lite'] = 'Gemini 3.5 Flash-Lite (Budget)';
 
-		// Gemini 3.5 series (May 2026 GA - latest flagship).
-		$models['gemini-3.5-flash'] = 'Gemini 3.5 Flash';
+		// Gemini 3.5 series (May 2026 GA - deprecated October 2026).
+		$models['gemini-3.5-flash'] = 'Gemini 3.5 Flash (Deprecated)';
 
 		// Gemini 3.1 series (April 2026 GA).
 		$models['gemini-3.1-pro']        = 'Gemini 3.1 Pro';
 		$models['gemini-3.1-flash-lite'] = 'Gemini 3.1 Flash Lite (Budget)';
 
-		// Gemini 2.5 series (multimodal - text, image, video) - Stable.
-		$models['gemini-2.5-pro']                   = 'Gemini 2.5 Pro';
-		$models['gemini-2.5-flash']                 = 'Gemini 2.5 Flash (Recommended)';
+		// Gemini 2.5 series (multimodal - text, image, video) - deprecated November 2026.
+		$models['gemini-2.5-pro']                   = 'Gemini 2.5 Pro (Deprecated)';
+		$models['gemini-2.5-flash']                 = 'Gemini 2.5 Flash (Deprecated)';
 		$models['gemini-2.5-flash-lite']            = 'Gemini 2.5 Flash Lite';
 		$models['gemini-2.5-flash-preview-09-2025'] = 'Gemini 2.5 Flash (Sep 2025 Preview)';
 
@@ -377,7 +388,8 @@ class WP_MCP_AI_Model_Service {
 
 		// Image generation model - only for image generation/editing tools.
 		if ( $requires_image_gen ) {
-			$models['gemini-3.1-flash-image'] = 'Gemini 3.1 Flash Image — Nano Banana 2 (Recommended)';
+			$models['gemini-nano-banana-2.1'] = 'Gemini Nano Banana 2.1 (Recommended)';
+			$models['gemini-3.1-flash-image'] = 'Gemini 3.1 Flash Image — Nano Banana 2 (Deprecated)';
 		}
 
 		// Gemini 2.0 series (stable).
@@ -769,8 +781,9 @@ class WP_MCP_AI_Model_Service {
 		$models['meta/llama-3.2-11b-vision-instruct'] = 'Llama 3.2 11B Vision Instruct (Free)';
 
 		// NVIDIA Nemotron Models.
-		$models['nvidia/llama-3.1-nemotron-70b-instruct'] = 'Nemotron 70B Instruct (Free)';
-		$models['nvidia/nemotron-3-super-120b-a12b']      = 'Nemotron 3 Super 120B MoE (1M context)';
+		$models['nvidia/llama-3.1-nemotron-70b-instruct']  = 'Nemotron 70B Instruct (Free)';
+		$models['nvidia/nemotron-3.5-super-vl-120b-a12b'] = 'Nemotron 3.5 Super VL 120B MoE (1M context, early access)';
+		$models['nvidia/nemotron-3.5-lightning-30b-a3b']  = 'Nemotron 3.5 Lightning 30B MoE (1M context)';
 		$models['nvidia/nemotron-3-nano-30b-a3b']         = 'Nemotron 3 Nano 30B MoE (Free, 1M context)';
 
 		// Mistral AI Models.
@@ -1112,11 +1125,12 @@ class WP_MCP_AI_Model_Service {
 
 		$models = array();
 
-		$models['kimi-k3']          = 'Kimi K3 (2.8T MoE, 1M Context, Open Weights)';
-		$models['kimi-k2.7-code']   = 'Kimi K2.7 Code (256K, Multimodal)';
-		$models['kimi-latest']      = 'Kimi Latest (1M Context)';
-		$models['moonshot-v1-8k']   = 'Moonshot V1 (8K)';
-		$models['moonshot-v1-32k']  = 'Moonshot V1 (32K)';
+		$models['kimi-k3.1-pro']   = 'Kimi K3.1 Pro (3T MoE, 1M Context, Recommended)';
+		$models['kimi-k3']         = 'Kimi K3 (2.8T MoE, 1M Context, Open Weights)';
+		$models['kimi-k2.7-code']  = 'Kimi K2.7 Code (256K, Multimodal)';
+		$models['kimi-latest']     = 'Kimi Latest (1M Context)';
+		$models['moonshot-v1-8k']  = 'Moonshot V1 (8K)';
+		$models['moonshot-v1-32k'] = 'Moonshot V1 (32K)';
 		$models['moonshot-v1-128k'] = 'Moonshot V1 (128K)';
 
 		return $models;
@@ -1164,10 +1178,10 @@ class WP_MCP_AI_Model_Service {
 	public function get_provider_default_models_by_lane( $provider ) {
 		$provider_lanes = array(
 			'openai'       => array(
-				'stable'    => 'gpt-4.1',
+				'stable'    => 'gpt-6.1-sol',
 				'latest'    => 'gpt-6-sol',
 				'budget'    => 'gpt-6-luna',
-				'vision'    => 'gpt-4.1',
+				'vision'    => 'gpt-6.1-sol',
 				'image'     => 'gpt-image-2',
 				'audio_in'  => 'gpt-transcribe',
 				'audio_out' => 'gpt-4o-mini-tts',
@@ -1180,10 +1194,10 @@ class WP_MCP_AI_Model_Service {
 			),
 			'gemini'       => array(
 				'stable' => 'gemini-3.8-flash',
-				'latest' => 'gemini-3.8-flash',
+				'latest' => 'gemini-4-argon',
 				'budget' => 'gemini-3.5-flash-lite',
 				'vision' => 'gemini-3.8-flash',
-				'image'  => 'gemini-3.1-flash-image',
+				'image'  => 'gemini-nano-banana-2.1',
 			),
 			'huggingface'  => array(
 				'stable' => 'meta-llama/Llama-3.3-70B-Instruct',

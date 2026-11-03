@@ -383,7 +383,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		$model        = isset( $settings['default_gemini_model'] ) && ! empty( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+		$model        = isset( $settings['default_gemini_model'] ) && ! empty( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-3.5-flash-lite';
 		$request_body = array(
 			'contents'         => array(
 				array(

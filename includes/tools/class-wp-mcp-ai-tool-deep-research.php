@@ -1531,7 +1531,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! in_array( 'openai', $exclude_providers, true ) && ! empty( $settings['openai_api_key'] ) && class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$client = new WP_MCP_AI_OpenAI_Client();
 			// Prefer the configured default, else the current flagship research-grade model (1M context).
-			$model = ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-5.6-sol';
+			$model = ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-6.1-sol';
 			return array(
 				'client'   => $client,
 				'provider' => 'openai',
@@ -1541,8 +1541,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! in_array( 'gemini', $exclude_providers, true ) && ! empty( $settings['gemini_api_key'] ) && class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$client = new WP_MCP_AI_Gemini_Client();
-			// Prefer gemini-3.1-pro-preview for deep research (1M context, 64K output, agentic capabilities) or fall back to configured default.
-			$model = ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3.1-pro-preview';
+			// Prefer gemini-4-argon for deep research (flagship reasoning, 1M context) or fall back to configured default.
+			$model = ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-4-argon';
 			return array(
 				'client'   => $client,
 				'provider' => 'gemini',
@@ -1552,8 +1552,8 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! in_array( 'anthropic', $exclude_providers, true ) && ! empty( $settings['anthropic_api_key'] ) && class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			$client = new WP_MCP_AI_Anthropic_Client();
-			// Prefer claude-opus-4.5 for comprehensive research (highest intelligence, 200K context, persistent memory).
-			$model = 'claude-opus-4.5';
+			// Prefer claude-opus-5-5 for comprehensive research (flagship, 1M context).
+			$model = 'claude-opus-5-5';
 			return array(
 				'client'   => $client,
 				'provider' => 'anthropic',
@@ -1648,7 +1648,7 @@ class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		if ( ! in_array( 'kimi', $exclude_providers, true ) && ! empty( $settings['kimi_api_key'] ) && class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 			$client = new WP_MCP_AI_Kimi_Client();
-			$model  = ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k3';
+			$model  = ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k3.1-pro';
 			return array(
 				'client'   => $client,
 				'provider' => 'kimi',
