@@ -13,7 +13,9 @@
  * Usage:
  *   node bin/package-plugin.mjs [output.zip]
  *
- * Cross-platform: `zip` on POSIX runners (mirror CI), PowerShell on Windows.
+ * Cross-platform: `zip` on POSIX runners (mirror CI), bsdtar on Windows
+ * (System32 tar.exe — PowerShell's Compress-Archive writes backslash entry
+ * separators, which the OpenAI portal rejects as unsafe paths).
  * Dependency-free: Node built-ins only.
  *
  * @see https://developers.openai.com/api/docs/guides/agents-api/tools/plugins
@@ -56,27 +58,36 @@ try {
 				return true;
 			}
 			const parts = rel.split( sep );
+			// Dot-prefixed members are stripped: the OpenAI portal
+			// validator rejects hidden paths as unsafe.
 			return !parts.includes( 'dist' ) &&
 				!parts.includes( 'node_modules' ) &&
 				!parts.includes( '.git' ) &&
+				!parts.includes( '.github' ) &&
+				!parts.includes( '.codex-plugin' ) &&
 				!parts.includes( 'docs' ) &&
+				!parts.some( ( p ) => p.startsWith( '.' ) ) &&
 				!parts.some( ( p ) => p === '.env' || p.startsWith( '.env.' ) );
 		},
 	} );
 
 	const isWindows = process.platform === 'win32';
 	if ( isWindows ) {
+		// System32 bsdtar writes spec-compliant forward-slash ZIP entry
+		// names. Resolve it explicitly — a Git Bash PATH puts GNU tar first,
+		// and GNU tar cannot create ZIP archives.
+		const sysTar = join(
+			process.env.SystemRoot || 'C:\\Windows',
+			'System32',
+			'tar.exe'
+		);
 		execFileSync(
-			'powershell',
-			[
-				'-NoProfile',
-				'-Command',
-				`Compress-Archive -Path '${ join( staging, '*' ).replace( /\\/g, '/' ) }' -DestinationPath '${ out.replace( /\\/g, '/' ) }' -Force`,
-			],
+			sysTar,
+			[ '-a', '-c', '-f', out, '-C', staging, manifest.name ],
 			{ stdio: 'inherit' }
 		);
 	} else {
-		execFileSync( 'zip', [ '-r', '-q', out, '.' ], { cwd: staging, stdio: 'inherit' } );
+		execFileSync( 'zip', [ '-r', '-q', out, manifest.name ], { cwd: staging, stdio: 'inherit' } );
 	}
 } catch ( error ) {
 	console.error( 'Archive step failed.', error.message );
