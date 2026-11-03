@@ -42,7 +42,7 @@ class ContentGraphSettingsStore implements SettingsStoreInterface {
 	 */
 	private const DEFAULTS = array(
 		'ai_default_provider'      => 'openai',
-		'ai_default_model'         => 'gpt-4o',
+		'ai_default_model'         => 'gpt-6.1-sol',
 		'ai_chat_enabled'          => true,
 		'ai_temperature'           => 0.7,
 		'ai_max_tokens'            => 4096,
@@ -130,7 +130,7 @@ class ContentGraphSettingsStore implements SettingsStoreInterface {
 	}
 
 	public function getDefaultModel(): string {
-		return (string) $this->get( 'ai_default_model', 'gpt-4o' );
+		return (string) $this->get( 'ai_default_model', 'gpt-6.1-sol' );
 	}
 
 	/**

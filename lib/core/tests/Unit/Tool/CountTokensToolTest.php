@@ -72,14 +72,36 @@ final class CountTokensToolTest extends TestCase {
 	public function testWithModelContextLimit(): void {
 		$result = $this->tool->execute( array(
 			'text'  => str_repeat( 'a', 4000 ), // ~1000 tokens
+			'model' => 'gpt-6.1-sol',
+		) );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'gpt-6.1-sol', $result['data']['model'] );
+		$this->assertSame( 1050000, $result['data']['context_limit'] );
+		$this->assertGreaterThan( 0, $result['data']['remaining'] );
+		$this->assertLessThan( 100, $result['data']['utilization_pct'] );
+	}
+
+	public function testDeprecatedModelStillHasContextLimit(): void {
+		$result = $this->tool->execute( array(
+			'text'  => str_repeat( 'a', 4000 ),
 			'model' => 'gpt-4o-mini',
 		) );
 
 		$this->assertTrue( $result['success'] );
 		$this->assertSame( 'gpt-4o-mini', $result['data']['model'] );
 		$this->assertSame( 128000, $result['data']['context_limit'] );
-		$this->assertGreaterThan( 0, $result['data']['remaining'] );
-		$this->assertLessThan( 100, $result['data']['utilization_pct'] );
+	}
+
+	public function testRetiredModelHasNoLimitInfo(): void {
+		// gpt-4.1-nano was removed from the catalog (sunset 2026-10-23 passed).
+		$result = $this->tool->execute( array(
+			'text'  => 'hello',
+			'model' => 'gpt-4.1-nano',
+		) );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayNotHasKey( 'context_limit', $result['data'] );
 	}
 
 	public function testUnknownModelNoLimitInfo(): void {

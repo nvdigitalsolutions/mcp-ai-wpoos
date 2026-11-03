@@ -90,7 +90,7 @@ class ProfessionSeeder {
 
 			// Only update if it's empty or set to legacy gpt-4.
 			if ( empty( $current_model ) || 'gpt-4' === $current_model ) {
-				update_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_model', 'gpt-4.1' );
+				update_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_model', 'gpt-6.1-sol' );
 			}
 
 			// Set default provider if not set.
@@ -227,7 +227,7 @@ class ProfessionSeeder {
 				$profession_data['default_provider'] = 'openai';
 			}
 			if ( ! isset( $profession_data['default_model'] ) ) {
-				$profession_data['default_model'] = 'gpt-4.1';
+				$profession_data['default_model'] = 'gpt-6.1-sol';
 			}
 			if ( ! isset( $profession_data['default_temperature'] ) ) {
 				$profession_data['default_temperature'] = 0.7;

@@ -51,7 +51,7 @@ final class SuggestBestModelToolTest extends TestCase {
 		$result = $this->tool->execute( array( 'task' => 'vision task' ) );
 
 		$this->assertTrue( $result['success'] );
-		$this->assertSame( 'gpt-4o', $result['data']['model'] );
+		$this->assertSame( 'gpt-6.1-sol', $result['data']['model'] );
 	}
 
 	public function testSuggestsMathModel(): void {
@@ -68,7 +68,7 @@ final class SuggestBestModelToolTest extends TestCase {
 		) );
 
 		$this->assertTrue( $result['success'] );
-		$this->assertSame( 'gpt-4o-mini', $result['data']['model'] );
+		$this->assertSame( 'gpt-6-luna', $result['data']['model'] );
 		$this->assertSame( 'speed', $result['data']['priority'] );
 	}
 

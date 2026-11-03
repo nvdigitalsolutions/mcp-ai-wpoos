@@ -65,6 +65,8 @@ class ModelCatalogMigration {
 			'gpt-4-turbo'                          => 'gpt-4.1',
 			'gpt-4-1106-preview'                   => 'gpt-4.1',
 			'gpt-4-vision-preview'                 => 'gpt-4.1',
+			// GPT-4.1 Nano shut down 2026-10-23 (sunset passed) -> gpt-5.6-luna.
+			'gpt-4.1-nano'                         => 'gpt-5.6-luna',
 			'o1'                                   => 'o3-mini',
 			'o1-mini'                              => 'o3-mini',
 			'o1-preview'                           => 'o3-mini',
@@ -106,6 +108,8 @@ class ModelCatalogMigration {
 			'meta/llama-3.1-405b-instruct'         => 'meta/llama-3.3-70b-instruct',
 			'meta/llama-3.1-70b-instruct'          => 'meta/llama-3.3-70b-instruct',
 			'meta/llama-3.1-8b-instruct'           => 'meta/llama-3.2-3b-instruct',
+			// Nemotron 3 Super retired 2026-10-19 (requests now fail) -> 3.5 Super.
+			'nvidia/nemotron-3-super-120b-a12b'    => 'nvidia/nemotron-3.5-super-vl-120b-a12b',
 			'microsoft/phi-3-medium-128k-instruct' => 'microsoft/phi-4',
 			'microsoft/phi-3-medium-4k-instruct'   => 'microsoft/phi-4',
 			'microsoft/phi-3-mini-128k-instruct'   => 'microsoft/phi-4',

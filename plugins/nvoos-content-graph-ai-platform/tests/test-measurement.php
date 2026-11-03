@@ -240,7 +240,7 @@ class Test_Platform_Measurement extends \WP_UnitTestCase {
 			array(
 				'assistant_id' => '42',
 				'user_id'      => '7',
-				'model'        => ' <b>gpt</b>-4o ',
+				'model'        => ' <b>gpt</b>-6.1-sol ',
 				'tool'         => 'get_posts',
 				'session_id'   => ' sess_1 ',
 				'attributes'   => array(
@@ -254,7 +254,7 @@ class Test_Platform_Measurement extends \WP_UnitTestCase {
 
 		$this->assertSame( 42, $sanitized['assistant_id'] );
 		$this->assertSame( 7, $sanitized['user_id'] );
-		$this->assertSame( 'gpt-4o', $sanitized['model'] );
+		$this->assertSame( 'gpt-6.1-sol', $sanitized['model'] );
 		$this->assertSame( 'get_posts', $sanitized['tool'] );
 		$this->assertSame( 'sess_1', $sanitized['session_id'] );
 		$this->assertArrayNotHasKey( 'not-allowed', $sanitized );
@@ -507,7 +507,7 @@ class Test_Platform_Measurement extends \WP_UnitTestCase {
 			array(),
 			array(
 				'provider' => 'openai',
-				'model'    => 'gpt-4o',
+				'model'    => 'gpt-6.1-sol',
 			)
 		);
 		$observer->on_after(

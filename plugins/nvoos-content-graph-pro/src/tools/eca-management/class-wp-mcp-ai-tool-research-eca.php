@@ -790,10 +790,10 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	protected function get_research_model( $provider, $settings ) {
 		switch ( $provider ) {
 			case 'openai':
-				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
+				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-6.1-sol';
 
 			case 'gemini':
-				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
+				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3.5-flash-lite';
 
 			case 'anthropic':
 				return 'claude-sonnet-4-5-20250929';
@@ -823,7 +823,7 @@ class WP_MCP_AI_Tool_Research_ECA implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				return ! empty( $settings['digitalocean_model'] ) ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct';
 
 			case 'kimi':
-				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k2.7-code';
+				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k3.1-pro';
 
 			case 'baseten':
 				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';

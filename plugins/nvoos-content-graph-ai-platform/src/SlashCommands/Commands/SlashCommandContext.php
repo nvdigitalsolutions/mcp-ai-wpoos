@@ -302,7 +302,6 @@ class SlashCommandContext {
 			'gpt-4o-mini'       => 128000,
 			'gpt-4.1'           => 1000000,
 			'gpt-4.1-mini'      => 1000000,
-			'gpt-4.1-nano'      => 1000000,
 			'gpt-4-turbo'       => 128000,
 			'gpt-3.5-turbo'     => 16385,
 			'gemini-2.5-flash'  => 2097152,

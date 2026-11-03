@@ -333,7 +333,7 @@ class Test_Token_Tracking extends \WP_UnitTestCase {
 		$this->assertSame( 0, $dry['correctly_attributed'] );
 		$this->assertSame( 1, $dry['records_updated'] );
 		$this->assertSame( 'gemini', $dry['updates'][0]['new_provider'] );
-		$this->assertSame( 'gemini-3.1-flash-image', $dry['updates'][0]['new_model'] );
+		$this->assertSame( 'gemini-nano-banana-2.1', $dry['updates'][0]['new_model'] );
 
 		// Apply for real.
 		$applied = EnhancedTokenTracking::migrate_provider_misattributions( false, 100 );
@@ -341,7 +341,7 @@ class Test_Token_Tracking extends \WP_UnitTestCase {
 
 		$rows = TokenTrackingDatabase::get_user_usage( $user_id, '', '' );
 		$this->assertSame( 'gemini', $rows[0]['provider'] );
-		$this->assertSame( 'gemini-3.1-flash-image', $rows[0]['model'] );
+		$this->assertSame( 'gemini-nano-banana-2.1', $rows[0]['model'] );
 		$this->assertEquals( 0, (int) $rows[0]['is_estimated'] );
 	}
 

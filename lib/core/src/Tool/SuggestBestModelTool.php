@@ -16,21 +16,21 @@ class SuggestBestModelTool extends AbstractTool {
 	private const RECOMMENDATIONS = array(
 		'coding'      => array(
 			'quality' => 'claude-sonnet-4-6',
-			'speed'   => 'gpt-4o-mini',
+			'speed'   => 'gpt-6-luna',
 			'cost'    => 'deepseek-flash',
 		),
 		'writing'     => array(
 			'quality' => 'claude-opus-4-6',
-			'speed'   => 'gpt-4o-mini',
+			'speed'   => 'gpt-6-luna',
 			'cost'    => 'gemini-2.0-flash',
 		),
 		'analysis'    => array(
 			'quality' => 'gpt-5',
-			'speed'   => 'gpt-4o-mini',
+			'speed'   => 'gpt-6-luna',
 			'cost'    => 'gemini-2.0-flash-lite',
 		),
 		'vision'      => array(
-			'quality' => 'gpt-4o',
+			'quality' => 'gpt-6.1-sol',
 			'speed'   => 'gemini-2.0-flash',
 			'cost'    => 'gemini-2.0-flash-lite',
 		),
@@ -41,7 +41,7 @@ class SuggestBestModelTool extends AbstractTool {
 		),
 		'translation' => array(
 			'quality' => 'claude-sonnet-4-6',
-			'speed'   => 'gpt-4o-mini',
+			'speed'   => 'gpt-6-luna',
 			'cost'    => 'gemini-2.0-flash',
 		),
 	);

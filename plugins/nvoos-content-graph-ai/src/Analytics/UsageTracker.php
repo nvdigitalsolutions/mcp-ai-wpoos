@@ -528,6 +528,24 @@ class UsageTracker {
 		// Common model pricing (as of June 2026).
 		// See: https://openai.com/api/pricing/.
 		$pricing_map = array(
+			// OpenAI GPT-6 Sol / Luna (September 22, 2026).
+			'gpt-6-sol'                                    => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M.
+				'output_cost_per_1k' => 0.01,   // $10.00/1M.
+			),
+			'gpt-6-luna'                                   => array(
+				'input_cost_per_1k'  => 0.0001, // $0.10/1M.
+				'output_cost_per_1k' => 0.0005, // $0.50/1M.
+			),
+			// OpenAI GPT-6.1 Sol / Terra (November 2026 refresh).
+			'gpt-6.1-sol'                                  => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M.
+				'output_cost_per_1k' => 0.01,   // $10.00/1M.
+			),
+			'gpt-6.1-terra'                                => array(
+				'input_cost_per_1k'  => 0.001,  // $1.00/1M.
+				'output_cost_per_1k' => 0.005,  // $5.00/1M.
+			),
 			'gpt-5.6'                                      => array(
 				'input_cost_per_1k'  => 0.005,
 				'output_cost_per_1k' => 0.03,
@@ -591,10 +609,6 @@ class UsageTracker {
 			'gpt-4.1-mini'                                 => array(
 				'input_cost_per_1k'  => 0.0004,
 				'output_cost_per_1k' => 0.0016,
-			),
-			'gpt-4.1-nano'                                 => array(
-				'input_cost_per_1k'  => 0.0001,
-				'output_cost_per_1k' => 0.0004,
 			),
 			'gpt-4o'                                       => array(
 				'input_cost_per_1k'  => 0.0025,
@@ -664,13 +678,35 @@ class UsageTracker {
 				'input_cost_per_1k'  => 0.00125,
 				'output_cost_per_1k' => 0.01,
 			),
+			// Gemini 4 Argon (October 13, 2026 GA - flagship).
+			'gemini-4-argon'                               => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M intro through Nov 30, 2026 (standard $4.00 from Dec 1).
+				'output_cost_per_1k' => 0.01,   // $10.00/1M intro (standard $20.00 from Dec 1).
+			),
+			// Gemini Nano Banana 2.1 (October 6, 2026 GA).
+			'gemini-nano-banana-2.1'                       => array(
+				'input_cost_per_1k'  => 0.0015, // $1.50/1M (text/image/video).
+				'output_cost_per_1k' => 0.03,   // $30.00/1M images ($0.0336 per 1K image).
+			),
 			'claude-fable-5'                               => array(
+				'input_cost_per_1k'  => 0.01,
+				'output_cost_per_1k' => 0.05,
+			),
+			'claude-opus-5-5'                              => array(
+				'input_cost_per_1k'  => 0.004,  // $4.00/1M.
+				'output_cost_per_1k' => 0.02,   // $20.00/1M.
+			),
+			'claude-mythos-5-1'                            => array(
 				'input_cost_per_1k'  => 0.01,
 				'output_cost_per_1k' => 0.05,
 			),
 			'claude-sonnet-5'                              => array(
 				'input_cost_per_1k'  => 0.002,
 				'output_cost_per_1k' => 0.01,
+			),
+			'claude-sonnet-5-5'                            => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M.
+				'output_cost_per_1k' => 0.01,   // $10.00/1M.
 			),
 			'claude-sonnet-4-6'                            => array(
 				'input_cost_per_1k'  => 0.003,
@@ -695,6 +731,11 @@ class UsageTracker {
 			'claude-sonnet-4-5-20250929'                   => array(
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.015,
+			),
+			// Claude Haiku 5.5 (November 2026 refresh).
+			'claude-haiku-5-5'                             => array(
+				'input_cost_per_1k'  => 0.0001, // From $0.10/1M.
+				'output_cost_per_1k' => 0.0005, // From $0.50/1M.
 			),
 			'claude-haiku-4-5'                             => array(
 				'input_cost_per_1k'  => 0.001,
@@ -900,6 +941,12 @@ class UsageTracker {
 			'glm-4.7'                                      => array(
 				'input_cost_per_1k'  => 0.0006,
 				'output_cost_per_1k' => 0.0022,
+			),
+			// Kimi (Moonshot AI) direct models.
+			// See: https://platform.moonshot.ai/docs/pricing/chat.
+			'kimi-k3.1-pro'                                => array(
+				'input_cost_per_1k'  => 0.002,  // $2.00/1M (cache hit $0.20).
+				'output_cost_per_1k' => 0.01,   // $10.00/1M.
 			),
 			'moonshotai/kimi-k2'                           => array(
 				'input_cost_per_1k'  => 0.0006,

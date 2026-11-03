@@ -316,7 +316,7 @@ class Test_Media_Library_Columns extends \WP_UnitTestCase {
 				'alt_text' => 'A test image',
 				'success'  => true,
 				'provider' => 'openai',
-				'model'    => 'gpt-4o-mini',
+				'model'    => 'gpt-6-luna',
 				'usage'    => array(
 					'prompt_tokens'     => 100,
 					'completion_tokens' => 50,
@@ -333,7 +333,7 @@ class Test_Media_Library_Columns extends \WP_UnitTestCase {
 		$this->assertArrayHasKey( 'generate_image_alt_text', $usage['tools'] );
 		$this->assertNotEmpty( $usage['last_used'] );
 		$this->assertSame( 'openai', $usage['last_provider'] );
-		$this->assertSame( 'gpt-4o-mini', $usage['last_model'] );
+		$this->assertSame( 'gpt-6-luna', $usage['last_model'] );
 
 		if ( defined( 'WP_MCP_AI_PATH' ) ) {
 			// Monolith: the base cost calculator contributes to the total.
@@ -356,7 +356,7 @@ class Test_Media_Library_Columns extends \WP_UnitTestCase {
 			array(
 				'success'  => true,
 				'provider' => 'openai',
-				'model'    => 'gpt-4o-mini',
+				'model'    => 'gpt-6-luna',
 				'usage'    => array( 'total_tokens' => 100 ),
 			)
 		);
@@ -368,7 +368,7 @@ class Test_Media_Library_Columns extends \WP_UnitTestCase {
 			array(
 				'success'  => true,
 				'provider' => 'openai',
-				'model'    => 'gpt-4o-mini',
+				'model'    => 'gpt-6-luna',
 				'usage'    => array( 'total_tokens' => 75 ),
 			)
 		);

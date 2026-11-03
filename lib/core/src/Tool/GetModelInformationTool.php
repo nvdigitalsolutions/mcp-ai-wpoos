@@ -42,7 +42,7 @@ class GetModelInformationTool extends AbstractTool {
 			'properties'           => array(
 				'model'    => array(
 					'type'        => 'string',
-					'description' => 'Model identifier (e.g., "gpt-4o", "gemini-2.0-flash").',
+					'description' => 'Model identifier (e.g., "gpt-6.1-sol", "gemini-3.5-flash-lite").',
 				),
 				'provider' => array(
 					'type'        => 'string',

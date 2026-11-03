@@ -206,7 +206,7 @@ class Test_Cli_Commands extends \WP_UnitTestCase {
 
 	public function test_get_setting_reads_defaults(): void {
 		$this->assertSame( 'openai', SettingsCommand::get_setting( 'ai_default_provider' ) );
-		$this->assertSame( 'gpt-4o', SettingsCommand::get_setting( 'ai_default_model' ) );
+		$this->assertSame( 'gpt-6.1-sol', SettingsCommand::get_setting( 'ai_default_model' ) );
 	}
 
 	public function test_get_setting_refuses_secrets_and_unknown(): void {

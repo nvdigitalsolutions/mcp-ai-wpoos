@@ -21,38 +21,46 @@ class CostCalculator {
 	 * Pricing per million tokens: [prompt_price, completion_price].
 	 *
 	 * Prices in USD per 1M tokens. Source: official provider pricing pages
-	 * as of September 2026. Update when providers change pricing.
+	 * as of November 2026. Update when providers change pricing.
 	 *
 	 * @var array<string, array<string, array{float, float}>>
 	 */
 	private const PRICING = array(
 		'openai'       => array(
+			'gpt-6.1-sol'   => array( 2.00, 10.00 ),  // GPT-6.1 Sol (November 2026 refresh).
+			'gpt-6.1-terra' => array( 1.00, 5.00 ),   // GPT-6.1 Terra (visual / computer use).
 			'gpt-5-nano'   => array( 0.15, 0.60 ),
 			'gpt-5-mini'   => array( 0.30, 1.20 ),
 			'gpt-5'        => array( 1.25, 5.00 ),
-			'gpt-4o'       => array( 2.50, 10.00 ),
-			'gpt-4o-mini'  => array( 0.15, 0.60 ),
-			'gpt-4.1'      => array( 2.00, 8.00 ),
-			'gpt-4.1-mini' => array( 0.40, 1.60 ),
-			'gpt-4.1-nano' => array( 0.10, 0.40 ),
+			'gpt-4o'       => array( 2.50, 10.00 ),   // Deprecated - sunset 2027-01-14.
+			'gpt-4o-mini'  => array( 0.15, 0.60 ),    // Deprecated - sunset 2027-01-14.
+			'gpt-4.1'      => array( 2.00, 8.00 ),    // Deprecated - sunset 2027-01-14.
+			'gpt-4.1-mini' => array( 0.40, 1.60 ),    // Deprecated - sunset 2027-01-14.
 			'o4-mini'      => array( 1.10, 4.40 ),
 			'o3'           => array( 10.00, 40.00 ),
 			'o3-mini'      => array( 1.10, 4.40 ),
 			'gpt-image-1'  => array( 0.00, 4.00 ),   // Image gen: flat per-image
+			// GPT Image 2.5: $8/$30 per 1M image tokens; $5/1M text input.
+			'gpt-image-2.5-sunburst' => array( 8.00, 30.00 ),
+			'gpt-image-2.5-flare'    => array( 8.00, 30.00 ),
 			'default'      => array( 2.50, 10.00 ),
 		),
 		'anthropic'    => array(
 			'claude-opus-4-6'   => array( 15.00, 75.00 ),
 			'claude-sonnet-4-6' => array( 3.00, 15.00 ),
 			'claude-haiku-4-6'  => array( 1.00, 5.00 ),
+			'claude-haiku-5-5'  => array( 0.10, 0.50 ),  // Claude Haiku 5.5 (November 2026 refresh).
 			'default'           => array( 3.00, 15.00 ),
 		),
 		'gemini'       => array(
-			'gemini-2.5-pro'        => array( 2.50, 10.00 ),
-			'gemini-2.5-flash'      => array( 0.30, 1.20 ),
-			'gemini-2.0-flash'      => array( 0.15, 0.60 ),
-			'gemini-2.0-flash-lite' => array( 0.075, 0.30 ),
-			'default'               => array( 0.15, 0.60 ),
+			'gemini-4-argon'         => array( 2.00, 10.00 ),  // Intro; standard $4/$20 from Dec 1, 2026.
+			'gemini-2.5-pro'         => array( 2.50, 10.00 ),  // Deprecated - sunset 2026-12-01.
+			'gemini-2.5-flash'       => array( 0.30, 1.20 ),   // Deprecated - sunset 2026-12-01.
+			'gemini-2.0-flash'       => array( 0.15, 0.60 ),
+			'gemini-2.0-flash-lite'  => array( 0.075, 0.30 ),
+			// Image gen: $1.50 per 1M input; $30 per 1M image output.
+			'gemini-nano-banana-2.1' => array( 1.50, 30.00 ),
+			'default'                => array( 0.15, 0.60 ),
 		),
 		'deepseek'     => array(
 			'deepseek-flash'               => array( 0.15, 0.60 ),   // V4.1 Flash (off-peak cache miss).
@@ -65,16 +73,22 @@ class CostCalculator {
 			'default' => array( 2.00, 8.00 ),   // Varies wildly by model
 		),
 		'kimi'         => array(
-			'kimi-k2.6' => array( 0.60, 2.40 ),
-			'default'   => array( 0.60, 2.40 ),
+			'kimi-k3.1-pro' => array( 2.00, 10.00 ),  // Kimi K3.1 Pro (November 2026 refresh).
+			'kimi-k2.6'     => array( 0.60, 2.40 ),   // Deprecated - K2 sunset 2026-12-31.
+			'default'       => array( 2.00, 10.00 ),
 		),
 		'digitalocean' => array(
 			'default' => array( 0.00, 0.00 ),   // Priced per GPU-second
 		),
 		'cloudflare'   => array(
+			'@cf/deepseek-ai/deepseek-v4.1-flash-1017' => array( 0.30, 1.20 ),
+			'@cf/qwen/qwen3.8-27b'                     => array( 0.45, 3.20 ),
+			'@cf/ibm-granite/granite-4.0-h-micro'      => array( 0.017, 0.112 ),
 			'default' => array( 0.00, 0.00 ),   // Usage-based, varies
 		),
 		'nvidia_nim'   => array(
+			'nvidia/nemotron-3.5-super-vl-120b-a12b' => array( 0.06, 0.35 ),
+			'nvidia/nemotron-3.5-lightning-30b-a3b'  => array( 0.06, 0.20 ),
 			'default' => array( 0.00, 0.00 ),   // Priced per GPU-hour
 		),
 		'huggingface'  => array(
