@@ -65,6 +65,24 @@ export interface ScheduleResultEnvelope {
 	[ k: string ]: unknown;
 }
 
+/**
+ * Fleet-wide run aggregates from GET /schedules/fleet-stats — computed
+ * server-side from the schedules table and the per-schedule history ring
+ * buffers. `last_run` is an epoch timestamp or null when nothing ran yet.
+ */
+export interface FleetStats {
+	total_schedules: number;
+	enabled_schedules: number;
+	total_runs: number;
+	success_runs: number;
+	failure_runs: number;
+	success_rate: number;
+	failures_24h: number;
+	overdue_schedules: number;
+	last_run: number | null;
+	[ k: string ]: unknown;
+}
+
 interface OkEnvelope {
 	ok?: boolean;
 	message?: string;
@@ -196,6 +214,14 @@ export class ScheduleManagerClient {
 			{ signal }
 		);
 		return Array.isArray( body?.results ) ? body.results : [];
+	}
+
+	/** GET /schedules/fleet-stats — fleet-wide aggregates for the ops card. */
+	async fleetStats( signal?: AbortSignal ): Promise< FleetStats | null > {
+		const body = await this.request< { stats?: FleetStats } >( '/schedules/fleet-stats', {
+			signal,
+		} );
+		return body?.stats ?? null;
 	}
 
 	/** GET /presets — SA schedule presets (filters optional). */

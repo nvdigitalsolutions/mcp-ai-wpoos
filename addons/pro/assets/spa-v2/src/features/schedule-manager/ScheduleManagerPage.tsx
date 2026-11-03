@@ -13,6 +13,7 @@ import { __ } from '@wordpress/i18n';
 import { useScheduleManager } from '../../hooks/useScheduleManager';
 import { useBootstrap } from '../../hooks/useBootstrap';
 import { ScheduleRunsView } from './ScheduleRunsView';
+import { ScheduleFleetCard } from './ScheduleFleetCard';
 import type { ScheduleItem } from '../../api/schedule-manager';
 import {
 	DataTable,
@@ -39,9 +40,11 @@ export function ScheduleManagerPage(): JSX.Element {
 	const {
 		schedules,
 		presets,
+		fleetStats,
 		loading,
 		error,
 		schedulesError,
+		fleetStatsError,
 		actionError,
 		refresh,
 		createSchedule,
@@ -326,7 +329,11 @@ export function ScheduleManagerPage(): JSX.Element {
 			) }
 
 			{ tab === 'schedules' && (
-				<section className="nvoos-pro-spa-diagnostics__card">
+				<>
+					{ fleetStats && (
+						<ScheduleFleetCard stats={ fleetStats } error={ fleetStatsError } />
+					) }
+					<section className="nvoos-pro-spa-diagnostics__card">
 					<h3 className="nvoos-pro-spa-diagnostics__card-title">{ __( 'Schedules', 'nvoos-pro-spa' ) }</h3>
 					<p className="nvoos-pro-spa-diagnostics__muted">
 						<button
@@ -413,7 +420,8 @@ export function ScheduleManagerPage(): JSX.Element {
 							caption={ __( 'Schedules', 'nvoos-pro-spa' ) }
 						/>
 					) }
-				</section>
+					</section>
+				</>
 			) }
 
 			{ tab === 'presets' && (
