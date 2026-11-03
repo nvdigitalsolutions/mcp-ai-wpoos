@@ -41,6 +41,7 @@ answer:
 | `GET mcp-ai-pro/v1/schedules/{id}/history` | `{ ok, schedule_id, history: RunRecord[], total }` | `RunRecord = { status: 'success'|'failure'|'running'|'timeout', start_time: epoch-s, duration: float-s, error: string, action_log: array }` — newest-first, ring-buffered |
 | `GET mcp-ai-pro/v1/schedules/{id}/results` | `{ schedule_id, results: ResultEnvelope[], count }` | `ResultEnvelope = { summary, data, render: 'text'|'table'|…, status, error, generated_at }` — captured per `display.result_capture` |
 | `GET mcp-ai-pro/v1/schedules` | `{ ok, schedules, total }` | `ScheduleItem` carries `run_count`, `last_run` etc. |
+| `GET mcp-ai-pro/v1/schedules/fleet-stats` | `{ ok, stats: FleetStats }` | `FleetStats = { total_schedules, enabled_schedules, total_runs, success_runs, failure_runs, success_rate, failures_24h, overdue_schedules, last_run }` — computed from the schedules table + history ring buffers, no new storage |
 
 CSV export: client-side build from the history rows (no new route needed).
 
@@ -82,6 +83,27 @@ returns to the list (state-based navigation, matching the page's tab pattern).
 - No new endpoint key → **no** PHP config / runtime-config changes
   (endpoints.scheduleManager already exists everywhere).
 
+### 4.3 Fleet overview card (ScheduleFleetCard, same feature folder)
+
+Rendered at the top of the schedules tab, fed by `/schedules/fleet-stats`.
+
+- **Counts** — schedules / enabled / total runs / success rate.
+- **Attention flags** — failures within the last 24 h and overdue schedules
+  (2×-median-gap rule, identical math on server and SPA) render as warning
+  badges with a card-level "Needs attention" badge.
+- **Last run** — epoch timestamp formatted like the runs view.
+- **Fleet outcome split** — small donut (success vs failure counts) when any
+  run exists.
+- **Degrades, never blocks** — fetched through `Promise.allSettled` beside
+  the two lists with its own `fleetStatsError` slot; a failed fetch hides the
+  card and leaves the schedules/presets tables fully usable.
+
+Server side (`addons/pro`): `get_fleet_stats()` static on the schedule
+manager + a `fleet-stats` REST handler registered BEFORE the `(?P<id>...)`
+routes (registration-order discipline), with REST tests covering the
+aggregate math, the empty-fleet zero state, and the single-run no-overdue
+edge case.
+
 ## 5. Validation gates
 
 - `npm run typecheck`, `npm test` (new suite: report-strip math, overdue
@@ -97,6 +119,8 @@ returns to the list (state-based navigation, matching the page's tab pattern).
 
 ## 6. Deferred (own PRs)
 
-- **Fleet-wide ops card** on the console Dashboard — needs a new
-  fleet-aggregates REST route (4-point endpoint wiring), out of scope here.
+- **Console Dashboard card** (the ConsoleShell DashboardPage, not the
+  spa-v2 Schedule Manager) — the fleet stats are available from the same
+  route; wiring an ops card onto the console dashboard home is a separate
+  surface and stays out of this PR.
 - Server-side CSV route if the client-side export proves insufficient.

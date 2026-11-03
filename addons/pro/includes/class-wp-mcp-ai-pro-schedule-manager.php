@@ -887,6 +887,113 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Manager' ) ) {
 		}
 
 		/**
+		 * Fleet-wide run aggregates for the ops dashboard (console Dashboard card).
+		 *
+		 * Computed from the schedules table and the per-schedule history ring
+		 * buffers — no new storage. "Overdue" applies the same 2x-median-gap
+		 * rule the SPA runs view uses (healthchecks freshness model).
+		 *
+		 * @return array{
+		 *     total_schedules:int,
+		 *     enabled_schedules:int,
+		 *     total_runs:int,
+		 *     success_runs:int,
+		 *     failure_runs:int,
+		 *     success_rate:int,
+		 *     failures_24h:int,
+		 *     overdue_schedules:int,
+		 *     last_run:?int,
+		 * }
+		 */
+		public static function get_fleet_stats() {
+			$schedules = self::load_schedules();
+			$history   = self::load_history();
+			$now       = time();
+
+			$total_schedules = count( $schedules );
+			$enabled         = 0;
+			$total_runs      = 0;
+			$success_runs    = 0;
+			$failures_24h    = 0;
+			$overdue_count   = 0;
+			$last_run_any    = 0;
+
+			foreach ( $schedules as $schedule ) {
+				if ( ! empty( $schedule['enabled'] ) ) {
+					++$enabled;
+				}
+			}
+
+			foreach ( $history as $runs ) {
+				if ( ! is_array( $runs ) ) {
+					continue;
+				}
+				$total_runs += count( $runs );
+				$start_times = array();
+				foreach ( $runs as $run ) {
+					$status     = isset( $run['status'] ) ? $run['status'] : '';
+					$start_time = isset( $run['start_time'] ) ? (int) $run['start_time'] : 0;
+					if ( 'success' === $status ) {
+						++$success_runs;
+					}
+					if ( $start_time > $last_run_any ) {
+						$last_run_any = $start_time;
+					}
+					if ( $start_time >= $now - DAY_IN_SECONDS && 'success' !== $status ) {
+						++$failures_24h;
+					}
+					if ( $start_time > 0 ) {
+						$start_times[] = $start_time;
+					}
+				}
+				sort( $start_times );
+				if ( self::is_overdue_series( $start_times, $now ) ) {
+					++$overdue_count;
+				}
+			}
+
+			return array(
+				'total_schedules'   => $total_schedules,
+				'enabled_schedules' => $enabled,
+				'total_runs'        => $total_runs,
+				'success_runs'      => $success_runs,
+				'failure_runs'      => $total_runs - $success_runs,
+				'success_rate'      => $total_runs > 0 ? (int) round( ( $success_runs / $total_runs ) * 100 ) : 0,
+				'failures_24h'      => $failures_24h,
+				'overdue_schedules' => $overdue_count,
+				'last_run'          => $last_run_any > 0 ? $last_run_any : null,
+			);
+		}
+
+		/**
+		 * Overdue check for one chronological start-time series: the latest run
+		 * is older than 2x the median inter-run gap (mirrors the SPA rule).
+		 *
+		 * @param array<int,int> $start_times Chronological epoch seconds.
+		 * @param int            $now         Current epoch seconds.
+		 * @return bool
+		 */
+		private static function is_overdue_series( array $start_times, int $now ): bool {
+			$count = count( $start_times );
+			if ( $count < 2 ) {
+				return false;
+			}
+			$gaps = array();
+			for ( $i = 1; $i < $count; $i++ ) {
+				$gaps[] = $start_times[ $i ] - $start_times[ $i - 1 ];
+			}
+			sort( $gaps );
+			$mid        = intdiv( count( $gaps ), 2 );
+			$median_gap = ( count( $gaps ) % 2 )
+				? $gaps[ $mid ]
+				: ( $gaps[ $mid - 1 ] + $gaps[ $mid ] ) / 2;
+			if ( $median_gap <= 0 ) {
+				return false;
+			}
+			return ( $now - $start_times[ $count - 1 ] ) > $median_gap * 2;
+		}
+
+		/**
 		 * Export all enabled schedules as an RFC 5545 iCalendar (.ics) string.
 		 *
 		 * Each enabled schedule becomes a VEVENT whose DTSTART is the next WP-cron

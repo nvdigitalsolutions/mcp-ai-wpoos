@@ -118,4 +118,144 @@ describe( 'ScheduleManagerPage', () => {
 			expect( screen.getByText( 'No schedules yet.' ) ).toBeTruthy();
 		} );
 	} );
+
+	it( 'renders the fleet overview card from /schedules/fleet-stats', async () => {
+		setRuntime( ENDPOINT );
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn( ( input: RequestInfo | URL ) => {
+				const url = String( input );
+				if ( url.endsWith( '/schedules/fleet-stats' ) ) {
+					return Promise.resolve(
+						jsonResponse( {
+							ok: true,
+							stats: {
+								total_schedules: 2,
+								enabled_schedules: 1,
+								total_runs: 5,
+								success_runs: 3,
+								failure_runs: 2,
+								success_rate: 60,
+								failures_24h: 1,
+								overdue_schedules: 0,
+								last_run: 1700000000,
+							},
+						} )
+					);
+				}
+				if ( url.endsWith( '/schedules' ) ) {
+					return Promise.resolve( jsonResponse( { ok: true, schedules: [], total: 0 } ) );
+				}
+				if ( url.endsWith( '/presets' ) ) {
+					return Promise.resolve( jsonResponse( { ok: true, presets: [], total: 0 } ) );
+				}
+				return Promise.reject( new Error( `Unexpected fetch: ${ url }` ) );
+			} )
+		);
+
+		render( <ScheduleManagerPage /> );
+
+		await waitFor( () => {
+			expect( screen.getByText( 'Fleet overview' ) ).toBeTruthy();
+		} );
+		// 'Schedules' appears in the tab, the card label and the table caption —
+		// assert presence, not uniqueness.
+		expect( screen.getAllByText( 'Schedules' ).length ).toBeGreaterThan( 0 );
+		expect( screen.getByText( 'Total runs' ) ).toBeTruthy();
+		expect( screen.getByText( 'Success rate' ) ).toBeTruthy();
+		expect( screen.getByText( '60%' ) ).toBeTruthy();
+		expect( screen.getByText( 'Failures (24 h)' ) ).toBeTruthy();
+		expect( screen.getByText( 'Last run' ) ).toBeTruthy();
+	} );
+
+	it( 'flags the fleet when failures or overdue schedules need attention', async () => {
+		setRuntime( ENDPOINT );
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn( ( input: RequestInfo | URL ) => {
+				const url = String( input );
+				if ( url.endsWith( '/schedules/fleet-stats' ) ) {
+					return Promise.resolve(
+						jsonResponse( {
+							ok: true,
+							stats: {
+								total_schedules: 3,
+								enabled_schedules: 3,
+								total_runs: 20,
+								success_runs: 14,
+								failure_runs: 6,
+								success_rate: 70,
+								failures_24h: 3,
+								overdue_schedules: 2,
+								last_run: null,
+							},
+						} )
+					);
+				}
+				if ( url.endsWith( '/schedules' ) ) {
+					return Promise.resolve( jsonResponse( { ok: true, schedules: [], total: 0 } ) );
+				}
+				if ( url.endsWith( '/presets' ) ) {
+					return Promise.resolve( jsonResponse( { ok: true, presets: [], total: 0 } ) );
+				}
+				return Promise.reject( new Error( `Unexpected fetch: ${ url }` ) );
+			} )
+		);
+
+		render( <ScheduleManagerPage /> );
+
+		await waitFor( () => {
+			expect( screen.getByText( 'Needs attention' ) ).toBeTruthy();
+		} );
+		expect( screen.getByText( '70%' ) ).toBeTruthy();
+	} );
+
+	it( 'degrades gracefully when fleet-stats fails (lists still render)', async () => {
+		setRuntime( ENDPOINT );
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn( ( input: RequestInfo | URL ) => {
+				const url = String( input );
+				if ( url.endsWith( '/schedules/fleet-stats' ) ) {
+					return Promise.resolve( {
+						ok: false,
+						status: 500,
+						json: async () => ( { message: 'Fleet stats unavailable.' } ),
+					} as Response );
+				}
+				if ( url.endsWith( '/schedules' ) ) {
+					return Promise.resolve(
+						jsonResponse( {
+							ok: true,
+							schedules: [
+								{
+									id: 'sched_1',
+									name: 'Nightly digest',
+									schedule_type: 'assistant_run',
+									schedule: 'daily',
+									enabled: true,
+								},
+							],
+							total: 1,
+						} )
+					);
+				}
+				if ( url.endsWith( '/presets' ) ) {
+					return Promise.resolve( jsonResponse( { ok: true, presets: [], total: 0 } ) );
+				}
+				return Promise.reject( new Error( `Unexpected fetch: ${ url }` ) );
+			} )
+		);
+
+		render( <ScheduleManagerPage /> );
+
+		await waitFor( () => {
+			expect( screen.getByText( 'Nightly digest' ) ).toBeTruthy();
+		} );
+		// The card never renders without stats — the lists stay usable.
+		expect( screen.queryByText( 'Fleet overview' ) ).toBeNull();
+	} );
 } );
