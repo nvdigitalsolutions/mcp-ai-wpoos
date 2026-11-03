@@ -58,6 +58,7 @@ class AdminPage {
 	 * Only loads on the Astro CMS admin page.
 	 *
 	 * The STANDALONE bundle is used deliberately: it bundles React and the
+	 *
 	 * @wordpress/* packages from node_modules, so it does not depend on the
 	 * wp-admin script chain. The externals-based wp-admin build (build/index.js)
 	 * renders broken tables under WP 7.1+ — its JSX runtime shim captures

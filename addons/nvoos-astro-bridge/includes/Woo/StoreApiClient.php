@@ -37,9 +37,9 @@ class StoreApiClient {
 	/**
 	 * Whether the WooCommerce Store API surface exists.
 	 *
-	 * class_exists alone is a false positive in the test env (the bootstrap
-	 * defines a stub `WooCommerce` class) — the product source layer uses
-	 * the same two-part check. The filter is the test/override seam.
+	 * A `class_exists()` check alone is a false positive in the test env (the
+	 * bootstrap defines a stub `WooCommerce` class) — the product source layer
+	 * uses the same two-part check. The filter is the test/override seam.
 	 *
 	 * @return bool
 	 */
@@ -112,9 +112,9 @@ class StoreApiClient {
 	/**
 	 * Add one line to the Woo cart.
 	 *
-	 * @param string $token      Cart token.
-	 * @param int    $product_id Product id.
-	 * @param int    $quantity   Quantity.
+	 * @param string                                              $token      Cart token.
+	 * @param int                                                 $product_id Product id.
+	 * @param int                                                 $quantity   Quantity.
 	 * @param array<int, array{attribute: string, value: string}> $variation Ordered variation attributes.
 	 * @return array{ok: bool, cart: array<string, mixed>, notices: array<int, array{type: string, text: string}>}|WP_Error
 	 */

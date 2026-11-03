@@ -257,7 +257,7 @@ class CartController extends BaseController {
 			if ( ! is_array( $item ) ) {
 				continue;
 			}
-			$prices     = isset( $item['prices'] ) && is_array( $item['prices'] ) ? $item['prices'] : array();
+			$prices       = isset( $item['prices'] ) && is_array( $item['prices'] ) ? $item['prices'] : array();
 			$normalized[] = array(
 				'key'       => isset( $item['key'] ) ? sanitize_text_field( (string) $item['key'] ) : '',
 				'productId' => (int) ( $item['id'] ?? 0 ),
