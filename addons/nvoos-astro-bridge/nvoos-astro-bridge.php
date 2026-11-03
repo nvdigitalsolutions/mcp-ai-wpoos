@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Astro Bridge
+ * Plugin Name: NV oOS Astro Bridge
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
  * Description: Serves the nvoos-commerce/v1 Payload-compatible commerce envelope — products, categories, brands, colors, statuses, promotions, promocodes, banner, carousel, auth, managers and media — from WordPress + WooCommerce for the NV Astro storefront, with the embedded Astro CMS admin.
  * Version:     1.1.0

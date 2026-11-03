@@ -1,4 +1,4 @@
-# Astro Bridge
+# NV oOS Astro Bridge
 
 > The WordPress half of the NV Astro storefront (Proposal 092) — the
 > Payload-compatible `nvoos-commerce/v1` commerce envelope over WordPress +
@@ -29,7 +29,7 @@ You can do this via SFTP, or zip the folder and upload via **Plugins → Add New
 
 ### 2. Activate
 
-Go to **Plugins → Installed Plugins**, find "Astro Bridge", and click **Activate**.
+Go to **Plugins → Installed Plugins**, find "NV oOS Astro Bridge", and click **Activate**.
 
 On activation the plugin:
 - Creates the `manage_astro` capability and grants it to Administrators and Editors (existing installs are migrated automatically from the legacy `manage_funiq` slug on the next page load)
@@ -444,7 +444,7 @@ Deleting the plugin via **Plugins → Delete** runs `uninstall.php`, which remov
 - WordPress 6.7+
 - PHP 8.1+
 - Node.js 18+ (dev/build only; not needed by end users)
-- NV oOS base plugin — optional; Astro Bridge is standalone
+- NV oOS base plugin — optional; NV oOS Astro Bridge is standalone
 
 ## License
 
