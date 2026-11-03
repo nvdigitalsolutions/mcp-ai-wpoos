@@ -167,7 +167,17 @@ function assertEnvelope<T>(data: unknown, collection: string): PaginatedCollecti
 // In-process memo of VALIDATED envelopes keyed by URL — one render, many
 // components, one fetch (and one validation). Raw responses are never
 // cached: a malformed response must fail loudly on every consumer.
-const memo = new Map<string, unknown>();
+//
+// TTL-bounded (2026-11-03 prod incident): the memo is module-level and
+// lives as long as the server process, so an unbounded entry would pin the
+// first-render data forever (the homepage served seed-era images for 30
+// minutes until the next redeploy). Entries expire after MEMO_TTL_MS —
+// long enough to dedupe within a render, short enough to never outlive a
+// content update by more than a few seconds.
+const memo = new Map<string, { data: unknown; expires: number }>();
+
+/** Module-memo TTL — see above. 10 s covers any single render comfortably. */
+const MEMO_TTL_MS = 10_000;
 
 /** Fetch one page of a collection. */
 export async function getCollection<T>(
@@ -184,14 +194,17 @@ export async function getCollection<T>(
 	const suffix = query ? `?${query}` : '';
 	const url = joinPath(resolveBase(requestUrl), collection) + suffix;
 
-	const hit = memo.get(url) as PaginatedCollection<T> | undefined;
+	const hit = memo.get(url);
 	if (hit) {
-		return hit;
+		if (hit.expires > Date.now()) {
+			return hit.data as PaginatedCollection<T>;
+		}
+		memo.delete(url);
 	}
 
 	const data = await fetchJson(url);
 	const validated = assertEnvelope<T>(data, collection);
-	memo.set(url, validated);
+	memo.set(url, { data: validated, expires: Date.now() + MEMO_TTL_MS });
 	return validated;
 }
 
@@ -244,9 +257,12 @@ export async function getCollectionOrNull<T>(
 	const suffix = query ? `?${query}` : '';
 	const url = joinPath(resolveBase(requestUrl), collection) + suffix;
 
-	const hit = memo.get(url) as PaginatedCollection<T> | undefined;
+	const hit = memo.get(url);
 	if (hit) {
-		return hit;
+		if (hit.expires > Date.now()) {
+			return hit.data as PaginatedCollection<T>;
+		}
+		memo.delete(url);
 	}
 
 	const res = await fetch(url, { headers: { accept: 'application/json' } });
@@ -258,7 +274,7 @@ export async function getCollectionOrNull<T>(
 	}
 	const data = await res.json();
 	const validated = assertEnvelope<T>(data, collection);
-	memo.set(url, validated);
+	memo.set(url, { data: validated, expires: Date.now() + MEMO_TTL_MS });
 	return validated;
 }
 

@@ -169,6 +169,49 @@ describe('getCollection / getAll', () => {
 		});
 	});
 
+	it('evicts module-memo entries after the TTL instead of pinning first-render data', async () => {
+		// 2026-11-03 prod incident: the module-level memo lived forever, so the
+		// first render after a deploy pinned stale envelopes until the next
+		// redeploy (seed-era images served for ~30 min).
+		vi.useFakeTimers();
+		try {
+			let calls = 0;
+			vi.stubGlobal(
+				'fetch',
+				vi.fn(async () => {
+					calls += 1;
+					return new Response(
+						JSON.stringify({
+							docs: [{ id: calls }],
+							totalDocs: 1,
+							limit: 7,
+							totalPages: 1,
+							page: 1,
+							hasNextPage: false,
+							hasPrevPage: false,
+						}),
+						{ status: 200 }
+					);
+				}
+			));
+			const url = new URL('https://store.example/');
+			const params = { limit: 7, sort: 'date' };
+
+			const first = await getCollection<{ id: number }>('products', url, params);
+			const second = await getCollection<{ id: number }>('products', url, params);
+			expect(calls).toBe(1); // deduped within the TTL
+			expect(second.docs[0]?.id).toBe(first.docs[0]?.id);
+
+			vi.advanceTimersByTime(11_000);
+			const third = await getCollection<{ id: number }>('products', url, params);
+			expect(calls).toBe(2); // evicted and refetched
+			expect(third.docs[0]?.id).toBe(2);
+		} finally {
+			vi.useRealTimers();
+			vi.unstubAllGlobals();
+		}
+	});
+
 	it('accumulates all pages for getAll', async () => {
 		const pages: Record<string, number[]> = {
 			'1': [1, 2],
