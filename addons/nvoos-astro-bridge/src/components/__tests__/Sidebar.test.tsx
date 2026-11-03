@@ -18,15 +18,18 @@ beforeEach(() => {
 });
 
 describe('Sidebar', () => {
-	it('renders the three section groups with their items', () => {
+	it('renders the four section groups with their items', () => {
 		render(<Sidebar activeSlug="products" onSelect={() => {}} />);
 
 		expect(screen.getByRole('button', { name: 'Catalog' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Content' })).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Access' })).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'System' })).toBeTruthy();
 
 		// Items are nav buttons inside the section lists.
 		expect(screen.getByRole('button', { name: 'Products' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Pages' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Posts' })).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Managers' })).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Design System' })).toBeTruthy();
 	});

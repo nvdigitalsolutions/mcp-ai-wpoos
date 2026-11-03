@@ -119,7 +119,9 @@ export type CollectionSlug =
 	| 'colors'
 	| 'statuses'
 	| 'promotions'
-	| 'promocodes';
+	| 'promocodes'
+	| 'content/pages'
+	| 'content/posts';
 
 /** Sidebar navigation targets — collections plus the managers, design and settings sections. */
 export type NavSlug = CollectionSlug | 'managers' | 'design' | 'settings';

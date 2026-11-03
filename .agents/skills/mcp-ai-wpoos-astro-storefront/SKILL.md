@@ -14,7 +14,7 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 
 | Piece | Location | Role |
 |---|---|---|
-| Bridge addon | `addons/nvoos-astro-bridge/` | Serves the Payload envelope from WordPress + WooCommerce data (transitional backend; Laravel takes over at T1 per Proposals 085/090) |
+| Bridge addon | `addons/nvoos-astro-bridge/` | Serves the Payload envelope from WordPress + WooCommerce data (transitional backend; Laravel takes over at T1 per Proposals 085/090). Display name: **NV oOS Astro Bridge** (renamed from "Astro Bridge" 2026-11-03; slug/version unchanged) |
 | Storefront source | `examples/nvoos-astro-velocity/` | Astro SSR + prerendered catalog, React islands (cart badge, gallery), View Transitions |
 | Sync workflow | `.github/workflows/sync-nvoos-astro-velocity.yml` | Builds + tests, then rebuilds for the mirror |
 | Public mirror | `nvdigitalsolutions/nvoos-astro-velocity` (PUBLIC) | Assembled deploy tree (Astro `dist/` + server shim) — zero licensed bytes |
@@ -93,6 +93,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 - **Windows gotcha:** `astro check` OOMs at the default 4 GB heap on this
   machine — run `NODE_OPTIONS=--max-old-space-size=8192 npm run check` (and
   the same for `npm run build`, which chains `astro check` first).
+- **Windows vitest fork-pool hang (2026-11-03):** the default forks pool
+  times out starting workers for EVERY test file (pre-existing ones
+  included — `[vitest-pool]: Failed to start forks worker`). Run
+  `npx vitest run --pool=threads`. The bridge SPA's own suite
+  (`addons/nvoos-astro-bridge`, `npm run test`) fails the same way — the
+  same flag fixes it.
 - The fixture server returns **401 on `/auth/me` without a cookie** and serves
   a real 1×1 PNG on `/wp-content/uploads/` — keep both behaviours.
 - PHP side (bridge): `php -l` + phpcs, then PHPUnit in Docker (`oos-wp`
@@ -309,6 +315,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   output buffers — the class keeps a static `$pending` flag with
   `send_pending()`/`reset_pending()` seams. Test through those seams, not the
   action.
+- **Never grep over the minified bundles (2026-11-03):**
+  `addons/nvoos-astro-bridge/build/standalone/astro-admin.js` and the app's
+  `public/manage-assets/astro-admin.js` are multi-MB single-line esbuild
+  output — a bare grep over the addon or app directory matches the whole
+  file and floods the context window. Always scope with an include pattern
+  (`addons/nvoos-astro-bridge/src/**`) when hunting SPA code.
 - **TestTransformerGolden**: paths use `dirname(__DIR__, 2)`; golden JSON and
   transformer output must both be normalized (`normalize_golden_fields()` —
   floats like `1299.0` vs `1299`, name-sorted terms) before comparison.
@@ -549,6 +561,17 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   React islands and logs per-render errors; forge has no islands so it uses
   mdx); `src/lib/content/merge.ts` — envelope wins on slug collision,
   local fills gaps (L2).
+  **Write contract (107):** POST/PUT accept `title`, `content`
+  (`wp_kses_post`-sanitized), `excerpt`, `status`
+  (publish|draft|pending|future — create defaults to draft), `publishAt`
+  (WP `future` scheduling; normalize the WP 6.9 `rest_parse_date()`
+  timestamp), `blocks` (Portable Text stored as post meta, never rendered
+  server-side), `seoTitle`/`seoDescription` (Rank Math → Yoast
+  write-through), and `submittedBy`; posts also accept `category`
+  (`{ id, name }` or bare id — WP core categories, NOT the commerce
+  `categories` collection). Both types expose `GET /{id}/revisions` +
+  `POST /{id}/restore`; the list's `?status=` filter serves only manager
+  sessions (fail-closed publish-only).
 - **Variants (106)**: additive `variants[]` on single-doc GETs only (woo mode;
   `WooProductSource` hydrates `WC_Product_Variable` children); listings flat.
   PDP `VariantSelector` island (radio semantics, sold-out disabled, price +
@@ -636,6 +659,23 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   `site_status` first). Env: `NVOOS_PREVIEW_SECRET`/`NVOOS_PREVIEW_TTL_MS`
   (preview tokens), `NVOOS_MCP_CONTENT_WRITE_MAX`/`_WINDOW_MS` (write
   quota, default 30/10 min).
+- **/manage content workbench (2026-11-03, 107 Phase 2 — the editor
+  experience):** the Astro CMS admin SPA now surfaces the governed
+  collections itself — a **Content** sidebar section (Pages, Posts) over
+  `content/pages` + `content/posts`, list views with the status-workflow
+  filter (all/published/draft/pending/scheduled riding the manager-only
+  `?status=` listing), and config-driven edit forms (title, excerpt,
+  content, SEO title/description, scheduled publish, approval status
+  select). Two new config primitives power it: a `select` field type
+  (options + zod enum from one config; `SelectField` associates its label
+  via `useId`/`htmlFor`) and a `statusFilter` collection flag
+  (`ListView` + `useCollection` `status` arg). The publish transition is
+  still the bridge's `publish_posts` gate — the SPA only surfaces it.
+  Bundle flow unchanged: `npm run build:standalone` →
+  `scripts/sync-manage-assets.mjs` → committed
+  `public/manage-assets/astro-admin.{js,css}` (both rebuilt in the same
+  change). Posts category editing is NOT in the form (no WP-category
+  picker source in the SPA; `where[category]` stays MCP-side).
 - **Content-slice gotchas (107 session — each cost a fix):**
   - **Route-cache poisoning:** the memory provider serves fresh hits BEFORE
     the route runs and caches any response carrying `CDN-Cache-Control` with

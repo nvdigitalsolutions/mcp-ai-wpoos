@@ -21,11 +21,12 @@ interface SidebarProps {
 /** Section labels — keyed by the NavEntry section value. */
 const SECTION_LABELS: Record<string, string> = {
 	catalog: 'Catalog',
+	content: 'Content',
 	access: 'Access',
 	system: 'System',
 };
 
-const SECTION_ORDER = ['catalog', 'access', 'system'] as const;
+const SECTION_ORDER = ['catalog', 'content', 'access', 'system'] as const;
 
 /** localStorage key for the collapsed-section map. */
 const STORAGE_KEY = 'astro-admin-nav-sections';

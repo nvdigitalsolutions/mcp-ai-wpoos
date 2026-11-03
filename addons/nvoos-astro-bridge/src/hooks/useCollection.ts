@@ -57,6 +57,12 @@ export interface CollectionListArgs {
 	sort?: string;
 	/** Payload-style where clause, e.g. `{ name: { like: 'chair' } }`. */
 	where?: Record<string, unknown>;
+	/**
+	 * Workflow status filter for the governed content collections
+	 * (draft | pending | future | any). Manager sessions only — the bridge
+	 * serves `?status=` to non-managers as publish-only regardless.
+	 */
+	status?: string;
 }
 
 /**
@@ -142,12 +148,15 @@ export async function request<T>(endpoint: string, options: Record<string, unkno
  * keep-previous-data + abort discipline the console's DataTable uses.
  */
 export function useCollection<T>(slug: CollectionSlug, args: CollectionListArgs = {}) {
-	const { page = 1, limit = 20, sort, where } = args;
+	const { page = 1, limit = 20, sort, where, status } = args;
 	const params = new URLSearchParams();
 	params.set('page', String(page));
 	params.set('limit', String(limit));
 	if (sort) {
 		params.set('sort', sort);
+	}
+	if (status) {
+		params.set('status', status);
 	}
 	// Bracket-encoded where clauses — the same wire shape the storefront
 	// commerce client emits (buildWhereParams), so the backend sees one
@@ -164,7 +173,7 @@ export function useCollection<T>(slug: CollectionSlug, args: CollectionListArgs 
 	}
 
 	return useQuery<PaginatedResponse<T>>({
-		queryKey: [slug, { page, limit, sort, where }],
+		queryKey: [slug, { page, limit, sort, where, status }],
 		queryFn: ({ signal }) =>
 			request<PaginatedResponse<T>>(`${slug}?${params.toString()}`, { signal }),
 		placeholderData: (prev) => prev,

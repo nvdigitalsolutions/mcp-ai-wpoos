@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.13"
   plugin-version-tested: "1.2.13"
-  last-updated: "2026-10-27"
+  last-updated: "2026-11-03"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -535,6 +535,10 @@ AND the standalone Vite app, without forking the widget.
   `Cannot find module '@rolldown/binding-win32-x64-msvc'` (npm bug #4828
   skips optional deps). `npm install` in the addon repairs it — check the
   lockfile stayed untouched before committing.
+- **Windows forks-pool startup hang (2026-11-03, astro bridge):** the default
+  forks pool can time out starting workers for EVERY test file (pre-existing
+  ones included — `[vitest-pool]: Failed to start forks worker`).
+  `npx vitest run --pool=threads` runs the same suites green.
 - jsdom cannot run Cytoscape's canvas — mock the vendored factory + deps;
   test the config hand-off (`window.nvoosContentGraphAdmin` shape) and the
   destroy-on-unmount contract, not the vendored internals.
