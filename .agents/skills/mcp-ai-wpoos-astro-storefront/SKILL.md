@@ -690,6 +690,12 @@ Shoelace (stale) and Lion/AstroUXDS (heavy) were rejected — see the table.
   omits `role="listbox"` from the list while items carry `role="option"` —
   axe fails `aria-required-parent`/`only-listitems`. Set `composite: false`
   for the classic listbox ARIA shape.
+- **Island DOM never carries the Astro scope attribute (caught
+  post-deploy on /components/, 2026-11-03):** page-scoped styles targeting
+  island-rendered classes silently don't match — the Zag combobox shipped
+  with default list bullets and no hover highlight. Island-targeting rules
+  in .astro page style blocks must be `:global()`; pin the regression in
+  e2e with `toHaveCSS` (the component-library spec does).
 - **Islands under parallel e2e load:** `page.goto` resolves before
   `client:load` islands hydrate; an interaction landing on an un-hydrated
   controlled input sticks its native value and React never sees the event
