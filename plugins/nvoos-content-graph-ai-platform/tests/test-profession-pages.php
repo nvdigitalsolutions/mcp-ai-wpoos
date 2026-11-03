@@ -548,7 +548,7 @@ class Test_Profession_Pages extends \WP_UnitTestCase {
 		// phpcs:disable WordPress.Security.NonceVerification -- Test fixture: valid nonce into the superglobals.
 		$_POST['wp_mcp_ai_profession_settings_nonce']   = \wp_create_nonce( 'wp_mcp_ai_profession_settings' );
 		$_POST['wp_mcp_ai_profession_default_provider'] = 'openai';
-		$_POST['wp_mcp_ai_profession_default_model']    = 'gpt-4.1';
+		$_POST['wp_mcp_ai_profession_default_model']    = 'gpt-6.1-sol';
 		$_POST['wp_mcp_ai_profession_default_temperature'] = '2.5';
 		// phpcs:enable WordPress.Security.NonceVerification
 
@@ -563,7 +563,7 @@ class Test_Profession_Pages extends \WP_UnitTestCase {
 		$this->assertStringContainsString( 'page=wp-mcp-ai-profession-settings', $redirected );
 
 		$this->assertSame( 'openai', \get_option( 'wp_mcp_ai_profession_default_provider' ) );
-		$this->assertSame( 'gpt-4.1', \get_option( 'wp_mcp_ai_profession_default_model' ) );
+		$this->assertSame( 'gpt-6.1-sol', \get_option( 'wp_mcp_ai_profession_default_model' ) );
 		// The temperature is clamped to the 0–1 range (int coercion quirk).
 		$this->assertEquals( 1.0, \get_option( 'wp_mcp_ai_profession_default_temperature' ) );
 	}

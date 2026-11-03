@@ -46,7 +46,7 @@ class Test_Platform_Blueprints extends \WP_UnitTestCase {
 			'name'          => 'Support Analyst',
 			'description'   => 'Triages support tickets.',
 			'provider'      => 'openai',
-			'model'         => 'gpt-4.1-mini',
+			'model'         => 'gpt-6-luna',
 			'system_prompt' => 'You are a support analyst.',
 			'tools'         => array( 'web_search', 'get_recent_posts' ),
 			'skills'        => array( 'code-reviewer' ),

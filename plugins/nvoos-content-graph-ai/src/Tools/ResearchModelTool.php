@@ -450,24 +450,24 @@ class ResearchModelTool extends AbstractAiTool {
 					$settings = \WP_MCP_AI_Admin_Settings::get_settings();
 					$settings = is_array( $settings ) ? $settings : array();
 
-					return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
+					return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-5.6-sol';
 				}
 
 				// Standalone: the Content Graph store's default model.
 				$default = CoreBridge::instance()->settings->getDefaultModel();
 
-				return '' !== $default ? $default : 'gpt-4.1';
+				return '' !== $default ? $default : 'gpt-5.6-sol';
 
 			case 'gemini':
 				if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					$settings = \WP_MCP_AI_Admin_Settings::get_settings();
 					$settings = is_array( $settings ) ? $settings : array();
 
-					return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
+					return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3.5-flash-lite';
 				}
 
 				// The Content Graph store has no gemini-specific default.
-				return 'gemini-2.5-flash';
+				return 'gemini-3.5-flash-lite';
 
 			case 'anthropic':
 				return 'claude-sonnet-4-5-20250929';

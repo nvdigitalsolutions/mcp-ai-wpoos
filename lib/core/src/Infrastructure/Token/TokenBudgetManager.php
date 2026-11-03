@@ -56,11 +56,15 @@ class TokenBudgetManager {
 	 * Mirrors the canonical model-catalog.json and the legacy
 	 * WP_MCP_AI_Token_Budget_Manager::$model_limits table.
 	 *
-	 * Keyed by model slug; snapshot as of September 2026.
+	 * Keyed by model slug; snapshot as of November 2026.
 	 *
 	 * @var array<string, int>
 	 */
 	public const MODEL_LIMITS = array(
+		// OpenAI GPT-6.1 series (November 2026 refresh).
+		'gpt-6.1-sol'     => 1050000,
+		'gpt-6.1-terra'   => 1050000,
+		'gpt-6-luna'      => 1050000,
 		// OpenAI GPT-5 family.
 		'gpt-5.5'         => 1050000,
 		'gpt-5.5-mini'    => 270000,
@@ -81,17 +85,23 @@ class TokenBudgetManager {
 		'o1-2024-12-17'   => 200000,
 		'o1-preview'      => 128000,
 		'o1-mini'         => 128000,
-		// OpenAI legacy.
+		// OpenAI legacy (deprecated - sunset 2027-01-14).
 		'gpt-4.1'         => 1000000,
 		'gpt-4.1-mini'    => 1000000,
-		'gpt-4.1-nano'    => 1000000,
 		'gpt-4o'          => 128000,
 		'gpt-4o-mini'     => 128000,
 		'gpt-4-turbo'     => 128000,
 		'gpt-4'           => 8192,
 		'gpt-3.5-turbo'   => 16385,
+		// OpenAI image generation.
+		'gpt-image-2.5-sunburst' => 400000,
+		'gpt-image-2.5-flare'    => 400000,
 		// Anthropic Claude.
 		'claude-mythos-preview' => 1000000,
+		'claude-mythos-5-1'     => 1000000,
+		'claude-fable-5.1'      => 1000000,
+		'claude-sonnet-5-5'     => 1000000,
+		'claude-haiku-5-5'      => 1000000,
 		'claude-opus-4-8'       => 1000000,
 		'claude-opus-4-7'       => 1000000,
 		'claude-opus-4-6'       => 1000000,
@@ -103,16 +113,18 @@ class TokenBudgetManager {
 		'claude-3-opus'         => 200000,
 		'claude-3-haiku'        => 200000,
 		// Google Gemini.
-		'gemini-3.5-flash'      => 1048576,
-		'gemini-3.1-pro'        => 2000000,
+		'gemini-4-argon'         => 1048576,
+		'gemini-3.5-flash'       => 1048576,
+		'gemini-3.1-pro'         => 2000000,
 		'gemini-3.1-pro-preview' => 1000000,
-		'gemini-3.1-flash'      => 1000000,
-		'gemini-3.1-flash-lite' => 1000000,
-		'gemini-3-pro-preview'  => 1000000,
+		'gemini-3.1-flash'       => 1000000,
+		'gemini-3.1-flash-lite'  => 1000000,
+		'gemini-3-pro-preview'   => 1000000,
 		'gemini-3-flash-preview' => 1000000,
-		'gemini-2.5-pro'        => 1048576,
-		'gemini-2.5-flash'      => 1048576,
+		'gemini-2.5-pro'         => 1048576,
+		'gemini-2.5-flash'       => 1048576,
 		'gemini-3.1-flash-image' => 131072,
+		'gemini-nano-banana-2.1' => 131072,
 		'gemini-2.5-flash-image' => 1048576,
 		'gemini-2.0-flash'      => 1048576,
 		'gemini-2.0-flash-image' => 1048576,
@@ -126,10 +138,15 @@ class TokenBudgetManager {
 		'deepseek-v3'                => 65536,
 		'deepseek-r1-0528-qwen3-8b'  => 32768,
 		// Kimi / Moonshot AI.
+		'kimi-k3.1-pro'      => 1048576,
 		'kimi-k2.6'          => 262144,
 		'kimi-k2.5'          => 262144,
 		'kimi-k2'            => 262144,
 		'kimi-k2-thinking'   => 262144,
+		// Cloudflare Workers AI.
+		'@cf/deepseek-ai/deepseek-v4.1-flash-1017' => 1048576,
+		'@cf/qwen/qwen3.8-27b'                     => 262144,
+		'@cf/ibm-granite/granite-4.0-h-micro'      => 131000,
 		// Meta Llama.
 		'llama4'             => 131072,
 		'llama3.3'           => 131072,
@@ -147,7 +164,9 @@ class TokenBudgetManager {
 		'qwen2.5'            => 131072,
 		'qwen2'              => 32768,
 		// NVIDIA.
-		'nemotron-3'         => 1048576,
+		'nemotron-3'                            => 1048576,
+		'nvidia/nemotron-3.5-super-vl-120b-a12b' => 1048576,
+		'nvidia/nemotron-3.5-lightning-30b-a3b'  => 1048576,
 		// Other open models.
 		'codellama'          => 16384,
 		'phi4'               => 16384,
@@ -168,6 +187,10 @@ class TokenBudgetManager {
 	 */
 	public const MAX_OUTPUT_TOKENS = array(
 		'claude-mythos-preview' => 128000,
+		'claude-mythos-5-1'     => 128000,
+		'claude-fable-5.1'      => 128000,
+		'claude-sonnet-5-5'     => 128000,
+		'claude-haiku-5-5'      => 128000,
 		'claude-opus-4-6'       => 128000,
 		'claude-opus-4-5'       => 128000,
 		'claude-sonnet-4-6'     => 64000,

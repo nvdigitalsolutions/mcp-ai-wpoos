@@ -40,6 +40,9 @@ class CountTokensTool extends AbstractTool {
 	 * @var array<string, int>
 	 */
 	private const MODEL_LIMITS = array(
+		'gpt-6.1-sol'        => 1050000,
+		'gpt-6.1-terra'      => 1050000,
+		'gpt-6-luna'         => 1050000,
 		'gpt-5'              => 256000,
 		'gpt-5-mini'         => 256000,
 		'gpt-5-nano'         => 256000,
@@ -47,20 +50,28 @@ class CountTokensTool extends AbstractTool {
 		'gpt-4o-mini'        => 128000,
 		'gpt-4.1'            => 1048576,
 		'gpt-4.1-mini'       => 1048576,
-		'gpt-4.1-nano'       => 1048576,
 		'o4-mini'            => 200000,
 		'o3'                 => 200000,
 		'o3-mini'            => 200000,
 		'claude-opus-4-6'    => 200000,
 		'claude-sonnet-4-6'  => 200000,
 		'claude-haiku-4-6'   => 200000,
+		'claude-haiku-5-5'   => 1000000,
+		'gemini-4-argon'     => 1048576,
 		'gemini-2.5-pro'     => 1048576,
 		'gemini-2.5-flash'   => 1048576,
 		'gemini-2.0-flash'   => 1048576,
 		'gemini-2.0-flash-lite' => 1048576,
+		'gemini-nano-banana-2.1' => 131072,
 		'deepseek-flash'     => 1048576,
 		'deepseek-v4-pro'    => 1048576,
+		'kimi-k3.1-pro'      => 1048576,
 		'kimi-k2.6'          => 131072,
+		'@cf/deepseek-ai/deepseek-v4.1-flash-1017' => 1048576,
+		'@cf/qwen/qwen3.8-27b'                     => 262144,
+		'@cf/ibm-granite/granite-4.0-h-micro'      => 131000,
+		'nvidia/nemotron-3.5-super-vl-120b-a12b'   => 1048576,
+		'nvidia/nemotron-3.5-lightning-30b-a3b'    => 1048576,
 	);
 
 	public function getSlug(): string {

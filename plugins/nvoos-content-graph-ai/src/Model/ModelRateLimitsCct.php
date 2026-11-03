@@ -722,7 +722,7 @@ class ModelRateLimitsCct {
 				__( 'High-Capacity Fallback Model', 'nvoos-content-graph-ai' ),
 				'text',
 				array(
-					'description' => __( 'Model to use when this model\'s TPM limit is exceeded (e.g., gemini-2.5-flash). Leave empty to use global fallback setting.', 'nvoos-content-graph-ai' ),
+					'description' => __( 'Model to use when this model\'s TPM limit is exceeded (e.g., gemini-3.5-flash-lite). Leave empty to use global fallback setting.', 'nvoos-content-graph-ai' ),
 				)
 			),
 		);

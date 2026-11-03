@@ -63,8 +63,8 @@ class ProviderSelection extends AiSection {
 			'ai_default_model'    => array(
 				'type'        => 'text',
 				'label'       => __( 'Default Model', 'nvoos-content-graph-ai' ),
-				'description' => __( 'Model identifier for the selected provider (e.g. gpt-4o, gemini-2.0-flash).', 'nvoos-content-graph-ai' ),
-				'default'     => 'gpt-4o',
+				'description' => __( 'Model identifier for the selected provider (e.g. gpt-6.1-sol, gemini-3.5-flash-lite).', 'nvoos-content-graph-ai' ),
+				'default'     => 'gpt-6.1-sol',
 			),
 		);
 	}

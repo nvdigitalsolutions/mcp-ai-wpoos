@@ -94,7 +94,7 @@ class ChatInterface extends AiSection {
 					'restUrl'           => \rest_url( 'nvoos-content-graph/v1' ),
 					'nonce'             => \wp_create_nonce( 'wp_rest' ),
 					'defaultProvider'   => (string) ( $settings['ai_default_provider'] ?? 'openai' ),
-					'defaultModel'      => (string) ( $settings['ai_default_model'] ?? 'gpt-4o' ),
+					'defaultModel'      => (string) ( $settings['ai_default_model'] ?? 'gpt-6.1-sol' ),
 					'providersFallback' => self::getProviderFallback(),
 					'i18n'              => array(
 						'placeholder'        => __( 'Type your message…', 'nvoos-content-graph-ai' ),

@@ -290,7 +290,7 @@ final class Plugin {
 			$defaults,
 			array(
 				'ai_default_provider'      => 'openai',
-				'ai_default_model'         => 'gpt-4o',
+				'ai_default_model'         => 'gpt-6.1-sol',
 				'ai_chat_enabled'          => true,
 				'ai_temperature'           => 0.7,
 				'ai_max_tokens'            => 4096,

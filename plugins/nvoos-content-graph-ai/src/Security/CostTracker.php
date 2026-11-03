@@ -71,6 +71,23 @@ class CostTracker {
 			'input'  => 0.15,
 			'output' => 0.60,
 		),
+		// OpenAI GPT-6 / GPT-6.1 (September-November 2026 refresh).
+		'gpt-6.1-sol'      => array(
+			'input'  => 2.00,
+			'output' => 10.00,
+		),
+		'gpt-6.1-terra'    => array(
+			'input'  => 1.00,
+			'output' => 5.00,
+		),
+		'gpt-6-sol'        => array(
+			'input'  => 2.00,
+			'output' => 10.00,
+		),
+		'gpt-6-luna'       => array(
+			'input'  => 0.10,
+			'output' => 0.50,
+		),
 		'gpt-4-turbo'       => array(
 			'input'  => 10.00,
 			'output' => 30.00,
@@ -108,6 +125,23 @@ class CostTracker {
 			'input'  => 0.80,
 			'output' => 4.00,
 		),
+		// Anthropic Sonnet/Opus/Mythos/Haiku 5.5 (September-November 2026 refresh).
+		'claude-sonnet-5-5' => array(
+			'input'  => 2.00,
+			'output' => 10.00,
+		),
+		'claude-opus-5-5'   => array(
+			'input'  => 4.00,
+			'output' => 20.00,
+		),
+		'claude-mythos-5-1' => array(
+			'input'  => 10.00,
+			'output' => 50.00,
+		),
+		'claude-haiku-5-5'  => array(
+			'input'  => 0.10,
+			'output' => 0.50,
+		),
 		// Gemini.
 		'gemini-1.5-pro'    => array(
 			'input'  => 1.25,
@@ -116,6 +150,33 @@ class CostTracker {
 		'gemini-1.5-flash'  => array(
 			'input'  => 0.075,
 			'output' => 0.30,
+		),
+		// Gemini 4 Argon / Nano Banana 2.1 (October 2026 GA).
+		'gemini-4-argon'    => array(
+			'input'  => 2.00,
+			'output' => 10.00,
+		),
+		'gemini-nano-banana-2.1' => array(
+			'input'  => 1.50,
+			'output' => 30.00,
+		),
+		// Kimi K3.1 Pro (October 2026).
+		'kimi-k3.1-pro'     => array(
+			'input'  => 2.00,
+			'output' => 10.00,
+		),
+		'kimi-k2.7-code-highspeed' => array(
+			'input'  => 0.95,
+			'output' => 4.00,
+		),
+		// NVIDIA Nemotron 3.5 (October 2026).
+		'nvidia/nemotron-3.5-super-vl-120b-a12b' => array(
+			'input'  => 0.06,
+			'output' => 0.35,
+		),
+		'nvidia/nemotron-3.5-lightning-30b-a3b' => array(
+			'input'  => 0.06,
+			'output' => 0.20,
 		),
 		// Image generation (flat cost per image).
 		'dall-e-3'          => array(

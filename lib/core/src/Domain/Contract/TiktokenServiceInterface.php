@@ -24,7 +24,7 @@ interface TiktokenServiceInterface {
 	 * falls back to chars/4 heuristic otherwise.
 	 *
 	 * @param string      $text  Text to tokenize.
-	 * @param string|null $model Model slug for encoding selection (e.g. 'gpt-4o').
+	 * @param string|null $model Model slug for encoding selection (e.g. 'gpt-6.1-sol').
 	 *
 	 * @return int  Estimated token count (never negative).
 	 */
@@ -56,7 +56,7 @@ interface TiktokenServiceInterface {
 	 * Resolve the appropriate tiktoken encoding name for a model.
 	 *
 	 * Maps model families to OpenAI encoding schemes:
-	 *   - GPT-4o → o200k_base
+	 *   - GPT-5, GPT-6, GPT-4o → o200k_base
 	 *   - GPT-4, GPT-3.5 → cl100k_base
 	 *   - Davinci, text-* → p50k_base
 	 *

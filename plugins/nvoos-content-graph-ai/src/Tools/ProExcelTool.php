@@ -954,12 +954,12 @@ class ProExcelTool extends AbstractAiTool {
 	 */
 	private function get_default_model() {
 		if ( defined( 'WP_MCP_AI_PATH' ) && class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
-			$model = \WP_MCP_AI_Settings_Registry::get_setting( 'default_model', 'gpt-4o-mini' );
-			return ! empty( $model ) ? $model : 'gpt-4o-mini';
+			$model = \WP_MCP_AI_Settings_Registry::get_setting( 'default_model', 'gpt-6.1-sol' );
+			return ! empty( $model ) ? $model : 'gpt-6.1-sol';
 		}
 
-		$model = CoreBridge::instance()->settings->get( 'ai_default_model', 'gpt-4o-mini' );
-		return ! empty( $model ) ? $model : 'gpt-4o-mini';
+		$model = CoreBridge::instance()->settings->get( 'ai_default_model', 'gpt-6.1-sol' );
+		return ! empty( $model ) ? $model : 'gpt-6.1-sol';
 	}
 
 	/**

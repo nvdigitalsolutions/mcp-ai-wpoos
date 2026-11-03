@@ -21,7 +21,7 @@ use Nvoos\Core\Domain\Contract\StreamingProviderInterface;
 
 class OpenAIRealtimeProvider implements StreamingProviderInterface
 {
-    private const DEFAULT_MODEL = 'gpt-4o-realtime-preview';
+    private const DEFAULT_MODEL = 'gpt-realtime-2.1';
     private const WS_BASE_URL   = 'wss://api.openai.com/v1/realtime';
 
     /** @var array<string, array> Active connections keyed by connection ID. */
