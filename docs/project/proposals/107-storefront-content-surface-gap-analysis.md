@@ -294,6 +294,43 @@ bridge's own `PostTypeController` conventions.
    (centralized revocation)?
 5. Should the content slice ride the existing `cms_*` prefix instead of a new
    `content_*` prefix? (Recommended: new prefix — different auth/actor model.)
+6. Component-library adoption for the storefront (owner suggestion,
+   2026-11-03): adopt, adapt, or defer the researched candidates? See §10
+   for the evaluation. (Recommended: hybrid — adapt selected
+   `accessible-astro-components` components onto ADS tokens; adopt Zag.js
+   for high-complexity interactive behavior; defer the effect-showcase kits.)
+
+## 10. Component-library evaluation (owner suggestion, 2026-11-03)
+
+Four candidates were researched at the owner's request — `astro-component-kit`
+(astrocomponents.dev), `accessible-astro-components` (Incluud),
+`jordienr/astro-design-system`, plus the headless tier discovered during the
+research (Zag.js, Shoelace, Lion, Starwind, bejamas, WebcoreUI). Registry
+facts verified 2026-11-03 (versions, publish dates, licenses, dependency
+surfaces).
+
+| Candidate | What it is | Maintenance | Deps | Verdict |
+|---|---|---|---|---|
+| `astro-component-kit` (konstantinWDK) | Effect showcase (glass/neon/cyberpunk buttons) | Active (2026-10-27) | `@astrojs/sitemap` + optional `apexcharts`/`three` | **Defer** — fights the ADS token system and the a11y/perf gates |
+| `accessible-astro-components` (Incluud) | Zero-dep, WCAG/ARIA-first Astro component library | Active (5.8.1, 2026-10-19) | **Zero** (peer `astro ^5\|^6\|^7`) | **Adapt selectively** — behavior is gold-standard (native details/summary, WAI-ARIA tabs); re-theme onto ADS |
+| `jordienr/astro-design-system` | Dead 2022-era docs-site template (Astro 1.0-beta) | Abandoned (2023-05) | Astro 1.0-beta + Tailwind 0.1 + DocSearch | **Reject** — not a library |
+| Zag.js (Chakra team) | Framework-agnostic headless state machines | Active (1.47.0, 2026-10-26) | Tiny (`@zag-js/core` + utils) | **Adopt** for high-complexity behavior (dialog focus trap, combobox) |
+| Shoelace / Lion / AstroUXDS | Web-component libraries | Shoelace stale (2025-03); Lion active; UXDS = full design system | Medium–heavy runtimes | **Reject for the storefront** — heavier runtime + re-tokenization cost |
+| Starwind UI / bejamas/ui / WebcoreUI | Tailwind copy-and-own or plain Astro kits | Active (Starwind 3.5.0, 2026-11-01) | Zero-ish | **Reject** — Tailwind-based (we run ADS tokens, not Tailwind) or weaker a11y mission |
+
+**Adopted decision (hybrid):**
+
+- **Adapt** — `src/components/ui/` carries the Incluud accordion, tabs, and
+  breadcrumbs with behavior/markup preserved (MIT attribution in each file
+  header) and styling re-tokenized onto the ADS semantic layer. The tabs
+  script gained the APG Home/End bindings during adaptation.
+- **Adopt** — `@zag-js/dialog` + `@zag-js/combobox` (via `@zag-js/react`)
+  power unstyled islands (`src/islands/UiDialog.tsx`, `UiCombobox.tsx`);
+  Zag owns the a11y state machines, we own every visual.
+- Demo surface: `/components/` gallery page + axe/keyboard e2e gates
+  (`tests/e2e/component-library.spec.ts`). NOTICE entries cover both MIT
+  sources. Long-term: the adopted pieces become candidate 107 content blocks
+  (accordion FAQ, tabs).
 
 ## Sources
 
