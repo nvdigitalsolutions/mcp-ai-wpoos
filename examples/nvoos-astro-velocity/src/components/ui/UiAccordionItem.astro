@@ -1,0 +1,224 @@
+---
+// ---------------------------------------------------------------------------
+// UiAccordionItem.astro — one accordion item (native details/summary).
+// Adapted from `accessible-astro-components` (Incluud), MIT — behavior and
+// markup preserved; styling re-tokenized onto ADS. The `name` prop enables
+// the exclusive-accordion pattern (native `details name` semantics).
+// ---------------------------------------------------------------------------
+
+interface Props {
+	class?: string;
+	/** Title text displayed in the accordion header. */
+	title: string;
+	/** Optional name for the details element (exclusive accordions). */
+	name?: string;
+	/** Heading level for the title. @default 'h3' */
+	headingLevel?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+	/** Visual style variant. @default 'default' */
+	variant?: 'default' | 'chevron';
+	/** Whether the item is initially open. @default false */
+	open?: boolean;
+	[key: string]: unknown;
+}
+
+const {
+	class: className,
+	title,
+	name,
+	headingLevel = 'h3',
+	variant = 'default',
+	open = false,
+	...rest
+} = Astro.props;
+
+const HeadingTag = headingLevel;
+---
+
+<li class:list={['ui-accordion-item', className]} {...rest}>
+	<details class:list={['ui-accordion-wrapper', `ui-accordion-variant-${variant}`]} name={name} {...(open ? { open } : {})}>
+		<summary class="ui-accordion-title">
+			<HeadingTag class="ui-accordion-heading">
+				{
+					variant === 'chevron' ? (
+						<>
+							{title}
+							<span class="ui-accordion-icon-chevron">
+								<svg
+									aria-hidden="true"
+									width="12"
+									height="8"
+									fill="none"
+									xmlns="http://www.w3.org/2000/svg"
+								>
+									<path
+										d="M1.4 1.6L6 6.2l4.6-4.6"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+									/>
+								</svg>
+							</span>
+						</>
+					) : (
+						<>
+							<span class="ui-accordion-icon-plus">
+								<svg
+									aria-hidden="true"
+									width="20"
+									height="2"
+									fill="none"
+									xmlns="http://www.w3.org/2000/svg"
+								>
+									<path fill="currentColor" d="M20 .5v1H0v-1z" />
+								</svg>
+								<svg width="2" height="20" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path fill="currentColor" d="M1.5 20h-1V0h1z" />
+								</svg>
+							</span>
+							{title}
+						</>
+					)
+				}
+			</HeadingTag>
+		</summary>
+		<div class="ui-accordion-content">
+			<slot />
+		</div>
+	</details>
+</li>
+
+<style>
+	:where(.ui-accordion-wrapper) {
+		--transition-duration: 0.3s;
+		--transition-easing: cubic-bezier(0.165, 0.84, 0.44, 1);
+
+		border-block-start: 2px solid var(--nv-line-strong);
+		padding-block: 0;
+	}
+
+	.ui-accordion-title :global(.ui-accordion-heading) {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		min-inline-size: 100%;
+		margin: 0;
+		font-weight: normal;
+		font-size: 1.25rem;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		:where(.ui-accordion-wrapper) {
+			interpolate-size: allow-keywords;
+		}
+	}
+
+	details::details-content {
+		opacity: 0;
+		transition:
+			content-visibility var(--transition-duration) allow-discrete,
+			opacity var(--transition-duration) var(--transition-easing),
+			block-size var(--transition-duration) var(--transition-easing);
+		block-size: 0;
+		overflow-y: clip;
+	}
+
+	details[open]::details-content {
+		opacity: 1;
+		block-size: auto;
+	}
+
+	.ui-accordion-wrapper.ui-accordion-variant-default .ui-accordion-content {
+		padding: 0 0 1.5rem 2.2rem;
+	}
+
+	.ui-accordion-wrapper.ui-accordion-variant-chevron .ui-accordion-title :global(.ui-accordion-heading) {
+		justify-content: space-between;
+	}
+
+	.ui-accordion-wrapper.ui-accordion-variant-chevron .ui-accordion-content {
+		padding-block-end: 2.2rem;
+	}
+
+	:where(.ui-accordion-title) {
+		display: flex;
+		cursor: pointer;
+		padding-block: 0.75rem;
+		list-style: none;
+	}
+
+	:where(.ui-accordion-title)::marker,
+	:where(.ui-accordion-title)::-webkit-details-marker {
+		display: none;
+		content: '';
+	}
+
+	:where(.ui-accordion-title:hover),
+	:where(.ui-accordion-title:focus-visible) {
+		color: var(--nv-ink);
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+
+	:where(.ui-accordion-title:focus-visible) {
+		outline: none;
+		border-radius: var(--nv-radius);
+		box-shadow: var(--ads-semantic-focus-ring);
+	}
+
+	:where(.ui-accordion-icon-plus) {
+		display: inline-block;
+		position: relative;
+		aspect-ratio: 1;
+		block-size: 20px;
+	}
+
+	:where(.ui-accordion-icon-plus svg) {
+		position: absolute;
+	}
+
+	:where(.ui-accordion-icon-plus svg:first-of-type) {
+		transform: translateY(-50%);
+		inset-block-start: 50%;
+		inset-inline-start: 0;
+	}
+
+	:where(.ui-accordion-icon-plus svg:last-of-type) {
+		transform: translateY(-50%);
+		inset-block-start: 50%;
+		inset-inline-start: 50%;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		:where(.ui-accordion-icon-plus svg:last-of-type) {
+			transition: all var(--transition-duration) var(--transition-easing);
+		}
+	}
+
+	:where(.ui-accordion-icon-chevron) {
+		flex-shrink: 0;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		:where(.ui-accordion-icon-chevron svg) {
+			transition: transform var(--transition-duration) var(--transition-easing);
+		}
+	}
+
+	:where(.ui-accordion-content a) {
+		display: inline-block;
+	}
+
+	:where(.ui-accordion-content > *:not(:first-child)) {
+		margin-block-start: 0.75rem;
+	}
+
+	:where(.ui-accordion-wrapper[open] .ui-accordion-icon-plus svg:last-of-type) {
+		transform: rotate(90deg);
+		inset-block-start: 0;
+	}
+
+	:where(.ui-accordion-wrapper[open] .ui-accordion-icon-chevron svg) {
+		transform: scaleY(-1);
+	}
+</style>

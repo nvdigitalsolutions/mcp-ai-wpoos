@@ -1,0 +1,29 @@
+---
+// UiBreadcrumbs.astro — breadcrumb nav container. Adapted from
+// `accessible-astro-components` (Incluud), MIT; styling re-tokenized onto ADS.
+interface Props {
+	class?: string;
+	/** Accessible label for the breadcrumb navigation. @default 'Breadcrumbs' */
+	ariaLabel?: string;
+	[key: string]: unknown;
+}
+
+const { class: className, ariaLabel = 'Breadcrumbs', ...rest } = Astro.props;
+---
+
+<nav class:list={['ui-breadcrumbs', className]} aria-label={ariaLabel} {...rest}>
+	<ol class="ui-breadcrumbs-list">
+		<slot />
+	</ol>
+</nav>
+
+<style>
+	:where(.ui-breadcrumbs-list) {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+</style>

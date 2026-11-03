@@ -667,6 +667,37 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
     fixture/BFF pair (8125/4323) — publishing/deleting on the shared pair
     races the parallel listing-count specs.
 
+## Component library (Q6, 2026-11-03)
+
+Owner-suggested candidates were researched (registry facts verified
+2026-11-03); the evaluation lives in the gap analysis §10. **Adopted
+hybrid:** Incluud `accessible-astro-components` (MIT, zero-dep, a11y-first)
+adapted into `src/components/ui/` — behavior/markup preserved, styling
+re-tokenized onto ADS (`--nv-*`), attribution headers + NOTICE; Zag.js
+(`@zag-js/dialog` + `@zag-js/combobox` via `@zag-js/react`) powers unstyled
+islands (`src/islands/UiDialog.tsx`, `UiCombobox.tsx`). Demo: `/components/`
+gallery + `tests/e2e/component-library.spec.ts` (axe + keyboard gates).
+`astro-component-kit` (effect showcase), Starwind/bejamas (Tailwind),
+Shoelace (stale) and Lion/AstroUXDS (heavy) were rejected — see the table.
+
+- **Zag 1.47 API (three breaking shapes — each cost a fix):**
+  `dialog.machine` is a machine DEFINITION object, not a factory — all props
+  (incl. `id`) go in `useMachine(machine, userProps)`'s second arg; and
+  `useMachine` returns the `Service` directly (no `[state, send]` tuple) —
+  `connect(service, normalizeProps)` takes it. Type the callbacks from the
+  package exports (`dialog.OpenChangeDetails`, `combobox.InputValueChangeDetails`).
+- **Combobox `composite` default breaks axe:** the roving-tabindex default
+  omits `role="listbox"` from the list while items carry `role="option"` —
+  axe fails `aria-required-parent`/`only-listitems`. Set `composite: false`
+  for the classic listbox ARIA shape.
+- **Islands under parallel e2e load:** `page.goto` resolves before
+  `client:load` islands hydrate; an interaction landing on an un-hydrated
+  controlled input sticks its native value and React never sees the event
+  (symptom: the collection never filters, `data-highlighted` never appears —
+  flaky ONLY under full-suite load). Fix: the repo's `data-hydrated` marker
+  convention (HomeStats/StackExplorer) — set it in a mount `useEffect` and
+  `expect(...).toHaveAttribute('data-hydrated', '')` before interacting.
+
 ## References
 
 - Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · **Proposal 104** (runtime hardening: `-proposal.md`, `-research.md`, `-implementation-plan.md`, `-ecosystem-repo-analysis.md`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
