@@ -1434,76 +1434,11 @@ the changed files is the substantive gate; plan CI waits accordingly.
       exercisable — but re-running `Plugin::init()` via reflection
       double-registers unguarded hooks (e.g. `RebuildWebhook::init()`); test
       the migration method's behaviour instead of re-booting the plugin.
+  88. **WP 6.9 `rest_parse_date()` returns a Unix timestamp — normalize
+## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
- ## CI workflow hardening — setup-php `tools: wp-cli` flakes
-
- `shivammathur/setup-php` `tools: wp-cli` fails intermittently (`✗ wp-cli
- Could not setup wp-cli`) WITHOUT failing the step, so the next `wp core
- download` dies with `wp: command not found` (exit 127) — same code, same
- workflow, alternating green/red runs. Fixed in PR #6998 for
- `.github/workflows/phpunit-content-graph.yml` + the plugin-check job of
- `.github/workflows/build-nvoos-content-graph.yml`:
-
- ```yaml
- - name: Ensure WP-CLI is available
-   run: |
-     if ! command -v wp >/dev/null 2>&1; then
-       curl -sSLo wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-       chmod +x wp-cli.phar
-       sudo mv wp-cli.phar /usr/local/bin/wp
-     fi
-     wp --version
- ```
-
- Diagnose via `gh run view <id> --log | grep -iE "wp-cli"` — look for the
- red ✗ tool line in the Set up PHP step, not the step that died. Any new
- workflow using setup-php `tools: wp-cli` should include this fallback step.
-
-69. **`wp_http_validate_url` rejects valid URLs in the Docker test runner
-    (astro bridge, 2026-11-03).** The runner's DNS resolution makes core's
-    URL validator reject legitimate https URLs. Symptom: shop/checkout URL
-    validation in REST tests fails on values that pass on live sites. Fix:
-    validate with `filter_var( $url, FILTER_VALIDATE_URL )` + an
-    `https?://` scheme whitelist instead of `wp_http_validate_url` (the Pro
-    schedule-manager suite documents the same gotcha).
-
-70. **Auth-gate tests: use subscriber → 403, not anonymous (astro bridge,
-    2026-11-03).** The root test bootstrap injects a valid admin auth
-    cookie, and the bridge's REST cookie-restore path re-authenticates it —
-    anonymous assertions are nondeterministic. Assert the gate with a
-    subscriber (logged in, wrong capability) for a stable 403.
-
-71. **The test DB persists across runs — pre-delete pinned synthetic posts.
-    ** Synthetic fixture posts with fixed ids (the astro bridge draft id
-    9902) linger between runs and silently turn id-collision assertions
-    flaky. Fix: `wp_delete_post( 9902, true )` in `setUp()` before
-    re-creating the fixture.
-
-72. **Woo price reads use the CRUD method, not a standalone function.
-    ** There is no `wc_get_price()`; variant/product pricing is
-    `$product->get_price()` / `$variation->get_price()`. Attribute labels go
-    through `wc_attribute_label()` (the `pa_*` taxonomy slug is not the
-    label).
-
-73. **Astro bridge dual-matrix volumes (2026-11-03).** The WP 7.1 suite runs
-    against the shared core volume (DB `wordpress_test_astro_wp71`); the
-    WP 6.9 matrix needs its own fresh volume (`astro-wp69-core`, DB
-    `wordpress_test_astro`). The Linux vendor volume
-    (`astro-105106-vendor`: PHPUnit 11.5.56 + wp-phpunit 7.0.2, patches
-    applied) is reusable across bridge clusters — host/container vendor
-    pruning is safe after it exists.
-
- ## Production fix vs test fix
-
-- **Fix production** when the test exposes a genuine bug: unsafe coercion
-  (pattern 11), a latent fatal on a real code path (Graphify admin classes
-  required only under bootstrap `is_admin()`, #6106), or a missing filter seam
-  that blocks deterministic testing (#6097). Keep production edits minimal and
-  behavior-compatible; document the contract change in the PR.
-- **Fix the test** when it documents an outdated contract or an environment
-  assumption. Never weaken a security assertion (nonce/capability) to make a
-  test pass; prefer structural fixes over `setExpectedIncorrectUsage()`
-  (ineffective on WP 7.1).
+Moved to `reference/ci-workflow-hardening.md` (the setup-php flake fix from
+PR #6998: fallback wp-cli install step + the `gh run view` diagnosis).
 
 ## Debugging workflow
 
@@ -1565,73 +1500,7 @@ suffix index (chunk manifests list files, they are not inputs).
 
 ## Cluster state board
 
-Completed clusters (merged or open against `alpha-working`): #6084 CRM
-toolkit, #6085 CRM data store, #6086 Huggingface, #6087 Veo, #6088 transcript
-mining, #6089 quiz admin pages, #6090 document template pages, #6091
-multi-agent AJAX, #6092 chart JS enqueue, #6093 admin hook suffixes, #6094
-orchestration modes, #6095 REST tools controller, #6096 multi-agent
-orchestration, #6097 NPM notice, #6098 multi-agent dashboard, #6099 slash
-command integration, #6100 profession media vector, #6101 base knowledge
-seeder, #6102 pro dashboard diagnostic, #6103 chat conversation CCT, #6104
-admin test model, #6105 profession team CPT sanitization, #6106 Graphify admin
-classes, #6107 toolkit + hooks registry, #6108 test-suite skill, #6109 Shopify
-sync CCT manager, #6110 semantic compressor, #6111 usage tracker pricing
-drift, #6112 docs catch-up, #6113 Content Graph AI credential encryption,
-#6114 WP 7.1 Woo role resync, #6115 create post taxonomy application, #6116
-site creator tools drift, #6117 toolkit registry singleton drift, #6118
-PHPUnit loader excludes, #6119 credential resolver cache invalidation, #6120
-capability flags model drift, #6121 settings suite test drift, #6122 slash
-command tool mode contract, #6124 crawler job contract, #6125 Crawl4AI tool
-failures, #6126 transcript mining job cluster, #6127 save post content drift,
-#6128 tool slug integrity drift, #6129 tool coverage manifest, #6130 bulk
-auto dispatch inline, #6131 TPM fallback model drift, #6132 async registry
-construct errors, #6133 base version polluters, #6134 cache helper cluster,
-#6135 transcript recorder repository, #6136 translation loading timing,
-#6137 profession playbook seeder, #6138 site health tool, #6139 settings
-dashboard, #6140 slash command sync docs, #6141 REST assistant directory,
-#6143 Pro test autoload, #6144 new regressions, #6145 Graphify connectors,
-#6146 rate limit backoff, #6147 provider subtab settings, #6148 orchestration
-slider settings, #6149 MCP client configuration, #6150 federation test,
-#6153 Google Chat fields (open).
-
-Newer merged clusters (post-#6153, discovered via the PR merge log):
-#6249 Hermes dashboard fleet extensions, #6251 Auth0 toggle, #6252 Auth0
-menu, #6253 docs-hub emoji DOM crash, #6254 auto-categorize, #6255 provider
-defaults, #6256 Pro SPA v2 shortcode, #6257 chart tiers, #6258 theme
-sortable compat, #6259 chat attachments, #6260 count-tokens params, #6262
-continuation seam, #6263 chat SSE handler, #6264 cache helper, #6265
-nefarious rate limiter + chat hook tolerance (open).
-
-Session 2026-09-04/05 wave-5 clusters (runs 91006542428 + 91771001271,
-all merged): #6280 chat transcripts + attachments, #6281 charts + Pro
-dashboard, #6282 professions/teams, #6283 presets/remote connections,
-#6284 Cloudflare, #6285 mesh networking, #6286 memory auto-capture,
-#6287 AI CPT management integration, #6288 PayHere vs Remote
-Connections, #6289 Mubert music contract, #6290 OpenAI classic Images
-API, #6291/#6297 composer metadata drift, #6292 Content Graph AI
-ecosystem, #6293 pro schedule AJAX + curriculum exporter, #6294
-cluster-board docs, #6295 exec-disabled host hardening, #6296
-conversation-import CCT gate, #6298 model routing/complexity routing,
-#6299 Gemini, #6300 JetEngine/Graphify stub isolation + gates, #6301
-OAuth/credentials encryption, #6302 REST + skill-pack registry, #6303
-admin/settings drift, #6304 K10 Elementor, #6305 K11 permission gates
-(acting-user capability checks), #6306 K12 HTTP/provider clients, #6307
-K13 orchestration budget, #6308 K14 logging/events (recent-activity
-allowlist + trace durations), #6311 K16 misc singles (webhook
-round-trip, settings-repository blob fallback, chart HTML attachment
-gating, site-builder heading tags, PSO keyword inflections,
-scheduled-post publish date reset + 16 suite contract updates), #6312
-K15 skill-suite upload isolation (pack normalisation + install action
-landed via direct commit d452a125bf).
-
-Session 2026-09-05 cluster (run 91942465749): #6327 post-K16 singles
-(merged) — chat transcript session-key mock restore, MemPalace wing-scope
-graph leak (production fix in `wake_up_context`), OKF Pro tools lost to
-`clear_tools()` on the shared registry, Site Health provider-key
-isolation, transcript-mining logging cache reset.
-
-Remaining candidates change quickly; re-triage from the latest CI log rather
-than trusting an old list.
+Moved to `reference/cluster-state-board.md` (the merged-cluster PR ledger).
 
 ## References
 
