@@ -54,6 +54,13 @@ describe('nav catalogue', () => {
 		expect(navEntryFor('nope' as any)).toBeUndefined();
 	});
 
+	it('exposes the governed content collections under the content section', () => {
+		expect(navEntryFor('content/pages')?.label).toBe('Pages');
+		expect(navEntryFor('content/pages')?.section).toBe('content');
+		expect(navEntryFor('content/posts')?.label).toBe('Posts');
+		expect(navEntryFor('content/posts')?.section).toBe('content');
+	});
+
 	it('is visible unless a declared capability is missing', () => {
 		expect(isNavEntryVisible(navEntryFor('products')!)).toBe(true);
 		// A hypothetical owner-only entry: fail-closed for missing caps.

@@ -73,4 +73,33 @@ describe('buildSchema', () => {
 			expect(result.error.flatten().fieldErrors.category?.[0]).toContain('Category');
 		}
 	});
+
+	it('enforces the select enum and rejects values outside the options', () => {
+		const pageConfig: CollectionConfig = {
+			slug: 'content/pages',
+			label: 'Page',
+			pluralLabel: 'Pages',
+			type: 'collection',
+			defaultColumns: ['title', 'status'],
+			fields: [
+				{ name: 'title', type: 'text', label: 'Title', required: true },
+				{
+					name: 'status',
+					type: 'select',
+					label: 'Status',
+					options: [
+						{ value: 'draft', label: 'Draft' },
+						{ value: 'pending', label: 'Pending review' },
+						{ value: 'publish', label: 'Published' },
+					],
+				},
+			],
+		};
+
+		const schema = buildSchema(pageConfig);
+		expect(schema.safeParse({ title: 'About', status: 'draft' }).success).toBe(true);
+		expect(schema.safeParse({ title: 'About', status: 'publish' }).success).toBe(true);
+		const rejected = schema.safeParse({ title: 'About', status: 'trash' });
+		expect(rejected.success).toBe(false);
+	});
 });

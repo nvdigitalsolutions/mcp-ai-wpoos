@@ -25,12 +25,24 @@ interface SortState {
 	direction: 'asc' | 'desc';
 }
 
+/** Status options for the governed content collections (bridge ?status=). */
+const STATUS_FILTER_OPTIONS = [
+	{ value: 'any', label: 'All statuses' },
+	{ value: 'publish', label: 'Published' },
+	{ value: 'draft', label: 'Draft' },
+	{ value: 'pending', label: 'Pending' },
+	{ value: 'future', label: 'Scheduled' },
+];
+
 export function ListView({ config, onEdit, onCreate }: ListViewProps) {
 	const writable = isCollectionWritable(config.slug);
 	const [page, setPage] = useState(1);
 	const [sort, setSort] = useState<SortState | null>(null);
 	const [searchTerm, setSearchTerm] = useState('');
 	const [debouncedSearch, setDebouncedSearch] = useState('');
+	// The content workbench defaults to the full workflow ('any'); the bridge
+	// still enforces publish-only for sessions without the manage cap.
+	const [statusFilter, setStatusFilter] = useState('any');
 
 	// Debounce the search box so every keystroke doesn't hit the backend
 	// (300ms — the standard admin-table trade-off between latency and load).
@@ -54,6 +66,7 @@ export function ListView({ config, onEdit, onCreate }: ListViewProps) {
 		limit: 20,
 		sort: config.sortable?.length ? sortParam : undefined,
 		where: config.searchable ? where : undefined,
+		status: config.statusFilter ? statusFilter : undefined,
 	});
 	const deleteMutation = useDocumentDelete(config.slug);
 
@@ -142,6 +155,27 @@ export function ListView({ config, onEdit, onCreate }: ListViewProps) {
 						<label className="screen-reader-text" htmlFor={`${config.slug}-search`}>
 							Search {config.pluralLabel}
 						</label>
+					)}
+					{config.statusFilter && (
+						<label className="screen-reader-text" htmlFor={`${config.slug}-status`}>
+							Status filter
+						</label>
+					)}
+					{config.statusFilter && (
+						<select
+							id={`${config.slug}-status`}
+							value={statusFilter}
+							onChange={(event) => {
+								setStatusFilter((event.target as HTMLSelectElement).value);
+								setPage(1);
+							}}
+						>
+							{STATUS_FILTER_OPTIONS.map((option) => (
+								<option key={option.value} value={option.value}>
+									{option.label}
+								</option>
+							))}
+						</select>
 					)}
 					{config.searchable && (
 						<input

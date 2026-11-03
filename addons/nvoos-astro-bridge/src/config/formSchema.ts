@@ -38,6 +38,7 @@ function refineRequired(base: z.ZodTypeAny, field: FieldConfig): z.ZodTypeAny {
 	switch (field.type) {
 		case 'number':
 		case 'checkbox':
+		case 'select':
 			return base;
 		case 'relationship':
 			if (field.hasMany) {
@@ -110,6 +111,16 @@ export function buildSchema(config: CollectionConfig): z.ZodObject<any> {
 			case 'array':
 				base = z.any();
 				break;
+			case 'select': {
+				const options = (field.options ?? []).map((o) => o.value);
+				// An enum is always non-empty — membership IS the constraint,
+				// so requiredness needs no refine (no empty option exists).
+				base =
+					options.length > 0
+						? z.enum(options as [string, ...string[]])
+						: z.string();
+				break;
+			}
 			case 'textarea':
 			case 'date':
 			case 'text':

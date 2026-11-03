@@ -1,6 +1,10 @@
-# Changelog — Astro Bridge (nvoos-astro-bridge)
+# Changelog — NV oOS Astro Bridge (nvoos-astro-bridge)
 
 ## 1.1.0 — 2026-11-03
+
+### Added
+
+- **Pages & Posts in the Astro CMS `/manage` surface** (Proposal 107 Phase 2 — the editor experience). The content workbench lands in the admin SPA: a **Content** sidebar section (Pages, Posts) over the governed `content/pages` + `content/posts` collections; list views with the status-workflow filter (all/published/draft/pending/scheduled — the bridge's manager-only `?status=` listing); edit forms for title, excerpt, content, SEO title/description, scheduled publish, and the approval status select (draft/pending/publish/scheduled) — publishing stays gated by the bridge's `publish_posts` state machine, the SPA just surfaces it. Config-driven like every other collection: a new `select` field type (options + zod enum from one config) and a `statusFilter` collection flag power both lists.
 
 ### Fixed
 

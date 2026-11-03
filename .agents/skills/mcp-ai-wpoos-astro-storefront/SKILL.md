@@ -636,6 +636,23 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   `site_status` first). Env: `NVOOS_PREVIEW_SECRET`/`NVOOS_PREVIEW_TTL_MS`
   (preview tokens), `NVOOS_MCP_CONTENT_WRITE_MAX`/`_WINDOW_MS` (write
   quota, default 30/10 min).
+- **/manage content workbench (2026-11-03, 107 Phase 2 — the editor
+  experience):** the Astro CMS admin SPA now surfaces the governed
+  collections itself — a **Content** sidebar section (Pages, Posts) over
+  `content/pages` + `content/posts`, list views with the status-workflow
+  filter (all/published/draft/pending/scheduled riding the manager-only
+  `?status=` listing), and config-driven edit forms (title, excerpt,
+  content, SEO title/description, scheduled publish, approval status
+  select). Two new config primitives power it: a `select` field type
+  (options + zod enum from one config; `SelectField` associates its label
+  via `useId`/`htmlFor`) and a `statusFilter` collection flag
+  (`ListView` + `useCollection` `status` arg). The publish transition is
+  still the bridge's `publish_posts` gate — the SPA only surfaces it.
+  Bundle flow unchanged: `npm run build:standalone` →
+  `scripts/sync-manage-assets.mjs` → committed
+  `public/manage-assets/astro-admin.{js,css}` (both rebuilt in the same
+  change). Posts category editing is NOT in the form (no WP-category
+  picker source in the SPA; `where[category]` stays MCP-side).
 - **Content-slice gotchas (107 session — each cost a fix):**
   - **Route-cache poisoning:** the memory provider serves fresh hits BEFORE
     the route runs and caches any response carrying `CDN-Cache-Control` with
