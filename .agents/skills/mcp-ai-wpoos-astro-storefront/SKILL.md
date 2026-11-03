@@ -14,7 +14,7 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 
 | Piece | Location | Role |
 |---|---|---|
-| Bridge addon | `addons/nvoos-astro-bridge/` | Serves the Payload envelope from WordPress + WooCommerce data (transitional backend; Laravel takes over at T1 per Proposals 085/090) |
+| Bridge addon | `addons/nvoos-astro-bridge/` | Serves the Payload envelope from WordPress + WooCommerce data (transitional backend; Laravel takes over at T1 per Proposals 085/090). Display name: **NV oOS Astro Bridge** (renamed from "Astro Bridge" 2026-11-03; slug/version unchanged) |
 | Storefront source | `examples/nvoos-astro-velocity/` | Astro SSR + prerendered catalog, React islands (cart badge, gallery), View Transitions |
 | Sync workflow | `.github/workflows/sync-nvoos-astro-velocity.yml` | Builds + tests, then rebuilds for the mirror |
 | Public mirror | `nvdigitalsolutions/nvoos-astro-velocity` (PUBLIC) | Assembled deploy tree (Astro `dist/` + server shim) — zero licensed bytes |
@@ -93,6 +93,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 - **Windows gotcha:** `astro check` OOMs at the default 4 GB heap on this
   machine — run `NODE_OPTIONS=--max-old-space-size=8192 npm run check` (and
   the same for `npm run build`, which chains `astro check` first).
+- **Windows vitest fork-pool hang (2026-11-03):** the default forks pool
+  times out starting workers for EVERY test file (pre-existing ones
+  included — `[vitest-pool]: Failed to start forks worker`). Run
+  `npx vitest run --pool=threads`. The bridge SPA's own suite
+  (`addons/nvoos-astro-bridge`, `npm run test`) fails the same way — the
+  same flag fixes it.
 - The fixture server returns **401 on `/auth/me` without a cookie** and serves
   a real 1×1 PNG on `/wp-content/uploads/` — keep both behaviours.
 - PHP side (bridge): `php -l` + phpcs, then PHPUnit in Docker (`oos-wp`
@@ -309,6 +315,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   output buffers — the class keeps a static `$pending` flag with
   `send_pending()`/`reset_pending()` seams. Test through those seams, not the
   action.
+- **Never grep over the minified bundles (2026-11-03):**
+  `addons/nvoos-astro-bridge/build/standalone/astro-admin.js` and the app's
+  `public/manage-assets/astro-admin.js` are multi-MB single-line esbuild
+  output — a bare grep over the addon or app directory matches the whole
+  file and floods the context window. Always scope with an include pattern
+  (`addons/nvoos-astro-bridge/src/**`) when hunting SPA code.
 - **TestTransformerGolden**: paths use `dirname(__DIR__, 2)`; golden JSON and
   transformer output must both be normalized (`normalize_golden_fields()` —
   floats like `1299.0` vs `1299`, name-sorted terms) before comparison.
@@ -549,6 +561,17 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   React islands and logs per-render errors; forge has no islands so it uses
   mdx); `src/lib/content/merge.ts` — envelope wins on slug collision,
   local fills gaps (L2).
+  **Write contract (107):** POST/PUT accept `title`, `content`
+  (`wp_kses_post`-sanitized), `excerpt`, `status`
+  (publish|draft|pending|future — create defaults to draft), `publishAt`
+  (WP `future` scheduling; normalize the WP 6.9 `rest_parse_date()`
+  timestamp), `blocks` (Portable Text stored as post meta, never rendered
+  server-side), `seoTitle`/`seoDescription` (Rank Math → Yoast
+  write-through), and `submittedBy`; posts also accept `category`
+  (`{ id, name }` or bare id — WP core categories, NOT the commerce
+  `categories` collection). Both types expose `GET /{id}/revisions` +
+  `POST /{id}/restore`; the list's `?status=` filter serves only manager
+  sessions (fail-closed publish-only).
 - **Variants (106)**: additive `variants[]` on single-doc GETs only (woo mode;
   `WooProductSource` hydrates `WC_Product_Variable` children); listings flat.
   PDP `VariantSelector` island (radio semantics, sold-out disabled, price +
