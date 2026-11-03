@@ -88,9 +88,14 @@ class TestShopGlobalsController extends WP_Test_REST_TestCase {
 
 		$this->assertStringContainsString( '/checkout/', $data['checkoutUrl'] );
 		$this->assertStringContainsString( '/cart/', $data['cartUrl'] );
+		$this->assertStringContainsString( '/order-received/', $data['returnUrl'] );
 		$this->assertMatchesRegularExpression( '/^[A-Z]{3}$/', $data['currency'] );
 		$this->assertSame( '$', $data['currencySymbol'] );
 		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/', $data['updatedAt'] );
+		// 108 extension fields (read-only): the native default and no
+		// payment methods without WooCommerce.
+		$this->assertSame( 'native', $data['productsSource'] );
+		$this->assertSame( array(), $data['paymentMethods'] );
 	}
 
 	/**
@@ -110,6 +115,7 @@ class TestShopGlobalsController extends WP_Test_REST_TestCase {
 				array(
 					'checkoutUrl'    => 'https://shop.example.com/checkout/',
 					'cartUrl'        => 'https://shop.example.com/cart/',
+					'returnUrl'      => 'https://shop.example.com/checkout/order-received/',
 					'currency'       => 'eur',
 					'currencySymbol' => '€',
 				)
@@ -119,8 +125,24 @@ class TestShopGlobalsController extends WP_Test_REST_TestCase {
 		$data = $response->get_data();
 		$this->assertSame( 'https://shop.example.com/checkout/', $data['checkoutUrl'] );
 		$this->assertSame( 'https://shop.example.com/cart/', $data['cartUrl'] );
+		$this->assertSame( 'https://shop.example.com/checkout/order-received/', $data['returnUrl'] );
 		$this->assertSame( 'EUR', $data['currency'] );
 		$this->assertSame( '€', $data['currencySymbol'] );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Off-site return URL without an allowlist entry → typed 400 (108 H1).
+	 */
+	public function test_patch_offsite_return_url_rejected(): void {
+		wp_set_current_user( $this->admin_id );
+
+		$response = rest_get_server()->dispatch(
+			$this->patch_request( array( 'returnUrl' => 'https://evil.example.com/thanks/' ) )
+		);
+		$this->assertEquals( 400, $response->get_status() );
+		$this->assertSame( 'astro_shop_return_url_not_allowed', $response->as_error()->get_error_code() );
 
 		wp_set_current_user( 0 );
 	}

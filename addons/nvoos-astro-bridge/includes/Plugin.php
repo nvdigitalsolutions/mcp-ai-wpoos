@@ -18,6 +18,7 @@ use NvoosAstroBridge\REST\{
 	BaseController,
 	BrandsController,
 	CarouselController,
+	CartController,
 	CategoriesController,
 	ColorsController,
 	ManagersController,
@@ -30,8 +31,10 @@ use NvoosAstroBridge\REST\{
 	ShopGlobalsController,
 	StatusesController,
 	ThemePolicyController,
+	WooLoginController,
 };
 use NvoosAstroBridge\Admin\AdminPage;
+use NvoosAstroBridge\Woo\ReturnUrlFilter;
 
 /**
  * Plugin composition root.
@@ -119,6 +122,10 @@ final class Plugin {
 		// 5. Storefront rebuild webhook (Proposal 092 Phase 2.3 — no-ops
 		// until the operator configures a webhook URL).
 		RebuildWebhook::init();
+
+		// 6. Woo return-URL repoint (108 Phase 3) — the hook only fires
+		// inside Woo's checkout flow, so registration is always safe.
+		( new ReturnUrlFilter() )->register();
 	}
 
 	/**
@@ -182,6 +189,8 @@ final class Plugin {
 			new PostsController(),
 			new ThemePolicyController(),
 			new ShopGlobalsController(),
+			new CartController(),
+			new WooLoginController(),
 		);
 
 		foreach ( $controllers as $controller ) {

@@ -32,12 +32,35 @@ export interface SelectedVariant {
 
 const STORAGE_KEY = 'nvoos-cart-v1';
 const SELECTION_STORAGE_KEY = 'nvoos-selected-variants';
+const SESSION_STORAGE_KEY = 'nvoos-cart-session';
 
 export const cartLines = map<Record<number, CartLine>>({});
 export const cartCount = atom<number>(0);
 
 /** Per-product selected variants — survives client-side navigation. */
 export const selectedVariants = atom<Record<number, SelectedVariant>>({});
+
+/** The client cart-session id (108 Phase 2) — an unguessable per-browser
+ *  UUID that keys the server-side Woo cart session. Generates once and
+ *  persists; the same trust level as the Store API's own guest token. */
+export function getCartSessionId(): string {
+	if (typeof localStorage === 'undefined') {
+		return '';
+	}
+	try {
+		let session = localStorage.getItem(SESSION_STORAGE_KEY);
+		if (!session) {
+			session =
+				typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+					? crypto.randomUUID()
+					: `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+			localStorage.setItem(SESSION_STORAGE_KEY, session);
+		}
+		return session;
+	} catch {
+		return '';
+	}
+}
 
 function recalculate(): void {
 	let count = 0;

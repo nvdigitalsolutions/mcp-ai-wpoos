@@ -155,13 +155,28 @@ export interface ContentDoc {
 	publishAt?: string;
 }
 
-/** Shop globals document (106 §1.3 — globals/shop). */
+/** A payment method hint (read-only, 108 Phase 3) — display only. */
+export interface PaymentMethod {
+	id: string;
+	title: string;
+}
+
+/** Shop globals document (106 §1.3 — globals/shop, extended by 108). */
 export interface ShopDoc {
 	checkoutUrl: string;
 	cartUrl: string;
+	/** Post-payment return destination (108 Phase 3) — may be empty on
+	 *  backends that predate the field. */
+	returnUrl?: string;
 	currency: string;
 	currencySymbol: string;
 	updatedAt: string;
+	/** Product backend mode — `native` keeps the URL handoff; `woo`/`both`
+	 *  route the cart through the bridge Store API proxy (108 Phase 2).
+	 *  Absent on legacy backends — treated as `native` (fail closed). */
+	productsSource?: 'native' | 'woo' | 'both';
+	/** Enabled gateway hints (108 Phase 3) — display only, never payment UI. */
+	paymentMethods?: PaymentMethod[];
 }
 
 /** Auth payloads (bridge B4 — owner decision Q5: accounts in v1). */

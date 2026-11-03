@@ -122,6 +122,8 @@ const EXPECTED_TOOLS = [
 	'content_preview_url',
 	'content_restore',
 	'content_validate',
+	'shop_get',
+	'shop_update',
 	'site_status',
 	'preview_url',
 	'rebuild_trigger',

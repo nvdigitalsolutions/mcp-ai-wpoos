@@ -2,17 +2,24 @@
 // CartView island — full cart rendering (client-only state). The cart page
 // shell is server-rendered; lines hydrate from the nanostores cart.
 //
-// Proposal 106 §4 — checkout handoff: simple-product lines build the Woo
-// checkout URL (`?add-to-cart=1,2` comma form) and hand off with an absolute
-// link (no BFF proxy); variant lines are excluded with an honest note; the
-// cart clears on click so the handoff is one-shot.
+// Proposal 106 §4 — checkout handoff (native mode): simple-product lines
+// build the Woo checkout URL (`?add-to-cart=1,2` comma form) and hand off
+// with an absolute link (no BFF proxy); variant lines are excluded with an
+// honest note; the cart clears on click so the handoff is one-shot.
+//
+// Proposal 108 Phase 2 — server-cart sync (woo/both modes): the local cart
+// is reconciled into the WooCommerce session cart through the bridge Store
+// API proxy and the shopper hands off with a CLEAN checkout URL (variants
+// included). The URL form stays as the fail-open fallback when the proxy
+// errors. INV-1: no payment UI ever renders here.
 // ---------------------------------------------------------------------------
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '@nanostores/react';
 import {
 	cartLines,
 	clearCart,
+	getCartSessionId,
 	loadCartFromStorage,
 	removeFromCart,
 	setLineQty,
@@ -20,6 +27,7 @@ import {
 import type { CartLine } from '../lib/store/cart';
 import { formatPrice } from '../lib/commerce/money';
 import { buildCheckoutUrl } from '../lib/commerce/checkout';
+import { syncServerCart } from '../lib/commerce/cart-api';
 import type { ShopDoc } from '../lib/commerce/types';
 
 interface Props {
@@ -27,8 +35,12 @@ interface Props {
 	shop: ShopDoc;
 }
 
+type SyncState = 'idle' | 'syncing' | 'error';
+
 export default function CartView({ shop }: Props) {
 	const lines = useStore(cartLines);
+	const [syncState, setSyncState] = useState<SyncState>('idle');
+	const [syncError, setSyncError] = useState('');
 
 	useEffect(() => {
 		loadCartFromStorage();
@@ -39,6 +51,58 @@ export default function CartView({ shop }: Props) {
 
 	const entries: CartLine[] = Object.values(lines);
 	const plan = buildCheckoutUrl(shop, entries);
+	const usesServerCart =
+		(shop.productsSource === 'woo' || shop.productsSource === 'both') &&
+		typeof shop.checkoutUrl === 'string' &&
+		shop.checkoutUrl.length > 0;
+
+	/** Hand the cart to Woo — the 108 §2 analytics seam fires either way. */
+	const emitHandoff = (mode: 'server-cart' | 'url-form') => {
+		window.dispatchEvent(
+			new CustomEvent('nvoos:checkout-handoff', {
+				detail: {
+					mode,
+					lines: entries.length,
+					variants: entries.filter((line) => line.variantId != null).length,
+				},
+			})
+		);
+	};
+
+	const handleCheckout = async (event: React.MouseEvent<HTMLAnchorElement>) => {
+		if (!usesServerCart) {
+			emitHandoff('url-form');
+			clearCart();
+			return;
+		}
+
+		event.preventDefault();
+		if (syncState === 'syncing') {
+			return;
+		}
+		setSyncState('syncing');
+		setSyncError('');
+
+		const session = getCartSessionId();
+		if (!session) {
+			setSyncError('The server cart is unavailable in this browser.');
+			setSyncState('error');
+			return;
+		}
+
+		const result = await syncServerCart(session, entries);
+		if (result.ok) {
+			emitHandoff('server-cart');
+			clearCart();
+			window.location.assign(shop.checkoutUrl);
+			return;
+		}
+
+		// Fail-open to the legacy URL form — the link below becomes the
+		// fallback (simple lines only, the variant note explains the rest).
+		setSyncError(result.error);
+		setSyncState('error');
+	};
 
 	if (entries.length === 0) {
 		return (
@@ -98,13 +162,27 @@ export default function CartView({ shop }: Props) {
 					{formatPrice(entries.reduce((sum, line) => sum + line.price * line.qty, 0))}
 				</strong>
 			</p>
-			{plan.url ? (
+			{usesServerCart && syncState !== 'error' ? (
+				<a
+					className="btn"
+					href={shop.checkoutUrl}
+					rel="noopener noreferrer"
+					data-cart-checkout
+					aria-disabled={syncState === 'syncing'}
+					onClick={handleCheckout}
+				>
+					{syncState === 'syncing' ? 'Syncing cart…' : 'Checkout on WooCommerce'}
+				</a>
+			) : plan.url ? (
 				<a
 					className="btn"
 					href={plan.url}
 					rel="noopener noreferrer"
 					data-cart-checkout
-					onClick={() => clearCart()}
+					onClick={() => {
+						emitHandoff('url-form');
+						clearCart();
+					}}
 				>
 					Checkout on WooCommerce
 				</a>
@@ -113,7 +191,13 @@ export default function CartView({ shop }: Props) {
 					Checkout on WooCommerce
 				</button>
 			)}
-			{plan.variantCount > 0 && (
+			{syncState === 'error' && syncError !== '' && (
+				<p className="cart__note" data-cart-sync-error>
+					Server cart sync failed — {syncError} Falling back to the direct
+					checkout link.
+				</p>
+			)}
+			{plan.variantCount > 0 && (!usesServerCart || syncState === 'error') && (
 				<p className="cart__note" data-cart-variant-note>
 					Variant items are excluded from this checkout — variant checkout opens
 					in the next release.

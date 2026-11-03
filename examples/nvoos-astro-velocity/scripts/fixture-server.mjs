@@ -141,9 +141,19 @@ function patchThemePolicy(body) {
 const shop = {
 	checkoutUrl: 'https://nvoos.pro/checkout/',
 	cartUrl: 'https://nvoos.pro/cart/',
+	returnUrl: 'https://nvoos.pro/checkout/order-received/',
 	currency: 'USD',
 	currencySymbol: '$',
 	updatedAt: '2026-11-03T09:00:00Z',
+	// 108 Phase 2 — the woo checkout-woo spec pair boots with the override.
+	productsSource: process.env.NVOOS_FIXTURE_PRODUCTS_SOURCE === 'woo' ? 'woo' : 'native',
+	paymentMethods:
+		process.env.NVOOS_FIXTURE_PRODUCTS_SOURCE === 'woo'
+			? [
+					{ id: 'stripe', title: 'Stripe' },
+					{ id: 'paypal', title: 'PayPal' },
+				]
+			: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -497,7 +507,35 @@ const server = createServer((req, res) => {
 	if (segments[0] === 'globals') {
 		if (segments[1] === 'banner') return send(res, 200, banner);
 		if (segments[1] === 'carousel') return send(res, 200, carousel);
-		if (segments[1] === 'shop') return send(res, 200, shop);
+		if (segments[1] === 'shop') {
+			if (req.method === 'GET') return send(res, 200, shop);
+			if (req.method === 'PATCH') {
+				// Manager seam (108 Phase 4) — mirror the bridge's cap gate.
+				if (!isManagerRequest(req)) {
+					return send(res, 403, { code: 'rest_forbidden', message: 'manage_astro required.' });
+				}
+				let raw = '';
+				req.setEncoding('utf8');
+				req.on('data', (chunk) => {
+					raw += chunk;
+				});
+				req.on('end', () => {
+					let body = null;
+					try {
+						body = raw ? JSON.parse(raw) : {};
+					} catch {
+						return send(res, 400, { code: 'astro_shop_invalid_body', message: 'Body must be JSON.' });
+					}
+					for (const field of ['checkoutUrl', 'cartUrl', 'returnUrl', 'currency', 'currencySymbol']) {
+						if (typeof body[field] === 'string') shop[field] = body[field];
+					}
+					shop.updatedAt = new Date().toISOString();
+					return send(res, 200, shop);
+				});
+				return;
+			}
+			return send(res, 405, { code: 'fixture_method_not_allowed' });
+		}
 		if (segments[1] === 'theme') {
 			if (req.method === 'GET') return send(res, 200, themePolicy);
 			if (req.method === 'PATCH') {
@@ -528,6 +566,52 @@ const server = createServer((req, res) => {
 			return send(res, 405, { code: 'fixture_method_not_allowed' });
 		}
 		return send(res, 404, { code: 'fixture_not_found' });
+	}
+
+	// Cart sync (108 Phase 2) — the bridge Store API proxy's fixture twin.
+	if (segments[0] === 'cart' && segments[1] === 'sync') {
+		if (req.method !== 'POST') return send(res, 405, { code: 'fixture_method_not_allowed' });
+		if (shop.productsSource === 'native') {
+			return send(res, 400, {
+				code: 'astro_cart_native_mode',
+				message: 'The storefront cart proxy is disabled in native product mode.',
+			});
+		}
+		const session = req.headers['x-nvoos-cart-session'] ?? '';
+		if (typeof session !== 'string' || !/^[A-Za-z0-9-]{8,64}$/.test(session)) {
+			return send(res, 400, { code: 'astro_cart_invalid_session', message: 'Bad session.' });
+		}
+		let raw = '';
+		req.setEncoding('utf8');
+		req.on('data', (chunk) => {
+			raw += chunk;
+		});
+		req.on('end', () => {
+			let body = null;
+			try {
+				body = raw ? JSON.parse(raw) : {};
+			} catch {
+				return send(res, 400, { code: 'astro_cart_invalid_body', message: 'Body must be JSON.' });
+			}
+			const lines = Array.isArray(body.lines) ? body.lines : [];
+			const items = lines.map((line, index) => ({
+				key: `fixture-${index}`,
+				productId: Number(line.productId),
+				name: `Fixture line ${line.productId}`,
+				qty: Number(line.qty),
+				price: 1,
+			}));
+			return send(res, 200, {
+				session,
+				items,
+				totals: {
+					totalItems: items.reduce((sum, item) => sum + item.qty, 0),
+					totalPrice: '0',
+				},
+				notices: [],
+			});
+		});
+		return;
 	}
 
 	// Promocode validation (idempotent read, case-insensitive).

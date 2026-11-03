@@ -706,16 +706,36 @@ Shoelace (stale) and Lion/AstroUXDS (heavy) were rejected — see the table.
 
 ## Proposal 108 + blocks promotion (2026-11-03)
 
-- **108 checkout hardening (Phase 1 shipped):** `ShopGlobalsController`
-  enforces a same-site/allowlist rule on `checkoutUrl`/`cartUrl`
-  (`funiq_bridge_checkout_url_allowlist` filter; userinfo + non-80/443
-  ports rejected; new 400 codes `astro_shop_checkout_url_not_allowed` /
-  `astro_shop_cart_url_not_allowed`). The cart checkout link carries
-  `rel="noopener noreferrer"`. Docs: the `docs/project/proposals/108-*`
-  trio (research + gap analysis with DECISION-1 `shop` tool slice and
-  DECISION-2 three-lane render pipeline, PCI INV-1 — no payment UI in the
-  app). Phases 2–4 (Store API cart proxy, return URL / gateway list / SSO
-  token, MCP `shop_get`/`shop_update`) are owner-approved-only.
+- **108 shipped in full (PR #7414 + follow-up):** Phase 1 — the
+  same-site/allowlist rule on `checkoutUrl`/`cartUrl`/`returnUrl`
+  (`funiq_bridge_checkout_url_allowlist`; userinfo + non-80/443 ports
+  rejected; codes `astro_shop_{checkout_url,cart_url,return_url}_not_allowed`;
+  the camel→snake mapping is `preg_replace('/([a-z])([A-Z])/', '$1_$2', …)`)
+  + `rel="noopener noreferrer"` on the handoff link. Phase 2 — the bridge
+  cart proxy: `POST /nvoos-commerce/v1/cart/sync` (public customer surface,
+  `X-Nvoos-Cart-Session` UUID header, woo/both modes only) reconciles the
+  local cart into the Woo session cart via `Woo/StoreApiClient` (Store API
+  `Cart-Token` guest sessions, transient-cached per session id, zero-HTTP
+  test seam `funiq_bridge_store_api_pre_response` + availability seam
+  `funiq_bridge_store_api_available` — the env's Woo stubs define
+  `wc_get_product`, so `remove_all_filters` alone cannot prove the 501
+  path; add `__return_false`). The app island (`CartView`) syncs then hands
+  off with a CLEAN checkout URL (variants included), fails OPEN to the
+  legacy URL form with the variant note, and fires the
+  `nvoos:checkout-handoff` CustomEvent analytics seam (mode/lines/variants).
+  Phase 3 — `returnUrl` globals + `ReturnUrlFilter` (`woocommerce_get_return_url`
+  → `/checkout/thanks/?order_id=&order_key=`), read-only `paymentMethods`
+  (60 s transient) + `productsSource` in the shop doc, and the opt-in SSO
+  route `GET /woo-login/{token}` (`funiq_bridge_woo_sso_enabled`, 5-min
+  single-use per-user HMAC; `auth_cookie` filter is the test seam for
+  `wp_set_auth_cookie`, which never populates `$_COOKIE` under CLI).
+  Phase 4 — MCP `shop_get`/`shop_update` (SERVER_VERSION 0.4.0, 35 tools;
+  write gate = manager cookie + `NVOOS_MCP_SHOP_WRITE_*` quota). Fixture:
+  the `checkout-woo` e2e project rides its own pair (8126/4324,
+  `NVOOS_FIXTURE_PRODUCTS_SOURCE=woo`) and the fixture serves PATCH
+  `/globals/shop` + POST `/cart/sync`. Docs: `docs/project/proposals/108-*`
+  trio (research + gap analysis with DECISION-1/2 + PCI INV-1) + bridge
+  README route table.
 - **Content blocks promoted to the adopted components:** `faq` renders as
   the accordion (`UiAccordionItem`, shared `name="nvoos-content-faq"` →
   native exclusive accordion; solo-item top border restored in scope) and

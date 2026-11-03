@@ -1,11 +1,17 @@
 # 108 — WooCommerce Checkout & Cart Enhancement — Implementation Plan
 
+> **Status (2026-11-03):** all four phases are implemented and validated in
+> this track. Phase 1 shipped in PR #7414; Phases 2–4 ship in the follow-up
+> PR on the same branch. The owner decisions Q1–Q4 remain open for
+> production policy (SSO toggle, allowlist policy, thanks-route UX, T1
+> timing) — the code ships with the documented defaults.
+
 > Phase-by-phase plan for the gaps in
 > `108-woo-checkout-cart-enhancement-gap-analysis.md`. Phase 1 ships in this
 > PR together with the 107 follow-up (tabs + accordion content blocks);
 > Phases 2–4 are scoped for owner approval.
 
-## Phase 1 — Harden the existing handoff (this PR)
+## Phase 1 — Harden the existing handoff (✅ shipped — PR #7414)
 
 ### 1.1 H1 — same-site + allowlist checkout/cart/return URLs
 
@@ -65,7 +71,7 @@ component-library`. Bridge: phpcs + PHPUnit (WP 6.9 + 7.1 matrix) per the
 test-suite skill. Hermetic build (`npm run build:prod-sim` equivalent in
 the sync workflow).
 
-## Phase 2 — Cart parity via a bridge Store API proxy (owner approval)
+## Phase 2 — Cart parity via a bridge Store API proxy (✅ shipped)
 
 1. **Bridge `POST /nvoos-commerce/v1/cart/items`** — server-side Store API
    client (`wc/store/v1/cart/*`): mint a cart nonce/cart token via the
@@ -85,7 +91,7 @@ the sync workflow).
 5. Tests: bridge PHPUnit (fixture-mocked Store API HTTP), app vitest for
    the new client path, e2e cart spec for variant add + coupon.
 
-## Phase 3 — Checkout continuity (owner approval; Q1–Q3 decide)
+## Phase 3 — Checkout continuity (✅ shipped — SSO behind the default-off toggle)
 
 1. **Return URL** — add `returnUrl` to the shop globals (default
    `home_url('/checkout/order-received/')`); bridge filter
@@ -101,7 +107,7 @@ the sync workflow).
    endpoint that sets the auth cookie and redirects to checkout (H5).
    Off by default.
 
-## Phase 4 — MCP `shop` tool slice (owner approval)
+## Phase 4 — MCP `shop` tool slice (✅ shipped)
 
 1. App `/mcp` gains `shop_get` (read-only, open) and `shop_update`
    (manager-session gated, per-session write quota, audit line) over the
