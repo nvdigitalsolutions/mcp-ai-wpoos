@@ -65,6 +65,21 @@ const TOOL_DESCRIPTION_HINTS = {
 };
 
 /**
+ * Annotation overrides for tools whose upstream hints misstate side effects.
+ * `deep_research` can schedule background cron work and persist results to
+ * agent memory, so it must not advertise `readOnlyHint: true` — the OpenAI
+ * portal scan rejects read-only claims on tools with user-visible side
+ * effects. Keyed by the unprefixed upstream tool slug.
+ */
+const TOOL_ANNOTATION_OVERRIDES = {
+	deep_research: {
+		readOnlyHint: false,
+		destructiveHint: false,
+		openWorldHint: true,
+	},
+};
+
+/**
  * Protocol versions this gateway can speak, newest first. Mirrors the
  * plugin's own MCP negotiation list so every NV oOS surface agrees.
  */
@@ -272,6 +287,10 @@ async function listTools( ctx, id ) {
 				const hint = TOOL_DESCRIPTION_HINTS[ tool.name ];
 				if ( hint && 'string' === typeof prefixed.description ) {
 					prefixed.description += hint;
+				}
+				const override = TOOL_ANNOTATION_OVERRIDES[ tool.name ];
+				if ( override ) {
+					prefixed.annotations = { ...( prefixed.annotations || {} ), ...override };
 				}
 				tools.push( prefixed );
 			}
