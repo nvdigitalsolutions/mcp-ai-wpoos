@@ -1,0 +1,52 @@
+---
+// UiTabsPanel.astro — one tabpanel. Adapted from
+// `accessible-astro-components` (Incluud), MIT; styling re-tokenized onto ADS.
+interface Props {
+	class?: string;
+	/** Unique identifier for the panel. */
+	id: string;
+	/** ID of the tab that labels this panel. */
+	labelledby: string;
+	/** Whether this panel is currently selected. @default false */
+	selected?: boolean;
+	[key: string]: unknown;
+}
+
+const { class: className, id, labelledby, selected = false, ...rest } = Astro.props;
+---
+
+<div
+	class:list={['ui-tabs-panel', className]}
+	role="tabpanel"
+	id={id}
+	aria-labelledby={labelledby}
+	aria-hidden={!selected}
+	{...rest}
+>
+	<slot />
+</div>
+
+<style>
+	:where(.ui-tabs-panel) {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: flex-start;
+		gap: 1rem;
+		border: 2px solid var(--nv-line);
+		border-end-start-radius: var(--nv-radius);
+		border-end-end-radius: var(--nv-radius);
+		border-start-end-radius: var(--nv-radius);
+		padding: 1.5rem;
+		min-block-size: 8rem;
+		color: var(--nv-ink);
+	}
+
+	:where(.ui-tabs-panel[aria-hidden='true']) {
+		display: none;
+	}
+
+	:where(.ui-tabs-panel > :not(:first-child)) {
+		margin-block-start: 0.5rem;
+	}
+</style>

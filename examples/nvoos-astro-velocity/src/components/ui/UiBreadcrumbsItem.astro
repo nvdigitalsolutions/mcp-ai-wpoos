@@ -1,0 +1,56 @@
+---
+// UiBreadcrumbsItem.astro — one breadcrumb item (link or current page).
+// Adapted from `accessible-astro-components` (Incluud), MIT; styling
+// re-tokenized onto ADS.
+interface Props {
+	class?: string;
+	/** Text label for the breadcrumb. */
+	label: string;
+	/** URL for the breadcrumb link. */
+	href?: string;
+	/** Whether this item represents the current page. @default false */
+	currentPage?: boolean;
+	[key: string]: unknown;
+}
+
+const { class: className, label = 'Breadcrumb', href, currentPage = false, ...rest } = Astro.props;
+---
+
+<li class:list={['ui-breadcrumbs-item', className]} {...rest}>
+	{
+		currentPage ? (
+			<span aria-current="page" class="ui-breadcrumbs-current">{label}</span>
+		) : (
+			<a href={href} class="ui-breadcrumbs-link">{label}</a>
+		)
+	}
+</li>
+
+<style>
+	:where(.ui-breadcrumbs-item) {
+		display: inline-flex;
+		align-items: center;
+	}
+
+	:where(.ui-breadcrumbs-item:not(:first-child)::before) {
+		content: '/';
+		color: var(--nv-muted);
+		margin-inline-end: 0.5rem;
+	}
+
+	:where(.ui-breadcrumbs-link) {
+		color: var(--nv-muted);
+		text-decoration: none;
+	}
+
+	:where(.ui-breadcrumbs-link:hover),
+	:where(.ui-breadcrumbs-link:focus-visible) {
+		color: var(--nv-ink);
+		text-decoration: underline;
+		text-underline-offset: 4px;
+	}
+
+	:where(.ui-breadcrumbs-current) {
+		color: var(--nv-ink);
+	}
+</style>

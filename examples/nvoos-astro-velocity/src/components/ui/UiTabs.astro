@@ -1,0 +1,92 @@
+---
+// ---------------------------------------------------------------------------
+// UiTabs.astro — tabs container + the WAI-ARIA tabs behavior script
+// (roving tabindex, Left/Right/Home/End keys, aria-controls panels).
+// Adapted from `accessible-astro-components` (Incluud), MIT —
+// https://github.com/incluud/accessible-astro-components — with the APG
+// Home/End key bindings added and styling re-tokenized onto ADS.
+// ---------------------------------------------------------------------------
+
+interface Props {
+	class?: string;
+	[key: string]: unknown;
+}
+
+const { class: className, ...rest } = Astro.props;
+---
+
+<div class:list={['ui-tabs', className]} {...rest}>
+	<slot />
+</div>
+
+<script>
+	function initializeTabComponent(component: HTMLElement) {
+		const tabList = component.querySelector<HTMLElement>('[role="tablist"]');
+		const tabs = [...component.querySelectorAll<HTMLElement>('[role="tab"]')];
+		const tabPanels = [...component.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+
+		let tabsIndex = tabs.findIndex(
+			(tab) => tab.getAttribute('tabindex') === '0' || tab.getAttribute('aria-selected') === 'true'
+		);
+		if (tabsIndex === -1) {
+			tabsIndex = 0;
+		}
+
+		const changeTabs = (nextTab: HTMLElement) => {
+			tabsIndex = tabs.indexOf(nextTab);
+
+			tabs.forEach((tab) => {
+				const isSelected = tab === nextTab;
+				tab.setAttribute('aria-selected', String(isSelected));
+				tab.setAttribute('tabindex', isSelected ? '0' : '-1');
+			});
+
+			tabPanels.forEach((panel) => {
+				panel.setAttribute('aria-hidden', 'true');
+			});
+
+			const targetPanel = component.querySelector<HTMLElement>(
+				`#${nextTab.getAttribute('aria-controls')}`
+			);
+			targetPanel?.setAttribute('aria-hidden', 'false');
+		};
+
+		tabs.forEach((tab) => {
+			tab.addEventListener('click', () => {
+				changeTabs(tab);
+			});
+		});
+
+		tabList?.addEventListener('keydown', (event: KeyboardEvent) => {
+			let nextIndex: number | null = null;
+
+			if (event.key === 'ArrowRight') {
+				nextIndex = (tabsIndex + 1) % tabs.length;
+			} else if (event.key === 'ArrowLeft') {
+				nextIndex = (tabsIndex - 1 + tabs.length) % tabs.length;
+			} else if (event.key === 'Home') {
+				nextIndex = 0;
+			} else if (event.key === 'End') {
+				nextIndex = tabs.length - 1;
+			}
+
+			if (nextIndex === null) {
+				return;
+			}
+
+			event.preventDefault();
+			const nextTab = tabs[nextIndex];
+			if (nextTab) {
+				nextTab.focus();
+				changeTabs(nextTab);
+			}
+		});
+	}
+
+	document.querySelectorAll<HTMLElement>('.ui-tabs').forEach(initializeTabComponent);
+
+	// Handle Astro view transitions — the document survives, the nodes do not.
+	document.addEventListener('astro:after-swap', () => {
+		document.querySelectorAll<HTMLElement>('.ui-tabs').forEach(initializeTabComponent);
+	});
+</script>

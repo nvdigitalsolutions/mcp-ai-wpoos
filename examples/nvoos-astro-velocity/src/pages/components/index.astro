@@ -1,0 +1,241 @@
+---
+// ---------------------------------------------------------------------------
+// /components — component-library evaluation gallery (2026-11-03, the Q6
+// research track). Shows both adoption approaches side by side:
+//
+//   1. ADAPTED (accessible-astro-components, Incluud — MIT): behavior and
+//      markup cherry-picked into src/components/ui/, styling re-tokenized
+//      onto the ADS semantic layer. Native details/summary accordion, full
+//      WAI-ARIA tabs (roving tabindex + arrow/Home/End keys), breadcrumbs.
+//   2. HEADLESS (Zag.js, Chakra team — MIT): unstyled state machines wired
+//      into our own React islands (dialog focus trap + combobox). Zag owns
+//      the a11y behavior; we own every visual.
+//
+// The evaluation record lives in the Proposal 107 gap analysis, §10.
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import UiAccordion from '../../components/ui/UiAccordion.astro';
+import UiAccordionItem from '../../components/ui/UiAccordionItem.astro';
+import UiTabs from '../../components/ui/UiTabs.astro';
+import UiTabsList from '../../components/ui/UiTabsList.astro';
+import UiTabsTab from '../../components/ui/UiTabsTab.astro';
+import UiTabsPanel from '../../components/ui/UiTabsPanel.astro';
+import UiBreadcrumbs from '../../components/ui/UiBreadcrumbs.astro';
+import UiBreadcrumbsItem from '../../components/ui/UiBreadcrumbsItem.astro';
+import UiDialog from '../../islands/UiDialog';
+import UiCombobox from '../../islands/UiCombobox';
+
+const title = 'Component library evaluation';
+const description =
+	'Adapted accessible-astro-components and headless Zag.js components, re-themed onto the ADS token system.';
+---
+
+<BaseLayout title={title} description={description}>
+	<article class="gallery">
+		<h1>Component library evaluation</h1>
+		<p class="lede">
+			Two adoption approaches for accessible UI components — adapted Incluud
+			components (behavior preserved, styling re-tokenized onto ADS) and
+			headless Zag.js state machines in our own islands. Evaluation record:{' '}
+			<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/alpha-working/docs/project/proposals/107-storefront-content-surface-gap-analysis.md">
+				Proposal 107 gap analysis §10
+			</a>
+			.
+		</p>
+
+		<section class="demo-section">
+			<h2>Adapted — accessible-astro-components (MIT)</h2>
+
+			<h3>Accordion (native details/summary)</h3>
+			<UiAccordion>
+				<UiAccordionItem title="What is the ADS token system?">
+					<p>
+						A DTCG-sourced, three-layer token system (core → semantic → component)
+						with light/dark theming and a drift-gated generator. These demo
+						components bind the <code>--nv-*</code> aliases.
+					</p>
+				</UiAccordionItem>
+				<UiAccordionItem title="Why keep the native details element?" open>
+					<p>
+						The native <code>details</code>/<code>summary</code> pattern gives
+						keyboard, screen-reader, and reduced-motion behavior for free —
+						no script, no ARIA to hand-roll. The <code>name</code> attribute
+						also enables exclusive accordions.
+					</p>
+				</UiAccordionItem>
+			</UiAccordion>
+
+			<h3>Tabs (WAI-ARIA tabs pattern)</h3>
+			<UiTabs>
+				<UiTabsList>
+					<UiTabsTab id="tab-design" controls="panel-design" selected>Design</UiTabsTab>
+					<UiTabsTab id="tab-content" controls="panel-content">Content</UiTabsTab>
+					<UiTabsTab id="tab-ops" controls="panel-ops">Ops</UiTabsTab>
+				</UiTabsList>
+				<UiTabsPanel id="panel-design" labelledby="tab-design" selected>
+					<p>The design slice: tokens, themes, WCAG contrast checks.</p>
+				</UiTabsPanel>
+				<UiTabsPanel id="panel-content" labelledby="tab-content">
+					<p>The content slice: draft-first pages and posts with preview links.</p>
+				</UiTabsPanel>
+				<UiTabsPanel id="panel-ops" labelledby="tab-ops">
+					<p>Ops: site status, previews, rebuild triggers.</p>
+				</UiTabsPanel>
+			</UiTabs>
+
+			<h3>Breadcrumbs</h3>
+			<UiBreadcrumbs>
+				<UiBreadcrumbsItem label="Home" href="/" />
+				<UiBreadcrumbsItem label="Components" href="/components/" />
+				<UiBreadcrumbsItem label="Evaluation" currentPage />
+			</UiBreadcrumbs>
+		</section>
+
+		<section class="demo-section">
+			<h2>Headless — Zag.js (MIT)</h2>
+			<p>
+				Zag owns the interaction state machines (focus trap, Escape handling,
+				ARIA wiring); the markup and ADS-token styling are ours.
+			</p>
+
+			<h3>Dialog (focus trap)</h3>
+			<UiDialog client:load title="Zag dialog demo" />
+			<p class="hint">
+				Open the dialog, then Tab — focus cycles inside. Escape or the backdrop
+				closes it and focus returns to the trigger.
+			</p>
+
+			<h3>Combobox (autocomplete)</h3>
+			<UiCombobox client:load />
+			<p class="hint">Type to filter; ArrowUp/Down highlight; Enter selects.</p>
+		</section>
+	</article>
+</BaseLayout>
+
+<style>
+	.lede {
+		color: var(--nv-muted);
+		max-width: 46rem;
+	}
+
+	.demo-section {
+		margin-block-start: 2.5rem;
+		max-width: 46rem;
+	}
+
+	.demo-section h3 {
+		margin-block: 1.5rem 0.75rem;
+	}
+
+	.hint {
+		color: var(--nv-muted);
+		font-size: 0.9rem;
+	}
+
+	/* --- Zag island styles (page-scoped — the islands own no visuals) --- */
+	.ui-dialog-backdrop {
+		position: fixed;
+		inset: 0;
+		background: rgb(0 0 0 / 0.45);
+		z-index: 40;
+	}
+
+	.ui-dialog-backdrop[hidden],
+	.ui-dialog-positioner[hidden],
+	.ui-dialog-content[hidden] {
+		display: none;
+	}
+
+	.ui-dialog-positioner {
+		position: fixed;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 41;
+		pointer-events: none;
+	}
+
+	.ui-dialog-content {
+		pointer-events: auto;
+		background: var(--nv-surface);
+		color: var(--nv-ink);
+		border: 1px solid var(--nv-line);
+		border-radius: var(--nv-radius);
+		padding: 1.5rem;
+		max-inline-size: min(90vw, 28rem);
+		box-shadow: var(--ads-semantic-focus-ring);
+	}
+
+	.ui-dialog-title {
+		margin: 0 0 0.5rem;
+	}
+
+	.ui-combobox {
+		position: relative;
+		max-inline-size: 20rem;
+	}
+
+	.ui-combobox-label {
+		display: block;
+		margin-block-end: 0.35rem;
+		color: var(--nv-muted);
+		font-size: 0.9rem;
+	}
+
+	.ui-combobox-control {
+		display: flex;
+		border: 1px solid var(--nv-line);
+		border-radius: var(--nv-radius);
+		background: var(--nv-surface);
+	}
+
+	.ui-combobox-input {
+		flex: 1;
+		border: none;
+		background: transparent;
+		color: var(--nv-ink);
+		padding: 0.5rem 0.75rem;
+	}
+
+	.ui-combobox-input:focus {
+		outline: none;
+	}
+
+	.ui-combobox-trigger {
+		border: none;
+		background: transparent;
+		color: var(--nv-muted);
+		padding-inline: 0.5rem;
+	}
+
+	.ui-combobox-positioner {
+		position: absolute;
+		inset-block-start: calc(100% + 0.25rem);
+		inline-size: 100%;
+		z-index: 30;
+	}
+
+	.ui-combobox-list {
+		margin: 0;
+		padding: 0.25rem;
+		list-style: none;
+		background: var(--nv-surface);
+		border: 1px solid var(--nv-line);
+		border-radius: var(--nv-radius);
+		max-block-size: 12rem;
+		overflow-y: auto;
+	}
+
+	.ui-combobox-item {
+		padding: 0.4rem 0.75rem;
+		border-radius: calc(var(--nv-radius) / 2);
+		cursor: pointer;
+	}
+
+	.ui-combobox-item[data-highlighted],
+	.ui-combobox-item:hover {
+		background: var(--nv-surface-alt);
+	}
+</style>
