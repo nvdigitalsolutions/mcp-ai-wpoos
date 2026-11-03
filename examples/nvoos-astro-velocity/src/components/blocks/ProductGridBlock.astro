@@ -1,0 +1,32 @@
+---
+// ProductGrid custom block (107 §3.1) — a live product pick by id. Fetches
+// through the commerce client (memoized per render; missing ids are skipped
+// silently — the grid renders what resolves).
+import ProductGrid from '../ProductGrid.astro';
+import { getProduct } from '../../lib/commerce/client';
+import type { Product } from '../../lib/commerce/types';
+
+interface Props {
+	node: { _type: 'productGrid'; ids: number[] };
+}
+
+const { node } = Astro.props;
+
+const products = (
+	await Promise.all(node.ids.map((id) => getProduct(id, Astro.url)))
+).filter((product): product is Product => product !== null);
+---
+
+{
+	products.length > 0 && (
+		<section class="block-products" aria-label="Products in this story">
+			<ProductGrid products={products} />
+		</section>
+	)
+}
+
+<style>
+	.block-products {
+		margin-block: 1.25rem;
+	}
+</style>

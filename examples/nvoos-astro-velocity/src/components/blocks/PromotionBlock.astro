@@ -1,0 +1,38 @@
+---
+// Promotion custom block (107 §3.1) — an active promotion card by id.
+// Promotion copy is manager-authored content (trusted upstream HTML).
+import { getPromotions } from '../../lib/commerce/client';
+
+interface Props {
+	node: { _type: 'promotion'; promotionId: number };
+}
+
+const { node } = Astro.props;
+
+const envelope = await getPromotions(Astro.url, { page: 1, limit: 100 });
+const promotion = envelope.docs.find((item) => item.id === node.promotionId);
+---
+
+{
+	promotion?.active && (
+		<aside class="block-promotion">
+			<h2>{promotion.title}</h2>
+			<div set:html={promotion.description} />
+			<a class="btn" href="/promotions/">View promotions</a>
+		</aside>
+	)
+}
+
+<style>
+	.block-promotion {
+		border: 1px solid var(--nv-line);
+		border-radius: var(--nv-radius);
+		padding: 1.25rem;
+		margin-block: 1.25rem;
+		background: var(--nv-surface-alt);
+	}
+
+	.block-promotion h2 {
+		margin-top: 0;
+	}
+</style>

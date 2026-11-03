@@ -437,13 +437,22 @@ export const getAllPages = (requestUrl: string | URL | undefined) =>
 export const getAllPosts = (requestUrl: string | URL | undefined) =>
 	getAll<ContentDoc>('content/posts', requestUrl);
 
-/** Fetch a single page by ID (SSR + 404 handling — the getProduct pattern). */
+/** Fetch a single page by ID (SSR + 404 handling — the getProduct pattern).
+ *
+ * Preview reads (Proposal 107 §3.2) pass `status: 'any'` plus the visitor's
+ * cookie header: the backend then serves drafts to managers only (fail-closed
+ * 404 otherwise). Preview reads never touch the memo cache — cookie-dependent
+ * responses must not leak across renders. */
 export async function getPage(
 	id: number,
-	requestUrl: string | URL | undefined
+	requestUrl: string | URL | undefined,
+	opts: { status?: 'any'; cookie?: string | null } = {}
 ): Promise<ContentDoc | null> {
-	const url = joinPath(resolveBase(requestUrl), `content/pages/${id}`);
-	const res = await fetch(url, { headers: { accept: 'application/json' } });
+	const q = opts.status === 'any' ? '?status=any' : '';
+	const url = joinPath(resolveBase(requestUrl), `content/pages/${id}`) + q;
+	const res = await fetch(url, {
+		headers: { accept: 'application/json', ...(opts.cookie ? { cookie: opts.cookie } : {}) },
+	});
 	if (res.status === 404) {
 		return null;
 	}
@@ -453,13 +462,17 @@ export async function getPage(
 	return (await res.json()) as ContentDoc;
 }
 
-/** Fetch a single post by ID (SSR + 404 handling). */
+/** Fetch a single post by ID (SSR + 404 handling; preview opts — see getPage). */
 export async function getPost(
 	id: number,
-	requestUrl: string | URL | undefined
+	requestUrl: string | URL | undefined,
+	opts: { status?: 'any'; cookie?: string | null } = {}
 ): Promise<ContentDoc | null> {
-	const url = joinPath(resolveBase(requestUrl), `content/posts/${id}`);
-	const res = await fetch(url, { headers: { accept: 'application/json' } });
+	const q = opts.status === 'any' ? '?status=any' : '';
+	const url = joinPath(resolveBase(requestUrl), `content/posts/${id}`) + q;
+	const res = await fetch(url, {
+		headers: { accept: 'application/json', ...(opts.cookie ? { cookie: opts.cookie } : {}) },
+	});
 	if (res.status === 404) {
 		return null;
 	}

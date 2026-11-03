@@ -1,0 +1,22 @@
+---
+// Link mark component — renders the annotated span inside a scheme-safe
+// anchor. @portabletext/astro hands the toolkit mark node to mark
+// components: the link target lives on node.markDef (resolved from the
+// block's markDefs by markKey), not on the node itself. Anything outside
+// http/https/mailto degrades to a plain anchor (never a javascript: URL).
+import { isSafeHref } from '../../lib/content/portable-text';
+
+interface Props {
+	node: {
+		markType?: string;
+		markKey?: string;
+		markDef?: { _type?: string; href?: unknown } | null;
+	};
+}
+
+const { node } = Astro.props;
+const href = typeof node.markDef?.href === 'string' ? node.markDef.href : '';
+const safe = isSafeHref(href);
+---
+
+<a href={safe ? href : '#'} rel="noopener noreferrer"><slot /></a>

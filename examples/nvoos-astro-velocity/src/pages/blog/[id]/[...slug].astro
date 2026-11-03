@@ -1,11 +1,11 @@
 ---
 // ---------------------------------------------------------------------------
-// Blog post detail — Proposal 106 §2 (content/posts + hybrid local).
-//
-// Envelope post by id (301 to the canonical slug on drift — the 104 PDP
-// pattern); local MDX posts render when the envelope has no doc with the
-// requested id (local posts live under /blog/0/<slug>/). BlogPosting
-// JSON-LD; s-maxage=300; cache tags ['content','posts'] + policy revision.
+// Blog post detail — Proposal 106 §2 (content/posts + hybrid local) +
+// Proposal 107 (DECISION-2): agent-authored posts render Portable Text
+// `blocks`; legacy posts keep the trusted `contentRendered` HTML path.
+// Preview sessions behave exactly as the page route (see
+// src/pages/pages/[id]/[...slug].astro): private no-store, status=any read
+// with forwarded cookies, no route-cache entry, no local fallback.
 // ---------------------------------------------------------------------------
 
 import BaseLayout from '../../../layouts/BaseLayout.astro';
@@ -14,38 +14,41 @@ import { isPublished } from '../../../lib/commerce/publish';
 import { toIsoDate } from '../../../lib/commerce/normalize';
 import { getCollection } from 'astro:content';
 import { localBySlug } from '../../../lib/content/merge';
+import { contentBody } from '../../../lib/content/render';
+import { hasPreviewSession } from '../../../lib/content/preview';
+import Blocks from '../../../components/blocks/Blocks.astro';
 import { blogPostingJsonLd, breadcrumbJsonLd } from '../../../lib/seo/jsonld';
 import { pageTitle, plainExcerpt } from '../../../lib/seo/meta';
 import { absoluteUrl } from '../../../lib/url';
 
-Astro.response.headers.set(
-	'Cache-Control',
-	'public, s-maxage=300, stale-while-revalidate=600'
-);
-
 const id = Number(Astro.params.id ?? 0);
 const requestedSlug = String(Astro.params.slug ?? '').replace(/\/+$/, '');
 
-const site = Astro.site ?? new URL('https://store.nvoos.cloud');
-const policy = await getThemePolicy(Astro.url);
+const previewActive = hasPreviewSession(Astro.request.headers.get('cookie'));
+const visitorCookie = Astro.request.headers.get('cookie');
 
-if (Astro.cache.enabled) {
-	Astro.cache.set({
-		maxAge: 300,
-		swr: 600,
-		tags: ['content', 'posts'],
-		etag: policy.updatedAt,
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const NOT_FOUND = (body: string) =>
+	new Response(body, {
+		status: 404,
+		headers: { 'cache-control': 'private, no-store' },
 	});
-}
 
 // Envelope first (L2): a matching published post renders; a draft never
 // falls through to local content (publication discipline, 104 §2.1).
-const envelope = Number.isInteger(id) && id > 0 ? await getPost(id, Astro.url) : null;
-if (envelope && !isPublished(envelope)) {
-	return new Response('Post not found', { status: 404 });
+const envelope =
+	Number.isInteger(id) && id > 0
+		? await getPost(id, Astro.url, previewActive ? { status: 'any', cookie: visitorCookie } : {})
+		: null;
+if (envelope && !previewActive && !isPublished(envelope)) {
+	return NOT_FOUND('Post not found');
 }
 if (envelope && requestedSlug !== envelope.slug) {
 	return Astro.redirect(`/blog/${id}/${envelope.slug}/`, 301);
+}
+// Previews are envelope-only (see the page route for the rationale).
+if (previewActive && !envelope) {
+	return NOT_FOUND('Post not found');
 }
 
 // Hybrid-local fallback (O-4): no envelope post with this id — render the
@@ -53,7 +56,33 @@ if (envelope && requestedSlug !== envelope.slug) {
 const localPosts = await getCollection('posts', (entry) => !entry.data.draft);
 const local = envelope ? null : localBySlug(localPosts, requestedSlug);
 if (!envelope && !local) {
-	return new Response('Post not found', { status: 404 });
+	return NOT_FOUND('Post not found');
+}
+
+// Cache treatment applies to RENDERED responses only — a 404 (above) must
+// never enter the route cache, or a preview render would be served the
+// cached public 404 (the provider serves fresh hits before the route runs).
+if (previewActive) {
+	// Preview renders must reflect the backend NOW: drop any public cache
+	// entry for this exact path, and never advertise the render to crawlers
+	// or shared caches.
+	await Astro.cache.invalidate({ path: Astro.url.pathname });
+	Astro.response.headers.set('Cache-Control', 'private, no-store');
+	Astro.response.headers.set('X-Robots-Tag', 'noindex');
+} else {
+	Astro.response.headers.set(
+		'Cache-Control',
+		'public, s-maxage=300, stale-while-revalidate=600'
+	);
+	const policy = await getThemePolicy(Astro.url);
+	if (Astro.cache.enabled) {
+		Astro.cache.set({
+			maxAge: 300,
+			swr: 600,
+			tags: ['content', 'posts'],
+			etag: policy.updatedAt,
+		});
+	}
 }
 
 const title = envelope
@@ -65,9 +94,10 @@ const description = envelope
 const canonical = envelope
 	? absoluteUrl(site, `/blog/${id}/${envelope.slug}/`)
 	: absoluteUrl(site, `/blog/0/${local?.id ?? requestedSlug}/`);
-const html = envelope
-	? envelope.contentRendered || envelope.content
-	: (local?.rendered?.html ?? '');
+const body = envelope
+	? contentBody(envelope)
+	: { blocks: null, html: local?.rendered?.html ?? '' };
+const draftPreview = previewActive && envelope !== null && envelope.status !== undefined && envelope.status !== 'publish';
 const datePublished = envelope
 	? toIsoDate(envelope.createdAt) ?? undefined
 	: local?.data.date?.toISOString();
@@ -104,6 +134,25 @@ const jsonld = [
 	</nav>
 	<article>
 		<h1>{envelope ? envelope.title : local?.data.title}</h1>
-		<div class="content-body" set:html={html} />
+		{
+			draftPreview && (
+				<div class="preview-banner" role="status">
+					Draft preview — not publicly visible
+				</div>
+			)
+		}
+		{body.blocks ? <Blocks blocks={body.blocks} /> : <div class="content-body" set:html={body.html} />}
 	</article>
 </BaseLayout>
+
+<style>
+	.preview-banner {
+		display: inline-block;
+		margin-block-end: 1rem;
+		padding: 0.35rem 0.75rem;
+		border: 1px dashed var(--nv-line-strong, var(--nv-line));
+		border-radius: var(--nv-radius);
+		color: var(--nv-muted);
+		font-size: 0.85rem;
+	}
+</style>
