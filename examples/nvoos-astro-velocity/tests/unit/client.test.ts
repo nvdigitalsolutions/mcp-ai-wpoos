@@ -9,7 +9,7 @@ import {
 	getThemePolicy,
 	MAX_LIMIT,
 } from '../../src/lib/commerce/client';
-import type { Product } from '../../src/lib/commerce/types';
+import type { Product, SortValue } from '../../src/lib/commerce/types';
 
 describe('buildWhereParams', () => {
 	it('serializes equals operators', () => {
@@ -195,7 +195,9 @@ describe('getCollection / getAll', () => {
 				}
 			));
 			const url = new URL('https://store.example/');
-			const params = { limit: 7, sort: 'date' };
+			// Explicit annotation: an untyped literal widens `sort` to `string`,
+			// which is not assignable to the client's `sort?: SortValue`.
+			const params: { limit: number; sort: SortValue } = { limit: 7, sort: 'date' };
 
 			const first = await getCollection<{ id: number }>('products', url, params);
 			const second = await getCollection<{ id: number }>('products', url, params);
