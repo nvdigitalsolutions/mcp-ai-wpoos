@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Cognition desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks (Proposals 073/075/076), the screen-OCR snippet track (Proposal 100, features snippet/snippet-onnx), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, or screen OCR.
+description: Operational guide for the NV oOS Cognition desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks (Proposals 073/075/076), the screen-OCR snippet track (Proposal 100, features snippet/snippet-onnx), the document-OCR input track (Proposal 109, feature document — PDF/multi-page TIFF via pdfium-render), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, screen OCR, or document OCR.
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
@@ -90,6 +90,10 @@ examples/nvoos-dictate/
   -Command` with `$var` gets mangled by MSYS, so always `-File x.ps1`):
   the presence of `fastconformer`/`parakeet`/`whisper`/`sherpa-onnx` means
   the engines are linked; `Assistant` means the SPA tab shipped.
+  **Release trap:** the `nvoos-agent` marker (a thread-name literal) is
+  DCE'd by release optimizations — the script also matches the agent
+  controller's spawn-error string (`could not spawn agent worker`), which
+  survives both profiles.
   **Trap:** a plain `cargo build`/`cargo run` (debug profile) compiles with
   `devUrl` (`http://localhost:1420`) baked in, so the webview loads the
   Vite dev server at runtime and shows `ERR_CONNECTION_REFUSED` in the app
@@ -98,6 +102,16 @@ examples/nvoos-dictate/
   (or `npm run tauri dev` with vite running) produces a usable GUI exe;
   after any plain-cargo headless check, rebuild via tauri before handing
   the exe back.
+- **Release build + installer bundles** (the other common "complete" ask):
+  `npm run tauri -- build --features <union>` (drop `--debug --no-bundle`)
+  → release exe ~55 MB + `target/release/bundle/` **NSIS setup ~13 MiB** +
+  **MSI ~163 MiB** (the MSI embeds the WebView2 bootstrap; WiX + NSIS are
+  downloaded automatically by the tauri CLI). Same CMake/LIBCLANG_PATH env
+  as debug. **Trap — first full release build can exceed 60 min** (the
+  tool-timeout hit at 851/853 crates once); the resume is incremental
+  (~9 min). Release RTF stays fast (whisper base.en 0.32, parakeet 0.19)
+  — proof the `force-debug` wiring survives release profiles. Bundles are
+  unsigned dev artifacts (`pubkey: ""`).
 - `generate_context!` embeds the frontend `dist` at compile time — run
   `npm run build` before any cargo step in CI.
 - Boot smoke test: `cmd //c start "" <exe>` → `tasklist //FI "IMAGENAME eq
@@ -690,6 +704,50 @@ live on the reference PC — it returns **fenced** JSON, which
 `parse_label_response` tolerates). The no-facial-recognition bright line is in
 the system prompt. `VisionDiagnostics` gained `polish_enabled/provder/model/calls/results`.
 
+## Document OCR input — PDF & multi-page TIFF (Proposal 109, feature `document`)
+
+Proposal 109 implements 102's deferred document-input pipeline: PDFs and
+multi-page TIFFs into the snippet OCR stack, using the industry-standard
+hybrid two-pass (per-page text-layer extraction where present — OCRmyPDF's
+`--skip-text` strategy — and 300-DPI rasterization + OCR where not).
+Docs: `docs/project/proposals/109-document-input-pipeline-ocr-{proposal,implementation-plan}.md`.
+**Status:** M0 spike shipped (PR #7425); M1 (lib modules + shared
+`layout.rs` pull-forward) pending.
+
+- **Feature:** `document = ["snippet", "dep:pdfium-render", "dep:tiff"]`.
+  `pdfium-render` pinned `default-features = false, features =
+  ["pdfium_7881", "image_025", "thread_safe"]` (resolved 0.9.5; `image_025`
+  matches the app's `image` 0.25 pin — no duplicate image tree). PDFium is
+  the only license-clean engine (BSD-3; MuPDF/Poppler/Ghostscript are
+  AGPL/GPL).
+- **Binary provisioning:** bblanchon `chromium/7881`
+  `pdfium-win-x64.tgz` — **the Windows archive layout is `bin/pdfium.dll`,
+  NOT `lib/`** (7,211,520 bytes, sha256
+  `79d4676b656cfb1abcea88f9ade3b4b0826c5200382db5f4ec72a636c598c118`).
+  Runtime binding via `Pdfium::default()` / `bind_to_library` (dll beside
+  the exe); bundle-time provisioning is plan decision D2. Never commit the
+  dll; the checked-in generator `scripts/make_doc_fixtures.py` emits
+  offset-computed fixtures (`text-2page.pdf`, `malformed.pdf` — the
+  repo-level `*.pdf` info/exclude needs `git add -f`).
+- **Verified 0.9.5 API facts** (the README documents 0.9.6 — they differ):
+  `PdfPageTextChars::iter()` yields **owned** `PdfPageTextChar` (no
+  `.cloned()`); chars borrow `PdfPageText`, so extract owned fields inside
+  the closure; `origin()`/`origin_x()` return `Result<PdfPoints,
+  PdfiumError>`; `PdfRect` exposes `width()`/`height()` accessors;
+  `PdfPoints { value }` is a public-field struct; `set_target_width`/
+  `set_maximum_height` take `i32`; `has_unicode_map_error()` is 0.9.6-only
+  — 0.9.5's unmapped-glyph signal is `unicode_char() == None`.
+- **Spike run recipe:** `pdfium.dll` in `src-tauri/target/debug/`, run
+  `./examples/document_probe.exe <pdf>` from that dir. Live-verified:
+  44/36 chars with exact origins+bounds, exact 2550×3300 render at
+  300 DPI; malformed fixture → `PdfiumLibraryInternalError(FormatError)`,
+  exit 1, no panic. Gates: fmt, clippy `-D warnings` (`--features
+  document`), tests with and without the feature.
+- **Deferred to M1:** encrypted-PDF fixture (needs an RC4 security-handler
+  writer), the complete-union build gaining `document`, verify markers,
+  and the `layout.rs` pull-forward (102 is still unimplemented — 109 M1
+  builds the shared module first).
+
 ## Stage-2 polish providers (local LLM cleanup)
 
 Stage-2 is the optional LLM polish that runs **after** Stage-1 deterministic
@@ -1068,6 +1126,19 @@ New this session (2026-11-02): **rebrand to NV oOS Cognition v0.3.0 +
   checkout takes ~15–25 min on ubuntu runners, and the mirror API's
   `pushed_at` updates immediately while `size` lags — verify a sync by
   `pushed_at` plus a root `contents/` listing.
+
+New this session (2026-11-03): **document-OCR input pipeline (Proposal
+  109) — proposal + implementation plan + M0 spike (PR #7425).** New
+  `document` feature (pdfium-render pinned pdfium_7881/image_025/
+  thread_safe + tiff), the `document_probe` spike example, the
+  `make_doc_fixtures.py` generator with committed PDF fixtures, and the
+  verified pdfium-render 0.9.5 API facts — see the new "Document OCR
+  input" section above. Also this session: the **release build + bundle
+  recipe** (NSIS ~13 MiB, MSI ~163 MiB, the >60-min-first-build trap) and
+  the **verify-script release-proof agent marker** (the `nvoos-agent`
+  thread name is DCE'd in release builds — the script now also matches
+  `could not spawn agent worker`). Complete-union + verify markers gain
+  `document` at M1, when lib code lands.
 
 ## Related skills
 

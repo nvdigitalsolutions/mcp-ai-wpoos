@@ -38,6 +38,13 @@ name = "snippet_ocr_probe"
 path = "examples/snippet_ocr_probe.rs"
 required-features = ["snippet"]
 
+# Document-input de-risk spike (Proposal 109, M0): PDF text extraction +
+# 300-DPI rendering via pdfium-render (feature `document`).
+[[example]]
+name = "document_probe"
+path = "examples/document_probe.rs"
+required-features = ["document"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -115,6 +122,18 @@ chromiumoxide = { version = "0.9", optional = true, default-features = false }
 # The StreamExt trait used to poll chromiumoxide's Handler (its own `futures`
 # dependency is not re-exported; a direct dep keeps the stream poll in scope).
 futures = { version = "0.3", optional = true }
+# Document input pipeline (Proposal 109): PDF open/extract/render. PDFium is
+# the BSD-3 engine behind Chrome/WebView2 (MuPDF/Poppler/Ghostscript are
+# AGPL/GPL — incompatible with this app's license). Features pinned:
+# `pdfium_7881` (API version, matches the bblanchon prebuilt binary),
+# `image_025` (matches the app's image 0.25 pin — no duplicate image tree),
+# `thread_safe` (Pdfium is not thread-safe; the crate serializes calls).
+# The binary itself is a pinned, checksummed download — never committed (D2).
+pdfium-render = { version = "0.9", default-features = false, features = ["pdfium_7881", "image_025", "thread_safe"], optional = true }
+# Multi-page TIFF page iteration (the `image` crate decodes only the first
+# page). Already transitively present via image-tiff; a direct optional dep
+# exposes the paged Decoder API.
+tiff = { version = "0.9", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 # Low-level keyboard hook (WH_KEYBOARD_LL), GetAsyncKeyState fallback, and
@@ -193,6 +212,11 @@ snippet = ["dep:image"]
 # ort/ort-sys/ndarray16 pins with `vision` (rapid-ocr-rs is NOT used: it pulls
 # its own ort version and would drift the rc.9 pin).
 snippet-onnx = ["snippet", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
+# Document input pipeline (Proposal 109): PDF + multi-page TIFF into the
+# snippet OCR stack. PDFium (BSD-3) is runtime-loaded from a pinned,
+# checksummed binary shipped as a bundle resource; `tiff` adds multi-page
+# decode. The VLM polish pass reuses Proposal 076's transport — no new dep.
+document = ["snippet", "dep:pdfium-render", "dep:tiff"]
 
 [patch.crates-io]
 whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

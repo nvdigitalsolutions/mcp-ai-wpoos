@@ -17,6 +17,9 @@ $markers = @(
     @{ name = "vision (ort)";    re = "ort" },
     @{ name = "camera (nokhwa)"; re = "nokhwa" },
     @{ name = "agent";           re = "nvoos-agent" },
+    # The "nvoos-agent" thread-name literal is DCE'd by release optimizations;
+    # the controller's own spawn-error string survives in both profiles.
+    @{ name = "agent (release-proof)"; re = "could not spawn agent worker" },
     @{ name = "mcp";             re = "mcp" },
     @{ name = "snippet (OCR)";   re = "snippet" },
     @{ name = "Assistant SPA";   re = "Assistant" },
