@@ -151,6 +151,10 @@ a:hover {
 	font-size: 0.9rem;
 }
 
+.theme-badge {
+	white-space: nowrap;
+}
+
 /* Product grid ---------------------------------------------------------- */
 
 .product-grid {

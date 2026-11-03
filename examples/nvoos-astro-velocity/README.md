@@ -92,15 +92,18 @@ an OG card never breaks the page.
 
 ## MCP assistant surface (`/mcp`)
 
-`nvoos-astro-mcp` serves 33 tools over Streamable HTTP at `/mcp` (bundled into
-`dist/mcp-entry.mjs` on `astro:build:done`). Every tool carries a
-human-readable `title` and spec `annotations` (readOnly/destructive/idempotent/
+`nvoos-astro-mcp` 0.4.0 serves 35 tools over Streamable HTTP at `/mcp`
+(bundled into `dist/mcp-entry.mjs` on `astro:build:done`). Every tool carries
+a human-readable `title` and spec `annotations` (readOnly/destructive/idempotent/
 openWorld hints) so MCP clients — Zed, NV oOS assistants, Claude — can render
 and gate the registry without scraping descriptions:
 
 - **Design (14)** — `tokens_get/set/import_dtcg/rollback`, `theme_*`,
   `contrast_check` (WCAG 2.2 AA/AAA levels), `design_analyze/compare/plan/theme`
-  (inspired-by design-language import — never a clone). Every mutating design
+  (inspired-by design-language import — never a clone). Theme descriptors carry
+  an optional SemVer `version` (static themes declare it in their DTCG source;
+  `theme_create` accepts it; imported themes default to 1.0.0) — the site
+  footer shows the active theme and its version. Every mutating design
   write echoes its pre-write `snapshot_id`, so `tokens_rollback` can undo
   exactly that write (no argument rolls back to the latest snapshot).
 - **CMS (6)** — `cms_list/get/create/update/delete`, `media_upload` over the
@@ -123,6 +126,10 @@ and gate the registry without scraping descriptions:
 - **Ops (5)** — `site_status`, `preview_url`, `rebuild_trigger` (webhook env),
   `screenshot` (opt-in `NVOOS_MCP_SCREENSHOT=1`, path-only input),
   `nds_export` (the NDS DTCG document for the Design System round-trip).
+- **Shop (2, Proposal 108)** — `shop_get`/`shop_update` over the shop globals
+  doc (checkout/cart/return URLs, display currency, payment-method hints).
+  Writes are manager-gated and the backend enforces same-site/allowlisted
+  URLs on the editable fields.
 
 Auth is fail-closed: reads are public; design writes accept an
 `Authorization: Bearer <NVOOS_MCP_TOKEN>` **or** a manager session cookie;

@@ -10,10 +10,11 @@ import { registerCmsTools } from './tools/cms';
 import { registerContentTools } from './tools/content';
 import { registerShopTools } from './tools/shop';
 import { registerOpsTools } from './tools/ops';
+import { APP_VERSION } from '../src/lib/version';
 import type { TokenService } from '../src/lib/tokens/service';
 
 export const SERVER_NAME = 'nvoos-astro-mcp';
-export const SERVER_VERSION = '0.4.0';
+export const SERVER_VERSION = APP_VERSION;
 
 export function buildServer(service: TokenService = designService): McpServer {
 	const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });

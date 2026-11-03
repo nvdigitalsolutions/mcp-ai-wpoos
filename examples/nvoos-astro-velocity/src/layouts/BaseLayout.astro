@@ -19,9 +19,12 @@ import CartBadge from '../islands/CartBadge';
 import ManageLink from '../islands/ManageLink';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import ContrastToggle from '../components/ContrastToggle.astro';
+import ThemeBadge from '../components/ThemeBadge.astro';
 import { getThemePolicy } from '../lib/commerce/client';
 import { resolvePolicyTheme } from '../lib/theme/policy';
 import { ALL_THEMES } from '../lib/theme/registry';
+import { defaultTokenService } from '../lib/tokens/service';
+import { APP_VERSION } from '../lib/version';
 import '../styles/generated/tokens.css';
 import '../styles/global.css';
 
@@ -52,6 +55,15 @@ const policyPayload = JSON.stringify({
 	resolved,
 	registry: ALL_THEMES,
 });
+
+// Theme version map for the footer badge — light/dark (no version) plus the
+// static brand themes and any runtime themes in the process-wide service.
+// SSR pages read the live service; prerendered pages bake the build-time map.
+const themeVersions: Record<string, string | null> = {};
+for (const name of defaultTokenService.listThemes()) {
+	const descriptor = defaultTokenService.themeDescriptor(name);
+	themeVersions[name] = typeof descriptor?.version === 'string' ? descriptor.version : null;
+}
 ---
 
 <!doctype html>
@@ -171,7 +183,7 @@ const policyPayload = JSON.stringify({
 				<CartBadge client:load transition:persist />
 				<ThemeToggle />
 				<ContrastToggle />
-				<ManageLink client:load />
+				<ManageLink client:load transition:persist />
 			</div>
 		</header>
 		<main class="container">
@@ -180,8 +192,16 @@ const policyPayload = JSON.stringify({
 		<footer class="site-footer">
 			<div class="container">
 				<p>
-					NV Store — an NV-authored, MIT-licensed Astro storefront
-					(Proposal 092). <a href="/about">About</a> · <a href="/terms">Terms</a>
+					NV Store v{APP_VERSION} — an NV-authored, MIT-licensed Astro storefront
+					(Proposal 092). <a href="/about">About</a> · <a href="/terms">Terms</a>{' '}
+					·{' '}
+					<a
+						href="https://github.com/nvdigitalsolutions/nvoos-astro-velocity"
+						rel="noopener noreferrer"
+					>
+						Source
+					</a>{' '}
+					· <ThemeBadge versions={themeVersions} />
 				</p>
 			</div>
 		</footer>

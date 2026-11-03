@@ -200,7 +200,8 @@ export default function StackExplorer() {
 					Colors, radii, type, and spacing all flow from a DTCG design-token
 					layer with light, dark, and high-contrast modes — and runtime
 					brand themes that apply instantly with no rebuild. Every token pair
-					is audited against WCAG 2.2 contrast thresholds.
+					is audited against WCAG 2.2 contrast thresholds, and an optional
+					server-side theme policy can pin one brand fleet-wide.
 				</p>
 				<p className="stack-live">
 					This page renders in the {theme.theme} theme with {theme.contrast}{' '}
@@ -216,11 +217,18 @@ export default function StackExplorer() {
 				hidden={active !== 'ai'}
 			>
 				<p>
-					An MCP endpoint (<code>/mcp</code>) exposes 25 tools across design,
-					CMS, and ops, so an AI assistant can browse the catalog, apply
-					themes, audit contrast, and manage content through the same
+					An MCP endpoint (<code>/mcp</code>) exposes 35 tools across five
+					slices — design (14), CMS (6), content (8), ops (5), and shop (2) —
+					so an AI assistant can browse the catalog, publish posts, re-theme
+					the store, audit contrast, and configure checkout through the same
 					surface a human manager uses. Every write is fail-closed and
 					authenticated.
+				</p>
+				<p>
+					From <code>design_analyze</code> (import a site's design language)
+					to <code>content_preview_url</code> (signed draft previews) and{' '}
+					<code>shop_update</code> (checkout globals) — an MCP client lists
+					the full registry live at <code>/mcp</code>.
 				</p>
 			</div>
 		</div>

@@ -16,7 +16,7 @@ export interface EmittedTheme {
 	/** DTCG document for tokens_import_dtcg (groups + themes shape). */
 	dtcgDocument: Record<string, unknown>;
 	/** Runtime-theme descriptor for theme_create. */
-	themeDescriptor: { name: string; description: string; tokens: Record<string, string> };
+	themeDescriptor: { name: string; description: string; version?: string; tokens: Record<string, string> };
 	/** WCAG 2.2 audit of the critical pairs. */
 	audit: {
 		pairs: Array<{ fg: string; bg: string; role: string; ratio: number | null; aaNormal: boolean }>;
@@ -88,6 +88,7 @@ export function emitTheme(analysis: DesignAnalysisResult, name?: string): Emitte
 		themes: {
 			[themeName]: {
 				description: `Imported from ${analysis.source.url} (inspired-by — Proposal 098).`,
+				version: '1.0.0',
 				tokens,
 			},
 		},
@@ -105,6 +106,7 @@ export function emitTheme(analysis: DesignAnalysisResult, name?: string): Emitte
 		themeDescriptor: {
 			name: themeName,
 			description: `Imported design language from ${analysis.source.url}`,
+			version: '1.0.0',
 			tokens,
 		},
 		audit,

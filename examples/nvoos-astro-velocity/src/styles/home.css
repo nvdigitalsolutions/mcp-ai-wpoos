@@ -159,3 +159,45 @@
 	color: var(--nv-ink);
 	font-weight: 600;
 }
+
+/* Tour link cards ---------------------------------------------------------- */
+
+.tour {
+	margin-block: 2.5rem;
+}
+
+.tour-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 1rem;
+	margin: 1rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.tour-card a {
+	display: block;
+	height: 100%;
+	border: 1px solid var(--nv-line);
+	border-radius: var(--nv-radius);
+	padding: 1.25rem;
+	background: var(--nv-surface);
+	color: inherit;
+	text-decoration: none;
+}
+
+.tour-card a:hover {
+	border-color: var(--nv-accent);
+}
+
+.tour-card h3 {
+	margin: 0 0 0.5rem;
+	font-size: 1.05rem;
+	color: var(--nv-ink);
+}
+
+.tour-card p {
+	margin: 0;
+	color: var(--nv-muted);
+	font-size: 0.95rem;
+}
