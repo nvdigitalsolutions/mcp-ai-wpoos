@@ -422,10 +422,14 @@ class WP_MCP_AI_Tool_Discover_New_Models implements WP_MCP_AI_Tool_Interface, WP
 	protected function get_known_anthropic_models() {
 		// Anthropic doesn't expose a models list API, so we use known models.
 		return array(
-			'claude-opus-5'              => array( 'name' => 'Claude Opus 5 (Jul 2026 - Flagship)' ),
+			'claude-opus-5-5'            => array( 'name' => 'Claude Opus 5.5 (Sep 2026 - Flagship)' ),
+			'claude-opus-5'              => array( 'name' => 'Claude Opus 5 (Jul 2026)' ),
 			'claude-fable-5.1'           => array( 'name' => 'Claude Fable 5.1 (Sep 2026 - Top Tier)' ),
+			'claude-mythos-5-1'          => array( 'name' => 'Claude Mythos 5.1 (Invitation-only)' ),
 			'claude-mythos-5'            => array( 'name' => 'Claude Mythos 5 (Invitation-only)' ),
+			'claude-sonnet-5-5'          => array( 'name' => 'Claude Sonnet 5.5 (Sep 2026 - Recommended)' ),
 			'claude-sonnet-5'            => array( 'name' => 'Claude Sonnet 5 (Current)' ),
+			'claude-haiku-5-5'           => array( 'name' => 'Claude Haiku 5.5 (Fastest)' ),
 			'claude-opus-4-8'            => array( 'name' => 'Claude Opus 4.8 (May 2026)' ),
 			'claude-opus-4-7'            => array( 'name' => 'Claude Opus 4.7' ),
 			'claude-opus-4-6'            => array( 'name' => 'Claude Opus 4.6' ),

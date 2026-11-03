@@ -76,17 +76,18 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'o1-mini'                        => 128000,
 		// OpenAI legacy (still in use via OpenRouter / older configs).
 		'gpt-4.1-mini'                   => 1000000,
-		'gpt-4.1-nano'                   => 1000000,
 		'gpt-4.1'                        => 128000,
 		'gpt-4o'                         => 128000,
 		'gpt-4o-mini'                    => 128000,
 		'gpt-4-turbo'                    => 128000,
 		'gpt-4'                          => 8192,
 		'gpt-3.5-turbo'                  => 16385,
+		// OpenAI GPT-6.1 series (November 2026 refresh).
+		'gpt-6.1-sol'                    => 1050000,
+		'gpt-6.1-terra'                  => 1050000,
 		// Anthropic Claude (September 2026).
 		// Opus 4.6-5 and Sonnet 4.6: 1M context at standard pricing.
 		'claude-mythos-5'                => 1000000,
-		'claude-fable-5.1'               => 200000,
 		'claude-opus-5'                  => 1000000,
 		'claude-opus-4-8'                => 1000000,
 		'claude-opus-4-7'                => 1000000,
@@ -95,13 +96,16 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'claude-opus-4-5'                => 200000,
 		'claude-sonnet-4-5'              => 200000,
 		'claude-haiku-4-5'               => 200000,
+		'claude-haiku-5-5'               => 1000000,
 		'claude-mythos-5-1'              => 1000000,
 		'claude-opus-5-5'                => 1000000,
-		'claude-sonnet-5-5'              => 200000,
+		'claude-sonnet-5-5'              => 1000000,
+		'claude-fable-5.1'               => 1000000,
 		'claude-3-5-sonnet'              => 200000,
 		'claude-3-opus'                  => 200000,
 		'claude-3-haiku'                 => 200000,
 		// Google Gemini (September 2026).
+		'gemini-4-argon'                 => 1048576,
 		'gemini-3.8-flash'               => 1048576,
 		'gemini-3.7-flash'               => 1048576,
 		'gemini-3.6-flash'               => 1048576,
@@ -115,6 +119,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'gemini-2.5-pro'                 => 1048576,
 		'gemini-3.1-flash-image-preview' => 131072,
 		'gemini-3.1-flash-image'         => 131072,
+		'gemini-nano-banana-2.1'         => 131072,
 		'gemini-3.8-live'                => 1048576,
 		'gemini-2.0-flash-image'         => 1048576,
 		'gemini-2.5-flash'               => 2097152,
@@ -127,6 +132,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'deepseek-v3'                    => 65536,
 		'deepseek-r1-0528-qwen3-8b'      => 32768,
 		// Kimi / Moonshot AI.
+		'kimi-k3.1-pro'                  => 1048576,
 		'kimi-k3'                        => 1048576,
 		'kimi-k2.7-code'                 => 256000,
 		'kimi-k2.7-code-highspeed'       => 256000,
@@ -913,8 +919,8 @@ class WP_MCP_AI_Token_Budget_Manager {
 			}
 		} elseif ( $is_gemini ) {
 			// Gemini models have very high TPM limits (1M).
-			$suggested[] = 'gemini-2.5-flash';
 			$suggested[] = 'gemini-3.5-flash-lite';
+			$suggested[] = 'gemini-3.8-flash';
 			$suggested[] = 'gemini-3.6-flash';
 		} elseif ( $is_claude ) {
 			// Claude models — suggest models with higher TPM limits.
@@ -928,7 +934,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 
 		// Always suggest Gemini as a fallback for very large requests.
 		if ( $required_tokens > 200000 && ! $is_gemini ) {
-			$suggested[] = 'gemini-2.5-flash';
+			$suggested[] = 'gemini-3.5-flash-lite';
 			$suggested[] = 'gemini-3.6-flash';
 		}
 

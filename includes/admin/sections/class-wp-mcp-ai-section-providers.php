@@ -104,7 +104,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			if ( empty( $openai_models ) ) {
 				$openai_models = array(
 					'gpt-6-astra'   => 'GPT-6 Astra (Limited Preview)',
-					'gpt-5.6-sol'   => 'GPT-5.6 Sol (Recommended)',
+					'gpt-6.1-sol'   => 'GPT-6.1 Sol (Recommended)',
+					'gpt-6.1-terra' => 'GPT-6.1 Terra (Visual/Computer Use)',
+					'gpt-6-luna'    => 'GPT-6 Luna (Lowest Cost)',
+					'gpt-5.6-sol'   => 'GPT-5.6 Sol',
 					'gpt-5.6-terra' => 'GPT-5.6 Terra (Balanced)',
 					'gpt-5.6-luna'  => 'GPT-5.6 Luna (Lowest Cost)',
 					'gpt-5.4'       => 'GPT-5.4',
@@ -116,7 +119,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'gpt-5-nano'    => 'GPT-5 Nano',
 					'gpt-4.1'       => 'GPT-4.1',
 					'gpt-4.1-mini'  => 'GPT-4.1 Mini',
-					'gpt-4.1-nano'  => 'GPT-4.1 Nano',
 					'gpt-4o'        => 'GPT-4o',
 					'gpt-4o-mini'   => 'GPT-4o Mini',
 					'o4-mini'       => 'o4-mini',
@@ -133,14 +135,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-opus-5'     => 'Claude Opus 5 (Flagship)',
-					'claude-fable-5.1'  => 'Claude Fable 5.1 (Top Tier)',
-					'claude-sonnet-5'   => 'Claude Sonnet 5 (Recommended)',
-					'claude-opus-4-8'   => 'Claude Opus 4.8',
-					'claude-opus-4-7'   => 'Claude Opus 4.7',
-					'claude-opus-4-6'   => 'Claude Opus 4.6',
+					'claude-opus-5-5'  => 'Claude Opus 5.5 (Flagship)',
+					'claude-fable-5.1' => 'Claude Fable 5.1 (Top Tier)',
+					'claude-sonnet-5-5' => 'Claude Sonnet 5.5 (Recommended)',
+					'claude-sonnet-5'  => 'Claude Sonnet 5',
+					'claude-opus-4-8'  => 'Claude Opus 4.8',
+					'claude-opus-4-7'  => 'Claude Opus 4.7',
+					'claude-opus-4-6'  => 'Claude Opus 4.6',
 					'claude-sonnet-4-6' => 'Claude Sonnet 4.6',
-					'claude-haiku-4-5'  => 'Claude Haiku 4.5 (Fastest)',
+					'claude-haiku-5-5' => 'Claude Haiku 5.5 (Fastest)',
+					'claude-haiku-4-5' => 'Claude Haiku 4.5',
 				);
 			}
 
@@ -153,15 +157,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $gemini_models ) ) {
 				$gemini_models = array(
-					'gemini-3.8-flash'      => 'Gemini 3.8 Flash (Recommended)',
-					'gemini-3.7-flash'      => 'Gemini 3.7 Flash',
-					'gemini-3.6-flash'      => 'Gemini 3.6 Flash',
-					'gemini-3.5-flash'      => 'Gemini 3.5 Flash',
+					'gemini-4-argon'       => 'Gemini 4 Argon (Flagship)',
+					'gemini-3.8-flash'     => 'Gemini 3.8 Flash (Recommended)',
+					'gemini-3.7-flash'     => 'Gemini 3.7 Flash (Deprecated)',
+					'gemini-3.6-flash'     => 'Gemini 3.6 Flash',
+					'gemini-3.5-flash'     => 'Gemini 3.5 Flash (Deprecated)',
 					'gemini-3.5-flash-lite' => 'Gemini 3.5 Flash Lite (Budget)',
-					'gemini-3.1-pro'        => 'Gemini 3.1 Pro',
+					'gemini-3.1-pro'       => 'Gemini 3.1 Pro',
 					'gemini-3.1-flash-lite' => 'Gemini 3.1 Flash Lite',
-					'gemini-2.5-pro'        => 'Gemini 2.5 Pro',
-					'gemini-2.5-flash'      => 'Gemini 2.5 Flash',
+					'gemini-2.5-pro'       => 'Gemini 2.5 Pro (Deprecated)',
+					'gemini-2.5-flash'     => 'Gemini 2.5 Flash (Deprecated)',
 				);
 			}
 
@@ -255,9 +260,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to curated list when catalog is not available.
 			if ( empty( $kimi_models ) ) {
 				$kimi_models = array(
-					'kimi-k3'        => 'Kimi K3 (2.8T MoE, 1M Context, Recommended)',
-					'kimi-k2.7-code' => 'Kimi K2.7 Code (256K, tool calling)',
-					'kimi-k2.6'      => 'Kimi K2.6 (256K, tool calling)',
+					'kimi-k3.1-pro'   => 'Kimi K3.1 Pro (3T MoE, 1M Context, Recommended)',
+					'kimi-k3'         => 'Kimi K3 (2.8T MoE, 1M Context)',
+					'kimi-k2.7-code'  => 'Kimi K2.7 Code (256K, Deprecated)',
+					'kimi-k2.6'       => 'Kimi K2.6 (256K, Deprecated)',
 				);
 			}
 
@@ -360,7 +366,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Default OpenAI Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'The default model to use for OpenAI requests. GPT-5.4 is the current recommended default. GPT-4.1 remains available as a proven stable option. GPT-5.4 Mini offers a budget-friendly alternative.', 'mcp-ai-wpoos' ),
 					'options'     => $openai_models,
-					'default'     => 'gpt-4.1',
+					'default'     => 'gpt-6.1-sol',
 				),
 				'openai_embedding_model'             => array(
 					'type'        => 'select',
@@ -568,7 +574,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						$anthropic_models,
 						$gemini_models
 					),
-					'default'     => 'gemini-2.5-flash',
+					'default'     => 'gemini-3.5-flash-lite',
 				),
 				'openai_fallback_model'              => array(
 					'type'        => 'select',
@@ -747,7 +753,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'gemini_thinking_budget_tokens'      => array(
 					'type'        => 'number',
 					'label'       => __( 'Gemini Thinking Budget (tokens)', 'mcp-ai-wpoos' ),
-					'description' => __( 'Maximum thinking tokens for Gemini 2.5+ extended reasoning (thinkingConfig). Set to 0 to disable. Recommended: 1024–8192 for most tasks, up to 24576 for complex reasoning. Only affects models that support extended thinking (e.g. gemini-2.5-flash, gemini-2.5-pro).', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum thinking tokens for Gemini 3.x extended reasoning (thinkingConfig). Set to 0 to disable. Recommended: 1024–8192 for most tasks, up to 24576 for complex reasoning. Only affects models that support extended thinking (e.g. gemini-3.5-flash-lite, gemini-4-argon).', 'mcp-ai-wpoos' ),
 					'default'     => '0',
 					'min'         => '0',
 					'max'         => '24576',
@@ -756,12 +762,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'gemini_image_model'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Gemini Image Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default model for image generation via Gemini. gemini-3.1-flash-image (Nano Banana 2) is the latest specialized image generation model with support for new resolutions (0.5K/2K/4K), aspect ratios (1:4/4:1/1:8/8:1), Image Search Grounding, and Thinking mode. gemini-2.5-flash-image shut down on October 2, 2026.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image generation via Gemini. gemini-nano-banana-2.1 (Nano Banana 2.1, October 2026 GA) is the latest specialized image generation model with improved visual quality, multi-turn character consistency, text rendering, and wide/panoramic ratios (1:4/4:1/1:8/8:1). gemini-3.1-flash-image (Nano Banana 2) was deprecated on October 6, 2026 (no shutdown date announced).', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'gemini-3.1-flash-image' => 'Gemini 3.1 Flash Image — Nano Banana 2 (Latest)',
+						'gemini-nano-banana-2.1' => 'Gemini Nano Banana 2.1 (Latest)',
+						'gemini-3.1-flash-image' => 'Gemini 3.1 Flash Image — Nano Banana 2 (Deprecated)',
 						'gemini-exp-1206'        => 'Gemini Exp 1206 (Experimental)',
 					),
-					'default'     => 'gemini-3.1-flash-image',
+					'default'     => 'gemini-nano-banana-2.1',
 				),
 				'gemini_image_mime_type'             => array(
 					'type'        => 'select',
@@ -1566,9 +1573,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'kimi_model'                         => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Kimi Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'The default Kimi model to use. kimi-k3 is the flagship with 1M context and vision (recommended). kimi-k2.7-code is the coding specialist; kimi-k2.6 is the stable 256K agentic model.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The default Kimi model to use. kimi-k3.1-pro is the current flagship with 1M context and vision (recommended). kimi-k2.7-code is the coding specialist; kimi-k2.6 is the stable 256K agentic model. The K2 series retires at the end of December 2026.', 'mcp-ai-wpoos' ),
 					'options'     => $kimi_models,
-					'default'     => 'kimi-k3',
+					'default'     => 'kimi-k3.1-pro',
 				),
 				'kimi_base_url'                      => array(
 					'type'        => 'url',

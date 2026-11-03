@@ -1329,7 +1329,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public static function get_default_model() {
 			$settings = self::get_settings();
-			return isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4.1-mini';
+			return isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-6.1-sol';
 		}
 
 		/**
@@ -4513,7 +4513,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="number" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_thinking_budget_tokens]" value="<?php echo esc_attr( (string) $budget ); ?>" class="small-text" min="0" max="24576" step="256" />
 		<p class="description">
-			<?php esc_html_e( 'Maximum thinking tokens for Gemini 2.5+ extended reasoning (thinkingConfig). Set to 0 to disable. Recommended: 1024–8192 for most tasks, up to 24576 for complex reasoning. Only affects models that support extended thinking (e.g. gemini-2.5-flash, gemini-2.5-pro).', 'mcp-ai-wpoos' ); ?>
+			<?php esc_html_e( 'Maximum thinking tokens for Gemini 3.x extended reasoning (thinkingConfig). Set to 0 to disable. Recommended: 1024–8192 for most tasks, up to 24576 for complex reasoning. Only affects models that support extended thinking (e.g. gemini-3.5-flash-lite, gemini-4-argon).', 'mcp-ai-wpoos' ); ?>
 		</p>
 			<?php
 		}
@@ -5480,11 +5480,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			// Final fallback to minimal hardcoded list.
 			$choices = array(
+				'gpt-6.1-sol'  => __( 'GPT-6.1 Sol', 'mcp-ai-wpoos' ),
+				'gpt-6-luna'   => __( 'GPT-6 Luna', 'mcp-ai-wpoos' ),
+				'gpt-5.6-sol'  => __( 'GPT-5.6 Sol', 'mcp-ai-wpoos' ),
 				'gpt-4.1'      => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
 				'gpt-4.1-mini' => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
-				'gpt-4.1-nano' => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
 				'gpt-4o-mini'  => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
-				'gpt-4-turbo'  => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
 			);
 
 			/**
@@ -5597,6 +5598,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$special_cases = array(
 				// GPT-6 Astra (September 2026).
 				'gpt-6-astra'                             => __( 'GPT-6 Astra (Limited Preview)', 'mcp-ai-wpoos' ),
+				// GPT-6.1 series (November 2026 refresh).
+				'gpt-6.1-sol'                             => __( 'GPT-6.1 Sol (Balanced)', 'mcp-ai-wpoos' ),
+				'gpt-6.1-terra'                           => __( 'GPT-6.1 Terra (Visual/Computer Use)', 'mcp-ai-wpoos' ),
 				// GPT-5.6 series (July 2026 - Sol/Terra/Luna tiers).
 				'gpt-5.6-sol'                             => __( 'GPT-5.6 Sol (Flagship)', 'mcp-ai-wpoos' ),
 				'gpt-5.6-terra'                           => __( 'GPT-5.6 Terra (Balanced)', 'mcp-ai-wpoos' ),
@@ -5648,9 +5652,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				// Legacy GPT-4 series.
 				'gpt-4.1'                                 => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
 				'gpt-4.1-mini'                            => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
-				'gpt-4.1-nano'                            => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
 				'gpt-4-turbo'                             => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
-				'gpt-4'                                   => __( 'GPT-4', 'mcp-ai-wpoos' ),
 				// GPT-3.5 series.
 				'gpt-3.5-turbo'                           => __( 'GPT-3.5 Turbo', 'mcp-ai-wpoos' ),
 				'gpt-3.5-turbo-16k'                       => __( 'GPT-3.5 Turbo 16k', 'mcp-ai-wpoos' ),
@@ -5742,6 +5744,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Handle special cases first.
 			$special_cases = array(
 				'gpt-6-astra'                             => __( 'GPT-6 Astra (Limited Preview)', 'mcp-ai-wpoos' ),
+				'gpt-6.1-sol'                             => __( 'GPT-6.1 Sol (Balanced)', 'mcp-ai-wpoos' ),
+				'gpt-6.1-terra'                           => __( 'GPT-6.1 Terra (Visual/Computer Use)', 'mcp-ai-wpoos' ),
 				'gpt-5.6-sol'                             => __( 'GPT-5.6 Sol (Flagship)', 'mcp-ai-wpoos' ),
 				'gpt-5.6-terra'                           => __( 'GPT-5.6 Terra (Balanced)', 'mcp-ai-wpoos' ),
 				'gpt-5.6-luna'                            => __( 'GPT-5.6 Luna (Lowest Cost)', 'mcp-ai-wpoos' ),
@@ -5764,7 +5768,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'gpt-4o-mini'                             => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
 				'gpt-4.1'                                 => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
 				'gpt-4.1-mini'                            => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
-				'gpt-4.1-nano'                            => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
 				'gpt-4-turbo'                             => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
 				'gpt-4'                                   => __( 'GPT-4', 'mcp-ai-wpoos' ),
 				'gpt-3.5-turbo'                           => __( 'GPT-3.5 Turbo', 'mcp-ai-wpoos' ),
@@ -5813,6 +5816,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
+					// GPT-6.1 series (November 2026 refresh).
+					'gpt-6.1-sol'                        => __( 'GPT-6.1 Sol (Balanced)', 'mcp-ai-wpoos' ),
+					'gpt-6.1-terra'                      => __( 'GPT-6.1 Terra (Visual/Computer Use)', 'mcp-ai-wpoos' ),
 					// GPT-6 Astra (September 2026 - limited preview).
 					'gpt-6-astra'                        => __( 'GPT-6 Astra (Limited Preview)', 'mcp-ai-wpoos' ),
 					// GPT-5.6 series (July 2026) - Sol/Terra/Luna tiers.
@@ -5881,7 +5887,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					// Legacy GPT-4 series.
 					'gpt-4.1'                            => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
 					'gpt-4.1-mini'                       => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
-					'gpt-4.1-nano'                       => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
 					'gpt-4-turbo'                        => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
 					'gpt-4'                              => __( 'GPT-4', 'mcp-ai-wpoos' ),
 					// GPT-3.5 series (legacy).

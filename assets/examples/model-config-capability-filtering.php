@@ -49,9 +49,9 @@ Array(
     'gemini_group' => Array(
         'label' => 'Google Gemini',
         'options' => Array(
-            'gemini-3.6-flash' => 'Gemini 3.6 Flash',
-            'gemini-2.5-flash' => 'Gemini 2.5 Flash',
-            'gemini-2.5-pro' => 'Gemini 2.5 Pro'
+            'gemini-3.8-flash' => 'Gemini 3.8 Flash',
+            'gemini-3.5-flash-lite' => 'Gemini 3.5 Flash-Lite',
+            'gemini-3.1-pro' => 'Gemini 3.1 Pro'
             // Note: gemma models NOT included (text-only)
         )
     )
@@ -139,8 +139,8 @@ $flags = get_model_capability_flags( 'claude-sonnet-5', 'anthropic' );
 // ['vision', 'multimodal'] - All Claude models are multimodal
 
 // Gemini models
-$flags = get_model_capability_flags( 'gemini-2.5-flash', 'gemini' );
-// ['vision', 'multimodal'] - Gemini 2.x is multimodal
+$flags = get_model_capability_flags( 'gemini-3.5-flash-lite', 'gemini' );
+// ['vision', 'multimodal'] - Gemini 3.x is multimodal
 
 $flags = get_model_capability_flags( 'gemma-2-9b-it', 'gemini' );
 // [] - Gemma models are text-only
@@ -192,9 +192,9 @@ Array(
     'gemini_group' => Array(
         'label' => 'Google Gemini',
         'options' => Array(
-            'gemini-3.6-flash' => 'Gemini 3.6 Flash',
-            'gemini-2.5-flash' => 'Gemini 2.5 Flash',
-            'gemini-2.5-pro' => 'Gemini 2.5 Pro'
+            'gemini-3.8-flash' => 'Gemini 3.8 Flash',
+            'gemini-3.5-flash-lite' => 'Gemini 3.5 Flash-Lite',
+            'gemini-3.1-pro' => 'Gemini 3.1 Pro'
         )
     )
 )

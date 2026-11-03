@@ -45,6 +45,15 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.10,  // $0.10 per 1M input tokens.
 				'output' => 0.50,  // $0.50 per 1M output tokens.
 			),
+			// GPT-6.1 Sol / Terra (November 2026 refresh — OpenAI models page, fetched 2026-11-03).
+			'gpt-6.1-sol'                  => array(
+				'input'  => 2.00,  // $2 per 1M input tokens.
+				'output' => 10.00, // $10 per 1M output tokens.
+			),
+			'gpt-6.1-terra'                => array(
+				'input'  => 1.00,  // $1 per 1M input tokens.
+				'output' => 5.00,  // $5 per 1M output tokens.
+			),
 			// GPT-5.6 series (July 2026). Sol/Terra/Luna tiers.
 			'gpt-5.6-sol'                  => array(
 				'input'  => 4.00,  // $4 per 1M input tokens (promo through Nov 21, 2026; standard $5).
@@ -120,10 +129,6 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.40,
 				'output' => 1.60,
 			),
-			'gpt-4.1-nano'                 => array(
-				'input'  => 0.10,
-				'output' => 0.40,
-			),
 			'gpt-4o'                       => array(
 				'input'  => 2.50,
 				'output' => 10.00,
@@ -185,6 +190,12 @@ class WP_MCP_AI_Cost_Calculator {
 				'output'       => 3.75,   // $3.75 per 1M (intro; standard $7.50 from Jan 1, 2027).
 				'cached_input' => 0.075,  // $0.075 per 1M cached input.
 			),
+			// Gemini 4 Argon (October 13, 2026 GA — flagship).
+			'gemini-4-argon'               => array(
+				'input'        => 2.00,   // $2.00 per 1M (intro through Nov 30, 2026; standard $4.00 from Dec 1, 2026).
+				'output'       => 10.00,  // $10.00 per 1M (intro; standard $20.00 from Dec 1, 2026).
+				'cached_input' => 0.10,   // $0.10 per 1M cached input (implicit caching only).
+			),
 			'gemini-3.7-flash'              => array(
 				'input'        => 0.75,   // $0.75 per 1M (intro; standard $1.50 from Jan 1, 2027).
 				'output'       => 3.75,   // $3.75 per 1M (intro; standard $7.50 from Jan 1, 2027).
@@ -244,6 +255,11 @@ class WP_MCP_AI_Cost_Calculator {
 			'gemini-3.1-flash-image'        => array(
 				'input'  => 0.50,   // $0.50 per 1M (text/image).
 				'output' => 60.00,  // $60 per 1M (images, ~$0.067/image at 1024x1024).
+			),
+			// Gemini Nano Banana 2.1 (October 6, 2026 GA).
+			'gemini-nano-banana-2.1'       => array(
+				'input'  => 1.50,   // $1.50 per 1M (text/image/video).
+				'output' => 30.00,  // $30 per 1M (images, $0.0336 per 1K image).
 			),
 			// [RETIRED] Gemini 2.5 Flash Image shut down 2026-10-02 — use gemini-3.1-flash-image.
 			// [DEPRECATED] Legacy entries.
@@ -342,6 +358,11 @@ class WP_MCP_AI_Cost_Calculator {
 			'claude-haiku-4-5-20251001'  => array(
 				'input'  => 1.00,
 				'output' => 5.00,
+			),
+			// Claude Haiku 5.5 (November 2026 refresh).
+			'claude-haiku-5-5'           => array(
+				'input'  => 0.10,   // From $0.10 per 1M input tokens.
+				'output' => 0.50,   // From $0.50 per 1M output tokens.
 			),
 		),
 		'ollama'       => array(
@@ -455,6 +476,10 @@ class WP_MCP_AI_Cost_Calculator {
 				'output' => 0.0,
 			),
 			'jev-1.13.0' => array(
+				'input'  => 0.042,
+				'output' => 0.0,
+			),
+			'jev-1.14.0' => array(
 				'input'  => 0.042,
 				'output' => 0.0,
 			),

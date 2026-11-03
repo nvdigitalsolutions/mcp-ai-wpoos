@@ -1129,7 +1129,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
-			$model   = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : 'claude-haiku-4-5';
+			$model   = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : 'claude-haiku-5-5';
 
 			if ( empty( $api_key ) ) {
 				wp_send_json_error( array( 'message' => __( 'Please provide an Anthropic API key.', 'mcp-ai-wpoos' ) ) );

@@ -439,6 +439,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 					'gemini-2.0-flash',
 					'gemini-pro',
 					'gemini-3.1-flash-image',
+					'gemini-nano-banana-2.1',
 					'gemini-3.8-live',
 				),
 			),
@@ -587,7 +588,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 	private static function infer_gemini_model_from_tool( $tool, $old_model ) {
 		// Image-related Gemini tools use the Gemini image model.
 		if ( in_array( $tool, array( 'generate_gemini_image', 'edit_gemini_image' ), true ) ) {
-			return 'gemini-3.1-flash-image';
+			return 'gemini-nano-banana-2.1';
 		}
 
 		// Default to flash if the tool is unknown but assumed to be Gemini.
