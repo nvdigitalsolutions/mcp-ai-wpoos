@@ -214,22 +214,23 @@ are placeholders for that reconciliation, not final copy.)
 ## 9. Dependencies & decisions
 
 - [x] Go-ahead for the new addon + name `nvoos-gateway` (approved: "NV oOS Gateway")
-- [ ] Mirror repo + PAT secret (GitHub admin) — C.1
-- [ ] GitHub Pages enable on the mirror — C.3
-- [x] Gateway challenge route + version alignment (Phase A) — code shipped; Velocity deploy + env token pending
+- [x] Mirror repo + PAT secret (GitHub admin) — C.1 (`nvdigitalsolutions/nvoos-chatgpt-gateway-plugin` seeded)
+- [x] GitHub Pages enable on the mirror — C.3 (built 2026-11-03: `https://nvdigitalsolutions.github.io/nvoos-chatgpt-gateway-plugin/`)
+- [x] Gateway challenge route + version alignment (Phase A) — code shipped **and deployed** (live `/health` 0.3.0, 2026-11-03); Velocity env challenge token still unset (E.4 sets it at submission)
 - [ ] Auth0: allowlist portal redirect URI; dedicated test user — E.3/E.6
 - [ ] `publication.countries` allowlist decision — D.3
-- [ ] `demo_recording_url` recording — D.2
+- [~] `demo_recording_url` recording — D.2 (gateway-side video recorded 2026-11-03: `C:\Users\rasta\Videos\nvoos-gateway-walkthrough.mp4`; the ChatGPT-UI segment still needs an owner-recorded take)
 - [ ] Decide policy scoping for `oauth:*` after E.5 measurement
+- [ ] Re-publish the registry listing at 0.3.0 (mcp-publisher — the live registry entry still shows 0.2.0)
 
 ## 10. Effort estimate
 
 | Phase | Effort | Blocker |
 |---|---|---|
-| A — gateway challenge route + deploy | ✅ shipped 2026-11-02 (0.3.0, 39/39 tests) | — |
+| A — gateway challenge route + deploy | ✅ shipped 2026-11-02, deployed 2026-11-03 (0.3.0 live) | — |
 | B — package scaffold | ✅ scaffolded 2026-11-02 (validate.mjs green) | — |
-| C — mirror/sync/Pages | workflow shipped; mirror repo + PAT + Pages enable pending | GitHub admin |
-| D — metadata | drafted in the scaffold (0.1.0) | URLs live + recording |
+| C — mirror/sync/Pages | ✅ done 2026-11-03 (repo seeded, Pages built, C.4 Tier-1 smoke recorded in the addon README) | — |
+| D — metadata | drafted in the scaffold (0.1.0) | recording (ChatGPT-UI segment) + countries decision |
 | E — portal loop | pending | verified identity, reviewer account |
 
 ## 11. Rollback

@@ -12,7 +12,7 @@ description: "Operational guide for the NV oOS MCP Gateway (addons/mcp-gateway �
 - Deploy target: Cloudways Velocity at **`https://mcp.nvoos.pro`**. Auto-deploy fires on the mirror push; env vars are dashboard-only (no Cloudways API/MCP surface for Velocity).
 - Tracking issue: **#6902**. Deploy guide: `docs/operations/deployment/mcp-gateway-velocity-setup.md`. Submission pack: `docs/operations/deployment/mcp-gateway-directory-submission.md`.
 
-## Live map (verified 2026-11-01)
+## Live map (verified 2026-11-03)
 
 | Slug | Site | Visibility |
 |---|---|---|
@@ -72,8 +72,10 @@ Symptom: `tools/list` → `_meta.gateway.errors.<slug>: "upstream error (401)"`
 
 ## Deploy verification ladder
 
-- **Version marker**: `/health.version` must equal `addons/mcp-gateway/package.json`'s
-  `version`. The `VERSION` constant in `src/index.js` is a hardcoded string
+- **Version marker**: the `version` field of `GET /health` (public) and
+  `GET /health/full` (keyed) must equal `addons/mcp-gateway/package.json`'s
+  `version` — there is **no `/health.version` route** (it 404s; verified live
+  2026-11-03). The `VERSION` constant in `src/index.js` is a hardcoded string
   that must track it (PR #7345 added the comment + a health test that
   enforces the contract — a version bump that misses the constant now fails
   the suite). Historical: the 0.2.0 bump forgot it and `/health` lied 0.1.1.
@@ -169,6 +171,55 @@ Phase 4 walkthrough completed (see the connector notes below).
   issues show the “couldn't find your session” template instead).
   DCR without `redirect_uris` → 400 payload error when DCR is on (proves
   the toggle without creating a client).
+
+## ChatGPT plugin directory submission (Proposal 101, live 2026-11-03)
+
+The public-directory plugin for the demo MCP (`addons/chatgpt-gateway-plugin`,
+0.1.0) — the “NV oOS Gateway” entry locked to `https://mcp.nvoos.pro/mcp`.
+Distinct from the Proposal 099 connector above (that stays for power users;
+this is the directory discoverability layer). Plan doc:
+`docs/project/proposals/101-nvoos-gateway-chatgpt-plugin-implementation-plan.md`.
+
+- **Shipped**: gateway 0.3.0 deployed (2026-11-03 — `/health` version
+  0.3.0); challenge route live (`GET /.well-known/openai-apps-challenge`
+  → 404 JSON `challenge_not_configured` until `GATEWAY_OPENAI_CHALLENGE_TOKEN`
+  is set at E.4 — set it only while completing a submission, then unset);
+  plugin scaffold (dual manifests, 3 `demo_*` skills, canonical-URL
+  `bin/validate.mjs`); mirror `nvdigitalsolutions/nvoos-chatgpt-gateway-plugin`
+  seeded + sync workflow; **GitHub Pages live** at
+  `https://nvdigitalsolutions.github.io/nvoos-chatgpt-gateway-plugin/`
+  (landing + privacy + terms from `docs/`; Pages API shows `status: built`).
+- **Key-type confusion is the recurring mistake**: the demo site's **operator
+  token** (`op_xxxx.SECRET`, what the gateway holds server-side in
+  `NVOOS_SITE_DEMO_TOKEN`) is NOT a gateway key — the gateway rejects it with
+  `unauthorized` / “Unknown API key”. Gateway client keys are 32-byte
+  `base64url`. To smoke upstream without the gateway: POST the op_ token
+  straight to `https://nvoos.pro/wp-json/mcp-ai/v1/mcp`.
+- **Tier-1 smoke (C.4, done 2026-11-03, recorded in the addon README's
+  “Verification” section — never the key itself)**: gateway key → `tools/list`
+  (two `demo_*` tools, `_meta.gateway.sites:["demo"]`, no errors) →
+  `tools/call demo_get_environment_status` (live WP/PHP/plugin report).
+  Upstream annotations verified: `readOnlyHint: true` both; `openWorldHint`
+  true only for `deep_research` (matches plan E.5 expectations).
+- **Registry listing is stale at 0.2.0** (`io.github.nvdigitalsolutions/nvoos-mcp-gateway`,
+  verified 2026-11-03) — re-run `mcp-publisher publish` at 0.3.0 before/at
+  submission so directory imports reflect the deployed version.
+- **Walkthrough recording (D.2)**: gateway-side demo recorded
+  `C:\Users\rasta\Videos\nvoos-gateway-walkthrough.mp4` (H.264, ~47 s: demo
+  page live calls → `/health` → OAuth well-known → Pages listing). Recording
+  tricks: the CDP screencast emits frames on change only (idle-compressed,
+  AV1) — transcode with ffmpeg to H.264 before upload; browser demos of live
+  gateway calls need a local Node proxy (the gateway sends no CORS headers).
+  The portal's ChatGPT-UI segment (add MCP server → Auth0 consent → tools
+  appear) must be owner-recorded in ChatGPT — never share the ChatGPT
+  account password in chat; if one leaks, rotate it.
+- **Open Phase E blockers**: OpenAI portal org verification; ZIP upload +
+  metadata findings loop; MCP connect (OAuth → DCR) with the portal redirect
+  URI allowlisted in Auth0; domain verification via the challenge token;
+  Scan Tools reconciliation (exact `demo_*` list is authoritative for the
+  review block; watch `demo_nvoos_get_profile` — don't reference it, and
+  policy-deny it if the scan flags `_meta["openai/profile"]`); dedicated
+  Auth0 reviewer test user (no MFA, no site account).
 
 ## Registry publishing (mcp-publisher)
 
