@@ -259,6 +259,101 @@ const CONTENT_COLLECTIONS = {
 	'content/posts': contentPosts,
 };
 
+// ---------------------------------------------------------------------------
+// Proposal 107 — the content write surface + preview semantics (fixture
+// parity with the bridge): POST/PATCH/DELETE + /restore behind the manager
+// seam, status ladder (draft default on create), drafts 404 on public
+// single-GET, and a fixture-level kses for the raw-HTML field.
+// ---------------------------------------------------------------------------
+const CONTENT_STATUSES = ['draft', 'pending', 'publish', 'future'];
+let nextContentId = 2000;
+/** id -> snapshots, most recent first (the fixture /revisions source). */
+const contentHistory = new Map();
+
+/** Fixture-level kses — the wp_kses_post stand-in (scripts/inline handlers
+ *  stripped; a javascript: href degrades to #). */
+function fixtureKses(html) {
+	return String(html ?? '')
+		.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+		.replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+		.replace(/\shref\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, ' href="#"');
+}
+
+function slugify(title) {
+	return (
+		String(title)
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-+|-+$/g, '') || 'untitled'
+	);
+}
+
+function nowStamp() {
+	return new Date().toISOString().replace('T', ' ').slice(0, 19);
+}
+
+function applyContentPatch(collection, existing, body, isCreate) {
+	const now = nowStamp();
+	const title = body.title !== undefined ? String(body.title) : (existing?.title ?? '');
+	// WP keeps the slug stable on update (post_name is independent of
+	// post_title); creates slugify the title.
+	const slug = isCreate ? slugify(title) : existing.slug;
+	const doc = {
+		id: existing?.id,
+		slug,
+		title,
+		excerpt: body.excerpt !== undefined ? String(body.excerpt) : (existing?.excerpt ?? ''),
+		content: body.content !== undefined ? fixtureKses(body.content) : (existing?.content ?? ''),
+		contentRendered: existing?.contentRendered ?? '',
+		type: existing?.type ?? (collection === 'content/posts' ? 'post' : 'page'),
+		featuredImage: existing?.featuredImage ?? null,
+		seoTitle: body.seoTitle !== undefined ? String(body.seoTitle) : (existing?.seoTitle ?? ''),
+		seoDescription:
+			body.seoDescription !== undefined ? String(body.seoDescription) : (existing?.seoDescription ?? ''),
+		category:
+			body.category && body.category.id !== undefined
+				? body.category
+				: (existing?.category ?? null),
+		createdAt: existing?.createdAt ?? now,
+		updatedAt: now,
+		status:
+			body.status !== undefined && CONTENT_STATUSES.includes(body.status)
+				? body.status
+				: (existing?.status ?? 'draft'),
+	};
+	if (body.blocks !== undefined) {
+		doc.blocks = Array.isArray(body.blocks) ? body.blocks : [];
+	}
+	if (body.submittedBy !== undefined) {
+		doc.submittedBy = String(body.submittedBy);
+	}
+	if (body.publishAt !== undefined) {
+		doc.publishAt = String(body.publishAt);
+	}
+	if (isCreate) {
+		doc.id = ++nextContentId;
+	}
+	return doc;
+}
+
+function readRequestBody(req, cb) {
+	let raw = '';
+	req.setEncoding('utf8');
+	req.on('data', (chunk) => {
+		raw += chunk;
+	});
+	req.on('end', () => {
+		let body = null;
+		try {
+			body = raw ? JSON.parse(raw) : {};
+		} catch {
+			cb(null, new Error('invalid_json'));
+			return;
+		}
+		cb(body, null);
+	});
+}
+
 /** where[slug][equals] / where[category][equals] for content listings. */
 function filterContent(docs, where) {
 	let out = [...docs];
@@ -480,15 +575,104 @@ const server = createServer((req, res) => {
 		return send(res, 404, { code: 'fixture_not_found' });
 	}
 
-	// Content collections (106 §1.2) — listings + single docs.
+	// Media upload (media_upload fixture parity) — manager-gated; the bytes
+	// are discarded (the hermetic loop needs the doc, not the file) and a
+	// fixture attachment doc mirrors the bridge shape {id, url, path}.
+	if (segments[0] === 'media' && segments.length === 1 && req.method === 'POST') {
+		if (!isManagerRequest(req)) {
+			return send(res, 403, { code: 'rest_forbidden', message: 'manage_astro required.' });
+		}
+		req.resume();
+		req.on('end', () => {
+			send(res, 200, {
+				id: 9001,
+				url: 'http://localhost:8123/wp-content/uploads/2026/11/fixture-upload.png',
+				path: '2026/11/fixture-upload.png',
+			});
+		});
+		return;
+	}
+
+	// Content collections (106 §1.2 + 107 writes) — listings, single docs,
+	// create/update/delete, revisions/restore behind the manager seam.
 	const contentCollection = CONTENT_COLLECTIONS[`${segments[0]}/${segments[1]}`];
 	if (contentCollection) {
+		// POST create — manager-gated, draft by default (107 G4).
+		if (segments.length === 2 && req.method === 'POST') {
+			if (!isManagerRequest(req)) {
+				return send(res, 403, { code: 'rest_forbidden', message: 'manage_astro required.' });
+			}
+			readRequestBody(req, (body, err) => {
+				if (err || body === null || typeof body !== 'object' || Array.isArray(body)) {
+					return send(res, 400, { code: 'astro_invalid_body', message: 'Body must be a JSON object.' });
+				}
+				const doc = applyContentPatch(contentCollection, null, body, true);
+				contentCollection.push(doc);
+				return send(res, 200, doc);
+			});
+			return;
+		}
+
 		if (segments.length >= 3) {
 			const id = Number(segments[2]);
-			const doc = contentCollection.find((item) => item.id === id);
-			if (!doc) return send(res, 404, { code: 'fixture_not_found' });
-			return send(res, 200, doc);
+			const index = contentCollection.findIndex((item) => item.id === id);
+			const doc = index >= 0 ? contentCollection[index] : null;
+
+			// /revisions + /restore (107 G6) — manager-gated.
+			if (segments[3] === 'revisions' && req.method === 'GET') {
+				if (!isManagerRequest(req)) {
+					return send(res, 403, { code: 'rest_forbidden', message: 'manage_astro required.' });
+				}
+				if (!doc) return send(res, 404, { code: 'fixture_not_found' });
+				const history = contentHistory.get(id) ?? [];
+				return send(res, 200, { docs: history, totalDocs: history.length });
+			}
+			if (segments[3] === 'restore' && req.method === 'POST') {
+				if (!isManagerRequest(req)) {
+					return send(res, 403, { code: 'rest_forbidden', message: 'manage_astro required.' });
+				}
+				if (!doc) return send(res, 404, { code: 'fixture_not_found' });
+				return send(res, 200, { ...doc, restored: true });
+			}
+
+			// Single GET — bridge parity (107 §3.2): drafts 404 publicly.
+			if (req.method === 'GET') {
+				if (!doc) return send(res, 404, { code: 'fixture_not_found' });
+				if (doc.status !== undefined && doc.status !== 'publish' && !isManagerRequest(req)) {
+					return send(res, 404, { code: 'fixture_not_found' });
+				}
+				return send(res, 200, doc);
+			}
+
+			// PATCH / DELETE — manager-gated. Each successful PATCH pushes the
+			// pre-write doc onto the history stack (the /revisions source).
+			if (req.method === 'PATCH' || req.method === 'DELETE') {
+				if (!isManagerRequest(req)) {
+					return send(res, 403, { code: 'rest_forbidden', message: 'manage_astro required.' });
+				}
+				if (!doc) return send(res, 404, { code: 'fixture_not_found' });
+				if (req.method === 'DELETE') {
+					contentCollection.splice(index, 1);
+					contentHistory.delete(id);
+					return send(res, 204, {});
+				}
+				readRequestBody(req, (body, err) => {
+					if (err || body === null || typeof body !== 'object' || Array.isArray(body)) {
+						return send(res, 400, { code: 'astro_invalid_body', message: 'Body must be a JSON object.' });
+					}
+					const history = contentHistory.get(id) ?? [];
+					history.unshift({ ...doc });
+					contentHistory.set(id, history.slice(0, 20));
+					const updated = applyContentPatch(contentCollection, doc, body, false);
+					contentCollection[index] = updated;
+					return send(res, 200, updated);
+				});
+				return;
+			}
+
+			return send(res, 405, { code: 'fixture_method_not_allowed' });
 		}
+
 		const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 		const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 10));
 		const where = {};
@@ -506,10 +690,13 @@ const server = createServer((req, res) => {
 			}
 		}
 		let docs = filterContent(contentCollection, where);
-		// Publish-only listings (drafts excluded — the 9902 pin), unless the
-		// manager preview passes status=any.
-		if (url.searchParams.get('status') !== 'any') {
+		// Bridge parity (107): publish-only publicly; managers may narrow to
+		// draft|pending|future or widen to any.
+		const statusParam = url.searchParams.get('status');
+		if (!isManagerRequest(req) || !statusParam || statusParam === 'publish') {
 			docs = docs.filter((doc) => doc.status === undefined || doc.status === 'publish');
+		} else if (statusParam !== 'any') {
+			docs = docs.filter((doc) => doc.status === statusParam);
 		}
 		return send(res, 200, envelope(docs, page, limit), {
 			'cache-control': 'public, s-maxage=300, stale-while-revalidate=60',

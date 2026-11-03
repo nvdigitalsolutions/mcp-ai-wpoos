@@ -1,0 +1,59 @@
+---
+// ---------------------------------------------------------------------------
+// Blocks.astro — the Portable Text serializer composition (Proposal 107
+// DECISION-2). Standard blocks render through the library defaults; the
+// allowlisted custom types (the commerce components) map to one Astro
+// component each; link marks render through a scheme-safe anchor. Unknown
+// types never reach this component — the schema rejects them at the render
+// boundary (parsePortableText in the routes).
+// ---------------------------------------------------------------------------
+
+import { PortableText } from '@portabletext/astro';
+import HeroBlock from './HeroBlock.astro';
+import ImageBlock from './ImageBlock.astro';
+import ProductGridBlock from './ProductGridBlock.astro';
+import PromotionBlock from './PromotionBlock.astro';
+import TestimonialBlock from './TestimonialBlock.astro';
+import FaqBlock from './FaqBlock.astro';
+import StatBlock from './StatBlock.astro';
+import LinkMark from './LinkMark.astro';
+import type { PortableTextBlock } from '../../lib/content/portable-text';
+
+interface Props {
+	blocks: PortableTextBlock[];
+}
+
+const { blocks } = Astro.props;
+
+// @portabletext/astro 0.2.0 component map — SINGULAR keys (`type`/`mark`),
+// not the React-style plurals. Custom types map one component each; the
+// `link` mark overrides the library default.
+const components = {
+	type: {
+		hero: HeroBlock,
+		image: ImageBlock,
+		productGrid: ProductGridBlock,
+		promotion: PromotionBlock,
+		testimonial: TestimonialBlock,
+		faq: FaqBlock,
+		stat: StatBlock,
+	},
+	mark: {
+		link: LinkMark,
+	},
+};
+---
+
+<div class="blocks">
+	<PortableText value={blocks} components={components} />
+</div>
+
+<style>
+	.blocks {
+		max-width: 46rem;
+	}
+
+	.blocks :global(h2) {
+		margin-top: 1.5rem;
+	}
+</style>

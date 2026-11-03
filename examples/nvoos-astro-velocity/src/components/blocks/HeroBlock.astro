@@ -1,0 +1,30 @@
+---
+// Hero custom block (107 §3.1) — title + optional lede.
+interface Props {
+	node: { _type: 'hero'; title: string; lede?: string };
+}
+
+const { node } = Astro.props;
+---
+
+<section class="block-hero">
+	<h2>{node.title}</h2>
+	{node.lede && <p class="block-hero__lede">{node.lede}</p>}
+</section>
+
+<style>
+	.block-hero {
+		padding-block: 1.5rem;
+	}
+
+	.block-hero h2 {
+		margin: 0 0 0.5rem;
+		font-size: clamp(1.6rem, 4vw, 2.4rem);
+		line-height: 1.15;
+	}
+
+	.block-hero__lede {
+		color: var(--nv-muted);
+		margin: 0;
+	}
+</style>

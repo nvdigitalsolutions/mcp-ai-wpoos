@@ -1,0 +1,32 @@
+---
+// Testimonial custom block (107 §3.1).
+interface Props {
+	node: { _type: 'testimonial'; quote: string; author?: string };
+}
+
+const { node } = Astro.props;
+---
+
+<figure class="block-testimonial">
+	<blockquote>{node.quote}</blockquote>
+	{node.author && <figcaption>{node.author}</figcaption>}
+</figure>
+
+<style>
+	.block-testimonial {
+		margin: 1.25rem 0;
+		padding-inline: 1rem;
+		border-left: 3px solid var(--nv-line-strong);
+	}
+
+	.block-testimonial blockquote {
+		margin: 0;
+		font-style: italic;
+	}
+
+	.block-testimonial figcaption {
+		color: var(--nv-muted);
+		font-size: 0.9rem;
+		margin-top: 0.4rem;
+	}
+</style>

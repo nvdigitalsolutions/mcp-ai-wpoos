@@ -204,8 +204,12 @@ can appear in the repo root. Two failure modes follow:
   or use the terminal tool's `tail_lines`.
 - `node --test <directory>` does **not** recurse on this setup (runs one
   file) — pass explicit files or the package's `npm test` script.
-- Windows-reserved names: see the `nul`-artifact section above (same
+- **Windows-reserved names:** see the `nul`-artifact section above (same
   `powershell -File` pattern applies).
+- **Files whose names begin with `-`** (a stray `--target` from a mis-parsed
+  `npm run build -- --target`): plain `rm --target` fails with
+  `rm: unknown option` — use the double-dash form `rm -- --target` (the
+  error message itself suggests it).
 
 ## Pathspec commits, shared-index races, workflow YAML (learned 2026-11-02, Cognition rebrand session)
 

@@ -3,6 +3,7 @@
 **Date:** 2026-11-03
 **Companion to:** `107-storefront-content-surface-gap-analysis.md` (research + decisions + gap matrix — this plan implements its recommendations)
 **Scope:** the Astro storefront (`examples/nvoos-astro-velocity`), the bridge addon (`addons/nvoos-astro-bridge`), and the storefront `/mcp` surface. **No Pro-toolkit code changes** — reuse is pattern-level only (gap analysis §8).
+**Status:** **IMPLEMENTED** on `feat/storefront-content-slice` (PR against `alpha-working`, the code companion to #7405) — the 8-tool content slice, the Portable Text render pipeline, the preview-token exchange, the bridge approval ladder + revisions/restore + media `alt`, and the fixture/test parity. Deviations recorded while building: (1) `publishAt` with an explicit `publish` status resolves to `future` (WP core flips any future-dated post — never publish early); (2) the raw-HTML `content` field is sanitized at BOTH gates (bridge `wp_kses_post` on write, `sanitize-html` on render); (3) blocks are stored natively as serialized arrays (not a JSON string); (4) content detail routes cache only RENDERED responses — a 404 never enters the route cache (preview-poisoning fix); (5) the MCP bundle gains a `createRequire` banner (CJS deps under ESM import).
 
 Each phase carries its own exit gate. P1 is the only P0 phase; P2 and P3 are independent and may land as separate PR clusters after P1.
 

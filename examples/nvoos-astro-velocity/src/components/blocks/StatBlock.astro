@@ -1,0 +1,37 @@
+---
+// Stat custom block (107 §3.1) — a big number + label.
+interface Props {
+	node: { _type: 'stat'; value: string; label: string };
+}
+
+const { node } = Astro.props;
+---
+
+<div class="block-stat">
+	<span class="block-stat__value">{node.value}</span>
+	<span class="block-stat__label">{node.label}</span>
+</div>
+
+<style>
+	.block-stat {
+		display: inline-flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		border: 1px solid var(--nv-line);
+		border-radius: var(--nv-radius);
+		padding: 1rem 1.25rem;
+		margin: 0.5rem 0.5rem 0.5rem 0;
+		background: var(--nv-surface-alt);
+	}
+
+	.block-stat__value {
+		font-size: 1.8rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.block-stat__label {
+		color: var(--nv-muted);
+		font-size: 0.85rem;
+	}
+</style>

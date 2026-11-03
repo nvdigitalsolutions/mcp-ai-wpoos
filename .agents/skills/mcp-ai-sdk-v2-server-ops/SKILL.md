@@ -113,6 +113,16 @@ const nodeHandler = toNodeHandler(handler); // optional 3rd arg: pre-parsed body
   crashes with `TypeError: Cannot read properties of undefined (reading
   '_supportedProtocolVersions')` → silent 500s. Assign to a variable and
   return the server.
+- **A `.refine()`-ed zod schema cannot be `.extend()`-ed at registration.**
+  `z.object(...).refine(...)` returns a `ZodEffects`, which has NO
+  `.extend()`/`.partial()` methods — an `inputSchema` built that way throws
+  at REGISTRATION time (`contentFieldsSchema.extend is not a function`),
+  which kills EVERY tool call on the mount with `-32603 Internal server
+  error` (even unrelated tools). Build variants from the plain
+  `z.object` form and apply the `.refine()` separately per variant
+  (`contentFieldsObject.extend({...}).refine(...)`). Unit-test one call
+  from each family after touching a schema — registration errors surface
+  as opaque -32603s.
 - **Read the body first only if you pass it back:** if your wrapper drains
   the Node stream (auth inspection), pass the parsed body as
   `toNodeHandler(handler)(req, res, parsedBody)` — the SDK would otherwise

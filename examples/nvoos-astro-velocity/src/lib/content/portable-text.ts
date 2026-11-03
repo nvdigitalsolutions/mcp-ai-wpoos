@@ -1,0 +1,201 @@
+// ---------------------------------------------------------------------------
+// Portable Text — the structured block-content layer (Proposal 107,
+// DECISION-2, D1). Open spec (portabletext.org), JSON-native, agent-friendly:
+// the semantic intent of each block is explicit.
+//
+// This module is the app-side contract for agent-authored content:
+//   - standard Portable Text `block` items (styles h2/h3, marks strong/em/link)
+//   - an allowlisted set of custom block types (the commerce components)
+//   - zod validation (loud failure — the D3 discipline)
+//   - a raw-HTML sanitizer for the legacy `content`/`contentRendered` path
+//
+// Unknown custom types are REJECTED at the schema (never silently dropped)
+// and the renderer's unknown fallback is visible-by-design.
+// ---------------------------------------------------------------------------
+
+import sanitizeHtml from 'sanitize-html';
+import { z } from 'zod';
+
+/** Custom block types — the allowlisted commerce components (107 §3.1). */
+export const CUSTOM_BLOCK_TYPES = [
+	'hero',
+	'image',
+	'productGrid',
+	'promotion',
+	'testimonial',
+	'faq',
+	'stat',
+] as const;
+
+export type CustomBlockType = (typeof CUSTOM_BLOCK_TYPES)[number];
+
+/** A standard Portable Text mark definition (strong/em/link). */
+const markSchema = z.object({
+	_type: z.literal('span'),
+	text: z.string(),
+	marks: z.array(z.string()).default([]),
+});
+
+/** A standard Portable Text mark definition (link-only allowlist). */
+const linkMarkDefSchema = z.object({
+	_key: z.string().min(1),
+	_type: z.literal('link'),
+	href: z.string().min(1),
+});
+
+/** A standard Portable Text block (one style + inline spans). */
+const blockSchema = z.object({
+	_type: z.literal('block'),
+	style: z.enum(['normal', 'h2', 'h3']).default('normal'),
+	children: z.array(markSchema).min(1),
+	markDefs: z.array(linkMarkDefSchema).default([]),
+});
+
+const heroSchema = z.object({
+	_type: z.literal('hero'),
+	title: z.string().min(1).max(120),
+	lede: z.string().max(500).optional(),
+});
+
+const imageSchema = z.object({
+	_type: z.literal('image'),
+	src: z.string().min(1),
+	alt: z.string().max(300),
+});
+
+const productGridSchema = z.object({
+	_type: z.literal('productGrid'),
+	ids: z.array(z.number().int().positive()).min(1).max(24),
+});
+
+const promotionSchema = z.object({
+	_type: z.literal('promotion'),
+	promotionId: z.number().int().positive(),
+});
+
+const testimonialSchema = z.object({
+	_type: z.literal('testimonial'),
+	quote: z.string().min(1).max(600),
+	author: z.string().max(120).optional(),
+});
+
+const faqSchema = z.object({
+	_type: z.literal('faq'),
+	question: z.string().min(1).max(300),
+	answer: z.string().min(1).max(1000),
+});
+
+const statSchema = z.object({
+	_type: z.literal('stat'),
+	value: z.string().min(1).max(40),
+	label: z.string().max(120),
+});
+
+/** One Portable Text top-level item (standard block or custom type). */
+export const portableTextItemSchema = z.discriminatedUnion('_type', [
+	blockSchema,
+	...[
+		heroSchema,
+		imageSchema,
+		productGridSchema,
+		promotionSchema,
+		testimonialSchema,
+		faqSchema,
+		statSchema,
+	],
+]);
+
+export const portableTextSchema = z
+	.array(portableTextItemSchema)
+	.max(100, 'a document carries at most 100 blocks');
+
+/** Runtime TS shapes for renderers (zod-inferred). */
+export type PortableTextItem = z.infer<typeof portableTextItemSchema>;
+export type PortableTextBlock = PortableTextItem;
+export type PortableTextCustomBlock = Exclude<PortableTextItem, { _type: 'block' }>;
+
+/**
+ * Validate a blocks payload — the content_validate gate and the render
+ * boundary. Unknown types fail loudly with the offending index named;
+ * link markDefs ride a second-pass scheme check (belt and braces on top of
+ * the schema — javascript:/data: hrefs are rejected before render).
+ */
+export function parsePortableText(input: unknown): PortableTextBlock[] {
+	const result = portableTextSchema.safeParse(input);
+	if (!result.success) {
+		const issues = result.error.issues
+			.map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+			.join('; ');
+		throw new Error(`[portable-text] invalid blocks — ${issues}`);
+	}
+	for (const item of result.data) {
+		if (item._type === 'block') {
+			for (const def of item.markDefs ?? []) {
+				if (!isSafeHref(def.href)) {
+					throw new Error(
+						`[portable-text] unsafe link href rejected — "${def.href}"`
+					);
+				}
+			}
+		}
+	}
+	return result.data;
+}
+
+/**
+ * Raw-HTML sanitizer (D2) — the ONLY path agent-authored HTML may take.
+ * Explicit tag/attribute allowlist; scripts, inline handlers and data: URIs
+ * are stripped. Legacy WP-authored `contentRendered` may bypass this (it is
+ * trusted upstream content, rendered exactly as today).
+ */
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+	allowedTags: [
+		'p',
+		'br',
+		'strong',
+		'em',
+		'b',
+		'i',
+		'u',
+		'a',
+		'ul',
+		'ol',
+		'li',
+		'h2',
+		'h3',
+		'h4',
+		'blockquote',
+		'code',
+		'pre',
+		'img',
+		'figure',
+		'figcaption',
+	],
+	allowedAttributes: {
+		a: ['href', 'title', 'rel', 'target'],
+		img: ['src', 'alt', 'title', 'width', 'height'],
+		code: ['class'],
+	},
+	allowedSchemes: ['http', 'https', 'mailto'],
+	allowedSchemesByTag: { img: ['http', 'https'] },
+	transformTags: {
+		a: sanitizeHtml.simpleTransform('a', {
+			rel: 'noopener noreferrer',
+		}),
+	},
+};
+
+/** Sanitize raw HTML from an agent-authored content field. */
+export function sanitizeContentHtml(html: string): string {
+	return sanitizeHtml(html, SANITIZE_OPTIONS);
+}
+
+/** Reject javascript:/data: hrefs in link marks — belts and braces (D3). */
+export function isSafeHref(href: string): boolean {
+	try {
+		const url = new URL(href, 'https://invalid.local');
+		return url.protocol === 'https:' || url.protocol === 'http:' || url.protocol === 'mailto:';
+	} catch {
+		return false;
+	}
+}

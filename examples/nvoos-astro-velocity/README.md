@@ -92,29 +92,52 @@ an OG card never breaks the page.
 
 ## MCP assistant surface (`/mcp`)
 
-`nvoos-astro-mcp` serves 21 tools over Streamable HTTP at `/mcp` (bundled into
+`nvoos-astro-mcp` serves 33 tools over Streamable HTTP at `/mcp` (bundled into
 `dist/mcp-entry.mjs` on `astro:build:done`). Every tool carries a
 human-readable `title` and spec `annotations` (readOnly/destructive/idempotent/
 openWorld hints) so MCP clients — Zed, NV oOS assistants, Claude — can render
 and gate the registry without scraping descriptions:
 
-- **Design (10)** — `tokens_get/set/import_dtcg/rollback`, `theme_*`,
-  `contrast_check` (WCAG 2.2 AA/AAA levels). Every mutating design write
-  echoes its pre-write `snapshot_id`, so `tokens_rollback` can undo exactly
-  that write (no argument rolls back to the latest snapshot).
+- **Design (14)** — `tokens_get/set/import_dtcg/rollback`, `theme_*`,
+  `contrast_check` (WCAG 2.2 AA/AAA levels), `design_analyze/compare/plan/theme`
+  (inspired-by design-language import — never a clone). Every mutating design
+  write echoes its pre-write `snapshot_id`, so `tokens_rollback` can undo
+  exactly that write (no argument rolls back to the latest snapshot).
 - **CMS (6)** — `cms_list/get/create/update/delete`, `media_upload` over the
   commerce contract (collection allowlist, `limit` ≤ 100; writes require a
   manager session cookie — the backend enforces `manage_astro`).
+- **Content (8, Proposal 107)** — `content_list/get/create/update/delete`,
+  `content_preview_url`, `content_restore`, `content_validate` over the
+  `content/pages` + `content/posts` collections. Writes are manager-gated and
+  ride the approval ladder: creates default to **draft**, `pending`/`draft`
+  round-trips stay open to the submitting role, and `publish`/`future` (or
+  unpublishing) require the backend `publish_posts` capability — a state the
+  submitting actor cannot flip (`content_publish_forbidden`). Documents carry
+  Portable Text `blocks` (the allowlisted component schema) and an audit trail
+  (`submittedBy`/`approvedBy`). `content_preview_url` mints a short-lived
+  signed link that exchanges for a host-only preview cookie at
+  `/preview/{type}/{id}` and redirects to the canonical route — draft previews
+  work for logged-in managers only (fail-closed 404 otherwise) and render with
+  a draft banner, `noindex`, and no caching. `content_validate` is the
+  read-only dry-run gate (block schema + raw-HTML sanitizer).
 - **Ops (5)** — `site_status`, `preview_url`, `rebuild_trigger` (webhook env),
   `screenshot` (opt-in `NVOOS_MCP_SCREENSHOT=1`, path-only input),
   `nds_export` (the NDS DTCG document for the Design System round-trip).
 
 Auth is fail-closed: reads are public; design writes accept an
 `Authorization: Bearer <NVOOS_MCP_TOKEN>` **or** a manager session cookie;
-contract writes (cms_* writes, media_upload) require the manager cookie.
-Host/Origin allowlists (DNS-rebinding guards), a per-IP rate limit, and audit
-log lines sit in front of the handler. The /manage **Design System tab** is
-itself an MCP client over the same-origin endpoint (manager cookie).
+contract writes (cms_* + content_* writes, media_upload) require the manager
+cookie. Host/Origin allowlists (DNS-rebinding guards), a per-IP rate limit, a
+per-session content-write quota (G14 — `NVOOS_MCP_CONTENT_WRITE_MAX` writes per
+`NVOOS_MCP_CONTENT_WRITE_WINDOW_MS`, default 30/10 min), and audit log lines
+sit in front of the handler. The /manage **Design System tab** is itself an
+MCP client over the same-origin endpoint (manager cookie).
+
+Preview tokens (107 §3.2): `NVOOS_PREVIEW_SECRET` (HMAC secret — set it on
+production mounts; the dev fallback is intentionally public) and
+`NVOOS_PREVIEW_TTL_MS` (default 30 min). Successful content writes purge the
+matching route-cache tags through `/internal/revalidate` when
+`NVOOS_REVALIDATE_TOKEN` + `NVOOS_SSR_API_ORIGIN` are configured.
 
 `preview_url` / `screenshot` resolve the storefront origin as
 `NVOOS_STOREFRONT_ORIGIN` → the inbound request Host (scheme from

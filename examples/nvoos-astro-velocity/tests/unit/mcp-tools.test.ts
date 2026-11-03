@@ -8,6 +8,7 @@
 import { createServer, type Server } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createAstroMcpNodeHandler } from '../../mcp/bff';
+import { verifyPreviewToken } from '../../src/lib/content/preview';
 
 const TOKEN = 'tool-test-token';
 
@@ -108,6 +109,44 @@ beforeAll(async () => {
 				hasNextPage: false,
 				hasPrevPage: false,
 			});
+		}
+		// Content slice (Proposal 107) — pages/posts CRUD echo.
+		const contentCollection = /^\/content\/(pages|posts)$/.exec(url.pathname);
+		if (contentCollection) {
+			if (req.method === 'GET') {
+				return json(200, {
+					docs: [{ id: 201, title: 'Stub content', status: 'publish' }],
+					totalDocs: 1,
+					limit: 100,
+					totalPages: 1,
+					page: 1,
+					hasNextPage: false,
+					hasPrevPage: false,
+				});
+			}
+			if (req.method === 'POST') {
+				return json(200, {
+					id: 202,
+					type: contentCollection[1] === 'pages' ? 'page' : 'post',
+					...reqBody(rawBody),
+				});
+			}
+		}
+		const contentItem = /^\/content\/(pages|posts)\/(\d+)$/.exec(url.pathname);
+		if (contentItem) {
+			if (req.method === 'GET') {
+				return json(200, { id: Number(contentItem[2]), title: 'Stub content' });
+			}
+			if (req.method === 'PATCH') {
+				return json(200, { id: Number(contentItem[2]), ...reqBody(rawBody) });
+			}
+			if (req.method === 'DELETE') {
+				return json(200, { ok: true });
+			}
+		}
+		const contentRestore = /^\/content\/(pages|posts)\/(\d+)\/restore$/.exec(url.pathname);
+		if (contentRestore && req.method === 'POST') {
+			return json(200, { id: Number(contentRestore[2]), restored: true });
 		}
 		return json(404, { code: 'not_found' });
 	});
@@ -342,6 +381,168 @@ describe('cms tools over the stub backend', () => {
 		expect(list).toBeDefined();
 		expect(list?.cookie).toContain('session=manager-cookie');
 		expect(list?.query).toContain('status=draft');
+	});
+});
+
+describe('content tools (Proposal 107)', () => {
+	it('content_list returns the paginated envelope', async () => {
+		recorded.length = 0;
+		const { message } = await call(mainPort, 'content_list', { type: 'post', limit: 10 });
+		expect(message.error).toBeUndefined();
+		expect(message.result?.isError).toBeUndefined();
+		expect(message.result?.structuredContent?.totalDocs).toBe(1);
+		const list = recorded.find((entry) => entry.method === 'GET' && entry.path === '/content/posts');
+		expect(list).toBeDefined();
+	});
+
+	it('content_list with a draft status without a manager cookie fails fast', async () => {
+		recorded.length = 0;
+		const { message } = await call(mainPort, 'content_list', { type: 'page', status: 'draft' });
+		expect(message.result?.isError).toBe(true);
+		expect(textOf(message)).toContain('manager session');
+		expect(recorded).toHaveLength(0);
+	});
+
+	it('content_list with status=draft and a manager cookie forwards the filter', async () => {
+		recorded.length = 0;
+		const { message } = await call(
+			mainPort,
+			'content_list',
+			{ type: 'page', status: 'draft' },
+			{ cookie: 'session=manager-cookie' }
+		);
+		expect(message.result?.isError).toBeUndefined();
+		const list = recorded.find((entry) => entry.method === 'GET' && entry.path === '/content/pages');
+		expect(list?.cookie).toContain('session=manager-cookie');
+		expect(list?.query).toContain('status=draft');
+	});
+
+	it('content_get forwards the manager cookie when present', async () => {
+		recorded.length = 0;
+		const { message } = await call(
+			mainPort,
+			'content_get',
+			{ type: 'post', id: 201 },
+			{ cookie: 'session=manager-cookie' }
+		);
+		expect(message.result?.isError).toBeUndefined();
+		const get = recorded.find((entry) => entry.method === 'GET' && entry.path === '/content/posts/201');
+		expect(get?.cookie).toContain('session=manager-cookie');
+	});
+
+	it('content_create without a manager cookie fails with the manager-session error', async () => {
+		recorded.length = 0;
+		const { message } = await call(mainPort, 'content_create', {
+			type: 'post',
+			title: 'Draft post',
+		});
+		expect(message.result?.isError).toBe(true);
+		expect(textOf(message)).toContain('manager session');
+		expect(recorded).toHaveLength(0);
+	});
+
+	it('content_create defaults to draft and POSTs the body with the cookie', async () => {
+		recorded.length = 0;
+		const { message } = await call(
+			mainPort,
+			'content_create',
+			{ type: 'post', title: 'Draft post', blocks: [{ _type: 'stat', value: '1', label: 'x' }] },
+			{ cookie: 'session=manager-cookie' }
+		);
+		expect(message.result?.isError).toBeUndefined();
+		const post = recorded.find((entry) => entry.method === 'POST' && entry.path === '/content/posts');
+		expect(post).toBeDefined();
+		expect(post?.cookie).toContain('session=manager-cookie');
+		const sent = reqBody(post?.body ?? '{}');
+		expect(sent.title).toBe('Draft post');
+		expect(sent.status).toBe('draft');
+		expect(sent.blocks).toHaveLength(1);
+	});
+
+	it('content_update PATCHes by id with the cookie', async () => {
+		recorded.length = 0;
+		const { message } = await call(
+			mainPort,
+			'content_update',
+			{ type: 'post', id: 201, status: 'pending' },
+			{ cookie: 'session=manager-cookie' }
+		);
+		expect(message.result?.isError).toBeUndefined();
+		const patch = recorded.find((entry) => entry.method === 'PATCH' && entry.path === '/content/posts/201');
+		expect(patch).toBeDefined();
+		expect(reqBody(patch?.body ?? '{}')).toEqual({ status: 'pending' });
+	});
+
+	it('content_delete is manager-gated and deletes by id', async () => {
+		recorded.length = 0;
+		const denied = await call(mainPort, 'content_delete', { type: 'post', id: 201 });
+		expect(denied.message.result?.isError).toBe(true);
+		expect(recorded).toHaveLength(0);
+
+		const { message } = await call(
+			mainPort,
+			'content_delete',
+			{ type: 'post', id: 201 },
+			{ cookie: 'session=manager-cookie' }
+		);
+		expect(message.result?.isError).toBeUndefined();
+		const del = recorded.find((entry) => entry.method === 'DELETE' && entry.path === '/content/posts/201');
+		expect(del).toBeDefined();
+	});
+
+	it('content_restore POSTs the revision id', async () => {
+		recorded.length = 0;
+		const { message } = await call(
+			mainPort,
+			'content_restore',
+			{ type: 'page', id: 201, revision: 301 },
+			{ cookie: 'session=manager-cookie' }
+		);
+		expect(message.result?.isError).toBeUndefined();
+		const restore = recorded.find(
+			(entry) => entry.method === 'POST' && entry.path === '/content/pages/201/restore'
+		);
+		expect(reqBody(restore?.body ?? '{}')).toEqual({ revision: 301 });
+	});
+
+	it('content_validate returns the normalized payload and sanitizes raw HTML', async () => {
+		const { message } = await call(mainPort, 'content_validate', {
+			title: 'T',
+			content: '<p>hi</p><script>alert(1)</script>',
+		});
+		expect(message.result?.isError).toBeUndefined();
+		const normalized = message.result?.structuredContent?.normalized as {
+			content?: string;
+		};
+		expect(normalized?.content).toContain('<p>hi</p>');
+		expect(normalized?.content).not.toContain('<script');
+	});
+
+	it('content_validate rejects unsafe block hrefs (D3 — loud failure)', async () => {
+		const { message } = await call(mainPort, 'content_validate', {
+			title: 'T',
+			blocks: [
+				{
+					_type: 'block',
+					children: [{ _type: 'span', text: 'x', marks: ['a1'] }],
+					markDefs: [{ _key: 'a1', _type: 'link', href: 'javascript:alert(1)' }],
+				},
+			],
+		});
+		expect(message.result?.isError).toBe(true);
+		expect(textOf(message)).toContain('unsafe link href');
+	});
+
+	it('content_preview_url mints a token the preview route verifies', async () => {
+		const { message } = await call(mainPort, 'content_preview_url', {
+			type: 'post',
+			id: 201,
+		});
+		expect(message.result?.isError).toBeUndefined();
+		const structured = message.result?.structuredContent as { url?: string };
+		expect(structured?.url).toContain('/preview/post/201/?token=');
+		const token = new URL(structured?.url ?? '').searchParams.get('token') ?? '';
+		expect(verifyPreviewToken('post', 201, token)).toBe(true);
 	});
 });
 

@@ -1,0 +1,26 @@
+---
+// Image custom block (107 §3.1) — one figure; alt is required by the schema
+// (or explicitly empty for decorative images).
+interface Props {
+	node: { _type: 'image'; src: string; alt: string };
+}
+
+const { node } = Astro.props;
+---
+
+<figure class="block-image">
+	<img src={node.src} alt={node.alt} loading="lazy" decoding="async" />
+</figure>
+
+<style>
+	.block-image {
+		margin: 1.25rem 0;
+	}
+
+	.block-image img {
+		border-radius: var(--nv-radius);
+		width: 100%;
+		height: auto;
+		display: block;
+	}
+</style>

@@ -75,6 +75,13 @@ final class Schema {
 	public const META_PROMOCODE_LOGO       = '_funiq_logo';
 
 	// -----------------------------------------------------------------------
+	// Post meta keys (content — pages/posts, Proposal 107).
+	// -----------------------------------------------------------------------
+	public const META_CONTENT_BLOCKS = '_funiq_content_blocks';
+	public const META_SUBMITTED_BY   = '_funiq_submitted_by';
+	public const META_APPROVED_BY    = '_funiq_approved_by';
+
+	// -----------------------------------------------------------------------
 	// Term meta keys.
 	// -----------------------------------------------------------------------
 	public const TERM_META_HEX_CODE = '_funiq_hex_code';

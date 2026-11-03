@@ -1,0 +1,59 @@
+---
+// ---------------------------------------------------------------------------
+// Preview exchange route (Proposal 107 §3.2, D3) — the Next.js Draft Mode
+// pattern. A content_preview_url link lands here ONCE: the signed token is
+// verified (expiry + HMAC), the visitor's cookies are forwarded to the
+// backend so a logged-in manager can read drafts (fail-closed — a
+// non-manager link to a draft resolves to 404), a host-only HttpOnly
+// preview cookie is set, and the browser is redirected to the canonical
+// public route. The token never lives in the URL afterwards.
+// ---------------------------------------------------------------------------
+
+import { getPage, getPost } from '../../../lib/commerce/client';
+import { PREVIEW_COOKIE, previewTtlMs, verifyPreviewToken } from '../../../lib/content/preview';
+
+const type = String(Astro.params.type ?? '');
+const id = Number(Astro.params.id ?? 0);
+const token = String(Astro.url.searchParams.get('token') ?? '');
+
+if (type !== 'page' && type !== 'post') {
+	return new Response('Not found', { status: 404 });
+}
+if (!Number.isInteger(id) || id <= 0 || !verifyPreviewToken(type, id, token)) {
+	return new Response('Invalid or expired preview link', { status: 401 });
+}
+
+const visitorCookie = Astro.request.headers.get('cookie');
+const doc =
+	type === 'page'
+		? await getPage(id, Astro.url, { status: 'any', cookie: visitorCookie })
+		: await getPost(id, Astro.url, { status: 'any', cookie: visitorCookie });
+
+if (!doc || !doc.slug) {
+	return new Response('Not found', { status: 404 });
+}
+
+const ttlMs = previewTtlMs();
+// Host-only by omission (no `domain` option) — the BFF strips Domain= on
+// the auth cookie for the same reason. `secure` follows the platform proxy
+// (x-forwarded-proto first, then the request URL) so local plain-HTTP dev
+// and TLS-terminated production both get a cookie the browser will send.
+const forwardedProto = (
+	Astro.request.headers.get('x-forwarded-proto') ?? ''
+)
+	.split(',')[0]
+	.trim();
+const secure = forwardedProto
+	? forwardedProto === 'https'
+	: Astro.url.protocol === 'https:';
+Astro.cookies.set(PREVIEW_COOKIE, '1', {
+	path: '/',
+	httpOnly: true,
+	sameSite: 'lax',
+	maxAge: Math.max(1, Math.floor(ttlMs / 1000)),
+	secure,
+});
+
+const target = type === 'page' ? `/pages/${id}/${doc.slug}/` : `/blog/${id}/${doc.slug}/`;
+return Astro.redirect(target, 302);
+---

@@ -6,6 +6,8 @@
 // never to backend-specific endpoints or fields (D3 gate).
 // ---------------------------------------------------------------------------
 
+import type { PortableTextBlock } from '../content/portable-text';
+
 /** Paginated collection envelope — the contract invariant (085 appendix §2). */
 export interface PaginatedCollection<T> {
 	docs: T[];
@@ -143,6 +145,14 @@ export interface ContentDoc {
 	createdAt: string;
 	updatedAt: string;
 	status?: string;
+	/** Proposal 107 (DECISION-2): Portable Text blocks — agent-authored
+	 *  structured content. Absent on legacy docs. */
+	blocks?: PortableTextBlock[];
+	/** Proposal 107 (G13): actor audit — who submitted / approved the doc. */
+	submittedBy?: string;
+	approvedBy?: string;
+	/** Proposal 107 (G8): scheduled publication (future). */
+	publishAt?: string;
 }
 
 /** Shop globals document (106 §1.3 — globals/shop). */

@@ -1,0 +1,29 @@
+---
+// FAQ custom block (107 §3.1) — a semantic question/answer pair.
+interface Props {
+	node: { _type: 'faq'; question: string; answer: string };
+}
+
+const { node } = Astro.props;
+---
+
+<section class="block-faq">
+	<h3>{node.question}</h3>
+	<p>{node.answer}</p>
+</section>
+
+<style>
+	.block-faq {
+		margin-block: 1rem;
+	}
+
+	.block-faq h3 {
+		margin: 0 0 0.35rem;
+		font-size: 1.05rem;
+	}
+
+	.block-faq p {
+		margin: 0;
+		color: var(--nv-muted);
+	}
+</style>

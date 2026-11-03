@@ -42,6 +42,7 @@
 		"@modelcontextprotocol/node": "^2.0.0",
 		"@modelcontextprotocol/server": "^2.0.0",
 		"@nanostores/react": "^2.0.1",
+		"@portabletext/astro": "^0.2.0",
 		"@resvg/resvg-js": "^2.6.2",
 		"astro": "^7.4.4",
 		"limax": "^4.2.3",
