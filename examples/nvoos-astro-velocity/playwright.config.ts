@@ -27,7 +27,7 @@ export default defineConfig({
 		{
 			name: 'default',
 			fullyParallel: true,
-			testIgnore: /(design-import|rebrand-loop|theme-policy)\.spec\.ts/,
+			testIgnore: /(design-import|rebrand-loop|theme-policy|content-write)\.spec\.ts/,
 		},
 		{
 			name: 'stateful-mcp',
@@ -42,6 +42,19 @@ export default defineConfig({
 			testMatch: /theme-policy\.spec\.ts/,
 			use: {
 				baseURL: 'http://localhost:4322',
+				trace: 'on-first-retry',
+			},
+		},
+		// The content-write spec publishes/deletes posts, which would race
+		// every other spec's listing counts — so it runs serial against its
+		// OWN fixture + BFF pair (ports 8125/4323), the theme-policy pattern.
+		{
+			name: 'content-write',
+			fullyParallel: false,
+			workers: 1,
+			testMatch: /content-write\.spec\.ts/,
+			use: {
+				baseURL: 'http://localhost:4323',
 				trace: 'on-first-retry',
 			},
 		},
@@ -93,6 +106,27 @@ export default defineConfig({
 				PORT: '4322',
 				NVOOS_TARGET_SITE: 'http://localhost:8124',
 				NVOOS_THEME_POLICY_TTL: '0',
+			},
+		},
+		// The content-write pair (Proposal 107): isolated so publishing/
+		// deleting fixture content can never race the shared listing counts.
+		{
+			command: 'node scripts/fixture-server.mjs',
+			port: 8125,
+			reuseExistingServer: true,
+			stdout: 'ignore',
+			env: { ...process.env, PORT: '8125' },
+		},
+		{
+			command: 'node scripts/serve.mjs',
+			port: 4323,
+			reuseExistingServer: true,
+			stdout: 'ignore',
+			env: {
+				...process.env,
+				PORT: '4323',
+				NVOOS_TARGET_SITE: 'http://localhost:8125',
+				NVOOS_SSR_API_ORIGIN: 'http://localhost:8125/wp-json/nvoos-commerce/v1',
 			},
 		},
 	],

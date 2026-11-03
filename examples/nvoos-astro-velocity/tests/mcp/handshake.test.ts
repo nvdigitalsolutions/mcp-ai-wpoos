@@ -114,6 +114,14 @@ const EXPECTED_TOOLS = [
 	'cms_update',
 	'cms_delete',
 	'media_upload',
+	'content_list',
+	'content_get',
+	'content_create',
+	'content_update',
+	'content_delete',
+	'content_preview_url',
+	'content_restore',
+	'content_validate',
 	'site_status',
 	'preview_url',
 	'rebuild_trigger',
@@ -215,6 +223,13 @@ describe('nvoos-astro-mcp HTTP conformance', () => {
 		// Retry-safe writes declare the idempotent hint.
 		expect(byName.get('tokens_set')?.annotations?.idempotentHint).toBe(true);
 		expect(byName.get('rebuild_trigger')?.annotations?.idempotentHint).toBe(true);
+		// The content slice (Proposal 107): reads open, writes manager-gated,
+		// delete destructive, restore retry-safe.
+		expect(byName.get('content_list')?.annotations?.readOnlyHint).toBe(true);
+		expect(byName.get('content_get')?.annotations?.readOnlyHint).toBe(true);
+		expect(byName.get('content_preview_url')?.annotations?.readOnlyHint).toBe(true);
+		expect(byName.get('content_delete')?.annotations?.destructiveHint).toBe(true);
+		expect(byName.get('content_restore')?.annotations?.idempotentHint).toBe(true);
 		// Every tool declares all four hints (spec defaults are pessimistic).
 		// The open-world exceptions (Proposal 098): the design-import tools
 		// fetch external URLs and declare it; every other tool is

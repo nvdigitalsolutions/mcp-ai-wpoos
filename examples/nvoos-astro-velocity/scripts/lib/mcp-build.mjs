@@ -46,6 +46,16 @@ export async function buildMcpEntry() {
 			target: 'node20',
 			outfile: OUT_FILE,
 			external: ['node:*'],
+			// CJS dependencies bundled into ESM output ship esbuild's
+			// `__require` shim, which throws "Dynamic require of X is not
+			// supported" when the bundle is imported from an ESM module
+			// (`require` is undefined there). Inject a createRequire shim so
+			// the bundled CJS wrappers resolve node builtins at runtime —
+			// the deploy tree ships no node_modules, and every remaining
+			// require targets a node: builtin.
+			banner: {
+				js: "import{createRequire as __nvoosCreateRequire}from'node:module';const require=__nvoosCreateRequire(import.meta.url);",
+			},
 			logLevel: 'warning',
 		});
 	} catch (error) {
