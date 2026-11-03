@@ -56,7 +56,26 @@ final class ContentTransform {
 			}
 		}
 
-		return array(
+		// Proposal 107: blocks are the agent-authored structured-content
+		// layer (Portable Text); submittedBy/approvedBy are the actor-audit
+		// trail (the approval state the submitter cannot flip).
+		$blocks = get_post_meta( $post->ID, \NvoosAstroBridge\Schema::META_CONTENT_BLOCKS, true );
+		if ( is_string( $blocks ) && '' !== $blocks ) {
+			// Legacy storage shape (the 107 first cut wrote a JSON string) —
+			// decode to the array form and fall back to empty on garbage.
+			$decoded = json_decode( $blocks, true );
+			$blocks  = is_array( $decoded ) ? $decoded : array();
+		}
+		if ( is_array( $blocks ) ) {
+			$blocks = array_values( $blocks );
+		} else {
+			$blocks = array();
+		}
+
+		$submitted_by = get_post_meta( $post->ID, \NvoosAstroBridge\Schema::META_SUBMITTED_BY, true );
+		$approved_by  = get_post_meta( $post->ID, \NvoosAstroBridge\Schema::META_APPROVED_BY, true );
+
+		$doc = array(
 			'id'              => (int) $post->ID,
 			'slug'            => (string) $post->post_name,
 			'title'           => (string) $post->post_title,
@@ -79,7 +98,22 @@ final class ContentTransform {
 			'createdAt'       => (string) $post->post_date,
 			'updatedAt'       => (string) $post->post_modified,
 			'status'          => (string) $post->post_status,
+			'publishAt'       => 'future' === $post->post_status ? (string) $post->post_date : null,
 		);
+
+		// Additive 107 fields — absent unless set, so legacy consumers and
+		// goldens stay byte-identical for docs that predate the slice.
+		if ( array() !== $blocks ) {
+			$doc['blocks'] = $blocks;
+		}
+		if ( is_string( $submitted_by ) && '' !== $submitted_by ) {
+			$doc['submittedBy'] = $submitted_by;
+		}
+		if ( is_string( $approved_by ) && '' !== $approved_by ) {
+			$doc['approvedBy'] = $approved_by;
+		}
+
+		return $doc;
 	}
 
 	/**
@@ -109,11 +143,71 @@ final class ContentTransform {
 		if ( isset( $data['excerpt'] ) ) {
 			$args['post_excerpt'] = sanitize_textarea_field( $data['excerpt'] );
 		}
-		if ( isset( $data['status'] ) && in_array( $data['status'], array( 'publish', 'draft' ), true ) ) {
+		if ( isset( $data['status'] ) && in_array( $data['status'], array( 'publish', 'draft', 'pending', 'future' ), true ) ) {
 			$args['post_status'] = $data['status'];
 		}
 
+		// Proposal 107 (G8): publishAt schedules the post (WP `future`). The
+		// date rides post_date; an explicit publish status wins over the
+		// scheduled flip.
+		if ( isset( $data['publishAt'] ) && is_string( $data['publishAt'] ) && '' !== $data['publishAt'] ) {
+			$parsed = rest_parse_date( sanitize_text_field( $data['publishAt'] ) );
+			// WP 6.9 rest_parse_date() returns a Unix timestamp; older core
+			// returns the 'Y-m-d H:i:s' string. Normalize to the string form
+			// wp_insert_post/wp_checkdate expect.
+			if ( is_int( $parsed ) && $parsed > 0 ) {
+				$parsed = gmdate( 'Y-m-d H:i:s', $parsed );
+			}
+			if ( is_string( $parsed ) && '' !== $parsed ) {
+				$args['post_date']     = $parsed;
+				$args['post_date_gmt'] = get_gmt_from_date( $parsed );
+				if ( ! isset( $args['post_status'] ) || 'draft' === $args['post_status'] || 'pending' === $args['post_status'] ) {
+					$args['post_status'] = 'future';
+				}
+			}
+		}
+
 		return $args;
+	}
+
+	/**
+	 * Save the shared 107 fields (blocks, SEO meta, submitter) — the
+	 * two-gate rule: validate and sanitize at entry.
+	 *
+	 * @param int                  $post_id Post ID.
+	 * @param array<string, mixed> $data    Request body.
+	 * @return void
+	 */
+	public static function save_shared( int $post_id, array $data ): void {
+		if ( isset( $data['blocks'] ) ) {
+			$blocks = $data['blocks'];
+			if ( is_array( $blocks ) ) {
+				// Blocks are an allowlisted Portable Text subset — validated
+				// by the storefront schema; the bridge stores them as data,
+				// never renders them. Stored natively (WP serializes arrays)
+				// so the read path returns the array form.
+				update_post_meta( $post_id, \NvoosAstroBridge\Schema::META_CONTENT_BLOCKS, array_values( $blocks ) );
+			} else {
+				delete_post_meta( $post_id, \NvoosAstroBridge\Schema::META_CONTENT_BLOCKS );
+			}
+		}
+
+		// SEO write-through (G7): Rank Math first, then Yoast — the reverse
+		// of the read-side mapping.
+		if ( isset( $data['seoTitle'] ) ) {
+			$title = sanitize_text_field( $data['seoTitle'] );
+			update_post_meta( $post_id, 'rank_math_title', $title );
+			update_post_meta( $post_id, '_yoast_wpseo_title', $title );
+		}
+		if ( isset( $data['seoDescription'] ) ) {
+			$desc = sanitize_text_field( $data['seoDescription'] );
+			update_post_meta( $post_id, 'rank_math_description', $desc );
+			update_post_meta( $post_id, '_yoast_wpseo_metadesc', $desc );
+		}
+
+		if ( isset( $data['submittedBy'] ) && is_string( $data['submittedBy'] ) && '' !== $data['submittedBy'] ) {
+			update_post_meta( $post_id, \NvoosAstroBridge\Schema::META_SUBMITTED_BY, sanitize_text_field( $data['submittedBy'] ) );
+		}
 	}
 
 	/**

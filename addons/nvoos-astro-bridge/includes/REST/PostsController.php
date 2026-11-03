@@ -67,16 +67,47 @@ class PostsController extends PostTypeController {
 	}
 
 	/**
+	 * Proposal 107 (G4): agent-originated creates default to draft —
+	 * publishing is a separate, capability-gated transition.
+	 *
+	 * @return string
+	 */
+	protected function default_status(): string {
+		return 'draft';
+	}
+
+	/**
+	 * Proposal 107 (G4): the approval state machine applies.
+	 *
+	 * @return bool
+	 */
+	protected function governed_statuses(): bool {
+		return true;
+	}
+
+	/**
+	 * Proposal 107 (G6): revision listing + restore.
+	 *
+	 * @return bool
+	 */
+	protected function supports_revisions(): bool {
+		return true;
+	}
+
+	/**
 	 * Assign the WP category after creating/updating the post.
 	 *
 	 * Accepts either the contract shape (`{ id, name }`) or a bare category
-	 * ID — the same input the admin SPA relationship fields produce.
+	 * ID — the same input the admin SPA relationship fields produce. The
+	 * shared 107 meta (blocks, SEO, submitter) is saved first.
 	 *
 	 * @param int                  $post_id Post ID.
 	 * @param array<string, mixed> $data    Request body.
 	 * @return void
 	 */
 	protected function save_meta( int $post_id, array $data ): void {
+		ContentTransform::save_shared( $post_id, $data );
+
 		if ( ! isset( $data['category'] ) ) {
 			return;
 		}

@@ -65,15 +65,42 @@ class PagesController extends PostTypeController {
 	}
 
 	/**
-	 * Pages carry no bridge meta — title/content/excerpt/status live in the
-	 * post columns handled by post_args().
+	 * Proposal 107 (G4): agent-originated creates default to draft —
+	 * publishing is a separate, capability-gated transition.
+	 *
+	 * @return string
+	 */
+	protected function default_status(): string {
+		return 'draft';
+	}
+
+	/**
+	 * Proposal 107 (G4): the approval state machine applies.
+	 *
+	 * @return bool
+	 */
+	protected function governed_statuses(): bool {
+		return true;
+	}
+
+	/**
+	 * Proposal 107 (G6): revision listing + restore.
+	 *
+	 * @return bool
+	 */
+	protected function supports_revisions(): bool {
+		return true;
+	}
+
+	/**
+	 * Pages carry the shared 107 meta (blocks, SEO, submitter).
 	 *
 	 * @param int                  $post_id Post ID.
 	 * @param array<string, mixed> $data    Request body.
 	 * @return void
 	 */
 	protected function save_meta( int $post_id, array $data ): void {
-		// No page-level meta in the §1.2 contract.
+		ContentTransform::save_shared( $post_id, $data );
 	}
 
 	/**

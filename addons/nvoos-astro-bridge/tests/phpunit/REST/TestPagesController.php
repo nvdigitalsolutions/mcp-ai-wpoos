@@ -252,12 +252,13 @@ class TestPagesController extends WP_Test_REST_TestCase {
 	}
 
 	/**
-	 * CRUD: create (publish), update (title + status), delete.
+	 * CRUD: create (draft default — Proposal 107 G4), publish via the
+	 * explicit transition, update, delete.
 	 */
 	public function test_crud_lifecycle(): void {
 		wp_set_current_user( $this->admin_id );
 
-		// Create.
+		// Create — defaults to draft (107 G4: no accidental publishes).
 		$request = new WP_REST_Request( 'POST', '/nvoos-commerce/v1/content/pages' );
 		$request->set_header( 'content-type', 'application/json' );
 		$request->set_body(
@@ -273,24 +274,24 @@ class TestPagesController extends WP_Test_REST_TestCase {
 		$this->assertEquals( 200, $response->get_status() );
 		$data = $response->get_data();
 		$this->assertSame( 'New Page', $data['title'] );
-		$this->assertSame( 'publish', $data['status'] );
+		$this->assertSame( 'draft', $data['status'] );
 		$this->assertSame( 'Hi', $data['excerpt'] );
 
-		// Update.
+		// Update — the approver (publish_posts) flips it live.
 		$request = new WP_REST_Request( 'PUT', '/nvoos-commerce/v1/content/pages/' . $data['id'] );
 		$request->set_header( 'content-type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
 				array(
 					'title'  => 'Renamed',
-					'status' => 'draft',
+					'status' => 'publish',
 				)
 			)
 		);
 		$response = rest_get_server()->dispatch( $request );
 		$this->assertEquals( 200, $response->get_status() );
 		$this->assertSame( 'Renamed', $response->get_data()['title'] );
-		$this->assertSame( 'draft', $response->get_data()['status'] );
+		$this->assertSame( 'publish', $response->get_data()['status'] );
 
 		// Delete.
 		$request  = new WP_REST_Request( 'DELETE', '/nvoos-commerce/v1/content/pages/' . $data['id'] );
