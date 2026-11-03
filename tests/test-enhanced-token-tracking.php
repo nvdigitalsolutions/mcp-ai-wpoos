@@ -62,9 +62,12 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		// Trigger the hook that enhanced tracking listens to.
 		do_action( 'wp_mcp_ai_after_usage_recorded', $user_id, $assistant_id, $provider, $model, $totals, $usage );
 
-		// Verify record was created.
+		// Verify record was created. The end bound carries a few minutes of
+		// slack: rows are stamped with the insert-time second, so a slow runner
+		// can otherwise push a record past `end_date = now` and silently drop
+		// it from the result window.
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$records    = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
 
 		$this->assertCount( 1, $records, 'Should have 1 usage record' );
@@ -88,7 +91,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		do_action( 'wp_mcp_ai_after_usage_recorded', $user_id, $assistant_id, 'openai', 'gpt-4o', array(), $usage );
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$records    = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
 
 		$this->assertCount( 1, $records, 'Should have 1 record' );
@@ -119,7 +122,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $arguments, $context, $result );
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$records    = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
 
 		$this->assertCount( 1, $records, 'Should have 1 tool usage record' );
@@ -159,7 +162,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $arguments, $context, $result );
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$records    = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
 
 		$this->assertCount( 1, $records, 'Should have 1 tool usage record' );
@@ -191,7 +194,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $arguments, $context, $result );
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$records    = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
 
 		$this->assertCount( 1, $records, 'Should have 1 record' );
@@ -241,7 +244,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		);
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$stats      = WP_MCP_AI_Enhanced_Token_Tracking::get_user_statistics( $user_id, $start_date, $end_date );
 
 		$this->assertIsArray( $stats, 'Statistics should be an array' );
@@ -302,7 +305,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 
 		// Verify records were created.
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 year' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$records    = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
 
 		$this->assertCount( 2, $records, 'Should have 2 backfilled records' );
@@ -327,7 +330,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		do_action( 'wp_mcp_ai_after_tool_execution', 'no_tokens_tool', array(), array(), $context );
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$records    = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
 
 		$this->assertEmpty( $records, 'Should not record without token usage data' );
@@ -352,7 +355,7 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create();
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$stats      = WP_MCP_AI_Enhanced_Token_Tracking::get_user_statistics( $user_id, $start_date, $end_date );
 
 		$this->assertIsArray( $stats, 'Statistics should be an array' );

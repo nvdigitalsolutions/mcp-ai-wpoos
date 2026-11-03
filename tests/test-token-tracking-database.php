@@ -21,6 +21,38 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 
 		// Initialize the database table.
 		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
+
+		// Start from a clean slate. Earlier suites in the single-process run
+		// can leave committed rows in the REAL table (their teardown DDL
+		// implicitly commits) or a TEMPORARY shadow on this connection — both
+		// would otherwise bleed into this test's cost-summary arithmetic.
+		$this->truncate_all_table_shadows();
+	}
+
+	/**
+	 * Truncate both the temporary shadow and the real token tracking table.
+	 *
+	 * With the harness's CREATE TABLE -> CREATE TEMPORARY TABLE rewrite, a
+	 * test's inserts can land in either physical table depending on state left
+	 * behind by earlier suites; wiping both before the test writes makes the
+	 * suite independent of that shared state.
+	 */
+	private function truncate_all_table_shadows() {
+		global $wpdb;
+
+		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
+
+		// Never let a stale creation-retry backoff from an earlier suite block
+		// this suite's table setup.
+		delete_transient( WP_MCP_AI_Token_Tracking_Database::RETRY_TRANSIENT );
+
+		// Ensure the REAL table exists and is empty (filters off inside).
+		$this->create_real_table();
+
+		// Truncate the TEMPORARY shadow (if one exists on this connection);
+		// with no shadow this re-truncates the already-empty real table.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Test-only DDL on a plugin-owned table; name from a class constant.
+		$wpdb->query( "TRUNCATE TABLE {$table_name}" );
 	}
 
 	/**
@@ -161,7 +193,10 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	public function test_get_user_usage() {
 		$user_id    = $this->factory->user->create();
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		// Slack on the end bound: rows are stamped with the insert-time second,
+		// so a slow runner can push a record past `now` and drop it from the
+		// window (flaky in the full suite). See test_get_user_cost_summary.
+		$end_date = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 
 		// Record some usage.
 		WP_MCP_AI_Token_Tracking_Database::record_usage(
@@ -198,7 +233,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	public function test_get_user_usage_with_tool_filter() {
 		$user_id    = $this->factory->user->create();
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 
 		// Record usage for multiple tools.
 		WP_MCP_AI_Token_Tracking_Database::record_usage( $user_id, 'tool1', 'openai', 'gpt-4o', 1000, 500 );
@@ -217,10 +252,13 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	public function test_get_user_cost_summary() {
 		$user_id    = $this->factory->user->create();
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		// Give the end bound a few minutes of slack: the rows are stamped with
+		// the current time, and a slow runner can push an insert onto the next
+		// second, silently excluding it from the summary window.
+		$end_date = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 
 		// Record some actual costs.
-		WP_MCP_AI_Token_Tracking_Database::record_usage(
+		$actual_insert_id = WP_MCP_AI_Token_Tracking_Database::record_usage(
 			$user_id,
 			'tool1',
 			'openai',
@@ -232,7 +270,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 		);
 
 		// Record some estimated costs.
-		WP_MCP_AI_Token_Tracking_Database::record_usage(
+		$estimated_insert_id = WP_MCP_AI_Token_Tracking_Database::record_usage(
 			$user_id,
 			'tool2',
 			'openai',
@@ -242,6 +280,12 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 			0.15,
 			true // estimated cost.
 		);
+
+		// Fail loudly at the insert point: a failed insert surfaces as a wrong
+		// summary sum today, which hides the real culprit when the shared
+		// table state is disturbed by earlier suites.
+		$this->assertNotFalse( $actual_insert_id, 'Actual-cost record should be inserted' );
+		$this->assertNotFalse( $estimated_insert_id, 'Estimated-cost record should be inserted' );
 
 		$summary = WP_MCP_AI_Token_Tracking_Database::get_user_cost_summary( $user_id, $start_date, $end_date );
 
@@ -296,7 +340,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 
 		// Verify recent record still exists.
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 		$usage      = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
 
 		$this->assertCount( 1, $usage, 'Should have 1 recent record remaining' );
@@ -361,7 +405,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	 */
 	public function test_get_usage_for_nonexistent_user() {
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 
 		$usage = WP_MCP_AI_Token_Tracking_Database::get_user_usage( 99999, $start_date, $end_date );
 
@@ -375,7 +419,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 	public function test_cost_summary_no_usage() {
 		$user_id    = $this->factory->user->create();
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 
 		$summary = WP_MCP_AI_Token_Tracking_Database::get_user_cost_summary( $user_id, $start_date, $end_date );
 
@@ -500,7 +544,7 @@ class Test_Token_Tracking_Database extends WP_UnitTestCase {
 
 		$user_id    = $this->factory->user->create();
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 day' ) );
-		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$end_date   = gmdate( 'Y-m-d H:i:s', strtotime( '+5 minutes' ) );
 
 		ob_start();
 		$usage      = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
