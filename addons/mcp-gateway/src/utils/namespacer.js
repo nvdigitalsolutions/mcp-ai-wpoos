@@ -26,7 +26,30 @@ export function prefixTool( slug, tool ) {
 	return {
 		...tool,
 		name: `${ slug }_${ tool.name }`,
+		annotations: normalizeAnnotations( tool.annotations ),
 		_meta: { ...( tool._meta || {} ), gateway: { site: slug } },
+	};
+}
+
+/**
+ * Force the three safety hints the OpenAI plugin portal requires as explicit
+ * booleans on every advertised tool: `readOnlyHint`, `destructiveHint` and
+ * `openWorldHint` (missing upstream values default pessimistically — an
+ * un-flagged tool advertises `destructiveHint: true`, matching the site
+ * plugin's own annotation discipline). Upstream-only keys such as
+ * `idempotentHint` pass through untouched.
+ *
+ * @param {object|undefined} annotations Upstream annotations (MCP Tool shape).
+ * @return {object} Normalized annotations.
+ */
+export function normalizeAnnotations( annotations ) {
+	const a = annotations && 'object' === typeof annotations ? annotations : {};
+	const readOnly = true === a.readOnlyHint;
+	return {
+		...a,
+		readOnlyHint: readOnly,
+		destructiveHint: readOnly ? false : true === a.destructiveHint || ! ( 'destructiveHint' in a ),
+		openWorldHint: true === a.openWorldHint,
 	};
 }
 

@@ -1,5 +1,14 @@
 # Changelog — NV oOS MCP Gateway
 
+## [0.3.1] — 2026-11-03
+
+- Normalize every advertised tool's annotations to the three explicit
+  safety booleans the OpenAI plugin portal scan requires — `readOnlyHint`,
+  `destructiveHint`, `openWorldHint` — defaulting pessimistically when an
+  upstream omits them (read-only tools advertise `destructiveHint: false`;
+  un-flagged tools `true`, matching the site plugin's own annotation
+  discipline). Upstream-only keys like `idempotentHint` pass through.
+
 ## [0.3.0] — 2026-11-02
 
 - Add the OpenAI plugin domain-verification route:
