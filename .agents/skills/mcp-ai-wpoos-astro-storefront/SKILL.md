@@ -371,6 +371,17 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   wp-admin build keeps the element shim (window.React.createElement) that
   piggybacks WP's React. Also: output naming comes from an object entryPoint
   (`{ 'astro-admin': 'src/standalone.tsx' }`), not `entryNames`.
+- **The wp-admin page serves the STANDALONE bundle (bridge 1.1.0, learned
+  2026-11-03):** `AdminPage` enqueues `build/standalone/astro-admin.{js,css}`,
+  NOT the externals-based `build/index.js`. Under WP 7.1.4 the externals +
+  JSX-shim pipeline committed an inconsistent tree (products table rows were
+  text-only, zero `<td>` elements — fiber tree and DOM disagreed) while the
+  identical standalone bundle rendered perfectly when injected into the same
+  page. The externals target stays in `esbuild.config.cjs` but nothing
+  enqueues it. Two follow-ups of the same incident: the old enqueue pointed
+  at a non-existent `build/index.css` (the SPA ran unstyled in wp-admin), and
+  `standalone.css` now bleeds the shell edge-to-edge
+  (`body.toplevel_page_astro-cms #wpcontent { padding-left: 0 }`).
 - **`/manage` login triage:** a `401` on `/api/auth/me` in the network
   panel BEFORE sign-in is the expected auth probe (the gate then renders
   the form). A successful login landing on "does not have permission to
