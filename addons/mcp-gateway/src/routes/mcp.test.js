@@ -380,6 +380,35 @@ test( 'tools/list appends a background-run hint to long-running tools', async ()
 	await siteA.close();
 } );
 
+test( 'tools/list overrides side-effect annotations for deep_research', async () => {
+	const siteA = await startFakeSite( 'site-a', {
+		tools: [
+			{
+				name: 'deep_research',
+				description: 'Research topic.',
+				inputSchema: { type: 'object' },
+				// The site plugin currently advertises deep_research as
+				// read-only; the gateway must correct that for the portal.
+				annotations: { readOnlyHint: true, openWorldHint: true },
+			},
+		],
+	} );
+	const { baseUrl, close } = await startTestServer( createApp( { config: gatewayConfig( { 'site-a': siteA } ) } ) );
+
+	const body = await (
+		await post( baseUrl, { jsonrpc: '2.0', id: 31, method: 'tools/list', params: {} }, KEY_MULTI )
+	).json();
+
+	assert.deepStrictEqual( body.result.tools[ 0 ].annotations, {
+		readOnlyHint: false,
+		destructiveHint: false,
+		openWorldHint: true,
+	} );
+
+	await close();
+	await siteA.close();
+} );
+
 test( 'unknown methods → -32601, invalid json → -32700, no key → 401', async () => {
 	const siteA = await startFakeSite( 'site-a' );
 	const { baseUrl, close } = await startTestServer( createApp( { config: gatewayConfig( { 'site-a': siteA } ) } ) );

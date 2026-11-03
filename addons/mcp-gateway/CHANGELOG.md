@@ -8,6 +8,11 @@
   upstream omits them (read-only tools advertise `destructiveHint: false`;
   un-flagged tools `true`, matching the site plugin's own annotation
   discipline). Upstream-only keys like `idempotentHint` pass through.
+- Override the annotations for `deep_research`: it can schedule background
+  cron work and persist results to agent memory, so it must not advertise
+  `readOnlyHint: true` (the portal scan rejects read-only claims on tools
+  with user-visible side effects). Advertised as read-only: false,
+  destructive: false, open-world: true.
 
 ## [0.3.0] — 2026-11-02
 
