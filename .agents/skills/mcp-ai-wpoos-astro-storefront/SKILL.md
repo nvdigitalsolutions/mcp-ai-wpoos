@@ -161,11 +161,16 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   the Linux CI `npm run build` at `build:mcp` (PR #7303). Use the esbuild JS
   API (`import { build } from 'esbuild'`) — it resolves the platform binary
   itself; `scripts/build-mcp.mjs` was rewritten this way.
-- **25 tools** (`SERVER_VERSION` 0.2.0): design (14 — `tokens_get/set/import_dtcg/rollback`,
+- **33 tools** (`SERVER_VERSION` 0.3.0): design (14 — `tokens_get/set/import_dtcg/rollback`,
   `theme_*`, `contrast_check`, `design_analyze/compare/plan/theme`; bulk writes transactional: validate → dry-run
   diff → snapshot → all-or-nothing), CMS (6 — `cms_list/get/create/update/delete`,
   `media_upload` over `commerce/client.ts`, collection allowlist, `limit` ≤ 100),
-  ops (5 — `site_status`, `preview_url`, `rebuild_trigger`, `screenshot`,
+  content (8 — `content_list/get/create/update/delete/preview_url/restore/validate`
+  over `content/pages` + `content/posts`, Proposal 107; writes manager-gated,
+  draft-default creates, publish gated on the backend `publish_posts` cap,
+  per-session write quota, post-write route-cache purge — see the
+  "MCP scope — 33 tools" section below), ops (5 — `site_status`, `preview_url`,
+  `rebuild_trigger`, `screenshot`,
   `nds_export` — the NDS DTCG document + mapping report for the 4.2 round-trip).
   The design-import tools (Proposal 098) fetch a source URL (Astro theme repo,
   WordPress site, or any website) and extract its design language — palette
@@ -597,15 +602,59 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   the `'loading'` update re-runs the effect — the panel spins forever.
   Trigger one-shot fetches from the activation dep alone and guard with a
   `useRef`, or use the updater-function form.
-- **MCP scope — pages are repo work:** the `/mcp` surface (25 tools) can
-  write commerce collections (`cms_*` allowlist: products, categories,
-  brands, colors, media, promotions, promocodes — **NOT** `content/pages` /
-  `content/posts`, those come from WordPress via the bridge), control
-  themes/tokens, import design language, and run ops. It **cannot** build
-  or edit pages, and there are no chart/dashboard tools in the app — page
-  changes are `.astro`/island source edits shipped via the mirror workflow.
-  On prod mounts, `screenshot` and `rebuild_trigger` are opt-in/disabled
-  (check `site_status` first).
+- **MCP scope — 33 tools (0.3.0, Proposal 107):** the `/mcp` surface writes
+  commerce collections (`cms_*` allowlist: products, categories, brands,
+  colors, media, promotions, promocodes), controls themes/tokens, imports
+  design language, and runs ops. The **content slice** (`content_list/get/
+  create/update/delete/preview_url/restore/validate`, Proposal 107) writes
+  `content/pages` + `content/posts` through the bridge's approval ladder:
+  creates default to **draft**, `publish`/`future`/unpublish require the
+  backend `publish_posts` cap (`content_publish_forbidden` 403 otherwise),
+  and successful writes purge the route-cache tags via `/internal/revalidate`
+  when configured. `content_preview_url` mints a signed token that exchanges
+  for a host-only `nvoos-preview` cookie at `/preview/{type}/{id}` and
+  redirects to the canonical route — draft previews render for logged-in
+  managers only (fail-closed 404), with a draft banner, `noindex` and no
+  caching (the route invalidates its own cache entry first). Agent-authored
+  docs render their Portable Text `blocks` through `src/components/blocks/`;
+  raw-HTML `content` is sanitized at BOTH gates (bridge `wp_kses_post` on
+  write, `sanitize-html` on render). There are still **no chart/dashboard
+  tools** in the app; structural pages (home, layout, routes) remain
+  `.astro`/island source edits shipped via the mirror workflow. On prod
+  mounts, `screenshot` and `rebuild_trigger` are opt-in/disabled (check
+  `site_status` first). Env: `NVOOS_PREVIEW_SECRET`/`NVOOS_PREVIEW_TTL_MS`
+  (preview tokens), `NVOOS_MCP_CONTENT_WRITE_MAX`/`_WINDOW_MS` (write
+  quota, default 30/10 min).
+- **Content-slice gotchas (107 session — each cost a fix):**
+  - **Route-cache poisoning:** the memory provider serves fresh hits BEFORE
+    the route runs and caches any response carrying `CDN-Cache-Control` with
+    maxAge>0 — including a manual `new Response('…', {status:404})` with a
+    body. `Astro.cache.set()` must run ONLY after the 404/redirect gates
+    (never before them), or a public 404 for a draft URL is cached and the
+    preview render is served the cached 404. 404s return
+    `Cache-Control: private, no-store`. Preview renders skip `cache.set` AND
+    `Astro.cache.invalidate({ path })` first.
+  - **Preview cookie `Secure`:** `secure: import.meta.env.PROD` breaks
+    plain-HTTP local dev/e2e (browser refuses to send it) — derive from
+    `x-forwarded-proto` first, then `Astro.url.protocol`.
+  - **ZodEffects has no `.extend`/`.partial`:** a `.refine()`-ed object
+    schema cannot be extended for the create/update variants — extend the
+    plain `z.object` form, refine separately. A registration-time throw
+    breaks EVERY tool call on the mount (-32603).
+  - **sanitize-html in the MCP bundle:** the esbuild CJS shim throws
+    `Dynamic require of "path" is not supported` when the bundle is imported
+    from ESM. `scripts/lib/mcp-build.mjs` injects a `createRequire` banner —
+    any new CJS dep in `mcp/` re-triggers this without it.
+  - **WP 6.9 `rest_parse_date()` returns a Unix timestamp** (older core
+    returns the `'Y-m-d H:i:s'` string) — normalize before `post_date`.
+  - **A future `post_date` always wins:** `wp_insert_post` flips an explicit
+    `publish` to `future` — never publish early.
+  - **Bridge auth-gate tests:** user-0 dispatches re-authenticate via the
+    bootstrap's admin cookie — assert gates with a subscriber (logged in,
+    wrong cap), never anonymous.
+  - **Content e2e isolation:** the content-write spec runs serial on its OWN
+    fixture/BFF pair (8125/4323) — publishing/deleting on the shared pair
+    races the parallel listing-count specs.
 
 ## References
 
@@ -614,4 +663,7 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 - `addons/nvoos-astro-bridge/README.md` (REST surface, data map)
 - Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`, `mcp-ai-wpoos-astro-forge` (the generator that turns a WP/Woo site into an Astro frontend — this skill covers the serving side)
 - Related: Proposal 085 + appendix (contract invariant, Strangler Fig),
-  Proposal 090 (Laravel backend flip — the storefront survives it unchanged).
+  Proposal 090 (Laravel backend flip — the storefront survives it unchanged),
+  **Proposal 107** (storefront content surface: gap analysis + implementation
+  plan — the 8-tool content slice, Portable Text blocks, preview tokens,
+  approval ladder; this skill's code companion).
