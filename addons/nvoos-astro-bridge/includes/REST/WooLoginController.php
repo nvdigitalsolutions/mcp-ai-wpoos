@@ -149,8 +149,8 @@ class WooLoginController extends BaseController {
 		}
 
 		list( $user_id_raw, $exp_raw, $hmac ) = $parts;
-		$user_id = absint( $user_id_raw );
-		$exp     = absint( $exp_raw );
+		$user_id                              = absint( $user_id_raw );
+		$exp                                  = absint( $exp_raw );
 
 		if ( $user_id < 1 || $exp < time() || $exp > time() + self::TOKEN_TTL + 60 ) {
 			return new WP_Error( 'astro_woo_sso_expired_token', 'The handoff token has expired.', array( 'status' => 401 ) );
