@@ -12,6 +12,8 @@ import { useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useScheduleManager } from '../../hooks/useScheduleManager';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import { ScheduleRunsView } from './ScheduleRunsView';
+import type { ScheduleItem } from '../../api/schedule-manager';
 import {
 	DataTable,
 	type DataTableColumn,
@@ -56,6 +58,8 @@ export function ScheduleManagerPage(): JSX.Element {
 	const [ tab, setTab ] = useState< 'schedules' | 'presets' >( 'schedules' );
 	const [ busy, setBusy ] = useState< string | null >( null );
 	const [ showForm, setShowForm ] = useState< boolean >( false );
+	/** The schedule whose runs are open (null = the list is shown). */
+	const [ runsFor, setRunsFor ] = useState< ScheduleItem | null >( null );
 	const [ form, setForm ] = useState( {
 		name: '',
 		schedule_type: 'assistant_run',
@@ -118,6 +122,14 @@ export function ScheduleManagerPage(): JSX.Element {
 							) }
 						</>,
 						<>
+							<button
+								type="button"
+								className="nvoos-pro-spa-token-manager__action"
+								disabled={ busy !== null }
+								onClick={ () => setRunsFor( schedule ) }
+							>
+								{ __( 'Runs', 'nvoos-pro-spa' ) }
+							</button>
 							<button
 								type="button"
 								className="nvoos-pro-spa-token-manager__action"
@@ -239,6 +251,17 @@ export function ScheduleManagerPage(): JSX.Element {
 					{ __( 'Retry', 'nvoos-pro-spa' ) }
 				</button>
 			</div>
+		);
+	}
+
+	if ( runsFor ) {
+		return (
+			<ScheduleRunsView
+				schedule={ runsFor }
+				endpoint={ runtime?.endpoints.scheduleManager ?? '' }
+				nonce={ runtime?.nonce ?? '' }
+				onBack={ () => setRunsFor( null ) }
+			/>
 		);
 	}
 
