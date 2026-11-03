@@ -133,21 +133,26 @@ const description =
 		font-size: 0.9rem;
 	}
 
-	/* --- Zag island styles (page-scoped — the islands own no visuals) --- */
-	.ui-dialog-backdrop {
+	/* --- Zag island styles ---
+	   The islands render their DOM client-side — React output NEVER
+	   receives the Astro scope attribute, so page-scoped selectors
+	   silently don't match (the deployed combobox showed default list
+	   bullets and no hover highlight). Every island-targeting rule here
+	   must be :global(). The islands own no visuals; this page does. */
+	:global(.ui-dialog-backdrop) {
 		position: fixed;
 		inset: 0;
 		background: rgb(0 0 0 / 0.45);
 		z-index: 40;
 	}
 
-	.ui-dialog-backdrop[hidden],
-	.ui-dialog-positioner[hidden],
-	.ui-dialog-content[hidden] {
+	:global(.ui-dialog-backdrop[hidden]),
+	:global(.ui-dialog-positioner[hidden]),
+	:global(.ui-dialog-content[hidden]) {
 		display: none;
 	}
 
-	.ui-dialog-positioner {
+	:global(.ui-dialog-positioner) {
 		position: fixed;
 		inset: 0;
 		display: flex;
@@ -157,7 +162,7 @@ const description =
 		pointer-events: none;
 	}
 
-	.ui-dialog-content {
+	:global(.ui-dialog-content) {
 		pointer-events: auto;
 		background: var(--nv-surface);
 		color: var(--nv-ink);
@@ -168,30 +173,30 @@ const description =
 		box-shadow: var(--ads-semantic-focus-ring);
 	}
 
-	.ui-dialog-title {
+	:global(.ui-dialog-title) {
 		margin: 0 0 0.5rem;
 	}
 
-	.ui-combobox {
+	:global(.ui-combobox) {
 		position: relative;
 		max-inline-size: 20rem;
 	}
 
-	.ui-combobox-label {
+	:global(.ui-combobox-label) {
 		display: block;
 		margin-block-end: 0.35rem;
 		color: var(--nv-muted);
 		font-size: 0.9rem;
 	}
 
-	.ui-combobox-control {
+	:global(.ui-combobox-control) {
 		display: flex;
 		border: 1px solid var(--nv-line);
 		border-radius: var(--nv-radius);
 		background: var(--nv-surface);
 	}
 
-	.ui-combobox-input {
+	:global(.ui-combobox-input) {
 		flex: 1;
 		border: none;
 		background: transparent;
@@ -199,25 +204,25 @@ const description =
 		padding: 0.5rem 0.75rem;
 	}
 
-	.ui-combobox-input:focus {
+	:global(.ui-combobox-input:focus) {
 		outline: none;
 	}
 
-	.ui-combobox-trigger {
+	:global(.ui-combobox-trigger) {
 		border: none;
 		background: transparent;
 		color: var(--nv-muted);
 		padding-inline: 0.5rem;
 	}
 
-	.ui-combobox-positioner {
+	:global(.ui-combobox-positioner) {
 		position: absolute;
 		inset-block-start: calc(100% + 0.25rem);
 		inline-size: 100%;
 		z-index: 30;
 	}
 
-	.ui-combobox-list {
+	:global(.ui-combobox-list) {
 		margin: 0;
 		padding: 0.25rem;
 		list-style: none;
@@ -228,14 +233,14 @@ const description =
 		overflow-y: auto;
 	}
 
-	.ui-combobox-item {
+	:global(.ui-combobox-item) {
 		padding: 0.4rem 0.75rem;
 		border-radius: calc(var(--nv-radius) / 2);
 		cursor: pointer;
 	}
 
-	.ui-combobox-item[data-highlighted],
-	.ui-combobox-item:hover {
+	:global(.ui-combobox-item[data-highlighted]),
+	:global(.ui-combobox-item:hover) {
 		background: var(--nv-surface-alt);
 	}
 </style>

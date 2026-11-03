@@ -29,6 +29,7 @@ const THEME_DOC = {
 const SHOP_DOC = {
 	checkoutUrl: 'https://nvoos.pro/checkout/',
 	cartUrl: 'https://nvoos.pro/cart/',
+	returnUrl: 'https://nvoos.pro/checkout/order-received/',
 	currency: 'USD',
 	currencySymbol: '$',
 	updatedAt: '2026-11-03T09:00:00Z',
@@ -139,6 +140,7 @@ describe('SettingsView writes', () => {
 				data: {
 					checkoutUrl: SHOP_DOC.checkoutUrl,
 					cartUrl: SHOP_DOC.cartUrl,
+					returnUrl: SHOP_DOC.returnUrl,
 					currency: 'EUR',
 					currencySymbol: '€',
 				},

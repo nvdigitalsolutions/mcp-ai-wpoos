@@ -120,6 +120,15 @@ class Test_WooCommerce_Integration extends WP_UnitTestCase {
 			$this->wc_init_handlers = isset( $GLOBALS['wp_filter']['woocommerce_init'] ) ? $GLOBALS['wp_filter']['woocommerce_init'] : null;
 			$GLOBALS['nds_test_wc']     = function_exists( 'WC' ) ? WC() : null;
 			$GLOBALS['nds_test_mailer'] = ( function_exists( 'WC' ) && WC() ) ? WC()->mailer() : null;
+
+			// Skip-gate (the WP 7.1 matrix, 2026-11-03): that environment
+			// defines a stub WooCommerce CLASS plus a WC() facade returning
+			// null — class_exists alone is a false positive and bind_hooks()
+			// would call mailer() on null. The real-Woo CI matrix and the
+			// local stub branch cover the behavior; this matrix skips.
+			if ( null === $GLOBALS['nds_test_wc'] || ! is_callable( array( $GLOBALS['nds_test_wc'], 'mailer' ) ) ) {
+				$this->markTestSkipped( 'WooCommerce is stubbed without a functional WC() facade — the real-Woo matrix covers this path.' );
+			}
 		} else {
 			$GLOBALS['nds_test_mailer'] = new WC_Emails();
 			$GLOBALS['nds_test_wc']     = new WooCommerce();

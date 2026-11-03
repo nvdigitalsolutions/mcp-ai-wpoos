@@ -81,6 +81,7 @@ export function SettingsView() {
 	const [shop, setShop] = useState<ShopGlobals | null>(null);
 	const [checkoutUrl, setCheckoutUrl] = useState('');
 	const [cartUrl, setCartUrl] = useState('');
+	const [returnUrl, setReturnUrl] = useState('');
 	const [currency, setCurrency] = useState('USD');
 	const [currencySymbol, setCurrencySymbol] = useState('$');
 	const [savingShop, setSavingShop] = useState(false);
@@ -109,6 +110,7 @@ export function SettingsView() {
 			setShop(shopDoc);
 			setCheckoutUrl(shopDoc.checkoutUrl);
 			setCartUrl(shopDoc.cartUrl);
+			setReturnUrl(shopDoc.returnUrl);
 			setCurrency(shopDoc.currency);
 			setCurrencySymbol(shopDoc.currencySymbol);
 		};
@@ -163,6 +165,7 @@ export function SettingsView() {
 				data: {
 					checkoutUrl,
 					cartUrl,
+					returnUrl,
 					currency,
 					currencySymbol,
 				},
@@ -325,6 +328,24 @@ export function SettingsView() {
 						onChange={(event) => setCartUrl((event.target as HTMLInputElement).value)}
 						style={{ maxWidth: 420 }}
 					/>
+				</div>
+
+				<div style={FIELD_GROUP}>
+					<label style={FIELD_LABEL} htmlFor="shop-return-url">
+						Return URL
+					</label>
+					<input
+						id="shop-return-url"
+						type="url"
+						className="regular-text"
+						value={returnUrl}
+						onChange={(event) => setReturnUrl((event.target as HTMLInputElement).value)}
+						style={{ maxWidth: 420 }}
+					/>
+					<p style={{ margin: '4px 0 0', fontSize: 12, opacity: 0.8 }}>
+						Where Woo sends shoppers after a completed order (108) — the
+						storefront thanks route, e.g. /checkout/thanks/.
+					</p>
 				</div>
 
 				<div style={FIELD_GROUP}>

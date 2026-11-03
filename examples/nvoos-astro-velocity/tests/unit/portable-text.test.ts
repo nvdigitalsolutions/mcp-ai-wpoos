@@ -37,8 +37,44 @@ describe('portableText schema — accept', () => {
 			{ _type: 'testimonial', quote: 'Great', author: 'A' },
 			{ _type: 'faq', question: 'Q?', answer: 'A.' },
 			{ _type: 'stat', value: '99%', label: 'uptime' },
+			{
+				_type: 'tabs',
+				tabs: [
+					{
+						title: 'Tab one',
+						blocks: [
+							{
+								_type: 'block',
+								style: 'normal',
+								children: [{ _type: 'span', text: 'Nested', marks: [] }],
+								markDefs: [],
+							},
+						],
+					},
+				],
+			},
 		]);
-		expect(blocks).toHaveLength(7);
+		expect(blocks).toHaveLength(8);
+	});
+
+	it('accepts tabs with nested custom blocks and a supplied _key', () => {
+		const blocks = parsePortableText([
+			{
+				_type: 'tabs',
+				_key: 'spec-tabs',
+				tabs: [
+					{
+						title: 'Facts',
+						blocks: [{ _type: 'stat', value: '42', label: 'widgets' }],
+					},
+					{
+						title: 'Questions',
+						blocks: [{ _type: 'faq', question: 'Why?', answer: 'Because.' }],
+					},
+				],
+			},
+		]);
+		expect(blocks).toHaveLength(1);
 	});
 });
 
@@ -92,6 +128,65 @@ describe('portableText schema — reject', () => {
 		expect(() => parsePortableText([{ _type: 'productGrid', ids: [] }])).toThrow(
 			/invalid blocks/
 		);
+	});
+
+	it('rejects a tabs block with no tabs', () => {
+		expect(() => parsePortableText([{ _type: 'tabs', tabs: [] }])).toThrow(
+			/invalid blocks/
+		);
+	});
+
+	it('rejects a tabs block with an empty tab title', () => {
+		expect(() =>
+			parsePortableText([
+				{
+					_type: 'tabs',
+					tabs: [
+						{
+							title: '',
+							blocks: [
+								{
+									_type: 'block',
+									children: [{ _type: 'span', text: 'x', marks: [] }],
+								},
+							],
+						},
+					],
+				},
+			])
+		).toThrow(/invalid blocks/);
+	});
+
+	it('rejects more than 6 tabs', () => {
+		const tabs = Array.from({ length: 7 }, (_, index) => ({
+			title: `Tab ${index}`,
+			blocks: [
+				{ _type: 'block', children: [{ _type: 'span', text: 'x', marks: [] }] },
+			],
+		}));
+		expect(() => parsePortableText([{ _type: 'tabs', tabs }])).toThrow(/invalid blocks/);
+	});
+
+	it('rejects unsafe hrefs nested inside tab content (recursive walk)', () => {
+		expect(() =>
+			parsePortableText([
+				{
+					_type: 'tabs',
+					tabs: [
+						{
+							title: 'Tab',
+							blocks: [
+								{
+									_type: 'block',
+									children: [{ _type: 'span', text: 'x', marks: ['a1'] }],
+									markDefs: [{ _key: 'a1', _type: 'link', href: 'javascript:alert(1)' }],
+								},
+							],
+						},
+					],
+				},
+			])
+		).toThrow(/unsafe link href/);
 	});
 });
 

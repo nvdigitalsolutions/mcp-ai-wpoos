@@ -41,7 +41,14 @@ class ShopGlobalsController extends BaseController {
 	 *
 	 * @var array<int, string>
 	 */
-	private const FIELDS = array( 'checkoutUrl', 'cartUrl', 'currency', 'currencySymbol' );
+	private const FIELDS = array( 'checkoutUrl', 'cartUrl', 'returnUrl', 'currency', 'currencySymbol' );
+
+	/**
+	 * URL fields — all three ride the 108 H1 same-site/allowlist gate.
+	 *
+	 * @var array<int, string>
+	 */
+	private const URL_FIELDS = array( 'checkoutUrl', 'cartUrl', 'returnUrl' );
 
 	/**
 	 * Register routes.
@@ -115,12 +122,22 @@ class ShopGlobalsController extends BaseController {
 			}
 		}
 
-		foreach ( array( 'checkoutUrl', 'cartUrl' ) as $field ) {
-			if ( isset( $data[ $field ] ) && ! $this->is_valid_http_url( $data[ $field ] ) ) {
-				$code = 'checkoutUrl' === $field ? 'astro_shop_invalid_checkout_url' : 'astro_shop_invalid_cart_url';
+		foreach ( self::URL_FIELDS as $field ) {
+			if ( ! isset( $data[ $field ] ) ) {
+				continue;
+			}
+			$snake = strtolower( (string) preg_replace( '/([a-z])([A-Z])/', '$1_$2', $field ) );
+			if ( ! $this->is_valid_http_url( $data[ $field ] ) ) {
 				return new WP_Error(
-					$code,
+					'astro_shop_invalid_' . $snake,
 					sprintf( '%s must be an absolute http(s) URL.', $field ),
+					array( 'status' => 400 )
+				);
+			}
+			if ( ! $this->is_allowed_shop_url( $data[ $field ] ) ) {
+				return new WP_Error(
+					'astro_shop_' . $snake . '_not_allowed',
+					sprintf( '%s must point at this site or an allowlisted host.', $field ),
 					array( 'status' => 400 )
 				);
 			}
@@ -149,6 +166,9 @@ class ShopGlobalsController extends BaseController {
 		}
 		if ( isset( $data['cartUrl'] ) ) {
 			$doc['cartUrl'] = esc_url_raw( $data['cartUrl'] );
+		}
+		if ( isset( $data['returnUrl'] ) ) {
+			$doc['returnUrl'] = esc_url_raw( $data['returnUrl'] );
 		}
 		if ( isset( $data['currency'] ) ) {
 			$doc['currency'] = strtoupper( sanitize_text_field( $data['currency'] ) );
@@ -200,11 +220,51 @@ class ShopGlobalsController extends BaseController {
 	}
 
 	/**
+	 * Whether a shop URL may be a checkout/cart handoff target (108 H1).
+	 *
+	 * Open-redirect hardening: same-site by default; external hosts must be
+	 * explicitly allowlisted via the `funiq_bridge_checkout_url_allowlist`
+	 * filter. userinfo and non-standard ports are rejected outright.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return bool
+	 */
+	private function is_allowed_shop_url( $value ): bool {
+		if ( ! is_string( $value ) ) {
+			return false;
+		}
+		$parts = wp_parse_url( $value );
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+			return false;
+		}
+		if ( isset( $parts['user'] ) || isset( $parts['pass'] ) ) {
+			return false;
+		}
+		if ( isset( $parts['port'] ) && ! in_array( (int) $parts['port'], array( 80, 443 ), true ) ) {
+			return false;
+		}
+
+		$host      = strtolower( (string) $parts['host'] );
+		$site_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+		/**
+		 * Extra hosts allowed as checkout/cart handoff targets.
+		 *
+		 * @param array<int, string> $hosts Lowercase hostnames.
+		 */
+		$allowlist = apply_filters( 'funiq_bridge_checkout_url_allowlist', array() );
+		$allowlist = is_array( $allowlist ) ? array_map( 'strtolower', array_filter( $allowlist, 'is_string' ) ) : array();
+
+		return $host === $site_host || in_array( $host, $allowlist, true );
+	}
+
+	/**
 	 * Normalize a stored doc — every field coerced/fallbacked to the
-	 * contract shape.
+	 * contract shape. Read-only extension fields (108 §2–3): the product
+	 * source mode and the enabled payment-method list.
 	 *
 	 * @param array<string, mixed> $doc Stored document.
-	 * @return array{checkoutUrl: string, cartUrl: string, currency: string, currencySymbol: string, updatedAt: string}
+	 * @return array{checkoutUrl: string, cartUrl: string, returnUrl: string, currency: string, currencySymbol: string, updatedAt: string, productsSource: string, paymentMethods: array<int, array{id: string, title: string}>}
 	 */
 	private function normalize_doc( array $doc ): array {
 		$defaults = Schema::shop_defaults();
@@ -220,6 +280,7 @@ class ShopGlobalsController extends BaseController {
 		return array(
 			'checkoutUrl'    => $url( $doc['checkoutUrl'] ?? null, $defaults['checkoutUrl'] ),
 			'cartUrl'        => $url( $doc['cartUrl'] ?? null, $defaults['cartUrl'] ),
+			'returnUrl'      => $url( $doc['returnUrl'] ?? null, $defaults['returnUrl'] ),
 			'currency'       => ( is_string( $doc['currency'] ?? null ) && 1 === preg_match( '/^[A-Za-z]{3}$/', $doc['currency'] ) )
 				? strtoupper( $doc['currency'] )
 				: $defaults['currency'],
@@ -229,6 +290,67 @@ class ShopGlobalsController extends BaseController {
 			'updatedAt'      => ( is_string( $doc['updatedAt'] ?? null ) && '' !== $doc['updatedAt'] )
 				? $doc['updatedAt']
 				: gmdate( 'c' ),
+			'productsSource' => $this->resolve_products_source(),
+			'paymentMethods' => $this->payment_methods(),
 		);
+	}
+
+	/**
+	 * The effective product source mode (option, filter-overridable).
+	 *
+	 * @return string
+	 */
+	private function resolve_products_source(): string {
+		$source = get_option( Schema::OPTION_PRODUCT_SOURCE, Schema::SOURCE_NATIVE );
+		if ( ! is_string( $source ) ) {
+			$source = Schema::SOURCE_NATIVE;
+		}
+
+		/**
+		 * Per-request product source override.
+		 *
+		 * @param string $source Current source mode.
+		 */
+		$source = apply_filters( 'funiq_bridge_products_source', $source );
+
+		return in_array( $source, array( Schema::SOURCE_NATIVE, 'woo', 'both' ), true ) ? $source : Schema::SOURCE_NATIVE;
+	}
+
+	/**
+	 * Enabled payment-method list (read-only, 60 s cached) — the storefront
+	 * may SHOW the methods, never drive them (INV-1). Empty without Woo.
+	 *
+	 * @return array<int, array{id: string, title: string}>
+	 */
+	private function payment_methods(): array {
+		$cached = get_transient( 'funiq_bridge_payment_methods' );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$methods = array();
+		if ( class_exists( 'WooCommerce' ) && function_exists( 'WC' ) && is_callable( array( WC(), 'payment_gateways' ) ) ) {
+			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+			if ( is_array( $gateways ) ) {
+				foreach ( $gateways as $id => $gateway ) {
+					$methods[] = array(
+						'id'    => sanitize_key( (string) $id ),
+						'title' => sanitize_text_field( (string) ( $gateway->title ?? $id ) ),
+					);
+				}
+			}
+		}
+
+		/**
+		 * Override the payment-method list (tests, headless gateways).
+		 *
+		 * @param array<int, array{id: string, title: string}> $methods Methods.
+		 */
+		$methods = apply_filters( 'funiq_bridge_payment_methods', $methods );
+		$methods = is_array( $methods ) ? $methods : array();
+
+		set_transient( 'funiq_bridge_payment_methods', $methods, MINUTE_IN_SECONDS );
+
+		return $methods;
 	}
 }

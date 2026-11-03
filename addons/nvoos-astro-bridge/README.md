@@ -146,6 +146,9 @@ with it.
 | `GET` | `/auth/me` | Logged-in cookie |
 | `GET` | `/managers[?search=&page=&limit=]` | `manage_astro` |
 | `PUT` | `/managers/{id}` (`{"manage": true|false}`) | `manage_astro` |
+| `GET`/`PATCH` | `/globals/shop` | Read public / Write cap — `checkoutUrl`/`cartUrl`/`returnUrl` are same-site + allowlist validated (108 H1) |
+| `POST` | `/cart/sync` | Public (customer surface) — `X-Nvoos-Cart-Session` header; woo/both product modes only, variants + coupons via the Store API proxy (108 Phase 2) |
+| `GET` | `/woo-login/{token}` | Public — single-use SSO handoff (108 Phase 3), disabled unless `funiq_bridge_woo_sso_enabled` is `yes` |
 
 **CMS content write surface (Proposal 107):** the `content/pages` + `content/posts`
 collections ride an approval state machine on top of the standard CRUD:

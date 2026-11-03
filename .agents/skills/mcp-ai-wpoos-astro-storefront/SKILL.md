@@ -690,6 +690,12 @@ Shoelace (stale) and Lion/AstroUXDS (heavy) were rejected — see the table.
   omits `role="listbox"` from the list while items carry `role="option"` —
   axe fails `aria-required-parent`/`only-listitems`. Set `composite: false`
   for the classic listbox ARIA shape.
+- **Island DOM never carries the Astro scope attribute (caught
+  post-deploy on /components/, 2026-11-03):** page-scoped styles targeting
+  island-rendered classes silently don't match — the Zag combobox shipped
+  with default list bullets and no hover highlight. Island-targeting rules
+  in .astro page style blocks must be `:global()`; pin the regression in
+  e2e with `toHaveCSS` (the component-library spec does).
 - **Islands under parallel e2e load:** `page.goto` resolves before
   `client:load` islands hydrate; an interaction landing on an un-hydrated
   controlled input sticks its native value and React never sees the event
@@ -697,6 +703,63 @@ Shoelace (stale) and Lion/AstroUXDS (heavy) were rejected — see the table.
   flaky ONLY under full-suite load). Fix: the repo's `data-hydrated` marker
   convention (HomeStats/StackExplorer) — set it in a mount `useEffect` and
   `expect(...).toHaveAttribute('data-hydrated', '')` before interacting.
+
+## Proposal 108 + blocks promotion (2026-11-03)
+
+- **108 shipped in full (PR #7414 + follow-up):** Phase 1 — the
+  same-site/allowlist rule on `checkoutUrl`/`cartUrl`/`returnUrl`
+  (`funiq_bridge_checkout_url_allowlist`; userinfo + non-80/443 ports
+  rejected; codes `astro_shop_{checkout_url,cart_url,return_url}_not_allowed`;
+  the camel→snake mapping is `preg_replace('/([a-z])([A-Z])/', '$1_$2', …)`)
+  + `rel="noopener noreferrer"` on the handoff link. Phase 2 — the bridge
+  cart proxy: `POST /nvoos-commerce/v1/cart/sync` (public customer surface,
+  `X-Nvoos-Cart-Session` UUID header, woo/both modes only) reconciles the
+  local cart into the Woo session cart via `Woo/StoreApiClient` (Store API
+  `Cart-Token` guest sessions, transient-cached per session id, zero-HTTP
+  test seam `funiq_bridge_store_api_pre_response` + availability seam
+  `funiq_bridge_store_api_available` — the env's Woo stubs define
+  `wc_get_product`, so `remove_all_filters` alone cannot prove the 501
+  path; add `__return_false`). The app island (`CartView`) syncs then hands
+  off with a CLEAN checkout URL (variants included), fails OPEN to the
+  legacy URL form with the variant note, and fires the
+  `nvoos:checkout-handoff` CustomEvent analytics seam (mode/lines/variants).
+  Phase 3 — `returnUrl` globals + `ReturnUrlFilter` (`woocommerce_get_return_url`
+  → `/checkout/thanks/?order_id=&order_key=`), read-only `paymentMethods`
+  (60 s transient) + `productsSource` in the shop doc, and the opt-in SSO
+  route `GET /woo-login/{token}` (`funiq_bridge_woo_sso_enabled`, 5-min
+  single-use per-user HMAC; `auth_cookie` filter is the test seam for
+  `wp_set_auth_cookie`, which never populates `$_COOKIE` under CLI).
+  Phase 4 — MCP `shop_get`/`shop_update` (SERVER_VERSION 0.4.0, 35 tools;
+  write gate = manager cookie + `NVOOS_MCP_SHOP_WRITE_*` quota). Fixture:
+  the `checkout-woo` e2e project rides its own pair (8126/4324,
+  `NVOOS_FIXTURE_PRODUCTS_SOURCE=woo`) and the fixture serves PATCH
+  `/globals/shop` + POST `/cart/sync`. Docs: `docs/project/proposals/108-*`
+  trio (research + gap analysis with DECISION-1/2 + PCI INV-1) + bridge
+  README route table.
+- **Content blocks promoted to the adopted components:** `faq` renders as
+  the accordion (`UiAccordionItem`, shared `name="nvoos-content-faq"` →
+  native exclusive accordion; solo-item top border restored in scope) and
+  a new `tabs` block type (nested Portable Text per tab, deterministic ids
+  from `_key` or a djb2 of the node JSON, recursive schema). The type/mark
+  map moved to `src/components/blocks/components.ts` (shared by
+  Blocks.astro + TabsBlock.astro — no circular component imports).
+- **Zod recursive-schema recipe (cost a session):** a `z.lazy` schema
+  inside a `z.discriminatedUnion` cannot carry a `z.ZodType<T>` annotation
+  (ts2502/ts2456/ts2345) — declare the recursive member as an INTERFACE
+  (`blocks: PortableTextItem[]` property) and build the item union from
+  the non-recursive members' `z.infer` + the interface. `z.lazy` in the
+  schema, no annotation on the union const.
+- **Deploy-preview recipe:** to preview an unmerged branch's routes on the
+  live site, dispatch the sync workflow on the branch ref
+  (`gh workflow run sync-nvoos-astro-velocity.yml --ref <branch>`) — the
+  mirror push is what Velocity deploys. **Stale-process symptom:** after a
+  mirror push, new static assets return 200 while a new ROUTE 404s — the
+  files are deployed but the Node process still runs the old route table;
+  it resolves when Velocity restarts it (or nudge with another dispatch).
+  Static-asset 200-vs-404 is how you fingerprint which build NGINX serves.
+  Route chunks for pages named `index.astro` hash as `index_<hash>` —
+  there is no `components_*` chunk; locate a nested route by grepping
+  chunk CONTENT (a unique page string), never the filename.
 
 ## References
 

@@ -116,6 +116,15 @@ final class Schema {
 	 */
 	public const OPTION_PRODUCT_SOURCE = 'funiq_bridge_products_source';
 
+	/**
+	 * Woo SSO handoff switch (Proposal 108 Phase 3) — when `yes`, logins on
+	 * the bridge auth surface mint a short-lived, single-use token that the
+	 * `woo-login` route exchanges for a logged-in Woo session before landing
+	 * on the hosted checkout. Off by default: cross-domain carts work without
+	 * it, shoppers simply sign in at checkout.
+	 */
+	public const OPTION_WOO_SSO_ENABLED = 'funiq_bridge_woo_sso_enabled';
+
 	// -----------------------------------------------------------------------
 	// Product source names (the `source` field on product documents).
 	// -----------------------------------------------------------------------
@@ -198,19 +207,21 @@ final class Schema {
 	}
 
 	/**
-	 * Default values for the shop globals option (Proposal 106 §1.3).
+	 * Default values for the shop globals option (Proposal 106 §1.3,
+	 * extended by 108 §3).
 	 *
-	 * Checkout/cart URLs derive from the site home URL; the currency comes
-	 * from WooCommerce when it is active (USD otherwise). The currency
+	 * Checkout/cart/return URLs derive from the site home URL; the currency
+	 * comes from WooCommerce when it is active (USD otherwise). The currency
 	 * symbol is a display hint for the storefront — no currency conversion
 	 * happens bridge-side.
 	 *
-	 * @return array{checkoutUrl: string, cartUrl: string, currency: string, currencySymbol: string, updatedAt: string}
+	 * @return array{checkoutUrl: string, cartUrl: string, returnUrl: string, currency: string, currencySymbol: string, updatedAt: string}
 	 */
 	public static function shop_defaults(): array {
 		return array(
 			'checkoutUrl'    => home_url( '/checkout/' ),
 			'cartUrl'        => home_url( '/cart/' ),
+			'returnUrl'      => home_url( '/checkout/order-received/' ),
 			'currency'       => ( class_exists( 'WooCommerce' ) && function_exists( 'get_woocommerce_currency' ) ) ? get_woocommerce_currency() : 'USD',
 			'currencySymbol' => '$',
 			'updatedAt'      => gmdate( 'c' ),

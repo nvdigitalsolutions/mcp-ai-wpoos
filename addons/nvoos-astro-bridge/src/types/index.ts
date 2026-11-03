@@ -143,6 +143,8 @@ export interface ThemePolicy {
 export interface ShopGlobals {
 	checkoutUrl: string;
 	cartUrl: string;
+	/** Post-payment return destination (108 Phase 3). */
+	returnUrl: string;
 	currency: string;
 	currencySymbol: string;
 	updatedAt: string;

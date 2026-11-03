@@ -43,6 +43,20 @@ class AuthController extends BaseController {
 	protected $rest_base = 'auth';
 
 	/**
+	 * The Woo SSO handoff controller (token minting, 108 Phase 3).
+	 *
+	 * @var WooLoginController
+	 */
+	private $woo_login;
+
+	/**
+	 * Wire the SSO controller.
+	 */
+	public function __construct() {
+		$this->woo_login = new WooLoginController();
+	}
+
+	/**
 	 * Register routes.
 	 *
 	 * @return void
@@ -254,7 +268,16 @@ class AuthController extends BaseController {
 
 		wp_set_current_user( $user->ID );
 
-		return rest_ensure_response( $this->me_payload( $user->ID ) );
+		$payload = $this->me_payload( $user->ID );
+
+		// Woo SSO handoff (108 Phase 3): when the owner toggle is on, a login
+		// also mints the single-use token that signs the shopper into the
+		// hosted checkout across the registrable-domain boundary.
+		if ( $this->woo_login->is_enabled() ) {
+			$payload['wooLoginToken'] = $this->woo_login->mint_token( $user->ID );
+		}
+
+		return rest_ensure_response( $payload );
 	}
 
 	/**

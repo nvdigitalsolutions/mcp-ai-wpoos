@@ -396,13 +396,17 @@ export async function getThemePolicy(
 }
 
 /** Fallback shop doc — fail closed: an empty checkoutUrl disables the
- *  handoff link in the cart (106 §4). */
+ *  handoff link in the cart (106 §4); the missing source mode resolves to
+ *  `native` so legacy backends keep the URL handoff (108 §2). */
 export const DEFAULT_SHOP_DOC: ShopDoc = {
 	checkoutUrl: '',
 	cartUrl: '',
+	returnUrl: '',
 	currency: 'USD',
 	currencySymbol: '$',
 	updatedAt: '',
+	productsSource: 'native',
+	paymentMethods: [],
 };
 
 /** Fetch the shop globals doc (106 §1.3) through the resolved base, 60 s TTL,
@@ -425,7 +429,29 @@ export async function getShop(requestUrl: string | URL | undefined): Promise<Sho
 		if (!res.ok) {
 			throw new Error(`Commerce API ${res.status} for ${key}`);
 		}
-		const doc = (await res.json()) as ShopDoc;
+		const raw = (await res.json()) as Partial<ShopDoc>;
+		// 108 normalization — legacy backends omit the extension fields.
+		const doc: ShopDoc = {
+			checkoutUrl: typeof raw.checkoutUrl === 'string' ? raw.checkoutUrl : '',
+			cartUrl: typeof raw.cartUrl === 'string' ? raw.cartUrl : '',
+			returnUrl: typeof raw.returnUrl === 'string' ? raw.returnUrl : '',
+			currency: typeof raw.currency === 'string' ? raw.currency : 'USD',
+			currencySymbol: typeof raw.currencySymbol === 'string' ? raw.currencySymbol : '$',
+			updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : '',
+			productsSource:
+				raw.productsSource === 'woo' || raw.productsSource === 'both'
+					? raw.productsSource
+					: 'native',
+			paymentMethods: Array.isArray(raw.paymentMethods)
+				? raw.paymentMethods.filter(
+					(m) =>
+						typeof m === 'object' &&
+						m !== null &&
+						typeof m.id === 'string' &&
+						typeof m.title === 'string'
+				)
+				: [],
+		};
 		globalsMemo.set(key, { doc, expires: now + 60_000 });
 		return doc;
 	} catch {

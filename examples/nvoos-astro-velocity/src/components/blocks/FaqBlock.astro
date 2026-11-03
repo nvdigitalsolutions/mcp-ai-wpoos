@@ -1,28 +1,40 @@
 ---
-// FAQ custom block (107 §3.1) — a semantic question/answer pair.
+// ---------------------------------------------------------------------------
+// FaqBlock.astro — FAQ custom block (107 §3.1), promoted to the adopted
+// accessible accordion (108 Phase 1.3): native details/summary via
+// UiAccordionItem with a SHARED `name` (native exclusive-accordion
+// semantics) so consecutive FAQ blocks on a page behave as one accordion.
+// Markup/behaviour from `accessible-astro-components` (Incluud, MIT);
+// styling rides the ADS tokens.
+// ---------------------------------------------------------------------------
+
+import UiAccordion from '../ui/UiAccordion.astro';
+import UiAccordionItem from '../ui/UiAccordionItem.astro';
+
 interface Props {
 	node: { _type: 'faq'; question: string; answer: string };
 }
 
 const { node } = Astro.props;
+
+/** Document-wide exclusive-accordion group (native `details name`). */
+const ACCORDION_NAME = 'nvoos-content-faq';
 ---
 
-<section class="block-faq">
-	<h3>{node.question}</h3>
-	<p>{node.answer}</p>
-</section>
+<UiAccordion class="block-faq">
+	<UiAccordionItem title={node.question} name={ACCORDION_NAME} headingLevel="h3">
+		<p class="block-faq__answer">{node.answer}</p>
+	</UiAccordionItem>
+</UiAccordion>
 
 <style>
-	.block-faq {
-		margin-block: 1rem;
+	/* Solo-item accordions restore the top rule the container's first-child
+	   rule removes, so stacked FAQ blocks read as one continuous list. */
+	.block-faq :global(.ui-accordion-item:first-child .ui-accordion-wrapper) {
+		border-block-start: 2px solid var(--nv-line-strong);
 	}
 
-	.block-faq h3 {
-		margin: 0 0 0.35rem;
-		font-size: 1.05rem;
-	}
-
-	.block-faq p {
+	.block-faq__answer {
 		margin: 0;
 		color: var(--nv-muted);
 	}

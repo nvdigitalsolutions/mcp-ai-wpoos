@@ -85,6 +85,11 @@ test('Zag combobox filters and selects via keyboard', async ({ page }) => {
 	const input = page.getByRole('combobox', { name: 'Wood' });
 	// Wait for island hydration first — see the dialog test.
 	await expect(page.locator('.ui-combobox')).toHaveAttribute('data-hydrated', '');
+	// Styling regression gate (2026-11-03): the island DOM never receives
+	// Astro's scope attribute, so page-scoped selectors silently miss — the
+	// deployed list showed default bullets with no hover highlight. The
+	// page's island rules must stay :global(); toHaveCSS proves they apply.
+	await expect(page.locator('.ui-combobox-list')).toHaveCSS('list-style-type', 'none');
 	await input.fill('oa');
 
 	// Wait for the filtered collection to commit before the keyboard

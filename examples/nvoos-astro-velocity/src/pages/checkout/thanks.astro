@@ -1,0 +1,60 @@
+---
+// ---------------------------------------------------------------------------
+// /checkout/thanks — the post-payment return route (Proposal 108 Phase 3).
+//
+// The bridge repoints Woo's order-received return at this route with the
+// order reference in the query. NO sensitive data is read or displayed —
+// just a confirmation and links back to the storefront; order details stay
+// on the WordPress/account side. Renders server-side, never cached.
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const orderId = Astro.url.searchParams.get('order_id') ?? '';
+const orderKey = Astro.url.searchParams.get('order_key') ?? '';
+
+const title = 'Thank you for your order';
+const description = 'Your order is confirmed — keep shopping on the NV Store.';
+---
+
+<BaseLayout title={title} description={description}>
+	<article class="thanks">
+		<h1>Thank you for your order</h1>
+		<p class="lede">
+			Your order is confirmed. A confirmation email is on its way from the
+			store.
+		</p>
+		{
+			orderId !== '' && (
+				<p class="ref">
+					Order reference: <strong>{orderId}</strong>
+					{orderKey !== '' && <span class="ref__key"> · {orderKey.slice(0, 8)}…</span>}
+				</p>
+			)
+		}
+		<p>
+			<a class="btn" href="/products/">
+				Continue shopping
+			</a>{' '}
+			<a href="/account/">Manage your account</a>
+		</p>
+	</article>
+</BaseLayout>
+
+<style>
+	.thanks {
+		max-width: 46rem;
+	}
+
+	.lede {
+		color: var(--nv-muted);
+	}
+
+	.ref {
+		font-variant-numeric: tabular-nums;
+	}
+
+	.ref__key {
+		color: var(--nv-muted);
+	}
+</style>

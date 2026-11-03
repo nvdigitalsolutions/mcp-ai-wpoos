@@ -5,18 +5,12 @@
 // allowlisted custom types (the commerce components) map to one Astro
 // component each; link marks render through a scheme-safe anchor. Unknown
 // types never reach this component — the schema rejects them at the render
-// boundary (parsePortableText in the routes).
+// boundary (parsePortableText in the routes). The map is shared with
+// TabsBlock.astro (nested tab content renders the same components — 108).
 // ---------------------------------------------------------------------------
 
 import { PortableText } from '@portabletext/astro';
-import HeroBlock from './HeroBlock.astro';
-import ImageBlock from './ImageBlock.astro';
-import ProductGridBlock from './ProductGridBlock.astro';
-import PromotionBlock from './PromotionBlock.astro';
-import TestimonialBlock from './TestimonialBlock.astro';
-import FaqBlock from './FaqBlock.astro';
-import StatBlock from './StatBlock.astro';
-import LinkMark from './LinkMark.astro';
+import { PORTABLE_TEXT_COMPONENTS } from './components';
 import type { PortableTextBlock } from '../../lib/content/portable-text';
 
 interface Props {
@@ -24,28 +18,10 @@ interface Props {
 }
 
 const { blocks } = Astro.props;
-
-// @portabletext/astro 0.2.0 component map — SINGULAR keys (`type`/`mark`),
-// not the React-style plurals. Custom types map one component each; the
-// `link` mark overrides the library default.
-const components = {
-	type: {
-		hero: HeroBlock,
-		image: ImageBlock,
-		productGrid: ProductGridBlock,
-		promotion: PromotionBlock,
-		testimonial: TestimonialBlock,
-		faq: FaqBlock,
-		stat: StatBlock,
-	},
-	mark: {
-		link: LinkMark,
-	},
-};
 ---
 
 <div class="blocks">
-	<PortableText value={blocks} components={components} />
+	<PortableText value={blocks} components={PORTABLE_TEXT_COMPONENTS} />
 </div>
 
 <style>
