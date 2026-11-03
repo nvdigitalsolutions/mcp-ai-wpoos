@@ -731,6 +731,9 @@ Shoelace (stale) and Lion/AstroUXDS (heavy) were rejected — see the table.
   files are deployed but the Node process still runs the old route table;
   it resolves when Velocity restarts it (or nudge with another dispatch).
   Static-asset 200-vs-404 is how you fingerprint which build NGINX serves.
+  Route chunks for pages named `index.astro` hash as `index_<hash>` —
+  there is no `components_*` chunk; locate a nested route by grepping
+  chunk CONTENT (a unique page string), never the filename.
 
 ## References
 

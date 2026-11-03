@@ -68,6 +68,36 @@
     applied) is reusable across bridge clusters — host/container vendor
     pruning is safe after it exists.
 
+74. **Verified local bridge invocation (2026-11-03, the 108 cluster).**
+    Volumes present on this box as of then: `astro-105106-vendor` (Linux
+    vendor), `wp71-core` (WP 7.1 core — the SKILL recipe's `mf-wp71-core`
+    example; use `docker volume ls` to pick the real name), and the DBs
+    `wordpress_test_astro`, `wordpress_test_astro_fresh`,
+    `wordpress_test_astro_wp71` inside `oos-wp-db`. The one-off runner
+    form that works (the `oos-wp` container's own `/tmp/wp71` is gone
+    after restarts):
+
+    ```bash
+    # WP 6.9 matrix
+    MSYS_NO_PATHCONV=1 docker run --rm \
+      -e WP_CORE_DIR=/var/www/html -e WP_DB_HOST=db \
+      -e WP_DB_NAME=wordpress_test_astro -e WP_DB_USER=wordpress -e WP_DB_PASSWORD=wordpress \
+      -v oos-wp_wp_core:/var/www/html \
+      -v F:/GITHUB/mcp-ai-wpoos:/var/www/html/wp-content/plugins/mcp-ai-wpoos \
+      -v astro-105106-vendor:/var/www/html/wp-content/plugins/mcp-ai-wpoos/vendor \
+      --network oos-wp_default wordpress:6.9-php8.2-apache \
+      sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php -d memory_limit=1G vendor/bin/phpunit addons/nvoos-astro-bridge/tests/phpunit/<File>.php --no-coverage'
+
+    # WP 7.1 matrix — swap the two core/DB envs and mounts:
+    #   -e WP_CORE_DIR=/tmp/wp71 -e WP_DB_NAME=wordpress_test_astro_wp71
+    #   -v wp71-core:/tmp/wp71   (instead of oos-wp_wp_core:/var/www/html)
+    ```
+
+    The runner image is just the PHP runtime (the mounted core defines the
+    WP version) — `wordpress:6.9-php8.2-apache` works for both matrices.
+    The bridge PHPUnit boot is slow under the one-off runner (~30-60 s of
+    bootstrap logging before the test dots) — that is normal, not a hang.
+
  ## Production fix vs test fix
 
 - **Fix production** when the test exposes a genuine bug: unsafe coercion
