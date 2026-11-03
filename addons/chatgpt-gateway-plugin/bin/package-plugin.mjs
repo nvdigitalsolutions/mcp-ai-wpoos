@@ -39,7 +39,7 @@ if ( !existsSync( manifestPath ) ) {
 }
 
 const manifest = JSON.parse( readFileSync( manifestPath, 'utf8' ) );
-const out = process.argv[2] || join( root, 'dist', 'nvoos-site-bridge.zip' );
+const out = process.argv[2] || join( root, 'dist', 'nvoos-gateway.zip' );
 mkdirSync( dirname( out ), { recursive: true } );
 
 // Stage the plugin under a single folder inside a temp dir, excluding build
@@ -59,6 +59,7 @@ try {
 			return !parts.includes( 'dist' ) &&
 				!parts.includes( 'node_modules' ) &&
 				!parts.includes( '.git' ) &&
+				!parts.includes( 'docs' ) &&
 				!parts.some( ( p ) => p === '.env' || p.startsWith( '.env.' ) );
 		},
 	} );
