@@ -698,6 +698,40 @@ Shoelace (stale) and Lion/AstroUXDS (heavy) were rejected — see the table.
   convention (HomeStats/StackExplorer) — set it in a mount `useEffect` and
   `expect(...).toHaveAttribute('data-hydrated', '')` before interacting.
 
+## Proposal 108 + blocks promotion (2026-11-03)
+
+- **108 checkout hardening (Phase 1 shipped):** `ShopGlobalsController`
+  enforces a same-site/allowlist rule on `checkoutUrl`/`cartUrl`
+  (`funiq_bridge_checkout_url_allowlist` filter; userinfo + non-80/443
+  ports rejected; new 400 codes `astro_shop_checkout_url_not_allowed` /
+  `astro_shop_cart_url_not_allowed`). The cart checkout link carries
+  `rel="noopener noreferrer"`. Docs: the `docs/project/proposals/108-*`
+  trio (research + gap analysis with DECISION-1 `shop` tool slice and
+  DECISION-2 three-lane render pipeline, PCI INV-1 — no payment UI in the
+  app). Phases 2–4 (Store API cart proxy, return URL / gateway list / SSO
+  token, MCP `shop_get`/`shop_update`) are owner-approved-only.
+- **Content blocks promoted to the adopted components:** `faq` renders as
+  the accordion (`UiAccordionItem`, shared `name="nvoos-content-faq"` →
+  native exclusive accordion; solo-item top border restored in scope) and
+  a new `tabs` block type (nested Portable Text per tab, deterministic ids
+  from `_key` or a djb2 of the node JSON, recursive schema). The type/mark
+  map moved to `src/components/blocks/components.ts` (shared by
+  Blocks.astro + TabsBlock.astro — no circular component imports).
+- **Zod recursive-schema recipe (cost a session):** a `z.lazy` schema
+  inside a `z.discriminatedUnion` cannot carry a `z.ZodType<T>` annotation
+  (ts2502/ts2456/ts2345) — declare the recursive member as an INTERFACE
+  (`blocks: PortableTextItem[]` property) and build the item union from
+  the non-recursive members' `z.infer` + the interface. `z.lazy` in the
+  schema, no annotation on the union const.
+- **Deploy-preview recipe:** to preview an unmerged branch's routes on the
+  live site, dispatch the sync workflow on the branch ref
+  (`gh workflow run sync-nvoos-astro-velocity.yml --ref <branch>`) — the
+  mirror push is what Velocity deploys. **Stale-process symptom:** after a
+  mirror push, new static assets return 200 while a new ROUTE 404s — the
+  files are deployed but the Node process still runs the old route table;
+  it resolves when Velocity restarts it (or nudge with another dispatch).
+  Static-asset 200-vs-404 is how you fingerprint which build NGINX serves.
+
 ## References
 
 - Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · **Proposal 104** (runtime hardening: `-proposal.md`, `-research.md`, `-implementation-plan.md`, `-ecosystem-repo-analysis.md`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`

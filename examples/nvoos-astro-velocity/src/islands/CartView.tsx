@@ -102,6 +102,7 @@ export default function CartView({ shop }: Props) {
 				<a
 					className="btn"
 					href={plan.url}
+					rel="noopener noreferrer"
 					data-cart-checkout
 					onClick={() => clearCart()}
 				>

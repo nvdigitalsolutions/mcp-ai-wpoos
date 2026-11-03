@@ -61,6 +61,11 @@ test('variant lines are excluded from the URL and render the note', async ({ pag
 		'href',
 		/add-to-cart=1$/
 	);
+	// 108 H2 — the handoff link never leaks opener/opener.referrer state.
+	await expect(page.locator('a[data-cart-checkout]')).toHaveAttribute(
+		'rel',
+		'noopener noreferrer'
+	);
 	await expect(page.locator('[data-cart-variant-note]')).toBeVisible();
 	await expect(page.locator('[data-cart-variant-note]')).toContainText('excluded');
 });

@@ -89,6 +89,33 @@ test('agent-authored blocks render through the Portable Text components', async 
 				{ _type: 'stat', value: '42', label: 'widgets' },
 				{ _type: 'faq', question: 'Why?', answer: 'Because.' },
 				{
+					_type: 'tabs',
+					tabs: [
+						{
+							title: 'Details',
+							blocks: [
+								{
+									_type: 'block',
+									style: 'normal',
+									children: [{ _type: 'span', text: 'Tab body', marks: [] }],
+									markDefs: [],
+								},
+							],
+						},
+						{
+							title: 'Shipping',
+							blocks: [
+								{
+									_type: 'block',
+									style: 'normal',
+									children: [{ _type: 'span', text: 'Ships free', marks: [] }],
+									markDefs: [],
+								},
+							],
+						},
+					],
+				},
+				{
 					_type: 'block',
 					style: 'h2',
 					children: [{ _type: 'span', text: 'Heading', marks: [] }],
@@ -114,8 +141,25 @@ test('agent-authored blocks render through the Portable Text components', async 
 	// Custom components rendered.
 	await expect(page.locator('.block-stat__value')).toHaveText('42');
 	await expect(page.locator('.block-stat__label')).toHaveText('widgets');
-	await expect(page.locator('.block-faq h3')).toHaveText('Why?');
+	// FAQ now renders as the adopted accordion (108): a details/summary
+	// pair with the shared exclusive-accordion name.
+	await expect(page.locator('.block-faq summary .ui-accordion-heading')).toHaveText('Why?');
 	await expect(page.locator('.block-faq p')).toHaveText('Because.');
+	await expect(page.locator('.block-faq details')).toHaveAttribute('name', 'nvoos-content-faq');
+	await page.locator('.block-faq summary').click();
+	await expect(page.locator('.block-faq details')).toHaveAttribute('open', '');
+	// Tabs block (108): first tab selected, click switches panels.
+	const tabs = page.locator('.block-tabs');
+	await expect(tabs.locator('[role="tab"]')).toHaveCount(2);
+	await expect(tabs.locator('[role="tabpanel"]')).toHaveCount(2);
+	await expect(tabs.locator('[role="tab"]').first()).toHaveAttribute('aria-selected', 'true');
+	await expect(tabs.locator('[role="tabpanel"]').first()).toHaveAttribute('aria-hidden', 'false');
+	await expect(tabs.locator('[role="tabpanel"]').first()).toContainText('Tab body');
+	await expect(tabs.locator('[role="tabpanel"]').nth(1)).toHaveAttribute('aria-hidden', 'true');
+	await tabs.locator('[role="tab"]').nth(1).click();
+	await expect(tabs.locator('[role="tab"]').nth(1)).toHaveAttribute('aria-selected', 'true');
+	await expect(tabs.locator('[role="tabpanel"]').nth(1)).toHaveAttribute('aria-hidden', 'false');
+	await expect(tabs.locator('[role="tabpanel"]').nth(1)).toContainText('Ships free');
 	// Standard block styles + marks through the library defaults.
 	await expect(page.locator('.blocks h2')).toHaveText('Heading');
 	await expect(page.locator('.blocks a[href="https://example.com"]')).toHaveText('link');

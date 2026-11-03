@@ -25,6 +25,7 @@ export const CUSTOM_BLOCK_TYPES = [
 	'testimonial',
 	'faq',
 	'stat',
+	'tabs',
 ] as const;
 
 export type CustomBlockType = (typeof CUSTOM_BLOCK_TYPES)[number];
@@ -91,6 +92,61 @@ const statSchema = z.object({
 	label: z.string().max(120),
 });
 
+/**
+ * The tabs custom block — the recursion point of the Portable Text tree
+ * (108 Phase 1.3). Declared as an INTERFACE: TypeScript allows recursive
+ * references through object properties, which the pure type-alias form
+ * (`z.infer` of a self-referential schema) does not (ts2456/ts2502).
+ */
+export interface PortableTextTabsBlock {
+	_type: 'tabs';
+	_key?: string;
+	tabs: Array<{
+		title: string;
+		blocks: PortableTextItem[];
+	}>;
+}
+
+/**
+ * One Portable Text top-level item — the discriminated union of the
+ * non-recursive member schemas' output types plus the interface-declared
+ * tabs member. Equivalent to `z.infer<typeof portableTextItemSchema>` by
+ * construction (the schema const is annotated against it).
+ */
+export type PortableTextItem =
+	| z.infer<typeof blockSchema>
+	| z.infer<typeof heroSchema>
+	| z.infer<typeof imageSchema>
+	| z.infer<typeof productGridSchema>
+	| z.infer<typeof promotionSchema>
+	| z.infer<typeof testimonialSchema>
+	| z.infer<typeof faqSchema>
+	| z.infer<typeof statSchema>
+	| PortableTextTabsBlock;
+
+/**
+ * Tabs custom block schema (108 Phase 1.3) — the adopted WAI-ARIA tabs
+ * components as a Portable Text type. Tab content is nested Portable Text
+ * (recursive via z.lazy — declared before portableTextItemSchema,
+ * resolved lazily).
+ */
+const tabsSchema = z.object({
+	_type: z.literal('tabs'),
+	_key: z.string().min(1).max(120).optional(),
+	tabs: z
+		.array(
+			z.object({
+				title: z.string().min(1).max(120),
+				blocks: z.lazy(
+					(): z.ZodType<PortableTextItem[]> =>
+						z.array(portableTextItemSchema).min(1).max(20)
+				),
+			})
+		)
+		.min(1)
+		.max(6),
+});
+
 /** One Portable Text top-level item (standard block or custom type). */
 export const portableTextItemSchema = z.discriminatedUnion('_type', [
 	blockSchema,
@@ -102,6 +158,7 @@ export const portableTextItemSchema = z.discriminatedUnion('_type', [
 		testimonialSchema,
 		faqSchema,
 		statSchema,
+		tabsSchema,
 	],
 ]);
 
@@ -110,7 +167,6 @@ export const portableTextSchema = z
 	.max(100, 'a document carries at most 100 blocks');
 
 /** Runtime TS shapes for renderers (zod-inferred). */
-export type PortableTextItem = z.infer<typeof portableTextItemSchema>;
 export type PortableTextBlock = PortableTextItem;
 export type PortableTextCustomBlock = Exclude<PortableTextItem, { _type: 'block' }>;
 
@@ -118,7 +174,9 @@ export type PortableTextCustomBlock = Exclude<PortableTextItem, { _type: 'block'
  * Validate a blocks payload — the content_validate gate and the render
  * boundary. Unknown types fail loudly with the offending index named;
  * link markDefs ride a second-pass scheme check (belt and braces on top of
- * the schema — javascript:/data: hrefs are rejected before render).
+ * the schema — javascript:/data: hrefs are rejected before render). The
+ * walk recurses into nested content (tabs tab blocks) — every link in the
+ * tree is checked, not just the top level (108 Phase 1.3).
  */
 export function parsePortableText(input: unknown): PortableTextBlock[] {
 	const result = portableTextSchema.safeParse(input);
@@ -129,17 +187,28 @@ export function parsePortableText(input: unknown): PortableTextBlock[] {
 		throw new Error(`[portable-text] invalid blocks — ${issues}`);
 	}
 	for (const item of result.data) {
-		if (item._type === 'block') {
-			for (const def of item.markDefs ?? []) {
-				if (!isSafeHref(def.href)) {
-					throw new Error(
-						`[portable-text] unsafe link href rejected — "${def.href}"`
-					);
-				}
+		assertSafeLinks(item);
+	}
+	return result.data;
+}
+
+/** Recurse a parsed item tree, rejecting unsafe link hrefs loudly. */
+function assertSafeLinks(item: PortableTextItem): void {
+	if (item._type === 'block') {
+		for (const def of item.markDefs ?? []) {
+			if (!isSafeHref(def.href)) {
+				throw new Error(`[portable-text] unsafe link href rejected — "${def.href}"`);
+			}
+		}
+		return;
+	}
+	if (item._type === 'tabs') {
+		for (const tab of item.tabs) {
+			for (const nested of tab.blocks) {
+				assertSafeLinks(nested);
 			}
 		}
 	}
-	return result.data;
 }
 
 /**

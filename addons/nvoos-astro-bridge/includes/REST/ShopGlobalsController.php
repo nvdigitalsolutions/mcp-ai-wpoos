@@ -116,11 +116,22 @@ class ShopGlobalsController extends BaseController {
 		}
 
 		foreach ( array( 'checkoutUrl', 'cartUrl' ) as $field ) {
-			if ( isset( $data[ $field ] ) && ! $this->is_valid_http_url( $data[ $field ] ) ) {
+			if ( ! isset( $data[ $field ] ) ) {
+				continue;
+			}
+			if ( ! $this->is_valid_http_url( $data[ $field ] ) ) {
 				$code = 'checkoutUrl' === $field ? 'astro_shop_invalid_checkout_url' : 'astro_shop_invalid_cart_url';
 				return new WP_Error(
 					$code,
 					sprintf( '%s must be an absolute http(s) URL.', $field ),
+					array( 'status' => 400 )
+				);
+			}
+			if ( ! $this->is_allowed_shop_url( $data[ $field ] ) ) {
+				$code = 'checkoutUrl' === $field ? 'astro_shop_checkout_url_not_allowed' : 'astro_shop_cart_url_not_allowed';
+				return new WP_Error(
+					$code,
+					sprintf( '%s must point at this site or an allowlisted host.', $field ),
 					array( 'status' => 400 )
 				);
 			}
@@ -197,6 +208,45 @@ class ShopGlobalsController extends BaseController {
 		}
 		return false !== filter_var( $value, FILTER_VALIDATE_URL )
 			&& 1 === preg_match( '#^https?://#i', $value );
+	}
+
+	/**
+	 * Whether a shop URL may be a checkout/cart handoff target (108 H1).
+	 *
+	 * Open-redirect hardening: same-site by default; external hosts must be
+	 * explicitly allowlisted via the `funiq_bridge_checkout_url_allowlist`
+	 * filter. userinfo and non-standard ports are rejected outright.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return bool
+	 */
+	private function is_allowed_shop_url( $value ): bool {
+		if ( ! is_string( $value ) ) {
+			return false;
+		}
+		$parts = wp_parse_url( $value );
+		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
+			return false;
+		}
+		if ( isset( $parts['user'] ) || isset( $parts['pass'] ) ) {
+			return false;
+		}
+		if ( isset( $parts['port'] ) && ! in_array( (int) $parts['port'], array( 80, 443 ), true ) ) {
+			return false;
+		}
+
+		$host      = strtolower( (string) $parts['host'] );
+		$site_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+
+		/**
+		 * Extra hosts allowed as checkout/cart handoff targets.
+		 *
+		 * @param array<int, string> $hosts Lowercase hostnames.
+		 */
+		$allowlist = apply_filters( 'funiq_bridge_checkout_url_allowlist', array() );
+		$allowlist = is_array( $allowlist ) ? array_map( 'strtolower', array_filter( $allowlist, 'is_string' ) ) : array();
+
+		return $host === $site_host || in_array( $host, $allowlist, true );
 	}
 
 	/**

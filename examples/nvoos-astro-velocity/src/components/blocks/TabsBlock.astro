@@ -1,0 +1,69 @@
+---
+// ---------------------------------------------------------------------------
+// TabsBlock.astro — tabs custom block (108 Phase 1.3): the adopted
+// WAI-ARIA tabs components (Incluud, MIT — arrow/Home/End keys, roving
+// tabindex) as a Portable Text type. Tab content is nested Portable Text
+// rendered through the shared map, so agents can put any allowlisted block
+// inside a tab. Deterministic ids: the `_key` when supplied, else a djb2 of
+// the node JSON — stable across SSR renders and route-cache entries.
+// ---------------------------------------------------------------------------
+
+import { PortableText } from '@portabletext/astro';
+import UiTabs from '../ui/UiTabs.astro';
+import UiTabsList from '../ui/UiTabsList.astro';
+import UiTabsTab from '../ui/UiTabsTab.astro';
+import UiTabsPanel from '../ui/UiTabsPanel.astro';
+import { PORTABLE_TEXT_COMPONENTS } from './components';
+import type { PortableTextBlock } from '../../lib/content/portable-text';
+
+interface Props {
+	node: {
+		_type: 'tabs';
+		_key?: string;
+		tabs: { title: string; blocks: PortableTextBlock[] }[];
+	};
+}
+
+const { node } = Astro.props;
+
+/** djb2 — a short, deterministic, collision-resistant-enough id base. */
+function hash(input: string): string {
+	let h = 5381;
+	for (let i = 0; i < input.length; i += 1) {
+		h = ((h << 5) + h + input.charCodeAt(i)) | 0;
+	}
+	return (h >>> 0).toString(36);
+}
+
+const base = node._key && node._key.length > 0 ? node._key : hash(JSON.stringify(node));
+const id = `tabs-${base}`;
+---
+
+<UiTabs class="block-tabs">
+	<UiTabsList>
+		{node.tabs.map((tab, index) => (
+			<UiTabsTab
+				id={`${id}-tab-${index}`}
+				controls={`${id}-panel-${index}`}
+				selected={index === 0}
+			>
+				{tab.title}
+			</UiTabsTab>
+		))}
+	</UiTabsList>
+	{node.tabs.map((tab, index) => (
+		<UiTabsPanel
+			id={`${id}-panel-${index}`}
+			labelledby={`${id}-tab-${index}`}
+			selected={index === 0}
+		>
+			<PortableText value={tab.blocks} components={PORTABLE_TEXT_COMPONENTS} />
+		</UiTabsPanel>
+	))}
+</UiTabs>
+
+<style>
+	.block-tabs {
+		margin-block: 1.5rem;
+	}
+</style>
