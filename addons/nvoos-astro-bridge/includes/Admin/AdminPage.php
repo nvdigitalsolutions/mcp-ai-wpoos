@@ -57,6 +57,15 @@ class AdminPage {
 	 *
 	 * Only loads on the Astro CMS admin page.
 	 *
+	 * The STANDALONE bundle is used deliberately: it bundles React and the
+	 * @wordpress/* packages from node_modules, so it does not depend on the
+	 * wp-admin script chain. The externals-based wp-admin build (build/index.js)
+	 * renders broken tables under WP 7.1+ — its JSX runtime shim captures
+	 * window.React.createElement, and the field incident of 2026-11-03 showed
+	 * text-only rows (no <td> elements) in exactly that environment. The
+	 * standalone bundle is the same artifact the /manage surface ships and is
+	 * proven against the live backend.
+	 *
 	 * @param string $hook_suffix Current admin page hook.
 	 * @return void
 	 */
@@ -65,14 +74,14 @@ class AdminPage {
 			return;
 		}
 
-		$js_path  = NVOOS_ASTRO_BRIDGE_PATH . 'build/index.js';
-		$css_path = NVOOS_ASTRO_BRIDGE_PATH . 'build/index.css';
+		$js_path  = NVOOS_ASTRO_BRIDGE_PATH . 'build/standalone/astro-admin.js';
+		$css_path = NVOOS_ASTRO_BRIDGE_PATH . 'build/standalone/astro-admin.css';
 
 		if ( file_exists( $js_path ) ) {
 			wp_enqueue_script(
 				'astro-admin',
-				NVOOS_ASTRO_BRIDGE_URL . 'build/index.js',
-				array( 'wp-element', 'wp-components', 'wp-api-fetch', 'wp-i18n' ),
+				NVOOS_ASTRO_BRIDGE_URL . 'build/standalone/astro-admin.js',
+				array(),
 				filemtime( $js_path ),
 				array(
 					'in_footer' => true,
@@ -84,8 +93,8 @@ class AdminPage {
 		if ( file_exists( $css_path ) ) {
 			wp_enqueue_style(
 				'astro-admin',
-				NVOOS_ASTRO_BRIDGE_URL . 'build/index.css',
-				array( 'wp-components' ),
+				NVOOS_ASTRO_BRIDGE_URL . 'build/standalone/astro-admin.css',
+				array(),
 				filemtime( $css_path )
 			);
 		}

@@ -38,11 +38,11 @@ On activation the plugin:
 
 ### 3. Done — no build step needed
 
-The admin SPA ships pre-compiled in `build/index.js`. After activation, an **Astro CMS** menu item appears in the WordPress admin sidebar immediately. No `npm install` or build step is required on the server.
+The admin SPA ships pre-compiled in `build/standalone/astro-admin.{js,css}` (a self-contained bundle — React and the `@wordpress/*` packages are bundled, so it does not depend on the wp-admin script chain). After activation, an **Astro CMS** menu item appears in the WordPress admin sidebar immediately. No `npm install` or build step is required on the server.
 
 > **For developers:** If you modify the React source in `src/`, rebuild with:
 > ```bash
-> cd addons/nvoos-astro-bridge && npm install && npm run build
+> cd addons/nvoos-astro-bridge && npm install && npm run build:standalone
 > ```
 
 ### 4. Verify it works
