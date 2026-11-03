@@ -165,11 +165,13 @@ Four rules, each from a session that cost a recovery:
   shared lines; your PR's unique additions stay), then
   `git push --force-with-lease`. A successful rebase replay is proof the
   conflict is gone — by construction the branch is ahead of the base.
-- **Local `.git/info/exclude` can silently block deliberate files.** The
-  main worktree ignores `*.png`/`*.jpg` (per-worktree media guard, not repo
-  config). `git add` then fails with "ignored by one of your .gitignore
-  files" — run `git check-ignore -v <path>` to find the rule and `git add -f`
-  when the file is deliberate (gateway logo assets, PR #7349).
+- **The shared `.git/info/exclude` can silently block deliberate files.**
+  The **repository-level** info/exclude (applies to **linked worktrees too**
+  — not per-worktree) ignores `*.png`/`*.jpg`/`*.pdf` (the `*.pdf` rule hit
+  the dictate document-OCR fixtures, 2026-11-03). `git add` then fails with
+  "ignored by one of your .gitignore files" — run `git check-ignore -v
+  <path>` to find the rule and `git add -f` when the file is deliberate
+  (gateway logo assets PR #7349; dictate PDF fixtures PR #7425).
 
 ## Windows reserved-name artifacts (learned 2026-10-29)
 
