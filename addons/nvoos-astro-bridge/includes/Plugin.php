@@ -36,6 +36,8 @@ use NvoosAstroBridge\REST\{
 };
 use NvoosAstroBridge\Admin\AdminPage;
 use NvoosAstroBridge\Admin\SettingsPage;
+use NvoosAstroBridge\CLI\MigrationCommand;
+use NvoosAstroBridge\Woo\NativeCatalogMigrator;
 use NvoosAstroBridge\Woo\ReturnUrlFilter;
 
 /**
@@ -129,6 +131,23 @@ final class Plugin {
 		// 6. Woo return-URL repoint (108 Phase 3) — the hook only fires
 		// inside Woo's checkout flow, so registration is always safe.
 		( new ReturnUrlFilter() )->register();
+
+		// 7. Proposal 112 — the native→Woo catalog migration. The sweep
+		// callback is registered on EVERY request (never admin-gated) so
+		// the Action Scheduler runner can always find it; the WP-CLI
+		// commands guard their own registration.
+		add_action( Schema::HOOK_MIGRATE_SWEEP, array( $plugin, 'handle_migration_sweep' ), 10, 1 );
+		MigrationCommand::register();
+	}
+
+	/**
+	 * One native-catalog migration sweep chunk (the AS callback).
+	 *
+	 * @param int $offset Products to skip.
+	 * @return void
+	 */
+	public function handle_migration_sweep( int $offset ): void {
+		( new NativeCatalogMigrator() )->handle_sweep( $offset );
 	}
 
 	/**

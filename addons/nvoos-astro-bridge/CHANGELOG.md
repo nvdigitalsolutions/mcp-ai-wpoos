@@ -1,5 +1,14 @@
 # Changelog — NV oOS Astro Bridge (nvoos-astro-bridge)
 
+## 1.1.3 — 2026-11-04
+
+### Added
+
+- **Native→Woo catalog migration** (Proposal 112, owner direction: the Woo-owned catalog): `NativeCatalogMigrator` migrates every `funiq_product` into a WooCommerce product via WC CRUD — SKU-keyed (`NV-<id>`) idempotent upserts, price/oldPrice mapping, dimensions, featured, shared-media image/gallery ids, native Category→`product_cat` (Brand/Color follow the `WooTaxonomy` mapping, terms created on demand), draft fidelity, and the promotion linkage carried as `_nvoos_bridge_promotion_id` meta. Batches wrap `wp_defer_term_counting` + `wp_suspend_cache_invalidation` (Woo bulk-save practice); an Action Scheduler cursor sweep records counters/status in `nvoos_bridge_migration_state`.
+- **WP-CLI surface** (`wp nvoos-astro-bridge migrate-native`, `migration-status`): dry-run by default (VIP/WP-CLI best practice), `--run` executes with a confirm for large catalogs, `--limit`/`--offset` for cursor runs.
+- **Settings page controls**: a Catalog migration panel with dry-run (report rendered inline, no writes) and background-run buttons, plus native/migrated counts and sweep status in the System status panel.
+- **Woo write-path parity**: `promotionId`/`promotion` write-through on the woo source and the transformer reads the carried promotion back into the contract doc (shared `PromotionRef` helper).
+
 ## 1.1.2 — 2026-11-04
 
 ### Fixed

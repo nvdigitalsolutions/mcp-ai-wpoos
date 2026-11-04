@@ -326,4 +326,46 @@ class TestWooProductSource extends WP_Test_REST_TestCase {
 		$this->assertCount( 1, ProductSources::active() );
 		$this->assertSame( Schema::SOURCE_NATIVE, ProductSources::active()[0]->name() );
 	}
+
+	/**
+	 * Proposal 112 parity — the woo write path carries promotionId as Woo
+	 * meta and the transformer reads it back into the contract doc.
+	 */
+	public function test_promotion_linkage_round_trip(): void {
+		$source = new \NvoosAstroBridge\Sources\WooProductSource();
+		$promo  = wp_insert_post(
+			array(
+				'post_type'   => Schema::CPT_PROMOTION,
+				'post_title'  => 'Winter Sale',
+				'post_status' => 'publish',
+			)
+		);
+
+		$doc = $source->create_product(
+			array(
+				'name'        => 'Promo Chair',
+				'price'       => 50,
+				'promotionId' => $promo,
+			)
+		);
+
+		$this->assertSame( $promo, $doc['promotion']['id'] );
+		$this->assertSame( 'Winter Sale', $doc['promotion']['title'] );
+
+		// Update clears the linkage when the payload says so.
+		$updated = $source->update_product( $doc['id'], array( 'promotionId' => 0 ) );
+		$this->assertNull( $updated['promotion'] );
+
+		// Re-link via the promotion object shape (the admin SPA form).
+		$relinked = $source->update_product(
+			$doc['id'],
+			array(
+				'promotion' => array(
+					'id'    => $promo,
+					'title' => 'Winter Sale',
+				),
+			)
+		);
+		$this->assertSame( $promo, $relinked['promotion']['id'] );
+	}
 }
