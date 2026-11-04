@@ -135,8 +135,9 @@ pub fn vision_polish_prompt() -> &'static str {
 
 /// Build a multimodal chat-completions body: a text instruction plus a single
 /// base64 data-URI image. `model` is omitted when `None` (LM Studio serves its
-/// single loaded model in that case).
-#[cfg(feature = "vision")]
+/// single loaded model in that case). Pure JSON — shared by the vision polish
+/// (Proposal 076) and OCR polish (Proposal 109) transports.
+#[cfg(any(feature = "vision", feature = "document"))]
 pub fn build_vision_body(
     model: Option<&str>,
     prompt: &str,
@@ -156,6 +157,20 @@ pub fn build_vision_body(
         body["model"] = json!(model);
     }
     body
+}
+
+/// OCR-correction prompt (Proposal 109 §3.8): repair recognition errors
+/// against the page pixels; preserve structure; output only corrected text.
+#[cfg(feature = "document")]
+pub fn ocr_polish_prompt(ocr_text: &str) -> String {
+    format!(
+        "You are a precise OCR corrector. The image is a scanned document page \
+         and the text below is its OCR output, which may contain recognition \
+         errors (wrong glyphs, swapped letters, missing punctuation). Correct \
+         the text using the image. Preserve the original line breaks, reading \
+         order, and structure exactly. Do not summarize, translate, or add \
+         commentary. Return ONLY the corrected text.\n\nOCR text:\n{ocr_text}"
+    )
 }
 
 /// Parse a vision-polish reply into `(label, confidence)`. Tolerates a

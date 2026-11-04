@@ -64,8 +64,8 @@ examples/nvoos-dictate/
   co-link because the vendored whisper-rs-sys compiles whisper.cpp with
   the static CRT /MT, matching sherpa-onnx's prebuilt libs).
   **"Complete" build** (every opt-in surface) is the union of all
-  feature-gated modules — engines + vision + agent + mcp + snippet OCR:
-  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx`.
+  feature-gated modules — engines + vision + agent + mcp + snippet OCR + document:
+  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx,document,snippet-pdf`.
   **Trap — a build that omits a feature silently boots with that surface
   "not compiled", not an error.** `vision` (YOLO detection/tracking + camera
   preview + VLM label-polish) and `agent` (browser control) are each
@@ -711,8 +711,22 @@ multi-page TIFFs into the snippet OCR stack, using the industry-standard
 hybrid two-pass (per-page text-layer extraction where present — OCRmyPDF's
 `--skip-text` strategy — and 300-DPI rasterization + OCR where not).
 Docs: `docs/project/proposals/109-document-input-pipeline-ocr-{proposal,implementation-plan}.md`.
-**Status:** M0 spike shipped (PR #7425); M1 (lib modules + shared
-`layout.rs` pull-forward) pending.
+**Status:** M0 spike + M1–M4 implemented on PR #7425: `document/mod.rs`
+(types + `available()`), `pdf.rs` (bind/open/extract/300-DPI render),
+`hybrid.rs` (char→word reconstruction + classify router), shared
+`snippet/layout.rs` (XY-cut reading order — pulled forward from 102),
+`preprocess.rs` (scan profile: 2× upscale + Otsu), `ocr.rs` (engine
+dispatch), `tiff.rs` (multi-page), `controller.rs` (worker + progress +
+cancel, always compiled with cfg'd stubs), `polish.rs` (local VLM via
+076's transport), `export.rs` (txt/md/hOCR/ALTO) + `export_pdf.rs`
+(searchable-PDF rebuild via lopdf, feature `snippet-pdf`); IPC
+(`document_available`, `pick_document`, `transcribe_document`,
+`cancel_document`, `export_document` + `document://progress` events),
+`Settings.document`, `DocumentDiagnostics`, a `source` column on the
+snippets history table, a Home "Document OCR" panel, and fixtures
+(`text-2page.pdf` 954 B, `malformed.pdf`, `encrypted.pdf` — RC4 security
+handler, user pw `test`). ADR `docs/decisions/0005-document-engine.md`;
+`NOTICE.md` carries the PDFium BSD-3 entry.
 
 - **Feature:** `document = ["snippet", "dep:pdfium-render", "dep:tiff"]`.
   `pdfium-render` pinned `default-features = false, features =
@@ -743,10 +757,11 @@ Docs: `docs/project/proposals/109-document-input-pipeline-ocr-{proposal,implemen
   300 DPI; malformed fixture → `PdfiumLibraryInternalError(FormatError)`,
   exit 1, no panic. Gates: fmt, clippy `-D warnings` (`--features
   document`), tests with and without the feature.
-- **Deferred to M1:** encrypted-PDF fixture (needs an RC4 security-handler
-  writer), the complete-union build gaining `document`, verify markers,
-  and the `layout.rs` pull-forward (102 is still unimplemented — 109 M1
-  builds the shared module first).
+- **Deferred:** the encrypted fixture's per-object **stream-decryption**
+  round-trip is not yet verified (the U/O handshake opens correctly with
+  the password — the error path is fully covered); full polish/exports UI
+  pass; 102's deskew step; verify markers use `pdfium library not found`
+  (a real lib string).
 
 ## Stage-2 polish providers (local LLM cleanup)
 
@@ -1140,8 +1155,44 @@ New this session (2026-11-03): **document-OCR input pipeline (Proposal
   `could not spawn agent worker`). Complete-union + verify markers gain
   `document` at M1, when lib code lands.
 
+New this session (2026-11-03, later): **Proposal 109 M1–M4 implemented**
+  on PR #7425 — the full document pipeline described in the "Document OCR
+  input" section: hybrid router + shared `layout.rs`, scan profile, OCR
+  dispatch, multi-page TIFF, controller/progress/cancel, local VLM polish,
+  txt/md/hOCR/ALTO + searchable-PDF exports (new `snippet-pdf` feature +
+  lopdf), IPC + Settings + Diagnostics + history `source` column, the Home
+  "Document OCR" panel, encrypted fixture, ADR 0005, NOTICE entry, and a
+  `document (pdfium)` verify marker (`pdfium library not found`). Gates:
+  fmt, clippy `-D warnings` (default + document + snippet-pdf + full
+  union), 144 lib + 17 golden + 6 history + 5 validation + 5 document
+  integration tests, `npm run build`. Known gaps: encrypted-fixture
+  stream-decryption round-trip unverified; hOCR/ALTO are line-granularity
+  v1; searchable-PDF v1 re-rasterizes (vector-preserving relayer
+  deferred); polish needs a live local VLM to exercise end-to-end.
+
 ## Related skills
 
 - `mcp-ai-wpoos-plugin` — plugin-side setup (assistant credentials, Docker)
 - `mcp-ai-wpoos-spa-ui` — React/Vite conventions shared with the SPA addons
 - `mcp-ai-wpoos-test-suite` — PHPUnit side; this skill covers the Rust gates
+
+New this session (2026-11-04): **Proposal 109 M1-M4 follow-up PR + CI fmt
+fix.** PR #7425 (proposal/plan/M0) was squash-merged into alpha-working;
+M1-M4 + ADR 0005 + docs land via the follow-up PR from
+`feat/nvoos-dictate-document-ocr-m0`. The CI `cargo fmt --check` failure
+was stale formatting, not toolchain drift: the committed files were
+edited after the last local fmt run, so they were never fmt-clean for the
+pinned stable. Fix = run `cargo fmt` with the same toolchain CI uses
+(dtolnay@stable == rustup stable 1.99.1, rustfmt 1.10.0). **rustup
+self-update blocker on this PC:** `could not create link ... cargo-miri.exe
+(os error 183)` - delete the stale hardlink (`rm ~/.cargo/bin/cargo-miri.exe`)
+and re-run `rustup update stable`; the toolchain sync is blocked until the
+self-update completes. The CI windows-bundle union now includes
+`document,snippet-pdf` (compile-only on CI - PDFium binds at runtime, and
+the document tests need the dll so they stay out of CI). UI fact:
+"Transcribe media" = audio/video only; PDF/TIFF go through the Home
+"Document OCR" panel; single raster images (PNG/JPEG) are the documented
+follow-up. Research notes:
+`docs/project/proposals/109-document-input-pipeline-ocr-research.md`
+(engine comparisons, licensing matrix, cloud-vs-local economics,
+small-VLM polish options, addons/pro survey).

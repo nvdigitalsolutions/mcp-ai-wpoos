@@ -25,6 +25,17 @@ optional vision label-polish layer talks to your local LM Studio / Ollama
 server as a separate process — no model code is embedded or redistributed
 by this application.
 
+The document pipeline (Proposal 109) loads the **PDFium** library at
+runtime to parse and render PDF files. PDFium is Copyright The PDFium
+Authors, licensed under BSD-3-Clause (a permissive license compatible
+with this application's proprietary boundary); the prebuilt library is
+downloaded from the bblanchon/pdfium-binaries project at build/bundle
+time, never committed to this repository, and is loaded from beside the
+executable at runtime. Text recognition runs through the same on-device
+OCR engines listed above (Windows.Media.Ocr / Apple Vision / RapidOCR
+PP-OCR), and the optional OCR-polish pass talks to your local LM Studio /
+Ollama server as a separate process.
+
 For licensing enquiries: licensing@nvdigitalsolutions.com
 
 SPDX identifier for these files: `LicenseRef-Proprietary`

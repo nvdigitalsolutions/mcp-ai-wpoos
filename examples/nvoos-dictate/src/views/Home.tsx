@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
   api,
+  onDocumentProgress,
   onMediaProgress,
   type Detection,
   type DictateEvent,
+  type DocumentResult,
   type MediaTranscription,
   type PreviewFrame,
   type SpaCheck,
@@ -102,6 +104,114 @@ function MediaPanel() {
           <h3>Summary</h3>
           <pre className="preview">{summary}</pre>
         </>
+      )}
+    </section>
+  );
+}
+
+/** Document OCR panel (Proposal 109): pick a PDF or TIFF, transcribe it
+ * page-by-page (text-layer extraction or on-device OCR), review with
+ * per-page provenance, copy, and export. */
+function DocumentPanel() {
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [result, setResult] = useState<DocumentResult | null>(null);
+  const [error, setError] = useState('');
+  const [exported, setExported] = useState('');
+
+  useEffect(() => {
+    const unlisten = onDocumentProgress((p) => {
+      if (p.phase === 'extract') setProgress(`Page ${p.page}/${p.page_count} — text layer`);
+      else if (p.phase === 'ocr') setProgress(`Page ${p.page}/${p.page_count} — recognizing`);
+      else setProgress(`Page ${p.page}/${p.page_count} — polishing`);
+    });
+    return () => void unlisten.then((fn) => fn());
+  }, []);
+
+  const pick = async () => {
+    setError('');
+    setResult(null);
+    setExported('');
+    const path = await api.pickDocument();
+    if (!path) return;
+    setBusy(true);
+    try {
+      setResult(await api.transcribeDocument(path));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  };
+
+  const copy = () => {
+    if (!result) return;
+    void navigator.clipboard.writeText(result.pages.map((p) => p.text).join('\n\n'));
+  };
+
+  const exportAs = async (format: string) => {
+    setError('');
+    setExported('');
+    try {
+      const dest = await api.exportDocument(format);
+      if (dest) setExported(dest);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  return (
+    <section className="card">
+      <h2>Document OCR</h2>
+      <p className="muted">
+        Extract text from a PDF or multi-page TIFF. Born-digital pages are read from the
+        document's text layer; scanned pages are recognized on-device at 300 DPI. Everything
+        stays on this machine.
+      </p>
+      <div className="btn-row">
+        <button className="btn" disabled={busy} onClick={pick}>
+          {busy ? 'Working…' : 'Choose document…'}
+        </button>
+        {busy && (
+          <button className="btn ghost" onClick={() => void api.cancelDocument()}>
+            Cancel
+          </button>
+        )}
+        {result && !busy && (
+          <>
+            <button className="btn ghost" onClick={copy}>
+              Copy text
+            </button>
+            <button className="btn ghost" onClick={() => void exportAs('txt')}>
+              Export TXT
+            </button>
+            <button className="btn ghost" onClick={() => void exportAs('md')}>
+              Export Markdown
+            </button>
+            <button className="btn ghost" onClick={() => void exportAs('pdf')}>
+              Export searchable PDF
+            </button>
+          </>
+        )}
+      </div>
+      {progress && <p className="muted">{progress}</p>}
+      {error && <p className="warn-text">{error}</p>}
+      {exported && <p className="muted">Exported to {exported}</p>}
+      {result && (
+        <div className="doc-pages">
+          {result.pages.map((p) => (
+            <details key={p.index} open={p.index === 0}>
+              <summary>
+                Page {p.index + 1}
+                <span className={`badge ${p.provenance === 'text' ? 'ok' : p.provenance === 'polished' ? 'ok' : 'warn'}`}>
+                  {p.provenance}
+                </span>
+              </summary>
+              <pre className="preview">{p.text}</pre>
+            </details>
+          ))}
+        </div>
       )}
     </section>
   );
@@ -520,6 +630,7 @@ export default function Home({ status, dictate, onRefresh }: Props) {
       </section>
 
       <MediaPanel />
+      <DocumentPanel />
       <CameraPanel />
       {status?.agent_available && <BrowserAgentPanel />}
 

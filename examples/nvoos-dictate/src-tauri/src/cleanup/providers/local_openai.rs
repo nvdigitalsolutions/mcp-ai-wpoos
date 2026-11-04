@@ -323,8 +323,34 @@ impl LocalOpenAiProvider {
             image_data_uri,
             0.0,
         );
+        self.post_vision(&body).await
+    }
+
+    /// Correct OCR text against a page image (Proposal 109 §3.8 polish).
+    #[cfg(feature = "document")]
+    /// `image_data_uri` is a base64 data-URI PNG of the page; `text` is the
+    /// deterministic OCR output. Returns the raw assistant text — the caller
+    /// strips any fences defensively.
+    pub async fn correct_ocr(&self, image_data_uri: &str, text: &str) -> AppResult<String> {
+        let model = if self.model.is_empty() {
+            None
+        } else {
+            Some(self.model.as_str())
+        };
+        let body = openai_shape::build_vision_body(
+            model,
+            &openai_shape::ocr_polish_prompt(text),
+            image_data_uri,
+            0.1,
+        );
+        self.post_vision(&body).await
+    }
+
+    /// Shared multimodal POST (the two polish flavours differ only in prompt).
+    #[cfg(any(feature = "vision", feature = "document"))]
+    async fn post_vision(&self, body: &serde_json::Value) -> AppResult<String> {
         let url = format!("{}/chat/completions", self.base_url);
-        let resp = match self.http.post(&url).json(&body).send().await {
+        let resp = match self.http.post(&url).json(body).send().await {
             Ok(r) => r,
             Err(e) => return Err(self.map_send_error(e)),
         };

@@ -111,6 +111,9 @@ pub struct AppState {
     /// Resident snippet-OCR controller (Proposal 100). Always present
     /// (type-stable); capture/engines run behind the `snippet` features.
     pub snippet: std::sync::Arc<crate::snippet::controller::SnippetController>,
+    /// Resident document-pipeline state (Proposal 109). Always present
+    /// (type-stable); pdfium/tiff/OCR bodies run behind `document`.
+    pub document: std::sync::Arc<crate::document::controller::DocumentController>,
     /// Resident STT engine (swapped on settings change).
     pub engine: RwLock<Option<Arc<dyn SttEngine>>>,
     pub paste: Arc<dyn PasteBackend>,
@@ -129,6 +132,7 @@ impl AppState {
             vision: Mutex::new(None),
             agent: crate::agent::controller::AgentController::new(),
             snippet: std::sync::Arc::new(crate::snippet::controller::SnippetController::new()),
+            document: std::sync::Arc::new(crate::document::controller::DocumentController::new()),
             engine: RwLock::new(None),
             paste: platform_backend(),
             recorder: Arc::new(MeetingRecorder::new(16000)),

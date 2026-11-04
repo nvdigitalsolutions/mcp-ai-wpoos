@@ -29,6 +29,10 @@
 pub mod controller;
 pub mod models;
 
+/// Shared reading-order reconstruction (Proposal 102 D7, pulled forward by
+/// Proposal 109): pure geometry over normalized boxes — always compiled.
+pub mod layout;
+
 #[cfg(feature = "snippet")]
 pub mod capture;
 

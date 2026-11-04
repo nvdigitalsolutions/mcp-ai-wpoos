@@ -30,6 +30,9 @@ pub enum AppError {
     #[error("Audio error: {0}")]
     Audio(String),
 
+    #[error("Document error: {0}")]
+    Document(String),
+
     #[error("Speech engine error: {0}")]
     Engine(String),
 
