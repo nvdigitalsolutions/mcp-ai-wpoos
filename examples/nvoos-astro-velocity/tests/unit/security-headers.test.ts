@@ -53,6 +53,40 @@ describe('buildCsp', () => {
 		const hashes = (buildCsp(html).match(/'sha256-[^']+'/g) ?? []).length;
 		expect(hashes).toBe(1); // the JSON data block contributes no hash
 	});
+
+	it('mirrors the Stripe csp-nonce meta into the payment-scoped script-src', () => {
+		const html = '<html><head><meta property="csp-nonce" nonce="abc123def" /><script>a()</script></head></html>';
+		const csp = buildCsp(html, { 'x-nvoos-csp-payment': '1' });
+		expect(csp).toContain("'nonce-abc123def'");
+		expect(csp).toContain('https://js.stripe.com');
+		expect(csp).toContain("script-src 'self'");
+	});
+
+	it('ignores the csp-nonce meta outside the payment scope', () => {
+		const csp = buildCsp('<meta property="csp-nonce" nonce="abc123def" /><script>a()</script>');
+		expect(csp).not.toContain("'nonce-abc123def'");
+		expect(csp).not.toContain('https://js.stripe.com');
+	});
+
+	it('does not mint a nonce source when the checkout page omits the meta', () => {
+		const csp = buildCsp('<script>a()</script>', { 'x-nvoos-csp-payment': '1' });
+		expect(csp).not.toContain("'nonce-");
+		expect(csp).toContain('https://js.stripe.com');
+	});
+
+	it('allows the Stripe connect-src hosts on the payment scope', () => {
+		const csp = buildCsp('<script>a()</script>', { 'x-nvoos-csp-payment': '1' });
+		expect(csp).toContain('https://api.stripe.com');
+		expect(csp).toContain('https://m.stripe.com');
+		expect(csp).toContain('https://m.stripe.network');
+	});
+
+	it('still never allows blanket unsafe-inline scripts', () => {
+		const csp = buildCsp('<meta property="csp-nonce" nonce="abc" /><script>a()</script>', {
+			'x-nvoos-csp-payment': '1',
+		});
+		expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
+	});
 });
 
 describe('static security headers', () => {

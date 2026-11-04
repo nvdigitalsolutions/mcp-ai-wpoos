@@ -1,5 +1,12 @@
 # Changelog — NV oOS Astro Bridge (nvoos-astro-bridge)
 
+## 1.1.2 — 2026-11-04
+
+### Fixed
+
+- **Embedded checkout fatal on a failed cart bootstrap**: `CheckoutController` destructured `resolve_token()` into `list()` before checking for a `WP_Error`, so a failed Store API cart bootstrap crashed with `Cannot use object of type WP_Error as array` (production incident 2026-11-04) and the raw "critical error" HTML leaked through the BFF. All five checkout routes now capture-and-check first and return a clean typed 502.
+- **Cart bootstrap 502 on Cloudways**: the Store API client looped back to the site's public URL over HTTPS; the platform WAF (Imunify360 / anti-bot) intercepted the server-side POST and answered without the `Cart-Token` header, so guest carts could never bootstrap. The client now dispatches the Store API in-process through Woo's REST server (`rest_do_request`) — no network hop, nothing to intercept.
+
 ## 1.1.1 — 2026-11-04
 
 ### Added

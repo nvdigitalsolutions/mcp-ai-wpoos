@@ -18,6 +18,8 @@
 namespace NvoosAstroBridge\Woo;
 
 use WP_Error;
+use WP_REST_Request;
+use WP_REST_Response;
 
 /**
  * Store API client.
@@ -342,7 +344,15 @@ class StoreApiClient {
 	}
 
 	/**
-	 * One Store API HTTP round-trip.
+	 * One Store API round-trip.
+	 *
+	 * The Store API is dispatched in-process through Woo's own REST server
+	 * (the pattern Woo documents for server-side cart work) — NOT via a
+	 * loopback wp_remote_request to home_url(). On Cloudways the public-HTTPS
+	 * loopback POST is intercepted by the platform WAF (Imunify360 / anti-bot)
+	 * and answered without the Cart-Token header, so guest cart bootstrap
+	 * failed with a 502 (production incident 2026-11-04). An in-process
+	 * dispatch has no network hop left to intercept.
 	 *
 	 * @param string                    $method     HTTP method.
 	 * @param string                    $path       Store API path (starts with /).
@@ -374,7 +384,8 @@ class StoreApiClient {
 		}
 
 		/**
-		 * Test seam — a canned Store API response skips real HTTP entirely.
+		 * Test seam — a canned Store API response skips the real dispatch
+		 * entirely.
 		 *
 		 * The resolved request args ride along (additive, Proposal 110) so
 		 * tests can assert the nonce/token headers and the outbound body;
@@ -383,7 +394,7 @@ class StoreApiClient {
 		 * @param array{status: int, headers: array<string, mixed>, body: string}|null $pre Canned response, or null to continue.
 		 * @param string               $method HTTP method.
 		 * @param string               $path   Store API path.
-		 * @param array<string, mixed> $args   Resolved wp_remote_request args.
+		 * @param array<string, mixed> $args   Resolved request args.
 		 */
 		$pre = apply_filters( 'funiq_bridge_store_api_pre_response', null, $method, $path, $args );
 		if ( is_array( $pre ) && isset( $pre['status'], $pre['body'] ) ) {
@@ -394,18 +405,39 @@ class StoreApiClient {
 			);
 		}
 
-		$url = home_url( self::BASE_PATH . $path );
+		$request = new WP_REST_Request( $method, self::BASE_PATH . $path );
+		foreach ( $args['headers'] as $name => $value ) {
+			$request->set_header( (string) $name, (string) $value );
+		}
+		if ( isset( $args['body'] ) ) {
+			$request->set_body( (string) $args['body'] );
+		}
 
-		$response = wp_remote_request( $url, $args );
+		$response = rest_do_request( $request );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
 
+		if ( ! $response instanceof WP_REST_Response ) {
+			return new WP_Error(
+				'astro_store_api_invalid_response',
+				'The WooCommerce Store API returned an invalid response.',
+				array( 'status' => 502 )
+			);
+		}
+
+		// WP_HTTP_Response stores header names lowercase — normalize explicitly
+		// so callers (bootstrap_cart reads `cart-token`) never depend on casing.
+		$headers = array();
+		foreach ( $response->get_headers() as $name => $value ) {
+			$headers[ strtolower( (string) $name ) ] = $value;
+		}
+
 		return array(
-			'status'  => (int) wp_remote_retrieve_response_code( $response ),
-			'headers' => wp_remote_retrieve_headers( $response ),
-			'body'    => (string) wp_remote_retrieve_body( $response ),
+			'status'  => (int) $response->get_status(),
+			'headers' => $headers,
+			'body'    => (string) wp_json_encode( $response->get_data() ),
 		);
 	}
 

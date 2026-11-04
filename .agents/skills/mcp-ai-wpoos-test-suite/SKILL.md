@@ -174,6 +174,16 @@ ran the Gmail/Calendar auto-fallback suites green on
 `wordpress_test_wp71`) — no `docker cp` dance needed when `/tmp/wp71` is
 gone from the container.
 
+**Verify the vendor volume BEFORE trusting the ledger (2026-11-04):**
+`alpha-working-vendor` was EMPTY despite the notes above (a prune emptied
+it) — the one-off run then dies with `Could not open input file:
+vendor/bin/phpunit`. Probe first (`docker run --rm -v <vol>:/v
+wordpress:6.9-php8.2-apache sh -c 'ls /v/bin/phpunit; grep -c PHPUnit
+/v/composer/autoload_classmap.php'`) or rebuild from scratch
+(`docker volume create <worktree>-vendor` + the composer:2 step above).
+On 2026-11-04 `astro-105106-vendor` was the complete one (934 classmap
+entries).
+
 **Host-side recovery without the volume (2026-10-23, main checkout):**
 the pruned classmap can be fixed in place — run
 `composer install --no-interaction --prefer-dist` on the **host** (the
