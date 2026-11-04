@@ -20,6 +20,7 @@ use NvoosAstroBridge\REST\{
 	CarouselController,
 	CartController,
 	CategoriesController,
+	CheckoutController,
 	ColorsController,
 	ManagersController,
 	MediaController,
@@ -190,6 +191,7 @@ final class Plugin {
 			new ThemePolicyController(),
 			new ShopGlobalsController(),
 			new CartController(),
+			new CheckoutController(),
 			new WooLoginController(),
 		);
 

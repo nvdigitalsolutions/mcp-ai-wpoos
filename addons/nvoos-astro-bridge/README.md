@@ -148,6 +148,11 @@ with it.
 | `PUT` | `/managers/{id}` (`{"manage": true|false}`) | `manage_astro` |
 | `GET`/`PATCH` | `/globals/shop` | Read public / Write cap — `checkoutUrl`/`cartUrl`/`returnUrl` are same-site + allowlist validated (108 H1) |
 | `POST` | `/cart/sync` | Public (customer surface) — `X-Nvoos-Cart-Session` header; woo/both product modes only, variants + coupons via the Store API proxy (108 Phase 2) |
+| `GET` | `/checkout` | Public (customer surface) — the merged checkout doc (draft order, items, totals, shipping rates, addresses) for the session cart; `private, no-store` headers (110 Phase A) |
+| `POST` | `/checkout/customer` | Public — validates addresses Woo-side, recalcs totals + rates (110 Phase A) |
+| `POST` | `/checkout/shipping-rate` | Public — selects one shipping rate (110 Phase A) |
+| `POST` | `/checkout/coupon` | Public — applies a coupon to the session cart (110 Phase A) |
+| `POST` | `/checkout` | Public — processes the order + payment through the configured gateway (`payment_method`, addresses, `payment_data`, `expected_total`); rate-limited per session/IP; returns `orderId`/`orderKey`/`paymentResult` (110 Phase A) |
 | `GET` | `/woo-login/{token}` | Public — single-use SSO handoff (108 Phase 3), disabled unless `funiq_bridge_woo_sso_enabled` is `yes` |
 
 **CMS content write surface (Proposal 107):** the `content/pages` + `content/posts`

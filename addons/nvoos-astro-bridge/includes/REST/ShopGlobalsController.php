@@ -278,20 +278,25 @@ class ShopGlobalsController extends BaseController {
 		};
 
 		return array(
-			'checkoutUrl'    => $url( $doc['checkoutUrl'] ?? null, $defaults['checkoutUrl'] ),
-			'cartUrl'        => $url( $doc['cartUrl'] ?? null, $defaults['cartUrl'] ),
-			'returnUrl'      => $url( $doc['returnUrl'] ?? null, $defaults['returnUrl'] ),
-			'currency'       => ( is_string( $doc['currency'] ?? null ) && 1 === preg_match( '/^[A-Za-z]{3}$/', $doc['currency'] ) )
+			'checkoutUrl'          => $url( $doc['checkoutUrl'] ?? null, $defaults['checkoutUrl'] ),
+			'cartUrl'              => $url( $doc['cartUrl'] ?? null, $defaults['cartUrl'] ),
+			'returnUrl'            => $url( $doc['returnUrl'] ?? null, $defaults['returnUrl'] ),
+			'currency'             => ( is_string( $doc['currency'] ?? null ) && 1 === preg_match( '/^[A-Za-z]{3}$/', $doc['currency'] ) )
 				? strtoupper( $doc['currency'] )
 				: $defaults['currency'],
-			'currencySymbol' => ( is_string( $doc['currencySymbol'] ?? null ) && '' !== $doc['currencySymbol'] )
+			'currencySymbol'       => ( is_string( $doc['currencySymbol'] ?? null ) && '' !== $doc['currencySymbol'] )
 				? $doc['currencySymbol']
 				: $defaults['currencySymbol'],
-			'updatedAt'      => ( is_string( $doc['updatedAt'] ?? null ) && '' !== $doc['updatedAt'] )
+			'updatedAt'            => ( is_string( $doc['updatedAt'] ?? null ) && '' !== $doc['updatedAt'] )
 				? $doc['updatedAt']
 				: gmdate( 'c' ),
-			'productsSource' => $this->resolve_products_source(),
-			'paymentMethods' => $this->payment_methods(),
+			'productsSource'       => $this->resolve_products_source(),
+			'paymentMethods'       => $this->payment_methods(),
+			// Proposal 110 read-only extensions: the Stripe publishable key (a
+			// PUBLIC key by design — safe to expose; empty when Stripe is not
+			// the active gateway) and Woo's guest-checkout switch.
+			'stripePublishableKey' => $this->stripe_publishable_key(),
+			'guestCheckout'        => $this->guest_checkout_enabled(),
 		);
 	}
 
@@ -352,5 +357,60 @@ class ShopGlobalsController extends BaseController {
 		set_transient( 'funiq_bridge_payment_methods', $methods, MINUTE_IN_SECONDS );
 
 		return $methods;
+	}
+
+	/**
+	 * The Stripe publishable key when the Stripe gateway is enabled
+	 * (Proposal 110) — the storefront loads Stripe.js and renders the
+	 * gateway's hosted Payment Element with it. Publishable keys are public
+	 * by design (Stripe documents them as safe to ship to the browser); the
+	 * SECRET key never leaves this option.
+	 *
+	 * @return string Empty when Stripe is not the active gateway.
+	 */
+	private function stripe_publishable_key(): string {
+		$key = '';
+
+		$settings = get_option( 'woocommerce_stripe_settings', array() );
+		if ( is_array( $settings ) && ! empty( $settings['enabled'] ) && 'yes' === $settings['enabled'] ) {
+			$testmode  = isset( $settings['testmode'] ) && 'yes' === $settings['testmode'];
+			$candidate = $testmode
+				? ( $settings['test_publishable_key'] ?? '' )
+				: ( $settings['publishable_key'] ?? '' );
+			if ( is_string( $candidate ) ) {
+				$key = $candidate;
+			}
+		}
+
+		/**
+		 * Override the Stripe publishable key (tests, custom gateways).
+		 *
+		 * @param string $key Current key (empty when Stripe is inactive).
+		 */
+		$key = apply_filters( 'funiq_bridge_stripe_publishable_key', $key );
+
+		return is_string( $key ) ? $key : '';
+	}
+
+	/**
+	 * Woo's guest-checkout switch (Proposal 110) — the storefront hides the
+	 * account-creation option when guests cannot check out.
+	 *
+	 * @return bool
+	 */
+	private function guest_checkout_enabled(): bool {
+		$enabled = false;
+		if ( class_exists( 'WooCommerce' ) ) {
+			$enabled = 'yes' === get_option( 'woocommerce_enable_guest_checkout', 'yes' );
+		}
+
+		/**
+		 * Override the guest-checkout flag (tests).
+		 *
+		 * @param bool $enabled Current flag.
+		 */
+		$enabled = apply_filters( 'funiq_bridge_guest_checkout', $enabled );
+
+		return (bool) $enabled;
 	}
 }

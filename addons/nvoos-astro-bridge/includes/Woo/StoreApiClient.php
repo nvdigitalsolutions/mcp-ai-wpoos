@@ -35,6 +35,13 @@ class StoreApiClient {
 	private const TOKEN_TRANSIENT = 'funiq_bridge_cart_token_';
 
 	/**
+	 * The Store API nonce action — WooCommerce validates the `wc_store_api`
+	 * nonce on every cart/checkout mutation (the Blocks checkout mints the
+	 * same nonce server-side).
+	 */
+	private const NONCE_ACTION = 'wc_store_api';
+
+	/**
 	 * Whether the WooCommerce Store API surface exists.
 	 *
 	 * A `class_exists()` check alone is a false positive in the test env (the
@@ -142,6 +149,16 @@ class StoreApiClient {
 	}
 
 	/**
+	 * Mint a Store API nonce (server-side only — the storefront never sees
+	 * this; it rides the bridge session).
+	 *
+	 * @return string
+	 */
+	public function mint_nonce(): string {
+		return (string) wp_create_nonce( self::NONCE_ACTION );
+	}
+
+	/**
 	 * Read the current Woo cart state.
 	 *
 	 * @param string $token Cart token.
@@ -158,6 +175,134 @@ class StoreApiClient {
 				'astro_cart_store_api_error',
 				$this->error_message( $response['body'] ),
 				array( 'status' => $response['status'] )
+			);
+		}
+
+		return $this->decode_cart_body( $response['body'] );
+	}
+
+	/**
+	 * Read the checkout doc for the current cart — the Store API draft order
+	 * with the persisted billing/shipping addresses and the chosen payment
+	 * method (Proposal 110 Phase A).
+	 *
+	 * @param string $token Cart token.
+	 * @param string $nonce Store API nonce.
+	 * @return array<string, mixed>|WP_Error
+	 */
+	public function get_checkout( string $token, string $nonce ) {
+		$response = $this->request( 'GET', '/checkout', null, $token, $nonce );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		if ( $response['status'] >= 400 ) {
+			return new WP_Error(
+				'astro_checkout_store_api_error',
+				$this->error_message( $response['body'] ),
+				array( 'status' => $response['status'] >= 500 ? 502 : $response['status'] )
+			);
+		}
+
+		return $this->decode_cart_body( $response['body'] );
+	}
+
+	/**
+	 * Process the order and payment — POST /checkout drives the configured
+	 * gateway exactly like the Blocks checkout (Proposal 110 Phase A).
+	 *
+	 * @param string               $token Cart token.
+	 * @param string               $nonce Store API nonce.
+	 * @param array<string, mixed> $body  Checkout payload (addresses, payment).
+	 * @return array<string, mixed>|WP_Error Decoded Store API response.
+	 */
+	public function checkout( string $token, string $nonce, array $body ) {
+		$response = $this->request( 'POST', '/checkout', $body, $token, $nonce );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		if ( $response['status'] >= 400 ) {
+			$decoded = $this->decode_cart_body( $response['body'] );
+			$message = isset( $decoded['message'] ) && is_string( $decoded['message'] )
+				? $decoded['message']
+				: $this->error_message( $response['body'] );
+			// Total mismatch (409) returns the refreshed cart so the storefront
+			// can re-render — preserve the data, unlike other rejections.
+			// The error DATA shape is flat (status + message + cart) so the
+			// REST envelope serializes it without a nested data/data key.
+			$data = array(
+				'status'  => $response['status'] >= 500 ? 502 : $response['status'],
+				'message' => $message,
+			);
+			if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
+				$data['cart'] = $decoded['data'];
+			}
+			return new WP_Error(
+				'astro_checkout_rejected',
+				$message,
+				$data
+			);
+		}
+
+		return $this->decode_cart_body( $response['body'] );
+	}
+
+	/**
+	 * Update the checkout customer — addresses are validated and the cart
+	 * totals/shipping rates recalculated by Woo (Store API cart/update-customer).
+	 *
+	 * @param string               $token Cart token.
+	 * @param string               $nonce Store API nonce.
+	 * @param array<string, mixed> $body  billing_address / shipping_address.
+	 * @return array<string, mixed>|WP_Error
+	 */
+	public function update_customer( string $token, string $nonce, array $body ) {
+		$response = $this->request( 'POST', '/cart/update-customer', $body, $token, $nonce );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		if ( $response['status'] >= 400 ) {
+			return new WP_Error(
+				'astro_checkout_customer_rejected',
+				$this->error_message( $response['body'] ),
+				array( 'status' => $response['status'] >= 500 ? 502 : $response['status'] )
+			);
+		}
+
+		return $this->decode_cart_body( $response['body'] );
+	}
+
+	/**
+	 * Select a shipping rate for a package (Store API cart/select-shipping-rate).
+	 *
+	 * @param string $token      Cart token.
+	 * @param string $nonce      Store API nonce.
+	 * @param string $package_id Shipping package id.
+	 * @param string $rate_id    Selected rate id.
+	 * @return array<string, mixed>|WP_Error
+	 */
+	public function select_shipping_rate( string $token, string $nonce, string $package_id, string $rate_id ) {
+		$response = $this->request(
+			'POST',
+			'/cart/select-shipping-rate',
+			array(
+				'package_id' => $package_id,
+				'rate_id'    => $rate_id,
+			),
+			$token,
+			$nonce
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		if ( $response['status'] >= 400 ) {
+			return new WP_Error(
+				'astro_checkout_rate_rejected',
+				$this->error_message( $response['body'] ),
+				array( 'status' => $response['status'] >= 500 ? 502 : $response['status'] )
 			);
 		}
 
@@ -203,27 +348,10 @@ class StoreApiClient {
 	 * @param string                    $path       Store API path (starts with /).
 	 * @param array<string, mixed>|null $body       JSON body (POST only).
 	 * @param string                    $cart_token Cart token header (empty = none).
+	 * @param string                    $nonce      Store API nonce header (empty = none).
 	 * @return array{status: int, headers: array<string, mixed>, body: string}|WP_Error
 	 */
-	public function request( string $method, string $path, ?array $body = null, string $cart_token = '' ) {
-		/**
-		 * Test seam — a canned Store API response skips real HTTP entirely.
-		 *
-		 * @param array{status: int, headers: array<string, mixed>, body: string}|null $pre Canned response, or null to continue.
-		 * @param string $method HTTP method.
-		 * @param string $path   Store API path.
-		 */
-		$pre = apply_filters( 'funiq_bridge_store_api_pre_response', null, $method, $path );
-		if ( is_array( $pre ) && isset( $pre['status'], $pre['body'] ) ) {
-			return array(
-				'status'  => (int) $pre['status'],
-				'headers' => isset( $pre['headers'] ) && is_array( $pre['headers'] ) ? $pre['headers'] : array(),
-				'body'    => (string) $pre['body'],
-			);
-		}
-
-		$url = home_url( self::BASE_PATH . $path );
-
+	public function request( string $method, string $path, ?array $body = null, string $cart_token = '', string $nonce = '' ) {
 		$args = array(
 			'method'  => $method,
 			'timeout' => 10,
@@ -235,9 +363,38 @@ class StoreApiClient {
 		if ( '' !== $cart_token ) {
 			$args['headers']['Cart-Token'] = $cart_token;
 		}
+		if ( '' !== $nonce ) {
+			// Woo Blocks sends X-WC-Store-API-Nonce; the official curl examples
+			// use `Nonce`. Sending both is accepted by the Store API validator.
+			$args['headers']['Nonce']                = $nonce;
+			$args['headers']['X-WC-Store-API-Nonce'] = $nonce;
+		}
 		if ( null !== $body ) {
 			$args['body'] = wp_json_encode( $body );
 		}
+
+		/**
+		 * Test seam — a canned Store API response skips real HTTP entirely.
+		 *
+		 * The resolved request args ride along (additive, Proposal 110) so
+		 * tests can assert the nonce/token headers and the outbound body;
+		 * existing 3-arg callbacks are unaffected.
+		 *
+		 * @param array{status: int, headers: array<string, mixed>, body: string}|null $pre Canned response, or null to continue.
+		 * @param string               $method HTTP method.
+		 * @param string               $path   Store API path.
+		 * @param array<string, mixed> $args   Resolved wp_remote_request args.
+		 */
+		$pre = apply_filters( 'funiq_bridge_store_api_pre_response', null, $method, $path, $args );
+		if ( is_array( $pre ) && isset( $pre['status'], $pre['body'] ) ) {
+			return array(
+				'status'  => (int) $pre['status'],
+				'headers' => isset( $pre['headers'] ) && is_array( $pre['headers'] ) ? $pre['headers'] : array(),
+				'body'    => (string) $pre['body'],
+			);
+		}
+
+		$url = home_url( self::BASE_PATH . $path );
 
 		$response = wp_remote_request( $url, $args );
 
