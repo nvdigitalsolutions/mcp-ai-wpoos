@@ -1,7 +1,7 @@
 {
 	"name": "nvoos-gateway",
 	"displayName": "NV oOS Gateway",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Connects Claude Code to the NV oOS MCP Gateway — the public, fleet-scoped endpoint for NV oOS WordPress sites. Namespaced <site-slug>_<tool> tools (demo_* on the public demo site): environment status, deep research with citations, content workflows, and store tools over streamable HTTP, authenticated with a site-scoped gateway key or OAuth.",
 	"author": {
 		"name": "NV Digital Solutions",
