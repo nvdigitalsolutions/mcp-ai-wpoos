@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-astro-storefront
-description: Operational guide for the NV-authored headless storefront (Proposal 092) — the nvoos-astro-bridge Payload-shaped commerce contract (`nvoos-commerce/v1`), the `examples/nvoos-astro-velocity` Astro app, its hermetic dev/test loop (fixture server, vitest, Playwright, Lighthouse CI), the sync workflow + mirror deployment, the ADS design system (DTCG tokens, drift gate, dark/light theming), and the `nvoos-astro-mcp` assistant-control surface at `/mcp` (dual-era Streamable HTTP, fail-closed write auth). Use when working on the storefront, the bridge contract, image optimization, design tokens/themes, the MCP mount, or the mirror deploy loop.
+description: Operational guide for the NV-authored headless storefront (Proposal 092) — the nvoos-astro-bridge Payload-shaped commerce contract (`nvoos-commerce/v1`), the `examples/nvoos-astro-velocity` Astro app, its hermetic dev/test loop (fixture server, vitest, Playwright, Lighthouse CI), the sync workflow + mirror deployment, the ADS design system (DTCG tokens, drift gate, dark/light theming), the `nvoos-astro-mcp` assistant-control surface at `/mcp` (dual-era Streamable HTTP, fail-closed write auth), and the native→Woo catalog migration (Proposal 112, Woo-owned catalog). Use when working on the storefront, the bridge contract, image optimization, design tokens/themes, the MCP mount, the catalog migration, or the mirror deploy loop.
 ---
 
 # NV oOS Astro Storefront — ops guide (Proposal 092)
@@ -942,9 +942,65 @@ Shoelace (stale) and Lion/AstroUXDS (heavy) were rejected — see the table.
   there is no `components_*` chunk; locate a nested route by grepping
   chunk CONTENT (a unique page string), never the filename.
 
+## Native→Woo catalog migration (Proposal 112, PR #7442, bridge 1.1.3)
+
+Owner decision: **Option B — the Woo-owned catalog.** One-time, idempotent
+migration of `funiq_product` into Woo products (no sync layer); the native
+source retires one release after the default flips to `woo`. New internal
+identifiers use **`nvoos_bridge_`** — legacy `funiq_bridge_*`/`funiq/v1` stay
+until a separate global data-migration project. New surfaces:
+
+- **Engine** `addons/nvoos-astro-bridge/includes/Woo/NativeCatalogMigrator.php`
+  — SKU-keyed idempotent upserts (`NV-<id>` via `wc_get_product_id_by_sku()` +
+  `_nvoos_bridge_migrated_from` meta fallback — Woo's own cross-site migration
+doc pattern), WC CRUD setters + `save()`, price mapping identical to
+  `WooProductSource` (price=sale, oldPrice=regular when greater), category→
+  `product_cat`, brand/color via `WooTaxonomy`, promotionId as
+  `_nvoos_bridge_promotion_id` meta, AS cursor sweep
+  (`nvoos_bridge/migrate_native_sweep`, batch filter
+  `nvoos_bridge_migrator_batch_size`, state option `nvoos_bridge_migration_state`).
+- **WP-CLI:** `wp nvoos-astro-bridge migrate-native` (dry-run default,
+  `--run`, `--limit`, `--offset`) + `migration-status`.
+- **Settings page:** Catalog migration panel (dry-run button renders the
+  report inline via a 1-hour transient; run button queues the sweep) +
+  counts/status rows in the System status panel.
+
+Cost-a-session gotchas:
+
+- **WP default-category trap:** saving a product with an EMPTY `product_cat`
+  set makes WordPress assign the default "Uncategorized" term; a deferred
+  term append then leaves the product in BOTH. Migrations must materialize
+  planned terms (`wp_insert_term`) BEFORE `$product->save()`, then re-run the
+  term resolution so real ids flow into `set_category_ids()`. Same applies to
+  any headless create path with category-less products.
+- **By-value foreach stamping:** `foreach ( $issues as $issue ) { $issue['nativeId'] = ...; }`
+  silently does nothing — use `as &$issue` + `unset( $issue )`.
+- **Sweep state machine:** `handle_sweep()` should self-transition
+  `idle → running` (chunks can run without `enqueue_sweep()`, e.g. manual AS
+  runs); `done` is set by the first chunk that finds an empty batch — the
+  cursor is `offset + batch_size` per chunk.
+- **`resolve_term()` native-fallback rule:** when `WooTaxonomy` returns the
+  NATIVE taxonomy (no `pa_brand`/`pa_color` registered) the native term id is
+  already valid — return it directly; recreating terms splits brand identity.
+- **Addon phpcs docblock alignment (WPCS `ParamNotAligned`):** in `@param`
+  groups the `$` column = longest type + 1 space (pad each type to
+  longest+1); descriptions align at longest variable name + 1. Yoda-flip
+  `$taxonomy === Schema::CONST` to `Schema::CONST === $taxonomy`.
+- **Version bump lock-step:** header `Version:` + `NVOOS_ASTRO_BRIDGE_VERSION`
+  + addon `package.json` + `package-lock.json` + CHANGELOG all bump together.
+- **One-off gate runner (no local vendor):** phpcs/phpunit run inside Docker —
+  mount the worktree + the complete vendor volume `astro-105106-vendor` (NOT
+  `alpha-working-vendor`, which is empty) + isolated DB `wordpress_test_astro`;
+  the WP 6.9 image, not the WP 7.1 one (7.1 has no Woo → suite skips). Never
+  run two PHPUnits concurrently — the DB is shared.
+
+Out of scope for the first PR: retiring the native source (Phase 4 — one
+release later), any auto-sync layer (owner chose one-time migration), and
+legacy-identifier renames.
+
 ## References
 
-- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · **Proposal 104** (runtime hardening: `-proposal.md`, `-research.md`, `-implementation-plan.md`, `-ecosystem-repo-analysis.md`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
+- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · **Proposal 104** (runtime hardening: `-proposal.md`, `-research.md`, `-implementation-plan.md`, `-ecosystem-repo-analysis.md`) · **Proposal 112** (native→Woo catalog migration, Woo-owned catalog — implementation PR #7442) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
 - `examples/nvoos-astro-velocity/README.md` (architecture, env, commands)
 - `addons/nvoos-astro-bridge/README.md` (REST surface, data map)
 - Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`, `mcp-ai-wpoos-astro-forge` (the generator that turns a WP/Woo site into an Astro frontend — this skill covers the serving side)
