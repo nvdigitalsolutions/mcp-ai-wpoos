@@ -1314,3 +1314,25 @@ New this session (2026-11-04, evening): **Proposal 111 implemented**
   (Apache-2.0, 3B, OmniDocBench v1.5 91.09%) is a candidate default
   model id. Plan doc:
   `docs/project/proposals/111-deepseek-ocr-provider-implementation-plan.md`.
+  **Live verification (2026-11-04, probe run):** `ollama pull
+  deepseek-ocr` (6.7 GB F16) then the probe against the fixtures —
+  `image-text.png` -> `## IMAGE OCR FIXTURE 123`, `text-2page.pdf`
+  (rendered 2319x3000) -> the fox text, clean. Two transport findings,
+  both shipped: (1) Ollama's `/v1/chat/completions` OpenAI-compat mount
+  non-deterministically DROPS image features for the `deepseekocr`
+  architecture (some page sizes derail into `<|im_start|>` loops; the
+  native `/api/chat` with `images:[b64]` is reliable at every tested
+  size 600x200..3000x3000) — `understand_document` branches: ollama ->
+  native `/api/chat` (endpoint = base URL minus the `/v1` suffix),
+  lm_studio -> compat mount; the Settings connection test pings ollama
+  with a blank 64x64 image via the native route (text-only pings loop
+  on this vision model). (2) Even native replies occasionally carry a
+  stray template-fragment prefix (`\<|im_start|>user`,
+  `</|im_start|>user`, `\>`) — `parse_document_model_reply` strips the
+  fragment list deterministically (slash variants + bare `\` first);
+  the content after them is valid. **Local-machine ops:** the Ollama
+  install on this PC was missing `llama-server.exe` + CPU runners
+  (every model call HTTP 500) — silent reinstall `OllamaSetup.exe /S`
+  restored it; the probe exe needs `pdfium.dll` copied beside it in
+  `target/debug/examples/` (bind() searches next to the exe; build.rs
+  stages at `target/debug/` for the main binary only).
