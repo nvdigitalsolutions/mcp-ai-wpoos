@@ -795,6 +795,59 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   `/checkout/`. The cart page got the checkout's `no-store` treatment in
   the same pass (`src/pages/cart/index.astro`).
 
+### 110 hardening — the live 502 / HTML-leak / CSP triad (2026-11-04)
+
+- **`CheckoutController` fataled on ANY bootstrap failure.** Every route did
+  `list( $token, $nonce ) = $this->resolve_token( $session )` BEFORE the
+  `is_wp_error` check — destructuring a `WP_Error` throws
+  `Cannot use object of type WP_Error as array` (line 180), the REST layer
+  500s, and raw "critical error" HTML leaks through the BFF. Discipline:
+  capture first (`$resolved = …; if ( is_wp_error( $resolved ) ) return
+  $resolved; list( … ) = $resolved;`). Pinned by
+  `test_bootstrap_failure_surfaces_clean_502` — a canned 200 bootstrap
+  WITHOUT the `Cart-Token` header (the exact WAF shape), asserted as a typed
+  502. A `list()` on a maybe-`WP_Error` value is the recurring bug class;
+  grep new code for it.
+- **The Store API client looped back over public HTTPS**
+  (`wp_remote_request( home_url('/wp-json/wc/store/v1/…') )`). Cloudways'
+  WAF (Imunify360 / anti-bot) intercepts the server-side POST and answers
+  without the `Cart-Token` header → `astro_cart_token_missing` 502 on every
+  cart bootstrap. The client now dispatches **in-process** via
+  `rest_do_request( new WP_REST_Request( $method, '/wc/store/v1' . $path ) )`
+  — the pattern Woo's Store API docs use for server-side cart work — with
+  the `funiq_bridge_store_api_pre_response` seam still first (zero-HTTP
+  tests unchanged; the seam's `$args` keep `method`/`headers`/`body`).
+  Response headers are lowercased before returning (the `cart-token` key).
+  Nested-dispatch safety was verified: the bridge's `rest_post_dispatch`
+  filters (B1 + no-store) and the `determine_current_user` shim are all
+  route/namespace-scoped, so inner Store API responses pass through
+  untouched. Never reintroduce a loopback `wp_remote_request` to the site's
+  own origin for the Store API.
+- **Stripe.js inline scripts were CSP-blocked.** Hashing can't cover them
+  (content varies per load); Stripe's documented mechanism is a
+  `<meta property="csp-nonce" nonce="…">` tag — Stripe.js reads it and
+  applies the nonce to everything it injects. The checkout page mints a
+  per-render nonce (`randomBytes(16)` from `node:crypto`, gated on
+  `embedded`), emits the meta via the BaseLayout head slot as a
+  `<Fragment slot="head" set:html=…>` (Astro's `MetaHTMLAttributes` has no
+  `nonce` key — a typed `<meta nonce>` fails `astro check`), and
+  `buildCsp()` mirrors it into the payment-scoped `script-src` as
+  `'nonce-…'` (honored ONLY under `x-nvoos-csp-payment`). Also added
+  `https://m.stripe.com` to the payment `connect-src`. No `unsafe-inline`.
+  Pinned in `tests/unit/security-headers.test.ts`.
+- **Cloudways fatal triage without SSH:** the `monitoring` toolset's
+  `get_app_logs` MCP tool (type=error, resource=apache; poll
+  `operation_status`) returns the platform error log — grep it for
+  `PHP Fatal error`. SSH from the dev box stays publickey-denied, so this
+  is the only self-serve path; the 2026-11-04 fatal was found in seconds
+  this way.
+- **Vendor-volume trap (one-off PHPUnit):** `docker volume ls` proves
+  nothing — `alpha-working-vendor` was EMPTY on 2026-11-04 despite the
+  ledger. Probe before mounting (`docker run --rm -v <vol>:/v … ls
+  /v/bin/phpunit`); `astro-105106-vendor` was complete (934 PHPUnit
+  classmap entries) and ran the bridge suites green against the isolated
+  `wordpress_test_astro` DB.
+
 ## Component library (Q6, 2026-11-03)
 
 Owner-suggested candidates were researched (registry facts verified

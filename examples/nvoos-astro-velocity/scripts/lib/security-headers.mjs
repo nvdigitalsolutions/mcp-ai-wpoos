@@ -49,15 +49,28 @@ export function buildCsp(html, headers = {}) {
 	// (Stripe.js + Payment Element iframe) are allowed ONLY there, never
 	// site-wide. Card data stays inside Stripe's origin (INV-1).
 	const paymentScope = headers['x-nvoos-csp-payment'] === '1';
+
+	// Stripe.js and CSP nonces: Stripe.js injects inline bootstrap scripts,
+	// so hashing can never cover them (content varies per load). Stripe's
+	// documented mechanism is a <meta property="csp-nonce" nonce="…"> tag —
+	// Stripe.js reads it and applies the nonce to everything it injects. The
+	// checkout page mints a per-render nonce; the CSP mirrors it here. Only
+	// honored inside the payment scope, so no other surface can mint a nonce.
+	const nonceMeta = paymentScope
+		? /<meta\s[^>]*\bproperty\s*=\s*["']csp-nonce["'][^>]*\bnonce\s*=\s*["']([^"']+)["']/i.exec(html) ??
+			/<meta\s[^>]*\bnonce\s*=\s*["']([^"']+)["'][^>]*\bproperty\s*=\s*["']csp-nonce["']/i.exec(html)
+		: null;
+	const nonceSource = nonceMeta ? `'nonce-${nonceMeta[1]}'` : '';
+
 	const directives = [
 		"default-src 'self'",
-		`script-src 'self' ${hashes.join(' ')}${paymentScope ? ' https://js.stripe.com' : ''}`.trim(),
+		`script-src 'self' ${hashes.join(' ')}${nonceSource ? ` ${nonceSource}` : ''}${paymentScope ? ' https://js.stripe.com' : ''}`.trim(),
 		// Inline style ATTRIBUTES (swatches, gallery) require style-src
-		// 'unsafe-inline'; scripts remain hash-only above.
+		// 'unsafe-inline'; scripts remain hash/nonce-only above.
 		"style-src 'self' 'unsafe-inline'",
 		`img-src 'self' data:${paymentScope ? ' https://*.stripe.com https://*.stripe.network' : ''}`,
 		"font-src 'self'",
-		`connect-src 'self'${paymentScope ? ' https://api.stripe.com https://m.stripe.network https://r.stripe.com' : ''}`,
+		`connect-src 'self'${paymentScope ? ' https://api.stripe.com https://m.stripe.com https://m.stripe.network https://r.stripe.com' : ''}`,
 		paymentScope
 			? 'frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.network'
 			: "frame-src 'none'",

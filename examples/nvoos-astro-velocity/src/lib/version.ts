@@ -5,4 +5,4 @@
 // in lock-step.
 // ---------------------------------------------------------------------------
 
-export const APP_VERSION = '0.4.1';
+export const APP_VERSION = '0.4.2';

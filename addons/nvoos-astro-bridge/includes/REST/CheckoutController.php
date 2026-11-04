@@ -177,10 +177,11 @@ class CheckoutController extends BaseController {
 			return $gates;
 		}
 
-		list( $token, $nonce ) = $this->resolve_token( $session );
-		if ( is_wp_error( $token ) ) {
-			return $token;
+		$resolved = $this->resolve_token( $session );
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
 		}
+		list( $token, $nonce ) = $resolved;
 
 		$checkout = $this->client->get_checkout( $token, $nonce );
 		if ( is_wp_error( $checkout ) ) {
@@ -213,10 +214,11 @@ class CheckoutController extends BaseController {
 			return $gates;
 		}
 
-		list( $token, $nonce ) = $this->resolve_token( $session );
-		if ( is_wp_error( $token ) ) {
-			return $token;
+		$resolved = $this->resolve_token( $session );
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
 		}
+		list( $token, $nonce ) = $resolved;
 
 		$body = $request->get_json_params();
 		if ( ! is_array( $body ) ) {
@@ -280,10 +282,11 @@ class CheckoutController extends BaseController {
 			return $gates;
 		}
 
-		list( $token, $nonce ) = $this->resolve_token( $session );
-		if ( is_wp_error( $token ) ) {
-			return $token;
+		$resolved = $this->resolve_token( $session );
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
 		}
+		list( $token, $nonce ) = $resolved;
 
 		$body       = $request->get_json_params();
 		$package_id = isset( $body['packageId'] ) ? sanitize_text_field( (string) $body['packageId'] ) : '';
@@ -326,10 +329,11 @@ class CheckoutController extends BaseController {
 			return $gates;
 		}
 
-		list( $token, $nonce ) = $this->resolve_token( $session );
-		if ( is_wp_error( $token ) ) {
-			return $token;
+		$resolved = $this->resolve_token( $session );
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
 		}
+		list( $token, $nonce ) = $resolved;
 
 		$body = $request->get_json_params();
 		$code = isset( $body['code'] ) ? sanitize_text_field( (string) $body['code'] ) : '';
@@ -380,10 +384,11 @@ class CheckoutController extends BaseController {
 			return $limited;
 		}
 
-		list( $token, $nonce ) = $this->resolve_token( $session );
-		if ( is_wp_error( $token ) ) {
-			return $token;
+		$resolved = $this->resolve_token( $session );
+		if ( is_wp_error( $resolved ) ) {
+			return $resolved;
 		}
+		list( $token, $nonce ) = $resolved;
 
 		$body = $request->get_json_params();
 		if ( ! is_array( $body ) ) {

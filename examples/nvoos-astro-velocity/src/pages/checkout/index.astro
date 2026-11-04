@@ -16,10 +16,20 @@ import CheckoutView from '../../islands/CheckoutView';
 import { getShop } from '../../lib/commerce/client';
 import { canEmbedCheckout } from '../../lib/commerce/checkout-api';
 import { pageTitle } from '../../lib/seo/meta';
+import { randomBytes } from 'node:crypto';
 import '../../styles/checkout.css';
 
 const shop = await getShop(Astro.url);
 const embedded = canEmbedCheckout(shop);
+
+// Stripe.js CSP nonce (Proposal 110): Stripe.js injects inline bootstrap
+// scripts, so hash-only CSP can never allow them. Stripe's documented
+// mechanism is a <meta property="csp-nonce" nonce="…"> tag — Stripe.js reads
+// it and applies the nonce to its injected scripts. The BFF mirrors the same
+// nonce into the payment-scoped script-src directive (see
+// scripts/lib/security-headers.mjs). Minted per render; the page is never
+// cached (no-store below), so the nonce is single-use per response.
+const cspNonce = embedded ? randomBytes(16).toString('base64') : '';
 
 // A payment surface is never cached, and the x-nvoos-csp-payment marker is
 // consumed by the BFF security-header wrapper to scope the Stripe.js
@@ -32,6 +42,9 @@ if (embedded) {
 ---
 
 <BaseLayout title={pageTitle('Checkout')}>
+	{embedded && (
+		<Fragment slot="head" set:html={`<meta property="csp-nonce" nonce="${cspNonce}">`} />
+	)}
 	<h1>Checkout</h1>
 	{
 		embedded ? (

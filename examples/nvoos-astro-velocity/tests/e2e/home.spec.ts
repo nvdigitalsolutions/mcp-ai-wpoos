@@ -38,7 +38,7 @@ test.describe('home — no JS', () => {
 		// Footer surfaces the app version (single source: src/lib/version.ts)
 		// and the active-theme badge's server default (light).
 		const footer = page.locator('.site-footer');
-		await expect(footer).toContainText('NV Store v0.4.1');
+		await expect(footer).toContainText('NV Store v0.4.2');
 		await expect(footer).toContainText('Theme: light');
 
 		const blocks = await page

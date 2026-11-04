@@ -236,6 +236,35 @@ class TestCheckoutController extends WP_Test_REST_TestCase {
 	}
 
 	/**
+	 * When cart bootstrap fails (no Cart-Token issued), the checkout routes
+	 * surface a clean 502 instead of the WP_Error-as-array fatal that leaked
+	 * raw "critical error" HTML through the BFF (production incident
+	 * 2026-11-04: CheckoutController.php:180).
+	 */
+	public function test_bootstrap_failure_surfaces_clean_502(): void {
+		// Deterministic production shape: the bootstrap POST /cart answers 200
+		// WITHOUT the Cart-Token header (the Cloudways WAF interception),
+		// which makes resolve_token() return a WP_Error — every checkout
+		// route must relay it as a typed 502, never destructure it.
+		$this->stub_store_api(
+			static function ( $method, $path ) {
+				if ( 'POST' === $method && '/cart' === $path ) {
+					return array(
+						'status'  => 200,
+						'headers' => array(),
+						'body'    => '{}',
+					);
+				}
+				return null;
+			}
+		);
+
+		$response = rest_get_server()->dispatch( $this->checkout_request( 'GET', '/checkout' ) );
+		$this->assertEquals( 502, $response->get_status() );
+		$this->assertSame( 'astro_cart_token_missing', $response->as_error()->get_error_code() );
+	}
+
+	/**
 	 * A missing or malformed session header is a typed 400.
 	 */
 	public function test_session_header_required(): void {
