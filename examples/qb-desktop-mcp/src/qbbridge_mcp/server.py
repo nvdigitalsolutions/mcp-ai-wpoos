@@ -46,7 +46,10 @@ tool again with exactly the same arguments plus confirm_code. A changed
 argument needs a new preview. Own bookings can be undone with qb_revert_run.
 This server cannot delete, void or change existing transactions."""
 
-mcp = FastMCP("qbbridge", instructions=INSTRUCTIONS)
+# Proposal 113: the server identifies as an NV-owned product in client UIs;
+# upstream shipped it as "qbbridge". QBBRIDGE_* env vars and the console
+# script keep upstream names for compatibility.
+mcp = FastMCP("nvoos-qb-desktop-mcp", instructions=INSTRUCTIONS)
 
 DATA_DIR = Path(os.environ.get("QBBRIDGE_DATA_DIR") or _default_data_dir())
 RUNS_DIR = Path(os.environ.get("QBBRIDGE_RUNS_DIR") or (DATA_DIR / "runs"))

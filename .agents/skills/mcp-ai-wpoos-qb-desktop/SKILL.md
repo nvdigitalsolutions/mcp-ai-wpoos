@@ -5,9 +5,10 @@ description: Operate the QuickBooks Desktop MCP server (Proposal 113) in example
 
 # QB Desktop MCP — operational guide
 
-Local stdio MCP server (`qb-desktop` in Zed context_servers) that reads a
-QuickBooks Desktop company file via qbXML over COM and writes only in
-tiers. Fork of `Compolaga/quickbooks-desktop-mcp` (MIT, QBBridge lineage).
+Local stdio MCP server (`nvoos-qb-desktop-mcp` in Zed context_servers)
+that reads a QuickBooks Desktop company file via qbXML over COM and
+writes only in tiers. Fork of `Compolaga/quickbooks-desktop-mcp` (MIT,
+QBBridge lineage).
 
 ## Load order
 
