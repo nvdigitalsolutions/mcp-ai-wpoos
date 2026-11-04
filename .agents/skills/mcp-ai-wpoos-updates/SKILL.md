@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.15"
   plugin-version-tested: "1.2.15"
-  last-updated: "2026-11-01"
+  last-updated: "2026-11-04"
 ---
 
 # NV oOS Updates — Docs Catch-Up, Model Catalog & PR Deferred-Item Sweeps
@@ -614,8 +614,13 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
 ### B1b. Test drift files & file surface beyond the process-doc map
 
 The July 2026 process doc's 24-file map misses several files the September 2026
-run had to touch. Grep for the IDs you changed across `tests/`,
-`addons/pro/tests/`, and `tests/js/`, then update:
+run had to touch - and the November 2026 run (PR #7416) missed 11 assertion
+sites across 7 more files the table below did not list yet (fixed in PR #7440).
+Because the table itself drifts, **the grep sweep is the authority**: for every
+model ID the refresh changes, run
+`grep -rn "<old-id>" tests/ addons/pro/tests/ examples/` (add `\b` for short
+ids like `gpt-4.1`) and move every hit in the same PR. The table is the fast
+path, never the whole check. Then update:
 
 | File | What it pins |
 |---|---|
@@ -630,6 +635,22 @@ run had to touch. Grep for the IDs you changed across `tests/`,
 | `tests/test-image-tool-settings.php` + `tests/test-openai-image-tool.php` | Image tool `DEFAULT_MODEL` const + schema fallback |
 | `tests/test-model-rate-limits-cct.php` | Image-model presence/absence assertions |
 | `addons/pro/tests/test-oos-composition-service.php` | Seeded `_wp_mcp_ai_model` ids |
+| `tests/test-default-assistants.php` | Orchestrator (and sibling) assistant `model` values |
+| `tests/test-assistant-builder-assistant.php` | Assistant-builder config `model` + installed CPT meta `model` |
+| `tests/test-architect-agent-assistant-creation.php` | Architect config `model` + installed CPT meta `model` |
+| `tests/test-enhanced-openai-client-stabilization.php` | Router light/advanced routing targets (simple `gpt-6-luna`, complex `gpt-6.1-sol`) |
+| `tests/test-tpm-limit-validation.php` | High-capacity fallback model (`gemini-3.5-flash-lite`) |
+| `tests/test-get-environment-status-tool.php` | Plugin `default_model` in the status payload |
+| `tests/test-gemini-image-pattern-consistency.php` | Gemini image `DEFAULT_MODEL` allowlist (see fragile-check rule below) |
+
+**Fragile-check rule (November 2026):**
+`test-gemini-image-pattern-consistency.php` used
+`assertStringContainsString( 'image', strtolower( $model ) )`; the refresh moved
+the default to `gemini-nano-banana-2.1`, which contains no "image" substring,
+so the test broke even though the production value was correct. The test now
+checks membership in a known-image-model allowlist - when the image default
+changes again, update the allowlist entry. Never assert model identity via a
+semantic substring.
 
 Files the 24-file map misses (all touched in the September 2026 run):
 
