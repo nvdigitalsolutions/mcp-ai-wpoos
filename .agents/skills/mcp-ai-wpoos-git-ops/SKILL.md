@@ -150,6 +150,19 @@ Four rules, each from a session that cost a recovery:
   <branch> origin/alpha-working`, then operate there via `git -C` (and
   `npm pack <abs-dir>` rather than `--prefix`). `git worktree remove`
   when done — the shared checkout was never touched.
+- **In-repo worktree variant when editor tools need the files (2026-11-04):**
+  if your editing tools can only reach paths under the project root, add
+  the linked worktree INSIDE the repo (`git worktree add
+  F:/GITHUB/mcp-ai-wpoos/.wt-<name> -b <branch> origin/alpha-working` —
+  git is fine with it; the dir shows as untracked in the main tree and is
+  removed wholesale afterwards). For validation runs, junction the
+  node_modules instead of reinstalling: node
+  `fs.symlinkSync('<main>/node_modules', '<wt>/node_modules', 'junction')`
+  (no admin rights needed); `cd` the terminal into the worktree dir for
+  npm/astro/vitest/playwright. `git worktree remove --force .wt-<name>`
+  when done — verified 2026-11-04 for the 110 version-bump PR (lint,
+  astro check, vitest, hermetic build and home e2e all ran inside the
+  worktree).
 - **De-stack a PR without `reset --hard`:** move the branch back with
   `git reset --mixed <parent>` (worktree untouched), restore only your own
   paths with `git restore --worktree -- <your-paths>` (a file you created
@@ -202,6 +215,18 @@ can appear in the repo root. Two failure modes follow:
   run `powershell -NoProfile -ExecutionPolicy Bypass -File`, or do it in
   node instead (e.g. JPEG/PNG dimension sniffing from the file header — no
   deps needed).
+- **Inline `python -c` with backslash strings gets mangled the same way
+  (2026-11-04):** `'\\'` in an inline `python -c` arrives as `'\'` and
+  the script dies mid-parse (SyntaxError). Write the script to a `.py`
+  file and run `python <file>` — same pattern as the `.ps1` rule (the
+  110 bridge-zip packaging script was built this way).
+- **`2>nul` under sh creates a real `nul` FILE (2026-11-04):** a Windows
+  habit like `dir ... 2>nul` in the sh shell redirects stderr to an
+  untracked file literally named `nul` in the repo root. It never rides
+  commits (pathspec discipline), but remove it: PowerShell
+  `Test-Path -LiteralPath '\\?\<abs>\nul'` returns FALSE (the
+  MSYS-created file is not the device path) — node removes it:
+  `node -e "fs.rmSync('nul',{force:true})"`.
 - `findstr /C:"..."` quoting breaks under sh — pipe to node for filtering
   or use the terminal tool's `tail_lines`.
 - `node --test <directory>` does **not** recurse on this setup (runs one

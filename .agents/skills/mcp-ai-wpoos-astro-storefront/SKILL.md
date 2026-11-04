@@ -760,6 +760,32 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   would resurrect the cleared cart; `click()` not `check()` on CONTROLLED
   radios — the selected state returns from the round-trip).
 - Full doc: `docs/project/proposals/110-embedded-checkout-store-api-proposal.md`.
+- **Version discipline (2026-11-04, owner rule):** `src/lib/version.ts`
+  `APP_VERSION` is the single source of truth — the footer, the MCP
+  handshake (`SERVER_VERSION = APP_VERSION` in `mcp/server.ts`) and the
+  manifests all derive from it. Bump INCREMENTALLY (0.4.0 → 0.4.1, not
+  0.5.0) in version.ts + package.json + package-lock.json (the two ROOT
+  entries only — dependency versions must not move) + the
+  `tests/e2e/home.spec.ts` footer pin (`NV Store v0.x.y`) in one commit.
+  The BRIDGE has its OWN version (plugin header `nvoos-astro-bridge.php`
+  + `CHANGELOG.md`; 1.1.0 → 1.1.1 for 110) — bump it whenever the bridge
+  gains routes so the wp-admin Plugins screen proves the deploy landed.
+- **The merge-deploys-app-not-bridge gap (2026-11-04 outage):** the sync
+  workflow redeploys the APP on alpha-working merge, but the bridge plugin
+  on nvoos.pro is a MANUAL deploy. A cluster that changes both sides leaves
+  the live storefront broken the moment the app ships: the checkout page
+  shows "The checkout could not be loaded — No route was found matching the
+  URL and request method" (`rest_no_route` — the stale bridge has no
+  `/checkout` routes) and the console shows a 404 (the `/api/checkout`
+  fetch). Fix = build the bridge zip and upload ("Replace current with
+  uploaded"): python zipfile (forward slashes, single top-level
+  `nvoos-astro-bridge/` folder), include-set = the main file,
+  `uninstall.php`, `LICENSE`, `README.md`, `CHANGELOG.md`,
+  `THIRD_PARTY_NOTICES.md`, `includes/`, `build/` (the standalone SPA
+  bundle is REQUIRED — wp-admin enqueues it); exclude `src/`, `tests/`,
+  `node_modules/`. Verify the version on the Plugins screen, then retest
+  `/checkout/`. The cart page got the checkout's `no-store` treatment in
+  the same pass (`src/pages/cart/index.astro`).
 
 ## Component library (Q6, 2026-11-03)
 
