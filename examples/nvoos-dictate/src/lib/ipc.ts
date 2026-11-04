@@ -242,10 +242,28 @@ export interface MediaProgress {
 
 export type PageProvenance = 'text' | 'ocr' | 'polished';
 
+export interface DocumentWord {
+  text: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface DocumentLine {
+  text: string;
+  words: DocumentWord[];
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface DocumentPage {
   index: number;
   text: string;
   provenance: PageProvenance;
+  lines?: DocumentLine[];
 }
 
 export interface DocumentResult {

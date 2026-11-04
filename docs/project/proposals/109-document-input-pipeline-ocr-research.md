@@ -179,8 +179,11 @@ Cloud VLM OCR is deliberately not required.
    **done** (follow-up PR: `document/images.rs`, Images dialog filter,
    PNG/JPEG fixtures). An image result still labels itself `document-ocr`
    in history, same as a scanned page — cosmetic, not a gap.
-2. Word-level bounding boxes through the pipeline → hOCR/ALTO v2 with
-   `bbox` attributes.
+2. ~~Word-level bounding boxes → hOCR/ALTO v2~~ — **done** (follow-up PR:
+   `document/words.rs`, `DocumentLine`/`DocumentWord`, boxed PDF text
+   layers + OCR-engine boxes, finalized text reconciled onto raw boxes;
+   polished rewrites degrade to line-level boxes). Searchable-PDF word
+   placement remains deferred.
 3. ~~pdfium.dll installer provisioning~~ — **done** (follow-up PR:
    `scripts/fetch-pdfium.ps1` sha256-pinned fetch, Windows-only
    `tauri.windows.conf.json` bundle resource, `build.rs` dev/test staging,
@@ -190,6 +193,9 @@ Cloud VLM OCR is deliberately not required.
 5. Optional VLM reading-order / table detection for complex layouts
    (XY-Cut++/DocTR-style) behind the polish toggle.
 6. Batch/folder document input.
+7. DeepSeek-OCR model tier (Proposal 111): optional local document-
+   understanding pass for layout-complex / low-confidence pages, via the
+   existing local-server transport — see the proposal for the phased plan.
 
 ## Sources
 

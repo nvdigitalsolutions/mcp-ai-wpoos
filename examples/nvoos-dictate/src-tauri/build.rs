@@ -1,5 +1,6 @@
 fn main() {
     tauri_build::build();
+    #[cfg(feature = "document")]
     stage_pdfium_for_dev();
 }
 

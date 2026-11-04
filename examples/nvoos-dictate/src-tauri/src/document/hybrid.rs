@@ -6,7 +6,11 @@
 //! Pure functions over extracted metrics — golden-testable with no pdfium
 //! or engine involvement.
 
+#[cfg(feature = "document")]
+use crate::document::words;
 use crate::document::ExtractedChar;
+#[cfg(feature = "document")]
+use crate::document::{DocumentLine, DocumentWord};
 use crate::snippet::layout::{self, LayoutBox};
 
 /// A page with fewer extracted chars than this is treated as image-only.
@@ -109,6 +113,36 @@ pub fn chars_to_text(chars: &[ExtractedChar], page_w: f32) -> String {
     layout::reading_order(&words, page_w, median * 2.5)
 }
 
+/// Extract a page's text layer into boxed lines in the page's canonical
+/// raster space (300-DPI render pixels — PDF points are scaled by
+/// `dpi / 72`). Reading order matches `chars_to_text` (the same XY-cut +
+/// line-clustering geometry), now retaining word boxes.
+#[cfg(feature = "document")]
+pub fn chars_to_lines(chars: &[ExtractedChar], page_w: f32, dpi: f32) -> Vec<DocumentLine> {
+    let words = chars_to_words(chars);
+    if words.is_empty() {
+        return Vec::new();
+    }
+    let scale = (dpi / 72.0).max(1.0);
+    let mut widths: Vec<f32> = words.iter().map(|w| w.w).collect();
+    widths.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let median = widths[widths.len() / 2].max(1.0);
+    let words = words::scale_words(
+        words
+            .into_iter()
+            .map(|b| DocumentWord {
+                text: b.text,
+                x: b.x,
+                y: b.y,
+                w: b.w,
+                h: b.h,
+            })
+            .collect(),
+        scale,
+    );
+    words::lines_from_words_column_aware(&words, page_w * scale, median * 2.5 * scale)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,6 +217,19 @@ mod tests {
         assert_eq!(words[0].text, "The");
         assert_eq!(words[1].text, "qu"); // space ends the previous word
         assert_eq!(words[2].text, "f");
+    }
+
+    #[test]
+    #[cfg(feature = "document")]
+    fn chars_to_lines_scales_points_to_render_pixels() {
+        let chars = vec![
+            ch("a", 72.0, 100.0, 8.0, 12.0),
+            ch("b", 80.0, 100.0, 8.0, 12.0),
+        ];
+        let lines = chars_to_lines(&chars, 612.0, 300.0);
+        assert_eq!(lines.len(), 1);
+        // 72pt at 300 DPI = 300px.
+        assert!((lines[0].words[0].x - 300.0).abs() < 0.5);
     }
 
     #[test]

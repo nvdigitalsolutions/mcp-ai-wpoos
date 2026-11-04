@@ -33,8 +33,9 @@ fn xml_escape(s: &str) -> String {
 }
 
 /// hOCR: XHTML with per-page `ocr_page` elements and per-line `ocr_line`
-/// children. v1 emits line text without word bounding boxes (box retention
-/// across the pipeline is a later upgrade) — still a valid hOCR document.
+/// children. Pages with retained word geometry also emit per-word
+/// `ocrx_word` children with `bbox` titles (Proposal 109 follow-up 2);
+/// pages without lines fall back to the v1 line-only form.
 pub fn to_hocr(result: &DocumentResult) -> String {
     let mut out = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
@@ -50,16 +51,48 @@ pub fn to_hocr(result: &DocumentResult) -> String {
             i + 1,
             i + 1
         ));
-        for (li, line) in page.text.lines().enumerate() {
-            if line.trim().is_empty() {
-                continue;
+        if page.lines.is_empty() {
+            for (li, line) in page.text.lines().enumerate() {
+                if line.trim().is_empty() {
+                    continue;
+                }
+                out.push_str(&format!(
+                    "<span class=\"ocr_line\" id=\"page_{}_line_{}\">{}</span>\n",
+                    i + 1,
+                    li + 1,
+                    xml_escape(line)
+                ));
             }
-            out.push_str(&format!(
-                "<span class=\"ocr_line\" id=\"page_{}_line_{}\">{}</span>\n",
-                i + 1,
-                li + 1,
-                xml_escape(line)
-            ));
+        } else {
+            for (li, line) in page.lines.iter().enumerate() {
+                if line.text.trim().is_empty() {
+                    continue;
+                }
+                out.push_str(&format!(
+                    "<span class=\"ocr_line\" id=\"page_{}_line_{}\" title=\"bbox {} {} {} {}\">",
+                    i + 1,
+                    li + 1,
+                    round(line.x),
+                    round(line.y),
+                    round(line.w),
+                    round(line.h)
+                ));
+                if line.words.is_empty() {
+                    out.push_str(&xml_escape(&line.text));
+                } else {
+                    for w in &line.words {
+                        out.push_str(&format!(
+                            "<span class=\"ocrx_word\" title=\"bbox {} {} {} {}\">{}</span> ",
+                            round(w.x),
+                            round(w.y),
+                            round(w.w),
+                            round(w.h),
+                            xml_escape(&w.text)
+                        ));
+                    }
+                }
+                out.push_str("</span>\n");
+            }
         }
         out.push_str("</div>\n");
     }
@@ -67,8 +100,16 @@ pub fn to_hocr(result: &DocumentResult) -> String {
     out
 }
 
-/// ALTO XML: the library-standard archival layout description, same v1
-/// line-only granularity as hOCR.
+/// Round a box coordinate to an integer attribute value (hOCR/ALTO use
+/// whole pixels).
+fn round(v: f32) -> i64 {
+    v.round() as i64
+}
+
+/// ALTO XML: the library-standard archival layout description. Pages with
+/// retained word geometry emit per-word `<String>` children with
+/// HPOS/VPOS/WIDTH/HEIGHT (Proposal 109 follow-up 2); pages without lines
+/// fall back to the v1 line-only form.
 pub fn to_alto(result: &DocumentResult) -> String {
     let mut out = String::from(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\
@@ -82,16 +123,57 @@ pub fn to_alto(result: &DocumentResult) -> String {
             i + 1,
             i + 1
         ));
-        for (li, line) in page.text.lines().enumerate() {
-            if line.trim().is_empty() {
-                continue;
+        if page.lines.is_empty() {
+            for (li, line) in page.text.lines().enumerate() {
+                if line.trim().is_empty() {
+                    continue;
+                }
+                out.push_str(&format!(
+                    "<TextLine ID=\"page{}_line{}\"><String CONTENT=\"{}\"/></TextLine>\n",
+                    i + 1,
+                    li + 1,
+                    xml_escape(line)
+                ));
             }
-            out.push_str(&format!(
-                "<TextLine ID=\"page{}_line{}\"><String CONTENT=\"{}\"/></TextLine>\n",
-                i + 1,
-                li + 1,
-                xml_escape(line)
-            ));
+        } else {
+            for (li, line) in page.lines.iter().enumerate() {
+                if line.text.trim().is_empty() {
+                    continue;
+                }
+                if line.words.is_empty() {
+                    out.push_str(&format!(
+                        "<TextLine ID=\"page{}_line{}\" HPOS=\"{}\" VPOS=\"{}\" WIDTH=\"{}\" HEIGHT=\"{}\"><String CONTENT=\"{}\"/></TextLine>\n",
+                        i + 1,
+                        li + 1,
+                        round(line.x),
+                        round(line.y),
+                        round(line.w),
+                        round(line.h),
+                        xml_escape(&line.text)
+                    ));
+                } else {
+                    out.push_str(&format!(
+                        "<TextLine ID=\"page{}_line{}\" HPOS=\"{}\" VPOS=\"{}\" WIDTH=\"{}\" HEIGHT=\"{}\">",
+                        i + 1,
+                        li + 1,
+                        round(line.x),
+                        round(line.y),
+                        round(line.w),
+                        round(line.h)
+                    ));
+                    for w in &line.words {
+                        out.push_str(&format!(
+                            "<String CONTENT=\"{}\" HPOS=\"{}\" VPOS=\"{}\" WIDTH=\"{}\" HEIGHT=\"{}\"/>",
+                            xml_escape(&w.text),
+                            round(w.x),
+                            round(w.y),
+                            round(w.w),
+                            round(w.h)
+                        ));
+                    }
+                    out.push_str("</TextLine>\n");
+                }
+            }
         }
         out.push_str("</PrintSpace>\n</Page>\n");
     }
@@ -115,7 +197,7 @@ pub fn emit(format: &str, result: &DocumentResult) -> AppResult<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::document::{DocumentPage, PageProvenance};
+    use crate::document::{DocumentLine, DocumentPage, DocumentWord, PageProvenance};
 
     fn sample() -> DocumentResult {
         DocumentResult {
@@ -124,11 +206,13 @@ mod tests {
                 DocumentPage {
                     index: 0,
                     text: "hello <world> & friends".into(),
+                    lines: vec![],
                     provenance: PageProvenance::Text,
                 },
                 DocumentPage {
                     index: 1,
                     text: "second page".into(),
+                    lines: vec![],
                     provenance: PageProvenance::Ocr,
                 },
             ],
@@ -160,6 +244,64 @@ mod tests {
         let alto = to_alto(&sample());
         assert!(alto.contains("hello &lt;world&gt; &amp; friends"));
         assert!(alto.contains("<Page ID=\"page2\""));
+    }
+
+    fn boxed() -> DocumentResult {
+        DocumentResult {
+            path: "a.pdf".into(),
+            pages: vec![DocumentPage {
+                index: 0,
+                text: "The quick fox".into(),
+                lines: vec![DocumentLine {
+                    text: "The quick fox".into(),
+                    words: vec![
+                        DocumentWord {
+                            text: "The".into(),
+                            x: 96.0,
+                            y: 100.0,
+                            w: 30.0,
+                            h: 20.0,
+                        },
+                        DocumentWord {
+                            text: "quick".into(),
+                            x: 140.0,
+                            y: 100.0,
+                            w: 45.0,
+                            h: 20.0,
+                        },
+                    ],
+                    x: 96.0,
+                    y: 100.0,
+                    w: 89.0,
+                    h: 20.0,
+                }],
+                provenance: PageProvenance::Text,
+            }],
+            page_count: 1,
+            duration_ms: 1,
+        }
+    }
+
+    #[test]
+    fn hocr_emits_word_boxes_when_retained() {
+        let hocr = to_hocr(&boxed());
+        assert!(hocr.contains("class=\"ocrx_word\" title=\"bbox 96 100 30 20\">The</span>"));
+        assert!(
+            hocr.contains("class=\"ocr_line\" id=\"page_1_line_1\" title=\"bbox 96 100 89 20\"")
+        );
+        // v1 fallback still exercised for pages without lines.
+        assert!(to_hocr(&sample()).contains("id=\"page_1_line_1\">hello"));
+    }
+
+    #[test]
+    fn alto_emits_word_strings_when_retained() {
+        let alto = to_alto(&boxed());
+        assert!(alto.contains(
+            "<String CONTENT=\"The\" HPOS=\"96\" VPOS=\"100\" WIDTH=\"30\" HEIGHT=\"20\"/>"
+        ));
+        assert!(alto.contains(
+            "<TextLine ID=\"page1_line1\" HPOS=\"96\" VPOS=\"100\" WIDTH=\"89\" HEIGHT=\"20\">"
+        ));
     }
 
     #[test]

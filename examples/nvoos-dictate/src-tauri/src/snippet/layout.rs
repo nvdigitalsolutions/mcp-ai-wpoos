@@ -74,11 +74,10 @@ pub fn xy_cut_words(boxes: &[LayoutBox], page_w: f32, min_gap: f32) -> Vec<Vec<L
     cols
 }
 
-/// Cluster one column's words into lines. A word joins a line when its
-/// vertical center falls inside the line's span (handles mixed font sizes
-/// on one baseline); words within a line are x-sorted so a taller glyph
-/// slightly lower on the same baseline never reorders the line.
-pub fn cluster_lines(boxes: &[LayoutBox]) -> Vec<LayoutLine> {
+/// Cluster one column's words into raw line groups (boxes kept, x-sorted
+/// within each group). Shared by `cluster_lines` — this variant preserves
+/// geometry for downstream word-level emitters (Proposal 109 follow-up 2).
+pub fn line_groups(boxes: &[LayoutBox]) -> Vec<Vec<LayoutBox>> {
     let mut sorted: Vec<&LayoutBox> = boxes.iter().collect();
     sorted.sort_by(|a, b| {
         a.y.partial_cmp(&b.y)
@@ -106,8 +105,22 @@ pub fn cluster_lines(boxes: &[LayoutBox]) -> Vec<LayoutLine> {
 
     groups
         .into_iter()
-        .map(|mut group| {
-            group.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap_or(std::cmp::Ordering::Equal));
+        .map(|group| {
+            let mut g: Vec<LayoutBox> = group.into_iter().cloned().collect();
+            g.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap_or(std::cmp::Ordering::Equal));
+            g
+        })
+        .collect()
+}
+
+/// Cluster one column's words into lines. A word joins a line when its
+/// vertical center falls inside the line's span (handles mixed font sizes
+/// on one baseline); words within a line are x-sorted so a taller glyph
+/// slightly lower on the same baseline never reorders the line.
+pub fn cluster_lines(boxes: &[LayoutBox]) -> Vec<LayoutLine> {
+    line_groups(boxes)
+        .into_iter()
+        .map(|group| {
             let text = group
                 .iter()
                 .map(|w| w.text.as_str())
