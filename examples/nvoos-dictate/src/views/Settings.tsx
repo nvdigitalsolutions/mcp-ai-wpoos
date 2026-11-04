@@ -26,6 +26,7 @@ type SettingsTab =
   | 'ollama'
   | 'agent'
   | 'snippet'
+  | 'documents'
   | 'privacy'
   | 'permissions';
 
@@ -34,6 +35,19 @@ export default function SettingsView({ onChanged, status }: Props) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+
+  const testDocModel = async () => {
+    setBusy(true);
+    setMessage('');
+    try {
+      const reply = await api.testDocumentModelConnection();
+      setMessage(`Document model connected — reply: ${reply}`);
+    } catch (e) {
+      setMessage(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
   const [loadFailed, setLoadFailed] = useState(false);
   const [devices, setDevices] = useState<string[]>([]);
   const [cameras, setCameras] = useState<string[]>([]);
@@ -214,6 +228,9 @@ export default function SettingsView({ onChanged, status }: Props) {
         </button>
         <button className={tab === 'snippet' ? 'tab active' : 'tab'} onClick={() => setTab('snippet')}>
           Screen OCR
+        </button>
+        <button className={tab === 'documents' ? 'tab active' : 'tab'} onClick={() => setTab('documents')}>
+          Documents
         </button>
         <button className={tab === 'privacy' ? 'tab active' : 'tab'} onClick={() => setTab('privacy')}>
           Privacy
@@ -802,6 +819,171 @@ export default function SettingsView({ onChanged, status }: Props) {
               feature.
             </p>
           )}
+        </section>
+      )}
+
+      {tab === 'documents' && (
+        <section className="card">
+          <h2>Documents</h2>
+          <p className="muted">PDF / TIFF / image extraction (Proposal 109).</p>
+          <label className="row">
+            <span>Rasterization DPI</span>
+            <input
+              type="number"
+              value={settings.document.dpi}
+              onChange={(e) =>
+                patch({ document: { ...settings.document, dpi: Number(e.target.value) || 300 } })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Page cap per document</span>
+            <input
+              type="number"
+              value={settings.document.max_pages}
+              onChange={(e) =>
+                patch({
+                  document: { ...settings.document, max_pages: Number(e.target.value) || 200 },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Polish OCR with a local VLM</span>
+            <input
+              type="checkbox"
+              checked={settings.document.polish_enabled}
+              onChange={(e) =>
+                patch({
+                  document: { ...settings.document, polish_enabled: e.target.checked },
+                })
+              }
+            />
+          </label>
+          {settings.document.polish_enabled && (
+            <label className="row">
+              <span>Polish model</span>
+              <input
+                type="text"
+                value={settings.document.polish_model}
+                placeholder="qwen/qwen2.5-vl-7b"
+                onChange={(e) =>
+                  patch({ document: { ...settings.document, polish_model: e.target.value } })
+                }
+              />
+            </label>
+          )}
+          <h3>DeepSeek-OCR model tier</h3>
+          <p className="muted">
+            Optional: pages the box-level OCR handles poorly are sent to a local
+            DeepSeek-OCR-class model (Ollama / LM Studio) which returns structured Markdown.
+            Slow — budgeted per document. Pull the model first (e.g. ollama pull deepseek-ocr,
+            ~6.7 GB).
+          </p>
+          <label className="row">
+            <span>Enable model tier</span>
+            <input
+              type="checkbox"
+              checked={settings.document.model.enabled}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: { ...settings.document.model, enabled: e.target.checked },
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Provider</span>
+            <select
+              value={settings.document.model.provider}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: { ...settings.document.model, provider: e.target.value },
+                  },
+                })
+              }
+            >
+              <option value="ollama">Ollama</option>
+              <option value="lm_studio">LM Studio</option>
+            </select>
+          </label>
+          <label className="row">
+            <span>Model id</span>
+            <input
+              type="text"
+              value={settings.document.model.model}
+              placeholder="deepseek-ocr"
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: { ...settings.document.model, model: e.target.value },
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Use for every scanned page</span>
+            <input
+              type="checkbox"
+              checked={settings.document.model.all_scans}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: { ...settings.document.model, all_scans: e.target.checked },
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Min confidence (0–1, empty = off)</span>
+            <input
+              type="text"
+              value={settings.document.model.min_confidence ?? ''}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: {
+                      ...settings.document.model,
+                      min_confidence: e.target.value === '' ? null : Number(e.target.value),
+                    },
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Model pages per document</span>
+            <input
+              type="number"
+              value={settings.document.model.max_pages}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: {
+                      ...settings.document.model,
+                      max_pages: Number(e.target.value) || 5,
+                    },
+                  },
+                })
+              }
+            />
+          </label>
+          <div className="btn-row">
+            <button className="btn" disabled={busy} onClick={() => void testDocModel()}>
+              Test connection
+            </button>
+          </div>
         </section>
       )}
 

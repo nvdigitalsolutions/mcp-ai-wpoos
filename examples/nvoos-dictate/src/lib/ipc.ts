@@ -111,6 +111,22 @@ export interface Settings {
     cleanup_profile: string; // off | ocr | full_stage1
     retain_history: boolean;
   };
+  document: {
+    dpi: number;
+    text_page_min_chars: number;
+    max_pages: number;
+    polish_enabled: boolean;
+    polish_model: string;
+    model: {
+      enabled: boolean;
+      provider: string;
+      model: string;
+      min_confidence: number | null;
+      all_scans: boolean;
+      max_pages: number;
+      load_timeout_ms: number;
+    };
+  };
 }
 
 export interface StatusInfo {
@@ -240,7 +256,7 @@ export interface MediaProgress {
   fraction: number;
 }
 
-export type PageProvenance = 'text' | 'ocr' | 'polished';
+export type PageProvenance = 'text' | 'ocr' | 'polished' | 'model';
 
 export interface DocumentWord {
   text: string;
@@ -276,7 +292,7 @@ export interface DocumentResult {
 export interface DocumentProgress {
   page: number;
   page_count: number;
-  phase: 'extract' | 'ocr' | 'polish';
+  phase: 'extract' | 'ocr' | 'polish' | 'model';
   fraction: number;
 }
 
@@ -418,6 +434,25 @@ export interface DiagnosticsInfo {
     models: SnippetModelStatus[];
     onnx_available: boolean;
   };
+  document: {
+    available: boolean;
+    pdf_export_available: boolean;
+    busy: boolean;
+    documents: number;
+    pages: number;
+    text_pages: number;
+    ocr_pages: number;
+    model_pages: number;
+    last_ms: number;
+    errors: number;
+    last_error: string | null;
+    dpi: number;
+    max_pages: number;
+    polish_enabled: boolean;
+    model_enabled: boolean;
+    model_provider: string;
+    model_model: string;
+  };
   last_dictation: {
     window_ms: number;
     utterance_ms: number;
@@ -546,6 +581,9 @@ export const api = {
   pickMediaFile: () => invoke<string | null>('pick_media_file'),
 
   documentAvailable: () => invoke<boolean>('document_available'),
+  documentModelAvailable: () => invoke<boolean>('document_model_available'),
+  testDocumentModelConnection: () =>
+    invoke<string>('test_document_model_connection'),
   pickDocument: () => invoke<string | null>('pick_document'),
   transcribeDocument: (path: string) =>
     invoke<DocumentResult>('transcribe_document', { path }),

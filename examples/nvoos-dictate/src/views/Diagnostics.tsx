@@ -311,6 +311,41 @@ export default function DiagnosticsView() {
       </section>
 
       <section className="card">
+        <h2>Document OCR</h2>
+        {info.document.available ? (
+          <ul className="diag-list">
+            <li>
+              <span>Documents / pages</span>
+              <span>
+                {info.document.documents} / {info.document.pages}
+              </span>
+            </li>
+            <li>
+              <span>Pages by provenance</span>
+              <span>
+                text {info.document.text_pages} · ocr {info.document.ocr_pages} · model{' '}
+                {info.document.model_pages}
+              </span>
+            </li>
+            <li>
+              <span>Model tier (DeepSeek-OCR)</span>
+              <span className={badge(info.document.model_enabled)}>
+                {info.document.model_enabled
+                  ? `${info.document.model_provider} · ${info.document.model_model}`
+                  : 'off'}
+              </span>
+            </li>
+            <li>
+              <span>Last document</span>
+              <span>{info.document.last_ms} ms</span>
+            </li>
+          </ul>
+        ) : (
+          <p className="muted">not compiled into this build</p>
+        )}
+      </section>
+
+      <section className="card">
         <h2>Screen OCR (snippet)</h2>
         {info.snippet.available ? (
           <ul className="kv">
