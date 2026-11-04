@@ -34,7 +34,7 @@
 > That document answers every common question in one place: what the project is, current security posture, what's production vs experimental, PHP version requirements, AI development methodology, compliance status, and scoping advice for a limited-budget review.
 >
 > **Quick links for reviewers:**
-> - [Addon Inventory](docs/project/ADDON_INVENTORY.md) — what each of 31 addons does and its status
+> - [Addon Inventory](docs/project/ADDON_INVENTORY.md) — what each of 32 addons does and its status
 > - [Security Posture](docs/operations/security/SECURITY_POSTURE.md) — current state of all 50 audit findings
 > - [Compliance Traceability](docs/operations/compliance/TRACEABILITY.md) — every .org rejection reason → commit → verification command
 > - [AI-Assisted Development](docs/developer/AI_ASSISTED_DEVELOPMENT.md) — methodology, transparency, and what to scrutinize
