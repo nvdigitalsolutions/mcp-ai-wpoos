@@ -31,7 +31,11 @@ fn born_digital_pdf_extracts_text_layer() {
             "page {i} should classify as text-layer"
         );
         let text = hybrid::chars_to_text(&chars, page.width().value);
-        let expect = if i == 0 { "quick brown fox" } else { "Second page" };
+        let expect = if i == 0 {
+            "quick brown fox"
+        } else {
+            "Second page"
+        };
         assert!(
             text.contains(expect),
             "page {i} text should reconstruct words, got: {text}"
@@ -83,5 +87,8 @@ fn missing_library_is_a_clean_error() {
     // dll, so this assertion covers the error-mapping contract only via the
     // fallback path — skipped when the library is present (normal CI).
     let _ = probe;
-    assert!(pdf::bind().is_ok(), "pdfium.dll should be beside the test exe");
+    assert!(
+        pdf::bind().is_ok(),
+        "pdfium.dll should be beside the test exe"
+    );
 }

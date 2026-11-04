@@ -20,6 +20,8 @@ pub mod hybrid;
 
 #[cfg(feature = "document")]
 pub mod export;
+#[cfg(feature = "snippet-pdf")]
+pub mod export_pdf;
 #[cfg(feature = "document")]
 pub mod ocr;
 #[cfg(feature = "document")]
@@ -30,8 +32,6 @@ pub mod polish;
 pub mod preprocess;
 #[cfg(feature = "document")]
 pub mod tiff;
-#[cfg(feature = "snippet-pdf")]
-pub mod export_pdf;
 
 use serde::{Deserialize, Serialize};
 

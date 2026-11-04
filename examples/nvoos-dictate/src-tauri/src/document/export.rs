@@ -106,7 +106,9 @@ pub fn emit(format: &str, result: &DocumentResult) -> AppResult<String> {
         "md" => Ok(to_markdown(result)),
         "hocr" => Ok(to_hocr(result)),
         "alto" => Ok(to_alto(result)),
-        other => Err(AppError::Document(format!("unknown export format '{other}'"))),
+        other => Err(AppError::Document(format!(
+            "unknown export format '{other}'"
+        ))),
     }
 }
 
@@ -137,7 +139,10 @@ mod tests {
 
     #[test]
     fn txt_joins_pages() {
-        assert_eq!(to_txt(&sample()), "hello <world> & friends\n\nsecond page\n");
+        assert_eq!(
+            to_txt(&sample()),
+            "hello <world> & friends\n\nsecond page\n"
+        );
     }
 
     #[test]

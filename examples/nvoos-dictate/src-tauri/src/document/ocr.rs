@@ -29,9 +29,9 @@ pub fn recognize_rgb(
     #[cfg(windows)]
     if engine == "winrt" || want_auto {
         let bgra = rgb_to_bgra(rgb, w, h);
-        match crate::snippet::ocr_winrt::create_engine(&settings.snippet.language).and_then(|e| {
-            crate::snippet::ocr_winrt::recognize_bgra(&e, &bgra, w, h)
-        }) {
+        match crate::snippet::ocr_winrt::create_engine(&settings.snippet.language)
+            .and_then(|e| crate::snippet::ocr_winrt::recognize_bgra(&e, &bgra, w, h))
+        {
             Ok(r) => return Ok(r),
             Err(e) => {
                 tracing::warn!("winrt OCR failed ({e}); trying fallback");
@@ -43,7 +43,8 @@ pub fn recognize_rgb(
     #[cfg(all(target_os = "macos", feature = "snippet"))]
     if engine == "sidecar" || want_auto {
         let bgra = rgb_to_bgra(rgb, w, h);
-        match crate::snippet::macos_sidecar::recognize_bgra(&bgra, w, h, &settings.snippet.language) {
+        match crate::snippet::macos_sidecar::recognize_bgra(&bgra, w, h, &settings.snippet.language)
+        {
             Ok(r) => return Ok(r),
             Err(e) => {
                 tracing::warn!("macOS Vision OCR failed ({e}); trying fallback");

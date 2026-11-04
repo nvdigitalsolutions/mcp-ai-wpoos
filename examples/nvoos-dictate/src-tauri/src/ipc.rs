@@ -1530,7 +1530,9 @@ pub async fn transcribe_document(
     }
     let controller = state.document.clone();
     if controller.is_busy() {
-        return Err(AppError::Other("a document is already being processed".into()));
+        return Err(AppError::Other(
+            "a document is already being processed".into(),
+        ));
     }
     controller.set_busy(true);
 
@@ -1560,7 +1562,11 @@ pub async fn transcribe_document(
             if settings.snippet.retain_history {
                 let combined = result.combined_text();
                 let (text_pages, _ocr_pages, _polished) = result.provenance_counts();
-                let engine = if text_pages == 0 { "document-ocr" } else { "document" };
+                let engine = if text_pages == 0 {
+                    "document-ocr"
+                } else {
+                    "document"
+                };
                 let _ = state.db.insert_document_snippet(
                     &combined,
                     &combined,
@@ -1650,7 +1656,11 @@ pub fn export_document(
         }
 
         let content = crate::document::export::emit(&format, &result)?;
-        let ext = if format == "md" { "md" } else { format.as_str() };
+        let ext = if format == "md" {
+            "md"
+        } else {
+            format.as_str()
+        };
         let picked = window
             .dialog()
             .file()

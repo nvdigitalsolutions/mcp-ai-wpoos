@@ -62,8 +62,6 @@ pub fn migrations() -> Migrations<'static> {
         // Document history (Proposal 109): a `source` badge distinguishes
         // screen captures (`screen`, the default) from document results
         // (`document`); `language` carries the source path for documents.
-        M::up(
-            "ALTER TABLE snippets ADD COLUMN source TEXT NOT NULL DEFAULT 'screen';",
-        ),
+        M::up("ALTER TABLE snippets ADD COLUMN source TEXT NOT NULL DEFAULT 'screen';"),
     ])
 }

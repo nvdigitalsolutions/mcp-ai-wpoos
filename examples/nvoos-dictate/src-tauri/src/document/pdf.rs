@@ -70,14 +70,8 @@ pub fn extract_chars(page: &PdfPage<'_>) -> AppResult<Vec<ExtractedChar>> {
                 .origin()
                 .unwrap_or((PdfPoints { value: 0.0 }, PdfPoints { value: 0.0 }));
             let bounds = c.loose_bounds().ok();
-            let w = bounds
-                .as_ref()
-                .map(|b| b.width().value)
-                .unwrap_or(0.0);
-            let h = bounds
-                .as_ref()
-                .map(|b| b.height().value)
-                .unwrap_or(0.0);
+            let w = bounds.as_ref().map(|b| b.width().value).unwrap_or(0.0);
+            let h = bounds.as_ref().map(|b| b.height().value).unwrap_or(0.0);
             let unmapped = c.unicode_char().is_none();
             let glyph = c
                 .unicode_char()

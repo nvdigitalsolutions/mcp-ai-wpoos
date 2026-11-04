@@ -89,10 +89,7 @@ pub fn export_searchable_pdf(
                     y -= LINE_HEIGHT_PT;
                     continue;
                 }
-                content.push_str(&format!(
-                    "1 0 0 1 36 {y} Tm\n({}) Tj\n",
-                    pdf_escape(line)
-                ));
+                content.push_str(&format!("1 0 0 1 36 {y} Tm\n({}) Tj\n", pdf_escape(line)));
                 y -= LINE_HEIGHT_PT;
             }
             content.push_str("ET\n");

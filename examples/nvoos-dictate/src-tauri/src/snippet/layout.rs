@@ -32,11 +32,7 @@ pub struct LayoutLine {
 /// Recursive XY-cut over **word** boxes: find the widest horizontal gap
 /// between x-sorted word intervals; when it exceeds `min_gap`, partition at
 /// the gap's center and recurse. Returns columns left-to-right.
-pub fn xy_cut_words(
-    boxes: &[LayoutBox],
-    page_w: f32,
-    min_gap: f32,
-) -> Vec<Vec<LayoutBox>> {
+pub fn xy_cut_words(boxes: &[LayoutBox], page_w: f32, min_gap: f32) -> Vec<Vec<LayoutBox>> {
     if boxes.len() < 2 || min_gap <= 0.0 || page_w <= 0.0 {
         return vec![boxes.to_vec()];
     }
@@ -96,10 +92,7 @@ pub fn cluster_lines(boxes: &[LayoutBox]) -> Vec<LayoutLine> {
         let mut placed = false;
         for group in groups.iter_mut().rev() {
             let span_y = group[0].y;
-            let span_h = group
-                .iter()
-                .map(|w| w.h)
-                .fold(1.0f32, f32::max);
+            let span_h = group.iter().map(|w| w.h).fold(1.0f32, f32::max);
             if center >= span_y && center <= span_y + span_h {
                 group.push(b);
                 placed = true;
@@ -114,10 +107,7 @@ pub fn cluster_lines(boxes: &[LayoutBox]) -> Vec<LayoutLine> {
     groups
         .into_iter()
         .map(|mut group| {
-            group.sort_by(|a, b| {
-                a.x.partial_cmp(&b.x)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
+            group.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap_or(std::cmp::Ordering::Equal));
             let text = group
                 .iter()
                 .map(|w| w.text.as_str())

@@ -48,8 +48,8 @@ fn decoding_to_rgb(
     w: u32,
     h: u32,
 ) -> AppResult<RgbImage> {
-    use tiff::ColorType as CT;
     use tiff::decoder::DecodingResult as DR;
+    use tiff::ColorType as CT;
 
     let dyn_img = match (color_type, image) {
         (CT::Gray(8), DR::U8(v)) => image::DynamicImage::ImageLuma8(

@@ -24,9 +24,9 @@ use tauri::Emitter;
 use crate::config::Settings;
 #[cfg(feature = "document")]
 use crate::document::hybrid::{self, PageClass};
-use crate::document::{DocumentPage, DocumentResult};
 #[cfg(feature = "document")]
 use crate::document::PageProvenance;
+use crate::document::{DocumentPage, DocumentResult};
 use crate::error::{AppError, AppResult};
 use crate::state::SecretStore;
 
@@ -207,8 +207,7 @@ fn run_pdf_pages(
         }
         let page_w = page.width().value;
         let chars = crate::document::pdf::extract_chars(&page)?;
-        let class =
-            hybrid::classify_with(&chars, settings.document.text_page_min_chars.max(1));
+        let class = hybrid::classify_with(&chars, settings.document.text_page_min_chars.max(1));
 
         let (text, provenance) = match class {
             PageClass::Text => {
@@ -278,8 +277,7 @@ fn run_tiff_pages(
             frame.width(),
             frame.height(),
         );
-        let snippet =
-            crate::document::ocr::recognize_rgb(settings, models_dir, &proc, pw, ph)?;
+        let snippet = crate::document::ocr::recognize_rgb(settings, models_dir, &proc, pw, ph)?;
         let cleaned = crate::cleanup::run_ocr_deterministic(&snippet.text);
         controller.stats.ocr_pages.fetch_add(1, Ordering::Relaxed);
         let (text, provenance) = match crate::document::polish::maybe_polish(

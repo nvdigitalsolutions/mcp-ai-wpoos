@@ -134,7 +134,15 @@ mod tests {
 
         // Plenty of chars but a broken ToUnicode map.
         let mut bad: Vec<ExtractedChar> = (0..100)
-            .map(|i| ch("a", (i % 20) as f32 * 10.0, 100.0 + (i / 20) as f32 * 15.0, 8.0, 12.0))
+            .map(|i| {
+                ch(
+                    "a",
+                    (i % 20) as f32 * 10.0,
+                    100.0 + (i / 20) as f32 * 15.0,
+                    8.0,
+                    12.0,
+                )
+            })
             .collect();
         for c in bad.iter_mut().take(20) {
             c.unmapped = true;
@@ -145,7 +153,15 @@ mod tests {
     #[test]
     fn classify_routes_healthy_pages_to_text() {
         let good: Vec<ExtractedChar> = (0..80)
-            .map(|i| ch("a", (i % 20) as f32 * 10.0, 100.0 + (i / 20) as f32 * 15.0, 8.0, 12.0))
+            .map(|i| {
+                ch(
+                    "a",
+                    (i % 20) as f32 * 10.0,
+                    100.0 + (i / 20) as f32 * 15.0,
+                    8.0,
+                    12.0,
+                )
+            })
             .collect();
         assert_eq!(classify(&good), PageClass::Text);
     }

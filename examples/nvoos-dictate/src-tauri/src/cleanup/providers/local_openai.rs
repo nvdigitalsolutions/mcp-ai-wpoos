@@ -375,7 +375,6 @@ impl LocalOpenAiProvider {
         let payload: serde_json::Value = resp.json().await?;
         openai_shape::parse_chat_response(&payload)
     }
-
 }
 
 /// Extract model identifiers from an OpenAI-compatible `{ data: [{ id, … }] }`.
