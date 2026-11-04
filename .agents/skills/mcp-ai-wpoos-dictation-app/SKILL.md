@@ -1175,3 +1175,24 @@ New this session (2026-11-03, later): **Proposal 109 M1–M4 implemented**
 - `mcp-ai-wpoos-plugin` — plugin-side setup (assistant credentials, Docker)
 - `mcp-ai-wpoos-spa-ui` — React/Vite conventions shared with the SPA addons
 - `mcp-ai-wpoos-test-suite` — PHPUnit side; this skill covers the Rust gates
+
+New this session (2026-11-04): **Proposal 109 M1-M4 follow-up PR + CI fmt
+fix.** PR #7425 (proposal/plan/M0) was squash-merged into alpha-working;
+M1-M4 + ADR 0005 + docs land via the follow-up PR from
+`feat/nvoos-dictate-document-ocr-m0`. The CI `cargo fmt --check` failure
+was stale formatting, not toolchain drift: the committed files were
+edited after the last local fmt run, so they were never fmt-clean for the
+pinned stable. Fix = run `cargo fmt` with the same toolchain CI uses
+(dtolnay@stable == rustup stable 1.99.1, rustfmt 1.10.0). **rustup
+self-update blocker on this PC:** `could not create link ... cargo-miri.exe
+(os error 183)` - delete the stale hardlink (`rm ~/.cargo/bin/cargo-miri.exe`)
+and re-run `rustup update stable`; the toolchain sync is blocked until the
+self-update completes. The CI windows-bundle union now includes
+`document,snippet-pdf` (compile-only on CI - PDFium binds at runtime, and
+the document tests need the dll so they stay out of CI). UI fact:
+"Transcribe media" = audio/video only; PDF/TIFF go through the Home
+"Document OCR" panel; single raster images (PNG/JPEG) are the documented
+follow-up. Research notes:
+`docs/project/proposals/109-document-input-pipeline-ocr-research.md`
+(engine comparisons, licensing matrix, cloud-vs-local economics,
+small-VLM polish options, addons/pro survey).

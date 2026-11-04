@@ -288,3 +288,17 @@ can appear in the repo root. Two failure modes follow:
   commit.
 - Don't claim validation that wasn't run. Reference files by project-relative
   path.
+
+### Format-check drift - verify the toolchain and the commit (2026-11-04)
+
+- A "fmt green" claim goes stale when files are edited after the last
+  `cargo fmt` run - the dictate CI fmt failure (#7425 follow-up) was
+  exactly this, not a rustfmt version mismatch. Before opening a PR,
+  re-run `cargo fmt --check` with the same toolchain the CI action uses
+  (`dtolnay/rust-toolchain@stable` == rustup stable). A blocked rustup
+  self-update silently pins you to an older toolchain - delete the stale
+  `~/.cargo/bin/cargo-miri.exe` hardlink and re-run `rustup update stable`.
+- When triaging a failed run's diff, confirm which commit it actually
+  tested: `gh run list --workflow <file> --json headSha,displayTitle,
+  conclusion` - a force-push between the run and your triage makes a
+  pasted diff describe a commit you no longer have.
