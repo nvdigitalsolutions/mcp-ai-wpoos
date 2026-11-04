@@ -1499,7 +1499,7 @@ pub fn document_available() -> bool {
     crate::document::available()
 }
 
-/// Pick a document file (PDF or TIFF) via the native dialog.
+/// Pick a document file (PDF, TIFF, or raster image) via the native dialog.
 #[tauri::command]
 pub fn pick_document(window: tauri::Window) -> AppResult<Option<String>> {
     main_window_only(&window)?;
@@ -1508,6 +1508,7 @@ pub fn pick_document(window: tauri::Window) -> AppResult<Option<String>> {
         .dialog()
         .file()
         .add_filter("Documents", &["pdf", "tif", "tiff"])
+        .add_filter("Images", &["png", "jpg", "jpeg", "webp"])
         .blocking_pick_file();
     Ok(picked
         .and_then(|p| p.into_path().ok())

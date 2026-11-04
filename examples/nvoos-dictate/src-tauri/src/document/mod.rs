@@ -23,6 +23,8 @@ pub mod export;
 #[cfg(feature = "snippet-pdf")]
 pub mod export_pdf;
 #[cfg(feature = "document")]
+pub mod images;
+#[cfg(feature = "document")]
 pub mod ocr;
 #[cfg(feature = "document")]
 pub mod pdf;

@@ -165,9 +165,9 @@ function DocumentPanel() {
     <section className="card">
       <h2>Document OCR</h2>
       <p className="muted">
-        Extract text from a PDF or multi-page TIFF. Born-digital pages are read from the
-        document's text layer; scanned pages are recognized on-device at 300 DPI. Everything
-        stays on this machine.
+        Extract text from a PDF, multi-page TIFF, or an image (PNG, JPEG, WebP). Born-digital
+        pages are read from the document's text layer; scanned pages and images are recognized
+        on-device at 300 DPI. Everything stays on this machine.
       </p>
       <div className="btn-row">
         <button className="btn" disabled={busy} onClick={pick}>
