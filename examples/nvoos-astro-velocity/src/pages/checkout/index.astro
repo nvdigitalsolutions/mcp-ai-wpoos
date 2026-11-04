@@ -48,14 +48,14 @@ if (embedded) {
 				<CheckoutView client:load shop={shop} />
 			</>
 		) : (
-			<div className="cart" data-checkout-hosted-panel>
+			<div class="cart" data-checkout-hosted-panel>
 				<p>
 					This storefront is in native catalog mode, so checkout happens on the
 					hosted WooCommerce checkout page.
 				</p>
 				{shop.checkoutUrl ? (
 					<a
-						className="btn"
+						class="btn"
 						href={shop.checkoutUrl}
 						rel="noopener noreferrer"
 						data-checkout-hosted
@@ -63,7 +63,7 @@ if (embedded) {
 						Continue to checkout
 					</a>
 				) : (
-					<a className="btn" href="/cart/">
+					<a class="btn" href="/cart/">
 						Return to cart
 					</a>
 				)}
