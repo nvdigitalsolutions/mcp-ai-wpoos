@@ -132,3 +132,16 @@ test( 'PUBLIC_SITE_SLUGS matching configured sites warns nothing', () => {
 	assert.deepEqual( cfg.warnings, [] );
 	assert.deepEqual( cfg.publicSlugs, new Set( [ 'demo' ] ) );
 } );
+
+test( 'PUBLIC_DEMO_KEY is optional, trimmed, and never fatal', () => {
+	const unset = loadConfig( { AUTH_MODE: 'open' } );
+	assert.strictEqual( unset.demoKey, '' );
+	assert.deepEqual( unset.errors, [] );
+
+	const set = loadConfig( {
+		AUTH_MODE: 'open',
+		PUBLIC_DEMO_KEY: '  demo-key-1234567890abcdef  ',
+	} );
+	assert.strictEqual( set.demoKey, 'demo-key-1234567890abcdef' );
+	assert.deepEqual( set.errors, [] );
+} );

@@ -28,7 +28,7 @@ import { challengeRouter } from './routes/challenge.js';
 // Must track `package.json` `version` — the deploy-verification runbook
 // (`docs/operations/deployment/mcp-gateway-velocity-setup.md` §7) keys off
 // `/health` reporting this value.
-export const VERSION = '0.3.1';
+export const VERSION = '0.3.2';
 
 /**
  * Build the gateway app.

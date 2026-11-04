@@ -236,8 +236,8 @@ export function parsePublicSlugs( raw ) {
  * Collects errors rather than throwing so every problem is reported at once.
  *
  * @param {object} env Env object (defaults to process.env).
- * @return {object} `{ keys, previousKeys, sites, publicSlugs, errors,
- *                   warnings }` plus the governance fields.
+ * @return {object} `{ keys, previousKeys, sites, publicSlugs, demoKey,
+ *                   errors, warnings }` plus the governance fields.
  */
 export function loadConfig( env = process.env ) {
 	const errors = [];
@@ -339,6 +339,9 @@ export function loadConfig( env = process.env ) {
 	const geoMap = parseGeoMap( env.GEO_MAP, errors );
 	const adminToken = String( env.GATEWAY_ADMIN_TOKEN || '' ).trim();
 	const openaiChallengeToken = String( env.GATEWAY_OPENAI_CHALLENGE_TOKEN || '' ).trim();
+	// Operator-published demo credential for the landing page — a scoped,
+	// public-by-design key, not a secret (unset = the page keeps placeholders).
+	const demoKey = String( env.PUBLIC_DEMO_KEY || '' ).trim();
 	const trustProxy = '1' === env.TRUST_PROXY;
 	const siteLifecycle = parseSiteLifecycle( env.SITE_LIFECYCLE, errors );
 	const auditSinkUrl = String( env.AUDIT_SINK_URL || '' ).trim();
@@ -352,6 +355,7 @@ export function loadConfig( env = process.env ) {
 		previousKeys,
 		sites,
 		publicSlugs,
+		demoKey,
 		oauth,
 		quotas,
 		policy,
