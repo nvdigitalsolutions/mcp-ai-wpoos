@@ -23,6 +23,7 @@ upstream open-source project, adapted for NV use per Proposal 113
 | Adaptation | Why |
 |---|---|
 | `QBBRIDGE_WRITE_MODE` (readonly / safe / full, default **safe**) in `server.py` | Proposal 113 write tier: only additive list adds (customer/item/vendor) + revert by default; transactional writes need operator sign-off (`full`) |
+| Server identity `nvoos-qb-desktop-mcp` (`FastMCP` name, was `qbbridge`) | NV branding in client UIs; `QBBRIDGE_*` env vars and the `qbbridge-mcp` console script keep upstream names |
 | `[tool.uv] dev-dependencies` in `pyproject.toml` | This repo pins uv 0.12, which reads the legacy block instead of PEP 735 `dependency-groups`; `uv sync` then installs the test deps for CI |
 | `tests/test_offline.py` gate tests + autouse full-mode fixture | Upstream tests exercise every write tool; they run under `WRITE_MODE=full`, the gate tests pin the shipped default |
 | `docs/zed-runbook.md`, `README.nv.md`, `UPSTREAM.md`, `.gitignore` additions | NV operational layer (Zed wiring, first-connect authorization, no-live-data rule) — none of it touches QuickBooks semantics |

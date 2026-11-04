@@ -49,18 +49,25 @@ the first-connect authorization click-through, which is mandatory once
 QuickBooks Desktop 2026 is installed):
 
 ```jsonc
-"qb-desktop": {
+"nvoos-qb-desktop-mcp": {
     "enabled": false,  // enable after QB Desktop 2026 is installed + authorized (docs/zed-runbook.md)
-    "command": "C:\\Users\\rasta\\AppData\\Local\\hermes\\bin\\uv.exe",
-    "args": ["run", "--project", "F:\\GITHUB\\mcp-ai-wpoos\\examples\\qb-desktop-mcp", "qbbridge-mcp"],
+    "command": "C:/Users/rasta/AppData/Local/hermes/bin/uv.exe",
+    "args": ["run", "--project", "F:/GITHUB/mcp-ai-wpoos/examples/qb-desktop-mcp", "qbbridge-mcp"],
     "env": {
         "QBBRIDGE_WRITE_MODE": "safe",
-        "QBBRIDGE_DATA_DIR": "%LOCALAPPDATA%\\QBBridge\\nv"
+        "QBBRIDGE_APP_NAME": "NV oOS QB Desktop MCP",
+        "QBBRIDGE_DATA_DIR": "C:/Users/rasta/AppData/Local/QBBridge/nv"
     }
 }
 ```
 
 Notes:
+- The MCP server identifies as **`nvoos-qb-desktop-mcp`** in client UIs;
+  the console script stays `qbbridge-mcp` (upstream name, compatibility).
+- `QBBRIDGE_APP_NAME` is the name QuickBooks shows in the authorization
+  dialog and the Integrated Applications list. Set **before** the first
+  authorization — the permission is per app name, so changing it later
+  forces re-authorization.
 - `QBBRIDGE_WRITE_MODE` defaults to `safe`; set it explicitly anyway.
 - `QBBRIDGE_QBXML_MAX` defaults to 13.0 (upstream, for QB 2016). For QB
   Desktop 2026 raise it to the version QuickBooks supports — check with

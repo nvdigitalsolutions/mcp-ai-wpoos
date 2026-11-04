@@ -90,9 +90,10 @@
 
 ### M2 — Zed wiring + first-connect authorization (PARTIAL)
 
-- [done] `qb-desktop` context server added to user-level Zed settings
-  (`enabled: false` until QB is installed + authorized; `uv run --project`
-  with absolute uv path; `QBBRIDGE_WRITE_MODE=safe` pinned in env).
+- [done] `nvoos-qb-desktop-mcp` context server added to user-level Zed
+  settings (`enabled: false` until QB is installed + authorized; `uv run
+  --project` with absolute uv path; `QBBRIDGE_WRITE_MODE=safe` and
+  `QBBRIDGE_APP_NAME` pinned in env).
 - [done] `docs/zed-runbook.md`: authorization click-through (incl. the
   "type yes" dialog quirk), Integrated Applications verification,
   personal-data box, tool-permission matrix, troubleshooting.
@@ -164,7 +165,7 @@
 | `uv` installed (0.12.3, hermes bin) | **done** |
 | Fork tracked in `examples/qb-desktop-mcp`, `UPSTREAM.md` SHA | **done** |
 | Company-file copy (not live, not upgraded-from-2014 without backup) | **owner — M1.5** |
-| Zed user-level `context_servers` entry `qb-desktop` | **done (enabled: false)** |
+| Zed user-level `context_servers` entry `nvoos-qb-desktop-mcp` | **done (enabled: false)** |
 | Offline test suite green (138) | **done** |
 
 ## Failure-contract taxonomy (adopt from the QBBridge/Schrex runbooks, verify against QB 26.0)

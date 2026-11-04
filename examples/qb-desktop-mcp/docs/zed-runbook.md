@@ -9,8 +9,9 @@ the upstream PyInstaller installer.
 - QuickBooks Desktop **2026 (Enterprise 26.0)** installed, 64-bit.
 - QuickBooks opened **as Admin, single-user mode**, with a **copy** of the
   company file (never the live file for the first runs).
-- Zed with the `qb-desktop` context server entry in user-level settings
-  (see `README.nv.md`). Start with `"enabled": false`, then enable it here.
+- Zed with the `nvoos-qb-desktop-mcp` context server entry in user-level
+  settings (see `README.nv.md`). Start with `"enabled": false`, then
+  enable it here.
 
 ## 1. Verify the environment
 
@@ -23,10 +24,10 @@ C:\Users\rasta\AppData\Local\hermes\bin\uv.exe run --project F:\GITHUB\mcp-ai-wp
 
 ## 2. First connect — the authorization prompt
 
-1. Enable `qb-desktop` in Zed settings, restart Zed.
+1. Enable `nvoos-qb-desktop-mcp` in Zed settings, restart Zed.
 2. In the Zed agent panel ask: **"call qb_status"**.
-3. QuickBooks shows a one-time prompt **"QBBridge … is requesting
-   permission"** (name set by `QBBRIDGE_APP_NAME`). Choose:
+3. QuickBooks shows a one-time prompt **"NV oOS QB Desktop MCP … is
+   requesting permission"** (name set by `QBBRIDGE_APP_NAME`). Choose:
    - **"Yes, always allow access; even when my QuickBooks isn't running"**,
      or at minimum "Yes, whenever this QuickBooks company file is open".
    - Known QuickBooks bug: the "type yes" box takes no input until you

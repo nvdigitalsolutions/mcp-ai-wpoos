@@ -159,9 +159,11 @@ Tracked copy in `examples/qb-desktop-mcp` (fork point `fee09147af`,
 
 ### 4.2 Extensions we add (v1 scope)
 
-- **Zed-native wiring (done)**: `qb-desktop` context server in user-level
-  Zed settings (`uv run --project … qbbridge-mcp`, `enabled: false` until
-  QB 2026 is installed + authorized); scan exclusions added repo-wide.
+- **Zed-native wiring (done)**: `nvoos-qb-desktop-mcp` context server in
+  user-level Zed settings (`uv run --project … qbbridge-mcp`,
+  `enabled: false` until QB 2026 is installed + authorized;
+  `QBBRIDGE_APP_NAME` set to "NV oOS QB Desktop MCP" before first
+  authorization); scan exclusions added repo-wide.
 - **Agent skill (done)**: `.agents/skills/mcp-ai-wpoos-qb-desktop/` — the
   operational guide (write tiers, two-step flow, hard rules, verification).
   **Client business knowledge** (which customer is which, account mapping,
@@ -243,7 +245,7 @@ they additionally require:
 | **M0 — Environment + fork (done)** | Tracked copy of `Compolaga/quickbooks-desktop-mcp` (MIT) into `examples/qb-desktop-mcp` (`UPSTREAM.md` fork-point SHA); `uv` verified; `.gitignore`, scan exclusions, path-filtered CI | Offline suite green (138 tests) |
 | **M1 — v1 server + write-tier gate (done)** | Base read/write surface as-is; `QBBRIDGE_WRITE_MODE` gate (readonly/safe/full, default safe) + 5 gate tests; uv-0.12 pyproject adaptation; `uv.lock` | `uv run pytest` green without QuickBooks |
 | **M1.5 — QB install (owner)** | QB Desktop 2026 (Enterprise 26.0) installed; 64-bit `QBXMLRP2` verified; a company-file **copy** opened in single-user mode | `reg query` resolves; `qb_status` reaches the copy |
-| **M2 — Zed wiring + first-connect auth** | Enable `qb-desktop` in Zed; authorization click-through per `docs/zed-runbook.md` §2; Integrated Applications entry verified; read tools auto-approved, write tools per-call | Agent in Zed answers a real lookup question |
+| **M2 — Zed wiring + first-connect auth** | Enable `nvoos-qb-desktop-mcp` in Zed; authorization click-through per `docs/zed-runbook.md` §2; Integrated Applications entry verified; read tools auto-approved, write tools per-call | Agent in Zed answers a real lookup question |
 | **M3 — Live tie-out (copy)** | Closed-month P&L, A/P aging, per-bill open balances vs QuickBooks reports on a **copy**; mismatch protocol | All figures to the cent; tie-out table recorded (counts only) |
 | **M4 — Safe writes on the copy** | `qb_create_customer/item/vendor` + revert (already server-gated to safe tier); write → verify → revert round-trip | Create → verify → revert → gone, on the copy |
 | **M5 — Transactional writes (gated)** | `QBBRIDGE_WRITE_MODE=full` only after owner sign-off; invoice/payment/deposit/check/journal with the existing business checks | Invoice → verify → revert round-trip on the copy; per-session owner sign-off on live books |
