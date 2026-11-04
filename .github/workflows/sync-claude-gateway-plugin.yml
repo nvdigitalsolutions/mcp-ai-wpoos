@@ -1,0 +1,70 @@
+name: Sync claude-gateway-plugin
+
+# Syncs addons/claude-gateway-plugin to the standalone mirror repo
+# nvdigitalsolutions/nvoos-claude-gateway-plugin (git subtree split,
+# force-push to main) — same pattern as sync-chatgpt-gateway-plugin.yml.
+#
+# The mirror repo doubles as (a) the plugin's own Claude Code marketplace
+# (`/plugin marketplace add nvdigitalsolutions/nvoos-claude-gateway-plugin`)
+# and (b) the source folder for the Anthropic plugin directory submission,
+# so the mirror must carry exactly the plugin files and nothing else.
+#
+# The check-secret guard keeps CI green if the workflow is merged before the
+# CLAUDE_GATEWAY_PLUGIN_REPO_TOKEN secret exists (GitHub forbids secrets.*
+# in `if` expressions, so presence is probed through a run-step env var).
+# Remove the guard job once the secret is permanently configured.
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'addons/claude-gateway-plugin/**'
+
+jobs:
+  check-secret:
+    runs-on: ubuntu-latest
+    outputs:
+      has_token: ${{ steps.check.outputs.has_token }}
+    steps:
+      - id: check
+        env:
+          TOKEN: ${{ secrets.CLAUDE_GATEWAY_PLUGIN_REPO_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CLAUDE_GATEWAY_PLUGIN_REPO_TOKEN not set; skipping claude-gateway-plugin sync"
+          fi
+
+  validate:
+    needs: check-secret
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: addons/claude-gateway-plugin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate plugin manifest and catalog
+        run: node bin/validate-claude-plugin.mjs . --strict
+
+  sync:
+    needs: [check-secret, validate]
+    if: needs.check-secret.outputs.has_token == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=addons/claude-gateway-plugin --branch=claude-gateway-plugin-split
+
+      - name: Push to nvoos-claude-gateway-plugin
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.CLAUDE_GATEWAY_PLUGIN_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-claude-gateway-plugin.git claude-gateway-plugin-split:main --force
