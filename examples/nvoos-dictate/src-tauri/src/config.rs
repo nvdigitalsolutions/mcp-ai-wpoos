@@ -544,6 +544,36 @@ impl Default for SnippetConfig {
 }
 
 /// The complete persisted settings blob.
+/// Document input pipeline settings (Proposal 109).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct DocumentConfig {
+    /// Rasterization DPI for OCR-bound pages (300 standard; 400–600 helps
+    /// small fonts).
+    pub dpi: u32,
+    /// Pages with fewer extracted chars than this route to OCR.
+    pub text_page_min_chars: usize,
+    /// Hard page cap per document (memory/patience bound).
+    pub max_pages: usize,
+    /// Opt-in local VLM correction after deterministic OCR cleanup.
+    pub polish_enabled: bool,
+    /// VLM model for polish (empty = the local server's default).
+    pub polish_model: String,
+}
+
+impl Default for DocumentConfig {
+    fn default() -> Self {
+        Self {
+            dpi: 300,
+            text_page_min_chars: 50,
+            max_pages: 200,
+            polish_enabled: false,
+            polish_model: String::new(),
+        }
+    }
+}
+
+/// The complete persisted settings blob.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
 pub struct Settings {
@@ -562,6 +592,7 @@ pub struct Settings {
     pub ui: UiConfig,
     pub spa: SpaConfig,
     pub snippet: SnippetConfig,
+    pub document: DocumentConfig,
 }
 
 impl Settings {

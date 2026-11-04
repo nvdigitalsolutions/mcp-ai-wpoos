@@ -240,6 +240,28 @@ export interface MediaProgress {
   fraction: number;
 }
 
+export type PageProvenance = 'text' | 'ocr' | 'polished';
+
+export interface DocumentPage {
+  index: number;
+  text: string;
+  provenance: PageProvenance;
+}
+
+export interface DocumentResult {
+  path: string;
+  pages: DocumentPage[];
+  page_count: number;
+  duration_ms: number;
+}
+
+export interface DocumentProgress {
+  page: number;
+  page_count: number;
+  phase: 'extract' | 'ocr' | 'polish';
+  fraction: number;
+}
+
 export interface PreviewFrame {
   width: number;
   height: number;
@@ -504,6 +526,14 @@ export const api = {
   transcribeMedia: (path: string) => invoke<MediaTranscription>('transcribe_media', { path }),
   summarizeMedia: (text: string) => invoke<string>('summarize_media', { text }),
   pickMediaFile: () => invoke<string | null>('pick_media_file'),
+
+  documentAvailable: () => invoke<boolean>('document_available'),
+  pickDocument: () => invoke<string | null>('pick_document'),
+  transcribeDocument: (path: string) =>
+    invoke<DocumentResult>('transcribe_document', { path }),
+  cancelDocument: () => invoke<void>('cancel_document'),
+  exportDocument: (format: string) =>
+    invoke<string | null>('export_document', { format }),
   cancelDictation: () => invoke<void>('cancel_dictation'),
 
   snippetAvailable: () => invoke<boolean>('snippet_available'),
@@ -545,6 +575,12 @@ export function onModelProgress(
 
 export function onMediaProgress(handler: (progress: MediaProgress) => void): Promise<UnlistenFn> {
   return listen<MediaProgress>('media://progress', (e) => handler(e.payload));
+}
+
+export function onDocumentProgress(
+  handler: (progress: DocumentProgress) => void,
+): Promise<UnlistenFn> {
+  return listen<DocumentProgress>('document://progress', (e) => handler(e.payload));
 }
 
 /** Which webview window is this? (overlay = focusless PTT capsule,

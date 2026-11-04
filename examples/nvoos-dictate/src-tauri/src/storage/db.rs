@@ -47,6 +47,8 @@ pub struct SnippetRow {
     pub region_w: i64,
     pub region_h: i64,
     pub ocr_ms: i64,
+    /// `screen` (snippet capture, default) | `document` (Proposal 109).
+    pub source: String,
     pub created_at: String,
 }
 
@@ -131,10 +133,38 @@ impl Db {
         Ok(conn.last_insert_rowid())
     }
 
+    /// Insert a document-pipeline history row (Proposal 109): `source` =
+    /// `document`; `language` carries the source path; `region_w` the page
+    /// count; `ocr_ms` the pipeline duration.
+    pub fn insert_document_snippet(
+        &self,
+        text_raw: &str,
+        text_clean: &str,
+        engine: &str,
+        source_path: &str,
+        page_count: u32,
+        duration_ms: u64,
+    ) -> AppResult<i64> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO snippets (text_raw, text_clean, engine, language, region_w, region_h, ocr_ms, source)
+             VALUES (?1, ?2, ?3, ?4, ?5, 0, ?6, 'document')",
+            params![
+                text_raw,
+                text_clean,
+                engine,
+                source_path,
+                page_count as i64,
+                duration_ms as i64
+            ],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
     pub fn list_snippets(&self, limit: i64, offset: i64) -> AppResult<Vec<SnippetRow>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, text_raw, text_clean, engine, language, region_w, region_h, ocr_ms, created_at
+            "SELECT id, text_raw, text_clean, engine, language, region_w, region_h, ocr_ms, source, created_at
              FROM snippets
              ORDER BY id DESC
              LIMIT ?1 OFFSET ?2",
@@ -150,7 +180,8 @@ impl Db {
                     region_w: r.get(5)?,
                     region_h: r.get(6)?,
                     ocr_ms: r.get(7)?,
-                    created_at: r.get(8)?,
+                    source: r.get(8)?,
+                    created_at: r.get(9)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;

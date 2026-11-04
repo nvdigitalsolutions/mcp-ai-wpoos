@@ -6,6 +6,7 @@ pub mod camera;
 pub mod cleanup;
 pub mod config;
 pub mod dictation;
+pub mod document;
 pub mod error;
 pub mod hotkey;
 pub mod ipc;
@@ -261,6 +262,11 @@ pub fn run() {
             ipc::get_snippet_models,
             ipc::download_snippet_model,
             ipc::list_ocr_languages,
+            ipc::document_available,
+            ipc::pick_document,
+            ipc::transcribe_document,
+            ipc::cancel_document,
+            ipc::export_document,
             ipc::get_permissions,
             ipc::request_permission,
             ipc::open_system_settings,

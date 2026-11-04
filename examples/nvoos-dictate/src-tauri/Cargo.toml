@@ -134,6 +134,10 @@ pdfium-render = { version = "0.9", default-features = false, features = ["pdfium
 # page). Already transitively present via image-tiff; a direct optional dep
 # exposes the paged Decoder API.
 tiff = { version = "0.9", optional = true }
+# Searchable-PDF emitter (feature `snippet-pdf`, Proposal 102 D9 / 109 D10):
+# a battle-tested low-level PDF writer — xref/stream bookkeeping is where
+# hand-rolling fails silently.
+lopdf = { version = "0.36", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 # Low-level keyboard hook (WH_KEYBOARD_LL), GetAsyncKeyState fallback, and
@@ -217,6 +221,9 @@ snippet-onnx = ["snippet", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
 # checksummed binary shipped as a bundle resource; `tiff` adds multi-page
 # decode. The VLM polish pass reuses Proposal 076's transport — no new dep.
 document = ["snippet", "dep:pdfium-render", "dep:tiff"]
+# Searchable-PDF export (102 D9/D10 shared emitter): lopdf rebuilds the
+# source PDF with a rendered page image + invisible text layer.
+snippet-pdf = ["snippet", "dep:lopdf"]
 
 [patch.crates-io]
 whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

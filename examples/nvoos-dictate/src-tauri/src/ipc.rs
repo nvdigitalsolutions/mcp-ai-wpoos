@@ -56,6 +56,8 @@ pub struct StatusInfo {
     pub snippet_engine: String,
     /// The configured snippet hotkey (empty = disabled).
     pub snippet_hotkey: String,
+    /// Whether the document pipeline (Proposal 109) is compiled in.
+    pub document_available: bool,
 }
 
 /// Reject commands invoked from any window other than the main one.
@@ -143,6 +145,7 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         snippet_available: crate::snippet::available(),
         snippet_engine: settings.snippet.engine.clone(),
         snippet_hotkey: settings.snippet.hotkey.clone(),
+        document_available: crate::document::available(),
     })
 }
 
@@ -278,7 +281,47 @@ pub struct DiagnosticsInfo {
     pub vision: VisionDiagnostics,
     pub agent: AgentDiagnostics,
     pub snippet: SnippetDiagnostics,
+    pub document: DocumentDiagnostics,
     pub last_dictation: Option<crate::dictation::LastDictationStats>,
+}
+
+/// Document pipeline health (Proposal 109), mirroring the snippet block.
+#[derive(Debug, Clone, Serialize)]
+pub struct DocumentDiagnostics {
+    pub available: bool,
+    pub pdf_export_available: bool,
+    pub busy: bool,
+    pub documents: u64,
+    pub pages: u64,
+    pub text_pages: u64,
+    pub ocr_pages: u64,
+    pub last_ms: u64,
+    pub errors: u64,
+    pub last_error: Option<String>,
+    pub dpi: u32,
+    pub max_pages: usize,
+    pub polish_enabled: bool,
+}
+
+/// Build the document pipeline diagnostics snapshot.
+fn document_diagnostics(state: &AppState, settings: &Settings) -> DocumentDiagnostics {
+    use std::sync::atomic::Ordering;
+    let controller = &state.document;
+    DocumentDiagnostics {
+        available: crate::document::available(),
+        pdf_export_available: crate::document::pdf_export_available(),
+        busy: controller.is_busy(),
+        documents: controller.stats.documents.load(Ordering::Relaxed),
+        pages: controller.stats.pages.load(Ordering::Relaxed),
+        text_pages: controller.stats.text_pages.load(Ordering::Relaxed),
+        ocr_pages: controller.stats.ocr_pages.load(Ordering::Relaxed),
+        last_ms: controller.stats.last_ms.load(Ordering::Relaxed),
+        errors: controller.stats.errors.load(Ordering::Relaxed),
+        last_error: controller.stats.last_error.lock().unwrap().clone(),
+        dpi: settings.document.dpi,
+        max_pages: settings.document.max_pages,
+        polish_enabled: settings.document.polish_enabled,
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -469,6 +512,7 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
         vision: vision_diagnostics(&state, &settings),
         agent: agent_diagnostics(&state, &settings),
         snippet: snippet_diagnostics(&state, &settings),
+        document: document_diagnostics(&state, &settings),
         last_dictation: crate::dictation::last_dictation_stats(),
     })
 }
@@ -1444,6 +1488,196 @@ pub fn list_ocr_languages() -> Vec<String> {
     #[cfg(not(all(windows, feature = "snippet")))]
     {
         Vec::new()
+    }
+}
+
+// ---- Document OCR (Proposal 109) -----------------------------------------
+
+/// Whether the document pipeline is compiled into this build.
+#[tauri::command]
+pub fn document_available() -> bool {
+    crate::document::available()
+}
+
+/// Pick a document file (PDF or TIFF) via the native dialog.
+#[tauri::command]
+pub fn pick_document(window: tauri::Window) -> AppResult<Option<String>> {
+    main_window_only(&window)?;
+    use tauri_plugin_dialog::DialogExt;
+    let picked = window
+        .dialog()
+        .file()
+        .add_filter("Documents", &["pdf", "tif", "tiff"])
+        .blocking_pick_file();
+    Ok(picked
+        .and_then(|p| p.into_path().ok())
+        .map(|path| path.to_string_lossy().into_owned()))
+}
+
+/// Run the document pipeline on a picked file. The heavy work runs on a
+/// blocking thread; per-page progress streams on `document://progress` and
+/// the final result is returned to the caller.
+#[tauri::command]
+pub async fn transcribe_document(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    path: String,
+) -> AppResult<crate::document::DocumentResult> {
+    main_window_only(&window)?;
+    let path = std::path::PathBuf::from(path);
+    if !path.is_file() {
+        return Err(AppError::Other("file not found".into()));
+    }
+    let controller = state.document.clone();
+    if controller.is_busy() {
+        return Err(AppError::Other("a document is already being processed".into()));
+    }
+    controller.set_busy(true);
+
+    let settings = state.settings_snapshot();
+    let models_dir = state.models_dir();
+    let secrets = state.secrets.clone();
+    let app = state.app.clone();
+    let path_for_task = path.clone();
+    let controller_task = controller.clone();
+    let settings_task = settings.clone();
+    let outcome = tauri::async_runtime::spawn_blocking(move || {
+        crate::document::controller::run_pipeline(
+            &app,
+            &controller_task,
+            &settings_task,
+            &models_dir,
+            secrets.as_ref(),
+            &path_for_task,
+        )
+    })
+    .await
+    .map_err(|e| AppError::Other(format!("document worker failed: {e}")))?;
+    controller.set_busy(false);
+
+    match outcome {
+        Ok(result) => {
+            if settings.snippet.retain_history {
+                let combined = result.combined_text();
+                let (text_pages, _ocr_pages, _polished) = result.provenance_counts();
+                let engine = if text_pages == 0 { "document-ocr" } else { "document" };
+                let _ = state.db.insert_document_snippet(
+                    &combined,
+                    &combined,
+                    engine,
+                    &result.path,
+                    result.page_count as u32,
+                    result.duration_ms as u64,
+                );
+            }
+            Ok(result)
+        }
+        Err(e) => {
+            use std::sync::atomic::Ordering;
+            controller.stats.errors.fetch_add(1, Ordering::Relaxed);
+            *controller.stats.last_error.lock().unwrap() = Some(e.to_string());
+            Err(e)
+        }
+    }
+}
+
+/// Abort the in-flight document run at the next page boundary.
+#[tauri::command]
+pub fn cancel_document(state: State<'_, AppState>) {
+    state.document.cancel();
+}
+
+/// Export the last document result. Text formats (`txt` | `md` | `hocr` |
+/// `alto`) are string emitters; `pdf` rebuilds the source as a searchable
+/// PDF (feature `snippet-pdf`). A save dialog asks for the destination —
+/// exports only ever happen on an explicit user action.
+#[tauri::command]
+pub fn export_document(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    format: String,
+) -> AppResult<Option<String>> {
+    main_window_only(&window)?;
+    #[cfg(not(feature = "document"))]
+    {
+        let _ = (&window, &format, &state);
+        Err(AppError::NotConfigured(
+            "document pipeline not compiled into this build".into(),
+        ))
+    }
+    #[cfg(feature = "document")]
+    {
+        let result = state
+            .document
+            .last_result()
+            .ok_or_else(|| AppError::Document("no document result to export".into()))?;
+        use tauri_plugin_dialog::DialogExt;
+
+        if format == "pdf" {
+            if !crate::document::pdf_export_available() {
+                return Err(AppError::NotConfigured(
+                    "searchable-PDF export is not compiled into this build (feature snippet-pdf)"
+                        .into(),
+                ));
+            }
+            #[cfg(feature = "snippet-pdf")]
+            {
+                let settings = state.settings_snapshot();
+                let picked = window
+                    .dialog()
+                    .file()
+                    .set_file_name(default_export_name(&result, "pdf"))
+                    .add_filter("PDF", &["pdf"])
+                    .blocking_save_file();
+                let Some(dest) = picked.and_then(|p| p.into_path().ok()) else {
+                    return Ok(None);
+                };
+                crate::document::export_pdf::export_searchable_pdf(
+                    std::path::Path::new(&result.path),
+                    &result,
+                    &dest,
+                    settings.document.dpi,
+                )?;
+                return Ok(Some(dest.to_string_lossy().into_owned()));
+            }
+            #[cfg(not(feature = "snippet-pdf"))]
+            {
+                return Err(AppError::NotConfigured(
+                    "searchable-PDF export is not compiled into this build (feature snippet-pdf)"
+                        .into(),
+                ));
+            }
+        }
+
+        let content = crate::document::export::emit(&format, &result)?;
+        let ext = if format == "md" { "md" } else { format.as_str() };
+        let picked = window
+            .dialog()
+            .file()
+            .set_file_name(default_export_name(&result, ext))
+            .add_filter("Export", &[ext])
+            .blocking_save_file();
+        let Some(dest) = picked.and_then(|p| p.into_path().ok()) else {
+            return Ok(None);
+        };
+        std::fs::write(&dest, content)?;
+        Ok(Some(dest.to_string_lossy().into_owned()))
+    }
+}
+
+/// Default export filename: source stem + suffix.
+#[cfg(feature = "document")]
+fn default_export_name(result: &crate::document::DocumentResult, ext: &str) -> String {
+    let stem = std::path::Path::new(&result.path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("document");
+    match ext {
+        "pdf" => format!("{stem}-searchable.pdf"),
+        "md" => format!("{stem}.md"),
+        "hocr" => format!("{stem}.hocr.html"),
+        "alto" => format!("{stem}.alto.xml"),
+        _ => format!("{stem}.{ext}"),
     }
 }
 
