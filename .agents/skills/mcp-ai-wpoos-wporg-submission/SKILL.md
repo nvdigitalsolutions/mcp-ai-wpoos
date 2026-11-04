@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.11"
   plugin-version-tested: "1.2.11"
-  last-updated: "2026-10-24"
+  last-updated: "2026-11-04"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook

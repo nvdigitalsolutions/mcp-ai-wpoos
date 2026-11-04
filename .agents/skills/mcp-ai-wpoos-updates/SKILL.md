@@ -918,6 +918,37 @@ previous window — the user will usually want it back-dated.
 1.2.16 pass over PRs #7364–#7393: the deep-research reliability wave (#7376/#7377/#7384 — validation gate, measurable depth, staged evidence, richer diagnostics, **+3 base tools** `research_status`/`research_result`/`research_cancel`, the new `deep_research_model` setting + `gpt-5.6-sol` fallback, and the shared `WP_MCP_AI_Tool_Research_Completion` trait across the ten Pro research tools), the abilities-bridge MCP-adapter interop (#7383 — raw `WP_Error` passthrough + pessimistic `destructiveHint` mapping, verified live), the gateway OAuth/ChatGPT go-live (#7371–#7375/#7381 — `GATEWAY_OAUTH_DEFAULT_SITES`, underscore tool names, gateway **0.3.0** + the OpenAI challenge route; Proposal 099 Phases 0–4 live) with the **new `chatgpt-gateway-plugin` addon 0.1.0** (Proposal 101) + chatgpt-plugin 0.2.0 (#7379), the dictate → **NV oOS Cognition v0.3.0** rebrand + first-party console window + screen OCR (sub-project, #7380/#7382/#7385–#7387, Proposals 100/102/103), the forge-bridge wp.org pre-submission (#7388 — POST-only verify, `edit_pages` minting, 30/30) + standalone framing (#7390) + forge npm 0.1.1 dist bins (#7391) + the public mirror, the Zed skill-catalog description-budget slimming (#7378), the npm-deprecate workflow, the glob 9/11/13 → 14.0.2 overrides (#7367), and the dictate release fix (#7364). New scope rules executed: the #6787 uncovered-PR rule fired **three times** (#7364/#7365/#7367 merged 09:30–09:31Z, 6–7 min before the #7368 catch-up merge, and the 1.2.15 changelog never covered them — cross-check the changelog for PR numbers during orientation, the tree diff alone misses them); direct commits (the dictate PTT fallback engage+revert — net-zero, the forge mirror, the npm-deprecate workflows) join the window without PR numbers; the gateway row's version column had lagged through 0.2.0 (pre-existing drift) while the in-window #7381 set 0.3.0 — corrected in-pass with the ChatGPT Plugin 0.1.0 → 0.2.0 in-window bump. Proposals README 100/101/102/103 registration stays deferred (another agent's staged 097 entry). OI-1: group-38 extension (+5 `@since 1.2.0` in the new `trait-wp-mcp-ai-tool-research-completion.php` — the Pro research folder's 1.2.0 trait family) + new group 66 (+12 `@since 1.2.0` in-window in base `class-wp-mcp-ai-tool-deep-research.php`; convention note: the three new research-* tools' `@since 1.1.0` ×3 mirror the sibling file's family). Tool count +3 base (~358/~1,378/~1,735), skill count 81 unchanged (in-place updates only), zero catalog diff (#7376 is a settings default), addons 30 → 31, and the stale 1.2.14 build-set removal (30 files — 9 + 2 + 19))
 
 Preceding windows:
+  `docs/project/plans/1.2.17-docs-catch-up.md` (this pass — the
+1.2.17 pass over PRs #7395–#7445: the Astro storefront content & checkout
+wave (Proposals 104–108 — runtime hardening + theme policy + `content_*`
+MCP slice + Q6 component library + checkout/cart hardening), the embedded
+checkout via the Store API (Proposal 110) with the prod-trace fixes + the
+native→Woo catalog migration (Proposal 112, Woo-owned catalog, bridge
+1.1.3), the Cognition Document OCR pipeline + DeepSeek-OCR tier (Proposals
+109/111, sub-project), the November 2026 Track B model-catalog refresh
+(v2026.11.03, 251 models, #7416/#7417/#7440), gateway 0.3.1 + the new
+`claude-gateway-plugin` addon 0.1.0 (#7444/#7445), and the Pro Schedule
+Manager Runs & Reports + fleet card (#7411/#7412). New scope rules
+executed: a **feature-branch PR** (#7417 — merged into
+`feat/model-catalog-november-2026`, tree reached alpha-working inside
+#7416's merge) classifies with its parent PR; the **astro-bridge ZIP
+supersession** (4 files — v1.0.1/v1.1.0/v1.1.1/v1.1.2 removed once v1.1.3
+built, the v1.2.2 docs-hub completion precedent); the **1.2.16 pass's
+bundled-RELEASE-NOTES miss** (the Zed plugin-skill companion gained the
+v1.2.16 section but the base-bundled copy stayed on v1.2.15) and the
+**pre-Cognition-rebrand bundled dictation-app copy** (two windows behind)
+were both byte-identical re-synced in-pass; FOR_REVIEWERS drift corrected
+(Funiq Bridge 1.0.0 → NV oOS Astro Bridge 1.1.3, MCP Gateway 0.1.1 →
+0.3.1, 31 → 32 addons + the four missing addon rows); the README repo-map
+addons row 30 → 32 (the 1.2.16 pass had left it at 30 — the #7019-type
+lower-surface drift). OI-1: new group 67 (+1 `@since 1.2.0` in
+`addons/pro/includes/rest/class-wp-mcp-ai-pro-schedule-rest-controller.php`
+#7412 — the file's 1.0.0 family). Tool count unchanged
+(~358/~1,378/~1,735), skill count 81 unchanged (in-place updates only),
+addons 31 → 32, and the stale 1.2.15 build-set removal (30 files — 9 + 2
++ 19) + the superseded astro-bridge ZIPs (4 files))
+
+Preceding windows:
   `docs/project/plans/1.2.15-docs-catch-up.md` (executed — the
 1.2.15 pass over PRs #7308–#7363: Astro Forge Phases 0–4 (#7335–#7344, Proposal 096 — the MIT-licensed `examples/nvoos-astro-forge` generator, the 29-tool `/mcp` surface, and the new standalone `plugins/nvoos-forge-bridge` 0.1.0 sub-project), the Proposal 098 design-language import (#7331/#7334 — open-world `design_*` tools, bridge draft/publish products), the Proposal 095 completion (#7318/#7320/#7322/#7323/#7325 — CMS/ops slices + NDS DTCG round-trip + the Design tab + the bridge SPA MIT carve-out), console site-title branding + Records remote browsing (#7321/#7324/#7326/#7327/#7330), the npx-bridge manager-session bootstrap (#7328, 0.1.0-alpha.5), the gateway registry publish (#7345–#7349 — version-marker fix, `PUBLIC_SITE_SLUGS`), Proposal 099 + the PKCE e2e harness (#7361/#7362), the dictate release fixes (#7351/#7353/#7354/#7356 + main twins #7352/#7355/#7357), and the dependency sweeps (#7308/#7311/#7360). New scope rules executed: the #6787 uncovered-PR rule (#7308 — merged 13 min before the #7309 catch-up); main-line twins build-classified; a worktree branch-switch mid-pass → the linked-worktree recipe (`git worktree add -b … origin/alpha-working`, edit there, never the shared tree); the proposals-README registration stays deferred when the shared file carries another agent's uncommitted edits. A5 fired again: the README repo-map skill row was 76 while AGENTS.md/copilot-instructions were 81 in-window — the fold-in owed (plus the missing five names); FOR_REVIEWERS 76 → 81. Skill reconciliations beyond frontmatter: the #7336 client-scrub touched only the Zed copies — the six bundled copies of design-crm/design-email-marketing/design-seo-content (base + CG-AI platform) still carried client identifiers, the scrub ported in-pass (base pairs byte-identical); and the dictation-app skill gained the v1.2.15 release-pipeline hardening bullet (tauri CLI + softprops, conditional Apple signing env, tag-tree workflow evaluation, the Windows exe job). The 1.2.14 pass's v1.2.2 "demotion" had left the full entry in the Release History (13 full entries + the table row) — this pass removed BOTH v1.2.2 and v1.2.3 full entries to restore the 12-row invariant. OI-1: group-35 extension (+2 `@since 0.2.0` in the new `class-nvoos-nds-dtcg-importer.php` while the addon ships 0.3.0; the in-window NDS admin-page/plugin additions carry no tags — recorded as an addon-level missing-tags note) + a sub-project convention note (`plugins/nvoos-forge-bridge` carries no `@since` tags — own track). Tool count unchanged (~355/~1,378/~1,732), skill count 79 → 81, zero catalog diff, no addon bumps, and the stale 1.2.13 build-set removal (30 files — 9 + 2 + 19))
 

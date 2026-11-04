@@ -1,20 +1,22 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Dictation desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — build/run on Windows/MSVC, the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the embedded remote-STT fallback, the Stage-2 polish provider track (disabled/openai_compat/nvoos plus local LM Studio and Ollama), the file/media decode seam (Symphonia 0.5), the live camera + local object-detection/tracking track (Proposals 073 + 075) with an opt-in VLM label-polish layer (Proposal 076), the CDP browser-control agent (feature agent) + FastConformer engine + NV oOS multi-SPA hub, model registry + verification harnesses, the plugins.updater boot-crash config rule, and the full test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, or VLM relabeling.
+description: Operational guide for the NV oOS Cognition desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks (Proposals 073/075/076), the screen-OCR snippet track (Proposal 100, features snippet/snippet-onnx), the document-OCR input track (Proposal 109, feature document — PDF/multi-page TIFF via pdfium-render, plus the Proposal 111 DeepSeek-OCR local model tier), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, screen OCR, document OCR, or the DeepSeek-OCR model tier.
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
-  app-version: "0.2.0"
+  app-version: "0.3.0"
   proposal: "067"
   pr: "7043"
-  last-updated: "2026-10-14"
+  last-updated: "2026-11-02"
 ---
-# NV oOS Dictation App — Build, Engines, and Verification Guide
+# NV oOS Cognition App — Build, Engines, and Verification Guide
 
 Operational guide for `examples/nvoos-dictate` (Proposal 067, PR #7011):
 a local-first push-to-talk dictation + meeting transcription desktop app
-with the NV oOS plugin as the optional AI-enrichment backend.
+with the NV oOS plugin as the optional AI-enrichment backend. The product
+brand is **NV oOS Cognition** (v0.3.0 rebrand); technical identifiers stay
+`nvoos-dictate` (crate, binary, updater tags, data dirs) — see Proposal 103.
 
 ## When to use this skill
 
@@ -23,20 +25,21 @@ with the NV oOS plugin as the optional AI-enrichment backend.
 - Changing the deterministic cleanup pipeline (golden fixtures are the backstop)
 - Wiring the Embedded addon remote-STT fallback or its auth
 - Running the benchmark harness (`transcribe_file`) or the model downloader
-- Embedding the hosted Pro SPA in the Assistant tab, or changing its reachability probe / CSP
+- Opening the Complete Velocity console window, or changing its navigation guard / CSP
 - Producing a "complete" hand-off exe (the full feature union, not just STT flags)
 - Continuing P2 (loopback + PTT matrix), P4/P5 ports, or distribution
 - Verifying the macOS port from CI or a remote Mac (boot smoke, interactive SSH session, VNC options)
+- Building/debugging **screen OCR** (Proposal 100, features `snippet`/`snippet-onnx`)
 
 ## Layout
 
 ```
 examples/nvoos-dictate/
-├── src/                  # React webview (Settings/History/Meetings/Overlay)
+├── src/                  # React webview (Settings/History/Meetings/Overlay/Snippet)
 ├── src-tauri/            # the Rust crate (manifest lives HERE, not at app root)
-│   ├── src/{audio,stt,cleanup,nvoos,hotkey,paste,meetings,mcp,storage}
+│   ├── src/{audio,stt,cleanup,nvoos,hotkey,paste,meetings,mcp,storage,snippet}
 │   ├── tests/            # integration tests (must stay under src-tauri/tests!)
-│   ├── examples/         # transcribe_file.rs (WER/e2e_ms) + download_model.rs
+│   ├── examples/         # transcribe_file.rs + download_model.rs + snippet_ocr_probe.rs
 │   └── capabilities/ + icons/
 ├── docs/decisions/       # ADRs 0001 (paste strategy), 0002 (MCP transport), 0003 (engines)
 └── e2e/                  # Playwright (webview UI)
@@ -61,8 +64,8 @@ examples/nvoos-dictate/
   co-link because the vendored whisper-rs-sys compiles whisper.cpp with
   the static CRT /MT, matching sherpa-onnx's prebuilt libs).
   **"Complete" build** (every opt-in surface) is the union of all
-  feature-gated modules — engines + vision + agent + mcp:
-  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp`.
+  feature-gated modules — engines + vision + agent + mcp + snippet OCR + document:
+  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx,document,snippet-pdf`.
   **Trap — a build that omits a feature silently boots with that surface
   "not compiled", not an error.** `vision` (YOLO detection/tracking + camera
   preview + VLM label-polish) and `agent` (browser control) are each
@@ -87,6 +90,10 @@ examples/nvoos-dictate/
   -Command` with `$var` gets mangled by MSYS, so always `-File x.ps1`):
   the presence of `fastconformer`/`parakeet`/`whisper`/`sherpa-onnx` means
   the engines are linked; `Assistant` means the SPA tab shipped.
+  **Release trap:** the `nvoos-agent` marker (a thread-name literal) is
+  DCE'd by release optimizations — the script also matches the agent
+  controller's spawn-error string (`could not spawn agent worker`), which
+  survives both profiles.
   **Trap:** a plain `cargo build`/`cargo run` (debug profile) compiles with
   `devUrl` (`http://localhost:1420`) baked in, so the webview loads the
   Vite dev server at runtime and shows `ERR_CONNECTION_REFUSED` in the app
@@ -95,6 +102,16 @@ examples/nvoos-dictate/
   (or `npm run tauri dev` with vite running) produces a usable GUI exe;
   after any plain-cargo headless check, rebuild via tauri before handing
   the exe back.
+- **Release build + installer bundles** (the other common "complete" ask):
+  `npm run tauri -- build --features <union>` (drop `--debug --no-bundle`)
+  → release exe ~55 MB + `target/release/bundle/` **NSIS setup ~13 MiB** +
+  **MSI ~163 MiB** (the MSI embeds the WebView2 bootstrap; WiX + NSIS are
+  downloaded automatically by the tauri CLI). Same CMake/LIBCLANG_PATH env
+  as debug. **Trap — first full release build can exceed 60 min** (the
+  tool-timeout hit at 851/853 crates once); the resume is incremental
+  (~9 min). Release RTF stays fast (whisper base.en 0.32, parakeet 0.19)
+  — proof the `force-debug` wiring survives release profiles. Bundles are
+  unsigned dev artifacts (`pubkey: ""`).
 - `generate_context!` embeds the frontend `dist` at compile time — run
   `npm run build` before any cargo step in CI.
 - Boot smoke test: `cmd //c start "" <exe>` → `tasklist //FI "IMAGENAME eq
@@ -114,7 +131,7 @@ examples/nvoos-dictate/
 pubkey). Without it the app panics at boot:
 
 ```
-error while running NV oOS Dictation: PluginInitialization("updater",
+error while running NV oOS Cognition: PluginInitialization("updater",
 "Error deserializing 'plugins.updater' within your Tauri configuration:
 invalid type: null, expected struct Config")
 ```
@@ -135,6 +152,8 @@ cargo test            # default (mock/embedded)
 cargo test --features vision   # 94 lib (+9 vision/tracker/polish tests)
 cargo test --features mcp       # +4 toolbox tests
 cargo test --features parakeet  # 46 lib (+1 tar.bz2 extraction test)
+cargo test --features snippet   # 122 lib (+ snippet capture/selection/OCR tests)
+cargo test --features snippet-onnx  # 126 lib (+ RapidOCR decode tests)
 ```
 
 Native feature compile checks: `parakeet`, `whisper`, `moonshine`,
@@ -169,7 +188,7 @@ The GitHub macOS runner is the remote Mac. The full remote loop:
   universal DMG via publish-nvoos-dictate.yml; targeted builds land under
   `src-tauri/target/<triple>/debug/bundle/macos/`
   (`universal-apple-darwin` for universal), not `target/debug/`.
-- **Interactive:** run the `NV oOS Dictation — macOS interactive session`
+- **Interactive:** run the `NV oOS Cognition — macOS interactive session`
   workflow (`workflow_dispatch`) — builds the bundle, runs
   `scripts/macos-matrix-remote.sh` (the automatable subset of
   `docs/ptt-matrix-macos.md`: bundle surface, sidecar `--check`, boot
@@ -186,6 +205,22 @@ The GitHub macOS runner is the remote Mac. The full remote loop:
   `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY`, `APPLE_ID`,
   `APPLE_PASSWORD`, `APPLE_TEAM_ID`) → tag `nvoos-dictate-v*`
   (`publish-nvoos-dictate.yml`).
+- **Release pipeline (v1.2.15 hardening, PRs #7351/#7353/#7354/#7356):** the
+  workflow carries `permissions: contents: write`; bundles build with the
+  **tauri CLI directly** (`npm run tauri -- build <args>`) and the release
+  job cuts the draft release with `softprops/action-gh-release@v2` —
+  tauri-action's octokit path fails with `Resource not accessible by
+  integration` even with write permissions. The macOS leg exports
+  `APPLE_*` to `$GITHUB_ENV` **only when the signing secrets actually
+  exist** — GitHub substitutes missing secrets as empty strings and the
+  tauri CLI treats set-but-empty vars as "signing configured" (empty
+  keychain import failure); without them the build runs ad-hoc.
+  **Tag-triggered runs evaluate the workflow file from the tag's commit** —
+  after a workflow fix, move the tag to the new tip and re-push to re-run.
+  The `windows-bundle` job builds the complete feature-union debug exe
+  (CMake + LLVM via Chocolatey, `LIBCLANG_PATH`) with a 30 s
+  boot-residency gate and uploads `nvoos-dictate-windows-exe`; both app
+  artifacts retain 90 days.
 
 Remote-Mac landscape (2026-10): **Cirrus CI shut down 2026-06-01**
 (Cirrus Labs joined OpenAI) — do not recommend it. Docker/QEMU macOS
@@ -196,7 +231,7 @@ Platform pitfalls that already cost CI runs:
 
 - **Tauri v2 keeps the Cargo binary name as the bundle executable** —
   `Contents/MacOS/nvoos-dictate`, NOT productName
-  (`Contents/MacOS/NV oOS Dictation` does not exist). Discover it with
+  (`Contents/MacOS/NV oOS Cognition` does not exist). Discover it with
   `find "$APP/Contents/MacOS" -maxdepth 1 -type f -perm -u+x ! -name
   '*helper*' -print -quit` or read `CFBundleExecutable`.
 - **`screencapture -x` produces no image on GitHub macOS runners** —
@@ -597,6 +632,60 @@ download `yolo11n.pt` from
 `python -c "from ultralytics import YOLO; YOLO('yolo11n.pt').export(format='onnx', opset=12, imgsz=640)"`.
 No `onnxslim` = the simplifier step logs a non-fatal warning.
 
+## Snippet OCR — screen-to-text (Proposal 100, features `snippet`/`snippet-onnx`)
+
+The "OCR push-to-talk": hotkey (default **Win+Shift+T** on Windows, ⌘⇧T
+on macOS — registered via `tauri-plugin-global-shortcut`, **never** the PTT
+`win_hook`; a one-shot chord needs no swallow discipline) → GDI virtual-
+screen freeze (in-memory only, never disk) → full-screen **pointer-owning**
+`snippet` window (unlike the focusless overlay capsule) renders a scaled
+preview data-URI → drag/Shift-move/Esc → crop the full-res frame in Rust →
+recognize on the `nvoos-snippet` worker → OCR cleanup profile
+(`cleanup::run_ocr_deterministic`) → clipboard → optional auto-paste.
+Engine dispatch: WinRT on Windows, Apple Vision via the sidecar on macOS,
+RapidOCR-ONNX as portable/fallback, local-VLM fallback deferred.
+
+- **WinRT leg (verified live on the reference PC, ~35 ms):**
+  `snippet/ocr_winrt.rs`. Raw BGRA → `SoftwareBitmap` goes through the
+  sanctioned **DataWriter/InMemoryRandomAccessStream/DataReader** path
+  (`DataReader::LoadAsync` BEFORE `ReadBuffer`); `IMemoryBufferByteAccess`
+  QI is compile-blocked by windows-rs's interface-hierarchy check and a
+  direct `Buffer::cast` fails E_NOINTERFACE at runtime — do not re-try
+  either. Language packs via `AvailableRecognizerLanguages` (needs the
+  `Foundation_Collections` feature); "no OCR languages installed" offers
+  the ONNX download instead of dead-ending.
+- **GDI capture (`snippet/capture.rs`, windows 0.58 shapes):**
+  `CreateDIBSection` returns `Result<HBITMAP>`, `BitBlt` returns
+  `Result<()>`, `biCompression: u32` (= `BI_RGB.0`), `SelectObject`/
+  `DeleteObject` take handles (HBITMAP → HGDIOBJ via `From`). **Copy the
+  DIB bits out before `DeleteObject`** — the bitmap owns the memory;
+  `from_raw_parts` would double-free. Virtual-screen metrics
+  (`SM_*VIRTUALSCREEN`) handle negative multi-monitor origins; Tauri sets
+  PerMonitorV2 DPI awareness.
+- **ONNX leg (`snippet/ocr_onnx.rs`, verified ~90–120 ms/shot):**
+  hand-rolled DBNet det + SVTR rec on the pinned `ort` rc.9. **BGR channel
+  order** (PaddleOCR `img_mode: BGR` — RGB yields all-blank output).
+  Decode: class 0 = CTC blank, `class i → dict[i-1]` (official exports
+  carry one extra GTC/NRTR-head token). **No ×8 width quantization** for
+  the rec input (it clips trailing glyphs); expand det boxes unclip-style
+  (~6% + 3 px) or edge characters get cut. Pack catalogue
+  (`snippet/models.rs`, pinned SHA-256): det from the official RapidOCR
+  ModelScope export; rec + dict from the **monkt** HF mirror — the official
+  ModelScope rec export's dynamic height axis produces all-blank output on
+  ort rc.9, the fixed-height (48) monkt export does not; the monkt dict is
+  byte-identical to the official `ppocrv5_en_dict.txt`.
+- **macOS (CI-verified only — Swift can't build on Windows):** the helper
+  gained one-shot `screenshot` + `ocr` subcommands (`Snipper.swift`;
+  SCScreenshotManager on 14+, `CGWindowListCreateImage` on 13, Vision
+  `.accurate`); sidecar protocol stays v1 with additive `image`/`ocr_result`
+  frames; `--check` smokes Vision on a generated bitmap.
+- **Debug tooling:** `snippet_ocr_probe` example — `--engine winrt|onnx|
+  onnx-raw|download` (raw dumps argmax indices for mapping forensics;
+  download exercises the production pack downloader). Fixture images via
+  PowerShell System.Drawing (the same trick as the SAPI-TTS fixtures).
+- **Hotkey isolation:** a git diff touching `src/hotkey/` invalidates the
+  snippet work — the chord rides the global-shortcut plugin on purpose.
+
 **Vision label polish (Proposal 076):** the stock `yolov11n` is a
 closed-vocabulary 80-class COCO model, so it mislabels arbitrary objects
 (a pen → "knife"). The opt-in VLM polish layer fixes this: when
@@ -614,6 +703,83 @@ round-trip never stalls the 15 fps detect loop. Default model
 live on the reference PC — it returns **fenced** JSON, which
 `parse_label_response` tolerates). The no-facial-recognition bright line is in
 the system prompt. `VisionDiagnostics` gained `polish_enabled/provder/model/calls/results`.
+
+## Document OCR input — PDF & multi-page TIFF (Proposal 109, feature `document`)
+
+Proposal 109 implements 102's deferred document-input pipeline: PDFs and
+multi-page TIFFs into the snippet OCR stack, using the industry-standard
+hybrid two-pass (per-page text-layer extraction where present — OCRmyPDF's
+`--skip-text` strategy — and 300-DPI rasterization + OCR where not).
+Docs: `docs/project/proposals/109-document-input-pipeline-ocr-{proposal,implementation-plan}.md`.
+**Status:** M0 spike + M1–M4 implemented on PR #7425: `document/mod.rs`
+(types + `available()`), `pdf.rs` (bind/open/extract/300-DPI render),
+`hybrid.rs` (char→word reconstruction + classify router), shared
+`snippet/layout.rs` (XY-cut reading order — pulled forward from 102),
+`preprocess.rs` (scan profile: 2× upscale + Otsu), `ocr.rs` (engine
+dispatch), `tiff.rs` (multi-page), `controller.rs` (worker + progress +
+cancel, always compiled with cfg'd stubs), `polish.rs` (local VLM via
+076's transport), `export.rs` (txt/md/hOCR/ALTO) + `export_pdf.rs`
+(searchable-PDF rebuild via lopdf, feature `snippet-pdf`); IPC
+(`document_available`, `pick_document`, `transcribe_document`,
+`cancel_document`, `export_document` + `document://progress` events),
+`Settings.document`, `DocumentDiagnostics`, a `source` column on the
+snippets history table, a Home "Document OCR" panel, and fixtures
+(`text-2page.pdf` 954 B, `malformed.pdf`, `encrypted.pdf` — RC4 security
+handler, user pw `test`). ADR `docs/decisions/0005-document-engine.md`;
+`NOTICE.md` carries the PDFium BSD-3 entry.
+
+- **Feature:** `document = ["snippet", "dep:pdfium-render", "dep:tiff"]`.
+  `pdfium-render` pinned `default-features = false, features =
+  ["pdfium_7881", "image_025", "thread_safe"]` (resolved 0.9.5; `image_025`
+  matches the app's `image` 0.25 pin — no duplicate image tree). PDFium is
+  the only license-clean engine (BSD-3; MuPDF/Poppler/Ghostscript are
+  AGPL/GPL).
+- **Binary provisioning:** bblanchon `chromium/7881`
+  `pdfium-win-x64.tgz` — **the Windows archive layout is `bin/pdfium.dll`,
+  NOT `lib/`** (7,211,520 bytes, sha256
+  `79d4676b656cfb1abcea88f9ade3b4b0826c5200382db5f4ec72a636c598c118`).
+  Runtime binding via `Pdfium::default()` / `bind_to_library` (dll beside
+  the exe). **Bundle-time provisioning shipped (2026-11-04):**
+  `scripts/fetch-pdfium.ps1` (pinned sha256, extracts `bin/pdfium.dll`),
+  `tauri.windows.conf.json` ships the whole `resources` DIRECTORY (not the
+  dll path — `tauri_build` validates bundle resources on EVERY cargo
+  invocation, so a file-level resource breaks clean Windows CI checkouts;
+  the directory always exists because its README is committed). macOS
+  bundle config untouched — macOS dylib provisioning is a separate
+  follow-up), `build.rs` stages it beside dev/test binaries when
+  `document` is on, and the publish workflow fetches before bundling.
+  `bundle.resources` lands the dll under `resources/` beside the installed
+  exe (Tauri preserves the relative path); `pdf.rs::bind()` tries exe-dir,
+  then exe-dir/resources, then the system search. Verify an installer with
+  an NSIS silent install or an `msiexec /a` admin extract, and prove the
+  bundled layout by running `document_probe.exe` from the install dir.
+  **MSYS installer trap:** Git Bash mangles `/S` and `/D=` (the GUI opens
+  instead of installing) — use `cmd //c start /wait "" ...`; the Tauri NSIS
+  template ignores `/D` anyway and installs to
+  `%LOCALAPPDATA%\<productName>`.
+  Never commit the dll; the checked-in generator
+  `scripts/make_doc_fixtures.py` emits offset-computed fixtures
+  (`text-2page.pdf`, `malformed.pdf` — the repo-level `*.pdf`
+  info/exclude needs `git add -f`).
+- **Verified 0.9.5 API facts** (the README documents 0.9.6 — they differ):
+  `PdfPageTextChars::iter()` yields **owned** `PdfPageTextChar` (no
+  `.cloned()`); chars borrow `PdfPageText`, so extract owned fields inside
+  the closure; `origin()`/`origin_x()` return `Result<PdfPoints,
+  PdfiumError>`; `PdfRect` exposes `width()`/`height()` accessors;
+  `PdfPoints { value }` is a public-field struct; `set_target_width`/
+  `set_maximum_height` take `i32`; `has_unicode_map_error()` is 0.9.6-only
+  — 0.9.5's unmapped-glyph signal is `unicode_char() == None`.
+- **Spike run recipe:** `pdfium.dll` in `src-tauri/target/debug/`, run
+  `./examples/document_probe.exe <pdf>` from that dir. Live-verified:
+  44/36 chars with exact origins+bounds, exact 2550×3300 render at
+  300 DPI; malformed fixture → `PdfiumLibraryInternalError(FormatError)`,
+  exit 1, no panic. Gates: fmt, clippy `-D warnings` (`--features
+  document`), tests with and without the feature.
+- **Deferred:** the encrypted fixture's per-object **stream-decryption**
+  round-trip is not yet verified (the U/O handshake opens correctly with
+  the password — the error path is fully covered); full polish/exports UI
+  pass; 102's deskew step; verify markers use `pdfium library not found`
+  (a real lib string).
 
 ## Stage-2 polish providers (local LLM cleanup)
 
@@ -732,44 +898,68 @@ chunked path. **Deferred:** GUI file-picker (needs `tauri-plugin-dialog`), a
 `transcripts.media` DB column (no consumer), and media fixtures for
 decode e2e tests.
 
-## Assistant SPA tab (embedded hosted Pro SPA) + reachability probe
+## NV oOS Console window (first-party) + reachability probe
 
 A third frontend surface (in addition to the chat SPA and the dictation
-main window): a new **Assistant** tab in the dictate app that embeds the
-hosted NV oOS Pro SPA — the same connect-to-any-backend surface as
-`examples/nvoos-pro-spa-vite` — in an `<iframe>`. This is the "Option 1"
-(hosted iframe) alternative to vendoring spa-v2 into the dictate app, which
-collides with React-version/dependency/CSP/network-model conflicts and is
-nearly always the wrong choice.
+main window): a new **Assistant** tab in the dictate app that opens the
+NV oOS **Complete Velocity console** (`nvoos-complete-velocity`, e.g.
+`https://console.nvoos.cloud`) **in its own top-level window**. Every NV
+oOS surface (assistant, chat, toolkits, schedule, media, …) is wrapped
+inside the console, so the earlier per-addon surface discovery
+(`spa-surfaces` endpoint, sub-tabs) was retired — one window, one origin.
 
-### Why a frame, not a native mount
+### Why a dedicated window, not an iframe
 
-`nvoos-pro-spa-vite` mounts spa-v2 sources directly via a Vite alias and
-does its own `window.NVOOS_PRO_SPA` bootstrap + fetch/auth wrapper. Reproducing
-that inside the dictate app means porting a second full React app (spa-v2's
-`@ai-sdk/react`, `zustand`, `react-router-dom`, `cytoscape`, `jquery`, …) and
-breaking the dictate app's "no remote content, no network" webview model. The
-iframe sidesteps all of it: the SPA's connect screen, auth modes, and SSE chat
-run inside the frame's own origin; the dictate webview never talks to
-WordPress.
+The first attempt embedded the console in an `<iframe>` inside the main
+window. That breaks the console's sign-in: `login.ts` replays WordPress'
+cookie flow (test-cookie GET → credential POST → auth cookies on a
+redirect), and embedded frames are a **third-party context** — WebView2
+blocks third-party cookies by design (Microsoft WebView2Feedback
+#1665/#2013; no toggle), so the test cookie never sticks and the login
+screen masks the real "cookies are blocked" error as the uniform
+"Invalid username or password.". A top-level window is first-party — the
+same context as a browser tab — so cookie auth, and everything downstream
+of it (REST session bootstrap, SSE), just works. This mirrors the
+Electron-world standard for cookie-authenticated third-party surfaces
+(OAuth/SSO flows get their own BrowserWindow).
 
 ### Wiring (all shipped)
 
 - **Setting** — `Settings.spa.url` (`config.rs` `SpaConfig`; serde-default,
-  backward-compatible). The Settings → NV oOS tab exposes "Assistant tab URL".
-- **View** — `views/Assistant.tsx` renders a sandboxed iframe
-  (`allow-scripts allow-same-origin allow-forms`, `referrerPolicy no-referrer`)
-  and a "not configured" hint when the URL is empty. Reads the URL via the
-  existing `get_settings` IPC.
+  backward-compatible). The Settings → NV oOS tab exposes
+  "Default Complete Velocity URL".
+- **Launcher** — `views/Assistant.tsx` shows the configured URL and an
+  "Open NV oOS Console" button → `open_nvoos_console` IPC →
+  `ensure_nvoos_console_window` (`lib.rs`): creates or refocuses the
+  `nvoos-console` window (`WebviewUrl::External`). If the configured URL
+  changed, the window is destroyed and rebuilt (the navigation guard is
+  bound to the old origin).
+- **Navigation guard** — `on_navigation` allows only the configured
+  console origin; foreign origins open in the system browser via the
+  opener plugin. `on_new_window` denies popups and opens them externally
+  (Tauri 1.3 advisory: never let a remote-content window roam freely).
+  The window's capability `capabilities/console.json` is `core:default`
+  with **no `remote` block** — the console page can never call app IPC.
 - **Status card** — `StatusInfo.spa_configured` + `spa_url` (from `get_status`)
-  drive an "Assistant (Pro SPA)" row on the Home System card (configured badge
-  + URL).
-- **CSP** — `tauri.conf.json` `security.csp` gained `frame-src https:`. It is
-  HTTPS-any (NOT a pinned host) because the URL is user-configurable and
-  unknown at bundle time; a single-host lock needs a dynamic-CSP/navigation-
-  handler change. Cookie-mode login inside the iframe can be flaky (third-party
-  cookie / SameSite rules) — bearer/guest/wp-application-password modes are
-  more iframe-friendly.
+  drive an "NV oOS" row on the Home System card (configured badge + URL +
+  reachability probe).
+- **CSP** — the main window no longer carries `frame-src` (no iframes
+  remain). The console window loads a remote URL, which is governed by the
+  console's own headers/CSP, not the app's.
+- **Direct composer delivery** — when the console window is open and an app
+  window is foreground, dictation inserts into the console's chat composer
+  via `console_window.eval(...)` using the React-safe native value setter +
+  a bubbling `input` event (a plain `textarea.value` assignment desyncs
+  React state) with a 2 s retry; otherwise it falls back to an OS-level
+  Ctrl+V paste through a real `VK_V` `keybd_event` (`enigo` unicode
+  injection is ignored by Chromium/WebView2). A "no speech detected"
+  result never pastes silence. The composer is resolved by
+  `querySelector('textarea')` — if the console changes its DOM, scope the
+  selector to the composer class.
+- **PTT liveness** — the LL-hook fallback keys off the event-driven
+  `LAST_EVENT_MS` inside `hook_proc` (timer-driven heartbeats can't detect
+  delivery stalls), and `open_nvoos_console` is `async` (a sync command
+  that opens a window deadlocks the main thread).
 
 ### Reachability probe (`check_spa` IPC) — the two hard rules
 
@@ -918,9 +1108,9 @@ two before merging the port.
 
 New this session (2026-10-13): **FastConformer STT engine** (the `nemo_ctc`
 slot, `fastconformer` feature, registry id
-`sherpa-onnx-nemo-ctc-en-conformer-large`) and the **Assistant SPA tab**
-(hosted-Pro-SPA iframe + `Settings.spa.url` + the Rust-side `check_spa`
-reachability probe + `frame-src https:` CSP). See the two sections above for
+`sherpa-onnx-nemo-ctc-en-conformer-large`) and the **NV oOS console window**
+(`Settings.spa.url` + `open_nvoos_console` + origin-locked navigation guard
++ the Rust-side `check_spa` reachability probe). See the two sections above for
 full detail. Gates green on the reference PC: `cargo check`/`clippy
 --all-targets -- -D warnings`/`fmt --check` (default + `fastconformer`),
 `cargo test --lib` 107 passed (incl. 4 `validate_spa_url` tests), `npm run
@@ -929,8 +1119,220 @@ build`. The complete debug exe is the full feature union
 the STT flags; see the "complete build" note in Build & run. PR #7047 tracks
 the code change (branch `add/fastconformer-engine-and-assistant-spa-tab`).
 
+New this session (2026-11-02): **screen OCR snippet (Proposal 100)** —
+  features `snippet` (capture + selection overlay + platform-native engines,
+  implies `dep:image`) and `snippet-onnx` (RapidOCR ONNX, shares the ort pin),
+  the `snippet/` module (capture/ocr_winrt/ocr_onnx/models/controller), the
+  pointer-owning full-screen `snippet` window + capability, WinRT end-to-end
+  verified live (~35 ms with word boxes), the ONNX pipeline verified live
+  (~90–120 ms, BGR + blank-offset decode), the pinned pack catalogue, the
+  OCR cleanup profile, snippet history (append-only migration), the
+  `snippet_ocr_probe` spike example, and the Swift sidecar `screenshot`/`ocr`
+  subcommands (CI-verified). See "Snippet OCR" above for the full set of
+  gotchas (DataWriter path, DIB ownership, monkt-vs-official exports).
+  Gates green: fmt, clippy (default + `snippet` + `snippet-onnx`),
+  `cargo test` 117 default / 122 snippet / 126 snippet-onnx, `npm run build`.
+  The complete-build union and `verify_complete_build.ps1` now include
+  `snippet,snippet-onnx`.
+
+New this session (2026-11-02): **rebrand to NV oOS Cognition v0.3.0 +
+  public mirror** — the product name, window titles, macOS `.app` paths,
+  CI workflow names and the publish release title move to the Cognition
+  brand; technical identifiers stay `nvoos-dictate` (crate, binary,
+  updater tags `nvoos-dictate-v*`, `%APPDATA%/nvoos-dictate`, keychain
+  targets) for updater/keychain/data-dir continuity (Proposal 103). The
+  publish workflow no longer runs `scripts/gen-icons.mjs` — that script
+  emits placeholder art and would overwrite the committed brand icons in
+  every release bundle; it is bootstrap-only. `examples/nvoos-dictate` is
+  mirrored one-way to the public repo
+  `nvdigitalsolutions/nvoos-cognition` by
+  `.github/workflows/sync-nvoos-cognition.yml` (subtree split + force
+  push; backfilled 2026-11-02, run #3 success). The mirror carries the
+  proprietary `LICENSE.txt` — source-visible, not open-source.
+  **Mirror token recipe (activation or rotation):** a repo-scoped
+  fine-grained PAT — resource owner `nvdigitalsolutions`, only the
+  `nvoos-cognition` repo, Contents: read+write — stored as
+  `NVOOS_COGNITION_REPO_TOKEN`. Push-step diagnostics: `Invalid username
+  or token` means the token VALUE is bad (expired/truncated/wrong kind);
+  a correctly-shaped token with the wrong repo scope says `Repository not
+  found` instead. First-backfill notes: the `fetch-depth: 0` monorepo
+  checkout takes ~15–25 min on ubuntu runners, and the mirror API's
+  `pushed_at` updates immediately while `size` lags — verify a sync by
+  `pushed_at` plus a root `contents/` listing.
+
+New this session (2026-11-03): **document-OCR input pipeline (Proposal
+  109) — proposal + implementation plan + M0 spike (PR #7425).** New
+  `document` feature (pdfium-render pinned pdfium_7881/image_025/
+  thread_safe + tiff), the `document_probe` spike example, the
+  `make_doc_fixtures.py` generator with committed PDF fixtures, and the
+  verified pdfium-render 0.9.5 API facts — see the new "Document OCR
+  input" section above. Also this session: the **release build + bundle
+  recipe** (NSIS ~13 MiB, MSI ~163 MiB, the >60-min-first-build trap) and
+  the **verify-script release-proof agent marker** (the `nvoos-agent`
+  thread name is DCE'd in release builds — the script now also matches
+  `could not spawn agent worker`). Complete-union + verify markers gain
+  `document` at M1, when lib code lands.
+
+New this session (2026-11-03, later): **Proposal 109 M1–M4 implemented**
+  on PR #7425 — the full document pipeline described in the "Document OCR
+  input" section: hybrid router + shared `layout.rs`, scan profile, OCR
+  dispatch, multi-page TIFF, controller/progress/cancel, local VLM polish,
+  txt/md/hOCR/ALTO + searchable-PDF exports (new `snippet-pdf` feature +
+  lopdf), IPC + Settings + Diagnostics + history `source` column, the Home
+  "Document OCR" panel, encrypted fixture, ADR 0005, NOTICE entry, and a
+  `document (pdfium)` verify marker (`pdfium library not found`). Gates:
+  fmt, clippy `-D warnings` (default + document + snippet-pdf + full
+  union), 144 lib + 17 golden + 6 history + 5 validation + 5 document
+  integration tests, `npm run build`. Known gaps: encrypted-fixture
+  stream-decryption round-trip unverified; searchable-PDF v1 re-rasterizes
+  (vector-preserving relayer + word-positioned text layer deferred); polish
+  needs a live local VLM to exercise end-to-end. **hOCR/ALTO are now v2**
+  (word boxes — follow-up 2): `DocumentPage.lines: Vec<DocumentLine>` with
+  `DocumentWord` boxes in the page's canonical raster space (PDF pages =
+  300-DPI render pixels, TIFF/image = source pixels; engine boxes scaled
+  back from the scan-profile 2x space). Polished pages carry pre-polish
+  boxes when the finalized text aligns perfectly (`words::align`), else
+  synthetic line-level boxes (`fallback_lines`); model tiers output no
+  coordinates by design (Proposal 111).
+
 ## Related skills
 
 - `mcp-ai-wpoos-plugin` — plugin-side setup (assistant credentials, Docker)
 - `mcp-ai-wpoos-spa-ui` — React/Vite conventions shared with the SPA addons
 - `mcp-ai-wpoos-test-suite` — PHPUnit side; this skill covers the Rust gates
+
+New this session (2026-11-04): **Proposal 109 M1-M4 follow-up PR + CI fmt
+fix.** PR #7425 (proposal/plan/M0) was squash-merged into alpha-working;
+M1-M4 + ADR 0005 + docs land via the follow-up PR from
+`feat/nvoos-dictate-document-ocr-m0`. The CI `cargo fmt --check` failure
+was stale formatting, not toolchain drift: the committed files were
+edited after the last local fmt run, so they were never fmt-clean for the
+pinned stable. Fix = run `cargo fmt` with the same toolchain CI uses
+(dtolnay@stable == rustup stable 1.99.1, rustfmt 1.10.0). **rustup
+self-update blocker on this PC:** `could not create link ... cargo-miri.exe
+(os error 183)` - delete the stale hardlink (`rm ~/.cargo/bin/cargo-miri.exe`)
+and re-run `rustup update stable`; the toolchain sync is blocked until the
+self-update completes. The CI windows-bundle union now includes
+`document,snippet-pdf` (compile-only on CI - PDFium binds at runtime, and
+the document tests need the dll so they stay out of CI). UI fact:
+"Transcribe media" = audio/video only; PDF/TIFF go through the Home
+"Document OCR" panel; single raster images (PNG/JPEG) are the documented
+follow-up. Research notes:
+`docs/project/proposals/109-document-input-pipeline-ocr-research.md`
+(engine comparisons, licensing matrix, cloud-vs-local economics,
+small-VLM polish options, addons/pro survey).
+
+New this session (2026-11-04, later): **raster-image input (Proposal 109
+follow-up 1).** PNG/JPEG/WebP now route through the document pipeline:
+`document/images.rs` (image::open -> RGB8 frame, 40 MP pixel cap, clean
+"unsupported image" error), a controller refactor (`run_raster_pages` is
+the shared TIFF/image loop; `run_tiff_pages`/`run_image_pages` are thin
+wrappers; the non-document stub set gained a `run_image_pages` stub),
+`pick_document` gained an Images filter (png/jpg/jpeg/webp), the Home copy
+lists images, and dispatch keys off extension (png|jpg|jpeg|webp).
+Fixtures: `scripts/make_image_fixtures.ps1` (System.Drawing PNG+JPEG
+600x200 + broken.png copied from malformed.pdf; the repo-level
+info/exclude ignores *.png/*.jpg, so committing new versions needs
+`git add -f`); `tests/document_images.rs` (3 decode/error tests, no
+pdfium needed). No Cargo.toml change: `image` 0.25 default features
+include webp, and `document` implies `snippet` implies `dep:image`.
+Image results label themselves `document-ocr` in history (same as
+scanned pages) - cosmetic only.
+
+New this session (2026-11-04, provisioning): **pdfium.dll bundle-resource
+provisioning** (follow-up 3). `scripts/fetch-pdfium.ps1` downloads the
+pinned `chromium/7881` tgz and verifies the sha256 of the EXTRACTED dll
+(the pin is the 7,211,520-byte binary, not the re-packable tgz — the gate
+caught exactly that mistake on first run); `tauri.windows.conf.json` adds
+it as a Windows-only bundle resource; `build.rs` stages it beside
+dev/test binaries; the publish workflow fetches before bundling.
+**Tauri v2 places bundle resources under a `resources/` subdir beside the
+installed exe (relative paths preserved)** — `pdf.rs::bind()` now tries
+exe-dir, then exe-dir/resources, then the system search, and
+`document_probe.rs` uses that production path (it previously called
+`Pdfium::default()` = cwd/system only). **Verification recipe:** NSIS
+`/S` silent install (Git Bash mangles `/S` and `/D=` — use
+`cmd //c start /wait "" "<setup>" /S`; the Tauri NSIS template ignores
+`/D` anyway and installs to `%LOCALAPPDATA%\<productName>`), copy
+`target/debug/examples/document_probe.exe` into the install dir, and run
+it against `tests/fixtures/text-2page.pdf` — success proves the bundled
+layout binds. `msiexec /a` admin-extract is unreliable under MSYS
+(`start /wait` reports the stub's exit, not the install's) — the NSIS
+check is the authoritative one.
+
+New this session (2026-11-04, word boxes + model tier): **hOCR/ALTO v2
+  word-level bounding boxes** (follow-up 2) and **Proposal 111
+  (DeepSeek-OCR provider tier — implemented later this session, see below)**. Word boxes: additive serde
+  (`DocumentPage.lines`, `#[serde(default)]`; TS `lines?`), canonical
+  raster space per page (PDF = 300-DPI render pixels, TIFF/image = source
+  pixels; engine boxes scaled back from the 2x scan-profile space),
+  `words.rs` (from_snippet / scale_words / linear vs column-aware line
+  grouping / perfect-token align / fallback_lines), `layout.rs` gained
+  `line_groups` (shared with cluster_lines - behavior byte-identical),
+  hOCR `ocrx_word` + ALTO per-word `<String>` emitters with a v1 fallback
+  when `lines` is empty. Polished pages: boxes are pre-polish by contract.
+  DeepSeek-OCR (MIT, 3B MoE, 6.7GB via Ollama/LM Studio/llama.cpp
+  PR #17400): proposal 111 decides **model tier via the local-server
+  transport, never embedded** - see the proposal for P0/P1/P2 and the
+  probe-first verification plan.
+
+New this session (2026-11-04, evening): **Proposal 111 implemented**
+  (PR #7439, stacked on #7434 word-boxes — merge #7434 first). Ships:
+  `document/model.rs` (`DocumentModel` worker, own current-thread
+  runtime like `polish.rs`; `should_escalate` pure+tested;
+  `build_document_model` = configured provider first, the other local
+  provider as fallback; `page_to_png_data_uri` sends the RAW page —
+  never the binarized scan profile — downscaled to a 3000px long edge;
+  `maybe_model` is soft-fail — the deterministic result always
+  survives). Prompt contract is the official family prompt
+  `<image>\n<|grounding|>Convert the document to markdown.` with **no
+  system message** (DeepWiki/Cohorte guidance); the weak box-level OCR
+  text rides along as prior context. Escalation: budgeted `max_pages`
+  per document + `all_scans` opt-in + `min_confidence` gate — honest
+  note: WinRT reports constant 1.0 and ONNX reports None, so only
+  `all_scans` fires until an engine reports real scores. New
+  `PageProvenance::Model` ('model'); `provenance_counts()` is now a
+  4-tuple (text, ocr, polished, model). Settings: new Documents tab
+  (provider Ollama/LM Studio, model id, all-scans, min-confidence,
+  page budget, Test-connection button via
+  `test_document_model_connection`); Diagnostics: Document OCR card
+  with per-provenance counts. Live probe:
+  `cargo run --features document --example document_model_probe --
+  <pdf|image>` (the verification gate for the tier).
+  **Default-feature CI discipline (the recurring trap):** the
+  `document` module is ALWAYS compiled (type-stable for AppState/IPC),
+  so every new model-tier reference must be cfg-gated — `pub mod
+  model` is `#[cfg(feature = "document")]`, `run_pipeline` (shared
+  entry) cfg-splits the runner dispatch (`&model` arg exists only in
+  document builds), the not-document runner stubs dropped the model
+  param, `test_document_model_connection` has a not-document stub,
+  and the probe is registered via `required-features = ["document"]`
+  in Cargo.toml. Gates re-verified green: fmt, clippy `-D warnings`
+  (default + document + document,snippet-pdf), tests 127 default /
+  158 document, `npm run build`. Known gaps: no live deepseek-ocr
+  server run yet (ollama pull deepseek-ocr ~6.7GB); DeepSeek-OCR-2
+  (Apache-2.0, 3B, OmniDocBench v1.5 91.09%) is a candidate default
+  model id. Plan doc:
+  `docs/project/proposals/111-deepseek-ocr-provider-implementation-plan.md`.
+  **Live verification (2026-11-04, probe run):** `ollama pull
+  deepseek-ocr` (6.7 GB F16) then the probe against the fixtures —
+  `image-text.png` -> `## IMAGE OCR FIXTURE 123`, `text-2page.pdf`
+  (rendered 2319x3000) -> the fox text, clean. Two transport findings,
+  both shipped: (1) Ollama's `/v1/chat/completions` OpenAI-compat mount
+  non-deterministically DROPS image features for the `deepseekocr`
+  architecture (some page sizes derail into `<|im_start|>` loops; the
+  native `/api/chat` with `images:[b64]` is reliable at every tested
+  size 600x200..3000x3000) — `understand_document` branches: ollama ->
+  native `/api/chat` (endpoint = base URL minus the `/v1` suffix),
+  lm_studio -> compat mount; the Settings connection test pings ollama
+  with a blank 64x64 image via the native route (text-only pings loop
+  on this vision model). (2) Even native replies occasionally carry a
+  stray template-fragment prefix (`\<|im_start|>user`,
+  `</|im_start|>user`, `\>`) — `parse_document_model_reply` strips the
+  fragment list deterministically (slash variants + bare `\` first);
+  the content after them is valid. **Local-machine ops:** the Ollama
+  install on this PC was missing `llama-server.exe` + CPU runners
+  (every model call HTTP 500) — silent reinstall `OllamaSetup.exe /S`
+  restored it; the probe exe needs `pdfium.dll` copied beside it in
+  `target/debug/examples/` (bind() searches next to the exe; build.rs
+  stages at `target/debug/` for the main binary only).
