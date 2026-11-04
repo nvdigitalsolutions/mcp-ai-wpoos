@@ -65,9 +65,14 @@ server process — nothing runs on your machine.
 
 - `version` in `.claude-plugin/plugin.json` is bumped with every release so
   installs receive updates.
-- `node bin/validate-claude-plugin.mjs . --strict` checks the manifest,
-  the marketplace catalog, component front matter, and README/license
-  requirements without needing the Claude Code CLI.
+- The monorepo ships a dependency-free validator at
+  `bin/validate-claude-plugin.mjs` (in
+  `nvdigitalsolutions/mcp-ai-wpoos`) — run
+  `node bin/validate-claude-plugin.mjs . --strict` from the plugin folder
+  to check the manifest, the marketplace catalog, component front matter,
+  and README/license requirements without needing the Claude Code CLI.
+  The validator is dev tooling and is deliberately **not** shipped in the
+  plugin distribution.
 - The mirror repository (`nvdigitalsolutions/nvoos-claude-gateway-plugin`)
   is synced one-way from `addons/claude-gateway-plugin/` in the
   `nvdigitalsolutions/mcp-ai-wpoos` monorepo — never commit to the mirror

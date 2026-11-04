@@ -243,10 +243,11 @@ Two marketplace-installable distributions, both pointing at the same gateway:
 
 Release discipline: bump `.claude-plugin/plugin.json` `version` with every
 release or installed plugins never see updates. No `claude` CLI on this
-machine — `node addons/claude-gateway-plugin/bin/validate-claude-plugin.mjs
-<dir> --strict` checks the manifest, marketplace catalog, component front
-matter, and README/LICENSE requirements; the sync workflow runs it in a
-`validate` job.
+machine — `node bin/validate-claude-plugin.mjs <dir> --strict` (monorepo
+root; deliberately not shipped in the plugin distribution, which keeps the
+directory scan clean) checks the manifest, marketplace catalog, component
+front matter, and README/LICENSE requirements; the sync workflow runs it in
+a `validate` job.
 
 OAuth alternative: the gateway's RFC 9728 metadata + Auth0 DCR are what
 Claude Code's `/mcp` OAuth flow discovers — documented in the slim
