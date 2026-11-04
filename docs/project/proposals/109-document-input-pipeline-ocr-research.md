@@ -181,8 +181,11 @@ Cloud VLM OCR is deliberately not required.
    in history, same as a scanned page — cosmetic, not a gap.
 2. Word-level bounding boxes through the pipeline → hOCR/ALTO v2 with
    `bbox` attributes.
-3. pdfium.dll installer provisioning (Tauri bundle resources or a
-   first-run fetch script) — today the dll must sit beside the exe.
+3. ~~pdfium.dll installer provisioning~~ — **done** (follow-up PR:
+   `scripts/fetch-pdfium.ps1` sha256-pinned fetch, Windows-only
+   `tauri.windows.conf.json` bundle resource, `build.rs` dev/test staging,
+   publish-workflow fetch step; NSIS/MSI installers verified to contain
+   the dll beside the exe).
 4. Deskew pass (102's deferred item) for rotated scans.
 5. Optional VLM reading-order / table detection for complex layouts
    (XY-Cut++/DocTR-style) behind the polish toggle.

@@ -1,8 +1,9 @@
 //! PDFium access layer for the document pipeline (Proposal 109, D1/D2).
 //!
 //! Runtime-dynamic binding: the `pdfium.dll` / `libpdfium.dylib` is loaded
-//! from beside the executable first (bundle-time provisioning, D2), then the
-//! system search. All functions are synchronous; the controller owns the
+//! from beside the executable first (dev/test staging), then the bundle's
+//! `resources/` directory (installer provisioning), then the system search.
+//! All functions are synchronous; the controller owns the
 //! `Pdfium` instance on its worker thread (Pdfium is not thread-safe — the
 //! crate's `thread_safe` feature serializes access internally).
 //!
@@ -25,15 +26,18 @@ pub const MAX_RENDER_EDGE: i32 = 5000;
 pub const DEFAULT_DPI: u32 = 300;
 const POINTS_PER_INCH: f32 = 72.0;
 
-/// Bind the pdfium library: exe-adjacent first, then the system search.
-/// A missing library is a clean `AppError` — never a panic.
+/// Bind the pdfium library: exe-adjacent first (dev/test staging), then
+/// the bundle's `resources/` directory (installer provisioning), then the
+/// system search. A missing library is a clean `AppError` — never a panic.
 pub fn bind() -> AppResult<Pdfium> {
     if let Ok(exe) = std::env::current_exe() {
         if let Some(dir) = exe.parent() {
-            if let Ok(bindings) =
-                Pdfium::bind_to_library(Pdfium::pdfium_platform_library_name_at_path(dir))
-            {
-                return Ok(Pdfium::new(bindings));
+            for candidate in [dir.to_path_buf(), dir.join("resources")] {
+                if let Ok(bindings) = Pdfium::bind_to_library(
+                    Pdfium::pdfium_platform_library_name_at_path(&candidate),
+                ) {
+                    return Ok(Pdfium::new(bindings));
+                }
             }
         }
     }

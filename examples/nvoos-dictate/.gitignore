@@ -36,3 +36,7 @@ models/
 # Playwright
 e2e/test-results/
 e2e/playwright-report/
+
+# PDFium runtime for the document pipeline — gitignored binary, fetched by
+# scripts/fetch-pdfium.ps1 and shipped via tauri.windows.conf.json resources
+src-tauri/resources/pdfium.dll

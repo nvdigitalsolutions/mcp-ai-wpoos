@@ -739,10 +739,25 @@ handler, user pw `test`). ADR `docs/decisions/0005-document-engine.md`;
   NOT `lib/`** (7,211,520 bytes, sha256
   `79d4676b656cfb1abcea88f9ade3b4b0826c5200382db5f4ec72a636c598c118`).
   Runtime binding via `Pdfium::default()` / `bind_to_library` (dll beside
-  the exe); bundle-time provisioning is plan decision D2. Never commit the
-  dll; the checked-in generator `scripts/make_doc_fixtures.py` emits
-  offset-computed fixtures (`text-2page.pdf`, `malformed.pdf` — the
-  repo-level `*.pdf` info/exclude needs `git add -f`).
+  the exe). **Bundle-time provisioning shipped (2026-11-04):**
+  `scripts/fetch-pdfium.ps1` (pinned sha256, extracts `bin/pdfium.dll`),
+  `tauri.windows.conf.json` ships it as a Windows-only bundle resource
+  (macOS bundle config untouched — macOS dylib provisioning is a separate
+  follow-up), `build.rs` stages it beside dev/test binaries when
+  `document` is on, and the publish workflow fetches before bundling.
+  `bundle.resources` lands the dll under `resources/` beside the installed
+  exe (Tauri preserves the relative path); `pdf.rs::bind()` tries exe-dir,
+  then exe-dir/resources, then the system search. Verify an installer with
+  an NSIS silent install or an `msiexec /a` admin extract, and prove the
+  bundled layout by running `document_probe.exe` from the install dir.
+  **MSYS installer trap:** Git Bash mangles `/S` and `/D=` (the GUI opens
+  instead of installing) — use `cmd //c start /wait "" ...`; the Tauri NSIS
+  template ignores `/D` anyway and installs to
+  `%LOCALAPPDATA%\<productName>`.
+  Never commit the dll; the checked-in generator
+  `scripts/make_doc_fixtures.py` emits offset-computed fixtures
+  (`text-2page.pdf`, `malformed.pdf` — the repo-level `*.pdf`
+  info/exclude needs `git add -f`).
 - **Verified 0.9.5 API facts** (the README documents 0.9.6 — they differ):
   `PdfPageTextChars::iter()` yields **owned** `PdfPageTextChar` (no
   `.cloned()`); chars borrow `PdfPageText`, so extract owned fields inside
@@ -1213,3 +1228,24 @@ pdfium needed). No Cargo.toml change: `image` 0.25 default features
 include webp, and `document` implies `snippet` implies `dep:image`.
 Image results label themselves `document-ocr` in history (same as
 scanned pages) - cosmetic only.
+
+New this session (2026-11-04, provisioning): **pdfium.dll bundle-resource
+provisioning** (follow-up 3). `scripts/fetch-pdfium.ps1` downloads the
+pinned `chromium/7881` tgz and verifies the sha256 of the EXTRACTED dll
+(the pin is the 7,211,520-byte binary, not the re-packable tgz — the gate
+caught exactly that mistake on first run); `tauri.windows.conf.json` adds
+it as a Windows-only bundle resource; `build.rs` stages it beside
+dev/test binaries; the publish workflow fetches before bundling.
+**Tauri v2 places bundle resources under a `resources/` subdir beside the
+installed exe (relative paths preserved)** — `pdf.rs::bind()` now tries
+exe-dir, then exe-dir/resources, then the system search, and
+`document_probe.rs` uses that production path (it previously called
+`Pdfium::default()` = cwd/system only). **Verification recipe:** NSIS
+`/S` silent install (Git Bash mangles `/S` and `/D=` — use
+`cmd //c start /wait "" "<setup>" /S`; the Tauri NSIS template ignores
+`/D` anyway and installs to `%LOCALAPPDATA%\<productName>`), copy
+`target/debug/examples/document_probe.exe` into the install dir, and run
+it against `tests/fixtures/text-2page.pdf` — success proves the bundled
+layout binds. `msiexec /a` admin-extract is unreliable under MSYS
+(`start /wait` reports the stub's exit, not the install's) — the NSIS
+check is the authoritative one.
