@@ -40,15 +40,12 @@ jobs:
   validate:
     needs: check-secret
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: addons/claude-gateway-plugin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Validate plugin manifest and catalog
-        run: node bin/validate-claude-plugin.mjs . --strict
+        run: node bin/validate-claude-plugin.mjs addons/claude-gateway-plugin --strict
 
   sync:
     needs: [check-secret, validate]
