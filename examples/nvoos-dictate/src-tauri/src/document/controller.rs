@@ -212,11 +212,20 @@ fn run_pdf_pages(
         let chars = crate::document::pdf::extract_chars(&page)?;
         let class = hybrid::classify_with(&chars, settings.document.text_page_min_chars.max(1));
 
-        let (text, provenance) = match class {
+        let (text, lines, provenance) = match class {
             PageClass::Text => {
                 emit_progress(app, index, page_count, "extract", 1.0);
                 controller.stats.text_pages.fetch_add(1, Ordering::Relaxed);
-                (hybrid::chars_to_text(&chars, page_w), PageProvenance::Text)
+                let lines = hybrid::chars_to_lines(&chars, page_w, settings.document.dpi as f32);
+                let text = lines
+                    .iter()
+                    .map(|l| l.text.as_str())
+                    .collect::<Vec<_>>()
+                    .join(
+                        "
+",
+                    );
+                (text, lines, PageProvenance::Text)
             }
             PageClass::Ocr => {
                 emit_progress(app, index, page_count, "ocr", 0.3);
@@ -231,7 +240,12 @@ fn run_pdf_pages(
                     crate::document::ocr::recognize_rgb(settings, models_dir, &proc, pw, ph)?;
                 let cleaned = crate::cleanup::run_ocr_deterministic(&snippet.text);
                 controller.stats.ocr_pages.fetch_add(1, Ordering::Relaxed);
-                match crate::document::polish::maybe_polish(
+                let raw_words = crate::document::words::from_snippet(
+                    &snippet.words,
+                    raw.width() as f32 / pw as f32,
+                    raw.height() as f32 / ph as f32,
+                );
+                let (text, provenance) = match crate::document::polish::maybe_polish(
                     app,
                     &polisher,
                     index,
@@ -243,12 +257,21 @@ fn run_pdf_pages(
                 ) {
                     Some(polished) => (polished, PageProvenance::Polished),
                     None => (cleaned, PageProvenance::Ocr),
-                }
+                };
+                let lines = crate::document::words::align(&text, &raw_words).unwrap_or_else(|| {
+                    crate::document::words::fallback_lines(
+                        &text,
+                        raw.width() as f32,
+                        raw.height() as f32,
+                    )
+                });
+                (text, lines, provenance)
             }
         };
         out.push(DocumentPage {
             index,
             text,
+            lines,
             provenance,
         });
     }
@@ -283,6 +306,11 @@ fn run_raster_pages(
         let snippet = crate::document::ocr::recognize_rgb(settings, models_dir, &proc, pw, ph)?;
         let cleaned = crate::cleanup::run_ocr_deterministic(&snippet.text);
         controller.stats.ocr_pages.fetch_add(1, Ordering::Relaxed);
+        let raw_words = crate::document::words::from_snippet(
+            &snippet.words,
+            frame.width() as f32 / pw as f32,
+            frame.height() as f32 / ph as f32,
+        );
         let (text, provenance) = match crate::document::polish::maybe_polish(
             app,
             &polisher,
@@ -296,9 +324,17 @@ fn run_raster_pages(
             Some(polished) => (polished, PageProvenance::Polished),
             None => (cleaned, PageProvenance::Ocr),
         };
+        let lines = crate::document::words::align(&text, &raw_words).unwrap_or_else(|| {
+            crate::document::words::fallback_lines(
+                &text,
+                frame.width() as f32,
+                frame.height() as f32,
+            )
+        });
         out.push(DocumentPage {
             index,
             text,
+            lines,
             provenance,
         });
     }

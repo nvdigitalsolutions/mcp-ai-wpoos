@@ -34,6 +34,8 @@ pub mod polish;
 pub mod preprocess;
 #[cfg(feature = "document")]
 pub mod tiff;
+#[cfg(feature = "document")]
+pub mod words;
 
 use serde::{Deserialize, Serialize};
 
@@ -60,6 +62,31 @@ impl PageProvenance {
     }
 }
 
+/// One word with its bounding box (top-left origin, y grows down) in the
+/// page's canonical raster space: PDF pages in 300-DPI render pixels,
+/// TIFF/image pages in source-image pixels.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentWord {
+    pub text: String,
+    pub x: f32,
+    pub y: f32,
+    pub w: f32,
+    pub h: f32,
+}
+
+/// One reconstructed line: joined text, per-word boxes, and the line's own
+/// extent (derived from its words). `words` is empty when the page has no
+/// usable word geometry (e.g. a polished page whose text no longer aligns).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DocumentLine {
+    pub text: String,
+    pub words: Vec<DocumentWord>,
+    pub x: f32,
+    pub y: f32,
+    pub w: f32,
+    pub h: f32,
+}
+
 /// One page of a recognized document.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentPage {
@@ -67,6 +94,12 @@ pub struct DocumentPage {
     pub index: usize,
     /// Final text (post-layout, post-cleanup, post-polish).
     pub text: String,
+    /// Reconstructed lines with word-level boxes where the pipeline could
+    /// retain geometry (empty otherwise — Proposal 109 follow-up 2). Boxes
+    /// always describe the pre-cleanup recognition; the finalized `text`
+    /// may differ (stripped fillers, VLM polish).
+    #[serde(default)]
+    pub lines: Vec<DocumentLine>,
     pub provenance: PageProvenance,
 }
 
@@ -150,11 +183,13 @@ mod tests {
                 DocumentPage {
                     index: 0,
                     text: "one".into(),
+                    lines: vec![],
                     provenance: PageProvenance::Text,
                 },
                 DocumentPage {
                     index: 1,
                     text: "two".into(),
+                    lines: vec![],
                     provenance: PageProvenance::Ocr,
                 },
             ],

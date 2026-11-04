@@ -741,8 +741,11 @@ handler, user pw `test`). ADR `docs/decisions/0005-document-engine.md`;
   Runtime binding via `Pdfium::default()` / `bind_to_library` (dll beside
   the exe). **Bundle-time provisioning shipped (2026-11-04):**
   `scripts/fetch-pdfium.ps1` (pinned sha256, extracts `bin/pdfium.dll`),
-  `tauri.windows.conf.json` ships it as a Windows-only bundle resource
-  (macOS bundle config untouched — macOS dylib provisioning is a separate
+  `tauri.windows.conf.json` ships the whole `resources` DIRECTORY (not the
+  dll path — `tauri_build` validates bundle resources on EVERY cargo
+  invocation, so a file-level resource breaks clean Windows CI checkouts;
+  the directory always exists because its README is committed). macOS
+  bundle config untouched — macOS dylib provisioning is a separate
   follow-up), `build.rs` stages it beside dev/test binaries when
   `document` is on, and the publish workflow fetches before bundling.
   `bundle.resources` lands the dll under `resources/` beside the installed
@@ -1181,9 +1184,16 @@ New this session (2026-11-03, later): **Proposal 109 M1–M4 implemented**
   fmt, clippy `-D warnings` (default + document + snippet-pdf + full
   union), 144 lib + 17 golden + 6 history + 5 validation + 5 document
   integration tests, `npm run build`. Known gaps: encrypted-fixture
-  stream-decryption round-trip unverified; hOCR/ALTO are line-granularity
-  v1; searchable-PDF v1 re-rasterizes (vector-preserving relayer
-  deferred); polish needs a live local VLM to exercise end-to-end.
+  stream-decryption round-trip unverified; searchable-PDF v1 re-rasterizes
+  (vector-preserving relayer + word-positioned text layer deferred); polish
+  needs a live local VLM to exercise end-to-end. **hOCR/ALTO are now v2**
+  (word boxes — follow-up 2): `DocumentPage.lines: Vec<DocumentLine>` with
+  `DocumentWord` boxes in the page's canonical raster space (PDF pages =
+  300-DPI render pixels, TIFF/image = source pixels; engine boxes scaled
+  back from the scan-profile 2x space). Polished pages carry pre-polish
+  boxes when the finalized text aligns perfectly (`words::align`), else
+  synthetic line-level boxes (`fallback_lines`); model tiers output no
+  coordinates by design (Proposal 111).
 
 ## Related skills
 
@@ -1249,3 +1259,19 @@ it against `tests/fixtures/text-2page.pdf` — success proves the bundled
 layout binds. `msiexec /a` admin-extract is unreliable under MSYS
 (`start /wait` reports the stub's exit, not the install's) — the NSIS
 check is the authoritative one.
+
+New this session (2026-11-04, word boxes + model tier): **hOCR/ALTO v2
+  word-level bounding boxes** (follow-up 2) and **Proposal 111
+  (DeepSeek-OCR provider tier, design-only)**. Word boxes: additive serde
+  (`DocumentPage.lines`, `#[serde(default)]`; TS `lines?`), canonical
+  raster space per page (PDF = 300-DPI render pixels, TIFF/image = source
+  pixels; engine boxes scaled back from the 2x scan-profile space),
+  `words.rs` (from_snippet / scale_words / linear vs column-aware line
+  grouping / perfect-token align / fallback_lines), `layout.rs` gained
+  `line_groups` (shared with cluster_lines - behavior byte-identical),
+  hOCR `ocrx_word` + ALTO per-word `<String>` emitters with a v1 fallback
+  when `lines` is empty. Polished pages: boxes are pre-polish by contract.
+  DeepSeek-OCR (MIT, 3B MoE, 6.7GB via Ollama/LM Studio/llama.cpp
+  PR #17400): proposal 111 decides **model tier via the local-server
+  transport, never embedded** - see the proposal for P0/P1/P2 and the
+  probe-first verification plan.
