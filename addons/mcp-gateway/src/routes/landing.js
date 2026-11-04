@@ -3,7 +3,9 @@
  *
  * Human-readable entry point for directory reviewers and prospective users:
  * what the endpoint is, how auth works, copy-paste client configs. No
- * secrets, ever.
+ * secrets, ever — with one deliberate exception: the operator-published
+ * demo key (`PUBLIC_DEMO_KEY`), a public-by-design, site-scoped credential.
+ * When unset, the page falls back to `YOUR_KEY` placeholders.
  */
 
 import express from 'express';
@@ -40,6 +42,7 @@ const PAGE = `<!doctype html>
 	<h2>Endpoint</h2>
 	<pre>POST /mcp   (JSON-RPC 2.0 · streamable HTTP · MCP 2026-07-28)
 GET  /mcp   (server discovery JSON)</pre>
+	__DEMO_SECTION__
 	<h2>Authentication</h2>
 	<p>
 		Every request requires a public API key:
@@ -77,15 +80,52 @@ GET  /mcp   (server discovery JSON)</pre>
 </html>
 `;
 
+const DEMO_SECTION = `<h2>Try it now — public demo key</h2>
+	<p>
+		No account needed. This read-only demo key is bound to the public
+		<code>demo</code> site (<a href="https://nvoos.pro">nvoos.pro</a>) and
+		exposes exactly two namespaced tools:
+		<code>demo_get_environment_status</code> (live WordPress/PHP/plugin
+		report) and <code>demo_deep_research</code> (multi-step web research
+		with citations).
+	</p>
+	<pre>Authorization: Bearer __DEMO_KEY__</pre>
+`;
+
 /**
- * Build the landing router.
+ * Escape a value for HTML text context. Gateway keys are base64url, but
+ * the env value is operator-controlled — escape defensively.
+ *
+ * @param {string} value Raw value.
+ * @return {string} Escaped value.
+ */
+function escapeHtml( value ) {
+	return String( value )
+		.replace( /&/g, '&amp;' )
+		.replace( /</g, '&lt;' )
+		.replace( />/g, '&gt;' )
+		.replace( /"/g, '&quot;' )
+		.replace( /'/g, '&#39;' );
+}
+
+/**
+ * Build the landing router. When the config carries `demoKey`
+ * (`PUBLIC_DEMO_KEY`), the page advertises it and substitutes it into the
+ * copy-paste configs; otherwise the page keeps `YOUR_KEY` placeholders.
  *
  * @return {import('express').Router} Router.
  */
 export function landingRouter() {
 	const router = express.Router();
-	router.get( '/', ( _req, res ) => {
-		res.type( 'html' ).send( PAGE );
+	router.get( '/', ( req, res ) => {
+		const demoKey = req.app.get( 'gatewayConfig' ).demoKey || '';
+		const page = demoKey
+			? PAGE.replace( '__DEMO_SECTION__', DEMO_SECTION.replace( '__DEMO_KEY__', escapeHtml( demoKey ) ) ).replaceAll(
+					'YOUR_KEY',
+					escapeHtml( demoKey )
+			  )
+			: PAGE.replace( '__DEMO_SECTION__', '' );
+		res.type( 'html' ).send( page );
 	} );
 	return router;
 }

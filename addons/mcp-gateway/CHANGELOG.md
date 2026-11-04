@@ -1,5 +1,15 @@
 # Changelog — NV oOS MCP Gateway
 
+## [0.3.2] — 2026-11-04
+
+- Publish the demo key on the public landing page (`GET /`): a new
+  optional `PUBLIC_DEMO_KEY` env var renders the operator-published demo
+  credential in a "Try it now" section and substitutes it into the
+  copy-paste client configs (HTML-escaped). Unset, the page behaves
+  exactly as before (`YOUR_KEY` placeholders, no key material). The key is
+  a public-by-design, site-scoped credential — the variable exists so its
+  value never has to live in the repo.
+
 ## [0.3.1] — 2026-11-03
 
 - Normalize every advertised tool's annotations to the three explicit

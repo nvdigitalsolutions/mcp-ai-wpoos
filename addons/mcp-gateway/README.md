@@ -48,6 +48,7 @@ Deployment target: **Cloudways Velocity** (managed Node hosting) at
 | `GATEWAY_PUBLIC_KEYS` | **yes** | Public keys → site slugs: `key=slug-a,slug-b;key2=slug-c` (or JSON object) |
 | `GATEWAY_PUBLIC_KEYS_PREVIOUS` | no | Rotation overlap — previous key map (warns once on use) |
 | `PUBLIC_SITE_SLUGS` | no | Privacy filter for the public `/health` endpoint: comma-separated slugs visible without auth (`*` or unset = all configured sites). `/health/full` always reports every site. |
+| `PUBLIC_DEMO_KEY` | no | Operator-published demo key rendered on the `GET /` landing page (substituted into the copy-paste configs). A public, site-scoped credential — never a secret. Unset = the page keeps `YOUR_KEY` placeholders. |
 | `NVOOS_SITE_<SLUG>_URL` | per site | Upstream MCP endpoint, full URL incl. `/wp-json/mcp-ai/v1/mcp` |
 | `NVOOS_SITE_<SLUG>_TOKEN` | per site | Fleet Operator token (`op_xxxx.SECRET`); never logged or returned |
 | `AUTH_MODE` | no | `strict` (default) fails closed at boot when no keys are set |
