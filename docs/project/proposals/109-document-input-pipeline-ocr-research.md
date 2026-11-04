@@ -20,9 +20,9 @@ UX. They share only the optional LLM polish/summarize stage.
 - **PDF / multi-page TIFF** — handled by the separate Home "Document OCR"
   panel (Proposal 109): text-layer extraction where present, on-device
   300 DPI OCR where not.
-- **Single raster images (PNG/JPEG/WebP)** — not yet wired into the
-  document pipeline; recommended follow-up in §6 (decode via the existing
-  `image` crate, then the same scan-profile + OCR path).
+- **Single raster images (PNG/JPEG/WebP)** — implemented in the follow-up
+  PR: decoded via the existing `image` crate into the shared RGB8 frame,
+  then the same scan-profile + OCR path as a TIFF page.
 
 ## 2. Industry standards and best practices
 
@@ -175,8 +175,10 @@ Cloud VLM OCR is deliberately not required.
 
 ## 6. Recommended follow-ups
 
-1. Raster-image input (PNG/JPEG/WebP) through the same OCR path — closes
-   the "images" gap next to PDF/TIFF.
+1. ~~Raster-image input (PNG/JPEG/WebP) through the same OCR path~~ —
+   **done** (follow-up PR: `document/images.rs`, Images dialog filter,
+   PNG/JPEG fixtures). An image result still labels itself `document-ocr`
+   in history, same as a scanned page — cosmetic, not a gap.
 2. Word-level bounding boxes through the pipeline → hOCR/ALTO v2 with
    `bbox` attributes.
 3. pdfium.dll installer provisioning (Tauri bundle resources or a

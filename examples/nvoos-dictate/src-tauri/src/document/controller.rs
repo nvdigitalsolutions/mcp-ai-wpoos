@@ -157,8 +157,11 @@ pub fn run_pipeline(
     let pages = match ext.as_str() {
         "pdf" => run_pdf_pages(app, controller, settings, models_dir, secrets, path),
         "tif" | "tiff" => run_tiff_pages(app, controller, settings, models_dir, secrets, path),
+        "png" | "jpg" | "jpeg" | "webp" => {
+            run_image_pages(app, controller, settings, models_dir, secrets, path)
+        }
         other => Err(AppError::Document(format!(
-            "unsupported document format '{other}' — use PDF or TIFF"
+            "unsupported document format '{other}' — use PDF, TIFF, PNG, JPEG, or WebP"
         ))),
     }?;
 
@@ -252,17 +255,17 @@ fn run_pdf_pages(
     Ok(out)
 }
 
-/// TIFF flow: every page is an image — scan profile → OCR → optional polish.
+/// Shared raster flow (TIFF pages and single images): every frame is an
+/// image — scan profile → OCR → optional polish.
 #[cfg(feature = "document")]
-fn run_tiff_pages(
+fn run_raster_pages(
     app: &AppHandle,
     controller: &DocumentController,
     settings: &Settings,
     models_dir: &Path,
     secrets: &dyn SecretStore,
-    path: &Path,
+    frames: Vec<image::RgbImage>,
 ) -> AppResult<Vec<DocumentPage>> {
-    let frames = crate::document::tiff::pages(path, settings.document.max_pages.max(1))?;
     let page_count = frames.len();
     let polisher = build_polisher(settings, secrets);
 
@@ -300,6 +303,34 @@ fn run_tiff_pages(
         });
     }
     Ok(out)
+}
+
+/// TIFF flow: decode the pages, then the shared raster path.
+#[cfg(feature = "document")]
+fn run_tiff_pages(
+    app: &AppHandle,
+    controller: &DocumentController,
+    settings: &Settings,
+    models_dir: &Path,
+    secrets: &dyn SecretStore,
+    path: &Path,
+) -> AppResult<Vec<DocumentPage>> {
+    let frames = crate::document::tiff::pages(path, settings.document.max_pages.max(1))?;
+    run_raster_pages(app, controller, settings, models_dir, secrets, frames)
+}
+
+/// Single-image flow: decode the one frame, then the shared raster path.
+#[cfg(feature = "document")]
+fn run_image_pages(
+    app: &AppHandle,
+    controller: &DocumentController,
+    settings: &Settings,
+    models_dir: &Path,
+    secrets: &dyn SecretStore,
+    path: &Path,
+) -> AppResult<Vec<DocumentPage>> {
+    let frame = crate::document::images::page(path)?;
+    run_raster_pages(app, controller, settings, models_dir, secrets, vec![frame])
 }
 
 /// Build the polish worker when enabled (settings + a local provider).
@@ -344,6 +375,21 @@ fn run_pdf_pages(
 #[cfg(not(feature = "document"))]
 #[allow(clippy::too_many_arguments)]
 fn run_tiff_pages(
+    _app: &AppHandle,
+    _controller: &DocumentController,
+    _settings: &Settings,
+    _models_dir: &Path,
+    _secrets: &dyn SecretStore,
+    _path: &Path,
+) -> AppResult<Vec<DocumentPage>> {
+    Err(AppError::NotConfigured(
+        "document pipeline not compiled into this build".into(),
+    ))
+}
+
+#[cfg(not(feature = "document"))]
+#[allow(clippy::too_many_arguments)]
+fn run_image_pages(
     _app: &AppHandle,
     _controller: &DocumentController,
     _settings: &Settings,
