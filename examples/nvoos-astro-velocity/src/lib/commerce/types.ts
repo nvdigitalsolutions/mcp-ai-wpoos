@@ -161,7 +161,7 @@ export interface PaymentMethod {
 	title: string;
 }
 
-/** Shop globals document (106 §1.3 — globals/shop, extended by 108). */
+/** Shop globals document (106 §1.3 — globals/shop, extended by 108/110). */
 export interface ShopDoc {
 	checkoutUrl: string;
 	cartUrl: string;
@@ -177,6 +177,92 @@ export interface ShopDoc {
 	productsSource?: 'native' | 'woo' | 'both';
 	/** Enabled gateway hints (108 Phase 3) — display only, never payment UI. */
 	paymentMethods?: PaymentMethod[];
+	/** The Stripe PUBLISHABLE key (110) — empty when Stripe is not the
+	 *  active gateway. Public by design; the card collection happens inside
+	 *  Stripe's hosted Payment Element, never in app-rendered inputs. */
+	stripePublishableKey?: string;
+	/** Woo's guest-checkout switch (110) — hides the account-creation
+	 *  option when guests cannot check out. */
+	guestCheckout?: boolean;
+}
+
+/** One address on the checkout (app-facing camelCase shape — the bridge
+ *  maps to/from the Store API snake_case fields). */
+export interface CheckoutAddress {
+	firstName: string;
+	lastName: string;
+	company: string;
+	address1: string;
+	address2: string;
+	city: string;
+	state: string;
+	postcode: string;
+	country: string;
+	phone: string;
+	/** Billing carries the contact email (guest order notification). */
+	email: string;
+}
+
+/** A checkout line item (mirrors the cart-sync item shape, 108 §2). */
+export interface CheckoutItem {
+	key: string;
+	productId: number;
+	name: string;
+	qty: number;
+	price: number;
+}
+
+/** Checkout totals — totalPrice is Woo's minor-unit string. */
+export interface CheckoutTotals {
+	totalItems: number;
+	totalPrice: string;
+	shippingTotal?: string;
+	taxTotal?: string;
+}
+
+/** One shipping rate within a package. */
+export interface ShippingRate {
+	rateId: string;
+	name: string;
+	description: string;
+	price: string;
+	selected: boolean;
+}
+
+/** A shipping package with its rates (usually exactly one package). */
+export interface ShippingPackage {
+	packageId: string;
+	name: string;
+	rates: ShippingRate[];
+}
+
+/** The merged checkout doc (GET /checkout — 110 Phase A). */
+export interface CheckoutDoc {
+	session: string;
+	orderId: number;
+	orderStatus: string;
+	items: CheckoutItem[];
+	totals: CheckoutTotals;
+	billingAddress: CheckoutAddress | null;
+	shippingAddress: CheckoutAddress | null;
+	paymentMethod: string;
+	shippingRates: ShippingPackage[];
+	needsShipping: boolean;
+	coupons: Array<{ code: string; discount: string }>;
+	notices: Array<{ type: string; text: string }>;
+}
+
+/** The place-order result (POST /checkout — 110 Phase A). */
+export interface CheckoutResult {
+	orderId: number;
+	orderKey: string;
+	status: string;
+	paymentResult: {
+		paymentStatus: string;
+		redirectUrl: string;
+		paymentDetails: unknown[];
+	};
+	notices: Array<{ type: string; text: string }>;
 }
 
 /** Auth payloads (bridge B4 — owner decision Q5: accounts in v1). */

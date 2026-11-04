@@ -1,0 +1,38 @@
+---
+// Checkout page — server shell + client-hydrated CheckoutView island
+// (Proposal 110 Phase B: the embedded checkout).
+//
+// The page itself is static: every piece of checkout state (cart session,
+// addresses, rates, payment) is per-shopper and fetched client-side through
+// the /api checkout proxy. Server-side it contributes exactly two things:
+// the shop globals (gateways, Stripe key, guest switch) and the payment CSP
+// scope — the ONLY page where the gateway's hosted fields may load.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CheckoutView from '../../islands/CheckoutView';
+import { getShop } from '../../lib/commerce/client';
+import { pageTitle } from '../../lib/seo/meta';
+import '../../styles/checkout.css';
+
+const shop = await getShop(Astro.url);
+
+// A payment surface is never cached, and the x-nvoos-csp-payment marker is
+// consumed by the BFF security-header wrapper to scope the Stripe.js
+// directives to this document (scripts/lib/security-headers.mjs) — it is
+// stripped before the response ships.
+Astro.response.headers.set('Cache-Control', 'no-store');
+Astro.response.headers.set('x-nvoos-csp-payment', '1');
+---
+
+<BaseLayout title={pageTitle('Checkout')}>
+	<h1>Checkout</h1>
+	<noscript>
+		<p>
+			Checkout requires JavaScript. Open the{' '}
+			<a href={shop.checkoutUrl || '/cart/'} rel="noopener noreferrer">
+				hosted checkout
+			</a>{' '}
+			instead.
+		</p>
+	</noscript>
+	<CheckoutView client:load shop={shop} />
+</BaseLayout>

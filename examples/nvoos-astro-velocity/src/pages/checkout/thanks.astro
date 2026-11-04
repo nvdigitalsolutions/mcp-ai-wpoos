@@ -1,34 +1,40 @@
 ---
 // ---------------------------------------------------------------------------
-// /checkout/thanks — the post-payment return route (Proposal 108 Phase 3).
+// /checkout/thanks — the post-payment return route (Proposal 108 Phase 3,
+// reused by the embedded checkout in Proposal 110 — both the hosted
+// checkout's return filter and the app's post-payment destination land
+// here).
 //
-// The bridge repoints Woo's order-received return at this route with the
-// order reference in the query. NO sensitive data is read or displayed —
-// just a confirmation and links back to the storefront; order details stay
-// on the WordPress/account side. Renders server-side, never cached.
+// Renders ONLY the validated order id/key from the query string — nothing
+// user-supplied is echoed unvalidated. NO sensitive data is read or
+// displayed; order details stay on the WordPress/account side. Renders
+// server-side, never cached.
 // ---------------------------------------------------------------------------
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { pageTitle } from '../../lib/seo/meta';
+import { parseThanksParams } from '../../lib/commerce/checkout-api';
 
-const orderId = Astro.url.searchParams.get('order_id') ?? '';
-const orderKey = Astro.url.searchParams.get('order_key') ?? '';
+const { orderId, orderKey } = parseThanksParams(Astro.url.searchParams);
 
-const title = 'Thank you for your order';
+// A post-payment page is never cached (it can carry order references).
+Astro.response.headers.set('Cache-Control', 'no-store');
+
 const description = 'Your order is confirmed — keep shopping on the NV Store.';
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout title={pageTitle('Order received')} description={description}>
 	<article class="thanks">
-		<h1>Thank you for your order</h1>
-		<p class="lede">
+		<h1 data-thanks-heading>Thank you for your order</h1>
+		<p class="lede" data-thanks-order>
 			Your order is confirmed. A confirmation email is on its way from the
 			store.
 		</p>
 		{
-			orderId !== '' && (
+			orderId !== null && (
 				<p class="ref">
-					Order reference: <strong>{orderId}</strong>
-					{orderKey !== '' && <span class="ref__key"> · {orderKey.slice(0, 8)}…</span>}
+					Order reference: <strong>#{orderId}</strong>
+					{orderKey !== null && <span class="ref__key"> · {orderKey.slice(0, 8)}…</span>}
 				</p>
 			)
 		}

@@ -33,6 +33,7 @@ every other surface; manager sign-in is the contract's own REST auth flow.
 | PLP (`/categories|brands|colors/{id}/{slug}/` + filters) | On-demand SSR, `s-maxage=300` (prerendered page-1s were dropped — a static page would ignore filter query strings) |
 | Home / promotions / promocodes / search | SSR, cached |
 | Cart badge, gallery, promo-code field, add-to-cart, account | React islands (`client:idle` / `client:visible` / `client:load` on account) |
+| Cart (`/cart/`) + embedded checkout (`/checkout/`, `/checkout/thanks/`) | SSR shells (`no-store` — a payment surface is never cached) + `CartView`/`CheckoutView` islands (Proposal 110) |
 | `/manage` (Astro CMS) | SSR shell + `ManageGate` island (sign-in gate → injected CMS bundle); `noindex` |
 | About / terms | Static markdown |
 | Sitemap / robots | SSR endpoints (the sitemap integration cannot list SSR'd PLP bases, so a custom endpoint generates the full map; drafts are filtered by the 104 publication predicate) |
@@ -130,6 +131,18 @@ and gate the registry without scraping descriptions:
   doc (checkout/cart/return URLs, display currency, payment-method hints).
   Writes are manager-gated and the backend enforces same-site/allowlisted
   URLs on the editable fields.
+
+## Embedded checkout (Proposal 110)
+
+The cart hands off to the EMBEDDED checkout (`/checkout/`) in woo/both product
+modes — the WooCommerce session cart rides the bridge `/checkout` proxy
+(Store API, bridge-minted nonce), so addresses, shipping rates, coupons and
+payment all process Woo-side through the configured gateway. Card collection
+happens inside Stripe's hosted Payment Element (INV-1: the app never renders
+raw card fields; card data never touches the app/BFF/bridge). The hosted
+`checkoutUrl` stays the fail-open fallback, and Apple/Google Pay is a
+live-verified follow-up (Stripe.js v10 removed the token-yielding Payment
+Request Button).
 
 Auth is fail-closed: reads are public; design writes accept an
 `Authorization: Bearer <NVOOS_MCP_TOKEN>` **or** a manager session cookie;

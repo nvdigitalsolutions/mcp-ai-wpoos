@@ -1,13 +1,22 @@
-// checkout-woo.spec.ts — Proposal 108 Phase 2 e2e gates: the server-cart
-// path. Runs serial on its OWN fixture + BFF pair (8126/4324 — see
-// playwright.config.ts) where the fixture serves woo product mode.
+// checkout-woo.spec.ts — Proposal 108 Phase 2 + 110 e2e gates: the
+// server-cart path. Runs serial on its OWN fixture + BFF pair (8126/4324 —
+// see playwright.config.ts) where the fixture serves woo product mode.
 //
-// The sync request is captured through Playwright's route API; the
-// outbound checkout navigation is route-aborted so the test stays hermetic.
+// 110: a successful sync now continues to the EMBEDDED checkout (`/checkout/`)
+// instead of the hosted URL — the handoff event mode is `embedded`. The
+// hosted URL form stays the fail-open fallback when the sync errors.
 import { expect, test } from '@playwright/test';
 
+// One-shot localStorage seed — addInitScript re-runs on EVERY navigation
+// (the cart click navigates to /checkout), so a bare seed would resurrect
+// the cleared cart on the next document. The sessionStorage flag scopes the
+// seed to the first load of the tab.
 const seedCart = async (page: import('@playwright/test').Page, lines: Record<string, unknown>) => {
 	await page.addInitScript((cartJson) => {
+		if (sessionStorage.getItem('__seeded-cart')) {
+			return;
+		}
+		sessionStorage.setItem('__seeded-cart', '1');
 		localStorage.setItem('nvoos-cart-v1', cartJson);
 	}, JSON.stringify(lines));
 };
@@ -16,22 +25,36 @@ const waitForCart = async (page: import('@playwright/test').Page) => {
 	await expect(page.locator('[data-cart-root]')).toHaveAttribute('data-hydrated', 'true');
 };
 
-test('woo mode syncs the cart server-side (variants included) and hands off clean', async ({
+test('woo mode syncs the cart server-side (variants included) and continues to the embedded checkout', async ({
 	page,
 }) => {
 	// Capture the handoff event (108 §2 analytics seam) before anything runs.
+	// The click NAVIGATES to /checkout/ (same-origin), so the capture must
+	// survive the reload — it rides sessionStorage and re-hydrates on the
+	// new document (addInitScript alone would be wiped by the navigation).
 	await page.addInitScript(() => {
+		const key = '__nvoosCheckoutHandoff';
 		(
 			window as unknown as {
 				__nvoosCheckoutHandoff?: { mode: string; lines: number; variants: number } | null;
 			}
-		).__nvoosCheckoutHandoff = null;
+		).__nvoosCheckoutHandoff = JSON.parse(sessionStorage.getItem(key) ?? 'null') as {
+			mode: string;
+			lines: number;
+			variants: number;
+		} | null;
 		window.addEventListener('nvoos:checkout-handoff', (event) => {
+			const detail = (event as CustomEvent).detail as {
+				mode: string;
+				lines: number;
+				variants: number;
+			};
+			sessionStorage.setItem(key, JSON.stringify(detail));
 			(
 				window as unknown as {
 					__nvoosCheckoutHandoff: { mode: string; lines: number; variants: number } | null;
 				}
-			).__nvoosCheckoutHandoff = (event as CustomEvent).detail;
+			).__nvoosCheckoutHandoff = detail;
 		});
 	});
 
@@ -54,48 +77,35 @@ test('woo mode syncs the cart server-side (variants included) and hands off clea
 		},
 	});
 
-	// Capture the sync POST body; fulfil the outbound checkout navigation
-	// with a 204 so the page never leaves the hermetic origin.
+	// Capture the sync POST without intercepting it — the fixture seeds its
+	// per-session cart state from this call, and the checkout page reads it.
 	let syncBody: Record<string, unknown> | null = null;
-	await page.route('**/api/cart/sync', async (route) => {
-		syncBody = JSON.parse(route.request().postData() ?? '{}') as Record<string, unknown>;
-		await route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({
-				session: 'fixture-session',
-				items: [],
-				totals: { totalItems: 3, totalPrice: '0' },
-				notices: [],
-			}),
-		});
+	page.on('request', (request) => {
+		if (request.url().includes('/api/cart/sync')) {
+			syncBody = request.postDataJSON() as Record<string, unknown> | null;
+		}
 	});
-	await page.route('https://nvoos.pro/**', (route) =>
-		route.fulfill({ status: 204, body: '' })
-	);
 
 	await page.goto('/cart/');
 	await waitForCart(page);
 
-	// The checkout link points at the CLEAN checkout URL (no add-to-cart).
-	await expect(page.locator('a[data-cart-checkout]')).toHaveAttribute(
-		'href',
-		'https://nvoos.pro/checkout/'
-	);
+	// The checkout link points at the EMBEDDED checkout (110).
+	await expect(page.locator('a[data-cart-checkout]')).toHaveAttribute('href', '/checkout/');
 
 	// Dispatch the DOM click directly: the React handler runs synchronously
-	// (sync → clear) while the 204 navigation resolves in the background.
+	// (sync → clear) while the navigation resolves.
 	await page.locator('a[data-cart-checkout]').evaluate((el) =>
 		(el as HTMLAnchorElement).click()
 	);
 
+	// Lands on the embedded checkout page.
+	await expect(page).toHaveURL(/\/checkout\/$/);
+	await expect(page.locator('[data-checkout-root]')).toHaveAttribute('data-hydrated', 'true');
+
+	// Both lines synced — the variant line carries its attributes.
 	await expect(async () => {
 		expect(syncBody).not.toBeNull();
 	}).toPass();
-
-	// Both lines synced — the variant line carries its attributes.
-	// (TS narrows the closure-written variable to null, so read it through
-	// explicit casts.)
 	const body = syncBody as unknown as Record<string, unknown>;
 	const lines = body.lines as Array<Record<string, unknown>>;
 	expect(lines).toHaveLength(2);
@@ -104,7 +114,7 @@ test('woo mode syncs the cart server-side (variants included) and hands off clea
 	expect(variantLine?.qty).toBe(2);
 	expect(variantLine?.attributes).toEqual([{ name: 'Size', value: 'Large' }]);
 
-	// The handoff event fired with the server-cart mode + the variant count.
+	// The handoff event fired with the embedded mode + the variant count.
 	const handoff = await page.evaluate(
 		() =>
 			(
@@ -113,7 +123,7 @@ test('woo mode syncs the cart server-side (variants included) and hands off clea
 				}
 			).__nvoosCheckoutHandoff
 	);
-	expect(handoff).toEqual({ mode: 'server-cart', lines: 2, variants: 1 });
+	expect(handoff).toEqual({ mode: 'embedded', lines: 2, variants: 1 });
 
 	// The local cart cleared (one-shot handoff).
 	await expect(async () => {

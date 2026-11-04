@@ -27,7 +27,7 @@ export default defineConfig({
 		{
 			name: 'default',
 			fullyParallel: true,
-			testIgnore: /(design-import|rebrand-loop|theme-policy|content-write|checkout-woo)\.spec\.ts/,
+			testIgnore: /(design-import|rebrand-loop|theme-policy|content-write|checkout-woo|checkout-embedded)\.spec\.ts/,
 		},
 		{
 			name: 'stateful-mcp',
@@ -58,14 +58,16 @@ export default defineConfig({
 				trace: 'on-first-retry',
 			},
 		},
-		// The checkout-woo spec exercises the 108 server-cart path, which
-		// needs the fixture in woo product mode — an isolated pair with
-		// NVOOS_FIXTURE_PRODUCTS_SOURCE=woo, the theme-policy pattern.
+		// The checkout-woo project covers the 108 server-cart path AND the 110
+		// embedded checkout — both need the fixture in woo product mode (an
+		// isolated pair with NVOOS_FIXTURE_PRODUCTS_SOURCE=woo, the
+		// theme-policy pattern). Serial: the embedded spec places orders and
+		// mutates per-session fixture state.
 		{
 			name: 'checkout-woo',
 			fullyParallel: false,
 			workers: 1,
-			testMatch: /checkout-woo\.spec\.ts/,
+			testMatch: /(checkout-woo|checkout-embedded)\.spec\.ts/,
 			use: {
 				baseURL: 'http://localhost:4324',
 				trace: 'on-first-retry',

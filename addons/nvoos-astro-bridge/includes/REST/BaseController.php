@@ -102,10 +102,14 @@ abstract class BaseController extends WP_REST_Controller {
 		// session-tied CSRF token — caching it at the edge serves one
 		// visitor's nonce to everyone and breaks cookie auth (incident
 		// 2026-10-29: the cached anonymous nonce failed validation for every
-		// authenticated REST call).
+		// authenticated REST call). /checkout serves one visitor's draft
+		// order + addresses (Proposal 110) — the same rule applies, and the
+		// CheckoutController additionally pins private/no-store headers.
 		if (
 			0 === strpos( $route, '/' . \NvoosAstroBridge\Schema::REST_NAMESPACE . '/auth' )
 			|| 0 === strpos( $route, '/' . \NvoosAstroBridge\Schema::REST_NAMESPACE_NV . '/auth' )
+			|| 0 === strpos( $route, '/' . \NvoosAstroBridge\Schema::REST_NAMESPACE . '/checkout' )
+			|| 0 === strpos( $route, '/' . \NvoosAstroBridge\Schema::REST_NAMESPACE_NV . '/checkout' )
 		) {
 			return $response;
 		}

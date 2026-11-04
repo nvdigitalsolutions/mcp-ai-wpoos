@@ -577,11 +577,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   PDP `VariantSelector` island (radio semantics, sold-out disabled, price +
   JSON-LD `Offer[]` follow selection); cart lines carry `variantId` +
   `attributes`.
-- **Checkout handoff (106)**: `GET/PATCH /globals/shop` (`checkoutUrl` from
-  `home_url('/checkout/')`, display currency; `s-maxage=60`);
-  `buildCheckoutUrl()` (pure) → comma-form `?add-to-cart=1,2` for simple
-  lines, variant lines excluded with a note (T1 Laravel cart resource owns
-  variant checkout). No BFF change — absolute link to the WP frontend.
+- **Checkout handoff (106) → embedded checkout (110)**: `GET/PATCH
+  /globals/shop` (`checkoutUrl` from `home_url('/checkout/')`, display
+  currency; `s-maxage=60`); `buildCheckoutUrl()` (pure) → comma-form
+  `?add-to-cart=1,2` — the NATIVE-mode path and the fail-open fallback.
+  In woo/both modes the cart syncs and continues to the EMBEDDED checkout
+  (`/checkout/`) — see the "Embedded checkout (110)" section below.
 - **Policy e2e isolation**: theme-policy specs run on a second fixture/BFF
   pair (8124/4322, `NVOOS_THEME_POLICY_TTL=0`) so PATCH→render is
   deterministic without racing the shared fixture's theme assertions.
@@ -706,6 +707,59 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   - **Content e2e isolation:** the content-write spec runs serial on its OWN
     fixture/BFF pair (8125/4323) — publishing/deleting on the shared pair
     races the parallel listing-count specs.
+
+## Embedded checkout (Proposal 110, shipped 2026-11-04)
+
+- **The app no longer links out for the common path.** In woo/both modes the
+  cart syncs (108) and continues to `/checkout/` — the embedded checkout.
+  The bridge (`REST/CheckoutController.php`) proxies the Store API with a
+  bridge-minted `wc_store_api` nonce + the session Cart-Token:
+  `GET /checkout` (merged draft-order + cart doc), `POST /checkout/customer`
+  (Woo-side address validation + totals/rates), `POST /checkout/shipping-rate`,
+  `POST /checkout/coupon`, `POST /checkout` (place order — `expected_total`
+  passthrough, 409 drift preserves the refreshed cart, per-session AND per-IP
+  rate limits). All routes fail-closed (501/400 typed) and pin
+  `private, no-store`; the B1 public-cache filter EXCLUDES `/checkout`
+  (per-session draft orders must never be edge-cached).
+- **Payment boundary (INV-1 refined):** no RAW card inputs in the app;
+  gateway-hosted fields are sanctioned. Card collection = Stripe Payment
+  Element (`@stripe/*` v10, `src/islands/CheckoutView.tsx` → StripeSection),
+  token relayed via the Woo-documented `payment_data` keys
+  (`lib/commerce/checkout-api.ts` → `buildStripePaymentData()`). PCI: SAQ A
+  (redirect methods) / SAQ A-EP (embedded Elements). **Apple/Google Pay is
+  DEFERRED** — Stripe.js v10 removed the token-yielding legacy Payment
+  Request Button; ExpressCheckoutElement needs client-secret confirmPayment
+  and can't feed the Store API flow (live-verified follow-up + Apple Pay
+  domain registration).
+- **CSP:** the checkout page opts into the payment scope via the
+  `x-nvoos-csp-payment` response header (stripped before shipping) —
+  `scripts/lib/security-headers.mjs` adds Stripe script/frame/connect/img
+  directives for THAT document only.
+- **Shop globals additions:** read-only `stripePublishableKey` (empty when
+  Stripe inactive — the hermetic fixture ships NO key, so e2e never loads
+  Stripe.js) + `guestCheckout` (Woo switch; the submit button disables when
+  accounts are required).
+- **Thanks page:** `src/pages/checkout/thanks.astro` (the 108 route) reads
+  VALIDATED `order_id`/`order_key` params only (`parseThanksParams`).
+- **CartView:** woo/both success → `window.location.assign('/checkout/')`,
+  handoff event mode `embedded` (was `server-cart`); hosted URL = fail-open
+  fallback on sync error; native mode unchanged.
+- **Fixture:** stateful per-session checkout twin in `fixture-server.mjs`
+  (cart/sync seeds lines; checkout routes mutate; 409 drift simulation;
+  default flat_rate so totals include shipping).
+- **T1 (085/090):** the app binds ONLY the `nvoos-commerce/v1` checkout
+  envelope — Laravel re-implements the five routes and the app survives
+  unchanged.
+- **Tests:** bridge `tests/phpunit/REST/TestCheckoutController.php` (12
+  tests; the header filters are asserted via DIRECT invocation —
+  `rest_post_dispatch` does not run inside `rest_get_server()->dispatch()`,
+  the shop-globals test pattern). App: vitest
+  `tests/unit/checkout-api.test.ts`, e2e `checkout-embedded.spec.ts` +
+  reworked `checkout-woo.spec.ts` on the woo pair (one-shot seedCart via a
+  sessionStorage flag — `addInitScript` re-runs on every navigation and
+  would resurrect the cleared cart; `click()` not `check()` on CONTROLLED
+  radios — the selected state returns from the round-trip).
+- Full doc: `docs/project/proposals/110-embedded-checkout-store-api-proposal.md`.
 
 ## Component library (Q6, 2026-11-03)
 
