@@ -221,6 +221,38 @@ this is the directory discoverability layer). Plan doc:
   policy-deny it if the scan flags `_meta["openai/profile"]`); dedicated
   Auth0 reviewer test user (no MFA, no site account).
 
+## Claude Code plugin distribution (2026-11-04)
+
+Two marketplace-installable distributions, both pointing at the same gateway:
+
+- **Gateway addon plugin** — `addons/mcp-gateway/.claude-plugin/`
+  (`nvoos-mcp-gateway`; manifest `version` tracks the gateway release,
+  currently 0.3.1). Marketplace `nvoos-marketplace` ships in the same
+  folder, so the mirror installs by name:
+  `/plugin marketplace add nvdigitalsolutions/nvoos-mcp-gateway` →
+  `/plugin install nvoos-mcp-gateway@nvoos-marketplace`.
+- **Slim directory plugin** — `addons/claude-gateway-plugin/` (`nvoos-gateway`,
+  0.1.0; plugin-only files + icon + `docs/` privacy/terms Pages scaffold).
+  Marketplace `nvoos-claude-marketplace`; mirror
+  `nvdigitalsolutions/nvoos-claude-gateway-plugin` (sync via
+  `sync-claude-gateway-plugin.yml` — subtree split + force-push, secret
+  `CLAUDE_GATEWAY_PLUGIN_REPO_TOKEN`). This is the artifact for the
+  **Anthropic plugin directory** submission (needs a paid claude.ai plan +
+  the developer portal at claude.ai/directory/manage + GitHub Pages enabled
+  on the mirror for the privacy/terms URLs).
+
+Release discipline: bump `.claude-plugin/plugin.json` `version` with every
+release or installed plugins never see updates. No `claude` CLI on this
+machine — `node addons/claude-gateway-plugin/bin/validate-claude-plugin.mjs
+<dir> --strict` checks the manifest, marketplace catalog, component front
+matter, and README/LICENSE requirements; the sync workflow runs it in a
+`validate` job.
+
+OAuth alternative: the gateway's RFC 9728 metadata + Auth0 DCR are what
+Claude Code's `/mcp` OAuth flow discovers — documented in the slim
+plugin's `connect` command. Verified live for the ChatGPT connector, not
+yet recorded end-to-end from Claude Code.
+
 ## Registry publishing (mcp-publisher)
 
 - Binary: `C:/Users/rasta/.mcp-publisher/mcp-publisher.exe` (device-flow

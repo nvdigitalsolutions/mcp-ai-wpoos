@@ -166,16 +166,26 @@ recorded calls (argument keys only) and diffs it against the live policy.
 ## Claude Code plugin
 
 The addon ships a Claude Code plugin (`.claude-plugin/plugin.json`,
-`commands/connect.md`, `skills/gateway/`) that syncs to the mirror repo and
-doubles as the marketplace source:
+`commands/connect.md`, `skills/gateway/`) that syncs to the mirror repo.
+The mirror doubles as the plugin's marketplace (`.claude-plugin/marketplace.json`),
+so it installs by name:
 
 ```
 /plugin marketplace add nvdigitalsolutions/nvoos-mcp-gateway
+/plugin install nvoos-mcp-gateway@nvoos-marketplace
 ```
 
 Enabling the plugin prompts for the gateway API key (stored securely as a
 sensitive `userConfig` option) and substitutes it into the MCP server's
 `Authorization` header.
+
+Release discipline: `version` in `.claude-plugin/plugin.json` must be
+bumped with every gateway release or installed plugins never see updates.
+
+A slimmer, directory-ready distribution (`nvoos-gateway`, plugin-only files
+plus icon) ships in `addons/claude-gateway-plugin/` and syncs to
+`nvdigitalsolutions/nvoos-claude-gateway-plugin` — use that for the
+Anthropic directory submission.
 
 ## OAuth 2.1 resource server (opt-in per deployment; live on mcp.nvoos.pro)
 

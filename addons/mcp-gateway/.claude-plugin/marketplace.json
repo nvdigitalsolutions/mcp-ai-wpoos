@@ -1,0 +1,17 @@
+{
+	"name": "nvoos-marketplace",
+	"owner": {
+		"name": "NV Digital Solutions",
+		"url": "https://nvdigitalsolutions.com"
+	},
+	"description": "NV oOS plugins for Claude Code — ships the fleet gateway plugin (nvoos-mcp-gateway).",
+	"plugins": [
+		{
+			"name": "nvoos-mcp-gateway",
+			"source": "./",
+			"description": "Fleet-scoped MCP server for NV oOS WordPress sites — one API key, every bound site; tools appear namespaced as <site-slug>_<tool>.",
+			"category": "MCP servers",
+			"tags": [ "wordpress", "mcp", "gateway" ]
+		}
+	]
+}

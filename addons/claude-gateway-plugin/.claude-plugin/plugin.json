@@ -1,0 +1,37 @@
+{
+	"name": "nvoos-gateway",
+	"displayName": "NV oOS Gateway",
+	"version": "0.1.0",
+	"description": "Connects Claude Code to the NV oOS MCP Gateway — the public, fleet-scoped endpoint for NV oOS WordPress sites. Namespaced <site-slug>_<tool> tools (demo_* on the public demo site): environment status, deep research with citations, content workflows, and store tools over streamable HTTP, authenticated with a site-scoped gateway key or OAuth.",
+	"author": {
+		"name": "NV Digital Solutions",
+		"url": "https://nvdigitalsolutions.com"
+	},
+	"homepage": "https://mcp.nvoos.pro/",
+	"repository": "https://github.com/nvdigitalsolutions/nvoos-claude-gateway-plugin",
+	"license": "GPL-3.0-or-later",
+	"keywords": [ "wordpress", "mcp", "nvoos", "gateway", "woocommerce" ],
+	"icon": "./assets/icon.png",
+	"documentationUrl": "https://mcp.nvoos.pro/",
+	"supportUrl": "https://github.com/nvdigitalsolutions/nvoos-claude-gateway-plugin/issues",
+	"privacyPolicyUrl": "https://nvdigitalsolutions.github.io/nvoos-claude-gateway-plugin/privacy",
+	"termsOfServiceUrl": "https://nvdigitalsolutions.github.io/nvoos-claude-gateway-plugin/terms",
+	"mcpServers": {
+		"nvoos": {
+			"type": "http",
+			"url": "https://mcp.nvoos.pro/mcp",
+			"headers": {
+				"Authorization": "Bearer ${user_config.api_key}"
+			}
+		}
+	},
+	"userConfig": {
+		"api_key": {
+			"type": "string",
+			"title": "Gateway API key",
+			"description": "Public API key issued by the NV oOS gateway operator (keys are site-scoped with server-side tool allowlists).",
+			"required": true,
+			"sensitive": true
+		}
+	}
+}

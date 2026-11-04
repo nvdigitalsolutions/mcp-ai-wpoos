@@ -1,0 +1,17 @@
+{
+	"name": "nvoos-claude-marketplace",
+	"owner": {
+		"name": "NV Digital Solutions",
+		"url": "https://nvdigitalsolutions.com"
+	},
+	"description": "NV oOS plugins for Claude Code — the public gateway plugin catalog.",
+	"plugins": [
+		{
+			"name": "nvoos-gateway",
+			"source": "./",
+			"description": "Connect Claude Code to the NV oOS MCP Gateway — namespaced site tools, deep research, content workflows, and store tools over streamable HTTP.",
+			"category": "MCP servers",
+			"tags": [ "wordpress", "mcp", "gateway" ]
+		}
+	]
+}
