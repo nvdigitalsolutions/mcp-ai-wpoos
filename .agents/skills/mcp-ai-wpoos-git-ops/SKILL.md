@@ -220,6 +220,15 @@ can appear in the repo root. Two failure modes follow:
   the script dies mid-parse (SyntaxError). Write the script to a `.py`
   file and run `python <file>` — same pattern as the `.ps1` rule (the
   110 bridge-zip packaging script was built this way).
+- **Never pipe a validation gate through `grep`/`head` — the exit code is
+  the gate (2026-11-04 CI-blocker):** `astro check 2>&1 | grep ... | head -3`
+  masked a real failure (3 `className` type errors in an `.astro` template
+  shipped to alpha-working; the sync workflow's `astro check` step failed
+  on them) because the pipe chain exited 0 and the error lines were beyond
+  `head`. Also: a BARE `npx astro build` does NOT type-check — only the
+  full `npm run build` chain (or `astro check` itself) does. Discipline:
+  `cmd > log 2>&1; echo "exit: $?"; tail log` and assert 0 explicitly
+  before claiming a gate green.
 - **`2>nul` under sh creates a real `nul` FILE (2026-11-04):** a Windows
   habit like `dir ... 2>nul` in the sh shell redirects stderr to an
   untracked file literally named `nul` in the repo root. It never rides

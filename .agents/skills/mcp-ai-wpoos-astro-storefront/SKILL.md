@@ -90,6 +90,14 @@ npx playwright install chromium && npm run test:e2e    # 2 specs — JS-disabled
 npm run lhci:ci                                        # CHROME_PATH → Playwright's Chromium
 ```
 
+- **CI's "Build test artifact" step runs `astro check` as a GATE** — the
+  sync workflow fails there before any deploy. Validate the same way
+  locally: capture the exit code unmasked (`cmd > log 2>&1; echo exit=$?`),
+  never through a `grep`/`head` pipe — a masked 2026-11-04 run shipped
+  three `className` type errors in an `.astro` template and the CI gate
+  caught them on the next mirror build. A bare `npx astro build` does NOT
+  type-check; `npm run build` (which chains `astro check`) and CI both do.
+
 - **Windows gotcha:** `astro check` OOMs at the default 4 GB heap on this
   machine — run `NODE_OPTIONS=--max-old-space-size=8192 npm run check` (and
   the same for `npm run build`, which chains `astro check` first).
