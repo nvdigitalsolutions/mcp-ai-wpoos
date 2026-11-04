@@ -1,4 +1,6 @@
-// checkout.spec.ts — Proposal 106 P3 e2e gates (WooCommerce handoff).
+// checkout.spec.ts — Proposal 106 P3 e2e gates (WooCommerce handoff) +
+// Proposal 111: in NATIVE mode (the default fixture pair) /checkout renders
+// the hosted-checkout interstitial instead of the embedded island.
 //
 // The cart page reads the shop globals doc (fixture checkoutUrl =
 // https://nvoos.pro/checkout/) and hands off simple-product lines via the
@@ -130,6 +132,25 @@ test('axe: the cart is WCAG-clean', async ({ page }) => {
 	});
 	await page.goto('/cart/');
 	await waitForCart(page);
+	const results = await new AxeBuilder({ page }).analyze();
+	expect(
+		results.violations,
+		`axe violations: ${JSON.stringify(results.violations, null, 2)}`
+	).toEqual([]);
+});
+
+test('native mode renders the hosted-checkout panel instead of the island', async ({ page }) => {
+	await page.goto('/checkout/');
+
+	// No island, no /api/checkout boot — the server-rendered panel links out.
+	await expect(page.locator('[data-checkout-hosted-panel]')).toBeVisible();
+	await expect(page.locator('[data-checkout-root]')).toHaveCount(0);
+	await expect(page.locator('a[data-checkout-hosted]')).toHaveAttribute(
+		'href',
+		'https://nvoos.pro/checkout/'
+	);
+
+	// And it stays axe-clean.
 	const results = await new AxeBuilder({ page }).analyze();
 	expect(
 		results.violations,

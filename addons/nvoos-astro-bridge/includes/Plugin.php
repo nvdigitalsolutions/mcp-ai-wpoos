@@ -35,6 +35,7 @@ use NvoosAstroBridge\REST\{
 	WooLoginController,
 };
 use NvoosAstroBridge\Admin\AdminPage;
+use NvoosAstroBridge\Admin\SettingsPage;
 use NvoosAstroBridge\Woo\ReturnUrlFilter;
 
 /**
@@ -115,9 +116,10 @@ final class Plugin {
 		// 3. Seed default options on activation.
 		add_action( 'init', array( $plugin, 'seed_default_options' ) );
 
-		// 4. Admin page (React SPA).
+		// 4. Admin pages (React SPA + the wp-admin settings surface).
 		if ( is_admin() ) {
 			AdminPage::init();
+			SettingsPage::init();
 		}
 
 		// 5. Storefront rebuild webhook (Proposal 092 Phase 2.3 — no-ops
