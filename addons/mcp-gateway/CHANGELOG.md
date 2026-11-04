@@ -28,6 +28,12 @@
 
 ## Unreleased
 
+- Claude Code plugin distribution: add `.claude-plugin/marketplace.json`
+  (`nvoos-marketplace`) so the mirror installs by name
+  (`/plugin install nvoos-mcp-gateway@nvoos-marketplace`); bump the
+  manifest version to 0.3.1; document the version-bump release discipline
+  and the slimmer directory-ready plugin (`addons/claude-gateway-plugin`).
+
 - Rename the tool-namespacing separator from `.` to `_`
   (`demo.get_environment_status` → `demo_get_environment_status`): the MCP
   tool-name grammar forbids dots, and OpenAI connectors (ChatGPT/Codex)
