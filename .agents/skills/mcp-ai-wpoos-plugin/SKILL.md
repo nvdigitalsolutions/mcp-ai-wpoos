@@ -107,9 +107,11 @@ credentials than this repo's dev compose (verified on the live stack,
 
 | Service | Address |
 |---|---|
-| WordPress | `http://localhost:8092` — admin at `/wp-admin` (**admin / design_admin_2026**) |
+| WordPress | `http://localhost:8092` — admin at `/wp-admin` (**admin / CHANGE_ME**) |
 | Media worker | `http://localhost:3100` |
 | MySQL | `localhost:3308` |
+
+> Substitute the real stack password for `CHANGE_ME` — never commit live credentials.
 
 - The stack mounts the plugin from `design-stack/plugins/mcp-ai-wpoos` — an
   NTFS junction to the plugin repo — so code edits land in this repo.
@@ -601,7 +603,7 @@ Key env vars: `MCP_AI_SSH_REMOTE_HOST`/`MCP_AI_SSH_REMOTE_PORT` (web server
 from the server's perspective; probe with curl over SSH — Cloudways Apache
 may sit on 8080), `MCP_AI_HOST_HEADER` (canonical host override when the
 web server 301-redirects on Host), `MCP_AI_SSH_EXTRA_ARGS` (e.g.
-`"-i C:/keys/id_ed25519 -o ProxyJump=bastion"`), `MCP_AI_ENV_FILE` (default
+`"-i <path-to-ssh-key> -o ProxyJump=bastion"`), `MCP_AI_ENV_FILE` (default
 `~/.nvoos-bridge.env` — keep the token out of settings.json).
 
 Operator-credential audience binding is checked against `home_url()` from
