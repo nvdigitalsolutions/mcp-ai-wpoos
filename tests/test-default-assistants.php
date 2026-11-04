@@ -75,7 +75,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 
 		$this->assertEquals( 'orchestrator-supervisor', $orchestrator['slug'] );
 		$this->assertEquals( 'openai', $orchestrator['provider'] );
-		$this->assertEquals( 'gpt-4.1', $orchestrator['model'] );
+		$this->assertEquals( 'gpt-6.1-sol', $orchestrator['model'] );
 		$this->assertEquals( 0.3, $orchestrator['temperature'] );
 		$this->assertContains( 'supervisor', $orchestrator['primary_roles'] );
 		$this->assertIsArray( $orchestrator['tools'] );

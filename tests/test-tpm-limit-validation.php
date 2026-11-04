@@ -141,7 +141,7 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		// Should fallback to the high-capacity default model.
 		$this->assertNotEquals( 'gpt-4o-mini', $selected_model, 'Should fallback from gpt-4o-mini for large requests.' );
 		$this->assertEquals(
-			'gemini-2.5-flash',
+			'gemini-3.5-flash-lite',
 			$selected_model,
 			'Should fallback to the default high-capacity model.'
 		);
@@ -213,7 +213,7 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 
 		$this->assertNotEquals( $model, $result, 'Should suggest fallback model when exceeding TPM limits.' );
 		$this->assertEquals(
-			'gemini-2.5-flash',
+			'gemini-3.5-flash-lite',
 			$result,
 			'Should suggest the default high-capacity model.'
 		);
@@ -416,9 +416,9 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$result = $method->invoke( null );
 
 		$this->assertEquals(
-			'gemini-2.5-flash',
+			'gemini-3.5-flash-lite',
 			$result,
-			'Should return default high-capacity fallback model (gemini-2.5-flash).'
+			'Should return default high-capacity fallback model (gemini-3.5-flash-lite).'
 		);
 	}
 }

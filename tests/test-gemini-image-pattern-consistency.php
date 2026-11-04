@@ -31,11 +31,14 @@ class Test_Gemini_Image_Pattern_Consistency extends WP_UnitTestCase {
 			'Both tools should use the same default image model'
 		);
 
-		// Verify it's an image model.
-		$this->assertStringContainsString(
-			'image',
+		// Verify it's one of the known Gemini image models. The November 2026
+		// catalog refresh moved the default to gemini-nano-banana-2.1, which
+		// does not contain the literal string "image", so check membership in
+		// the known image-model allowlist instead of a substring match.
+		$this->assertContains(
 			strtolower( $generate_model ),
-			'Default model should be an image model'
+			array( 'gemini-nano-banana-2.1', 'gemini-3.1-flash-image', 'gemini-exp-1206' ),
+			'Default model should be a Gemini image model'
 		);
 	}
 

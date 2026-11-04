@@ -231,7 +231,7 @@ class WP_MCP_AI_Get_Environment_Status_Tool_Test extends WP_UnitTestCase {
 		$this->assertSame( 'deepseek-flash', $result['plugin']['default_provider_model'] );
 		// default_model remains the OpenAI default and must not be mistaken
 		// for the model DeepSeek chats use.
-		$this->assertSame( 'gpt-4.1', $result['plugin']['default_model'] );
+		$this->assertSame( 'gpt-6.1-sol', $result['plugin']['default_model'] );
 	}
 
 	/**
