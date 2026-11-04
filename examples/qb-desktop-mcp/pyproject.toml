@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "qbbridge-mcp"
+version = "0.2.0"
+description = "QBBridge -- an MCP frontend for QuickBooks Desktop. Read, write, and safely undo transactions via QBXML/QBFC, from any MCP-compatible client."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "mcp>=1.10,<2",
+    "pywin32; sys_platform == 'win32'",
+]
+
+[project.scripts]
+qbbridge-mcp = "qbbridge_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qbbridge_mcp"]
+
+# Proposal 113 adaptation: this repo's pinned uv (0.12) reads legacy
+# [tool.uv] dev-dependencies (installed by default on `uv sync`), not the
+# newer PEP 735 [dependency-groups]. Test dependencies live here so CI can
+# run `uv sync && uv run pytest` with no extra flags.
+[tool.uv]
+dev-dependencies = ["pytest>=8", "lxml>=5", "anyio>=4"]

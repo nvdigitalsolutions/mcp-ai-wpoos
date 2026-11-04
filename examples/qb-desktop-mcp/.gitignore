@@ -1,0 +1,29 @@
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# QuickBooks SDK schemas — Intuit licence: NEVER commit (see UPSTREAM.md)
+xsd/
+*.xsd
+
+# Server runtime state (lives in %LOCALAPPDATA%\QBBridge by default;
+# never let a run of this server leak into git)
+runs/
+*.undolog.jsonl
+*.reverted.jsonl
+confirm.key
+used_codes/
+
+# Client data — NEVER commit company files or backups (UPSTREAM.md rule 1+3)
+*.qbw
+*.qbb
+*.qbm
+*.qba
+*.tl
+
+# Installer build output (upstream PyInstaller/Inno path — not used by us)
+installer/dist/
+installer/Output/
