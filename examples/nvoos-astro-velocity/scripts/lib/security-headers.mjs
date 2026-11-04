@@ -22,7 +22,7 @@ export const STATIC_SECURITY_HEADERS = {
 };
 
 /** Extract inline scripts (no src, not JSON-LD data blocks) and hash each. */
-export function buildCsp(html) {
+export function buildCsp(html, headers = {}) {
 	const hashes = [];
 	const re = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
 	for (const match of html.matchAll(re)) {
@@ -43,19 +43,29 @@ export function buildCsp(html) {
 		// indentation).
 		hashes.push(`'sha256-${createHash('sha256').update(content).digest('base64')}'`);
 	}
-	return [
+
+	// Proposal 110 — the checkout page opts IN to the payment scope via the
+	// x-nvoos-csp-payment response header: the gateway's hosted fields
+	// (Stripe.js + Payment Element iframe) are allowed ONLY there, never
+	// site-wide. Card data stays inside Stripe's origin (INV-1).
+	const paymentScope = headers['x-nvoos-csp-payment'] === '1';
+	const directives = [
 		"default-src 'self'",
-		`script-src 'self' ${hashes.join(' ')}`.trim(),
+		`script-src 'self' ${hashes.join(' ')}${paymentScope ? ' https://js.stripe.com' : ''}`.trim(),
 		// Inline style ATTRIBUTES (swatches, gallery) require style-src
 		// 'unsafe-inline'; scripts remain hash-only above.
 		"style-src 'self' 'unsafe-inline'",
-		"img-src 'self' data:",
+		`img-src 'self' data:${paymentScope ? ' https://*.stripe.com https://*.stripe.network' : ''}`,
 		"font-src 'self'",
-		"connect-src 'self'",
+		`connect-src 'self'${paymentScope ? ' https://api.stripe.com https://m.stripe.network https://r.stripe.com' : ''}`,
+		paymentScope
+			? 'frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.network'
+			: "frame-src 'none'",
 		"frame-ancestors 'none'",
 		"base-uri 'self'",
 		"form-action 'self'",
-	].join('; ');
+	];
+	return directives.join('; ');
 }
 
 /**
@@ -137,8 +147,10 @@ export function wrapWithSecurityHeaders(res) {
 			const headers = {
 				...pending.headers,
 				...STATIC_SECURITY_HEADERS,
-				'content-security-policy': buildCsp(body.toString('utf8')),
+				'content-security-policy': buildCsp(body.toString('utf8'), pending.headers),
 			};
+			// The internal CSP marker is consumed above — never ship it.
+			delete headers['x-nvoos-csp-payment'];
 			if (pending.statusMessage !== undefined) {
 				originalWriteHead(pending.statusCode, pending.statusMessage, headers);
 			} else {

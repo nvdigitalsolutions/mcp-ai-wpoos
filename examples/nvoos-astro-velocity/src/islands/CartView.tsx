@@ -9,9 +9,10 @@
 //
 // Proposal 108 Phase 2 — server-cart sync (woo/both modes): the local cart
 // is reconciled into the WooCommerce session cart through the bridge Store
-// API proxy and the shopper hands off with a CLEAN checkout URL (variants
-// included). The URL form stays as the fail-open fallback when the proxy
-// errors. INV-1: no payment UI ever renders here.
+// API proxy and the shopper continues to the EMBEDDED checkout
+// (`/checkout/`, Proposal 110) — variants included. The hosted URL form
+// stays as the fail-open fallback when the proxy errors. INV-1: no payment
+// UI ever renders here.
 // ---------------------------------------------------------------------------
 
 import { useEffect, useState } from 'react';
@@ -57,7 +58,7 @@ export default function CartView({ shop }: Props) {
 		shop.checkoutUrl.length > 0;
 
 	/** Hand the cart to Woo — the 108 §2 analytics seam fires either way. */
-	const emitHandoff = (mode: 'server-cart' | 'url-form') => {
+	const emitHandoff = (mode: 'embedded' | 'url-form') => {
 		window.dispatchEvent(
 			new CustomEvent('nvoos:checkout-handoff', {
 				detail: {
@@ -92,9 +93,11 @@ export default function CartView({ shop }: Props) {
 
 		const result = await syncServerCart(session, entries);
 		if (result.ok) {
-			emitHandoff('server-cart');
+			emitHandoff('embedded');
 			clearCart();
-			window.location.assign(shop.checkoutUrl);
+			// The embedded checkout (Proposal 110) — the server session cart
+			// now carries every line; /checkout reads it through the proxy.
+			window.location.assign('/checkout/');
 			return;
 		}
 
@@ -165,13 +168,12 @@ export default function CartView({ shop }: Props) {
 			{usesServerCart && syncState !== 'error' ? (
 				<a
 					className="btn"
-					href={shop.checkoutUrl}
-					rel="noopener noreferrer"
+					href="/checkout/"
 					data-cart-checkout
 					aria-disabled={syncState === 'syncing'}
 					onClick={handleCheckout}
 				>
-					{syncState === 'syncing' ? 'Syncing cart…' : 'Checkout on WooCommerce'}
+					{syncState === 'syncing' ? 'Syncing cart…' : 'Checkout'}
 				</a>
 			) : plan.url ? (
 				<a

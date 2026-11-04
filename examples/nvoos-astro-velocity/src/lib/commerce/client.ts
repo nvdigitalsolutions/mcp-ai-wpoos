@@ -407,6 +407,8 @@ export const DEFAULT_SHOP_DOC: ShopDoc = {
 	updatedAt: '',
 	productsSource: 'native',
 	paymentMethods: [],
+	stripePublishableKey: '',
+	guestCheckout: false,
 };
 
 /** Fetch the shop globals doc (106 §1.3) through the resolved base, 60 s TTL,
@@ -451,6 +453,11 @@ export async function getShop(requestUrl: string | URL | undefined): Promise<Sho
 						typeof m.title === 'string'
 				)
 				: [],
+			// 110 extensions — absent on legacy backends (fail closed).
+			stripePublishableKey:
+				typeof raw.stripePublishableKey === 'string' ? raw.stripePublishableKey : '',
+			guestCheckout:
+				typeof raw.guestCheckout === 'boolean' ? raw.guestCheckout : false,
 		};
 		globalsMemo.set(key, { doc, expires: now + 60_000 });
 		return doc;

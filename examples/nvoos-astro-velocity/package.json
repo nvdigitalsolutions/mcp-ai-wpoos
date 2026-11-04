@@ -44,6 +44,8 @@
 		"@nanostores/react": "^2.0.1",
 		"@portabletext/astro": "^0.2.0",
 		"@resvg/resvg-js": "^2.6.2",
+		"@stripe/react-stripe-js": "^7.0.1",
+		"@stripe/stripe-js": "^10.2.1",
 		"@zag-js/combobox": "^1.47.0",
 		"@zag-js/dialog": "^1.47.0",
 		"@zag-js/react": "^1.47.0",

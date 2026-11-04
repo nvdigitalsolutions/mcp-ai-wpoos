@@ -151,9 +151,14 @@ const shop = {
 		process.env.NVOOS_FIXTURE_PRODUCTS_SOURCE === 'woo'
 			? [
 					{ id: 'stripe', title: 'Stripe' },
+					{ id: 'cod', title: 'Cash on delivery' },
 					{ id: 'paypal', title: 'PayPal' },
 				]
 			: [],
+	// 110 — the embedded checkout reads the guest switch; the Stripe key is
+	// deliberately ABSENT (no key → the card section stays hidden, tests stay
+	// hermetic — real Stripe.js never loads).
+	guestCheckout: true,
 };
 
 // ---------------------------------------------------------------------------
@@ -478,6 +483,93 @@ function send(res, status, body, headers = {}) {
 	res.end(JSON.stringify(body));
 }
 
+// ---------------------------------------------------------------------------
+// Embedded checkout fixture state (Proposal 110) — per cart-session Woo
+// twin: lines seeded by cart/sync, addresses/rates/coupons mutated by the
+// /checkout routes, cleared when the order is placed.
+// ---------------------------------------------------------------------------
+const checkoutSessions = new Map();
+let nextOrderId = 9000;
+
+function checkoutState(session) {
+	let state = checkoutSessions.get(session);
+	if (!state) {
+		// Woo always carries a selected rate on a shippable cart — default
+		// the flat rate so the initial totals include shipping.
+		state = { lines: [], coupon: '', billing: null, shipping: null, rateId: 'flat_rate' };
+		checkoutSessions.set(session, state);
+	}
+	return state;
+}
+
+function productName(productId) {
+	const product = products.find((item) => item.id === productId);
+	return product ? product.name : `Fixture line ${productId}`;
+}
+
+function productPrice(productId) {
+	const product = products.find((item) => item.id === productId);
+	return product && typeof product.price === 'number' ? product.price : 1;
+}
+
+/** Subtotal in minor units (prices are dollars). */
+function computeSubtotal(state) {
+	return state.lines.reduce(
+		(sum, line) => sum + Math.round(productPrice(line.productId) * 100) * line.qty,
+		0
+	);
+}
+
+const SHIPPING_RATES = [
+	{ rateId: 'flat_rate', name: 'Standard shipping', description: '', price: '1000' },
+	{ rateId: 'express_rate', name: 'Express shipping', description: '', price: '2500' },
+];
+
+/** Subtotal + shipping + tax(0) — the fixture keeps tax flat for determinism. */
+function computeTotal(state) {
+	const shipping = SHIPPING_RATES.find((rate) => rate.rateId === state.rateId);
+	return computeSubtotal(state) + (shipping ? Number(shipping.price) : 0);
+}
+
+function buildCheckoutDoc(session) {
+	const state = checkoutState(session);
+	const selectedRateId = state.rateId || SHIPPING_RATES[0].rateId;
+	return {
+		session,
+		orderId: 0,
+		orderStatus: 'checkout-draft',
+		items: state.lines.map((line, index) => ({
+			key: `fixture-${index}`,
+			productId: line.productId,
+			name: productName(line.productId),
+			qty: line.qty,
+			price: productPrice(line.productId),
+		})),
+		totals: {
+			totalItems: state.lines.reduce((sum, line) => sum + line.qty, 0),
+			totalPrice: String(computeTotal(state)),
+			shippingTotal: SHIPPING_RATES.find((rate) => rate.rateId === selectedRateId)?.price ?? '0',
+			taxTotal: '0',
+		},
+		billingAddress: state.billing,
+		shippingAddress: state.shipping,
+		paymentMethod: '',
+		shippingRates: [
+			{
+				packageId: 'pkg-0',
+				name: 'Shipment',
+				rates: SHIPPING_RATES.map((rate) => ({
+					...rate,
+					selected: rate.rateId === selectedRateId,
+				})),
+			},
+		],
+		needsShipping: state.lines.length > 0,
+		coupons: state.coupon ? [{ code: state.coupon, discount: '100' }] : [],
+		notices: [],
+	};
+}
+
 const server = createServer((req, res) => {
 	const url = new URL(req.url, 'http://localhost');
 
@@ -569,6 +661,8 @@ const server = createServer((req, res) => {
 	}
 
 	// Cart sync (108 Phase 2) — the bridge Store API proxy's fixture twin.
+	// Proposal 110: the sync additionally SEEDS the per-session server cart
+	// state the /checkout routes read — the embedded checkout's fixture.
 	if (segments[0] === 'cart' && segments[1] === 'sync') {
 		if (req.method !== 'POST') return send(res, 405, { code: 'fixture_method_not_allowed' });
 		if (shop.productsSource === 'native') {
@@ -594,24 +688,156 @@ const server = createServer((req, res) => {
 				return send(res, 400, { code: 'astro_cart_invalid_body', message: 'Body must be JSON.' });
 			}
 			const lines = Array.isArray(body.lines) ? body.lines : [];
-			const items = lines.map((line, index) => ({
-				key: `fixture-${index}`,
+			const state = checkoutState(session);
+			state.lines = lines.map((line) => ({
 				productId: Number(line.productId),
-				name: `Fixture line ${line.productId}`,
 				qty: Number(line.qty),
-				price: 1,
+			}));
+			if (typeof body.coupon === 'string' && body.coupon !== '') {
+				state.coupon = body.coupon;
+			}
+			const items = state.lines.map((line, index) => ({
+				key: `fixture-${index}`,
+				productId: line.productId,
+				name: productName(line.productId),
+				qty: line.qty,
+				price: productPrice(line.productId),
 			}));
 			return send(res, 200, {
 				session,
 				items,
 				totals: {
 					totalItems: items.reduce((sum, item) => sum + item.qty, 0),
-					totalPrice: '0',
+					totalPrice: String(computeSubtotal(state)),
 				},
 				notices: [],
 			});
 		});
 		return;
+	}
+
+	// Embedded checkout (110 Phase B) — the bridge /checkout proxy's fixture
+	// twin: stateful per cart-session, same gates, same envelope.
+	if (segments[0] === 'checkout') {
+		const session = req.headers['x-nvoos-cart-session'] ?? '';
+		if (typeof session !== 'string' || !/^[A-Za-z0-9-]{8,64}$/.test(session)) {
+			return send(res, 400, { code: 'astro_checkout_invalid_session', message: 'Bad session.' });
+		}
+		if (shop.productsSource === 'native') {
+			return send(res, 400, {
+				code: 'astro_checkout_native_mode',
+				message: 'The embedded checkout is disabled in native product mode.',
+			});
+		}
+
+		const readBody = (onBody) => {
+			let raw = '';
+			req.setEncoding('utf8');
+			req.on('data', (chunk) => {
+				raw += chunk;
+			});
+			req.on('end', () => {
+				let body = {};
+				try {
+					body = raw ? JSON.parse(raw) : {};
+				} catch {
+					return send(res, 400, { code: 'astro_checkout_invalid_body', message: 'Body must be JSON.' });
+				}
+				onBody(body);
+			});
+		};
+
+		if (segments[1] === undefined && req.method === 'GET') {
+			return send(res, 200, buildCheckoutDoc(session));
+		}
+
+		if (segments[1] === 'customer' && req.method === 'POST') {
+			return readBody((body) => {
+				const state = checkoutState(session);
+				if (body.billingAddress && typeof body.billingAddress === 'object') {
+					state.billing = body.billingAddress;
+				}
+				if (body.shippingAddress && typeof body.shippingAddress === 'object') {
+					state.shipping = body.shippingAddress;
+				}
+				return send(res, 200, buildCheckoutDoc(session));
+			});
+		}
+
+		if (segments[1] === 'shipping-rate' && req.method === 'POST') {
+			return readBody((body) => {
+				const state = checkoutState(session);
+				if (typeof body.rateId === 'string' && body.rateId !== '') {
+					state.rateId = body.rateId;
+				}
+				return send(res, 200, buildCheckoutDoc(session));
+			});
+		}
+
+		if (segments[1] === 'coupon' && req.method === 'POST') {
+			return readBody((body) => {
+				const state = checkoutState(session);
+				const code = typeof body.code === 'string' ? body.code.trim() : '';
+				if (code === 'SAVE10') {
+					state.coupon = code;
+				} else {
+					state.coupon = '';
+				}
+				const doc = buildCheckoutDoc(session);
+				if (code === '') {
+					doc.notices.push({ type: 'error', text: 'A coupon code is required.' });
+				} else if (code !== 'SAVE10') {
+					doc.notices.push({ type: 'error', text: `Coupon "${code}" does not exist.` });
+				} else {
+					doc.notices.push({ type: 'success', text: 'Coupon applied.' });
+				}
+				return send(res, 200, doc);
+			});
+		}
+
+		if (segments[1] === undefined && req.method === 'POST') {
+			return readBody((body) => {
+				const state = checkoutState(session);
+				const method = typeof body.payment_method === 'string' ? body.payment_method : '';
+				if (method === '') {
+					return send(res, 400, { code: 'astro_checkout_invalid_body', message: 'payment_method is required.' });
+				}
+				if (!body.billingAddress || typeof body.billingAddress !== 'object') {
+					return send(res, 400, {
+						code: 'astro_checkout_invalid_billing_address',
+						message: 'billingAddress is required.',
+					});
+				}
+				const expected = typeof body.expectedTotal === 'string' ? Number(body.expectedTotal) : null;
+				const actual = computeTotal(state);
+				if (expected !== null && Number.isFinite(expected) && expected !== actual) {
+					return send(res, 409, {
+						code: 'astro_checkout_rejected',
+						message: 'The order total changed. Please review your order.',
+						data: { totals: { total_price: String(actual) } },
+					});
+				}
+				nextOrderId += 1;
+				const orderId = nextOrderId;
+				const orderKey = `wc_order_fixture_${orderId}`;
+				const doc = {
+					orderId,
+					orderKey,
+					status: 'processing',
+					paymentResult: {
+						paymentStatus: 'success',
+						redirectUrl:
+							method === 'paypal' ? 'https://www.paypal.com/checkoutnow?token=fixture' : '',
+						paymentDetails: [],
+					},
+					notices: [],
+				};
+				checkoutSessions.delete(session);
+				return send(res, 200, doc);
+			});
+		}
+
+		return send(res, 405, { code: 'fixture_method_not_allowed' });
 	}
 
 	// Promocode validation (idempotent read, case-insensitive).
