@@ -399,9 +399,10 @@ jobs:
       # required by generate_context!) automatically. --no-bundle skips the
       # installer/MSI + WebView2 bootstrap (the runner ships system
       # WebView2); the feature list is the same complete union as the local
-      # hand-off build.
+      # hand-off build. document/snippet-pdf compile here without pdfium.dll -
+      # the binding loads the library at runtime, not at build time.
       - name: Build debug exe (complete feature union)
-        run: npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx
+        run: npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx,document,snippet-pdf
 
       # Boot residency gate: the GUI must survive startup on the runner's
       # desktop session (catches crash-at-boot regressions in the Windows
