@@ -99,7 +99,7 @@ Password prompts are not supported — a spawned process has no TTY.
 | `MCP_AI_SSH_REMOTE_HOST` | `localhost` | Web-server host, from the server's perspective |
 | `MCP_AI_SSH_REMOTE_PORT` | `80` | Web-server port (Cloudways stacks may use `8080` for Apache; probe with `curl` over SSH) |
 | `MCP_AI_LOCAL_PORT` | auto free port | Pin the local forward port (normally not needed) |
-| `MCP_AI_SSH_EXTRA_ARGS` | — | Extra ssh args, e.g. `"-i C:/keys/id_ed25519 -o ProxyJump=bastion"` |
+| `MCP_AI_SSH_EXTRA_ARGS` | — | Extra ssh args, e.g. `"-i <path-to-ssh-key> -o ProxyJump=bastion"` |
 | `MCP_AI_SSH_BATCH_MODE` | `1` | Set `0` only with an SSH_ASKPASS helper configured |
 | `MCP_AI_SSH_READY_MS` | `15000` | Tunnel startup budget |
 | `MCP_AI_BASE_PATH` | `/wp-json/mcp-ai/v1/mcp` | MCP route path |

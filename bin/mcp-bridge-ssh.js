@@ -22,7 +22,7 @@
  *   MCP_AI_SSH_CMD           ssh binary (default: ssh)
  *   MCP_AI_SSH_EXTRA_ARGS    Extra args passed to ssh before the managed
  *                            ones, double-quote values containing spaces
- *                            (e.g. "-i C:/keys/id_ed25519 -o ProxyJump=bastion")
+ *                            (e.g. "-i <path-to-ssh-key> -o ProxyJump=bastion")
  *   MCP_AI_SSH_BATCH_MODE    Set to 0 to disable BatchMode=yes. Only useful
  *                            if an SSH_ASKPASS helper is configured — a
  *                            spawned process has no TTY for password prompts.
