@@ -82,6 +82,41 @@ final class Schema {
 	public const META_APPROVED_BY    = '_funiq_approved_by';
 
 	// -----------------------------------------------------------------------
+	// Proposal 112 — Woo-owned catalog migration (nvoos_bridge_ prefix per
+	// the owner naming decision 2026-11-04).
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Woo product meta: the native (funiq_product) post id this product was
+	 * migrated from. The idempotency anchor alongside the generated SKU.
+	 */
+	public const META_NVOOS_MIGRATED_FROM = '_nvoos_bridge_migrated_from';
+
+	/**
+	 * Woo product meta: the native promotionId carried across the migration
+	 * (Woo has no promotion equivalent — the storefront reads it back).
+	 */
+	public const META_NVOOS_PROMOTION_ID = '_nvoos_bridge_promotion_id';
+
+	/**
+	 * Migration state option (autoload off): the last sweep counters and
+	 * status — read by the Settings page and the WP-CLI status command.
+	 */
+	public const OPTION_MIGRATION_STATE = 'nvoos_bridge_migration_state';
+
+	/**
+	 * Action Scheduler hook for one sweep chunk (cursor pattern: args carry
+	 * only the offset). Group: nvoos-bridge-migrate.
+	 */
+	public const HOOK_MIGRATE_SWEEP = 'nvoos_bridge/migrate_native_sweep';
+
+	/**
+	 * Generated SKU prefix for migrated products — NV-<native_id> is a
+	 * namespaced business key that can never collide with real store SKUs.
+	 */
+	public const SKU_PREFIX_MIGRATED = 'NV-';
+
+	// -----------------------------------------------------------------------
 	// Term meta keys.
 	// -----------------------------------------------------------------------
 	public const TERM_META_HEX_CODE = '_funiq_hex_code';

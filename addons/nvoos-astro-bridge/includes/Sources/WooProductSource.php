@@ -16,6 +16,7 @@
 namespace NvoosAstroBridge\Sources;
 
 use NvoosAstroBridge\Schema;
+use NvoosAstroBridge\Transformers\PromotionRef;
 use WC_Product;
 use WC_Product_Attribute;
 use WC_Product_Simple;
@@ -317,7 +318,7 @@ class WooProductSource implements ProductSource {
 			'imageId'      => $image_id,
 			'imagesIds'    => $gallery_ids,
 			'statuses'     => $stock_doc ? array( $stock_doc ) : array(),
-			'promotion'    => null,
+			'promotion'    => $this->promo_ref( $id ),
 			'createdAt'    => $date_creat ? $date_creat->date( 'Y-m-d H:i:s' ) : '',
 			'updatedAt'    => $date_mod ? $date_mod->date( 'Y-m-d H:i:s' ) : '',
 			'source'       => Schema::SOURCE_WOO,
@@ -626,6 +627,42 @@ class WooProductSource implements ProductSource {
 			}
 			$product->set_category_ids( $term_ids );
 		}
+
+		// Promotion linkage (Proposal 112) — carried as Woo meta; the woo
+		// transformer reads it back so the storefront banner logic survives
+		// the migration. Accepts the same shapes as the native write path.
+		if ( isset( $data['promotionId'] ) ) {
+			$promo_id = (int) $data['promotionId'];
+		} elseif ( isset( $data['promotion'] ) ) {
+			$promotion = $data['promotion'];
+			$promo_id  = 0;
+			if ( is_array( $promotion ) && isset( $promotion['id'] ) ) {
+				$promo_id = (int) $promotion['id'];
+			} elseif ( is_numeric( $promotion ) ) {
+				$promo_id = (int) $promotion;
+			}
+		} else {
+			$promo_id = -1; // Sentinel — no field in the payload, leave as-is.
+		}
+		if ( $promo_id > 0 ) {
+			$product->update_meta_data( Schema::META_NVOOS_PROMOTION_ID, (string) $promo_id );
+		} elseif ( 0 === $promo_id ) {
+			$product->delete_meta_data( Schema::META_NVOOS_PROMOTION_ID );
+		}
+	}
+
+	/**
+	 * Resolve the carried promotion reference for the contract doc.
+	 *
+	 * @param int $product_id Woo product id.
+	 * @return array<string, mixed>|null
+	 */
+	private function promo_ref( int $product_id ): ?array {
+		$promo_id = (int) get_post_meta( $product_id, Schema::META_NVOOS_PROMOTION_ID, true );
+		if ( $promo_id < 1 ) {
+			return null;
+		}
+		return PromotionRef::resolve( $promo_id );
 	}
 
 	/**

@@ -24,6 +24,7 @@
 namespace NvoosAstroBridge\Admin;
 
 use NvoosAstroBridge\Schema;
+use NvoosAstroBridge\Woo\NativeCatalogMigrator;
 
 /**
  * Registers and renders the bridge settings page.
@@ -50,6 +51,10 @@ class SettingsPage {
 		add_action( 'admin_menu', array( $instance, 'register_page' ), 11 );
 		add_action( 'admin_init', array( $instance, 'register_settings' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( NVOOS_ASTRO_BRIDGE_FILE ), array( $instance, 'plugin_row_links' ) );
+
+		// Proposal 112 — the catalog-migration action endpoints.
+		add_action( 'admin_post_nvoos_bridge_migrate_dry_run', array( $instance, 'handle_migrate_dry_run' ) );
+		add_action( 'admin_post_nvoos_bridge_migrate_run', array( $instance, 'handle_migrate_run' ) );
 	}
 
 	/**
@@ -263,6 +268,9 @@ class SettingsPage {
 		echo '<h2>' . esc_html__( 'System status', 'nvoos-astro-bridge' ) . '</h2>';
 		$this->render_status_panel();
 
+		echo '<h2>' . esc_html__( 'Catalog migration (native → Woo)', 'nvoos-astro-bridge' ) . '</h2>';
+		$this->render_migration_panel();
+
 		echo '<p class="description">';
 		esc_html_e( 'Storefront-facing globals (checkout/cart/return URLs, display currency) are configured in the Astro CMS Settings view — they shape the storefront, not this backend.', 'nvoos-astro-bridge' );
 		echo '</p>';
@@ -298,6 +306,13 @@ class SettingsPage {
 			'Store API base'          => home_url( '/wp-json/wc/store/v1/' ),
 		);
 
+		if ( $this->woo_active() ) {
+			$migrator                        = new NativeCatalogMigrator();
+			$rows['Native products']         = (string) $migrator->count_native();
+			$rows['Migrated (Woo) products'] = (string) $migrator->count_migrated();
+			$rows['Migration status']        = (string) $migrator->state()['status'];
+		}
+
 		echo '<table class="widefat striped" role="presentation"><tbody>';
 		foreach ( $rows as $label => $value ) {
 			printf(
@@ -316,5 +331,129 @@ class SettingsPage {
 	 */
 	private function woo_active(): bool {
 		return class_exists( 'WooCommerce' ) && function_exists( 'wc_get_product' );
+	}
+
+	// -----------------------------------------------------------------------
+	// Proposal 112 — catalog migration controls.
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Render the migration panel: counts, the dry-run button, the run
+	 * button (queues the Action Scheduler sweep) and the latest report.
+	 *
+	 * @return void
+	 */
+	private function render_migration_panel(): void {
+		if ( ! $this->woo_active() ) {
+			echo '<p>';
+			esc_html_e( 'WooCommerce is not active — the migration requires it.', 'nvoos-astro-bridge' );
+			echo '</p>';
+			return;
+		}
+
+		$migrator = new NativeCatalogMigrator();
+		$state    = $migrator->state();
+
+		echo '<p>';
+		esc_html_e( 'Migrate the built-in (native) products into WooCommerce so the storefront has a single purchasable catalog. The dry run reports without writing; the run queues a background sweep. Re-running is safe — existing migrations are updated, never duplicated.', 'nvoos-astro-bridge' );
+		echo '</p>';
+
+		echo '<table class="widefat striped" role="presentation"><tbody>';
+		$rows = array(
+			'Native products'                      => (string) $migrator->count_native(),
+			'Migrated products'                    => (string) $migrator->count_migrated(),
+			'Last sweep status'                    => (string) $state['status'],
+			'Scanned / created / updated / failed' => sprintf( '%d / %d / %d / %d', $state['scanned'], $state['created'], $state['updated'], $state['failed'] ),
+		);
+		foreach ( $rows as $label => $value ) {
+			printf(
+				'<tr><th scope="row">%s</th><td>%s</td></tr>',
+				esc_html( $label ),
+				esc_html( (string) $value )
+			);
+		}
+		echo '</tbody></table>';
+
+		echo '<p>';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline">';
+		echo '<input type="hidden" name="action" value="nvoos_bridge_migrate_dry_run">';
+		wp_nonce_field( 'nvoos_bridge_migrate', 'nvoos_bridge_migrate_nonce' );
+		submit_button( __( 'Dry run (no writes)', 'nvoos-astro-bridge' ), 'secondary', 'nvoos_bridge_migrate_dry_run_submit', false );
+		echo '</form> ';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline">';
+		echo '<input type="hidden" name="action" value="nvoos_bridge_migrate_run">';
+		wp_nonce_field( 'nvoos_bridge_migrate', 'nvoos_bridge_migrate_nonce' );
+		submit_button( __( 'Run migration (background)', 'nvoos-astro-bridge' ), 'primary', 'nvoos_bridge_migrate_run_submit', false );
+		echo '</form>';
+		echo '</p>';
+
+		$report = get_transient( 'nvoos_bridge_migration_report' );
+		if ( is_array( $report ) && ! empty( $report ) ) {
+			echo '<h3>' . esc_html__( 'Latest dry-run report', 'nvoos-astro-bridge' ) . '</h3>';
+			echo '<table class="widefat striped" role="presentation"><tbody>';
+			$report_rows = array(
+				'Scanned of total' => sprintf( '%d of %d', (int) $report['scanned'], (int) $report['total'] ),
+				'Would create'     => (string) $report['create'],
+				'Would update'     => (string) $report['update'],
+				'Failed'           => (string) $report['failed'],
+				'Terms to create'  => (string) $report['terms_created'],
+			);
+			foreach ( $report_rows as $label => $value ) {
+				printf(
+					'<tr><th scope="row">%s</th><td>%s</td></tr>',
+					esc_html( $label ),
+					esc_html( $value )
+				);
+			}
+			echo '</tbody></table>';
+
+			if ( ! empty( $report['issues'] ) ) {
+				echo '<ul>';
+				foreach ( array_slice( $report['issues'], 0, 20 ) as $issue ) {
+					printf(
+						'<li>#%s — %s</li>',
+						esc_html( (string) ( $issue['nativeId'] ?? '-' ) ),
+						esc_html( (string) ( $issue['message'] ?? '-' ) )
+					);
+				}
+				echo '</ul>';
+			}
+		}
+	}
+
+	/**
+	 * Admin-post handler — run the dry-run inline and show the report.
+	 *
+	 * @return void
+	 */
+	public function handle_migrate_dry_run(): void {
+		if ( ! current_user_can( Schema::CAP_MANAGE ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'nvoos-astro-bridge' ) );
+		}
+		check_admin_referer( 'nvoos_bridge_migrate', 'nvoos_bridge_migrate_nonce' );
+
+		$report = ( new NativeCatalogMigrator() )->dry_run();
+		set_transient( 'nvoos_bridge_migration_report', $report, HOUR_IN_SECONDS );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&nvoos-migrated=dry-run' ) );
+		exit;
+	}
+
+	/**
+	 * Admin-post handler — queue the Action Scheduler sweep.
+	 *
+	 * @return void
+	 */
+	public function handle_migrate_run(): void {
+		if ( ! current_user_can( Schema::CAP_MANAGE ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'nvoos-astro-bridge' ) );
+		}
+		check_admin_referer( 'nvoos_bridge_migrate', 'nvoos_bridge_migrate_nonce' );
+
+		$queued = ( new NativeCatalogMigrator() )->enqueue_sweep();
+
+		$notice = $queued ? 'nvoos-migrated=started' : 'nvoos-migrated=unavailable';
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&' . $notice ) );
+		exit;
 	}
 }
