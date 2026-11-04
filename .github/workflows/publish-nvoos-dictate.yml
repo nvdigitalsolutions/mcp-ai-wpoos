@@ -104,6 +104,15 @@ jobs:
             echo "No Apple signing secrets — ad-hoc signing only."
           fi
 
+      # The Windows bundle ships the gitignored PDFium runtime as a bundle
+      # resource (tauri.windows.conf.json); fetch + verify it before the
+      # build. Pinned by sha256 — see scripts/fetch-pdfium.ps1.
+      - name: Fetch PDFium runtime (Windows only)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: examples/nvoos-dictate
+        run: ./scripts/fetch-pdfium.ps1
+
       - name: Build bundles
         working-directory: examples/nvoos-dictate
         run: npm run tauri -- build ${{ matrix.args }}

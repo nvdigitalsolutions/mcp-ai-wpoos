@@ -5,8 +5,9 @@
 //! Proves the three load-bearing pdfium-render calls (open, text chars,
 //! render) plus the D2 runtime-binary binding before any lib code lands.
 //!
-//! Run from `src-tauri/target/debug` so the probe binds the `pdfium.dll`
-//! placed beside the exe: `./examples/document_probe.exe <file.pdf>`.
+//! Run from `src-tauri/target/debug` (dev layout) or from an installed
+//! bundle dir (resources layout) so the probe exercises the production
+//! binding: `./examples/document_probe.exe <file.pdf>`.
 
 use std::path::Path;
 
@@ -23,11 +24,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nth(1)
         .expect("usage: document_probe <file.pdf>");
 
-    // D2: dynamic binding — `Pdfium::default()` loads a library beside the
-    // executable (or the current working directory), then the system
-    // search. A missing library surfaces as a clean `PdfiumError`, never a
+    // D2: dynamic binding — the production resolution path from
+    // `document::pdf::bind()`: beside the exe (dev/test staging), then the
+    // bundle's `resources/` directory (installer provisioning), then the
+    // system search. A missing library surfaces as a clean error, never a
     // panic.
-    let pdfium = Pdfium::default();
+    let pdfium = nvoos_dictate_lib::document::pdf::bind()?;
 
     // Encrypted docs: a `None` password on a protected file yields an
     // error here — the probe asserts that path is clean by not unwrapping.
