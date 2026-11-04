@@ -49,6 +49,12 @@ description: "Operational guide for the NV oOS MCP Gateway (addons/mcp-gateway �
   stay invisible publicly and their degradation does not flip the public
   `status`; `/health/full` always reports everything. Unknown slugs are
   **boot warnings, never fatal** (a typo hides sites — the safe direction).
+- `PUBLIC_DEMO_KEY` (added 0.3.2, PR #7446): optional — when set, the
+  public landing page (`GET /`) renders the operator-published demo
+  credential in a "Try it now" block and substitutes it into the
+  copy-paste client configs (HTML-escaped). Unset = `YOUR_KEY`
+  placeholders. Public-by-design; the value lives only in the Velocity
+  env, never in the repo.
 
 ## Upstream 401 playbook (the recurring failure)
 
@@ -227,7 +233,7 @@ Two marketplace-installable distributions, both pointing at the same gateway:
 
 - **Gateway addon plugin** — `addons/mcp-gateway/.claude-plugin/`
   (`nvoos-mcp-gateway`; manifest `version` tracks the gateway release,
-  currently 0.3.1). Marketplace `nvoos-marketplace` ships in the same
+  currently 0.3.2). Marketplace `nvoos-marketplace` ships in the same
   folder, so the mirror installs by name:
   `/plugin marketplace add nvdigitalsolutions/nvoos-mcp-gateway` →
   `/plugin install nvoos-mcp-gateway@nvoos-marketplace`.
