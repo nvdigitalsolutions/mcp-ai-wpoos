@@ -1,13 +1,18 @@
 name: Sync claude-gateway-plugin
 
 # Syncs addons/claude-gateway-plugin to the standalone mirror repo
-# nvdigitalsolutions/nvoos-claude-gateway-plugin (git subtree split,
-# force-push to main) — same pattern as sync-chatgpt-gateway-plugin.yml.
+# nvdigitalsolutions/nvoos-claude-gateway-plugin (one snapshot commit per
+# sync, fast-forward push — same pattern as sync-mcp-gateway.yml).
 #
 # The mirror repo doubles as (a) the plugin's own Claude Code marketplace
 # (`/plugin marketplace add nvdigitalsolutions/nvoos-claude-gateway-plugin`)
 # and (b) the source folder for the Anthropic plugin directory submission,
 # so the mirror must carry exactly the plugin files and nothing else.
+#
+# Depth 1 is deliberate: the monorepo pack is ~38 GiB (build artifacts
+# committed over time), so the subtree-split pattern from the ChatGPT
+# plugin sync (fetch-depth: 0) hangs the Checkout step — the 2026-11-04
+# #7444 sync run failed on it.
 #
 # The check-secret guard keeps CI green if the workflow is merged before the
 # CLAUDE_GATEWAY_PLUGIN_REPO_TOKEN secret exists (GitHub forbids secrets.*
@@ -55,13 +60,55 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # Depth 1 is enough: the mirror step snapshots HEAD's subtree and
+          # reads only HEAD's commit message — nothing needs history. The
+          # monorepo pack is ~38 GiB, so fetch-depth: 0 hangs this step.
+          fetch-depth: 1
 
-      - name: Split subtree
+      - name: Mirror the subtree with a fast-forward push
+        env:
+          TOKEN: ${{ secrets.CLAUDE_GATEWAY_PLUGIN_REPO_TOKEN }}
         run: |
-          git subtree split --prefix=addons/claude-gateway-plugin --branch=claude-gateway-plugin-split
+          set -euo pipefail
 
-      - name: Push to nvoos-claude-gateway-plugin
-        run: |
-          git config --local --unset-all http.https://github.com/.extraheader
-          git push https://x-access-token:${{ secrets.CLAUDE_GATEWAY_PLUGIN_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-claude-gateway-plugin.git claude-gateway-plugin-split:main --force
+          # The ambient GITHUB_TOKEN extraheader would override the token
+          # URL auth below — drop it for the rest of the job.
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          git config --local user.name 'github-actions[bot]'
+          git config --local user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          MIRROR_URL="https://x-access-token:${TOKEN}@github.com/nvdigitalsolutions/nvoos-claude-gateway-plugin.git"
+          MSG="$(git log -1 --format='%s%n%n%b' -- addons/claude-gateway-plugin)"
+          TREE="$(git rev-parse HEAD:addons/claude-gateway-plugin)"
+          INCOMING_VERSION="$(node -p "JSON.parse(require('fs').readFileSync('addons/claude-gateway-plugin/.claude-plugin/plugin.json','utf8')).version")"
+
+          # Retry loop: a concurrent sync (or any direct push) may advance
+          # mirror main between our fetch and push. Refetch the tip and
+          # rebuild the snapshot commit on top of it instead of force-pushing.
+          # Fetch into FETCH_HEAD (not a named ref): a shallow --depth=1
+          # fetch grafts the tip and would break the local fast-forward check
+          # on the retry fetch.
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet --depth=1 "$MIRROR_URL" main
+
+            # Version guard: never let a stale branch promotion (or an
+            # out-of-order sync run) roll the public mirror backwards.
+            MIRROR_VERSION="$(git show FETCH_HEAD:.claude-plugin/plugin.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version" 2>/dev/null || true)"
+            if [ -n "$MIRROR_VERSION" ] \
+              && [ "$INCOMING_VERSION" != "$MIRROR_VERSION" ] \
+              && [ "$(printf '%s\n%s\n' "$INCOMING_VERSION" "$MIRROR_VERSION" | sort -V | head -n1)" = "$INCOMING_VERSION" ]; then
+              echo "::notice::Skipping — incoming ${INCOMING_VERSION} is older than the mirror's ${MIRROR_VERSION} (stale branch promotion)"
+              exit 0
+            fi
+
+            SYNC_COMMIT="$(printf '%s\n' "$MSG" | git commit-tree "$TREE" -p FETCH_HEAD)"
+            if git push --quiet "$MIRROR_URL" "$SYNC_COMMIT:main"; then
+              echo "Pushed ${SYNC_COMMIT} to nvoos-claude-gateway-plugin:main"
+              exit 0
+            fi
+            echo "Push rejected (mirror main advanced) — attempt ${attempt}/5, retrying"
+            sleep 5
+          done
+
+          echo "::error::Gave up after 5 attempts — mirror main kept advancing"
+          exit 1
