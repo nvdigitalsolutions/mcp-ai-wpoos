@@ -267,6 +267,8 @@ pub fn run() {
             ipc::transcribe_document,
             ipc::cancel_document,
             ipc::export_document,
+            ipc::document_model_available,
+            ipc::test_document_model_connection,
             ipc::get_permissions,
             ipc::request_permission,
             ipc::open_system_settings,

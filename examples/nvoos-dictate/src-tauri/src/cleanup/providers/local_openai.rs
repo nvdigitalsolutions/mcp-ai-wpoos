@@ -346,6 +346,25 @@ impl LocalOpenAiProvider {
         self.post_vision(&body).await
     }
 
+    /// Full-page document understanding (Proposal 111): the page image plus
+    /// the official grounding prompt; returns the model's fence-stripped
+    /// Markdown.
+    #[cfg(feature = "document")]
+    pub async fn understand_document(
+        &self,
+        image_data_uri: &str,
+        prior_text: &str,
+    ) -> AppResult<String> {
+        let model = if self.model.is_empty() {
+            None
+        } else {
+            Some(self.model.as_str())
+        };
+        let body = openai_shape::build_document_model_body(model, image_data_uri, prior_text);
+        let raw = self.post_vision(&body).await?;
+        Ok(openai_shape::parse_document_model_reply(&raw))
+    }
+
     /// Shared multimodal POST (the two polish flavours differ only in prompt).
     #[cfg(any(feature = "vision", feature = "document"))]
     async fn post_vision(&self, body: &serde_json::Value) -> AppResult<String> {

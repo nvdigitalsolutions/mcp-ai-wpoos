@@ -301,6 +301,10 @@ pub struct DocumentDiagnostics {
     pub dpi: u32,
     pub max_pages: usize,
     pub polish_enabled: bool,
+    pub model_pages: u64,
+    pub model_enabled: bool,
+    pub model_provider: String,
+    pub model_model: String,
 }
 
 /// Build the document pipeline diagnostics snapshot.
@@ -321,6 +325,10 @@ fn document_diagnostics(state: &AppState, settings: &Settings) -> DocumentDiagno
         dpi: settings.document.dpi,
         max_pages: settings.document.max_pages,
         polish_enabled: settings.document.polish_enabled,
+        model_pages: controller.stats.model_pages.load(Ordering::Relaxed),
+        model_enabled: settings.document.model.enabled,
+        model_provider: settings.document.model.provider.clone(),
+        model_model: settings.document.model.model.clone(),
     }
 }
 
@@ -1499,6 +1507,41 @@ pub fn document_available() -> bool {
     crate::document::available()
 }
 
+/// Whether the document-model tier is compiled in (Proposal 111).
+#[tauri::command]
+pub fn document_model_available() -> bool {
+    crate::document::available()
+}
+
+/// Test the document-model endpoint: builds the worker from the current
+/// settings and sends a one-token ping. Quality is the probe's job — this
+/// proves the local server answers.
+#[cfg(feature = "document")]
+#[tauri::command]
+pub async fn test_document_model_connection(state: State<'_, AppState>) -> AppResult<String> {
+    let settings = state.settings_snapshot();
+    let worker = crate::document::model::build_document_model(&settings, state.secrets.as_ref())
+        .ok_or_else(|| {
+            AppError::NotConfigured(
+                "document model tier is disabled or no local provider is configured".into(),
+            )
+        })?;
+    let outcome = tauri::async_runtime::spawn_blocking(move || worker.test_connection())
+        .await
+        .map_err(|e| AppError::Other(format!("connection test failed: {e}")))?;
+    outcome
+}
+
+/// Stub for builds without the `document` feature (the command surface is
+/// stable; the body fails cleanly).
+#[cfg(not(feature = "document"))]
+#[tauri::command]
+pub async fn test_document_model_connection(_state: State<'_, AppState>) -> AppResult<String> {
+    Err(AppError::NotConfigured(
+        "document pipeline not compiled into this build".into(),
+    ))
+}
+
 /// Pick a document file (PDF, TIFF, or raster image) via the native dialog.
 #[tauri::command]
 pub fn pick_document(window: tauri::Window) -> AppResult<Option<String>> {
@@ -1562,7 +1605,7 @@ pub async fn transcribe_document(
         Ok(result) => {
             if settings.snippet.retain_history {
                 let combined = result.combined_text();
-                let (text_pages, _ocr_pages, _polished) = result.provenance_counts();
+                let (text_pages, _ocr_pages, _polished, _model_pages) = result.provenance_counts();
                 let engine = if text_pages == 0 {
                     "document-ocr"
                 } else {

@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Cognition desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks (Proposals 073/075/076), the screen-OCR snippet track (Proposal 100, features snippet/snippet-onnx), the document-OCR input track (Proposal 109, feature document — PDF/multi-page TIFF via pdfium-render), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, screen OCR, or document OCR.
+description: Operational guide for the NV oOS Cognition desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks (Proposals 073/075/076), the screen-OCR snippet track (Proposal 100, features snippet/snippet-onnx), the document-OCR input track (Proposal 109, feature document — PDF/multi-page TIFF via pdfium-render, plus the Proposal 111 DeepSeek-OCR local model tier), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, screen OCR, document OCR, or the DeepSeek-OCR model tier.
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
@@ -1262,7 +1262,7 @@ check is the authoritative one.
 
 New this session (2026-11-04, word boxes + model tier): **hOCR/ALTO v2
   word-level bounding boxes** (follow-up 2) and **Proposal 111
-  (DeepSeek-OCR provider tier, design-only)**. Word boxes: additive serde
+  (DeepSeek-OCR provider tier — implemented later this session, see below)**. Word boxes: additive serde
   (`DocumentPage.lines`, `#[serde(default)]`; TS `lines?`), canonical
   raster space per page (PDF = 300-DPI render pixels, TIFF/image = source
   pixels; engine boxes scaled back from the 2x scan-profile space),
@@ -1275,3 +1275,42 @@ New this session (2026-11-04, word boxes + model tier): **hOCR/ALTO v2
   PR #17400): proposal 111 decides **model tier via the local-server
   transport, never embedded** - see the proposal for P0/P1/P2 and the
   probe-first verification plan.
+
+New this session (2026-11-04, evening): **Proposal 111 implemented**
+  (PR #7439, stacked on #7434 word-boxes — merge #7434 first). Ships:
+  `document/model.rs` (`DocumentModel` worker, own current-thread
+  runtime like `polish.rs`; `should_escalate` pure+tested;
+  `build_document_model` = configured provider first, the other local
+  provider as fallback; `page_to_png_data_uri` sends the RAW page —
+  never the binarized scan profile — downscaled to a 3000px long edge;
+  `maybe_model` is soft-fail — the deterministic result always
+  survives). Prompt contract is the official family prompt
+  `<image>\n<|grounding|>Convert the document to markdown.` with **no
+  system message** (DeepWiki/Cohorte guidance); the weak box-level OCR
+  text rides along as prior context. Escalation: budgeted `max_pages`
+  per document + `all_scans` opt-in + `min_confidence` gate — honest
+  note: WinRT reports constant 1.0 and ONNX reports None, so only
+  `all_scans` fires until an engine reports real scores. New
+  `PageProvenance::Model` ('model'); `provenance_counts()` is now a
+  4-tuple (text, ocr, polished, model). Settings: new Documents tab
+  (provider Ollama/LM Studio, model id, all-scans, min-confidence,
+  page budget, Test-connection button via
+  `test_document_model_connection`); Diagnostics: Document OCR card
+  with per-provenance counts. Live probe:
+  `cargo run --features document --example document_model_probe --
+  <pdf|image>` (the verification gate for the tier).
+  **Default-feature CI discipline (the recurring trap):** the
+  `document` module is ALWAYS compiled (type-stable for AppState/IPC),
+  so every new model-tier reference must be cfg-gated — `pub mod
+  model` is `#[cfg(feature = "document")]`, `run_pipeline` (shared
+  entry) cfg-splits the runner dispatch (`&model` arg exists only in
+  document builds), the not-document runner stubs dropped the model
+  param, `test_document_model_connection` has a not-document stub,
+  and the probe is registered via `required-features = ["document"]`
+  in Cargo.toml. Gates re-verified green: fmt, clippy `-D warnings`
+  (default + document + document,snippet-pdf), tests 127 default /
+  158 document, `npm run build`. Known gaps: no live deepseek-ocr
+  server run yet (ollama pull deepseek-ocr ~6.7GB); DeepSeek-OCR-2
+  (Apache-2.0, 3B, OmniDocBench v1.5 91.09%) is a candidate default
+  model id. Plan doc:
+  `docs/project/proposals/111-deepseek-ocr-provider-implementation-plan.md`.

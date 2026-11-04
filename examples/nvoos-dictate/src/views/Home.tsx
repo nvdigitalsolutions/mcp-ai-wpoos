@@ -123,6 +123,8 @@ function DocumentPanel() {
     const unlisten = onDocumentProgress((p) => {
       if (p.phase === 'extract') setProgress(`Page ${p.page}/${p.page_count} — text layer`);
       else if (p.phase === 'ocr') setProgress(`Page ${p.page}/${p.page_count} — recognizing`);
+      else if (p.phase === 'model')
+        setProgress(`Page ${p.page}/${p.page_count} — understanding with the local model`);
       else setProgress(`Page ${p.page}/${p.page_count} — polishing`);
     });
     return () => void unlisten.then((fn) => fn());
@@ -204,7 +206,7 @@ function DocumentPanel() {
             <details key={p.index} open={p.index === 0}>
               <summary>
                 Page {p.index + 1}
-                <span className={`badge ${p.provenance === 'text' ? 'ok' : p.provenance === 'polished' ? 'ok' : 'warn'}`}>
+                <span className={`badge ${['text', 'polished', 'model'].includes(p.provenance) ? 'ok' : 'warn'}`}>
                   {p.provenance}
                 </span>
               </summary>
