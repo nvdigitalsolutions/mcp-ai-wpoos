@@ -33,23 +33,50 @@ impl DocumentModel {
     }
 
     /// One full-page pass (blocking). The reply is fence-stripped Markdown.
+    /// Ollama takes its NATIVE `/api/chat` route (the OpenAI-compat mount
+    /// drops image features for the deepseekocr architecture — live
+    /// verification 2026-11-04); LM Studio keeps the compat route.
     #[cfg(feature = "document")]
     pub fn understand(&self, image_data_uri: &str, prior_text: &str) -> AppResult<String> {
-        self.rt.block_on(
-            self.provider
-                .understand_document(image_data_uri, prior_text),
-        )
+        self.rt.block_on(async {
+            if self.provider.kind.id == "ollama" {
+                self.provider
+                    .understand_document_native(image_data_uri, prior_text)
+                    .await
+            } else {
+                self.provider
+                    .understand_document(image_data_uri, prior_text)
+                    .await
+            }
+        })
     }
 
     /// Liveness check for the Settings "Test connection" button: a one-token
     /// completion through the configured endpoint (quality is the probe's
     /// job — this proves the server answers).
     pub fn test_connection(&self) -> AppResult<String> {
-        self.rt.block_on(self.provider.complete(
-            "You are a health check.",
-            "Reply with the single word: ok",
-            0.0,
-        ))
+        self.rt.block_on(async {
+            if self.provider.kind.id == "ollama" {
+                // A text-only ping is off-contract for a vision model (it
+                // loops on template fragments): ping with a blank image
+                // through the native endpoint instead — a real round-trip.
+                let blank = page_to_png_data_uri(&vec![255u8; 64 * 64 * 3], 64, 64)?;
+                let reply = self.provider.understand_document_native(&blank, "").await?;
+                if reply.trim().is_empty() {
+                    Ok("ok — local server answered (empty reply)".to_string())
+                } else {
+                    Ok(reply)
+                }
+            } else {
+                self.provider
+                    .complete(
+                        "You are a health check.",
+                        "Reply with the single word: ok",
+                        0.0,
+                    )
+                    .await
+            }
+        })
     }
 }
 

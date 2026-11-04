@@ -215,9 +215,47 @@ pub fn build_document_model_body(
 /// fenced block's body wins, otherwise the trimmed raw text (the same
 /// contract as `polish::strip_fences`, inlined to keep this module
 /// dependency-free).
+///
+/// Also strips stray chat-template fragments from the reply prefix
+/// (live verification, 2026-11-04): Ollama's deepseekocr preprocessing
+/// occasionally prepends `<|im_start|>…` / `<|grounding|>` / `\\>` tokens
+/// on some page sizes. The content after them is valid — remove the
+/// fragments deterministically instead of fighting the server.
 #[cfg(feature = "document")]
 pub fn parse_document_model_reply(raw: &str) -> String {
-    let trimmed = raw.trim();
+    let mut trimmed = raw.trim();
+    const FRAGMENTS: &[&str] = &[
+        // `\\>` first, then a bare backslash: Ollama sometimes prefixes
+        // the template fragment with a stray escape token
+        // (`\\<|im_start|>user`) or emits a lone `\\>`.
+        "\\>",
+        "\\",
+        "<|im_start|>user",
+        "<|im_start|>assistant",
+        "<|im_start|>system",
+        "<|im_start|>",
+        "<|im_end|>",
+        "</|im_start|>user",
+        "</|im_start|>assistant",
+        "</|im_start|>system",
+        "</|im_start|>",
+        "</|im_end|>",
+        "<|grounding|>",
+        "<image>",
+    ];
+    loop {
+        let mut advanced = false;
+        for frag in FRAGMENTS {
+            if let Some(rest) = trimmed.strip_prefix(frag) {
+                trimmed = rest.trim_start();
+                advanced = true;
+                break;
+            }
+        }
+        if !advanced {
+            break;
+        }
+    }
     if trimmed.starts_with("```") {
         let mut lines = trimmed.lines();
         let _ = lines.next();
@@ -227,6 +265,43 @@ pub fn parse_document_model_reply(raw: &str) -> String {
         return inner.join("\n").trim().to_string();
     }
     trimmed.to_string()
+}
+
+/// Ollama-native document-understanding body (Proposal 111 live
+/// verification, 2026-11-04): the OpenAI-compat `/v1/chat/completions`
+/// mount non-deterministically drops image features for the `deepseekocr`
+/// architecture (some page sizes derail into `<|im_start|>` template
+/// loops), while the native `/api/chat` endpoint with `images: [b64]` is
+/// reliable at every tested size (600x200 up to 3000x3000).
+#[cfg(feature = "document")]
+pub fn build_document_model_body_native(
+    model: Option<&str>,
+    image_b64: &str,
+    prior_text: &str,
+) -> Value {
+    let mut body = json!({
+        "messages": [
+            { "role": "user", "content": document_model_prompt(prior_text), "images": [image_b64] }
+        ],
+        "stream": false,
+        "options": { "temperature": 0.1 }
+    });
+    if let Some(model) = model {
+        body["model"] = json!(model);
+    }
+    body
+}
+
+/// Parse an Ollama-native `/api/chat` reply: `message.content`, then the
+/// same fence-stripping contract as the OpenAI-compat path.
+#[cfg(feature = "document")]
+pub fn parse_document_model_native_reply(payload: &Value) -> String {
+    let content = payload
+        .get("message")
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_str())
+        .unwrap_or_default();
+    parse_document_model_reply(content)
 }
 
 /// Parse a vision-polish reply into `(label, confidence)`. Tolerates a
@@ -402,5 +477,52 @@ mod document_model_tests {
             "# Title"
         );
         assert_eq!(parse_document_model_reply("  plain  "), "plain");
+    }
+
+    #[test]
+    fn reply_parser_strips_stray_template_fragments() {
+        assert_eq!(
+            parse_document_model_reply("<|im_start|>user\nThe quick brown fox"),
+            "The quick brown fox"
+        );
+        assert_eq!(
+            parse_document_model_reply("<|im_start|>assistant\n<|grounding|># Title"),
+            "# Title"
+        );
+        assert_eq!(
+            parse_document_model_reply("\\>image OCR Fixture"),
+            "image OCR Fixture"
+        );
+        assert_eq!(
+            parse_document_model_reply("<|im_end|>  <image>  plain"),
+            "plain"
+        );
+        assert_eq!(
+            parse_document_model_reply("\\<|im_start|>user\nThe quick brown fox"),
+            "The quick brown fox"
+        );
+        assert_eq!(
+            parse_document_model_reply("</|im_start|>user\nThe quick brown fox"),
+            "The quick brown fox"
+        );
+    }
+
+    #[test]
+    fn native_body_carries_the_image_in_images_array() {
+        let body = build_document_model_body_native(Some("deepseek-ocr"), "AAAA", "");
+        let msgs = body["messages"].as_array().unwrap();
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0]["images"][0], "AAAA");
+        assert_eq!(body["stream"], false);
+        assert_eq!(body["model"], "deepseek-ocr");
+    }
+
+    #[test]
+    fn native_reply_parser_reads_message_content() {
+        let payload = json!({
+            "message": { "role": "assistant", "content": "```markdown\n# Title\n```" }
+        });
+        assert_eq!(parse_document_model_native_reply(&payload), "# Title");
+        assert_eq!(parse_document_model_native_reply(&json!({})), "");
     }
 }

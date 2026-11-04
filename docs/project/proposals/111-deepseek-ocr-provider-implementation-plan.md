@@ -102,3 +102,39 @@
 3. Live: probe against `deepseek-ocr` on Ollama; escalation exercised
    end-to-end when a local server is running (documented recipe).
 4. CI: the standard build-nvoos-dictate matrix.
+
+## Live verification results (2026-11-04)
+
+`ollama pull deepseek-ocr` (6.7 GB, F16, 3.3B) on the reference PC, then
+the `document_model_probe` against the existing fixtures:
+
+- `tests/fixtures/image-text.png` (600x200) -> `## IMAGE OCR FIXTURE 123`
+  (correct Markdown, ~10-19 s cold, ~3 s warm).
+- `tests/fixtures/text-2page.pdf` (rendered 2549x3299 -> 2319x3000 PNG) ->
+  the fox text, clean (24 s cold).
+
+Two findings changed the transport design (both shipped):
+
+1. **The OpenAI-compat mount drops image features for the `deepseekocr`
+   architecture.** `/v1/chat/completions` with `image_url` content parts
+   derailed non-deterministically on some page sizes (replies became
+   `<|im_start|>` template loops or `\ |\` noise) while Ollama's native
+   `/api/chat` with `images: [b64]` was reliable at every tested size
+   (600x200 .. 3000x3000). The tier now branches: **ollama -> native
+   `/api/chat`** (endpoint derived from the base URL by stripping the
+   `/v1` suffix), **lm_studio -> the compat mount**. The Settings
+   connection test pings Ollama with a blank 64x64 image through the
+   native route (text-only pings are off-contract for this vision model
+   and loop).
+2. **Even the native route occasionally prefixes replies with stray
+   template fragments** on some page sizes (`\<|im_start|>user`,
+   `</|im_start|>user`, `\>`). The content after them is valid, so
+   `parse_document_model_reply` strips the fragment list deterministically
+   (including slash variants and a bare `\`) before fence-stripping.
+
+Local-machine ops note: the Ollama install on the reference PC was
+missing `llama-server.exe` and the CPU runners (every model call returned
+HTTP 500) — a silent reinstall (`OllamaSetup.exe /S`) restored it. The
+probe exe needs `pdfium.dll` copied beside it under
+`target/debug/examples/` (`bind()` searches next to the exe; build.rs
+stages the dll at `target/debug/` for the main binary only).
