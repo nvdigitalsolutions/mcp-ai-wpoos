@@ -1,7 +1,7 @@
 # NV oOS Documentation Index
 
-**Last Updated:** November 01, 2026
-**Plugin Version:** 1.2.16
+**Last Updated:** November 04, 2026
+**Plugin Version:** 1.2.17
 **MCP Version:** 2026-07-28
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
