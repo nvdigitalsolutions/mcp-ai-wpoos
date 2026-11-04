@@ -17,6 +17,8 @@
 
 pub mod controller;
 pub mod hybrid;
+#[cfg(feature = "document")]
+pub mod model;
 
 #[cfg(feature = "document")]
 pub mod export;
@@ -49,6 +51,9 @@ pub enum PageProvenance {
     Ocr,
     /// OCR page whose text was corrected by the optional local VLM polish.
     Polished,
+    /// Page understood by the local document-model tier (Proposal 111) —
+    /// structured Markdown; models emit no word coordinates.
+    Model,
 }
 
 impl PageProvenance {
@@ -58,6 +63,7 @@ impl PageProvenance {
             Self::Text => "text",
             Self::Ocr => "ocr",
             Self::Polished => "polished",
+            Self::Model => "model",
         }
     }
 }
@@ -124,19 +130,22 @@ impl DocumentResult {
             .join("\n\n")
     }
 
-    /// Counts per provenance, for diagnostics/history.
-    pub fn provenance_counts(&self) -> (usize, usize, usize) {
+    /// Counts per provenance, for diagnostics/history: (text, ocr, polished,
+    /// model).
+    pub fn provenance_counts(&self) -> (usize, usize, usize, usize) {
         let mut t = 0;
         let mut o = 0;
         let mut p = 0;
+        let mut m = 0;
         for page in &self.pages {
             match page.provenance {
                 PageProvenance::Text => t += 1,
                 PageProvenance::Ocr => o += 1,
                 PageProvenance::Polished => p += 1,
+                PageProvenance::Model => m += 1,
             }
         }
-        (t, o, p)
+        (t, o, p, m)
     }
 }
 
@@ -173,6 +182,7 @@ mod tests {
         assert_eq!(PageProvenance::Text.id(), "text");
         assert_eq!(PageProvenance::Ocr.id(), "ocr");
         assert_eq!(PageProvenance::Polished.id(), "polished");
+        assert_eq!(PageProvenance::Model.id(), "model");
     }
 
     #[test]
@@ -197,6 +207,6 @@ mod tests {
             duration_ms: 10,
         };
         assert_eq!(result.combined_text(), "one\n\ntwo");
-        assert_eq!(result.provenance_counts(), (1, 1, 0));
+        assert_eq!(result.provenance_counts(), (1, 1, 0, 0));
     }
 }

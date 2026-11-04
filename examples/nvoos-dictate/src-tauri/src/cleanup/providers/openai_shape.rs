@@ -169,8 +169,64 @@ pub fn ocr_polish_prompt(ocr_text: &str) -> String {
          errors (wrong glyphs, swapped letters, missing punctuation). Correct \
          the text using the image. Preserve the original line breaks, reading \
          order, and structure exactly. Do not summarize, translate, or add \
-         commentary. Return ONLY the corrected text.\n\nOCR text:\n{ocr_text}"
+         Return ONLY the corrected text.\n\nOCR text:\n{ocr_text}"
     )
+}
+
+/// Document-understanding prompt (Proposal 111): the official DeepSeek-OCR
+/// prompt family — a plain grounding instruction, no system message (the
+/// DeepWiki/Cohorte guidance: plain prompts outperform chat scaffolding for
+/// this family). The box-level OCR text is offered as weak prior context.
+#[cfg(feature = "document")]
+pub fn document_model_prompt(prior_text: &str) -> String {
+    if prior_text.trim().is_empty() {
+        "<image>\n<|grounding|>Convert the document to markdown.".to_string()
+    } else {
+        format!(
+            "<image>\n<|grounding|>Convert the document to markdown. The text below is weak box-level OCR prior context — correct it against the image and preserve the layout (headings, lists, tables):\n\n{prior_text}"
+        )
+    }
+}
+
+/// Build the document-understanding body (Proposal 111): a single user
+/// message with the grounding prompt + the page image; no system message.
+#[cfg(feature = "document")]
+pub fn build_document_model_body(
+    model: Option<&str>,
+    image_data_uri: &str,
+    prior_text: &str,
+) -> Value {
+    let mut body = json!({
+        "messages": [
+            { "role": "user", "content": [
+                { "type": "text", "text": document_model_prompt(prior_text) },
+                { "type": "image_url", "image_url": { "url": image_data_uri } }
+            ]}
+        ],
+        "temperature": 0.1
+    });
+    if let Some(model) = model {
+        body["model"] = json!(model);
+    }
+    body
+}
+
+/// Strip fenced/prose wrappers from a document-model reply: the first
+/// fenced block's body wins, otherwise the trimmed raw text (the same
+/// contract as `polish::strip_fences`, inlined to keep this module
+/// dependency-free).
+#[cfg(feature = "document")]
+pub fn parse_document_model_reply(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if trimmed.starts_with("```") {
+        let mut lines = trimmed.lines();
+        let _ = lines.next();
+        let inner: Vec<&str> = lines
+            .take_while(|l| !l.trim_start().starts_with("```"))
+            .collect();
+        return inner.join("\n").trim().to_string();
+    }
+    trimmed.to_string()
 }
 
 /// Parse a vision-polish reply into `(label, confidence)`. Tolerates a
@@ -313,5 +369,38 @@ mod tests {
             assert!(label.contains("stapler"));
             assert!(conf > 0.0);
         }
+    }
+}
+
+#[cfg(all(test, feature = "document"))]
+mod document_model_tests {
+    use super::*;
+
+    #[test]
+    fn prompt_uses_official_grounding_contract() {
+        let prompt = document_model_prompt("");
+        assert!(prompt.starts_with("<image>\n<|grounding|>Convert the document to markdown"));
+        assert!(document_model_prompt("weak ocr").contains("weak ocr"));
+    }
+
+    #[test]
+    fn body_has_no_system_message_and_carries_the_image() {
+        let body =
+            build_document_model_body(Some("deepseek-ocr"), "data:image/png;base64,AAAA", "");
+        assert!(body.get("system").is_none());
+        let msgs = body["messages"].as_array().unwrap();
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0]["role"], "user");
+        assert_eq!(body["model"], "deepseek-ocr");
+        assert_eq!(body["temperature"], 0.1);
+    }
+
+    #[test]
+    fn reply_parser_strips_fences() {
+        assert_eq!(
+            parse_document_model_reply("```markdown\n# Title\n```"),
+            "# Title"
+        );
+        assert_eq!(parse_document_model_reply("  plain  "), "plain");
     }
 }

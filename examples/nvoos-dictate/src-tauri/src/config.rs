@@ -543,6 +543,46 @@ impl Default for SnippetConfig {
     }
 }
 
+/// Local document-understanding tier (Proposal 111): an optional
+/// DeepSeek-OCR-class model served by LM Studio / Ollama, called for pages
+/// the box-level OCR engines recognize poorly. Off by default.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct DocumentModelConfig {
+    /// Master switch for the tier.
+    pub enabled: bool,
+    /// Provider: `ollama` | `lm_studio`.
+    pub provider: String,
+    /// Model id (`deepseek-ocr` for Ollama; blank = the server's single
+    /// loaded model).
+    pub model: String,
+    /// Escalate pages whose mean engine confidence is below this (0..1).
+    /// `None` = never escalate on confidence. Note: WinRT reports a
+    /// constant 1.0 and ONNX reports None today, so only `all_scans`
+    /// fires until an engine reports real scores.
+    pub min_confidence: Option<f32>,
+    /// Escalate every OCR page regardless of confidence (budgeted).
+    pub all_scans: bool,
+    /// Cap on model-tier pages per document (the tier is slow).
+    pub max_pages: usize,
+    /// Cold-load budget for the local server.
+    pub load_timeout_ms: u64,
+}
+
+impl Default for DocumentModelConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            provider: "ollama".to_string(),
+            model: "deepseek-ocr".to_string(),
+            min_confidence: None,
+            all_scans: false,
+            max_pages: 5,
+            load_timeout_ms: 120_000,
+        }
+    }
+}
+
 /// The complete persisted settings blob.
 /// Document input pipeline settings (Proposal 109).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -559,6 +599,8 @@ pub struct DocumentConfig {
     pub polish_enabled: bool,
     /// VLM model for polish (empty = the local server's default).
     pub polish_model: String,
+    /// Local document-understanding tier (Proposal 111).
+    pub model: DocumentModelConfig,
 }
 
 impl Default for DocumentConfig {
@@ -569,6 +611,7 @@ impl Default for DocumentConfig {
             max_pages: 200,
             polish_enabled: false,
             polish_model: String::new(),
+            model: DocumentModelConfig::default(),
         }
     }
 }

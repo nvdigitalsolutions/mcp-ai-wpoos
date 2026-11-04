@@ -49,6 +49,7 @@ pub struct DocumentStats {
     pub pages: AtomicU64,
     pub text_pages: AtomicU64,
     pub ocr_pages: AtomicU64,
+    pub model_pages: AtomicU64,
     pub last_ms: AtomicU64,
     pub errors: AtomicU64,
     pub last_error: Mutex<Option<String>>,
@@ -148,12 +149,28 @@ pub fn run_pipeline(
 ) -> AppResult<DocumentResult> {
     let started = std::time::Instant::now();
     controller.stats.documents.fetch_add(1, Ordering::Relaxed);
+    #[cfg(feature = "document")]
+    let model = crate::document::model::build_document_model(settings, secrets);
 
     let ext = path
         .extension()
         .and_then(|e| e.to_str())
         .map(|e| e.to_lowercase())
         .unwrap_or_default();
+    #[cfg(feature = "document")]
+    let pages = match ext.as_str() {
+        "pdf" => run_pdf_pages(app, controller, settings, models_dir, secrets, &model, path),
+        "tif" | "tiff" => {
+            run_tiff_pages(app, controller, settings, models_dir, secrets, &model, path)
+        }
+        "png" | "jpg" | "jpeg" | "webp" => {
+            run_image_pages(app, controller, settings, models_dir, secrets, &model, path)
+        }
+        other => Err(AppError::Document(format!(
+            "unsupported document format '{other}' — use PDF, TIFF, PNG, JPEG, or WebP"
+        ))),
+    }?;
+    #[cfg(not(feature = "document"))]
     let pages = match ext.as_str() {
         "pdf" => run_pdf_pages(app, controller, settings, models_dir, secrets, path),
         "tif" | "tiff" => run_tiff_pages(app, controller, settings, models_dir, secrets, path),
@@ -192,6 +209,7 @@ fn run_pdf_pages(
     settings: &Settings,
     models_dir: &Path,
     secrets: &dyn SecretStore,
+    model: &Option<crate::document::model::DocumentModel>,
     path: &Path,
 ) -> AppResult<Vec<DocumentPage>> {
     let pdfium = crate::document::pdf::bind()?;
@@ -199,6 +217,7 @@ fn run_pdf_pages(
     let page_count = document.pages().len() as usize;
     let max_pages = settings.document.max_pages.max(1);
     let polisher = build_polisher(settings, secrets);
+    let mut model_pages_used = 0usize;
 
     let mut out: Vec<DocumentPage> = Vec::new();
     for (index, page) in document.pages().iter().enumerate() {
@@ -245,19 +264,44 @@ fn run_pdf_pages(
                     raw.width() as f32 / pw as f32,
                     raw.height() as f32 / ph as f32,
                 );
-                let (text, provenance) = match crate::document::polish::maybe_polish(
-                    app,
-                    &polisher,
-                    index,
-                    page_count,
-                    &raw_rgb,
-                    raw.width(),
-                    raw.height(),
-                    &cleaned,
+                let mut text = cleaned;
+                let mut provenance = PageProvenance::Ocr;
+                if crate::document::model::should_escalate(
+                    &settings.document.model,
+                    snippet.confidence,
+                    model_pages_used,
                 ) {
-                    Some(polished) => (polished, PageProvenance::Polished),
-                    None => (cleaned, PageProvenance::Ocr),
-                };
+                    if let Some(md) = crate::document::model::maybe_model(
+                        app,
+                        model,
+                        index,
+                        page_count,
+                        &raw_rgb,
+                        raw.width(),
+                        raw.height(),
+                        &text,
+                    ) {
+                        text = md;
+                        provenance = PageProvenance::Model;
+                        model_pages_used += 1;
+                        controller.stats.model_pages.fetch_add(1, Ordering::Relaxed);
+                    }
+                }
+                if provenance == PageProvenance::Ocr {
+                    if let Some(polished) = crate::document::polish::maybe_polish(
+                        app,
+                        &polisher,
+                        index,
+                        page_count,
+                        &raw_rgb,
+                        raw.width(),
+                        raw.height(),
+                        &text,
+                    ) {
+                        text = polished;
+                        provenance = PageProvenance::Polished;
+                    }
+                }
                 let lines = crate::document::words::align(&text, &raw_words).unwrap_or_else(|| {
                     crate::document::words::fallback_lines(
                         &text,
@@ -287,10 +331,12 @@ fn run_raster_pages(
     settings: &Settings,
     models_dir: &Path,
     secrets: &dyn SecretStore,
+    model: &Option<crate::document::model::DocumentModel>,
     frames: Vec<image::RgbImage>,
 ) -> AppResult<Vec<DocumentPage>> {
     let page_count = frames.len();
     let polisher = build_polisher(settings, secrets);
+    let mut model_pages_used = 0usize;
 
     let mut out: Vec<DocumentPage> = Vec::new();
     for (index, frame) in frames.iter().enumerate() {
@@ -311,19 +357,44 @@ fn run_raster_pages(
             frame.width() as f32 / pw as f32,
             frame.height() as f32 / ph as f32,
         );
-        let (text, provenance) = match crate::document::polish::maybe_polish(
-            app,
-            &polisher,
-            index,
-            page_count,
-            frame.as_raw(),
-            frame.width(),
-            frame.height(),
-            &cleaned,
+        let mut text = cleaned;
+        let mut provenance = PageProvenance::Ocr;
+        if crate::document::model::should_escalate(
+            &settings.document.model,
+            snippet.confidence,
+            model_pages_used,
         ) {
-            Some(polished) => (polished, PageProvenance::Polished),
-            None => (cleaned, PageProvenance::Ocr),
-        };
+            if let Some(md) = crate::document::model::maybe_model(
+                app,
+                model,
+                index,
+                page_count,
+                frame.as_raw(),
+                frame.width(),
+                frame.height(),
+                &text,
+            ) {
+                text = md;
+                provenance = PageProvenance::Model;
+                model_pages_used += 1;
+                controller.stats.model_pages.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+        if provenance == PageProvenance::Ocr {
+            if let Some(polished) = crate::document::polish::maybe_polish(
+                app,
+                &polisher,
+                index,
+                page_count,
+                frame.as_raw(),
+                frame.width(),
+                frame.height(),
+                &text,
+            ) {
+                text = polished;
+                provenance = PageProvenance::Polished;
+            }
+        }
         let lines = crate::document::words::align(&text, &raw_words).unwrap_or_else(|| {
             crate::document::words::fallback_lines(
                 &text,
@@ -349,10 +420,13 @@ fn run_tiff_pages(
     settings: &Settings,
     models_dir: &Path,
     secrets: &dyn SecretStore,
+    model: &Option<crate::document::model::DocumentModel>,
     path: &Path,
 ) -> AppResult<Vec<DocumentPage>> {
     let frames = crate::document::tiff::pages(path, settings.document.max_pages.max(1))?;
-    run_raster_pages(app, controller, settings, models_dir, secrets, frames)
+    run_raster_pages(
+        app, controller, settings, models_dir, secrets, model, frames,
+    )
 }
 
 /// Single-image flow: decode the one frame, then the shared raster path.
@@ -363,10 +437,19 @@ fn run_image_pages(
     settings: &Settings,
     models_dir: &Path,
     secrets: &dyn SecretStore,
+    model: &Option<crate::document::model::DocumentModel>,
     path: &Path,
 ) -> AppResult<Vec<DocumentPage>> {
     let frame = crate::document::images::page(path)?;
-    run_raster_pages(app, controller, settings, models_dir, secrets, vec![frame])
+    run_raster_pages(
+        app,
+        controller,
+        settings,
+        models_dir,
+        secrets,
+        model,
+        vec![frame],
+    )
 }
 
 /// Build the polish worker when enabled (settings + a local provider).

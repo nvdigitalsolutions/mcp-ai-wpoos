@@ -45,6 +45,13 @@ name = "document_probe"
 path = "examples/document_probe.rs"
 required-features = ["document"]
 
+# Document-model tier probe (Proposal 111): one page -> local DeepSeek-OCR
+# server -> Markdown. Requires the `document` feature (image/pdfium deps).
+[[example]]
+name = "document_model_probe"
+path = "examples/document_model_probe.rs"
+required-features = ["document"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
