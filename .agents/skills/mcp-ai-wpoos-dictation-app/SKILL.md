@@ -1196,3 +1196,20 @@ follow-up. Research notes:
 `docs/project/proposals/109-document-input-pipeline-ocr-research.md`
 (engine comparisons, licensing matrix, cloud-vs-local economics,
 small-VLM polish options, addons/pro survey).
+
+New this session (2026-11-04, later): **raster-image input (Proposal 109
+follow-up 1).** PNG/JPEG/WebP now route through the document pipeline:
+`document/images.rs` (image::open -> RGB8 frame, 40 MP pixel cap, clean
+"unsupported image" error), a controller refactor (`run_raster_pages` is
+the shared TIFF/image loop; `run_tiff_pages`/`run_image_pages` are thin
+wrappers; the non-document stub set gained a `run_image_pages` stub),
+`pick_document` gained an Images filter (png/jpg/jpeg/webp), the Home copy
+lists images, and dispatch keys off extension (png|jpg|jpeg|webp).
+Fixtures: `scripts/make_image_fixtures.ps1` (System.Drawing PNG+JPEG
+600x200 + broken.png copied from malformed.pdf; the repo-level
+info/exclude ignores *.png/*.jpg, so committing new versions needs
+`git add -f`); `tests/document_images.rs` (3 decode/error tests, no
+pdfium needed). No Cargo.toml change: `image` 0.25 default features
+include webp, and `document` implies `snippet` implies `dep:image`.
+Image results label themselves `document-ocr` in history (same as
+scanned pages) - cosmetic only.
