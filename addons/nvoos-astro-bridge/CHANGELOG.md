@@ -1,5 +1,12 @@
 # Changelog — NV oOS Astro Bridge (nvoos-astro-bridge)
 
+## 1.1.1 — 2026-11-04
+
+### Added
+
+- **Embedded checkout proxy** (Proposal 110 Phase A): five `nvoos-commerce/v1` routes — `GET /checkout` (merged draft-order + cart doc), `POST /checkout/customer`, `POST /checkout/shipping-rate`, `POST /checkout/coupon`, `POST /checkout` (order + payment through the configured gateway) — all over the WooCommerce Store API with a bridge-minted `wc_store_api` nonce and the session `Cart-Token`. Per-session/IP rate limits, `expected_total` passthrough (409 drift preserves the refreshed cart), fail-closed gates (501/400) and `private, no-store` headers; the `/checkout` routes are excluded from the public B1 cache headers.
+- **Shop globals extensions**: read-only `stripePublishableKey` (public key; empty when Stripe is inactive) and `guestCheckout` (Woo's guest-checkout switch).
+
 ## 1.1.0 — 2026-11-03
 
 ### Added

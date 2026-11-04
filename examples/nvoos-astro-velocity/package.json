@@ -1,6 +1,6 @@
 {
 	"name": "nvoos-astro-velocity",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"description": "NV-authored headless storefront (Astro 7 SSR) for the NV commerce contract — Proposal 092.",
 	"type": "module",
 	"main": "server.js",

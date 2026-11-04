@@ -8,6 +8,10 @@ import { getShop } from '../../lib/commerce/client';
 import { pageTitle } from '../../lib/seo/meta';
 
 const shop = await getShop(Astro.url);
+
+// The cart is a per-shopper surface (the island renders the shopper's
+// lines) — never cached at the edge, the same treatment as /checkout (110).
+Astro.response.headers.set('Cache-Control', 'no-store');
 ---
 
 <BaseLayout title={pageTitle('Cart')}>
