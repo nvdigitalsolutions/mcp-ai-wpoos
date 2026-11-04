@@ -1,4 +1,4 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.16)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.17)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
@@ -6,6 +6,13 @@ Operational content stays in SKILL.md; append new per-version sections here.
 ---
 
 ---
+
+## Astro Checkout Wave, Document OCR, November Model Catalog (v1.2.17)
+
+- **No plugin-side tool or route changes** (PRs #7395–#7445) — zero tool-registry diff in-window; `fleet-stats` is a Pro REST route and the bridge/storefront surfaces are addon/app-side. The actionable ops content:
+- **November model catalog** (PRs #7416/#7417/#7440) — catalog **v2026.11.03**, 251 models, 18 providers: `default_model` → `gpt-6.1-sol`, selector light/advanced `gpt-6-luna`/`gpt-6.1-sol`, `gemini_image_model` → `gemini-nano-banana-2.1`, high-token fallback `gemini-3.5-flash-lite`; the gpt-4o/4.1 family deprecates (shutdown 2027-01-14, `gpt-4.1-nano` removed with the migration-map entry); the migration rewrites stored references once per catalog version bump. Ops lesson: never assert an image-model identity via an `"image"` substring — use an allowlist (the #7440 fragile-check rule).
+- **Astro Bridge** (addon 1.1.3 — three in-window bumps) — the settings page (product source native/woo/both + Woo SSO + System status) pins its capability to `manage_astro`, not `manage_options`; `migrate-native` is dry-run by default (`--run` confirm); the Store API dispatches in-process; the checkout routes are typed 502s. Storefront 0.4.2, gateway 0.3.1, new `claude-gateway-plugin` 0.1.0 addon.
+- **Sub-projects** — Cognition: Document OCR (Proposal 109) + DeepSeek-OCR tier (Proposal 111 — Ollama native `/api/chat`; the OpenAI-compat mount drops image features for `deepseekocr`); forge/wp.org state recorded in the astro-forge + wporg-submission skills.
 
 ## Deep-Research Reliability + Job Tools, Abilities MCP Adapter Interop, Gateway OAuth Go-Live (v1.2.16)
 

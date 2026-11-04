@@ -14,12 +14,12 @@ Architecturally, the project has undergone a major framework extraction: the AI 
 The repo is a **monorepo** containing:
 - The **base plugin** (GPLv3, ships to WordPress.org) — `mcp-ai-wpoos.php` + `includes/`
 - A **Pro addon** (commercial/proprietary) — `addons/pro/`
-- **31 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.4.0, MCP Gateway v0.3.0, Checkout API v0.1.2)
+- **32 additional addons** (various licenses) — `addons/*/` (including Fleet Operator, Media Worker v3.4.0, MCP Gateway v0.3.1, Checkout API v0.1.2)
 - The **extracted AI engine** (framework-agnostic, Hexagonal Architecture) — `lib/core/`
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.2.16 (November 2026)
+**Current version:** 1.2.17 (November 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
 **Total tools:** ~1,735 (~358 base + ~1,378 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
@@ -96,7 +96,7 @@ core/
 
 ## 4. Addon Inventory (Production vs Experimental)
 
-The monorepo contains **30 addon directories** under `addons/` (31 entries in the [ADDON_INVENTORY.md](ADDON_INVENTORY.md) inventory, including the standalone `core/` plugin). See the inventory for full details including license, version, and dependencies.
+The monorepo contains **32 addon directories** under `addons/` (33 entries in the [ADDON_INVENTORY.md](ADDON_INVENTORY.md) inventory, including the standalone `core/` plugin). See the inventory for full details including license, version, and dependencies.
 
 ### Production (actively maintained — review priority)
 
@@ -114,7 +114,7 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 | **SaaS Controller** | 0.3.0 | Proprietary | Cloudflare Workers + D1 + KV + AI Gateway deployment toolkit. One-click wizard, Plan/Apply, drift detector (0.3.0: Worker secrets + D1 schema folded into Plan/Apply). |
 | **Cloudways Dashboard** | 0.1.0 | GPLv3 | SaaS operator dashboard (Velzon-themed React SPA). Cloudways server + WP site management. |
 | **Comic Reader** | 0.5.0 | GPLv3 | CBR/CBZ/CB7/CBT comic reader & AI-powered creator (Komga-parity upgrade: Range serving, archive validation, per-user progress, continue-reading). React reading interface. |
-| **Funiq Bridge** | 1.0.0 | GPLv3 | Payload CMS → WordPress bridge for Funiq React PWA. REST API, CPTs, taxonomies, React admin SPA. |
+| **NV oOS Astro Bridge** | 1.1.3 | GPLv3 (PHP proprietary · SPA `src/` MIT) | The WordPress half of the NV Astro storefront (Proposal 092): the Payload-compatible `nvoos-commerce/v1` envelope over WordPress + WooCommerce, the standalone Astro CMS `/manage` surface, the theme policy + shop globals, the five-route embedded checkout (Store API in-process dispatch, Stripe nonce CSP), the hosted-checkout fallback + Settings page, and the one-time native→Woo catalog migration (Proposal 112 — `migrate-native` CLI, dry-run by default). |
 | **LibreChat** | 0.1.0 | GPLv3 | Sandboxed Python/JavaScript code interpreter, TTS/STT speech services, web search reranker. |
 | **Fleet Operator** | 1.0.0 | GPLv3 | External-operator governance (Hermes or any MCP/A2A host). Scoped `op_` credentials with audience binding, expiry, rate limits, revocation; MCP `tools/list` scoping + `tools/call` enforcement; admin page, WP-CLI, Hermes YAML + Zed/VS Code/Claude Desktop config generators (`generate_zed_json()`/`generate_claude_json()` through the npx bridge), skills pack. |
 | **Media Worker** | 3.4.0 | GPLv3 | Docker-based Node.js sidecar. 11 route handlers (image, video, pdf, ocr, email, social, code, data, document, browser, workflow) plus native `/api/crawl/*` endpoints (single-URL Markdown, batched crawling, link scans) and a Crawl4AI-compatible facade. Queue module with concurrent processing. Multi-tenant shared worker mode since v2.4.0 (`SITE_TOKENS` per-site isolation, per-site rate limits); Phase 2 per-site provider keys (`SITE_PROVIDER_KEYS`) + usage counters + grouped temp TTLs; Phase 3 scale features (opt-in Redis rate-limit store, provider-keys file hot-reload). Timing-safe token auth, SSRF guard, sandboxed Puppeteer, rate limiting, Helmet. Worker routing with local fallbacks. |
@@ -124,7 +124,11 @@ The monorepo contains **30 addon directories** under `addons/` (31 entries in th
 | Addon | Version | License | Notes |
 |---|---|---|---|
 | **Page Agent** | 0.1.0 | GPLv3 | Alibaba Page Agent (MIT) browser copilot. Natural-language page control — click, type, navigate. Client-side only. |
-| **MCP Gateway** | 0.1.1 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. Subtree mirror to `nvoos-mcp-gateway`. |
+| **MCP Gateway** | 0.3.1 | GPLv3 | Public fleet MCP endpoint (Express service, streamable HTTP MCP 2026-07-28). Public API-key auth with rotation, per-key rate limits, `<site-slug>.<tool>` namespacing, graceful per-site degradation, fail-closed env config. OAuth 2.1 / ChatGPT connector live (Auth0, `GATEWAY_OAUTH_DEFAULT_SITES`), underscore tool names, the OpenAI challenge route, and 0.3.1 tool-annotation normalization for the portal scan. Subtree mirror to `nvoos-mcp-gateway`. |
+| **mcp-wordpress Gateway** | 0.2.0 | Proprietary (pinned MIT upstream) | Auth-gated Streamable HTTP MCP server on pinned docdyhr/mcp-wordpress internals (Node 22, Cloudways Velocity) — Express `/healthz` + `/mcp` with timing-safe `X-MCP-Token` auth, tool allow/deny policy, and the Proposal 094 governance layer (traceparent, token-bucket quotas, deny-lists). Deploys via subtree split to the `nvoos-mcp-wordpress` mirror. |
+| **ChatGPT Plugin** | 0.2.0 | GPLv3 | ChatGPT / Codex plugin package connecting OpenAI agent surfaces to the site's native MCP bridge. Portable `plugin.json`/`mcp.json` (+ `.codex-plugin` overlay), three skills, full `extensions.com.openai` submission metadata (0.2.0, #7379), Pages privacy/terms. Syncs via subtree split to `nvoos-chatgpt-plugin`. |
+| **ChatGPT Gateway Plugin** | 0.1.0 | GPLv3 | The public-directory ChatGPT/Codex entry locked to `https://mcp.nvoos.pro/mcp` (Proposal 101) — dual manifests, `demo_*` namespaced skills, canonical-URL validate gate, publisher Pages. Syncs to `nvoos-chatgpt-gateway-plugin`. |
+| **Claude Gateway Plugin** | 0.1.0 | GPLv3 | The Anthropic-directory Claude Code entry (`nvoos-gateway`) — one `http` MCP server with a sensitive `userConfig.api_key` → Bearer binding, no executable surfaces (the validator stays in the monorepo), directory-listing metadata + Pages privacy/terms, and the documented OAuth 2.1 alternative. Syncs to `nvoos-claude-gateway-plugin` (its marketplace). |
 | **Schedule Anything** | 0.1.2 | Proprietary | Full SaaS booking platform with Stripe, calendar management, multi-tenant architecture, and single-site sole-tenant mode (Proposal 082) — activates on non-multisite installs with idempotent self-provisioning. **0.1.2 (v1.2.9):** the live `sa-tools` registry route, server-decided toolkit entitlements, multisite admin capability grants, preset facets + pagination, and idempotent toggles. |
 | **Schedule Anything SPA** | 0.2.0 | Proprietary | React SPA frontend (Vite + Tailwind v4) for Schedule Anything. |
 | **Design System** | 0.3.0 | GPLv3 | Design token system + token-driven email templates (formerly "Crocoblock DS" at `addons/crocoblock-ds/` — renamed 0.1.0 → 0.3.0). 55+ CSS tokens, admin editor, DTCG export, a11y tokens, 8 addon-provided email-template tools. |

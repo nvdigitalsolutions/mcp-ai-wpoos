@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 7.4
-Stable tag: 1.2.16
+Stable tag: 1.2.17
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.17 - November 04, 2026 =
+
+Bumped to 1.2.17 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The Astro storefront content & checkout wave lands (Proposals 104–108): server-rendered product pages with a tag-based cache-purge endpoint, the bridge theme policy and variant/CMS-content routes, the content_* MCP tool slice with the Pages/Posts workbench, the Q6 component library (Incluud adapted, Zag.js adopted headless), and the Woo checkout/cart hardening with the Store API cart-sync proxy. The embedded checkout ships (Proposal 110) with typed 502s, in-process Store API dispatch, and the Stripe CSP nonce fix; the native→Woo catalog migration lands (Proposal 112 — Woo-owned catalog, one-time idempotent migrate-native CLI). Sub-projects: the Cognition app gains the Document OCR pipeline (Proposal 109 — PDF/TIFF/image, hOCR/ALTO word boxes, searchable-PDF export) and the DeepSeek-OCR escalation tier (Proposal 111); the November 2026 model catalog refresh ships (v2026.11.03, 251 models — gpt-6.1-sol defaults, the gpt-4.1 family deprecates); gateway 0.3.1 normalizes tool annotations for the OpenAI portal scan and the new claude-gateway-plugin addon 0.1.0 ships. The Pro Schedule Manager gains the Runs & Reports surface plus the fleet overview card. Tool count unchanged: ~358 base + ~1,378 Pro (~1,735 total; live registry authoritative). Coding-time skills 81. Stale 1.2.15 build ZIPs + superseded astro-bridge ZIPs removed.
 
 = 1.2.16 - November 02, 2026 =
 

@@ -5,7 +5,7 @@ description: Repair and triage guide for the NV oOS PHPUnit test suite — Docke
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-30"
+  last-updated: "2026-11-04"
   plugin-version: "1.2.14"
   plugin-version-tested: "1.2.14"
 ---
