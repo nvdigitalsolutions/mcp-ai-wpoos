@@ -32,7 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /** Plugin version. */
 if ( ! defined( 'NVOOS_ASTRO_BRIDGE_VERSION' ) ) {
-	define( 'NVOOS_ASTRO_BRIDGE_VERSION', '1.1.0' );
+	define( 'NVOOS_ASTRO_BRIDGE_VERSION', '1.1.1' );
 }
 
 /** Absolute path to this plugin file. */
