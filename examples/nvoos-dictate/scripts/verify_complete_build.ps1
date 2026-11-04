@@ -22,6 +22,7 @@ $markers = @(
     @{ name = "agent (release-proof)"; re = "could not spawn agent worker" },
     @{ name = "mcp";             re = "mcp" },
     @{ name = "snippet (OCR)";   re = "snippet" },
+    @{ name = "document (pdfium)"; re = "pdfium library not found" },
     @{ name = "Assistant SPA";   re = "Assistant" },
     # The plain "moonshine" token also matches sherpa-onnx's own model-zoo
     # strings (it supports the Moonshine model family), so assert on the
