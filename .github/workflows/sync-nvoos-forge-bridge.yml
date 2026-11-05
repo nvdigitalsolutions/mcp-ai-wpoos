@@ -1,0 +1,26 @@
+name: Sync nvoos-forge-bridge
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'plugins/nvoos-forge-bridge/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split subtree
+        run: |
+          git subtree split --prefix=plugins/nvoos-forge-bridge --branch=nvoos-forge-bridge-split
+
+      - name: Push to nvoos-forge-bridge
+        run: |
+          git config --local --unset-all http.https://github.com/.extraheader
+          git push https://x-access-token:${{ secrets.NVOOS_FORGE_BRIDGE_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-forge-bridge.git nvoos-forge-bridge-split:main --force
