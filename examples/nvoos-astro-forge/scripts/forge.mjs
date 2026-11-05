@@ -42,11 +42,13 @@ import { analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity } fr
 import { emitDeployConfig } from '../lib/deploy-config.ts';
 import { analyzeSite, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
+import { discoverInventory } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
 import { scaffold } from '../lib/scaffold.ts';
 import { SitesStore } from '../lib/sites.ts';
 import { maskSecret, Vault } from '../lib/vault.ts';
+import { extractWireframes } from '../lib/wireframes.ts';
 import { setupWizard } from '../lib/wizard.ts';
 import { WpClient } from '../lib/wp-client.ts';
 
@@ -164,6 +166,7 @@ async function runAnalyze( url, options ) {
 	// --design (114 P1): run the design-language extraction and attach the v2
 	// design block to the drafted profile. Extraction failures never block the
 	// draft (the operator can still scaffold content-only).
+	let designCss; // The --design stylesheets, fed to breakpoint extraction (115).
 	if ( options.design ) {
 		try {
 			const input = await fetchDesignInput( profile.url, fetch, {
@@ -173,6 +176,7 @@ async function runAnalyze( url, options ) {
 			} );
 			const design = analyzeDesignInput( input );
 			profile.design = design;
+			designCss = ( input.css ?? [] ).join( '\n' );
 			console.log( `\u2713 Design language extracted: ${ design.concept }` );
 			const roles = Object.keys( design.palette.roles );
 			console.log(
@@ -180,6 +184,38 @@ async function runAnalyze( url, options ) {
 			);
 		} catch ( error ) {
 			console.error( `\u26a0 Design extraction failed (continuing without): ${ error instanceof Error ? error.message : error }` );
+		}
+	}
+
+	// --inventory / --wireframes (115): the site-shape analysis (one-pager vs
+	// multi-page), the missing-page diff, and per-page wireframes for every
+	// path the source exposes but the REST collections do not cover.
+	if ( options.inventory || options.wireframes ) {
+		try {
+			const inventory = await discoverInventory( profile, { fetch, wayback: options.wayback === true } );
+			profile.inventory = inventory;
+			console.log( `\u2713 Site shape: ${ inventory.shape } (${ inventory.navAnchors.length } nav anchor(s), ${ inventory.navPages.length } nav page(s))` );
+			console.log( `  covered ${ inventory.covered.length }, excluded ${ inventory.excluded.length }, missing ${ inventory.missing.length }: ${ inventory.missing.slice( 0, 12 ).join( ' ' ) || '(none)' }` );
+			for ( const anchor of inventory.danglingAnchors ) {
+				console.warn( `\u26a0 Nav anchor #${ anchor } has no matching section id on the homepage.` );
+			}
+		} catch ( error ) {
+			console.error( `\u26a0 Inventory failed (continuing without): ${ error instanceof Error ? error.message : error }` );
+		}
+	}
+	if ( options.wireframes ) {
+		const missing = profile.inventory?.missing ?? [];
+		if ( missing.length === 0 ) {
+			console.log( '\u2713 No missing pages — nothing to wireframe.' );
+		} else {
+			try {
+				profile.wireframes = await extractWireframes( profile, missing, { fetch, css: designCss } );
+				for ( const wireframe of Object.values( profile.wireframes ) ) {
+					console.log( `\u2713 Wireframe ${ wireframe.slug } (${ wireframe.status }, ${ wireframe.sections.length } section(s))` );
+				}
+			} catch ( error ) {
+				console.error( `\u26a0 Wireframe extraction failed (continuing without): ${ error instanceof Error ? error.message : error }` );
+			}
 		}
 	}
 
@@ -751,6 +787,9 @@ program
 	.argument( '<url>', 'the WordPress URL (https://…)' )
 	.option( '--write <path>', 'write the draft profile to a file' )
 	.option( '--design', 'extract the design language and attach the rebuild block (Proposal 114)' )
+	.option( '--inventory', 'discover the full page inventory + site shape (one-pager vs multi-page, Proposal 115)' )
+	.option( '--wireframes', 'imply --inventory and extract wireframes for the missing pages (Proposal 115)' )
+	.option( '--wayback', 'add Wayback CDX discovery to the inventory (deleted pages)' )
 	.action( async ( url, options ) => {
 		await runAnalyze( url, options );
 	} );

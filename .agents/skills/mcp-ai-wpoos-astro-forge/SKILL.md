@@ -474,6 +474,43 @@ the only committed artifact per site.
   secrets `NVOOS_FORGE_MIRROR_URL`/`_TOKEN`, `FORGE_WEBHOOK_SECRET`.
 - Full runbook + research: `docs/project/proposals/114-shared-mirror-deploy-addendum.md`.
 
+## Proposal 115 — inventory, wireframes, responsive (2026-11-06)
+
+The forge rebuilds the source site COMPLETELY: a full page inventory
+(sitemap index + homepage links + optional Wayback CDX), site-shape
+recognition (one-pager vs multi-page vs hybrid + nav-anchor
+reconciliation), per-page wireframes for pages the REST collections do
+not cover (captured from rendered HTML, or content-first placeholders for
+dead URLs), and responsive recognition (css-tree breakpoints +
+per-breakpoint grid columns).
+
+- **CLI:** `forge analyze <url> --inventory [--wayback]` and
+  `--wireframes` (implies inventory; attaches `profile.inventory` +
+  `profile.wireframes`; the `--design` pass feeds its stylesheets to
+  breakpoint extraction).
+- **Scaffold:** `profile.wireframes` → `src/lib/wireframes.generated.ts` +
+  one static `src/pages/<slug>.astro` per wireframe (reserved slugs +
+  frontPage skipped with a warning; gated on the template's
+  DesignRenderer). `ScaffoldResult.wireframePages`.
+- **Adopted deps (forge-package only — never vendored):** `sitemap` v9
+  (`parseSitemapIndex`/`parseSitemap` take a **Readable stream** — a
+  string throws `xml.on is not a function`; index vs urlset are separate
+  parsers), `css-tree` (+ `@types/css-tree`; MediaQueryList preludes
+  serialize via `generate()`, NOT `.value`). Build-vs-buy + research:
+  `docs/project/proposals/115-forge-inventory-wireframes-responsive-proposal.md`
+  (WP2Static/Simply Static = crawl methodology only, their HTML is
+  unmaintainable; Crawlee/readability/Trafilatura/wget rejected;
+  Wayback CDX = the deleted-page source).
+- **Gotchas (each cost a fix 2026-11-06):** `forge.mjs` is plain JS — a TS
+  annotation in the analyze flow broke the CLI under node (the e2e caught
+  it; unit/esbuild did not). `normalizePath('/')` must early-return before
+  the trailing-slash append or it yields `//`. Mixed min/max media queries
+  pollute width sets — `max-width` wins, `min-width` is the fallback.
+  `.ds-grid` now renders `repeat(var(--ds-cols-*, N), minmax(0, 1fr))` at
+  the canonical 1025/767 breakpoints — wireframe columns ride CSS custom
+  properties on the grid container (DesignRenderer passes `columns` to
+  FeatureGrid/IconList via the `wireframeSections` prop).
+
 ## Phase roadmap (096 §5)
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,

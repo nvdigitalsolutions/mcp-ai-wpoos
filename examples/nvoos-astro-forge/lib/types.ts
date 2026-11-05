@@ -6,6 +6,8 @@
 // collection maps one WordPress REST base onto one Astro content collection.
 // ---------------------------------------------------------------------------
 
+import type { SemanticSection } from './semantic.ts';
+
 /** One WordPress REST collection (e.g. posts, pages, a CPT). */
 export interface WpCollection {
 	/** Collection slug in the generated Astro project (posts, pages, …). */
@@ -61,6 +63,71 @@ export interface ForgeForms {
 	searchForms?: string[];
 }
 
+/**
+ * The site-shape inventory (Proposal 115 §2) — which URLs the source
+ * exposes (sitemaps + homepage links + optional Wayback), how the homepage
+ * navigates (anchors = one-pager sections, paths = additional pages), and
+ * the missing-page diff against the REST collections.
+ */
+export interface ForgeInventory {
+	/** one-pager: the homepage nav is (almost) all same-page anchors.
+	 *  multi-page: the nav links to distinct pages. hybrid: both. */
+	shape: 'one-pager' | 'multi-page' | 'hybrid';
+	/** Anchor targets found on the homepage (#about, /#about). */
+	navAnchors: string[];
+	/** Distinct page paths found on the homepage. */
+	navPages: string[];
+	/** Paths covered by the REST collections (after exclusions). */
+	covered: string[];
+	/** Paths the profile excludes. */
+	excluded: string[];
+	/** Paths the source exposes but the collections do not cover. */
+	missing: string[];
+	/** Anchor targets with no matching element id in the homepage HTML. */
+	danglingAnchors: string[];
+	analyzedAt: string;
+}
+
+/**
+ * Per-breakpoint behavior of one wireframe section (Proposal 115 §4) — the
+ * responsive language captured from the source, never its CSS.
+ */
+export interface ForgeResponsive {
+	/** Breakpoint labels, ascending width: ['mobile', 'tablet', 'desktop']. */
+	breakpoints: string[];
+	/** Column counts per breakpoint label. */
+	columns?: Record<string, number>;
+	/** explicit = per-breakpoint column classes captured from the markup;
+	 *  inferred = the industry-standard desktop N → tablet 2 → mobile 1
+	 *  collapse rule. */
+	columnSource: 'explicit' | 'inferred';
+}
+
+/** One section of a page wireframe: the semantic section + its responsive behavior. */
+export interface ForgeWireframeSection {
+	section: SemanticSection;
+	responsive: ForgeResponsive;
+}
+
+/**
+ * A page wireframe (Proposal 115 §3) — the semantic blueprint of a page the
+ * REST collections do not cover, extracted from the rendered source HTML.
+ * Never source markup: sections carry escaped text + media refs only (114).
+ */
+export interface ForgeWireframe {
+	title: string;
+	slug: string;
+	/** The URL the wireframe was extracted from. */
+	source: string;
+	extractedAt: string;
+	/** captured = the source served the page; placeholder = it 404s (the
+	 *  scaffold still emits the page so the site structure survives). */
+	status: 'captured' | 'placeholder';
+	/** Anchor targets captured on the page with no matching id (completeness gap). */
+	danglingAnchors?: string[];
+	sections: ForgeWireframeSection[];
+}
+
 /** One operator-configured WordPress site. */
 export interface SiteProfile {
 	/** Root URL (https://…). No trailing slash. */
@@ -96,6 +163,19 @@ export interface SiteProfile {
 	design?: ForgeDesign;
 	/** Collections to wire into the generated project. */
 	collections: WpCollection[];
+	/**
+	 * The inventory block (Proposal 115 §2) — the site-shape analysis
+	 * (one-pager vs multi-page vs hybrid), the homepage nav targets, and
+	 * the missing-page diff against the REST collections.
+	 */
+	inventory?: ForgeInventory;
+	/**
+	 * The wireframe block (Proposal 115 §3) — per-page semantic blueprints
+	 * for pages the REST collections do not cover, extracted from the
+	 * rendered source. The scaffold emits one static page per wireframe so
+	 * the rebuild covers the full source site structure.
+	 */
+	wireframes?: Record<string, ForgeWireframe>;
 }
 
 /**

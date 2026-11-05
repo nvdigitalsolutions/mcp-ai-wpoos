@@ -21,24 +21,39 @@ import Testimonial from './Testimonial.astro';
 import TextBlock from './TextBlock.astro';
 import manifestJson from '../../../nvoos.json';
 
+/** A pre-classified wireframe section (Proposal 115) — the semantic section
+ *  plus its per-breakpoint column behavior. */
+interface WireframeSectionInput {
+	section: SemanticSection;
+	responsive?: { columns?: Record<string, number> };
+}
+
 interface Props {
 	html?: string;
+	/** Pre-classified wireframe sections — take precedence over `html` and
+	 *  carry per-breakpoint column behavior (115 §4). */
+	wireframeSections?: WireframeSectionInput[];
 }
 
 // The manifest's inferred JSON type has no `forms` key on profiles that
 // omit the block — read it through an explicit shape.
 const manifest = manifestJson as { forms?: { searchForms?: string[] } };
-const { html = '' } = Astro.props;
-const sections: SemanticSection[] = html ? classifyHtml(html, { searchForms: manifest.forms?.searchForms }) : [];
+const { html = '', wireframeSections } = Astro.props;
+const sections: SemanticSection[] = wireframeSections
+	? wireframeSections.map( ( w ) => w.section )
+	: html
+		? classifyHtml( html, { searchForms: manifest.forms?.searchForms } )
+		: [];
+const columnsFor = ( index: number ): Record<string, number> | undefined => wireframeSections?.[ index ]?.responsive?.columns;
 ---
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{sections.map((section) => (
+		{sections.map((section, index) => (
 			<Fragment>
 				{section.kind === 'hero' && <Hero section={section} />}
-				{section.kind === 'feature-grid' && <FeatureGrid section={section} />}
-				{section.kind === 'icon-list' && <IconList section={section} />}
+				{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} />}
+				{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}
 				{section.kind === 'testimonial' && <Testimonial section={section} />}
 				{section.kind === 'logo-cloud' && <LogoCloud section={section} />}
 				{section.kind === 'cta' && <Cta section={section} />}

@@ -383,8 +383,21 @@ a {
 
 .ds-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
 	gap: var(--forge-space);
+	/* Proposal 115 §4: the wireframe's per-breakpoint column behavior rides
+	 * these custom properties; the defaults are the standard 4 → 2 → 1
+	 * collapse at the canonical Elementor widths. */
+	grid-template-columns: repeat(var(--ds-cols-desktop, 4), minmax(0, 1fr));
+}
+@media (max-width: 1025px) {
+	.ds-grid {
+		grid-template-columns: repeat(var(--ds-cols-tablet, 2), minmax(0, 1fr));
+	}
+}
+@media (max-width: 767px) {
+	.ds-grid {
+		grid-template-columns: repeat(var(--ds-cols-mobile, 1), minmax(0, 1fr));
+	}
 }
 
 .ds-card {

@@ -1,19 +1,25 @@
 ---
 // IconList — icon-list sections rebuilt as a card list.
+// `columns` (Proposal 115 §4) drives the grid via per-breakpoint CSS custom
+// properties — the wireframe's captured/inferred collapse behavior.
 import type { SemanticSection } from '../../forge/semantic.ts';
 
 interface Props {
 	section: SemanticSection;
+	columns?: Record<string, number>;
 }
 
-const { section } = Astro.props;
+const { section, columns } = Astro.props;
 const { title, items } = section.slots;
+const gridStyle = columns
+	? `--ds-cols-desktop: ${ columns.desktop ?? 4 }; --ds-cols-tablet: ${ columns.tablet ?? 2 }; --ds-cols-mobile: ${ columns.mobile ?? 1 };`
+	: undefined;
 ---
 
 <section class="ds-section">
 	{title && <h2 class="ds-title">{title}</h2>}
 	{items && items.length > 0 && (
-		<ul class="ds-grid post-list">
+		<ul class="ds-grid post-list" style={gridStyle}>
 			{items.map((item) => (
 				<li class="ds-card">
 					{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
