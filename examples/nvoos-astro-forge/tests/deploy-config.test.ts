@@ -5,9 +5,9 @@
 
 import { createHmac } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, readdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { promisify } from 'node:util';
 
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -42,6 +42,23 @@ describe( 'emitDeployConfig', () => {
 		expect( deploy ).toContain( 'actions/deploy-pages@v4' );
 		expect( rebuild ).toContain( `types: [${ DEFAULT_EVENT_TYPE }]` );
 		expect( rebuild ).toContain( 'uses: ./.github/workflows/deploy.yml' );
+	} );
+
+	it( 'reports correct relative paths for a dot-slash-prefixed target', async () => {
+		// `forge deploy-config --target ./out` passes the dot-slash form — the
+		// reported paths must not lose their leading characters.
+		const local = join( process.cwd(), `.tmp-deploy-${ Date.now() }` );
+		await mkdir( local, { recursive: true } );
+		try {
+			const { files } = await emitDeployConfig( `./${ relative( process.cwd(), local ) }`, { mode: 'github-pages' } );
+			expect( files.sort() ).toEqual( [
+				'.github/workflows/deploy.yml',
+				'.github/workflows/rebuild.yml',
+				'scripts/verify-dispatch.mjs',
+			] );
+		} finally {
+			await rm( local, { recursive: true, force: true } );
+		}
 	} );
 
 	it( 'emits the wrangler steps for cloudflare-pages with the project name', async () => {
