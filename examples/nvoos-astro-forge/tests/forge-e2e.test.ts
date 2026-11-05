@@ -328,6 +328,15 @@ describe('forge e2e — emitted site', () => {
 		expect(detail).not.toContain('elementor-section');
 		expect(detail).not.toContain('elementor-widget');
 
+		// The logo wall keeps its heading + CTA — nothing the classifier
+		// captured is dropped by the component.
+		expect(detail).toContain('Trusted by crews');
+		expect(detail).toContain('Meet the crews');
+		// The heading + single-image section renders its media too (the text
+		// fallback bucket renders everything).
+		expect(detail).toContain('Field notes');
+		expect(detail).toContain('alt="Field notes"');
+
 		// The build-time contrast audit ships (warn mode on the default scaffold).
 		const audit = JSON.parse(await readFile(path.join(workDir, 'dist', 'design-audit.json'), 'utf8'));
 		expect(audit.strict).toBe(false);

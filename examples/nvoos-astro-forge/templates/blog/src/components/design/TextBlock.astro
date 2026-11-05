@@ -1,5 +1,7 @@
 ---
-// TextBlock — plain text sections rebuilt as escaped paragraphs (no raw HTML).
+// TextBlock — the fallback bucket for classified sections: plain text
+// rebuilt as escaped paragraphs, plus any media/links the classifier
+// captured. Nothing the semantic model found gets dropped here.
 import type { SemanticSection } from '../../forge/semantic.ts';
 
 interface Props {
@@ -7,10 +9,22 @@ interface Props {
 }
 
 const { section } = Astro.props;
-const { title, body } = section.slots;
+const { title, body, media, links } = section.slots;
 ---
 
 <section class="ds-section ds-body">
 	{title && <h2 class="ds-title">{title}</h2>}
 	{body?.map((paragraph) => <p class="ds-text">{paragraph}</p>)}
+	{media?.map((image) => (
+		<img class="ds-media" src={image.src} alt={image.alt ?? ''} width="1200" height="675" loading="lazy" />
+	))}
+	{links && links.length > 0 && (
+		<div class="ds-links">
+			{links.map((link) => (
+				<a class="ds-button" href={link.href ?? '#'}>
+					{link.text ?? 'Learn more'}
+				</a>
+			))}
+		</div>
+	)}
 </section>

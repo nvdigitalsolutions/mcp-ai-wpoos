@@ -166,6 +166,21 @@ export function createWpFixtureData() {
 						'<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-widget-container"><h3>Wool</h3><p>Merino and cashmere.</p></div></div>',
 						'<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-widget-container"><h3>Linen</h3><p>Washed and relaxed.</p></div></div>',
 						'</div></div></div></div>',
+						// A logo wall carrying a heading + CTA — the LogoCloud
+						// component must render all three, never drop the links.
+						'<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">',
+						'<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h2>Trusted by crews</h2></div></div>',
+						'<div class="elementor-widget elementor-widget-image"><div class="elementor-widget-container"><img src="/wp-content/uploads/a.png" alt="Alpha" /></div></div>',
+						'<div class="elementor-widget elementor-widget-image"><div class="elementor-widget-container"><img src="/wp-content/uploads/b.png" alt="Beta" /></div></div>',
+						'<div class="elementor-widget elementor-widget-image"><div class="elementor-widget-container"><img src="/wp-content/uploads/c.png" alt="Gamma" /></div></div>',
+						'<div class="elementor-widget elementor-widget-button"><div class="elementor-widget-container"><a href="#crews">Meet the crews</a></div></div>',
+						'</div></div></div></div>',
+						// A heading + single image section (a title card) — the
+						// text fallback must render the media too.
+						'<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">',
+						'<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h2>Field notes</h2></div></div>',
+						'<div class="elementor-widget elementor-widget-image"><div class="elementor-widget-container"><img src="/wp-content/uploads/notes.png" alt="Field notes" /></div></div>',
+						'</div></div></div></div>',
 					].join( '' ),
 				},
 			},
