@@ -445,6 +445,35 @@ through WordPress.**
   Docker `oos-wp` env (wp-tests-config targets the compose network) — phpcs
   + `php -l` run anywhere, PHPUnit does not.
 
+## Shared-mirror deploy (branch per site, 2026-11-06)
+
+Owner decision: forged client sites deploy through ONE private mirror repo
+(`nvdigitalsolutions/nvoos-forge-sites`) — one `site/<name>` branch per
+client, built `dist/` at the branch ROOT (force-pushed, flat; `main` holds
+only the README clone anchor). Velocity apps connect the mirror and select
+Branch = `site/<name>` (Root directory = repo root — Velocity supports
+per-app Branch + Root Directory per the official deployment docs). Never
+commit generated sites into the monorepo: `sites/<name>.json` profiles are
+the only committed artifact per site.
+
+- **Forge:** `deploy`/`deploy-config` gain `--mirror-repo <owner/repo>` +
+  `--site-branch <branch>` (paired, validated). Mirror mode emits
+  `scripts/mirror-push.mjs` next to the workflows (single template in
+  `lib/deploy-config.ts` `mirrorPushScript()` — orphan-branch checkout +
+  force push; the workflow and the CLI run the SAME emitted file, no
+  drift). `deploy --mirror-repo` skips repo creation and mirrors a prebuilt
+  `dist/` (operator staging path; needs `GITHUB_TOKEN`). Legacy velocity
+  shape (per-site repo, `deploy` branch under `site/`) is unchanged.
+- **Monorepo pipeline:** `.github/workflows/forge-sites.yml` — push on
+  `sites/**`/templates/libs, `workflow_dispatch` (`site` input), and
+  `repository_dispatch` `nvoos-forge-content-changed` (bridge-fired; HMAC
+  verified by the committed `.github/forge/verify-dispatch.mjs`, generated
+  by `emitDeployConfig`). Per site: scaffold → deploy-config → build →
+  mirror-push. Unset `NVOOS_FORGE_MIRROR_*` secrets degrade to build-only
+  (never a red job). Needs repo variable `NVOOS_FORGE_MIRROR_REPO` +
+  secrets `NVOOS_FORGE_MIRROR_URL`/`_TOKEN`, `FORGE_WEBHOOK_SECRET`.
+- Full runbook + research: `docs/project/proposals/114-shared-mirror-deploy-addendum.md`.
+
 ## Phase roadmap (096 §5)
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,

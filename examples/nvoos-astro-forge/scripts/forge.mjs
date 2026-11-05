@@ -8,6 +8,7 @@
 //   node scripts/forge.mjs site add|remove|list|use …
 //   node scripts/forge.mjs vault set|delete|list …
 //   node scripts/forge.mjs deploy <site.json|name> --target <dir> --to <mode>
+//     [--mirror-repo owner/repo --site-branch site/<name>]  (velocity shared mirror — branch per site)
 //   node scripts/forge.mjs wizard <url> --target <dir> [--preset …] [--build]
 //
 // `analyze` performs the polite discovery pass (site_analyze). The scaffold
@@ -30,6 +31,8 @@
 // ---------------------------------------------------------------------------
 
 import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
@@ -56,6 +59,22 @@ function fail( message ) {
 
 function failDeployMode( mode ) {
 	fail( `Unknown deploy mode "${ mode }" — use one of: ${ DEPLOY_MODES.join( ', ' ) }` );
+}
+
+/** Shared-mirror deploy validation — the two flags travel together and the
+ * repo must be owner/repo shaped (it becomes the clone URL). */
+function assertMirrorOptions( options ) {
+	if ( options.siteBranch && ! options.mirrorRepo ) {
+		fail( '--site-branch requires --mirror-repo.' );
+	}
+	if ( options.mirrorRepo ) {
+		if ( ! options.siteBranch ) {
+			fail( '--mirror-repo requires --site-branch (the per-site branch, e.g. site/jayainc).' );
+		}
+		if ( ! /^[a-z0-9][a-z0-9-]*\/[a-z0-9._-]+$/i.test( options.mirrorRepo ) ) {
+			fail( `Invalid --mirror-repo "${ options.mirrorRepo }" — use owner/repo.` );
+		}
+	}
 }
 
 function failPreset( preset ) {
@@ -260,6 +279,7 @@ async function runDeploy( profileRef, options ) {
 	if ( ! DEPLOY_MODES.includes( mode ) ) {
 		failDeployMode( mode );
 	}
+	assertMirrorOptions( options );
 	if ( options.preset && ! PRESET_NAMES.includes( options.preset ) ) {
 		failPreset( options.preset );
 	}
@@ -299,9 +319,46 @@ async function runDeploy( profileRef, options ) {
 		mode,
 		siteUrl: String( profile.url ),
 		cloudflareProject: options.cloudflareProject,
+		mirrorRepo: options.mirrorRepo,
+		siteBranch: options.siteBranch,
 	} );
 	for ( const file of emitted.files ) {
 		console.log( `  + ${ file }` );
+	}
+
+	// 2b. Shared-mirror deploy: no per-site repo. The generated source lives
+	//     wherever the operator keeps it (the monorepo sites/ convention); the
+	//     workflow ships dist/ to the mirror branch. Here we mirror a prebuilt
+	//     dist/ directly — the operator staging path. Same emitted script as
+	//     the workflow, so the two paths cannot drift.
+	if ( options.mirrorRepo ) {
+		const dist = join( options.target, 'dist' );
+		if ( ! existsSync( dist ) ) {
+			console.log( `\u26a0 No dist/ under ${ options.target } — run \`npm install && npm run build\` in the project (ASTRO_SITE=${ String( profile.url ) }), then re-run this command to mirror it.` );
+			return;
+		}
+		const token = process.env.GITHUB_TOKEN ?? ( await new Vault().get( 'github' ).catch( () => undefined ) );
+		if ( ! token ) {
+			console.error( 'No GitHub token — set GITHUB_TOKEN or store one via `node scripts/forge.mjs vault set github` (value on stdin).' );
+			process.exit( 1 );
+		}
+		console.log( `\u2713 Mirroring dist/ -> ${ options.mirrorRepo }@${ options.siteBranch }` );
+		try {
+			execFileSync( 'node', [ join( options.target, 'scripts', 'mirror-push.mjs' ) ], {
+				stdio: 'inherit',
+				env: {
+					...process.env,
+					MIRROR_URL: `https://github.com/${ options.mirrorRepo }.git`,
+					MIRROR_TOKEN: token,
+					SITE_BRANCH: options.siteBranch,
+					SOURCE_DIR: dist,
+				},
+			} );
+		} catch ( error ) {
+			console.error( error instanceof Error ? error.message : error );
+			process.exitCode = 1;
+		}
+		return;
 	}
 
 	// 3. Resolve per-invocation auth — env first, then the vault. Never
@@ -443,6 +500,7 @@ async function runDeployConfig( profileRef, options ) {
 	if ( ! DEPLOY_MODES.includes( mode ) ) {
 		failDeployMode( mode );
 	}
+	assertMirrorOptions( options );
 	let siteUrl = options.siteUrl;
 	if ( ! siteUrl && profileRef ) {
 		const profile = await loadProfile( profileRef );
@@ -453,6 +511,8 @@ async function runDeployConfig( profileRef, options ) {
 			mode,
 			siteUrl,
 			cloudflareProject: options.cloudflareProject,
+			mirrorRepo: options.mirrorRepo,
+			siteBranch: options.siteBranch,
 		} );
 		console.log( `\u2713 Emitted the deploy pipeline into ${ options.target }:` );
 		for ( const file of emitted.files ) {
@@ -723,6 +783,8 @@ program
 	.option( '--to <mode>', 'deploy mode', 'github-pages' )
 	.option( '--site-url <url>', 'site URL override' )
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
+	.option( '--mirror-repo <owner/repo>', 'velocity shared mirror — one repo, branch per site (no per-site repo)' )
+	.option( '--site-branch <branch>', 'shared mirror site branch (e.g. site/jayainc; required with --mirror-repo)' )
 	.action( async ( profileRef, options ) => {
 		await runDeployConfig( profileRef, options );
 	} );
@@ -743,6 +805,8 @@ program
 	.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (applied when scaffolding)' )
 	.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
+	.option( '--mirror-repo <owner/repo>', 'velocity shared mirror — skip repo creation, mirror prebuilt dist/ to the site branch' )
+	.option( '--site-branch <branch>', 'shared mirror site branch (e.g. site/jayainc; required with --mirror-repo)' )
 	.action( async ( profileRef, options ) => {
 		await runDeploy( profileRef, options );
 	} );
