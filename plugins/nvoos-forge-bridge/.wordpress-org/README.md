@@ -81,12 +81,12 @@ Outputs (all PNG):
 
 ## SVN upload runbook (post-submission)
 
-0. Build the release ZIP: `python bin/build-nvoos-forge-bridge.py --version 0.1.0`
-   → `build/nvoos-forge-bridge-v0.1.0.zip` (13 files, top-level folder,
+0. Build the release ZIP: `python bin/build-nvoos-forge-bridge.py --version 0.2.0`
+   → `build/nvoos-forge-bridge-v0.2.0.zip` (top-level folder,
    forward-slash entries).
 1. `svn co https://plugins.svn.wordpress.org/nvoos-forge-bridge` (once).
 2. Copy the plugin ZIP contents into `trunk/` and tag it
-   `tags/0.1.0/` (Guideline 3 — trunk + tag per release).
+   `tags/0.2.0/` (Guideline 3 — trunk + tag per release).
 3. Copy this directory's `assets/` into the SVN checkout's `assets/`.
 4. Assets-only SVN commits do NOT change plugin visibility — the plugin
    goes public on the first `trunk/` code commit.

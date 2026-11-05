@@ -171,6 +171,33 @@ class Test_Forge_Bridge_Webhook extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A failed HTTP request returns a WP_Error without raising a TypeError
+	 * (regression: send() declared `: array`, which fataled at shutdown when
+	 * the transport failed after configuration).
+	 */
+	public function test_failed_request_returns_wp_error_without_typeerror(): void {
+		$this->configure();
+		remove_all_filters( 'pre_http_request' );
+		add_filter(
+			'pre_http_request',
+			function () {
+				return new WP_Error( 'nvoos_forge_bridge_test_transport', 'transport down' );
+			},
+			10,
+			3
+		);
+
+		$result = Rebuild_Webhook::send( 'content' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'nvoos_forge_bridge_test_transport', $result->get_error_code() );
+
+		// The shutdown path must survive a failed send without a fatal error.
+		Rebuild_Webhook::reset_pending();
+		Rebuild_Webhook::on_content_changed();
+		Rebuild_Webhook::send_pending();
+	}
+
+	/**
 	 * Revisions never schedule a dispatch (the revision insert fires the
 	 * real save_post hook; the handler must skip it).
 	 */

@@ -80,6 +80,7 @@ The uncompiled source of this plugin lives in the public repository at https://g
 
 = 0.2.0 =
 * New: form submission bridge for forged static sites — `POST /nvoos-forge/v1/forms/submit` dispatches to the native JetFormBuilder / Elementor Pro handlers (origin allowlist, per-IP rate limit, honeypot + timestamp spam floor, optional Cloudflare Turnstile with action/hostname pinning, server-side field sanitization, typed 404/501 contracts, no-JS redirect fallback).
+* Fix: a failed rebuild webhook request no longer raises a fatal error at shutdown — the send method no longer declares a return type the HTTP layer cannot honor, so a failed request returns an error object instead of crashing.
 
 = 0.1.0 =
 * Initial release: signed rebuild webhook (autosave/revision/auto-draft skip, trash + delete hooks), inbound rebuild trigger, single-use preview tokens (editors+, POST-only verify), redacted health endpoint.

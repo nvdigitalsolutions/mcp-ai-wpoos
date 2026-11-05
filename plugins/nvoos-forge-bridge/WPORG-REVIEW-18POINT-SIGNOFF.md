@@ -88,3 +88,47 @@ the WordPress.org plugin directory. Excluded from the shipping ZIP via
 2. SVN checkout + `trunk/` + `tags/0.1.0/` + `assets/` per
    `.wordpress-org/README.md`.
 3. Assets: screenshots 1–2, icon 128/256, banner 772/1544 (all captured).
+
+---
+
+## 0.2.0 re-submission — reviewer reply (2026-11-06, review P0TDX399590HGN)
+
+The first review (v0.1.0) reported one finding: **`Rebuild_Webhook::send()`
+declared `: array`, but a failed HTTP request returns `WP_Error` — an
+uncaught TypeError at shutdown when content changes.** Full write-up in
+`WPORG-REVIEW-FINDINGS.md`; the reply draft is `WPORG-REVIEW-REPLY.md`.
+
+### Fix applied
+
+- `send()` return type removed (PHP 7.4 has no union types; the docblock
+  already declared `@return array|\WP_Error`). A failed delivery is now a
+  silent no-op instead of a fatal error.
+- Regression test `test_failed_request_returns_wp_error_without_typeerror`:
+  `pre_http_request` returns `WP_Error` → `send()` returns it, and the
+  `schedule()` → `send_pending()` shutdown path survives.
+- Related-issue sweep: the only other `wp_remote_post` call (Turnstile
+  verification) already handles `WP_Error`; no other typed return crosses
+  an HTTP result.
+
+### Version sweep (all 0.2.0)
+
+| Location | Value |
+|---|---|
+| `nvoos-forge-bridge.php` header `Version:` | 0.2.0 |
+| `NVOOS_FORGE_BRIDGE_VERSION` constant | 0.2.0 |
+| `readme.txt` `Stable tag:` | 0.2.0 |
+| `readme.txt` changelog | 0.2.0 entry + the fix bullet; 0.1.0 kept |
+| `languages/nvoos-forge-bridge.pot` `Project-Id-Version` | NV oOS Forge Bridge 0.2.0 (regenerated — now includes the forms-bridge strings; 51 msgids) |
+| `.wordpress-org/README.md` SVN runbook examples | 0.2.0 |
+| ZIP | `build/nvoos-forge-bridge-v0.2.0.zip` (built by `bin/build-nvoos-forge-bridge.py`) |
+
+### Validation run (2026-11-06)
+
+| Gate | Result |
+|---|---|
+| `wp plugin check` (Plugin Check, WP latest, `--severity=5`) | **0 ERRORs, 0 WARNINGs** — clean report |
+| `vendor/bin/phpcs --standard=phpcs.xml.dist .` | 0 violations (WPCS + PHPCompatibilityWP, min WP 6.0 / PHP 7.4+) |
+| `php -l` on all shipped PHP files | No syntax errors |
+| PHPUnit (own config, wp-phpunit, WP latest, isolated DB) | **48/48 tests, 133 assertions, OK** (incl. the new regression test) |
+| Clean-install activation test (one-off container, `WP_DEBUG` + `WP_DEBUG_LOG` on) | Activation clean; front-page load: no warnings/notices/fatals; `debug.log` empty; no unexpected output |
+| CI | `.github/workflows/phpunit-forge-bridge.yml` — phpcs + PHPUnit + PCP gate (ERRORs block the PR); staging list tri-synced with `.distignore` |
