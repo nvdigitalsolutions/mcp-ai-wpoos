@@ -285,6 +285,7 @@ describe('renderContentConfig', () => {
 		expect(out).toContain("type: 'basic'");
 		expect(out).toContain('export const collections = {');
 		expect(out).toContain("replace(/\\/+$/, '')");
+		expect(out).toContain('userAgent: import.meta.env.WP_USER_AGENT');
 	});
 
 	it('wires wc-consumer collections to the Woo auth env', () => {
@@ -661,7 +662,7 @@ describe( 'scaffold — hybrid local content (Proposal 106 P2)', () => {
 		const out = renderContentConfig(PROFILE);
 		expect(out).toContain('collection: postsCollection, auth: applicationAuth, local: { pattern:');
 		// The products collection (no local source) stays plain.
-		expect(out).toContain('products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: applicationAuth }) })');
+		expect(out).toContain('products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: applicationAuth, userAgent: import.meta.env.WP_USER_AGENT }) })');
 	} );
 } );
 
