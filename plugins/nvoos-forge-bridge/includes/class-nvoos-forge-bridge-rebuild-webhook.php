@@ -167,9 +167,13 @@ final class Rebuild_Webhook {
 	 * that payload proof and fails closed.
 	 *
 	 * @param string $type Change kind.
-	 * @return array|\WP_Error wp_remote_post result.
+	 * @return array|\WP_Error wp_remote_post result — `WP_Error` when the
+	 *                         request fails. No declared return type: the
+	 *                         plugin supports PHP 7.4, which has no union
+	 *                         types (declaring `array` made a failed request
+	 *                         raise a TypeError at shutdown).
 	 */
-	public static function send( string $type ): array {
+	public static function send( string $type ) {
 		$url       = Settings::rebuild_url();
 		$time      = time();
 		$nonce     = bin2hex( random_bytes( 12 ) );

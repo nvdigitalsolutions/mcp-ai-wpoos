@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: NV oOS Forge Bridge 0.1.0\n"
+"Project-Id-Version: NV oOS Forge Bridge 0.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nvoos-forge-bridge\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-31T17:43:50+00:00\n"
+"POT-Creation-Date: 2026-11-05T19:52:44+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: nvoos-forge-bridge\n"
@@ -26,7 +26,7 @@ msgstr ""
 
 #. Description of the plugin
 #: nvoos-forge-bridge.php
-msgid "Rebuild webhook + preview tokens for sites generated with the NV oOS Astro Forge. Fires a signed GitHub repository_dispatch when content changes (debounced), verifies inbound rebuild triggers with HMAC, and mints single-use preview tokens."
+msgid "Rebuild webhook + preview tokens for sites generated with the NV oOS Astro Forge, plus a form submission bridge for forged JetFormBuilder / Elementor Pro forms. Fires a signed GitHub repository_dispatch when content changes (debounced), verifies inbound rebuild triggers with HMAC, mints single-use preview tokens, and dispatches static-site form submissions to the native form handlers (origin allowlist, rate limit, honeypot/timestamp, optional Turnstile)."
 msgstr ""
 
 #. Author of the plugin
@@ -39,64 +39,186 @@ msgstr ""
 msgid "https://nvdigitalsolutions.com"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-plugin.php:72
-#: includes/class-nvoos-forge-bridge-plugin.php:73
-#: includes/class-nvoos-forge-bridge-settings.php:185
+#: includes/class-nvoos-forge-bridge-plugin.php:74
+#: includes/class-nvoos-forge-bridge-plugin.php:75
+#: includes/class-nvoos-forge-bridge-settings.php:356
 msgid "Forge Bridge"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:136
+#: includes/class-nvoos-forge-bridge-settings.php:270
 msgid "You are not allowed to change these settings."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:187
+#: includes/class-nvoos-forge-bridge-settings.php:358
 msgid "Fires a signed GitHub repository_dispatch when content changes, so the Astro Forge rebuilds the generated frontend. Configure the target repository, a token with dispatch rights, and a shared HMAC secret."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:190
+#: includes/class-nvoos-forge-bridge-settings.php:361
 msgid "Settings saved."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:193
+#: includes/class-nvoos-forge-bridge-settings.php:364
 msgid "The rebuild webhook is not fully configured — content changes will not trigger rebuilds yet."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:200
+#: includes/class-nvoos-forge-bridge-settings.php:367
+msgid "Form submissions are not enabled — enable the bridge and allowlist your static origin before the forged forms go live."
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:372
+msgid "Rebuild webhook"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:375
 msgid "Enable rebuild webhook"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:204
+#: includes/class-nvoos-forge-bridge-settings.php:379
 msgid "GitHub dispatches URL"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:207
+#: includes/class-nvoos-forge-bridge-settings.php:382
 msgid "Empty disables the webhook."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:211
+#: includes/class-nvoos-forge-bridge-settings.php:386
 msgid "GitHub token"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:214
+#: includes/class-nvoos-forge-bridge-settings.php:389
 msgid "A repo-scoped token with dispatch rights. Leave blank to keep the stored value."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:218
+#: includes/class-nvoos-forge-bridge-settings.php:393
 msgid "HMAC secret"
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:221
+#: includes/class-nvoos-forge-bridge-settings.php:396
 msgid "Signs outbound dispatch payloads and verifies inbound rebuild triggers. Leave blank to keep the stored value."
 msgstr ""
 
-#: includes/class-nvoos-forge-bridge-settings.php:225
+#: includes/class-nvoos-forge-bridge-settings.php:400
 msgid "Dispatch event type"
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-rebuild.php:93
+#: includes/class-nvoos-forge-bridge-settings.php:405
+msgid "Forms (forged frontend submissions)"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:407
+msgid "The forged static site rebuilds your JetFormBuilder / Elementor Pro forms and posts submissions to this plugin, which dispatches them to the native handler — validation, storage, mail, and post-submit actions run exactly as on WordPress. The static origin must be allowlisted below (one per line)."
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:411
+msgid "Enable form submissions"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:415
+msgid "Static origins (allowlist)"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:418
+msgid "The static site origin(s) allowed to submit — one full origin per line. Requests from any other origin are rejected."
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:422
+msgid "Captcha (optional)"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:425
+msgid "None"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:426
+msgid "Cloudflare Turnstile"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:428
+msgid "When set, every submission must carry a fresh Turnstile token (action and hostname are pinned to your allowlisted origin)."
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:432
+msgid "Turnstile site key"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:436
+msgid "Turnstile secret"
+msgstr ""
+
+#: includes/class-nvoos-forge-bridge-settings.php:439
+msgid "Leave blank to keep the stored value."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:94
+msgid "Form submissions are disabled on this site."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:101
+msgid "The request origin is not allowed."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:107
+msgid "Too many submissions — try again later."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:137
+msgid "Captcha verification failed."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:227
+msgid "Accepted."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:322
+msgid "Invalid JSON body."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:330
+msgid "The form identifier is required."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:345
+msgid "No form fields were submitted."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:368
+msgid "Too many form fields."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:417
+#: includes/rest/class-nvoos-forge-bridge-forms.php:423
+msgid "The form does not exist on this site."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:425
+msgid "No form handler (JetFormBuilder or Elementor Pro) is active on this site."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:548
+msgid "The JetFormBuilder handler is not available."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:578
+msgid "The JetFormBuilder handler did not produce a response."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:617
+msgid "The Elementor Pro form handler is not available."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:634
+msgid "The Elementor Pro handler did not produce a response."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-forms.php:678
+#: includes/rest/class-nvoos-forge-bridge-forms.php:707
+msgid "The form handler returned an unrecognized response."
+msgstr ""
+
+#: includes/rest/class-nvoos-forge-bridge-rebuild.php:95
 msgid "Invalid or missing request signature."
 msgstr ""
 
-#: includes/rest/class-nvoos-forge-bridge-rebuild.php:109
+#: includes/rest/class-nvoos-forge-bridge-rebuild.php:111
 msgid "You are not allowed to create preview tokens."
 msgstr ""
