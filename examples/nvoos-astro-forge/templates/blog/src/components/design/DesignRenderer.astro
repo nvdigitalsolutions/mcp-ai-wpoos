@@ -20,6 +20,7 @@ import LogoCloud from './LogoCloud.astro';
 import Testimonial from './Testimonial.astro';
 import TextBlock from './TextBlock.astro';
 import manifestJson from '../../../nvoos.json';
+import { vocabulary } from '../../lib/vocabulary.generated.ts';
 
 /** A pre-classified wireframe section (Proposal 115) — the semantic section
  *  plus its per-breakpoint column behavior. */
@@ -42,7 +43,13 @@ const { html = '', wireframeSections } = Astro.props;
 const sections: SemanticSection[] = wireframeSections
 	? wireframeSections.map( ( w ) => w.section )
 	: html
-		? classifyHtml( html, { searchForms: manifest.forms?.searchForms } )
+		? classifyHtml( html, {
+				searchForms: manifest.forms?.searchForms,
+				// The learned vocabulary (Proposal 116) wins over the seeded
+				// classifier defaults — per-site, baked at scaffold time.
+				widgetRoles: vocabulary.widgetRoles,
+				blockRoles: vocabulary.blockRoles,
+		  } )
 		: [];
 const columnsFor = ( index: number ): Record<string, number> | undefined => wireframeSections?.[ index ]?.responsive?.columns;
 ---

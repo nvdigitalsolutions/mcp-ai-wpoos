@@ -511,6 +511,26 @@ per-breakpoint grid columns).
   properties on the grid container (DesignRenderer passes `columns` to
   FeatureGrid/IconList via the `wireframeSections` prop).
 
+## Proposal 116 — learned vocabulary classifier (2026-11-06)
+
+The classifier never enumerates widgets again: unknown `elementor-widget-*`
+/ `wp-block-*` names classify as **`content`** (low confidence — slots
+merge, the shape ladder decides the kind) instead of being dropped;
+`classifyHtml` options gain `widgetRoles`/`blockRoles` overrides that win
+over the exported seed dictionaries (`SEEDED_WIDGET_ROLES` /
+`SEEDED_BLOCK_ROLES`); `forge analyze --vocabulary` learns per-site — the
+`wp/v2/block-types` registry via keyword rules + every widget name on the
+rendered homepage — and reports `unknownWidgets`/`unknownBlocks` for the
+operator to pin in `profile.vocabulary` (scaffold bakes
+`vocabulary.generated.ts`; the renderer merges it). Structured Gutenberg
+docs (columns/group re-seeded `container`) now enter the section pipeline
+via the container/content gate; a safety ladder pins **the pipeline never
+empties a non-empty document** (embed-only posts stay raw text; empty
+Elementor scaffolding still drops). Elementor 4.0 atomic output is real
+semantic HTML — form extraction + the shape ladder cover it name-free; the
+atomic JSON data layer is the documented enrichment path. Research:
+`docs/project/proposals/116-forge-learned-vocabulary-proposal.md`.
+
 ## Phase roadmap (096 §5)
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,

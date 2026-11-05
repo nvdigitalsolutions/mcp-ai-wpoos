@@ -244,3 +244,62 @@ describe( 'SECTION_MAP', () => {
 		expect( SECTION_MAP.text.component ).toBe( 'TextBlock' );
 	} );
 } );
+
+describe( 'learned vocabulary (Proposal 116)', () => {
+	const FUTURE = 'futuristic-thing';
+
+	it( 'captures unknown widget content instead of dropping it', () => {
+		const html = SECTION(
+			`<div class="elementor-widget elementor-widget-${FUTURE}"><div class="elementor-widget-container"><h2>Next-gen section</h2><p>Some body copy.</p></div></div>`
+		);
+		const sections = classifyHtml( html );
+		expect( sections.length ).toBeGreaterThan( 0 );
+		const section = sections[ 0 ];
+		expect( section.confidence ).toBe( 'low' ); // shape decided, not a name
+		expect( section.slots.title ).toBe( 'Next-gen section' );
+		expect( section.slots.body ).toContain( 'Some body copy.' );
+	} );
+
+	it( 'profile widgetRoles overrides win over the seeded defaults', () => {
+		const html = SECTION(
+			[
+				`<div class="elementor-widget elementor-widget-${FUTURE}"><div class="elementor-widget-container"><h3>Card one</h3><p>First.</p></div></div>`,
+				`<div class="elementor-widget elementor-widget-${FUTURE}"><div class="elementor-widget-container"><h3>Card two</h3><p>Second.</p></div></div>`,
+			].join( '' )
+		);
+		const sections = classifyHtml( html, { widgetRoles: { [ FUTURE ]: { kind: 'feature' } } } );
+		const section = sections[ 0 ];
+		expect( section.slots.items ).toHaveLength( 2 );
+		expect( section.kind ).toBe( 'feature-grid' );
+		expect( section.confidence ).toBe( 'high' );
+	} );
+
+	it( 'structured Gutenberg blocks enter the section pipeline via the learned gate', () => {
+		const html = [
+			'<div class="wp-block-columns">',
+			'<div class="wp-block-column"><h2 class="wp-block-heading">Column heading</h2><p class="wp-block-paragraph">Body text.</p></div>',
+			'</div>',
+		].join( '' );
+		const sections = classifyHtml( html );
+		expect( sections.length ).toBeGreaterThan( 0 );
+		expect( sections[ 0 ].slots.title ).toBe( 'Column heading' );
+	} );
+
+	it( 'embed-only posts keep the raw post-body path (no content loss)', () => {
+		const html = '<figure class="wp-block-embed"><div class="wp-block-embed__wrapper"><iframe src="https://example.com/e"></iframe></div></figure>';
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 1 );
+		expect( sections[ 0 ].kind ).toBe( 'text' );
+	} );
+
+	it( 'unknown blocks classify as content and never empty the document', () => {
+		const html = [
+			'<div class="wp-block-brand-new-block">',
+			'<h2>Shiny new block</h2><p>With some words.</p>',
+			'</div>',
+		].join( '' );
+		const sections = classifyHtml( html );
+		expect( sections.length ).toBeGreaterThan( 0 );
+		expect( sections[ 0 ].slots.title ).toBe( 'Shiny new block' );
+	} );
+} );
