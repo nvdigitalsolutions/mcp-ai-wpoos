@@ -484,6 +484,20 @@ the only committed artifact per site.
   `sites/<name>.json`, merge → the workflow mirrors on the next run. The
   mirror's `main` README lists the convention (update it via the
   `contents` API PUT — base64 content + the current file `sha`).
+- **Operational learnings (2026-11-06, first live mirror push):** the
+  Windows self-hosted runner's `npm install` phase runs ~15 min — a quiet
+  job is NOT a hang, check `gh run view <id> --log` before touching code.
+  The WCAG scaffold warnings fix in the PROFILE, not the template:
+  `design.tokens` keys are the `--forge-*` names minus the prefix (`ink`,
+  `muted`, `line-strong`, …); pick values from the source's own unassigned
+  pool that PASS — the audit's one-size suggestion (same dark color for all
+  three) flattens hierarchy, `#505050` muted and `#666666` line-strong both
+  clear 4.5:1/3:1 and keep it. Mirror CI secrets on the monorepo:
+  `NVOOS_FORGE_MIRROR_URL` + `NVOOS_FORGE_MIRROR_TOKEN` + variable
+  `NVOOS_FORGE_MIRROR_REPO` — set via `gh auth token | gh secret set …` so
+  the token never lands in a transcript. A prebuilt local `dist/` stages
+  instantly: run the generated `scripts/mirror-push.mjs` with `MIRROR_URL`/
+  `MIRROR_TOKEN`/`SITE_BRANCH` env.
 - **Local preview of a built site** (a `dist/` exists): the Zed terminal
   reaps backgrounded children, so detach the server —
   `powershell.exe -NoProfile -Command "Start-Process -FilePath 'node' -ArgumentList 'node_modules/astro/bin/astro.mjs','preview','--port','4199' -WorkingDirectory '<abs target>' -WindowStyle Hidden"`.

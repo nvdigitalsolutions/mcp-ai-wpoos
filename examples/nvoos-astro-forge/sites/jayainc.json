@@ -56,6 +56,11 @@
 			"analyzedAt": "2026-11-05T16:09:35.424Z"
 		},
 		"concept": "cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.",
+		"tokens": {
+			"ink": "#242424",
+			"muted": "#505050",
+			"line-strong": "#666666"
+		},
 		"palette": {
 			"roles": {
 				"accent": "#6ec1e4",
