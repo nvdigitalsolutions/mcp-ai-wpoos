@@ -13,9 +13,21 @@ export interface WpClientOptions {
 	baseUrl: string;
 	auth?: WpAuth;
 	timeoutMs?: number;
+	/**
+	 * User-Agent header. Defaults to a browser-like UA — bot protection
+	 * (Imunify360/Cloudflare et al.) frequently 403s UA-less or tool-default
+	 * requests from datacenter IPs. Override via the WP_USER_AGENT env in
+	 * the scaffolded project.
+	 */
+	userAgent?: string;
 	/** Test seam — the underlying fetch. */
 	fetchImpl?: typeof fetch;
 }
+
+/** The default request UA — a Chrome desktop signature so WordPress WAFs
+ *  treat build-time content fetches as a normal browser. */
+export const DEFAULT_USER_AGENT =
+	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 /** Typed client errors — machine-readable codes for tool/log surfaces. */
 export class WpClientError extends Error {
@@ -36,12 +48,14 @@ export class WpClient {
 	private readonly baseUrl: string;
 	private readonly auth?: WpAuth;
 	private readonly timeoutMs: number;
+	private readonly userAgent: string;
 	private readonly fetchImpl: typeof fetch;
 
 	constructor(options: WpClientOptions) {
 		this.baseUrl = options.baseUrl.replace(/\/+$/, '');
 		this.auth = options.auth;
 		this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+		this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
 		this.fetchImpl = options.fetchImpl ?? fetch;
 	}
 
@@ -51,7 +65,7 @@ export class WpClient {
 		for (const [key, value] of Object.entries(params)) {
 			url.searchParams.set(key, value);
 		}
-		const headers: Record<string, string> = { accept: 'application/json' };
+		const headers: Record<string, string> = { accept: 'application/json', 'user-agent': this.userAgent };
 		if (this.auth?.type === 'basic') {
 			headers.authorization = `Basic ${Buffer.from(`${this.auth.username}:${this.auth.password}`).toString('base64')}`;
 		} else if (this.auth?.type === 'bearer') {

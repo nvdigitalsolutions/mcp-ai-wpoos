@@ -32,6 +32,13 @@ export interface WpLoaderOptions {
 	/** Auth for private sources — never written into the scaffolded project. */
 	auth?: WpAuth;
 	/**
+	 * User-Agent for WP requests. Defaults to a browser-like UA in WpClient
+	 * — bot protection (Imunify360/Cloudflare et al.) frequently 403s
+	 * UA-less or tool-default requests from datacenter IPs. Override via
+	 * the WP_USER_AGENT env (the scaffolded content.config wires it).
+	 */
+	userAgent?: string;
+	/**
 	 * Hybrid local content (Proposal 106 P2): a local MDX glob merged under
 	 * the WP entries. Local fills the gaps; WP wins on store-id collision. A
 	 * network-level WP failure (no connection at all) degrades to local-only
@@ -140,7 +147,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 		name: 'nvoos-wp',
 		schema: contentSchema,
 		load: async (context: LoaderContext) => {
-			const client = WpClient.fromProfile(site, { auth });
+			const client = WpClient.fromProfile(site, { auth, userAgent: options.userAgent });
 
 			if (collection.source === 'payload') {
 				await loadPayloadEntries(context, client, collection);

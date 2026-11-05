@@ -141,6 +141,20 @@ describe('WpClient auth', () => {
 	});
 });
 
+describe('WpClient user agent (Proposal 116 hardening)', () => {
+	it('sends a browser-like UA by default and honors the override', async () => {
+		const { fetchImpl, requests } = cannedWp([], 1);
+		const client = new WpClient({ baseUrl: 'https://fixture.test', fetchImpl });
+		await client.root();
+		expect(requests[0].headers['user-agent']).toContain('Mozilla/5.0');
+
+		const { fetchImpl: fetchImpl2, requests: requests2 } = cannedWp([], 1);
+		const client2 = new WpClient({ baseUrl: 'https://fixture.test', fetchImpl: fetchImpl2, userAgent: 'custom-agent/1.0' });
+		await client2.root();
+		expect(requests2[0].headers['user-agent']).toBe('custom-agent/1.0');
+	});
+});
+
 describe('WpClient errors', () => {
 	it('maps 401/403 to wp_auth_required', async () => {
 		const client = new WpClient({

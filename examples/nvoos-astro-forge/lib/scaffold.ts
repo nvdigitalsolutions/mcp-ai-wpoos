@@ -278,7 +278,7 @@ export function renderContentConfig(profile: SiteProfile): string {
 			? `, local: { pattern: ${tsString(localSource.pattern)}, base: ${tsString(localSource.base)} }`
 			: '';
 		block.push(
-			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption} }) }),`
+			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption}, userAgent: import.meta.env.WP_USER_AGENT }) }),`
 		);
 	}
 	block.push(`};`);
