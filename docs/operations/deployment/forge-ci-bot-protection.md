@@ -17,9 +17,17 @@ over-permissive (everyone else's Actions traffic gets through too).
 
 ### 1. Self-hosted runner with a fixed IP (recommended — one IP, reusable for every client)
 
-Stand up a GitHub Actions self-hosted runner on NV infra with a **static
-IP** (any small VPS, or even this dev machine — its residential IP is
-already allowed by jayainc, proven by the local builds):
+**IMPLEMENTED (2026-11-06):** the `forge-sites` workflow now runs on
+`[self-hosted, forge-builder]` — NV's Windows runner on this dev machine
+(`F:/GITHUB/actions-runner`, registered as `forge-builder-windows`, labels
+`self-hosted,forge-builder,windows,x64`). Its residential IP is already
+allowed by jayainc. Caveats: the machine must be on for builds; the runner
+was started detached (not yet a service — install the service from an
+admin shell with `cd F:\GITHUB\actions-runner && svc.cmd install` then
+`svc.cmd start`). The workflow pins `defaults: run: shell: bash` because
+Windows runners default to PowerShell.
+
+To add a NEW runner (any NV machine):
 
 1. Mint a token: `gh api -X POST repos/nvdigitalsolutions/mcp-ai-wpoos/actions/runners/registration-token --jq .token`
 2. Install `actions-runner` (GitHub's official installer), label it e.g. `forge-builder`, run as a service.
@@ -46,4 +54,6 @@ tools (`cloudways-nvdigital`) from an assistant that has them attached.
 Re-run `forge-sites.yml` (workflow_dispatch, `site=jayainc`) — the build
 should reach the mirror-push step (which skips gracefully until the
 `NVOOS_FORGE_MIRROR_*` secrets exist). The WCAG lines in the log are
-informational warnings, not failures.
+informational warnings, not failures. Status (2026-11-06): the runner is
+online and the workflow has been switched to it — first end-to-end run
+verified in CI.
