@@ -14,6 +14,49 @@ const SECTION = ( inner: string ) =>
 const WIDGET = ( name: string, inner: string ) =>
 	`<div class="elementor-widget elementor-widget-${ name }"><div class="elementor-widget-container">${ inner }</div></div>`;
 
+describe( 'classifyHtml — vendor-prefixed widget families (Phlox/Auxin)', () => {
+	it( 'rebuilds aux_* widgets like the core Elementor ones', () => {
+		const html = SECTION(
+			WIDGET( 'aux_modern_heading', '<h2>Ship to South Florida</h2>' ) +
+				WIDGET( 'aux_text', '<p>Highest quality of support and service.</p>' ) +
+				WIDGET( 'aux_button', '<a href="/contact/">Get in touch</a>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'hero' );
+		expect( sections[ 0 ].slots.title ).toBe( 'Ship to South Florida' );
+		expect( sections[ 0 ].slots.body ).toContain( 'Highest quality of support and service.' );
+		expect( sections[ 0 ].slots.links?.[ 0 ] ).toMatchObject( { text: 'Get in touch', href: '/contact/' } );
+	} );
+} );
+
+describe( 'classifyHtml — wrapped Elementor documents (the wp-post root)', () => {
+	it( 'splits sections nested under the data-elementor-type wrapper', () => {
+		const html =
+			'<div data-elementor-type="wp-post" class="elementor elementor-71">' +
+			SECTION( WIDGET( 'heading', '<h2>Hero title</h2>' ) + WIDGET( 'text-editor', '<p>Hero copy.</p>' ) ) +
+			SECTION( WIDGET( 'icon-box', '<h3>Wool</h3><p>Merino.</p>' ) + WIDGET( 'icon-box', '<h3>Linen</h3><p>Washed.</p>' ) ) +
+			'</div>';
+		const sections = classifyHtml( html );
+		expect( sections.map( ( section ) => section.kind ) ).toEqual( [ 'hero', 'feature-grid' ] );
+		expect( sections[ 1 ].slots.items ).toHaveLength( 2 );
+	} );
+
+	it( 'never splits a section nested inside another section', () => {
+		const html =
+			'<div class="elementor elementor-71">' +
+			SECTION(
+				WIDGET( 'heading', '<h2>Outer</h2>' ) +
+					'<div class="elementor-section elementor-inner-section">' +
+					WIDGET( 'text-editor', '<p>Inner content.</p>' ) +
+					'</div>'
+			) +
+			'</div>';
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 1 );
+		expect( sections[ 0 ].slots.title ).toBe( 'Outer' );
+	} );
+} );
+
 describe( 'classifyHtml — fallbacks', () => {
 	it( 'wraps plain non-builder HTML as a single text section (the post-body path)', () => {
 		const html = '<h2>Care</h2><p>Wash cold.</p>';
