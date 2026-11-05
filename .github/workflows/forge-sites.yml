@@ -40,6 +40,14 @@ on:
 permissions:
   contents: read
 
+# The workflow runs on NV's self-hosted Windows runner (bot-protected sources
+# 403 GitHub's datacenter IPs — see docs/operations/deployment/
+# forge-ci-bot-protection.md). Windows runners default to PowerShell, so the
+# bash steps below need an explicit shell.
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   # One forge-sites run at a time — mirror branches are force-pushed.
   group: forge-sites
@@ -47,7 +55,9 @@ concurrency:
 
 jobs:
   forge:
-    runs-on: ubuntu-latest
+    # NV's fixed-IP runner (option 1 of the bot-protection runbook) — the
+    # label pins it; `self-hosted` is the required base label.
+    runs-on: [ self-hosted, forge-builder ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
