@@ -28,7 +28,7 @@
 // ---------------------------------------------------------------------------
 
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 
 /** Supported deploy targets. */
 export type DeployMode = 'github-pages' | 'cloudflare-pages' | 'velocity';
@@ -281,6 +281,8 @@ export async function emitDeployConfig( dir: string, config: DeployConfig ): Pro
 	for ( const file of files ) {
 		await writeFile( file.path, file.content, 'utf8' );
 	}
-	// Relative paths with forward slashes (Windows-safe).
-	return { files: files.map( ( f ) => f.path.slice( dir.length + 1 ).split( '\\' ).join( '/' ) ) };
+	// Relative paths with forward slashes (Windows-safe). `relative` (not a
+	// slice on `dir.length`) keeps the report correct for `./`-prefixed
+	// targets — `join()` normalizes the prefix away from the written path.
+	return { files: files.map( ( f ) => relative( dir, f.path ).split( '\\' ).join( '/' ) ) };
 }
