@@ -267,6 +267,11 @@ live PDP (200 + `Product` JSON-LD + cache header, 301 slug convergence,
   cast to an exact `(name, config, cb) => unknown` signature. And the SDK
   imports types from `zod/v4` — keep the mcp files importing `z` from
   `'zod/v4'` so type identities line up.
+- **`deploy-config` echoed paths were sliced on `dir.length`** — a
+  `./`-prefixed `--target` (`forge deploy-config … --target ./out`) printed
+  `ithub/workflows/deploy.yml` while the files landed correctly (only the
+  console report was wrong). Now `path.relative` + a dot-slash regression
+  test (2026-11-06) — keep path reporting relative-based.
 
 ## Template contract (FORGE markers)
 
@@ -473,6 +478,18 @@ the only committed artifact per site.
   (never a red job). Needs repo variable `NVOOS_FORGE_MIRROR_REPO` +
   secrets `NVOOS_FORGE_MIRROR_URL`/`_TOKEN`, `FORGE_WEBHOOK_SECRET`.
 - Full runbook + research: `docs/project/proposals/114-shared-mirror-deploy-addendum.md`.
+- **Adding a client site:** seed the branch on the mirror —
+  `gh api repos/nvdigitalsolutions/nvoos-forge-sites/git/refs -f ref=refs/heads/site/<name> -f sha=<main sha>`
+  (read the sha via `gh api …/git/refs/heads/main --jq .object.sha`) — commit
+  `sites/<name>.json`, merge → the workflow mirrors on the next run. The
+  mirror's `main` README lists the convention (update it via the
+  `contents` API PUT — base64 content + the current file `sha`).
+- **Local preview of a built site** (a `dist/` exists): the Zed terminal
+  reaps backgrounded children, so detach the server —
+  `powershell.exe -NoProfile -Command "Start-Process -FilePath 'node' -ArgumentList 'node_modules/astro/bin/astro.mjs','preview','--port','4199' -WorkingDirectory '<abs target>' -WindowStyle Hidden"`.
+  astro's bin is `bin/astro.mjs` (NOT `astro.js`); `astro preview` binds
+  `localhost` (::1) only — probe `curl http://localhost:<port>/`, not
+  `127.0.0.1`; stop via the PID from `netstat -ano | grep <port> | grep LISTEN`.
 
 ## Proposal 115 — inventory, wireframes, responsive (2026-11-06)
 

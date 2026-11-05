@@ -462,6 +462,15 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## Deploy & revalidation
 
+- **Forged client sites (Proposal 114) do NOT get per-app mirror repos.**
+  They deploy through ONE shared private mirror
+  (`nvdigitalsolutions/nvoos-forge-sites`) — one `site/<name>` branch per
+  client with `dist/` at the branch root (force-pushed, flat). Velocity
+  supports per-app **Branch** + **Root directory** settings (official
+  Velocity deployment docs), so each client app connects the shared repo
+  and selects its branch. Ops: the `mcp-ai-wpoos-astro-forge` skill +
+  `docs/project/proposals/114-shared-mirror-deploy-addendum.md`.
+
 - `npm run sync:dist` assembles the deploy tree; the workflow has **two
   builds**: localhost-origin (smoke/e2e/LHCI) and prod-host rebuild (mirror).
 - Rebuild trigger: bridge fires a debounced `nvoos-storefront-content-changed`
