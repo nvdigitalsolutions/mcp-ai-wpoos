@@ -555,6 +555,10 @@ atomic JSON data layer is the documented enrichment path. Research:
   global dispatcher); unset = no-op, misconfigured = fail-closed build.
   Operator infra: a small allowlisted proxy (or the Cloudways bot-protection
   allowlist when the site is on NV's account).
+- **Browser-UA hardening (same session):** `WpClient` sends a
+  Chrome-desktop UA by default (`DEFAULT_USER_AGENT`), overridable per
+  deploy via `WP_USER_AGENT` (the scaffolded content.config wires it) —
+  UA-less requests are a bot-protection trigger on many hosts.
 
 ## Phase roadmap (096 §5)
 
