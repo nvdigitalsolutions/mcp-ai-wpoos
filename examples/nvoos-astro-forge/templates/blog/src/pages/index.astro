@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
+import DesignRenderer from '../components/design/DesignRenderer.astro';
 
 // A WordPress static front page (page_on_front) renders at `/`; otherwise
 // the template falls back to the blog-style home.
@@ -9,6 +10,9 @@ const frontPageSlug = manifest.frontPage;
 const pages = await getCollection('pages');
 const frontPage = frontPageSlug ? pages.find((page) => page.data.slug === frontPageSlug) : undefined;
 const frontContent = frontPage ? await render(frontPage) : undefined;
+// The loader's rendered.html — the sanitized body the semantic renderer
+// classifies (entry.body is not populated by the content store).
+const frontBody = frontPage?.rendered?.html;
 
 const posts = (await getCollection('posts'))
 	.filter((post) => post.data.date)
@@ -18,7 +22,9 @@ const latest = posts.slice(0, 3);
 ---
 
 <Base title="Home">
-	{frontPage && frontContent ? (
+	{frontPage && frontBody ? (
+		<DesignRenderer html={frontBody} />
+	) : frontPage && frontContent ? (
 		<div class="post-body">
 			<frontContent.Content />
 		</div>

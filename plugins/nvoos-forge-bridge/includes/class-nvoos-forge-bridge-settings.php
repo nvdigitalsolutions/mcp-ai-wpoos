@@ -39,6 +39,31 @@ final class Settings {
 	public const OPTION_REBUILD_ENABLED = 'nvoos_forge_bridge_rebuild_enabled';
 
 	/**
+	 * Forms: master enable flag (1/0). Disabled = the submit route 404s.
+	 */
+	public const OPTION_FORMS_ENABLED = 'nvoos_forge_bridge_forms_enabled';
+
+	/**
+	 * Forms: CORS allowlist — one static origin per line.
+	 */
+	public const OPTION_FORMS_ORIGINS = 'nvoos_forge_bridge_forms_origins';
+
+	/**
+	 * Forms: optional captcha provider ('' or 'turnstile').
+	 */
+	public const OPTION_FORMS_CAPTCHA_PROVIDER = 'nvoos_forge_bridge_forms_captcha_provider';
+
+	/**
+	 * Forms: captcha secret (write-only, never echoed).
+	 */
+	public const OPTION_FORMS_CAPTCHA_SECRET = 'nvoos_forge_bridge_forms_captcha_secret';
+
+	/**
+	 * Forms: captcha site key (public; copied into the static site's config).
+	 */
+	public const OPTION_FORMS_CAPTCHA_SITE_KEY = 'nvoos_forge_bridge_forms_captcha_site_key';
+
+	/**
 	 * Default event type.
 	 */
 	public const DEFAULT_EVENT = 'nvoos-forge-content-changed';
@@ -55,6 +80,11 @@ final class Settings {
 			self::OPTION_REBUILD_SECRET,
 			self::OPTION_REBUILD_EVENT,
 			self::OPTION_REBUILD_ENABLED,
+			self::OPTION_FORMS_ENABLED,
+			self::OPTION_FORMS_ORIGINS,
+			self::OPTION_FORMS_CAPTCHA_PROVIDER,
+			self::OPTION_FORMS_CAPTCHA_SECRET,
+			self::OPTION_FORMS_CAPTCHA_SITE_KEY,
 		);
 	}
 
@@ -102,6 +132,110 @@ final class Settings {
 	 */
 	public static function rebuild_enabled(): bool {
 		return '1' === (string) get_option( self::OPTION_REBUILD_ENABLED, '0' );
+	}
+
+	/**
+	 * Whether the form bridge is enabled.
+	 *
+	 * @return bool
+	 */
+	public static function forms_enabled(): bool {
+		return '1' === (string) get_option( self::OPTION_FORMS_ENABLED, '0' );
+	}
+
+	/**
+	 * Normalize an origin to the comparable shape (scheme://host[:port],
+	 * lowercase, no trailing slash).
+	 *
+	 * @param string $origin Origin.
+	 * @return string
+	 */
+	public static function normalize_origin( $origin ) {
+		$origin = untrailingslashit( strtolower( trim( (string) $origin ) ) );
+		if ( '' === $origin ) {
+			return '';
+		}
+		$parsed = wp_parse_url( $origin );
+		if ( empty( $parsed['host'] ) ) {
+			return $origin;
+		}
+		$scheme = isset( $parsed['scheme'] ) ? $parsed['scheme'] : 'https';
+		$port   = isset( $parsed['port'] ) ? ':' . $parsed['port'] : '';
+		return $scheme . '://' . $parsed['host'] . $port;
+	}
+
+	/**
+	 * The configured static origins (normalized), one per entry.
+	 *
+	 * @return string[]
+	 */
+	public static function forms_origins(): array {
+		$raw     = (string) get_option( self::OPTION_FORMS_ORIGINS, '' );
+		$origins = array();
+		foreach ( preg_split( '/[\r\n]+/', $raw ) as $line ) {
+			$normalized = self::normalize_origin( $line );
+			if ( '' !== $normalized ) {
+				$origins[] = $normalized;
+			}
+		}
+		return array_values( array_unique( $origins ) );
+	}
+
+	/**
+	 * Whether an origin is allowlisted.
+	 *
+	 * @param string $origin Origin.
+	 * @return bool
+	 */
+	public static function forms_origin_allowed( $origin ): bool {
+		$normalized = self::normalize_origin( $origin );
+		return '' !== $normalized && in_array( $normalized, self::forms_origins(), true );
+	}
+
+	/**
+	 * The captcha provider ('' or 'turnstile').
+	 *
+	 * @return string
+	 */
+	public static function forms_captcha_provider(): string {
+		$provider = (string) get_option( self::OPTION_FORMS_CAPTCHA_PROVIDER, '' );
+		return 'turnstile' === $provider ? $provider : '';
+	}
+
+	/**
+	 * The captcha secret (write-only in the UI).
+	 *
+	 * @return string
+	 */
+	public static function forms_captcha_secret(): string {
+		return (string) get_option( self::OPTION_FORMS_CAPTCHA_SECRET, '' );
+	}
+
+	/**
+	 * The captcha site key.
+	 *
+	 * @return string
+	 */
+	public static function forms_captcha_site_key(): string {
+		return sanitize_text_field( (string) get_option( self::OPTION_FORMS_CAPTCHA_SITE_KEY, '' ) );
+	}
+
+	/**
+	 * Whether captcha verification is active (provider + secret set).
+	 *
+	 * @return bool
+	 */
+	public static function forms_captcha_enabled(): bool {
+		return 'turnstile' === self::forms_captcha_provider() && '' !== self::forms_captcha_secret();
+	}
+
+	/**
+	 * Whether the forms bridge is enabled AND has an origin allowlist.
+	 *
+	 * @return bool
+	 */
+	public static function forms_configured(): bool {
+		return self::forms_enabled() && count( self::forms_origins() ) > 0;
 	}
 
 	/**
@@ -165,6 +299,42 @@ final class Settings {
 		$enabled = isset( $_POST['rebuild_enabled'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['rebuild_enabled'] ) ) ? '1' : '0';
 		update_option( self::OPTION_REBUILD_ENABLED, $enabled );
 
+		// Forms: master switch, origin allowlist (absolute origins only),
+		// and the optional captcha.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
+		$forms_enabled = isset( $_POST['forms_enabled'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['forms_enabled'] ) ) ? '1' : '0';
+		update_option( self::OPTION_FORMS_ENABLED, $forms_enabled );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
+		$origins_raw = isset( $_POST['forms_origins'] ) ? sanitize_textarea_field( wp_unslash( $_POST['forms_origins'] ) ) : '';
+		$origins     = array();
+		foreach ( preg_split( '/[\r\n]+/', $origins_raw ) as $line ) {
+			$origin = trim( (string) $line );
+			if ( '' === $origin || 1 !== preg_match( '#^https?://#i', $origin ) ) {
+				continue;
+			}
+			$normalized = self::normalize_origin( $origin );
+			if ( '' !== $normalized ) {
+				$origins[] = $normalized;
+			}
+		}
+		update_option( self::OPTION_FORMS_ORIGINS, implode( "\n", array_unique( $origins ) ) );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
+		$provider = isset( $_POST['forms_captcha_provider'] ) ? sanitize_key( wp_unslash( $_POST['forms_captcha_provider'] ) ) : '';
+		update_option( self::OPTION_FORMS_CAPTCHA_PROVIDER, in_array( $provider, array( '', 'turnstile' ), true ) ? $provider : '' );
+
+		// The captcha secret is write-only: an empty field keeps the stored value.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
+		$captcha_secret = isset( $_POST['forms_captcha_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['forms_captcha_secret'] ) ) : '';
+		if ( '' !== $captcha_secret ) {
+			update_option( self::OPTION_FORMS_CAPTCHA_SECRET, $captcha_secret );
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
+		$captcha_site_key = isset( $_POST['forms_captcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['forms_captcha_site_key'] ) ) : '';
+		update_option( self::OPTION_FORMS_CAPTCHA_SITE_KEY, $captcha_site_key );
+
 		$fallback = admin_url( 'options-general.php?page=nvoos-forge-bridge' );
 		wp_safe_redirect( add_query_arg( 'updated', '1', wp_get_referer() ? wp_get_referer() : $fallback ) );
 		exit;
@@ -179,7 +349,8 @@ final class Settings {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		$configured = self::rebuild_configured();
+		$configured       = self::rebuild_configured();
+		$forms_configured = self::forms_configured();
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Forge Bridge', 'nvoos-forge-bridge' ); ?></h1>
@@ -192,9 +363,13 @@ final class Settings {
 			<?php if ( ! $configured ) : ?>
 				<div class="notice notice-warning"><p><?php esc_html_e( 'The rebuild webhook is not fully configured — content changes will not trigger rebuilds yet.', 'nvoos-forge-bridge' ); ?></p></div>
 			<?php endif; ?>
+			<?php if ( ! $forms_configured ) : ?>
+				<div class="notice notice-warning"><p><?php esc_html_e( 'Form submissions are not enabled — enable the bridge and allowlist your static origin before the forged forms go live.', 'nvoos-forge-bridge' ); ?></p></div>
+			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="nvoos_forge_bridge_save" />
 				<?php wp_nonce_field( self::nonce_action() ); ?>
+				<h2 class="title"><?php esc_html_e( 'Rebuild webhook', 'nvoos-forge-bridge' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><label for="rebuild_enabled"><?php esc_html_e( 'Enable rebuild webhook', 'nvoos-forge-bridge' ); ?></label></th>
@@ -224,6 +399,45 @@ final class Settings {
 					<tr>
 						<th scope="row"><label for="rebuild_event"><?php esc_html_e( 'Dispatch event type', 'nvoos-forge-bridge' ); ?></label></th>
 						<td><input type="text" class="regular-text" id="rebuild_event" name="rebuild_event" value="<?php echo esc_attr( self::rebuild_event() ); ?>" /></td>
+					</tr>
+				</table>
+
+				<h2 class="title"><?php esc_html_e( 'Forms (forged frontend submissions)', 'nvoos-forge-bridge' ); ?></h2>
+				<p>
+					<?php esc_html_e( 'The forged static site rebuilds your JetFormBuilder / Elementor Pro forms and posts submissions to this plugin, which dispatches them to the native handler — validation, storage, mail, and post-submit actions run exactly as on WordPress. The static origin must be allowlisted below (one per line).', 'nvoos-forge-bridge' ); ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="forms_enabled"><?php esc_html_e( 'Enable form submissions', 'nvoos-forge-bridge' ); ?></label></th>
+						<td><input type="checkbox" id="forms_enabled" name="forms_enabled" value="1" <?php checked( self::forms_enabled() ); ?> /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="forms_origins"><?php esc_html_e( 'Static origins (allowlist)', 'nvoos-forge-bridge' ); ?></label></th>
+						<td>
+							<textarea class="large-text code" id="forms_origins" name="forms_origins" rows="3" placeholder="https://www.example.com"><?php echo esc_textarea( implode( "\n", self::forms_origins() ) ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'The static site origin(s) allowed to submit — one full origin per line. Requests from any other origin are rejected.', 'nvoos-forge-bridge' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="forms_captcha_provider"><?php esc_html_e( 'Captcha (optional)', 'nvoos-forge-bridge' ); ?></label></th>
+						<td>
+							<select id="forms_captcha_provider" name="forms_captcha_provider">
+								<option value="" <?php selected( '', self::forms_captcha_provider() ); ?>><?php esc_html_e( 'None', 'nvoos-forge-bridge' ); ?></option>
+								<option value="turnstile" <?php selected( 'turnstile', self::forms_captcha_provider() ); ?>><?php esc_html_e( 'Cloudflare Turnstile', 'nvoos-forge-bridge' ); ?></option>
+							</select>
+							<p class="description"><?php esc_html_e( 'When set, every submission must carry a fresh Turnstile token (action and hostname are pinned to your allowlisted origin).', 'nvoos-forge-bridge' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="forms_captcha_site_key"><?php esc_html_e( 'Turnstile site key', 'nvoos-forge-bridge' ); ?></label></th>
+						<td><input type="text" class="regular-text" id="forms_captcha_site_key" name="forms_captcha_site_key" value="<?php echo esc_attr( self::forms_captcha_site_key() ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="forms_captcha_secret"><?php esc_html_e( 'Turnstile secret', 'nvoos-forge-bridge' ); ?></label></th>
+						<td>
+							<input type="password" class="regular-text" id="forms_captcha_secret" name="forms_captcha_secret" value="" autocomplete="new-password" placeholder="<?php echo esc_attr( self::forms_captcha_enabled() ? '••••••••' : '' ); ?>" />
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the stored value.', 'nvoos-forge-bridge' ); ?></p>
+						</td>
 					</tr>
 				</table>
 				<?php submit_button(); ?>

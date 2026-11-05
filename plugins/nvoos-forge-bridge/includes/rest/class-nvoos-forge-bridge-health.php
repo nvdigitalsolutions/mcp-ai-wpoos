@@ -52,6 +52,10 @@ class Health extends \WP_REST_Controller {
 				'rebuildEnabled'    => Settings::rebuild_enabled(),
 				'rebuildConfigured' => Settings::rebuild_configured(),
 				'rebuildUrlHost'    => self::redacted_host( Settings::rebuild_url() ),
+				'formsEnabled'      => Settings::forms_enabled(),
+				'formsConfigured'   => Settings::forms_configured(),
+				'formsOriginsCount' => count( Settings::forms_origins() ),
+				'formsCaptcha'      => Settings::forms_captcha_enabled(),
 			)
 		);
 	}

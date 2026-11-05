@@ -16,15 +16,25 @@ import { cp, copyFile, mkdir, readFile, readdir, rename, rm, stat, writeFile } f
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { contrastRatio, passesAaText } from './contrast.ts';
+import { auditWarnings, contrastAudit } from './contrast.ts';
+import { designToTokens, suggestContrastFixes } from './design.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
-import type { SiteProfile, WpCollection } from './types.ts';
+import type { ForgeDesign, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 /** Files vendored into every generated project under `src/forge/`. */
-export const FORGE_LIB_FILES = ['types.ts', 'wp-client.ts', 'sanitize.ts', 'wp-loader.ts'];
+export const FORGE_LIB_FILES = [
+	'types.ts',
+	'wp-client.ts',
+	'sanitize.ts',
+	'wp-loader.ts',
+	// Proposal 114: the semantic classifier + the shared contrast math the
+	// generated project's build-time audit endpoint consumes.
+	'semantic.ts',
+	'contrast.ts',
+];
 
 /**
  * Agent stubs every scaffold emits unless --no-agents (Proposal 104 §4.4,
@@ -42,12 +52,12 @@ stays the CMS; this repo owns the presentation.
 
 - src/pages/ — routes (posts, pages, products, SEO surfaces)
 - src/layouts/Base.astro — the shared chrome (head, nav, footer)
-- src/components/ — UI components (SmartImage)
+- src/components/ — UI components (SmartImage, design/ — the 114 semantic rebuild sections)
 - src/styles/global.css — --forge-* design tokens + styles
 - src/content.config.ts — the content layer (collections, WP auth env)
-- src/forge/ — vendored forge libraries (loader, client, sanitizer) — treat as generated
+- src/forge/ — vendored forge libraries (loader, client, sanitizer, semantic classifier) — treat as generated
 - src/copy/ — typed copy tables (en.ts is the reference table)
-- src/lib/ — theme runtime (policy + registry + theme modules), SEO builders (104/105 port targets)
+- src/lib/ — theme runtime (policy + registry + theme modules), SEO builders, design.generated.ts (the resolved design)
 - nvoos.json — the forge manifest; configuration lives here
 - scripts/postbuild.mjs — materializes dist/_redirects after build
 - .context/ — drop customer context files here for agent sessions
@@ -114,6 +124,12 @@ export interface ScaffoldOptions {
 	 * 'auto' with a warning. Default 'auto'.
 	 */
 	themePolicy?: string;
+	/**
+	 * Strict contrast mode (114 §3.5): the manifest gets designAudit
+	 * 'strict', and the generated project's build-time audit endpoint fails
+	 * the build when any rendered pair fails WCAG. Default false ('warn').
+	 */
+	strictContrast?: boolean;
 }
 
 export interface ForgeManifest {
@@ -125,6 +141,13 @@ export interface ForgeManifest {
 	frontPage?: string;
 	/** Applied design-token overrides (098 output, tokens_apply). */
 	tokens?: Record<string, string>;
+	/** The design rebuild block (114 §3.3) — provenance for verify + audit. */
+	design?: ForgeDesign;
+	/** Contrast gate mode: 'warn' (default) or 'strict' (fail the build). */
+	designAudit?: 'warn' | 'strict';
+	/** The form bridge block (114 §3.9) — endpoint/searchForms consumed by
+	 * the Form design component (env vars override at deploy time). */
+	forms?: { endpoint?: string; origin?: string; searchForms?: string[] };
 	/**
 	 * Surface toggles (104 §4.3 preset output) — the template gates its
 	 * chrome on these (search/feed links, sitemap pointer, og:image).
@@ -323,17 +346,57 @@ const DEFAULT_TOKENS: Record<string, string> = {
 	surface: '#ffffff',
 	'surface-alt': '#f5f5f4',
 	line: '#e4e4e2',
+	// The 3:1-audited functional border (the ADS line-strong additive —
+	// decorative hairlines keep `line`; inputs use this).
+	'line-strong': '#767676',
 	radius: '8px',
+	'radius-sm': '4px',
+	'radius-lg': '12px',
 	font: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+	'font-display': "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
 	space: '1rem',
+	'space-sm': '0.5rem',
+	'space-lg': '2rem',
 	measure: '72ch',
+	'scale-h1': '2.25rem',
+	'scale-h2': '1.75rem',
+	'scale-h3': '1.25rem',
+	'scale-h4': '1.125rem',
+	'scale-body': '1rem',
+	'scale-small': '0.875rem',
+	'shadow-card': '0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06)',
 };
 
+/** The template's dark-mode overrides — audited alongside the light pairs. */
+export const DARK_TOKENS: Record<string, string> = {
+	ink: '#f5f5f4',
+	muted: '#a3a3a3',
+	surface: '#171717',
+	'surface-alt': '#262626',
+	line: '#3f3f3f',
+	'line-strong': '#6b6b6b',
+};
+
+/** High-contrast mode collapses muted/line onto ink (the CSS var refs). */
+export function highTokensFor( tokens: Record<string, string> ): Record<string, string> {
+	const ink = tokens.ink ?? '#1a1a1a';
+	return { muted: ink, line: ink, 'line-strong': ink };
+}
+
+/**
+ * Merge the token stack (114 §3.3): template defaults ← design-block
+ * derivation (tokens_apply v2) ← explicit profile.tokens overrides. Explicit
+ * operator overrides always win.
+ */
+export function mergeTokens( design?: ForgeDesign, tokens?: Record<string, string> ): Record<string, string> {
+	return { ...DEFAULT_TOKENS, ...( design ? designToTokens( design ) : {} ), ...( tokens ?? {} ) };
+}
+
 /** Render the :root token block (defaults + profile overrides). */
-export function renderTokenBlock(tokens?: Record<string, string>): string {
-	const merged = { ...DEFAULT_TOKENS, ...(tokens ?? {}) };
-	const lines = Object.entries(merged).map(([name, value]) => `\t--forge-${name}: ${value};`);
-	return `:root {\n${lines.join('\n')}\n}`;
+export function renderTokenBlock( tokens?: Record<string, string> ): string {
+	const merged = { ...DEFAULT_TOKENS, ...( tokens ?? {} ) };
+	const lines = Object.entries( merged ).map( ( [ name, value ] ) => `\t--forge-${ name }: ${ value };` );
+	return `:root {\n${ lines.join( '\n' ) }\n}`;
 }
 
 /** Rewrite the FORGE:tokens span in global.css (line-anchored markers). */
@@ -362,22 +425,115 @@ export function rewriteGlobalCss(source: string, tokens?: Record<string, string>
 	].join('\n');
 }
 
-/** WCAG contrast gate over the pairs the template renders — warns, never blocks. */
-export function tokenWarnings(tokens?: Record<string, string>): string[] {
-	const merged = { ...DEFAULT_TOKENS, ...(tokens ?? {}) };
-	const warnings: string[] = [];
-	const pairs: Array<[string, string, string]> = [
-		['ink', 'surface', 'body text (ink on surface)'],
-		['accent-ink', 'accent', 'text on accent (accent-ink on accent)'],
+/**
+ * Render the generated design module (114 §3.3) — src/lib/design.generated.ts.
+ * The single source of truth stays the profile's design block; this file is
+ * the deterministic build artifact the template reads (audit endpoint,
+ * design components). Repo style: tabs + single quotes via tsString.
+ */
+export function renderDesignGenerated( profile: SiteProfile, tokens: Record<string, string> ): string {
+	const design = profile.design;
+	const header = [
+		'// ---------------------------------------------------------------------------',
+		'// design.generated.ts — generated by nvoos-astro-forge (Proposal 114 §3.3);',
+		'// edits are overwritten on re-scaffold. The resolved design module: the',
+		'// single source of truth is the site profile\'s design block (nvoos.json);',
+		'// this file is the build artifact the template reads — tokens for the audit',
+		'// endpoint, typography/spacing/radii for the design components, and the',
+		'// adaptation brief for attribution. Deterministic: same profile, same bytes.',
+		'// ---------------------------------------------------------------------------',
+		'',
+		'export interface ResolvedDesign {',
+		'\tsource: { url: string; analyzedAt?: string };',
+		'\tconcept?: string;',
+		'\ttokens: Record<string, string>;',
+		'\tdarkTokens: Record<string, string>;',
+		'\thighTokens: Record<string, string>;',
+		'\ttypography: { display?: string; body?: string; scalePx: number[] };',
+		'\tspacing: { scalePx: number[] };',
+		'\tradii: { valuesPx: number[] };',
+		'\tcomponents: Record<string, number>;',
+		'\tadaptation?: {',
+		'\t\tkeep: string[];',
+		'\t\treplace: string[];',
+		'\t\tremix: string[];',
+		'\t\tlicensingNote: string;',
+		'\t\tattribution: string[];',
+		'\t};',
+		'}',
+		'',
+		'export const resolvedDesign: ResolvedDesign = {',
 	];
-	for (const [fgKey, bgKey, label] of pairs) {
-		const ratio = contrastRatio(merged[fgKey], merged[bgKey]);
-		if (ratio === undefined) {
-			warnings.push(`Token ${fgKey}/${bgKey} failed to parse — ${label} contrast not checked.`);
-		} else if (!passesAaText(ratio)) {
-			warnings.push(
-				`WCAG: ${label} contrast is ${ratio.toFixed(2)}:1 — below the 4.5:1 AA minimum (SC 1.4.3).`
-			);
+	const body: string[] = [];
+	body.push(
+		`\tsource: { url: ${ tsString( profile.url.replace( /\/+$/, '' ) ) }${ design ? `, analyzedAt: ${ tsString( design.source.analyzedAt ) }` : '' } },`
+	);
+	if ( design?.concept ) {
+		body.push( `\tconcept: ${ tsString( design.concept ) },` );
+	}
+	body.push( '\ttokens: {' );
+	for ( const [ name, value ] of Object.entries( tokens ) ) {
+		body.push( `\t\t${ tsString( name ) }: ${ tsString( value ) },` );
+	}
+	body.push( '\t},' );
+	body.push( '\tdarkTokens: {' );
+	for ( const [ name, value ] of Object.entries( DARK_TOKENS ) ) {
+		body.push( `\t\t${ tsString( name ) }: ${ tsString( value ) },` );
+	}
+	body.push( '\t},' );
+	body.push( '\thighTokens: {' );
+	for ( const [ name, value ] of Object.entries( highTokensFor( tokens ) ) ) {
+		body.push( `\t\t${ tsString( name ) }: ${ tsString( value ) },` );
+	}
+	body.push( '\t},' );
+	body.push(
+		`\ttypography: {${ design?.typography.display ? ` display: ${ tsString( design.typography.display ) },` : '' }${ design?.typography.body ? ` body: ${ tsString( design.typography.body ) },` : '' } scalePx: ${ JSON.stringify( design?.typography.scalePx ?? [ 14, 16, 20, 28, 40 ] ) } },`
+	);
+	body.push( `\tspacing: { scalePx: ${ JSON.stringify( design?.spacing.scalePx ?? [ 4, 8, 16, 24, 48 ] ) } },` );
+	body.push( `\tradii: { valuesPx: ${ JSON.stringify( design?.radii.valuesPx ?? [ 4, 8 ] ) } },` );
+	body.push( `\tcomponents: ${ JSON.stringify( design?.components ?? {} ) },` );
+	if ( design?.adaptation ) {
+		body.push( '\tadaptation: {' );
+		body.push( `\t\tkeep: ${ JSON.stringify( design.adaptation.keep ) },` );
+		body.push( `\t\treplace: ${ JSON.stringify( design.adaptation.replace ) },` );
+		body.push( `\t\tremix: ${ JSON.stringify( design.adaptation.remix ) },` );
+		body.push( `\t\tlicensingNote: ${ tsString( design.adaptation.licensingNote ) },` );
+		body.push( `\t\tattribution: ${ JSON.stringify( design.adaptation.attribution ) },` );
+		body.push( '\t},' );
+	}
+	body.push( '};' );
+	body.push( '' );
+	return [ ...header, ...body ].join( '\n' );
+}
+
+/**
+ * WCAG contrast gate over the pairs the template renders — warns, never
+ * blocks (114 §3.5: strict mode is the manifest flag, not this function).
+ * With a design block present, every failing pair gets a suggested one-token
+ * fix from the source's own unassigned pool.
+ */
+export function tokenWarnings( tokens?: Record<string, string>, design?: ForgeDesign ): string[] {
+	const merged = mergeTokens( design, tokens );
+	const audit = contrastAudit( merged, DARK_TOKENS, highTokensFor( merged ) );
+	const warnings = auditWarnings( audit );
+	if ( design ) {
+		const fixes = suggestContrastFixes(
+			design,
+			audit.failures.map( ( pair ) => ( {
+				token: pair.token,
+				label: pair.label,
+				ratio: pair.ratio ?? 0,
+				background:
+					pair.mode === 'dark' ? DARK_TOKENS[ pair.background ] ?? merged[ pair.background ] : merged[ pair.background ],
+				required: pair.required,
+			} ) )
+		);
+		for ( const fix of fixes ) {
+			if ( fix.suggested ) {
+				warnings.push(
+					`Suggest: set --forge-${ fix.token } to ${ fix.suggested } (from the source's unassigned pool) — ${ fix.label } becomes ${ fix.suggestedRatio?.toFixed( 2 ) }:1.`
+				);
+			}
 		}
 	}
 	return warnings;
@@ -580,12 +736,26 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 	const source = await readFile(configPath, 'utf8');
 	await writeFile(configPath, rewriteContentConfig(source, profile), 'utf8');
 
-	// 3a. Apply the design language (tokens_apply — Proposal 098 output) over
-	//     the --forge-* defaults, and gate the rendered pairs against WCAG.
-	const cssPath = path.join(targetDir, 'src', 'styles', 'global.css');
-	const css = await readFile(cssPath, 'utf8');
-	await writeFile(cssPath, rewriteGlobalCss(css, profile.tokens), 'utf8');
-	const warnings = tokenWarnings(profile.tokens);
+	// 3a. Apply the design language (tokens_apply v2 — Proposal 114 §3.3) over
+	//     the --forge-* defaults, gate the rendered pairs against WCAG, and
+	//     write the resolved design module the audit endpoint reads.
+	const mergedTokens = mergeTokens( profile.design, profile.tokens );
+	const cssPath = path.join( targetDir, 'src', 'styles', 'global.css' );
+	const css = await readFile( cssPath, 'utf8' );
+	await writeFile( cssPath, rewriteGlobalCss( css, mergedTokens ), 'utf8' );
+	// The resolved design module — templates without it (the builtin test
+	// fixture) skip the write; the real template always ships it.
+	try {
+		await stat( path.join( targetDir, 'src', 'lib', 'design.generated.ts' ) );
+		await writeFile(
+			path.join( targetDir, 'src', 'lib', 'design.generated.ts' ),
+			renderDesignGenerated( profile, mergedTokens ),
+			'utf8'
+		);
+	} catch {
+		// No design module in the template — nothing to write.
+	}
+	const warnings = tokenWarnings( mergedTokens, profile.design );
 
 	// 3b. Bake the theme policy (105 §4) — the policy module ships verbatim
 	//     with the template copy; only the generated stub is rewritten. Custom
@@ -681,9 +851,9 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 	if (surfaces.ogImages) {
 		// Ship the OG endpoint: move it into place, bake the brand tokens,
 		// and inject the render deps into the generated package.json.
-		await rename(path.join(targetDir, 'src', 'pages', '_og'), path.join(targetDir, 'src', 'pages', 'og'));
-		const ogPath = path.join(targetDir, 'src', 'pages', 'og', '[slug].png.ts');
-		await writeFile(ogPath, rewriteOgTokens(await readFile(ogPath, 'utf8'), profile.tokens), 'utf8');
+		await rename( path.join( targetDir, 'src', 'pages', '_og' ), path.join( targetDir, 'src', 'pages', 'og' ) );
+		const ogPath = path.join( targetDir, 'src', 'pages', 'og', '[slug].png.ts' );
+		await writeFile( ogPath, rewriteOgTokens( await readFile( ogPath, 'utf8' ), mergedTokens ), 'utf8' );
 		await mutatePackageJson(targetDir, (pkg) => {
 			const devDeps = (pkg.devDependencies ?? {}) as Record<string, unknown>;
 			for (const [name, version] of Object.entries(OG_DEV_DEPENDENCIES)) {
@@ -708,6 +878,13 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 	}
 
 	// 4. Manifest + env example + gitignore gate.
+	const forms = profile.forms
+		? {
+				endpoint: profile.forms.endpoint ?? `${ profile.url.replace( /\/+$/, '' ) }/wp-json/nvoos-forge/v1`,
+				origin: profile.forms.origin,
+				searchForms: profile.forms.searchForms,
+		  }
+		: undefined;
 	const manifest: ForgeManifest = {
 		version: 1,
 		generator: 'nvoos-astro-forge',
@@ -715,6 +892,9 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 		name: profile.name ?? 'Forge Site',
 		frontPage: profile.frontPage,
 		tokens: profile.tokens,
+		design: profile.design,
+		designAudit: options.strictContrast ? 'strict' : 'warn',
+		forms,
 		surfaces,
 		render,
 		generatedAt: new Date().toISOString(),
@@ -750,6 +930,16 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 			'# created under WooCommerce → Settings → Advanced → REST API).',
 			'WP_WC_CONSUMER_KEY=',
 			'WP_WC_CONSUMER_SECRET=',
+			'',
+			'# Form bridge (Proposal 114 §3.9) — the rebuilt forms POST submissions',
+			'# to the NV oOS Forge Bridge on WordPress, which dispatches them to the',
+			'# native JetFormBuilder / Elementor Pro handler. Defaults to the value',
+			'# in nvoos.json forms.endpoint; set this to override per deploy.',
+			'NVOOS_FORGE_FORMS_ENDPOINT=',
+			'',
+			'# The static origin serving this site — enter the SAME value in the',
+			'# bridge plugin\'s Settings → Forge Bridge → Forms origin allowlist.',
+			'NVOOS_FORGE_FORMS_ORIGIN=',
 			'',
 		].join('\n'),
 		'utf8'

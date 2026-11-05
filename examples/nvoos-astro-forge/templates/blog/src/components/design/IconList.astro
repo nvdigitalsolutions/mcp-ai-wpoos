@@ -1,0 +1,26 @@
+---
+// IconList — icon-list sections rebuilt as a card list.
+import type { SemanticSection } from '../../forge/semantic.ts';
+
+interface Props {
+	section: SemanticSection;
+}
+
+const { section } = Astro.props;
+const { title, items } = section.slots;
+---
+
+<section class="ds-section">
+	{title && <h2 class="ds-title">{title}</h2>}
+	{items && items.length > 0 && (
+		<ul class="ds-grid post-list">
+			{items.map((item) => (
+				<li class="ds-card">
+					{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
+					{item.title && <h4>{item.title}</h4>}
+					{item.body && <p>{item.body}</p>}
+				</li>
+			))}
+		</ul>
+	)}
+</section>

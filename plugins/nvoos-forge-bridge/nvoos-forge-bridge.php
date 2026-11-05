@@ -2,8 +2,8 @@
 /**
  * Plugin Name: NV oOS Forge Bridge
  * Plugin URI:  https://nvdigitalsolutions.com/wpoos
- * Description: Rebuild webhook + preview tokens for sites generated with the NV oOS Astro Forge. Fires a signed GitHub repository_dispatch when content changes (debounced), verifies inbound rebuild triggers with HMAC, and mints single-use preview tokens.
- * Version:     0.1.0
+ * Description: Rebuild webhook + preview tokens for sites generated with the NV oOS Astro Forge, plus a form submission bridge for forged JetFormBuilder / Elementor Pro forms. Fires a signed GitHub repository_dispatch when content changes (debounced), verifies inbound rebuild triggers with HMAC, mints single-use preview tokens, and dispatches static-site form submissions to the native form handlers (origin allowlist, rate limit, honeypot/timestamp, optional Turnstile).
+ * Version:     0.2.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: NV Digital Solutions
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /** Plugin version. */
-define( 'NVOOS_FORGE_BRIDGE_VERSION', '0.1.0' );
+define( 'NVOOS_FORGE_BRIDGE_VERSION', '0.2.0' );
 
 /** Absolute path to this plugin file. */
 define( 'NVOOS_FORGE_BRIDGE_FILE', __FILE__ );

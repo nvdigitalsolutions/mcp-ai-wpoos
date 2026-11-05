@@ -78,6 +78,63 @@ node scripts/forge.mjs site.json --target ./customer-frontend
 cd customer-frontend && npm install && npm run build
 ```
 
+### Design rebuild (Proposal 114)
+
+The forge never replicates a source site's markup — it rebuilds the
+presentation with the NV oOS design system (098 extraction → semantic
+content model → ADS components → token theme → verified parity):
+
+```sh
+# 1. Extract the design language (roles + confidence + unassigned pool,
+#    typography, spacing, radii, adaptation brief — token data only,
+#    never source CSS/assets).
+node scripts/forge.mjs analyze https://shop.example.com --design --write site.json
+
+# 2. Scaffold applies it: the `design` block derives the --forge-* token
+#    theme (explicit `tokens` overrides win), writes
+#    src/lib/design.generated.ts, and audits every rendered pair against
+#    WCAG 2.2 with one-token fix suggestions from the source's own pool.
+node scripts/forge.mjs site.json --target ./customer-frontend
+
+# 3. Build: the vendored semantic classifier (src/forge/semantic.ts)
+#    rebuilds Elementor sections as ADS design components
+#    (src/components/design/ — hero/feature-grid/testimonial/logo-cloud…);
+#    unrecognized content stays on the .post-body path. dist/design-audit.json
+#    ships the contrast audit. --strict-contrast fails the build on failing
+#    pairs (manifest designAudit: strict).
+
+# 4. Verify language parity after a build (never pixel parity):
+node scripts/forge.mjs verify site.json --target ./customer-frontend
+```
+
+### Forms — JetFormBuilder + Elementor submissions (114 §3.9)
+
+Forms integrate the way WooCommerce did: **content at build time, behavior
+proxied through WordPress.** The sanitizer keeps a functional form allowlist
+(no `action`/`method`/`on*`/`style`), the classifier rebuilds every source
+`<form>` as the `Form` design component, and the static site posts to the
+bridge plugin's `forms/submit` route — the bridge dispatches to the NATIVE
+JetFormBuilder / Elementor Pro handler, so validation, storage, mail, and
+post-submit actions run exactly as on WordPress.
+
+```jsonc
+// site.json — the forms block (all optional; env vars override at deploy).
+{
+  "forms": {
+    "endpoint": "https://shop.example.com/wp-json/nvoos-forge/v1", // default: <profile.url>/wp-json/nvoos-forge/v1
+    "origin": "https://customer.example.com",                      // the bridge's CORS allowlist entry
+    "searchForms": ["find"]                                        // extra single-input names mapped to /search/
+  }
+}
+```
+
+Rendered behavior:
+
+- **Search forms** (single search-ish input, or per-site `searchForms` names) map onto the site's own `/search/` surface — a GET to `/search/?q=…`.
+- **Submit forms** rebuild with the bridge endpoint as their `action` and carry the WP-side form identifier (`form`), the source `post_id` when the markup carries one, a honeypot, a client timestamp, and progressive-enhancement fetch. No resolvable WP form → the section degrades to a plain title/links band — never a dead endpoint.
+- **The bridge** (`plugins/nvoos-forge-bridge` ≥ 0.2.0) runs the origin allowlist, per-IP rate limit, honeypot/timestamp spam ladder, optional Turnstile (action + hostname pinned), server-side sanitization, and typed 404/501 contracts. The no-JS fallback is an ordinary form POST + redirect back with `?form=ok|error`.
+- **Config** ships in `.env.example` (`NVOOS_FORGE_FORMS_ENDPOINT`, `NVOOS_FORGE_FORMS_ORIGIN`) — never hardcoded; the allowlist is configured in the bridge plugin's settings page.
+
 ### Storefront profiles (Phase 1a)
 
 ```json

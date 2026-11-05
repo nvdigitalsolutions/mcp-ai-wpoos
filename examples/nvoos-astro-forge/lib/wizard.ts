@@ -18,12 +18,13 @@ import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { emitDeployConfig, type DeployMode } from './deploy-config.ts';
+import { analyzeDesignInput, fetchDesignInput } from './design.ts';
 import { analyzeSite, profileFromDiscovery, type DiscoveryReport } from './discovery.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, suggestPreset, DEFAULT_THEME_POLICY, type PresetName, type RenderMode } from './presets.ts';
 import { scaffold } from './scaffold.ts';
 import { SitesStore } from './sites.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
-import type { SiteProfile } from './types.ts';
+import type { ForgeDesign, SiteProfile } from './types.ts';
 import { WpClient } from './wp-client.ts';
 
 /**
@@ -37,9 +38,11 @@ export interface WizardUi {
 	/** Ask static vs ssr (storefront preset only, 104 Q4) — null cancels. */
 	selectRender?: (suggested: RenderMode, preset: PresetName) => Promise<RenderMode | null>;
 	/** Ask the theme policy (105 §4, default 'auto') — null cancels. */
-	selectThemePolicy?: (suggested: string) => Promise<string | null>;
+	selectThemePolicy?: ( suggested: string ) => Promise<string | null>;
+	/** Confirm the extracted design language before it becomes the rebuild theme (114 P6). */
+	confirmDesign?: ( design: ForgeDesign ) => Promise<boolean>;
 	/** Final go/no-go before scaffolding — false cancels the wizard. */
-	confirmScaffold?: (preset: PresetName, targetDir: string) => Promise<boolean>;
+	confirmScaffold?: ( preset: PresetName, targetDir: string ) => Promise<boolean>;
 }
 
 export interface WizardOptions {
@@ -73,6 +76,17 @@ export interface WizardOptions {
 	 * auto | light | dark | brand:<slug>. Default 'auto'.
 	 */
 	themePolicy?: string;
+	/**
+	 * Extract the source design language (114 P1) and apply it as the
+	 * rebuild theme. Extraction failures degrade to warnings — a wizard
+	 * never dies on a design pass.
+	 */
+	design?: boolean;
+	/**
+	 * Strict contrast mode (114 §3.5) — the scaffold's designAudit flips to
+	 * 'strict' and the generated build fails on failing pairs.
+	 */
+	strictContrast?: boolean;
 	/** Interactive prompt hooks (CLI only). */
 	ui?: WizardUi;
 	/** Emit the AGENTS.md/.context stubs (default true; --no-agents flips it). */
@@ -171,6 +185,29 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 	if ( options.name ) {
 		profile.name = options.name;
 	}
+
+	// 1e. Design language (114 P1/P6) — extract from the source and attach the
+	//     rebuild block. Deterministic analysis; the ui.confirmDesign hook is
+	//     the interactive gate (TTY only). Failures warn, never cancel.
+	if ( options.design ) {
+		try {
+			const design = analyzeDesignInput(
+				await fetchDesignInput( profile.url, fetch, { allowLoopback: options.allowLoopback === true } )
+			);
+			const apply = options.ui?.confirmDesign ? await options.ui.confirmDesign( design ) : true;
+			if ( apply ) {
+				profile.design = design;
+				warnings.push( `Design language applied: ${ design.concept }` );
+			} else {
+				warnings.push( 'Design language extracted but not applied (declined at the prompt).' );
+			}
+		} catch ( error ) {
+			warnings.push(
+				`Design extraction failed (continuing without): ${ error instanceof Error ? error.message : String( error ) }`
+			);
+		}
+	}
+
 	const siteName = options.name ?? slugFromUrl( options.url );
 
 	// 2. Register (the operator allowlist entry).
@@ -201,6 +238,7 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 			surfaces: options.ogImages ? { ogImages: true } : undefined,
 			agents: options.agents,
 			themePolicy,
+			strictContrast: options.strictContrast,
 		} );
 		scaffolded = true;
 	}

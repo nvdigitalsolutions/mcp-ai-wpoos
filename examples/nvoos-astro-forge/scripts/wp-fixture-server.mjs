@@ -99,8 +99,24 @@ export function createWpFixtureData() {
 				link: `${ORIGIN}/xss-trap/`,
 				excerpt: { rendered: '<p>This post carries script content the sanitizer must strip.</p>' },
 				content: {
-					rendered:
+					rendered: [
 						'<p>Safe paragraph.</p><script>alert("xss")</script><img src="x" onerror="steal()" alt="trap" /><a href="javascript:alert(1)">click</a>',
+						// Forms (114 §3.9): a search form, an Elementor submit form
+						// with its hidden carriers, and XSS vectors inside form
+						// controls (onfocus + javascript: value) — the sanitizer
+						// keeps the functional allowlist and kills the vectors.
+						'<form role="search"><input type="search" name="s" placeholder="Search the fixture" /><button type="submit">Go</button></form>',
+						'<form class="elementor-form" method="post" action="https://fixture.test/?elementor-pro-forms=submit">' +
+							'<input type="hidden" name="form_id" value="fixture-form-1" />' +
+							'<input type="hidden" name="post_id" value="3" />' +
+							'<label for="trap-name">Name</label>' +
+							'<input type="text" name="form_fields[name]" id="trap-name" required="required" placeholder="Jane" />' +
+							'<label for="trap-msg">Message</label>' +
+							'<textarea name="form_fields[message]" id="trap-msg" rows="4"></textarea>' +
+							'<input type="text" name="evil" onfocus="alert(2)" value="javascript:alert(3)" />' +
+							'<button type="submit">Send</button>' +
+							'</form>',
+					].join( '' ),
 				},
 			},
 			{
@@ -131,6 +147,28 @@ export function createWpFixtureData() {
 					rendered: '<pre class="wp-block-code"><code>Row 1: k1, p1, repeat.</code></pre><p>Repeat rows 1\u20132.</p>',
 				},
 			},
+			{
+				id: 6,
+				date_gmt: '2026-10-15T09:00:00',
+				modified_gmt: '2026-10-15T09:00:00',
+				title: { rendered: 'The elementor landing post (114 fixture)' },
+				slug: 'elementor-landing',
+				link: `${ORIGIN}/elementor-landing/`,
+				excerpt: { rendered: '<p>A builder-built landing section the semantic renderer rebuilds.</p>' },
+				content: {
+					rendered: [
+						'<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">',
+						'<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h2>Ship to the fjords</h2></div></div>',
+						'<div class="elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>Fast and easy.</p></div></div>',
+						'<div class="elementor-widget elementor-widget-button"><div class="elementor-widget-container"><a href="#about">Read More</a></div></div>',
+						'</div></div></div></div>',
+						'<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">',
+						'<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-widget-container"><h3>Wool</h3><p>Merino and cashmere.</p></div></div>',
+						'<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-widget-container"><h3>Linen</h3><p>Washed and relaxed.</p></div></div>',
+						'</div></div></div></div>',
+					].join( '' ),
+				},
+			},
 		],
 		pages: [
 			{
@@ -152,7 +190,20 @@ export function createWpFixtureData() {
 				slug: 'contact',
 				link: `${ORIGIN}/contact/`,
 				excerpt: { rendered: '' },
-				content: { rendered: '<p>Write to <a href="mailto:hello@fixture.test">hello@fixture.test</a>.</p>' },
+				content: {
+					rendered: [
+						'<p>Write to <a href="mailto:hello@fixture.test">hello@fixture.test</a>.</p>',
+						// A JetFormBuilder form — the hidden carrier gives the WP form id.
+						'<form class="jet-form-builder" method="post">' +
+							'<input type="hidden" name="_jet_engine_booking_form_id" value="9" />' +
+							'<label>Email</label>' +
+							'<input type="email" name="email" required="required" />' +
+							'<label>Message</label>' +
+							'<textarea name="message" rows="5"></textarea>' +
+							'<button type="submit">Ask away</button>' +
+							'</form>',
+					].join( '' ),
+				},
 			},
 		],
 		/** WooCommerce wc/v3 flat documents — prices, stock, images, categories. */
@@ -286,6 +337,21 @@ export function createWpFixtureServer(port = PORT) {
 		if (path === '/health') {
 			res.writeHead(200, { 'content-type': 'text/plain' });
 			res.end('ok');
+			return;
+		}
+		// The homepage — the design-import fetch target (114 P1): a minimal
+		// HTML document with an Elementor-style inline <style> so the wizard's
+		// --design step extracts deterministic roles hermetically.
+		if (path === '/') {
+			res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+			res.end(
+				'<!doctype html><html><head><style>' +
+					':root{--e-global-color-primary:#6ec1e4;--e-global-color-text:#444444;' +
+					'--e-global-typography-primary-font-family:"Rubik";--e-global-typography-text-font-family:"Roboto";}' +
+					'.hero{font-size:40px;padding:16px;border-radius:4px}' +
+					'</style></head><body><h1 class="hero">Fixture Wares</h1>' +
+					'<a class="btn">Buy</a><div class="card"></div></body></html>'
+			);
 			return;
 		}
 		if (path === '/wp-json' || path === '/wp-json/') {

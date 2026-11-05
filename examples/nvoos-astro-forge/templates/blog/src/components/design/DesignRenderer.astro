@@ -1,0 +1,52 @@
+---
+// DesignRenderer — the semantic renderer (Proposal 114 §3.2/§3.4).
+//
+// Takes the ALREADY-sanitized entry body (page.body) and renders it through
+// the semantic content model: classified builder sections rebuild as ADS
+// design components; unclassified content falls back to the .post-body
+// treatment (the sanitized substring, verbatim). No classification happens
+// here — the vendored src/forge/semantic.ts owns that; this component only
+// dispatches sections to components. Text is interpolated (escaped); only
+// sanitized substrings pass through set:html.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import { classifyHtml } from '../../forge/semantic.ts';
+import Cta from './Cta.astro';
+import FeatureGrid from './FeatureGrid.astro';
+import Form from './Form.astro';
+import Gallery from './Gallery.astro';
+import Hero from './Hero.astro';
+import IconList from './IconList.astro';
+import LogoCloud from './LogoCloud.astro';
+import Testimonial from './Testimonial.astro';
+import TextBlock from './TextBlock.astro';
+import manifestJson from '../../../nvoos.json';
+
+interface Props {
+	html?: string;
+}
+
+// The manifest's inferred JSON type has no `forms` key on profiles that
+// omit the block — read it through an explicit shape.
+const manifest = manifestJson as { forms?: { searchForms?: string[] } };
+const { html = '' } = Astro.props;
+const sections: SemanticSection[] = html ? classifyHtml(html, { searchForms: manifest.forms?.searchForms }) : [];
+---
+
+{sections.length > 0 && (
+	<div class="design-sections">
+		{sections.map((section) => (
+			<Fragment>
+				{section.kind === 'hero' && <Hero section={section} />}
+				{section.kind === 'feature-grid' && <FeatureGrid section={section} />}
+				{section.kind === 'icon-list' && <IconList section={section} />}
+				{section.kind === 'testimonial' && <Testimonial section={section} />}
+				{section.kind === 'logo-cloud' && <LogoCloud section={section} />}
+				{section.kind === 'cta' && <Cta section={section} />}
+				{section.kind === 'gallery' && <Gallery section={section} />}
+				{section.kind === 'form' && <Form section={section} />}
+				{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} />)}
+				{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
+			</Fragment>
+		))}
+	</div>
+)}

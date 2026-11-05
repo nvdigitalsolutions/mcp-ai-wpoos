@@ -2,6 +2,7 @@
 // /posts/{id}/{slug}/ — one WordPress post, rendered through the Forge sanitizer.
 import Base from '../../layouts/Base.astro';
 import SmartImage from '../../components/SmartImage.astro';
+import DesignRenderer from '../../components/design/DesignRenderer.astro';
 import { getCollection, render } from 'astro:content';
 import { jsonLdFor, renderJsonLd } from '../../lib/seo.ts';
 import manifest from '../../../nvoos.json';
@@ -11,11 +12,14 @@ export async function getStaticPaths() {
 	// Astro 7 spread params are flat slash-joined strings, not arrays.
 	return posts.map((post) => ({
 		params: { parts: `${post.id}/${post.data.slug}` },
-		props: { post },
+		// The sanitized body HTML is extracted HERE (server context) —
+		// getStaticPaths props are serialized and the store's `rendered`
+		// object does not survive that trip; a plain string prop does.
+		props: { post, body: post.rendered?.html },
 	}));
 }
 
-const { post } = Astro.props;
+const { post, body } = Astro.props;
 const { Content } = await render(post);
 const pageUrl = Astro.site ? new URL(`/posts/${post.id}/${post.data.slug}/`, Astro.site).href : undefined;
 // SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
@@ -47,9 +51,13 @@ const ogImage =
 		{post.data.featuredImage && (
 			<SmartImage class="featured" src={post.data.featuredImage} sizes="(min-width: 48rem) 72ch, 100vw" />
 		)}
-		<div class="post-body">
-			<Content />
-		</div>
+		{body ? (
+			<DesignRenderer html={body} />
+		) : (
+			<div class="post-body">
+				<Content />
+			</div>
+		)}
 	</article>
 	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
 </Base>

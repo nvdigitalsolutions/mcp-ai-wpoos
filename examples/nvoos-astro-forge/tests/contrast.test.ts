@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { contrastRatio, parseHex, passesAaText, relativeLuminance } from '../lib/contrast.ts';
+import { auditWarnings, contrastAudit, contrastRatio, parseHex, passesAaNonText, passesAaText, relativeLuminance } from '../lib/contrast.ts';
 
 describe('parseHex', () => {
 	it('parses 3/6/8-digit forms and rejects junk', () => {
@@ -51,5 +51,58 @@ describe('passesAaText', () => {
 	it('enforces the 4.5:1 floor', () => {
 		expect(passesAaText(4.49)).toBe(false);
 		expect(passesAaText(4.5)).toBe(true);
+	});
+});
+
+describe('contrastAudit (Proposal 114 §3.5)', () => {
+	it('passes every rendered pair on the template defaults (light + dark + high)', () => {
+		const audit = contrastAudit(
+			{
+				ink: '#1a1a1a',
+				muted: '#6b6b6b',
+			surface: '#ffffff',
+			accent: '#0f6b4f',
+			'accent-ink': '#ffffff',
+			'line-strong': '#767676',
+		},
+		{
+			ink: '#f5f5f4',
+			muted: '#a3a3a3',
+			surface: '#171717',
+			'line-strong': '#6b6b6b',
+		},
+		{ muted: '#1a1a1a', 'line-strong': '#1a1a1a' }
+		);
+		expect(audit.failures).toEqual([]);
+		expect(audit.unparsed).toEqual([]);
+		expect(audit.pairs).toHaveLength(10);
+	});
+
+	it('flags the pilot pair (text #7a7a7a on white) as a light-mode failure with a ratio', () => {
+		const audit = contrastAudit({ ink: '#7a7a7a', muted: '#6b6b6b', surface: '#ffffff', accent: '#0f6b4f', 'accent-ink': '#ffffff', 'line-strong': '#767676' });
+		const failure = audit.failures.find((pair) => pair.token === 'ink' && pair.mode === 'light');
+		expect(failure).toBeDefined();
+		expect(failure?.ratio).toBeCloseTo(4.29, 1);
+		expect(auditWarnings(audit).some((w) => w.includes('4.5:1'))).toBe(true);
+	});
+
+	it('audits the high-contrast axis over the LIGHT theme (not the dark palette)', () => {
+		// Regression: the high-contrast pairs resolved against the dark
+		// surface made default scaffolds fail with ~1:1 ratios.
+		const audit = contrastAudit(
+			{ ink: '#1a1a1a', muted: '#6b6b6b', surface: '#ffffff', accent: '#0f6b4f', 'accent-ink': '#ffffff', 'line-strong': '#767676' },
+			{ ink: '#f5f5f4', muted: '#a3a3a3', surface: '#171717', 'line-strong': '#6b6b6b' },
+			{ muted: '#1a1a1a', 'line-strong': '#1a1a1a' }
+		);
+		const highInk = audit.pairs.find((pair) => pair.token === 'ink' && pair.mode === 'high');
+		expect(highInk?.ratio).toBeGreaterThan(4.5);
+	});
+
+	it('collects unparseable pairs and the non-text 3:1 floor', () => {
+		const audit = contrastAudit({ ink: 'red', muted: '#6b6b6b', surface: '#ffffff', accent: '#0f6b4f', 'accent-ink': '#ffffff', 'line-strong': '#e4e4e2' });
+		expect(audit.unparsed.length).toBeGreaterThan(0);
+		expect(audit.failures.some((pair) => pair.token === 'line-strong')).toBe(true); // hairline fails 3:1
+		expect(passesAaNonText(3)).toBe(true);
+		expect(passesAaNonText(2.99)).toBe(false);
 	});
 });

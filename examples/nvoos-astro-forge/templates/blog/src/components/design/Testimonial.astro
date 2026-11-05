@@ -1,0 +1,21 @@
+---
+// Testimonial — quote/review sections rebuilt as blockquotes with citation.
+import type { SemanticSection } from '../../forge/semantic.ts';
+
+interface Props {
+	section: SemanticSection;
+}
+
+const { section } = Astro.props;
+const { title, items } = section.slots;
+---
+
+<section class="ds-section ds-body">
+	{title && <h2 class="ds-title">{title}</h2>}
+	{items?.map((item) => (
+		<blockquote class="ds-quote">
+			<p>{item.body}</p>
+			{item.title && <footer>{item.title}</footer>}
+		</blockquote>
+	))}
+</section>

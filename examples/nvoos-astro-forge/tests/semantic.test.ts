@@ -1,0 +1,203 @@
+// ---------------------------------------------------------------------------
+// semantic.test.ts — the builder-structure classifier (Proposal 114 P2):
+// Elementor widget sections, wp-block fallbacks, slot extraction, and the
+// fallback ladder (component → text → drop).
+// ---------------------------------------------------------------------------
+
+import { describe, expect, it } from 'vitest';
+
+import { classifyHtml, SECTION_MAP } from '../lib/semantic.ts';
+
+const SECTION = ( inner: string ) =>
+	`<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">${ inner }</div></div></div></div>`;
+
+const WIDGET = ( name: string, inner: string ) =>
+	`<div class="elementor-widget elementor-widget-${ name }"><div class="elementor-widget-container">${ inner }</div></div>`;
+
+describe( 'classifyHtml — fallbacks', () => {
+	it( 'wraps plain non-builder HTML as a single text section (the post-body path)', () => {
+		const html = '<h2>Care</h2><p>Wash cold.</p>';
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 1 );
+		expect( sections[ 0 ].kind ).toBe( 'text' );
+		expect( sections[ 0 ].html ).toBe( html );
+	} );
+
+	it( 'returns nothing for empty input', () => {
+		expect( classifyHtml( '' ) ).toEqual( [] );
+		expect( classifyHtml( '   ' ) ).toEqual( [] );
+	} );
+
+	it( 'drops recognized-but-empty builder scaffolding', () => {
+		const html = SECTION( WIDGET( 'heading', '' ) + WIDGET( 'text-editor', '<div></div>' ) );
+		expect( classifyHtml( html ) ).toEqual( [] );
+	} );
+} );
+
+describe( 'classifyHtml — Elementor sections', () => {
+	it( 'rebuilds a hero from heading + text + button in the first section', () => {
+		const html =
+			SECTION( WIDGET( 'heading', '<h2>Ship to South Florida</h2>' ) + WIDGET( 'text-editor', '<p>We offer a catalogue.</p>' ) + WIDGET( 'button', '<a href="#about">Read More</a>' ) ) +
+			SECTION( WIDGET( 'text-editor', '<p>More content.</p>' ) );
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'hero' );
+		expect( sections[ 0 ].slots.title ).toBe( 'Ship to South Florida' );
+		expect( sections[ 0 ].slots.body ).toContain( 'We offer a catalogue.' );
+		expect( sections[ 0 ].slots.links?.[ 0 ] ).toMatchObject( { text: 'Read More', href: '#about' } );
+		// The later text-only section falls back to text with its raw HTML.
+		expect( sections[ 1 ].kind ).toBe( 'text' );
+	} );
+
+	it( 'rebuilds icon-boxes as a feature grid', () => {
+		const html = SECTION(
+			WIDGET( 'icon-box', '<h3>Consumer Electronics</h3><p>Cameras and audio.</p>' ) +
+				WIDGET( 'icon-box', '<h3>Healthcare</h3><p>Wellness products.</p>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'feature-grid' );
+		expect( sections[ 0 ].slots.items ).toHaveLength( 2 );
+		expect( sections[ 0 ].slots.items?.[ 0 ] ).toMatchObject( { title: 'Consumer Electronics', body: 'Cameras and audio.' } );
+	} );
+
+	it( 'rebuilds testimonials as quote sections', () => {
+		const html = SECTION( WIDGET( 'testimonial', '<p>Fast &amp; easy to work with.</p><div>Kumar</div>' ) );
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'testimonial' );
+		expect( sections[ 0 ].slots.items?.[ 0 ]?.body ).toBe( 'Fast & easy to work with.' );
+	} );
+
+	it( 'rebuilds an image wall as a logo cloud', () => {
+		const html = SECTION(
+			WIDGET( 'image', '<img src="/wp-content/uploads/a.png" alt="Alpha" />' ) +
+				WIDGET( 'image', '<img src="/wp-content/uploads/b.png" alt="Beta" />' ) +
+				WIDGET( 'image', '<img src="/wp-content/uploads/c.png" alt="Gamma" />' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'logo-cloud' );
+		expect( sections[ 0 ].slots.media ).toHaveLength( 3 );
+		expect( sections[ 0 ].slots.media?.[ 0 ] ).toMatchObject( { src: '/wp-content/uploads/a.png', alt: 'Alpha' } );
+	} );
+
+	it( 'rebuilds heading + buttons as a CTA band', () => {
+		const html = SECTION( WIDGET( 'heading', '<h2>Ready?</h2>' ) + WIDGET( 'button', '<a href="/contact/">Contact us</a>' ) );
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'cta' );
+		expect( sections[ 0 ].slots.title ).toBe( 'Ready?' );
+	} );
+
+	it( 'rebuilds an image gallery', () => {
+		const html = SECTION(
+			WIDGET( 'image-gallery', '<img src="/wp-content/uploads/1.png" alt="One" /><img src="/wp-content/uploads/2.png" alt="Two" />' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'gallery' );
+		expect( sections[ 0 ].slots.media ).toHaveLength( 2 );
+	} );
+} );
+
+describe( 'classifyHtml — wp-block fallback', () => {
+	it( 'treats plain blocks as a text section (no builder sections detected)', () => {
+		const html = '<h2 class="wp-block-heading">Heading</h2><p class="wp-block-paragraph">Body text.</p>';
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 1 );
+		expect( sections[ 0 ].kind ).toBe( 'text' );
+		expect( sections[ 0 ].html ).toContain( 'Body text.' );
+	} );
+} );
+
+describe( 'classifyHtml — forms (Proposal 114 §3.9)', () => {
+	const FORM = ( inner: string ) => `<form class="elementor-form">${ inner }</form>`;
+
+	it( 'maps a single search field onto the search kind (the /search/ surface)', () => {
+		const html = '<p>Find things.</p>' + FORM( '<input type="search" name="s" placeholder="Search…" />' );
+		const sections = classifyHtml( html );
+		expect( sections.map( ( section ) => section.kind ) ).toEqual( [ 'text', 'form' ] );
+		const form = sections[ 1 ];
+		expect( form.form?.kind ).toBe( 'search' );
+		expect( form.form?.fields[ 0 ] ).toMatchObject( { name: 's', type: 'search', placeholder: 'Search…' } );
+	} );
+
+	it( 'detects search by input name, form role, and the per-site searchForms list', () => {
+		expect( classifyHtml( FORM( '<input type="text" name="query" />' ) )[ 0 ].form?.kind ).toBe( 'search' );
+		expect( classifyHtml( '<form role="search"><input type="text" name="anything" /></form>' )[ 0 ].form?.kind ).toBe( 'search' );
+		expect( classifyHtml( FORM( '<input type="text" name="find" />' ), { searchForms: [ 'find' ] } )[ 0 ].form?.kind ).toBe( 'search' );
+	} );
+
+	it( 'classifies an Elementor form: hidden form_id carrier, labels, fields, select, submit label', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Contact</h2>' ) +
+				WIDGET(
+					'form',
+					FORM(
+						'<input type="hidden" name="form_id" value="abc123" />' +
+							'<input type="hidden" name="post_id" value="42" />' +
+							'<label for="f-name">Name</label>' +
+							'<input type="text" name="form_fields[name]" id="f-name" required="required" />' +
+							'<label for="f-msg">Message</label>' +
+							'<textarea name="form_fields[msg]" id="f-msg" rows="6"></textarea>' +
+							'<select name="form_fields[topic]"><option value="a" selected="selected">Alpha</option></select>' +
+							'<button type="submit">Send</button>'
+					)
+				)
+		);
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 1 );
+		expect( sections[ 0 ].kind ).toBe( 'form' );
+		expect( sections[ 0 ].slots.title ).toBe( 'Contact' );
+		expect( sections[ 0 ].form ).toMatchObject( { kind: 'submit', handler: 'elementor', formId: 'abc123' } );
+		expect( sections[ 0 ].form?.fields ).toHaveLength( 3 );
+		expect( sections[ 0 ].form?.fields[ 0 ] ).toMatchObject( { name: 'form_fields[name]', label: 'Name', required: true } );
+		expect( sections[ 0 ].form?.fields[ 1 ] ).toMatchObject( { type: 'textarea', rows: '6', label: 'Message' } );
+		expect( sections[ 0 ].form?.fields[ 2 ] ).toMatchObject( { type: 'select' } );
+		expect( sections[ 0 ].form?.fields[ 2 ]?.options ).toHaveLength( 1 );
+		expect( sections[ 0 ].form?.submitLabel ).toBe( 'Send' );
+	} );
+
+	it( 'classifies a JetFormBuilder form from its hidden ID carrier', () => {
+		const html = FORM(
+			'<input type="hidden" name="_jet_engine_booking_form_id" value="7" />' +
+				'<label>Email</label>' +
+				'<input type="email" name="email" required="required" />'
+		);
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 1 );
+		expect( sections[ 0 ].kind ).toBe( 'form' );
+		expect( sections[ 0 ].form ).toMatchObject( { kind: 'submit', handler: 'jetformbuilder', formId: '7' } );
+		expect( sections[ 0 ].form?.fields[ 0 ] ).toMatchObject( { type: 'email', name: 'email', label: 'Email', required: true } );
+	} );
+
+	it( 'classifies a Contact Form 7 form from its _wpcf7 carrier', () => {
+		const html = FORM( '<input type="hidden" name="_wpcf7" value="12" /><input type="text" name="your-name" />' );
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].form ).toMatchObject( { kind: 'submit', handler: 'wpcf7', formId: '12' } );
+	} );
+
+	it( 'degrades an unidentified form to a cta band with its region links — never a dead endpoint', () => {
+		const html =
+			'<div><p>Prefer email? <a href="mailto:hi@example.com">Write to us</a></p>' +
+			FORM( '<input type="text" name="email" />' ) +
+			'</div>';
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 1 );
+		expect( sections[ 0 ].kind ).toBe( 'form' );
+		expect( sections[ 0 ].form?.kind ).toBe( 'cta' );
+		expect( sections[ 0 ].slots.links?.[ 0 ] ).toMatchObject( { text: 'Write to us', href: 'mailto:hi@example.com' } );
+	} );
+
+	it( 'drops forms with nothing to rebuild (no fields, no id, no region content)', () => {
+		expect( classifyHtml( FORM( '' ) ) ).toEqual( [] );
+		expect( classifyHtml( FORM( '<input type="text" name="email" />' ) ) ).toEqual( [] );
+	} );
+} );
+
+describe( 'SECTION_MAP', () => {
+	it( 'maps every kind onto a component + label (the data mapping, 114 §3.4)', () => {
+		for ( const entry of Object.values( SECTION_MAP ) ) {
+			expect( entry.component.length ).toBeGreaterThan( 0 );
+			expect( entry.label.length ).toBeGreaterThan( 0 );
+		}
+		expect( SECTION_MAP.hero.component ).toBe( 'Hero' );
+		expect( SECTION_MAP[ 'feature-grid' ].component ).toBe( 'FeatureGrid' );
+		expect( SECTION_MAP.text.component ).toBe( 'TextBlock' );
+	} );
+} );

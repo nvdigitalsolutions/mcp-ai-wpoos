@@ -78,6 +78,9 @@ const PROFILE: SiteProfile = {
 	frontPage: 'about',
 	// tokens_apply: the 098 design language lands over the --forge-* defaults.
 	tokens: { accent: '#0b5f4e' },
+	// The form bridge (114 §3.9) — the default endpoint derives from the
+	// profile URL; the rebuilt forms POST there, never to WP directly.
+	forms: {},
 	collections: [
 		{
 			slug: 'posts',
@@ -235,6 +238,32 @@ describe('forge e2e — emitted site', () => {
 		expect(detail).not.toContain('<script>alert');
 		expect(detail).not.toContain('onerror');
 		expect(detail).not.toContain('javascript:');
+		// Form-control vectors (114 §3.9 risk gate) die with the rest.
+		expect(detail).not.toContain('onfocus');
+	});
+
+	it('rebuilds forms as design components on the bridge endpoint (114 §3.9)', async () => {
+		const trap = await readFile(path.join(workDir, 'dist', 'posts', '3', 'xss-trap', 'index.html'), 'utf8');
+		// The search form maps onto the site's own /search/ surface (input q).
+		expect(trap).toContain('action="/search/"');
+		expect(trap).toContain('name="q"');
+		// The Elementor form rebuilds with the bridge endpoint as its action —
+		// the source WP action/method/carriers never leak.
+		expect(trap).toContain('action="https://fixture.test/wp-json/nvoos-forge/v1/forms/submit"');
+		expect(trap).toContain('name="form"');
+		expect(trap).toContain('value="fixture-form-1"');
+		expect(trap).toContain('name="honeypot"');
+		expect(trap).toContain('name="form_fields[name]"');
+		expect(trap).toContain('placeholder="Jane"');
+		expect(trap).not.toContain('name="form_id"');
+		expect(trap).not.toContain('elementor-pro-forms');
+
+		// The JetFormBuilder form on /contact/ rebuilds with its numeric form id.
+		const contact = await readFile(path.join(workDir, 'dist', 'contact', 'index.html'), 'utf8');
+		expect(contact).toContain('action="https://fixture.test/wp-json/nvoos-forge/v1/forms/submit"');
+		expect(contact).toContain('value="9"');
+		expect(contact).toContain('name="email"');
+		expect(contact).toContain('Ask away');
 	});
 
 	it('keeps allowlisted embeds and wires SEO surfaces on detail pages', async () => {
@@ -283,6 +312,27 @@ describe('forge e2e — emitted site', () => {
 		expect(redirects).toContain('/fjord-merino-sweater/\t/posts/1/fjord-merino-sweater/\t301');
 		expect(redirects).toContain('/about/\t/\t301');
 		expect(redirects).toContain('/product/fjord-merino-sweater/\t/products/101/fjord-merino-sweater/\t301');
+	});
+
+	it('rebuilds builder sections and ships the design audit (Proposal 114)', async () => {
+		const detail = await readFile(path.join(workDir, 'dist', 'posts', '6', 'elementor-landing', 'index.html'), 'utf8');
+		// The hero + feature grid rebuild as ADS design sections…
+		expect(detail).toContain('design-sections');
+		expect(detail).toContain('ds-hero');
+		expect(detail).toContain('ds-grid');
+		expect(detail).toContain('Ship to the fjords');
+		expect(detail).toContain('Read More');
+		expect(detail).toContain('Linen');
+		// …and the builder scaffolding classes are gone from the output (the
+		// semantic model replaced them — the bloat metric).
+		expect(detail).not.toContain('elementor-section');
+		expect(detail).not.toContain('elementor-widget');
+
+		// The build-time contrast audit ships (warn mode on the default scaffold).
+		const audit = JSON.parse(await readFile(path.join(workDir, 'dist', 'design-audit.json'), 'utf8'));
+		expect(audit.strict).toBe(false);
+		expect(audit.audit.pairs.length).toBeGreaterThanOrEqual(10);
+		expect(audit.audit.failures).toEqual([]);
 	});
 
 	it('indexes the site with Pagefind for client-side search', async () => {
@@ -709,6 +759,7 @@ describe('forge e2e — setup_wizard (Phase 4 exit: URL → built, deploy-ready)
 				wizardTarget,
 				'--name',
 				'fixture-wizard',
+				'--design',
 				'--build',
 			],
 			{ NVOOS_FORGE_HOME: wizardHome, NVOOS_FORGE_ALLOW_LOOPBACK: '1' }
@@ -718,6 +769,10 @@ describe('forge e2e — setup_wizard (Phase 4 exit: URL → built, deploy-ready)
 		// Scaffolded + manifest (the wizard normalizes trailing slashes).
 		const manifest = JSON.parse(await readFile(path.join(wizardTarget, 'nvoos.json'), 'utf8'));
 		expect(manifest.url).toBe(origin);
+		// The --design step extracted the fixture homepage's design language
+		// (the non-TTY path applies it deterministically) and the manifest
+		// carries the rebuild block.
+		expect(manifest.design?.palette?.roles?.accent).toBe('#6ec1e4');
 
 		// Built.
 		await expect(readFile(path.join(wizardTarget, 'dist', 'index.html'), 'utf8')).resolves.toContain('Fixture Wares');

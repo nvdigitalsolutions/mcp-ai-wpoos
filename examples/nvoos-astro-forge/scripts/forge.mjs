@@ -29,12 +29,13 @@
 // Requires Node >= 22.6 (native TypeScript type stripping).
 // ---------------------------------------------------------------------------
 
-import { readFile, stat, writeFile } from 'node:fs/promises';
+import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
+import { analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity } from '../lib/design.ts';
 import { emitDeployConfig } from '../lib/deploy-config.ts';
 import { analyzeSite, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
@@ -140,6 +141,29 @@ async function runAnalyze( url, options ) {
 	const report = await analyzeSite( new WpClient( { baseUrl: url.replace( /\/+$/, '' ) } ) );
 	console.log( renderReport( report ) );
 	const profile = profileFromDiscovery( report );
+
+	// --design (114 P1): run the design-language extraction and attach the v2
+	// design block to the drafted profile. Extraction failures never block the
+	// draft (the operator can still scaffold content-only).
+	if ( options.design ) {
+		try {
+			const input = await fetchDesignInput( profile.url, fetch, {
+				// The CLI-only loopback opt-in (local dev sites) — mirrors the
+				// wizard's allowLoopback plumbing.
+				allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
+			} );
+			const design = analyzeDesignInput( input );
+			profile.design = design;
+			console.log( `\u2713 Design language extracted: ${ design.concept }` );
+			const roles = Object.keys( design.palette.roles );
+			console.log(
+				`  roles: ${ roles.length > 0 ? roles.join( ', ' ) : '(none confident)' }; unassigned pool: ${ design.palette.unassigned.length } color(s); type: ${ design.typography.display ?? design.typography.body ?? 'system' }`
+			);
+		} catch ( error ) {
+			console.error( `\u26a0 Design extraction failed (continuing without): ${ error instanceof Error ? error.message : error }` );
+		}
+	}
+
 	const profileJson = `${ JSON.stringify( profile, null, '\t' ) }\n`;
 	if ( options.write ) {
 		await writeFile( options.write, profileJson, 'utf8' );
@@ -261,6 +285,7 @@ async function runDeploy( profileRef, options ) {
 			surfaces: options.ogImages ? { ogImages: true } : undefined,
 			agents: options.agents,
 			themePolicy: options.themePolicy,
+			strictContrast: options.strictContrast === true,
 		} );
 		console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 		for ( const warning of result.warnings ) {
@@ -372,6 +397,7 @@ async function runScaffold( profileRef, options ) {
 		surfaces: options.ogImages ? { ogImages: true } : undefined,
 		agents: options.agents,
 		themePolicy: options.themePolicy,
+		strictContrast: options.strictContrast === true,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 	for ( const collection of result.manifest.collections ) {
@@ -536,6 +562,14 @@ async function runWizard( url, options ) {
 					} );
 					return ok === true;
 				},
+				confirmDesign: async ( design ) => {
+					// The design step (114 P6) — confirm the extracted language
+					// before it becomes the rebuild theme.
+					const ok = await confirm( {
+						message: `Design language extracted: ${ design.concept } Apply it as the rebuild theme?`,
+					} );
+					return ok === true;
+				},
 			}
 		: undefined;
 
@@ -554,6 +588,8 @@ async function runWizard( url, options ) {
 			ogImages: options.ogImages === true,
 			agents: options.agents,
 			themePolicy: options.themePolicy,
+			design: options.design === true,
+			strictContrast: options.strictContrast === true,
 			ui,
 			// Local-dev opt-in only — the MCP surface never sets this.
 			allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
@@ -579,6 +615,66 @@ async function runWizard( url, options ) {
 	}
 }
 
+// -- verify (114 P5) ---------------------------------------------------------
+
+/** Concatenate the built CSS bundle under dist/ (bounded — parity only needs
+ * the token layer + type/scale signals, never the full bundle). */
+async function collectDistCss( target ) {
+	const chunks = [];
+	async function walk( dir ) {
+		for ( const entry of await readdir( dir, { withFileTypes: true } ) ) {
+			if ( entry.isDirectory() ) {
+				if ( entry.name === 'node_modules' || entry.name === 'pagefind' ) {
+					continue;
+				}
+				await walk( join( dir, entry.name ) );
+				continue;
+			}
+			if ( entry.name.endsWith( '.css' ) ) {
+				chunks.push( ( await readFile( join( dir, entry.name ), 'utf8' ) ).slice( 0, 1024 * 1024 ) );
+			}
+		}
+	}
+	await walk( join( target, 'dist' ) );
+	return chunks.join( '\n' ).slice( 0, 4 * 1024 * 1024 );
+}
+
+async function runVerify( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	assertProfile( profile );
+	if ( ! profile.design ) {
+		fail( 'The profile has no design block — run `node scripts/forge.mjs analyze <url> --design --write <profile>` first.' );
+	}
+	let css;
+	try {
+		css = await collectDistCss( options.target );
+	} catch ( error ) {
+		fail(
+			`Cannot read the built CSS under ${ options.target }/dist — run \`npm run build\` in the project first (${ error instanceof Error ? error.message : error }).`
+		);
+	}
+	// Re-extract the BUILT site's design language with the same analyzer and
+	// score it against the source design — language parity, never pixel parity.
+	const built = analyzeBuiltCss( css, String( profile.url ) );
+	const report = scoreParity( profile.design, built, Number( options.threshold ?? 0.6 ) );
+	console.log(
+		`\u2713 Language parity: ${ ( report.score * 100 ).toFixed( 0 ) }% (threshold ${ report.threshold }) — ${ report.pass ? 'PASS' : 'FAIL' }`
+	);
+	console.log( `  role distance: ${ report.metrics.roleDistance.toFixed( 2 ) } (0 = identical roles)` );
+	console.log( `  family overlap: ${ ( report.metrics.familyOverlap * 100 ).toFixed( 0 ) }%` );
+	console.log( `  scale overlap: ${ ( report.metrics.scaleOverlap * 100 ).toFixed( 0 ) }%` );
+	console.log( `  spacing overlap: ${ ( report.metrics.spacingOverlap * 100 ).toFixed( 0 ) }%` );
+	console.log( `  concept match: ${ report.metrics.conceptMatch === 1 ? 'yes' : 'no' }` );
+	if ( options.baselines ) {
+		// The baseline step is opt-in and browser-backed (114 §3.6): the
+		// deterministic parity gate above runs without any browser.
+		console.log(
+			'\u26a0 Screenshot baselines need Playwright — install it in the forge (npm i -D playwright) to enable --baselines; the parity gate above already ran.'
+		);
+	}
+	process.exitCode = report.pass ? 0 : 1;
+}
+
 // -- program -----------------------------------------------------------------
 
 const pkg = JSON.parse( await readFile( new URL( '../package.json', import.meta.url ), 'utf8' ) );
@@ -594,6 +690,7 @@ program
 	.description( 'discover a WordPress site and draft a site.json (site_analyze)' )
 	.argument( '<url>', 'the WordPress URL (https://…)' )
 	.option( '--write <path>', 'write the draft profile to a file' )
+	.option( '--design', 'extract the design language and attach the rebuild block (Proposal 114)' )
 	.action( async ( url, options ) => {
 		await runAnalyze( url, options );
 	} );
@@ -609,6 +706,8 @@ program
 	.option( '--render <mode>', 'static | ssr (default: static; prompted for storefront on a TTY)' )
 	.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (default: auto)' )
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
+	.option( '--design', 'extract the source design language and apply it as the rebuild theme' )
+	.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (designAudit: strict)' )
 	.option( '--build', 'run npm install + astro build before finishing' )
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
 	.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
@@ -641,10 +740,22 @@ program
 	.option( '--render <mode>', 'static | ssr (applied when scaffolding)' )
 	.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (applied when scaffolding)' )
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
+	.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (applied when scaffolding)' )
 	.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
 	.action( async ( profileRef, options ) => {
 		await runDeploy( profileRef, options );
+	} );
+
+program
+	.command( 'verify' )
+	.description( 'score design-language parity between the source site and the built frontend (Proposal 114)' )
+	.argument( '<profileRef>', 'site.json path or registered site name (must carry a design block)' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.option( '--threshold <n>', 'parity pass threshold 0-1 (default 0.6)', '0.6' )
+	.option( '--baselines', 'note the opt-in Playwright baseline step' )
+	.action( async ( profileRef, options ) => {
+		await runVerify( profileRef, options );
 	} );
 
 const siteCommand = program
@@ -717,6 +828,7 @@ function scaffoldOptions( cmd ) {
 		.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
 		.option( '--overwrite', 'replace a non-forge target directory' )
 		.option( '--check', 'verify collection sizes against the page caps (no scaffold)' )
+		.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (designAudit: strict)' )
 		.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' );
 }
 
