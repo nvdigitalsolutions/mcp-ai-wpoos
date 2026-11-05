@@ -1,0 +1,31 @@
+---
+// FeatureGrid — icon-box/counter/feature sections rebuilt as a card grid.
+import type { SemanticSection } from '../../forge/semantic.ts';
+
+interface Props {
+	section: SemanticSection;
+}
+
+const { section } = Astro.props;
+const { title, items } = section.slots;
+---
+
+<section class="ds-section">
+	{title && <h2 class="ds-title">{title}</h2>}
+	{items && items.length > 0 && (
+		<div class="ds-grid">
+			{items.map((item) => (
+				<div class="ds-card">
+					{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
+					{item.title && <h3>{item.title}</h3>}
+					{item.body && <p>{item.body}</p>}
+					{item.links?.[0] && (
+						<a class="ds-button" href={item.links[0].href ?? '#'}>
+							{item.links[0].text ?? 'Learn more'}
+						</a>
+					)}
+				</div>
+			))}
+		</div>
+	)}
+</section>

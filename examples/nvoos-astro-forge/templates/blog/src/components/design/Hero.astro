@@ -1,0 +1,30 @@
+---
+// Hero — the hero section component (Proposal 114 P4). Token-driven only;
+// no brand values. The page article already owns the h1, so the hero leads
+// with an h2.
+import type { SemanticSection } from '../../forge/semantic.ts';
+
+interface Props {
+	section: SemanticSection;
+}
+
+const { section } = Astro.props;
+const { title, body, media, links } = section.slots;
+---
+
+<section class="ds-section ds-hero">
+	{title && <h2 class="ds-title">{title}</h2>}
+	{body?.map((paragraph) => <p class="ds-text">{paragraph}</p>)}
+	{media?.[0]?.src && (
+		<img class="ds-media" src={media[0].src} alt={media[0].alt ?? ''} width="1200" height="675" loading="lazy" />
+	)}
+	{links && links.length > 0 && (
+		<div class="ds-links">
+			{links.map((link) => (
+				<a class="ds-button" href={link.href ?? '#'}>
+					{link.text ?? 'Learn more'}
+				</a>
+			))}
+		</div>
+	)}
+</section>

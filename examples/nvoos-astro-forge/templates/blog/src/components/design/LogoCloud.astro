@@ -1,0 +1,19 @@
+---
+// LogoCloud — a wall of brand/logo images (image-carousel/brand sections).
+import type { SemanticSection } from '../../forge/semantic.ts';
+
+interface Props {
+	section: SemanticSection;
+}
+
+const { section } = Astro.props;
+const { media } = section.slots;
+---
+
+{media && media.length > 0 && (
+	<section class="ds-section ds-logos" aria-label="Featured brands">
+		{media.map((image) => (
+			<img src={image.src} alt={image.alt ?? ''} width="240" height="120" loading="lazy" />
+		))}
+	</section>
+)}

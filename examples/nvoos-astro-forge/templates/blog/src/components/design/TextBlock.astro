@@ -1,0 +1,16 @@
+---
+// TextBlock — plain text sections rebuilt as escaped paragraphs (no raw HTML).
+import type { SemanticSection } from '../../forge/semantic.ts';
+
+interface Props {
+	section: SemanticSection;
+}
+
+const { section } = Astro.props;
+const { title, body } = section.slots;
+---
+
+<section class="ds-section ds-body">
+	{title && <h2 class="ds-title">{title}</h2>}
+	{body?.map((paragraph) => <p class="ds-text">{paragraph}</p>)}
+</section>

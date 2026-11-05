@@ -14,9 +14,21 @@
 	--forge-accent: #0f6b4f;
 	--forge-accent-ink: #ffffff;
 	--forge-radius: 8px;
+	--forge-radius-sm: 4px;
+	--forge-radius-lg: 12px;
 	--forge-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--forge-font-display: var(--forge-font);
 	--forge-space: 1rem;
+	--forge-space-sm: 0.5rem;
+	--forge-space-lg: 2rem;
 	--forge-measure: 72ch;
+	--forge-scale-h1: 2.25rem;
+	--forge-scale-h2: 1.75rem;
+	--forge-scale-h3: 1.25rem;
+	--forge-scale-h4: 1.125rem;
+	--forge-scale-body: 1rem;
+	--forge-scale-small: 0.875rem;
+	--forge-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 /* FORGE:tokens-end */
 
@@ -307,4 +319,227 @@ a {
 .search-status {
 	color: var(--forge-muted);
 	font-size: 0.875rem;
+}
+
+/* -------------------------------------------------------------------------
+   Design rebuild sections (Proposal 114) — the ADS component library renders
+   classified source sections on these token-driven classes. Nothing here
+   hardcodes a brand value; everything rides the --forge-* layer above.
+   ------------------------------------------------------------------------- */
+.design-sections {
+	display: grid;
+	gap: var(--forge-space-lg);
+}
+
+.ds-section {
+	margin: 0;
+}
+
+.ds-hero {
+	padding: var(--forge-space-lg);
+	background: var(--forge-surface-alt);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius-lg);
+	display: grid;
+	gap: var(--forge-space);
+}
+
+.ds-hero h1,
+.ds-hero h2,
+.ds-title {
+	font-family: var(--forge-font-display);
+	font-size: var(--forge-scale-h2);
+	line-height: 1.2;
+	margin: 0;
+}
+
+.ds-hero p,
+.ds-text {
+	margin: 0;
+	color: var(--forge-muted);
+}
+
+.ds-media {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius);
+}
+
+.ds-button {
+	display: inline-block;
+	padding: var(--forge-space-sm) var(--forge-space);
+	background: var(--forge-accent);
+	color: var(--forge-accent-ink);
+	text-decoration: none;
+	border-radius: var(--forge-radius-sm);
+	font-weight: 600;
+}
+
+.ds-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--forge-space-sm);
+}
+
+.ds-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+	gap: var(--forge-space);
+}
+
+.ds-card {
+	padding: var(--forge-space);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius);
+	background: var(--forge-surface-alt);
+	box-shadow: var(--forge-shadow-card);
+	display: grid;
+	gap: var(--forge-space-sm);
+}
+
+.ds-card h3,
+.ds-card h4,
+.ds-card h5 {
+	font-family: var(--forge-font-display);
+	font-size: var(--forge-scale-h4);
+	margin: 0;
+}
+
+.ds-card p {
+	margin: 0;
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+}
+
+.ds-card img {
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	border-radius: var(--forge-radius-sm);
+}
+
+.ds-quote {
+	margin: 0;
+	padding: var(--forge-space);
+	border-left: 4px solid var(--forge-accent);
+	background: var(--forge-surface-alt);
+	border-radius: 0 var(--forge-radius) var(--forge-radius) 0;
+}
+
+.ds-quote footer {
+	margin-top: var(--forge-space-sm);
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+}
+
+.ds-logos {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--forge-space);
+}
+
+.ds-logos img {
+	height: 3rem;
+	width: auto;
+}
+
+.ds-gallery {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	gap: var(--forge-space-sm);
+}
+
+.ds-gallery img {
+	width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius-sm);
+}
+
+.ds-body {
+	display: grid;
+	gap: var(--forge-space);
+}
+
+/* --- Form component (Proposal 114 §3.9) --------------------------------- */
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.ds-form {
+	display: grid;
+	gap: var(--forge-space);
+}
+
+.ds-form-search {
+	grid-template-columns: 1fr auto;
+	align-items: center;
+}
+
+.ds-field {
+	display: grid;
+	gap: var(--forge-space-sm);
+}
+
+.ds-label {
+	font-weight: 600;
+	font-size: var(--forge-scale-small);
+}
+
+.ds-required {
+	color: var(--forge-accent);
+}
+
+.ds-check {
+	display: inline-flex;
+	gap: var(--forge-space-sm);
+	font-size: var(--forge-scale-small);
+	color: var(--forge-muted);
+}
+
+.ds-input {
+	font: inherit;
+	color: var(--forge-ink);
+	background: var(--forge-surface);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius-sm);
+	padding: var(--forge-space-sm);
+	max-width: 100%;
+}
+
+.ds-input:focus {
+	outline: 2px solid var(--forge-accent);
+	outline-offset: 1px;
+}
+
+.ds-form-status {
+	margin: 0;
+	font-size: var(--forge-scale-small);
+	color: var(--forge-muted);
+}
+
+/* The honeypot: invisible to humans, an inviting trap for bots. */
+.ds-honeypot {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ds-button,
+	.ds-card,
+	.ds-media {
+		transition: none;
+	}
 }

@@ -1,0 +1,213 @@
+---
+// Form — the rebuilt form component (Proposal 114 §3.9). Renders the
+// classified FormInfo as an ADS form on the token layer, never the source
+// markup:
+//   - 'search' → the site's own /search/ surface (GET, input name q);
+//   - 'submit' → a POST to the configured bridge endpoint with the
+//     honeypot + timestamp spam floor and a progressive-enhancement fetch;
+//     without JS the ordinary form POST still lands (the no-JS floor);
+//   - 'cta' (no resolvable WP form ID) → a plain title/links band —
+//     never a dead endpoint.
+// The bridge URL is resolved env-first (NVOOS_FORGE_FORMS_ENDPOINT), then
+// from the scaffolded manifest default — never hardcoded.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import manifestJson from '../../../nvoos.json';
+
+// The manifest's inferred JSON type has no `forms` key on profiles that
+// omit the block — read it through an explicit shape.
+const manifest = manifestJson as { forms?: { endpoint?: string; searchForms?: string[] } };
+
+interface Props {
+	section: SemanticSection;
+}
+
+const { section } = Astro.props;
+const { title, links } = section.slots;
+const form = section.form;
+
+const configuredEndpoint = (
+	import.meta.env.NVOOS_FORGE_FORMS_ENDPOINT ||
+	manifest.forms?.endpoint ||
+	''
+).replace(/\/+$/, '');
+const endpoint = configuredEndpoint ? `${configuredEndpoint}/forms/submit` : '';
+// The page URL the bridge records as the referrer / redirect target.
+const pagePath = Astro.url?.pathname || '/';
+
+const searchField = form?.fields?.[0];
+const isSearch = form?.kind === 'search';
+const isSubmit = form?.kind === 'submit' && Boolean(endpoint) && Boolean(form?.formId || form?.formName);
+const degradeToCta = Boolean(form) && !isSearch && !isSubmit;
+---
+
+{(isSearch || isSubmit || degradeToCta) && (
+	<section class="ds-section ds-hero">
+		{title && <h2 class="ds-title">{title}</h2>}
+		{isSearch && (
+			<form class="ds-form ds-form-search" action="/search/" method="get" role="search">
+				<label class="visually-hidden" for="ds-search-q">{searchField?.label || 'Search the site'}</label>
+				<input
+					class="ds-input"
+					id="ds-search-q"
+					type="search"
+					name="q"
+					placeholder={searchField?.placeholder || 'Search…'}
+					autocomplete="off"
+				/>
+				<button class="ds-button" type="submit">{form?.submitLabel || 'Search'}</button>
+			</form>
+		)}
+		{isSubmit && form && (
+			<form class="ds-form" method="post" action={endpoint} data-ds-form>
+				{form.fields.map((field, index) => (
+					<div class="ds-field">
+						{field.label && field.type !== 'checkbox' && field.type !== 'radio' && (
+							<label class="ds-label" for={`ds-f-${index}`}>
+								{field.label}
+								{field.required && <span class="ds-required" aria-hidden="true"> *</span>}
+							</label>
+						)}
+						{field.type === 'textarea' ? (
+							<textarea
+								class="ds-input"
+								id={`ds-f-${index}`}
+								name={field.name}
+								rows={field.rows || '5'}
+								placeholder={field.placeholder}
+								required={field.required || undefined}
+							>{field.value}</textarea>
+						) : field.type === 'select' ? (
+							<select
+								class="ds-input"
+								id={`ds-f-${index}`}
+								name={field.name}
+								required={field.required || undefined}
+							>
+								{!field.options?.some((option) => option.selected) && (
+									<option value="" disabled selected>
+										{field.placeholder || 'Select…'}
+									</option>
+								)}
+								{field.options?.map((option) => (
+									<option value={option.value} selected={option.selected || undefined}>
+										{option.label}
+									</option>
+								))}
+							</select>
+						) : (
+							<>
+								<input
+									class="ds-input"
+									id={`ds-f-${index}`}
+									type={(field.type || 'text') as 'text' | 'email' | 'tel' | 'url' | 'number' | 'date' | 'time' | 'datetime-local' | 'month' | 'week' | 'search' | 'password' | 'checkbox' | 'radio' | 'file' | 'range' | 'color'}
+									name={field.name}
+									value={field.value}
+									placeholder={field.placeholder}
+									required={field.required || undefined}
+								/>
+								{(field.type === 'checkbox' || field.type === 'radio') && field.label && (
+									<label class="ds-check" for={`ds-f-${index}`}>
+										{field.label}
+									</label>
+								)}
+							</>
+						)}
+					</div>
+				))}
+				<input type="hidden" name="form" value={form.formId || form.formName || ''} />
+				{form.postId && <input type="hidden" name="post_id" value={form.postId} />}
+				<input type="hidden" name="honeypot" class="ds-honeypot" value="" tabindex="-1" autocomplete="off" aria-hidden="true" />
+				<input type="hidden" name="timestamp" value="" data-ds-timestamp />
+				<input type="hidden" name="_redirect" value={pagePath} />
+				<button class="ds-button" type="submit">{form.submitLabel || 'Send'}</button>
+				<p class="ds-form-status" role="status" aria-live="polite" hidden></p>
+			</form>
+		)}
+		{degradeToCta && links && links.length > 0 && (
+			<div class="ds-links">
+				{links.map((link) => (
+					<a class="ds-button" href={link.href ?? '#'}>
+						{link.text ?? 'Learn more'}
+					</a>
+				))}
+			</div>
+		)}
+	</section>
+)}
+
+<script>
+	// Progressive enhancement: submit as JSON to the bridge endpoint with the
+	// honeypot + timestamp spam floor. Delegated so any number of forms work;
+	// Astro hoists + dedupes identical bundled scripts. The no-JS fallback is
+	// the ordinary form POST to the same endpoint.
+	document.addEventListener('submit', async (event) => {
+		const formEl = event.target instanceof HTMLElement ? (event.target.closest('form[data-ds-form]') as HTMLFormElement | null) : null;
+		if (!formEl) return;
+		event.preventDefault();
+
+		const honeypot = formEl.elements.namedItem('honeypot') as HTMLInputElement | null;
+		if (honeypot && honeypot.value.trim() !== '') return; // Bot floor — silently drop.
+
+		const payload: { form: string; fields: Record<string, string>; honeypot: string; timestamp: number; page: string } = {
+			form: (formEl.elements.namedItem('form') as HTMLInputElement).value,
+			fields: {},
+			honeypot: '',
+			timestamp: Date.now(),
+			page: window.location.href,
+		};
+		for (const raw of Array.from(formEl.elements)) {
+			const element = raw as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+			if (!('name' in element) || !element.name) continue;
+			if (['form', 'post_id', 'honeypot', 'timestamp', '_redirect'].includes(element.name)) continue;
+			if ((element.type === 'checkbox' || element.type === 'radio') && !(element as HTMLInputElement).checked) continue;
+			payload.fields[element.name] = element.value;
+		}
+
+		const status = formEl.querySelector('.ds-form-status') as HTMLParagraphElement | null;
+		if (status) {
+			status.hidden = false;
+			status.textContent = 'Sending…';
+		}
+		try {
+			const response = await fetch(formEl.action, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload),
+			});
+			const data = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+			if (data.ok) {
+				if (status) status.textContent = data.message || 'Thank you — your message was sent.';
+				formEl.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLButtonElement>(
+					'input, textarea, select, button'
+				).forEach((element) => {
+					if (element.type === 'submit') element.remove();
+					else if (element !== status) element.disabled = true;
+				});
+			} else if (status) {
+				status.textContent = data.message || 'Something went wrong. Please try again.';
+			}
+		} catch {
+			if (status) status.textContent = 'Something went wrong. Please try again.';
+		}
+	});
+</script>
+
+<script is:inline>
+	// The no-JS redirect floor: the bridge 302s back with ?form=ok|error.
+	// (Plain JS — `is:inline` scripts are never TypeScript-processed.)
+	(function () {
+		if (window.__dsFormStatus) return;
+		window.__dsFormStatus = true;
+		const outcome = new URLSearchParams(window.location.search).get('form');
+		if (outcome === 'ok' || outcome === 'error') {
+			const message =
+				outcome === 'ok'
+					? 'Thank you — your message was sent.'
+					: 'Something went wrong. Please try again.';
+			for (const status of document.querySelectorAll('.ds-form-status')) {
+				status.hidden = false;
+				status.textContent = message;
+			}
+		}
+	})();
+</script>

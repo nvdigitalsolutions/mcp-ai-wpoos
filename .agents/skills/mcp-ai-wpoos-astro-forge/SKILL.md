@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-astro-forge
-description: Operational guide for the NV oOS Astro Forge (Proposal 096) — the WP→Astro frontend generator in examples/nvoos-astro-forge (wp-client, Astro content-layer loader, versioned sanitizer, scaffold CLI, blog template, hermetic WP wire fixture, CI exit gate). Use when forging a customer frontend, adding a template or collection, debugging the e2e gate, or continuing Phases 1–4 (wc/v3 Woo loader, site_analyze, tokens_apply, MCP tool surface, bridge plugin).
+description: Operational guide for the NV oOS Astro Forge (Proposal 096) — the WP→Astro frontend generator in examples/nvoos-astro-forge (wp-client, Astro content-layer loader, versioned sanitizer, scaffold CLI, blog template, hermetic WP wire fixture, CI exit gate). Use when forging a customer frontend, adding a template or collection, debugging the e2e gate, continuing Phases 1–4 (wc/v3 Woo loader, site_analyze, tokens_apply, MCP tool surface, bridge plugin), running the Proposal 114 design-rebuild loop (design block, semantic sections, contrast audit, forge verify), or working the 114 §3.9 forms bridge (sanitizer form allowlist, Form.astro, bridge forms/submit route).
 ---
 
 # NV oOS Astro Forge — ops guide (Proposal 096 Phase 0)
@@ -300,6 +300,150 @@ From the 098 pipeline for the pilot customer (a WooCommerce storefront):
 - Keep the customer's name and URL out of skills and generated code — the
   design tokens alone are the deliverable (the 098 recreation loop is
   concept-adaptation, never cloning).
+
+## Proposal 114 — design rebuild (shipped 2026-11-05)
+
+The forge never replicates a source's markup: it extracts the design
+LANGUAGE (098-style) and rebuilds the presentation with the ADS — semantic
+content model → design components → full token theme → verified parity.
+Proposal: `docs/project/proposals/114-forge-design-rebuild-proposal.md`
+(+ `-research.md` — DTCG 2025.10, Style Dictionary theming, CI contrast
+gates, visual-regression practice).
+
+- **`lib/design.ts`** — the forge design-import module: `fetchDesignInput`
+  (homepage + ≤6 same-origin stylesheets, bounded, SSRF-guarded by the
+  caller), `analyzeDesignInput` (deterministic: Elementor/theme CSS-var
+  roles with confidence + unassigned pool, type pairing + px scales, spacing,
+  radii, shadows, component vocabulary, adaptation brief),
+  `analyzeBuiltCss` (the verify-side extraction), `designToTokens` (role→
+  `--forge-*` map; accent-ink by contrast, not threshold), `suggestContrastFixes`
+  (one-token fixes from the source's own pool), `scoreParity` (role distance,
+  family/scale/spacing overlap, order-independent concept signature — never
+  pixel parity).
+- **`lib/semantic.ts`** (vendored into generated projects) — the builder-
+  structure classifier: Elementor widget sections + `wp-block-*`/`vc_*`
+  markers → typed sections (hero/feature-grid/icon-list/testimonial/
+  logo-cloud/cta/gallery/text/raw) with text/media slots. Only splits
+  ALREADY-SANITIZED HTML; emits substrings + escaped text, never new markup.
+  Elementor-widget-less documents stay on the post-body raw path.
+- **Profile `design` block (v2)** — `types.ts` `ForgeDesign`; written by
+  `forge analyze --design` (CLI) or the MCP `design_apply`; scaffold merges
+  defaults ← design-derived ← explicit `tokens` (`mergeTokens`), writes
+  `src/lib/design.generated.ts` (deterministic), and audits WCAG pairs via
+  the shared `contrastAudit` (light + dark + high; `line-strong` is the
+  3:1-audited border token, the ADS additive). `--strict-contrast` →
+  manifest `designAudit: strict` → the build-time `/design-audit.json`
+  endpoint THROWS on failures (contrast cannot creep back).
+- **Template:** `src/components/design/` (DesignRenderer + Hero/FeatureGrid/
+  IconList/Testimonial/LogoCloud/Cta/Gallery/TextBlock), wired into
+  `[slug].astro` / `posts/[...parts].astro` / `index.astro` via the
+  sanitized body — **the body string must be extracted in getStaticPaths**
+  (props are serialized; the store's `rendered` object does not survive the
+  trip; `entry.body` is never populated). Plain Gutenberg prose and
+  non-builder content render identically to before (the e2e XSS/embed/rich-
+  content gates pin this).
+- **`forge verify <profile> --target <dir>`** — re-extracts the built CSS
+  bundle and scores parity (default threshold 0.6); `--baselines` is the
+  documented opt-in Playwright step (the parity gate needs no browser).
+  MCP: `design_apply` (write, open-world policy like site_analyze) +
+  `design_verify` (read). Wizard: `--design` + the `confirmDesign` clack
+  hook (TTY-gated; non-TTY applies deterministically).
+- **Gotchas (each cost a fix 2026-11-05):** htmlparser2's `handler.root` is
+  the DOCUMENT — its `.children` are the top-level nodes; the analyzer must
+  skip generic families (`ui-monospace` etc.) or the built bundle's
+  `font-family:ui-monospace,…` code rule wins the pairing rank; scale/spacing
+  px signals live in `--forge-scale-*`/`--forge-space-*` VAR VALUES, not in
+  `font-size:` declarations — harvest both forms; `.ts` endpoint files have
+  NO frontmatter fences (a leading `---` is a syntax error); `fetchDesignInput`
+  is polite — a throttled source (jayainc served 14.8s responses after
+  repeated analyzes) is a slow BUILD, not a bug (WpClient already times out
+  at 15s).
+
+## Proposal 114 §3.9 — form bridge P7 (shipped 2026-11-05)
+
+Forms integrate like WooCommerce: **content at build time, behavior proxied
+through WordPress.**
+
+- **Render half (the forge):** `sanitize.ts` gains the form allowlist —
+  `form`/`label`/`input`/`textarea`/`select`/`option`/`optgroup`/`button`/
+  `fieldset`/`legend` + functional attributes only (`action`/`method`/
+  `on*`/`formaction`/`style` are never allowed; `javascript:` `value`s die in
+  transformTags) — `SANITIZE_VERSION = 2`. `semantic.ts` gains the `form`
+  section kind + `FormInfo` (kind search|submit|cta, handler, formId,
+  formName, postId, fields, submitLabel): forms are extracted FIRST, before
+  the builder-section pipeline, from the top-level nodes; search forms = one
+  search-ish input (`type=search` / name s|search|query|q / `role=search` /
+  the profile's `forms.searchForms` names) or a hidden-ID carrier
+  (`form_id` → elementor, `_jet_engine_booking_form_id` → jetformbuilder,
+  `_wpcf7` → wpcf7; `post_id`/`__queried_post_id` → postId); no resolvable ID
+  → `cta` (title/links band, dropped when empty — never a dead endpoint).
+  `classifyHtml(html, options)` — the no-forms path is byte-identical to
+  pre-P7 (all 297 unit tests pin it). `Form.astro` (pure Astro, NO islands):
+  search → GET `/search/?q=`; submit → POST to `{NVOOS_FORGE_FORMS_ENDPOINT ||
+  manifest.forms.endpoint}/forms/submit` with hidden `form`/`post_id?`/
+  `honeypot`/`timestamp`/`_redirect` + delegated fetch enhancement (Astro
+  hoists + dedupes identical bundled scripts); the no-JS floor is the
+  ordinary form POST + `?form=ok|error` status script. `search.astro`
+  prefills + auto-runs from `?q=`.
+- **Config:** `types.ts` `ForgeForms` (endpoint/origin/searchForms) on
+  `SiteProfile` + `ForgeManifest`; scaffold emits `manifest.forms` (endpoint
+  defaults to `<profile.url>/wp-json/nvoos-forge/v1`) and `.env.example`
+  (`NVOOS_FORGE_FORMS_ENDPOINT`, `NVOOS_FORGE_FORMS_ORIGIN`).
+- **Behavior half (`plugins/nvoos-forge-bridge` 0.2.0):**
+  `includes/rest/class-nvoos-forge-bridge-forms.php` — one public route
+  `POST /nvoos-forge/v1/forms/submit` (permission `__return_true` — the
+  gates ARE the auth): disabled→404; origin allowlist (Origin header,
+  Referer fallback, normalized via `Settings::normalize_origin`)→403;
+  per-IP rate limit (transient, 5/10min)→429; honeypot non-empty or
+  timestamp outside ±2h (JSON path; optional on the no-JS form-encoded
+  floor)→silent 200 discard; optional Turnstile with `action`=
+  `nvoos_forge_form` + hostname pinned to the allowlisted origin (fails
+  closed on network errors); server-side `sanitize_textarea_field` on every
+  field (count/length caps). Dispatch ladder: JFB (`jet_fb_handler()->
+  process_form()` driven through the `_jet_engine_booking_form_id` +
+  `_jet_engine_refer` `$_POST` carriers, `is_ajax = true` for the JSON
+  response; form-id resolution via the `jet-form-builder` CPT) → Elementor
+  Pro (`ElementorPro\Modules\Forms\Classes\Ajax_Handler::ajax_send_form()`
+  with the admin-ajax contract emulated in-process: `action`/`form_id`/
+  `post_id`/`queried_id`/`form_fields` + a fresh `wp_create_nonce(
+  'elementor_pro_forms')`; form existence via a bounded `_elementor_data`
+  LIKE) → typed 404 `nvoos_forge_form_not_found` / 501
+  `nvoos_forge_no_form_handler`. Both native dispatches are wrapped in
+  `capture_json()` — the `wp_die_json_handler` filter intercepts the
+  handler's process-ending `wp_send_json*` and captures its data (both
+  `{status,…}` JFB and `{success,data}` shapes map into the envelope
+  `{ok,message,errors?}`). Version-drift seams: `nvoos_forge_bridge_forms_
+  jfb_available|elementor_available` (bool filters) + `…_jfb_dispatch|
+  elementor_dispatch` (return an envelope array or WP_Error to pin a
+  specific plugin release; null = native). Audit seam: the
+  `nvoos_forge_bridge_form_submission` action (accepted|rejected). No-JS
+  floor: form-encoded bodies redirect (302) to the allowlisted `_redirect`
+  with `?form=ok|error` (open-redirect guarded). Settings: `OPTION_FORMS_*`
+  (enabled, origins textarea, captcha provider/site key/secret) + UI
+  section + `option_keys()` + redacted health fields.
+- **Tests:** forge — sanitizer form allowlist + XSS vectors, semantic form
+  classification (search/submit/cta/JFB/CF7/postId/options), scaffold forms
+  emission, e2e fixture forms (xss-trap search+Elementor form, contact JFB
+  form) asserting the rebuilt `action`es + honeypot + no carrier/vector
+  leaks. Bridge — `tests/test-forms.php` zero-HTTP: origin/rate/spam gates,
+  404/501/400/429 contracts, both dispatch seams + sanitization capture,
+  captcha via intercepted `pre_http_request`, no-JS 302 + open-redirect
+  guard.
+- **Gotchas (each cost a fix 2026-11-05, P7):** the generated project's
+  frontmatter context cannot resolve DOM type NAMES (`HTMLInputTypeAttribute`
+  → ts(2304)) — cast input `type` to a literal union instead; `is:inline`
+  scripts are PLAIN JS — TS assertions (`as unknown as`) fail the check
+  (ts(8016)); a type error in one template file makes `astro check` emit
+  cascading ts(7027) "unreachable code" noise on unrelated inline scripts —
+  fix the root error, not the warnings; `nvoos.json` has no `forms` key on
+  form-less profiles — read it through an explicit cast shape; `--overwrite`
+  re-scaffold wipes `node_modules` (reinstall); `classifyHtml` must split
+  forms from the TOP-LEVEL nodes in document order or non-form content
+  re-renders forms twice; the JFB `form_id` carrier is a hidden INPUT NAME
+  (`_jet_engine_booking_form_id`), Elementor's is `form_id` + `post_id`
+  hidden inputs — no `data-*` surface needed; bridge PHPUnit needs the
+  Docker `oos-wp` env (wp-tests-config targets the compose network) — phpcs
+  + `php -l` run anywhere, PHPUnit does not.
 
 ## Phase roadmap (096 §5)
 

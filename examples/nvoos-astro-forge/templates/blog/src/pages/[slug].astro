@@ -5,6 +5,7 @@
 import Base from '../layouts/Base.astro';
 import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
+import DesignRenderer from '../components/design/DesignRenderer.astro';
 import { jsonLdFor, renderJsonLd } from '../lib/seo.ts';
 
 export async function getStaticPaths() {
@@ -13,11 +14,14 @@ export async function getStaticPaths() {
 		.filter((page) => page.data.slug !== manifest.frontPage)
 		.map((page) => ({
 			params: { slug: page.data.slug },
-			props: { page },
+			// The sanitized body HTML is extracted HERE (server context) —
+			// getStaticPaths props are serialized and the store's `rendered`
+			// object does not survive that trip; a plain string prop does.
+			props: { page, body: page.rendered?.html },
 		}));
 }
 
-const { page } = Astro.props;
+const { page, body } = Astro.props;
 const { Content } = await render(page);
 const pageUrl = Astro.site ? new URL(`/${page.data.slug}/`, Astro.site).href : undefined;
 // SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
@@ -33,9 +37,13 @@ const jsonLd = jsonLdFor('WebPage', {
 <Base title={seoTitle} description={seoDescription} canonical={pageUrl}>
 	<article class="post">
 		<h1>{page.data.title}</h1>
-		<div class="post-body">
-			<Content />
-		</div>
+		{body ? (
+			<DesignRenderer html={body} />
+		) : (
+			<div class="post-body">
+				<Content />
+			</div>
+		)}
 	</article>
 	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
 </Base>

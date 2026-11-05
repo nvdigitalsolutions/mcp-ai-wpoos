@@ -5,6 +5,8 @@
 import Base from '../layouts/Base.astro';
 
 const pageUrl = Astro.site ? new URL('/search/', Astro.site).href : undefined;
+// A ?q= parameter (the rebuilt search forms GET here) prefills the query.
+const query = Astro.url?.searchParams.get('q')?.slice(0, 200) ?? '';
 ---
 
 <Base title="Search" description="Search the site." canonical={pageUrl}>
@@ -16,6 +18,7 @@ const pageUrl = Astro.site ? new URL('/search/', Astro.site).href : undefined;
 			class="search-input"
 			placeholder="Search posts and products…"
 			autocomplete="off"
+			value={query}
 		/>
 	</form>
 	<ul id="search-results" class="post-list"></ul>
@@ -70,6 +73,11 @@ const pageUrl = Astro.site ? new URL('/search/', Astro.site).href : undefined;
 				clearTimeout(timer);
 				timer = setTimeout(run, 200);
 			});
+
+			// The rebuilt search forms land here with ?q=… — run immediately.
+			if (input.value.trim()) {
+				run();
+			}
 		})();
 	</script>
 </Base>

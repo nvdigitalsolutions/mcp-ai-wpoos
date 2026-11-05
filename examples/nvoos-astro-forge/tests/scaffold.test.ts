@@ -10,8 +10,8 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { FORGE_ROOT, renderAstroConfig, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
-import type { SiteProfile } from '../lib/types.ts';
+import { FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderDesignGenerated, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
 
@@ -32,6 +32,31 @@ const PROFILE: SiteProfile = {
 			embed: false,
 		},
 	],
+};
+
+/** A jayainc-shaped design block — the rebuilt theme input (114 §3.3). */
+const DESIGN: ForgeDesign = {
+	mode: 'rebuild',
+	source: { url: 'https://shop.example.com', analyzedAt: '2026-11-05T00:00:00.000Z' },
+	concept: 'cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.',
+	palette: {
+		roles: { accent: '#6ec1e4', text: '#444444', surface: '#ffffff', 'field.border': '#767676' },
+		unassigned: [ '#ffcf0e', '#242424', '#3d3d3d' ],
+		confidence: { accent: 'high', text: 'medium' },
+	},
+	typography: { display: 'Rubik', body: 'Roboto', scalePx: [ 14, 16, 20, 28, 40 ] },
+	spacing: { scalePx: [ 4, 8, 16, 24, 48 ] },
+	radii: { valuesPx: [ 4, 8 ] },
+	shadows: { count: 2 },
+	components: { button: 7, card: 8 },
+	modes: { dark: 'auto', contrast: 'auto' },
+	adaptation: {
+		keep: [ 'The palette roles, type pairing, and spacing rhythm.' ],
+		replace: [ 'All copy, imagery, logos with the customer\'s own content.' ],
+		remix: [ 'Shift the accent hue by roughly 10 degrees.' ],
+		licensingNote: 'Inspired-by analysis: no source CSS, HTML, copy, or assets were copied.',
+		attribution: [ 'Source: https://shop.example.com' ],
+	},
 };
 
 const tempDirs: string[] = [];
@@ -637,5 +662,110 @@ describe( 'scaffold — hybrid local content (Proposal 106 P2)', () => {
 		expect(out).toContain('collection: postsCollection, auth: applicationAuth, local: { pattern:');
 		// The products collection (no local source) stays plain.
 		expect(out).toContain('products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: applicationAuth }) })');
+	} );
+} );
+
+describe( 'scaffold — design rebuild (Proposal 114)', () => {
+	it( 'vendors the semantic classifier + contrast math alongside the loader libs', () => {
+		expect( FORGE_LIB_FILES ).toContain( 'semantic.ts' );
+		expect( FORGE_LIB_FILES ).toContain( 'contrast.ts' );
+	} );
+
+	it( 'derives the token theme from the design block (defaults ← design ← explicit overrides)', () => {
+		const merged = mergeTokens( DESIGN, { accent: '#123456' } );
+		// Explicit operator overrides win.
+		expect( merged.accent ).toBe( '#123456' );
+		// Design-derived values land everywhere else.
+		expect( merged.ink ).toBe( '#444444' );
+		expect( merged[ 'font-display' ] ).toContain( 'Rubik' );
+		expect( merged[ 'line-strong' ] ).toBe( '#767676' );
+		expect( merged[ 'scale-h1' ] ).toBe( '40px' );
+		// Untouched defaults survive.
+		expect( merged.measure ).toBe( '72ch' );
+	} );
+
+	it( 'applies the design through the scaffold and writes the generated design module', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'rebuilt' );
+		const result = await scaffold( { profile: { ...PROFILE, design: DESIGN }, targetDir: target, template: 'blog' } );
+
+		// The token span carries the design-derived values.
+		const css = await readFile( path.join( target, 'src', 'styles', 'global.css' ), 'utf8' );
+		expect( css ).toContain( '--forge-accent: #6ec1e4;' );
+		expect( css ).toContain( '--forge-ink: #444444;' );
+		expect( css ).toContain( "--forge-font-display: 'Rubik', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;" );
+
+		// The resolved design module ships with tokens + provenance.
+		const generated = await readFile( path.join( target, 'src', 'lib', 'design.generated.ts' ), 'utf8' );
+		expect( generated ).toContain( "'accent': '#6ec1e4'" );
+		expect( generated ).toContain( "source: { url: 'https://shop.example.com', analyzedAt: '2026-11-05T00:00:00.000Z' }" );
+		expect( generated ).toContain( 'adaptation: {' );
+
+		// The manifest records the design block + the warn-mode audit gate.
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.design.palette.roles.accent ).toBe( '#6ec1e4' );
+		expect( manifest.designAudit ).toBe( 'warn' );
+
+		// The build-time audit endpoint ships.
+		await expect( stat( path.join( target, 'src', 'pages', 'design-audit.json.ts' ) ) ).resolves.toBeTruthy();
+
+		// The jayainc-class failing text color would have produced warnings;
+		// #444444 passes every pair (no design-driven warnings here).
+		expect( result.warnings ).toEqual( [] );
+	} );
+
+	it( 'flips the manifest to strict contrast and suggests pool fixes for failing pairs', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'strict' );
+		const failing: ForgeDesign = { ...DESIGN, palette: { ...DESIGN.palette, roles: { ...DESIGN.palette.roles, text: '#7a7a7a' } } };
+		const result = await scaffold( {
+			profile: { ...PROFILE, design: failing },
+			targetDir: target,
+			template: 'blog',
+			strictContrast: true,
+		} );
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.designAudit ).toBe( 'strict' );
+		// The gate suggests the source's own pool color as the one-token fix.
+		expect( result.warnings.some( ( warning ) => warning.includes( 'unassigned pool' ) ) ).toBe( true );
+		expect( result.warnings.some( ( warning ) => warning.includes( '4.5:1' ) ) ).toBe( true );
+	} );
+
+	it( 'renders the generated design module deterministically', () => {
+		const merged = mergeTokens( DESIGN );
+		const once = renderDesignGenerated( { ...PROFILE, design: DESIGN }, merged );
+		const twice = renderDesignGenerated( { ...PROFILE, design: DESIGN }, merged );
+		expect( once ).toBe( twice );
+		expect( once ).toContain( 'export const resolvedDesign: ResolvedDesign = {' );
+	} );
+
+	it( 'warns with a design block but stays quiet on clean designs', () => {
+		expect( tokenWarnings( undefined, DESIGN ) ).toEqual( [] );
+		expect( tokenWarnings( { ink: 'red' }, DESIGN ).length ).toBeGreaterThan( 0 );
+	} );
+} );
+
+describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
+	it( 'emits the forms block in the manifest with the default endpoint', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'forms' );
+		await scaffold({ profile: { ...PROFILE, forms: { origin: 'https://static.example.com', searchForms: [ 'find' ] } }, targetDir: target, template: 'blog' } );
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.forms ).toEqual( {
+			endpoint: 'https://shop.example.com/wp-json/nvoos-forge/v1',
+			origin: 'https://static.example.com',
+			searchForms: [ 'find' ],
+		} );
+	} );
+
+	it( 'emits the forms env example and omits the block when unconfigured', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'forms-env' );
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' } );
+		const envExample = await readFile( path.join( target, '.env.example' ), 'utf8' );
+		expect( envExample ).toContain( 'NVOOS_FORGE_FORMS_ENDPOINT=' );
+		expect( envExample ).toContain( 'NVOOS_FORGE_FORMS_ORIGIN=' );
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.forms ).toBeUndefined();
 	} );
 } );
