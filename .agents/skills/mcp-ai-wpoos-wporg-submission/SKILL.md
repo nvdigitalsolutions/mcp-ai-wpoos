@@ -268,6 +268,7 @@ submission track, NOT something to allowlist. The docs-hub ZIP is clean
 | `WordPress.WP.I18n.TextDomainMismatch` | Real blocker (base) | Text domain must equal the wp.org slug/dir name; the repo domain is `mcp-ai-wpoos`. Needs the slug migration track — do not allowlist |
 | `no_plugin_readme` | Real or mount artifact | readme.txt must sit at the ZIP root. If it does and PCP still fires, suspect the bind-mount truncation (pitfall 5) |
 | CodeAnalysis — core function newer than the declared `Requires at least` | Real | PCP flags any WP function whose `@since` is newer than the plugin's minimum (e.g. `wp_generate_uuid4()` is WP 6.7+ under `Requires at least: 6.0`). Fix: a `function_exists()`-guarded polyfill (keeps the floor) or bump `Requires at least`. Add the same check for any WP API used by new standalone plugins |
+| **Typed return crossing a `WP_Error`-returning API — INVISIBLE to PCP, phpcs, and `php -l`** | Real runtime fatal (forge-bridge review, 2026-11-05) | `public static function send( string $type ): array { return wp_remote_post( … ); }` passes every static gate (syntax is valid, style is clean, PCP does no type inference) but fatals with a `TypeError` when the request fails. Only two things catch this class: a **failure-path test** (`pre_http_request` returning `WP_Error` — the forge-bridge suite's interceptor only returned success, so 30/30 tests passed with the bug shipped) or a **static analyzer** (Psalm/PHPStan with WP stubs — not currently in any gate). Pre-submission rule: every `wp_remote_*` call site gets a failure-path test, and the raw result never crosses a typed `: array` declaration (PHP 7.4 has no union types — drop the type, keep the `@return array|\WP_Error` docblock). Sweep item 8 in the related-issue checklist |
 
 ### Second plugin in the pipeline (nvoos-design-system, issue #6811)
 
@@ -414,6 +415,22 @@ Drafted add-form fields:
   browsers (matches `== External Services ==`); no premium/upsells; validation
   numbers (PCP 0/0, phpcs 0, PHPUnit 30/30) + source link
   `github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/alpha-working/plugins/nvoos-forge-bridge`.
+
+**First review came back (2026-11-05, review P0TDX399590HGN):** one finding
+— `Rebuild_Webhook::send()` declared `: array` but `wp_remote_post()`
+returns `array|WP_Error`, so a failed delivery raised an uncaught `TypeError`
+at shutdown. The gate stack shipped it green (PCP 0/0, phpcs 0, 30/30 tests)
+because none of the gates does type inference and the test suite's
+`pre_http_request` interceptor only ever returned success — the failure
+branch was untested (see the triage row + sweep item 8 above). **Fixed in
+0.2.0 (2026-11-06):** return type removed (PHP 7.4 = no union types),
+regression test `test_failed_request_returns_wp_error_without_typeerror`,
+POT regenerated (was stale at 0.1.0 — the 0.2.0 forms-bridge strings were
+missing), changelog bullet, signoff section + `WPORG-REVIEW-FINDINGS.md` /
+`WPORG-REVIEW-REPLY.md` in the plugin dir (ZIP-excluded). Validation: PHPUnit
+48/48 (133 assertions), PCP 0/0, phpcs 0, clean-install activation test with
+`WP_DEBUG` on (activation clean, homepage 200, empty debug.log). Upload ZIP
+`build/nvoos-forge-bridge-v0.2.0.zip` (14 files).
 
 ### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
 
@@ -574,6 +591,19 @@ Each review item is a category — grep the whole plugin for siblings:
    each render is either on-page (settings screen) or a one-shot
    action-result; grep `$_GET/$_POST/$_REQUEST` and confirm cap + nonce +
    sanitize on every handler.
+8. **Typed return crossing a `WP_Error`-returning API** — grep
+   `wp_remote_(get|post|request)` and check every call site: (a) the
+   enclosing function has no `: array` (or any) return type on the raw
+   result — PHP 7.4 has no union types, so the correct shape is an untyped
+   signature + `@return array|\WP_Error`; (b) a failure-path test exists
+   (`pre_http_request` → `WP_Error`, assert no TypeError and the caller
+   survives). This is the forge-bridge first-review category (2026-11-05,
+   review P0TDX399590HGN): `Rebuild_Webhook::send()` declared `: array` and
+   fataled at shutdown on a failed delivery — shipped with PCP 0/0, phpcs 0,
+   and 30/30 green tests because none of the gates does data-flow analysis
+   and no test exercised the failure branch. Sibling sweep (2026-11-06):
+   docs-hub `checkout-client.php` + `remote-repo.php` and content-graph
+   `Vendor` + `HttpClient` are clean (untyped + `is_wp_error` handled).
 
 ### Reviewer reply email (template)
 
