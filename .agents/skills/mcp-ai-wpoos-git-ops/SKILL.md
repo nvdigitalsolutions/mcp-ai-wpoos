@@ -46,6 +46,33 @@ git push --force-with-lease origin <branch>
 - GitHub Docs reference: "Managing stacked pull requests" /
   "Troubleshooting stacked pull requests" (`gh stack rebase` alternative).
 
+## Freeze a PR branch once it is mergeable (the lost-commit trap, 2026-11-06)
+
+Follow-up commits pushed to an OPEN PR branch silently vanish when the
+owner squash-merges the PR **before those pushes** — the squash only
+takes the branch state at merge time (observed: the forge-sites workflow
+fix + the skills-doc commit were both lost this way and had to be
+recovered as new PRs).
+
+- Once a PR is mergeable, STOP pushing to its branch. Any new work goes
+  on a fresh branch (stack it on the PR branch, then rebase after the
+  merge).
+- After a merge, **forensic the squash** before assuming it took
+everything:
+  `git diff <squash-sha> <branch-tip-sha>` — anything listed as
+  additions-from-the-tip that the squash lacks was MISSED; recover it
+  as a new PR. (The reverse direction shows rebase-at-merge artifacts —
+  newer base content your tip predates — those are fine.)
+
+## GitHub Actions expressions: `||` is `if:`-only (2026-11-06)
+
+The `||` / `&&` operators exist ONLY inside `if:` conditionals. In
+`env:` blocks, `${{ vars.X || 'default' }}` evaluates EMPTY — a workflow
+that passes the result into a CLI flag silently sends `""` (the
+forge-sites `--mirror-repo` failure). Default env values belong in the
+shell: `VAR="${VAR:-default}"` in the `run:` block, with the raw variable
+left in `env:` as the override point.
+
 ## alpha-working → main squash-sync (the release-sync recipe)
 
 `main` mirrors `alpha-working` through periodic "Merge alpha-working into
