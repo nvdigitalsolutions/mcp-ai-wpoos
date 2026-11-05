@@ -76,6 +76,34 @@ describe( 'emitDeployConfig', () => {
 		expect( deploy ).toContain( 'mirror-tmp' );
 	} );
 
+	it( 'emits the shared-mirror branch-per-site steps for velocity', async () => {
+		const { files } = await emitDeployConfig( dir, {
+			mode: 'velocity',
+			mirrorRepo: 'nvdigitalsolutions/nvoos-forge-sites',
+			siteBranch: 'site/jayainc',
+		} );
+		expect( files.sort() ).toEqual( [
+			'.github/workflows/deploy.yml',
+			'.github/workflows/rebuild.yml',
+			'scripts/mirror-push.mjs',
+			'scripts/verify-dispatch.mjs',
+		] );
+		const { deploy } = await emitted();
+		expect( deploy ).toContain( 'node scripts/mirror-push.mjs' );
+		expect( deploy ).toContain( 'SITE_BRANCH: site/jayainc' );
+		expect( deploy ).not.toContain( 'mirror-tmp' );
+		const script = await readFile( join( dir, 'scripts', 'mirror-push.mjs' ), 'utf8' );
+		expect( script ).toContain( 'SITE_BRANCH' );
+		expect( script ).toContain( "'checkout', '--orphan'" );
+		expect( script ).toContain( "'push', '--force'" );
+		expect( script ).not.toMatch( /ghp_/ );
+	} );
+
+	it( 'rejects a half-set shared mirror config', async () => {
+		await expect( emitDeployConfig( dir, { mode: 'velocity', mirrorRepo: 'o/r' } ) ).rejects.toThrow( /mirrorRepo and siteBranch/ );
+		await expect( emitDeployConfig( dir, { mode: 'velocity', siteBranch: 'site/x' } ) ).rejects.toThrow( /mirrorRepo and siteBranch/ );
+	} );
+
 	it( 'bakes the site URL into the build env and customizes the event type', async () => {
 		await emitDeployConfig( dir, { mode: 'github-pages', siteUrl: 'https://store.example.com', eventType: 'custom-event' } );
 		const { deploy, rebuild } = await emitted();

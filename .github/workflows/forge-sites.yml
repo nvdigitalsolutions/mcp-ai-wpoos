@@ -1,0 +1,104 @@
+# forge-sites.yml — build every committed forge site profile and mirror the
+# built dist/ to the shared mirror repo (branch per site).
+#
+# Shared-mirror model (Proposal 114 addendum, 2026-11-06): ONE mirror repo
+# (`nvdigitalsolutions/nvoos-forge-sites`) hosts every client site on its own
+# `site/<name>` branch. Each Velocity app connects to the mirror, selects its
+# branch, and serves the branch root (Root directory = repo root).
+#
+# Triggers:
+#   - push to alpha-working touching sites/** (or forge libs/templates)
+#   - workflow_dispatch (optional `site` input)
+#   - repository_dispatch `nvoos-forge-content-changed` from
+#     nvoos-forge-bridge on the client WP sites (HMAC proof verified first;
+#     payload.site optionally narrows the run)
+#
+# Secrets (monorepo): NVOOS_FORGE_MIRROR_URL, NVOOS_FORGE_MIRROR_TOKEN,
+# FORGE_WEBHOOK_SECRET. Unset mirror secrets degrade gracefully: the push
+# skips and the job stays green (build-only).
+
+name: Forge Sites
+
+on:
+  push:
+    branches: [ alpha-working ]
+    paths:
+      - 'examples/nvoos-astro-forge/sites/**'
+      - 'examples/nvoos-astro-forge/templates/**'
+      - 'examples/nvoos-astro-forge/lib/**'
+      - 'examples/nvoos-astro-forge/scripts/**'
+      - 'examples/nvoos-astro-forge/package.json'
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 'Site name to build (sites/<name>.json) — blank builds every site'
+        required: false
+        type: string
+  repository_dispatch:
+    types: [ nvoos-forge-content-changed ]
+
+permissions:
+  contents: read
+
+concurrency:
+  # One forge-sites run at a time — mirror branches are force-pushed.
+  group: forge-sites
+  cancel-in-progress: false
+
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install forge dependencies
+        working-directory: examples/nvoos-astro-forge
+        run: npm ci
+
+      - name: Verify dispatch signature
+        if: github.event_name == 'repository_dispatch'
+        env:
+          FORGE_WEBHOOK_SECRET: ${{ secrets.FORGE_WEBHOOK_SECRET }}
+          DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: node .github/forge/verify-dispatch.mjs --event-type nvoos-forge-content-changed --max-age 600
+
+      - name: Build and mirror sites
+        working-directory: examples/nvoos-astro-forge
+        env:
+          MIRROR_URL: ${{ secrets.NVOOS_FORGE_MIRROR_URL }}
+          MIRROR_TOKEN: ${{ secrets.NVOOS_FORGE_MIRROR_TOKEN }}
+          FORGE_WORK: ${{ runner.temp }}/forge-work
+          DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$FORGE_WORK"
+
+          # Resolve the site list: dispatch payload `site` first, then the
+          # manual input, otherwise every sites/*.json.
+          SITES=""
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            SITES=$(node -e "const fs=require('fs');try{const s=JSON.parse(process.env.DISPATCH_PAYLOAD||'{}').site;if(typeof s==='string'&&s)process.stdout.write(s)}catch{}")
+          else
+            SITES="${{ github.event.inputs.site }}"
+          fi
+          if [ -z "$SITES" ]; then
+            SITES=$(node -e "const fs=require('fs');if(fs.existsSync('sites')){process.stdout.write(fs.readdirSync('sites').filter(f=>f.endsWith('.json')).map(f=>f.slice(0,-5)).join(' '))}")
+          fi
+          echo "Sites: ${SITES:-<none>}"
+
+          for name in $SITES; do
+            echo "== $name =="
+            target="$FORGE_WORK/$name"
+            node scripts/forge.mjs "sites/$name.json" --target "$target"
+            node scripts/forge.mjs deploy-config "sites/$name.json" --target "$target" \
+              --to velocity --mirror-repo "${{ vars.NVOOS_FORGE_MIRROR_REPO }}" --site-branch "site/$name"
+            URL=$(node -e "const fs=require('fs');console.log(JSON.parse(fs.readFileSync('sites/$name.json','utf8')).url)")
+            ( cd "$target" && npm install && ASTRO_SITE="$URL" npm run build )
+            ( cd "$target" && SITE_BRANCH="site/$name" node scripts/mirror-push.mjs )
+          done

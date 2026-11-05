@@ -1,0 +1,171 @@
+{
+	"url": "https://jayainc.com",
+	"name": "JAYAINC",
+	"frontPage": "home",
+	"forms": {},
+	"collections": [
+		{
+			"slug": "posts",
+			"restBase": "wp/v2/posts",
+			"fields": [
+				"id",
+				"date_gmt",
+				"modified_gmt",
+				"title",
+				"slug",
+				"link",
+				"content",
+				"excerpt",
+				"rank_math_title",
+				"rank_math_description",
+				"yoast_head_json"
+			],
+			"embed": true,
+			"kind": "post",
+			"optional": true
+		},
+		{
+			"slug": "pages",
+			"restBase": "wp/v2/pages",
+			"fields": [
+				"id",
+				"date_gmt",
+				"modified_gmt",
+				"title",
+				"slug",
+				"link",
+				"content",
+				"excerpt",
+				"rank_math_title",
+				"rank_math_description",
+				"yoast_head_json"
+			],
+			"embed": true,
+			"kind": "page",
+			"optional": false,
+			"exclude": [
+				"login-customizer",
+				"inc"
+			]
+		}
+	],
+	"design": {
+		"mode": "rebuild",
+		"source": {
+			"url": "https://jayainc.com",
+			"analyzedAt": "2026-11-05T16:09:35.424Z"
+		},
+		"concept": "cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.",
+		"palette": {
+			"roles": {
+				"accent": "#6ec1e4",
+				"accent-alt": "#54595f",
+				"text": "#7a7a7a",
+				"custom-1c5389b3": "#4054b2",
+				"custom-62cec3ab": "#23a455",
+				"custom-6dfcb2cd": "#000000",
+				"custom-d80c1ff": "#ffffff",
+				"surface": "#ffffff",
+				"field.border": "#eaeaea"
+			},
+			"unassigned": [
+				"#666666",
+				"#999999",
+				"#3d3d3d",
+				"#333333",
+				"#ffcf0e",
+				"#f8f8f8",
+				"#242424",
+				"#1e87f0",
+				"#cccccc",
+				"#aaaaaa",
+				"#d6d6d6",
+				"#505050"
+			],
+			"confidence": {
+				"accent": "high",
+				"accent-alt": "high",
+				"text": "high",
+				"custom-1c5389b3": "high",
+				"custom-62cec3ab": "high",
+				"custom-6dfcb2cd": "high",
+				"custom-d80c1ff": "high",
+				"surface": "medium",
+				"field.border": "medium"
+			}
+		},
+		"typography": {
+			"display": "rubik",
+			"body": "roboto",
+			"scalePx": [
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				18
+			]
+		},
+		"spacing": {
+			"scalePx": [
+				0.0001,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			]
+		},
+		"radii": {
+			"valuesPx": [
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				8,
+				20
+			]
+		},
+		"shadows": {
+			"count": 188
+		},
+		"components": {
+			"header": 19,
+			"footer": 9,
+			"button": 9,
+			"nav": 1,
+			"badge": 1,
+			"form": 5,
+			"input": 2,
+			"feature": 1
+		},
+		"modes": {
+			"dark": "auto",
+			"contrast": "auto"
+		},
+		"adaptation": {
+			"keep": [
+				"The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.",
+				"Component vocabulary hints (buttons, cards, nav) as a checklist, not as markup."
+			],
+			"replace": [
+				"All copy, imagery, logos, and distinctive artwork with the customer's own content.",
+				"Fonts with licensed equivalents unless the source font is verifiably self-hostable."
+			],
+			"remix": [
+				"Shift the accent hue by roughly 10 degrees and pick the customer's own brand neutrals — visibly theirs, not a copy.",
+				"Let the customer's real content (products, posts, pages) drive the layout; apply the language to it."
+			],
+			"licensingNote": "Inspired-by analysis: no source CSS, HTML, copy, or assets were copied. Verify the source license before any closer adaptation.",
+			"attribution": [
+				"Source: https://jayainc.com"
+			]
+		}
+	}
+}

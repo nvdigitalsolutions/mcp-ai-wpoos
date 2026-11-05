@@ -47,6 +47,13 @@ export interface DeployConfig {
 	siteUrl?: string;
 	/** Cloudflare Pages project name (cloudflare-pages mode). */
 	cloudflareProject?: string;
+	/** Shared mirror repo (owner/repo) — branch-per-site velocity deploys.
+	 *  Set together with `siteBranch`: one mirror repo hosts every client,
+	 *  one branch per site, dist/ at the branch ROOT (Velocity app:
+	 *  Branch = site/<name>, Root directory = repo root). */
+	mirrorRepo?: string;
+	/** The per-site branch on the shared mirror (e.g. `site/jayainc`). */
+	siteBranch?: string;
 	/** repository_dispatch event type to accept. */
 	eventType?: string;
 	/** Max age of a dispatch before it is refused (seconds). */
@@ -81,8 +88,24 @@ function deploySteps( config: DeployConfig ): string[] {
 			`          command: pages deploy dist --project-name=${ project }`,
 		];
 	}
-	// velocity — connected-repo mirror: dist/ lands on the `deploy` branch of
-	// the mirror repo under `site/` (the 092 sync pattern, per-client).
+	// velocity — two shapes:
+	//  - shared mirror (mirrorRepo + siteBranch): dist/ is force-pushed to the
+	//    site's own branch at the branch ROOT — one branch per client site,
+	//    each Velocity app selects its branch (Root directory = repo root).
+	//    The heavy lifting lives in scripts/mirror-push.mjs (emitted alongside
+	//    the workflows) so the CLI can run the exact same push locally.
+	//  - per-site connected repo (legacy): dist/ lands on the `deploy` branch
+	//    of the mirror repo under `site/` (the 092 sync pattern, per-client).
+	if ( config.mirrorRepo && config.siteBranch ) {
+		return [
+			'      - name: Mirror dist to the shared site branch',
+			'        env:',
+			'          MIRROR_URL: ${{ secrets.VELOCITY_MIRROR_URL }}',
+			'          MIRROR_TOKEN: ${{ secrets.VELOCITY_MIRROR_TOKEN }}',
+			`          SITE_BRANCH: ${ config.siteBranch }`,
+			'        run: node scripts/mirror-push.mjs',
+		];
+	}
 	return [
 		'      - name: Mirror dist to the connected repo',
 		'        env:',
@@ -263,6 +286,87 @@ function verifyScript(): string {
 }
 
 /**
+ * The mirror-push runner emitted next to the workflows in shared-mirror
+ * mode. Plain node, no dependencies: clones `main` of the mirror, checks out
+ * an ORPHAN site branch (flat single-commit history), replaces the content
+ * with the build output, and force-pushes. Unset MIRROR_URL/MIRROR_TOKEN
+ * skips with a warning (never a failed build). The CLI runs the same emitted
+ * file for the operator staging path, so workflow and CLI cannot drift.
+ */
+function mirrorPushScript(): string {
+	return [
+		'#!/usr/bin/env node',
+		'// mirror-push.mjs — force-push a built dist/ to a per-site branch of the',
+		'// shared forge mirror repo (velocity shared-mirror mode). One branch per',
+		'// client site; each Velocity app connects to the mirror repo and selects',
+		'// its branch (Root directory = repo root). Flat history: every push',
+		'// replaces the branch content.',
+		'//',
+		'// Contract: MIRROR_URL (https URL of the mirror repo), MIRROR_TOKEN',
+		'// (repo-scoped deploy token), SITE_BRANCH (e.g. site/jayainc), and',
+		'// optionally SOURCE_DIR (default: ./dist). Unset URL/token skips with a',
+		'// warning — never a failed build.',
+		'',
+		"import { execFileSync } from 'node:child_process';",
+		"import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs';",
+		"import { tmpdir } from 'node:os';",
+		"import { join, resolve } from 'node:path';",
+		'',
+		'function git( args, cwd ) {',
+		"	return execFileSync( 'git', args, { cwd, stdio: [ 'ignore', 'pipe', 'pipe' ] } ).toString();",
+		'}',
+		'',
+		"const url = process.env.MIRROR_URL ?? '';",
+		"const token = process.env.MIRROR_TOKEN ?? '';",
+		"const branch = process.env.SITE_BRANCH ?? '';",
+		"const source = resolve( process.cwd(), process.env.SOURCE_DIR ?? 'dist' );",
+		'',
+		'if ( ! url || ! token ) {',
+		"	console.log( 'mirror-push: MIRROR_URL / MIRROR_TOKEN are not set — skipping mirror deploy.' );",
+		'	process.exit( 0 );',
+		'}',
+		'if ( ! branch ) {',
+		"	console.error( 'mirror-push: SITE_BRANCH is not set — refusing to push.' );",
+		'	process.exit( 1 );',
+		'}',
+		'if ( ! existsSync( source ) ) {',
+		"	console.error( 'mirror-push: ' + source + ' does not exist — run the build first.' );",
+		'	process.exit( 1 );',
+		'}',
+		'',
+		'const authed = new URL( url );',
+		"authed.username = 'x-access-token';",
+		'authed.password = token;',
+		'',
+		"const tmp = mkdtempSync( join( tmpdir(), 'forge-mirror-' ) );",
+		'try {',
+		"	git( [ 'clone', '--depth', '1', '--branch', 'main', '--', authed.href, tmp ] );",
+		"	git( [ 'config', 'user.name', 'nvoos-forge' ], tmp );",
+		"	git( [ 'config', 'user.email', 'forge@nvdigitalsolutions.com' ], tmp );",
+		'	// An orphan branch: the site branch is a single root commit (flat).',
+		"	git( [ 'checkout', '--orphan', branch ], tmp );",
+		"	git( [ 'rm', '-rf', '.' ], tmp );",
+		'	cpSync( source, tmp, { recursive: true } );',
+		"	git( [ 'add', '-A' ], tmp );",
+		"	const message = 'Forge deploy: ' + ( process.env.GITHUB_SHA ?? 'local' );",
+		'	try {',
+		"		git( [ 'commit', '-m', message ], tmp );",
+		'	} catch {',
+		"		git( [ 'commit', '--allow-empty', '-m', message ], tmp );",
+		'	}',
+		"	git( [ 'push', '--force', 'origin', branch ], tmp );",
+		'} catch ( error ) {',
+		"\tconsole.error( 'mirror-push failed: ' + ( error && error.stderr ? error.stderr.toString() : String( error ) ) );",
+		'\tprocess.exit( 1 );',
+		'} finally {',
+		'	rmSync( tmp, { recursive: true, force: true } );',
+		'}',
+		"console.log( 'mirror-push: ' + branch + ' updated.' );",
+		'',
+	].join( '\n' );
+}
+
+/**
  * Emit the deploy pipeline into a forged project directory. Returns the
  * relative paths written. Existing files are overwritten (re-emit is the
  * deploy-config update path).
@@ -273,11 +377,18 @@ export async function emitDeployConfig( dir: string, config: DeployConfig ): Pro
 	await mkdir( workflows, { recursive: true } );
 	await mkdir( scripts, { recursive: true } );
 
+	if ( Boolean( config.mirrorRepo ) !== Boolean( config.siteBranch ) ) {
+		throw new Error( 'mirrorRepo and siteBranch must be set together (shared-mirror velocity deploys).' );
+	}
+
 	const files: { path: string; content: string }[] = [
 		{ path: join( workflows, 'deploy.yml' ), content: deployWorkflow( config ) },
 		{ path: join( workflows, 'rebuild.yml' ), content: rebuildWorkflow( config ) },
 		{ path: join( scripts, 'verify-dispatch.mjs' ), content: verifyScript() },
 	];
+	if ( config.mirrorRepo && config.siteBranch ) {
+		files.push( { path: join( scripts, 'mirror-push.mjs' ), content: mirrorPushScript() } );
+	}
 	for ( const file of files ) {
 		await writeFile( file.path, file.content, 'utf8' );
 	}
