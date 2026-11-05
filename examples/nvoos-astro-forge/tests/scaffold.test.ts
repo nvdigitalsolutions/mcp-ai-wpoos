@@ -759,13 +759,64 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 	} );
 
 	it( 'emits the forms env example and omits the block when unconfigured', async () => {
-		const root = await tempDir();
-		const target = path.join( root, 'forms-env' );
-		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' } );
-		const envExample = await readFile( path.join( target, '.env.example' ), 'utf8' );
-		expect( envExample ).toContain( 'NVOOS_FORGE_FORMS_ENDPOINT=' );
-		expect( envExample ).toContain( 'NVOOS_FORGE_FORMS_ORIGIN=' );
-		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
-		expect( manifest.forms ).toBeUndefined();
+			const root = await tempDir();
+			const target = path.join( root, 'forms-env' );
+			await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' } );
+			const envExample = await readFile( path.join( target, '.env.example' ), 'utf8' );
+			expect( envExample ).toContain( 'NVOOS_FORGE_FORMS_ENDPOINT=' );
+			expect( envExample ).toContain( 'NVOOS_FORGE_FORMS_ORIGIN=' );
+			const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+			expect( manifest.forms ).toBeUndefined();
+		} );
 	} );
-} );
+
+	describe( 'scaffold — wireframe pages (Proposal 115 §3)', () => {
+		it( 'emits the wireframe module + one page per wireframe and skips reserved slugs', async () => {
+			const root = await tempDir();
+			const target = path.join( root, 'wf' );
+			const profile: SiteProfile = {
+				...PROFILE,
+				wireframes: {
+					about: {
+						title: 'About',
+						slug: 'about',
+						source: 'https://shop.example.com/about/',
+						extractedAt: '2026-11-06T00:00:00.000Z',
+						status: 'placeholder',
+						sections: [],
+					},
+					posts: {
+						title: 'Posts',
+						slug: 'posts',
+						source: 'https://shop.example.com/posts/',
+						extractedAt: '2026-11-06T00:00:00.000Z',
+						status: 'captured',
+						sections: [],
+					},
+				},
+			};
+			const result = await scaffold({ profile, targetDir: target, template: 'blog' } );
+
+			await expect( stat( path.join( target, 'src', 'lib', 'wireframes.generated.ts' ) ) ).resolves.toBeTruthy();
+			await expect( stat( path.join( target, 'src', 'pages', 'about.astro' ) ) ).resolves.toBeTruthy();
+			// Reserved route slug — never shadowed.
+			await expect( stat( path.join( target, 'src', 'pages', 'posts.astro' ) ) ).rejects.toThrow();
+			expect( result.wireframePages ).toEqual( [ 'src/pages/about.astro' ] );
+			expect( result.warnings.some( ( w ) => w.includes( 'posts' ) ) ).toBe( true );
+
+			const page = await readFile( path.join( target, 'src', 'pages', 'about.astro' ), 'utf8' );
+			expect( page ).toContain( 'DesignRenderer wireframeSections' );
+			expect( page ).toContain( "wireframes['about']" );
+			const module = await readFile( path.join( target, 'src', 'lib', 'wireframes.generated.ts' ), 'utf8' );
+			expect( module ).toContain( "status: 'captured' | 'placeholder'" );
+			expect( module ).toContain( '"slug": "about"' );
+		} );
+
+		it( 'leaves no wireframe routes when the profile has none', async () => {
+			const root = await tempDir();
+			const target = path.join( root, 'plain' );
+			const result = await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' } );
+			await expect( stat( path.join( target, 'src', 'lib', 'wireframes.generated.ts' ) ) ).rejects.toThrow();
+			expect( result.wireframePages ).toBeUndefined();
+		} );
+	} );
