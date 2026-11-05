@@ -487,12 +487,17 @@ the only committed artifact per site.
 - **Operational learnings (2026-11-06, first live mirror push):** the
   Windows self-hosted runner's `npm install` phase runs ~15 min — a quiet
   job is NOT a hang, check `gh run view <id> --log` before touching code.
-  The WCAG scaffold warnings fix in the PROFILE, not the template:
-  `design.tokens` keys are the `--forge-*` names minus the prefix (`ink`,
-  `muted`, `line-strong`, …); pick values from the source's own unassigned
-  pool that PASS — the audit's one-size suggestion (same dark color for all
-  three) flattens hierarchy, `#505050` muted and `#666666` line-strong both
-  clear 4.5:1/3:1 and keep it. Mirror CI secrets on the monorepo:
+  The WCAG scaffold warnings fix in the PROFILE, not the template: the
+  TOP-LEVEL `tokens` keys are the `--forge-*` names minus the prefix (`ink`,
+  `muted`, `line-strong`, …) — a `design.tokens` block does NOT exist and is
+  silently ignored (the merge is `defaults ← designToTokens(design) ←
+  profile.tokens`). Pick values from the source's own unassigned pool that
+  PASS — the audit's one-size suggestion (same dark color for all three)
+  flattens hierarchy, `#505050` muted and `#666666` line-strong both clear
+  4.5:1/3:1 and keep it. GitHub intermittently rejects the orphan force
+  push with `remote: fatal error in commit_refs` — the emitted script
+  retries 3× with a 5s `Atomics.wait` sleep (cross-platform). Mirror CI
+  secrets on the monorepo:
   `NVOOS_FORGE_MIRROR_URL` + `NVOOS_FORGE_MIRROR_TOKEN` + variable
   `NVOOS_FORGE_MIRROR_REPO` — set via `gh auth token | gh secret set …` so
   the token never lands in a transcript. A prebuilt local `dist/` stages

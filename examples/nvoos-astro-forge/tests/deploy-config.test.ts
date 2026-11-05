@@ -96,6 +96,8 @@ describe( 'emitDeployConfig', () => {
 		expect( script ).toContain( 'SITE_BRANCH' );
 		expect( script ).toContain( "'checkout', '--orphan'" );
 		expect( script ).toContain( "'push', '--force'" );
+		expect( script ).toContain( 'mirror-push: attempt' );
+		expect( script ).toContain( 'Atomics.wait' );
 		expect( script ).not.toMatch( /ghp_/ );
 	} );
 
