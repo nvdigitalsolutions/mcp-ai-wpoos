@@ -178,6 +178,13 @@ const WIDGET_ROLES: Record<string, { kind: 'title' | 'body' | 'media' | 'links' 
 	// (form nodes are split out BEFORE widget grouping), so the role only
 	// marks the wrapper; the FormInfo carries the payload.
 	form: { kind: 'form' },
+	// Phlox Pro / Auxin widget family (jayainc's live vocabulary, 2026-11-06
+	// run) — same Elementor widget-class contract, vendor-prefixed names.
+	aux_modern_heading: { kind: 'title' },
+	aux_button: { kind: 'links' },
+	aux_image: { kind: 'media' },
+	aux_blockquote: { kind: 'quote' },
+	aux_text: { kind: 'body' },
 };
 
 /** wp-block-* name → role (Gutenberg's block vocabulary). */
@@ -747,6 +754,21 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string ): S
 		if ( child.type === 'tag' && isSectionBoundary( child ) ) {
 			sections.push( child );
 		}
+	}
+	if ( sections.length === 0 ) {
+		// Wrapped documents (Elementor's data-elementor-type="wp-post" root
+		// wraps every section in one container): take the OUTERMOST section
+		// boundaries at any depth — never a boundary nested inside another.
+		const collectOutermost = ( node: HNode ) => {
+			for ( const child of childrenOf( node ) ) {
+				if ( child.type === 'tag' && isSectionBoundary( child ) ) {
+					sections.push( child );
+				} else {
+					collectOutermost( child );
+				}
+			}
+		};
+		collectOutermost( root );
 	}
 
 	if ( sections.length === 0 ) {
