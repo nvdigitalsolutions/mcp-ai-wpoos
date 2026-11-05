@@ -73,10 +73,16 @@ jobs:
         env:
           MIRROR_URL: ${{ secrets.NVOOS_FORGE_MIRROR_URL }}
           MIRROR_TOKEN: ${{ secrets.NVOOS_FORGE_MIRROR_TOKEN }}
+          # The shared mirror repo — override via the repo variable. NOTE:
+          # GitHub expressions support `||` only in `if:` conditionals, NOT in
+          # `env:` blocks (an env `vars.X || default` evaluates empty) — the
+          # default therefore lives in the shell below (${VAR:-default}).
+          MIRROR_REPO: ${{ vars.NVOOS_FORGE_MIRROR_REPO }}
           FORGE_WORK: ${{ runner.temp }}/forge-work
           DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
         run: |
           set -euo pipefail
+          MIRROR_REPO="${MIRROR_REPO:-nvdigitalsolutions/nvoos-forge-sites}"
           mkdir -p "$FORGE_WORK"
 
           # Resolve the site list: dispatch payload `site` first, then the
@@ -97,7 +103,7 @@ jobs:
             target="$FORGE_WORK/$name"
             node scripts/forge.mjs "sites/$name.json" --target "$target"
             node scripts/forge.mjs deploy-config "sites/$name.json" --target "$target" \
-              --to velocity --mirror-repo "${{ vars.NVOOS_FORGE_MIRROR_REPO }}" --site-branch "site/$name"
+              --to velocity --mirror-repo "$MIRROR_REPO" --site-branch "site/$name"
             URL=$(node -e "const fs=require('fs');console.log(JSON.parse(fs.readFileSync('sites/$name.json','utf8')).url)")
             ( cd "$target" && npm install && ASTRO_SITE="$URL" npm run build )
             ( cd "$target" && SITE_BRANCH="site/$name" node scripts/mirror-push.mjs )
