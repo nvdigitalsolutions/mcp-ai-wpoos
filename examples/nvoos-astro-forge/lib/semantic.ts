@@ -110,6 +110,14 @@ export interface SemanticSection {
 export interface ClassifyOptions {
 	/** Extra input names that mark a single-field form as a search form. */
 	searchForms?: string[];
+	/**
+	 * Learned role overrides (Proposal 116) — win over the seeded default
+	 * dictionaries. The scaffold bakes the profile's vocabulary into
+	 * vocabulary.generated.ts; the renderer passes it here so widget/block
+	 * vocabulary evolves per-site without a forge release.
+	 */
+	widgetRoles?: Record<string, WidgetRole>;
+	blockRoles?: Record<string, BlockRole>;
 }
 
 /** section-kind → template component + human label (the data mapping, 114 §3.4). */
@@ -155,8 +163,17 @@ const WIDGET_NAME_RE = /elementor-widget-([\w-]+)/;
 const WP_BLOCK = /(^|\s)wp-block-([\w-]+)(\s|$)/;
 const VC_WRAPPER = /(^|\s)vc_[a-z_]+(\s|$)/;
 
-/** Widget name → role vocabulary (Elementor's widget taxonomy). */
-const WIDGET_ROLES: Record<string, { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' }> = {
+/**
+ * Widget name → role vocabulary (Elementor's widget taxonomy) — the SEEDED
+ * DEFAULT dictionary (Proposal 116 §3). Unknown names never drop content:
+ * they classify as `content` (slots merge, the section shape decides the
+ * kind) and the operator can pin them per-profile via `widgetRoles`.
+ */
+export type WidgetRole = { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' | 'content' };
+export type BlockRole = { kind: 'title' | 'body' | 'media' | 'links' | 'quote' | 'gallery' | 'container' | 'content' };
+
+/** The seeded widget dictionary (exported for the learn/report surface). */
+export const SEEDED_WIDGET_ROLES: Record<string, WidgetRole> = {
 	heading: { kind: 'title' },
 	'theme-page-title': { kind: 'title' },
 	'text-editor': { kind: 'body' },
@@ -188,7 +205,7 @@ const WIDGET_ROLES: Record<string, { kind: 'title' | 'body' | 'media' | 'links' 
 };
 
 /** wp-block-* name → role (Gutenberg's block vocabulary). */
-const BLOCK_ROLES: Record<string, { kind: 'title' | 'body' | 'media' | 'links' | 'quote' | 'gallery' }> = {
+export const SEEDED_BLOCK_ROLES: Record<string, BlockRole> = {
 	heading: { kind: 'title' },
 	paragraph: { kind: 'body' },
 	list: { kind: 'body' },
@@ -200,8 +217,11 @@ const BLOCK_ROLES: Record<string, { kind: 'title' | 'body' | 'media' | 'links' |
 	buttons: { kind: 'links' },
 	quote: { kind: 'quote' },
 	pullquote: { kind: 'quote' },
-	columns: { kind: 'body' },
-	group: { kind: 'body' },
+	// Structured blocks (116 §2): container-gated into the section pipeline.
+	// Gutenberg-only docs were gated to text before, so re-seeding these from
+	// 'body' changes no existing output — it only arms the learned-vocabulary gate.
+	columns: { kind: 'container' },
+	group: { kind: 'container' },
 };
 
 function classList( attribs?: Record<string, string> ): string[] {
@@ -297,12 +317,23 @@ function collectSlots( node: HNode ): SemanticSection['slots'] {
 
 interface WidgetLike {
 	node: HNode;
-	role: { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' };
+	role: WidgetRole | BlockRole;
 	confidence: 'high' | 'medium' | 'low';
 }
 
-/** Find classified widgets inside a node (Elementor + blocks). */
-function collectWidgets( root: HNode ): WidgetLike[] {
+/** Resolve a widget role: profile overrides win over the seeded defaults. */
+function resolveWidgetRole( name: string, options: ClassifyOptions ): WidgetRole | undefined {
+	return options.widgetRoles?.[ name ] ?? SEEDED_WIDGET_ROLES[ name ];
+}
+
+/** Resolve a block role: profile overrides win over the seeded defaults. */
+function resolveBlockRole( name: string, options: ClassifyOptions ): BlockRole | undefined {
+	return options.blockRoles?.[ name ] ?? SEEDED_BLOCK_ROLES[ name ];
+}
+
+/** Find classified widgets inside a node (Elementor + blocks). Unknown names
+ *  classify as `content` — never dropped (Proposal 116 §2). */
+function collectWidgets( root: HNode, options: ClassifyOptions ): WidgetLike[] {
 	const widgets: WidgetLike[] = [];
 	const walk = ( node: HNode ) => {
 		if ( node.type === 'tag' ) {
@@ -310,19 +341,16 @@ function collectWidgets( root: HNode ): WidgetLike[] {
 			const elementorWidget = classes.some( ( c ) => ELEMENTOR_WIDGET.test( c ) || ELEMENTOR_WIDGET.test( ` ${ c } ` ) );
 			if ( elementorWidget ) {
 				const match = classes.map( ( c ) => WIDGET_NAME_RE.exec( c ) ).find( Boolean );
-				const role = match ? WIDGET_ROLES[ match[ 1 ].toLowerCase() ] : undefined;
-				if ( role ) {
-					widgets.push( { node, role, confidence: 'high' } );
-					return; // Widget content belongs to the widget.
-				}
+				const name = match?.[ 1 ].toLowerCase();
+				const role = name ? resolveWidgetRole( name, options ) : undefined;
+				widgets.push( { node, role: role ?? { kind: 'content' }, confidence: role ? 'high' : 'low' } );
+				return; // Widget content belongs to the widget.
 			}
 			const block = classes.map( ( c ) => WP_BLOCK.exec( c ) ).find( Boolean );
 			if ( block ) {
-				const role = BLOCK_ROLES[ block[ 2 ].toLowerCase() ];
-				if ( role ) {
-					widgets.push( { node, role, confidence: 'high' } );
-					return;
-				}
+				const role = resolveBlockRole( block[ 2 ].toLowerCase(), options );
+				widgets.push( { node, role: role ?? { kind: 'content' }, confidence: role ? 'high' : 'low' } );
+				return;
 			}
 		}
 		for ( const child of childrenOf( node ) ) {
@@ -387,6 +415,9 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 	}
 
 	const hasBody = ( slots.body?.length ?? 0 ) > 0;
+	// Unknown-name widgets drop the confidence — the shape decided the kind,
+	// not a recognized vocabulary entry (Proposal 116).
+	const effectiveConfidence = widgets.some( ( widget ) => widget.role.kind === 'content' ) ? 'low' : confidence;
 	const kinds: Array<{ kind: SectionKind; reason: boolean }> = [
 		{ kind: 'logo-cloud', reason: media.length >= 3 && ! hasBody },
 		{ kind: 'gallery', reason: media.length >= 2 && ! slots.title && ! hasBody },
@@ -398,7 +429,7 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 		{ kind: 'text', reason: true },
 	];
 	const matched = kinds.find( ( entry ) => entry.reason ) ?? kinds[ kinds.length - 1 ];
-	return { kind: matched.kind, confidence, slots };
+	return { kind: matched.kind, confidence: effectiveConfidence, slots };
 }
 
 /** Does this node look like a section boundary (Elementor section / group)? */
@@ -729,21 +760,26 @@ function formSection( html: string, region: HNode, form: HNode, searchForms?: st
  * raw-HTML carried by the text fallback — the whole document for the
  * no-forms fast path, joined slices for split regions.
  */
-function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string ): SemanticSection[] {
+function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, options: ClassifyOptions ): SemanticSection[] {
 	const root: HNode = { type: 'root', children: nodes, startIndex: 0, endIndex: html.length - 1 };
 
 	if ( ! hasBuilderMarkers( root ) ) {
 		return fallbackHtml.trim().length > 0 ? [ { kind: 'text', confidence: 'low', slots: {}, html: fallbackHtml } ] : [];
 	}
 
-	// Block markers without Elementor widgets (plain Gutenberg prose) stay on
-	// the proven post-body path — a single raw text section. Only documents
-	// with classified Elementor widgets enter the section-rebuild pipeline
-	// (Gutenberg content is prose, not builder scaffolding).
-	const elementorWidgets = collectWidgets( root ).filter( ( widget ) =>
+	// Plain Gutenberg prose (no Elementor widgets, no structured/unknown
+	// blocks) stays on the proven post-body path — a single raw text section.
+	// Structured blocks (columns/group/cover — `container`) and unknown-name
+	// blocks (`content`, Proposal 116) enter the section-rebuild pipeline so
+	// the learned vocabulary applies without a forge release.
+	const allWidgets = collectWidgets( root, options );
+	const elementorWidgets = allWidgets.filter( ( widget ) =>
 		classList( widget.node.attribs ).some( ( c ) => ELEMENTOR_WIDGET.test( c ) || ELEMENTOR_WIDGET.test( ` ${ c } ` ) )
 	);
-	if ( elementorWidgets.length === 0 ) {
+	const structuredBlocks = allWidgets.some(
+		( widget ) => widget.role.kind === 'container' || widget.role.kind === 'content'
+	);
+	if ( elementorWidgets.length === 0 && ! structuredBlocks ) {
 		return fallbackHtml.trim().length > 0 ? [ { kind: 'text', confidence: 'low', slots: {}, html: fallbackHtml } ] : [];
 	}
 
@@ -777,7 +813,7 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string ): S
 
 	const out: SemanticSection[] = [];
 	for ( const section of sections ) {
-		const widgets = collectWidgets( section );
+		const widgets = collectWidgets( section, options );
 		if ( widgets.length === 0 ) {
 			const text = trimmed( textOf( section ) );
 			if ( text.length > 0 ) {
@@ -796,6 +832,13 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string ): S
 			continue; // Recognized but empty — dropped (the fallback ladder).
 		}
 		out.push( built );
+	}
+	// The pipeline must never empty a non-empty document: embed-only or
+	// unclassifiable content falls back to the raw post-body path. Scoped
+	// to the structured-block gate — Elementor scaffolding that classifies
+	// empty stays dropped (the pinned fallback ladder).
+	if ( out.length === 0 && fallbackHtml.trim().length > 0 && elementorWidgets.length === 0 ) {
+		return [ { kind: 'text', confidence: 'low', slots: {}, html: fallbackHtml } ];
 	}
 	return out;
 }
@@ -828,7 +871,7 @@ export function classifyHtml( html: string, options: ClassifyOptions = {} ): Sem
 	if ( formNodes.length === 0 ) {
 		// The pre-form pipeline, unchanged — the whole document is one region
 		// and the text fallback carries the full source string.
-		return classifyRegion( html, nodes, html );
+		return classifyRegion( html, nodes, html, options );
 	}
 
 	// Forms present: walk top-level nodes in document order; nodes whose
@@ -838,7 +881,7 @@ export function classifyHtml( html: string, options: ClassifyOptions = {} ): Sem
 	const pending: HNode[] = [];
 	const flushPending = () => {
 		if ( pending.length > 0 ) {
-			sections.push( ...classifyRegion( html, pending, joinSlices( html, pending ) ) );
+			sections.push( ...classifyRegion( html, pending, joinSlices( html, pending ), options ) );
 			pending.length = 0;
 		}
 	};

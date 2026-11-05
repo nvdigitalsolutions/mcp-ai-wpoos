@@ -176,6 +176,30 @@ export interface SiteProfile {
 	 * the rebuild covers the full source site structure.
 	 */
 	wireframes?: Record<string, ForgeWireframe>;
+	/**
+	 * The learned vocabulary block (Proposal 116 §3) — per-site widget/block
+	 * role maps plus the unknown-name report. The scaffold bakes it into
+	 * vocabulary.generated.ts; the renderer merges it over the seeded
+	 * classifier defaults so vocabulary evolves per-site, never per-release.
+	 */
+	vocabulary?: ForgeVocabulary;
+}
+
+/**
+ * The learned widget/block vocabulary (Proposal 116 §3). Roles are the
+ * classifier's kind names; unknown names are REPORTED (they still classify
+ * as `content` — never dropped) so the operator can pin them.
+ */
+export interface ForgeVocabulary {
+	/** Operator-pinned / learned widget roles — win over the seeded defaults. */
+	widgetRoles: Record<string, string>;
+	/** Learned block roles from the WP block-types registry. */
+	blockRoles: Record<string, string>;
+	/** elementor-widget-* names seen on the site with no seeded/learned role. */
+	unknownWidgets: string[];
+	/** Block registry names with no keyword match. */
+	unknownBlocks: string[];
+	analyzedAt: string;
 }
 
 /**

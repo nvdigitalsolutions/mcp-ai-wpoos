@@ -820,3 +820,37 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 			expect( result.wireframePages ).toBeUndefined();
 		} );
 	} );
+
+	describe( 'scaffold — learned vocabulary (Proposal 116 §3)', () => {
+		it( 'bakes the profile vocabulary into vocabulary.generated.ts', async () => {
+			const root = await tempDir();
+			const target = path.join( root, 'vocab' );
+			await scaffold({
+				profile: {
+					...PROFILE,
+					vocabulary: {
+						widgetRoles: { mystery_widget: 'feature' },
+						blockRoles: { columns: 'container' },
+						unknownWidgets: [ 'mystery_widget' ],
+						unknownBlocks: [],
+						analyzedAt: '2026-11-06T00:00:00.000Z',
+					},
+				},
+				targetDir: target,
+				template: 'blog',
+			} );
+			const module = await readFile( path.join( target, 'src', 'lib', 'vocabulary.generated.ts' ), 'utf8' );
+			expect( module ).toContain( '"mystery_widget":"feature"' );
+			expect( module ).toContain( '"columns":"container"' );
+			expect( module ).toContain( 'as Record<string, WidgetRole>' );
+		} );
+
+		it( 'emits an empty vocabulary by default (the seeded defaults apply)', async () => {
+			const root = await tempDir();
+			const target = path.join( root, 'vocab-empty' );
+			await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' } );
+			const module = await readFile( path.join( target, 'src', 'lib', 'vocabulary.generated.ts' ), 'utf8' );
+			expect( module ).toContain( 'widgetRoles: {}' );
+			expect( module ).toContain( 'blockRoles: {}' );
+		} );
+	} );

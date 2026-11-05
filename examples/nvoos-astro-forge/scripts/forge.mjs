@@ -42,13 +42,14 @@ import { analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity } fr
 import { emitDeployConfig } from '../lib/deploy-config.ts';
 import { analyzeSite, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
-import { discoverInventory } from '../lib/inventory.ts';
+import { discoverInventory, fetchText } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
 import { scaffold } from '../lib/scaffold.ts';
 import { SitesStore } from '../lib/sites.ts';
 import { maskSecret, Vault } from '../lib/vault.ts';
 import { extractWireframes } from '../lib/wireframes.ts';
+import { learnVocabulary } from '../lib/vocabulary.ts';
 import { setupWizard } from '../lib/wizard.ts';
 import { WpClient } from '../lib/wp-client.ts';
 
@@ -216,6 +217,28 @@ async function runAnalyze( url, options ) {
 			} catch ( error ) {
 				console.error( `\u26a0 Wireframe extraction failed (continuing without): ${ error instanceof Error ? error.message : error }` );
 			}
+		}
+	}
+
+	// --vocabulary (116 §3): learn the widget/block vocabulary — the block
+	// registry from the WP REST API + every elementor-widget-* name on the
+	// rendered homepage. Unknown names are REPORTED (they still classify as
+	// `content`, never dropped) so the operator can pin them.
+	if ( options.vocabulary ) {
+		try {
+			const home = await fetchText( fetch, profile.url, {} );
+			profile.vocabulary = await learnVocabulary( profile, {
+				fetch,
+				htmls: home.status === 200 ? [ home.text ] : [],
+			} );
+			console.log(
+				`\u2713 Vocabulary learned: ${ Object.keys( profile.vocabulary.blockRoles ).length } block role(s), ${ profile.vocabulary.unknownWidgets.length } unknown widget(s), ${ profile.vocabulary.unknownBlocks.length } unknown block(s).`
+			);
+			for ( const name of profile.vocabulary.unknownWidgets.slice( 0, 12 ) ) {
+				console.warn( `  \u26a0 Unknown widget "${ name }" — pin it via profile.vocabulary.widgetRoles (no forge release needed).` );
+			}
+		} catch ( error ) {
+			console.error( `\u26a0 Vocabulary learning failed (continuing without): ${ error instanceof Error ? error.message : error }` );
 		}
 	}
 
@@ -790,6 +813,7 @@ program
 	.option( '--inventory', 'discover the full page inventory + site shape (one-pager vs multi-page, Proposal 115)' )
 	.option( '--wireframes', 'imply --inventory and extract wireframes for the missing pages (Proposal 115)' )
 	.option( '--wayback', 'add Wayback CDX discovery to the inventory (deleted pages)' )
+	.option( '--vocabulary', 'learn the widget/block vocabulary (block-types registry + rendered widget names, Proposal 116)' )
 	.action( async ( url, options ) => {
 		await runAnalyze( url, options );
 	} );
