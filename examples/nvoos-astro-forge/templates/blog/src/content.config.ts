@@ -8,8 +8,14 @@
 
 import { defineCollection } from 'astro:content';
 
+import { configureFetchProxy } from './forge/fetch-proxy.ts';
 import { createWpLoader } from './forge/wp-loader.ts';
 import type { SiteProfile, WpCollection, WpAuth } from './forge/types.ts';
+
+// Install the build-time proxy dispatcher BEFORE anything fetches (content
+// layer + remote image service). No-op when WP_FETCH_PROXY is unset; fails
+// the build loudly when it is misconfigured — never silently bypasses.
+configureFetchProxy();
 
 // FORGE:site
 const siteUrl = (import.meta.env.WP_SITE_URL ?? 'http://127.0.0.1:8473').replace(/\/+$/, '');

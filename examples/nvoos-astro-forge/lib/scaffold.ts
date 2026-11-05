@@ -30,6 +30,7 @@ export const FORGE_LIB_FILES = [
 	'wp-client.ts',
 	'sanitize.ts',
 	'wp-loader.ts',
+	'fetch-proxy.ts',
 	// Proposal 114: the semantic classifier + the shared contrast math the
 	// generated project's build-time audit endpoint consumes.
 	'semantic.ts',
@@ -1105,6 +1106,11 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 			'# The static origin serving this site — enter the SAME value in the',
 			'# bridge plugin\'s Settings → Forge Bridge → Forms origin allowlist.',
 			'NVOOS_FORGE_FORMS_ORIGIN=',
+			'',
+			'# Build-time fetch proxy (bot-protected sources): route ALL build',
+			'# fetches through an allowlisted proxy (http://user:pass@host:port).',
+			'# Unset = direct fetches.',
+			'WP_FETCH_PROXY=',
 			'',
 		].join('\n'),
 		'utf8'

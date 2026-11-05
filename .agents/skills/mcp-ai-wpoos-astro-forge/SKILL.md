@@ -547,6 +547,14 @@ Elementor scaffolding still drops). Elementor 4.0 atomic output is real
 semantic HTML — form extraction + the shape ladder cover it name-free; the
 atomic JSON data layer is the documented enrichment path. Research:
 `docs/project/proposals/116-forge-learned-vocabulary-proposal.md`.
+- **Build-time proxy seam:** hosts with bot protection block datacenter
+  egress (jayainc 403s GitHub runners — IP-based, UA alone won't fix it).
+  `WP_FETCH_PROXY=http://user:pass@host:port` in the generated project's
+  env routes ALL build fetches (content layer + remote image service)
+  through an allowlisted proxy via `fetch-proxy.ts` (undici ProxyAgent,
+  global dispatcher); unset = no-op, misconfigured = fail-closed build.
+  Operator infra: a small allowlisted proxy (or the Cloudways bot-protection
+  allowlist when the site is on NV's account).
 
 ## Phase roadmap (096 §5)
 
