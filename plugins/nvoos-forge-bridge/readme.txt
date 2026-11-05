@@ -1,14 +1,14 @@
 === NV oOS Forge Bridge ===
 Contributors: vsamtani
-Tags: headless, rebuild, webhook, automation, static-site
+Tags: headless, rebuild, webhook, static-site, forms
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.2.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Signed, debounced rebuild webhook when WordPress content changes: works with GitHub Actions, Netlify, Vercel, or any CI. Mints preview tokens.
+Signed rebuild webhook when WordPress content changes, single-use preview tokens, and a form-submission bridge for forged static sites.
 
 == Description ==
 
@@ -18,6 +18,7 @@ NV oOS Forge Bridge is the WordPress half of a CMS-to-CI rebuild loop, and it wo
 * **Inbound rebuild trigger** — `POST /wp-json/nvoos-forge/v1/rebuild` accepts only requests carrying a valid signature, so external systems can request a rebuild with proof of the shared secret.
 * **Preview tokens** — `POST /wp-json/nvoos-forge/v1/preview-tokens` (editors and above) mints a single-use, 15-minute bearer token; `POST …/preview-tokens/verify` with the token consumes it. Tokens are stored hashed, never in plaintext.
 * **Health** — `GET /wp-json/nvoos-forge/v1/health` returns a redacted status (versions, booleans, the webhook host) — never tokens, secrets, or full URLs.
+* **Form submissions from a generated static site** — `POST /wp-json/nvoos-forge/v1/forms/submit` accepts the forged site's rebuilt forms and dispatches them to the NATIVE handler (JetFormBuilder's form processor or Elementor Pro's form ajax handler), so validation, storage, mail, and post-submit actions run exactly as on WordPress — the plugin never reimplements form handling. Submissions are gated by a CORS origin allowlist (your static origin, one per line), per-IP rate limits, a mandatory honeypot + timestamp spam floor (optional Cloudflare Turnstile with the `action` and `hostname` pinned to your allowlisted origin), and server-side sanitization of every field. Unknown form → 404; no form handler → 501; caught bots get a silent success. The no-JavaScript fallback is an ordinary form POST that redirects back to the static page with `?form=ok|error`.
 
 == Installation ==
 
@@ -47,6 +48,10 @@ The token and secret are write-only in the settings UI (never echoed), excluded 
 
 Only after you configure it. The rebuild webhook sends one signed POST to the GitHub API host you entered (by default `https://api.github.com`) per debounce window, from your server, containing the repository dispatch payload. Nothing is sent until the URL, token, and shared secret are saved, and no data is ever sent to the browser.
 
+= Does the forms bridge call any external services? =
+
+Only when you enable the optional captcha. With Cloudflare Turnstile selected, each form submission triggers one server-to-server verification call to Cloudflare (`https://challenges.cloudflare.com/turnstile/v0/siteverify`). Without the captcha, the forms bridge makes no external calls at all — it dispatches submissions to your own WordPress form plugins, in-process.
+
 == External Services ==
 
 This plugin connects to the GitHub API (`https://api.github.com`, or the custom dispatches URL you configure) to trigger a rebuild of your generated frontend.
@@ -56,6 +61,11 @@ This plugin connects to the GitHub API (`https://api.github.com`, or the custom 
 * **No account data is collected or tracked**, and nothing is sent unless you have enabled the webhook and saved a dispatches URL, token, and secret.
 * **GitHub Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
 * **GitHub Privacy Statement:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
+
+Optionally, when you enable the Cloudflare Turnstile captcha for the forms bridge, each form submission triggers one server-to-server verification call to `https://challenges.cloudflare.com/turnstile/v0/siteverify` (your Turnstile secret plus the visitor's token and IP address). Without the captcha, the forms bridge makes no external calls.
+
+* **Cloudflare Terms of Service:** https://www.cloudflare.com/website-terms/
+* **Cloudflare Privacy Policy:** https://www.cloudflare.com/privacypolicy/
 
 == Source Code ==
 
@@ -67,6 +77,9 @@ The uncompiled source of this plugin lives in the public repository at https://g
 2. Settings page after configuring the GitHub dispatches URL, token, and HMAC secret — credentials are write-only, shown masked.
 
 == Changelog ==
+
+= 0.2.0 =
+* New: form submission bridge for forged static sites — `POST /nvoos-forge/v1/forms/submit` dispatches to the native JetFormBuilder / Elementor Pro handlers (origin allowlist, per-IP rate limit, honeypot + timestamp spam floor, optional Cloudflare Turnstile with action/hostname pinning, server-side field sanitization, typed 404/501 contracts, no-JS redirect fallback).
 
 = 0.1.0 =
 * Initial release: signed rebuild webhook (autosave/revision/auto-draft skip, trash + delete hooks), inbound rebuild trigger, single-use preview tokens (editors+, POST-only verify), redacted health endpoint.
