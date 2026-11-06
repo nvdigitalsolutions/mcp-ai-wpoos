@@ -22,7 +22,7 @@ import { Parser, DomHandler } from 'htmlparser2';
 
 import { relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
-import type { ForgeDesign, ForgeSection } from './types.ts';
+import type { ForgeChrome, ForgeDesign, ForgeSection } from './types.ts';
 
 /** Bounded fetch input: the homepage HTML plus same-origin CSS bodies. */
 export interface DesignFetchInput {
@@ -277,13 +277,14 @@ const GENERIC_FAMILIES = new Set( [
 ] );
 
 /** Sorted numeric values extracted from px declarations (font-size/margin/…). */
-function pxValues( cssText: string, patterns: RegExp[] ): number[] {
+function pxValues( cssText: string, patterns: Array<{ pattern: RegExp; pxPerUnit?: number }> ): number[] {
 	const values = new Set<number>();
-	for ( const property of patterns ) {
-		for ( const match of cssText.matchAll( property ) ) {
-			const value = parseFloat( match[ 1 ] );
-			if ( Number.isFinite( value ) && value > 0 && value <= 120 ) {
-				values.add( value );
+	for ( const { pattern, pxPerUnit } of patterns ) {
+		for ( const match of cssText.matchAll( pattern ) ) {
+			const raw = parseFloat( match[ 1 ] );
+			const value = pxPerUnit ? raw * pxPerUnit : raw;
+			if ( Number.isFinite( value ) && value > 0 && value <= 160 ) {
+				values.add( Math.round( value * 10 ) / 10 );
 			}
 		}
 	}
@@ -293,9 +294,134 @@ function pxValues( cssText: string, patterns: RegExp[] ): number[] {
 // The forge's scale/spacing tokens are custom properties
 // (--forge-scale-h1: 40px) — px signals live in the var VALUES, not in
 // font-size/margin declarations, so both declaration and token forms count.
-const FONT_SCALE_PATTERNS = [ /font-size\s*:\s*([\d.]+)px/gi, /--[\w-]*scale[\w-]*\s*:\s*([\d.]+)px/gi ];
-const SPACE_PATTERNS = [ /(?:margin|padding|gap)\s*(?:-\w+)?\s*:\s*([\d.]+)px/gi, /--[\w-]*spac[\w-]*\s*:\s*([\d.]+)px/gi ];
-const RADIUS_PATTERNS = [ /border-radius\s*:\s*([\d.]+)px/gi ];
+// rem/em sizes normalize to px at the 16px root (the industry default) so
+// display sizes (jayainc's 4.5rem hero = 72px) enter the scale.
+const FONT_SCALE_PATTERNS: Array<{ pattern: RegExp; pxPerUnit?: number }> = [
+	{ pattern: /font-size\s*:\s*([\d.]+)px/gi },
+	{ pattern: /font-size\s*:\s*([\d.]+)r?em/gi, pxPerUnit: 16 },
+	{ pattern: /--[\w-]*scale[\w-]*\s*:\s*([\d.]+)px/gi },
+];
+const SPACE_PATTERNS: Array<{ pattern: RegExp }> = [
+	{ pattern: /(?:margin|padding|gap)\s*(?:-\w+)?\s*:\s*([\d.]+)px/gi },
+	{ pattern: /--[\w-]*spac[\w-]*\s*:\s*([\d.]+)px/gi },
+];
+const RADIUS_PATTERNS: Array<{ pattern: RegExp }> = [ { pattern: /border-radius\s*:\s*([\d.]+)px/gi } ];
+
+/**
+ * Trim a step ladder to at most `max` steps while keeping BOTH ends — the
+ * small reading sizes AND the display sizes (a naive head-slice drops the
+ * hero size, which is the one the design system needs most).
+ */
+function trimLadder( values: number[], max: number ): number[] {
+	if ( values.length <= max ) {
+		return values;
+	}
+	return [ ...values.slice( 0, Math.max( 2, max - 6 ) ), ...values.slice( -6 ) ];
+}
+
+// The type-scale bands (117 §5 + jayainc): a dense builder harvest yields
+// 50+ font sizes — the ladder must keep a REPRESENTATIVE of each band, not
+// a raw bottom/top slice (the 4/6 split dropped the entire reading band:
+// body became 64px on a 52-value harvest). Bands, not positions.
+const SCALE_BANDS = {
+	small: [ 0, 12 ],
+	body: [ 13, 20 ],
+	card: [ 24, 34 ],
+	section: [ 36, 60 ],
+	hero: [ 60, 100 ],
+} as const;
+
+function bandValues( values: number[], lo: number, hi: number ): number[] {
+	return values.filter( ( value ) => value >= lo && value <= hi );
+}
+
+/** The first (smallest) value in the band — the body/small reading size. */
+function firstInBand( values: number[], lo: number, hi: number ): number | undefined {
+	return bandValues( values, lo, hi )[ 0 ];
+}
+
+/** The value closest to the band center — the band representative. */
+function centerOfBand( values: number[], lo: number, hi: number ): number | undefined {
+	const band = bandValues( values, lo, hi );
+	if ( band.length === 0 ) {
+		return undefined;
+	}
+	const center = ( lo + hi ) / 2;
+	return band.reduce( ( best, value ) => ( Math.abs( value - center ) < Math.abs( best - center ) ? value : best ) );
+}
+
+/** The smallest value strictly above `min` and at most `hi` (a step above). */
+function nextStep( values: number[], min: number, hi: number ): number | undefined {
+	return values.filter( ( value ) => value > min && value <= hi ).sort( ( a, b ) => a - b )[ 0 ];
+}
+
+/**
+ * Trim the FONT-size ladder band-aware (jayainc: 52 harvested sizes): the
+ * first small steps, the body size, a card-title representative, a section-
+ * title representative, the hero representative and the largest display
+ * value. The token ranking below reads the same bands off this ladder.
+ */
+function trimScaleLadder( values: number[] ): number[] {
+	if ( values.length <= 10 ) {
+		return values;
+	}
+	const picked = new Set<number>();
+	for ( const value of bandValues( values, SCALE_BANDS.small[ 0 ], SCALE_BANDS.small[ 1 ] ).slice( 0, 3 ) ) {
+		picked.add( value );
+	}
+	const body = firstInBand( values, SCALE_BANDS.body[ 0 ], SCALE_BANDS.body[ 1 ] );
+	if ( body !== undefined ) {
+		picked.add( body );
+	}
+	const card = centerOfBand( values, SCALE_BANDS.card[ 0 ], SCALE_BANDS.card[ 1 ] );
+	if ( card !== undefined ) {
+		picked.add( card );
+	}
+	const section = centerOfBand( values, SCALE_BANDS.section[ 0 ], SCALE_BANDS.section[ 1 ] );
+	if ( section !== undefined ) {
+		picked.add( section );
+	}
+	const hero = centerOfBand( values, SCALE_BANDS.hero[ 0 ], SCALE_BANDS.hero[ 1 ] );
+	if ( hero !== undefined ) {
+		picked.add( hero );
+	}
+	// The largest display value (banner-size) keeps the full range in the
+	// parity fingerprint even when it sits above the hero band.
+	const largest = values[ values.length - 1 ];
+	picked.add( largest );
+	return [ ...picked ].sort( ( a, b ) => a - b );
+}
+
+// The spacing rhythm bands (jayainc: a 46-value margin/padding harvest).
+// Same disease as the type scale: a bottom/top slice kept [0,1,2,3] +
+// [101,104,125,130,140,150] — the actual layout rhythm (4-96px) vanished
+// and space-4 baked as 104px. Bands, not positions.
+const SPACE_BANDS = {
+	xs: [ 2, 6 ],
+	sm: [ 8, 12 ],
+	md: [ 14, 20 ],
+	lg: [ 24, 40 ],
+	xl: [ 48, 96 ],
+} as const;
+
+function trimSpaceLadder( values: number[] ): number[] {
+	if ( values.length <= 10 ) {
+		return values;
+	}
+	const picked = new Set<number>();
+	const hairline = firstInBand( values, 1, 3 );
+	if ( hairline !== undefined ) {
+		picked.add( hairline );
+	}
+	for ( const [ lo, hi ] of Object.values( SPACE_BANDS ) ) {
+		const representative = centerOfBand( values, lo, hi );
+		if ( representative !== undefined ) {
+			picked.add( representative );
+		}
+	}
+	picked.add( values[ values.length - 1 ] );
+	return [ ...picked ].sort( ( a, b ) => a - b );
+}
 
 function componentVocabulary( html: string ): Record<string, number> {
 	const vocabulary: Record<string, number> = {};
@@ -350,6 +476,8 @@ type HNodeLike = {
 	name?: string;
 	attribs?: Record<string, string>;
 	children?: HNodeLike[];
+	/** Source offset (htmlparser2 withStartIndices) — position scoping. */
+	startIndex?: number;
 };
 
 const RULE_RE = /([^{}]+)\{([^{}]*)\}/g;
@@ -417,6 +545,11 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		}
 		const id = idMatch[ 1 ];
 		const fact: ForgeSection = { id };
+		// The section's own HTML id is the source anchor (#about, #contact…)
+		// the chrome nav links to — the renderer re-applies it per section.
+		if ( section.attribs?.id ) {
+			fact.anchor = section.attribs.id;
+		}
 		// Inline styles (rare for Elementor, but cheap to honor).
 		const inlineGradient = inlineStyle( section, 'background-image', BG_GRADIENT_RE );
 		if ( inlineGradient ) {
@@ -514,6 +647,232 @@ export function resolveSectionTheme( section: ForgeSection ): 'hero' | 'dark' | 
 	return 'alt';
 }
 
+// ---------------------------------------------------------------------------
+// Site-chrome pass (120 §2) — the header/footer facts.
+//
+// The page content rebuilds through the semantic pipeline, but the header/
+// footer come from theme templates the REST content never carries — so the
+// rebuilt site lost the source's chrome entirely (jayainc: top contact
+// strip, logo + tagline, anchor nav, CALL US, the footer contact columns).
+// This pass extracts the chrome FACTS from the raw rendered homepage —
+// topbar lines, logo, tagline, nav items, the tel: button, footer blocks,
+// copyright — and the template rebuilds them with its own components.
+// Facts only, never markup.
+// ---------------------------------------------------------------------------
+
+function findFirstNode( node: HNodeLike, predicate: ( node: HNodeLike ) => boolean ): HNodeLike | undefined {
+	if ( predicate( node ) ) {
+		return node;
+	}
+	for ( const child of childNodes( node ) ) {
+		const found = findFirstNode( child, predicate );
+		if ( found ) {
+			return found;
+		}
+	}
+	return undefined;
+}
+
+function collectNodes( node: HNodeLike, predicate: ( node: HNodeLike ) => boolean, out: HNodeLike[] = [] ): HNodeLike[] {
+	if ( predicate( node ) ) {
+		out.push( node );
+	}
+	for ( const child of childNodes( node ) ) {
+		collectNodes( child, predicate, out );
+	}
+	return out;
+}
+
+/**
+ * Pick the SITE chrome node among hint matches. Stray mid-document matches
+ * must not win: jayainc renders a post's `<footer class="entry-meta">`
+ * BEFORE the real `<footer id="sitefooter">`. Preference order: a node
+ * whose class/id matches the site pattern, else the last match (the site
+ * chrome closes the document).
+ */
+function findSiteNode( root: HNodeLike, hint: ( node: HNodeLike ) => boolean, sitePattern: RegExp ): HNodeLike | undefined {
+	const candidates = collectNodes( root, hint );
+	if ( candidates.length === 0 ) {
+		return undefined;
+	}
+	const site = candidates.find( ( node ) => sitePattern.test( tagClasses( node ) + ' ' + ( node.attribs?.id ?? '' ) ) );
+	return site ?? candidates[ candidates.length - 1 ];
+}
+
+function nodeText( node: HNodeLike | undefined ): string {
+	if ( ! node ) {
+		return '';
+	}
+	return ( node.type === 'text' ? ( ( node as unknown as { data?: string } ).data ?? '' ) : childNodes( node ).map( nodeText ).join( ' ' ) ).replace( /\s+/g, ' ' ).trim();
+}
+
+function tagClasses( node: HNodeLike ): string {
+	return node.attribs?.class ?? '';
+}
+
+function paragraphNodesOf( node: HNodeLike ): HNodeLike[] {
+	return collectNodes( node, ( n ) => n.type === 'tag' && n.name === 'p' );
+}
+
+/** The header/footer facts of the rendered homepage, or undefined. */
+export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefined {
+	const handler = new DomHandler( undefined, { withStartIndices: true } );
+	const parser = new Parser( handler, { lowerCaseTags: true, lowerCaseAttributeNames: true } );
+	parser.write( input.html );
+	parser.end();
+	const root = handler.root as unknown as HNodeLike;
+
+	const headerHint = ( n: HNodeLike ): boolean =>
+		n.type === 'tag' &&
+		// The top contact strip (#top-header) is a SIBLING of the header — a
+		// loose header id/class match grabs it and empties logo/tagline/nav.
+		!/top-header|topbar|top-bar/i.test( tagClasses( n ) + ' ' + ( n.attribs?.id ?? '' ) ) &&
+		( n.name === 'header' || /site-header|masthead|master-header/i.test( tagClasses( n ) ) || /(^|-)header($|-)/i.test( n.attribs?.id ?? '' ) );
+	const footerHint = ( n: HNodeLike ): boolean =>
+		n.type === 'tag' &&
+		( n.name === 'footer' || /site-footer|colophon/i.test( tagClasses( n ) ) || /footer/i.test( n.attribs?.id ?? '' ) );
+	const headerNode = findSiteNode( root, headerHint, /site-header|masthead|master-header/i );
+	const footerNode = findSiteNode( root, footerHint, /site-footer|sitefooter|colophon/i );
+	if ( ! headerNode && ! footerNode ) {
+		return undefined;
+	}
+
+	const chrome: ForgeChrome = {};
+	if ( headerNode ) {
+		// 1. The top contact strip — a top-header/topbar element ANYWHERE in
+		//    the document (jayainc's sits as a SIBLING above the header).
+		const topbar = findFirstNode( root, ( n ) => n.type === 'tag' && /top-header|topbar|top-bar/i.test( tagClasses( n ) + ' ' + ( n.attribs?.id ?? '' ) ) );
+		const topbarLines = ( topbar ? paragraphNodesOf( topbar ).map( nodeText ) : [] ).filter( ( text ) => text.length > 0 ).slice( 0, 3 );
+		if ( topbarLines.length > 0 ) {
+			chrome.topbar = topbarLines;
+		}
+
+		// 2. The logo — prefer the light-background variant of a dark/light
+		//    pair (jayainc ships a white svg + a blue svg; the blue one reads
+		//    on the rebuilt light header).
+		const imgs = collectNodes( headerNode, ( n ) => n.type === 'tag' && n.name === 'img' && Boolean( n.attribs?.src ) );
+		const logoImg =
+			imgs.find( ( img ) => tagClasses( img ).split( /\s+/ ).some( ( c ) => /image2$|logo2$|(?:blue|dark|color)/i.test( c ) ) ) ?? imgs[ 0 ];
+		if ( logoImg ) {
+			chrome.logo = { src: logoImg.attribs?.src, alt: logoImg.attribs?.alt };
+		}
+
+		// 3. The tagline — the longest header paragraph (≤140 chars) that is
+		//    not a topbar line (the source's site description under the brand).
+		const headerParagraphs = paragraphNodesOf( headerNode )
+			.map( nodeText )
+			.filter( ( text ) => text.length > 0 && ! topbarLines.includes( text ) );
+		const tagline = headerParagraphs.filter( ( text ) => text.length <= 140 ).sort( ( a, b ) => b.length - a.length )[ 0 ];
+		if ( tagline ) {
+			chrome.tagline = tagline;
+		}
+
+		// 4. The nav — labeled links (the logo link carries no text and
+		//    drops out); '#' (scroll-top) normalizes to '/'.
+		const navNode = findFirstNode( headerNode, ( n ) => n.type === 'tag' && n.name === 'nav' ) ?? headerNode;
+		const nav: Array<{ label: string; href: string }> = [];
+		for ( const link of collectNodes( navNode, ( n ) => n.type === 'tag' && n.name === 'a' && Boolean( n.attribs?.href ) ) ) {
+			const label = nodeText( link );
+			const href = ( link.attribs?.href ?? '' ).trim();
+			if ( ! label || href.startsWith( 'javascript:' ) || href.startsWith( 'tel:' ) || href.startsWith( 'mailto:' ) ) {
+				continue;
+			}
+			nav.push( { label, href: href === '#' ? '/' : href } );
+			if ( nav.length >= 8 ) {
+				break;
+			}
+		}
+		if ( nav.length > 0 ) {
+			chrome.nav = nav;
+		}
+
+		// 5. The call button (the tel: link).
+		const callLink = findFirstNode( headerNode, ( n ) => n.type === 'tag' && n.name === 'a' && ( n.attribs?.href ?? '' ).startsWith( 'tel:' ) );
+		if ( callLink ) {
+			chrome.call = { label: nodeText( callLink ) || 'Call', href: callLink.attribs?.href ?? '' };
+		}
+	}
+
+	if ( footerNode ) {
+		// 6. The footer blocks — the intro paragraphs, then each heading with
+		//    its following item lines (jayainc: blurb, Products list, the
+		//    Contact table). Position-scoped between consecutive headings.
+		//    The columns usually live in a footer-widget ASIDE next to the
+		//    footer element (jayainc's <aside class="subfooter">) — the
+		//    <footer> itself is often just the copyright line, so both
+		//    scopes merge for the blocks (the copyright below stays strict
+		//    to the footer element).
+		const scopes: HNodeLike[] = [ footerNode ];
+		const widgetAside = findFirstNode( root, ( n ) =>
+			n.type === 'tag' && n.name === 'aside' && /subfooter|sub-footer|footer-widget|footbar/i.test( tagClasses( n ) + ' ' + ( n.attribs?.id ?? '' ) )
+		);
+		if ( widgetAside ) {
+			scopes.push( widgetAside );
+		}
+		const blocks: Array<{ title?: string; items: string[] }> = [];
+		const byPosition = ( a: HNodeLike, b: HNodeLike ): number => ( a.startIndex ?? 0 ) - ( b.startIndex ?? 0 );
+		const headings = scopes
+			.flatMap( ( scope ) => collectNodes( scope, ( n ) => n.type === 'tag' && /^h[3-6]$/.test( n.name ?? '' ) ) )
+			.sort( byPosition );
+		const paragraphs = scopes.flatMap( ( scope ) => paragraphNodesOf( scope ) ).sort( byPosition );
+		const itemNodes = scopes
+			.flatMap( ( scope ) => collectNodes( scope, ( n ) => n.type === 'tag' && ( n.name === 'li' || n.name === 'tr' || n.name === 'p' ) ) )
+			.sort( byPosition );
+		if ( headings.length === 0 ) {
+			const items = paragraphs.map( nodeText ).filter( ( text ) => text.length > 0 ).slice( 0, 4 );
+			if ( items.length > 0 ) {
+				blocks.push( { items } );
+			}
+		} else {
+			const firstHeadingIndex = headings[ 0 ].startIndex ?? Number.POSITIVE_INFINITY;
+			const intro = paragraphs
+				.filter( ( p ) => ( p.startIndex ?? 0 ) < firstHeadingIndex )
+				.map( nodeText )
+				.filter( ( text ) => text.length > 0 )
+				.slice( 0, 2 );
+			if ( intro.length > 0 ) {
+				blocks.push( { items: intro } );
+			}
+			headings.slice( 0, 4 ).forEach( ( heading, index ) => {
+				const nextIndex = headings[ index + 1 ]?.startIndex ?? Number.POSITIVE_INFINITY;
+				const items: string[] = [];
+				for ( const itemNode of itemNodes ) {
+					const position = itemNode.startIndex ?? 0;
+					if ( position <= ( heading.startIndex ?? 0 ) || position >= nextIndex ) {
+						continue;
+					}
+					const text = nodeText( itemNode );
+					if ( text && ! items.includes( text ) ) {
+						items.push( text );
+					}
+					if ( items.length >= 8 ) {
+						break;
+					}
+				}
+				blocks.push( { title: nodeText( heading ), items } );
+			} );
+		}
+		if ( blocks.length > 0 ) {
+			chrome.footerBlocks = blocks;
+		}
+
+		// 7. The copyright line (the small/.copyright element — conservative,
+		//    no prose fallback).
+		const copyright = findFirstNode( footerNode, ( n ) =>
+			n.type === 'tag' && ( n.name === 'small' || /copyright/i.test( tagClasses( n ) ) || /copyright/i.test( n.attribs?.id ?? '' ) )
+		);
+		const copyrightText = nodeText( copyright );
+		if ( copyrightText ) {
+			chrome.copyright = copyrightText;
+		}
+	}
+
+	if ( Object.keys( chrome ).length === 0 ) {
+		return undefined;
+	}
+	return chrome;
+}
+
 export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	const cssText = input.css.join( '\n' );
 	const roles: Record<string, string> = {};
@@ -595,9 +954,9 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 
 	// 3. Typography, spacing, radii, shadows.
 	const families = familyFrequencies( cssText ).map( ( entry ) => entry.family );
-	const scale = pxValues( cssText, FONT_SCALE_PATTERNS ).slice( 0, 8 );
-	const spacing = pxValues( cssText, SPACE_PATTERNS ).slice( 0, 8 );
-	const radii = pxValues( cssText, RADIUS_PATTERNS ).slice( 0, 8 );
+	const scale = trimScaleLadder( pxValues( cssText, FONT_SCALE_PATTERNS ) );
+	const spacing = trimSpaceLadder( pxValues( cssText, SPACE_PATTERNS ) );
+	const radii = trimLadder( pxValues( cssText, RADIUS_PATTERNS ), 8 );
 	const shadows = ( cssText.match( /box-shadow\s*:/gi ) ?? [] ).length;
 
 	return {
@@ -618,6 +977,7 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		// The section-background pass (117 §2) — the per-band theming data
 		// the scaffold bakes into sections.generated.ts.
 		sections: input.html ? analyzeSections( input ) : undefined,
+		chrome: input.html ? analyzeChrome( input ) : undefined,
 		adaptation: {
 			keep: [
 				'The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.',
@@ -709,20 +1069,42 @@ export function designToTokens( design: ForgeDesign ): Record<string, string> {
 	}
 	const scale = design.typography.scalePx;
 	if ( scale.length > 0 ) {
-		tokens[ 'scale-h1' ] = `${ Math.max( ...scale ) }px`;
-		tokens[ 'scale-h2' ] = `${ scale[ Math.min( scale.length - 1, 3 ) ] ?? 28 }px`;
-		tokens[ 'scale-h3' ] = `${ scale[ Math.min( scale.length - 1, 2 ) ] ?? 20 }px`;
-		tokens[ 'scale-body' ] = `${ scale[ Math.min( scale.length - 1, 1 ) ] ?? 16 }px`;
-		tokens[ 'scale-small' ] = `${ scale[ 0 ] ?? 14 }px`;
+		// Banded ranking (117 §5 + jayainc's dense harvest): the top-down
+		// ranking pinned h1 to the largest harvested value — a 52-value
+		// builder harvest made that a 128px banner and body text 64px.
+		// Read each band off the ladder instead: body/small from the reading
+		// band (first in band — the source's actual body size), headings
+		// from their band centers (representatives, dense-ladder-safe).
+		// The micro-text band centers on 10px — a first-value pick lands on
+		// 8px (a hidden/micro element size) and makes every scale-small
+		// consumer unreadable (jayainc's topbar rendered at 8px).
+		const small = centerOfBand( scale, 8, 12 ) ?? firstInBand( scale, SCALE_BANDS.small[ 0 ], SCALE_BANDS.small[ 1 ] ) ?? scale[ 0 ];
+		const body = firstInBand( scale, SCALE_BANDS.body[ 0 ], SCALE_BANDS.body[ 1 ] ) ?? firstInBand( scale, 13, 24 ) ?? 16;
+		const h3 = centerOfBand( scale, SCALE_BANDS.card[ 0 ], SCALE_BANDS.card[ 1 ] ) ?? nextStep( scale, body + 6, 40 ) ?? body + 8;
+		const h2 = centerOfBand( scale, SCALE_BANDS.section[ 0 ], SCALE_BANDS.section[ 1 ] ) ?? nextStep( scale, h3 + 8, 76 ) ?? h3 + 12;
+		const h1 = centerOfBand( scale, SCALE_BANDS.hero[ 0 ], SCALE_BANDS.hero[ 1 ] ) ?? nextStep( scale, h2 + 12, 128 ) ?? scale[ scale.length - 1 ];
+		tokens[ 'scale-h1' ] = `${ h1 }px`;
+		tokens[ 'scale-h2' ] = `${ h2 }px`;
+		tokens[ 'scale-h3' ] = `${ h3 }px`;
+		tokens[ 'scale-body' ] = `${ body }px`;
+		tokens[ 'scale-small' ] = `${ small }px`;
 	}
 	const space = design.spacing.scalePx;
 	if ( space.length > 0 ) {
-		const steps = [ 1, 2, 4, 6, 8 ].map( ( n ) => space[ Math.min( space.length - 1, n - 1 ) ] ?? space[ space.length - 1 ] );
-		tokens[ 'space-1' ] = `${ steps[ 0 ] }px`;
-		tokens[ 'space-2' ] = `${ steps[ 1 ] }px`;
-		tokens[ 'space-3' ] = `${ steps[ 2 ] }px`;
-		tokens[ 'space-4' ] = `${ steps[ 3 ] }px`;
-		tokens[ 'space-5' ] = `${ steps[ 4 ] }px`;
+		// Banded spacing (jayainc's 46-value harvest): the bottom/top slice
+		// baked space-4 as 104px. Read each rhythm band off the ladder —
+		// xs/sm/md/lg/xl representatives — so the rebuilt rhythm stays a
+		// rhythm.
+		const xs = centerOfBand( space, SPACE_BANDS.xs[ 0 ], SPACE_BANDS.xs[ 1 ] ) ?? firstInBand( space, 2, 8 ) ?? space[ 0 ];
+		const sm = centerOfBand( space, SPACE_BANDS.sm[ 0 ], SPACE_BANDS.sm[ 1 ] ) ?? nextStep( space, xs, 14 ) ?? xs + 4;
+		const md = centerOfBand( space, SPACE_BANDS.md[ 0 ], SPACE_BANDS.md[ 1 ] ) ?? nextStep( space, sm + 4, 22 ) ?? sm + 8;
+		const lg = centerOfBand( space, SPACE_BANDS.lg[ 0 ], SPACE_BANDS.lg[ 1 ] ) ?? nextStep( space, md + 8, 44 ) ?? md + 12;
+		const xl = centerOfBand( space, SPACE_BANDS.xl[ 0 ], SPACE_BANDS.xl[ 1 ] ) ?? nextStep( space, lg + 12, 100 ) ?? lg + 20;
+		tokens[ 'space-1' ] = `${ xs }px`;
+		tokens[ 'space-2' ] = `${ sm }px`;
+		tokens[ 'space-3' ] = `${ md }px`;
+		tokens[ 'space-4' ] = `${ lg }px`;
+		tokens[ 'space-5' ] = `${ xl }px`;
 	}
 	const radii = design.radii.valuesPx;
 	if ( radii.length > 0 ) {

@@ -211,12 +211,40 @@ export interface ForgeVocabulary {
 export interface ForgeSection {
 	/** Elementor's elementor-element-<id> class suffix. */
 	id?: string;
+	/** The section's own HTML id (the source anchor — #about, #contact…). */
+	anchor?: string;
 	bgImage?: string;
 	bgColor?: string;
 	bgGradient?: string;
 	/** The background-overlay tint (Elementor's overlay layer). */
 	overlay?: string;
 	padding?: string;
+}
+
+/**
+ * The site chrome (Proposal 120 §2) — the rendered header/footer facts the
+ * rebuild re-applies: topbar lines, logo, tagline, nav anchors, the call
+ * button, footer blocks, copyright. Extracted from the RAW rendered
+ * homepage (never from source CSS/markup — facts only, then rebuilt with
+ * the template's own components). Absent when the source exposes no
+ * recognizable chrome.
+ */
+export interface ForgeChrome {
+	/** The top contact strip lines (address, phone). */
+	topbar?: string[];
+	/** The brand logo (the light-background variant when the source ships
+	 * dark/light pairs). */
+	logo?: { src?: string; alt?: string };
+	/** The tagline under the brand (the source's site description). */
+	tagline?: string;
+	/** The header nav (anchor links on one-pagers; page links otherwise). */
+	nav?: Array<{ label: string; href: string }>;
+	/** The tel: call-to-action button. */
+	call?: { label: string; href: string };
+	/** The footer columns (heading + item lines each). */
+	footerBlocks?: Array<{ title?: string; items: string[] }>;
+	/** The copyright line. */
+	copyright?: string;
 }
 
 /**
@@ -241,6 +269,8 @@ export interface ForgeDesign {
 	modes: { dark: 'auto' | 'light' | 'dark'; contrast: 'auto' | 'standard' | 'high' };
 	/** The section-background pass (117 §2) — omitted when unavailable. */
 	sections?: ForgeSection[];
+	/** The site-chrome pass (120 §2) — omitted when unavailable. */
+	chrome?: ForgeChrome;
 	adaptation: {
 		keep: string[];
 		replace: string[];
