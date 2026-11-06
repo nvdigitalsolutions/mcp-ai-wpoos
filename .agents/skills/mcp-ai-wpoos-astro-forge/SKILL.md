@@ -511,6 +511,20 @@ the only committed artifact per site.
   astro's bin is `bin/astro.mjs` (NOT `astro.js`); `astro preview` binds
   `localhost` (::1) only — probe `curl http://localhost:<port>/`, not
   `127.0.0.1`; stop via the PID from `netstat -ano | grep <port> | grep LISTEN`.
+- **Velocity app framework MUST be static (2026-11-06):** the mirror branch
+  ships PREBUILT flat files (index.html at the branch root) — the Velocity
+  app's Deployment Settings framework must be the **static/HTML** preset,
+  NOT a Node framework. With `Astro-ssr` selected, Velocity runs
+  `npm install` and fails `ENOENT package.json` (the mirror has no
+  package.json — rc=254, no build log past Install Dependencies). The fix
+  is a Velocity-console UI change (Deployment Settings → Framework →
+  static; Root Directory stays `./`; no build command) — the Cloudways MCP
+  exposes no deployment-settings tool (the apps toolset's web-rules tools
+  are header/redirect rules only). The mirror content itself is not the
+  problem: verify with
+  `gh api repos/nvdigitalsolutions/nvoos-forge-sites/contents/?ref=site/<name>`
+  — `index.html` at root means the push is good and the serving config is
+  the only thing to fix.
 
 ## Proposal 115 — inventory, wireframes, responsive (2026-11-06)
 
