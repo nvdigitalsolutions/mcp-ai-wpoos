@@ -66,10 +66,12 @@ export function buildCsp(html, headers = {}) {
 		"default-src 'self'",
 		`script-src 'self' ${hashes.join(' ')}${nonceSource ? ` ${nonceSource}` : ''}${paymentScope ? ' https://js.stripe.com' : ''}`.trim(),
 		// Inline style ATTRIBUTES (swatches, gallery) require style-src
-		// 'unsafe-inline'; scripts remain hash/nonce-only above.
-		"style-src 'self' 'unsafe-inline'",
+		// 'unsafe-inline'; scripts remain hash/nonce-only above. The Google
+		// Fonts host serves the harvested webfont stylesheets (126 §webfonts).
+		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 		`img-src 'self' data:${paymentScope ? ' https://*.stripe.com https://*.stripe.network' : ''}`,
-		"font-src 'self'",
+		// The harvested webfont files load from fonts.gstatic.com (126).
+		"font-src 'self' https://fonts.gstatic.com",
 		`connect-src 'self'${paymentScope ? ' https://api.stripe.com https://m.stripe.com https://m.stripe.network https://r.stripe.com' : ''}`,
 		paymentScope
 			? 'frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.network'

@@ -33,7 +33,8 @@ describe('buildCsp', () => {
 
 	it('covers style attributes, images, frames and base-uri', () => {
 		const csp = buildCsp('<script>a()</script>');
-		expect(csp).toContain("style-src 'self' 'unsafe-inline'");
+		expect(csp).toContain("style-src 'self' 'unsafe-inline' https://fonts.googleapis.com");
+		expect(csp).toContain("font-src 'self' https://fonts.gstatic.com");
 		expect(csp).toContain("img-src 'self' data:");
 		expect(csp).toContain("frame-ancestors 'none'");
 		expect(csp).toContain("base-uri 'self'");

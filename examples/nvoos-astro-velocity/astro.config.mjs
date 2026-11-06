@@ -48,6 +48,16 @@ export default defineConfig({
 		],
 	},
 
+	// Scroll-driven reveals (Proposal 126 cross-pollination) declare
+	// `animation-timeline` as a SEPARATE longhand — lightningcss (Vite 8's
+	// default minifier) merges it into the `animation` shorthand, and Chrome
+	// drops the whole declaration (the forge jayainc outage, 2026-11-06).
+	// Pin the minifier to esbuild, which preserves the longhand; `esbuild`
+	// is already a devDependency (Vite imports it at build time).
+	vite: {
+		build: { cssMinify: 'esbuild' },
+	},
+
 	integrations: [
 		react(),
 		// Rebuilds dist/mcp-entry.mjs on astro:build:done — astro build

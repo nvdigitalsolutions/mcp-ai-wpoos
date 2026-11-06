@@ -451,3 +451,25 @@ a:hover {
 	color: var(--nv-muted);
 	font-size: 0.9rem;
 }
+
+/* --------------------------------------------------------------------------
+ * Scroll-driven reveals (Proposal 126 cross-pollination — the forge
+ * motion runtime): the CSS-native view() timeline plays each reveal once
+ * as it enters the viewport. The FINISHED state is the default (the golden
+ * rule) — browsers without animation-timeline render correct, animation-free
+ * content; reduced-motion visitors get the same via the no-preference gate.
+ * No JavaScript.
+ * -------------------------------------------------------------------------- */
+@supports (animation-timeline: view()) {
+	@media (prefers-reduced-motion: no-preference) {
+		.reveal {
+			animation: nvoos-reveal-fade linear both;
+			animation-timeline: view();
+			animation-range: entry 0% entry 45%;
+		}
+		.reveal--fade-up { animation-name: nvoos-reveal-fade-up; }
+	}
+}
+
+@keyframes nvoos-reveal-fade { from { opacity: 0; } }
+@keyframes nvoos-reveal-fade-up { from { opacity: 0; translate: 0 24px; } }

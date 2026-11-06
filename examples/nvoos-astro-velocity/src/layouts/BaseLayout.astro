@@ -25,6 +25,8 @@ import { resolvePolicyTheme } from '../lib/theme/policy';
 import { ALL_THEMES } from '../lib/theme/registry';
 import { defaultTokenService } from '../lib/tokens/service';
 import { APP_VERSION } from '../lib/version';
+import { googleFontsUrl, webfontFamilies } from '../lib/webfonts';
+import { semantic } from '../lib/tokens.generated';
 import '../styles/generated/tokens.css';
 import '../styles/global.css';
 
@@ -64,6 +66,10 @@ for (const name of defaultTokenService.listThemes()) {
 	const descriptor = defaultTokenService.themeDescriptor(name);
 	themeVersions[name] = typeof descriptor?.version === 'string' ? descriptor.version : null;
 }
+
+// The harvested webfonts (126 §webfonts): the default theme's font tokens —
+// a named family loads from Google Fonts, a system stack loads nothing.
+const webfontUrl = googleFontsUrl(webfontFamilies([semantic.font]));
 ---
 
 <!doctype html>
@@ -86,6 +92,13 @@ for (const name of defaultTokenService.listThemes()) {
 			))
 		}
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		{webfontUrl && (
+			<>
+				<link rel="preconnect" href="https://fonts.googleapis.com" />
+				<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+				<link rel="stylesheet" href={webfontUrl} />
+			</>
+		)}
 		<!-- Theme-policy payload (105 §3): JSON data block, no event handlers —
 		     the boot script and the toggles read it via [data-theme-policy]. -->
 		<script type="application/json" data-theme-policy set:html={policyPayload} />
