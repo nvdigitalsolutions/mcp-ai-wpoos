@@ -10,6 +10,7 @@ import {
 	analyzeBuiltCss,
 	analyzeChrome,
 	analyzeDesignInput,
+	analyzeScrollBehavior,
 	analyzeSections,
 	colorDistance,
 	designToTokens,
@@ -461,6 +462,64 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 
 	it( 'returns undefined when the source exposes no recognizable chrome', () => {
 		expect( analyzeChrome( { url: 'https://x.example.com', html: '<div><p>plain page</p></div>', css: [] } ) ).toBeUndefined();
+	} );
+} );
+
+describe( 'analyzeScrollBehavior (Proposal 121)', () => {
+	const BEHAVIOR_HTML =
+		'<header id="site-header">' +
+		'<img class="aux-logo-sticky" src="/logo.svg" alt="">' +
+		'</header>' +
+		'<section class="elementor-section elementor-top-section elementor-element elementor-element-a4ad586"><h2>Hero</h2></section>' +
+		'<section class="elementor-section elementor-top-section elementor-element elementor-element-9999999">' +
+		'<div class="aux-parallax-section elementor-column elementor-element elementor-element-ab8540a"></div>' +
+		'</section>' +
+		'<div class="elementor-element elementor-element-1111111 aux-appear-watch-animation aux-fade-in-up"><h3>Reveal up</h3></div>' +
+		'<div class="elementor-element elementor-element-2222222 aux-appear-watch-animation aux-unknown-effect"><h3>Reveal unknown</h3></div>' +
+		'<div class="elementor-element elementor-element-3333333" data-settings="{&quot;motion_fx_motion_fx_scrolling&quot;:&quot;yes&quot;,&quot;motion_fx_translateY_effect&quot;:&quot;yes&quot;,&quot;motion_fx_translateY_speed&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:2,&quot;sizes&quot;:[]}}"><h3>Motion parallax</h3></div>' +
+		'<div class="elementor-element elementor-element-4444444"><h3>Sticky widget</h3></div>';
+	const BEHAVIOR_CSS =
+		'.elementor-element-4444444 { position: sticky; top: 20px; }';
+
+	const pass = analyzeScrollBehavior( { url: 'https://jayainc.com', html: BEHAVIOR_HTML, css: [ BEHAVIOR_CSS ] } );
+
+	it( 'flags the sticky header from the header logo class', () => {
+		expect( pass.headerSticky ).toBe( true );
+	} );
+
+	it( 'classifies the theme parallax column and rolls it up to its top-level section', () => {
+		// The parallax column (ab8540a) lives INSIDE a top-level section — the
+		// rebuilt renderer only wraps top-level sections, so the behavior must
+		// attach to the containing section id (9999999).
+		const rolled = pass.entries.find( ( behavior ) => behavior.id === '9999999' );
+		expect( rolled?.kind ).toBe( 'parallax' );
+		expect( pass.entries.some( ( behavior ) => behavior.id === 'ab8540a' ) ).toBe( false );
+	} );
+
+	it( 'maps the aux reveal effect onto the canonical vocabulary', () => {
+		const entry = pass.entries.find( ( behavior ) => behavior.id === '1111111' );
+		expect( entry ).toEqual( { id: '1111111', kind: 'reveal', effect: 'fade-up' } );
+	} );
+
+	it( 'never drops an unmapped reveal effect — it degrades to fade', () => {
+		const entry = pass.entries.find( ( behavior ) => behavior.id === '2222222' );
+		expect( entry ).toEqual( { id: '2222222', kind: 'reveal', effect: 'fade' } );
+	} );
+
+	it( 'reads the Elementor motion_fx scrolling payload as parallax with its speed', () => {
+		const entry = pass.entries.find( ( behavior ) => behavior.id === '3333333' );
+		expect( entry ).toEqual( { id: '3333333', kind: 'parallax', speed: 2 } );
+	} );
+
+	it( 'classifies a sticky CSS rule scoped to the element id', () => {
+		const entry = pass.entries.find( ( behavior ) => behavior.id === '4444444' );
+		expect( entry ).toEqual( { id: '4444444', kind: 'sticky' } );
+	} );
+
+	it( 'returns an empty pass for a static page', () => {
+		const empty = analyzeScrollBehavior( { url: 'https://x.example.com', html: '<div><p>static</p></div>', css: [] } );
+		expect( empty.headerSticky ).toBe( false );
+		expect( empty.entries ).toEqual( [] );
 	} );
 } );
 

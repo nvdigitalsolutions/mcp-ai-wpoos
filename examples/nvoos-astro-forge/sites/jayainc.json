@@ -58,7 +58,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://jayainc.com",
-			"analyzedAt": "2026-11-06T03:45:42.440Z"
+			"analyzedAt": "2026-11-06T04:18:26.984Z"
 		},
 		"concept": "cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.",
 		"palette": {
@@ -266,6 +266,156 @@
 				}
 			],
 			"copyright": "© 2026 JAYAINC. powered by NV Digital Solutions"
+		},
+		"behavior": {
+			"headerSticky": true,
+			"entries": [
+				{
+					"id": "a4ad586",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "a4ad586",
+					"kind": "reveal",
+					"effect": "scale-up"
+				},
+				{
+					"id": "a4ad586",
+					"kind": "reveal",
+					"effect": "fade-up"
+				},
+				{
+					"id": "a4ad586",
+					"kind": "reveal",
+					"effect": "fade"
+				},
+				{
+					"id": "cff59dd",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "cff59dd",
+					"kind": "reveal",
+					"effect": "fade"
+				},
+				{
+					"id": "dff3f1a",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "d5844b9",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "d5844b9",
+					"kind": "reveal",
+					"effect": "fade-up"
+				},
+				{
+					"id": "4239539",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "4239539",
+					"kind": "reveal",
+					"effect": "fade-up"
+				},
+				{
+					"id": "d5844b9",
+					"kind": "reveal",
+					"effect": "fade"
+				},
+				{
+					"id": "5e78df1",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "5e78df1",
+					"kind": "reveal",
+					"effect": "fade-up"
+				},
+				{
+					"id": "6492d8b",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "6492d8b",
+					"kind": "reveal",
+					"effect": "fade-right"
+				},
+				{
+					"id": "5e78df1",
+					"kind": "reveal",
+					"effect": "fade"
+				},
+				{
+					"id": "fcc5e07",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "fcc5e07",
+					"kind": "reveal",
+					"effect": "scale-up"
+				},
+				{
+					"id": "fcc5e07",
+					"kind": "reveal",
+					"effect": "fade-up"
+				},
+				{
+					"id": "059421c",
+					"kind": "reveal",
+					"effect": "fade"
+				},
+				{
+					"id": "059421c",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "059421c",
+					"kind": "reveal",
+					"effect": "fade-up"
+				},
+				{
+					"id": "48ace0b",
+					"kind": "reveal",
+					"effect": "fade"
+				},
+				{
+					"id": "48ace0b",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "48ace0b",
+					"kind": "reveal",
+					"effect": "fade-right"
+				},
+				{
+					"id": "fd63522",
+					"kind": "reveal",
+					"effect": "fade"
+				},
+				{
+					"id": "fd63522",
+					"kind": "parallax",
+					"speed": 1
+				},
+				{
+					"id": "fd63522",
+					"kind": "reveal",
+					"effect": "fade-right"
+				}
+			]
 		},
 		"adaptation": {
 			"keep": [

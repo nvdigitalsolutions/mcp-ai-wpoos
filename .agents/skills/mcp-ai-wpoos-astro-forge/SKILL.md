@@ -511,6 +511,20 @@ the only committed artifact per site.
   astro's bin is `bin/astro.mjs` (NOT `astro.js`); `astro preview` binds
   `localhost` (::1) only — probe `curl http://localhost:<port>/`, not
   `127.0.0.1`; stop via the PID from `netstat -ano | grep <port> | grep LISTEN`.
+- **Velocity app framework MUST be static (2026-11-06):** the mirror branch
+  ships PREBUILT flat files (index.html at the branch root) — the Velocity
+  app's Deployment Settings framework must be the **static/HTML** preset,
+  NOT a Node framework. With `Astro-ssr` selected, Velocity runs
+  `npm install` and fails `ENOENT package.json` (the mirror has no
+  package.json — rc=254, no build log past Install Dependencies). The fix
+  is a Velocity-console UI change (Deployment Settings → Framework →
+  static; Root Directory stays `./`; no build command) — the Cloudways MCP
+  exposes no deployment-settings tool (the apps toolset's web-rules tools
+  are header/redirect rules only). The mirror content itself is not the
+  problem: verify with
+  `gh api repos/nvdigitalsolutions/nvoos-forge-sites/contents/?ref=site/<name>`
+  — `index.html` at root means the push is good and the serving config is
+  the only thing to fix.
 
 ## Proposal 115 — inventory, wireframes, responsive (2026-11-06)
 
@@ -719,6 +733,43 @@ spacing overlap 40% → 71%) taught three rebuild gaps, all fixed in
   remaining deltas — treat it as advisory and verify claims with sharp
   pixel sampling + computed styles (the model asserted the rebuilt hero
   was LIGHTER when pixels proved it DARKER).
+
+## Proposal 121 — scroll-behavior pass (2026-11-06)
+
+`docs/project/proposals/121-forge-scroll-behavior-proposal.md`. The rebuild
+was static while the source moves. `analyzeScrollBehavior` (design.ts) walks
+**EVERY element** of the rendered homepage (the per-div loop), classifies
+sticky / reveal / parallax, and the template rebuilds the motion with a
+**CSS-native `@supports` runtime** — no JS, no new dependency:
+
+- **Signals:** `aux-appear-watch-animation` + `aux-{effect}` classes (the
+  Phlox system; effect name-mapped to fade-up/down/left/right, scale-up,
+  blur, unmapped → fade); `aux-parallax-section`; `aux-logo-sticky` /
+  `aux-top-sticky` / header-scoped `elementor-sticky` → the `headerSticky`
+  flag; Elementor Motion Effects via the `data-settings` JSON
+  (`motion_fx_motion_fx_scrolling: yes` + `motion_fx_*_effect: yes` →
+  parallax with `motion_fx_translateY_speed.size`; non-scrolling motion →
+  reveal); `elementor-invisible` → reveal; CSS facts
+  (`position: sticky|fixed`, `background-attachment: fixed`) resolved
+  against the element's own id rule.
+- **Roll-up:** behaviors attach to the containing `elementor-top-section`
+  id (a parallax COLUMN inside the hero makes the rebuilt hero section
+  parallax) — the renderer only wraps top-level sections. A section-stack
+  during the walk tracks the current top-section id.
+- **Emission:** `profile.design.behavior` → `behaviors.generated.ts`;
+  `DesignRenderer` adds `ds-reveal ds-reveal--{effect}` / `ds-parallax`
+  (with `--ds-parallax-range` scaled by speed) / `ds-sticky`;
+  `Base.astro` toggles `.site-header--sticky`. global.css: view() timelines
+  for reveals, scroll(root) for parallax, all gated on `@supports` +
+  `prefers-reduced-motion`, the finished state as the default (the golden
+  rule). Verified live on jayainc: sticky header + 5 parallax bands + 2
+  reveal bands, zero JS.
+- **Gotchas (each cost a fix 2026-11-06):** the motion_fx key regex must be
+  case-insensitive (`motion_fx_translateY_effect` has a capital Y);
+  `renderBehaviorsGenerated` must emit the `entries: [` opener (the first
+  cut emitted `],` with no opener — the e2e's astro check caught it with
+  `ts(2695)`); the `data-settings` JSON is entity-encoded (`&quot;`) —
+  decode before `JSON.parse`.
 - **Gotchas (each cost a fix 2026-11-06):** a bare `theme = themeFor(...)`
   assignment inside the DesignRenderer map is an implicit-global in strict
   ESM → `ReferenceError: theme is not defined` at PRERENDER (use `const`);

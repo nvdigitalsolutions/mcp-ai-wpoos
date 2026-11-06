@@ -657,6 +657,61 @@ a {
 	border: 0;
 }
 
+/* -------------------------------------------------------------------------
+ * Scroll behavior (Proposal 121) — the CSS-native motion runtime. The
+ * FINISHED state is the default (the golden rule): browsers without
+ * animation-timeline render correct, animation-free content. Every
+ * animation is gated on @supports + prefers-reduced-motion — no JS.
+ * ------------------------------------------------------------------------- */
+.site-header--sticky {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	background: var(--forge-surface);
+}
+
+/* Reveals: view() timelines play once as the section enters. */
+@supports (animation-timeline: view()) {
+	@media (prefers-reduced-motion: no-preference) {
+		.ds-reveal {
+			animation: ds-fade linear both;
+			animation-timeline: view();
+			animation-range: entry 0% entry 60%;
+		}
+		.ds-reveal--fade-up { animation-name: ds-fade-up; }
+		.ds-reveal--fade-down { animation-name: ds-fade-down; }
+		.ds-reveal--fade-left { animation-name: ds-fade-left; }
+		.ds-reveal--fade-right { animation-name: ds-fade-right; }
+		.ds-reveal--scale-up { animation-name: ds-scale-up; }
+		.ds-reveal--blur { animation-name: ds-blur; }
+	}
+}
+
+@keyframes ds-fade { from { opacity: 0; } }
+@keyframes ds-fade-up { from { opacity: 0; transform: translateY(40px); } }
+@keyframes ds-fade-down { from { opacity: 0; transform: translateY(-40px); } }
+@keyframes ds-fade-left { from { opacity: 0; transform: translateX(-48px); } }
+@keyframes ds-fade-right { from { opacity: 0; transform: translateX(48px); } }
+@keyframes ds-scale-up { from { opacity: 0; transform: scale(0.94); } }
+@keyframes ds-blur { from { opacity: 0; filter: blur(8px); } }
+
+/* Parallax: scroll() timelines tie the band to the page scroll; the range
+ * scales with the source's motion_fx speed (--ds-parallax-range). */
+@supports (animation-timeline: scroll()) {
+	@media (prefers-reduced-motion: no-preference) {
+		.ds-parallax {
+			animation: ds-parallax linear both;
+			animation-timeline: scroll(root);
+			animation-range: cover 0% cover 100%;
+		}
+	}
+}
+
+@keyframes ds-parallax {
+	from { transform: translateY(var(--ds-parallax-range, 24px)); }
+	to { transform: translateY(calc(var(--ds-parallax-range, 24px) * -1)); }
+}
+
 /* The hero/about media: all images, side by side (the source two-up). */
 .ds-media-grid {
 	display: grid;

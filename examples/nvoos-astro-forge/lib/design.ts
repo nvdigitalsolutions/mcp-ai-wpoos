@@ -22,7 +22,7 @@ import { Parser, DomHandler } from 'htmlparser2';
 
 import { relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
-import type { ForgeChrome, ForgeDesign, ForgeSection } from './types.ts';
+import type { ForgeChrome, ForgeDesign, ForgeSection, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 /** Bounded fetch input: the homepage HTML plus same-origin CSS bodies. */
 export interface DesignFetchInput {
@@ -979,6 +979,172 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 	return chrome;
 }
 
+// ---------------------------------------------------------------------------
+// Scroll-behavior pass (Proposal 121) — the per-element behavior walk.
+//
+// The rebuild was static while the source moves: Phlox's
+// aux-appear-watch-animation reveals (32 on jayainc's home), the
+// aux-parallax-section hero column, the aux-logo-sticky header, and
+// Elementor Motion Effects (data-settings motion_fx JSON). This pass walks
+// EVERY element (the owner's loop idea) and classifies each one's scroll
+// behavior into a tiny vocabulary — sticky / reveal (once) / parallax
+// (continuous) — keyed by the SAME elementor-element-<id> the sections pass
+// uses. Facts only: the template rebuilds the motion with its own
+// CSS-native @supports runtime, never the vendor's JS.
+// ---------------------------------------------------------------------------
+
+/** The aux-appear effect class → canonical effect (name-mapped, 116-style). */
+const REVEAL_EFFECTS: Array<{ pattern: RegExp; effect: NonNullable<ScrollBehaviorEntry[ 'effect' ]> }> = [
+	{ pattern: /fade-in-up|fadeup|fadeInUp/i, effect: 'fade-up' },
+	{ pattern: /fade-in-down|fadedown|fadeInDown/i, effect: 'fade-down' },
+	{ pattern: /fade-in-left|fadeleft|fadeInLeft/i, effect: 'fade-left' },
+	{ pattern: /fade-in-right|faderight|fadeInRight/i, effect: 'fade-right' },
+	{ pattern: /scale-up|scaleup|zoom-in|zoomIn/i, effect: 'scale-up' },
+	{ pattern: /blur|blurin/i, effect: 'blur' },
+];
+
+const STICKY_CLASS_RE = /(?:^|\s)(elementor-sticky|aux-top-sticky|aux-logo-sticky)(?:\s|$)/;
+const APPEAR_CLASS_RE = /(?:^|\s)aux-appear-watch-animation(?:\s|$)/;
+const PARALLAX_CLASS_RE = /(?:^|\s)aux-parallax-section(?:\s|$)/;
+
+/** Decode the &quot;/&#39; entities Elementor writes into data-settings. */
+function decodeEntities( value: string ): string {
+	return value.replace( /&quot;/g, '"' ).replace( /&#0?39;/g, "'" ).replace( /&amp;/g, '&' );
+}
+
+/** Parse the data-settings motion_fx JSON into a tolerant record. */
+function motionFxSettings( node: HNodeLike ): Record<string, unknown> | undefined {
+	const raw = node.attribs?.[ 'data-settings' ];
+	if ( ! raw ) {
+		return undefined;
+	}
+	try {
+		const parsed = JSON.parse( decodeEntities( raw ) );
+		return typeof parsed === 'object' && parsed !== null ? ( parsed as Record<string, unknown> ) : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function motionFxValue( settings: Record<string, unknown> | undefined, key: string ): unknown {
+	return settings?.[ key ];
+}
+
+/** Extract the source element id (elementor-element-<id>) from a class list. */
+function elementIdOf( classes: string ): string | undefined {
+	return classes.split( /\s+/ ).map( ( cls ) => SECTION_ID_RE.exec( cls ) ).find( Boolean )?.[ 1 ];
+}
+
+/**
+ * The per-element scroll-behavior classification (121 §2.2). Deterministic;
+ * an empty html yields an empty pass.
+ */
+export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehaviorPass {
+	const handler = new DomHandler( undefined, {} );
+	const parser = new Parser( handler, { lowerCaseTags: true, lowerCaseAttributeNames: true } );
+	parser.write( input.html );
+	parser.end();
+	const root = handler.root as unknown as HNodeLike;
+	const cssText = input.css.join( '\n' );
+
+	const pass: ScrollBehaviorPass = { headerSticky: false, entries: [] };
+	const seen = new Set<string>();
+	const push = ( entry: ScrollBehaviorEntry ): void => {
+		const key = `${ entry.kind }:${ entry.id ?? '' }:${ entry.effect ?? '' }`;
+		if ( seen.has( key ) ) {
+			return;
+		}
+		seen.add( key );
+		pass.entries.push( entry );
+	};
+
+	const headerNode = findFirstNode( root, ( n ) => n.type === 'tag' && ( n.name === 'header' || /site-header|master-header/i.test( tagClasses( n ) + ' ' + ( n.attribs?.id ?? '' ) ) ) );
+
+	// The walk: EVERY element (the one-pager loop), classified in order.
+	// Behaviors ROLL UP to the nearest top-level section: a parallax column
+	// inside the hero makes the rebuilt HERO section parallax (the renderer
+	// only ever wraps top-level sections). The section stack tracks the
+	// current containing elementor-top-section id.
+	const sectionStack: string[] = [];
+	const walk = ( node: HNodeLike ): void => {
+		if ( node.type === 'tag' ) {
+			const classes = tagClasses( node );
+			const id = elementIdOf( classes );
+			const isTopSection = sectionClasses( node ).some( ( cls ) => cls === 'elementor-top-section' || cls === 'elementor-section' );
+			if ( isTopSection && id ) {
+				sectionStack.push( id );
+			}
+			const sectionId = id !== undefined && isTopSection ? id : sectionStack[ sectionStack.length - 1 ] ?? id;
+			const settings = motionFxSettings( node );
+			const scrolling = motionFxValue( settings, 'motion_fx_motion_fx_scrolling' ) === 'yes';
+			const hasMotionKeys = settings !== undefined && Object.keys( settings ).some( ( key ) => /^motion_fx_(translate|rotate|scale|opacity|blur)[xy]?_effect$/i.test( key ) );
+
+			// 1. Sticky — the Elementor sticky class, a sticky header class, or
+			//    a sticky/fixed CSS rule scoped to the element's own id.
+			if ( STICKY_CLASS_RE.test( classes ) ) {
+				const insideHeader = headerNode !== undefined && findFirstNode( headerNode, ( n ) => n === node ) !== undefined;
+				if ( insideHeader || /aux-logo-sticky|aux-top-sticky/i.test( classes ) ) {
+					pass.headerSticky = true;
+				} else if ( sectionId ) {
+					push( { id: sectionId, kind: 'sticky' } );
+				}
+			} else if ( id ) {
+				for ( const rule of cssText.matchAll( RULE_RE ) ) {
+					if ( ! rule[ 1 ].includes( `elementor-element-${ id }` ) ) {
+						continue;
+					}
+					if ( /position\s*:\s*(sticky|fixed)/i.test( rule[ 2 ] ) ) {
+						push( { id: sectionId, kind: 'sticky' } );
+					}
+					break;
+				}
+			}
+
+			// 2. Parallax — the theme class, the Elementor scroll-tied
+			//    translate effect, or a fixed-attachment background rule.
+			if ( PARALLAX_CLASS_RE.test( classes ) || ( scrolling && hasMotionKeys ) ) {
+				if ( sectionId ) {
+					const speed = settings ? ( ( motionFxValue( settings, 'motion_fx_translateY_speed' ) as { size?: number } | undefined )?.size ?? 1 ) : 1;
+					push( { id: sectionId, kind: 'parallax', speed: Number.isFinite( speed ) && speed > 0 ? speed : 1 } );
+				}
+			} else if ( id ) {
+				for ( const rule of cssText.matchAll( RULE_RE ) ) {
+					if ( ! rule[ 1 ].includes( `elementor-element-${ id }` ) ) {
+						continue;
+					}
+					if ( /background-attachment\s*:\s*fixed/i.test( rule[ 2 ] ) ) {
+						push( { id: sectionId, kind: 'parallax' } );
+					}
+					break;
+				}
+			}
+
+			// 3. Reveal — the theme's appear-watch system, Elementor's
+			//    invisible marker (entrance-animated elements), or the
+			//    generic AOS/wow/animate conventions.
+			const hasAppear = APPEAR_CLASS_RE.test( classes );
+			const hasEntrance = settings !== undefined && ! scrolling && hasMotionKeys;
+			const hasGenericReveal = /data-aos|\bwow\b|animate__animated/i.test( classes + ' ' + ( node.attribs?.[ 'data-aos' ] ?? '' ) );
+			if ( hasAppear || hasEntrance || hasGenericReveal || /(?:^|\s)elementor-invisible(?:\s|$)/.test( classes ) ) {
+				if ( sectionId ) {
+					const effect = REVEAL_EFFECTS.find( ( entry ) => entry.pattern.test( classes ) )?.effect ?? 'fade';
+					push( { id: sectionId, kind: 'reveal', effect } );
+				}
+			}
+		}
+		for ( const child of childNodes( node ) ) {
+			walk( child );
+		}
+		if ( node.type === 'tag' && sectionClasses( node ).some( ( cls ) => cls === 'elementor-top-section' || cls === 'elementor-section' ) ) {
+			sectionStack.pop();
+		}
+	};
+	walk( root );
+	return pass.entries.length === 0 && ! pass.headerSticky
+		? { headerSticky: false, entries: [] }
+		: pass;
+}
+
 export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	const cssText = input.css.join( '\n' );
 	const roles: Record<string, string> = {};
@@ -1097,6 +1263,7 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		// the scaffold bakes into sections.generated.ts.
 		sections: input.html ? analyzeSections( input ) : undefined,
 		chrome: input.html ? analyzeChrome( input ) : undefined,
+		behavior: input.html ? analyzeScrollBehavior( input ) : undefined,
 		adaptation: {
 			keep: [
 				'The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.',

@@ -5,6 +5,7 @@ import { useCopy } from '../copy/index.ts';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 import { chrome } from '../lib/chrome.generated.ts';
+import { behaviors } from '../lib/behaviors.generated.ts';
 
 interface Props {
 	title: string;
@@ -133,7 +134,7 @@ const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
 				))}
 			</div>
 		)}
-		<header class="site-header">
+		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky']}>
 			<div class="brand-block">
 				<a class="brand" href="/">
 					{chrome?.logo?.src ? <img class="brand-logo" src={chrome.logo.src} alt={chrome.logo.alt ?? siteTitle} /> : siteTitle}
