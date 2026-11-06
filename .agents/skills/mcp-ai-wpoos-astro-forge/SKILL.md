@@ -776,6 +776,21 @@ sticky / reveal / parallax, and the template rebuilds the motion with a
   cut emitted `],` with no opener — the e2e's astro check caught it with
   `ts(2695)`); the `data-settings` JSON is entity-encoded (`&quot;`) —
   decode before `JSON.parse`.
+- **The CSS minifier can silently kill every scroll animation (cost the
+  jayainc parallax 2026-11-06):** Chrome (as of 157) drops the ENTIRE
+  `animation` declaration when a timeline value (`scroll()`/`view()`)
+  appears inside the SHORTHAND — `animation-timeline` must stay a separate
+  longhand. Vite 8 defaults to **lightningcss** when present (astro pulls
+  it transitively) and lightningcss 1.33 merges the longhand back into the
+  the deployed jayainc build lost all 5 parallax bands + both
+  reveal bands to exactly this. The template's `astro.config.mjs` pins
+  `vite.build.cssMinify: 'esbuild'` (esbuild preserves the longhand) —
+  and the template devDeps must carry the `esbuild` package (Vite imports
+  it at build time for that path; missing it fails the build); the
+  e2e gate asserts `animation-timeline:scroll(root)` + `:view()` survive
+  the built bundle and no timeline lands inside a shorthand. Never switch
+  the minifier (or "optimize" those rules into one shorthand) without
+  re-checking that gate.
 - **Gotchas (each cost a fix 2026-11-06):** a bare `theme = themeFor(...)`
   assignment inside the DesignRenderer map is an implicit-global in strict
   ESM → `ReferenceError: theme is not defined` at PRERENDER (use `const`);

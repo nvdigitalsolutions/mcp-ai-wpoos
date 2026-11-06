@@ -283,9 +283,22 @@ describe('forge e2e — emitted site', () => {
 		const cssHref = /href="(\/_astro\/[^"]+\.css)"/.exec(index)?.[1];
 		if (cssHref) {
 			const css = await readFile(path.join(workDir, 'dist', cssHref.replace(/^\//, '')), 'utf8');
-			expect(css).toContain('--forge-accent:#0b5f4e');
+			// Minifier-agnostic: esbuild preserves the space in custom-property
+			// values, lightningcss strips it.
+			expect(css).toMatch(/--forge-accent:\s*#0b5f4e/);
+			// The 2026-11-06 regressions must never come back: (a) a minifier
+			// that merges the timeline into the `animation` shorthand kills
+			// every parallax + reveal; (b) the brand strips must stay equal
+			// columns (the 3rem-height flex row made jayainc's wide banners
+			// dominate, shrank the square marks, and wrapped the row).
+			expect(css).toContain('animation-timeline:scroll(root)');
+			expect(css).toContain('animation-timeline:view()');
+			expect(css).not.toMatch(/animation:[^;}]*scroll\(root\)/);
+			expect(css).not.toMatch(/animation:[^;}]*view\(\)/);
+			expect(css).toMatch(/grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\(\s*8rem\s*,\s*1fr\s*\)\s*\)/);
+			expect(css).toMatch(/\.ds-logos\s+img\s*\{[^}]*height:\s*auto/);
 		} else {
-			expect(index).toContain('--forge-accent:#0b5f4e');
+			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);
 		}
 		expect(index).toContain('type="application/rss+xml"');
 
