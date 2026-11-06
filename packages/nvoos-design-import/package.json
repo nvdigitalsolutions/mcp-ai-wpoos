@@ -7,7 +7,8 @@
 	"main": "src/contrast.ts",
 	"exports": {
 		"./contrast": "./src/contrast.ts",
-		"./webfonts": "./src/webfonts.ts"
+		"./webfonts": "./src/webfonts.ts",
+		"./color": "./src/color.ts"
 	},
 	"license": "MIT"
 }
