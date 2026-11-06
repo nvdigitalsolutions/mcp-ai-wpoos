@@ -346,6 +346,67 @@ export default function DiagnosticsView() {
       </section>
 
       <section className="card">
+        <h2>Memory</h2>
+        {info.memory.available ? (
+          <ul className="kv">
+            <li>
+              <span>Compiled / enabled</span>
+              <span className={badge(info.memory.enabled)}>
+                {info.memory.enabled ? 'enabled' : 'compiled, disabled'}
+              </span>
+            </li>
+            <li>
+              <span>Embedder</span>
+              <span className={badge(info.memory.model_installed)}>
+                {info.memory.embedder}
+                {info.memory.model_installed ? '' : ' — not downloaded'}
+              </span>
+            </li>
+            <li>
+              <span>Chunks (indexed / total)</span>
+              <span>
+                {info.memory.chunks_indexed} / {info.memory.chunks_total}
+                {info.memory.chunks_pending > 0 ? ` · ${info.memory.chunks_pending} pending` : ''}
+              </span>
+            </li>
+            <li>
+              <span>Vector width / blend weight</span>
+              <span>
+                {info.memory.dim} · {info.memory.semantic_weight.toFixed(2)}
+              </span>
+            </li>
+            <li>
+              <span>Last worker batch</span>
+              <span>{info.memory.last_batch_ms} ms</span>
+            </li>
+            {info.memory.errors > 0 && (
+              <li>
+                <span>Errors</span>
+                <span className="badge warn">{info.memory.errors}</span>
+              </li>
+            )}
+          </ul>
+        ) : (
+          <p className="muted">not compiled into this build (needs the `memory` feature)</p>
+        )}
+        {info.memory.available && info.memory.recent_ops.length > 0 && (
+          <>
+            <h3>Destructive operation log</h3>
+            <ul className="kv">
+              {info.memory.recent_ops.map((op, i) => (
+                <li key={i}>
+                  <span>{op.created_at}</span>
+                  <span>
+                    {op.action} — {op.detail}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
+
+      <section className="card">
         <h2>Screen OCR (snippet)</h2>
         {info.snippet.available ? (
           <ul className="kv">

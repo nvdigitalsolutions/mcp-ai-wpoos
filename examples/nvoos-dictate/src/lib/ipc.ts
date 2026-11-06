@@ -127,6 +127,13 @@ export interface Settings {
       load_timeout_ms: number;
     };
   };
+  memory: {
+    enabled: boolean;
+    embedder: string;
+    semantic_weight: number;
+    top_k: number;
+    ask_provider_enabled: boolean;
+  };
 }
 
 export interface StatusInfo {
@@ -158,6 +165,11 @@ export interface StatusInfo {
   snippet_available: boolean;
   snippet_engine: string;
   snippet_hotkey: string;
+  document_available: boolean;
+  memory_available: boolean;
+  memory_enabled: boolean;
+  memory_indexed: number;
+  memory_chunks: number;
 }
 
 export interface SpaCheck {
@@ -453,6 +465,7 @@ export interface DiagnosticsInfo {
     model_provider: string;
     model_model: string;
   };
+  memory: MemoryStatus;
   last_dictation: {
     window_ms: number;
     utterance_ms: number;
@@ -500,6 +513,42 @@ export interface PermissionInfo {
   explanation: string;
   granted: boolean;
   promptable: boolean;
+}
+
+// ---- memory (Proposal 127) -----------------------------------------------
+
+export interface MemoryHit {
+  chunk_id: number;
+  surface: string; // 'transcript' | 'meeting' | 'snippet'
+  surface_id: number;
+  seq: number;
+  text: string;
+  score: number;
+  matched_terms: number;
+}
+
+export interface MemoryStatus {
+  available: boolean;
+  enabled: boolean;
+  embedder: string;
+  model_installed: boolean;
+  dim: number;
+  semantic_weight: number;
+  chunks_total: number;
+  chunks_indexed: number;
+  chunks_pending: number;
+  last_batch_ms: number;
+  errors: number;
+  recent_ops: {
+    action: string; // 'purge' | 'reindex'
+    detail: string;
+    created_at: string;
+  }[];
+}
+
+export interface AskResult {
+  hits: MemoryHit[];
+  answer: string | null;
 }
 
 /** Whether the webview runs inside the macOS app (permission rows are mac-only). */
@@ -608,6 +657,12 @@ export const api = {
   requestPermission: (kind: string) =>
     invoke<PermissionInfo>('request_permission', { kind }),
   openSystemSettings: (kind: string) => invoke<void>('open_system_settings', { kind }),
+
+  memoryStatus: () => invoke<MemoryStatus>('memory_status'),
+  askMemory: (query: string) => invoke<AskResult>('ask_memory', { query }),
+  reindexMemory: (confirmation: string) => invoke<void>('reindex_memory', { confirmation }),
+  purgeMemory: (confirmation: string) => invoke<void>('purge_memory', { confirmation }),
+  downloadMemoryModel: (force = false) => invoke<void>('download_memory_model', { force }),
 };
 
 // ---- events --------------------------------------------------------------

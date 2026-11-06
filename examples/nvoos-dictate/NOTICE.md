@@ -36,6 +36,14 @@ OCR engines listed above (Windows.Media.Ocr / Apple Vision / RapidOCR
 PP-OCR), and the optional OCR-polish pass talks to your local LM Studio /
 Ollama server as a separate process.
 
+The memory layer (Proposal 127) downloads at runtime (never bundles) the
+**IBM Granite-Embedding-97M-Multilingual r2** encoder (Apache-2.0,
+© IBM — model weights and tokenizer from Hugging Face) and embeds text
+through the ONNX Runtime (MIT). Vector search runs through the
+**sqlite-vec** extension (MIT/Apache-2.0, © Alex Garcia) compiled into the
+binary; tokenization uses the `tokenizers` Rust crate (Apache-2.0,
+© Hugging Face). The optional BGE-small reference embedder is MIT (© BAAI).
+
 For licensing enquiries: licensing@nvdigitalsolutions.com
 
 SPDX identifier for these files: `LicenseRef-Proprietary`

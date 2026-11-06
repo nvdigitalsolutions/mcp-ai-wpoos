@@ -190,6 +190,21 @@ Four rules, each from a session that cost a recovery:
   when done — verified 2026-11-04 for the 110 version-bump PR (lint,
   astro check, vitest, hermetic build and home e2e all ran inside the
   worktree).
+- **Uncommitted changes + shared tree → copy your paths into the fresh
+  worktree (2026-11-07, dictate memory-layer PR):** the worktree starts at
+  the base commit with none of your uncommitted work, so first confirm
+  base parity: `git diff --stat origin/alpha-working HEAD -- <your-paths>`
+  — empty means no rebase needed (foreign commits never touched your
+  paths). Then copy exactly your changed paths (modified + untracked) from
+  the main tree into the worktree **one file at a time with explicit
+  destinations** — multi-source `cp a.txt b.txt dest/` flattens both into
+  `dest/`, not their relative subpaths (a `scripts/*.ps1` landed at the
+  app root that way; caught by diffing the worktree's `git status --short`
+  against the main tree's expected change list before staging). For
+  Tauri/Rust apps junction `src-tauri/target` exactly like node_modules
+  (`fs.symlinkSync(...,'junction')`) — cargo validation is then
+  near-instant instead of recompiling ort; both dirs are gitignored, so
+  the worktree removal stays clean.
 - **De-stack a PR without `reset --hard`:** move the branch back with
   `git reset --mixed <parent>` (worktree untouched), restore only your own
   paths with `git restore --worktree -- <your-paths>` (a file you created

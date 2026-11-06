@@ -616,6 +616,38 @@ impl Default for DocumentConfig {
     }
 }
 
+/// Memory layer settings (Proposal 127): the unified, searchable corpus
+/// over transcripts, meetings and snippets.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct MemoryConfig {
+    /// Master switch. Off = the worker never embeds and the corpus is not
+    /// searchable from the Ask panel (chunks already stored stay on disk).
+    pub enabled: bool,
+    /// Catalogue id of the embedder (`granite-97m-r2-int8` default).
+    pub embedder: String,
+    /// Blend weight for the vector leg (0 = keyword-only, 1 = semantic-only).
+    /// 0.85 is the measured plateau for granite-97m-r2 (SurfSense eval).
+    pub semantic_weight: f32,
+    /// Chunks per Ask result.
+    pub top_k: usize,
+    /// Whether Ask also runs a cited answer through the Stage-2 provider
+    /// (`cleanup.provider`). Chunks-only when off or when the provider fails.
+    pub ask_provider_enabled: bool,
+}
+
+impl Default for MemoryConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            embedder: "granite-97m-r2-int8".to_string(),
+            semantic_weight: 0.85,
+            top_k: 5,
+            ask_provider_enabled: true,
+        }
+    }
+}
+
 /// The complete persisted settings blob.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
@@ -636,6 +668,7 @@ pub struct Settings {
     pub spa: SpaConfig,
     pub snippet: SnippetConfig,
     pub document: DocumentConfig,
+    pub memory: MemoryConfig,
 }
 
 impl Settings {

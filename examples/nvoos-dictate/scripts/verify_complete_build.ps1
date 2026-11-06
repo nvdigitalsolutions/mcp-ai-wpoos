@@ -23,6 +23,9 @@ $markers = @(
     @{ name = "mcp";             re = "mcp" },
     @{ name = "snippet (OCR)";   re = "snippet" },
     @{ name = "document (pdfium)"; re = "pdfium library not found" },
+    @{ name = "memory (vec0)";       re = "chunk_vectors" },
+    @{ name = "memory (tokenizers)"; re = "tokenizer truncation" },
+    @{ name = "memory (granite)";    re = "granite-97m-r2-int8" },
     @{ name = "Assistant SPA";   re = "Assistant" },
     # The plain "moonshine" token also matches sherpa-onnx's own model-zoo
     # strings (it supports the Moonshine model family), so assert on the

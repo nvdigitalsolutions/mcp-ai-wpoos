@@ -27,6 +27,7 @@ type SettingsTab =
   | 'agent'
   | 'snippet'
   | 'documents'
+  | 'memory'
   | 'privacy'
   | 'permissions';
 
@@ -35,6 +36,9 @@ export default function SettingsView({ onChanged, status }: Props) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  // Typed-confirmation words for the destructive memory ops (Proposal 128).
+  const [reindexConfirm, setReindexConfirm] = useState('');
+  const [purgeConfirm, setPurgeConfirm] = useState('');
 
   const testDocModel = async () => {
     setBusy(true);
@@ -231,6 +235,9 @@ export default function SettingsView({ onChanged, status }: Props) {
         </button>
         <button className={tab === 'documents' ? 'tab active' : 'tab'} onClick={() => setTab('documents')}>
           Documents
+        </button>
+        <button className={tab === 'memory' ? 'tab active' : 'tab'} onClick={() => setTab('memory')}>
+          Memory
         </button>
         <button className={tab === 'privacy' ? 'tab active' : 'tab'} onClick={() => setTab('privacy')}>
           Privacy
@@ -984,6 +991,157 @@ export default function SettingsView({ onChanged, status }: Props) {
               Test connection
             </button>
           </div>
+        </section>
+      )}
+
+      {tab === 'memory' && (
+        <section className="card">
+          <h2>Memory</h2>
+          <p className="muted">
+            Searchable corpus over your dictations, meetings and screen captures (Proposal 127).
+            Everything stays on this machine; the embedder runs locally.
+          </p>
+          <label className="row">
+            <span>Enable memory indexing</span>
+            <input
+              type="checkbox"
+              checked={settings.memory.enabled}
+              onChange={(e) =>
+                patch({ memory: { ...settings.memory, enabled: e.target.checked } })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Embedder</span>
+            <select
+              value={settings.memory.embedder}
+              onChange={(e) =>
+                patch({ memory: { ...settings.memory, embedder: e.target.value } })
+              }
+            >
+              <option value="granite-97m-r2-int8">granite-97m-r2-int8 (multilingual, ~118 MB)</option>
+              <option value="granite-97m-r2-fp32">granite-97m-r2-fp32 (fallback, ~372 MB)</option>
+              <option value="bge-small-en-v1.5">bge-small-en-v1.5 (English only, ~64 MB)</option>
+            </select>
+          </label>
+          <label className="row">
+            <span>Semantic weight ({settings.memory.semantic_weight.toFixed(2)})</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={settings.memory.semantic_weight}
+              onChange={(e) =>
+                patch({
+                  memory: { ...settings.memory, semantic_weight: Number(e.target.value) },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Passages per answer</span>
+            <input
+              type="number"
+              value={settings.memory.top_k}
+              onChange={(e) =>
+                patch({
+                  memory: {
+                    ...settings.memory,
+                    top_k: Math.max(1, Math.min(20, Number(e.target.value) || 5)),
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Answer with the Stage-2 provider</span>
+            <input
+              type="checkbox"
+              checked={settings.memory.ask_provider_enabled}
+              onChange={(e) =>
+                patch({
+                  memory: { ...settings.memory, ask_provider_enabled: e.target.checked },
+                })
+              }
+            />
+          </label>
+          <div className="btn-row">
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={() => {
+                setBusy(true);
+                void api
+                  .downloadMemoryModel()
+                  .then(() => setMessage('Embedder installed.'))
+                  .catch((e) => setMessage(String(e)))
+                  .finally(() => setBusy(false));
+              }}
+            >
+              Download embedder model
+            </button>
+          </div>
+          <label className="row">
+            <span>Type REINDEX to rebuild the vector index</span>
+            <input
+              type="text"
+              value={reindexConfirm}
+              placeholder="REINDEX"
+              onChange={(e) => setReindexConfirm(e.target.value)}
+            />
+          </label>
+          <div className="btn-row">
+            <button
+              className="btn ghost"
+              disabled={busy || reindexConfirm !== 'REINDEX'}
+              onClick={() => {
+                setBusy(true);
+                void api
+                  .reindexMemory(reindexConfirm)
+                  .then(() => {
+                    setReindexConfirm('');
+                    setMessage('Reindexing started (runs in the background).');
+                  })
+                  .catch((e) => setMessage(String(e)))
+                  .finally(() => setBusy(false));
+              }}
+            >
+              Reindex
+            </button>
+          </div>
+          <label className="row">
+            <span>Type PURGE to wipe the index (history kept, search lost)</span>
+            <input
+              type="text"
+              value={purgeConfirm}
+              placeholder="PURGE"
+              onChange={(e) => setPurgeConfirm(e.target.value)}
+            />
+          </label>
+          <div className="btn-row">
+            <button
+              className="btn ghost"
+              disabled={busy || purgeConfirm !== 'PURGE'}
+              onClick={() => {
+                setBusy(true);
+                void api
+                  .purgeMemory(purgeConfirm)
+                  .then(() => {
+                    setPurgeConfirm('');
+                    setMessage('Memory corpus wiped (history kept, audit log kept).');
+                  })
+                  .catch((e) => setMessage(String(e)))
+                  .finally(() => setBusy(false));
+              }}
+            >
+              Wipe index
+            </button>
+          </div>
+          <p className="muted">
+            Destructive operations are gated by a typed confirmation and recorded in an
+            append-only audit log (visible on Diagnostics).
+          </p>
         </section>
       )}
 
