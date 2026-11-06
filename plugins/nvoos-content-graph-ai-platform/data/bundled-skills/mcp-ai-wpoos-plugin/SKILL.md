@@ -11,6 +11,9 @@ metadata:
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
+> **Spec current as of v1.2.17** (last verified 2026-11-04). Version-tagged
+> facts are CI-enforced by `tests/test-knowledge-base-facts-sync.php`.
+
 Complete operational skill for the NV Digital Open Operator System (oOS)
 WordPress plugin running in Docker on Windows/WSL2. Covers the full lifecycle:
 startup, assistant creation, credential tokens, MCP tool calling, API key
@@ -43,7 +46,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~347 base / ~1,648 full tools
+     │  Tool Registry     │  ~358 base + ~1,378 Pro (~1,735 total; live registry authoritative)
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
