@@ -579,6 +579,44 @@ atomic JSON data layer is the documented enrichment path. Research:
   deploy via `WP_USER_AGENT` (the scaffolded content.config wires it) —
   UA-less requests are a bot-protection trigger on many hosts.
 
+## Proposal 117 — classifier fidelity + section theming (2026-11-06)
+
+jayainc's live rebuild taught two gaps: structured single-column widgets
+flattened, and the flat theme ignored the source's band rhythm.
+
+- **Structured icon-text items (semantic.ts):** `extractStructuredItem`
+  detects the aux_text / icon-box family pattern — an `aux-ico-box` header
+  (icon span or image) + an h3-h6 + body paragraphs — and turns each widget
+  into ONE item (title/body/media/icon) instead of flat media + orphans.
+  Product cards become a captioned `feature-grid`; icon features become an
+  `icon-list` (items.every(icon)). Quote widgets carry the author line
+  (`aux-author`/cite/byline → `item.author`). **Gotchas:** the header-box
+  class regex must be `/ico-box|icon-box-icon|icon-box-wrapper/i` — a loose
+  `/icon/` also matches the widget's OWN `elementor-widget-icon-box` class
+  and empties every item body; testimonial in the kinds ladder needs
+  `!items.some(title)` or titled structured items misclassify as quotes.
+- **Section ids (the theming key):** every classified section carries its
+  source `elementor-element-<id>` (`SemanticSection.id`).
+- **`analyzeSections` (design.ts):** walks the RAW homepage for
+  elementor-top-section elements and pulls per-id background facts from the
+  same-origin CSS (gradient/photo/color/overlay/padding). **Gotchas:** a
+  PHOTO beats a gradient for the same id (Elementor layers decoration
+  gradients on child/overlay selectors — jayainc's hero photo was being
+  cleared); an `elementor-background-overlay` rule's color must NEVER feed
+  `bgColor`; `resolveSectionTheme` maps bgImage→hero, dark rgb/hex→dark,
+  near-white→light, gray→alt — normalize rgb() to hex before the luminance
+  math (navy gradients end in `rgb(4,19,43)`).
+- **Baked theming:** scaffold writes `src/lib/sections.generated.ts`
+  (template ships an empty stub); `DesignRenderer` looks sections up by id
+  and wraps each in `.ds-section-wrap--{hero|dark|alt|light}` with the
+  source bg inline (hero = photo + tint, overlay via `--ds-overlay`).
+  global.css adapts foregrounds (dark bands → white headings, white cards).
+  Hero renders ALL media images (`.ds-media-grid`). Regenerate a profile
+  with `forge analyze <url> --design --write <tmp>` and merge the fresh
+  `design` (sections included) + `vocabulary` blocks into the committed
+  profile — `analyze --write` drafts a NEW profile, never merge over the
+  hand-tuned collections/tokens/frontPage.
+
 ## Phase roadmap (096 §5)
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,
