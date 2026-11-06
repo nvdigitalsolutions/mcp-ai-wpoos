@@ -99,6 +99,12 @@ describe( 'emitDeployConfig', () => {
 		expect( script ).toContain( 'mirror-push: attempt' );
 		expect( script ).toContain( 'Atomics.wait' );
 		expect( script ).not.toMatch( /ghp_/ );
+		// Velocity-compat (2026-11-06): Velocity requires a build command —
+		// the mirror ships a no-op package.json so npm install + build succeed
+		// on the prebuilt branch (Output Directory = repo root).
+		expect( script ).toContain( 'Velocity-compat' );
+		expect( script ).toContain( "join( tmp, 'package.json' )" );
+		expect( script ).toContain( 'nvoos-forge-site' );
 	} );
 
 	it( 'rejects a half-set shared mirror config', async () => {

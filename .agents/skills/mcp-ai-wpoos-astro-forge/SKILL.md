@@ -511,20 +511,23 @@ the only committed artifact per site.
   astro's bin is `bin/astro.mjs` (NOT `astro.js`); `astro preview` binds
   `localhost` (::1) only — probe `curl http://localhost:<port>/`, not
   `127.0.0.1`; stop via the PID from `netstat -ano | grep <port> | grep LISTEN`.
-- **Velocity app framework MUST be static (2026-11-06):** the mirror branch
-  ships PREBUILT flat files (index.html at the branch root) — the Velocity
-  app's Deployment Settings framework must be the **static/HTML** preset,
-  NOT a Node framework. With `Astro-ssr` selected, Velocity runs
-  `npm install` and fails `ENOENT package.json` (the mirror has no
-  package.json — rc=254, no build log past Install Dependencies). The fix
-  is a Velocity-console UI change (Deployment Settings → Framework →
-  static; Root Directory stays `./`; no build command) — the Cloudways MCP
-  exposes no deployment-settings tool (the apps toolset's web-rules tools
-  are header/redirect rules only). The mirror content itself is not the
-  problem: verify with
+- **Velocity app — build-centric, no static preset (2026-11-06):** Velocity
+  ALWAYS runs `npm install` + a build command; there is no pure static
+  framework option. With `Astro-ssr` selected, a mirror branch (prebuilt
+  flat files, no package.json) fails `ENOENT package.json` (rc=254). The
+  working pattern: the mirror-push emission ships a **no-op package.json
+  stub** (`nvoos-forge-site`, build = `node -e …console.log…`) beside the
+  built files, and the Velocity Deployment Settings set the **Output
+  Directory to the repo root (`.`)** with the default build command
+  (`npm run build` — the no-op). The Cloudways MCP exposes no
+  deployment-settings tool (the apps toolset's web-rules tools are
+  header/redirect rules only) — these are Velocity-console UI settings.
+  The mirror content itself is not the problem: verify with
   `gh api repos/nvdigitalsolutions/nvoos-forge-sites/contents/?ref=site/<name>`
-  — `index.html` at root means the push is good and the serving config is
-  the only thing to fix.
+  — `index.html` at root means the push is good. A hand-added stub does NOT
+  survive the next mirror force-push (the push replaces branch content) —
+  the stub must come from the emission, so merge the emission fix BEFORE
+  the next forge-sites run.
 
 ## Proposal 115 — inventory, wireframes, responsive (2026-11-06)
 
