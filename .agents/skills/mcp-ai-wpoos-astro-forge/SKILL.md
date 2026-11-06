@@ -1000,6 +1000,37 @@ Research-backed (web.dev responsive images, MDN animation-timeline, DTCG
   on phones. Header wraps under 767px (nav full row, tagline hides under
   480px); horizontal reveals degrade to plain fade on phones; the collage
   photos return to static flow below 1152px (the measured band fit).
+- **Hero headline width (125 §8):** the photo-hero title runs the full
+  band measure; the source keeps the 72px headline in a ~66% column.
+  `.ds-section-wrap--hero .ds-title { max-width:
+  var(--ds-hero-title-max, 66%) }` above 767px — the var is the per-site
+  seam (e2e-pinned).
+- **Cluster B — axe e2e gate:** `playwright` + `axe-core` as forge
+  devDeps; the vitest e2e serves `dist/` on a loopback static server and
+  runs `axe.run` in real Chromium (`axe.default.source` injected via
+  `addScriptTag`). axe's own docs: `color-contrast` does NOT work in
+  JSDOM — the browser route is the sanctioned integration. CI adds
+  `npx playwright install --with-deps chromium` before the e2e step.
+- **Cluster B — content blocks:** `FaqAccordion.astro` (native
+  `<details name>` exclusive accordion) + `Tabs.astro` (radio-input
+  technique, deterministic ids from `src/lib/blocks.ts` djb2) ship in the
+  template for local MDX content. Two traps: MDX imports must sit at the
+  TOP of the file (after frontmatter — mid-file imports silently don't
+  render), and Astro scopes component elements with `data-astro-cid`, so
+  e2e assertions must be attribute-agnostic (`toContain('<summary')`, not
+  exact tags).
+- **Cluster B — drift gate:** the scaffold writes `nvoos.generated.json`
+  (sha256 of every generated/rewritten file); the template's
+  `scripts/check-generated.mjs` re-hashes on `npm run check` and fails on
+  hand-edits or stale scaffolds (unit-pinned clean/tamper/restore).
+- **Cluster D/D2 — shared core:** `packages/nvoos-design-import` holds
+  the canonical `contrast.ts`, `webfonts.ts` and `color.ts`; forge keeps
+  byte-identical copies (`lib/contrast.ts`, `lib/color.ts`) pinned by
+  `tests/shared-libs.test.ts` — edit the package first, never the consumer
+  copy. The color-conversion core is the ONLY provably-shared analyzer
+  slice: `lightnessOf` (WCAG luminance in forge vs HSL lightness in
+  velocity) and the hue/saturation formulas deliberately differ — forcing
+  either would change tuned classification thresholds.
 
 ## Phase roadmap (096 §5)
 

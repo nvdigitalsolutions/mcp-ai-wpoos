@@ -725,6 +725,34 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
     fixture/BFF pair (8125/4323) — publishing/deleting on the shared pair
     races the parallel listing-count specs.
 
+## Proposal 126 cross-pollination with the forge (2026-11-07)
+
+- **Scroll-driven reveals:** `.reveal` / `.reveal--fade-up` utilities in
+  `global.css` — `@supports (animation-timeline: view())` + reduced-motion
+  gating, the finished state is the default (no-JS, the forge motion
+  runtime). Applied on the home hero + about cards. **The esbuild pin is
+  mandatory:** `vite.build.cssMinify: 'esbuild'` in astro.config.mjs —
+  lightningcss merges `animation-timeline` into the `animation` shorthand
+  and Chrome drops the whole declaration (verified in the built CSS:
+  `dist/client/_astro/*.css` — the server output nests client assets under
+  `dist/client/`, not `dist/_astro/`).
+- **Webfont harvesting:** `src/lib/webfonts.ts` filters the default
+  theme's `semantic.font` token to named families and builds the Google
+  Fonts CSS2 URL; `BaseLayout` preconnects + links it. The CSP gained
+  `style-src https://fonts.googleapis.com` + `font-src
+  https://fonts.gstatic.com` (pinned in `security-headers.test.ts`).
+  Hermetic-safe: system stacks load nothing. The generated semantic type
+  has ONLY `font` — there is no `font-display` key to index. Runtime
+  theme font overrides ride the next rebuild (the forge static model).
+- **Shared design-import core:** `packages/nvoos-design-import` holds the
+  canonical `webfonts.ts` and `color.ts`; the storefront keeps
+  byte-identical copies (`src/lib/webfonts.ts`,
+  `src/lib/design-import/color.ts`) pinned by
+  `tests/unit/webfonts-drift.test.ts` — edit the package first, never the
+  consumer copy. `design-import/analyzer.ts` imports the color-conversion
+  core; its `lightnessOf` (HSL) and hue/saturation helpers deliberately
+  differ from forge's (WCAG luminance) — do NOT unify them.
+
 ## Embedded checkout (Proposal 110, shipped 2026-11-04)
 
 - **The app no longer links out for the common path.** In woo/both modes the
