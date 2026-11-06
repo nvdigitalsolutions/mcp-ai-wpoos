@@ -203,6 +203,23 @@ export interface ForgeVocabulary {
 }
 
 /**
+ * One source page section's background facts (Proposal 117 §2) — the
+ * per-band theming data the scaffold bakes into sections.generated.ts.
+ * Keyed by the Elementor section id the semantic classifier carries on
+ * each rebuilt section, so the source band theming re-applies positionally.
+ */
+export interface ForgeSection {
+	/** Elementor's elementor-element-<id> class suffix. */
+	id?: string;
+	bgImage?: string;
+	bgColor?: string;
+	bgGradient?: string;
+	/** The background-overlay tint (Elementor's overlay layer). */
+	overlay?: string;
+	padding?: string;
+}
+
+/**
  * The v2 design block (Proposal 114) — a DTCG-flavored design language,
  * never source assets. Roles are fail-loud (098): only confident values
  * land in `roles`; everything else stays in `unassigned`.
@@ -222,6 +239,8 @@ export interface ForgeDesign {
 	shadows: { count: number };
 	components: Record<string, number>;
 	modes: { dark: 'auto' | 'light' | 'dark'; contrast: 'auto' | 'standard' | 'high' };
+	/** The section-background pass (117 §2) — omitted when unavailable. */
+	sections?: ForgeSection[];
 	adaptation: {
 		keep: string[];
 		replace: string[];

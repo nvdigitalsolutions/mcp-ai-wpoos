@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderDesignGenerated, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderDesignGenerated, renderSectionsGenerated, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -738,6 +738,21 @@ describe( 'scaffold — design rebuild (Proposal 114)', () => {
 		const twice = renderDesignGenerated( { ...PROFILE, design: DESIGN }, merged );
 		expect( once ).toBe( twice );
 		expect( once ).toContain( 'export const resolvedDesign: ResolvedDesign = {' );
+	} );
+
+	it( 'renders the generated section-theme module from the design sections (117 §2)', () => {
+		const design: ForgeDesign = {
+			...DESIGN,
+			sections: [
+				{ id: 'a4ad586', bgImage: 'https://shop.example.com/hero.jpg', bgColor: 'rgba(8, 26, 67, 0.9)' },
+				{ id: '5e78df1', bgGradient: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)' },
+				{ id: '48ace0b', bgColor: '#f6f6f6' },
+			],
+		};
+		const out = renderSectionsGenerated( { ...PROFILE, design } );
+		expect( out ).toContain( "id: 'a4ad586', theme: 'hero', bgImage: 'https://shop.example.com/hero.jpg'" );
+		expect( out ).toContain( "id: '5e78df1', theme: 'dark'" );
+		expect( out ).toContain( "id: '48ace0b', theme: 'light', bg: '#f6f6f6'" );
 	} );
 
 	it( 'warns with a design block but stays quiet on clean designs', () => {

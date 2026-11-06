@@ -15,7 +15,7 @@ const { title, items } = section.slots;
 	{items?.map((item) => (
 		<blockquote class="ds-quote">
 			<p>{item.body}</p>
-			{item.title && <footer>{item.title}</footer>}
+			{(item.author || item.title) && <footer>— {item.author ?? item.title}</footer>}
 		</blockquote>
 	))}
 </section>

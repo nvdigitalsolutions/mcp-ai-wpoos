@@ -18,8 +18,11 @@
 // Node type-stripping safe: no enums, no namespaces, no parameter properties.
 // ---------------------------------------------------------------------------
 
+import { Parser, DomHandler } from 'htmlparser2';
+
+import { relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
-import type { ForgeDesign } from './types.ts';
+import type { ForgeDesign, ForgeSection } from './types.ts';
 
 /** Bounded fetch input: the homepage HTML plus same-origin CSS bodies. */
 export interface DesignFetchInput {
@@ -327,6 +330,190 @@ function componentVocabulary( html: string ): Record<string, number> {
  * high confidence, frequency/saturation heuristics medium, and everything
  * else lands in the unassigned pool.
  */
+// ---------------------------------------------------------------------------
+// Section-background pass (117 §2) — the per-band theming data.
+//
+// The design-rebuild applies ONE flat theme; real Elementor pages alternate
+// dark photo heros, navy bands, and gray/white bands (jayainc's rhythm). The
+// section pass recovers that: it walks the RAW rendered homepage for
+// top-level Elementor sections (elementor-element-<id>), then pulls each
+// id's background-image / background (gradient) / background-color / overlay /
+// padding out of the same-origin CSS bodies (Elementor emits them as
+// `.elementor-element-<id>` rules, never inline). The scaffold bakes the
+// results into sections.generated.ts keyed by id — the classifier carries the
+// SAME id on each rebuilt section, so the renderer re-applies the source
+// band theming positionally without any markup copying.
+// ---------------------------------------------------------------------------
+
+type HNodeLike = {
+	type?: string;
+	name?: string;
+	attribs?: Record<string, string>;
+	children?: HNodeLike[];
+};
+
+const RULE_RE = /([^{}]+)\{([^{}]*)\}/g;
+const BG_GRADIENT_RE = /background-image\s*:\s*((?:repeating-)?(?:linear|radial|conic)-gradient\([^;]+)/i;
+const BG_IMAGE_RE = /background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i;
+const BG_COLOR_RE = /background-color\s*:\s*([^;!]+)/i;
+const PADDING_RE = /padding\s*:\s*([^;!]+)/i;
+const SECTION_ID_RE = /elementor-element-([0-9a-f]{4,})/;
+
+function childNodes( node: HNodeLike | undefined ): HNodeLike[] {
+	return node?.children ?? [];
+}
+
+function sectionClasses( node: HNodeLike ): string[] {
+	return ( node.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
+}
+
+function allSectionNodes( node: HNodeLike, out: HNodeLike[] ): void {
+	for ( const child of childNodes( node ) ) {
+		if ( child.type === 'tag' && sectionClasses( child ).some( ( c ) => c === 'elementor-top-section' || c === 'elementor-section' ) ) {
+			out.push( child );
+		} else {
+			allSectionNodes( child, out );
+		}
+	}
+}
+
+function inlineStyle( node: HNodeLike, name: string, regex: RegExp ): string | undefined {
+	const style = node.attribs?.style;
+	if ( ! style ) {
+		return undefined;
+	}
+	const parts = style.split( ';' ).map( ( part ) => part.trim() ).filter( Boolean );
+	for ( const part of parts ) {
+		if ( part.toLowerCase().startsWith( name ) ) {
+			const match = regex.exec( part );
+			if ( match ) {
+				return match[ 1 ].trim();
+			}
+		}
+	}
+	return undefined;
+}
+
+/**
+ * Extract the ordered source-section backgrounds from the fetched homepage
+ * + stylesheets. Deterministic; an empty html yields an empty list.
+ */
+export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
+	const handler = new DomHandler( undefined, {} );
+	const parser = new Parser( handler, { lowerCaseTags: true, lowerCaseAttributeNames: true } );
+	parser.write( input.html );
+	parser.end();
+
+	const sections: HNodeLike[] = [];
+	allSectionNodes( handler.root as unknown as HNodeLike, sections );
+
+	const cssText = input.css.join( '\n' );
+	const facts: ForgeSection[] = [];
+	for ( const section of sections ) {
+		const classes = sectionClasses( section );
+		const idMatch = classes.map( ( c ) => SECTION_ID_RE.exec( c ) ).find( Boolean );
+		if ( ! idMatch ) {
+			continue;
+		}
+		const id = idMatch[ 1 ];
+		const fact: ForgeSection = { id };
+		// Inline styles (rare for Elementor, but cheap to honor).
+		const inlineGradient = inlineStyle( section, 'background-image', BG_GRADIENT_RE );
+		if ( inlineGradient ) {
+			fact.bgGradient = inlineGradient;
+		} else {
+			const inlineImage = inlineStyle( section, 'background-image', BG_IMAGE_RE );
+			if ( inlineImage ) {
+				fact.bgImage = inlineImage;
+			}
+		}
+		const inlineColor = inlineStyle( section, 'background-color', BG_COLOR_RE );
+		if ( inlineColor ) {
+			fact.bgColor = inlineColor;
+		}
+		// Same-origin CSS rules scoped to this section's id.
+		for ( const rule of cssText.matchAll( RULE_RE ) ) {
+			const selector = rule[ 1 ];
+			const body = rule[ 2 ];
+			if ( ! selector.includes( `elementor-element-${ id }` ) ) {
+				continue;
+			}
+			const gradient = body.match( BG_GRADIENT_RE );
+			// A photo beats a gradient: Elementor layers decoration gradients on
+			// child/overlay selectors of the same id — the section's own photo
+			// must never be cleared by one (jayainc's hero).
+			if ( gradient && ! fact.bgGradient && ! fact.bgImage ) {
+				fact.bgGradient = gradient[ 1 ].trim();
+			}
+			const image = body.match( BG_IMAGE_RE );
+			if ( image && ! fact.bgImage ) {
+				fact.bgImage = image[ 1 ].trim();
+			}
+			const color = body.match( BG_COLOR_RE );
+			// The overlay rule's color belongs to the overlay layer — it must
+			// never become the band's own background color.
+			if ( selector.includes( 'background-overlay' ) ) {
+				if ( color && ! fact.overlay ) {
+					fact.overlay = color[ 1 ].trim();
+				}
+			} else if ( color && ! fact.bgColor ) {
+				fact.bgColor = color[ 1 ].trim();
+			}
+			const padding = body.match( PADDING_RE );
+			if ( padding && ! fact.padding ) {
+				fact.padding = padding[ 1 ].trim();
+			}
+		}
+		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay ) {
+			facts.push( fact );
+		}
+	}
+	return facts;
+}
+
+/** The last color value of a gradient expression (the band's dominant end). */
+function lastColorOf( gradient: string | undefined ): string | undefined {
+	if ( ! gradient ) {
+		return undefined;
+	}
+	const colors = gradient.match( /(?:rgba?|hsla?)\([^)]+\)|#[0-9a-f]{3,8}\b/gi );
+	return colors?.[ colors.length - 1 ];
+}
+
+/** Normalize an rgb()/hex color to #rrggbb for the luminance math. */
+function toHex( color: string | undefined ): string | undefined {
+	if ( ! color ) {
+		return undefined;
+	}
+	const rgb = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i.exec( color );
+	if ( rgb ) {
+		return '#' + [ 1, 2, 3 ].map( ( i ) => ( +rgb[ i ] ).toString( 16 ).padStart( 2, '0' ) ).join( '' );
+	}
+	return /^#[0-9a-f]{3,8}$/i.test( color.trim() ) ? color.trim() : undefined;
+}
+
+/**
+ * Resolve a source section's rebuild theme: hero (photo background), dark
+ * (navy/black bands), alt (gray bands), light (white/near-white). Baked into
+ * sections.generated.ts at scaffold; the renderer wraps each rebuilt section.
+ */
+export function resolveSectionTheme( section: ForgeSection ): 'hero' | 'dark' | 'alt' | 'light' {
+	if ( section.bgImage ) {
+		return 'hero';
+	}
+	const candidate = toHex( lastColorOf( section.bgGradient ) ?? section.bgColor );
+	const lum = candidate ? relativeLuminance( candidate ) : undefined;
+	if ( lum !== undefined ) {
+		if ( lum < 0.3 ) {
+			return 'dark';
+		}
+		if ( lum > 0.85 ) {
+			return 'light';
+		}
+	}
+	return 'alt';
+}
+
 export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	const cssText = input.css.join( '\n' );
 	const roles: Record<string, string> = {};
@@ -428,6 +615,9 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		shadows: { count: shadows },
 		components: componentVocabulary( input.html ),
 		modes: { dark: 'auto', contrast: 'auto' },
+		// The section-background pass (117 §2) — the per-band theming data
+		// the scaffold bakes into sections.generated.ts.
+		sections: input.html ? analyzeSections( input ) : undefined,
 		adaptation: {
 			keep: [
 				'The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.',

@@ -44,6 +44,10 @@ export interface SectionItem {
 	body?: string;
 	media?: MediaRef;
 	links?: LinkRef[];
+	/** The item renders with an icon marker (icon-list family). */
+	icon?: boolean;
+	/** Attribution line (testimonial/quote authors). */
+	author?: string;
 }
 
 /**
@@ -103,6 +107,11 @@ export interface SemanticSection {
 	form?: FormInfo;
 	/** The sanitized source substring (text/raw kinds only). */
 	html?: string;
+	/** The source builder section id (Elementor's elementor-element-<id>
+	 * class) — the theming hook: the scaffold bakes the source section
+	 * backgrounds keyed by this id into sections.generated.ts, and the
+	 * renderer re-applies them per section. */
+	id?: string;
 }
 
 /** classifyHtml options (the generated renderer passes the manifest's
@@ -363,6 +372,75 @@ function collectWidgets( root: HNode, options: ClassifyOptions ): WidgetLike[] {
 	return widgets;
 }
 
+/** Is `candidate` inside `container` (any depth)? */
+function within( candidate: HNode, container: HNode ): boolean {
+	return allDescendants( container, ( n ) => n === candidate ).length > 0;
+}
+
+/**
+ * Extract the structured icon-text widget pattern — a header box (an icon
+ * glyph or an image) plus a small heading plus a body paragraph. Elementor's
+ * aux_text widget (and similar icon-box families) renders single-column
+ * feature cards this way; the flat slot collector would flatten them into
+ * uncaptioned media + orphan paragraphs (jayainc's product cards and
+ * service features hit exactly this). Returns an item draft or undefined.
+ */
+function extractStructuredItem( node: HNode ): { title?: string; body?: string; media?: MediaRef; icon: boolean } | undefined {
+	const headings = allDescendants( node, ( n ) => n.type === 'tag' && /^h[3-6]$/.test( n.name ?? '' ) );
+	if ( headings.length === 0 ) {
+		return undefined;
+	}
+	// The header-box class match must not hit the widget's own class
+	// (elementor-widget-icon-box contains 'icon') — only real icon containers:
+	// aux's `aux-ico-box` family and Elementor's icon-box internals.
+	const headerBoxes = allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).some( ( c ) => /ico-box|icon-box-icon|icon-box-wrapper/i.test( c ) ) );
+	let icon = false;
+	let media: MediaRef | undefined;
+	if ( headerBoxes.length > 0 ) {
+		const box = headerBoxes[ 0 ];
+		icon = allDescendants( box, ( n ) => n.type === 'tag' && n.name === 'span' && classList( n.attribs ).some( ( c ) => /icon/i.test( c ) ) ).length > 0;
+		const img = findDescendant( box, ( n ) => n.type === 'tag' && n.name === 'img' );
+		if ( img ) {
+			media = { src: img.attribs?.src ?? img.attribs?.[ 'data-src' ], alt: img.attribs?.alt };
+		}
+	}
+	const title = trimmed( textOf( headings[ 0 ] ) );
+	if ( ! title ) {
+		return undefined;
+	}
+	// Body: the widget's paragraphs, minus the title and anything inside the
+	// header box.
+	const paragraphs = allDescendants( node, ( n ) => n.type === 'tag' && n.name === 'p' )
+		.filter( ( p ) => ! ( headerBoxes.length > 0 && within( p, headerBoxes[ 0 ] ) ) )
+		.map( ( p ) => trimmed( textOf( p ) ) )
+		.filter( ( value ) => value && value !== title );
+	const body = paragraphs.length > 0 ? paragraphs.join( ' ' ) : undefined;
+	return { title, body, media, icon };
+}
+
+/** The attribution line of a quote widget (aux-author / cite / byline). */
+function authorOf( node: HNode ): string | undefined {
+	for ( const el of allDescendants( node, ( n ) => n.type === 'tag' ) ) {
+		const classes = classList( el.attribs );
+		const isAuthorEl = el.name === 'cite' || classes.some( ( c ) => /(author|byline|attribution)/i.test( c ) );
+		if ( isAuthorEl ) {
+			const value = trimmed( textOf( el ) );
+			if ( value ) {
+				return value;
+			}
+		}
+	}
+	return undefined;
+}
+
+/** The source builder section id (Elementor's elementor-element-<id> class). */
+function elementorId( node: HNode ): string | undefined {
+	const match = classList( node.attribs )
+		.map( ( c ) => /^elementor-element-([0-9a-f]{4,})$/.exec( c ) )
+		.find( Boolean );
+	return match?.[ 1 ];
+}
+
 /** Merge widget slots into one section draft. */
 function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSection {
 	const slots: SemanticSection['slots'] = {};
@@ -373,6 +451,27 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 	const confidence: 'high' | 'medium' | 'low' = 'high';
 
 	for ( const widget of widgets ) {
+		// Structured icon-text widgets (an icon/image header + a small heading)
+		// are single-column feature cards — extract them as items BEFORE the
+		// flat slot merge, which loses the captions and flattens the columns.
+		const structured =
+			widget.role.kind === 'body' || widget.role.kind === 'content' || widget.role.kind === 'feature'
+				? extractStructuredItem( widget.node )
+				: undefined;
+		if ( structured ) {
+			const item: SectionItem = { title: structured.title };
+			if ( structured.body ) {
+				item.body = structured.body;
+			}
+			if ( structured.media ) {
+				item.media = structured.media;
+			}
+			if ( structured.icon ) {
+				item.icon = true;
+			}
+			items.push( item );
+			continue;
+		}
 		const collected = collectSlots( widget.node );
 		if ( collected.title && ! slots.title ) {
 			slots.title = collected.title;
@@ -398,6 +497,9 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 			if ( ( collected.links ?? [] ).length > 0 ) {
 				item.links = collected.links;
 			}
+			if ( widget.role.kind === 'quote' ) {
+				item.author = authorOf( widget.node );
+			}
 			items.push( item );
 		}
 	}
@@ -419,10 +521,10 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 	// not a recognized vocabulary entry (Proposal 116).
 	const effectiveConfidence = widgets.some( ( widget ) => widget.role.kind === 'content' ) ? 'low' : confidence;
 	const kinds: Array<{ kind: SectionKind; reason: boolean }> = [
-		{ kind: 'logo-cloud', reason: media.length >= 3 && ! hasBody },
+		{ kind: 'logo-cloud', reason: media.length >= 3 && ! hasBody && items.length === 0 },
 		{ kind: 'gallery', reason: media.length >= 2 && ! slots.title && ! hasBody },
-		{ kind: 'testimonial', reason: items.length > 0 && items.some( ( item ) => Boolean( item.body ) ) && ! slots.title },
-		{ kind: 'icon-list', reason: items.length >= 2 && ! hasBody },
+		{ kind: 'testimonial', reason: items.length > 0 && items.some( ( item ) => Boolean( item.body ) ) && ! slots.title && ! items.some( ( item ) => Boolean( item.title ) ) },
+		{ kind: 'icon-list', reason: items.length >= 2 && items.every( ( item ) => Boolean( item.icon ) ) },
 		{ kind: 'feature-grid', reason: items.length >= 2 },
 		{ kind: 'cta', reason: Boolean( slots.title ) && links.length > 0 && ! hasBody && media.length === 0 },
 		{ kind: 'hero', reason: Boolean( slots.title ) && ( hasBody || media.length > 0 ) && ( index === 0 || ( links.length > 0 && media.length > 0 ) ) },
@@ -814,10 +916,11 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 	const out: SemanticSection[] = [];
 	for ( const section of sections ) {
 		const widgets = collectWidgets( section, options );
+		const sourceId = elementorId( section );
 		if ( widgets.length === 0 ) {
 			const text = trimmed( textOf( section ) );
 			if ( text.length > 0 ) {
-				out.push( { kind: 'text', confidence: 'low', slots: { body: [ text ] }, html: sliceHtml( html, section ) || fallbackHtml } );
+				out.push( { kind: 'text', confidence: 'low', slots: { body: [ text ] }, html: sliceHtml( html, section ) || fallbackHtml, id: sourceId } );
 			}
 			continue;
 		}
@@ -830,6 +933,9 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 			( built.slots.links?.length ?? 0 ) === 0;
 		if ( empty ) {
 			continue; // Recognized but empty — dropped (the fallback ladder).
+		}
+		if ( sourceId ) {
+			built.id = sourceId;
 		}
 		out.push( built );
 	}

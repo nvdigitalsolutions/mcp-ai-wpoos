@@ -469,6 +469,94 @@ a {
 	border-radius: var(--forge-radius-sm);
 }
 
+/* ------------------------------------------------------------------------
+ * Section theming (Proposal 117 §2) — the source band re-applied per
+ * rebuilt section. The wrapper carries the source background; the theme
+ * class sets the foreground adaptation (dark bands get light text, the hero
+ * photo gets its overlay tint via --ds-overlay).
+ * ------------------------------------------------------------------------ */
+.ds-section-wrap--dark {
+	color: #f5f5f4;
+}
+
+.ds-section-wrap--dark :is(h1, h2, h3, h4, h5, h6) {
+	color: #ffffff;
+}
+
+.ds-section-wrap--dark .ds-card {
+	background: var(--forge-surface);
+	color: var(--forge-ink);
+}
+
+.ds-section-wrap--dark .ds-card :is(h3, h4) {
+	color: var(--forge-ink);
+}
+
+.ds-section-wrap--dark .ds-quote {
+	background: rgba(255, 255, 255, 0.08);
+	color: #f5f5f4;
+}
+
+.ds-section-wrap--dark .ds-quote footer {
+	color: #d7d7d7;
+}
+
+.ds-section-wrap--hero {
+	position: relative;
+	background-size: cover;
+	background-position: center;
+}
+
+.ds-section-wrap--hero::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: var(--ds-overlay, rgba(8, 26, 67, 0.9));
+}
+
+.ds-section-wrap--hero > * {
+	position: relative;
+	color: #ffffff;
+}
+
+.ds-section-wrap--hero .ds-section {
+	padding-top: 6rem;
+	padding-bottom: 6rem;
+}
+
+.ds-section-wrap--hero .ds-hero {
+	background: transparent;
+	border: 0;
+}
+
+/* The hero/about media: all images, side by side (the source two-up). */
+.ds-media-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: var(--forge-space);
+}
+
+.ds-media-grid .ds-media {
+	width: 100%;
+}
+
+/* The icon-list marker (117 §1) — accent disc with a check glyph. */
+.ds-icon-marker {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	background: var(--forge-accent);
+	color: var(--forge-accent-ink);
+	font-weight: 700;
+}
+
+.ds-lede {
+	margin-bottom: var(--forge-space);
+}
+
 .ds-body {
 	display: grid;
 	gap: var(--forge-space);
