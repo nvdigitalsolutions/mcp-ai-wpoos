@@ -11,6 +11,10 @@
  * plugins/nvoos-content-graph-ai-platform/data/knowledge-base/ must stay
  * byte-identical — edit the canonical file, then copy it across.
  *
+ * Tool counts are chained to the README's System Architecture count line,
+ * which the docs catch-up pass already updates with exact deltas — a count
+ * change therefore forces this suite to fail until the KB is refreshed.
+ *
  * Historical changelog entries inside the knowledge-base files are exempt
  * from the stale-marker assertions (per the repo's "historical per-version
  * blocks stay untouched" rule), so assertions run against the active
@@ -130,7 +134,6 @@ class Test_Knowledge_Base_Facts_Sync extends WP_UnitTestCase {
 		$this->assertStringContainsString( '18 AI providers', $doc );
 		$this->assertStringContainsString( 'DeepSeek', $doc );
 		$this->assertStringContainsString( 'live registry authoritative', $doc );
-		$this->assertStringContainsString( '~1,735', $doc );
 		$this->assertStringNotContainsString( 'WordPress Open Operator', $doc );
 		$this->assertStringNotContainsString( '519 built-in', $doc );
 		$this->assertStringNotContainsString( 'GPT-4 Turbo', $doc );
@@ -160,11 +163,29 @@ class Test_Knowledge_Base_Facts_Sync extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'NV Digital Open Operator System', $playbook );
 		$this->assertStringContainsString( 'DeepSeek', $playbook );
 		$this->assertStringContainsString( 'live registry authoritative', $playbook );
-		$this->assertStringContainsString( '~1,735', $playbook );
 		$this->assertStringNotContainsString( 'WordPress Open Operator', $playbook );
 		$this->assertStringNotContainsString( '519', $playbook );
 		$this->assertStringNotContainsString( 'GPT-4 Turbo', $playbook );
 		$this->assertStringNotContainsString( 'Gemini 1.5', $playbook );
+	}
+
+	/**
+	 * The KB tool counts must track the README System Architecture line.
+	 *
+	 * The docs catch-up pass maintains the README count with exact deltas, so
+	 * chaining the KB totals to it forces a KB refresh whenever tools change.
+	 */
+	public function test_tool_counts_track_the_readme_architecture_line() {
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local repo files in tests, not remote URLs.
+		$readme = (string) file_get_contents( $this->root . '/README.md' );
+		$this->assertSame( 1, preg_match( '/\*\*~([0-9,]+) tool classes\*\* \(~([0-9,]+) base \+ ~([0-9,]+) Pro;/', $readme, $readme_matches ), 'README System Architecture count line not found' );
+		foreach ( array( $this->document_path(), $this->playbook_path() ) as $kb_file ) {
+			$content = $this->active_content( $kb_file );
+			$this->assertSame( 1, preg_match( '/~([0-9,]+) built-in tools \(~([0-9,]+) base \+ ~([0-9,]+) Pro;/', $content, $kb_matches ), 'Knowledge-base count line not found in ' . $kb_file );
+			$this->assertSame( $readme_matches[1], $kb_matches[1], 'Total tool count drifted from the README in ' . $kb_file );
+			$this->assertSame( $readme_matches[2], $kb_matches[2], 'Base tool count drifted from the README in ' . $kb_file );
+			$this->assertSame( $readme_matches[3], $kb_matches[3], 'Pro tool count drifted from the README in ' . $kb_file );
+		}
 	}
 
 	/**
