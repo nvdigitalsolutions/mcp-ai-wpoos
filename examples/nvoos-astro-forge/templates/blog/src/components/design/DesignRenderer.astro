@@ -107,6 +107,11 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	if ( theme.bg ) {
 		parts.push( `background:${ theme.bg }` );
 	}
+	// The source band's declared padding (jayainc: the 100px bands vs the
+	// flush content-tight bands) — inline wins over the wrap default.
+	if ( theme.padding ) {
+		parts.push( `padding:${ theme.padding }` );
+	}
 	return parts.length > 0 ? parts.join( ';' ) : undefined;
 };
 ---

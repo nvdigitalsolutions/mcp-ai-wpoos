@@ -14,6 +14,12 @@ export interface ForgeChrome {
 	call?: { label: string; href: string; bg?: string; ink?: string };
 	footerBlocks?: Array<{ title?: string; items: string[] }>;
 	copyright?: string;
+	/** The site favicon (the first <link rel="icon"> href, absolute). */
+	favicon?: string;
+	/** The footer brand logo (the footer-widget media image). */
+	footerLogo?: { src?: string; alt?: string };
+	/** The footer background color (resolved from the footer-widget CSS). */
+	footerBg?: string;
 }
 
 export const chrome: ForgeChrome | undefined = undefined;

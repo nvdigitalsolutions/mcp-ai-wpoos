@@ -467,6 +467,123 @@ function dominantCtaColor( cssText: string ): string | undefined {
 	return best;
 }
 
+/**
+ * The element-based CTA metrics: walk the rendered homepage for ACTUAL
+ * button elements (button-ish classes), resolve each one's background,
+ * padding and border-radius through the CSS, and return the values
+ * covering the most elements. Element coverage beats rule frequency —
+ * the source's every button wears `aux-mikado-yellow` (the yellow
+ * gradient) while the accent-colored rules outnumber it in the raw CSS
+ * (jayainc: rule-frequency picked the cyan accent for buttons).
+ */
+function dominantCtaFillFromHtml( input: DesignFetchInput ): { fill: string; padding?: string; radius?: string } | undefined {
+	const handler = new DomHandler( undefined, {} );
+	const parser = new Parser( handler, { lowerCaseTags: true, lowerCaseAttributeNames: true } );
+	parser.write( input.html );
+	parser.end();
+	const root = handler.root as unknown as HNodeLike;
+	const cssText = input.css.join( '\n' );
+	const votes = new Map<string, number>();
+	const padVotes = new Map<string, number>();
+	const radiusVotes = new Map<string, number>();
+	const bump = ( map: Map<string, number>, value: string, weight = 1 ): void => {
+		map.set( value, ( map.get( value ) ?? 0 ) + weight );
+	};
+	const walk = ( node: HNodeLike ): void => {
+		if ( node.type === 'tag' && ( node.name === 'a' || node.name === 'button' ) ) {
+			const classes = tagClasses( node ).split( /\s+/ ).filter( Boolean );
+			if ( ! classes.some( ( cls ) => /button|btn|cta|aux-ac|aux-call|pricing/i.test( cls ) ) ) {
+				for ( const child of childNodes( node ) ) {
+					walk( child );
+				}
+				return;
+			}
+			// Cascade approximation: per property, the matching rule with the
+			// MOST of the element's classes in its selector wins, ties broken
+			// by source order (a rough specificity + order cascade — the old
+			// frequency scheme let base rules out-vote the size/pill rules).
+			// The FILL prefers gradients: a gradient background-image is the
+			// effective visual fill over any flat color (jayainc's buttons
+			// paint the yellow gradient; flat hover/outline colors lose).
+			let elementGradient: string | undefined;
+			let elementColor: string | undefined;
+			let gradientSpec = -1;
+			let colorSpec = -1;
+			let elementPadding: string | undefined;
+			let elementRadius: string | undefined;
+			let padSpec = -1;
+			let radiusSpec = -1;
+			let ruleIndex = 0;
+			for ( const rule of cssText.matchAll( RULE_RE ) ) {
+				const selector = rule[ 1 ];
+				const matchCount = classes.filter( ( cls ) => selector.includes( cls ) ).length;
+				if ( matchCount === 0 ) {
+					ruleIndex++;
+					continue;
+				}
+				const spec = matchCount * 1000000 + ruleIndex;
+				const body = rule[ 2 ];
+				const gradient = body.match( BG_GRADIENT_RE );
+				if ( gradient && spec >= gradientSpec ) {
+					elementGradient = gradient[ 1 ].trim();
+					gradientSpec = spec;
+				}
+				const color = body.match( BG_COLOR_RE );
+				if ( color ) {
+					const value = normalizeColor( color[ 1 ].trim() );
+					if ( value && value !== 'transparent' && spec >= colorSpec ) {
+						elementColor = value;
+						colorSpec = spec;
+					}
+				}
+				const padding = body.match( /(?:^|;)\s*padding\s*:\s*([^;!]+)/i );
+				if ( padding && spec >= padSpec ) {
+					elementPadding = padding[ 1 ].trim();
+					padSpec = spec;
+				}
+				const radius = body.match( /(?:^|;)\s*border-radius\s*:\s*([^;!]+)/i );
+				if ( radius && spec >= radiusSpec ) {
+					elementRadius = radius[ 1 ].trim();
+					radiusSpec = spec;
+				}
+				ruleIndex++;
+			}
+			const elementFill = elementGradient ?? elementColor;
+			// The cascade winner per element feeds the votes directly — the
+			// base-rule noise never reaches them.
+			if ( elementFill ) {
+				bump( votes, elementFill );
+			}
+			if ( elementPadding ) {
+				bump( padVotes, elementPadding );
+			}
+			if ( elementRadius ) {
+				bump( radiusVotes, elementRadius );
+			}
+		}
+		for ( const child of childNodes( node ) ) {
+			walk( child );
+		}
+	};
+	walk( root );
+	const top = ( map: Map<string, number> ): string | undefined => {
+		let best: string | undefined;
+		let bestCount = 0;
+		for ( const [ value, count ] of map ) {
+			if ( count > bestCount ) {
+				best = value;
+				bestCount = count;
+			}
+		}
+		return best;
+	};
+	const fill = top( votes );
+	if ( ! fill ) {
+		return undefined;
+	}
+	return { fill, padding: top( padVotes ), radius: top( radiusVotes ) };
+}
+
 function componentVocabulary( html: string ): Record<string, number> {
 	const vocabulary: Record<string, number> = {};
 	const hints: Record<string, RegExp> = {
@@ -914,6 +1031,30 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		);
 		if ( widgetAside ) {
 			scopes.push( widgetAside );
+			// The footer brand logo (jayainc: the white logo PNG in the first
+			// footer widget) and the footer's own background color.
+			const footerImg = findFirstNode( widgetAside, ( n ) => n.type === 'tag' && n.name === 'img' && Boolean( n.attribs?.src ) );
+			if ( footerImg ) {
+				chrome.footerLogo = { src: footerImg.attribs?.src, alt: footerImg.attribs?.alt };
+			}
+			const asideClasses = ( widgetAside.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
+			if ( asideClasses.length > 0 && input.css.length > 0 ) {
+				const rules = [ ...input.css.join( '\n' ).matchAll( RULE_RE ) ];
+				// Prefer the rule whose selector ENDS on the aside's class (the
+				// rule styling the aside itself, not a descendant rule that
+				// merely mentions the class) — cascade-ordered, last wins.
+				const terminal = rules.filter( ( rule ) => asideClasses.some( ( cls ) => new RegExp( '\\.' + cls + '\\s*$' ).test( rule[ 1 ].trim() ) ) );
+				const pool = terminal.length > 0 ? terminal : rules.filter( ( rule ) => asideClasses.some( ( cls ) => rule[ 1 ].includes( cls ) ) );
+				for ( const rule of pool ) {
+					const bg = rule[ 2 ].match( BG_COLOR_RE );
+					if ( bg ) {
+						const value = normalizeColor( bg[ 1 ].trim() );
+						if ( value && value !== 'transparent' ) {
+							chrome.footerBg = value;
+						}
+					}
+				}
+			}
 		}
 		const blocks: Array<{ title?: string; items: string[] }> = [];
 		const byPosition = ( a: HNodeLike, b: HNodeLike ): number => ( a.startIndex ?? 0 ) - ( b.startIndex ?? 0 );
@@ -970,6 +1111,23 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		const copyrightText = nodeText( copyright );
 		if ( copyrightText ) {
 			chrome.copyright = copyrightText;
+		}
+	}
+
+	// 8. The favicon — the first <link rel="icon"> (or apple-touch-icon)
+	//    href, resolved absolute. The rebuilt layout had no icon (a
+	//    404 on /favicon.ico) while the source ships one.
+	const iconLink = findFirstNode( root, ( n ) =>
+		n.type === 'tag' &&
+		n.name === 'link' &&
+		Boolean( n.attribs?.href ) &&
+		/(?:^|\s)(?:icon|shortcut icon|apple-touch-icon)(?:\s|$)/i.test( n.attribs?.rel ?? '' )
+	);
+	if ( iconLink ) {
+		try {
+			chrome.favicon = new URL( iconLink.attribs?.href ?? '', input.url ).href;
+		} catch {
+			// Unparseable href — skip.
 		}
 	}
 
@@ -1150,6 +1308,7 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	const roles: Record<string, string> = {};
 	const confidence: Record<string, RoleConfidence> = {};
 	const varHits: Record<string, { value: string; role: string }> = {};
+	let designCtaStyle: { padding?: string; radius?: string } | undefined;
 
 	// 1. CSS custom properties with role hints — the highest-quality signal.
 	for ( const match of cssText.matchAll( CSS_VAR_RE ) ) {
@@ -1192,6 +1351,26 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 			roles.accent = cta;
 			confidence.accent = 'high';
 			varHits.accent = { value: cta, role: 'accent' };
+		}
+	}
+
+	// 1c. The CTA role — the fill the source's actual BUTTON elements wear
+	// (element coverage beats rule frequency: jayainc's buttons are all
+	// mikado-yellow while the accent-colored rules outnumber them in the
+	// raw CSS). Separate from `accent`, which stays the text-accent.
+	// The button metrics (padding/radius) ride along — the rebuilt
+	// .ds-button must wear the source's own shape (jayainc: 14px 43px
+	// pill, not the template's 8px 16px square).
+	if ( input.html ) {
+		const ctaMetrics = dominantCtaFillFromHtml( input );
+		if ( ctaMetrics ) {
+			roles.cta = ctaMetrics.fill;
+			confidence.cta = 'high';
+			designCtaStyle = {
+				padding: ctaMetrics.padding,
+				// A pill (1600px) is a pill — cap so the token stays sane.
+				radius: ctaMetrics.radius ? ( parseFloat( ctaMetrics.radius ) > 999 ? '999px' : ctaMetrics.radius ) : undefined,
+			};
 		}
 	}
 
@@ -1264,6 +1443,7 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		sections: input.html ? analyzeSections( input ) : undefined,
 		chrome: input.html ? analyzeChrome( input ) : undefined,
 		behavior: input.html ? analyzeScrollBehavior( input ) : undefined,
+		ctaStyle: designCtaStyle,
 		adaptation: {
 			keep: [
 				'The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.',
@@ -1358,6 +1538,28 @@ export function designToTokens( design: ForgeDesign ): Record<string, string> {
 		// border token, mirroring the ADS line-strong additive) — decorative
 		// hairlines keep the template default line.
 		tokens[ 'line-strong' ] = roles[ 'field.border' ];
+	}
+	if ( roles.cta ) {
+		// The CTA fill (121 §5): the actual button background the source
+		// wears — often distinct from the text accent (jayainc: yellow
+		// buttons, cyan accents). cta-ink by contrast, like accent-ink;
+		// a gradient's dominant END color drives the ink decision.
+		tokens.cta = roles.cta;
+		const ctaHex = normalizeColor( roles.cta ) ?? ( roles.cta.includes( 'gradient' ) ? normalizeColor( lastColorOf( roles.cta ) ?? '' ) : undefined );
+		if ( ctaHex ) {
+			const whiteRatio = contrast( '#ffffff', ctaHex ) ?? 0;
+			const blackRatio = contrast( '#111111', ctaHex ) ?? 0;
+			tokens[ 'cta-ink' ] = whiteRatio >= blackRatio ? '#ffffff' : '#111111';
+		}
+	}
+	// The source button shape (121 §5) — padding + radius ride the same
+	// harvest so the rebuilt buttons match the source's (jayainc: the
+	// 14px 43px pill, not the template default).
+	if ( design.ctaStyle?.padding ) {
+		tokens[ 'cta-pad' ] = design.ctaStyle.padding;
+	}
+	if ( design.ctaStyle?.radius ) {
+		tokens[ 'cta-radius' ] = design.ctaStyle.radius;
 	}
 	const grays = design.palette.unassigned.filter( ( value ) => {
 		const hex = normalizeColor( value );

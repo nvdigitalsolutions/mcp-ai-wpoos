@@ -169,6 +169,38 @@ describe( 'analyzeDesignInput', () => {
 		expect( customized.palette.roles.accent ).toBe( '#2b90d9' );
 	} );
 
+	it( 'extracts the CTA fill from the actual button elements (jayainc: yellow buttons, cyan accents)', () => {
+		const html =
+			'<div class="elementor-widget-button">' +
+			'<a class="aux-button aux-mikado-yellow aux-curve">Read More</a>' +
+			'<a class="aux-button aux-mikado-yellow aux-curve">Our Products</a>' +
+			'<a class="aux-button aux-mikado-yellow aux-curve">ALL SERVICES</a>' +
+			'</div>';
+		const css = [
+			'a.aux-button.aux-mikado-yellow { background-image: linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%); color: white; }',
+			':root { --e-global-color-primary: #6ec1e4; }',
+			'.aux-ac-btn1 { background-color: rgb(27, 176, 206); }',
+		].join( '\n' );
+		const withCta = analyzeDesignInput( { url: 'https://jayainc.com', html, css: [ css ] } );
+		// Element coverage: all three buttons wear the yellow gradient, so it
+		// wins the CTA role even though the cyan rule exists in the CSS.
+		expect( withCta.palette.roles.cta ).toBe( 'linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%)' );
+		const tokens = designToTokens( withCta );
+		expect( tokens.cta ).toContain( 'linear-gradient' );
+		expect( tokens[ 'cta-ink' ] ).toBe( '#111111' ); // dark ink on the yellow fill
+	} );
+
+	it( 'harvests the source button shape (padding + pill radius)', () => {
+		const html = '<div><a class="aux-button aux-mikado-yellow aux-curve">Read More</a></div>';
+		const css = [
+			'a.aux-button.aux-mikado-yellow { background-color: rgb(252, 205, 15); padding: 14px 43px; border-radius: 1600px; }',
+		].join( '\n' );
+		const shaped = analyzeDesignInput( { url: 'https://jayainc.com', html, css: [ css ] } );
+		const tokens = designToTokens( shaped );
+		expect( tokens[ 'cta-pad' ] ).toBe( '14px 43px' );
+		expect( tokens[ 'cta-radius' ] ).toBe( '999px' ); // a pill is a pill
+	} );
+
 	it( 'normalizes rem/em font sizes into the scale at the 16px root (117 §5)', () => {
 		const css = [
 			'.hero h2 { font-size: 4.5rem; }',
@@ -382,6 +414,7 @@ describe( 'scoreParity + analyzeBuiltCss', () => {
 describe( 'analyzeChrome (Proposal 120 §2)', () => {
 	const CHROME_HTML =
 		// jayainc's shape: the topbar is a document-level SIBLING above the header.
+		'<link rel="icon" href="/wp-content/uploads/cropped-jaya-inc-icon-32x32.png">' +
 		'<div id="top-header" class="aux-top-header">' +
 		'<p>123 Harbour Street, Kingston</p>' +
 		'<p>(876) 555-0100</p>' +
@@ -458,6 +491,10 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 
 	it( 'reads the copyright from the small element', () => {
 		expect( chrome?.copyright ).toBe( '© 2026 Jaya Inc. All rights reserved.' );
+	} );
+
+	it( 'captures the favicon link as an absolute URL', () => {
+		expect( chrome?.favicon ).toBe( 'https://jayainc.com/wp-content/uploads/cropped-jaya-inc-icon-32x32.png' );
 	} );
 
 	it( 'returns undefined when the source exposes no recognizable chrome', () => {
@@ -537,13 +574,13 @@ describe( 'analyzeChrome — site-node ranking + footer widgets (jayainc shape)'
 		'<nav><a href="#about">About</a></nav>' +
 		'</header>' +
 		'<aside class="subfooter aux-subfooter">' +
-		'<div><p>We serve the whole island.</p></div>' +
+		'<div><img src="/footer-logo.png" alt="Site"><p>We serve the whole island.</p></div>' +
 		'<section><h3>Products</h3><ul><li>Pipes</li><li>Valves</li></ul></section>' +
 		'<section><h3>Contact</h3><table><tr><td>123 Harbour St</td></tr></table></section>' +
 		'</aside>' +
 		'<footer id="sitefooter"><small>© 2026 Site</small></footer>';
 
-	const chrome = analyzeChrome( { url: 'https://jayainc.com', html: HTML, css: [] } );
+	const chrome = analyzeChrome( { url: 'https://jayainc.com', html: HTML, css: [ '.aux-subfooter { background-color: rgb(243, 243, 243); }' ] } );
 
 	it( 'ignores the stray entry-meta footer and entry-header', () => {
 		expect( chrome?.logo?.src ).toContain( '/logo.svg' );
@@ -560,5 +597,10 @@ describe( 'analyzeChrome — site-node ranking + footer widgets (jayainc shape)'
 
 	it( 'reads the copyright strictly from the footer element', () => {
 		expect( chrome?.copyright ).toBe( '© 2026 Site' );
+	} );
+
+	it( 'captures the footer brand logo and the footer background', () => {
+		expect( chrome?.footerLogo?.src ).toBe( '/footer-logo.png' );
+		expect( chrome?.footerBg ).toBe( '#f3f3f3' );
 	} );
 } );

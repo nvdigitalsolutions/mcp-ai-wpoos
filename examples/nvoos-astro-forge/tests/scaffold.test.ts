@@ -242,6 +242,13 @@ describe('tokens_apply', () => {
 		expect(out).toContain('/* FORGE:tokens-end */');
 	});
 
+	it('applies a profile measure token over the template default (the section-width fix)', () => {
+		const css = ['/* FORGE:tokens */', ':root {', '\t--forge-measure: 75rem;', '}', '/* FORGE:tokens-end */'].join('\n');
+		const out = rewriteGlobalCss(css, { measure: 'min(1600px, 100%)' });
+		expect(out).toContain('--forge-measure: min(1600px, 100%);');
+		expect(out).not.toContain('--forge-measure: 75rem');
+	});
+
 	it('fails loudly when the markers are missing', () => {
 		expect(() => rewriteGlobalCss(':root {}', {})).toThrow(/FORGE:tokens/);
 	});
@@ -682,7 +689,7 @@ describe( 'scaffold — design rebuild (Proposal 114)', () => {
 		expect( merged[ 'line-strong' ] ).toBe( '#767676' );
 		expect( merged[ 'scale-h1' ] ).toBe( '40px' );
 		// Untouched defaults survive.
-		expect( merged.measure ).toBe( '72ch' );
+		expect( merged.measure ).toBe( '75rem' );
 	} );
 
 	it( 'applies the design through the scaffold and writes the generated design module', async () => {
