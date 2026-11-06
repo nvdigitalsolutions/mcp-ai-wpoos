@@ -1,7 +1,7 @@
 # NV oOS Pro vs Base Version Guide
 
 > **GSD Context File** — Load this when making decisions about Base vs Pro feature placement.
-> Last reviewed: August 12, 2026.
+> Last reviewed: November 6, 2026 (v1.2.17 — counts refreshed; live registry authoritative).
 
 ---
 
@@ -11,8 +11,8 @@ NV oOS has two distribution modes:
 
 | Mode | Constant | Tools | Description |
 |------|---------|-------|-------------|
-| **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~347 core tools | Open-source, WordPress.org compatible |
-| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,648 tools (~347 base + ~1,301 Pro) | Premium addon with third-party integrations |
+| **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~358 core tools | Open-source, WordPress.org compatible |
+| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,735 tools (~358 base + ~1,378 Pro; live registry authoritative) | Premium addon with third-party integrations |
 
 ---
 
@@ -95,7 +95,7 @@ if ( class_exists( 'RankMath' ) ) {
 mcp-ai-wpoos.php                    # Main plugin file
 mcp-ai-wpoos-base.php               # Base-only entry point
 includes/
-├── tools/class-wp-mcp-ai-tool-*.php    # ~308 core tools
+├── tools/class-wp-mcp-ai-tool-*.php    # ~358 core tools
 ├── class-wp-mcp-ai-transcript-retention.php  # Transcript retention (base)
 ├── class-wp-mcp-ai-rest.php            # Core REST API
 ├── class-wp-mcp-ai-admin.php           # Core admin

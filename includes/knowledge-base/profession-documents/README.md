@@ -482,6 +482,28 @@ Good commit messages:
 - **Profession Reseeding Guide**: `../../docs/profession-reseeding.md`
 - **Tool Recommendations**: `../../docs/PROFESSION_TOOL_RECOMMENDATIONS.md`
 
+## Fact Freshness Contract (sync rule)
+
+The product facts in `wpoos_developer.txt`, its playbook, and
+`professions/technology.json` (name, version, provider list, tool count) drift
+over time. Rules:
+
+1. **Facts are version-tagged.** Each file carries a "Spec current as of
+   vX.Y.Z" line; on every release, refresh the facts and the stamp together.
+2. **The model catalog is the source of truth for model IDs**
+   (Settings → NV oOS → Models) — knowledge-base text points at the catalog
+   instead of pinning model lists.
+3. **Historical changelog entries inside these files are never rewritten**;
+   refresh entries are appended above them.
+4. **CI enforces 1-3** via `tests/test-knowledge-base-facts-sync.php` — a
+   version bump without a knowledge-base refresh fails the suite.
+5. **Edit the canonical files** under `includes/knowledge-base/`, then copy
+   them byte-identical to
+   `plugins/nvoos-content-graph-ai-platform/data/knowledge-base/` (the test
+   enforces the mirror parity).
+6. The docs catch-up track (`.agents/skills/mcp-ai-wpoos-updates`) includes
+   this refresh as a release step.
+
 ## Testing
 
 Test base knowledge seeding:
@@ -497,6 +519,20 @@ Test coverage includes:
 - MIME type assignment by category
 - Force mode refresh
 - File encoding validation
+
+Fact freshness tests:
+
+```bash
+vendor/bin/phpunit tests/test-knowledge-base-facts-sync.php
+```
+
+The fact-sync gate asserts the `wpoos_developer` document, playbook, and
+`technology.json` entry carry the plugin-header version stamp, the corrected
+product name (NV Digital Open Operator System), the 18-provider list, and the
+live-registry tool count — and that no stale markers remain in the active
+(non-changelog) content. It also enforces byte-identity between the canonical
+`includes/knowledge-base/` files and their
+`plugins/nvoos-content-graph-ai-platform/data/knowledge-base/` mirrors.
 
 ## File Statistics
 
@@ -520,6 +556,6 @@ Potential improvements:
 
 ---
 
-**Last Updated**: December 2024
+**Last Updated**: November 2026
 **Maintained By**: NV oOS Development Team
 **Questions?** See `../../docs/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md` or open an issue.

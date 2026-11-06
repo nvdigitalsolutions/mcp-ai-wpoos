@@ -339,6 +339,19 @@ weekly (or on demand), independent of any release.
   `1.1.43`/`1.1.51`/`1.1.54`/`1.2.4`, model-foundry `1.6.0` → `1.2.4`,
   chart-fence + chart-recipes-JS `1.4.0` → `1.2.4`).
 
+- **Shipped knowledge-base facts refresh (adopted 2026-11-06).** The
+  profession knowledge base (`includes/knowledge-base/**` — the
+  `wpoos_developer` document + playbook + `professions/technology.json` entry
+  and their `plugins/nvoos-content-graph-ai-platform/data/knowledge-base/`
+  byte-identical mirrors) carries version-tagged product facts (name,
+  provider list, tool count) consumed by site-side assistants. Every pass
+  refreshes the "Spec current as of vX.Y.Z" stamps and the facts together,
+  appends a dated changelog entry above the historical ones (never rewriting
+  them), and keeps the mirror copies byte-identical. CI enforces the contract
+  via `tests/test-knowledge-base-facts-sync.php` — a version bump without a
+  KB refresh fails the suite; the refresh belongs to the P1 agent-context
+  commit.
+
 ### A3. Commit structure (mirror v1.1.58–v1.1.83)
 
 Separate commits, in this order:
