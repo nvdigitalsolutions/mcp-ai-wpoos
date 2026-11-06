@@ -12,9 +12,12 @@ interface Props {
 	alt?: string;
 	class?: string;
 	sizes?: string;
+	/** Eager for above-the-fold media (the LCP image); everything else
+	 *  stays lazy — the responsive-image default (web.dev). */
+	eager?: boolean;
 }
 
-const { src, alt = '', class: className, sizes } = Astro.props;
+const { src, alt = '', class: className, sizes, eager = false } = Astro.props;
 
 function safeHost(url?: string): string | undefined {
 	if (!url) {
@@ -42,9 +45,10 @@ const optimizedSrc = src && wpHost && imageHost === wpHost ? src : undefined;
 		widths={[480, 768, 1200]}
 		sizes={sizes ?? '100vw'}
 		inferSize
-		loading="lazy"
+		loading={eager ? 'eager' : 'lazy'}
+		fetchpriority={eager ? 'high' : 'auto'}
 		decoding="async"
 	/>
 ) : (
-	<img src={src} alt={alt} class={className} loading="lazy" decoding="async" />
+	<img src={src} alt={alt} class={className} loading={eager ? 'eager' : 'lazy'} decoding="async" />
 )}

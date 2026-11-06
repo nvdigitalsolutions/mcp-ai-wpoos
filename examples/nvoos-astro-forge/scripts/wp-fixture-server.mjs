@@ -212,8 +212,11 @@ export function createWpFixtureData() {
 						'</div></div>' +
 						'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap">' +
 						'<div class="elementor-element elementor-element-sf5 elementor-widget elementor-widget-aux_simple_shape"><div class="elementor-widget-container"><div class="aux-the-shape"></div></div></div>' +
-						'<div class="elementor-element elementor-element-sf6 elementor-widget elementor-widget-aux_image"><div class="elementor-widget-container"><div class="aux-media-image"><img src="/wp-content/uploads/a.png" alt="Ronan" /></div></div></div>' +
-						'<div class="elementor-element elementor-element-sf7 elementor-widget elementor-widget-aux_image"><div class="elementor-widget-container"><div class="aux-media-image"><img src="/wp-content/uploads/b.png" alt="Elevate" /></div></div></div>' +
+						// The media URLs are absolute here — the split-hero's SmartImage
+						// pipeline only optimizes same-host WP sources (relative fixture
+						// paths would silently skip the processed-image e2e pin).
+						'<div class="elementor-element elementor-element-sf6 elementor-widget elementor-widget-aux_image"><div class="elementor-widget-container"><div class="aux-media-image"><img src="' + ORIGIN + '/wp-content/uploads/a.png" alt="Ronan" /></div></div></div>' +
+						'<div class="elementor-element elementor-element-sf7 elementor-widget elementor-widget-aux_image"><div class="elementor-widget-container"><div class="aux-media-image"><img src="' + ORIGIN + '/wp-content/uploads/b.png" alt="Elevate" /></div></div></div>' +
 						'</div></div>' +
 						'</div>' +
 						'</section>' +

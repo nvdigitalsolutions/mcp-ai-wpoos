@@ -363,6 +363,19 @@ describe('forge e2e — emitted site', () => {
 		// The harvested webfont loads (125 §2) — rubik from Google Fonts.
 		expect(index).toContain('fonts.googleapis.com/css2?family=rubik');
 		expect(index).toContain('type="application/rss+xml"');
+		// The image pipeline (126 §image): same-host WP media rebuilds
+		// through SmartImage — processed WebP under /_astro/ with a
+		// responsive srcset (the fixture serves a real PNG and the
+		// WP-host-derived image.domains authorizes it).
+		const productsIndex = await readFile(path.join(workDir, 'dist', 'products', 'index.html'), 'utf8');
+		expect(productsIndex).toMatch(/src="\/_astro\/[^"]+\.webp"/);
+		expect(productsIndex).toContain('srcset');
+		// The DTCG interchange doc (126 §dtcg) ships verbatim from
+		// public/ — the machine-readable design contract beside the CSS.
+		const dtcg = JSON.parse(await readFile(path.join(workDir, 'dist', 'tokens.dtcg.json'), 'utf8'));
+		expect(dtcg.$schema).toContain('designtokens.org');
+		expect(dtcg.core.color.$type).toBe('color');
+		expect(dtcg.core.color.accent.$value).toBe('#0b5f4e');
 
 		const feed = await readFile(path.join(workDir, 'dist', 'feed.xml'), 'utf8');
 		expect(feed).toContain('<rss version="2.0"');

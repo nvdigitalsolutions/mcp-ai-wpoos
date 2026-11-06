@@ -976,6 +976,31 @@ analyzer + template + profile:
   `elementor-element-<hex>` (e.g. `a1b2c3d`) and key the profile's
   `design.sections` entries to the same id.
 
+## Proposal 126 — cross-pollination with astro-velocity (2026-11-07)
+
+Research-backed (web.dev responsive images, MDN animation-timeline, DTCG
+2025.10, axe-core, WCAG 2.2 — full citations in
+`docs/project/proposals/126-forge-velocity-cross-pollination.md`):
+
+- **Image pipeline:** the design-band components (Hero media grid,
+  FeatureGrid, IconList, Gallery, TextBlock) render through the existing
+  `SmartImage` (Astro Image, same-host-only, `inferSize`, WebP + srcset;
+  `eager` prop → `fetchpriority="high"` for the LCP image). The collage
+  photos + logo marks stay plain `<img>` (absolute offsets / exact SVG
+  sizing beat optimization). The fixture's About media URLs are ABSOLUTE
+  now — relative paths would silently skip the processed-image e2e pin
+  (SmartImage's same-host gate).
+- **DTCG interchange doc:** `renderTokensDtcg` emits
+  `public/tokens.dtcg.json` (2025.10 core→semantic groups, typed tokens,
+  `{ref}` aliases) beside the flat CSS vars — NDS importer / ADS tooling
+  readable. Only hex colors are DTCG-safe; non-hex token values stay
+  CSS-only.
+- **Mobile overflow (125 §8):** the body's `overflow-x: clip` guard
+  CLIPS instead of scrolling — the single-row header lost its right side
+  on phones. Header wraps under 767px (nav full row, tagline hides under
+  480px); horizontal reveals degrade to plain fade on phones; the collage
+  photos return to static flow below 1152px (the measured band fit).
+
 ## Phase roadmap (096 §5)
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,

@@ -10,6 +10,7 @@
 // classes (auxicon-*, fa fa-*, …); with the source's own icon stylesheet
 // (chrome.iconCss) linked in the layout they draw the real glyphs.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SmartImage from '../SmartImage.astro';
 import IconMarker from './IconMarker.astro';
 
 interface Props {
@@ -30,7 +31,7 @@ const gridStyle = !rows && columns
 	{media && media.length > 0 ? (
 		<div class="ds-icon-split">
 			<div class="ds-icon-media">
-				{media.map((entry) => entry.src && <img src={entry.src} alt={entry.alt ?? title ?? ''} loading="lazy" width="400" height="600" />)}
+				{media.map((entry) => entry.src && <SmartImage src={entry.src} alt={entry.alt ?? title ?? ''} />)}
 			</div>
 			<div class="ds-icon-content">
 				{title && <h2 class="ds-title">{title}</h2>}
@@ -59,7 +60,7 @@ const gridStyle = !rows && columns
 							{list.map((item) => (
 								<li class="ds-card">
 									<IconMarker item={item} />
-									{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
+									{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} />}
 									{item.title && <h4>{item.title}</h4>}
 									{item.body && <p>{item.body}</p>}
 								</li>
@@ -97,7 +98,7 @@ const gridStyle = !rows && columns
 						{list.map((item) => (
 							<li class="ds-card">
 								<IconMarker item={item} />
-								{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
+								{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} />}
 								{item.title && <h4>{item.title}</h4>}
 								{item.body && <p>{item.body}</p>}
 							</li>

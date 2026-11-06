@@ -3,6 +3,7 @@
 // `columns` (Proposal 115 §4) drives the grid via per-breakpoint CSS custom
 // properties — the wireframe's captured/inferred collapse behavior.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SmartImage from '../SmartImage.astro';
 
 interface Props {
 	section: SemanticSection;
@@ -29,7 +30,7 @@ const gridStyle = columns
 		<div class="ds-grid" style={gridStyle}>
 			{items.map((item) => (
 				<div class="ds-card">
-					{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
+					{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} />}
 					{item.title && <h3>{item.title}</h3>}
 					{item.body && <p>{item.body}</p>}
 					{item.links?.[0] && (
