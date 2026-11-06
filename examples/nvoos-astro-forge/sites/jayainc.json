@@ -58,12 +58,12 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://jayainc.com",
-			"analyzedAt": "2026-11-06T03:03:33.671Z"
+			"analyzedAt": "2026-11-06T03:45:42.440Z"
 		},
 		"concept": "cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.",
 		"palette": {
 			"roles": {
-				"accent": "#6ec1e4",
+				"accent": "#1bb0ce",
 				"accent-alt": "#54595f",
 				"text": "#7a7a7a",
 				"custom-1c5389b3": "#4054b2",
@@ -157,7 +157,6 @@
 			{
 				"id": "a4ad586",
 				"bgImage": "https://jayainc.com/wp-content/uploads/2018/11/jaya-3-1.jpg",
-				"bgColor": "rgba(8,26,67,0.9)",
 				"overlay": "transparent"
 			},
 			{
@@ -240,7 +239,9 @@
 			],
 			"call": {
 				"label": "CALL US",
-				"href": "tel:305-500-9319"
+				"href": "tel:305-500-9319",
+				"bg": "linear-gradient(98deg, #ffcf0e 0%, #ffb70e 100%)",
+				"ink": "#ffffff"
 			},
 			"footerBlocks": [
 				{

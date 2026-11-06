@@ -239,8 +239,10 @@ export interface ForgeChrome {
 	tagline?: string;
 	/** The header nav (anchor links on one-pagers; page links otherwise). */
 	nav?: Array<{ label: string; href: string }>;
-	/** The tel: call-to-action button. */
-	call?: { label: string; href: string };
+	/** The tel: call-to-action button — bg/ink carry the source button's
+	 * own colors (the header CTA often wears a distinct color the site
+	 * accent does not). */
+	call?: { label: string; href: string; bg?: string; ink?: string };
 	/** The footer columns (heading + item lines each). */
 	footerBlocks?: Array<{ title?: string; items: string[] }>;
 	/** The copyright line. */

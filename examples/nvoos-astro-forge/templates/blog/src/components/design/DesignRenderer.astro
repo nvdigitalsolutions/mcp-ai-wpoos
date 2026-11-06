@@ -72,7 +72,9 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 		if ( theme.bgImage ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
 		}
-		if ( theme.bg ) {
+		// A color alongside the photo is the source's UNDERLAY (invisible
+		// beneath an opaque image) — never paint it over the photo.
+		if ( theme.bg && ! theme.bgImage ) {
 			parts.push( `background-color:${ theme.bg }` );
 		}
 		if ( theme.overlay ) {
