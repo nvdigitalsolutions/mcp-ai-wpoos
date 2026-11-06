@@ -18,4 +18,12 @@ describe('shared design-import core (126 §shared)', () => {
 		]);
 		expect(vendored).toBe(canonical);
 	});
+
+	it('lib/color.ts is the byte-synced canonical copy (126 D2)', async () => {
+		const [canonical, local] = await Promise.all([
+			readFile(path.join(PACKAGE_ROOT, 'src', 'color.ts'), 'utf8'),
+			readFile(path.join(FORGE_ROOT, 'lib', 'color.ts'), 'utf8'),
+		]);
+		expect(local).toBe(canonical);
+	});
 });
