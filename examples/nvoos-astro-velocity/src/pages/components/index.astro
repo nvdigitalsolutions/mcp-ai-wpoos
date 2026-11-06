@@ -215,22 +215,34 @@ const description =
 		padding-inline: 0.5rem;
 	}
 
+	/* The positioner carries Zag's floating-ui inline styles (top/left/width
+	   plus the placement transform) — page rules must not fight them, only
+	   stack the popup above page content (the dialog layers sit at 40/41). */
 	:global(.ui-combobox-positioner) {
-		position: absolute;
-		inset-block-start: calc(100% + 0.25rem);
-		inline-size: 100%;
 		z-index: 30;
+	}
+
+	/* Zag hides the popup with the `hidden` attribute on the content part.
+	   An author display rule would beat the UA [hidden] rule, so spell the
+	   closed state out explicitly (same contract as the dialog rules). */
+	:global(.ui-combobox-content[hidden]) {
+		display: none;
+	}
+
+	:global(.ui-combobox-content) {
+		background: var(--nv-surface);
+		border: 1px solid var(--nv-line);
+		border-radius: var(--nv-radius);
+		/* Zag scrolls highlighted options into view using the content part
+		   as the scroll root, so the overflow goes here, not on the list. */
+		max-block-size: 12rem;
+		overflow-y: auto;
 	}
 
 	:global(.ui-combobox-list) {
 		margin: 0;
 		padding: 0.25rem;
 		list-style: none;
-		background: var(--nv-surface);
-		border: 1px solid var(--nv-line);
-		border-radius: var(--nv-radius);
-		max-block-size: 12rem;
-		overflow-y: auto;
 	}
 
 	:global(.ui-combobox-item) {
