@@ -839,6 +839,16 @@ a {
 	letter-spacing: var(--ds-title-ls, normal);
 }
 
+/* The hero headline does not span the band (125 §8): the source's heading
+ * column sits at ~two-thirds of the container measure — jayainc's 72px
+ * "Ship to South Florida…" wraps inside a narrower column, not the full
+ * 1140px band. Mobile keeps the full width; the var is the per-site seam. */
+@media (width>767px) {
+	.ds-section-wrap--hero .ds-title {
+		max-width: var(--ds-hero-title-max, 66%);
+	}
+}
+
 /* The fallback text bands carry the same heading facts (the centered
  * "Other Featured Products" band). */
 .ds-body .ds-title {
