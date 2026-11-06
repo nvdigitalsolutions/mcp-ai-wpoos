@@ -65,7 +65,7 @@ examples/nvoos-dictate/
   the static CRT /MT, matching sherpa-onnx's prebuilt libs).
   **"Complete" build** (every opt-in surface) is the union of all
   feature-gated modules — engines + vision + agent + mcp + snippet OCR + document:
-  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx,document,snippet-pdf`.
+  `npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx,document,snippet-pdf,memory`.
   **Trap — a build that omits a feature silently boots with that surface
   "not compiled", not an error.** `vision` (YOLO detection/tracking + camera
   preview + VLM label-polish) and `agent` (browser control) are each
@@ -780,6 +780,57 @@ handler, user pw `test`). ADR `docs/decisions/0005-document-engine.md`;
   the password — the error path is fully covered); full polish/exports UI
   pass; 102's deskew step; verify markers use `pdfium library not found`
   (a real lib string).
+
+## Memory layer — ask your captures (Proposal 127, feature `memory`)
+
+A local, searchable corpus over every capture surface (dictations,
+meetings, snippets/documents) with hybrid retrieval: **FTS5 keyword leg +
+vec0 vector leg**, blended `w·sim + (1−w)·kw` (SurfSense ADRs 0006/0031/0033
+adapted; w = `settings.memory.semantic_weight`, default **0.85** — the
+SurfSense-measured granite plateau). Docs:
+`docs/project/proposals/127-cognition-memory-layer-{proposal,research,implementation-plan}.md`.
+
+- **Schema (always compiled — never feature-gated):** `chunks` (fan-out of
+  transcripts/meetings/snippets at insert; cascade-delete with the capture
+  row), `chunks_fts` (FTS5 external-content, AI/AD/AU triggers), and
+  `chunk_vectors` (sqlite-vec vec0, `distance_metric=cosine`, dim 384).
+  **`sqlite-vec = "=0.1.9"` is a NON-optional pinned dep**: the migration
+  list creates the vec0 table unconditionally (rusqlite_migration keys by
+  position — a conditional migration would break opening a memory-enabled
+  DB from a feature-off build). The extension registers process-globally
+  via `sqlite3_auto_extension` in `storage/db.rs::register_vec0()` BEFORE
+  any connection opens; rusqlite needs the `load_extension` feature. vec0
+  gotchas: **`+aux` columns are partition keys and are ILLEGAL in KNN
+  WHERE clauses** — plain metadata columns filter inside the KNN query
+  (before `k` — the SurfSense scope gotcha); `distance` = 1 − cosine.
+- **Encoder (feature `memory` = ort + ort-sys + tokenizers + ndarray16):**
+  `OrtEmbedder` loads the pinned **granite-97m-r2-int8** ONNX
+  (`memory/models.rs`: `onnx/model_quint8_avx2.onnx` 98,247,878 B sha256
+  `a6022dd8…` + `tokenizer.json` 25,301,672 B sha256 `4f2842d5…`;
+  Apache-2.0, 384-dim, CLS pooling, ~55 languages) through the rc.9 ort
+  session APIs — positional `ort::inputs![v0, v1]` with input/output names
+  discovered at load. **Live-verified (2026-11-07, embed_probe): ~7.4 ms
+  per sentence (debug build), cross-lingual cosine en↔de/fr/es ≈ 0.87–0.89
+  vs 0.65 unrelated — the probe is the regression gate.** `tokenizers =
+  "0.23"` (stable only; the 1.0.0-rc series is a shim), features
+  `["onig"]` only. `From<ort::Error>` gained `feature = "memory"`.
+- **Controller (`memory/controller.rs`):** one `nvoos-memory` worker owns
+  the encoder (std-mpsc job channel: `Swap`/`Embed{reply}`); polls
+  `pending_chunks` (32/batch) every 2 s when enabled; embedder swaps on
+  settings change (drop-before-download rule applies). Failure-soft
+  everywhere: no encoder → keyword-only retrieval; provider error →
+  chunks-only ask. **Destructive-op gate (Proposal 128, NiceDB pattern):**
+  `purge`/`reindex` take a typed confirmation (`PURGE` / `REINDEX`, exact
+  + case-sensitive) enforced in the controller — the single gate point —
+  and every completed op appends to the `memory_ops` audit table (never
+  deleted, survives purge; shown on Diagnostics → Memory). IPC:
+  `memory_status`, `ask_memory`, `reindex_memory(confirmation)`,
+  `purge_memory(confirmation)`, `download_memory_model`; Settings → Memory
+  tab (inline type-the-word inputs); Home "Ask your words" panel;
+  Diagnostics → Memory card + op log; `StatusInfo` memory fields. Tests:
+  `tests/memory.rs` + `memory/*` unit tests run on a deterministic
+  `MockEmbedder` (no network, no ort); complete-build union gains `memory`
+  with markers `chunk_vectors` / `granite-97m-r2-int8`.
 
 ## Stage-2 polish providers (local LLM cleanup)
 

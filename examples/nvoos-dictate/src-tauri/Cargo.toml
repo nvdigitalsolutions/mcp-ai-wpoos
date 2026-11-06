@@ -52,6 +52,14 @@ name = "document_model_probe"
 path = "examples/document_model_probe.rs"
 required-features = ["document"]
 
+# Memory-layer de-risk spike (Proposal 127, M0): downloads the pinned granite
+# embedder files, loads tokenizer + ort session, and embeds fixture sentences
+# (dim, RTF, cross-lingual cosine sanity). Requires the `memory` feature.
+[[example]]
+name = "embed_probe"
+path = "examples/embed_probe.rs"
+required-features = ["memory"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -68,8 +76,17 @@ serde_json = "1"
 thiserror = "2"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "fs", "io-util"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream", "blocking"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.32", features = ["bundled", "load_extension"] }
 rusqlite_migration = "1"
+# Memory layer (Proposal 127): vec0 virtual tables live in the shared SQLite
+# database. NON-optional on purpose — the `chunk_vectors` table is created
+# unconditionally in the migration list, because rusqlite_migration keys
+# migrations by position and a feature-conditional migration would break
+# opening a memory-enabled DB from a feature-off build. The crate is pure C
+# (~a few hundred KB) and loads via `Connection::load_extension("vec0",
+# sqlite3_vec_init)`; pinned exactly because sqlite-vec is pre-v1 and the
+# vec0 API has shifted between 0.1.x releases.
+sqlite-vec = "=0.1.9"
 keyring = "3"
 cpal = "0.15"
 arboard = "3"
@@ -145,6 +162,12 @@ tiff = { version = "0.9", optional = true }
 # a battle-tested low-level PDF writer — xref/stream bookkeeping is where
 # hand-rolling fails silently.
 lopdf = { version = "0.36", optional = true }
+# Memory layer (Proposal 127): BPE tokenization for the embedder (granite
+# ModernBERT tokenizer.json). 0.23 stable only — the 1.0.0-rc series is a
+# re-export shim under a different internal layout. `onig` is required for
+# the `\p{...}` regex the GPT-2/ModernBERT ByteLevel pretokenizer carries;
+# BPE + tokenizer.json deserialization are core in this series.
+tokenizers = { version = "0.23", default-features = false, features = ["onig"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 # Low-level keyboard hook (WH_KEYBOARD_LL), GetAsyncKeyState fallback, and
@@ -228,6 +251,12 @@ snippet-onnx = ["snippet", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
 # checksummed binary shipped as a bundle resource; `tiff` adds multi-page
 # decode. The VLM polish pass reuses Proposal 076's transport — no new dep.
 document = ["snippet", "dep:pdfium-render", "dep:tiff"]
+# Memory layer (Proposal 127): local hybrid retrieval (FTS5 + vec0) over the
+# capture corpus, embedded with a bundled ONNX encoder on the pinned ort.
+# sqlite-vec is deliberately NOT feature-gated here (schema stability — see
+# the dependency note); this feature gates the encoder (ort + tokenizers)
+# and the cited-answer provider path only.
+memory = ["dep:ort", "dep:ort-sys", "dep:tokenizers", "dep:ndarray16"]
 # Searchable-PDF export (102 D9/D10 shared emitter): lopdf rebuilds the
 # source PDF with a rendered page image + invisible text layer.
 snippet-pdf = ["snippet", "dep:lopdf"]

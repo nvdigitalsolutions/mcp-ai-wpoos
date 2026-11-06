@@ -14,6 +14,7 @@ pub mod ipc;
 pub mod mcp;
 pub mod media;
 pub mod meetings;
+pub mod memory;
 pub mod nvoos;
 pub mod paste;
 pub mod permissions;
@@ -191,6 +192,13 @@ pub fn run() {
             // Load persisted settings into state and start the core graph.
             let app_state = handle.state::<state::AppState>();
             let _ = app_state.reload_settings();
+            // Memory worker + encoder follow the persisted settings
+            // (failure-soft: a missing model leaves keyword-only retrieval).
+            {
+                let settings = app_state.settings_snapshot();
+                let models_dir = app_state.models_dir();
+                app_state.memory.apply_settings(&settings, &models_dir);
+            }
             dictation::DictationController::spawn(handle.clone())?;
             snippet::controller::SnippetController::start(&handle)?;
             Ok(())
@@ -269,6 +277,11 @@ pub fn run() {
             ipc::export_document,
             ipc::document_model_available,
             ipc::test_document_model_connection,
+            ipc::memory_status,
+            ipc::ask_memory,
+            ipc::reindex_memory,
+            ipc::purge_memory,
+            ipc::download_memory_model,
             ipc::get_permissions,
             ipc::request_permission,
             ipc::open_system_settings,

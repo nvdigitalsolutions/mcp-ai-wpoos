@@ -101,7 +101,8 @@ impl From<keyring::Error> for AppError {
     feature = "vision",
     feature = "moonshine",
     feature = "silero-vad",
-    feature = "snippet-onnx"
+    feature = "snippet-onnx",
+    feature = "memory"
 ))]
 impl From<ort::Error> for AppError {
     fn from(e: ort::Error) -> Self {

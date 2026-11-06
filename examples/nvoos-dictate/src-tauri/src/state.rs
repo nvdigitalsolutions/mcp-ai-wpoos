@@ -94,7 +94,7 @@ impl SecretStore for InMemorySecretStore {
 /// The shared application state.
 pub struct AppState {
     pub settings: RwLock<Settings>,
-    pub db: Db,
+    pub db: std::sync::Arc<Db>,
     pub secrets: Arc<dyn SecretStore>,
     pub app: AppHandle,
     /// Resident microphone (ring buffer). None when no mic exists.
@@ -114,6 +114,9 @@ pub struct AppState {
     /// Resident document-pipeline state (Proposal 109). Always present
     /// (type-stable); pdfium/tiff/OCR bodies run behind `document`.
     pub document: std::sync::Arc<crate::document::controller::DocumentController>,
+    /// Resident memory controller (Proposal 127). Always present
+    /// (type-stable); the encoder (ort + tokenizers) runs behind `memory`.
+    pub memory: std::sync::Arc<crate::memory::controller::MemoryController>,
     /// Resident STT engine (swapped on settings change).
     pub engine: RwLock<Option<Arc<dyn SttEngine>>>,
     pub paste: Arc<dyn PasteBackend>,
@@ -122,8 +125,12 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(app: AppHandle, db: Db, secrets: Arc<dyn SecretStore>) -> Self {
+        let db = std::sync::Arc::new(db);
         Self {
             settings: RwLock::new(Settings::default()),
+            memory: std::sync::Arc::new(crate::memory::controller::MemoryController::new(
+                db.clone(),
+            )),
             db,
             secrets,
             app,
@@ -157,6 +164,9 @@ impl AppState {
         )?;
         settings.save()?;
         *self.settings.write().unwrap() = settings.clone();
+        // Re-apply the memory encoder + poll gate. Failure-soft by
+        // contract: a missing model leaves keyword-only retrieval.
+        self.memory.apply_settings(&settings, &self.models_dir());
         Ok(settings)
     }
 

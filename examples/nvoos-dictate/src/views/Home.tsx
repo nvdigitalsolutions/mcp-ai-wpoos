@@ -3,6 +3,7 @@ import {
   api,
   onDocumentProgress,
   onMediaProgress,
+  type AskResult,
   type Detection,
   type DictateEvent,
   type DocumentResult,
@@ -576,6 +577,86 @@ function BrowserAgentPanel() {
   );
 }
 
+/** Memory panel (Proposal 127): ask the corpus — dictations, meetings,
+ *  snippets and document pages — and get cited passages back, optionally
+ *  answered by the Stage-2 provider. Failure-soft by design: a provider
+ *  error still returns passages. */
+function MemoryPanel({ enabled }: { enabled: boolean }) {
+  const [query, setQuery] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<AskResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const ask = async () => {
+    const q = query.trim();
+    if (!q || busy || !enabled) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      setResult(await api.askMemory(q));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copy = (text: string) => {
+    void navigator.clipboard.writeText(text);
+  };
+
+  return (
+    <section className="card">
+      <h2>Ask your words</h2>
+      <p className="muted">
+        {enabled
+          ? 'Search everything you have captured — dictations, meetings, screen grabs and documents. Ask a question or type a phrase; matching passages come back cited.'
+          : 'Memory is off. Enable it in Settings → Memory to start indexing your captures for search.'}
+      </p>
+      <div className="row">
+        <input
+          type="text"
+          style={{ flex: 1 }}
+          value={query}
+          placeholder="What did I say about…?"
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              void ask();
+            }
+          }}
+        />
+        <button className="btn" disabled={busy || !enabled} onClick={() => void ask()}>
+          {busy ? 'Asking…' : 'Ask'}
+        </button>
+      </div>
+      {error && <p className="muted">Error: {error}</p>}
+      {result?.answer && <pre className="preview">{result.answer}</pre>}
+      {result && result.hits.length === 0 && !result.answer && (
+        <p className="muted">No passages found.</p>
+      )}
+      {result && result.hits.length > 0 && (
+        <ul className="hits">
+          {result.hits.map((h) => (
+            <li key={h.chunk_id} className="hit">
+              <span className="row">
+                <span className="badge dim">{h.surface}</span>
+                <span className="muted">{h.score.toFixed(2)}</span>
+                <button className="btn ghost" onClick={() => copy(h.text)}>
+                  Copy
+                </button>
+              </span>
+              <p>{h.text}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export default function Home({ status, dictate, onRefresh }: Props) {
   const [spaChecking, setSpaChecking] = useState(false);
   const [spaCheck, setSpaCheck] = useState<SpaCheck | null>(null);
@@ -635,6 +716,7 @@ export default function Home({ status, dictate, onRefresh }: Props) {
       <DocumentPanel />
       <CameraPanel />
       {status?.agent_available && <BrowserAgentPanel />}
+      {status?.memory_available && <MemoryPanel enabled={status.memory_enabled} />}
 
       <section className="card">
         <h2>System</h2>
@@ -704,6 +786,16 @@ export default function Home({ status, dictate, onRefresh }: Props) {
                 {status?.snippet_hotkey
                   ? `${status.snippet_hotkey} · ${status.snippet_engine}`
                   : 'available (no hotkey set)'}
+              </span>
+            </li>
+          )}
+          {status?.memory_available && (
+            <li>
+              <span>Memory</span>
+              <span className={badge(status.memory_enabled)}>
+                {status.memory_enabled
+                  ? `${status.memory_indexed}/${status.memory_chunks} chunks indexed`
+                  : 'off (enable in Settings → Memory)'}
               </span>
             </li>
           )}

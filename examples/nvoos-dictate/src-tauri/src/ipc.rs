@@ -58,6 +58,14 @@ pub struct StatusInfo {
     pub snippet_hotkey: String,
     /// Whether the document pipeline (Proposal 109) is compiled in.
     pub document_available: bool,
+    /// Whether the memory layer (Proposal 127) is compiled in.
+    pub memory_available: bool,
+    /// Whether the memory layer is turned on in Settings.
+    pub memory_enabled: bool,
+    /// Number of chunks with a stored vector.
+    pub memory_indexed: i64,
+    /// Total number of chunks in the corpus.
+    pub memory_chunks: i64,
 }
 
 /// Reject commands invoked from any window other than the main one.
@@ -108,6 +116,11 @@ pub fn update_settings(state: State<'_, AppState>, settings: Settings) -> AppRes
 pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
     let settings = state.settings_snapshot();
     let engine = state.engine.read().unwrap().clone();
+    let (memory_chunks, memory_indexed) = state
+        .db
+        .memory_counts()
+        .map(|(total, indexed, _)| (total, indexed))
+        .unwrap_or((0, 0));
     Ok(StatusInfo {
         ptt_key: settings.hotkey.ptt_key.clone(),
         ptt_mode: settings.hotkey.ptt_mode.clone(),
@@ -146,6 +159,10 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         snippet_engine: settings.snippet.engine.clone(),
         snippet_hotkey: settings.snippet.hotkey.clone(),
         document_available: crate::document::available(),
+        memory_available: crate::memory::available(),
+        memory_enabled: settings.memory.enabled,
+        memory_indexed,
+        memory_chunks,
     })
 }
 
@@ -282,6 +299,7 @@ pub struct DiagnosticsInfo {
     pub agent: AgentDiagnostics,
     pub snippet: SnippetDiagnostics,
     pub document: DocumentDiagnostics,
+    pub memory: crate::memory::MemoryStatus,
     pub last_dictation: Option<crate::dictation::LastDictationStats>,
 }
 
@@ -521,6 +539,9 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
         agent: agent_diagnostics(&state, &settings),
         snippet: snippet_diagnostics(&state, &settings),
         document: document_diagnostics(&state, &settings),
+        memory: state
+            .memory
+            .status(&state.db, &settings, &state.models_dir())?,
         last_dictation: crate::dictation::last_dictation_stats(),
     })
 }
@@ -690,6 +711,88 @@ fn hotkey_diagnostics(settings: &Settings) -> HotkeyDiagnostics {
 }
 
 // ---- macOS TCC permissions (P5, phase M1) -------------------------------
+
+// ---- Memory layer (Proposal 127) -----------------------------------------
+
+/// Snapshot of the memory subsystem (Settings/Diagnostics/Home cards).
+#[tauri::command]
+pub fn memory_status(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+) -> AppResult<crate::memory::MemoryStatus> {
+    main_window_only(&window)?;
+    let settings = state.settings_snapshot();
+    state
+        .memory
+        .status(&state.db, &settings, &state.models_dir())
+}
+
+/// Ask the memory corpus: retrieved chunks always, a cited answer when a
+/// Stage-2 provider answered. Failure-soft by contract — a provider error
+/// returns chunks-only, never an error to the user.
+#[tauri::command]
+pub async fn ask_memory(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    query: String,
+) -> AppResult<crate::memory::AskResult> {
+    main_window_only(&window)?;
+    let settings = state.settings_snapshot();
+    state
+        .memory
+        .ask(&state.db, &query, &settings, state.secrets.as_ref())
+        .await
+}
+
+/// Drop every vector row; the worker re-embeds the corpus on its next
+/// polls (the re-embed path for embedder changes). The keyword index keeps
+/// serving throughout. Gated by the typed confirmation (Proposal 128): the
+/// backend is the authority — the UI input merely gathers the word.
+#[tauri::command]
+pub fn reindex_memory(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    confirmation: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.memory.reindex(&state.db, &confirmation)
+}
+
+/// Wipe the search corpus (chunks + vectors + FTS). Capture history is
+/// untouched, but existing history stops being searchable until
+/// re-captured — hence the stricter `PURGE` typed gate.
+#[tauri::command]
+pub fn purge_memory(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    confirmation: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.memory.purge(&state.db, &confirmation)
+}
+
+/// Download (or force re-download) the configured embedder's pinned files,
+/// then rebuild the resident encoder.
+#[tauri::command]
+pub async fn download_memory_model(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    force: bool,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    let settings = state.settings_snapshot();
+    let spec = crate::memory::models::spec_by_id(&settings.memory.embedder).ok_or_else(|| {
+        AppError::Other(format!("unknown embedder '{}'", settings.memory.embedder))
+    })?;
+    // Drop the resident encoder BEFORE replacing files on disk: a loaded
+    // session can hold the model open on Windows (the download-IPC rule).
+    state.memory.drop_encoder();
+    let models_dir = state.models_dir();
+    crate::memory::models::download(spec, &models_dir, force, |_| {}).await?;
+    // Rebuild on the fresh files.
+    state.memory.apply_settings(&settings, &models_dir);
+    Ok(())
+}
 
 /// Permission rows for the Settings wizard. The Microphone row derives its
 /// state from the resident capture (a working stream = granted).
