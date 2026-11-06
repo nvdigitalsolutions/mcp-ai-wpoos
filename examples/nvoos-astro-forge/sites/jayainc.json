@@ -58,7 +58,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://jayainc.com",
-			"analyzedAt": "2026-11-06T01:15:58.683Z"
+			"analyzedAt": "2026-11-06T03:03:33.671Z"
 		},
 		"concept": "cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.",
 		"palette": {
@@ -103,26 +103,25 @@
 			"display": "rubik",
 			"body": "roboto",
 			"scalePx": [
+				8,
+				9.6,
 				10,
-				11,
-				12,
 				13,
-				14,
-				15,
-				16,
-				18
+				29,
+				48,
+				80,
+				128
 			]
 		},
 		"spacing": {
 			"scalePx": [
-				0.0001,
 				1,
-				2,
-				3,
 				4,
-				5,
-				6,
-				7
+				10,
+				17,
+				30,
+				70,
+				150
 			]
 		},
 		"radii": {
@@ -172,6 +171,7 @@
 			},
 			{
 				"id": "d5844b9",
+				"anchor": "about",
 				"bgGradient": "linear-gradient(180deg, #e5e5e5 0%, #ffffff 100%)",
 				"bgColor": "transparent"
 			},
@@ -183,6 +183,7 @@
 			},
 			{
 				"id": "fcc5e07",
+				"anchor": "services",
 				"bgGradient": "linear-gradient(180deg, #ffffff 0%, #e5e5e5 100%)",
 				"bgColor": "transparent",
 				"padding": "100px 0px 100px 0px"
@@ -195,6 +196,7 @@
 			},
 			{
 				"id": "48ace0b",
+				"anchor": "contact",
 				"bgColor": "#f6f6f6",
 				"padding": "100px 0px 0px 0px"
 			},
@@ -204,6 +206,66 @@
 				"padding": "0px 0px 0px 0px"
 			}
 		],
+		"chrome": {
+			"topbar": [
+				"3300 NW 112TH AVE Doral, FL 33172",
+				"+1 (305) 500-9319"
+			],
+			"logo": {
+				"src": "https://jayainc.com/wp-content/uploads/2018/09/JAYAINC-LOGO-V1-blue.svg",
+				"alt": "JAYAINC"
+			},
+			"tagline": "Import / Export Servicing South Florida, Latin America & The Caribbean",
+			"nav": [
+				{
+					"label": "HOME",
+					"href": "/"
+				},
+				{
+					"label": "ABOUT",
+					"href": "#about"
+				},
+				{
+					"label": "PRODUCTS",
+					"href": "#products"
+				},
+				{
+					"label": "SERVICES",
+					"href": "#services"
+				},
+				{
+					"label": "CONTACT",
+					"href": "#contact"
+				}
+			],
+			"call": {
+				"label": "CALL US",
+				"href": "tel:305-500-9319"
+			},
+			"footerBlocks": [
+				{
+					"items": [
+						"Your needs are our top priority and we guarantee to provide each of our patrons with the highest quality of support and service tailored to your requirements."
+					]
+				},
+				{
+					"title": "Products",
+					"items": [
+						"Consumer Electronics Healthcare Products Home Appliances Beauty Products"
+					]
+				},
+				{
+					"title": "Contact",
+					"items": [
+						"Address: 3300 NW 112TH AVE",
+						"Phone: +1 (305) 500-9319",
+						"Work: Monday – Friday 09.00 – 23.00 Sunday 09.00 – 16.00",
+						"Email: [email protected]"
+					]
+				}
+			],
+			"copyright": "© 2026 JAYAINC. powered by NV Digital Solutions"
+		},
 		"adaptation": {
 			"keep": [
 				"The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.",
