@@ -24,6 +24,12 @@ describe( 'visionConfig', () => {
 		expect( config ).toEqual( { baseUrl: 'https://ollama.local/v1', key: 'sk-x', model: 'llava' } );
 	} );
 
+	it( 'honors the timeout override (local models need a long first load)', () => {
+		const config = visionConfig( { NVOOS_FORGE_VISION_KEY: 'sk-x', NVOOS_FORGE_VISION_TIMEOUT_MS: '240000' } );
+		expect( config?.timeoutMs ).toBe( 240000 );
+		expect( visionConfig( { NVOOS_FORGE_VISION_KEY: 'sk-x', NVOOS_FORGE_VISION_TIMEOUT_MS: 'junk' } )?.timeoutMs ).toBeUndefined();
+	} );
+
 	it( 'is undefined without a key — callers skip', () => {
 		expect( visionConfig( { NVOOS_FORGE_VISION_BASE_URL: 'https://x/v1' } ) ).toBeUndefined();
 		expect( visionConfig( {} ) ).toBeUndefined();

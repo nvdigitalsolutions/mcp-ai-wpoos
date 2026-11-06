@@ -629,7 +629,9 @@ flattened, and the flat theme ignored the source's band rhythm.
   in the request body — NEVER hosted URLs (mShots 403 / gist-binary / the
   hallucinated-placeholder failure chain, 2026-11-06). Env:
   `NVOOS_FORGE_VISION_BASE_URL`/`_KEY`/`_MODEL` (any OpenAI-compatible
-  endpoint incl. local Ollama). Screenshots: `NVOOS_FORGE_CAPTURE_URL`
+  endpoint incl. local Ollama — `NVOOS_FORGE_VISION_TIMEOUT_MS` for local
+  models' slow first load; qwen2.5vl:7b demoed live at 60/100 on jayainc).
+  Screenshots: `NVOOS_FORGE_CAPTURE_URL`
   (source only — remote endpoints can't reach the local build) or dropped
   `<target>/verify-artifacts/<label>-{source,built}.{png,jpg,webp}`.
   Fail-soft everywhere; vision never runs inside the build (determinism).

@@ -23,6 +23,9 @@ export interface VisionConfig {
 	baseUrl: string;
 	key: string;
 	model: string;
+	/** Request timeout ms (default 120000 — local models need more on first
+	 * load; NVOOS_FORGE_VISION_TIMEOUT_MS overrides). */
+	timeoutMs?: number;
 }
 
 /** An in-memory image (base64 + mime) — the vision payload shape. */
@@ -41,11 +44,16 @@ export function visionConfig( env: NodeJS.ProcessEnv = process.env ): VisionConf
 	if ( ! key ) {
 		return undefined;
 	}
-	return {
+	const config: VisionConfig = {
 		baseUrl: ( env.NVOOS_FORGE_VISION_BASE_URL ?? 'https://api.openai.com/v1' ).replace( /\/+$/, '' ),
 		key,
 		model: env.NVOOS_FORGE_VISION_MODEL ?? 'gpt-4o-mini',
 	};
+	const timeout = Number( env.NVOOS_FORGE_VISION_TIMEOUT_MS );
+	if ( Number.isFinite( timeout ) && timeout > 0 ) {
+		config.timeoutMs = timeout;
+	}
+	return config;
 }
 
 /** The data-URL form OpenAI-compatible vision APIs accept for image_url.url. */
@@ -137,10 +145,10 @@ export async function visionRun(
 	images: VisionImage[],
 	prompt: string,
 	fetchImpl: typeof fetch = fetch,
-	timeoutMs: number = 120_000,
+	timeoutMs?: number,
 	maxTokens: number = 900
 ): Promise<VisionOutcome> {
-	const outcome = await chat( config, buildBody( config, images, prompt, maxTokens ), fetchImpl, timeoutMs );
+	const outcome = await chat( config, buildBody( config, images, prompt, maxTokens ), fetchImpl, timeoutMs ?? config.timeoutMs ?? 120_000 );
 	if ( ! outcome.ok ) {
 		return outcome;
 	}
@@ -173,7 +181,7 @@ export async function visionCompare(
 	built: VisionImage,
 	prompt: string = COMPARE_PROMPT,
 	fetchImpl: typeof fetch = fetch,
-	timeoutMs: number = 120_000
+	timeoutMs?: number
 ): Promise<VisionOutcome> {
 	return visionRun( config, [ source, built ], prompt, fetchImpl, timeoutMs );
 }
