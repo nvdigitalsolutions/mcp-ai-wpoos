@@ -644,6 +644,57 @@ flattened, and the flat theme ignored the source's band rhythm.
   porting; the only cheap PHP port is the section-background pass + the
   WCAG gate. Research: `119-forge-practicality-mcp-and-plugin-assessment.md`.
 
+## Proposal 120 — chrome + banded scales (2026-11-06)
+
+Vision-verified jayainc iteration (fidelity 60 → 85, parity 84%,
+spacing overlap 40% → 71%) taught three rebuild gaps, all fixed in
+`lib/design.ts` + the template:
+
+- **Site chrome (`analyzeChrome`, 120 §2):** header/footer come from theme
+  templates that never reach the REST content — the rebuilt site had NO
+  chrome. `analyzeChrome` extracts chrome FACTS (topbar lines, logo,
+  tagline, nav, tel: call, footer blocks, copyright) from the raw rendered
+  homepage; `Base.astro` rebuilds them with its own components
+  (`chrome.generated.ts` bakes at scaffold; absent chrome keeps the
+  default header). **Site-node ranking** (`findSiteNode`): prefer the
+  site-pattern id/class (`site-header|masthead|master-header` /
+  `site-footer|sitefooter|colophon`), else the LAST match — a post's
+  `<footer class="entry-meta">` precedes the real `<footer id="sitefooter">`
+  on jayainc and must not win; same for stray `<header class="entry-header">`.
+  **Header hint must exclude topbar-ish nodes** (`!/top-header|topbar|top-bar/i`)
+  — `#top-header` matched the loose header regex and emptied logo/tagline/nav.
+  **Footer columns live in a widget ASIDE** (`<aside class="subfooter">`)
+  beside the footer element — merge both scopes for the blocks
+  (position-scoped between headings, `startIndex`-ordered); the copyright
+  stays strict to the footer element. Section anchors (`attribs.id` on the
+  Elementor section → `ForgeSection.anchor`) re-apply as `id="…"` on each
+  `ds-section-wrap` so the chrome nav resolves.
+- **Banded type scale (120 §3):** dense builder harvests (jayainc: 52
+  sizes) break the bottom/top 10-step trim — it kept
+  `[8,9.6,10,11,64,72,80,82,96,128]` and ranked **body = 64px, small = 8px**.
+  `trimScaleLadder` keeps a representative PER BAND (small ≤12, body 13-20,
+  card 24-34, section 36-60, hero 60-100 + the largest display value), and
+  `designToTokens` reads the same bands (body = FIRST in band — the source's
+  actual body; headings = band centers; small = center of [8,12] → 10px,
+  never the micro 8px). Rebuilt jayainc: body 13px, cards 29px, titles
+  44-48px, hero 66-80px vs source ground truth 13/28/43/72. `body` now
+  wires `font-size: var(--forge-scale-body)` — the token existed but
+  nothing applied it (browsers default 16px).
+- **Banded spacing (120 §4):** same disease — a 46-value margin/padding
+  harvest baked `space-4: 104px`. `trimSpaceLadder` + band-mapped
+  `space-1..5` (xs 2-6, sm 8-12, md 14-20, lg 24-40, xl 48-96 centers,
+  hairline + largest kept) bake a real rhythm (jayainc: 4/10/17/30/70).
+- **Gotchas (each cost a fix 2026-11-06):** a bare `theme = themeFor(...)`
+  assignment inside the DesignRenderer map is an implicit-global in strict
+  ESM → `ReferenceError: theme is not defined` at PRERENDER (use `const`);
+  `trimLadder` (bottom/top ends) survives for radii only — fonts/spacing
+  are band-aware now; the vision layer 400s on oversized screenshots
+  (qwen2.5vl rejected a 1440×6383 full-page capture) — resize dropped
+  artifacts to a ≤2048 long edge first (sharp is in the forge devDeps via
+  astro); a detached `astro preview` holds the target dir — re-scaffold
+  `--overwrite` fails EBUSY until the preview PID is killed (`netstat -ano |
+  grep <port>`).
+
 ## Phase roadmap (096 §5)
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,
