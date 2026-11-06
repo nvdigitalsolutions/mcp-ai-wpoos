@@ -43,6 +43,8 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `lib/content-scan.ts` | §3.3 content audit scanner (htmlparser2 — embeds/alt/hosts/shortcode artifacts + unprocessed brackets) |
 | `lib/redirects.ts` | §3.3 live 301-map generator (the template's exact rules, computed from REST) |
 | `lib/ssrf.ts` | URL guard — private/literal-range refusal, registry allowlist + `NVOOS_FORGE_OPEN_ANALYZE` opt-in, CLI-only loopback exemption |
+| `lib/vision.ts` | 118 §1 optional vision layer — OpenAI-compatible chat-completions, DATA-URL images in the body, fail-soft `{ok}` outcomes |
+| `lib/capture.ts` | 118 §2 screenshot contract — `NVOOS_FORGE_CAPTURE_URL` endpoint or dropped `verify-artifacts/` files (browser-free) |
 | `lib/project-files.ts` | Shared source collector for pushes (CLI deploy + `github_commit` tool) |
 | `mcp/` | Phase 4 MCP surface (095 dual-era pattern): single-source `registry.ts` (zod + annotations + write flags; router/full modes), `bff.ts` (rate limit → Host/Origin → fail-closed write auth), `stdio.ts`, 7 tool slices |
 | `scripts/forge-mcp.mjs` | MCP Streamable HTTP entry (`FORGE_MCP_PORT`, default 8472) |
@@ -616,6 +618,22 @@ flattened, and the flat theme ignored the source's band rhythm.
   `design` (sections included) + `vocabulary` blocks into the committed
   profile — `analyze --write` drafts a NEW profile, never merge over the
   hand-tuned collections/tokens/frontPage.
+
+- **`analyze --write` merges by default (118 §3):** a fresh analysis draft
+  MERGES into an existing profile — hand-tuned collections/tokens/frontPage/
+  forms survive, the analyzed blocks (design/vocabulary/inventory/wireframes)
+  refresh. `--fresh` forces a clean draft.
+- **`forge verify --visual [--serve <port>] [--wait <s>] [--strict-visual
+  [--min-fidelity 70]]` (118 §4):** after the parity gate, compare SOURCE vs
+  BUILT screenshots with a vision model. Images travel as base64 DATA URLs
+  in the request body — NEVER hosted URLs (mShots 403 / gist-binary / the
+  hallucinated-placeholder failure chain, 2026-11-06). Env:
+  `NVOOS_FORGE_VISION_BASE_URL`/`_KEY`/`_MODEL` (any OpenAI-compatible
+  endpoint incl. local Ollama). Screenshots: `NVOOS_FORGE_CAPTURE_URL`
+  (source only — remote endpoints can't reach the local build) or dropped
+  `<target>/verify-artifacts/<label>-{source,built}.{png,jpg,webp}`.
+  Fail-soft everywhere; vision never runs inside the build (determinism).
+  Report: `verify-artifacts/visual-audit.json`.
 
 ## Phase roadmap (096 §5)
 

@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { analyzeSite, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
+import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { WpClient } from '../lib/wp-client.ts';
 
 interface Route {
@@ -149,3 +149,53 @@ describe('profileFromDiscovery', () => {
 		expect(profile.collections.find((c) => c.slug === 'posts')?.authMode).toBeUndefined();
 	});
 });
+
+describe( 'mergeProfileDraft (Proposal 118 §3)', () => {
+	const fresh = profileFromDiscovery( {
+		url: 'https://jayainc.com',
+		name: 'JAYAINC',
+		description: '',
+		postTypes: {},
+		woocommerce: false,
+		wooPublic: false,
+		seoPlugins: [],
+		lockedDown: false,
+		frontPageSlug: 'home',
+		collections: [
+			{ slug: 'posts', restBase: 'wp/v2/posts', kind: 'post', optional: true, count: 0 },
+			{ slug: 'pages', restBase: 'wp/v2/pages', kind: 'page', optional: false, count: 3 },
+		],
+		junkPages: [ 'inc' ],
+	} );
+	fresh.design = { mode: 'rebuild', source: { url: 'https://jayainc.com', analyzedAt: 'x' }, concept: 'c', palette: { roles: {}, unassigned: [], confidence: {} }, typography: { scalePx: [ 16 ] }, spacing: { scalePx: [ 8 ] }, radii: { valuesPx: [] }, shadows: { count: 0 }, components: {}, modes: { dark: 'auto', contrast: 'auto' }, sections: [ { id: 'a4ad586', bgImage: 'x.jpg' } ], adaptation: { keep: [], replace: [], remix: [], licensingNote: '', attribution: [] } };
+
+	it( 'keeps hand-tuned fields and refreshes the analyzed blocks', () => {
+		const existing = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		// Simulate operator curation on top of a previous analyze run.
+		existing.tokens = { ink: '#242424' };
+		existing.frontPage = 'home';
+		existing.collections = existing.collections.map( ( c ) =>
+			c.slug === 'pages' ? { ...c, exclude: [ 'inc', 'login-customizer' ], maxPages: 3 } : c
+		);
+		existing.design = undefined; // e.g. the operator stripped a stale block
+
+		const merged = mergeProfileDraft( existing, fresh );
+		expect( merged.tokens ).toEqual( { ink: '#242424' } );
+		expect( merged.frontPage ).toBe( 'home' );
+		const pages = merged.collections.find( ( c ) => c.slug === 'pages' );
+		expect( pages?.exclude ).toEqual( [ 'inc', 'login-customizer' ] );
+		expect( pages?.maxPages ).toBe( 3 );
+		expect( merged.design?.sections?.[ 0 ]?.id ).toBe( 'a4ad586' );
+	} );
+
+	it( 'fills missing fields from the draft but never drops curated collections', () => {
+		const existing = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		existing.collections = [];
+		existing.frontPage = undefined;
+		existing.name = undefined;
+		const merged = mergeProfileDraft( existing, fresh );
+		expect( merged.collections.length ).toBe( 2 );
+		expect( merged.frontPage ).toBe( 'home' );
+		expect( merged.name ).toBe( 'JAYAINC' );
+	} );
+} );

@@ -266,6 +266,42 @@ export function profileFromDiscovery(report: DiscoveryReport): SiteProfile {
 	};
 }
 
+/**
+ * Merge a fresh discovery draft into an existing profile (Proposal 118 §3).
+ * The operator's hand-tuned fields survive — collections (excludes, fields,
+ * caps), frontPage, tokens, forms — while the ANALYZED blocks (design,
+ * vocabulary, inventory, wireframes) refresh from the new run. Missing
+ * fields fill from the draft. This is the default `analyze --write`
+ * behavior; `--fresh` bypasses it.
+ */
+export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): SiteProfile {
+	const merged: SiteProfile = { ...existing };
+	merged.url = existing.url || fresh.url;
+	merged.name = existing.name ?? fresh.name;
+	if ( fresh.design ) {
+		merged.design = fresh.design;
+	}
+	if ( fresh.vocabulary ) {
+		merged.vocabulary = fresh.vocabulary;
+	}
+	if ( fresh.inventory ) {
+		merged.inventory = fresh.inventory;
+	}
+	if ( fresh.wireframes ) {
+		merged.wireframes = fresh.wireframes;
+	}
+	if ( ( existing.collections ?? [] ).length === 0 ) {
+		merged.collections = fresh.collections;
+	}
+	if ( ! existing.frontPage && fresh.frontPage ) {
+		merged.frontPage = fresh.frontPage;
+	}
+	if ( ! existing.forms && fresh.forms ) {
+		merged.forms = fresh.forms;
+	}
+	return merged;
+}
+
 /** Render the human-readable discovery summary. */
 export function renderReport(report: DiscoveryReport): string {
 	const lines: string[] = [];
