@@ -602,7 +602,7 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\tlogo?: { src?: string; alt?: string };',
 		'\ttagline?: string;',
 		'\tnav?: Array<{ label: string; href: string }>;',
-		'\tcall?: { label: string; href: string };',
+		'\tcall?: { label: string; href: string; bg?: string; ink?: string };',
 		'\tfooterBlocks?: Array<{ title?: string; items: string[] }>;',
 		'\tcopyright?: string;',
 		'}',
@@ -632,7 +632,14 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		entry.push( `nav: [${ chrome.nav.map( ( item ) => `{ label: ${ tsString( item.label ) }, href: ${ tsString( item.href ) } }` ).join( ', ' ) }]` );
 	}
 	if ( chrome.call ) {
-		entry.push( `call: { label: ${ tsString( chrome.call.label ) }, href: ${ tsString( chrome.call.href ) } }` );
+		const call: string[] = [ `label: ${ tsString( chrome.call.label ) }`, `href: ${ tsString( chrome.call.href ) }` ];
+		if ( chrome.call.bg ) {
+			call.push( `bg: ${ tsString( chrome.call.bg ) }` );
+		}
+		if ( chrome.call.ink ) {
+			call.push( `ink: ${ tsString( chrome.call.ink ) }` );
+		}
+		entry.push( `call: { ${ call.join( ', ' ) } }` );
 	}
 	if ( chrome.footerBlocks && chrome.footerBlocks.length > 0 ) {
 		entry.push(

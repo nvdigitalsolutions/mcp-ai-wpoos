@@ -423,6 +423,50 @@ function trimSpaceLadder( values: number[] ): number[] {
 	return [ ...picked ].sort( ( a, b ) => a - b );
 }
 
+/** Elementor's untouched default primaries — when the var role is one of
+ * these, the builder was never customized and the theme's own CTA color is
+ * the brand's real accent (jayainc: --e-global-color-primary stays #6ec1e4
+ * while every button is #fccd0f). */
+const DEFAULT_BUILDER_PRIMARIES = new Set( [ '#6ec1e4', '#61ce70', '#4054b2' ] );
+
+/**
+ * The dominant button/CTA background color from the CSS — the color the
+ * user actually sees on every call-to-action. Neutral/transparent values
+ * are skipped; the most frequent saturated CTA color wins.
+ */
+function dominantCtaColor( cssText: string ): string | undefined {
+	const counts = new Map<string, number>();
+	for ( const rule of cssText.matchAll( RULE_RE ) ) {
+		const selector = rule[ 1 ];
+		if ( ! /button|\.btn\b|cta|aux-call|aux-ac|pricing/i.test( selector ) ) {
+			continue;
+		}
+		const color = rule[ 2 ].match( BG_COLOR_RE );
+		if ( ! color ) {
+			continue;
+		}
+		const value = normalizeColor( color[ 1 ].trim() );
+		if ( ! value || value === 'transparent' ) {
+			continue;
+		}
+		const saturation = saturationOf( value );
+		const lightness = lightnessOf( value );
+		if ( saturation < 40 || lightness < 25 || lightness > 80 ) {
+			continue;
+		}
+		counts.set( value, ( counts.get( value ) ?? 0 ) + 1 );
+	}
+	let best: string | undefined;
+	let bestCount = 0;
+	for ( const [ value, count ] of counts ) {
+		if ( count > bestCount ) {
+			best = value;
+			bestCount = count;
+		}
+	}
+	return best;
+}
+
 function componentVocabulary( html: string ): Record<string, number> {
 	const vocabulary: Record<string, number> = {};
 	const hints: Record<string, RegExp> = {
@@ -596,6 +640,14 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			if ( padding && ! fact.padding ) {
 				fact.padding = padding[ 1 ].trim();
 			}
+		}
+		// A background-color alongside a photo is an UNDERLAY — Elementor
+		// paints it beneath the (opaque) image, so the source renders it
+		// invisibly (jayainc's hero: rgba(8,26,67,0.9) under jaya-3-1.jpg).
+		// Storing it as the band color makes the rebuilt hero paint the tint
+		// OVER the photo — the opposite of the source. Drop it.
+		if ( fact.bgImage ) {
+			delete fact.bgColor;
 		}
 		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay ) {
 			facts.push( fact );
@@ -786,10 +838,64 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 			chrome.nav = nav;
 		}
 
-		// 5. The call button (the tel: link).
+		// 5. The call button (the tel: link) — plus its real colors: the
+		//    link's classes resolve through the source CSS to the button's
+		//    actual background/text (jayainc's CALL US is yellow #fccd0f
+		//    while the site accent is cyan #1bb0ce — the chrome must not
+		//    repaint it with the accent).
 		const callLink = findFirstNode( headerNode, ( n ) => n.type === 'tag' && n.name === 'a' && ( n.attribs?.href ?? '' ).startsWith( 'tel:' ) );
 		if ( callLink ) {
-			chrome.call = { label: nodeText( callLink ) || 'Call', href: callLink.attribs?.href ?? '' };
+			const call: NonNullable<ForgeChrome[ 'call' ]> = { label: nodeText( callLink ) || 'Call', href: callLink.attribs?.href ?? '' };
+			const classes = ( callLink.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
+			if ( classes.length > 0 && input.css.length > 0 ) {
+				const cssText = input.css.join( '\n' );
+				const bgVotes = new Map<string, number>();
+				const inkVotes = new Map<string, number>();
+				for ( const rule of cssText.matchAll( RULE_RE ) ) {
+					const selector = rule[ 1 ];
+					if ( ! classes.some( ( cls ) => selector.includes( cls ) ) ) {
+						continue;
+					}
+					const body = rule[ 2 ];
+					const bg = body.match( BG_COLOR_RE );
+					if ( bg ) {
+						const value = normalizeColor( bg[ 1 ].trim() );
+						if ( value && value !== 'transparent' ) {
+							bgVotes.set( value, ( bgVotes.get( value ) ?? 0 ) + 1 );
+						}
+					}
+					const gradient = body.match( BG_GRADIENT_RE );
+					if ( gradient ) {
+						// The gradient IS the button's effective background (it
+						// overrides the flat color) — keep the raw expression
+						// so the rebuild renders the source's exact fill.
+						bgVotes.set( gradient[ 1 ].trim(), ( bgVotes.get( gradient[ 1 ].trim() ) ?? 0 ) + 2 );
+					}
+					// The standalone color: declaration (anchored — 'color' inside
+					// 'background-color' must not match).
+					const ink = body.match( /(?:^|;)\s*color\s*:\s*([^;!]+)/i );
+					if ( ink ) {
+						const value = normalizeColor( ink[ 1 ].trim() );
+						if ( value && value !== 'transparent' ) {
+							inkVotes.set( value, ( inkVotes.get( value ) ?? 0 ) + 1 );
+						}
+					}
+				}
+				const top = ( votes: Map<string, number> ): string | undefined => {
+					let best: string | undefined;
+					let bestCount = 0;
+					for ( const [ value, count ] of votes ) {
+						if ( count > bestCount ) {
+							best = value;
+							bestCount = count;
+						}
+					}
+					return best;
+				};
+				call.bg = top( bgVotes );
+				call.ink = top( inkVotes );
+			}
+			chrome.call = call;
 		}
 	}
 
@@ -910,6 +1016,19 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		}
 	}
 
+	// 1b. The untouched-builder-default override: when the var role is one
+	// of the builder's stock primaries, the theme was never customized and
+	// the dominant CTA color IS the brand accent (jayainc: the global
+	// primary stays #6ec1e4 while every button renders #fccd0f).
+	if ( roles.accent && DEFAULT_BUILDER_PRIMARIES.has( roles.accent ) ) {
+		const cta = dominantCtaColor( cssText );
+		if ( cta && cta !== roles.accent ) {
+			roles.accent = cta;
+			confidence.accent = 'high';
+			varHits.accent = { value: cta, role: 'accent' };
+		}
+	}
+
 	// 2. Frequency + saturation heuristics fill the confident gaps.
 	const frequencies = colorFrequencies( cssText );
 	const ranked = [ ...frequencies.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] );
@@ -999,8 +1118,28 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 }
 
 /** Normalize a CSS color value to lowercase hex; undefined when unparseable. */
+/** The CSS named colors themes actually use for buttons (white/black and
+ * friends) — the chrome ink extraction reads `color: white` declarations. */
+const NAMED_COLORS: Record<string, string> = {
+	white: '#ffffff',
+	black: '#000000',
+	red: '#ff0000',
+	green: '#008000',
+	blue: '#0000ff',
+	yellow: '#ffff00',
+	orange: '#ffa500',
+	gray: '#808080',
+	grey: '#808080',
+	silver: '#c0c0c0',
+	gold: '#ffd700',
+};
+
 export function normalizeColor( value: string ): string | undefined {
 	const trimmed = value.trim();
+	const named = NAMED_COLORS[ trimmed.toLowerCase() ];
+	if ( named ) {
+		return named;
+	}
 	let hex = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec( trimmed )?.[ 0 ];
 	if ( hex ) {
 		return expandHex( hex ).toLowerCase();
