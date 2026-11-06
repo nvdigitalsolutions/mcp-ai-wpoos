@@ -541,10 +541,32 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbg?: string;',
 		'\t/** The hero photo (hero sections only). */',
 		'\tbgImage?: string;',
-		'	/** The overlay tint over the hero photo. */',
-		'	overlay?: string;',
-		'	/** The source band padding (the declared padding fact). */',
-		'	padding?: string;',
+		'\t/** The overlay tint over the hero photo. */',
+		'\toverlay?: string;',
+		'\t/** The source band padding (the declared padding fact). */',
+		'\tpadding?: string;',
+		'\t/** The boxed container width (the source constrains its content —',
+		'\t * jayainc\'s Elementor 1140px default). Absent → the site measure. */',
+		'\tmeasure?: string;',
+		'\t/** The container column-gap gutter (gap-default 10px … wider 30px). */',
+		'\tpaddingX?: string;',
+		'\t/** Section-level pull facts (124 §4) — negative margins overlap',
+		'\t * the neighbor band; z-index stacks the overlap. */',
+		'\tmarginTop?: string;',
+		'\tmarginBottom?: string;',
+		'\tzIndex?: string;',
+		'\t/** The top-level column responsive facts (124 §6) — widths per',
+		'\t * device + order/visibility; the split components re-measure. */',
+		'\tcolumns?: Array<{',
+		'\t\twidth?: number;',
+		'\t\twidthTablet?: number;',
+		'\t\twidthMobile?: number;',
+		'\t\treverseMobile?: boolean;',
+		'\t\treverseTablet?: boolean;',
+		'\t\thiddenMobile?: boolean;',
+		'\t\thiddenTablet?: boolean;',
+		'\t\thiddenDesktop?: boolean;',
+		'\t}>;',
 		'}',
 		'',
 		'export const sections: SectionTheme[] = [',
@@ -581,6 +603,54 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		// flush content-tight bands) — the wrap applies it inline.
 		if ( section.padding ) {
 			entry.push( `padding: ${ tsString( section.padding ) }` );
+		}
+		// The boxed container measure + column gap (124 §3) — the inner
+		// column re-measures to the source's container width.
+		if ( section.measure ) {
+			entry.push( `measure: ${ tsString( section.measure ) }` );
+		}
+		if ( section.paddingX ) {
+			entry.push( `paddingX: ${ tsString( section.paddingX ) }` );
+		}
+		if ( section.marginTop ) {
+			entry.push( `marginTop: ${ tsString( section.marginTop ) }` );
+		}
+		if ( section.marginBottom ) {
+			entry.push( `marginBottom: ${ tsString( section.marginBottom ) }` );
+		}
+		if ( section.zIndex ) {
+			entry.push( `zIndex: ${ tsString( section.zIndex ) }` );
+		}
+		if ( section.columns && section.columns.length > 0 ) {
+			const columns = section.columns.map( ( column ) => {
+				const parts: string[] = [];
+				if ( column.width !== undefined ) {
+					parts.push( `width: ${ column.width }` );
+				}
+				if ( column.widthTablet !== undefined ) {
+					parts.push( `widthTablet: ${ column.widthTablet }` );
+				}
+				if ( column.widthMobile !== undefined ) {
+					parts.push( `widthMobile: ${ column.widthMobile }` );
+				}
+				if ( column.reverseMobile ) {
+					parts.push( 'reverseMobile: true' );
+				}
+				if ( column.reverseTablet ) {
+					parts.push( 'reverseTablet: true' );
+				}
+				if ( column.hiddenMobile ) {
+					parts.push( 'hiddenMobile: true' );
+				}
+				if ( column.hiddenTablet ) {
+					parts.push( 'hiddenTablet: true' );
+				}
+				if ( column.hiddenDesktop ) {
+					parts.push( 'hiddenDesktop: true' );
+				}
+				return `{ ${ parts.join( ', ' ) } }`;
+			} );
+			entry.push( `columns: [${ columns.join( ', ' ) }]` );
 		}
 		body.push( `\t{ ${ entry.join( ', ' ) } },` );
 	}
@@ -632,7 +702,14 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'	copyright?: string;',
 		'	/** The site favicon (the first <link rel="icon"> href, absolute). */',
 		'	favicon?: string;',
-		'	/** The footer brand logo (the footer-widget media image). */',
+		'\t/** The source icon-font stylesheet (the icons CSS link, e.g. the theme\'s',
+		'\t * auxin-icon.css) — the rebuild\'s icon markers carry the source glyph',
+		'\t * classes and this sheet draws them (the customer\'s own asset). */',
+		'\ticonCss?: string;',
+		'\t/** The subfooter text color (the source paints white-ish text on its',
+		'\t * dark footer). */',
+		'\tfooterInk?: string;',
+		'\t/** The footer brand logo (the footer-widget media image). */',
 		'	footerLogo?: { src?: string; alt?: string };',
 		'	/** The footer background color (resolved from the footer-widget CSS). */',
 		'	footerBg?: string;',
@@ -718,6 +795,12 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	}
 	if ( chrome.favicon ) {
 		entry.push( `favicon: ${ tsString( chrome.favicon ) }` );
+	}
+	if ( chrome.iconCss ) {
+		entry.push( `iconCss: ${ tsString( chrome.iconCss ) }` );
+	}
+	if ( chrome.footerInk ) {
+		entry.push( `footerInk: ${ tsString( chrome.footerInk ) }` );
 	}
 	if ( chrome.footerLogo?.src ) {
 		const logo: string[] = [ `src: ${ tsString( chrome.footerLogo.src ) }` ];

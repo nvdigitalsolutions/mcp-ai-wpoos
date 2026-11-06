@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+	analyzeBandContinuity,
 	analyzeBuiltCss,
 	analyzeChrome,
 	analyzeDesignInput,
@@ -20,8 +21,9 @@ import {
 	scoreParity,
 	suggestContrastFixes,
 	stylesheetLinks,
+	verifyBandFlow,
 } from '../lib/design.ts';
-import type { ForgeDesign } from '../lib/types.ts';
+import type { ForgeDesign, ForgeSection } from '../lib/types.ts';
 
 /** A minimal Elementor-ish CSS payload (the page-builder var surface). */
 const ELEMENTOR_CSS = `
@@ -114,6 +116,118 @@ describe( 'analyzeSections / resolveSectionTheme (Proposal 117 §2)', () => {
 		const css = '.elementor-element-a4ad586 { background-image: url("https://jayainc.com/photo.jpg"); background-color: rgba(8, 26, 67, 0.9); }';
 		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
 		expect( sections ).toEqual( [ { id: 'a4ad586', bgImage: 'https://jayainc.com/photo.jpg' } ] );
+	} );
+
+	it( 'captures the boxed container measure + column gap (124 §3 facts)', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-section-boxed elementor-element elementor-element-5e78df1">' +
+			'<div class="elementor-container elementor-column-gap-wider"><h2>Products</h2></div>' +
+			'</section>';
+		const css = '.elementor-section.elementor-section-boxed > .elementor-container { max-width: 1140px; }';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections ).toEqual( [ { id: '5e78df1', measure: '1140px', paddingX: '30px' } ] );
+	} );
+
+	it( 'falls back to the Elementor boxed default when no container rule exists', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-section-boxed elementor-element elementor-element-48ace0b">' +
+			'<div class="elementor-container"><h2>Logos</h2></div>' +
+			'</section>';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [] } );
+		expect( sections[ 0 ] ).toMatchObject( { id: '48ace0b', measure: '1140px' } );
+		expect( sections[ 0 ].paddingX ).toBeUndefined();
+	} );
+
+	it( 'ignores non-numeric container max-width overrides (the theme page-cover rule)', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-section-boxed elementor-element elementor-element-a4ad586">' +
+			'<div class="elementor-container"><h2>Hero</h2></div>' +
+			'</section>';
+		const css = [
+			'.aux-page-cover .aux-page-cover-wrapper > .elementor-container { width: 100vw !important; max-width: none !important; }',
+			'.elementor-section.elementor-section-boxed > .elementor-container { max-width: 1200px; }',
+		].join( '\n' );
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections[ 0 ]?.measure ).toBe( '1200px' );
+	} );
+
+	it( 'captures section-level pull facts: negative margins and z-index (124 §4)', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-5e78df1">' +
+			'<div class="elementor-container"><h2>Products</h2></div>' +
+			'</section>';
+		const css = '.elementor-element-5e78df1 { background-color: #ffffff; margin-top: -80px; margin-bottom: 0px; z-index: 5; }';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections[ 0 ] ).toMatchObject( { id: '5e78df1', marginTop: '-80px', zIndex: '5' } );
+		// Zero margins are noise, not a pull fact.
+		expect( sections[ 0 ].marginBottom ).toBeUndefined();
+	} );
+
+	it( 'captures the top-level column responsive facts (124 §6)', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-fcc5e07">' +
+			'<div class="elementor-container">' +
+			'<div class="elementor-column elementor-col-50 elementor-md-50 elementor-sm-100 elementor-reverse-mobile"></div>' +
+			'<div class="elementor-column elementor-col-50 elementor-hidden-desktop"></div>' +
+			'</div>' +
+			'</section>';
+		const css = '.elementor-element-fcc5e07 { background-color: #e5e5e5; }';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections[ 0 ]?.columns ).toEqual( [
+			{ width: 50, widthTablet: 50, widthMobile: 100, reverseMobile: true },
+			{ width: 50, hiddenDesktop: true },
+		] );
+	} );
+
+	it( 'ignores inner-section columns (only the band grid counts, 124 §6)', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-d5844b9">' +
+			'<div class="elementor-container">' +
+			'<div class="elementor-column elementor-col-100">' +
+			'<div class="elementor-widget-wrap">' +
+			'<section class="elementor-section elementor-inner-section"><div class="elementor-container"><div class="elementor-column elementor-col-50"></div></div></section>' +
+			'</div></div>' +
+			'</div>' +
+			'</section>';
+		const css = '.elementor-element-d5844b9 { background-color: #ffffff; }';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		// One top-level column — below the two-column threshold, so no facts.
+		expect( sections[ 0 ]?.columns ).toBeUndefined();
+	} );
+} );
+
+describe( 'analyzeBandContinuity / verifyBandFlow (124 §7)', () => {
+	it( 'reports the source seams where adjacent bands do not meet', () => {
+		const sections: ForgeSection[] = [
+			{ id: 'a', bgGradient: 'linear-gradient(180deg, #e5e5e5 0%, #ffffff 100%)' },
+			{ id: 'b', bgGradient: 'linear-gradient(180deg, #ffffff 6%, #04132b 100%)' },
+			{ id: 'c', bgColor: '#e5e5e5' },
+		];
+		const seams = analyzeBandContinuity( sections );
+		// a→b meets white-to-white; b→c is the navy→gray hard cut.
+		expect( seams ).toHaveLength( 1 );
+		expect( seams[ 0 ] ).toMatchObject( { fromId: 'b', toId: 'c', fromEdge: '#04132b', toEdge: '#e5e5e5' } );
+	} );
+
+	it( 'verifies the built band flow against the source bands', () => {
+		const sections: ForgeSection[] = [
+			{ id: 'a4ad586', bgImage: 'https://x.example/hero.jpg' },
+			{ id: '5e78df1', bgGradient: 'linear-gradient(180deg, #ffffff 6%, #04132b 100%)', padding: '100px 0px 100px 0px' },
+			{ id: 'dff3f1a', bgColor: '#e5e5e5' },
+		];
+		const html =
+			'<div data-section-id="a4ad586" class="ds-section-wrap" style="background-image:url(\'https://x.example/hero.jpg\')"></div>' +
+			'<div data-section-id="5e78df1" class="ds-section-wrap" style="background:linear-gradient(180deg, #ffffff 6%, #04132b 100%);padding:100px 0px 100px 0px"></div>';
+		const report = verifyBandFlow( sections, html );
+		expect( report.dropped ).toEqual( [ 'dff3f1a' ] );
+		expect( report.mismatched ).toEqual( [] );
+	} );
+
+	it( 'flags built bands whose background drifted from the baked theme', () => {
+		const html = '<div data-section-id="5e78df1" style="background:linear-gradient(180deg, #ffffff 6%, #111111 100%)"></div>';
+		const report = verifyBandFlow( [ { id: '5e78df1', bgGradient: 'linear-gradient(180deg, #ffffff 6%, #04132b 100%)' } ], html );
+		expect( report.dropped ).toEqual( [] );
+		expect( report.mismatched ).toHaveLength( 1 );
 	} );
 } );
 
@@ -415,6 +529,7 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 	const CHROME_HTML =
 		// jayainc's shape: the topbar is a document-level SIBLING above the header.
 		'<link rel="icon" href="/wp-content/uploads/cropped-jaya-inc-icon-32x32.png">' +
+		'<link rel="stylesheet" id="auxin-front-icon-css" href="/wp-content/themes/phlox-pro/css/auxin-icon.css?ver=5.17.20">' +
 		'<div id="top-header" class="aux-top-header">' +
 		'<p>123 Harbour Street, Kingston</p>' +
 		'<p>(876) 555-0100</p>' +
@@ -448,9 +563,68 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 		expect( chrome?.topbar ).toEqual( [ '123 Harbour Street, Kingston', '(876) 555-0100' ] );
 	} );
 
-	it( 'prefers the light-background logo variant of a dark/light pair', () => {
+	it( 'falls back to the paired dark variant when no surface resolves (124 §1)', () => {
 		expect( chrome?.logo?.src ).toContain( 'JAYAINC-LOGO-V1-blue.svg' );
 		expect( chrome?.logo?.alt ).toBe( 'Jaya Inc' );
+	} );
+
+	it( 'assigns the header logo variant by WCAG contrast against the header background (124 §1)', () => {
+		const html =
+			'<header id="site-header">' +
+			'<img class="custom-logo aux-logo-image1" src="/wht-logo.svg" alt="Site">' +
+			'<img class="custom-logo aux-logo-image2" src="/blue-logo.svg" alt="Site">' +
+			'</header>';
+		const css = [ '#site-header { background-color: rgb(4, 19, 43); }' ];
+		const styled = analyzeChrome( {
+			url: 'https://jayainc.com',
+			html,
+			css,
+			logoColors: {
+				'https://jayainc.com/wht-logo.svg': [ '#ffffff' ],
+				'https://jayainc.com/blue-logo.svg': [ '#09162b' ],
+			},
+		} );
+		// White on navy = ~15.5:1; the navy variant sits at ~1.07:1 — the
+		// contrast picks the white logo, not the paired dark one.
+		expect( styled?.logo?.src ).toContain( 'wht-logo.svg' );
+	} );
+
+	it( 'captures the :before overlay gradient as the effective footer background + the subfooter ink (124 §1)', () => {
+		const html = '<aside class="aux-subfooter"><img class="custom-logo" src="/footer-logo.png" alt=""><p>Contact us</p></aside>' +
+			'<footer id="sitefooter"><small>© 2026 Site</small></footer>';
+		const css = [
+			'.aux-subfooter { background-color: rgb(243, 243, 243); }',
+			'.aux-subfooter:before { background-image: linear-gradient(107deg, #081a43 0%, #071230 100%); opacity: 0.92; }',
+			'.aux-subfooter p { color: rgba(255, 255, 255, 0.7); }',
+		].join( '\n' );
+		const styled = analyzeChrome( { url: 'https://jayainc.com', html, css: [ css ] } );
+		// The overlay paints ON TOP of the flat base — the navy gradient is
+		// the effective fill, never the #f3f3f3 under it.
+		expect( styled?.footerBg ).toBe( 'linear-gradient(107deg, #081a43 0%, #071230 100%)' );
+		expect( styled?.footerInk ).toBe( '#ffffff' );
+	} );
+
+	it( 'assigns the footer logo variant by contrast against the footer surface (124 §1)', () => {
+		const html =
+			'<header id="site-header">' +
+			'<img class="custom-logo aux-logo-image1" src="/wht-logo.svg" alt="Site">' +
+			'<img class="custom-logo aux-logo-image2" src="/blue-logo.svg" alt="Site">' +
+			'</header>' +
+			'<aside class="aux-subfooter"><img src="/footer-logo.png" alt=""><p>Contact us</p></aside>' +
+			'<footer id="sitefooter"><small>© 2026 Site</small></footer>';
+		const css = [ '.aux-subfooter { background-color: rgb(4, 19, 43); }' ];
+		const styled = analyzeChrome( {
+			url: 'https://jayainc.com',
+			html,
+			css,
+			logoColors: {
+				'https://jayainc.com/wht-logo.svg': [ '#ffffff' ],
+				'https://jayainc.com/blue-logo.svg': [ '#09162b' ],
+				'https://jayainc.com/footer-logo.png': [ '#ffffff' ],
+			},
+		} );
+		// Dark footer: the white variants clear it; the navy one does not.
+		expect( styled?.footerLogo?.src ).toContain( 'footer-logo.png' );
 	} );
 
 	it( 'takes the longest header paragraph as the tagline (excluding topbar lines)', () => {
@@ -539,6 +713,10 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 
 	it( 'captures the favicon link as an absolute URL', () => {
 		expect( chrome?.favicon ).toBe( 'https://jayainc.com/wp-content/uploads/cropped-jaya-inc-icon-32x32.png' );
+	} );
+
+	it( 'captures the source icon-font stylesheet (never the favicon rel=icon)', () => {
+		expect( chrome?.iconCss ).toBe( 'https://jayainc.com/wp-content/themes/phlox-pro/css/auxin-icon.css?ver=5.17.20' );
 	} );
 
 	it( 'returns undefined when the source exposes no recognizable chrome', () => {

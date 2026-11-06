@@ -21,6 +21,28 @@ export interface SectionTheme {
 	overlay?: string;
 	/** The source band padding (the declared padding fact). */
 	padding?: string;
+	/** The boxed container width (the source constrains its content —
+	 * jayainc's Elementor 1140px default). Absent → the site measure. */
+	measure?: string;
+	/** The container column-gap gutter (gap-default 10px … wider 30px). */
+	paddingX?: string;
+	/** Section-level pull facts (124 §4) — negative margins overlap
+	 * the neighbor band; z-index stacks the overlap. */
+	marginTop?: string;
+	marginBottom?: string;
+	zIndex?: string;
+	/** The top-level column responsive facts (124 §6) — widths per
+	 * device + order/visibility; the split components re-measure. */
+	columns?: Array<{
+		width?: number;
+		widthTablet?: number;
+		widthMobile?: number;
+		reverseMobile?: boolean;
+		reverseTablet?: boolean;
+		hiddenMobile?: boolean;
+		hiddenTablet?: boolean;
+		hiddenDesktop?: boolean;
+	}>;
 }
 
 export const sections: SectionTheme[] = [];

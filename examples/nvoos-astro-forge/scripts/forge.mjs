@@ -38,7 +38,7 @@ import { join } from 'node:path';
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
-import { analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity } from '../lib/design.ts';
+import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { emitDeployConfig } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
@@ -185,6 +185,24 @@ async function runAnalyze( url, options ) {
 			console.log(
 				`  roles: ${ roles.length > 0 ? roles.join( ', ' ) : '(none confident)' }; unassigned pool: ${ design.palette.unassigned.length } color(s); type: ${ design.typography.display ?? design.typography.body ?? 'system' }`
 			);
+			// The band-continuity report (124 §7) — the source's own transition
+			// signature: continuous flows meet at their gradient edges; a hard
+			// cut here is the source's design (the verify gate later treats any
+			// built/source MISMATCH of this signature as the defect).
+			const bandSections = design.sections ?? [];
+			if ( bandSections.length > 0 ) {
+				console.log( `  bands: ${ bandSections.length } section(s) with band facts` );
+				const seams = analyzeBandContinuity( bandSections );
+				if ( seams.length === 0 ) {
+					console.log( '  transitions: continuous — every adjacent band meets its neighbor.' );
+				} else {
+					for ( const seam of seams ) {
+						console.log(
+							`  hard cut: ${ seam.fromId ?? '?' } ${ seam.fromEdge ?? '' } → ${ seam.toId ?? '?' } ${ seam.toEdge ?? '' } (ΔE ${ seam.distance })`
+						);
+					}
+				}
+			}
 		} catch ( error ) {
 			console.error( `\u26a0 Design extraction failed (continuing without): ${ error instanceof Error ? error.message : error }` );
 		}
@@ -752,6 +770,17 @@ async function runWizard( url, options ) {
 
 // -- verify (114 P5) ---------------------------------------------------------
 
+/** The built front-page HTML (static: dist/index.html; server output:
+ * dist/client/index.html) — the band-flow gate walks its section wraps. */
+async function readBuiltHtml( target ) {
+	for ( const candidate of [ join( target, 'dist', 'index.html' ), join( target, 'dist', 'client', 'index.html' ) ] ) {
+		if ( existsSync( candidate ) ) {
+			return await readFile( candidate, 'utf8' );
+		}
+	}
+	return undefined;
+}
+
 /** Concatenate the built CSS bundle under dist/ (bounded — parity only needs
  * the token layer + type/scale signals, never the full bundle). */
 async function collectDistCss( target ) {
@@ -808,6 +837,30 @@ async function runVerify( profileRef, options ) {
 		);
 	}
 	process.exitCode = report.pass ? 0 : 1;
+	// 124 §7 — the band-flow gate: every source band with visual facts must
+	// render in the built page carrying the baked background. A dropped
+	// band is exactly the failure the source's continuous band flow depends
+	// on (jayainc's gray bridge + flush contact band, pre-124 §5).
+	const indexHtml = await readBuiltHtml( options.target );
+	if ( indexHtml ) {
+		const flow = verifyBandFlow( profile.design?.sections ?? [], indexHtml );
+		if ( flow.dropped.length === 0 && flow.mismatched.length === 0 ) {
+			console.log( '\u2713 Band flow: every source band renders with its baked background.' );
+		} else {
+			for ( const id of flow.dropped ) {
+				console.warn( `\u2717 Band flow: source band ${ id } is missing from the built page (dropped or unclassified).` );
+			}
+			for ( const mismatch of flow.mismatched ) {
+				console.warn( `\u2717 Band flow: band ${ mismatch.id } renders ${ mismatch.actual ?? 'nothing' }, expected ${ mismatch.expected }.` );
+			}
+			process.exitCode = 1;
+		}
+		for ( const seam of flow.seams ) {
+			console.log(
+				`  source hard cut: ${ seam.fromId ?? '?' } ${ seam.fromEdge ?? '' } → ${ seam.toId ?? '?' } ${ seam.toEdge ?? '' } (ΔE ${ seam.distance })`
+			);
+		}
+	}
 	if ( options.visual ) {
 		// The vision layer (118 §4) — advisory unless --strict-visual; never
 		// downgrades a parity failure.

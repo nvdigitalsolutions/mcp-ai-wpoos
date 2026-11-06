@@ -46,6 +46,15 @@ export interface SectionItem {
 	links?: LinkRef[];
 	/** The item renders with an icon marker (icon-list family). */
 	icon?: boolean;
+	/** The source icon glyph's font classes, marker-ready — e.g.
+	 * `auxicon auxicon-badge`, `fa fas fa-check`, `dashicons dashicons-cart`.
+	 * The rebuild's marker carries them so the source's own icon stylesheet
+	 * (chrome.iconCss) draws the real glyph; absent → the ✓ fallback. */
+	iconClass?: string;
+	/** The source icon position (aux-ico-pos-left/top, …): 'row' renders the
+	 * icon left of the text (the source's stacked icon rows), 'stack' above
+	 * it. Absent → the default card grid. */
+	layout?: 'row' | 'stack';
 	/** Attribution line (testimonial/quote authors). */
 	author?: string;
 }
@@ -385,7 +394,34 @@ function within( candidate: HNode, container: HNode ): boolean {
  * uncaptioned media + orphan paragraphs (jayainc's product cards and
  * service features hit exactly this). Returns an item draft or undefined.
  */
-function extractStructuredItem( node: HNode ): { title?: string; body?: string; media?: MediaRef; icon: boolean } | undefined {
+/** The source icon glyph's font classes, marker-ready. The source icon
+ * fonts identify glyphs by class (auxicon-*, Font Awesome's fa fa-*,
+ * dashicons-*, Elementor's eicon-*); the rebuild's marker carries them so
+ * the source's own icon stylesheet (chrome.iconCss) can draw the real
+ * glyph. Unrecognized classes yield undefined (the ✓ fallback). */
+function glyphClassesOf( node: HNode ): string | undefined {
+	const classes = classList( node.attribs );
+	const auxGlyph = classes.find( ( c ) => /^auxicon-/i.test( c ) );
+	if ( auxGlyph ) {
+		return `auxicon ${ auxGlyph }`;
+	}
+	const dashiconsGlyph = classes.find( ( c ) => /^dashicons-/i.test( c ) );
+	if ( dashiconsGlyph ) {
+		return `dashicons ${ dashiconsGlyph }`;
+	}
+	const eiconGlyph = classes.find( ( c ) => /^eicon-/i.test( c ) );
+	if ( eiconGlyph ) {
+		return `eicon ${ eiconGlyph }`;
+	}
+	const faFamily = classes.find( ( c ) => /^(?:fa|fas|far|fab|fal|fad|fat)$/i.test( c ) );
+	const faGlyph = classes.find( ( c ) => /^fa-/i.test( c ) );
+	if ( faFamily ) {
+		return faGlyph ? `fa ${ faFamily } ${ faGlyph }` : `fa ${ faFamily }`;
+	}
+	return undefined;
+}
+
+function extractStructuredItem( node: HNode ): { title?: string; body?: string; media?: MediaRef; icon: boolean; iconClass?: string; layout?: 'row' | 'stack' } | undefined {
 	const headings = allDescendants( node, ( n ) => n.type === 'tag' && /^h[3-6]$/.test( n.name ?? '' ) );
 	if ( headings.length === 0 ) {
 		return undefined;
@@ -395,15 +431,24 @@ function extractStructuredItem( node: HNode ): { title?: string; body?: string; 
 	// aux's `aux-ico-box` family and Elementor's icon-box internals.
 	const headerBoxes = allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).some( ( c ) => /ico-box|icon-box-icon|icon-box-wrapper/i.test( c ) ) );
 	let icon = false;
+	let iconClass: string | undefined;
 	let media: MediaRef | undefined;
 	if ( headerBoxes.length > 0 ) {
 		const box = headerBoxes[ 0 ];
-		icon = allDescendants( box, ( n ) => n.type === 'tag' && n.name === 'span' && classList( n.attribs ).some( ( c ) => /icon/i.test( c ) ) ).length > 0;
+		const iconSpans = allDescendants( box, ( n ) => n.type === 'tag' && n.name === 'span' && classList( n.attribs ).some( ( c ) => /icon/i.test( c ) ) );
+		icon = iconSpans.length > 0;
+		iconClass = iconSpans.length > 0 ? glyphClassesOf( iconSpans[ 0 ] ) : undefined;
 		const img = findDescendant( box, ( n ) => n.type === 'tag' && n.name === 'img' );
 		if ( img ) {
 			media = { src: img.attribs?.src ?? img.attribs?.[ 'data-src' ], alt: img.attribs?.alt };
 		}
 	}
+	// The source icon position (aux's aux-ico-pos-* container classes) — the
+	// row/stack fact the renderer rebuilds (jayainc's service cards are
+	// icon-LEFT rows, not an icon-above card grid).
+	const positionNode = findDescendant( node, ( n ) => n.type === 'tag' && classList( n.attribs ).some( ( c ) => /^aux-ico-pos-(?:left|top|right|bottom)$/.test( c ) ) );
+	const positionClass = positionNode ? classList( positionNode.attribs ).find( ( c ) => /^aux-ico-pos-(?:left|top|right|bottom)$/.test( c ) ) : undefined;
+	const layout: 'row' | 'stack' | undefined = positionClass === 'aux-ico-pos-top' || positionClass === 'aux-ico-pos-bottom' ? 'stack' : positionClass ? 'row' : undefined;
 	const title = trimmed( textOf( headings[ 0 ] ) );
 	if ( ! title ) {
 		return undefined;
@@ -415,7 +460,7 @@ function extractStructuredItem( node: HNode ): { title?: string; body?: string; 
 		.map( ( p ) => trimmed( textOf( p ) ) )
 		.filter( ( value ) => value && value !== title );
 	const body = paragraphs.length > 0 ? paragraphs.join( ' ' ) : undefined;
-	return { title, body, media, icon };
+	return { title, body, media, icon, iconClass, layout };
 }
 
 /** The attribution line of a quote widget (aux-author / cite / byline). */
@@ -468,6 +513,12 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 			}
 			if ( structured.icon ) {
 				item.icon = true;
+			}
+			if ( structured.iconClass ) {
+				item.iconClass = structured.iconClass;
+			}
+			if ( structured.layout ) {
+				item.layout = structured.layout;
 			}
 			items.push( item );
 			continue;
@@ -932,7 +983,15 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 			( built.slots.items?.length ?? 0 ) === 0 &&
 			( built.slots.links?.length ?? 0 ) === 0;
 		if ( empty ) {
-			continue; // Recognized but empty — dropped (the fallback ladder).
+			// A recognized-but-empty band WITH a source id still renders as
+			// an empty themed band — dropping it would break the source's
+			// continuous band flow (jayainc's gray spacer bridge and the
+			// flush contact/map band). Plain scaffolding without an id
+			// stays dropped (the pinned fallback ladder).
+			if ( sourceId ) {
+				out.push( { kind: 'text', confidence: 'low', slots: {}, id: sourceId } );
+			}
+			continue;
 		}
 		if ( sourceId ) {
 			built.id = sourceId;

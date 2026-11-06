@@ -19,16 +19,22 @@
 // ---------------------------------------------------------------------------
 
 import { Parser, DomHandler } from 'htmlparser2';
+import { createRequire } from 'node:module';
 
-import { relativeLuminance } from './contrast.ts';
+import { contrastRatio, relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
-import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+
+const nodeRequire = createRequire( import.meta.url );
 
 /** Bounded fetch input: the homepage HTML plus same-origin CSS bodies. */
 export interface DesignFetchInput {
 	url: string;
 	html: string;
 	css: string[];
+	/** Logo-variant dominant colors by absolute src (the contrast-based
+	 * logo assignment, 124 §1) — absent when the assets were not fetched. */
+	logoColors?: Record<string, string[]>;
 }
 
 export type RoleConfidence = 'high' | 'medium' | 'low';
@@ -71,6 +77,192 @@ const MAX_HTML_BYTES = 2 * 1024 * 1024;
 // ~886KB) — a 512KB cut lands mid-@media block and the dangling brace
 // swallows every stylesheet fetched after it.
 const MAX_CSS_BYTES = 2 * 1024 * 1024;
+
+// -- logo color extraction (124 §1) -------------------------------------------
+
+/** The site's logo candidate imgs — class/id carries a logo/brand marker
+ * (custom-logo, aux-logo-image1/2, brand-*, …), never content images whose
+ * FILENAME merely mentions a logo. Deduplicated, bounded. */
+export function logoCandidates( html: string ): string[] {
+	const srcs: string[] = [];
+	for ( const match of html.matchAll( /<img[^>]*>/gi ) ) {
+		const src = /src=["']([^"']+)["']/i.exec( match[ 0 ] )?.[ 1 ];
+		if ( ! src ) {
+			continue;
+		}
+		const cls = /class=["']([^"']+)["']/i.exec( match[ 0 ] )?.[ 1 ] ?? '';
+		const id = /id=["']([^"']+)["']/i.exec( match[ 0 ] )?.[ 1 ] ?? '';
+		if ( ! /(?:^|\s)(?:[a-z-]*logo[a-z-]*|brand)(?:\s|$)/i.test( ` ${ cls } ${ id } ` ) ) {
+			continue;
+		}
+		srcs.push( src );
+	}
+	return [ ...new Set( srcs ) ].slice( 0, 6 );
+}
+
+/** Frequency-ranked fill colors of an SVG logo (text parse, no deps). */
+export function svgFillsOf( svg: string ): string[] {
+	const counts = new Map<string, number>();
+	const valueRe = /(?:fill|stop-color)\s*=\s*["']([^"']+)["']/gi;
+	for ( const match of svg.matchAll( valueRe ) ) {
+		const value = ( match[ 1 ] ?? '' ).trim().toLowerCase();
+		if ( value === 'none' || value === 'transparent' || value.startsWith( 'url(' ) ) {
+			continue;
+		}
+		const hex = normalizeColor( value );
+		if ( hex && hex !== 'transparent' ) {
+			counts.set( hex, ( counts.get( hex ) ?? 0 ) + 1 );
+		}
+	}
+	return [ ...counts.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] ).slice( 0, 4 ).map( ( [ hex ] ) => hex );
+}
+
+/** Dominant colors of a raster logo — sharp when resolvable (the forge dev
+ * toolchain ships it; the published CLI degrades to the filename heuristic). */
+async function rasterLogoColors( bytes: Uint8Array ): Promise<string[] | undefined> {
+	let sharp: { default?: unknown } | undefined;
+	try {
+		sharp = nodeRequire( 'sharp' ) as { default?: unknown } | undefined;
+	} catch {
+		return undefined;
+	}
+	const impl = ( ( sharp?.default ?? sharp ) as ( input: Buffer ) => {
+		resize: ( w: number, h: number, opts: Record<string, unknown> ) => unknown;
+	} );
+	if ( typeof impl !== 'function' ) {
+		return undefined;
+	}
+	try {
+		const pipeline = impl( Buffer.from( bytes ) ).resize( 24, 24, { fit: 'inside' } ) as {
+			ensureAlpha: () => { raw: () => { toBuffer: ( opts: { resolveWithObject: true } ) => Promise<{ data: Buffer; info: { channels: number } }> } };
+		};
+		const { data } = await pipeline.ensureAlpha().raw().toBuffer( { resolveWithObject: true } );
+		const counts = new Map<string, number>();
+		for ( let index = 0; index + 3 < data.length; index += 4 ) {
+			if ( data[ index + 3 ] < 128 ) {
+				continue;
+			}
+			const key = `${ data[ index ] >> 4 }-${ data[ index + 1 ] >> 4 }-${ data[ index + 2 ] >> 4 }`;
+			counts.set( key, ( counts.get( key ) ?? 0 ) + 1 );
+		}
+		return [ ...counts.entries() ]
+			.sort( ( a, b ) => b[ 1 ] - a[ 1 ] )
+			.slice( 0, 3 )
+			.map( ( [ key ] ) => {
+				const [ r, g, b ] = key.split( '-' ).map( ( part ) => ( parseInt( part, 10 ) << 4 ) + 8 );
+				return rgbToHex( r, g, b );
+			} );
+	} catch {
+		return undefined;
+	}
+}
+
+/** Filename-hint fallback colors (wht/white/light → white, dark/black →
+ * near-black) — exact colors always come from the fetched asset itself. */
+export function heuristicLogoColors( src: string ): string[] | undefined {
+	const stem = decodeURIComponent( ( src.split( '?' )[ 0 ].split( '/' ).pop() ?? '' ).toLowerCase() ).replace( /\.[a-z0-9]+$/, '' );
+	if ( /(?:^|[-_])(?:wht|white|light)(?:[-_]|$)/.test( stem ) ) {
+		return [ '#ffffff' ];
+	}
+	if ( /(?:^|[-_])(?:dark|black)(?:[-_]|$)/.test( stem ) ) {
+		return [ '#101010' ];
+	}
+	return undefined;
+}
+
+/** Is this img a site-logo candidate (class/id carries a logo/brand marker)?
+ * Content images whose FILENAME merely mentions a logo never qualify. */
+export function isLogoImg( node: { attribs?: Record<string, string> } ): boolean {
+	if ( ! node.attribs?.src ) {
+		return false;
+	}
+	const cls = node.attribs?.class ?? '';
+	const id = node.attribs?.id ?? '';
+	return /(?:^|\s)(?:[a-z-]*logo[a-z-]*|brand)(?:\s|$)/i.test( ` ${ cls } ${ id } ` );
+}
+
+/** The color stops of a surface (flat → itself; gradients → their stops) —
+ * a logo variant must clear EVERY stop (worst-case scoring, 124 §1). */
+function surfaceStops( surface: string | undefined ): string[] {
+	if ( ! surface ) {
+		return [];
+	}
+	const stops: string[] = [];
+	for ( const match of surface.matchAll( HEX_RE ) ) {
+		const hex = expandHex( match[ 0 ] ).toLowerCase();
+		if ( ! stops.includes( hex ) ) {
+			stops.push( hex );
+		}
+	}
+	for ( const match of surface.matchAll( RGB_RE ) ) {
+		const hex = rgbToHex( parseInt( match[ 1 ], 10 ), parseInt( match[ 2 ], 10 ), parseInt( match[ 3 ], 10 ) );
+		if ( ! stops.includes( hex ) ) {
+			stops.push( hex );
+		}
+	}
+	if ( stops.length === 0 ) {
+		const flat = normalizeColor( surface );
+		if ( flat && flat !== 'transparent' ) {
+			stops.push( flat );
+		}
+	}
+	return stops.slice( 0, 4 );
+}
+
+/** Worst-case WCAG contrast of a candidate against the surface stops. */
+function logoContrastScore( colors: string[], surface: string | undefined ): number | undefined {
+	const stops = surfaceStops( surface );
+	if ( stops.length === 0 ) {
+		return undefined;
+	}
+	let worst = Infinity;
+	for ( const color of colors ) {
+		for ( const stop of stops ) {
+			const ratio = contrastRatio( color, stop );
+			if ( ratio !== undefined ) {
+				worst = Math.min( worst, ratio );
+			}
+		}
+	}
+	return worst === Infinity ? undefined : worst;
+}
+
+/** Pick the best-contrast logo variant for a surface (WCAG 1.4.11 non-text
+ * contrast — 3:1 minimum, max wins). Exact colors come from the fetched
+ * assets (logoColors, keyed by ABSOLUTE src); the filename heuristic
+ * stands in when the asset was not fetched. Ties keep pool order (footer
+ * DOM candidates first for footers). Undefined when no variant scores. */
+export function pickLogoVariant<T extends { attribs?: Record<string, string> | undefined }>(
+	pool: T[],
+	surface: string | undefined,
+	logoColors: Record<string, string[]> | undefined,
+	baseUrl: string
+): T | undefined {
+	let best: T | undefined;
+	let bestScore = -Infinity;
+	for ( const candidate of pool ) {
+		const src = candidate.attribs?.src;
+		if ( ! src ) {
+			continue;
+		}
+		let absolute = src;
+		try {
+			absolute = new URL( src, baseUrl ).href;
+		} catch {
+			// Keep the raw src — the lookup falls back to it below.
+		}
+		const colors = logoColors?.[ absolute ] ?? logoColors?.[ src ] ?? heuristicLogoColors( src );
+		if ( ! colors || colors.length === 0 ) {
+			continue;
+		}
+		const score = logoContrastScore( colors, surface );
+		if ( score !== undefined && score > bestScore ) {
+			best = candidate;
+			bestScore = score;
+		}
+	}
+	return best;
+}
 
 /** Expand a short hex (#abc → #aabbcc); alpha is dropped. */
 function expandHex( hex: string ): string {
@@ -240,7 +432,41 @@ export async function fetchDesignInput(
 			// A missing stylesheet is never fatal — the remaining signals stand.
 		}
 	}
-	return { url: base, html, css };
+	// The logo variant pool (124 §1): fetch each candidate and extract its
+	// dominant colors (SVG fills — a text parse; rasters via sharp when
+	// available) so the chrome pass can assign variants to surfaces by
+	// WCAG 1.4.11 contrast. Bounded, fail-soft — a missing asset never
+	// fails the analysis; the filename heuristics stand in.
+	const logoColors: Record<string, string[]> = {};
+	for ( const src of logoCandidates( html ) ) {
+		let absolute: string;
+		try {
+			absolute = new URL( src, base ).href;
+			if ( new URL( absolute ).hostname !== new URL( base ).hostname ) {
+				continue;
+			}
+		} catch {
+			continue;
+		}
+		try {
+			const res = await fetchImpl( absolute, { redirect: 'follow', signal: AbortSignal.timeout( 10_000 ) } );
+			if ( ! res.ok ) {
+				continue;
+			}
+			const bytes = new Uint8Array( await res.arrayBuffer() );
+			if ( bytes.byteLength > 256 * 1024 ) {
+				continue;
+			}
+			const text = new TextDecoder().decode( bytes.slice( 0, 2048 ) );
+			const colors = /<svg/i.test( text ) ? svgFillsOf( new TextDecoder().decode( bytes ) ) : await rasterLogoColors( bytes );
+			if ( colors && colors.length > 0 ) {
+				logoColors[ absolute ] = colors;
+			}
+		} catch {
+			// A missing logo asset is never fatal — the heuristics stand.
+		}
+	}
+	return { url: base, html, css, logoColors };
 }
 
 // -- analysis ----------------------------------------------------------------
@@ -1009,6 +1235,56 @@ const BG_COLOR_RE = /background-color\s*:\s*([^;!]+)(\s*!\s*important)?/i;
 const PADDING_RE = /padding\s*:\s*([^;!]+)/i;
 const SECTION_ID_RE = /elementor-element-([0-9a-f]{4,})/;
 
+/** One top-level column's responsive facts (124 §6) — Elementor's per-device
+ * width/order/visibility classes. Undefined when the column carries none. */
+function columnFactsOf( node: HNodeLike ): ForgeSectionColumn | undefined {
+	const classes = sectionClasses( node );
+	const facts: ForgeSectionColumn = {};
+	const width = classes.map( ( c ) => /^elementor-col-(\d+)$/.exec( c ) ).find( Boolean );
+	if ( width ) {
+		facts.width = parseInt( width[ 1 ], 10 );
+	}
+	const tablet = classes.map( ( c ) => /^elementor-md-(\d+)$/.exec( c ) ).find( Boolean );
+	if ( tablet ) {
+		facts.widthTablet = parseInt( tablet[ 1 ], 10 );
+	}
+	const mobile = classes.map( ( c ) => /^elementor-sm-(\d+)$/.exec( c ) ).find( Boolean );
+	if ( mobile ) {
+		facts.widthMobile = parseInt( mobile[ 1 ], 10 );
+	}
+	if ( classes.includes( 'elementor-reverse-mobile' ) || classes.includes( 'elementor-reverse-phone' ) ) {
+		facts.reverseMobile = true;
+	}
+	if ( classes.includes( 'elementor-reverse-tablet' ) ) {
+		facts.reverseTablet = true;
+	}
+	if ( classes.includes( 'elementor-hidden-mobile' ) || classes.includes( 'elementor-hidden-phone' ) ) {
+		facts.hiddenMobile = true;
+	}
+	if ( classes.includes( 'elementor-hidden-tablet' ) ) {
+		facts.hiddenTablet = true;
+	}
+	if ( classes.includes( 'elementor-hidden-desktop' ) ) {
+		facts.hiddenDesktop = true;
+	}
+	return Object.keys( facts ).length > 0 ? facts : undefined;
+}
+
+/** Elementor's column-gap class → the side padding it adds to the column
+ * (the container's inner gutter — `gap-wider` = 30px, the default 10px). */
+const ELEMENTOR_COLUMN_GAPS: Record<string, string> = {
+	narrow: '5px',
+	default: '10px',
+	extended: '15px',
+	wide: '20px',
+	wider: '30px',
+};
+
+/** The Elementor boxed-container default when the stylesheets carry no
+ * explicit rule (frontend.min.css: `.elementor-section.elementor-section-
+ * boxed > .elementor-container { max-width: 1140px }`). */
+const ELEMENTOR_BOXED_MEASURE = '1140px';
+
 function childNodes( node: HNodeLike | undefined ): HNodeLike[] {
 	return node?.children ?? [];
 }
@@ -1019,7 +1295,11 @@ function sectionClasses( node: HNodeLike ): string[] {
 
 function allSectionNodes( node: HNodeLike, out: HNodeLike[] ): void {
 	for ( const child of childNodes( node ) ) {
-		if ( child.type === 'tag' && sectionClasses( child ).some( ( c ) => c === 'elementor-top-section' || c === 'elementor-section' ) ) {
+		// TOP-level sections only (124 §6) — inner sections are a column's
+		// content, never a band; their elementor-element ids must not leak
+		// into the band facts (an inner section's margin is a widget-level
+		// spacing fact, not a band pull).
+		if ( child.type === 'tag' && sectionClasses( child ).some( ( c ) => c === 'elementor-top-section' ) ) {
 			out.push( child );
 		} else {
 			allSectionNodes( child, out );
@@ -1118,6 +1398,84 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			if ( padding && ! fact.padding ) {
 				fact.padding = padding[ 1 ].trim();
 			}
+			// Section-level pull/overlap facts (124 §4): negative margins are
+			// the source pulling a band up/down over its neighbor; z-index
+			// is the stacking cue that makes the overlap render.
+			const marginTop = body.match( /margin-top\s*:\s*([^;!]+)/i );
+			if ( marginTop && ! fact.marginTop ) {
+				const value = marginTop[ 1 ].trim();
+				if ( value && ! /^0(?:px|%|em|rem)?$/.test( value ) ) {
+					fact.marginTop = value;
+				}
+			}
+			const marginBottom = body.match( /margin-bottom\s*:\s*([^;!]+)/i );
+			if ( marginBottom && ! fact.marginBottom ) {
+				const value = marginBottom[ 1 ].trim();
+				if ( value && ! /^0(?:px|%|em|rem)?$/.test( value ) ) {
+					fact.marginBottom = value;
+				}
+			}
+			const zIndex = body.match( /z-index\s*:\s*([^;!]+)/i );
+			if ( zIndex && ! fact.zIndex ) {
+				fact.zIndex = zIndex[ 1 ].trim();
+			}
+		}
+		// The top-level column responsive facts (124 §6) — the container's
+		// DIRECT column children (inner-section columns nest deeper and are
+		// not this band's grid). Widths + per-device order/visibility are
+		// the rebuild's relayout input across device types.
+		const container = childNodes( section ).find(
+			( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-container' )
+		);
+		if ( container ) {
+			const columns = childNodes( container )
+				.filter( ( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-column' ) )
+				.map( ( column ) => columnFactsOf( column ) )
+				.filter( ( column ) => column !== undefined );
+			if ( columns.length >= 2 || columns.some( ( column ) => column.widthTablet || column.widthMobile || column.reverseMobile || column.reverseTablet || column.hiddenMobile || column.hiddenTablet || column.hiddenDesktop ) ) {
+				fact.columns = columns;
+			}
+		}
+		// The boxed container's measure + column gap (124 §3): boxed sections
+		// constrain their CONTENT (the band bg stays full-width) — the rebuilt
+		// band's inner column must re-measure to the source's container width
+		// (jayainc: 1140px + the gap-wider 30px gutter), never the site measure.
+		if ( classes.includes( 'elementor-section-boxed' ) ) {
+			fact.measure = ELEMENTOR_BOXED_MEASURE;
+			// Resolve the effective container width from the stylesheets: a
+		// numeric max-width on a .elementor-container rule; the boxed rule
+		// wins over generic ones. Non-numeric values (`none !important` —
+		// the theme's page-cover override) never replace the default.
+			let resolved: string | undefined;
+			for ( const rule of topLevelRules( cssText ) ) {
+				if ( ! /\.elementor-container/.test( rule.selector ) ) {
+					continue;
+				}
+				const width = rule.body.match( /max-width\s*:\s*(\d+(?:\.\d+)?(?:px|rem|em|vw|%))/i );
+				if ( ! width ) {
+					continue;
+				}
+				if ( /section-boxed/.test( rule.selector ) ) {
+					resolved = width[ 1 ];
+					break;
+				}
+				if ( ! resolved ) {
+					resolved = width[ 1 ];
+				}
+			}
+			if ( resolved ) {
+				fact.measure = resolved;
+			}
+			const container = childNodes( section ).find(
+				( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-container' )
+			);
+			const gapClass = container
+				? sectionClasses( container ).map( ( c ) => /^elementor-column-gap-(\w+)$/.exec( c ) ).find( Boolean )
+				: undefined;
+			const gap = gapClass ? ELEMENTOR_COLUMN_GAPS[ gapClass[ 1 ] ] : undefined;
+			if ( gap ) {
+				fact.paddingX = gap;
+			}
 		}
 		// A background-color alongside a photo is an UNDERLAY — Elementor
 		// paints it beneath the (opaque) image, so the source renders it
@@ -1127,7 +1485,7 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		if ( fact.bgImage ) {
 			delete fact.bgColor;
 		}
-		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay ) {
+		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns ) {
 			facts.push( fact );
 		}
 	}
@@ -1323,12 +1681,21 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 			chrome.topbarInk = topbarResolved.ink;
 		}
 
-		// 2. The logo — prefer the light-background variant of a dark/light
-		//    pair (jayainc ships a white svg + a blue svg; the blue one reads
-		//    on the rebuilt light header).
+		// 2. The logo — assigned by WCAG 1.4.11 non-text contrast (124 §1):
+		//    each variant's dominant colors (fetched SVG fills / raster
+		//    sampling / filename hints) score against the header's actual
+		//    background; the best-contrast variant wins. jayainc ships a
+		//    white svg + a navy "blue" svg — the white one reads on the
+		//    navy header, the navy one does not (1.07:1). Without a
+		//    resolvable surface, the old variant preference stands in.
 		const imgs = collectNodes( headerNode, ( n ) => n.type === 'tag' && n.name === 'img' && Boolean( n.attribs?.src ) );
-		const logoImg =
-			imgs.find( ( img ) => tagClasses( img ).split( /\s+/ ).some( ( c ) => /image2$|logo2$|(?:blue|dark|color)/i.test( c ) ) ) ?? imgs[ 0 ];
+		const logoPool = imgs.filter( ( img ) => isLogoImg( img ) );
+		// The header surface resolves NOW (the 4c pass runs after the logo
+		// pick — resolve it early for the contrast assignment; the later
+		// pass re-resolves and owns chrome.headerBg).
+		const headerSurface = chrome.headerBg ?? resolveElementFill( headerNode ).fill ?? chrome.topbarBg;
+		const picked = pickLogoVariant( logoPool.length > 0 ? logoPool : imgs, headerSurface, input.logoColors, input.url );
+		const logoImg = picked ?? imgs.find( ( img ) => tagClasses( img ).split( /\s+/ ).some( ( c ) => /image2$|logo2$|(?:blue|dark|color)/i.test( c ) ) ) ?? imgs[ 0 ];
 		if ( logoImg ) {
 			chrome.logo = { src: logoImg.attribs?.src, alt: logoImg.attribs?.alt };
 		}
@@ -1446,12 +1813,16 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		);
 		if ( widgetAside ) {
 			scopes.push( widgetAside );
-			// The footer brand logo (jayainc: the white logo PNG in the first
-			// footer widget) and the footer's own background color.
-			const footerImg = findFirstNode( widgetAside, ( n ) => n.type === 'tag' && n.name === 'img' && Boolean( n.attribs?.src ) );
-			if ( footerImg ) {
-				chrome.footerLogo = { src: footerImg.attribs?.src, alt: footerImg.attribs?.alt };
-			}
+			// The footer brand logo — the variant pool spans header + footer
+			// scopes and the contrast against the footer surface decides
+			// (jayainc: the white PNG in the first footer widget; on a
+			// dark footer the white variants win, a dark variant on a light
+			// footer). Footer-DOM candidates break ties.
+			const footerImgs = collectNodes( widgetAside, ( n ) => n.type === 'tag' && n.name === 'img' && Boolean( n.attribs?.src ) );
+			const headerLogoImgs = headerNode
+				? collectNodes( headerNode, ( n ) => n.type === 'tag' && n.name === 'img' && Boolean( n.attribs?.src ) ).filter( ( img ) => isLogoImg( img ) )
+				: [];
+			const footerPool = [ ...footerImgs, ...headerLogoImgs ];
 			const asideClasses = ( widgetAside.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
 			if ( asideClasses.length > 0 && input.css.length > 0 ) {
 				const rules = topLevelRules( input.css.join( '\n' ) );
@@ -1459,16 +1830,78 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 				// rule styling the aside itself, not a descendant rule that
 				// merely mentions the class) — cascade-ordered, last wins.
 				const terminal = rules.filter( ( rule ) => asideClasses.some( ( cls ) => new RegExp( '\\.' + cls + '\\s*$' ).test( rule.selector.trim() ) ) );
-				const pool = terminal.length > 0 ? terminal : rules.filter( ( rule ) => asideClasses.some( ( cls ) => rule.selector.includes( cls ) ) );
+				// The :before overlay paints ON TOP of the flat base — include
+				// the aside's pseudo-element rules in the bg pool (jayainc's
+				// navy subfooter tint lives in `.aux-subfooter:before`).
+				const overlayRules = rules.filter( ( rule ) => asideClasses.some( ( cls ) => new RegExp( '\\.' + cls + '\\s*:?(:?before|after)\\s*$' ).test( rule.selector.trim() ) ) );
+				const pool = terminal.length > 0 ? [ ...terminal, ...overlayRules ] : rules.filter( ( rule ) => asideClasses.some( ( cls ) => rule.selector.includes( cls ) ) );
+				const inkRules = terminal.length > 0 ? rules.filter( ( rule ) => asideClasses.some( ( cls ) => rule.selector.includes( cls ) ) ) : pool;
+				let flatBg: string | undefined;
+				let overlayBg: string | undefined;
 				for ( const rule of pool ) {
-					const bg = rule.body.match( BG_COLOR_RE );
-					if ( bg ) {
-						const value = normalizeColor( bg[ 1 ].trim() );
-						if ( value && value !== 'transparent' ) {
-							chrome.footerBg = value;
+					const isOverlay = /:(:)?(?:before|after)/.test( rule.selector );
+					if ( /:(:)?(?:hover|focus|active|visited)/.test( rule.selector ) ) {
+						continue; // Pseudo-states are not the resting fill.
+					}
+					const gradient = rule.body.match( BG_GRADIENT_RE );
+					const color = rule.body.match( BG_COLOR_RE );
+					const value = gradient ? gradient[ 1 ].trim() : color ? normalizeColor( color[ 1 ].trim() ) : undefined;
+					if ( ! value || value === 'transparent' ) {
+						continue;
+					}
+					if ( isOverlay ) {
+						// The :before overlay paints ON TOP of the flat base — a
+						// gradient overlay (jayainc's navy subfooter tint) is the
+						// effective fill; a gradient always beats a flat overlay.
+						if ( gradient || ! overlayBg ) {
+							overlayBg = value;
 						}
+					} else {
+						flatBg = value;
 					}
 				}
+				const effectiveFooterBg = overlayBg ?? flatBg;
+				if ( effectiveFooterBg ) {
+					chrome.footerBg = effectiveFooterBg;
+				}
+				// The subfooter text color (the source paints white text on
+				// the dark footer) — the descendant `color:` rule, never a
+				// background-color (the 123 ink-regex discipline). The
+				// SHALLOWEST selector wins (`.aux-subfooter p` is the
+				// footer's base text; `.… .social-list li a` colors only
+				// its links); ties → later rule wins.
+				let footerInk: string | undefined;
+				let inkDepth = Infinity;
+				for ( const rule of inkRules ) {
+					if ( /:(:)?(?:before|after|hover|focus|active|visited)/.test( rule.selector ) ) {
+						continue;
+					}
+					const ink = rule.body.match( /(?:^|;)\s*color\s*:\s*([^;!]+)/i );
+					if ( ! ink ) {
+						continue;
+					}
+					const value = normalizeColor( ink[ 1 ].trim() );
+					if ( ! value || value === 'transparent' ) {
+						continue;
+					}
+					const parts = rule.selector.trim().split( /\s+/ );
+					const depth = parts.length - 1;
+					if ( depth <= inkDepth ) {
+						footerInk = value;
+						inkDepth = depth;
+					}
+				}
+				if ( footerInk ) {
+					chrome.footerInk = footerInk;
+				}
+			}
+			// The contrast assignment needs the resolved surface — resolve it
+			// first, then pick the footer variant against it.
+			const footerSurface = chrome.footerBg ?? chrome.footerBarBg;
+			const picked = pickLogoVariant( footerPool, footerSurface, input.logoColors, input.url );
+			const footerImg = picked ?? footerImgs[ 0 ];
+			if ( footerImg ) {
+				chrome.footerLogo = { src: footerImg.attribs?.src, alt: footerImg.attribs?.alt };
 			}
 		}
 		const blocks: Array<{ title?: string; items: string[] }> = [];
@@ -1575,6 +2008,30 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 	if ( iconLink ) {
 		try {
 			chrome.favicon = new URL( iconLink.attribs?.href ?? '', input.url ).href;
+		} catch {
+			// Unparseable href — skip.
+		}
+	}
+
+	// 8b. The source icon-font stylesheet (the icons CSS link — jayainc's
+	// auxin-icon.css). The rebuild's icon markers carry the source glyph
+	// classes; this sheet (the customer's own asset) draws the real glyphs.
+	// Matched by the stylesheet id/href naming convention (icon/awesome/
+	// fontello/icomoon), never the favicon's `rel=icon`.
+	const iconCssLink = findFirstNode( root, ( n ) => {
+		if ( n.type !== 'tag' || n.name !== 'link' || ! n.attribs?.href ) {
+			return false;
+		}
+		if ( ! /(?:^|\s)stylesheet(?:\s|$)/i.test( n.attribs?.rel ?? '' ) ) {
+			return false;
+		}
+		const id = n.attribs?.id ?? '';
+		const basename = ( n.attribs?.href ?? '' ).split( '?' )[ 0 ].split( '/' ).pop() ?? '';
+		return /(?:icon|awesome|fontello|icomoon)/i.test( `${ id } ${ basename }` );
+	} );
+	if ( iconCssLink ) {
+		try {
+			chrome.iconCss = new URL( iconCssLink.attribs?.href ?? '', input.url ).href;
 		} catch {
 			// Unparseable href — skip.
 		}
@@ -2268,6 +2725,169 @@ export function scoreParity( source: ForgeDesign, target: ForgeDesign, threshold
 		pass: score >= threshold,
 		threshold,
 	};
+}
+
+// -- band continuity (124 §7) -------------------------------------------------
+
+/** One adjacent-band transition seam — the source's own hard cut, or the
+ * symptom of a band the rebuild dropped/mis-analyzed. */
+export interface BandSeam {
+	fromId?: string;
+	toId?: string;
+	/** The edge colors that failed to meet. */
+	fromEdge?: string;
+	toEdge?: string;
+	/** CIE76 ΔE between the two edge colors (0 = identical). */
+	distance: number;
+}
+
+/** Color tokens of a gradient/color string, in declaration order. */
+function gradientStops( value: string | undefined ): string[] {
+	if ( ! value ) {
+		return [];
+	}
+	const stops: string[] = [];
+	const re = /#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\b|rgba?\([^)]*\)/gi;
+	for ( const match of value.matchAll( re ) ) {
+		const hex = normalizeColor( match[ 0 ] );
+		if ( hex ) {
+			stops.push( hex );
+		}
+	}
+	return stops;
+}
+
+/** A band's visual edges (the colors its top/bottom meet its neighbors
+ * with): the gradient's first/last stops, or the flat color both ways.
+ * Photo-only bands (bgImage without a color) have no comparable edges. */
+export function bandEdgeColors( section: ForgeSection ): { start?: string; end?: string } {
+	const stops = gradientStops( section.bgGradient );
+	if ( stops.length >= 2 ) {
+		return { start: stops[ 0 ], end: stops[ stops.length - 1 ] };
+	}
+	if ( stops.length === 1 ) {
+		return { start: stops[ 0 ], end: stops[ 0 ] };
+	}
+	if ( section.bgColor && section.bgColor !== 'transparent' ) {
+		const color = normalizeColor( section.bgColor );
+		if ( color ) {
+			return { start: color, end: color };
+		}
+	}
+	return {};
+}
+
+/** Raw CIE76 ΔE (0–441) between two hex colors. */
+function rawDeltaE( a: string, b: string ): number | undefined {
+	try {
+		const [ r1, g1, b1 ] = hexToRgb( a );
+		const [ r2, g2, b2 ] = hexToRgb( b );
+		return Math.sqrt( ( r1 - r2 ) ** 2 + ( g1 - g2 ) ** 2 + ( b1 - b2 ) ** 2 );
+	} catch {
+		return undefined;
+	}
+}
+
+/** The source's adjacent-band transition report: seams where band N's end
+ * color does not meet band N+1's start color (ΔE > 25 — a visible hard
+ * cut). Photo bands and unparseable colors are never compared. The seams
+ * are the source's OWN cuts — the verify gate treats any built/source
+ * MISMATCH of this signature as the defect, never the cuts themselves. */
+export function analyzeBandContinuity( sections: ForgeSection[] ): BandSeam[] {
+	const seams: BandSeam[] = [];
+	for ( let index = 1; index < sections.length; index++ ) {
+		const previous = bandEdgeColors( sections[ index - 1 ] );
+		const next = bandEdgeColors( sections[ index ] );
+		if ( ! previous.end || ! next.start ) {
+			continue;
+		}
+		const distance = rawDeltaE( previous.end, next.start );
+		if ( distance === undefined ) {
+			continue;
+		}
+		if ( distance > 25 ) {
+			seams.push( {
+				fromId: sections[ index - 1 ].id,
+				toId: sections[ index ].id,
+				fromEdge: previous.end,
+				toEdge: next.start,
+				distance: Math.round( distance ),
+			} );
+		}
+	}
+	return seams;
+}
+
+/** One built band wrap (the DesignRenderer marks each wrap with its source
+ * section id — the verify gate matches on it). */
+export interface BuiltBand {
+	id?: string;
+	bg?: string;
+	bgImage?: string;
+	padding?: string;
+}
+
+/** Extract the built page's band wraps from its HTML (static or server
+ * output). The wrap's inline style carries the baked theme background. */
+export function builtBandsOf( html: string ): BuiltBand[] {
+	const bands: BuiltBand[] = [];
+	const re = /<div\s+data-section-id="([^"]*)"[^>]*style="([^"]*)"[^>]*>/gi;
+	for ( const match of html.matchAll( re ) ) {
+		const style = match[ 2 ] ?? '';
+		const bg = /(?:^|;)background:\s*([^";]+)/i.exec( style )?.[ 1 ];
+		const bgImage = /(?:^|;)background-image:\s*url\(['"]?([^'"\)]+)['"]?\)/i.exec( style )?.[ 1 ];
+		const padding = /(?:^|;)padding:\s*([^";]+)/i.exec( style )?.[ 1 ];
+		bands.push( { id: match[ 1 ], bg: bg?.trim(), bgImage: bgImage?.trim(), padding: padding?.trim() } );
+	}
+	return bands;
+}
+
+/** The band-flow verify gate: every source band with visual facts must
+ * render in the built page carrying the baked background (a dropped band
+ * is exactly the failure the source's continuous flow depends on). */
+export interface BandFlowReport {
+	/** Source bands (with band facts) missing from the built page. */
+	dropped: string[];
+	/** Bands whose built background/padding differs from the baked theme. */
+	mismatched: Array<{ id: string; expected: string; actual?: string }>;
+	/** The source's own adjacent-band seams (informational). */
+	seams: BandSeam[];
+}
+
+function normalizeBg( value: string | undefined ): string {
+	return ( value ?? '' ).replace( /\s+/g, ' ' ).trim().toLowerCase();
+}
+
+export function verifyBandFlow( sourceSections: ForgeSection[], builtHtml: string ): BandFlowReport {
+	const builtById = new Map( builtBandsOf( builtHtml ).filter( ( band ) => band.id ).map( ( band ) => [ band.id as string, band ] ) );
+	const dropped: string[] = [];
+	const mismatched: BandFlowReport[ 'mismatched' ] = [];
+	for ( const section of sourceSections ) {
+		if ( ! section.id ) {
+			continue;
+		}
+		const expectedBg = section.bgGradient ?? ( section.bgColor && section.bgColor !== 'transparent' ? normalizeColor( section.bgColor ) : undefined );
+		const expectedImage = section.bgImage;
+		const expectedPadding = section.padding;
+		if ( ! expectedBg && ! expectedImage && ! expectedPadding ) {
+			continue; // No visual band facts — nothing to gate.
+		}
+		const band = builtById.get( section.id );
+		if ( ! band ) {
+			dropped.push( section.id );
+			continue;
+		}
+		if ( expectedBg && normalizeBg( band.bg ) !== normalizeBg( expectedBg ) ) {
+			mismatched.push( { id: section.id, expected: expectedBg, actual: band.bg } );
+		}
+		if ( expectedImage && band.bgImage !== expectedImage ) {
+			mismatched.push( { id: section.id, expected: expectedImage, actual: band.bgImage } );
+		}
+		if ( expectedPadding && ( band.padding ?? '' ).replace( /\s+/g, ' ' ).trim() !== expectedPadding.replace( /\s+/g, ' ' ).trim() ) {
+			mismatched.push( { id: section.id, expected: expectedPadding, actual: band.padding } );
+		}
+	}
+	return { dropped, mismatched, seams: analyzeBandContinuity( sourceSections ) };
 }
 
 /** Deterministic concept signature: accent hue bucket + the sorted type pair (order-independent). */

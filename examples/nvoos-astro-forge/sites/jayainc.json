@@ -163,35 +163,51 @@
 			{
 				"id": "a4ad586",
 				"bgImage": "https://jayainc.com/wp-content/uploads/2018/11/jaya-3-1.jpg",
-				"overlay": "transparent"
+				"overlay": "transparent",
+				"measure": "1140px",
+				"paddingX": "30px"
 			},
 			{
 				"id": "cff59dd",
 				"bgGradient": "linear-gradient(180deg, #eaeaea 0%, #e5e5e5 100%)",
-				"bgColor": "transparent"
+				"bgColor": "transparent",
+				"measure": "1140px",
+				"paddingX": "30px"
 			},
 			{
 				"id": "dff3f1a",
-				"bgColor": "#e5e5e5"
+				"bgColor": "#e5e5e5",
+				"measure": "1140px",
+				"paddingX": "10px"
 			},
 			{
 				"id": "d5844b9",
 				"anchor": "about",
 				"bgGradient": "linear-gradient(180deg, #e5e5e5 0%, #ffffff 100%)",
-				"bgColor": "transparent"
+				"bgColor": "transparent",
+				"measure": "1140px",
+				"paddingX": "30px"
 			},
 			{
 				"id": "5e78df1",
 				"bgGradient": "linear-gradient(180deg, #ffffff 6%, #04132b 100%)",
 				"bgColor": "transparent",
-				"padding": "100px 0px 100px 0px"
+				"padding": "100px 0px 100px 0px",
+				"measure": "1140px",
+				"paddingX": "30px"
 			},
 			{
 				"id": "fcc5e07",
 				"anchor": "services",
 				"bgGradient": "linear-gradient(180deg, #ffffff 0%, #e5e5e5 100%)",
 				"bgColor": "transparent",
-				"padding": "100px 0px 100px 0px"
+				"padding": "100px 0px 100px 0px",
+				"measure": "1140px",
+				"paddingX": "30px",
+				"columns": [
+					{ "width": 50 },
+					{ "width": 50 }
+				]
 			},
 			{
 				"id": "059421c",
@@ -203,12 +219,16 @@
 				"id": "48ace0b",
 				"anchor": "contact",
 				"bgColor": "#f6f6f6",
-				"padding": "100px 0px 0px 0px"
+				"padding": "100px 0px 0px 0px",
+				"measure": "1140px",
+				"paddingX": "30px"
 			},
 			{
 				"id": "fd63522",
 				"bgColor": "#f6f6f6",
-				"padding": "0px 0px 0px 0px"
+				"padding": "0px 0px 0px 0px",
+				"measure": "1140px",
+				"paddingX": "30px"
 			}
 		],
 		"chrome": {
@@ -219,7 +239,7 @@
 			"topbarBg": "#04132b",
 			"topbarInk": "#ffffff",
 			"logo": {
-				"src": "https://jayainc.com/wp-content/uploads/2018/09/JAYAINC-LOGO-V1-blue.svg",
+				"src": "https://jayainc.com/wp-content/uploads/2018/09/JAYAINC-LOGO-V1-wht.svg",
 				"alt": "JAYAINC"
 			},
 			"tagline": "Import / Export Servicing South Florida, Latin America & The Caribbean",
@@ -270,7 +290,8 @@
 				"src": "https://jayainc.com/wp-content/uploads/2018/09/JAYAINC-LOGO-V1-wht-v2.png",
 				"alt": ""
 			},
-			"footerBg": "#f3f3f3",
+			"footerBg": "linear-gradient(107deg, #081a43 0%, #071230 100%)",
+			"footerInk": "rgba(255, 255, 255, 0.7)",
 			"footerBlocks": [
 				{
 					"items": [
@@ -302,6 +323,7 @@
 				"transform": "capitalize"
 			},
 			"favicon": "https://jayainc.com/wp-content/uploads/2018/09/cropped-jaya-inc-icon-32x32.png",
+			"iconCss": "https://jayainc.com/wp-content/themes/phlox-pro/css/auxin-icon.css?ver=5.17.20",
 			"chromeSize": "16px"
 		},
 		"behavior": {
