@@ -92,7 +92,7 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 		{sections.map((section, index) => {
 			const theme = themeFor(section);
 			return (
-				<div class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`]} style={wrapStyle(theme)}>
+				<div id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`]} style={wrapStyle(theme)}>
 					{section.kind === 'hero' && <Hero section={section} />}
 					{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} />}
 					{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}

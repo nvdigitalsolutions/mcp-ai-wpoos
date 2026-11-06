@@ -11,6 +11,8 @@ export type SectionThemeName = 'hero' | 'dark' | 'alt' | 'light';
 export interface SectionTheme {
 	id?: string;
 	theme: SectionThemeName;
+	/** The source section anchor (the chrome nav links to it). */
+	anchor?: string;
 	/** The source band background (gradient or flat color). */
 	bg?: string;
 	/** The hero photo (hero sections only). */

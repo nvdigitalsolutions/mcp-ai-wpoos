@@ -58,6 +58,9 @@
 body {
 	margin: 0;
 	font-family: var(--forge-font);
+	/* The body token IS the reading size — the rebuilt body text mirrors the
+	 * source's (jayainc's 13px body, not the browser's 16px default). */
+	font-size: var(--forge-scale-body, 1rem);
 	line-height: 1.6;
 	color: var(--forge-ink);
 	background: var(--forge-surface);
@@ -100,6 +103,83 @@ a {
 	border-top: 1px solid var(--forge-line);
 	color: var(--forge-muted);
 	font-size: 0.875rem;
+}
+
+/* ------------------------------------------------------------------------
+ * Site chrome (Proposal 120 §2) — the source header/footer rebuilt: top
+ * contact strip, logo + tagline, source nav, the call button, footer
+ * columns, copyright. Absent chrome keeps the default minimal chrome.
+ * ------------------------------------------------------------------------ */
+.site-topbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 2rem;
+	padding: 0.5rem clamp(1rem, 4vw, 2rem);
+	background: var(--forge-surface-alt);
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small, 0.875rem);
+}
+
+.site-topbar p {
+	margin: 0;
+}
+
+.brand-block {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.brand-logo {
+	height: 2.5rem;
+	width: auto;
+}
+
+.brand-tagline {
+	margin: 0;
+	font-size: var(--forge-scale-small, 0.875rem);
+	color: var(--forge-muted);
+}
+
+.header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.call-button {
+	display: inline-block;
+	padding: var(--forge-space-sm) var(--forge-space);
+	background: var(--forge-accent);
+	color: var(--forge-accent-ink);
+	text-decoration: none;
+	border-radius: var(--forge-radius-sm);
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.site-footer-blocks {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+	gap: var(--forge-space);
+	margin-bottom: var(--forge-space);
+}
+
+.site-footer-block h3 {
+	font-family: var(--forge-font-display);
+	font-size: var(--forge-scale-h4, 1.125rem);
+	color: var(--forge-ink);
+	margin: 0 0 var(--forge-space-sm);
+}
+
+.site-footer-block p {
+	margin: 0 0 var(--forge-space-sm);
+}
+
+.site-copyright,
+.site-credit {
+	margin: 0.25rem 0 0;
+	font-size: var(--forge-scale-small, 0.875rem);
 }
 
 .hero {
@@ -345,10 +425,20 @@ a {
 }
 
 .ds-hero h1,
-.ds-hero h2,
+.ds-hero h2 {
+	font-family: var(--forge-font-display);
+	/* The source display size (72px on jayainc) with a fluid floor — a
+	 * 72px heading must not survive a 360px viewport. */
+	font-size: clamp(1.75rem, 3.5vw + 1rem, var(--forge-scale-h1, 2.25rem));
+	font-weight: 500;
+	line-height: 1.15;
+	margin: 0;
+}
+
 .ds-title {
 	font-family: var(--forge-font-display);
-	font-size: var(--forge-scale-h2);
+	font-size: clamp(1.5rem, 2.5vw + 0.5rem, var(--forge-scale-h2, 1.75rem));
+	font-weight: 500;
 	line-height: 1.2;
 	margin: 0;
 }
@@ -414,7 +504,8 @@ a {
 .ds-card h4,
 .ds-card h5 {
 	font-family: var(--forge-font-display);
-	font-size: var(--forge-scale-h4);
+	font-size: var(--forge-scale-h3, 1.25rem);
+	font-weight: 500;
 	margin: 0;
 }
 
