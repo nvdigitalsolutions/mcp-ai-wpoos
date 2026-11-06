@@ -358,7 +358,7 @@
 			{
 				"id": "fd63522",
 				"bgColor": "#f6f6f6",
-				"padding": "0px 0px 0px 0px",
+				"padding": "0px 0px 100px 0px",
 				"measure": "1140px",
 				"paddingX": "30px",
 				"catalog": {
