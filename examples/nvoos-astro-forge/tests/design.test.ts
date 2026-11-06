@@ -481,6 +481,50 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 		expect( styled?.call?.ink ).toBe( '#ffffff' );
 	} );
 
+	it( 'resolves the chrome typography/shape facts through the specificity cascade (123)', () => {
+		const html =
+			'<header id="site-header" class="site-header-section aux-header-light">' +
+			'<nav><a href="#about" class="aux-item-content">About</a></nav>' +
+			'<a href="tel:+18765550100" class="aux-button aux-large aux-mikado-yellow aux-curve aux-ac-btn1">CALL US</a>' +
+			'</header>' +
+			'<footer id="sitefooter" class="aux-site-footer"><h3 class="widget-title">Products</h3><small>© 2026</small></footer>';
+		const css = [
+			'body { font-family: Rubik; font-size: 100%; font-weight: 300; }',
+			'.aux-header-light { background-color: rgb(4, 19, 43); color: rgb(255, 255, 255); }',
+			// A base gray rule EARLIER in the sheet — the later header-scoped
+			// white rule must win for the nav ink.
+			'.aux-top-header .aux-menu-depth-0 > .aux-item-content { color: rgb(80, 80, 80); }',
+			'.site-header-section.aux-header-light .aux-menu-depth-0 > .aux-item-content { color: rgb(255, 255, 255); font-size: 16px; }',
+			// The generic large size loses to the header-scoped large size.
+			'a.button.aux-large { padding: 20px 35px; font-weight: 700; }',
+			'.site-header-section .aux-button.aux-large { padding: 14px 43px; }',
+			'.aux-mikado-yellow { color: rgb(36, 36, 36); font-weight: 400; text-transform: uppercase; }',
+			'a.button.aux-curve { border-radius: 100em; }',
+			'.aux-ac-btn1 { background-image: linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%); }',
+			'.aux-site-footer { background-color: rgba(8, 26, 67, 0.9); color: rgba(255, 255, 255, 0.7); }',
+			'.aux-subfooter .widget-title { font-weight: 500; font-size: 29px; text-transform: capitalize; }',
+		].join( '\n' );
+		const styled = analyzeChrome( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( styled?.headerBg ).toBe( '#04132b' );
+		expect( styled?.headerInk ).toBe( '#ffffff' );
+		expect( styled?.navStyle ).toEqual( { size: '16px' } );
+		expect( styled?.navInk ).toBe( '#ffffff' );
+		expect( styled?.call?.ink ).toBe( '#242424' );
+		expect( styled?.call?.style ).toMatchObject( { padding: '14px 43px', radius: '100em', weight: '400', transform: 'uppercase' } );
+		expect( styled?.footerBarBg ).toBe( 'rgba(8, 26, 67, 0.9)' ); // alpha survives
+		expect( styled?.footerBarInk ).toBe( 'rgba(255, 255, 255, 0.7)' ); // alpha preserved
+		expect( styled?.footerHeadingStyle ).toEqual( { weight: '500', size: '29px', transform: 'capitalize' } );
+		expect( styled?.chromeSize ).toBe( '16px' );
+	} );
+
+	it( 'resolves the chrome size from the body/html rules when the elements carry none (123)', () => {
+		const html = '<header id="site-header"><nav><a href="#about" class="aux-item-content">About</a></nav></header>';
+		const css = [ 'html { font-size: 16px; }', 'body { font-size: 100%; }' ].join( '\n' );
+		const styled = analyzeChrome( { url: 'https://x.example.com', html, css: [ css ] } );
+		// 100% of the html root rule — NEVER the rebuilt content body scale.
+		expect( styled?.chromeSize ).toBe( '16px' );
+	} );
+
 	it( 'scopes footer blocks between consecutive headings with an intro block', () => {
 		expect( chrome?.footerBlocks ).toEqual( [
 			{ items: [ 'Jaya Inc supplies plumbing, electrical and hardware lines island-wide.' ] },

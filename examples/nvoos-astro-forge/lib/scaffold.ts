@@ -606,20 +606,42 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'// same bytes.',
 		'// ---------------------------------------------------------------------------',
 		'',
+		'export interface ForgeChromeStyle {',
+		'	padding?: string;',
+		'	radius?: string;',
+		'	weight?: string;',
+		'	size?: string;',
+		'	transform?: string;',
+		'	letterSpacing?: string;',
+		'}',
+		'',
 		'export interface ForgeChrome {',
-		'\ttopbar?: string[];',
-		'\tlogo?: { src?: string; alt?: string };',
-		'\ttagline?: string;',
-		'\tnav?: Array<{ label: string; href: string }>;',
-		'\tcall?: { label: string; href: string; bg?: string; ink?: string };',
-		'\tfooterBlocks?: Array<{ title?: string; items: string[] }>;',
-		'\tcopyright?: string;',
-		'\t/** The site favicon (the first <link rel="icon"> href, absolute). */',
-		'\tfavicon?: string;',
-		'\t/** The footer brand logo (the footer-widget media image). */',
-		'\tfooterLogo?: { src?: string; alt?: string };',
-		'\t/** The footer background color (resolved from the footer-widget CSS). */',
-		'\tfooterBg?: string;',
+		'	topbar?: string[];',
+		'	topbarBg?: string;',
+		'	topbarInk?: string;',
+		'	logo?: { src?: string; alt?: string };',
+		'	tagline?: string;',
+		'	nav?: Array<{ label: string; href: string }>;',
+		'	navStyle?: ForgeChromeStyle;',
+		'	navInk?: string;',
+		'	headerBg?: string;',
+		'	headerInk?: string;',
+		'	call?: { label: string; href: string; bg?: string; ink?: string; style?: ForgeChromeStyle };',
+		'	footerBlocks?: Array<{ title?: string; items: string[] }>;',
+		'	footerHeadingStyle?: ForgeChromeStyle;',
+		'	copyright?: string;',
+		'	/** The site favicon (the first <link rel="icon"> href, absolute). */',
+		'	favicon?: string;',
+		'	/** The footer brand logo (the footer-widget media image). */',
+		'	footerLogo?: { src?: string; alt?: string };',
+		'	/** The footer background color (resolved from the footer-widget CSS). */',
+		'	footerBg?: string;',
+		'	/** The copyright bar\'s own background (a translucent navy on some sources). */',
+		'	footerBarBg?: string;',
+		'	/** The copyright bar\'s text color (usually translucent white). */',
+		'	footerBarInk?: string;',
+		'	/** The chrome base font-size (the source chrome runs at its own size). */',
+		'	chromeSize?: string;',
 		'}',
 		'',
 	];
@@ -629,6 +651,12 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	const entry: string[] = [];
 	if ( chrome.topbar && chrome.topbar.length > 0 ) {
 		entry.push( `topbar: ${ JSON.stringify( chrome.topbar ) }` );
+	}
+	if ( chrome.topbarBg ) {
+		entry.push( `topbarBg: ${ tsString( chrome.topbarBg ) }` );
+	}
+	if ( chrome.topbarInk ) {
+		entry.push( `topbarInk: ${ tsString( chrome.topbarInk ) }` );
 	}
 	if ( chrome.logo ) {
 		const logo: string[] = [];
@@ -646,6 +674,18 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	if ( chrome.nav && chrome.nav.length > 0 ) {
 		entry.push( `nav: [${ chrome.nav.map( ( item ) => `{ label: ${ tsString( item.label ) }, href: ${ tsString( item.href ) } }` ).join( ', ' ) }]` );
 	}
+	if ( chrome.navStyle ) {
+		entry.push( `navStyle: ${ renderChromeStyle( chrome.navStyle ) }` );
+	}
+	if ( chrome.navInk ) {
+		entry.push( `navInk: ${ tsString( chrome.navInk ) }` );
+	}
+	if ( chrome.headerBg ) {
+		entry.push( `headerBg: ${ tsString( chrome.headerBg ) }` );
+	}
+	if ( chrome.headerInk ) {
+		entry.push( `headerInk: ${ tsString( chrome.headerInk ) }` );
+	}
 	if ( chrome.call ) {
 		const call: string[] = [ `label: ${ tsString( chrome.call.label ) }`, `href: ${ tsString( chrome.call.href ) }` ];
 		if ( chrome.call.bg ) {
@@ -653,6 +693,9 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		}
 		if ( chrome.call.ink ) {
 			call.push( `ink: ${ tsString( chrome.call.ink ) }` );
+		}
+		if ( chrome.call.style ) {
+			call.push( `style: ${ renderChromeStyle( chrome.call.style ) }` );
 		}
 		entry.push( `call: { ${ call.join( ', ' ) } }` );
 	}
@@ -686,7 +729,43 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	if ( chrome.footerBg ) {
 		entry.push( `footerBg: ${ tsString( chrome.footerBg ) }` );
 	}
+	if ( chrome.footerHeadingStyle ) {
+		entry.push( `footerHeadingStyle: ${ renderChromeStyle( chrome.footerHeadingStyle ) }` );
+	}
+	if ( chrome.footerBarBg ) {
+		entry.push( `footerBarBg: ${ tsString( chrome.footerBarBg ) }` );
+	}
+	if ( chrome.footerBarInk ) {
+		entry.push( `footerBarInk: ${ tsString( chrome.footerBarInk ) }` );
+	}
+	if ( chrome.chromeSize ) {
+		entry.push( `chromeSize: ${ tsString( chrome.chromeSize ) }` );
+	}
 	return [ ...header, `export const chrome: ForgeChrome | undefined = { ${ entry.join( ', ' ) } };`, '' ].join( '\n' );
+}
+
+/** Render a ForgeChromeStyle object literal (tabs + single quotes). */
+function renderChromeStyle( style: { padding?: string; radius?: string; weight?: string; size?: string; transform?: string; letterSpacing?: string } ): string {
+	const parts: string[] = [];
+	if ( style.padding ) {
+		parts.push( `padding: ${ tsString( style.padding ) }` );
+	}
+	if ( style.radius ) {
+		parts.push( `radius: ${ tsString( style.radius ) }` );
+	}
+	if ( style.weight ) {
+		parts.push( `weight: ${ tsString( style.weight ) }` );
+	}
+	if ( style.size ) {
+		parts.push( `size: ${ tsString( style.size ) }` );
+	}
+	if ( style.transform ) {
+		parts.push( `transform: ${ tsString( style.transform ) }` );
+	}
+	if ( style.letterSpacing ) {
+		parts.push( `letterSpacing: ${ tsString( style.letterSpacing ) }` );
+	}
+	return `{ ${ parts.join( ', ' ) } }`;
 }
 
 /**

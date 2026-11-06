@@ -61,12 +61,12 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://jayainc.com",
-			"analyzedAt": "2026-11-06T05:33:27.154Z"
+			"analyzedAt": "2026-11-06T10:37:35.470Z"
 		},
 		"concept": "cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.",
 		"palette": {
 			"roles": {
-				"accent": "#1bb0ce",
+				"accent": "#5bc0de",
 				"accent-alt": "#54595f",
 				"text": "#7a7a7a",
 				"custom-1c5389b3": "#4054b2",
@@ -78,18 +78,18 @@
 				"field.border": "#eaeaea"
 			},
 			"unassigned": [
-				"#666666",
-				"#999999",
 				"#3d3d3d",
+				"#bbbbbb",
 				"#333333",
-				"#ffcf0e",
-				"#f8f8f8",
-				"#242424",
-				"#1e87f0",
-				"#cccccc",
 				"#aaaaaa",
-				"#d6d6d6",
-				"#505050"
+				"#999999",
+				"#666666",
+				"#ffcf0e",
+				"#eeeeee",
+				"#1bb0ce",
+				"#f8f8f8",
+				"#505050",
+				"#242424"
 			],
 			"confidence": {
 				"accent": "high",
@@ -106,17 +106,18 @@
 		},
 		"typography": {
 			"display": "rubik",
-			"body": "roboto",
+			"body": "rubik",
 			"scalePx": [
+				1,
 				8,
-				9.6,
-				10,
+				8.8,
 				13,
 				29,
 				48,
 				80,
 				128
-			]
+			],
+			"bodyWeight": "300"
 		},
 		"spacing": {
 			"scalePx": [
@@ -133,16 +134,16 @@
 			"valuesPx": [
 				1,
 				2,
-				3,
-				4,
-				5,
-				6,
-				8,
-				20
+				10,
+				13,
+				15,
+				20,
+				25,
+				50
 			]
 		},
 		"shadows": {
-			"count": 188
+			"count": 275
 		},
 		"components": {
 			"header": 19,
@@ -215,6 +216,8 @@
 				"3300 NW 112TH AVE Doral, FL 33172",
 				"+1 (305) 500-9319"
 			],
+			"topbarBg": "#04132b",
+			"topbarInk": "#ffffff",
 			"logo": {
 				"src": "https://jayainc.com/wp-content/uploads/2018/09/JAYAINC-LOGO-V1-blue.svg",
 				"alt": "JAYAINC"
@@ -242,11 +245,26 @@
 					"href": "#contact"
 				}
 			],
+			"navStyle": {
+				"weight": "400",
+				"size": "16px",
+				"transform": "uppercase"
+			},
+			"navInk": "#ffffff",
+			"headerInk": "#ffffff",
+			"headerBg": "#04132b",
 			"call": {
 				"label": "CALL US",
 				"href": "tel:305-500-9319",
 				"bg": "linear-gradient(98deg, #ffcf0e 0%, #ffb70e 100%)",
-				"ink": "#ffffff"
+				"ink": "#242424",
+				"style": {
+					"padding": "14px 43px",
+					"radius": "100em",
+					"weight": "400",
+					"size": "16px",
+					"transform": "uppercase"
+				}
 			},
 			"footerLogo": {
 				"src": "https://jayainc.com/wp-content/uploads/2018/09/JAYAINC-LOGO-V1-wht-v2.png",
@@ -276,7 +294,15 @@
 				}
 			],
 			"copyright": "© 2026 JAYAINC. powered by NV Digital Solutions",
-			"favicon": "https://jayainc.com/wp-content/uploads/2018/09/cropped-jaya-inc-icon-32x32.png"
+			"footerBarBg": "rgba(8, 26, 67, 0.9)",
+			"footerBarInk": "rgba(255, 255, 255, 0.7)",
+			"footerHeadingStyle": {
+				"weight": "500",
+				"size": "29px",
+				"transform": "capitalize"
+			},
+			"favicon": "https://jayainc.com/wp-content/uploads/2018/09/cropped-jaya-inc-icon-32x32.png",
+			"chromeSize": "16px"
 		},
 		"behavior": {
 			"headerSticky": true,
