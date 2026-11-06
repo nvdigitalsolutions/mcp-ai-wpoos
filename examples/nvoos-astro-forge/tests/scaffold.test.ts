@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderSectionsGenerated, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderSectionsGenerated, renderTokensDtcg, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -417,6 +417,51 @@ describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
 		// The type declaration carries `family: string`; a VALUE emission
 		// would carry a quoted family literal.
 		expect( module ).not.toContain( "family: '" );
+	} );
+} );
+
+describe( 'renderTokensDtcg (126 §dtcg — the DTCG 2025.10 interchange doc)', () => {
+	const baseProfile: SiteProfile = {
+		url: 'https://jayainc.example/',
+		name: 'Jaya',
+		collections: [],
+		design: {
+			mode: 'rebuild',
+			source: { url: 'https://jayainc.example', analyzedAt: '2026-11-06T00:00:00.000Z' },
+			concept: 'test',
+			palette: { roles: {}, unassigned: [], confidence: {} },
+			typography: { display: 'rubik', body: 'rubik', bodyWeight: '300', scalePx: [ 16, 13, 29, 48 ] },
+			spacing: { scalePx: [ 4, 8, 16, 24, 48 ] },
+			radii: { valuesPx: [ 4, 8 ] },
+			shadows: { count: 0 },
+			components: {},
+			modes: { dark: 'auto', contrast: 'auto' },
+			adaptation: { keep: [], replace: [], remix: [], licensingNote: '', attribution: [] },
+		},
+	};
+
+	it( 'emits the 2025.10 schema with core→semantic groups and typed tokens', () => {
+		const doc = JSON.parse( renderTokensDtcg( baseProfile, { accent: '#0b5f4e', 'accent-ink': '#ffffff', ink: '#1a1a1a', muted: '#6b6b6b', surface: '#ffffff', 'surface-alt': '#f5f5f4', line: '#e4e4e2', 'line-strong': '#767676' } ) );
+		expect( doc.$schema ).toContain( 'designtokens.org' );
+		expect( doc.core.color.$type ).toBe( 'color' );
+		expect( doc.core.color.accent.$value ).toBe( '#0b5f4e' );
+		expect( doc.core.font.$type ).toBe( 'fontFamily' );
+		expect( doc.core.font.body.$value ).toBe( 'rubik' );
+		expect( doc.core.space.$type ).toBe( 'dimension' );
+		expect( doc.core.space.md.$value ).toEqual( { value: 16, unit: 'px' } );
+		expect( doc.core.radius.$type ).toBe( 'dimension' );
+		expect( doc.semantic.color.$type ).toBe( 'color' );
+		// The typography composite aliases the core family (DTCG {ref}).
+		expect( doc.semantic.typography.body.$type ).toBe( 'typography' );
+		expect( doc.semantic.typography.body.$value.fontFamily ).toBe( '{core.font.body}' );
+		expect( doc.semantic.typography.body.$value.fontSize ).toEqual( { value: 13, unit: 'px' } );
+		expect( doc.semantic.typography.body.$value.fontWeight ).toBe( 300 );
+	} );
+
+	it( 'keeps non-hex token values CSS-only (the var stays authoritative)', () => {
+		const doc = JSON.parse( renderTokensDtcg( baseProfile, { accent: 'rgb(11, 95, 78)', ink: '#1a1a1a' } ) );
+		expect( doc.core.color.accent ).toBeUndefined();
+		expect( doc.core.color.ink.$value ).toBe( '#1a1a1a' );
 	} );
 } );
 

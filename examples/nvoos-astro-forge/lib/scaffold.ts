@@ -538,6 +538,79 @@ export function renderDesignGenerated( profile: SiteProfile, tokens: Record<stri
 }
 
 /**
+ * Render the DTCG 2025.10 token document (126 §dtcg) —
+ * public/tokens.dtcg.json. The interchange artifact: the same core→semantic
+ * group shape the ADS (velocity) and the NDS importer consume (the design
+ * tokens format module 2025.10 — $type/$value groups, {ref} aliases), emitted
+ * beside the flat CSS vars so a forged site ships a machine-readable design
+ * contract. Only hex colors are DTCG-safe — non-hex token values stay
+ * CSS-only (the CSS var remains authoritative). Deterministic.
+ */
+export function renderTokensDtcg( profile: SiteProfile, tokens: Record<string, string> ): string {
+	const design = profile.design;
+	const hexOnly = ( value: string | undefined ): string | undefined =>
+		value && /^#[0-9a-f]{3,8}$/i.test( value ) ? value.toLowerCase() : undefined;
+	const colorGroup = ( names: string[] ): Record<string, unknown> => {
+		const group: Record<string, unknown> = {};
+		for ( const name of names ) {
+			const value = hexOnly( tokens[ name ] );
+			if ( value ) {
+				group[ name ] = { $value: value };
+			}
+		}
+		return group;
+	};
+	const dim = ( px: number | undefined ): { value: number; unit: 'px' } | undefined =>
+		typeof px === 'number' ? { value: px, unit: 'px' } : undefined;
+	const spaceStops = [ 'xs', 'sm', 'md', 'lg', 'xl' ];
+	const space: Record<string, unknown> = {};
+	( design?.spacing.scalePx ?? [ 4, 8, 16, 24, 48 ] ).forEach( ( px, index ) => {
+		const name = spaceStops[ index ] ?? `step-${ index + 1 }`;
+		const value = dim( px );
+		if ( value ) {
+			space[ name ] = { $value: value };
+		}
+	} );
+	const radiusStops = [ 'sm', 'md', 'lg' ];
+	const radius: Record<string, unknown> = {};
+	( design?.radii.valuesPx ?? [ 4, 8 ] ).forEach( ( px, index ) => {
+		const name = radiusStops[ index ] ?? `step-${ index + 1 }`;
+		const value = dim( px );
+		if ( value ) {
+			radius[ name ] = { $value: value };
+		}
+	} );
+	const dtcg = {
+		$schema: 'https://www.designtokens.org/schemas/2025.10/format.json',
+		core: {
+			color: { $type: 'color', ...colorGroup( [ 'accent', 'accent-ink', 'ink', 'muted', 'surface', 'surface-alt', 'line', 'line-strong' ] ) },
+			font: {
+				$type: 'fontFamily',
+				display: { $value: design?.typography.display ?? tokens[ 'font-display' ] },
+				body: { $value: design?.typography.body ?? tokens.font },
+			},
+			space: { $type: 'dimension', ...space },
+			radius: { $type: 'dimension', ...radius },
+		},
+		semantic: {
+			color: { $type: 'color', ...colorGroup( [ 'ink', 'muted', 'accent-ink', 'line', 'line-strong' ] ) },
+			typography: {
+				body: {
+					$type: 'typography',
+					$value: {
+						fontFamily: '{core.font.body}',
+						fontSize: dim( design?.typography.scalePx?.[ 1 ] ) ?? { value: 16, unit: 'px' },
+						fontWeight: parseInt( design?.typography.bodyWeight ?? '', 10 ) || 400,
+						lineHeight: 1.6,
+					},
+				},
+			},
+		},
+	};
+	return JSON.stringify( dtcg, null, 2 ) + '\n';
+}
+
+/**
  * Render the generated section-theme module (117 §2) —
  * src/lib/sections.generated.ts. The source section backgrounds (profile
  * design.sections) bake into a deterministic array keyed by section id,
@@ -1419,6 +1492,15 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 		await writeFile(
 			path.join( targetDir, 'src', 'lib', 'behaviors.generated.ts' ),
 			renderBehaviorsGenerated( profile ),
+			'utf8'
+		);
+		// The DTCG interchange document (126 §dtcg) — public/ ships verbatim
+		// so the static build serves /tokens.dtcg.json: the machine-readable
+		// design contract (NDS importer, ADS tooling) beside the flat CSS vars.
+		await mkdir( path.join( targetDir, 'public' ), { recursive: true } );
+		await writeFile(
+			path.join( targetDir, 'public', 'tokens.dtcg.json' ),
+			renderTokensDtcg( profile, mergedTokens ),
 			'utf8'
 		);
 	} catch {

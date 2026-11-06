@@ -1,6 +1,7 @@
 ---
 // Gallery — image galleries rebuilt as a responsive grid.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SmartImage from '../SmartImage.astro';
 
 interface Props {
 	section: SemanticSection;
@@ -15,7 +16,7 @@ const { title, media } = section.slots;
 		{title && <h2 class="ds-title">{title}</h2>}
 		<div class="ds-gallery">
 			{media.map((image) => (
-				<img src={image.src} alt={image.alt ?? ''} width="400" height="400" loading="lazy" />
+				<SmartImage src={image.src} alt={image.alt ?? ''} />
 			))}
 		</div>
 	</section>

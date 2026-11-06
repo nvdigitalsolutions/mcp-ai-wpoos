@@ -11,6 +11,7 @@
 // All values come from the section facts; nothing here hardcodes a brand.
 import type { SemanticSection } from '../../forge/semantic.ts';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SmartImage from '../SmartImage.astro';
 
 interface Props {
 	section: SemanticSection;
@@ -123,7 +124,7 @@ const offsetVars = ( index: number ): string | undefined => {
 		))}
 		{media && media.length > 0 && (
 			<div class="ds-media-grid">
-				{media.map((image) => (image.src ? <img class="ds-media" src={image.src} alt={image.alt ?? ''} width="600" height="600" loading="lazy" /> : null))}
+				{media.map((image, index) => (image.src ? <SmartImage class="ds-media" src={image.src} alt={image.alt ?? ''} eager={index === 0} /> : null))}
 			</div>
 		)}
 		{links && links.length > 0 && (
