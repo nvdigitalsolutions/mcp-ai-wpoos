@@ -13,6 +13,7 @@
 // ---------------------------------------------------------------------------
 
 import { cp, copyFile, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -1501,6 +1502,31 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 		await writeFile(
 			path.join( targetDir, 'public', 'tokens.dtcg.json' ),
 			renderTokensDtcg( profile, mergedTokens ),
+			'utf8'
+		);
+		// The generated-artifact drift manifest (126 §drift) — sha256 of
+		// every generated/rewritten file; the template's
+		// scripts/check-generated.mjs re-hashes on `npm run check` and fails
+		// on hand-edits or stale scaffolds.
+		const generatedFiles = [
+			'src/styles/global.css',
+			'src/lib/design.generated.ts',
+			'src/lib/sections.generated.ts',
+			'src/lib/chrome.generated.ts',
+			'src/lib/behaviors.generated.ts',
+			'src/lib/vocabulary.generated.ts',
+			'public/tokens.dtcg.json',
+		];
+		const files: Record<string, string> = {};
+		for ( const file of generatedFiles ) {
+			const content = await readFile( path.join( targetDir, file ), 'utf8' ).catch( () => null );
+			if ( content !== null ) {
+				files[ file ] = createHash( 'sha256' ).update( content ).digest( 'hex' );
+			}
+		}
+		await writeFile(
+			path.join( targetDir, 'nvoos.generated.json' ),
+			JSON.stringify( { scaffoldedAt: new Date().toISOString(), files }, null, 2 ) + '\n',
 			'utf8'
 		);
 	} catch {

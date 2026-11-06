@@ -12,6 +12,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
+import http from 'node:http';
 import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -172,6 +173,46 @@ const PROFILE: SiteProfile = {
 	],
 };
 
+/** Serves a built dist directory over loopback (the axe e2e gate). */
+async function serveStatic( dir: string ): Promise<{ port: number; close: () => Promise<void> }> {
+	const types: Record<string, string> = {
+		'.html': 'text/html; charset=utf-8',
+		'.css': 'text/css',
+		'.js': 'text/javascript',
+		'.json': 'application/json',
+		'.svg': 'image/svg+xml',
+		'.png': 'image/png',
+		'.webp': 'image/webp',
+		'.xml': 'application/xml',
+		'.txt': 'text/plain',
+		'.ico': 'image/x-icon',
+	};
+	const server = http.createServer( async ( req, res ) => {
+		const url = new URL( req.url ?? '/', 'http://localhost' );
+		let target = path.join( dir, decodeURIComponent( url.pathname ) );
+		if ( url.pathname.endsWith( '/' ) ) {
+			target = path.join( target, 'index.html' );
+		}
+		const body = await readFile( target ).catch( () => null );
+		if ( body === null ) {
+			res.writeHead( 404 );
+			res.end();
+			return;
+		}
+		res.writeHead( 200, { 'content-type': types[ path.extname( target ) ] ?? 'application/octet-stream' } );
+		res.end( body );
+	} );
+	await new Promise<void>( ( resolve ) => server.listen( 0, '127.0.0.1', resolve ) );
+	const address = server.address();
+	if ( ! address || typeof address === 'string' ) {
+		throw new Error( 'static server failed to bind' );
+	}
+	return {
+		port: address.port,
+		close: () => new Promise( ( resolve ) => server.close( () => resolve() ) ),
+	};
+}
+
 beforeAll(async () => {
 	const port = await freePort();
 	origin = `http://127.0.0.1:${port}`;
@@ -227,6 +268,16 @@ describe('forge e2e — emitted site', () => {
 		expect(posts).toContain('Stitch pattern: honeycomb rib');
 		// The hybrid-local demo post merges under the WP entries (106 P2).
 		expect(posts).toContain('Hello from the forge');
+		// The content blocks (126 §blocks) render in the local post — the
+		// native exclusive FAQ accordion and the no-JS tab set (Astro
+		// scopes the elements, so assert attribute-agnostically).
+		const localPost = await readFile(path.join(workDir, 'dist', 'posts', 'hello-world', 'hello-world', 'index.html'), 'utf8');
+		expect(localPost).toContain('nvoos-content-faq');
+		expect(localPost).toContain('<summary');
+		expect(localPost).toContain('Where do you ship?');
+		expect(localPost).toContain('nvoos-tabs-input');
+		expect(localPost).toContain('nvoos-tabs-tab');
+		expect(localPost).toContain('nvoos-tabs-panel');
 
 		const sitemap = await readFile(path.join(workDir, 'dist', 'sitemap.xml'), 'utf8');
 		expect(sitemap).toContain('/posts/1/fjord-merino-sweater/');
@@ -401,6 +452,32 @@ describe('forge e2e — emitted site', () => {
 		expect(redirects).toContain('/about/\t/\t301');
 		expect(redirects).toContain('/product/fjord-merino-sweater/\t/products/101/fjord-merino-sweater/\t301');
 	});
+
+	it('passes the axe-core WCAG gate on the rebuilt home (126 §a11y)', async () => {
+		// axe-core's own docs: color-contrast does not work in JSDOM — the
+		// browser route (Chromium + injected axe) is the sanctioned one. The
+		// built dist serves statically; the gate covers the rebuilt design
+		// bands, not just the fixture's sanitized markup.
+		const { port, close } = await serveStatic(path.join(workDir, 'dist'));
+		let browser;
+		try {
+			const { chromium } = await import('playwright');
+			const axeModule = ( await import('axe-core') ) as unknown as { default: { source: string } };
+			browser = await chromium.launch();
+			const page = await browser.newPage();
+			await page.goto(`http://127.0.0.1:${port}/`);
+			await page.waitForLoadState('networkidle');
+			await page.addScriptTag({ content: axeModule.default.source });
+			const results = await page.evaluate(async () => {
+				const w = window as unknown as { axe: { run: (c: unknown, o: unknown) => Promise<{ violations: unknown[] }> } };
+				return w.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } });
+			});
+			expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
+		} finally {
+			await browser?.close();
+			await close();
+		}
+	}, 120_000);
 
 	it('rebuilds builder sections and ships the design audit (Proposal 114)', async () => {
 		const detail = await readFile(path.join(workDir, 'dist', 'posts', '6', 'elementor-landing', 'index.html'), 'utf8');
