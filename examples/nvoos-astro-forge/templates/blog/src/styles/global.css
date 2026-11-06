@@ -136,6 +136,19 @@ a {
 	padding: 2rem clamp(1rem, 4vw, 2rem);
 }
 
+/* Design-rebuild pages: the themed bands are full-bleed and carry their own
+ * rhythm (117/122) — the main padding would open a gap under the header and
+ * above the footer the source does not have (jayainc's bands meet its
+ * chrome flush). Plain/prose pages keep the padding. */
+.site-main:has([class*='ds-section-wrap--']) {
+	padding: 0;
+}
+
+/* Same flush on the footer side — the last band meets the footer strips. */
+.site-main:has([class*='ds-section-wrap--']) + .site-footer {
+	margin-top: 0;
+}
+
 .site-footer {
 	/* Full-width strips by default — the source footer bands span the
 	 * viewport (the measure-constrained default trapped jayainc's gray/navy
@@ -156,6 +169,9 @@ a {
 
 .site-footer-sub {
 	background: var(--forge-footer-bg, transparent);
+	/* The subfooter ink (the source paints white-ish text on its dark
+	 * footer — jayainc's rgba(255,255,255,0.7)). */
+	color: var(--forge-footer-ink, var(--forge-muted));
 }
 
 .site-footer-sub-inner,
@@ -249,7 +265,7 @@ a {
 	font-size: var(--forge-footer-heading-size, var(--forge-scale-h4, 1.125rem));
 	font-weight: var(--forge-footer-heading-weight, 700);
 	text-transform: var(--forge-footer-heading-transform, none);
-	color: var(--forge-ink);
+	color: var(--forge-footer-ink, var(--forge-ink));
 	margin: 0 0 var(--forge-space-sm);
 }
 
@@ -493,9 +509,10 @@ a {
 	margin: 0;
 	/* The internal band rhythm (the source keeps its rhythm in inner
 	 * columns; per-band padding facts override via the wrap's inline
-	 * style). */
-	padding-top: var(--forge-space-3, 1.25rem);
-	padding-bottom: var(--forge-space-3, 1.25rem);
+	 * style — --ds-pad-y collapses to 0 so the source's declared bands
+	 * meet their neighbors flush, 124 §5). */
+	padding-top: var(--ds-pad-y, var(--forge-space-3, 1.25rem));
+	padding-bottom: var(--ds-pad-y, var(--forge-space-3, 1.25rem));
 }
 
 /* Full-bleed bands (120 §5): the source band backgrounds span the
@@ -526,11 +543,16 @@ a {
 .ds-section-wrap--dark .ds-section,
 .ds-section-wrap--alt .ds-section,
 .ds-section-wrap--light .ds-section {
-	max-width: var(--forge-measure);
+	/* The boxed container measure (124 §3): the source constrains its
+	 * content to the container width (jayainc's 1140px) while the band
+	 * background stays full-width. Absent → the site measure. */
+	max-width: var(--ds-measure, var(--forge-measure));
 	margin-left: auto;
 	margin-right: auto;
-	padding-left: clamp(1rem, 4vw, 2rem);
-	padding-right: clamp(1rem, 4vw, 2rem);
+	/* The container's column-gap gutter (gap-default 10px … wider 30px)
+	 * rides as the side padding; absent → the template clamp. */
+	padding-left: var(--ds-pad-x, clamp(1rem, 4vw, 2rem));
+	padding-right: var(--ds-pad-x, clamp(1rem, 4vw, 2rem));
 }
 
 .ds-hero {
@@ -739,8 +761,8 @@ a {
 
 .ds-section-wrap--hero .ds-section {
 	width: 100%;
-	padding-top: 6rem;
-	padding-bottom: 6rem;
+	padding-top: var(--ds-pad-y, 6rem);
+	padding-bottom: var(--ds-pad-y, 6rem);
 }
 
 .ds-section-wrap--hero .ds-hero {
@@ -789,13 +811,29 @@ a {
 @keyframes ds-blur { from { opacity: 0; filter: blur(8px); } }
 
 /* Parallax: scroll() timelines tie the band to the page scroll; the range
- * scales with the source's motion_fx speed (--ds-parallax-range). */
+ * scales with the source's motion_fx speed (--ds-parallax-range). The
+ * carrier matches the source: hero bands drift as a whole (their photo IS
+ * the background), every other parallax section drifts its MEDIA elements
+ * (the source's parallax columns carry the imagery — jayainc's about
+ * photos, the services portrait, the product cards — while the text
+ * stays); alternate directions give the source's independent-column feel. */
 @supports (animation-timeline: scroll()) {
 	@media (prefers-reduced-motion: no-preference) {
-		.ds-parallax {
+		.ds-section-wrap--hero.ds-parallax {
 			animation: ds-parallax linear both;
 			animation-timeline: scroll(root);
 			animation-range: cover 0% cover 100%;
+		}
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-media,
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-icon-media img,
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-card {
+			animation: ds-parallax-media linear both;
+			animation-timeline: scroll(root);
+			animation-range: cover 0% cover 100%;
+		}
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-media:nth-child(even),
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-icon-media img:nth-child(even) {
+			animation-name: ds-parallax-media-reverse;
 		}
 	}
 }
@@ -803,6 +841,16 @@ a {
 @keyframes ds-parallax {
 	from { translate: 0 var(--ds-parallax-range, 24px); }
 	to { translate: 0 calc(var(--ds-parallax-range, 24px) * -1); }
+}
+
+@keyframes ds-parallax-media {
+	from { translate: 0 var(--ds-parallax-range, 24px); }
+	to { translate: 0 calc(var(--ds-parallax-range, 24px) * -1); }
+}
+
+@keyframes ds-parallax-media-reverse {
+	from { translate: 0 calc(var(--ds-parallax-range, 24px) * -1); }
+	to { translate: 0 var(--ds-parallax-range, 24px); }
 }
 
 /* The hero/about media: all images, side by side (the source two-up). */
@@ -816,7 +864,10 @@ a {
 	width: 100%;
 }
 
-/* The icon-list marker (117 §1) — accent disc with a check glyph. */
+/* The icon-list marker (117 §1) — accent disc with a check glyph.
+ * Glyph-classed markers (auxicon-*, fa fa-*, …) draw the SOURCE glyph via
+ * the source's own icon stylesheet (chrome.iconCss) and carry no fallback
+ * text — the font supplies the glyph, not the rebuild. */
 .ds-icon-marker {
 	display: inline-flex;
 	align-items: center;
@@ -827,13 +878,52 @@ a {
 	background: var(--forge-accent);
 	color: var(--forge-accent-ink);
 	font-weight: 700;
+	flex: 0 0 auto;
+}
+
+.ds-icon-marker::before {
+	/* The source icon fonts render their glyph through ::before — the base
+	 * class (auxicon/fa/eicon/dashicons) sizes and colors it. */
+	font-size: 1.05rem;
+}
+
+/* Source-shaped icon rows (123 §6 follow-up): the icon-LEFT list the source
+ * renders (aux-ico-pos-left) — a single-column stack of icon + text rows,
+ * never the icon-above card grid. */
+.ds-icon-rows {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--forge-space);
+}
+
+.ds-icon-row {
+	display: flex;
+	gap: var(--forge-space);
+	align-items: flex-start;
+}
+
+.ds-icon-row .ds-icon-marker {
+	margin-top: 0.15em;
+}
+
+.ds-icon-row h4 {
+	margin: 0 0 0.25em;
+}
+
+.ds-icon-row p {
+	margin: 0;
 }
 
 /* The icon-list split (121 §6): a standalone image beside the content —
- * jayainc's "Why Choose Us" section pairs a portrait photo with the list. */
+ * jayainc's "Why Choose Us" section pairs a portrait photo with the list.
+ * The ratio comes from the source's column facts (124 §6 — the services
+ * split is 50/50); the template's 5fr/7fr is only the fallback. */
 .ds-icon-split {
 	display: grid;
-	grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+	grid-template-columns: var(--ds-split-ratio, minmax(0, 5fr) minmax(0, 7fr));
 	gap: var(--forge-space-lg);
 	align-items: start;
 }
@@ -847,6 +937,11 @@ a {
 @media (max-width: 767px) {
 	.ds-icon-split {
 		grid-template-columns: 1fr;
+	}
+	/* The source's mobile column order (elementor-reverse-mobile, 124 §6)
+	 * — the wrap's inline --ds-icon-media-order flips the media below. */
+	.ds-icon-media {
+		order: var(--ds-icon-media-order, 0);
 	}
 }
 

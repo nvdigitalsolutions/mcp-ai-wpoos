@@ -2,7 +2,15 @@
 // IconList — icon-list sections rebuilt as a card list.
 // `columns` (Proposal 115 §4) drives the grid via per-breakpoint CSS custom
 // properties — the wireframe's captured/inferred collapse behavior.
+//
+// Source-shaped rows: when every item's source layout fact is an icon-LEFT
+// row (aux-ico-pos-left), the list rebuilds as stacked icon rows — the
+// source's rhythm — instead of the icon-above card grid (the default for
+// unclassified/stack-layout lists). Icon markers carry the source glyph
+// classes (auxicon-*, fa fa-*, …); with the source's own icon stylesheet
+// (chrome.iconCss) linked in the layout they draw the real glyphs.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import IconMarker from './IconMarker.astro';
 
 interface Props {
 	section: SemanticSection;
@@ -11,8 +19,10 @@ interface Props {
 
 const { section, columns } = Astro.props;
 const { title, body, items, media } = section.slots;
-const gridStyle = columns
-	? `--ds-cols-desktop: ${ columns.desktop ?? 4 }; --ds-cols-tablet: ${ columns.tablet ?? 2 }; --ds-cols-mobile: ${ columns.mobile ?? 1 };`
+const list = items ?? [];
+const rows = list.length > 0 && list.every((item) => item.layout === 'row');
+const gridStyle = !rows && columns
+	? `--ds-cols-desktop: ${columns.desktop ?? 4}; --ds-cols-tablet: ${columns.tablet ?? 2}; --ds-cols-mobile: ${columns.mobile ?? 1};`
 	: undefined;
 ---
 
@@ -31,17 +41,31 @@ const gridStyle = columns
 						))}
 					</div>
 				)}
-				{items && items.length > 0 && (
-					<ul class="ds-grid post-list" style={gridStyle}>
-						{items.map((item) => (
-							<li class="ds-card">
-								{item.icon && <span class="ds-icon-marker" aria-hidden="true">✓</span>}
-								{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
-								{item.title && <h4>{item.title}</h4>}
-								{item.body && <p>{item.body}</p>}
+				{rows ? (
+					<ul class="ds-icon-rows">
+						{list.map((item) => (
+							<li class="ds-icon-row">
+								<IconMarker item={item} />
+								<div class="ds-icon-row-text">
+									{item.title && <h4>{item.title}</h4>}
+									{item.body && <p>{item.body}</p>}
+								</div>
 							</li>
 						))}
 					</ul>
+				) : (
+					list.length > 0 && (
+						<ul class="ds-grid post-list" style={gridStyle}>
+							{list.map((item) => (
+								<li class="ds-card">
+									<IconMarker item={item} />
+									{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
+									{item.title && <h4>{item.title}</h4>}
+									{item.body && <p>{item.body}</p>}
+								</li>
+							))}
+						</ul>
+					)
 				)}
 			</div>
 		</div>
@@ -55,17 +79,31 @@ const gridStyle = columns
 					))}
 				</div>
 			)}
-			{items && items.length > 0 && (
-				<ul class="ds-grid post-list" style={gridStyle}>
-					{items.map((item) => (
-						<li class="ds-card">
-							{item.icon && <span class="ds-icon-marker" aria-hidden="true">✓</span>}
-							{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
-							{item.title && <h4>{item.title}</h4>}
-							{item.body && <p>{item.body}</p>}
+			{rows ? (
+				<ul class="ds-icon-rows">
+					{list.map((item) => (
+						<li class="ds-icon-row">
+							<IconMarker item={item} />
+							<div class="ds-icon-row-text">
+								{item.title && <h4>{item.title}</h4>}
+								{item.body && <p>{item.body}</p>}
+							</div>
 						</li>
 					))}
 				</ul>
+			) : (
+				list.length > 0 && (
+					<ul class="ds-grid post-list" style={gridStyle}>
+						{list.map((item) => (
+							<li class="ds-card">
+								<IconMarker item={item} />
+								{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
+								{item.title && <h4>{item.title}</h4>}
+								{item.body && <p>{item.body}</p>}
+							</li>
+						))}
+					</ul>
+				)
 			)}
 		</>
 	)}

@@ -16,6 +16,13 @@ export interface ForgeChrome {
 	copyright?: string;
 	/** The site favicon (the first <link rel="icon"> href, absolute). */
 	favicon?: string;
+	/** The source icon-font stylesheet (the icons CSS link, e.g. the theme's
+	 * auxin-icon.css) — the rebuild's icon markers carry the source glyph
+	 * classes and this sheet draws them (the customer's own asset). */
+	iconCss?: string;
+	/** The subfooter text color (the source paints white-ish text on its
+	 * dark footer). */
+	footerInk?: string;
 	/** The footer brand logo (the footer-widget media image). */
 	footerLogo?: { src?: string; alt?: string };
 	/** The footer background color (resolved from the footer-widget CSS). */

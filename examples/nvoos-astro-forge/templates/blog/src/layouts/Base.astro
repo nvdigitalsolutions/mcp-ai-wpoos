@@ -48,6 +48,7 @@ const chromeVars = [
 	chrome?.footerBarBg && `--forge-footer-bar-bg:${chrome.footerBarBg}`,
 	chrome?.footerBarInk && `--forge-footer-bar-ink:${chrome.footerBarInk}`,
 	chrome?.footerBg && `--forge-footer-bg:${chrome.footerBg}`,
+	chrome?.footerInk && `--forge-footer-ink:${chrome.footerInk}`,
 ]
 	.filter(Boolean)
 	.join(';');
@@ -64,6 +65,7 @@ const chromeVars = [
 		{pageUrl && <link rel="canonical" href={pageUrl} />}
 		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
 		{chrome?.favicon && <link rel="icon" href={chrome.favicon} />}
+		{chrome?.iconCss && <link rel="stylesheet" href={chrome.iconCss} media="all" />}
 		{ogImage && <meta property="og:image" content={ogImage} />}
 		<meta name="robots" content="index, follow" />
 		<script id="forge-theme-policy" type="application/json" data-theme-policy is:inline set:html={policyJson}></script>

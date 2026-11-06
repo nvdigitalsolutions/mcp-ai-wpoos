@@ -60,8 +60,37 @@ describe( 'classifyHtml — vendor-prefixed widget families (Phlox/Auxin)', () =
 		expect( sections[ 0 ].kind ).toBe( 'icon-list' );
 		expect( sections[ 0 ].slots.items ).toHaveLength( 2 );
 		expect( sections[ 0 ].slots.items?.[ 0 ] ).toMatchObject( { title: 'Procurement', body: 'Best discounts.', icon: true } );
+		// The source glyph classes ride along (the rebuild's marker draws the
+		// real glyph via the source's own icon stylesheet).
+		expect( sections[ 0 ].slots.items?.[ 0 ]?.iconClass ).toBe( 'auxicon auxicon-badge' );
+		// No aux-ico-pos-* fact → the default card grid, no layout pin.
+		expect( sections[ 0 ].slots.items?.[ 0 ]?.layout ).toBeUndefined();
 		// The section intro survives as body, not as a phantom item.
 		expect( sections[ 0 ].slots.body ).toContain( 'The relationships we have established.' );
+	} );
+
+	// jayainc's live service cards: the widget container declares
+	// aux-ico-pos-left — the rebuild renders icon-LEFT rows, not a card grid.
+	it( 'carries the source icon position as the row layout fact', () => {
+		const feature = ( title: string, body: string, glyph: string, position: string ) =>
+			`<div class="aux-widget-advanced-text aux-wrap-style-simple ${ position }"><div class="aux-text-widget-header"><div class="aux-ico-box"><span class="aux-ico ${ glyph }"></span></div></div><div class="aux-text-inner"><h4>${ title }</h4><div class="widget-content"><p>${ body }</p></div></div></div>`;
+		const html = SECTION(
+			WIDGET( 'aux_text', feature( 'Procurement', 'Best discounts.', 'auxicon-badge', 'aux-ico-pos-left' ) ) +
+				WIDGET( 'aux_text', feature( 'Export Services', 'All aspects of exports.', 'auxicon-factory-lift-streamline-warehouse', 'aux-ico-pos-left' ) ) +
+				WIDGET( 'aux_text', feature( 'Logistics', 'Freight shipping.', 'auxicon-airplane-up-streamline-transport', 'aux-ico-pos-left' ) )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'icon-list' );
+		expect( sections[ 0 ].slots.items ).toHaveLength( 3 );
+		expect( sections[ 0 ].slots.items?.every( ( item ) => item.layout === 'row' ) ).toBe( true );
+		expect( sections[ 0 ].slots.items?.[ 1 ]?.iconClass ).toBe( 'auxicon auxicon-factory-lift-streamline-warehouse' );
+	} );
+
+	it( 'pins icon-ABOVE widgets as the stack layout fact', () => {
+		const feature = ( title: string ) =>
+			`<div class="aux-widget-advanced-text aux-ico-pos-top"><div class="aux-text-widget-header"><div class="aux-ico-box"><span class="aux-ico auxicon-star"></span></div></div><div class="aux-text-inner"><h4>${ title }</h4></div></div>`;
+		const sections = classifyHtml( SECTION( WIDGET( 'aux_text', feature( 'One' ) ) + WIDGET( 'aux_text', feature( 'Two' ) ) ) );
+		expect( sections[ 0 ].slots.items?.every( ( item ) => item.layout === 'stack' ) ).toBe( true );
 	} );
 
 	it( 'carries the quote author line onto the testimonial item', () => {
@@ -136,6 +165,22 @@ describe( 'classifyHtml — fallbacks', () => {
 	it( 'drops recognized-but-empty builder scaffolding', () => {
 		const html = SECTION( WIDGET( 'heading', '' ) + WIDGET( 'text-editor', '<div></div>' ) );
 		expect( classifyHtml( html ) ).toEqual( [] );
+	} );
+
+	// 124 §5 — an empty band WITH a source id (jayainc's gray spacer bridge
+	// and the flush contact band) still renders as an empty themed band:
+	// dropping it would break the source's continuous band flow.
+	it( 'keeps recognized-but-empty bands with a source id (the continuous flow)', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-dff3f1a">' +
+			'<div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">' +
+			'<div class="elementor-widget elementor-widget-spacer"><div class="elementor-widget-container"></div></div>' +
+			'</div></div></div></section>';
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 1 );
+		expect( sections[ 0 ].kind ).toBe( 'text' );
+		expect( sections[ 0 ].id ).toBe( 'dff3f1a' );
+		expect( sections[ 0 ].slots ).toEqual( {} );
 	} );
 } );
 

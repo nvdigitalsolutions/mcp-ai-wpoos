@@ -305,6 +305,9 @@ describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
 				topbarInk: '#ffffff',
 				headerBg: '#04132b',
 				headerInk: '#ffffff',
+				favicon: 'https://jayainc.example/wp-content/uploads/cropped-icon-32x32.png',
+				iconCss: 'https://jayainc.example/wp-content/themes/phlox-pro/css/auxin-icon.css?ver=5.17.20',
+				footerInk: 'rgba(255, 255, 255, 0.7)',
 				navStyle: { weight: '400', size: '16px', transform: 'uppercase' },
 				navInk: '#ffffff',
 				call: {
@@ -332,6 +335,9 @@ describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
 		expect( module ).toContain( "footerBarInk: 'rgba(255, 255, 255, 0.7)'" );
 		expect( module ).toContain( "footerHeadingStyle: { weight: '500', size: '29px', transform: 'capitalize' }" );
 		expect( module ).toContain( "chromeSize: '16px'" );
+		expect( module ).toContain( "favicon: 'https://jayainc.example/wp-content/uploads/cropped-icon-32x32.png'" );
+		expect( module ).toContain( "iconCss: 'https://jayainc.example/wp-content/themes/phlox-pro/css/auxin-icon.css?ver=5.17.20'" );
+		expect( module ).toContain( "footerInk: 'rgba(255, 255, 255, 0.7)'" );
 	} );
 
 	it( 'bakes undefined for a chrome-less profile', () => {
@@ -811,14 +817,32 @@ describe( 'scaffold — design rebuild (Proposal 114)', () => {
 			...DESIGN,
 			sections: [
 				{ id: 'a4ad586', bgImage: 'https://shop.example.com/hero.jpg', bgColor: 'rgba(8, 26, 67, 0.9)' },
-				{ id: '5e78df1', bgGradient: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)' },
+				{ id: '5e78df1', bgGradient: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)', measure: '1140px', paddingX: '30px' },
 				{ id: '48ace0b', bgColor: '#f6f6f6' },
 			],
 		};
 		const out = renderSectionsGenerated( { ...PROFILE, design } );
 		expect( out ).toContain( "id: 'a4ad586', theme: 'hero', bgImage: 'https://shop.example.com/hero.jpg'" );
-		expect( out ).toContain( "id: '5e78df1', theme: 'dark'" );
+		expect( out ).toContain( "id: '5e78df1', theme: 'dark', bg: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)', measure: '1140px', paddingX: '30px'" );
 		expect( out ).toContain( "id: '48ace0b', theme: 'light', bg: '#f6f6f6'" );
+	} );
+
+	it( 'bakes the section pull facts (124 §4)', () => {
+		const design: ForgeDesign = {
+			...DESIGN,
+			sections: [ { id: '059421c', bgColor: '#081a43', marginTop: '-120px', zIndex: '2' } ],
+		};
+		const out = renderSectionsGenerated( { ...PROFILE, design } );
+		expect( out ).toContain( "marginTop: '-120px', zIndex: '2'" );
+	} );
+
+	it( 'bakes the column responsive facts (124 §6)', () => {
+		const design: ForgeDesign = {
+			...DESIGN,
+			sections: [ { id: 'fcc5e07', bgColor: '#e5e5e5', columns: [ { width: 50 }, { width: 50, reverseMobile: true } ] } ],
+		};
+		const out = renderSectionsGenerated( { ...PROFILE, design } );
+		expect( out ).toContain( 'columns: [{ width: 50 }, { width: 50, reverseMobile: true }]' );
 	} );
 
 	it( 'warns with a design block but stays quiet on clean designs', () => {

@@ -90,6 +90,16 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 		return undefined;
 	}
 	const parts: string[] = [];
+	// The boxed container measure + column gap (124 §3): the inner column
+	// re-measures to the source's container width (jayainc's 1140px +
+	// gap gutter), never the site measure — the band bg stays full-width.
+	// Theme-agnostic: hero bands are boxed too.
+	if ( theme.measure ) {
+		parts.push( `--ds-measure:${ theme.measure }` );
+	}
+	if ( theme.paddingX ) {
+		parts.push( `--ds-pad-x:${ theme.paddingX }` );
+	}
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
@@ -111,6 +121,31 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	// flush content-tight bands) — inline wins over the wrap default.
 	if ( theme.padding ) {
 		parts.push( `padding:${ theme.padding }` );
+		// The source declares the band's rhythm — suppress the template's
+		// default section padding so the bands meet their neighbors flush
+		// (124 §5, the continuous flow).
+		parts.push( '--ds-pad-y:0' );
+	}
+	// Section-level pull facts (124 §4): negative margins overlap the
+	// neighbor band; z-index stacks the overlap.
+	if ( theme.marginTop ) {
+		parts.push( `margin-top:${ theme.marginTop }` );
+	}
+	if ( theme.marginBottom ) {
+		parts.push( `margin-bottom:${ theme.marginBottom }` );
+	}
+	if ( theme.zIndex ) {
+		parts.push( `z-index:${ theme.zIndex }` );
+	}
+	// The column responsive facts (124 §6): the split components re-measure
+	// from the source's per-device widths/order instead of the template's
+	// fixed ratio (jayainc's services split is 50/50, not 5fr/7fr).
+	const columns = theme.columns ?? [];
+	if ( columns.length >= 2 && columns[ 0 ].width && columns[ 1 ].width ) {
+		parts.push( `--ds-split-ratio:minmax(0,${ columns[ 0 ].width / 100 }fr) minmax(0,${ columns[ 1 ].width / 100 }fr)` );
+	}
+	if ( columns.some( ( column ) => column.reverseMobile ) ) {
+		parts.push( '--ds-icon-media-order:2' );
 	}
 	return parts.length > 0 ? parts.join( ';' ) : undefined;
 };
@@ -122,7 +157,7 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 			const theme = themeFor(section);
 			const behavior = behaviorFor(section);
 			return (
-				<div id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section-id={section.id ?? undefined} id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{section.kind === 'hero' && <Hero section={section} />}
 					{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} />}
 					{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}

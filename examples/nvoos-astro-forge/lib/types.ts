@@ -219,6 +219,38 @@ export interface ForgeSection {
 	/** The background-overlay tint (Elementor's overlay layer). */
 	overlay?: string;
 	padding?: string;
+	/** The boxed container's max-width (Elementor's boxed sections constrain
+	 * their content — jayainc's 1140px default). Absent → the site measure. */
+	measure?: string;
+	/** The container's column-gap side padding (gap-default 10px …
+	 * gap-wider 30px) — the source's inner gutter. */
+	paddingX?: string;
+	/** Section-level pull facts (124 §4) — negative margins pull the band
+	 * over its neighbor (the source's overlap rhythm), z-index stacks it. */
+	marginTop?: string;
+	marginBottom?: string;
+	zIndex?: string;
+	/** The top-level column responsive facts (124 §6) — desktop/tablet/
+	 * mobile widths (elementor-col/md/sm-*) + order/visibility flags. The
+	 * split components re-measure from these; absent → the template
+	 * default ratio. */
+	columns?: ForgeSectionColumn[];
+}
+
+/** One top-level column's responsive facts (Elementor's per-device
+ * width/order/visibility classes) — the rebuild's relayout input. */
+export interface ForgeSectionColumn {
+	/** Desktop width % (elementor-col-*). */
+	width?: number;
+	/** Tablet width % (elementor-md-*). */
+	widthTablet?: number;
+	/** Mobile width % (elementor-sm-*). */
+	widthMobile?: number;
+	reverseMobile?: boolean;
+	reverseTablet?: boolean;
+	hiddenMobile?: boolean;
+	hiddenTablet?: boolean;
+	hiddenDesktop?: boolean;
 }
 
 /**
@@ -282,6 +314,14 @@ export interface ForgeChrome {
 	copyright?: string;
 	/** The site favicon (the first <link rel="icon"> href, absolute). */
 	favicon?: string;
+	/** The source icon-font stylesheet (the icons CSS link, e.g. the theme's
+	 * auxin-icon.css) — the rebuild's icon markers carry the source glyph
+	 * classes and this sheet draws them (the customer's own asset, like the
+	 * content media URLs). */
+	iconCss?: string;
+	/** The subfooter text color (the source paints white-ish text on its
+	 * dark footer — jayainc's rgba(255,255,255,0.7)). */
+	footerInk?: string;
 	/** The footer's brand logo (the footer-widget media image). */
 	footerLogo?: { src?: string; alt?: string };
 	/** The footer background color (resolved from the footer-widget CSS). */
