@@ -679,15 +679,21 @@ a {
 }
 
 .ds-logos {
-	display: flex;
-	flex-wrap: wrap;
+	/* Source brand strips are equal-width columns (Elementor col-16 grids),
+	 * not height-normalized flex rows — jayainc's six brands sit in one
+	 * 6-up row at ~166px per column. A uniform 3rem height instead made
+	 * the wide banners (Duracell) dominate, shrank the square marks
+	 * (VO5), and wrapped the row. Equal columns with natural-ratio logos
+	 * keep the source's rhythm (mobile collapses via auto-fit). */
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
 	align-items: center;
 	gap: var(--forge-space);
 }
 
 .ds-logos img {
-	height: 3rem;
-	width: auto;
+	width: 100%;
+	height: auto;
 }
 
 .ds-gallery {

@@ -20,6 +20,20 @@ export default defineConfig({
 	// collections need the MDX integration.
 	integrations: [mdx()],
 	// FORGE:render-config
+	// Scroll-driven animations (Proposal 121) declare `animation-timeline`
+	// as a SEPARATE longhand — Chrome (as of 157) drops the entire
+	// `animation` declaration when a timeline value (scroll()/view())
+	// appears inside the shorthand. Vite 8 defaults to lightningcss when
+	// the package is present (astro pulls it transitively), and
+	// lightningcss 1.33 merges the longhand back into the shorthand — the
+	// deployed jayainc build lost every parallax + reveal animation to
+	// that merge (2026-11-06). Pin the minifier to esbuild, which
+	// preserves the separate longhands (regression-pinned in the e2e).
+	// Vite imports the `esbuild` package at build time for this path, so
+	// the template devDependencies must carry it.
+	vite: {
+		build: { cssMinify: 'esbuild' },
+	},
 	image: {
 		domains: wpHost ? [wpHost] : [],
 	},
