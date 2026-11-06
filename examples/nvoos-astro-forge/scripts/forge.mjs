@@ -30,9 +30,9 @@
 // Requires Node >= 22.6 (native TypeScript type stripping).
 // ---------------------------------------------------------------------------
 
-import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { readFile, readdir, mkdir, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { join } from 'node:path';
 
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
@@ -40,7 +40,8 @@ import { Command } from 'commander';
 
 import { analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity } from '../lib/design.ts';
 import { emitDeployConfig } from '../lib/deploy-config.ts';
-import { analyzeSite, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
+import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
+import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
@@ -48,6 +49,7 @@ import { collectProjectFiles, slugify } from '../lib/project-files.ts';
 import { scaffold } from '../lib/scaffold.ts';
 import { SitesStore } from '../lib/sites.ts';
 import { maskSecret, Vault } from '../lib/vault.ts';
+import { COMPARE_PROMPT, visionCompare, visionConfig } from '../lib/vision.ts';
 import { extractWireframes } from '../lib/wireframes.ts';
 import { learnVocabulary } from '../lib/vocabulary.ts';
 import { setupWizard } from '../lib/wizard.ts';
@@ -244,8 +246,22 @@ async function runAnalyze( url, options ) {
 
 	const profileJson = `${ JSON.stringify( profile, null, '\t' ) }\n`;
 	if ( options.write ) {
-		await writeFile( options.write, profileJson, 'utf8' );
-		console.log( `\u2713 Draft profile written to ${ options.write } — review excludes/frontPage, then scaffold.` );
+		// Merge into an existing profile by default (Proposal 118 §3): the
+		// operator's hand-tuned collections/tokens/frontPage/forms survive;
+		// the analyzed blocks refresh. `--fresh` forces a clean draft.
+		let text = profileJson;
+		let mode = 'Draft profile written to';
+		try {
+			const existing = JSON.parse( await readFile( options.write, 'utf8' ) );
+			if ( ! options.fresh && existing && typeof existing === 'object' ) {
+				text = `${ JSON.stringify( mergeProfileDraft( existing, profile ), null, '\t' ) }\n`;
+				mode = 'Draft profile MERGED into';
+			}
+		} catch {
+			// No existing file — a fresh write.
+		}
+		await writeFile( options.write, text, 'utf8' );
+		console.log( `\u2713 ${ mode } ${ options.write } — review excludes/frontPage, then scaffold.` );
 	} else {
 		console.log( '--- draft site.json ---' );
 		console.log( profileJson.trimEnd() );
@@ -792,6 +808,142 @@ async function runVerify( profileRef, options ) {
 		);
 	}
 	process.exitCode = report.pass ? 0 : 1;
+	if ( options.visual ) {
+		// The vision layer (118 §4) — advisory unless --strict-visual; never
+		// downgrades a parity failure.
+		await runVisualVerify( profile, options );
+	}
+}
+
+const sleep = ( ms ) => new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+
+/** Boot the built site with `astro preview` (detached — survives the CLI). */
+function servePreview( target, port ) {
+	const bin = join( target, 'node_modules', 'astro', 'bin', 'astro.mjs' );
+	const child = spawn( process.execPath, [ bin, 'preview', '--port', String( port ) ], {
+		cwd: target,
+		detached: true,
+		stdio: 'ignore',
+		windowsHide: true,
+	} );
+	child.unref();
+	console.log( `\u27a1 Preview server started on http://localhost:${ port } (astro preview) — stop it by killing the process on that port.` );
+}
+
+/**
+ * The visual comparison (118 §4): source + built screenshots through a
+ * vision model. Sources: NVOOS_FORGE_CAPTURE_URL (source only — a remote
+ * endpoint cannot reach the local build) and dropped artifacts under
+ * <target>/verify-artifacts/<label>-{source,built}.{png,jpg,webp}.
+ * Advisory by default; --strict-visual gates on the --min-fidelity score.
+ */
+async function runVisualVerify( profile, options ) {
+	const config = visionConfig();
+	if ( ! config ) {
+		if ( options.strictVisual ) {
+			fail( '--strict-visual needs vision credentials: set NVOOS_FORGE_VISION_BASE_URL / NVOOS_FORGE_VISION_KEY / NVOOS_FORGE_VISION_MODEL.' );
+		}
+		console.log(
+			'\u26a0 Visual verify skipped: set NVOOS_FORGE_VISION_BASE_URL / NVOOS_FORGE_VISION_KEY / NVOOS_FORGE_VISION_MODEL to enable the vision comparison.'
+		);
+		return;
+	}
+
+	const target = options.target;
+	const host = ( () => { try { return new URL( String( profile.url ) ).hostname; } catch { return ''; } } )();
+	const bareHost = host.replace( /^www\./, '' );
+	const label = slugify( profile.name ?? ( bareHost || 'site' ) );
+	const dir = join( target, 'verify-artifacts' );
+	const sourceLabel = `${ label }-source`;
+	const builtLabel = `${ label }-built`;
+	await mkdir( dir, { recursive: true } );
+
+	// 1. Source screenshot: the capture endpoint when configured, else a
+	//    dropped artifact.
+	let source = undefined;
+	const endpoint = captureEndpoint();
+	if ( endpoint ) {
+		source = await captureRemote( endpoint, String( profile.url ), sourceLabel );
+	}
+	source = source ?? await readArtifact( dir, sourceLabel );
+
+	// 2. Built screenshot: a dropped artifact (the endpoint cannot reach
+	//    localhost). --serve boots the preview so the operator can capture.
+	let built = await readArtifact( dir, builtLabel );
+	if ( ! built && options.serve ) {
+		servePreview( target, Number( options.serve ?? 4173 ) );
+	}
+	if ( ! source || ! built ) {
+		const missing = [];
+		if ( ! source ) {
+			missing.push( `${ sourceLabel }.png` );
+		}
+		if ( ! built ) {
+			missing.push( `${ builtLabel }.png` );
+		}
+		console.log( `\u26a0 Visual verify needs screenshots: drop ${ missing.join( ', ' ) } in ${ dir } (${ options.serve ? 'the preview server is running,' : 'pass --serve <port> to boot the built site,' } set NVOOS_FORGE_CAPTURE_URL to auto-capture the source).` );
+		const waitSeconds = Number( options.wait ?? 90 );
+		console.log( `   Polling for the artifacts (${ waitSeconds }s)…` );
+		const deadline = Date.now() + waitSeconds * 1000;
+		while ( Date.now() < deadline ) {
+			await sleep( 2000 );
+			source = source ?? await readArtifact( dir, sourceLabel );
+			built = await readArtifact( dir, builtLabel );
+			if ( source && built ) {
+				break;
+			}
+		}
+	}
+	if ( ! source || ! built ) {
+		if ( options.strictVisual ) {
+			fail( 'Visual verify could not obtain both screenshots (--strict-visual).' );
+		}
+		console.log( '\u26a0 Both screenshots were not available — the visual comparison did not run (advisory).' );
+		return;
+	}
+
+	// 3. The vision comparison (one request, both images, data URLs).
+	console.log( '\u27a1 Vision model comparing the source and built screenshots…' );
+	const outcome = await visionCompare( config, source, built );
+	if ( ! outcome.ok ) {
+		console.warn( `\u26a0 Vision comparison failed: ${ outcome.error }` );
+		if ( options.strictVisual ) {
+			fail( 'Vision comparison failed (--strict-visual).' );
+		}
+		return;
+	}
+	const verdict = outcome.verdict;
+	const fidelity = typeof verdict.fidelity === 'number' ? verdict.fidelity : null;
+	if ( fidelity === null ) {
+		console.warn( '\u26a0 The model returned no numeric fidelity — see the audit report.' );
+	} else {
+		console.log( `\u2713 Visual fidelity: ${ fidelity }/100` );
+	}
+	const divergences = Array.isArray( verdict.divergences ) ? verdict.divergences : [];
+	for ( const divergence of divergences ) {
+		const area = divergence && divergence.area ? divergence.area : 'general';
+		const severity = divergence && divergence.severity ? divergence.severity : 'low';
+		const note = divergence && divergence.note ? divergence.note : '';
+		console.log( `  - [${ severity }] ${ area }: ${ note }` );
+	}
+	if ( typeof verdict.summary === 'string' && verdict.summary ) {
+		console.log( `  summary: ${ verdict.summary }` );
+	}
+	await writeFile(
+		join( dir, 'visual-audit.json' ),
+		`${ JSON.stringify( { generatedAt: new Date().toISOString(), sourceUrl: profile.url, fidelity, verdict }, null, '\t' ) }\n`,
+		'utf8'
+	);
+	console.log( `  audit: ${ join( dir, 'visual-audit.json' ) }` );
+
+	// 4. The gate — strict mode only.
+	if ( options.strictVisual ) {
+		const min = Number( options.minFidelity ?? 70 );
+		if ( fidelity === null || fidelity < min ) {
+			console.error( `\u26a0 Visual fidelity ${ fidelity === null ? 'n/a' : fidelity } below the ${ min } gate — FAIL` );
+			process.exitCode = 1;
+		}
+	}
 }
 
 // -- program -----------------------------------------------------------------
@@ -808,7 +960,8 @@ program
 	.command( 'analyze' )
 	.description( 'discover a WordPress site and draft a site.json (site_analyze)' )
 	.argument( '<url>', 'the WordPress URL (https://…)' )
-	.option( '--write <path>', 'write the draft profile to a file' )
+	.option( '--write <path>', 'write the draft profile to a file (MERGE into an existing profile — hand-tuned fields survive)' )
+	.option( '--fresh', 'with --write: overwrite an existing profile with a clean draft instead of merging' )
 	.option( '--design', 'extract the design language and attach the rebuild block (Proposal 114)' )
 	.option( '--inventory', 'discover the full page inventory + site shape (one-pager vs multi-page, Proposal 115)' )
 	.option( '--wireframes', 'imply --inventory and extract wireframes for the missing pages (Proposal 115)' )
@@ -881,6 +1034,11 @@ program
 	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
 	.option( '--threshold <n>', 'parity pass threshold 0-1 (default 0.6)', '0.6' )
 	.option( '--baselines', 'note the opt-in Playwright baseline step' )
+	.option( '--visual', 'also compare SOURCE and BUILT screenshots with a vision model (Proposal 118)' )
+	.option( '--serve <port>', 'with --visual: boot the built site with `astro preview` on <port> while you capture it' )
+	.option( '--wait <seconds>', 'with --visual: poll for the dropped built screenshot this many seconds (default 90)', '90' )
+	.option( '--min-fidelity <n>', 'with --visual --strict-visual: fail below this 0-100 score (default 70)', '70' )
+	.option( '--strict-visual', 'fail the command when the visual comparison cannot run or scores below --min-fidelity' )
 	.action( async ( profileRef, options ) => {
 		await runVerify( profileRef, options );
 	} );
