@@ -51,13 +51,20 @@ export default function UiCombobox({ label = 'Wood', placeholder = 'Choose a woo
 				</button>
 			</div>
 			<div {...api.getPositionerProps()} className="ui-combobox-positioner">
-				<ul {...api.getListProps()} className="ui-combobox-list">
-					{items.map((item) => (
-						<li key={item} {...api.getItemProps({ item })} className="ui-combobox-item">
-							{item}
-						</li>
-					))}
-				</ul>
+				{/* The content part carries Zag's `hidden` (closed state), the
+				   data-state/data-placement attributes, and the pointer-down
+				   guard that keeps the input focused when an option is
+				   clicked. Skipping it leaves the listbox permanently visible
+				   and unpositioned. */}
+				<div {...api.getContentProps()} className="ui-combobox-content">
+					<ul {...api.getListProps()} className="ui-combobox-list">
+						{items.map((item) => (
+							<li key={item} {...api.getItemProps({ item })} className="ui-combobox-item">
+								{item}
+							</li>
+						))}
+					</ul>
+				</div>
 			</div>
 		</div>
 	);

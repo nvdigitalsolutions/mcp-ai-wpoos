@@ -90,7 +90,14 @@ test('Zag combobox filters and selects via keyboard', async ({ page }) => {
 	// deployed list showed default bullets with no hover highlight. The
 	// page's island rules must stay :global(); toHaveCSS proves they apply.
 	await expect(page.locator('.ui-combobox-list')).toHaveCSS('list-style-type', 'none');
+	// Closed-state gate: the Zag content part carries the `hidden` attribute
+	// — a missing content element left the listbox permanently visible and
+	// unpositioned on the deployed page (2026-11-07 regression).
+	await expect(page.locator('.ui-combobox-content')).toBeHidden();
 	await input.fill('oa');
+
+	// Opening via typing must reveal the popup again.
+	await expect(page.locator('.ui-combobox-content')).toBeVisible();
 
 	// Wait for the filtered collection to commit before the keyboard
 	// sequence (the re-filter is a React state round-trip).
