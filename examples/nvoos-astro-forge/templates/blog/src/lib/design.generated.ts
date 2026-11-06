@@ -69,3 +69,7 @@ export const resolvedDesign: ResolvedDesign = {
 	radii: { valuesPx: [4, 8] },
 	components: {},
 };
+
+// The source webfonts (125 §2) — Base.astro loads them from Google Fonts
+// when the harvested family is not a system stack (jayainc: Rubik).
+export const webFonts: Array<{ family: string; weights: number[] }> = [];

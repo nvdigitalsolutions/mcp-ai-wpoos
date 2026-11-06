@@ -195,7 +195,41 @@ export function createWpFixtureData() {
 				link: `${ORIGIN}/about/`,
 				excerpt: { rendered: '' },
 				rank_math_title: 'About Fixture Wares',
-				content: { rendered: '<p>Fixture Wares is the hermetic test storefront.</p>' },
+				content: {
+					rendered:
+						// The split-hero fixture (125 §1): a copy column + a media
+						// collage column. The section id is hex — Elementor's real
+						// id shape; the classifier only extracts [0-9a-f]{4,} —
+						// and the profile's design.sections entry (a1b2c3d) carries
+						// the split facts the rebuilt home must apply.
+						'<section class="elementor-section elementor-top-section elementor-element elementor-element-a1b2c3d">' +
+						'<div class="elementor-container">' +
+						'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap">' +
+						'<div class="elementor-element elementor-element-sf1 elementor-widget elementor-widget-aux_modern_heading"><div class="elementor-widget-container"><h2 class="aux-modern-heading-primary">At Fixture Wares we serve the fjords.</h2><div class="aux-modern-heading-divider"></div></div></div>' +
+						'<div class="elementor-element elementor-element-sf2 elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>Your needs are our top priority.</p></div></div>' +
+						'<div class="elementor-element elementor-element-sf3 elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>We source every major brand.</p></div></div>' +
+						'<div class="elementor-element elementor-element-sf4 elementor-widget elementor-widget-aux_button"><div class="elementor-widget-container"><a href="#products">Our Products</a></div></div>' +
+						'</div></div>' +
+						'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap">' +
+						'<div class="elementor-element elementor-element-sf5 elementor-widget elementor-widget-aux_simple_shape"><div class="elementor-widget-container"><div class="aux-the-shape"></div></div></div>' +
+						'<div class="elementor-element elementor-element-sf6 elementor-widget elementor-widget-aux_image"><div class="elementor-widget-container"><div class="aux-media-image"><img src="/wp-content/uploads/a.png" alt="Ronan" /></div></div></div>' +
+						'<div class="elementor-element elementor-element-sf7 elementor-widget elementor-widget-aux_image"><div class="elementor-widget-container"><div class="aux-media-image"><img src="/wp-content/uploads/b.png" alt="Elevate" /></div></div></div>' +
+						'</div></div>' +
+						'</div>' +
+						'</section>' +
+						// The flipbook catalog (125 §4): the PDF source lives only
+						// in the dflip script — the profile's design.sections fact
+						// (b4c5d6e) must turn the sanitized empty band into
+						// a titled open-catalogue CTA.
+						'<section class="elementor-section elementor-top-section elementor-element elementor-element-b4c5d6e">' +
+						'<div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">' +
+						'<div class="elementor-element elementor-element-cf1 elementor-widget elementor-widget-shortcode"><div class="elementor-widget-container"><div class="elementor-shortcode">' +
+						'<div class="_df_book df-lite" id="df_2113" _slug="fiori-digital-catalogue" data-title="fiori-digital-catalogue" wpoptions="true"></div>' +
+						'<script class="df-shortcode-script" type="application/javascript">window.option_df_2113 = {"outline":[],"source":"https://fixture.test/wp-content/uploads/catalog.pdf"}; if(window.DFLIP){window.DFLIP.parseBooks();}</script>' +
+						'</div></div></div>' +
+						'</div></div></div>' +
+						'</section>',
+				},
 			},
 			{
 				id: 12,

@@ -1,0 +1,25 @@
+---
+// Catalog — a band whose source content was a dflip flipbook (125 §4).
+// The PDF source dies with its script under sanitization, so the raw
+// homepage pass captures it as a section fact; the rebuild renders a
+// centered open-catalogue CTA (the slug-ish data-title is a backend id,
+// not display copy — it stays off the rebuilt band). The interactive
+// flipbook itself is a source-side JS widget the forge never re-implements.
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import { useCopy } from '../../copy/index.ts';
+
+interface Props {
+	theme: SectionTheme;
+}
+
+const { theme } = Astro.props;
+const copy = useCopy();
+---
+
+<section class="ds-section ds-body ds-catalog">
+	<div class="ds-links">
+		<a class="ds-button" href={theme.catalog?.source} target="_blank" rel="noopener">
+			{copy.catalog.open}
+		</a>
+	</div>
+</section>

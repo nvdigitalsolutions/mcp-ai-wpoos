@@ -61,9 +61,9 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://jayainc.com",
-			"analyzedAt": "2026-11-06T10:37:35.470Z"
+			"analyzedAt": "2026-11-06T20:19:39.353Z"
 		},
-		"concept": "cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.",
+		"concept": "cool accent over light neutrals, rubik display / rubik body, compact spacing rhythm.",
 		"palette": {
 			"roles": {
 				"accent": "#5bc0de",
@@ -164,13 +164,41 @@
 				"id": "a4ad586",
 				"bgImage": "https://jayainc.com/wp-content/uploads/2018/11/jaya-3-1.jpg",
 				"overlay": "transparent",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				],
 				"measure": "1140px",
-				"paddingX": "30px"
+				"paddingX": "30px",
+				"titleStyle": {
+					"size": "72px",
+					"weight": "500",
+					"lineHeight": "79px",
+					"letterSpacing": "-2.1px"
+				},
+				"titleDivider": {
+					"width": "125px",
+					"height": "6px",
+					"background": "#ffcf0e",
+					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
+				}
 			},
 			{
 				"id": "cff59dd",
 				"bgGradient": "linear-gradient(180deg, #eaeaea 0%, #e5e5e5 100%)",
 				"bgColor": "transparent",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				],
 				"measure": "1140px",
 				"paddingX": "30px"
 			},
@@ -185,16 +213,70 @@
 				"anchor": "about",
 				"bgGradient": "linear-gradient(180deg, #e5e5e5 0%, #ffffff 100%)",
 				"bgColor": "transparent",
+				"zIndex": "1",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				],
 				"measure": "1140px",
-				"paddingX": "30px"
+				"paddingX": "30px",
+				"layout": "split",
+				"bodyColumns": 2,
+				"titleStyle": {
+					"size": "43px",
+					"weight": "500",
+					"lineHeight": "57px",
+					"letterSpacing": "-1.5px"
+				},
+				"titleDivider": {
+					"width": "125px",
+					"height": "6px",
+					"background": "#ffcf0e",
+					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
+				},
+				"mediaShape": {
+					"width": "412px",
+					"height": "450px",
+					"background": "linear-gradient(39deg, #ffcf0e 0%, #ffb70e 100%)"
+				},
+				"mediaOffsets": [
+					{
+						"top": "-25%",
+						"left": "0px",
+						"shadow": "0px 3px 34px 0px rgba(0,0,0,0.16)"
+					},
+					{
+						"top": "25%",
+						"right": "-110px",
+						"shadow": "0px 3px 35px 0px rgba(0,0,0,0.16)"
+					}
+				]
 			},
 			{
 				"id": "5e78df1",
+				"anchor": "products",
 				"bgGradient": "linear-gradient(180deg, #ffffff 6%, #04132b 100%)",
 				"bgColor": "transparent",
 				"padding": "100px 0px 100px 0px",
 				"measure": "1140px",
-				"paddingX": "30px"
+				"paddingX": "30px",
+				"titleAlign": "center",
+				"titleStyle": {
+					"size": "43px",
+					"weight": "500",
+					"lineHeight": "57px",
+					"letterSpacing": "-1.5px"
+				},
+				"titleDivider": {
+					"width": "125px",
+					"height": "6px",
+					"background": "#ffcf0e",
+					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
+				}
 			},
 			{
 				"id": "fcc5e07",
@@ -202,24 +284,74 @@
 				"bgGradient": "linear-gradient(180deg, #ffffff 0%, #e5e5e5 100%)",
 				"bgColor": "transparent",
 				"padding": "100px 0px 100px 0px",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				],
 				"measure": "1140px",
 				"paddingX": "30px",
-				"columns": [
-					{ "width": 50 },
-					{ "width": 50 }
-				]
+				"layout": "split",
+				"titleStyle": {
+					"size": "43px",
+					"weight": "500",
+					"lineHeight": "57px",
+					"letterSpacing": "-1.5px"
+				},
+				"titleDivider": {
+					"width": "125px",
+					"height": "6px",
+					"background": "#ffcf0e",
+					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
+				}
 			},
 			{
 				"id": "059421c",
 				"bgGradient": "linear-gradient(137deg, #081a43 0%, #071230 100%)",
 				"bgColor": "transparent",
-				"padding": "125px 0px 125px 0px"
+				"padding": "125px 0px 125px 0px",
+				"titleAlign": "center",
+				"titleStyle": {
+					"size": "43px",
+					"weight": "500",
+					"lineHeight": "57px",
+					"letterSpacing": "-1.5px"
+				},
+				"titleDivider": {
+					"width": "125px",
+					"height": "6px",
+					"background": "#ffcf0e",
+					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
+				}
 			},
 			{
 				"id": "48ace0b",
 				"anchor": "contact",
 				"bgColor": "#f6f6f6",
 				"padding": "100px 0px 0px 0px",
+				"columns": [
+					{
+						"width": 16
+					},
+					{
+						"width": 16
+					},
+					{
+						"width": 16
+					},
+					{
+						"width": 16
+					},
+					{
+						"width": 16
+					},
+					{
+						"width": 16
+					}
+				],
 				"measure": "1140px",
 				"paddingX": "30px"
 			},
@@ -228,7 +360,11 @@
 				"bgColor": "#f6f6f6",
 				"padding": "0px 0px 0px 0px",
 				"measure": "1140px",
-				"paddingX": "30px"
+				"paddingX": "30px",
+				"catalog": {
+					"source": "https://jayainc.com/wp-content/uploads/2021/01/FIORI-CATALOG-2021.pdf",
+					"title": "fiori-digital-catalogue"
+				}
 			}
 		],
 		"chrome": {
@@ -286,12 +422,12 @@
 					"transform": "uppercase"
 				}
 			},
+			"footerBg": "linear-gradient(107deg, #081a43 0%, #071230 100%)",
+			"footerInk": "rgba(255, 255, 255, 0.7)",
 			"footerLogo": {
 				"src": "https://jayainc.com/wp-content/uploads/2018/09/JAYAINC-LOGO-V1-wht-v2.png",
 				"alt": ""
 			},
-			"footerBg": "linear-gradient(107deg, #081a43 0%, #071230 100%)",
-			"footerInk": "rgba(255, 255, 255, 0.7)",
 			"footerBlocks": [
 				{
 					"items": [
@@ -309,12 +445,12 @@
 					"items": [
 						"Address: 3300 NW 112TH AVE",
 						"Phone: +1 (305) 500-9319",
-						"Work: Monday – Friday 09.00 – 23.00 Sunday 09.00 – 16.00",
+						"Work: Monday \u2013 Friday 09.00 \u2013 23.00 Sunday 09.00 \u2013 16.00",
 						"Email: [email protected]"
 					]
 				}
 			],
-			"copyright": "© 2026 JAYAINC. powered by NV Digital Solutions",
+			"copyright": "\u00a9 2026 JAYAINC. powered by NV Digital Solutions",
 			"footerBarBg": "rgba(8, 26, 67, 0.9)",
 			"footerBarInk": "rgba(255, 255, 255, 0.7)",
 			"footerHeadingStyle": {
@@ -482,7 +618,7 @@
 		},
 		"adaptation": {
 			"keep": [
-				"The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.",
+				"The palette roles, type pairing, and spacing rhythm \u2014 the design language, not the pixels.",
 				"Component vocabulary hints (buttons, cards, nav) as a checklist, not as markup."
 			],
 			"replace": [
@@ -490,7 +626,7 @@
 				"Fonts with licensed equivalents unless the source font is verifiably self-hostable."
 			],
 			"remix": [
-				"Shift the accent hue by roughly 10 degrees and pick the customer's own brand neutrals — visibly theirs, not a copy.",
+				"Shift the accent hue by roughly 10 degrees and pick the customer's own brand neutrals \u2014 visibly theirs, not a copy.",
 				"Let the customer's real content (products, posts, pages) drive the layout; apply the language to it."
 			],
 			"licensingNote": "Inspired-by analysis: no source CSS, HTML, copy, or assets were copied. Verify the source license before any closer adaptation.",

@@ -43,6 +43,25 @@ export interface SectionTheme {
 		hiddenTablet?: boolean;
 		hiddenDesktop?: boolean;
 	}>;
+	/** The content rhythm (125 §1) — 'split' = a copy column beside a
+	 * media collage column (the source's two-column hero bands). */
+	layout?: 'split';
+	/** The heading's underline divider facts (width/height/background/shadow). */
+	titleDivider?: { width: string; height: string; background: string; shadow?: string };
+	/** The heading typography (size/weight/line-height/letter-spacing). */
+	titleStyle?: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string };
+	/** The heading is centered (the source's aux-widget-inner centering). */
+	titleAlign?: 'center';
+	/** The media collage backdrop shape (width/height/background/radius). */
+	mediaShape?: { width: string; height: string; background: string; radius?: string };
+	/** Per-image collage offsets (absolute positioning against the collage box). */
+	mediaOffsets?: Array<{ top?: string; right?: string; bottom?: string; left?: string; shadow?: string }>;
+	/** The body paragraphs render in N columns (the source's sub-column split). */
+	bodyColumns?: number;
+	/** The band's flipbook catalog (125 §4) — the PDF the sanitizer
+	 * would otherwise lose with the dflip script; the rebuild renders
+	 * a titled open-catalogue CTA. */
+	catalog?: { title?: string; source: string };
 }
 
 export const sections: SectionTheme[] = [];

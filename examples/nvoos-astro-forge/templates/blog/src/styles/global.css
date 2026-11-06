@@ -66,6 +66,20 @@
 	box-sizing: border-box;
 }
 
+/* The source one-pager scrolls smoothly to its anchors (jayainc ships
+ * scroll-behavior: smooth) and the sticky header must not cover the
+ * landing band — scroll-padding-top offsets every anchor jump. */
+html {
+	scroll-behavior: smooth;
+	scroll-padding-top: 7rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
+
 body {
 	margin: 0;
 	font-family: var(--forge-font);
@@ -672,6 +686,15 @@ a {
 	border-radius: 0 var(--forge-radius) var(--forge-radius) 0;
 }
 
+/* The source testimonial reads as a BIG quote (jayainc: 22.4px = 1.4rem at
+ * the 16px chrome root, line-height 1.6, gray ink) — the body scale
+ * (13px) reads as plain prose, not a pull-quote. */
+.ds-quote p {
+	margin: 0;
+	font-size: 1.4rem;
+	line-height: 1.6;
+}
+
 .ds-quote footer {
 	margin-top: var(--forge-space-sm);
 	color: var(--forge-muted);
@@ -777,6 +800,116 @@ a {
 }
 
 /* -------------------------------------------------------------------------
+ * The split hero (125 §1) — a copy column beside a media collage column,
+ * rebuilding the source's two-column hero bands (jayainc's about). No card
+ * chrome: the split sits directly on the band like the source. The wrap's
+ * --ds-split-ratio (the 124 §6 column facts) drives the ratio; the collage
+ * photos are absolutely offset over the backdrop shape via --ds-off-* vars
+ * so the mobile reset can return them to static flow.
+ * ------------------------------------------------------------------------- */
+.ds-hero-split {
+	grid-template-columns: var(--ds-split-ratio, minmax(0, 1fr) minmax(0, 1fr));
+	align-items: center;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	padding: 0;
+	gap: var(--forge-space-lg);
+}
+
+.ds-hero-copy {
+	display: grid;
+	gap: var(--forge-space);
+	justify-items: start;
+}
+
+.ds-hero-split .ds-title {
+	font-size: clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem)));
+	font-weight: var(--ds-title-weight, 500);
+	line-height: var(--ds-title-lh, 1.2);
+	letter-spacing: var(--ds-title-ls, normal);
+}
+
+/* The hero band's own heading facts (125 §7) — the source hero's 72px
+ * title + divider (jayainc). The h1 token is only the no-fact fallback. */
+.ds-section-wrap--hero .ds-title {
+	font-size: clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h1, 2.25rem)));
+	font-weight: var(--ds-title-weight, 500);
+	line-height: var(--ds-title-lh, 1.15);
+	letter-spacing: var(--ds-title-ls, normal);
+}
+
+/* The fallback text bands carry the same heading facts (the centered
+ * "Other Featured Products" band). */
+.ds-body .ds-title {
+	font-size: clamp(1.5rem, 2.5vw + 0.5rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem)));
+	font-weight: var(--ds-title-weight, 500);
+	line-height: var(--ds-title-lh, 1.2);
+	letter-spacing: var(--ds-title-ls, normal);
+}
+
+/* The centered heading band (125 §7) — title + divider ride the grid's
+ * justify-items; the text centers like the source's aux-widget-inner. */
+.ds-body--center {
+	justify-items: center;
+	text-align: center;
+}
+
+.ds-title-divider {
+	display: block;
+	margin-top: var(--forge-space-2, 0.625rem);
+}
+
+.ds-hero-body {
+	display: grid;
+	grid-template-columns: repeat(var(--ds-body-cols, 1), minmax(0, 1fr));
+	gap: var(--forge-space);
+}
+
+/* The source's link row rides far below the copy (jayainc: 70px). */
+.ds-hero-split .ds-links {
+	margin-top: calc(var(--forge-space-5, 3rem) - var(--forge-space));
+}
+
+.ds-hero-collage {
+	position: relative;
+}
+
+.ds-collage-shape {
+	display: block;
+	margin-inline: auto;
+}
+
+.ds-collage-media {
+	position: absolute;
+	top: var(--ds-off-top, auto);
+	right: var(--ds-off-right, auto);
+	bottom: var(--ds-off-bottom, auto);
+	left: var(--ds-off-left, auto);
+	box-shadow: var(--ds-shadow, none);
+	width: auto;
+	max-width: none;
+}
+
+@media (width<=767px) {
+	.ds-hero-split {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.ds-hero-collage {
+		position: static;
+		display: grid;
+		gap: var(--forge-space);
+	}
+	.ds-collage-shape {
+		max-width: 100%;
+	}
+	.ds-collage-media {
+		position: static;
+		width: 100%;
+	}
+}
+
+/* -------------------------------------------------------------------------
  * Scroll behavior (Proposal 121) — the CSS-native motion runtime. The
  * FINISHED state is the default (the golden rule): browsers without
  * animation-timeline render correct, animation-free content. Every
@@ -825,11 +958,11 @@ a {
  * stays); alternate directions give the source's independent-column feel. */
 @supports (animation-timeline: scroll()) {
 	@media (prefers-reduced-motion: no-preference) {
-		.ds-section-wrap--hero.ds-parallax {
-			animation: ds-parallax linear both;
-			animation-timeline: scroll(root);
-			animation-range: cover 0% cover 100%;
-		}
+		// The hero band is STATIC (125 §5): the source hero's photo is a
+		// fixed-position background (verified live: constant 50% 50%,
+		// attachment scroll) — a band translate overlapped the flush
+		// quote band below (jayainc: "raised up onto the hero"). The
+		// media-carrier parallax below keeps the source's moving pieces.
 		.ds-parallax:not(.ds-section-wrap--hero) .ds-media,
 		.ds-parallax:not(.ds-section-wrap--hero) .ds-icon-media img,
 		.ds-parallax:not(.ds-section-wrap--hero) .ds-card {
@@ -842,11 +975,6 @@ a {
 			animation-name: ds-parallax-media-reverse;
 		}
 	}
-}
-
-@keyframes ds-parallax {
-	from { translate: 0 var(--ds-parallax-range, 24px); }
-	to { translate: 0 calc(var(--ds-parallax-range, 24px) * -1); }
 }
 
 @keyframes ds-parallax-media {
@@ -965,6 +1093,13 @@ a {
 .ds-body {
 	display: grid;
 	gap: var(--forge-space);
+}
+
+/* The catalog band (125 §4) — the flipbook's titled open-CTA, centered
+ * like the source's full-width book (jayainc's FIORI catalog). */
+.ds-catalog {
+	justify-items: center;
+	text-align: center;
 }
 
 /* --- Form component (Proposal 114 §3.9) --------------------------------- */

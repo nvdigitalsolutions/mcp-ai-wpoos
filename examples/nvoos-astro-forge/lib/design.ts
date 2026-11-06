@@ -1352,6 +1352,28 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		if ( section.attribs?.id ) {
 			fact.anchor = section.attribs.id;
 		}
+		// A nav anchor can sit on an INNER section instead of the band
+		// (125 §6 — jayainc's #products lives on the inner section inside
+		// the products band): adopt the first descendant id that reads as
+		// a nav target (plain lowercase slug, not an internal/auto id).
+		if ( ! fact.anchor ) {
+			const stack: HNodeLike[] = [ section ];
+			let adopted: string | undefined;
+			while ( stack.length > 0 && ! adopted ) {
+				const current = stack.pop() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					const candidate = child.attribs?.id;
+					if ( candidate && /^[a-z][a-z0-9-]{1,31}$/.test( candidate ) && ! /^(?:elementor|aux-|df_|nvoos)/.test( candidate ) ) {
+						adopted = candidate;
+						break;
+					}
+					stack.push( child );
+				}
+			}
+			if ( adopted ) {
+				fact.anchor = adopted;
+			}
+		}
 		// Inline styles (rare for Elementor, but cheap to honor).
 		const inlineGradient = inlineStyle( section, 'background-image', BG_GRADIENT_RE );
 		if ( inlineGradient ) {
@@ -1442,25 +1464,35 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		// (jayainc: 1140px + the gap-wider 30px gutter), never the site measure.
 		if ( classes.includes( 'elementor-section-boxed' ) ) {
 			fact.measure = ELEMENTOR_BOXED_MEASURE;
-			// Resolve the effective container width from the stylesheets: a
-		// numeric max-width on a .elementor-container rule; the boxed rule
-		// wins over generic ones. Non-numeric values (`none !important` —
-		// the theme's page-cover override) never replace the default.
+			// Resolve the effective container width: the theme's canonical
+			// --container-max-width declaration (Elementor/Phlox emit it per
+			// breakpoint; jayainc: 1140/1024/767 — the desktop value is the
+			// boxed truth) wins. Only when absent, fall back to the
+			// stylesheet ladder — a numeric max-width on a .elementor-container
+			// rule, boxed-scoped rules over generic ones. A raw sheet rule can
+			// belong to a different template (jayainc's sheets carry a 1900px
+			// one the live site never renders) — the var is the ground truth.
 			let resolved: string | undefined;
-			for ( const rule of topLevelRules( cssText ) ) {
-				if ( ! /\.elementor-container/.test( rule.selector ) ) {
-					continue;
-				}
-				const width = rule.body.match( /max-width\s*:\s*(\d+(?:\.\d+)?(?:px|rem|em|vw|%))/i );
-				if ( ! width ) {
-					continue;
-				}
-				if ( /section-boxed/.test( rule.selector ) ) {
-					resolved = width[ 1 ];
-					break;
-				}
-				if ( ! resolved ) {
-					resolved = width[ 1 ];
+			const containerVar = cssText.match( /--container-max-width\s*:\s*(\d+(?:\.\d+)?(?:px|rem|em|vw|%))/ );
+			if ( containerVar ) {
+				resolved = containerVar[ 1 ];
+			}
+			if ( ! resolved ) {
+				for ( const rule of topLevelRules( cssText ) ) {
+					if ( ! /\.elementor-container/.test( rule.selector ) ) {
+						continue;
+					}
+					const width = rule.body.match( /max-width\s*:\s*(\d+(?:\.\d+)?(?:px|rem|em|vw|%))/i );
+					if ( ! width ) {
+						continue;
+					}
+					if ( /section-boxed/.test( rule.selector ) ) {
+						resolved = width[ 1 ];
+						break;
+					}
+					if ( ! resolved ) {
+						resolved = width[ 1 ];
+					}
 				}
 			}
 			if ( resolved ) {
@@ -1477,6 +1509,245 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 				fact.paddingX = gap;
 			}
 		}
+		// ---- 125 §1: the split-hero layout + collage/typography facts ----
+		// The source's two-column hero bands (a copy column beside a media
+		// collage column) rebuild as a split hero — jayainc's about band.
+		// Widget ids are collected from the DOM because Elementor scopes the
+		// widget VALUE rules to the widget id, never the section id.
+		const hasWidget = ( node: HNodeLike, pattern: RegExp ): boolean => {
+			const stack: HNodeLike[] = [ node ];
+			while ( stack.length > 0 ) {
+				const current = stack.pop() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					if ( child.type === 'tag' && sectionClasses( child ).some( ( cls ) => pattern.test( cls ) ) ) {
+						return true;
+					}
+					stack.push( child );
+				}
+			}
+			return false;
+		};
+		const collectWidgetIds = ( node: HNodeLike, pattern: RegExp, out: string[] ): void => {
+			for ( const child of childNodes( node ) ) {
+				if ( child.type === 'tag' && sectionClasses( child ).some( ( cls ) => pattern.test( cls ) ) ) {
+					const widgetId = elementIdOf( tagClasses( child ) );
+					if ( widgetId && ! out.includes( widgetId ) ) {
+						out.push( widgetId );
+					}
+				}
+				collectWidgetIds( child, pattern, out );
+			}
+		};
+		const COPY_WIDGET_RE = /^elementor-widget-(?:heading|text-editor|button|aux_modern_heading|aux_button|aux_text)$/;
+		const MEDIA_WIDGET_RE = /^elementor-widget-(?:aux_image|image)$/;
+		const splitContainer = childNodes( section ).find(
+			( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-container' )
+		);
+		const domColumns = splitContainer
+			? childNodes( splitContainer ).filter( ( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-column' ) )
+			: [];
+		const copyColumn = domColumns.find( ( column ) => hasWidget( column, COPY_WIDGET_RE ) && ! hasWidget( column, MEDIA_WIDGET_RE ) && ! hasWidget( column, /aux-simple-shape/ ) );
+		const mediaColumn = domColumns.find( ( column ) => ( hasWidget( column, MEDIA_WIDGET_RE ) || hasWidget( column, /aux-simple-shape/ ) ) && ! hasWidget( column, COPY_WIDGET_RE ) );
+		const hasImageSrc = ( node: HNodeLike ): boolean => {
+			const stack: HNodeLike[] = [ node ];
+			while ( stack.length > 0 ) {
+				const current = stack.pop() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					if ( child.type === 'tag' && child.name === 'img' && child.attribs?.src ) {
+						return true;
+					}
+					stack.push( child );
+				}
+			}
+			return false;
+		};
+		const mediaColumnReal = mediaColumn && ( hasImageSrc( mediaColumn ) || hasWidget( mediaColumn, /aux-simple-shape/ ) );
+		// A photo-background hero never splits: the band itself IS the media
+		// (jayainc's hero carries an empty aux_image shell in its second
+		// column — a builder leftover, not content).
+		if ( ! fact.bgImage && domColumns.length === 2 && copyColumn && mediaColumnReal ) {
+			fact.layout = 'split';
+			// The body paragraphs sit in sub-columns (jayainc: two side-by-side).
+			const innerSection = ( () => {
+				const stack: HNodeLike[] = [ copyColumn ];
+				while ( stack.length > 0 ) {
+					const current = stack.pop() as HNodeLike;
+					for ( const child of childNodes( current ) ) {
+						if ( child.type === 'tag' && sectionClasses( child ).includes( 'elementor-inner-section' ) ) {
+							return child;
+						}
+						stack.push( child );
+					}
+				}
+				return undefined;
+			} )();
+			if ( innerSection ) {
+				const innerContainer = childNodes( innerSection ).find(
+					( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-container' )
+				);
+				const innerColumns = innerContainer
+					? childNodes( innerContainer ).filter(
+							( child ) => child.type === 'tag' && sectionClasses( child ).includes( 'elementor-column' )
+					  )
+					: [];
+				if ( innerColumns.length >= 2 ) {
+					fact.bodyColumns = innerColumns.length;
+				}
+			}
+		}
+		const headingIds: string[] = [];
+		const shapeIds: string[] = [];
+		const imageIds: string[] = [];
+		collectWidgetIds( section, /^elementor-widget-(?:aux_modern_heading|heading)$/, headingIds );
+		collectWidgetIds( section, /^elementor-widget-(?:aux_simple_shape|simple_shape)$/, shapeIds );
+		collectWidgetIds( section, MEDIA_WIDGET_RE, imageIds );
+		// The heading facts (125 §1/§7) apply to any band with a modern-
+		// heading widget — the split hero's copy column AND single-column
+		// heading bands (jayainc's centered "Other Featured Products" +
+		// the hero's own 72px title + divider).
+		if ( fact.layout === 'split' || headingIds.length > 0 ) {
+			for ( const rule of topLevelRules( cssText ) ) {
+				const scopedToSection = rule.selector.includes( `elementor-element-${ id }` );
+				const scopedToWidget =
+					headingIds.some( ( widgetId ) => rule.selector.includes( `elementor-element-${ widgetId }` ) ) ||
+					shapeIds.some( ( widgetId ) => rule.selector.includes( `elementor-element-${ widgetId }` ) ) ||
+					imageIds.some( ( widgetId ) => rule.selector.includes( `elementor-element-${ widgetId }` ) );
+				if ( ! scopedToSection && ! scopedToWidget ) {
+					continue;
+				}
+				const body = rule.body;
+				if ( ! fact.titleDivider && /\.aux-modern-heading-divider/.test( rule.selector ) ) {
+					const width = body.match( /width\s*:\s*([^;!]+)/i );
+					const height = body.match( /height\s*:\s*([^;!]+)/i );
+					const background = body.match( /background-color\s*:\s*([^;!]+)/i );
+					const shadow = body.match( /box-shadow\s*:\s*([^;!]+)/i );
+					if ( width && height && background ) {
+						fact.titleDivider = {
+							width: width[ 1 ].trim(),
+							height: height[ 1 ].trim(),
+							background: background[ 1 ].trim(),
+							shadow: shadow?.[ 1 ]?.trim(),
+						};
+					}
+				}
+				if ( ! fact.titleAlign && /\.aux-widget-inner/.test( rule.selector ) && /text-align\s*:\s*center/i.test( body ) ) {
+					fact.titleAlign = 'center';
+				}
+				if ( ! fact.titleStyle && /\.aux-modern-heading-primary/.test( rule.selector ) ) {
+					const size = body.match( /font-size\s*:\s*([^;!]+)/i );
+					const weight = body.match( /font-weight\s*:\s*([^;!]+)/i );
+					const lineHeight = body.match( /line-height\s*:\s*([^;!]+)/i );
+					const letterSpacing = body.match( /letter-spacing\s*:\s*([^;!]+)/i );
+					if ( size || weight || lineHeight || letterSpacing ) {
+						fact.titleStyle = {
+							size: size?.[ 1 ]?.trim(),
+							weight: weight?.[ 1 ]?.trim(),
+							lineHeight: lineHeight?.[ 1 ]?.trim(),
+							letterSpacing: letterSpacing?.[ 1 ]?.trim(),
+						};
+					}
+				}
+				if ( ! fact.mediaShape && /\.aux-the-shape/.test( rule.selector ) ) {
+					const width = body.match( /width\s*:\s*([^;!]+)/i );
+					const height = body.match( /height\s*:\s*([^;!]+)/i );
+					const gradient = body.match( BG_GRADIENT_RE );
+					const color = body.match( BG_COLOR_RE );
+					const radius = body.match( /border-radius\s*:\s*([^;!]+)/i );
+					if ( width && height && ( gradient || color ) ) {
+						fact.mediaShape = {
+							width: width[ 1 ].trim(),
+							height: height[ 1 ].trim(),
+							background: ( gradient ?? color )?.[ 1 ]?.trim() ?? '',
+							radius: radius?.[ 1 ]?.trim(),
+						};
+					}
+				}
+				for ( const widgetId of imageIds ) {
+					if ( ! rule.selector.includes( `elementor-element-${ widgetId }` ) ) {
+						continue;
+					}
+					if ( ! fact.mediaOffsets ) {
+						fact.mediaOffsets = imageIds.map( () => ( {} ) );
+					}
+					const entry = fact.mediaOffsets[ imageIds.indexOf( widgetId ) ];
+					if ( /\.aux-media-image/.test( rule.selector ) ) {
+						const shadow = body.match( /box-shadow\s*:\s*([^;!]+)/i );
+						if ( shadow && ! entry.shadow ) {
+							entry.shadow = shadow[ 1 ].trim();
+						}
+					} else if ( /position\s*:\s*absolute/i.test( body ) ) {
+						const top = body.match( /top\s*:\s*([^;!]+)/i );
+						const right = body.match( /right\s*:\s*([^;!]+)/i );
+						const bottom = body.match( /bottom\s*:\s*([^;!]+)/i );
+						const left = body.match( /left\s*:\s*([^;!]+)/i );
+						if ( top ) {
+							entry.top = top[ 1 ].trim();
+						}
+						if ( right ) {
+							entry.right = right[ 1 ].trim();
+						}
+						if ( bottom ) {
+							entry.bottom = bottom[ 1 ].trim();
+						}
+						if ( left ) {
+							entry.left = left[ 1 ].trim();
+						}
+					}
+				}
+			}
+			// Drop the offsets list when nothing is absolutely positioned.
+			if ( fact.mediaOffsets && ! fact.mediaOffsets.some( ( entry ) => entry.top || entry.right || entry.bottom || entry.left ) ) {
+				delete fact.mediaOffsets;
+			}
+		}
+		// ---- 125 §4: the flipbook catalog (the dflip shortcode) ----
+		// The catalog's PDF source lives ONLY in the widget's script — the
+		// sanitizer strips scripts, so the classifier never sees it. This raw
+		// pass captures it as a band fact and the rebuild renders a titled
+		// open-catalogue CTA (jayainc's FIORI catalog below the logos band).
+		const dfBook = ( () => {
+			const stack: HNodeLike[] = [ section ];
+			while ( stack.length > 0 ) {
+				const current = stack.pop() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					if ( child.type === 'tag' && sectionClasses( child ).some( ( cls ) => /^_?df_book$/.test( cls ) || cls === 'df-lite' ) ) {
+						return child;
+					}
+					stack.push( child );
+				}
+			}
+			return undefined;
+		} )();
+		if ( dfBook ) {
+			let source: string | undefined;
+			const stack: HNodeLike[] = [ section ];
+			while ( stack.length > 0 && ! source ) {
+				const current = stack.pop() as HNodeLike;
+				for ( const child of childNodes( current ) ) {
+					// htmlparser2 v12 emits script/style nodes with type 'script'/
+					// 'style' (not 'tag') — match on the name, not the type.
+					if ( child.name === 'script' && sectionClasses( child ).includes( 'df-shortcode-script' ) ) {
+						const text = ( child.children ?? [] ).map( ( node ) => ( node as { data?: string } ).data ?? '' ).join( '' );
+						const payload = /window\.option_df_\d+\s*=\s*(\{[\s\S]*?\})\s*;/.exec( text );
+						if ( payload ) {
+							try {
+								const parsed = JSON.parse( payload[ 1 ] ) as { source?: string };
+								if ( parsed.source ) {
+									source = parsed.source;
+								}
+							} catch {
+								// Malformed payload — the CTA stays absent.
+							}
+						}
+					}
+					stack.push( child );
+				}
+			}
+			if ( source ) {
+				const title = dfBook.attribs?.[ 'data-title' ];
+				fact.catalog = { source, ...( title ? { title } : {} ) };
+			}
+		}
 		// A background-color alongside a photo is an UNDERLAY — Elementor
 		// paints it beneath the (opaque) image, so the source renders it
 		// invisibly (jayainc's hero: rgba(8,26,67,0.9) under jaya-3-1.jpg).
@@ -1485,7 +1756,7 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 		if ( fact.bgImage ) {
 			delete fact.bgColor;
 		}
-		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns ) {
+		if ( fact.bgImage || fact.bgGradient || fact.bgColor || fact.overlay || fact.measure || fact.paddingX || fact.marginTop || fact.marginBottom || fact.zIndex || fact.columns || fact.layout || fact.titleDivider || fact.titleStyle || fact.titleAlign || fact.mediaShape || fact.mediaOffsets || fact.bodyColumns || fact.catalog ) {
 			facts.push( fact );
 		}
 	}

@@ -29,9 +29,13 @@ const copy = useCopy();
 	}
 
 	.theme-toggle button {
-		border: 1px solid var(--forge-line);
+		/* The header ink (a body-level chrome var) wins when the header is
+		 * themed — on jayainc's navy header the toggle was dark-on-dark
+		 * (--forge-ink #242424 on #04132b). Falls back to the hairline +
+		 * ink on default headers. */
+		border: 1px solid var(--forge-header-ink, var(--forge-line));
 		background: transparent;
-		color: var(--forge-ink);
+		color: var(--forge-header-ink, var(--forge-ink));
 		font: inherit;
 		font-size: 0.85rem;
 		padding: 0.25rem 0.6rem;

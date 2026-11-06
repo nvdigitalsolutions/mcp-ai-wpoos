@@ -508,6 +508,32 @@ export function renderDesignGenerated( profile: SiteProfile, tokens: Record<stri
 	}
 	body.push( '};' );
 	body.push( '' );
+	// The source webfonts (125 §2) — Base.astro loads them from Google
+	// Fonts when the harvested family is not a system stack. The rebuilt
+	// site otherwise renders the fallback stack (Segoe UI/Helvetica) and
+	// the source's type rhythm never lands (jayainc: Rubik).
+	body.push( '// The source webfonts (125 §2) — Base.astro loads them from Google Fonts' );
+	body.push( '// when the harvested family is not a system stack (jayainc: Rubik).' );
+	body.push( 'export const webFonts: Array<{ family: string; weights: number[] }> = [' );
+	const systemFontRe = /^(system-ui|ui-sans-serif|ui-serif|ui-monospace|sans-serif|serif|monospace|cursive|fantasy|arial|helvetica|georgia|times|garamond|courier|verdana|tahoma|trebuchet|segoe|menlo|consolas|impact)$/i;
+	const families: string[] = [];
+	for ( const name of [ design?.typography.display, design?.typography.body ] ) {
+		const clean = ( name ?? '' ).trim().replace( /["']/g, '' );
+		if ( clean && ! systemFontRe.test( clean ) && ! families.includes( clean.toLowerCase() ) ) {
+			families.push( clean );
+		}
+	}
+	const weights = [ 300, 400, 500, 600, 700 ];
+	const bodyWeight = parseInt( design?.typography.bodyWeight ?? '', 10 );
+	if ( bodyWeight && ! weights.includes( bodyWeight ) ) {
+		weights.push( bodyWeight );
+	}
+	weights.sort( ( a, b ) => a - b );
+	for ( const family of families ) {
+		body.push( `\t{ family: ${ tsString( family ) }, weights: [ ${ weights.join( ', ' ) } ] },` );
+	}
+	body.push( '];' );
+	body.push( '' );
 	return [ ...header, ...body ].join( '\n' );
 }
 
@@ -567,6 +593,25 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t\thiddenTablet?: boolean;',
 		'\t\thiddenDesktop?: boolean;',
 		'\t}>;',
+		'\t/** The content rhythm (125 §1) — \'split\' = a copy column beside a',
+		'\t * media collage column (the source\'s two-column hero bands). */',
+		"\tlayout?: 'split';",
+		'\t/** The heading\'s underline divider facts (width/height/background/shadow). */',
+		'\ttitleDivider?: { width: string; height: string; background: string; shadow?: string };',
+		'\t/** The heading typography (size/weight/line-height/letter-spacing). */',
+		'\ttitleStyle?: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string };',
+		'\t/** The heading is centered (the source\'s aux-widget-inner centering). */',
+		"\ttitleAlign?: 'center';",
+		'\t/** The media collage backdrop shape (width/height/background/radius). */',
+		'\tmediaShape?: { width: string; height: string; background: string; radius?: string };',
+		'\t/** Per-image collage offsets (absolute positioning against the collage box). */',
+		'\tmediaOffsets?: Array<{ top?: string; right?: string; bottom?: string; left?: string; shadow?: string }>;',
+		'\t/** The body paragraphs render in N columns (the source\'s sub-column split). */',
+		'\tbodyColumns?: number;',
+		'\t/** The band\'s flipbook catalog (125 §4) — the PDF the sanitizer',
+		'\t * would otherwise lose with the dflip script; the rebuild renders',
+		'\t * a titled open-catalogue CTA. */',
+		'\tcatalog?: { title?: string; source: string };',
 		'}',
 		'',
 		'export const sections: SectionTheme[] = [',
@@ -651,6 +696,73 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 				return `{ ${ parts.join( ', ' ) } }`;
 			} );
 			entry.push( `columns: [${ columns.join( ', ' ) }]` );
+		}
+		// The split-hero + collage facts (125 §1) — layout, divider, heading
+		// type, backdrop shape, per-photo offsets, body columns.
+		if ( section.layout ) {
+			entry.push( `layout: ${ tsString( section.layout ) }` );
+		}
+		if ( section.titleDivider ) {
+			const divider = section.titleDivider;
+			entry.push(
+				`titleDivider: { width: ${ tsString( divider.width ) }, height: ${ tsString( divider.height ) }, background: ${ tsString( divider.background ) }${ divider.shadow ? `, shadow: ${ tsString( divider.shadow ) }` : '' } }`
+			);
+		}
+		if ( section.titleStyle ) {
+			const style = section.titleStyle;
+			const parts: string[] = [];
+			if ( style.size ) {
+				parts.push( `size: ${ tsString( style.size ) }` );
+			}
+			if ( style.weight ) {
+				parts.push( `weight: ${ tsString( style.weight ) }` );
+			}
+			if ( style.lineHeight ) {
+				parts.push( `lineHeight: ${ tsString( style.lineHeight ) }` );
+			}
+			if ( style.letterSpacing ) {
+				parts.push( `letterSpacing: ${ tsString( style.letterSpacing ) }` );
+			}
+			entry.push( `titleStyle: { ${ parts.join( ', ' ) } }` );
+		}
+		if ( section.titleAlign ) {
+			entry.push( `titleAlign: ${ tsString( section.titleAlign ) }` );
+		}
+		if ( section.mediaShape ) {
+			const shape = section.mediaShape;
+			entry.push(
+				`mediaShape: { width: ${ tsString( shape.width ) }, height: ${ tsString( shape.height ) }, background: ${ tsString( shape.background ) }${ shape.radius ? `, radius: ${ tsString( shape.radius ) }` : '' } }`
+			);
+		}
+		if ( section.mediaOffsets && section.mediaOffsets.length > 0 ) {
+			const offsets = section.mediaOffsets.map( ( offset ) => {
+				const parts: string[] = [];
+				if ( offset.top ) {
+					parts.push( `top: ${ tsString( offset.top ) }` );
+				}
+				if ( offset.right ) {
+					parts.push( `right: ${ tsString( offset.right ) }` );
+				}
+				if ( offset.bottom ) {
+					parts.push( `bottom: ${ tsString( offset.bottom ) }` );
+				}
+				if ( offset.left ) {
+					parts.push( `left: ${ tsString( offset.left ) }` );
+				}
+				if ( offset.shadow ) {
+					parts.push( `shadow: ${ tsString( offset.shadow ) }` );
+				}
+				return `{ ${ parts.join( ', ' ) } }`;
+			} );
+			entry.push( `mediaOffsets: [${ offsets.join( ', ' ) }]` );
+		}
+		if ( section.bodyColumns ) {
+			entry.push( `bodyColumns: ${ section.bodyColumns }` );
+		}
+		if ( section.catalog ) {
+			entry.push(
+				`catalog: { ${ section.catalog.title ? `title: ${ tsString( section.catalog.title ) }, ` : '' }source: ${ tsString( section.catalog.source ) } }`
+			);
 		}
 		body.push( `\t{ ${ entry.join( ', ' ) } },` );
 	}

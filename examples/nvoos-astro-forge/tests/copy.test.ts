@@ -46,6 +46,7 @@ describe( 'copy tables', () => {
 			nav: { primaryLabel: 'Principale', home: 'Accueil', products: 'Produits', posts: 'Articles', search: 'Rechercher' },
 			footer: { generatedBy: 'Généré par NV oOS Astro Forge.' },
 			theme: { label: 'Thème', forcedNote: 'Le thème est défini par la politique du site.' },
+			catalog: { open: 'Voir le catalogue' },
 			search: { placeholder: 'Rechercher…', searching: 'Recherche…', noResults: 'Aucun résultat.', unavailable: 'Recherche indisponible.' },
 		};
 		expect( fr.nav.home ).toBe( 'Accueil' );

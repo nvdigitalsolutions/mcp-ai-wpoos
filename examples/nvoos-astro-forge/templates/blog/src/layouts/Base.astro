@@ -6,6 +6,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 import { chrome } from '../lib/chrome.generated.ts';
 import { behaviors } from '../lib/behaviors.generated.ts';
+import { webFonts } from '../lib/design.generated.ts';
 
 interface Props {
 	title: string;
@@ -66,6 +67,14 @@ const chromeVars = [
 		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
 		{chrome?.favicon && <link rel="icon" href={chrome.favicon} />}
 		{chrome?.iconCss && <link rel="stylesheet" href={chrome.iconCss} media="all" />}
+		{/* The source webfonts (125 §2) — the harvested family loads from
+			Google Fonts so the rebuild keeps the source's type rhythm
+			(jayainc: Rubik); system-stack profiles emit no link. */}
+		{webFonts.length > 0 && <link rel="preconnect" href="https://fonts.googleapis.com" />}
+		{webFonts.length > 0 && <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />}
+		{webFonts.map((font) => (
+			<link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.family.replace(/ /g, '+')}:wght@${font.weights.join(';')}&display=swap`} />
+		))}
 		{ogImage && <meta property="og:image" content={ogImage} />}
 		<meta name="robots" content="index, follow" />
 		<script id="forge-theme-policy" type="application/json" data-theme-policy is:inline set:html={policyJson}></script>

@@ -235,6 +235,35 @@ export interface ForgeSection {
 	 * split components re-measure from these; absent → the template
 	 * default ratio. */
 	columns?: ForgeSectionColumn[];
+	/** The section's content rhythm (125 §1) — 'split' = the source's
+	 * two-column hero band: a copy column (heading + divider + body +
+	 * links) beside a media collage column (jayainc's about band). */
+	layout?: 'split';
+	/** The heading's underline divider (aux-modern-heading-divider) —
+	 * width/height/background/shadow facts the rebuild re-applies under
+	 * the split hero's title. */
+	titleDivider?: { width: string; height: string; background: string; shadow?: string };
+	/** The heading typography (the source's modern-heading rule) — size/
+	 * weight/line-height/letter-spacing. Absent → the template tokens. */
+	titleStyle?: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string };
+	/** The heading is centered (the source's aux-widget-inner centering —
+	 * jayainc's "Other Featured Products" band). */
+	titleAlign?: 'center';
+	/** The media collage's backdrop shape (aux-the-shape) — the rectangle
+	 * the offset photos compose over (jayainc's 412x450 yellow shape). */
+	mediaShape?: { width: string; height: string; background: string; radius?: string };
+	/** Per-image collage offsets (the absolutely-positioned parallax pieces
+	 * — aux-parallax-piece) in media order: top/right/bottom/left resolve
+	 * against the collage box; absent → the image sits in flow. */
+	mediaOffsets?: Array<{ top?: string; right?: string; bottom?: string; left?: string; shadow?: string }>;
+	/** The body paragraphs render in N columns (the source's sub-column
+	 * split — jayainc's two side-by-side about paragraphs). */
+	bodyColumns?: number;
+	/** The band's flipbook catalog (125 §4 — the dflip shortcode): the PDF
+	 * source dies with its script under sanitization, so the rebuild
+	 * renders a titled open-catalogue CTA instead. Captured from the raw
+	 * homepage (the _df_book node + its df-shortcode-script payload). */
+	catalog?: { title?: string; source: string };
 }
 
 /** One top-level column's responsive facts (Elementor's per-device
