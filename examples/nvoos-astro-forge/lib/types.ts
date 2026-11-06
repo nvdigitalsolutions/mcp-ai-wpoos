@@ -229,9 +229,31 @@ export interface ForgeSection {
  * the template's own components). Absent when the source exposes no
  * recognizable chrome.
  */
+export interface ForgeChromeStyle {
+	/** The source's padding fact (e.g. the call button's `14px 43px`). */
+	padding?: string;
+	/** The source's border-radius fact (a pill renders as a huge px value). */
+	radius?: string;
+	/** The source's font-weight fact (300/400/500/…). */
+	weight?: string;
+	/** The source's font-size fact (chrome text runs at its own size, not
+	 * the content body scale — jayainc's nav is 16px while its content
+	 * body is 13px). */
+	size?: string;
+	/** The source's text-transform fact (uppercase nav, capitalize footer
+	 * headings). */
+	transform?: string;
+	/** The source's letter-spacing fact. */
+	letterSpacing?: string;
+}
+
 export interface ForgeChrome {
 	/** The top contact strip lines (address, phone). */
 	topbar?: string[];
+	/** The top strip's own background (jayainc: the navy `#04132b`). */
+	topbarBg?: string;
+	/** The top strip's text color. */
+	topbarInk?: string;
 	/** The brand logo (the light-background variant when the source ships
 	 * dark/light pairs). */
 	logo?: { src?: string; alt?: string };
@@ -239,12 +261,23 @@ export interface ForgeChrome {
 	tagline?: string;
 	/** The header nav (anchor links on one-pagers; page links otherwise). */
 	nav?: Array<{ label: string; href: string }>;
+	/** The nav link typography (weight/size/transform/letter-spacing). */
+	navStyle?: ForgeChromeStyle;
+	/** The nav link color (usually white on a dark header). */
+	navInk?: string;
+	/** The header's own background (many one-pagers run a dark header the
+	 * default white chrome must not paint over). */
+	headerBg?: string;
+	/** The header text color (inherits to the brand block). */
+	headerInk?: string;
 	/** The tel: call-to-action button — bg/ink carry the source button's
 	 * own colors (the header CTA often wears a distinct color the site
-	 * accent does not). */
-	call?: { label: string; href: string; bg?: string; ink?: string };
+	 * accent does not), style carries its shape/type facts. */
+	call?: { label: string; href: string; bg?: string; ink?: string; style?: ForgeChromeStyle };
 	/** The footer columns (heading + item lines each). */
 	footerBlocks?: Array<{ title?: string; items: string[] }>;
+	/** The footer column heading typography (jayainc: 500/29px/capitalize). */
+	footerHeadingStyle?: ForgeChromeStyle;
 	/** The copyright line. */
 	copyright?: string;
 	/** The site favicon (the first <link rel="icon"> href, absolute). */
@@ -253,6 +286,15 @@ export interface ForgeChrome {
 	footerLogo?: { src?: string; alt?: string };
 	/** The footer background color (resolved from the footer-widget CSS). */
 	footerBg?: string;
+	/** The copyright bar's own background (jayainc: a translucent navy
+	 * strip below the light-gray subfooter). */
+	footerBarBg?: string;
+	/** The copyright bar's text color (usually translucent white). */
+	footerBarInk?: string;
+	/** The chrome base font-size — header/topbar/footer run at the source's
+	 * chrome size, NOT the content body scale (jayainc: 16px chrome over
+	 * a 13px content body). */
+	chromeSize?: string;
 }
 
 /**
@@ -293,7 +335,7 @@ export interface ForgeDesign {
 		unassigned: string[];
 		confidence: Record<string, 'high' | 'medium' | 'low'>;
 	};
-	typography: { display?: string; body?: string; scalePx: number[] };
+	typography: { display?: string; body?: string; scalePx: number[]; bodyWeight?: string };
 	spacing: { scalePx: number[] };
 	radii: { valuesPx: number[] };
 	shadows: { count: number };

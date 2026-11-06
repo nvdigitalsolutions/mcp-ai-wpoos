@@ -22,7 +22,7 @@ import { Parser, DomHandler } from 'htmlparser2';
 
 import { relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
-import type { ForgeChrome, ForgeDesign, ForgeSection, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 /** Bounded fetch input: the homepage HTML plus same-origin CSS bodies. */
 export interface DesignFetchInput {
@@ -58,9 +58,19 @@ const ELEMENTOR_ROLE_NAMES: Record<string, string> = {
 	accent: 'accent',
 };
 
-const MAX_STYLESHEETS = 6;
+// The stylesheet cap keeps hostile sources from ballooning the analysis, but
+// it must be generous enough to reach the theme's CUSTOMIZER file — the
+// override sheet that carries the real body/header/footer facts (jayainc's
+// `uploads/phlox-pro/custom.css` sat at index 7 and a 6-cap silently dropped
+// the site's entire typography/chrome truth). The cumulative byte cap below
+// still bounds the total payload.
+const MAX_STYLESHEETS = 40;
+const MAX_CSS_TOTAL_BYTES = 3 * 1024 * 1024;
 const MAX_HTML_BYTES = 2 * 1024 * 1024;
-const MAX_CSS_BYTES = 512 * 1024;
+// The per-file cap must hold a full theme sheet (jayainc's main.css is
+// ~886KB) — a 512KB cut lands mid-@media block and the dangling brace
+// swallows every stylesheet fetched after it.
+const MAX_CSS_BYTES = 2 * 1024 * 1024;
 
 /** Expand a short hex (#abc → #aabbcc); alpha is dropped. */
 function expandHex( hex: string ): string {
@@ -190,15 +200,41 @@ export async function fetchDesignInput(
 	}
 	const html = ( await home.text() ).slice( 0, MAX_HTML_BYTES );
 	const css: string[] = [];
-	// Inline <style> blocks ride along with the linked sheets.
-	for ( const match of html.matchAll( /<style[^>]*>([\s\S]*?)<\/style>/gi ) ) {
-		css.push( match[ 1 ].slice( 0, MAX_CSS_BYTES ) );
-	}
-	for ( const link of stylesheetLinks( html, base ) ) {
+	// Collect stylesheets in DOCUMENT order — inline <style> blocks
+	// interleave with the linked sheets at their printed positions (WP
+	// prints the inline blocks after the links; an inline 16px nav rule
+	// must cascade AFTER the linked 0.875em rule, as the browser sees it).
+	let cssTotalBytes = 0;
+	const tagRe = /<link[^>]+rel=["']?stylesheet["']?[^>]*>|<style[^>]*>[\s\S]*?<\/style>/gi;
+	for ( const match of html.matchAll( tagRe ) ) {
+		const tag = match[ 0 ];
+		if ( tag.startsWith( '<style' ) ) {
+			const body = tag.replace( /^<style[^>]*>|<\/style>$/gi, '' ).slice( 0, MAX_CSS_BYTES );
+			css.push( body );
+			continue;
+		}
+		if ( cssTotalBytes >= MAX_CSS_TOTAL_BYTES ) {
+			continue;
+		}
+		const href = /href=["']([^"']+)["']/i.exec( tag )?.[ 1 ];
+		if ( ! href ) {
+			continue;
+		}
+		let absolute: string;
 		try {
-			const res = await fetchImpl( link, { redirect: 'follow', signal: AbortSignal.timeout( 15_000 ) } );
+			absolute = new URL( href, base ).href;
+			if ( new URL( absolute ).hostname !== new URL( base ).hostname ) {
+				continue;
+			}
+		} catch {
+			continue;
+		}
+		try {
+			const res = await fetchImpl( absolute, { redirect: 'follow', signal: AbortSignal.timeout( 15_000 ) } );
 			if ( res.ok ) {
-				css.push( ( await res.text() ).slice( 0, MAX_CSS_BYTES ) );
+				const body = ( await res.text() ).slice( 0, MAX_CSS_BYTES );
+				css.push( body );
+				cssTotalBytes += body.length;
 			}
 		} catch {
 			// A missing stylesheet is never fatal — the remaining signals stand.
@@ -210,10 +246,10 @@ export async function fetchDesignInput(
 // -- analysis ----------------------------------------------------------------
 
 /** Deterministic concept summary from the confident roles + type pairing. */
-function conceptFor( roles: Record<string, string>, families: string[] ): string {
+function conceptFor( roles: Record<string, string>, displayFamily?: string, bodyFamily?: string ): string {
 	const accent = roles.accent;
 	const warmth = accent ? ( hueOf( accent ) > 210 || ( hueOf( accent ) >= 150 && hueOf( accent ) <= 210 ) ? 'cool' : hueOf( accent ) < 60 || hueOf( accent ) >= 300 ? 'warm' : 'neutral' ) : 'neutral';
-	const pair = families.length >= 2 ? `${ families[ 0 ].toLowerCase() } display / ${ families[ 1 ].toLowerCase() } body` : 'single-family type';
+	const pair = displayFamily && bodyFamily ? `${ displayFamily.toLowerCase() } display / ${ bodyFamily.toLowerCase() } body` : 'single-family type';
 	return `${ warmth } accent over light neutrals, ${ pair }, compact spacing rhythm.`;
 }
 
@@ -436,12 +472,12 @@ const DEFAULT_BUILDER_PRIMARIES = new Set( [ '#6ec1e4', '#61ce70', '#4054b2' ] )
  */
 function dominantCtaColor( cssText: string ): string | undefined {
 	const counts = new Map<string, number>();
-	for ( const rule of cssText.matchAll( RULE_RE ) ) {
-		const selector = rule[ 1 ];
+	for ( const rule of topLevelRules( cssText ) ) {
+		const selector = rule.selector;
 		if ( ! /button|\.btn\b|cta|aux-call|aux-ac|pricing/i.test( selector ) ) {
 			continue;
 		}
-		const color = rule[ 2 ].match( BG_COLOR_RE );
+		const color = rule.body.match( BG_COLOR_RE );
 		if ( ! color ) {
 			continue;
 		}
@@ -467,6 +503,287 @@ function dominantCtaColor( cssText: string ): string | undefined {
 	return best;
 }
 
+/** Keep the raw value when normalization would flatten it (gradients, and
+ * rgba()/hsla() WITH alpha — e.g. the translucent navy footer bar); normalize
+ * flat hex/named/rgb colors so palette math stays comparable. */
+function bgForCss( value: string ): string | undefined {
+	const trimmed = value.trim();
+	if ( trimmed.includes( 'gradient' ) || /^(rgba|hsla)\(\s*[^)]+,\s*[\d.]+\s*\)\s*$/i.test( trimmed ) ) {
+		return trimmed;
+	}
+	return normalizeColor( trimmed );
+}
+
+interface ResolvedElementStyle {
+	/** The effective background (gradient ALWAYS beats flat color) — the
+	 * cascade winner per property, raw where bgForCss keeps it raw. */
+	fill?: string;
+	/** The anchored `color:` cascade winner (text ink, alpha preserved). */
+	ink?: string;
+	padding?: string;
+	radius?: string;
+	weight?: string;
+	size?: string;
+	transform?: string;
+	letterSpacing?: string;
+}
+
+interface ResolveElementOptions {
+	/** When true, the FILL only considers rules whose selector ENDS on one of
+	 * the element's own tokens (the rule styling the element itself, not a
+	 * descendant rule that merely mentions it) — the header/footer strips
+	 * resolve their own background this way (jayainc's `.site-header-section
+	 * .aux-button` gradient must never leak onto the header). */
+	terminalFill?: boolean;
+}
+
+/**
+ * The specificity-approximated cascade shared by the CTA harvest and the
+ * chrome typography pass: per property, the rule whose selector matches the
+ * MOST of the element's tokens wins (`own * 1e6 + context * 1e8 + ruleIndex`,
+ * ties by source order). Ancestor-context matches outweigh own matches —
+ * scoped rules like `.site-header-section .aux-button` are the element's
+ * real rules and must beat the generic `.aux-button`/size-ladder rules. The
+ * frequency schemes this replaces let base rules out-vote the real
+ * size/pill/ink rules. The FILL prefers gradients: a gradient
+ * background-image is the effective paint over any flat background-color
+ * (jayainc's yellow call button; flat hover/outline colors lose).
+ * Pseudo-state rules (`:hover` etc.) are skipped — the rebuild targets the
+ * resting design.
+ */
+function resolveElementRules( classes: string[], cssText: string, extra: string[] = [], options: ResolveElementOptions = {} ): ResolvedElementStyle {
+	const out: ResolvedElementStyle = {};
+	const tokens = [ ...classes, ...extra ].filter( Boolean );
+	const own = classes.filter( Boolean );
+	if ( tokens.length === 0 ) {
+		return out;
+	}
+	interface Best {
+		own: boolean;
+		spec: number;
+		important: boolean;
+	}
+	// Own-match precedence: a rule matching NONE of the element's own tokens
+	// can only ever INHERIT (the header's `.aux-header-light { color: #fff }`
+	// feeds the call button nothing — its real ink comes from a rule matching
+	// its own classes). Any own-match candidate beats any context-only
+	// candidate for the same property. `!important` beats everything except
+	// another `!important` (the customizer's white-topbar rule outranks the
+	// theme's yellow icon rules exactly as the browser honors it).
+	const better = ( own: boolean, spec: number, important: boolean, best: Best | undefined ): boolean => {
+		if ( ! best ) {
+			return true;
+		}
+		if ( important && ! best.important ) {
+			return true;
+		}
+		if ( ! important && best.important ) {
+			return false;
+		}
+		if ( own && ! best.own ) {
+			return true;
+		}
+		if ( ! own && best.own ) {
+			return false;
+		}
+		return spec >= best.spec;
+	};
+	let gradient: string | undefined;
+	let gradientBest: Best | undefined;
+	let color: string | undefined;
+	let colorBest: Best | undefined;
+	let ink: string | undefined;
+	let inkBest: Best | undefined;
+	const specs: Record<Exclude<keyof ResolvedElementStyle, 'fill' | 'ink'>, { value?: string; best?: Best }> = {
+		padding: {},
+		radius: {},
+		weight: {},
+		size: {},
+		transform: {},
+		letterSpacing: {},
+	};
+	let ruleIndex = 0;
+	for ( const rule of topLevelRules( cssText ) ) {
+		const selector = rule.selector;
+		// Pseudo-states AND state CLASSES skip — the rebuild targets the
+		// resting design (jayainc's nav: an !important `.aux-hover` rule
+		// would otherwise out-cascade the resting white).
+		if ( /:(?:hover|focus|active|visited|disabled)|\b(?:aux-)?hover\b/i.test( selector ) ) {
+			ruleIndex++;
+			continue;
+		}
+		const matchCount = tokens.filter( ( token ) => selector.includes( token ) ).length;
+		if ( matchCount === 0 ) {
+			ruleIndex++;
+			continue;
+		}
+		const ownMatches = own.filter( ( token ) => selector.includes( token ) ).length;
+		const contextMatches = matchCount - ownMatches;
+		const spec = ownMatches * 1000000 + contextMatches * 100000000 + ruleIndex;
+		const hasOwn = ownMatches > 0;
+		const body = rule.body;
+		// Per-declaration !important: the flag belongs to the property, not
+		// the whole rule (a rule may pin its background while its color is
+		// a normal declaration).
+		const imp = ( match: RegExpExecArray | null | undefined | RegExpMatchArray ): boolean => Boolean( match && match[ 2 ] );
+		// The terminal rule (selector ENDS on an own token) styles the
+		// element itself — the descendant rules below must never supply the
+		// element-level FILL. Ink/typography still flow from descendant
+		// rules (`.aux-top-header a { color: #fff }` IS the topbar's ink).
+		const trimmed = selector.trim();
+		const terminal = own.some( ( token ) => trimmed.endsWith( token ) );
+		const fillEligible = ! options.terminalFill || terminal;
+		if ( fillEligible ) {
+			const gradientMatch = body.match( BG_GRADIENT_RE );
+			if ( gradientMatch && better( hasOwn, spec, imp( gradientMatch ), gradientBest ) ) {
+				gradient = gradientMatch[ 1 ].trim();
+				gradientBest = { own: hasOwn, spec, important: imp( gradientMatch ) };
+			}
+			const colorMatch = body.match( BG_COLOR_RE );
+			if ( colorMatch ) {
+				const value = bgForCss( colorMatch[ 1 ].trim() );
+				if ( value && value !== 'transparent' && better( hasOwn, spec, imp( colorMatch ), colorBest ) ) {
+					color = value;
+					colorBest = { own: hasOwn, spec, important: imp( colorMatch ) };
+				}
+			}
+		}
+		const inkMatch = body.match( /(?:^|;)\s*color\s*:\s*([^;!]+)(\s*!\s*important)?/i );
+		if ( inkMatch ) {
+			// Alpha-preserving: rgba(255,255,255,0.7) stays raw — the 70%
+			// translucency IS the source's look (the copyright bar ink).
+			const value = bgForCss( inkMatch[ 1 ].trim() );
+			if ( value && value !== 'transparent' && better( hasOwn, spec, imp( inkMatch ), inkBest ) ) {
+				ink = value;
+				inkBest = { own: hasOwn, spec, important: imp( inkMatch ) };
+			}
+		}
+		for ( const key of Object.keys( specs ) as Array<keyof typeof specs> ) {
+			const regex = PROP_RE[ key ];
+			const match = body.match( regex );
+			const value = match ? match[ 1 ].trim() : undefined;
+			if ( value && better( hasOwn, spec, imp( match ), specs[ key ].best ) ) {
+				specs[ key ] = { value, best: { own: hasOwn, spec, important: imp( match ) } };
+			}
+		}
+		ruleIndex++;
+	}
+	out.fill = gradient ?? color;
+	if ( ink ) {
+		out.ink = ink;
+	}
+	// Collapse symmetric 4-value paddings (14px 43px 14px 43px → 14px 43px).
+	if ( specs.padding.value ) {
+		specs.padding.value = specs.padding.value.replace( /^(\S+\s+\S+)\s+\1$/, '$1' );
+	}
+	for ( const key of Object.keys( specs ) as Array<keyof typeof specs> ) {
+		if ( specs[ key ].value ) {
+			out[ key ] = specs[ key ].value;
+		}
+	}
+	return out;
+}
+
+const PROP_RE: Record<'padding' | 'radius' | 'weight' | 'size' | 'transform' | 'letterSpacing', RegExp> = {
+	padding: /(?:^|;)\s*padding\s*:\s*([^;!]+)(\s*!\s*important)?/i,
+	radius: /(?:^|;)\s*border-radius\s*:\s*([^;!]+)(\s*!\s*important)?/i,
+	weight: /(?:^|;)\s*font-weight\s*:\s*([^;!]+)(\s*!\s*important)?/i,
+	size: /(?:^|;)\s*font-size\s*:\s*([^;!]+)(\s*!\s*important)?/i,
+	transform: /(?:^|;)\s*text-transform\s*:\s*([^;!]+)(\s*!\s*important)?/i,
+	letterSpacing: /(?:^|;)\s*letter-spacing\s*:\s*([^;!]+)(\s*!\s*important)?/i,
+};
+
+/** The last body/html-selector rule's declaration for `prop` (cascade-
+ * ordered — later rules win). The source's ACTUAL body font/size, as opposed
+ * to the banded content scale (jayainc: `body { font-family: Rubik;
+ * font-weight: 300 }` while its content widgets run 13px). */
+function rootRuleFact( cssText: string, tag: 'body' | 'html', prop: string ): string | undefined {
+	let best: string | undefined;
+	let bestSpec = -1;
+	let ruleIndex = 0;
+	for ( const rule of topLevelRules( cssText ) ) {
+		const selector = rule.selector.trim().toLowerCase();
+		const isTarget =
+			selector === tag ||
+			selector.startsWith( tag + ' ' ) ||
+			selector.startsWith( tag + '.' ) ||
+			selector.startsWith( tag + '#' ) ||
+			( tag === 'body' && selector.startsWith( 'html body' ) );
+		if ( isTarget ) {
+			const match = rule.body.match( new RegExp( '(?:^|;)\\s*' + prop + '\\s*:\\s*([^;!]+)', 'i' ) );
+			const value = match ? match[ 1 ].trim() : '';
+			// A var() reference carries no fact (the rebuilt token layer's
+			// `body { font-family: var(--forge-font) }` must not pollute the
+			// source analysis — and neither must it when scoring the built).
+			if ( value && ! value.startsWith( 'var(' ) && ruleIndex >= bestSpec ) {
+				best = value;
+				bestSpec = ruleIndex;
+			}
+		}
+		ruleIndex++;
+	}
+	return best;
+}
+
+function bodyRuleFact( cssText: string, prop: string ): string | undefined {
+	return rootRuleFact( cssText, 'body', prop );
+}
+
+/** The h1-h6 family rule's declaration for `prop` — the source's heading
+ * (display) font (jayainc: `h1, h2, h3, h4, h5, h6 { font-family: Rubik;
+ * font-weight: 500 }` in the customizer sheet, cascade-ordered). */
+function headingRuleFact( cssText: string, prop: string ): string | undefined {
+	let best: string | undefined;
+	let bestSpec = -1;
+	let ruleIndex = 0;
+	for ( const rule of topLevelRules( cssText ) ) {
+		const selector = rule.selector.trim().toLowerCase();
+		const isHeading = /^h1\b/.test( selector ) && /h2\b/.test( selector ) && /h3\b/.test( selector );
+		if ( isHeading ) {
+			const match = rule.body.match( new RegExp( '(?:^|;)\\s*' + prop + '\\s*:\\s*([^;!]+)', 'i' ) );
+			const value = match ? match[ 1 ].trim() : '';
+			if ( value && ! value.startsWith( 'var(' ) && ruleIndex >= bestSpec ) {
+				best = value;
+				bestSpec = ruleIndex;
+			}
+		}
+		ruleIndex++;
+	}
+	return best;
+}
+
+/**
+ * Resolve the source's CHROME font-size as a px fact. The body rule often
+ * declares a relative value (`body { font-size: 100% }`) — relative to the
+ * html root rule, not to the rebuilt content body (jayainc: 100% of 16px =
+ * 16px chrome over a 13px content body).
+ */
+function chromeSizeFrom( cssText: string ): string | undefined {
+	const htmlSize = rootRuleFact( cssText, 'html', 'font-size' );
+	const bodySize = rootRuleFact( cssText, 'body', 'font-size' );
+	const pxOf = ( value: string | undefined ): number | undefined => {
+		const match = /^([\d.]+)px$/i.exec( ( value ?? '' ).trim() );
+		return match ? Number( match[ 1 ] ) : undefined;
+	};
+	if ( bodySize ) {
+		const px = pxOf( bodySize );
+		if ( px !== undefined ) {
+			return `${ px }px`;
+		}
+		const base = pxOf( htmlSize ) ?? 16;
+		const pct = /^([\d.]+)%$/i.exec( bodySize.trim() );
+		if ( pct ) {
+			return `${ Math.round( ( Number( pct[ 1 ] ) / 100 ) * base ) }px`;
+		}
+		const em = /^([\d.]+)em$/i.exec( bodySize.trim() );
+		if ( em ) {
+			return `${ Math.round( Number( em[ 1 ] ) * base ) }px`;
+		}
+	}
+	const htmlPx = pxOf( htmlSize );
+	return htmlPx !== undefined ? `${ htmlPx }px` : undefined;
+}
+
 /**
  * The element-based CTA metrics: walk the rendered homepage for ACTUAL
  * button elements (button-ish classes), resolve each one's background,
@@ -486,8 +803,8 @@ function dominantCtaFillFromHtml( input: DesignFetchInput ): { fill: string; pad
 	const votes = new Map<string, number>();
 	const padVotes = new Map<string, number>();
 	const radiusVotes = new Map<string, number>();
-	const bump = ( map: Map<string, number>, value: string, weight = 1 ): void => {
-		map.set( value, ( map.get( value ) ?? 0 ) + weight );
+	const bump = ( map: Map<string, number>, value: string ): void => {
+		map.set( value, ( map.get( value ) ?? 0 ) + 1 );
 	};
 	const walk = ( node: HNodeLike ): void => {
 		if ( node.type === 'tag' && ( node.name === 'a' || node.name === 'button' ) ) {
@@ -498,67 +815,18 @@ function dominantCtaFillFromHtml( input: DesignFetchInput ): { fill: string; pad
 				}
 				return;
 			}
-			// Cascade approximation: per property, the matching rule with the
-			// MOST of the element's classes in its selector wins, ties broken
-			// by source order (a rough specificity + order cascade — the old
-			// frequency scheme let base rules out-vote the size/pill rules).
-			// The FILL prefers gradients: a gradient background-image is the
-			// effective visual fill over any flat color (jayainc's buttons
-			// paint the yellow gradient; flat hover/outline colors lose).
-			let elementGradient: string | undefined;
-			let elementColor: string | undefined;
-			let gradientSpec = -1;
-			let colorSpec = -1;
-			let elementPadding: string | undefined;
-			let elementRadius: string | undefined;
-			let padSpec = -1;
-			let radiusSpec = -1;
-			let ruleIndex = 0;
-			for ( const rule of cssText.matchAll( RULE_RE ) ) {
-				const selector = rule[ 1 ];
-				const matchCount = classes.filter( ( cls ) => selector.includes( cls ) ).length;
-				if ( matchCount === 0 ) {
-					ruleIndex++;
-					continue;
-				}
-				const spec = matchCount * 1000000 + ruleIndex;
-				const body = rule[ 2 ];
-				const gradient = body.match( BG_GRADIENT_RE );
-				if ( gradient && spec >= gradientSpec ) {
-					elementGradient = gradient[ 1 ].trim();
-					gradientSpec = spec;
-				}
-				const color = body.match( BG_COLOR_RE );
-				if ( color ) {
-					const value = normalizeColor( color[ 1 ].trim() );
-					if ( value && value !== 'transparent' && spec >= colorSpec ) {
-						elementColor = value;
-						colorSpec = spec;
-					}
-				}
-				const padding = body.match( /(?:^|;)\s*padding\s*:\s*([^;!]+)/i );
-				if ( padding && spec >= padSpec ) {
-					elementPadding = padding[ 1 ].trim();
-					padSpec = spec;
-				}
-				const radius = body.match( /(?:^|;)\s*border-radius\s*:\s*([^;!]+)/i );
-				if ( radius && spec >= radiusSpec ) {
-					elementRadius = radius[ 1 ].trim();
-					radiusSpec = spec;
-				}
-				ruleIndex++;
+			// The shared cascade resolution (specificity-approximated, gradient
+			// fill always beats flat) — the cascade winner per element feeds the
+			// votes directly, base-rule noise never reaches them.
+			const resolved = resolveElementRules( classes, cssText );
+			if ( resolved.fill ) {
+				bump( votes, resolved.fill );
 			}
-			const elementFill = elementGradient ?? elementColor;
-			// The cascade winner per element feeds the votes directly — the
-			// base-rule noise never reaches them.
-			if ( elementFill ) {
-				bump( votes, elementFill );
+			if ( resolved.padding ) {
+				bump( padVotes, resolved.padding );
 			}
-			if ( elementPadding ) {
-				bump( padVotes, elementPadding );
-			}
-			if ( elementRadius ) {
-				bump( radiusVotes, elementRadius );
+			if ( resolved.radius ) {
+				bump( radiusVotes, resolved.radius );
 			}
 		}
 		for ( const child of childNodes( node ) ) {
@@ -642,9 +910,102 @@ type HNodeLike = {
 };
 
 const RULE_RE = /([^{}]+)\{([^{}]*)\}/g;
-const BG_GRADIENT_RE = /background-image\s*:\s*((?:repeating-)?(?:linear|radial|conic)-gradient\([^;]+)/i;
+
+/**
+ * Split CSS into TOP-LEVEL rules (comments and quoted strings inert, parens
+ * tracked, nested blocks counted by depth). The flat RULE_RE can desync on
+ * `@media`/`@supports` blocks AND on braces inside url(data:…) payloads —
+ * both silently swallow the rules that follow them (jayainc: an svg data
+ * URI in an early sheet ate every later `body { font-family }` rule and the
+ * customizer's navy-header overrides). Media bodies keep their nested text
+ * — element-token matching never hits a media selector, so the inner rules
+ * stay inert.
+ */
+function topLevelRules( cssText: string ): Array<{ selector: string; body: string }> {
+	const rules: Array<{ selector: string; body: string }> = [];
+	let depth = 0;
+	let paren = 0;
+	let selector = '';
+	let body = '';
+	let inComment = false;
+	let inString: string | undefined;
+	for ( let i = 0; i < cssText.length; i++ ) {
+		const c = cssText[ i ];
+		const next = cssText[ i + 1 ];
+		if ( inComment ) {
+			if ( c === '*' && next === '/' ) {
+				inComment = false;
+				i++;
+			}
+			continue;
+		}
+		if ( c === '/' && next === '*' ) {
+			inComment = true;
+			i++;
+			continue;
+		}
+		if ( inString ) {
+			// Strings are inert STRUCTURALLY, but their bytes accumulate (the
+			// property regexes read them: `font-family: "Rubik"`).
+			if ( c === '\\' && next ) {
+				if ( depth === 0 ) {
+					selector += c + next;
+				} else {
+					body += c + next;
+				}
+				i++;
+				continue;
+			}
+			if ( c === inString ) {
+				inString = undefined;
+			}
+		} else if ( paren === 0 && ( c === '"' || c === "'" ) ) {
+			// Quotes only open strings OUTSIDE url(...) — unquoted data URIs
+			// carry apostrophes that must never start a string (jayainc's svg
+			// payloads swallowed every rule after them).
+			inString = c;
+		} else {
+			if ( c === '(' ) {
+				paren++;
+			}
+			if ( c === ')' ) {
+				paren = Math.max( 0, paren - 1 );
+			}
+			// Braces inside parens (url(data:…) payloads) are value bytes,
+			// not structure.
+			if ( c === '{' && paren === 0 ) {
+				if ( depth === 0 ) {
+					selector = selector.trim();
+					body = '';
+					depth = 1;
+				} else {
+					depth++;
+					body += c;
+				}
+				continue;
+			}
+			if ( c === '}' && paren === 0 ) {
+				depth--;
+				if ( depth === 0 ) {
+					rules.push( { selector, body } );
+					selector = '';
+				} else {
+					body += c;
+				}
+				continue;
+			}
+		}
+		if ( depth === 0 ) {
+			selector += c;
+		} else {
+			body += c;
+		}
+	}
+	return rules;
+}
+const BG_GRADIENT_RE = /background-image\s*:\s*((?:repeating-)?(?:linear|radial|conic)-gradient\([^;]+)(\s*!\s*important)?/i;
 const BG_IMAGE_RE = /background-image\s*:\s*url\(["']?([^"')]+)["']?\)/i;
-const BG_COLOR_RE = /background-color\s*:\s*([^;!]+)/i;
+const BG_COLOR_RE = /background-color\s*:\s*([^;!]+)(\s*!\s*important)?/i;
 const PADDING_RE = /padding\s*:\s*([^;!]+)/i;
 const SECTION_ID_RE = /elementor-element-([0-9a-f]{4,})/;
 
@@ -726,9 +1087,9 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			fact.bgColor = inlineColor;
 		}
 		// Same-origin CSS rules scoped to this section's id.
-		for ( const rule of cssText.matchAll( RULE_RE ) ) {
-			const selector = rule[ 1 ];
-			const body = rule[ 2 ];
+		for ( const rule of topLevelRules( cssText ) ) {
+			const selector = rule.selector;
+			const body = rule.body;
 			if ( ! selector.includes( `elementor-element-${ id }` ) ) {
 				continue;
 			}
@@ -907,6 +1268,43 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 	}
 
 	const chrome: ForgeChrome = {};
+	const cssText = input.css.length > 0 ? input.css.join( '\n' ) : '';
+	// The element's own tokens (classes + #id — many chrome rules are id-scoped:
+	// #site-header, #top-header) and the ancestor context tokens (header
+	// classes for nav/call links — `.site-header-section .aux-item-content`
+	// must beat the unrelated `.mm-footer .aux-item-content`).
+	const nodeTokens = ( node: HNodeLike | undefined ): string[] => {
+		const tokens = ( node?.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
+		if ( node?.attribs?.id ) {
+			tokens.push( `#${ node.attribs.id }` );
+		}
+		return tokens;
+	};
+	const resolveStyle = ( node: HNodeLike | undefined, context: Array<HNodeLike | undefined> = [] ): ResolvedElementStyle => {
+		return resolveElementRules( nodeTokens( node ), cssText, context.flatMap( nodeTokens ) );
+	};
+	// Element-level backgrounds resolve against TERMINAL rules only (the rule
+	// styling the strip itself — a descendant rule's gradient must never leak
+	// onto the header, as jayainc's `.site-header-section .aux-button` would).
+	const resolveElementFill = ( node: HNodeLike | undefined ): ResolvedElementStyle => {
+		return resolveElementRules( nodeTokens( node ), cssText, [], { terminalFill: true } );
+	};
+	const pickTextStyle = ( resolved: ResolvedElementStyle ): ForgeChromeStyle | undefined => {
+		const style: ForgeChromeStyle = {};
+		if ( resolved.weight ) {
+			style.weight = resolved.weight;
+		}
+		if ( resolved.size ) {
+			style.size = resolved.size;
+		}
+		if ( resolved.transform ) {
+			style.transform = resolved.transform;
+		}
+		if ( resolved.letterSpacing && ! /^(0|0px|normal)$/i.test( resolved.letterSpacing ) ) {
+			style.letterSpacing = resolved.letterSpacing;
+		}
+		return Object.keys( style ).length > 0 ? style : undefined;
+	};
 	if ( headerNode ) {
 		// 1. The top contact strip — a top-header/topbar element ANYWHERE in
 		//    the document (jayainc's sits as a SIBLING above the header).
@@ -914,6 +1312,15 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		const topbarLines = ( topbar ? paragraphNodesOf( topbar ).map( nodeText ) : [] ).filter( ( text ) => text.length > 0 ).slice( 0, 3 );
 		if ( topbarLines.length > 0 ) {
 			chrome.topbar = topbarLines;
+		}
+		// The top strip's own colors (jayainc: the navy #04132b strip with
+		// white text — the rebuilt default surface-alt/muted would drift).
+		const topbarResolved = resolveElementFill( topbar );
+		if ( topbarResolved.fill ) {
+			chrome.topbarBg = topbarResolved.fill;
+		}
+		if ( topbarResolved.ink ) {
+			chrome.topbarInk = topbarResolved.ink;
 		}
 
 		// 2. The logo — prefer the light-background variant of a dark/light
@@ -955,62 +1362,70 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 			chrome.nav = nav;
 		}
 
-		// 5. The call button (the tel: link) — plus its real colors: the
-		//    link's classes resolve through the source CSS to the button's
-		//    actual background/text (jayainc's CALL US is yellow #fccd0f
-		//    while the site accent is cyan #1bb0ce — the chrome must not
-		//    repaint it with the accent).
+		// 4b. The nav link typography — the first labeled link's classes
+		// resolve through the CSS (the source nav is often uppercase at the
+		// chrome size: jayainc's 400/16px/uppercase white on the navy header).
+		const navLinkNode = collectNodes( navNode, ( n ) => n.type === 'tag' && n.name === 'a' && Boolean( n.attribs?.href ) ).find( ( link ) => {
+			const label = nodeText( link );
+			const href = ( link.attribs?.href ?? '' ).trim();
+			return Boolean( label ) && ! href.startsWith( 'tel:' ) && ! href.startsWith( 'mailto:' );
+		} );
+		const navResolved = resolveStyle( navLinkNode, [ headerNode ] );
+		const navStyle = pickTextStyle( navResolved );
+		if ( navStyle ) {
+			chrome.navStyle = navStyle;
+		}
+		if ( navResolved.ink ) {
+			chrome.navInk = navResolved.ink;
+			// The nav link color doubles as the header text color (the brand
+			// block/tagline inherit it on dark headers).
+			chrome.headerInk = navResolved.ink;
+		}
+
+		// 4c. The header's own background — many one-pagers run a dark
+		// header (jayainc: navy #04132b) the default white chrome must not
+		// paint over.
+		const headerResolved = resolveElementFill( headerNode );
+		if ( headerResolved.fill ) {
+			chrome.headerBg = headerResolved.fill;
+		}
+		if ( headerResolved.ink ) {
+			chrome.headerInk = chrome.headerInk ?? headerResolved.ink;
+		}
+
+		// 5. The call button (the tel: link) — plus its real colors AND shape:
+		//    the link's classes resolve through the source CSS via the shared
+		//    specificity cascade (jayainc's CALL US: the yellow gradient,
+		//    DARK #242424 ink — a base white `color:` rule must not win —
+		//    uppercase, 14px 43px, pill radius).
 		const callLink = findFirstNode( headerNode, ( n ) => n.type === 'tag' && n.name === 'a' && ( n.attribs?.href ?? '' ).startsWith( 'tel:' ) );
 		if ( callLink ) {
 			const call: NonNullable<ForgeChrome[ 'call' ]> = { label: nodeText( callLink ) || 'Call', href: callLink.attribs?.href ?? '' };
-			const classes = ( callLink.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
-			if ( classes.length > 0 && input.css.length > 0 ) {
-				const cssText = input.css.join( '\n' );
-				const bgVotes = new Map<string, number>();
-				const inkVotes = new Map<string, number>();
-				for ( const rule of cssText.matchAll( RULE_RE ) ) {
-					const selector = rule[ 1 ];
-					if ( ! classes.some( ( cls ) => selector.includes( cls ) ) ) {
-						continue;
-					}
-					const body = rule[ 2 ];
-					const bg = body.match( BG_COLOR_RE );
-					if ( bg ) {
-						const value = normalizeColor( bg[ 1 ].trim() );
-						if ( value && value !== 'transparent' ) {
-							bgVotes.set( value, ( bgVotes.get( value ) ?? 0 ) + 1 );
-						}
-					}
-					const gradient = body.match( BG_GRADIENT_RE );
-					if ( gradient ) {
-						// The gradient IS the button's effective background (it
-						// overrides the flat color) — keep the raw expression
-						// so the rebuild renders the source's exact fill.
-						bgVotes.set( gradient[ 1 ].trim(), ( bgVotes.get( gradient[ 1 ].trim() ) ?? 0 ) + 2 );
-					}
-					// The standalone color: declaration (anchored — 'color' inside
-					// 'background-color' must not match).
-					const ink = body.match( /(?:^|;)\s*color\s*:\s*([^;!]+)/i );
-					if ( ink ) {
-						const value = normalizeColor( ink[ 1 ].trim() );
-						if ( value && value !== 'transparent' ) {
-							inkVotes.set( value, ( inkVotes.get( value ) ?? 0 ) + 1 );
-						}
-					}
-				}
-				const top = ( votes: Map<string, number> ): string | undefined => {
-					let best: string | undefined;
-					let bestCount = 0;
-					for ( const [ value, count ] of votes ) {
-						if ( count > bestCount ) {
-							best = value;
-							bestCount = count;
-						}
-					}
-					return best;
-				};
-				call.bg = top( bgVotes );
-				call.ink = top( inkVotes );
+			const callResolved = resolveStyle( callLink, [ headerNode ] );
+			if ( callResolved.fill ) {
+				call.bg = callResolved.fill;
+			}
+			if ( callResolved.ink ) {
+				call.ink = callResolved.ink;
+			}
+			const callStyle: ForgeChromeStyle = {};
+			if ( callResolved.padding ) {
+				callStyle.padding = callResolved.padding;
+			}
+			if ( callResolved.radius ) {
+				callStyle.radius = callResolved.radius;
+			}
+			if ( callResolved.weight ) {
+				callStyle.weight = callResolved.weight;
+			}
+			if ( callResolved.size ) {
+				callStyle.size = callResolved.size;
+			}
+			if ( callResolved.transform ) {
+				callStyle.transform = callResolved.transform;
+			}
+			if ( Object.keys( callStyle ).length > 0 ) {
+				call.style = callStyle;
 			}
 			chrome.call = call;
 		}
@@ -1039,14 +1454,14 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 			}
 			const asideClasses = ( widgetAside.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
 			if ( asideClasses.length > 0 && input.css.length > 0 ) {
-				const rules = [ ...input.css.join( '\n' ).matchAll( RULE_RE ) ];
+				const rules = topLevelRules( input.css.join( '\n' ) );
 				// Prefer the rule whose selector ENDS on the aside's class (the
 				// rule styling the aside itself, not a descendant rule that
 				// merely mentions the class) — cascade-ordered, last wins.
-				const terminal = rules.filter( ( rule ) => asideClasses.some( ( cls ) => new RegExp( '\\.' + cls + '\\s*$' ).test( rule[ 1 ].trim() ) ) );
-				const pool = terminal.length > 0 ? terminal : rules.filter( ( rule ) => asideClasses.some( ( cls ) => rule[ 1 ].includes( cls ) ) );
+				const terminal = rules.filter( ( rule ) => asideClasses.some( ( cls ) => new RegExp( '\\.' + cls + '\\s*$' ).test( rule.selector.trim() ) ) );
+				const pool = terminal.length > 0 ? terminal : rules.filter( ( rule ) => asideClasses.some( ( cls ) => rule.selector.includes( cls ) ) );
 				for ( const rule of pool ) {
-					const bg = rule[ 2 ].match( BG_COLOR_RE );
+					const bg = rule.body.match( BG_COLOR_RE );
 					if ( bg ) {
 						const value = normalizeColor( bg[ 1 ].trim() );
 						if ( value && value !== 'transparent' ) {
@@ -1112,6 +1527,40 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		if ( copyrightText ) {
 			chrome.copyright = copyrightText;
 		}
+		// The ink resolution prefers the CLASSCED container (`.aux-copyright`
+		// carries the source's translucent-white rule) over the classless
+		// <small> it wraps.
+		const copyrightBox = findFirstNode( footerNode, ( n ) =>
+			n.type === 'tag' && ( /copyright/i.test( tagClasses( n ) ) || /copyright/i.test( n.attribs?.id ?? '' ) )
+		);
+
+		// 7b. The footer element's OWN colors — the copyright bar (jayainc:
+		// a translucent navy rgba(8,26,67,0.9) strip BELOW the light-gray
+		// subfooter aside, translucent-white text). The footer element and
+		// the widget aside are two different strips on many Phlox sites.
+		// The bar INK belongs to the copyright node (its own rule carries
+		// the translucent white — the footer element's base color is a gray
+		// the bar must not inherit).
+		const footerBarResolved = resolveElementFill( footerNode );
+		if ( footerBarResolved.fill ) {
+			chrome.footerBarBg = footerBarResolved.fill;
+		}
+		const copyrightResolved = resolveStyle( copyrightBox ?? copyright, [ footerNode ] );
+		if ( copyrightResolved.ink ) {
+			chrome.footerBarInk = copyrightResolved.ink;
+		} else if ( footerBarResolved.ink ) {
+			chrome.footerBarInk = footerBarResolved.ink;
+		}
+
+		// 7c. The footer column heading typography (jayainc: 500/29px/
+		// capitalize — the rebuilt display-font 18px default drifts).
+		if ( headings.length > 0 ) {
+			const headingResolved = resolveStyle( headings[ 0 ], [ footerNode, widgetAside ] );
+			const headingStyle = pickTextStyle( headingResolved );
+			if ( headingStyle ) {
+				chrome.footerHeadingStyle = headingStyle;
+			}
+		}
 	}
 
 	// 8. The favicon — the first <link rel="icon"> (or apple-touch-icon)
@@ -1128,6 +1577,19 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 			chrome.favicon = new URL( iconLink.attribs?.href ?? '', input.url ).href;
 		} catch {
 			// Unparseable href — skip.
+		}
+	}
+
+	// 9. The chrome base font-size — header/topbar/footer run at the source's
+	// chrome size (jayainc: 16px), NOT the content body scale (13px). The
+	// body/html rules are the authoritative source (relative values resolve
+	// against the html root rule, never the rebuilt body); the element
+	// resolutions only fill in when those rules are absent (descendant
+	// font-size rules pollute the header element's own resolution).
+	if ( cssText.length > 0 ) {
+		const chromeSize = chromeSizeFrom( cssText ) ?? resolveStyle( headerNode ).size ?? resolveStyle( footerNode ).size;
+		if ( chromeSize ) {
+			chrome.chromeSize = chromeSize;
 		}
 	}
 
@@ -1247,11 +1709,11 @@ export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehavior
 					push( { id: sectionId, kind: 'sticky' } );
 				}
 			} else if ( id ) {
-				for ( const rule of cssText.matchAll( RULE_RE ) ) {
-					if ( ! rule[ 1 ].includes( `elementor-element-${ id }` ) ) {
+				for ( const rule of topLevelRules( cssText ) ) {
+					if ( ! rule.selector.includes( `elementor-element-${ id }` ) ) {
 						continue;
 					}
-					if ( /position\s*:\s*(sticky|fixed)/i.test( rule[ 2 ] ) ) {
+					if ( /position\s*:\s*(sticky|fixed)/i.test( rule.body ) ) {
 						push( { id: sectionId, kind: 'sticky' } );
 					}
 					break;
@@ -1266,11 +1728,11 @@ export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehavior
 					push( { id: sectionId, kind: 'parallax', speed: Number.isFinite( speed ) && speed > 0 ? speed : 1 } );
 				}
 			} else if ( id ) {
-				for ( const rule of cssText.matchAll( RULE_RE ) ) {
-					if ( ! rule[ 1 ].includes( `elementor-element-${ id }` ) ) {
+				for ( const rule of topLevelRules( cssText ) ) {
+					if ( ! rule.selector.includes( `elementor-element-${ id }` ) ) {
 						continue;
 					}
-					if ( /background-attachment\s*:\s*fixed/i.test( rule[ 2 ] ) ) {
+					if ( /background-attachment\s*:\s*fixed/i.test( rule.body ) ) {
 						push( { id: sectionId, kind: 'parallax' } );
 					}
 					break;
@@ -1417,7 +1879,22 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	}
 
 	// 3. Typography, spacing, radii, shadows.
-	const families = familyFrequencies( cssText ).map( ( entry ) => entry.family );
+	// @font-face blocks are load evidence, not usage — they inflate
+	// local google-fonts sheets (roboto.css carries ~5 faces) and flip the
+	// ranking away from the families elements actually wear.
+	const cssForFamilies = cssText.replace( /@font-face\s*\{[^{}]*\}/gi, '' );
+	const families = familyFrequencies( cssForFamilies ).map( ( entry ) => entry.family );
+	// The body-selector rule is the authoritative body family (later rules
+	// win) — the frequency ranking miscounts builder-default families that
+	// sit unused in Elementor's typography tokens (jayainc: `roboto` is a
+	// token-layer leftover while the body really renders Rubik). The
+	// h1-h6 rule is the authoritative DISPLAY family the same way.
+	const bodyRuleFamily = bodyRuleFact( cssText, 'font-family' )?.split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).toLowerCase();
+	const headingRuleFamily = headingRuleFact( cssText, 'font-family' )?.split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).toLowerCase();
+	const bodyFamily = bodyRuleFamily && ! GENERIC_FAMILIES.has( bodyRuleFamily ) ? bodyRuleFamily : families[ 1 ];
+	const headingFamily = headingRuleFamily && ! GENERIC_FAMILIES.has( headingRuleFamily ) ? headingRuleFamily : undefined;
+	const displayFamily = headingFamily ?? ( families[ 0 ] && families[ 0 ] !== bodyFamily ? families[ 0 ] : families.find( ( family ) => family !== bodyFamily ) ?? bodyFamily );
+	const bodyWeight = bodyRuleFact( cssText, 'font-weight' );
 	const scale = trimScaleLadder( pxValues( cssText, FONT_SCALE_PATTERNS ) );
 	const spacing = trimSpaceLadder( pxValues( cssText, SPACE_PATTERNS ) );
 	const radii = trimLadder( pxValues( cssText, RADIUS_PATTERNS ), 8 );
@@ -1426,12 +1903,13 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	return {
 		mode: 'rebuild',
 		source: { url: input.url, analyzedAt: new Date().toISOString() },
-		concept: conceptFor( roles, families ),
+		concept: conceptFor( roles, displayFamily, bodyFamily ),
 		palette: { roles, unassigned, confidence },
 		typography: {
-			display: families[ 0 ],
-			body: families[ 1 ],
+			display: displayFamily,
+			body: bodyFamily,
 			scalePx: scale.length > 0 ? scale : [ 14, 16, 20, 28, 40 ],
+			bodyWeight,
 		},
 		spacing: { scalePx: spacing.length > 0 ? spacing : [ 4, 8, 16, 24, 48 ] },
 		radii: { valuesPx: radii },
@@ -1572,8 +2050,16 @@ export function designToTokens( design: ForgeDesign ): Record<string, string> {
 	if ( design.typography.display ) {
 		tokens[ 'font-display' ] = `'${ design.typography.display }', ${ DEFAULT_FONT_STACK }`;
 	}
-	if ( design.typography.body && design.typography.body !== design.typography.display ) {
+	if ( design.typography.body ) {
+		// Always emit the body font — even when body === display the body
+		// token must not fall through to the system stack (a single-family
+		// source like jayainc renders BOTH roles in Rubik).
 		tokens.font = `'${ design.typography.body }', ${ DEFAULT_FONT_STACK }`;
+	}
+	if ( design.typography.bodyWeight ) {
+		// The source body's real weight (jayainc: 300 — the rebuilt 400
+		// default reads visibly bolder than the source everywhere).
+		tokens[ 'body-weight' ] = design.typography.bodyWeight;
 	}
 	const scale = design.typography.scalePx;
 	if ( scale.length > 0 ) {

@@ -24,6 +24,33 @@ const hasFeed = manifest.surfaces?.feed !== false;
 // The baked policy rides to the client as inert JSON (Proposal 105 §4) —
 // the boot script and the theme toggle both read this node.
 const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
+// The chrome typography/shape facts (Proposal 123) ride as CSS custom
+// properties on <body> — global.css reads them with template-default
+// fallbacks, so sites without the facts keep the default chrome.
+const chromeVars = [
+	chrome?.chromeSize && `--forge-chrome-size:${chrome.chromeSize}`,
+	chrome?.headerBg && `--forge-header-bg:${chrome.headerBg}`,
+	chrome?.headerInk && `--forge-header-ink:${chrome.headerInk}`,
+	chrome?.topbarBg && `--forge-topbar-bg:${chrome.topbarBg}`,
+	chrome?.topbarInk && `--forge-topbar-ink:${chrome.topbarInk}`,
+	chrome?.navStyle?.transform && `--forge-nav-transform:${chrome.navStyle.transform}`,
+	chrome?.navStyle?.weight && `--forge-nav-weight:${chrome.navStyle.weight}`,
+	chrome?.navStyle?.size && `--forge-nav-size:${chrome.navStyle.size}`,
+	chrome?.navStyle?.letterSpacing && `--forge-nav-letter-spacing:${chrome.navStyle.letterSpacing}`,
+	chrome?.call?.style?.padding && `--forge-call-pad:${chrome.call.style.padding}`,
+	chrome?.call?.style?.radius && `--forge-call-radius:${chrome.call.style.radius}`,
+	chrome?.call?.style?.weight && `--forge-call-weight:${chrome.call.style.weight}`,
+	chrome?.call?.style?.transform && `--forge-call-transform:${chrome.call.style.transform}`,
+	chrome?.call?.style?.size && `--forge-call-size:${chrome.call.style.size}`,
+	chrome?.footerHeadingStyle?.weight && `--forge-footer-heading-weight:${chrome.footerHeadingStyle.weight}`,
+	chrome?.footerHeadingStyle?.size && `--forge-footer-heading-size:${chrome.footerHeadingStyle.size}`,
+	chrome?.footerHeadingStyle?.transform && `--forge-footer-heading-transform:${chrome.footerHeadingStyle.transform}`,
+	chrome?.footerBarBg && `--forge-footer-bar-bg:${chrome.footerBarBg}`,
+	chrome?.footerBarInk && `--forge-footer-bar-ink:${chrome.footerBarInk}`,
+	chrome?.footerBg && `--forge-footer-bg:${chrome.footerBg}`,
+]
+	.filter(Boolean)
+	.join(';');
 ---
 
 <!doctype html>
@@ -127,7 +154,7 @@ const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
 			})();
 		</script>
 	</head>
-	<body>
+	<body style={chromeVars || undefined}>
 		{chrome?.topbar && chrome.topbar.length > 0 && (
 			<div class="site-topbar">
 				{chrome.topbar.map((line) => (
@@ -135,7 +162,7 @@ const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
 				))}
 			</div>
 		)}
-		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky']}>
+		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky', chrome?.headerBg && 'site-header--themed']}>
 			<div class="brand-block">
 				<a class="brand" href="/">
 					{chrome?.logo?.src ? <img class="brand-logo" src={chrome.logo.src} alt={chrome.logo.alt ?? siteTitle} /> : siteTitle}
@@ -168,32 +195,40 @@ const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
 		<main class="site-main">
 			<slot />
 		</main>
-		<footer class="site-footer" style={chrome?.footerBg ? `background:${chrome.footerBg};` : undefined}>
-			{chrome?.footerLogo?.src && (
-				<div class="site-footer-logo">
-					<img src={chrome.footerLogo.src} alt={chrome.footerLogo.alt ?? siteTitle} />
-				</div>
-			)}
-			{chrome?.footerBlocks && chrome.footerBlocks.length > 0 && (
-				<div class="site-footer-blocks">
-					{chrome.footerBlocks.map((block) => (
-						<div class="site-footer-block">
-							{block.title && <h3>{block.title}</h3>}
-							{block.items.map((item) => (
-								<p>{item}</p>
+		<footer class:list={['site-footer', (chrome?.footerBg || chrome?.footerBarBg) && 'site-footer--themed']}>
+			<div class="site-footer-sub">
+				<div class="site-footer-sub-inner">
+					{chrome?.footerLogo?.src && (
+						<div class="site-footer-logo">
+							<img src={chrome.footerLogo.src} alt={chrome.footerLogo.alt ?? siteTitle} />
+						</div>
+					)}
+					{chrome?.footerBlocks && chrome.footerBlocks.length > 0 && (
+						<div class="site-footer-blocks">
+							{chrome.footerBlocks.map((block) => (
+								<div class="site-footer-block">
+									{block.title && <h3>{block.title}</h3>}
+									{block.items.map((item) => (
+										<p>{item}</p>
+									))}
+								</div>
 							))}
 						</div>
-					))}
+					)}
 				</div>
-			)}
-			{chrome?.copyright ? (
-				<>
-					<p class="site-copyright">{chrome.copyright}</p>
-					<p class="site-credit">{copy.footer.generatedBy}</p>
-				</>
-			) : (
-				<p>{copy.footer.generatedBy}</p>
-			)}
+			</div>
+			<div class="site-footer-bar">
+				<div class="site-footer-bar-inner">
+					{chrome?.copyright ? (
+						<>
+							<p class="site-copyright">{chrome.copyright}</p>
+							<p class="site-credit">{copy.footer.generatedBy}</p>
+						</>
+					) : (
+						<p>{copy.footer.generatedBy}</p>
+					)}
+				</div>
+			</div>
 		</footer>
 	</body>
 </html>

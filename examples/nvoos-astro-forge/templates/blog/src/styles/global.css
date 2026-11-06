@@ -72,6 +72,9 @@ body {
 	/* The body token IS the reading size — the rebuilt body text mirrors the
 	 * source's (jayainc's 13px body, not the browser's 16px default). */
 	font-size: var(--forge-scale-body, 1rem);
+	/* The source body's real weight (jayainc: Rubik 300 — the 400 default
+	 * reads visibly bolder everywhere). */
+	font-weight: var(--forge-body-weight, 400);
 	line-height: 1.6;
 	color: var(--forge-ink);
 	background: var(--forge-surface);
@@ -91,17 +94,40 @@ a {
 	gap: 1rem;
 	padding: 1rem clamp(1rem, 4vw, 2rem);
 	border-bottom: 1px solid var(--forge-line);
+	/* The source chrome runs at its own size (16px over a 13px content
+	 * body on jayainc), and dark headers paint their own bg/ink (Proposal
+	 * 123 — the vars exist only when the chrome facts were harvested). */
+	font-size: var(--forge-chrome-size, inherit);
+	background: var(--forge-header-bg, transparent);
+	color: var(--forge-header-ink, var(--forge-ink));
+}
+
+/* A harvested header bg means the source runs a colored header — drop the
+ * default hairline and lift the strip (the source's own elevation). */
+.site-header--themed {
+	border-bottom: none;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
 }
 
 .site-header .brand {
 	font-weight: 700;
 	text-decoration: none;
-	color: var(--forge-ink);
+	color: var(--forge-header-ink, var(--forge-ink));
 }
 
 .site-header nav {
 	display: flex;
 	gap: 1rem;
+}
+
+.site-header nav a {
+	color: var(--forge-header-ink, var(--forge-accent));
+	text-decoration: none;
+	/* The source nav's own typography (jayainc: 400/16px/uppercase white). */
+	font-weight: var(--forge-nav-weight, 400);
+	font-size: var(--forge-nav-size, inherit);
+	text-transform: var(--forge-nav-transform, none);
+	letter-spacing: var(--forge-nav-letter-spacing, normal);
 }
 
 .site-main {
@@ -111,12 +137,45 @@ a {
 }
 
 .site-footer {
-	max-width: var(--forge-measure);
-	margin: 2rem auto 0;
-	padding: 1rem clamp(1rem, 4vw, 2rem);
+	/* Full-width strips by default — the source footer bands span the
+	 * viewport (the measure-constrained default trapped jayainc's gray/navy
+	 * strips in a column); the inner containers re-measure. */
+	margin: 2rem 0 0;
 	border-top: 1px solid var(--forge-line);
 	color: var(--forge-muted);
-	font-size: 0.875rem;
+	/* The chrome size, not the content body scale. */
+	font-size: var(--forge-chrome-size, 0.875rem);
+}
+
+/* A harvested footer bg means the source paints its own strips — the
+ * default hairline/above-margin goes (the gray band touches the content). */
+.site-footer--themed {
+	margin-top: 0;
+	border-top: none;
+}
+
+.site-footer-sub {
+	background: var(--forge-footer-bg, transparent);
+}
+
+.site-footer-sub-inner,
+.site-footer-bar-inner {
+	max-width: var(--forge-measure);
+	margin-inline: auto;
+	padding: 1.5rem clamp(1rem, 4vw, 2rem);
+}
+
+/* The copyright bar — its own strip on the source (jayainc: a translucent
+ * navy below the light-gray subfooter, translucent-white text). */
+.site-footer-bar {
+	background: var(--forge-footer-bar-bg, transparent);
+	color: var(--forge-footer-bar-ink, inherit);
+}
+
+.site-footer-bar-inner {
+	text-align: center;
+	padding-top: 1rem;
+	padding-bottom: 1rem;
 }
 
 /* ------------------------------------------------------------------------
@@ -129,9 +188,9 @@ a {
 	flex-wrap: wrap;
 	gap: 0.25rem 2rem;
 	padding: 0.5rem clamp(1rem, 4vw, 2rem);
-	background: var(--forge-surface-alt);
-	color: var(--forge-muted);
-	font-size: var(--forge-scale-small, 0.875rem);
+	background: var(--forge-topbar-bg, var(--forge-surface-alt));
+	color: var(--forge-topbar-ink, var(--forge-muted));
+	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
 }
 
 .site-topbar p {
@@ -152,7 +211,7 @@ a {
 .brand-tagline {
 	margin: 0;
 	font-size: var(--forge-scale-small, 0.875rem);
-	color: var(--forge-muted);
+	color: var(--forge-header-ink, var(--forge-muted));
 }
 
 .header-actions {
@@ -163,12 +222,17 @@ a {
 
 .call-button {
 	display: inline-block;
-	padding: var(--forge-space-sm) var(--forge-space);
+	/* The source call button's own shape (jayainc: 14px 43px, pill radius,
+	 * 400 weight, uppercase) — falls back to the generic CTA shape tokens,
+	 * then the template defaults. */
+	padding: var(--forge-call-pad, var(--forge-cta-pad, var(--forge-space-sm) var(--forge-space)));
+	border-radius: var(--forge-call-radius, var(--forge-cta-radius, var(--forge-radius-sm)));
+	font-weight: var(--forge-call-weight, 600);
+	text-transform: var(--forge-call-transform, none);
+	font-size: var(--forge-call-size, inherit);
 	background: var(--forge-accent);
 	color: var(--forge-accent-ink);
 	text-decoration: none;
-	border-radius: var(--forge-radius-sm);
-	font-weight: 600;
 	white-space: nowrap;
 }
 
@@ -181,7 +245,10 @@ a {
 
 .site-footer-block h3 {
 	font-family: var(--forge-font-display);
-	font-size: var(--forge-scale-h4, 1.125rem);
+	/* The source column-heading typography (jayainc: 500/29px/capitalize). */
+	font-size: var(--forge-footer-heading-size, var(--forge-scale-h4, 1.125rem));
+	font-weight: var(--forge-footer-heading-weight, 700);
+	text-transform: var(--forge-footer-heading-transform, none);
 	color: var(--forge-ink);
 	margin: 0 0 var(--forge-space-sm);
 }
@@ -193,7 +260,7 @@ a {
 .site-copyright,
 .site-credit {
 	margin: 0.25rem 0 0;
-	font-size: var(--forge-scale-small, 0.875rem);
+	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
 }
 
 .hero {
@@ -691,7 +758,9 @@ a {
 	position: sticky;
 	top: 0;
 	z-index: 20;
-	background: var(--forge-surface);
+	/* The sticky variant must keep the harvested header bg (jayainc's navy
+	 * strip stays navy when pinned) — surface only as the fallback. */
+	background: var(--forge-header-bg, var(--forge-surface));
 }
 
 /* Reveals: view() timelines play once as the section enters. */

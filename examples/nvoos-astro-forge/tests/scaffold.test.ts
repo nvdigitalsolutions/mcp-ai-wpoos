@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderDesignGenerated, renderSectionsGenerated, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderSectionsGenerated, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -283,7 +283,66 @@ describe('tokens_apply', () => {
 	});
 });
 
-describe('renderContentConfig', () => {
+describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
+	const profile: SiteProfile = {
+		url: 'https://jayainc.example/',
+		name: 'Jaya',
+		collections: [],
+		design: {
+			mode: 'rebuild',
+			source: { url: 'https://jayainc.example', analyzedAt: '2026-11-06T00:00:00.000Z' },
+			concept: 'test',
+			palette: { roles: {}, unassigned: [], confidence: {} },
+			typography: { scalePx: [ 16 ] },
+			spacing: { scalePx: [ 8 ] },
+			radii: { valuesPx: [] },
+			shadows: { count: 0 },
+			components: {},
+			modes: { dark: 'auto', contrast: 'auto' },
+			adaptation: { keep: [], replace: [], remix: [], licensingNote: '', attribution: [] },
+			chrome: {
+				topbarBg: '#04132b',
+				topbarInk: '#ffffff',
+				headerBg: '#04132b',
+				headerInk: '#ffffff',
+				navStyle: { weight: '400', size: '16px', transform: 'uppercase' },
+				navInk: '#ffffff',
+				call: {
+					label: 'CALL US',
+					href: 'tel:305-500-9319',
+					bg: 'linear-gradient(98deg, #ffcf0e 0%, #ffb70e 100%)',
+					ink: '#242424',
+					style: { padding: '14px 43px', radius: '100em', weight: '400', size: '16px', transform: 'uppercase' },
+				},
+				footerBarBg: 'rgba(8, 26, 67, 0.9)',
+				footerBarInk: 'rgba(255, 255, 255, 0.7)',
+				footerHeadingStyle: { weight: '500', size: '29px', transform: 'capitalize' },
+				chromeSize: '16px',
+			},
+		},
+	};
+
+	it( 'bakes the typography/shape facts (alpha preserved, no zero letter-spacing)', () => {
+		const module = renderChromeGenerated( profile );
+		expect( module ).toContain( "topbarBg: '#04132b'" );
+		expect( module ).toContain( "headerBg: '#04132b'" );
+		expect( module ).toContain( "navStyle: { weight: '400', size: '16px', transform: 'uppercase' }" );
+		expect( module ).toContain( "style: { padding: '14px 43px', radius: '100em', weight: '400', size: '16px', transform: 'uppercase' }" );
+		expect( module ).toContain( "footerBarBg: 'rgba(8, 26, 67, 0.9)'" );
+		expect( module ).toContain( "footerBarInk: 'rgba(255, 255, 255, 0.7)'" );
+		expect( module ).toContain( "footerHeadingStyle: { weight: '500', size: '29px', transform: 'capitalize' }" );
+		expect( module ).toContain( "chromeSize: '16px'" );
+	} );
+
+	it( 'bakes undefined for a chrome-less profile', () => {
+		const design = profile.design!;
+		const bare: SiteProfile = { ...profile, design: { ...design } };
+		delete bare.design!.chrome;
+		expect( renderChromeGenerated( bare ) ).toContain( 'export const chrome: ForgeChrome | undefined = undefined;' );
+	} );
+} );
+
+describe( 'renderContentConfig', () => {
 	it('emits env-driven site URL and both auth blocks', () => {
 		const out = renderContentConfig(PROFILE);
 		expect(out).toContain("import.meta.env.WP_SITE_URL ?? 'https://shop.example.com'");
