@@ -19,6 +19,7 @@
 import type { SemanticSection } from '../../forge/semantic.ts';
 import { classifyHtml } from '../../forge/semantic.ts';
 import { sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
+import { behaviors } from '../../lib/behaviors.generated.ts';
 import Cta from './Cta.astro';
 import FeatureGrid from './FeatureGrid.astro';
 import Form from './Form.astro';
@@ -63,6 +64,27 @@ const sections: SemanticSection[] = wireframeSections
 const columnsFor = ( index: number ): Record<string, number> | undefined => wireframeSections?.[ index ]?.responsive?.columns;
 const themeFor = ( section: SemanticSection ): SectionTheme | undefined =>
 	section.id ? sectionThemes.find( ( theme ) => theme.id === section.id ) : undefined;
+/** The source scroll behavior for a section (Proposal 121) — sticky /
+ * reveal / parallax, keyed by the same element id. */
+const behaviorFor = ( section: SemanticSection ) =>
+	section.id ? behaviors.entries.find( ( behavior ) => behavior.id === section.id ) : undefined;
+const behaviorClasses = ( behavior: ReturnType<typeof behaviorFor> ): string[] => {
+	if ( ! behavior ) {
+		return [];
+	}
+	if ( behavior.kind === 'reveal' ) {
+		return [ 'ds-reveal', `ds-reveal--${ behavior.effect ?? 'fade' }` ];
+	}
+	if ( behavior.kind === 'parallax' ) {
+		return [ 'ds-parallax' ];
+	}
+	return [ 'ds-sticky' ];
+};
+/** The parallax travel range scales with the source's motion_fx speed. */
+const parallaxStyle = ( behavior: ReturnType<typeof behaviorFor> ): string | undefined =>
+	behavior?.kind === 'parallax' && behavior.speed !== undefined && behavior.speed > 1
+		? `--ds-parallax-range:${ Math.min( behavior.speed, 4 ) * 24 }px`
+		: undefined;
 const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
@@ -93,8 +115,9 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	<div class="design-sections">
 		{sections.map((section, index) => {
 			const theme = themeFor(section);
+			const behavior = behaviorFor(section);
 			return (
-				<div id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`]} style={wrapStyle(theme)}>
+				<div id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{section.kind === 'hero' && <Hero section={section} />}
 					{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} />}
 					{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}

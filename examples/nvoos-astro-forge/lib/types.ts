@@ -250,6 +250,30 @@ export interface ForgeChrome {
 }
 
 /**
+ * The scroll-behavior pass (Proposal 121) — the source's motion, keyed by
+ * the same elementor-element-<id> the sections pass uses: sticky elements,
+ * reveal-on-scroll effects (once), and parallax/scroll-tied effects
+ * (continuous). Extracted from the raw rendered homepage (classes,
+ * data-settings motion_fx JSON, CSS facts) — behavior facts only, the
+ * template rebuilds them with its own CSS-native runtime.
+ */
+export interface ScrollBehaviorEntry {
+	/** The source element id (elementor-element-<id> class suffix). */
+	id?: string;
+	kind: 'sticky' | 'reveal' | 'parallax';
+	/** The canonical effect (reveal only; unmapped → 'fade'). */
+	effect?: 'fade-up' | 'fade-down' | 'fade-left' | 'fade-right' | 'scale-up' | 'blur' | 'fade';
+	/** The parallax speed (motion_fx_translateY_speed.size; default 1). */
+	speed?: number;
+}
+
+export interface ScrollBehaviorPass {
+	/** The source header is sticky (aux-logo-sticky / elementor-sticky). */
+	headerSticky: boolean;
+	entries: ScrollBehaviorEntry[];
+}
+
+/**
  * The v2 design block (Proposal 114) — a DTCG-flavored design language,
  * never source assets. Roles are fail-loud (098): only confident values
  * land in `roles`; everything else stays in `unassigned`.
@@ -273,6 +297,8 @@ export interface ForgeDesign {
 	sections?: ForgeSection[];
 	/** The site-chrome pass (120 §2) — omitted when unavailable. */
 	chrome?: ForgeChrome;
+	/** The scroll-behavior pass (121) — omitted when unavailable. */
+	behavior?: ScrollBehaviorPass;
 	adaptation: {
 		keep: string[];
 		replace: string[];
