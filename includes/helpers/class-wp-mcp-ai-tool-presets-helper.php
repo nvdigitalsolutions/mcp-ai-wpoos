@@ -3135,6 +3135,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		 *     @type array  $primary_role_ids Array of profession post IDs for auto-select. Default array().
 		 *     @type bool   $show_auto_select Whether to show the Auto-Select button. Default true.
 		 *     @type bool   $show_selected_bar Whether to show the selected tools chips bar. Default true.
+		 *     @type int    $assistant_id    Assistant post ID used for model-assisted auto-select. Default 0.
 		 * }
 		 */
 	public static function render_presets( $args = array() ) {
@@ -3151,6 +3152,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			'primary_role_ids'     => array(),
 			'show_auto_select'     => true,
 			'show_selected_bar'    => true,
+			'assistant_id'         => 0,
 		);
 
 		$args    = wp_parse_args( $args, $defaults );
@@ -3203,7 +3205,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				printf(
 					'<button type="button" class="%1$s wp-mcp-ai-auto-select-tools" style="background: #6c3cb8; border-color: #6c3cb8; color: #fff;" title="%2$s">%3$s</button>',
 					esc_attr( $args['button_class'] ),
-					esc_attr__( 'Analyze the assistant\'s instructions and selected professions to automatically choose the most relevant tools.', 'mcp-ai-wpoos' ),
+					esc_attr__( 'Analyze the assistant\'s instructions and selected professions to automatically choose the most relevant tools — AI-assisted when a model is available.', 'mcp-ai-wpoos' ),
 					esc_html__( '🤖 Auto-Select', 'mcp-ai-wpoos' )
 				);
 			}
@@ -3249,7 +3251,18 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		// Include JavaScript if requested.
 		if ( $args['include_script'] ) {
 			$auto_select_data = array();
+			$auto_select_ajax = array();
 			if ( $args['show_auto_select'] ) {
+				// Server-side analysis endpoint config. The click handler posts the
+				// live form values here so a configured AI model can refine the
+				// selection; the embedded keyword result below stays as the
+				// offline/fallback path.
+				$auto_select_ajax = array(
+					'url'    => admin_url( 'admin-ajax.php' ),
+					'nonce'  => wp_create_nonce( 'wp_mcp_ai_auto_select_tools' ),
+					'postId' => absint( $args['assistant_id'] ),
+				);
+
 				// Wrap in try-catch to prevent compute errors from breaking the page.
 				try {
 					$auto_select_data = self::compute_auto_select_data(
@@ -3269,7 +3282,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					);
 				}
 			}
-			self::render_preset_script( $args['checkbox_selector'], $args['show_selected_bar'], $args['show_auto_select'], $auto_select_data );
+			self::render_preset_script( $args['checkbox_selector'], $args['show_selected_bar'], $args['show_auto_select'], $auto_select_data, $auto_select_ajax );
 		}
 	}
 
@@ -3282,8 +3295,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	 * @param bool   $show_selected_bar Whether to render the selected tools chips bar.
 	 * @param bool   $show_auto_select  Whether the auto-select button is present.
 	 * @param array  $auto_select_data  Data for auto-select (scored tools list).
+	 * @param array  $auto_select_ajax  AJAX config for model-assisted auto-select (url, nonce, postId).
 	 */
-	protected static function render_preset_script( $checkbox_selector, $show_selected_bar = true, $show_auto_select = false, $auto_select_data = array() ) {
+	protected static function render_preset_script( $checkbox_selector, $show_selected_bar = true, $show_auto_select = false, $auto_select_data = array(), $auto_select_ajax = array() ) {
 		static $preset_script_printed = false;
 
 		if ( $preset_script_printed ) {
@@ -3293,6 +3307,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		$preset_script_printed  = true;
 		$checkbox_selector_json = wp_json_encode( $checkbox_selector );
 		$auto_select_data_json  = wp_json_encode( $auto_select_data );
+		$auto_select_ajax_json  = wp_json_encode( $auto_select_ajax );
 		$show_selected_bar_json = wp_json_encode( $show_selected_bar );
 		$show_auto_select_json  = wp_json_encode( $show_auto_select );
 
@@ -3308,6 +3323,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				var showSelectedBar = {$show_selected_bar_json};
 				var showAutoSelect = {$show_auto_select_json};
 				var autoSelectData = {$auto_select_data_json};
+				var autoSelectAjax = {$auto_select_ajax_json};
 
 				// Helper function to toggle checkboxes.
 				function toggleCheckboxes( toolSlugs, checked ) {
@@ -3459,49 +3475,119 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				}
 
 				// Auto-Select button handler.
-				if ( showAutoSelect && autoSelectBtn && autoSelectData && autoSelectData.tools && autoSelectData.tools.length > 0 ) {
-					autoSelectBtn.addEventListener( 'click', function( e ) {
-						e.preventDefault();
+				if ( showAutoSelect && autoSelectBtn ) {
+					var hasAjaxPath = autoSelectAjax && autoSelectAjax.url;
+					var hasEmbeddedData = autoSelectData && autoSelectData.tools && autoSelectData.tools.length > 0;
 
-						// Visual feedback: disable button during processing.
-						autoSelectBtn.disabled = true;
-						autoSelectBtn.textContent = '...';
+					// Show a transient notice under the preset buttons.
+					function showAutoSelectNotice( message, isError ) {
+						var notice = document.createElement( 'div' );
+						notice.className = 'notice ' + ( isError ? 'notice-error' : 'notice-success' ) + ' is-dismissible';
+						notice.style.margin = '10px 0';
+						notice.innerHTML = '<p>' + message + '</p>';
+						autoSelectBtn.parentNode.parentNode.insertBefore( notice, autoSelectBtn.parentNode );
+						setTimeout( function() {
+							if ( notice.parentNode ) {
+								notice.parentNode.removeChild( notice );
+							}
+						}, 8000 );
+					}
 
-						// Clear current selection first.
+					// Clear the current selection, then check the chosen tools.
+					function applyAutoSelect( tools, reason, method ) {
 						if ( clearAllBtn ) {
 							clearAllBtn.click();
 						}
-
-						// Small delay for visual feedback, then select.
 						setTimeout( function() {
-							autoSelectData.tools.forEach( function( toolSlug ) {
+							tools.forEach( function( toolSlug ) {
 								var checkbox = document.querySelector( checkboxSelector + '[value=\"' + toolSlug + '\"]' );
 								if ( checkbox && ! checkbox.checked ) {
 									checkbox.checked = true;
 									checkbox.dispatchEvent( new Event( 'change', { bubbles: true } ) );
 								}
 							} );
-							autoSelectBtn.disabled = false;
-							autoSelectBtn.textContent = '\u{1F916} Auto-Select';
-
-							// Show notification.
-							var notice = document.createElement( 'div' );
-							notice.className = 'notice notice-success is-dismissible';
-							notice.style.margin = '10px 0';
-							notice.innerHTML = '<p><strong>Auto-Select complete:</strong> ' + autoSelectData.tools.length + ' tools selected based on instructions and professions. ' + ( autoSelectData.reason || '' ) + '</p>';
-							autoSelectBtn.parentNode.parentNode.insertBefore( notice, autoSelectBtn.parentNode );
-							setTimeout( function() {
-								if ( notice.parentNode ) {
-									notice.parentNode.removeChild( notice );
-								}
-							}, 8000 );
+							var methodLabel = ( method === 'model' ) ? 'AI-assisted selection' : 'Keyword matching';
+							showAutoSelectNotice( '<strong>Auto-Select complete:</strong> ' + tools.length + ' tools selected (' + methodLabel + '). ' + ( reason || '' ) );
 						}, 150 );
-					} );
-				} else if ( showAutoSelect && autoSelectBtn ) {
-					// No auto-select data available — disable the button.
-					autoSelectBtn.disabled = true;
-					autoSelectBtn.style.opacity = '0.6';
-					autoSelectBtn.title = 'Set system instructions or select professions to enable auto-select.';
+					}
+
+					// Apply the embedded keyword-matching result (offline fallback).
+					function applyEmbeddedAutoSelect( extraReason ) {
+						if ( ! hasEmbeddedData ) {
+							return false;
+						}
+						applyAutoSelect( autoSelectData.tools, ( extraReason ? extraReason + ' ' : '' ) + ( autoSelectData.reason || '' ), 'keyword' );
+						return true;
+					}
+
+					if ( ! hasAjaxPath && ! hasEmbeddedData ) {
+						// No auto-select data available — disable the button.
+						autoSelectBtn.disabled = true;
+						autoSelectBtn.style.opacity = '0.6';
+						autoSelectBtn.title = 'Set system instructions or select professions to enable auto-select.';
+					} else {
+						autoSelectBtn.addEventListener( 'click', function( e ) {
+							e.preventDefault();
+
+							// Visual feedback: disable button during processing.
+							autoSelectBtn.disabled = true;
+							autoSelectBtn.textContent = '\u{1F916} Analyzing\u2026';
+
+							var finish = function() {
+								autoSelectBtn.disabled = false;
+								autoSelectBtn.textContent = '\u{1F916} Auto-Select';
+							};
+
+							// Model-assisted path: the server analyzes the live
+							// instructions and available tools with an AI model when
+							// one is configured, and falls back to keyword matching.
+							if ( hasAjaxPath ) {
+								var formData = new FormData();
+								formData.append( 'action', 'wp_mcp_ai_auto_select_tools' );
+								formData.append( 'nonce', autoSelectAjax.nonce );
+								formData.append( 'post_id', autoSelectAjax.postId || 0 );
+
+								var promptField = document.querySelector( '[name=\"wp_mcp_ai_system_prompt\"]' );
+								if ( promptField ) {
+									formData.append( 'system_prompt', promptField.value || '' );
+								}
+								document.querySelectorAll( '[name=\"wp_mcp_ai_primary_roles[]\"]:checked' ).forEach( function( cb ) {
+									formData.append( 'primary_role_ids[]', cb.value );
+								} );
+								document.querySelectorAll( checkboxSelector ).forEach( function( cb ) {
+									formData.append( 'available_tools[]', cb.value );
+								} );
+
+								fetch( autoSelectAjax.url, { method: 'POST', credentials: 'same-origin', body: formData } )
+									.then( function( response ) {
+										if ( ! response.ok ) {
+											throw new Error( 'HTTP ' + response.status );
+										}
+										return response.json();
+									} )
+									.then( function( data ) {
+										if ( data && data.success && data.data && Array.isArray( data.data.tools ) && data.data.tools.length > 0 ) {
+											applyAutoSelect( data.data.tools, data.data.reason || '', data.data.method || 'keyword' );
+										} else if ( ! applyEmbeddedAutoSelect() ) {
+											var message = ( data && data.data && data.data.reason ) ? data.data.reason : 'Auto-Select could not determine any tools.';
+											showAutoSelectNotice( '<strong>Auto-Select:</strong> ' + message, true );
+										}
+										finish();
+									} )
+									.catch( function() {
+										if ( ! applyEmbeddedAutoSelect( 'AI analysis unavailable \u2014' ) ) {
+											showAutoSelectNotice( '<strong>Auto-Select:</strong> analysis failed. Please try again.', true );
+										}
+										finish();
+									} );
+								return;
+							}
+
+							// Offline path: apply the pre-computed keyword result directly.
+							applyEmbeddedAutoSelect();
+							finish();
+						} );
+					}
 				}
 
 				// Select All button handler.
@@ -3597,20 +3683,191 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	 *
 	 * Uses deterministic keyword matching against tool definitions (name, description,
 	 * profession_tags, toolkit) to score each tool. Returns the top-scoring tools.
+	 * This is the offline fallback for the model-assisted path in
+	 * compute_model_auto_select().
 	 *
-	 * @param string $system_prompt   The assistant's system instructions.
+	 * @param string $system_prompt    The assistant's system instructions.
 	 * @param array  $primary_role_ids Array of profession post IDs.
 	 * @param array  $available_tools  Array of available tool slugs to consider.
 	 * @return array { tools: string[], reason: string }|array Empty array if no data.
 	 */
 	public static function compute_auto_select_data( $system_prompt, $primary_role_ids, $available_tools ) {
+		$context  = self::collect_auto_select_context( $system_prompt, $primary_role_ids );
+		$keywords = array_unique( array_map( 'strtolower', $context['keywords'] ) );
+
+		// If no keywords, return empty.
+		if ( empty( $keywords ) ) {
+			return array(
+				'tools'  => array(),
+				'reason' => __( 'No instructions or professions found to analyze.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Cap keywords to avoid excessive scoring loops.
+		$max_keywords = apply_filters( 'wp_mcp_ai_auto_select_max_keywords', 300 );
+		if ( count( $keywords ) > $max_keywords ) {
+			$keywords = array_slice( $keywords, 0, $max_keywords );
+		}
+
+		// Build tool index from registry.
+		$tool_index = self::build_tool_index( $available_tools );
+
+		if ( empty( $tool_index ) ) {
+			return array(
+				'tools'  => array(),
+				'reason' => __( 'No tool definitions available to match against.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Score each tool against keywords and take the top scorers.
+		$scored = self::score_tools( $keywords, $context['profession_tags'], $tool_index );
+
+		$max_tools = apply_filters( 'wp_mcp_ai_auto_select_max_tools', 40 );
+		$min_score = apply_filters( 'wp_mcp_ai_auto_select_min_score', 3 );
+
+		$selected = array();
+		foreach ( $scored as $slug => $score ) {
+			if ( count( $selected ) >= $max_tools ) {
+				break;
+			}
+			if ( $score < $min_score ) {
+				break;
+			}
+			$selected[] = $slug;
+		}
+
+		$reason = sprintf(
+			/* translators: 1: number of keywords analyzed, 2: number of professions */
+			__( 'Analyzed %1$d keywords from instructions and %2$d profession(s).', 'mcp-ai-wpoos' ),
+			count( $keywords ),
+			count( $primary_role_ids )
+		);
+
+		return array(
+			'tools'  => array_values( $selected ),
+			'reason' => $reason,
+		);
+	}
+
+	/**
+	 * Compute model-assisted auto-select recommendations.
+	 *
+	 * When an AI provider and model are supplied, the assistant's instructions,
+	 * professions, and a ranked catalog of available tools are sent to the model
+	 * and its JSON slug selection is validated against the available tools.
+	 * Returns WP_Error when there is no context, no catalog, no model, or an
+	 * unparseable model answer — callers then fall back to the deterministic
+	 * compute_auto_select_data().
+	 *
+	 * @param string $system_prompt    The assistant's system instructions.
+	 * @param array  $primary_role_ids Array of profession post IDs.
+	 * @param array  $available_tools  Array of available tool slugs to consider.
+	 * @param string $provider         Provider slug to route the request to (e.g. 'openai').
+	 * @param string $model            Optional model identifier for the request.
+	 * @return array{ tools: string[], reason: string, method: 'model' }|WP_Error
+	 */
+	public static function compute_model_auto_select( $system_prompt, $primary_role_ids, $available_tools, $provider = '', $model = '' ) {
+		$context = self::collect_auto_select_context( $system_prompt, $primary_role_ids );
+
+		if ( empty( $context['keywords'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_auto_select_no_context',
+				__( 'No instructions or professions found to analyze.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$tool_index = self::build_tool_index( $available_tools );
+		if ( empty( $tool_index ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_auto_select_no_tools',
+				__( 'No tool definitions available to match against.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$catalog  = self::build_model_catalog( $context, $tool_index );
+		$messages = self::build_model_messages( $context, $catalog );
+		$options  = array(
+			'provider'    => $provider,
+			'temperature' => 0.2,
+			'max_tokens'  => 1200,
+		);
+		if ( '' !== $model ) {
+			$options['model'] = $model;
+		}
+
+		// Seam for tests and integrations: return a chat-completion array or
+		// WP_Error to skip the real provider call. Null falls through to the
+		// container-built language model router.
+		$response = apply_filters( 'wp_mcp_ai_auto_select_model_response', null, $messages, $options );
+		if ( null === $response && function_exists( 'wp_mcp_ai_container' ) ) {
+			$container = wp_mcp_ai_container();
+			if ( $container->has( 'router' ) ) {
+				$response = $container->get( 'router' )->create_chat_completion( $messages, $options );
+			}
+		}
+
+		if ( null === $response ) {
+			return new WP_Error(
+				'wp_mcp_ai_auto_select_no_model',
+				__( 'No AI model is available for tool selection.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$text  = self::extract_completion_text( $response );
+		$slugs = self::extract_slug_array_from_text( $text, array_keys( $tool_index ) );
+
+		if ( empty( $slugs ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_auto_select_parse_failed',
+				__( 'The model returned no valid tool slugs.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Keep the selection focused — this is what stops Auto-Select from
+		// over-enabling tools when a model is available.
+		$max_tools = apply_filters( 'wp_mcp_ai_auto_select_model_max_tools', 40 );
+		if ( count( $slugs ) > $max_tools ) {
+			$slugs = array_slice( $slugs, 0, $max_tools );
+		}
+
+		return array(
+			'tools'  => array_values( $slugs ),
+			'reason' => sprintf(
+				/* translators: 1: number of tools selected, 2: provider slug */
+				__( 'AI analyzed the instructions and available tools and selected %1$d tool(s) via %2$s.', 'mcp-ai-wpoos' ),
+				count( $slugs ),
+				$provider
+			),
+			'method' => 'model',
+		);
+	}
+
+	/**
+	 * Collect the auto-select analysis context from the system prompt and professions.
+	 *
+	 * @param string $system_prompt    The assistant's system instructions.
+	 * @param array  $primary_role_ids Array of profession post IDs.
+	 * @return array {
+	 *     @type string $system_prompt   Length-capped system prompt.
+	 *     @type array  $keywords        Raw keywords (lowercase, not deduped).
+	 *     @type array  $profession_tags Sanitized profession titles.
+	 *     @type array  $professions     Structured profession summaries for model prompts.
+	 * }
+	 */
+	protected static function collect_auto_select_context( $system_prompt, $primary_role_ids ) {
 		// Cap system prompt length to avoid excessive keyword extraction.
 		$max_prompt_chars = apply_filters( 'wp_mcp_ai_auto_select_max_prompt_chars', 5000 );
 		if ( is_string( $system_prompt ) && strlen( $system_prompt ) > $max_prompt_chars ) {
 			$system_prompt = substr( $system_prompt, 0, $max_prompt_chars );
 		}
 
-		$keywords = array();
+		$keywords        = array();
+		$profession_tags = array();
+		$professions     = array();
 
 		// 1. Extract keywords from system prompt.
 		if ( ! empty( $system_prompt ) && is_string( $system_prompt ) ) {
@@ -3619,7 +3876,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		}
 
 		// 2. Extract keywords from profession data.
-		$profession_tags = array();
 		if ( ! empty( $primary_role_ids ) && is_array( $primary_role_ids ) ) {
 			foreach ( $primary_role_ids as $role_id ) {
 				$role_id = absint( $role_id );
@@ -3637,10 +3893,18 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				$profession_tags[] = sanitize_title( $title_lower );
 				$keywords[]        = $title_lower;
 
+				$profession_summary = array(
+					'id'            => $role_id,
+					'title'         => trim( (string) $profession_post->post_title ),
+					'description'   => '',
+					'default_tools' => array(),
+				);
+
 				// Collect role description.
 				$role_description = get_post_meta( $role_id, '_wp_mcp_ai_profession_role_description', true );
 				if ( ! empty( $role_description ) ) {
-					$keywords = array_merge( $keywords, self::extract_keywords_from_text( $role_description ) );
+					$keywords                          = array_merge( $keywords, self::extract_keywords_from_text( $role_description ) );
+					$profession_summary['description'] = trim( (string) $role_description );
 				}
 
 				// Collect knowledge base.
@@ -3659,46 +3923,42 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					}
 				}
 
-				// Collect default tools (these are directly relevant).
+				// Collect default tools (these are directly relevant). The raw
+				// slug and its space-separated form are both added so slug/name
+				// matching (which normalises underscores to spaces) can hit.
 				$default_tools = get_post_meta( $role_id, '_wp_mcp_ai_profession_default_tools', true );
 				if ( is_array( $default_tools ) ) {
 					foreach ( $default_tools as $tool ) {
 						if ( is_string( $tool ) ) {
-							$keywords[] = strtolower( trim( $tool ) );
+							$tool_slug                             = strtolower( trim( $tool ) );
+							$keywords[]                            = $tool_slug;
+							$keywords[]                            = str_replace( '_', ' ', $tool_slug );
+							$profession_summary['default_tools'][] = $tool;
 						}
 					}
 				}
+
+				$professions[] = $profession_summary;
 			}
 		}
 
-		// If no keywords, return empty.
-		if ( empty( $keywords ) ) {
-			return array(
-				'tools'  => array(),
-				'reason' => __( 'No instructions or professions found to analyze.', 'mcp-ai-wpoos' ),
-			);
-		}
+		return array(
+			'system_prompt'   => is_string( $system_prompt ) ? $system_prompt : '',
+			'keywords'        => $keywords,
+			'profession_tags' => $profession_tags,
+			'professions'     => $professions,
+		);
+	}
 
-		// Deduplicate and normalize keywords.
-		$keywords = array_unique( array_map( 'strtolower', $keywords ) );
-
-		// Cap keywords to avoid excessive scoring loops.
-		$max_keywords = apply_filters( 'wp_mcp_ai_auto_select_max_keywords', 300 );
-		if ( count( $keywords ) > $max_keywords ) {
-			$keywords = array_slice( $keywords, 0, $max_keywords );
-		}
-
-		// 3. Build tool index from registry.
-		$tool_index = self::build_tool_index( $available_tools );
-
-		if ( empty( $tool_index ) ) {
-			return array(
-				'tools'  => array(),
-				'reason' => __( 'No tool definitions available to match against.', 'mcp-ai-wpoos' ),
-			);
-		}
-
-		// 4. Score each tool against keywords.
+	/**
+	 * Score every tool in the index against the collected keywords.
+	 *
+	 * @param string[] $keywords        Deduplicated, lowercase keywords.
+	 * @param string[] $profession_tags Sanitized profession titles.
+	 * @param array    $tool_index      Tool index from build_tool_index().
+	 * @return array Slug => score, sorted descending (score > 0 only).
+	 */
+	protected static function score_tools( $keywords, $profession_tags, $tool_index ) {
 		$scored = array();
 		foreach ( $tool_index as $slug => $tool_data ) {
 			$score = 0;
@@ -3775,32 +4035,375 @@ class WP_MCP_AI_Tool_Presets_Helper {
 		// Sort by score descending.
 		arsort( $scored, SORT_NUMERIC );
 
-		// Take top-scoring tools (up to configurable max, default 100).
-		$max_tools = apply_filters( 'wp_mcp_ai_auto_select_max_tools', 100 );
-		$min_score = apply_filters( 'wp_mcp_ai_auto_select_min_score', 3 );
+		return $scored;
+	}
 
-		$selected = array();
-		foreach ( $scored as $slug => $score ) {
-			if ( count( $selected ) >= $max_tools ) {
-				break;
-			}
-			if ( $score < $min_score ) {
-				break;
-			}
-			$selected[] = $slug;
+	/**
+	 * Build the one-line-per-tool catalog sent to the model.
+	 *
+	 * Keyword-scored tools lead (best signal first) and the remaining budget is
+	 * filled with unscored tools so novel instructions still see a representative
+	 * slice of the catalog without blowing the prompt size.
+	 *
+	 * @param array $context    Context from collect_auto_select_context().
+	 * @param array $tool_index Tool index from build_tool_index().
+	 * @return string[] Lines formatted as "slug | name | description".
+	 */
+	protected static function build_model_catalog( $context, $tool_index ) {
+		$keywords     = array_unique( array_map( 'strtolower', $context['keywords'] ) );
+		$max_keywords = apply_filters( 'wp_mcp_ai_auto_select_max_keywords', 300 );
+		if ( count( $keywords ) > $max_keywords ) {
+			$keywords = array_slice( $keywords, 0, $max_keywords );
 		}
 
-		$reason = sprintf(
-			/* translators: 1: number of keywords analyzed, 2: number of professions */
-			__( 'Analyzed %1$d keywords from instructions and %2$d profession(s).', 'mcp-ai-wpoos' ),
-			count( $keywords ),
-			count( $primary_role_ids )
-		);
+		$scored        = self::score_tools( $keywords, $context['profession_tags'], $tool_index );
+		$candidate_cap = apply_filters( 'wp_mcp_ai_auto_select_model_candidates', 250 );
+		$candidates    = array_keys( $scored );
+
+		// Fill the remaining budget with unscored tools.
+		if ( count( $candidates ) < $candidate_cap ) {
+			foreach ( array_keys( $tool_index ) as $slug ) {
+				if ( count( $candidates ) >= $candidate_cap ) {
+					break;
+				}
+				if ( ! in_array( $slug, $candidates, true ) ) {
+					$candidates[] = $slug;
+				}
+			}
+		}
+
+		$max_desc = apply_filters( 'wp_mcp_ai_auto_select_model_desc_chars', 140 );
+		$lines    = array();
+		foreach ( $candidates as $slug ) {
+			if ( ! isset( $tool_index[ $slug ] ) ) {
+				continue;
+			}
+			$data        = $tool_index[ $slug ];
+			$description = trim( (string) $data['description'] );
+			// Keep lines compact: flatten newlines and the delimiter itself.
+			$description = str_replace( array( "\r", "\n", '|' ), ' ', $description );
+			if ( function_exists( 'mb_strlen' ) && function_exists( 'mb_substr' ) ) {
+				if ( mb_strlen( $description ) > $max_desc ) {
+					$description = mb_substr( $description, 0, max( 1, $max_desc - 1 ) ) . '…';
+				}
+			} elseif ( strlen( $description ) > $max_desc ) {
+				$description = substr( $description, 0, max( 1, $max_desc - 1 ) ) . '…';
+			}
+
+			$lines[] = $slug . ' | ' . $data['name'] . ' | ' . $description;
+		}
+
+		return $lines;
+	}
+
+	/**
+	 * Build the chat messages for the model-assisted selection request.
+	 *
+	 * @param array $context Context from collect_auto_select_context().
+	 * @param array $catalog Catalog lines from build_model_catalog().
+	 * @return array Message payload for create_chat_completion().
+	 */
+	protected static function build_model_messages( $context, $catalog ) {
+		$system_message = __( 'You select tools for an AI assistant on a WordPress platform.', 'mcp-ai-wpoos' ) . "\n"
+			. __( 'Given the assistant\'s instructions and a catalog of available tools, choose the most relevant tool slugs.', 'mcp-ai-wpoos' ) . "\n"
+			. __( 'Rules:', 'mcp-ai-wpoos' ) . "\n"
+			. '- ' . __( 'Respond with ONLY a JSON array of tool slugs, e.g. ["web_search","create_post"].', 'mcp-ai-wpoos' ) . "\n"
+			. '- ' . __( 'Slugs must match the catalog exactly.', 'mcp-ai-wpoos' ) . "\n"
+			. '- ' . __( 'Select a focused set: at least 5 and at most 40 tools.', 'mcp-ai-wpoos' ) . "\n"
+			. '- ' . __( 'No prose, no markdown fences, no explanations.', 'mcp-ai-wpoos' );
+
+		$prompt = trim( (string) $context['system_prompt'] );
+		if ( '' === $prompt ) {
+			$prompt = __( '(none)', 'mcp-ai-wpoos' );
+		}
+
+		$user_parts   = array();
+		$user_parts[] = __( 'Assistant system instructions:', 'mcp-ai-wpoos' ) . "\n" . $prompt;
+
+		if ( ! empty( $context['professions'] ) ) {
+			$profession_lines   = array();
+			$profession_lines[] = __( 'Assigned professions:', 'mcp-ai-wpoos' );
+			foreach ( $context['professions'] as $profession ) {
+				$line = '- ' . $profession['title'];
+				if ( '' !== $profession['description'] ) {
+					$description = trim( $profession['description'] );
+					if ( strlen( $description ) > 300 ) {
+						$description = substr( $description, 0, 297 ) . '...';
+					}
+					$line .= ' — ' . $description;
+				}
+				if ( ! empty( $profession['default_tools'] ) ) {
+					$line .= ' (' . __( 'default tools:', 'mcp-ai-wpoos' ) . ' ' . implode( ', ', array_slice( $profession['default_tools'], 0, 15 ) ) . ')';
+				}
+				$profession_lines[] = $line;
+			}
+			$user_parts[] = implode( "\n", $profession_lines );
+		}
+
+		$user_parts[] = __( 'Available tools (slug | name | description):', 'mcp-ai-wpoos' ) . "\n" . implode( "\n", $catalog );
+
+		$user_parts[] = __( 'Choose the most relevant tool slugs for this assistant. Respond with ONLY the JSON array.', 'mcp-ai-wpoos' );
 
 		return array(
-			'tools'  => array_values( $selected ),
-			'reason' => $reason,
+			array(
+				'role'    => 'system',
+				'content' => $system_message,
+			),
+			array(
+				'role'    => 'user',
+				'content' => implode( "\n\n", $user_parts ),
+			),
 		);
+	}
+
+	/**
+	 * Extract the assistant text from a chat-completion response.
+	 *
+	 * @param array $response Provider response array.
+	 * @return string Extracted text content (may be empty).
+	 */
+	protected static function extract_completion_text( $response ) {
+		if ( ! is_array( $response ) ) {
+			return '';
+		}
+
+		if ( isset( $response['content'] ) ) {
+			if ( is_string( $response['content'] ) ) {
+				return $response['content'];
+			}
+			if ( is_array( $response['content'] ) ) {
+				$texts = array();
+				foreach ( $response['content'] as $part ) {
+					if ( isset( $part['text'] ) && is_string( $part['text'] ) ) {
+						$texts[] = $part['text'];
+					}
+				}
+				return implode( '', $texts );
+			}
+		}
+
+		$content = isset( $response['choices'][0]['message']['content'] ) ? $response['choices'][0]['message']['content'] : '';
+		if ( is_string( $content ) ) {
+			return $content;
+		}
+		if ( is_array( $content ) ) {
+			$texts = array();
+			foreach ( $content as $part ) {
+				if ( isset( $part['text'] ) && is_string( $part['text'] ) ) {
+					$texts[] = $part['text'];
+				}
+			}
+			return implode( '', $texts );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Parse a JSON array of tool slugs out of free-form model output.
+	 *
+	 * Tolerates surrounding prose and markdown code fences, then validates every
+	 * slug against the allowed list (case-insensitive) and deduplicates while
+	 * preserving order.
+	 *
+	 * @param string   $text        Raw model output.
+	 * @param string[] $valid_slugs Allowed tool slugs.
+	 * @return string[] Validated, deduplicated slugs.
+	 */
+	public static function extract_slug_array_from_text( $text, $valid_slugs ) {
+		if ( ! is_string( $text ) || '' === trim( $text ) ) {
+			return array();
+		}
+
+		$text = trim( $text );
+		// Strip markdown code fences around the JSON.
+		$text = preg_replace( '/^```(?:json)?\s*/i', '', $text );
+		$text = preg_replace( '/\s*```$/', '', $text );
+
+		$start = strpos( $text, '[' );
+		if ( false === $start ) {
+			return array();
+		}
+		$end = strrpos( $text, ']' );
+		if ( false === $end || $end <= $start ) {
+			return array();
+		}
+
+		$decoded = json_decode( substr( $text, $start, $end - $start + 1 ), true );
+		if ( ! is_array( $decoded ) ) {
+			return array();
+		}
+
+		$valid = array_map( 'strtolower', array_map( 'strval', $valid_slugs ) );
+		$slugs = array();
+		foreach ( $decoded as $item ) {
+			if ( ! is_string( $item ) ) {
+				continue;
+			}
+			$slug = strtolower( trim( $item ) );
+			if ( '' === $slug || in_array( $slug, $slugs, true ) ) {
+				continue;
+			}
+			if ( in_array( $slug, $valid, true ) ) {
+				$slugs[] = $slug;
+			}
+		}
+
+		return $slugs;
+	}
+
+	/**
+	 * Resolve the provider/model pair used for model-assisted auto-select.
+	 *
+	 * Prefers the assistant's saved provider and model, then the site default
+	 * provider. Only providers that are both enabled and credentialed (per
+	 * WP_MCP_AI_Admin_Settings::get_available_providers()) qualify.
+	 *
+	 * @param int $post_id Assistant post ID (0 when no assistant yet exists).
+	 * @return array { provider: string, model: string } Empty array when no model is available.
+	 */
+	public static function resolve_auto_select_model( $post_id = 0 ) {
+		$config = array();
+
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'get_available_providers' ) ) {
+			$available = WP_MCP_AI_Admin_Settings::get_available_providers();
+		} else {
+			$available = array();
+		}
+
+		if ( ! empty( $available ) ) {
+			$provider = '';
+			$model    = '';
+			if ( $post_id > 0 ) {
+				$provider = (string) get_post_meta( $post_id, '_wp_mcp_ai_provider', true );
+				$model    = (string) get_post_meta( $post_id, '_wp_mcp_ai_model', true );
+			}
+
+			if ( '' !== $provider && isset( $available[ sanitize_key( $provider ) ] ) ) {
+				$config = array(
+					'provider' => sanitize_key( $provider ),
+					'model'    => $model,
+				);
+			} else {
+				$settings = WP_MCP_AI_Admin_Settings::get_settings();
+				$default  = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : '';
+				if ( '' !== $default && isset( $available[ $default ] ) ) {
+					$config = array(
+						'provider' => $default,
+						'model'    => '',
+					);
+				}
+			}
+		}
+
+		/**
+		 * Filter the provider/model pair used for model-assisted auto-select.
+		 *
+		 * @param array $config  { provider, model } (empty = no model available).
+		 * @param int   $post_id Assistant post ID.
+		 */
+		return apply_filters( 'wp_mcp_ai_auto_select_model_config', $config, $post_id );
+	}
+
+	/**
+	 * Handle the admin-ajax request for model-assisted auto-select.
+	 *
+	 * Reads the live system prompt, checked professions, and available tool
+	 * checkboxes from the assistant editor, runs the model-assisted selection
+	 * when a model is available, and falls back to deterministic keyword
+	 * matching otherwise.
+	 */
+	public static function handle_auto_select_ajax() {
+		check_ajax_referer( 'wp_mcp_ai_auto_select_tools', 'nonce' );
+
+		$post_type = class_exists( 'WP_MCP_AI_Assistant_CPT' ) ? WP_MCP_AI_Assistant_CPT::POST_TYPE : 'mcp_ai_assistant';
+
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		if ( $post_id > 0 ) {
+			$post = get_post( $post_id );
+			if ( ! $post || $post_type !== $post->post_type || ! current_user_can( 'edit_post', $post_id ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'You do not have permission to edit this assistant.', 'mcp-ai-wpoos' ) ),
+					403
+				);
+			}
+		} else {
+			$post_type_object = get_post_type_object( $post_type );
+			// The capability comes from the assistant post type's own cap map,
+			// so it can never be expressed as a string literal here.
+			$capability = $post_type_object ? $post_type_object->cap->edit_posts : 'manage_options';
+			// phpcs:ignore WordPress.WP.Capabilities.Undetermined -- Capability derived from the registered post type object.
+			if ( ! current_user_can( $capability ) ) {
+				wp_send_json_error(
+					array( 'message' => __( 'You do not have permission to create assistants.', 'mcp-ai-wpoos' ) ),
+					403
+				);
+			}
+		}
+
+		$system_prompt = isset( $_POST['system_prompt'] ) ? sanitize_textarea_field( wp_unslash( $_POST['system_prompt'] ) ) : '';
+
+		$primary_role_ids = array();
+		if ( isset( $_POST['primary_role_ids'] ) && is_array( $_POST['primary_role_ids'] ) ) {
+			foreach ( wp_unslash( $_POST['primary_role_ids'] ) as $role_id ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via absint() below.
+				$primary_role_ids[] = absint( $role_id );
+			}
+		}
+		$primary_role_ids = array_values( array_unique( array_filter( $primary_role_ids ) ) );
+
+		$available_tools = array();
+		if ( isset( $_POST['available_tools'] ) && is_array( $_POST['available_tools'] ) ) {
+			foreach ( wp_unslash( $_POST['available_tools'] ) as $tool_slug ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_key() below.
+				$available_tools[] = sanitize_key( (string) $tool_slug );
+			}
+		}
+		$available_tools = array_values( array_unique( array_filter( $available_tools ) ) );
+
+		// Fall back to saved meta when the request carries no live values (e.g.
+		// the block context or a screen without the primary-roles metabox).
+		if ( '' === $system_prompt && $post_id > 0 ) {
+			$system_prompt = (string) get_post_meta( $post_id, '_wp_mcp_ai_system_prompt', true );
+		}
+		if ( empty( $primary_role_ids ) && $post_id > 0 ) {
+			$saved_roles = get_post_meta( $post_id, '_wp_mcp_ai_primary_roles', true );
+			if ( is_array( $saved_roles ) ) {
+				$primary_role_ids = array_values( array_unique( array_filter( array_map( 'absint', $saved_roles ) ) ) );
+			}
+		}
+
+		$result       = null;
+		$model_config = self::resolve_auto_select_model( $post_id );
+		if ( ! empty( $model_config ) && apply_filters( 'wp_mcp_ai_auto_select_enable_model', true ) ) {
+			$result = self::compute_model_auto_select(
+				$system_prompt,
+				$primary_role_ids,
+				$available_tools,
+				$model_config['provider'],
+				$model_config['model']
+			);
+		}
+
+		if ( is_wp_error( $result ) ) {
+			$fallback           = self::compute_auto_select_data( $system_prompt, $primary_role_ids, $available_tools );
+			$fallback['method'] = 'keyword';
+			if ( ! empty( $fallback['tools'] ) ) {
+				$fallback['reason'] = sprintf(
+					/* translators: %s: model error message */
+					__( 'AI analysis unavailable (%s) — used keyword matching instead.', 'mcp-ai-wpoos' ),
+					$result->get_error_message()
+				);
+			}
+			wp_send_json_success( $fallback );
+		}
+
+		if ( null === $result ) {
+			// No model configured — deterministic path only.
+			$fallback           = self::compute_auto_select_data( $system_prompt, $primary_role_ids, $available_tools );
+			$fallback['method'] = 'keyword';
+			wp_send_json_success( $fallback );
+		}
+
+		wp_send_json_success( $result );
 	}
 
 	/**
@@ -4067,4 +4670,16 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 		return $index;
 	}
+}
+
+/**
+ * Register the model-assisted Auto-Select AJAX endpoint.
+ *
+ * Registered at load time (admin contexts only — including admin-ajax.php,
+ * where WP_ADMIN is defined before plugins load) so the handler is available
+ * as soon as admin-ajax.php dispatches, and guarded so integrations that
+ * re-load the file do not double-register.
+ */
+if ( is_admin() && ! has_action( 'wp_ajax_wp_mcp_ai_auto_select_tools', array( 'WP_MCP_AI_Tool_Presets_Helper', 'handle_auto_select_ajax' ) ) ) {
+	add_action( 'wp_ajax_wp_mcp_ai_auto_select_tools', array( 'WP_MCP_AI_Tool_Presets_Helper', 'handle_auto_select_ajax' ) );
 }

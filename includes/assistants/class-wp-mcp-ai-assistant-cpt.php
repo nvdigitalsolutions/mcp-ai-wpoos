@@ -194,6 +194,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					'primary_role_ids'  => $primary_role_ids,
 					'show_auto_select'  => true,
 					'show_selected_bar' => true,
+					'assistant_id'      => $post_id,
 				)
 			);
 		}

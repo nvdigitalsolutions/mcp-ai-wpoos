@@ -1,5 +1,11 @@
 # oOS – Changelog
 
+## [Unreleased]
+
+### Changed — model-assisted Auto-Select for assistant tools
+
+- The assistant editor's 🤖 Auto-Select button now asks the assistant's configured AI model (or the site default provider) to pick tools from the available catalog when a model is available — the deterministic keyword matching remains the fallback and runs when no model is configured. The analysis happens on click via admin-ajax (`wp_mcp_ai_auto_select_tools`, nonce + assistant `edit_post` gated), so rendering the editor never blocks on a model call, and the completion notice shows the method used ("AI-assisted selection" vs "Keyword matching"). Selections stay focused: the model is capped at 40 tools and the keyword-fallback default drops from 100 → 40. New filters: `wp_mcp_ai_auto_select_enable_model`, `wp_mcp_ai_auto_select_model_config`, `wp_mcp_ai_auto_select_model_response`, `wp_mcp_ai_auto_select_model_max_tools`, `wp_mcp_ai_auto_select_model_candidates`, `wp_mcp_ai_auto_select_model_desc_chars`. Profession default tools now also match as space-separated keywords, so they reliably score in both paths.
+
 ## [1.2.17] - 2026-11-04
 
 ### Added — Astro storefront content & checkout wave (Proposals 104–108, #7395/#7396/#7399/#7400/#7404–#7414)
