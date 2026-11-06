@@ -1,0 +1,13 @@
+{
+	"name": "@nvdigitalsolutions/nvoos-design-import",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Shared design-language primitives for the NV oOS Astro apps — WCAG contrast math and webfont harvesting (Proposal 126 shared core)",
+	"type": "module",
+	"main": "src/contrast.ts",
+	"exports": {
+		"./contrast": "./src/contrast.ts",
+		"./webfonts": "./src/webfonts.ts"
+	},
+	"license": "MIT"
+}
