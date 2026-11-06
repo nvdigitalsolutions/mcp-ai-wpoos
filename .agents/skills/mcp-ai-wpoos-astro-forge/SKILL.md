@@ -634,6 +634,15 @@ flattened, and the flat theme ignored the source's band rhythm.
   `<target>/verify-artifacts/<label>-{source,built}.{png,jpg,webp}`.
   Fail-soft everywhere; vision never runs inside the build (determinism).
   Report: `verify-artifacts/visual-audit.json`.
+- **119 determinations (2026-11-06):** the MCP surface covers the vision
+  layer — `design_verify_visual` (read-only; capture endpoint or dropped
+  artifacts; fail-closed errors unconfigured) and `design_apply` now
+  reports the 117 section pass in its payload. Practicality: headless
+  WP+Astro is the 2026 mainstream; rebuild-not-replicate is the legal
+  line; vision stays ADVISORY (models miss small changes and sound sure —
+  keep the deterministic gates). Base+pro: MESH to the forge MCP instead of
+  porting; the only cheap PHP port is the section-background pass + the
+  WCAG gate. Research: `119-forge-practicality-mcp-and-plugin-assessment.md`.
 
 ## Phase roadmap (096 §5)
 
