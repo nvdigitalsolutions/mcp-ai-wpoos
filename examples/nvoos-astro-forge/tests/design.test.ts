@@ -105,6 +105,15 @@ describe( 'analyzeSections / resolveSectionTheme (Proposal 117 §2)', () => {
 		expect( resolveSectionTheme( { id: 'c', bgColor: '#f6f6f6' } ) ).toBe( 'light' );
 		expect( resolveSectionTheme( { id: 'd', bgColor: '#e5e5e5' } ) ).toBe( 'alt' );
 	} );
+
+	it( 'drops the background-color underlay when a photo exists (the source renders it invisibly)', () => {
+		// jayainc's hero: rgba(8,26,67,0.9) is UNDER jaya-3-1.jpg on the
+		// source — painting it as the band color over-tinted the rebuild.
+		const html = '<section class="elementor-section elementor-top-section elementor-element elementor-element-a4ad586"><h2>Hero</h2></section>';
+		const css = '.elementor-element-a4ad586 { background-image: url("https://jayainc.com/photo.jpg"); background-color: rgba(8, 26, 67, 0.9); }';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections ).toEqual( [ { id: 'a4ad586', bgImage: 'https://jayainc.com/photo.jpg' } ] );
+	} );
 } );
 
 describe( 'analyzeDesignInput', () => {
@@ -139,6 +148,24 @@ describe( 'analyzeDesignInput', () => {
 	it( 'defaults the concept to a deterministic summary', () => {
 		// #6ec1e4 has hue ~203 → the cool bucket.
 		expect( design.concept ).toContain( 'cool' );
+	} );
+
+	it( 'prefers the dominant CTA color over an untouched builder default primary (jayainc)', () => {
+		const css = [
+			':root { --e-global-color-primary: #6ec1e4; }',
+			'a.button.aux-mikado-yellow { background-color: rgb(252, 205, 15); }',
+			'a.button.aux-mikado-yellow.aux-fill:hover { background-color: rgb(223, 180, 3); }',
+			'button.aux-mikado-yellow.aux-outline { background-color: transparent; }',
+		].join( '\n' );
+		const withCta = analyzeDesignInput( { url: 'https://jayainc.com', html: DESIGN_HTML, css: [ css ] } );
+		expect( withCta.palette.roles.accent ).toBe( '#fccd0f' );
+		expect( withCta.palette.confidence.accent ).toBe( 'high' );
+	} );
+
+	it( 'keeps a customized builder primary when the CSS carries no CTA color', () => {
+		const css = ':root { --e-global-color-primary: #2b90d9; }';
+		const customized = analyzeDesignInput( { url: 'https://x.example.com', html: DESIGN_HTML, css: [ css ] } );
+		expect( customized.palette.roles.accent ).toBe( '#2b90d9' );
 	} );
 
 	it( 'normalizes rem/em font sizes into the scale at the 16px root (117 §5)', () => {
@@ -407,6 +434,17 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 
 	it( 'extracts the tel: call button', () => {
 		expect( chrome?.call ).toEqual( { label: 'CALL US', href: 'tel:+18765550100' } );
+	} );
+
+	it( 'reads the call button colors from its class rules (the header CTA wears its own color)', () => {
+		const html = '<header id="site-header"><a href="tel:+18765550100" class="aux-button aux-mikado-yellow aux-ac-btn1">CALL US</a></header>';
+		const css = [
+			'a.button.aux-mikado-yellow { background-color: rgb(252, 205, 15); color: white; }',
+			'.aux-ac-btn1 { background-image: linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%); }',
+		].join( '\n' );
+		const styled = analyzeChrome( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( styled?.call?.bg ).toBe( 'linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%)' );
+		expect( styled?.call?.ink ).toBe( '#ffffff' );
 	} );
 
 	it( 'scopes footer blocks between consecutive headings with an intro block', () => {

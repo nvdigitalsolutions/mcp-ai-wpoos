@@ -64,6 +64,9 @@ body {
 	line-height: 1.6;
 	color: var(--forge-ink);
 	background: var(--forge-surface);
+	/* Full-bleed bands paint 100vw — clip the scrollbar-width sliver
+	 * instead of letting it scroll horizontally. */
+	overflow-x: clip;
 }
 
 a {
@@ -406,13 +409,39 @@ a {
    classified source sections on these token-driven classes. Nothing here
    hardcodes a brand value; everything rides the --forge-* layer above.
    ------------------------------------------------------------------------- */
-.design-sections {
-	display: grid;
-	gap: var(--forge-space-lg);
-}
-
+/* Bands are contiguous on the source — the design-sections container is
+ * plain block flow (no gap, no seams between bands). */
 .ds-section {
 	margin: 0;
+	/* The internal band rhythm (the source keeps its rhythm in inner
+	 * columns; the rebuilt components carry it themselves). */
+	padding-top: var(--forge-space-4, 2rem);
+	padding-bottom: var(--forge-space-4, 2rem);
+}
+
+/* Full-bleed bands (120 §5): the source band backgrounds span the
+ * viewport edge-to-edge (jayainc's hero photo was trapped inside the
+ * --forge-measure container). The wrap escapes the measure; the inner
+ * section re-measures. */
+.ds-section-wrap--hero,
+.ds-section-wrap--dark,
+.ds-section-wrap--alt,
+.ds-section-wrap--light {
+	width: 100vw;
+	margin-left: calc(50% - 50vw);
+	padding-top: var(--forge-space-5, 4rem);
+	padding-bottom: var(--forge-space-5, 4rem);
+}
+
+.ds-section-wrap--hero .ds-section,
+.ds-section-wrap--dark .ds-section,
+.ds-section-wrap--alt .ds-section,
+.ds-section-wrap--light .ds-section {
+	max-width: var(--forge-measure);
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: clamp(1rem, 4vw, 2rem);
+	padding-right: clamp(1rem, 4vw, 2rem);
 }
 
 .ds-hero {
@@ -596,13 +625,20 @@ a {
 	position: relative;
 	background-size: cover;
 	background-position: center;
+	/* The source hero is a tall photo band (jayainc: 724px) with the
+	 * content vertically centered. */
+	display: flex;
+	align-items: center;
+	min-height: clamp(22rem, 75vh, 48rem);
 }
 
 .ds-section-wrap--hero::before {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: var(--ds-overlay, rgba(8, 26, 67, 0.9));
+	/* No overlay fact → a mild legibility tint only (the source renders
+	 * the raw photo; a 0.9 navy default over-darkened the rebuild). */
+	background: var(--ds-overlay, rgba(0, 0, 0, 0.3));
 }
 
 .ds-section-wrap--hero > * {
@@ -611,6 +647,7 @@ a {
 }
 
 .ds-section-wrap--hero .ds-section {
+	width: 100%;
 	padding-top: 6rem;
 	padding-bottom: 6rem;
 }

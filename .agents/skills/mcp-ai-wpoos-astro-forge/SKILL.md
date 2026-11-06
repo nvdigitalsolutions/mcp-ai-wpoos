@@ -684,6 +684,41 @@ spacing overlap 40% → 71%) taught three rebuild gaps, all fixed in
   harvest baked `space-4: 104px`. `trimSpaceLadder` + band-mapped
   `space-1..5` (xs 2-6, sm 8-12, md 14-20, lg 24-40, xl 48-96 centers,
   hairline + largest kept) bake a real rhythm (jayainc: 4/10/17/30/70).
+- **Full-bleed + layering + accent (120 §5, vision round 2):** the band
+  backgrounds were trapped inside `--forge-measure` — the four band wraps
+  (`hero/dark/alt/light`) now escape with `width: 100vw; margin-left:
+  calc(50% - 50vw)` (works through symmetric parent padding), the inner
+  `.ds-section` re-measures, `body` gets `overflow-x: clip` for the
+  scrollbar sliver, bands are contiguous (the `.design-sections` grid gap
+  is gone — seams the source doesn't have), each `.ds-section` carries its
+  own vertical rhythm, and the hero gains `min-height: clamp(22rem, 75vh,
+  48rem)` + flex centering (source: 724px). **Hero layering:** a
+  `background-color` alongside a photo is the source's UNDERLAY (invisible
+  beneath an opaque JPG) — `analyzeSections` drops it and `wrapStyle` never
+  paints it over the photo; the `::before` overlay fallback softens to
+  `rgba(0,0,0,0.3)` (a 0.9 navy default over-darkened the rebuild — hero
+  pixels were rgb(33,47,82) vs the source's rgb(102,97,99); after the fix
+  rgb(97,90,89)). **Accent recovery:** when the var role is an untouched
+  builder default primary (#6ec1e4/#61ce70/#4054b2), `dominantCtaColor`
+  scans button-ish selectors (`button|.btn|cta|aux-call|aux-ac|pricing`)
+  for the most frequent saturated background — jayainc's real accent is
+  #1bb0ce (headings/links/icons), not the stock Elementor blue.
+  **Call-button colors:** `analyzeChrome` resolves the tel: link's classes
+  through the CSS (flat bg + raw gradient — the gradient is the effective
+  fill, it round-trips verbatim — + anchored `color:` declarations) into
+  `call.bg`/`call.ink`; `Base.astro` inlines them (jayainc's CALL US = the
+  exact yellow gradient + white ink). The ink regex must be
+  `/(?:^|;)\s*color\s*:/` (unanchored it matches `background-color`) and
+  `normalizeColor` needs the common CSS named colors (white/black/gold…).
+- **Vision methodology:** full-page captures downscale to ~500px wide —
+  text is illegible and the model hallucinates content complaints. Capture
+  the TOP VIEWPORT at native resolution (1440×900) instead: header + hero
+  carry the highest signal and the model's findings become accurate
+  ("maintains the layout and content order…"). The model's 1-100 score
+  plateaus around 85 for structurally-rebuilt sites regardless of the
+  remaining deltas — treat it as advisory and verify claims with sharp
+  pixel sampling + computed styles (the model asserted the rebuilt hero
+  was LIGHTER when pixels proved it DARKER).
 - **Gotchas (each cost a fix 2026-11-06):** a bare `theme = themeFor(...)`
   assignment inside the DesignRenderer map is an implicit-global in strict
   ESM → `ReferenceError: theme is not defined` at PRERENDER (use `const`);

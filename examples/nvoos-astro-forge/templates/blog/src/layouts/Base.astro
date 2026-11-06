@@ -156,7 +156,7 @@ const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
 			</nav>
 			<div class="header-actions">
 				{chrome?.call && (
-					<a class="call-button" href={chrome.call.href}>
+					<a class="call-button" href={chrome.call.href} style={chrome.call.bg ? `background:${chrome.call.bg};color:${chrome.call.ink ?? '#ffffff'};` : undefined}>
 						{chrome.call.label}
 					</a>
 				)}

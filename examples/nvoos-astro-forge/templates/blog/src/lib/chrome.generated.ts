@@ -11,7 +11,7 @@ export interface ForgeChrome {
 	logo?: { src?: string; alt?: string };
 	tagline?: string;
 	nav?: Array<{ label: string; href: string }>;
-	call?: { label: string; href: string };
+	call?: { label: string; href: string; bg?: string; ink?: string };
 	footerBlocks?: Array<{ title?: string; items: string[] }>;
 	copyright?: string;
 }
