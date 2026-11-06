@@ -1,12 +1,16 @@
 NV oOS Developer - Professional Knowledge Base
 
+Spec current as of v1.2.17 (2026-11-04). Facts are version-tagged; the CI
+test tests/test-knowledge-base-facts-sync.php fails when this file drifts
+from the plugin header. Refresh this document on every release.
+
 
 Author: NV Digital Solutions
 Website: https://nvdigitalsolutions.com
 
 === OVERVIEW ===
 
-NV oOS (WordPress Open Operator System) is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates OpenAI GPT models, Google Gemini, and Ollama (local AI) through the Model Context Protocol (MCP), offering 519 built-in tools (165 base + 348 pro + 6 core/memory) for content management, media generation, e-commerce, forms, and system automation.
+NV oOS — NV Digital Open Operator System (oOS) — is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates 18 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Azure, TypeSafe Jev, WebLLM & embedded engines) through the Model Context Protocol (MCP), offering ~1,735 built-in tools (~358 base + ~1,378 Pro; live registry authoritative) for content management, media generation, e-commerce, forms, and system automation. DeepSeek is the default provider on NV oOS cloud installs.
 
 === ARCHITECTURE ===
 
@@ -19,12 +23,12 @@ Core Components:
    
 2. Assistant System (Custom Post Type)
    - Links to professions for configuration inheritance
-   - Configures AI provider (OpenAI/Gemini/Ollama)
+   - Configures AI provider (18 supported; DeepSeek is the cloud default)
    - Sets model parameters (temperature, max_tokens, streaming)
    - Manages authentication credentials (bearer tokens)
    
 3. Tool Registry
-   - Central management of 519 built-in tools (165 base + 348 pro + 6 core/memory)
+   - Central management of ~1,735 built-in tools (~358 base + ~1,378 Pro; live registry authoritative)
    - Extension system for custom tools
    - Capability-based access control
    - Structured parameter validation with Symfony Validator
@@ -37,27 +41,21 @@ Core Components:
 
 === AI PROVIDERS ===
 
-OpenAI Integration:
-- Models: GPT-4, GPT-4 Turbo, GPT-4o, o1-preview, o1-mini
-- Image Generation: DALL-E 3 (1024x1024, 1792x1024, 1024x1792)
-- Video Generation: Sora (5-60 seconds, 480p-1080p, 24/30/60fps)
-- Speech: TTS with 6 voices (alloy, echo, fable, onyx, nova, shimmer)
-- Transcription: Whisper model for audio transcription/translation
-- Configuration: Settings → NV oOS → OpenAI API Settings
+18 providers are supported. The model catalog (Settings → NV oOS → Models) is
+the single source of truth for model IDs and is refreshed monthly — treat any
+model name in this document as an example, never a closed list.
 
-Google Gemini Integration:
-- Models: Gemini 1.5 Pro, Gemini 2.0 Flash, Gemini 2.0 Experimental
-- Image Generation: Imagen 3 with aspect ratio control
-- Video Generation: Veo 2.0, Veo 3.1 (1920x1080, 5-8 seconds)
-- Music Generation: Lyria model for instrumental audio
-- Long Context: Gemini 1.5 Pro supports up to 1M tokens
-- Configuration: Settings → NV oOS → Gemini API Settings
+Chat providers (current defaults in parentheses): OpenAI (gpt-6.1-sol),
+Google Gemini (gemini-3.5-flash), Anthropic Claude, DeepSeek
+(deepseek-v4-pro — the default provider on NV oOS cloud installs), OpenRouter,
+Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face,
+LM Studio, Ollama (local AI — llama3, mistral, codellama and other open
+models, no external API costs), Azure, TypeSafe Jev (decision-only provider
+powering typesafe_decide), WebLLM, and embedded engines.
 
-Ollama Integration:
-- Local AI deployment for privacy and offline use
-- Supports llama3, mistral, codellama, and other open models
-- No external API costs or rate limits
-- Configuration: Settings → NV oOS → Ollama Settings
+Media-generation capabilities (provider-specific): OpenAI DALL-E / Sora /
+Whisper, Google Imagen / Veo / Lyria, Anthropic, Stability, and others.
+Configuration: Settings → NV oOS → Providers.
 
 === TOOL CATEGORIES ===
 
@@ -197,7 +195,7 @@ Creation Methods:
 Key Settings:
 - name: Assistant display name
 - profession_id: Link to profession (inherits tools, playbooks, knowledge)
-- provider: openai | gemini | ollama
+- provider: openai | gemini | anthropic | deepseek | openrouter | ... (18 supported; deepseek is the cloud default)
 - model: Provider-specific model name
 - temperature: 0.1 (factual) to 2.0 (creative), default 0.7
 - max_tokens: Response length limit (1000-128000)
@@ -205,13 +203,14 @@ Key Settings:
 - tools: Array of tool slugs (inherits from profession if empty)
 - system_instructions: Custom instructions (merged with profession playbooks)
 
-Model Selection Guidelines:
-- Factual/Technical: GPT-4o, temperature 0.1-0.3
-- Creative Writing: GPT-4 Turbo, temperature 0.7-1.2
-- Complex Reasoning: o1-preview, o1-mini (no temperature)
-- Fast/Economical: Gemini 2.0 Flash, temperature 0.5-1.0
-- Long Context: Gemini 1.5 Pro (1M tokens)
-- Local/Private: Ollama (llama3, mistral)
+Model Selection Guidelines (model IDs change monthly via the model catalog):
+- Factual/Technical: gpt-6.1-sol (OpenAI default), temperature 0.1-0.3
+- Creative Writing: gpt-6.1-sol or Claude, temperature 0.7-1.2
+- Complex Reasoning: o-series or Claude reasoning models (no temperature)
+- Fast/Economical: deepseek-flash or gemini-3.5-flash, temperature 0.5-1.0
+- Long Context: Gemini long-context models (up to 1M tokens)
+- Local/Private: Ollama (llama3, mistral) or LM Studio
+- Authoritative list: Settings → NV oOS → Models (catalog, refreshed monthly)
 
 === CUSTOM TOOL DEVELOPMENT ===
 
@@ -418,31 +417,31 @@ Post-Deployment:
 1. Content Creation Assistant:
    - Profession: content_creator
    - Tools: web_search, search_content, save_post, generate_openai_image
-   - Model: GPT-4 Turbo, temperature 0.8
+   - Model: gpt-6.1-sol, temperature 0.8
    - Use: Blog posts, social media, marketing copy
 
 2. E-Commerce Product Manager:
    - Profession: Product Manager (custom)
    - Tools: get_woo_products, create_woo_product, get_rankmath_seo
-   - Model: GPT-4o, temperature 0.5
+   - Model: gpt-6.1-sol, temperature 0.5
    - Use: Product descriptions, SEO optimization, inventory management
 
 3. Developer Assistant:
    - Profession: wpoos_developer
    - Tools: search_content, save_post, web_search, check_plugin_status
-   - Model: GPT-4 Turbo, temperature 0.3
+   - Model: gpt-6.1-sol, temperature 0.3
    - Use: Code help, plugin development, troubleshooting
 
 4. Customer Support Agent:
    - Profession: customer_service_rep
    - Tools: search_content, web_search, get_user_info
-   - Model: Gemini 2.0 Flash, temperature 0.6
+   - Model: gemini-3.5-flash, temperature 0.6
    - Use: Answer questions, knowledge base search, ticket resolution
 
 5. Visual Content Creator:
    - Profession: graphic_designer
    - Tools: generate_openai_image, generate_gemini_image, edit_gemini_image
-   - Model: GPT-4 Turbo, temperature 1.0
+   - Model: gpt-6.1-sol, temperature 1.0
    - Use: Social graphics, blog headers, ad creatives
 
 === TROUBLESHOOTING ===
@@ -478,14 +477,14 @@ Authentication Failures:
 Performance Problems:
 - Enable caching (object, page, CDN)
 - Reduce max_tokens if responses too long
-- Use Gemini Flash for faster responses
+- Use a Flash-class model (e.g. gemini-3.5-flash or deepseek-flash) for faster responses
 - Implement async processing for heavy tasks
 - Monitor database query performance
 
 === RESOURCES ===
 
 Official Documentation:
-- Plugin Docs: /docs/ directory (32 files)
+- Plugin Docs: /docs/ directory (~1,600 files across 12 directories)
 - Tool Reference: /docs/tool-reference.md
 - REST API: /docs/rest-api.md
 - Quick Reference: /docs/QUICK_REFERENCE.md
@@ -511,10 +510,10 @@ Development:
 
 === VERSION INFORMATION ===
 
-NV oOS Versions:
-- Base Version: 165 core tools, no third-party dependencies
-- Full Version: 519 tools including integrations (165 base + 348 pro + 6 core/memory)
-- Pro Addon: 348 pro tools including video processing (FFmpeg required)
+NV oOS Versions (current release v1.2.17; live registry authoritative):
+- Base Version: ~358 core tools, no third-party dependencies
+- Full Version: ~1,735 tools (~358 base + ~1,378 Pro) including integrations
+- Pro Addon: ~1,378 Pro tools including video processing (FFmpeg required)
 
 WordPress Requirements:
 - WordPress: 6.0 or higher
@@ -530,6 +529,8 @@ Optional Plugin Dependencies:
 - WPCode: Code snippet management (1 tool)
 
 === CHANGELOG ===
+
+2026-11-06: Refreshed for v1.2.17 — corrected product name (NV Digital Open Operator System), the 18-provider list (DeepSeek default on cloud installs), the tool count (~358 base + ~1,378 Pro = ~1,735; live registry authoritative), and model-catalog pointers. Version-tagged; CI-enforced by tests/test-knowledge-base-facts-sync.php.
 
 2024-12-19: Created comprehensive NV oOS Developer knowledge base
 - Complete architecture overview and component descriptions
