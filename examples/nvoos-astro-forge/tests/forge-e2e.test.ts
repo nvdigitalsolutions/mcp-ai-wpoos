@@ -394,6 +394,10 @@ describe('forge e2e — emitted site', () => {
 			expect(css).not.toMatch(/animation:[^;}]*view\(\)/);
 			expect(css).toMatch(/grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\(\s*8rem\s*,\s*1fr\s*\)\s*\)/);
 			expect(css).toMatch(/\.ds-logos\s+img\s*\{[^}]*height:\s*auto/);
+			// The hero headline constraint (125 §8): the band title does not
+			// span the full measure on desktop (jayainc's 72px headline sits
+			// in a ~66% column; the var is the per-site seam).
+			expect(css).toMatch(/\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*max-width:\s*var\(--ds-hero-title-max/);
 		} else {
 			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);
 		}
