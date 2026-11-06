@@ -1,5 +1,6 @@
 ---
-// DesignRenderer — the semantic renderer (Proposal 114 §3.2/§3.4).
+// DesignRenderer — the semantic renderer (Proposal 114 §3.2/§3.4, themed by
+// 117 §2).
 //
 // Takes the ALREADY-sanitized entry body (page.body) and renders it through
 // the semantic content model: classified builder sections rebuild as ADS
@@ -8,8 +9,16 @@
 // here — the vendored src/forge/semantic.ts owns that; this component only
 // dispatches sections to components. Text is interpolated (escaped); only
 // sanitized substrings pass through set:html.
+//
+// Theming (117 §2): the classifier carries each section's source Elementor id;
+// sections.generated.ts maps that id to the source band's background facts and
+// resolved theme. Every section renders inside a themed wrapper that
+// re-applies the source band — dark navy bands, gray bands, and the hero
+// photo with its overlay — so the rebuilt page keeps the source's visual
+// rhythm without copying any markup.
 import type { SemanticSection } from '../../forge/semantic.ts';
 import { classifyHtml } from '../../forge/semantic.ts';
+import { sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
 import Cta from './Cta.astro';
 import FeatureGrid from './FeatureGrid.astro';
 import Form from './Form.astro';
@@ -52,23 +61,50 @@ const sections: SemanticSection[] = wireframeSections
 		  } )
 		: [];
 const columnsFor = ( index: number ): Record<string, number> | undefined => wireframeSections?.[ index ]?.responsive?.columns;
+const themeFor = ( section: SemanticSection ): SectionTheme | undefined =>
+	section.id ? sectionThemes.find( ( theme ) => theme.id === section.id ) : undefined;
+const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
+	if ( ! theme ) {
+		return undefined;
+	}
+	const parts: string[] = [];
+	if ( theme.theme === 'hero' ) {
+		if ( theme.bgImage ) {
+			parts.push( `background-image:url('${ theme.bgImage }')` );
+		}
+		if ( theme.bg ) {
+			parts.push( `background-color:${ theme.bg }` );
+		}
+		if ( theme.overlay ) {
+			parts.push( `--ds-overlay:${ theme.overlay }` );
+		}
+		return parts.length > 0 ? parts.join( ';' ) : undefined;
+	}
+	if ( theme.bg ) {
+		parts.push( `background:${ theme.bg }` );
+	}
+	return parts.length > 0 ? parts.join( ';' ) : undefined;
+};
 ---
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{sections.map((section, index) => (
-			<Fragment>
-				{section.kind === 'hero' && <Hero section={section} />}
-				{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} />}
-				{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}
-				{section.kind === 'testimonial' && <Testimonial section={section} />}
-				{section.kind === 'logo-cloud' && <LogoCloud section={section} />}
-				{section.kind === 'cta' && <Cta section={section} />}
-				{section.kind === 'gallery' && <Gallery section={section} />}
-				{section.kind === 'form' && <Form section={section} />}
-				{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} />)}
-				{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
-			</Fragment>
-		))}
+		{sections.map((section, index) => {
+			const theme = themeFor(section);
+			return (
+				<div class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`]} style={wrapStyle(theme)}>
+					{section.kind === 'hero' && <Hero section={section} />}
+					{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} />}
+					{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}
+					{section.kind === 'testimonial' && <Testimonial section={section} />}
+					{section.kind === 'logo-cloud' && <LogoCloud section={section} />}
+					{section.kind === 'cta' && <Cta section={section} />}
+					{section.kind === 'gallery' && <Gallery section={section} />}
+					{section.kind === 'form' && <Form section={section} />}
+					{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} />)}
+					{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
+				</div>
+			);
+		})}
 	</div>
 )}

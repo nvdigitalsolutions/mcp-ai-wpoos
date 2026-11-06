@@ -27,6 +27,68 @@ describe( 'classifyHtml — vendor-prefixed widget families (Phlox/Auxin)', () =
 		expect( sections[ 0 ].slots.body ).toContain( 'Highest quality of support and service.' );
 		expect( sections[ 0 ].slots.links?.[ 0 ] ).toMatchObject( { text: 'Get in touch', href: '/contact/' } );
 	} );
+
+	// Proposal 117 §1 — the structured icon-text pattern (jayainc's live
+	// markup): an aux_text widget whose header box carries an image or icon
+	// plus a small heading + body is ONE card, not flat media + orphans.
+	it( 'rebuilds aux_text image cards as a captioned feature grid', () => {
+		const card = ( img: string, title: string, body: string ) =>
+			`<div class="aux-widget-advanced-text"><div class="aux-text-widget-header"><div class="aux-ico-box aux-img-box"><img src="${ img }" alt="" /></div></div><div class="aux-text-inner"><h4>${ title }</h4><div class="widget-content"><p>${ body }</p></div></div></div>`;
+		const html = SECTION(
+			WIDGET( 'aux_text', card( 'a.jpg', 'Consumer Electronics', 'Cameras and audio.' ) ) +
+				WIDGET( 'aux_text', card( 'b.jpg', 'Home Appliances', 'Kitchen gear.' ) )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'feature-grid' );
+		expect( sections[ 0 ].slots.items ).toHaveLength( 2 );
+		expect( sections[ 0 ].slots.items?.[ 0 ] ).toMatchObject( {
+			title: 'Consumer Electronics',
+			body: 'Cameras and audio.',
+			media: { src: 'a.jpg' },
+		} );
+	} );
+
+	it( 'rebuilds aux_text icon features as an icon list', () => {
+		const feature = ( title: string, body: string ) =>
+			`<div class="aux-widget-advanced-text"><div class="aux-text-widget-header"><div class="aux-ico-box"><span class="aux-ico auxicon-badge"></span></div></div><div class="aux-text-inner"><h4>${ title }</h4><div class="widget-content"><p>${ body }</p></div></div></div>`;
+		const html = SECTION(
+			WIDGET( 'aux_modern_heading', '<h2>Why Choose Us</h2><p>The relationships we have established.</p>' ) +
+				WIDGET( 'aux_text', feature( 'Procurement', 'Best discounts.' ) ) +
+				WIDGET( 'aux_text', feature( 'Export Services', 'All aspects of exports.' ) )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'icon-list' );
+		expect( sections[ 0 ].slots.items ).toHaveLength( 2 );
+		expect( sections[ 0 ].slots.items?.[ 0 ] ).toMatchObject( { title: 'Procurement', body: 'Best discounts.', icon: true } );
+		// The section intro survives as body, not as a phantom item.
+		expect( sections[ 0 ].slots.body ).toContain( 'The relationships we have established.' );
+	} );
+
+	it( 'carries the quote author line onto the testimonial item', () => {
+		const html = SECTION(
+			WIDGET( 'aux_blockquote', '<blockquote><p>Fast &amp; easy to work with.</p><div class="aux-author">Kumar Samtani</div></blockquote>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'testimonial' );
+		expect( sections[ 0 ].slots.items?.[ 0 ] ).toMatchObject( { body: 'Fast & easy to work with.', author: 'Kumar Samtani' } );
+	} );
+} );
+
+describe( 'classifyHtml — section ids (Proposal 117 §2 theming keys)', () => {
+	it( 'carries the source Elementor section id on each rebuilt section', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-a4ad586">' +
+			'<div class="elementor-container"><div class="elementor-widget-wrap">' +
+			WIDGET( 'heading', '<h2>Hero title</h2>' ) +
+			'</div></div></section>' +
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-5e78df1">' +
+			'<div class="elementor-container"><div class="elementor-widget-wrap">' +
+			WIDGET( 'text-editor', '<p>Second band.</p>' ) +
+			'</div></div></section>';
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].id ).toBe( 'a4ad586' );
+		expect( sections[ 1 ].id ).toBe( '5e78df1' );
+	} );
 } );
 
 describe( 'classifyHtml — wrapped Elementor documents (the wp-post root)', () => {

@@ -15,8 +15,10 @@ const { title, body, media, links } = section.slots;
 <section class="ds-section ds-hero">
 	{title && <h2 class="ds-title">{title}</h2>}
 	{body?.map((paragraph) => <p class="ds-text">{paragraph}</p>)}
-	{media?.[0]?.src && (
-		<img class="ds-media" src={media[0].src} alt={media[0].alt ?? ''} width="1200" height="675" loading="lazy" />
+	{media && media.length > 0 && (
+		<div class="ds-media-grid">
+			{media.map((image) => (image.src ? <img class="ds-media" src={image.src} alt={image.alt ?? ''} width="600" height="600" loading="lazy" /> : null))}
+		</div>
 	)}
 	{links && links.length > 0 && (
 		<div class="ds-links">

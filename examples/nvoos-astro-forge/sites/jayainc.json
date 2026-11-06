@@ -58,7 +58,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://jayainc.com",
-			"analyzedAt": "2026-11-05T16:09:35.424Z"
+			"analyzedAt": "2026-11-06T01:15:58.683Z"
 		},
 		"concept": "cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.",
 		"palette": {
@@ -154,6 +154,56 @@
 			"dark": "auto",
 			"contrast": "auto"
 		},
+		"sections": [
+			{
+				"id": "a4ad586",
+				"bgImage": "https://jayainc.com/wp-content/uploads/2018/11/jaya-3-1.jpg",
+				"bgColor": "rgba(8,26,67,0.9)",
+				"overlay": "transparent"
+			},
+			{
+				"id": "cff59dd",
+				"bgGradient": "linear-gradient(180deg, #eaeaea 0%, #e5e5e5 100%)",
+				"bgColor": "transparent"
+			},
+			{
+				"id": "dff3f1a",
+				"bgColor": "#e5e5e5"
+			},
+			{
+				"id": "d5844b9",
+				"bgGradient": "linear-gradient(180deg, #e5e5e5 0%, #ffffff 100%)",
+				"bgColor": "transparent"
+			},
+			{
+				"id": "5e78df1",
+				"bgGradient": "linear-gradient(180deg, #ffffff 6%, #04132b 100%)",
+				"bgColor": "transparent",
+				"padding": "100px 0px 100px 0px"
+			},
+			{
+				"id": "fcc5e07",
+				"bgGradient": "linear-gradient(180deg, #ffffff 0%, #e5e5e5 100%)",
+				"bgColor": "transparent",
+				"padding": "100px 0px 100px 0px"
+			},
+			{
+				"id": "059421c",
+				"bgGradient": "linear-gradient(137deg, #081a43 0%, #071230 100%)",
+				"bgColor": "transparent",
+				"padding": "125px 0px 125px 0px"
+			},
+			{
+				"id": "48ace0b",
+				"bgColor": "#f6f6f6",
+				"padding": "100px 0px 0px 0px"
+			},
+			{
+				"id": "fd63522",
+				"bgColor": "#f6f6f6",
+				"padding": "0px 0px 0px 0px"
+			}
+		],
 		"adaptation": {
 			"keep": [
 				"The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.",
@@ -172,5 +222,18 @@
 				"Source: https://jayainc.com"
 			]
 		}
+	},
+	"vocabulary": {
+		"widgetRoles": {},
+		"blockRoles": {},
+		"unknownWidgets": [
+			"aux_simple_shape",
+			"container",
+			"shortcode",
+			"spacer",
+			"wrap"
+		],
+		"unknownBlocks": [],
+		"analyzedAt": "2026-11-06T01:15:59.813Z"
 	}
 }

@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { section, columns } = Astro.props;
-const { title, items } = section.slots;
+const { title, body, items } = section.slots;
 const gridStyle = columns
 	? `--ds-cols-desktop: ${ columns.desktop ?? 4 }; --ds-cols-tablet: ${ columns.tablet ?? 2 }; --ds-cols-mobile: ${ columns.mobile ?? 1 };`
 	: undefined;
@@ -18,10 +18,18 @@ const gridStyle = columns
 
 <section class="ds-section">
 	{title && <h2 class="ds-title">{title}</h2>}
+	{body && body.length > 0 && (
+		<div class="ds-lede">
+			{body.map((paragraph) => (
+				<p>{paragraph}</p>
+			))}
+		</div>
+	)}
 	{items && items.length > 0 && (
 		<ul class="ds-grid post-list" style={gridStyle}>
 			{items.map((item) => (
 				<li class="ds-card">
+					{item.icon && <span class="ds-icon-marker" aria-hidden="true">✓</span>}
 					{item.media?.src && <img src={item.media.src} alt={item.media.alt ?? item.title ?? ''} width="400" height="400" loading="lazy" />}
 					{item.title && <h4>{item.title}</h4>}
 					{item.body && <p>{item.body}</p>}

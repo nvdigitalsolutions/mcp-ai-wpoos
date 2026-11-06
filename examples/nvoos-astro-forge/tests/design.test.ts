@@ -9,10 +9,12 @@ import { describe, expect, it } from 'vitest';
 import {
 	analyzeBuiltCss,
 	analyzeDesignInput,
+	analyzeSections,
 	colorDistance,
 	designToTokens,
 	lightnessOf,
 	normalizeColor,
+	resolveSectionTheme,
 	scoreParity,
 	suggestContrastFixes,
 	stylesheetLinks,
@@ -61,6 +63,45 @@ describe( 'stylesheetLinks', () => {
 		expect( stylesheetLinks( html, 'https://shop.example.com' ) ).toEqual( [
 			'https://shop.example.com/wp-content/themes/x/style.css',
 		] );
+	} );
+} );
+
+describe( 'analyzeSections / resolveSectionTheme (Proposal 117 §2)', () => {
+	const SECTIONS_HTML =
+		'<div class="elementor">' +
+		'<section class="elementor-section elementor-top-section elementor-element elementor-element-a4ad586"><div class="elementor-background-overlay"></div><h2>Hero</h2></section>' +
+		'<section class="elementor-section elementor-top-section elementor-element elementor-element-5e78df1"><h2>Products</h2></section>' +
+		'<section class="elementor-section elementor-top-section elementor-element elementor-element-48ace0b"><h2>Logos</h2></section>' +
+		'</div>';
+	const SECTIONS_CSS = `
+.elementor-element-a4ad586:not(.x), .elementor-element-a4ad586 > .elementor-element-populated { background-image: url("https://jayainc.com/wp-content/uploads/hero.jpg"); }
+.elementor-element-a4ad586 .elementor-background-overlay { background-color: rgba(8, 26, 67, 0.9); }
+.elementor-element-5e78df1 { background-image: linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%); padding: 100px 0px; }
+.elementor-element-48ace0b { background-color: #f6f6f6; }
+`;
+
+	it( 'extracts ordered section backgrounds from html + css, keyed by id', () => {
+		const sections = analyzeSections( { url: 'https://jayainc.com', html: SECTIONS_HTML, css: [ SECTIONS_CSS ] } );
+		expect( sections ).toEqual( [
+			{
+				id: 'a4ad586',
+				bgImage: 'https://jayainc.com/wp-content/uploads/hero.jpg',
+				overlay: 'rgba(8, 26, 67, 0.9)',
+			},
+			{
+				id: '5e78df1',
+				bgGradient: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)',
+				padding: '100px 0px',
+			},
+			{ id: '48ace0b', bgColor: '#f6f6f6' },
+		] );
+	} );
+
+	it( 'resolves hero from a photo, dark from a navy gradient, light from near-white', () => {
+		expect( resolveSectionTheme( { id: 'a', bgImage: 'x.jpg' } ) ).toBe( 'hero' );
+		expect( resolveSectionTheme( { id: 'b', bgGradient: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)' } ) ).toBe( 'dark' );
+		expect( resolveSectionTheme( { id: 'c', bgColor: '#f6f6f6' } ) ).toBe( 'light' );
+		expect( resolveSectionTheme( { id: 'd', bgColor: '#e5e5e5' } ) ).toBe( 'alt' );
 	} );
 } );
 
