@@ -348,6 +348,78 @@ describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
 	} );
 } );
 
+describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
+	const design: ForgeDesign = {
+		mode: 'rebuild',
+		source: { url: 'https://jayainc.example', analyzedAt: '2026-11-06T00:00:00.000Z' },
+		concept: 'test',
+		palette: { roles: {}, unassigned: [], confidence: {} },
+		typography: { display: 'rubik', body: 'rubik', bodyWeight: '300', scalePx: [ 16 ] },
+		spacing: { scalePx: [ 8 ] },
+		radii: { valuesPx: [] },
+		shadows: { count: 0 },
+		components: {},
+		modes: { dark: 'auto', contrast: 'auto' },
+		adaptation: { keep: [], replace: [], remix: [], licensingNote: '', attribution: [] },
+	};
+	const profile: SiteProfile = {
+		url: 'https://jayainc.example/',
+		name: 'Jaya',
+		collections: [],
+		design: {
+			...design,
+			sections: [
+				{
+					id: 'd5844b9',
+					anchor: 'about',
+					bgGradient: 'linear-gradient(180deg, #e5e5e5 0%, #ffffff 100%)',
+					layout: 'split',
+					bodyColumns: 2,
+					titleDivider: { width: '125px', height: '6px', background: '#ffcf0e', shadow: '0px 4px 8px 0px rgba(255,207,14,0.5)' },
+					titleStyle: { size: '43px', weight: '500', lineHeight: '57px', letterSpacing: '-1.5px' },
+					mediaShape: { width: '412px', height: '450px', background: 'linear-gradient(39deg, #ffcf0e 0%, #ffb70e 100%)' },
+					mediaOffsets: [ { top: '-25%', left: '0px', shadow: '0px 3px 34px 0px rgba(0,0,0,0.16)' }, { top: '25%', right: '-110px' } ],
+				},
+				{
+					id: 'fd63522',
+					bgColor: '#f6f6f6',
+					catalog: { title: 'fiori-digital-catalogue', source: 'https://jayainc.example/wp-content/uploads/catalog.pdf' },
+				},
+			],
+		},
+	};
+
+	it( 'emits the split-hero + collage facts into sections.generated', () => {
+		const module = renderSectionsGenerated( profile );
+		expect( module ).toContain( "layout: 'split'" );
+		expect( module ).toContain( 'bodyColumns: 2' );
+		expect( module ).toContain( "titleDivider: { width: '125px', height: '6px', background: '#ffcf0e', shadow: '0px 4px 8px 0px rgba(255,207,14,0.5)' }" );
+		expect( module ).toContain( "titleStyle: { size: '43px', weight: '500', lineHeight: '57px', letterSpacing: '-1.5px' }" );
+		expect( module ).toContain( "mediaShape: { width: '412px', height: '450px', background: 'linear-gradient(39deg, #ffcf0e 0%, #ffb70e 100%)' }" );
+		expect( module ).toContain( "mediaOffsets: [{ top: '-25%', left: '0px', shadow: '0px 3px 34px 0px rgba(0,0,0,0.16)' }, { top: '25%', right: '-110px' }]" );
+		expect( module ).toContain( "catalog: { title: 'fiori-digital-catalogue', source: 'https://jayainc.example/wp-content/uploads/catalog.pdf' }" );
+	} );
+
+	it( 'emits the harvested webfont for Google Fonts loading (125 §2)', () => {
+		const module = renderDesignGenerated( profile, { accent: '#0b5f4e' } );
+		expect( module ).toContain( 'export const webFonts' );
+		expect( module ).toContain( "family: 'rubik', weights: [ 300, 400, 500, 600, 700 ]" );
+	} );
+
+	it( 'skips system stacks in the webfont list', () => {
+		const systemDesign: ForgeDesign = {
+			...design,
+			typography: { display: 'system-ui', body: 'arial', scalePx: [ 16 ] },
+		};
+		const bare: SiteProfile = { ...profile, design: { ...systemDesign, sections: [] } };
+		const module = renderDesignGenerated( bare, { accent: '#0b5f4e' } );
+		expect( module ).toContain( 'export const webFonts' );
+		// The type declaration carries `family: string`; a VALUE emission
+		// would carry a quoted family literal.
+		expect( module ).not.toContain( "family: '" );
+	} );
+} );
+
 describe( 'renderContentConfig', () => {
 	it('emits env-driven site URL and both auth blocks', () => {
 		const out = renderContentConfig(PROFILE);

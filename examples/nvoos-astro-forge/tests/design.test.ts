@@ -194,6 +194,142 @@ describe( 'analyzeSections / resolveSectionTheme (Proposal 117 §2)', () => {
 		// One top-level column — below the two-column threshold, so no facts.
 		expect( sections[ 0 ]?.columns ).toBeUndefined();
 	} );
+
+	it( 'captures the split-hero layout + collage facts (125 §1 — jayainc about shape)', () => {
+		const html =
+			'<section id="about" class="elementor-section elementor-top-section elementor-element elementor-element-d5844b9">' +
+			'<div class="elementor-container">' +
+			'<div class="elementor-column elementor-col-50 elementor-element elementor-element-8f68b56">' +
+			'<div class="elementor-widget-wrap">' +
+			'<div class="elementor-element elementor-element-3b80cc6 elementor-widget elementor-widget-aux_modern_heading"><h2 class="aux-modern-heading-primary">At JAYAINC</h2><div class="aux-modern-heading-divider"></div></div>' +
+			'<section class="elementor-section elementor-inner-section elementor-element elementor-element-4239539"><div class="elementor-container">' +
+			'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap"><div class="elementor-element elementor-element-900f3fe elementor-widget elementor-widget-text-editor"><p>one</p></div></div></div>' +
+			'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap"><div class="elementor-element elementor-element-8e3c14c elementor-widget elementor-widget-text-editor"><p>two</p></div></div></div>' +
+			'</div></section>' +
+			'<div class="elementor-element elementor-element-ff6efc3 elementor-widget elementor-widget-aux_button"><a>Our Products</a></div>' +
+			'</div></div>' +
+			'<div class="elementor-column elementor-col-50 elementor-element elementor-element-a2d36f3">' +
+			'<div class="elementor-widget-wrap">' +
+			'<div class="elementor-element elementor-element-3dafd39 elementor-widget elementor-widget-aux_simple_shape"><div class="aux-the-shape"></div></div>' +
+			'<div class="elementor-element elementor-element-a82fe0f elementor-widget elementor-widget-aux_image"><div class="aux-media-image"><img src="ronan.jpg" alt="" /></div></div>' +
+			'<div class="elementor-element elementor-element-37ebddc elementor-widget elementor-widget-aux_image"><div class="aux-media-image"><img src="elevate.jpg" alt="" /></div></div>' +
+			'</div></div>' +
+			'</div>' +
+			'</section>';
+		const css = [
+			'.elementor-element-d5844b9 { background-image: linear-gradient(180deg, #e5e5e5 0%, #ffffff 100%); }',
+			'.elementor-element-3b80cc6 .aux-modern-heading-divider { height: 6px; width: 125px; background-color: #ffcf0e; box-shadow: 0px 4px 8px 0px rgba(255,207,14,0.5); }',
+			'.elementor-element-3b80cc6 .aux-modern-heading-primary { font-size: 43px; font-weight: 500; line-height: 57px; letter-spacing: -1.5px; }',
+			'.elementor-element-3dafd39 .aux-the-shape { width: 412px; height: 450px; background-image: linear-gradient(39deg, #ffcf0e 0%, #ffb70e 100%); }',
+			'.elementor-element-a82fe0f { position: absolute; top: -25%; left: 0px; }',
+			'.elementor-element-a82fe0f .aux-media-image { box-shadow: 0px 3px 34px 0px rgba(0,0,0,0.16); }',
+			'.elementor-element-37ebddc { position: absolute; top: 25%; right: -110px; }',
+		].join( '\n' );
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections[ 0 ] ).toMatchObject( {
+			id: 'd5844b9',
+			anchor: 'about',
+			layout: 'split',
+			bodyColumns: 2,
+			titleDivider: { width: '125px', height: '6px', background: '#ffcf0e', shadow: '0px 4px 8px 0px rgba(255,207,14,0.5)' },
+			titleStyle: { size: '43px', weight: '500', lineHeight: '57px', letterSpacing: '-1.5px' },
+			mediaShape: { width: '412px', height: '450px', background: 'linear-gradient(39deg, #ffcf0e 0%, #ffb70e 100%)' },
+			mediaOffsets: [
+				{ top: '-25%', left: '0px', shadow: '0px 3px 34px 0px rgba(0,0,0,0.16)' },
+				{ top: '25%', right: '-110px' },
+			],
+		} );
+	} );
+
+	it( 'prefers the theme container var over a conflicting sheet rule (125 §3)', () => {
+		// jayainc's sheets carry a 1900px .elementor-container rule that the
+		// live site never renders — the per-breakpoint --container-max-width
+		// declaration is the boxed truth (desktop first).
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-section-boxed elementor-element elementor-element-5e78df1">' +
+			'<div class="elementor-container"><h2>Products</h2></div>' +
+			'</section>';
+		const css = [
+			':root { --container-max-width: 1140px; }',
+			'.elementor-section.elementor-section-boxed > .elementor-container { max-width: 1900px; }',
+		].join( '\n' );
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections[ 0 ]?.measure ).toBe( '1140px' );
+	} );
+
+	it( 'never splits a photo-background hero (the band itself is the media)', () => {
+		// jayainc's hero: column 2 carries an EMPTY aux_image shell (a builder
+		// leftover) — the photo is the section background. Split must not fire.
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-a4ad586">' +
+			'<div class="elementor-container">' +
+			'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap">' +
+			'<div class="elementor-element elementor-element-9b25b26 elementor-widget elementor-widget-aux_modern_heading"><h2 class="aux-modern-heading-primary">Ship to South Florida</h2><div class="aux-modern-heading-divider"></div></div>' +
+			'</div></div>' +
+			'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap">' +
+			'<div class="elementor-element elementor-element-ae19d28 elementor-widget elementor-widget-aux_image"><div class="aux-media-image"></div></div>' +
+			'</div></div>' +
+			'</div>' +
+			'</section>';
+		const css = '.elementor-element-a4ad586 { background-image: url("https://jayainc.com/jaya-3-1.jpg"); }';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections[ 0 ]?.layout ).toBeUndefined();
+		expect( sections[ 0 ]?.bgImage ).toBe( 'https://jayainc.com/jaya-3-1.jpg' );
+	} );
+
+	it( 'adopts a nav anchor from an inner section (125 §6 — jayainc #products)', () => {
+		// The nav target can live on an INNER section inside the band — the
+		// rebuilt wrap must carry the id or the chrome nav dangles.
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-5e78df1">' +
+			'<div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">' +
+			'<section class="elementor-section elementor-inner-section" id="products"><div class="elementor-container"><div class="elementor-column"></div></div></section>' +
+			'</div></div></div>' +
+			'</section>';
+		const css = '.elementor-element-5e78df1 { background-color: #ffffff; }';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections[ 0 ]?.anchor ).toBe( 'products' );
+	} );
+
+	it( 'ignores internal auto ids when adopting anchors (df_/elementor prefixes)', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-fd63522">' +
+			'<div class="_df_book df-lite" id="df_2113"></div>' +
+			'</section>';
+		const css = '.elementor-element-fd63522 { background-color: #f6f6f6; }';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ css ] } );
+		expect( sections[ 0 ]?.anchor ).toBeUndefined();
+	} );
+
+	it( 'captures the flipbook catalog from the dflip shortcode (125 §4)', () => {
+		// The PDF source lives ONLY in the widget script — the sanitizer
+		// strips scripts, so the raw-homepage pass must carry it as a band
+		// fact (jayainc's FIORI catalog below the logos band).
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-fd63522">' +
+			'<div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">' +
+			'<div class="elementor-element elementor-element-c33f204 elementor-widget elementor-widget-shortcode"><div class="elementor-widget-container"><div class="elementor-shortcode">' +
+			'<div class="_df_book df-lite" id="df_2113" _slug="fiori-digital-catalogue" data-title="fiori-digital-catalogue" wpoptions="true"></div>' +
+			'<script class="df-shortcode-script" type="application/javascript">window.option_df_2113 = {"outline":[],"backgroundColor":"#F6F6F6","height":"auto","source":"https:\\/\\/jayainc.com\\/wp-content\\/uploads\\/2021\\/01\\/FIORI-CATALOG-2021.pdf"}; if(window.DFLIP){window.DFLIP.parseBooks();}</script>' +
+			'</div></div></div>' +
+			'</div></div></div>' +
+			'</section>';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ '.elementor-element-fd63522 { background-color: #f6f6f6; }' ] } );
+		expect( sections[ 0 ]?.catalog ).toEqual( {
+			title: 'fiori-digital-catalogue',
+			source: 'https://jayainc.com/wp-content/uploads/2021/01/FIORI-CATALOG-2021.pdf',
+		} );
+	} );
+
+	it( 'ignores malformed dflip payloads (no source, no catalog fact)', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-fd63522">' +
+			'<div class="_df_book df-lite" id="df_9"></div>' +
+			'<script class="df-shortcode-script">window.option_df_9 = {"broken";</script>' +
+			'</section>';
+		const sections = analyzeSections( { url: 'https://jayainc.com', html, css: [ '.elementor-element-fd63522 { background-color: #f6f6f6; }' ] } );
+		expect( sections[ 0 ]?.catalog ).toBeUndefined();
+	} );
 } );
 
 describe( 'analyzeBandContinuity / verifyBandFlow (124 §7)', () => {

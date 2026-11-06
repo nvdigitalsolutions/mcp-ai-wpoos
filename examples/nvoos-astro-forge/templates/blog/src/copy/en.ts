@@ -24,6 +24,9 @@ export const en = {
 		label: 'Theme',
 		forcedNote: 'Theme is set by the site policy.',
 	},
+	catalog: {
+		open: 'View catalogue',
+	},
 	search: {
 		placeholder: 'Search posts and products…',
 		searching: 'Searching…',

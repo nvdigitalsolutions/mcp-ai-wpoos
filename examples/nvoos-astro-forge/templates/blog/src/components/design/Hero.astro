@@ -2,31 +2,138 @@
 // Hero — the hero section component (Proposal 114 P4). Token-driven only;
 // no brand values. The page article already owns the h1, so the hero leads
 // with an h2.
+//
+// Split layout (125 §1): when the section's theme carries `layout: 'split'`
+// (the source's two-column hero band), the hero renders a copy column —
+// heading, underline divider, body paragraphs (in the source's sub-column
+// count), links — beside a media collage column: the source's backdrop
+// shape with the photos absolutely offset over it (jayainc's about band).
+// All values come from the section facts; nothing here hardcodes a brand.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
 
 interface Props {
 	section: SemanticSection;
+	theme?: SectionTheme;
 }
 
-const { section } = Astro.props;
+const { section, theme } = Astro.props;
 const { title, body, media, links } = section.slots;
+
+/** The heading typography facts ride CSS vars — the .ds-title clamp keeps
+ * its fluid floor so a 43px source heading never breaks a 360px viewport. */
+const titleVars = [
+	theme?.titleStyle?.size && `--ds-title-size:${theme.titleStyle.size}`,
+	theme?.titleStyle?.weight && `--ds-title-weight:${theme.titleStyle.weight}`,
+	theme?.titleStyle?.lineHeight && `--ds-title-lh:${theme.titleStyle.lineHeight}`,
+	theme?.titleStyle?.letterSpacing && `--ds-title-ls:${theme.titleStyle.letterSpacing}`,
+]
+	.filter(Boolean)
+	.join(';');
+
+const dividerStyle = theme?.titleDivider
+	? [
+			`width:${theme.titleDivider.width}`,
+			`height:${theme.titleDivider.height}`,
+			`background:${theme.titleDivider.background}`,
+			theme.titleDivider.shadow && `box-shadow:${theme.titleDivider.shadow}`,
+		]
+			.filter(Boolean)
+			.join(';')
+	: undefined;
+
+const shapeStyle = theme?.mediaShape
+	? [
+			`width:${theme.mediaShape.width}`,
+			`height:${theme.mediaShape.height}`,
+			`background:${theme.mediaShape.background}`,
+			theme.mediaShape.radius && `border-radius:${theme.mediaShape.radius}`,
+		]
+			.filter(Boolean)
+			.join(';')
+	: undefined;
+
+/** The collage photo offsets ride CSS vars so the mobile reset can switch
+ * the image back to static flow without fighting inline top/right values. */
+const offsetVars = ( index: number ): string | undefined => {
+	const offset = theme?.mediaOffsets?.[index];
+	if (!offset) {
+		return undefined;
+	}
+	return [
+		offset.top && `--ds-off-top:${offset.top}`,
+		offset.right && `--ds-off-right:${offset.right}`,
+		offset.bottom && `--ds-off-bottom:${offset.bottom}`,
+		offset.left && `--ds-off-left:${offset.left}`,
+		offset.shadow && `--ds-shadow:${offset.shadow}`,
+	]
+		.filter(Boolean)
+		.join(';');
+};
 ---
 
-<section class="ds-section ds-hero">
-	{title && <h2 class="ds-title">{title}</h2>}
-	{body?.map((paragraph) => <p class="ds-text">{paragraph}</p>)}
-	{media && media.length > 0 && (
-		<div class="ds-media-grid">
-			{media.map((image) => (image.src ? <img class="ds-media" src={image.src} alt={image.alt ?? ''} width="600" height="600" loading="lazy" /> : null))}
+{theme?.layout === 'split' ? (
+	<section class="ds-section ds-hero ds-hero-split">
+		<div class="ds-hero-copy">
+			{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+			{theme.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
+			{body && body.length > 0 && (
+				<div class="ds-hero-body" style={theme.bodyColumns ? `--ds-body-cols:${theme.bodyColumns}` : undefined}>
+					{body.map((paragraph) => (
+						<p class="ds-text">{paragraph}</p>
+					))}
+				</div>
+			)}
+			{links && links.length > 0 && (
+				<div class="ds-links">
+					{links.map((link) => (
+						<a class="ds-button" href={link.href ?? '#'}>
+							{link.text ?? 'Learn more'}
+						</a>
+					))}
+				</div>
+			)}
 		</div>
-	)}
-	{links && links.length > 0 && (
-		<div class="ds-links">
-			{links.map((link) => (
-				<a class="ds-button" href={link.href ?? '#'}>
-					{link.text ?? 'Learn more'}
-				</a>
-			))}
-		</div>
-	)}
-</section>
+		{media && media.length > 0 && (
+			<div class="ds-hero-collage">
+				{theme.mediaShape && <span class="ds-collage-shape" aria-hidden="true" style={shapeStyle} />}
+				{media.map(
+					(image, index) =>
+						image.src && (
+							<img
+								class="ds-media ds-collage-media"
+								src={image.src}
+								alt={image.alt ?? ''}
+								width="600"
+								height="600"
+								loading="lazy"
+								style={offsetVars(index)}
+							/>
+						)
+				)}
+			</div>
+		)}
+	</section>
+) : (
+	<section class="ds-section ds-hero">
+		{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+		{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
+		{body?.map((paragraph) => (
+			<p class="ds-text">{paragraph}</p>
+		))}
+		{media && media.length > 0 && (
+			<div class="ds-media-grid">
+				{media.map((image) => (image.src ? <img class="ds-media" src={image.src} alt={image.alt ?? ''} width="600" height="600" loading="lazy" /> : null))}
+			</div>
+		)}
+		{links && links.length > 0 && (
+			<div class="ds-links">
+				{links.map((link) => (
+					<a class="ds-button" href={link.href ?? '#'}>
+						{link.text ?? 'Learn more'}
+					</a>
+				))}
+			</div>
+		)}
+	</section>
+)}

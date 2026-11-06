@@ -919,6 +919,63 @@ headless-chromium computed styles against the live source.
   Re-scaffold (not manual CSS copies) after template edits — the
   `FORGE:tokens` rewrite only runs in the scaffold pipeline.
 
+## Proposal 125 — split hero, webfonts, catalog (2026-11-06)
+
+The live jayainc rebuild taught four rebuild gaps; all fixed in the
+analyzer + template + profile:
+
+- **Split hero + collage facts (`layout: 'split'`):** the source's
+  two-column hero bands (a copy column beside a media collage column)
+  rebuild as a split hero. `analyzeSections` classifies top-level columns
+  by widget roles (`COPY_WIDGET_RE`/`MEDIA_WIDGET_RE`), skips
+  photo-background heroes (the band IS the media — jayainc's hero carries
+  an EMPTY aux_image shell, so the media column must contain a real
+  img[src] or the shape), and captures `titleDivider`/`titleStyle`
+  (aux-modern-heading rules), `mediaShape` (aux-the-shape
+  width/height/gradient/radius), per-photo `mediaOffsets` (absolute
+  top/right/bottom/left + box-shadow — Elementor scopes these rules to
+  the WIDGET id, never the section id, so the widget ids are collected
+  from the DOM first), and `bodyColumns` (the inner-section column count
+  — the columns nest under the inner CONTAINER, not the inner section).
+  Hero.astro renders the split: title facts ride CSS vars (the clamp
+  floor survives on mobile), offsets ride `--ds-off-*` vars so the
+  mobile reset can return the photos to static flow.
+- **Webfonts (125 §2):** the rebuild never loaded the harvested family —
+  jayainc rendered in Segoe UI instead of Rubik. `renderDesignGenerated`
+  emits `webFonts` (family + weights, system stacks filtered);
+  Base.astro preconnects + links Google Fonts.
+- **Container measure truth (125 §3):** the theme's per-breakpoint
+  `--container-max-width` declaration (jayainc: 1140/1024/767) beats any
+  `.elementor-container` sheet rule — jayainc's sheets carry a 1900px
+  rule the live site never renders.
+- **Flipbook catalog (125 §4):** the dflip shortcode's PDF source lives
+  ONLY in its script; the sanitizer strips scripts, so the band rendered
+  EMPTY. `analyzeSections` captures the `_df_book` node + the
+  `df-shortcode-script` payload (`window.option_df_N = {...}`) as
+  `catalog: { title, source }`; the renderer builds a centered
+  open-catalogue CTA (the slug-ish data-title is backend id, NOT
+  rendered copy; the source's 0px band padding is operator-pinned to the
+  100px rhythm in the profile).
+- **Gotchas (each cost a fix 2026-11-06):** htmlparser2 v12 emits
+  script/style nodes with type 'script'/'style', NOT 'tag' — match on
+  `child.name`; the hero parallax `from { translate: 0 +24px }` opened a
+  24px WHITE GAP under the header at load (the cover range clamps
+  pre-scroll progress to the from state) — the hero keyframes are now
+  neutral-at-load, lag-only (`from 0 → to +2×range`); the band never
+  translates against flush neighbors, the media-carrier keyframes keep
+  the ±range. The theme toggle hardcoded `var(--forge-ink)` —
+  dark-on-dark on themed headers; it now reads
+  `var(--forge-header-ink, var(--forge-ink))`. **Verify against the LIVE
+  deploy, never file://** — root-absolute stylesheet hrefs don't resolve
+  over file:// and every computed style reads as unstyled. **The e2e
+  fixture section ids must be hex** — the classifier's `elementorId`
+  extracts only `^elementor-element-([0-9a-f]{4,})$`; a human-readable id
+  (`elementor-element-hero-split-fixture`) silently loses the whole facts
+  chain (no `data-section-id`, `themeFor` misses, plain-hero fallback with
+  no divider/collage). Real Elementor ids are hex — name fixture sections
+  `elementor-element-<hex>` (e.g. `a1b2c3d`) and key the profile's
+  `design.sections` entries to the same id.
+
 ## Phase roadmap (096 §5)
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,

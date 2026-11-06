@@ -78,6 +78,52 @@ const PROFILE: SiteProfile = {
 	frontPage: 'about',
 	// tokens_apply: the 098 design language lands over the --forge-* defaults.
 	tokens: { accent: '#0b5f4e' },
+	// The design block (125): the fixture's About page carries a split-hero
+	// section whose facts ride design.sections — the rebuilt home must
+	// render the copy/divider/collage layout, and the harvested webfont
+	// (rubik) must load from Google Fonts.
+	design: {
+		mode: 'rebuild',
+		source: { url: 'https://fixture.test', analyzedAt: '2026-11-06T00:00:00.000Z' },
+		concept: 'hermetic split hero',
+		palette: { roles: { accent: '#0b5f4e' }, unassigned: [], confidence: { accent: 'high' } },
+		typography: { display: 'rubik', body: 'rubik', bodyWeight: '300', scalePx: [ 8, 13, 29, 48 ] },
+		spacing: { scalePx: [ 4, 10, 17, 30, 70 ] },
+		radii: { valuesPx: [ 4 ] },
+		shadows: { count: 0 },
+		components: {},
+		modes: { dark: 'auto', contrast: 'auto' },
+		adaptation: {
+			keep: [],
+			replace: [],
+			remix: [],
+			licensingNote: '',
+			attribution: [],
+		},
+		sections: [
+			{
+				id: 'a1b2c3d',
+				anchor: 'about',
+				bgGradient: 'linear-gradient(180deg, #e5e5e5 0%, #ffffff 100%)',
+				measure: '1140px',
+				paddingX: '30px',
+				layout: 'split',
+				bodyColumns: 2,
+				titleDivider: { width: '125px', height: '6px', background: '#0b5f4e', shadow: '0px 4px 8px 0px rgba(11,95,78,0.5)' },
+				titleStyle: { size: '43px', weight: '500', lineHeight: '57px', letterSpacing: '-1.5px' },
+				mediaShape: { width: '412px', height: '450px', background: 'linear-gradient(39deg, #0b5f4e 0%, #0a8a71 100%)' },
+				mediaOffsets: [
+					{ top: '-25%', left: '0px', shadow: '0px 3px 34px 0px rgba(0,0,0,0.16)' },
+					{ top: '25%', right: '-110px' },
+				],
+			},
+			{
+				id: 'b4c5d6e',
+				bgColor: '#f6f6f6',
+				catalog: { title: 'fiori-digital-catalogue', source: 'https://fixture.test/wp-content/uploads/catalog.pdf' },
+			},
+		],
+	},
 	// The form bridge (114 §3.9) — the default endpoint derives from the
 	// profile URL; the rebuilt forms POST there, never to WP directly.
 	forms: {},
@@ -168,9 +214,9 @@ describe('forge e2e — scaffold → check → build', () => {
 describe('forge e2e — emitted site', () => {
 	it( 'renders posts, the front page, sitemap and robots', async () => {
 		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
-		// The About page is the static front page — its content renders at `/`,
-		// with the site name in the chrome.
-		expect(index).toContain('Fixture Wares is the hermetic test storefront.');
+		// The About page is the static front page — its rebuilt sections
+		// render at `/`, with the site name in the chrome.
+		expect(index).toContain('At Fixture Wares we serve the fjords.');
 		expect(index).toContain('<title>Fixture Wares</title>');
 		// ...and /about/ must not exist as a second URL for the same content.
 		await expect(readFile(path.join(workDir, 'dist', 'about', 'index.html'), 'utf8')).rejects.toThrow();
@@ -300,6 +346,22 @@ describe('forge e2e — emitted site', () => {
 		} else {
 			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);
 		}
+		// The split-hero rebuild (125 §1): the fixture's About page carries a
+		// copy+media-collage section whose facts ride the profile's
+		// design.sections — the rebuilt home must render the split layout,
+		// the heading divider, and the backdrop shape.
+		expect(index).toContain('ds-hero-split');
+		expect(index).toContain('ds-title-divider');
+		expect(index).toContain('ds-collage-shape');
+		expect(index).toContain('--ds-off-top:-25%');
+		// The flipbook catalog (125 §4) — the PDF source dies with its
+		// script; the section fact rebuilds it as a centered open-CTA (the
+		// slug-ish data-title is backend id, never rendered copy).
+		expect(index).toContain('ds-catalog');
+		expect(index).toContain('https://fixture.test/wp-content/uploads/catalog.pdf');
+		expect(index).not.toContain('fiori-digital-catalogue');
+		// The harvested webfont loads (125 §2) — rubik from Google Fonts.
+		expect(index).toContain('fonts.googleapis.com/css2?family=rubik');
 		expect(index).toContain('type="application/rss+xml"');
 
 		const feed = await readFile(path.join(workDir, 'dist', 'feed.xml'), 'utf8');
@@ -676,7 +738,7 @@ describe('forge e2e — minimal preset scaffold (Proposal 104 §4.3)', () => {
 			await expect(readFile(path.join(minimalDir, 'dist', 'search', 'index.html'), 'utf8')).rejects.toThrow();
 			await expect(readFile(path.join(minimalDir, 'dist', 'products', 'index.html'), 'utf8')).rejects.toThrow();
 			const index = await readFile(path.join(minimalDir, 'dist', 'index.html'), 'utf8');
-			expect(index).toContain('Fixture Wares is the hermetic test storefront.');
+			expect(index).toContain('At Fixture Wares we serve the fjords.');
 			expect(index).not.toContain('href="/search/"');
 		} finally {
 			await rm(minimalDir, { recursive: true, force: true });

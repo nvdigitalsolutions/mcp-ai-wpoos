@@ -21,6 +21,7 @@ import { classifyHtml } from '../../forge/semantic.ts';
 import { sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
 import { behaviors } from '../../lib/behaviors.generated.ts';
 import Cta from './Cta.astro';
+import Catalog from './Catalog.astro';
 import FeatureGrid from './FeatureGrid.astro';
 import Form from './Form.astro';
 import Gallery from './Gallery.astro';
@@ -158,16 +159,22 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 			const behavior = behaviorFor(section);
 			return (
 				<div data-section-id={section.id ?? undefined} id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme), parallaxStyle(behavior)].filter(Boolean).join(';')}>
-					{section.kind === 'hero' && <Hero section={section} />}
-					{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} />}
-					{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}
-					{section.kind === 'testimonial' && <Testimonial section={section} />}
-					{section.kind === 'logo-cloud' && <LogoCloud section={section} />}
-					{section.kind === 'cta' && <Cta section={section} />}
-					{section.kind === 'gallery' && <Gallery section={section} />}
-					{section.kind === 'form' && <Form section={section} />}
-					{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} />)}
-					{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
+					{theme?.catalog ? (
+						<Catalog theme={theme} />
+					) : (
+						<>
+							{section.kind === 'hero' && <Hero section={section} theme={theme} />}
+							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} />}
+							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}
+							{section.kind === 'testimonial' && <Testimonial section={section} />}
+							{section.kind === 'logo-cloud' && <LogoCloud section={section} />}
+							{section.kind === 'cta' && <Cta section={section} />}
+							{section.kind === 'gallery' && <Gallery section={section} />}
+							{section.kind === 'form' && <Form section={section} />}
+							{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
+							{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
+						</>
+					)}
 				</div>
 			);
 		})}
