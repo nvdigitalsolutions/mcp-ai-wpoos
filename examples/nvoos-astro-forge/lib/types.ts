@@ -247,6 +247,12 @@ export interface ForgeChrome {
 	footerBlocks?: Array<{ title?: string; items: string[] }>;
 	/** The copyright line. */
 	copyright?: string;
+	/** The site favicon (the first <link rel="icon"> href, absolute). */
+	favicon?: string;
+	/** The footer's brand logo (the footer-widget media image). */
+	footerLogo?: { src?: string; alt?: string };
+	/** The footer background color (resolved from the footer-widget CSS). */
+	footerBg?: string;
 }
 
 /**
@@ -299,6 +305,8 @@ export interface ForgeDesign {
 	chrome?: ForgeChrome;
 	/** The scroll-behavior pass (121) — omitted when unavailable. */
 	behavior?: ScrollBehaviorPass;
+	/** The CTA metrics (121 §5) — the source button's padding + radius. */
+	ctaStyle?: { padding?: string; radius?: string };
 	adaptation: {
 		keep: string[];
 		replace: string[];

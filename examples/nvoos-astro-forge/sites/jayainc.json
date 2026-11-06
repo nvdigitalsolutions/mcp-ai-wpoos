@@ -6,7 +6,10 @@
 	"tokens": {
 		"ink": "#242424",
 		"muted": "#505050",
-		"line-strong": "#666666"
+		"line-strong": "#666666",
+		"measure": "min(1600px, 100%)",
+		"cta-pad": "16px 50px",
+		"cta-radius": "999px"
 	},
 	"collections": [
 		{
@@ -58,7 +61,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://jayainc.com",
-			"analyzedAt": "2026-11-06T04:18:26.984Z"
+			"analyzedAt": "2026-11-06T05:33:27.154Z"
 		},
 		"concept": "cool accent over light neutrals, rubik display / roboto body, compact spacing rhythm.",
 		"palette": {
@@ -70,6 +73,7 @@
 				"custom-62cec3ab": "#23a455",
 				"custom-6dfcb2cd": "#000000",
 				"custom-d80c1ff": "#ffffff",
+				"cta": "linear-gradient(98deg, #ffcf0e 0%, #ffb70e 100%)",
 				"surface": "#ffffff",
 				"field.border": "#eaeaea"
 			},
@@ -95,6 +99,7 @@
 				"custom-62cec3ab": "high",
 				"custom-6dfcb2cd": "high",
 				"custom-d80c1ff": "high",
+				"cta": "high",
 				"surface": "medium",
 				"field.border": "medium"
 			}
@@ -243,6 +248,11 @@
 				"bg": "linear-gradient(98deg, #ffcf0e 0%, #ffb70e 100%)",
 				"ink": "#ffffff"
 			},
+			"footerLogo": {
+				"src": "https://jayainc.com/wp-content/uploads/2018/09/JAYAINC-LOGO-V1-wht-v2.png",
+				"alt": ""
+			},
+			"footerBg": "#f3f3f3",
 			"footerBlocks": [
 				{
 					"items": [
@@ -265,7 +275,8 @@
 					]
 				}
 			],
-			"copyright": "© 2026 JAYAINC. powered by NV Digital Solutions"
+			"copyright": "© 2026 JAYAINC. powered by NV Digital Solutions",
+			"favicon": "https://jayainc.com/wp-content/uploads/2018/09/cropped-jaya-inc-icon-32x32.png"
 		},
 		"behavior": {
 			"headerSticky": true,
@@ -416,6 +427,10 @@
 					"effect": "fade-right"
 				}
 			]
+		},
+		"ctaStyle": {
+			"padding": "12px 23px",
+			"radius": "100em"
 		},
 		"adaptation": {
 			"keep": [

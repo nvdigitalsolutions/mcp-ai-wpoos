@@ -360,7 +360,9 @@ const DEFAULT_TOKENS: Record<string, string> = {
 	space: '1rem',
 	'space-sm': '0.5rem',
 	'space-lg': '2rem',
-	measure: '72ch',
+	// The site container width — a SITE measure, not a prose measure
+	// (72ch ≈ 470px at 13px body text squeezed the rebuilt bands).
+	measure: '75rem',
 	'scale-h1': '2.25rem',
 	'scale-h2': '1.75rem',
 	'scale-h3': '1.25rem',
@@ -539,8 +541,10 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbg?: string;',
 		'\t/** The hero photo (hero sections only). */',
 		'\tbgImage?: string;',
-		'\t/** The overlay tint over the hero photo. */',
-		'\toverlay?: string;',
+		'	/** The overlay tint over the hero photo. */',
+		'	overlay?: string;',
+		'	/** The source band padding (the declared padding fact). */',
+		'	padding?: string;',
 		'}',
 		'',
 		'export const sections: SectionTheme[] = [',
@@ -572,6 +576,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 			if ( bg && bg !== 'transparent' ) {
 				entry.push( `bg: ${ tsString( bg ) }` );
 			}
+		}
+		// The source band's declared padding (jayainc: 100px bands vs the
+		// flush content-tight bands) — the wrap applies it inline.
+		if ( section.padding ) {
+			entry.push( `padding: ${ tsString( section.padding ) }` );
 		}
 		body.push( `\t{ ${ entry.join( ', ' ) } },` );
 	}
@@ -605,6 +614,12 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\tcall?: { label: string; href: string; bg?: string; ink?: string };',
 		'\tfooterBlocks?: Array<{ title?: string; items: string[] }>;',
 		'\tcopyright?: string;',
+		'\t/** The site favicon (the first <link rel="icon"> href, absolute). */',
+		'\tfavicon?: string;',
+		'\t/** The footer brand logo (the footer-widget media image). */',
+		'\tfooterLogo?: { src?: string; alt?: string };',
+		'\t/** The footer background color (resolved from the footer-widget CSS). */',
+		'\tfooterBg?: string;',
 		'}',
 		'',
 	];
@@ -657,6 +672,19 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	}
 	if ( chrome.copyright ) {
 		entry.push( `copyright: ${ tsString( chrome.copyright ) }` );
+	}
+	if ( chrome.favicon ) {
+		entry.push( `favicon: ${ tsString( chrome.favicon ) }` );
+	}
+	if ( chrome.footerLogo?.src ) {
+		const logo: string[] = [ `src: ${ tsString( chrome.footerLogo.src ) }` ];
+		if ( chrome.footerLogo.alt ) {
+			logo.push( `alt: ${ tsString( chrome.footerLogo.alt ) }` );
+		}
+		entry.push( `footerLogo: { ${ logo.join( ', ' ) } }` );
+	}
+	if ( chrome.footerBg ) {
+		entry.push( `footerBg: ${ tsString( chrome.footerBg ) }` );
 	}
 	return [ ...header, `export const chrome: ForgeChrome | undefined = { ${ entry.join( ', ' ) } };`, '' ].join( '\n' );
 }

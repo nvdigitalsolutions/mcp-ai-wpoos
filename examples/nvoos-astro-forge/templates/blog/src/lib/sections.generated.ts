@@ -19,6 +19,8 @@ export interface SectionTheme {
 	bgImage?: string;
 	/** The overlay tint over the hero photo. */
 	overlay?: string;
+	/** The source band padding (the declared padding fact). */
+	padding?: string;
 }
 
 export const sections: SectionTheme[] = [];

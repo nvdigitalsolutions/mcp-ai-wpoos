@@ -13,6 +13,13 @@
 	--forge-line: #e4e4e2;
 	--forge-accent: #0f6b4f;
 	--forge-accent-ink: #ffffff;
+	/* The CTA fill (121 §5) — the source's actual button background; falls
+	 * back to the accent when the analysis found no distinct button fill. */
+	--forge-cta: var(--forge-accent);
+	--forge-cta-ink: var(--forge-accent-ink);
+	/* The source button shape (padding + radius) — harvested per-site. */
+	--forge-cta-pad: var(--forge-space-sm) var(--forge-space);
+	--forge-cta-radius: var(--forge-radius-sm);
 	--forge-radius: 8px;
 	--forge-radius-sm: 4px;
 	--forge-radius-lg: 12px;
@@ -21,7 +28,11 @@
 	--forge-space: 1rem;
 	--forge-space-sm: 0.5rem;
 	--forge-space-lg: 2rem;
-	--forge-measure: 72ch;
+	/* The site container width — a SITE measure, not a prose measure
+	 * (72ch ≈ 470px at 13px body text squeezed the rebuilt bands into a
+	 * narrow column inside full-width backgrounds). Sites override via a
+	 * profile `tokens.measure`. */
+	--forge-measure: 75rem;
 	--forge-scale-h1: 2.25rem;
 	--forge-scale-h2: 1.75rem;
 	--forge-scale-h3: 1.25rem;
@@ -414,9 +425,10 @@ a {
 .ds-section {
 	margin: 0;
 	/* The internal band rhythm (the source keeps its rhythm in inner
-	 * columns; the rebuilt components carry it themselves). */
-	padding-top: var(--forge-space-4, 2rem);
-	padding-bottom: var(--forge-space-4, 2rem);
+	 * columns; per-band padding facts override via the wrap's inline
+	 * style). */
+	padding-top: var(--forge-space-3, 1.25rem);
+	padding-bottom: var(--forge-space-3, 1.25rem);
 }
 
 /* Full-bleed bands (120 §5): the source band backgrounds span the
@@ -427,10 +439,20 @@ a {
 .ds-section-wrap--dark,
 .ds-section-wrap--alt,
 .ds-section-wrap--light {
+	/* Full-bleed: 100vw + self-referential centering (margin-left 50% of
+	 * the CONTAINING block, transform -50% of the ELEMENT) — the math
+	 * cancels the scrollbar so the band never sits 7px left of the
+	 * viewport. The motion keyframes below use the independent
+	 * `translate`/`scale` properties so they COMPOSE with this transform
+	 * instead of replacing it. */
 	width: 100vw;
-	margin-left: calc(50% - 50vw);
-	padding-top: var(--forge-space-5, 4rem);
-	padding-bottom: var(--forge-space-5, 4rem);
+	margin-left: 50%;
+	transform: translateX(-50%);
+	/* The source bands that declare no padding are content-tight — a
+	 * modest default beats the old 70px (the padded bands carry their
+	 * own inline padding fact). */
+	padding-top: var(--forge-space-4, 2rem);
+	padding-bottom: var(--forge-space-4, 2rem);
 }
 
 .ds-section-wrap--hero .ds-section,
@@ -486,11 +508,13 @@ a {
 
 .ds-button {
 	display: inline-block;
-	padding: var(--forge-space-sm) var(--forge-space);
-	background: var(--forge-accent);
-	color: var(--forge-accent-ink);
+	/* The source's button shape (padding + radius) and fill — harvested
+	 * per-site (jayainc: the 14px 43px pill). */
+	padding: var(--forge-cta-pad, var(--forge-space-sm) var(--forge-space));
+	background: var(--forge-cta, var(--forge-accent));
+	color: var(--forge-cta-ink, var(--forge-accent-ink));
 	text-decoration: none;
-	border-radius: var(--forge-radius-sm);
+	border-radius: var(--forge-cta-radius, var(--forge-radius-sm));
 	font-weight: 600;
 }
 
@@ -688,11 +712,11 @@ a {
 }
 
 @keyframes ds-fade { from { opacity: 0; } }
-@keyframes ds-fade-up { from { opacity: 0; transform: translateY(40px); } }
-@keyframes ds-fade-down { from { opacity: 0; transform: translateY(-40px); } }
-@keyframes ds-fade-left { from { opacity: 0; transform: translateX(-48px); } }
-@keyframes ds-fade-right { from { opacity: 0; transform: translateX(48px); } }
-@keyframes ds-scale-up { from { opacity: 0; transform: scale(0.94); } }
+@keyframes ds-fade-up { from { opacity: 0; translate: 0 40px; } }
+@keyframes ds-fade-down { from { opacity: 0; translate: 0 -40px; } }
+@keyframes ds-fade-left { from { opacity: 0; translate: -48px 0; } }
+@keyframes ds-fade-right { from { opacity: 0; translate: 48px 0; } }
+@keyframes ds-scale-up { from { opacity: 0; scale: 0.94; } }
 @keyframes ds-blur { from { opacity: 0; filter: blur(8px); } }
 
 /* Parallax: scroll() timelines tie the band to the page scroll; the range
@@ -708,8 +732,8 @@ a {
 }
 
 @keyframes ds-parallax {
-	from { transform: translateY(var(--ds-parallax-range, 24px)); }
-	to { transform: translateY(calc(var(--ds-parallax-range, 24px) * -1)); }
+	from { translate: 0 var(--ds-parallax-range, 24px); }
+	to { translate: 0 calc(var(--ds-parallax-range, 24px) * -1); }
 }
 
 /* The hero/about media: all images, side by side (the source two-up). */
@@ -734,6 +758,34 @@ a {
 	background: var(--forge-accent);
 	color: var(--forge-accent-ink);
 	font-weight: 700;
+}
+
+/* The icon-list split (121 §6): a standalone image beside the content —
+ * jayainc's "Why Choose Us" section pairs a portrait photo with the list. */
+.ds-icon-split {
+	display: grid;
+	grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+	gap: var(--forge-space-lg);
+	align-items: start;
+}
+
+.ds-icon-media img {
+	width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius);
+}
+
+@media (max-width: 767px) {
+	.ds-icon-split {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* The footer brand logo (the footer-widget media image). */
+.site-footer-logo img {
+	width: auto;
+	height: 3rem;
+	margin-bottom: var(--forge-space);
 }
 
 .ds-lede {
