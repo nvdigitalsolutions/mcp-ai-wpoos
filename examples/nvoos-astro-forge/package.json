@@ -68,7 +68,9 @@
 		"@types/node": "^26.6.6",
 		"@types/sanitize-html": "^2.16.2",
 		"astro": "^7.4.4",
+		"axe-core": "^4.14.0",
 		"esbuild": "^0.28.0",
+		"playwright": "^1.65.0",
 		"schema-dts": "^2.1.0",
 		"typescript": "^6.0.3",
 		"vitest": "^5.0.5"

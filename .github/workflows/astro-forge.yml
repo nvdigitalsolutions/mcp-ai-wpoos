@@ -39,6 +39,12 @@ jobs:
         run: npm ci --no-audit --no-fund
         working-directory: examples/nvoos-astro-forge
 
+      # The axe e2e gate (126 §a11y) runs in real Chromium — install the
+      # browser (with system deps) before the e2e step.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: examples/nvoos-astro-forge
+
       - name: Typecheck
         run: npm run typecheck
         working-directory: examples/nvoos-astro-forge

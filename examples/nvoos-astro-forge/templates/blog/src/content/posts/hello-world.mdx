@@ -5,6 +5,9 @@ date: 2026-11-03
 draft: false
 ---
 
+import FaqAccordion from '../../components/blocks/FaqAccordion.astro';
+import Tabs from '../../components/blocks/Tabs.astro';
+
 This post lives in **src/content/posts/** and merges under the WordPress
 collection (Proposal 106 hybrid local): WordPress entries win on collisions,
 local entries fill the gaps, and a scaffolded site builds and renders even
@@ -13,3 +16,11 @@ with no WordPress connection.
 - Point `WP_SITE_URL` at a live WordPress to see its posts here too.
 - Add `draft: true` to keep a local post out of the build.
 - Frontmatter contract: `title`, `description`, `date`, `draft`.
+
+The content blocks (Proposal 126 §blocks) are available to local MDX
+content — the FAQ accordion and the tab set below are the static-site
+accessible answers (native disclosure semantics, no JavaScript):
+
+<FaqAccordion heading="Shipping" items={[{ question: 'Where do you ship?', answer: 'Worldwide, from the fjords.' }, { question: 'How fast?', answer: 'Fast enough for merino.' }]} />
+
+<Tabs heading="Care" items={[{ title: 'Wash', content: 'Cold wool cycle, flat dry.' }, { title: 'Store', content: 'Folded, cedar, away from light.' }]} />

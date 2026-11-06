@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -141,6 +142,37 @@ describe('scaffold — production blog template', () => {
 		// Manifest carries the site identity for the template chrome.
 		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
 		expect(manifest.name).toBe('Example Store');
+
+		// The drift manifest (126 §drift) hashes every generated file.
+		const generated = JSON.parse(await readFile(path.join(target, 'nvoos.generated.json'), 'utf8'));
+		expect(Object.keys(generated.files)).toEqual([
+			'src/styles/global.css',
+			'src/lib/design.generated.ts',
+			'src/lib/sections.generated.ts',
+			'src/lib/chrome.generated.ts',
+			'src/lib/behaviors.generated.ts',
+			'src/lib/vocabulary.generated.ts',
+			'public/tokens.dtcg.json',
+		]);
+	});
+
+	it('check-generated passes on a clean scaffold and fails on drift (126 §drift)', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'site');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog' });
+
+		const run = () =>
+			spawnSync(process.execPath, [path.join(target, 'scripts', 'check-generated.mjs')], { encoding: 'utf8' });
+		expect(run().status).toBe(0);
+
+		// Tamper with a generated file — the gate must fail, then pass again
+		// after the file is restored.
+		const generated = path.join(target, 'src', 'lib', 'design.generated.ts');
+		const original = await readFile(generated, 'utf8');
+		await writeFile(generated, original + '\n// hand edit\n', 'utf8');
+		expect(run().status).toBe(1);
+		await writeFile(generated, original, 'utf8');
+		expect(run().status).toBe(0);
 	});
 
 	it('keeps the storefront pages when the profile declares products', async () => {
