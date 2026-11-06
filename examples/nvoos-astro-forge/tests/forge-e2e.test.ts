@@ -343,6 +343,12 @@ describe('forge e2e — emitted site', () => {
 			expect(css).not.toMatch(/animation:[^;}]*view\(\)/);
 			expect(css).toMatch(/grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\(\s*8rem\s*,\s*1fr\s*\)\s*\)/);
 			expect(css).toMatch(/\.ds-logos\s+img\s*\{[^}]*height:\s*auto/);
+			// The mobile chrome (125 §8): the header must wrap on phones
+			// (one flex row clipped the right side off against the body's
+			// overflow guard) and the collage offsets must reset to static
+			// flow below the measured band — mid-photo viewport clipping.
+			expect(css).toMatch(/@media[^{]*\{\s*\.site-header\s*\{[^}]*flex-wrap:\s*wrap/);
+			expect(css).toMatch(/\.ds-collage-media\s*\{[^}]*position:\s*static/);
 		} else {
 			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);
 		}
