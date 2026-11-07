@@ -60,6 +60,8 @@ export interface SectionTheme {
 	titleAlign?: 'center';
 	/** The media collage backdrop shape (width/height/background/radius). */
 	mediaShape?: { width: string; height: string; background: string; radius?: string };
+	/** The card box model of a media grid band (measured — see lib/types). */
+	cardStyle?: { gap?: string; padding?: string; textPadding?: string };
 	/** Per-image collage offsets (absolute positioning against the collage box). */
 	mediaOffsets?: Array<{ top?: string; right?: string; bottom?: string; left?: string; shadow?: string }>;
 	/** The body paragraphs render in N columns (the source's sub-column split). */

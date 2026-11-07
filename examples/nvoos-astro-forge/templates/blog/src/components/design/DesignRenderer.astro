@@ -196,6 +196,20 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 			parts.push( `margin-bottom:${ marginBottom }` );
 		}
 	}
+	// The card box model (measured per band): Elementor cards are theme
+	// components, so gap/padding come from measurement rather than any
+	// band-scoped rule. Absent → the template's own card defaults.
+	if ( theme.cardStyle ) {
+		if ( theme.cardStyle.gap ) {
+			parts.push( `--ds-card-gap:${ theme.cardStyle.gap }` );
+		}
+		if ( theme.cardStyle.padding ) {
+			parts.push( `--ds-card-pad:${ theme.cardStyle.padding }` );
+		}
+		if ( theme.cardStyle.textPadding ) {
+			parts.push( `--ds-card-text-pad:${ theme.cardStyle.textPadding }` );
+		}
+	}
 	if ( theme.zIndex ) {
 		parts.push( `z-index:${ theme.zIndex }` );
 	}
