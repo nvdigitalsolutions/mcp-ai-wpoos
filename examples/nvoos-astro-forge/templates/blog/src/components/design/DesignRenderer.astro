@@ -164,7 +164,7 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 					) : (
 						<>
 							{section.kind === 'hero' && <Hero section={section} theme={theme} />}
-							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} />}
+							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} theme={theme} />}
 							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}
 							{section.kind === 'testimonial' && <Testimonial section={section} />}
 							{section.kind === 'logo-cloud' && <LogoCloud section={section} />}

@@ -264,6 +264,7 @@
 				"padding": "100px 0px 100px 0px",
 				"measure": "1140px",
 				"paddingX": "30px",
+				"marginTop": "170px",
 				"titleAlign": "center",
 				"titleStyle": {
 					"size": "43px",

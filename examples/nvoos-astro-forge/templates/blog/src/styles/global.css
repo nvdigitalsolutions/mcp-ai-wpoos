@@ -901,6 +901,8 @@ a {
 .ds-title-divider {
 	display: block;
 	margin-top: var(--forge-space-2, 0.625rem);
+	/* A fixed-width block child centers inside the grid/centered band. */
+	margin-inline: auto;
 }
 
 .ds-hero-body {
