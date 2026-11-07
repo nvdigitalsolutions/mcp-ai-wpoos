@@ -398,6 +398,16 @@ describe('forge e2e — emitted site', () => {
 			// span the full measure on desktop (jayainc's 72px headline sits
 			// in a ~66% column; the var is the per-site seam).
 			expect(css).toMatch(/\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*max-width:\s*var\(--ds-hero-title-max/);
+			// The title-to-grid rhythm (125 §8): the card grid opens with
+			// breathing room below the band heading.
+			expect(css).toMatch(/\.ds-grid\s*\{[^}]*margin-top:\s*var\(--forge-space\)/);
+			// The mobile chrome (125 §8 — recovered after the #7493 squash
+			// dropped the commit): the header must wrap on phones (one flex
+			// row clipped the right side off against the body's overflow
+			// guard) and the collage offsets must reset to static flow below
+			// the measured band.
+			expect(css).toMatch(/@media[^{]*\{\s*\.site-header\s*\{[^}]*flex-wrap:\s*wrap/);
+			expect(css).toMatch(/\.ds-collage-media\s*\{[^}]*position:\s*static/);
 		} else {
 			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);
 		}
@@ -492,6 +502,9 @@ describe('forge e2e — emitted site', () => {
 		expect(detail).toContain('Ship to the fjords');
 		expect(detail).toContain('Read More');
 		expect(detail).toContain('Linen');
+		// The rebuilt feature grid serves slot-aware sizes (126 §image): a
+		// 4-up card is ~25vw on desktop, never the 100vw default.
+		expect(detail).toContain('sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw"');
 		// …and the builder scaffolding classes are gone from the output (the
 		// semantic model replaced them — the bloat metric).
 		expect(detail).not.toContain('elementor-section');

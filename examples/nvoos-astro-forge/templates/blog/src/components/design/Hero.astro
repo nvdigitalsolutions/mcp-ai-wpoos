@@ -124,7 +124,7 @@ const offsetVars = ( index: number ): string | undefined => {
 		))}
 		{media && media.length > 0 && (
 			<div class="ds-media-grid">
-				{media.map((image, index) => (image.src ? <SmartImage class="ds-media" src={image.src} alt={image.alt ?? ''} eager={index === 0} /> : null))}
+				{media.map((image, index) => (image.src ? <SmartImage class="ds-media" src={image.src} alt={image.alt ?? ''} sizes="(min-width: 768px) 50vw, 100vw" eager={index === 0} /> : null))}
 			</div>
 		)}
 		{links && links.length > 0 && (

@@ -266,6 +266,34 @@ a {
 	white-space: nowrap;
 }
 
+/* Mobile chrome (125 §8): the header is a single flex row (logo block,
+ * five nav links, call button, toggle) — it cannot fit a phone viewport,
+ * and the body's horizontal clip guard cut the right side off. The nav
+ * wraps onto its own full-width row; the tagline shrinks, then hides on
+ * the smallest screens to free the row. */
+@media (width<=767px) {
+	.site-header {
+		flex-wrap: wrap;
+		row-gap: 0.5rem;
+	}
+	.site-header nav {
+		order: 3;
+		flex-basis: 100%;
+		flex-wrap: wrap;
+		justify-content: center;
+		row-gap: 0.25rem;
+	}
+	.brand-tagline {
+		font-size: 0.75rem;
+	}
+}
+
+@media (width<=480px) {
+	.brand-tagline {
+		display: none;
+	}
+}
+
 .site-footer-blocks {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
@@ -627,9 +655,14 @@ a {
 	gap: var(--forge-space-sm);
 }
 
-.ds-grid {
+	.ds-grid {
 	display: grid;
 	gap: var(--forge-space);
+	/* The title-to-grid rhythm (125 §8): the source heading sits above
+	 * the cards with breathing room; the zero-margin title otherwise
+	 * touches the first row (jayainc's "Let our Expert & Trusted
+	 * Team…" band). Adjacent lede margins collapse with this one. */
+	margin-top: var(--forge-space);
 	/* Proposal 115 §4: the wireframe's per-breakpoint column behavior rides
 	 * these custom properties; the defaults are the standard 4 → 2 → 1
 	 * collapse at the canonical Elementor widths. */
@@ -905,6 +938,14 @@ a {
 	.ds-hero-split {
 		grid-template-columns: minmax(0, 1fr);
 	}
+}
+
+/* The absolute collage offsets only fit once the measured band fits
+ * (the 1140px measure + gutters). Below that — Elementor's own tablet
+ * reflow — the photos return to static flow inside their column instead
+ * of poking past the viewport edge, where the body's overflow guard
+ * would clip them mid-photo. */
+@media (width<1152px) {
 	.ds-hero-collage {
 		position: static;
 		display: grid;
@@ -948,6 +989,15 @@ a {
 		.ds-reveal--fade-right { animation-name: ds-fade-right; }
 		.ds-reveal--scale-up { animation-name: ds-scale-up; }
 		.ds-reveal--blur { animation-name: ds-blur; }
+		/* The horizontal reveals translate the band ±48px — on phones the
+		 * bands are full-bleed and the body clip would shear the edge; the
+		 * entrance degrades to the plain fade. */
+		@media (width<=767px) {
+			.ds-reveal--fade-left,
+			.ds-reveal--fade-right {
+				animation-name: ds-fade;
+			}
+		}
 	}
 }
 

@@ -16,7 +16,7 @@ const { title, media } = section.slots;
 		{title && <h2 class="ds-title">{title}</h2>}
 		<div class="ds-gallery">
 			{media.map((image) => (
-				<SmartImage src={image.src} alt={image.alt ?? ''} />
+				<SmartImage src={image.src} alt={image.alt ?? ''} sizes="(min-width: 768px) 33vw, 100vw" />
 			))}
 		</div>
 	</section>

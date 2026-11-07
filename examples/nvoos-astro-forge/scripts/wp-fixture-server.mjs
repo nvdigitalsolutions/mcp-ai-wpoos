@@ -164,7 +164,7 @@ export function createWpFixtureData() {
 						'</div></div></div></div>',
 						'<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">',
 						'<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-widget-container"><h3>Wool</h3><p>Merino and cashmere.</p></div></div>',
-						'<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-widget-container"><h3>Linen</h3><p>Washed and relaxed.</p></div></div>',
+						'<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-widget-container"><span class="elementor-icon-box-icon"><img src="' + ORIGIN + '/wp-content/uploads/a.png" alt="Linen" /></span><h3>Linen</h3><p>Washed and relaxed.</p></div></div>',
 						'</div></div></div></div>',
 						// A logo wall carrying a heading + CTA — the LogoCloud
 						// component must render all three, never drop the links.

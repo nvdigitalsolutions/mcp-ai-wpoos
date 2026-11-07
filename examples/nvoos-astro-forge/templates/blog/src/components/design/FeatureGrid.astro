@@ -30,7 +30,7 @@ const gridStyle = columns
 		<div class="ds-grid" style={gridStyle}>
 			{items.map((item) => (
 				<div class="ds-card">
-					{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} />}
+					{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
 					{item.title && <h3>{item.title}</h3>}
 					{item.body && <p>{item.body}</p>}
 					{item.links?.[0] && (
