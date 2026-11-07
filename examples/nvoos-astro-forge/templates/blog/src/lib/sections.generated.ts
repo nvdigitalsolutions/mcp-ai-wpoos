@@ -8,6 +8,12 @@
 
 export type SectionThemeName = 'hero' | 'dark' | 'alt' | 'light';
 
+export type BandSpacing = 'template' | 'source';
+
+/** Whether a band with no source padding fact keeps the template rhythm
+ * or renders flush (the source’s own 0). From profile.bandSpacing. */
+export const bandSpacing: BandSpacing = 'template';
+
 export interface SectionTheme {
 	id?: string;
 	theme: SectionThemeName;
@@ -28,8 +34,8 @@ export interface SectionTheme {
 	paddingX?: string;
 	/** Section-level pull facts (124 §4) — negative margins overlap
 	 * the neighbor band; z-index stacks the overlap. */
-	marginTop?: string;
-	marginBottom?: string;
+	marginTop?: string | { desktop?: string; tablet?: string; mobile?: string };
+	marginBottom?: string | { desktop?: string; tablet?: string; mobile?: string };
 	zIndex?: string;
 	/** The top-level column responsive facts (124 §6) — widths per
 	 * device + order/visibility; the split components re-measure. */
@@ -54,6 +60,8 @@ export interface SectionTheme {
 	titleAlign?: 'center';
 	/** The media collage backdrop shape (width/height/background/radius). */
 	mediaShape?: { width: string; height: string; background: string; radius?: string };
+	/** The card box model of a media grid band (measured — see lib/types). */
+	cardStyle?: { gap?: string; padding?: string; textPadding?: string };
 	/** Per-image collage offsets (absolute positioning against the collage box). */
 	mediaOffsets?: Array<{ top?: string; right?: string; bottom?: string; left?: string; shadow?: string }>;
 	/** The body paragraphs render in N columns (the source's sub-column split). */

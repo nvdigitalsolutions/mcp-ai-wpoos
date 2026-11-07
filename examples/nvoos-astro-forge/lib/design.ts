@@ -24,7 +24,7 @@ import { createRequire } from 'node:module';
 import { expandHex, hexToRgb, hslToHex, rgbToHex } from './color.ts';
 import { contrastRatio, relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
-import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 const nodeRequire = createRequire( import.meta.url );
 
@@ -1249,6 +1249,115 @@ function sectionClasses( node: HNodeLike ): string[] {
 	return ( node.attribs?.class ?? '' ).split( /\s+/ ).filter( Boolean );
 }
 
+/**
+ * The device buckets the template renders — its own breakpoints (1025 desktop,
+ * 768 tablet). Elementor scopes a rule to a device RANGE with max-width, so the
+ * same property can carry three different values.
+ */
+type DeviceBucket = 'desktop' | 'tablet' | 'mobile';
+
+/** Map an `@media` condition onto the template's bucket, or undefined if it is
+ * outside the ranges the rebuild renders. */
+function mediaBucket( media: string ): DeviceBucket | undefined {
+	const max = /max-width\s*:\s*(\d+(?:\.\d+)?)px/i.exec( media );
+	if ( max ) {
+		const width = Number( max[ 1 ] );
+		if ( width <= 767 ) {
+			return 'mobile';
+		}
+		if ( width <= 1024 ) {
+			return 'tablet';
+		}
+		return undefined;
+	}
+	const min = /min-width\s*:\s*(\d+(?:\.\d+)?)px/i.exec( media );
+	if ( min ) {
+		const width = Number( min[ 1 ] );
+		if ( width >= 1025 ) {
+			return 'desktop';
+		}
+		if ( width >= 768 ) {
+			return 'tablet';
+		}
+	}
+	return undefined;
+}
+
+/**
+ * Every rule, flattened with the media condition that guards it. `topLevelRules`
+ * keeps a media body as inert nested text (so element-token matching cannot hit
+ * a media selector); this recursion is what makes those rules readable.
+ */
+function rulesInMedia( cssText: string ): Array<{ selector: string; body: string; media?: string }> {
+	const out: Array<{ selector: string; body: string; media?: string }> = [];
+	for ( const rule of topLevelRules( cssText ) ) {
+		const selector = rule.selector.trim();
+		if ( ! selector.startsWith( '@media' ) ) {
+			out.push( { selector, body: rule.body } );
+			continue;
+		}
+		for ( const inner of topLevelRules( rule.body ) ) {
+			out.push( { selector: inner.selector.trim(), body: inner.body, media: selector } );
+		}
+	}
+	return out;
+}
+
+/**
+ * A property the source scopes per device. Returns a device map ONLY when the
+ * scoped declarations actually differ — a single value stays a string, so the
+ * common case is unchanged.
+ *
+ * This is the class of fact the flat "first top-level match wins" read loses: a
+ * band declared flush on desktop but pulled on tablet/mobile read as "no pull"
+ * (or as whichever single value an operator then pinned by hand).
+ */
+function responsiveLength(
+	rules: Array<{ selector: string; body: string; media?: string }>,
+	token: string,
+	property: string
+): ResponsiveLength | undefined {
+	const pattern = new RegExp( `${ property }\\s*:\\s*([^;!]+)`, 'i' );
+	const values: Partial< Record< DeviceBucket, string > > = {};
+	let sawMedia = false;
+	for ( const rule of rules ) {
+		if ( ! rule.selector.includes( token ) ) {
+			continue;
+		}
+		const match = pattern.exec( rule.body );
+		if ( ! match ) {
+			continue;
+		}
+		const value = match[ 1 ].trim();
+		if ( ! value ) {
+			continue;
+		}
+		if ( rule.media ) {
+			const bucket = mediaBucket( rule.media );
+			if ( ! bucket ) {
+				continue;
+			}
+			sawMedia = true;
+			values[ bucket ] = value;
+			continue;
+		}
+		if ( ! values.desktop ) {
+			values.desktop = value;
+		}
+	}
+	if ( ! sawMedia ) {
+		return undefined;
+	}
+	const declared = [ values.desktop, values.tablet, values.mobile ].filter( Boolean ) as string[];
+	if ( declared.length === 0 ) {
+		return undefined;
+	}
+	// A media rule that merely repeats the desktop value is not a scope.
+	// (A scope with no desktop value at all — tablet-only — still is.)
+	const repeatsDesktop = values.desktop !== undefined && declared.every( ( value ) => value === values.desktop );
+	return repeatsDesktop ? undefined : values;
+}
+
 function allSectionNodes( node: HNodeLike, out: HNodeLike[] ): void {
 	for ( const child of childNodes( node ) ) {
 		// TOP-level sections only (124 §6) — inner sections are a column's
@@ -1294,6 +1403,9 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 	allSectionNodes( handler.root as unknown as HNodeLike, sections );
 
 	const cssText = input.css.join( '\n' );
+	// Every rule with the media condition guarding it — the per-section pass
+	// below reads top-level rules only, so device-scoped overrides were invisible.
+	const scopedRules = rulesInMedia( cssText );
 	const facts: ForgeSection[] = [];
 	for ( const section of sections ) {
 		const classes = sectionClasses( section );
@@ -1397,6 +1509,18 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			if ( zIndex && ! fact.zIndex ) {
 				fact.zIndex = zIndex[ 1 ].trim();
 			}
+		}
+		// Device-scoped pulls (Elementor's responsive cascade): a band can be
+		// flush on desktop and pulled on tablet/mobile. Capture the map instead
+		// of one value — the flat read above cannot see inside `@media`.
+		const scopedToken = `elementor-element-${ id }`;
+		const scopedMarginTop = responsiveLength( scopedRules, scopedToken, 'margin-top' );
+		if ( scopedMarginTop ) {
+			fact.marginTop = scopedMarginTop;
+		}
+		const scopedMarginBottom = responsiveLength( scopedRules, scopedToken, 'margin-bottom' );
+		if ( scopedMarginBottom ) {
+			fact.marginBottom = scopedMarginBottom;
 		}
 		// The top-level column responsive facts (124 §6) — the container's
 		// DIRECT column children (inner-section columns nest deeper and are

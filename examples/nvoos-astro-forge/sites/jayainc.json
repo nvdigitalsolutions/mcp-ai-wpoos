@@ -2,6 +2,7 @@
 	"url": "https://jayainc.com",
 	"name": "JAYAINC",
 	"frontPage": "home",
+	"bandSpacing": "source",
 	"forms": {},
 	"tokens": {
 		"ink": "#242424",
@@ -262,9 +263,13 @@
 				"bgGradient": "linear-gradient(180deg, #ffffff 6%, #04132b 100%)",
 				"bgColor": "transparent",
 				"padding": "100px 0px 100px 0px",
-				"measure": "1140px",
+				"measure": "1600px",
 				"paddingX": "30px",
-				"marginTop": "170px",
+				"marginTop": {
+					"desktop": "0px",
+					"tablet": "170px",
+					"mobile": "100px"
+				},
 				"titleAlign": "center",
 				"titleStyle": {
 					"size": "43px",
@@ -277,6 +282,11 @@
 					"height": "6px",
 					"background": "#ffcf0e",
 					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
+				},
+				"cardStyle": {
+					"gap": "0px",
+					"padding": "10px",
+					"textPadding": "40px"
 				}
 			},
 			{
@@ -446,12 +456,12 @@
 					"items": [
 						"Address: 3300 NW 112TH AVE",
 						"Phone: +1 (305) 500-9319",
-						"Work: Monday \u2013 Friday 09.00 \u2013 23.00 Sunday 09.00 \u2013 16.00",
+						"Work: Monday – Friday 09.00 – 23.00 Sunday 09.00 – 16.00",
 						"Email: [email protected]"
 					]
 				}
 			],
-			"copyright": "\u00a9 2026 JAYAINC. powered by NV Digital Solutions",
+			"copyright": "© 2026 JAYAINC. powered by NV Digital Solutions",
 			"footerBarBg": "rgba(8, 26, 67, 0.9)",
 			"footerBarInk": "rgba(255, 255, 255, 0.7)",
 			"footerHeadingStyle": {
@@ -619,7 +629,7 @@
 		},
 		"adaptation": {
 			"keep": [
-				"The palette roles, type pairing, and spacing rhythm \u2014 the design language, not the pixels.",
+				"The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.",
 				"Component vocabulary hints (buttons, cards, nav) as a checklist, not as markup."
 			],
 			"replace": [
@@ -627,7 +637,7 @@
 				"Fonts with licensed equivalents unless the source font is verifiably self-hostable."
 			],
 			"remix": [
-				"Shift the accent hue by roughly 10 degrees and pick the customer's own brand neutrals \u2014 visibly theirs, not a copy.",
+				"Shift the accent hue by roughly 10 degrees and pick the customer's own brand neutrals — visibly theirs, not a copy.",
 				"Let the customer's real content (products, posts, pages) drive the layout; apply the language to it."
 			],
 			"licensingNote": "Inspired-by analysis: no source CSS, HTML, copy, or assets were copied. Verify the source license before any closer adaptation.",
@@ -636,6 +646,41 @@
 			]
 		}
 	},
+	"pins": [
+		{
+			"path": "sections.5e78df1.marginTop",
+			"value": {
+				"desktop": "0px",
+				"tablet": "170px",
+				"mobile": "100px"
+			},
+			"why": "Elementor scopes this band's pull to a device range: flush on desktop, 170px on tablet, 100px on mobile."
+		},
+		{
+			"path": "sections.5e78df1.measure",
+			"value": "1600px",
+			"why": "This band's container is Elementor's 1600px wide, not the 1140px default — extraction reads the default. Cards are 25% of it."
+		},
+		{
+			"path": "sections.5e78df1.cardStyle",
+			"value": {
+				"gap": "0px",
+				"padding": "10px",
+				"textPadding": "40px"
+			},
+			"why": "The source cards are borderless media cards: 10px widget-wrap padding, no column gutter, 40px-padded text block — measured, not band-scoped CSS."
+		},
+		{
+			"path": "sections.fd63522.padding",
+			"value": "0px 0px 100px 0px",
+			"why": "The catalogue band keeps 100px of bottom air under the button."
+		},
+		{
+			"path": "chrome.footerInk",
+			"value": "rgba(255, 255, 255, 0.7)",
+			"why": "Muted footer text on the dark footer bar."
+		}
+	],
 	"vocabulary": {
 		"widgetRoles": {},
 		"blockRoles": {},
@@ -648,5 +693,241 @@
 		],
 		"unknownBlocks": [],
 		"analyzedAt": "2026-11-06T01:15:59.813Z"
+	},
+	"geometry": {
+		"a4ad586": {
+			"desktop": {
+				"height": 724,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 688,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 796,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"cff59dd": {
+			"desktop": {
+				"height": 326,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 307,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 445,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"dff3f1a": {
+			"desktop": {
+				"height": 70,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 70,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 70,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"d5844b9": {
+			"desktop": {
+				"height": 566,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 1207,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 1394,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"5e78df1": {
+			"desktop": {
+				"height": 1216,
+				"width": 1440,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 1866,
+				"width": 834,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"marginTop": 170,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 2951,
+				"width": 390,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"marginTop": 100,
+				"marginBottom": 0
+			}
+		},
+		"fcc5e07": {
+			"desktop": {
+				"height": 1392,
+				"width": 1440,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 2496,
+				"width": 834,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"marginTop": 150,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 2479,
+				"width": 390,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"marginTop": 150,
+				"marginBottom": 0
+			}
+		},
+		"059421c": {
+			"desktop": {
+				"height": 343,
+				"width": 1440,
+				"paddingTop": 125,
+				"paddingBottom": 125,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 283,
+				"width": 834,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 330,
+				"width": 390,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"48ace0b": {
+			"desktop": {
+				"height": 316,
+				"width": 1440,
+				"paddingTop": 100,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 956,
+				"width": 834,
+				"paddingTop": 100,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 1533,
+				"width": 390,
+				"paddingTop": 100,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"fd63522": {
+			"desktop": {
+				"height": 520,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 520,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 520,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		}
 	}
 }

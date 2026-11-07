@@ -41,6 +41,9 @@ import { Command } from 'commander';
 import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { emitDeployConfig } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
+import { findDroppedPins } from '../lib/pins.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, diffGeometry, measureGeometry, serveDir } from '../lib/geometry.ts';
+import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
@@ -262,6 +265,23 @@ async function runAnalyze( url, options ) {
 		}
 	}
 
+	// --geometry (114 §3.6): measure the SOURCE bands so `verify --geometry` can
+	// diff the build against real boxes instead of inferred CSS. Browser-backed,
+	// so it stays opt-in (the parity gate above never needs a browser).
+	if ( options.geometry ) {
+		const ids = ( profile.design?.sections ?? [] ).map( ( section ) => section.id ).filter( Boolean );
+		if ( ids.length === 0 ) {
+			console.warn( '\u26a0 --geometry needs the design block to know which bands to measure — pass --design too.' );
+		} else {
+			try {
+				profile.geometry = await measureGeometry( { url: profile.url, ids, kind: 'source' } );
+				console.log( `\u2713 Geometry baseline: ${ ids.length } band(s) at ${ DEFAULT_GEOMETRY_VIEWPORTS.length } viewports.` );
+			} catch ( error ) {
+				console.warn( `\u26a0 Geometry baseline skipped: ${ error instanceof Error ? error.message : error }` );
+			}
+		}
+	}
+
 	const profileJson = `${ JSON.stringify( profile, null, '\t' ) }\n`;
 	if ( options.write ) {
 		// Merge into an existing profile by default (Proposal 118 §3): the
@@ -271,9 +291,23 @@ async function runAnalyze( url, options ) {
 		let mode = 'Draft profile written to';
 		try {
 			const existing = JSON.parse( await readFile( options.write, 'utf8' ) );
-			if ( ! options.fresh && existing && typeof existing === 'object' ) {
-				text = `${ JSON.stringify( mergeProfileDraft( existing, profile ), null, '\t' ) }\n`;
-				mode = 'Draft profile MERGED into';
+			if ( existing && typeof existing === 'object' ) {
+				const pins = Array.isArray( existing.pins ) ? existing.pins : [];
+				if ( options.fresh ) {
+					if ( pins.length > 0 ) {
+						console.warn( `  \u26a0 --fresh drops ${ pins.length } operator pin(s) in ${ options.write } — re-add them, or drop the flag to merge.` );
+					}
+				} else {
+					const merged = mergeProfileDraft( existing, profile );
+					text = `${ JSON.stringify( merged, null, '\t' ) }\n`;
+					mode = 'Draft profile MERGED into';
+					// Pins are re-applied by the merge, so anything still dropped
+					// means the source no longer has that section — say so instead
+					// of letting the operator assume the pin held.
+					for ( const pin of findDroppedPins( merged.design, pins ) ) {
+						console.warn( `  \u26a0 Pin "${ pin.path }" could not be re-applied — its section is gone from the source.` );
+					}
+				}
 			}
 		} catch {
 			// No existing file — a fresh write.
@@ -861,6 +895,59 @@ async function runVerify( profileRef, options ) {
 			);
 		}
 	}
+	// Fact consumption (the "a component ignored the fact" class): every fact a
+	// band declares must leave its marker in that band's built HTML — jayainc's
+	// titleStyle/titleDivider/titleAlign were baked in and never rendered.
+	if ( indexHtml ) {
+		const unrendered = auditFacts( profile.design?.sections ?? [], indexHtml );
+		if ( unrendered.length === 0 ) {
+			console.log( '\u2713 Fact consumption: every declared band fact renders.' );
+		} else {
+			for ( const item of unrendered ) {
+				console.warn( `\u2717 Fact consumption: band ${ item.sectionId } declares ${ item.fact } but the build has no ${ item.marker }.` );
+			}
+			if ( options.strictFacts ) {
+				process.exitCode = 1;
+			}
+		}
+	}
+
+	// Geometry (114 §3.6): the build's real boxes against the recorded source
+	// boxes. Language parity cannot see a 903px card or a flat 170px pull; this can.
+	if ( options.geometry ) {
+		if ( ! profile.geometry ) {
+			fail( 'No geometry baseline in the profile — run `analyze <url> --design --geometry --write <profile>` first.' );
+		}
+		const ids = Object.keys( profile.geometry );
+		const served = await serveDir( join( options.target, 'dist' ) );
+		try {
+			const built = await measureGeometry( { url: served.url, ids, kind: 'built' } );
+			const deviations = diffGeometry( profile.geometry, built );
+			const failures = deviations.filter( ( deviation ) => deviation.severity === 'fail' );
+			const warnings = deviations.filter( ( deviation ) => deviation.severity === 'warn' );
+			if ( deviations.length === 0 ) {
+				console.log( '\u2713 Geometry: every band matches the source box at every viewport.' );
+			} else {
+				const limit = Number( options.geometryLimit ?? 12 );
+				const ordered = [ ...failures, ...warnings ];
+				for ( const deviation of ordered.slice( 0, limit ) ) {
+					const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
+					const actual = deviation.actual === null ? 'missing' : `${ deviation.actual }px`;
+					console.warn( `${ mark } Geometry: band ${ deviation.sectionId } @ ${ deviation.viewport } ${ deviation.metric } — source ${ deviation.expected }px, build ${ actual }` );
+				}
+				if ( ordered.length > limit ) {
+					console.warn( `  \u2026 ${ ordered.length - limit } more deviation(s); raise --geometry-limit to see them.` );
+				}
+				console.log( `  geometry: ${ failures.length } fail, ${ warnings.length } warn across ${ ids.length } band(s)` );
+			}
+			if ( failures.length > 0 ) {
+				process.exitCode = 1;
+			}
+		} finally {
+			served.server.close();
+		}
+	}
+
 	if ( options.visual ) {
 		// The vision layer (118 §4) — advisory unless --strict-visual; never
 		// downgrades a parity failure.
@@ -1020,6 +1107,7 @@ program
 	.option( '--wireframes', 'imply --inventory and extract wireframes for the missing pages (Proposal 115)' )
 	.option( '--wayback', 'add Wayback CDX discovery to the inventory (deleted pages)' )
 	.option( '--vocabulary', 'learn the widget/block vocabulary (block-types registry + rendered widget names, Proposal 116)' )
+	.option( '--geometry', 'measure each source band\u0027s box at 3 viewports so `verify --geometry` can diff the build (needs --design; requires Playwright)' )
 	.action( async ( url, options ) => {
 		await runAnalyze( url, options );
 	} );
@@ -1086,6 +1174,9 @@ program
 	.argument( '<profileRef>', 'site.json path or registered site name (must carry a design block)' )
 	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
 	.option( '--threshold <n>', 'parity pass threshold 0-1 (default 0.6)', '0.6' )
+	.option( '--geometry', 'diff the built bands\u0027 boxes against the recorded source geometry (needs `analyze --geometry`; requires Playwright)' )
+	.option( '--geometry-limit <n>', 'how many geometry deviations to print (default 12)', '12' )
+	.option( '--strict-facts', 'fail when a declared band fact did not reach the built HTML (default: report only)' )
 	.option( '--baselines', 'note the opt-in Playwright baseline step' )
 	.option( '--visual', 'also compare SOURCE and BUILT screenshots with a vision model (Proposal 118)' )
 	.option( '--serve <port>', 'with --visual: boot the built site with `astro preview` on <port> while you capture it' )

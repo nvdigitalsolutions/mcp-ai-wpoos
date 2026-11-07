@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { auditWarnings, contrastAudit } from './contrast.ts';
 import { designToTokens, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
-import type { ForgeDesign, SiteProfile, WpCollection } from './types.ts';
+import type { ForgeDesign, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -201,6 +201,20 @@ export async function resolveTemplateDir(template?: string): Promise<string> {
 /** Serialize one collection as a TS object literal for content.config.ts. */
 function tsString(value: string): string {
 	return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+}
+
+/**
+ * Serialize a band length — a plain string, or the per-device map Elementor
+ * uses when it scopes a pull to a device range.
+ */
+function tsLength( value: ResponsiveLength ): string {
+	if ( typeof value === 'string' ) {
+		return tsString( value );
+	}
+	const parts = ( [ 'desktop', 'tablet', 'mobile' ] as const )
+		.filter( ( device ) => value[ device ] )
+		.map( ( device ) => `${ device }: ${ tsString( value[ device ] as string ) }` );
+	return `{ ${ parts.join( ', ' ) } }`;
 }
 
 function collectionLiteral(collection: WpCollection, indent = '\t'): string {
@@ -630,7 +644,14 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'// and wraps them accordingly. Deterministic: same profile, same bytes.',
 		'// ---------------------------------------------------------------------------',
 		'',
-		'export type SectionThemeName = \'hero\' | \'dark\' | \'alt\' | \'light\';',
+		'',
+		"export type BandSpacing = 'template' | 'source';",
+		'',
+		'/** Whether a band with no source padding fact keeps the template rhythm',
+		' * or renders flush (the source\u2019s own 0). From profile.bandSpacing. */',
+		`export const bandSpacing: BandSpacing = '${ profile.bandSpacing === 'source' ? 'source' : 'template' }';`,
+		'',
+		"export type SectionThemeName = 'hero' | 'dark' | 'alt' | 'light';",
 		'',
 		'export interface SectionTheme {',
 		'\tid?: string;',
@@ -651,9 +672,10 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t/** The container column-gap gutter (gap-default 10px … wider 30px). */',
 		'\tpaddingX?: string;',
 		'\t/** Section-level pull facts (124 §4) — negative margins overlap',
-		'\t * the neighbor band; z-index stacks the overlap. */',
-		'\tmarginTop?: string;',
-		'\tmarginBottom?: string;',
+		'\t * the neighbor band; z-index stacks the overlap. A length may be a',
+		'\t * per-device map where the source scopes the pull to a range. */',
+		'\tmarginTop?: string | { desktop?: string; tablet?: string; mobile?: string };',
+		'\tmarginBottom?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\tzIndex?: string;',
 		'\t/** The top-level column responsive facts (124 §6) — widths per',
 		'\t * device + order/visibility; the split components re-measure. */',
@@ -678,6 +700,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		"\ttitleAlign?: 'center';",
 		'\t/** The media collage backdrop shape (width/height/background/radius). */',
 		'\tmediaShape?: { width: string; height: string; background: string; radius?: string };',
+		'\t/** The card box model of a media grid band (measured; template defaults when absent). */',
+		'\tcardStyle?: { gap?: string; padding?: string; textPadding?: string };',
 		'\t/** Per-image collage offsets (absolute positioning against the collage box). */',
 		'\tmediaOffsets?: Array<{ top?: string; right?: string; bottom?: string; left?: string; shadow?: string }>;',
 		'\t/** The body paragraphs render in N columns (the source\'s sub-column split). */',
@@ -732,10 +756,10 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 			entry.push( `paddingX: ${ tsString( section.paddingX ) }` );
 		}
 		if ( section.marginTop ) {
-			entry.push( `marginTop: ${ tsString( section.marginTop ) }` );
+			entry.push( `marginTop: ${ tsLength( section.marginTop ) }` );
 		}
 		if ( section.marginBottom ) {
-			entry.push( `marginBottom: ${ tsString( section.marginBottom ) }` );
+			entry.push( `marginBottom: ${ tsLength( section.marginBottom ) }` );
 		}
 		if ( section.zIndex ) {
 			entry.push( `zIndex: ${ tsString( section.zIndex ) }` );
@@ -801,6 +825,15 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		}
 		if ( section.titleAlign ) {
 			entry.push( `titleAlign: ${ tsString( section.titleAlign ) }` );
+		}
+		if ( section.cardStyle ) {
+			const card = section.cardStyle;
+			const parts = ( [ 'gap', 'padding', 'textPadding' ] as const )
+				.filter( ( key ) => card[ key ] )
+				.map( ( key ) => `${ key }: ${ tsString( card[ key ] as string ) }` );
+			if ( parts.length > 0 ) {
+				entry.push( `cardStyle: { ${ parts.join( ', ' ) } }` );
+			}
 		}
 		if ( section.mediaShape ) {
 			const shape = section.mediaShape;
