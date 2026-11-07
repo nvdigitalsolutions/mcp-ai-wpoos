@@ -185,6 +185,24 @@ class WP_MCP_AI_Tool_Send_Lead_Whatsapp implements WP_MCP_AI_Tool_Interface, WP_
 
 		$message = sanitize_textarea_field( $arguments['message'] );
 
+		// Deterministic pre-send gate.
+		if ( class_exists( 'WP_MCP_AI_CRM_Pre_Send_Gate' ) ) {
+			$gate = WP_MCP_AI_CRM_Pre_Send_Gate::check(
+				array(
+					'lead_id' => $lead_id,
+					'channel' => 'whatsapp',
+					'kind'    => $sequence_id ? 'sequence' : 'one_off',
+					'to'      => $phone,
+					'body'    => $message,
+					'step'    => $sequence_id ? $step_index : 0,
+					'context' => $context,
+				)
+			);
+			if ( is_wp_error( $gate ) ) {
+				return $gate;
+			}
+		}
+
 		// Resolve WhatsApp credentials from integration settings.
 		$settings = class_exists( 'WP_MCP_AI_CRM_Engine' )
 			? WP_MCP_AI_CRM_Engine::get_toolkit_settings()

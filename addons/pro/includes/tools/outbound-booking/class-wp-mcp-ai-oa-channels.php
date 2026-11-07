@@ -88,6 +88,9 @@ class WP_MCP_AI_OA_Channels {
 		if ( 'rejected' === $status ) {
 			return new WP_Error( 'rejected', __( 'Message was rejected.', 'mcp-ai-wpoos-pro' ) );
 		}
+		if ( 'held' === $status ) {
+			return new WP_Error( 'held', __( 'Message is held for human review.', 'mcp-ai-wpoos-pro' ) );
+		}
 
 		$channel = get_post_meta( $outbox_id, '_oa_ob_channel', true );
 		$mode    = self::mode_for( $channel );
@@ -96,9 +99,9 @@ class WP_MCP_AI_OA_Channels {
 		}
 		if ( 'approval' === $mode ) {
 			return array(
-				'success'   => true,
-				'message'   => __( 'Message awaits manual send — mark it sent after sending it yourself.', 'mcp-ai-wpoos-pro' ),
-				'outbox_id' => $outbox_id,
+				'success'           => true,
+				'message'           => __( 'Message awaits manual send — mark it sent after sending it yourself.', 'mcp-ai-wpoos-pro' ),
+				'outbox_id'         => $outbox_id,
 				'needs_manual_send' => true,
 			);
 		}
@@ -115,6 +118,55 @@ class WP_MCP_AI_OA_Channels {
 		if ( is_wp_error( $veto ) ) {
 			WP_MCP_AI_OA_Outbox::set_status( $outbox_id, 'failed', $veto->get_error_message() );
 			return $veto;
+		}
+
+		// Deterministic pre-send gate. Auto-send never bypasses it.
+		if ( class_exists( 'WP_MCP_AI_CRM_Pre_Send_Gate' ) ) {
+			$lead_id = (int) get_post_meta( $outbox_id, '_oa_ob_lead_id', true );
+			$to      = '';
+			if ( 'email' === $channel ) {
+				$to = get_post_meta( $lead_id, 'email', true );
+			} elseif ( 'linkedin_dm' === $channel ) {
+				$to = get_post_meta( $lead_id, '_oa_linkedin', true );
+			} elseif ( 'instagram_dm' === $channel ) {
+				$to = get_post_meta( $lead_id, '_oa_instagram', true );
+			}
+			$kind = (string) get_post_meta( $outbox_id, '_oa_ob_kind', true );
+			if ( '' === $kind ) {
+				$kind = 'sequence';
+			}
+			$gate = WP_MCP_AI_CRM_Pre_Send_Gate::check(
+				array(
+					'lead_id' => $lead_id,
+					'channel' => $channel,
+					'kind'    => $kind,
+					'to'      => $to,
+					'subject' => get_post_meta( $outbox_id, '_oa_ob_subject', true ),
+					'body'    => get_post_meta( $outbox_id, '_oa_ob_body', true ),
+					'step'    => (int) get_post_meta( $outbox_id, '_oa_ob_step', true ),
+				)
+			);
+			if ( is_wp_error( $gate ) ) {
+				$data = $gate->get_error_data();
+				WP_MCP_AI_OA_Outbox::hold( $outbox_id, is_array( $data ) && isset( $data['reasons'] ) ? (array) $data['reasons'] : array() );
+				return $gate;
+			}
+		}
+
+		// Agent output guard: foreign links / instruction echoes in AI copy.
+		if ( class_exists( 'WP_MCP_AI_CRM_Agent_Guard' ) && '1' === (string) get_post_meta( $outbox_id, '_oa_ob_ai_generated', true ) ) {
+			$review = WP_MCP_AI_CRM_Agent_Guard::review(
+				get_post_meta( $outbox_id, '_oa_ob_subject', true ),
+				get_post_meta( $outbox_id, '_oa_ob_body', true ),
+				array(
+					'lead_id' => (int) get_post_meta( $outbox_id, '_oa_ob_lead_id', true ),
+					'kind'    => get_post_meta( $outbox_id, '_oa_ob_kind', true ),
+				)
+			);
+			if ( empty( $review['ok'] ) ) {
+				WP_MCP_AI_OA_Outbox::hold( $outbox_id, $review['reasons'] );
+				return new WP_Error( 'wp_mcp_ai_crm_agent_guard_held', __( 'Generated message is held for human review.', 'mcp-ai-wpoos-pro' ), array( 'reasons' => $review['reasons'] ) );
+			}
 		}
 
 		if ( 'email' === $channel ) {
@@ -159,6 +211,10 @@ class WP_MCP_AI_OA_Channels {
 		}
 		$settings = WP_MCP_AI_OA_Settings::get();
 		$headers  = array( 'Content-Type: text/html; charset=UTF-8' );
+		if ( class_exists( 'WP_MCP_AI_CRM_Unsubscribe' ) ) {
+			$kind    = get_post_meta( $outbox_id, '_oa_ob_kind', true );
+			$headers = array_merge( $headers, WP_MCP_AI_CRM_Unsubscribe::headers_for_lead( $lead_id, 'email', $kind ? $kind : 'sequence' ) );
+		}
 		if ( $settings['from_name'] && $settings['from_email'] ) {
 			$headers[] = 'From: ' . $settings['from_name'] . ' <' . $settings['from_email'] . '>';
 		}
@@ -267,6 +323,13 @@ class WP_MCP_AI_OA_Channels {
 
 		$lead_id  = (int) get_post_meta( $outbox_id, '_oa_ob_lead_id', true );
 		$angle_id = (int) get_post_meta( $outbox_id, '_oa_ob_angle_id', true );
+		if ( 'email' === $channel && class_exists( 'WP_MCP_AI_CRM_Deliverability' ) ) {
+			WP_MCP_AI_CRM_Deliverability::record_sent();
+			$from = (string) WP_MCP_AI_OA_Settings::get_setting( 'from_email', '' );
+			if ( $from ) {
+				WP_MCP_AI_CRM_Deliverability::increment_sent_today( $from );
+			}
+		}
 		if ( $angle_id ) {
 			WP_MCP_AI_OA_Angle_CPT::record_event( $angle_id, 'send' );
 		}
@@ -276,7 +339,7 @@ class WP_MCP_AI_OA_Channels {
 
 		// CRM activity trail (only when the CRM activity CPT is available).
 		if ( post_type_exists( 'mcp_ai_crm_activity' ) ) {
-			$subject = get_post_meta( $outbox_id, '_oa_ob_subject', true );
+			$subject     = get_post_meta( $outbox_id, '_oa_ob_subject', true );
 			$activity_id = wp_insert_post(
 				array(
 					'post_type'   => 'mcp_ai_crm_activity',

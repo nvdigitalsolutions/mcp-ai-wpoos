@@ -132,26 +132,43 @@ class WP_MCP_AI_OA_Engine {
 	 * @return array Tick summary.
 	 */
 	public static function run_tick() {
-		$summary = array( 'processed' => 0, 'sent' => 0, 'skipped' => 0, 'reason' => '' );
+		$summary = array(
+			'processed' => 0,
+			'sent'      => 0,
+			'skipped'   => 0,
+			'reason'    => '',
+		);
 
 		if ( ! post_type_exists( 'mcp_ai_lead' ) ) {
 			$summary['reason'] = 'crm_disabled';
 			return $summary;
 		}
-		if ( ! self::within_send_window() ) {
+		if ( ! class_exists( 'WP_MCP_AI_CRM_Send_Window' ) && ! self::within_send_window() ) {
 			$summary['reason'] = 'outside_window';
 			return $summary;
 		}
 
 		$s   = WP_MCP_AI_OA_Settings::get();
 		$cap = (int) $s['daily_cap'];
-		$day = get_option( self::DAY_OPTION, array( 'date' => '', 'sent' => 0 ) );
+		$day = get_option(
+			self::DAY_OPTION,
+			array(
+				'date' => '',
+				'sent' => 0,
+			)
+		);
 		if ( ! is_array( $day ) ) {
-			$day = array( 'date' => '', 'sent' => 0 );
+			$day = array(
+				'date' => '',
+				'sent' => 0,
+			);
 		}
 		$today = current_time( 'Y-m-d' );
 		if ( $day['date'] !== $today ) {
-			$day = array( 'date' => $today, 'sent' => 0 );
+			$day = array(
+				'date' => $today,
+				'sent' => 0,
+			);
 		}
 		if ( $day['sent'] >= $cap ) {
 			$summary['reason'] = 'daily_cap';
@@ -166,8 +183,14 @@ class WP_MCP_AI_OA_Engine {
 				'fields'         => 'ids',
 				'no_found_rows'  => true,
 				'meta_query'     => array(
-					array( 'key' => '_active_sequence_id', 'compare' => 'EXISTS' ),
-					array( 'key' => '_sequence_paused', 'compare' => 'NOT EXISTS' ),
+					array(
+						'key'     => '_active_sequence_id',
+						'compare' => 'EXISTS',
+					),
+					array(
+						'key'     => '_sequence_paused',
+						'compare' => 'NOT EXISTS',
+					),
 				),
 			)
 		);
@@ -177,12 +200,12 @@ class WP_MCP_AI_OA_Engine {
 				break;
 			}
 			$result = self::process_lead( (int) $lead_id );
-			$summary['processed']++;
+			++$summary['processed'];
 			if ( ! empty( $result['sent'] ) ) {
-				$day['sent']++;
-				$summary['sent']++;
+				++$day['sent'];
+				++$summary['sent'];
 			} elseif ( ! empty( $result['skipped'] ) ) {
-				$summary['skipped']++;
+				++$summary['skipped'];
 			}
 		}
 
@@ -202,31 +225,51 @@ class WP_MCP_AI_OA_Engine {
 		$lead_id = absint( $lead_id );
 		$lead    = get_post( $lead_id );
 		if ( ! $lead || 'mcp_ai_lead' !== $lead->post_type ) {
-			return array( 'lead_id' => $lead_id, 'skipped' => true, 'reason' => 'not_found' );
+			return array(
+				'lead_id' => $lead_id,
+				'skipped' => true,
+				'reason'  => 'not_found',
+			);
 		}
 
 		$status = (string) get_post_meta( $lead_id, '_oa_status', true );
 		if ( in_array( $status, self::STOPPED_STATUSES, true ) ) {
-			return array( 'lead_id' => $lead_id, 'skipped' => true, 'reason' => 'status_' . $status );
+			return array(
+				'lead_id' => $lead_id,
+				'skipped' => true,
+				'reason'  => 'status_' . $status,
+			);
 		}
 
 		$due = (int) get_post_meta( $lead_id, '_oa_next_due', true );
 		if ( $due && $due > time() ) {
-			return array( 'lead_id' => $lead_id, 'skipped' => true, 'reason' => 'not_due' );
+			return array(
+				'lead_id' => $lead_id,
+				'skipped' => true,
+				'reason'  => 'not_due',
+			);
 		}
 
 		$sequence_id = absint( get_post_meta( $lead_id, '_active_sequence_id', true ) );
 		$steps       = $sequence_id ? get_post_meta( $sequence_id, 'steps', true ) : array();
 		if ( ! is_array( $steps ) || empty( $steps ) ) {
 			update_post_meta( $lead_id, '_oa_last_error', 'empty_sequence' );
-			return array( 'lead_id' => $lead_id, 'skipped' => true, 'reason' => 'empty_sequence' );
+			return array(
+				'lead_id' => $lead_id,
+				'skipped' => true,
+				'reason'  => 'empty_sequence',
+			);
 		}
 		$steps = array_values( $steps );
 
 		$index = absint( get_post_meta( $lead_id, '_sequence_step', true ) );
 		if ( $index >= count( $steps ) ) {
 			update_post_meta( $lead_id, '_oa_status', 'completed' );
-			return array( 'lead_id' => $lead_id, 'skipped' => true, 'reason' => 'sequence_complete' );
+			return array(
+				'lead_id' => $lead_id,
+				'skipped' => true,
+				'reason'  => 'sequence_complete',
+			);
 		}
 
 		$step    = $steps[ $index ];
@@ -238,17 +281,41 @@ class WP_MCP_AI_OA_Engine {
 
 		if ( ! in_array( $channel, WP_MCP_AI_OA_Channels::CHANNELS, true ) ) {
 			update_post_meta( $lead_id, '_oa_last_error', 'unsupported_channel_' . $channel );
-			return array( 'lead_id' => $lead_id, 'skipped' => true, 'reason' => 'unsupported_channel' );
+			return array(
+				'lead_id' => $lead_id,
+				'skipped' => true,
+				'reason'  => 'unsupported_channel',
+			);
 		}
 		if ( 'off' === WP_MCP_AI_OA_Channels::mode_for( $channel ) ) {
-			return array( 'lead_id' => $lead_id, 'skipped' => true, 'reason' => 'channel_off' );
+			return array(
+				'lead_id' => $lead_id,
+				'skipped' => true,
+				'reason'  => 'channel_off',
+			);
 		}
 
 		// Email requires consent attestation (set at import) or CRM consent.
 		if ( 'email' === $channel && '1' !== (string) get_post_meta( $lead_id, '_oa_email_consent', true ) ) {
 			if ( ! class_exists( 'WP_MCP_AI_CRM_Consent' ) || ! WP_MCP_AI_CRM_Consent::is_permitted( $lead_id, 'email' ) ) {
-				return array( 'lead_id' => $lead_id, 'skipped' => true, 'reason' => 'consent_required' );
+				return array(
+					'lead_id' => $lead_id,
+					'skipped' => true,
+					'reason'  => 'consent_required',
+				);
 			}
+		}
+
+		// Per-recipient send window (Proposal 129). Replies are handled first
+		// by the inbound path and never reach this method.
+		if ( class_exists( 'WP_MCP_AI_CRM_Send_Window' ) && ! WP_MCP_AI_CRM_Send_Window::is_open( $lead_id, $channel, 'sequence' ) ) {
+			$next = WP_MCP_AI_CRM_Send_Window::next_open( $lead_id, $channel, 'sequence' );
+			update_post_meta( $lead_id, '_oa_next_due', $next->getTimestamp() );
+			return array(
+				'lead_id' => $lead_id,
+				'skipped' => true,
+				'reason'  => 'outside_window',
+			);
 		}
 
 		// Resolve the angle for this step.
@@ -276,10 +343,10 @@ class WP_MCP_AI_OA_Engine {
 		if ( $angle_id ) {
 			update_post_meta( $lead_id, '_oa_last_angle_id', $angle_id );
 		}
-		$context         = array(
-			'sequence_name' => get_the_title( $sequence_id ),
-			'booking_url'   => $booking_link_id ? WP_MCP_AI_OA_Booking_Link_CPT::get_booking_url( $booking_link_id, $lead_id ) : '',
-			'angle_subject' => $subject,
+		$context = array(
+			'sequence_name'    => get_the_title( $sequence_id ),
+			'booking_url'      => $booking_link_id ? WP_MCP_AI_OA_Booking_Link_CPT::get_booking_url( $booking_link_id, $lead_id ) : '',
+			'angle_subject'    => $subject,
 			'angle_first_line' => $angle_id ? get_post_meta( $angle_id, '_oa_angle_first_line', true ) : '',
 		);
 		$subject = WP_MCP_AI_OA_Templates::render( $subject, $lead_id, $context );
@@ -301,13 +368,26 @@ class WP_MCP_AI_OA_Engine {
 		);
 		if ( is_wp_error( $outbox_id ) ) {
 			update_post_meta( $lead_id, '_oa_last_error', $outbox_id->get_error_message() );
-			return array( 'lead_id' => $lead_id, 'skipped' => true, 'reason' => 'outbox_error' );
+			return array(
+				'lead_id' => $lead_id,
+				'skipped' => true,
+				'reason'  => 'outbox_error',
+			);
 		}
 
 		$sent = false;
 		if ( WP_MCP_AI_OA_Channels::is_auto( $channel ) ) {
 			$dispatch = WP_MCP_AI_OA_Channels::dispatch( $outbox_id );
-			$sent     = ! is_wp_error( $dispatch ) && empty( $dispatch['needs_manual_send'] );
+			if ( is_wp_error( $dispatch ) && in_array( $dispatch->get_error_code(), array( 'wp_mcp_ai_crm_gate_blocked', 'wp_mcp_ai_crm_agent_guard_held' ), true ) ) {
+				update_post_meta( $lead_id, '_oa_last_error', 'gate_held' );
+				return array(
+					'lead_id'   => $lead_id,
+					'skipped'   => true,
+					'reason'    => 'gate_held',
+					'outbox_id' => $outbox_id,
+				);
+			}
+			$sent = ! is_wp_error( $dispatch ) && empty( $dispatch['needs_manual_send'] );
 		}
 
 		// Advance the enrollment state.
@@ -393,7 +473,10 @@ class WP_MCP_AI_OA_Engine {
 		$lead_id = absint( $lead_id );
 		$body    = trim( (string) $body );
 		if ( ! get_post( $lead_id ) ) {
-			return array( 'success' => false, 'reason' => 'not_found' );
+			return array(
+				'success' => false,
+				'reason'  => 'not_found',
+			);
 		}
 
 		// Record the reply on the angle that earned it.
@@ -420,7 +503,12 @@ class WP_MCP_AI_OA_Engine {
 		$sentiment = self::classify( $body );
 		if ( 'objection' === $sentiment && self::maybe_respond_to_objection( $lead_id, $channel, $body ) ) {
 			update_post_meta( $lead_id, '_oa_status', 'replied' );
-			return array( 'success' => true, 'lead_id' => $lead_id, 'sentiment' => 'objection', 'routed' => 'objection_response' );
+			return array(
+				'success'   => true,
+				'lead_id'   => $lead_id,
+				'sentiment' => 'objection',
+				'routed'    => 'objection_response',
+			);
 		}
 
 		update_post_meta( $lead_id, '_oa_replied_at', current_time( 'mysql', true ) );
@@ -435,11 +523,21 @@ class WP_MCP_AI_OA_Engine {
 			if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
 				WP_MCP_AI_CRM_Audit::record( 'outbound_reply_negative', 'lead', $lead_id, array( 'channel' => $channel ) );
 			}
-			return array( 'success' => true, 'lead_id' => $lead_id, 'sentiment' => 'negative', 'routed' => 'stopped' );
+			return array(
+				'success'   => true,
+				'lead_id'   => $lead_id,
+				'sentiment' => 'negative',
+				'routed'    => 'stopped',
+			);
 		}
 
 		update_post_meta( $lead_id, '_oa_status', 'replied' );
-		return array( 'success' => true, 'lead_id' => $lead_id, 'sentiment' => 'neutral', 'routed' => 'manual_review' );
+		return array(
+			'success'   => true,
+			'lead_id'   => $lead_id,
+			'sentiment' => 'neutral',
+			'routed'    => 'manual_review',
+		);
 	}
 
 	/**
@@ -462,15 +560,20 @@ class WP_MCP_AI_OA_Engine {
 
 		$booking_link_id = self::get_booking_link_for_lead( $lead_id );
 		if ( ! $booking_link_id ) {
-			return array( 'success' => true, 'lead_id' => $lead_id, 'sentiment' => 'positive', 'routed' => 'slack_handoff' );
+			return array(
+				'success'   => true,
+				'lead_id'   => $lead_id,
+				'sentiment' => 'positive',
+				'routed'    => 'slack_handoff',
+			);
 		}
 
 		// Build the invite from the booking link template and enqueue it.
 		$invite = get_post_meta( $booking_link_id, '_oa_booking_invite_body', true );
 		if ( ! $invite ) {
-			$invite = __( "Hey {{first_name}}, glad this resonated — you can grab a time that suits you right here: {{booking_url}}", 'mcp-ai-wpoos-pro' );
+			$invite = __( 'Hey {{first_name}}, glad this resonated — you can grab a time that suits you right here: {{booking_url}}', 'mcp-ai-wpoos-pro' );
 		}
-		$body  = WP_MCP_AI_OA_Templates::render(
+		$body    = WP_MCP_AI_OA_Templates::render(
 			$invite,
 			$lead_id,
 			array( 'booking_url' => WP_MCP_AI_OA_Booking_Link_CPT::get_booking_url( $booking_link_id, $lead_id ) )
@@ -495,14 +598,25 @@ class WP_MCP_AI_OA_Engine {
 			)
 		);
 		if ( is_wp_error( $outbox_id ) ) {
-			return array( 'success' => false, 'lead_id' => $lead_id, 'reason' => $outbox_id->get_error_message() );
+			return array(
+				'success' => false,
+				'lead_id' => $lead_id,
+				'reason'  => $outbox_id->get_error_message(),
+			);
 		}
 		$sent = false;
 		if ( WP_MCP_AI_OA_Channels::is_auto( 'email' ) ) {
 			$dispatch = WP_MCP_AI_OA_Channels::dispatch( $outbox_id );
 			$sent     = ! is_wp_error( $dispatch ) && empty( $dispatch['needs_manual_send'] );
 		}
-		return array( 'success' => true, 'lead_id' => $lead_id, 'sentiment' => 'positive', 'routed' => 'booking_invite', 'outbox_id' => $outbox_id, 'sent' => $sent );
+		return array(
+			'success'   => true,
+			'lead_id'   => $lead_id,
+			'sentiment' => 'positive',
+			'routed'    => 'booking_invite',
+			'outbox_id' => $outbox_id,
+			'sent'      => $sent,
+		);
 	}
 
 	/**
@@ -624,7 +738,14 @@ class WP_MCP_AI_OA_Engine {
 							'step'            => 0,
 							'channel'         => 'email',
 							'subject'         => __( 'Re: your question', 'mcp-ai-wpoos-pro' ),
-							'body'            => WP_MCP_AI_OA_Templates::render( $response, $lead_id, array( 'objection' => $needle, 'response' => $response ) ),
+							'body'            => WP_MCP_AI_OA_Templates::render(
+								$response,
+								$lead_id,
+								array(
+									'objection' => $needle,
+									'response'  => $response,
+								)
+							),
 							'status'          => 'pending',
 							'kind'            => 'objection_reply',
 							'angle_id'        => (int) $entry->ID,
@@ -676,7 +797,7 @@ class WP_MCP_AI_OA_Engine {
 			$groups[ $root ][] = $angle;
 		}
 
-		$history   = get_option( self::HISTORY_OPTION, array() );
+		$history    = get_option( self::HISTORY_OPTION, array() );
 		$promotions = array();
 		if ( ! is_array( $history ) ) {
 			$history = array();
@@ -694,18 +815,54 @@ class WP_MCP_AI_OA_Engine {
 				continue; // Not enough data yet.
 			}
 
-			$winner = null;
-			$best   = -1.0;
+			$stats = array();
 			foreach ( $members as $member ) {
-				$member_sends   = max( 1, (int) get_post_meta( $member->ID, '_oa_angle_sends', true ) );
+				$member_sends   = (int) get_post_meta( $member->ID, '_oa_angle_sends', true );
 				$member_replies = (int) get_post_meta( $member->ID, '_oa_angle_replies', true );
-				$rate           = $member_replies / $member_sends;
-				if ( $rate > $best ) {
-					$best   = $rate;
-					$winner = $member;
+				$stats[]        = array(
+					'post'    => $member,
+					'sends'   => max( 1, $member_sends ),
+					'replies' => $member_replies,
+					'rate'    => $member_replies / max( 1, $member_sends ),
+				);
+			}
+			usort(
+				$stats,
+				static function ( $a, $b ) {
+					return $b['rate'] <=> $a['rate'];
+				}
+			);
+			$winner = $stats[0]['post'];
+
+			// Statistical guard: once every variant has a meaningful sample,
+			// require a two-proportion z-test at 95% before promoting.
+			$significant = true;
+			$enough      = true;
+			foreach ( $stats as $stat ) {
+				if ( $stat['sends'] < 30 ) {
+					$enough = false;
+					break;
 				}
 			}
-			if ( ! $winner ) {
+			if ( $enough && isset( $stats[1] ) ) {
+				$n1          = $stats[0]['sends'];
+				$n2          = $stats[1]['sends'];
+				$r1          = $stats[0]['replies'];
+				$r2          = $stats[1]['replies'];
+				$p           = ( $r1 + $r2 ) / max( 1, $n1 + $n2 );
+				$se          = sqrt( $p * ( 1 - $p ) * ( ( 1 / $n1 ) + ( 1 / $n2 ) ) );
+				$z           = $se > 0 ? ( ( $r1 / $n1 ) - ( $r2 / $n2 ) ) / $se : 0;
+				$significant = $z >= 1.96;
+			}
+
+			/**
+			 * Filter whether an A/B group may be promoted.
+			 *
+			 * @param bool  $significant Whether the winner clears the guard.
+			 * @param array $stats       Per-variant sends/replies/rate.
+			 */
+			$significant = (bool) apply_filters( 'wp_mcp_ai_crm_ab_promotion_significant', $significant, $stats );
+			if ( ! $significant ) {
 				continue;
 			}
 			foreach ( $members as $member ) {
@@ -750,16 +907,16 @@ class WP_MCP_AI_OA_Engine {
 	 */
 	public static function get_pipeline_stats() {
 		$stats = array(
-			'prospects' => 0,
-			'messaged'  => 0,
-			'replied'   => 0,
-			'positive'  => 0,
-			'booked'    => 0,
-			'shown'     => 0,
-			'reply_rate' => 0,
-			'positive_rate' => 0,
-			'book_rate' => 0,
-			'show_rate' => 0,
+			'prospects'      => 0,
+			'messaged'       => 0,
+			'replied'        => 0,
+			'positive'       => 0,
+			'booked'         => 0,
+			'shown'          => 0,
+			'reply_rate'     => 0,
+			'positive_rate'  => 0,
+			'book_rate'      => 0,
+			'show_rate'      => 0,
 			'pending_outbox' => 0,
 		);
 
@@ -778,18 +935,18 @@ class WP_MCP_AI_OA_Engine {
 				if ( '' === $status ) {
 					continue;
 				}
-				$stats['prospects']++;
+				++$stats['prospects'];
 				if ( get_post_meta( $lead_id, '_oa_last_message_at', true ) ) {
-					$stats['messaged']++;
+					++$stats['messaged'];
 				}
 				if ( in_array( $status, array( 'replied', 'replied_positive', 'booked' ), true ) ) {
-					$stats['replied']++;
+					++$stats['replied'];
 				}
 				if ( in_array( $status, array( 'replied_positive', 'booked' ), true ) ) {
-					$stats['positive']++;
+					++$stats['positive'];
 				}
 				if ( 'booked' === $status ) {
-					$stats['booked']++;
+					++$stats['booked'];
 				}
 			}
 		}
@@ -810,7 +967,7 @@ class WP_MCP_AI_OA_Engine {
 				}
 				$status = get_post_meta( $appointment_id, '_status', true );
 				if ( in_array( $status, array( 'confirmed', 'completed' ), true ) ) {
-					$stats['shown']++;
+					++$stats['shown'];
 				}
 			}
 		}

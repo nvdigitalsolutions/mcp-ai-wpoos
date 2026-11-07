@@ -1092,6 +1092,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Archive_Stale_Contacts'    => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-archive-stale-contacts.php',
 				'WP_MCP_AI_Tool_Recalculate_Engagement_Scores' => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-recalculate-engagement-scores.php',
 				'WP_MCP_AI_Tool_Scan_Duplicate_Contacts'   => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/class-wp-mcp-ai-tool-scan-duplicate-contacts.php',
+
+				// ── Phase F: Outreach admissibility (Proposal 129) — v3.3.0 ──
+				'WP_MCP_AI_Tool_Verify_Lead_Email'         => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/quality/class-wp-mcp-ai-tool-verify-lead-email.php',
+				'WP_MCP_AI_Tool_Check_Sending_Domain'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-check-sending-domain.php',
+				'WP_MCP_AI_Tool_Get_Sending_Readiness'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-get-sending-readiness.php',
+				'WP_MCP_AI_Tool_Manage_Sending_Warmup'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/compliance/class-wp-mcp-ai-tool-manage-sending-warmup.php',
+				'WP_MCP_AI_Tool_Collect_Prospect_Signals'  => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/collectors/class-wp-mcp-ai-tool-collect-prospect-signals.php',
+				'WP_MCP_AI_Tool_Explain_Prospect_Fit'      => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/leads/class-wp-mcp-ai-tool-explain-prospect-fit.php',
+				'WP_MCP_AI_Tool_Query_Signal_Cohort'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/leads/class-wp-mcp-ai-tool-query-signal-cohort.php',
+				'WP_MCP_AI_Tool_Export_Outreach_Csv'       => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/leads/class-wp-mcp-ai-tool-export-outreach-csv.php',
+				'WP_MCP_AI_Tool_Preview_Pre_Send_Gate'     => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-preview-pre-send-gate.php',
+				'WP_MCP_AI_Tool_Review_Held_Send'          => WP_MCP_AI_PRO_PATH . 'includes/tools/crm/outbound/class-wp-mcp-ai-tool-review-held-send.php',
 			);
 				$pro_tools = array_merge( $pro_tools, $crm_tools );
 		}
