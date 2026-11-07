@@ -43,10 +43,26 @@ const dividerStyle = theme?.titleDivider
 			.join(';')
 	: undefined;
 
+/** The shape's own px geometry rides custom properties. Inline `width`/`height`
+ * would outrank the tablet/mobile reflow and pin the collage to its desktop
+ * size, letting the 412px shape size the implicit grid column and spill past
+ * the viewport. */
+const shapeRatio = ( () => {
+	const width = theme?.mediaShape?.width ?? '';
+	const height = theme?.mediaShape?.height ?? '';
+	if ( ! /px$/i.test( width ) || ! /px$/i.test( height ) ) {
+		return undefined;
+	}
+	const w = Number.parseFloat( width );
+	const h = Number.parseFloat( height );
+	return w > 0 && h > 0 ? `${ w } / ${ h }` : undefined;
+} )();
+
 const shapeStyle = theme?.mediaShape
 	? [
-			`width:${theme.mediaShape.width}`,
-			`height:${theme.mediaShape.height}`,
+			`--ds-shape-w:${theme.mediaShape.width}`,
+			`--ds-shape-h:${theme.mediaShape.height}`,
+			shapeRatio && `--ds-shape-ratio:${shapeRatio}`,
 			`background:${theme.mediaShape.background}`,
 			theme.mediaShape.radius && `border-radius:${theme.mediaShape.radius}`,
 		]
@@ -97,7 +113,14 @@ const offsetVars = ( index: number ): string | undefined => {
 		</div>
 		{media && media.length > 0 && (
 			<div class="ds-hero-collage">
-				{theme.mediaShape && <span class="ds-collage-shape" aria-hidden="true" style={shapeStyle} />}
+				{theme.mediaShape && (
+					<span
+						class="ds-collage-shape"
+						aria-hidden="true"
+						data-fluid={shapeRatio ? '' : undefined}
+						style={shapeStyle}
+					/>
+				)}
 				{media.map(
 					(image, index) =>
 						image.src && (

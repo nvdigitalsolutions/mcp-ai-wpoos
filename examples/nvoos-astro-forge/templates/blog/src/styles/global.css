@@ -964,6 +964,8 @@ a {
 .ds-collage-shape {
 	display: block;
 	margin-inline: auto;
+	width: var(--ds-shape-w, auto);
+	height: var(--ds-shape-h, auto);
 }
 
 .ds-collage-media {
@@ -992,14 +994,28 @@ a {
 	.ds-hero-collage {
 		position: static;
 		display: grid;
+		/* A definite track is load-bearing: an implicit auto column is
+		 * sized by the 412px shape, so max-width: 100% has no definite
+		 * containing block to resolve against and both the shape and the
+		 * photos spill past the viewport (measured: 45px of horizontal
+		 * scroll at 390px, 72px at 768px). */
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--forge-space);
 	}
 	.ds-collage-shape {
+		width: 100%;
 		max-width: 100%;
+	}
+	/* Keep the shape's own proportions once it goes full width, instead of
+	 * stretching it to the desktop height. */
+	.ds-collage-shape[data-fluid] {
+		height: auto;
+		aspect-ratio: var(--ds-shape-ratio);
 	}
 	.ds-collage-media {
 		position: static;
 		width: 100%;
+		height: auto;
 	}
 }
 
@@ -1061,11 +1077,11 @@ a {
  * stays); alternate directions give the source's independent-column feel. */
 @supports (animation-timeline: scroll()) {
 	@media (prefers-reduced-motion: no-preference) {
-		// The hero band is STATIC (125 §5): the source hero's photo is a
-		// fixed-position background (verified live: constant 50% 50%,
-		// attachment scroll) — a band translate overlapped the flush
-		// quote band below (jayainc: "raised up onto the hero"). The
-		// media-carrier parallax below keeps the source's moving pieces.
+		/* The hero band is STATIC (125 §5): the source hero's photo is a
+		 * fixed-position background (verified live: constant 50% 50%,
+		 * attachment scroll) — a band translate overlapped the flush
+		 * quote band below (jayainc: "raised up onto the hero"). The
+		 * media-carrier parallax below keeps the source's moving pieces. */
 		.ds-parallax:not(.ds-section-wrap--hero) .ds-media,
 		.ds-parallax:not(.ds-section-wrap--hero) .ds-icon-media img,
 		.ds-parallax:not(.ds-section-wrap--hero) .ds-card {

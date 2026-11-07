@@ -1072,6 +1072,16 @@ not typecheck, so a green suite can still fail CI on fixture types.
   inline `margin-top` OUTRANKS media queries** — a device map must be
   emitted as CSS (base rule + two media rules), never inline. Proof it
   works: raw extraction on jayainc now returns exactly the map.
+- **The collage geometry rides custom properties, not inline
+  `width`/`height`.** Same trap as margins, one level deeper: an inline
+  `width`/`height` on `.ds-collage-shape` cannot be overridden by the reflow
+  media query, and a fixed 412px child sizes the *implicit* grid column, so
+  `max-width: 100%` has no definite containing block to resolve against.
+  jayainc measured 45px of horizontal scroll at 390px and 72px at 768px
+  before the fix. The reflow needs BOTH a definite track
+  (`grid-template-columns: minmax(0, 1fr)`) and the geometry in
+  `--ds-shape-w` / `--ds-shape-h` / `--ds-shape-ratio`, so the shape can go
+  full width at its own ratio (`[data-fluid]` + `aspect-ratio`).
 - **`bandSpacing: 'template' | 'source'`** (profile-level, default
   `template`). `source` renders fact-less bands flush. Two traps: the wrap's
   padding comes from a RULE (`--forge-space-4`), not `--ds-pad-y` (which
