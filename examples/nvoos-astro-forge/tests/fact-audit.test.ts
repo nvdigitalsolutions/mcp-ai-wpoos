@@ -20,6 +20,13 @@ const BUILT = [
 	'<div data-section-id="bbb"><h2>Plain</h2></div>',
 ].join( '' );
 
+/** The source divider fact (all three fields are required on the wire type). */
+const divider = (): NonNullable< ForgeSection[ 'titleDivider' ] > => ( {
+	width: '125px',
+	height: '6px',
+	background: '#ffcf0e',
+} );
+
 const section = ( overrides: Partial< ForgeSection > ): ForgeSection =>
 	( { id: 'aaa', ...overrides } as ForgeSection );
 
@@ -32,7 +39,7 @@ describe( 'auditFacts', () => {
 					padding: '0px 0px 100px 0px',
 					titleAlign: 'center',
 					titleStyle: { size: '43px' },
-					titleDivider: { width: '125px' },
+					titleDivider: divider(),
 				} ),
 			],
 			BUILT
@@ -43,7 +50,7 @@ describe( 'auditFacts', () => {
 
 	it( 'reports each fact a band declares but does not render', () => {
 		const unrendered = auditFacts(
-			[ section( { titleDivider: { width: '125px' }, titleStyle: { size: '43px' }, titleAlign: 'center' } ) ],
+			[ section( { titleDivider: divider(), titleStyle: { size: '43px' }, titleAlign: 'center' } ) ],
 			BUILT.replace( /<span class="ds-title-divider"><\/span>/, '' )
 				.replace( ' ds-body--center', '' )
 				.replace( ' style="--ds-title-size:43px"', '' )
@@ -56,12 +63,13 @@ describe( 'auditFacts', () => {
 		] );
 	} );
 
-	it( 'does not audit alignment that is not centred', () => {
-		expect( auditFacts( [ section( { titleAlign: 'left' } ) ], BUILT ) ).toEqual( [] );
+	it( 'audits only the facts a band actually declares', () => {
+		// No titleAlign/titleStyle/divider — only the padding it does declare.
+		expect( auditFacts( [ section( { padding: '10px 0' } ) ], BUILT ) ).toEqual( [] );
 	} );
 
 	it( 'skips a band that is absent from the build (the band-flow gate owns that)', () => {
-		expect( auditFacts( [ section( { id: 'zzz', titleDivider: { width: '1px' } } ) ], BUILT ) ).toEqual( [] );
+		expect( auditFacts( [ section( { id: 'zzz', titleDivider: divider() } ) ], BUILT ) ).toEqual( [] );
 	} );
 
 	it( 'ignores a responsive <style> block that names the section id', () => {
@@ -72,7 +80,7 @@ describe( 'auditFacts', () => {
 			'<div data-section-id="aaa"><span class="ds-title-divider"></span></div>',
 		].join( '' );
 
-		expect( auditFacts( [ section( { titleDivider: { width: '125px' } } ) ], html ) ).toEqual( [] );
+		expect( auditFacts( [ section( { titleDivider: divider() } ) ], html ) ).toEqual( [] );
 	} );
 
 	it( 'only inspects a band\'s own slice of the HTML', () => {
@@ -82,6 +90,6 @@ describe( 'auditFacts', () => {
 			'<div data-section-id="bbb"><span class="ds-title-divider"></span></div>',
 		].join( '' );
 
-		expect( auditFacts( [ section( { titleDivider: { width: '125px' } } ) ], html ) ).toHaveLength( 1 );
+		expect( auditFacts( [ section( { titleDivider: divider() } ) ], html ) ).toHaveLength( 1 );
 	} );
 } );
