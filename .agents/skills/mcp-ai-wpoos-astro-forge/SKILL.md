@@ -350,8 +350,25 @@ gates, visual-regression practice).
   non-builder content render identically to before (the e2e XSS/embed/rich-
   content gates pin this).
 - **`forge verify <profile> --target <dir>`** — re-extracts the built CSS
-  bundle and scores parity (default threshold 0.6); `--baselines` is the
-  documented opt-in Playwright step (the parity gate needs no browser).
+  bundle and scores parity (default threshold 0.6). Parity is LANGUAGE parity
+  (roles/scale/spacing), never pixels; three gates now cover what it cannot
+  see:
+  - `verify` (always) — **fact consumption** via `lib/fact-audit.ts`: every
+    fact a band declares must leave its marker in that band's built HTML.
+    This is what catches a component that never received the section theme
+    (Found by the audit: `FeatureGrid` and `IconList` both silently dropped
+    `titleStyle`/`titleDivider`/`titleAlign`.) `--strict-facts` makes it fail.
+  - `analyze --geometry` + `verify --geometry` — **box geometry** via
+    `lib/geometry.ts`: measures each band at 1440/834/390 into
+    `profile.geometry`, then diffs the build against it (warn at tolerance,
+    fail at 2×; `--geometry-limit` caps output). Box metrics survive font and
+    anti-aliasing differences, so no pixel thresholds or Docker font pinning.
+    A 903px card from a missing `height: auto` is invisible to CSS review and
+    obvious here.
+  - Extraction now reads `@media` bodies (`rulesInMedia`) for `margin-top`/
+    `margin-bottom`: a band flush on desktop but pulled on tablet/mobile is
+    captured as `{ desktop, tablet, mobile }`, not flattened. An inline margin
+    outranks the media queries, so a device map is emitted as CSS only.
   MCP: `design_apply` (write, open-world policy like site_analyze) +
   `design_verify` (read). Wizard: `--design` + the `confirmDesign` clack
   hook (TTY-gated; non-TTY applies deterministically).

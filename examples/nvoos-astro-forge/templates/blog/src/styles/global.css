@@ -906,7 +906,11 @@ a {
 .ds-title-divider {
 	display: block;
 	margin-top: var(--forge-space-2, 0.625rem);
-	/* A fixed-width block child centers inside the grid/centered band. */
+}
+
+/* A fixed-width bar centres only inside a centred band — a left-aligned
+ * section keeps its divider on the leading edge. */
+.ds-body--center .ds-title-divider {
 	margin-inline: auto;
 }
 

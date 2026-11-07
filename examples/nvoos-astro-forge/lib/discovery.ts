@@ -295,6 +295,9 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	if ( fresh.wireframes ) {
 		merged.wireframes = fresh.wireframes;
 	}
+	if ( fresh.geometry ) {
+		merged.geometry = fresh.geometry;
+	}
 	if ( ( existing.collections ?? [] ).length === 0 ) {
 		merged.collections = fresh.collections;
 	}

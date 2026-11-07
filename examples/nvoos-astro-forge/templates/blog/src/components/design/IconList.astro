@@ -10,31 +10,54 @@
 // classes (auxicon-*, fa fa-*, …); with the source's own icon stylesheet
 // (chrome.iconCss) linked in the layout they draw the real glyphs.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 import IconMarker from './IconMarker.astro';
 
 interface Props {
 	section: SemanticSection;
-	columns?: Record<string, number>;
+	columns?: Record< string, number >;
+	theme?: SectionTheme;
 }
 
-const { section, columns } = Astro.props;
+const { section, columns, theme } = Astro.props;
 const { title, body, items, media } = section.slots;
 const list = items ?? [];
 const rows = list.length > 0 && list.every((item) => item.layout === 'row');
 const gridStyle = !rows && columns
 	? `--ds-cols-desktop: ${columns.desktop ?? 4}; --ds-cols-tablet: ${columns.tablet ?? 2}; --ds-cols-mobile: ${columns.mobile ?? 1};`
 	: undefined;
+// Heading facts (125 §7/§8) — the same rhythm FeatureGrid applies, so a split
+// band does not lose the source's type scale and underline divider.
+const titleVars = [
+	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
+	theme?.titleStyle?.weight && `--ds-title-weight:${ theme.titleStyle.weight }`,
+	theme?.titleStyle?.lineHeight && `--ds-title-lh:${ theme.titleStyle.lineHeight }`,
+	theme?.titleStyle?.letterSpacing && `--ds-title-ls:${ theme.titleStyle.letterSpacing }`,
+]
+	.filter( Boolean )
+	.join( ';' );
+const dividerStyle = theme?.titleDivider
+	? [
+			`width:${ theme.titleDivider.width }`,
+			`height:${ theme.titleDivider.height }`,
+			`background:${ theme.titleDivider.background }`,
+			theme.titleDivider.shadow && `box-shadow:${ theme.titleDivider.shadow }`,
+		]
+			.filter( Boolean )
+			.join( ';' )
+	: undefined;
 ---
 
-<section class="ds-section">
+<section class:list={['ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center']}>
 	{media && media.length > 0 ? (
 		<div class="ds-icon-split">
 			<div class="ds-icon-media">
 				{media.map((entry) => entry.src && <SmartImage src={entry.src} alt={entry.alt ?? title ?? ''} />)}
 			</div>
 			<div class="ds-icon-content">
-				{title && <h2 class="ds-title">{title}</h2>}
+				{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+				{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 				{body && body.length > 0 && (
 					<div class="ds-lede">
 						{body.map((paragraph) => (
@@ -72,7 +95,8 @@ const gridStyle = !rows && columns
 		</div>
 	) : (
 		<>
-			{title && <h2 class="ds-title">{title}</h2>}
+			{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+			{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 			{body && body.length > 0 && (
 				<div class="ds-lede">
 					{body.map((paragraph) => (
