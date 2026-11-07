@@ -41,6 +41,7 @@ import { Command } from 'commander';
 import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { emitDeployConfig } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
+import { findDroppedPins } from '../lib/pins.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
@@ -271,9 +272,23 @@ async function runAnalyze( url, options ) {
 		let mode = 'Draft profile written to';
 		try {
 			const existing = JSON.parse( await readFile( options.write, 'utf8' ) );
-			if ( ! options.fresh && existing && typeof existing === 'object' ) {
-				text = `${ JSON.stringify( mergeProfileDraft( existing, profile ), null, '\t' ) }\n`;
-				mode = 'Draft profile MERGED into';
+			if ( existing && typeof existing === 'object' ) {
+				const pins = Array.isArray( existing.pins ) ? existing.pins : [];
+				if ( options.fresh ) {
+					if ( pins.length > 0 ) {
+						console.warn( `  \u26a0 --fresh drops ${ pins.length } operator pin(s) in ${ options.write } — re-add them, or drop the flag to merge.` );
+					}
+				} else {
+					const merged = mergeProfileDraft( existing, profile );
+					text = `${ JSON.stringify( merged, null, '\t' ) }\n`;
+					mode = 'Draft profile MERGED into';
+					// Pins are re-applied by the merge, so anything still dropped
+					// means the source no longer has that section — say so instead
+					// of letting the operator assume the pin held.
+					for ( const pin of findDroppedPins( merged.design, pins ) ) {
+						console.warn( `  \u26a0 Pin "${ pin.path }" could not be re-applied — its section is gone from the source.` );
+					}
+				}
 			}
 		} catch {
 			// No existing file — a fresh write.

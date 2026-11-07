@@ -636,6 +636,23 @@
 			]
 		}
 	},
+	"pins": [
+		{
+			"path": "sections.5e78df1.marginTop",
+			"value": "170px",
+			"why": "Elementor pulls this band up over the section above; extraction reports 0px."
+		},
+		{
+			"path": "sections.fd63522.padding",
+			"value": "0px 0px 100px 0px",
+			"why": "The catalogue band keeps 100px of bottom air under the button."
+		},
+		{
+			"path": "chrome.footerInk",
+			"value": "rgba(255, 255, 255, 0.7)",
+			"why": "Muted footer text on the dark footer bar."
+		}
+	],
 	"vocabulary": {
 		"widgetRoles": {},
 		"blockRoles": {},
