@@ -8,6 +8,12 @@
 
 export type SectionThemeName = 'hero' | 'dark' | 'alt' | 'light';
 
+export type BandSpacing = 'template' | 'source';
+
+/** Whether a band with no source padding fact keeps the template rhythm
+ * or renders flush (the source’s own 0). From profile.bandSpacing. */
+export const bandSpacing: BandSpacing = 'template';
+
 export interface SectionTheme {
 	id?: string;
 	theme: SectionThemeName;
