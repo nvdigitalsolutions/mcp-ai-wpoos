@@ -193,6 +193,53 @@ class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$subject = sanitize_text_field( $arguments['subject'] );
 		$body    = wp_kses_post( $arguments['body'] );
 
+		// Deterministic pre-send gate. Runs on exactly what would leave.
+		if ( class_exists( 'WP_MCP_AI_CRM_Pre_Send_Gate' ) ) {
+			$gate = WP_MCP_AI_CRM_Pre_Send_Gate::check(
+				array(
+					'lead_id' => $lead_id,
+					'channel' => 'email',
+					'kind'    => $sequence_id ? 'sequence' : 'one_off',
+					'to'      => $email,
+					'subject' => $subject,
+					'body'    => $body,
+					'step'    => $sequence_id ? $step_index : 0,
+					'context' => $context,
+				)
+			);
+			if ( is_wp_error( $gate ) ) {
+				$gate_data  = $gate->get_error_data();
+				$gate_codes = is_array( $gate_data ) && isset( $gate_data['codes'] ) ? (array) $gate_data['codes'] : array();
+				if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+					WP_MCP_AI_CRM_Audit::record(
+						'outbound_gate_blocked',
+						'lead',
+						$lead_id,
+						array(
+							'channel' => 'email',
+							'codes'   => implode( ',', $gate_codes ),
+						)
+					);
+				}
+				return $gate;
+			}
+		}
+
+		// Agent output guard for AI-written copy.
+		if ( class_exists( 'WP_MCP_AI_CRM_Agent_Guard' ) && '1' === (string) get_post_meta( $lead_id, '_crm_ai_generated', true ) ) {
+			$review = WP_MCP_AI_CRM_Agent_Guard::review(
+				$subject,
+				$body,
+				array(
+					'lead_id' => $lead_id,
+					'kind'    => $sequence_id ? 'sequence' : 'one_off',
+				)
+			);
+			if ( empty( $review['ok'] ) ) {
+				return new WP_Error( 'wp_mcp_ai_crm_agent_guard_held', __( 'Generated message requires human review.', 'mcp-ai-wpoos-pro' ), array( 'reasons' => $review['reasons'] ) );
+			}
+		}
+
 		// Append CAN-SPAM footer if configured.
 		if ( class_exists( 'WP_MCP_AI_CRM_Engine' ) ) {
 			$s = WP_MCP_AI_CRM_Engine::get_toolkit_settings();
@@ -201,7 +248,19 @@ class WP_MCP_AI_Tool_Send_Lead_Email implements WP_MCP_AI_Tool_Interface, WP_MCP
 			}
 		}
 
-		$sent = wp_mail( $email, $subject, $body, array( 'Content-Type: text/html; charset=UTF-8' ) );
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+		if ( class_exists( 'WP_MCP_AI_CRM_Unsubscribe' ) ) {
+			$headers = array_merge(
+				$headers,
+				WP_MCP_AI_CRM_Unsubscribe::headers_for_lead( $lead_id, 'email', $sequence_id ? 'sequence' : 'one_off' )
+			);
+		}
+
+		$sent = wp_mail( $email, $subject, $body, $headers );
+
+		if ( $sent && class_exists( 'WP_MCP_AI_CRM_Deliverability' ) ) {
+			WP_MCP_AI_CRM_Deliverability::record_sent();
+		}
 
 		if ( ! $sent ) {
 			return new WP_Error( 'send_failed', __( 'Email failed to send.', 'mcp-ai-wpoos-pro' ) );

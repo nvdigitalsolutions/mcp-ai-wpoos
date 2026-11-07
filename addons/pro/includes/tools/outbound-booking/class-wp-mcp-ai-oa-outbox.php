@@ -38,7 +38,7 @@ class WP_MCP_AI_OA_Outbox {
 	 *
 	 * @var string[]
 	 */
-	const STATUSES = array( 'pending', 'approved', 'sent', 'rejected', 'failed' );
+	const STATUSES = array( 'pending', 'approved', 'sent', 'rejected', 'failed', 'held' );
 
 	/**
 	 * Message kinds.
@@ -128,13 +128,29 @@ class WP_MCP_AI_OA_Outbox {
 				'no_found_rows'  => true,
 				'meta_query'     => array(
 					'relation' => 'AND',
-					array( 'key' => '_oa_ob_lead_id', 'value' => $lead_id, 'compare' => '=' ),
-					array( 'key' => '_oa_ob_sequence_id', 'value' => $sequence_id, 'compare' => '=' ),
-					array( 'key' => '_oa_ob_step', 'value' => $step, 'compare' => '=' ),
-					array( 'key' => '_oa_ob_kind', 'value' => $kind, 'compare' => '=' ),
+					array(
+						'key'     => '_oa_ob_lead_id',
+						'value'   => $lead_id,
+						'compare' => '=',
+					),
+					array(
+						'key'     => '_oa_ob_sequence_id',
+						'value'   => $sequence_id,
+						'compare' => '=',
+					),
+					array(
+						'key'     => '_oa_ob_step',
+						'value'   => $step,
+						'compare' => '=',
+					),
+					array(
+						'key'     => '_oa_ob_kind',
+						'value'   => $kind,
+						'compare' => '=',
+					),
 					array(
 						'key'     => '_oa_ob_status',
-						'value'   => array( 'pending', 'approved' ),
+						'value'   => array( 'pending', 'approved', 'held' ),
 						'compare' => 'IN',
 					),
 				),
@@ -144,7 +160,7 @@ class WP_MCP_AI_OA_Outbox {
 			return (int) $existing[0];
 		}
 
-		$lead = get_post( $lead_id );
+		$lead  = get_post( $lead_id );
 		$title = $lead ? sprintf(
 			/* translators: 1: lead name, 2: channel, 3: sequence step */
 			__( '%1$s · %2$s · step %3$d', 'mcp-ai-wpoos-pro' ),
@@ -184,6 +200,92 @@ class WP_MCP_AI_OA_Outbox {
 		update_post_meta( $post_id, '_oa_ob_created_at', current_time( 'mysql', true ) );
 
 		return $post_id;
+	}
+
+	/**
+	 * Mark a message as held for human review.
+	 *
+	 * A held message is one the pre-send gate refused to let through on an
+	 * auto-send path. It is deliberately excluded from "approve all".
+	 *
+	 * @since 3.3.0
+	 * @param int   $outbox_id Outbox post ID.
+	 * @param array $reasons   Gate reasons (code/detail pairs).
+	 * @return bool
+	 */
+	public static function hold( $outbox_id, array $reasons = array() ) {
+		$outbox_id = absint( $outbox_id );
+		if ( ! $outbox_id ) {
+			return false;
+		}
+		self::set_status( $outbox_id, 'held' );
+		update_post_meta( $outbox_id, '_oa_ob_hold_reason', wp_json_encode( array_values( $reasons ) ) );
+		update_post_meta( $outbox_id, '_oa_ob_held_at', current_time( 'mysql', true ) );
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Audit' ) ) {
+			WP_MCP_AI_CRM_Audit::record(
+				'outbound_message_held',
+				'outbox',
+				$outbox_id,
+				array( 'reasons' => wp_json_encode( $reasons ) )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Re-run the gate and approve a held message when it now passes.
+	 *
+	 * @since 3.3.0
+	 * @param int $outbox_id Outbox post ID.
+	 * @return bool|WP_Error True when approved, WP_Error when still held.
+	 */
+	public static function approve_held( $outbox_id ) {
+		$outbox_id = absint( $outbox_id );
+		if ( ! $outbox_id ) {
+			return new WP_Error( 'not_found', __( 'Message not found.', 'mcp-ai-wpoos-pro' ) );
+		}
+		$status = get_post_meta( $outbox_id, '_oa_ob_status', true );
+		if ( 'held' !== $status ) {
+			return new WP_Error( 'not_held', __( 'Message is not held.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( class_exists( 'WP_MCP_AI_CRM_Pre_Send_Gate' ) ) {
+			$lead_id = (int) get_post_meta( $outbox_id, '_oa_ob_lead_id', true );
+			$channel = get_post_meta( $outbox_id, '_oa_ob_channel', true );
+			$to      = 'email' === $channel ? get_post_meta( $lead_id, 'email', true ) : get_post_meta( $lead_id, '_oa_linkedin', true );
+			if ( ! $to && 'instagram_dm' === $channel ) {
+				$to = get_post_meta( $lead_id, '_oa_instagram', true );
+			}
+			$kind = (string) get_post_meta( $outbox_id, '_oa_ob_kind', true );
+			if ( '' === $kind ) {
+				$kind = 'sequence';
+			}
+			$gate = WP_MCP_AI_CRM_Pre_Send_Gate::check(
+				array(
+					'lead_id' => $lead_id,
+					'channel' => $channel,
+					'kind'    => $kind,
+					'to'      => $to,
+					'subject' => get_post_meta( $outbox_id, '_oa_ob_subject', true ),
+					'body'    => get_post_meta( $outbox_id, '_oa_ob_body', true ),
+					'step'    => (int) get_post_meta( $outbox_id, '_oa_ob_step', true ),
+				)
+			);
+			if ( is_wp_error( $gate ) ) {
+				$data    = $gate->get_error_data();
+				$reasons = is_array( $data ) && isset( $data['reasons'] ) ? (array) $data['reasons'] : array();
+				self::hold( $outbox_id, $reasons );
+				return $gate;
+			}
+		}
+
+		self::set_status( $outbox_id, 'approved' );
+		delete_post_meta( $outbox_id, '_oa_ob_hold_reason' );
+		delete_post_meta( $outbox_id, '_oa_ob_held_at' );
+		WP_MCP_AI_OA_Channels::dispatch( $outbox_id );
+		return true;
 	}
 
 	/**
@@ -299,6 +401,10 @@ class WP_MCP_AI_OA_Outbox {
 			$actions['oa_approve'] = '<a href="' . esc_url( $url( 'approve' ) ) . '">' . esc_html__( 'Approve', 'mcp-ai-wpoos-pro' ) . '</a>';
 			$actions['oa_reject']  = '<a href="' . esc_url( $url( 'reject' ) ) . '">' . esc_html__( 'Reject', 'mcp-ai-wpoos-pro' ) . '</a>';
 		}
+		if ( 'held' === $status ) {
+			$actions['oa_approve'] = '<a href="' . esc_url( $url( 'approve' ) ) . '">' . esc_html__( 'Approve held', 'mcp-ai-wpoos-pro' ) . '</a>';
+			$actions['oa_reject']  = '<a href="' . esc_url( $url( 'reject' ) ) . '">' . esc_html__( 'Reject', 'mcp-ai-wpoos-pro' ) . '</a>';
+		}
 		if ( in_array( $status, array( 'pending', 'approved' ), true ) ) {
 			$actions['oa_send'] = '<a href="' . esc_url( $url( 'send' ) ) . '">' . esc_html__( 'Mark Sent', 'mcp-ai-wpoos-pro' ) . '</a>';
 		}
@@ -333,7 +439,13 @@ class WP_MCP_AI_OA_Outbox {
 			return $redirect;
 		}
 		foreach ( $post_ids as $post_id ) {
-			self::transition( absint( $post_id ), str_replace( 'oa_', '', $action ) );
+			$post_id = absint( $post_id );
+			// "Approve all" deliberately never approves held mail: each held
+			// message must be read before it can leave.
+			if ( 'oa_approve' === $action && 'held' === get_post_meta( $post_id, '_oa_ob_status', true ) ) {
+				continue;
+			}
+			self::transition( $post_id, str_replace( 'oa_', '', $action ) );
 		}
 		return $redirect;
 	}
@@ -372,6 +484,10 @@ class WP_MCP_AI_OA_Outbox {
 	private static function transition( $outbox_id, $action ) {
 		switch ( $action ) {
 			case 'approve':
+				if ( 'held' === get_post_meta( $outbox_id, '_oa_ob_status', true ) ) {
+					self::approve_held( $outbox_id );
+					break;
+				}
 				self::set_status( $outbox_id, 'approved' );
 				// Auto-channels dispatch immediately on approval.
 				WP_MCP_AI_OA_Channels::dispatch( $outbox_id );
@@ -405,6 +521,15 @@ class WP_MCP_AI_OA_Outbox {
 			);
 			echo '</p></div>';
 		}
+		if ( ! empty( $counts['held'] ) ) {
+			echo '<div class="notice notice-warning"><p>';
+			printf(
+				/* translators: %d: number of held messages */
+				esc_html__( '%d message(s) are held by the pre-send gate. Read each one before approving; "Approve all" skips held mail.', 'mcp-ai-wpoos-pro' ),
+				(int) $counts['held']
+			);
+			echo '</p></div>';
+		}
 	}
 
 	/**
@@ -430,7 +555,7 @@ class WP_MCP_AI_OA_Outbox {
 				$status = 'pending';
 			}
 			if ( isset( $counts[ $status ] ) ) {
-				$counts[ $status ]++;
+				++$counts[ $status ];
 			}
 		}
 		return $counts;

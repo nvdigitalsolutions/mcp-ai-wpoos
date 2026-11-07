@@ -83,24 +83,33 @@ class WP_MCP_AI_Tool_Create_Outreach_Sequence implements WP_MCP_AI_Tool_Interfac
 					'items' => array(
 						'type'       => 'object',
 						'properties' => array(
-							'channel'         => array(
+							'channel'          => array(
 								'type' => 'string',
 								'enum' => WP_MCP_AI_CRM_Codes::CHANNELS,
 							),
-							'template_id'     => array( 'type' => 'string' ),
-							'wait_hours'      => array(
+							'template_id'      => array( 'type' => 'string' ),
+							'wait_hours'       => array(
 								'type'    => 'integer',
 								'default' => 24,
 							),
-							'branch_on_reply' => array(
+							'branch_on_reply'  => array(
 								'type'    => 'boolean',
 								'default' => true,
 							),
+							'purpose'          => array( 'type' => 'string' ),
+							'max_words'        => array( 'type' => 'integer' ),
+							'link_budget'      => array( 'type' => 'integer' ),
+							'require_evidence' => array( 'type' => 'boolean' ),
 						),
 					),
 				),
+				'preset'      => array(
+					'type'        => 'string',
+					'enum'        => array( 'short', 'standard', 'breakup' ),
+					'description' => __( 'Benchmark-aligned cadence preset. Use instead of steps.', 'mcp-ai-wpoos-pro' ),
+				),
 			),
-			'required'   => array( 'name', 'steps' ),
+			'required'   => array( 'name' ),
 		);
 	}
 
@@ -142,18 +151,29 @@ class WP_MCP_AI_Tool_Create_Outreach_Sequence implements WP_MCP_AI_Tool_Interfac
 		}
 		$name  = sanitize_text_field( $arguments['name'] );
 		$steps = $arguments['steps'] ?? array();
+		if ( empty( $steps ) && ! empty( $arguments['preset'] ) && class_exists( 'WP_MCP_AI_CRM_Sequence_Presets' ) ) {
+			$preset = WP_MCP_AI_CRM_Sequence_Presets::get( $arguments['preset'] );
+			if ( is_wp_error( $preset ) ) {
+				return $preset;
+			}
+			$steps = $preset['steps'];
+		}
 		if ( empty( $steps ) ) {
-			return new WP_Error( 'no_steps', __( 'At least one step is required.', 'mcp-ai-wpoos-pro' ) );
+			return new WP_Error( 'no_steps', __( 'At least one step or a preset is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 		// Sanitise steps.
 		$clean = array();
 		foreach ( $steps as $i => $s ) {
 			$clean[] = array(
-				'order'           => $i + 1,
-				'channel'         => sanitize_key( $s['channel'] ?? 'email' ),
-				'template_id'     => sanitize_key( $s['template_id'] ?? '' ),
-				'wait_hours'      => absint( $s['wait_hours'] ?? 24 ),
-				'branch_on_reply' => ! empty( $s['branch_on_reply'] ),
+				'order'            => $i + 1,
+				'channel'          => sanitize_key( $s['channel'] ?? 'email' ),
+				'template_id'      => sanitize_key( $s['template_id'] ?? '' ),
+				'wait_hours'       => absint( $s['wait_hours'] ?? 24 ),
+				'branch_on_reply'  => ! empty( $s['branch_on_reply'] ),
+				'purpose'          => sanitize_key( $s['purpose'] ?? '' ),
+				'max_words'        => absint( $s['max_words'] ?? 0 ),
+				'link_budget'      => isset( $s['link_budget'] ) ? absint( $s['link_budget'] ) : null,
+				'require_evidence' => ! empty( $s['require_evidence'] ),
 			);
 		}
 		$seq_id = wp_insert_post(

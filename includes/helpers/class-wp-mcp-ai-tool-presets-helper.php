@@ -1900,6 +1900,17 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'crm_email_search_leads',
 					'crm_email_search_correspondence',
 					'crm_email_search_accounting',
+					// Outreach admissibility & signals (Pro, Proposal 129).
+					'verify_lead_email',
+					'check_sending_domain',
+					'get_sending_readiness',
+					'manage_sending_warmup',
+					'preview_pre_send_gate',
+					'collect_prospect_signals',
+					'explain_prospect_fit',
+					'query_signal_cohort',
+					'export_outreach_csv',
+					'review_held_send',
 					// Client profile & communication (Pro).
 					'create_client_profile',
 					'client_communication_log',

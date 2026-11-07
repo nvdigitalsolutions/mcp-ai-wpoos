@@ -2564,6 +2564,77 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Schedule_Presets' ) ) {
 						'args' => array(),
 					),
 				),
+
+				// -- Outreach admissibility (Proposal 129, v3.3.0).
+
+				'outreach_readiness_watch'          => array(
+					'name'          => __( 'Outreach Readiness Watch', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Checks sending-domain authentication and the composite sending-readiness score every morning. Flags missing SPF/DKIM/DMARC, incomplete warmup, high bounce/complaint rates, or low verified coverage before a campaign can start.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-shield-alt',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'daily',
+					'tags'          => array( 'crm', 'outreach', 'deliverability', 'readiness' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'check_sending_domain',
+								'arguments' => array(),
+								'label'     => __( 'Check SPF, DKIM and DMARC', 'mcp-ai-wpoos-pro' ),
+							),
+							array(
+								'tool_slug' => 'get_sending_readiness',
+								'arguments' => array(),
+								'label'     => __( 'Score sending readiness', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'outreach_held_mail_digest'         => array(
+					'name'          => __( 'Outreach Held-Mail Digest', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Lists outbox messages held by the pre-send gate or the agent guard so a human can read each one before approval. Held mail is never included in bulk approve.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'monitoring',
+					'icon'          => 'dashicons-email-alt',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'daily',
+					'tags'          => array( 'crm', 'outreach', 'approval', 'held' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'review_held_send',
+								'arguments' => array(
+									'action' => 'list',
+									'limit'  => 20,
+								),
+								'label'     => __( 'List held outbox mail', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
+				'outreach_signal_cohort_snapshot'   => array(
+					'name'          => __( 'Outreach Signal Cohort Snapshot', 'mcp-ai-wpoos-pro' ),
+					'description'   => __( 'Counts the current cohort of leads with confirmed buying signals (for example no online booking) so the team can see whether enough qualified prospects exist before launching a campaign.', 'mcp-ai-wpoos-pro' ),
+					'toolkit'       => 'crm',
+					'category'      => 'reporting',
+					'icon'          => 'dashicons-chart-pie',
+					'schedule_type' => 'workflow',
+					'schedule'      => 'weekly',
+					'tags'          => array( 'crm', 'outreach', 'signals', 'cohort' ),
+					'schedule_data' => array(
+						'workflow_steps' => array(
+							array(
+								'tool_slug' => 'query_signal_cohort',
+								'arguments' => array(
+									'must'       => array( 'no_online_booking' ),
+									'count_only' => true,
+								),
+								'label'     => __( 'Count the current signal cohort', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+				),
 			);
 		}
 

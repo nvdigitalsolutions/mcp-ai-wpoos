@@ -65,6 +65,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				self::get_maintenance_presets(),
 				self::get_onboarding_presets(),
 				self::get_crm_support_presets(),
+				self::get_outreach_presets(),
 				self::get_fashion_presets(),
 				self::get_fnb_presets(),
 				self::get_gtmetrix_presets()
@@ -166,7 +167,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 						),
 					),
 				),
-				'fnb_monthly_review'  => array(
+				'fnb_monthly_review' => array(
 					'name'        => __( 'Monthly Cost Review', 'mcp-ai-wpoos-pro' ),
 					'description' => __( 'Compare the month against budget and the previous month, split volume vs per-cover effects, then save the R-08 review as a draft.', 'mcp-ai-wpoos-pro' ),
 					'category'    => 'fnb',
@@ -606,6 +607,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 				'maintenance'   => __( 'Site Maintenance', 'mcp-ai-wpoos-pro' ),
 				'onboarding'    => __( 'User & Content Onboarding', 'mcp-ai-wpoos-pro' ),
 				'crm_support'   => __( 'CRM — Support & Ticket Management', 'mcp-ai-wpoos-pro' ),
+				'outreach'      => __( 'Outreach — Admissibility & Signals', 'mcp-ai-wpoos-pro' ),
 				'fashion'       => __( 'AI Fashion Production', 'mcp-ai-wpoos-pro' ),
 			);
 		}
@@ -3313,6 +3315,305 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Workflow_Presets' ) ) {
 							'source'       => 'node_5',
 							'target'       => 'node_6',
 							'sourceHandle' => 'output',
+						),
+					),
+				),
+			);
+		}
+
+		/**
+		 * Get Outreach admissibility workflow presets (Proposal 129).
+		 *
+		 * @since  3.3.0
+		 * @return array<string, array> Preset definitions.
+		 */
+		private static function get_outreach_presets() {
+			return array(
+				'outreach_readiness_gate' => array(
+					'name'        => __( 'Outreach Readiness Gate', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Check domain authentication and sending readiness, then build a signal cohort and export it only when the readiness gate passes.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'outreach',
+					'icon'        => 'dashicons-shield-alt',
+					'tags'        => array( 'crm', 'outreach', 'deliverability', 'signals', 'cohort' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Outreach Cycle', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Start a campaign preparation cycle.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'Check Sending Domain', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'check_sending_domain',
+								'arguments'   => array(),
+								'description' => __( 'Verify SPF, DKIM and DMARC records.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Get Sending Readiness', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'get_sending_readiness',
+								'arguments'   => array(),
+								'description' => __( 'Score warmup, bounce, complaint and verified coverage.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'condition',
+							'position' => array(
+								'x' => 250,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Ready to Send?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_3.ready == true',
+								'description' => __( 'Only proceed when no readiness blockers remain.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_5',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 100,
+								'y' => 600,
+							),
+							'data'     => array(
+								'label'       => __( 'Build Signal Cohort', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'query_signal_cohort',
+								'arguments'   => array(
+									'must'  => array( 'no_online_booking' ),
+									'limit' => 50,
+								),
+								'description' => __( 'Count and sample leads with the confirmed buying signal.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_6',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 100,
+								'y' => 750,
+							),
+							'data'     => array(
+								'label'       => __( 'Export Outreach CSV', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'export_outreach_csv',
+								'arguments'   => array(
+									'limit'              => 500,
+									'include_suppressed' => false,
+								),
+								'description' => __( 'Write a sequencer-ready CSV with evidence and verification status.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_7',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 100,
+								'y' => 900,
+							),
+							'data'     => array(
+								'label'       => __( 'Audience Ready', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Readiness passed and the cohort was exported.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_8',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 400,
+								'y' => 600,
+							),
+							'data'     => array(
+								'label'       => __( 'Blocked — Fix Readiness', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Resolve the readiness blockers before building the list.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_4_5',
+							'source'       => 'node_4',
+							'target'       => 'node_5',
+							'sourceHandle' => 'true',
+						),
+						array(
+							'id'           => 'edge_5_6',
+							'source'       => 'node_5',
+							'target'       => 'node_6',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_6_7',
+							'source'       => 'node_6',
+							'target'       => 'node_7',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_4_8',
+							'source'       => 'node_4',
+							'target'       => 'node_8',
+							'sourceHandle' => 'false',
+						),
+					),
+				),
+				'outreach_held_review'    => array(
+					'name'        => __( 'Outreach Held-Mail Review', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'List held outbox mail and dry-run the gate on the first held message so a human can read why it was stopped before approving.', 'mcp-ai-wpoos-pro' ),
+					'category'    => 'outreach',
+					'icon'        => 'dashicons-email-alt',
+					'tags'        => array( 'crm', 'outreach', 'approval', 'held', 'gate' ),
+					'nodes'       => array(
+						array(
+							'id'       => 'node_1',
+							'type'     => 'input',
+							'position' => array(
+								'x' => 250,
+								'y' => 0,
+							),
+							'data'     => array(
+								'label'       => __( 'Daily Review', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Start the held-mail review.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_2',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 250,
+								'y' => 150,
+							),
+							'data'     => array(
+								'label'       => __( 'List Held Mail', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'review_held_send',
+								'arguments'   => array(
+									'action' => 'list',
+									'limit'  => 20,
+								),
+								'description' => __( 'List messages held by the gate or agent guard.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_3',
+							'type'     => 'condition',
+							'position' => array(
+								'x' => 250,
+								'y' => 300,
+							),
+							'data'     => array(
+								'label'       => __( 'Any Held?', 'mcp-ai-wpoos-pro' ),
+								'expression'  => 'node_2.count > 0',
+								'description' => __( 'Only review when held mail exists.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_4',
+							'type'     => 'tool',
+							'position' => array(
+								'x' => 100,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'Preview First Held Draft', 'mcp-ai-wpoos-pro' ),
+								'toolSlug'    => 'preview_pre_send_gate',
+								'arguments'   => array(
+									'lead_id' => '{{node_2.held.0.lead_id}}',
+									'body'    => '{{node_2.held.0.body}}',
+								),
+								'description' => __( 'Dry-run the gate on the first held message.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_5',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 100,
+								'y' => 600,
+							),
+							'data'     => array(
+								'label'       => __( 'Read Each Held Message', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Approve or reject each held message individually.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						array(
+							'id'       => 'node_6',
+							'type'     => 'output',
+							'position' => array(
+								'x' => 400,
+								'y' => 450,
+							),
+							'data'     => array(
+								'label'       => __( 'No Held Mail', 'mcp-ai-wpoos-pro' ),
+								'description' => __( 'Nothing needs review today.', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+					),
+					'edges'       => array(
+						array(
+							'id'           => 'edge_1_2',
+							'source'       => 'node_1',
+							'target'       => 'node_2',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_2_3',
+							'source'       => 'node_2',
+							'target'       => 'node_3',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_4',
+							'source'       => 'node_3',
+							'target'       => 'node_4',
+							'sourceHandle' => 'true',
+						),
+						array(
+							'id'           => 'edge_4_5',
+							'source'       => 'node_4',
+							'target'       => 'node_5',
+							'sourceHandle' => 'output',
+						),
+						array(
+							'id'           => 'edge_3_6',
+							'source'       => 'node_3',
+							'target'       => 'node_6',
+							'sourceHandle' => 'false',
 						),
 					),
 				),
