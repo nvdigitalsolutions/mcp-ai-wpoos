@@ -657,7 +657,9 @@ a {
 
 	.ds-grid {
 	display: grid;
-	gap: var(--forge-space);
+	/* The band's measured card gutter (Elementor column gap) — the template's
+	 * own gutter when the source declares none. */
+	gap: var(--ds-card-gap, var(--forge-space));
 	/* The title-to-grid rhythm (125 §8): the source heading sits above
 	 * the cards with breathing room; the zero-margin title otherwise
 	 * touches the first row (jayainc's "Let our Expert & Trusted
@@ -680,7 +682,9 @@ a {
 }
 
 .ds-card {
-	padding: var(--forge-space);
+	/* The band's measured card padding (Elementor wraps its card content in a
+	 * 10px-padded widget wrap on jayainc). */
+	padding: var(--ds-card-pad, var(--forge-space));
 	border: 1px solid var(--forge-line);
 	border-radius: var(--forge-radius);
 	background: var(--forge-surface-alt);
@@ -692,6 +696,9 @@ a {
 .ds-card h3,
 .ds-card h4,
 .ds-card h5 {
+	/* The source pads the card's TEXT BLOCK (40px on jayainc), not the heading
+	 * itself — it is what gives the card its post-image height. */
+	padding: var(--ds-card-text-pad, 0);
 	font-family: var(--forge-font-display);
 	font-size: var(--forge-scale-h3, 1.25rem);
 	font-weight: 500;

@@ -303,6 +303,14 @@ export interface ForgeSection {
 	/** The heading is centered (the source's aux-widget-inner centering —
 	 * jayainc's "Other Featured Products" band). */
 	titleAlign?: 'center';
+	/**
+	 * The card box model of a media grid band. Elementor cards are theme
+	 * components, so a source's card padding / grid gutter / text-block padding
+	 * are not band-scoped CSS facts — they are measured per band (jayainc's
+	 * products cards: 10px wrap padding, 40px text padding, no gutter). Empty →
+	 * the template defaults.
+	 */
+	cardStyle?: { gap?: string; padding?: string; textPadding?: string };
 	/** The media collage's backdrop shape (aux-the-shape) — the rectangle
 	 * the offset photos compose over (jayainc's 412x450 yellow shape). */
 	mediaShape?: { width: string; height: string; background: string; radius?: string };

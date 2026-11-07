@@ -282,6 +282,11 @@
 					"height": "6px",
 					"background": "#ffcf0e",
 					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
+				},
+				"cardStyle": {
+					"gap": "0px",
+					"padding": "10px",
+					"textPadding": "40px"
 				}
 			},
 			{
@@ -655,6 +660,15 @@
 			"path": "sections.5e78df1.measure",
 			"value": "1600px",
 			"why": "This band's container is Elementor's 1600px wide, not the 1140px default — extraction reads the default. Cards are 25% of it."
+		},
+		{
+			"path": "sections.5e78df1.cardStyle",
+			"value": {
+				"gap": "0px",
+				"padding": "10px",
+				"textPadding": "40px"
+			},
+			"why": "The source cards are borderless media cards: 10px widget-wrap padding, no column gutter, 40px-padded text block — measured, not band-scoped CSS."
 		},
 		{
 			"path": "sections.fd63522.padding",

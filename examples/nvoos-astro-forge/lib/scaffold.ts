@@ -700,6 +700,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		"\ttitleAlign?: 'center';",
 		'\t/** The media collage backdrop shape (width/height/background/radius). */',
 		'\tmediaShape?: { width: string; height: string; background: string; radius?: string };',
+		'\t/** The card box model of a media grid band (measured; template defaults when absent). */',
+		'\tcardStyle?: { gap?: string; padding?: string; textPadding?: string };',
 		'\t/** Per-image collage offsets (absolute positioning against the collage box). */',
 		'\tmediaOffsets?: Array<{ top?: string; right?: string; bottom?: string; left?: string; shadow?: string }>;',
 		'\t/** The body paragraphs render in N columns (the source\'s sub-column split). */',
@@ -823,6 +825,15 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		}
 		if ( section.titleAlign ) {
 			entry.push( `titleAlign: ${ tsString( section.titleAlign ) }` );
+		}
+		if ( section.cardStyle ) {
+			const card = section.cardStyle;
+			const parts = ( [ 'gap', 'padding', 'textPadding' ] as const )
+				.filter( ( key ) => card[ key ] )
+				.map( ( key ) => `${ key }: ${ tsString( card[ key ] as string ) }` );
+			if ( parts.length > 0 ) {
+				entry.push( `cardStyle: { ${ parts.join( ', ' ) } }` );
+			}
 		}
 		if ( section.mediaShape ) {
 			const shape = section.mediaShape;
