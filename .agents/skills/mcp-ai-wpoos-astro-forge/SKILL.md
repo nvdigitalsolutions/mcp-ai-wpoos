@@ -1053,6 +1053,60 @@ Research-backed (web.dev responsive images, MDN animation-timeline, DTCG
   velocity) and the hue/saturation formulas deliberately differ — forcing
   either would change tuned classification thresholds.
 
+## Fidelity gates and measured facts (2026-11-07)
+
+The jayainc band-by-band review produced three gates and four fact kinds.
+Each line below cost a wrong build — do not re-derive them.
+
+**Gates** (all documented in the Proposal 114 verify section):
+`analyze --geometry` + `verify --geometry` (box metrics at 1440/834/390),
+fact consumption in `verify` (`--strict-facts`), and the `rulesInMedia`
+responsive read. **`npm run typecheck` is part of the gate** — vitest does
+not typecheck, so a green suite can still fail CI on fixture types.
+
+- **Device-scoped margins.** `topLevelRules` deliberately keeps a media body
+  as inert nested text, so facts inside `@media` were invisible: jayainc's
+  band pull is 0px desktop / 170px tablet / 100px mobile and came back as
+  "none". `rulesInMedia` recurses into media bodies; `responsiveLength`
+  emits `{ desktop, tablet, mobile }` only when the values differ. **An
+  inline `margin-top` OUTRANKS media queries** — a device map must be
+  emitted as CSS (base rule + two media rules), never inline. Proof it
+  works: raw extraction on jayainc now returns exactly the map.
+- **`bandSpacing: 'template' | 'source'`** (profile-level, default
+  `template`). `source` renders fact-less bands flush. Two traps: the wrap's
+  padding comes from a RULE (`--forge-space-4`), not `--ds-pad-y` (which
+  only collapses the inner `.ds-section`), so source mode must zero
+  `padding-top/bottom` explicitly; and an EMPTY band is a spacer (jayainc's
+  `dff3f1a` is 70px with no padding fact) — zeroing it rendered 0px and
+  shifted every band below. Empty bands keep the wrap rhythm and drop only
+  `--ds-pad-y`.
+- **`cardStyle: { gap, padding, textPadding }`** (per band). Elementor card
+  metrics live on theme widgets (`.elementor-widget-wrap`, `.aux-text-inner`),
+  never on the band, so no band-scoped CSS scan can find them — they are
+  MEASURED facts, applied as `--ds-card-gap` / `--ds-card-pad` /
+  `--ds-card-text-pad` with the template value as fallback. Probe the card's
+  own tree before guessing: jayainc's missing 107px was a 40px text-block
+  padding, not the image.
+- **`.ds-card img` needs `height: auto`, and must not force 1/1.**
+  SmartImage's `width`/`height` attributes are presentational hints that beat
+  `aspect-ratio`; without `height: auto` a 687×768 source rendered 224×768
+  and every card stood 903px tall. Forcing `1 / 1` then cost another 139px —
+  the source keeps the intrinsic ratio. A fixed `height: 300px` is wrong at
+  every other viewport and over-crops under `object-fit: cover`.
+- **`measure` is not necessarily the site default.** Extraction reads the
+  1140px container default; a band's own container can be Elementor's 1600px
+  (jayainc's products band — its 25% columns are 345px, not 258px). Correct
+  the fact and PIN it.
+- **A short band can be MISSING CONTENT, not wrong layout.** jayainc's
+  products band still measured 885px against 1216px after its cards matched,
+  because the source has a third block — an "ALL SERVICES" CTA — that never
+  entered the section slots. Grep the built HTML for the source's text, not
+  just its boxes; geometry cannot see content that was never emitted.
+- **Pin every measured/authored fact.** `profile.pins` re-applies through
+  `mergeProfileDraft`; `tests/pins.test.ts` fails naming the exact path when
+  a regenerate drops one. Known jayainc pins: `5e78df1` marginTop, measure,
+  cardStyle; `fd63522` padding; `chrome.footerInk`.
+
 ## Phase roadmap (096 §5)
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,
