@@ -113,7 +113,20 @@ const responsiveMarginCss = ( id: string | undefined, property: string, value: R
 		.filter( Boolean )
 		.join( '' );
 };
-const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
+// ---------------------------------------------------------------------------
+// A band with no slots renders nothing (the templates only draw what the
+// classifier found); `source` band spacing must not collapse those to 0px.
+const sectionHasContent = ( section: SemanticSection ): boolean => {
+	const { title, body, items, media } = section.slots ?? {};
+	return Boolean(
+		title ||
+			( body && body.length > 0 ) ||
+			( items && items.length > 0 ) ||
+			( media && media.length > 0 )
+	);
+};
+
+const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
 	}
@@ -140,11 +153,17 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	} else if ( bandSpacing === 'source' ) {
 		// No padding fact = the source band is flush. `source` mode honours that
 		// instead of the template's own rhythm. The wrap's padding comes from a
-		// rule (--forge-space-4), NOT --ds-pad-y, so zero it explicitly; the var
-		// still collapses the INNER section's rhythm.
-		parts.push( 'padding-top:0' );
-		parts.push( 'padding-bottom:0' );
+		// rule (--forge-space-4), NOT --ds-pad-y, so zero it explicitly.
+		//
+		// An EMPTY band is a spacer (jayainc's dff3f1a is 70px with no padding
+		// fact and no content): zeroing it would render 0px and shift every
+		// band below it. Those keep the wrap's rhythm and lose only the inner
+		// section's, which would otherwise double-count it.
 		parts.push( '--ds-pad-y:0' );
+		if ( hasContent ) {
+			parts.push( 'padding-top:0' );
+			parts.push( 'padding-bottom:0' );
+		}
 	}
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage ) {
@@ -212,7 +231,7 @@ const responsiveMargins = sections
 			const theme = themeFor(section);
 			const behavior = behaviorFor(section);
 			return (
-				<div data-section-id={section.id ?? undefined} id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section-id={section.id ?? undefined} id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (
