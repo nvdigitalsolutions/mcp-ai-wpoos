@@ -2,6 +2,7 @@
 	"url": "https://jayainc.com",
 	"name": "JAYAINC",
 	"frontPage": "home",
+	"bandSpacing": "source",
 	"forms": {},
 	"tokens": {
 		"ink": "#242424",

@@ -18,7 +18,7 @@
 // rhythm without copying any markup.
 import type { SemanticSection } from '../../forge/semantic.ts';
 import { classifyHtml } from '../../forge/semantic.ts';
-import { sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
+import { bandSpacing, sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
 import { behaviors } from '../../lib/behaviors.generated.ts';
 import Cta from './Cta.astro';
 import Catalog from './Catalog.astro';
@@ -128,6 +128,24 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	if ( theme.paddingX ) {
 		parts.push( `--ds-pad-x:${ theme.paddingX }` );
 	}
+	// The source band's declared padding (jayainc: the 100px bands vs the
+	// flush content-tight bands) — inline wins over the wrap default. This runs
+	// BEFORE the hero's early return: a hero band carries padding facts too.
+	if ( theme.padding ) {
+		parts.push( `padding:${ theme.padding }` );
+		// The source declares the band's rhythm — suppress the template's
+		// default section padding so the bands meet their neighbors flush
+		// (124 §5, the continuous flow).
+		parts.push( '--ds-pad-y:0' );
+	} else if ( bandSpacing === 'source' ) {
+		// No padding fact = the source band is flush. `source` mode honours that
+		// instead of the template's own rhythm. The wrap's padding comes from a
+		// rule (--forge-space-4), NOT --ds-pad-y, so zero it explicitly; the var
+		// still collapses the INNER section's rhythm.
+		parts.push( 'padding-top:0' );
+		parts.push( 'padding-bottom:0' );
+		parts.push( '--ds-pad-y:0' );
+	}
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
@@ -144,15 +162,6 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	}
 	if ( theme.bg ) {
 		parts.push( `background:${ theme.bg }` );
-	}
-	// The source band's declared padding (jayainc: the 100px bands vs the
-	// flush content-tight bands) — inline wins over the wrap default.
-	if ( theme.padding ) {
-		parts.push( `padding:${ theme.padding }` );
-		// The source declares the band's rhythm — suppress the template's
-		// default section padding so the bands meet their neighbors flush
-		// (124 §5, the continuous flow).
-		parts.push( '--ds-pad-y:0' );
 	}
 	// Section-level pull facts (124 §4): negative margins overlap the
 	// neighbor band; z-index stacks the overlap.

@@ -162,6 +162,14 @@ export interface SiteProfile {
 	 */
 	design?: ForgeDesign;
 	/**
+	 * Whether a band that declares NO padding fact keeps the template's own band
+	 * rhythm (`template`, the default) or renders flush like the source
+	 * (`source`). Elementor reports `padding: 0` for many bands; `source` honours
+	 * that instead of adding the template's breathing room. Opt-in per profile —
+	 * nothing changes unless a profile asks for it.
+	 */
+	bandSpacing?: 'template' | 'source';
+	/**
 	 * Measured source geometry (`analyze --geometry`), one box per band per
 	 * viewport. `verify --geometry` diffs the built site against it — the gate
 	 * the language-parity score cannot provide (Proposal 114 §3.6).
