@@ -408,6 +408,14 @@ describe('forge e2e — emitted site', () => {
 			// the measured band.
 			expect(css).toMatch(/@media[^{]*\{\s*\.site-header\s*\{[^}]*flex-wrap:\s*wrap/);
 			expect(css).toMatch(/\.ds-collage-media\s*\{[^}]*position:\s*static/);
+			// The collage must not spill once it reflows: an implicit auto track
+			// is sized by the fixed 412px shape, so max-width has no definite
+			// containing block to resolve against and the shape drags the
+			// photos past the viewport (measured: 45px of horizontal scroll at
+			// 390px, 21px at 768px). The definite track is the load-bearing fix;
+			// the shape then goes full width at its own ratio.
+			expect(css).toMatch(/\.ds-hero-collage\s*\{[^}]*grid-template-columns:\s*minmax\(\s*0\s*,\s*1fr\s*\)/);
+			expect(css).toMatch(/\.ds-collage-shape\[data-fluid\]\s*\{[^}]*aspect-ratio:\s*var\(--ds-shape-ratio\)/);
 		} else {
 			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);
 		}
@@ -418,6 +426,10 @@ describe('forge e2e — emitted site', () => {
 		expect(index).toContain('ds-hero-split');
 		expect(index).toContain('ds-title-divider');
 		expect(index).toContain('ds-collage-shape');
+		// The shape's geometry rides custom properties so the reflow can
+		// override it — inline width/height would outrank the media query.
+		expect(index).toContain('--ds-shape-w:412px');
+		expect(index).toContain('--ds-shape-ratio:412 / 450');
 		expect(index).toContain('--ds-off-top:-25%');
 		// The flipbook catalog (125 §4) — the PDF source dies with its
 		// script; the section fact rebuilds it as a centered open-CTA (the
