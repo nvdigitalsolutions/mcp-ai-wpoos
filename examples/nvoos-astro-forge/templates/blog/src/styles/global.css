@@ -706,6 +706,11 @@ a {
 
 .ds-card img {
 	width: 100%;
+	/* SmartImage emits width/height attributes; without `height: auto` those
+	 * presentational hints win and the image renders at its full intrinsic
+	 * height (a 687x768 source became a 768px-tall card), so `aspect-ratio`
+	 * never applied. */
+	height: auto;
 	aspect-ratio: 1 / 1;
 	object-fit: cover;
 	border-radius: var(--forge-radius-sm);

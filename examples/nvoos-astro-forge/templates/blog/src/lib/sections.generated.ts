@@ -28,8 +28,8 @@ export interface SectionTheme {
 	paddingX?: string;
 	/** Section-level pull facts (124 §4) — negative margins overlap
 	 * the neighbor band; z-index stacks the overlap. */
-	marginTop?: string;
-	marginBottom?: string;
+	marginTop?: string | { desktop?: string; tablet?: string; mobile?: string };
+	marginBottom?: string | { desktop?: string; tablet?: string; mobile?: string };
 	zIndex?: string;
 	/** The top-level column responsive facts (124 §6) — widths per
 	 * device + order/visibility; the split components re-measure. */

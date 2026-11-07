@@ -223,6 +223,13 @@ export interface ForgeVocabulary {
 }
 
 /**
+ * A band length that may differ per device. Elementor scopes a section's pull
+ * to a device range, so a single value is unfaithful: jayainc's products band
+ * is 0px on desktop, 170px on tablet and 100px on mobile.
+ */
+export type ResponsiveLength = string | { desktop?: string; tablet?: string; mobile?: string };
+
+/**
  * One source page section's background facts (Proposal 117 §2) — the
  * per-band theming data the scaffold bakes into sections.generated.ts.
  * Keyed by the Elementor section id the semantic classifier carries on
@@ -247,8 +254,8 @@ export interface ForgeSection {
 	paddingX?: string;
 	/** Section-level pull facts (124 §4) — negative margins pull the band
 	 * over its neighbor (the source's overlap rhythm), z-index stacks it. */
-	marginTop?: string;
-	marginBottom?: string;
+	marginTop?: ResponsiveLength;
+	marginBottom?: ResponsiveLength;
 	zIndex?: string;
 	/** The top-level column responsive facts (124 §6) — desktop/tablet/
 	 * mobile widths (elementor-col/md/sm-*) + order/visibility flags. The
