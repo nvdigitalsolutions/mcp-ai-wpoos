@@ -1,24 +1,50 @@
 ---
 // FeatureGrid — icon-box/counter/feature sections rebuilt as a card grid.
 // `columns` (Proposal 115 §4) drives the grid via per-breakpoint CSS custom
-// properties — the wireframe's captured/inferred collapse behavior.
+// properties — the wireframe's captured/inferred collapse behavior. The
+// heading facts (125 §7/§8) re-apply the source's modern-heading rhythm:
+// typography vars, the underline divider, and the centered alignment
+// (jayainc's "Let our Expert & Trusted Team…" band).
 import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 
 interface Props {
 	section: SemanticSection;
 	columns?: Record<string, number>;
+	theme?: SectionTheme;
 }
 
-const { section, columns } = Astro.props;
+const { section, columns, theme } = Astro.props;
 const { title, body, items } = section.slots;
 const gridStyle = columns
 	? `--ds-cols-desktop: ${ columns.desktop ?? 4 }; --ds-cols-tablet: ${ columns.tablet ?? 2 }; --ds-cols-mobile: ${ columns.mobile ?? 1 };`
 	: undefined;
+
+const titleVars = [
+	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
+	theme?.titleStyle?.weight && `--ds-title-weight:${ theme.titleStyle.weight }`,
+	theme?.titleStyle?.lineHeight && `--ds-title-lh:${ theme.titleStyle.lineHeight }`,
+	theme?.titleStyle?.letterSpacing && `--ds-title-ls:${ theme.titleStyle.letterSpacing }`,
+]
+	.filter( Boolean )
+	.join( ';' );
+
+const dividerStyle = theme?.titleDivider
+	? [
+			`width:${ theme.titleDivider.width }`,
+			`height:${ theme.titleDivider.height }`,
+			`background:${ theme.titleDivider.background }`,
+			theme.titleDivider.shadow && `box-shadow:${ theme.titleDivider.shadow }`,
+		]
+			.filter( Boolean )
+			.join( ';' )
+	: undefined;
 ---
 
-<section class="ds-section">
-	{title && <h2 class="ds-title">{title}</h2>}
+<section class:list={['ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center']}>
+	{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+	{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 	{body && body.length > 0 && (
 		<div class="ds-lede">
 			{body.map((paragraph) => (

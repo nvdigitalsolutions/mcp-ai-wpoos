@@ -407,6 +407,8 @@ describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
 					bgGradient: 'linear-gradient(180deg, #e5e5e5 0%, #ffffff 100%)',
 					layout: 'split',
 					bodyColumns: 2,
+					marginTop: '170px',
+					titleAlign: 'center',
 					titleDivider: { width: '125px', height: '6px', background: '#ffcf0e', shadow: '0px 4px 8px 0px rgba(255,207,14,0.5)' },
 					titleStyle: { size: '43px', weight: '500', lineHeight: '57px', letterSpacing: '-1.5px' },
 					mediaShape: { width: '412px', height: '450px', background: 'linear-gradient(39deg, #ffcf0e 0%, #ffb70e 100%)' },
@@ -425,6 +427,8 @@ describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
 		const module = renderSectionsGenerated( profile );
 		expect( module ).toContain( "layout: 'split'" );
 		expect( module ).toContain( 'bodyColumns: 2' );
+		expect( module ).toContain( "marginTop: '170px'" );
+		expect( module ).toContain( "titleAlign: 'center'" );
 		expect( module ).toContain( "titleDivider: { width: '125px', height: '6px', background: '#ffcf0e', shadow: '0px 4px 8px 0px rgba(255,207,14,0.5)' }" );
 		expect( module ).toContain( "titleStyle: { size: '43px', weight: '500', lineHeight: '57px', letterSpacing: '-1.5px' }" );
 		expect( module ).toContain( "mediaShape: { width: '412px', height: '450px', background: 'linear-gradient(39deg, #ffcf0e 0%, #ffb70e 100%)' }" );
