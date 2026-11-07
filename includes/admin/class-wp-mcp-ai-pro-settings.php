@@ -2159,7 +2159,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Register a dummy stylesheet handle so that wp_add_inline_style()
 			// (called at the end of this method) has a valid handle to attach to.
-			wp_register_style( 'wp-mcp-ai-pro-settings', false );
+			// The version only cache-busts the inline block, so the plugin version
+			// is the right source and keeps the handle honest across releases.
+			$style_version = defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0';
+			wp_register_style( 'wp-mcp-ai-pro-settings', false, array(), $style_version );
 			wp_enqueue_style( 'wp-mcp-ai-pro-settings' );
 
 			$packages        = self::get_npm_packages();
