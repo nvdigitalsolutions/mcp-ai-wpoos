@@ -183,6 +183,26 @@ export interface SiteProfile {
 	 * classifier defaults so vocabulary evolves per-site, never per-release.
 	 */
 	vocabulary?: ForgeVocabulary;
+	/**
+	 * Operator-owned facts inside the ANALYZED `design` block (see
+	 * `lib/pins.ts`). `analyze --write` refreshes `design` wholesale, so these
+	 * paths are re-applied afterwards — a regenerate can never silently drop a
+	 * hand-tuned fact. Pins live here, at the top level, because `design` is the
+	 * block being replaced.
+	 */
+	pins?: DesignPin[];
+}
+
+/**
+ * One operator-owned fact inside the design block. `path` is a dot path
+ * (`chrome.footerInk`) or a section shorthand
+ * (`sections.5e78df1.marginTop`); `value` is any JSON value, compared
+ * structurally. `why` is the operator's note on why the fact is pinned.
+ */
+export interface DesignPin {
+	path: string;
+	value: unknown;
+	why?: string;
 }
 
 /**

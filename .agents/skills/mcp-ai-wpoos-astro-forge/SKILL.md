@@ -851,8 +851,12 @@ on-screen with computed styles + pixel sampling before merge.
   (first `<link rel="icon">`, absolute — `cropped-jaya-inc-icon-32x32`);
   `Base.astro` wires all three.
 - **Operator pins survive `analyze --write`:** the tokens merge preserves
-  hand-tuned `cta-pad`/`cta-radius`/`measure` keys — verify the pin
-  survives the next `analyze --write` merge before regenerating a profile.
+  hand-tuned `cta-pad`/`cta-radius`/`measure` keys. Facts INSIDE the analyzed
+  `design` block are replaced wholesale, so declare those at the profile's top
+  level in `pins` — `{ "path": "sections.5e78df1.marginTop", "value": "170px" }`
+  or `{ "path": "chrome.footerInk", "value": "…" }`; `mergeProfileDraft`
+  re-applies them (`lib/pins.ts`) and `tests/pins.test.ts` fails when the
+  committed profile stops satisfying one. `--fresh` still drops them (it warns).
 
 ## Proposal 123 — chrome typography pass (2026-11-06)
 
