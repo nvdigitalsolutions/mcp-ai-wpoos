@@ -708,10 +708,13 @@ a {
 	width: 100%;
 	/* SmartImage emits width/height attributes; without `height: auto` those
 	 * presentational hints win and the image renders at its full intrinsic
-	 * height (a 687x768 source became a 768px-tall card), so `aspect-ratio`
-	 * never applied. */
+	 * height (a 687x768 source became a 768px-tall card).
+	 *
+	 * No `aspect-ratio` override: the source cards keep each image's own ratio
+	 * (jayainc's are 687x768 portrait, rendering 325x363 at a 345px card). A
+	 * forced 1/1 square cropped them and lost 139px of card height; a fixed px
+	 * height would be wrong at every other viewport. */
 	height: auto;
-	aspect-ratio: 1 / 1;
 	object-fit: cover;
 	border-radius: var(--forge-radius-sm);
 }
