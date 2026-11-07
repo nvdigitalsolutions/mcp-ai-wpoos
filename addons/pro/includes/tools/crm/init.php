@@ -40,12 +40,30 @@ if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
 		// Since 3.2.0: JobNavigator-adoption shared helpers.
 		'class-wp-mcp-ai-crm-stage-history.php',
 		'class-wp-mcp-ai-crm-identity.php',
+		// Since 3.3.0: outreach admissibility layer (Proposal 129).
+		'class-wp-mcp-ai-crm-pre-send-gate.php',
+		'class-wp-mcp-ai-crm-deliverability.php',
+		'class-wp-mcp-ai-crm-send-window.php',
+		'class-wp-mcp-ai-crm-unsubscribe.php',
+		'class-wp-mcp-ai-crm-opt-out-detector.php',
+		'class-wp-mcp-ai-crm-signals-db.php',
+		'class-wp-mcp-ai-crm-signals.php',
+		'collectors/class-wp-mcp-ai-crm-signal-collector.php',
+		'class-wp-mcp-ai-crm-agent-guard.php',
+		'class-wp-mcp-ai-crm-sequence-presets.php',
 	);
 	foreach ( $_crm_files as $_file ) {
 		$_path = $crm_engine_dir . $_file;
 		if ( file_exists( $_path ) ) {
 			require_once $_path;
 		}
+	}
+
+	// Register unsubscribe routes and inbound opt-out detection.
+	WP_MCP_AI_CRM_Unsubscribe::init();
+	WP_MCP_AI_CRM_Opt_Out_Detector::init();
+	if ( class_exists( 'WP_MCP_AI_CRM_Signals_DB' ) ) {
+		WP_MCP_AI_CRM_Signals_DB::init();
 	}
 
 	// Load Upwork client so availability checks succeed at tool registration time.
