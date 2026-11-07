@@ -86,6 +86,33 @@ const parallaxStyle = ( behavior: ReturnType<typeof behaviorFor> ): string | und
 	behavior?.kind === 'parallax' && behavior.speed !== undefined && behavior.speed > 1
 		? `--ds-parallax-range:${ Math.min( behavior.speed, 4 ) * 24 }px`
 		: undefined;
+/** A band margin — one length, or a per-device map (Elementor's scoped pulls). */
+type ResponsiveMargin = string | { desktop?: string; tablet?: string; mobile?: string } | undefined;
+
+/** The inline half of a band margin — only plain strings go inline. */
+const marginInline = ( value: ResponsiveMargin ): string | undefined =>
+	typeof value === 'string' ? value : undefined;
+
+/**
+ * The stylesheet half of a band margin. Elementor scopes a pull to a device
+ * range — jayainc's products band is 0px on desktop, 170px on tablet and 100px
+ * on mobile — so a single inline value is unfaithful. A per-device map is
+ * emitted entirely as CSS: an inline margin-top would outrank the media
+ * queries. Breakpoints match the template's (1025 desktop / 768 tablet).
+ */
+const responsiveMarginCss = ( id: string | undefined, property: string, value: ResponsiveMargin ): string => {
+	if ( ! id || typeof value !== 'object' || value === null ) {
+		return '';
+	}
+	const scoped = `[data-section-id="${ id }"]`;
+	return [
+		value.desktop && `${ scoped }{${ property }:${ value.desktop }}`,
+		value.tablet && `@media (max-width: 1024px){${ scoped }{${ property }:${ value.tablet }}}`,
+		value.mobile && `@media (max-width: 767px){${ scoped }{${ property }:${ value.mobile }}}`,
+	]
+		.filter( Boolean )
+		.join( '' );
+};
 const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	if ( ! theme ) {
 		return undefined;
@@ -130,10 +157,16 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	// Section-level pull facts (124 §4): negative margins overlap the
 	// neighbor band; z-index stacks the overlap.
 	if ( theme.marginTop ) {
-		parts.push( `margin-top:${ theme.marginTop }` );
+		const marginTop = marginInline( theme.marginTop );
+		if ( marginTop ) {
+			parts.push( `margin-top:${ marginTop }` );
+		}
 	}
 	if ( theme.marginBottom ) {
-		parts.push( `margin-bottom:${ theme.marginBottom }` );
+		const marginBottom = marginInline( theme.marginBottom );
+		if ( marginBottom ) {
+			parts.push( `margin-bottom:${ marginBottom }` );
+		}
 	}
 	if ( theme.zIndex ) {
 		parts.push( `z-index:${ theme.zIndex }` );
@@ -150,10 +183,22 @@ const wrapStyle = ( theme: SectionTheme | undefined ): string | undefined => {
 	}
 	return parts.length > 0 ? parts.join( ';' ) : undefined;
 };
+
+// The per-device half of every band margin — emitted once, scoped by section id.
+const responsiveMargins = sections
+	.map( ( section ) => {
+		const theme = themeFor( section );
+		return (
+			responsiveMarginCss( section.id, 'margin-top', theme?.marginTop ) +
+			responsiveMarginCss( section.id, 'margin-bottom', theme?.marginBottom )
+		);
+	} )
+	.join( '' );
 ---
 
 {sections.length > 0 && (
 	<div class="design-sections">
+		{responsiveMargins && <Fragment set:html={ `<style>${ responsiveMargins }</style>` } />}
 		{sections.map((section, index) => {
 			const theme = themeFor(section);
 			const behavior = behaviorFor(section);

@@ -264,7 +264,11 @@
 				"padding": "100px 0px 100px 0px",
 				"measure": "1140px",
 				"paddingX": "30px",
-				"marginTop": "170px",
+				"marginTop": {
+					"desktop": "0px",
+					"tablet": "170px",
+					"mobile": "100px"
+				},
 				"titleAlign": "center",
 				"titleStyle": {
 					"size": "43px",
@@ -639,8 +643,12 @@
 	"pins": [
 		{
 			"path": "sections.5e78df1.marginTop",
-			"value": "170px",
-			"why": "Elementor pulls this band up over the section above; extraction reports 0px."
+			"value": {
+				"desktop": "0px",
+				"tablet": "170px",
+				"mobile": "100px"
+			},
+			"why": "Elementor scopes this band's pull to a device range: flush on desktop, 170px on tablet, 100px on mobile."
 		},
 		{
 			"path": "sections.fd63522.padding",
