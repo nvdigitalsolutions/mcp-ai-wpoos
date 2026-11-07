@@ -210,7 +210,7 @@ const responsiveMargins = sections
 						<>
 							{section.kind === 'hero' && <Hero section={section} theme={theme} />}
 							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} theme={theme} />}
-							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} />}
+							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} theme={theme} />}
 							{section.kind === 'testimonial' && <Testimonial section={section} />}
 							{section.kind === 'logo-cloud' && <LogoCloud section={section} />}
 							{section.kind === 'cta' && <Cta section={section} />}

@@ -161,6 +161,12 @@ export interface SiteProfile {
 	 * brief). The scaffold derives the `--forge-*` token theme from it.
 	 */
 	design?: ForgeDesign;
+	/**
+	 * Measured source geometry (`analyze --geometry`), one box per band per
+	 * viewport. `verify --geometry` diffs the built site against it — the gate
+	 * the language-parity score cannot provide (Proposal 114 §3.6).
+	 */
+	geometry?: ForgeGeometry;
 	/** Collections to wire into the generated project. */
 	collections: WpCollection[];
 	/**
@@ -228,6 +234,19 @@ export interface ForgeVocabulary {
  * is 0px on desktop, 170px on tablet and 100px on mobile.
  */
 export type ResponsiveLength = string | { desktop?: string; tablet?: string; mobile?: string };
+
+/** One band's measured box at one viewport (see `lib/geometry.ts`). */
+export interface BandGeometry {
+	height: number;
+	width: number;
+	paddingTop: number;
+	paddingBottom: number;
+	marginTop: number;
+	marginBottom: number;
+}
+
+/** Measured band geometry: section id → viewport name → box. */
+export type ForgeGeometry = Record< string, Record< string, BandGeometry > >;
 
 /**
  * One source page section's background facts (Proposal 117 §2) — the
