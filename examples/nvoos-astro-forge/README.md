@@ -103,8 +103,19 @@ node scripts/forge.mjs site.json --target ./customer-frontend
 #    ships the contrast audit. --strict-contrast fails the build on failing
 #    pairs (manifest designAudit: strict).
 
-# 4. Verify language parity after a build (never pixel parity):
+# 4. Verify after a build (never pixel parity). Three independent gates:
+#    language parity (default), fact consumption (always on — every fact a
+#    band declares must leave its marker in that band's HTML; --strict-facts
+#    to fail), and box geometry (--geometry — measures each band at
+#    1440/834/390 and diffs against the baseline `analyze --geometry` recorded
+#    in the profile; warn at tolerance, fail at 2x, --geometry-limit caps
+#    output). Geometry needs Playwright; parity never does.
 node scripts/forge.mjs verify site.json --target ./customer-frontend
+node scripts/forge.mjs verify site.json --target ./customer-frontend --geometry
+
+# 5. Capture that geometry baseline alongside the design block:
+node scripts/forge.mjs analyze https://customer.example --design --geometry \
+  --write site.json
 ```
 
 ### Forms — JetFormBuilder + Elementor submissions (114 §3.9)

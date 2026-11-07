@@ -161,6 +161,20 @@ export interface SiteProfile {
 	 * brief). The scaffold derives the `--forge-*` token theme from it.
 	 */
 	design?: ForgeDesign;
+	/**
+	 * Whether a band that declares NO padding fact keeps the template's own band
+	 * rhythm (`template`, the default) or renders flush like the source
+	 * (`source`). Elementor reports `padding: 0` for many bands; `source` honours
+	 * that instead of adding the template's breathing room. Opt-in per profile —
+	 * nothing changes unless a profile asks for it.
+	 */
+	bandSpacing?: 'template' | 'source';
+	/**
+	 * Measured source geometry (`analyze --geometry`), one box per band per
+	 * viewport. `verify --geometry` diffs the built site against it — the gate
+	 * the language-parity score cannot provide (Proposal 114 §3.6).
+	 */
+	geometry?: ForgeGeometry;
 	/** Collections to wire into the generated project. */
 	collections: WpCollection[];
 	/**
@@ -183,6 +197,26 @@ export interface SiteProfile {
 	 * classifier defaults so vocabulary evolves per-site, never per-release.
 	 */
 	vocabulary?: ForgeVocabulary;
+	/**
+	 * Operator-owned facts inside the ANALYZED `design` block (see
+	 * `lib/pins.ts`). `analyze --write` refreshes `design` wholesale, so these
+	 * paths are re-applied afterwards — a regenerate can never silently drop a
+	 * hand-tuned fact. Pins live here, at the top level, because `design` is the
+	 * block being replaced.
+	 */
+	pins?: DesignPin[];
+}
+
+/**
+ * One operator-owned fact inside the design block. `path` is a dot path
+ * (`chrome.footerInk`) or a section shorthand
+ * (`sections.5e78df1.marginTop`); `value` is any JSON value, compared
+ * structurally. `why` is the operator's note on why the fact is pinned.
+ */
+export interface DesignPin {
+	path: string;
+	value: unknown;
+	why?: string;
 }
 
 /**
@@ -201,6 +235,26 @@ export interface ForgeVocabulary {
 	unknownBlocks: string[];
 	analyzedAt: string;
 }
+
+/**
+ * A band length that may differ per device. Elementor scopes a section's pull
+ * to a device range, so a single value is unfaithful: jayainc's products band
+ * is 0px on desktop, 170px on tablet and 100px on mobile.
+ */
+export type ResponsiveLength = string | { desktop?: string; tablet?: string; mobile?: string };
+
+/** One band's measured box at one viewport (see `lib/geometry.ts`). */
+export interface BandGeometry {
+	height: number;
+	width: number;
+	paddingTop: number;
+	paddingBottom: number;
+	marginTop: number;
+	marginBottom: number;
+}
+
+/** Measured band geometry: section id → viewport name → box. */
+export type ForgeGeometry = Record< string, Record< string, BandGeometry > >;
 
 /**
  * One source page section's background facts (Proposal 117 §2) — the
@@ -227,8 +281,8 @@ export interface ForgeSection {
 	paddingX?: string;
 	/** Section-level pull facts (124 §4) — negative margins pull the band
 	 * over its neighbor (the source's overlap rhythm), z-index stacks it. */
-	marginTop?: string;
-	marginBottom?: string;
+	marginTop?: ResponsiveLength;
+	marginBottom?: ResponsiveLength;
 	zIndex?: string;
 	/** The top-level column responsive facts (124 §6) — desktop/tablet/
 	 * mobile widths (elementor-col/md/sm-*) + order/visibility flags. The
@@ -249,6 +303,14 @@ export interface ForgeSection {
 	/** The heading is centered (the source's aux-widget-inner centering —
 	 * jayainc's "Other Featured Products" band). */
 	titleAlign?: 'center';
+	/**
+	 * The card box model of a media grid band. Elementor cards are theme
+	 * components, so a source's card padding / grid gutter / text-block padding
+	 * are not band-scoped CSS facts — they are measured per band (jayainc's
+	 * products cards: 10px wrap padding, 40px text padding, no gutter). Empty →
+	 * the template defaults.
+	 */
+	cardStyle?: { gap?: string; padding?: string; textPadding?: string };
 	/** The media collage's backdrop shape (aux-the-shape) — the rectangle
 	 * the offset photos compose over (jayainc's 412x450 yellow shape). */
 	mediaShape?: { width: string; height: string; background: string; radius?: string };

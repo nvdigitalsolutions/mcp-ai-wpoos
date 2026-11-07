@@ -657,7 +657,9 @@ a {
 
 	.ds-grid {
 	display: grid;
-	gap: var(--forge-space);
+	/* The band's measured card gutter (Elementor column gap) — the template's
+	 * own gutter when the source declares none. */
+	gap: var(--ds-card-gap, var(--forge-space));
 	/* The title-to-grid rhythm (125 §8): the source heading sits above
 	 * the cards with breathing room; the zero-margin title otherwise
 	 * touches the first row (jayainc's "Let our Expert & Trusted
@@ -680,7 +682,9 @@ a {
 }
 
 .ds-card {
-	padding: var(--forge-space);
+	/* The band's measured card padding (Elementor wraps its card content in a
+	 * 10px-padded widget wrap on jayainc). */
+	padding: var(--ds-card-pad, var(--forge-space));
 	border: 1px solid var(--forge-line);
 	border-radius: var(--forge-radius);
 	background: var(--forge-surface-alt);
@@ -692,6 +696,9 @@ a {
 .ds-card h3,
 .ds-card h4,
 .ds-card h5 {
+	/* The source pads the card's TEXT BLOCK (40px on jayainc), not the heading
+	 * itself — it is what gives the card its post-image height. */
+	padding: var(--ds-card-text-pad, 0);
 	font-family: var(--forge-font-display);
 	font-size: var(--forge-scale-h3, 1.25rem);
 	font-weight: 500;
@@ -706,32 +713,62 @@ a {
 
 .ds-card img {
 	width: 100%;
-	aspect-ratio: 1 / 1;
+	/* SmartImage emits width/height attributes; without `height: auto` those
+	 * presentational hints win and the image renders at its full intrinsic
+	 * height (a 687x768 source became a 768px-tall card).
+	 *
+	 * No `aspect-ratio` override: the source cards keep each image's own ratio
+	 * (jayainc's are 687x768 portrait, rendering 325x363 at a 345px card). A
+	 * forced 1/1 square cropped them and lost 139px of card height; a fixed px
+	 * height would be wrong at every other viewport. */
+	height: auto;
 	object-fit: cover;
 	border-radius: var(--forge-radius-sm);
 }
 
 .ds-quote {
 	margin: 0;
-	padding: var(--forge-space);
-	border-left: 4px solid var(--forge-accent);
-	background: var(--forge-surface-alt);
-	border-radius: 0 var(--forge-radius) var(--forge-radius) 0;
+	/* The source's blockquote component (Auxin theme rules): 1.5em padding, a
+	 * hairline rule, italic type and a large decorative open-quote glyph — not
+	 * a filled card. */
+	padding: 1.5em;
+	position: relative;
+	/* The source blockquote's own base is 140% (22.4px at the 16px root) — it
+	 * is what makes the 1.5em padding resolve to the source's 33.6px. */
+	font-size: 1.4rem;
+	border-left: 1px solid var(--forge-line, #ccc);
+	font-style: italic;
+	/* Prose measure: the source's quote column is ~900px wide, so a 1080px
+	 * line would not wrap where the original does. */
+	max-width: 58rem;
 }
 
-/* The source testimonial reads as a BIG quote (jayainc: 22.4px = 1.4rem at
- * the 16px chrome root, line-height 1.6, gray ink) — the body scale
- * (13px) reads as plain prose, not a pull-quote. */
+/* The pull-quote mark — in flow (the source's ::before is 82px and occupies
+ * its own line), so it carries real height. */
+.ds-quote::before {
+	content: '\201C';
+	display: block;
+	font-size: 5.125rem;
+	line-height: 1.45;
+	color: var(--forge-line, #b9b9b9);
+	font-style: normal;
+}
+
+/* The source testimonial reads as a BIG quote (jayainc: 26px / 46px = 1.77 at
+ * the 16px chrome root) — the body scale reads as plain prose, not a
+ * pull-quote. */
 .ds-quote p {
 	margin: 0;
-	font-size: 1.4rem;
-	line-height: 1.6;
+	font-size: 1.625rem;
+	line-height: 1.77;
 }
 
 .ds-quote footer {
 	margin-top: var(--forge-space-sm);
 	color: var(--forge-muted);
-	font-size: var(--forge-scale-small);
+	/* The source's attribution is a 13px cite, not the tiny caption scale. */
+	font-size: 0.8125rem;
+	font-style: normal;
 }
 
 .ds-logos {
@@ -901,7 +938,11 @@ a {
 .ds-title-divider {
 	display: block;
 	margin-top: var(--forge-space-2, 0.625rem);
-	/* A fixed-width block child centers inside the grid/centered band. */
+}
+
+/* A fixed-width bar centres only inside a centred band — a left-aligned
+ * section keeps its divider on the leading edge. */
+.ds-body--center .ds-title-divider {
 	margin-inline: auto;
 }
 

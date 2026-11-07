@@ -9,6 +9,7 @@
 // ---------------------------------------------------------------------------
 
 import { WpClient } from './wp-client.ts';
+import { applyDesignPins } from './pins.ts';
 import type { SiteProfile, WpCollection } from './types.ts';
 
 /** System/auth slugs that never belong in a generated frontend. */
@@ -273,13 +274,17 @@ export function profileFromDiscovery(report: DiscoveryReport): SiteProfile {
  * vocabulary, inventory, wireframes) refresh from the new run. Missing
  * fields fill from the draft. This is the default `analyze --write`
  * behavior; `--fresh` bypasses it.
+ *
+ * Operator design pins (`existing.pins`, see `lib/pins.ts`) are re-applied
+ * over the refreshed design so a regenerate cannot silently drop a
+ * hand-tuned fact.
  */
 export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): SiteProfile {
 	const merged: SiteProfile = { ...existing };
 	merged.url = existing.url || fresh.url;
 	merged.name = existing.name ?? fresh.name;
 	if ( fresh.design ) {
-		merged.design = fresh.design;
+		merged.design = applyDesignPins( fresh.design, existing.pins );
 	}
 	if ( fresh.vocabulary ) {
 		merged.vocabulary = fresh.vocabulary;
@@ -289,6 +294,9 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	}
 	if ( fresh.wireframes ) {
 		merged.wireframes = fresh.wireframes;
+	}
+	if ( fresh.geometry ) {
+		merged.geometry = fresh.geometry;
 	}
 	if ( ( existing.collections ?? [] ).length === 0 ) {
 		merged.collections = fresh.collections;

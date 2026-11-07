@@ -350,8 +350,25 @@ gates, visual-regression practice).
   non-builder content render identically to before (the e2e XSS/embed/rich-
   content gates pin this).
 - **`forge verify <profile> --target <dir>`** — re-extracts the built CSS
-  bundle and scores parity (default threshold 0.6); `--baselines` is the
-  documented opt-in Playwright step (the parity gate needs no browser).
+  bundle and scores parity (default threshold 0.6). Parity is LANGUAGE parity
+  (roles/scale/spacing), never pixels; three gates now cover what it cannot
+  see:
+  - `verify` (always) — **fact consumption** via `lib/fact-audit.ts`: every
+    fact a band declares must leave its marker in that band's built HTML.
+    This is what catches a component that never received the section theme
+    (Found by the audit: `FeatureGrid` and `IconList` both silently dropped
+    `titleStyle`/`titleDivider`/`titleAlign`.) `--strict-facts` makes it fail.
+  - `analyze --geometry` + `verify --geometry` — **box geometry** via
+    `lib/geometry.ts`: measures each band at 1440/834/390 into
+    `profile.geometry`, then diffs the build against it (warn at tolerance,
+    fail at 2×; `--geometry-limit` caps output). Box metrics survive font and
+    anti-aliasing differences, so no pixel thresholds or Docker font pinning.
+    A 903px card from a missing `height: auto` is invisible to CSS review and
+    obvious here.
+  - Extraction now reads `@media` bodies (`rulesInMedia`) for `margin-top`/
+    `margin-bottom`: a band flush on desktop but pulled on tablet/mobile is
+    captured as `{ desktop, tablet, mobile }`, not flattened. An inline margin
+    outranks the media queries, so a device map is emitted as CSS only.
   MCP: `design_apply` (write, open-world policy like site_analyze) +
   `design_verify` (read). Wizard: `--design` + the `confirmDesign` clack
   hook (TTY-gated; non-TTY applies deterministically).
@@ -851,8 +868,12 @@ on-screen with computed styles + pixel sampling before merge.
   (first `<link rel="icon">`, absolute — `cropped-jaya-inc-icon-32x32`);
   `Base.astro` wires all three.
 - **Operator pins survive `analyze --write`:** the tokens merge preserves
-  hand-tuned `cta-pad`/`cta-radius`/`measure` keys — verify the pin
-  survives the next `analyze --write` merge before regenerating a profile.
+  hand-tuned `cta-pad`/`cta-radius`/`measure` keys. Facts INSIDE the analyzed
+  `design` block are replaced wholesale, so declare those at the profile's top
+  level in `pins` — `{ "path": "sections.5e78df1.marginTop", "value": "170px" }`
+  or `{ "path": "chrome.footerInk", "value": "…" }`; `mergeProfileDraft`
+  re-applies them (`lib/pins.ts`) and `tests/pins.test.ts` fails when the
+  committed profile stops satisfying one. `--fresh` still drops them (it warns).
 
 ## Proposal 123 — chrome typography pass (2026-11-06)
 
@@ -1031,6 +1052,60 @@ Research-backed (web.dev responsive images, MDN animation-timeline, DTCG
   slice: `lightnessOf` (WCAG luminance in forge vs HSL lightness in
   velocity) and the hue/saturation formulas deliberately differ — forcing
   either would change tuned classification thresholds.
+
+## Fidelity gates and measured facts (2026-11-07)
+
+The jayainc band-by-band review produced three gates and four fact kinds.
+Each line below cost a wrong build — do not re-derive them.
+
+**Gates** (all documented in the Proposal 114 verify section):
+`analyze --geometry` + `verify --geometry` (box metrics at 1440/834/390),
+fact consumption in `verify` (`--strict-facts`), and the `rulesInMedia`
+responsive read. **`npm run typecheck` is part of the gate** — vitest does
+not typecheck, so a green suite can still fail CI on fixture types.
+
+- **Device-scoped margins.** `topLevelRules` deliberately keeps a media body
+  as inert nested text, so facts inside `@media` were invisible: jayainc's
+  band pull is 0px desktop / 170px tablet / 100px mobile and came back as
+  "none". `rulesInMedia` recurses into media bodies; `responsiveLength`
+  emits `{ desktop, tablet, mobile }` only when the values differ. **An
+  inline `margin-top` OUTRANKS media queries** — a device map must be
+  emitted as CSS (base rule + two media rules), never inline. Proof it
+  works: raw extraction on jayainc now returns exactly the map.
+- **`bandSpacing: 'template' | 'source'`** (profile-level, default
+  `template`). `source` renders fact-less bands flush. Two traps: the wrap's
+  padding comes from a RULE (`--forge-space-4`), not `--ds-pad-y` (which
+  only collapses the inner `.ds-section`), so source mode must zero
+  `padding-top/bottom` explicitly; and an EMPTY band is a spacer (jayainc's
+  `dff3f1a` is 70px with no padding fact) — zeroing it rendered 0px and
+  shifted every band below. Empty bands keep the wrap rhythm and drop only
+  `--ds-pad-y`.
+- **`cardStyle: { gap, padding, textPadding }`** (per band). Elementor card
+  metrics live on theme widgets (`.elementor-widget-wrap`, `.aux-text-inner`),
+  never on the band, so no band-scoped CSS scan can find them — they are
+  MEASURED facts, applied as `--ds-card-gap` / `--ds-card-pad` /
+  `--ds-card-text-pad` with the template value as fallback. Probe the card's
+  own tree before guessing: jayainc's missing 107px was a 40px text-block
+  padding, not the image.
+- **`.ds-card img` needs `height: auto`, and must not force 1/1.**
+  SmartImage's `width`/`height` attributes are presentational hints that beat
+  `aspect-ratio`; without `height: auto` a 687×768 source rendered 224×768
+  and every card stood 903px tall. Forcing `1 / 1` then cost another 139px —
+  the source keeps the intrinsic ratio. A fixed `height: 300px` is wrong at
+  every other viewport and over-crops under `object-fit: cover`.
+- **`measure` is not necessarily the site default.** Extraction reads the
+  1140px container default; a band's own container can be Elementor's 1600px
+  (jayainc's products band — its 25% columns are 345px, not 258px). Correct
+  the fact and PIN it.
+- **A short band can be MISSING CONTENT, not wrong layout.** jayainc's
+  products band still measured 885px against 1216px after its cards matched,
+  because the source has a third block — an "ALL SERVICES" CTA — that never
+  entered the section slots. Grep the built HTML for the source's text, not
+  just its boxes; geometry cannot see content that was never emitted.
+- **Pin every measured/authored fact.** `profile.pins` re-applies through
+  `mergeProfileDraft`; `tests/pins.test.ts` fails naming the exact path when
+  a regenerate drops one. Known jayainc pins: `5e78df1` marginTop, measure,
+  cardStyle; `fd63522` padding; `chrome.footerInk`.
 
 ## Phase roadmap (096 §5)
 
