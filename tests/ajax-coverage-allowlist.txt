@@ -3,10 +3,13 @@
 # Handler names (without the wp_ajax_ prefix) listed here are exempt from the
 # coverage CI guard run by `php bin/audit-ajax-handlers.php --check`.
 #
-# These 69 handlers are awaiting coverage clusters; each group below notes the
+# These 69 entries are awaiting coverage clusters; each group below notes the
 # reason. As tests land, remove the corresponding entries so the guard starts
-# enforcing them. (66 are visible to the audit's registration scan; the 3 Zai
-# connection handlers are map-registered and included for completeness.)
+# enforcing them. 66 entries currently match a registered, untested handler;
+# the remaining 3 (wp_mcp_ai_fetch_zai_models, wp_mcp_ai_test_zai_connection,
+# wp_mcp_ai_install_skill_pack) are retained for handlers registered through a
+# callback map, which the literal `add_action` scan cannot see, or for handlers
+# not yet registered.
 #
 # Lines beginning with # are comments. Blank lines are ignored.
 
