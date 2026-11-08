@@ -1,4 +1,4 @@
-# NV oOS Forge Bridge — wp.org Review Reply Draft (0.2.0)
+# NV oOS Forge Bridge — wp.org Review Reply Draft (0.3.0)
 
 Excluded from the shipping ZIP via `.distignore` (`/WPORG-REVIEW-*.md`).
 Reply to the review thread; keep it short and factual per the team's request.
@@ -8,7 +8,7 @@ Reply to the review thread; keep it short and factual per the team's request.
 Hi,
 
 Thanks for the review. The TypeError in `Rebuild_Webhook::send()` is fixed
-and version 0.2.0 has been uploaded:
+and version 0.3.0 has been uploaded:
 
 - `send()` no longer declares an `array` return type. A failed HTTP request
   now returns a `WP_Error` (as the docblock already documented) instead of
@@ -23,6 +23,12 @@ and version 0.2.0 has been uploaded:
   from `send()` and the `schedule()` → `send_pending()` shutdown path
   completes without a fatal error.
 
+0.3.0 also adds one read-only surface: `GET /nvoos-forge/v1/redirects`
+exports the exact-URL rules already stored by Redirection or Rank Math so a
+generated static site can keep legacy URLs alive. It is opt-in, bounded to
+500 rules, returns no row ids/hit counts/timestamps, and can be gated with a
+shared token. It makes no external calls.
+
 Also re-verified the activation checklist on a clean WordPress install with
 WP_DEBUG enabled: activation produces no errors, warnings, notices, or
 output; the plugin creates no database tables (options and transients
@@ -33,7 +39,7 @@ once the dispatches URL, token, and secret are saved.
 
 Validation: `wp plugin check` reports 0 errors and 0 warnings, phpcs
 (WPCS + PHPCompatibilityWP) is clean, and the full PHPUnit suite passes
-(48 tests) on the latest WordPress.
+(58 tests) on the latest WordPress.
 
 Keeping the permalink `nvoos-forge-bridge`.
 
