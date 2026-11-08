@@ -22,10 +22,98 @@ jobs:
 
       - name: Push to nvoos-forge-bridge
         env:
-          NVOOS_FORGE_BRIDGE_DEPLOY_KEY: ${{ secrets.NVOOS_FORGE_BRIDGE_DEPLOY_KEY }}
+          REPO_TOKEN: ${{ secrets.NVOOS_FORGE_BRIDGE_REPO_TOKEN }}
+          DEPLOY_KEY: ${{ secrets.NVOOS_FORGE_BRIDGE_DEPLOY_KEY }}
         run: |
-          mkdir -p ~/.ssh
-          printf '%s' "$NVOOS_FORGE_BRIDGE_DEPLOY_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          git push git@github.com:nvdigitalsolutions/nvoos-forge-bridge.git nvoos-forge-bridge-split:main --force
+          set -euo pipefail
+
+          TARGET="nvdigitalsolutions/nvoos-forge-bridge.git"
+          SPLIT="nvoos-forge-bridge-split"
+
+          # actions/checkout leaves an auth header in the local git config. It
+          # takes precedence over the credential embedded in the push URL, so
+          # every push would fail with a confusing 403.
+          git config --local --unset-all http.https://github.com/.extraheader || true
+
+          if [ -z "${REPO_TOKEN:-}" ] && [ -z "${DEPLOY_KEY:-}" ]; then
+            echo "::error title=No sync credential::Neither NVOOS_FORGE_BRIDGE_REPO_TOKEN nor NVOOS_FORGE_BRIDGE_DEPLOY_KEY is set. Preferred fix: add NVOOS_FORGE_BRIDGE_REPO_TOKEN - a fine-grained PAT with 'Contents: Read and write' on nvdigitalsolutions/nvoos-forge-bridge - which is how the other 22 sync workflows authenticate."
+            exit 1
+          fi
+
+          push_via_token() {
+            echo "::notice::Pushing with NVOOS_FORGE_BRIDGE_REPO_TOKEN over HTTPS."
+            git push "https://x-access-token:${REPO_TOKEN}@github.com/${TARGET}" "${SPLIT}:main" --force
+          }
+
+          push_via_deploy_key() {
+            local key_file="${RUNNER_TEMP}/nvoos-forge-bridge_deploy_key"
+            local log="${RUNNER_TEMP}/nvoos-forge-bridge_push.log"
+            local key="${DEPLOY_KEY}"
+
+            # Normalise the stored secret: strip CRs and surrounding whitespace.
+            key="${key//$'\r'/}"
+            key="${key#"${key%%[![:space:]]*}"}"
+            key="${key%"${key##*[![:space:]]}"}"
+
+            # A secret pasted as a single line often carries literal "\n"
+            # instead of newlines. Expand it only when no real newline exists.
+            if [[ "${key}" != *$'\n'* && "${key}" == *'\n'* ]]; then
+              key="${key//\\n/$'\n'}"
+            fi
+
+            if [[ "${key}" != *"BEGIN "*"PRIVATE KEY"* ]]; then
+              echo "::error title=DEPLOY_KEY is not a private key::NVOOS_FORGE_BRIDGE_DEPLOY_KEY has no '-----BEGIN ... PRIVATE KEY-----' block. A single 'ssh-ed25519 AAAA...' line is the PUBLIC half and cannot authenticate. Store the entire unencrypted private key file, or switch to NVOOS_FORGE_BRIDGE_REPO_TOKEN."
+              return 2
+            fi
+
+            umask 077
+            printf '%s\n' "${key}" > "${key_file}"
+
+            # Prove the key is loadable before involving ssh at all. This is
+            # what turns the opaque "error in libcrypto" into a clear message:
+            # it means the stored value is not a parseable OpenSSH/PEM key.
+            if ! ssh-keygen -y -f "${key_file}" >/dev/null 2>&1; then
+              echo "::error title=DEPLOY_KEY cannot be parsed::'ssh-keygen -y -f' rejected the stored key. 'error in libcrypto' is the usual symptom: truncated base64, a passphrase-protected key, or literal '\n' separators. Re-store the full unencrypted key, or switch to NVOOS_FORGE_BRIDGE_REPO_TOKEN."
+              return 2
+            fi
+
+            echo "::notice::Deploy key loaded: $(ssh-keygen -lf "${key_file}" | awk '{print $2}')"
+
+            mkdir -p ~/.ssh
+            chmod 700 ~/.ssh
+            ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null || true
+            chmod 600 ~/.ssh/known_hosts
+            if [ ! -s ~/.ssh/known_hosts ]; then
+              echo "::warning title=ssh-keyscan returned nothing::github.com host keys could not be pre-loaded."
+            fi
+
+            if ! GIT_SSH_COMMAND="ssh -i ${key_file} -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+                 git push "git@github.com:${TARGET}" "${SPLIT}:main" --force >"${log}" 2>&1; then
+              cat "${log}"
+              if grep -q 'Host key verification failed' "${log}"; then
+                echo "::error title=Host key verification failed::github.com host keys were not loaded into known_hosts, so the connection was never attempted far enough to test the key."
+              else
+                echo "::error title=Deploy key rejected::The key parsed correctly but GitHub refused it. Confirm that the fingerprint above is registered as a WRITE deploy key on nvdigitalsolutions/nvoos-forge-bridge, and that the repository still exists."
+              fi
+              return 3
+            fi
+            cat "${log}"
+          }
+
+          if [ -n "${REPO_TOKEN:-}" ]; then
+            if push_via_token; then
+              exit 0
+            fi
+            echo "::warning title=Token push failed::NVOOS_FORGE_BRIDGE_REPO_TOKEN could not push (expired, revoked, or missing 'Contents: Read and write' on the target repository). Falling back to the deploy key."
+          fi
+
+          if [ -n "${DEPLOY_KEY:-}" ]; then
+            status=0
+            push_via_deploy_key || status=$?
+            if [ "${status}" -eq 0 ]; then
+              exit 0
+            fi
+          fi
+
+          echo "::error title=Sync failed::No configured credential could push to nvdigitalsolutions/nvoos-forge-bridge. Preferred fix: add NVOOS_FORGE_BRIDGE_REPO_TOKEN (fine-grained PAT, 'Contents: Read and write', scoped to that repository) - the same pattern the other 22 sync workflows use."
+          exit 1
