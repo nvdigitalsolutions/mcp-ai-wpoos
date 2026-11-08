@@ -401,12 +401,17 @@ describe('forge e2e — emitted site', () => {
 			// The title-to-grid rhythm (125 §8): the card grid opens with
 			// breathing room below the band heading.
 			expect(css).toMatch(/\.ds-grid\s*\{[^}]*margin-top:\s*var\(--forge-space\)/);
-			// The mobile chrome (125 §8 — recovered after the #7493 squash
-			// dropped the commit): the header must wrap on phones (one flex
-			// row clipped the right side off against the body's overflow
-			// guard) and the collage offsets must reset to static flow below
-			// the measured band.
+			// The chrome reflow (125 §8 — recovered after the #7493 squash
+			// dropped the commit): the header must wrap wherever the single
+			// flex row does not fit (it needs ~850px of content) or the call
+			// button gets sliced at the body's clip edge, and the collage
+			// offsets must reset to static flow below the measured band.
 			expect(css).toMatch(/@media[^{]*\{\s*\.site-header\s*\{[^}]*flex-wrap:\s*wrap/);
+			// The wrap must start at the band-reflow breakpoint, not the phone
+			// width: pinning it to 767px sliced the call button off at 768px
+			// (right edge x=819 on a 753px body). The source stacks its nav to
+			// 1024px and only goes single-row by 1152px.
+			expect(css).toMatch(/@media\s*\(width<\s*1152px\)\s*\{\s*\.site-header\s*\{[^}]*flex-wrap:\s*wrap/);
 			expect(css).toMatch(/\.ds-collage-media\s*\{[^}]*position:\s*static/);
 			// The collage must not spill once it reflows: an implicit auto track
 			// is sized by the fixed 412px shape, so max-width has no definite
