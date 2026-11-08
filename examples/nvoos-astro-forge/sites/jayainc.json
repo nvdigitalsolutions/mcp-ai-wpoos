@@ -929,5 +929,45 @@
 				"marginBottom": 0
 			}
 		}
+	},
+	"tracking": {
+		"trackers": [
+			{
+				"vendor": "google-analytics-4",
+				"category": "analytics",
+				"enabled": true,
+				"ids": {
+					"measurementId": "G-2YHHTF74LJ"
+				},
+				"detectedBy": [
+					"script:www.googletagmanager.com"
+				],
+				"confidence": "high",
+				"detectedVia": "html"
+			}
+		],
+		"consent": {
+			"mode": "forge",
+			"default": "denied",
+			"strategy": "basic",
+			"waitForUpdate": 500,
+			"gpc": true
+		},
+		"delivery": {
+			"mode": "deferred"
+		},
+		"csp": {
+			"hosts": [
+				"https://*.analytics.google.com",
+				"https://*.g.doubleclick.net",
+				"https://*.google-analytics.com",
+				"https://stats.g.doubleclick.net",
+				"https://www.googletagmanager.com"
+			]
+		},
+		"analyzedAt": "2026-11-08T11:38:11.111Z",
+		"pagesAnalyzed": [
+			"https://jayainc.com"
+		]
 	}
 }
