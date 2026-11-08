@@ -47,11 +47,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Tool_Presets_Helper {
 
 		/**
-		 * Cached tool keyword index for auto-select matching.
+		 * Cached tool keyword indexes for auto-select matching.
 		 *
-		 * @var array|null
+		 * Keyed by the normalised requested tool set so a narrow caller does not
+		 * poison later calls that need a wider catalog.
+		 *
+		 * @var array<string, array>|null
 		 */
-	protected static $tool_index = null;
+		protected static $tool_index = null;
 
 		/**
 		 * Get the tool presets configuration.
@@ -4608,18 +4611,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	 * @return array<string, array> Mapping of tool slug => definition metadata.
 	 */
 	protected static function build_tool_index( $available_tools = array() ) {
-		if ( null !== self::$tool_index ) {
-			if ( empty( $available_tools ) ) {
-				return self::$tool_index;
-			}
-			// Filter cached index to only available tools.
-			$filtered = array();
-			foreach ( $available_tools as $slug ) {
-				if ( isset( self::$tool_index[ $slug ] ) ) {
-					$filtered[ $slug ] = self::$tool_index[ $slug ];
-				}
-			}
-			return $filtered;
+		$normalized = array_values( array_unique( array_map( 'strval', $available_tools ) ) );
+		sort( $normalized );
+		$cache_key = empty( $normalized ) ? '__all__' : md5( implode( '|', $normalized ) );
+
+		if ( is_array( self::$tool_index ) && isset( self::$tool_index[ $cache_key ] ) ) {
+			return self::$tool_index[ $cache_key ];
 		}
 
 		$index = array();
@@ -4677,7 +4674,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			}
 		}
 
-		self::$tool_index = $index;
+		if ( ! is_array( self::$tool_index ) ) {
+			self::$tool_index = array();
+		}
+		self::$tool_index[ $cache_key ] = $index;
 
 		return $index;
 	}

@@ -106,6 +106,38 @@ class WP_MCP_AI_Tool_Presets_Auto_Select_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that a narrow catalog call does not poison the cached tool index for
+	 * later callers that need a wider catalog.
+	 */
+	public function test_tool_index_cache_is_order_independent() {
+		// Reset the helper's cached indexes so this test controls the first build.
+		$reset = Closure::bind(
+			static function () {
+				self::$tool_index = null;
+			},
+			null,
+			'WP_MCP_AI_Tool_Presets_Helper'
+		);
+		$reset();
+
+		// Narrow caller, as the admin-ajax endpoint does for a small selection.
+		WP_MCP_AI_Tool_Presets_Helper::compute_auto_select_data(
+			'search the web',
+			array(),
+			array( 'web_search' )
+		);
+
+		// Wider caller: create_chart must still be scored from its own index.
+		$result = WP_MCP_AI_Tool_Presets_Helper::compute_auto_select_data(
+			'create a chart',
+			array(),
+			$this->known_tools
+		);
+
+		$this->assertContains( 'create_chart', $result['tools'] );
+	}
+
+	/**
 	 * Test that model output parses through prose and markdown fences.
 	 */
 	public function test_extract_slug_array_from_text_parses_fenced_json() {
