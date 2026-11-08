@@ -41,7 +41,10 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `lib/deploy-config.ts` | Phase 3.3 generated pipeline — deploy.yml/rebuild.yml + fail-closed `verify-dispatch.mjs` |
 | `lib/wizard.ts` | Phase 4 setup_wizard — analyze → register → scaffold → build → git init → pipeline |
 | `lib/content-scan.ts` | §3.3 content audit scanner (htmlparser2 — embeds/alt/hosts/shortcode artifacts + unprocessed brackets) |
-| `lib/redirects.ts` | §3.3 live 301-map generator (the template's exact rules, computed from REST) |
+| `lib/tracking.ts` | 130 tracker detector — vendor fingerprint table, HTML signals, optional Playwright probe (requests + globals + cookie NAMES), report → profile draft, CSP host derivation |
+| `lib/tracking-audit.ts` | 130 `verify --tracking` gate — consent ordering, verification token/file presence, deferred static-HTML purity, purchase ownership, CSP superset/stale |
+| `lib/seo-audit.ts` | 131 `verify --seo` gate — double-branded titles, robots, canonical, OG/Twitter, JSON-LD graph, html lang |
+| `lib/redirects.ts` | 096 §3.3 + 132 redirect-map generator — URL-structure 301s merged beneath the bridge's stored Redirection/Rank Math rules (rebuild wins conflicts), fail-soft |
 | `lib/ssrf.ts` | URL guard — private/literal-range refusal, registry allowlist + `NVOOS_FORGE_OPEN_ANALYZE` opt-in, CLI-only loopback exemption |
 | `lib/vision.ts` | 118 §1 optional vision layer — OpenAI-compatible chat-completions, DATA-URL images in the body, fail-soft `{ok}` outcomes |
 | `lib/capture.ts` | 118 §2 screenshot contract — `NVOOS_FORGE_CAPTURE_URL` endpoint or dropped `verify-artifacts/` files (browser-free) |
@@ -221,6 +224,11 @@ live PDP (200 + `Product` JSON-LD + cache header, 301 slug convergence,
   rewrites the build script to `pagefind --site dist/client`, and
   `postbuild.mjs` materializes `_redirects` next to whichever redirects
   map exists (`dist/` or `dist/client/`).
+- **`scaffold()` stages beside the target and renames it in (#7516)** — the
+  first scaffold in a freshly-written checkout can hit Windows
+  `EPERM … rename '<target>.forge-tmp-…' -> '<target>'` (Defender/lock); a
+  retry succeeds and POSIX CI is unaffected. Do not "fix" it by deleting the
+  staging — that reintroduces the half-written-project bug.
 - **Inert template files live in underscore dirs, renamed at scaffold
   time** — `products/_ssr/` becomes `products/[id]/` (the on-demand route)
   and `_og/` becomes `og/` (OG cards) only when selected; otherwise they
@@ -1052,6 +1060,19 @@ Research-backed (web.dev responsive images, MDN animation-timeline, DTCG
   slice: `lightnessOf` (WCAG luminance in forge vs HSL lightness in
   velocity) and the hue/saturation formulas deliberately differ — forcing
   either would change tuned classification thresholds.
+
+## Capture surfaces — tracking, SEO head, stored redirects (130 / 131 / 132)
+
+Three shipped passes close the "capture everything the site does beyond
+content" gap. Full operational notes: `reference/capture-arc.md`.
+
+- **130** — tracker/consent detection + `verify --tracking`, a consent-first
+  rebuild, Report-Only CSP headers.
+- **131** — Rank Math / Yoast head fidelity (`composeDocumentTitle`, robots,
+  OG/Twitter, JSON-LD `@graph`, sitemap `lastmod` + noindex, `verify --seo`).
+- **132** — Redirection / Rank Math rules exported by bridge 0.3.0 and merged
+  beneath the rebuild's URL map (`_redirects` projection for Netlify /
+  Cloudflare).
 
 ## Fidelity gates and measured facts (2026-11-07)
 

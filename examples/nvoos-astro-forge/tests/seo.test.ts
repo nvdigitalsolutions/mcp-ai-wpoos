@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { breadcrumbList, jsonLdFor, renderJsonLd } from '../templates/blog/src/lib/seo.ts';
+import { breadcrumbList, composeDocumentTitle, jsonLdFor, jsonLdGraph, renderJsonLd } from '../templates/blog/src/lib/seo.ts';
 
 describe( 'jsonLdFor — WebPage', () => {
 	it( 'emits the typed document and drops absent fields', () => {
@@ -134,5 +134,88 @@ describe( 'renderJsonLd', () => {
 		const doc = { '@type': 'WebPage', name: 'a < b' };
 		expect( renderJsonLd( doc ) ).toBe( '{"@type":"WebPage","name":"a \\u003c b"}' );
 		expect( renderJsonLd( doc ) ).not.toContain( '<' );
+	} );
+} );
+
+describe( 'composeDocumentTitle (131 §2.1)', () => {
+	it( 'appends the site name when the page title does not carry it', () => {
+		expect( composeDocumentTitle( 'About Us', 'Fixture Wares' ) ).toBe( 'About Us — Fixture Wares' );
+	} );
+
+	it( 'never double-brands a title that already ends with the site name', () => {
+		expect( composeDocumentTitle( 'Contact Fixture Wares', 'Fixture Wares' ) ).toBe( 'Contact Fixture Wares' );
+		expect( composeDocumentTitle( 'Contact - Fixture Wares', 'Fixture Wares' ) ).toBe( 'Contact - Fixture Wares' );
+		expect( composeDocumentTitle( 'Contact | Fixture Wares', 'Fixture Wares' ) ).toBe( 'Contact | Fixture Wares' );
+		expect( composeDocumentTitle( 'Contact : Fixture Wares', 'Fixture Wares' ) ).toBe( 'Contact : Fixture Wares' );
+	} );
+
+	it( 'leaves the bare site name and the empty title alone', () => {
+		expect( composeDocumentTitle( 'Fixture Wares', 'Fixture Wares' ) ).toBe( 'Fixture Wares' );
+		expect( composeDocumentTitle( '', 'Fixture Wares' ) ).toBe( 'Fixture Wares' );
+		expect( composeDocumentTitle( '   ', 'Fixture Wares' ) ).toBe( 'Fixture Wares' );
+	} );
+
+	it( 'still appends when the brand appears only in the middle', () => {
+		expect( composeDocumentTitle( 'Fixture Wares shipping policy', 'Fixture Wares' ) ).toBe(
+			'Fixture Wares shipping policy — Fixture Wares'
+		);
+	} );
+} );
+
+describe( 'jsonLdGraph (131 §2.3)', () => {
+	const page = jsonLdFor( 'BlogPosting', { headline: 'Hello', url: 'https://example.com/posts/1/hello/' } );
+
+	it( 'wires Organization + WebSite + the page with @id references', () => {
+		const graph = jsonLdGraph( {
+			site: { url: 'https://example.com', name: 'Example', logo: 'https://example.com/logo.png' },
+			page,
+		} );
+		expect( graph[ '@context' ] ).toBe( 'https://schema.org' );
+		expect( graph[ '@graph' ] ).toHaveLength( 3 );
+		const [ organization, website, node ] = graph[ '@graph' ];
+		expect( organization ).toMatchObject( {
+			'@type': 'Organization',
+			'@id': 'https://example.com/#organization',
+			name: 'Example',
+			logo: { '@type': 'ImageObject', url: 'https://example.com/logo.png' },
+		} );
+		expect( website ).toMatchObject( {
+			'@type': 'WebSite',
+			'@id': 'https://example.com/#website',
+			publisher: { '@id': 'https://example.com/#organization' },
+		} );
+		expect( node ).toMatchObject( {
+			'@type': 'BlogPosting',
+			headline: 'Hello',
+			isPartOf: { '@id': 'https://example.com/#website' },
+		} );
+		// The page's own @context never leaks into the graph.
+		expect( node ).not.toHaveProperty( '@context' );
+	} );
+
+	it( 'adds the SearchAction when a search URL is configured', () => {
+		const graph = jsonLdGraph( {
+			site: { url: 'https://example.com', name: 'Example', searchUrl: 'https://example.com/search/' },
+			page,
+		} );
+		const website = graph[ '@graph' ][ 1 ] as { potentialAction?: { target?: { urlTemplate?: string } } };
+		expect( website.potentialAction?.target?.urlTemplate ).toBe(
+			'https://example.com/search/?q={search_term_string}'
+		);
+	} );
+
+	it( 'includes breadcrumbs without a nested @context', () => {
+		const graph = jsonLdGraph( {
+			site: { url: 'https://example.com', name: 'Example' },
+			page,
+			breadcrumbs: [
+				{ name: 'Home', url: 'https://example.com/' },
+				{ name: 'Posts', url: 'https://example.com/posts/' },
+			],
+		} );
+		expect( graph[ '@graph' ] ).toHaveLength( 4 );
+		const crumbs = graph[ '@graph' ][ 2 ];
+		expect( crumbs ).toMatchObject( { '@type': 'BreadcrumbList' } );
+		expect( crumbs ).not.toHaveProperty( '@context' );
 	} );
 } );

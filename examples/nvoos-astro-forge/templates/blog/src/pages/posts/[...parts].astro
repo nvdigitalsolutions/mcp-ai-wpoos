@@ -5,6 +5,7 @@ import SmartImage from '../../components/SmartImage.astro';
 import DesignRenderer from '../../components/design/DesignRenderer.astro';
 import { getCollection, render } from 'astro:content';
 import { jsonLdFor, renderJsonLd } from '../../lib/seo.ts';
+import { buildGraph, homeCrumb } from '../../lib/seo-graph.ts';
 import manifest from '../../../nvoos.json';
 
 export async function getStaticPaths() {
@@ -25,15 +26,23 @@ const pageUrl = Astro.site ? new URL(`/posts/${post.id}/${post.data.slug}/`, Ast
 // SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
 const seoTitle = post.data.seoTitle ?? post.data.title;
 const seoDescription = post.data.seoDescription ?? post.data.excerpt;
-const jsonLd = jsonLdFor('BlogPosting', {
-	url: pageUrl,
-	headline: seoTitle,
-	description: seoDescription,
-	datePublished: post.data.date,
-	dateModified: post.data.modified,
-	author: post.data.author,
-	image: post.data.featuredImage,
-});
+const jsonLd = buildGraph(
+	Astro.site,
+	jsonLdFor('BlogPosting', {
+		url: pageUrl,
+		headline: seoTitle,
+		description: seoDescription,
+		datePublished: post.data.date,
+		dateModified: post.data.modified,
+		author: post.data.author,
+		image: post.data.featuredImage,
+	}),
+	[
+		...homeCrumb(Astro.site),
+		...(Astro.site ? [ { name: 'Posts', url: new URL('/posts/', Astro.site).href } ] : []),
+		...(pageUrl ? [ { name: seoTitle, url: pageUrl } ] : []),
+	]
+);
 // og:image points at the build-time card when the ogImages surface is on.
 const ogImage =
 	manifest.surfaces?.ogImages && Astro.site
@@ -41,7 +50,7 @@ const ogImage =
 		: undefined;
 ---
 
-<Base title={seoTitle} description={seoDescription} canonical={pageUrl} ogImage={ogImage}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl} ogImage={ogImage} seo={post.data.seo}>
 	<article class="post">
 		<header>
 			<h1>{post.data.title}</h1>

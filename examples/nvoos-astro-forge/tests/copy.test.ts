@@ -37,6 +37,9 @@ describe( 'copy tables', () => {
 		expect( en.search.searching ).toBeTruthy();
 		expect( en.search.noResults ).toBeTruthy();
 		expect( en.search.unavailable ).toBeTruthy();
+		expect( en.consent.acceptAll ).toBe( 'Accept all' );
+		expect( en.consent.rejectAll ).toContain( 'Reject' );
+		expect( en.consent.categories.necessary ).toContain( 'always on' );
 	} );
 
 	it( 'a second locale shaped as Copy typechecks (the completeness gate)', () => {
@@ -48,6 +51,23 @@ describe( 'copy tables', () => {
 			theme: { label: 'Thème', forcedNote: 'Le thème est défini par la politique du site.' },
 			catalog: { open: 'Voir le catalogue' },
 			search: { placeholder: 'Rechercher…', searching: 'Recherche…', noResults: 'Aucun résultat.', unavailable: 'Recherche indisponible.' },
+			consent: {
+				regionLabel: 'Consentement aux cookies',
+				title: 'Préférences de cookies',
+				body: 'Nous utilisons des cookies pour mesurer le trafic et améliorer ce site.',
+				acceptAll: 'Tout accepter',
+				rejectAll: 'Refuser le non-essentiel',
+				preferences: 'Préférences',
+				save: 'Enregistrer',
+				privacyLink: 'Politique de confidentialité',
+				categories: {
+					necessary: 'Nécessaire (toujours actif)',
+					analytics: 'Analytique',
+					advertising: 'Publicité',
+					functional: 'Fonctionnel',
+					personalization: 'Personnalisation',
+				},
+			},
 		};
 		expect( fr.nav.home ).toBe( 'Accueil' );
 	} );

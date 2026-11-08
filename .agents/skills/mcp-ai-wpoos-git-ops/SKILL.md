@@ -220,6 +220,25 @@ Four rules, each from a session that cost a recovery:
   shared lines; your PR's unique additions stay), then
   `git push --force-with-lease`. A successful rebase replay is proof the
   conflict is gone — by construction the branch is ahead of the base.
+- **On-disk ≠ shipped (2026-11-08).** Before scoping a "commit this"
+  request, prove the feature exists upstream:
+  `git ls-tree --name-only origin/alpha-working <dir>` and
+  `git log --all --oneline -- <new-file>`. Two prior sessions' proposals
+  (130 trackers, 131 SEO) were fully implemented and validated but existed
+  ONLY as working-tree changes — the redirect PR could not be scoped
+  narrowly without dangling doc/code cross-references. When that happens,
+  land the whole arc in one PR and say so in the body, rather than
+  committing a delta whose docs point at files that do not exist.
+- **Copying a delta onto a moved base (2026-11-08, PR #7518).** Before
+  copying worktree files into a fresh branch, list the files the base moved
+  across your ENTIRE delta:
+  `git diff --stat HEAD origin/alpha-working -- <every path you touched>`.
+  Only the named files are at risk. For those, commit your delta on the old
+  base and let `git rebase --onto origin/alpha-working HEAD~1` 3-way-merge
+  them (one import-line conflict in the forge PR, zero elsewhere);
+  wholesale-copying the worktree versions silently REVERTS those merged
+  base commits. Re-validate after the rebase — the base's own tests
+  (554 vs 551) run too.
 - **The shared `.git/info/exclude` can silently block deliberate files.**
   The **repository-level** info/exclude (applies to **linked worktrees too**
   — not per-worktree) ignores `*.png`/`*.jpg`/`*.pdf` (the `*.pdf` rule hit

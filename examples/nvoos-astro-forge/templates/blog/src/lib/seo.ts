@@ -157,6 +157,106 @@ export function breadcrumbList(items: Array<{ name: string; url: string }>): Wit
 }
 
 /**
+ * Compose the document title (Proposal 131 §2.1).
+ *
+ * Rank Math's `rank_math_title` and Yoast's `yoast_head_json.title` are the
+ * FINAL rendered titles and usually already carry the site name. Appending
+ * the site name unconditionally produced `${seoTitle} — ${site} — ${site}`
+ * on every real source. Rules: empty → site name; already ends with the site
+ * name (optionally after a separator) → leave it; otherwise append.
+ */
+export function composeDocumentTitle( pageTitle: string, siteTitle: string ): string {
+	const title = pageTitle.trim();
+	const site = siteTitle.trim();
+	if ( ! title ) {
+		return site;
+	}
+	if ( ! site || title.toLowerCase() === site.toLowerCase() ) {
+		return title;
+	}
+	const escapedSite = site.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+	// `Site — Site` / `Site - Site` / `Site | Site` / `Site: Site` / bare `Site`.
+	const alreadyBranded = new RegExp( `(?:\\s[—–|·:]\\s|\\s-\\s)?${ escapedSite }\\s*$`, 'i' ).test( title );
+	return alreadyBranded ? title : `${ title } — ${ site }`;
+}
+
+/** The site-level identity the JSON-LD graph needs. */
+export interface SiteIdentity {
+	/** Absolute site origin, no trailing slash. */
+	url: string;
+	name: string;
+	logo?: string;
+	sameAs?: string[];
+	/** Absolute search URL (`/search/`) — enables the sitelinks search box. */
+	searchUrl?: string;
+}
+
+export interface JsonLdGraph {
+	'@context': 'https://schema.org';
+	'@graph': Array< Record< string, unknown > >;
+}
+
+/**
+ * Build the site-level graph around one page node (Proposal 131 §2.3):
+ * `Organization` + `WebSite` (+ `SearchAction`) + an optional
+ * `BreadcrumbList` + the page itself, wired with `@id` references. The page
+ * node arrives from `jsonLdFor`; its `@context` is dropped (the graph owns
+ * it). This is a REBUILD of the entity graph, never Yoast's `schema.@graph`.
+ */
+export function jsonLdGraph( input: {
+	site: SiteIdentity;
+	page: object;
+	breadcrumbs?: Array< { name: string; url: string } >;
+} ): JsonLdGraph {
+	const origin = input.site.url.replace( /\/+$/, '' );
+	const organizationId = `${ origin }/#organization`;
+	const websiteId = `${ origin }/#website`;
+	const pageNode: Record< string, unknown > = { ...( input.page as Record< string, unknown > ) };
+	delete pageNode[ '@context' ];
+
+	const organization: Record< string, unknown > = {
+		'@type': 'Organization',
+		'@id': organizationId,
+		name: input.site.name,
+		url: `${ origin }/`,
+		...( input.site.logo ? { logo: { '@type': 'ImageObject', url: input.site.logo } } : {} ),
+		...( input.site.sameAs && input.site.sameAs.length > 0 ? { sameAs: input.site.sameAs } : {} ),
+	};
+
+	const website: Record< string, unknown > = {
+		'@type': 'WebSite',
+		'@id': websiteId,
+		url: `${ origin }/`,
+		name: input.site.name,
+		publisher: { '@id': organizationId },
+		...( input.site.searchUrl
+			? {
+					potentialAction: {
+						'@type': 'SearchAction',
+						target: { '@type': 'EntryPoint', urlTemplate: `${ input.site.searchUrl }?q={search_term_string}` },
+						'query-input': 'required name=search_term_string',
+					},
+			  }
+			: {} ),
+	};
+
+	const graph: Array< Record< string, unknown > > = [ organization, website ];
+	if ( input.breadcrumbs && input.breadcrumbs.length > 0 ) {
+		const crumbNode: Record< string, unknown > = {
+			...( breadcrumbList( input.breadcrumbs ) as unknown as Record< string, unknown > ),
+		};
+		delete crumbNode[ '@context' ];
+		graph.push( crumbNode );
+	}
+	graph.push( {
+		...pageNode,
+		isPartOf: { '@id': websiteId },
+		...( pageNode.publisher ? {} : { publisher: { '@id': organizationId } } ),
+	} );
+	return { '@context': 'https://schema.org', '@graph': graph };
+}
+
+/**
  * Serialize a document for a `<script type="application/ld+json">` tag.
  * The `<` escape keeps the JSON inert inside the script element.
  */

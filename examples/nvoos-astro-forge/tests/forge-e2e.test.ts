@@ -169,6 +169,9 @@ const PROFILE: SiteProfile = {
 			],
 			kind: 'product',
 			authMode: 'wc-consumer',
+			// Proposal 131 — wc/v3 has no SEO fields; the loader merges the
+			// product CPT's Rank Math/Yoast head in one id-keyed sidecar pass.
+			seoFrom: 'wp/v2/product',
 		},
 	],
 };
@@ -284,6 +287,9 @@ describe('forge e2e — emitted site', () => {
 		expect(sitemap).toContain('/products/101/fjord-merino-sweater/');
 		expect(sitemap).toContain('/posts/hello-world/hello-world/');
 		expect(sitemap).not.toContain('/about/');
+		// 131 §2.4 — a noindex page leaves the map, and lastmod ships.
+		expect(sitemap).not.toContain('/contact/');
+		expect(sitemap).toContain('<lastmod>');
 
 		const robots = await readFile(path.join(workDir, 'dist', 'robots.txt'), 'utf8');
 		expect(robots).toContain(`Sitemap: ${origin}/sitemap.xml`);
@@ -321,6 +327,10 @@ describe('forge e2e — emitted site', () => {
 		expect(detail).toContain('Product');
 		expect(detail).toContain('120.00');
 		expect(detail).toContain('InStock');
+		// 131 §2.2 — the wp/v2 product sidecar merged the CPT's Yoast head into
+		// the wc/v3 document, and its title already brands itself.
+		expect(detail).toContain('<title>Fjord Merino Sweater — buy the original | Fixture Wares</title>');
+		expect(detail).toContain('name="twitter:card" content="summary_large_image"');
 
 		const outOfStock = await readFile(
 			path.join(workDir, 'dist', 'products', '102', 'harbor-linen-shirt', 'index.html'),
@@ -477,11 +487,24 @@ describe('forge e2e — emitted site', () => {
 			status: 301,
 		});
 		expect(map).toContainEqual({ from: '/about/', to: '/', status: 301 });
+		// Proposal 132 — the stored rules exported by the Forge Bridge ride along.
+		expect(map).toContainEqual({
+			from: '/old-fixture/',
+			to: '/products/101/fjord-merino-sweater/',
+			status: 301,
+		});
+		expect(map).toContainEqual({
+			from: '/legacy-fixture/',
+			to: '/posts/1/fjord-merino-sweater/',
+			status: 302,
+		});
 
 		const redirects = await readFile(path.join(workDir, 'dist', '_redirects'), 'utf8');
 		expect(redirects).toContain('/fjord-merino-sweater/\t/posts/1/fjord-merino-sweater/\t301');
 		expect(redirects).toContain('/about/\t/\t301');
 		expect(redirects).toContain('/product/fjord-merino-sweater/\t/products/101/fjord-merino-sweater/\t301');
+		expect(redirects).toContain('/old-fixture/\t/products/101/fjord-merino-sweater/\t301');
+		expect(redirects).toContain('/legacy-fixture/\t/posts/1/fjord-merino-sweater/\t302');
 	});
 
 	it('passes the axe-core WCAG gate on the rebuilt home (126 §a11y)', async () => {
@@ -659,12 +682,27 @@ describe('forge e2e — long-tail content tools against the fixture', () => {
 			// redirects_generate — sane single-hop map.
 			const redirects = await tool('redirects_generate')({ site: 'fixture-e2e' }, env);
 			expect(redirects.isError).toBeUndefined();
-			const redirectData = redirects.structuredContent as { redirects: Array<{ from: string; to: string; status: number }>; scanned: number };
+			const redirectData = redirects.structuredContent as {
+				redirects: Array<{ from: string; to: string; status: number }>;
+				scanned: number;
+				bridge: number;
+			};
 			expect(redirectData.scanned).toBeGreaterThan(0);
+			// Proposal 132 — the fixture bridge exports two stored rules.
+			expect(redirectData.bridge).toBe(2);
+			expect(redirectData.redirects).toContainEqual({
+				from: '/legacy-fixture/',
+				to: '/posts/1/fjord-merino-sweater/',
+				status: 302,
+			});
 			for (const entry of redirectData.redirects) {
-				expect(entry.status).toBe(301);
+				expect([301, 302, 303, 307, 308, 404, 410]).toContain(entry.status);
 				expect(entry.from).not.toBe(entry.to);
-				expect(entry.to.endsWith('/')).toBe(true);
+				if (entry.status >= 400) {
+					expect(entry.to).toBe('');
+				} else {
+					expect(entry.to.endsWith('/')).toBe(true);
+				}
 			}
 
 			// media_audit — the care-guide images are found.
@@ -754,11 +792,26 @@ describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2
 			'utf8'
 		);
 		expect(yoastPost).toContain('Care guide for wool, cashmere and linen — the studio journal — Fixture Wares');
+		// Proposal 131 — the rest of the Yoast head is carried, not dropped.
+		expect(yoastPost).toContain('property="og:title" content="How to care for natural fibres"');
+		expect(yoastPost).toContain('property="og:type" content="article"');
+		expect(yoastPost).toContain('name="twitter:card" content="summary_large_image"');
+		expect(yoastPost).toContain('property="og:image" content="' + origin + '/wp-content/uploads/care.png"');
+		// The site graph is rebuilt around the page node (never Yoast's @graph).
+		expect(yoastPost).toContain('"@graph"');
+		expect(yoastPost).toContain('"Organization"');
+		expect(yoastPost).toContain('"WebSite"');
+		expect(yoastPost).toContain('"BreadcrumbList"');
 
 		// Pages carry WebPage JSON-LD (velocity parity).
 		const contact = await readFile(path.join(workDir, 'dist', 'contact', 'index.html'), 'utf8');
 		expect(contact).toContain('"WebPage"');
 		expect(contact).toContain('application/ld+json');
+		// 131 §2.1 — the source title already carries the site name: no second suffix.
+		expect(contact).toContain('<title>Contact Fixture Wares</title>');
+		expect(contact).not.toContain('Contact Fixture Wares — Fixture Wares');
+		// 131 §2.2 — the robots directive survives the rebuild.
+		expect(contact).toContain('<meta name="robots" content="noindex, follow"');
 	} );
 
 	it( 'a forged blog builds and renders with NO WP connection (the demo path)', async () => {
@@ -1015,3 +1068,123 @@ describe('forge e2e — setup_wizard (Phase 4 exit: URL → built, deploy-ready)
 		await rm(wizardTarget, { recursive: true, force: true });
 	}, 600_000);
 });
+
+describe( 'forge e2e — tracking capture (Proposal 130)', () => {
+	let trackingDir = '';
+	let trackingProfile: SiteProfile | undefined;
+
+	afterAll( async () => {
+		if ( trackingDir ) {
+			await rm( trackingDir, { recursive: true, force: true } );
+		}
+	} );
+
+	it( 'detects the fixture trackers and drafts them DISABLED', async () => {
+		const { analyzeTracking, trackingFromReport, cspHostsFor } = await import( '../lib/tracking.ts' );
+		const report = await analyzeTracking( { url: origin, fetchImpl: fetch } );
+		const vendors = report.trackers.map( ( tracker ) => tracker.vendor );
+		expect( vendors ).toContain( 'google-analytics-4' );
+		expect( vendors ).toContain( 'meta-pixel' );
+		expect( vendors ).toContain( 'cookieyes' );
+		expect( report.trackers.find( ( tracker ) => tracker.vendor === 'google-analytics-4' )?.ids.measurementId ).toBe(
+			'G-FIXTURE1234'
+		);
+		expect( report.trackers.find( ( tracker ) => tracker.vendor === 'meta-pixel' )?.ids.pixelId ).toBe( '111222333444555' );
+		expect( report.consent.cmp?.vendor ).toBe( 'cookieyes' );
+		expect( report.verification.google ).toBe( 'fixture-verify-token' );
+		expect( report.warnings.join( ' ' ) ).toContain( 'noscript' );
+
+		const draft = trackingFromReport( report );
+		expect( draft.trackers.every( ( tracker ) => tracker.enabled === false ) ).toBe( true );
+		expect( draft.consent.mode ).toBe( 'external-cmp' );
+
+		// The operator keeps GA4 + Meta and switches to the first-party banner.
+		const enabled = draft.trackers.map( ( tracker ) =>
+			tracker.vendor === 'google-analytics-4' || tracker.vendor === 'meta-pixel'
+				? { ...tracker, enabled: true }
+				: tracker
+		);
+		trackingProfile = {
+			...PROFILE,
+			url: origin,
+			tracking: {
+				...draft,
+				trackers: enabled,
+				consent: { mode: 'forge', default: 'denied', strategy: 'basic', gpc: true, policy: { privacy: '/privacy/' } },
+				verification: {
+					...draft.verification,
+					files: [ { path: '/google-fixture.html', content: 'google-site-verification: google-fixture.html' } ],
+				},
+				csp: { hosts: cspHostsFor( enabled ) },
+			},
+		};
+	} );
+
+	it( 'scaffolds, checks, builds and emits consent-first tracking', async () => {
+		expect( trackingProfile ).toBeDefined();
+		trackingDir = await mkdtemp( path.join( os.tmpdir(), 'forge-tracking-' ) );
+		await scaffold( { profile: trackingProfile as SiteProfile, targetDir: trackingDir, template: 'blog' } );
+
+		const install = run( trackingDir, 'npm', [ 'install', '--no-audit', '--no-fund' ] );
+		expect( install.status, `npm install failed:\n${ install.stderr }` ).toBe( 0 );
+
+		const check = run( trackingDir, 'npm', [ 'run', 'check' ], { WP_SITE_URL: origin } );
+		expect( check.status, `astro check failed:\n${ check.stdout }\n${ check.stderr }` ).toBe( 0 );
+
+		const build = run( trackingDir, 'npm', [ 'run', 'build' ], { WP_SITE_URL: origin } );
+		expect( build.status, `astro build failed:\n${ build.stdout }\n${ build.stderr }` ).toBe( 0 );
+
+		const html = await readFile( path.join( trackingDir, 'dist', 'index.html' ), 'utf8' );
+		// Verification meta + proof file.
+		expect( html ).toContain( 'google-site-verification' );
+		expect( html ).toContain( 'fixture-verify-token' );
+		expect( await readFile( path.join( trackingDir, 'dist', 'google-fixture.html' ), 'utf8' ) ).toContain(
+			'google-site-verification'
+		);
+		// The consent bootstrap precedes the loader, and no vendor script is in
+		// the static HTML — deferred, consent-gated delivery.
+		const consentIndex = html.indexOf( 'nvoos-consent-default' );
+		expect( consentIndex ).toBeGreaterThan( -1 );
+		expect( html.indexOf( 'nvoos-tracking-loader' ) ).toBeGreaterThan( consentIndex );
+		expect( /<script[^>]+src=["'][^"']*googletagmanager/.test( html ) ).toBe( false );
+		expect( /<script[^>]+src=["'][^"']*facebook\.net/.test( html ) ).toBe( false );
+		// The banner renders and the event map keeps purchase on WordPress.
+		expect( html ).toContain( 'nvoos-consent-banner' );
+		expect( html ).toContain( '"purchase":false' );
+		// The CSP header file ships Report-Only with both enabled vendors' hosts.
+		const headers = await readFile( path.join( trackingDir, 'dist', '_headers' ), 'utf8' );
+		expect( headers ).toContain( 'Content-Security-Policy-Report-Only' );
+		expect( headers ).toContain( 'https://www.googletagmanager.com' );
+		expect( headers ).toContain( 'https://connect.facebook.net' );
+		// The pure gate agrees with the real build.
+		const { auditTracking } = await import( '../lib/tracking-audit.ts' );
+		const findings = auditTracking( trackingProfile?.tracking, html, { hasDistFile: () => true } );
+		expect( findings.filter( ( finding ) => finding.severity === 'fail' ) ).toEqual( [] );
+	}, 480_000 );
+
+	it( 'shows the consent banner with no axe violations', async () => {
+		const { port, close } = await serveStatic( path.join( trackingDir, 'dist' ) );
+		let browser;
+		try {
+			const { chromium } = await import( 'playwright' );
+			const axeModule = ( await import( 'axe-core' ) ) as unknown as { default: { source: string } };
+			browser = await chromium.launch();
+			const page = await browser.newPage();
+			await page.goto( `http://127.0.0.1:${ port }/` );
+			await page.waitForLoadState( 'networkidle' );
+			// A first visit has no stored decision — the banner must be visible.
+			expect( await page.locator( '#nvoos-consent-banner' ).isVisible() ).toBe( true );
+			await page.addScriptTag( { content: axeModule.default.source } );
+			const results = await page.evaluate( async () => {
+				const w = window as unknown as { axe: { run: ( c: unknown, o: unknown ) => Promise< { violations: unknown[] } > } };
+				return w.axe.run( document, {
+					runOnly: { type: 'tag', values: [ 'wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa' ] },
+				} );
+			} );
+			expect( results.violations, JSON.stringify( results.violations, null, 2 ) ).toEqual( [] );
+		} finally {
+			await browser?.close();
+			await close();
+		}
+	}, 180_000 );
+} );

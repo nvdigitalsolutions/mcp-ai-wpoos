@@ -50,6 +50,9 @@ import { discoverInventory, fetchText } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
 import { auditTokenBlock, mergeTokens, scaffold } from '../lib/scaffold.ts';
+import { auditSeo } from '../lib/seo-audit.ts';
+import { analyzeTracking, mergeTrackingDraft, renderTrackingReport, trackingFromReport } from '../lib/tracking.ts';
+import { auditTracking } from '../lib/tracking-audit.ts';
 import { SitesStore } from '../lib/sites.ts';
 import { maskSecret, Vault } from '../lib/vault.ts';
 import { COMPARE_PROMPT, visionCompare, visionConfig } from '../lib/vision.ts';
@@ -160,6 +163,24 @@ function assertProfile( profile ) {
 
 // -- modes -------------------------------------------------------------------
 
+/** Representative pages for --tracking: the inventory's nav pages, bounded
+ *  and junk-free. The homepage is always page 1. */
+function trackingPageUrls( profile, options ) {
+	const total = Number( options.trackingPages ?? 3 );
+	if ( ! Number.isFinite( total ) || total <= 1 ) {
+		return [];
+	}
+	const base = String( profile.url ).replace( /\/+$/, '' );
+	const junk = new Set( [ 'cart', 'checkout', 'my-account', 'login', 'search' ] );
+	const paths = ( profile.inventory?.navPages ?? [] ).filter( ( path ) => {
+		const slug = String( path ).split( '/' ).filter( Boolean ).pop() ?? '';
+		return slug && ! junk.has( slug );
+	} );
+	return [ ...new Set( paths ) ]
+		.slice( 0, total - 1 )
+		.map( ( path ) => new URL( path, base ).href );
+}
+
 async function runAnalyze( url, options ) {
 	if ( ! url || ! /^https?:\/\//.test( url ) ) {
 		fail( 'analyze needs an https?:// URL.' );
@@ -173,6 +194,7 @@ async function runAnalyze( url, options ) {
 	// design block to the drafted profile. Extraction failures never block the
 	// draft (the operator can still scaffold content-only).
 	let designCss; // The --design stylesheets, fed to breakpoint extraction (115).
+	let designInput; // Reused by --tracking so the homepage is fetched once.
 	if ( options.design ) {
 		try {
 			const input = await fetchDesignInput( profile.url, fetch, {
@@ -180,6 +202,7 @@ async function runAnalyze( url, options ) {
 				// wizard's allowLoopback plumbing.
 				allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
 			} );
+			designInput = input;
 			const design = analyzeDesignInput( input );
 			profile.design = design;
 			designCss = ( input.css ?? [] ).join( '\n' );
@@ -279,6 +302,33 @@ async function runAnalyze( url, options ) {
 			} catch ( error ) {
 				console.warn( `\u26a0 Geometry baseline skipped: ${ error instanceof Error ? error.message : error }` );
 			}
+		}
+	}
+
+	// --tracking (130): detect the source's measurement surface — analytics,
+	// ad pixels, a CMP and the ownership-verification tokens — and draft the
+	// tracking block with every tracker DISABLED. Detection is never consent
+	// to ship a tag; the operator promotes what the client keeps.
+	if ( options.tracking ) {
+		try {
+			const report = await analyzeTracking( {
+				url: profile.url,
+				fetchImpl: fetch,
+				html: designInput?.html,
+				pageUrls: trackingPageUrls( profile, options ),
+				probe: options.probe === true,
+			} );
+			profile.tracking = trackingFromReport( report, {
+				hasCommerce: profile.collections.some( ( collection ) => collection.slug === 'products' ),
+			} );
+			console.log( renderTrackingReport( report ) );
+			if ( profile.tracking.trackers.length > 0 ) {
+				console.log(
+					`\u2713 Tracking drafted: ${ profile.tracking.trackers.length } vendor(s), all DISABLED — enable what the client keeps, then re-scaffold.`
+				);
+			}
+		} catch ( error ) {
+			console.error( `\u26a0 Tracking analysis failed (continuing without): ${ error instanceof Error ? error.message : error }` );
 		}
 	}
 
@@ -804,6 +854,93 @@ async function runWizard( url, options ) {
 
 // -- verify (114 P5) ---------------------------------------------------------
 
+/** Every built HTML page (homepage first), bounded — the SEO gate walks them. */
+async function collectDistHtml( target, limit = 8 ) {
+	const root = existsSync( join( target, 'dist', 'index.html' ) )
+		? join( target, 'dist' )
+		: join( target, 'dist', 'client' );
+	const pages = [];
+	const rootIndex = join( root, 'index.html' );
+	if ( existsSync( rootIndex ) ) {
+		pages.push( { absolute: rootIndex, pathname: '/' } );
+	}
+	async function walk( dir ) {
+		if ( pages.length >= limit ) {
+			return;
+		}
+		for ( const entry of await readdir( dir, { withFileTypes: true } ) ) {
+			if ( pages.length >= limit ) {
+				return;
+			}
+			if ( entry.isDirectory() ) {
+				if ( entry.name === '_astro' || entry.name === 'pagefind' ) {
+					continue;
+				}
+				await walk( join( dir, entry.name ) );
+				continue;
+			}
+			if ( ! entry.name.endsWith( '.html' ) || entry.name === '404.html' ) {
+				continue;
+			}
+			const absolute = join( dir, entry.name );
+			if ( absolute === rootIndex ) {
+				continue;
+			}
+			let pathname = absolute.slice( root.length ).split( '\\' ).join( '/' ).replace( /index\.html$/, '' );
+			if ( ! pathname.startsWith( '/' ) ) {
+				pathname = `/${ pathname }`;
+			}
+			if ( ! pathname.endsWith( '/' ) ) {
+				pathname = `${ pathname }/`;
+			}
+			pages.push( { absolute, pathname } );
+		}
+	}
+	try {
+		await walk( root );
+	} catch {
+		// Missing dist — the caller reports it.
+	}
+	return pages;
+}
+
+/** The Proposal 131 gate — title/branding, robots, social head, JSON-LD. */
+async function runSeoVerify( profile, options ) {
+	const pages = await collectDistHtml( options.target, Number( options.seoPages ?? 8 ) );
+	if ( pages.length === 0 ) {
+		fail( `Cannot read any built HTML under ${ options.target }/dist — run \`npm run build\` first.` );
+	}
+	const siteName = profile.name ?? 'Forge';
+	const findings = [];
+	for ( const page of pages ) {
+		const html = await readFile( page.absolute, 'utf8' );
+		for ( const finding of auditSeo( html, { siteName, pathname: page.pathname } ) ) {
+			findings.push( { ...finding, page: page.pathname } );
+		}
+	}
+	const failures = findings.filter( ( finding ) => finding.severity === 'fail' );
+	const warnings = findings.filter( ( finding ) => finding.severity === 'warn' );
+	if ( findings.length === 0 ) {
+		console.log( `\u2713 SEO: ${ pages.length } page(s) — title, robots, social head and JSON-LD all hold.` );
+	}
+	for ( const finding of failures ) {
+		console.warn( `\u2717 SEO [${ finding.code }] ${ finding.page }: ${ finding.message }` );
+	}
+	// Warnings are usually site-wide — print each code once with a count.
+	const grouped = new Map();
+	for ( const finding of warnings ) {
+		const entry = grouped.get( finding.code ) ?? { message: finding.message, count: 0, page: finding.page };
+		entry.count += 1;
+		grouped.set( finding.code, entry );
+	}
+	for ( const [ code, entry ] of grouped ) {
+		console.log( `\u26a0 SEO [${ code }] ${ entry.count } page(s), first ${ entry.page }: ${ entry.message }` );
+	}
+	if ( failures.length > 0 || ( options.strictSeo === true && warnings.length > 0 ) ) {
+		process.exitCode = 1;
+	}
+}
+
 /** The built front-page HTML (static: dist/index.html; server output:
  * dist/client/index.html) — the band-flow gate walks its section wraps. */
 async function readBuiltHtml( target ) {
@@ -813,6 +950,37 @@ async function readBuiltHtml( target ) {
 		}
 	}
 	return undefined;
+}
+
+/** The Proposal 130 gate — consent ordering, verification, ownership, CSP. */
+function runTrackingVerify( profile, html, options ) {
+	if ( ! profile.tracking ) {
+		console.log( '\u2713 Tracking: the profile has no tracking block — nothing to verify.' );
+		return;
+	}
+	const findings = auditTracking( profile.tracking, html, {
+		hasDistFile: ( filePath ) => {
+			const relative = String( filePath ).replace( /^\//, '' );
+			return (
+				existsSync( join( options.target, 'dist', relative ) ) ||
+				existsSync( join( options.target, 'dist', 'client', relative ) )
+			);
+		},
+	} );
+	const failures = findings.filter( ( finding ) => finding.severity === 'fail' );
+	const warnings = findings.filter( ( finding ) => finding.severity === 'warn' );
+	if ( findings.length === 0 ) {
+		console.log( '\u2713 Tracking: consent ordering, verification and event ownership all hold.' );
+	}
+	for ( const finding of failures ) {
+		console.warn( `\u2717 Tracking [${ finding.code }]: ${ finding.message }` );
+	}
+	for ( const finding of warnings ) {
+		console.log( `\u26a0 Tracking [${ finding.code }]: ${ finding.message }` );
+	}
+	if ( failures.length > 0 || ( options.strictTracking === true && warnings.length > 0 ) ) {
+		process.exitCode = 1;
+	}
 }
 
 /** Concatenate the built CSS bundle under dist/ (bounded — parity only needs
@@ -841,6 +1009,19 @@ async function runVerify( profileRef, options ) {
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
 	if ( ! profile.design ) {
+		if ( options.tracking || options.seo ) {
+			if ( options.seo ) {
+				await runSeoVerify( profile, options );
+			}
+			if ( options.tracking ) {
+				const html = await readBuiltHtml( options.target );
+				if ( ! html ) {
+					fail( `Cannot read the built HTML under ${ options.target }/dist — run \`npm run build\` in the project first.` );
+				}
+				runTrackingVerify( profile, html, options );
+			}
+			return;
+		}
 		fail( 'The profile has no design block — run `node scripts/forge.mjs analyze <url> --design --write <profile>` first.' );
 	}
 	let css;
@@ -941,6 +1122,16 @@ async function runVerify( profileRef, options ) {
 				process.exitCode = 1;
 			}
 		}
+	}
+
+	// Tracking (130 §3.3): consent ordering, verification, ownership and CSP.
+	if ( options.tracking && indexHtml ) {
+		runTrackingVerify( profile, indexHtml, options );
+	}
+
+	// SEO head (131 §2.6): title/branding, robots, social head, JSON-LD graph.
+	if ( options.seo ) {
+		await runSeoVerify( profile, options );
 	}
 
 	// Geometry (114 §3.6): the build's real boxes against the recorded source
@@ -1139,6 +1330,9 @@ program
 	.option( '--wayback', 'add Wayback CDX discovery to the inventory (deleted pages)' )
 	.option( '--vocabulary', 'learn the widget/block vocabulary (block-types registry + rendered widget names, Proposal 116)' )
 	.option( '--geometry', 'measure each source band\u0027s box at 3 viewports so `verify --geometry` can diff the build (needs --design; requires Playwright)' )
+	.option( '--tracking', 'detect analytics, ad pixels, a CMP and verification tokens; draft the tracking block with every tracker DISABLED (Proposal 130)' )
+	.option( '--tracking-pages <n>', 'how many representative pages to scan for trackers (default 3)', '3' )
+	.option( '--probe', 'with --tracking: also load the page in Playwright and record its network requests, globals and cookie NAMES' )
 	.action( async ( url, options ) => {
 		await runAnalyze( url, options );
 	} );
@@ -1208,6 +1402,11 @@ program
 	.option( '--geometry', 'diff the built bands\u0027 boxes against the recorded source geometry (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--geometry-limit <n>', 'how many geometry deviations to print (default 12)', '12' )
 	.option( '--strict-facts', 'fail when a declared band fact did not reach the built HTML (default: report only)' )
+	.option( '--tracking', 'gate the tracking block: consent ordering, verification tokens/files, event ownership, CSP allowlist (Proposal 130)' )
+	.option( '--strict-tracking', 'with --tracking: treat warnings as failures (a stale CSP host, a double-count risk)' )
+	.option( '--seo', 'gate the SEO head: double-branded titles, robots directives, Open Graph/Twitter tags, JSON-LD graph (Proposal 131)' )
+	.option( '--strict-seo', 'with --seo: treat warnings as failures (a missing canonical, an incomplete social head)' )
+	.option( '--seo-pages <n>', 'with --seo: how many built pages to audit (default 8)', '8' )
 	.option( '--baselines', 'note the opt-in Playwright baseline step' )
 	.option( '--visual', 'also compare SOURCE and BUILT screenshots with a vision model (Proposal 118)' )
 	.option( '--serve <port>', 'with --visual: boot the built site with `astro preview` on <port> while you capture it' )

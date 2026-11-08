@@ -10,6 +10,7 @@
 
 import { WpClient } from './wp-client.ts';
 import { applyDesignPins } from './pins.ts';
+import { mergeTrackingDraft } from './tracking.ts';
 import type { SiteProfile, WpCollection } from './types.ts';
 
 /** System/auth slugs that never belong in a generated frontend. */
@@ -64,15 +65,30 @@ export interface DiscoveryReport {
 
 /** Standard field pruning per kind — the anti-N+1 discipline.
  * Posts/pages carry the optional SEO-meta fields (Rank Math + Yoast) —
- * absent plugins/fields are tolerated by the loader (106 §1.2). */
+ * absent plugins/fields are tolerated by the loader (106 §1.2). The Rank
+ * Math extras (canonical/robots/social) feed the 131 SEO head pass. */
+const SEO_FIELDS = [
+	'rank_math_title',
+	'rank_math_description',
+	'rank_math_canonical_url',
+	'rank_math_robots',
+	'rank_math_facebook_title',
+	'rank_math_facebook_description',
+	'rank_math_facebook_image',
+	'rank_math_twitter_title',
+	'rank_math_twitter_description',
+	'rank_math_twitter_image',
+	'yoast_head_json',
+];
+
 const FIELDS: Record<CollectionAnalysis['kind'], string[]> = {
 	post: [
 		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
-		'rank_math_title', 'rank_math_description', 'yoast_head_json',
+		...SEO_FIELDS,
 	],
 	page: [
 		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
-		'rank_math_title', 'rank_math_description', 'yoast_head_json',
+		...SEO_FIELDS,
 	],
 	product: [
 		'id',
@@ -255,6 +271,12 @@ export function profileFromDiscovery(report: DiscoveryReport): SiteProfile {
 		kind: analysis.kind,
 		source: analysis.source,
 		authMode: analysis.kind === 'product' && analysis.restBase.startsWith('wc/') ? 'wc-consumer' : undefined,
+		// Proposal 131 — wc/v3 carries no SEO fields; read them from the product
+		// CPT over wp/v2 in ONE sidecar request (id-keyed merge).
+		seoFrom:
+			analysis.kind === 'product' && analysis.restBase.startsWith('wc/') && report.postTypes.product
+				? `wp/v2/${report.postTypes.product.restBase}`
+				: undefined,
 		optional: analysis.optional,
 		exclude: analysis.kind === 'page' && report.junkPages.length > 0 ? report.junkPages : undefined,
 	}));
@@ -306,6 +328,11 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	}
 	if ( ! existing.forms && fresh.forms ) {
 		merged.forms = fresh.forms;
+	}
+	if ( fresh.tracking ) {
+		// Operator decisions survive: enabled flags, the consent block and the
+		// delivery/ecommerce choices are never overwritten by a re-analysis.
+		merged.tracking = mergeTrackingDraft( existing.tracking, fresh.tracking );
 	}
 	return merged;
 }

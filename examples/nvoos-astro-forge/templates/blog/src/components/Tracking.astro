@@ -1,0 +1,258 @@
+---
+// ---------------------------------------------------------------------------
+// Tracking.astro — the tracker & measurement surface (Proposal 130).
+//
+// Emits, in this exact order (the invariant `forge verify --tracking` checks):
+//   1. ownership-verification <meta> tags
+//   2. #nvoos-tracking-config (inert JSON the loader reads)
+//   3. #nvoos-consent-default (Consent Mode v2 defaults + stored decision + GPC)
+//   4. #nvoos-tracking-events (inert JSON — the event ownership map)
+//   5. the deferred first-party loader
+//
+// No vendor <script src> is ever emitted into the static HTML: the loader
+// injects each vendor only after its consent category is granted.
+// ---------------------------------------------------------------------------
+import { tracking } from '../lib/tracking.generated.ts';
+
+const verification = tracking.verification ?? {};
+const verificationMeta: Array< { name: string; content: string } > = [];
+const metaNames: Record< string, string > = {
+	google: 'google-site-verification',
+	bing: 'msvalidate.01',
+	yandex: 'yandex-verification',
+	pinterest: 'p:domain_verify',
+	facebook: 'facebook-domain-verification',
+};
+for ( const [ key, name ] of Object.entries( metaNames ) ) {
+	const content = verification[ key ];
+	if ( content ) {
+		verificationMeta.push( { name, content } );
+	}
+}
+
+const gtmEnabled = tracking.vendors.some( ( vendor ) => vendor.vendor === 'google-tag-manager' );
+// GTM wins: a GA4 tag alongside it double-counts page views (130 §2.6).
+const loadable = tracking.vendors.filter(
+	( vendor ) =>
+		vendor.category !== 'verification' &&
+		vendor.category !== 'server' &&
+		! ( gtmEnabled && vendor.vendor === 'google-analytics-4' )
+);
+const hasTrackers = tracking.enabled && loadable.length > 0;
+
+const consent = tracking.consent;
+const strategy = consent.strategy ?? 'basic';
+const advanced = strategy === 'advanced';
+const cmpScript = /^https:\/\//.test( consent.cmp?.script ?? '' ) ? consent.cmp?.script : undefined;
+const externalCmp = consent.mode === 'external-cmp' && cmpScript;
+
+const escapeJson = ( value: string ) => value.replace( /</g, '\\u003c' );
+
+const loaderConfig = escapeJson(
+	JSON.stringify( {
+		vendors: loadable,
+		consent: {
+			strategy,
+			waitForUpdate: consent.waitForUpdate ?? 500,
+			gpc: consent.gpc !== false,
+			state: consent.default ?? 'denied',
+		},
+	} )
+);
+
+// Exactly one owner per event. The forge never emits `purchase` while the
+// checkout lives on WordPress (130 §2.8).
+const events = escapeJson(
+	JSON.stringify( {
+		page_view: true,
+		view_item: tracking.ecommerce?.events === 'ga4',
+		add_to_cart: tracking.ecommerce?.events === 'ga4',
+		purchase: tracking.ecommerce?.purchaseSource === 'forge',
+	} )
+);
+
+const wait = Number( consent.waitForUpdate ?? 500 );
+const defaultState = consent.default === 'granted' ? 'granted' : 'denied';
+const gpcEnabled = consent.gpc !== false;
+
+const consentBootstrap = [
+	'(function () {',
+	"  var KEY = 'nvoos-consent';",
+	`  var STATE = '${ defaultState }';`,
+	`  var WAIT = ${ wait };`,
+	`  var GPC = ${ gpcEnabled };`,
+	'  window.dataLayer = window.dataLayer || [];',
+	'  window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };',
+	"  gtag('consent', 'default', {",
+	'    ad_storage: STATE, ad_user_data: STATE, ad_personalization: STATE,',
+	'    analytics_storage: STATE, functionality_storage: STATE,',
+	"    personalization_storage: STATE, security_storage: 'granted',",
+	'    wait_for_update: WAIT',
+	'  });',
+	'  var gpc = false;',
+	'  try { gpc = GPC && !!navigator.globalPrivacyControl; } catch (e) { gpc = false; }',
+	'  var d = null;',
+	'  try { var raw = localStorage.getItem(KEY); if (raw) { d = JSON.parse(raw); } } catch (e) { d = null; }',
+	'  var c = (d && d.v === 1 && d.categories) ? d.categories : null;',
+	"  var base = STATE === 'granted';",
+	'  var analytics = c ? !!c.analytics : base;',
+	'  var ads = (c ? !!c.advertising : base) && !gpc;',
+	'  var functional = c ? !!c.functional : base;',
+	'  var personalization = c ? !!c.personalization : base;',
+	"  gtag('consent', 'update', {",
+	"    ad_storage: ads ? 'granted' : 'denied',",
+	"    ad_user_data: ads ? 'granted' : 'denied',",
+	"    ad_personalization: ads ? 'granted' : 'denied',",
+	"    analytics_storage: analytics ? 'granted' : 'denied',",
+	"    functionality_storage: functional ? 'granted' : 'denied',",
+	"    personalization_storage: personalization ? 'granted' : 'denied'",
+	'  });',
+	'})();',
+].join( '\n' );
+
+const loader = [
+	'(function () {',
+	"  var node = document.getElementById('nvoos-tracking-config');",
+	'  if (!node) { return; }',
+	'  var cfg;',
+	'  try { cfg = JSON.parse(node.textContent || "{}"); } catch (e) { return; }',
+	"  var KEY = 'nvoos-consent';",
+	'  function decision() {',
+	'    try {',
+	'      var raw = localStorage.getItem(KEY);',
+	'      var d = raw ? JSON.parse(raw) : null;',
+	'      return d && d.v === 1 ? d : null;',
+	'    } catch (e) { return null; }',
+	'  }',
+	'  function granted(category) {',
+	'    var d = decision();',
+	'    return !!(d && d.categories && d.categories[category]);',
+	'  }',
+	'  var loaded = {};',
+	'  function inject(src, done) {',
+	'    if (!src || loaded[src]) { return; }',
+	'    loaded[src] = 1;',
+	'    var s = document.createElement("script");',
+	'    s.async = true;',
+	'    s.src = src;',
+	'    if (done) { s.onload = done; }',
+	'    (document.head || document.documentElement).appendChild(s);',
+	'  }',
+	'  function gtag() { window.dataLayer.push(arguments); }',
+	'  function load(v) {',
+	"    if (!granted(v.consentCategory || 'analytics')) { return; }",
+	'    var ids = v.ids || {};',
+	'    switch (v.vendor) {',
+	"      case 'google-tag-manager':",
+	'        if (!ids.containerId) { return; }',
+	'        window.dataLayer = window.dataLayer || [];',
+	'        window.dataLayer.push({ "gtm.start": new Date().getTime(), event: "gtm.js" });',
+	'        inject("https://www.googletagmanager.com/gtm.js?id=" + encodeURIComponent(ids.containerId));',
+	'        return;',
+	"      case 'google-analytics-4':",
+	"      case 'google-tag':",
+	"      case 'google-ads': {",
+	'        var gid = ids.measurementId || ids.tagId || ids.conversionId;',
+	'        if (!gid) { return; }',
+	'        gtag("js", new Date());',
+	'        gtag("config", gid);',
+	'        inject("https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(gid));',
+	'        return;',
+	'      }',
+	"      case 'meta-pixel':",
+	'        if (!ids.pixelId) { return; }',
+	'        inject("https://connect.facebook.net/en_US/fbevents.js", function () {',
+	'          window.fbq("init", ids.pixelId);',
+	'          window.fbq("track", "PageView");',
+	'        });',
+	'        return;',
+	"      case 'tiktok-pixel':",
+	'        if (!ids.pixelId) { return; }',
+	'        inject("https://analytics.tiktok.com/i18n/pixel/events.js", function () {',
+	'          window.ttq.load(ids.pixelId);',
+	'          window.ttq.page();',
+	'        });',
+	'        return;',
+	"      case 'pinterest-tag':",
+	'        if (!ids.tagId) { return; }',
+	'        inject("https://s.pinimg.com/ct/core.js", function () {',
+	'          window.pintrk("load", ids.tagId);',
+	'          window.pintrk("page");',
+	'        });',
+	'        return;',
+	"      case 'x-pixel':",
+	'        if (!ids.pixelId) { return; }',
+	'        inject("https://static.ads-twitter.com/uwt.js", function () { window.twq("config", ids.pixelId); });',
+	'        return;',
+	"      case 'snap-pixel':",
+	'        if (!ids.pixelId) { return; }',
+	'        inject("https://sc-static.net/scevent.min.js", function () {',
+	'          window.snaptr("init", ids.pixelId);',
+	'          window.snaptr("track", "PAGE_VIEW");',
+	'        });',
+	'        return;',
+	"      case 'reddit-pixel':",
+	'        if (!ids.pixelId) { return; }',
+	'        inject("https://www.redditstatic.com/ads/pixel.js", function () {',
+	'          window.rdt("init", ids.pixelId);',
+	'          window.rdt("track", "PageVisit");',
+	'        });',
+	'        return;',
+	"      case 'linkedin-insight':",
+	'        if (!ids.partnerId) { return; }',
+	'        window._linkedin_partner_id = ids.partnerId;',
+	'        window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];',
+	'        window._linkedin_data_partner_ids.push(ids.partnerId);',
+	'        inject("https://snap.licdn.com/li.lms-analytics/insight.min.js");',
+	'        return;',
+	"      case 'bing-uet':",
+	'        window.uetq = window.uetq || [];',
+	'        inject("https://bat.bing.com/bat.js");',
+	'        return;',
+	"      case 'hotjar':",
+	'        if (!ids.siteId) { return; }',
+	'        inject("https://static.hotjar.com/c/hotjar-" + encodeURIComponent(ids.siteId) + ".js?sv=6");',
+	'        return;',
+	"      case 'microsoft-clarity':",
+	'        if (!ids.projectId) { return; }',
+	'        inject("https://www.clarity.ms/tag/" + encodeURIComponent(ids.projectId));',
+	'        return;',
+	"      case 'hubspot':",
+	'        if (!ids.portalId) { return; }',
+	'        inject("https://js.hs-scripts.com/" + encodeURIComponent(ids.portalId) + ".js");',
+	'        return;',
+	"      case 'klaviyo':",
+	'        if (!ids.companyId) { return; }',
+	'        inject("https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=" + encodeURIComponent(ids.companyId));',
+	'        return;',
+	'      default:',
+	'        if (ids.script) { inject(ids.script); }',
+	'        return;',
+	'    }',
+	'  }',
+	'  function loadAll() { (cfg.vendors || []).forEach(load); }',
+	"  window.addEventListener('nvoos:consent', loadAll);",
+	'  if (decision()) { loadAll(); }',
+	'  // Advanced Consent Mode loads immediately and relies on the defaults;',
+	'  // basic mode waits for a decision (prior consent).',
+	'  if (cfg.consent && cfg.consent.strategy === "advanced") { loadAll(); }',
+	'})();',
+].join( '\n' );
+---
+
+{
+	verificationMeta.map( ( meta ) => <meta name={ meta.name } content={ meta.content } /> )
+}
+
+{
+	hasTrackers && (
+		<>
+			<script id="nvoos-tracking-config" type="application/json" is:inline set:html={ loaderConfig }></script>
+			<script id="nvoos-consent-default" is:inline set:html={ consentBootstrap }></script>
+			<script id="nvoos-tracking-events" type="application/json" is:inline set:html={ events }></script>
+			{ externalCmp && <script is:inline src={ cmpScript } async></script> }
+			<script id="nvoos-tracking-loader" is:inline set:html={ loader }></script>
+			{ advanced && <link rel="preconnect" href="https://www.googletagmanager.com" /> }
+		</>
+	)
+}

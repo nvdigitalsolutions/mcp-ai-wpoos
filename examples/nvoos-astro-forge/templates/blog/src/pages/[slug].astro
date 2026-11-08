@@ -7,6 +7,7 @@ import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
 import DesignRenderer from '../components/design/DesignRenderer.astro';
 import { jsonLdFor, renderJsonLd } from '../lib/seo.ts';
+import { buildGraph, homeCrumb } from '../lib/seo-graph.ts';
 
 export async function getStaticPaths() {
 	const pages = await getCollection('pages');
@@ -27,14 +28,18 @@ const pageUrl = Astro.site ? new URL(`/${page.data.slug}/`, Astro.site).href : u
 // SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
 const seoTitle = page.data.seoTitle ?? page.data.title;
 const seoDescription = page.data.seoDescription ?? page.data.excerpt;
-const jsonLd = jsonLdFor('WebPage', {
-	url: pageUrl,
-	title: seoTitle,
-	description: seoDescription,
-});
+const jsonLd = buildGraph(
+	Astro.site,
+	jsonLdFor('WebPage', {
+		url: pageUrl,
+		title: seoTitle,
+		description: seoDescription,
+	}),
+	[ ...homeCrumb(Astro.site), ...(pageUrl ? [ { name: seoTitle, url: pageUrl } ] : []) ]
+);
 ---
 
-<Base title={seoTitle} description={seoDescription} canonical={pageUrl}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl} seo={page.data.seo}>
 	<article class="post">
 		<h1>{page.data.title}</h1>
 		{body ? (

@@ -15,7 +15,8 @@ consumer, not a requirement.
 | Inbound trigger | `POST /wp-json/nvoos-forge/v1/rebuild` — accepted only with a valid signature over the body. |
 | Preview tokens | `POST /wp-json/nvoos-forge/v1/preview-tokens` (editors+) mints a single-use, 15-minute token; `POST /wp-json/nvoos-forge/v1/preview-tokens/verify` consumes it (POST-only — verification is a state change). Stored hashed only. |
 | **Form submissions** | `POST /wp-json/nvoos-forge/v1/forms/submit` — the forged static site's rebuilt forms post here and the plugin dispatches them to the NATIVE handler (JetFormBuilder's form processor or Elementor Pro's form ajax handler), so validation, storage, mail, and post-submit actions run exactly as on WordPress. Gated by: a CORS origin allowlist, per-IP rate limits, a mandatory honeypot + timestamp spam floor (optional Cloudflare Turnstile with `action` + `hostname` pinned), and server-side sanitization of every field. Unknown form → 404; no handler → 501; a caught bot → silent 200. The no-JS fallback is an ordinary form-encoded POST that redirects back to the static page with `?form=ok|error`. |
-| Health | `GET /wp-json/nvoos-forge/v1/health` — redacted (versions, booleans, webhook host, forms flags/counts). |
+| Health | `GET /wp-json/nvoos-forge/v1/health` — redacted (versions, booleans, webhook host, forms flags/counts, redirect-export flags/providers). |
+| **Stored redirects** | `GET /wp-json/nvoos-forge/v1/redirects` — normalizes the rules your redirect plugin already stores into `{ source, target, type }` so a forged static site can keep legacy URLs alive on cutover day. Redirection (`redirection_items`, joined to `redirection_groups` for group status, `match_type = 'url'`) and Rank Math (`rank_math_redirections`, `status = 'active'`, exact comparisons only). Opt-in, read-only, bounded to 500 rules with an explicit `truncated` flag, optional shared token. Only enabled/exact rules are exported; regex, query-scoped, non-URL match types, and unsupported action codes are returned as **skipped counts**, never widened. No row ids, hit counts, group ids, titles, or timestamps leave the server. |
 
 ## Consumers
 
@@ -53,6 +54,13 @@ the bridge only dispatches to them, never reimplements them. Submission
 outcomes surface through the `nvoos_forge_bridge_form_submission` action
 (`accepted` | `rejected`) — an audit seam you can wire to any logger.
 
+**Redirects** (the same settings page): enable the export to publish
+`GET /wp-json/nvoos-forge/v1/redirects`. The section reports which provider
+was detected (Redirection / Rank Math). Set an optional export token when the
+site's URL history should not be publicly readable — callers then send it as
+`X-Forge-Redirects-Token` (or a Bearer token). The Astro Forge reads this at
+build time and merges the rules beneath its own URL-structure map.
+
 ## Development
 
 ```bash
@@ -63,11 +71,13 @@ composer test             # phpunit (own config; WP tests via wp-phpunit)
 
 Tests cover: configuration gating, debounce/dedupe, HMAC signing +
 verification, the outbound POST contract (intercepted, zero network), REST
-routes, capability gates, token single-use/expiry, health redaction, and the
+routes, capability gates, token single-use/expiry, health redaction, the
 forms bridge — origin/rate gates, the honeypot/timestamp spam ladder, the
 JetFormBuilder + Elementor dispatch seams (zero HTTP, the checkout-proxy
 pattern), captcha (intercepted `pre_http_request`), the typed 404/501
-contracts, and the no-JS redirect floor.
+contracts, and the no-JS redirect floor — and the stored-redirects export
+(provider adapters against real plugin tables, group/status gating,
+normalization, dedupe, bounding, token gate, and the redaction contract).
 
 ## wp.org readiness
 

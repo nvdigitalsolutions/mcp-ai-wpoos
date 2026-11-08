@@ -40,7 +40,10 @@ const postsCollection: WpCollection = {
 	// tolerated by the loader, never a build failure (Proposal 106 §1.2).
 	fields: [
 		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
-		'rank_math_title', 'rank_math_description', 'yoast_head_json',
+		'rank_math_title', 'rank_math_description', 'rank_math_canonical_url', 'rank_math_robots',
+		'rank_math_facebook_title', 'rank_math_facebook_description', 'rank_math_facebook_image',
+		'rank_math_twitter_title', 'rank_math_twitter_description', 'rank_math_twitter_image',
+		'yoast_head_json',
 	],
 	embed: true,
 	perPage: 100,
@@ -51,7 +54,10 @@ const pagesCollection: WpCollection = {
 	restBase: 'wp/v2/pages',
 	fields: [
 		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
-		'rank_math_title', 'rank_math_description', 'yoast_head_json',
+		'rank_math_title', 'rank_math_description', 'rank_math_canonical_url', 'rank_math_robots',
+		'rank_math_facebook_title', 'rank_math_facebook_description', 'rank_math_facebook_image',
+		'rank_math_twitter_title', 'rank_math_twitter_description', 'rank_math_twitter_image',
+		'yoast_head_json',
 	],
 	embed: true,
 	perPage: 100,
@@ -79,6 +85,9 @@ const productsCollection: WpCollection = {
 	],
 	kind: 'product',
 	authMode: 'wc-consumer',
+	// Proposal 131 — wc/v3 carries no SEO fields; merge them from the product
+	// CPT over wp/v2 (one bounded sidecar request, keyed by product id).
+	seoFrom: 'wp/v2/product',
 	optional: true,
 	perPage: 100,
 	maxPages: 50,

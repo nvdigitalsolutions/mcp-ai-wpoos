@@ -80,6 +80,23 @@ export function createWpFixtureData() {
 				yoast_head_json: {
 					title: 'Care guide for wool, cashmere and linen — the studio journal',
 					description: 'Wash, store and repair natural fibres the studio way.',
+					// Proposal 131 — the rest of the Yoast head the rebuild carries:
+					// robots, canonical, Open Graph and the Twitter card.
+					canonical: `${ORIGIN}/care-guide/`,
+					robots: { index: 'index', follow: 'follow', 'max-image-preview': 'max-image-preview:large' },
+					og_title: 'How to care for natural fibres',
+					og_description: 'A studio guide to wool, cashmere and linen.',
+					og_type: 'article',
+					og_site_name: 'Fixture Wares',
+					og_image: [
+						{
+							url: `${ORIGIN}/wp-content/uploads/care.png`,
+							width: 1200,
+							height: 630,
+							type: 'image/png',
+						},
+					],
+					twitter_card: 'summary_large_image',
 				},
 				content: {
 					rendered: [
@@ -195,6 +212,7 @@ export function createWpFixtureData() {
 				link: `${ORIGIN}/about/`,
 				excerpt: { rendered: '' },
 				rank_math_title: 'About Fixture Wares',
+				rank_math_description: 'The Fixture Wares studio: fjord-made knitwear and homeware.',
 				content: {
 					rendered:
 						// The split-hero fixture (125 §1): a copy column + a media
@@ -242,6 +260,12 @@ export function createWpFixtureData() {
 				slug: 'contact',
 				link: `${ORIGIN}/contact/`,
 				excerpt: { rendered: '' },
+				// Proposal 131 — the source title already carries the site name (the
+				// double-brand regression) and the page is noindex (it must leave
+				// the sitemap and render the directive).
+				rank_math_title: 'Contact Fixture Wares',
+				rank_math_description: 'Reach the Fixture Wares studio.',
+				rank_math_robots: [ 'noindex', 'follow' ],
 				content: {
 					rendered: [
 						'<p>Write to <a href="mailto:hello@fixture.test">hello@fixture.test</a>.</p>',
@@ -314,6 +338,25 @@ export function createWpFixtureData() {
 		],
 		/** wp/v2 product CPT documents — no commerce fields, featured_media IDs. */
 		wpProducts: [
+			{
+				// The same id as the wc/v3 document below — WooCommerce products
+				// ARE the `product` CPT, so the 131 SEO sidecar matches by id.
+				id: 101,
+				date_gmt: '2026-10-01T00:00:00',
+				modified_gmt: '2026-10-01T00:00:00',
+				title: { rendered: 'Fjord Merino Sweater' },
+				slug: 'fjord-merino-sweater',
+				link: `${ORIGIN}/product/fjord-merino-sweater/`,
+				content: { rendered: '<p>The sweater, from the CPT.</p>' },
+				featured_media: 501,
+				yoast_head_json: {
+					title: 'Fjord Merino Sweater — buy the original | Fixture Wares',
+					description: 'The original expedition-weight fjord merino sweater.',
+					og_title: 'Fjord Merino Sweater',
+					og_image: [ { url: `${ORIGIN}/wp-content/uploads/product-a.png` } ],
+					twitter_card: 'summary_large_image',
+				},
+			},
 			{
 				id: 201,
 				date_gmt: '2026-10-01T00:00:00',
@@ -401,8 +444,22 @@ export function createWpFixtureServer(port = PORT) {
 					':root{--e-global-color-primary:#6ec1e4;--e-global-color-text:#444444;' +
 					'--e-global-typography-primary-font-family:"Rubik";--e-global-typography-text-font-family:"Roboto";}' +
 					'.hero{font-size:40px;padding:16px;border-radius:4px}' +
-					'</style></head><body><h1 class="hero">Fixture Wares</h1>' +
-					'<a class="btn">Buy</a><div class="card"></div></body></html>'
+					'</style>' +
+					// Proposal 130 — the measurement surface the tracking pass must
+					// detect: GA4 (script + inline config), a Meta pixel, a consent
+					// platform, a verification meta, and a <noscript> pixel that must
+					// only ever be WARNED about.
+					'<meta name="google-site-verification" content="fixture-verify-token">' +
+					'<script async src="https://www.googletagmanager.com/gtag/js?id=G-FIXTURE1234"></script>' +
+					'<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}' +
+					'gtag("js",new Date());gtag("config","G-FIXTURE1234");</script>' +
+					'<script src="https://connect.facebook.net/en_US/fbevents.js"></script>' +
+					'<script>fbq("init","111222333444555");fbq("track","PageView");</script>' +
+					'<script src="https://cdn-cookieyes.com/client_data/fixture/script.js"></script>' +
+					'</head><body><h1 class="hero">Fixture Wares</h1>' +
+					'<a class="btn">Buy</a><div class="card"></div>' +
+					'<noscript><img src="https://www.facebook.com/tr?id=1&ev=PageView"></noscript>' +
+					'</body></html>'
 			);
 			return;
 		}
@@ -470,6 +527,24 @@ export function createWpFixtureServer(port = PORT) {
 				res.writeHead(404, { 'content-type': 'application/json' });
 				res.end(JSON.stringify({ code: 'rest_post_invalid_id', message: 'Invalid product ID.' }));
 			}
+			return;
+		}
+		// Proposal 132 — the Forge Bridge's stored-redirects export. The fixture
+		// carries a 301 and a 302 so the build path proves non-301 statuses flow
+		// through to _redirects unchanged.
+		if (path === '/wp-json/nvoos-forge/v1/redirects') {
+			json(res, {
+				available: true,
+				enabled: true,
+				count: 2,
+				truncated: false,
+				providers: { redirection: 2, rankmath: 0 },
+				skipped: { regex: 0, query: 0, match: 0, action: 0, invalid: 0, duplicate: 0 },
+				redirects: [
+					{ source: '/legacy-fixture/', target: '/posts/1/fjord-merino-sweater/', type: 302 },
+					{ source: '/old-fixture/', target: '/products/101/fjord-merino-sweater/', type: 301 },
+				],
+			});
 			return;
 		}
 		if (path === '/wp-json/nvoos-commerce/v1/products') {
