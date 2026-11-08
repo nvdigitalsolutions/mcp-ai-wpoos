@@ -793,6 +793,21 @@ a {
 	height: auto;
 }
 
+/* Elementor's col-16 brand columns reflow to 50% at tablet and 100% at mobile.
+ * auto-fit alone packed FIVE logos into 142px tracks at 834px and held the
+ * strip to 158px against the source's 844px; the source shows two per row. */
+@media (max-width: 1025px) {
+	.ds-logos {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 767px) {
+	.ds-logos {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
 .ds-gallery {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
@@ -1191,10 +1206,17 @@ a {
 	border-radius: var(--forge-radius);
 }
 
-@media (max-width: 767px) {
+/* Elementor stacks its 50% columns below the TABLET breakpoint, not only on
+ * phones: at 834px the split still held two 371px tracks against the source's
+ * full-width 819px columns, so the portrait photo rendered 585px instead of
+ * ~1220 and the band read 611px against the source's 2272px inner box. */
+@media (max-width: 1025px) {
 	.ds-icon-split {
-		grid-template-columns: 1fr;
+		grid-template-columns: minmax(0, 1fr);
 	}
+}
+
+@media (max-width: 767px) {
 	/* The source's mobile column order (elementor-reverse-mobile, 124 §6)
 	 * — the wrap's inline --ds-icon-media-order flips the media below. */
 	.ds-icon-media {
