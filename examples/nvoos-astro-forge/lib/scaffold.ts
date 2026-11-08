@@ -758,6 +758,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tmediaShape?: { width: string; height: string; background: string; radius?: string };',
 		'\t/** The card box model of a media grid band (measured; template defaults when absent). */',
 		'\tcardStyle?: { gap?: string; padding?: string; textPadding?: string };',
+		'\ticonRowStyle?: { padTop?: string; padBottom?: string; titleSize?: string; titleLineHeight?: string; markerSize?: string; markerGlyph?: string; markerBackground?: string; markerInk?: string };',
 		'\t/** Per-image collage offsets (absolute positioning against the collage box). */',
 		'\tmediaOffsets?: Array<{ top?: string; right?: string; bottom?: string; left?: string; shadow?: string }>;',
 		'\t/** The body paragraphs render in N columns (the source\'s sub-column split). */',
@@ -889,6 +890,15 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 				.map( ( key ) => `${ key }: ${ tsString( card[ key ] as string ) }` );
 			if ( parts.length > 0 ) {
 				entry.push( `cardStyle: { ${ parts.join( ', ' ) } }` );
+			}
+		}
+		if ( section.iconRowStyle ) {
+			const row = section.iconRowStyle;
+			const parts = ( [ 'padTop', 'padBottom', 'titleSize', 'titleLineHeight', 'markerSize', 'markerGlyph', 'markerBackground', 'markerInk' ] as const )
+				.filter( ( key ) => row[ key ] )
+				.map( ( key ) => `${ key }: ${ tsString( row[ key ] as string ) }` );
+			if ( parts.length > 0 ) {
+				entry.push( `iconRowStyle: { ${ parts.join( ', ' ) } }` );
 			}
 		}
 		if ( section.mediaShape ) {

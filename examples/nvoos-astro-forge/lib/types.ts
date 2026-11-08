@@ -424,6 +424,23 @@ export interface ForgeSection {
 	 * the template defaults.
 	 */
 	cardStyle?: { gap?: string; padding?: string; textPadding?: string };
+	/**
+	 * The icon-row rhythm of an icon-list band (Elementor's advanced-text
+	 * widgets). Like the card box model this is measured, not band-scoped CSS:
+	 * each row carries its own inner padding, a large leading icon box and its
+	 * own title size (jayainc's services rows: 36px/50px padding, an 81px
+	 * circle with a 45px glyph, 27px/32px titles). Empty → template defaults.
+	 */
+	iconRowStyle?: {
+		padTop?: string;
+		padBottom?: string;
+		titleSize?: string;
+		titleLineHeight?: string;
+		markerSize?: string;
+		markerGlyph?: string;
+		markerBackground?: string;
+		markerInk?: string;
+	};
 	/** The media collage's backdrop shape (aux-the-shape) — the rectangle
 	 * the offset photos compose over (jayainc's 412x450 yellow shape). */
 	mediaShape?: { width: string; height: string; background: string; radius?: string };
