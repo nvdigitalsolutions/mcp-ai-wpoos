@@ -338,7 +338,11 @@
 				"id": "059421c",
 				"bgGradient": "linear-gradient(137deg, #081a43 0%, #071230 100%)",
 				"bgColor": "transparent",
-				"padding": "125px 0px 125px 0px",
+				"padding": {
+					"desktop": "125px 0px 125px 0px",
+					"tablet": "100px 0px 100px 0px",
+					"mobile": "100px 0px 100px 0px"
+				},
 				"marginTop": {
 					"desktop": "0px",
 					"tablet": "0px",
@@ -723,6 +727,15 @@
 			"path": "typography.bodyPx",
 			"value": 16,
 			"why": "The source body renders at 16px: the body element computes 16.0016px and 1335 of ~1771 body characters are 16px. 16 is absent from the px ladder because the source inherits it as a relative size, so the band heuristic picks 13px."
+		},
+		{
+			"path": "sections.059421c.padding",
+			"value": {
+				"desktop": "125px 0px 125px 0px",
+				"tablet": "100px 0px 100px 0px",
+				"mobile": "100px 0px 100px 0px"
+			},
+			"why": "The source scopes this band padding to a device range: 125px on desktop, 100px on tablet and mobile. A single shorthand forced 125px everywhere and over-padded tablet/mobile by 25px."
 		}
 	],
 	"vocabulary": {

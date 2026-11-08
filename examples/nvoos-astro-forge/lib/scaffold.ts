@@ -724,7 +724,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t/** The overlay tint over the hero photo. */',
 		'\toverlay?: string;',
 		'\t/** The source band padding (the declared padding fact). */',
-		'\tpadding?: string;',
+		'\tpadding?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\t/** The boxed container width (the source constrains its content —',
 		'\t * jayainc\'s Elementor 1140px default). Absent → the site measure. */',
 		'\tmeasure?: string;',
@@ -805,7 +805,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		// The source band's declared padding (jayainc: 100px bands vs the
 		// flush content-tight bands) — the wrap applies it inline.
 		if ( section.padding ) {
-			entry.push( `padding: ${ tsString( section.padding ) }` );
+			entry.push( `padding: ${ tsLength( section.padding ) }` );
 		}
 		// The boxed container measure + column gap (124 §3) — the inner
 		// column re-measures to the source's container width.

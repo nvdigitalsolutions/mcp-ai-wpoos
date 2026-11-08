@@ -497,6 +497,27 @@ describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
 		},
 	};
 
+	it( 'emits a device-scoped band padding as a responsive map', () => {
+		// The source scopes this band's padding (jayainc 059421c: 125px on
+		// desktop, 100px on tablet/mobile) — a single shorthand cannot carry it.
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [
+					{
+						id: '059421c',
+						bgColor: '#081a43',
+						padding: { desktop: '125px 0px 125px 0px', tablet: '100px 0px 100px 0px', mobile: '100px 0px 100px 0px' },
+					},
+				],
+			},
+		} );
+		expect( module ).toContain(
+			"padding: { desktop: '125px 0px 125px 0px', tablet: '100px 0px 100px 0px', mobile: '100px 0px 100px 0px' }"
+		);
+	} );
+
 	it( 'emits the split-hero + collage facts into sections.generated', () => {
 		const module = renderSectionsGenerated( profile );
 		expect( module ).toContain( "layout: 'split'" );
