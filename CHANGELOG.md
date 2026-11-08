@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed — combined build now ships the extracted OOS engine
+
+- The combined (`mcp-ai-wpoos-*.zip`) package now includes `lib/core` and `lib/wordpress-adapter`, so the framework-agnostic engine behind `?engine=oos` / `WP_MCP_AI_OOS_ENGINE` can actually boot on a packaged install. Previously `lib/` was excluded from every build, so the feature flag silently fell back to the legacy path even when enabled. `bin/build-plugin-zip.sh` scopes the exclusion to the base and WordPress.org builds (`BUILD_BASE`), which remain `lib`-free, and additionally drops the non-WordPress adapters (`lib/laravel-adapter`, `lib/craft-adapter`) plus the package's dev artefacts (`vendor/`, `tests/`, PHPStan/PHPUnit configs, caches). **The engine stays opt-in:** `enable_oos_engine` is still false by default and the legacy chat path is unchanged for new installs; sites that had already set the flag will begin using the engine after updating.
+
 ### Changed — model-assisted Auto-Select for assistant tools
 
 - The assistant editor's 🤖 Auto-Select button now asks the assistant's configured AI model (or the site default provider) to pick tools from the available catalog when a model is available — the deterministic keyword matching remains the fallback and runs when no model is configured. The analysis happens on click via admin-ajax (`wp_mcp_ai_auto_select_tools`, nonce + assistant `edit_post` gated), so rendering the editor never blocks on a model call, and the completion notice shows the method used ("AI-assisted selection" vs "Keyword matching"). Selections stay focused: the model is capped at 40 tools and the keyword-fallback default drops from 100 → 40. New filters: `wp_mcp_ai_auto_select_enable_model`, `wp_mcp_ai_auto_select_model_config`, `wp_mcp_ai_auto_select_model_response`, `wp_mcp_ai_auto_select_model_max_tools`, `wp_mcp_ai_auto_select_model_candidates`, `wp_mcp_ai_auto_select_model_desc_chars`. Profession default tools now also match as space-separated keywords, so they reliably score in both paths.
