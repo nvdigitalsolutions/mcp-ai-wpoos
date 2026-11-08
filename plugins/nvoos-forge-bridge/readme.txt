@@ -1,6 +1,6 @@
 === NV oOS Forge Bridge ===
 Contributors: vsamtani
-Tags: headless, rebuild, webhook, static-site, forms, redirects
+Tags: headless, rebuild, webhook, forms, redirects
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
@@ -8,7 +8,7 @@ Stable tag: 0.3.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Signed rebuild webhook when WordPress content changes, single-use preview tokens, a form-submission bridge for forged static sites, and a read-only redirect export.
+Signed rebuild webhooks, single-use preview tokens, a static-site form bridge, and a read-only redirect export for WordPress.
 
 == Description ==
 

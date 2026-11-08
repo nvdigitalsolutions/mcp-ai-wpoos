@@ -276,7 +276,7 @@ class Redirects extends \WP_REST_Controller {
 		}
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- a bounded read of the redirect plugin's own table; the data changes with edits, so a stale cache is worse.
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names come from $wpdb->prefix; only the limit is dynamic.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- table names come from $wpdb->prefix + a fixed suffix; only the limit is dynamic and bound through prepare().
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT i.url, i.regex, i.action_type, i.action_code, i.action_data, i.match_type
@@ -369,7 +369,7 @@ class Redirects extends \WP_REST_Controller {
 		}
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- a bounded read of the redirect plugin's own table; the data changes with edits, so a stale cache is worse.
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- the table name comes from $wpdb->prefix; only the limit is dynamic.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- the table name comes from $wpdb->prefix + a fixed suffix; only the limit is dynamic and bound through prepare().
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT sources, url_to, header_code

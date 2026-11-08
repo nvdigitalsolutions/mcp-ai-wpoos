@@ -132,3 +132,72 @@ uncaught TypeError at shutdown when content changes.** Full write-up in
 | PHPUnit (own config, wp-phpunit, WP latest, isolated DB) | **48/48 tests, 133 assertions, OK** (incl. the new regression test) |
 | Clean-install activation test (one-off container, `WP_DEBUG` + `WP_DEBUG_LOG` on) | Activation clean; front-page load: no warnings/notices/fatals; `debug.log` empty; no unexpected output |
 | CI | `.github/workflows/phpunit-forge-bridge.yml` — phpcs + PHPUnit + PCP gate (ERRORs block the PR); staging list tri-synced with `.distignore` |
+
+---
+
+## 0.3.0 re-submission — stored redirects export (2026-11-09)
+
+The 0.2.0 review fix is retained unchanged. 0.3.0 adds one read-only REST
+surface (`GET /nvoos-forge/v1/redirects`) plus its settings/health wiring.
+
+### Version sweep (all 0.3.0)
+
+| Location | Value |
+|---|---|
+| `nvoos-forge-bridge.php` header `Version:` | 0.3.0 |
+| `NVOOS_FORGE_BRIDGE_VERSION` constant | 0.3.0 |
+| `readme.txt` `Stable tag:` | 0.3.0 |
+| `readme.txt` changelog | 0.3.0 entry (redirect export + health flags); 0.2.0 + 0.1.0 kept |
+| `languages/nvoos-forge-bridge.pot` `Project-Id-Version` | NV oOS Forge Bridge 0.3.0 (regenerated — includes the redirects strings) |
+| `.wordpress-org/README.md` SVN runbook examples | 0.3.0 |
+| ZIP | `build/nvoos-forge-bridge-v0.3.0.zip` — 15 files, built by `bin/build-nvoos-forge-bridge.py` |
+
+### Readme hygiene (PCP warnings cleared)
+
+| Item | Fix |
+|---|---|
+| Too many tags (6) | Trimmed to 5: `headless, rebuild, webhook, forms, redirects` |
+| Short description > 150 chars (164) | Rewritten to 125 chars |
+
+### Validation run (2026-11-09)
+
+| Gate | Result |
+|---|---|
+| `php -l` on all shipped PHP files | No syntax errors |
+| `vendor/bin/phpcs --standard=phpcs.xml.dist .` | 0 violations (exit 0) |
+| PHPUnit (own config, wp-phpunit, WP 6.9 / PHP 8.3, isolated DB) | **58/58 tests, 167 assertions, OK** |
+| `wp plugin check` (PCP, `--severity=5`) on the built ZIP's shipping shape | **0 ERRORs, 0 WARNINGs** |
+| ZIP contents | 15 files; no dev files, hidden files, or `WPORG-REVIEW-*.md` |
+
+### Reviewer notes for the new route (pre-answered)
+
+- **Read-only and opt-in** — the route is registered always but returns the
+  empty envelope (`enabled: false`) until the operator turns the export on
+  in Settings → Forge Bridge. It never writes.
+- **Bounded** — 500 exported rules maximum with an explicit `truncated`
+  flag; the query adds `LIMIT MAX+1` so truncation is detectable.
+- **Narrowed, never widened** — only enabled, exact-URL rules are exported.
+  Regex, query-scoped, unsupported-action, and non-URL match types are
+  counted under `skipped` instead of being approximated.
+- **No data over-exposure** — no row ids, hit counts, group ids, titles, or
+  timestamps leave the server. The response is `{ source, target, type }`.
+- **Optional shared token** — an empty token keeps the route public (the
+  operator opted in); a non-empty token requires an exact
+  `X-Forge-Redirects-Token` / `Authorization: Bearer …` match (`hash_equals`,
+  401 otherwise). The readme documents the trade-off.
+- **Direct DB reads are to the redirect plugin's own tables only** —
+  `{$wpdb->prefix}redirection_items` (+ `_groups`) and
+  `{$wpdb->prefix}rank_math_redirections`, existence-checked first, with
+  the limit bound through `$wpdb->prepare()`. Both call sites carry a
+  scoped `phpcs:disable` for `DirectDB.UnescapedDBParameter` explaining that
+  the table name is the fixed prefix + literal suffix.
+- **No external calls** — the route reads local tables only; the
+  `== External Services ==` section is unchanged (GitHub dispatches +
+  optional Turnstile).
+
+### Remaining owner-side steps (not code)
+
+1. Upload `build/nvoos-forge-bridge-v0.3.0.zip` to the review thread / SVN.
+2. SVN: copy the ZIP contents into `trunk/`, then tag `tags/0.3.0/`.
+3. Optional: capture a third screenshot of the redirects settings section
+   (the current two screenshots cover the webhook settings only).

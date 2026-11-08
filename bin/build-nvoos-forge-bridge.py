@@ -2,7 +2,10 @@
 Build the wp.org submission ZIP for the NV oOS Forge Bridge plugin.
 
 Usage:
-    python bin/build-nvoos-forge-bridge.py [--version 0.1.0]
+    python bin/build-nvoos-forge-bridge.py [--version X.Y.Z]
+
+The default version is read from the plugin's `Version:` header, so a bare
+run always builds the current release.
 
 Output: build/nvoos-forge-bridge-v<version>.zip
 Shape: top-level folder nvoos-forge-bridge/ (readme.txt at the folder root),
@@ -13,6 +16,7 @@ the `plugin-check` staging list in .github/workflows/phpunit-forge-bridge.yml.
 
 import argparse
 import pathlib
+import re
 import sys
 import zipfile
 
@@ -59,9 +63,26 @@ def excluded(rel: pathlib.PurePosixPath) -> bool:
     return False
 
 
+def plugin_version() -> str:
+    """Read the `Version:` header from the plugin bootstrap file."""
+    bootstrap = SRC / "nvoos-forge-bridge.php"
+    if not bootstrap.is_file():
+        return ""
+    match = re.search(
+        r"^\s*\*?\s*Version:\s*([0-9][0-9A-Za-z.\-]*)",
+        bootstrap.read_text(encoding="utf-8"),
+        re.MULTILINE,
+    )
+    return match.group(1) if match else ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", default="0.1.0")
+    parser.add_argument(
+        "--version",
+        default=plugin_version(),
+        help="Release version (default: the plugin header's Version)",
+    )
     args = parser.parse_args()
     version = args.version
     if not version or not version.replace(".", "").isdigit():
