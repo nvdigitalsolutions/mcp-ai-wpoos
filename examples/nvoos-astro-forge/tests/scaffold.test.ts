@@ -11,7 +11,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderSectionsGenerated, renderTokensDtcg, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { auditTokenBlock, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderSectionsGenerated, renderTokensDtcg, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -327,6 +327,35 @@ describe('tokens_apply', () => {
 
 	it('fails loudly when the markers are missing', () => {
 		expect(() => rewriteGlobalCss(':root {}', {})).toThrow(/FORGE:tokens/);
+	});
+
+	it('audits the generated span against the profile (the green-button class)', () => {
+		const template = [
+			'/* FORGE:tokens */',
+			':root {',
+			'\t--forge-accent: #0f6b4f;',
+			'}',
+			'/* FORGE:tokens-end */',
+		].join('\n');
+
+		// A tree that never got the rewrite keeps the template defaults.
+		const stale = auditTokenBlock(template, { accent: '#ffcf0e' });
+		expect(stale.markers).toBe(true);
+		expect(stale.drifted.find((drift) => drift.name === 'accent')).toEqual({
+			name: 'accent',
+			expected: '#ffcf0e',
+			actual: '#0f6b4f',
+		});
+
+		// A rewritten tree round-trips clean.
+		const applied = rewriteGlobalCss(template, { accent: '#ffcf0e' });
+		expect(auditTokenBlock(applied, { accent: '#ffcf0e' }).drifted).toEqual([]);
+
+		// A hand-copied template has no span at all.
+		expect(auditTokenBlock(':root {}', { accent: '#ffcf0e' })).toEqual({
+			markers: false,
+			drifted: [],
+		});
 	});
 
 	it('warns when rendered pairs fail WCAG AA', () => {
