@@ -49,7 +49,7 @@ import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
-import { scaffold } from '../lib/scaffold.ts';
+import { auditTokenBlock, mergeTokens, scaffold } from '../lib/scaffold.ts';
 import { SitesStore } from '../lib/sites.ts';
 import { maskSecret, Vault } from '../lib/vault.ts';
 import { COMPARE_PROMPT, visionCompare, visionConfig } from '../lib/vision.ts';
@@ -871,6 +871,37 @@ async function runVerify( profileRef, options ) {
 		);
 	}
 	process.exitCode = report.pass ? 0 : 1;
+	// Token block (114 §3.3 — the "buttons turned green" gate): the generated
+	// project's global.css must carry the tokens scaffold would write for THIS
+	// profile. When it does not, the site still builds — with the template
+	// defaults (green accent, template CTA pad/radius) instead of the site's.
+	const tokenSource = await readFile(
+		join( options.target, 'src', 'styles', 'global.css' ),
+		'utf8'
+	).catch( () => null );
+	if ( tokenSource === null ) {
+		console.warn(
+			`\u2717 Token block: cannot read ${ options.target }/src/styles/global.css.`
+		);
+		process.exitCode = 1;
+	} else {
+		const audit = auditTokenBlock( tokenSource, mergeTokens( profile.design, profile.tokens ) );
+		if ( ! audit.markers ) {
+			console.warn(
+				'\u2717 Token block: global.css has no FORGE:tokens span — the tokens were never applied (re-scaffold, or run tokens_apply).'
+			);
+			process.exitCode = 1;
+		} else if ( audit.drifted.length === 0 ) {
+			console.log( '\u2713 Token block: the project carries this profile\u2019s tokens.' );
+		} else {
+			for ( const drift of audit.drifted ) {
+				console.warn(
+					`\u2717 Token block: --forge-${ drift.name } is ${ drift.actual ?? 'missing' }, expected ${ drift.expected }.`
+				);
+			}
+			process.exitCode = 1;
+		}
+	}
 	// 124 §7 — the band-flow gate: every source band with visual facts must
 	// render in the built page carrying the baked background. A dropped
 	// band is exactly the failure the source's continuous band flow depends

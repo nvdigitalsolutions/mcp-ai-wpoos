@@ -446,6 +446,46 @@ export function rewriteGlobalCss(source: string, tokens?: Record<string, string>
 }
 
 /**
+ * Audit a generated project's token span against what scaffold would write for
+ * the same profile. This is the "buttons turned green" class: a tree whose
+ * global.css never got the rewrite (a half-scaffolded project, a template
+ * copied over it by hand, a stale deploy) still builds — with the template
+ * defaults (#0f6b4f accent, template CTA pad/radius) instead of the site's.
+ *
+ * Returns `markers: false` when the span is absent entirely (nothing was ever
+ * applied), otherwise the tokens whose on-disk value differs from the profile.
+ */
+export function auditTokenBlock(
+	source: string,
+	tokens?: Record<string, string>
+): {
+	markers: boolean;
+	drifted: Array<{ name: string; expected: string; actual: string | null }>;
+} {
+	const lines = source.split(/\r?\n/);
+	const start = lines.findIndex((line) => line.trim() === '/* FORGE:tokens */');
+	const end = lines.findIndex((line) => line.trim() === '/* FORGE:tokens-end */');
+	if (start === -1 || end === -1 || end <= start) {
+		return { markers: false, drifted: [] };
+	}
+
+	const actual = new Map<string, string>();
+	for (const line of lines.slice(start + 1, end)) {
+		const match = line.match(/^\s*--forge-([a-z0-9-]+)\s*:\s*([^;]+);?\s*$/i);
+		if (match) {
+			actual.set(match[1], match[2].trim());
+		}
+	}
+
+	const expected = { ...DEFAULT_TOKENS, ...(tokens ?? {}) };
+	const drifted = Object.entries(expected)
+		.filter(([name, value]) => actual.get(name) !== value.trim())
+		.map(([name, value]) => ({ name, expected: value, actual: actual.get(name) ?? null }));
+
+	return { markers: true, drifted };
+}
+
+/**
  * Render the generated design module (114 §3.3) — src/lib/design.generated.ts.
  * The single source of truth stays the profile's design block; this file is
  * the deterministic build artifact the template reads (audit endpoint,
