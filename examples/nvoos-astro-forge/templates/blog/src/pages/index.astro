@@ -3,6 +3,8 @@ import Base from '../layouts/Base.astro';
 import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
 import DesignRenderer from '../components/design/DesignRenderer.astro';
+import { jsonLdFor, renderJsonLd } from '../lib/seo.ts';
+import { buildGraph } from '../lib/seo-graph.ts';
 
 // A WordPress static front page (page_on_front) renders at `/`; otherwise
 // the template falls back to the blog-style home.
@@ -19,9 +21,21 @@ const posts = (await getCollection('posts'))
 	.sort((a, b) => b.data.date.localeCompare(a.data.date));
 const truncated = posts.some((post) => post.data.truncated);
 const latest = posts.slice(0, 3);
+// 131 §2.3 — the homepage carries the site graph (Organization + WebSite +
+// SearchAction) with a WebPage node. SEO meta from the front page when it has
+// any (an absent SEO plugin leaves the fallbacks in place).
+const homeUrl = Astro.site ? new URL('/', Astro.site).href : undefined;
+const jsonLd = buildGraph(
+	Astro.site,
+	jsonLdFor('WebPage', {
+		url: homeUrl,
+		title: frontPage?.data.seoTitle ?? manifest.name,
+		description: frontPage?.data.seoDescription ?? frontPage?.data.excerpt,
+	})
+);
 ---
 
-<Base title="Home">
+<Base title="Home" seo={frontPage?.data.seo}>
 	{frontPage && frontBody ? (
 		<DesignRenderer html={frontBody} />
 	) : frontPage && frontContent ? (
@@ -54,4 +68,5 @@ const latest = posts.slice(0, 3);
 			</section>
 		</>
 	)}
+	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
 </Base>

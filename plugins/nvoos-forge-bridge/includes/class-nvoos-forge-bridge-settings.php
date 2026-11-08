@@ -64,6 +64,18 @@ final class Settings {
 	public const OPTION_FORMS_CAPTCHA_SITE_KEY = 'nvoos_forge_bridge_forms_captcha_site_key';
 
 	/**
+	 * Redirects: export the redirect plugins' stored rules (1/0). Off by
+	 * default — an opt-in, read-only build input.
+	 */
+	public const OPTION_REDIRECTS_ENABLED = 'nvoos_forge_bridge_redirects_enabled';
+
+	/**
+	 * Redirects: optional shared token. Empty = public (the operator opted in);
+	 * non-empty = the caller must send X-Forge-Redirects-Token or a Bearer token.
+	 */
+	public const OPTION_REDIRECTS_TOKEN = 'nvoos_forge_bridge_redirects_token';
+
+	/**
 	 * Default event type.
 	 */
 	public const DEFAULT_EVENT = 'nvoos-forge-content-changed';
@@ -85,6 +97,8 @@ final class Settings {
 			self::OPTION_FORMS_CAPTCHA_PROVIDER,
 			self::OPTION_FORMS_CAPTCHA_SECRET,
 			self::OPTION_FORMS_CAPTCHA_SITE_KEY,
+			self::OPTION_REDIRECTS_ENABLED,
+			self::OPTION_REDIRECTS_TOKEN,
 		);
 	}
 
@@ -230,6 +244,24 @@ final class Settings {
 	}
 
 	/**
+	 * Whether the stored-redirects export is enabled.
+	 *
+	 * @return bool
+	 */
+	public static function redirects_enabled(): bool {
+		return '1' === (string) get_option( self::OPTION_REDIRECTS_ENABLED, '0' );
+	}
+
+	/**
+	 * The optional shared token for the redirects export ('' = public).
+	 *
+	 * @return string
+	 */
+	public static function redirects_token(): string {
+		return (string) get_option( self::OPTION_REDIRECTS_TOKEN, '' );
+	}
+
+	/**
 	 * Whether the forms bridge is enabled AND has an origin allowlist.
 	 *
 	 * @return bool
@@ -335,6 +367,18 @@ final class Settings {
 		$captcha_site_key = isset( $_POST['forms_captcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['forms_captcha_site_key'] ) ) : '';
 		update_option( self::OPTION_FORMS_CAPTCHA_SITE_KEY, $captcha_site_key );
 
+		// Redirects export: opt-in switch + optional write-only token.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
+		$redirects_enabled = isset( $_POST['redirects_enabled'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['redirects_enabled'] ) ) ? '1' : '0';
+		update_option( self::OPTION_REDIRECTS_ENABLED, $redirects_enabled );
+
+		// The token is write-only: an empty field keeps the stored value.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
+		$redirects_token = isset( $_POST['redirects_token'] ) ? sanitize_text_field( wp_unslash( $_POST['redirects_token'] ) ) : '';
+		if ( '' !== $redirects_token ) {
+			update_option( self::OPTION_REDIRECTS_TOKEN, $redirects_token );
+		}
+
 		$fallback = admin_url( 'options-general.php?page=nvoos-forge-bridge' );
 		wp_safe_redirect( add_query_arg( 'updated', '1', wp_get_referer() ? wp_get_referer() : $fallback ) );
 		exit;
@@ -349,8 +393,9 @@ final class Settings {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		$configured       = self::rebuild_configured();
-		$forms_configured = self::forms_configured();
+		$configured         = self::rebuild_configured();
+		$forms_configured   = self::forms_configured();
+		$redirect_providers = \NvoosForgeBridge\Rest\Redirects::active_providers();
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Forge Bridge', 'nvoos-forge-bridge' ); ?></h1>
@@ -365,6 +410,9 @@ final class Settings {
 			<?php endif; ?>
 			<?php if ( ! $forms_configured ) : ?>
 				<div class="notice notice-warning"><p><?php esc_html_e( 'Form submissions are not enabled — enable the bridge and allowlist your static origin before the forged forms go live.', 'nvoos-forge-bridge' ); ?></p></div>
+			<?php endif; ?>
+			<?php if ( self::redirects_enabled() && array() === $redirect_providers ) : ?>
+				<div class="notice notice-warning"><p><?php esc_html_e( 'Redirect export is enabled but no supported redirect plugin (Redirection or Rank Math) was detected — the endpoint will return an empty list.', 'nvoos-forge-bridge' ); ?></p></div>
 			<?php endif; ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="nvoos_forge_bridge_save" />
@@ -437,6 +485,31 @@ final class Settings {
 						<td>
 							<input type="password" class="regular-text" id="forms_captcha_secret" name="forms_captcha_secret" value="" autocomplete="new-password" placeholder="<?php echo esc_attr( self::forms_captcha_enabled() ? '••••••••' : '' ); ?>" />
 							<p class="description"><?php esc_html_e( 'Leave blank to keep the stored value.', 'nvoos-forge-bridge' ); ?></p>
+						</td>
+					</tr>
+				</table>
+				<h2 class="title"><?php esc_html_e( 'Stored redirects (static site export)', 'nvoos-forge-bridge' ); ?></h2>
+				<p>
+					<?php esc_html_e( 'Exports the redirect rules your redirect plugin already stores — Redirection (redirection_items) and Rank Math (rank_math_redirections) — so the forged static site keeps every legacy URL alive on cutover day. Only enabled, exact URL matches are exported: regex, query-scoped, and non-URL match types cannot be expressed portably in a static _redirects file and are reported as skipped counts, never silently widened.', 'nvoos-forge-bridge' ); ?>
+					<?php if ( array() !== $redirect_providers ) : ?>
+						<?php echo esc_html( sprintf( /* translators: %s: comma-separated provider names. */ __( 'Detected: %s.', 'nvoos-forge-bridge' ), implode( ', ', $redirect_providers ) ) ); ?>
+					<?php else : ?>
+						<?php esc_html_e( 'No supported redirect plugin detected.', 'nvoos-forge-bridge' ); ?>
+					<?php endif; ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="redirects_enabled"><?php esc_html_e( 'Enable redirect export', 'nvoos-forge-bridge' ); ?></label></th>
+						<td>
+							<input type="checkbox" id="redirects_enabled" name="redirects_enabled" value="1" <?php checked( self::redirects_enabled() ); ?> />
+							<p class="description"><?php esc_html_e( 'Publishes GET /wp-json/nvoos-forge/v1/redirects — read-only, bounded to 500 rules, and safe to leave off when you are not building a static frontend.', 'nvoos-forge-bridge' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="redirects_token"><?php esc_html_e( 'Export token (optional)', 'nvoos-forge-bridge' ); ?></label></th>
+						<td>
+							<input type="password" class="regular-text" id="redirects_token" name="redirects_token" value="" autocomplete="new-password" placeholder="<?php echo esc_attr( '' !== self::redirects_token() ? '••••••••' : '' ); ?>" />
+							<p class="description"><?php esc_html_e( 'When set, callers must send the same value in the X-Forge-Redirects-Token header (or as a Bearer token). Leave blank to keep the stored value; set it to protect your URL structure from public discovery.', 'nvoos-forge-bridge' ); ?></p>
 						</td>
 					</tr>
 				</table>

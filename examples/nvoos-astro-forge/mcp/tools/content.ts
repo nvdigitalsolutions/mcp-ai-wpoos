@@ -172,9 +172,9 @@ export const CONTENT_TOOLS: ToolDef[] = [
 	},
 	{
 		name: 'redirects_generate',
-		title: 'Generate the WP → Astro 301 redirect map',
+		title: 'Generate the WP → Astro redirect map',
 		description:
-			'Compute the structured single-hop 301 map from the WordPress URL structure to the generated one (the exact rules the template\'s /redirects.json applies at build time): posts → /posts/{id}/{slug}/, pages → / or /{slug}/, products → /products/{id}/{slug}/. Deterministic and deduped. Registry sites only.',
+			'Compute the structured single-hop redirect map: the redirect plugins\' stored rules (Redirection / Rank Math, exported by the Forge Bridge) merged with the generated URL structure — posts → /posts/{id}/{slug}/, pages → / or /{slug}/, products → /products/{id}/{slug}/. The rebuild\'s own URLs win on conflict; a missing bridge is a warning, never a failure. Deterministic and deduped. Registry sites only.',
 		schema: z.object( { site: SITE } ),
 		annotations: READ_ONLY_TOOL,
 		write: false,
@@ -183,8 +183,10 @@ export const CONTENT_TOOLS: ToolDef[] = [
 			try {
 				const { client, profile } = await resolveSiteClient( env, site );
 				const report = await generateRedirects( profile, client );
+				const stored = report.bridge > 0 ? ` (${ report.bridge } stored rule(s) from the Forge Bridge)` : '';
+				const warning = report.warnings.length > 0 ? ` Warnings: ${ report.warnings.join( ' | ' ) }` : '';
 				return text(
-					`${ report.redirects.length } redirect(s) from ${ report.scanned } scanned entries${ report.truncated ? ' (TRUNCATED — raise maxPages)' : '' }.`,
+					`${ report.redirects.length } redirect(s) from ${ report.scanned } scanned entries${ stored }${ report.truncated ? ' (TRUNCATED — raise maxPages)' : '' }.${ warning }`,
 					report
 				);
 			} catch ( error ) {

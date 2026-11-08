@@ -1307,3 +1307,128 @@ a {
 		transition: none;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+   Proposal 130 — consent banner (first-party, mode: forge).
+   The bar is NON-modal: the page stays reachable, so there is no focus trap
+   and no aria-modal claim. Space is reserved on <body> while it is open so
+   the fixed bar can never obscure the focused element (WCAG 2.2 SC 2.4.11).
+   Accept and reject share one button style — equal prominence, reject first.
+   --------------------------------------------------------------------------- */
+html[data-consent-open] body {
+	padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+}
+
+.consent-banner {
+	position: fixed;
+	inset-inline: 0;
+	bottom: 0;
+	z-index: 60;
+	background: var(--forge-surface, #ffffff);
+	color: var(--forge-ink, #111111);
+	border-top: 1px solid var(--forge-line, #dddddd);
+	padding: 1rem clamp(1rem, 4vw, 2rem) calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+.consent-banner[hidden] {
+	display: none;
+}
+
+.consent-banner-inner {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem 1.25rem;
+	align-items: center;
+	max-width: var(--forge-measure, 75rem);
+	margin: 0 auto;
+}
+
+.consent-banner-text {
+	flex: 1 1 22rem;
+	margin: 0;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+}
+
+.consent-banner-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.consent-button {
+	appearance: none;
+	border: 1px solid var(--forge-ink, #111111);
+	border-radius: var(--forge-radius, 4px);
+	background: var(--forge-ink, #111111);
+	color: var(--forge-surface, #ffffff);
+	font: inherit;
+	font-size: 0.875rem;
+	padding: 0.5rem 0.9rem;
+	cursor: pointer;
+	min-height: 2.5rem;
+}
+
+.consent-button:hover,
+.consent-button:focus-visible {
+	background: var(--forge-accent, #111111);
+	border-color: var(--forge-accent, #111111);
+}
+
+.consent-link {
+	appearance: none;
+	background: none;
+	border: 0;
+	padding: 0.25rem;
+	font: inherit;
+	font-size: 0.875rem;
+	color: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.consent-policy {
+	font-size: 0.875rem;
+	text-decoration: underline;
+	color: inherit;
+}
+
+.consent-dialog {
+	border: 1px solid var(--forge-line, #dddddd);
+	border-radius: var(--forge-radius, 4px);
+	background: var(--forge-surface, #ffffff);
+	color: var(--forge-ink, #111111);
+	max-width: min(28rem, calc(100vw - 2rem));
+	padding: 1.25rem;
+}
+
+.consent-dialog::backdrop {
+	background: rgb(0 0 0 / 45%);
+}
+
+.consent-dialog-form {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.consent-dialog-form h2 {
+	margin: 0 0 0.25rem;
+	font-size: 1.125rem;
+}
+
+.consent-option {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+	padding: 0.25rem 0;
+	font-size: 0.9375rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.consent-banner,
+	.consent-button,
+	.consent-dialog {
+		transition: none;
+	}
+}

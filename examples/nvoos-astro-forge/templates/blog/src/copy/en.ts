@@ -24,6 +24,25 @@ export const en = {
 		label: 'Theme',
 		forcedNote: 'Theme is set by the site policy.',
 	},
+	// Proposal 130 — the consent banner. Reject and accept share one button
+	// style (equal prominence); the necessary category is never optional.
+	consent: {
+		regionLabel: 'Cookie consent',
+		title: 'Cookie preferences',
+		body: 'We use cookies to measure traffic and improve this site. You can accept all, reject everything non-essential, or choose categories.',
+		acceptAll: 'Accept all',
+		rejectAll: 'Reject non-essential',
+		preferences: 'Preferences',
+		save: 'Save choices',
+		privacyLink: 'Privacy policy',
+		categories: {
+			necessary: 'Necessary (always on)',
+			analytics: 'Analytics',
+			advertising: 'Advertising',
+			functional: 'Functional',
+			personalization: 'Personalisation',
+		},
+	},
 	catalog: {
 		open: 'View catalogue',
 	},

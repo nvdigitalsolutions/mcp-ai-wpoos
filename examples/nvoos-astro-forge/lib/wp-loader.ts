@@ -85,6 +85,28 @@ export const contentSchema = z
 		seoTitle: z.string().optional(),
 		/** Rank Math description or the Yoast fallback (yoast_head_json.description). */
 		seoDescription: z.string().optional(),
+		/**
+		 * The normalized SEO head facts (Proposal 131) — robots, canonical, OG and
+		 * Twitter values from Rank Math's flat fields + Yoast's `yoast_head_json`.
+		 * Absent when the source carries no SEO plugin (the template falls back).
+		 */
+		seo: z
+			.object({
+				title: z.string().optional(),
+				description: z.string().optional(),
+				canonical: z.string().optional(),
+				robots: z.string().optional(),
+				ogTitle: z.string().optional(),
+				ogDescription: z.string().optional(),
+				ogImage: z.string().optional(),
+				ogType: z.string().optional(),
+				ogSiteName: z.string().optional(),
+				twitterCard: z.string().optional(),
+				twitterTitle: z.string().optional(),
+				twitterDescription: z.string().optional(),
+				twitterImage: z.string().optional(),
+			})
+			.optional(),
 		price: z.string().optional(),
 		regularPrice: z.string().optional(),
 		salePrice: z.string().optional(),
@@ -112,6 +134,7 @@ export const contentSchema = z
 			featuredImage: raw.featuredImage,
 			seoTitle: raw.seoTitle,
 			seoDescription: raw.seoDescription,
+			seo: raw.seo,
 			price: raw.price,
 			regularPrice: raw.regularPrice,
 			salePrice: raw.salePrice,
@@ -176,6 +199,10 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 			}
 			const { entries, truncated } = fetched;
 
+			// Proposal 131 — the wp/v2 SEO sidecar for wires that carry no SEO
+			// fields (wc/v3 products). One bounded request; never fatal.
+			const seoIndex = await fetchSeoIndex( client, collection, context.logger );
+
 			// Deletions in WP must disappear from the next build.
 			context.store.clear();
 
@@ -207,7 +234,8 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 					continue;
 				}
 				const id = String(entry.id ?? entry.slug);
-				const raw = extractRaw(entry);
+				const seoEntry = seoIndex.get(String(entry.id ?? ''));
+				const raw = extractRaw(seoEntry ? { ...entry, ...seoEntry } : entry);
 				const modified = raw.modified || raw.date;
 				const featured = raw.featuredImage ?? mediaUrls.get(Number(entry.featured_media));
 
@@ -225,6 +253,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 						featuredImage: featured,
 						seoTitle: raw.seoTitle,
 						seoDescription: raw.seoDescription,
+						seo: raw.seo,
 						price: raw.price,
 						regularPrice: raw.regularPrice,
 						salePrice: raw.salePrice,
@@ -329,6 +358,7 @@ interface RawEntry {
 	featuredImage?: string;
 	seoTitle?: string;
 	seoDescription?: string;
+	seo?: SeoMeta;
 	price?: string;
 	regularPrice?: string;
 	salePrice?: string;
@@ -366,6 +396,7 @@ export function extractRaw(entry: Record<string, unknown>): RawEntry {
 		: [];
 
 	const seo = extractSeoMeta(entry);
+	const hasSeo = Object.keys( seo ).length > 0;
 
 	return {
 		title: title || String(entry.id ?? ''),
@@ -377,8 +408,9 @@ export function extractRaw(entry: Record<string, unknown>): RawEntry {
 		link: typeof entry.permalink === 'string' ? entry.permalink : typeof entry.link === 'string' ? entry.link : undefined,
 		author: embedded?.author?.[0]?.name ? String(embedded.author[0].name) : undefined,
 		featuredImage: extractFeaturedImage(entry) ?? wcImages[0],
-		seoTitle: seo.seoTitle,
-		seoDescription: seo.seoDescription,
+		seoTitle: seo.title,
+		seoDescription: seo.description,
+		seo: hasSeo ? seo : undefined,
 		price: extractCommerce(entry, ['price']),
 		regularPrice: extractCommerce(entry, ['regular_price']),
 		salePrice: extractCommerce(entry, ['sale_price']),
@@ -390,21 +422,156 @@ export function extractRaw(entry: Record<string, unknown>): RawEntry {
 }
 
 /**
- * SEO meta from the REST document (Proposal 106 §1.2 discipline): Rank Math
- * `rank_math_title`/`rank_math_description` first, then the Yoast
- * `yoast_head_json` object. Every field is optional — plugins/fields absent
- * from the response must never crash the loader (conditional include).
+ * Normalized SEO head facts (Proposal 131). Sources, in precedence order:
+ * Rank Math's flat REST fields → Yoast's `yoast_head_json` → nothing. Every
+ * key is optional (a site without an SEO plugin yields `{}`).
  */
-function extractSeoMeta(entry: Record<string, unknown>): { seoTitle?: string; seoDescription?: string } {
-	const rankTitle = extractText(entry.rank_math_title);
-	const rankDescription = extractText(entry.rank_math_description);
-	const yoast = (entry.yoast_head_json ?? {}) as Record<string, unknown>;
-	const yoastTitle = extractText(yoast.title);
-	const yoastDescription = extractText(yoast.description) ?? extractText(yoast.og_description);
-	return {
-		seoTitle: rankTitle ?? yoastTitle,
-		seoDescription: rankDescription ?? yoastDescription,
+export interface SeoMeta {
+	title?: string;
+	description?: string;
+	canonical?: string;
+	robots?: string;
+	ogTitle?: string;
+	ogDescription?: string;
+	ogImage?: string;
+	ogType?: string;
+	ogSiteName?: string;
+	twitterCard?: string;
+	twitterTitle?: string;
+	twitterDescription?: string;
+	twitterImage?: string;
+}
+
+/** The wp/v2 fields the SEO sidecar requests — nothing else. */
+export const SEO_SIDECAR_FIELDS = [
+	'id',
+	'slug',
+	'rank_math_title',
+	'rank_math_description',
+	'rank_math_canonical_url',
+	'rank_math_robots',
+	'rank_math_facebook_title',
+	'rank_math_facebook_description',
+	'rank_math_facebook_image',
+	'rank_math_twitter_title',
+	'rank_math_twitter_description',
+	'rank_math_twitter_image',
+	'yoast_head_json',
+];
+
+/** Yoast returns the head as an object; tolerate a JSON string too. */
+function yoastHead( entry: Record< string, unknown > ): Record< string, unknown > {
+	const raw = entry.yoast_head_json;
+	if ( typeof raw === 'string' ) {
+		try {
+			const parsed = JSON.parse( raw );
+			return parsed && typeof parsed === 'object' ? ( parsed as Record< string, unknown > ) : {};
+		} catch {
+			return {};
+		}
+	}
+	return raw && typeof raw === 'object' ? ( raw as Record< string, unknown > ) : {};
+}
+
+function asHttpUrl( value: unknown ): string | undefined {
+	return typeof value === 'string' && /^https?:\/\//i.test( value.trim() ) ? value.trim() : undefined;
+}
+
+/**
+ * Normalize a robots value to a `content` string. Rank Math exposes an array
+ * (['index','follow']); Yoast exposes an object ({ index: 'index', follow:
+ * 'follow', 'max-snippet': 'max-snippet:-1' }).
+ */
+export function normalizeRobots( value: unknown ): string | undefined {
+	if ( typeof value === 'string' && value.trim() ) {
+		return value.trim().replace( /\s*,\s*/g, ', ' );
+	}
+	const parts = Array.isArray( value )
+		? value.filter( ( entry ): entry is string => typeof entry === 'string' && entry.trim() !== '' )
+		: value && typeof value === 'object'
+			? Object.values( value as Record< string, unknown > ).filter(
+					( entry ): entry is string => typeof entry === 'string' && entry.trim() !== ''
+			  )
+			: [];
+	const normalized = [ ...new Set( parts.map( ( entry ) => entry.trim() ) ) ];
+	return normalized.length > 0 ? normalized.join( ', ' ) : undefined;
+}
+
+/** The first Yoast og_image URL (the array-of-objects shape). */
+function yoastOgImage( yoast: Record< string, unknown > ): string | undefined {
+	const image = Array.isArray( yoast.og_image ) ? yoast.og_image[ 0 ] : undefined;
+	if ( image && typeof image === 'object' && 'url' in image ) {
+		return asHttpUrl( ( image as { url?: unknown } ).url );
+	}
+	return asHttpUrl( yoast.og_image );
+}
+
+/**
+ * SEO meta from the REST document (Proposal 106 §1.2 discipline, extended by
+ * 131): Rank Math flat fields first, then Yoast's `yoast_head_json`. Every
+ * field is optional — plugins/fields absent from the response must never
+ * crash the loader.
+ */
+export function extractSeoMeta( entry: Record< string, unknown > ): SeoMeta {
+	const yoast = yoastHead( entry );
+	const rankTitle = extractText( entry.rank_math_title );
+	const rankDescription = extractText( entry.rank_math_description );
+	const yoastDescription = extractText( yoast.description ) ?? extractText( yoast.og_description );
+	const candidates: SeoMeta = {
+		title: rankTitle ?? extractText( yoast.title ),
+		description: rankDescription ?? yoastDescription,
+		canonical: asHttpUrl( entry.rank_math_canonical_url ) ?? asHttpUrl( yoast.canonical ),
+		robots: normalizeRobots( entry.rank_math_robots ) ?? normalizeRobots( yoast.robots ),
+		ogTitle: extractText( entry.rank_math_facebook_title ) ?? extractText( yoast.og_title ),
+		ogDescription: extractText( entry.rank_math_facebook_description ) ?? extractText( yoast.og_description ),
+		ogImage: asHttpUrl( entry.rank_math_facebook_image ) ?? yoastOgImage( yoast ),
+		ogType: extractText( yoast.og_type ),
+		ogSiteName: extractText( yoast.og_site_name ),
+		twitterCard: extractText( yoast.twitter_card ),
+		twitterTitle: extractText( entry.rank_math_twitter_title ),
+		twitterDescription: extractText( entry.rank_math_twitter_description ),
+		twitterImage: asHttpUrl( entry.rank_math_twitter_image ),
 	};
+	for ( const key of Object.keys( candidates ) as Array< keyof SeoMeta > ) {
+		if ( ! candidates[ key ] ) {
+			delete candidates[ key ];
+		}
+	}
+	return candidates;
+}
+
+/**
+ * Proposal 131 — read the wp/v2 SEO sidecar for a commerce collection whose
+ * primary wire (wc/v3) carries no SEO fields. ONE bounded paginated request;
+ * a 404/403 (CPT not exposed) is a warning, never a failed build.
+ */
+async function fetchSeoIndex(
+	client: WpClient,
+	collection: WpCollection,
+	logger: { warn: ( message: string ) => void }
+): Promise< Map< string, Record< string, unknown > > > {
+	const index = new Map< string, Record< string, unknown > >();
+	if ( ! collection.seoFrom ) {
+		return index;
+	}
+	try {
+		const { entries } = await client.fetchAll< Record< string, unknown > >( collection.seoFrom, {
+			perPage: 100,
+			maxPages: collection.maxPages,
+			fields: SEO_SIDECAR_FIELDS,
+		} );
+		for ( const entry of entries ) {
+			const key = String( entry.id ?? '' );
+			if ( key ) {
+				index.set( key, entry );
+			}
+		}
+	} catch {
+		logger.warn(
+			`[nvoos-wp] ${ collection.slug }: SEO sidecar ${ collection.seoFrom } unavailable — falling back to the primary wire's meta.`
+		);
+	}
+	return index;
 }
 
 /** A non-empty string field, or undefined (absent fields are never fatal). */

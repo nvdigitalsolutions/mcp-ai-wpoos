@@ -1,0 +1,207 @@
+---
+// ---------------------------------------------------------------------------
+// ConsentBanner.astro — the first-party consent UI (Proposal 130 §2.5).
+//
+// Rendered only when consent.mode === 'forge'. Accessibility contract
+// (WCAG 2.2 AA — the European Accessibility Act has applied since
+// 2025-06-28):
+//   • the BAR is a non-modal region (`role="region"`) — the page stays
+//     reachable, so no `aria-modal` lie and no focus trap;
+//   • the PREFERENCES panel is a native <dialog> (browser-managed focus trap
+//     and Escape handling — closing without saving changes nothing);
+//   • reject and accept share one button style (equal prominence, reject
+//     first in DOM order);
+//   • `html[data-consent-open]` reserves body space so the fixed bar cannot
+//     obscure the focused element (SC 2.4.11 Focus Not Obscured).
+//
+// The inline script mirrors src/lib/consent.ts; CONSENT_KEY / CONSENT_VERSION
+// are pinned by a unit test (keep the two in sync).
+// ---------------------------------------------------------------------------
+import { tracking } from '../lib/tracking.generated.ts';
+import { useCopy } from '../copy/index.ts';
+
+const copy = useCopy();
+const show = tracking.enabled && tracking.consent.mode === 'forge' && tracking.vendors.length > 0;
+const policy = tracking.consent.policy;
+---
+
+{
+	show && (
+		<>
+			<div
+				class="consent-banner"
+				id="nvoos-consent-banner"
+				role="region"
+				aria-label={copy.consent.regionLabel}
+				data-open="true"
+				hidden
+			>
+				<div class="consent-banner-inner">
+					<p class="consent-banner-text">{copy.consent.body}</p>
+					<div class="consent-banner-actions">
+						<button type="button" class="consent-button" data-consent="reject">{copy.consent.rejectAll}</button>
+						<button type="button" class="consent-button" data-consent="accept">{copy.consent.acceptAll}</button>
+						<button type="button" class="consent-link" data-consent="preferences">{copy.consent.preferences}</button>
+					</div>
+					{policy?.privacy && (
+						<a class="consent-policy" href={policy.privacy}>{copy.consent.privacyLink}</a>
+					)}
+				</div>
+			</div>
+			<dialog class="consent-dialog" id="nvoos-consent-dialog" aria-labelledby="nvoos-consent-title">
+				<form method="dialog" id="nvoos-consent-form" class="consent-dialog-form">
+					<h2 id="nvoos-consent-title">{copy.consent.title}</h2>
+					<p>{copy.consent.body}</p>
+					<label class="consent-option">
+						<input type="checkbox" checked disabled />
+						<span>{copy.consent.categories.necessary}</span>
+					</label>
+					<label class="consent-option">
+						<input type="checkbox" name="analytics" />
+						<span>{copy.consent.categories.analytics}</span>
+					</label>
+					<label class="consent-option">
+						<input type="checkbox" name="advertising" />
+						<span>{copy.consent.categories.advertising}</span>
+					</label>
+					<label class="consent-option">
+						<input type="checkbox" name="functional" />
+						<span>{copy.consent.categories.functional}</span>
+					</label>
+					<label class="consent-option">
+						<input type="checkbox" name="personalization" />
+						<span>{copy.consent.categories.personalization}</span>
+					</label>
+					<div class="consent-banner-actions">
+						<button type="button" class="consent-button" data-consent="reject">{copy.consent.rejectAll}</button>
+						<button type="submit" class="consent-button" data-consent="save">{copy.consent.save}</button>
+					</div>
+				</form>
+			</dialog>
+			<script is:inline>
+				(function () {
+					var KEY = 'nvoos-consent';
+					var VERSION = 1;
+					var banner = document.getElementById('nvoos-consent-banner');
+					var dialog = document.getElementById('nvoos-consent-dialog');
+					var form = document.getElementById('nvoos-consent-form');
+					if (!banner || !dialog || !form) {
+						return;
+					}
+
+					function read() {
+						try {
+							var raw = localStorage.getItem(KEY);
+							var stored = raw ? JSON.parse(raw) : null;
+							return stored && stored.v === VERSION ? stored : null;
+						} catch (error) {
+							return null;
+						}
+					}
+
+					function hide() {
+						banner.hidden = true;
+						banner.removeAttribute('data-open');
+						document.documentElement.removeAttribute('data-consent-open');
+					}
+
+					function showBanner() {
+						banner.hidden = false;
+						banner.setAttribute('data-open', 'true');
+						document.documentElement.setAttribute('data-consent-open', 'true');
+					}
+
+					function save(categories) {
+						var decision = {
+							v: VERSION,
+							ts: Date.now(),
+							categories: {
+								necessary: true,
+								analytics: !!categories.analytics,
+								advertising: !!categories.advertising,
+								functional: !!categories.functional,
+								personalization: !!categories.personalization,
+							},
+							gpc: !!navigator.globalPrivacyControl,
+						};
+						try {
+							localStorage.setItem(KEY, JSON.stringify(decision));
+						} catch (error) {
+							/* storage blocked — the session stays denied */
+						}
+						hide();
+						try {
+							window.dispatchEvent(new CustomEvent('nvoos:consent', { detail: decision }));
+						} catch (error) {
+							/* old browsers: the loader's own check still applies */
+						}
+					}
+
+					function checked(name) {
+						var field = form.elements.namedItem(name);
+						return !!(field && field.checked);
+					}
+
+					function reflect() {
+						var stored = read();
+						var categories = (stored && stored.categories) || {};
+						['analytics', 'advertising', 'functional', 'personalization'].forEach(function (name) {
+							var field = form.elements.namedItem(name);
+							if (field) {
+								field.checked = !!categories[name];
+							}
+						});
+					}
+
+					if (!read()) {
+						showBanner();
+					}
+
+					banner.addEventListener('click', function (event) {
+						var target = event.target;
+						var action = target && target.getAttribute ? target.getAttribute('data-consent') : null;
+						if (action === 'accept') {
+							save({ analytics: true, advertising: true, functional: true, personalization: true });
+						} else if (action === 'reject') {
+							save({});
+						} else if (action === 'preferences') {
+							reflect();
+							if (typeof dialog.showModal === 'function') {
+								dialog.showModal();
+							} else {
+								dialog.setAttribute('open', '');
+							}
+						}
+					});
+
+					form.addEventListener('submit', function (event) {
+						event.preventDefault();
+						save({
+							analytics: checked('analytics'),
+							advertising: checked('advertising'),
+							functional: checked('functional'),
+							personalization: checked('personalization'),
+						});
+						if (dialog.open) {
+							dialog.close();
+						}
+					});
+
+					// The preferences panel's reject button saves through the form.
+					dialog.addEventListener('click', function (event) {
+						var target = event.target;
+						var action = target && target.getAttribute ? target.getAttribute('data-consent') : null;
+						if (action === 'reject') {
+							save({});
+							if (dialog.open) {
+								dialog.close();
+							}
+						} else if (target === dialog) {
+							dialog.close();
+						}
+					});
+				})();
+			</script>
+		</>
+	)
+}

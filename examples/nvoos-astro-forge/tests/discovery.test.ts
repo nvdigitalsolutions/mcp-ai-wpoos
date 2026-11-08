@@ -141,6 +141,9 @@ describe('profileFromDiscovery', () => {
 		expect(products?.kind).toBe('product');
 		expect(products?.authMode).toBe('wc-consumer');
 		expect(products?.fields).toContain('regular_price');
+		// Proposal 131 — wc/v3 carries no SEO fields; discovery points the
+		// loader at the product CPT for the sidecar merge.
+		expect(products?.seoFrom).toBe('wp/v2/product');
 	});
 
 	it('leaves non-product collections without an authMode', async () => {

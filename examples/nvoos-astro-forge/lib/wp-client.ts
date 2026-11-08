@@ -137,4 +137,13 @@ export class WpClient {
 	static fromProfile(profile: SiteProfile, options: Omit<WpClientOptions, 'baseUrl'> = {}): WpClient {
 		return new WpClient({ ...options, baseUrl: profile.url });
 	}
+
+	/**
+	 * The transport this client uses — lets a sibling fetcher (the bridge
+	 * redirects export) reuse the same base URL, fetch implementation, and
+	 * User-Agent instead of opening a second, differently-configured channel.
+	 */
+	transport(): { baseUrl: string; fetchImpl: typeof fetch; userAgent: string } {
+		return { baseUrl: this.baseUrl, fetchImpl: this.fetchImpl, userAgent: this.userAgent };
+	}
 }

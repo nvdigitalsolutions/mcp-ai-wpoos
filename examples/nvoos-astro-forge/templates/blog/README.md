@@ -40,8 +40,9 @@ Environment (see `.env.example`):
 - `/{slug}/` — WordPress pages (the front page slug is skipped to keep one
   canonical URL)
 - `/sitemap.xml`, `/robots.txt`, `/feed.xml` (RSS 2.0), `/404.html`
-- `/redirects.json` + `dist/_redirects` (post-build) — the 301 map from the
-  old WordPress URL structure to the generated one
+- `/redirects.json` + `dist/_redirects` (post-build) — the redirect map: the
+  source site's stored rules (Redirection / Rank Math, via the Forge Bridge)
+  merged with the old WordPress URL structure → the generated one
 
 ## Safety invariants (Proposal 096 §2.4)
 
@@ -101,6 +102,24 @@ tree-shaken messages, the forge emits `@inlang/paraglide-js` wiring instead
 (Proposal 104 D9); the table keys map 1:1 onto message files, so the
 migration is mechanical. The zero-dependency tables remain the default.
 
+## Tracking & consent (Proposal 130)
+
+`src/lib/tracking.generated.ts` is the baked measurement surface (vendors +
+public ids, the consent config, verification tokens, the delivery mode and the
+single `purchase` owner). `src/components/Tracking.astro` emits, in order: the
+ownership-verification `<meta>` tags, the inert loader config, the
+`#nvoos-consent-default` Consent Mode v2 bootstrap (defaults + stored decision
++ Global Privacy Control), the event-ownership JSON, and the deferred
+first-party loader. **No vendor `<script src>` is ever in the static HTML** —
+the loader injects each vendor only after its category is granted
+(`basic` strategy). `src/components/ConsentBanner.astro` renders only when
+`consent.mode === 'forge'`; it is a non-modal region (no focus trap, no
+`aria-modal`) with a native `<dialog>` preferences panel, equal-prominence
+accept/reject, and `html[data-consent-open]` body padding for WCAG 2.2 SC
+2.4.11. Decisions live in `localStorage['nvoos-consent']` (never a consent
+cookie); `src/lib/consent.ts` is the pure model the inline scripts mirror.
+A profile without a tracking block leaves the stub inert and renders nothing.
+
 ## SEO builder (`src/lib/seo.ts`)
 
 `jsonLdFor(kind, input)` covers `WebPage | BlogPosting | Article | Product`
@@ -111,6 +130,47 @@ tags. The posts detail pages emit `BlogPosting`, the pages emit `WebPage`,
 and the product detail pages emit `Product` (Proposal 106 JSON-LD parity) —
 the e2e gate pins all three. Posts/pages titles + descriptions prefer the
 source SEO meta (Rank Math → Yoast → title/excerpt).
+
+**Proposal 131 additions.** `composeDocumentTitle(title, site)` is the
+single title rule — it appends the site name only when the page title does
+not already end with it (Rank Math/Yoast titles are final and usually carry
+it; a blind append produced `X — Site — Site`). `jsonLdGraph({ site, page,
+breadcrumbs })` wraps the page node in the site entity graph —
+`Organization` + `WebSite` (+ `SearchAction` when the search surface is on) +
+`BreadcrumbList` — wired by `@id`, rebuilt from facts (never Yoast's raw
+`schema.@graph`). `src/lib/seo-graph.ts` supplies the identity from
+`nvoos.json` + the harvested chrome logo. The layout renders the full social
+head (`og:*` + `twitter:*`) and the source `robots` directive, and the
+sitemap carries `<lastmod>`, drops `noindex` URLs, and ships image entries.
+`forge verify --seo [--strict-seo]` audits the built head (double-branded
+titles, a noindex homepage, invalid JSON-LD, missing OG/Twitter/canonical).
+
+## Redirect map (`/redirects.json` → `_redirects`)
+
+Two sources feed one deterministic map (Proposal 132):
+
+1. **Stored rules** — your redirect plugin's existing rules (Redirection
+   `redirection_items`, Rank Math `rank_math_redirections`), read at build
+   time from the Forge Bridge's read-only `GET /nvoos-forge/v1/redirects`.
+   Endpoint resolution: `NVOOS_FORGE_REDIRECTS_ENDPOINT` → `WP_SITE_URL` →
+   the manifest URL; a token-gated export uses
+   `NVOOS_FORGE_REDIRECTS_TOKEN`. A missing bridge is a console warning, not
+   a build failure.
+2. **The rebuild's URL structure** — posts → `/posts/{id}/{slug}/`, pages →
+   `/` or `/{slug}/`, products → `/products/{id}/{slug}/`. These win on
+   conflict: the rebuild knows where it actually serves the content.
+
+`redirects.json` keeps the **faithful** source status
+(`301/302/303/307/308/404/410`). `scripts/postbuild.mjs` projects it onto
+what the static hosts actually honour: `303/307→302`, `308→301`, `410→404`,
+unknown statuses omitted, 404/410 target rendered as `/`. It writes a `#`
+note when anything was projected and logs the count.
+
+Host matrix (documented, not guessed): Netlify documents 301/302/404 and
+calls 307 unsupported; Cloudflare Pages documents 301/302/303/307/308 and
+rejects 404/410 (an absent path already 404s). Regex, query-scoped, and
+conditional rules cannot be expressed portably — the bridge counts them in
+`skipped` instead of widening them.
 
 ## Tailwind bridge (`src/styles/tokens-tailwind.css`)
 

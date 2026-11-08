@@ -3,23 +3,63 @@ import '../styles/global.css';
 import manifest from '../../nvoos.json';
 import { useCopy } from '../copy/index.ts';
 import ThemeToggle from '../components/ThemeToggle.astro';
+import Tracking from '../components/Tracking.astro';
+import ConsentBanner from '../components/ConsentBanner.astro';
 import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 import { chrome } from '../lib/chrome.generated.ts';
 import { behaviors } from '../lib/behaviors.generated.ts';
 import { webFonts } from '../lib/design.generated.ts';
+import { composeDocumentTitle } from '../lib/seo.ts';
+
+/** The normalized SEO head facts the loader carries (Proposal 131). */
+interface SeoHead {
+	title?: string;
+	description?: string;
+	canonical?: string;
+	robots?: string;
+	ogTitle?: string;
+	ogDescription?: string;
+	ogImage?: string;
+	ogType?: string;
+	ogSiteName?: string;
+	twitterCard?: string;
+	twitterTitle?: string;
+	twitterDescription?: string;
+	twitterImage?: string;
+}
 
 interface Props {
 	title: string;
 	description?: string;
 	canonical?: string;
 	ogImage?: string;
+	/** Source SEO head facts (Rank Math → Yoast). Absent = template defaults. */
+	seo?: SeoHead;
 }
 
-const { title, description, canonical, ogImage } = Astro.props;
+const { title, description, canonical, ogImage, seo } = Astro.props;
+const meta: SeoHead = seo ?? {};
 const copy = useCopy();
 const siteTitle = manifest.name ?? 'Forge';
-const fullTitle = title === 'Home' ? siteTitle : `${title} — ${siteTitle}`;
+// 131 §2.1 — never double-brand a title that already carries the site name
+// (Rank Math/Yoast titles are final, usually `${page} - ${site}`).
+const fullTitle = title === 'Home' ? siteTitle : composeDocumentTitle(title, siteTitle);
 const pageUrl = canonical ?? (Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined);
+// The SOURCE canonical is deliberately not rendered: it points at the
+// WordPress origin. `verify --seo` reports a dropped custom canonical.
+const robots = meta.robots ?? 'index, follow';
+// The page's own description wins; the source SEO description fills the gap
+// (the front page passes no explicit description — 131 §2.5).
+const pageDescription = description ?? meta.description;
+const ogTitle = meta.ogTitle ?? fullTitle;
+const ogDescription = meta.ogDescription ?? pageDescription;
+const ogType = meta.ogType ?? 'website';
+const ogSiteName = meta.ogSiteName ?? siteTitle;
+const socialImage = ogImage ?? meta.ogImage ?? meta.twitterImage;
+const twitterCard = meta.twitterCard ?? (socialImage ? 'summary_large_image' : 'summary');
+const twitterTitle = meta.twitterTitle ?? ogTitle;
+const twitterDescription = meta.twitterDescription ?? ogDescription;
+const twitterImage = meta.twitterImage ?? socialImage;
 const hasSearch = manifest.surfaces?.search !== false;
 const hasFeed = manifest.surfaces?.feed !== false;
 // The baked policy rides to the client as inert JSON (Proposal 105 §4) —
@@ -62,7 +102,7 @@ const chromeVars = [
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content="NV oOS Astro Forge" />
 		<title>{fullTitle}</title>
-		{description && <meta name="description" content={description} />}
+		{pageDescription && <meta name="description" content={pageDescription} />}
 		{pageUrl && <link rel="canonical" href={pageUrl} />}
 		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
 		{chrome?.favicon && <link rel="icon" href={chrome.favicon} />}
@@ -75,8 +115,23 @@ const chromeVars = [
 		{webFonts.map((font) => (
 			<link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.family.replace(/ /g, '+')}:wght@${font.weights.join(';')}&display=swap`} />
 		))}
-		{ogImage && <meta property="og:image" content={ogImage} />}
-		<meta name="robots" content="index, follow" />
+		{/* Proposal 131 — the full social head. Values come from the source's
+			Rank Math/Yoast facts when present, else the template defaults. */}
+		<meta property="og:site_name" content={ogSiteName} />
+		<meta property="og:type" content={ogType} />
+		<meta property="og:title" content={ogTitle} />
+		{ogDescription && <meta property="og:description" content={ogDescription} />}
+		{pageUrl && <meta property="og:url" content={pageUrl} />}
+		{socialImage && <meta property="og:image" content={socialImage} />}
+		<meta name="twitter:card" content={twitterCard} />
+		<meta name="twitter:title" content={twitterTitle} />
+		{twitterDescription && <meta name="twitter:description" content={twitterDescription} />}
+		{twitterImage && <meta name="twitter:image" content={twitterImage} />}
+		<meta name="robots" content={robots} />
+		{/* Proposal 130 — verification meta, the inert tracker config, the consent
+			defaults and the deferred loader. Renders nothing on a profile without
+			a tracking block, so this is inert for every existing site. */}
+		<Tracking />
 		<script id="forge-theme-policy" type="application/json" data-theme-policy is:inline set:html={policyJson}></script>
 		<script is:inline>
 			// Proposal 105 §4 no-FOUC policy boot: policy first, storage second.
@@ -241,5 +296,7 @@ const chromeVars = [
 				</div>
 			</div>
 		</footer>
+		{/* Proposal 130 — the first-party consent banner (mode: forge only). */}
+		<ConsentBanner />
 	</body>
 </html>

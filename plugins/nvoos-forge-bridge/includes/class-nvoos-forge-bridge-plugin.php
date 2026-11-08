@@ -62,6 +62,8 @@ final class Plugin {
 		$health->register_routes();
 		$forms = new Rest\Forms();
 		$forms->register_routes();
+		$redirects = new Rest\Redirects();
+		$redirects->register_routes();
 	}
 
 	/**

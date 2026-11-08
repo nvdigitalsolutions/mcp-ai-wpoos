@@ -1,14 +1,14 @@
 === NV oOS Forge Bridge ===
 Contributors: vsamtani
-Tags: headless, rebuild, webhook, static-site, forms
+Tags: headless, rebuild, webhook, static-site, forms, redirects
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Signed rebuild webhook when WordPress content changes, single-use preview tokens, and a form-submission bridge for forged static sites.
+Signed rebuild webhook when WordPress content changes, single-use preview tokens, a form-submission bridge for forged static sites, and a read-only redirect export.
 
 == Description ==
 
@@ -19,6 +19,7 @@ NV oOS Forge Bridge is the WordPress half of a CMS-to-CI rebuild loop, and it wo
 * **Preview tokens** — `POST /wp-json/nvoos-forge/v1/preview-tokens` (editors and above) mints a single-use, 15-minute bearer token; `POST …/preview-tokens/verify` with the token consumes it. Tokens are stored hashed, never in plaintext.
 * **Health** — `GET /wp-json/nvoos-forge/v1/health` returns a redacted status (versions, booleans, the webhook host) — never tokens, secrets, or full URLs.
 * **Form submissions from a generated static site** — `POST /wp-json/nvoos-forge/v1/forms/submit` accepts the forged site's rebuilt forms and dispatches them to the NATIVE handler (JetFormBuilder's form processor or Elementor Pro's form ajax handler), so validation, storage, mail, and post-submit actions run exactly as on WordPress — the plugin never reimplements form handling. Submissions are gated by a CORS origin allowlist (your static origin, one per line), per-IP rate limits, a mandatory honeypot + timestamp spam floor (optional Cloudflare Turnstile with the `action` and `hostname` pinned to your allowlisted origin), and server-side sanitization of every field. Unknown form → 404; no form handler → 501; caught bots get a silent success. The no-JavaScript fallback is an ordinary form POST that redirects back to the static page with `?form=ok|error`.
+* **Stored redirects for a generated static site** — `GET /wp-json/nvoos-forge/v1/redirects` normalizes the redirect rules already stored by **Redirection** (`redirection_items`) and **Rank Math** (`rank_math_redirections`) into `{ source, target, type }`, so a forged static site keeps legacy URLs alive on cutover day. Read-only and opt-in. Only enabled, exact URL matches are exported (max 500, `truncated` reported); regex, query-scoped, and non-URL match types cannot be expressed portably in a static `_redirects` file and are returned as skipped counts instead of being silently widened. An optional shared token gates the endpoint when you do not want your URL structure publicly readable.
 
 == Installation ==
 
@@ -77,6 +78,10 @@ The uncompiled source of this plugin lives in the public repository at https://g
 2. Settings page after configuring the GitHub dispatches URL, token, and HMAC secret — credentials are write-only, shown masked.
 
 == Changelog ==
+
+= 0.3.0 =
+* New: stored redirect export — `GET /nvoos-forge/v1/redirects` normalizes Redirection (`redirection_items`) and Rank Math (`rank_math_redirections`) rules into `{ source, target, type }` for the forged static site's `_redirects` map. Enabled/group-status aware, exact-URL only, bounded to 500 rules with an explicit `truncated` flag, skipped-count reporting for regex/query/non-URL matches, optional shared-token gate.
+* New: health reports `redirectsEnabled`, `redirectsAvailable`, and the detected provider list; Settings → Forge Bridge gains a stored-redirects section with provider detection.
 
 = 0.2.0 =
 * New: form submission bridge for forged static sites — `POST /nvoos-forge/v1/forms/submit` dispatches to the native JetFormBuilder / Elementor Pro handlers (origin allowlist, per-IP rate limit, honeypot + timestamp spam floor, optional Cloudflare Turnstile with action/hostname pinning, server-side field sanitization, typed 404/501 contracts, no-JS redirect fallback).

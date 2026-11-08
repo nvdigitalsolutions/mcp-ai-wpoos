@@ -42,6 +42,13 @@ export interface WpCollection {
 	authMode?: 'application-password' | 'wc-consumer';
 	/** A 404/empty source is tolerated (warn + empty collection), not fatal. */
 	optional?: boolean;
+	/**
+	 * Proposal 131 — where to read SEO meta the primary wire cannot carry.
+	 * wc/v3 products expose no Rank Math/Yoast fields, so the loader fetches
+	 * this wp/v2 CPT once (id → SEO fields) and merges it by product id — ONE
+	 * extra paginated request per build, never N+1. Absent = no enrichment.
+	 */
+	seoFrom?: string;
 }
 
 /**
@@ -61,6 +68,105 @@ export interface ForgeForms {
 	origin?: string;
 	/** Extra input names that mark a single-field form as a search form. */
 	searchForms?: string[];
+}
+
+/**
+ * The tracking block (Proposal 130 §2.2) — the source site's measurement
+ * surface, detected as FACTS (vendor + public id + category) and rebuilt by
+ * the generated project with first-party, consent-gated delivery. The forge
+ * never pastes the source's vendor snippets.
+ */
+export type TrackerCategory =
+	| 'analytics'
+	| 'advertising'
+	| 'session'
+	| 'consent'
+	| 'verification'
+	| 'server';
+
+/** One vendor found on the source (or declared by the operator). */
+export interface ForgeTracker {
+	/** Canonical vendor slug (e.g. 'google-analytics-4', 'meta-pixel'). */
+	vendor: string;
+	category: TrackerCategory;
+	/** Operator decision — detection NEVER enables a tracker. */
+	enabled: boolean;
+	/** Extracted public ids (measurementId, pixelId, containerId, script…). */
+	ids: Record<string, string>;
+	/** Provenance for the report (which fingerprints matched). */
+	detectedBy: string[];
+	confidence: 'high' | 'medium' | 'low';
+	/** The source gates this behind a consent layer (banner + opt-in). */
+	sourceConsented?: boolean;
+	/** How it was found: rendered HTML, browser probe, or operator entry. */
+	detectedVia?: 'html' | 'probe' | 'operator';
+	/** Dead vendor (Universal Analytics) — reported, never rebuilt. */
+	deprecated?: boolean;
+	notes?: string[];
+}
+
+/** The consent layer baked into the generated project. */
+export interface ForgeConsent {
+	/**
+	 * forge = our banner + loader; external-cmp = load the vendor's script and
+	 * wait for it; consent-mode-only = advanced Consent Mode (cookieless
+	 * pings, no banner from us); none = no consent layer (warns).
+	 */
+	mode: 'forge' | 'external-cmp' | 'consent-mode-only' | 'none';
+	/** Denied is the only compliant default; 'granted' is a US-only opt-in. */
+	default: 'denied' | 'granted';
+	/** basic blocks tags until consent; advanced sends cookieless pings. */
+	strategy?: 'basic' | 'advanced';
+	/** ms to wait for a CMP update (Google's default is 500). */
+	waitForUpdate?: number;
+	/** Honour navigator.globalPrivacyControl (recommended). */
+	gpc?: boolean;
+	/** Per-category operator overrides (promote/demote). */
+	categories?: Partial<Record<'analytics' | 'advertising' | 'functional' | 'personalization', boolean>>;
+	/** The source CMP (recorded; loaded only in external-cmp mode). */
+	cmp?: { vendor?: string; script?: string; cookieName?: string };
+	policy?: { privacy?: string; cookies?: string };
+	banner?: { position?: 'bottom' | 'bottom-left' | 'modal'; theme?: 'auto' | 'light' | 'dark' };
+	/**
+	 * Emit the CSP as ENFORCING instead of Report-Only (Proposal 130 §2.11).
+	 * Default false: an enforcing CSP that misses one host takes a live site
+	 * down, so the generated `_headers` starts in report-only.
+	 */
+	enforceCsp?: boolean;
+	/** External checkout URL that receives the consent handoff (§2.8). */
+	checkoutUrl?: string;
+}
+
+/** Ownership-verification tokens (Search Console, Bing, Yandex, …). */
+export interface ForgeVerification {
+	google?: string;
+	bing?: string;
+	yandex?: string;
+	pinterest?: string;
+	facebook?: string;
+	/** Static proof files copied into public/ verbatim (path + exact body). */
+	files?: Array<{ path: string; content: string }>;
+}
+
+/** The full tracking block a profile carries. */
+export interface ForgeTracking {
+	trackers: ForgeTracker[];
+	consent: ForgeConsent;
+	verification?: ForgeVerification;
+	delivery?: {
+		/** deferred (default) injects after consent; inline only with advanced. */
+		mode?: 'deferred' | 'inline' | 'partytown';
+		partytown?: boolean;
+	};
+	ecommerce?: {
+		events?: 'ga4' | 'none';
+		/** Exactly one owner of the purchase event — never both. */
+		purchaseSource?: 'wordpress' | 'forge';
+	};
+	/** Hosts the deploy headers must allow (computed from enabled vendors). */
+	csp?: { hosts: string[] };
+	analyzedAt?: string;
+	pagesAnalyzed?: string[];
 }
 
 /**
@@ -146,6 +252,13 @@ export interface SiteProfile {
 	 * never hardcoded into the customer repo).
 	 */
 	forms?: ForgeForms;
+	/**
+	 * The tracking block (Proposal 130) — the source's measurement and consent
+	 * surface (analytics, ad pixels, verification tokens, CMP) rebuilt with
+	 * first-party, consent-gated delivery. Absent = the generated project
+	 * emits no tracking markup at all.
+	 */
+	tracking?: ForgeTracking;
 	/**
 	 * Design-token overrides (Proposal 098 output) applied over the
 	 * template defaults at scaffold time. Keys are the `--forge-*` names

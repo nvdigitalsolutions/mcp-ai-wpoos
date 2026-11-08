@@ -12,9 +12,10 @@
 import Base from '../../../layouts/Base.astro';
 import SmartImage from '../../../components/SmartImage.astro';
 import { jsonLdFor, renderJsonLd } from '../../../lib/seo.ts';
+import { buildGraph, homeCrumb } from '../../../lib/seo-graph.ts';
 import { WpClient, WpClientError } from '../../../forge/wp-client.ts';
 import { sanitizeHtml } from '../../../forge/sanitize.ts';
-import { extractPayloadRaw, extractRaw, slugify } from '../../../forge/wp-loader.ts';
+import { extractPayloadRaw, extractRaw, SEO_SIDECAR_FIELDS, slugify } from '../../../forge/wp-loader.ts';
 import type { WpAuth } from '../../../forge/types.ts';
 import manifest from '../../../../nvoos.json';
 
@@ -55,6 +56,21 @@ try {
 	return new Response('Upstream error', { status: 502 });
 }
 
+// Proposal 131 — merge the product CPT's SEO fields (wc/v3 carries none).
+// One extra request, fail-soft: a missing SEO surface never 500s the PDP.
+if (productsRef.seoFrom) {
+	try {
+		const { body: seoBody } = await client.get<Record<string, unknown>>(`${productsRef.seoFrom}/${numericId}`, {
+			_fields: SEO_SIDECAR_FIELDS.join(','),
+		});
+		if (seoBody && typeof seoBody === 'object') {
+			entry = { ...entry, ...seoBody };
+		}
+	} catch {
+		// Bonus facts — the PDP renders with the commerce fields alone.
+	}
+}
+
 const raw = productsRef.source === 'payload' ? extractPayloadRaw(entry) : extractRaw(entry);
 const canonicalSlug = raw.slug || slugify(raw.title);
 if (!canonicalSlug || requestedSlug !== canonicalSlug) {
@@ -62,6 +78,8 @@ if (!canonicalSlug || requestedSlug !== canonicalSlug) {
 }
 
 const pageUrl = Astro.site ? new URL(`/products/${numericId}/${canonicalSlug}/`, Astro.site).href : undefined;
+const seoTitle = raw.seoTitle ?? raw.title;
+const seoDescription = raw.seoDescription ?? raw.excerpt;
 // Woo sets `price` to the sale price when on sale — sale state is
 // salePrice vs regularPrice, not vs price (mirrors the static PDP).
 const onSale = raw.salePrice && raw.regularPrice ? raw.salePrice !== raw.regularPrice : false;
@@ -76,19 +94,30 @@ const offers = raw.price
 			url: pageUrl,
 		}
 	: undefined;
-const jsonLd = jsonLdFor('Product', {
-	name: raw.title,
-	image: raw.featuredImage,
-	description: raw.excerpt,
-	sku: raw.sku,
-	...(offers ? { offers } : {}),
-});
+const jsonLd = buildGraph(
+	Astro.site,
+	jsonLdFor('Product', {
+		// The schema node keeps the PRODUCT name/description — the SEO title is
+		// for <title>/social only, not structured data.
+		name: raw.title,
+		image: raw.featuredImage,
+		description: raw.excerpt,
+		sku: raw.sku,
+		url: pageUrl,
+		...(offers ? { offers } : {}),
+	}),
+	[
+		...homeCrumb(Astro.site),
+		...(Astro.site ? [ { name: 'Products', url: new URL('/products/', Astro.site).href } ] : []),
+		...(pageUrl ? [ { name: seoTitle, url: pageUrl } ] : []),
+	]
+);
 
 // Cache the rendered product — the bridge webhook invalidates on change.
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
 ---
 
-<Base title={raw.title} description={raw.excerpt} canonical={pageUrl}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl} seo={raw.seo}>
 	<article class="post product">
 		<header>
 			<h1>{raw.title}</h1>

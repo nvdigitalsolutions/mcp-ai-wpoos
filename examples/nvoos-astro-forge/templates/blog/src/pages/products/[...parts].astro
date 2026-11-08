@@ -5,6 +5,7 @@ import Base from '../../layouts/Base.astro';
 import SmartImage from '../../components/SmartImage.astro';
 import { getCollection, render } from 'astro:content';
 import { jsonLdFor, renderJsonLd } from '../../lib/seo.ts';
+import { buildGraph, homeCrumb } from '../../lib/seo-graph.ts';
 
 export async function getStaticPaths() {
 	const products = await getCollection('products');
@@ -18,6 +19,10 @@ export async function getStaticPaths() {
 const { product } = Astro.props;
 const { Content } = await render(product);
 const pageUrl = Astro.site ? new URL(`/products/${product.id}/${product.data.slug}/`, Astro.site).href : undefined;
+// SEO meta from the source (the 131 sidecar merges the product CPT's
+// Rank Math/Yoast fields into the wc/v3 document).
+const seoTitle = product.data.seoTitle ?? product.data.title;
+const seoDescription = product.data.seoDescription ?? product.data.excerpt;
 // Woo sets `price` to the sale price when on sale — sale state is
 // salePrice vs regularPrice, not vs price.
 const onSale = product.data.salePrice && product.data.regularPrice
@@ -34,16 +39,26 @@ const offers = product.data.price
 			url: pageUrl,
 		}
 	: undefined;
-const jsonLd = jsonLdFor('Product', {
-	name: product.data.title,
-	image: product.data.featuredImage,
-	description: product.data.excerpt,
-	sku: product.data.sku,
-	...(offers ? { offers } : {}),
-});
+const jsonLd = buildGraph(
+	Astro.site,
+	jsonLdFor('Product', {
+		// The schema node keeps the PRODUCT name/description — the SEO title is
+		// for <title>/social only, not structured data.
+		name: product.data.title,
+		image: product.data.featuredImage,
+		description: product.data.excerpt,
+		sku: product.data.sku,
+		...(offers ? { offers } : {}),
+	}),
+	[
+		...homeCrumb(Astro.site),
+		...(Astro.site ? [ { name: 'Products', url: new URL('/products/', Astro.site).href } ] : []),
+		...(pageUrl ? [ { name: seoTitle, url: pageUrl } ] : []),
+	]
+);
 ---
 
-<Base title={product.data.title} description={product.data.excerpt} canonical={pageUrl}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl} seo={product.data.seo}>
 	<article class="post product">
 		<header>
 			<h1>{product.data.title}</h1>
