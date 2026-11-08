@@ -190,6 +190,17 @@ Four rules, each from a session that cost a recovery:
   when done — verified 2026-11-04 for the 110 version-bump PR (lint,
   astro check, vitest, hermetic build and home e2e all ran inside the
   worktree).
+- **Worktree admin dir vanished mid-session → rebuild, don't repair
+  (2026-11-08).** A linked worktree can spontaneously lose its
+  `.git/worktrees/<name>` admin dir: every git command there returns
+  `fatal: not a git repository: (NULL)`, the dir's `.git` file still points
+  at the missing path, and `git worktree list` no longer shows it at all.
+  The files and the branch ref are fine. Recover without touching the stale
+  dir: `git worktree add .wt-<name2> <same-branch>` from the main repo,
+  copy your paths across one at a time with explicit destinations, prove
+  the copy with `diff -q` per file (byte-identical), commit/push there, then
+  `rm -rf .wt-<old>` + `git worktree prune`. `git worktree remove` cannot
+  clean the stale dir — it is no longer registered.
 - **Uncommitted changes + shared tree → copy your paths into the fresh
   worktree (2026-11-07, dictate memory-layer PR):** the worktree starts at
   the base commit with none of your uncommitted work, so first confirm
@@ -373,6 +384,12 @@ can appear in the repo root. Two failure modes follow:
   `ref=<branch>`) remains the fallback.
 - `gh pr checks <n>` shows queued runs; the repo-wide **PHP Linting workflow
   takes ~20–30 minutes** — don't retry or "fix" it while it's simply running.
+  `Forbidden pattern checks` alone took 27m once, and
+  `PHP Compatibility Check` + `WPCS 3.0` can sit `pending` indefinitely —
+  they still show pending on PRs merged long before (verified 2026-11-08 on
+  an already-merged PR), so they are not a gate. Report `mergeable`
+  (`MERGEABLE`) plus the JS suites (`test`, `test (18.x)`, `test (20.x)`)
+  instead of blocking on those three.
 - After a forced push, GitHub recomputes conflict status automatically;
   re-check `mergeable` before reporting done.
 
