@@ -321,6 +321,16 @@
 					"height": "6px",
 					"background": "#ffcf0e",
 					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
+				},
+				"iconRowStyle": {
+					"padTop": "36px",
+					"padBottom": "50px",
+					"titleSize": "27px",
+					"titleLineHeight": "32px",
+					"markerSize": "81px",
+					"markerGlyph": "45px",
+					"markerBackground": "transparent",
+					"markerInk": "#242424"
 				}
 			},
 			{
@@ -693,6 +703,20 @@
 			"path": "chrome.footerInk",
 			"value": "rgba(255, 255, 255, 0.7)",
 			"why": "Muted footer text on the dark footer bar."
+		},
+		{
+			"path": "sections.fcc5e07.iconRowStyle",
+			"value": {
+				"padTop": "36px",
+				"padBottom": "50px",
+				"titleSize": "27px",
+				"titleLineHeight": "32px",
+				"markerSize": "81px",
+				"markerGlyph": "45px",
+				"markerBackground": "transparent",
+				"markerInk": "#242424"
+			},
+			"why": "The services rows are Auxin advanced-text widgets: 36px/50px inner padding, an 81px unfilled icon circle with a 45px glyph, and 27px/32px titles — measured live, not band-scoped CSS."
 		}
 	],
 	"vocabulary": {

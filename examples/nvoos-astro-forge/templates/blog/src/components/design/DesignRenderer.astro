@@ -210,6 +210,36 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 			parts.push( `--ds-card-text-pad:${ theme.cardStyle.textPadding }` );
 		}
 	}
+	// The icon-row rhythm (measured per band): the source's list rows carry
+	// their own inner padding, a large leading icon box and their own title
+	// size. Absent → the template's own row defaults.
+	if ( theme.iconRowStyle ) {
+		const row = theme.iconRowStyle;
+		if ( row.padTop ) {
+			parts.push( `--ds-icon-row-pad-top:${ row.padTop }` );
+		}
+		if ( row.padBottom ) {
+			parts.push( `--ds-icon-row-pad-bottom:${ row.padBottom }` );
+		}
+		if ( row.titleSize ) {
+			parts.push( `--ds-icon-title-size:${ row.titleSize }` );
+		}
+		if ( row.titleLineHeight ) {
+			parts.push( `--ds-icon-title-lh:${ row.titleLineHeight }` );
+		}
+		if ( row.markerSize ) {
+			parts.push( `--ds-icon-marker-size:${ row.markerSize }` );
+		}
+		if ( row.markerGlyph ) {
+			parts.push( `--ds-icon-marker-glyph:${ row.markerGlyph }` );
+		}
+		if ( row.markerBackground ) {
+			parts.push( `--ds-icon-marker-bg:${ row.markerBackground }` );
+		}
+		if ( row.markerInk ) {
+			parts.push( `--ds-icon-marker-ink:${ row.markerInk }` );
+		}
+	}
 	if ( theme.zIndex ) {
 		parts.push( `z-index:${ theme.zIndex }` );
 	}

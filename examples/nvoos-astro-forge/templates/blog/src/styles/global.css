@@ -1175,14 +1175,32 @@ a {
 	display: flex;
 	gap: var(--forge-space);
 	align-items: flex-start;
+	/* The source's rows carry their own inner rhythm (jayainc: 36px above,
+	 * 50px below). Measured per band; absent → flush, as before. */
+	padding-block: var(--ds-icon-row-pad-top, 0) var(--ds-icon-row-pad-bottom, 0);
 }
 
 .ds-icon-row .ds-icon-marker {
 	margin-top: 0.15em;
+	/* The source's leading icon is a large, unfilled circle around a big
+	 * glyph (jayainc: 81px box, 45px glyph). Measured per band; the template
+	 * keeps its accent-filled 2.5rem default when the band declares none. */
+	inline-size: var(--ds-icon-marker-size, 2.5rem);
+	block-size: var(--ds-icon-marker-size, 2.5rem);
+	background: var(--ds-icon-marker-bg, var(--forge-accent));
+	color: var(--ds-icon-marker-ink, var(--forge-accent-ink));
+}
+
+.ds-icon-row .ds-icon-marker::before {
+	font-size: var(--ds-icon-marker-glyph, 1.05rem);
 }
 
 .ds-icon-row h4 {
 	margin: 0 0 0.25em;
+	/* A row title is a heading, not body copy — without this it inherited the
+	 * 13px body size (the source's is 27px/32px). */
+	font-size: var(--ds-icon-title-size, var(--forge-scale-h4, 1.125rem));
+	line-height: var(--ds-icon-title-lh, 1.2);
 }
 
 .ds-icon-row p {
