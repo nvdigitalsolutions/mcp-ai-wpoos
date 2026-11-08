@@ -2,7 +2,7 @@
 // scaffold.test.ts — template copy, FORGE-marker rewrite, vendoring, gates.
 // ---------------------------------------------------------------------------
 
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -247,6 +247,50 @@ describe('scaffold — safety guards', () => {
 
 		await expect(stat(path.join(target, 'src/pages/extra.astro'))).rejects.toThrow();
 		expect((await readFile(path.join(target, 'nvoos.json'), 'utf8')).length).toBeGreaterThan(0);
+	});
+
+	it('keeps the previous project intact when a re-scaffold fails part-way', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'site');
+		const template = await createBuiltinTemplateFixture(root);
+		await scaffold({ profile: PROFILE, targetDir: target, template });
+
+		// Break the token span: the template copy succeeds, the rewrite throws.
+		// Deleting the target up front made this destroy the previous project
+		// and leave a half-written one that still built (template-default
+		// tokens, no site tokens) — see the staging swap in scaffold().
+		const cssPath = path.join(template, 'src', 'styles', 'global.css');
+		const css = await readFile(cssPath, 'utf8');
+		await writeFile(cssPath, css.replace(/\/\* FORGE:tokens(-end)? \*\/\n?/g, ''), 'utf8');
+
+		await expect(
+			scaffold({ profile: PROFILE, targetDir: target, template, overwrite: true })
+		).rejects.toThrow(/FORGE:tokens/);
+
+		// The previous project is untouched and no staging litter remains.
+		expect((await readFile(path.join(target, 'nvoos.json'), 'utf8')).length).toBeGreaterThan(0);
+		expect(await readFile(path.join(target, 'src', 'styles', 'global.css'), 'utf8')).toContain(
+			'--forge-accent'
+		);
+		expect((await readdir(root)).filter((name) => /\.forge-(tmp|old)-/.test(name))).toEqual([]);
+	});
+
+	it('swaps the new project into place and reports the real target', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'site');
+		const template = await createBuiltinTemplateFixture(root);
+		await scaffold({ profile: PROFILE, targetDir: target, template });
+
+		const result = await scaffold({
+			profile: PROFILE,
+			targetDir: target,
+			template,
+			overwrite: true,
+		});
+
+		// The swap reports the real directory, not the staging path.
+		expect(result.targetDir).toBe(target);
+		expect((await readdir(root)).filter((name) => /\.forge-(tmp|old)-/.test(name))).toEqual([]);
 	});
 
 	it('rejects unknown built-in template names', async () => {
