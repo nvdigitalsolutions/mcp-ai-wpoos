@@ -118,7 +118,8 @@
 				80,
 				128
 			],
-			"bodyWeight": "300"
+			"bodyWeight": "300",
+			"bodyPx": 16
 		},
 		"spacing": {
 			"scalePx": [
@@ -717,6 +718,11 @@
 				"markerInk": "#242424"
 			},
 			"why": "The services rows are Auxin advanced-text widgets: 36px/50px inner padding, an 81px unfilled icon circle with a 45px glyph, and 27px/32px titles — measured live, not band-scoped CSS."
+		},
+		{
+			"path": "typography.bodyPx",
+			"value": 16,
+			"why": "The source body renders at 16px: the body element computes 16.0016px and 1335 of ~1771 body characters are 16px. 16 is absent from the px ladder because the source inherits it as a relative size, so the band heuristic picks 13px."
 		}
 	],
 	"vocabulary": {
