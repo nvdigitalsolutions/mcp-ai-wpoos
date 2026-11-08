@@ -1425,28 +1425,22 @@ async function emitWireframes(
 }
 
 export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult> {
-	const preset = PRESETS[options.preset ?? 'blog'];
-	// The preset's collection-profile half applies here so a preset scaffold
-	// is self-contained (idempotent when the caller already applied it —
-	// applyPresetToProfile re-filters to the same result).
-	const profile = applyPresetToProfile(options.profile, options.preset ?? 'blog');
-	const { targetDir } = options;
-	const templateDir = await resolveTemplateDir(options.template);
+	const finalDir = path.resolve(options.targetDir);
 
 	// Safety: never clobber a non-empty directory that isn't a forge project.
 	let targetExists = false;
 	let targetEmpty = false;
 	let existingManifest = false;
 	try {
-		await stat(targetDir);
+		await stat(finalDir);
 		targetExists = true;
-		targetEmpty = (await readdir(targetDir)).length === 0;
+		targetEmpty = (await readdir(finalDir)).length === 0;
 	} catch {
 		// Missing target — fine.
 	}
 	if (targetExists && !targetEmpty) {
 		try {
-			await stat(path.join(targetDir, 'nvoos.json'));
+			await stat(path.join(finalDir, 'nvoos.json'));
 			existingManifest = true;
 		} catch {
 			// No manifest.
@@ -1454,14 +1448,85 @@ export async function scaffold(options: ScaffoldOptions): Promise<ScaffoldResult
 	}
 	if (targetExists && !targetEmpty && !existingManifest && !options.overwrite) {
 		throw new Error(
-			`${targetDir} exists but is not a forge project. Pass overwrite: true to replace it.`
+			`${finalDir} exists but is not a forge project. Pass overwrite: true to replace it.`
 		);
 	}
+
+	// Scaffold BESIDE the target and swap once it is complete. Deleting the
+	// target in place made a part-way failure destructive: an rmdir that hits
+	// a lock (a dev server holding dist/ open on Windows) aborted an
+	// --overwrite run after the old tree was already gone, which left a
+	// half-written project that still built — with template-default tokens
+	// instead of the site's.
+	const stagingDir = `${finalDir}.forge-tmp-${process.pid}-${Date.now()}`;
+	await rm(stagingDir, { recursive: true, force: true });
+	try {
+		const result = await scaffoldProject(options, stagingDir);
+		await swapStagedProject(stagingDir, finalDir);
+		return { ...result, targetDir: finalDir };
+	} catch (error) {
+		await rm(stagingDir, { recursive: true, force: true }).catch(() => undefined);
+		throw error;
+	}
+}
+
+/** Swap the finished staging tree into place, keeping the old tree alive until
+ * the new one is committed. A locked target (a dev server, watcher or editor
+ * holding it) fails the rename BEFORE anything is destroyed, with an
+ * actionable message rather than a half-written project. */
+async function swapStagedProject(stagingDir: string, finalDir: string): Promise<void> {
+	const backupDir = `${finalDir}.forge-old-${process.pid}-${Date.now()}`;
+	let hadTarget = false;
+	try {
+		await stat(finalDir);
+		hadTarget = true;
+	} catch {
+		// First scaffold — nothing to replace.
+	}
+
+	if (hadTarget) {
+		try {
+			await rename(finalDir, backupDir);
+		} catch (error) {
+			throw new Error(
+				`cannot replace ${finalDir}: something is holding it open (a dev server, a watcher or an editor). ` +
+					`Stop it and re-run — the existing project was left untouched. (${String(error)})`
+			);
+		}
+	}
+
+	try {
+		await rename(stagingDir, finalDir);
+	} catch (error) {
+		if (hadTarget) {
+			await rename(backupDir, finalDir).catch(() => undefined);
+		}
+		throw error;
+	}
+
+	if (hadTarget) {
+		// Best effort: Windows can keep a just-released tree briefly locked.
+		// The new project is already in place, so this must not fail the
+		// scaffold — a leftover `<target>.forge-old-*` is the worst case.
+		await rm(backupDir, { recursive: true, force: true }).catch(() => undefined);
+	}
+}
+
+/** Write the whole project into `targetDir` (a staging path). */
+async function scaffoldProject(
+	options: ScaffoldOptions,
+	targetDir: string
+): Promise<ScaffoldResult> {
+	const preset = PRESETS[options.preset ?? 'blog'];
+	// The preset's collection-profile half applies here so a preset scaffold
+	// is self-contained (idempotent when the caller already applied it —
+	// applyPresetToProfile re-filters to the same result).
+	const profile = applyPresetToProfile(options.profile, options.preset ?? 'blog');
+	const templateDir = await resolveTemplateDir(options.template);
 
 	// 1. Copy the template (never copy its build artifacts or lockfile state).
 	//    NOTE: filter by directory basename — a `\.astro$`-style regex would
 	//    silently drop every `.astro` page file.
-	await rm(targetDir, { recursive: true, force: true });
 	await cp(templateDir, targetDir, {
 		recursive: true,
 		filter: (src) => {
