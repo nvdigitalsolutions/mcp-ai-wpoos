@@ -84,7 +84,10 @@ body {
 	margin: 0;
 	font-family: var(--forge-font);
 	/* The body token IS the reading size — the rebuilt body text mirrors the
-	 * source's (jayainc's 13px body, not the browser's 16px default). */
+	 * source's MEASURED reading size (design.typography.bodyPx). A source that
+	 * inherits its body size (relative 100%/1rem) leaves 16px out of the px
+	 * ladder, so the band heuristic would pick the smallest neighbour
+	 * (jayainc: 13px against a real 16px). */
 	font-size: var(--forge-scale-body, 1rem);
 	/* The source body's real weight (jayainc: Rubik 300 — the 400 default
 	 * reads visibly bolder everywhere). */

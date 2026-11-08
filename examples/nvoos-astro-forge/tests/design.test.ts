@@ -477,6 +477,20 @@ describe( 'analyzeDesignInput', () => {
 		expect( tokens[ 'scale-small' ] ).toBe( '10px' );
 	} );
 
+	it( 'prefers the measured reading size over the px ladder (bodyPx fact)', () => {
+		// A source that inherits its body size (relative 100%/1rem) leaves 16px
+		// out of the harvested ladder, so the band heuristic picks 13px.
+		const noisy = { display: 'rubik', scalePx: [ 1, 8, 8.8, 13, 29, 48, 80, 128 ] };
+		expect( designToTokens( { ...design, typography: noisy } )[ 'scale-body' ] ).toBe( '13px' );
+		expect( designToTokens( { ...design, typography: { ...noisy, bodyPx: 16 } } )[ 'scale-body' ] ).toBe( '16px' );
+	} );
+
+	it( 'ignores an implausible bodyPx and falls back to the ladder', () => {
+		const noisy = { display: 'rubik', scalePx: [ 1, 8, 8.8, 13, 29, 48, 80, 128 ] };
+		expect( designToTokens( { ...design, typography: { ...noisy, bodyPx: 48 } } )[ 'scale-body' ] ).toBe( '13px' );
+		expect( designToTokens( { ...design, typography: { ...noisy, bodyPx: 4 } } )[ 'scale-body' ] ).toBe( '13px' );
+	} );
+
 	it( 'survives a dense builder harvest (jayainc: 52 sizes) without body becoming a display size', () => {
 		// The real jayainc harvest: a dense 52-value ladder. A bottom/top
 		// 10-step slice kept only [8,9.6,10,11,64,72,80,82,96,128] — body

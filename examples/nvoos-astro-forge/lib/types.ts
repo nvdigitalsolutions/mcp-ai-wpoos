@@ -596,7 +596,15 @@ export interface ForgeDesign {
 		unassigned: string[];
 		confidence: Record<string, 'high' | 'medium' | 'low'>;
 	};
-	typography: { display?: string; body?: string; scalePx: number[]; bodyWeight?: string };
+	typography: { display?: string; body?: string; scalePx: number[]; bodyWeight?: string; /**
+	 * The MEASURED reading size, in px — the size the source's body text
+	 * actually renders at. `scalePx` is harvested from px declarations only,
+	 * so a source that inherits the browser default (a relative `100%`/
+	 * `1rem` on html/body) leaves 16px out of the ladder entirely and the
+	 * band heuristic picks the smallest neighbouring value instead
+	 * (jayainc: 13px, against a real 16px). Optional: absent → the ladder.
+	 */
+	bodyPx?: number };
 	spacing: { scalePx: number[] };
 	radii: { valuesPx: number[] };
 	shadows: { count: number };

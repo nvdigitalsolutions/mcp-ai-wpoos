@@ -2881,7 +2881,13 @@ export function designToTokens( design: ForgeDesign ): Record<string, string> {
 		// 8px (a hidden/micro element size) and makes every scale-small
 		// consumer unreadable (jayainc's topbar rendered at 8px).
 		const small = centerOfBand( scale, 8, 12 ) ?? firstInBand( scale, SCALE_BANDS.small[ 0 ], SCALE_BANDS.small[ 1 ] ) ?? scale[ 0 ];
-		const body = firstInBand( scale, SCALE_BANDS.body[ 0 ], SCALE_BANDS.body[ 1 ] ) ?? firstInBand( scale, 13, 24 ) ?? 16;
+		const body =
+			( typeof design.typography.bodyPx === 'number' && design.typography.bodyPx >= 10 && design.typography.bodyPx <= 28
+				? design.typography.bodyPx
+				: undefined ) ??
+			firstInBand( scale, SCALE_BANDS.body[ 0 ], SCALE_BANDS.body[ 1 ] ) ??
+			firstInBand( scale, 13, 24 ) ??
+			16;
 		const h3 = centerOfBand( scale, SCALE_BANDS.card[ 0 ], SCALE_BANDS.card[ 1 ] ) ?? nextStep( scale, body + 6, 40 ) ?? body + 8;
 		const h2 = centerOfBand( scale, SCALE_BANDS.section[ 0 ], SCALE_BANDS.section[ 1 ] ) ?? nextStep( scale, h3 + 8, 76 ) ?? h3 + 12;
 		const h1 = centerOfBand( scale, SCALE_BANDS.hero[ 0 ], SCALE_BANDS.hero[ 1 ] ) ?? nextStep( scale, h2 + 12, 128 ) ?? scale[ scale.length - 1 ];
