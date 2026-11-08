@@ -1085,14 +1085,33 @@ fact consumption in `verify` (`--strict-facts`), and the `rulesInMedia`
 responsive read. **`npm run typecheck` is part of the gate** — vitest does
 not typecheck, so a green suite can still fail CI on fixture types.
 
-- **Device-scoped margins.** `topLevelRules` deliberately keeps a media body
-  as inert nested text, so facts inside `@media` were invisible: jayainc's
-  band pull is 0px desktop / 170px tablet / 100px mobile and came back as
-  "none". `rulesInMedia` recurses into media bodies; `responsiveLength`
-  emits `{ desktop, tablet, mobile }` only when the values differ. **An
-  inline `margin-top` OUTRANKS media queries** — a device map must be
-  emitted as CSS (base rule + two media rules), never inline. Proof it
-  works: raw extraction on jayainc now returns exactly the map.
+- **Device-scoped margins and padding.** `topLevelRules` deliberately keeps
+  a media body as inert nested text, so facts inside `@media` were
+  invisible: jayainc's band pull is 0px desktop / 170px tablet / 100px
+  mobile and came back as "none". `rulesInMedia` recurses into media
+  bodies; `responsiveLength` emits `{ desktop, tablet, mobile }` only when
+  the values differ. **An inline `margin-top`/`padding` OUTRANKS media
+  queries** — a device map must be emitted as CSS (base rule + two media
+  rules), never inline. Proof it works: raw extraction on jayainc now
+  returns exactly the map. `ForgeSection.padding` takes the same map
+  (`string | ResponsiveLength`): jayainc `059421c` is 125px desktop /
+  100px tablet+mobile, and a single shorthand over-padded both by 25px.
+  `DesignRenderer`'s `responsiveDeviceCss` emits it under
+  `[data-section-id="…"]`; only a plain string goes inline.
+- **A band fact has TWO render paths — teach both.** `verifyBandFlow`
+  (`builtBandsOf`) and fact consumption (`auditFacts`, `lib/fact-audit.ts`)
+  are independent checkers. Making one read a new render form leaves the
+  other emitting a phantom failure — after padding moved to scoped CSS,
+  `builtBandsOf` was fixed and `verify` still said "band 059421c declares
+  padding but the build has no padding:". Both now read
+  `lib/scoped-css.ts` (`stripAtMedia` + `scopedPaddingOf`) so they cannot
+  drift. Keep `auditFacts` strict per form: a string must be inline, a
+  device map must have its `[data-section-id]` rule — an unrelated inline
+  `padding:` elsewhere in the band must not mask a missing rule.
+- **`sectionHtml()` slices band-tag → next band-tag.** Anything rendered in
+  a `<style>` block AHEAD of the band (scoped margins/padding) falls
+  outside that slice, so a fact whose marker lives there needs the
+  `FACT_MARKERS[].present` hook — a new marker string cannot see it.
 - **The collage geometry rides custom properties, not inline
   `width`/`height`.** Same trap as margins, one level deeper: an inline
   `width`/`height` on `.ds-collage-shape` cannot be overridden by the reflow
@@ -1136,7 +1155,16 @@ not typecheck, so a green suite can still fail CI on fixture types.
 - **Pin every measured/authored fact.** `profile.pins` re-applies through
   `mergeProfileDraft`; `tests/pins.test.ts` fails naming the exact path when
   a regenerate drops one. Known jayainc pins: `5e78df1` marginTop, measure,
-  cardStyle; `fd63522` padding; `chrome.footerInk`.
+  cardStyle; `059421c` padding (device map); `fd63522` padding;
+  `chrome.footerInk`.
+- **A geometry fail COUNT can stay flat while the build improves.** The
+  gate warns at tolerance and fails at 2×, so a genuine fix smaller than
+  the fail threshold leaves the count unchanged — cite per-band px
+  deviations, not the count. Structural fails not worth chasing:
+  `dff3f1a`'s paddingTop/Bottom 0→30px (its padding IS how it reaches
+  60px — the empty-band trap above) and `fd63522` (a `shortcode` band, a 3D
+  flipbook a static forge cannot execute; its 100px bottom padding is a
+  deliberate operator pin).
 
 ## Phase roadmap (096 §5)
 
