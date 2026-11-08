@@ -266,12 +266,16 @@ a {
 	white-space: nowrap;
 }
 
-/* Mobile chrome (125 §8): the header is a single flex row (logo block,
- * five nav links, call button, toggle) — it cannot fit a phone viewport,
- * and the body's horizontal clip guard cut the right side off. The nav
- * wraps onto its own full-width row; the tagline shrinks, then hides on
- * the smallest screens to free the row. */
-@media (width<=767px) {
+/* Chrome reflow (125 §8): the header is a single flex row (logo block,
+ * five nav links, call button, toggle) needing ~850px of content, so it
+ * cannot fit a phone or tablet viewport — at 768px the call button was
+ * sliced off at the body's clip edge (right edge x=819 on a 753px body).
+ * The source stacks the nav onto its own row up to 1024px and only goes
+ * single-row by 1152px (measured: header 160px tall at 768/900/1024,
+ * 100px at 1152), so the wrap shares the band-reflow breakpoint. That also
+ * stops the tagline from collapsing into three lines on narrow desktops.
+ * The tagline shrinks, then hides on the smallest screens to free the row. */
+@media (width<1152px) {
 	.site-header {
 		flex-wrap: wrap;
 		row-gap: 0.5rem;
