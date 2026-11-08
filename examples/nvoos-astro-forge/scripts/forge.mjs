@@ -50,7 +50,7 @@ import { discoverInventory, fetchText } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
 import { auditTokenBlock, mergeTokens, scaffold } from '../lib/scaffold.ts';
-import { auditSeo } from '../lib/seo-audit.ts';
+import { auditSeo, scanSeoHtml } from '../lib/seo-audit.ts';
 import { analyzeTracking, mergeTrackingDraft, renderTrackingReport, trackingFromReport } from '../lib/tracking.ts';
 import { auditTracking } from '../lib/tracking-audit.ts';
 import { SitesStore } from '../lib/sites.ts';
@@ -203,6 +203,15 @@ async function runAnalyze( url, options ) {
 				allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
 			} );
 			designInput = input;
+			// The source's own head description (Proposal 131 §2.5). wp/v2 does not
+			// expose rank_math_description on every install (jayainc returns only
+			// id/slug/title/excerpt), so the rendered homepage head is the only
+			// exact source. It becomes the front page's description fallback.
+			const headFacts = scanSeoHtml( input.html ?? '' );
+			if ( headFacts.metas.description ) {
+				profile.seo = { ...( profile.seo ?? {} ), description: headFacts.metas.description };
+				console.log( `\u2713 Head description captured: ${ headFacts.metas.description.slice( 0, 60 ) }${ headFacts.metas.description.length > 60 ? '\u2026' : '' }` );
+			}
 			const design = analyzeDesignInput( input );
 			profile.design = design;
 			designCss = ( input.css ?? [] ).join( '\n' );

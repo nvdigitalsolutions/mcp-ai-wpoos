@@ -283,6 +283,14 @@ export interface SiteProfile {
 	 */
 	bandSpacing?: 'template' | 'source';
 	/**
+	 * Site-level SEO facts captured from the source's RENDERED head
+	 * (Proposal 131 §2.5). wp/v2 does not expose `rank_math_description` on
+	 * every install — jayainc's returns only id/slug/title/excerpt — so the
+	 * homepage's own `<meta name="description">` is the only exact source.
+	 * The template uses it as the front page's description fallback.
+	 */
+	seo?: { description?: string; ogDescription?: string };
+	/**
 	 * Measured source geometry (`analyze --geometry`), one box per band per
 	 * viewport. `verify --geometry` diffs the built site against it — the gate
 	 * the language-parity score cannot provide (Proposal 114 §3.6).
