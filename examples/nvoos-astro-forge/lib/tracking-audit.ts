@@ -20,6 +20,14 @@ export interface TrackingFinding {
 export interface AuditTrackingOptions {
 	/** dist/ existence probe for verification proof files. */
 	hasDistFile?: ( path: string ) => boolean;
+	/**
+	 * The emitted `dist/_headers` text. The deploy header is the authority for
+	 * the CSP check: `scaffold` derives it from the ENABLED vendors, while an
+	 * `analyze --tracking` draft writes `csp.hosts: []` because detection never
+	 * enables a tracker. Enabling one must not require hand-editing the list —
+	 * so when the header is supplied, the required hosts are diffed against it.
+	 */
+	headers?: string;
 }
 
 /** Markers the generated layout emits (keep in sync with Tracking.astro). */
@@ -49,6 +57,37 @@ function readEvents( html: string ): Record< string, unknown > | null {
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * The hosts an emitted `_headers` CSP actually allows.
+ *
+ * `_headers` carries one `Name: value` line per header; a CSP value is a
+ * `;`-separated directive list and its host tokens start with `http`
+ * (`'self'`, `data:` and `'unsafe-inline'` are not hosts). Multiple CSP lines
+ * (per-route groups) are unioned.
+ */
+export function parseCspHosts( headers: string ): string[] {
+	const hosts = new Set< string >();
+	for ( const line of headers.split( /\r?\n/ ) ) {
+		const match = /^\s*Content-Security-Policy(?:-Report-Only)?\s*:\s*(.+)$/i.exec( line );
+		if ( ! match ) {
+			continue;
+		}
+		for ( const directive of match[ 1 ].split( ';' ) ) {
+			const parts = directive.trim().split( /\s+/ );
+			const name = parts.shift()?.toLowerCase();
+			if ( name !== 'script-src' && name !== 'img-src' && name !== 'connect-src' ) {
+				continue;
+			}
+			for ( const token of parts ) {
+				if ( /^https?:\/\//i.test( token ) ) {
+					hosts.add( token );
+				}
+			}
+		}
+	}
+	return [ ...hosts ].sort();
 }
 
 /**
@@ -150,12 +189,27 @@ export function auditTracking(
 	}
 
 	// --- CSP ----------------------------------------------------------------
+	// Required = the ENABLED vendors' hosts. The emitted header is authoritative
+	// when we have it; the profile's list is a declaration that may simply be
+	// absent (the analyze draft leaves it empty until a tracker is enabled), so
+	// an empty declaration is never a failure on its own.
 	const required = cspHostsFor( tracking.trackers );
 	const declared = tracking.csp?.hosts ?? [];
 	if ( required.length > 0 ) {
-		const missing = required.filter( ( host ) => ! declared.includes( host ) );
+		const missingDeclared = declared.length > 0 ? required.filter( ( host ) => ! declared.includes( host ) ) : [];
+		const emitted = typeof options.headers === 'string' ? parseCspHosts( options.headers ) : undefined;
+		const missingEmitted = emitted !== undefined ? required.filter( ( host ) => ! emitted.includes( host ) ) : [];
+		const missing = [ ...new Set( [ ...missingDeclared, ...missingEmitted ] ) ];
 		if ( missing.length > 0 ) {
-			push( 'csp-host-missing', 'fail', `tracking.csp.hosts is missing ${ missing.join( ', ' ) } — the deploy header would block an enabled vendor.` );
+			const where =
+				missingEmitted.length > 0
+					? 'the emitted dist/_headers CSP'
+					: 'tracking.csp.hosts';
+			push(
+				'csp-host-missing',
+				'fail',
+				`${ where } is missing ${ missing.join( ', ' ) } — the deploy header would block an enabled vendor.`
+			);
 		}
 		const stale = declared.filter( ( host ) => ! required.includes( host ) );
 		if ( stale.length > 0 ) {

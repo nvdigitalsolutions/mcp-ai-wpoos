@@ -952,13 +952,24 @@ async function readBuiltHtml( target ) {
 	return undefined;
 }
 
+/** The emitted `_headers` (the deploy CSP lives here) — optional. */
+async function readBuiltHeaders( target ) {
+	for ( const candidate of [ join( target, 'dist', '_headers' ), join( target, 'dist', 'client', '_headers' ) ] ) {
+		if ( existsSync( candidate ) ) {
+			return await readFile( candidate, 'utf8' );
+		}
+	}
+	return undefined;
+}
+
 /** The Proposal 130 gate — consent ordering, verification, ownership, CSP. */
-function runTrackingVerify( profile, html, options ) {
+function runTrackingVerify( profile, html, options, headers ) {
 	if ( ! profile.tracking ) {
 		console.log( '\u2713 Tracking: the profile has no tracking block — nothing to verify.' );
 		return;
 	}
 	const findings = auditTracking( profile.tracking, html, {
+		headers,
 		hasDistFile: ( filePath ) => {
 			const relative = String( filePath ).replace( /^\//, '' );
 			return (
@@ -1018,7 +1029,7 @@ async function runVerify( profileRef, options ) {
 				if ( ! html ) {
 					fail( `Cannot read the built HTML under ${ options.target }/dist — run \`npm run build\` in the project first.` );
 				}
-				runTrackingVerify( profile, html, options );
+				runTrackingVerify( profile, html, options, await readBuiltHeaders( options.target ) );
 			}
 			return;
 		}
@@ -1126,7 +1137,7 @@ async function runVerify( profileRef, options ) {
 
 	// Tracking (130 §3.3): consent ordering, verification, ownership and CSP.
 	if ( options.tracking && indexHtml ) {
-		runTrackingVerify( profile, indexHtml, options );
+		runTrackingVerify( profile, indexHtml, options, await readBuiltHeaders( options.target ) );
 	}
 
 	// SEO head (131 §2.6): title/branding, robots, social head, JSON-LD graph.
