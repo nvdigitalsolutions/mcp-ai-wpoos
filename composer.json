@@ -16,8 +16,9 @@
         "issues": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues",
         "source": "https://github.com/nvdigitalsolutions/mcp-ai-wpoos"
     },
-    "_comment": "Production deps are pinned to PHP-7.4-compatible versions via explicit constraints (Symfony 5.4 LTS + pinned contracts/PSR packages). A config.platform.php override is NOT set because dev dependencies (PHPUnit 11.x, cweagans/composer-patches 2.x) require PHP 8.0+/8.2+ and would fail composer install in CI. The minimum PHP guarantee is enforced by the require constraints, not the platform field. Run composer install --no-dev for production installs.",
+    "_comment": "Production deps are pinned to PHP-8.1-compatible versions via explicit constraints (Symfony 5.4 LTS + pinned contracts/PSR packages). A config.platform.php override is NOT set because dev dependencies (PHPUnit 11.x, cweagans/composer-patches 2.x) require PHP 8.0+/8.2+ and would fail composer install in CI. The minimum PHP guarantee is enforced by the require constraints, not the platform field. Run composer install --no-dev for production installs.",
     "require": {
+        "php": ">=8.1",
         "composer/installers": "^2.0",
         "psr/event-dispatcher": "^1.0",
         "symfony/http-client": "^5.4",
@@ -63,9 +64,9 @@
     "scripts": {
         "lint": "phpcs",
         "lint:errors-only": "phpcs --error-severity=1 --warning-severity=8",
-        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,docker,tests/helpers,tests/fixtures .",
+        "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,docker,tests/helpers,tests/fixtures .",
         "lint:base": "phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
-        "lint:base:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 --extensions=php --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
+        "lint:base:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 --extensions=php --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
         "format": "phpcbf",
         "security:red-team": "bash bin/red-team.sh",
         "security:red-team:php": "php bin/red-team.php",
