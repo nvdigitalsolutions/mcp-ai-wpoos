@@ -294,6 +294,34 @@ MSYS_NO_PATHCONV=1 docker run --rm --entrypoint php \
 - When only the client plugin is in scope this is faster than the root suite
   (which boots the full base+Pro plugin); the root suite covers
   `addons/checkout-api/tests` via the root phpunit.xml.dist.
+- **`plugins/nvoos-forge-bridge` also runs natively on the Windows host** (no
+  Docker; host PHP 8.3 has mysqli) — from the plugin dir:
+  `WP_PHPUNIT__TESTS_CONFIG=<abs>/wp-tests-config.php vendor/bin/phpunit -c phpunit.xml.dist --no-coverage`.
+  Three traps, each hit on 2026-11-08: (1) the config's `ABSPATH` must point
+  at a **full** WP core (a dir containing `wp-settings.php`) —
+  `%TEMP%\wordpress-tests-lib` (`includes/` + `data/` only) and a stripped
+  `%TEMP%\wordpress` (`wp-admin/wp-content/wp-includes` only) both die at
+  `require_once ABSPATH . 'wp-settings.php'`; find a real one by walking
+  `os.tmpdir()` for `wp-settings.php`; (2) without
+  `WP_PHPUNIT__TESTS_CONFIG` the loader stub defines nothing and the error is
+  *"The following required constants are not defined: WP_TESTS_DOMAIN, …"*,
+  not "config missing"; (3) create `wordpress_test` against the host's
+  `oos-wp-db` (3306, `root`/`wordpress`) first — the bootstrap installs
+  single-site itself.
+- **DDL escapes the per-test transaction.** For a plugin suite that creates
+  its provider's tables (the redirects export), `CREATE TABLE` in `setUp()`
+  implicitly commits and leaks state. Create in `setUpBeforeClass()`, `DROP`
+  in `tearDownAfterClass()`, and keep all row writes (`DELETE`/`INSERT`) in
+  `setUp()` so wp-phpunit's rollback still isolates tests. Delete the
+  generated `wp-tests-config.php` afterwards so another suite cannot silently
+  adopt `wordpress_test`.
+- **`WordPress.DB.PreparedSQL.NotPrepared` fires on a `$sql` VARIABLE**
+  passed to `$wpdb->prepare()` (even when it contains `%d`). Inline the query
+  literal into the call and keep the `InterpolatedNotPrepared` disable for
+  `{$wpdb->prefix}`. A `phpcs:ignore` on the line ABOVE a multi-line
+  statement does not cover sniffs reported on its inner lines — use
+  `phpcs:disable <Sniff>` / `phpcs:enable <Sniff>` around it (the plugin's
+  `composer run lint` fails on warnings, so exit code 1 is not "clean").
 - **Self-guarding addon tests bootstrap (#7134, SA platform):**
   `addons/schedule-anything-platform/tests/bootstrap.php` guards each test
   class with `class_exists()` on the addon's plugin class and marks the suite

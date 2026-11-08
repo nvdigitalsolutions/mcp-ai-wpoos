@@ -93,7 +93,7 @@ The single most common plugin-side vulnerability on wp.org. Rules:
 
 - **NEVER** use `'permission_callback' => '__return_true'` on a route that writes (POST / PUT / PATCH / DELETE). It means "any unauthenticated visitor can call this".
 - **Only acceptable** for genuinely public read-only routes (e.g. site status, public catalog). Even then, document the choice with a comment and consider rate limiting.
-- For state-changing routes, check at minimum a capability (`current_user_can('edit_posts')`) and ideally an object-level cap with the target ID:
+- **A GET that re-publishes operator-owned data is not "genuinely public".** Stored redirects, draft slugs, URL history, customer rows: the fact that a visitor could discover them by probing is not consent. Gate the export behind an explicit opt-in option (default off) plus an optional shared token compared with `hash_equals()` via an `X-…-Token` header or `Authorization: Bearer`, and answer `200 { enabled: false }` rather than 404 so the caller can tell "switched off" from "not installed". Keep health-style redaction (booleans, versions) a separate surface from the data export.
   ```php
   'permission_callback' => fn( $req ) => current_user_can( 'edit_post', (int) $req['id'] ),
   ```
