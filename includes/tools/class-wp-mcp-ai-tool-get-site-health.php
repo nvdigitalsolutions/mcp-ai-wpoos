@@ -324,11 +324,11 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 				if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
 					// Return a basic response structure if the API call fails.
 					return array(
-						'recommended_version' => '7.4',
-						'minimum_version'     => '7.4',
-						'is_supported'        => version_compare( PHP_VERSION, '7.4', '>=' ),
-						'is_secure'           => version_compare( PHP_VERSION, '7.4', '>=' ),
-						'is_acceptable'       => version_compare( PHP_VERSION, '7.4', '>=' ),
+						'recommended_version' => '8.1',
+						'minimum_version'     => '8.1',
+						'is_supported'        => version_compare( PHP_VERSION, '8.1', '>=' ),
+						'is_secure'           => version_compare( PHP_VERSION, '8.1', '>=' ),
+						'is_acceptable'       => version_compare( PHP_VERSION, '8.1', '>=' ),
 					);
 				}
 
@@ -340,8 +340,8 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 				}
 
 				$response = array(
-					'recommended_version' => isset( $body['recommended_version'] ) ? $body['recommended_version'] : '7.4',
-					'minimum_version'     => isset( $body['minimum_version'] ) ? $body['minimum_version'] : '7.4',
+					'recommended_version' => isset( $body['recommended_version'] ) ? $body['recommended_version'] : '8.1',
+					'minimum_version'     => isset( $body['minimum_version'] ) ? $body['minimum_version'] : '8.1',
 					'is_supported'        => isset( $body['is_supported'] ) ? (bool) $body['is_supported'] : false,
 					'is_secure'           => isset( $body['is_secure'] ) ? (bool) $body['is_secure'] : false,
 					'is_acceptable'       => isset( $body['is_acceptable'] ) ? (bool) $body['is_acceptable'] : false,

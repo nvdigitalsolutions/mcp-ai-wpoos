@@ -484,8 +484,8 @@ if ( ! function_exists( 'wp_mcp_ai_run_process' ) ) {
 			2 => array( 'pipe', 'w' ), // stderr.
 		);
 
-		// proc_open() accepts an array for $command only on PHP 7.4+ (the minimum
-		// for this plugin), which avoids shell expansion entirely.
+		// proc_open() accepts an array for $command (available since PHP 7.4), so
+		// this avoids shell expansion entirely.
 		$process = proc_open( $args, $descriptors, $pipes, $cwd );
 
 		if ( ! is_resource( $process ) ) {

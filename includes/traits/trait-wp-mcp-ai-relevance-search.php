@@ -15,7 +15,7 @@
  * - `bm25`: industry-standard, handles TF saturation + document length normalisation,
  *   recommended for long-form content or >1K records.
  *
- * PHP 7.4+ compatible — no typed properties, no named arguments.
+ * PHP 8.1+ compatible — typed properties and named arguments are allowed.
  *
  * @package WP_MCP_AI
  * @since 2.4.0
