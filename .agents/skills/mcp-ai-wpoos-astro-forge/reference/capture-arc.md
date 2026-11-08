@@ -54,6 +54,12 @@ snippet.** Proposal + implementation plan:
   `csp-host-missing` (fail) / `csp-host-stale`, `trackers-never-fire`,
   `cmp-script-missing`, `inline-basic-conflict`, `gtm-gtag-double`,
   `partytown-unavailable`, `deprecated-tracker`.
+- **CSP authority (fix 2026-11-08):** `verify --tracking` reads the emitted
+  `dist/_headers` and diffs the enabled vendors' hosts against it. The
+  profile's `csp.hosts` is only a declaration and may legitimately be empty —
+  an `analyze --tracking` draft writes `[]` because detection never enables a
+  tracker, so enabling one must not require hand-editing the list. An empty
+  declaration is never a failure; a declared list or the emitted header can be.
 - **Gotchas (each cost a fix 2026-11-08):** `renderTrackingGenerated` must
   emit `vendors: [],` on one line (a bare `vendors: [` + `],` pair breaks the
   inert stub); id keys are emitted through `tsKey` (bare when a valid
