@@ -33,9 +33,19 @@ const jsonLd = buildGraph(
 		description: frontPage?.data.seoDescription ?? frontPage?.data.excerpt,
 	})
 );
+// The front page's description: the page's own SEO description, then the
+// source's captured head description (131 §2.5 — wp/v2 does not expose Rank
+// Math's on every install), then the WordPress excerpt. Without this the front
+// page emitted no <meta name="description"> at all, while [slug].astro did.
+const frontDescription =
+	frontPage?.data.seoDescription || manifest.seoDescription || frontPage?.data.excerpt;
 ---
 
-<Base title="Home" seo={frontPage?.data.seo}>
+<Base
+	title="Home"
+	description={frontDescription}
+	seo={frontPage?.data.seo}
+>
 	{frontPage && frontBody ? (
 		<DesignRenderer html={frontBody} />
 	) : frontPage && frontContent ? (

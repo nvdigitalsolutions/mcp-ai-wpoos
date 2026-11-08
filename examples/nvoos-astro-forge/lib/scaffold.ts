@@ -142,6 +142,9 @@ export interface ForgeManifest {
 	name: string;
 	/** Page slug rendered at `/` (the WordPress static front page). */
 	frontPage?: string;
+	/** The source's own head description (131 §2.5) — the front page's
+	 * description fallback when the page carries no SEO description. */
+	seoDescription?: string;
 	/** Applied design-token overrides (098 output, tokens_apply). */
 	tokens?: Record<string, string>;
 	/** The design rebuild block (114 §3.3) — provenance for verify + audit. */
@@ -2106,6 +2109,9 @@ async function scaffoldProject(
 		url: profile.url.replace(/\/+$/, ''),
 		name: profile.name ?? 'Forge Site',
 		frontPage: profile.frontPage,
+		// Always emitted (never omitted): the template reads it directly and a
+		// missing key makes `astro check` fail on the inferred JSON type.
+		seoDescription: profile.seo?.description ?? '',
 		tokens: profile.tokens,
 		design: profile.design,
 		designAudit: options.strictContrast ? 'strict' : 'warn',
