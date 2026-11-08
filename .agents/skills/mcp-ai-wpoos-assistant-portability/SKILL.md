@@ -86,9 +86,10 @@ Pro:
    `duplicate_assistant` carry `write`/`state-changing` capability flags, so
    the destructive-ops gate (`confirm_destructive`) applies when enabled.
    REST and admin handlers require `manage_options` + nonce.
-6. **PHP 7.4 in base.** The engine and all base surfaces must not use enums,
-   named args, readonly, or union types. Pro-only code (blueprint exporter)
-   may use PHP 8.1+.
+6. **PHP 8.1 floor (single tier).** As of the 8.1 baseline the base plugin, the
+   engine, and all base surfaces share one floor — enums, `readonly`, union
+   types, and named arguments are permitted everywhere. Prefer PHPDoc shapes
+   and `@phpstan-type` aliases when a value is still a bare `array`.
 
 ## Bundle schema change procedure (format_version bump)
 

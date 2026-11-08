@@ -168,7 +168,7 @@ This keeps the GSD 30% rule intact, prevents drift across `CLAUDE.md` / `AGENTS.
 | **Strengths** | Full codebase reasoning, multi-file refactoring, test generation, architecture analysis |
 | **Context file** | `CLAUDE.md` — loaded automatically every turn |
 | **Limitations** | Cannot push to git directly; uses `report_progress` tool. Cannot access `.github/agents/` directory |
-| **PHP compat** | Must target PHP 7.4+ for base plugin, PHP 8.1+ for Pro addon |
+| **PHP compat** | Must target PHP 8.1+ for the base plugin and the Pro addon (single floor) |
 | **Security** | Must follow all rules in `.context/security-checklist.md` |
 
 ### GitHub Copilot

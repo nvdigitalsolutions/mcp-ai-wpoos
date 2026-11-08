@@ -20,8 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Prevent parse errors on PHP < 7.4 by exiting before class definition.
-if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+// Prevent parse errors on PHP < 8.1 by exiting before class definition.
+if ( version_compare( PHP_VERSION, '8.1.0', '<' ) ) {
 	return;
 }
 

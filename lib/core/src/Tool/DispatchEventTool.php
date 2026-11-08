@@ -76,6 +76,9 @@ class DispatchEventTool extends AbstractTool {
 
 		// Wrap the payload in a generic domain event.
 		$event = new class($eventName, $payload) {
+			/**
+			 * @param array<string, mixed> $data Event payload.
+			 */
 			public function __construct(
 				public readonly string $name,
 				public readonly array $data,

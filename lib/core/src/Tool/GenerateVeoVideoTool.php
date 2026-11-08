@@ -32,7 +32,7 @@ class GenerateVeoVideoTool extends AbstractTool {
 		$aspectRatio = $this->stringParam( $arguments, 'aspect_ratio', '16:9' );
 
 		try {
-			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/veo-2.0-generate-preview:predict?key={$key}", array( 'Content-Type'=>'application/json' ), \json_encode( array( 'instances'=>array( array( 'prompt'=>$prompt,'duration'=>$duration,'aspect_ratio'=>$aspectRatio ) ) ) ) );
+			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/veo-2.0-generate-preview:predict?key={$key}", array( 'Content-Type'=>'application/json' ), $this->jsonBody( array( 'instances'=>array( array( 'prompt'=>$prompt,'duration'=>$duration,'aspect_ratio'=>$aspectRatio ) ) ) ) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'Veo API error.'; return $this->errors->create( 'veo_error', $err ); }
 

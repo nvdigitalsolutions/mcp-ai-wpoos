@@ -3,7 +3,7 @@
 declare(strict_types=1); namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface; use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 class SaveProfessionTool extends AbstractTool {
-	public function __construct( ErrorFactoryInterface $e, private readonly ProfessionRepositoryInterface $p ) { parent::__construct( $e ); }
+	public function __construct( ErrorFactoryInterface $e, ProfessionRepositoryInterface $p ) { parent::__construct( $e ); }
 	public function getSlug(): string { return 'save_profession'; } public function getName(): string { return 'Save Profession'; } public function getDescription(): string { return 'Saves or updates a profession definition.'; }
 	public function getParametersSchema(): array { return array('type'=>'object','properties'=>array('slug'=>array('type'=>'string','description'=>'Profession slug.'), 'name'=>array('type'=>'string','description'=>'Display name.'), 'category'=>array('type'=>'string','description'=>'Category slug.'), 'description'=>array('type'=>'string','description'=>'Description.'), 'recommended_tools'=>array('type'=>'array','description'=>'Recommended tool slugs.','items'=>array('type'=>'string'))),'required'=>array('slug','name'),'additionalProperties'=>false); }
 	public function getRequiredCapability(): string { return 'manage_options'; }

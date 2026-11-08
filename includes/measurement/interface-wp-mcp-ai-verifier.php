@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Interface implemented by every measurement verifier.
  *
- * Verifier kinds (not enforced in PHP 7.4):
+ * Verifier kinds (union types available at the 8.1 floor):
  *   - rule           deterministic rule/schema checks (no LLM call)
  *   - schema         structural/JSON-schema verification
  *   - llm_judge      LLM-based judge (must differ from generator)

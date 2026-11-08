@@ -23,7 +23,7 @@ NV oOS is a **WordPress plugin** providing an AI Assistant framework with ~1,730
 
 | Distribution | Minimum PHP | Location |
 |-------------|-------------|----------|
-| **Base plugin** (`includes/`, root `*.php`) | **PHP 7.4+** | WordPress.org compatible |
+| **Base plugin** (`includes/`, root `*.php`) | **PHP 8.1+** | WordPress.org compatible; single floor shared with Pro |
 | **Pro addon** (`addons/pro/`) | **PHP 8.1+** | Enums, fibers, readonly, named args OK |
 
 **Base plugin:** No enums, no `readonly`, no union types, no named arguments, no match expressions.
@@ -869,7 +869,7 @@ composer run ci:all && npm run build
 # Quick checks:
 composer run lint          # PHPCS full codebase
 composer run format        # PHPCBF auto-fix
-composer run lint:compat   # PHP 7.4-8.3 compatibility
+composer run lint:compat   # PHP 8.1-8.4 compatibility
 npm run lint:js            # ESLint
 npm test                   # Jest
 ```
@@ -1025,8 +1025,7 @@ Full agent inventory: [`AGENTS.md`](AGENTS.md)
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `str_contains()` lint failure | Base plugin requires PHP 7.4+ | Use `strpos( $haystack, $needle ) !== false` instead |
-| `match` expression lint failure | Base plugin requires PHP 7.4+ | Use `switch`/`case` instead |
+| `str_contains()` / `match` flagged by `lint:compat` | Stale `testVersion` in the rule, not the code | Floor is PHP 8.1 — both are allowed; the rule pins `testVersion 8.1-8.4` |
 | Tool schema rejected by OpenAI | `'mixed'` type or missing `'items'` on arrays | Use `anyOf` for unions; always include `'items'` on arrays |
 | PHPCS error on `shell_exec()` | WordPress.org compliance | Use `proc_open()` for external processes |
 | Tests fail with "table not found" | Test DB not bootstrapped | Run `composer run test:install` first |

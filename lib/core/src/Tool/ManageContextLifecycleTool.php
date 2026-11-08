@@ -10,15 +10,58 @@ class ManageContextLifecycleTool extends AbstractTool {
 	public function getParametersSchema(): array { return array('type'=>'object','properties'=>array('action'=>array('type'=>'string','description'=>'Action.','enum'=>array('update','delete','prune')), 'memory_id'=>array('type'=>'string','description'=>'Memory ID to act on.'), 'patch'=>array('type'=>'object','description'=>'Fields to update (for update action).'), 'agent_id'=>array('type'=>array('integer','string'),'description'=>'Agent ID (for prune).'), ),'required'=>array('action','memory_id'),'additionalProperties'=>false); }
 	public function getRequiredCapability(): string { return 'edit_posts'; }
 	public function execute( array $arguments = array(), array $context = array() ): mixed {
-		$action = $this->stringParam($arguments,'action'); $memoryId = $this->stringParam($arguments,'memory_id');
-		if ( '' === $action || '' === $memoryId ) return $this->errors->validationFailed( 'action and memory_id required.', array('action'=>array('Required.'),'memory_id'=>array('Required.')) );
-		try { return match($action) {
-			'update' => ($r=$this->m->update($memoryId,$this->arrayParam($arguments,'patch'))), $this->success($r['success']?'Updated.':'Update failed.',$r),
-			'delete' => ($r=$this->m->delete($memoryId)), $this->success($r['success']?'Deleted.':'Delete failed.',$r),
-			'prune'  => $this->doPrune($arguments),
-			default  => $this->errors->validationFailed('Invalid action.',array('action'=>array('Must be update, delete, or prune.')))
-		}; } catch ( \Throwable $e ) { return $this->errors->create( 'lifecycle_failed', $e->getMessage() ); }
+		$action   = $this->stringParam( $arguments, 'action' );
+		$memoryId = $this->stringParam( $arguments, 'memory_id' );
+
+		if ( '' === $action || '' === $memoryId ) {
+			return $this->errors->validationFailed( 'action and memory_id required.', array( 'action' => array( 'Required.' ), 'memory_id' => array( 'Required.' ) ) );
+		}
+
+		try {
+			return match ( $action ) {
+				'update' => $this->updateMemory( $memoryId, $arguments ),
+				'delete' => $this->deleteMemory( $memoryId ),
+				'prune'  => $this->doPrune( $arguments ),
+				default  => $this->errors->validationFailed( 'Invalid action.', array( 'action' => array( 'Must be update, delete, or prune.' ) ) ),
+			};
+		} catch ( \Throwable $e ) {
+			return $this->errors->create( 'lifecycle_failed', $e->getMessage() );
+		}
 	}
+
+	/**
+	 * Apply a patch to one memory record.
+	 *
+	 * Extracted from the match arm: the previous comma-separated form parsed
+	 * as multi-condition match arms (PHP allows `cond, cond => body`), so the
+	 * success() call was evaluated as a *condition* and `$result` was
+	 * undefined. Behaviour here is what the original arms were clearly meant
+	 * to express.
+	 *
+	 * @param string $memoryId Memory identifier.
+	 * @param ToolArgs $arguments Raw tool arguments (for `patch`).
+	 * @return mixed Canonical envelope.
+	 */
+	private function updateMemory( string $memoryId, array $arguments ): mixed {
+		$result = $this->m->update( $memoryId, $this->objectParam( $arguments, 'patch' ) );
+
+		return $this->success( ! empty( $result['success'] ) ? 'Updated.' : 'Update failed.', $result );
+	}
+
+	/**
+	 * Delete one memory record.
+	 *
+	 * @param string $memoryId Memory identifier.
+	 * @return mixed Canonical envelope.
+	 */
+	private function deleteMemory( string $memoryId ): mixed {
+		$result = $this->m->delete( $memoryId );
+
+		return $this->success( ! empty( $result['success'] ) ? 'Deleted.' : 'Delete failed.', $result );
+	}
+	/**
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 */
 	private function doPrune( array $arguments ): mixed {
 		$agentId = (string)($arguments['agent_id']??''); if ( '' === $agentId ) return $this->errors->validationFailed( 'agent_id required for prune.', array('agent_id'=>array('Required.')) );
 		$memories = $this->m->listByAgent( $agentId, array(), 100 )['memories'] ?? array();

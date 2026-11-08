@@ -140,8 +140,8 @@ class WP_MCP_AI_Pro_Composition {
 	 * Constructor.
 	 *
 	 * Note: plain (untyped) parameters with explicit casts keep this file
-	 * PHP 7.4-compatible — the Pro addon supports 7.4 even though the
-	 * composition service only activates alongside lib/core (8.1+).
+	 * typed properties would be safe here, but plain parameters are kept
+	 * so the class stays promotable to lib/core.
 	 *
 	 * @param int                                         $assistant_id         Assistant post ID.
 	 * @param string                                      $generation_id        Deterministic composition fingerprint.

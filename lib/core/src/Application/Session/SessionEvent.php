@@ -24,6 +24,10 @@ final class SessionEvent {
 	 */
 	public const FORMAT_VERSION = 1;
 
+	/**
+	 * @param array<string, mixed> $data
+	 * @param array<int, int> $sourceEventSeqs
+	 */
 	public function __construct(
 		public readonly int $seq,
 		public readonly float $time,
@@ -32,6 +36,9 @@ final class SessionEvent {
 		public readonly array $sourceEventSeqs = array(),
 	) {}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	public function toArray(): array {
 		return array(
 			'v'                => self::FORMAT_VERSION,
@@ -43,6 +50,9 @@ final class SessionEvent {
 		);
 	}
 
+	/**
+	 * @param array<string, mixed> $raw
+	 */
 	public static function fromArray( array $raw ): self {
 		return new self(
 			seq: (int) ( $raw['seq'] ?? 0 ),

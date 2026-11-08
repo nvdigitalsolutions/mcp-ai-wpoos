@@ -15,6 +15,10 @@ namespace Nvoos\Core\Domain\Event;
 
 final class AfterToolExecution {
 
+	/**
+	 * @param ToolArgs $arguments
+	 * @param ToolContext $context
+	 */
 	public function __construct(
 		public readonly string $toolSlug,
 		public readonly array $arguments,

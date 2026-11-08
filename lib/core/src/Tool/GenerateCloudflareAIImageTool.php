@@ -45,7 +45,7 @@ class GenerateCloudflareAIImageTool extends AbstractTool {
 		if ( null !== $seed ) $body['seed'] = (int)$seed;
 
 		try {
-			$r = $this->h->send( 'POST', "https://api.cloudflare.com/client/v4/accounts/{$accountId}/ai/run/{$model}", array('Authorization'=>"Bearer {$apiToken}",'Content-Type'=>'application/json'), \json_encode($body) );
+			$r = $this->h->send( 'POST', "https://api.cloudflare.com/client/v4/accounts/{$accountId}/ai/run/{$model}", array('Authorization'=>"Bearer {$apiToken}",'Content-Type'=>'application/json'), $this->jsonBody($body) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['errors'][0]['message'] ?? 'Cloudflare AI error.'; return $this->errors->create( 'cf_error', $err ); }
 

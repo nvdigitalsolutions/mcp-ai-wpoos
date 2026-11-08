@@ -97,7 +97,7 @@ final class ToolScope implements ToolResolverInterface {
 	/**
 	 * Project the visible inherited + local tools onto model-facing schemas.
 	 *
-	 * @return array<int, array{type: string, function: array}>
+	 * @return array<int, array{type: string, function: array<string, mixed>}>
 	 */
 	public function schemas(): array {
 		$definitions = array();
@@ -196,7 +196,7 @@ final class ToolScope implements ToolResolverInterface {
 	}
 
 	/**
-	 * @return array{type: string, function: array}
+	 * @return array{type: string, function: array<string, mixed>}
 	 */
 	private function schemaFor( string $slug, ToolInterface $tool ): array {
 		return array(

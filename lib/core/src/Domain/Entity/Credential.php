@@ -47,6 +47,7 @@ final readonly class Credential implements \JsonSerializable {
 
 	/**
 	 * Safe serialization — never includes the secret.
+	 * @return array<string, mixed>
 	 */
 	public function jsonSerialize(): array {
 		return array(

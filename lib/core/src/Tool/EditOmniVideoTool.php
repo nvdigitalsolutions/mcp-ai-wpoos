@@ -30,7 +30,7 @@ class EditOmniVideoTool extends AbstractTool {
 		if ( null === $key || '' === $key ) return $this->errors->create( 'missing_key', 'No Gemini API key configured.' );
 
 		try {
-			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/gemini-omni-flash:edit?key={$key}", array( 'Content-Type'=>'application/json' ), \json_encode( array( 'instances'=>array( array( 'video_id'=>$videoId, 'prompt'=>$prompt ) ) ) ) );
+			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/gemini-omni-flash:edit?key={$key}", array( 'Content-Type'=>'application/json' ), $this->jsonBody( array( 'instances'=>array( array( 'video_id'=>$videoId, 'prompt'=>$prompt ) ) ) ) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'Omni edit error.'; return $this->errors->create( 'omni_error', $err ); }
 

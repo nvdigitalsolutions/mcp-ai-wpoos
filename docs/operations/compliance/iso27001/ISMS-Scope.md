@@ -51,7 +51,7 @@ The NV oOS plugin provides:
 
 #### 3.1.3 Technology
 - **Development:**
-  - PHP 7.4+ (WordPress backend)
+  - PHP 8.1+ (WordPress backend)
   - JavaScript/Node.js (Frontend)
   - Composer (dependency management)
   - NPM (JavaScript dependencies)
@@ -169,7 +169,7 @@ The following are **explicitly excluded** from the ISMS scope:
   - File storage systems
 
 ### 4.3 Dependencies
-- PHP runtime environment (7.4+)
+- PHP runtime environment (8.1+)
 - WordPress framework (6.0+)
 - Composer packages (see composer.json)
 - NPM packages (see package.json)

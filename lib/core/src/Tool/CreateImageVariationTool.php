@@ -28,7 +28,7 @@ class CreateImageVariationTool extends AbstractTool {
 		$size = $this->stringParam( $arguments, 'size', '1024x1024' );
 
 		try {
-			$r = $this->h->send( 'POST', 'https://api.openai.com/v1/images/variations', array( 'Authorization'=>"Bearer {$key}", 'Content-Type'=>'application/json' ), \json_encode( array( 'image'=>$imageUrl, 'n'=>$n, 'size'=>$size, 'response_format'=>'b64_json' ) ) );
+			$r = $this->h->send( 'POST', 'https://api.openai.com/v1/images/variations', array( 'Authorization'=>"Bearer {$key}", 'Content-Type'=>'application/json' ), $this->jsonBody( array( 'image'=>$imageUrl, 'n'=>$n, 'size'=>$size, 'response_format'=>'b64_json' ) ) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'DALL-E variation error.'; return $this->errors->create( 'dalle_error', $err ); }
 

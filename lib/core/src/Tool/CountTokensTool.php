@@ -165,6 +165,7 @@ class CountTokensTool extends AbstractTool {
 	 * Count tokens in a conversation messages array.
 	 *
 	 * Includes per-message formatting overhead.
+	 * @param array<int, array<string, mixed>> $messages Conversation messages.
 	 */
 	private function countMessageTokens( array $messages ): int {
 		$total = self::REPLY_PRIMING; // Assistant reply priming.

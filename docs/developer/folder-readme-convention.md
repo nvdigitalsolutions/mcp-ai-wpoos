@@ -36,7 +36,7 @@ This is the layering rule (mirrors `AGENTS.md` §2). Folder READMEs **must not**
 |---|---|
 | Naming conventions (`WP_MCP_AI_{Feature}_{Component}`) | [`.context/conventions.md`](../../../.context/conventions.md) |
 | Sanitiser / escaper list | [`.context/security-checklist.md`](../../../.context/security-checklist.md) |
-| PHP 7.4+ vs 8.1+ rule details | [`CLAUDE.md`](../../../CLAUDE.md) |
+| PHP 8.1+ vs 8.1+ rule details | [`CLAUDE.md`](../../../CLAUDE.md) |
 | Tool return envelope | [`.context/tool-registry.md`](../../../.context/tool-registry.md) |
 | BMAD phase gates | [`AGENTS.md`](../../../AGENTS.md) |
 

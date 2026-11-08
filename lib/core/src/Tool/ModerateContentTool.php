@@ -82,7 +82,7 @@ class ModerateContentTool extends AbstractTool {
 		$baseUrl = $this->settings->getApiBaseUrl( 'openai' ) ?? 'https://api.openai.com/v1';
 
 		try {
-			$body     = \json_encode(
+			$body     = $this->jsonBody(
 				array(
 					'model' => $model,
 					'input' => $text,

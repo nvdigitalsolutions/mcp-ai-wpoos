@@ -13,8 +13,15 @@ namespace Nvoos\Core\Domain\Contract;
 
 interface ContextCompressionInterface
 {
+    /**
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>
+     */
     public function compress(string $content, array $options = []): array;
 
+    /**
+     * @return array<int, string>
+     */
     public function chunk(string $content, int $chunkSize = 500, float $overlapRatio = 0.15): array;
 
     public function estimateTokens(string $text): int;

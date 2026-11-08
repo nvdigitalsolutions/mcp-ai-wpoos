@@ -25,7 +25,7 @@ interface FileOrchestrationInterface
      *
      * @param string $filePath  Local file path.
      * @param string $mimeType  MIME type.
-     * @param array  $options   Additional options (display_name, purpose, etc.).
+     * @param array<string, mixed>  $options   Additional options (display_name, purpose, etc.).
      *
      * @return array{success: bool, file_id?: string, uri?: string, error?: string}
      */

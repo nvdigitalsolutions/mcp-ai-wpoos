@@ -390,7 +390,7 @@ Phase 1: 0.04 seconds (esbuild) ✅ 100x faster
 
 ### Maintained
 - ✅ WordPress 6.0+ support
-- ✅ PHP 7.4+ support
+- ✅ PHP 8.1+ support
 - ✅ All existing features
 - ✅ Same API surface
 - ✅ Same CSS classes

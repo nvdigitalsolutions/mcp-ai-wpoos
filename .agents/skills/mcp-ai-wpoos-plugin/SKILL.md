@@ -7,7 +7,7 @@ metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.17"
   plugin-version-tested: "1.2.17"
-  last-updated: "2026-11-04"
+  last-updated: "2026-11-08"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
@@ -64,6 +64,16 @@ Zed / Claude Desktop / Cursor
   `mcp-ai-wpoos` (dev checkout), `nvdigital-open-operator-system-oos`
   (wp.org base), `nvdigital-open-operator-system-oos-complete` (complete
   bundle).
+- **All three install paths now carry the same tree.** Since 2026-11-08 the
+  dev checkout, `bin/build-plugin-zip.sh` output and the GitHub "Download
+  ZIP" (`git archive`) agree: the archive ships `lib/core/src` +
+  `lib/wordpress-adapter/src` and keeps the runtime
+  `bin/vectorize-image.js`, which `bin/strip-dev-files.sh` also preserves.
+  Before that fix an over-broad `src/` `export-ignore` rule stripped
+  `vendor/*/src`, so a source-ZIP install shipped without a working Composer
+  autoloader. **Diagnostic:** on any install, `vendor/guzzlehttp/guzzle/src/`
+  and `lib/core/src/` must both exist; if they do not, stop and fix the
+  packaging before debugging "class not found" as a plugin bug.
 - **Never declare `Requires Plugins: mcp-ai-wpoos` in an addon.** WordPress
   core matches dependency entries against the installed plugin's **folder
   slug** (`dirname()` of the plugin file) with AND semantics — not the slug

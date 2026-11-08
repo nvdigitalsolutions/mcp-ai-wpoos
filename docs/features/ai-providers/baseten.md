@@ -21,7 +21,7 @@
 
 - NV oOS base plugin active (no Pro addon required).
 - A Baseten account and API key — sign up at [baseten.co](https://app.baseten.co).
-- PHP 7.4+ (base plugin requirement).
+- PHP 8.1+ (base plugin requirement).
 
 ---
 

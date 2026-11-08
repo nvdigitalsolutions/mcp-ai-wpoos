@@ -25,6 +25,7 @@ interface ErrorFactoryInterface {
 	 *  - Laravel:   throws a domain exception
 	 *  - Standalone: Nvoos\Core\Domain\Error\DomainError
 	 *
+	 * @param array<string, mixed> $data
 	 * @return mixed  Framework-specific error object.
 	 */
 	public function create( string $code, string $message, array $data = array() ): mixed;
@@ -43,17 +44,19 @@ interface ErrorFactoryInterface {
 	 * or log errors use this to get a predictable array regardless of
 	 * the underlying error type.
 	 *
-	 * @return array{code: string, message: string, data: array}
+	 * @return array{code: string, message: string, data: array<string, mixed>}
 	 */
 	public function normalize( mixed $error ): array;
 
 	/**
 	 * Create a "not found" error.
+	 * @param array<string, mixed> $data
 	 */
 	public function notFound( string $message = 'Resource not found.', array $data = array() ): mixed;
 
 	/**
 	 * Create a "forbidden / access denied" error.
+	 * @param array<string, mixed> $data
 	 */
 	public function forbidden( string $message = 'Access denied.', array $data = array() ): mixed;
 

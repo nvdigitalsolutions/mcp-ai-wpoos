@@ -24,7 +24,7 @@ interface ModelCatalogInterface
      * Get available models for a specific provider.
      *
      * @param string $provider Provider slug (openai, anthropic, gemini, etc.).
-     * @param array  $args     Optional filters (capability_flags, etc.).
+     * @param array<string, mixed>  $args     Optional filters (capability_flags, etc.).
      *
      * @return array<string, string> Model ID => display name pairs.
      */
@@ -33,7 +33,7 @@ interface ModelCatalogInterface
     /**
      * Get all models across all enabled providers.
      *
-     * @return array<string, array{provider: string, name: string, capabilities: array}>
+     * @return array<string, array{provider: string, name: string, capabilities: array<int, string>}>
      */
     public function getAllModels(): array;
 
@@ -58,9 +58,9 @@ interface ModelCatalogInterface
     /**
      * Run discovery against providers to find new/changed/sunset models.
      *
-     * @param array $providers Provider slugs to query (empty = all enabled).
+     * @param array<int, string> $providers Provider slugs to query (empty = all enabled).
      *
-     * @return array{additions: array, sunsets: array, price_changes: array, errors: array, status: string}
+     * @return array{additions: array<int, mixed>, sunsets: array<int, mixed>, price_changes: array<int, mixed>, errors: array<int, string>, status: string}
      */
     public function discover(array $providers = []): array;
 }

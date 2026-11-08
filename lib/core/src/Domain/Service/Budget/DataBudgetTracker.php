@@ -85,6 +85,14 @@ final class DataBudgetTracker implements DataBudgetTrackerInterface
     }
 
     /**
+     * Current request identifier, for diagnostics and log correlation.
+     */
+    public function getRequestId(): string
+    {
+        return $this->requestId;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public function record(int $bytes): void

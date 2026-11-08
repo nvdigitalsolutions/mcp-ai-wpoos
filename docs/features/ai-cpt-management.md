@@ -294,4 +294,4 @@ Override CSS variables or add custom styles:
 - **Dependencies**: 
   - At least one configured AI assistant
   - WordPress 6.0+
-  - PHP 7.4+
+  - PHP 8.1+

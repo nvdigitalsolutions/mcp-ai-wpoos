@@ -44,7 +44,7 @@ class GenerateOpenAIImageTool extends AbstractTool {
 		if ( 'dall-e-3' === $model ) { $body['style'] = $style; $body['quality'] = $quality; }
 
 		try {
-			$r = $this->h->send( 'POST', 'https://api.openai.com/v1/images/generations', array( 'Authorization'=>"Bearer {$key}", 'Content-Type'=>'application/json' ), \json_encode( $body ) );
+			$r = $this->h->send( 'POST', 'https://api.openai.com/v1/images/generations', array( 'Authorization'=>"Bearer {$key}", 'Content-Type'=>'application/json' ), $this->jsonBody( $body ) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'DALL-E API error.'; return $this->errors->create( 'dalle_error', $err ); }
 

@@ -19,7 +19,7 @@ The NV oOS Performance Testing Suite provides comprehensive testing capabilities
 ### Prerequisites
 
 - WordPress 6.0 or higher
-- PHP 7.4 or higher
+- PHP 8.1 or higher
 - Composer installed
 - PHPUnit configured (run `composer install`)
 - Optional: JetEngine for CCT storage

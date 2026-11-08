@@ -36,6 +36,7 @@ abstract class AbstractHuggingFaceTool extends AbstractTool {
 
 	/**
 	 * Build auth headers — HuggingFace optionally uses a bearer token.
+	 * @return array<string, string>
 	 */
 	protected function buildHeaders(): array {
 		$headers = array( 'Accept' => 'application/json' );
@@ -50,6 +51,7 @@ abstract class AbstractHuggingFaceTool extends AbstractTool {
 
 	/**
 	 * Make a GET request to the HuggingFace Datasets API.
+	 * @param array<string, mixed> $query Query string parameters.
 	 */
 	protected function apiGet( string $path, array $query = array() ): mixed {
 		$url = self::API_BASE . $path;
@@ -72,6 +74,7 @@ abstract class AbstractHuggingFaceTool extends AbstractTool {
 
 	/**
 	 * Validate that a dataset name parameter is present.
+	 * @param ToolArgs $arguments Raw tool arguments.
 	 */
 	protected function requireDataset( array $arguments ): string {
 		$dataset = $this->stringParam( $arguments, 'dataset' );

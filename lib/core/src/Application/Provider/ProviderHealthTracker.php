@@ -47,6 +47,16 @@ class ProviderHealthTracker {
 	private const SCORE_TTL = 300; // 5 minutes.
 
 	/**
+	 * Per-instance fallback store used when the host has no transient API.
+	 *
+	 * Keeps the tracker usable (and testable) outside WordPress without
+	 * importing any platform function into the core.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $memoryStore = array();
+
+	/**
 	 * Record a successful provider request.
 	 *
 	 * @since 1.2.5
@@ -106,10 +116,9 @@ class ProviderHealthTracker {
 	 * @return int Score between -100 and 100.
 	 */
 	public function getScore( string $providerSlug ): int {
-		$slug    = sanitize_key( $providerSlug );
-		$transient = get_transient( self::SCORE_KEY_PREFIX . $slug );
+		$stored = $this->readScore( self::SCORE_KEY_PREFIX . $this->normalizeSlug( $providerSlug ) );
 
-		return false !== $transient ? (int) $transient : 0;
+		return false !== $stored ? (int) $stored : 0;
 	}
 
 	/**
@@ -122,8 +131,51 @@ class ProviderHealthTracker {
 	 * @return void
 	 */
 	private function setScore( string $providerSlug, int $score ): void {
-		$slug = sanitize_key( $providerSlug );
-		set_transient( self::SCORE_KEY_PREFIX . $slug, $score, self::SCORE_TTL );
+		$this->writeScore( self::SCORE_KEY_PREFIX . $this->normalizeSlug( $providerSlug ), $score );
+	}
+
+	/**
+	 * Normalise a provider slug to a cache-safe key.
+	 *
+	 * Mirrors `sanitize_key()` without depending on WordPress: lowercase and
+	 * strip everything outside `a-z0-9_-`.
+	 */
+	private function normalizeSlug( string $providerSlug ): string {
+		return (string) \preg_replace( '/[^a-z0-9_\-]/', '', \strtolower( $providerSlug ) );
+	}
+
+	/**
+	 * Read a score from the host store, falling back to memory.
+	 */
+	private function readScore( string $key ): mixed {
+		if ( \function_exists( 'get_transient' ) ) {
+			return \get_transient( $key );
+		}
+
+		return $this->memoryStore[ $key ] ?? false;
+	}
+
+	/**
+	 * Write a score to the host store, falling back to memory.
+	 */
+	private function writeScore( string $key, int $score ): void {
+		if ( \function_exists( 'set_transient' ) ) {
+			\set_transient( $key, $score, self::SCORE_TTL );
+			return;
+		}
+
+		$this->memoryStore[ $key ] = $score;
+	}
+
+	/**
+	 * Delete a score from the host store and the memory fallback.
+	 */
+	private function deleteScore( string $key ): void {
+		if ( \function_exists( 'delete_transient' ) ) {
+			\delete_transient( $key );
+		}
+
+		unset( $this->memoryStore[ $key ] );
 	}
 
 	/**
@@ -185,7 +237,10 @@ class ProviderHealthTracker {
 
 		$scores = array();
 		foreach ( $rows as $row ) {
-			$slug = str_replace( '_transient_' . self::SCORE_KEY_PREFIX, '', $row->option_name );
+			$optionName = $row->option_name ?? '';
+			$slug       = is_string( $optionName )
+				? str_replace( '_transient_' . self::SCORE_KEY_PREFIX, '', $optionName )
+				: '';
 			if ( '' !== $slug ) {
 				$scores[ $slug ] = (int) $row->option_value;
 			}
@@ -203,6 +258,6 @@ class ProviderHealthTracker {
 	 * @return void
 	 */
 	public function resetScore( string $providerSlug ): void {
-		delete_transient( self::SCORE_KEY_PREFIX . sanitize_key( $providerSlug ) );
+		$this->deleteScore( self::SCORE_KEY_PREFIX . $this->normalizeSlug( $providerSlug ) );
 	}
 }

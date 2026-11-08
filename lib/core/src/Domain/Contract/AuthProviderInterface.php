@@ -58,7 +58,7 @@ interface AuthProviderInterface {
 	 * Issue a new credential for external API access to an assistant.
 	 *
 	 * @param int   $assistantId  The assistant the credential grants access to.
-	 * @param array $options      Additional options (expiration, capabilities, etc.).
+	 * @param array<string, mixed> $options      Additional options (expiration, capabilities, etc.).
 	 *
 	 * @return Credential  The issued credential with token and metadata.
 	 */

@@ -69,6 +69,14 @@ The OOS engine adds negligible overhead — adapters are thin wrappers (one-line
 | Files | `lib/core/src/` and `lib/wordpress-adapter/src/` must be present |
 | Build | Full/complete build only — `lib/` is excluded from base WordPress.org builds |
 
+> **Build & activation status (2026-11-08).** The packaging claim above is now
+> implemented: `bin/build-plugin-zip.sh` ships `lib/core` and
+> `lib/wordpress-adapter` in the combined build and keeps excluding `/lib` from the
+> base and WordPress.org builds. `enable_oos_engine` remains **false by default** by
+> decision - see Proposal 134 section 14.5. Note that this guide and the
+> cross-platform gap analysis quote different migrated-tool counts (82 of ~195 here
+> vs 190 in the gap analysis); the gap analysis is the newer inventory.
+
 ## Debugging
 
 When the OOS engine fails to boot, an error is logged to the PHP error log (when `WP_DEBUG` is enabled). The `?engine=oos` query parameter overrides all other settings for quick testing.

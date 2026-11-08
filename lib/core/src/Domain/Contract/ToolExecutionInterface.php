@@ -19,6 +19,8 @@ interface ToolExecutionInterface
     /**
      * Execute a tool synchronously.
      *
+     * @param ToolArgs $arguments
+     * @param ToolContext $context
      * @return array{success: bool, result?: mixed, error?: string, duration_ms?: float}
      */
     public function executeSync(string $toolSlug, array $arguments, array $context = []): array;
@@ -26,6 +28,8 @@ interface ToolExecutionInterface
     /**
      * Enqueue a tool for asynchronous execution.
      *
+     * @param ToolArgs $arguments
+     * @param ToolContext $context
      * @return array{success: bool, job_id?: string, error?: string}
      */
     public function executeAsync(string $toolSlug, array $arguments, array $context = []): array;

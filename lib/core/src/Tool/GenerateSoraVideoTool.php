@@ -33,7 +33,7 @@ class GenerateSoraVideoTool extends AbstractTool {
 		$resolution = $this->stringParam( $arguments, 'resolution', '720p' );
 
 		try {
-			$r = $this->h->send( 'POST', 'https://api.openai.com/v1/video/generations', array( 'Authorization'=>"Bearer {$key}",'Content-Type'=>'application/json' ), \json_encode( array( 'model'=>'sora-2','prompt'=>$prompt,'duration'=>$duration,'resolution'=>$resolution ) ) );
+			$r = $this->h->send( 'POST', 'https://api.openai.com/v1/video/generations', array( 'Authorization'=>"Bearer {$key}",'Content-Type'=>'application/json' ), $this->jsonBody( array( 'model'=>'sora-2','prompt'=>$prompt,'duration'=>$duration,'resolution'=>$resolution ) ) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'Sora API error.'; return $this->errors->create( 'sora_error', $err ); }
 

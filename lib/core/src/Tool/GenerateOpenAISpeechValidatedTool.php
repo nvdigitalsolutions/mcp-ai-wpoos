@@ -75,7 +75,7 @@ class GenerateOpenAISpeechValidatedTool extends AbstractTool {
 					'Authorization' => "Bearer {$apiKey}",
 					'Content-Type'  => 'application/json',
 				),
-				\json_encode( array(
+				$this->jsonBody( array(
 					'model'           => $model,
 					'input'           => $text,
 					'voice'           => $voice,

@@ -5,7 +5,7 @@
  * Description: AI-powered page control copilot. Give any WordPress page its own AI agent that can click, type, and navigate via natural language. Requires NV oOS base plugin.
  * Version:     0.1.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.9
  * Requires Plugins: mcp-ai-wpoos
  * Author: NV Digital Solutions

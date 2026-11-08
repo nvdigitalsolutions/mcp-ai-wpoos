@@ -14,8 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Prevent parse errors on PHP < 7.4 by exiting before class definition.
-if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+// Prevent parse errors on PHP < 8.1 by exiting before class definition.
+if ( version_compare( PHP_VERSION, '8.1.0', '<' ) ) {
 	return;
 }
 
@@ -81,7 +81,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				$value = $settings[ $key ];
 
 				// Sanitize based on key patterns and types.
-				// Note: Using strpos() for PHP 7.4 compatibility (str_contains() requires PHP 8.0+).
+				// Note: strpos() retained here; str_contains() is available at the 8.1 floor.
 				if ( self::is_sensitive_setting_key( $key ) ) {
 					$current_value     = isset( $current[ $key ] ) ? $current[ $key ] : '';
 					$sanitized[ $key ] = self::sanitize_sensitive_setting_value( $value, $current_value );

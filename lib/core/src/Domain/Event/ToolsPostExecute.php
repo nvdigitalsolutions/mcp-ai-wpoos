@@ -17,6 +17,10 @@ namespace Nvoos\Core\Domain\Event;
 
 final class ToolsPostExecute {
 
+	/**
+	 * @param ToolArgs $arguments
+	 * @param ToolContext $context
+	 */
 	public function __construct(
 		public readonly string $slug,
 		public readonly array $arguments,

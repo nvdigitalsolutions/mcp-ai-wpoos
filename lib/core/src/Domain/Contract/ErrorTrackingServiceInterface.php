@@ -36,7 +36,7 @@ interface ErrorTrackingServiceInterface
      *
      * @param string $component Component where the error occurred.
      * @param string $message   Human-readable error message.
-     * @param array  $context   Additional structured context.
+     * @param array<string, mixed>  $context   Additional structured context.
      *
      * @return string Unique error ID.
      */
@@ -47,7 +47,7 @@ interface ErrorTrackingServiceInterface
      *
      * @param int $limit Maximum number of errors to return.
      *
-     * @return array<int, array{id: string, component: string, message: string, context: array, timestamp: int}>
+     * @return array<int, array{id: string, component: string, message: string, context: array<string, mixed>, timestamp: int}>
      */
     public function getRecent(int $limit = 50): array;
 

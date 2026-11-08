@@ -15,6 +15,10 @@ namespace Nvoos\Core\Domain\Event;
 
 final class AfterChatResponse {
 
+	/**
+	 * @param array<string, mixed> $requestContext
+	 * @param array<string, mixed> $response
+	 */
 	public function __construct(
 		public readonly int $assistantId,
 		public readonly array $response,

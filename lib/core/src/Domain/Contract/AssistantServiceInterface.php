@@ -24,7 +24,7 @@ interface AssistantServiceInterface
      * @param int $assistantId Assistant post ID.
      * @param int $userId      User ID (0 = current user).
      *
-     * @return array{valid: bool, assistant?: array, error?: string}
+     * @return array{valid: bool, assistant?: array<string, mixed>, error?: string}
      */
     public function validate(int $assistantId, int $userId = 0): array;
 
@@ -33,14 +33,14 @@ interface AssistantServiceInterface
      *
      * @param int $assistantId Assistant post ID.
      *
-     * @return array{found: bool, config?: array}
+     * @return array{found: bool, config?: array<string, mixed>}
      */
     public function getConfig(int $assistantId): array;
 
     /**
      * Get the default assistant for the current context.
      *
-     * @return array{found: bool, assistant_id?: int, config?: array}
+     * @return array{found: bool, assistant_id?: int, config?: array<string, mixed>}
      */
     public function getDefault(): array;
 
@@ -49,7 +49,7 @@ interface AssistantServiceInterface
      *
      * @param int $userId User ID.
      *
-     * @return array<int, array{id: int, title: string, status: string, capabilities: array}>
+     * @return array<int, array{id: int, title: string, status: string, capabilities: array<int, string>}>
      */
     public function listForUser(int $userId = 0): array;
 }

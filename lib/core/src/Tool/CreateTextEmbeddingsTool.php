@@ -91,7 +91,7 @@ class CreateTextEmbeddingsTool extends AbstractTool {
 		}
 
 		try {
-			$body     = \json_encode( $payload );
+			$body     = $this->jsonBody( $payload );
 			$response = $this->http->send( 'POST', $baseUrl . '/embeddings', array(
 				'Authorization' => "Bearer {$apiKey}",
 				'Content-Type'  => 'application/json',

@@ -25,10 +25,10 @@ interface ToolLoadBalancerInterface {
 	 * - Queues asynchronously if system is under high load
 	 *
 	 * @param string $tool_slug Tool identifier.
-	 * @param array  $arguments Tool arguments.
-	 * @param array  $context   Execution context.
+	 * @param ToolArgs  $arguments Tool arguments.
+	 * @param ToolContext  $context   Execution context.
 	 *
-	 * @return array|mixed  Execution result or error.
+	 * @return mixed  Execution result or error.
 	 */
 	public function routeToolExecution(
 		string $tool_slug,
@@ -40,7 +40,7 @@ interface ToolLoadBalancerInterface {
 	 * Track tool performance metrics after execution.
 	 *
 	 * @param string $tool_slug      Tool identifier.
-	 * @param array  $execution_data Execution data (duration, success, context).
+	 * @param array<string, mixed>  $execution_data Execution data (duration, success, context).
 	 *
 	 * @return void
 	 */
@@ -56,9 +56,9 @@ interface ToolLoadBalancerInterface {
 	 * considering historical performance data.
 	 *
 	 * @param string $task_description Natural-language task description.
-	 * @param array  $context          Optional execution context.
+	 * @param ToolContext  $context          Optional execution context.
 	 *
-	 * @return array  Ranked tool slugs with confidence scores.
+	 * @return array<int, array<string, mixed>>  Ranked tool slugs with confidence scores.
 	 */
 	public function getToolRecommendations(
 		string $task_description,

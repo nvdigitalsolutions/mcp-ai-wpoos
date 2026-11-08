@@ -4,7 +4,7 @@ Donate link: https://nvdigitalsolutions.com/wpoos
 Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
-Requires PHP: 7.4
+Requires PHP: 8.1
 Stable tag: 1.2.17
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -32,9 +32,9 @@ The plugin works standalone with vanilla WordPress and can be extended with opti
 
 = Versions =
 
-**Base Plugin (PHP 7.4+):** Works out of the box on any PHP 7.4+ installation. Includes all tools shipped in `includes/tools/` — currently 300+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
+**Base Plugin (PHP 8.1+):** Works out of the box on any PHP 8.1+ installation. Includes all tools shipped in `includes/tools/` — currently 300+ tools covering content management, media generation, research, site operations, analytics, MCP server, and more. Tools that integrate with optional third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are also included and activate automatically when those plugins are detected; no Pro addon is required to use them. **All base plugin features are fully available without any license key or paid upgrade.**
 
-**Pro Addon (PHP 8.1+ required):** A completely separate plugin that **adds brand-new tools** not present in the base plugin. It is a genuine extension — not an upgrade that unlocks hidden base-plugin capabilities. Pro-only tools are built with modern PHP 8.1+ features (enums, readonly properties, named arguments, fibers) and include entirely new toolsets: advanced multi-agent orchestration, autonomous research pipelines, project management, vault/secret management, real-time collaboration, Shopify catalog, medical imaging, CRM integrations, and more. Installing the Pro addon does not change how any existing base plugin tool works.
+**Pro Addon (PHP 8.1+):** A completely separate plugin that **adds brand-new tools** not present in the base plugin. It is a genuine extension — not an upgrade that unlocks hidden base-plugin capabilities. Pro-only tools share the same PHP 8.1+ baseline (enums, readonly properties, named arguments, fibers) and include entirely new toolsets: advanced multi-agent orchestration, autonomous research pipelines, project management, vault/secret management, real-time collaboration, Shopify catalog, medical imaging, CRM integrations, and more. Installing the Pro addon does not change how any existing base plugin tool works.
 
 **How they relate:** The base plugin is complete and fully functional on its own. The Pro addon sits alongside it to add more tools — the same way a second plugin would. No tool in `includes/tools/` is hidden, locked, or limited without the Pro addon.
 
@@ -143,7 +143,7 @@ NV oOS works perfectly standalone. Optional integrations add enhanced functional
 = System Requirements =
 
 * WordPress 6.0 or higher
-* PHP 7.4 or higher (PHP 8.0+ recommended)
+* PHP 8.1 or higher
 * MySQL 5.7 or higher (or MariaDB 10.3+)
 * API key from OpenAI, Google, or local AI server
 

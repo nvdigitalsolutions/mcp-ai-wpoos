@@ -5,7 +5,7 @@
  * Description: Algorave live coding music extension for NV oOS. Enables AI-powered music pattern generation, browser-based audio synthesis via Tone.js/Strudel, MIDI export, and real-time audio visualization through the oOS chat interface. Requires NV oOS base plugin.
  * Version:     1.0.7
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com

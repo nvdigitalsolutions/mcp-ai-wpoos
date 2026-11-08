@@ -24,7 +24,7 @@ interface ProfessionRepositoryInterface
     /**
      * Get all available professions.
      *
-     * @return array<string, array{name: string, slug: string, category: string, description: string, recommended_tools: array}>
+     * @return array<string, array{name: string, slug: string, category: string, description: string, recommended_tools: array<int, string>}>
      */
     public function getAll(): array;
 
@@ -33,7 +33,7 @@ interface ProfessionRepositoryInterface
      *
      * @param string $slug Profession slug.
      *
-     * @return array{found: bool, profession?: array}
+     * @return array{found: bool, profession?: array<string, mixed>}
      */
     public function getBySlug(string $slug): array;
 
@@ -42,7 +42,7 @@ interface ProfessionRepositoryInterface
      *
      * @param string $category Category slug.
      *
-     * @return array<string, array>
+     * @return array<string, array<string, mixed>>
      */
     public function getByCategory(string $category): array;
 
@@ -51,7 +51,7 @@ interface ProfessionRepositoryInterface
      *
      * @param string $slug Profession slug.
      *
-     * @return array{knowledge: array, playbook: array}
+     * @return array{knowledge: array<string, mixed>, playbook: array<string, mixed>}
      */
     public function loadKnowledgeBase(string $slug): array;
 
@@ -67,7 +67,7 @@ interface ProfessionRepositoryInterface
     /**
      * Get professions grouped by category.
      *
-     * @return array<string, array<int, array>>
+     * @return array<string, array<int, array<string, mixed>>>
      */
     public function getCategories(): array;
 }

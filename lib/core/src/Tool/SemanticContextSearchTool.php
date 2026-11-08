@@ -12,7 +12,7 @@ class SemanticContextSearchTool extends AbstractTool {
 	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$agentId = (string)($arguments['agent_id']??''); $query = $this->stringParam($arguments,'query');
 		if ( '' === $agentId || '' === $query ) return $this->errors->validationFailed( 'agent_id and query required.', array('agent_id'=>array('Required.'),'query'=>array('Required.')) );
-		$filters = $this->arrayParam($arguments,'filters'); $limit = \max(1,\min(50,$this->intParam($arguments,'limit',10)));
+		$filters = $this->objectParam($arguments,'filters'); $limit = \max(1,\min(50,$this->intParam($arguments,'limit',10)));
 		try { $results = $this->m->search( $query, $filters, $limit ); return $this->success( 'Found '.\count($results).' semantically similar contexts.', array('contexts'=>$results,'count'=>\count($results),'query'=>$query) ); }
 		catch ( \Throwable $e ) { return $this->errors->create( 'search_failed', $e->getMessage() ); }
 	}

@@ -582,7 +582,7 @@ Aligned with `.context/security-checklist.md` and the `wp-security-audit` / `wp-
 
 ```bash
 composer run lint                    # WPCS + the two custom tool sniffs
-composer run lint:compat             # PHP 7.4–8.3
+composer run lint:compat             # PHP 8.1–8.4
 composer run test                    # PHPUnit
 composer run docs:check-folder-readmes   # requires includes/google/README.md
 npm run lint:js

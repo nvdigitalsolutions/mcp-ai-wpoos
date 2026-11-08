@@ -26,7 +26,7 @@ class EditGeminiImageTool extends AbstractTool {
 		if ( null === $key || '' === $key ) return $this->errors->create( 'missing_key', 'No Gemini API key configured.' );
 
 		try {
-			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-edit-001:predict?key={$key}", array('Content-Type'=>'application/json'), \json_encode(array('instances'=>array(array('image'=>$imageUrl,'prompt'=>$prompt)))) );
+			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-edit-001:predict?key={$key}", array('Content-Type'=>'application/json'), $this->jsonBody(array('instances'=>array(array('image'=>$imageUrl,'prompt'=>$prompt)))) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'Imagen edit error.'; return $this->errors->create( 'imagen_error', $err ); }
 

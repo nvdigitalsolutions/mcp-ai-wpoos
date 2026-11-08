@@ -60,6 +60,9 @@ final readonly class StoredFile implements \JsonSerializable {
 		return strtolower( pathinfo( $this->filename, PATHINFO_EXTENSION ) );
 	}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	public function jsonSerialize(): array {
 		return array(
 			'id'         => $this->id,

@@ -77,7 +77,7 @@ class GenerateMusicTool extends AbstractTool {
 					'Authorization' => "Bearer {$apiKey}",
 					'Content-Type'  => 'application/json',
 				),
-				\json_encode( $body ),
+				$this->jsonBody( $body ),
 			);
 
 			$data = \json_decode( $response->body, true );

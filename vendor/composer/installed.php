@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'nvdigitalsolutions/mcp-ai-wpoos',
-        'pretty_version' => 'dev-fix/compliance-high-security-fixes',
-        'version' => 'dev-fix/compliance-high-security-fixes',
-        'reference' => 'e5946c7cd615e3b14ddf52040af82cfe9d891cf6',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '8d46eb508775aa4e49118c71d06bc1bb26d22808',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -20,9 +20,9 @@
             'dev_requirement' => false,
         ),
         'guzzlehttp/guzzle' => array(
-            'pretty_version' => '7.15.1',
-            'version' => '7.15.1.0',
-            'reference' => '61443dfb33c62f308ee8add20f45b4d6e4bf8d2f',
+            'pretty_version' => '7.15.2',
+            'version' => '7.15.2.0',
+            'reference' => '744101956d78b7c1384d0cbf379db13e859167bf',
             'type' => 'library',
             'install_path' => __DIR__ . '/../guzzlehttp/guzzle',
             'aliases' => array(),
@@ -56,9 +56,9 @@
             'dev_requirement' => false,
         ),
         'nvdigitalsolutions/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-fix/compliance-high-security-fixes',
-            'version' => 'dev-fix/compliance-high-security-fixes',
-            'reference' => 'e5946c7cd615e3b14ddf52040af82cfe9d891cf6',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '8d46eb508775aa4e49118c71d06bc1bb26d22808',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -240,7 +240,7 @@ const result3 = await editImage({
 ## Compatibility
 
 - **Minimum WordPress Version**: 6.0+
-- **PHP Version**: 7.4+
+- **PHP Version**: 8.1+
 - **Required Provider**: Gemini (enforced via tool rules)
 - **Supported Models**: 
   - `gemini-2.5-flash-image` (recommended)

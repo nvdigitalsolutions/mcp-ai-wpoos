@@ -69,8 +69,8 @@ abstract class AbstractProviderClient {
 	/**
 	 * Send a chat-completion request and return the full response.
 	 *
-	 * @param array $messages  Conversation messages in OpenAI-compatible format.
-	 * @param array $options   Provider-specific options (model, temperature, tools, etc.).
+	 * @param array<int, array<string, mixed>> $messages  Conversation messages in OpenAI-compatible format.
+	 * @param array<string, mixed>             $options   Provider-specific options (model, temperature, tools, etc.).
 	 *
 	 * @return array|mixed  Response array or error via ErrorFactoryInterface.
 	 */
@@ -79,8 +79,8 @@ abstract class AbstractProviderClient {
 	/**
 	 * Stream a chat-completion response token by token.
 	 *
-	 * @param array         $messages  Conversation messages.
-	 * @param array         $options   Provider-specific options.
+	 * @param array<int, array<string, mixed>> $messages  Conversation messages.
+	 * @param array<string, mixed>             $options   Provider-specific options.
 	 * @param callable|null $onChunk  Called for each received token.
 	 *
 	 * @return array|mixed  Final response or error.
@@ -159,6 +159,7 @@ abstract class AbstractProviderClient {
 
 	/**
 	 * Resolve the model identifier from options, falling back to the default.
+	 * @param array<string, mixed> $options
 	 */
 	protected function resolveModel( array $options ): string {
 		if ( ! empty( $options['model'] ) ) {
@@ -170,6 +171,7 @@ abstract class AbstractProviderClient {
 
 	/**
 	 * Get the HTTP request timeout in seconds.
+	 * @param array<string, mixed> $options
 	 */
 	protected function getTimeout( array $options = array() ): int {
 		if ( ! empty( $options['timeout'] ) ) {
@@ -195,11 +197,11 @@ abstract class AbstractProviderClient {
 	 * Returns null when validation passes (or when no budget manager is
 	 * wired).  Returns an error shape when the context window is exceeded.
 	 *
-	 * @param array  $payload  The full request payload about to be sent.
+	 * @param array<string, mixed>  $payload  The full request payload about to be sent.
 	 * @param string $model    Model identifier.
-	 * @return array|null  Error shape or null.
+	 * @return array<string, mixed>|null Error shape or null.
 	 *
-	 * @phpstan-return array{code: string, message: string, data: array}|null
+	 * @phpstan-return array{code: string, message: string, data: array<string, mixed>}|null
 	 */
 	protected function validateContextWindow( array $payload, string $model ): ?array {
 		if ( null === $this->tokenBudget ) {
@@ -220,7 +222,7 @@ abstract class AbstractProviderClient {
 	 * objects), this helper wraps the result through ErrorFactoryInterface
 	 * so that concrete providers can return a proper error type.
 	 *
-	 * @param array $result  The error shape from validateContextWindow().
+	 * @param array<string, mixed> $result  The error shape from validateContextWindow().
 	 * @return mixed  A properly-typed error via ErrorFactoryInterface.
 	 */
 	protected function contextWindowError( array $result ): mixed {

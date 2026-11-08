@@ -8,7 +8,7 @@ class ExecuteWorkflowTool extends AbstractTool {
 	public function getParametersSchema(): array { return array('type'=>'object','properties'=>array('team_id'=>array('type'=>'string','description'=>'Team ID.'), 'workflow'=>array('type'=>'object','description'=>'Workflow definition with steps.'), ),'required'=>array('team_id','workflow'),'additionalProperties'=>false); }
 	public function getRequiredCapability(): string { return 'edit_posts'; }
 	public function execute( array $arguments = array(), array $context = array() ): mixed {
-		$teamId = $this->stringParam($arguments,'team_id'); $workflow = $this->arrayParam($arguments,'workflow');
+		$teamId = $this->stringParam($arguments,'team_id'); $workflow = $this->objectParam($arguments,'workflow');
 		if (''===$teamId||array()===$workflow) return $this->errors->validationFailed('team_id and workflow required.',array('team_id'=>array('Required.'),'workflow'=>array('Required.')));
 		try { $r = $this->o->executeWorkflow($teamId,$workflow,$context); return $r['success'] ? $this->success('Workflow executed.',array('results'=>$r['results']??array())) : $this->errors->create('workflow_failed',$r['error']??'Unknown error.'); }
 		catch (\Throwable $e) { return $this->errors->create('workflow_failed',$e->getMessage()); }

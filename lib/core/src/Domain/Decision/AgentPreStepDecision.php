@@ -22,7 +22,7 @@ final class AgentPreStepDecision {
 
 	/**
 	 * @param string $kind     One of the KIND_* constants.
-	 * @param array  $messages Replacement messages when entering.
+	 * @param array<int, array<string, mixed>>  $messages Replacement messages when entering.
 	 */
 	public function __construct(
 		public readonly string $kind,
@@ -33,6 +33,9 @@ final class AgentPreStepDecision {
 		return new self( self::KIND_REJECT );
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $messages
+	 */
 	public static function enter( array $messages ): self {
 		return new self( self::KIND_ENTER, $messages );
 	}

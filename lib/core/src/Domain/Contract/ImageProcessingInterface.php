@@ -22,7 +22,7 @@ interface ImageProcessingInterface
      * @param string $sourcePath Absolute path to the source image.
      * @param int    $width      Target width in pixels.
      * @param int    $height     Target height in pixels.
-     * @param array  $options    Optional: crop (bool), quality (int 1-100).
+     * @param array<string, mixed>  $options    Optional: crop (bool), quality (int 1-100).
      *
      * @return array{path: string, width: int, height: int, mime_type: string, bytes: int}
      */

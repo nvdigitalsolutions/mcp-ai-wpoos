@@ -48,7 +48,7 @@ interface EmbeddingServiceInterface
      *
      * @param string             $contentId Unique content identifier.
      * @param array<int, float>  $vector    Embedding vector.
-     * @param array              $metadata  Associated metadata (title, type, etc.).
+     * @param array<string, mixed>              $metadata  Associated metadata (title, type, etc.).
      */
     public function store(string $contentId, array $vector, array $metadata = []): void;
 
@@ -59,7 +59,7 @@ interface EmbeddingServiceInterface
      * @param int               $limit       Maximum results.
      * @param float             $minScore    Minimum similarity score (0-1).
      *
-     * @return array<int, array{content_id: string, score: float, metadata: array}>
+     * @return array<int, array{content_id: string, score: float, metadata: array<string, mixed>}>
      */
     public function search(array $queryVector, int $limit = 10, float $minScore = 0.7): array;
 

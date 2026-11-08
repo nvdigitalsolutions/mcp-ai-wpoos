@@ -67,7 +67,7 @@ class GenerateOpenAISpeechTool extends AbstractTool {
 		$model  = $this->stringParam( $arguments, 'model', self::DEFAULT_MODEL );
 		$speed  = (float) ( $arguments['speed'] ?? 1.0 );
 
-		$body = \json_encode( array(
+		$body = $this->jsonBody( array(
 			'model'           => $model,
 			'input'           => $text,
 			'voice'           => $voice,

@@ -22,8 +22,8 @@ interface ToolGuardInterface {
 	 * Evaluate one pending tool call.
 	 *
 	 * @param string $slug      Canonical tool slug about to execute.
-	 * @param array  $arguments Parsed, sanitized tool arguments.
-	 * @param array  $context   Execution context (user_id, assistant_id, …).
+	 * @param ToolArgs  $arguments Parsed, sanitized tool arguments.
+	 * @param ToolContext  $context   Execution context (user_id, assistant_id, …).
 	 *
 	 * @return string|null  Denial reason to fail the call with, or null to
 	 *                      leave the call allowed.

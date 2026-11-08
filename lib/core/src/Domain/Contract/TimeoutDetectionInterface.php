@@ -15,6 +15,9 @@ interface TimeoutDetectionInterface
 {
     public function start(string $operationId, int $timeoutSeconds): void;
 
+    /**
+     * @return array<string, mixed>
+     */
     public function check(string $operationId): array;
 
     public function cancel(string $operationId): void;

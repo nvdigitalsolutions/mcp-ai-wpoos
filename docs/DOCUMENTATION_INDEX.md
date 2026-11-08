@@ -900,7 +900,7 @@ n#### New Audit & Compliance Docs
 ### New and updated documents (August 31, 2026, v1.1.66)
 
 - **[docs/project/plans/v1.1.66-docs-catch-up.md](project/plans/v1.1.66-docs-catch-up.md)** ⭐ **NEW** — v1.1.66 docs & release catch-up plan (PRs #6008, #6009, #6011–#6108, incl. #6063). (August 31, 2026)
-- **[.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md](../.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md)** ⭐ **NEW** — PHPUnit test-suite repair & triage skill: Docker commands, CI-log triage, 16 recurring root-cause patterns, cluster-by-cluster PR workflow. (August 31, 2026)
+- **[.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md](../.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md)** ⭐ **NEW** — PHPUnit test-suite repair & triage skill: Docker commands, CI-log triage, 89 recurring root-cause patterns, cluster-by-cluster PR workflow. (August 31, 2026)
 - **[docs/developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md](developer/testing-docs/TEST-SUITE-REMAINING-FIXES-PLAN.md)** ⭐ **NEW** — standing tracker for the remaining PHPUnit suite fixes. (August 31, 2026)
 - **[addons/checkout-api/README.md](../addons/checkout-api/README.md)** + **[addons/checkout-api/CHANGELOG.md](../addons/checkout-api/CHANGELOG.md)** ⭐ **NEW** — Checkout API addon v0.1.0 (vendor-side Stripe checkout/licensing service). (August 31, 2026)
 - **[plugins/nvoos-content-graph/docs/commerce-vendor-api.md](../plugins/nvoos-content-graph/docs/commerce-vendor-api.md)** ⭐ **NEW** — vendor-API contract for the Content Graph paid-checkout client. (August 31, 2026)

@@ -27,7 +27,7 @@ interface FileValidationServiceInterface
      * @param string $filePath Absolute path to file.
      * @param string $purpose   Upload purpose (assistants, fine-tuning, etc.).
      *
-     * @return array{valid: bool, warnings: array<int, string>, recommendations: array<int, string>, file_info: array}
+     * @return array{valid: bool, warnings: array<int, string>, recommendations: array<int, string>, file_info: array<string, mixed>}
      */
     public function validateForVectorStore(string $filePath, string $purpose = 'assistants'): array;
 

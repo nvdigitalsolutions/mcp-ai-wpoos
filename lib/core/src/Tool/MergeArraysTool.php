@@ -16,5 +16,10 @@ class MergeArraysTool extends AbstractTool {
 		foreach($arrays as $m){ if(!is_array($m)) continue; $r = match($s){'overwrite'=>array_replace_recursive($r,$m),'shallow'=>array_merge($r,$m),default=>$this->dm($r,$m)}; }
 		return $this->success("Merged ($s).",array('result'=>$r,'strategy'=>$s,'keys'=>count($r)));
 	}
+	/**
+	 * @param array<mixed, mixed> $a Base array.
+	 * @param array<mixed, mixed> $b Overlay array.
+	 * @return array<mixed, mixed>
+	 */
 	private function dm(array $a,array $b): array { foreach($b as $k=>$v){ if(is_array($v)&&isset($a[$k])&&is_array($a[$k])) $a[$k]=$this->dm($a[$k],$v); else $a[$k]=$v; } return $a; }
 }

@@ -55,6 +55,9 @@ final readonly class PostTypeSchema implements \JsonSerializable {
 		return in_array( $feature, $this->supports, true );
 	}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	public function jsonSerialize(): array {
 		return array(
 			'slug'            => $this->slug,

@@ -22,7 +22,7 @@ final readonly class HttpResponse implements \JsonSerializable {
 	/**
 	 * @param int    $statusCode HTTP status code (200, 404, 500, etc.).
 	 * @param string $body       Response body as a string.
-	 * @param array  $headers    Response headers as key-value pairs.
+	 * @param array<string, string>  $headers    Response headers as key-value pairs.
 	 */
 	public function __construct(
 		public int $statusCode,
@@ -33,7 +33,7 @@ final readonly class HttpResponse implements \JsonSerializable {
 	/**
 	 * JSON-serializable for logging and debugging.
 	 *
-	 * @return array{statusCode: int, body: string, headers: array}
+	 * @return array{statusCode: int, body: string, headers: array<string, string>}
 	 */
 	public function jsonSerialize(): array {
 		return array(

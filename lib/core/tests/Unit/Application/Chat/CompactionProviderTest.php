@@ -70,6 +70,27 @@ final class CompactionProviderTest extends TestCase {
 		};
 	}
 
+	private function compressorReturning( string $compressed ): ContextCompressionInterface {
+		return new class( $compressed ) implements ContextCompressionInterface {
+			public function __construct( private readonly string $compressed ) {}
+
+			public function compress( string $content, array $options = array() ): array {
+				return array(
+					'success'    => true,
+					'compressed' => $this->compressed,
+				);
+			}
+
+			public function chunk( string $content, int $chunkSize = 500, float $overlapRatio = 0.15 ): array {
+				return array();
+			}
+
+			public function estimateTokens( string $text ): int {
+				return 1;
+			}
+		};
+	}
+
 	public function testNoTriggerBeforeMinIteration(): void {
 		$provider = new CompactionProvider( $this->context(), $this->semantic() );
 
@@ -131,6 +152,23 @@ final class CompactionProviderTest extends TestCase {
 		};
 
 		$provider = new CompactionProvider( $broken );
+
+		$messages = $this->messages();
+
+		$this->assertSame( $messages, $provider->compact( $messages ) );
+	}
+
+	public function testDecodedNonListPayloadPassesThrough(): void {
+		// A decoded JSON object is not a message list: history must survive.
+		$provider = new CompactionProvider( $this->compressorReturning( '{"foo":"bar"}' ) );
+
+		$messages = $this->messages();
+
+		$this->assertSame( $messages, $provider->compact( $messages ) );
+	}
+
+	public function testDecodedListOfScalarsPassesThrough(): void {
+		$provider = new CompactionProvider( $this->compressorReturning( '["not-a-message"]' ) );
 
 		$messages = $this->messages();
 

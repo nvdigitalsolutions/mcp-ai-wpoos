@@ -69,6 +69,9 @@ final readonly class ContentItem implements \JsonSerializable {
 		return $this->taxonomy[ $taxonomy ] ?? array();
 	}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	public function jsonSerialize(): array {
 		return array(
 			'id'         => $this->id,

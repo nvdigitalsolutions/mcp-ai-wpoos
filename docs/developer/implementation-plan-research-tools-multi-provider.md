@@ -239,7 +239,7 @@ envelope, two-gate sanitisation, `WP_MCP_AI_Tool_Chat_Response`):
 **Validation commands:**
 ```bash
 composer run lint            # WPCS + WPMCPAI sniff compliance
-composer run lint:compat     # PHP 7.4+ syntax
+composer run lint:compat     # PHP 8.1+ syntax
 vendor/bin/phpunit tests/test-mempalace-phase3-embedding-providers.php
 vendor/bin/phpunit tests/test-tool-list-terms.php
 vendor/bin/phpunit --filter '/Deep_Research|Semantic_Content_Search/' tests/
@@ -285,7 +285,7 @@ All workstreams landed together in the working tree (not yet committed):
 
 Validation performed: PHP syntax (php -l) on all changed files; PHPCS
 (`phpcs.xml.dist`) clean on all changed source + test files; PHPCompatibility
-7.4–8.3 clean on changed sources; PHPUnit — 82 related tests pass (registry,
+8.1–8.4 clean on changed sources; PHPUnit — 82 related tests pass (registry,
 terms, semantic search, deep research, embedding providers). Pre-existing
 failures in `test-assistant-tool-presets.php` and
 `test-mempalace-memory-enhancements.php`/`test-memory-rrf-fusion-service.php`

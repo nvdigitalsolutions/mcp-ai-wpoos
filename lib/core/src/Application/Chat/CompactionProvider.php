@@ -40,7 +40,7 @@ class CompactionProvider {
 	/**
 	 * Whether the message list should be compacted before the next step.
 	 *
-	 * @param array  $messages     Current message list.
+	 * @param array<int, array<string, mixed>>  $messages     Current message list.
 	 * @param int    $contextLimit Model context window (0 = unknown → no trigger).
 	 * @param int    $iteration    Current loop iteration (0-based).
 	 * @param float  $threshold    Fraction of the window that triggers compaction.
@@ -63,6 +63,11 @@ class CompactionProvider {
 	 * Strategy cascade: semantic compression (facts-preserving) → context
 	 * compression → passthrough. A failed or non-decodable compression
 	 * never destroys history — the input is returned unchanged.
+	 *
+	 * @param array<int, array<string, mixed>> $messages
+	 * @return array<int, array<string, mixed>> The (possibly compacted) message
+	 *         list; the input unchanged when compaction is unavailable or the
+	 *         result is not a valid message list.
 	 */
 	public function compact( array $messages, string $model = '' ): array {
 		$encoded = \json_encode( $messages, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE );
@@ -89,6 +94,7 @@ class CompactionProvider {
 
 	/**
 	 * Estimate the token footprint of a message list.
+	 * @param array<int, array<string, mixed>> $messages
 	 */
 	public function estimateTokens( array $messages ): int {
 		$total = 0;
@@ -118,7 +124,12 @@ class CompactionProvider {
 	 * Decode a compressor result shape into a message list, or null when
 	 * the result is unusable.
 	 *
-	 * @return array|null
+	 * A decoded payload that is not a list of string-keyed message maps is
+	 * rejected so callers can always treat the return value as history (a
+	 * malformed compression must never replace the conversation).
+	 *
+	 * @param array<string, mixed> $result
+	 * @return array<int, array<string, mixed>>|null
 	 */
 	private function decodeResult( array $result ): ?array {
 		if ( empty( $result['compressed'] ) || ! \is_string( $result['compressed'] ) ) {
@@ -127,6 +138,28 @@ class CompactionProvider {
 
 		$decoded = \json_decode( $result['compressed'], true );
 
-		return \is_array( $decoded ) ? $decoded : null;
+		if ( ! \is_array( $decoded ) || ! \array_is_list( $decoded ) ) {
+			return null;
+		}
+
+		$messages = array();
+		foreach ( $decoded as $message ) {
+			if ( ! \is_array( $message ) ) {
+				return null;
+			}
+
+			$normalized = array();
+			foreach ( $message as $key => $value ) {
+				if ( ! \is_string( $key ) ) {
+					return null;
+				}
+
+				$normalized[ $key ] = $value;
+			}
+
+			$messages[] = $normalized;
+		}
+
+		return $messages;
 	}
 }

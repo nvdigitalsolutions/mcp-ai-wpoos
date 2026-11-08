@@ -29,7 +29,7 @@
  * - **RFI / Submittal log models** — schema + status-machine helpers for the
  *   logs stored as post-meta on the `mcp_ai_arch_proj` CPT.
  *
- * PHP 7.4 compatible — no enums, readonly, or named arguments.
+ * PHP 8.1 compatible — enums and readonly properties are available.
  *
  * @package WP_MCP_AI_Pro
  * @since 1.5.0

@@ -75,6 +75,7 @@ BUILD_CORE_ONLY=false
 BUILD_TOOLKITS=false
 BUILD_WP_ORG=false
 SKIP_NPM_BUILD=false
+SKIP_COMPOSER=false
 VERSION=""
 
 # Parse arguments
@@ -108,6 +109,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_NPM_BUILD=true
             shift
             ;;
+        --skip-composer)
+            SKIP_COMPOSER=true
+            shift
+            ;;
         --version)
             VERSION="$2"
             shift 2
@@ -132,6 +137,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --wp-org          Build WordPress.org submission packages (text domain transform)"
             echo "  --all             Build all versions (base, pro, combined, toolkits, wp-org)"
             echo "  --skip-npm-build  Skip npm install and build (use pre-built assets)"
+            echo "  --skip-composer   Skip composer install (vendor/ already in production state)"
             echo "  --version X.Y.Z   Specify version number"
             echo "  -h, --help        Show this help message"
             echo ""
@@ -223,9 +229,14 @@ fi
 echo ""
 
 # Step 2: Install production Composer dependencies
-echo "Step 2: Installing production PHP dependencies..."
-composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --quiet
-echo "✅ Production dependencies installed (with optimized classmap autoloader)"
+if [ "$SKIP_COMPOSER" = true ]; then
+    echo "Step 2: Skipping composer install (--skip-composer flag set — vendor/ already production)..."
+    echo "✅ Using existing production vendor"
+else
+    echo "Step 2: Installing production PHP dependencies..."
+    composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --quiet
+    echo "✅ Production dependencies installed (with optimized classmap autoloader)"
+fi
 echo ""
 
 # Clean build staging directories only — preserve previously-built ZIP files
@@ -277,6 +288,28 @@ if [ "$BUILD_BASE" = true ]; then
         --include 'bin/vectorize-image.js' \
         --exclude 'bin/*' \
         --exclude '.git' \
+        --exclude '.wt-*' \
+        --exclude 'nul' \
+        --exclude 'bt-out.log' \
+        --exclude 'errors.txt' \
+        --exclude '*.log' \
+        --exclude '/*.png' \
+        --exclude '/*.jpg' \
+        --exclude '/*.jpeg' \
+        --exclude '/*.gif' \
+        --exclude '/*.mdb' \
+        --exclude '/*.accdb' \
+        --exclude '/*.pdf' \
+        --exclude '/*.pptx' \
+        --exclude '/*.xlsx' \
+        --exclude '/*.html' \
+        --exclude '/.playwright-mcp' \
+        --exclude '/.phpunit.result.cache' \
+        --exclude '/.phpunit.cache' \
+        --exclude '/phpunit*.xml*' \
+        --exclude '/.??*/' \
+        --exclude '/projects' \
+        --exclude '/extensions' \
         --exclude '.git-branch-info' \
         --exclude '.github' \
         --exclude '.wordpress-org' \
@@ -459,7 +492,7 @@ if [ "$BUILD_BASE" = true ]; then
  * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Works standalone with optional third-party plugin integrations.\
  * Version: '"${VERSION}"'\
  * Requires at least: 6.0\
- * Requires PHP: 7.4\
+ * Requires PHP: 8.1\
  * Tested up to: 6.9\
  * Author: NV Digital Solutions\
  * Author URI: https://nvdigitalsolutions.com\
@@ -680,7 +713,7 @@ if [ "$BUILD_PRO" = true ]; then
  * Description: Professional add-on for NV Digital Open Operator System (oOS). Adds WooCommerce, JetEngine, advanced permissions, and more. Patent Pending (Application #19/410,504).\
  * Version: '"${VERSION}"'\
  * Requires at least: 6.0\
- * Requires PHP: 7.4\
+ * Requires PHP: 8.1\
  * Author: NV Digital Solutions\
  * Author URI: https://nvdigitalsolutions.com\
  * License: Proprietary\
@@ -769,11 +802,37 @@ if [ "$BUILD_COMBINED" = true ]; then
     # add-ons distributed as their own zips, not part of the complete package.
     # `examples` / `assets/examples` exclusions are root-anchored so the Pro
     # blueprint library at addons/pro/includes/tools/*/examples/ still ships.
+    # Ship the extracted OOS packages in the combined build: the engine
+    # requires lib/core/src + lib/wordpress-adapter/src. Their vendor/,
+    # tests/ and analyser config are excluded below. The base and
+    # WordPress.org builds keep excluding /lib entirely (see build_base).
     rsync -av --quiet . "build/${COMBINED_SLUG}/" \
         --include 'bin/' \
         --include 'bin/vectorize-image.js' \
         --exclude 'bin/*' \
         --exclude '.git' \
+        --exclude '.wt-*' \
+        --exclude 'nul' \
+        --exclude 'bt-out.log' \
+        --exclude 'errors.txt' \
+        --exclude '*.log' \
+        --exclude '/*.png' \
+        --exclude '/*.jpg' \
+        --exclude '/*.jpeg' \
+        --exclude '/*.gif' \
+        --exclude '/*.mdb' \
+        --exclude '/*.accdb' \
+        --exclude '/*.pdf' \
+        --exclude '/*.pptx' \
+        --exclude '/*.xlsx' \
+        --exclude '/*.html' \
+        --exclude '/.playwright-mcp' \
+        --exclude '/.phpunit.result.cache' \
+        --exclude '/.phpunit.cache' \
+        --exclude '/phpunit*.xml*' \
+        --exclude '/.??*/' \
+        --exclude '/projects' \
+        --exclude '/extensions' \
         --exclude '.git-branch-info' \
         --exclude '.github' \
         --exclude '.wordpress-org' \
@@ -842,7 +901,17 @@ if [ "$BUILD_COMBINED" = true ]; then
         --exclude '/assets/examples' \
         --exclude '/assets/csv-templates' \
         --exclude '/examples' \
-        --exclude '/lib' \
+        --exclude '/lib/laravel-adapter' \
+        --exclude '/lib/craft-adapter' \
+        --exclude '/lib/core/vendor' \
+        --exclude '/lib/core/tests' \
+        --exclude '/lib/core/.phpstan-cache' \
+        --exclude '/lib/core/.phpunit.cache' \
+        --exclude '/lib/core/phpstan.neon' \
+        --exclude '/lib/core/phpstan.neon.dist' \
+        --exclude '/lib/core/phpunit.xml.dist' \
+        --exclude '/lib/core/composer.lock' \
+        --exclude '/lib/core/.gitattributes' \
         --exclude 'jest.setup.js' \
         --exclude '.zap-rules.tsv' \
         --exclude 'addons/pro/assets/vendor/facebook-nodejs-business-sdk' \
@@ -1047,5 +1116,9 @@ echo ""
 # (no dev packages, classmap-only autoloading) for any subsequent
 # deployment or commit step.
 echo "Rebuilding production autoloader..."
-composer install --no-dev --classmap-authoritative --no-interaction --quiet
+if [ "$SKIP_COMPOSER" = true ]; then
+    echo "ℹ️  Skipped (--skip-composer flag set)."
+else
+    composer install --no-dev --classmap-authoritative --no-interaction --quiet
+fi
 echo "✅ Production autoloader rebuilt"

@@ -5,7 +5,7 @@
 	Description: AI Assistant framework with 18 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Azure, TypeSafe Jev, WebLLM & embedded engines). Includes 300+ tools for content management, media generation, research, and site operations out of the box. Optional Pro addon (PHP 8.1+) adds advanced AI toolkits on top. Framework-agnostic OOS core extracted for cross-platform use (Laravel, Craft CMS adapters).
 	 * Version: 1.2.17
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.10
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
@@ -44,14 +44,24 @@ if ( ! defined( 'WP_MCP_AI_FILE' ) ) {
 	define( 'WP_MCP_AI_FILE', __FILE__ );
 }
 
+if ( ! defined( 'WP_MCP_AI_MIN_PHP' ) ) {
+	/**
+	 * Minimum supported PHP version.
+	 *
+	 * Single source of truth for the floor: the plugin header, the guard
+	 * below, and the admin notice all read this value.
+	 */
+	define( 'WP_MCP_AI_MIN_PHP', '8.1.0' );
+}
+
 /**
  * Check PHP version compatibility before loading any classes.
  *
- * This plugin requires PHP 7.4 or later. On older PHP versions, class files
+ * This plugin requires PHP 8.1 or later. On older PHP versions, class files
  * will fail to parse with syntax errors. We check the version early to provide
  * a clear error message instead of cryptic parse errors.
  */
-if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+if ( version_compare( PHP_VERSION, WP_MCP_AI_MIN_PHP, '<' ) ) {
 	/**
 	 * Display admin notice for PHP version incompatibility.
 	 */
@@ -59,7 +69,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 		$message = sprintf(
 			'<strong>Open Operator System</strong> requires PHP version %2$s or higher. You are running PHP version %1$s. Please contact your hosting provider to upgrade PHP.',
 			PHP_VERSION,
-			'7.4.0'
+			WP_MCP_AI_MIN_PHP
 		);
 		printf(
 			'<div class="notice notice-error"><p>%s</p></div>',

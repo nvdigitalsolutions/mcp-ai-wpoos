@@ -23,15 +23,15 @@ interface ChatServiceInterface {
 	 * message processing, tool execution loops, and transcript recording.
 	 *
 	 * @param int   $assistant_id       Assistant identifier.
-	 * @param array $messages           Array of chat messages.
-	 * @param array $options            Chat options (model, temperature, etc.).
-	 * @param array $assistant_config   Assistant configuration.
-	 * @param array $transcript_context Transcript recording context.
+	 * @param array<int, array<string, mixed>> $messages           Array of chat messages.
+	 * @param array<string, mixed> $options            Chat options (model, temperature, etc.).
+	 * @param array<string, mixed> $assistant_config   Assistant configuration.
+	 * @param array<string, mixed> $transcript_context Transcript recording context.
 	 * @param int   $user_id            Authenticated user ID.
 	 * @param int   $max_iterations     Maximum agentic loop iterations (default 5).
 	 * @param mixed $request            Platform-specific request object (nullable).
 	 *
-	 * @return array|mixed  Success array or platform error.
+	 * @return mixed  Success array or platform error.
 	 */
 	public function processChatRequest(
 		int $assistant_id,
@@ -49,7 +49,7 @@ interface ChatServiceInterface {
 	 *
 	 * @param int   $assistant_id Assistant ID.
 	 * @param int   $user_id      User ID.
-	 * @param array $options      Request options.
+	 * @param array<string, mixed> $options      Request options.
 	 *
 	 * @return bool  True if rate limits are OK, false if exceeded.
 	 */
@@ -64,8 +64,8 @@ interface ChatServiceInterface {
 	 *
 	 * @param int   $assistant_id Assistant ID.
 	 * @param int   $user_id      User ID.
-	 * @param array $messages     Chat messages.
-	 * @param array $options      Request options.
+	 * @param array<int, array<string, mixed>> $messages     Chat messages.
+	 * @param array<string, mixed> $options      Request options.
 	 *
 	 * @return bool  True if within budget, false if exceeded.
 	 */

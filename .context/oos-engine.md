@@ -43,7 +43,7 @@ The bridge (`includes/bootstrap/oos-bridge.php`) is the composition root: PHP 8.
 ## Safety invariants (do not weaken)
 
 - Shadow and canary are **opt-in and default off**; shadow runs never emit output and always serve the legacy result.
-- The bridge must remain **PHP 7.4-parseable** (runtime guarded by its own PHP 8.1 gate) — no PHP 8 syntax in `includes/oos/` or `oos-bridge.php`.
+- The bridge targets **PHP 8.1+**, matching the plugin floor — PHP 8 syntax is permitted in `includes/oos/` and `oos-bridge.php`.
 - The shadow store is capped at 100 entries, newest first, non-autoloaded.
 - OOS-path tools must pass the same security gate (`ToolGuardInterface`) as the legacy path — capability + destructive-op parity (Phase 2).
 

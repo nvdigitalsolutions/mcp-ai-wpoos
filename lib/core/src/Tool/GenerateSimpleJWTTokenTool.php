@@ -11,7 +11,7 @@ class GenerateSimpleJWTTokenTool extends AbstractTool {
 		$payload = $this->arrayParam($arguments,'payload'); $secret = $this->stringParam($arguments,'secret');
 		if (array()===$payload||''===$secret) return $this->errors->validationFailed('payload and secret required.',array('payload'=>array('Required.'),'secret'=>array('Required.')));
 		$payload['iat'] = \time(); $payload['exp'] = \time() + \max(60,\min(86400,$this->intParam($arguments,'expires_in',3600)));
-		$header = \base64_encode(\json_encode(array('alg'=>'HS256','typ'=>'JWT'))); $payloadB64 = \base64_encode(\json_encode($payload));
+		$header = \base64_encode($this->jsonBody(array('alg'=>'HS256','typ'=>'JWT'))); $payloadB64 = \base64_encode($this->jsonBody($payload));
 		$sig = \base64_encode(\hash_hmac('sha256',"{$header}.{$payloadB64}",$secret,true));
 		return $this->success( 'JWT token generated.', array('token'=>"{$header}.{$payloadB64}.{$sig}",'expires_at'=>\gmdate('c',$payload['exp'])) );
 	}
