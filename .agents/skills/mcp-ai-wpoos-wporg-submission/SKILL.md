@@ -679,7 +679,8 @@ vendor/bin/phpunit -c phpunit.xml.dist --no-coverage \
 - `test-fnmatch-polyfill.php` is a **standalone script**, not PHPUnit —
   passing it errors with "Class test-fnmatch-polyfill cannot be found".
 - **Run them through the Docker runner, not the host vendor** — see
-  `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` → "Cross-worktree runs".
+  `.agents/skills/mcp-ai-wpoos-test-suite/reference/test-environments.md`
+  → "Cross-worktree runs".
   The host `vendor/` is frequently a pruned copy whose classmap has zero
   PHPUnit entries (`Class "PHPUnit\\TextUI\\Application" not found` on BOTH
   host and container); the Linux vendor volume is the reliable path. The
