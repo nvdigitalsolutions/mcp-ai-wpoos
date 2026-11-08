@@ -82,6 +82,13 @@ addons/pro/assets/vendor/** -text
 #
 # Mirrors the dev-only exclusions in .distignore. Keep the two lists in sync
 # when adding new dev-only directories or files.
+#
+# WARNING: patterns match at EVERY depth unless anchored with a leading `/`.
+# A bare `src/` silently strips `lib/*/src`, `vendor/*/src` and `addons/*/src`;
+# a bare `lib/` stripped the extracted engine from every archive. Anchor
+# anything that is meant to be root-only. Note also that export-ignore cannot
+# negate a pruned directory: to keep one file inside an ignored tree, ignore
+# the children (`dir/**`) and un-ignore the file (`dir/keep.js -export-ignore`).
 # -----------------------------------------------------------------------------
 
 # Git / GitHub metadata
@@ -137,8 +144,13 @@ Gulpfile.js                 export-ignore
 composer.lock               export-ignore
 vendor-dev/                 export-ignore
 
-# Development scripts and patches
-bin/                        export-ignore
+# Development scripts and patches.
+# bin/vectorize-image.js is RUNTIME: the image tools spawn it via node for
+# SVG output, and bin/build-plugin-zip.sh re-includes it explicitly. It is
+# therefore un-ignored below (export-ignore cannot negate a pruned
+# directory, hence the `bin/**` file pattern rather than `bin/`).
+bin/**                      export-ignore
+bin/vectorize-image.js      -export-ignore
 patches/                    export-ignore
 patches.lock.json           export-ignore
 
@@ -172,8 +184,11 @@ docs/                       export-ignore
 /examples/                  export-ignore
 /assets/examples/           export-ignore
 
-# Source files (only built bundles ship)
-src/                        export-ignore
+# Root SPA build sources only (only built bundles ship).
+# ANCHORED: an unanchored `src/` would strip every nested source tree too -
+# lib/core/src, vendor/guzzlehttp/*/src, addons/*/src - breaking both the
+# extracted engine and the Composer autoloader in `git archive` output.
+/src/                       export-ignore
 
 # AI-generated archive material (dev-only)
 archive/wordpress-org-submission/  export-ignore
@@ -184,5 +199,21 @@ archive/production-status/         export-ignore
 mcp-diagnostic-debug.php    export-ignore
 test-storage-service.html   export-ignore
 
-# Cross-platform extraction library (dev-only; not bundled in plugin)
-lib/                        export-ignore
+# Extracted OOS engine (lib/).
+#
+# lib/core/src and lib/wordpress-adapter/src are RUNTIME code: the combined
+# build ships them and the plugin loads them when the engine is enabled.
+# They must survive `git archive`, otherwise a GitHub "Download ZIP" would
+# install with an inert engine while bin/build-plugin-zip.sh ships it.
+#
+# Only analyser/test/dev material is excluded here, mirroring the targeted
+# --exclude list in the combined build of bin/build-plugin-zip.sh and
+# lib/core/.gitattributes. Base and WordPress.org builds still drop the
+# whole tree via .distignore (which lists `lib`).
+lib/core/tests/             export-ignore
+lib/core/phpstan.neon       export-ignore
+lib/core/phpstan.neon.dist  export-ignore
+lib/core/phpunit.xml.dist   export-ignore
+lib/core/.gitattributes     export-ignore
+lib/laravel-adapter/        export-ignore
+lib/craft-adapter/          export-ignore

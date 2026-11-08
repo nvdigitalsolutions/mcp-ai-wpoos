@@ -707,6 +707,7 @@ Recorded so a later session does not re-litigate them.
 | Decision | State | Rationale |
 |---|---|---|
 | `lib/` (the `nvoos/core` + `nvoos/wordpress-adapter` packages) ships in the **combined** build | **Implemented** - `bin/build-plugin-zip.sh` scoped its exclusion to the `BUILD_BASE` block only | The engine requires `lib/core/src` + `lib/wordpress-adapter/src` at runtime; without them the bridge in `includes/bootstrap/oos-bridge.php` silently degrades. Two documents already described this as the intent (`docs/features/oos-engine.md` "full/complete build only", and the cross-platform gap analysis "excluded from WordPress.org base builds"); the script simply did not implement it. Shipping it makes those documents true. |
+| `git archive` output (GitHub "Download ZIP") matches the combined build | **Implemented** - `.gitattributes` ships `lib/*/src`, `bin/vectorize-image.js` and every nested `src/` tree | `export-ignore` patterns match at every depth. The blanket `lib/` rule pruned the engine, and an unanchored `src/` rule additionally pruned `vendor/*/src` (Guzzle, PSR, Composer) plus `addons/*/src` - 5,944 tracked files - so an archive install could not autoload anything. |
 | `enable_oos_engine` stays **default-off** | **Decided** - revisit after the per-toolkit tool migration | ~166 of 194 core tools still extend `AbstractTool` rather than `AbstractResultTool`, and the 314 base + 1,023 Pro tool classes are untyped, so the legacy execution path is still the better-tested one. Present-but-inactive is the safest combination: the engine can be evaluated per-request via `?engine=oos` without changing default behaviour. |
 
 Build exclusions that go with the first row (all root-anchored so they cannot
@@ -717,6 +718,37 @@ match inside `addons/`):
 - `/lib/core/tests`, `phpstan.neon`, `phpstan.neon.dist`, `phpunit.xml.dist`, `.phpstan-cache`, `.phpunit.cache`, `composer.lock`, `.gitattributes` - development artefacts.
 
 Verified on the rebuilt artifacts: combined = 13,716 entries with 396 `lib/core` and 73 `lib/wordpress-adapter` entries, zero dev artefacts and zero dev dependencies; base = 3,173 entries with **zero** `lib/` entries.
+
+#### `git archive` parity (GitHub "Download ZIP")
+
+`export-ignore` is what `git archive` - and therefore GitHub's "Download ZIP" -
+honours, and its rule set is not the rsync rule set used by the build. Four
+corrections were required to make the archive equivalent to the combined build:
+
+- **`lib/` is no longer excluded wholesale.** The targeted entries above are
+  mirrored per-path in `.gitattributes`, so `lib/core/src` and
+  `lib/wordpress-adapter/src` survive while `lib/core/tests`, the PHPStan/PHPUnit
+  configs and the Laravel/Craft adapters do not.
+- **`src/` became `/src/`.** Unanchored, it matched every `src` directory at any
+  depth - `lib/*/src`, `vendor/guzzle*/src`, `vendor/psr/*/src`,
+  `vendor/composer/*/src`, `addons/*/src` - and removed 5,944 tracked files.
+  `bin/build-plugin-zip.sh` already used the anchored form.
+- **`bin/` became `bin/**` + `bin/vectorize-image.js -export-ignore`.** The image
+  tools spawn that script via `node` for SVG output and the build re-includes it
+  explicitly, so the archive must keep it. `export-ignore` cannot negate a pruned
+  directory, hence the file-level pattern.
+- **`bin/strip-dev-files.sh` keeps `bin/vectorize-image.js`.** The script removed
+  `bin/` wholesale, so a post-clone production tree lost the same runtime asset
+  even though the archive had it. It now clears `bin/` entry by entry.
+
+`.distignore` (consumed by `bin/prepare-wordpress-org-deploy.sh` via
+`rsync --exclude-from`) carried the same unanchored `src/`; it stripped 3,706
+`vendor/**/src` files from the WordPress.org deploy output and is now `/src/`.
+
+Verified: every tracked file dropped by `git archive` is also absent from
+`build/mcp-ai-wpoos-1.2.17.zip` (0 divergence), and extracting the archive yields
+17,245 files in which `vendor/autoload.php`, `Nvoos\Core\*` (via the bridge's
+PSR-4 registration) and `Nvoos\WordPress\Tool\*` all resolve.
 
 #### Behavioural delta for sites that already opted in
 
