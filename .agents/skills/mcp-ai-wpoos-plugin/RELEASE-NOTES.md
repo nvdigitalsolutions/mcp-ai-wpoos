@@ -1,9 +1,24 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.17)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.18)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
 
 ---
+
+## PHP 8.1 Baseline, Typed Engine, CRM Admissibility (v1.2.18)
+
+- **PHP floor 7.4 → 8.1** (#7529) — `Requires PHP: 8.1` in the plugin header + `readme.txt`, the new `WP_MCP_AI_MIN_PHP` runtime guard, `composer.json` at `>=8.1`, Site Health minimum/recommended reporting, and every doc/docblock/agent-context reference reswept (`composer run lint:compat` now targets 8.1–8.4). A 7.4 site can no longer activate the plugin.
+- **`lib/core` typed to PHPStan level 8** (#7529) — `ToolArgs`/`ToolContext`/envelope aliases; `Option` and `ToolResult` as total containers; `AbstractResultTool` + `ToolResultInterface` as the typed execution seam; `Support\Json`; `AbstractTool::objectParam()`/`stringListParam()`/`jsonBody()`; 399 level-7 findings → 0 at every level up to 8 (8 new unit tests).
+- **Tool-schema contract CI gate** (#7529) — `audit_contract()`/`audit_registry_contract()` plus `test_registry_schema_contract_is_clean` audit all **446 tools**; the finding labels register in Site Health.
+- **Packaging parity** (#7529) — the combined `mcp-ai-wpoos-*.zip` now ships `lib/core` + `lib/wordpress-adapter` (the `/lib` exclusion is scoped to the base and WordPress.org builds; the engine stays opt-in via `enable_oos_engine`), and GitHub's "Download ZIP" drops exactly the same tracked files (0 divergence) after anchoring the over-broad `export-ignore` rules; `bin/vectorize-image.js` survives the stripped build.
+- **Production `vendor/` resynced** (#7529) — guzzle 7.15.2 (URI-host/Host-header + cookie-domain fixes; GHSA-v5mv-p594-2x33, GHSA-f7vp-7xgx-4w4r) plus regenerated autoload metadata from a `--no-dev` install.
+- **Proposal 129 — +10 Pro tools** (#7513) — `verify_lead_email`, `check_sending_domain`, `get_sending_readiness`, `manage_sending_warmup`, `collect_prospect_signals`, `explain_prospect_fit`, `query_signal_cohort`, `export_outreach_csv`, `preview_pre_send_gate`, `review_held_send`. The pre-send gate runs on **every** outbound path (email/SMS/WhatsApp/OA dispatch); new signed `GET|POST /mcp-ai/v1/crm/unsubscribe` (RFC 8058); opt-in send windows; a self-healing 13-signal store; an agent-output guard; a `held` mail state; a z ≥ 1.96 A/B promotion guard.
+- **Tool counts** — ~358 base + ~1,388 Pro (~1,745 total; +10 Pro). Skills **81 → 82** (`mcp-ai-wpoos-qb-desktop`). Addons 32 (MCP Gateway 0.3.1 → 0.3.2; Claude Gateway Plugin 0.1.0 → 0.1.1). Model catalog v2026.11.03 unchanged.
+- **Model-assisted Auto-Select** (#7490) — the assistant editor's 🤖 Auto-Select asks the configured model to pick tools (admin-ajax, nonce + `edit_post` gated, capped at 40) with deterministic keyword matching as the fallback; six new filters.
+- **Knowledge-base facts gate** (#7487) — `tests/test-knowledge-base-facts-sync.php` asserts the version stamp, product name, 18-provider list and tool-count line across the canonical KB files and their Content Graph mirrors.
+- **Proposal 113 — QuickBooks Desktop MCP** (sub-project, #7458/#7459) — `examples/qb-desktop-mcp`, with a safe write tier behind `QBBRIDGE_WRITE_MODE` + a two-step confirm/revert flow.
+- **Proposal 114 — Astro Forge design rebuild** (app-side, #7463–#7528) — vocabulary learning, vision-verified rebuild comparison, section/band facts, a11y + token-drift + generated-token gates, form bridge + redirects; `plugins/nvoos-forge-bridge` **0.1.0 → 0.3.0**; new shared `packages/nvoos-design-import` 0.1.0.
+- **Cognition memory layer** (sub-project, #7501) — a Rust `memory` module with hybrid retrieval + safety gates.
 
 ---
 

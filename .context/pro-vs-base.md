@@ -1,7 +1,7 @@
 # NV oOS Pro vs Base Version Guide
 
 > **GSD Context File** — Load this when making decisions about Base vs Pro feature placement.
-> Last reviewed: November 6, 2026 (v1.2.17 — counts refreshed; live registry authoritative).
+> Last reviewed: November 8, 2026 (v1.2.18 — +10 Pro tools from Proposal 129; PHP floor raised to 8.1; live registry authoritative).
 
 ---
 
@@ -12,7 +12,7 @@ NV oOS has two distribution modes:
 | Mode | Constant | Tools | Description |
 |------|---------|-------|-------------|
 | **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~358 core tools | Open-source, WordPress.org compatible |
-| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,735 tools (~358 base + ~1,378 Pro; live registry authoritative) | Premium addon with third-party integrations |
+| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,745 tools (~358 base + ~1,388 Pro; live registry authoritative) | Premium addon with third-party integrations |
 
 ---
 

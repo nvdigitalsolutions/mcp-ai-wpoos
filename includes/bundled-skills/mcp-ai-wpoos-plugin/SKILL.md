@@ -11,7 +11,7 @@ metadata:
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
-> **Spec current as of v1.2.17** (last verified 2026-11-04). The console
+> **Spec current as of v1.2.18** (last verified 2026-11-08). The console
 > install at console.nvoos.cloud runs v1.2.15 with DeepSeek as the default
 > provider. Version-tagged facts are CI-enforced by
 > `tests/test-knowledge-base-facts-sync.php` for the shipped knowledge base.
