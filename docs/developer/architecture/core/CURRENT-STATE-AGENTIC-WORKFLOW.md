@@ -1804,7 +1804,7 @@ Iteration 3:
 ## Related Documentation
 
 - **[agentic-workflow-architecture.md](agentic-workflow-architecture.md)** - Detailed architecture
-- **[tool-reference.md](../../reference/tools/tool-reference.md)** - All tools documented (~1,735; live registry authoritative)
+- **[tool-reference.md](../../reference/tools/tool-reference.md)** - All tools documented (~1,745; live registry authoritative)
 - **[rest-api.md](../../reference/api/rest-api.md)** - REST API reference
 - **[ORCHESTRATION-LAYER-ARCHITECTURE.md](../orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)** - Orchestration details
 - **[BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md)** - Usage best practices

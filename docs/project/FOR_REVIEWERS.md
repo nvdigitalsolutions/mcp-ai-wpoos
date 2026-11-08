@@ -270,7 +270,7 @@ The project currently employs:
 - **GitHub Copilot** — inline suggestions and code completion
 - **OpenAI Codex** — prototyping and exploration
 - **BMAD Agents** — 6 internal workflow agents (`.bmad/agents/*.yaml`) running inside NV oOS assistants
-- **Zed Agent Skills** — 81 coding-time skills (`.agents/skills/`: 20 wp-* WordPress plugin development patterns + 36 design-* skills + 25 mcp-ai-* operational guides incl. mcp-ai-wpoos-plugin)
+- **Zed Agent Skills** — 82 coding-time skills (`.agents/skills/`: 20 wp-* WordPress plugin development patterns + 36 design-* skills + 26 mcp-ai-* operational guides incl. mcp-ai-wpoos-plugin)
 
 See [AI-Assisted Development](../developer/AI_ASSISTED_DEVELOPMENT.md) for full transparency about the tools, workflow, and what this means for code review.
 

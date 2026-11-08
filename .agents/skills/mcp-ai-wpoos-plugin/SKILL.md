@@ -52,7 +52,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~358 base + ~1,378 Pro (~1,735 total; live registry authoritative)
+     │  Tool Registry     │  ~358 base + ~1,388 Pro (~1,745 total; live registry authoritative)
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
