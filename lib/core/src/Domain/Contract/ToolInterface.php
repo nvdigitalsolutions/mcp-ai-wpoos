@@ -9,6 +9,11 @@
  *  - Adds optional sub-interfaces for capability flags, rules, data contracts,
  *    flow stages, and LLM sanitization.
  *
+ * Type aliases (`ToolArgs`, `ToolContext`, `ToolParametersSchema`) are
+ * declared once in lib/core/phpstan.neon so every contract can name its
+ * untyped arrays without repeating the shape. `...<array-key, mixed>` means
+ * "known keys documented, extra keys tolerated" while tools migrate.
+ *
  * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
@@ -49,6 +54,8 @@ interface ToolInterface {
 	 *  - properties: { param_name: { type, description, enum, ... } }
 	 *  - required: [ ... ]
 	 *  - additionalProperties: false
+	 *
+	 * @return ToolParametersSchema
 	 */
 	public function getParametersSchema(): array;
 
@@ -63,12 +70,14 @@ interface ToolInterface {
 	/**
 	 * Execute the tool with supplied arguments.
 	 *
-	 * @param array $arguments  Parsed and sanitized arguments matching the schema.
-	 * @param array $context    Execution context: user_id, assistant_id, request,
-	 *                          assistant_config, guest_request, agentic_loop, etc.
+	 * @param ToolArgs    $arguments Parsed and sanitized arguments matching the schema.
+	 * @param ToolContext $context   Execution context: user_id, assistant_id, request,
+	 *                               assistant_config, guest_request, agentic_loop, etc.
 	 *
 	 * @return mixed  Success: array with success/message/data keys.
 	 *                Failure: error created via ErrorFactoryInterface.
+	 *
+	 * @see \Nvoos\Core\Domain\Contract\ToolResultInterface  For tools that return a typed result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ): mixed;
 }
@@ -99,13 +108,13 @@ interface ToolRulesInterface {
 
 	/**
 	 * @return array{
-	 *     model_requirements?: array,
-	 *     parameter_constraints?: array,
-	 *     rate_limits?: array,
-	 *     timeout_constraints?: array,
-	 *     response_constraints?: array,
-	 *     dependencies?: array,
-	 *     orchestration_hints?: array,
+	 *     model_requirements?: array<string, mixed>,
+	 *     parameter_constraints?: array<string, mixed>,
+	 *     rate_limits?: array<string, mixed>,
+	 *     timeout_constraints?: array<string, mixed>,
+	 *     response_constraints?: array<string, mixed>,
+	 *     dependencies?: array<string, mixed>,
+	 *     orchestration_hints?: array<string, mixed>,
 	 * }
 	 */
 	public function getToolRules(): array;

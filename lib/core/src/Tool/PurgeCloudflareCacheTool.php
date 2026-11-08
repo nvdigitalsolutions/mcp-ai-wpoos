@@ -115,7 +115,7 @@ class PurgeCloudflareCacheTool extends AbstractTool {
 					'Authorization' => "Bearer {$apiToken}",
 					'Content-Type'  => 'application/json',
 				),
-				\json_encode( $payload ),
+				$this->jsonBody( $payload ),
 			);
 
 			$data = \json_decode( $response->body, true );
@@ -149,6 +149,10 @@ class PurgeCloudflareCacheTool extends AbstractTool {
 		}
 	}
 
+	/**
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 * @return array<string, mixed>|null
+	 */
 	private function buildPayload( array $arguments ): ?array {
 		$payload = array();
 

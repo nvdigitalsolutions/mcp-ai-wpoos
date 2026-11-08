@@ -97,7 +97,7 @@ class GenerateSlugTool extends AbstractTool {
 		$text = mb_strtolower( $text, 'UTF-8' );
 
 		// Replace non-alphanumeric characters with separator.
-		$text = preg_replace( '/[^a-z0-9]+/', $separator, $text );
+		$text = preg_replace( '/[^a-z0-9]+/', $separator, $text ) ?? $text;
 
 		// Trim separators from edges.
 		$text = trim( $text, $separator );

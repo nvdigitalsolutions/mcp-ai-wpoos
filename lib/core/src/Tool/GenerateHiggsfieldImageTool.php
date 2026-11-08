@@ -76,7 +76,7 @@ class GenerateHiggsfieldImageTool extends AbstractTool {
 		);
 
 		try {
-			$r = $this->h->send( 'POST', 'https://api.higgsfield.ai' . $endpoint, $headers, \json_encode( $body ) );
+			$r = $this->h->send( 'POST', 'https://api.higgsfield.ai' . $endpoint, $headers, $this->jsonBody( $body ) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) {
 				$err = $d['detail'] ?? 'Higgsfield API error.';

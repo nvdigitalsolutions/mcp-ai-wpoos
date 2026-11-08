@@ -22,7 +22,7 @@ final readonly class AuthContext implements \JsonSerializable {
 	 * @param string   $tokenType           'bearer', 'nonce', 'mesh', 'guest'.
 	 * @param int|null $scopedAssistantId   Token is restricted to a single assistant.
 	 * @param string[] $capabilities         Resolved capability strings.
-	 * @param array    $metadata             Additional auth metadata (token_context, etc.).
+	 * @param array<string, mixed>    $metadata             Additional auth metadata (token_context, etc.).
 	 */
 	public function __construct(
 		public int $userId = 0,
@@ -54,6 +54,9 @@ final readonly class AuthContext implements \JsonSerializable {
 		return null !== $this->scopedAssistantId;
 	}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	public function jsonSerialize(): array {
 		return array(
 			'user_id'             => $this->userId,

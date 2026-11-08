@@ -1,0 +1,51 @@
+# Local PHPStan configuration for nvoos/core.
+#
+# This file exists (rather than relying on phpstan.neon.dist) because the
+# type aliases below are referenced from src/ docblocks: PHPStan resolves
+# aliases from the configuration actually in use, so they must live here.
+#
+# Level and paths are inherited from phpstan.neon.dist; override with
+# `vendor/bin/phpstan analyse --level N` when measuring a level bump.
+#
+# NOTE: NEON does not support multi-line single-quoted strings, so each
+# alias must stay on one line.
+
+includes:
+    - phpstan.neon.dist
+
+parameters:
+    typeAliases:
+        # Parsed tool arguments. Extra keys are tolerated while toolkits migrate.
+        ToolArgs: 'array<string, mixed>'
+
+        # Execution context passed through the agentic loop. Keys are optional
+        # because adapters attach extras (auth_provider, request, …).
+        ToolContext: 'array{user_id?: int, assistant_id?: int, request?: mixed, assistant_config?: array<string, mixed>, guest_request?: bool, agentic_loop?: mixed, auth_provider?: object|null, ...<array-key, mixed>}'
+
+        # OpenAI-style function parameters schema. `properties` may be a
+        # stdClass for an empty map — see WP_MCP_AI_Tool_Schema_Auditor.
+        ToolParametersSchema: 'array{type?: string, properties?: object|array<string, mixed>, required?: array<int, string>, additionalProperties?: bool, description?: string, ...<array-key, mixed>}'
+
+        # Canonical tool envelopes.
+        SuccessEnvelope: 'array{success: true, message: string, data?: mixed}'
+        ErrorEnvelope: 'array{success: false, code: string, message: string, data?: array<string, mixed>}'
+
+        # Provider chat/completion payloads (already parsed from JSON).
+        ProviderResponse: 'array<string, mixed>'
+
+    ignoreErrors:
+        # Dependencies kept in public constructors while the stubbed
+        # implementations below are completed. These classes are part of the
+        # published `nvoos/core` API, so dropping a constructor parameter for
+        # a lint pass would be a needless BC break. Scoped to one rule and six
+        # files — no other rule is relaxed for them.
+        # Tracked in Proposal 132 §14.4.
+        -
+            identifier: constructor.unusedParameter
+            paths:
+                - src/Infrastructure/Provider/GeminiLiveProvider.php
+                - src/Infrastructure/Provider/OpenAIRealtimeProvider.php
+                - src/Tool/ErlangCStaffingAdvisorTool.php
+                - src/Tool/QueryRemoteSiteTool.php
+                - src/Tool/RunOpenAIExternalActionTool.php
+                - src/Tool/SaveProfessionTool.php

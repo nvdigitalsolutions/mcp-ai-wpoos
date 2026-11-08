@@ -30,7 +30,7 @@ interface CostTrackingServiceInterface
      * @param string $startDate Start date (YYYY-MM-DD).
      * @param string $endDate   End date (YYYY-MM-DD).
      *
-     * @return array{total_cost: float, total_tokens: int, by_provider: array, by_model: array, by_tool: array, by_date: array}
+     * @return array{total_cost: float, total_tokens: int, by_provider: array<string, float>, by_model: array<string, float>, by_tool: array<string, float>, by_date: array<string, float>}
      */
     public function getUserCostBreakdown(int $userId, string $startDate, string $endDate): array;
 
@@ -40,7 +40,7 @@ interface CostTrackingServiceInterface
      * @param string $startDate Start date (YYYY-MM-DD).
      * @param string $endDate   End date (YYYY-MM-DD).
      *
-     * @return array{total_cost: float, total_tokens: int, by_provider: array, by_model: array, by_tool: array, by_date: array, by_user: array}
+     * @return array{total_cost: float, total_tokens: int, by_provider: array<string, float>, by_model: array<string, float>, by_tool: array<string, float>, by_date: array<string, float>, by_user: array<string, float>}
      */
     public function getSiteCostBreakdown(string $startDate, string $endDate): array;
 }

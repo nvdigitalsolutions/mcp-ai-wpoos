@@ -37,6 +37,9 @@ final readonly class UserInfo implements \JsonSerializable {
 		return in_array( $role, $this->roles, true );
 	}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	public function jsonSerialize(): array {
 		return array(
 			'id'           => $this->id,

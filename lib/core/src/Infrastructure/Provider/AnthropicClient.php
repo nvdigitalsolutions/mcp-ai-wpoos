@@ -37,6 +37,10 @@ class AnthropicClient extends AbstractProviderClient {
 		return self::DEFAULT_BASE_URL;
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 */
 	public function chat( array $messages, array $options = array() ): mixed {
 		$apiKey = $this->getApiKey();
 
@@ -114,6 +118,10 @@ class AnthropicClient extends AbstractProviderClient {
 		}
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 */
 	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
 		$apiKey = $this->getApiKey();
 
@@ -183,7 +191,7 @@ class AnthropicClient extends AbstractProviderClient {
 			$assembled = '';
 			$toolUse   = array();
 
-			foreach ( \preg_split( "/\r?\n/", $respBody ) as $line ) {
+			foreach ( ( \preg_split( "/\r?\n/", $respBody ) ?: array() ) as $line ) {
 				$line = \trim( $line );
 				if ( '' === $line || 0 !== \strpos( $line, 'data: ' ) ) {
 					continue;
@@ -246,6 +254,10 @@ class AnthropicClient extends AbstractProviderClient {
 
 	// ─── Message conversion ──────────────────────────────────────────
 
+	/**
+	 * @param array<int, array<string, mixed>> $messages
+	 * @return array<int, array<string, mixed>>
+	 */
 	private function convertMessages( array $messages ): array {
 		$converted = array();
 
@@ -302,6 +314,10 @@ class AnthropicClient extends AbstractProviderClient {
 		return $converted;
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $tools
+	 * @return array<int, array<string, mixed>>
+	 */
 	private function convertTools( array $tools ): array {
 		$converted = array();
 
@@ -320,6 +336,8 @@ class AnthropicClient extends AbstractProviderClient {
 
 	/**
 	 * Normalize Anthropic response to OpenAI-compatible shape.
+	 * @param array<string, mixed> $data
+	 * @return array<string, mixed>
 	 */
 	private function normalizeResponse( array $data, string $model ): array {
 		$text      = '';

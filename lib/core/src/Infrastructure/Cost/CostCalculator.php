@@ -121,7 +121,7 @@ class CostCalculator {
 	/**
 	 * Calculate cost from a full response array that includes usage data.
 	 *
-	 * @param array  $response  Response with ['usage']['prompt_tokens'] etc.
+	 * @param array<string, mixed>  $response  Response with ['usage']['prompt_tokens'] etc.
 	 * @param string $provider
 	 * @param string $model
 	 *

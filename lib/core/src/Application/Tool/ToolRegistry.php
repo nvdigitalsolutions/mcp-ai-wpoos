@@ -22,12 +22,16 @@ use Nvoos\Core\Domain\Contract\ToolGuardInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\Decision\PreToolDecision;
 use Nvoos\Core\Domain\Decision\PostToolDecision;
+use Nvoos\Core\Domain\Error\AccessDeniedException;
+use Nvoos\Core\Domain\Error\DomainError;
+use Nvoos\Core\Domain\ValueObject\ToolResult;
 use Nvoos\Core\Domain\Event\BeforeToolExecution;
 use Nvoos\Core\Domain\Event\AfterToolExecution;
 use Nvoos\Core\Domain\Event\ToolsPreExecute;
 use Nvoos\Core\Domain\Event\ToolsExecute;
 use Nvoos\Core\Domain\Event\ToolsPostExecute;
 use Nvoos\Core\Domain\Event\ToolsRegistered;
+use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 
 class ToolRegistry implements ToolResolverInterface {
 
@@ -205,6 +209,8 @@ class ToolRegistry implements ToolResolverInterface {
 	 * → tool body → legacy after hook → tools/post_execute waterfall
 	 * (accept/replace/block).
 	 *
+	 * @param ToolArgs $arguments
+	 * @param ToolContext $context
 	 * @return mixed  Tool result or error.
 	 */
 	public function execute( string $slug, array $arguments = array(), array $context = array() ): mixed {
@@ -222,7 +228,12 @@ class ToolRegistry implements ToolResolverInterface {
 		$capability = $tool->getRequiredCapability();
 		if ( '' !== $capability ) {
 			$userId = $context['user_id'] ?? 0;
-			if ( $userId > 0 && ! ( $context['auth_provider'] ?? null )?->userCan( $userId, $capability ) ) {
+			$authProvider = $context['auth_provider'] ?? null;
+			$canExecute   = $authProvider instanceof AuthProviderInterface
+				? $authProvider->userCan( $userId, $capability )
+				: null;
+
+			if ( $userId > 0 && ! $canExecute ) {
 				return $this->errors->forbidden(
 					"You do not have permission to execute '{$slug}'.",
 				);
@@ -291,7 +302,18 @@ class ToolRegistry implements ToolResolverInterface {
 		}
 
 		// tools/execute around-dispatch — wrappers may wrap or replace the body.
-		$executeBody = static fn(): mixed => $tool->execute( $arguments, $context );
+		// AccessDeniedException is the typed authorization signal; convert it here
+		// so a tool can call authorize() without every caller re-checking.
+		$executeBody = function () use ( $tool, $arguments, $context ): mixed {
+			try {
+				return $tool->execute( $arguments, $context );
+			} catch ( AccessDeniedException $e ) {
+				return $this->errors->forbidden(
+					$e->getMessage(),
+					array( 'capability' => $e->capability ),
+				);
+			}
+		};
 
 		if ( $this->events instanceof WaterfallEventDispatcherInterface ) {
 			$result = $this->events->waterfall(
@@ -363,6 +385,52 @@ class ToolRegistry implements ToolResolverInterface {
 	}
 
 	/**
+	 * Execute a tool and return a typed result.
+	 *
+	 * Runs the exact same pipeline as execute() — observers, pre-execute
+	 * waterfall, monotonic guards, around-dispatch, post-execute waterfall —
+	 * then narrows the outcome into a ToolResult. This is the only place the
+	 * platform error type is converted into the framework-neutral
+	 * DomainError, so callers never need is_wp_error()/isError() again.
+	 *
+	 * @param string      $slug      Tool slug.
+	 * @param ToolArgs    $arguments Parsed tool arguments.
+	 * @param ToolContext $context   Execution context.
+	 * @return ToolResult<mixed>
+	 */
+	public function executeResult( string $slug, array $arguments = array(), array $context = array() ): ToolResult {
+		return $this->toResult( $this->execute( $slug, $arguments, $context ) );
+	}
+
+	/**
+	 * Narrow a raw tool outcome into a ToolResult.
+	 *
+	 * Accepts the three shapes that can reach a caller: an already-typed
+	 * ToolResult (from a tool that returned one directly), a platform error
+	 * object, or the canonical envelope array.
+	 *
+	 * @param mixed $result Raw tool outcome.
+	 * @return ToolResult<mixed>
+	 */
+	public function toResult( mixed $result ): ToolResult {
+		if ( $result instanceof ToolResult ) {
+			return $result;
+		}
+
+		if ( $this->errors->isError( $result ) ) {
+			return ToolResult::failure( DomainError::fromArray( $this->errors->normalize( $result ) ) );
+		}
+
+		if ( is_array( $result ) ) {
+			$message = isset( $result['message'] ) && is_string( $result['message'] ) ? $result['message'] : '';
+
+			return ToolResult::success( $message, $result['data'] ?? null );
+		}
+
+		return ToolResult::success( '', $result );
+	}
+
+	/**
 	 * JSON-encode a value without ever failing hard.
 	 */
 	private static function jsonEncodeSafe( mixed $value ): string {
@@ -374,7 +442,7 @@ class ToolRegistry implements ToolResolverInterface {
 	/**
 	 * Build OpenAI-compatible tool definitions for all enabled tools.
 	 *
-	 * @return array  Array of { type: 'function', function: { name, description, parameters } }
+	 * @return array<int, array<string, mixed>>  Array of { type: 'function', function: { name, description, parameters } }
 	 */
 	public function buildToolDefinitions(): array {
 		$definitions = array();

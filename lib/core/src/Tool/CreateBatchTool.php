@@ -28,7 +28,7 @@ class CreateBatchTool extends AbstractTool {
 		if ( \is_array( $meta ) && array() !== $meta ) $body['metadata'] = \array_slice( $meta, 0, 16 );
 
 		try {
-			$r = $this->h->send( 'POST', 'https://api.openai.com/v1/batches', array('Authorization'=>"Bearer {$key}",'Content-Type'=>'application/json'), \json_encode($body) );
+			$r = $this->h->send( 'POST', 'https://api.openai.com/v1/batches', array('Authorization'=>"Bearer {$key}",'Content-Type'=>'application/json'), $this->jsonBody($body) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'Batch API error.'; return $this->errors->create( 'batch_error', $err ); }
 			return $this->success( "Batch {$d['id']} created (Status: {$d['status']}).", array( 'batch_id'=>$d['id']??'', 'status'=>$d['status']??'', 'endpoint'=>$d['endpoint']??'', 'created_at'=>$d['created_at']??null ) );

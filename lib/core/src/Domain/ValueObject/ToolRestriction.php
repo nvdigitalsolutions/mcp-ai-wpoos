@@ -30,10 +30,16 @@ final class ToolRestriction {
 		private readonly array $deny = array(),
 	) {}
 
+	/**
+	 * @param array<int, string> $slugs Slugs that remain visible.
+	 */
 	public static function allowList( array $slugs ): self {
 		return new self( allow: array_values( $slugs ) );
 	}
 
+	/**
+	 * @param array<int, string> $slugs Slugs that are removed.
+	 */
 	public static function denyList( array $slugs ): self {
 		return new self( allow: null, deny: array_values( $slugs ) );
 	}
@@ -53,10 +59,18 @@ final class ToolRestriction {
 		return true;
 	}
 
+	/**
+	 * Allow-list, or null when unrestricted.
+	 *
+	 * @return array<int, string>|null
+	 */
 	public function allow(): ?array {
 		return $this->allow;
 	}
 
+	/**
+	 * @return array<int, string>
+	 */
 	public function deny(): array {
 		return $this->deny;
 	}

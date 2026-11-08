@@ -207,6 +207,8 @@ class SearchContentValidatedTool extends AbstractTool {
 
 	/**
 	 * Build a tax_query-compatible array from taxonomy_filters parameter.
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 * @return array<int, array<string, mixed>>
 	 */
 	private function buildTaxQuery( array $arguments ): array {
 		$filters = $this->arrayParam( $arguments, 'taxonomy_filters' );
@@ -276,6 +278,8 @@ class SearchContentValidatedTool extends AbstractTool {
 
 	/**
 	 * Build a meta_query-compatible array from meta_filters parameter.
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 * @return array<int, array<string, mixed>>
 	 */
 	private function buildMetaQuery( array $arguments ): array {
 		$filters = $this->arrayParam( $arguments, 'meta_filters' );

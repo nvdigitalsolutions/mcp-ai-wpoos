@@ -9,6 +9,9 @@ abstract class AbstractClientSideTool extends AbstractTool {
 
 	public function getRequiredCapability(): string {
 		return 'read'; }
+	/**
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 */
 	protected function validateText( array $arguments ): string|null {
 		$text = $this->stringParam( $arguments, 'text' );
 		return '' === $text ? 'text' : null;

@@ -33,6 +33,10 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 		return true;
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 */
 	public function chat( array $messages, array $options = array() ): mixed {
 		$apiKey = $this->getApiKey();
 
@@ -116,6 +120,10 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 		}
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 */
 	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
 		$apiKey = $this->getApiKey();
 
@@ -173,7 +181,7 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 					$finish    = 'stop';
 					$toolCalls = array();
 
-					foreach ( \preg_split( "/\r?\n/", $streamBody ) as $line ) {
+					foreach ( ( \preg_split( "/\r?\n/", $streamBody ) ?: array() ) as $line ) {
 						$line = \trim( $line );
 
 						if ( '' === $line || 0 === \strpos( $line, ':' ) ) {
@@ -281,8 +289,8 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 	 * correction attempt.
 	 *
 	 * @param string   $url          Endpoint URL.
-	 * @param array    $headers      Request headers.
-	 * @param array    $payload      Request payload.
+	 * @param array<string, string>    $headers      Request headers.
+	 * @param array<string, mixed>    $payload      Request payload.
 	 * @param callable $parseSuccess Body parser for a 2xx response.
 	 * @return mixed  Parsed result or error.
 	 */
@@ -327,8 +335,8 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 	 *
 	 * @param int    $statusCode HTTP status.
 	 * @param string $respBody   Raw response body.
-	 * @param array  $payload    Request payload that was rejected.
-	 * @return array|null  Corrected payload, or null.
+	 * @param array<string, mixed>  $payload    Request payload that was rejected.
+	 * @return array<string, mixed>|null Corrected payload, or null.
 	 */
 	private function correctUnsupportedParameter( int $statusCode, string $respBody, array $payload ): ?array {
 		if ( 400 !== $statusCode ) {
@@ -387,9 +395,9 @@ abstract class OpenAiCompatibleClient extends AbstractProviderClient {
 	 * `max_completion_tokens` and reject `temperature`; the gpt-5 family
 	 * also requires `max_completion_tokens`.
 	 *
-	 * @param array  $payload Request payload.
+	 * @param array<string, mixed>  $payload Request payload.
 	 * @param string $model   Resolved model id.
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	protected function applyModelConstraints( array $payload, string $model ): array {
 		if ( $this->requiresMaxCompletionTokens( $model ) && isset( $payload['max_tokens'] ) ) {

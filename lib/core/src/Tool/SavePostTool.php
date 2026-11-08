@@ -155,7 +155,7 @@ class SavePostTool extends AbstractTool {
 		}
 
 		// Build meta input.
-		$meta = $this->arrayParam( $arguments, 'meta_input' );
+		$meta = $this->objectParam( $arguments, 'meta_input' );
 
 		try {
 			if ( $postId > 0 ) {
@@ -228,7 +228,7 @@ class SavePostTool extends AbstractTool {
 	 * Normalize mixed term values (IDs or names) to string array for
 	 * the taxonomy input map.
 	 *
-	 * @param array $terms Mixed integers and strings.
+	 * @param array<mixed, mixed> $terms Mixed integers and strings.
 	 * @return string[] Normalized string array.
 	 */
 	private function normalizeTerms( array $terms ): array {

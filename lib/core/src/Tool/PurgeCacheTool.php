@@ -139,6 +139,10 @@ class PurgeCacheTool extends AbstractTool {
 		return '' !== (string) $token && '' !== (string) $zoneId;
 	}
 
+	/**
+	 * @param array<mixed, mixed> $urls URLs to purge.
+	 * @return array<mixed, mixed>
+	 */
 	private function purgeVarnish( bool $everything, array $urls ): array {
 		$varnishHost = (string) $this->settings->get( 'varnish_host', '127.0.0.1' );
 		$results     = array();
@@ -190,6 +194,10 @@ class PurgeCacheTool extends AbstractTool {
 		return $results;
 	}
 
+	/**
+	 * @param array<mixed, mixed> $urls URLs to purge.
+	 * @return array<mixed, mixed>
+	 */
 	private function purgeCloudflare( bool $everything, array $urls ): array {
 		$apiToken = (string) $this->settings->get( 'cloudflare_api_token', '' );
 		$zoneId   = (string) $this->settings->get( 'cloudflare_zone_id', '' );
@@ -227,7 +235,7 @@ class PurgeCacheTool extends AbstractTool {
 					'Authorization' => "Bearer {$apiToken}",
 					'Content-Type'  => 'application/json',
 				),
-				\json_encode( $payload ),
+				$this->jsonBody( $payload ),
 			);
 
 			$data = \json_decode( $response->body, true );

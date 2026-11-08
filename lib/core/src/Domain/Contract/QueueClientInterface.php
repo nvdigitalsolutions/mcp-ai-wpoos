@@ -28,8 +28,8 @@ interface QueueClientInterface
 	 * Enqueue a job for asynchronous execution.
 	 *
 	 * @param string $handler  Fully-qualified class name or registered handler ID.
-	 * @param array  $payload  Serializable payload passed to the handler.
-	 * @param array  $options  Optional: group, priority, delay_seconds, unique, etc.
+	 * @param array<string, mixed>  $payload  Serializable payload passed to the handler.
+	 * @param array<string, mixed>  $options  Optional: group, priority, delay_seconds, unique, etc.
 	 *
 	 * @return string  Job ID for tracking.
 	 */
@@ -51,7 +51,7 @@ public function cancel( string $jobId ): bool;
 	 * Schedule a recurring job.
 	 *
 	 * @param string $handler         Handler class name or ID.
-	 * @param array  $payload         Serializable payload.
+	 * @param array<string, mixed>  $payload         Serializable payload.
 	 * @param string $cronExpression  Cron expression (e.g. a 5-minute interval)
      *                                or interval string ('hourly', 'daily', 'twicedaily').
      *
@@ -67,7 +67,7 @@ public function cancel( string $jobId ): bool;
     /**
      * List jobs filtered by status and optional constraints.
      *
-     * @param array $filters  Optional: status, handler, group, user_id, assistant_id.
+     * @param array<string, mixed> $filters  Optional: status, handler, group, user_id, assistant_id.
      * @param int   $limit    Maximum results (1–100).
      *
      * @return JobStatus[]

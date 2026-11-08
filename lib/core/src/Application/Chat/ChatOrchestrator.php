@@ -54,6 +54,7 @@ use Nvoos\Core\Domain\Contract\SemanticCompressorInterface;
 use Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface;
 use Nvoos\Core\Domain\Contract\ContextCompressionInterface;
 use Nvoos\Core\Domain\ValueObject\CancellationToken;
+use Nvoos\Core\Support\Json;
 
 class ChatOrchestrator {
 
@@ -266,19 +267,19 @@ class ChatOrchestrator {
 	/**
 	 * Handle a chat request — non-streaming (returns full response).
 	 *
-	 * @param array $messages        OpenAI-format conversation messages.
-	 * @param array $assistantConfig Assistant configuration (provider, model, tools, etc.).
+	 * @param array<int, array<string, mixed>> $messages        OpenAI-format conversation messages.
+	 * @param array<string, mixed> $assistantConfig Assistant configuration (provider, model, tools, etc.).
 	 * @param int   $userId          Authenticated user ID (0 = guest).
 	 * @param int   $assistantId     Assistant post ID (0 = none).
-	 * @param array $options         Additional options (temperature, max_tokens, etc.).
+	 * @param array<string, mixed> $options         Additional options (temperature, max_tokens, etc.).
 	 * @param CancellationToken|null $cancellation Optional cooperative
 	 *     cancellation token; checked at every provider and tool boundary.
 	 *
 	 * @return array{
-	 *     response: array,
-	 *     tool_results: array,
+	 *     response: array<string, mixed>,
+	 *     tool_results: array<int, array<string, mixed>>,
 	 *     iterations: int,
-	 *     cost: array|null,
+	 *     cost: array<string, mixed>|null,
 	 *     cancelled: bool,
 	 *     cancel_reason: string,
 	 * }
@@ -354,7 +355,7 @@ class ChatOrchestrator {
 			$estimatedTokens = 0;
 			foreach ( $messages as $msg ) {
 				$content = \is_array( $msg['content'] ?? null )
-					? \json_encode( $msg['content'] )
+					? Json::encodeOr( $msg['content'], '' )
 					: (string) ( $msg['content'] ?? '' );
 				$estimatedTokens += $this->compressor->estimateTokens( $content );
 			}
@@ -364,7 +365,7 @@ class ChatOrchestrator {
 			// — pass ints, never the legacy options array.
 			if ( $estimatedTokens > (int) ( $tokenLimit * 0.8 ) ) {
 				$result = $this->compressor->compress(
-					\json_encode( $messages ),
+					Json::encodeOr( $messages, '[]' ),
 					2,
 					0,
 				);
@@ -577,10 +578,10 @@ class ChatOrchestrator {
 				} elseif ( is_array( $result ) && isset( $result['message'] ) ) {
 					$resultContent = is_string( $result['message'] )
 						? $result['message']
-						: \json_encode( $result );
+						: Json::encodeOr( $result, '(unserializable result)' );
 				} else {
 					// Sanitize: strip base64 to save tokens in LLM context.
-					$resultContent = \json_encode( $this->sanitizeToolResult( $result ) );
+					$resultContent = Json::encodeOr( $this->sanitizeToolResult( $result ), '(unserializable result)' );
 				}
 
 				// Track byte budget if wired (accounting only — spill
@@ -765,7 +766,10 @@ class ChatOrchestrator {
 	 * as SSE events. The caller is responsible for calling $sse->finish()
 	 * after this method returns.
 	 *
-	 * @return array  Same as handleChat() — the final response payload.
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $assistantConfig
+	 * @param array<string, mixed> $options
+	 * @return array<string, mixed>  Same as handleChat() — the final response payload.
 	 */
 	public function handleChatStreaming(
 		array $messages,
@@ -1077,9 +1081,9 @@ class ChatOrchestrator {
 				} elseif ( is_array( $result ) && isset( $result['message'] ) ) {
 					$resultContent = is_string( $result['message'] )
 						? $result['message']
-						: \json_encode( $result );
+						: Json::encodeOr( $result, '(unserializable result)' );
 				} else {
-					$resultContent = \json_encode( $result );
+					$resultContent = Json::encodeOr( $result, '(unserializable result)' );
 				}
 
 				if ( null !== $this->budgetTracker ) {
@@ -1276,6 +1280,7 @@ class ChatOrchestrator {
 	 *
 	 * @param string[] $allowedSlugs Assistant-configured tool slugs.
 	 * @param int      $assistantId  Assistant ID for audit attribution.
+	 * @return array<int, array<string, mixed>>
 	 */
 	private function buildAllowedTools( array $allowedSlugs, int $assistantId = 0 ): array {
 		if ( array() === $allowedSlugs ) {
@@ -1322,6 +1327,8 @@ class ChatOrchestrator {
 	 * reject empty arrays with errors like "[] is not of type 'object'".
 	 * Any schema that is empty, or that lacks the object root, is converted
 	 * to an open-object schema so the payload always serializes as an object.
+	 * @param array<string, mixed> $schema
+	 * @return array<string, mixed>
 	 */
 	private static function normalizeToolSchema( array $schema ): array {
 		if ( array() === $schema ) {
@@ -1370,8 +1377,8 @@ class ChatOrchestrator {
 	 * invalid and is rejected by strict providers (DeepSeek). This converts
 	 * those flags to the canonical form, preserving the author's intent.
 	 *
-	 * @param array $schema A normalized tool parameter schema.
-	 * @return array The schema with per-property `required` flags relocated.
+	 * @param array<string, mixed> $schema A normalized tool parameter schema.
+	 * @return array<string, mixed> The schema with per-property `required` flags relocated.
 	 */
 	private static function hoistPropertyRequiredFlags( array $schema ): array {
 		if ( ! isset( $schema['properties'] ) || ! \is_array( $schema['properties'] ) ) {
@@ -1414,7 +1421,8 @@ class ChatOrchestrator {
 	/**
 	 * Extract tool calls from an LLM response.
 	 *
-	 * @return array  Array of { id, function: { name, arguments } }
+	 * @param array<string, mixed> $response
+	 * @return array<int, array<string, mixed>>  Array of { id, function: { name, arguments } }
 	 */
 	private function extractToolCalls( array $response ): array {
 		// Direct tool_calls key.
@@ -1433,6 +1441,8 @@ class ChatOrchestrator {
 
 	/**
 	 * Extract the assistant message from an LLM response.
+	 * @param array<string, mixed> $response
+	 * @return array<string, mixed>
 	 */
 	private function extractAssistantMessage( array $response ): ?array {
 		if ( isset( $response['choices'][0]['message'] ) ) {
@@ -1446,6 +1456,9 @@ class ChatOrchestrator {
 		return null;
 	}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	private static function newCostAccumulator(): array {
 		return array(
 			'total_prompt_tokens'     => 0,
@@ -1460,7 +1473,7 @@ class ChatOrchestrator {
 	 * Error responses (WP_Error, DomainError, etc.) contribute nothing.
 	 *
 	 * @param mixed $response    Provider response array or error object.
-	 * @param array $accumulator Mutable accumulator from newCostAccumulator().
+	 * @param array<string, mixed> $accumulator Mutable accumulator from newCostAccumulator().
 	 */
 	private function accumulateUsage( mixed $response, array &$accumulator ): void {
 		if ( ! is_array( $response ) ) {
@@ -1480,7 +1493,8 @@ class ChatOrchestrator {
 	/**
 	 * Run the agent/pre_step waterfall (feature-detected).
 	 *
-	 * @return array{0: array, 1: bool}  [messages, rejected]
+	 * @param array<int, array<string, mixed>> $messages
+	 * @return array{0: array<int, array<string, mixed>>, 1: bool}  [messages, rejected]
 	 */
 	private function applyPreStepPolicy( array $messages, int $assistantId, int $iteration ): array {
 		if ( ! $this->events instanceof WaterfallEventDispatcherInterface ) {
@@ -1490,7 +1504,7 @@ class ChatOrchestrator {
 		$decision = $this->events->waterfall(
 			'agent/pre_step',
 			new AgentPreStep( messages: $messages, assistantId: $assistantId, iteration: $iteration ),
-			static function ( object $event ): AgentPreStepDecision {
+			static function ( AgentPreStep $event ): AgentPreStepDecision {
 				return AgentPreStepDecision::enter( $event->messages );
 			},
 		);
@@ -1510,7 +1524,8 @@ class ChatOrchestrator {
 	/**
 	 * Run the agent/request waterfall (feature-detected).
 	 *
-	 * @return array  The (possibly replaced) call options.
+	 * @param array<string, mixed> $options
+	 * @return array<string, mixed>  The (possibly replaced) call options.
 	 */
 	private function applyRequestPolicy( array $options, int $assistantId, int $iteration ): array {
 		if ( ! $this->events instanceof WaterfallEventDispatcherInterface ) {
@@ -1577,6 +1592,7 @@ class ChatOrchestrator {
 	 * The appended entry is persisted through the optional store when a
 	 * session id is known. Persistence failures must never break the chat
 	 * (the log is observability, not a correctness dependency).
+	 * @param array<string, mixed> $data
 	 */
 	private function recordSessionEvent( string $type, array $data, string $sessionId = '' ): void {
 		if ( null === $this->sessionLog ) {
@@ -1605,6 +1621,9 @@ class ChatOrchestrator {
 	 * Compaction facts are durable: a context_compacted entry records the
 	 * message counts before/after so resumed sessions know their history
 	 * was summarized.
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 * @return array<int, array<string, mixed>>
 	 */
 	private function maybeCompact( array $messages, array $options, int $iteration, string $sessionId ): array {
 		$provider = $this->compactionProvider;
@@ -1647,7 +1666,8 @@ class ChatOrchestrator {
 	/**
 	 * Build the canonical result payload for a cancelled request.
 	 *
-	 * @return array{response: array, tool_results: array, iterations: int, cost: null, cancelled: bool, cancel_reason: string}
+	 * @param array<string, mixed> $response
+	 * @return array{response: array<string, mixed>, tool_results: array<int, array<string, mixed>>, iterations: int, cost: null, cancelled: bool, cancel_reason: string}
 	 */
 	private function cancelledResult( array $response, CancellationToken $cancellation ): array {
 		return array(
@@ -1666,6 +1686,7 @@ class ChatOrchestrator {
 	 * When the agentic loop hits max_iterations, the final response may
 	 * still contain tool_calls that were never executed. Sending those to
 	 * the client causes "orphaned tool_call_id" errors on the next turn.
+	 * @param array<string, mixed> $response
 	 */
 	private function stripOrphanedToolCalls( array &$response ): void {
 		if ( isset( $response['choices'][0]['message']['tool_calls'] ) ) {
@@ -1717,7 +1738,7 @@ class ChatOrchestrator {
 	 *
 	 * @param mixed  $result   Raw tool result.
 	 * @param string $toolName Tool slug for context.
-	 * @return array<int, array> Image messages in OpenAI vision format.
+	 * @return array<int, array<string, mixed>> Image messages in OpenAI vision format.
 	 */
 	private function extractImagesFromToolResult( $result, string $toolName ): array {
 		if ( ! \is_array( $result ) ) {

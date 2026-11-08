@@ -193,6 +193,8 @@ class ProviderRouter {
 	 *  2. assistantConfig['provider'] — the assistant's configured provider
 	 *  3. site default — as configured in settings
 	 *
+	 * @param array<string, mixed> $options
+	 * @param array<string, mixed> $assistantConfig
 	 * @return AbstractProviderClient|null  Null if no provider resolves.
 	 */
 	public function resolveForChat( array $options = array(), array $assistantConfig = array() ): ?AbstractProviderClient {
@@ -215,6 +217,9 @@ class ProviderRouter {
 	/**
 	 * Send a chat completion through the appropriate provider.
 	 *
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 * @param array<string, mixed> $assistantConfig
 	 * @return mixed  Provider response or error.
 	 */
 	public function chat(
@@ -257,6 +262,9 @@ class ProviderRouter {
 
 	/**
 	 * Stream a chat completion through the appropriate provider.
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 * @param array<string, mixed> $assistantConfig
 	 */
 	public function stream(
 		array $messages,
@@ -331,8 +339,21 @@ class ProviderRouter {
 	 * @param mixed $result Provider response.
 	 * @return bool True when the result represents an error.
 	 */
+	/**
+	 * Whether a provider result is a platform error object.
+	 *
+	 * Duck-typed on purpose: the core must not import WP_Error. Any error
+	 * type that exposes `get_error_message()` (WP_Error, the Laravel
+	 * equivalent, a test double) is recognised.
+	 *
+	 * @param mixed $result Provider response.
+	 */
+	private function isPlatformError( mixed $result ): bool {
+		return \is_object( $result ) && \method_exists( $result, 'get_error_message' );
+	}
+
 	private function isError( mixed $result ): bool {
-		if ( $result instanceof \WP_Error ) {
+		if ( $this->isPlatformError( $result ) ) {
 			return true;
 		}
 
@@ -352,7 +373,7 @@ class ProviderRouter {
 	 * @return string Error classification.
 	 */
 	private function classifyError( mixed $result ): string {
-		if ( $result instanceof \WP_Error ) {
+		if ( $this->isPlatformError( $result ) ) {
 			$message = strtolower( $result->get_error_message() );
 			if ( str_contains( $message, 'timeout' ) || str_contains( $message, 'timed out' ) ) {
 				return 'timeout';
@@ -373,9 +394,9 @@ class ProviderRouter {
 	 *
 	 * @since 1.2.5
 	 *
-	 * @param array    $messages        Chat messages.
-	 * @param array    $options         Request options.
-	 * @param array    $assistantConfig Assistant config.
+	 * @param array<int, array<string, mixed>>    $messages        Chat messages.
+	 * @param array<string, mixed>    $options         Request options.
+	 * @param array<string, mixed>    $assistantConfig Assistant config.
 	 * @param string   $failedSlug      Slug of the provider that just failed.
 	 * @param callable $onChunk         Optional stream callback.
 	 * @return mixed|null Fallback result, or null if no fallback available.
@@ -429,8 +450,8 @@ class ProviderRouter {
 	 *
 	 * @since 1.2.13
 	 *
-	 * @param array         $messages Chat messages.
-	 * @param array         $options  Request options.
+	 * @param array<int, array<string, mixed>>         $messages Chat messages.
+	 * @param array<string, mixed>         $options  Request options.
 	 * @param string[]      $chain    Ordered provider slugs.
 	 * @param callable|null $onChunk  Optional stream callback.
 	 * @return mixed|null First successful result, or null when exhausted.
@@ -472,7 +493,7 @@ class ProviderRouter {
 	 *
 	 * @since 1.2.13
 	 *
-	 * @param array $assistantConfig Assistant config.
+	 * @param array<string, mixed> $assistantConfig Assistant config.
 	 * @return string[]
 	 */
 	private function resolveFallbackCandidates( array $assistantConfig ): array {
@@ -505,7 +526,7 @@ class ProviderRouter {
 	private function retryAfterSeconds( mixed $result ): int {
 		$retryAfter = null;
 
-		if ( $result instanceof \WP_Error ) {
+		if ( $this->isPlatformError( $result ) ) {
 			$data = $result->get_error_data();
 			if ( \is_array( $data ) ) {
 				if ( isset( $data['retry_after'] ) && \is_numeric( $data['retry_after'] ) ) {

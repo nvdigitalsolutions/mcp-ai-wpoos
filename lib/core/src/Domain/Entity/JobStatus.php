@@ -19,7 +19,7 @@ final readonly class JobStatus implements \JsonSerializable {
 	/**
 	 * @param string                  $jobId
 	 * @param string                  $status          'queued', 'running', 'completed', 'failed', 'cancelled'
-	 * @param array|null              $result          Serialized result payload (when completed).
+	 * @param array<string, mixed>|null              $result          Serialized result payload (when completed).
 	 * @param string|null             $error           Error message (when failed).
 	 * @param \DateTimeImmutable|null $queuedAt
 	 * @param \DateTimeImmutable|null $startedAt
@@ -58,6 +58,9 @@ final readonly class JobStatus implements \JsonSerializable {
 		return 'completed' === $this->status;
 	}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	public function jsonSerialize(): array {
 		return array(
 			'job_id'       => $this->jobId,

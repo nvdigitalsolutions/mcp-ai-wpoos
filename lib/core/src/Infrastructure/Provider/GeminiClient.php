@@ -35,6 +35,10 @@ class GeminiClient extends AbstractProviderClient {
 		return self::DEFAULT_BASE_URL;
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 */
 	public function chat( array $messages, array $options = array() ): mixed {
 		$apiKey = $this->getApiKey();
 
@@ -101,6 +105,10 @@ class GeminiClient extends AbstractProviderClient {
 		}
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 */
 	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
 		$apiKey = $this->getApiKey();
 
@@ -155,7 +163,7 @@ class GeminiClient extends AbstractProviderClient {
 
 			// Parse Gemini SSE stream.
 			$assembled = '';
-			foreach ( \preg_split( "/\r?\n/", $respBody ) as $line ) {
+			foreach ( ( \preg_split( "/\r?\n/", $respBody ) ?: array() ) as $line ) {
 				$line = \trim( $line );
 				if ( '' === $line || 0 !== \strpos( $line, 'data: ' ) ) {
 					continue;
@@ -230,6 +238,8 @@ class GeminiClient extends AbstractProviderClient {
 
 	/**
 	 * Convert OpenAI-format messages to Gemini contents array.
+	 * @param array<int, array<string, mixed>> $messages
+	 * @return array<int, array<string, mixed>>
 	 */
 	private function convertMessages( array $messages ): array {
 		$contents = array();
@@ -274,7 +284,7 @@ class GeminiClient extends AbstractProviderClient {
 
 			// Merge consecutive messages from the same role.
 			$last = \count( $contents ) - 1;
-			if ( $last >= 0 && $contents[ $last ]['role'] === $geminiRole ) {
+			if ( $last >= 0 && ( $contents[ $last ]['role'] ?? null ) === $geminiRole ) {
 				$contents[ $last ]['parts'] = \array_merge(
 					$contents[ $last ]['parts'],
 					$parts,
@@ -290,6 +300,9 @@ class GeminiClient extends AbstractProviderClient {
 		return $contents;
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $messages
+	 */
 	private function extractSystemInstruction( array $messages ): string {
 		foreach ( $messages as $msg ) {
 			if ( ( 'system' === ( $msg['role'] ?? '' ) ) && is_string( $msg['content'] ?? null ) ) {
@@ -301,6 +314,8 @@ class GeminiClient extends AbstractProviderClient {
 
 	/**
 	 * Convert OpenAI tool definitions to Gemini function declarations.
+	 * @param array<int, array<string, mixed>> $tools
+	 * @return array<int, array<string, mixed>>
 	 */
 	private function convertToolsToGemini( array $tools ): array {
 		$declarations = array();
@@ -321,6 +336,8 @@ class GeminiClient extends AbstractProviderClient {
 	/**
 	 * Normalize Gemini response to the OpenAI-compatible shape expected
 	 * by the agentic loop and frontend.
+	 * @param array<string, mixed> $data
+	 * @return array<string, mixed>
 	 */
 	private function normalizeResponse( array $data, string $model ): array {
 		$text = '';

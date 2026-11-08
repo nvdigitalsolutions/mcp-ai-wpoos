@@ -79,7 +79,7 @@ class StripHtmlTool extends AbstractTool {
 				array( '@<script[^>]*?>.*?</script>@si', '@<style[^>]*?>.*?</style>@si' ),
 				'',
 				$cleaned,
-			);
+			) ?? $cleaned;
 		}
 
 		if ( $decodeEntities ) {
@@ -87,7 +87,7 @@ class StripHtmlTool extends AbstractTool {
 		}
 
 		// Normalize whitespace.
-		$cleaned = preg_replace( '/\s+/', ' ', $cleaned );
+		$cleaned = preg_replace( '/\s+/', ' ', $cleaned ) ?? $cleaned;
 		$cleaned = trim( $cleaned );
 
 		$originalLen = strlen( $html );

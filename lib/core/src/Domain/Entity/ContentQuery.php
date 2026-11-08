@@ -23,8 +23,8 @@ final readonly class ContentQuery {
 	 * @param int|null    $authorId   Filter by author.
 	 * @param int[]       $include    Specific IDs to include (post__in).
 	 * @param int[]       $exclude    IDs to exclude (post__not_in).
-	 * @param array       $metaQuery  Meta field filtering specification.
-	 * @param array       $taxQuery   Taxonomy filtering specification.
+	 * @param array<int|string, mixed>   $metaQuery  WP_Query-style meta clause list.
+	 * @param array<int|string, mixed>   $taxQuery   WP_Query-style tax clause list.
 	 * @param string      $orderBy    Sort field: 'date', 'title', 'modified', 'id'.
 	 * @param string      $order      Sort direction: 'ASC' or 'DESC'.
 	 * @param int         $page       1-based page number.

@@ -24,13 +24,18 @@ class OpenAIRealtimeProvider implements StreamingProviderInterface
     private const DEFAULT_MODEL = 'gpt-4o-realtime-preview';
     private const WS_BASE_URL   = 'wss://api.openai.com/v1/realtime';
 
-    /** @var array<string, array> Active connections keyed by connection ID. */
+    /** @var array<string, array<string, mixed>> Active connections keyed by connection ID. */
     private array $connections = [];
 
+    /**
+     * @param SettingsStoreInterface $settings Provider settings.
+     * @param HttpClientInterface    $http     Reserved for the socket transport.
+     * @param ErrorFactoryInterface  $errors   Reserved for error mapping.
+     */
     public function __construct(
         private readonly SettingsStoreInterface $settings,
-        private readonly HttpClientInterface $http,
-        private readonly ErrorFactoryInterface $errors,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
     ) {}
 
     public function connect(array $options = []): array

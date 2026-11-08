@@ -44,7 +44,7 @@ class RunCrawl4AiJobTool extends AbstractTool {
 		}
 		$baseUrl = $this->s->getApiBaseUrl( 'crawl4ai' ) ?? 'http://localhost:11235';
 		try {
-			$body     = json_encode(
+			$body     = $this->jsonBody(
 				array(
 					'urls' => array( $url ),
 					'mode' => $this->stringParam( $arguments, 'mode', 'single' ),

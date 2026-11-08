@@ -13,9 +13,18 @@ namespace Nvoos\Core\Domain\Contract;
 
 interface TokenUsageInterface
 {
+    /**
+     * @param array<string, mixed> $metadata
+     */
     public function trackUsage(int $userId, string $modelId, int $promptTokens, int $completionTokens, array $metadata = []): void;
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getUserUsage(int $userId, string $startDate, string $endDate): array;
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getModelUsage(string $modelId, string $startDate, string $endDate): array;
 }

@@ -118,7 +118,7 @@ class UploadFileTool extends AbstractTool {
 				@unlink( $tmpFile );
 			} else {
 				if ( '' === $filename ) {
-					$filename = basename( parse_url( $url, PHP_URL_PATH ) ) ?: 'download';
+					$filename = basename( (string) parse_url( $url, PHP_URL_PATH ) ) ?: 'download';
 				}
 				$content = @file_get_contents( $url );
 				if ( false === $content ) {

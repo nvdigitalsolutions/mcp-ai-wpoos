@@ -39,7 +39,7 @@ class GenerateGeminiImageTool extends AbstractTool {
 		if ( '' !== $neg ) $inst['negativePrompt'] = $neg;
 
 		try {
-			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/{$model}:predict?key={$key}", array('Content-Type'=>'application/json'), \json_encode(array('instances'=>array($inst))) );
+			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/{$model}:predict?key={$key}", array('Content-Type'=>'application/json'), $this->jsonBody(array('instances'=>array($inst))) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'Imagen API error.'; return $this->errors->create( 'imagen_error', $err ); }
 

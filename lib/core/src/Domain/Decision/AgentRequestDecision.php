@@ -21,7 +21,7 @@ final class AgentRequestDecision {
 
 	/**
 	 * @param string $kind    One of the KIND_* constants.
-	 * @param array  $options Replacement call options when replacing.
+	 * @param array<string, mixed>  $options Replacement call options when replacing.
 	 */
 	public function __construct(
 		public readonly string $kind,
@@ -32,6 +32,9 @@ final class AgentRequestDecision {
 		return new self( self::KIND_KEEP );
 	}
 
+	/**
+	 * @param array<string, mixed> $options
+	 */
 	public static function replace( array $options ): self {
 		return new self( self::KIND_REPLACE, $options );
 	}

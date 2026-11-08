@@ -29,7 +29,7 @@ interface HttpClientInterface {
 	 *
 	 * @param string      $method  HTTP method (GET, POST, PUT, DELETE, etc.).
 	 * @param string      $url     Full request URL including query string.
-	 * @param array       $headers Request headers as key-value pairs.
+	 * @param array<string, string>       $headers Request headers as key-value pairs.
 	 * @param string|null $body    Request body (null for GET/HEAD requests).
 	 *
 	 * @return HttpResponse  The response with status code, body, and headers.

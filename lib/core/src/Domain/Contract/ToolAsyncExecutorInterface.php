@@ -24,8 +24,8 @@ interface ToolAsyncExecutorInterface {
 	 * for later retrieval via {@see getResult()}.
 	 *
 	 * @param string $tool_slug Tool identifier.
-	 * @param array  $arguments Tool arguments.
-	 * @param array  $context   Execution context (user_id, assistant_id, etc.).
+	 * @param ToolArgs  $arguments Tool arguments.
+	 * @param ToolContext  $context   Execution context (user_id, assistant_id, etc.).
 	 *
 	 * @return string|mixed  Job ID on success, or error.
 	 */
@@ -85,7 +85,7 @@ interface ToolAsyncExecutorInterface {
 	 *
 	 * @param string $job_id Job identifier.
 	 *
-	 * @return array|mixed  Job result data, or error if not found.
+	 * @return mixed  Job result data, or error if not found.
 	 */
 	public function getResult( string $job_id ): mixed;
 

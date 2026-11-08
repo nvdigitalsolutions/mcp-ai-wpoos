@@ -15,6 +15,10 @@ namespace Nvoos\Core\Domain\Event;
 
 final class CostCalculated {
 
+	/**
+	 * @param array<string, mixed> $costData
+	 * @param array<string, mixed> $response
+	 */
 	public function __construct(
 		public readonly array $costData,
 		public readonly int $assistantId,

@@ -129,6 +129,9 @@ class CalculateErlangCTool extends AbstractTool {
 		);
 	}
 
+	/**
+	 * @return SuccessEnvelope
+	 */
 	private function computeForAgents(
 		float $traffic, float $aht, int $agents, int $targetTime, float $targetSlFrac,
 		float $arrivalRate, float $origAht, float $concurrency, float $targetSlPct, int $origTargetTime,
@@ -175,6 +178,9 @@ class CalculateErlangCTool extends AbstractTool {
 		);
 	}
 
+	/**
+	 * @return SuccessEnvelope
+	 */
 	private function computeMinAgents(
 		float $traffic, float $aht, float $targetSlFrac, float $targetTime,
 		float $arrivalRate, float $origAht, float $concurrency, float $targetSlPct, int $origTargetTime,

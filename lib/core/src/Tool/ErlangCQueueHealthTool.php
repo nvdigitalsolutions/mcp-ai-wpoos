@@ -195,6 +195,7 @@ class ErlangCQueueHealthTool extends AbstractTool {
 
 	/**
 	 * @return array{arrival_rate: float, aht: float, agents: int, queue_depth: int}|null
+	 * @param ToolArgs $arguments Raw tool arguments.
 	 */
 	private function resolveInlineMetrics( array $arguments ): ?array {
 		$arrivalRate = $arguments['arrival_rate_per_hour'] ?? null;

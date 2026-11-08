@@ -25,7 +25,7 @@ interface PerformanceMonitorInterface
      *
      * @param string $metric    Metric name (e.g., 'chat_latency_ms', 'tool_execution_ms').
      * @param float  $value     Metric value.
-     * @param array  $tags      Optional tags (provider, model, tool, etc.).
+     * @param array<string, mixed>  $tags      Optional tags (provider, model, tool, etc.).
      */
     public function record(string $metric, float $value, array $tags = []): void;
 
@@ -45,7 +45,7 @@ interface PerformanceMonitorInterface
      *
      * @param string $period 'hour', 'day', 'week', or 'month'.
      *
-     * @return array{metrics: array, recommendations: array<int, string>}
+     * @return array{metrics: array<string, mixed>, recommendations: array<int, string>}
      */
     public function getReport(string $period = 'day'): array;
 

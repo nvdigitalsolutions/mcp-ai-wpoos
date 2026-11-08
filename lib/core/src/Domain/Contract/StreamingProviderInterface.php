@@ -50,7 +50,7 @@ interface StreamingProviderInterface
      * Send a text message (for interruption, function results, etc.).
      *
      * @param string $connectionId
-     * @param array  $message       Message payload.
+     * @param array<string, mixed>  $message       Message payload.
      *
      * @return array{success: bool, error?: string}
      */

@@ -13,9 +13,9 @@ class GeminiGeospatialQueryTool extends AbstractTool {
 		$q = $this->stringParam( $arguments, 'query' ); if ( '' === $q ) return $this->errors->validationFailed( 'Query required.', array('query'=>array('Required.')) );
 		$key = $this->s->getApiKey( 'gemini' ); if ( null === $key || '' === $key ) return $this->errors->create( 'missing_key', 'No Gemini API key configured.' );
 		$lat = (float)($arguments['latitude']??0); $lng = (float)($arguments['longitude']??0); $radius = (float)($arguments['radius_km']??10);
-		$locStr = (0!==$lat||0!==$lng) ? " Location: {$lat},{$lng} (radius {$radius}km)." : '';
+		$locStr = ( 0.0 !== $lat || 0.0 !== $lng ) ? " Location: {$lat},{$lng} (radius {$radius}km)." : '';
 		try {
-			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$key}", array('Content-Type'=>'application/json'), \json_encode(array('contents'=>array(array('parts'=>array(array('text'=>"Geospatial analysis: {$q}.{$locStr}")))))));
+			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$key}", array('Content-Type'=>'application/json'), $this->jsonBody(array('contents'=>array(array('parts'=>array(array('text'=>"Geospatial analysis: {$q}.{$locStr}")))))));
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'Gemini error.'; return $this->errors->create( 'gemini_error', $err ); }
 			$text = $d['candidates'][0]['content']['parts'][0]['text'] ?? '';

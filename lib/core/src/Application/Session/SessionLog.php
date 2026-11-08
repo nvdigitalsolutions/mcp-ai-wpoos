@@ -39,7 +39,8 @@ final class SessionLog {
 	/**
 	 * Append a typed entry and return its sequence number.
 	 *
-	 * @param array $data Type-specific payload.
+	 * @param array<string, mixed> $data Type-specific payload.
+	 * @param array<int, int> $sourceEventSeqs
 	 * @return int  The entry's monotonic seq (1-based).
 	 */
 	public function append( string $type, array $data, array $sourceEventSeqs = array() ): int {
@@ -89,7 +90,7 @@ final class SessionLog {
 	 *  - turn/tool-call bookkeeping entries produce no messages.
 	 *
 	 * @param string[] $systemPrompt Optional system prompt lines.
-	 * @return array<int, array>  OpenAI-format message list.
+	 * @return array<int, array<string, mixed>>  OpenAI-format message list.
 	 */
 	public function deriveMessages( array $systemPrompt = array() ): array {
 		$messages = array();
@@ -157,7 +158,7 @@ final class SessionLog {
 	/**
 	 * Export every entry as plain arrays (JSON-safe).
 	 *
-	 * @return array<int, array>
+	 * @return array<int, array<string, mixed>>
 	 */
 	public function export(): array {
 		return \array_map(
@@ -170,6 +171,7 @@ final class SessionLog {
 
 	/**
 	 * Rebuild a log from exported arrays (resume/replay).
+	 * @param array<int, array<string, mixed>> $exported
 	 */
 	public static function fromExported( array $exported ): self {
 		$log = new self();

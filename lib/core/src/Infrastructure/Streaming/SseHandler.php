@@ -14,6 +14,8 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Infrastructure\Streaming;
 
+use Nvoos\Core\Support\Json;
+
 class SseHandler {
 
 	/**
@@ -107,7 +109,7 @@ class SseHandler {
 		$json = \json_encode( $data, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE );
 
 		if ( false === $json ) {
-			$json = \json_encode( array( 'error' => 'JSON encoding failed: ' . \json_last_error_msg() ) );
+			$json = Json::encode( array( 'error' => 'JSON encoding failed: ' . \json_last_error_msg() ) );
 		}
 
 		// Split into lines for multi-line data.
@@ -165,6 +167,8 @@ class SseHandler {
 	 * Check whether the client requested an event stream.
 	 *
 	 * Inspects the Accept header and the stream query parameter.
+	 * @param array<string, string> $headers
+	 * @param array<string, mixed> $params
 	 */
 	public function wantsEventStream( array $headers, array $params ): bool {
 		// Check query parameter.

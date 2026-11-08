@@ -86,7 +86,7 @@ class GenerateHiggsfieldVideoTool extends AbstractTool {
 		);
 
 		try {
-			$r = $this->h->send( 'POST', 'https://api.higgsfield.ai/higgsfield/cinema-studio/4.0', $headers, \json_encode( $body ) );
+			$r = $this->h->send( 'POST', 'https://api.higgsfield.ai/higgsfield/cinema-studio/4.0', $headers, $this->jsonBody( $body ) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) {
 				$err = $d['detail'] ?? $d['error']['message'] ?? 'Higgsfield API error.';

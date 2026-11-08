@@ -87,7 +87,7 @@ class ReliefwebReportsTool extends AbstractTool {
 			);
 		}
 
-		$body = \json_encode(
+		$body = $this->jsonBody(
 			array(
 				'appname' => 'o-os-core',
 				'query'   => array( 'value' => '' ),

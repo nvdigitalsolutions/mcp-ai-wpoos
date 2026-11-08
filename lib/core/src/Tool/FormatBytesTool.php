@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class FormatBytesTool extends AbstractTool {
+use Nvoos\Core\Domain\ValueObject\FormatBytesRequest;
+use Nvoos\Core\Domain\ValueObject\ToolResult;
+
+class FormatBytesTool extends AbstractResultTool {
 
 	/**
 	 * Human-readable size units.
@@ -63,28 +66,44 @@ class FormatBytesTool extends AbstractTool {
 		return 'read';
 	}
 
-	public function execute( array $arguments = array(), array $context = array() ): mixed {
-		$bytes    = $this->intParam( $arguments, 'bytes' );
-		$decimals = $this->intParam( $arguments, 'decimals', 1 );
-		$binary   = $this->boolParam( $arguments, 'binary', false );
+	/**
+	 * Execute the tool and return a typed result.
+	 *
+	 * Parse once, then hand the request to a pure handler — the functional
+	 * core / imperative shell split (Red Book ch. 13).
+	 *
+	 * @param ToolArgs    $arguments Parsed tool arguments.
+	 * @param ToolContext $context   Execution context.
+	 * @return ToolResult<array{bytes: int, formatted: string, binary: bool, base: int}>
+	 */
+	public function executeResult( array $arguments = array(), array $context = array() ): ToolResult {
+		return $this->handle( FormatBytesRequest::fromArguments( $arguments ) );
+	}
 
-		if ( $bytes < 0 ) {
-			return $this->errors->validationFailed(
+	/**
+	 * Pure handler — no input arrays, no output arrays, no side effects.
+	 *
+	 * @param FormatBytesRequest $request Parsed request.
+	 * @return ToolResult<array{bytes: int, formatted: string, binary: bool, base: int}>
+	 */
+	private function handle( FormatBytesRequest $request ): ToolResult {
+		if ( $request->bytes < 0 ) {
+			return $this->validationFailure(
 				'bytes must be a non-negative integer.',
 				array( 'bytes' => array( 'Value must be >= 0.' ) ),
 			);
 		}
 
-		$base   = $binary ? 1024 : 1000;
-		$suffix = $binary ? 'iB' : 'B';
-		$result = $this->format( $bytes, $base, $decimals, $suffix );
+		$base   = $request->binary ? 1024 : 1000;
+		$suffix = $request->binary ? 'iB' : 'B';
+		$result = $this->format( $request->bytes, $base, $request->decimals, $suffix );
 
-		return $this->success(
-			sprintf( '%d bytes = %s.', $bytes, $result ),
+		return ToolResult::success(
+			sprintf( '%d bytes = %s.', $request->bytes, $result ),
 			array(
-				'bytes'     => $bytes,
+				'bytes'     => $request->bytes,
 				'formatted' => $result,
-				'binary'    => $binary,
+				'binary'    => $request->binary,
 				'base'      => $base,
 			),
 		);

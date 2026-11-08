@@ -122,6 +122,9 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 		};
 	}
 
+	/**
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 */
 	private function addFiles( string $apiKey, string $storeId, array $arguments ): mixed {
 		$fileIds = $this->arrayParam( $arguments, 'file_ids' );
 
@@ -154,7 +157,7 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 					'Authorization' => "Bearer {$apiKey}",
 					'Content-Type'  => 'application/json',
 				),
-				\json_encode( array( 'file_ids' => $fileIds ) ),
+				$this->jsonBody( array( 'file_ids' => $fileIds ) ),
 			);
 		} catch ( \Throwable $e ) {
 			return $this->errors->create( 'request_failed', "OpenAI API request failed: {$e->getMessage()}" );
@@ -236,7 +239,8 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 	 * Poll a vector store file batch until it reaches a terminal state or the
 	 * time cap expires.
 	 *
-	 * @param array $initialData Decoded response of the batch creation call.
+	 * @param array<string, mixed> $initialData Decoded response of the batch creation call.
+	 * @return array<string, mixed>
 	 */
 	private function pollFileBatch( string $apiKey, string $storeId, string $batchId, array $initialData, int $pollMaxSeconds ): array {
 		$data   = $initialData;
@@ -298,6 +302,7 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 
 	/**
 	 * Headerless single-file adds — fallback for gateways without file_batches.
+	 * @param array<int, string> $fileIds File IDs to add one by one.
 	 */
 	private function addFilesIndividually( string $apiKey, string $storeId, array $fileIds ): mixed {
 		$results = array();
@@ -312,7 +317,7 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 						'Authorization' => "Bearer {$apiKey}",
 						'Content-Type'  => 'application/json',
 					),
-					\json_encode( array( 'file_id' => (string) $fileId ) ),
+					$this->jsonBody( array( 'file_id' => (string) $fileId ) ),
 				);
 
 				$data = \json_decode( $response->body, true );
@@ -334,6 +339,9 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 		return $this->buildFileActionResult( 'added', $results, $errors, \count( $fileIds ) );
 	}
 
+	/**
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 */
 	private function removeFiles( string $apiKey, string $storeId, array $arguments ): mixed {
 		$fileIds = $this->arrayParam( $arguments, 'file_ids' );
 
@@ -373,6 +381,9 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 		return $this->buildFileActionResult( 'removed', $results, $errors, \count( $fileIds ) );
 	}
 
+	/**
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 */
 	private function listFiles( string $apiKey, string $storeId, array $arguments ): mixed {
 		$limit = $this->intParam( $arguments, 'limit', 20 );
 		$limit = \max( 1, \min( 100, $limit ) );
@@ -411,6 +422,11 @@ class ManageVectorStoreFilesTool extends AbstractTool {
 		}
 	}
 
+	/**
+	 * @param array<int, array<string, mixed>> $results Successful per-file results.
+	 * @param array<int, array<string, mixed>> $errors Per-file failures.
+	 * @param array<string, mixed> $extra Extra payload keys.
+	 */
 	private function buildFileActionResult( string $verb, array $results, array $errors, int $total, array $extra = array() ): mixed {
 		$ok  = \count( $results );
 		$err = \count( $errors );

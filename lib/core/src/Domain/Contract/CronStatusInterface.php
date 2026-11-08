@@ -27,7 +27,7 @@ interface CronStatusInterface
      * @param int         $limit       Maximum jobs to return.
      * @param int|string|null $assistantId Optional assistant ID filter.
      *
-     * @return array{active: int, pending: int, completed: int, failed: int, jobs: array<int, array>}
+     * @return array{active: int, pending: int, completed: int, failed: int, jobs: array<int, array<string, mixed>>}
      */
     public function getSummary(int $userId = 0, int $limit = 10, $assistantId = null): array;
 
@@ -36,7 +36,7 @@ interface CronStatusInterface
      *
      * @param string $jobId Job identifier.
      *
-     * @return array{found: bool, job?: array}
+     * @return array{found: bool, job?: array<string, mixed>}
      */
     public function getJob(string $jobId): array;
 

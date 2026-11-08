@@ -32,11 +32,17 @@ class ErlangCStaffingAdvisorTool extends AbstractTool {
 		'other' => 1,
 	);
 
+	/**
+	 * @param ErrorFactoryInterface $errors   Error factory.
+	 * @param ErlangCInterface      $erlang   Erlang C math.
+	 * @param SettingsStoreInterface $settings Reserved for staffing-policy overrides.
+	 * @param HttpClientInterface   $http     Reserved for external data sources.
+	 */
 	public function __construct(
 		ErrorFactoryInterface $errors,
 		private readonly ErlangCInterface $erlang,
-		private readonly SettingsStoreInterface $settings,
-		private readonly HttpClientInterface $http,
+		SettingsStoreInterface $settings,
+		HttpClientInterface $http,
 	) {
 		parent::__construct( $errors );
 	}

@@ -156,7 +156,13 @@ class SkillRegistry {
 
 		$loaded = 0;
 
-		foreach ( \scandir( $directory ) as $entry ) {
+		$entries = \scandir( $directory );
+
+		if ( false === $entries ) {
+			return 0;
+		}
+
+		foreach ( $entries as $entry ) {
 			if ( '.' === $entry || '..' === $entry ) {
 				continue;
 			}

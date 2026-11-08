@@ -15,6 +15,9 @@ namespace Nvoos\Core\Domain\Event;
 
 final class AgenticLoopCompleted {
 
+	/**
+	 * @param array<int, array<string, mixed>> $toolResults
+	 */
 	public function __construct(
 		public readonly int $totalIterations,
 		public readonly int $assistantId,

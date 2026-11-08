@@ -51,7 +51,7 @@ class GenerateOmniVideoTool extends AbstractTool {
 		if ( $async ) $body['async'] = true;
 
 		try {
-			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/gemini-omni-flash:predict?key={$key}", array( 'Content-Type'=>'application/json' ), \json_encode( array( 'instances'=>array($body) ) ) );
+			$r = $this->h->send( 'POST', "https://generativelanguage.googleapis.com/v1beta/models/gemini-omni-flash:predict?key={$key}", array( 'Content-Type'=>'application/json' ), $this->jsonBody( array( 'instances'=>array($body) ) ) );
 			$d = \json_decode( $r->body, true );
 			if ( $r->statusCode >= 400 ) { $err = $d['error']['message'] ?? 'Omni API error.'; return $this->errors->create( 'omni_error', $err ); }
 

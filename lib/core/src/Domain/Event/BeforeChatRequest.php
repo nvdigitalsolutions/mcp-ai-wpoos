@@ -15,6 +15,11 @@ namespace Nvoos\Core\Domain\Event;
 
 final class BeforeChatRequest {
 
+	/**
+	 * @param array<string, mixed> $authContext
+	 * @param array<int, array<string, mixed>> $messages
+	 * @param array<string, mixed> $options
+	 */
 	public function __construct(
 		public readonly int $assistantId,
 		public array $messages,

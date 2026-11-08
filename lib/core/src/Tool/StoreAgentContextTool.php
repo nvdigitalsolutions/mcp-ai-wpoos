@@ -12,7 +12,7 @@ class StoreAgentContextTool extends AbstractTool {
 	public function execute( array $arguments = array(), array $context = array() ): mixed {
 		$agentId = (string)($arguments['agent_id']??''); $content = $this->stringParam($arguments,'content');
 		if ( '' === $agentId || '' === $content ) return $this->errors->validationFailed( 'agent_id and content required.', array('agent_id'=>array('Required.'),'content'=>array('Required.')) );
-		$record = array( 'agent_id'=>$agentId, 'content'=>$content, 'title'=>$this->stringParam($arguments,'title'), 'tags'=>$this->arrayParam($arguments,'tags'), 'tier'=>$this->stringParam($arguments,'tier','recall'), 'importance'=>(float)($arguments['importance']??0.5), 'wing'=>$this->stringParam($arguments,'wing'), 'room'=>$this->stringParam($arguments,'room') );
+		$record = array( 'agent_id'=>$agentId, 'content'=>$content, 'title'=>$this->stringParam($arguments,'title'), 'tags'=>$this->stringListParam($arguments,'tags'), 'tier'=>$this->stringParam($arguments,'tier','recall'), 'importance'=>(float)($arguments['importance']??0.5), 'wing'=>$this->stringParam($arguments,'wing'), 'room'=>$this->stringParam($arguments,'room') );
 		$ttl = $this->intParam( $arguments, 'ttl' ); if ( $ttl > 0 ) $record['ttl'] = $ttl;
 		try { $r = $this->m->store( $record ); return $r['success'] ? $this->success( 'Memory stored.', array('memory_id'=>$r['memory_id']??null) ) : $this->errors->create( 'store_failed', $r['error']??'Unknown error.' ); }
 		catch ( \Throwable $e ) { return $this->errors->create( 'store_failed', $e->getMessage() ); }

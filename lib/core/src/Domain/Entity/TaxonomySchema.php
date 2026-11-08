@@ -31,6 +31,9 @@ final readonly class TaxonomySchema implements \JsonSerializable {
 		public string $description = '',
 	) {}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	public function jsonSerialize(): array {
 		return array(
 			'slug'            => $this->slug,

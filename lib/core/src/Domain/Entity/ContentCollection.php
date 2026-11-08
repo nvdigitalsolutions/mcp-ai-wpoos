@@ -35,6 +35,9 @@ final readonly class ContentCollection implements \JsonSerializable {
 		return $this->page < $this->totalPages;
 	}
 
+	/**
+	 * @return array<string, mixed>
+	 */
 	public function jsonSerialize(): array {
 		return array(
 			'items'       => $this->items,

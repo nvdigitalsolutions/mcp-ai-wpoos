@@ -236,6 +236,7 @@ class TokenBudgetManager {
 	 * Estimate tokens for an array of messages.
 	 *
 	 * Includes per-message overhead (4 tokens/message) plus content.
+	 * @param array<int, array<string, mixed>> $messages
 	 */
 	public function estimateMessageTokens( array $messages ): int {
 		$total = 3; // Assistant reply priming.
@@ -299,10 +300,10 @@ class TokenBudgetManager {
 	 *
 	 * Called by every provider client before create_chat_completion().
 	 *
-	 * @param array  $payload   The full request payload.
+	 * @param array<string, mixed>  $payload   The full request payload.
 	 * @param string $model     Model identifier.
 	 * @param string $provider  Provider slug (for error context).
-	 * @return array|null  Error shape when context window is exceeded; null when OK.
+	 * @return array{code: string, message: string, data: array<string, mixed>}|null Error shape when context window is exceeded; null when OK.
 	 */
 	public function validateContextWindow(
 		array $payload,
@@ -390,6 +391,7 @@ class TokenBudgetManager {
 	/**
 	 * Calculate token budget for a conversation.
 	 *
+	 * @param array<int, array<string, mixed>> $messages
 	 * @return array{available: int, used: int, reserved: int, limit: int, model: string}
 	 */
 	public function calculateBudget(

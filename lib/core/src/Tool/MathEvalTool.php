@@ -10,7 +10,7 @@ class MathEvalTool extends AbstractTool {
 	public function getRequiredCapability(): string { return 'read'; }
 	public function execute(array $arguments=[],array $context=[]): mixed {
 		$expr = $this->stringParam($arguments,'expression'); if(''===$expr) return $this->errors->validationFailed('expression required.',array('expression'=>array('Required.')));
-		$clean = preg_replace('/[^0-9+\-*\/%.()]/','',str_replace(' ','',$expr));
+		$clean = preg_replace('/[^0-9+\-*\/%.()]/','',str_replace(' ','',$expr)) ?? '';
 		if(''===$clean) return $this->errors->create('invalid_expression','No valid math characters.');
 		try { $r = $this->evalRec($clean); } catch(\Throwable $e){ return $this->errors->create('eval_error',$e->getMessage()); }
 		return $this->success("$r",array('expression'=>$expr,'result'=>$r));
