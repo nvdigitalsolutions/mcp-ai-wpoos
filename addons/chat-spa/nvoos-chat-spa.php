@@ -5,7 +5,7 @@
  * Description: NV oOS Chat — modern React chat surface for the NV oOS plugin. Drop-in shortcode + Gutenberg block that talks to the existing NV oOS REST chat endpoints (mcp-ai/v1/chat-client, /chat-transcripts, /chat-memory) via the Vercel AI SDK UI layer (@ai-sdk/react). No Node server is introduced.
  * Version:     0.7.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
  * License: GPLv3 or later

@@ -5,7 +5,7 @@
  * Description: Operator-side toolkit to deploy and manage the NV oOS Cloud control plane (Cloudflare Workers + D1 + KV + AI Gateway, Stripe billing, OpenRouter). Provides a One-Click Wizard, Plan/Apply dashboard, drift detector, audit log, and smoke tests inside WP-Admin. Requires NV oOS base plugin.
  * Version:     0.3.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com

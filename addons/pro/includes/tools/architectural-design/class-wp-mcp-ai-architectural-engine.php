@@ -7,8 +7,7 @@
  * aligned with IBC, IRC, ASCE 7, ASHRAE 62.1, ASHRAE 55, IS 875-3, IS 1893,
  * BS 6399-2, JNBC 2018, and Sri Lanka UDA / SLS guidance.
  *
- * Designed to be PHP 7.4-compatible so the math can be promoted to the base
- * distribution in the future without refactor.
+ * PHP 8.1-compatible so the math can be reused by the base distribution.
  *
  * @package WP_MCP_AI_Pro
  * @since 1.2.0

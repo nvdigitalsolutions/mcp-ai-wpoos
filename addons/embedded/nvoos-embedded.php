@@ -5,7 +5,7 @@
  * Description: Embedded AI and WebChat extension for NV oOS. Enables server-side LLM inference via llama.cpp (GGUF models), client-side browser inference via WebLLM (WebGPU), and decentralised P2P WebChat rooms with WebRTC signaling. Requires NV oOS base plugin.
  * Version:     0.2.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
