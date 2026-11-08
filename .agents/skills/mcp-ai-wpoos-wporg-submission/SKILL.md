@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live at 0.5.3; nvoos-content-graph live at 1.0.10; nvoos-design-system in the pipeline). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy, related-issue sweep, reply-email template), readme.txt standards, .wordpress-org listing assets, and the NV oOS Complete checkout-flow disclosure discipline. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, triaging PCP findings, or capturing listing screenshots."
+description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live at 0.5.3; nvoos-content-graph live at 1.0.10; nvoos-design-system in the pipeline). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy, related-issue sweep, reply-email template), readme.txt standards, .wordpress-org listing assets, the main-plugin packaging tri-sync (.distignore / .gitattributes export-ignore / strip-dev-files.sh) and git archive parity checks, and the NV oOS Complete checkout-flow disclosure discipline. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, triaging PCP findings, or capturing listing screenshots."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.11"
   plugin-version-tested: "1.2.11"
-  last-updated: "2026-11-04"
+  last-updated: "2026-11-08"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook
@@ -713,6 +713,74 @@ in PR #6662: its inline rsync list drifted from `.distignore`, a dev
 file. Playground-demo dev folders and their exclusion checklist live in the
 `mcp-ai-wpoos-playground-demos` skill.
 
+### Main plugin (`mcp-ai-wpoos`): the other tri-sync
+
+The base/complete plugin has its own three lists, and they diverged in
+2026-11 (fixed in `9db73a7cad`):
+
+| List | Consumed by |
+|---|---|
+| `.distignore` | `bin/prepare-wordpress-org-deploy.sh` (rsync `--exclude-from`) |
+| `.gitattributes` (`export-ignore`) | `git archive` -> GitHub "Download ZIP", source tarballs |
+| `bin/strip-dev-files.sh` (`DEV_PATHS`) | post-clone production trees |
+
+`bin/build-plugin-zip.sh` is a *fourth* view - rsync `--exclude` flags - and
+it already had the correct anchored patterns. When the four disagree, the
+build script is usually the reference implementation.
+
+**The anchor rule.** Every one of those matchers is depth-independent unless
+anchored with a leading `/`:
+
+- `src/` matched *every* `src` dir - `lib/*/src`, `vendor/guzzlehttp/*/src`,
+  `vendor/psr/*/src`, `vendor/composer/*/src`, `addons/*/src` - and dropped
+  **5,944 tracked files** from `git archive` plus **3,706 `vendor/**/src`**
+  from the WP.org deploy output (no Composer autoloader in either). Both
+  lists are now `/src/`.
+- A bare `lib/` pruned the extracted engine (`lib/core/src`,
+  `lib/wordpress-adapter/src`), which the combined build ships. Replaced by
+  the same per-path set the build uses: `lib/core/tests`,
+  `phpstan.neon` / `phpstan.neon.dist` / `phpunit.xml.dist`,
+  `lib/core/.gitattributes`, `lib/laravel-adapter/`, `lib/craft-adapter/`.
+
+**`export-ignore` cannot negate a pruned directory.** To keep a runtime file
+inside an otherwise dev-only dir, ignore the children and un-ignore the file:
+
+```
+bin/**                      export-ignore
+bin/vectorize-image.js      -export-ignore
+```
+
+`bin/vectorize-image.js` is runtime - three image tools spawn it via `node`
+for SVG output and the build re-includes it explicitly - so
+`strip-dev-files.sh` must clear `bin/` entry-by-entry rather than delete the
+whole directory.
+
+**Verification (run this, do not eyeball the diff):**
+
+1. **Stage first.** `git archive HEAD` reads `.gitattributes` *from the tree*,
+   so unstaged rules are invisible and the test silently passes. To validate
+   before committing, run `git write-tree` and archive the tree object it
+   prints instead of `HEAD`.
+2. **Parity against the shipped build.** Compare the archive listing with the
+   namelist of `build/mcp-ai-wpoos-*.zip` (Python `zipfile`). The archive may
+   legitimately drop dev files, but **everything it drops must also be absent
+   from the ZIP** (0 divergence). This check is what caught
+   `bin/vectorize-image.js`, which the `bin/` rule had swallowed.
+3. **Smoke the extracted tree.** Require `vendor/autoload.php`, then register
+   the bridge's PSR-4 prefixes (`Nvoos\Core\` -> `lib/core/src/`,
+   `Nvoos\WordPress\` -> `lib/wordpress-adapter/src/`; see
+   `includes/bootstrap/oos-bridge.php`) and assert the classes resolve. The
+   adapter namespace is `Nvoos\WordPress\Tool`, **not**
+   `...\Adapter\Tool` - guessing that name produces a false "broken
+   archive" reading.
+4. **Run rsync from the repo root** (`rsync -nav --exclude-from=.distignore ./ /tmp/x/`).
+   A subdirectory source re-roots the patterns and hides anchoring mistakes.
+   Count `^src/` (must be 0) and `^vendor/.*/src/` (must be non-zero).
+
+Shell/quoted-string hazards that corrupt this output (interleaved PTY,
+`/tmp` in Windows Python, mangled backslashes) are catalogued in
+`mcp-ai-wpoos-test-suite` -> "Shell harness pitfalls".
+
 **Windows local builds** — when the msys `rsync`/`zip` binaries are broken
 (missing DLLs — hit on the docs-hub 0.5.1 trunk build), stage with GNU
 `tar` using the same exclude set and zip with Python `zipfile` (normalize
@@ -720,6 +788,11 @@ entry names to forward slashes, verify the listing, and check `readme.txt`
 sits at the ZIP root) before uploading. Python `zipfile.extractall()` needs
 WINDOWS-style paths (`F:/...`) — msys-style `/f/...` silently resolves to
 `F:\f\...` (hit on the content-graph 1.0.12 pass).
+
+Hit again 2026-11-08 on the main plugin: `rsync.exe: error while loading
+shared libraries: msys-xxhash-0.dll`. Do not repair msys - run the identical
+command in WSL (`wsl -e bash -lc 'cd /mnt/f/GITHUB/mcp-ai-wpoos && rsync ...'`),
+which has a working rsync and reproduces the exclude semantics exactly.
 
 ## .wordpress-org assets
 

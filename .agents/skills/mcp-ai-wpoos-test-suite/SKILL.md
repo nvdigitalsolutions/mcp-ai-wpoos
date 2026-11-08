@@ -5,7 +5,7 @@ description: Repair and triage guide for the NV oOS PHPUnit test suite — Docke
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-11-04"
+  last-updated: "2026-11-08"
   plugin-version: "1.2.14"
   plugin-version-tested: "1.2.14"
 ---
@@ -1521,6 +1521,13 @@ fwrite( STDERR, 'STATE: ' . wp_json_encode( $data ) . PHP_EOL );
   emits no `[NV oOS]` lines while its neighbours do. Consecutive failing
   tests can straddle a progress-line boundary (`FF` at the end of one line
   plus `F` at the start of the next = three consecutive failures).
+
+### Shell harness pitfalls (Windows/Cygwin PTY)
+
+Moved to `reference/shell-harness-pitfalls.md` (PTY output interleaving,
+`/tmp` in Windows Python, heredoc backslash mangling, msys rsync, and the
+unstaged-`.gitattributes` trap - the false failures from the 2026-11-08
+packaging session).
 
 ## Enumerating the suite
 
