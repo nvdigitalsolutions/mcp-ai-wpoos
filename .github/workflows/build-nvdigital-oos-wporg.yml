@@ -346,14 +346,14 @@ jobs:
 
             | Package | File | Description |
             |---------|------|-------------|
-            | **Base** | `nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip` | Free base plugin (~300 tools) |
+            | **Base** | `nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip` | Free base plugin (~358 tools) |
             | **Pro** | `nvdigital-open-operator-system-oos-pro-${{ steps.version.outputs.version }}.zip` | Pro addon (requires base) |
             | **Complete** | `nvdigital-open-operator-system-oos-complete-${{ steps.version.outputs.version }}.zip` | Base + Pro combined |
 
             ### Requirements
 
             - WordPress 6.0+
-            - PHP 7.4+ (base) / PHP 8.1+ (pro)
+            - PHP 8.1+
             - AI provider API key (OpenAI, Gemini, or Ollama)
 
             ### Installation
