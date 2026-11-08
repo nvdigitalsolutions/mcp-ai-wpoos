@@ -73,7 +73,7 @@ The OOS engine adds negligible overhead — adapters are thin wrappers (one-line
 > implemented: `bin/build-plugin-zip.sh` ships `lib/core` and
 > `lib/wordpress-adapter` in the combined build and keeps excluding `/lib` from the
 > base and WordPress.org builds. `enable_oos_engine` remains **false by default** by
-> decision - see Proposal 132 section 14.5. Note that this guide and the
+> decision - see Proposal 134 section 14.5. Note that this guide and the
 > cross-platform gap analysis quote different migrated-tool counts (82 of ~195 here
 > vs 190 in the gap analysis); the gap analysis is the newer inventory.
 

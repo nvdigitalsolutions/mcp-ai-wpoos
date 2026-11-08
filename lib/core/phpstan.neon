@@ -39,7 +39,7 @@ parameters:
         # published `nvoos/core` API, so dropping a constructor parameter for
         # a lint pass would be a needless BC break. Scoped to one rule and six
         # files — no other rule is relaxed for them.
-        # Tracked in Proposal 132 §14.4.
+        # Tracked in Proposal 134 §14.4.
         -
             identifier: constructor.unusedParameter
             paths:

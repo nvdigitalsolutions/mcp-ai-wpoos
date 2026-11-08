@@ -487,7 +487,7 @@ present, preventing the OAuth handler classes (GitHub, QuickBooks, Cloudways, et
 
 ### Tool sets as the real differentiator
 
-Since the 8.1 baseline (Proposal 131) the base plugin and the Pro addon share a
+Since the 8.1 baseline (Proposal 133) the base plugin and the Pro addon share a
 single PHP floor of **8.1+**, so the PHP version is no longer what separates
 them. The differentiator is the tool set:
 

@@ -14,11 +14,11 @@ parameters:
     # array" errors from ToolInterface and provider contracts that used bare
     # `array` types because the WordPress adapter still supported PHP 7.4.
     #
-    # That constraint is gone: the plugin floor is now PHP 8.1 (Proposal 131).
+    # That constraint is gone: the plugin floor is now PHP 8.1 (Proposal 133).
     # Retire the errors with `@phpstan-type` aliases (ToolContext, ToolArgs,
     # ProviderResponse) and `array<string, mixed>` on the remainder, then
-    # promote to level 8 — see Proposal 132 (functional type signatures).
+    # promote to level 8 — see Proposal 134 (functional type signatures).
     #
-    # Progress (Proposal 132): levels 5-8 are now clean, so level 8 (the
-    # maximum) is enforced here. See Proposal 132 section 14 for the
+    # Progress (Proposal 134): levels 5-8 are now clean, so level 8 (the
+    # maximum) is enforced here. See Proposal 134 section 14 for the
     # implementation record.

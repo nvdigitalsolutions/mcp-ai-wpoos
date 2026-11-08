@@ -1,8 +1,8 @@
-# Proposal 132 — Functional Type Signatures (type-driven design for base + Pro)
+# Proposal 134 — Functional Type Signatures (type-driven design for base + Pro)
 
 - **Date:** 2026-11-08
 - **Status:** **Phases 1–2 shipped; WS-6 API shipped.** WS-3 partially applied (helpers added, legacy helpers deprecated rather than removed). WS-5 interface added, first typed tool migrated. WS-7 applied to one pilot tool. See §14 for the implemented/deferred split.
-- **Prerequisite:** [Proposal 131](131-php-81-baseline-proposal.md) — **shipped** (single PHP 8.1 floor)
+- **Prerequisite:** [Proposal 133](133-php-81-baseline-proposal.md) — **shipped** (single PHP 8.1 floor)
 - **Research basis:** *Functional Programming in Scala* (Chiusano & Bjarnason) mapped onto PHP 8.1, plus the 2024–2026 consensus on parse-don't-validate, illegal-states-unrepresentable, and static analysis as PHP's type checker (sources in §11).
 - **Owner:** Core
 - **Scope:** `lib/core/src/Domain/Contract/`, `lib/core/src/Tool/`, `lib/core/src/Application/Tool/`, `includes/interfaces/`, `includes/tools/`, `addons/pro/includes/tools/`
@@ -442,7 +442,7 @@ Explicitly rejected, because the book is seductive:
 
 ```mermaid
 flowchart TD
-    P0["Phase 0<br/>Proposal 131: PHP 8.1 floor"] --> G0{"shipped"}
+    P0["Phase 0<br/>Proposal 133: PHP 8.1 floor"] --> G0{"shipped"}
     G0 --> P1["Phase 1 (WS-1, WS-2)<br/>type aliases + envelope shapes"]
     P1 --> G1{"gate<br/>PHPStan level 7<br/>lib/core clean"}
     G1 --> P2["Phase 2 (WS-3, WS-4)<br/>Option, throw, ToolResult<br/>typed registry edge"]
@@ -525,7 +525,7 @@ are referenced from `src/`.
 - PHP FCIS/errors-as-values discussion — [r/PHP](https://www.reddit.com/r/PHP/comments/mpmf8g/which_form_of_typing_is_best_practice_in_php/)
 
 **In-repo**
-- [Proposal 131 — PHP 8.1 baseline](131-php-81-baseline-proposal.md)
+- [Proposal 133 — PHP 8.1 baseline](133-php-81-baseline-proposal.md)
 - `lib/core/phpstan.neon.dist`, `lib/core/src/Domain/Contract/ToolInterface.php`, `lib/core/src/Tool/AbstractTool.php`
 - `includes/interfaces/interface-wp-mcp-ai-tool.php`
 - `.agents/skills/mcp-ai-wpoos-wporg-submission/SKILL.md` (the "typed return crossing a `WP_Error` API" failure class)

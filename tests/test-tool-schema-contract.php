@@ -3,7 +3,7 @@
  * Unit tests for WP_MCP_AI_Tool_Schema_Auditor::audit_contract().
  *
  * Covers the schema self-consistency pass added alongside the typed
- * signature work (Proposal 132, WS-6). Client-emission hazards live in
+ * signature work (Proposal 134, WS-6). Client-emission hazards live in
  * test-tool-schema-auditor.php; these are authoring-contract hazards.
  *
  * @package WP_MCP_AI

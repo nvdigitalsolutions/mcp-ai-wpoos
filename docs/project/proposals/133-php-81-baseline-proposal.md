@@ -1,7 +1,7 @@
-# Proposal 131 — PHP 8.1 Baseline (single floor for base + Pro)
+# Proposal 133 — PHP 8.1 Baseline (single floor for base + Pro)
 
 - **Date:** 2026-11-08
-- **Status:** **Shipped** (this branch). Enables [Proposal 132](132-functional-type-signatures-proposal.md).
+- **Status:** **Shipped** (this branch). Enables [Proposal 134](134-functional-type-signatures-proposal.md).
 - **Owner:** Core
 - **Supersedes:** the "two PHP version targets" rule in `CLAUDE.md`, `.context/conventions.md`, and `AGENTS.md`.
 - **Compatibility field (for PRDs):** **PHP 8.1+** — for base plugin, Pro addon, and all `lib/*` packages.
@@ -135,7 +135,7 @@ operator-facing message can no longer drift apart.
 | 2 | wp.org submission note explaining the floor change and the 8.1 EOL rationale. |
 | 3 | Opportunistic cleanups now unblocked — not mandatory, do them where touched: `strpos()` → `str_contains()`, `switch` → `match`, array constants → enums, typed properties. |
 | 4 | Optional: set the repo-specific `php-min` on the `wp-*` skills if they are ever treated as repo policy rather than generic WordPress guidance. |
-| 5 | Execute [Proposal 132](132-functional-type-signatures-proposal.md) — the type work this bump unlocks. |
+| 5 | Execute [Proposal 134](134-functional-type-signatures-proposal.md) — the type work this bump unlocks. |
 | 6 | Plan the **8.2** floor (8.1 security support ended 2025-12-31). The type work does not depend on 8.2-only syntax, so this is a one-line gate + guard change plus a release note. |
 
 ## 8. Sources
@@ -144,4 +144,4 @@ operator-facing message can no longer drift apart.
 - WordPress PHP compatibility: <https://make.wordpress.org/hosting/handbook/handbook/php/>
 - In-repo evidence: `lib/core/composer.json`, `lib/wordpress-adapter/composer.json`,
   `lib/core/phpstan.neon.dist`, `.github/workflows/php-linting.yml`
-- Related: [Proposal 132 — Functional type signatures](132-functional-type-signatures-proposal.md)
+- Related: [Proposal 134 — Functional type signatures](134-functional-type-signatures-proposal.md)
