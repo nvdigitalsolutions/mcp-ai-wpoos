@@ -83,6 +83,51 @@ describe( 'auditFacts', () => {
 		expect( auditFacts( [ section( { titleDivider: divider() } ) ], html ) ).toEqual( [] );
 	} );
 
+	it( 'accepts a device-scoped padding rendered as a scoped <style> rule', () => {
+		// A device-scoped map cannot go inline — DesignRenderer emits it as a
+		// `[data-section-id]` rule ahead of the band, so the band's own slice has
+		// no `padding:`. The fact is still rendered.
+		const html = [
+			'<style>[data-section-id="aaa"]{padding:125px 0px 125px 0px}' +
+				'@media (max-width:1025px){[data-section-id="aaa"]{padding:100px 0px 100px 0px}}</style>',
+			'<div data-section-id="aaa"><h2>Heading</h2></div>',
+		].join( '' );
+
+		expect(
+			auditFacts(
+				[ section( { padding: { desktop: '125px 0px 125px 0px', tablet: '100px 0px 100px 0px' } } ) ],
+				html
+			)
+		).toEqual( [] );
+	} );
+
+	it( 'still reports a scoped padding that emits no scoped rule', () => {
+		// The map is declared but the build rendered nothing for it.
+		const html = '' +
+			'<div data-section-id="aaa"><h2>Heading</h2></div>';
+
+		const unrendered = auditFacts(
+			[ section( { padding: { desktop: '125px 0px' } } ) ],
+			html
+		);
+
+		expect( unrendered.map( ( item ) => item.fact ) ).toEqual( [ 'padding' ] );
+	} );
+
+	it( 'does not let an unrelated inline padding mask a missing scoped rule', () => {
+		// A nested element carries `padding:` but the band's map emitted no
+		// scoped rule — the fact is still unrendered.
+		const html = '' +
+			'<div data-section-id="aaa"><span style="padding:4px">x</span></div>';
+
+		const unrendered = auditFacts(
+			[ section( { padding: { desktop: '125px 0px', tablet: '100px 0px' } } ) ],
+			html
+		);
+
+		expect( unrendered.map( ( item ) => item.fact ) ).toEqual( [ 'padding' ] );
+	} );
+
 	it( 'only inspects a band\'s own slice of the HTML', () => {
 		// bbb renders a divider that aaa does not — aaa must still be reported.
 		const html = [

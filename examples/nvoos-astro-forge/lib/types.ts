@@ -393,7 +393,10 @@ export interface ForgeSection {
 	bgGradient?: string;
 	/** The background-overlay tint (Elementor's overlay layer). */
 	overlay?: string;
-	padding?: string;
+	/** The source band's declared padding — a CSS shorthand, or a per-device
+	 * map when the source scopes it (jayainc's 059421c is 125px on desktop,
+	 * 100px on tablet and mobile). Absent → the bandSpacing policy. */
+	padding?: string | ResponsiveLength;
 	/** The boxed container's max-width (Elementor's boxed sections constrain
 	 * their content — jayainc's 1140px default). Absent → the site measure. */
 	measure?: string;

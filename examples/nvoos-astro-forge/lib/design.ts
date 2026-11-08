@@ -24,6 +24,7 @@ import { createRequire } from 'node:module';
 import { expandHex, hexToRgb, hslToHex, rgbToHex } from './color.ts';
 import { contrastRatio, relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
+import { scopedPaddingOf } from './scoped-css.ts';
 import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 const nodeRequire = createRequire( import.meta.url );
@@ -3188,13 +3189,19 @@ export interface BuiltBand {
  * output). The wrap's inline style carries the baked theme background. */
 export function builtBandsOf( html: string ): BuiltBand[] {
 	const bands: BuiltBand[] = [];
+	const scopedPadding = scopedPaddingOf( html );
 	const re = /<div\s+data-section-id="([^"]*)"[^>]*style="([^"]*)"[^>]*>/gi;
 	for ( const match of html.matchAll( re ) ) {
 		const style = match[ 2 ] ?? '';
 		const bg = /(?:^|;)background:\s*([^";]+)/i.exec( style )?.[ 1 ];
 		const bgImage = /(?:^|;)background-image:\s*url\(['"]?([^'"\)]+)['"]?\)/i.exec( style )?.[ 1 ];
 		const padding = /(?:^|;)padding:\s*([^";]+)/i.exec( style )?.[ 1 ];
-		bands.push( { id: match[ 1 ], bg: bg?.trim(), bgImage: bgImage?.trim(), padding: padding?.trim() } );
+		bands.push( {
+			id: match[ 1 ],
+			bg: bg?.trim(),
+			bgImage: bgImage?.trim(),
+			padding: padding?.trim() ?? scopedPadding.get( match[ 1 ] ),
+		} );
 	}
 	return bands;
 }
@@ -3215,6 +3222,12 @@ function normalizeBg( value: string | undefined ): string {
 	return ( value ?? '' ).replace( /\s+/g, ' ' ).trim().toLowerCase();
 }
 
+/** A band padding as comparable text — a device-scoped map compares on its
+ * desktop value, which is what the unqueried built rule carries. */
+function paddingText( value: ForgeSection[ 'padding' ] ): string {
+	return typeof value === 'string' ? value : ( value?.desktop ?? '' );
+}
+
 export function verifyBandFlow( sourceSections: ForgeSection[], builtHtml: string ): BandFlowReport {
 	const builtById = new Map( builtBandsOf( builtHtml ).filter( ( band ) => band.id ).map( ( band ) => [ band.id as string, band ] ) );
 	const dropped: string[] = [];
@@ -3225,7 +3238,7 @@ export function verifyBandFlow( sourceSections: ForgeSection[], builtHtml: strin
 		}
 		const expectedBg = section.bgGradient ?? ( section.bgColor && section.bgColor !== 'transparent' ? normalizeColor( section.bgColor ) : undefined );
 		const expectedImage = section.bgImage;
-		const expectedPadding = section.padding;
+		const expectedPadding = paddingText( section.padding );
 		if ( ! expectedBg && ! expectedImage && ! expectedPadding ) {
 			continue; // No visual band facts — nothing to gate.
 		}

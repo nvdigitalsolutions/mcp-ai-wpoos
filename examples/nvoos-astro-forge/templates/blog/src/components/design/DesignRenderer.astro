@@ -86,21 +86,24 @@ const parallaxStyle = ( behavior: ReturnType<typeof behaviorFor> ): string | und
 	behavior?.kind === 'parallax' && behavior.speed !== undefined && behavior.speed > 1
 		? `--ds-parallax-range:${ Math.min( behavior.speed, 4 ) * 24 }px`
 		: undefined;
-/** A band margin — one length, or a per-device map (Elementor's scoped pulls). */
-type ResponsiveMargin = string | { desktop?: string; tablet?: string; mobile?: string } | undefined;
+/** A band length (margin or padding) — one value, or a per-device map
+ * (Elementor's scoped pulls and per-device band padding). */
+type ResponsiveLength = string | { desktop?: string; tablet?: string; mobile?: string } | undefined;
 
 /** The inline half of a band margin — only plain strings go inline. */
-const marginInline = ( value: ResponsiveMargin ): string | undefined =>
+const marginInline = ( value: ResponsiveLength ): string | undefined =>
 	typeof value === 'string' ? value : undefined;
 
 /**
  * The stylesheet half of a band margin. Elementor scopes a pull to a device
  * range — jayainc's products band is 0px on desktop, 170px on tablet and 100px
  * on mobile — so a single inline value is unfaithful. A per-device map is
- * emitted entirely as CSS: an inline margin-top would outrank the media
- * queries. Breakpoints match the template's (1025 desktop / 768 tablet).
+ * emitted entirely as CSS: an inline value would outrank the media queries.
+ * Band padding uses the same contract (jayainc's 059421c: 125px desktop,
+ * 100px tablet and mobile). Breakpoints match the template's (1025 desktop /
+ * 768 tablet).
  */
-const responsiveMarginCss = ( id: string | undefined, property: string, value: ResponsiveMargin ): string => {
+const responsiveDeviceCss = ( id: string | undefined, property: string, value: ResponsiveLength ): string => {
 	if ( ! id || typeof value !== 'object' || value === null ) {
 		return '';
 	}
@@ -145,7 +148,11 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	// flush content-tight bands) — inline wins over the wrap default. This runs
 	// BEFORE the hero's early return: a hero band carries padding facts too.
 	if ( theme.padding ) {
-		parts.push( `padding:${ theme.padding }` );
+		// A per-device map is emitted as scoped CSS below (an inline padding
+		// would outrank its media queries); only a plain shorthand goes inline.
+		if ( typeof theme.padding === 'string' ) {
+			parts.push( `padding:${ theme.padding }` );
+		}
 		// The source declares the band's rhythm — suppress the template's
 		// default section padding so the bands meet their neighbors flush
 		// (124 §5, the continuous flow).
@@ -256,13 +263,16 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	return parts.length > 0 ? parts.join( ';' ) : undefined;
 };
 
-// The per-device half of every band margin — emitted once, scoped by section id.
-const responsiveMargins = sections
+// The per-device half of every band margin AND padding — emitted once, scoped
+// by section id. A padding scoped to a device range needs the same CSS
+// treatment as a scoped pull: an inline value would outrank the media queries.
+const responsiveBandCss = sections
 	.map( ( section ) => {
 		const theme = themeFor( section );
 		return (
-			responsiveMarginCss( section.id, 'margin-top', theme?.marginTop ) +
-			responsiveMarginCss( section.id, 'margin-bottom', theme?.marginBottom )
+			responsiveDeviceCss( section.id, 'margin-top', theme?.marginTop ) +
+			responsiveDeviceCss( section.id, 'margin-bottom', theme?.marginBottom ) +
+			responsiveDeviceCss( section.id, 'padding', theme?.padding )
 		);
 	} )
 	.join( '' );
@@ -270,7 +280,7 @@ const responsiveMargins = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{responsiveMargins && <Fragment set:html={ `<style>${ responsiveMargins }</style>` } />}
+		{responsiveBandCss && <Fragment set:html={ `<style>${ responsiveBandCss }</style>` } />}
 		{sections.map((section, index) => {
 			const theme = themeFor(section);
 			const behavior = behaviorFor(section);

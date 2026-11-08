@@ -9,10 +9,13 @@
 // present, the CSS language scored fine, nothing compared facts to output.
 //
 // This is a static check: for each fact a band declares, the band's slice of
-// the built HTML must carry the marker that fact produces.
+// the built HTML must carry the marker that fact produces. A fact that can
+// render OUTSIDE that slice (a device-scoped padding emits a `<style>` rule
+// ahead of the band) supplies its own `present` search instead.
 // ---------------------------------------------------------------------------
 
 import type { ForgeSection } from './types.ts';
+import { scopedPaddingOf } from './scoped-css.ts';
 
 export interface UnrenderedFact {
 	sectionId: string;
@@ -29,6 +32,15 @@ interface FactMarker {
 	marker: string;
 	/** Only audit when the value matches (e.g. centred alignment). */
 	when?: ( value: unknown ) => boolean;
+	/** Override the marker search for facts that can render OUTSIDE the band's
+	 * own slice — a device-scoped padding emits a `[data-section-id]` rule in a
+	 * `<style>` block, which sits before the band element. */
+	present?: ( ctx: {
+		html: string;
+		sectionId: string;
+		value: unknown;
+		scopedPadding: Map< string, string >;
+	} ) => boolean;
 }
 
 /**
@@ -39,7 +51,17 @@ interface FactMarker {
 const FACT_MARKERS: FactMarker[] = [
 	{ key: 'bgGradient', label: 'bgGradient', marker: 'gradient' },
 	{ key: 'bgColor', label: 'bgColor', marker: 'background' },
-	{ key: 'padding', label: 'padding', marker: 'padding:' },
+	{
+		key: 'padding',
+		label: 'padding',
+		marker: 'padding:',
+		// A plain-string padding is inline on the band; a device-scoped map can
+		// only be a `[data-section-id=…]{padding:…}` rule in a <style> block
+		// ahead of it. Each form is checked against its own marker, so a stray
+		// inline `padding:` cannot mask a map that emitted no scoped rule.
+		present: ( { html, sectionId, value, scopedPadding } ) =>
+			typeof value === 'string' ? html.includes( 'padding:' ) : scopedPadding.has( sectionId ),
+	},
 	{ key: 'measure', label: 'measure', marker: '--ds-measure' },
 	{
 		key: 'titleAlign',
@@ -77,6 +99,7 @@ function sectionHtml( html: string, id: string ): string | undefined {
  */
 export function auditFacts( sections: ForgeSection[], builtHtml: string ): UnrenderedFact[] {
 	const unrendered: UnrenderedFact[] = [];
+	const scopedPadding = scopedPaddingOf( builtHtml );
 	for ( const section of sections ) {
 		if ( ! section.id ) {
 			continue;
@@ -94,7 +117,10 @@ export function auditFacts( sections: ForgeSection[], builtHtml: string ): Unren
 			if ( fact.when && ! fact.when( value ) ) {
 				continue;
 			}
-			if ( ! html.includes( fact.marker ) ) {
+			const rendered = fact.present
+				? fact.present( { html, sectionId: section.id, value, scopedPadding } )
+				: html.includes( fact.marker );
+			if ( ! rendered ) {
 				unrendered.push( { sectionId: section.id, fact: fact.label, marker: fact.marker } );
 			}
 		}
