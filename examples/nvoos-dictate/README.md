@@ -6,6 +6,8 @@ backend). Hold a hotkey, speak, release: speech recognition and the
 deterministic cleanup pipeline run on **your** machine, and the cleaned text
 pastes into whatever app has focus.
 
+<img width="1007" height="1394" alt="Screenshot 2026-11-09 030819" src="https://github.com/user-attachments/assets/39d161f7-b6df-4e9b-a0de-f422b478df36" />
+
 Windows first; Linux and macOS follow (see
 `docs/project/proposals/067-tauri-dictation-companion-app-proposal.md` in the
 repo root for the full design).
