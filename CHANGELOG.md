@@ -1,6 +1,13 @@
 # oOS – Changelog
 
-## [Unreleased]
+## [1.2.18] - 2026-11-08
+
+### Changed — PHP 8.1 baseline, typed engine, and the tool-schema contract gate (#7529)
+
+- **The plugin's PHP floor is now 8.1** (up from 7.4). The per-file 7.4 parse guards become 8.1 guards, the plugin header and `readme.txt` declare `Requires PHP: 8.1`, a new `WP_MCP_AI_MIN_PHP` constant backs the runtime guard, `composer.json` requires `>=8.1`, and the Site Health minimum/recommended report plus every docblock, doc and agent-context reference that still quoted 7.4 were rewritten (`composer run lint:compat` now targets 8.1–8.4). Sites on 7.4 can no longer activate the plugin.
+- **`lib/core` is typed to PHPStan level 8** — `ToolArgs`/`ToolContext`/envelope aliases, `Option` and `ToolResult` as total containers, `AbstractResultTool` + `ToolResultInterface` as the typed execution seam, `Support\Json` for request bodies (encoding throws) and best-effort text, and `AbstractTool::objectParam()`/`stringListParam()`/`jsonBody()` helpers; the Domain, Application, Infrastructure and Tool layers go from 399 level-7 findings to zero at every level up to 8, with 8 new unit tests covering the accessors and decode validation.
+- **Tool-schema contract gate** — `audit_contract()`/`audit_registry_contract()` on the schema auditor with the finding labels registered in Site Health, and the registry placed under a CI gate (`test_registry_schema_contract_is_clean`) that audits all 446 tools.
+- **Production `vendor/` resynced with `composer.lock`** — guzzle 7.15.2 (URI-host / Host-header and cookie-domain fixes, GHSA-v5mv-p594-2x33 + GHSA-f7vp-7xgx-4w4r) plus regenerated autoload metadata from a `--no-dev` install, so a fresh clone loads `vendor/autoload.php` without running Composer.
 
 ### Changed — combined build now ships the extracted OOS engine
 
@@ -13,6 +20,54 @@
 ### Changed — model-assisted Auto-Select for assistant tools
 
 - The assistant editor's 🤖 Auto-Select button now asks the assistant's configured AI model (or the site default provider) to pick tools from the available catalog when a model is available — the deterministic keyword matching remains the fallback and runs when no model is configured. The analysis happens on click via admin-ajax (`wp_mcp_ai_auto_select_tools`, nonce + assistant `edit_post` gated), so rendering the editor never blocks on a model call, and the completion notice shows the method used ("AI-assisted selection" vs "Keyword matching"). Selections stay focused: the model is capped at 40 tools and the keyword-fallback default drops from 100 → 40. New filters: `wp_mcp_ai_auto_select_enable_model`, `wp_mcp_ai_auto_select_model_config`, `wp_mcp_ai_auto_select_model_response`, `wp_mcp_ai_auto_select_model_max_tools`, `wp_mcp_ai_auto_select_model_candidates`, `wp_mcp_ai_auto_select_model_desc_chars`. Profession default tools now also match as space-separated keywords, so they reliably score in both paths.
+
+### Added — Proposal 129: outreach & CRM admissibility layer (#7513) — +10 Pro tools
+
+- **A deterministic admissibility layer now sits between message generation and the prospect** (patterns studied from Sellbird — no code, prompts or skill copy taken). New engines under `addons/pro/includes/tools/crm/`: `crm-pre-send-gate`, `crm-deliverability`, `crm-send-window`, `crm-unsubscribe`, `crm-opt-out-detector`, `crm-signals-db`, `crm-signals`, `crm-signal-collector`, `crm-agent-guard`, `crm-sequence-presets`.
+- **Ten new Pro tools** — `verify_lead_email`, `check_sending_domain`, `get_sending_readiness`, `manage_sending_warmup`, `collect_prospect_signals`, `explain_prospect_fit`, `query_signal_cohort`, `export_outreach_csv`, `preview_pre_send_gate`, `review_held_send`. Registration reaches the Pro tool map, three schedule presets, two workflow presets (the new `outreach` category), the `sales_crm` tool preset, the settings screen and the regenerated coverage manifest.
+- **Every outbound path calls the gate** — `send-lead-email`, `send-lead-sms`, `send-lead-whatsapp` and the OA `Channels::dispatch()`. RFC 8058 `List-Unsubscribe`/`List-Unsubscribe-Post` headers ship with a signed GET/POST route at `mcp-ai/v1/crm/unsubscribe`; the OA engine honours per-recipient send windows (opt-in, `enabled => false` by default so existing sequences are never silently retimed), a `held` mail state with review tools, and a z ≥ 1.96 A/B promotion guard once both arms reach 30 sends. The signal table self-heals (`SHOW TABLES` verification + `CREATE TABLE IF NOT EXISTS` fallback, `DB_VERSION` 1.0.1).
+- **Validation** — 471 tests / 6,781 assertions green on WP 6.9 + PHP 8.2 (77/216 on WP 7.1), phpcs 0 errors across all 44 changed PHP files.
+
+### Added — Astro Forge design rebuild + form bridge (Proposal 114, app-side, #7463–#7528)
+
+- **The forge becomes a fidelity engine.** It learns widget and block vocabularies instead of enumerating them, classifies auxin widgets and wrapped Elementor docs, and rebuilds a source site's chrome (header/footer), type and spacing scales ranked by band, full-bleed bands, hero layering, CTA shape, footer and missing media, contrast-assigned logos, continuous band flow, column facts and the source scroll behaviour. Section facts now carry band padding, section margins, icon-row rhythm, heading facts, card box models, image ratios/container widths and device-scoped margins, with split/logo bands reflowing at the tablet breakpoint and the header wrapping before its row clips.
+- **Verification became measurable** — vision-verified rebuild comparison (exposed over MCP), an a11y gate, a token drift check, generated-token gating in `forge verify`, a content-block vocabulary, a DTCG interchange doc and an image pipeline; design pins survive regeneration, flattened/dropped/misplaced facts are caught, and the band rhythm is optional per profile. The forge also captures the source's tracking profile, SEO head and redirects (with a CSP gate that ignores stale profiles), stages the scaffold before swapping it in, and ships a no-op build stub so Velocity can serve prebuilt mirrors.
+- **The standalone `nvoos-forge-bridge` plugin gains the form bridge** (`rest/class-nvoos-forge-bridge-forms.php`) and a redirects surface (`rest/class-nvoos-forge-bridge-redirects.php`) with full test coverage, plus the wp.org review fixes — a webhook `TypeError` on failed HTTP (P0TDX399590HGN), sync auth that fails actionably, and a browser-like UA / build-time fetch proxy seam for bot-protected sources. **Plugin 0.1.0 → 0.3.0.**
+- **CI/ops** — new `sync-nvoos-forge-bridge.yml` mirror sync, shared-mirror deploy for forged sites, dot-slash deploy-config path fixes, the forge-sites workflow mirror default, and a self-hosted runner for the bot-protection 403. Storefront side: the combobox popup rendering fix and scroll reveals + webfont harvesting.
+
+### Added — QuickBooks Desktop MCP (Proposal 113, sub-project, #7458/#7459)
+
+- **New `examples/qb-desktop-mcp` server** (`nvoos-qb-desktop-mcp`) — read tools over a QuickBooks Desktop company file plus a **safe write tier** (customer/item/vendor adds) behind a two-step confirm + revert flow and the `QBBRIDGE_WRITE_MODE` gate, with installer, docs, tests, Zed/CI wiring and a new `mcp-ai-wpoos-qb-desktop` coding-time skill.
+
+### Added — Cognition memory layer (sub-project, #7501)
+
+- **The Cognition app gains on-device memory** — a new Rust `memory` module (chunker, embedder, index, term scoring, controller) with hybrid retrieval and safety gates, SQLite migrations + storage wiring, new IPC commands and Diagnostics/Home/Settings surfaces, and 228 lines of memory tests. **v0.3.0 unchanged.**
+
+### Added — shared design-import core package (#7497/#7498)
+
+- **New `packages/nvoos-design-import` 0.1.0** — the design-import pipeline extracted from the forge and storefront into a shared core, with a unified color-conversion core and a webfont-harvesting test suite. Media/link rendering in logo-cloud and text blocks rides the same package.
+
+### Changed — gateway 0.3.2, Claude gateway plugin 0.1.1, and mcp-bridge env files (#7446/#7460/#7462)
+
+- **Gateway 0.3.2** publishes the demo key on the landing page (config-driven, with landing-route tests); the **Claude gateway plugin moves to 0.1.1** and the gateway-ops skill records it (the 0.1.0 → 0.1.1 bump had shipped without the skill/docs update — the same class of drift the 0.2.0 bump logged).
+- **`packages/nvoos-mcp-bridge` honours `MCP_AI_ENV_FILE`** — an env-file config source for the npx MCP bridge (`0.1.0-alpha.5` unchanged).
+- **Credential hygiene** — leaked credentials are redacted from the skill docs (#7461).
+
+### Changed — knowledge-base facts refresh + CI gate (#7487)
+
+- **The shipped profession knowledge base is now CI-enforced** — `tests/test-knowledge-base-facts-sync.php` asserts the version stamp, the product name, the 18-provider list and the tool-count line against the README, across the canonical `includes/knowledge-base/**` files and their `plugins/nvoos-content-graph-ai-platform` byte-identical mirrors. The active content was corrected (stale `519`/`GPT-4 Turbo`/`o1-preview`/`Gemini 1.5` references are asserted absent) and the historical changelog tails stay untouched.
+
+### Skills, docs, and CI (#7461/#7473/#7500/#7528)
+
+- **Astro skills** — the 126 clusters are documented (astro-storefront + astro-forge), plus the band-fact render paths and the capture arc; the git-ops skill recovers the learnings a squash dropped (#7473); `.agents/skills/mcp-ai-wpoos-qb-desktop/` is new (coding-time skills **81 → 82**).
+- **Docs** — Proposal 114 P1–P7, Proposal 119 (vision comparison assessment) and Proposal 129 (proposal + research + implementation plan) land under `docs/project/proposals/`.
+
+### Versioning
+
+- **Tool count: ~358 base + ~1,388 Pro (~1,745 total; live registry authoritative).** +10 Pro from Proposal 129's CRM admissibility tools; zero base registrations; the forge/storefront/bridge surfaces are app-side (described, not counted).
+- Skills: **81 → 82** (new `mcp-ai-wpoos-qb-desktop`). Addons: **32** (unchanged — MCP Gateway 0.3.1 → 0.3.2 and Claude Gateway Plugin 0.1.0 → 0.1.1 are version moves). Model catalog: **v2026.11.03** unchanged (251 models, 18 providers). Security classes: **12** (unchanged). Media Worker: **3.4.0** (unchanged). **PHP floor: 7.4 → 8.1.**
+- Sub-project moves: forge-bridge **0.1.0 → 0.3.0**; new `nvoos-design-import` **0.1.0**; astro-forge 0.1.1, astro storefront 0.4.2, astro bridge addon 1.1.3, Cognition 0.3.0 and mcp-bridge 0.1.0-alpha.5 unchanged. New `examples/qb-desktop-mcp` (Proposal 113).
+- Stale build ZIPs removed: the **1.2.16** oOS set (30 files — 6 root ZIPs + 3 `.sha256` + 2 optional-components + 19 toolkit-addons) plus the superseded root-level `nvoos-astro-bridge-1.1.1.zip`; 1.2.17 stays as the fallback.
 
 ## [1.2.17] - 2026-11-04
 
