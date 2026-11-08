@@ -62,7 +62,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://jayainc.com",
-			"analyzedAt": "2026-11-06T20:19:39.353Z"
+			"analyzedAt": "2026-11-08T12:25:44.134Z"
 		},
 		"concept": "cool accent over light neutrals, rubik display / rubik body, compact spacing rhythm.",
 		"palette": {
@@ -263,13 +263,13 @@
 				"bgGradient": "linear-gradient(180deg, #ffffff 6%, #04132b 100%)",
 				"bgColor": "transparent",
 				"padding": "100px 0px 100px 0px",
-				"measure": "1600px",
-				"paddingX": "30px",
 				"marginTop": {
 					"desktop": "0px",
 					"tablet": "170px",
 					"mobile": "100px"
 				},
+				"measure": "1600px",
+				"paddingX": "30px",
 				"titleAlign": "center",
 				"titleStyle": {
 					"size": "43px",
@@ -295,6 +295,10 @@
 				"bgGradient": "linear-gradient(180deg, #ffffff 0%, #e5e5e5 100%)",
 				"bgColor": "transparent",
 				"padding": "100px 0px 100px 0px",
+				"marginTop": {
+					"desktop": "0px",
+					"tablet": "150px"
+				},
 				"columns": [
 					{
 						"width": 50
@@ -324,6 +328,16 @@
 				"bgGradient": "linear-gradient(137deg, #081a43 0%, #071230 100%)",
 				"bgColor": "transparent",
 				"padding": "125px 0px 125px 0px",
+				"marginTop": {
+					"desktop": "0px",
+					"tablet": "0px",
+					"mobile": "0%"
+				},
+				"marginBottom": {
+					"desktop": "0px",
+					"tablet": "0px",
+					"mobile": "0%"
+				},
 				"titleAlign": "center",
 				"titleStyle": {
 					"size": "43px",
