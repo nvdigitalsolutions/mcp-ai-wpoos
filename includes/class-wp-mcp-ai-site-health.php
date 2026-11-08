@@ -571,6 +571,11 @@ class WP_MCP_AI_Site_Health {
 			WP_MCP_AI_Tool_Schema_Auditor::FINDING_OVER_BUDGET         => __( 'Schema over emit budget', 'mcp-ai-wpoos' ),
 			WP_MCP_AI_Tool_Schema_Auditor::FINDING_UNSAFE_INTEGER      => __( 'Unbounded integer id/amount field', 'mcp-ai-wpoos' ),
 			WP_MCP_AI_Tool_Schema_Auditor::FINDING_SLUG_TOO_LONG       => __( 'Tool slug over length limit', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_REQUIRED_UNDECLARED => __( 'Required key not declared in properties', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_PROPERTY_TYPE_MISSING => __( 'Property without a type', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_ARRAY_ITEMS_MISSING => __( 'Array property without items', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_MIN_ABOVE_MAX       => __( 'minimum greater than maximum', 'mcp-ai-wpoos' ),
+			WP_MCP_AI_Tool_Schema_Auditor::FINDING_ENUM_TYPE_MISMATCH  => __( 'Enum value mismatched with type', 'mcp-ai-wpoos' ),
 		);
 
 		$items = array();

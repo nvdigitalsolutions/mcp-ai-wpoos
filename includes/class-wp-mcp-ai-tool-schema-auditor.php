@@ -98,6 +98,41 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 	const FINDING_SLUG_TOO_LONG = 'slug_too_long';
 
 	/**
+	 * Finding: a `required` entry names a key that is not in `properties`.
+	 *
+	 * @var string
+	 */
+	const FINDING_REQUIRED_UNDECLARED = 'required_key_undeclared';
+
+	/**
+	 * Finding: a property has neither `type` nor a union/combinator/enum.
+	 *
+	 * @var string
+	 */
+	const FINDING_PROPERTY_TYPE_MISSING = 'property_type_missing';
+
+	/**
+	 * Finding: an `array` property omits `items`.
+	 *
+	 * @var string
+	 */
+	const FINDING_ARRAY_ITEMS_MISSING = 'array_items_missing';
+
+	/**
+	 * Finding: `minimum` is greater than `maximum`.
+	 *
+	 * @var string
+	 */
+	const FINDING_MIN_ABOVE_MAX = 'minimum_above_maximum';
+
+	/**
+	 * Finding: an `enum` value does not match the declared `type`.
+	 *
+	 * @var string
+	 */
+	const FINDING_ENUM_TYPE_MISMATCH = 'enum_type_mismatch';
+
+	/**
 	 * Default per-schema byte budget for tools/list (20 KB).
 	 *
 	 * Matches the per-server schema budget Codex applies before compacting
@@ -339,6 +374,177 @@ final class WP_MCP_AI_Tool_Schema_Auditor {
 		}
 
 		return $kept;
+	}
+
+	/**
+	 * Audit a schema against its own declared contract.
+	 *
+	 * Separate from audit_schema(), which encodes client-emission hazards.
+	 * These checks are about internal consistency — the failure class where a
+	 * tool declares a `required` key it never defines, types an array without
+	 * `items`, or writes a `minimum` above its `maximum`. None of those are
+	 * visible to JSON-schema-less static analysis, and all of them produce
+	 * confusing runtime validation instead of a clear authoring error.
+	 *
+	 * Pure and side-effect-free: no WordPress state, no emitted output.
+	 *
+	 * @since 1.2.18
+	 *
+	 * @param string $slug   Tool slug.
+	 * @param array  $schema Tool input schema.
+	 * @return array<int,array{code:string,path:string,detail:string}> Findings (empty when clean).
+	 */
+	public static function audit_contract( $slug, $schema ) {
+		unset( $slug );
+
+		$findings = array();
+
+		if ( ! is_array( $schema ) || ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
+			return $findings;
+		}
+
+		$properties = $schema['properties'];
+		$required   = isset( $schema['required'] ) && is_array( $schema['required'] ) ? $schema['required'] : array();
+
+		foreach ( $required as $key ) {
+			if ( ! is_string( $key ) ) {
+				continue;
+			}
+
+			if ( ! array_key_exists( $key, $properties ) ) {
+				$findings[] = array(
+					'code'   => self::FINDING_REQUIRED_UNDECLARED,
+					'path'   => '$.required.' . $key,
+					'detail' => sprintf(
+						/* translators: %s: parameter name */
+						__( '`required` lists "%s" but `properties` does not declare it; the model is told to send a field the schema never describes.', 'mcp-ai-wpoos' ),
+						$key
+					),
+				);
+			}
+		}
+
+		foreach ( $properties as $name => $property ) {
+			if ( ! is_array( $property ) ) {
+				continue;
+			}
+
+			$path     = '$.properties.' . $name;
+			$has_type = isset( $property['type'] );
+			$is_union = isset( $property['anyOf'] ) || isset( $property['oneOf'] ) || isset( $property['allOf'] );
+			$type     = $has_type ? $property['type'] : null;
+
+			if ( ! $has_type && ! $is_union ) {
+				$findings[] = array(
+					'code'   => self::FINDING_PROPERTY_TYPE_MISSING,
+					'path'   => $path,
+					'detail' => __( 'Property declares no `type` and no union/combinator; clients cannot translate it and the model cannot validate against it.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			if ( 'array' === $type && ! isset( $property['items'] ) ) {
+				$findings[] = array(
+					'code'   => self::FINDING_ARRAY_ITEMS_MISSING,
+					'path'   => $path . '.items',
+					'detail' => __( 'Array property has no `items` schema; generates `Array<unknown>` in TypeScript clients.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			if ( isset( $property['minimum'], $property['maximum'] )
+				&& is_numeric( $property['minimum'] ) && is_numeric( $property['maximum'] )
+				&& (float) $property['minimum'] > (float) $property['maximum'] ) {
+				$findings[] = array(
+					'code'   => self::FINDING_MIN_ABOVE_MAX,
+					'path'   => $path,
+					'detail' => __( '`minimum` is greater than `maximum`; no value can satisfy the schema.', 'mcp-ai-wpoos' ),
+				);
+			}
+
+			if ( isset( $property['enum'] ) && is_array( $property['enum'] ) && is_string( $type ) ) {
+				foreach ( $property['enum'] as $value ) {
+					if ( ! self::value_matches_type( $value, $type ) ) {
+						$findings[] = array(
+							'code'   => self::FINDING_ENUM_TYPE_MISMATCH,
+							'path'   => $path . '.enum',
+							'detail' => sprintf(
+								/* translators: 1: declared JSON type, 2: enum value rendered as text */
+								__( 'Enum value %2$s does not match the declared type "%1$s".', 'mcp-ai-wpoos' ),
+								$type,
+								is_scalar( $value ) ? (string) $value : gettype( $value )
+							),
+						);
+						break;
+					}
+				}
+			}
+		}
+
+		return $findings;
+	}
+
+	/**
+	 * Whether a JSON-schema enum value matches a JSON type name.
+	 *
+	 * @since 1.2.18
+	 *
+	 * @param mixed  $value Enum value.
+	 * @param string $type  JSON type name.
+	 * @return bool
+	 */
+	private static function value_matches_type( $value, $type ) {
+		switch ( $type ) {
+			case 'string':
+				return is_string( $value );
+			case 'integer':
+				return is_int( $value );
+			case 'number':
+				return is_int( $value ) || is_float( $value );
+			case 'boolean':
+				return is_bool( $value );
+			case 'array':
+				return is_array( $value ) && array_is_list( $value );
+			case 'object':
+				return is_object( $value );
+			case 'null':
+				return null === $value;
+			default:
+				return true;
+		}
+	}
+
+	/**
+	 * Audit every registered tool's schema contract.
+	 *
+	 * @since 1.2.18
+	 *
+	 * @param WP_MCP_AI_Tool_Registry|null $registry Optional registry; defaults to the singleton.
+	 * @return array<string,array<int,array{code:string,path:string,detail:string}>> Slug => findings (only non-empty entries).
+	 */
+	public static function audit_registry_contract( $registry = null ) {
+		if ( null === $registry && class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		}
+
+		if ( ! $registry || ! method_exists( $registry, 'get_all_tools' ) ) {
+			return array();
+		}
+
+		$findings = array();
+
+		foreach ( $registry->get_all_tools() as $slug => $tool ) {
+			if ( ! is_object( $tool ) || ! method_exists( $tool, 'get_parameters_schema' ) ) {
+				continue;
+			}
+
+			$schema  = $tool->get_parameters_schema();
+			$audited = self::audit_contract( $slug, is_array( $schema ) ? $schema : array() );
+
+			if ( ! empty( $audited ) ) {
+				$findings[ $slug ] = $audited;
+			}
+		}
+
+		return $findings;
 	}
 
 	/**
