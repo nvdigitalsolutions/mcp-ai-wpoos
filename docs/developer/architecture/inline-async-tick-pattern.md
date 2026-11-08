@@ -88,9 +88,9 @@ Every consumer of the trait wires the same four moving parts:
   measurement bootstrap can subscribe and record
   `inline_kick.duration_ms` and `inline_kick.failure.count` for OTel.
 
-## PHP 7.4 compatibility
+## PHP 8.1 compatibility
 
-The trait targets PHP 7.4+ (the base plugin's floor). No enums, no
+The trait targets PHP 8.1+ (the base plugin's floor). No enums, no
 `readonly`, no union return types. All members are non-private to keep
 trait methods callable from any composing host.
 

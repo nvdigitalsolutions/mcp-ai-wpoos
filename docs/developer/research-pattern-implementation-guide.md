@@ -27,7 +27,7 @@ This guide provides step-by-step instructions for implementing the **research_pr
 
 ### Required Knowledge
 
-- PHP 7.4+ and WordPress development
+- PHP 8.1+ and WordPress development
 - Understanding of tool interface (`WP_MCP_AI_Tool_Interface`)
 - Familiarity with WordPress coding standards
 - Basic understanding of AI/LLM integration

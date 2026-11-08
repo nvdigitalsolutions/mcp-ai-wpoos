@@ -41,7 +41,7 @@ User/AI Agent
 
 ## Unified Parameters (per tool)
 
-### `web_search` (Base — PHP 7.4+)
+### `web_search` (Base — PHP 8.1+)
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|

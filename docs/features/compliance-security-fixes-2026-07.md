@@ -178,7 +178,7 @@ After implementation, all fixes were validated with:
 ```bash
 composer run lint:base    # PHPCS — base plugin
 composer run lint         # PHPCS — full codebase
-composer run lint:compat  # PHP 7.4–8.3 compatibility
+composer run lint:compat  # PHP 8.1–8.4 compatibility
 composer run test         # PHPUnit — full test suite
 ```
 

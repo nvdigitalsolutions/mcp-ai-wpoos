@@ -226,7 +226,7 @@ jobs:
         run: |
           echo "Changed PHP files:"
           echo "${{ steps.changed-files.outputs.all_changed_files }}"
-          vendor/bin/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 7.4-8.3 ${{ steps.changed-files.outputs.all_changed_files }}
+          vendor/bin/phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 ${{ steps.changed-files.outputs.all_changed_files }}
 
       - name: Run PHP Compatibility Check on all files
         if: github.event_name == 'push'

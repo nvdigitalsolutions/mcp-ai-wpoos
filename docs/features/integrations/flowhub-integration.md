@@ -9,7 +9,7 @@ Flowhub is a cannabis dispensary POS (Point of Sale) and inventory management sy
 ## Requirements
 
 - WordPress 6.0 or higher
-- PHP 7.4 or higher
+- PHP 8.1 or higher
 - Flowhub API credentials (Client ID and API Key)
 - `manage_woocommerce` or `manage_options` capability
 

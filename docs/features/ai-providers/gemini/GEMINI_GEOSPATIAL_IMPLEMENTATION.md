@@ -249,14 +249,14 @@ All files pass PHP syntax checks:
 ## Compatibility
 
 ### Requirements
-- PHP 7.4+
+- PHP 8.1+
 - WordPress 6.0+
 - Gemini API key
 - Google Maps API key (for frontend visualization)
 
 ### Tested With
 - WordPress 6.0+
-- PHP 7.4, 8.0, 8.1, 8.2, 8.3
+- PHP 8.1, 8.2, 8.3, 8.4
 - Multisite configurations
 
 ## Success Criteria Met

@@ -485,13 +485,16 @@ plugin's capabilities.
 Similarly, `wp_mcp_ai_should_load_integrations()` returned `false` in base mode unless Pro was
 present, preventing the OAuth handler classes (GitHub, QuickBooks, Cloudways, etc.) from loading.
 
-### PHP version as the real differentiator
+### Tool sets as the real differentiator
 
-- **Base plugin (PHP 7.4+):** All `includes/tools/` tools are available. Tools for optional
+Since the 8.1 baseline (Proposal 131) the base plugin and the Pro addon share a
+single PHP floor of **8.1+**, so the PHP version is no longer what separates
+them. The differentiator is the tool set:
+
+- **Base plugin (PHP 8.1+):** All `includes/tools/` tools are available. Tools for optional
   third-party plugins (WooCommerce, JetEngine, Elementor, etc.) are registered and activate
   automatically when those plugins are detected via their `is_available()` guards.
-- **Pro addon (PHP 8.1+ required):** Adds genuinely NEW tools using modern PHP 8.1+ language
-  features (enums, readonly properties, named arguments, fibers). It does not unlock, gate, or
+- **Pro addon (PHP 8.1+):** Adds genuinely NEW tools. It does not unlock, gate, or
   restrict anything that is already in the base plugin.
 
 ### Changes made
@@ -501,8 +504,8 @@ present, preventing the OAuth handler classes (GitHub, QuickBooks, Cloudways, et
 | `includes/class-wp-mcp-ai-tool-registry.php` | Removed Pro-addon check from `is_base_version()`; the method now only respects the `WP_MCP_AI_BASE_VERSION` constant and filter |
 | `includes/class-wp-mcp-ai-tool-registry.php` | `load_default_tools()`: changed `$is_base_version ? $base_tools : array_merge(...)` to unconditional `array_merge($base_tools, $extended_tools, $pro_tools)` — all tools in the plugin always attempt registration |
 | `includes/bootstrap/helpers.php` | `wp_mcp_ai_should_load_integrations()` now always returns `true`; integration files are always loaded (they guard themselves against missing dependencies internally) |
-| `includes/bootstrap/constants.php` | `WP_MCP_AI_BASE_VERSION` default changed from `true` to `false`; updated docblock to document PHP 7.4 vs PHP 8.1+ as the version differentiator |
-| `readme.txt` | Rewrote "= Versions =" section to clearly explain PHP 7.4 base vs PHP 8.1+ Pro distinction |
+| `includes/bootstrap/constants.php` | `WP_MCP_AI_BASE_VERSION` default changed from `true` to `false`; the docblock documents the tool-set distinction (both distributions are PHP 8.1+, so PHP version gates nothing) |
+| `readme.txt` | Rewrote "= Versions =" section to explain the base vs Pro **tool-set** distinction (shared PHP 8.1+ floor) |
 
 ### Safety verification
 
@@ -531,4 +534,4 @@ WordPress.org build artefact.
 - [x] External services fully documented (was already done; URLs corrected)
 - [x] `sanitize_settings_callback()` now performs real recursive sanitization using `sanitize_textarea_field()` + `esc_url_raw()` + type casts; keys preserved to avoid corruption
 - [x] Base plugin tools are no longer gated behind the Pro addon; `is_base_version()` Pro-addon check removed; `wp_mcp_ai_should_load_integrations()` always returns `true`
-- [x] PHP 7.4 (base) vs PHP 8.1+ (Pro) documented as the definitive version differentiator in `constants.php`, `readme.txt`, and this document
+- [x] Base vs Pro is documented as a **tool-set** distinction (shared PHP 8.1+ floor) in `constants.php`, `readme.txt`, and this document

@@ -5,7 +5,7 @@ Get started with embedded function calling in 5 minutes!
 ## Prerequisites
 
 ✅ WordPress 6.0+  
-✅ PHP 7.4+  
+✅ PHP 8.1+  
 ✅ WP MCP AI plugin activated  
 ✅ Cloudflare Workers AI account  
 

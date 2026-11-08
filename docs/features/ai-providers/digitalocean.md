@@ -24,7 +24,7 @@
 - NV oOS base plugin active (no Pro addon required — DigitalOcean Serverless Inference is in the **Base** distribution).
 - A DigitalOcean Gradient Platform account with Serverless Inference enabled.
 - A **Model Access Key** created in **Gradient Platform → Serverless Inference → Model access keys**.
-- PHP 7.4+ (base plugin requirement).
+- PHP 8.1+ (base plugin requirement).
 
 ---
 

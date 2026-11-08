@@ -48,7 +48,7 @@ Where it shines:
 - Either:
   - A **TypeSafe API key** — early access is waitlisted; keys are issued at [console.typesafe.ai](https://console.typesafe.ai/settings/keys) after Google sign-in, **or**
   - An **OpenRouter API key** (use the `openrouter` transport of the tool — see below).
-- PHP 7.4+ (base plugin requirement).
+- PHP 8.1+ (base plugin requirement).
 
 ---
 

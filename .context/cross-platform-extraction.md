@@ -9,7 +9,7 @@ Context file for AI agents working on or near the framework-agnostic extraction 
 | File | Purpose |
 |---|---|
 | `lib/core/` | `nvoos/core` Composer package — framework-agnostic domain, application, infrastructure, and tool layers (PHP 8.1+, MIT) |
-| `lib/wordpress-adapter/` | `nvoos/wordpress-adapter` — WordPress implementations of all 8 domain contracts (PHP 7.4+, GPL-3.0) |
+| `lib/wordpress-adapter/` | `nvoos/wordpress-adapter` — WordPress implementations of all 8 domain contracts (PHP 8.1+, GPL-3.0) |
 | `lib/laravel-adapter/` | `nvoos/laravel-adapter` — Laravel implementations of all 8 domain contracts (PHP 8.1+, MIT) |
 | `lib/craft-adapter/` | `nvoos/craft-adapter` — Craft CMS implementations of all 8 domain contracts (PHP 8.1+, MIT) |
 | `includes/bootstrap/oos-bridge.php` | WordPress DI wiring — factory function `wp_mcp_ai_oos_orchestrator()`, PSR-4 autoloader, feature flag detection |
@@ -93,7 +93,7 @@ When the flag is off, the legacy `handle_chat_request()` path is completely unch
 ## PHP Version Split
 
 - **`lib/core/`** requires **PHP 8.1+** (uses `readonly` classes, enums, fibers, named arguments)
-- **`lib/wordpress-adapter/`** targets **PHP 7.4+** (uses traditional getters/setters, no readonly)
+- **`lib/wordpress-adapter/`** targets **PHP 8.1+** (matches the plugin floor; `readonly` and other 8.1 syntax are permitted)
 - **`includes/bootstrap/oos-bridge.php`** returns early on PHP < 8.1
 
 ## Current State (2026-07-13)

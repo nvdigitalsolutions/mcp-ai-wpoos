@@ -233,7 +233,7 @@
 - ✅ No secrets exposed in frontend
 
 ### Compatibility
-- **PHP**: 7.4+
+- **PHP**: 8.1+
 - **WordPress**: 6.0+
 - **Dependencies**: None (uses existing HuggingFace client)
 - **Conflicts**: None

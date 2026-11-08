@@ -3,7 +3,7 @@
 **Version:** 0.6.0  
 **Status:** All 7 phases complete  
 **Location:** `addons/chat-spa/`  
-**Requires:** WordPress 6.0+, PHP 7.4+, NV oOS base plugin
+**Requires:** WordPress 6.0+, PHP 8.1+, NV oOS base plugin
 
 The Chat SPA addon is a modern React-based replacement for the legacy `[mcp_ai_chat]` JavaScript shortcode. It uses the **Vercel AI SDK UI** with a custom SSE → Data Stream Protocol adapter and delivers a significantly richer chat experience while remaining backward-compatible with all existing assistants and tool configurations.
 

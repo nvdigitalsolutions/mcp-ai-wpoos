@@ -23,7 +23,7 @@
 **MCP Specification:** 2026-07-28 (Stateless Core, Full Compliance)  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
-**Requires:** WordPress 6.0+, PHP 7.4+  
+**Requires:** WordPress 6.0+, PHP 8.1+  
 **Patent Status:** Patent Pending (Application #19/410,504)  
 **Documentation:** [Grade A (95/100)](docs/history/2026/implementations/DOCUMENTATION_REVIEW_SUMMARY.md) — 1,617 files across 12 directories, 108 admin screenshots, 100% feature coverage
 
@@ -1094,7 +1094,7 @@ Prefer a traditional local WordPress install? Follow the full walkthrough on the
 
 **Minimum Requirements:**
 - WordPress 6.0+
-- PHP 7.4+ (PHP 8.0+ recommended)
+- PHP 8.1+
 - MySQL 5.7+ or MariaDB 10.3+
 
 **Optional Requirements for Enhanced Features:**
@@ -2753,7 +2753,7 @@ The script runs `composer install` and makes the following Composer scripts avai
 | Purpose | Command |
 | --- | --- |
 | WordPress coding standards lint | `composer run lint` |
-| PHP compatibility checks (PHP 7.4–8.3) | `composer run lint:compat` |
+| PHP compatibility checks (PHP 8.1–8.4) | `composer run lint:compat` |
 | Auto-fix coding standards violations | `composer run format` |
 | Generate the translation template | `composer run pot` |
 | Install the WordPress unit test scaffolding | `composer run test:install` |
@@ -2866,7 +2866,7 @@ See [`packages/README.md`](packages/README.md) for a full package listing and AP
 
 ### Coding standards & static analysis
 - Enforce the WordPress Coding Standards with `composer run lint`; auto-fix what you can with `composer run format`.【F:composer.json†L16-L23】
-- Validate cross-version compatibility (PHP 7.4–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
+- Validate cross-version compatibility (PHP 8.1–8.4) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
 
 ### Manual smoke tests
 - Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.

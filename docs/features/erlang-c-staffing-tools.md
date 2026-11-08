@@ -2,7 +2,7 @@
 
 **Added:** April 2026 (v1.1.8)  
 **Tier:** Base plugin (no Pro addon required)  
-**PHP Compatibility:** 7.4+
+**PHP Compatibility:** 8.1+
 
 ---
 

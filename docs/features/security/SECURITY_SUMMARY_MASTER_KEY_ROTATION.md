@@ -246,6 +246,6 @@ The solution successfully addresses all issues identified in the problem stateme
 
 **Implementation Date**: December 2025
 **WordPress Version**: 6.0+
-**PHP Version**: 7.4+
+**PHP Version**: 8.1+
 **Testing Framework**: PHPUnit
 **Security Scans**: CodeQL

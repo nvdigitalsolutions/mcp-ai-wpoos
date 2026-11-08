@@ -273,8 +273,8 @@ Successfully delivered comprehensive slash command system with admin UI across 4
 ### Type Safety
 
 **PHP Type Hints:**
-- Function parameters: Where possible (PHP 7.4+)
-- Return types: Where possible (PHP 7.4+)
+- Function parameters: Where possible (PHP 8.1+)
+- Return types: Where possible (PHP 8.1+)
 - Strict types: Not used (WordPress compatibility)
 
 **Type Checking:**
@@ -364,7 +364,7 @@ Successfully delivered comprehensive slash command system with admin UI across 4
 ### Prerequisites
 
 **Server Requirements:**
-- PHP 7.4+ (tested up to 8.3)
+- PHP 8.1+ (tested up to 8.3)
 - WordPress 6.0+
 - MySQL 5.7+ or MariaDB 10.3+
 - mod_rewrite enabled

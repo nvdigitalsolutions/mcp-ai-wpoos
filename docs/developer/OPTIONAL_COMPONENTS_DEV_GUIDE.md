@@ -176,7 +176,7 @@ jQuery.post(ajaxurl, {
 
 ### Components Won't Download
 
-1. **Check PHP version**: Requires PHP 7.4+
+1. **Check PHP version**: Requires PHP 8.1+
 2. **Check file permissions**: WordPress must be able to write to plugin directory
 3. **Check allow_url_fopen**: Must be enabled in PHP
 4. **Check firewall**: GitHub URLs must be accessible

@@ -261,7 +261,7 @@ public $content = '';
 - Type-safe arguments prevent runtime errors
 
 ### Challenges
-- Need to ensure PHP 8.0+ for attributes (or use annotations for 7.4)
+- Need to ensure PHP 8.0+ for attributes 
 - Custom constraints require validator registration
 - Developers need to learn new pattern (but documentation helps)
 
