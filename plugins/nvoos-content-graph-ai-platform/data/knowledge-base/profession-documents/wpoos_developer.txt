@@ -1,6 +1,6 @@
 NV oOS Developer - Professional Knowledge Base
 
-Spec current as of v1.2.17 (2026-11-04). Facts are version-tagged; the CI
+Spec current as of v1.2.18 (2026-11-08). Facts are version-tagged; the CI
 test tests/test-knowledge-base-facts-sync.php fails when this file drifts
 from the plugin header. Refresh this document on every release.
 
@@ -10,7 +10,7 @@ Website: https://nvdigitalsolutions.com
 
 === OVERVIEW ===
 
-NV oOS — NV Digital Open Operator System (oOS) — is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates 18 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Azure, TypeSafe Jev, WebLLM & embedded engines) through the Model Context Protocol (MCP), offering ~1,735 built-in tools (~358 base + ~1,378 Pro; live registry authoritative) for content management, media generation, e-commerce, forms, and system automation. DeepSeek is the default provider on NV oOS cloud installs.
+NV oOS — NV Digital Open Operator System (oOS) — is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates 18 AI providers (OpenAI, Gemini, Anthropic, DeepSeek, OpenRouter, Baseten, Kimi, Z.AI, DigitalOcean, NVIDIA NIM, Cloudflare, Hugging Face, LM Studio, Ollama, Azure, TypeSafe Jev, WebLLM & embedded engines) through the Model Context Protocol (MCP), offering ~1,745 built-in tools (~358 base + ~1,388 Pro; live registry authoritative) for content management, media generation, e-commerce, forms, and system automation. DeepSeek is the default provider on NV oOS cloud installs.
 
 === ARCHITECTURE ===
 
@@ -28,7 +28,7 @@ Core Components:
    - Manages authentication credentials (bearer tokens)
    
 3. Tool Registry
-   - Central management of ~1,735 built-in tools (~358 base + ~1,378 Pro; live registry authoritative)
+   - Central management of ~1,745 built-in tools (~358 base + ~1,388 Pro; live registry authoritative)
    - Extension system for custom tools
    - Capability-based access control
    - Structured parameter validation with Symfony Validator
@@ -348,7 +348,7 @@ PHPUnit Tests:
 Linting:
 - PHP: composer run lint (WPCS)
 - JavaScript: npm run lint:js (ESLint)
-- PHP Compatibility: composer run lint:compat (PHP 7.4-8.3)
+- PHP Compatibility: composer run lint:compat (PHP 8.1-8.4)
 
 Debugging Tools:
 - Enable logging: Settings → NV oOS → Enable Logging
@@ -375,7 +375,7 @@ Pre-Deployment:
 - [ ] API keys configured in settings (not in code)
 - [ ] Database migrations tested
 - [ ] Multisite compatibility verified
-- [ ] PHP compatibility checked (7.4-8.3)
+- [ ] PHP compatibility checked (8.1-8.4)
 - [ ] Dependencies updated (composer update, npm update)
 
 Configuration:
@@ -512,12 +512,12 @@ Development:
 
 NV oOS Versions (current release v1.2.17; live registry authoritative):
 - Base Version: ~358 core tools, no third-party dependencies
-- Full Version: ~1,735 tools (~358 base + ~1,378 Pro) including integrations
-- Pro Addon: ~1,378 Pro tools including video processing (FFmpeg required)
+- Full Version: ~1,745 tools (~358 base + ~1,388 Pro) including integrations
+- Pro Addon: ~1,388 Pro tools including video processing (FFmpeg required)
 
 WordPress Requirements:
 - WordPress: 6.0 or higher
-- PHP: 7.4 - 8.3
+- PHP: 8.1 - 8.4
 - MySQL: 5.7 or higher / MariaDB 10.3 or higher
 
 Optional Plugin Dependencies:
@@ -529,6 +529,7 @@ Optional Plugin Dependencies:
 - WPCode: Code snippet management (1 tool)
 
 === CHANGELOG ===
+2026-11-08: Refreshed for v1.2.18 — tool count moves to ~358 base + ~1,388 Pro = ~1,745 (Proposal 129 adds ten CRM admissibility tools; live registry authoritative) and the PHP requirement is now 8.1. Product name, the 18-provider list (DeepSeek default on cloud installs) and the model-catalog pointers are unchanged.
 
 2026-11-06: Refreshed for v1.2.17 — corrected product name (NV Digital Open Operator System), the 18-provider list (DeepSeek default on cloud installs), the tool count (~358 base + ~1,378 Pro = ~1,735; live registry authoritative), and model-catalog pointers. Version-tagged; CI-enforced by tests/test-knowledge-base-facts-sync.php.
 

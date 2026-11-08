@@ -238,7 +238,7 @@ Two marketplace-installable distributions, both pointing at the same gateway:
   `/plugin marketplace add nvdigitalsolutions/nvoos-mcp-gateway` →
   `/plugin install nvoos-mcp-gateway@nvoos-marketplace`.
 - **Slim directory plugin** — `addons/claude-gateway-plugin/` (`nvoos-gateway`,
-  0.1.0; plugin-only files + icon + `docs/` privacy/terms Pages scaffold).
+  0.1.1; plugin-only files + icon + `docs/` privacy/terms Pages scaffold).
   Marketplace `nvoos-claude-marketplace`; mirror
   `nvdigitalsolutions/nvoos-claude-gateway-plugin` (sync via
   `sync-claude-gateway-plugin.yml` — subtree split + force-push, secret

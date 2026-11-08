@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 8.1
-Stable tag: 1.2.17
+Stable tag: 1.2.18
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -298,6 +298,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.18 - November 08, 2026 =
+
+Bumped to 1.2.18 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. The plugin's PHP floor rises from 7.4 to 8.1 (header, readme.txt, the new WP_MCP_AI_MIN_PHP guard, composer.json, Site Health, docs), lib/core is typed to PHPStan level 8, and a tool-schema contract CI gate audits all 446 tools; the combined build now ships lib/ so the extracted OOS engine can boot, and GitHub's Download ZIP now drops exactly the same tracked files. Proposal 129 adds the outreach and CRM admissibility layer with ten new Pro tools (pre-send gate, deliverability/warmup, RFC 8058 unsubscribe plus a signed route, multilingual opt-out detection, a 13-signal store, an agent-output guard, sequence presets and a held-mail review state) wired into every outbound path. The Astro Forge design-rebuild engine lands (Proposal 114 — vocabulary learning, vision-verified rebuild comparison, section/band facts, a11y and token-drift gates, the form bridge and a redirects surface; the standalone nvoos-forge-bridge moves to 0.3.0) and the shared nvoos-design-import 0.1.0 package is extracted. Sub-projects: the new QuickBooks Desktop MCP server (Proposal 113) with its new coding-time skill, and the Cognition app's on-device memory layer (hybrid retrieval plus safety gates). Gateway 0.3.2 publishes the landing-page demo key, the Claude gateway plugin moves to 0.1.1, and packages/nvoos-mcp-bridge honours MCP_AI_ENV_FILE; the shipped profession knowledge base is refreshed and CI-enforced. Tool count: ~358 base + ~1,388 Pro (~1,745 total; +10 Pro; live registry authoritative). Coding-time skills 81 -> 82. Stale 1.2.16 build ZIPs removed.
 
 = 1.2.17 - November 04, 2026 =
 

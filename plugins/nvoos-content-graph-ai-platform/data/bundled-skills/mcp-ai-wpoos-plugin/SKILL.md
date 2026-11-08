@@ -11,7 +11,7 @@ metadata:
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
-> **Spec current as of v1.2.17** (last verified 2026-11-04). Version-tagged
+> **Spec current as of v1.2.18** (last verified 2026-11-08). Version-tagged
 > facts are CI-enforced by `tests/test-knowledge-base-facts-sync.php`.
 
 Complete operational skill for the NV Digital Open Operator System (oOS)
@@ -46,7 +46,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~358 base + ~1,378 Pro (~1,735 total; live registry authoritative)
+     │  Tool Registry     │  ~358 base + ~1,388 Pro (~1,745 total; live registry authoritative)
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘

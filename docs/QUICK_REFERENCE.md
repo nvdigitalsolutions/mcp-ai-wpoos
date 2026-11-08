@@ -1,12 +1,13 @@
 # NV oOS Quick Reference Guide
 
-**Version:** 1.2.17
-**Last Updated:** November 04, 2026
+**Version:** 1.2.18
+**Last Updated:** November 08, 2026
 
 This quick reference provides fast access to the most common tasks and commands for Open Operator System.
 
 ## Recent Updates (October–November 2026)
 
+- **v1.2.18** (November 08): the **PHP 8.1 baseline** (up from 7.4 — header, `readme.txt`, the new `WP_MCP_AI_MIN_PHP` guard, `composer.json`, Site Health and the docs sweep) with **`lib/core` typed to PHPStan level 8** (399 → 0 findings) and a **tool-schema contract CI gate** auditing all 446 tools; the combined build now ships `lib/` so the extracted OOS engine can boot, and GitHub's "Download ZIP" now drops exactly the same tracked files. **Proposal 129** adds the outreach & CRM admissibility layer (**+10 Pro tools** — pre-send gate, deliverability/warmup, RFC 8058 unsubscribe + signed route, multilingual opt-out detection, a 13-signal store, an agent-output guard, sequence presets, held-mail review). The **Astro Forge design-rebuild engine** lands (Proposal 114 — vocabulary learning, vision-verified rebuild comparison, section/band facts, a11y + token-drift gates, form bridge + redirects; `nvoos-forge-bridge` → 0.3.0) and the shared `nvoos-design-import` 0.1.0 package is extracted. Sub-projects: the new **QuickBooks Desktop MCP** server (Proposal 113) + the **Cognition memory layer** (hybrid retrieval + safety gates). Gateway 0.3.2, Claude gateway plugin 0.1.1, `MCP_AI_ENV_FILE` for the mcp-bridge, and the CI-enforced knowledge-base facts refresh. Tool count: ~358 base + ~1,388 Pro (~1,745 total — +10 Pro). Skills 81 → 82; addons 32 unchanged. **PHP floor 7.4 → 8.1.** Stale 1.2.16 build ZIPs removed. See `docs/project/plans/1.2.18-docs-catch-up.md`.
 - **v1.2.17** (November 04): the **Astro storefront content & checkout wave** (Proposals 104–108 — server-rendered PDPs + tag-based cache purge, the bridge theme policy + variants + CMS-content routes, the `content_*` MCP tool slice + Pages/Posts workbench, the Q6 component library with Incluud adapted + Zag.js adopted, and the Woo checkout/cart hardening); the **embedded checkout** via the Store API (Proposal 110) with the prod-trace fixes (typed 502s, in-process Store API dispatch, Stripe CSP nonce); the **native→Woo catalog migration** (Proposal 112 — Woo-owned catalog, `migrate-native` CLI); the **Document OCR pipeline + DeepSeek-OCR tier** in the Cognition app (Proposals 109/111); the **November model catalog refresh** (v2026.11.03 — `gpt-6.1-sol` defaults, gpt-4.1 family deprecating); **gateway 0.3.1** + the new **claude-gateway-plugin** addon; the Pro Schedule Manager **Runs & Reports + fleet card**. Tool count unchanged: ~358 base + ~1,378 Pro (~1,735 total). Skills 81; addons 31 → 32. Stale 1.2.15 build ZIPs + superseded astro-bridge ZIPs removed. See `docs/project/plans/1.2.17-docs-catch-up.md`.
 - **v1.2.16** (November 02): the **deep-research reliability pass** (validation gate, measurable depth, staged evidence, richer diagnostics) with **three new base job tools** (`research_status`/`research_result`/`research_cancel`) and the new `deep_research_model` setting + the thinking-model recovery ladder across the ten Pro research tools; the **Abilities bridge** verifies against the official MCP Adapter (raw `WP_Error` passthrough, pessimistic `destructiveHint`); the **gateway ChatGPT OAuth connector goes live** (Proposal 099 Phases 0–4 — `GATEWAY_OAUTH_DEFAULT_SITES`, underscore tool names) with **gateway 0.3.0** (OpenAI challenge route) and the **new `chatgpt-gateway-plugin` addon 0.1.0** (Proposal 101); chatgpt-plugin → 0.2.0; dictate → **NV oOS Cognition v0.3.0** (first-party console window + on-device screen OCR); **Forge Bridge** wp.org-ready (Plugin Check 0/0) + forge npm 0.1.1; glob 9/11/13 → 14.0.2. Tool count: ~358 base + ~1,378 Pro (~1,735 total — +3 base). Skills 81; addons 30 → 31. Stale 1.2.14 build ZIPs removed. See `docs/project/plans/1.2.16-docs-catch-up.md`.
 - **v1.2.14** (October 30): the Astro storefront lands end-to-end (Proposal 092) with the Astro Bridge rename (1.0.1), the standalone Astro CMS `/manage` surface, and REST cookie-auth restored on single-site HTTPS; F&B multi-connection Drive routing (Proposal 093); Google Workspace auto-fallback + the restricted-assistant settings grant; the MCP gateway policy layer (Proposal 094, 0.2.0); the Astro Design System + nvoos-astro-mcp (Proposal 095); front-end asset-leak guards; fast-uri/undici advisories. Tool count unchanged: ~355 base + ~1,378 Pro (~1,732 total). Coding-time skills 76 → 79. Stale 1.2.12 build ZIPs removed. See `docs/project/plans/1.2.14-docs-catch-up.md`.
@@ -171,7 +172,7 @@ This quick reference provides fast access to the most common tasks and commands 
 
 **Minimum:**
 - WordPress 6.0+
-- PHP 7.4+ (PHP 8.0+ recommended)
+- PHP 8.1+
 - MySQL 5.7+ or MariaDB 10.3+
 
 **Optional (for enhanced features):**
