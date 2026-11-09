@@ -108,6 +108,7 @@ Trade-off, stated plainly: `local` duplicates the media library into every deplo
 ## 7. Validation
 
 - `npm run typecheck` — clean.
-- `npx vitest run` (full suite, `--no-file-parallelism --testTimeout=90000`) — **953 passing, 62 files**, including the hermetic `forge-e2e` build gate.
-- `tests/media-localize.test.ts` 54, `tests/scaffold.test.ts` 83 (`--testTimeout` is needed on a loaded Windows box: the default 5 s elapses while other builds run — pre-existing).
+- `npx vitest run` (full suite, `--no-file-parallelism --testTimeout=90000`) — **954 passing, 63 files**, including the hermetic `forge-e2e` build gate.
+- `tests/media-localize.test.ts` 54, `tests/scaffold.test.ts` 83.
+- `tests/localize-media-proxy.test.ts` runs the real pass against a fixture CMS and pins the proxy split: uploads rewritten to `/media` and never fetched, the stylesheet and its font mirrored, `font-display: swap` applied, a foreign preconnect left intact. Verified red against the pre-fix script (`icons.woff` reported as "not a WordPress upload"). (`--testTimeout` is needed on a loaded Windows box: the default 5 s elapses while other builds run — pre-existing).
 - Expected effect on jayainc: the three JPEGs (619 KB) become WebP at roughly 290 KB — the 327 KB GTmetrix win — and the page stops chaining to Google Fonts.
