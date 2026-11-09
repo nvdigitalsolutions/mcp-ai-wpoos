@@ -8,6 +8,7 @@
 // ---------------------------------------------------------------------------
 import manifest from '../../nvoos.json';
 import { chrome } from './chrome.generated.ts';
+import { repairMediaUrl } from './media.ts';
 import { jsonLdGraph, type JsonLdGraph } from './seo.ts';
 
 /** Build the Organization + WebSite + (breadcrumbs) + bands + page graph. */
@@ -21,7 +22,10 @@ export function buildGraph(
 		site: {
 			url: astroSite?.origin ?? '',
 			name: manifest.name ?? 'Forge',
-			logo: chrome?.logo?.src,
+			// The source's absolute logo URL is data, so JSON-LD keeps an
+			// absolute URL — but it must point at the LIVE media host after a
+			// domain move (Proposal 139 §repair).
+			logo: repairMediaUrl( chrome?.logo?.src ),
 			searchUrl: astroSite && manifest.surfaces?.search !== false ? new URL('/search/', astroSite).href : undefined,
 		},
 		page,

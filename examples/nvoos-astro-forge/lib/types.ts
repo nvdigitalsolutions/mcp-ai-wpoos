@@ -318,12 +318,42 @@ export interface ForgeDeploy {
 	forms?: 'bridge-direct' | 'bff-proxied';
 }
 
+/**
+ * The media block (Proposal 138) — where images come from and whether the
+ * build keeps them local. Every field is optional; absent = the defaults
+ * (CMS host only, localization on).
+ */
+export interface ForgeMedia {
+	/**
+	 * Extra hosts Astro may optimize and the localizer may mirror: a CDN, an
+	 * image proxy, or a second domain the media still lives on. The CMS host
+	 * is always authorized. Do NOT list a host that serves WordPress media
+	 * under a path that the CMS also serves — a stale `/wp-content/` URL is
+	 * repaired to the CMS origin instead (Proposal 138 §repair).
+	 */
+	hosts?: string[];
+	/**
+	 * Mirror remote media into `dist/media` after the build (default true).
+	 * Astro already localizes the images it optimizes; this pass covers body
+	 * content, site chrome and non-optimized images so the deployed artifact
+	 * never hotlinks the CMS.
+	 */
+	localize?: boolean;
+	/** Per-file download cap in MB (default 25). Larger files stay remote. */
+	maxFileMb?: number;
+}
+
 /** One operator-configured WordPress site. */
 export interface SiteProfile {
 	/** Root URL (https://…). No trailing slash. */
 	url: string;
 	/** Display name (discovery fills it when absent). */
 	name?: string;
+	/**
+	 * The media block (Proposal 138) — extra authorized image hosts and the
+	 * build-time localization pass. Absent = CMS host only, localization on.
+	 */
+	media?: ForgeMedia;
 	/**
 	 * The deploy block (Proposal 135) — the runtime tier and the public-vs-CMS
 	 * origin split. Absent = the static tier (backwards compatible).

@@ -1,11 +1,12 @@
 ---
-// SmartImage — optimize same-host WordPress images with Astro Image
-// (responsive WebP/AVIF, lazy), and pass through anything else (CDN hosts,
-// external domains) as a plain <img>. The same-host decision mirrors the
-// env-first rule in content.config.ts, so the build can never fail on a
-// remote image the config doesn't allowlist.
+// SmartImage — optimize WordPress media with Astro Image (responsive
+// WebP/AVIF, lazy), and pass through anything else (CDN hosts, external
+// domains) as a plain <img>. The authorization gate mirrors `image.domains`
+// in astro.config.mjs (see src/lib/media.ts) and repairs a stale absolute
+// media URL to the configured CMS origin first — a site that moved domains
+// keeps its optimized images instead of falling back to a dead hotlink.
 import { Image } from 'astro:assets';
-import manifest from '../../nvoos.json';
+import { isAuthorizedImageUrl, repairMediaUrl } from '../lib/media.ts';
 
 interface Props {
 	src?: string;
@@ -19,22 +20,11 @@ interface Props {
 
 const { src, alt = '', class: className, sizes, eager = false } = Astro.props;
 
-function safeHost(url?: string): string | undefined {
-	if (!url) {
-		return undefined;
-	}
-	try {
-		return new URL(url).hostname;
-	} catch {
-		return undefined;
-	}
-}
-
-const effectiveSite = (import.meta.env.WP_SITE_URL ?? manifest.url).replace(/\/+$/, '');
-const wpHost = safeHost(effectiveSite);
-const imageHost = safeHost(src);
+// Repair before the gate: a `/wp-content/…` URL on a stale host is still the
+// CMS's media, and pointing it at the live origin lets Astro download it.
+const resolvedSrc = repairMediaUrl(src);
 // Narrowed through a local so the <Image> branch always sees a string.
-const optimizedSrc = src && wpHost && imageHost === wpHost ? src : undefined;
+const optimizedSrc = isAuthorizedImageUrl(resolvedSrc) ? resolvedSrc : undefined;
 ---
 
 {optimizedSrc ? (
@@ -50,5 +40,5 @@ const optimizedSrc = src && wpHost && imageHost === wpHost ? src : undefined;
 		decoding="async"
 	/>
 ) : (
-	<img src={src} alt={alt} class={className} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+	<img src={resolvedSrc} alt={alt} class={className} loading={eager ? 'eager' : 'lazy'} decoding="async" />
 )}

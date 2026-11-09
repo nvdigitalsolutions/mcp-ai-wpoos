@@ -1367,11 +1367,32 @@ record — read it as the spec. Exit 0 = parity, 1 = undeclared drift. It pins:
   Adding a kind to either app fails until declared — a new kind is a
   cross-product decision.
 
-It is a **script, not a vitest test**, on purpose: inside an app's suite every
+- It is a **script, not a vitest test**, on purpose: inside an app's suite every
 run of that app would need the OTHER app's `node_modules` (each tsconfig
 extends `astro/tsconfigs/strict`, resolved from the importing file's directory
 → `[TSCONFIG_ERROR] Tsconfig not found`). Node 24 strips TS types natively.
 Same discipline as `bin/check-chat-parity.php`.
+
+- **MCP surface (2026-11-09):** tool LISTS differ on purpose (a generator vs a
+storefront), so the gate pins the shared RUNTIME plus every name that appears
+on both sides:
+- annotation presets (`READ_ONLY_TOOL` … `DESTRUCTIVE_WRITE_TOOL`) must carry
+  the same four hints in both `mcp/util.ts` files;
+- the request pipeline must keep the fail-closed ORDER
+  (`limiter.allow(` → `validateHost(` → `validateOrigin(` →
+  `authorizeRequest(`) and the codes `-32029` (rate limit) / `-32001`
+  (unauthorized write);
+- a tool name present in both apps must be declared either
+  `SHARED_MCP_TOOLS` (identical title + annotations) or
+  `MCP_NAME_COLLISIONS` (with a reason). Today the shared set is EMPTY and
+  `rebuild_trigger` is the one declared collision (forge: vault-held signed
+  bridge POST, open-world write; velocity: `NVOOS_REBUILD_WEBHOOK_URL`,
+  idempotent write). The extractor reads both trees as TEXT (34 forge / 35
+  velocity tools) so the script stays dependency-free — keep it that way.
+- **Forward rule:** when the managed forge tier ships its `/mcp` surface
+  (porting the velocity design/ops slices), every copied tool moves into
+  `SHARED_MCP_TOOLS` — the gate fails the moment a name exists on both sides
+  unclassified. The workflow `paths` cover `examples/*/mcp/**` for both apps.
 
 ## Template endpoints and the deploy-branch README (2026-11-09)
 
@@ -1396,6 +1417,53 @@ Any collection beyond `posts`/`pages`/`products` is a CPT: the scaffold
 generates a `/<basePath>/` route pair, keeps it through every preset, and
 emits it in sitemap/llms. The source needs `show_in_rest`. Notes:
 `reference/cpt-collections.md`.
+
+## Proposal 139 — media localization (2026-11-09)
+
+Full notes: `docs/project/proposals/139-forge-media-localization-proposal.md`.
+
+A forged site must never hotlink the CMS. Astro's `<Image>` localizes what it
+can see; everything else did not — body-content `<img>`, chrome logos/favicon,
+collage photos, and any host outside `image.domains`. A domain move
+(`jayainc.com` → `cms.jayainc.com`) therefore broke images.
+
+Three layers, one contract:
+
+- **Authorize** — `image.domains` = CMS host ∪ `profile.media.hosts` ∪
+  `NVOOS_FORGE_MEDIA_HOSTS`; `SmartImage` reads the same rule from
+  `src/lib/media.ts` instead of a single-host comparison.
+- **Repair** — a `/wp-content/` or `/wp-includes/` path whose host is neither
+  the CMS nor an allowlisted media host is re-pointed at the CMS origin
+  (path + query preserved). Do NOT put the old domain in `media.hosts`: the
+  repair is what makes a stale DB work; allowlisting the dead host makes the
+  build fetch from the wrong place.
+- **Mirror** — `scripts/localize-media.mjs` runs after `astro build` (before
+  pagefind). Strategy follows the tier: `nvoos.json runtime: 'static'` →
+  **mirror** every remaining candidate into `dist/media/<hash>-<slug>.<ext>`;
+  `runtime: 'managed'` (bridge/BFF present) → **proxy** uploads to the
+  runtime's same-origin `/media/<rest>` route (no download, the CMS host never
+  reaches the HTML). **External stylesheets are mirrored with their fonts**
+  (theme icon sheets), so icon glyphs stop depending on the CMS host — and
+  stop tripping a future enforced CSP. Non-image stored facts (the catalogue
+  CTA, `chrome.iconCss`, the JSON-LD logo) are repaired at RENDER time via
+  `repairMediaUrl` instead. Override:
+  `NVOOS_FORGE_MEDIA_MODE=local|proxy|off`. Fail-soft (report in
+  `.forge-cache/media-localize.json`, build never fails), idempotent, honours
+  `WP_FETCH_PROXY`, caps per file (25 MB) and per build (500 MB).
+
+Config: `profile.media { hosts, localize, maxFileMb }` → `nvoos.json` +
+`.env.example`; env wins
+(`NVOOS_FORGE_MEDIA_MODE`, `NVOOS_FORGE_LOCALIZE_MEDIA`,
+`NVOOS_FORGE_MEDIA_HOSTS`, `NVOOS_FORGE_LOCALIZE_ALL`,
+`NVOOS_FORGE_MEDIA_MAX_MB` / `_MAX_TOTAL_MB`, `NVOOS_FORGE_MEDIA_TIMEOUT_MS`).
+
+**Never rewrite** `<a href>`, `<meta>` (`og:image` must stay absolute) or
+JSON-LD — a relative path there is invalid, and the catalogue PDF must keep
+working. Gotchas: emit `url(/media/…)` **unquoted** (a nested quote breaks a
+`style="…"` attribute); attribute regexes need `(?:^|\s)` / `(?<![\w-])` so
+`src` does not match inside `data-src`; SSR output lives in `dist/client`;
+and a flaky `EPERM`/`ENOTEMPTY` scaffold timeout under 61 parallel workers is
+the Windows staging race — re-run with `--maxWorkers=4` before debugging code.
 
 ## Repo conventions
 
