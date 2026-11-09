@@ -430,6 +430,21 @@ family) can fail *after* the PR is merged, on the merge commit itself. That
 is a new forward-fix, never a revert: the code is on the branch and other
 work has already stacked on it.
 
+**Root cause to check first — is the workflow even PR-triggered?** Read its
+`on:` block. `sync-nvoos-astro-velocity.yml` and
+`sync-nvoos-astro-forge.yml` are **push-only** (`push` to
+`main`/`alpha-working`, `repository_dispatch`, `workflow_dispatch`) — they
+have **no `pull_request` trigger**, deliberately (they force-push a mirror
+and must not run from a fork). So a green PR says *nothing* about them.
+This is exactly how #7536 merged with 87 lint errors.
+
+When the gate is push-only, **the only pre-merge validation is running the
+workflow's own commands locally**. Don't approximate: open the workflow
+file and execute each step's `run:` in order (lint → test → fixture drift →
+build → bundle-staleness → smoke → e2e → LHCI), with the same env. Then
+say so in the PR body — "the gate does not run on PRs; these were run
+locally" — instead of implying the PR checks cover it.
+
 1. **Find the commit the run tested.** `gh run list --workflow <file>
    --json databaseId,headSha,displayTitle,conclusion` and match `headSha`
    to `git log --oneline -3` on `alpha-working`. A force-push between the
