@@ -2,9 +2,15 @@ name: Astro app parity
 
 # The two Astro products share a CONTRACT but not code: `examples/nvoos-astro-forge`
 # GENERATES sites and `examples/nvoos-astro-velocity` is a hand-built storefront.
-# Both compose the agent-facing `llms.txt` and both declare a `data-section`
-# vocabulary, so those surfaces must not drift — and neither app's own suite can
-# see the other tree, so drift is invisible without this gate.
+# Both compose the agent-facing `llms.txt`, both declare a `data-section`
+# vocabulary, and both ship the same `mail.ts` form transport, so those surfaces
+# must not drift — and neither app's own suite can see the other tree, so drift
+# is invisible without this gate.
+#
+# The `paths` filters must cover EVERY file the script reads, in BOTH trees.
+# Narrow filters are how a drift gate silently stops running: editing only
+# velocity's `src/lib/mail.ts` (or its form endpoint) has to trigger it, not just
+# edits under the forge.
 #
 # Same discipline as `bin/check-chat-parity.php` (legacy chat ↔ lib/core) and the
 # base+pro → CG-Pro port verifier: compare implementations directly, and make
@@ -22,15 +28,15 @@ on:
     paths:
       - 'bin/check-astro-app-parity.mjs'
       - 'examples/nvoos-astro-forge/lib/**'
-      - 'examples/nvoos-astro-velocity/src/lib/llms.ts'
-      - 'examples/nvoos-astro-velocity/src/lib/content/section-kinds.ts'
+      - 'examples/nvoos-astro-velocity/src/lib/**'
+      - 'examples/nvoos-astro-velocity/src/pages/forms/**'
       - '.github/workflows/astro-app-parity.yml'
   pull_request:
     paths:
       - 'bin/check-astro-app-parity.mjs'
       - 'examples/nvoos-astro-forge/lib/**'
-      - 'examples/nvoos-astro-velocity/src/lib/llms.ts'
-      - 'examples/nvoos-astro-velocity/src/lib/content/section-kinds.ts'
+      - 'examples/nvoos-astro-velocity/src/lib/**'
+      - 'examples/nvoos-astro-velocity/src/pages/forms/**'
       - '.github/workflows/astro-app-parity.yml'
 
 jobs:

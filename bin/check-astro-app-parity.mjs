@@ -192,7 +192,9 @@ check(
 
 const MAIL_FORGE = 'examples/nvoos-astro-forge/lib/mail.ts';
 const MAIL_VELOCITY = 'examples/nvoos-astro-velocity/src/lib/mail.ts';
+const FORGE_ENDPOINT_SRC = 'examples/nvoos-astro-forge/lib/forms-direct.ts';
 const VELOCITY_ENDPOINT = 'examples/nvoos-astro-velocity/src/pages/forms/submit.ts';
+const VELOCITY_GUARDS = 'examples/nvoos-astro-velocity/src/lib/forms.ts';
 
 console.log('shared form-delivery module (byte identity)');
 {
@@ -214,6 +216,45 @@ console.log('shared form-delivery module (byte identity)');
 		'velocity endpoint reads the runtime environment',
 		`${VELOCITY_ENDPOINT} no longer calls runtimeEnv()`
 	);
+}
+
+// ---------------------------------------------------------------------------
+// 4. Guard-sequence parity.
+//
+// The endpoints are NOT shared source — the forge's is emitted, velocity's is
+// hand-written — but they must carry the same guards. Order may differ; a guard
+// that exists on one side only is the drift this catches, because it is exactly
+// how "we fixed the spam problem" becomes true for one product and false for the
+// other. Adding a guard therefore means adding it in BOTH trees (and the marker
+// here).
+// ---------------------------------------------------------------------------
+
+const GUARD_MARKERS = [
+	[/honeypot/, 'honeypot field'],
+	[/timestamp/, 'time-trap timestamp'],
+	[/64 \* 1024/, '64 KB body cap'],
+	[/429/, 'throttle response'],
+	[/idempotenc/i, 'idempotency key'],
+	[/replyTo/i, 'reply-to'],
+];
+
+console.log('form-endpoint guard parity');
+{
+	const forge = readFileSync(new URL(`../${FORGE_ENDPOINT_SRC}`, import.meta.url), 'utf8');
+	const velocity = [
+		readFileSync(new URL(`../${VELOCITY_ENDPOINT}`, import.meta.url), 'utf8'),
+		readFileSync(new URL(`../${VELOCITY_GUARDS}`, import.meta.url), 'utf8'),
+	].join('\n');
+
+	for (const [pattern, label] of GUARD_MARKERS) {
+		const inForge = pattern.test(forge);
+		const inVelocity = pattern.test(velocity);
+		check(
+			inForge && inVelocity,
+			`both endpoints keep the ${label}`,
+			`missing from ${[inForge ? '' : 'forge', inVelocity ? '' : 'velocity'].filter(Boolean).join(' and ')}`
+		);
+	}
 }
 
 // ---------------------------------------------------------------------------
