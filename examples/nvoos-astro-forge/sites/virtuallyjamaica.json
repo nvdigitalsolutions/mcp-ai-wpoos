@@ -392,10 +392,6 @@
 		}
 	],
 	"shape": "one-pager",
-	"contact": {
-		"heading": "Contact Us",
-		"blurb": "Choose the access point that works best for you. Or the cheapest one. Or ask us to support your favorite brand."
-	},
 	"deploy": {
 		"runtime": "managed"
 	},
