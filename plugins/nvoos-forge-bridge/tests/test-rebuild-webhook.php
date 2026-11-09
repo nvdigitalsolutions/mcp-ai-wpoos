@@ -409,7 +409,12 @@ class Test_Forge_Bridge_Webhook extends WP_UnitTestCase {
 				if ( false !== strpos( $url, '/api/revalidate' ) ) {
 					return new WP_Error( 'nvoos_forge_bridge_test_revalidate', 'revalidate down' );
 				}
-				return array( 'response' => array( 'code' => 204, 'message' => 'No Content' ) );
+				return array(
+					'response' => array(
+						'code'    => 204,
+						'message' => 'No Content',
+					),
+				);
 			},
 			10,
 			3
