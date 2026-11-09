@@ -566,6 +566,32 @@ describe('forge e2e — emitted site', () => {
 		expect(audit.audit.failures).toEqual([]);
 	});
 
+	it('ships the deploy-branch build report as an artifact (README.md)', async () => {
+		const readme = await readFile(path.join(workDir, 'dist', 'README.md'), 'utf8');
+
+		// It has to SAY it is generated: the mirror branch is force-pushed, so a
+		// hand-edited copy would silently disappear on the next build.
+		expect(readme).toContain('Generated artifact — do not edit this branch by hand.');
+
+		// Identity + provenance come from the manifest, never from a template.
+		expect(readme.startsWith('# Fixture Wares\n')).toBe(true);
+		expect(readme).toContain('| Source CMS |');
+		expect(readme).toContain('| Render mode | `static` |');
+
+		// Counts are read from the built collections.
+		expect(readme).toContain('| Posts |');
+		expect(readme).toContain('| Pages |');
+
+		// The design summary mirrors /design-audit.json.
+		expect(readme).toContain('token pairs meet WCAG 2.2');
+
+		// Artifacts and an exact rebuild command close the loop. No siteSlug is
+		// passed here (scaffold() is called directly), so the slug falls back to
+		// the display name.
+		expect(readme).toContain('`design-audit.json`');
+		expect(readme).toContain('node scripts/forge.mjs sites/fixture-wares.json');
+	});
+
 	it('indexes the site with Pagefind for client-side search', async () => {
 		const search = await readFile(path.join(workDir, 'dist', 'search', 'index.html'), 'utf8');
 		expect(search).toContain("import('/pagefind/pagefind.js')");

@@ -41,6 +41,10 @@ export const FORGE_LIB_FILES = [
 	// Proposal 136: the deterministic agent surfaces — llms.txt and the
 	// markdown page variants are composed from facts, never written by a model.
 	'llms.ts',
+	// The deploy-branch build report. It is an ARTIFACT rather than a
+	// hand-written file because mirror branches are force-pushed on every
+	// build — anything committed to the branch by hand is destroyed.
+	'readme.ts',
 ];
 
 /**
@@ -137,6 +141,12 @@ export interface ScaffoldOptions {
 	 * the build when any rendered pair fails WCAG. Default false ('warn').
 	 */
 	strictContrast?: boolean;
+	/**
+	 * The site profile's slug (the `sites/<slug>.json` stem). Recorded in the
+	 * manifest so the generated README can print an exact rebuild command
+	 * instead of guessing one from the display name.
+	 */
+	siteSlug?: string;
 }
 
 export interface ForgeManifest {
@@ -144,6 +154,8 @@ export interface ForgeManifest {
 	generator: 'nvoos-astro-forge';
 	url: string;
 	name: string;
+	/** The `sites/<slug>.json` stem this project was generated from. */
+	site?: string;
 	/** Page slug rendered at `/` (the WordPress static front page). */
 	frontPage?: string;
 	/** The source's own head description (131 §2.5) — the front page's
@@ -2252,6 +2264,7 @@ async function scaffoldProject(
 		generator: 'nvoos-astro-forge',
 		url: profile.url.replace(/\/+$/, ''),
 		name: profile.name ?? 'Forge Site',
+		...( options.siteSlug ? { site: options.siteSlug } : {} ),
 		frontPage: profile.frontPage ?? '',
 		// Always emitted (never omitted): the template reads it directly and a
 		// missing key makes `astro check` fail on the inferred JSON type.

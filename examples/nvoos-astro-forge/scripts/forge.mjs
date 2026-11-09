@@ -643,6 +643,13 @@ async function runScaffold( profileRef, options ) {
 	}
 
 	// scaffold() applies the preset's collection profile + surface toggles.
+	// The profile reference doubles as the report's site slug
+	// (`sites/<slug>.json` -> `<slug>`), so the generated README can print an
+	// exact rebuild command instead of guessing one from the display name.
+	const siteSlug =
+		typeof profileRef === 'string'
+			? profileRef.replace( /\\/g, '/' ).split( '/' ).pop().replace( /\.json$/, '' )
+			: undefined;
 	const result = await scaffold( {
 		profile,
 		targetDir: options.target,
@@ -654,6 +661,7 @@ async function runScaffold( profileRef, options ) {
 		agents: options.agents,
 		themePolicy: options.themePolicy,
 		strictContrast: options.strictContrast === true,
+		siteSlug,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 	for ( const collection of result.manifest.collections ) {
