@@ -132,3 +132,29 @@ describe( 'theme policy (Proposal 105 §4)', () => {
 		expect( isValidThemePolicy( 42 ) ).toBe( false );
 	} );
 } );
+
+describe( 'applyPresetToProfile — extra collections are content, not commerce', () => {
+	const profile = (): SiteProfile => ( {
+		url: 'https://example.com',
+		name: 'Example',
+		collections: [
+			{ slug: 'posts', restBase: 'wp/v2/posts', fields: [ 'id' ], embed: false },
+			{ slug: 'pages', restBase: 'wp/v2/pages', fields: [ 'id' ], embed: false },
+			{ slug: 'products', restBase: 'wc/v3/products', fields: [ 'id' ], embed: false },
+			{ slug: 'portfolio', restBase: 'wp/v2/portfolio', fields: [ 'id' ], embed: false },
+		],
+	} );
+
+	it( 'drops commerce but keeps an arbitrary CPT under every preset', () => {
+		for ( const preset of PRESET_NAMES ) {
+			const slugs = applyPresetToProfile( profile(), preset ).collections.map( ( collection ) => collection.slug );
+			expect( slugs, preset ).toContain( 'portfolio' );
+		}
+	} );
+
+	it( 'still drops products for the minimal preset', () => {
+		const slugs = applyPresetToProfile( profile(), 'minimal' ).collections.map( ( collection ) => collection.slug );
+		expect( slugs ).not.toContain( 'products' );
+		expect( slugs ).toEqual( [ 'posts', 'pages', 'portfolio' ] );
+	} );
+} );
