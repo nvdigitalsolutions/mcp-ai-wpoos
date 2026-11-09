@@ -725,7 +725,7 @@ describe( 'scaffold — preset surfaces (Proposal 104 §4.3)', () => {
 		const manifest = JSON.parse(await readFile(path.join(target, 'nvoos.json'), 'utf8'));
 		expect(manifest.surfaces).toEqual({ search: false, feed: true, sitemap: true, ogImages: false });
 		const pkg = JSON.parse(await readFile(path.join(target, 'package.json'), 'utf8'));
-		expect(pkg.scripts.build).toBe('astro build && node scripts/postbuild.mjs');
+		expect(pkg.scripts.build).toBe('astro build && node scripts/localize-media.mjs && node scripts/postbuild.mjs');
 	} );
 } );
 
@@ -1436,6 +1436,17 @@ describe( 'scaffold — form delivery mode (direct vs bridge)', () => {
 		expect( manifest.forms.delivery ).toBe( 'direct' );
 		// No secret ever reaches the manifest.
 		expect( JSON.stringify( manifest ) ).not.toContain( 'API_KEY' );
+
+		// Non-secret values are FILLED IN from the profile; only the provider key
+		// stays blank (the profile is the source of truth, the host holds secrets).
+		const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+		expect( env ).toContain( 'MAIL_PROVIDER=brevo' );
+		expect( env ).toContain( 'MAIL_FROM=forms@mail.example.com' );
+		expect( env ).toContain( 'MAIL_TO=hello@example.com' );
+		expect( env ).toContain( `NVOOS_TARGET_SITE=${ ( PROFILE.url ?? '' ).replace( /\/+$/, '' ) }` );
+		expect( env ).toContain( 'BREVO_API_KEY=' );
+		// A secret never appears with a value.
+		expect( env ).not.toMatch( /BREVO_API_KEY=\S+/ );
 	} );
 
 	it( 'keeps the WordPress bridge as the default', async () => {

@@ -161,6 +161,41 @@ node scripts/forge.mjs analyze https://customer.example --design --geometry --te
   --write site.json
 ```
 
+### Environment per site (build time vs runtime)
+
+Two different surfaces, easy to confuse:
+
+| Phase | Who reads it | Variables |
+|---|---|---|
+| Build (`npm run build`, CI) | the content loader fetches the CMS | `WP_SITE_URL`, `ASTRO_SITE`, `WP_FETCH_PROXY`, `WP_APPLICATION_USER` / `WP_APPLICATION_PASSWORD`, `WP_WC_CONSUMER_KEY` / `WP_WC_CONSUMER_SECRET`, `WP_USER_AGENT` |
+| Runtime (managed SSR) | the BFF proxies `/api`, `/media`, `/api/forms/submit` | `NVOOS_TARGET_SITE`, `NVOOS_REVALIDATE_TOKEN`, `MAIL_*`, `BREVO_API_KEY` |
+
+`scaffold` writes `.env.example` with every **non-secret** value already filled
+in from the profile: `WP_SITE_URL` from `url`, `NVOOS_TARGET_SITE` from `url`,
+`NVOOS_FORGE_FORMS_ORIGIN` from `deploy.publicOrigin`, and
+`MAIL_PROVIDER` / `MAIL_FROM` / `MAIL_FROM_NAME` / `MAIL_TO` / `MAIL_SUBJECT`
+from `forms.mail`. Only credentials stay blank, and `.env` is git-ignored.
+
+```sh
+# virtuallyjamaica.com — build time
+WP_SITE_URL=https://virtuallyjamaica.com
+ASTRO_SITE=https://virtuallyjamaica.com      # deploy.publicOrigin; CI sets it
+WP_FETCH_PROXY=http://user:pass@proxy:3128   # the bot-protection workaround
+
+# virtuallyjamaica.com — runtime (deploy.runtime: managed)
+NVOOS_TARGET_SITE=https://virtuallyjamaica.com
+NVOOS_REVALIDATE_TOKEN=…                      # secret; unset disables /api/revalidate
+MAIL_PROVIDER=brevo
+MAIL_FROM=forms@virtuallyjamaica.com
+MAIL_TO=info@virtuallyjamaica.com
+BREVO_API_KEY=…                               # secret
+```
+
+`WP_APPLICATION_*` does **not** fix a Cloudflare 403 — the request is rejected
+before WordPress sees it. Use `WP_FETCH_PROXY`, or allowlist the builder IP.
+Secrets never go in the profile or the manifest; they live in the host
+environment (Velocity's env panel, or the CI secret store).
+
 ### Forms — JetFormBuilder + Elementor submissions (114 §3.9)
 
 Forms integrate the way WooCommerce did: **content at build time, behavior
