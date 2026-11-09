@@ -130,6 +130,8 @@ live PDP (200 + `Product` JSON-LD + cache header, 301 slug convergence,
   namespaces), `allowImportingTsExtensions: true` + `noEmit` in the tsconfig.
   The generated template inherits `allowImportingTsExtensions` from
   `astro/tsconfigs/strict` — vendored `.ts`-extension imports typecheck as-is.
+  The same rule covers `tests/**/*.ts` (the tsconfig `include` lists it):
+  vitest resolves an extensionless specifier, `tsc` does not.
 - **`astro check` on a generated project needs `@types/sanitize-html` and
   `@types/node` in the template devDeps** — the vendored `sanitize.ts` and
   `wp-client.ts` typecheck under the language server.
@@ -1111,7 +1113,11 @@ Each line below cost a wrong build — do not re-derive them.
 `analyze --geometry` + `verify --geometry` (box metrics at 1440/834/390),
 fact consumption in `verify` (`--strict-facts`), and the `rulesInMedia`
 responsive read. **`npm run typecheck` is part of the gate** — vitest does
-not typecheck, so a green suite can still fail CI on fixture types.
+not typecheck, so a green suite can still fail CI on fixture types. The most
+common miss is an extensionless relative import in a new test: `tsc` under
+NodeNext raises TS2835, the module then resolves to `any`, and the report
+cascades into dozens of TS7006 "implicitly has an 'any' type" errors on the
+callbacks. Fix the specifier (`'../lib/foo.ts'`), not the parameter types.
 
 - **Device-scoped margins and padding.** `topLevelRules` deliberately keeps
   a media body as inert nested text, so facts inside `@media` were
