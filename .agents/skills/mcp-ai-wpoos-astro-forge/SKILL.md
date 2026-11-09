@@ -1372,6 +1372,27 @@ Full notes (kind evidence rules, the ts2304 `semantic.ts` trap, JSON-LD
 builder contracts, surface table, deferred work):
 `reference/proposal-136-section-vocabulary.md`.
 
+## CSP + client navigation (transferred from velocity, 2026-11-09)
+
+Generated sites use `script-src 'self' 'unsafe-inline'` (`lib/scaffold.ts`),
+because the template ships several `is:inline` scripts — and the template has
+**no** `ClientRouter` and **no** `client:*` islands. Those two facts are why the
+velocity CSP outage does not affect forge output; keep both from drifting.
+
+A hashed `script-src` + client-side routing is unsafe by construction: a
+navigation keeps the SOURCE document's policy, so any inline script the target
+page adds is blocked — and `client:visible`/`client:idle` each emit a per-page
+inline bootstrap (only `client:load` adds none).
+
+Managed/SSR mode emits `routeRules` with `swr: 600` for `/products/**` and
+`/posts/**`; stale HTML plus a hashed CSP is the same failure. And incremental
+hosts never delete files that leave the tree, so an orphaned
+`dist/client/**/*.html` shadows the SSR route indefinitely — purge it at boot
+**only** when the project is fully SSR (a `prerender = true` project must not).
+
+Details, the generated-config inventory and the one-route-stale triage rule:
+`reference/csp-client-navigation.md`.
+
 ## Repo conventions
 
 - **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to

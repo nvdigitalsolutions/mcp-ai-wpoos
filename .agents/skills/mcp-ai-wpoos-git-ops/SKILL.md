@@ -467,6 +467,14 @@ locally" — instead of implying the PR checks cover it.
 6. **Re-run the checks the fix could have touched** (unit tests, type check)
    even though the diff is whitespace — cheap, and it catches the case where
    the auto-fixer reordered something semantic.
+7. **A green CI run does not prove the DEPLOYED artifact is the new build.**
+   CI builds and simulates; the host deploys separately, and incremental
+   deploy hosts keep files that left the repo (2026-11-09: a route served
+   nine-day-old build-time HTML through a restart *and* a redeploy, because an
+   orphaned static file shadowed the SSR route). Verify the live artifact by
+   fingerprint — e.g. compare `/_astro/<chunk>.<hash>.js` names, or an
+   island's `client="…"` directive, against a local build. Restarting clears
+   caches; it does not delete files.
 
 ### `eslint` `indent` + `SwitchCase: 0` (the 87-error shape)
 
