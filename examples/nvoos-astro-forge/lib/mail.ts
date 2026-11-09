@@ -143,6 +143,27 @@ export function readMailConfig( env: Record< string, string | undefined > ): Mai
 	};
 }
 
+/**
+ * The environment at REQUEST time.
+ *
+ * `import.meta.env` is a BUILD-time snapshot: Vite inlines what it can see, so
+ * a secret injected into the running process after the build — the managed
+ * tier's normal delivery mechanism — is invisible to it. Read `process.env`
+ * first and fall back to the build-time object so `astro dev` with a `.env`
+ * file still works. Runtime wins on conflict.
+ */
+export function runtimeEnv(): Record< string, string | undefined > {
+	// `import.meta.env` is typed by Vite/Astro, not by this library's own
+	// tsconfig — read it structurally so both trees compile.
+	const build =
+		( import.meta as unknown as { env?: Record< string, string | undefined > } ).env ?? {};
+	const runtime =
+		typeof process !== 'undefined' && process.env
+			? ( process.env as Record< string, string | undefined > )
+			: {};
+	return { ...build, ...runtime };
+}
+
 /** Send through the provider. Returns the HTTP status (never throws). */
 export async function sendMail(
 	config: MailConfig,
