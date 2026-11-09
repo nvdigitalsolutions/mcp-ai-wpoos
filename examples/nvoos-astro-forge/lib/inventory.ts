@@ -289,6 +289,25 @@ function danglingAnchors( homeHtml: string, anchors: string[] ): string[] {
  * against the REST pages collection and profile exclusions, with the
  * site-shape verdict and anchor reconciliation.
  */
+/**
+ * The EFFECTIVE site shape.
+ *
+ * `shape` is the operator's setting and wins; `inventory.shape` is the
+ * `--inventory` verdict and is only a fallback, because an inference must never
+ * silently outrank a decision. Both absent ⇒ multi-page, the safe default.
+ */
+export function resolveSiteShape( profile: SiteProfile ): ForgeInventory['shape'] {
+	return profile.shape ?? profile.inventory?.shape ?? 'multi-page';
+}
+
+/** The in-page anchor targets a one-pager nav may link. */
+export function siteNavAnchors( profile: SiteProfile ): string[] {
+	if ( resolveSiteShape( profile ) !== 'one-pager' ) {
+		return [];
+	}
+	return [ ...new Set( ( profile.inventory?.navAnchors ?? [] ).filter( Boolean ) ) ];
+}
+
 export async function discoverInventory( profile: SiteProfile, deps: InventoryDeps ): Promise<ForgeInventory> {
 	const base = profile.url.replace( /\/+$/, '' );
 	const [ sitemaps, links, wayback, rest ] = await Promise.all( [

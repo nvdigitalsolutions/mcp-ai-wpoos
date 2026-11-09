@@ -143,3 +143,31 @@ describe('sanitize contract', () => {
 		expect(SANITIZE_OPTIONS.allowedTags).not.toContain('script');
 	});
 });
+
+describe( 'sanitizeHtml — one-pager anchor ids', () => {
+	// The source's `id` on a section/div is the in-page nav contract, so it
+	// survives — but only as a plain identifier that cannot shadow an id the
+	// forge owns.
+	it( 'keeps a plain anchor id on a section and a div', () => {
+		const html = sanitizeHtml('<section id="about" class="s"><p>Hi</p></section><div id="wifi" class="w"></div>');
+		expect(html).toContain('id="about"');
+		expect(html).toContain('id="wifi"');
+	});
+
+	it( 'drops an id that is not a plain identifier', () => {
+		const html = sanitizeHtml('<section id="a b\x22onclick=\x22x"><p>Hi</p></section>');
+		expect(html).not.toContain('id="a b');
+	});
+
+	it( 'drops an id that would shadow a forge-owned id', () => {
+		const html = sanitizeHtml('<div id="nvoos-consent-title"></div><div id="pagefind"></div><div id="ds-hero"></div>');
+		expect(html).not.toContain('nvoos-consent-title');
+		expect(html).not.toContain('pagefind');
+		expect(html).not.toContain('ds-hero');
+	} );
+
+	it( 'still strips ids from tags that do not carry anchors', () => {
+		const html = sanitizeHtml('<p id="legacy">text</p>');
+		expect(html).not.toContain('id="legacy"');
+	} );
+} );

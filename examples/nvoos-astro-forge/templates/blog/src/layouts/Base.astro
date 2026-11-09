@@ -67,6 +67,16 @@ const twitterTitle = meta.twitterTitle ?? ogTitle;
 const twitterDescription = meta.twitterDescription ?? ogDescription;
 const twitterImage = meta.twitterImage ?? socialImage;
 const hasSearch = manifest.surfaces?.search !== false;
+// One-pager navigation (profile `shape`): the source's own anchor targets, in
+// order. Empty for a multi-page site, so the page-link fallback stays in charge.
+const navAnchors: string[] = manifest.shape === 'one-pager' ? (manifest.navAnchors ?? []) : [];
+/** `#about-us` → `About Us` — the label the source's nav used, without scraping it. */
+const anchorLabel = (anchor: string): string =>
+	anchor
+		.replace(/[-_]+/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim()
+		.replace(/^./, (first: string) => first.toUpperCase());
 const hasFeed = manifest.surfaces?.feed !== false;
 // The baked policy rides to the client as inert JSON (Proposal 105 §4) —
 // the boot script and the theme toggle both read this node.
@@ -251,6 +261,15 @@ const chromeVars = [
 				{chrome?.nav && chrome.nav.length > 0 ? (
 					chrome.nav.map((item) => (
 						<a href={item.href}>{item.label}</a>
+					))
+				) : navAnchors.length > 0 ? (
+					/*
+					 * One-pager (profile `shape`): the source navigates by same-page
+					 * anchor, so link those instead of inventing page routes. The ids
+					 * survive sanitisation for exactly this contract.
+					 */
+					navAnchors.map((anchor) => (
+						<a href={`#${anchor}`}>{anchorLabel(anchor)}</a>
 					))
 				) : (
 					<>

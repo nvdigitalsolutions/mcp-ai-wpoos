@@ -1316,3 +1316,40 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 			expect( await readFile( path.join( target, 'src/lib/managed.generated.ts' ), 'utf8' ) ).toContain( 'export const MANAGED = false;' );
 		} );
 	} );
+
+describe( 'scaffold — site shape (the one-pager setting)', () => {
+	it( 'records the resolved shape and the one-pager anchors in the manifest', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'shape' );
+		const profile: SiteProfile = {
+			...PROFILE,
+			shape: 'one-pager',
+			// The verdict disagrees on purpose: the SETTING must win.
+			inventory: {
+				shape: 'multi-page',
+				navAnchors: [ 'about', 'contact' ],
+				navPages: [],
+				covered: [],
+				excluded: [],
+				missing: [],
+				danglingAnchors: [],
+				analyzedAt: '2026-11-09T00:00:00.000Z',
+			},
+		};
+		await scaffold( { profile, targetDir: target, template: 'blog' } );
+
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.shape ).toBe( 'one-pager' );
+		expect( manifest.navAnchors ).toEqual( [ 'about', 'contact' ] );
+	} );
+
+	it( 'defaults to multi-page with no anchors when the profile says nothing', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'shape-default' );
+		await scaffold( { profile: PROFILE, targetDir: target, template: 'blog' } );
+
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.shape ).toBe( 'multi-page' );
+		expect( manifest.navAnchors ).toEqual( [] );
+	} );
+} );

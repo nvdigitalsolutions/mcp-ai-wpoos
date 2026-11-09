@@ -42,6 +42,7 @@ import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesign
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { findDroppedPins } from '../lib/pins.ts';
+import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, diffGeometry, measureGeometry, serveDir } from '../lib/geometry.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
@@ -262,6 +263,18 @@ async function runAnalyze( url, options ) {
 			const inventory = await discoverInventory( profile, { fetch, wayback: options.wayback === true } );
 			profile.inventory = inventory;
 			console.log( `\u2713 Site shape: ${ inventory.shape } (${ inventory.navAnchors.length } nav anchor(s), ${ inventory.navPages.length } nav page(s))` );
+			// The verdict is not a decision. `profile.shape` drives the build; the
+			// analysis only proposes it, so say so instead of letting an inference
+			// quietly become the setting on a new site.
+			if ( ! profile.shape ) {
+				console.warn(
+					`\u26a0 Site shape is not declared — add "shape": "${ inventory.shape }" to the profile to make this a decision (the verdict is used until then).`
+				);
+			} else if ( profile.shape !== inventory.shape ) {
+				console.warn(
+					`\u26a0 Site shape: the profile declares ${ profile.shape } but the source reads ${ inventory.shape }. The setting wins — confirm it is deliberate.`
+				);
+			}
 			console.log( `  covered ${ inventory.covered.length }, excluded ${ inventory.excluded.length }, missing ${ inventory.missing.length }: ${ inventory.missing.slice( 0, 12 ).join( ' ' ) || '(none)' }` );
 			for ( const anchor of inventory.danglingAnchors ) {
 				console.warn( `\u26a0 Nav anchor #${ anchor } has no matching section id on the homepage.` );
@@ -1150,6 +1163,20 @@ async function runVerify( profileRef, options ) {
 			console.log(
 				`  source hard cut: ${ seam.fromId ?? '?' } ${ seam.fromEdge ?? '' } → ${ seam.toId ?? '?' } ${ seam.toEdge ?? '' } (ΔE ${ seam.distance })`
 			);
+		}
+	}
+	// One-pager nav (profile `shape`): every anchor the header links must land
+	// somewhere. A source band the rebuild dropped — e.g. a section whose only
+	// content was a contact form — leaves a dead nav link. Reported, never silent.
+	if ( indexHtml && resolveSiteShape( profile ) === 'one-pager' ) {
+		const anchors = siteNavAnchors( profile );
+		const escape = ( value ) => value.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+		const dead = anchors.filter( ( anchor ) => ! new RegExp( `id="${ escape( anchor ) }"` ).test( indexHtml ) );
+		if ( anchors.length > 0 && dead.length === 0 ) {
+			console.log( `✓ Nav anchors: all ${ anchors.length } one-pager target(s) exist in the built page.` );
+		}
+		for ( const anchor of dead ) {
+			console.warn( `⚠ Nav anchor: #${ anchor } has no matching element id in the built page.` );
 		}
 	}
 	// Fact consumption (the "a component ignored the fact" class): every fact a

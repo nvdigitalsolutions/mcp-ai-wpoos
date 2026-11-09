@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 import { auditWarnings, contrastAudit } from './contrast.ts';
 import { designToTokens, resolveSectionTheme, suggestContrastFixes } from './design.ts';
+import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree } from './managed-runtime.ts';
 import { consentCategoryFor, cspDirectivesFor } from './tracking.ts';
@@ -164,6 +165,14 @@ export interface ForgeManifest {
 	name: string;
 	/** The `sites/<slug>.json` stem this project was generated from. */
 	site?: string;
+	/**
+	 * How the site navigates — the resolved operator setting
+	 * (`profile.shape` › `inventory.shape` › multi-page). The template renders
+	 * anchor nav for a one-pager and page links otherwise.
+	 */
+	shape?: 'one-pager' | 'multi-page' | 'hybrid';
+	/** In-page anchor targets for a one-pager header nav. */
+	navAnchors?: string[];
 	/** Page slug rendered at `/` (the WordPress static front page). */
 	frontPage?: string;
 	/** The source's own head description (131 §2.5) — the front page's
@@ -2273,6 +2282,8 @@ async function scaffoldProject(
 		url: profile.url.replace(/\/+$/, ''),
 		name: profile.name ?? 'Forge Site',
 		...( options.siteSlug ? { site: options.siteSlug } : {} ),
+		shape: resolveSiteShape( profile ),
+		navAnchors: siteNavAnchors( profile ),
 		frontPage: profile.frontPage ?? '',
 		// Always emitted (never omitted): the template reads it directly and a
 		// missing key makes `astro check` fail on the inferred JSON type.

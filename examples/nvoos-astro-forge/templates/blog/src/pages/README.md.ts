@@ -40,6 +40,7 @@ type ManifestShape = {
 	generatedAt?: string;
 	generator?: string;
 	render?: string;
+	shape?: string;
 	/** The `sites/<slug>.json` stem (newer scaffolds only). */
 	site?: string;
 	surfaces?: Record<string, boolean>;
@@ -93,6 +94,7 @@ export const GET: APIRoute = async ( { site } ) => {
 		bands,
 		counts: { pages: pages.length, posts: posts.length, products: productCount },
 		render: meta.render ?? 'static',
+		shape: meta.shape,
 		surfaces: meta.surfaces ?? {},
 		collections: ( meta.collections ?? [] ).map( ( collection ) => ( {
 			slug: collection.slug ?? '',
