@@ -79,6 +79,12 @@ every other surface; manager sign-in is the contract's own REST auth flow.
 | `NVOOS_CURRENCY` | build/runtime | Price formatting + JSON-LD (default `USD`) |
 | `PORT` | `serve.mjs` | Listen port (Velocity injects it) |
 | `NVOOS_REVALIDATE_TOKEN` | `serve.mjs` (runtime) | Shared secret for `POST /internal/revalidate/` (tag-based cache purge, Proposal 104 Q3) — unset disables the route (503) |
+| `MAIL_PROVIDER` | `/forms/submit` (runtime) | `brevo` (default) or `mailjet` — Proposal 138 |
+| `MAIL_FROM` / `MAIL_FROM_NAME` | `/forms/submit` (runtime) | Sender; must be on the provider-authenticated domain |
+| `MAIL_TO` / `MAIL_SUBJECT` | `/forms/submit` (runtime) | Destination; subject defaults to "New website enquiry" |
+| `BREVO_API_KEY` | `/forms/submit` (runtime) | Brevo credential (never commit) |
+| `MAILJET_API_KEY` / `MAILJET_SECRET_KEY` | `/forms/submit` (runtime) | Mailjet credentials (never commit) |
+| `PUBLIC_CONTACT_EMAIL` | `/contact/` (build) | Fallback address rendered on the page |
 
 `npm run build:prod-sim` runs the production-parity build with `NVOOS_API_BASE`
 **unset** — the CI-enforced mirror invariant (a build-time commerce base baked
@@ -90,6 +96,31 @@ fixture data into prod; Proposal 104 Defect B).
 resvg, ADS semantic tokens, Inter via Fontsource) and caches it for a day.
 PDPs point `og:image` at it; render failures redirect to the product image —
 an OG card never breaks the page.
+
+## Public contact form (Proposal 138)
+
+`/contact/` posts to `/forms/submit`, which sends through a provider HTTP API
+(Brevo or Mailjet) — never raw SMTP, and never through `/api/*` (that prefix is
+the commerce proxy, so an Astro route there is unreachable).
+
+- **Native first**: a real `<form method="post">`, so it works without
+  JavaScript. The no-JS path returns `303 → /contact/?sent=1`; a `fetch` caller
+  gets `{ ok: true }`. The bundled `<script>` only upgrades it.
+- **Abuse layers, in order**: 64 KB body cap → honeypot (silent accept) → 2 s
+  time trap → 5 requests / 10 min per IP → provider send. A filled honeypot is
+  accepted, never rejected: a rejection teaches the bot what to change.
+- **The page is `no-store`** — it embeds a render timestamp for the time trap,
+  and a cached copy would look "too fast to be human".
+- **The transport is shared with the forge**: `src/lib/mail.ts` is byte-identical
+  to `examples/nvoos-astro-forge/lib/mail.ts`, enforced by
+  `bin/check-astro-app-parity.mjs`. Edit one, copy it to the other.
+- **Secrets are read at request time** via `runtimeEnv()`; `import.meta.env` is a
+  build-time snapshot and cannot see a key injected after the build.
+
+Deliverability is a domain problem: publish SPF + DKIM + DMARC (aligned) for
+`MAIL_FROM`'s domain. A perfect API call from an unauthenticated domain lands in
+spam. Details:
+`.agents/skills/mcp-ai-wpoos-astro-forge/reference/email-delivery.md`.
 
 ## MCP assistant surface (`/mcp`)
 
