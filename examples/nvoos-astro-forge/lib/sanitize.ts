@@ -82,8 +82,8 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		code: ['class'],
 		pre: ['class'],
 		span: ['class'],
-		div: ['class'],
-		section: ['class'],
+		div: ['class', 'id'],
+		section: ['class', 'id'],
 		ul: ['class'],
 		ol: ['class', 'start'],
 		li: ['class', 'value'],
@@ -151,7 +151,27 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 
 const JAVASCRIPT_URL = /^\s*javascript\s*:/i;
 
+/** A plain HTML identifier — no spaces, no quotes, no leading digit. */
+const SAFE_ANCHOR_ID = /^[a-z][a-z0-9_-]{0,40}$/i;
+/** Ids the forge owns: a source anchor must not shadow these. */
+const RESERVED_ANCHOR_ID = /^(nvoos-|pagefind|ds-)/i;
+
+/** Keep a safe, non-reserved `id`; drop anything else. */
+function anchorId( tagName: string, attribs: { [key: string]: string } ) {
+	const id = attribs.id;
+	if ( typeof id === 'string' && ( ! SAFE_ANCHOR_ID.test( id ) || RESERVED_ANCHOR_ID.test( id ) ) ) {
+		delete attribs.id;
+	}
+	return { tagName, attribs };
+}
+
 const transformTags: sanitizeHtmlLib.IOptions['transformTags'] = {
+	// In-page anchors (one-pager navigation). The source's `id` on a section or
+	// div IS the navigation contract — `#about` must land on the rebuilt band —
+	// so it survives sanitisation. Only a plain identifier is kept, and a source
+	// id may never shadow an id the forge itself owns.
+	section: (tagName: string, attribs: { [key: string]: string }) => anchorId(tagName, attribs),
+	div: (tagName: string, attribs: { [key: string]: string }) => anchorId(tagName, attribs),
 	// Every outbound link that opens a new tab gets the safe rel pair.
 	a: (_tagName: string, attribs: { [key: string]: string }) => {
 		if (attribs.target === '_blank') {
