@@ -1440,6 +1440,18 @@ extends `astro/tsconfigs/strict`, resolved from the importing file's directory
 → `[TSCONFIG_ERROR] Tsconfig not found`). Node 24 strips TS types natively.
 Same discipline as `bin/check-chat-parity.php`.
 
+## Template endpoints and the deploy-branch README (2026-11-09)
+
+Mirror branches are force-pushed every build, so a README there must be a
+**build artifact** (`src/pages/README.md.ts` → `dist/README.md`), never a
+hand-written file. Two traps when adding a template endpoint: `nvoos.json`
+**omits keys when they are unset** (`tracking`, `collections[].kind`), so the
+inferred JSON type must be read through an all-optional shape cast via
+`unknown`; and `getCollection` is typed per preset, so `'products'` is a type
+error on a blog-only site — widen the accessor and keep it in a `try`.
+
+Full notes: `reference/template-endpoints.md`.
+
 ## Repo conventions
 
 - **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to
