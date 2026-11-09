@@ -182,6 +182,22 @@ const webfontUrl = googleFontsUrl(webfontFamilies([semantic.font]));
 				document.addEventListener('astro:after-swap', apply);
 			})();
 		</script>
+		{/*
+			CSP (Proposal 104 D12) — INLINE SCRIPTS MUST BE PAGE-INVARIANT.
+
+			script-src is hashed per response from this document, and a hash list
+			belongs to the DOCUMENT: ClientRouter keeps it across an in-app
+			navigation, so an inline script that only the TARGET page has is
+			blocked (its own response's CSP is ignored for a fetched fragment).
+
+			Two rules follow:
+			  - bundled/hoisted scripts stay external (vite.build.assetsInlineLimit: 0)
+			    so `'self'` covers them;
+			  - islands use client:load ONLY. client:visible emits a per-page
+			    IntersectionObserver bootstrap and client:idle a per-page
+			    requestIdleCallback bootstrap — both are inline and therefore
+			    page-variant. Guarded by tests/unit/csp-inline-invariance.test.ts.
+		*/}
 		<ClientRouter />
 		<script>
 			// Analytics forwarding (R4/D9): client-side navigations via

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// AddToCartButton island — clean-room React component (D6), client:visible.
+// AddToCartButton island — clean-room React component (D6), client:load (CSP: no per-page inline bootstrap).
 // Writes the display-only cart store (no checkout in the v1 contract).
 //
 // Proposal 106: when the visitor selected a variant on the PDP, the line
