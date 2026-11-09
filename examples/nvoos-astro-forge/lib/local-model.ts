@@ -24,7 +24,9 @@ export interface LocalModel {
 }
 
 const DEFAULT_HOST = 'http://127.0.0.1:11434';
-const PROBE_TIMEOUT_MS = 1500;
+/** A busy daemon (loading a model) can take a moment to answer /api/tags; a
+ * 1.5s window produced a false negative while a model was warming. */
+const PROBE_TIMEOUT_MS = 2500;
 
 interface OllamaTag {
 	name?: string;
