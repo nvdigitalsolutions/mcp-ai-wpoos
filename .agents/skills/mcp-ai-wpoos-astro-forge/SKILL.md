@@ -1453,11 +1453,28 @@ Three layers, one contract:
   `.forge-cache/media-localize.json`, build never fails), idempotent, honours
   `WP_FETCH_PROXY`, caps per file (25 MB) and per build (500 MB).
 
-Config: `profile.media { hosts, localize, maxFileMb }` → `nvoos.json` +
+- **Optimize** — Proposal 140 runs three more steps in the same pass. Raster
+  mirrors (`jpg/jpeg/png/bmp/tif/tiff`) are re-encoded to WebP at quality 82
+  (the measured equivalent of JPEG 80) and kept **only when smaller**; a
+  source that will not shrink ships as-is and is reported, never failed. Every
+  `<img>` the pass touched gains its intrinsic `width`/`height` (the CLS
+  audit — attributes, not CSS `aspect-ratio`, reserve the first paint). And the
+  Google Fonts stylesheet + its woff2 files are mirrored so the page has no
+  cross-origin font chain, with `font-display: swap` injected into any
+  `@font-face` that lacked it. `forge verify` reports a `media budget` gate
+  (warn by default; `--strict-media` makes it fail).
+
+Config: `profile.media { hosts, localize, mode, maxFileMb }` → `nvoos.json` +
 `.env.example`; env wins
 (`NVOOS_FORGE_MEDIA_MODE`, `NVOOS_FORGE_LOCALIZE_MEDIA`,
 `NVOOS_FORGE_MEDIA_HOSTS`, `NVOOS_FORGE_LOCALIZE_ALL`,
-`NVOOS_FORGE_MEDIA_MAX_MB` / `_MAX_TOTAL_MB`, `NVOOS_FORGE_MEDIA_TIMEOUT_MS`).
+`NVOOS_FORGE_MEDIA_MAX_MB` / `_MAX_TOTAL_MB`, `NVOOS_FORGE_MEDIA_TIMEOUT_MS`,
+`NVOOS_FORGE_MEDIA_WEBP_QUALITY`, `NVOOS_FORGE_LOCALIZE_FONTS`).
+
+`media.mode` is how a **managed** site (default `proxy`) opts into a fully
+self-contained artifact: `"media": { "localize": true, "mode": "local" }`.
+Default is the bridge's same-origin `/media` proxy; `local` duplicates the
+library into the deploy but never depends on the CMS or the bridge.
 
 **Never rewrite** `<a href>`, `<meta>` (`og:image` must stay absolute) or
 JSON-LD — a relative path there is invalid, and the catalogue PDF must keep

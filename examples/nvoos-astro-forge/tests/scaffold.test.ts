@@ -1465,3 +1465,27 @@ describe( 'scaffold — form delivery mode (direct vs bridge)', () => {
 		expect( manifest.forms.delivery ).toBe( 'bridge' );
 	} );
 } );
+
+describe( 'scaffold — media policy (Proposal 139/140)', () => {
+	it( 'carries media.mode into the manifest and the env template', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'media-mode' );
+		await scaffold( {
+			profile: {
+				...PROFILE,
+				deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+				media: { localize: true, mode: 'local' },
+			},
+			targetDir: target,
+			template: 'blog',
+		} );
+
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.media ).toEqual( { localize: true, mode: 'local' } );
+
+		const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+		expect( env ).toContain( 'NVOOS_FORGE_MEDIA_MODE=local' );
+		expect( env ).toContain( 'NVOOS_FORGE_MEDIA_WEBP_QUALITY=' );
+		expect( env ).toContain( 'NVOOS_FORGE_LOCALIZE_FONTS=' );
+	} );
+} );

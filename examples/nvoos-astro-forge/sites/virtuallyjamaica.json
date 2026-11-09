@@ -481,6 +481,10 @@
 		"runtime": "managed",
 		"publicOrigin": "https://virtuallyjamaica.com"
 	},
+	"media": {
+		"localize": true,
+		"mode": "local"
+	},
 	"forms": {
 		"delivery": "direct",
 		"mail": {
