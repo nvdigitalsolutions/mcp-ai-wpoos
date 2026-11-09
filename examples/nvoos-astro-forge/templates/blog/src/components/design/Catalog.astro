@@ -6,6 +6,7 @@
 // not display copy — it stays off the rebuilt band). The interactive
 // flipbook itself is a source-side JS widget the forge never re-implements.
 import type { SectionTheme } from '../../lib/sections.generated.ts';
+import { repairMediaUrl } from '../../lib/media.ts';
 import { useCopy } from '../../copy/index.ts';
 
 interface Props {
@@ -18,7 +19,7 @@ const copy = useCopy();
 
 <section class="ds-section ds-body ds-catalog">
 	<div class="ds-links">
-		<a class="ds-button" href={theme.catalog?.source} target="_blank" rel="noopener">
+		<a class="ds-button" href={repairMediaUrl(theme.catalog?.source)} target="_blank" rel="noopener">
 			{copy.catalog.open}
 		</a>
 	</div>

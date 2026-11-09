@@ -1,6 +1,13 @@
 {
-	"url": "https://jayainc.com",
+	"url": "https://cms.jayainc.com",
 	"name": "JAYAINC",
+	"deploy": {
+		"runtime": "static",
+		"publicOrigin": "https://jayainc.com"
+	},
+	"media": {
+		"localize": true
+	},
 	"frontPage": "home",
 	"bandSpacing": "source",
 	"forms": {},

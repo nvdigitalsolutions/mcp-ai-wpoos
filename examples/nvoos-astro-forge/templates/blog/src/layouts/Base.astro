@@ -9,6 +9,7 @@ import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 import { chrome } from '../lib/chrome.generated.ts';
 import { behaviors } from '../lib/behaviors.generated.ts';
 import { webFonts } from '../lib/design.generated.ts';
+import { repairMediaUrl } from '../lib/media.ts';
 import { composeDocumentTitle } from '../lib/seo.ts';
 
 /** The normalized SEO head facts the loader carries (Proposal 131). */
@@ -128,7 +129,7 @@ const chromeVars = [
 		{markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} />}
 		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
 		{chrome?.favicon && <link rel="icon" href={chrome.favicon} />}
-		{chrome?.iconCss && <link rel="stylesheet" href={chrome.iconCss} media="all" />}
+		{chrome?.iconCss && <link rel="stylesheet" href={repairMediaUrl(chrome.iconCss)} media="all" />}
 		{/* The source webfonts (125 §2) — the harvested family loads from
 			Google Fonts so the rebuild keeps the source's type rhythm
 			(jayainc: Rubik); system-stack profiles emit no link. */}

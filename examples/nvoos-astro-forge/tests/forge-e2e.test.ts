@@ -315,6 +315,28 @@ describe('forge e2e — emitted site', () => {
 		expect(listing).toContain('https://cdn.fixture.test/product-c.png');
 	});
 
+	it('mirrors remote media into the build so nothing hotlinks the CMS (Proposal 138)', async () => {
+		// Body-content <img> tags render through `set:html` and never reach
+		// Astro's <Image> — the post-build localizer must still make them local.
+		const detail = await readFile(path.join(workDir, 'dist', 'posts', '2', 'care-guide', 'index.html'), 'utf8');
+		const localized = /src="(\/media\/[^"]+)"/.exec(detail)?.[1];
+		expect(localized, 'the care-guide body image was not localized').toBeTruthy();
+		expect(detail).not.toContain(`${origin}/wp-content/uploads/care-local.jpg`);
+
+		// The mirrored file really ships in the artifact.
+		const bytes = await readFile(path.join(workDir, 'dist', localized!.slice(1)));
+		expect(bytes.byteLength).toBeGreaterThan(0);
+
+		// Non-WordPress external images stay untouched (a CDN must keep
+		// working, and a rebuild must not mirror arbitrary third parties).
+		expect(detail).toContain('https://fixture.test/care.jpg');
+
+		// The pass reports what it did — never silent.
+		const report = JSON.parse(await readFile(path.join(workDir, '.forge-cache', 'media-localize.json'), 'utf8'));
+		expect(Array.isArray(report.localized)).toBe(true);
+		expect(report.localized.length).toBeGreaterThan(0);
+	});
+
 	it('renders product details with commerce data and Product JSON-LD', async () => {
 		const detail = await readFile(
 			path.join(workDir, 'dist', 'products', '101', 'fjord-merino-sweater', 'index.html'),
@@ -450,7 +472,10 @@ describe('forge e2e — emitted site', () => {
 		// script; the section fact rebuilds it as a centered open-CTA (the
 		// slug-ish data-title is backend id, never rendered copy).
 		expect(index).toContain('ds-catalog');
-		expect(index).toContain('https://fixture.test/wp-content/uploads/catalog.pdf');
+		// Proposal 139 §repair — the catalogue href is a stored absolute URL;
+		// the render layer re-points it at the configured CMS host (the fixture
+		// profile declares fixture.test, the build runs against the fixture).
+		expect(index).toContain(`${origin}/wp-content/uploads/catalog.pdf`);
 		expect(index).not.toContain('fiori-digital-catalogue');
 		// The harvested webfont loads (125 §2) — rubik from Google Fonts.
 		expect(index).toContain('fonts.googleapis.com/css2?family=rubik');

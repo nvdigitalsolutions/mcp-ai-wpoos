@@ -9,10 +9,23 @@ const site = process.env.ASTRO_SITE || 'http://localhost:4321';
 
 // Remote image domains for Astro Image: the WordPress source host, derived
 // from the same env-first rule the content layer uses (WP_SITE_URL overrides
-// the scaffolded profile URL). Images on other hosts fall back to plain
-// <img> tags in SmartImage — never a build failure.
+// the scaffolded profile URL). `profile.media.hosts` and
+// `NVOOS_FORGE_MEDIA_HOSTS` add extra authorized hosts (a CDN, or a legacy
+// domain during a migration) so those images still get downloaded +
+// optimized at build time instead of falling back to a hotlinked <img>.
+// Images on any other host fall back to plain <img> tags in SmartImage —
+// never a build failure. Keep the host rules in sync with src/lib/media.ts.
 const wpUrl = process.env.WP_SITE_URL || manifest.url;
 const wpHost = wpUrl ? new URL(wpUrl).hostname : '';
+const manifestHosts = Array.isArray(manifest.media?.hosts) ? manifest.media.hosts : [];
+const envHosts = (process.env.NVOOS_FORGE_MEDIA_HOSTS || '')
+	.split(/[,\s]+/)
+	.map((host) => host.trim().toLowerCase())
+	.filter(Boolean);
+const extraImageHosts = [
+	...new Set([...manifestHosts.map(String), ...envHosts].map((host) => host.toLowerCase())),
+].filter(Boolean);
+const imageDomains = [...new Set([...(wpHost ? [wpHost] : []), ...extraImageHosts])];
 
 export default defineConfig({
 	site,
@@ -35,6 +48,6 @@ export default defineConfig({
 		build: { cssMinify: 'esbuild' },
 	},
 	image: {
-		domains: wpHost ? [wpHost] : [],
+		domains: imageDomains,
 	},
 });

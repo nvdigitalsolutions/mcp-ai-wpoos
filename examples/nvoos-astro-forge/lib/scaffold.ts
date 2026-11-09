@@ -250,6 +250,12 @@ export interface ForgeManifest {
 	 * the Form design component (env vars override at deploy time). */
 	forms?: { endpoint?: string; origin?: string; searchForms?: string[] };
 	/**
+	 * Media provenance (138) — extra authorized image hosts and whether the
+	 * post-build localizer runs. Read by astro.config.mjs, src/lib/media.ts
+	 * and scripts/localize-media.mjs (env vars override at build time).
+	 */
+	media?: { hosts?: string[]; localize?: boolean; maxFileMb?: number };
+	/**
 	 * Surface toggles (104 §4.3 preset output) — the template gates its
 	 * chrome on these (search/feed links, sitemap pointer, og:image).
 	 */
@@ -258,6 +264,12 @@ export interface ForgeManifest {
 	contact?: ForgeContact;
 	/** Rendering model (104 Q4) — informational; the project files embody it. */
 	render?: 'static' | 'ssr';
+	/**
+	 * The deploy tier (135) — `managed` means the bridge/BFF is present at
+	 * runtime (the `/media/*` proxy + `/api`). Always emitted so the key is
+	 * inferable from the JSON; media handling keys off it (Proposal 139).
+	 */
+	runtime?: 'static' | 'managed';
 	/**
 	 * Tracking provenance (Proposal 130) — vendor names and the consent mode
 	 * only. No ids, no tokens: the manifest must stay safe in a public repo.
@@ -2445,11 +2457,28 @@ async function scaffoldProject(
 		design: profile.design,
 		designAudit: options.strictContrast ? 'strict' : 'warn',
 		forms,
+		// Proposal 138 — the media policy, emitted only when the profile sets
+		// one: an absent block IS the default (CMS host, localization on).
+		...( profile.media
+			? {
+					media: {
+						...( profile.media.hosts && profile.media.hosts.length > 0
+							? { hosts: profile.media.hosts }
+							: {} ),
+						...( profile.media.localize !== undefined ? { localize: profile.media.localize } : {} ),
+						...( profile.media.maxFileMb !== undefined ? { maxFileMb: profile.media.maxFileMb } : {} ),
+					},
+			  }
+			: {} ),
 		// Issue #7549 — a theme-injected contact band cannot come from content;
 		// the profile declares its copy so the front page can render `#contact`.
 		...( profile.contact ? { contact: profile.contact } : {} ),
 		surfaces,
 		render,
+		// Always emitted (139): the media pass reads it to choose between
+		// mirroring the library (static) and rewriting uploads to the
+		// same-origin `/media/*` proxy (managed).
+		runtime: profile.deploy?.runtime === 'managed' ? 'managed' : 'static',
 		...( hasTrackingModule && profile.tracking
 			? {
 					tracking: {
@@ -2496,6 +2525,24 @@ async function scaffoldProject(
 		[
 			'# The WordPress source this frontend is generated from.',
 			`WP_SITE_URL=${profile.url.replace(/\/+$/, '')}`,
+			'',
+			'# Proposal 138 — extra image hosts Astro may optimize and the build may',
+			'# mirror (a CDN, an image proxy, or a second domain the media lives on).',
+			'# Comma separated. The CMS host is always authorized; a stale',
+			'# /wp-content/ URL is repaired to it instead of hotlinked.',
+			`NVOOS_FORGE_MEDIA_HOSTS=${( profile.media?.hosts ?? [] ).join( ',' )}`,
+			'',
+			'# Proposal 138 — after the build, mirror every remote image still',
+			'# referenced into dist/media so the deployed site never hotlinks the CMS.',
+			'# Empty (default) = on; 0 = off.',
+			`NVOOS_FORGE_LOCALIZE_MEDIA=${profile.media?.localize === false ? '0' : ''}`,
+			'# Media strategy: local (mirror into dist/media), proxy (rewrite uploads',
+			'# to the managed runtime\'s same-origin /media proxy), or off. Empty =',
+			'# local for the static tier, proxy when the managed bridge is deployed.',
+			'NVOOS_FORGE_MEDIA_MODE=',
+			...( profile.media?.maxFileMb !== undefined
+				? [ `NVOOS_FORGE_MEDIA_MAX_MB=${profile.media.maxFileMb}` ]
+				: [] ),
 			'',
 			'# Optional — WordPress Application Passwords for private content.',
 			'# Never commit real credentials; copy to .env (git-ignored).',
