@@ -263,6 +263,18 @@ async function runAnalyze( url, options ) {
 			const inventory = await discoverInventory( profile, { fetch, wayback: options.wayback === true } );
 			profile.inventory = inventory;
 			console.log( `\u2713 Site shape: ${ inventory.shape } (${ inventory.navAnchors.length } nav anchor(s), ${ inventory.navPages.length } nav page(s))` );
+			// The verdict is not a decision. `profile.shape` drives the build; the
+			// analysis only proposes it, so say so instead of letting an inference
+			// quietly become the setting on a new site.
+			if ( ! profile.shape ) {
+				console.warn(
+					`\u26a0 Site shape is not declared — add "shape": "${ inventory.shape }" to the profile to make this a decision (the verdict is used until then).`
+				);
+			} else if ( profile.shape !== inventory.shape ) {
+				console.warn(
+					`\u26a0 Site shape: the profile declares ${ profile.shape } but the source reads ${ inventory.shape }. The setting wins — confirm it is deliberate.`
+				);
+			}
 			console.log( `  covered ${ inventory.covered.length }, excluded ${ inventory.excluded.length }, missing ${ inventory.missing.length }: ${ inventory.missing.slice( 0, 12 ).join( ' ' ) || '(none)' }` );
 			for ( const anchor of inventory.danglingAnchors ) {
 				console.warn( `\u26a0 Nav anchor #${ anchor } has no matching section id on the homepage.` );
