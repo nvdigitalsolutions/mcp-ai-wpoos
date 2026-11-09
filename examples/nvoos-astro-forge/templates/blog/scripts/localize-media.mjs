@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ---------------------------------------------------------------------------
-// localize-media.mjs — mirror remote media into the built site (Proposal 138).
+// localize-media.mjs — mirror remote media into the built site (Proposal 139).
 //
 // Runs AFTER `astro build`, BEFORE pagefind. Astro's <Image> already pulls
 // authorized remote images into dist/_astro/, but body-content images, site
@@ -24,8 +24,9 @@
 //     finds nothing to do,
 //   * respects WP_FETCH_PROXY, exactly like the content layer (bot-protected
 //     sources block datacenter egress),
-//   * only http(s) references in image/CSS contexts; <a href>, og:image and
-//     JSON-LD stay absolute.
+//   * only http(s) references in image/CSS/document contexts; og:image and
+//     JSON-LD stay absolute, and a link is mirrored only when its extension
+//     is on the document allowlist (never an executable or unknown archive).
 //
 // Env:
 //   NVOOS_FORGE_MEDIA_MODE           local | proxy | off — default: `proxy`
@@ -36,6 +37,7 @@
 //   NVOOS_FORGE_MEDIA_HOSTS          extra allowlisted media hosts (csv)
 //   NVOOS_FORGE_LOCALIZE_ALL         1 = mirror every http(s) asset host
 //   NVOOS_FORGE_MEDIA_MAX_MB         per-file cap (default 25)
+//   NVOOS_FORGE_MEDIA_MAX_DOC_MB     per-document cap (default 50)
 //   NVOOS_FORGE_MEDIA_MAX_TOTAL_MB   build-wide cap (default 500)
 //   NVOOS_FORGE_MEDIA_TIMEOUT_MS     per-request timeout (default 20000)
 //   WP_SITE_URL / nvoos.json url     the CMS origin (host repair + allowlist)
@@ -49,7 +51,9 @@ import path from 'node:path';
 import {
 	collectAssetUrls,
 	collectCssAssetUrls,
+	collectDocumentUrls,
 	collectStylesheetUrls,
+	documentExtension,
 	extensionForContentType,
 	mediaFileName,
 	parseHostList,
@@ -225,6 +229,9 @@ async function main() {
 			( typeof mediaPolicy.maxFileMb === 'number' ? mediaPolicy.maxFileMb : 25 )
 	);
 	const maxBytes = Math.max( 0, Number.isFinite( maxFileMb ) ? maxFileMb : 25 ) * 1024 * 1024;
+	// Documents get their own, larger cap: a catalogue PDF is legitimately tens
+	// of MB where an image that size is a mistake.
+	const maxDocBytes = Math.max( 0, Number( env( 'NVOOS_FORGE_MEDIA_MAX_DOC_MB' ) || 50 ) ) * 1024 * 1024;
 	const maxTotal = Math.max( 0, Number( env( 'NVOOS_FORGE_MEDIA_MAX_TOTAL_MB' ) || 500 ) ) * 1024 * 1024;
 	const timeoutMs = Math.max( 1000, Number( env( 'NVOOS_FORGE_MEDIA_TIMEOUT_MS' ) || 20000 ) );
 
@@ -262,6 +269,13 @@ async function main() {
 		for ( const url of collectStylesheetUrls( html ) ) {
 			if ( shouldLocalizeUrl( url, { cmsHost, mediaHosts, localizeAll } ) ) {
 				stylesheetUrls.add( url );
+			}
+		}
+		// Documents (brochures, catalogues, price lists). A link is content, so
+		// only the extension allowlist in the lib becomes a candidate.
+		for ( const url of collectDocumentUrls( html ) ) {
+			if ( shouldLocalizeUrl( url, { cmsHost, mediaHosts, localizeAll } ) ) {
+				candidates.add( url );
 			}
 		}
 	}
@@ -365,8 +379,9 @@ async function main() {
 				const result = await download( downloadUrl, timeoutMs );
 				buffer = result.buffer;
 				contentType = result.contentType;
-				if ( result.contentLength > maxBytes || buffer.length > maxBytes ) {
-					skipped.push( { url: downloadUrl, reason: `larger than ${ Math.round( maxBytes / 1024 / 1024 ) } MB` } );
+				const capBytes = documentExtension( downloadUrl ) ? maxDocBytes : maxBytes;
+				if ( result.contentLength > capBytes || buffer.length > capBytes ) {
+					skipped.push( { url: downloadUrl, reason: `larger than ${ Math.round( capBytes / 1024 / 1024 ) } MB` } );
 					return;
 				}
 				if ( totalBytes + buffer.length > maxTotal ) {
@@ -384,7 +399,10 @@ async function main() {
 			}
 
 			const urlExtension = path.extname( new URL( downloadUrl ).pathname ).replace( /^\./, '' ).toLowerCase();
-			const extension = extensionForContentType( contentType, urlExtension || 'bin' );
+			// A document's URL extension outranks its Content-Type: hosts serve
+			// PDFs as application/octet-stream (and some test fixtures mislabel
+			// them entirely), and the link text promises a .pdf.
+			const extension = documentExtension( downloadUrl ) ?? extensionForContentType( contentType, urlExtension || 'bin' );
 
 			for ( const original of originals ) {
 				const relative = mediaFileName( original, extension );
@@ -450,7 +468,7 @@ async function applyRewrite( sources, map ) {
 /** `media/<sha1>.<ext>` — the cache path for a download URL. */
 function cachedPathGuess( cacheKey, contentType, downloadUrl ) {
 	const urlExtension = path.extname( new URL( downloadUrl ).pathname ).replace( /^\./, '' ).toLowerCase();
-	const extension = extensionForContentType( contentType, urlExtension || 'bin' );
+	const extension = documentExtension( downloadUrl ) ?? extensionForContentType( contentType, urlExtension || 'bin' );
 	return path.join( CACHE_DIR, 'media', `${ cacheKey }.${ extension }` );
 }
 

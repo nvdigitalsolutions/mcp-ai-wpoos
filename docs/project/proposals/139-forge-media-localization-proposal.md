@@ -105,6 +105,16 @@ the moment `tracking.consent.enforceCsp` is turned on (`style-src`/`font-src`
 never allowlist the CMS). Fails soft like everything else: an unfetchable sheet
 keeps its original link and is reported.
 
+**Linked documents travel too.** An `a[href]` whose path ends in an allowlisted
+document extension (`pdf`, `doc(x)`, `xls(x)`, `ppt(x)`, `odt/ods/odp`, `csv`,
+`txt`, `rtf`, `epub`, `ics`, `zip`) is mirrored and rewritten. The list is an
+allowlist on purpose: a link is content, so a mis-typed href must never pull an
+executable or unknown archive into the build. Documents get their own cap
+(`NVOOS_FORGE_MEDIA_MAX_DOC_MB`, default 50 MB), the URL extension outranks the
+Content-Type (hosts serve PDFs as `application/octet-stream`), and a `#page=4`
+fragment survives on the rewritten href. Image anchors, page links, `mailto:`
+and in-page anchors are never touched.
+
 Override with `NVOOS_FORGE_MEDIA_MODE=local|proxy|off`.
 
 **Never** rewritten in either mode: `<a href>`, `<meta content>` (`og:image`
@@ -129,6 +139,7 @@ finds nothing.
 | Env | `NVOOS_FORGE_LOCALIZE_MEDIA` | on (`0` disables) |
 | Env | `NVOOS_FORGE_LOCALIZE_ALL` | off (mirror every host) |
 | Env | `NVOOS_FORGE_MEDIA_MAX_MB` / `_MAX_TOTAL_MB` | 25 / 500 |
+| Env | `NVOOS_FORGE_MEDIA_MAX_DOC_MB` | 50 (documents) |
 | Env | `NVOOS_FORGE_MEDIA_TIMEOUT_MS` | 20000 |
 
 The profile values are baked into `nvoos.json` (`media`) and emitted in
@@ -171,6 +182,12 @@ The profile values are baked into `nvoos.json` (`media`) and emitted in
 * **A local stylesheet changes the meaning of relative `url()`s** — the sheet
   moves from `/wp-content/themes/x/css/` to `/media/`, so every ref must be
   rewritten (local when mirrored, absolute otherwise).
+* **A document's path extension must win over its Content-Type** — a PDF
+  served as `application/octet-stream` (or mislabelled by a test fixture)
+  would otherwise land as `.bin` while the link promises a `.pdf`.
+* **Fragments are not download keys** — `brochure.pdf#page=4` is downloaded as
+  `brochure.pdf`, and the fragment is re-attached on the rewritten href; using
+  the raw href as the key would download the same file once per fragment.
 * **`<a>`, `<meta>`, JSON-LD must not be scanned** — `og:image` and schema.org
   `image` are invalid as relative paths, and the catalogue PDF must keep
   working.
@@ -193,7 +210,8 @@ The real rebuild surfaced three references that are not images and so are not
 mirrored — they are **repaired at render time** instead (`repairMediaUrl`):
 `chrome.iconCss` (`<link rel=stylesheet>`), the catalogue CTA
 (`design.sections[].catalog.source`) and the JSON-LD logo
-(`seo-graph.ts` → `chrome.logo.src`). Result: 21 references localized
-(1.7 MB — 12 images, the icon sheet and 8 font files), zero `jayainc.com`
-media references in `dist/`, and the icon sheet now same-origin (no CSP
-allowlist needed).
+(`seo-graph.ts` → `chrome.logo.src`). Result: 22 references localized
+(2.4 MB — 12 images, the icon sheet, 8 font files, and the 642 KB catalogue
+PDF), zero `jayainc.com` media references in `dist/`, the icon sheet
+same-origin (no CSP allowlist needed), and the catalogue link served from
+`/media/…`.

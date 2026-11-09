@@ -1444,9 +1444,11 @@ Three layers, one contract:
   runtime's same-origin `/media/<rest>` route (no download, the CMS host never
   reaches the HTML). **External stylesheets are mirrored with their fonts**
   (theme icon sheets), so icon glyphs stop depending on the CMS host — and
-  stop tripping a future enforced CSP. Non-image stored facts (the catalogue
-  CTA, `chrome.iconCss`, the JSON-LD logo) are repaired at RENDER time via
-  `repairMediaUrl` instead. Override:
+  stop tripping a future enforced CSP. **Linked documents** (an allowlist:
+  pdf/doc/xls/ppt/odt/csv/txt/rtf/epub/ics/zip) are mirrored too, with their
+  own cap and `#page=` fragments preserved; executables are never candidates.
+  Non-image stored facts (the catalogue CTA, `chrome.iconCss`, the JSON-LD
+  logo) are repaired at RENDER time via `repairMediaUrl` instead. Override:
   `NVOOS_FORGE_MEDIA_MODE=local|proxy|off`. Fail-soft (report in
   `.forge-cache/media-localize.json`, build never fails), idempotent, honours
   `WP_FETCH_PROXY`, caps per file (25 MB) and per build (500 MB).

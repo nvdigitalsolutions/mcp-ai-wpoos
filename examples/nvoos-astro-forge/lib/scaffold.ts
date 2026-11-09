@@ -250,7 +250,7 @@ export interface ForgeManifest {
 	 * the Form design component (env vars override at deploy time). */
 	forms?: { endpoint?: string; origin?: string; searchForms?: string[] };
 	/**
-	 * Media provenance (138) — extra authorized image hosts and whether the
+	 * Media provenance (139) — extra authorized image hosts and whether the
 	 * post-build localizer runs. Read by astro.config.mjs, src/lib/media.ts
 	 * and scripts/localize-media.mjs (env vars override at build time).
 	 */
@@ -2457,7 +2457,7 @@ async function scaffoldProject(
 		design: profile.design,
 		designAudit: options.strictContrast ? 'strict' : 'warn',
 		forms,
-		// Proposal 138 — the media policy, emitted only when the profile sets
+		// Proposal 139 — the media policy, emitted only when the profile sets
 		// one: an absent block IS the default (CMS host, localization on).
 		...( profile.media
 			? {
@@ -2526,16 +2526,18 @@ async function scaffoldProject(
 			'# The WordPress source this frontend is generated from.',
 			`WP_SITE_URL=${profile.url.replace(/\/+$/, '')}`,
 			'',
-			'# Proposal 138 — extra image hosts Astro may optimize and the build may',
+			'# Proposal 139 — extra image hosts Astro may optimize and the build may',
 			'# mirror (a CDN, an image proxy, or a second domain the media lives on).',
 			'# Comma separated. The CMS host is always authorized; a stale',
 			'# /wp-content/ URL is repaired to it instead of hotlinked.',
 			`NVOOS_FORGE_MEDIA_HOSTS=${( profile.media?.hosts ?? [] ).join( ',' )}`,
 			'',
-			'# Proposal 138 — after the build, mirror every remote image still',
+			'# Proposal 139 — after the build, mirror every remote image still',
 			'# referenced into dist/media so the deployed site never hotlinks the CMS.',
 			'# Empty (default) = on; 0 = off.',
 			`NVOOS_FORGE_LOCALIZE_MEDIA=${profile.media?.localize === false ? '0' : ''}`,
+			'# Per-document cap in MB for linked files (catalogues, price lists).',
+			'NVOOS_FORGE_MEDIA_MAX_DOC_MB=',
 			'# Media strategy: local (mirror into dist/media), proxy (rewrite uploads',
 			'# to the managed runtime\'s same-origin /media proxy), or off. Empty =',
 			'# local for the static tier, proxy when the managed bridge is deployed.',
