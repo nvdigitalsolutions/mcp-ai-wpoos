@@ -13,7 +13,7 @@ import {
 	extractBandsFromHtml,
 	inlineBackground,
 	stableBandId,
-} from '../lib/bands';
+} from '../lib/bands.ts';
 
 const page = ( body: string ) => `<!doctype html><html><head><title>t</title></head><body>${ body }</body></html>`;
 
