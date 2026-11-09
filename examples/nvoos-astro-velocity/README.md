@@ -6,6 +6,9 @@
 > public storefront while the PWA stays live as the A/B rollback (owner
 > decision Q1: keep A/B).
 
+<img width="75%" height="75%" alt="Screenshot 2026-11-09 202059" src="https://github.com/user-attachments/assets/db7d7dc4-28f2-40c1-bb1a-dff5c6916fc2" />
+
+
 The storefront is backend-agnostic by construction: whoever serves the
 contract — WordPress + bridge today, a Laravel commerce service tomorrow —
 is invisible to this app (085 appendix §2).
