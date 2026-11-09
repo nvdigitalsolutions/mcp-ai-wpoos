@@ -97,7 +97,17 @@ const vocabulary = Object.entries(BLOCK_TYPE_TO_KIND);
 			/>
 
 			<h3><code>image</code></h3>
-			<ImageBlock node={{ _type: 'image', src: '/favicon.svg', alt: 'The storefront favicon' }} />
+			<p class="hint">
+				A self-contained placeholder: site-root static files are not guaranteed
+				to ship to every host, so the demo carries its own bytes.
+			</p>
+			<ImageBlock
+				node={{
+					_type: 'image',
+					src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='200' viewBox='0 0 480 200'%3E%3Crect width='480' height='200' fill='%23111827'/%3E%3Ccircle cx='240' cy='100' r='46' fill='none' stroke='%236b7280' stroke-width='3'/%3E%3Cpath d='M214 100h52M240 74v52' stroke='%236b7280' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E",
+					alt: 'A placeholder graphic with a plus symbol in a circle',
+				}}
+			/>
 
 			<h3><code>testimonial</code></h3>
 			<TestimonialBlock

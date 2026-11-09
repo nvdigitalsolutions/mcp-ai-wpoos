@@ -169,3 +169,37 @@ test('the previously untagged blocks now emit data-section', async ({ page }) =>
 	await tabs.first().press('ArrowRight');
 	await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
 });
+
+// Proposal 104 D12 — the CSP is hashed per response, so inline scripts must be
+// page-INVARIANT or a ClientRouter navigation is blocked by the SOURCE
+// document's policy (the hash list belongs to the document, not the target).
+// This is the coverage gap that shipped a broken tabs pattern: every other
+// spec does a full goto(), which never exercises the client-side path.
+test('tabs work after in-app navigation (CSP is page-invariant)', async ({ page }) => {
+	const cspErrors: string[] = [];
+	page.on('console', (msg) => {
+		if (/Content Security Policy/i.test(msg.text())) cspErrors.push(msg.text());
+	});
+
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+	// Navigate in-app — ClientRouter intercepts same-origin anchors.
+	await page.evaluate(() => {
+		const anchor = document.createElement('a');
+		anchor.href = '/components/blocks/';
+		anchor.textContent = 'gallery';
+		document.body.appendChild(anchor);
+		anchor.click();
+	});
+	await page.waitForURL('**/components/blocks/');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Content blocks');
+
+	const tabs = page.getByRole('tab');
+	await expect(tabs).toHaveCount(2);
+	await tabs.nth(1).click();
+	await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
+	await expect(page.locator('[id$="-panel-1"]')).toHaveAttribute('aria-hidden', 'false');
+
+	expect(cspErrors, `CSP violations on navigation:\n${cspErrors.join('\n')}`).toEqual([]);
+});

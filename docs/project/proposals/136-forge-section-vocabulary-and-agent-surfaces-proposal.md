@@ -566,6 +566,10 @@ Known divergences, both deliberate: velocity's `llms.txt` links the markdown var
 
 Validation: 417 unit tests (44 files), `astro check` 0 errors / 0 warnings (226 files), Playwright 82/82 against a fresh `dist/`, smoke 19/19.
 
+**CSP + ClientRouter regression (same follow-up).** The gallery surfaced a latent, site-wide defect in Proposal 104 D12. The CSP hashes the inline scripts of the **rendered document**, but `ClientRouter` keeps the source document's policy across a client-side navigation, so a target page's inline script is blocked unless the source already allowed that exact hash. Home's CSP carried home's script (`0O7iB6…`); `/components/*` needed the tabs script (`kEpC0…`) — hence the console spam and a dead tabs pattern until reload. Fix: `vite.build.assetsInlineLimit: 0`, which keeps bundled scripts external (`'self'` covers them) and makes the hash list page-invariant — 6 inline hashes → 4, identical on `/`, `/components/`, `/components/blocks/` and `/cart/`. `tests/e2e/component-library.spec.ts` gained an in-app navigation spec asserting zero CSP violations, because every other e2e does a full `goto()` and never exercises the router. Residual, documented not fixed: `client:visible` islands still emit a per-page inline bootstrap, so navigating **into** home or a PDP is blocked; the remedies (convert those directives to `client:idle`, or drop `ClientRouter`) are hydration/UX tradeoffs and stay an owner decision.
+
+Also fixed: the gallery's `image` demo pointed at `/favicon.svg`, which is **404 on the deployed host** even though it exists in `dist/client`. The demo now carries its own `data:` URI (`img-src 'self' data:` is allowed).
+
 **Not shipped (deliberately deferred).**
 
 - `forge export-system` CLI subcommand and the `_system/specimen.astro` route.
