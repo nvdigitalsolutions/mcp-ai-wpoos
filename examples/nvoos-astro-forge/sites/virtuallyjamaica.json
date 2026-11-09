@@ -390,5 +390,6 @@
 			"value": "#2a2a2a",
 			"why": "The coral accent #fe6c61 with the template default white ink measures 2.79:1; #2a2a2a ink measures 5.15:1."
 		}
-	]
+	],
+	"shape": "one-pager"
 }

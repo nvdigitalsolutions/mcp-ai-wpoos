@@ -204,3 +204,14 @@ describe( 'composeSiteReadme — determinism', () => {
 		expect( readme.endsWith( '\n' ) ).toBe( true );
 	} );
 } );
+
+describe( 'composeSiteReadme — site shape', () => {
+	it( 'reports the resolved site shape in the provenance table', () => {
+		const readme = composeSiteReadme( base( { shape: 'one-pager' } ) );
+		expect( readme ).toContain( '| Site shape | `one-pager` |' );
+	} );
+
+	it( 'omits the row when the shape is unknown', () => {
+		expect( composeSiteReadme( base() ) ).not.toContain( 'Site shape' );
+	} );
+} );

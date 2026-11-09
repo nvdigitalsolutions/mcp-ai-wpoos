@@ -42,6 +42,7 @@ import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesign
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { findDroppedPins } from '../lib/pins.ts';
+import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, diffGeometry, measureGeometry, serveDir } from '../lib/geometry.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
@@ -1150,6 +1151,20 @@ async function runVerify( profileRef, options ) {
 			console.log(
 				`  source hard cut: ${ seam.fromId ?? '?' } ${ seam.fromEdge ?? '' } → ${ seam.toId ?? '?' } ${ seam.toEdge ?? '' } (ΔE ${ seam.distance })`
 			);
+		}
+	}
+	// One-pager nav (profile `shape`): every anchor the header links must land
+	// somewhere. A source band the rebuild dropped — e.g. a section whose only
+	// content was a contact form — leaves a dead nav link. Reported, never silent.
+	if ( indexHtml && resolveSiteShape( profile ) === 'one-pager' ) {
+		const anchors = siteNavAnchors( profile );
+		const escape = ( value ) => value.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+		const dead = anchors.filter( ( anchor ) => ! new RegExp( `id="${ escape( anchor ) }"` ).test( indexHtml ) );
+		if ( anchors.length > 0 && dead.length === 0 ) {
+			console.log( `✓ Nav anchors: all ${ anchors.length } one-pager target(s) exist in the built page.` );
+		}
+		for ( const anchor of dead ) {
+			console.warn( `⚠ Nav anchor: #${ anchor } has no matching element id in the built page.` );
 		}
 	}
 	// Fact consumption (the "a component ignored the fact" class): every fact a

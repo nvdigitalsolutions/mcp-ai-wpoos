@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { discoverInventory, normalizePath } from '../lib/inventory.ts';
+import { discoverInventory, normalizePath, resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import type { SiteProfile } from '../lib/types.ts';
 
 const PROFILE: SiteProfile = {
@@ -128,5 +128,47 @@ describe( 'discoverInventory', () => {
 		} );
 		expect( inventory.missing ).toContain( '/legacy-page/' );
 		expect( inventory.missing.some( ( p ) => p.includes( 'uploads' ) ) ).toBe( false );
+	} );
+} );
+
+describe( 'resolveSiteShape — the operator setting outranks the inference', () => {
+	const withInventory = ( shape: 'one-pager' | 'multi-page' | 'hybrid' ): SiteProfile => ( {
+		...PROFILE,
+		inventory: {
+			shape,
+			navAnchors: [ 'about', 'contact' ],
+			navPages: [],
+			covered: [],
+			excluded: [],
+			missing: [],
+			danglingAnchors: [],
+			analyzedAt: '2026-11-09T00:00:00.000Z',
+		},
+	} );
+
+	it( 'uses the explicit profile setting when present', () => {
+		expect( resolveSiteShape( { ...withInventory( 'multi-page' ), shape: 'one-pager' } ) ).toBe( 'one-pager' );
+	} );
+
+	it( 'falls back to the inventory verdict', () => {
+		expect( resolveSiteShape( withInventory( 'hybrid' ) ) ).toBe( 'hybrid' );
+	} );
+
+	it( 'defaults to multi-page when nothing was analysed', () => {
+		expect( resolveSiteShape( PROFILE ) ).toBe( 'multi-page' );
+	} );
+
+	it( 'exposes the anchor targets only for a one-pager', () => {
+		expect( siteNavAnchors( { ...withInventory( 'one-pager' ), shape: 'one-pager' } ) ).toEqual( [ 'about', 'contact' ] );
+		expect( siteNavAnchors( withInventory( 'multi-page' ) ) ).toEqual( [] );
+	} );
+
+	it( 'de-duplicates and drops empty anchor targets', () => {
+		const profile: SiteProfile = {
+			...withInventory( 'one-pager' ),
+			shape: 'one-pager',
+			inventory: { ...withInventory( 'one-pager' ).inventory!, navAnchors: [ 'about', 'about', '', 'contact' ] },
+		};
+		expect( siteNavAnchors( profile ) ).toEqual( [ 'about', 'contact' ] );
 	} );
 } );
