@@ -399,6 +399,13 @@ export interface SiteProfile {
 	 * the language-parity score cannot provide (Proposal 114 §3.6).
 	 */
 	geometry?: ForgeGeometry;
+	/**
+	 * The contact band (issue #7549) — a forged site used to lose the source's
+	 * theme-injected contact block, dead one-pager anchor included. When this
+	 * block is present the front page renders a `#contact` band; its form posts
+	 * through `forms.delivery` (Proposal 138).
+	 */
+	contact?: ForgeContact;
 	/** Collections to wire into the generated project. */
 	collections: WpCollection[];
 	/**
@@ -479,6 +486,14 @@ export interface BandGeometry {
 
 /** Measured band geometry: section id → viewport name → box. */
 export type ForgeGeometry = Record< string, Record< string, BandGeometry > >;
+
+/** The contact band copy (see `SiteProfile.contact`, issue #7549). */
+export interface ForgeContact {
+	heading?: string;
+	blurb?: string;
+	/** Shown as a mailto link when no form transport is configured. */
+	email?: string;
+}
 
 /**
  * The closed section-kind vocabulary (Proposal 136 §4.1).

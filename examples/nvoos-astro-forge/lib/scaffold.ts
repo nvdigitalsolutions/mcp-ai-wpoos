@@ -24,7 +24,7 @@ import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree } from './managed-runtime.ts';
 import { consentCategoryFor, cspDirectivesFor } from './tracking.ts';
-import type { ForgeDesign, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { ForgeContact, ForgeDesign, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -254,6 +254,8 @@ export interface ForgeManifest {
 	 * chrome on these (search/feed links, sitemap pointer, og:image).
 	 */
 	surfaces?: { search: boolean; feed: boolean; sitemap: boolean; ogImages: boolean };
+	/** The contact band (issue #7549) — copy the front page renders at `#contact`. */
+	contact?: ForgeContact;
 	/** Rendering model (104 Q4) — informational; the project files embody it. */
 	render?: 'static' | 'ssr';
 	/**
@@ -2400,6 +2402,9 @@ async function scaffoldProject(
 		design: profile.design,
 		designAudit: options.strictContrast ? 'strict' : 'warn',
 		forms,
+		// Issue #7549 — a theme-injected contact band cannot come from content;
+		// the profile declares its copy so the front page can render `#contact`.
+		...( profile.contact ? { contact: profile.contact } : {} ),
 		surfaces,
 		render,
 		...( hasTrackingModule && profile.tracking
