@@ -1122,6 +1122,8 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 			endpoint: 'https://shop.example.com/wp-json/nvoos-forge/v1',
 			origin: 'https://static.example.com',
 			searchForms: [ 'find' ],
+			// Recorded so the form can choose the same-origin direct route.
+			delivery: 'bridge',
 		} );
 	} );
 
@@ -1389,5 +1391,66 @@ describe( 'scaffold — extra (CPT) collections get routes', () => {
 	it( 'title-cases a hyphenated collection slug', () => {
 		expect( collectionTitle( 'case-studies' ) ).toBe( 'Case Studies' );
 		expect( collectionTitle( 'portfolio' ) ).toBe( 'Portfolio' );
+	} );
+} );
+
+describe( 'scaffold — form delivery mode (direct vs bridge)', () => {
+	const directProfile = ( mail = true ): SiteProfile => ( {
+		...PROFILE,
+		deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+		forms: {
+			delivery: 'direct',
+			...( mail ? { mail: { provider: 'brevo', from: 'forms@mail.example.com', to: 'hello@example.com' } } : {} ),
+		},
+	} );
+
+	it( 'refuses direct delivery outside the managed runtime', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'direct-static' );
+		await expect(
+			scaffold( { profile: { ...PROFILE, forms: { delivery: 'direct', mail: { provider: 'brevo', from: 'a@b.c', to: 'd@e.f' } } }, targetDir: target, template: 'blog' } )
+		).rejects.toThrow( /requires deploy\.runtime/ );
+	} );
+
+	it( 'refuses direct delivery without the mail block', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'direct-nomail' );
+		await expect(
+			scaffold( { profile: directProfile( false ), targetDir: target, template: 'blog' } )
+		).rejects.toThrow( /forms\.mail/ );
+	} );
+
+	it( 'emits the provider endpoint and records the mode', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'direct-ok' );
+		await scaffold( { profile: directProfile(), targetDir: target, template: 'blog' } );
+
+		const endpoint = await readFile( path.join( target, 'src', 'pages', 'api', 'forms', 'submit.ts' ), 'utf8' );
+		expect( endpoint ).toContain( 'readMailConfig' );
+		expect( endpoint ).toContain( 'honeypot' );
+		expect( endpoint ).not.toContain( 'proxyToWordPress' );
+		// The provider module is vendored next to the endpoint.
+		await expect( stat( path.join( target, 'src', 'forge', 'mail.ts' ) ) ).resolves.toBeTruthy();
+
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.forms.delivery ).toBe( 'direct' );
+		// No secret ever reaches the manifest.
+		expect( JSON.stringify( manifest ) ).not.toContain( 'API_KEY' );
+	} );
+
+	it( 'keeps the WordPress bridge as the default', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'bridge-default' );
+		await scaffold( {
+			profile: { ...PROFILE, deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ], forms: {} },
+			targetDir: target,
+			template: 'blog',
+		} );
+
+		const endpoint = await readFile( path.join( target, 'src', 'pages', 'api', 'forms', 'submit.ts' ), 'utf8' );
+		expect( endpoint ).toContain( 'proxyToWordPress' );
+
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.forms.delivery ).toBe( 'bridge' );
 	} );
 } );

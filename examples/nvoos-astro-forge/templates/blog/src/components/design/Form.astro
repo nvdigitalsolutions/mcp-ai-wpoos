@@ -15,7 +15,9 @@ import manifestJson from '../../../nvoos.json';
 
 // The manifest's inferred JSON type has no `forms` key on profiles that
 // omit the block — read it through an explicit shape.
-const manifest = manifestJson as { forms?: { endpoint?: string; searchForms?: string[] } };
+const manifest = manifestJson as {
+	forms?: { endpoint?: string; searchForms?: string[]; delivery?: 'bridge' | 'direct' };
+};
 
 interface Props {
 	section: SemanticSection;
@@ -30,7 +32,14 @@ const configuredEndpoint = (
 	manifest.forms?.endpoint ||
 	''
 ).replace(/\/+$/, '');
-const endpoint = configuredEndpoint ? `${configuredEndpoint}/forms/submit` : '';
+// `direct` sends to the same-origin managed route (which calls the provider
+// API); `bridge` sends to WordPress, which owns the handler and its mailer.
+const endpoint =
+	manifest.forms?.delivery === 'direct'
+		? '/api/forms/submit'
+		: configuredEndpoint
+			? `${configuredEndpoint}/forms/submit`
+			: '';
 // The page URL the bridge records as the referrer / redirect target.
 const pagePath = Astro.url?.pathname || '/';
 

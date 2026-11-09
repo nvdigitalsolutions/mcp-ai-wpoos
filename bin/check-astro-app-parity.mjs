@@ -22,6 +22,8 @@
 // from the forge tree, so `npm ci` there is enough.
 // ---------------------------------------------------------------------------
 
+import { readFileSync } from 'node:fs';
+
 import { SECTION_KINDS as FORGE_KINDS } from '../examples/nvoos-astro-forge/lib/types.ts';
 import { composeLlmsTxt as forgeCompose } from '../examples/nvoos-astro-forge/lib/llms.ts';
 import { SECTION_KINDS as VELOCITY_KINDS } from '../examples/nvoos-astro-velocity/src/lib/content/section-kinds.ts';
@@ -171,6 +173,89 @@ check(
 	[...FORGE_ONLY, ...VELOCITY_ONLY].every((kind) => !SHARED.includes(kind)),
 	'no kind is declared as both shared and app-only'
 );
+
+// ---------------------------------------------------------------------------
+// 3. Shared form-delivery module — BYTE identity.
+//
+// `mail.ts` is the provider transport BOTH products ship: the forge vendors it
+// into a generated site (`forms.delivery: 'direct'`) and velocity imports it at
+// src/lib/mail.ts. It is deliberately a COPY, not a shared package — a generated
+// site must build standalone, and a published storefront must not depend on the
+// forge tree. Copies drift, so this asserts byte identity: edit one, copy it to
+// the other, and the gate stays green.
+//
+// What is NOT gated is the endpoint around it. The forge's is emitted as source
+// (lib/forms-direct.ts); velocity's is hand-written
+// (src/pages/forms/submit.ts). Same guards, different frame — the divergence is
+// declared in reference/email-delivery.md.
+// ---------------------------------------------------------------------------
+
+const MAIL_FORGE = 'examples/nvoos-astro-forge/lib/mail.ts';
+const MAIL_VELOCITY = 'examples/nvoos-astro-velocity/src/lib/mail.ts';
+const FORGE_ENDPOINT_SRC = 'examples/nvoos-astro-forge/lib/forms-direct.ts';
+const VELOCITY_ENDPOINT = 'examples/nvoos-astro-velocity/src/pages/forms/submit.ts';
+const VELOCITY_GUARDS = 'examples/nvoos-astro-velocity/src/lib/forms.ts';
+
+console.log('shared form-delivery module (byte identity)');
+{
+	const forgeMail = readFileSync(new URL(`../${MAIL_FORGE}`, import.meta.url), 'utf8');
+	const velocityMail = readFileSync(new URL(`../${MAIL_VELOCITY}`, import.meta.url), 'utf8');
+	check(
+		velocityMail === forgeMail,
+		'mail.ts is byte-identical in both apps',
+		velocityMail === forgeMail
+			? ''
+			: `${MAIL_FORGE} and ${MAIL_VELOCITY} have diverged — copy one over the other`
+	);
+
+	// The endpoint must keep reading the RUNTIME environment: import.meta.env is
+	// a build-time snapshot, so a key injected after the build would be invisible.
+	const endpoint = readFileSync(new URL(`../${VELOCITY_ENDPOINT}`, import.meta.url), 'utf8');
+	check(
+		/runtimeEnv\(\)/.test(endpoint),
+		'velocity endpoint reads the runtime environment',
+		`${VELOCITY_ENDPOINT} no longer calls runtimeEnv()`
+	);
+}
+
+// ---------------------------------------------------------------------------
+// 4. Guard-sequence parity.
+//
+// The endpoints are NOT shared source — the forge's is emitted, velocity's is
+// hand-written — but they must carry the same guards. Order may differ; a guard
+// that exists on one side only is the drift this catches, because it is exactly
+// how "we fixed the spam problem" becomes true for one product and false for the
+// other. Adding a guard therefore means adding it in BOTH trees (and the marker
+// here).
+// ---------------------------------------------------------------------------
+
+const GUARD_MARKERS = [
+	[/honeypot/, 'honeypot field'],
+	[/timestamp/, 'time-trap timestamp'],
+	[/64 \* 1024/, '64 KB body cap'],
+	[/429/, 'throttle response'],
+	[/idempotenc/i, 'idempotency key'],
+	[/replyTo/i, 'reply-to'],
+];
+
+console.log('form-endpoint guard parity');
+{
+	const forge = readFileSync(new URL(`../${FORGE_ENDPOINT_SRC}`, import.meta.url), 'utf8');
+	const velocity = [
+		readFileSync(new URL(`../${VELOCITY_ENDPOINT}`, import.meta.url), 'utf8'),
+		readFileSync(new URL(`../${VELOCITY_GUARDS}`, import.meta.url), 'utf8'),
+	].join('\n');
+
+	for (const [pattern, label] of GUARD_MARKERS) {
+		const inForge = pattern.test(forge);
+		const inVelocity = pattern.test(velocity);
+		check(
+			inForge && inVelocity,
+			`both endpoints keep the ${label}`,
+			`missing from ${[inForge ? '' : 'forge', inVelocity ? '' : 'velocity'].filter(Boolean).join(' and ')}`
+		);
+	}
+}
 
 // ---------------------------------------------------------------------------
 
