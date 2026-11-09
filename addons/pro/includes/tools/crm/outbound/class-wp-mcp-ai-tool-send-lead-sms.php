@@ -9,6 +9,10 @@
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
  * @since 2.4.0 Wired to real Twilio and notify.lk APIs; stub removed.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

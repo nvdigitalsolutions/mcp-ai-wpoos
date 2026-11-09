@@ -16,6 +16,10 @@
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
  * @since 2.9.0 Added message logging via WP_MCP_AI_CRM_Message_Log on entry.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

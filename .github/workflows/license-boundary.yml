@@ -1,0 +1,32 @@
+name: Licence Boundary
+
+# The repo holds three differently-licensed products in one tree:
+#   includes/              GPL-3.0-or-later  (base plugin, ships to WordPress.org)
+#   lib/core/src/          MIT               (nvoos/core Composer package)
+#   addons/pro/includes/   Proprietary       (commercial addon)
+#   addons/canvas/         Proprietary       (commercial addon)
+#
+# This workflow turns that boundary from convention into a build failure.
+# See bin/check-license-boundary.sh and bin/add-spdx-headers.php.
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    name: Licence boundary intact
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check licence boundary
+        run: bash bin/check-license-boundary.sh

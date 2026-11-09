@@ -10,6 +10,8 @@
  * @copyright 2025-2026 NV Digital Solutions
  * @license   Proprietary
  * @since     2.11.0
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

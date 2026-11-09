@@ -1,7 +1,12 @@
 <?php
 /** Client-side AI tools base — server-side is parameter validation only.
  *
- * @package Nvoos\Core @since 1.0.0 @license MIT */
+ * @package Nvoos\Core @since 1.0.0 @license MIT
+ *
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
+ */
 declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 

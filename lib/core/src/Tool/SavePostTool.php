@@ -12,6 +12,8 @@
  * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);

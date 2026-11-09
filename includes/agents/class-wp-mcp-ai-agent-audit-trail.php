@@ -26,6 +26,8 @@
  *     monitoring of AI agent decision paths.
  *   - OTEL-compatible: Event fields map to Span (trail_id = trace_id), Events
  *     (step_type + data), and Resource (assistant_id, model).
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

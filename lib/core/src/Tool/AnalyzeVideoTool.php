@@ -7,6 +7,10 @@
  * by the agentic loop / provider layer.
  *
  * @package Nvoos\Core @since 2.0.0 @license MIT
+ *
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 declare(strict_types=1);
 namespace Nvoos\Core\Tool;

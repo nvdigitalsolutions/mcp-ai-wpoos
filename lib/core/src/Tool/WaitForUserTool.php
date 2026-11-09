@@ -1,5 +1,10 @@
 <?php
-/** Wait For User — pause agent execution for user input. @package Nvoos\Core @since 2.0.0 @license MIT */
+/** Wait For User — pause agent execution for user input. @package Nvoos\Core @since 2.0.0 @license MIT
+ *
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
+ */
 declare(strict_types=1); namespace Nvoos\Core\Tool; use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 class WaitForUserTool extends AbstractTool {
 	public function __construct( ErrorFactoryInterface $e ) { parent::__construct( $e ); }

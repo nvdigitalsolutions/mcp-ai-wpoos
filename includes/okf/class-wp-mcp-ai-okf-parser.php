@@ -17,6 +17,8 @@
  * @license  GPL-3.0-or-later
  *
  * @link https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

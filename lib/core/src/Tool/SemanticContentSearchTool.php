@@ -1,5 +1,10 @@
 <?php
-/** Semantic Content Search — semantic search across content. @package Nvoos\Core @since 2.0.0 @license MIT */
+/** Semantic Content Search — semantic search across content. @package Nvoos\Core @since 2.0.0 @license MIT
+ *
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
+ */
 declare(strict_types=1); namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface; use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 class SemanticContentSearchTool extends AbstractTool {

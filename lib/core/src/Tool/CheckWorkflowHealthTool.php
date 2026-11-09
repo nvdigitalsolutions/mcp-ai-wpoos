@@ -1,5 +1,10 @@
 <?php
-/** Check Workflow Health. @package Nvoos\Core @since 2.0.0 @license MIT */
+/** Check Workflow Health. @package Nvoos\Core @since 2.0.0 @license MIT
+ *
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
+ */
 declare(strict_types=1); namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\AgentOrchestrationInterface; use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 class CheckWorkflowHealthTool extends AbstractTool {

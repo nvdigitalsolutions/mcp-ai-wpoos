@@ -26,6 +26,8 @@
  *
  * @reference Imbue (2026). "LLM-based Evolution as a Universal Optimizer."
  *   https://imbue.com/blog/2026-02-27-darwinian-evolver
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

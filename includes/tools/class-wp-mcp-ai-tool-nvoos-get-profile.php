@@ -21,6 +21,10 @@
  * @package WP_MCP_AI
  * @since 1.1.94
  * @see    docs/project/proposals/053-chatgpt-plugin-addon-implementation-plan.md
+ *
+ * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

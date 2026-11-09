@@ -22,6 +22,10 @@
  * @since   1.9.0
  * @see     https://modelcontextprotocol.io/specification/2025-03-26
  * @see     https://modelcontextprotocol.io/extensions/apps/overview
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

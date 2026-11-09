@@ -17,6 +17,10 @@
  *   temperature     -> same key.
  *
  * @package NV_oOS_Pro_Spa
+ *
+ * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

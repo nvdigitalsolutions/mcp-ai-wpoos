@@ -1,5 +1,10 @@
 <?php
-/** Suggest Internal Links — SEO internal link prompt builder. @package Nvoos\Core @since 2.0.0 @license MIT */
+/** Suggest Internal Links — SEO internal link prompt builder. @package Nvoos\Core @since 2.0.0 @license MIT
+ *
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
+ */
 declare(strict_types=1); namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 class SuggestInternalLinksTool extends AbstractTool {

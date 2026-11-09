@@ -3,6 +3,10 @@
  * Architectural design interoperability module.
  *
  * @package NV_oOS_Pro
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 // phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed -- Utility functions co-located with class.

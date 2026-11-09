@@ -16,6 +16,10 @@
  * @package WP_MCP_AI_Pro
  * @since  2.9.0
  * @since  2.11.0 Added wp_mcp_ai_crm_auto_import_sources hook for Upwork/LinkedIn scheduled import.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

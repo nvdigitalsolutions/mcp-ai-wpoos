@@ -34,6 +34,10 @@
  * license; the Cairo graphics library is LGPL-2.1 (dynamically linked at
  * runtime). See `THIRD_PARTY_NOTICES.md` and the repository-wide `CREDITS.md`
  * for the full attribution index.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
