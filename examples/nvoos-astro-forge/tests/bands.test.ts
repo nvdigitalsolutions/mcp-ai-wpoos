@@ -270,4 +270,26 @@ describe( 'determinism and ids', () => {
 		const plain = { type: 'tag', name: 'div', attribs: { style: 'background:#04132b url(/x.jpg)' } };
 		expect( inlineBackground( plain ).bgColor ).toBe( '#04132b' );
 	} );
+
+	it( 'reads an image-only shorthand as a band background', () => {
+		// `background: url(...)` carries no colour — before this, the band read as
+		// "no background" and dropped out of the visual band set.
+		const node = {
+			type: 'tag',
+			name: 'section',
+			attribs: { id: 'contact', style: 'background: url(/contact-us.jpg) no-repeat;' },
+		};
+		const bg = inlineBackground( node );
+		expect( bg.bgImage ).toBe( '/contact-us.jpg' );
+		expect( bg.bgColor ).toBeUndefined();
+	} );
+
+	it( 'keeps an image-backed section in the band set (virtuallyjamaica #contact)', () => {
+		const html = page(
+			`<section id="contact" style="background: url(/c.jpg) no-repeat;"><h3>Contact Us</h3><p>${ LONG }</p></section>` +
+				`<section id="about" style="background-color:#ededed"><p>${ LONG }</p></section>`
+		);
+		const contact = extractBandsFromHtml( html ).bands.find( ( band ) => band.anchor === 'contact' );
+		expect( contact?.bgImage ).toBe( '/c.jpg' );
+	} );
 } );

@@ -302,6 +302,14 @@ export function inlineBackground( node: BandNode ): Pick< BandCandidate, 'bgColo
 		if ( /gradient\(/i.test( shorthand ) ) {
 			out.bgGradient = shorthand;
 		} else {
+			// `background: url(x.jpg) no-repeat` — the shorthand often carries the
+			// image and no colour at all (Brando's full-screen bands). Without
+			// this the band reads as "no background" and drops out of the visual
+			// band set entirely (virtuallyjamaica's #contact, 2026-11-09).
+			const shorthandUrl = /url\(\s*['"]?([^'")]+)/i.exec( shorthand )?.[ 1 ];
+			if ( shorthandUrl && ! out.bgImage ) {
+				out.bgImage = shorthandUrl;
+			}
 			const colour = /(#[0-9a-f]{3,8}|rgba?\([^)]*\))/i.exec( shorthand )?.[ 1 ];
 			if ( colour ) {
 				out.bgColor = colour;

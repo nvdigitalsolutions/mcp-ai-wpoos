@@ -320,6 +320,14 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	if ( fresh.geometry ) {
 		merged.geometry = fresh.geometry;
 	}
+	if ( fresh.text ) {
+		// The content baseline refreshes wholesale: it describes the SOURCE, and
+		// a re-analysis is exactly when the source's words may have changed.
+		merged.text = fresh.text;
+	}
+	if ( fresh.colors ) {
+		merged.colors = fresh.colors;
+	}
 	if ( ( existing.collections ?? [] ).length === 0 ) {
 		merged.collections = fresh.collections;
 	}

@@ -46,6 +46,10 @@ import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, diffGeometry, measureGeometry, serveDir } from '../lib/geometry.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
+import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
+import { compareRegionColorModes, measureRegionColors } from '../lib/region-colors.ts';
+import { captureDist, capturePage } from '../lib/screenshot.ts';
+import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
@@ -335,6 +339,69 @@ async function runAnalyze( url, options ) {
 			} catch ( error ) {
 				console.warn( `\u26a0 Geometry baseline skipped: ${ error instanceof Error ? error.message : error }` );
 			}
+		}
+	}
+
+	// --text: record the source's normalised visible text so `verify --text`
+	// can diff the build's content without any network at verify time (the
+	// same baseline discipline `--geometry` uses). Pure extraction — no model,
+	// no browser.
+	if ( options.text ) {
+		let ids = ( profile.design?.sections ?? [] ).map( ( section ) => section.id ).filter( Boolean );
+		// `--text` should not force a design re-analysis: when the fresh draft
+		// has no design block, take the band ids from the profile being written.
+		if ( ids.length === 0 && options.write ) {
+			try {
+				const existing = JSON.parse( await readFile( options.write, 'utf8' ) );
+				ids = ( existing.design?.sections ?? [] ).map( ( section ) => section.id ).filter( Boolean );
+			} catch {
+				// No existing profile — page-level text only.
+			}
+		}
+		try {
+			const home = designInput?.html
+				? { status: 200, text: designInput.html }
+				: await fetchText( fetch, profile.url, {} );
+			if ( home.status !== 200 || ! home.text ) {
+				console.warn( `\u26a0 Text baseline skipped: the homepage returned ${ home.status }.` );
+			} else {
+				profile.text = textBaselineFromHtml( home.text, {
+					url: profile.url,
+					ids,
+					includeAlt: options.textAlt === true,
+				} );
+				console.log(
+					`\u2713 Text baseline: ${ profile.text.page.length } chars, ${ profile.text.sections.length } band(s), ${ profile.text.skipped.length } band(s) skipped.`
+				);
+				if ( profile.text.sections.length === 0 && ( profile.design?.outline ?? [] ).length > 0 ) {
+					console.log(
+						'  per-band text needs addressable band ids (design.sections); this site is outline-only, so the baseline is page-level.'
+					);
+				}
+			}
+		} catch ( error ) {
+			console.warn( `\u26a0 Text baseline skipped: ${ error instanceof Error ? error.message : error }` );
+		}
+	}
+
+	// --colors: record the RENDERED background/text colour of the page regions
+	// (body, header, footer). Computed styles are machine-stable, so the
+	// baseline is plain data — the same discipline as --geometry.
+	if ( options.colors ) {
+		try {
+			const modes = parseColorModes( options.colorsModes );
+			profile.colors = await measureRegionColors( { url: profile.url, modes } );
+			for ( const mode of Object.keys( profile.colors ) ) {
+				const regions = Object.keys( profile.colors[ mode ] );
+				console.log( `\u2713 Colour baseline (${ mode }): ${ regions.length } region(s) \u2014 ${ regions.join( ', ' ) || 'none' }.` );
+				for ( const region of [ 'body', 'header', 'footer' ] ) {
+					if ( ! profile.colors[ mode ][ region ] ) {
+						console.warn( `  \u26a0 ${ region } not found in the source markup (${ mode } selector ladder missed it).` );
+					}
+				}
+			}
+		} catch ( error ) {
+			console.warn( `\u26a0 Colour baseline skipped: ${ error instanceof Error ? error.message : error }` );
 		}
 	}
 
@@ -986,6 +1053,10 @@ async function runSeoVerify( profile, options ) {
 	if ( failures.length > 0 || ( options.strictSeo === true && warnings.length > 0 ) ) {
 		process.exitCode = 1;
 	}
+	return {
+		status: failures.length > 0 ? 'fail' : warnings.length > 0 ? 'warn' : 'pass',
+		note: `${ pages.length } page(s), ${ failures.length } fail, ${ warnings.length } warn`,
+	};
 }
 
 /** The built front-page HTML (static: dist/index.html; server output:
@@ -1013,7 +1084,7 @@ async function readBuiltHeaders( target ) {
 function runTrackingVerify( profile, html, options, headers ) {
 	if ( ! profile.tracking ) {
 		console.log( '\u2713 Tracking: the profile has no tracking block — nothing to verify.' );
-		return;
+		return { status: 'na', note: 'no tracking block on the profile' };
 	}
 	const findings = auditTracking( profile.tracking, html, {
 		headers,
@@ -1039,6 +1110,10 @@ function runTrackingVerify( profile, html, options, headers ) {
 	if ( failures.length > 0 || ( options.strictTracking === true && warnings.length > 0 ) ) {
 		process.exitCode = 1;
 	}
+	return {
+		status: failures.length > 0 ? 'fail' : warnings.length > 0 ? 'warn' : 'pass',
+		note: `${ failures.length } fail, ${ warnings.length } warn`,
+	};
 }
 
 /** Concatenate the built CSS bundle under dist/ (bounded — parity only needs
@@ -1063,21 +1138,138 @@ async function collectDistCss( target ) {
 	return chunks.join( '\n' ).slice( 0, 4 * 1024 * 1024 );
 }
 
+const GATE_ORDER = [
+	'design language',
+	'token block',
+	'band flow',
+	'nav anchors',
+	'fact consumption',
+	'text parity',
+	'colour system',
+	'tracking',
+	'SEO head',
+	'box geometry',
+	'pixel parity',
+	'visual parity',
+];
+
+const GATE_MARK = { pass: '\u2713', warn: '\u26a0', fail: '\u2717', skip: '\u2013', na: '\u00b7' };
+
+/** Parse a comma list of colour schemes; unknown values are dropped. */
+function parseColorModes( value, fallback = [ 'light', 'dark' ] ) {
+	const list = String( value ?? '' )
+		.split( ',' )
+		.map( ( entry ) => entry.trim().toLowerCase() )
+		.filter( ( mode ) => mode === 'light' || mode === 'dark' );
+	return list.length > 0 ? list : fallback;
+}
+
+/**
+ * The parity scorecard: every gate type that ran, its verdict, and the
+ * pass rate. 100% means every gate was APPLIED and PASSED — a skipped gate
+ * (no baseline) counts against it, which is what makes the number honest.
+ */
+function printGateScorecard( gates ) {
+	if ( gates.length === 0 ) {
+		return;
+	}
+	const ordered = [ ...gates ].sort(
+		( a, b ) => ( GATE_ORDER.indexOf( a.name ) + 1 || 99 ) - ( GATE_ORDER.indexOf( b.name ) + 1 || 99 )
+	);
+	const counts = { pass: 0, warn: 0, fail: 0, skip: 0, na: 0 };
+	console.log( '\nParity scorecard' );
+	for ( const gate of ordered ) {
+		counts[ gate.status ] = ( counts[ gate.status ] ?? 0 ) + 1;
+		console.log( `  ${ GATE_MARK[ gate.status ] ?? '?' } ${ gate.name }${ gate.note ? ` \u2014 ${ gate.note }` : '' }` );
+	}
+	const total = gates.length;
+	// `na` = structurally inapplicable (no bands to measure, no tracking block).
+	// `skip` = applicable but not applied (no baseline) — it counts against 100%,
+	// which is what keeps the percentage honest.
+	const applicable = total - counts.na;
+	const percent = applicable === 0 ? 100 : Math.round( ( counts.pass / applicable ) * 100 );
+	const tail = [
+		counts.warn > 0 ? `${ counts.warn } warn` : '',
+		counts.fail > 0 ? `${ counts.fail } fail` : '',
+		counts.skip > 0 ? `${ counts.skip } skipped` : '',
+		counts.na > 0 ? `${ counts.na } n/a` : '',
+	]
+		.filter( Boolean )
+		.join( ', ' );
+	console.log( `  ${ counts.pass }/${ applicable } applicable gates passed (${ percent }%)${ tail ? ` \u2014 ${ tail }` : '' }` );
+	if ( percent === 100 ) {
+		console.log( '  \u2713 Every gate applied and passed.' );
+	} else {
+		console.log( '  \u2192 100% needs every gate APPLIED (baselines recorded) and PASSING.' );
+	}
+}
+
+/**
+ * The browser-backed gates (geometry, colours, pixel) need Playwright AND its
+ * downloaded Chromium build. A runner that installed the dependency but never
+ * fetched the browser must not abort the whole verify run: the gate degrades to
+ * `skip`, which still counts against 100% — the scorecard stays honest without
+ * a missing binary killing a deploy. Probed once per process.
+ */
+let browserProbe;
+async function browserAvailable() {
+	if ( browserProbe === undefined ) {
+		try {
+			const { chromium } = await import( 'playwright' );
+			const executable = chromium.executablePath();
+			browserProbe = Boolean( executable ) && existsSync( executable );
+		} catch {
+			browserProbe = false;
+		}
+	}
+	return browserProbe;
+}
+
+/** Any recorded screenshot to diff against (a baseline or a source capture). */
+async function hasPixelArtifacts( dir ) {
+	const files = await readdir( dir ).catch( () => [] );
+	return files.some( ( file ) => /^(?:baseline|source)-.+\.png$/.test( file ) );
+}
+
 async function runVerify( profileRef, options ) {
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
+	// Every applicable gate runs by default: putting a site through the forge
+	// should produce the complete scorecard without a human remembering six
+	// flags. `--minimal` keeps only the deterministic, browser-free gates (the
+	// CI blocking step uses it); `--all` survives as an explicit alias so
+	// existing scripts keep working, and it outranks --minimal. --visual stays
+	// opt-in: it needs credentials and is advisory.
+	if ( options.all || ! options.minimal ) {
+		options.tracking = true;
+		options.seo = true;
+		options.text = true;
+		options.colors = true;
+		options.geometry = true;
+		options.pixel = true;
+	}
+	const gates = [];
+	const record = ( name, status, note = '' ) => {
+		gates.push( { name, status, note } );
+	};
 	if ( ! profile.design ) {
 		if ( options.tracking || options.seo ) {
+			console.warn(
+				'\u26a0 The profile has no design block \u2014 the language, token, band and geometry gates cannot run. Run `node scripts/forge.mjs analyze <url> --design --write <profile>` to add one.'
+			);
 			if ( options.seo ) {
-				await runSeoVerify( profile, options );
+				const seo = await runSeoVerify( profile, options );
+				record( 'SEO head', seo.status, seo.note );
 			}
 			if ( options.tracking ) {
 				const html = await readBuiltHtml( options.target );
 				if ( ! html ) {
 					fail( `Cannot read the built HTML under ${ options.target }/dist — run \`npm run build\` in the project first.` );
 				}
-				runTrackingVerify( profile, html, options, await readBuiltHeaders( options.target ) );
+				const tracking = runTrackingVerify( profile, html, options, await readBuiltHeaders( options.target ) );
+				record( 'tracking', tracking.status, tracking.note );
 			}
+			printGateScorecard( gates );
 			return;
 		}
 		fail( 'The profile has no design block — run `node scripts/forge.mjs analyze <url> --design --write <profile>` first.' );
@@ -1102,6 +1294,11 @@ async function runVerify( profileRef, options ) {
 	console.log( `  scale overlap: ${ ( report.metrics.scaleOverlap * 100 ).toFixed( 0 ) }%` );
 	console.log( `  spacing overlap: ${ ( report.metrics.spacingOverlap * 100 ).toFixed( 0 ) }%` );
 	console.log( `  concept match: ${ report.metrics.conceptMatch === 1 ? 'yes' : 'no' }` );
+	record(
+		'design language',
+		report.pass ? 'pass' : 'fail',
+		`${ ( report.score * 100 ).toFixed( 0 ) }% (threshold ${ report.threshold })`
+	);
 	if ( options.baselines ) {
 		// The baseline step is opt-in and browser-backed (114 §3.6): the
 		// deterministic parity gate above runs without any browser.
@@ -1123,15 +1320,18 @@ async function runVerify( profileRef, options ) {
 			`\u2717 Token block: cannot read ${ options.target }/src/styles/global.css.`
 		);
 		process.exitCode = 1;
+		record( 'token block', 'fail', 'global.css unreadable' );
 	} else {
-		const audit = auditTokenBlock( tokenSource, mergeTokens( profile.design, profile.tokens ) );
+		const audit = auditTokenBlock( tokenSource, mergeTokens( profile.design, profile.tokens, profile.colors ) );
 		if ( ! audit.markers ) {
 			console.warn(
 				'\u2717 Token block: global.css has no FORGE:tokens span — the tokens were never applied (re-scaffold, or run tokens_apply).'
 			);
 			process.exitCode = 1;
+			record( 'token block', 'fail', 'no FORGE:tokens span' );
 		} else if ( audit.drifted.length === 0 ) {
 			console.log( '\u2713 Token block: the project carries this profile\u2019s tokens.' );
+			record( 'token block', 'pass', 'all tokens match the profile' );
 		} else {
 			for ( const drift of audit.drifted ) {
 				console.warn(
@@ -1139,6 +1339,7 @@ async function runVerify( profileRef, options ) {
 				);
 			}
 			process.exitCode = 1;
+			record( 'token block', 'fail', `${ audit.drifted.length } token(s) drifted` );
 		}
 	}
 	// 124 §7 — the band-flow gate: every source band with visual facts must
@@ -1150,6 +1351,7 @@ async function runVerify( profileRef, options ) {
 		const flow = verifyBandFlow( profile.design?.sections ?? [], indexHtml );
 		if ( flow.dropped.length === 0 && flow.mismatched.length === 0 ) {
 			console.log( '\u2713 Band flow: every source band renders with its baked background.' );
+			record( 'band flow', 'pass', `${ ( profile.design?.sections ?? [] ).length + ( profile.design?.outline ?? [] ).length } band(s)` );
 		} else {
 			for ( const id of flow.dropped ) {
 				console.warn( `\u2717 Band flow: source band ${ id } is missing from the built page (dropped or unclassified).` );
@@ -1158,6 +1360,7 @@ async function runVerify( profileRef, options ) {
 				console.warn( `\u2717 Band flow: band ${ mismatch.id } renders ${ mismatch.actual ?? 'nothing' }, expected ${ mismatch.expected }.` );
 			}
 			process.exitCode = 1;
+			record( 'band flow', 'fail', `${ flow.dropped.length } dropped, ${ flow.mismatched.length } mismatched` );
 		}
 		for ( const seam of flow.seams ) {
 			console.log(
@@ -1174,9 +1377,13 @@ async function runVerify( profileRef, options ) {
 		const dead = anchors.filter( ( anchor ) => ! new RegExp( `id="${ escape( anchor ) }"` ).test( indexHtml ) );
 		if ( anchors.length > 0 && dead.length === 0 ) {
 			console.log( `✓ Nav anchors: all ${ anchors.length } one-pager target(s) exist in the built page.` );
+			record( 'nav anchors', 'pass', `${ anchors.length } target(s)` );
 		}
 		for ( const anchor of dead ) {
 			console.warn( `⚠ Nav anchor: #${ anchor } has no matching element id in the built page.` );
+		}
+		if ( anchors.length > 0 && dead.length > 0 ) {
+			record( 'nav anchors', 'warn', `dead: #${ dead.join( ', #' ) }` );
 		}
 	}
 	// Fact consumption (the "a component ignored the fact" class): every fact a
@@ -1186,6 +1393,7 @@ async function runVerify( profileRef, options ) {
 		const unrendered = auditFacts( profile.design?.sections ?? [], indexHtml );
 		if ( unrendered.length === 0 ) {
 			console.log( '\u2713 Fact consumption: every declared band fact renders.' );
+			record( 'fact consumption', 'pass', 'all declared facts rendered' );
 		} else {
 			for ( const item of unrendered ) {
 				console.warn( `\u2717 Fact consumption: band ${ item.sectionId } declares ${ item.fact } but the build has no ${ item.marker }.` );
@@ -1193,25 +1401,123 @@ async function runVerify( profileRef, options ) {
 			if ( options.strictFacts ) {
 				process.exitCode = 1;
 			}
+			record(
+				'fact consumption',
+				options.strictFacts ? 'fail' : 'warn',
+				`${ unrendered.length } unrendered fact(s)`
+			);
 		}
+	}
+
+	// Content parity (the words gate): the design-language score and the fact
+	// audit both pass while copy goes missing. Coverage of the SOURCE is the
+	// gate (w-shingles, Manning/Schütze §19.6); added copy only informs.
+	if ( options.text && ! indexHtml ) {
+		console.warn( '\u26a0 Text parity: no built index.html found — the gate did not run.' );
+		if ( options.strictFacts ) {
+			process.exitCode = 1;
+		}
+	}
+	if ( options.text && indexHtml && ! profile.text ) {
+		console.warn( '\u26a0 Text parity: no baseline on the profile — run `analyze <url> --design --text --write <profile>`.' );
+		record( 'text parity', 'skip', 'no baseline (analyze --text)' );
+	}
+	if ( options.text && indexHtml && profile.text ) {
+		const textOptions = {
+			shingleSize: Number( options.textShingle ?? 3 ),
+			passAt: Number( options.textPass ?? 0.9 ),
+			warnAt: Number( options.textWarn ?? 0.75 ),
+		};
+		const includeAlt = options.textAlt === true;
+		const pageReport = compareText(
+			profile.text.page,
+			textFromHtml( indexHtml, { includeAlt } ),
+			textOptions
+		);
+		const pageMark = pageReport.verdict === 'fail' ? '\u2717' : pageReport.verdict === 'warn' ? '\u26a0' : '\u2713';
+		console.log(
+			`${ pageMark } Text parity (page): coverage ${ ( pageReport.coverage * 100 ).toFixed( 1 ) }% of the source — ${ pageReport.verdict.toUpperCase() }`
+		);
+		console.log(
+			`  shingles: ${ pageReport.shared }/${ pageReport.sourceShingles } shared, precision ${ ( pageReport.precision * 100 ).toFixed( 1 ) }%, jaccard ${ ( pageReport.jaccard * 100 ).toFixed( 1 ) }%`
+		);
+		if ( pageReport.verdict !== 'pass' && pageReport.missing.length > 0 ) {
+			console.log( `  missing from the build: ${ pageReport.missing.map( ( shingle ) => `"${ shingle }"` ).join( ', ' ) }` );
+		}
+		if ( pageReport.verdict === 'fail' ) {
+			process.exitCode = 1;
+		}
+		const bandIds = profile.text.sections.map( ( section ) => section.id );
+		const builtSections = extractSectionTexts( indexHtml, bandIds, { includeAlt } );
+		let bandFailures = 0;
+		for ( const section of profile.text.sections ) {
+			const builtText = builtSections.texts[ section.id ];
+			if ( builtText === undefined ) {
+				console.warn( `\u26a0 Text: band ${ section.id } has no [data-section-id] node in the build — cannot diff its words.` );
+				continue;
+			}
+			if ( builtText.length === 0 ) {
+				console.warn( `\u2717 Text: band ${ section.id } renders no text (source band has ${ section.text.length } chars).` );
+				bandFailures++;
+				continue;
+			}
+			const bandReport = compareText( section.text, builtText, textOptions );
+			if ( bandReport.verdict !== 'pass' ) {
+				const bandMark = bandReport.verdict === 'fail' ? '\u2717' : '\u26a0';
+				console.warn(
+					`${ bandMark } Text: band ${ section.id } coverage ${ ( bandReport.coverage * 100 ).toFixed( 1 ) }% — ${ bandReport.verdict.toUpperCase() }${ bandReport.missing.length > 0 ? ` (missing: ${ bandReport.missing.map( ( shingle ) => `"${ shingle }"` ).join( ', ' ) })` : '' }`
+				);
+			}
+			if ( bandReport.verdict === 'fail' ) {
+				bandFailures++;
+			}
+		}
+		if ( bandFailures > 0 ) {
+			process.exitCode = 1;
+		} else if ( profile.text.sections.length > 0 ) {
+			console.log( `\u2713 Text parity (bands): ${ profile.text.sections.length } band(s) within tolerance.` );
+		} else {
+			console.log( '  text parity: page-level only (the baseline carries no addressable band text).' );
+		}
+		record(
+			'text parity',
+			pageReport.verdict === 'fail' || bandFailures > 0
+				? 'fail'
+				: pageReport.verdict === 'warn'
+					? 'warn'
+					: 'pass',
+			`coverage ${ ( pageReport.coverage * 100 ).toFixed( 1 ) }%${ bandFailures > 0 ? `, ${ bandFailures } band(s) failing` : '' }`
+		);
 	}
 
 	// Tracking (130 §3.3): consent ordering, verification, ownership and CSP.
 	if ( options.tracking && indexHtml ) {
-		runTrackingVerify( profile, indexHtml, options, await readBuiltHeaders( options.target ) );
+		const tracking = runTrackingVerify( profile, indexHtml, options, await readBuiltHeaders( options.target ) );
+		record( 'tracking', tracking.status, tracking.note );
 	}
 
 	// SEO head (131 §2.6): title/branding, robots, social head, JSON-LD graph.
 	if ( options.seo ) {
-		await runSeoVerify( profile, options );
+		const seo = await runSeoVerify( profile, options );
+		record( 'SEO head', seo.status, seo.note );
 	}
 
 	// Geometry (114 §3.6): the build's real boxes against the recorded source
 	// boxes. Language parity cannot see a 903px card or a flat 170px pull; this can.
-	if ( options.geometry ) {
-		if ( ! profile.geometry ) {
-			fail( 'No geometry baseline in the profile — run `analyze <url> --design --geometry --write <profile>` first.' );
+	if ( options.geometry && ( ! profile.geometry || Object.keys( profile.geometry ).length === 0 ) ) {
+		const hasBands = ( profile.design?.sections ?? [] ).length > 0;
+		if ( hasBands ) {
+			console.warn( '\u26a0 Box geometry: no baseline on the profile — run `analyze <url> --geometry --write <profile>`.' );
+			record( 'box geometry', 'skip', 'no baseline (analyze --geometry)' );
+		} else {
+			console.log( '  box geometry: n/a — the site has no addressable band ids to measure (outline-only).' );
+			record( 'box geometry', 'na', 'no addressable band ids (outline-only site)' );
 		}
+	}
+	if ( options.geometry && profile.geometry && ! ( await browserAvailable() ) ) {
+		console.warn( '\u26a0 Box geometry: skipped \u2014 Playwright/Chromium is not available in this environment.' );
+		record( 'box geometry', 'skip', 'browser unavailable' );
+	} else if ( options.geometry && profile.geometry ) {
 		const ids = Object.keys( profile.geometry );
 		const served = await serveDir( join( options.target, 'dist' ) );
 		try {
@@ -1237,16 +1543,248 @@ async function runVerify( profileRef, options ) {
 			if ( failures.length > 0 ) {
 				process.exitCode = 1;
 			}
+			record(
+				'box geometry',
+				failures.length > 0 ? 'fail' : warnings.length > 0 ? 'warn' : 'pass',
+				`${ failures.length } fail, ${ warnings.length } warn across ${ ids.length } band(s)`
+			);
 		} finally {
 			served.server.close();
 		}
 	}
 
+	// Pixel gate (the renders gate): per-pixel delta with the anti-alias filter
+	// plus SSIM. The SOURCE screenshot comes from `verify-artifacts/` (the
+	// capture seam) or, with --pixel-live, from a headless capture of the
+	// source — but both sides must be the SAME viewport or the diff measures
+	// the capture, not the site.
+	if ( options.pixel && ! ( await browserAvailable() ) ) {
+		console.warn( '\u26a0 Pixel: skipped \u2014 Playwright/Chromium is not available in this environment.' );
+		record( 'pixel parity', 'skip', 'browser unavailable' );
+	} else if (
+		options.pixel &&
+		! options.pixelBaseline &&
+		! options.pixelLive &&
+		! ( await hasPixelArtifacts( join( options.target, 'verify-artifacts' ) ) )
+	) {
+		// Cheap preflight: with no baseline, no source capture and no
+		// --pixel-live there is nothing to diff — do not pay for a capture.
+		console.warn( '\u26a0 Pixel: no baseline under verify-artifacts \u2014 record one with --pixel-baseline. The gate is NOT a pass.' );
+		if ( options.strictPixel ) {
+			process.exitCode = 1;
+		}
+		record( 'pixel parity', 'skip', 'no baseline or source screenshots' );
+	} else if ( options.pixel ) {
+		const artifacts = join( options.target, 'verify-artifacts' );
+		const masks = Array.isArray( options.pixelMask ) ? options.pixelMask : [];
+		const pixelModes =
+			options.pixelMode === 'both'
+				? [ 'light', 'dark' ]
+				: [ options.pixelMode === 'dark' ? 'dark' : 'light' ];
+		const multiMode = pixelModes.length > 1;
+		await mkdir( artifacts, { recursive: true } ).catch( () => {} );
+		let compared = 0;
+		let pixelFailures = 0;
+		let pixelWarnings = 0;
+		let recorded = 0;
+		for ( const colorMode of pixelModes ) {
+			const suffix = multiMode ? `-${ colorMode }` : '';
+			let captured;
+			try {
+				captured = await captureDist( join( options.target, 'dist' ), DEFAULT_GEOMETRY_VIEWPORTS, { masks, mode: colorMode } );
+			} catch ( error ) {
+				fail( `Pixel capture failed — ${ error instanceof Error ? error.message : error }` );
+			}
+			// Baseline update mode needs a second capture of the SAME build: if two
+			// captures disagree the page is non-deterministic and a baseline would
+			// encode noise as truth.
+			const second = options.pixelBaseline
+				? await captureDist( join( options.target, 'dist' ), DEFAULT_GEOMETRY_VIEWPORTS, { masks, mode: colorMode } )
+				: undefined;
+			for ( const viewport of DEFAULT_GEOMETRY_VIEWPORTS ) {
+				const build = captured.get( viewport.name );
+				const label = `source-${ viewport.name }${ suffix }`;
+				if ( options.pixelBaseline ) {
+					const again = second?.get( viewport.name );
+					if ( again ) {
+						const noise = comparePngBuffers( build.png, again.png, {
+							maxDiffRatio: Number( options.pixelMaxDiff ?? 0.001 ),
+						} );
+						if ( noise.verdict === 'fail' ) {
+							console.warn(
+								`\u2717 Pixel baseline @ ${ viewport.name } [${ colorMode }]: two captures of the SAME build differ by ${ ( noise.diffRatio * 100 ).toFixed( 3 ) }% — capture is non-deterministic, baseline not written. Mask the dynamic region with --pixel-mask.`
+							);
+							process.exitCode = 1;
+							continue;
+						}
+					}
+					await writeFile( join( artifacts, `baseline-${ viewport.name }${ suffix }.png` ), build.png ).catch( () => {} );
+					recorded++;
+					continue;
+				}
+				// Suffixed name first; the unsuffixed name is the light-mode legacy.
+				const baseline =
+					( await readArtifact( artifacts, `baseline-${ viewport.name }${ suffix }` ) ) ??
+					( colorMode === 'light' ? await readArtifact( artifacts, `baseline-${ viewport.name }` ) : undefined );
+				const sourceShot = baseline
+					? undefined
+					: ( await readArtifact( artifacts, label ) ) ??
+						( colorMode === 'light' ? await readArtifact( artifacts, `source-${ viewport.name }` ) : undefined );
+				let source;
+				const origin = baseline ? 'baseline' : 'source';
+				if ( baseline ) {
+					source = Buffer.from( baseline.data, 'base64' );
+				} else if ( sourceShot ) {
+					source = Buffer.from( sourceShot.data, 'base64' );
+				} else if ( options.pixelLive ) {
+					try {
+						source = ( await capturePage( { url: profile.url, viewport, masks, mode: colorMode } ) ).png;
+					} catch ( error ) {
+						console.warn( `\u26a0 Pixel: live source capture failed @ ${ viewport.name } [${ colorMode }] — ${ error instanceof Error ? error.message : error }` );
+					}
+				}
+				if ( ! source ) {
+					console.warn(
+						`\u26a0 Pixel: no comparison image for ${ viewport.name } [${ colorMode }] — record one with --pixel-baseline, drop verify-artifacts/${ label }.png (at ${ viewport.width }\u00d7${ viewport.height }) or pass --pixel-live.`
+					);
+					continue;
+				}
+				let result = comparePngBuffers( source, build.png, {
+					threshold: Number( options.pixelThreshold ?? 0.1 ),
+					maxDiffRatio: Number( options.pixelMaxDiff ?? 0.001 ),
+					minSsim: Number( options.pixelMinSsim ?? 0.98 ),
+					includeDiff: true,
+				} );
+				// One retry on failure: a lazy image or a font swap can land late even
+				// after settle. Re-capture before calling it a regression — a real
+				// change fails twice.
+				if ( result.verdict === 'fail' ) {
+					const retry = await captureDist( join( options.target, 'dist' ), DEFAULT_GEOMETRY_VIEWPORTS, {
+						masks,
+						mode: colorMode,
+					} ).catch( () => undefined );
+					const retried = retry?.get( viewport.name );
+					if ( retried ) {
+						const secondPass = comparePngBuffers( source, retried.png, {
+							threshold: Number( options.pixelThreshold ?? 0.1 ),
+							maxDiffRatio: Number( options.pixelMaxDiff ?? 0.001 ),
+							minSsim: Number( options.pixelMinSsim ?? 0.98 ),
+							includeDiff: true,
+						} );
+						if ( secondPass.verdict !== 'fail' ) {
+							console.log( `  ${ viewport.name } [${ colorMode }]: first capture differed, re-capture matched — treating as transient.` );
+							result = secondPass;
+						}
+					}
+				}
+				compared++;
+				const mark = result.verdict === 'fail' ? '\u2717' : result.verdict === 'warn' ? '\u26a0' : '\u2713';
+				console.log(
+					`${ mark } Pixel @ ${ viewport.name } [${ colorMode }] (${ origin }): ${ ( result.diffRatio * 100 ).toFixed( 3 ) }% pixels differ, SSIM ${ result.ssim.toFixed( 4 ) } — ${ result.verdict.toUpperCase() }`
+				);
+				for ( const reason of result.reasons ) {
+					console.log( `  ${ reason }` );
+				}
+				const diff = encodeDiff( result );
+				if ( diff ) {
+					await writeFile( join( artifacts, `pixel-diff-${ viewport.name }${ suffix }.png` ), diff ).catch( () => {} );
+				}
+				if ( result.verdict === 'fail' ) {
+					pixelFailures++;
+					process.exitCode = 1;
+				} else if ( result.verdict === 'warn' ) {
+					pixelWarnings++;
+				}
+			}
+		}
+		if ( recorded > 0 ) {
+			console.log( `\u2713 Pixel baseline: recorded ${ recorded } capture(s) under ${ join( options.target, 'verify-artifacts' ) }.` );
+		}
+		if ( compared === 0 && recorded === 0 ) {
+			console.warn( '\u26a0 Pixel: nothing was compared (no source screenshots). The gate is NOT a pass.' );
+			if ( options.strictPixel ) {
+				process.exitCode = 1;
+			}
+		} else if ( compared > 0 && pixelFailures === 0 ) {
+			console.log( `\u2713 Pixel: ${ compared } capture(s) within tolerance.` );
+		}
+		if ( compared > 0 ) {
+			record(
+				'pixel parity',
+				pixelFailures > 0 ? 'fail' : pixelWarnings > 0 ? 'warn' : 'pass',
+				`${ compared } capture(s) (${ pixelModes.join( '+' ) }), ${ pixelFailures } fail, ${ pixelWarnings } warn`
+			);
+		} else if ( recorded > 0 ) {
+			record( 'pixel parity', 'skip', `baseline recorded (${ recorded } capture(s))` );
+		} else {
+			record( 'pixel parity', 'skip', 'no baseline or source screenshots' );
+		}
+	}
+
+	// Colour system (chrome + page surface): the computed background/text of
+	// body, header and footer, diffed with CIEDE2000. The token block proves the
+	// CSS carries the colours; this proves the browser RENDERS them.
+	if ( options.colors && ! profile.colors ) {
+		console.warn( '\u26a0 Colour system: no baseline on the profile — run `analyze <url> --colors --write <profile>`.' );
+		record( 'colour system', 'skip', 'no baseline (analyze --colors)' );
+	}
+	if ( options.colors && profile.colors && ! ( await browserAvailable() ) ) {
+		console.warn( '\u26a0 Colour system: skipped \u2014 Playwright/Chromium is not available in this environment.' );
+		record( 'colour system', 'skip', 'browser unavailable' );
+	} else if ( options.colors && profile.colors ) {
+		const modes = parseColorModes( options.colorsModes );
+		const served = await serveDir( join( options.target, 'dist' ) );
+		let builtColors;
+		try {
+			builtColors = await measureRegionColors( { url: served.url, modes } );
+		} catch ( error ) {
+			fail( `Colour measurement failed — ${ error instanceof Error ? error.message : error }` );
+		} finally {
+			served.server.close();
+		}
+		const report = compareRegionColorModes( profile.colors, builtColors, {
+			warnAt: Number( options.colorsWarn ?? 3 ),
+			failAt: Number( options.colorsFail ?? 6 ),
+		} );
+		const failures = report.deviations.filter( ( deviation ) => deviation.severity === 'fail' );
+		for ( const deviation of [ ...failures, ...report.deviations.filter( ( d ) => d.severity === 'warn' ) ] ) {
+			const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
+			console.warn(
+				`${ mark } Colour [${ deviation.mode }]: ${ deviation.region } ${ deviation.metric } \u2014 source ${ deviation.expected }, build ${ deviation.actual } (\u0394E00 ${ deviation.deltaE })`
+			);
+		}
+		for ( const region of report.missing ) {
+			console.warn( `\u26a0 Colour: ${ region } exists in the source baseline but not in the build (dropped chrome, scheme or markup change).` );
+		}
+		if ( report.skipped.length > 0 ) {
+			console.log( `  colour: ${ report.skipped.length } surface(s) skipped (transparent \u2014 not comparable)` );
+		}
+		if ( report.unimplemented.length > 0 ) {
+			console.log(
+				`  colour: ${ report.unimplemented.join( ', ' ) } not compared \u2014 the source defines no such scheme (a build-side dark theme is an addition, not a parity regression).`
+			);
+		}
+		if ( failures.length > 0 || ( options.strictColors && report.missing.length > 0 ) ) {
+			process.exitCode = 1;
+		}
+		if ( report.deviations.length === 0 && report.missing.length === 0 ) {
+			console.log( `\u2713 Colour system: ${ report.compared } surface metric(s) across ${ modes.join( '+' ) } within \u0394E00 ${ options.colorsWarn ?? 3 }.` );
+		}
+			record(
+			'colour system',
+			failures.length > 0 ? 'fail' : report.deviations.length > 0 || report.missing.length > 0 ? 'warn' : 'pass',
+			`${ report.compared } surface metric(s) (${ modes.join( '+' ) }), ${ report.deviations.length } drift, ${ report.missing.length } missing${ report.unimplemented.length > 0 ? `, ${ report.unimplemented.join( '/' ) } n/a (source has none)` : '' }`
+		);
+	}
+
 	if ( options.visual ) {
 		// The vision layer (118 §4) — advisory unless --strict-visual; never
-		// downgrades a parity failure.
+		// downgrades a parity failure, and stays out of the scorecard (it is
+		// non-deterministic and needs credentials).
 		await runVisualVerify( profile, options );
 	}
+
+	printGateScorecard( gates );
 }
 
 const sleep = ( ms ) => new Promise( ( resolve ) => setTimeout( resolve, ms ) );
@@ -1402,6 +1940,10 @@ program
 	.option( '--wayback', 'add Wayback CDX discovery to the inventory (deleted pages)' )
 	.option( '--vocabulary', 'learn the widget/block vocabulary (block-types registry + rendered widget names, Proposal 116)' )
 	.option( '--geometry', 'measure each source band\u0027s box at 3 viewports so `verify --geometry` can diff the build (needs --design; requires Playwright)' )
+	.option( '--text', 'record the homepage\u0027s normalised visible text so `verify --text` can diff the build\u0027s content (needs --design)' )
+	.option( '--text-alt', 'with --text: include <img alt> text in the baseline' )
+	.option( '--colors', 'record the computed background/text colour of body, header and footer so `verify --colors` can diff the build (requires Playwright)' )
+	.option( '--colors-modes <modes>', 'with --colors: colour schemes to measure, comma-separated (default light,dark)', 'light,dark' )
 	.option( '--tracking', 'detect analytics, ad pixels, a CMP and verification tokens; draft the tracking block with every tracker DISABLED (Proposal 130)' )
 	.option( '--tracking-pages <n>', 'how many representative pages to scan for trackers (default 3)', '3' )
 	.option( '--probe', 'with --tracking: also load the page in Playwright and record its network requests, globals and cookie NAMES' )
@@ -1472,9 +2014,30 @@ program
 	.description( 'score design-language parity between the source site and the built frontend (Proposal 114)' )
 	.argument( '<profileRef>', 'site.json path or registered site name (must carry a design block)' )
 	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
+	.option( '--all', 'enable every gate (default \u2014 kept as an explicit alias)' )
+	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, text, SEO, tracking)' )
 	.option( '--threshold <n>', 'parity pass threshold 0-1 (default 0.6)', '0.6' )
 	.option( '--geometry', 'diff the built bands\u0027 boxes against the recorded source geometry (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--geometry-limit <n>', 'how many geometry deviations to print (default 12)', '12' )
+	.option( '--text', 'diff the build\u0027s visible text against the recorded baseline (needs `analyze --text`)' )
+	.option( '--text-pass <n>', 'with --text: source coverage at/above this passes (default 0.9)', '0.9' )
+	.option( '--text-warn <n>', 'with --text: coverage between warn and pass warns (default 0.75)', '0.75' )
+	.option( '--text-shingle <n>', 'with --text: shingle width in words (default 3)', '3' )
+	.option( '--text-alt', 'with --text: compare <img alt> text too' )
+	.option( '--pixel', 'compare SOURCE and BUILT screenshots pixel-for-pixel (pixelmatch delta + SSIM; requires Playwright)' )
+	.option( '--pixel-baseline', 'with --pixel: record THIS build as the pixel baseline (verify-artifacts/baseline-<viewport>.png); later runs diff against it' )
+	.option( '--pixel-live', 'with --pixel: capture the SOURCE live instead of using verify-artifacts/source-<viewport>.png' )
+	.option( '--pixel-mask <selector...>', 'with --pixel: CSS selectors of dynamic regions to mask (carousels, clocks)', [] )
+	.option( '--pixel-mode <mode>', 'with --pixel: colour scheme to capture — light, dark, or both (default light)', 'light' )
+	.option( '--pixel-threshold <n>', 'with --pixel: per-pixel sensitivity 0-1 (default 0.1)', '0.1' )
+	.option( '--pixel-max-diff <n>', 'with --pixel: fail above this differing-pixel ratio (default 0.001 = 0.1%)', '0.001' )
+	.option( '--pixel-min-ssim <n>', 'with --pixel: fail below this SSIM (default 0.98)', '0.98' )
+	.option( '--strict-pixel', 'with --pixel: fail when no source screenshot could be compared' )
+	.option( '--colors', 'diff the build\u0027s computed body/header/footer colours against the recorded baseline (CIEDE2000; needs `analyze --colors`; requires Playwright)' )
+	.option( '--colors-warn <n>', 'with --colors: \u0394E00 at/above this warns (default 3)', '3' )
+	.option( '--colors-fail <n>', 'with --colors: \u0394E00 at/above this fails (default 6)', '6' )
+	.option( '--colors-modes <modes>', 'with --colors: colour schemes to measure, comma-separated (default light,dark)', 'light,dark' )
+	.option( '--strict-colors', 'with --colors: fail when a region the source had is missing from the build' )
 	.option( '--strict-facts', 'fail when a declared band fact did not reach the built HTML (default: report only)' )
 	.option( '--tracking', 'gate the tracking block: consent ordering, verification tokens/files, event ownership, CSP allowlist (Proposal 130)' )
 	.option( '--strict-tracking', 'with --tracking: treat warnings as failures (a stale CSP host, a double-count risk)' )
