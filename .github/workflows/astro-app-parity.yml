@@ -8,24 +8,27 @@ name: Astro app parity
 #
 # Same discipline as `bin/check-chat-parity.php` (legacy chat ↔ lib/core) and the
 # base+pro → CG-Pro port verifier: compare implementations directly, and make
-# every difference DELIBERATE and written down in the test.
+# every difference DELIBERATE and written down in the script.
 #
-# Cheap by design: one `npm ci` (forge only) and one test file. The velocity
-# modules under test are dependency-free, so no second install is needed.
+# Deliberately NOT a vitest test inside either app: it would join that app's
+# suite, so every CI run of that app would need the OTHER app's node_modules
+# (each tsconfig extends `astro/tsconfigs/strict`, resolved from the importing
+# file's directory → `[TSCONFIG_ERROR] Tsconfig not found`). Node 24 strips TS
+# types natively, so a plain script imports both trees with one install.
 
 on:
   push:
     branches: [main, alpha-working]
     paths:
+      - 'bin/check-astro-app-parity.mjs'
       - 'examples/nvoos-astro-forge/lib/**'
-      - 'examples/nvoos-astro-forge/tests/app-parity.test.ts'
       - 'examples/nvoos-astro-velocity/src/lib/llms.ts'
       - 'examples/nvoos-astro-velocity/src/lib/content/section-kinds.ts'
       - '.github/workflows/astro-app-parity.yml'
   pull_request:
     paths:
+      - 'bin/check-astro-app-parity.mjs'
       - 'examples/nvoos-astro-forge/lib/**'
-      - 'examples/nvoos-astro-forge/tests/app-parity.test.ts'
       - 'examples/nvoos-astro-velocity/src/lib/llms.ts'
       - 'examples/nvoos-astro-velocity/src/lib/content/section-kinds.ts'
       - '.github/workflows/astro-app-parity.yml'
@@ -40,26 +43,18 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          # Matches the Astro Forge workflow (Astro 7 needs >= 22.23.4).
+          # Node 24 strips TS types without a flag (the forge CLI already relies
+          # on native type stripping; Astro 7 needs >= 22.23.4 anyway).
           node-version: 24
           cache: npm
-          cache-dependency-path: |
-            examples/nvoos-astro-forge/package-lock.json
-            examples/nvoos-astro-velocity/package-lock.json
+          cache-dependency-path: examples/nvoos-astro-forge/package-lock.json
 
-      # Both installs are required: each app's tsconfig extends
-      # `astro/tsconfigs/strict`, and Vite resolves that from the IMPORTING
-      # file's directory. The test imports across trees, so the other app's
-      # `astro` must be resolvable or the transform fails with
-      # `[TSCONFIG_ERROR] Tsconfig not found`.
+      # Only the forge needs installing: its llms module imports htmlparser2.
+      # The velocity modules this check imports are dependency-free on purpose —
+      # keep them that way, or this step gains a second `npm ci`.
       - name: Install (forge)
         working-directory: examples/nvoos-astro-forge
         run: npm ci --no-audit --no-fund
 
-      - name: Install (velocity)
-        working-directory: examples/nvoos-astro-velocity
-        run: npm ci --no-audit --no-fund
-
       - name: Cross-app contract parity
-        working-directory: examples/nvoos-astro-forge
-        run: npx vitest run tests/app-parity.test.ts
+        run: node bin/check-astro-app-parity.mjs

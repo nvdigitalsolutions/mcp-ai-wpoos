@@ -1396,9 +1396,9 @@ Details, the generated-config inventory and the one-route-stale triage rule:
 ## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
 
 The two Astro products share a CONTRACT but not code, so neither suite can see
-the other tree. `tests/app-parity.test.ts` (CI:
+the other tree. `bin/check-astro-app-parity.mjs` (CI:
 `.github/workflows/astro-app-parity.yml`, triggered by EITHER app) is the
-record — read it as the spec. It pins two things:
+record — read it as the spec. Exit 0 = parity, 1 = undeclared drift. It pins:
 
 - **`composeLlmsTxt` is byte-identical** modulo one declared knob: the forge
   always links `.md`, velocity defaults to HTML (`variant: 'markdown'`
@@ -1407,9 +1407,11 @@ record — read it as the spec. It pins two things:
   Adding a kind to either app fails until declared — a new kind is a
   cross-product decision.
 
-Its two velocity imports are **dependency-free on purpose**; if either gains an
-import the job needs a second `npm ci`. Same discipline as
-`bin/check-chat-parity.php`.
+It is a **script, not a vitest test**, on purpose: inside an app's suite every
+run of that app would need the OTHER app's `node_modules` (each tsconfig
+extends `astro/tsconfigs/strict`, resolved from the importing file's directory
+→ `[TSCONFIG_ERROR] Tsconfig not found`). Node 24 strips TS types natively.
+Same discipline as `bin/check-chat-parity.php`.
 
 ## Repo conventions
 

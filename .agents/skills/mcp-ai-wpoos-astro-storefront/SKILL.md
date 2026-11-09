@@ -1174,13 +1174,13 @@ legacy-identifier renames.
 
 ## Proposal 136 — block kinds + agent surfaces (2026-11-09)
 
-- **Cross-app parity gate**: `examples/nvoos-astro-forge/tests/app-parity.test.ts`
+- **Cross-app parity gate**: `bin/check-astro-app-parity.mjs`
   (CI: `.github/workflows/astro-app-parity.yml`, triggered by either app) pins
   `composeLlmsTxt` against the forge modulo the declared `variant` knob, and the
   `SECTION_KINDS` relation (shared ∪ declared extras). Adding a kind here fails
   until it is declared there. Keep `src/lib/llms.ts` and
-  `src/lib/content/section-kinds.ts` dependency-free — the gate imports them
-  without installing this app.
+  `src/lib/content/section-kinds.ts` dependency-free — the check imports them
+  with only the forge installed.
 - **Three block types added** (`comparison`, `steps`, `team`). Each needs the
   four touchpoints in the SAME commit: zod schema in
   `lib/content/portable-text.ts`, the `CUSTOM_BLOCK_TYPES` allowlist, a
