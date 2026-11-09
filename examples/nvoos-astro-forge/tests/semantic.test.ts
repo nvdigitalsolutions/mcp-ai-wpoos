@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { classifyHtml, SECTION_MAP } from '../lib/semantic.ts';
+import { classifyHtml, SECTION_MAP, SEEDED_WIDGET_ROLES } from '../lib/semantic.ts';
 
 const SECTION = ( inner: string ) =>
 	`<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">${ inner }</div></div></div></div>`;
@@ -408,5 +408,40 @@ describe( 'learned vocabulary (Proposal 116)', () => {
 		const sections = classifyHtml( html );
 		expect( sections.length ).toBeGreaterThan( 0 );
 		expect( sections[ 0 ].slots.title ).toBe( 'Shiny new block' );
+	} );
+} );
+
+describe( 'seeded widget dictionary — theme/utility widget classes', () => {
+	// Observed on BOTH live forge sites: jayainc (Phlox/Auxin + Elementor) and
+	// virtuallyjamaica (WPBakery + Brando). Seeding them keeps `--vocabulary`
+	// from reporting them as unknown on every run of either site.
+	it( 'covers the utility widgets the two live sites emit', () => {
+		expect( SEEDED_WIDGET_ROLES[ 'button__link' ] ).toEqual( { kind: 'links' } );
+		expect( SEEDED_WIDGET_ROLES[ 'file__button' ] ).toEqual( { kind: 'links' } );
+		expect( SEEDED_WIDGET_ROLES.aux_simple_shape ).toEqual( { kind: 'media' } );
+		expect( SEEDED_WIDGET_ROLES.aux_shape ).toEqual( { kind: 'media' } );
+		expect( SEEDED_WIDGET_ROLES.container ).toEqual( { kind: 'content' } );
+		expect( SEEDED_WIDGET_ROLES.wrap ).toEqual( { kind: 'content' } );
+		expect( SEEDED_WIDGET_ROLES.spacer ).toEqual( { kind: 'content' } );
+		expect( SEEDED_WIDGET_ROLES.shortcode ).toEqual( { kind: 'content' } );
+	} );
+
+	it( 'classifies a button__link widget into the links slot', () => {
+		const html = SECTION(
+			WIDGET( 'aux_modern_heading', '<h2>Resources</h2>' ) +
+				WIDGET( 'button__link', '<a href="/catalog.pdf">Download catalog</a>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.links?.[ 0 ] ).toMatchObject( { text: 'Download catalog', href: '/catalog.pdf' } );
+	} );
+
+	it( 'never renders a decorative shape as body text', () => {
+		const html = SECTION(
+			WIDGET( 'aux_modern_heading', '<h2>Contact</h2>' ) +
+				WIDGET( 'aux_simple_shape', '<div class="aux-shape" aria-hidden="true"></div>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'Contact' );
+		expect( sections[ 0 ].slots.body ?? '' ).not.toContain( 'aux-shape' );
 	} );
 } );

@@ -3224,18 +3224,31 @@ export interface BuiltBand {
  * output). The wrap's inline style carries the baked theme background. */
 export function builtBandsOf( html: string ): BuiltBand[] {
 	const bands: BuiltBand[] = [];
+	const seen = new Set<string>();
 	const scopedPadding = scopedPaddingOf( html );
-	const re = /<div\s+data-section-id="([^"]*)"[^>]*style="([^"]*)"[^>]*>/gi;
-	for ( const match of html.matchAll( re ) ) {
-		const style = match[ 2 ] ?? '';
+	// Attribute ORDER is not part of the contract. The renderer emits
+	// `data-section="<kind>" data-section-id="<id>" id=… class=… style=…`, so a
+	// positional regex that expects `data-section-id` immediately after `<div`
+	// silently matches NOTHING and every band is reported as dropped. Match the
+	// tag, then read its attributes independently. The FIRST tag per id wins:
+	// the outermost wrapper carries the background, and nested elements repeat
+	// the id.
+	for ( const match of html.matchAll( /<div\b[^>]*>/gi ) ) {
+		const attributes = match[ 0 ];
+		const id = /\bdata-section-id="([^"]*)"/i.exec( attributes )?.[ 1 ];
+		if ( ! id || seen.has( id ) ) {
+			continue;
+		}
+		seen.add( id );
+		const style = /\bstyle="([^"]*)"/i.exec( attributes )?.[ 1 ] ?? '';
 		const bg = /(?:^|;)background:\s*([^";]+)/i.exec( style )?.[ 1 ];
 		const bgImage = /(?:^|;)background-image:\s*url\(['"]?([^'"\)]+)['"]?\)/i.exec( style )?.[ 1 ];
 		const padding = /(?:^|;)padding:\s*([^";]+)/i.exec( style )?.[ 1 ];
 		bands.push( {
-			id: match[ 1 ],
+			id,
 			bg: bg?.trim(),
 			bgImage: bgImage?.trim(),
-			padding: padding?.trim() ?? scopedPadding.get( match[ 1 ] ),
+			padding: padding?.trim() ?? scopedPadding.get( id ),
 		} );
 	}
 	return bands;

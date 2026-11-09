@@ -223,7 +223,7 @@ beforeAll(async () => {
 	await waitForHealth(`${origin}/health`);
 
 	workDir = await mkdtemp(path.join(os.tmpdir(), 'forge-e2e-'));
-	await scaffold({ profile: PROFILE, targetDir: workDir, template: 'blog' });
+	await scaffold({ profile: PROFILE, targetDir: workDir, template: 'blog', demoContent: true });
 
 	// Install the generated project (network: registry).
 	const install = run(workDir, 'npm', ['install', '--no-audit', '--no-fund']);
@@ -848,6 +848,9 @@ describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2
 				profile: { ...PROFILE, collections: PROFILE.collections.filter((collection) => collection.slug !== 'products') },
 				targetDir: offlineDir,
 				template: 'blog',
+				// The demo seed IS the offline content — this test is the reason
+				// `demoContent` exists.
+				demoContent: true,
 			});
 			const install = run(offlineDir, 'npm', ['install', '--no-audit', '--no-fund']);
 			expect(install.status, `npm install failed:\n${install.stderr}`).toBe(0);

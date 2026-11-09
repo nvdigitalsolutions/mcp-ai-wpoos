@@ -365,6 +365,29 @@ describe( 'analyzeBandContinuity / verifyBandFlow (124 §7)', () => {
 		expect( report.dropped ).toEqual( [] );
 		expect( report.mismatched ).toHaveLength( 1 );
 	} );
+
+	it( 'reads bands whose attributes are emitted in the renderer order', () => {
+		// The real renderer emits data-section BEFORE data-section-id, with the
+		// style last (the scoped-CSS output). A positional regex expecting
+		// data-section-id straight after `<div` matches nothing, so every band
+		// is reported as dropped.
+		const html =
+			'<div data-section="feature-grid" data-section-id="5e78df1" id="products" class="ds-section-wrap ds-section-wrap--dark" style="padding:100px 0px 100px 0px;background:linear-gradient(180deg, #ffffff 6%, #04132b 100%)"></div>';
+		const report = verifyBandFlow(
+			[ { id: '5e78df1', bgGradient: 'linear-gradient(180deg, #ffffff 6%, #04132b 100%)', padding: '100px 0px 100px 0px' } ],
+			html
+		);
+		expect( report.dropped ).toEqual( [] );
+		expect( report.mismatched ).toEqual( [] );
+	} );
+
+	it( 'keeps the outermost wrapper when a nested element repeats the band id', () => {
+		const html =
+			'<div data-section="hero" data-section-id="a" style="background-image:url(\'https://x.example/hero.jpg\')">' +
+			'<div data-section="hero" data-section-id="a" class="ds-inner"></div></div>';
+		const report = verifyBandFlow( [ { id: 'a', bgImage: 'https://x.example/hero.jpg' } ], html );
+		expect( report.mismatched ).toEqual( [] );
+	} );
 } );
 
 describe( 'analyzeDesignInput', () => {

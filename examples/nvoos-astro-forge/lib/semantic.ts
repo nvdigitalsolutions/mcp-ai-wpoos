@@ -305,6 +305,21 @@ export const SEEDED_WIDGET_ROLES: Record<string, WidgetRole> = {
 	aux_image: { kind: 'media' },
 	aux_blockquote: { kind: 'quote' },
 	aux_text: { kind: 'body' },
+	// Theme/utility widget classes seen on BOTH the jayainc (Phlox/Auxin +
+	// Elementor) and virtuallyjamaica (WPBakery + Brando) live sites, so they
+	// are seeded rather than pinned per profile. Every mapping is
+	// non-destructive: wrappers carry their own text only in rare cases and
+	// their children are classified individually, and the link/file widgets
+	// are buttons whose label belongs in the links slot.
+	'button__link': { kind: 'links' },
+	'file__button': { kind: 'links' },
+	// Decorative shape widget (Phlox) — renders as a graphic, never as text.
+	aux_simple_shape: { kind: 'media' },
+	aux_shape: { kind: 'media' },
+	container: { kind: 'content' },
+	wrap: { kind: 'content' },
+	spacer: { kind: 'content' },
+	shortcode: { kind: 'content' },
 };
 
 /** wp-block-* name → role (Gutenberg's block vocabulary). */

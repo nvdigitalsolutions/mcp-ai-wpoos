@@ -504,6 +504,7 @@ async function runDeploy( profileRef, options ) {
 			agents: options.agents,
 			themePolicy: options.themePolicy,
 			strictContrast: options.strictContrast === true,
+			demoContent: options.demoContent === true,
 		} );
 		console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 		for ( const warning of result.warnings ) {
@@ -661,6 +662,7 @@ async function runScaffold( profileRef, options ) {
 		agents: options.agents,
 		themePolicy: options.themePolicy,
 		strictContrast: options.strictContrast === true,
+		demoContent: options.demoContent === true,
 		siteSlug,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
@@ -1534,7 +1536,8 @@ function scaffoldOptions( cmd ) {
 		.option( '--overwrite', 'replace a non-forge target directory' )
 		.option( '--check', 'verify collection sizes against the page caps (no scaffold)' )
 		.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (designAudit: strict)' )
-		.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' );
+		.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
+		.option( '--demo-content', 'keep the template placeholder post/page (off by default: a real site must not ship them)' );
 }
 
 // The scaffold is the DEFAULT command (`isDefault`), so the bare form
