@@ -1351,6 +1351,8 @@ describe( 'scaffold — site shape (the one-pager setting)', () => {
 		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
 		expect( manifest.shape ).toBe( 'multi-page' );
 		expect( manifest.navAnchors ).toEqual( [] );
+	} );
+} );
 
 describe( 'scaffold — extra (CPT) collections get routes', () => {
 	const withPortfolio = (): SiteProfile => ( {
