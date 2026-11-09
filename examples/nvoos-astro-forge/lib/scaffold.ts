@@ -147,6 +147,14 @@ export interface ScaffoldOptions {
 	 * instead of guessing one from the display name.
 	 */
 	siteSlug?: string;
+	/**
+	 * Keep the template's placeholder post + page. They exist so a scaffold
+	 * renders with no WordPress at all (106 P2 hybrid local), but the loader
+	 * MERGES local MDX under the WP entries — so on a real site the
+	 * placeholder would publish at `/posts/hello-world/`. Off by default;
+	 * `--demo-content` keeps it for offline demos and the hybrid tests.
+	 */
+	demoContent?: boolean;
 }
 
 export interface ForgeManifest {
@@ -2371,6 +2379,17 @@ async function scaffoldProject(
 		await writeFile(path.join(targetDir, 'AGENTS.md'), AGENTS_STUB, 'utf8');
 		await mkdir(path.join(targetDir, '.context'), { recursive: true });
 		await writeFile(path.join(targetDir, '.context', 'README.md'), CONTEXT_STUB, 'utf8');
+	}
+
+	// 4c. Demo content — removed unless explicitly requested. The template
+	//     ships a placeholder post + page so a project renders with no
+	//     WordPress at all, but `wp-loader.ts` merges the local MDX glob UNDER
+	//     the WP entries (WP wins on collision, local fills). On a real site
+	//     that publishes "Hello from the forge" at /posts/hello-world/.
+	if (options.demoContent !== true) {
+		for (const relative of ['src/content/posts/hello-world.mdx', 'src/content/pages/README.md']) {
+			await rm(path.join(targetDir, relative), { force: true });
+		}
 	}
 
 	return {

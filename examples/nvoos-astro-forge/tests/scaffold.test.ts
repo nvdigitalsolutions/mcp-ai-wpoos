@@ -975,10 +975,20 @@ describe( 'scaffold — hybrid local content (Proposal 106 P2)', () => {
 
 		const config = await readFile(path.join(target, 'src', 'content.config.ts'), 'utf8');
 		expect(config).toContain("local: { pattern: '**/*.mdx', base: './src/content/posts' }");
-		// The demo seed ships with every scaffold.
+		// The demo seed is NOT shipped by default: the loader merges the local
+		// MDX glob UNDER the WP entries, so on a real site it would publish
+		// "Hello from the forge" at /posts/hello-world/.
+		await expect(stat(path.join(target, 'src', 'content', 'posts', 'hello-world.mdx'))).rejects.toThrow();
+		await expect(stat(path.join(target, 'src', 'content', 'pages'))).resolves.toBeTruthy();
+	} );
+
+	it( 'keeps the demo seed only when demoContent is requested', async () => {
+		const root = await tempDir();
+		const target = path.join(root, 'hybrid-demo');
+		await scaffold({ profile: PROFILE, targetDir: target, template: 'blog', demoContent: true });
+
 		const example = await readFile(path.join(target, 'src', 'content', 'posts', 'hello-world.mdx'), 'utf8');
 		expect(example).toContain('Hello from the forge');
-		await expect(stat(path.join(target, 'src', 'content', 'pages'))).resolves.toBeTruthy();
 	} );
 
 	it( 'keeps non-hybrid collections on the plain WP loader', () => {
