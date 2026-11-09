@@ -48,6 +48,33 @@ git push --force-with-lease origin <branch>
 - GitHub Docs reference: "Managing stacked pull requests" /
   "Troubleshooting stacked pull requests" (`gh stack rebase` alternative).
 
+## The PR was merged WHILE you were pushing (2026-11-09)
+
+A squash-merge can land between two of your commits. The `git push` still
+succeeds — the branch accepts it — but the PR is already frozen at its merged
+head, so the new commits sit on a dead branch and never reach the base.
+
+Detect (they diverge):
+
+```bash
+gh pr view <n> --json state          # MERGED
+gh api repos/<o>/<r>/branches/<branch> --jq .commit.sha | cut -c1-10
+gh api repos/<o>/<r>/pulls/<n> --jq .head.sha        | cut -c1-10
+```
+
+Fix — replay the post-merge commits onto the new base and open a FRESH PR:
+
+```bash
+git checkout -b <new-branch>
+git rebase --onto origin/alpha-working <the merged head sha>
+# the replay is clean when the squash tree matches the old head's tree
+git push -u origin <new-branch> && gh pr create --base alpha-working
+```
+
+Prevention: before adding a commit to a PR that has been green for a while,
+run `gh pr view <n> --json state`. Owner-merge on this repo means a green PR
+can disappear under you between tool calls.
+
 ## Freeze a PR branch once it is mergeable (the lost-commit trap, 2026-11-06)
 
 Follow-up commits pushed to an OPEN PR branch silently vanish when the

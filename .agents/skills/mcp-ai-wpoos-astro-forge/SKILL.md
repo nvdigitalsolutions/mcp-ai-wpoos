@@ -1452,6 +1452,11 @@ error on a blog-only site — widen the accessor and keep it in a `try`.
 
 Full notes: `reference/template-endpoints.md`.
 
+A one-pager's `shape` is a profile SETTING (`profile.shape`), not the
+`--inventory` verdict; the sanitizer strips `id` unless it is explicitly
+allowed, and that is what anchors ride on. Full notes:
+`reference/site-shape-and-anchors.md`.
+
 ## Repo conventions
 
 - **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to
