@@ -34,6 +34,8 @@ export const GET: APIRoute = async ({ site }) => {
 	// their own section rather than being buried under "Optional".
 	const CORE_COLLECTIONS = new Set(['posts', 'pages', 'products']);
 	const loadCollection = getCollection as unknown as (name: string) => Promise<Array<any>>;
+	const baseOf = (entry: { slug: string; basePath?: string }) =>
+		(entry.basePath ?? `/${entry.slug}`).replace(/\/+$/, '');
 	const headingOf = (slug: string) =>
 		slug.replace(/[-_]+/g, ' ').trim().replace(/\b\w/g, (first) => first.toUpperCase());
 	const extraSections = [];
@@ -42,7 +44,7 @@ export const GET: APIRoute = async ({ site }) => {
 		extraSections.push({
 			heading: headingOf(collection.slug),
 			entries: items.map((item) => ({
-				path: `${(collection.basePath ?? `/${collection.slug}`).replace(/\/+$/, '')}/${item.id}/${item.data?.slug ?? item.id}/`,
+				path: `${baseOf(collection)}/${item.id}/${item.data?.slug ?? item.id}/`,
 				title: item.data?.title ?? item.data?.slug ?? item.id,
 				note: item.data?.seoDescription ?? item.data?.excerpt,
 			})),

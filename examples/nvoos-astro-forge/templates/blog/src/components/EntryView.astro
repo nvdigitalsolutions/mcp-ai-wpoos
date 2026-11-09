@@ -20,10 +20,11 @@ interface Props {
 	collection: string;
 	/** URL prefix, e.g. `/portfolio`. */
 	basePath: string;
-	schemaType?: 'WebPage' | 'BlogPosting' | 'CreativeWork';
+	/** A CPT entry is `Article` by default; `WebPage` for a static-ish type. */
+	schemaType?: 'WebPage' | 'Article';
 }
 
-const { entry, body, collection, basePath, schemaType = 'CreativeWork' } = Astro.props;
+const { entry, body, collection, basePath, schemaType = 'Article' } = Astro.props;
 
 const data = entry.data ?? {};
 const slug = data.slug ?? entry.id;
@@ -47,15 +48,18 @@ const seoDescription =
 
 const jsonLd = buildGraph(
 	Astro.site,
-	jsonLdFor( schemaType, {
-		url: pageUrl,
-		title: seoTitle,
-		headline: seoTitle,
-		description: seoDescription,
-		datePublished: data.date,
-		dateModified: data.modified,
-		image: data.featuredImage,
-	} ),
+	// Each jsonLdFor overload takes its OWN input shape — one mixed object
+	// matches no overload, so branch on the kind.
+	schemaType === 'WebPage'
+		? jsonLdFor( 'WebPage', { url: pageUrl, title: seoTitle, description: seoDescription } )
+		: jsonLdFor( 'Article', {
+				url: pageUrl,
+				headline: seoTitle,
+				description: seoDescription,
+				datePublished: data.date,
+				dateModified: data.modified,
+				image: data.featuredImage,
+		  } ),
 	[ ...homeCrumb( Astro.site ), ...( pageUrl ? [ { name: seoTitle, url: pageUrl } ] : [] ) ]
 );
 ---
