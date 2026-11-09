@@ -88,6 +88,32 @@ export interface ForgeForms {
 	origin?: string;
 	/** Extra input names that mark a single-field form as a search form. */
 	searchForms?: string[];
+	/**
+	 * How a submission becomes an email.
+	 *
+	 * `bridge` (default) POSTs to WordPress, which owns the handler AND its
+	 * mailer — the SMTP setting lives there, so credentials never reach the
+	 * site. `direct` sends from the managed runtime through a provider HTTP
+	 * API instead, for a site with no bridge installed. Direct REQUIRES
+	 * `deploy.runtime: managed` (a static build has nowhere to keep a key).
+	 */
+	delivery?: 'bridge' | 'direct';
+	/**
+	 * Direct-delivery settings. Public identifier data only — the provider
+	 * SECRET comes from the environment (BREVO_API_KEY / MAILJET_*), never
+	 * from the profile or the manifest.
+	 */
+	mail?: {
+		provider: 
+			| 'brevo'
+			| 'mailjet';
+		/** Authenticated sender — must align with the domain's SPF/DKIM. */
+		from: string;
+		fromName?: string;
+		/** Where submissions are delivered. */
+		to: string;
+		subject?: string;
+	};
 }
 
 /**
