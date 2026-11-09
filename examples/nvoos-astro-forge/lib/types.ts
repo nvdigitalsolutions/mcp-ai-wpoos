@@ -20,6 +20,16 @@ import type {
 export interface WpCollection {
 	/** Collection slug in the generated Astro project (posts, pages, …). */
 	slug: string;
+	/**
+	 * URL prefix for this collection's routes. Defaults to `/<slug>`.
+	 *
+	 * An EXTRA collection (an arbitrary CPT) needs this to keep the source's
+	 * URLs: WordPress serves `portfolio` items under `/blog/portfolio/<slug>/`,
+	 * so a rebuild that silently moved them to `/portfolio/…` would drop the
+	 * site's existing rankings. Core collections ignore it (their routes are
+	 * template-owned).
+	 */
+	basePath?: string;
 	/** REST base path under /wp-json (e.g. 'wp/v2/posts'). */
 	restBase: string;
 	/** `_fields` pruning list — the anti-N+1 discipline (096 research §2.2). */

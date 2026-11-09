@@ -1,0 +1,85 @@
+---
+// One entry of a NON-CORE collection (a WordPress CPT such as `portfolio`).
+//
+// The core routes (posts, pages, products) own their own pages because each
+// carries its own schema and layout. A profile may declare any number of extra
+// collections; the scaffold generates a thin route per collection that gathers
+// the paths and hands the entry here. Additive by design: nothing here runs
+// unless a profile declares an extra collection.
+import Base from '../layouts/Base.astro';
+import manifest from '../../nvoos.json';
+import { render } from 'astro:content';
+import DesignRenderer from '../components/design/DesignRenderer.astro';
+import { jsonLdFor, renderJsonLd } from '../lib/seo.ts';
+import { buildGraph, homeCrumb } from '../lib/seo-graph.ts';
+
+interface Props {
+	entry: any;
+	/** Sanitized body HTML, extracted in getStaticPaths (store objects do not survive serialization). */
+	body?: string;
+	collection: string;
+	/** URL prefix, e.g. `/portfolio`. */
+	basePath: string;
+	/** A CPT entry is `Article` by default; `WebPage` for a static-ish type. */
+	schemaType?: 'WebPage' | 'Article';
+}
+
+const { entry, body, collection, basePath, schemaType = 'Article' } = Astro.props;
+
+const data = entry.data ?? {};
+const slug = data.slug ?? entry.id;
+const { Content } = await render( entry );
+const pageUrl = Astro.site ? new URL( `${ basePath }/${ entry.id }/${ slug }/`, Astro.site ).href : undefined;
+
+// SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
+const seoTitle = data.seoTitle ?? data.title ?? slug;
+
+/** Derive a UNIQUE description from the body before falling back to the site's. */
+function derivedDescription( html: string | undefined, site: string | undefined ): string | undefined {
+	const text = ( html ?? '' ).replace( /<[^>]+>/g, ' ' ).replace( /\s+/g, ' ' ).trim();
+	if ( ! text ) {
+		return site;
+	}
+	return text.length > 155 ? `${ text.slice( 0, 152 ).replace( /\s+\S*$/, '' ) }…` : text;
+}
+
+const seoDescription =
+	data.seoDescription ?? data.excerpt ?? derivedDescription( body, manifest.seoDescription );
+
+const jsonLd = buildGraph(
+	Astro.site,
+	// Each jsonLdFor overload takes its OWN input shape — one mixed object
+	// matches no overload, so branch on the kind.
+	schemaType === 'WebPage'
+		? jsonLdFor( 'WebPage', { url: pageUrl, title: seoTitle, description: seoDescription } )
+		: jsonLdFor( 'Article', {
+				url: pageUrl,
+				headline: seoTitle,
+				description: seoDescription,
+				datePublished: data.date,
+				dateModified: data.modified,
+				image: data.featuredImage,
+		  } ),
+	[ ...homeCrumb( Astro.site ), ...( pageUrl ? [ { name: seoTitle, url: pageUrl } ] : [] ) ]
+);
+---
+
+<Base
+	title={seoTitle}
+	description={seoDescription}
+	canonical={pageUrl}
+	seo={data.seo}
+	markdownHref={`${ basePath }/${ entry.id }/${ slug }/index.md`}
+>
+	<article class="post" data-collection={collection}>
+		<h1>{data.title}</h1>
+		{body ? (
+			<DesignRenderer html={body} />
+		) : (
+			<div class="post-body">
+				<Content />
+			</div>
+		)}
+	</article>
+	<script type="application/ld+json" set:html={renderJsonLd( jsonLd )} />
+</Base>

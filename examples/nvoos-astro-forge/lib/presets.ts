@@ -210,11 +210,11 @@ const STOREFRONT_PRODUCTS: WpCollection = {
 export function applyPresetToProfile(profile: SiteProfile, preset: PresetName): SiteProfile {
 	switch (preset) {
 		case 'minimal':
+			// Drop COMMERCE only. An extra collection is content the profile
+			// declared on purpose (an arbitrary CPT), so it survives every preset.
 			return {
 				...profile,
-				collections: profile.collections.filter(
-					(collection) => collection.slug === 'posts' || collection.slug === 'pages'
-				),
+				collections: profile.collections.filter((collection) => collection.slug !== 'products'),
 			};
 		case 'storefront':
 			if (profile.collections.some((collection) => collection.slug === 'products')) {

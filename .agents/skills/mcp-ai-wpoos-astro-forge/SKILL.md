@@ -1457,6 +1457,13 @@ A one-pager's `shape` is a profile SETTING (`profile.shape`), not the
 allowed, and that is what anchors ride on. Full notes:
 `reference/site-shape-and-anchors.md`.
 
+## Extra (CPT) collections get routes (2026-11-09)
+
+Any collection beyond `posts`/`pages`/`products` is a CPT: the scaffold
+generates a `/<basePath>/` route pair, keeps it through every preset, and
+emits it in sitemap/llms. The source needs `show_in_rest`. Notes:
+`reference/cpt-collections.md`.
+
 ## Repo conventions
 
 - **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to

@@ -12,7 +12,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { auditTokenBlock, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderSectionsGenerated, renderTokensDtcg, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { auditTokenBlock, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -1351,5 +1351,43 @@ describe( 'scaffold — site shape (the one-pager setting)', () => {
 		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
 		expect( manifest.shape ).toBe( 'multi-page' );
 		expect( manifest.navAnchors ).toEqual( [] );
+	} );
+} );
+
+describe( 'scaffold — extra (CPT) collections get routes', () => {
+	const withPortfolio = (): SiteProfile => ( {
+		...PROFILE,
+		collections: [
+			...PROFILE.collections,
+			{ ...PROFILE.collections[ 0 ], slug: 'portfolio', restBase: 'wp/v2/portfolio' },
+		],
+	} );
+
+	it( 'generates a listing and an entry route for a non-core collection', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'cpt' );
+		await scaffold( { profile: withPortfolio(), targetDir: target, template: 'blog' } );
+
+		const index = await readFile( path.join( target, 'src', 'pages', 'portfolio', 'index.astro' ), 'utf8' );
+		expect( index ).toContain( "import CollectionIndex from '../../components/CollectionIndex.astro'" );
+		expect( index ).toContain( 'collection={"portfolio"}' );
+		expect( index ).toContain( 'title={"Portfolio"}' );
+
+		const entry = await readFile( path.join( target, 'src', 'pages', 'portfolio', '[...parts].astro' ), 'utf8' );
+		expect( entry ).toContain( "import EntryView from '../../components/EntryView.astro'" );
+		expect( entry ).toContain( 'getStaticPaths' );
+		expect( entry ).toContain( 'basePath={"/portfolio"}' );
+	} );
+
+	it( 'does not generate routes for the core collections', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'core' );
+		await scaffold( { profile: PROFILE, targetDir: target, template: 'blog' } );
+		await expect( stat( path.join( target, 'src', 'pages', 'pages' ) ) ).rejects.toThrow();
+	} );
+
+	it( 'title-cases a hyphenated collection slug', () => {
+		expect( collectionTitle( 'case-studies' ) ).toBe( 'Case Studies' );
+		expect( collectionTitle( 'portfolio' ) ).toBe( 'Portfolio' );
 	} );
 } );

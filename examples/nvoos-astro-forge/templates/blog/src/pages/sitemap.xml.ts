@@ -54,6 +54,19 @@ export const GET: APIRoute = async ({ site }) => {
 	const products = hasProducts ? await getCollection('products' as 'posts') : [];
 	const frontPageSlug = manifest.frontPage;
 
+	// Extra collections (an arbitrary CPT: portfolio, case-studies, …). The
+	// scaffold generates a /<slug>/ route pair for each, so their URLs belong in
+	// the map — otherwise a CPT is published but unindexable.
+	const CORE_COLLECTIONS = new Set( [ 'posts', 'pages', 'products' ] );
+	const loadCollection = getCollection as unknown as ( name: string ) => Promise< Array< any > >;
+	const extraCollections = manifest.collections.filter( ( collection ) => ! CORE_COLLECTIONS.has( collection.slug ) );
+	const baseOf = ( collection: { slug: string; basePath?: string } ) =>
+		( collection.basePath ?? `/${ collection.slug }` ).replace( /\/+$/, '' );
+	const extraEntries: Array<{ slug: string; base: string; items: Array< any > }> = [];
+	for ( const collection of extraCollections ) {
+		extraEntries.push( { slug: collection.slug, base: baseOf( collection ), items: await loadCollection( collection.slug ) } );
+	}
+
 	/** `noindex` in the source's robots directive keeps a URL out of the map. */
 	const indexable = (seo: { robots?: string } | undefined) => !(seo?.robots ?? '').toLowerCase().includes('noindex');
 
@@ -75,6 +88,9 @@ export const GET: APIRoute = async ({ site }) => {
 		if (hasProducts) {
 			entries.push({ loc: new URL('/products/', site).href });
 		}
+		for ( const collection of extraCollections ) {
+			entries.push( { loc: new URL( `${ baseOf( collection ) }/`, site ).href } );
+		}
 	}
 	for (const post of posts) {
 		push(`/posts/${post.id}/${post.data.slug}/`, post.data);
@@ -85,6 +101,11 @@ export const GET: APIRoute = async ({ site }) => {
 	for (const page of pages) {
 		if (page.data.slug !== frontPageSlug) {
 			push(`/${page.data.slug}/`, page.data);
+		}
+	}
+	for ( const group of extraEntries ) {
+		for ( const item of group.items ) {
+			push( `${ group.base }/${ item.id }/${ item.data?.slug ?? item.id }/`, item.data ?? {} );
 		}
 	}
 
