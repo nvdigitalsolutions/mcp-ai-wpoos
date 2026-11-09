@@ -581,6 +581,54 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   product image); PDPs point `og:image` at it. Fixture server appends a
   synthetic draft (id 9901) at boot — goldens stay byte-identical.
 
+## CSP + ClientRouter — inline scripts MUST be page-invariant (2026-11-09)
+
+`scripts/lib/security-headers.mjs` builds `script-src` from the **rendered
+document** (SHA-256 per inline script; no `unsafe-inline`). That is correct for
+a full load and **wrong for client-side navigation**: `ClientRouter` swaps in
+another page's markup and re-executes its inline scripts, but the browser keeps
+the **first document's** CSP (a fetched fragment's CSP header is ignored). So
+any inline script present on page B but not page A is blocked on A → B.
+
+**Symptom.** Console spam from `ClientRouter.astro_astro_type_script_index_0_lang.*.js`:
+`Executing inline script violates the following Content Security Policy
+directive 'script-src …'`, listing hashes that do **not** match the ones the
+document allows. The interactive pattern on the target page (tabs, an island)
+is simply dead until a hard reload.
+
+**Diagnose by comparing hash sets across routes** — they must be identical:
+
+```sh
+for p in / /components/ /components/blocks/ /cart/; do
+  curl -sS -D - -o /dev/null "$BASE$p" | grep -i '^content-security-policy' \
+    | grep -o 'sha256-[A-Za-z0-9+/=]*' | tr '\n' ' '; echo " <- $p"
+done
+```
+
+**Fix (landed):** keep bundled scripts external so `'self'` covers them and the
+hash list stays page-invariant — `vite.build.assetsInlineLimit: 0` in
+`astro.config.mjs`. That removed the UiTabs script and the analytics script
+from the inline set (6 → 4 hashes, identical on every route).
+
+**Residual (documented, NOT fixed).** `client:visible` islands emit an inline
+IntersectionObserver bootstrap per page, so navigating **into** a page that has
+one (`/`, PDPs) is still blocked by the source document's CSP. Remedies, in
+order of blast radius: convert those directives to `client:idle`/`client:load`
+(changes hydration timing site-wide), or drop `ClientRouter` (full loads, exact
+CSP per document). Do not "fix" it with `unsafe-inline` or `strict-dynamic`
+(`strict-dynamic` ignores `'self'`, so every `src` script needs a nonce).
+
+**Test gap this exposes.** Every other e2e does `page.goto()` — a full load that
+never exercises the router. `tests/e2e/component-library.spec.ts` now navigates
+in-app (creates an anchor and clicks it) and asserts **zero** CSP console
+errors plus working tabs. Add that shape for any navigation-critical pattern.
+
+**Site-root assets are not guaranteed in the deployed mirror.**
+`/favicon.svg` returns **404** on the live host even though
+`dist/client/favicon.svg` exists locally and `npm run build`+`serve.mjs` serve
+it 200. Never reference a site-root static file from a page fixture; use a
+self-contained `data:` URI (`img-src 'self' data:` is already allowed).
+
 ## Proposals 105 + 106 surfaces (2026-11-03)
 
 - **Bridge theme policy (105)**: `GET/PATCH /globals/theme` —

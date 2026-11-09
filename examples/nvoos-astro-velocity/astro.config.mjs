@@ -55,7 +55,15 @@ export default defineConfig({
 	// Pin the minifier to esbuild, which preserves the longhand; `esbuild`
 	// is already a devDependency (Vite imports it at build time).
 	vite: {
-		build: { cssMinify: 'esbuild' },
+		build: {
+			cssMinify: 'esbuild',
+			// Proposal 104 D12 follow-up: keep bundled scripts EXTERNAL.
+			// The per-response CSP hashes inline scripts; a page whose inline
+			// set differs from the current document's (tabs, React helpers)
+			// is blocked when ClientRouter navigates to it. External chunks
+			// are covered by `'self'`, so the hash list stays page-invariant.
+			assetsInlineLimit: 0,
+		},
 	},
 
 	integrations: [
