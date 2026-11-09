@@ -38,7 +38,7 @@ import { join } from 'node:path';
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
-import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity, verifyBandFlow } from '../lib/design.ts';
+import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { findDroppedPins } from '../lib/pins.ts';
@@ -47,7 +47,7 @@ import { DEFAULT_GEOMETRY_VIEWPORTS, diffGeometry, measureGeometry, serveDir } f
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
-import { compareRegionColorModes, measureRegionColors } from '../lib/region-colors.ts';
+import { compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors } from '../lib/region-colors.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
@@ -60,7 +60,7 @@ import { analyzeTracking, mergeTrackingDraft, renderTrackingReport, trackingFrom
 import { auditTracking } from '../lib/tracking-audit.ts';
 import { SitesStore } from '../lib/sites.ts';
 import { maskSecret, Vault } from '../lib/vault.ts';
-import { COMPARE_PROMPT, visionCompare, visionConfig } from '../lib/vision.ts';
+import { COMPARE_PROMPT, resolveVisionConfig, visionCompare } from '../lib/vision.ts';
 import { extractWireframes } from '../lib/wireframes.ts';
 import { learnVocabulary } from '../lib/vocabulary.ts';
 import { setupWizard } from '../lib/wizard.ts';
@@ -202,9 +202,22 @@ async function runAnalyze( url, options ) {
 		fail( 'analyze needs an https?:// URL.' );
 	}
 
-	const report = await analyzeSite( new WpClient( { baseUrl: url.replace( /\/+$/, '' ) } ) );
-	console.log( renderReport( report ) );
-	const profile = profileFromDiscovery( report );
+	// --no-cms: a bot-protected source answers 403 on /wp-json, so CMS discovery
+	// cannot run. The design/colour/text baselines only need the RENDERED
+	// homepage, which normally is not blocked — so analyze that alone rather
+	// than dying before any baseline is recorded (virtuallyjamaica.com).
+	let profile;
+	if ( options.cms === false ) {
+		const host = new URL( url ).hostname.replace( /^www\./, '' );
+		console.log(
+			`\u26a0 --no-cms: skipping WordPress discovery for ${ host } \u2014 analyzing the rendered page only (no content collections).`
+		);
+		profile = { name: slugify( host ), url: url.replace( /\/+$/, '' ) };
+	} else {
+		const report = await analyzeSite( new WpClient( { baseUrl: url.replace( /\/+$/, '' ) } ) );
+		console.log( renderReport( report ) );
+		profile = profileFromDiscovery( report );
+	}
 
 	// --design (114 P1): run the design-language extraction and attach the v2
 	// design block to the drafted profile. Extraction failures never block the
@@ -390,7 +403,10 @@ async function runAnalyze( url, options ) {
 	if ( options.colors ) {
 		try {
 			const modes = parseColorModes( options.colorsModes );
-			profile.colors = await measureRegionColors( { url: profile.url, modes } );
+			// The band surfaces matter as much as the chrome: measure one region per
+			// renderable band anchor, with the composited background.
+			const regions = [ ...DEFAULT_COLOR_REGIONS, ...bandColorRegions( renderableBands( profile.design ) ) ];
+			profile.colors = await measureRegionColors( { url: profile.url, modes, regions, effective: true } );
 			for ( const mode of Object.keys( profile.colors ) ) {
 				const regions = Object.keys( profile.colors[ mode ] );
 				console.log( `\u2713 Colour baseline (${ mode }): ${ regions.length } region(s) \u2014 ${ regions.join( ', ' ) || 'none' }.` );
@@ -968,6 +984,19 @@ async function runWizard( url, options ) {
 
 // -- verify (114 P5) ---------------------------------------------------------
 
+/**
+ * One colour region per renderable band anchor. The default ladder only covers
+ * body/header/footer, so a source whose SURFACES carry the design
+ * (virtuallyjamaica's red #dd3333 hero band) was never measured — the gate read
+ * a transparent header and skipped the very surface that was wrong.
+ */
+function bandColorRegions( bands ) {
+	const anchors = bands
+		.map( ( band ) => band.anchor )
+		.filter( ( anchor, index, list ) => Boolean( anchor ) && list.indexOf( anchor ) === index );
+	return anchors.map( ( anchor ) => ( { name: `band:${ anchor }`, selectors: [ `#${ anchor }` ] } ) );
+}
+
 /** Every built HTML page (homepage first), bounded — the SEO gate walks them. */
 async function collectDistHtml( target, limit = 8 ) {
 	const root = existsSync( join( target, 'dist', 'index.html' ) )
@@ -1347,11 +1376,21 @@ async function runVerify( profileRef, options ) {
 	// band is exactly the failure the source's continuous band flow depends
 	// on (jayainc's gray bridge + flush contact band, pre-124 §5).
 	const indexHtml = await readBuiltHtml( options.target );
+	// The bands a build can render: Elementor sections when present, else the
+	// promoted outline (WPBakery/Divi/Bricks…). Band flow must check the same
+	// set the renderer themes, or an outline-only site passes vacuously.
+	const bands = renderableBands( profile.design );
 	if ( indexHtml ) {
-		const flow = verifyBandFlow( profile.design?.sections ?? [], indexHtml );
+		const flow = verifyBandFlow( bands, indexHtml );
+		// Outline bands are mapped POSITIONALLY (no Elementor ids exist), so a
+		// count/order difference is an approximation miss, not a proven dropped
+		// band. Report it loudly but never block a deploy on it; Elementor
+		// sections stay a hard gate.
+		const positional =
+			profile.design?.bandSource === 'outline' || ( profile.design?.sections?.length ?? 0 ) === 0;
 		if ( flow.dropped.length === 0 && flow.mismatched.length === 0 ) {
 			console.log( '\u2713 Band flow: every source band renders with its baked background.' );
-			record( 'band flow', 'pass', `${ ( profile.design?.sections ?? [] ).length + ( profile.design?.outline ?? [] ).length } band(s)` );
+			record( 'band flow', 'pass', `${ bands.length } band(s)${ positional ? ' (positional)' : '' }` );
 		} else {
 			for ( const id of flow.dropped ) {
 				console.warn( `\u2717 Band flow: source band ${ id } is missing from the built page (dropped or unclassified).` );
@@ -1359,8 +1398,12 @@ async function runVerify( profileRef, options ) {
 			for ( const mismatch of flow.mismatched ) {
 				console.warn( `\u2717 Band flow: band ${ mismatch.id } renders ${ mismatch.actual ?? 'nothing' }, expected ${ mismatch.expected }.` );
 			}
-			process.exitCode = 1;
-			record( 'band flow', 'fail', `${ flow.dropped.length } dropped, ${ flow.mismatched.length } mismatched` );
+			process.exitCode = positional ? process.exitCode : 1;
+			record(
+				'band flow',
+				positional ? 'warn' : 'fail',
+				`${ flow.dropped.length } dropped, ${ flow.mismatched.length } mismatched${ positional ? ' (positional outline)' : '' }`
+			);
 		}
 		for ( const seam of flow.seams ) {
 			console.log(
@@ -1734,9 +1777,23 @@ async function runVerify( profileRef, options ) {
 	} else if ( options.colors && profile.colors ) {
 		const modes = parseColorModes( options.colorsModes );
 		const served = await serveDir( join( options.target, 'dist' ) );
+		// Measure the same regions the baseline recorded — including the band
+		// anchors (`band:home`) — so a band surface that stopped rendering is a
+		// reported deviation, not a silent skip.
+		const bandNames = [
+			...new Set(
+				Object.values( profile.colors ).flatMap( ( regions ) =>
+					Object.keys( regions ).filter( ( name ) => name.startsWith( 'band:' ) )
+				)
+			),
+		];
+		const regions = [
+			...DEFAULT_COLOR_REGIONS,
+			...bandNames.map( ( name ) => ( { name, selectors: [ `#${ name.slice( 5 ) }` ] } ) ),
+		];
 		let builtColors;
 		try {
-			builtColors = await measureRegionColors( { url: served.url, modes } );
+			builtColors = await measureRegionColors( { url: served.url, modes, regions, effective: true } );
 		} catch ( error ) {
 			fail( `Colour measurement failed — ${ error instanceof Error ? error.message : error }` );
 		} finally {
@@ -1810,15 +1867,18 @@ function servePreview( target, port ) {
  * Advisory by default; --strict-visual gates on the --min-fidelity score.
  */
 async function runVisualVerify( profile, options ) {
-	const config = visionConfig();
+	const config = await resolveVisionConfig();
 	if ( ! config ) {
 		if ( options.strictVisual ) {
-			fail( '--strict-visual needs vision credentials: set NVOOS_FORGE_VISION_BASE_URL / NVOOS_FORGE_VISION_KEY / NVOOS_FORGE_VISION_MODEL.' );
+			fail( '--strict-visual needs a vision model: set NVOOS_FORGE_VISION_BASE_URL / NVOOS_FORGE_VISION_KEY / NVOOS_FORGE_VISION_MODEL, or run a local Ollama daemon (autodetected on 127.0.0.1:11434).' );
 		}
 		console.log(
-			'\u26a0 Visual verify skipped: set NVOOS_FORGE_VISION_BASE_URL / NVOOS_FORGE_VISION_KEY / NVOOS_FORGE_VISION_MODEL to enable the vision comparison.'
+			'\u26a0 Visual verify skipped: no vision model. Set NVOOS_FORGE_VISION_* or start Ollama (autodetected at 127.0.0.1:11434, override with NVOOS_FORGE_OLLAMA_URL).'
 		);
 		return;
+	}
+	if ( ! process.env.NVOOS_FORGE_VISION_KEY ) {
+		console.log( `  vision: local Ollama at ${ config.baseUrl } (${ config.model })` );
 	}
 
 	const target = options.target;
@@ -1935,6 +1995,7 @@ program
 	.option( '--write <path>', 'write the draft profile to a file (MERGE into an existing profile — hand-tuned fields survive)' )
 	.option( '--fresh', 'with --write: overwrite an existing profile with a clean draft instead of merging' )
 	.option( '--design', 'extract the design language and attach the rebuild block (Proposal 114)' )
+	.option( '--no-cms', 'skip WordPress (wp-json) discovery \u2014 for bot-protected sources; analyzes the rendered page only' )
 	.option( '--inventory', 'discover the full page inventory + site shape (one-pager vs multi-page, Proposal 115)' )
 	.option( '--wireframes', 'imply --inventory and extract wireframes for the missing pages (Proposal 115)' )
 	.option( '--wayback', 'add Wayback CDX discovery to the inventory (deleted pages)' )

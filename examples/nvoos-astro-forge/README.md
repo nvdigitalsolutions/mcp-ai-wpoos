@@ -88,7 +88,15 @@ content model → ADS components → token theme → verified parity):
 # 1. Extract the design language (roles + confidence + unassigned pool,
 #    typography, spacing, radii, adaptation brief — token data only,
 #    never source CSS/assets).
+#    Band surfaces come from the builder adapter when the source is Elementor;
+#    for every other builder (WPBakery/Brando, Divi, Bricks, Gutenberg…) the
+#    vendor-agnostic outline is PROMOTED into the band model and the renderer
+#    themes it positionally — without that a non-Elementor rebuild rendered
+#    template defaults (virtuallyjamaica.com's red #dd3333 hero came out white).
+#    Bot-protected source (Cloudflare 403 on /wp-json)? Add --no-cms: the
+#    design/colour/text baselines only need the rendered homepage.
 node scripts/forge.mjs analyze https://shop.example.com --design --write site.json
+node scripts/forge.mjs analyze https://shop.example.com --no-cms --design --colors --text --write site.json
 
 # 2. Scaffold applies it: the `design` block derives the --forge-* token
 #    theme (explicit `tokens` overrides win), writes
@@ -129,8 +137,11 @@ node scripts/forge.mjs site.json --target ./customer-frontend
 #    block) and is excluded from the denominator.
 #
 #    Colour is measured per scheme (--colors-modes light,dark, the default) so
-#    a dark header in light mode and an invented dark mode both surface; pixel
-#    captures default to light and take --pixel-mode light|dark|both.
+#    a dark header in light mode and an invented dark mode both surface; it now
+#    also measures ONE REGION PER BAND ANCHOR (`band:home`, `band:about`…) using
+#    the COMPOSITED background, so a band surface that stops rendering is a
+#    deviation instead of a silent transparent skip. Pixel captures default to
+#    light and take --pixel-mode light|dark|both.
 node scripts/forge.mjs verify site.json --target ./customer-frontend            # every gate
 node scripts/forge.mjs verify site.json --target ./customer-frontend --minimal  # browser-free gates (CI blocking)
 node scripts/forge.mjs verify site.json --target ./customer-frontend --geometry

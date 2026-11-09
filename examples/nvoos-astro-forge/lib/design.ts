@@ -25,6 +25,7 @@ import { expandHex, hexToRgb, hslToHex, rgbToHex } from './color.ts';
 import { contrastRatio, relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
 import { extractBandsFromHtml } from './bands.ts';
+import type { BandCandidate } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
 import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
@@ -1871,6 +1872,38 @@ export function bandOutline( input: DesignFetchInput ): {
 	return { outline: detected.bands, builder: detected.builder ?? detected.adapter };
 }
 
+/**
+ * Promote outline bands into the renderable band model. The two band shapes
+ * carry the same background facts, so the mapping is a field copy — the
+ * renderer then themes them positionally (`bandSource: 'outline'`).
+ */
+export function promoteOutlineBands( bands?: BandCandidate[] ): ForgeSection[] {
+	return ( bands ?? [] ).map( ( band ) => ( {
+		id: band.id,
+		anchor: band.anchor,
+		bgColor: band.bgColor,
+		bgImage: band.bgImage,
+		bgGradient: band.bgGradient,
+		measure: band.measure,
+		paddingX: band.paddingX,
+		columns: band.columns?.map( ( column ) => ( { width: column.width } ) ),
+	} ) );
+}
+
+/**
+ * The bands a build can render: the Elementor sections when present, else the
+ * promoted outline. Profiles analyzed before the promotion still carry
+ * `sections: []` + an outline, so every consumer goes through this.
+ */
+export function renderableBands(
+	design?: { sections?: ForgeSection[]; outline?: BandCandidate[] } | null
+): ForgeSection[] {
+	if ( design?.sections && design.sections.length > 0 ) {
+		return design.sections;
+	}
+	return promoteOutlineBands( design?.outline );
+}
+
 /** The last color value of a gradient expression (the band's dominant end). */
 function lastColorOf( gradient: string | undefined ): string | undefined {
 	if ( ! gradient ) {
@@ -2736,6 +2769,27 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 	const radii = trimLadder( pxValues( cssText, RADIUS_PATTERNS ), 8 );
 	const shadows = ( cssText.match( /box-shadow\s*:/gi ) ?? [] ).length;
 
+	// The section-background pass (117 §2) — the per-band theming data the
+	// scaffold bakes into sections.generated.ts. Elementor is authoritative
+	// when present. When it is not (WPBakery, Divi, Bricks, Gutenberg,
+	// Flatsome, plain HTML), the vendor-agnostic OUTLINE becomes the band
+	// model instead: without this the rebuild has no band surfaces at all and
+	// renders template defaults (virtuallyjamaica.com's red #dd3333 hero came
+	// out #f5f5f4, 2026-11-09). The renderer maps outline bands positionally,
+	// which `bandSource` tells it to do.
+	const elementorSections = input.html ? analyzeSections( input ) : undefined;
+	const outline = input.html ? bandOutline( input ) : {};
+	const sections =
+		elementorSections && elementorSections.length > 0
+			? elementorSections
+			: promoteOutlineBands( outline.outline );
+	const bandSource =
+		elementorSections && elementorSections.length > 0
+			? 'sections'
+			: sections.length > 0
+				? 'outline'
+				: undefined;
+
 	return {
 		mode: 'rebuild',
 		source: { url: input.url, analyzedAt: new Date().toISOString() },
@@ -2752,17 +2806,15 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		shadows: { count: shadows },
 		components: componentVocabulary( input.html ),
 		modes: { dark: 'auto', contrast: 'auto' },
-		// The section-background pass (117 §2) — the per-band theming data
-		// the scaffold bakes into sections.generated.ts. Elementor only: these
-		// bands DRIVE RENDERING, so nothing may be added here that the renderer
-		// cannot emit (Proposal 137 keeps other builders in `outline`).
-		sections: input.html ? analyzeSections( input ) : undefined,
-		// Proposal 137 — the vendor-agnostic band OUTLINE. Non-rendering on
-		// purpose: it records the source structure (adapter, anchors, inline
-		// backgrounds, measured columns) for builders the renderer has no model
-		// for yet (WPBakery, Divi, Bricks, Gutenberg, Flatsome…). Adding these
-		// to `sections` instead would fail the band-flow gate.
-		...( input.html ? bandOutline( input ) : {} ),
+		// The section-background pass (117 §2) — the per-band theming data the
+		// scaffold bakes into sections.generated.ts. Elementor sections win;
+		// otherwise the promoted outline bands (above) drive rendering.
+		sections,
+		bandSource,
+		// Proposal 137 — the vendor-agnostic band OUTLINE. Kept for provenance
+		// (adapter, `via`, measured columns) even when it also became
+		// `sections`; absent for Elementor sites.
+		...( input.html ? outline : {} ),
 		chrome: input.html ? analyzeChrome( input ) : undefined,
 		behavior: input.html ? analyzeScrollBehavior( input ) : undefined,
 		ctaStyle: designCtaStyle,

@@ -875,6 +875,13 @@ export interface ForgeDesign {
 	/** The section-background pass (117 §2) — omitted when unavailable. */
 	sections?: ForgeSection[];
 	/**
+	 * Where `sections` came from. `sections` = the Elementor extractor (ids
+	 * match the classifier, so the renderer themes by id). `outline` = the
+	 * vendor-agnostic outline promoted into the same shape — the renderer then
+	 * themes POSITIONALLY, because those bands carry no Elementor ids.
+	 */
+	bandSource?: 'sections' | 'outline';
+	/**
 	 * The vendor-agnostic band OUTLINE (Proposal 137) — the source's structural
 	 * bands for builders the rich extractor does not model (WPBakery, Divi,
 	 * Bricks, Gutenberg, Flatsome, plain HTML, a slider hero…). NON-RENDERING:

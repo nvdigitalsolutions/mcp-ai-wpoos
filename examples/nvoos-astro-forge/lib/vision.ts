@@ -13,10 +13,13 @@
 // Fail-soft by contract: without NVOOS_FORGE_VISION_* env the callers skip;
 // network/model errors surface as { ok: false } and never fail a build.
 // Vision NEVER runs inside the build — verify-time only, deterministic
-// builds stay deterministic.
+// builds stay deterministic. A reachable local Ollama daemon is used when no
+// explicit credentials are set, so the layer works without a paid key.
 //
 // Zero dependencies (global fetch), Node type-stripping safe.
 // ---------------------------------------------------------------------------
+
+import { detectLocalModel, type LocalModel } from './local-model.ts';
 
 export interface VisionConfig {
 	/** The OpenAI-compatible API base (e.g. https://api.openai.com/v1). */
@@ -46,6 +49,35 @@ export function visionConfig( env: NodeJS.ProcessEnv = process.env ): VisionConf
 		key,
 		model: env.NVOOS_FORGE_VISION_MODEL ?? 'gpt-4o-mini',
 	};
+}
+
+/** A vision config pointed at the local Ollama daemon (no key required). */
+export function visionConfigFromLocal(
+	local: LocalModel,
+	env: NodeJS.ProcessEnv = process.env
+): VisionConfig {
+	return {
+		baseUrl: local.baseUrl,
+		// Ollama ignores the key; the OpenAI-compatible client wants one.
+		key: 'ollama',
+		model: env.NVOOS_FORGE_VISION_MODEL ?? local.model,
+	};
+}
+
+/**
+ * The vision config to actually use: explicit credentials first, then a local
+ * Ollama daemon whenever one answers on the loopback interface.
+ * Undefined keeps the step skipped (never an error).
+ */
+export async function resolveVisionConfig(
+	env: NodeJS.ProcessEnv = process.env
+): Promise< VisionConfig | undefined > {
+	const explicit = visionConfig( env );
+	if ( explicit ) {
+		return explicit;
+	}
+	const local = await detectLocalModel( env );
+	return local ? visionConfigFromLocal( local, env ) : undefined;
 }
 
 /** The data-URL form OpenAI-compatible vision APIs accept for image_url.url. */

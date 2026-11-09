@@ -14,6 +14,10 @@ export type BandSpacing = 'template' | 'source';
  * or renders flush (the source’s own 0). From profile.bandSpacing. */
 export const bandSpacing: BandSpacing = 'template';
 
+/** Where the band list came from. `outline` = no Elementor ids exist, so the
+ * renderer maps bands POSITIONALLY (section index → band index). */
+export const bandSource: 'sections' | 'outline' = 'sections';
+
 export interface SectionTheme {
 	id?: string;
 	theme: SectionThemeName;

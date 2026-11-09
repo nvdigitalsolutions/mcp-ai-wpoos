@@ -420,6 +420,15 @@ export interface MeasureColorOptions {
 	modes?: string[];
 	viewport?: { width: number; height: number };
 	timeout?: number;
+	/**
+	 * Resolve the COMPOSITED background instead of the element's own one: when
+	 * a region is transparent, walk its ancestors to the first opaque
+	 * background. A transparent header sitting on a coloured hero is that
+	 * colour to the eye, and band surfaces are usually painted by a wrapper —
+	 * reading only `backgroundColor` reports `transparent` and the gate skips
+	 * the very surface that is wrong.
+	 */
+	effective?: boolean;
 }
 
 /**
@@ -451,23 +460,46 @@ export async function measureRegionColors(
 			try {
 				const page = await context.newPage();
 				await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
-				const colors = await page.evaluate( ( regionList ) => {
-					const read = ( element: Element ): { background: string; text: string } => {
-						const style = getComputedStyle( element );
-						return { background: style.backgroundColor, text: style.color };
-					};
-					const out: Record< string, { background: string; text: string } > = {};
-					for ( const region of regionList ) {
-						for ( const selector of region.selectors ) {
-							const element = document.querySelector( selector );
-							if ( element ) {
-								out[ region.name ] = read( element );
-								break;
+				const colors = await page.evaluate(
+					( args ) => {
+						const isOpaque = ( value: string ): boolean => {
+							if ( ! value || value === 'transparent' ) {
+								return false;
+							}
+							const alpha = /rgba?\([^)]*,\s*([0-9.]+)\s*\)/.exec( value );
+							return ! alpha || Number( alpha[ 1 ] ) >= 0.5;
+						};
+						const readBackground = ( element: Element, effective: boolean ): string => {
+							if ( ! effective ) {
+								return getComputedStyle( element ).backgroundColor;
+							}
+							let node: Element | null = element;
+							while ( node ) {
+								const background = getComputedStyle( node ).backgroundColor;
+								if ( isOpaque( background ) ) {
+									return background;
+								}
+								node = node.parentElement;
+							}
+							return 'transparent';
+						};
+						const out: Record< string, { background: string; text: string } > = {};
+						for ( const region of args.regions ) {
+							for ( const selector of region.selectors ) {
+								const element = document.querySelector( selector );
+								if ( element ) {
+									out[ region.name ] = {
+										background: readBackground( element, args.effective ),
+										text: getComputedStyle( element ).color,
+									};
+									break;
+								}
 							}
 						}
-					}
-					return out;
-				}, regions );
+						return out;
+					},
+					{ regions, effective: options.effective === true }
+				);
 				const baseline: Record< string, RegionColors > = {};
 				for ( const [ region, values ] of Object.entries( colors ) ) {
 					baseline[ region ] = {
