@@ -1152,7 +1152,10 @@ async function collectDistCss( target ) {
 	async function walk( dir ) {
 		for ( const entry of await readdir( dir, { withFileTypes: true } ) ) {
 			if ( entry.isDirectory() ) {
-				if ( entry.name === 'node_modules' || entry.name === 'pagefind' ) {
+				// `media` holds the LOCALIZED source assets (Proposal 139) — an
+				// imported theme sheet, not the rebuild's own styling, so folding
+				// it into the parity sample would score the source against itself.
+				if ( entry.name === 'node_modules' || entry.name === 'pagefind' || entry.name === 'media' ) {
 					continue;
 				}
 				await walk( join( dir, entry.name ) );
@@ -1165,6 +1168,28 @@ async function collectDistCss( target ) {
 	}
 	await walk( join( target, 'dist' ) );
 	return chunks.join( '\n' ).slice( 0, 4 * 1024 * 1024 );
+}
+
+/**
+ * Proposal 139 — the localizer's URL -> local-path map, when the build left
+ * one. Absent (mirror/proxy mode, or localization disabled) means band flow
+ * compares the raw URLs exactly as before.
+ */
+async function readLocalizedMedia( target ) {
+	const raw = await readFile( join( target, '.forge-cache', 'media-localize.json' ), 'utf8' ).catch( () => null );
+	if ( ! raw ) {
+		return undefined;
+	}
+	try {
+		const report = JSON.parse( raw );
+		const entries = Array.isArray( report.localized ) ? report.localized : [];
+		const pairs = entries
+			.filter( ( entry ) => entry && typeof entry.url === 'string' && typeof entry.file === 'string' )
+			.map( ( entry ) => [ entry.url, entry.file ] );
+		return pairs.length > 0 ? new Map( pairs ) : undefined;
+	} catch {
+		return undefined;
+	}
 }
 
 const GATE_ORDER = [
@@ -1381,7 +1406,7 @@ async function runVerify( profileRef, options ) {
 	// set the renderer themes, or an outline-only site passes vacuously.
 	const bands = renderableBands( profile.design );
 	if ( indexHtml ) {
-		const flow = verifyBandFlow( bands, indexHtml );
+		const flow = verifyBandFlow( bands, indexHtml, await readLocalizedMedia( options.target ) );
 		// Outline bands are mapped POSITIONALLY (no Elementor ids exist), so a
 		// count/order difference is an approximation miss, not a proven dropped
 		// band. Report it loudly but never block a deploy on it; Elementor
