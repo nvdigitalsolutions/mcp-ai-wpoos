@@ -48,6 +48,8 @@ export interface ReadmeInput {
 	counts?: { pages?: number; posts?: number; products?: number };
 	/** Render mode: `static` (default) or `ssr`. */
 	render?: string;
+	/** How the site navigates — the resolved operator setting. */
+	shape?: string;
 	surfaces?: Record<string, boolean>;
 	collections?: ReadmeCollection[];
 	tracking?: { enabled?: boolean; vendors?: string[]; consentMode?: string };
@@ -172,6 +174,7 @@ export function composeSiteReadme( input: ReadmeInput ): string {
 		[ 'Public origin', `\`${ cell( pub ) }\`` ],
 		[ 'Scaffolded', input.generatedAt ? `\`${ cell( input.generatedAt ) }\`` : '' ],
 		[ 'Render mode', `\`${ cell( render ) }\`` ],
+		[ 'Site shape', input.shape ? `\`${ cell( input.shape ) }\`` : '' ],
 		[ 'Page builder', input.builder ? `\`${ cell( input.builder ) }\`` : '' ],
 		[ 'Design analysed', input.analysedAt ? `\`${ cell( input.analysedAt ) }\`` : '' ],
 		[ 'Site profile', input.profilePath ? `\`${ cell( input.profilePath ) }\`` : '' ],

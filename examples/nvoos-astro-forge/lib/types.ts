@@ -296,6 +296,20 @@ export interface SiteProfile {
 	/** Page slug to render at `/` (the WordPress static front page). */
 	frontPage?: string;
 	/**
+	 * How the site navigates — an OPERATOR SETTING, not an inference.
+	 *
+	 * `--inventory` derives a verdict into `inventory.shape`, but that is a
+	 * report line: it never drove the build. This field is the decision. When it
+	 * is absent the derived verdict is used; when both are absent the site is
+	 * treated as multi-page (the safe default).
+	 *
+	 * `one-pager` means the header nav is same-page anchors and the page ids are
+	 * the navigation contract — the sanitizer keeps those ids for exactly this
+	 * reason, and the scaffold records the anchors in the manifest so the header
+	 * can link them.
+	 */
+	shape?: 'one-pager' | 'multi-page' | 'hybrid';
+	/**
 	 * The form bridge block (Proposal 114 §3.9) — the static site rebuilds
 	 * source forms as the Form design component; submissions POST to the
 	 * bridge endpoint (`<endpoint>/forms/submit`) on WordPress, where the
