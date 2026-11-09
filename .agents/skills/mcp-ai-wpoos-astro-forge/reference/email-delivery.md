@@ -82,3 +82,61 @@ node scripts/forge.mjs sites/<site>.json --target ../<site>-frontend
 cd ../<site>-frontend && npm install && npm run check   # generated code typechecks
 # then set MAIL_* + the provider key in the host env and POST one test message
 ```
+
+## Both products (Proposal 138)
+
+The same transport ships in both Astro products:
+
+| | forge | velocity |
+| --- | --- | --- |
+| Transport | `examples/nvoos-astro-forge/lib/mail.ts`, vendored to `src/forge/mail.ts` | `examples/nvoos-astro-velocity/src/lib/mail.ts` |
+| Endpoint | emitted `src/pages/api/forms/submit.ts` (`bridge` default, `direct` opt-in) | `src/pages/forms/submit.ts` (always direct) |
+| Form | `templates/blog/src/components/design/Form.astro` | `src/components/ContactForm.astro` + `src/pages/contact.astro` |
+| Credentials | env only | env only |
+
+`mail.ts` is BYTE-IDENTICAL in both trees, and `bin/check-astro-app-parity.mjs`
+fails when it diverges — edit one, copy it to the other. The endpoints around it
+are NOT shared: the forge's is generated source (it must land in a generated
+tree), velocity's is hand-written. Same guards, different frame; extend one,
+extend the other.
+
+### Velocity specifics
+
+- `/forms/submit`, never `/api/forms/submit`: `scripts/serve.mjs` proxies the
+  whole `/api/*` prefix to the commerce contract, so an Astro route there is
+  unreachable. `/internal/revalidate` sits outside it for the same reason.
+- Native-first form: works with JavaScript off (303 back to `/contact/?sent=1`);
+  the bundled script only upgrades it. Use a `hidden` honeypot, not
+  `aria-hidden` — the latter around a focusable input trips the axe gate.
+- The page is `no-store`: it embeds a render timestamp for the time trap, and a
+  cached copy looks "too fast to be human" and gets dropped.
+- No island needed. A component `<script>` is hoisted to an external chunk
+  (`assetsInlineLimit: 0`), so it is covered by `'self'` and never joins the
+  per-document CSP hash set.
+- The contract gate (`tests/unit/contract-grep.test.ts`) scans COMMENTS too —
+  do not name the backend path when describing the proxy.
+
+## Runtime env, not build-time env
+
+`import.meta.env` is a BUILD-time snapshot. A key injected into the running
+process after the build (the managed tier's normal delivery mechanism) is
+invisible to it, so the endpoint 500s in production while working in dev.
+
+`readMailConfig( runtimeEnv() )` is the required call. `runtimeEnv()` reads
+`process.env` first and falls back to the build-time object, so `astro dev` with
+a `.env` file still works; runtime wins. It reads `import.meta` structurally
+because the forge's tsconfig carries no Vite types. Parity asserts the velocity
+endpoint keeps using it.
+
+## Verifying an emitted endpoint
+
+`astro build` does NOT catch a malformed emitted module. Scaffold and run
+`astro check`:
+
+```
+node scripts/forge.mjs forge <profile.json> --target <dir> --preset blog --render ssr
+cd <dir> && npm install && npx astro check && npx astro build
+```
+
+A `direct` profile needs `deploy.runtime: managed` AND a `forms.mail` block, or
+the scaffold refuses. Secrets are never in the profile or the manifest.
