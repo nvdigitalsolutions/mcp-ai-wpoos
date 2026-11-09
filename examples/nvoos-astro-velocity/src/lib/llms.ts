@@ -155,93 +155,93 @@ export function markdownFromPortableText( items: unknown[] ): string {
 		const type = String( item._type ?? '' );
 
 		switch ( type ) {
-			case 'block': {
-				const style = String( item.style ?? 'normal' );
-				const text = spansToMarkdown(
-					( item.children as PortableSpan[] ) ?? [],
-					( item.markDefs as PortableLinkDef[] ) ?? []
-				).trim();
-				if ( ! text ) {
-					break;
-				}
-				out.push( style === 'h2' ? `## ${ text }` : style === 'h3' ? `### ${ text }` : text );
+		case 'block': {
+			const style = String( item.style ?? 'normal' );
+			const text = spansToMarkdown(
+				( item.children as PortableSpan[] ) ?? [],
+				( item.markDefs as PortableLinkDef[] ) ?? []
+			).trim();
+			if ( ! text ) {
 				break;
 			}
-			case 'hero': {
-				if ( item.title ) {
-					out.push( `## ${ String( item.title ) }` );
-				}
-				if ( item.lede ) {
-					out.push( String( item.lede ) );
-				}
-				break;
+			out.push( style === 'h2' ? `## ${ text }` : style === 'h3' ? `### ${ text }` : text );
+			break;
+		}
+		case 'hero': {
+			if ( item.title ) {
+				out.push( `## ${ String( item.title ) }` );
 			}
-			case 'image': {
-				if ( item.src ) {
-					out.push( `![${ String( item.alt ?? '' ) }](${ String( item.src ) })` );
-				}
-				break;
+			if ( item.lede ) {
+				out.push( String( item.lede ) );
 			}
-			case 'testimonial': {
-				const author = item.author ? `\n\n— ${ String( item.author ) }` : '';
-				out.push( `> ${ String( item.quote ?? '' ) }${ author }` );
-				break;
+			break;
+		}
+		case 'image': {
+			if ( item.src ) {
+				out.push( `![${ String( item.alt ?? '' ) }](${ String( item.src ) })` );
 			}
-			case 'faq': {
-				out.push( `**${ String( item.question ?? '' ) }**\n\n${ String( item.answer ?? '' ) }` );
-				break;
+			break;
+		}
+		case 'testimonial': {
+			const author = item.author ? `\n\n— ${ String( item.author ) }` : '';
+			out.push( `> ${ String( item.quote ?? '' ) }${ author }` );
+			break;
+		}
+		case 'faq': {
+			out.push( `**${ String( item.question ?? '' ) }**\n\n${ String( item.answer ?? '' ) }` );
+			break;
+		}
+		case 'stat': {
+			out.push( `- **${ String( item.value ?? '' ) }** — ${ String( item.label ?? '' ) }` );
+			break;
+		}
+		case 'comparison': {
+			const columns = ( item.columns as string[] ) ?? [];
+			const rows = ( item.rows as Array< { label: string; values: string[] } > ) ?? [];
+			if ( item.caption ) {
+				out.push( `**${ String( item.caption ) }**` );
 			}
-			case 'stat': {
-				out.push( `- **${ String( item.value ?? '' ) }** — ${ String( item.label ?? '' ) }` );
-				break;
+			if ( columns.length > 0 && rows.length > 0 ) {
+				out.push( gfmTable( columns, rows ) );
 			}
-			case 'comparison': {
-				const columns = ( item.columns as string[] ) ?? [];
-				const rows = ( item.rows as Array< { label: string; values: string[] } > ) ?? [];
-				if ( item.caption ) {
-					out.push( `**${ String( item.caption ) }**` );
-				}
-				if ( columns.length > 0 && rows.length > 0 ) {
-					out.push( gfmTable( columns, rows ) );
-				}
-				break;
+			break;
+		}
+		case 'steps': {
+			const steps = ( item.items as Array< { title: string; body?: string } > ) ?? [];
+			out.push(
+				steps
+					.map( ( step, index ) => `${ index + 1 }. **${ step.title }**${ step.body ? ` — ${ step.body }` : '' }` )
+					.join( '\n' )
+			);
+			break;
+		}
+		case 'team': {
+			const people = ( item.people as Array< { name: string; role?: string } > ) ?? [];
+			out.push( people.map( ( person ) => `- **${ person.name }**${ person.role ? ` — ${ person.role }` : '' }` ).join( '\n' ) );
+			break;
+		}
+		case 'tabs': {
+			const tabs = ( item.tabs as Array< { title: string; blocks: unknown[] } > ) ?? [];
+			for ( const tab of tabs ) {
+				out.push( `### ${ tab.title }` );
+				out.push( markdownFromPortableText( tab.blocks ) );
 			}
-			case 'steps': {
-				const steps = ( item.items as Array< { title: string; body?: string } > ) ?? [];
-				out.push(
-					steps
-						.map( ( step, index ) => `${ index + 1 }. **${ step.title }**${ step.body ? ` — ${ step.body }` : '' }` )
-						.join( '\n' )
-				);
-				break;
+			break;
+		}
+		case 'productGrid': {
+			const ids = ( item.ids as number[] ) ?? [];
+			if ( ids.length > 0 ) {
+				out.push( `**Featured products:** ${ ids.join( ', ' ) }` );
 			}
-			case 'team': {
-				const people = ( item.people as Array< { name: string; role?: string } > ) ?? [];
-				out.push( people.map( ( person ) => `- **${ person.name }**${ person.role ? ` — ${ person.role }` : '' }` ).join( '\n' ) );
-				break;
-			}
-			case 'tabs': {
-				const tabs = ( item.tabs as Array< { title: string; blocks: unknown[] } > ) ?? [];
-				for ( const tab of tabs ) {
-					out.push( `### ${ tab.title }` );
-					out.push( markdownFromPortableText( tab.blocks ) );
-				}
-				break;
-			}
-			case 'productGrid': {
-				const ids = ( item.ids as number[] ) ?? [];
-				if ( ids.length > 0 ) {
-					out.push( `**Featured products:** ${ ids.join( ', ' ) }` );
-				}
-				break;
-			}
-			case 'promotion':
-				// A rendered banner — its copy lives in the promotions collection.
-				break;
-			default:
-				// An unknown type cannot reach here (the schema rejects it); if one
-				// ever does, say so rather than dropping it silently.
-				out.push( `_[unrendered block: ${ type }]_` );
+			break;
+		}
+		case 'promotion':
+			// A rendered banner — its copy lives in the promotions collection.
+			break;
+		default:
+			// An unknown type cannot reach here (the schema rejects it); if one
+			// ever does, say so rather than dropping it silently.
+			out.push( `_[unrendered block: ${ type }]_` );
 		}
 	}
 

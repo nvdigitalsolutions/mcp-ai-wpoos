@@ -1065,6 +1065,34 @@ Out of scope for the first PR: retiring the native source (Phase 4 — one
 release later), any auto-sync layer (owner chose one-time migration), and
 legacy-identifier renames.
 
+## Proposal 136 — block kinds + agent surfaces (2026-11-09)
+
+- **Three block types added** (`comparison`, `steps`, `team`). Each needs the
+  four touchpoints in the SAME commit: zod schema in
+  `lib/content/portable-text.ts`, the `CUSTOM_BLOCK_TYPES` allowlist, a
+  component in `components/blocks/`, and the `TYPE_COMPONENTS` map in
+  `components.ts`. `tests/unit/agent-surfaces.test.ts` pins accept + reject.
+- **`data-section` on block roots**: the three new blocks plus hero, image,
+  testimonial, and `stat` — which emits `data-section="stats"` (the KIND name)
+  while its Portable Text type keeps the name `stat`. `faq`, `tabs`,
+  `productGrid`, `promotion` still lack it: they render through `ui/` wrappers
+  (`UiAccordion`, `UiTabs`) that must forward the attribute first.
+- **Agent surfaces**: `src/lib/llms.ts` (`composeLlmsTxt`,
+  `markdownFromPortableText`, `textFromHtml`), `/llms.txt` (fail-soft per
+  collection — never 500 because one collection is down), `.md` variants at
+  `/products|pages|blog/<id>/<slug>/index.md`, and `rel="describedby"` +
+  `markdownHref` in `BaseLayout.astro`. `llms.txt` links markdown for those
+  three collections only; the rest stay HTML under `## Optional`.
+- **`scripts/serve.mjs` serves a PREBUILT `dist/`.** Playwright runs with
+  `reuseExistingServer: true`, so `npm run test:e2e` without `npm run build`
+  tests the PREVIOUS build — a green suite then proves nothing about the
+  change (learned the hard way 2026-11-09: 76/76 "passed" against a stale
+  tree, and the new spec failed only after rebuilding).
+- **`eslint` uses `SwitchCase: 0`** — `case` labels sit at the SAME indent as
+  their `switch`, with case bodies +1. `astro check` passing does NOT mean lint
+  passes: run `npm run lint`, or `npx eslint src --fix`. A `switch` at 2 tabs
+  puts `case` at 2 and its body at 3.
+
 ## References
 
 - Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · **Proposal 104** (runtime hardening: `-proposal.md`, `-research.md`, `-implementation-plan.md`, `-ecosystem-repo-analysis.md`) · **Proposal 112** (native→Woo catalog migration, Woo-owned catalog — implementation PR #7442) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
