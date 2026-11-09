@@ -86,6 +86,30 @@ describe( 'contact band (issue #7549)', () => {
 	} );
 } );
 
+describe( 'virtuallyjamaica contact transport', () => {
+	it( 'uses direct Brevo delivery to the client inbox', async () => {
+		const profile = JSON.parse(
+			await readFile( path.join( FORGE_ROOT, 'sites', 'virtuallyjamaica.json' ), 'utf8' )
+		) as {
+			deploy?: { runtime?: string };
+			forms?: { delivery?: string; mail?: { provider?: string; from?: string; to?: string } };
+		};
+
+		// Proposal 138: `direct` requires the managed runtime plus a mail block —
+		// a static build has nowhere to keep the provider key.
+		expect( profile.deploy?.runtime ).toBe( 'managed' );
+		expect( profile.forms?.delivery ).toBe( 'direct' );
+		expect( profile.forms?.mail ).toMatchObject( {
+			provider: 'brevo',
+			to: 'info@virtuallyjamaica.com',
+		} );
+		// The sender must be on a domain authenticated at the provider.
+		expect( profile.forms?.mail?.from ).toMatch( /@virtuallyjamaica\.com$/ );
+		// Secrets are env-only — never in the profile.
+		expect( JSON.stringify( profile ) ).not.toContain( 'API_KEY' );
+	} );
+} );
+
 describe( 'footer ink', () => {
 	it( 'renders footer copy in body ink, not the muted token', async () => {
 		const css = await readFile(

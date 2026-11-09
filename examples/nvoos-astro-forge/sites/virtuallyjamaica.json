@@ -395,5 +395,16 @@
 	"contact": {
 		"heading": "Contact Us",
 		"blurb": "Choose the access point that works best for you. Or the cheapest one. Or ask us to support your favorite brand."
+	},
+	"deploy": {
+		"runtime": "managed"
+	},
+	"forms": {
+		"delivery": "direct",
+		"mail": {
+			"provider": "brevo",
+			"from": "forms@virtuallyjamaica.com",
+			"to": "info@virtuallyjamaica.com"
+		}
 	}
 }
