@@ -388,6 +388,18 @@ describe( 'analyzeBandContinuity / verifyBandFlow (124 §7)', () => {
 		const report = verifyBandFlow( [ { id: 'a', bgImage: 'https://x.example/hero.jpg' } ], html );
 		expect( report.mismatched ).toEqual( [] );
 	} );
+
+	it( 'accepts a localized band image (Proposal 139)', () => {
+		// The localizer rewrites the source URL to /media/<hash>-<slug>.<ext>;
+		// the report it writes is the map that keeps this gate meaningful.
+		const expected = 'https://cms.example/wp-content/uploads/2018/11/hero.jpg';
+		const html = '<div data-section-id="a4ad586" style="background-image:url(\'/media/6023da595fed-hero.jpg\')"></div>';
+		const localized = new Map( [ [ expected, '/media/6023da595fed-hero.jpg' ] ] );
+
+		expect( verifyBandFlow( [ { id: 'a4ad586', bgImage: expected } ], html, localized ).mismatched ).toEqual( [] );
+		// Without the map the same build is a genuine mismatch.
+		expect( verifyBandFlow( [ { id: 'a4ad586', bgImage: expected } ], html ).mismatched ).toHaveLength( 1 );
+	} );
 } );
 
 describe( 'analyzeDesignInput', () => {

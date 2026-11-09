@@ -3328,10 +3328,19 @@ function paddingText( value: ForgeSection[ 'padding' ] ): string {
 	return typeof value === 'string' ? value : ( value?.desktop ?? '' );
 }
 
-export function verifyBandFlow( sourceSections: ForgeSection[], builtHtml: string ): BandFlowReport {
+export function verifyBandFlow(
+	sourceSections: ForgeSection[],
+	builtHtml: string,
+	localizedMedia?: Map<string, string>
+): BandFlowReport {
 	const builtById = new Map( builtBandsOf( builtHtml ).filter( ( band ) => band.id ).map( ( band ) => [ band.id as string, band ] ) );
 	const dropped: string[] = [];
 	const mismatched: BandFlowReport[ 'mismatched' ] = [];
+	// A localized build renders `/media/<hash>-<slug>.<ext>` in place of the
+	// source's absolute URL (Proposal 139). The localizer's report is that
+	// URL -> path map, so a mirrored image still satisfies the declared fact.
+	const sameImage = ( expected: string, actual?: string ): boolean =>
+		actual === expected || ( actual !== undefined && localizedMedia?.get( expected ) === actual );
 	for ( const section of sourceSections ) {
 		if ( ! section.id ) {
 			continue;
@@ -3350,7 +3359,7 @@ export function verifyBandFlow( sourceSections: ForgeSection[], builtHtml: strin
 		if ( expectedBg && normalizeBg( band.bg ) !== normalizeBg( expectedBg ) ) {
 			mismatched.push( { id: section.id, expected: expectedBg, actual: band.bg } );
 		}
-		if ( expectedImage && band.bgImage !== expectedImage ) {
+		if ( expectedImage && ! sameImage( expectedImage, band.bgImage ) ) {
 			mismatched.push( { id: section.id, expected: expectedImage, actual: band.bgImage } );
 		}
 		if ( expectedPadding && ( band.padding ?? '' ).replace( /\s+/g, ' ' ).trim() !== expectedPadding.replace( /\s+/g, ' ' ).trim() ) {
