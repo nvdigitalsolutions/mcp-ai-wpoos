@@ -7,7 +7,7 @@ interface Props {
 const { node } = Astro.props;
 ---
 
-<figure class="block-testimonial">
+<figure class="block-testimonial" data-section="testimonial">
 	<blockquote>{node.quote}</blockquote>
 	{node.author && <figcaption>{node.author}</figcaption>}
 </figure>

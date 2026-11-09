@@ -1,0 +1,55 @@
+---
+// Marquee — a repeated label track (Proposal 136 §4.1).
+//
+// WCAG 2.2 SC 2.2.2 (Pause, Stop, Hide) is the reason this component exists in
+// this shape. Content that moves automatically, for more than five seconds, in
+// parallel with other content MUST offer a mechanism to pause it — and the
+// SC explicitly notes there is no five-second exception for auto-updating
+// content, and that motion started by scrolling something into view counts as
+// automatic.
+//
+// The mechanism is a checkbox, deliberately: it works with zero JavaScript, it
+// is reachable by keyboard (Space toggles), and the label text swaps with the
+// state so the control is never lying about what it will do. A `<button>` would
+// have needed a script; the no-JS floor is worth more here than the nicer role.
+//
+// `prefers-reduced-motion` removes the animation AND the control — nothing
+// moves, so there is nothing to pause.
+//
+// The duplicate track is aria-hidden so the labels are announced once.
+import type { SemanticSection } from '../../forge/semantic.ts';
+
+interface Props {
+	section: SemanticSection;
+	uid?: string | number;
+}
+
+const { section, uid = 'band' } = Astro.props;
+const items = section.marquee?.items ?? [];
+const toggleId = `ds-marquee-toggle-${ uid }`;
+const speed = section.marquee?.speed;
+const trackStyle = speed ? `--ds-marquee-speed:${ speed }` : undefined;
+---
+
+{items.length > 0 && (
+	<section class="ds-section ds-marquee" aria-label={section.slots.title ?? 'Highlights'}>
+		{section.slots.title && <h2 class="ds-title visually-hidden">{section.slots.title}</h2>}
+		<input type="checkbox" id={toggleId} class="ds-marquee__toggle" checked />
+		<label class="ds-marquee__pause" for={toggleId}>
+			<span class="ds-marquee__label ds-marquee__label--pause">Pause</span>
+			<span class="ds-marquee__label ds-marquee__label--play">Play</span>
+		</label>
+		<div class="ds-marquee__viewport">
+			<ul class="ds-marquee__track" style={trackStyle} role="list">
+				{items.map((item) => (
+					<li class="ds-marquee__item">{item.label}</li>
+				))}
+			</ul>
+			<ul class="ds-marquee__track" aria-hidden="true">
+				{items.map((item) => (
+					<li class="ds-marquee__item">{item.label}</li>
+				))}
+			</ul>
+		</div>
+	</section>
+)}

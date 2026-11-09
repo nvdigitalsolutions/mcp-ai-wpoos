@@ -7,7 +7,7 @@ interface Props {
 const { node } = Astro.props;
 ---
 
-<div class="block-stat">
+<div class="block-stat" data-section="stats">
 	<span class="block-stat__value">{node.value}</span>
 	<span class="block-stat__label">{node.label}</span>
 </div>

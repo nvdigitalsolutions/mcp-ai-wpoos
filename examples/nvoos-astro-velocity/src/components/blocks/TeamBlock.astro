@@ -1,0 +1,73 @@
+---
+// Team custom block (Proposal 136 §4.1) — people and their roles.
+//
+// <figure>/<figcaption> is the semantic pairing: the portrait is the figure,
+// the name + role is its caption. An image's alt is the person's NAME, never
+// "team member" — a screen-reader user is navigating people.
+interface Props {
+	node: { _type: 'team'; people: Array<{ name: string; role?: string; photo?: string }> };
+}
+
+const { node } = Astro.props;
+---
+
+<ul class="block-team" data-section="team" role="list">
+	{node.people.map((person) => (
+		<li class="block-team__member">
+			<figure>
+				{person.photo && (
+					<img
+						src={person.photo}
+						alt={person.name}
+						width="320"
+						height="320"
+						loading="lazy"
+						decoding="async"
+					/>
+				)}
+				<figcaption>
+					<span class="block-team__name">{person.name}</span>
+					{person.role && <span class="block-team__role">{person.role}</span>}
+				</figcaption>
+			</figure>
+		</li>
+	))}
+</ul>
+
+<style>
+	.block-team {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+		gap: 1.5rem;
+		margin: 1.5rem 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.block-team figure {
+		margin: 0;
+	}
+
+	.block-team img {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1 / 1;
+		object-fit: cover;
+		border-radius: var(--nv-radius);
+	}
+
+	.block-team figcaption {
+		display: grid;
+		gap: 0.15rem;
+		margin-top: 0.6rem;
+	}
+
+	.block-team__name {
+		font-weight: 700;
+	}
+
+	.block-team__role {
+		color: var(--nv-muted);
+		font-size: 0.85rem;
+	}
+</style>

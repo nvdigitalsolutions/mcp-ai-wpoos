@@ -23,6 +23,11 @@ export interface SeoAuditOptions {
 	pathname: string;
 	/** The URL this page should canonicalise to, when known. */
 	expectedUrl?: string;
+	/**
+	 * Proposal 136 §4.5 — also require every fact in the page's JSON-LD to have
+	 * a visible counterpart (`verify --seo --structured`).
+	 */
+	structured?: boolean;
 }
 
 interface HeadFacts {
@@ -178,5 +183,125 @@ export function auditSeo( html: string, options: SeoAuditOptions ): SeoFinding[]
 		push( 'html-lang-missing', 'warn', 'The <html> element has no lang attribute.' );
 	}
 
+	// --- structured data matches visible text (Proposal 136 §4.5) -------------
+	if ( options.structured ) {
+		findings.push( ...auditStructuredData( html ) );
+	}
+
+	return findings;
+}
+
+// ---------------------------------------------------------------------------
+// Structured data ↔ visible text (Proposal 136 §4.5)
+//
+// Google's own AI-features guidance lists "making sure your structured data
+// matches the visible text on the page" as a fundamental. This is the
+// mechanical form of that rule: every number, price and date in the JSON-LD
+// must appear in the rendered text of the band that contributed it — a price
+// in the markup that nobody can see is a mismatch, and a price visible only in
+// JSON-LD is a promise the page does not keep.
+// ---------------------------------------------------------------------------
+
+/** Fact-shaped leaf values: prices, bare numbers, and ISO dates. */
+const PRICE_FACT = /^[$€£¥₹]?\s?\d[\d.,]*(?:\s?(?:\/|per)\s?[a-z]+)?$/i;
+const DATE_FACT = /^\d{4}-\d{2}-\d{2}/;
+
+/** Normalize for comparison: lowercase, no currency symbols, single spaces. */
+function normalizeFact( value: string ): string {
+	return value
+		.toLowerCase()
+		.replace( /[$€£¥₹]/g, '' )
+		.replace( /\s+/g, ' ' )
+		.trim();
+}
+
+/** The page's visible text (scripts and styles removed). */
+function visibleText( html: string ): string {
+	return normalizeFact(
+		html
+			.replace( /<script[\s\S]*?<\/script>/gi, ' ' )
+			.replace( /<style[\s\S]*?<\/style>/gi, ' ' )
+			.replace( /<[^>]+>/g, ' ' )
+	);
+}
+
+/** The visible text of every `data-section="pricing"` band, concatenated. */
+function pricingBandText( html: string ): string {
+	const opens = [ ...html.matchAll( /<div[^>]*\bdata-section="([a-z-]+)"[^>]*>/g ) ];
+	const bands: string[] = [];
+	for ( let index = 0; index < opens.length; index++ ) {
+		if ( opens[ index ][ 1 ] !== 'pricing' ) {
+			continue;
+		}
+		const start = opens[ index ].index ?? 0;
+		const end = opens[ index + 1 ]?.index ?? html.length;
+		bands.push( html.slice( start, end ) );
+	}
+	return visibleText( bands.join( ' ' ) );
+}
+
+interface StructuredFact {
+	path: string;
+	value: string;
+}
+
+/** Every fact-shaped leaf in a JSON-LD document, with its path. */
+function collectFacts( node: unknown, path: string, out: StructuredFact[] ): void {
+	if ( Array.isArray( node ) ) {
+		node.forEach( ( child, index ) => collectFacts( child, `${ path }[${ index }]`, out ) );
+		return;
+	}
+	if ( node && typeof node === 'object' ) {
+		for ( const [ key, value ] of Object.entries( node as Record< string, unknown > ) ) {
+			collectFacts( value, path ? `${ path }.${ key }` : key, out );
+		}
+		return;
+	}
+	if ( typeof node === 'number' ) {
+		out.push( { path, value: String( node ) } );
+		return;
+	}
+	if ( typeof node === 'string' && ( PRICE_FACT.test( node.trim() ) || DATE_FACT.test( node.trim() ) ) ) {
+		out.push( { path, value: node.trim() } );
+	}
+}
+
+/**
+ * Facts in the page's JSON-LD that the page does not show. Empty is the only
+ * acceptable result — a price in the graph and not on the page is either a
+ * stale build or an offer nobody can buy.
+ */
+export function auditStructuredData( html: string ): SeoFinding[] {
+	const findings: SeoFinding[] = [];
+	const facts = scanSeoHtml( html );
+	const pageText = visibleText( html );
+	const bandText = pricingBandText( html );
+
+	for ( const block of facts.jsonLd ) {
+		let document: unknown;
+		try {
+			document = JSON.parse( block );
+		} catch {
+			continue; // the parse failure is already reported by auditSeo
+		}
+		const leaves: StructuredFact[] = [];
+		collectFacts( document, '', leaves );
+		for ( const leaf of leaves ) {
+			const needle = normalizeFact( leaf.value );
+			if ( ! needle ) {
+				continue;
+			}
+			// A price must be visible IN A PRICING BAND when one exists — a price
+			// that only appears in unrelated body copy is not the offer shown.
+			const haystack = bandText && PRICE_FACT.test( leaf.value ) ? bandText : pageText;
+			if ( ! haystack.includes( needle ) ) {
+				findings.push( {
+					code: 'structured-fact-not-visible',
+					severity: 'fail',
+					message: `JSON-LD ${ leaf.path } = "${ leaf.value }" has no visible counterpart on the page.`,
+				} );
+			}
+		}
+	}
 	return findings;
 }

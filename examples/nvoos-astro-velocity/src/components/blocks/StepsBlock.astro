@@ -1,0 +1,44 @@
+---
+// Steps custom block (Proposal 136 §4.1) — an ordered process.
+//
+// An <ol> and nothing else: order carries the information. No HowTo markup —
+// Google removed that rich result and its documentation in September 2023.
+interface Props {
+	node: { _type: 'steps'; items: Array<{ title: string; body?: string }> };
+}
+
+const { node } = Astro.props;
+---
+
+<ol class="block-steps" data-section="steps">
+	{node.items.map((step) => (
+		<li class="block-steps__item">
+			<h3 class="block-steps__title">{step.title}</h3>
+			{step.body && <p class="block-steps__body">{step.body}</p>}
+		</li>
+	))}
+</ol>
+
+<style>
+	.block-steps {
+		display: grid;
+		gap: 1rem;
+		margin: 1.5rem 0;
+		padding-left: 1.25rem;
+	}
+
+	.block-steps__item::marker {
+		color: var(--nv-accent);
+		font-weight: 700;
+	}
+
+	.block-steps__title {
+		margin: 0 0 0.25rem;
+		font-size: 1.05rem;
+	}
+
+	.block-steps__body {
+		margin: 0;
+		color: var(--nv-muted);
+	}
+</style>

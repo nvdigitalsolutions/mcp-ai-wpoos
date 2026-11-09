@@ -27,7 +27,71 @@ export type SectionKind =
 	| 'gallery'
 	| 'text'
 	| 'form'
-	| 'raw';
+	| 'raw'
+	// Proposal 136 §4.1 — the six kinds decided by STRUCTURAL evidence.
+	| 'pricing'
+	| 'stats'
+	| 'steps'
+	| 'team'
+	| 'marquee'
+	| 'comparison';
+
+// -- Proposal 136 §4.1 band slots ---------------------------------------------
+// The classifier and the template's DesignRenderer share these shapes (this
+// file is vendored into generated projects as src/forge/semantic.ts, so it must
+// stay dependency-free — no imports from lib/types.ts).
+
+/** One plan in a pricing band. `price` is the source's verbatim string (it
+ * carries the currency and period — `$98/mo`) so the structured-data gate can
+ * match it against the visible text. */
+export interface PricingPlan {
+	name: string;
+	price: string;
+	currency?: string;
+	period?: string;
+	features?: string[];
+	cta?: { label: string; href: string };
+	featured?: boolean;
+	/** Only present when the source shows a struck-through original price. */
+	salePrice?: string;
+}
+
+/** One metric. `unit` is split only when the source splits it. */
+export interface StatItem {
+	value: string;
+	unit?: string;
+	label: string;
+	caption?: string;
+}
+
+/** One ordered step. */
+export interface StepItem {
+	title: string;
+	body?: string;
+	media?: string;
+}
+
+/** One person. */
+export interface TeamMember {
+	name: string;
+	/** Absent when the source shows only a name (never fabricated). */
+	role?: string;
+	photo?: string;
+	bio?: string;
+	sameAs?: string;
+}
+
+/** One repeated label in a marquee. */
+export interface MarqueeItem {
+	label: string;
+	icon?: string;
+}
+
+/** One row of a comparison band. */
+export interface ComparisonRow {
+	label: string;
+	values: string[];
+}
 
 export interface MediaRef {
 	src?: string;
@@ -121,6 +185,21 @@ export interface SemanticSection {
 	 * backgrounds keyed by this id into sections.generated.ts, and the
 	 * renderer re-applies them per section. */
 	id?: string;
+
+	// -- Proposal 136 §4.1: the six structural kinds carry their own slots -----
+	/** Pricing band: plans in source order (≥2, else it is not a pricing band). */
+	pricing?: { plans: PricingPlan[]; note?: string };
+	/** Stats band: value/unit/label triples in source order (≥2). */
+	stats?: { items: StatItem[] };
+	/** Steps band: an ORDERED list — the order IS the information (≥2). */
+	steps?: { items: StepItem[] };
+	/** Team band: people with their role (≥2). */
+	team?: { people: TeamMember[] };
+	/** Marquee band: repeated labels (≥4). The pause control is the template's
+	 * obligation (WCAG 2.2.2), never the source's. */
+	marquee?: { items: MarqueeItem[]; speed?: string };
+	/** Comparison band: columns then rows; `values` align to the columns. */
+	comparison?: { columns: string[]; rows: ComparisonRow[]; caption?: string };
 }
 
 /** classifyHtml options (the generated renderer passes the manifest's
@@ -150,6 +229,12 @@ export const SECTION_MAP: Record<SectionKind, { component: string; label: string
 	text: { component: 'TextBlock', label: 'Text' },
 	form: { component: 'Form', label: 'Form' },
 	raw: { component: 'RawHtml', label: 'Raw HTML' },
+	pricing: { component: 'Pricing', label: 'Pricing' },
+	stats: { component: 'Stats', label: 'Stats' },
+	steps: { component: 'Steps', label: 'Steps' },
+	team: { component: 'Team', label: 'Team' },
+	marquee: { component: 'Marquee', label: 'Marquee' },
+	comparison: { component: 'Comparison', label: 'Comparison' },
 };
 
 // -- minimal structural node model (htmlparser2 output, typed structurally) ---
@@ -585,6 +670,364 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 	return { kind: matched.kind, confidence: effectiveConfidence, slots };
 }
 
+// -- structural kinds (Proposal 136 §4.1) -------------------------------------
+//
+// The six 136 kinds are decided by EVIDENCE, never by a class token alone: a
+// band that merely mentions a price stays a feature grid; a pricing band has
+// two or more priced plans. Detection order matters — comparison (a table) and
+// steps (an ordered list) are unambiguous; pricing runs before stats so a
+// priced plan never falls through to a metric; marquee runs last because a
+// repeated track is the weakest evidence.
+//
+// Everything here is FACT extraction from the already-sanitized DOM — text,
+// hrefs, image srcs. No markup is copied and nothing is synthesized.
+
+const PRICE_TEXT = /[$€£¥₹]\s?\d|\b\d[\d.,]*\s?(?:\/|per\b)/i;
+const PRICE_TOKEN = /[$€£¥₹]\s?\d[\d.,]*(?:\s?(?:\/|per)\s?[a-z]+)?/i;
+const STAT_VALUE = /^[\d.,]+\s*[%+kKmMx]?$/i;
+const STEP_INTENT = /step|process|timeline|how-?to|roadmap/i;
+const TEAM_INTENT = /(^|[-_])team|person|member|staff|people/i;
+const PLAN_INTENT = /price|plan|package|tier|pricing/i;
+const PLAN_FEATURED = /featured|popular|highlight|recommend|best/i;
+const STAT_INTENT = /counter|stat|metric|odometer|number|figure/i;
+const MARQUEE_INTENT = /marquee|ticker|logo-carousel|logo-marquee|client-strip/i;
+
+/** Every tag descendant (depth-first), excluding the node itself. */
+function descendantTags( node: HNode, out: HNode[] = [] ): HNode[] {
+	for ( const child of childrenOf( node ) ) {
+		if ( child.type === 'tag' ) {
+			out.push( child );
+			descendantTags( child, out );
+		}
+	}
+	return out;
+}
+
+function tagsNamed( node: HNode, name: string ): HNode[] {
+	return descendantTags( node ).filter( ( tag ) => tag.name === name );
+}
+
+function directChildren( node: HNode ): HNode[] {
+	return childrenOf( node ).filter( ( child ) => child.type === 'tag' );
+}
+
+function ownsClass( node: HNode, pattern: RegExp ): boolean {
+	return classList( node.attribs ).some( ( token ) => pattern.test( token ) );
+}
+
+function attrOf( node: HNode, name: string ): string | undefined {
+	const value = node.attribs?.[ name ];
+	return value === undefined || value === '' ? undefined : value;
+}
+
+function firstHeading( node: HNode ): HNode | undefined {
+	return descendantTags( node ).find( ( tag ) => typeof tag.name === 'string' && /^h[1-6]$/.test( tag.name ) );
+}
+
+function firstImageSrc( node: HNode ): string | undefined {
+	const image = tagsNamed( node, 'img' )[ 0 ];
+	return image ? attrOf( image, 'src' ) : undefined;
+}
+
+/** The text of the next tagged sibling of `target` inside `root`. */
+function nextSiblingText( root: HNode, target: HNode ): string | undefined {
+	for ( const parent of [ root, ...descendantTags( root ) ] ) {
+		const kids = directChildren( parent );
+		const index = kids.indexOf( target );
+		if ( index >= 0 && kids[ index + 1 ] ) {
+			const text = trimmed( textOf( kids[ index + 1 ] ) );
+			if ( text ) {
+				return text;
+			}
+		}
+	}
+	return undefined;
+}
+
+/**
+ * A comparison table: `<table>` whose header carries a label column plus two or
+ * more value columns, and at least two body rows. Fewer than three header cells
+ * is ambiguous (a two-column table may be a plain spec list), so it is not a
+ * comparison band.
+ */
+function comparisonFrom( node: HNode ): SemanticSection['comparison'] | undefined {
+	const table = tagsNamed( node, 'table' )[ 0 ];
+	if ( ! table ) {
+		return undefined;
+	}
+	const cellsOf = ( row: HNode ) => directChildren( row ).filter( ( cell ) => cell.name === 'th' || cell.name === 'td' );
+	const rows = tagsNamed( table, 'tr' );
+	if ( rows.length < 3 ) {
+		return undefined;
+	}
+	const headers = cellsOf( rows[ 0 ] ).map( ( cell ) => trimmed( textOf( cell ) ) );
+	// `['', 'Starter', 'Pro']` and `['Feature', 'Starter', 'Pro']` both mean a
+	// label column plus two value columns.
+	const columns = headers.length >= 3 ? headers.slice( 1 ) : [];
+	if ( columns.length < 2 || ! columns.every( Boolean ) ) {
+		return undefined;
+	}
+	const bodyRows: ComparisonRow[] = [];
+	for ( const row of rows.slice( 1 ) ) {
+		const cells = cellsOf( row ).map( ( cell ) => trimmed( textOf( cell ) ) );
+		if ( cells.length < 3 ) {
+			continue;
+		}
+		bodyRows.push( { label: cells[ 0 ], values: cells.slice( 1 ) } );
+	}
+	if ( bodyRows.length < 2 ) {
+		return undefined;
+	}
+	const caption = tagsNamed( table, 'caption' )[ 0 ];
+	const captionText = caption ? trimmed( textOf( caption ) ) : '';
+	return { columns, rows: bodyRows, ...( captionText ? { caption: captionText } : {} ) };
+}
+
+/**
+ * An ordered process list. Intent is required alongside the structure — a plain
+ * `<ol>` of prose points in a text band is not a step sequence.
+ */
+function stepsFrom( node: HNode ): SemanticSection['steps'] | undefined {
+	const list = tagsNamed( node, 'ol' )[ 0 ];
+	if ( ! list ) {
+		return undefined;
+	}
+	const items = directChildren( list ).filter( ( child ) => child.name === 'li' );
+	if ( items.length < 2 ) {
+		return undefined;
+	}
+	const intent = ownsClass( node, STEP_INTENT ) || items.some( ( item ) => Boolean( firstHeading( item ) ) );
+	if ( ! intent ) {
+		return undefined;
+	}
+	const steps: StepItem[] = [];
+	for ( const item of items ) {
+		const heading = firstHeading( item );
+		const full = trimmed( textOf( item ) );
+		const title = heading ? trimmed( textOf( heading ) ) : full.slice( 0, 90 );
+		if ( ! title ) {
+			continue;
+		}
+		const body = heading ? trimmed( full.replace( title, '' ) ) : '';
+		const media = firstImageSrc( item );
+		steps.push( { title, ...( body ? { body } : {} ), ...( media ? { media } : {} ) } );
+	}
+	return steps.length >= 2 ? { items: steps } : undefined;
+}
+
+/** Team members: figures with a portrait, or explicit team/member cards. */
+function teamFrom( node: HNode ): SemanticSection['team'] | undefined {
+	const figures = tagsNamed( node, 'figure' ).filter( ( figure ) => Boolean( firstImageSrc( figure ) ) );
+	const boxes =
+		figures.length >= 2
+			? figures
+			: descendantTags( node ).filter(
+					( tag ) => ownsClass( tag, TEAM_INTENT ) && Boolean( firstImageSrc( tag ) ) && trimmed( textOf( tag ) ).length > 0
+			  );
+	if ( boxes.length < 2 ) {
+		return undefined;
+	}
+	const people: TeamMember[] = [];
+	for ( const box of boxes ) {
+		const caption = tagsNamed( box, 'figcaption' )[ 0 ];
+		// A caption with element children is name-then-role markup; a flat
+		// caption is split on the usual separator. `textOf` concatenates without
+		// separators, so reading a structured caption whole would yield "AdaCEO".
+		const captionKids = caption ? directChildren( caption ) : [];
+		let name = '';
+		let role = '';
+		if ( captionKids.length >= 2 ) {
+			name = trimmed( textOf( captionKids[ 0 ] ) );
+			role = trimmed( captionKids.slice( 1 ).map( ( kid ) => textOf( kid ) ).join( ' ' ) );
+		} else {
+			const flat = trimmed( textOf( caption ?? box ) );
+			const split = /^(.{2,60}?)\s*[—–,|·]\s*(.+)$/.exec( flat );
+			name = split ? split[ 1 ].trim() : flat;
+			role = split ? split[ 2 ].trim() : '';
+		}
+		if ( ! name || name.length > 80 ) {
+			continue;
+		}
+		const photo = firstImageSrc( box );
+		const link = tagsNamed( box, 'a' ).find( ( anchor ) => Boolean( attrOf( anchor, 'href' ) ) );
+		people.push( {
+			name,
+			...( role ? { role } : {} ),
+			...( photo ? { photo } : {} ),
+			...( link ? { sameAs: attrOf( link, 'href' ) } : {} ),
+		} );
+	}
+	return people.length >= 2 ? { people } : undefined;
+}
+
+/** Short direct-text fragments of a node and its descendants. A price lives in
+ * one of these (`$29/mo` is the direct text of its own element); reading the
+ * card's whole concatenated text would swallow the next word into the price. */
+function textFragments( node: HNode ): string[] {
+	return [ node, ...descendantTags( node ) ]
+		.flatMap( ( tag ) =>
+			childrenOf( tag )
+				.filter( ( child ) => child.type === 'text' )
+				.map( ( child ) => trimmed( child.data ?? '' ) )
+		)
+		.filter( ( fragment ) => fragment.length >= 2 && fragment.length <= 24 );
+}
+
+/** Priced plans. Two or more priced cards are required — one price in a
+ * feature grid is a caption, not a pricing band. */
+function pricingFrom( node: HNode ): SemanticSection['pricing'] | undefined {
+	// A plan is a PRICED card: it carries a price token AND either a heading or
+	// a feature list. Without the structure requirement the innermost `.price`
+	// element itself would become the "plan" (and lose its name and features).
+	const priced = descendantTags( node ).filter(
+		( tag ) =>
+			ownsClass( tag, PLAN_INTENT ) &&
+			PRICE_TEXT.test( textOf( tag ) ) &&
+			( Boolean( firstHeading( tag ) ) || tagsNamed( tag, 'li' ).length > 0 )
+	);
+	// Keep the leaf-most candidates: a `.pricing-table` wrapper contains the
+	// `.price` cards, and would otherwise become a plan itself.
+	const candidates = priced.filter( ( candidate ) => ! priced.some( ( other ) => other !== candidate && descendantTags( candidate ).includes( other ) ) );
+	if ( candidates.length < 2 ) {
+		return undefined;
+	}
+	const plans: PricingPlan[] = [];
+	for ( const plan of candidates ) {
+		const text = trimmed( textOf( plan ) );
+		// The price that is NOT struck through is what the visitor pays; the
+		// struck text is the original. Anything else invents a sale the page does
+		// not show.
+		const struck = tagsNamed( plan, 'del' ).concat( tagsNamed( plan, 's' ) )[ 0 ];
+		const struckText = struck ? trimmed( textOf( struck ) ) : '';
+		const fragments = textFragments( plan );
+		const priceOf = ( fragment: string ) => ! struckText || ! struckText.includes( fragment );
+		const currentPrice = fragments.find( ( fragment ) => PRICE_TOKEN.test( fragment ) && priceOf( fragment ) );
+		const originalPrice = struckText
+			? fragments.find( ( fragment ) => PRICE_TOKEN.test( fragment ) && struckText.includes( fragment ) )
+			: undefined;
+		const price = currentPrice ?? originalPrice;
+		if ( ! price ) {
+			continue;
+		}
+		const heading = firstHeading( plan );
+		const name = trimmed( ( heading ? textOf( heading ) : text ).replace( price, '' ) ).slice( 0, 60 ) || `Plan ${ plans.length + 1 }`;
+		// A struck-through original price is the SALE evidence; without one the
+		// band emits no sale price at all.
+		const features = tagsNamed( plan, 'li' )
+			.map( ( item ) => trimmed( textOf( item ) ) )
+			.filter( ( feature ) => feature.length > 0 )
+			.slice( 0, 12 );
+		const link = tagsNamed( plan, 'a' ).find( ( anchor ) => Boolean( attrOf( anchor, 'href' ) ) );
+		const href = link ? attrOf( link, 'href' ) : undefined;
+		plans.push( {
+			name,
+			price,
+			...( originalPrice && originalPrice !== price ? { salePrice: originalPrice } : {} ),
+			...( features.length > 0 ? { features } : {} ),
+			...( link && href ? { cta: { label: trimmed( textOf( link ) ) || 'Choose plan', href } } : {} ),
+			...( ownsClass( plan, PLAN_FEATURED ) ? { featured: true } : {} ),
+		} );
+	}
+	return plans.length >= 2 ? { plans } : undefined;
+}
+
+/** Value/label metrics. A label is required — a bare number is not a stat. */
+function statsFrom( node: HNode ): SemanticSection['stats'] | undefined {
+	const all = descendantTags( node );
+	let boxes = all.filter( ( tag ) => ownsClass( tag, STAT_INTENT ) && STAT_VALUE.test( trimmed( textOf( tag ) ) ) );
+	if ( boxes.length < 2 ) {
+		// Fallback: repeated bare-number siblings under one parent.
+		boxes = [];
+		for ( const parent of all ) {
+			const hits = directChildren( parent ).filter( ( child ) => STAT_VALUE.test( trimmed( textOf( child ) ) ) );
+			if ( hits.length >= 2 ) {
+				boxes.push( ...hits );
+			}
+		}
+	}
+	if ( boxes.length < 2 ) {
+		return undefined;
+	}
+	const items: StatItem[] = [];
+	for ( const box of boxes ) {
+		const raw = trimmed( textOf( box ) );
+		const value = STAT_VALUE.exec( raw )?.[ 0 ]?.trim();
+		if ( ! value ) {
+			continue;
+		}
+		const parts = /^([\d.,]+)\s*([%+kKmMx]?)$/i.exec( value );
+		const label = nextSiblingText( node, box ) ?? '';
+		if ( ! label || label.length > 80 ) {
+			continue;
+		}
+		items.push( {
+			value: parts?.[ 1 ] ?? value,
+			...( parts?.[ 2 ] ? { unit: parts[ 2 ] } : {} ),
+			label,
+		} );
+	}
+	return items.length >= 2 ? { items } : undefined;
+}
+
+/** A repeated track. The class must SAY it is a marquee/ticker — an ordinary
+ * logo cloud is a logo cloud. */
+function marqueeFrom( node: HNode ): SemanticSection['marquee'] | undefined {
+	// The track (or a wrapper) names itself a marquee — the section itself
+	// usually does not.
+	if ( ! ownsClass( node, MARQUEE_INTENT ) && ! descendantTags( node ).some( ( tag ) => ownsClass( tag, MARQUEE_INTENT ) ) ) {
+		return undefined;
+	}
+	// Leaf-ish nodes only: a wrapper's text is the concatenation of its children
+	// and would otherwise become one giant extra "label".
+	const leafish = descendantTags( node ).filter(
+		( tag ) => tag.name === 'li' || tag.name === 'a' || directChildren( tag ).length === 0
+	);
+	const labels = [
+		...new Set(
+			leafish
+				.map( ( tag ) => ( tag.name === 'img' ? trimmed( attrOf( tag, 'alt' ) ?? '' ) : trimmed( textOf( tag ) ) ) )
+				.filter( ( label ) => label.length > 1 && label.length < 80 )
+		),
+	];
+	if ( labels.length < 4 ) {
+		return undefined;
+	}
+	return { items: labels.slice( 0, 24 ).map( ( label ) => ( { label } ) ) };
+}
+
+/**
+ * Classify a whole band by structural evidence (Proposal 136). Returns
+ * undefined when no kind's evidence holds — the section then takes the existing
+ * shape ladder, unchanged (the byte-identity pin).
+ */
+function structuralSection( node: HNode ): SemanticSection | undefined {
+	const comparison = comparisonFrom( node );
+	if ( comparison ) {
+		return { kind: 'comparison', confidence: 'high', slots: {}, comparison };
+	}
+	const steps = stepsFrom( node );
+	if ( steps ) {
+		return { kind: 'steps', confidence: 'high', slots: {}, steps };
+	}
+	const team = teamFrom( node );
+	if ( team ) {
+		return { kind: 'team', confidence: 'high', slots: {}, team };
+	}
+	const pricing = pricingFrom( node );
+	if ( pricing ) {
+		return { kind: 'pricing', confidence: 'high', slots: {}, pricing };
+	}
+	const stats = statsFrom( node );
+	if ( stats ) {
+		return { kind: 'stats', confidence: 'high', slots: {}, stats };
+	}
+	const marquee = marqueeFrom( node );
+	if ( marquee ) {
+		return { kind: 'marquee', confidence: 'high', slots: {}, marquee };
+	}
+	return undefined;
+}
+
 /** Does this node look like a section boundary (Elementor section / group)? */
 function isSectionBoundary( node: HNode ): boolean {
 	const classes = classList( node.attribs );
@@ -968,6 +1411,18 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 	for ( const section of sections ) {
 		const widgets = collectWidgets( section, options );
 		const sourceId = elementorId( section );
+		// Proposal 136: structural evidence (a priced plan set, an ordered
+		// process, a comparison table, a team, a metrics row, a repeated track)
+		// decides the kind BEFORE the shape ladder. No evidence → the ladder runs
+		// exactly as before, so form-less/kind-less documents stay byte-identical.
+		const structural = structuralSection( section );
+		if ( structural ) {
+			if ( sourceId ) {
+				structural.id = sourceId;
+			}
+			out.push( structural );
+			continue;
+		}
 		if ( widgets.length === 0 ) {
 			const text = trimmed( textOf( section ) );
 			if ( text.length > 0 ) {

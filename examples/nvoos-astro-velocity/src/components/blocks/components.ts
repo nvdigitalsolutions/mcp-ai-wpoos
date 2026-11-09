@@ -16,6 +16,9 @@ import PromotionBlock from './PromotionBlock.astro';
 import TestimonialBlock from './TestimonialBlock.astro';
 import FaqBlock from './FaqBlock.astro';
 import StatBlock from './StatBlock.astro';
+import ComparisonBlock from './ComparisonBlock.astro';
+import StepsBlock from './StepsBlock.astro';
+import TeamBlock from './TeamBlock.astro';
 import TabsBlock from './TabsBlock.astro';
 import LinkMark from './LinkMark.astro';
 
@@ -27,6 +30,9 @@ export const TYPE_COMPONENTS = {
 	testimonial: TestimonialBlock,
 	faq: FaqBlock,
 	stat: StatBlock,
+	comparison: ComparisonBlock,
+	steps: StepsBlock,
+	team: TeamBlock,
 	tabs: TabsBlock,
 };
 

@@ -7,7 +7,7 @@ interface Props {
 const { node } = Astro.props;
 ---
 
-<section class="block-hero">
+<section class="block-hero" data-section="hero">
 	<h2>{node.title}</h2>
 	{node.lede && <p class="block-hero__lede">{node.lede}</p>}
 </section>

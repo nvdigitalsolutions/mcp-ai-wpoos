@@ -6,7 +6,15 @@
 // collection maps one WordPress REST base onto one Astro content collection.
 // ---------------------------------------------------------------------------
 
-import type { SemanticSection } from './semantic.ts';
+import type {
+	SemanticSection,
+	PricingPlan,
+	StatItem,
+	StepItem,
+	TeamMember,
+	MarqueeItem,
+	ComparisonRow,
+} from './semantic.ts';
 
 /** One WordPress REST collection (e.g. posts, pages, a CPT). */
 export interface WpCollection {
@@ -423,6 +431,58 @@ export interface BandGeometry {
 export type ForgeGeometry = Record< string, Record< string, BandGeometry > >;
 
 /**
+ * The closed section-kind vocabulary (Proposal 136 §4.1).
+ *
+ * Kinds name the BAND'S STRUCTURE, never its styling: the palette, type and
+ * motion always come from the source's extracted design language. `content` is
+ * the fallback — an unrecognised band is classified as content, never dropped
+ * (the 116 "never enumerate widgets" rule, generalised).
+ *
+ * The six 136 kinds are `pricing`, `stats`, `steps`, `team`, `marquee` and
+ * `comparison`; the rest are the 114/114-P7 set.
+ */
+export const SECTION_KINDS = [
+	'hero',
+	'feature-grid',
+	'icon-list',
+	'testimonial',
+	'logo-cloud',
+	'cta',
+	'gallery',
+	'text',
+	'form',
+	'raw',
+	'pricing',
+	'stats',
+	'steps',
+	'team',
+	'marquee',
+	'comparison',
+	'content',
+] as const;
+
+export type ForgeSectionKind = ( typeof SECTION_KINDS )[ number ];
+
+/** True when `value` is a known section kind (the emitted `data-section`). */
+export function isSectionKind( value: unknown ): value is ForgeSectionKind {
+	return typeof value === 'string' && ( SECTION_KINDS as readonly string[] ).includes( value );
+}
+
+/** One plan in a pricing band. `price` is the source's VERBATIM string (it
+ * carries the currency and period — `$98/mo`), so the structured-data gate can
+ * string-match it against the visible text. The interfaces live in
+ * `semantic.ts` because the classifier and the renderer share them; they are
+ * re-exported here for the profile-side code. */
+export type {
+	PricingPlan,
+	StatItem,
+	StepItem,
+	TeamMember,
+	MarqueeItem,
+	ComparisonRow,
+};
+
+/**
  * One source page section's background facts (Proposal 117 §2) — the
  * per-band theming data the scaffold bakes into sections.generated.ts.
  * Keyed by the Elementor section id the semantic classifier carries on
@@ -431,6 +491,10 @@ export type ForgeGeometry = Record< string, Record< string, BandGeometry > >;
 export interface ForgeSection {
 	/** Elementor's elementor-element-<id> class suffix. */
 	id?: string;
+	/** The band's classified kind (Proposal 136 §4.2). Advisory: the build
+	 * emits it as `data-section` and `verify` compares the two when present.
+	 * Absent → the fact gate still requires a valid kind on the built band. */
+	kind?: ForgeSectionKind;
 	/** The section's own HTML id (the source anchor — #about, #contact…). */
 	anchor?: string;
 	bgImage?: string;
@@ -512,6 +576,25 @@ export interface ForgeSection {
 	 * renders a titled open-catalogue CTA instead. Captured from the raw
 	 * homepage (the _df_book node + its df-shortcode-script payload). */
 	catalog?: { title?: string; source: string };
+
+	// -- Proposal 136 §4.1 band slots -----------------------------------------
+	// Extracted facts only: no markup, no styles. Each component reads its own
+	// slot and renders it with the template's own markup.
+
+	/** Pricing band: plans in source order. The plan carrying `featured` (or the
+	 * single highlighted card) wins the emphasis. */
+	pricing?: { plans: PricingPlan[]; note?: string };
+	/** Stats band: value/unit/label triples in source order. */
+	stats?: { items: StatItem[] };
+	/** Steps band: an ORDERED list — order is the information. */
+	steps?: { items: StepItem[] };
+	/** Team band: people with their role (and portrait when the source has one). */
+	team?: { people: TeamMember[] };
+	/** Marquee band: repeated labels. `speed` only when a CSS animation-duration
+	 * fact resolves; the pause control is always rendered (WCAG 2.2.2). */
+	marquee?: { items: MarqueeItem[]; speed?: string };
+	/** Comparison band: columns then rows; `values` align to the columns. */
+	comparison?: { columns: string[]; rows: ComparisonRow[]; caption?: string };
 }
 
 /** One top-level column's responsive facts (Elementor's per-device

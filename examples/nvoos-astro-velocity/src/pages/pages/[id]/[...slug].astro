@@ -122,6 +122,7 @@ const jsonld = [
 	title={title}
 	description={description}
 	canonical={canonical}
+	markdownHref={canonical ? `${canonical.replace(/\/+$/, '')}/index.md` : undefined}
 	jsonld={jsonld}
 >
 	<nav class="breadcrumbs" aria-label="Breadcrumb">

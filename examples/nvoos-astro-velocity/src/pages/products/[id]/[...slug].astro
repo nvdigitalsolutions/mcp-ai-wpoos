@@ -130,6 +130,7 @@ const gallery: GalleryEntry[] = [product.image, ...product.images]
 	title={meta.title}
 	description={meta.description}
 	canonical={meta.canonical}
+	markdownHref={meta.canonical ? `${meta.canonical.replace(/\/+$/, '')}/index.md` : undefined}
 	image={ogImage}
 	jsonld={jsonld}
 >

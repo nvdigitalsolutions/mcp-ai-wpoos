@@ -35,9 +35,15 @@ interface Props {
 	ogImage?: string;
 	/** Source SEO head facts (Rank Math → Yoast). Absent = template defaults. */
 	seo?: SeoHead;
+	/**
+	 * The markdown variant of this page (Proposal 136 §4.4). Emitted as
+	 * `rel="alternate" type="text/markdown"` only for routes that actually
+	 * build one — a link to a missing file is worse than no link.
+	 */
+	markdownHref?: string;
 }
 
-const { title, description, canonical, ogImage, seo } = Astro.props;
+const { title, description, canonical, ogImage, seo, markdownHref } = Astro.props;
 const meta: SeoHead = seo ?? {};
 const copy = useCopy();
 const siteTitle = manifest.name ?? 'Forge';
@@ -104,6 +110,12 @@ const chromeVars = [
 		<title>{fullTitle}</title>
 		{pageDescription && <meta name="description" content={pageDescription} />}
 		{pageUrl && <link rel="canonical" href={pageUrl} />}
+		{/* Proposal 136 §4.4 — discovery for agents: `describedby` points at the
+			llms.txt that covers this path; `alternate` at the markdown variant.
+			These are agent affordances, never an SEO signal (Google gives
+			llms.txt no ranking effect). */}
+		<link rel="describedby" href="/llms.txt" />
+		{markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} />}
 		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
 		{chrome?.favicon && <link rel="icon" href={chrome.favicon} />}
 		{chrome?.iconCss && <link rel="stylesheet" href={chrome.iconCss} media="all" />}

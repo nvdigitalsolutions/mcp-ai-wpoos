@@ -1,0 +1,57 @@
+---
+// Comparison — a row/column fact table (Proposal 136 §4.1).
+//
+// A real <table> with scoped headers, because that IS the information. The
+// responsive treatment is an overflow container — semantics never change at a
+// breakpoint (a div grid would lose the row/column relationships entirely).
+//
+// The scroll container is focusable (tabindex="0") with an accessible name so
+// keyboard users can pan it without a pointer; that is the standard pattern
+// for a horizontally scrolling region.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SectionHeading from './SectionHeading.astro';
+
+interface Props {
+	section: SemanticSection;
+	theme?: SectionTheme;
+}
+
+const { section, theme } = Astro.props;
+const columns = section.comparison?.columns ?? [];
+const rows = section.comparison?.rows ?? [];
+const caption = section.comparison?.caption ?? section.slots.title;
+const headingId = section.id ? `ds-compare-${ section.id }` : undefined;
+---
+
+{columns.length > 0 && rows.length > 0 && (
+	<section
+		class:list={['ds-section', 'ds-body', 'ds-compare-band', theme?.titleAlign === 'center' && 'ds-body--center']}
+		aria-labelledby={section.slots.title ? headingId : undefined}
+	>
+		<SectionHeading title={section.slots.title} theme={theme} headingId={headingId} />
+		<div class="ds-compare__scroll" role="region" aria-label={caption ?? 'Comparison'} tabindex="0">
+			<table class="ds-compare">
+				{caption && <caption>{caption}</caption>}
+				<thead>
+					<tr>
+						<td />
+						{columns.map((column) => (
+							<th scope="col">{column}</th>
+						))}
+					</tr>
+				</thead>
+				<tbody>
+					{rows.map((row) => (
+						<tr>
+							<th scope="row">{row.label}</th>
+							{row.values.map((value) => (
+								<td>{value}</td>
+							))}
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+	</section>
+)}

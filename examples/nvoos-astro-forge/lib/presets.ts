@@ -67,6 +67,64 @@ export interface PresetSurfaces {
 	ogImages: boolean;
 }
 
+/**
+ * Preset guidance for agents (Proposal 136 §4.4). `presets.json` is the
+ * machine-readable catalogue an agent outside MCP can read to choose a preset
+ * without opening code — the same job `index.json` does for the reference
+ * landing-page library.
+ */
+export interface PresetGuidance {
+	id: PresetName;
+	bestFor: string;
+	/** Signals that make this preset the right choice. */
+	detect: string[];
+	render: RenderMode;
+	/** Section kinds the preset is expected to produce. */
+	kinds: string[];
+	surfaces: string[];
+}
+
+const PRESET_GUIDANCE: Record< PresetName, { bestFor: string; detect: string[]; kinds: string[] } > = {
+	blog: {
+		bestFor: 'Editorial sites: a blog with pages, search and feeds.',
+		detect: [ 'posts outnumber products', 'no wc/v3 namespace advertised' ],
+		kinds: [ 'hero', 'feature-grid', 'icon-list', 'testimonial', 'cta', 'text', 'form' ],
+	},
+	storefront: {
+		bestFor: 'WooCommerce catalogues and product marketing.',
+		detect: [ 'wc/v3 advertised', 'product post type present' ],
+		kinds: [ 'hero', 'pricing', 'feature-grid', 'gallery', 'stats', 'comparison', 'testimonial', 'cta' ],
+	},
+	minimal: {
+		bestFor: 'The smallest useful site: posts and pages, no search surface.',
+		detect: [ 'few pages', 'no products', 'no search requirement' ],
+		kinds: [ 'hero', 'text', 'feature-grid', 'cta' ],
+	},
+};
+
+/** The catalogue entries, in the fixed preset order. */
+export function presetCatalogue(): PresetGuidance[] {
+	return PRESET_NAMES.map( ( name ) => {
+		const preset = PRESETS[ name ];
+		const guidance = PRESET_GUIDANCE[ name ];
+		return {
+			id: name,
+			bestFor: guidance.bestFor,
+			detect: guidance.detect,
+			render: preset.render,
+			kinds: guidance.kinds,
+			surfaces: Object.entries( preset.surfaces )
+				.filter( ( [ , enabled ] ) => enabled )
+				.map( ( [ key ] ) => key ),
+		};
+	} );
+}
+
+/** Serialize `presets.json` (checked in; a test pins it to this function). */
+export function serializePresets(): string {
+	return `${ JSON.stringify( { version: 1, presets: presetCatalogue() }, null, '\t' ) }\n`;
+}
+
 export interface ForgePreset {
 	name: PresetName;
 	/** Built-in template name (or path) the preset scaffolds from. */

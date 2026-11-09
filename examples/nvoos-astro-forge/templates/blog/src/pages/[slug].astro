@@ -39,7 +39,7 @@ const jsonLd = buildGraph(
 );
 ---
 
-<Base title={seoTitle} description={seoDescription} canonical={pageUrl} seo={page.data.seo}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl} seo={page.data.seo} markdownHref={`/${page.data.slug}/index.md`}>
 	<article class="post">
 		<h1>{page.data.title}</h1>
 		{body ? (

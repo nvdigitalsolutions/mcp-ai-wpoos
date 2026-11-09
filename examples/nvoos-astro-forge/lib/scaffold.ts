@@ -38,6 +38,9 @@ export const FORGE_LIB_FILES = [
 	// generated project's build-time audit endpoint consumes.
 	'semantic.ts',
 	'contrast.ts',
+	// Proposal 136: the deterministic agent surfaces — llms.txt and the
+	// markdown page variants are composed from facts, never written by a model.
+	'llms.ts',
 ];
 
 /**
@@ -1411,6 +1414,47 @@ export function renderTrackingEnvLines( profile: SiteProfile ): string[] {
  * sections up and adds the behavior classes, and the layout reads the
  * headerSticky flag. Absent behaviors bake an empty pass.
  */
+/**
+ * MOTION.md — the motion contract written down (Proposal 136 §4.4).
+ *
+ * The same facts `behaviors.generated.ts` bakes, rendered as a table so an
+ * operator (or an agent) can review what moves, how far, and what happens under
+ * `prefers-reduced-motion` before approving a rebuild. Deterministic: no
+ * timestamps, rows in source order.
+ */
+export function renderMotionDoc( profile: SiteProfile ): string {
+	const entries = ( profile.design?.behavior?.entries ?? [] ) as Array<{
+		id: string;
+		kind: string;
+		effect?: string;
+		speed?: number;
+	}>;
+	const header = [
+		'# Motion contract',
+		'',
+		'Every band is complete at rest. Motion is additive and CSS-only;',
+		'`prefers-reduced-motion` returns the page to its at-rest state.',
+		'',
+	];
+	if ( entries.length === 0 ) {
+		return [ ...header, 'The source declares no scroll behaviour, so the rebuild has none.', '' ].join( '\n' );
+	}
+	const rows = entries.map( ( entry ) => {
+		const behaviour = entry.effect && entry.kind !== 'sticky' ? `${ entry.kind } (${ entry.effect })` : entry.kind;
+		const range = entry.kind === 'parallax' && entry.speed ? `±${ Math.min( entry.speed, 4 ) * 24 }px` : '—';
+		return `| \`${ entry.id }\` | ${ behaviour } | ${ range } | static |`;
+	} );
+	return [
+		...header,
+		'| Band | Behaviour | Range | Reduced motion |',
+		'| --- | --- | --- | --- |',
+		...rows,
+		'',
+		'Generated from `profile.design.behavior` by nvoos-astro-forge — re-scaffolding overwrites this file.',
+		'',
+	].join( '\n' );
+}
+
 export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 	const behavior = profile.design?.behavior;
 	const header = [
@@ -1983,6 +2027,11 @@ async function scaffoldProject(
 			renderBehaviorsGenerated( profile ),
 			'utf8'
 		);
+		// MOTION.md — the human/agent-readable motion contract (136 §4.4). The
+		// behaviours are already baked into behaviors.generated.ts; this is the
+		// same facts written down so an operator (or an agent) can review what
+		// moves before approving a rebuild.
+		await writeFile( path.join( targetDir, 'MOTION.md' ), renderMotionDoc( profile ), 'utf8' );
 		// The DTCG interchange document (126 §dtcg) — public/ ships verbatim
 		// so the static build serves /tokens.dtcg.json: the machine-readable
 		// design contract (NDS importer, ADS tooling) beside the flat CSS vars.

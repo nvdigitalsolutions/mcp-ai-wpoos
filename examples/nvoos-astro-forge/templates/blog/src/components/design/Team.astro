@@ -1,0 +1,57 @@
+---
+// Team — people and their roles (Proposal 136 §4.1).
+//
+// <figure>/<figcaption> is the semantic pairing: the portrait is the figure and
+// the name + role is its caption. The image alt is the person's NAME, never
+// "team member" — a screen-reader user is navigating people, not decoration.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SectionHeading from './SectionHeading.astro';
+import SmartImage from '../SmartImage.astro';
+
+interface Props {
+	section: SemanticSection;
+	theme?: SectionTheme;
+}
+
+const { section, theme } = Astro.props;
+const people = section.team?.people ?? [];
+const headingId = section.id ? `ds-team-${ section.id }` : undefined;
+---
+
+{people.length > 0 && (
+	<section
+		class:list={['ds-section', 'ds-body', 'ds-team-band', theme?.titleAlign === 'center' && 'ds-body--center']}
+		aria-labelledby={section.slots.title ? headingId : undefined}
+	>
+		<SectionHeading title={section.slots.title} theme={theme} headingId={headingId} />
+		<ul class="ds-team" role="list">
+			{people.map((person) => (
+				<li class="ds-person">
+					<figure class="ds-person__figure">
+						{person.photo && (
+							<SmartImage
+								src={person.photo}
+								alt={person.name}
+								sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw"
+							/>
+						)}
+						<figcaption class="ds-person__caption">
+							<span class="ds-person__name">
+								{person.sameAs ? (
+									<a href={person.sameAs} rel="noopener">
+										{person.name}
+									</a>
+								) : (
+									person.name
+								)}
+							</span>
+							{person.role && <span class="ds-person__role">{person.role}</span>}
+							{person.bio && <span class="ds-person__bio">{person.bio}</span>}
+						</figcaption>
+					</figure>
+				</li>
+			))}
+		</ul>
+	</section>
+)}

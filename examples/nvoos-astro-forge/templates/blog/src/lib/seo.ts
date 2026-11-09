@@ -207,6 +207,9 @@ export function jsonLdGraph( input: {
 	site: SiteIdentity;
 	page: object;
 	breadcrumbs?: Array< { name: string; url: string } >;
+	/** Extra graph nodes (Proposal 136 §4.5 band nodes: OfferCatalog, Person).
+	 * They are wired to the WebSite/Organization before the page node. */
+	extraNodes?: Array< Record< string, unknown > >;
 } ): JsonLdGraph {
 	const origin = input.site.url.replace( /\/+$/, '' );
 	const organizationId = `${ origin }/#organization`;
@@ -248,6 +251,11 @@ export function jsonLdGraph( input: {
 		delete crumbNode[ '@context' ];
 		graph.push( crumbNode );
 	}
+	// Band nodes sit between the site entities and the page node, so the graph
+	// reads site → bands → page.
+	if ( input.extraNodes && input.extraNodes.length > 0 ) {
+		graph.push( ...input.extraNodes );
+	}
 	graph.push( {
 		...pageNode,
 		isPartOf: { '@id': websiteId },
@@ -262,4 +270,88 @@ export function jsonLdGraph( input: {
  */
 export function renderJsonLd(document: object): string {
 	return JSON.stringify(document).replace(/</g, '\\u003c');
+}
+
+// ---------------------------------------------------------------------------
+// Band-level nodes (Proposal 136 §4.5).
+//
+// The forge emits JSON-LD per POST TYPE today, so a rebuilt pricing band
+// shipped no Offer at all. These builders turn the classified bands into graph
+// nodes — but only from facts the page actually shows: an Offer is emitted only
+// when EVERY plan carries a visible price string, and a Person only when the
+// name is real text.
+//
+// Deliberately absent: FAQPage and HowTo. Google removed the FAQ rich result
+// on 2026-05-07 (docs deleted 2026-06-15) and the HowTo rich result in
+// September 2023, so emitting either would be markup for a feature that does
+// not exist. The visible <details> accordion and <ol> stay exactly as they are.
+// ---------------------------------------------------------------------------
+
+/** One pricing plan fact, as the classifier extracts it. */
+export interface BandPlan {
+	name: string;
+	price: string;
+	salePrice?: string;
+}
+
+/** One team member fact, as the classifier extracts it. */
+export interface BandPerson {
+	name: string;
+	role?: string;
+	sameAs?: string;
+}
+
+/** The band facts the node builders need (structural typing — no semantic
+ * import, so this stays standalone like the rest of the template libs). */
+export interface BandInput {
+	id?: string;
+	kind?: string;
+	pricing?: { plans: BandPlan[] };
+	team?: { people: BandPerson[] };
+}
+
+/**
+ * The OfferCatalog for one pricing band, or undefined when any plan lacks a
+ * price. A partial catalogue would describe an offer the page does not show.
+ */
+export function offerCatalogNode( band: BandInput ): Record< string, unknown > | undefined {
+	const plans = band.pricing?.plans ?? [];
+	if ( plans.length === 0 || plans.some( ( plan ) => ! plan.price ) ) {
+		return undefined;
+	}
+	return {
+		'@type': 'OfferCatalog',
+		'@id': `#/pricing${ band.id ? `-${ band.id }` : '' }`,
+		name: 'Plans',
+		itemListElement: plans.map( ( plan, index ) => ( {
+			'@type': 'Offer',
+			'@id': `#/pricing${ band.id ? `-${ band.id }` : '' }/offer-${ index + 1 }`,
+			name: plan.name,
+			price: plan.price,
+		} ) ),
+	};
+}
+
+/** One Person node per team member. `worksFor` is wired by the caller. */
+export function personNodes( band: BandInput, organizationId: string ): Array< Record< string, unknown > > {
+	return ( band.team?.people ?? [] ).map( ( person ) => ( {
+		'@type': 'Person',
+		name: person.name,
+		...( person.role ? { jobTitle: person.role } : {} ),
+		...( person.sameAs ? { url: person.sameAs } : {} ),
+		worksFor: { '@id': organizationId },
+	} ) );
+}
+
+/** Every band-level node a set of classified bands contributes. */
+export function bandNodes( bands: BandInput[], organizationId: string ): Array< Record< string, unknown > > {
+	const nodes: Array< Record< string, unknown > > = [];
+	for ( const band of bands ) {
+		const catalog = offerCatalogNode( band );
+		if ( catalog ) {
+			nodes.push( catalog );
+		}
+		nodes.push( ...personNodes( band, organizationId ) );
+	}
+	return nodes;
 }
