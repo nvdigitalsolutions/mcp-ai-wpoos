@@ -1,0 +1,54 @@
+name: Astro app parity
+
+# The two Astro products share a CONTRACT but not code: `examples/nvoos-astro-forge`
+# GENERATES sites and `examples/nvoos-astro-velocity` is a hand-built storefront.
+# Both compose the agent-facing `llms.txt` and both declare a `data-section`
+# vocabulary, so those surfaces must not drift — and neither app's own suite can
+# see the other tree, so drift is invisible without this gate.
+#
+# Same discipline as `bin/check-chat-parity.php` (legacy chat ↔ lib/core) and the
+# base+pro → CG-Pro port verifier: compare implementations directly, and make
+# every difference DELIBERATE and written down in the test.
+#
+# Cheap by design: one `npm ci` (forge only) and one test file. The velocity
+# modules under test are dependency-free, so no second install is needed.
+
+on:
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-astro-forge/lib/**'
+      - 'examples/nvoos-astro-forge/tests/app-parity.test.ts'
+      - 'examples/nvoos-astro-velocity/src/lib/llms.ts'
+      - 'examples/nvoos-astro-velocity/src/lib/content/section-kinds.ts'
+      - '.github/workflows/astro-app-parity.yml'
+  pull_request:
+    paths:
+      - 'examples/nvoos-astro-forge/lib/**'
+      - 'examples/nvoos-astro-forge/tests/app-parity.test.ts'
+      - 'examples/nvoos-astro-velocity/src/lib/llms.ts'
+      - 'examples/nvoos-astro-velocity/src/lib/content/section-kinds.ts'
+      - '.github/workflows/astro-app-parity.yml'
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # Matches the Astro Forge workflow (Astro 7 needs >= 22.23.4).
+          node-version: 24
+          cache: npm
+          cache-dependency-path: examples/nvoos-astro-forge/package-lock.json
+
+      - name: Install (forge only)
+        working-directory: examples/nvoos-astro-forge
+        run: npm ci --no-audit --no-fund
+
+      - name: Cross-app contract parity
+        working-directory: examples/nvoos-astro-forge
+        run: npx vitest run tests/app-parity.test.ts

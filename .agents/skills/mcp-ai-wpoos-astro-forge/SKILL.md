@@ -1393,6 +1393,24 @@ hosts never delete files that leave the tree, so an orphaned
 Details, the generated-config inventory and the one-route-stale triage rule:
 `reference/csp-client-navigation.md`.
 
+## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
+
+The two Astro products share a CONTRACT but not code, so neither suite can see
+the other tree. `tests/app-parity.test.ts` (CI:
+`.github/workflows/astro-app-parity.yml`, triggered by EITHER app) is the
+record — read it as the spec. It pins two things:
+
+- **`composeLlmsTxt` is byte-identical** modulo one declared knob: the forge
+  always links `.md`, velocity defaults to HTML (`variant: 'markdown'`
+  reproduces the forge exactly).
+- **`data-section`**: each vocabulary = `(shared) ∪ (its own declared extras)`.
+  Adding a kind to either app fails until declared — a new kind is a
+  cross-product decision.
+
+Its two velocity imports are **dependency-free on purpose**; if either gains an
+import the job needs a second `npm ci`. Same discipline as
+`bin/check-chat-parity.php`.
+
 ## Repo conventions
 
 - **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to
