@@ -29,6 +29,8 @@ export interface LlmsInput {
 	products?: LlmsEntry[];
 	posts?: LlmsEntry[];
 	optional?: LlmsEntry[];
+	/** Additional PRIMARY sections — e.g. an extra CPT collection. */
+	extraSections?: Array<{ heading: string; entries: LlmsEntry[] }>;
 	extra?: string;
 	/**
 	 * What the links point at. `html` (default) links the canonical pages;
@@ -85,6 +87,7 @@ export function composeLlmsTxt( input: LlmsInput ): string {
 		section( 'Pages', input.pages, input.origin, variant ),
 		section( 'Posts', input.posts, input.origin, variant ),
 		section( 'Products', input.products, input.origin, variant ),
+		...( input.extraSections ?? [] ).map( ( extra ) => section( extra.heading, extra.entries, input.origin, variant ) ),
 		section( 'Optional', input.optional, input.origin, variant ),
 	].filter( Boolean );
 

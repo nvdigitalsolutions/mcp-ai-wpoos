@@ -32,6 +32,8 @@ export interface LlmsInput {
 	pages?: LlmsEntry[];
 	products?: LlmsEntry[];
 	posts?: LlmsEntry[];
+	/** Additional PRIMARY sections — e.g. an extra CPT collection. */
+	extraSections?: Array<{ heading: string; entries: LlmsEntry[] }>;
 	/** Secondary links an agent may skip under a short context budget. */
 	optional?: LlmsEntry[];
 	/** Free-form prose between the summary and the first section. */
@@ -82,6 +84,7 @@ export function composeLlmsTxt( input: LlmsInput ): string {
 		section( 'Pages', input.pages, input.origin ),
 		section( 'Posts', input.posts, input.origin ),
 		section( 'Products', input.products, input.origin ),
+		...( input.extraSections ?? [] ).map( ( extra ) => section( extra.heading, extra.entries, input.origin ) ),
 		section( 'Optional', input.optional, input.origin ),
 	].filter( Boolean );
 
