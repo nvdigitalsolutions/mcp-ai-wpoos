@@ -172,7 +172,10 @@ a {
 	 * strips in a column); the inner containers re-measure. */
 	margin: 2rem 0 0;
 	border-top: 1px solid var(--forge-line);
-	color: var(--forge-muted);
+	/* Body ink, not the muted token: the colour gate measures what the footer
+	 * actually renders, and the source's footer text is body copy
+	 * (virtuallyjamaica: #626262, not the #595959 muted default). */
+	color: var(--forge-ink);
 	/* The chrome size, not the content body scale. */
 	font-size: var(--forge-chrome-size, 0.875rem);
 }
@@ -187,8 +190,9 @@ a {
 .site-footer-sub {
 	background: var(--forge-footer-bg, transparent);
 	/* The subfooter ink (the source paints white-ish text on its dark
-	 * footer — jayainc's rgba(255,255,255,0.7)). */
-	color: var(--forge-footer-ink, var(--forge-muted));
+	 * footer — jayainc's rgba(255,255,255,0.7)); without a harvested ink the
+	 * subfooter is body copy, not muted. */
+	color: var(--forge-footer-ink, var(--forge-ink));
 }
 
 .site-footer-sub-inner,
