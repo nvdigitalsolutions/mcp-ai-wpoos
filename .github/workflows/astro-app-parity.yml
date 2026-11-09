@@ -43,10 +43,21 @@ jobs:
           # Matches the Astro Forge workflow (Astro 7 needs >= 22.23.4).
           node-version: 24
           cache: npm
-          cache-dependency-path: examples/nvoos-astro-forge/package-lock.json
+          cache-dependency-path: |
+            examples/nvoos-astro-forge/package-lock.json
+            examples/nvoos-astro-velocity/package-lock.json
 
-      - name: Install (forge only)
+      # Both installs are required: each app's tsconfig extends
+      # `astro/tsconfigs/strict`, and Vite resolves that from the IMPORTING
+      # file's directory. The test imports across trees, so the other app's
+      # `astro` must be resolvable or the transform fails with
+      # `[TSCONFIG_ERROR] Tsconfig not found`.
+      - name: Install (forge)
         working-directory: examples/nvoos-astro-forge
+        run: npm ci --no-audit --no-fund
+
+      - name: Install (velocity)
+        working-directory: examples/nvoos-astro-velocity
         run: npm ci --no-audit --no-fund
 
       - name: Cross-app contract parity
