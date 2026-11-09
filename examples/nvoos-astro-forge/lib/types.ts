@@ -341,6 +341,13 @@ export interface ForgeMedia {
 	localize?: boolean;
 	/** Per-file download cap in MB (default 25). Larger files stay remote. */
 	maxFileMb?: number;
+	/**
+	 * The mirror strategy, overriding the runtime-derived default (Proposal
+	 * 140). Absent = `local` for the static tier, `proxy` when the bridge is
+	 * deployed. Set `local` on a managed site when the artifact must be
+	 * self-contained (a CMS move then never breaks the deploy).
+	 */
+	mode?: 'local' | 'proxy' | 'off';
 }
 
 /** One operator-configured WordPress site. */

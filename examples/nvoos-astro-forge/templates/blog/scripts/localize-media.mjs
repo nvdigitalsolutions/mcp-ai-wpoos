@@ -45,16 +45,21 @@
 
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import {
+	addFontDisplaySwap,
+	addImageDimensions,
 	collectAssetUrls,
 	collectCssAssetUrls,
 	collectDocumentUrls,
 	collectStylesheetUrls,
 	documentExtension,
 	extensionForContentType,
+	IMAGE_EXTENSIONS,
+	isReencodableImage,
+	isWebfontUrl,
 	mediaFileName,
 	parseHostList,
 	proxyMediaPath,
@@ -63,7 +68,10 @@ import {
 	rewriteHtml,
 	rewriteStylesheet,
 	shouldLocalizeUrl,
+	stripPreconnects,
 	stylesheetAssetUrls,
+	svgIntrinsicSize,
+	WEBFONT_HOSTS,
 } from './media-localize-lib.mjs';
 
 const ROOT = process.cwd();
@@ -194,7 +202,78 @@ function resolveMode( manifest, mediaPolicy ) {
 	if ( mediaPolicy.localize === false || ! truthy( env( 'NVOOS_FORGE_LOCALIZE_MEDIA' ), true ) ) {
 		return 'off';
 	}
+	// The profile's own choice sits between the env override and the runtime
+	// default: a managed site whose owner wants a self-contained artifact says
+	// so in the profile instead of a per-deploy env var.
+	if ( [ 'local', 'proxy', 'off' ].includes( mediaPolicy.mode ) ) {
+		return mediaPolicy.mode;
+	}
 	return manifest.runtime === 'managed' ? 'proxy' : 'local';
+}
+
+/**
+ * `sharp`, when this project has it. Absent means the pass still mirrors bytes
+ * verbatim — re-encoding is an enhancement, never a build dependency.
+ *
+ * @returns {Promise<Function|null>} The sharp factory.
+ */
+async function loadSharp() {
+	try {
+		const module = await import( 'sharp' );
+		return module.default ?? module;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Encode a raster image to WebP (Proposal 140 §1).
+ *
+ * @param {Function} sharp The sharp factory.
+ * @param {Buffer} buffer Source bytes.
+ * @param {number} quality WebP quality (the JPEG-80 equivalent is 82).
+ * @returns {Promise<{buffer: Buffer, size: ?}>} The encode result, or `null`.
+ */
+async function encodeWebp( sharp, buffer, quality ) {
+	try {
+		const image = sharp( buffer, { failOn: 'none' } );
+		const meta = await image.metadata();
+		if ( ! meta || ! meta.width || ! meta.height ) {
+			return null;
+		}
+		const encoded = await image.webp( { quality } ).toBuffer();
+		return { buffer: encoded, size: { width: meta.width, height: meta.height } };
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Intrinsic dimensions for the `<img>` dimension fill (Proposal 140 §2).
+ *
+ * @param {Function|null} sharp The sharp factory.
+ * @param {Buffer} buffer Asset bytes.
+ * @param {string} extension Lower-case extension.
+ * @returns {Promise<{width: number, height: number}|null>} Dimensions, if known.
+ */
+async function intrinsicSize( sharp, buffer, extension ) {
+	if ( extension === 'svg' ) {
+		return svgIntrinsicSize( buffer.toString( 'utf8' ) );
+	}
+	// Fonts, stylesheets and the documents 139 mirrors have no `<img>` to size,
+	// and handing a PDF to sharp would render page 1 for nothing.
+	if ( ! IMAGE_EXTENSIONS.has( extension ) ) {
+		return null;
+	}
+	if ( ! sharp ) {
+		return null;
+	}
+	try {
+		const meta = await sharp( buffer, { failOn: 'none' } ).metadata();
+		return meta && meta.width > 0 && meta.height > 0 ? { width: meta.width, height: meta.height } : null;
+	} catch {
+		return null;
+	}
 }
 
 async function main() {
@@ -234,6 +313,14 @@ async function main() {
 	const maxDocBytes = Math.max( 0, Number( env( 'NVOOS_FORGE_MEDIA_MAX_DOC_MB' ) || 50 ) ) * 1024 * 1024;
 	const maxTotal = Math.max( 0, Number( env( 'NVOOS_FORGE_MEDIA_MAX_TOTAL_MB' ) || 500 ) ) * 1024 * 1024;
 	const timeoutMs = Math.max( 1000, Number( env( 'NVOOS_FORGE_MEDIA_TIMEOUT_MS' ) || 20000 ) );
+	// Proposal 140 — self-hosting webfonts and re-encoding images are opt-out,
+	// because both remove a runtime dependency on a third party.
+	const webfontHosts = truthy( env( 'NVOOS_FORGE_LOCALIZE_FONTS' ), true ) ? WEBFONT_HOSTS : [];
+	const webpQuality = Math.min( 100, Math.max( 1, Number( env( 'NVOOS_FORGE_MEDIA_WEBP_QUALITY' ) || 82 ) ) );
+	const transformer = await loadSharp();
+	const sizes = new Map();
+	const optimized = [];
+	const unoptimized = [];
 
 	// The build-time proxy seam — same env the content layer honours.
 	const proxy = env( 'WP_FETCH_PROXY' );
@@ -267,7 +354,7 @@ async function main() {
 			candidates.add( url );
 		}
 		for ( const url of collectStylesheetUrls( html ) ) {
-			if ( shouldLocalizeUrl( url, { cmsHost, mediaHosts, localizeAll } ) ) {
+			if ( shouldLocalizeUrl( url, { cmsHost, mediaHosts, localizeAll, webfontHosts } ) ) {
 				stylesheetUrls.add( url );
 			}
 		}
@@ -308,38 +395,48 @@ async function main() {
 		}
 	}
 
-	const wanted = [ ...candidates ].filter( ( url ) =>
-		shouldLocalizeUrl( url, { cmsHost, mediaHosts, localizeAll } )
+	let wanted = [ ...candidates ].filter( ( url ) =>
+		shouldLocalizeUrl( url, { cmsHost, mediaHosts, localizeAll, webfontHosts } )
 	);
 
 	// Managed runtime (bridge/BFF present): the deployment already serves
-	// `/media/<rest>` from `<CMS>/wp-content/uploads/<rest>` server-to-server.
-	// Rewrite uploads to that same-origin path instead of duplicating the
-	// media library into every managed deploy.
+	// `/media/<rest>` from `<CMS>/wp-content/uploads/<rest>` server-to-server, so
+	// the media library stays there. What the proxy CANNOT serve still travels
+	// with the build: the stylesheets and the fonts they reference. A
+	// third-party font sheet is a render-blocking cross-origin chain, and the
+	// proxy only matches uploads — leaving the font chain remote was a silent
+	// hole in an otherwise self-contained artifact (Proposal 140 §3).
+	const proxyMap = new Map();
+	const proxied = [];
+	const leftRemote = [];
 	if ( mode === 'proxy' ) {
-		const map = new Map();
-		const proxied = [];
-		const leftRemote = [];
+		const mirrorable = new Set( stylesheetUrls );
+		for ( const sheet of stylesheets ) {
+			for ( const asset of stylesheetAssetUrls( sheet.text, sheet.url ) ) {
+				mirrorable.add( asset );
+			}
+		}
+		for ( const url of wanted ) {
+			if ( isWebfontUrl( url ) ) {
+				mirrorable.add( url );
+			}
+		}
+		const local = [];
 		for ( const url of wanted ) {
 			const proxiedPath = proxyMediaPath( url );
 			if ( proxiedPath ) {
-				map.set( url, proxiedPath );
+				proxyMap.set( url, proxiedPath );
 				proxied.push( { url, file: proxiedPath } );
+			} else if ( mirrorable.has( url ) ) {
+				local.push( url );
 			} else {
 				leftRemote.push( { url, reason: 'not a WordPress upload — the /media proxy cannot serve it' } );
 			}
 		}
-		const rewrittenFiles = await applyRewrite( sources, map );
-		log(
-			`managed runtime — rewrote ${ proxied.length } upload reference(s) to the same-origin /media proxy across ${ rewrittenFiles } file(s)` +
-				( leftRemote.length > 0 ? `; ${ leftRemote.length } non-upload reference(s) left as-is` : '' ) +
-				'.'
-		);
-		await writeReport( { mode, origin, localized: [], proxied, skipped: leftRemote, failed: [], bytes: 0 } );
-		return;
+		wanted = local;
 	}
 
-	if ( wanted.length === 0 ) {
+	if ( wanted.length === 0 && proxyMap.size === 0 ) {
 		log( `nothing to localize in ${ path.relative( ROOT, out ) } (${ htmlFiles.length } page(s) scanned).` );
 		await writeReport( { mode, origin, localized: [], skipped: [], failed: [], bytes: 0 } );
 		return;
@@ -359,7 +456,7 @@ async function main() {
 	await mkdir( path.join( CACHE_DIR, 'media' ), { recursive: true } );
 	await mkdir( path.join( out, 'media' ), { recursive: true } );
 
-	const map = new Map();
+	const map = new Map( proxyMap );
 	let totalBytes = 0;
 
 	await mapLimit( [ ...byDownloadUrl.entries() ], CONCURRENCY, async ( [ downloadUrl, originals ] ) => {
@@ -402,18 +499,43 @@ async function main() {
 			// A document's URL extension outranks its Content-Type: hosts serve
 			// PDFs as application/octet-stream (and some test fixtures mislabel
 			// them entirely), and the link text promises a .pdf.
-			const extension = documentExtension( downloadUrl ) ?? extensionForContentType( contentType, urlExtension || 'bin' );
+			let extension = documentExtension( downloadUrl ) ?? extensionForContentType( contentType, urlExtension || 'bin' );
+
+			// 140 §1 — re-encode raster images to WebP before they ship. A WebP
+			// that came out larger than the source is discarded: the source wins.
+			let payload = buffer;
+			let size = await intrinsicSize( transformer, buffer, extension );
+			if ( transformer && isReencodableImage( extension ) ) {
+				const encoded = await encodeWebp( transformer, buffer, webpQuality );
+				if ( encoded && encoded.buffer.length < payload.length ) {
+					optimized.push( {
+						url: downloadUrl,
+						from: extension,
+						to: 'webp',
+						bytes: buffer.length,
+						optimizedBytes: encoded.buffer.length,
+					} );
+					payload = encoded.buffer;
+					size = encoded.size ?? size;
+					extension = 'webp';
+				} else {
+					unoptimized.push( { url: downloadUrl, reason: 're-encoding produced no smaller file' } );
+				}
+			}
 
 			for ( const original of originals ) {
 				const relative = mediaFileName( original, extension );
 				const destination = path.join( out, relative );
 				await mkdir( path.dirname( destination ), { recursive: true } );
-				await copyFile( cacheFile, destination );
+				await writeFile( destination, payload );
 				const publicPath = `/${ relative.split( path.sep ).join( '/' ) }`;
 				map.set( original, publicPath );
-				localized.push( { url: original, file: publicPath, bytes: buffer.length } );
+				if ( size ) {
+					sizes.set( publicPath, size );
+				}
+				localized.push( { url: original, file: publicPath, bytes: payload.length } );
 			}
-			totalBytes += buffer.length;
+			totalBytes += payload.length;
 		} catch ( error ) {
 			const reason = error instanceof Error ? error.message : String( error );
 			failed.push( { url: downloadUrl, reason } );
@@ -425,20 +547,39 @@ async function main() {
 		const relative = mediaFileName( sheet.url, 'css' );
 		const destination = path.join( out, relative );
 		await mkdir( path.dirname( destination ), { recursive: true } );
-		const rewritten = rewriteStylesheet( sheet.text, sheet.url, map );
+		// 140 §4 — every mirrored sheet gets `font-display` where it was missing:
+		// the theme icon font shipped without it, so the browser held text back
+		// until 129 KB of woff arrived.
+		const rewritten = addFontDisplaySwap( rewriteStylesheet( sheet.text, sheet.url, map ) );
 		await writeFile( destination, rewritten, 'utf8' );
 		const publicPath = `/${ relative.split( path.sep ).join( '/' ) }`;
 		map.set( sheet.url, publicPath );
 		localized.push( { url: sheet.url, file: publicPath, bytes: Buffer.byteLength( rewritten ) } );
 	}
 
-	// 4. Rewrite the sources in place.
-	const rewrittenFiles = await applyRewrite( sources, map );
+	// 4. Rewrite the sources in place. Any host we now serve ourselves no longer
+	// earns a preconnect — once Google's sheet and its woff2 are local, the two
+	// hints in the head open connections the page never uses (140 §3).
+	const localizedHosts = new Set();
+	for ( const url of map.keys() ) {
+		try {
+			const host = new URL( url ).hostname.toLowerCase();
+			if ( WEBFONT_HOSTS.includes( host ) ) {
+				localizedHosts.add( host );
+			}
+		} catch {
+			// A malformed key cannot name a host we should strip.
+		}
+	}
+	const rewrittenFiles = await applyRewrite( sources, map, sizes, localizedHosts );
 
 	const humanBytes = ( bytes ) => `${ ( bytes / 1024 / 1024 ).toFixed( 1 ) } MB`;
+	const savedBytes = optimized.reduce( ( total, entry ) => total + ( entry.bytes - entry.optimizedBytes ), 0 );
 	log(
 		`localized ${ localized.length } reference(s) (${ humanBytes( totalBytes ) }) across ${ rewrittenFiles } file(s)` +
-			( skipped.length > 0 ? `, skipped ${ skipped.length }` : '' ) +
+			( proxied.length > 0 ? `; proxied ${ proxied.length } upload reference(s) to /media` : '' ) +
+			( optimized.length > 0 ? `, re-encoded ${ optimized.length } to WebP (saved ${ Math.round( savedBytes / 1024 ) } KB)` : '' ) +
+			( skipped.length + leftRemote.length > 0 ? `, skipped ${ skipped.length + leftRemote.length }` : '' ) +
 			( failed.length > 0 ? `, ${ failed.length } failed` : '' ) +
 			'.'
 	);
@@ -448,15 +589,29 @@ async function main() {
 	if ( failed.length > 10 ) {
 		log( `  …and ${ failed.length - 10 } more in ${ path.relative( ROOT, REPORT_PATH ) }.` );
 	}
-	await writeReport( { mode, origin, localized, skipped, failed, bytes: totalBytes } );
+	await writeReport( {
+		mode,
+		origin,
+		localized,
+		optimized,
+		unoptimized,
+		proxied,
+		skipped: [ ...skipped, ...leftRemote ],
+		failed,
+		bytes: totalBytes,
+	} );
 }
 
 /** Rewrite every collected source in place; returns the changed-file count. */
-async function applyRewrite( sources, map ) {
+async function applyRewrite( sources, map, sizes = new Map(), preconnectHosts = new Set() ) {
 	let rewrittenFiles = 0;
 	for ( const [ file, source ] of sources ) {
 		const isHtml = path.extname( file ).toLowerCase() === '.html';
-		const next = isHtml ? rewriteHtml( source, map ) : rewriteCss( source, map );
+		// 140 §2 — the dimension fill runs after the URL rewrite so it can key on
+		// the local path the tag now carries.
+		const next = isHtml
+			? addImageDimensions( stripPreconnects( rewriteHtml( source, map ), preconnectHosts ), sizes )
+			: rewriteCss( source, map );
 		if ( next !== source ) {
 			await writeFile( file, next, 'utf8' );
 			rewrittenFiles += 1;

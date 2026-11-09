@@ -10,12 +10,16 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+	addFontDisplaySwap,
+	addImageDimensions,
 	collectAssetUrls,
 	collectCssAssetUrls,
 	collectDocumentUrls,
 	collectStylesheetUrls,
 	documentExtension,
 	extensionForContentType,
+	isReencodableImage,
+	isWebfontUrl,
 	mediaFileName,
 	parseHostList,
 	proxyMediaPath,
@@ -27,7 +31,10 @@ import {
 	rewriteStylesheet,
 	shouldLocalizeUrl,
 	srcsetUrls,
+	stripPreconnects,
 	stylesheetAssetUrls,
+	svgIntrinsicSize,
+	WEBFONT_HOSTS,
 } from '../templates/blog/scripts/media-localize-lib.mjs';
 
 const CMS = 'https://cms.jayainc.com';
@@ -361,3 +368,103 @@ describe('rewriteCss', () => {
 		);
 	});
 });
+
+describe('Proposal 140 — re-encoding', () => {
+	it('only re-encodes raster formats that can improve', () => {
+		expect(isReencodableImage('jpg')).toBe(true);
+		expect(isReencodableImage('.JPEG')).toBe(true);
+		expect(isReencodableImage('png')).toBe(true);
+		expect(isReencodableImage('tiff')).toBe(true);
+		// Vector, animated, and already next-gen sources are left alone.
+		expect(isReencodableImage('svg')).toBe(false);
+		expect(isReencodableImage('gif')).toBe(false);
+		expect(isReencodableImage('webp')).toBe(false);
+		expect(isReencodableImage('avif')).toBe(false);
+		expect(isReencodableImage('ico')).toBe(false);
+	});
+});
+
+describe('Proposal 140 — webfonts', () => {
+	it('recognizes the Google Fonts hosts and nothing else', () => {
+		expect(isWebfontUrl('https://fonts.googleapis.com/css2?family=Rubik')).toBe(true);
+		expect(isWebfontUrl('https://fonts.gstatic.com/s/rubik/v30/x.woff2')).toBe(true);
+		expect(isWebfontUrl('https://cms.test/wp-content/font.woff2')).toBe(false);
+		expect(isWebfontUrl('not a url')).toBe(false);
+	});
+
+	it('only localizes webfont hosts when opted in', () => {
+		const url = 'https://fonts.gstatic.com/s/rubik/v30/x.woff2';
+		expect(shouldLocalizeUrl(url)).toBe(false);
+		expect(shouldLocalizeUrl(url, { webfontHosts: WEBFONT_HOSTS })).toBe(true);
+	});
+
+	it('injects font-display only where it is missing', () => {
+		const css = '@font-face{font-family:Icons;src:url(/media/i.woff)}@font-face{font-family:Body;font-display:optional;src:url(/b.woff)}';
+		const out = addFontDisplaySwap(css);
+		// The gap is filled…
+		expect(out).toContain('@font-face{font-display:swap;font-family:Icons');
+		// …and the author's explicit choice survives.
+		expect(out).toContain('font-display:optional');
+		expect(out).not.toContain('font-display:swap;font-family:Body');
+	});
+	it('is idempotent', () => {
+		const once = addFontDisplaySwap('@font-face{font-family:Icons;src:url(/i.woff)}');
+		expect(addFontDisplaySwap(once)).toBe(once);
+	});
+});
+
+describe('Proposal 140 — image dimensions', () => {
+	it('reads a viewBox before width/height', () => {
+		expect(svgIntrinsicSize('<svg viewBox="0 0 289 76" width="999"><path/></svg>')).toEqual({ width: 289, height: 76 });
+		expect(svgIntrinsicSize('<svg width="120px" height="40px"></svg>')).toEqual({ width: 120, height: 40 });
+		expect(svgIntrinsicSize('<svg></svg>')).toBeNull();
+	});
+
+	it('fills width/height on dimension-less img tags', () => {
+		const sizes = new Map([['/media/logo.webp', { width: 289, height: 76 }]]);
+		const html = '<img class="brand-logo" src="/media/logo.webp" alt="JAYAINC">';
+		expect(addImageDimensions(html, sizes)).toBe(
+			'<img class="brand-logo" src="/media/logo.webp" alt="JAYAINC" width="289" height="76">'
+		);
+	});
+
+	it('never overrides an explicit dimension', () => {
+		const sizes = new Map([['/media/logo.webp', { width: 289, height: 76 }]]);
+		const html = '<img src="/media/logo.webp" width="40" height="11">';
+		expect(addImageDimensions(html, sizes)).toBe(html);
+	});
+
+	it('leaves images it has no size for alone', () => {
+		const html = '<img src="/media/unknown.webp" alt="">';
+		expect(addImageDimensions(html, new Map())).toBe(html);
+	});
+});
+
+describe( 'Proposal 140 — dead preconnects', () => {
+	const head =
+		'<link rel="preconnect" href="https://fonts.googleapis.com">' +
+		'<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
+		'<link rel="preconnect" href="https://cdn.example.com">' +
+		'<link rel="stylesheet" href="/media/x-fonts.css">';
+
+	it( 'drops the hints for hosts the build now serves', () => {
+		const out = stripPreconnects( head, [ 'fonts.googleapis.com', 'fonts.gstatic.com' ] );
+		expect( out ).not.toContain( 'fonts.googleapis.com' );
+		expect( out ).not.toContain( 'fonts.gstatic.com' );
+	} );
+
+	it( 'keeps a preconnect that still earns its keep', () => {
+		const out = stripPreconnects( head, [ 'fonts.gstatic.com' ] );
+		expect( out ).toContain( 'https://cdn.example.com' );
+		expect( out ).toContain( 'https://fonts.googleapis.com' );
+	} );
+
+	it( 'never touches a stylesheet link', () => {
+		const out = stripPreconnects( '<link rel="stylesheet" href="https://fonts.googleapis.com/css2">', [ 'fonts.googleapis.com' ] );
+		expect( out ).toContain( 'rel="stylesheet"' );
+	} );
+
+	it( 'is a no-op without hosts', () => {
+		expect( stripPreconnects( head ) ).toBe( head );
+	} );
+} );

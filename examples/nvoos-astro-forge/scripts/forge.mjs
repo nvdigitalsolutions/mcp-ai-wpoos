@@ -1192,12 +1192,65 @@ async function readLocalizedMedia( target ) {
 	}
 }
 
+/**
+ * Proposal 140 — the media budget gate.
+ *
+ * The localizer's report is the source of truth: every file the pass shipped,
+ * its bytes, and which raster images re-encoding improved. A JPEG or PNG still
+ * shipping means either the source could not be improved or the image pass
+ * never ran — both worth surfacing, neither worth blocking a deploy over (a
+ * source image that does not shrink is a legitimate outcome), so this warns by
+ * default and fails under `--strict-media`.
+ *
+ * @param {string} target The forged project root.
+ * @returns {Promise<{status: string, note: string, legacy?: Array}>} The verdict.
+ */
+async function runMediaBudgetVerify( target ) {
+	const raw = await readFile( join( target, '.forge-cache', 'media-localize.json' ), 'utf8' ).catch( () => null );
+	if ( ! raw ) {
+		return { status: 'skip', note: 'no localization report (media not localized)' };
+	}
+	let report;
+	try {
+		report = JSON.parse( raw );
+	} catch {
+		return { status: 'skip', note: 'unreadable localization report' };
+	}
+	const entries = Array.isArray( report.localized ) ? report.localized : [];
+	if ( entries.length === 0 ) {
+		return { status: 'skip', note: `mode ${ report.mode ?? 'unknown' } localized nothing` };
+	}
+	const isImage = /\.(?:avif|webp|svg|ico|gif|jpe?g|png)$/i;
+	const isLegacy = /\.(?:jpe?g|png)$/i;
+	const images = entries.filter( ( entry ) => isImage.test( String( entry.file ?? '' ) ) );
+	const legacy = images.filter( ( entry ) => isLegacy.test( String( entry.file ?? '' ) ) );
+	// Documents (Proposal 139 §documents) land in the same list; they are never
+	// re-encoded, so they are reported by weight only — a 50 MB catalogue is a
+	// deploy-size fact, not a failure.
+	const isDocument = /\.(?:pdf|docx?|xlsx?|pptx?|od[ts]p?|csv|txt|rtf|epub|ics|zip)$/i;
+	const documents = entries.filter( ( entry ) => isDocument.test( String( entry.file ?? '' ) ) );
+	const documentBytes = documents.reduce( ( total, entry ) => total + ( Number( entry.bytes ) || 0 ), 0 );
+	const bytes = images.reduce( ( total, entry ) => total + ( Number( entry.bytes ) || 0 ), 0 );
+	const saved = Array.isArray( report.optimized )
+		? report.optimized.reduce( ( total, entry ) => total + ( ( Number( entry.bytes ) || 0 ) - ( Number( entry.optimizedBytes ) || 0 ) ), 0 )
+		: 0;
+	const note =
+		`${ images.length } image(s), ${ Math.round( bytes / 1024 ) } KB shipped` +
+		( documents.length > 0 ? ` + ${ documents.length } document(s), ${ Math.round( documentBytes / 1024 ) } KB` : '' ) +
+		( saved > 0 ? `, ${ Math.round( saved / 1024 ) } KB saved by re-encoding` : '' );
+	if ( legacy.length === 0 ) {
+		return { status: 'pass', note };
+	}
+	return { status: 'warn', note: `${ note }; ${ legacy.length } JPEG/PNG still shipped`, legacy };
+}
+
 const GATE_ORDER = [
 	'design language',
 	'token block',
 	'band flow',
 	'nav anchors',
 	'fact consumption',
+	'media budget',
 	'text parity',
 	'colour system',
 	'tracking',
@@ -1475,6 +1528,27 @@ async function runVerify( profileRef, options ) {
 				`${ unrendered.length } unrendered fact(s)`
 			);
 		}
+	}
+	// Proposal 140 — what the artifact actually ships. The design gates prove
+	// the site LOOKS like the source; this one proves the bytes are local and
+	// modern, which is what the CMS-independence promise depends on.
+	const media = await runMediaBudgetVerify( options.target );
+	if ( media.status === 'skip' ) {
+		record( 'media budget', 'skip', media.note );
+	} else {
+		const line = `Media budget: ${ media.note }`;
+		if ( media.status === 'pass' ) {
+			console.log( `\u2713 ${ line }` );
+		} else {
+			console.warn( `\u26a0 ${ line }` );
+			for ( const entry of media.legacy ?? [] ) {
+				console.warn( `  still shipping ${ entry.file }` );
+			}
+			if ( options.strictMedia ) {
+				process.exitCode = 1;
+			}
+		}
+		record( 'media budget', options.strictMedia && media.status !== 'pass' ? 'fail' : media.status, media.note );
 	}
 
 	// Content parity (the words gate): the design-language score and the fact
@@ -2125,6 +2199,7 @@ program
 	.option( '--colors-modes <modes>', 'with --colors: colour schemes to measure, comma-separated (default light,dark)', 'light,dark' )
 	.option( '--strict-colors', 'with --colors: fail when a region the source had is missing from the build' )
 	.option( '--strict-facts', 'fail when a declared band fact did not reach the built HTML (default: report only)' )
+	.option( '--strict-media', 'fail when the artifact still ships a JPEG/PNG the localizer could not re-encode (Proposal 140)' )
 	.option( '--tracking', 'gate the tracking block: consent ordering, verification tokens/files, event ownership, CSP allowlist (Proposal 130)' )
 	.option( '--strict-tracking', 'with --tracking: treat warnings as failures (a stale CSP host, a double-count risk)' )
 	.option( '--seo', 'gate the SEO head: double-branded titles, robots directives, Open Graph/Twitter tags, JSON-LD graph (Proposal 131)' )

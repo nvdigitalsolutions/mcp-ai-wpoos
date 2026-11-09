@@ -104,6 +104,25 @@ export const DOCUMENT_EXTENSIONS = new Set( [
 	'zip',
 ] );
 
+/**
+ * Raster formats the localizer re-encodes to WebP (Proposal 140).
+ *
+ * SVG and ICO are excluded (vector / raster-icon, no gain), GIF is excluded
+ * because re-encoding drops animation, and WebP/AVIF are already next-gen.
+ * The quality mapping is Malte Ubl's measured JPEG→WebP/AVIF equivalence
+ * (industrialempathy.com/posts/avif-webp-quality-settings): JPEG 80 ≈
+ * WebP 82 ≈ AVIF 64, JPEG 70 ≈ WebP 72 ≈ AVIF 56.
+ */
+export const REENCODE_EXTENSIONS = new Set( [ 'jpg', 'jpeg', 'png', 'bmp', 'tif', 'tiff' ] );
+
+/**
+ * The webfont hosts the localizer mirrors (Proposal 140 §3). A `@font-face`
+ * served by a third party is a render-blocking cross-origin chain that can
+ * fail outright — self-hosting removes both risks, as long as the family's
+ * licence allows it (Google Fonts ships SIL OFL families).
+ */
+export const WEBFONT_HOSTS = [ 'fonts.googleapis.com', 'fonts.gstatic.com' ];
+
 /** `/wp-content/...` and `/wp-includes/...` are WordPress-owned paths. */
 const WP_ASSET_PATH = /^\/(?:wp-content|wp-includes)\//i;
 
@@ -199,7 +218,7 @@ export function proxyMediaPath( rawUrl ) {
  * `blob:`, `mailto:` and relative URLs are never candidates.
  *
  * @param {string} rawUrl Absolute URL found in the build.
- * @param {{ cmsHost?: string, mediaHosts?: Iterable<string>, localizeAll?: boolean }} options Decision inputs.
+ * @param {{ cmsHost?: string, mediaHosts?: Iterable<string>, localizeAll?: boolean, webfontHosts?: Iterable<string> }} options Decision inputs.
  * @returns {boolean} True when the URL is a localization candidate.
  */
 export function shouldLocalizeUrl( rawUrl, options = {} ) {
@@ -218,6 +237,11 @@ export function shouldLocalizeUrl( rawUrl, options = {} ) {
 	const host = parsed.hostname.toLowerCase();
 	const mediaHosts = options.mediaHosts ? new Set( options.mediaHosts ) : new Set();
 	if ( mediaHosts.has( host ) ) {
+		return true;
+	}
+	// Webfonts are opted into separately (Proposal 140): the hosts never serve
+	// site media, so accepting them cannot widen the image allowlist.
+	if ( options.webfontHosts && new Set( options.webfontHosts ).has( host ) ) {
 		return true;
 	}
 	if ( options.cmsHost && host === String( options.cmsHost ).toLowerCase() ) {
@@ -685,5 +709,159 @@ export function rewriteCss( css, map ) {
 	return css.replace( /url\(\s*(?:'|")?([^'")]+?)(?:'|")?\s*\)/gi, ( match, inner ) => {
 		const local = map.get( String( inner ?? '' ).trim() );
 		return local ? `url(${ local })` : match;
+	} );
+}
+
+/**
+ * Is this extension a raster image worth re-encoding? (Proposal 140 §1.)
+ *
+ * @param {string} extension Lower-case, no dot.
+ * @returns {boolean} True for JPEG/PNG/BMP/TIFF.
+ */
+export function isReencodableImage( extension ) {
+	return REENCODE_EXTENSIONS.has( String( extension ?? '' ).toLowerCase().replace( /^\./, '' ) );
+}
+
+/**
+ * Is this URL a third-party webfont resource (the Google Fonts CSS API or the
+ * static font host)? (Proposal 140 §3.)
+ *
+ * @param {string} rawUrl Absolute URL.
+ * @returns {boolean} True when the URL serves webfont CSS or font binaries.
+ */
+export function isWebfontUrl( rawUrl ) {
+	try {
+		const parsed = new URL( rawUrl );
+		return WEBFONT_HOSTS.includes( parsed.hostname.toLowerCase() );
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Ensure every `@font-face` block declares `font-display` (Proposal 140 §4).
+ *
+ * Without it the browser blocks text painting until the font arrives
+ * (Lighthouse: "Ensure text remains visible during webfont load"). `swap`
+ * paints the fallback immediately and swaps in the webfont on arrival — the
+ * documented default for body text. A sheets' author choice is respected: a
+ * block that already declares `font-display` is left untouched.
+ *
+ * `@font-face` cannot nest, so a `[^}]*` block match is exact.
+ *
+ * @param {string} css Stylesheet source.
+ * @param {string} value The `font-display` value to inject.
+ * @returns {string} The stylesheet, with gaps filled.
+ */
+export function addFontDisplaySwap( css, value = 'swap' ) {
+	return String( css ?? '' ).replace( /@font-face\s*\{[^}]*\}/gi, ( block ) => {
+		if ( /font-display\s*:/i.test( block ) ) {
+			return block;
+		}
+		return block.replace( /\{/, `{font-display:${ value };` );
+	} );
+}
+
+/**
+ * Read an SVG's intrinsic size without decoding it.
+ *
+ * `viewBox` wins (it is the drawing's coordinate space, which is what an
+ * `<img>` needs for its aspect ratio); explicit `width`/`height` attributes
+ * are the fallback. A responsive SVG with neither has no intrinsic size.
+ *
+ * @param {string} text SVG source.
+ * @returns {{ width: number, height: number }|null} Rounded dimensions.
+ */
+export function svgIntrinsicSize( text ) {
+	const head = String( text ?? '' ).slice( 0, 8192 );
+	const tag = head.match( /<svg\b[^>]*>/i );
+	if ( ! tag ) {
+		return null;
+	}
+	const viewBox = attributeValue( tag[ 0 ], 'viewBox' );
+	if ( viewBox ) {
+		const parts = viewBox.trim().split( /[\s,]+/ ).map( Number );
+		if ( parts.length === 4 && parts[ 2 ] > 0 && parts[ 3 ] > 0 ) {
+			return { width: Math.round( parts[ 2 ] ), height: Math.round( parts[ 3 ] ) };
+		}
+	}
+	const toNumber = ( raw ) => Number( String( raw ?? '' ).replace( /[^\d.]/g, '' ) );
+	const width = toNumber( attributeValue( tag[ 0 ], 'width' ) );
+	const height = toNumber( attributeValue( tag[ 0 ], 'height' ) );
+	if ( width > 0 && height > 0 ) {
+		return { width: Math.round( width ), height: Math.round( height ) };
+	}
+	return null;
+}
+
+/**
+ * Give every dimension-less `<img>` its intrinsic width/height (Proposal 140 §2).
+ *
+ * Lighthouse's "use explicit width and height" audit is about the browser
+ * reserving space *before* CSS applies — so a localized image whose tag has no
+ * attributes still shifts the layout. The attributes lose to any CSS rule, so
+ * adding them never fights the design.
+ *
+ * @param {string} html Built HTML document.
+ * @param {Map<string,{width:number,height:number}>} sizes Public path → dimensions.
+ * @returns {string} The document, with gaps filled.
+ */
+export function addImageDimensions( html, sizes ) {
+	if ( ! sizes || sizes.size === 0 ) {
+		return html;
+	}
+	return String( html ?? '' ).replace( /<img\b[^>]*>/gi, ( tag ) => {
+		if ( /\swidth\s*=/i.test( tag ) || /\sheight\s*=/i.test( tag ) ) {
+			return tag;
+		}
+		const src = attributeValue( tag, 'src' );
+		if ( ! src ) {
+			return tag;
+		}
+		const size = sizes.get( src.trim() );
+		if ( ! size || ! ( size.width > 0 ) || ! ( size.height > 0 ) ) {
+			return tag;
+		}
+		const attributes = ` width="${ Math.round( size.width ) }" height="${ Math.round( size.height ) }"`;
+		return tag.replace( /\s*(\/?)>$/, ( end, selfClosing ) => `${ attributes }${ selfClosing ? ' /' : '' }>` );
+	} );
+}
+
+/**
+ * Drop `preconnect` hints for hosts the build now serves itself (Proposal 140).
+ *
+ * Once the Google Fonts stylesheet and its woff2 files are mirrored, the two
+ * `preconnect` links in the head open connections to hosts the page never
+ * contacts — pure waste, and two extra handshakes in the waterfall. Only hosts
+ * we actually localized are stripped, so a hint that still earns its keep
+ * survives.
+ *
+ * Written without word-boundary or whitespace escapes on purpose: `rel` is a
+ * token list, so a substring test is the honest check, and it keeps the
+ * pattern readable.
+ *
+ * @param {string} html Built HTML document.
+ * @param {Iterable<string>} [hosts] Hostnames whose resources are now local.
+ * @returns {string} The document, with dead hints removed.
+ */
+export function stripPreconnects( html, hosts ) {
+	const targets = hosts ? new Set( [ ...hosts ].map( ( host ) => String( host ).toLowerCase() ) ) : new Set();
+	if ( targets.size === 0 ) {
+		return html;
+	}
+	return String( html ?? '' ).replace( /<link[^>]*>/gi, ( tag ) => {
+		const rel = attributeValue( tag, 'rel' );
+		if ( ! rel || rel.toLowerCase().indexOf( 'preconnect' ) === -1 ) {
+			return tag;
+		}
+		const href = attributeValue( tag, 'href' );
+		if ( ! href ) {
+			return tag;
+		}
+		try {
+			return targets.has( new URL( href ).hostname.toLowerCase() ) ? '' : tag;
+		} catch {
+			return tag;
+		}
 	} );
 }
