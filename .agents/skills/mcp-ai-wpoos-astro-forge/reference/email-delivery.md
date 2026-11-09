@@ -97,8 +97,9 @@ The same transport ships in both Astro products:
 `mail.ts` is BYTE-IDENTICAL in both trees, and `bin/check-astro-app-parity.mjs`
 fails when it diverges — edit one, copy it to the other. The endpoints around it
 are NOT shared: the forge's is generated source (it must land in a generated
-tree), velocity's is hand-written. Same guards, different frame; extend one,
-extend the other.
+tree), velocity's is hand-written. Same guards, different frame — byte identity
+would be wrong, but guard PRESENCE is gated, so dropping a guard from one
+product fails `bin/check-astro-app-parity.mjs`.
 
 ### Velocity specifics
 

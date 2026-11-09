@@ -38,8 +38,9 @@ surface:
    environment at request time.
 3. **Velocity gets the same transport.** `/forms/submit` plus a native-first
    contact form, sharing `mail.ts` byte-identically with the forge.
-4. **A drift gate.** `bin/check-astro-app-parity.mjs` now fails if the two
-   copies of `mail.ts` diverge.
+4. **A drift gate.** `bin/check-astro-app-parity.mjs` fails if the two
+   copies of `mail.ts` diverge, if the velocity endpoint stops reading the
+   runtime environment, or if either endpoint loses a guard the other keeps.
 
 The provider API is chosen over raw SMTP deliberately; §4 records the
 reasoning. Deliverability is treated as a domain problem (§5), not something
@@ -53,7 +54,7 @@ code can paper over.
 | Forge, no bridge | **submission lost** | `forms.delivery: 'direct'` → provider API |
 | Velocity | no form surface at all | `/contact/` + `/forms/submit` → provider API |
 | Shared transport | — | `mail.ts`, byte-identical in both apps |
-| Drift detection | llms.txt format + section kinds only | + `mail.ts` byte identity + endpoint env check |
+| Drift detection | llms.txt format + section kinds only | + `mail.ts` byte identity, endpoint env check, and guard-presence parity |
 
 ## 3. The two modes
 
@@ -182,7 +183,11 @@ with "copy one over the other".
 What is **not** gated, and is declared instead: the endpoint around the module.
 The forge's is emitted as source (`lib/forms-direct.ts`, because it has to land
 in a generated tree); velocity's is hand-written (`src/pages/forms/submit.ts`).
-Same guards, different frame. Extending the guard set means editing both.
+Same guards, different frame, so byte identity would be wrong — but guard
+presence IS gated: section 4 of the parity script asserts each marker
+(honeypot, time trap, body cap, throttle, idempotency, reply-to) exists on
+**both** sides. Dropping a guard from one product therefore fails CI, which is
+the "we fixed the spam problem" drift that motivated the gate.
 
 ## 10. Decisions
 

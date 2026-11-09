@@ -51,8 +51,9 @@ value ever reaches it.
 - `tests/unit/forms.test.ts` — 20 tests.
 
 ### P4 — drift gate — **done**
-`bin/check-astro-app-parity.mjs` gains §3: byte identity for `mail.ts`, and an
-assertion that the velocity endpoint still calls `runtimeEnv()`.
+`bin/check-astro-app-parity.mjs` gains §3 (byte identity for `mail.ts`, plus an
+assertion that the velocity endpoint still calls `runtimeEnv()`) and §4
+(guard-presence parity across the two endpoints).
 
 ### P5 — docs and skills — **done**
 This pair, the velocity README section, `.env.example`, and
