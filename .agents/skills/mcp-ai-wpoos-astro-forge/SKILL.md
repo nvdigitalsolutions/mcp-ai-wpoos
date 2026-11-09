@@ -1441,10 +1441,13 @@ Three layers, one contract:
   pagefind). Strategy follows the tier: `nvoos.json runtime: 'static'` →
   **mirror** every remaining candidate into `dist/media/<hash>-<slug>.<ext>`;
   `runtime: 'managed'` (bridge/BFF present) → **proxy** uploads to the
-  runtime's same-origin `/media/<rest>` route (no download, the CMS host never
-  reaches the HTML). **External stylesheets are mirrored with their fonts**
-  (theme icon sheets), so icon glyphs stop depending on the CMS host — and
-  stop tripping a future enforced CSP. **Linked documents** (an allowlist:
+  runtime's same-origin `/media/<rest>` route (a rewrite, no download).
+  **External stylesheets are mirrored with their fonts in BOTH modes**
+  (theme icon sheets, plus the Google Fonts sheet when
+  `NVOOS_FORGE_LOCALIZE_FONTS` is on — the `/media` proxy only matches uploads,
+  so leaving the font chain remote kept a render-blocking cross-origin hop in
+  a supposedly self-contained artifact). Icon glyphs therefore stop depending
+  on the CMS host — and stop tripping a future enforced CSP. **Linked documents** (an allowlist:
   pdf/doc/xls/ppt/odt/csv/txt/rtf/epub/ics/zip) are mirrored too, with their
   own cap and `#page=` fragments preserved; executables are never candidates.
   Non-image stored facts (the catalogue CTA, `chrome.iconCss`, the JSON-LD
@@ -1453,28 +1456,16 @@ Three layers, one contract:
   `.forge-cache/media-localize.json`, build never fails), idempotent, honours
   `WP_FETCH_PROXY`, caps per file (25 MB) and per build (500 MB).
 
-- **Optimize** — Proposal 140 runs three more steps in the same pass. Raster
-  mirrors (`jpg/jpeg/png/bmp/tif/tiff`) are re-encoded to WebP at quality 82
-  (the measured equivalent of JPEG 80) and kept **only when smaller**; a
-  source that will not shrink ships as-is and is reported, never failed. Every
-  `<img>` the pass touched gains its intrinsic `width`/`height` (the CLS
-  audit — attributes, not CSS `aspect-ratio`, reserve the first paint). And the
-  Google Fonts stylesheet + its woff2 files are mirrored so the page has no
-  cross-origin font chain, with `font-display: swap` injected into any
-  `@font-face` that lacked it. `forge verify` reports a `media budget` gate
-  (warn by default; `--strict-media` makes it fail).
+- **Optimize** — Proposal 140 adds WebP re-encode (q82), intrinsic
+  `width`/`height` fill, self-hosted webfonts with `font-display: swap`,
+  dead `preconnect` stripping, and a `media budget` verify gate. Env vars,
+  modes and gotchas:
+  [`reference/performance-budget.md`](reference/performance-budget.md).
 
 Config: `profile.media { hosts, localize, mode, maxFileMb }` → `nvoos.json` +
-`.env.example`; env wins
-(`NVOOS_FORGE_MEDIA_MODE`, `NVOOS_FORGE_LOCALIZE_MEDIA`,
-`NVOOS_FORGE_MEDIA_HOSTS`, `NVOOS_FORGE_LOCALIZE_ALL`,
-`NVOOS_FORGE_MEDIA_MAX_MB` / `_MAX_TOTAL_MB`, `NVOOS_FORGE_MEDIA_TIMEOUT_MS`,
-`NVOOS_FORGE_MEDIA_WEBP_QUALITY`, `NVOOS_FORGE_LOCALIZE_FONTS`).
-
-`media.mode` is how a **managed** site (default `proxy`) opts into a fully
-self-contained artifact: `"media": { "localize": true, "mode": "local" }`.
-Default is the bridge's same-origin `/media` proxy; `local` duplicates the
-library into the deploy but never depends on the CMS or the bridge.
+`.env.example`; env wins. `media.mode` (`local|proxy|off`) is how a managed
+site — whose default is the bridge’s same-origin `/media` proxy — opts into a
+fully self-contained artifact: `"media": { "localize": true, "mode": "local" }`.
 
 **Never rewrite** `<a href>`, `<meta>` (`og:image` must stay absolute) or
 JSON-LD — a relative path there is invalid, and the catalogue PDF must keep

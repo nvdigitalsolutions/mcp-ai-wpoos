@@ -31,6 +31,7 @@ import {
 	rewriteStylesheet,
 	shouldLocalizeUrl,
 	srcsetUrls,
+	stripPreconnects,
 	stylesheetAssetUrls,
 	svgIntrinsicSize,
 	WEBFONT_HOSTS,
@@ -438,3 +439,32 @@ describe('Proposal 140 — image dimensions', () => {
 		expect(addImageDimensions(html, new Map())).toBe(html);
 	});
 });
+
+describe( 'Proposal 140 — dead preconnects', () => {
+	const head =
+		'<link rel="preconnect" href="https://fonts.googleapis.com">' +
+		'<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
+		'<link rel="preconnect" href="https://cdn.example.com">' +
+		'<link rel="stylesheet" href="/media/x-fonts.css">';
+
+	it( 'drops the hints for hosts the build now serves', () => {
+		const out = stripPreconnects( head, [ 'fonts.googleapis.com', 'fonts.gstatic.com' ] );
+		expect( out ).not.toContain( 'fonts.googleapis.com' );
+		expect( out ).not.toContain( 'fonts.gstatic.com' );
+	} );
+
+	it( 'keeps a preconnect that still earns its keep', () => {
+		const out = stripPreconnects( head, [ 'fonts.gstatic.com' ] );
+		expect( out ).toContain( 'https://cdn.example.com' );
+		expect( out ).toContain( 'https://fonts.googleapis.com' );
+	} );
+
+	it( 'never touches a stylesheet link', () => {
+		const out = stripPreconnects( '<link rel="stylesheet" href="https://fonts.googleapis.com/css2">', [ 'fonts.googleapis.com' ] );
+		expect( out ).toContain( 'rel="stylesheet"' );
+	} );
+
+	it( 'is a no-op without hosts', () => {
+		expect( stripPreconnects( head ) ).toBe( head );
+	} );
+} );

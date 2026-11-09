@@ -59,6 +59,10 @@ The hosts are a **separate opt-in list** (`webfontHosts`), not an addition to `m
 
 Fail-soft, as always: if the fetch fails the remote `<link>` survives, which is exactly today's behaviour.
 
+This runs in **both modes**. The managed `/media` proxy only matches uploads, so before this change a managed site kept its font chain cross-origin and render-blocking — and paid for a download it then discarded (the proxy branch returned before the emit step). Proxy mode now mirrors the stylesheets and the fonts they reference, and proxies only the uploads.
+
+Dead `preconnect` hints are the other half: once a host is served locally, `stripPreconnects()` removes its `<link rel="preconnect">`. Only hosts actually present in the localization map are stripped, so a hint that still earns its keep survives.
+
 ### 3.4 `font-display` on every mirrored sheet (§4)
 
 `addFontDisplaySwap()` injects `font-display: swap` into any `@font-face` block that does not declare it, at stylesheet-emit time. Applied to every mirrored sheet, so the theme icon font (which shipped without it and blocked 129 KB of text painting) is covered. A sheet that already declares a value keeps it — `optional` is a deliberate choice, not a gap. `@font-face` cannot nest, so a `[^}]*` block match is exact.
@@ -104,6 +108,6 @@ Trade-off, stated plainly: `local` duplicates the media library into every deplo
 ## 7. Validation
 
 - `npm run typecheck` — clean.
-- `npx vitest run` (full suite, `--no-file-parallelism --testTimeout=90000`) — **949 passing, 62 files**, including the hermetic `forge-e2e` build gate.
-- `tests/media-localize.test.ts` 50, `tests/scaffold.test.ts` 83 (`--testTimeout` is needed on a loaded Windows box: the default 5 s elapses while other builds run — pre-existing).
+- `npx vitest run` (full suite, `--no-file-parallelism --testTimeout=90000`) — **953 passing, 62 files**, including the hermetic `forge-e2e` build gate.
+- `tests/media-localize.test.ts` 54, `tests/scaffold.test.ts` 83 (`--testTimeout` is needed on a loaded Windows box: the default 5 s elapses while other builds run — pre-existing).
 - Expected effect on jayainc: the three JPEGs (619 KB) become WebP at roughly 290 KB — the 327 KB GTmetrix win — and the page stops chaining to Google Fonts.

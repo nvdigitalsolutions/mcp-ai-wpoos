@@ -59,6 +59,7 @@ import {
 	extensionForContentType,
 	IMAGE_EXTENSIONS,
 	isReencodableImage,
+	isWebfontUrl,
 	mediaFileName,
 	parseHostList,
 	proxyMediaPath,
@@ -67,6 +68,7 @@ import {
 	rewriteHtml,
 	rewriteStylesheet,
 	shouldLocalizeUrl,
+	stripPreconnects,
 	stylesheetAssetUrls,
 	svgIntrinsicSize,
 	WEBFONT_HOSTS,
@@ -393,38 +395,48 @@ async function main() {
 		}
 	}
 
-	const wanted = [ ...candidates ].filter( ( url ) =>
+	let wanted = [ ...candidates ].filter( ( url ) =>
 		shouldLocalizeUrl( url, { cmsHost, mediaHosts, localizeAll, webfontHosts } )
 	);
 
 	// Managed runtime (bridge/BFF present): the deployment already serves
-	// `/media/<rest>` from `<CMS>/wp-content/uploads/<rest>` server-to-server.
-	// Rewrite uploads to that same-origin path instead of duplicating the
-	// media library into every managed deploy.
+	// `/media/<rest>` from `<CMS>/wp-content/uploads/<rest>` server-to-server, so
+	// the media library stays there. What the proxy CANNOT serve still travels
+	// with the build: the stylesheets and the fonts they reference. A
+	// third-party font sheet is a render-blocking cross-origin chain, and the
+	// proxy only matches uploads — leaving the font chain remote was a silent
+	// hole in an otherwise self-contained artifact (Proposal 140 §3).
+	const proxyMap = new Map();
+	const proxied = [];
+	const leftRemote = [];
 	if ( mode === 'proxy' ) {
-		const map = new Map();
-		const proxied = [];
-		const leftRemote = [];
+		const mirrorable = new Set( stylesheetUrls );
+		for ( const sheet of stylesheets ) {
+			for ( const asset of stylesheetAssetUrls( sheet.text, sheet.url ) ) {
+				mirrorable.add( asset );
+			}
+		}
+		for ( const url of wanted ) {
+			if ( isWebfontUrl( url ) ) {
+				mirrorable.add( url );
+			}
+		}
+		const local = [];
 		for ( const url of wanted ) {
 			const proxiedPath = proxyMediaPath( url );
 			if ( proxiedPath ) {
-				map.set( url, proxiedPath );
+				proxyMap.set( url, proxiedPath );
 				proxied.push( { url, file: proxiedPath } );
+			} else if ( mirrorable.has( url ) ) {
+				local.push( url );
 			} else {
 				leftRemote.push( { url, reason: 'not a WordPress upload — the /media proxy cannot serve it' } );
 			}
 		}
-		const rewrittenFiles = await applyRewrite( sources, map );
-		log(
-			`managed runtime — rewrote ${ proxied.length } upload reference(s) to the same-origin /media proxy across ${ rewrittenFiles } file(s)` +
-				( leftRemote.length > 0 ? `; ${ leftRemote.length } non-upload reference(s) left as-is` : '' ) +
-				'.'
-		);
-		await writeReport( { mode, origin, localized: [], proxied, skipped: leftRemote, failed: [], bytes: 0 } );
-		return;
+		wanted = local;
 	}
 
-	if ( wanted.length === 0 ) {
+	if ( wanted.length === 0 && proxyMap.size === 0 ) {
 		log( `nothing to localize in ${ path.relative( ROOT, out ) } (${ htmlFiles.length } page(s) scanned).` );
 		await writeReport( { mode, origin, localized: [], skipped: [], failed: [], bytes: 0 } );
 		return;
@@ -444,7 +456,7 @@ async function main() {
 	await mkdir( path.join( CACHE_DIR, 'media' ), { recursive: true } );
 	await mkdir( path.join( out, 'media' ), { recursive: true } );
 
-	const map = new Map();
+	const map = new Map( proxyMap );
 	let totalBytes = 0;
 
 	await mapLimit( [ ...byDownloadUrl.entries() ], CONCURRENCY, async ( [ downloadUrl, originals ] ) => {
@@ -545,15 +557,29 @@ async function main() {
 		localized.push( { url: sheet.url, file: publicPath, bytes: Buffer.byteLength( rewritten ) } );
 	}
 
-	// 4. Rewrite the sources in place.
-	const rewrittenFiles = await applyRewrite( sources, map, sizes );
+	// 4. Rewrite the sources in place. Any host we now serve ourselves no longer
+	// earns a preconnect — once Google's sheet and its woff2 are local, the two
+	// hints in the head open connections the page never uses (140 §3).
+	const localizedHosts = new Set();
+	for ( const url of map.keys() ) {
+		try {
+			const host = new URL( url ).hostname.toLowerCase();
+			if ( WEBFONT_HOSTS.includes( host ) ) {
+				localizedHosts.add( host );
+			}
+		} catch {
+			// A malformed key cannot name a host we should strip.
+		}
+	}
+	const rewrittenFiles = await applyRewrite( sources, map, sizes, localizedHosts );
 
 	const humanBytes = ( bytes ) => `${ ( bytes / 1024 / 1024 ).toFixed( 1 ) } MB`;
 	const savedBytes = optimized.reduce( ( total, entry ) => total + ( entry.bytes - entry.optimizedBytes ), 0 );
 	log(
 		`localized ${ localized.length } reference(s) (${ humanBytes( totalBytes ) }) across ${ rewrittenFiles } file(s)` +
+			( proxied.length > 0 ? `; proxied ${ proxied.length } upload reference(s) to /media` : '' ) +
 			( optimized.length > 0 ? `, re-encoded ${ optimized.length } to WebP (saved ${ Math.round( savedBytes / 1024 ) } KB)` : '' ) +
-			( skipped.length > 0 ? `, skipped ${ skipped.length }` : '' ) +
+			( skipped.length + leftRemote.length > 0 ? `, skipped ${ skipped.length + leftRemote.length }` : '' ) +
 			( failed.length > 0 ? `, ${ failed.length } failed` : '' ) +
 			'.'
 	);
@@ -563,17 +589,29 @@ async function main() {
 	if ( failed.length > 10 ) {
 		log( `  …and ${ failed.length - 10 } more in ${ path.relative( ROOT, REPORT_PATH ) }.` );
 	}
-	await writeReport( { mode, origin, localized, optimized, unoptimized, skipped, failed, bytes: totalBytes } );
+	await writeReport( {
+		mode,
+		origin,
+		localized,
+		optimized,
+		unoptimized,
+		proxied,
+		skipped: [ ...skipped, ...leftRemote ],
+		failed,
+		bytes: totalBytes,
+	} );
 }
 
 /** Rewrite every collected source in place; returns the changed-file count. */
-async function applyRewrite( sources, map, sizes = new Map() ) {
+async function applyRewrite( sources, map, sizes = new Map(), preconnectHosts = new Set() ) {
 	let rewrittenFiles = 0;
 	for ( const [ file, source ] of sources ) {
 		const isHtml = path.extname( file ).toLowerCase() === '.html';
 		// 140 §2 — the dimension fill runs after the URL rewrite so it can key on
 		// the local path the tag now carries.
-		const next = isHtml ? addImageDimensions( rewriteHtml( source, map ), sizes ) : rewriteCss( source, map );
+		const next = isHtml
+			? addImageDimensions( stripPreconnects( rewriteHtml( source, map ), preconnectHosts ), sizes )
+			: rewriteCss( source, map );
 		if ( next !== source ) {
 			await writeFile( file, next, 'utf8' );
 			rewrittenFiles += 1;

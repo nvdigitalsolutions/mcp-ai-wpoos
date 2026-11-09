@@ -826,3 +826,42 @@ export function addImageDimensions( html, sizes ) {
 		return tag.replace( /\s*(\/?)>$/, ( end, selfClosing ) => `${ attributes }${ selfClosing ? ' /' : '' }>` );
 	} );
 }
+
+/**
+ * Drop `preconnect` hints for hosts the build now serves itself (Proposal 140).
+ *
+ * Once the Google Fonts stylesheet and its woff2 files are mirrored, the two
+ * `preconnect` links in the head open connections to hosts the page never
+ * contacts — pure waste, and two extra handshakes in the waterfall. Only hosts
+ * we actually localized are stripped, so a hint that still earns its keep
+ * survives.
+ *
+ * Written without word-boundary or whitespace escapes on purpose: `rel` is a
+ * token list, so a substring test is the honest check, and it keeps the
+ * pattern readable.
+ *
+ * @param {string} html Built HTML document.
+ * @param {Iterable<string>} [hosts] Hostnames whose resources are now local.
+ * @returns {string} The document, with dead hints removed.
+ */
+export function stripPreconnects( html, hosts ) {
+	const targets = hosts ? new Set( [ ...hosts ].map( ( host ) => String( host ).toLowerCase() ) ) : new Set();
+	if ( targets.size === 0 ) {
+		return html;
+	}
+	return String( html ?? '' ).replace( /<link[^>]*>/gi, ( tag ) => {
+		const rel = attributeValue( tag, 'rel' );
+		if ( ! rel || rel.toLowerCase().indexOf( 'preconnect' ) === -1 ) {
+			return tag;
+		}
+		const href = attributeValue( tag, 'href' );
+		if ( ! href ) {
+			return tag;
+		}
+		try {
+			return targets.has( new URL( href ).hostname.toLowerCase() ) ? '' : tag;
+		} catch {
+			return tag;
+		}
+	} );
+}
