@@ -24,6 +24,7 @@ import { createRequire } from 'node:module';
 import { expandHex, hexToRgb, hslToHex, rgbToHex } from './color.ts';
 import { contrastRatio, relativeLuminance } from './contrast.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
+import { extractBandsFromHtml } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
 import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
@@ -1841,7 +1842,33 @@ export function analyzeSections( input: DesignFetchInput ): ForgeSection[] {
 			facts.push( fact );
 		}
 	}
+	// Vendor-agnostic fallback (Proposal 137). The pass above understands ONLY
+	// Elementor: a WPBakery/Divi/Bricks/Gutenberg/Flatsome/plain-HTML site
+	// yielded zero bands, losing its design structure entirely
+	// (virtuallyjamaica.com, 2026-11-09 — WPBakery + Brando). Those bands go to
+	// `design.outline`, NOT to `sections`: `sections` drives rendering and the
+	// band-flow gate would (correctly) fail for bands the renderer cannot emit.
+
 	return facts;
+}
+
+/**
+ * The band outline for builders the rich Elementor extractor does not cover.
+ * Returns `{}` when Elementor produced sections (they are authoritative) or
+ * when no bands were detected — keeping the profile clean.
+ */
+export function bandOutline( input: DesignFetchInput ): {
+	outline?: import( './bands.ts' ).BandCandidate[];
+	builder?: string;
+} {
+	const detected = extractBandsFromHtml( input.html );
+	if ( detected.bands.length === 0 ) {
+		return {};
+	}
+	// `builder` is the tech that was fingerprinted; `bands[].via` is the layer
+	// that produced the boundaries (they differ when a theme rewrites the
+	// builder's row wrapper away — Brando keeps wpb_column, drops vc_row).
+	return { outline: detected.bands, builder: detected.builder ?? detected.adapter };
 }
 
 /** The last color value of a gradient expression (the band's dominant end). */
@@ -2726,8 +2753,16 @@ export function analyzeDesignInput( input: DesignFetchInput ): ForgeDesign {
 		components: componentVocabulary( input.html ),
 		modes: { dark: 'auto', contrast: 'auto' },
 		// The section-background pass (117 §2) — the per-band theming data
-		// the scaffold bakes into sections.generated.ts.
+		// the scaffold bakes into sections.generated.ts. Elementor only: these
+		// bands DRIVE RENDERING, so nothing may be added here that the renderer
+		// cannot emit (Proposal 137 keeps other builders in `outline`).
 		sections: input.html ? analyzeSections( input ) : undefined,
+		// Proposal 137 — the vendor-agnostic band OUTLINE. Non-rendering on
+		// purpose: it records the source structure (adapter, anchors, inline
+		// backgrounds, measured columns) for builders the renderer has no model
+		// for yet (WPBakery, Divi, Bricks, Gutenberg, Flatsome…). Adding these
+		// to `sections` instead would fail the band-flow gate.
+		...( input.html ? bandOutline( input ) : {} ),
 		chrome: input.html ? analyzeChrome( input ) : undefined,
 		behavior: input.html ? analyzeScrollBehavior( input ) : undefined,
 		ctaStyle: designCtaStyle,

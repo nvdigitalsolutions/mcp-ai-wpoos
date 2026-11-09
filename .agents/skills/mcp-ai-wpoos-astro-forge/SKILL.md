@@ -1393,6 +1393,27 @@ hosts never delete files that leave the tree, so an orphaned
 Details, the generated-config inventory and the one-route-stale triage rule:
 `reference/csp-client-navigation.md`.
 
+## Builder vocabulary (Proposal 137, 2026-11-09)
+
+The design extractor used to be Elementor-only: any other builder produced
+**zero** bands and the build silently degraded (virtuallyjamaica.com —
+WPBakery + Brando). `lib/bands.ts` now segments the DOM in three layers —
+**adapters** (declarative fingerprints: elementor, wpbakery, divi, beaver,
+bricks, gutenberg, oxygen, flatsome, revolution-slider), **semantic** landmarks,
+then **VIPS-lite** visual boundaries.
+
+Adding a builder = two data rows (`BUILDER_ADAPTERS` + `WIDGET_PATTERNS`) and a
+real-markup fixture; nothing branches on builder identity.
+
+Three rules that cost real debugging: column detection is ORTHOGONAL to band
+detection (Brando emits `wpb_column`s with no `vc_row`); prefer the LARGEST
+breakpoint (`vc_col-sm-12 vc_col-lg-6` → 50 %, not 100 %); and `design.outline`
+is NOT `design.sections` — `sections` drives rendering and band-flow, skeleton
+bands there fail the gate.
+
+Full vocabulary table, the three rules in detail, the coverage-signal semantics
+(8 → 2 unknowns) and the phases: `reference/builder-vocabulary.md`.
+
 ## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
 
 The two Astro products share a CONTRACT but not code, so neither suite can see

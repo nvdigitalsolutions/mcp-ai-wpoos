@@ -49,6 +49,34 @@ describe( 'collectWidgetNames', () => {
 		].join( '' );
 		expect( collectWidgetNames( html ) ).toEqual( [ 'aux_modern_heading', 'future_widget', 'heading' ] );
 	} );
+
+	it( 'harvests names across every supported builder (Proposal 137)', () => {
+		const html = [
+			'<div class="elementor-widget-heading">',
+			'<div class="wp-block-image">',
+			'<div class="wp-block-columns">', // structural — excluded
+			'<div class="et_pb_blurb">',
+			'<div class="et_pb_section">', // structural — excluded
+			'<div class="brxe-heading">',
+			'<div class="brxe-container">', // structural — excluded
+			'<div class="wpb_single_image">',
+			'<div class="wpb_column">', // structural — excluded
+			'<div class="ux-banner">',
+		].join( '' );
+		expect( collectWidgetNames( html ) ).toEqual( [
+			'banner',
+			'blurb',
+			'heading',
+			'image',
+			'single_image',
+		] );
+	} );
+
+	it( 'is stateless across calls (module-level /g patterns)', () => {
+		const html = '<div class="elementor-widget-heading"></div>';
+		expect( collectWidgetNames( html ) ).toEqual( [ 'heading' ] );
+		expect( collectWidgetNames( html ) ).toEqual( [ 'heading' ] );
+	} );
 } );
 
 describe( 'learnVocabulary', () => {
