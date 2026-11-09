@@ -2481,6 +2481,16 @@ async function scaffoldProject(
 		`${JSON.stringify(manifest, null, '\t')}\n`,
 		'utf8'
 	);
+	// The profile is the single source of truth for everything that is NOT a
+	// secret: the CMS origin, the public origin and the form envelope are all
+	// already in it, so the env example is FILLED IN and the operator supplies
+	// only credentials. (virtuallyjamaica, 2026-11-09: a fresh scaffold still
+	// shipped MAIL_FROM= blank and NVOOS_TARGET_SITE= blank while the profile
+	// held both values.)
+	const publicOrigin = ( profile.deploy?.publicOrigin ?? profile.url ?? '' ).replace( /\/+$/, '' );
+	const cmsOrigin = ( profile.url ?? '' ).replace( /\/+$/, '' );
+	const mail = profile.forms?.mail;
+	const mailProvider = mail?.provider ?? 'brevo';
 	await writeFile(
 		path.join(targetDir, '.env.example'),
 		[
@@ -2501,11 +2511,11 @@ async function scaffoldProject(
 			'# to the NV oOS Forge Bridge on WordPress, which dispatches them to the',
 			'# native JetFormBuilder / Elementor Pro handler. Defaults to the value',
 			'# in nvoos.json forms.endpoint; set this to override per deploy.',
-			'NVOOS_FORGE_FORMS_ENDPOINT=',
+			`NVOOS_FORGE_FORMS_ENDPOINT=${ profile.forms?.endpoint ?? '' }`,
 			'',
 			'# The static origin serving this site — enter the SAME value in the',
 			'# bridge plugin\'s Settings → Forge Bridge → Forms origin allowlist.',
-			'NVOOS_FORGE_FORMS_ORIGIN=',
+			`NVOOS_FORGE_FORMS_ORIGIN=${ profile.forms?.origin ?? publicOrigin }`,
 			'',
 			// Direct delivery only. Deliverability is a DOMAIN concern: SPF, DKIM
 			// and DMARC must be published for MAIL_FROM's domain or the message is
@@ -2513,16 +2523,16 @@ async function scaffoldProject(
 			// (e.g. forms@mail.yourdomain.com), not a site-only mailbox.
 			...( profile.forms?.delivery === 'direct'
 				? [
-					'MAIL_PROVIDER=brevo',
-					'MAIL_FROM=',
-					'MAIL_FROM_NAME=',
-					'MAIL_TO=',
-					'MAIL_SUBJECT=New website enquiry',
+					`MAIL_PROVIDER=${ mailProvider }`,
+					`MAIL_FROM=${ mail?.from ?? '' }`,
+					`MAIL_FROM_NAME=${ mail?.fromName ?? '' }`,
+					`MAIL_TO=${ mail?.to ?? '' }`,
+					`MAIL_SUBJECT=${ mail?.subject ?? 'New website enquiry' }`,
 					'',
 					'# The provider secret lives in the host environment, never in the repo.',
-					'BREVO_API_KEY=',
-					'# MAILJET_API_KEY=',
-					'# MAILJET_SECRET_KEY=',
+					mailProvider === 'mailjet' ? '# BREVO_API_KEY=' : 'BREVO_API_KEY=',
+					mailProvider === 'mailjet' ? 'MAILJET_API_KEY=' : '# MAILJET_API_KEY=',
+					mailProvider === 'mailjet' ? 'MAILJET_SECRET_KEY=' : '# MAILJET_SECRET_KEY=',
 					'',
 				  ]
 				: [] ),
@@ -2546,7 +2556,7 @@ async function scaffoldProject(
 						'# Managed runtime (Proposal 135) — the WordPress origin the BFF proxies',
 						'# /api, /media and /api/forms/submit to (server-to-server; the CMS host',
 						'# is never called by a browser).',
-						'NVOOS_TARGET_SITE=',
+						`NVOOS_TARGET_SITE=${ cmsOrigin }`,
 						'',
 						'# Shared secret for POST /api/revalidate (tag-based cache invalidation).',
 						'# Unset disables the route (503).',
