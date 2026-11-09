@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// HomeStats island — the live counters on the home page (client:visible).
+// HomeStats island — the live counters on the home page (client:load).
 //
 // The server-rendered HTML carries the real contract totals so crawlers and
 // no-JS visitors see the numbers; on hydration the island animates 0 →

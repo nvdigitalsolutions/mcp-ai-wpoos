@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // StackExplorer island — accessible tab panels on the home page that explain
-// the storefront's layers (client:visible).
+// the storefront's layers (client:load).
 //
 // Two panels carry live reads: the contract panel fetches the real totalDocs
 // from the commerce envelope (same-origin /api/*, the PromoCodeField

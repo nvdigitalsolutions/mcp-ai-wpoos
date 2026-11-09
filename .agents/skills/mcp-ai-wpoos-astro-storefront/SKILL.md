@@ -605,18 +605,40 @@ for p in / /components/ /components/blocks/ /cart/; do
 done
 ```
 
-**Fix (landed):** keep bundled scripts external so `'self'` covers them and the
-hash list stays page-invariant — `vite.build.assetsInlineLimit: 0` in
-`astro.config.mjs`. That removed the UiTabs script and the analytics script
-from the inline set (6 → 4 hashes, identical on every route).
+**Fix (landed, two parts):**
 
-**Residual (documented, NOT fixed).** `client:visible` islands emit an inline
-IntersectionObserver bootstrap per page, so navigating **into** a page that has
-one (`/`, PDPs) is still blocked by the source document's CSP. Remedies, in
-order of blast radius: convert those directives to `client:idle`/`client:load`
-(changes hydration timing site-wide), or drop `ClientRouter` (full loads, exact
-CSP per document). Do not "fix" it with `unsafe-inline` or `strict-dynamic`
-(`strict-dynamic` ignores `'self'`, so every `src` script needs a nonce).
+1. Bundled/hoisted scripts stay external so `'self'` covers them —
+   `vite.build.assetsInlineLimit: 0` in `astro.config.mjs`. Removed the UiTabs
+   script and the analytics script from the inline set.
+2. **Islands use `client:load` only.** `client:visible` emits a per-page
+   IntersectionObserver bootstrap and `client:idle` a per-page
+   `requestIdleCallback` bootstrap — both inline, both page-variant. Only
+   `client:load` adds nothing to the inline set. With both applied the
+   first-party inline set is **IDENTICAL on every route** (`/`, `/components/`,
+   `/components/blocks/`, `/cart/`, `/checkout/`, `/products/`, a PDP,
+   `/pages/1/about/` → 4 hashes each, 1 distinct set). Guarded by
+   `tests/unit/csp-inline-invariance.test.ts` (asserts `assetsInlineLimit: 0`
+   and that no island uses `client:visible`/`client:idle`; it strips comments
+   first, because prose legitimately names the directives).
+
+**Cloudflare injects a THIRD-PARTY inline script — cannot be allowlisted.**
+The live host sits behind Cloudflare, which appends:
+
+```
+(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);
+ … window.__CF$cv$params={r:'<per-request ray>',t:'…'};
+ … '/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=<ray>' …})()
+```
+
+Its content embeds a **per-request `ray` id**, so its hash changes on every
+response and no CSP hash list can ever contain it. Observed: 2 blocks per
+in-app navigation (one from the source document's injection, one from the
+target's) and 3 when navigating into a `client:visible` page. This is
+Cloudflare **Bot Fight Mode / JS detections**; the correct resolution is to
+disable that feature for the host (Security → Bots) — it is already
+non-functional while blocked, so nothing is lost, and `'unsafe-inline'` is
+the only code-side alternative, which 104 D12 forbids. Confirm with:
+`curl -sS https://<host>/ | grep -o '__CF\$cv\$params'`.
 
 **Test gap this exposes.** Every other e2e does `page.goto()` — a full load that
 never exercises the router. `tests/e2e/component-library.spec.ts` now navigates

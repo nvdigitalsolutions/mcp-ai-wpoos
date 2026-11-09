@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// CartBadge island — clean-room React component (D6), hydrates client:idle.
+// CartBadge island — clean-room React component (D6), hydrates client:load (CSP: no per-page inline bootstrap).
 // Reads the nanostores cart; persists across View Transitions via
 // transition:persist (set by the host page/layout).
 // ---------------------------------------------------------------------------

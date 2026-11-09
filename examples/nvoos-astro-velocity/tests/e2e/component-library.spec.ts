@@ -202,4 +202,19 @@ test('tabs work after in-app navigation (CSP is page-invariant)', async ({ page 
 	await expect(page.locator('[id$="-panel-1"]')).toHaveAttribute('aria-hidden', 'false');
 
 	expect(cspErrors, `CSP violations on navigation:\n${cspErrors.join('\n')}`).toEqual([]);
+
+	// Round-trip back INTO home: home is the page that used to carry a
+	// `client:visible` bootstrap, so navigation in this direction was blocked
+	// while the outbound direction passed. Assert both sides.
+	await page.evaluate(() => {
+		const anchor = document.createElement('a');
+		anchor.href = '/';
+		anchor.textContent = 'home';
+		document.body.appendChild(anchor);
+		anchor.click();
+	});
+	await page.waitForURL((url) => url.pathname === '/');
+	await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+	expect(cspErrors, `CSP violations on the return navigation:\n${cspErrors.join('\n')}`).toEqual([]);
 });

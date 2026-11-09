@@ -152,7 +152,10 @@ const gallery: GalleryEntry[] = [product.image, ...product.images]
 
 	<article class="pdp">
 		<div>
-			<GalleryLightbox entries={gallery} alt={product.name} client:visible />
+			{/* client:load, not client:visible/client:idle — both emit a per-page
+			    inline bootstrap that a hash-based CSP cannot allow on in-app
+			    navigation (see the CSP note in BaseLayout). */}
+			<GalleryLightbox entries={gallery} alt={product.name} client:load />
 		</div>
 		<div>
 			<h1>{product.name}</h1>
@@ -205,9 +208,9 @@ const gallery: GalleryEntry[] = [product.image, ...product.images]
 				name={product.name}
 				price={product.price}
 				image={product.image}
-				client:visible
+				client:load
 			/>
-			<PromoCodeField client:visible />
+			<PromoCodeField client:load />
 			<section>
 				<h2>Description</h2>
 				<div set:html={sanitizeDescription(product.description)} />

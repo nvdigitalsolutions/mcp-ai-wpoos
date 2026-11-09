@@ -154,12 +154,16 @@ const hasCatalog = newest.totalDocs > 0;
 
 	<section aria-labelledby="stats-heading">
 		<h2 id="stats-heading" class="sr-only">Live store stats</h2>
-		<HomeStats counts={liveCounts} client:visible />
+		{/* client:load, not client:visible/client:idle — both of those emit a
+		    per-page inline bootstrap (IntersectionObserver / requestIdleCallback)
+		    that a hash-based CSP cannot allow on in-app navigation. See the CSP
+		    note in BaseLayout. */}
+		<HomeStats counts={liveCounts} client:load />
 	</section>
 
 	<section class="explore" aria-labelledby="explore-heading">
 		<h2 id="explore-heading">Explore the stack</h2>
-		<StackExplorer client:visible />
+		<StackExplorer client:load />
 	</section>
 
 	<section class="tour" id="tour" aria-labelledby="tour-heading">
