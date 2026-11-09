@@ -20,7 +20,7 @@ BFF session pattern. spa-v2 sources are compiled in via the
 `@nvoos/pro-spa-v2` Vite alias (**no fork** — tracks
 `addons/pro/assets/spa-v2`).
 
-<img width="50%" height="50%" alt="Screenshot 2026-11-09 031400" src="https://github.com/user-attachments/assets/a439dd01-f669-4f49-9306-80f33f639021" />
+<img width="66%" height="66%" alt="Screenshot 2026-11-09 031400" src="https://github.com/user-attachments/assets/a439dd01-f669-4f49-9306-80f33f639021" />
 
 Proposal: `docs/project/proposals/083-nvoos-complete-console-app-proposal.md` ·
 Plan: `docs/project/plans/nvoos-complete-console-app-implementation.md` ·
