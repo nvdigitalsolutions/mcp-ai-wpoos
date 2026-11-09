@@ -1,6 +1,6 @@
 {
 	"name": "@nvdigitalsolutions/nvoos-astro-forge",
-	"version": "0.1.1",
+	"version": "0.2.0",
 	"license": "MIT",
 	"description": "Proposal 096 — WP→Astro generation: REST client, content-layer loader, sanitizer, blog template, scaffold CLI, deploy pipeline",
 	"type": "module",
