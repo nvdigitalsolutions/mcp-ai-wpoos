@@ -33,8 +33,10 @@ git fetch origin alpha-working
 git merge-tree --write-tree origin/alpha-working HEAD
 # Verify the squash tree equals your old baseline (empty diff = clean replay ahead):
 git diff <squash-merge-sha> <old-baseline-sha>
-# Replay only the commits after the baseline:
-git rebase --onto origin/alpha-working <old-baseline-sha> <branch>
+# Replay only the commits after the baseline.
+# --autostash is required in a shared worktree (another agent's unstaged
+# edits would otherwise make the rebase refuse to start).
+git rebase --autostash --onto origin/alpha-working <old-baseline-sha> <branch>
 git push --force-with-lease origin <branch>
 ```
 

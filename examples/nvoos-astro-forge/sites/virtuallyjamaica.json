@@ -73,7 +73,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://virtuallyjamaica.com",
-			"analyzedAt": "2026-11-09T04:38:03.753Z"
+			"analyzedAt": "2026-11-09T04:55:19.839Z"
 		},
 		"concept": "warm accent over light neutrals, montserrat display / roboto body, compact spacing rhythm.",
 		"palette": {
@@ -82,7 +82,10 @@
 				"cta": "linear-gradient(#0000,#0000001a 50%,#0000001a)",
 				"accent": "#fe6c61",
 				"text": "#2a2a2a",
-				"field.border": "#767676"
+				"field.border": "#ebebeb",
+				"field": {
+					"border": "#767676"
+				}
 			},
 			"unassigned": [
 				"#ffffff",
@@ -158,6 +161,71 @@
 			"contrast": "auto"
 		},
 		"sections": [],
+		"outline": [
+			{
+				"id": "45f5e88",
+				"via": "visual",
+				"bgColor": "#dd3333",
+				"anchor": "home"
+			},
+			{
+				"id": "1d5804b",
+				"via": "visual",
+				"bgColor": "#ededed",
+				"anchor": "about",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "1ff4891",
+				"via": "visual",
+				"bgColor": "#ededed",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "860a86e",
+				"via": "visual",
+				"bgColor": "#ededed",
+				"anchor": "features"
+			},
+			{
+				"id": "499464d",
+				"via": "visual",
+				"bgColor": "#ededed",
+				"anchor": "services",
+				"columns": [
+					{
+						"width": 25
+					},
+					{
+						"width": 33.33
+					},
+					{
+						"width": 41.67
+					}
+				]
+			},
+			{
+				"id": "cd02263",
+				"via": "visual",
+				"bgColor": "#ededed",
+				"anchor": "hardware"
+			}
+		],
+		"builder": "wpbakery",
 		"chrome": {
 			"footerBarBg": "#ededed",
 			"favicon": "https://virtuallyjamaica.com/wp-content/uploads/2018/11/cropped-vj-fav-icon-32x32.png",
@@ -189,6 +257,9 @@
 			"attribution": [
 				"Source: https://virtuallyjamaica.com"
 			]
+		},
+		"tokens": {
+			"accent-ink": "#2a2a2a"
 		}
 	},
 	"inventory": {
@@ -240,9 +311,12 @@
 	"vocabulary": {
 		"widgetRoles": {},
 		"blockRoles": {},
-		"unknownWidgets": [],
+		"unknownWidgets": [
+			"button__link",
+			"file__button"
+		],
 		"unknownBlocks": [],
-		"analyzedAt": "2026-11-09T04:38:13.389Z"
+		"analyzedAt": "2026-11-09T04:58:54.313Z"
 	},
 	"tracking": {
 		"trackers": [
@@ -286,7 +360,7 @@
 		"csp": {
 			"hosts": []
 		},
-		"analyzedAt": "2026-11-09T04:38:13.429Z",
+		"analyzedAt": "2026-11-09T04:56:47.635Z",
 		"pagesAnalyzed": [
 			"https://virtuallyjamaica.com"
 		]

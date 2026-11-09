@@ -751,6 +751,28 @@ export interface ForgeDesign {
 	modes: { dark: 'auto' | 'light' | 'dark'; contrast: 'auto' | 'standard' | 'high' };
 	/** The section-background pass (117 §2) — omitted when unavailable. */
 	sections?: ForgeSection[];
+	/**
+	 * The vendor-agnostic band OUTLINE (Proposal 137) — the source's structural
+	 * bands for builders the rich extractor does not model (WPBakery, Divi,
+	 * Bricks, Gutenberg, Flatsome, plain HTML, a slider hero…). NON-RENDERING:
+	 * `sections` drives the build, and the band-flow gate requires every entry
+	 * there to reach the page. Kept so the operator (and a future renderer)
+	 * can work from real structure instead of guessing.
+	 */
+	outline?: Array< {
+		id: string;
+		anchor?: string;
+		bgColor?: string;
+		bgImage?: string;
+		bgGradient?: string;
+		measure?: string;
+		paddingX?: string;
+		columns?: { width: number }[];
+		/** Which layer produced it: an adapter id, 'semantic' or 'visual'. */
+		via: string;
+	} >;
+	/** The builder adapter that matched the source (elementor, wpbakery, divi…). */
+	builder?: string;
 	/** The site-chrome pass (120 §2) — omitted when unavailable. */
 	chrome?: ForgeChrome;
 	/** The scroll-behavior pass (121) — omitted when unavailable. */
