@@ -27,7 +27,27 @@ const { Content } = await render(page);
 const pageUrl = Astro.site ? new URL(`/${page.data.slug}/`, Astro.site).href : undefined;
 // SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
 const seoTitle = page.data.seoTitle ?? page.data.title;
-const seoDescription = page.data.seoDescription ?? page.data.excerpt;
+
+/**
+ * Description fallback for source pages that carry neither a Rank Math
+ * description nor an excerpt (Proposal 131 gate: `meta-description-missing`).
+ * Derive one from the sanitized body first — that keeps it UNIQUE per page —
+ * and only then fall back to the site description. Duplicating the site
+ * description across every page would satisfy the gate and hurt the SEO it is
+ * meant to protect.
+ */
+function derivedDescription( html: string | undefined, site: string | undefined ): string | undefined {
+	const text = ( html ?? '' ).replace( /<[^>]+>/g, ' ' ).replace( /\s+/g, ' ' ).trim();
+	if ( ! text ) {
+		return site;
+	}
+	return text.length > 155 ? `${ text.slice( 0, 152 ).replace( /\s+\S*$/, '' ) }…` : text;
+}
+
+const seoDescription =
+	page.data.seoDescription ??
+	page.data.excerpt ??
+	derivedDescription( body, manifest.seoDescription );
 const jsonLd = buildGraph(
 	Astro.site,
 	jsonLdFor('WebPage', {
