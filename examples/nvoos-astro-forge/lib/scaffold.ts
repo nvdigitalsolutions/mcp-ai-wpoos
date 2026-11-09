@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 import { auditWarnings, contrastAudit } from './contrast.ts';
 import { designToTokens, resolveSectionTheme, suggestContrastFixes } from './design.ts';
+import { renderDirectFormsEndpointTs } from './forms-direct.ts';
 import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree } from './managed-runtime.ts';
@@ -42,6 +43,9 @@ export const FORGE_LIB_FILES = [
 	// Proposal 136: the deterministic agent surfaces — llms.txt and the
 	// markdown page variants are composed from facts, never written by a model.
 	'llms.ts',
+	// Direct form delivery — the provider HTTP API, used only when a profile
+	// opts into forms.delivery: 'direct'.
+	'mail.ts',
 	// The deploy-branch build report. It is an ARTIFACT rather than a
 	// hand-written file because mirror branches are force-pushed on every
 	// build — anything committed to the branch by hand is destroyed.
@@ -2309,6 +2313,21 @@ async function scaffoldProject(
 	//     the deploy-tree assembler. Only emitted for runtime: managed; the
 	//     static tier is untouched. No secrets are written (env comes from the
 	//     Velocity app).
+	// Direct delivery needs a server to hold the provider key and to run the
+	// per-IP throttle. A static build has neither, so refuse loudly rather
+	// than emit an endpoint that cannot exist.
+	const directDelivery = profile.forms?.delivery === 'direct';
+	if (directDelivery && !managed) {
+		throw new Error(
+			'forms.delivery: "direct" requires deploy.runtime: "managed" — a static site has nowhere to keep the provider key. Use delivery: "bridge" (WordPress owns the mailer) or set the managed runtime.'
+		);
+	}
+	if (directDelivery && !profile.forms?.mail) {
+		throw new Error(
+			'forms.delivery: "direct" requires forms.mail { provider, from, to } so the endpoint knows who sends and who receives.'
+		);
+	}
+
 	if (managed) {
 		await mkdir(path.join(targetDir, 'src', 'lib'), { recursive: true });
 		await writeFile(path.join(targetDir, 'src', 'lib', 'managed.generated.ts'), renderManagedGenerated(true), 'utf8');
@@ -2316,7 +2335,13 @@ async function scaffoldProject(
 
 		await mkdir(path.join(targetDir, 'src', 'pages', 'api', 'forms'), { recursive: true });
 		await writeFile(path.join(targetDir, 'src', 'pages', 'api', '[...path].ts'), renderApiProxyTs(), 'utf8');
-		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'forms', 'submit.ts'), renderFormsProxyTs(), 'utf8');
+		// `direct` sends through the provider API instead of the WordPress
+		// bridge; the validation above guarantees this is the managed tier.
+		await writeFile(
+			path.join(targetDir, 'src', 'pages', 'api', 'forms', 'submit.ts'),
+			directDelivery ? renderDirectFormsEndpointTs() : renderFormsProxyTs(),
+			'utf8'
+		);
 		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'revalidate.ts'), renderRevalidateTs(), 'utf8');
 		// Proposal 135 Phase 5 — the preview exchange + the draft-aware page.
 		// `/manage` mints the token on the CMS; this route only transports it
@@ -2355,6 +2380,8 @@ async function scaffoldProject(
 				endpoint: profile.forms.endpoint ?? `${ profile.url.replace( /\/+$/, '' ) }/wp-json/nvoos-forge/v1`,
 				origin: profile.forms.origin,
 				searchForms: profile.forms.searchForms,
+				delivery: profile.forms.delivery ?? 'bridge',
+				mail: profile.forms.mail,
 		  }
 		: undefined;
 	const manifest: ForgeManifest = {
@@ -2432,6 +2459,25 @@ async function scaffoldProject(
 			'# bridge plugin\'s Settings → Forge Bridge → Forms origin allowlist.',
 			'NVOOS_FORGE_FORMS_ORIGIN=',
 			'',
+			// Direct delivery only. Deliverability is a DOMAIN concern: SPF, DKIM
+			// and DMARC must be published for MAIL_FROM's domain or the message is
+			// sent and then filtered. Use an address on the provider domain
+			// (e.g. forms@mail.yourdomain.com), not a site-only mailbox.
+			...( profile.forms?.delivery === 'direct'
+				? [
+					'MAIL_PROVIDER=brevo',
+					'MAIL_FROM=',
+					'MAIL_FROM_NAME=',
+					'MAIL_TO=',
+					'MAIL_SUBJECT=New website enquiry',
+					'',
+					'# The provider secret lives in the host environment, never in the repo.',
+					'BREVO_API_KEY=',
+					'# MAILJET_API_KEY=',
+					'# MAILJET_SECRET_KEY=',
+					'',
+				  ]
+				: [] ),
 			'# Stored redirects (Proposal 132) — the build reads the redirect rules',
 			'# your WordPress redirect plugin already stores (Redirection / Rank Math)',
 			'# from the Forge Bridge, so legacy URLs keep resolving after cutover.',
