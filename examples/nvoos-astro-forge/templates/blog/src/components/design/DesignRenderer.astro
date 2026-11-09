@@ -17,7 +17,7 @@
 // photo with its overlay — so the rebuilt page keeps the source's visual
 // rhythm without copying any markup.
 import type { SemanticSection } from '../../forge/semantic.ts';
-import { bandSpacing, sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
+import { bandSpacing, bandSource, sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
 import { behaviors } from '../../lib/behaviors.generated.ts';
 import { classifyBody } from '../../lib/classify.ts';
 import Cta from './Cta.astro';
@@ -56,8 +56,21 @@ const sections: SemanticSection[] = wireframeSections
 	? wireframeSections.map( ( w ) => w.section )
 	: classifyBody( html );
 const columnsFor = ( index: number ): Record<string, number> | undefined => wireframeSections?.[ index ]?.responsive?.columns;
-const themeFor = ( section: SemanticSection ): SectionTheme | undefined =>
-	section.id ? sectionThemes.find( ( theme ) => theme.id === section.id ) : undefined;
+/**
+ * The source band theme for a rebuilt section. Elementor sites match by the
+ * classifier-carried section id. Outline-only sources (WPBakery/Brando…) carry
+ * no ids at all, so `bandSource === 'outline'` maps them POSITIONALLY — the
+ * rebuilt sections and the source bands both follow the page flow. Without the
+ * positional pass those bands never themed, so the rebuild rendered template
+ * defaults instead of the source's own surfaces (virtuallyjamaica's red hero).
+ */
+const themeFor = ( section: SemanticSection, index: number ): SectionTheme | undefined => {
+	const byId = section.id ? sectionThemes.find( ( theme ) => theme.id === section.id ) : undefined;
+	if ( byId ) {
+		return byId;
+	}
+	return bandSource === 'outline' ? sectionThemes[ index ] : undefined;
+};
 /** The source scroll behavior for a section (Proposal 121) — sticky /
  * reveal / parallax, keyed by the same element id. */
 const behaviorFor = ( section: SemanticSection ) =>
@@ -267,8 +280,8 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 // by section id. A padding scoped to a device range needs the same CSS
 // treatment as a scoped pull: an inline value would outrank the media queries.
 const responsiveBandCss = sections
-	.map( ( section ) => {
-		const theme = themeFor( section );
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
 		return (
 			responsiveDeviceCss( section.id, 'margin-top', theme?.marginTop ) +
 			responsiveDeviceCss( section.id, 'margin-bottom', theme?.marginBottom ) +
@@ -282,10 +295,10 @@ const responsiveBandCss = sections
 	<div class="design-sections">
 		{responsiveBandCss && <Fragment set:html={ `<style>${ responsiveBandCss }</style>` } />}
 		{sections.map((section, index) => {
-			const theme = themeFor(section);
+			const theme = themeFor(section, index);
 			const behavior = behaviorFor(section);
 			return (
-				<div data-section={section.kind} data-section-id={section.id ?? undefined} id={theme?.anchor ?? section.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={theme?.anchor ?? section.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (

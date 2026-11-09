@@ -22,6 +22,38 @@ Neither replaces the others. The gate matrix is now:
 \* deterministic **only** when the capture settings below are honoured; the
 baseline recorder refuses to write when two captures of the same build differ.
 
+## Band surfaces (outline-only sources)
+
+The chrome ladder (body/header/footer) misses the surfaces that carry a
+non-Elementor design, and `design.sections` used to be empty for those builders —
+so the rebuild rendered template defaults. Two changes close that:
+
+- `analyze --design` promotes the vendor-agnostic outline into `design.sections`
+  (`bandSource: 'outline'`). `sections.generated.ts` bakes each band's
+  `bg`/`anchor`, and `DesignRenderer` maps them POSITIONALLY because no
+  Elementor ids exist. Band flow reports positional misses as `warn`, never a
+  hard fail.
+- `analyze --colors` records one region per band anchor (`band:home`, …) using
+  the **composited** background — a transparent band over a coloured parent is
+  that colour. `verify --colors` measures the same regions, so a band surface
+  that stops rendering is reported instead of silently skipped as transparent.
+
+virtuallyjamaica.com: the red `#dd3333` hero was invisible to the chrome ladder
+and to the empty `design.sections`; it now reports
+`band:home background — source #dd3333, build #ffffff (ΔE00 46.53)`.
+
+Bot-protected source (Cloudflare answers 403 on `/wp-json`)? `analyze --no-cms`
+runs the design/colour/text passes from the rendered homepage alone.
+
+## Local model (Ollama)
+
+`--visual` resolves its model in order: explicit `NVOOS_FORGE_VISION_*`
+credentials, then a reachable local Ollama daemon (`127.0.0.1:11434`, or
+`NVOOS_FORGE_OLLAMA_URL` / `OLLAMA_HOST`), preferring a vision-capable model
+(`NVOOS_FORGE_OLLAMA_MODEL` overrides the choice). `NVOOS_FORGE_NO_LOCAL=1`
+opts out. No key and no daemon → the step stays skipped, never an error, and
+vision never runs inside a build.
+
 ## The scorecard — `verify` (every gate runs by default)
 
 Every applicable gate runs by default, so a plain `verify` prints one table at

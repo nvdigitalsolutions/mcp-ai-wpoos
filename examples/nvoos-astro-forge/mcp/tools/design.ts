@@ -29,7 +29,7 @@ import { SitesStore } from '../../lib/sites.ts';
 import { assertSafeHttpUrl, isFetchAllowed } from '../../lib/ssrf.ts';
 import { compareText, extractSectionTexts, textFromHtml } from '../../lib/text-parity.ts';
 import type { SiteProfile } from '../../lib/types.ts';
-import { COMPARE_PROMPT, visionCompare, visionConfig } from '../../lib/vision.ts';
+import { COMPARE_PROMPT, resolveVisionConfig, visionCompare } from '../../lib/vision.ts';
 import type { ToolDef } from '../tool-def.ts';
 import { errorResult, READ_ONLY_TOOL, text, WRITE_TOOL } from '../util.ts';
 
@@ -201,10 +201,10 @@ export const DESIGN_TOOLS: ToolDef[] = [
 		handler: async ( args, env ) => {
 			const { site, profilePath, target } = args as { site?: string; profilePath?: string; target: string };
 			try {
-				const config = visionConfig();
+				const config = await resolveVisionConfig();
 				if ( ! config ) {
 					return errorResult(
-						'Vision credentials are not configured on the server — set NVOOS_FORGE_VISION_BASE_URL / NVOOS_FORGE_VISION_KEY / NVOOS_FORGE_VISION_MODEL.'
+						'No vision model available — set NVOOS_FORGE_VISION_BASE_URL / NVOOS_FORGE_VISION_KEY / NVOOS_FORGE_VISION_MODEL, or expose a local Ollama daemon (autodetected at 127.0.0.1:11434, override with NVOOS_FORGE_OLLAMA_URL).'
 					);
 				}
 				const { profile } = await resolveProfile( env, site, profilePath );
