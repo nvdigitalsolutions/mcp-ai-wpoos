@@ -1181,6 +1181,16 @@ legacy-identifier renames.
   until it is declared there. Keep `src/lib/llms.ts` and
   `src/lib/content/section-kinds.ts` dependency-free — the check imports them
   with only the forge installed.
+- **MCP surface is gated too (2026-11-09).** The tool LISTS differ on purpose
+  from the forge's (generator vs storefront), so the gate pins the shared
+  runtime: the annotation presets in `mcp/tools/util.ts` must carry the same
+  four hints as the forge's `mcp/util.ts`, both `mcp/bff.ts` must keep the
+  fail-closed order (`limiter.allow(` → `validateHost(` → `validateOrigin(` →
+  `authorizeRequest(`) with codes `-32029`/`-32001`, and any tool NAME present
+  in both apps must be declared `SHARED_MCP_TOOLS` (identical title +
+  annotations) or `MCP_NAME_COLLISIONS` with a reason. `rebuild_trigger` is the
+  one declared collision today; the shared set is empty until the forge's
+  managed tier ports the design/ops slices.
 - **Three block types added** (`comparison`, `steps`, `team`). Each needs the
   four touchpoints in the SAME commit: zod schema in
   `lib/content/portable-text.ts`, the `CUSTOM_BLOCK_TYPES` allowlist, a

@@ -3,9 +3,12 @@ name: Astro app parity
 # The two Astro products share a CONTRACT but not code: `examples/nvoos-astro-forge`
 # GENERATES sites and `examples/nvoos-astro-velocity` is a hand-built storefront.
 # Both compose the agent-facing `llms.txt`, both declare a `data-section`
-# vocabulary, and both ship the same `mail.ts` form transport, so those surfaces
-# must not drift — and neither app's own suite can see the other tree, so drift
-# is invisible without this gate.
+# vocabulary, both ship the same `mail.ts` form transport, and both expose an
+# MCP server with the same annotation presets + fail-closed request pipeline,
+# so those surfaces must not drift — and neither app's own suite can see the
+# other tree, so drift is invisible without this gate. MCP tool LISTS differ on
+# purpose (a generator vs a storefront); only the shared runtime and any tool
+# name that appears on both sides are gated.
 #
 # The `paths` filters must cover EVERY file the script reads, in BOTH trees.
 # Narrow filters are how a drift gate silently stops running: editing only
@@ -28,15 +31,19 @@ on:
     paths:
       - 'bin/check-astro-app-parity.mjs'
       - 'examples/nvoos-astro-forge/lib/**'
+      - 'examples/nvoos-astro-forge/mcp/**'
       - 'examples/nvoos-astro-velocity/src/lib/**'
       - 'examples/nvoos-astro-velocity/src/pages/forms/**'
+      - 'examples/nvoos-astro-velocity/mcp/**'
       - '.github/workflows/astro-app-parity.yml'
   pull_request:
     paths:
       - 'bin/check-astro-app-parity.mjs'
       - 'examples/nvoos-astro-forge/lib/**'
+      - 'examples/nvoos-astro-forge/mcp/**'
       - 'examples/nvoos-astro-velocity/src/lib/**'
       - 'examples/nvoos-astro-velocity/src/pages/forms/**'
+      - 'examples/nvoos-astro-velocity/mcp/**'
       - '.github/workflows/astro-app-parity.yml'
 
 jobs:
