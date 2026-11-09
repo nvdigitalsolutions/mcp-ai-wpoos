@@ -1,0 +1,323 @@
+{
+	"url": "https://virtuallyjamaica.com",
+	"name": "Virtually Jamaica",
+	"frontPage": "application",
+	"collections": [
+		{
+			"slug": "posts",
+			"restBase": "wp/v2/posts",
+			"fields": [
+				"id",
+				"date_gmt",
+				"modified_gmt",
+				"title",
+				"slug",
+				"link",
+				"content",
+				"excerpt",
+				"rank_math_title",
+				"rank_math_description",
+				"rank_math_canonical_url",
+				"rank_math_robots",
+				"rank_math_facebook_title",
+				"rank_math_facebook_description",
+				"rank_math_facebook_image",
+				"rank_math_twitter_title",
+				"rank_math_twitter_description",
+				"rank_math_twitter_image",
+				"yoast_head_json"
+			],
+			"embed": true,
+			"kind": "post",
+			"optional": true
+		},
+		{
+			"slug": "pages",
+			"restBase": "wp/v2/pages",
+			"fields": [
+				"id",
+				"date_gmt",
+				"modified_gmt",
+				"title",
+				"slug",
+				"link",
+				"content",
+				"excerpt",
+				"rank_math_title",
+				"rank_math_description",
+				"rank_math_canonical_url",
+				"rank_math_robots",
+				"rank_math_facebook_title",
+				"rank_math_facebook_description",
+				"rank_math_facebook_image",
+				"rank_math_twitter_title",
+				"rank_math_twitter_description",
+				"rank_math_twitter_image",
+				"yoast_head_json"
+			],
+			"embed": true,
+			"kind": "page",
+			"optional": false,
+			"exclude": [
+				"login-customizer",
+				"my-account",
+				"checkout",
+				"cart"
+			]
+		}
+	],
+	"seo": {
+		"description": "Through WiFi advertising, you can target the right audience, at the right time and at the same time leverage your hotspot to promote your business!"
+	},
+	"design": {
+		"mode": "rebuild",
+		"source": {
+			"url": "https://virtuallyjamaica.com",
+			"analyzedAt": "2026-11-09T04:38:03.753Z"
+		},
+		"concept": "warm accent over light neutrals, montserrat display / roboto body, compact spacing rhythm.",
+		"palette": {
+			"roles": {
+				"surface": "#ffffff",
+				"cta": "linear-gradient(#0000,#0000001a 50%,#0000001a)",
+				"accent": "#fe6c61",
+				"text": "#2a2a2a",
+				"field.border": "#767676"
+			},
+			"unassigned": [
+				"#ffffff",
+				"#000000",
+				"#f7f7f7",
+				"#2a2a2a",
+				"#f2f2f2",
+				"#5472d2",
+				"#8d6dc4",
+				"#4cadc9",
+				"#cec2ab",
+				"#50485b",
+				"#75d69c",
+				"#f7be68"
+			],
+			"confidence": {
+				"surface": "high",
+				"cta": "high",
+				"accent": "medium",
+				"text": "medium",
+				"field.border": "medium"
+			}
+		},
+		"typography": {
+			"display": "montserrat",
+			"body": "roboto",
+			"scalePx": [
+				8,
+				9,
+				10,
+				13,
+				28,
+				48,
+				80,
+				160
+			]
+		},
+		"spacing": {
+			"scalePx": [
+				1,
+				4,
+				10,
+				17,
+				32,
+				70,
+				130
+			]
+		},
+		"radii": {
+			"valuesPx": [
+				1,
+				2,
+				6,
+				10,
+				15,
+				25,
+				30,
+				50
+			]
+		},
+		"shadows": {
+			"count": 427
+		},
+		"components": {
+			"header": 2,
+			"footer": 4,
+			"button": 10,
+			"nav": 9,
+			"form": 8
+		},
+		"modes": {
+			"dark": "auto",
+			"contrast": "auto"
+		},
+		"sections": [],
+		"chrome": {
+			"footerBarBg": "#ededed",
+			"favicon": "https://virtuallyjamaica.com/wp-content/uploads/2018/11/cropped-vj-fav-icon-32x32.png",
+			"iconCss": "https://virtuallyjamaica.com/wp-content/themes/brando/assets/css/et-line-icons.css?ver=1.0",
+			"chromeSize": "13px"
+		},
+		"behavior": {
+			"headerSticky": false,
+			"entries": []
+		},
+		"ctaStyle": {
+			"padding": "6px 5px",
+			"radius": "4px"
+		},
+		"adaptation": {
+			"keep": [
+				"The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.",
+				"Component vocabulary hints (buttons, cards, nav) as a checklist, not as markup."
+			],
+			"replace": [
+				"All copy, imagery, logos, and distinctive artwork with the customer's own content.",
+				"Fonts with licensed equivalents unless the source font is verifiably self-hostable."
+			],
+			"remix": [
+				"Shift the accent hue by roughly 10 degrees and pick the customer's own brand neutrals — visibly theirs, not a copy.",
+				"Let the customer's real content (products, posts, pages) drive the layout; apply the language to it."
+			],
+			"licensingNote": "Inspired-by analysis: no source CSS, HTML, copy, or assets were copied. Verify the source license before any closer adaptation.",
+			"attribution": [
+				"Source: https://virtuallyjamaica.com"
+			]
+		}
+	},
+	"inventory": {
+		"shape": "one-pager",
+		"navAnchors": [
+			"about",
+			"contact",
+			"features",
+			"hardware",
+			"home",
+			"services",
+			"wifi"
+		],
+		"navPages": [],
+		"covered": [
+			"/",
+			"/blog2/",
+			"/cart/",
+			"/checkout/",
+			"/login-customizer/",
+			"/my-account/",
+			"/shop/"
+		],
+		"excluded": [
+			"/cart/",
+			"/checkout/",
+			"/login-customizer/",
+			"/my-account/"
+		],
+		"missing": [
+			"/blog/portfolio/",
+			"/blog/portfolio/kanchanavin-com/",
+			"/blog/portfolio/kd411/",
+			"/blog/portfolio/nvbali/",
+			"/blog/portfolio/suki-macdonald/",
+			"/blog/portfolio/team-dungeon-mma/",
+			"/blog/portfolio/tropicana-jewelers/",
+			"/fonts.googleapis.com/",
+			"/fonts.googleapis.com/css/",
+			"/locations.kml/",
+			"/www.google.com/",
+			"/www.googletagmanager.com/",
+			"/xmlrpc.php/"
+		],
+		"danglingAnchors": [],
+		"analyzedAt": "2026-11-09T04:38:11.852Z"
+	},
+	"wireframes": {},
+	"vocabulary": {
+		"widgetRoles": {},
+		"blockRoles": {},
+		"unknownWidgets": [],
+		"unknownBlocks": [],
+		"analyzedAt": "2026-11-09T04:38:13.389Z"
+	},
+	"tracking": {
+		"trackers": [
+			{
+				"vendor": "google-analytics-4",
+				"category": "analytics",
+				"enabled": false,
+				"ids": {
+					"measurementId": "G-MBVSGV66MN"
+				},
+				"detectedBy": [
+					"script:www.googletagmanager.com"
+				],
+				"confidence": "high",
+				"detectedVia": "html"
+			},
+			{
+				"vendor": "google-tag-manager",
+				"category": "analytics",
+				"enabled": false,
+				"ids": {
+					"containerId": "GTM-T5HFT22"
+				},
+				"detectedBy": [
+					"inline:call-shape"
+				],
+				"confidence": "medium",
+				"detectedVia": "html"
+			}
+		],
+		"consent": {
+			"mode": "none",
+			"default": "denied",
+			"strategy": "basic",
+			"waitForUpdate": 500,
+			"gpc": true
+		},
+		"delivery": {
+			"mode": "deferred"
+		},
+		"csp": {
+			"hosts": []
+		},
+		"analyzedAt": "2026-11-09T04:38:13.429Z",
+		"pagesAnalyzed": [
+			"https://virtuallyjamaica.com"
+		]
+	},
+	"tokens": {
+		"surface": "#ffffff",
+		"ink": "#2a2a2a",
+		"muted": "#595959",
+		"line-strong": "#767676",
+		"accent-ink": "#2a2a2a"
+	},
+	"pins": [
+		{
+			"path": "palette.roles.surface",
+			"value": "#ffffff",
+			"why": "The extractor assigned a grey band (#dddddd) as the surface; the page background is white, and #ffffff is in the site own palette pool. Text on #dddddd measured 3.30:1."
+		},
+		{
+			"path": "palette.roles.text",
+			"value": "#2a2a2a",
+			"why": "The extracted text colour #777777 fails AA against the real surface (3.30:1). #2a2a2a is in the site own pool and measures 14.35:1 on white."
+		},
+		{
+			"path": "palette.roles.field.border",
+			"value": "#767676",
+			"why": "Input borders need 3:1 (non-text contrast). The extracted #ebebeb measured 1.14:1; #767676 measures 4.54:1."
+		},
+		{
+			"path": "tokens.accent-ink",
+			"value": "#2a2a2a",
+			"why": "The coral accent #fe6c61 with the template default white ink measures 2.79:1; #2a2a2a ink measures 5.15:1."
+		}
+	]
+}
