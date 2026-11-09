@@ -172,9 +172,15 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 		load: async (context: LoaderContext) => {
 			const client = WpClient.fromProfile(site, { auth, userAgent: options.userAgent });
 
-			if (collection.source === 'payload') {
+			if (collection.source === 'payload' || collection.source === 'local') {
 				await loadPayloadEntries(context, client, collection);
 				return;
+			}
+
+			if ( !collection.restBase ) {
+				// Fail loud and legible: a silent `/wp-json/undefined` request looks
+				// like a network fault and wastes an operator's afternoon.
+				throw new Error( `[nvoos-wp] ${collection.slug}: no restBase configured.` );
 			}
 
 			let fetched;
@@ -598,12 +604,19 @@ function extractCommerce(entry: Record<string, unknown>, keys: string[]): string
  * nvoos-astro-bridge: `{ docs, totalDocs, limit, totalPages, page,
  * hasNextPage, hasPrevPage }` pagination over flat documents (no `_fields`
  * pruning, no X-WP headers). Reads are public; auth is not sent.
+ *
+ * `source: 'local'` (Proposal 135 §D4) reads the SAME envelope from the
+ * bridge's local-content collection — the CMS-authored documents a managed
+ * site owns. It differs in exactly one way that matters here: local
+ * documents carry an explicit `slug`, so the URL survives a title edit
+ * (envelope documents otherwise derive their slug from the title).
  */
 async function loadPayloadEntries(
 	context: LoaderContext,
 	client: WpClient,
 	collection: WpCollection
 ): Promise<void> {
+	const restBase = payloadRestBase(collection);
 	const perPage = collection.perPage ?? 100;
 	const maxPages = collection.maxPages ?? 50;
 	const entries: Array<Record<string, unknown>> = [];
@@ -611,10 +624,27 @@ async function loadPayloadEntries(
 	let pages = 0;
 
 	for (let page = 1; page <= maxPages; page++) {
-		const { body } = await client.get<PayloadPage>(collection.restBase, {
-			page: String(page),
-			limit: String(perPage),
-		});
+		let body: PayloadPage;
+		try {
+			const response = await client.get<PayloadPage>(restBase, {
+				page: String(page),
+				limit: String(perPage),
+			});
+			body = response.body;
+		} catch (error) {
+			// An explicitly optional envelope source may be absent (a bridge
+			// that has not shipped the collection yet, or a site with no local
+			// content) — an empty collection, not a failed build. Mirrors the
+			// wp/v2 branch's optional handling.
+			if (collection.optional && error instanceof WpClientError && error.code === 'wp_not_found') {
+				context.store.clear();
+				context.logger.warn(
+					`[nvoos-wp] ${collection.slug}: source not found (marked optional) — empty collection.`
+				);
+				return;
+			}
+			throw error;
+		}
 		entries.push(...(body.docs ?? []));
 		pages = page;
 		const totalPages = Math.max(1, Number(body.totalPages ?? 1));
@@ -675,12 +705,31 @@ interface PayloadPage {
 	page?: number;
 }
 
+/**
+ * The REST base for an envelope collection.
+ *
+ * `source: 'local'` has a canonical home, so a profile may omit `restBase`
+ * entirely — one less thing to get wrong in 20 site profiles.
+ */
+export function payloadRestBase(collection: WpCollection): string {
+	if (collection.restBase) {
+		return collection.restBase;
+	}
+	return collection.source === 'local' ? 'nvoos-commerce/v1/local' : '';
+}
+
 /** Map one flat nvoos-commerce/v1 document into the stable entry shape. */
 export function extractPayloadRaw(entry: Record<string, unknown>): RawEntry {
 	const title = typeof entry.name === 'string' ? entry.name : String(entry.id ?? '');
 	const html = typeof entry.description === 'string' ? entry.description : '';
 	const date = String(entry.createdAt ?? entry.created_at ?? '');
 	const modified = String(entry.updatedAt ?? entry.updated_at ?? date);
+
+	// An explicit slug wins over the title-derived one: content with a URL
+	// (local CMS documents) must not change its route when an editor renames
+	// the title. Products carry no slug, so their behaviour is unchanged.
+	const slug =
+		typeof entry.slug === 'string' && entry.slug.trim() !== '' ? entry.slug.trim() : slugify(title);
 
 	// Price semantics: `price` is the CURRENT price; `oldPrice` present means
 	// a sale (strike-through = oldPrice). Mirrors the Woo mapping.
@@ -716,7 +765,7 @@ export function extractPayloadRaw(entry: Record<string, unknown>): RawEntry {
 
 	return {
 		title,
-		slug: slugify(title),
+		slug,
 		date,
 		modified,
 		html,

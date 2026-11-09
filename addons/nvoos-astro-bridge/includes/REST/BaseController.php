@@ -125,6 +125,15 @@ abstract class BaseController extends WP_REST_Controller {
 			return $response;
 		}
 
+		// Never mark a preview response public (Proposal 135 Phase 5). A
+		// `preview_token` request deliberately returns NON-published content to
+		// an anonymous caller; caching it at the edge would serve one editor's
+		// draft to every visitor. The token is per-post and short-lived, but the
+		// cache has no idea either fact.
+		if ( self::is_preview_request( $request ) ) {
+			return $response;
+		}
+
 		$response->header( 'Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60' );
 
 		// ETag from the serialized body — correct for collections and singles.
@@ -141,6 +150,8 @@ abstract class BaseController extends WP_REST_Controller {
 				$response->header( 'Last-Modified', gmdate( 'D, d M Y H:i:s', $ts ) . ' GMT' );
 			}
 		}
+
+		self::apply_cache_tags( $response, $request );
 
 		return $response;
 	}
@@ -191,6 +202,11 @@ abstract class BaseController extends WP_REST_Controller {
 			return $response;
 		}
 
+		// Same preview guard as B1 — see is_preview_request().
+		if ( self::is_preview_request( $request ) ) {
+			return $response;
+		}
+
 		$response->header( 'Cache-Control', 'public, s-maxage=60, stale-while-revalidate=15' );
 
 		// ETag from the serialized body — the doc hash the storefront uses
@@ -200,6 +216,87 @@ abstract class BaseController extends WP_REST_Controller {
 			$response->header( 'ETag', '"' . md5( $body ) . '"' );
 		}
 
+		self::apply_cache_tags( $response, $request );
+
 		return $response;
+	}
+
+	/**
+	 * Whether a request carries a preview token.
+	 *
+	 * A valid token returns non-published content to an anonymous caller, so
+	 * every "is this cacheable?" decision must answer no. The check is on the
+	 * PARAMETER's presence, not its validity: a forged/garbage token still
+	 * means the caller is asking for a draft, and a cacheable 404/403 would be
+	 * indistinguishable from the real thing anyway.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return bool
+	 */
+	protected static function is_preview_request( $request ): bool {
+		if ( ! $request instanceof \WP_REST_Request ) {
+			return false;
+		}
+		$token = $request->get_param( 'preview_token' );
+
+		return is_string( $token ) && '' !== $token;
+	}
+
+	/**
+	 * Cache tags for targeted invalidation (Proposal 135 / A2).
+	 *
+	 * The vocabulary matches the frontend's `Astro.cache.set({ tags })`:
+	 * one tag per collection plus `collection:<id>` for a single document.
+	 * `Cache-Tag` is the Fastly/Cloudflare convention, `Surrogate-Key` the
+	 * Varnish/Fastly one — both carry the same list.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return array<int, string>
+	 */
+	private static function cache_tags( $request ): array {
+		$route = (string) $request->get_route();
+		// The namespace constants already carry `/v1` (funiq/v1,
+		// nvoos-commerce/v1) — do not append it again.
+		$rest = (string) preg_replace(
+			'#^/(?:' . preg_quote( \NvoosAstroBridge\Schema::REST_NAMESPACE, '#' ) . '|' . preg_quote( \NvoosAstroBridge\Schema::REST_NAMESPACE_NV, '#' ) . ')/?#',
+			'',
+			$route
+		);
+
+		$segments = array_values( array_filter( explode( '/', $rest ), 'strlen' ) );
+		if ( empty( $segments ) ) {
+			return array();
+		}
+
+		// The route is the MATCHED PATTERN, so parameter segments arrive as
+		// regex noise — keep only the leading collection slug.
+		$collection = (string) preg_replace( '/[^a-z0-9_-].*$/i', '', (string) $segments[0] );
+		if ( '' === $collection ) {
+			return array();
+		}
+
+		$tags = array( $collection );
+		$id   = $request->get_param( 'id' );
+		if ( is_numeric( $id ) && (int) $id > 0 ) {
+			$tags[] = $collection . ':' . (int) $id;
+		}
+
+		return array_values( array_unique( $tags ) );
+	}
+
+	/**
+	 * Apply the tag headers to a response.
+	 *
+	 * @param WP_REST_Response $response Response.
+	 * @param WP_REST_Request  $request  Request.
+	 * @return void
+	 */
+	private static function apply_cache_tags( $response, $request ): void {
+		$tags = self::cache_tags( $request );
+		if ( empty( $tags ) ) {
+			return;
+		}
+		$response->header( 'Cache-Tag', implode( ',', $tags ) );
+		$response->header( 'Surrogate-Key', implode( ' ', $tags ) );
 	}
 }

@@ -104,6 +104,26 @@ class SettingsPage {
 			)
 		);
 
+		register_setting(
+			self::OPTION_GROUP,
+			Schema::OPTION_PUBLIC_ORIGIN,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_public_origin' ),
+				'default'           => '',
+			)
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			Schema::OPTION_MEDIA_ORIGIN,
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_media_origin' ),
+				'default'           => Schema::MEDIA_ORIGIN_CMS,
+			)
+		);
+
 		add_filter(
 			'option_page_capability_' . self::OPTION_GROUP,
 			static function (): string {
@@ -132,6 +152,29 @@ class SettingsPage {
 			array( $this, 'render_woo_sso_field' ),
 			self::PAGE_SLUG,
 			'nvoos_astro_bridge_integration'
+		);
+
+		add_settings_section(
+			'nvoos_astro_bridge_domains',
+			'Domains',
+			array( $this, 'render_domains_section' ),
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'public_origin',
+			'Public site origin',
+			array( $this, 'render_public_origin_field' ),
+			self::PAGE_SLUG,
+			'nvoos_astro_bridge_domains'
+		);
+
+		add_settings_field(
+			'media_origin',
+			'Media URLs',
+			array( $this, 'render_media_origin_field' ),
+			self::PAGE_SLUG,
+			'nvoos_astro_bridge_domains'
 		);
 	}
 
@@ -183,6 +226,110 @@ class SettingsPage {
 	 */
 	public function sanitize_switch( $value ): string {
 		return 'yes' === $value ? 'yes' : 'no';
+	}
+
+	/**
+	 * Sanitize the public site origin (Proposal 135).
+	 *
+	 * Empty means "same origin as WordPress" (the historical behaviour).
+	 * Anything that is not an absolute http(s) origin never persists — the
+	 * previously stored value is kept and a settings error is queued.
+	 *
+	 * @param mixed $value Submitted value.
+	 * @return string Normalized origin or ''.
+	 */
+	public function sanitize_public_origin( $value ): string {
+		if ( '' === $value || null === $value ) {
+			return '';
+		}
+
+		$normalized = Schema::normalize_origin( $value );
+		if ( '' !== $normalized ) {
+			return $normalized;
+		}
+
+		add_settings_error(
+			self::OPTION_GROUP,
+			'invalid_public_origin',
+			'Public site origin must be an absolute http(s) origin, e.g. https://client.com.'
+		);
+
+		$stored = get_option( Schema::OPTION_PUBLIC_ORIGIN, '' );
+		return is_string( $stored ) ? $stored : '';
+	}
+
+	/**
+	 * Sanitize the media-origin mode (Proposal 135 / A6).
+	 *
+	 * @param mixed $value Submitted value.
+	 * @return string `cms` or `frontend`.
+	 */
+	public function sanitize_media_origin( $value ): string {
+		return Schema::MEDIA_ORIGIN_FRONTEND === $value ? Schema::MEDIA_ORIGIN_FRONTEND : Schema::MEDIA_ORIGIN_CMS;
+	}
+
+	/**
+	 * Domains section copy — the CMS-vs-public split (Proposal 135).
+	 *
+	 * @return void
+	 */
+	public function render_domains_section(): void {
+		echo '<p>';
+		esc_html_e( 'Set the public origin when the Astro frontend owns the visitor-facing domain and WordPress lives on a CMS subdomain (for example WordPress on cms.example.com, the site on example.com). Shopper-facing defaults and the checkout allowlist use it instead of the WordPress URL.', 'nvoos-astro-bridge' );
+		echo '</p>';
+	}
+
+	/**
+	 * The public-origin input.
+	 *
+	 * @return void
+	 */
+	public function render_public_origin_field(): void {
+		$current = get_option( Schema::OPTION_PUBLIC_ORIGIN, '' );
+		$current = is_string( $current ) ? $current : '';
+
+		printf(
+			'<input type="url" class="regular-text" name="%1$s" id="%1$s" value="%2$s" placeholder="%3$s" inputmode="url" />',
+			esc_attr( Schema::OPTION_PUBLIC_ORIGIN ),
+			esc_attr( $current ),
+			esc_attr( untrailingslashit( home_url() ) )
+		);
+
+		echo '<p class="description">';
+		esc_html_e( 'Leave empty to use the WordPress site URL. Changing this does not rewrite an already-stored shop doc — update the checkout/cart/return URLs in the Astro CMS Shop settings.', 'nvoos-astro-bridge' );
+		echo '</p>';
+	}
+
+	/**
+	 * The media-origin select.
+	 *
+	 * @return void
+	 */
+	public function render_media_origin_field(): void {
+		$current = get_option( Schema::OPTION_MEDIA_ORIGIN, Schema::MEDIA_ORIGIN_CMS );
+		if ( ! is_string( $current ) ) {
+			$current = Schema::MEDIA_ORIGIN_CMS;
+		}
+
+		$options = array(
+			Schema::MEDIA_ORIGIN_CMS      => 'Absolute URLs on this WordPress host (static sites, default)',
+			Schema::MEDIA_ORIGIN_FRONTEND => 'Same-origin /media/ paths (managed sites with the media proxy)',
+		);
+
+		echo '<select name="' . esc_attr( Schema::OPTION_MEDIA_ORIGIN ) . '" id="' . esc_attr( Schema::OPTION_MEDIA_ORIGIN ) . '">';
+		foreach ( $options as $value => $label ) {
+			printf(
+				'<option value="%s"%s>%s</option>',
+				esc_attr( $value ),
+				selected( $current, $value, false ),
+				esc_html( $label )
+			);
+		}
+		echo '</select>';
+
+		echo '<p class="description">';
+		esc_html_e( 'Only choose /media/ paths when the frontend serves the media proxy (a managed forged site). A static site cannot serve /media/* — its images would 404.', 'nvoos-astro-bridge' );
+		echo '</p>';
 	}
 
 	/**
@@ -303,6 +450,9 @@ class SettingsPage {
 			'Product source (live)'   => is_string( $effective ) && in_array( $effective, array( Schema::SOURCE_NATIVE, 'woo', 'both' ), true ) ? $effective : $stored,
 			'Embedded checkout'       => ( $this->woo_active() && 'native' !== $effective ) ? 'Enabled' : 'Disabled (native mode or Woo missing)',
 			'Guest checkout'          => ( 'yes' === get_option( 'woocommerce_enable_guest_checkout', 'yes' ) ) ? 'Allowed' : 'Requires account',
+			'Public site origin'      => Schema::public_origin(),
+			'WordPress origin'        => untrailingslashit( home_url() ),
+			'Media URLs'              => Schema::MEDIA_ORIGIN_FRONTEND === get_option( Schema::OPTION_MEDIA_ORIGIN, Schema::MEDIA_ORIGIN_CMS ) ? 'same-origin /media/' : 'absolute (CMS host)',
 			'Store API base'          => home_url( '/wp-json/wc/store/v1/' ),
 		);
 

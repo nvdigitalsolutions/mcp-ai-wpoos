@@ -554,6 +554,34 @@ the only committed artifact per site.
   the stub must come from the emission, so merge the emission fix BEFORE
   the next forge-sites run.
 
+## Proposal 135 — two-tier deploy + domain topology (2026-11-09)
+
+Full notes: `reference/proposal-135-managed-tier.md`.
+
+- **WordPress is never the public origin.** A profile's `url` is the CMS host
+  (`https://cms.client.com`); the public site is `ASTRO_SITE`
+  (`https://client.com`). Set `WP_HOME`/`WP_SITEURL` to the CMS host.
+- **`deploy.runtime`** — `static` (default) or `managed`; flows to
+  `deploy-config` → `mirror-push` and a per-branch `deploy.json`. Managed
+  **fails closed** without `server.js`, and implies SSR.
+- Managed ships **endpoint proxy routes**, not `src/fetch.ts` (a custom fetch
+  handler makes Astro skip sessions/actions/middleware/cache).
+- `Astro.cache.set` only behind the generated `MANAGED` flag; bridge tags are
+  `collection` + `collection:<id>`; `nvoos-forge-bridge` posts them to
+  `/api/revalidate`. Preview branches (`preview: true`) + `NVOOS_FORGE_SMOKE`.
+- **Phase 5 shipped:** `nvoos_forge_local` CPT + `/nvoos-commerce/v1/local`,
+  forge `source: 'local'` (slug-authoritative, `restBase` optional, `optional`
+  degrades), `/api/preview` (token → host-only cookie) and `/preview/<slug>/`
+  (SSR, `noindex`, `no-store`, managed only). Preview tokens are
+  **bridge-verified, frontend-transported** — never put the key on the frontend.
+- **`/manage` is not bundled into the template** (the bridge is proprietary and
+  the template is a separate distribution). Editors use the CMS page.
+- Scaffold hazards fixed: the drift manifest must be hashed AFTER the managed
+  rewrite (`writeGeneratedManifest`, step 3g); an omitted `frontPage` vanishes
+  from `nvoos.json` and breaks `astro check` (emit `''`); an emitted `.astro`
+  file must open with `---`. Remaining: live collections (2c).
+
+
 ## Proposal 115 — inventory, wireframes, responsive (2026-11-06)
 
 The forge rebuilds the source site COMPLETELY: a full page inventory

@@ -39,7 +39,7 @@ import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
 import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, scoreParity, verifyBandFlow } from '../lib/design.ts';
-import { emitDeployConfig } from '../lib/deploy-config.ts';
+import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { findDroppedPins } from '../lib/pins.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, diffGeometry, measureGeometry, serveDir } from '../lib/geometry.ts';
@@ -70,6 +70,17 @@ function fail( message ) {
 
 function failDeployMode( mode ) {
 	fail( `Unknown deploy mode "${ mode }" — use one of: ${ DEPLOY_MODES.join( ', ' ) }` );
+}
+
+function failRuntime( runtime ) {
+	fail( `Unknown deploy runtime "${ runtime }" — use one of: ${ DEPLOY_RUNTIMES.join( ', ' ) }` );
+}
+
+/** The deploy-runtime guard — the CLI fails before anything is emitted. */
+function assertRuntime( options ) {
+	if ( options.runtime && ! DEPLOY_RUNTIMES.includes( options.runtime ) ) {
+		failRuntime( options.runtime );
+	}
 }
 
 /** Shared-mirror deploy validation — the two flags travel together and the
@@ -466,6 +477,7 @@ async function runDeploy( profileRef, options ) {
 		failDeployMode( mode );
 	}
 	assertMirrorOptions( options );
+	assertRuntime( options );
 	if ( options.preset && ! PRESET_NAMES.includes( options.preset ) ) {
 		failPreset( options.preset );
 	}
@@ -503,10 +515,11 @@ async function runDeploy( profileRef, options ) {
 	//    workflow, and the fail-closed dispatch verifier).
 	const emitted = await emitDeployConfig( options.target, {
 		mode,
-		siteUrl: String( profile.url ),
+		siteUrl: resolveSiteUrl( profile, options.siteUrl ),
 		cloudflareProject: options.cloudflareProject,
 		mirrorRepo: options.mirrorRepo,
 		siteBranch: options.siteBranch,
+		runtime: options.runtime,
 	} );
 	for ( const file of emitted.files ) {
 		console.log( `  + ${ file }` );
@@ -687,10 +700,11 @@ async function runDeployConfig( profileRef, options ) {
 		failDeployMode( mode );
 	}
 	assertMirrorOptions( options );
+	assertRuntime( options );
 	let siteUrl = options.siteUrl;
-	if ( ! siteUrl && profileRef ) {
+	if ( profileRef ) {
 		const profile = await loadProfile( profileRef );
-		siteUrl = String( profile.url ?? '' );
+		siteUrl = resolveSiteUrl( profile, options.siteUrl );
 	}
 	try {
 		const emitted = await emitDeployConfig( options.target, {
@@ -699,6 +713,7 @@ async function runDeployConfig( profileRef, options ) {
 			cloudflareProject: options.cloudflareProject,
 			mirrorRepo: options.mirrorRepo,
 			siteBranch: options.siteBranch,
+			runtime: options.runtime,
 		} );
 		console.log( `\u2713 Emitted the deploy pipeline into ${ options.target }:` );
 		for ( const file of emitted.files ) {
@@ -1387,6 +1402,7 @@ program
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
 	.option( '--mirror-repo <owner/repo>', 'velocity shared mirror — one repo, branch per site (no per-site repo)' )
 	.option( '--site-branch <branch>', 'shared mirror site branch (e.g. site/jayainc; required with --mirror-repo)' )
+	.option( '--runtime <mode>', 'static | managed — managed ships a Node entry + the BFF (Proposal 135)', 'static' )
 	.action( async ( profileRef, options ) => {
 		await runDeployConfig( profileRef, options );
 	} );
@@ -1409,6 +1425,7 @@ program
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
 	.option( '--mirror-repo <owner/repo>', 'velocity shared mirror — skip repo creation, mirror prebuilt dist/ to the site branch' )
 	.option( '--site-branch <branch>', 'shared mirror site branch (e.g. site/jayainc; required with --mirror-repo)' )
+	.option( '--runtime <mode>', 'static | managed — applied to the emitted pipeline (Proposal 135)', 'static' )
 	.action( async ( profileRef, options ) => {
 		await runDeploy( profileRef, options );
 	} );

@@ -121,7 +121,9 @@ export type CollectionSlug =
 	| 'promotions'
 	| 'promocodes'
 	| 'content/pages'
-	| 'content/posts';
+	| 'content/posts'
+	/** Proposal 135 §D4 — CMS-authored content stored in the bridge's own CPT. */
+	| 'local';
 
 /** Sidebar navigation targets — collections plus the managers, design and settings sections. */
 export type NavSlug = CollectionSlug | 'managers' | 'design' | 'settings';

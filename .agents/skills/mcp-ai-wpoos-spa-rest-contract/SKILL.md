@@ -489,6 +489,16 @@ sub-agents; keep one coordinator for fixes + final gates.
 
 ## Gotchas
 
+- **A contract served behind a frontend BFF is a different auth topology.**
+  When the SPA runs on the public origin and the REST API on a CMS host, the
+  browser must never see a `Domain=` cookie for the CMS — rewrite the proxied
+  `Set-Cookie` to **host-only** (drop `Domain=`, keep `HttpOnly`/`SameSite`/
+  `Secure`). The same rule applies to preview/one-shot tokens: store them in a
+  host-only, `HttpOnly` cookie with a short `Max-Age`, never in
+  `localStorage` (a token in JS is one XSS from exfiltration, and a domain
+  cookie is one sibling subdomain from the same). Verify by asserting the
+  literal `Set-Cookie` header, not just the status: `Domain` absent is the
+  contract.
 - Contract tests that bake in phantom fields **mask** real drift — rewrite
   them from the server's actual response, not the client's types.
 - `_fields` filtering is applied after caching in the assistants/tools list

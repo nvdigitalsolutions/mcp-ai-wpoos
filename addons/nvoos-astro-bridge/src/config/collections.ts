@@ -41,14 +41,20 @@ export interface CollectionConfig {
    * implement the Payload-style where clause (name.like) server-side today.
    */
   searchable?: boolean;
-  /**
-   * Whether the list surface shows the status workflow filter (publish /
-   * draft / pending / future / any). For the governed content collections —
-   * the bridge serves `?status=` to manager sessions only, so the filter
-   * rides the same auth the rest of the CMS uses.
-   */
-  statusFilter?: boolean;
-}
+  	/**
+  	 * Whether the list surface shows the status workflow filter (publish /
+  	 * draft / pending / future / any). For the governed content collections —
+  	 * the bridge serves `?status=` to manager sessions only, so the filter
+  	 * rides the same auth the rest of the CMS uses.
+  	 */
+  	statusFilter?: boolean;
+  	/**
+  	 * Whether a row offers "Preview my edit" (Proposal 135 Phase 5). Only the
+  	 * local collection has a preview-token route; the button mints a
+  	 * short-lived link on the site's PUBLIC origin and opens it in a tab.
+  	 */
+  	previewable?: boolean;
+  }
 
 export const collections: CollectionConfig[] = [
   {
@@ -184,6 +190,37 @@ export const collections: CollectionConfig[] = [
     pluralLabel: 'Posts',
     type: 'collection',
     statusFilter: true,
+    defaultColumns: ['title', 'status', 'updatedAt'],
+    fields: [
+      { name: 'title', type: 'text', label: 'Title', required: true },
+      { name: 'excerpt', type: 'textarea', label: 'Excerpt' },
+      { name: 'content', type: 'textarea', label: 'Content' },
+      { name: 'seoTitle', type: 'text', label: 'SEO Title' },
+      { name: 'seoDescription', type: 'textarea', label: 'SEO Description' },
+      { name: 'publishAt', type: 'date', label: 'Publish At' },
+      {
+        name: 'status',
+        type: 'select',
+        label: 'Status',
+        options: [
+          { value: 'draft', label: 'Draft' },
+          { value: 'pending', label: 'Pending review' },
+          { value: 'publish', label: 'Published' },
+          { value: 'future', label: 'Scheduled' },
+        ],
+      },
+    ],
+  },
+  {
+    // Proposal 135 §D4 — content this site OWNS, not content mirrored from
+    // the source WordPress site. Same field set as Pages on purpose: one
+    // editor mental model, and the same approval state machine behind it.
+    slug: 'local',
+    label: 'Local page',
+    pluralLabel: 'Local content',
+    type: 'collection',
+    statusFilter: true,
+    previewable: true,
     defaultColumns: ['title', 'status', 'updatedAt'],
     fields: [
       { name: 'title', type: 'text', label: 'Title', required: true },

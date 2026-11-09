@@ -29,7 +29,7 @@ class CategoryTransformer {
 		return array(
 			'id'            => $term->term_id,
 			'name'          => $term->name,
-			'image'         => $image_id ? ( wp_get_attachment_url( (int) $image_id ) ?: '' ) : '',
+			'image'         => Schema::media_url( $image_id ),
 			'productsCount' => $this->count_products( $term->term_id ),
 		);
 	}

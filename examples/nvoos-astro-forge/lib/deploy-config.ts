@@ -33,6 +33,45 @@ import { join, relative } from 'node:path';
 /** Supported deploy targets. */
 export type DeployMode = 'github-pages' | 'cloudflare-pages' | 'velocity';
 
+/**
+ * Supported deploy runtimes (Proposal 135).
+ *
+ *  - `static`  — prebuilt flat files; Velocity serves them with a no-op build
+ *                (the historical shape — unchanged output).
+ *  - `managed` — the same branch plus a Node entry (`server.js`); the site owns
+ *                `/api/*`, `/manage`, `/mcp` and `/api/revalidate` behind an
+ *                Astro `src/fetch.ts` BFF.
+ */
+export type DeployRuntime = 'static' | 'managed';
+
+/** The runtime values the CLI and the emitter accept. */
+export const DEPLOY_RUNTIMES: readonly DeployRuntime[] = [ 'static', 'managed' ];
+
+/** Reject an unknown runtime before anything is written. */
+export function assertRuntime( runtime: unknown ): asserts runtime is DeployRuntime | undefined {
+	if ( runtime === undefined ) {
+		return;
+	}
+	if ( typeof runtime !== 'string' || ! DEPLOY_RUNTIMES.includes( runtime as DeployRuntime ) ) {
+		throw new Error( `Invalid deploy runtime "${ String( runtime ) }" — use static or managed.` );
+	}
+}
+
+/**
+ * The canonical public origin the build bakes into `ASTRO_SITE` (Proposal 135).
+ *
+ * Precedence: explicit override → `profile.deploy.publicOrigin` → `profile.url`.
+ * `profile.url` is the WordPress/CMS origin, which equals the public origin
+ * only for single-origin installs; the deploy block separates them.
+ */
+export function resolveSiteUrl(
+	profile: { url?: string; deploy?: { publicOrigin?: string } },
+	override?: string
+): string {
+	const candidate = override ?? profile.deploy?.publicOrigin ?? profile.url ?? '';
+	return String( candidate ).replace( /\/+$/, '' );
+}
+
 /** Default dispatch event type — the bridge plugin's DEFAULT_EVENT. */
 export const DEFAULT_EVENT_TYPE = 'nvoos-forge-content-changed';
 
@@ -58,6 +97,12 @@ export interface DeployConfig {
 	eventType?: string;
 	/** Max age of a dispatch before it is refused (seconds). */
 	refreshWindowSeconds?: number;
+	/**
+	 * Runtime shape of the mirrored branch (Proposal 135). Default `static`.
+	 * `managed` emits a real start command and fails closed when the deploy tree
+	 * has no `server.js` (a managed branch that cannot boot is never pushed).
+	 */
+	runtime?: DeployRuntime;
 }
 
 /** The mode-specific deploy steps appended to the shared build job. */
@@ -97,14 +142,26 @@ function deploySteps( config: DeployConfig ): string[] {
 	//  - per-site connected repo (legacy): dist/ lands on the `deploy` branch
 	//    of the mirror repo under `site/` (the 092 sync pattern, per-client).
 	if ( config.mirrorRepo && config.siteBranch ) {
-		return [
+		const steps = [
 			'      - name: Mirror dist to the shared site branch',
 			'        env:',
 			'          MIRROR_URL: ${{ secrets.VELOCITY_MIRROR_URL }}',
 			'          MIRROR_TOKEN: ${{ secrets.VELOCITY_MIRROR_TOKEN }}',
 			`          SITE_BRANCH: ${ config.siteBranch }`,
-			'        run: node scripts/mirror-push.mjs',
+			`          RUNTIME: ${ config.runtime ?? 'static' }`,
 		];
+		if ( config.runtime === 'managed' ) {
+			// Proposal 135: the managed branch carries the BFF deploy tree
+			// (dist/ + server.js), assembled before the push.
+			return [
+				...steps,
+				'          SOURCE_DIR: .deploy',
+				'        run: |',
+				'          node scripts/sync-deploy-tree.mjs',
+				'          node scripts/mirror-push.mjs',
+			];
+		}
+		return [ ...steps, '        run: node scripts/mirror-push.mjs' ];
 	}
 	return [
 		'      - name: Mirror dist to the connected repo',
@@ -293,7 +350,7 @@ function verifyScript(): string {
  * skips with a warning (never a failed build). The CLI runs the same emitted
  * file for the operator staging path, so workflow and CLI cannot drift.
  */
-function mirrorPushScript(): string {
+function mirrorPushScript( runtime: DeployRuntime = 'static' ): string {
 	return [
 		'#!/usr/bin/env node',
 		'// mirror-push.mjs — force-push a built dist/ to a per-site branch of the',
@@ -320,6 +377,13 @@ function mirrorPushScript(): string {
 		"const token = process.env.MIRROR_TOKEN ?? '';",
 		"const branch = process.env.SITE_BRANCH ?? '';",
 		"const source = resolve( process.cwd(), process.env.SOURCE_DIR ?? 'dist' );",
+		"const runtime = process.env.RUNTIME ?? '" + runtime + "';",
+		"const managed = runtime === 'managed';",
+		'',
+		"if ( runtime !== 'static' && runtime !== 'managed' ) {",
+		"\tconsole.error( 'mirror-push: invalid RUNTIME ' + runtime + ' — use static or managed.' );",
+		'\tprocess.exit( 1 );',
+		'}',
 		'',
 		'if ( ! url || ! token ) {',
 		"	console.log( 'mirror-push: MIRROR_URL / MIRROR_TOKEN are not set — skipping mirror deploy.' );",
@@ -330,8 +394,16 @@ function mirrorPushScript(): string {
 		'	process.exit( 1 );',
 		'}',
 		'if ( ! existsSync( source ) ) {',
-		"	console.error( 'mirror-push: ' + source + ' does not exist — run the build first.' );",
-		'	process.exit( 1 );',
+		"\tconsole.error( 'mirror-push: ' + source + ' does not exist — run the build first.' );",
+		'\tprocess.exit( 1 );',
+		'}',
+		'',
+		"if ( managed && ! existsSync( join( source, 'server.js' ) ) ) {",
+		"\tconsole.error( 'mirror-push: runtime=managed but ' + source + '/server.js is missing.' );",
+		"\tconsole.error( '  A managed site needs the BFF deploy tree (Proposal 135 Phase 2).' );",
+		"\tconsole.error( '  Build it with SOURCE_DIR=.deploy (scripts/sync-deploy-tree.mjs), or' );",
+		"\tconsole.error( '  set deploy.runtime=static in the site profile.' );",
+		'\tprocess.exit( 1 );',
 		'}',
 		'',
 		'const authed = new URL( url );',
@@ -352,8 +424,21 @@ function mirrorPushScript(): string {
 		'// `npm run build` succeed on a repo that ships PREBUILT files (the',
 		'// site IS the output). Point the Velocity app\'s Output Directory at',
 		'// the repo root (`.`).',
+		'//',
+		'// Managed tier (Proposal 135): a real start command. The app owns',
+		'// /api/*, /manage, /mcp and /api/revalidate through src/fetch.ts.',
+		'if ( managed ) {',
+		"\tconst managedPkg = { name: 'nvoos-forge-site', version: '1.0.0', private: true, type: 'module', scripts: { build: 'node -e process.exit(0)', start: 'node server.js' }, engines: { node: '>=22.23.4' } };",
+		"\twriteFileSync( join( tmp, 'package.json' ), JSON.stringify( managedPkg, null, 2 ) );",
+		'} else {',
 		'\twriteFileSync( join( tmp, \'package.json\' ), JSON.stringify( { name: \'nvoos-forge-site\', version: \'1.0.0\', private: true, scripts: { build: \'node -e "console.log(\\\'prebuilt static site\\\')"\' } }, null, 2 ) + \'\\n\' );',
-		"	git( [ 'add', '-A' ], tmp );",
+		'}',
+		'',
+		'// deploy.json — the branch-level deploy contract. Documents the Velocity',
+		'// settings (Entry file, Output Directory) next to the code; it cannot',
+		'// apply them (no deployment-settings API) but it makes them reproducible.',
+		"writeFileSync( join( tmp, 'deploy.json' ), JSON.stringify( { runtime, entry: managed ? 'server.js' : null, outputDirectory: '.', generator: 'nvoos-astro-forge', proposal: 135, generatedAt: new Date().toISOString() }, null, 2 ) );",
+		"\tgit( [ 'add', '-A' ], tmp );",
 		"	const message = 'Forge deploy: ' + ( process.env.GITHUB_SHA ?? 'local' );",
 		'	try {',
 		"		git( [ 'commit', '-m', message ], tmp );",
@@ -399,6 +484,8 @@ export async function emitDeployConfig( dir: string, config: DeployConfig ): Pro
 	await mkdir( workflows, { recursive: true } );
 	await mkdir( scripts, { recursive: true } );
 
+	assertRuntime( config.runtime );
+
 	if ( Boolean( config.mirrorRepo ) !== Boolean( config.siteBranch ) ) {
 		throw new Error( 'mirrorRepo and siteBranch must be set together (shared-mirror velocity deploys).' );
 	}
@@ -409,7 +496,7 @@ export async function emitDeployConfig( dir: string, config: DeployConfig ): Pro
 		{ path: join( scripts, 'verify-dispatch.mjs' ), content: verifyScript() },
 	];
 	if ( config.mirrorRepo && config.siteBranch ) {
-		files.push( { path: join( scripts, 'mirror-push.mjs' ), content: mirrorPushScript() } );
+		files.push( { path: join( scripts, 'mirror-push.mjs' ), content: mirrorPushScript( config.runtime ) } );
 	}
 	for ( const file of files ) {
 		await writeFile( file.path, file.content, 'utf8' );

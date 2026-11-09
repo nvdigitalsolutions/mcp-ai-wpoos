@@ -23,6 +23,17 @@ final class Settings {
 	public const OPTION_REBUILD_TOKEN = 'nvoos_forge_bridge_rebuild_token';
 
 	/**
+	 * Managed-frontend revalidate endpoint (Proposal 135) — the forged site's
+	 * `POST /api/revalidate`. Empty disables the direct-invalidation hop.
+	 */
+	public const OPTION_REVALIDATE_URL = 'nvoos_forge_bridge_revalidate_url';
+
+	/**
+	 * Bearer token for the revalidate endpoint (never echoed back).
+	 */
+	public const OPTION_REVALIDATE_TOKEN = 'nvoos_forge_bridge_revalidate_token';
+
+	/**
 	 * Shared HMAC secret (never echoed back; verifies inbound triggers and
 	 * signs outbound dispatch payloads).
 	 */
@@ -92,6 +103,8 @@ final class Settings {
 			self::OPTION_REBUILD_SECRET,
 			self::OPTION_REBUILD_EVENT,
 			self::OPTION_REBUILD_ENABLED,
+			self::OPTION_REVALIDATE_URL,
+			self::OPTION_REVALIDATE_TOKEN,
 			self::OPTION_FORMS_ENABLED,
 			self::OPTION_FORMS_ORIGINS,
 			self::OPTION_FORMS_CAPTCHA_PROVIDER,
@@ -118,6 +131,34 @@ final class Settings {
 	 */
 	public static function rebuild_token(): string {
 		return (string) get_option( self::OPTION_REBUILD_TOKEN, '' );
+	}
+
+	/**
+	 * The managed frontend's revalidate endpoint (trailing slashes trimmed)
+	 * or '' when unset.
+	 *
+	 * @return string
+	 */
+	public static function revalidate_url(): string {
+		return untrailingslashit( (string) get_option( self::OPTION_REVALIDATE_URL, '' ) );
+	}
+
+	/**
+	 * The revalidate bearer token ('' when unset).
+	 *
+	 * @return string
+	 */
+	public static function revalidate_token(): string {
+		return (string) get_option( self::OPTION_REVALIDATE_TOKEN, '' );
+	}
+
+	/**
+	 * Whether the direct-invalidation hop can fire (URL + token present).
+	 *
+	 * @return bool
+	 */
+	public static function revalidate_configured(): bool {
+		return '' !== self::revalidate_url() && '' !== self::revalidate_token();
 	}
 
 	/**
@@ -327,6 +368,22 @@ final class Settings {
 		$event = isset( $_POST['rebuild_event'] ) ? sanitize_title( wp_unslash( $_POST['rebuild_event'] ) ) : '';
 		update_option( self::OPTION_REBUILD_EVENT, '' === $event ? self::DEFAULT_EVENT : $event );
 
+		// Direct invalidation (Proposal 135) — the managed frontend's
+		// /api/revalidate; independent of the GitHub dispatch.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
+		$revalidate_url = isset( $_POST['revalidate_url'] ) ? sanitize_text_field( wp_unslash( $_POST['revalidate_url'] ) ) : '';
+		if ( '' !== $revalidate_url && ! wp_http_validate_url( $revalidate_url ) ) {
+			$revalidate_url = '';
+		}
+		update_option( self::OPTION_REVALIDATE_URL, $revalidate_url );
+
+		// The revalidate token is write-only: an empty field keeps the stored value.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
+		$revalidate_token = isset( $_POST['revalidate_token'] ) ? sanitize_text_field( wp_unslash( $_POST['revalidate_token'] ) ) : '';
+		if ( '' !== $revalidate_token ) {
+			update_option( self::OPTION_REVALIDATE_TOKEN, $revalidate_token );
+		}
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer above.
 		$enabled = isset( $_POST['rebuild_enabled'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['rebuild_enabled'] ) ) ? '1' : '0';
 		update_option( self::OPTION_REBUILD_ENABLED, $enabled );
@@ -447,6 +504,20 @@ final class Settings {
 					<tr>
 						<th scope="row"><label for="rebuild_event"><?php esc_html_e( 'Dispatch event type', 'nvoos-forge-bridge' ); ?></label></th>
 						<td><input type="text" class="regular-text" id="rebuild_event" name="rebuild_event" value="<?php echo esc_attr( self::rebuild_event() ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="revalidate_url"><?php esc_html_e( 'Revalidate endpoint (managed sites)', 'nvoos-forge-bridge' ); ?></label></th>
+						<td>
+							<input type="url" class="regular-text" id="revalidate_url" name="revalidate_url" value="<?php echo esc_attr( self::revalidate_url() ); ?>" placeholder="https://www.example.com/api/revalidate" />
+							<p class="description"><?php esc_html_e( 'Purges the managed frontend cache by tag in seconds. Set this to the site\'s /api/revalidate URL and the shared NVOOS_REVALIDATE_TOKEN. Empty disables the hop; the GitHub dispatch still rebuilds.', 'nvoos-forge-bridge' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="revalidate_token"><?php esc_html_e( 'Revalidate token', 'nvoos-forge-bridge' ); ?></label></th>
+						<td>
+							<input type="password" class="regular-text" id="revalidate_token" name="revalidate_token" value="" autocomplete="new-password" placeholder="<?php echo esc_attr( self::revalidate_configured() ? '••••••••' : '' ); ?>" />
+							<p class="description"><?php esc_html_e( 'Must equal the site\'s NVOOS_REVALIDATE_TOKEN. Leave blank to keep the stored value.', 'nvoos-forge-bridge' ); ?></p>
+						</td>
 					</tr>
 				</table>
 

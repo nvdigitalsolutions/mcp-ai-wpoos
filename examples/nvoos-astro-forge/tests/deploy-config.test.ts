@@ -12,7 +12,7 @@ import { promisify } from 'node:util';
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { DEFAULT_EVENT_TYPE, emitDeployConfig } from '../lib/deploy-config.ts';
+import { DEFAULT_EVENT_TYPE, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 
 const execFileAsync = promisify( execFile );
 
@@ -134,6 +134,105 @@ describe( 'emitDeployConfig', () => {
 		const { deploy } = await emitted();
 		expect( deploy ).toContain( 'wrangler-action' );
 		expect( deploy ).not.toContain( 'configure-pages' );
+	} );
+
+	// -- Proposal 135: the two-tier deploy model ----------------------------
+
+	const MIRROR = { mode: 'velocity' as const, mirrorRepo: 'nvdigitalsolutions/nvoos-forge-sites', siteBranch: 'site/test' };
+
+	it( 'defaults to the static runtime and records it in deploy.json', async () => {
+		await emitDeployConfig( dir, MIRROR );
+		const script = await readFile( join( dir, 'scripts', 'mirror-push.mjs' ), 'utf8' );
+		expect( script ).toContain( "process.env.RUNTIME ?? 'static'" );
+		expect( script ).toContain( "writeFileSync( join( tmp, 'deploy.json' )" );
+		expect( script ).toContain( 'proposal: 135' );
+		expect( script ).toContain( 'nvoos-forge-site' );
+	} );
+
+	it( 'bakes RUNTIME into the shared-mirror step', async () => {
+		await emitDeployConfig( dir, { ...MIRROR, runtime: 'managed' } );
+		const { deploy } = await emitted();
+		expect( deploy ).toContain( 'RUNTIME: managed' );
+	} );
+
+	it( 'managed emits a real start command and the deploy manifest', async () => {
+		const { files } = await emitDeployConfig( dir, { ...MIRROR, runtime: 'managed' } );
+		expect( files ).toContain( 'scripts/mirror-push.mjs' );
+		const script = await readFile( join( dir, 'scripts', 'mirror-push.mjs' ), 'utf8' );
+		expect( script ).toContain( "process.env.RUNTIME ?? 'managed'" );
+		expect( script ).toContain( "start: 'node server.js'" );
+		expect( script ).toContain( 'managedPkg' );
+		expect( script ).toContain( "entry: managed ? 'server.js' : null" );
+	} );
+
+	it( 'managed assembles the deploy tree before the mirror push', async () => {
+		await emitDeployConfig( dir, { ...MIRROR, runtime: 'managed' } );
+		const { deploy } = await emitted();
+		expect( deploy ).toContain( 'node scripts/sync-deploy-tree.mjs' );
+		expect( deploy ).toContain( 'SOURCE_DIR: .deploy' );
+	} );
+
+	it( 'static does not assemble a deploy tree', async () => {
+		await emitDeployConfig( dir, MIRROR );
+		const { deploy } = await emitted();
+		expect( deploy ).not.toContain( 'sync-deploy-tree.mjs' );
+		expect( deploy ).not.toContain( 'SOURCE_DIR: .deploy' );
+	} );
+
+	it( 'rejects an unknown runtime before writing anything', async () => {
+		await expect( emitDeployConfig( dir, { ...MIRROR, runtime: 'bogus' as 'static' } ) ).rejects.toThrow( /Invalid deploy runtime/ );
+	} );
+
+	describe( 'emitted mirror-push.mjs (runtime contract)', () => {
+		async function runPush( extraEnv: Record<string, string> ) {
+			const script = join( dir, 'scripts', 'mirror-push.mjs' );
+			return execFileAsync( 'node', [ script ], {
+				env: {
+					...process.env,
+					MIRROR_URL: 'https://github.com/example/mirror.git',
+					MIRROR_TOKEN: 'x',
+					SITE_BRANCH: 'site/test',
+					...extraEnv,
+				},
+			} );
+		}
+
+		it( 'skips (exit 0) when the mirror secrets are unset — even for managed', async () => {
+			await emitDeployConfig( dir, MIRROR );
+			const { stdout } = await runPush( { MIRROR_URL: '', MIRROR_TOKEN: '', RUNTIME: 'managed' } );
+			expect( stdout ).toContain( 'skipping mirror deploy' );
+		} );
+
+		it( 'refuses to push a managed tree without server.js', async () => {
+			await emitDeployConfig( dir, MIRROR );
+			await expect( runPush( { RUNTIME: 'managed', SOURCE_DIR: dir } ) ).rejects.toThrow( /server\.js is missing/ );
+		} );
+
+		it( 'rejects an unknown RUNTIME from the environment', async () => {
+			await emitDeployConfig( dir, MIRROR );
+			await expect( runPush( { RUNTIME: 'edge', SOURCE_DIR: dir } ) ).rejects.toThrow( /invalid RUNTIME/ );
+		} );
+	} );
+} );
+
+describe( 'resolveSiteUrl (Proposal 135)', () => {
+	it( 'prefers deploy.publicOrigin over the CMS url', () => {
+		expect(
+			resolveSiteUrl( { url: 'https://cms.client.com/', deploy: { publicOrigin: 'https://client.com/' } } )
+		).toBe( 'https://client.com' );
+	} );
+
+	it( 'falls back to the profile url (single-origin installs)', () => {
+		expect( resolveSiteUrl( { url: 'https://client.com/' } ) ).toBe( 'https://client.com' );
+	} );
+
+	it( 'lets an explicit override win', () => {
+		expect(
+			resolveSiteUrl(
+				{ url: 'https://cms.client.com', deploy: { publicOrigin: 'https://client.com' } },
+				'https://staging.client.com/'
+			)
+		).toBe( 'https://staging.client.com' );
 	} );
 } );
 

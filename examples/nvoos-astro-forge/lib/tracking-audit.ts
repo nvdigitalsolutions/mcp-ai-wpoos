@@ -46,6 +46,12 @@ function vendorScriptIndex( html: string, hosts: RegExp[] ): number {
 }
 
 /** Parse the emitted events JSON (absent → null). */
+/** The inline script body of the element with the given id, or null. */
+function inlineScriptBody( html: string, id: string ): string | null {
+	const match = new RegExp( `<script[^>]*id=["']${ escapeRegExp( id ) }["'][^>]*>([\\s\\S]*?)</script>`, 'i' ).exec( html );
+	return match ? match[ 1 ] : null;
+}
+
 function readEvents( html: string ): Record< string, unknown > | null {
 	const match = new RegExp( `<script[^>]*id=["']${ TRACKING_EVENTS_ID }["'][^>]*>([\\s\\S]*?)</script>`, 'i' ).exec( html );
 	if ( ! match ) {
@@ -158,6 +164,28 @@ export function auditTracking(
 	}
 	if ( consentMode === 'external-cmp' && ! tracking.consent?.cmp?.script ) {
 		push( 'cmp-script-missing', 'warn', 'consent.mode is "external-cmp" but no cmp.script is configured — the loader will stay denied.' );
+	}
+
+	// --- Consent Mode v2 shape (Proposal 135 / B6) ---------------------------
+	// The template always emits defaults AND an update; a hand-rebuilt head is
+	// the failure this catches. A banner that records a choice but never fires
+	// gtag('consent','update',…) behaves as if nothing changed, and Google
+	// requires ad_user_data + ad_personalization for EEA/UK traffic.
+	if ( consentIndex !== -1 ) {
+		const block = inlineScriptBody( html, CONSENT_DEFAULT_ID );
+		if ( block !== null ) {
+			if ( ! /gtag\(\s*['"]consent['"]\s*,\s*['"]default['"]/.test( block ) ) {
+				push( 'consent-default-call-missing', 'fail', `#${ CONSENT_DEFAULT_ID } has no gtag('consent','default',…) call.` );
+			}
+			if ( ! /gtag\(\s*['"]consent['"]\s*,\s*['"]update['"]/.test( block ) ) {
+				push( 'consent-update-missing', 'fail', `#${ CONSENT_DEFAULT_ID } records a default but never calls gtag('consent','update',…) — the tags never learn the visitor's choice.` );
+			}
+			for ( const param of [ 'ad_user_data', 'ad_personalization' ] ) {
+				if ( ! block.includes( param ) ) {
+					push( 'consent-v2-param-missing', 'fail', `#${ CONSENT_DEFAULT_ID } is missing the Consent Mode v2 parameter "${ param }" (required for EEA/UK traffic).` );
+				}
+			}
+		}
 	}
 
 	// --- static-HTML purity (deferred + basic) ------------------------------

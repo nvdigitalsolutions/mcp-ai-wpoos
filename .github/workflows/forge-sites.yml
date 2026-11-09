@@ -34,6 +34,11 @@ on:
         description: 'Site name to build (sites/<name>.json) — blank builds every site'
         required: false
         type: string
+      preview:
+        description: 'Build a preview deployment on site/<name>-preview (not production)'
+        required: false
+        type: boolean
+        default: false
   repository_dispatch:
     types: [ nvoos-forge-content-changed ]
 
@@ -88,6 +93,9 @@ jobs:
           # `env:` blocks (an env `vars.X || default` evaluates empty) — the
           # default therefore lives in the shell below (${VAR:-default}).
           MIRROR_REPO: ${{ vars.NVOOS_FORGE_MIRROR_REPO }}
+          # Opt-in post-push smoke check (Proposal 135 / C3).
+          NVOOS_FORGE_SMOKE: ${{ vars.NVOOS_FORGE_SMOKE }}
+          PREVIEW: ${{ github.event.inputs.preview }}
           FORGE_WORK: ${{ runner.temp }}/forge-work
           DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
         run: |
@@ -111,10 +119,44 @@ jobs:
           for name in $SITES; do
             echo "== $name =="
             target="$FORGE_WORK/$name"
+            # Proposal 135: the profile owns the runtime tier. Unset/invalid
+            # degrades to "static" (the historical behaviour).
+            RUNTIME=$(node -e "const fs=require('fs');try{const p=JSON.parse(fs.readFileSync('sites/$name.json','utf8'));const r=p&&p.deploy&&p.deploy.runtime;process.stdout.write(r==='managed'?'managed':'static')}catch{process.stdout.write('static')}")
+            echo "   runtime: $RUNTIME"
+            # Preview deployments (Proposal 135 / C1) — an explicit preview
+            # dispatch writes site/<name>-preview, leaving production alone.
+            SITE_BRANCH="site/$name"
+            if [ "${PREVIEW:-}" = "true" ]; then
+              SITE_BRANCH="site/$name-preview"
+              echo "   preview branch: $SITE_BRANCH"
+            fi
+            URL=$(node -e "const fs=require('fs');console.log(JSON.parse(fs.readFileSync('sites/$name.json','utf8')).url)")
+            # Proposal 135: `url` is the WordPress/CMS origin; the PUBLIC origin
+            # (deploy.publicOrigin) is what ASTRO_SITE canonicalizes to.
+            PUBLIC_ORIGIN=$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('sites/$name.json','utf8'));const o=(p.deploy&&p.deploy.publicOrigin)||p.url||'';process.stdout.write(o.replace(/\/+$/,''))")
+            echo "   cms: $URL  public: $PUBLIC_ORIGIN"
             node scripts/forge.mjs "sites/$name.json" --target "$target"
             node scripts/forge.mjs deploy-config "sites/$name.json" --target "$target" \
-              --to velocity --mirror-repo "$MIRROR_REPO" --site-branch "site/$name"
-            URL=$(node -e "const fs=require('fs');console.log(JSON.parse(fs.readFileSync('sites/$name.json','utf8')).url)")
-            ( cd "$target" && npm install && ASTRO_SITE="$URL" npm run build )
-            ( cd "$target" && SITE_BRANCH="site/$name" node scripts/mirror-push.mjs )
+              --to velocity --mirror-repo "$MIRROR_REPO" --site-branch "$SITE_BRANCH" --runtime "$RUNTIME" --site-url "$PUBLIC_ORIGIN"
+            ( cd "$target" && npm install && ASTRO_SITE="$PUBLIC_ORIGIN" npm run build )
+            # Proposal 135: managed branches ship the BFF deploy tree
+            # (dist/ + server.js) rather than the flat static files.
+            MIRROR_SOURCE="dist"
+            if [ "$RUNTIME" = "managed" ]; then
+              ( cd "$target" && node scripts/sync-deploy-tree.mjs )
+              MIRROR_SOURCE=".deploy"
+            fi
+            ( cd "$target" && SOURCE_DIR="$MIRROR_SOURCE" RUNTIME="$RUNTIME" SITE_BRANCH="$SITE_BRANCH" node scripts/mirror-push.mjs )
+
+            # Post-push smoke (Proposal 135 / C3): opt-in via NVOOS_FORGE_SMOKE.
+            # Never fatal by default — DNS may not point at the app yet.
+            if [ -n "${NVOOS_FORGE_SMOKE:-}" ] && [ "${PREVIEW:-}" != "true" ]; then
+              code=$( curl -sS -o "$FORGE_WORK/$name.smoke.html" -w '%{http_code}' --max-time 20 "$PUBLIC_ORIGIN" || echo 000 )
+              echo "   smoke $PUBLIC_ORIGIN -> $code"
+              if [ "$code" != "200" ]; then
+                echo "::warning title=Forge smoke::$name returned $code at $PUBLIC_ORIGIN"
+              elif grep -Eqi 'name="robots"[^>]*noindex' "$FORGE_WORK/$name.smoke.html"; then
+                echo "::warning title=Forge smoke::$name serves noindex on the public origin"
+              fi
+            fi
           done

@@ -36,6 +36,7 @@ class TestShopGlobalsController extends WP_Test_REST_TestCase {
 		do_action( 'rest_api_init' );
 
 		delete_option( Schema::OPTION_SHOP );
+		delete_option( Schema::OPTION_PUBLIC_ORIGIN );
 
 		$this->admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( 0 );
@@ -48,6 +49,7 @@ class TestShopGlobalsController extends WP_Test_REST_TestCase {
 	 */
 	public function tearDown(): void {
 		delete_option( Schema::OPTION_SHOP );
+		delete_option( Schema::OPTION_PUBLIC_ORIGIN );
 		parent::tearDown();
 	}
 
@@ -266,6 +268,56 @@ class TestShopGlobalsController extends WP_Test_REST_TestCase {
 			$this->patch_request( array( 'currency' => 'GBP' ) )
 		);
 		$this->assertEquals( 403, $response->get_status() );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Proposal 135 — the shopper-facing defaults follow the configured public
+	 * origin, not the WordPress (CMS) origin.
+	 */
+	public function test_defaults_follow_the_public_origin(): void {
+		update_option( Schema::OPTION_PUBLIC_ORIGIN, 'https://store.example.com' );
+
+		$request  = new WP_REST_Request( 'GET', '/nvoos-commerce/v1/globals/shop' );
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		$this->assertSame( 'https://store.example.com/checkout/', $data['checkoutUrl'] );
+		$this->assertSame( 'https://store.example.com/cart/', $data['cartUrl'] );
+		$this->assertSame( 'https://store.example.com/checkout/order-received/', $data['returnUrl'] );
+	}
+
+	/**
+	 * Proposal 135 — the public-origin host is a first-class same-site host:
+	 * no allowlist filter is needed when the CMS lives on a subdomain.
+	 */
+	public function test_public_origin_host_is_allowed_without_the_allowlist(): void {
+		update_option( Schema::OPTION_PUBLIC_ORIGIN, 'https://store.example.com' );
+		wp_set_current_user( $this->admin_id );
+
+		$response = rest_get_server()->dispatch(
+			$this->patch_request( array( 'checkoutUrl' => 'https://store.example.com/checkout/' ) )
+		);
+		$this->assertEquals( 200, $response->get_status() );
+		$this->assertSame( 'https://store.example.com/checkout/', $response->get_data()['checkoutUrl'] );
+
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Proposal 135 — a third host is still rejected; the public origin does
+	 * not widen the allowlist beyond the two real origins.
+	 */
+	public function test_third_host_is_still_rejected(): void {
+		update_option( Schema::OPTION_PUBLIC_ORIGIN, 'https://store.example.com' );
+		wp_set_current_user( $this->admin_id );
+
+		$response = rest_get_server()->dispatch(
+			$this->patch_request( array( 'checkoutUrl' => 'https://evil.example.com/checkout/' ) )
+		);
+		$this->assertEquals( 400, $response->get_status() );
+		$this->assertSame( 'astro_shop_checkout_url_not_allowed', $response->as_error()->get_error_code() );
 
 		wp_set_current_user( 0 );
 	}

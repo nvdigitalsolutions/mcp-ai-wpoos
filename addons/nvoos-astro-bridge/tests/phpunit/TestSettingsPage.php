@@ -76,6 +76,7 @@ class TestSettingsPage extends WP_UnitTestCase {
 		$wp_settings_errors = array();
 		delete_option( Schema::OPTION_PRODUCT_SOURCE );
 		delete_option( Schema::OPTION_WOO_SSO_ENABLED );
+		delete_option( Schema::OPTION_PUBLIC_ORIGIN );
 		parent::tearDown();
 	}
 
@@ -120,6 +121,36 @@ class TestSettingsPage extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Proposal 135 — the public origin sanitizer normalizes a valid origin.
+	 */
+	public function test_sanitize_public_origin_normalizes(): void {
+		$this->assertSame( '', $this->page->sanitize_public_origin( '' ) );
+		$this->assertSame( '', $this->page->sanitize_public_origin( null ) );
+		$this->assertSame( 'https://client.example.com', $this->page->sanitize_public_origin( 'https://client.example.com' ) );
+		$this->assertSame( 'https://client.example.com', $this->page->sanitize_public_origin( 'HTTPS://Client.Example.com/' ) );
+		$this->assertSame( 'https://client.example.com', $this->page->sanitize_public_origin( 'https://client.example.com/some/path/?q=1' ) );
+		$this->assertSame( 'http://localhost:8080', $this->page->sanitize_public_origin( 'http://localhost:8080/' ) );
+	}
+
+	/**
+	 * Proposal 135 — an invalid origin never persists; the stored value wins
+	 * and a settings error is queued.
+	 */
+	public function test_sanitize_public_origin_rejects_invalid(): void {
+		update_option( Schema::OPTION_PUBLIC_ORIGIN, 'https://keep.example.com' );
+
+		$this->assertSame( 'https://keep.example.com', $this->page->sanitize_public_origin( 'not-a-url' ) );
+		$this->assertSame( 'https://keep.example.com', $this->page->sanitize_public_origin( '/relative' ) );
+		$this->assertSame( 'https://keep.example.com', $this->page->sanitize_public_origin( 'ftp://client.example.com' ) );
+		$this->assertSame( 'https://keep.example.com', $this->page->sanitize_public_origin( 'https://user@client.example.com' ) );
+
+		global $wp_settings_errors;
+		$this->assertNotEmpty( $wp_settings_errors );
+
+		delete_option( Schema::OPTION_PUBLIC_ORIGIN );
+	}
+
+	/**
 	 * Saving the option page requires manage_astro (not manage_options) —
 	 * editors granted the bridge cap can configure it, the Settings API
 	 * default would lock them out.
@@ -149,6 +180,8 @@ class TestSettingsPage extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'action="options.php"', $html );
 		$this->assertStringContainsString( 'System status', $html );
 		$this->assertStringContainsString( 'funiq_bridge_products_source', $html );
+		$this->assertStringContainsString( 'funiq_bridge_public_origin', $html );
+		$this->assertStringContainsString( 'Public site origin', $html );
 	}
 
 	/**
@@ -158,6 +191,7 @@ class TestSettingsPage extends WP_UnitTestCase {
 		global $wp_registered_settings;
 		$this->assertArrayHasKey( Schema::OPTION_PRODUCT_SOURCE, $wp_registered_settings );
 		$this->assertArrayHasKey( Schema::OPTION_WOO_SSO_ENABLED, $wp_registered_settings );
+		$this->assertArrayHasKey( Schema::OPTION_PUBLIC_ORIGIN, $wp_registered_settings );
 	}
 
 	/**

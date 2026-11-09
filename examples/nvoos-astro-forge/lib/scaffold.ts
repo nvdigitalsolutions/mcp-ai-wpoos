@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { auditWarnings, contrastAudit } from './contrast.ts';
 import { designToTokens, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
+import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree } from './managed-runtime.ts';
 import { consentCategoryFor, cspDirectivesFor } from './tracking.ts';
 import type { ForgeDesign, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
@@ -233,11 +234,59 @@ function tsLength( value: ResponsiveLength ): string {
 	return `{ ${ parts.join( ', ' ) } }`;
 }
 
+/**
+ * Resolve a collection's REST base.
+ *
+ * `source: 'local'` has a canonical home on the bridge
+ * (`nvoos-commerce/v1/local`), so a profile may omit `restBase` entirely —
+ * one less thing to get wrong across 20 site profiles.
+ */
+function collectionRestBase( collection: WpCollection ): string {
+	if ( collection.restBase ) {
+		return collection.restBase;
+	}
+	return collection.source === 'local' ? 'nvoos-commerce/v1/local' : '';
+}
+
+/**
+ * Write the generated-artifact drift manifest (Proposal 126 §drift).
+ *
+ * MUST run after every generated write in the scaffold: the managed tier
+ * rewrites `src/lib/managed.generated.ts` late in the sequence, and a
+ * manifest hashed before that reports a phantom drift on every managed site.
+ */
+async function writeGeneratedManifest( targetDir: string ): Promise<void> {
+	const generatedFiles = [
+		'src/styles/global.css',
+		'src/lib/design.generated.ts',
+		'src/lib/sections.generated.ts',
+		'src/lib/chrome.generated.ts',
+		'src/lib/behaviors.generated.ts',
+		'src/lib/vocabulary.generated.ts',
+		'src/lib/tracking.generated.ts',
+		'src/lib/managed.generated.ts',
+		'public/tokens.dtcg.json',
+		'public/_headers',
+	];
+	const files: Record<string, string> = {};
+	for ( const file of generatedFiles ) {
+		const content = await readFile( path.join( targetDir, file ), 'utf8' ).catch( () => null );
+		if ( content !== null ) {
+			files[ file ] = createHash( 'sha256' ).update( content ).digest( 'hex' );
+		}
+	}
+	await writeFile(
+		path.join( targetDir, 'nvoos.generated.json' ),
+		JSON.stringify( { scaffoldedAt: new Date().toISOString(), files }, null, 2 ) + '\n',
+		'utf8'
+	);
+}
+
 function collectionLiteral(collection: WpCollection, indent = '\t'): string {
 	const fields = collection.fields.map((f) => tsString(f)).join(', ');
 	const lines = [
 		`${indent}slug: ${tsString(collection.slug)},`,
-		`${indent}restBase: ${tsString(collection.restBase)},`,
+		`${indent}restBase: ${tsString(collectionRestBase(collection))},`,
 		`${indent}fields: [${fields}],`,
 		`${indent}embed: ${collection.embed === false ? 'false' : 'true'},`,
 		`${indent}perPage: ${collection.perPage ?? 100},`,
@@ -1480,7 +1529,7 @@ export const OG_DEV_DEPENDENCIES: Record<string, string> = {
  * exist only in 'ssr' mode; 'static' removes both lines. The template
  * carries the markers — matching is line-anchored like the FORGE:site span.
  */
-export function renderAstroConfig(source: string, render: RenderMode): string {
+export function renderAstroConfig(source: string, render: RenderMode, managed = false): string {
 	const lines = source.split(/\r?\n/);
 	const importLine = lines.findIndex((line) => line.trim() === '// FORGE:adapter-import');
 	const configLine = lines.findIndex((line) => line.trim() === '// FORGE:render-config');
@@ -1489,6 +1538,10 @@ export function renderAstroConfig(source: string, render: RenderMode): string {
 	}
 	const out: string[] = [];
 	for (let i = 0; i < lines.length; i++) {
+		if (managed && lines[i].trim() === "import { defineConfig } from 'astro/config';") {
+			out.push("import { defineConfig, memoryCache } from 'astro/config';");
+			continue;
+		}
 		if (i === importLine) {
 			if (render === 'ssr') {
 				out.push("import node from '@astrojs/node';");
@@ -1499,6 +1552,17 @@ export function renderAstroConfig(source: string, render: RenderMode): string {
 			if (render === 'ssr') {
 				out.push("\toutput: 'server',");
 				out.push("\tadapter: node({ mode: 'standalone' }),");
+			}
+			if (managed) {
+				// Proposal 135: tag-based route caching backs the revalidate route.
+				out.push('\t// Managed runtime (Proposal 135) — tag-based route caching.');
+				out.push('\tcache: { provider: memoryCache() },');
+				out.push('\trouteRules: {');
+				out.push("\t\t'/products/**': { maxAge: 300, swr: 600 },");
+				out.push("\t\t'/posts/**': { maxAge: 300, swr: 600 },");
+				out.push("\t\t'/manage/**': { maxAge: 0 },");
+				out.push("\t\t'/api/**': { maxAge: 0 },");
+				out.push('\t},');
 			}
 			continue;
 		}
@@ -1807,6 +1871,15 @@ async function scaffoldProject(
 	// is self-contained (idempotent when the caller already applied it —
 	// applyPresetToProfile re-filters to the same result).
 	const profile = applyPresetToProfile(options.profile, options.preset ?? 'blog');
+	// Proposal 135: the managed tier needs a Node process (the BFF + the
+	// revalidate endpoint), so it requires server output. Infer it from the
+	// runtime tier; an explicit conflicting --render still fails closed BEFORE
+	// any writes — a half-scaffolded managed project is worse than an error.
+	const managed = profile.deploy?.runtime === 'managed';
+	const render: RenderMode = options.render ?? (managed ? 'ssr' : preset.render);
+	if (managed && render !== 'ssr') {
+		throw new Error('A managed site uses server output — scaffold it with --render ssr (Proposal 135).');
+	}
 	const templateDir = await resolveTemplateDir(options.template);
 
 	// 1. Copy the template (never copy its build artifacts or lockfile state).
@@ -1919,33 +1992,11 @@ async function scaffoldProject(
 			renderTokensDtcg( profile, mergedTokens ),
 			'utf8'
 		);
-		// The generated-artifact drift manifest (126 §drift) — sha256 of
-		// every generated/rewritten file; the template's
-		// scripts/check-generated.mjs re-hashes on `npm run check` and fails
-		// on hand-edits or stale scaffolds.
-		const generatedFiles = [
-			'src/styles/global.css',
-			'src/lib/design.generated.ts',
-			'src/lib/sections.generated.ts',
-			'src/lib/chrome.generated.ts',
-			'src/lib/behaviors.generated.ts',
-			'src/lib/vocabulary.generated.ts',
-			'src/lib/tracking.generated.ts',
-			'public/tokens.dtcg.json',
-			'public/_headers',
-		];
-		const files: Record<string, string> = {};
-		for ( const file of generatedFiles ) {
-			const content = await readFile( path.join( targetDir, file ), 'utf8' ).catch( () => null );
-			if ( content !== null ) {
-				files[ file ] = createHash( 'sha256' ).update( content ).digest( 'hex' );
-			}
-		}
-		await writeFile(
-			path.join( targetDir, 'nvoos.generated.json' ),
-			JSON.stringify( { scaffoldedAt: new Date().toISOString(), files }, null, 2 ) + '\n',
-			'utf8'
-		);
+		// The generated-artifact drift manifest (126 §drift) is written at the
+		// END of the scaffold (step 3g) — see writeGeneratedManifest(). It used
+		// to be written here, BEFORE 3f rewrote src/lib/managed.generated.ts,
+		// which made every managed site fail `npm run check` with a phantom
+		// "drifted" report.
 	} catch {
 		// No design module in the template — nothing to write.
 	}
@@ -2016,7 +2067,6 @@ async function scaffoldProject(
 	//     endpoint + its devDeps. The manifest.surfaces flags gate the
 	//     template chrome.
 	const surfaces: PresetSurfaces = { ...preset.surfaces, ...(options.surfaces ?? {}) };
-	const render: RenderMode = options.render ?? preset.render;
 	if (!surfaces.search) {
 		await rm(path.join(targetDir, 'src', 'pages', 'search.astro'), { force: true });
 		await mutatePackageJson(targetDir, (pkg) => {
@@ -2088,11 +2138,56 @@ async function scaffoldProject(
 	//     when the template carries no config (the builtin test fixture).
 	const astroConfigPath = path.join(targetDir, 'astro.config.mjs');
 	try {
-		await writeFile(astroConfigPath, renderAstroConfig(await readFile(astroConfigPath, 'utf8'), render), 'utf8');
+		await writeFile(astroConfigPath, renderAstroConfig(await readFile(astroConfigPath, 'utf8'), render, managed), 'utf8');
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
 			throw error;
 		}
+	}
+
+	// 3f. Managed runtime (Proposal 135 Phase 2) — the server-to-server proxy
+	//     routes, the token-gated revalidate endpoint, the Velocity entry and
+	//     the deploy-tree assembler. Only emitted for runtime: managed; the
+	//     static tier is untouched. No secrets are written (env comes from the
+	//     Velocity app).
+	if (managed) {
+		await mkdir(path.join(targetDir, 'src', 'lib'), { recursive: true });
+		await writeFile(path.join(targetDir, 'src', 'lib', 'managed.generated.ts'), renderManagedGenerated(true), 'utf8');
+		await writeFile(path.join(targetDir, 'src', 'lib', 'managed-proxy.ts'), renderProxyHelperTs(), 'utf8');
+
+		await mkdir(path.join(targetDir, 'src', 'pages', 'api', 'forms'), { recursive: true });
+		await writeFile(path.join(targetDir, 'src', 'pages', 'api', '[...path].ts'), renderApiProxyTs(), 'utf8');
+		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'forms', 'submit.ts'), renderFormsProxyTs(), 'utf8');
+		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'revalidate.ts'), renderRevalidateTs(), 'utf8');
+		// Proposal 135 Phase 5 — the preview exchange + the draft-aware page.
+		// `/manage` mints the token on the CMS; this route only transports it
+		// into a host-only cookie and redirects to /preview/<slug>/.
+		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'preview.ts'), renderPreviewApiTs(), 'utf8');
+		await mkdir(path.join(targetDir, 'src', 'pages', 'preview'), { recursive: true });
+		await writeFile(path.join(targetDir, 'src', 'pages', 'preview', '[...slug].astro'), renderPreviewPageTs(), 'utf8');
+
+		await mkdir(path.join(targetDir, 'src', 'pages', 'media'), { recursive: true });
+		await writeFile(path.join(targetDir, 'src', 'pages', 'media', '[...path].ts'), renderMediaProxyTs(), 'utf8');
+
+		await writeFile(path.join(targetDir, 'server.js'), renderServerShim(), 'utf8');
+		await writeFile(path.join(targetDir, 'scripts', 'sync-deploy-tree.mjs'), renderSyncDeployTree(), 'utf8');
+		await mutatePackageJson(targetDir, (pkg) => {
+			const scripts = (pkg.scripts ?? {}) as Record<string, unknown>;
+			scripts['sync-deploy-tree'] = 'node scripts/sync-deploy-tree.mjs';
+			pkg.scripts = scripts;
+		});
+	}
+
+	// 3g. Generated-artifact drift manifest (Proposal 126 §drift) — sha256 of
+	//     every generated/rewritten file. Written LAST, after every other
+	//     generated write has landed (the managed block above rewrites
+	//     src/lib/managed.generated.ts). The template's
+	//     scripts/check-generated.mjs re-hashes on `npm run check` and fails on
+	//     hand-edits or stale scaffolds.
+	try {
+		await writeGeneratedManifest(targetDir);
+	} catch {
+		// No design module in the template — nothing to manifest.
 	}
 
 	// 4. Manifest + env example + gitignore gate.
@@ -2108,7 +2203,7 @@ async function scaffoldProject(
 		generator: 'nvoos-astro-forge',
 		url: profile.url.replace(/\/+$/, ''),
 		name: profile.name ?? 'Forge Site',
-		frontPage: profile.frontPage,
+		frontPage: profile.frontPage ?? '',
 		// Always emitted (never omitted): the template reads it directly and a
 		// missing key makes `astro check` fail on the inferred JSON type.
 		seoDescription: profile.seo?.description ?? '',
@@ -2131,7 +2226,7 @@ async function scaffoldProject(
 		generatedAt: new Date().toISOString(),
 		collections: profile.collections.map((c) => ({
 			slug: c.slug,
-			restBase: c.restBase,
+			restBase: collectionRestBase(c),
 			kind: c.kind,
 			// Explicit loader defaults keep both keys present in the JSON so
 			// the manifest's inferred type exposes them (the SSR route reads
@@ -2188,6 +2283,19 @@ async function scaffoldProject(
 			'# fetches through an allowlisted proxy (http://user:pass@host:port).',
 			'# Unset = direct fetches.',
 			'WP_FETCH_PROXY=',
+			...(profile.deploy?.runtime === 'managed'
+				? [
+						'',
+						'# Managed runtime (Proposal 135) — the WordPress origin the BFF proxies',
+						'# /api, /media and /api/forms/submit to (server-to-server; the CMS host',
+						'# is never called by a browser).',
+						'NVOOS_TARGET_SITE=',
+						'',
+						'# Shared secret for POST /api/revalidate (tag-based cache invalidation).',
+						'# Unset disables the route (503).',
+						'NVOOS_REVALIDATE_TOKEN=',
+				  ]
+				: []),
 			...renderTrackingEnvLines( profile ),
 			'',
 		].join('\n'),
