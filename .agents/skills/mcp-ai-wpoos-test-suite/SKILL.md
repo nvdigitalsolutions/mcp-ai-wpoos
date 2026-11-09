@@ -60,7 +60,23 @@ MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins
 Rules:
 
 - **Never run two `docker exec phpunit` concurrently** — they collide on the
-  shared `wordpress_test` DB.
+  shared `wordpress_test` DB (the second times out with a connection error
+  rather than failing cleanly).
+- **A `--no-dev` vendor tree has no PHPUnit.** Symptom:
+  `Class "PHPUnit\TextUI\Application" not found` (or `vendor/bin/phpunit`
+  missing) after `vendor/` was installed with `--no-dev`. Run
+  `composer install` (dev included), then restore the tracked bits:
+  `git checkout -- vendor/composer/` — do **not** `git checkout -- vendor/`
+  wholesale in a shared worktree (other agents' work can live there).
+- **phpcs cannot find `WordPress` after a vendor restore.** Symptom:
+  `Referenced sniff "WordPress" does not exist. ERROR: No sniffs were
+  registered.` The `installed_paths` setting lives in
+  `vendor/squizlabs/php_codesniffer/CodeSniffer.conf`, which the composer
+  plugin regenerates on install and which is empty after a restore. Either
+  re-run `composer install`, or point phpcs at the standards for that run:
+  `phpcs --standard=phpcs.xml.dist --runtime-set installed_paths "<abs>/vendor/wp-coding-standards/wpcs,<abs>/vendor/phpcompatibility/php-compatibility,<abs>/vendor/phpcsstandards/phpcsutils,<abs>/vendor/phpcsstandards/phpcsextra"`
+  (absolute paths — relative ones silently resolve to nothing and still
+  report the same error).
 - Validate every cluster on **both** WP 6.9 and WP 7.1 before opening the PR.
 - The local bootstrap lacks JetEngine and Graphify; the CI bootstrap loads
   them. A suite skipped locally can still fail in CI — and vice versa.
@@ -1185,6 +1201,30 @@ the changed files is the substantive gate; plan CI waits accordingly.
           $parsed = gmdate( 'Y-m-d H:i:s', $parsed );
       }
       ```
+
+  90. **A boot-time admin cookie defeats "anonymous" assertions.** The root
+      bootstrap logs an administrator in and leaves `$_COOKIE[LOGGED_IN_COOKIE]`
+      set for the whole PHPUnit process. Any code path that re-resolves the
+      session from that cookie (the bridge's `AuthSupport::maybe_restore_…`,
+      called from `item_permissions_check()` and from the governed-content
+      read path) silently resurrects the admin *after* `wp_set_current_user(0)`
+      — so a test asserting "a draft 404s publicly" gets **200**. Fix: capture
+      the cookie in `setUp()`, `unset( $_COOKIE[ LOGGED_IN_COOKIE ] )`, and put
+      it back in `tearDown()` so later suites see the environment they expect.
+      (`wp_set_current_user(0)` alone is not enough; the restore runs inside
+      the request, after your setUp.)
+  91. **A standalone-plugin suite whose bootstrap needs `WP_TESTS_*` cannot run
+      in this container.** `plugins/nvoos-forge-bridge` (and similar
+      single-plugin suites) read `WP_TESTS_DOMAIN` / `WP_TESTS_TITLE` /
+      `WP_TESTS_EMAIL` / `WP_PHP_BINARY` and abort without them; this local
+      environment does not define them, CI does. Gates that DO apply locally:
+      `php -l` and `phpcs`. Say "lint only, CI runs the suite" in the PR rather
+      than claiming the tests passed.
+  92. **Shared-state flakes in a parallel JS suite.** `examples/nvoos-astro-forge`
+      `tests/sites.test.ts` reads the shared `~/.nvoos-forge/sites.json`: it
+      fails intermittently in a full parallel `npm test` run and passes in
+      isolation. Re-run the single file before hunting for a real regression —
+      and never write to the registry from another suite.
 
 ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 

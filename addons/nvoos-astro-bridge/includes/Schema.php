@@ -35,6 +35,26 @@ final class Schema {
 	public const CPT_PROMOTION = 'funiq_promotion';
 	public const CPT_PROMOCODE = 'funiq_promocode';
 
+	/**
+	 * Local (CMS-authored) content for the forged frontend — Proposal 135 §D4.
+	 *
+	 * Deliberately NOT `forge_local`: a bare slug is a collision hazard on a
+	 * shared WordPress install, and every other new identifier in this addon
+	 * carries the `nvoos_` prefix (Proposal 112's meta-prefix decision).
+	 * Private + `show_in_rest` false — this CPT is reached only through the
+	 * bridge contract, never through wp/v2.
+	 */
+	public const CPT_FORGE_LOCAL = 'nvoos_forge_local';
+
+	/**
+	 * Preview token lifetime in seconds (Proposal 135 Phase 5).
+	 *
+	 * A preview link is a short-lived convenience for an editor, not a session:
+	 * 15 minutes is long enough to open the link and look at a draft, short
+	 * enough that a leaked link dies on its own.
+	 */
+	public const PREVIEW_TTL = 900;
+
 	// -----------------------------------------------------------------------
 	// Taxonomy slugs.
 	// -----------------------------------------------------------------------
@@ -160,11 +180,46 @@ final class Schema {
 	 */
 	public const OPTION_WOO_SSO_ENABLED = 'funiq_bridge_woo_sso_enabled';
 
+	/**
+	 * Public site origin (Proposal 135) — the origin visitors use, e.g.
+	 * `https://client.com` when WordPress itself lives on `cms.client.com`.
+	 *
+	 * Shopper-facing defaults (checkout/cart/return) and the checkout-URL
+	 * allowlist derive from this instead of `home_url()`. Empty = fall back to
+	 * `home_url()`, so single-origin deployments are unchanged.
+	 */
+	public const OPTION_PUBLIC_ORIGIN = 'funiq_bridge_public_origin';
+
+	/**
+	 * Media origin (Proposal 135 / A6) — `cms` (default: absolute URLs on the
+	 * WordPress host) or `frontend` (same-origin `/media/...` paths for the
+	 * managed site's media proxy). `frontend` is only correct when the frontend
+	 * serves `/media/*` (the managed proxy) — a static site needs `cms`.
+	 */
+	public const OPTION_MEDIA_ORIGIN = 'funiq_bridge_media_origin';
+
+	/**
+	 * Media origin: absolute URLs on the WordPress host (default).
+	 */
+	public const MEDIA_ORIGIN_CMS = 'cms';
+
+	/**
+	 * Media origin: same-origin `/media/...` paths (managed sites with the
+	 * media proxy).
+	 */
+	public const MEDIA_ORIGIN_FRONTEND = 'frontend';
+
 	// -----------------------------------------------------------------------
 	// Product source names (the `source` field on product documents).
 	// -----------------------------------------------------------------------
 	public const SOURCE_NATIVE = 'native';
 	public const SOURCE_WOO    = 'woocommerce';
+
+	/**
+	 * Local CPT-authored content read by the forge loader
+	 * (`WpCollection.source === 'local'`).
+	 */
+	public const SOURCE_LOCAL = 'local';
 
 	// -----------------------------------------------------------------------
 	// WooCommerce mapping targets (used when Woo is the products source).
@@ -242,21 +297,131 @@ final class Schema {
 	}
 
 	/**
+	 * The media URL for an attachment, honoring the media-origin setting.
+	 *
+	 * @param int $attachment_id Attachment id.
+	 * @return string URL (absolute in cms mode, `/media/...` in frontend mode).
+	 */
+	public static function media_url( $attachment_id ): string {
+		if ( empty( $attachment_id ) ) {
+			return '';
+		}
+		$url = wp_get_attachment_url( (int) $attachment_id );
+
+		return self::media_url_from( is_string( $url ) ? $url : '' );
+	}
+
+	/**
+	 * Rewrite a WordPress uploads URL for the configured media origin.
+	 * Pure string work — unit-testable without an attachment fixture.
+	 *
+	 * @param string $url Absolute uploads URL (or any URL).
+	 * @return string The URL, or its `/media/...` path in frontend mode.
+	 */
+	public static function media_url_from( $url ): string {
+		if ( ! is_string( $url ) || '' === $url ) {
+			return '';
+		}
+
+		$mode = get_option( self::OPTION_MEDIA_ORIGIN, self::MEDIA_ORIGIN_CMS );
+		if ( self::MEDIA_ORIGIN_FRONTEND !== $mode ) {
+			return $url;
+		}
+
+		$uploads = wp_get_upload_dir();
+		$base    = isset( $uploads['baseurl'] ) ? (string) $uploads['baseurl'] : '';
+		if ( '' !== $base && 0 === strpos( $url, $base ) ) {
+			return '/media' . substr( $url, strlen( $base ) );
+		}
+
+		return $url;
+	}
+
+	/**
+	 * The public site origin (Proposal 135).
+	 *
+	 * `home_url()` is the CMS origin. When the frontend owns the public domain
+	 * (`cms.client.com` for WordPress, `client.com` for shoppers), shopper-facing
+	 * URLs built from `home_url()` point at a host that serves no storefront.
+	 * Resolves the configured origin; falls back to `home_url()` when unset, so
+	 * single-origin installs (nvoos.pro) behave exactly as before.
+	 *
+	 * @return string Absolute origin, no trailing slash.
+	 */
+	public static function public_origin(): string {
+		$stored = get_option( self::OPTION_PUBLIC_ORIGIN, '' );
+		$origin = is_string( $stored ) ? self::normalize_origin( $stored ) : '';
+
+		if ( '' === $origin ) {
+			$origin = self::normalize_origin( home_url() );
+		}
+
+		/**
+		 * Per-request public-origin override.
+		 *
+		 * @param string $origin Normalized origin.
+		 */
+		$origin = apply_filters( 'funiq_bridge_public_origin', $origin );
+
+		return is_string( $origin ) && '' !== $origin ? $origin : untrailingslashit( (string) home_url() );
+	}
+
+	/**
+	 * Normalize an absolute http(s) origin to `scheme://host[:port]`.
+	 *
+	 * Returns an empty string for anything else (relative values, other
+	 * schemes, userinfo). Validation is deliberately local —
+	 * `wp_http_validate_url()` resolves DNS, which fails on intranet hosts and
+	 * in CI (the ShopGlobalsController documents the same gotcha).
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string Normalized origin or ''.
+	 */
+	public static function normalize_origin( $value ): string {
+		if ( ! is_string( $value ) || '' === $value ) {
+			return '';
+		}
+
+		$parts = wp_parse_url( $value );
+		if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+			return '';
+		}
+
+		$scheme = strtolower( (string) $parts['scheme'] );
+		if ( 'http' !== $scheme && 'https' !== $scheme ) {
+			return '';
+		}
+		if ( isset( $parts['user'] ) || isset( $parts['pass'] ) ) {
+			return '';
+		}
+
+		$port = isset( $parts['port'] ) ? ':' . (int) $parts['port'] : '';
+
+		return $scheme . '://' . strtolower( (string) $parts['host'] ) . $port;
+	}
+
+	/**
 	 * Default values for the shop globals option (Proposal 106 §1.3,
 	 * extended by 108 §3).
 	 *
-	 * Checkout/cart/return URLs derive from the site home URL; the currency
-	 * comes from WooCommerce when it is active (USD otherwise). The currency
-	 * symbol is a display hint for the storefront — no currency conversion
-	 * happens bridge-side.
+	 * Checkout/cart/return URLs derive from the PUBLIC origin (Proposal 135) —
+	 * the configured frontend origin when one is set, `home_url()` otherwise.
+	 * The currency comes from WooCommerce when it is active (USD otherwise).
+	 * The currency symbol is a display hint for the storefront — no currency
+	 * conversion happens bridge-side.
+	 *
+	 * An already-stored shop doc keeps its URLs; changing the public origin
+	 * does not rewrite it (update the doc via /manage → Shop).
 	 *
 	 * @return array{checkoutUrl: string, cartUrl: string, returnUrl: string, currency: string, currencySymbol: string, updatedAt: string}
 	 */
 	public static function shop_defaults(): array {
+		$origin = self::public_origin();
+
 		return array(
-			'checkoutUrl'    => home_url( '/checkout/' ),
-			'cartUrl'        => home_url( '/cart/' ),
-			'returnUrl'      => home_url( '/checkout/order-received/' ),
+			'checkoutUrl'    => $origin . '/checkout/',
+			'cartUrl'        => $origin . '/cart/',
+			'returnUrl'      => $origin . '/checkout/order-received/',
 			'currency'       => ( class_exists( 'WooCommerce' ) && function_exists( 'get_woocommerce_currency' ) ) ? get_woocommerce_currency() : 'USD',
 			'currencySymbol' => '$',
 			'updatedAt'      => gmdate( 'c' ),

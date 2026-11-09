@@ -314,6 +314,24 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## Key gotchas (learned the hard way)
 
+- **A custom `src/fetch.ts` would break the whole app.** A fetch handler that
+  returns a `Response` replaces Astro's request pipeline — Astro then warns
+  that the project's sessions, actions, middleware and cache handlers are NOT
+  wired. A storefront that adopted it would silently lose customer sessions,
+  server actions and route caching. That is why this app keeps its own
+  `serve.mjs` and the forge uses **endpoint proxy routes** instead
+  (Proposal 135).
+- **`home_url()` is not the public origin** (Proposal 135). When the CMS lives
+  on `cms.<client>` and the storefront owns `<client>`, shopper-facing defaults
+  must come from `Schema::public_origin()` / `OPTION_PUBLIC_ORIGIN`, never
+  `home_url()` — otherwise `shop_defaults()` and the checkout/cart/return URL
+  allowlist point at a host that serves no storefront.
+- **`/manage` is proprietary and is NOT redistributed.**
+  `addons/nvoos-astro-bridge/LICENSE` is a commercial licence and the forge
+  template is a separate distribution, so the SPA bundle may only ship where
+  the bridge licence applies (this app and wp-admin). A forged site must load
+  it from the licensed CMS host or use the CMS page — never bundle it into a
+  template.
 - **CartBadge** must hydrate `client:load transition:persist` — `client:idle`
   is too slow for Playwright e2e.
 - Playwright islands with `client:visible` hydrate lazily → use `toPass()` +
@@ -383,6 +401,18 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   (host-only), and `/api/auth/me`'s `canManage` gates everything. The sync
   workflow installs bridge deps (`npm ci` in `addons/nvoos-astro-bridge/`) before
   the app build and re-runs on bridge path changes.
+- **Adding a collection to `/manage` (the four-file rule):** a new collection is
+  `types/index.ts` (`CollectionSlug`), `config/collections.ts` (fields +
+  `statusFilter`/`searchable`/`previewable`/`sortable`), `auth/permissions.ts`
+  (`NAV` entry — the sidebar and the router both read it), then **rebuild the
+  bundle and sync it**: `npm run build && npm run build:standalone` in the addon,
+  then `node scripts/sync-manage-assets.mjs` here (or `npm run build:manage`).
+  Both committed bundles must move together — `build/standalone/*` and
+  `public/manage-assets/*` — or the two-bundle drift gate fails.
+- **A per-row action that mints a link must open the tab synchronously.**
+  `window.open()` after an `await` is treated as a popup and blocked; open
+  `about:blank` first, then `location.replace(url)` once the request resolves
+  (the `local` collection's Preview button, Proposal 135).
 - **Standalone build — jsx-runtime (learned 2026-10-29):**
   `@wordpress/element` ships NO `./jsx-runtime` export — a standalone
   esbuild build with `jsxImportSource: '@wordpress/element'` fails with

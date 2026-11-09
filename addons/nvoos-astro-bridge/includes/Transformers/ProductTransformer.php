@@ -93,11 +93,7 @@ class ProductTransformer {
 	 * @return string Empty string if no valid attachment.
 	 */
 	private function media_url( $attachment_id ): string {
-		if ( empty( $attachment_id ) ) {
-			return '';
-		}
-		$url = wp_get_attachment_url( (int) $attachment_id );
-		return $url ?: '';
+		return Schema::media_url( $attachment_id );
 	}
 
 	/**

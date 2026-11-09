@@ -16,6 +16,7 @@ import { buildGraph, homeCrumb } from '../../../lib/seo-graph.ts';
 import { WpClient, WpClientError } from '../../../forge/wp-client.ts';
 import { sanitizeHtml } from '../../../forge/sanitize.ts';
 import { extractPayloadRaw, extractRaw, SEO_SIDECAR_FIELDS, slugify } from '../../../forge/wp-loader.ts';
+import { MANAGED } from '../../../lib/managed.generated.ts';
 import type { WpAuth } from '../../../forge/types.ts';
 import manifest from '../../../../nvoos.json';
 
@@ -54,6 +55,14 @@ try {
 		return new Response('Not found', { status: 404 });
 	}
 	return new Response('Upstream error', { status: 502 });
+}
+
+// Proposal 135 / 2b — tag this response so POST /api/revalidate can purge
+// exactly this product (or the whole collection) in seconds, no rebuild.
+// Guarded by the generated MANAGED flag: an ssr-without-managed build has no
+// cache provider, so it must never touch the cache API.
+if (MANAGED) {
+	Astro.cache.set({ maxAge: 300, swr: 600, tags: ['products', `products:${numericId}`] });
 }
 
 // Proposal 131 — merge the product CPT's SEO fields (wc/v3 carries none).

@@ -8,8 +8,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { createWpLoader, slugify } from '../lib/wp-loader.ts';
-import type { SiteProfile } from '../lib/types.ts';
+import { createWpLoader, extractPayloadRaw, payloadRestBase, slugify } from '../lib/wp-loader.ts';
+import type { SiteProfile, WpCollection } from '../lib/types.ts';
 import type { LoaderContext } from 'astro/loaders';
 
 interface StoredEntry {
@@ -446,6 +446,128 @@ describe('createWpLoader load()', () => {
 		expect(warnings.some((w) => w.includes('incomplete'))).toBe(true);
 	});
 });
+
+describe( 'extractPayloadRaw (nvoos-commerce envelope)', () => {
+	it( 'maps name/description into the entry shape', () => {
+		const raw = extractPayloadRaw( {
+			id: 9,
+			name: 'Aurora Sofa',
+			description: '<p>Deep seat</p>',
+			createdAt: '2026-11-01T10:00:00',
+			updatedAt: '2026-11-02T10:00:00',
+			image: 'https://fixture.test/a.png',
+			images: ['https://fixture.test/b.png'],
+		} );
+
+		expect( raw.title ).toBe( 'Aurora Sofa' );
+		expect( raw.html ).toBe( '<p>Deep seat</p>' );
+		expect( raw.date ).toBe( '2026-11-01T10:00:00' );
+		expect( raw.modified ).toBe( '2026-11-02T10:00:00' );
+		expect( raw.featuredImage ).toBe( 'https://fixture.test/a.png' );
+	} );
+
+	it( 'derives the slug from the title when the document carries none', () => {
+		expect( extractPayloadRaw( { id: 1, name: 'Aurora 3-Seater Sofa' } ).slug ).toBe( 'aurora-3-seater-sofa' );
+	} );
+
+	it( 'prefers an explicit slug (local content keeps its URL on a rename)', () => {
+		const raw = extractPayloadRaw( {
+			id: 7,
+			name: 'Behind The Scenes (renamed)',
+			slug: 'behind-the-scenes',
+		} );
+
+		expect( raw.slug ).toBe( 'behind-the-scenes' );
+	} );
+} );
+
+describe( 'local source (Proposal 135 §D4)', () => {
+	const LOCAL: WpCollection = {
+		slug: 'posts',
+		restBase: '',
+		fields: [],
+		source: 'local',
+	};
+
+	it( 'defaults the REST base to the bridge local collection', () => {
+		expect( payloadRestBase( LOCAL ) ).toBe( 'nvoos-commerce/v1/local' );
+		expect( payloadRestBase( { ...LOCAL, restBase: 'nvoos-commerce/v1/pages' } ) ).toBe( 'nvoos-commerce/v1/pages' );
+	} );
+
+	it( 'loads local documents with their explicit slugs', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader( {
+			site: PROFILE,
+			collection: LOCAL,
+			userAgent: 'test',
+		} );
+
+		const requested: string[] = [];
+		const originalFetch = globalThis.fetch;
+		( globalThis as { fetch: typeof fetch } ).fetch = ( async ( input: string | URL | Request ) => {
+			requested.push( String( input ) );
+			return new Response(
+				JSON.stringify( {
+					docs: [
+						{
+							id: 7,
+							name: 'Behind The Scenes',
+							slug: 'behind-the-scenes',
+							description: '<p>Notes</p><script>alert(1)</script>',
+							seoTitle: 'Behind The Scenes — Studio',
+							createdAt: '2026-11-01T09:00:00',
+							updatedAt: '2026-11-03T09:00:00',
+						},
+					],
+					totalDocs: 1,
+					totalPages: 1,
+				} ),
+				{ status: 200, headers: { 'content-type': 'application/json' } }
+			);
+		} ) as typeof fetch;
+
+		try {
+			await loader.load( fakeContext( store ) );
+		} finally {
+			( globalThis as { fetch: typeof fetch } ).fetch = originalFetch;
+		}
+
+		expect( requested[0] ).toContain( '/wp-json/nvoos-commerce/v1/local' );
+		expect( store.entries ).toHaveLength( 1 );
+
+		const entry = store.entries[0];
+		expect( entry.id ).toBe( '7' );
+		expect( entry.data.slug ).toBe( 'behind-the-scenes' );
+		expect( entry.data.title ).toBe( 'Behind The Scenes' );
+		expect( entry.data.seoTitle ).toBe( 'Behind The Scenes — Studio' );
+		// Sanitizer ran: the script tag is gone.
+		expect( entry.rendered?.html ).toContain( '<p>Notes</p>' );
+		expect( entry.rendered?.html ).not.toContain( '<script' );
+	} );
+
+	it( 'degrades to an empty collection when an optional local source 404s', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader( {
+			site: PROFILE,
+			collection: { ...LOCAL, optional: true },
+		} );
+
+		const originalFetch = globalThis.fetch;
+		( globalThis as { fetch: typeof fetch } ).fetch = ( async () =>
+			new Response( JSON.stringify( { code: 'rest_no_route', message: 'No route.' } ), {
+				status: 404,
+				headers: { 'content-type': 'application/json' },
+			} ) ) as typeof fetch;
+
+		try {
+			await loader.load( fakeContext( store ) );
+		} finally {
+			( globalThis as { fetch: typeof fetch } ).fetch = originalFetch;
+		}
+
+		expect( store.entries ).toHaveLength( 0 );
+	} );
+} );
 
 describe( 'slugify (D4 — limax, matches the velocity rule)', () => {
 	it( 'transliterates accents', () => {

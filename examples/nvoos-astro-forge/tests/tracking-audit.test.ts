@@ -34,7 +34,7 @@ const HEAD = [
 	'<head>',
 	'<meta name="google-site-verification" content="abc123">',
 	'<script id="nvoos-tracking-config" type="application/json">{"vendors":[]}</script>',
-	'<script id="nvoos-consent-default">gtag("consent","default",{});</script>',
+	'<script id="nvoos-consent-default">gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied"});gtag("consent","update",{ad_storage:"granted",ad_user_data:"granted",ad_personalization:"granted"});</script>',
 	'<script id="nvoos-tracking-events" type="application/json">{"purchase":false}</script>',
 	'<script id="nvoos-tracking-loader">/* loader */</script>',
 	'</head>',
@@ -211,5 +211,40 @@ describe( 'parseCspHosts', () => {
 
 	it( 'returns an empty list when there is no CSP line', () => {
 		expect( parseCspHosts( '/*\n  X-Frame-Options: DENY\n' ) ).toEqual( [] );
+	} );
+} );
+
+describe( 'consent mode v2 gate (Proposal 135)', () => {
+	const consentHtml = ( body: string ) =>
+		`<html><head><script id="nvoos-consent-default">${ body }</script></head><body></body></html>`;
+
+	const COMPLETE =
+		"gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied'});" +
+		"gtag('consent','update',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});";
+
+	it( 'passes a complete default + update pair', () => {
+		const findings = auditTracking( tracking(), consentHtml( COMPLETE ) ).filter(
+			( finding ) => finding.code.startsWith( 'consent-' ) && finding.severity === 'fail'
+		);
+		expect( findings ).toEqual( [] );
+	} );
+
+	it( 'fails when the bootstrap records a choice but never updates', () => {
+		const findings = auditTracking(
+			tracking(),
+			consentHtml( "gtag('consent','default',{ad_user_data:'denied',ad_personalization:'denied'});" )
+		);
+		expect( findings.some( ( finding ) => finding.code === 'consent-update-missing' && finding.severity === 'fail' ) ).toBe( true );
+	} );
+
+	it( 'fails when the Consent Mode v2 parameters are missing', () => {
+		const findings = auditTracking(
+			tracking(),
+			consentHtml(
+				"gtag('consent','default',{ad_storage:'denied'});" +
+				"gtag('consent','update',{ad_storage:'granted'});"
+			)
+		);
+		expect( findings.filter( ( finding ) => finding.code === 'consent-v2-param-missing' ) ).toHaveLength( 2 );
 	} );
 } );

@@ -244,8 +244,9 @@ class ShopGlobalsController extends BaseController {
 			return false;
 		}
 
-		$host      = strtolower( (string) $parts['host'] );
-		$site_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		$host        = strtolower( (string) $parts['host'] );
+		$site_host   = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		$public_host = strtolower( (string) wp_parse_url( Schema::public_origin(), PHP_URL_HOST ) );
 
 		/**
 		 * Extra hosts allowed as checkout/cart handoff targets.
@@ -255,7 +256,10 @@ class ShopGlobalsController extends BaseController {
 		$allowlist = apply_filters( 'funiq_bridge_checkout_url_allowlist', array() );
 		$allowlist = is_array( $allowlist ) ? array_map( 'strtolower', array_filter( $allowlist, 'is_string' ) ) : array();
 
-		return $host === $site_host || in_array( $host, $allowlist, true );
+		// Proposal 135: the configured public origin is a first-class same-site
+		// host — with the CMS on a subdomain, `home_url()` alone would reject
+		// every legitimate frontend checkout URL.
+		return $host === $site_host || $host === $public_host || in_array( $host, $allowlist, true );
 	}
 
 	/**

@@ -298,6 +298,26 @@ export async function fetchMedia(id: number): Promise<MediaUploadResult> {
 }
 
 /**
+ * Mint a preview link for one local-content document (Proposal 135 Phase 5).
+ *
+ * The bridge signs a short-lived, single-document token and returns the URL
+ * the editor opens — on the site's PUBLIC origin, where `/api/preview` stores
+ * the token in a host-only cookie and redirects to the real page. The CMS
+ * never sees the token's key material, and the token dies on its own.
+ */
+export interface PreviewLink {
+	token: string;
+	expiresAt: string;
+	slug: string;
+	/** Empty when the site has no public origin configured. */
+	previewUrl: string;
+}
+
+export async function createPreviewLink(slug: string, id: number): Promise<PreviewLink> {
+	return request<PreviewLink>(`${slug}/${id}/preview-token`, { method: 'POST' });
+}
+
+/**
  * Fetch the current managers list.
  */
 export function useManagers() {

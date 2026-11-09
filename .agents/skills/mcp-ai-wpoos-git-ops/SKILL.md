@@ -141,6 +141,14 @@ Four rules, each from a session that cost a recovery:
   `git restore --worktree -- <only-the-files-you-touched>`. **Never
   `git reset --hard` in a shared worktree** — it wipes other agents'
   uncommitted tracked edits (e.g. a modified `SKILL.md`).
+- **Never `git checkout -- vendor/` wholesale.** `vendor/` is bind-mounted into
+  the Docker `oos-wp` container, so `composer install` (needed for PHPUnit
+  when the tree was installed `--no-dev`) dirties it. Restore **only** the
+  tracked composer metadata — `git checkout -- vendor/composer/` — because
+  other agents' dependency work can live elsewhere under `vendor/`, and a
+  blanket restore erases it. Same rule for any generated tree
+  (`build/`, `dist/`, `public/manage-assets/`): restore or rebuild exactly the
+  paths you touched.
 - **Rebasing with foreign unstaged edits present:** plain `git rebase`
   refuses ("You have unstaged changes"); `git rebase --autostash` stashes
   only tracked changes and pops them back. **Safer variant (2026-11-03,

@@ -30,11 +30,13 @@ export interface WpCollection {
 	 */
 	kind?: 'post' | 'page' | 'product';
 	/**
-	 * Wire format: 'wp' (wp/v2 + wc/v3, default) or 'payload' — the
+	 * Wire format: 'wp' (wp/v2 + wc/v3, default), 'payload' — the
 	 * nvoos-commerce/v1 envelope served by the nvoos-astro-bridge
-	 * ({ docs, totalDocs, totalPages, page } pagination, flat documents).
+	 * ({ docs, totalDocs, totalPages, page } pagination, flat documents), or
+	 * 'local' — the same envelope read from the bridge's local-content
+	 * collection (Proposal 135 §D4), where documents carry an explicit slug.
 	 */
-	source?: 'wp' | 'payload';
+	source?: 'wp' | 'payload' | 'local';
 	/**
 	 * Auth source for the generated project: application passwords
 	 * (default) or WooCommerce consumer key/secret (wc/v3 endpoints).
@@ -234,12 +236,55 @@ export interface ForgeWireframe {
 	sections: ForgeWireframeSection[];
 }
 
+/**
+ * The deploy runtime a forged site ships as (Proposal 135).
+ *
+ *  - `static`  — a prebuilt, flat `dist/` on the site branch. No Node process;
+ *                velocity serves the files (a no-op build satisfies Velocity).
+ *  - `managed` — the same mirror branch plus a Node entry (`server.js`). The
+ *                app owns `/api/*`, `/manage`, `/mcp` and `/api/revalidate`
+ *                through an Astro `src/fetch.ts` BFF, so the WordPress origin
+ *                never has to be publicly reachable from a browser.
+ */
+export type ForgeRuntime = 'static' | 'managed';
+
+/**
+ * The deploy block (Proposal 135 §4) — how the forged site is hosted and how
+ * it reaches WordPress at runtime. Every field is optional; an absent block
+ * means the historical static tier.
+ */
+export interface ForgeDeploy {
+	/** Runtime shape (default `static`). */
+	runtime?: ForgeRuntime;
+	/**
+	 * The public origin shoppers/visitors use (canonical host). Defaults to
+	 * ASTRO_SITE at build time and then to `profile.url`. This is NOT the
+	 * WordPress origin when the CMS lives on `cms.<domain>`.
+	 */
+	publicOrigin?: string;
+	/** Managed only: expose the token-gated `POST /api/revalidate` route. */
+	revalidate?: boolean;
+	/** Managed only: serve the `nvoos-astro-bridge` `/manage` surface. */
+	manage?: boolean;
+	/**
+	 * How rebuilt forms reach the forge bridge: `bridge-direct` posts from the
+	 * browser (needs a publicly reachable CMS), `bff-proxied` posts through the
+	 * managed site's BFF (keeps the CMS private). Default `bridge-direct`.
+	 */
+	forms?: 'bridge-direct' | 'bff-proxied';
+}
+
 /** One operator-configured WordPress site. */
 export interface SiteProfile {
 	/** Root URL (https://…). No trailing slash. */
 	url: string;
 	/** Display name (discovery fills it when absent). */
 	name?: string;
+	/**
+	 * The deploy block (Proposal 135) — the runtime tier and the public-vs-CMS
+	 * origin split. Absent = the static tier (backwards compatible).
+	 */
+	deploy?: ForgeDeploy;
 	/** Page slug to render at `/` (the WordPress static front page). */
 	frontPage?: string;
 	/**

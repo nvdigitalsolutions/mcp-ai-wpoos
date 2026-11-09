@@ -10,7 +10,7 @@
 
 namespace NvoosAstroBridge;
 
-use NvoosAstroBridge\PostTypes\{Product, Promotion, Promocode};
+use NvoosAstroBridge\PostTypes\{ForgeLocal, Product, Promotion, Promocode};
 use NvoosAstroBridge\Taxonomies\{Brand, Category, Color, Status};
 use NvoosAstroBridge\REST\{
 	AuthController,
@@ -22,6 +22,7 @@ use NvoosAstroBridge\REST\{
 	CategoriesController,
 	CheckoutController,
 	ColorsController,
+	LocalController,
 	ManagersController,
 	MediaController,
 	PagesController,
@@ -161,6 +162,8 @@ final class Plugin {
 		( new Product() )->register();
 		( new Promotion() )->register();
 		( new Promocode() )->register();
+		// Proposal 135 §D4 — CMS-authored content for managed forged sites.
+		( new ForgeLocal() )->register();
 	}
 
 	/**
@@ -209,6 +212,7 @@ final class Plugin {
 			new ManagersController(),
 			new PagesController(),
 			new PostsController(),
+			new LocalController(),
 			new ThemePolicyController(),
 			new ShopGlobalsController(),
 			new CartController(),
@@ -352,6 +356,7 @@ final class Plugin {
 		( new Product() )->register();
 		( new Promotion() )->register();
 		( new Promocode() )->register();
+		( new ForgeLocal() )->register();
 		( new Category() )->register();
 		( new Brand() )->register();
 		( new Color() )->register();

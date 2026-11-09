@@ -397,6 +397,28 @@ export function createWpFixtureData() {
 				status: 'publish',
 			},
 		],
+		/**
+		 * Local content (Proposal 135 §D4) — the bridge's nvoos_forge_local CPT,
+		 * served through the same envelope as products. Documents carry an
+		 * explicit `slug` because their URL must survive a title edit.
+		 */
+		payloadLocal: [
+			{
+				id: 401,
+				name: 'Behind The Scenes',
+				slug: 'behind-the-scenes',
+				description: '<p>How the studio builds a collection.</p>',
+				excerpt: 'A studio note.',
+				category: null,
+				featuredImage: null,
+				seoTitle: 'Behind The Scenes — Studio',
+				seoDescription: 'A studio note.',
+				createdAt: '2026-11-01 09:00:00',
+				updatedAt: '2026-11-03 09:00:00',
+				status: 'publish',
+				source: 'local',
+			},
+		],
 		/** Media documents for featured_media resolution. */
 		media: {
 			501: { source_url: `${ORIGIN}/wp-content/uploads/media-501.png` },
@@ -553,6 +575,29 @@ export function createWpFixtureServer(port = PORT) {
 			const total = data.payloadProducts.length;
 			const totalPages = Math.max(1, Math.ceil(total / limit));
 			const slice = data.payloadProducts.slice((pageNum - 1) * limit, pageNum * limit);
+			json(res, {
+				docs: slice,
+				totalDocs: total,
+				limit,
+				totalPages,
+				page: pageNum,
+				hasNextPage: pageNum < totalPages,
+				hasPrevPage: pageNum > 1,
+			});
+			return;
+		}
+		// Local content (Proposal 135 §D4) — the same envelope, plus the
+		// `where[slug][equals]` filter the draft-aware preview page uses.
+		if (path === '/wp-json/nvoos-commerce/v1/local') {
+			const limit = Number(url.searchParams.get('limit') ?? '100');
+			const pageNum = Number(url.searchParams.get('page') ?? '1');
+			const slugFilter = url.searchParams.get('where[slug][equals]');
+			const all = slugFilter
+				? data.payloadLocal.filter((doc) => doc.slug === slugFilter)
+				: data.payloadLocal;
+			const total = all.length;
+			const totalPages = Math.max(1, Math.ceil(total / limit));
+			const slice = all.slice((pageNum - 1) * limit, pageNum * limit);
 			json(res, {
 				docs: slice,
 				totalDocs: total,

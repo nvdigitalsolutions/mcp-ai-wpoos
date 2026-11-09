@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -153,6 +154,7 @@ describe('scaffold — production blog template', () => {
 			'src/lib/behaviors.generated.ts',
 			'src/lib/vocabulary.generated.ts',
 			'src/lib/tracking.generated.ts',
+			'src/lib/managed.generated.ts',
 			'public/tokens.dtcg.json',
 		]);
 	});
@@ -1207,5 +1209,100 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 			const module = await readFile( path.join( target, 'src', 'lib', 'vocabulary.generated.ts' ), 'utf8' );
 			expect( module ).toContain( 'widgetRoles: {}' );
 			expect( module ).toContain( 'blockRoles: {}' );
+		} );
+	} );
+
+	describe( 'scaffold — managed runtime (Proposal 135)', () => {
+		const MANAGED: SiteProfile = {
+			...PROFILE,
+			deploy: { runtime: 'managed', revalidate: true, manage: true, forms: 'bff-proxied' },
+		};
+
+		it( 'refuses a managed profile with an explicit static render', async () => {
+			const root = await tempDir();
+			await expect(
+				scaffold( { profile: MANAGED, targetDir: path.join( root, 'site' ), template: 'blog', render: 'static' } )
+			).rejects.toThrow( /managed site uses server output/ );
+		} );
+
+		it( 'emits the managed proxy routes, revalidate endpoint, entry, deploy tree and cache config', async () => {
+			const root = await tempDir();
+			const target = path.join( root, 'site' );
+
+			// No explicit --render: the managed runtime implies server output.
+			await scaffold( { profile: MANAGED, targetDir: target, template: 'blog' } );
+
+			const helper = await readFile( path.join( target, 'src/lib/managed-proxy.ts' ), 'utf8' );
+			expect( helper ).toContain( 'hostOnlyCookie' );
+			expect( helper ).toContain( 'sanitizeRestPath' );
+
+			const managedFlag = await readFile( path.join( target, 'src/lib/managed.generated.ts' ), 'utf8' );
+			expect( managedFlag ).toContain( 'export const MANAGED = true;' );
+
+			const apiProxy = await readFile( path.join( target, 'src/pages/api/[...path].ts' ), 'utf8' );
+			expect( apiProxy ).toContain( '/wp-json/nvoos-commerce/v1/' );
+
+			const formsProxy = await readFile( path.join( target, 'src/pages/api/forms/submit.ts' ), 'utf8' );
+			expect( formsProxy ).toContain( '/wp-json/nvoos-forge/v1/forms/submit' );
+
+			const mediaProxy = await readFile( path.join( target, 'src/pages/media/[...path].ts' ), 'utf8' );
+			expect( mediaProxy ).toContain( '/wp-content/uploads/' );
+
+			const revalidate = await readFile( path.join( target, 'src/pages/api/revalidate.ts' ), 'utf8' );
+			expect( revalidate ).toContain( 'cache.invalidate({ tags })' );
+			expect( revalidate ).toContain( 'export const prerender = false;' );
+
+			// Proposal 135 Phase 5 — the preview seam.
+			const previewApi = await readFile( path.join( target, 'src/pages/api/preview.ts' ), 'utf8' );
+			expect( previewApi ).toContain( "const COOKIE = 'nvoos_preview';" );
+			expect( previewApi ).toContain( 'httpOnly: true' );
+			const previewPage = await readFile( path.join( target, 'src/pages/preview/[...slug].astro' ), 'utf8' );
+			expect( previewPage ).toContain( 'export const prerender = false;' );
+			expect( previewPage ).toContain( 'preview_token: token' );
+
+			expect( await readFile( path.join( target, 'server.js' ), 'utf8' ) ).toContain( "import './dist/server/entry.mjs';" );
+			expect( await readFile( path.join( target, 'scripts/sync-deploy-tree.mjs' ), 'utf8' ) ).toContain( "start: 'node server.js'" );
+
+			const config = await readFile( path.join( target, 'astro.config.mjs' ), 'utf8' );
+			expect( config ).toContain( 'memoryCache' );
+			expect( config ).toContain( "output: 'server'" );
+			expect( config ).toContain( "'/products/**': { maxAge: 300, swr: 600 }" );
+			expect( config ).toContain( "'/api/**': { maxAge: 0 }" );
+
+			const pkg = JSON.parse( await readFile( path.join( target, 'package.json' ), 'utf8' ) ) as {
+				scripts?: Record<string, string>;
+			};
+			expect( pkg.scripts?.[ 'sync-deploy-tree' ] ).toBe( 'node scripts/sync-deploy-tree.mjs' );
+
+			const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+			expect( env ).toContain( 'NVOOS_TARGET_SITE=' );
+			expect( env ).toContain( 'NVOOS_REVALIDATE_TOKEN=' );
+
+			// The drift manifest must hash the POST-rewrite managed flag. It used
+			// to be written before the managed block, so every managed site
+			// failed its own `npm run check` with a phantom "drifted" report.
+			const drift = JSON.parse( await readFile( path.join( target, 'nvoos.generated.json' ), 'utf8' ) ) as {
+				files: Record<string, string>;
+			};
+			expect( drift.files[ 'src/lib/managed.generated.ts' ] ).toBe(
+				createHash( 'sha256' ).update( managedFlag ).digest( 'hex' )
+			);
+		} );
+
+		it( 'leaves the static tier untouched', async () => {
+			const root = await tempDir();
+			const target = path.join( root, 'site' );
+
+			await scaffold( { profile: PROFILE, targetDir: target, template: 'blog' } );
+
+			await expect( stat( path.join( target, 'src/lib/managed-proxy.ts' ) ) ).rejects.toMatchObject( { code: 'ENOENT' } );
+			// The preview surface is managed-only: a static tree has no server.
+			await expect( stat( path.join( target, 'src/pages/api/preview.ts' ) ) ).rejects.toMatchObject( { code: 'ENOENT' } );
+			await expect( stat( path.join( target, 'src/pages/preview' ) ) ).rejects.toMatchObject( { code: 'ENOENT' } );
+			const config = await readFile( path.join( target, 'astro.config.mjs' ), 'utf8' );
+			expect( config ).not.toContain( 'memoryCache' );
+			const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+			expect( env ).not.toContain( 'NVOOS_TARGET_SITE' );
+			expect( await readFile( path.join( target, 'src/lib/managed.generated.ts' ), 'utf8' ) ).toContain( 'export const MANAGED = false;' );
 		} );
 	} );
