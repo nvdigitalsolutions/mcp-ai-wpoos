@@ -50,7 +50,7 @@ const ogImage =
 		: undefined;
 ---
 
-<Base title={seoTitle} description={seoDescription} canonical={pageUrl} ogImage={ogImage} seo={post.data.seo}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl} ogImage={ogImage} seo={post.data.seo} markdownHref={`/posts/${post.id}/${post.data.slug}/index.md`}>
 	<article class="post">
 		<header>
 			<h1>{post.data.title}</h1>

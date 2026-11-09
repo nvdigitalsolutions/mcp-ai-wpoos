@@ -1,0 +1,42 @@
+---
+// Steps — an ordered process (Proposal 136 §4.1).
+//
+// Order carries the information, so this is an <ol> and nothing else. There is
+// deliberately NO HowTo structured data: Google removed the HowTo rich result
+// and its documentation in September 2023, so emitting it would be noise.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SectionHeading from './SectionHeading.astro';
+import SmartImage from '../SmartImage.astro';
+
+interface Props {
+	section: SemanticSection;
+	theme?: SectionTheme;
+}
+
+const { section, theme } = Astro.props;
+const items = section.steps?.items ?? [];
+const headingId = section.id ? `ds-steps-${ section.id }` : undefined;
+---
+
+{items.length > 0 && (
+	<section
+		class:list={['ds-section', 'ds-body', 'ds-steps-band', theme?.titleAlign === 'center' && 'ds-body--center']}
+		aria-labelledby={section.slots.title ? headingId : undefined}
+	>
+		<SectionHeading title={section.slots.title} theme={theme} headingId={headingId} />
+		<ol class="ds-steps">
+			{items.map((step) => (
+				<li class="ds-step">
+					{step.media && (
+						<div class="ds-step__media">
+							<SmartImage src={step.media} alt={step.title} sizes="(min-width: 1025px) 33vw, 100vw" />
+						</div>
+					)}
+					<h3 class="ds-step__title">{step.title}</h3>
+					{step.body && <p class="ds-step__body">{step.body}</p>}
+				</li>
+			))}
+		</ol>
+	</section>
+)}

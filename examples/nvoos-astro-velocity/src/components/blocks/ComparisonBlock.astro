@@ -1,0 +1,88 @@
+---
+// Comparison custom block (Proposal 136 §4.1) — a labelled fact table.
+//
+// A real <table> with scoped headers, because the row/column relationship IS
+// the information. The responsive treatment is an overflow container; the
+// semantics never change at a breakpoint. The container is focusable with an
+// accessible name so keyboard users can pan it without a pointer.
+interface Props {
+	node: {
+		_type: 'comparison';
+		caption?: string;
+		columns: string[];
+		rows: Array<{ label: string; values: string[] }>;
+	};
+}
+
+const { node } = Astro.props;
+const caption = node.caption;
+---
+
+<div class="block-comparison" data-section="comparison">
+	<div class="block-comparison__scroll" role="region" aria-label={caption ?? 'Comparison'} tabindex="0">
+		<table>
+			{caption && <caption>{caption}</caption>}
+			<thead>
+				<tr>
+					<td></td>
+					{node.columns.map((column) => (
+						<th scope="col">{column}</th>
+					))}
+				</tr>
+			</thead>
+			<tbody>
+				{node.rows.map((row) => (
+					<tr>
+						<th scope="row">{row.label}</th>
+						{row.values.map((value) => (
+							<td>{value}</td>
+						))}
+					</tr>
+				))}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<style>
+	.block-comparison__scroll {
+		max-width: 100%;
+		overflow-x: auto;
+	}
+
+	.block-comparison__scroll:focus-visible {
+		outline: 2px solid var(--nv-accent);
+		outline-offset: 2px;
+	}
+
+	.block-comparison table {
+		min-width: 100%;
+		border-collapse: collapse;
+	}
+
+	.block-comparison caption {
+		padding-bottom: 0.5rem;
+		color: var(--nv-muted);
+		font-size: 0.85rem;
+		text-align: left;
+		caption-side: top;
+	}
+
+	.block-comparison th,
+	.block-comparison td {
+		padding: 0.6rem 0.75rem;
+		border-bottom: 1px solid var(--nv-line);
+		text-align: left;
+		vertical-align: top;
+	}
+
+	.block-comparison thead th {
+		font-size: 0.78rem;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+	}
+
+	.block-comparison tbody th {
+		font-weight: 600;
+	}
+</style>

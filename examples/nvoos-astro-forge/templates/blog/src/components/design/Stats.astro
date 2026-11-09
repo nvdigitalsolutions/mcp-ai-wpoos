@@ -1,0 +1,43 @@
+---
+// Stats — a metrics row (Proposal 136 §4.1).
+//
+// A <dl> is the whole point: value and label are a term/description pair, so a
+// screen reader announces "98% — client retention" instead of reading two
+// unrelated strings. The value and unit sit in ONE node for the same reason
+// (splitting them makes some readers announce "98" then "%" as separate items).
+import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SectionHeading from './SectionHeading.astro';
+
+interface Props {
+	section: SemanticSection;
+	theme?: SectionTheme;
+}
+
+const { section, theme } = Astro.props;
+const items = section.stats?.items ?? [];
+const headingId = section.id ? `ds-stats-${ section.id }` : undefined;
+---
+
+{items.length > 0 && (
+	<section
+		class:list={['ds-section', 'ds-body', 'ds-stats-band', theme?.titleAlign === 'center' && 'ds-body--center']}
+		aria-labelledby={section.slots.title ? headingId : undefined}
+	>
+		<SectionHeading title={section.slots.title} theme={theme} headingId={headingId} />
+		<dl class="ds-stats">
+			{items.map((item) => (
+				<div class="ds-stat">
+					<dt class="ds-stat__value">
+						{item.value}
+						{item.unit}
+					</dt>
+					<dd class="ds-stat__label">
+						{item.label}
+						{item.caption && <span class="ds-stat__caption">{item.caption}</span>}
+					</dd>
+				</div>
+			))}
+		</dl>
+	</section>
+)}

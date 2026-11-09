@@ -1,0 +1,62 @@
+---
+// Pricing — a priced plan set (Proposal 136 §4.1).
+//
+// The classifier only emits `pricing` when it found two or more PRICED plans,
+// so this component never invents a price. The price string is the source's
+// verbatim copy (`$98/mo`) — the structured-data gate string-matches it
+// against the visible text, so it must never be reformatted here.
+//
+// A feature MATRIX (the same feature set across plans) is the `comparison`
+// kind's job: cards here, a real <table> there. That keeps one accessible
+// table implementation instead of two.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SectionHeading from './SectionHeading.astro';
+
+interface Props {
+	section: SemanticSection;
+	theme?: SectionTheme;
+}
+
+const { section, theme } = Astro.props;
+const plans = section.pricing?.plans ?? [];
+const note = section.pricing?.note;
+const headingId = section.id ? `ds-pricing-${ section.id }` : undefined;
+---
+
+{plans.length > 0 && (
+	<section
+		class:list={['ds-section', 'ds-body', 'ds-pricing', theme?.titleAlign === 'center' && 'ds-body--center']}
+		aria-labelledby={section.slots.title ? headingId : undefined}
+	>
+		<SectionHeading title={section.slots.title} theme={theme} headingId={headingId} />
+		<ul class="ds-plans" role="list">
+			{plans.map((plan) => (
+				<li class:list={['ds-plan', plan.featured && 'ds-plan--featured']}>
+					<h3 class="ds-plan__name">{plan.name}</h3>
+					<p class="ds-plan__price">
+						{plan.salePrice && (
+							<s class="ds-plan__was">
+								{plan.salePrice}
+							</s>
+						)}
+						<span class="ds-plan__now">{plan.price}</span>
+					</p>
+					{plan.features && plan.features.length > 0 && (
+						<ul class="ds-plan__features">
+							{plan.features.map((feature) => (
+								<li>{feature}</li>
+							))}
+						</ul>
+					)}
+					{plan.cta && (
+						<a class="ds-button ds-plan__cta" href={plan.cta.href}>
+							{plan.cta.label}
+						</a>
+					)}
+				</li>
+			))}
+		</ul>
+		{note && <p class="ds-pricing__note">{note}</p>}
+	</section>
+)}

@@ -1475,3 +1475,299 @@ html[data-consent-open] body {
 		transition: none;
 	}
 }
+
+/* ---------------------------------------------------------------------------
+   Proposal 136 — structural section kinds (pricing, stats, steps, team,
+   marquee, comparison).
+
+   Every value here is a token: the six kinds are STRUCTURE, and the palette,
+   type and motion always come from the source's extracted design language.
+   The marquee's pause mechanism is a checkbox so it survives with no JS — see
+   Marquee.astro for the WCAG 2.2.2 rationale.
+--------------------------------------------------------------------------- */
+
+.ds-plans {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+	gap: var(--forge-space-lg);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ds-plan {
+	display: flex;
+	flex-direction: column;
+	gap: var(--forge-space-sm);
+	padding: var(--ds-card-pad, 1.5rem);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius-lg);
+	background: var(--forge-surface);
+}
+
+.ds-plan--featured {
+	border-color: var(--forge-accent);
+	box-shadow: var(--forge-shadow-card);
+}
+
+.ds-plan__name {
+	margin: 0;
+	font-size: var(--forge-scale-h3);
+}
+
+.ds-plan__price {
+	display: flex;
+	gap: 0.5rem;
+	align-items: baseline;
+	margin: 0;
+	font-size: var(--forge-scale-h2);
+	font-weight: 700;
+}
+
+.ds-plan__was {
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-body);
+	font-weight: 400;
+}
+
+.ds-plan__features {
+	display: grid;
+	gap: 0.25rem;
+	margin: 0;
+	padding-left: 1.1rem;
+}
+
+.ds-plan__cta {
+	align-self: flex-start;
+	margin-top: auto;
+}
+
+.ds-pricing__note {
+	margin-top: var(--forge-space);
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+}
+
+.ds-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	gap: var(--forge-space-lg);
+	margin: 0;
+}
+
+.ds-stat {
+	text-align: center;
+}
+
+.ds-stat__value {
+	font-size: clamp(2rem, 4vw, var(--forge-scale-h1));
+	font-weight: 700;
+	line-height: 1;
+}
+
+.ds-stat__label {
+	margin: 0.35rem 0 0;
+	color: var(--forge-muted);
+}
+
+.ds-stat__caption {
+	display: block;
+	font-size: var(--forge-scale-small);
+}
+
+.ds-steps {
+	display: grid;
+	gap: var(--forge-space-lg);
+	margin: 0;
+	padding-left: 1.25rem;
+}
+
+.ds-step::marker {
+	color: var(--forge-accent);
+	font-weight: 700;
+}
+
+.ds-step__media img {
+	border-radius: var(--forge-radius);
+}
+
+.ds-step__title {
+	margin: 0.5rem 0 0.25rem;
+	font-size: var(--forge-scale-h3);
+}
+
+.ds-step__body {
+	margin: 0;
+	color: var(--forge-muted);
+}
+
+.ds-team {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+	gap: var(--forge-space-lg);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ds-person__figure {
+	margin: 0;
+}
+
+.ds-person__figure img {
+	width: 100%;
+	height: auto;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	border-radius: var(--forge-radius);
+}
+
+.ds-person__caption {
+	display: grid;
+	gap: 0.15rem;
+	margin-top: 0.75rem;
+}
+
+.ds-person__name {
+	font-weight: 700;
+}
+
+.ds-person__role {
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+}
+
+/* -- marquee (WCAG 2.2.2) --------------------------------------------------- */
+
+.ds-marquee {
+	position: relative;
+}
+
+.ds-marquee__viewport {
+	display: flex;
+	gap: var(--forge-space-lg);
+	overflow: hidden;
+}
+
+.ds-marquee__track {
+	flex: 0 0 auto;
+	display: flex;
+	gap: var(--forge-space-lg);
+	min-width: 100%;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	animation: ds-marquee-scroll var(--ds-marquee-speed, 28s) linear infinite;
+}
+
+.ds-marquee__item {
+	white-space: nowrap;
+}
+
+/* The control: a real checkbox, visually hidden but focusable. */
+.ds-marquee__toggle {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	border: 0;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.ds-marquee__pause {
+	display: inline-block;
+	margin-bottom: 0.5rem;
+	padding: 0.25rem 0.75rem;
+	border: 1px solid var(--forge-line);
+	border-radius: 999px;
+	font-size: var(--forge-scale-small);
+	cursor: pointer;
+}
+
+.ds-marquee__label--play {
+	display: none;
+}
+
+.ds-marquee__toggle:focus-visible + .ds-marquee__pause {
+	outline: 2px solid var(--forge-accent);
+	outline-offset: 2px;
+}
+
+.ds-marquee__toggle:not(:checked) ~ .ds-marquee__viewport .ds-marquee__track {
+	animation-play-state: paused;
+}
+
+.ds-marquee__toggle:not(:checked) + .ds-marquee__pause .ds-marquee__label--pause {
+	display: none;
+}
+
+.ds-marquee__toggle:not(:checked) + .ds-marquee__pause .ds-marquee__label--play {
+	display: inline;
+}
+
+@keyframes ds-marquee-scroll {
+	from {
+		transform: translateX(0);
+	}
+
+	to {
+		transform: translateX(calc(-100% - var(--forge-space-lg)));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ds-marquee__track {
+		animation: none;
+	}
+
+	.ds-marquee__toggle,
+	.ds-marquee__pause {
+		display: none;
+	}
+}
+
+/* -- comparison ------------------------------------------------------------- */
+
+.ds-compare__scroll {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.ds-compare__scroll:focus-visible {
+	outline: 2px solid var(--forge-accent);
+	outline-offset: 2px;
+}
+
+.ds-compare {
+	min-width: 100%;
+	border-collapse: collapse;
+}
+
+.ds-compare caption {
+	padding-bottom: 0.5rem;
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+	text-align: left;
+	caption-side: top;
+}
+
+.ds-compare th,
+.ds-compare td {
+	padding: 0.6rem 0.75rem;
+	border-bottom: 1px solid var(--forge-line);
+	text-align: left;
+	vertical-align: top;
+}
+
+.ds-compare thead th {
+	font-size: var(--forge-scale-small);
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.ds-compare tbody th {
+	font-weight: 600;
+}

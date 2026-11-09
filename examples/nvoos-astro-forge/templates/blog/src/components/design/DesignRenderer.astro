@@ -17,21 +17,25 @@
 // photo with its overlay — so the rebuilt page keeps the source's visual
 // rhythm without copying any markup.
 import type { SemanticSection } from '../../forge/semantic.ts';
-import { classifyHtml } from '../../forge/semantic.ts';
 import { bandSpacing, sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
 import { behaviors } from '../../lib/behaviors.generated.ts';
+import { classifyBody } from '../../lib/classify.ts';
 import Cta from './Cta.astro';
 import Catalog from './Catalog.astro';
+import Comparison from './Comparison.astro';
 import FeatureGrid from './FeatureGrid.astro';
 import Form from './Form.astro';
 import Gallery from './Gallery.astro';
 import Hero from './Hero.astro';
 import IconList from './IconList.astro';
 import LogoCloud from './LogoCloud.astro';
+import Marquee from './Marquee.astro';
+import Pricing from './Pricing.astro';
+import Stats from './Stats.astro';
+import Steps from './Steps.astro';
+import Team from './Team.astro';
 import Testimonial from './Testimonial.astro';
 import TextBlock from './TextBlock.astro';
-import manifestJson from '../../../nvoos.json';
-import { vocabulary } from '../../lib/vocabulary.generated.ts';
 
 /** A pre-classified wireframe section (Proposal 115) — the semantic section
  *  plus its per-breakpoint column behavior. */
@@ -47,21 +51,10 @@ interface Props {
 	wireframeSections?: WireframeSectionInput[];
 }
 
-// The manifest's inferred JSON type has no `forms` key on profiles that
-// omit the block — read it through an explicit shape.
-const manifest = manifestJson as { forms?: { searchForms?: string[] } };
 const { html = '', wireframeSections } = Astro.props;
 const sections: SemanticSection[] = wireframeSections
 	? wireframeSections.map( ( w ) => w.section )
-	: html
-		? classifyHtml( html, {
-				searchForms: manifest.forms?.searchForms,
-				// The learned vocabulary (Proposal 116) wins over the seeded
-				// classifier defaults — per-site, baked at scaffold time.
-				widgetRoles: vocabulary.widgetRoles,
-				blockRoles: vocabulary.blockRoles,
-		  } )
-		: [];
+	: classifyBody( html );
 const columnsFor = ( index: number ): Record<string, number> | undefined => wireframeSections?.[ index ]?.responsive?.columns;
 const themeFor = ( section: SemanticSection ): SectionTheme | undefined =>
 	section.id ? sectionThemes.find( ( theme ) => theme.id === section.id ) : undefined;
@@ -125,7 +118,14 @@ const sectionHasContent = ( section: SemanticSection ): boolean => {
 		title ||
 			( body && body.length > 0 ) ||
 			( items && items.length > 0 ) ||
-			( media && media.length > 0 )
+			( media && media.length > 0 ) ||
+			// Proposal 136 structured slots — a kind is content too.
+			( section.pricing?.plans.length ?? 0 ) > 0 ||
+			( section.stats?.items.length ?? 0 ) > 0 ||
+			( section.steps?.items.length ?? 0 ) > 0 ||
+			( section.team?.people.length ?? 0 ) > 0 ||
+			( section.marquee?.items.length ?? 0 ) > 0 ||
+			( section.comparison?.rows.length ?? 0 ) > 0
 	);
 };
 
@@ -285,7 +285,7 @@ const responsiveBandCss = sections
 			const theme = themeFor(section);
 			const behavior = behaviorFor(section);
 			return (
-				<div data-section-id={section.id ?? undefined} id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={section.kind} data-section-id={section.id ?? undefined} id={theme?.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (
@@ -298,6 +298,12 @@ const responsiveBandCss = sections
 							{section.kind === 'cta' && <Cta section={section} />}
 							{section.kind === 'gallery' && <Gallery section={section} />}
 							{section.kind === 'form' && <Form section={section} />}
+							{section.kind === 'pricing' && <Pricing section={section} theme={theme} />}
+							{section.kind === 'stats' && <Stats section={section} theme={theme} />}
+							{section.kind === 'steps' && <Steps section={section} theme={theme} />}
+							{section.kind === 'team' && <Team section={section} theme={theme} />}
+							{section.kind === 'marquee' && <Marquee section={section} uid={section.id ?? index} />}
+							{section.kind === 'comparison' && <Comparison section={section} theme={theme} />}
 							{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
 							{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
 						</>

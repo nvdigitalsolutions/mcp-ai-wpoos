@@ -26,6 +26,13 @@ export const CUSTOM_BLOCK_TYPES = [
 	'faq',
 	'stat',
 	'tabs',
+	// Proposal 136 §4.1 — the structural kinds that are also Portable Text
+	// types. Deliberately NOT `pricing` (Woo owns prices; a plan table on a
+	// storefront is a Product/Offer surface) and NOT `marquee` (Carousel.astro
+	// already covers a repeated horizontal track).
+	'comparison',
+	'steps',
+	'team',
 ] as const;
 
 export type CustomBlockType = (typeof CUSTOM_BLOCK_TYPES)[number];
@@ -93,6 +100,55 @@ const statSchema = z.object({
 });
 
 /**
+ * Comparison block (Proposal 136 §4.1) — a labelled fact table. The renderer
+ * emits a real <table> with scoped headers, so this is a row/column contract,
+ * not free markup. `values` aligns to `columns`.
+ */
+const comparisonSchema = z.object({
+	_type: z.literal('comparison'),
+	caption: z.string().max(200).optional(),
+	columns: z.array(z.string().min(1).max(80)).min(2).max(6),
+	rows: z
+		.array(
+			z.object({
+				label: z.string().min(1).max(120),
+				values: z.array(z.string().max(200)).min(1).max(6),
+			})
+		)
+		.min(1)
+		.max(20),
+});
+
+/** Steps block (136 §4.1) — an ORDERED process; the order is the information. */
+const stepsSchema = z.object({
+	_type: z.literal('steps'),
+	items: z
+		.array(
+			z.object({
+				title: z.string().min(1).max(120),
+				body: z.string().max(600).optional(),
+			})
+		)
+		.min(2)
+		.max(12),
+});
+
+/** Team block (136 §4.1) — people and their roles. */
+const teamSchema = z.object({
+	_type: z.literal('team'),
+	people: z
+		.array(
+			z.object({
+				name: z.string().min(1).max(80),
+				role: z.string().max(80).optional(),
+				photo: z.string().min(1).optional(),
+			})
+		)
+		.min(2)
+		.max(12),
+});
+
+/**
  * The tabs custom block — the recursion point of the Portable Text tree
  * (108 Phase 1.3). Declared as an INTERFACE: TypeScript allows recursive
  * references through object properties, which the pure type-alias form
@@ -122,6 +178,9 @@ export type PortableTextItem =
 	| z.infer<typeof testimonialSchema>
 	| z.infer<typeof faqSchema>
 	| z.infer<typeof statSchema>
+	| z.infer<typeof comparisonSchema>
+	| z.infer<typeof stepsSchema>
+	| z.infer<typeof teamSchema>
 	| PortableTextTabsBlock;
 
 /**
@@ -158,6 +217,9 @@ export const portableTextItemSchema = z.discriminatedUnion('_type', [
 		testimonialSchema,
 		faqSchema,
 		statSchema,
+		comparisonSchema,
+		stepsSchema,
+		teamSchema,
 		tabsSchema,
 	],
 ]);

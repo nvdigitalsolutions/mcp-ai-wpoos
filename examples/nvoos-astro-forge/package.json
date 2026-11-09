@@ -15,6 +15,7 @@
 		"scripts",
 		"templates",
 		"dist",
+		"presets.json",
 		"LICENSE",
 		"NOTICE",
 		"README.md"

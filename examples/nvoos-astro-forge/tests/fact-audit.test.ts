@@ -4,6 +4,10 @@
 // jayainc's feature grid carried titleStyle/titleDivider/titleAlign and still
 // rendered a plain heading: the component was never given the section theme.
 // Every existing gate passed, because nothing compared facts to output.
+//
+// Proposal 136 §4.2 adds the band's KIND to the audited facts: every built band
+// must carry a `data-section` value from the closed vocabulary, and a band that
+// DECLARES a kind must render that exact kind.
 // ---------------------------------------------------------------------------
 
 import { describe, expect, it } from 'vitest';
@@ -12,12 +16,12 @@ import { auditFacts } from '../lib/fact-audit.ts';
 import type { ForgeSection } from '../lib/types.ts';
 
 const BUILT = [
-	'<div data-section-id="aaa" style="padding:0px;background:#f6f6f6">',
+	'<div data-section="feature-grid" data-section-id="aaa" style="padding:0px;background:#f6f6f6">',
 	'<section class="ds-section ds-body ds-body--center">',
 	'<h2 class="ds-title" style="--ds-title-size:43px">Heading</h2>',
 	'<span class="ds-title-divider"></span>',
 	'</section></div>',
-	'<div data-section-id="bbb"><h2>Plain</h2></div>',
+	'<div data-section="text" data-section-id="bbb"><h2>Plain</h2></div>',
 ].join( '' );
 
 /** The source divider fact (all three fields are required on the wire type). */
@@ -77,7 +81,7 @@ describe( 'auditFacts', () => {
 		// attribute search would slice that stylesheet instead of the element.
 		const html = [
 			'<style>[data-section-id="aaa"]{margin-top:0px}</style>',
-			'<div data-section-id="aaa"><span class="ds-title-divider"></span></div>',
+			'<div data-section="text" data-section-id="aaa"><span class="ds-title-divider"></span></div>',
 		].join( '' );
 
 		expect( auditFacts( [ section( { titleDivider: divider() } ) ], html ) ).toEqual( [] );
@@ -90,7 +94,7 @@ describe( 'auditFacts', () => {
 		const html = [
 			'<style>[data-section-id="aaa"]{padding:125px 0px 125px 0px}' +
 				'@media (max-width:1025px){[data-section-id="aaa"]{padding:100px 0px 100px 0px}}</style>',
-			'<div data-section-id="aaa"><h2>Heading</h2></div>',
+			'<div data-section="text" data-section-id="aaa"><h2>Heading</h2></div>',
 		].join( '' );
 
 		expect(
@@ -104,7 +108,7 @@ describe( 'auditFacts', () => {
 	it( 'still reports a scoped padding that emits no scoped rule', () => {
 		// The map is declared but the build rendered nothing for it.
 		const html = '' +
-			'<div data-section-id="aaa"><h2>Heading</h2></div>';
+			'<div data-section="text" data-section-id="aaa"><h2>Heading</h2></div>';
 
 		const unrendered = auditFacts(
 			[ section( { padding: { desktop: '125px 0px' } } ) ],
@@ -118,7 +122,7 @@ describe( 'auditFacts', () => {
 		// A nested element carries `padding:` but the band's map emitted no
 		// scoped rule — the fact is still unrendered.
 		const html = '' +
-			'<div data-section-id="aaa"><span style="padding:4px">x</span></div>';
+			'<div data-section="text" data-section-id="aaa"><span style="padding:4px">x</span></div>';
 
 		const unrendered = auditFacts(
 			[ section( { padding: { desktop: '125px 0px', tablet: '100px 0px' } } ) ],
@@ -131,10 +135,42 @@ describe( 'auditFacts', () => {
 	it( 'only inspects a band\'s own slice of the HTML', () => {
 		// bbb renders a divider that aaa does not — aaa must still be reported.
 		const html = [
-			'<div data-section-id="aaa"><h2>Plain</h2></div>',
-			'<div data-section-id="bbb"><span class="ds-title-divider"></span></div>',
+			'<div data-section="text" data-section-id="aaa"><h2>Plain</h2></div>',
+			'<div data-section="text" data-section-id="bbb"><span class="ds-title-divider"></span></div>',
 		].join( '' );
 
 		expect( auditFacts( [ section( { titleDivider: divider() } ) ], html ) ).toHaveLength( 1 );
+	} );
+
+	// -- Proposal 136 §4.2: the band's kind ------------------------------------
+
+	it( 'accepts the declared kind when the band renders it', () => {
+		const html = '<div data-section="pricing" data-section-id="aaa"><h2>Plans</h2></div>';
+		expect( auditFacts( [ section( { kind: 'pricing' } ) ], html ) ).toEqual( [] );
+	} );
+
+	it( 'flags a kind mismatch between the profile and the build', () => {
+		// The profile says pricing; the renderer emitted a feature grid.
+		const html = '<div data-section="feature-grid" data-section-id="aaa"><h2>Plans</h2></div>';
+		const unrendered = auditFacts( [ section( { kind: 'pricing' } ) ], html );
+
+		expect( unrendered.map( ( item ) => item.fact ) ).toEqual( [ 'section kind' ] );
+	} );
+
+	it( 'flags an out-of-vocabulary kind', () => {
+		const html = '<div data-section="sales-pitch" data-section-id="aaa"><h2>Plans</h2></div>';
+		const unrendered = auditFacts( [ section( {} ) ], html );
+
+		expect( unrendered ).toHaveLength( 1 );
+		expect( unrendered[ 0 ].fact ).toContain( 'out of vocabulary' );
+	} );
+
+	it( 'flags a band that emits no kind at all', () => {
+		const html = '<div data-section-id="aaa"><h2>Plans</h2></div>';
+		const unrendered = auditFacts( [ section( {} ) ], html );
+
+		expect( unrendered ).toEqual( [
+			{ sectionId: 'aaa', fact: 'section kind', marker: 'data-section=' },
+		] );
 	} );
 } );

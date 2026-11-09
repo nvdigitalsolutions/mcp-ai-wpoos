@@ -36,6 +36,12 @@ interface Props {
 	canonical?: string;
 	image?: string;
 	jsonld?: Record<string, unknown>[];
+	/**
+	 * The markdown variant of this page (Proposal 136 §4.4). Emitted as
+	 * `rel="alternate" type="text/markdown"` only for routes that build one —
+	 * a link to a missing file is worse than no link.
+	 */
+	markdownHref?: string;
 }
 
 const {
@@ -44,6 +50,7 @@ const {
 	canonical,
 	image,
 	jsonld = [],
+	markdownHref,
 } = Astro.props;
 
 // Live policy for SSR renders (getThemePolicy falls back to the build-baked
@@ -85,6 +92,11 @@ const webfontUrl = googleFontsUrl(webfontFamilies([semantic.font]));
 			)
 		}
 		{canonical && <link rel="canonical" href={canonical} />}
+		{/* Proposal 136 §4.4 — discovery for agents: `describedby` points at the
+			llms.txt that covers this path. An agent affordance, never an SEO
+			signal (Google gives llms.txt no ranking effect). */}
+		<link rel="describedby" href="/llms.txt" />
+		{markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} />}
 		{image && <meta property="og:image" content={image} />}
 		{
 			jsonld.map((block) => (

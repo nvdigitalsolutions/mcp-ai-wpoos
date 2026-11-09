@@ -8,7 +8,7 @@ interface Props {
 const { node } = Astro.props;
 ---
 
-<figure class="block-image">
+<figure class="block-image" data-section="image">
 	<img src={node.src} alt={node.alt} loading="lazy" decoding="async" />
 </figure>
 

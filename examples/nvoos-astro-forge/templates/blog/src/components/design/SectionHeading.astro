@@ -1,0 +1,49 @@
+---
+// SectionHeading — the shared modern-heading block for the 136 structural
+// kinds. Sources without a heading fact render nothing, so every caller can
+// mount it unconditionally.
+//
+// The heading facts (125 §7/§8) re-apply the source's rhythm: typography vars,
+// the underline divider, and the centered alignment.
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+
+interface Props {
+	title?: string;
+	theme?: SectionTheme;
+	/** Ties the heading to the section's `aria-labelledby`. */
+	headingId?: string;
+}
+
+const { title, theme, headingId } = Astro.props;
+
+const titleVars = [
+	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
+	theme?.titleStyle?.weight && `--ds-title-weight:${ theme.titleStyle.weight }`,
+	theme?.titleStyle?.lineHeight && `--ds-title-lh:${ theme.titleStyle.lineHeight }`,
+	theme?.titleStyle?.letterSpacing && `--ds-title-ls:${ theme.titleStyle.letterSpacing }`,
+]
+	.filter( Boolean )
+	.join( ';' );
+
+const dividerStyle = theme?.titleDivider
+	? [
+			`width:${ theme.titleDivider.width }`,
+			`height:${ theme.titleDivider.height }`,
+			`background:${ theme.titleDivider.background }`,
+			theme.titleDivider.shadow && `box-shadow:${ theme.titleDivider.shadow }`,
+		]
+			.filter( Boolean )
+			.join( ';' )
+	: undefined;
+---
+
+{(title || theme?.titleDivider) && (
+	<>
+		{title && (
+			<h2 class="ds-title" id={headingId} style={titleVars || undefined}>
+				{title}
+			</h2>
+		)}
+		{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
+	</>
+)}

@@ -938,7 +938,7 @@ async function runSeoVerify( profile, options ) {
 	const findings = [];
 	for ( const page of pages ) {
 		const html = await readFile( page.absolute, 'utf8' );
-		for ( const finding of auditSeo( html, { siteName, pathname: page.pathname } ) ) {
+		for ( const finding of auditSeo( html, { siteName, pathname: page.pathname, structured: Boolean( options.structured ) } ) ) {
 			findings.push( { ...finding, page: page.pathname } );
 		}
 	}
@@ -1443,6 +1443,7 @@ program
 	.option( '--strict-tracking', 'with --tracking: treat warnings as failures (a stale CSP host, a double-count risk)' )
 	.option( '--seo', 'gate the SEO head: double-branded titles, robots directives, Open Graph/Twitter tags, JSON-LD graph (Proposal 131)' )
 	.option( '--strict-seo', 'with --seo: treat warnings as failures (a missing canonical, an incomplete social head)' )
+	.option( '--structured', 'with --seo: require every JSON-LD price/number/date to appear in the visible page text (Proposal 136)' )
 	.option( '--seo-pages <n>', 'with --seo: how many built pages to audit (default 8)', '8' )
 	.option( '--baselines', 'note the opt-in Playwright baseline step' )
 	.option( '--visual', 'also compare SOURCE and BUILT screenshots with a vision model (Proposal 118)' )

@@ -15,6 +15,7 @@
 // ---------------------------------------------------------------------------
 
 import type { ForgeSection } from './types.ts';
+import { isSectionKind } from './types.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
 
 export interface UnrenderedFact {
@@ -72,7 +73,20 @@ const FACT_MARKERS: FactMarker[] = [
 	{ key: 'titleStyle', label: 'titleStyle', marker: '--ds-title-size' },
 	{ key: 'titleDivider', label: 'titleDivider', marker: 'ds-title-divider' },
 	{ key: 'catalog', label: 'catalog', marker: 'ds-catalog' },
+	// Proposal 136 §4.2 — the band's classified kind. A DECLARED kind must reach
+	// the build as `data-section="<kind>"` on the band itself.
+	{
+		key: 'kind',
+		label: 'section kind',
+		marker: 'data-section=',
+		present: ( { html, value } ) => html.includes( `data-section="${ String( value ) }"` ),
+	},
 ];
+
+/** The `data-section` value the built band carries, if any. */
+function sectionKindOf( html: string ): string | undefined {
+	return /data-section="([^"]*)"/.exec( html )?.[ 1 ];
+}
 
 /**
  * the built HTML belonging to one band: from its element tag to the next
@@ -123,6 +137,18 @@ export function auditFacts( sections: ForgeSection[], builtHtml: string ): Unren
 			if ( ! rendered ) {
 				unrendered.push( { sectionId: section.id, fact: fact.label, marker: fact.marker } );
 			}
+		}
+		// Proposal 136 §4.2 — every built band carries a kind, and it is one of
+		// the closed vocabulary. This is what makes the output classifiable by an
+		// agent without re-running the analyzer. Checked independently of the
+		// `kind` marker above: a band that declares no kind must still emit one,
+		// and an out-of-enum value is a failure even when the strings happen to
+		// match a declared value elsewhere.
+		const emittedKind = sectionKindOf( html );
+		if ( ! emittedKind ) {
+			unrendered.push( { sectionId: section.id, fact: 'section kind', marker: 'data-section=' } );
+		} else if ( ! isSectionKind( emittedKind ) ) {
+			unrendered.push( { sectionId: section.id, fact: `section kind (out of vocabulary: ${ emittedKind })`, marker: 'data-section=' } );
 		}
 	}
 	return unrendered;
