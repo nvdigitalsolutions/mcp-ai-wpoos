@@ -551,12 +551,20 @@ freshly scaffolded project.
 |---|---|
 | Agent surfaces | `src/lib/llms.ts` (composer only — velocity content is Portable Text, so no HTML projection), `/llms.txt` route with fail-soft collection loads, `rel="describedby"` in `BaseLayout.astro` |
 | Block kinds | `comparison` / `steps` / `team` added end to end: zod schema + allowlist + component + map entry (`comparison` uses a real `<table>` with `th[scope]` inside a focusable scroll region; `steps` an `<ol>`; `team` figures) |
-| `data-section` | On the three new block roots plus `hero` / `image` / `testimonial` / `stat`. `faq` / `tabs` / `productGrid` / `promotion` still need their `ui/` wrappers to forward the attribute |
+| `data-section` | On the three new block roots plus `hero` / `image` / `testimonial` / `stat`, and (follow-up pass) `faq` / `tabs` / `productGrid` / `promotion` — all eleven block types now emit a kind |
 | Carousel | Keyboard-pannable now (`tabindex="0"` + focus ring). It is user-scrolled, so WCAG 2.2.2 needs no pause control — the expected failure was not there |
 
 Known divergences, both deliberate: velocity's `llms.txt` links the markdown variants of **products, pages and posts** only (categories/brands/collections have no `.md` route, so they stay in `## Optional` as HTML), and its `stat` Portable Text type emits `data-section="stats"` so the KIND vocabulary still matches the forge while the authoring type keeps its name. No `pricing` block (Woo owns prices) and no `marquee` (Carousel covers it).
 
 **Markdown projection + e2e (same session).** `markdownFromPortableText()` covers every allowlisted block type (GFM tables, ordered steps, nested tabs, and an explicit `_[unrendered block: …]_` marker rather than a silent drop); legacy `contentRendered` HTML degrades through `textFromHtml()` (paragraph breaks kept, markup stripped). Three `.md` routes serve products, pages and posts, and the three pages advertise `rel="alternate" type="text/markdown"`. Velocity's Playwright suite passes **79/79** against a freshly built `dist/` — note that `scripts/serve.mjs` serves a prebuilt tree, so an e2e run without `npm run build` silently exercises the previous build.
+
+**`data-section` completion + block gallery (follow-up, 2026-11-09).** The four remaining block types are tagged: `faq`, `tabs`, `productGrid` → `product-grid`, `promotion`. The blocker recorded above turned out not to exist — every `ui/` primitive (`UiAccordion`, `UiTabs`, `UiTabsList`, `UiTabsPanel`, `UiTabsTab`, `UiAccordionItem`) already ends with `{...rest}` on its root, so each was a one-line edit on the block, not a primitive change. Three additions make the coverage durable:
+
+- **`src/lib/content/section-kinds.ts`** is the vocabulary of record (`SECTION_KINDS`, `isSectionKind`, `BLOCK_TYPE_TO_KIND`). It is storefront-local: the forge has no `faq` / `tabs` / `product-grid` / `promotion` kinds because it does not generate those bands.
+- **`tests/unit/section-kinds.test.ts`** is the drift gate: every `src/components/blocks/*.astro` must declare exactly one `data-section` from the vocabulary, and every kind must be used. `Blocks.astro` (the Portable Text dispatcher) and `LinkMark` (an inline mark) are excluded by name. The regex anchors on `data-section="` so `data-section-id="` can never be counted as a kind.
+- **`/components/blocks/`** is a fixture gallery of every non-live block, linked from `/components/`. It is a separate route on purpose: `/components/` is the Q6 component-library *adoption* record and cites Proposal 107 §10, so content fixtures there would corrupt an evaluation. `productGrid` and `promotion` are documented by mapping rather than rendered, because they call the commerce client and omit the band when the upstream does not resolve.
+
+Validation: 417 unit tests (44 files), `astro check` 0 errors / 0 warnings (226 files), Playwright 82/82 against a fresh `dist/`, smoke 19/19.
 
 **Not shipped (deliberately deferred).**
 

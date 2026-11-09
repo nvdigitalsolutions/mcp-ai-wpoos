@@ -39,7 +39,7 @@ const base = node._key && node._key.length > 0 ? node._key : hash(JSON.stringify
 const id = `tabs-${base}`;
 ---
 
-<UiTabs class="block-tabs">
+<UiTabs class="block-tabs" data-section="tabs">
 	<UiTabsList>
 		{node.tabs.map((tab, index) => (
 			<UiTabsTab

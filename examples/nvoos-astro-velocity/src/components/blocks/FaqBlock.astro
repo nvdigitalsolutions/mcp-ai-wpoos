@@ -21,7 +21,7 @@ const { node } = Astro.props;
 const ACCORDION_NAME = 'nvoos-content-faq';
 ---
 
-<UiAccordion class="block-faq">
+<UiAccordion class="block-faq" data-section="faq">
 	<UiAccordionItem title={node.question} name={ACCORDION_NAME} headingLevel="h3">
 		<p class="block-faq__answer">{node.answer}</p>
 	</UiAccordionItem>

@@ -15,7 +15,7 @@ const promotion = envelope.docs.find((item) => item.id === node.promotionId);
 
 {
 	promotion?.active && (
-		<aside class="block-promotion">
+		<aside class="block-promotion" data-section="promotion">
 			<h2>{promotion.title}</h2>
 			<div set:html={promotion.description} />
 			<a class="btn" href="/promotions/">View promotions</a>

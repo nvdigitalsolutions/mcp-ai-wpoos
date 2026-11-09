@@ -110,3 +110,62 @@ test('Zag combobox filters and selects via keyboard', async ({ page }) => {
 	await input.press('Enter');
 	await expect(input).toHaveValue('Oak');
 });
+
+test('content-block gallery is axe-clean', async ({ page }) => {
+	await page.goto('/components/blocks/');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Content blocks');
+	const results = await new AxeBuilder({ page }).analyze();
+	expect(
+		results.violations,
+		`axe violations: ${JSON.stringify(results.violations, null, 2)}`
+	).toEqual([]);
+});
+
+test('every gallery band declares an in-vocabulary data-section', async ({ page }) => {
+	await page.goto('/components/blocks/');
+
+	// The vocabulary is the contract — a new value must be added to
+	// src/lib/content/section-kinds.ts (and its unit test) before it can
+	// appear here. Kept in sync deliberately, not derived: this literal is
+	// the second opinion. The live-data kinds are listed but not rendered.
+	const KINDS = [
+		'hero',
+		'image',
+		'testimonial',
+		'stats',
+		'comparison',
+		'steps',
+		'team',
+		'tabs',
+		'faq',
+	];
+
+	const found = await page.locator('[data-section]').evaluateAll((nodes) =>
+		nodes.map((node) => node.getAttribute('data-section') ?? '')
+	);
+	expect(found.length).toBeGreaterThanOrEqual(KINDS.length);
+	for (const kind of found) {
+		expect(KINDS, `unexpected data-section="${kind}"`).toContain(kind);
+	}
+
+	// Every kind appears at least once.
+	for (const kind of KINDS) {
+		expect(found, `no band rendered data-section="${kind}"`).toContain(kind);
+	}
+});
+
+test('the previously untagged blocks now emit data-section', async ({ page }) => {
+	await page.goto('/components/blocks/');
+
+	// faq and tabs used to render only through the ui/ wrappers with no kind.
+	await expect(page.locator('[data-section="faq"]')).toHaveCount(2);
+	await expect(page.locator('[data-section="tabs"]')).toHaveCount(1);
+
+	// The tabs behaviour still works from inside the tagged wrapper.
+	const tabs = page.getByRole('tab');
+	await expect(tabs).toHaveCount(2);
+	await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+	await tabs.first().focus();
+	await tabs.first().press('ArrowRight');
+	await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
+});
