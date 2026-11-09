@@ -407,6 +407,92 @@
 				}
 			}
 		],
+		"outline": [
+			{
+				"id": "df407bf",
+				"via": "elementor",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "91cd942",
+				"via": "elementor",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "6196e5c",
+				"via": "elementor",
+				"anchor": "about",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "50f0306",
+				"via": "elementor"
+			},
+			{
+				"id": "ed95e11",
+				"via": "elementor",
+				"anchor": "services",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "124938e",
+				"via": "elementor",
+				"anchor": "contact",
+				"columns": [
+					{
+						"width": 16.67
+					},
+					{
+						"width": 16.67
+					},
+					{
+						"width": 16.67
+					},
+					{
+						"width": 16.67
+					},
+					{
+						"width": 16.67
+					},
+					{
+						"width": 16.67
+					}
+				]
+			},
+			{
+				"id": "d81bc5f",
+				"via": "elementor"
+			}
+		],
+		"builder": "elementor",
 		"chrome": {
 			"topbar": [
 				"3300 NW 112TH AVE Doral, FL 33172",
@@ -741,15 +827,9 @@
 	"vocabulary": {
 		"widgetRoles": {},
 		"blockRoles": {},
-		"unknownWidgets": [
-			"aux_simple_shape",
-			"container",
-			"shortcode",
-			"spacer",
-			"wrap"
-		],
+		"unknownWidgets": [],
 		"unknownBlocks": [],
-		"analyzedAt": "2026-11-06T01:15:59.813Z"
+		"analyzedAt": "2026-11-09T06:25:21.864Z"
 	},
 	"geometry": {
 		"a4ad586": {

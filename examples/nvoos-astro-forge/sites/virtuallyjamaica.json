@@ -311,12 +311,9 @@
 	"vocabulary": {
 		"widgetRoles": {},
 		"blockRoles": {},
-		"unknownWidgets": [
-			"button__link",
-			"file__button"
-		],
+		"unknownWidgets": [],
 		"unknownBlocks": [],
-		"analyzedAt": "2026-11-09T04:58:54.313Z"
+		"analyzedAt": "2026-11-09T06:25:50.786Z"
 	},
 	"tracking": {
 		"trackers": [
