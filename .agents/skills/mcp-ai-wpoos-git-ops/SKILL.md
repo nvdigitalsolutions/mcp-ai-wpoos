@@ -422,3 +422,42 @@ can appear in the repo root. Two failure modes follow:
   tested: `gh run list --workflow <file> --json headSha,displayTitle,
   conclusion` - a force-push between the run and your triage makes a
   pasted diff describe a commit you no longer have.
+
+## Post-merge CI triage — a MERGED PR can still fail (2026-11-09)
+
+A workflow that runs on push to `alpha-working` (the `Sync nvoos-astro-*`
+family) can fail *after* the PR is merged, on the merge commit itself. That
+is a new forward-fix, never a revert: the code is on the branch and other
+work has already stacked on it.
+
+1. **Find the commit the run tested.** `gh run list --workflow <file>
+   --json databaseId,headSha,displayTitle,conclusion` and match `headSha`
+   to `git log --oneline -3` on `alpha-working`. A force-push between the
+   run and your triage means the pasted log describes a commit you no longer
+   have.
+2. **Read the failing step, not the job name.** `gh run view <id> --log-failed`
+   gives the exact command and its stderr.
+3. **Assume the cheapest cause first.** In this repo the post-merge failure
+   class is almost always lint/format drift, not behaviour: a pre-merge
+   `astro check` / `tsc` / unit run is a *different* toolchain from `eslint`
+   and `wp-scripts`, and passing one proves nothing about the other.
+4. **Fix forward on a fresh branch off the target.** `git switch -c
+   fix/<what>-<why> origin/alpha-working`, apply the minimal fix, stage ONLY
+   the affected files, commit, push, PR against `alpha-working`.
+5. **Prove the fix is mechanical when it is.** For an auto-fixer (`eslint
+   --fix`, `prettier --write`, `cargo fmt`), `git diff --ignore-all-space
+   -- <file>` must be **empty** — that is the evidence the change is
+   whitespace-only and cannot have altered behaviour. Paste that fact in the
+   PR body, not just "lint passes".
+6. **Re-run the checks the fix could have touched** (unit tests, type check)
+   even though the diff is whitespace — cheap, and it catches the case where
+   the auto-fixer reordered something semantic.
+
+### `eslint` `indent` + `SwitchCase: 0` (the 87-error shape)
+
+This repo's ESLint (via `@wordpress/eslint-plugin`) sets `SwitchCase: 0`.
+`case` labels therefore sit at the **same** indent as the `switch`, and each
+case body is **+1 tab**. Authoring a `switch` at 2 tabs means `case` at 2
+tabs, body at 3, nested block at 4. A `switch` nested one level deeper than
+the author expects produces a uniform off-by-one across every line of the
+switch — 87 errors from one mental slip, all fixed by `npx eslint src --fix`.

@@ -1349,6 +1349,29 @@ not typecheck, so a green suite can still fail CI on fixture types.
     so asserting the token in the built CSS requires following the
     stylesheet link (assertion adapted, gate unchanged).
 
+## Proposal 136 — section vocabulary + agent surfaces (2026-11-09)
+
+Six section kinds (`pricing`, `stats`, `steps`, `team`, `marquee`,
+`comparison`) decided by STRUCTURAL evidence only — never a class token —
+in the fixed order comparison → steps → team → pricing → stats → marquee.
+No evidence → the old shape ladder runs unchanged.
+
+`data-section-id` is identity (load-bearing); `data-section` is the kind and
+is advisory. `lib/fact-audit.ts` audits the kind, so fixtures without the
+attribute now fail the gate — intended.
+
+Also shipped: band-level JSON-LD (`offerCatalogNode` refuses to emit a
+partial price catalogue), the `verify --seo --structured` gate (prices
+band-scoped, other facts page-scoped), and the agent surfaces (`llms.txt`,
+`.md` variants, `MOTION.md`, `presets.json`).
+
+**Never add `FAQPage` or `HowTo`** — Google removed the FAQ rich result on
+2026-05-07 (docs deleted 2026-06-15) and HowTo in 2023.
+
+Full notes (kind evidence rules, the ts2304 `semantic.ts` trap, JSON-LD
+builder contracts, surface table, deferred work):
+`reference/proposal-136-section-vocabulary.md`.
+
 ## Repo conventions
 
 - **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to
