@@ -168,6 +168,16 @@ addons/pro/tests/           export-ignore
 # Embedded addon test fixtures
 addons/embedded/tests/      export-ignore
 
+# Proprietary addons must never appear in `git archive` output (GitHub
+# release source ZIPs). They are distributed ONLY via their own rsync-built
+# standalone ZIPs (bin/build-pro-standalone.sh, bin/build-canvas-addon.sh),
+# which read from the working tree and are unaffected by export-ignore.
+# The base/WP.org ZIP already excludes addons/ via .distignore.
+# NOTE: deliberately NOT a bare `addons/` pattern - that would also strip
+# addons/embedded and addons/cloud-worker, which ship inside the base build.
+addons/pro/                 export-ignore
+addons/canvas/              export-ignore
+
 # Docker (dev-only)
 docker-compose.yml          export-ignore
 docker/                     export-ignore

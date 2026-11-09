@@ -22,6 +22,8 @@
  *
  * @see WP_MCP_AI_Agent_Harness_Evolver Core evolution engine.
  * @see WP_MCP_AI_Tool_Evolve_Harness   Tool that exposes evolution to the agent.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

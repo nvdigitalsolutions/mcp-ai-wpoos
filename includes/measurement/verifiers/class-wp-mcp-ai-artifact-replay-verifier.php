@@ -23,6 +23,8 @@
  * @license   GPL-3.0-or-later
  *
  * @see WP_MCP_AI_Artifact_Failure_Replay Replay case producer.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

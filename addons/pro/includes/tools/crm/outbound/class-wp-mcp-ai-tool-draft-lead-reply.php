@@ -12,6 +12,10 @@
  * @since 2.4.0 Uses the AI provider for real AI drafting; template fallback retained.
  * @since 2.10.0 Provider call routed through the OpenAI/Gemini/Anthropic clients;
  *                the previous wp_mcp_ai_chat_completion() helper never existed.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

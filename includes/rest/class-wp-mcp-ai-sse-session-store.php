@@ -14,6 +14,10 @@
  * @package WP_MCP_AI
  * @subpackage REST
  * @since 1.1.55
+ *
+ * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

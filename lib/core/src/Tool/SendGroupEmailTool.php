@@ -1,5 +1,10 @@
 <?php
-/** Send Group Email. @package Nvoos\Core @since 2.0.0 @license MIT */
+/** Send Group Email. @package Nvoos\Core @since 2.0.0 @license MIT
+ *
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
+ */
 declare(strict_types=1); namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\EmailServiceInterface; use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 class SendGroupEmailTool extends AbstractTool {

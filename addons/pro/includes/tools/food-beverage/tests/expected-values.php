@@ -4,6 +4,10 @@
  * Generated 2026-10-08 from Surf_Club_Midigama_-_Demo_Data.xlsx.
  *
  * @package WP_MCP_AI_Pro
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 return array(

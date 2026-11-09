@@ -17,6 +17,10 @@
  *
  * @package NV_oOS_Pro
  * @since   2.1.2
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

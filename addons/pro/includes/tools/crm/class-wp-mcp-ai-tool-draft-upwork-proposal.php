@@ -9,6 +9,10 @@
  * @package WP_MCP_AI_Pro
  * @subpackage CRM_Toolkit
  * @since 1.0.0 (original), 2.3.0 (forwarding stub)
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

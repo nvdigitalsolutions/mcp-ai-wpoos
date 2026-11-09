@@ -5,6 +5,10 @@
  * asserts every row of the expected-values oracle.
  *
  * Usage: php addons/pro/includes/tools/gtmetrix/tests/smoke-run.php
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 // --- Define ABSPATH FIRST (repo files exit silently without it) ------------

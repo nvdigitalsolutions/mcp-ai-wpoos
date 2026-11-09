@@ -18,6 +18,10 @@
  * @since 1.1.94
  * @see    https://www.rfc-editor.org/rfc/rfc9728 (Protected Resource Metadata)
  * @see    docs/project/proposals/053-chatgpt-plugin-addon-implementation-plan.md
+ *
+ * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

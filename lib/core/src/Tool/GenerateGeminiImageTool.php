@@ -1,5 +1,10 @@
 <?php
-/** Generate Gemini Image — Imagen API wrapper. @package Nvoos\Core @since 2.0.0 @license MIT */
+/** Generate Gemini Image — Imagen API wrapper. @package Nvoos\Core @since 2.0.0 @license MIT
+ *
+ * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
+ */
 declare(strict_types=1);
 namespace Nvoos\Core\Tool;
 
