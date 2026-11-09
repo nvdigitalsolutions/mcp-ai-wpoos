@@ -185,6 +185,11 @@ export interface SemanticSection {
 	 * backgrounds keyed by this id into sections.generated.ts, and the
 	 * renderer re-applies them per section. */
 	id?: string;
+	/** The source element's own HTML id — the nav anchor (#about, #contact…).
+	 * The renderer re-applies it when the band has no themed anchor, so a
+	 * content-classified section keeps a one-pager's targets (virtuallyjamaica's
+	 * `#contact` was lost this way). */
+	anchor?: string;
 
 	// -- Proposal 136 §4.1: the six structural kinds carry their own slots -----
 	/** Pricing band: plans in source order (≥2, else it is not a pricing band). */
@@ -1335,6 +1340,16 @@ function headingOutside( region: HNode, form: HNode ): string | undefined {
 	return found;
 }
 
+/** A nav-target anchor: a plain lowercase slug, never an internal/auto id. */
+function anchorOfNode( node: HNode ): string | undefined {
+	const id = node.attribs?.id;
+	return id &&
+		/^[a-z][a-z0-9-]{1,31}$/.test( id ) &&
+		! /^(?:elementor|aux-|df_|nvoos|rev_slider|wp-)/.test( id )
+		? id
+		: undefined;
+}
+
 /** Build a `form` section for one classified form node. */
 function formSection( html: string, region: HNode, form: HNode, searchForms?: string[] ): SemanticSection | undefined {
 	const info = classifyForm( form, searchForms );
@@ -1342,6 +1357,12 @@ function formSection( html: string, region: HNode, form: HNode, searchForms?: st
 		return undefined;
 	}
 	const section: SemanticSection = { kind: 'form', confidence: 'high', slots: {} };
+	// The band's own id is the nav target (a CF7 form inside
+	// `<section id="contact">` must keep that anchor).
+	const anchor = anchorOfNode( region );
+	if ( anchor ) {
+		section.anchor = anchor;
+	}
 	const title = headingOutside( region, form );
 	if ( title ) {
 		section.slots.title = title;
@@ -1426,6 +1447,7 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 	for ( const section of sections ) {
 		const widgets = collectWidgets( section, options );
 		const sourceId = elementorId( section );
+		const anchor = anchorOfNode( section );
 		// Proposal 136: structural evidence (a priced plan set, an ordered
 		// process, a comparison table, a team, a metrics row, a repeated track)
 		// decides the kind BEFORE the shape ladder. No evidence → the ladder runs
@@ -1435,13 +1457,16 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 			if ( sourceId ) {
 				structural.id = sourceId;
 			}
+			if ( anchor ) {
+				structural.anchor = anchor;
+			}
 			out.push( structural );
 			continue;
 		}
 		if ( widgets.length === 0 ) {
 			const text = trimmed( textOf( section ) );
 			if ( text.length > 0 ) {
-				out.push( { kind: 'text', confidence: 'low', slots: { body: [ text ] }, html: sliceHtml( html, section ) || fallbackHtml, id: sourceId } );
+				out.push( { kind: 'text', confidence: 'low', slots: { body: [ text ] }, html: sliceHtml( html, section ) || fallbackHtml, id: sourceId, ...( anchor ? { anchor } : {} ) } );
 			}
 			continue;
 		}
@@ -1459,12 +1484,15 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 			// flush contact/map band). Plain scaffolding without an id
 			// stays dropped (the pinned fallback ladder).
 			if ( sourceId ) {
-				out.push( { kind: 'text', confidence: 'low', slots: {}, id: sourceId } );
+				out.push( { kind: 'text', confidence: 'low', slots: {}, id: sourceId, ...( anchor ? { anchor } : {} ) } );
 			}
 			continue;
 		}
 		if ( sourceId ) {
 			built.id = sourceId;
+		}
+		if ( anchor ) {
+			built.anchor = anchor;
 		}
 		out.push( built );
 	}

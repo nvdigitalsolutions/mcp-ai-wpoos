@@ -322,6 +322,23 @@ describe( 'classifyHtml — forms (Proposal 114 §3.9)', () => {
 		expect( sections[ 0 ].form ).toMatchObject( { kind: 'submit', handler: 'wpcf7', formId: '12' } );
 	} );
 
+	it( 'carries the band id as the nav anchor (the one-pager contract)', () => {
+		const html =
+			'<section id="contact">' +
+			FORM( '<input type="hidden" name="_wpcf7" value="260" /><input type="text" name="your-name" />' ) +
+			'</section>';
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].anchor ).toBe( 'contact' );
+	} );
+
+	it( 'refuses an internal/auto id as an anchor', () => {
+		const html =
+			'<section id="elementor-42">' +
+			FORM( '<input type="hidden" name="_wpcf7" value="260" /><input type="text" name="your-name" />' ) +
+			'</section>';
+		expect( classifyHtml( html )[ 0 ].anchor ).toBeUndefined();
+	} );
+
 	it( 'degrades an unidentified form to a cta band with its region links — never a dead endpoint', () => {
 		const html =
 			'<div><p>Prefer email? <a href="mailto:hi@example.com">Write to us</a></p>' +
