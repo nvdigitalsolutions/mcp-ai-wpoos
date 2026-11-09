@@ -1224,12 +1224,19 @@ async function runMediaBudgetVerify( target ) {
 	const isLegacy = /\.(?:jpe?g|png)$/i;
 	const images = entries.filter( ( entry ) => isImage.test( String( entry.file ?? '' ) ) );
 	const legacy = images.filter( ( entry ) => isLegacy.test( String( entry.file ?? '' ) ) );
+	// Documents (Proposal 139 §documents) land in the same list; they are never
+	// re-encoded, so they are reported by weight only — a 50 MB catalogue is a
+	// deploy-size fact, not a failure.
+	const isDocument = /\.(?:pdf|docx?|xlsx?|pptx?|od[ts]p?|csv|txt|rtf|epub|ics|zip)$/i;
+	const documents = entries.filter( ( entry ) => isDocument.test( String( entry.file ?? '' ) ) );
+	const documentBytes = documents.reduce( ( total, entry ) => total + ( Number( entry.bytes ) || 0 ), 0 );
 	const bytes = images.reduce( ( total, entry ) => total + ( Number( entry.bytes ) || 0 ), 0 );
 	const saved = Array.isArray( report.optimized )
 		? report.optimized.reduce( ( total, entry ) => total + ( ( Number( entry.bytes ) || 0 ) - ( Number( entry.optimizedBytes ) || 0 ) ), 0 )
 		: 0;
 	const note =
 		`${ images.length } image(s), ${ Math.round( bytes / 1024 ) } KB shipped` +
+		( documents.length > 0 ? ` + ${ documents.length } document(s), ${ Math.round( documentBytes / 1024 ) } KB` : '' ) +
 		( saved > 0 ? `, ${ Math.round( saved / 1024 ) } KB saved by re-encoding` : '' );
 	if ( legacy.length === 0 ) {
 		return { status: 'pass', note };

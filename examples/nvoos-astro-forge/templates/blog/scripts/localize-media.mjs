@@ -45,7 +45,7 @@
 
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import {
@@ -57,6 +57,7 @@ import {
 	collectStylesheetUrls,
 	documentExtension,
 	extensionForContentType,
+	IMAGE_EXTENSIONS,
 	isReencodableImage,
 	mediaFileName,
 	parseHostList,
@@ -256,6 +257,11 @@ async function encodeWebp( sharp, buffer, quality ) {
 async function intrinsicSize( sharp, buffer, extension ) {
 	if ( extension === 'svg' ) {
 		return svgIntrinsicSize( buffer.toString( 'utf8' ) );
+	}
+	// Fonts, stylesheets and the documents 139 mirrors have no `<img>` to size,
+	// and handing a PDF to sharp would render page 1 for nothing.
+	if ( ! IMAGE_EXTENSIONS.has( extension ) ) {
+		return null;
 	}
 	if ( ! sharp ) {
 		return null;

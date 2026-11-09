@@ -41,6 +41,8 @@ After a download, if the extension is in `REENCODE_EXTENSIONS` (`jpg/jpeg/png/bm
 
 Excluded on purpose: `svg` (vector), `ico` (icon), `gif` (re-encoding drops animation), `webp`/`avif` (already next-gen), and anything `sharp` cannot read (fail-soft).
 
+Documents mirrored by 139 (`pdf`, `doc(x)`, `xls(x)`, …) land in the same `localized` list but are excluded by extension — re-encoding a PDF is not a thing, and its weight is a deploy-size fact, not a budget failure. The gate reports it separately.
+
 Consistency note: the template already ships WebP-only for content images (`<Image>` emits a single `<img>` in the optimised format, not a `<picture>` chain), so background and chrome images following the same rule adds no new compatibility risk.
 
 ### 3.2 Explicit dimensions (§2)
@@ -63,7 +65,7 @@ Fail-soft, as always: if the fetch fails the remote `<link>` survives, which is 
 
 ### 3.5 The media budget gate (§5)
 
-`forge verify` gains a `media budget` gate that reads `.forge-cache/media-localize.json` — the report the pass already writes — and asserts the artifact ships no JPEG/PNG it could have re-encoded, reporting images shipped and bytes saved. `skip` when the report is absent (proxy mode, or localization off).
+`forge verify` gains a `media budget` gate that reads `.forge-cache/media-localize.json` — the report the pass already writes — and asserts the artifact ships no JPEG/PNG it could have re-encoded, reporting images shipped, bytes saved, and (since 139) document weight. `skip` when the report is absent (proxy mode, or localization off).
 
 **Warn by default, fail under `--strict-media`.** A source image that does not shrink is a legitimate outcome, so this must not block a deploy; but it must be visible, or the win silently rots.
 
@@ -102,6 +104,6 @@ Trade-off, stated plainly: `local` duplicates the media library into every deplo
 ## 7. Validation
 
 - `npm run typecheck` — clean.
-- `npx vitest run --exclude tests/forge-e2e.test.ts` — **910 passing** (was 901; +9 for the new helpers).
-- `tests/scaffold.test.ts` — 82 passing (`--testTimeout=60000`: the default 5 s elapses on a loaded Windows box, pre-existing).
+- `npx vitest run` (full suite, `--no-file-parallelism --testTimeout=90000`) — **949 passing, 62 files**, including the hermetic `forge-e2e` build gate.
+- `tests/media-localize.test.ts` 50, `tests/scaffold.test.ts` 83 (`--testTimeout` is needed on a loaded Windows box: the default 5 s elapses while other builds run — pre-existing).
 - Expected effect on jayainc: the three JPEGs (619 KB) become WebP at roughly 290 KB — the 327 KB GTmetrix win — and the page stops chaining to Google Fonts.
