@@ -478,7 +478,8 @@
 	],
 	"shape": "one-pager",
 	"deploy": {
-		"runtime": "managed"
+		"runtime": "managed",
+		"publicOrigin": "https://virtuallyjamaica.com"
 	},
 	"forms": {
 		"delivery": "direct",
