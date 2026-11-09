@@ -1072,11 +1072,38 @@ legacy-identifier renames.
   `lib/content/portable-text.ts`, the `CUSTOM_BLOCK_TYPES` allowlist, a
   component in `components/blocks/`, and the `TYPE_COMPONENTS` map in
   `components.ts`. `tests/unit/agent-surfaces.test.ts` pins accept + reject.
-- **`data-section` on block roots**: the three new blocks plus hero, image,
-  testimonial, and `stat` — which emits `data-section="stats"` (the KIND name)
-  while its Portable Text type keeps the name `stat`. `faq`, `tabs`,
-  `productGrid`, `promotion` still lack it: they render through `ui/` wrappers
-  (`UiAccordion`, `UiTabs`) that must forward the attribute first.
+- **`data-section` on block roots**: ALL eleven block types now emit it.
+  The three new blocks (comparison/steps/team) plus hero, image, testimonial,
+  `stat` (which emits `data-section="stats"` — the KIND name — while its
+  Portable Text type keeps the name `stat`), and — as of the follow-up pass —
+  `faq`, `tabs`, `productGrid` (`product-grid`), `promotion`.
+- **The `ui/` primitives already forward attributes.** `UiAccordion`,
+  `UiTabs`, `UiTabsList`, `UiTabsPanel`, `UiTabsTab`, `UiAccordionItem` all
+  end with `{...rest}` on their root, so passing `data-section` from the block
+  works with NO primitive change. The earlier note here ("must forward the
+  attribute first") was wrong — check the primitive before assuming; all four
+  missing tags were a one-line edit on the block, not the primitive.
+- **Vocabulary lives in `src/lib/content/section-kinds.ts`**
+  (`SECTION_KINDS`, `isSectionKind`, `BLOCK_TYPE_TO_KIND`). It is
+  storefront-local: the forge has no `faq`/`tabs`/`product-grid`/`promotion`
+  kinds because it does not generate those bands. Two gates:
+  `tests/unit/section-kinds.test.ts` (source grep — every
+  `src/components/blocks/*.astro` declares exactly ONE in-vocabulary
+  `data-section`, every kind has a block; `Blocks.astro` is the dispatcher and
+  `LinkMark` an inline mark, both excluded) and an e2e vocabulary assertion.
+  The unit regex MUST anchor on `data-section="` — `data-section-id="` only
+  matches if you forget the quote.
+- **Block gallery is `/components/blocks/`, not `/components/`.**
+  `/components/` is the Q6 *adoption* record (Incluud vs Zag, cites Proposal
+  107 §10) — adding content fixtures there would corrupt an evaluation.
+  The gallery renders every non-live block from inline fixtures; `productGrid`
+  and `promotion` are documented by mapping only, because they call the
+  commerce client and omit the band when the upstream does not resolve (an
+  empty gallery answers its own question badly). Fixtures are contextually
+  typed by the props, so a block contract change breaks `astro check` here.
+- **`marks` belongs on SPANS, not on the block.** A `_type: 'block'` carries
+  `style` + `children` + `markDefs`; `marks: []` on the block itself is
+  ts2353. The block-level array is `markDefs`.
 - **Agent surfaces**: `src/lib/llms.ts` (`composeLlmsTxt`,
   `markdownFromPortableText`, `textFromHtml`), `/llms.txt` (fail-soft per
   collection — never 500 because one collection is down), `.md` variants at

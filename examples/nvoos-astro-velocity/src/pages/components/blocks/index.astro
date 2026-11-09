@@ -1,0 +1,288 @@
+---
+// ---------------------------------------------------------------------------
+// /components/blocks — the content-block gallery.
+//
+// Deliberately SEPARATE from /components/ (the Q6 component-library
+// evaluation, which answers "do we adopt Incluud / Zag?"). This page answers
+// a different question: "what do the Portable Text block types render, and
+// what `data-section` kind does each emit?" Mixing the two would put content
+// fixtures inside an adoption record that cites Proposal 107 §10.
+//
+// Every block here is rendered from an inline FIXTURE — no commerce calls, so
+// the page is deterministic and asset-light. The two live-data blocks
+// (productGrid, promotion) are documented by mapping only: rendering them
+// would make this page depend on the catalog and on an active promotion, and
+// an empty gallery answers its own question badly.
+//
+// The fixtures satisfy the real zod-derived types, so `astro check` fails if a
+// block's contract changes and this page is not updated with it.
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import HeroBlock from '../../../components/blocks/HeroBlock.astro';
+import ImageBlock from '../../../components/blocks/ImageBlock.astro';
+import TestimonialBlock from '../../../components/blocks/TestimonialBlock.astro';
+import StatBlock from '../../../components/blocks/StatBlock.astro';
+import ComparisonBlock from '../../../components/blocks/ComparisonBlock.astro';
+import StepsBlock from '../../../components/blocks/StepsBlock.astro';
+import TeamBlock from '../../../components/blocks/TeamBlock.astro';
+import TabsBlock from '../../../components/blocks/TabsBlock.astro';
+import FaqBlock from '../../../components/blocks/FaqBlock.astro';
+import { BLOCK_TYPE_TO_KIND } from '../../../lib/content/section-kinds';
+
+const title = 'Content blocks';
+const description =
+	'Every Portable Text block type the storefront renders, with the data-section kind each one emits.';
+
+/** Portable Text type → emitted kind, in authoring order. */
+const vocabulary = Object.entries(BLOCK_TYPE_TO_KIND);
+---
+
+<BaseLayout title={title} description={description}>
+	<article class="gallery">
+		<p class="crumb"><a href="/components/">← Component library evaluation</a></p>
+
+		<h1>Content blocks</h1>
+		<p class="lede">
+			The Portable Text block types a page or post body can carry, rendered
+			from fixtures. Each block's root element carries{' '}
+			<code>data-section="&lt;kind&gt;"</code> — a structural label agents and
+			tests can select on, independent of CSS class names. The kind is
+			advisory; identity, where it exists, stays <code>data-section-id</code>.
+		</p>
+
+		<section class="demo-section">
+			<h2>Vocabulary</h2>
+			<p class="hint">
+				The emitted value is the <em>kind</em>, not the authoring type name.
+				<code>stat</code> → <code>stats</code> is the only rename.
+			</p>
+			<div class="scroll">
+				<table class="vocab">
+					<thead>
+						<tr>
+							<th scope="col">Authoring type</th>
+							<th scope="col">Emits</th>
+						</tr>
+					</thead>
+					<tbody>
+						{
+							vocabulary.map(([ type, kind ]) => (
+								<tr>
+									<td><code>{type}</code></td>
+									<td>{type === kind ? <span class="same">same</span> : <code>{kind}</code>}</td>
+								</tr>
+							))
+						}
+					</tbody>
+				</table>
+			</div>
+			<p class="hint">
+				Source of truth: <code>src/lib/content/section-kinds.ts</code>. A unit
+				test fails if a block ships without an in-vocabulary kind, or if a
+				kind has no block.
+			</p>
+		</section>
+
+		<section class="demo-section">
+			<h2>Structural blocks</h2>
+
+			<h3><code>hero</code></h3>
+			<HeroBlock
+				node={{
+					_type: 'hero',
+					title: 'A headline that opens the body',
+					lede: 'An optional lede sits beneath it. Both are plain text — the hero is a band, not a place for markup.',
+				}}
+			/>
+
+			<h3><code>image</code></h3>
+			<ImageBlock node={{ _type: 'image', src: '/favicon.svg', alt: 'The storefront favicon' }} />
+
+			<h3><code>testimonial</code></h3>
+			<TestimonialBlock
+				node={{
+					_type: 'testimonial',
+					quote: 'The blocks rendered exactly as reviewed, with no surprises in production.',
+					author: 'A customer',
+				}}
+			/>
+
+			<h3><code>stats</code> — authored as <code>stat</code></h3>
+			<div class="stat-row">
+				<StatBlock node={{ _type: 'stat', value: '3', label: 'new section kinds' }} />
+				<StatBlock node={{ _type: 'stat', value: '11', label: 'block types' }} />
+				<StatBlock node={{ _type: 'stat', value: '0', label: 'scripts required' }} />
+			</div>
+
+			<h3><code>comparison</code></h3>
+			<ComparisonBlock
+				node={{
+					_type: 'comparison',
+					caption: 'Draft-first publication',
+					columns: [ 'Draft', 'Published' ],
+					rows: [
+						{ label: 'Visible to shoppers', values: [ 'No', 'Yes' ] },
+						{ label: 'Indexed', values: [ 'No', 'Yes' ] },
+						{ label: 'Preview link', values: [ 'Yes', 'Not needed' ] },
+					],
+				}}
+			/>
+
+			<h3><code>steps</code></h3>
+			<StepsBlock
+				node={{
+					_type: 'steps',
+					items: [
+						{ title: 'Write the body', body: 'Compose blocks in the editor; nothing publishes yet.' },
+						{ title: 'Preview it', body: 'A signed preview link renders the draft to a real browser.' },
+						{ title: 'Publish', body: 'The page enters the sitemap and the catalog index.' },
+					],
+				}}
+			/>
+
+			<h3><code>team</code></h3>
+			<TeamBlock
+				node={{
+					_type: 'team',
+					people: [
+						{ name: 'Ada Lovelace', role: 'Editorial lead' },
+						{ name: 'Grace Hopper', role: 'Operations' },
+					],
+				}}
+			/>
+
+			<h3><code>tabs</code></h3>
+			<TabsBlock
+				node={{
+					_type: 'tabs',
+					_key: 'gallery-tabs',
+					tabs: [
+						{
+							title: 'Render',
+							blocks: [
+								{
+									_type: 'block',
+									style: 'normal',
+									markDefs: [],
+									children: [
+										{ _type: 'span', text: 'Tab bodies are nested Portable Text — any allowlisted block can live inside one.', marks: [] },
+									],
+								},
+							],
+						},
+						{
+							title: 'Access',
+							blocks: [
+								{
+									_type: 'block',
+									style: 'normal',
+									markDefs: [],
+									children: [
+										{ _type: 'span', text: 'Arrow keys, Home and End move between tabs; selection follows focus.', marks: [] },
+									],
+								},
+							],
+						},
+					],
+				}}
+			/>
+
+			<h3><code>faq</code></h3>
+			<FaqBlock
+				node={{
+					_type: 'faq',
+					question: 'Why details/summary?',
+					answer: 'The native element gives keyboard, screen-reader and reduced-motion behaviour with no script. A shared name attribute makes consecutive FAQ blocks behave as one exclusive accordion.',
+				}}
+			/>
+			<FaqBlock
+				node={{
+					_type: 'faq',
+					question: 'Is FAQ schema emitted?',
+					answer: 'No. Google retired the FAQ rich result, so the visible accordion is the whole feature.',
+				}}
+			/>
+		</section>
+
+		<section class="demo-section">
+			<h2>Live-data blocks</h2>
+			<p>
+				Two block types resolve against the catalog at render time, so they are
+				listed rather than demoed here:
+			</p>
+			<ul class="plain">
+				<li><code>productGrid</code> → <code>data-section="product-grid"</code> — a live product pick by id.</li>
+				<li><code>promotion</code> → <code>data-section="promotion"</code> — an active promotion card by id.</li>
+			</ul>
+			<p class="hint">
+				Both omit the band entirely when the upstream does not resolve, which is
+				why a fixture gallery would show nothing.
+			</p>
+		</section>
+	</article>
+</BaseLayout>
+
+<style>
+	.crumb {
+		margin-block-end: 1rem;
+		font-size: 0.9rem;
+	}
+
+	.lede {
+		color: var(--nv-muted);
+		max-width: 46rem;
+	}
+
+	.demo-section {
+		margin-block-start: 2.5rem;
+		max-width: 46rem;
+	}
+
+	.demo-section h3 {
+		margin-block: 2rem 0.75rem;
+	}
+
+	.demo-section h3 code {
+		font-size: 0.95em;
+	}
+
+	.hint {
+		color: var(--nv-muted);
+		font-size: 0.9rem;
+	}
+
+	.scroll {
+		overflow-x: auto;
+	}
+
+	.vocab {
+		border-collapse: collapse;
+		min-inline-size: 18rem;
+	}
+
+	.vocab th,
+	.vocab td {
+		border-block-end: 1px solid var(--nv-line);
+		padding: 0.4rem 0.75rem;
+		text-align: start;
+	}
+
+	.vocab thead th {
+		border-block-end: 2px solid var(--nv-line-strong);
+	}
+
+	.same {
+		color: var(--nv-muted);
+	}
+
+	.stat-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+
+	.plain {
+		padding-inline-start: 1.25rem;
+	}
+</style>
