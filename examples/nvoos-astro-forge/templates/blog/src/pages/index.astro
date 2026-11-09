@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
 import DesignRenderer from '../components/design/DesignRenderer.astro';
+import Contact from '../components/design/Contact.astro';
 import { jsonLdFor, renderJsonLd, bandNodes } from '../lib/seo.ts';
 import { buildGraph, organizationId } from '../lib/seo-graph.ts';
 import { classifyBody } from '../lib/classify.ts';
@@ -47,6 +48,9 @@ const jsonLd = buildGraph(
 // page emitted no <meta name="description"> at all, while [slug].astro did.
 const frontDescription =
 	frontPage?.data.seoDescription || manifest.seoDescription || frontPage?.data.excerpt;
+// Issue #7549 — the contact band the source injected from its theme. The
+// profile declares the copy; the band (and its `#contact` anchor) renders here.
+const contactBlock = (manifest as { contact?: { heading?: string } }).contact;
 ---
 
 <Base
@@ -86,5 +90,6 @@ const frontDescription =
 			</section>
 		</>
 	)}
+	{contactBlock && <Contact />}
 	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
 </Base>

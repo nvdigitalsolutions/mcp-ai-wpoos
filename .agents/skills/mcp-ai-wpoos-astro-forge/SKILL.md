@@ -1110,6 +1110,29 @@ content" gap. Full operational notes: `reference/capture-arc.md`.
 `rulesInMedia`, and typecheck-as-a-gate. Full notes:
 `reference/fidelity-gates.md`.
 
+## Content, colour and pixel parity gates (2026-11-09)
+
+Three gates close the "words went missing / the colours never applied / the
+render drifted" blind spot:
+
+- `verify --text` diffs the build's normalised visible text against the
+  `analyze --text` baseline (3-word w-shingles; **coverage of the source** is
+  the gate — added copy never fails a rebuild).
+- `verify --colors` diffs the COMPUTED body/header/footer background+text
+  colour with CIEDE2000 (warn ≥ 3, fail ≥ 6); transparent surfaces skipped.
+  The token block proves the CSS carries the colours — this proves the browser
+  renders them.
+- `verify --pixel` diffs deterministic screenshots with pixelmatch's YIQ delta
+  **and** SSIM against a recorded baseline (build-vs-build regression) or the
+  live source (`--pixel-live`, near-clone work only). Determinism is proven,
+  not assumed: `--pixel-baseline` refuses to write when two captures of the
+  same build differ.
+
+Mask noisy regions instead of loosening thresholds; never fake the clock (it
+can freeze hydration). Full thresholds, extraction rules, the determinism
+recipe, measured virtuallyjamaica numbers and the industry basis:
+`reference/pixel-and-text-parity.md`.
+
 ## Phase roadmap (096 §5)
 
 - **Phase 0 — shipped** (PR #7335, merged 2026-10-31): client, loader,

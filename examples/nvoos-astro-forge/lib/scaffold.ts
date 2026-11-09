@@ -24,7 +24,7 @@ import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree } from './managed-runtime.ts';
 import { consentCategoryFor, cspDirectivesFor } from './tracking.ts';
-import type { ForgeDesign, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { ForgeColorModes, ForgeContact, ForgeDesign, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -254,6 +254,8 @@ export interface ForgeManifest {
 	 * chrome on these (search/feed links, sitemap pointer, og:image).
 	 */
 	surfaces?: { search: boolean; feed: boolean; sitemap: boolean; ogImages: boolean };
+	/** The contact band (issue #7549) — copy the front page renders at `#contact`. */
+	contact?: ForgeContact;
 	/** Rendering model (104 Q4) — informational; the project files embody it. */
 	render?: 'static' | 'ssr';
 	/**
@@ -568,12 +570,43 @@ export function highTokensFor( tokens: Record<string, string> ): Record<string, 
 }
 
 /**
- * Merge the token stack (114 §3.3): template defaults ← design-block
- * derivation (tokens_apply v2) ← explicit profile.tokens overrides. Explicit
- * operator overrides always win.
+ * The rendered body ink from a colour baseline, when one exists.
+ *
+ * The design extraction reads CSS DECLARATIONS; the browser reads what actually
+ * paints. On virtuallyjamaica the extracted `text` role is `#2a2a2a` (a
+ * heading/declaration colour) while body copy renders `#626262` — a 18.79 ΔE00
+ * miss that only the colour gate could see. `ink` is body copy, so the measured
+ * body colour wins over the declared one. `accent-ink` is NOT overridden: it is
+ * contrast-derived for text ON the accent and would fail AA if it followed the
+ * body ink.
  */
-export function mergeTokens( design?: ForgeDesign, tokens?: Record<string, string> ): Record<string, string> {
-	return { ...DEFAULT_TOKENS, ...( design ? designToTokens( design ) : {} ), ...( tokens ?? {} ) };
+function measuredBodyInk( colors?: ForgeColorModes | Record< string, { text?: string } > ): string | undefined {
+	if ( ! colors ) {
+		return undefined;
+	}
+	const modes = colors as Record< string, unknown >;
+	// Current shape (mode → region → colours); legacy flat shape (region → colours).
+	const light = ( modes.light ?? modes ) as Record< string, { text?: string } | undefined >;
+	const text = light?.body?.text;
+	return typeof text === 'string' && /^#[0-9a-f]{6}$/i.test( text ) ? text : undefined;
+}
+
+/**
+ * Merge the token stack (114 §3.3): template defaults ← design-block
+ * derivation (tokens_apply v2) ← rendered body ink (when measured) ← explicit
+ * profile.tokens overrides. Explicit operator overrides always win.
+ */
+export function mergeTokens(
+	design?: ForgeDesign,
+	tokens?: Record< string, string >,
+	colors?: ForgeColorModes | Record< string, { text?: string } >
+): Record< string, string > {
+	const merged = { ...DEFAULT_TOKENS, ...( design ? designToTokens( design ) : {} ), ...( tokens ?? {} ) };
+	const ink = measuredBodyInk( colors );
+	if ( ink && ! ( tokens && typeof tokens.ink === 'string' && tokens.ink.trim() ) ) {
+		merged.ink = ink;
+	}
+	return merged;
 }
 
 /** Render the :root token block (defaults + profile overrides). */
@@ -1601,8 +1634,12 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
  * With a design block present, every failing pair gets a suggested one-token
  * fix from the source's own unassigned pool.
  */
-export function tokenWarnings( tokens?: Record<string, string>, design?: ForgeDesign ): string[] {
-	const merged = mergeTokens( design, tokens );
+export function tokenWarnings(
+	tokens?: Record< string, string >,
+	design?: ForgeDesign,
+	colors?: ForgeColorModes | Record< string, { text?: string } >
+): string[] {
+	const merged = mergeTokens( design, tokens, colors );
 	const audit = contrastAudit( merged, DARK_TOKENS, highTokensFor( merged ) );
 	const warnings = auditWarnings( audit );
 	if ( design ) {
@@ -2081,7 +2118,7 @@ async function scaffoldProject(
 	// 3a. Apply the design language (tokens_apply v2 — Proposal 114 §3.3) over
 	//     the --forge-* defaults, gate the rendered pairs against WCAG, and
 	//     write the resolved design module the audit endpoint reads.
-	const mergedTokens = mergeTokens( profile.design, profile.tokens );
+	const mergedTokens = mergeTokens( profile.design, profile.tokens, profile.colors );
 	const cssPath = path.join( targetDir, 'src', 'styles', 'global.css' );
 	const css = await readFile( cssPath, 'utf8' );
 	await writeFile( cssPath, rewriteGlobalCss( css, mergedTokens ), 'utf8' );
@@ -2142,7 +2179,7 @@ async function scaffoldProject(
 	} catch {
 		// No design module in the template — nothing to write.
 	}
-	const warnings = tokenWarnings( mergedTokens, profile.design );
+	const warnings = tokenWarnings( mergedTokens, profile.design, profile.colors );
 
 	// 3a2. Wireframe pages (Proposal 115 §3) — every page the profile's
 	//      wireframe block captures becomes a static route, so the rebuild
@@ -2400,6 +2437,9 @@ async function scaffoldProject(
 		design: profile.design,
 		designAudit: options.strictContrast ? 'strict' : 'warn',
 		forms,
+		// Issue #7549 — a theme-injected contact band cannot come from content;
+		// the profile declares its copy so the front page can render `#contact`.
+		...( profile.contact ? { contact: profile.contact } : {} ),
 		surfaces,
 		render,
 		...( hasTrackingModule && profile.tracking

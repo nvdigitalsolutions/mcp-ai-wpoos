@@ -364,7 +364,7 @@
 	},
 	"tokens": {
 		"surface": "#ffffff",
-		"ink": "#2a2a2a",
+		"ink": "#626262",
 		"muted": "#595959",
 		"line-strong": "#767676",
 		"accent-ink": "#2a2a2a"
@@ -391,5 +391,53 @@
 			"why": "The coral accent #fe6c61 with the template default white ink measures 2.79:1; #2a2a2a ink measures 5.15:1."
 		}
 	],
-	"shape": "one-pager"
+	"shape": "one-pager",
+	"deploy": {
+		"runtime": "managed"
+	},
+	"forms": {
+		"delivery": "direct",
+		"mail": {
+			"provider": "brevo",
+			"from": "forms@virtuallyjamaica.com",
+			"to": "info@virtuallyjamaica.com"
+		}
+	},
+	"text": {
+		"capturedAt": "2026-11-09T15:50:02.964Z",
+		"url": "https://virtuallyjamaica.com",
+		"page": "toggle navigation about wifi marketing features services hardware contact see what we can do for you. we specialize in custom solutions for your business social wifi marketing solution the best way to promote your business! having the ability to provide an internet access service to these visitors will give you the opportunity to make your business more competitive. in today's business environment attractions, hotels, cafe's and bars are faced with an increasing pressure to offer their guests internet connectivity. through wifi advertising, you can target the right audience, at the right time and at the same time leverage your hotspot to promote your business for free! learn more wifi social marketing how it works landing page advertise your business with your own wi-fi start page. when people connect to your wi-fi signal, they are redirected automatically to your hotspot start page (called splash page). - customize the login page with your company branding and logo for a more professional look and feel. social integration while giving out free wi-fi, you can promote your own facebook page, get new \"likes\" and social recommendations from your customers. this increases your business' visibility, customer engagement and eventually sales. in other worlds, this is free advertising. pop-up ads once a user connects to the hotspot you have to ability to display ads/promotion before they are prompted to login in. wi-fi for advertising: show images and youtube video ads to wi-fi clients. email marketing automated email response - once a customer connects a customized welcome email will be sent with the option to unsubscribe from the email list. wi-fi to build your sales pipeline & nurture your marketing leads. integrate wi-fi with mailchimp, salesforce, hubspot, zendesk, and many others powerful and unlimited design feature highlights custom landing page advertise your business with your own wi-fi start page. when people connect to your wi-fi signal, they are redirected automatically to your hotspot start page (called splash page). - customize the login page with your company branding and logo for a more professional look and feel. capture user metadata data capture - you can specify which questions you want to ask your customers. this can include email, phone number or other personal data that is pertinent to your business. or you can even create a questionnaire that they can fill out (like feedback/survey). multiple login options facebook | instagram | twitter | linkedin | email | phone are just some of the options - while giving out free wi-fi, you can promote your own facebook page, get new \"likes\" and social recommendations from your customers. this increases your business' visibility, customer engagement and eventually sales. in other worlds, this is free advertising. pop-up advertising once a user connects to the hotspot you have to ability to display ads/promotion before they are prompted to login in. this is a good place to upsell any of your current product offering or services. coupon code system easy-to-use, multi-role software for paid/no-paid wi-fi. you will be able to configure a coupon template and set the data limit, a quota limit, the duration, and other key metrics. you can also customize texts and how the coupon is printed. then, a front desk operator can easily print tens of unique coupon codes in seconds and distribute or sell them to your guests. the easy-to-use monitoring dashboard allows you to see in real-time if a coupon has been used or not. coupon codes can be customized, to give users a personalized passphrase to access the wi-fi network redirect page once a user logs into the system you will have the ability to re-direct (send) them to any website you like automated email on signup once a customer connects a customized welcome email will be sent with the option to unsubscribe from the email list. our system integrates directly with such services as mailchimp in order to fully utilize automated responses. remarketing google's audience marketing integrations available in order to track usage and have the ability to create audiences to re-market with google adwords. whether you are thinking of running a hotspot for free or for a fee, you will need a management system to maintain quality of service for your customers, eliminate free-riders, and keep your network secure. our products are custom designed for the environment they will be deployed into. our mission it to create professional web design with a creative, clear-cut approach we endeavor to help web entrepreneurs with hands-on web consulting that fits your needs. we offer professional network solutions, website design, web consulting and web site marketing services we can design or redesign all aspects of your website, from search engine friendly graphic design and layout to information architecture and navigation contact us choose the access point that works best for you. or the cheapest one. or ask us to support your favorite brand. [ultimate_spacer height=\"25''] supported hardware contact us this deep customer understanding allows our clients to make evidence based decisions around a number of key business challenges, like space planning, customer relationship management and engagement. please contact us for more information. © 2023 virtually jamaica is powered by nv digital solutions.",
+		"sections": [],
+		"skipped": []
+	},
+	"colors": {
+		"light": {
+			"body": {
+				"background": "#ffffff",
+				"text": "#626262"
+			},
+			"header": {
+				"background": "transparent",
+				"text": "#626262"
+			},
+			"footer": {
+				"background": "#ededed",
+				"text": "#626262"
+			}
+		},
+		"dark": {
+			"body": {
+				"background": "#ffffff",
+				"text": "#626262"
+			},
+			"header": {
+				"background": "transparent",
+				"text": "#626262"
+			},
+			"footer": {
+				"background": "#ededed",
+				"text": "#626262"
+			}
+		}
+	}
 }

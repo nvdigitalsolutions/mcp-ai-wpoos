@@ -145,7 +145,25 @@ jobs:
             # how a broken band-flow parser and a demo post shipped unnoticed.
             # A failing gate aborts the run (set -euo pipefail), so a regression
             # can never reach the mirror branch.
-            node scripts/forge.mjs verify "sites/$name.json" --target "$target" --seo --tracking
+            # Every gate runs by default, so this BLOCKING step narrows to the
+            # deterministic, browser-free set: a missing Chromium build or a
+            # stale screenshot baseline must not stall a legitimate deploy.
+            node scripts/forge.mjs verify "sites/$name.json" --target "$target" --minimal
+
+            # The full parity scorecard (every gate, light + dark). Reported,
+            # never blocking — the gate above is the gate. `tee` keeps the table
+            # in the log and copies it into the run summary.
+            node scripts/forge.mjs verify "sites/$name.json" --target "$target" \
+              --pixel-mode both 2>&1 | tee "$FORGE_WORK/$name.scorecard.txt" \
+              || echo "::warning title=Forge parity::$name reported failing or skipped gates (see the scorecard above)"
+            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+              {
+                echo "### Parity scorecard — $name"
+                echo '```'
+                sed -n '/Parity scorecard/,$p' "$FORGE_WORK/$name.scorecard.txt" 2>/dev/null || true
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
 
             # Demo content must never reach a client site: the hybrid loader
             # merges local MDX under the WP entries, so a placeholder in

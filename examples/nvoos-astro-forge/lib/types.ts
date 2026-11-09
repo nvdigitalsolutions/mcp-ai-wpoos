@@ -399,6 +399,30 @@ export interface SiteProfile {
 	 * the language-parity score cannot provide (Proposal 114 §3.6).
 	 */
 	geometry?: ForgeGeometry;
+	/**
+	 * The content baseline (`analyze --text`): the source's normalised visible
+	 * text, page-level and per band. `verify --text` diffs the build against it
+	 * — the gate neither the design-language score nor the fact audit can give
+	 * (both pass while words go missing).
+	 */
+	text?: ForgeTextBaseline;
+	/**
+	 * The colour-system baseline (`analyze --colors`): computed background/text
+	 * per colour scheme and region. `verify --colors` diffs the build against it
+	 * with CIEDE2000.
+	 */
+	colors?: ForgeColorModes;
+	/**
+	 * The contact band (issue #7549). A forged site used to lose the source's
+	 * contact block entirely when the band was theme-injected (virtuallyjamaica:
+	 * the `#contact` section is not in `post_content`), leaving a dead one-pager
+	 * anchor. When this block is present the front page renders a `#contact`
+	 * band; its form posts through `forms.delivery` (Proposal 138) — `direct`
+	 * calls the site's own provider-backed route, `bridge` calls WordPress.
+	 * Without a transport the band renders as copy + a mailto link, never a
+	 * form pointed at a dead endpoint.
+	 */
+	contact?: ForgeContact;
 	/** Collections to wire into the generated project. */
 	collections: WpCollection[];
 	/**
@@ -479,6 +503,55 @@ export interface BandGeometry {
 
 /** Measured band geometry: section id → viewport name → box. */
 export type ForgeGeometry = Record< string, Record< string, BandGeometry > >;
+
+/** The contact band copy (see `SiteProfile.contact`, issue #7549). */
+export interface ForgeContact {
+	heading?: string;
+	blurb?: string;
+	/** Shown as a mailto link when no form transport is configured. */
+	email?: string;
+}
+
+/** One band's normalised visible text from the source (`lib/text-parity.ts`). */
+export interface ForgeTextSection {
+	id: string;
+	text: string;
+}
+
+/**
+ * The content baseline (`analyze --text`), mirroring `geometry`: captured from
+ * the source once, diffed against the build by `verify --text`. Text is stored
+ * NORMALISED (NFKC, punctuation folded, whitespace collapsed, lowercased) so a
+ * comparison never re-litigates the same editorial noise.
+ */
+export interface ForgeTextBaseline {
+	capturedAt: string;
+	url: string;
+	/** Normalised visible text of the source homepage. */
+	page: string;
+	/** Per-band text, for bands whose source node could be located. */
+	sections: ForgeTextSection[];
+	/** Band ids with no extractable source text (reported, never failed). */
+	skipped: string[];
+}
+
+/** One region's computed surface + text colour (`#rrggbb` or `transparent`). */
+export interface RegionColors {
+	background: string;
+	text: string;
+}
+
+/**
+ * The colour-system baseline (`analyze --colors`): computed background/text
+ * per COLOUR SCHEME, per region (body, header, footer), from the source's
+ * RENDERED page. Modes are measured separately because a header may be dark
+ * in light mode, or the site may theme `prefers-color-scheme` — comparing one
+ * scheme only would miss both.
+ *
+ * Shape: `{ light: { body: {...}, header: {...} }, dark: { ... } }`.
+ * `verify --colors` re-measures the build and diffs with CIEDE2000.
+ */
+export type ForgeColorModes = Record< string, Record< string, RegionColors > >;
 
 /**
  * The closed section-kind vocabulary (Proposal 136 §4.1).
