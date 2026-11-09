@@ -574,6 +574,8 @@ Validation: 417 unit tests (44 files), `astro check` 0 errors / 0 warnings (226 
 
 Also fixed: the gallery's `image` demo pointed at `/favicon.svg`, which is **404 on the deployed host** even though it exists in `dist/client`. The demo now carries its own `data:` URI (`img-src 'self' data:` is allowed).
 
+**Orphaned prerendered HTML (root cause of the nine-day-stale PDP).** After the CSP work, `/products/1/aurora-3-seater-sofa/` still rendered `client="visible"` islands and a chunk (`GalleryLightbox.0OTO-7vP.js`) no current build emits — while home, PLP, cart and checkout all matched the local build. It survived a service restart **and** a redeploy, and a cache-buster changed nothing (`cf-cache-status: DYNAMIC`, `Cache-Control: max-age=0`), so it was never caching. Velocity deploys the mirror **incrementally and never deletes files that leave the repo**; a prerendered `dist/client/products/…/index.html` from the Proposal 092 era (31 Oct) had been shadowing the SSR route for nine days — serving build-time content *and* build-time inline scripts, which is why the CSP violations persisted on that route alone. Fix: `scripts/lib/purge-prerendered.mjs` deletes every `*.html` under `dist/client` at boot (fully-SSR builds emit none), and `sync-dist.mjs` refuses to assemble a mirror tree containing any, so the condition cannot ship again. Tested by `tests/unit/purge-prerendered.test.ts` plus a seeded-tree boot check.
+
 **Not shipped (deliberately deferred).**
 
 - `forge export-system` CLI subcommand and the `_system/specimen.astro` route.

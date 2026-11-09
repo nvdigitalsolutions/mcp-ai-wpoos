@@ -651,6 +651,43 @@ errors plus working tabs. Add that shape for any navigation-critical pattern.
 it 200. Never reference a site-root static file from a page fixture; use a
 self-contained `data:` URI (`img-src 'self' data:` is already allowed).
 
+### Orphaned prerendered HTML shadows SSR (nine-day-stale PDP, 2026-11-09)
+
+**Velocity deploys the mirror INCREMENTALLY — it never deletes files that left
+the repo.** This app is fully SSR (`output: 'server'`), so a correct build emits
+**zero** `.html` under `dist/client`; `@astrojs/server` serves `dist/client`
+*before* falling through to the renderer. An orphaned prerendered page from an
+older build therefore **shadows the SSR route forever**.
+
+Symptom (one route, everything else fine): `/products/1/aurora-3-seater-sofa/`
+served `client="visible"` islands and a chunk (`GalleryLightbox.0OTO-7vP.js`)
+that no current build produces, while home/PLP/cart all matched the local
+build. Nine days stale, surviving **restarts** and **redeploys**, and producing
+CSP violations on every in-app navigation into it.
+
+**Diagnosis — rule out caching, then compare against a local build:**
+
+```sh
+curl -sS "$URL?cb=999" | grep -o 'client="[a-z]*"' | sort | uniq -c   # cache-buster
+curl -sS -D - -o /dev/null "$URL" | grep -Ei 'cf-cache-status|cache-control'
+curl -sS "$URL" | grep -o '<chunk-name>[^"]*\.js'                    # vs dist/client/_astro
+```
+If `cf-cache-status: DYNAMIC`, `Cache-Control: max-age=0`, a cache-buster
+changes nothing, **and the chunk hash is absent from your build**, the origin is
+serving a stale *file*, not a cache. Confirm in the deployed tree with
+`find dist/client -name '*.html'` (should be 0).
+
+**Fix (landed):** a boot-time purge — `scripts/lib/purge-prerendered.mjs`
+(`purgePrerenderedHtml`) deletes every `*.html` under `dist/client` before the
+Astro handler loads, logging what it removed; `scripts/sync-dist.mjs` also
+refuses to assemble a mirror tree containing any `.html`. Self-healing, because
+no redeploy logic depends on Velocity cleaning up. Guarded by
+`tests/unit/purge-prerendered.test.ts`.
+
+**Rule:** when exactly ONE route is stale across restarts *and* redeploys,
+suspect static-file shadowing, not caching. Restarting clears an in-process
+route cache; it does not delete a file.
+
 ## Proposals 105 + 106 surfaces (2026-11-03)
 
 - **Bridge theme policy (105)**: `GET/PATCH /globals/theme` —
@@ -1137,6 +1174,13 @@ legacy-identifier renames.
 
 ## Proposal 136 — block kinds + agent surfaces (2026-11-09)
 
+- **Cross-app parity gate**: `examples/nvoos-astro-forge/tests/app-parity.test.ts`
+  (CI: `.github/workflows/astro-app-parity.yml`, triggered by either app) pins
+  `composeLlmsTxt` against the forge modulo the declared `variant` knob, and the
+  `SECTION_KINDS` relation (shared ∪ declared extras). Adding a kind here fails
+  until it is declared there. Keep `src/lib/llms.ts` and
+  `src/lib/content/section-kinds.ts` dependency-free — the gate imports them
+  without installing this app.
 - **Three block types added** (`comparison`, `steps`, `team`). Each needs the
   four touchpoints in the SAME commit: zod schema in
   `lib/content/portable-text.ts`, the `CUSTOM_BLOCK_TYPES` allowlist, a

@@ -29,7 +29,8 @@
 import { createServer } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { request as httpRequest } from 'node:http';
-import { URL } from 'node:url';
+import { URL, fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 import {
 	HOP_BY_HOP,
@@ -39,6 +40,7 @@ import {
 } from './lib/proxy-headers.mjs';
 import { wrapWithSecurityHeaders } from './lib/security-headers.mjs';
 import { seedMcpEnv } from './lib/mcp-env.mjs';
+import { purgePrerenderedHtml } from './lib/purge-prerendered.mjs';
 
 const PORT = Number(process.env.PORT) || 4321;
 const TARGET_SITE = (process.env.NVOOS_TARGET_SITE || '').replace(/\/+$/, '');
@@ -82,6 +84,22 @@ process.env.ASTRO_NODE_AUTOSTART = 'disabled';
 // commerce client prefers this loopback origin when present
 // (incident 2026-10-29 #2).
 process.env.NVOOS_SSR_API_ORIGIN = `http://127.0.0.1:${PORT}`;
+
+// Stale-prerender guard (2026-11-09): Velocity deploys incrementally and keeps
+// files that left the repo, so an orphaned `dist/client/**/*.html` from an old
+// prerender build shadows the SSR route forever — serving build-time content
+// with build-time inline scripts, which a per-document hash CSP can never
+// allow. A fully SSR build emits zero HTML, so anything found is orphaned.
+{
+	const here = dirname(fileURLToPath(import.meta.url));
+	const removed = purgePrerenderedHtml(join(here, '..', 'dist', 'client'));
+	if (removed.length > 0) {
+		console.warn(
+			`[serve] removed ${removed.length} orphaned prerendered HTML file(s) shadowing SSR routes:`
+		);
+		for (const path of removed.slice(0, 5)) console.warn(`[serve]   ${path}`);
+	}
+}
 
 const { handler: astroHandler } = await import('../dist/server/entry.mjs');
 

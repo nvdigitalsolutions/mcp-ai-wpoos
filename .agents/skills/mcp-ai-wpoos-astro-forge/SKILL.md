@@ -1372,6 +1372,45 @@ Full notes (kind evidence rules, the ts2304 `semantic.ts` trap, JSON-LD
 builder contracts, surface table, deferred work):
 `reference/proposal-136-section-vocabulary.md`.
 
+## CSP + client navigation (transferred from velocity, 2026-11-09)
+
+Generated sites use `script-src 'self' 'unsafe-inline'` (`lib/scaffold.ts`),
+because the template ships several `is:inline` scripts — and the template has
+**no** `ClientRouter` and **no** `client:*` islands. Those two facts are why the
+velocity CSP outage does not affect forge output; keep both from drifting.
+
+A hashed `script-src` + client-side routing is unsafe by construction: a
+navigation keeps the SOURCE document's policy, so any inline script the target
+page adds is blocked — and `client:visible`/`client:idle` each emit a per-page
+inline bootstrap (only `client:load` adds none).
+
+Managed/SSR mode emits `routeRules` with `swr: 600` for `/products/**` and
+`/posts/**`; stale HTML plus a hashed CSP is the same failure. And incremental
+hosts never delete files that leave the tree, so an orphaned
+`dist/client/**/*.html` shadows the SSR route indefinitely — purge it at boot
+**only** when the project is fully SSR (a `prerender = true` project must not).
+
+Details, the generated-config inventory and the one-route-stale triage rule:
+`reference/csp-client-navigation.md`.
+
+## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
+
+The two Astro products share a CONTRACT but not code, so neither suite can see
+the other tree. `tests/app-parity.test.ts` (CI:
+`.github/workflows/astro-app-parity.yml`, triggered by EITHER app) is the
+record — read it as the spec. It pins two things:
+
+- **`composeLlmsTxt` is byte-identical** modulo one declared knob: the forge
+  always links `.md`, velocity defaults to HTML (`variant: 'markdown'`
+  reproduces the forge exactly).
+- **`data-section`**: each vocabulary = `(shared) ∪ (its own declared extras)`.
+  Adding a kind to either app fails until declared — a new kind is a
+  cross-product decision.
+
+Its two velocity imports are **dependency-free on purpose**; if either gains an
+import the job needs a second `npm ci`. Same discipline as
+`bin/check-chat-parity.php`.
+
 ## Repo conventions
 
 - **Public mirror:** `examples/nvoos-astro-forge/` is subtree-mirrored to
