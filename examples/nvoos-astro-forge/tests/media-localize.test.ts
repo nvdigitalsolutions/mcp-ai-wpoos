@@ -12,7 +12,9 @@ import { describe, expect, it } from 'vitest';
 import {
 	collectAssetUrls,
 	collectCssAssetUrls,
+	collectDocumentUrls,
 	collectStylesheetUrls,
+	documentExtension,
 	extensionForContentType,
 	mediaFileName,
 	parseHostList,
@@ -153,6 +155,12 @@ describe('extensionForContentType', () => {
 		expect(extensionForContentType('image/svg+xml')).toBe('svg');
 	});
 
+	it('maps the document types a host serves without an extension', () => {
+		expect(extensionForContentType('application/pdf')).toBe('pdf');
+		expect(extensionForContentType('application/vnd.ms-excel')).toBe('xls');
+		expect(extensionForContentType('application/octet-stream', 'pdf')).toBe('pdf');
+	});
+
 	it('falls back to the supplied extension', () => {
 		expect(extensionForContentType('application/octet-stream', 'png')).toBe('png');
 		expect(extensionForContentType('', 'png')).toBe('png');
@@ -238,7 +246,7 @@ describe('rewriteHtml', () => {
 		expect(out).not.toContain('cms.test');
 	});
 
-	it('leaves anchors, og:image and JSON-LD absolute', () => {
+	it('leaves image anchors, og:image and JSON-LD absolute', () => {
 		const html = [
 			'<a href="https://cms.test/wp-content/uploads/a.jpg">Download</a>',
 			'<meta property="og:image" content="https://cms.test/wp-content/uploads/a.jpg">',
@@ -299,6 +307,49 @@ describe('stylesheet localization', () => {
 		const html = '<link rel="stylesheet" href="https://cms.test/icon.css">';
 		const out = rewriteHtml( html, new Map( [ [ 'https://cms.test/icon.css', '/media/x-icon.css' ] ] ) );
 		expect( out ).toContain( 'href="/media/x-icon.css"' );
+	});
+});
+
+describe('document localization', () => {
+	it('collects only allowlisted document links, fragment-free', () => {
+		const html = [
+			'<a href="https://cms.test/wp-content/uploads/2021/FIORI-CATALOG.pdf#page=3">Catalogue</a>',
+			'<a href="https://cms.test/wp-content/uploads/price-list.xlsx">Prices</a>',
+			'<a href="https://cms.test/about/">About</a>',
+			'<a href="/wp-content/uploads/local.pdf">Local</a>',
+			'<a href="mailto:hi@cms.test">Mail</a>',
+			'<a href="https://cms.test/wp-content/uploads/setup.exe">Setup</a>',
+		].join('\n');
+		expect([ ...collectDocumentUrls( html ) ].sort()).toEqual(
+			[
+				'https://cms.test/wp-content/uploads/2021/FIORI-CATALOG.pdf',
+				'https://cms.test/wp-content/uploads/price-list.xlsx',
+			].sort()
+		);
+	});
+
+	it('derives the extension from the path and refuses unknown types', () => {
+		expect( documentExtension( 'https://cms.test/a/BROCHURE.PDF' ) ).toBe( 'pdf' );
+		expect( documentExtension( 'https://cms.test/a/setup.exe' ) ).toBeUndefined();
+		expect( documentExtension( 'https://cms.test/a/page' ) ).toBeUndefined();
+	});
+
+	it('rewrites a mapped document link, keeping the fragment and attributes', () => {
+		const map = new Map( [
+			[ 'https://cms.test/wp-content/uploads/FIORI-CATALOG.pdf', '/media/abc123-fiori-catalog.pdf' ],
+		] );
+		const html =
+			'<a class="ds-button" href="https://cms.test/wp-content/uploads/FIORI-CATALOG.pdf#page=3" target="_blank" rel="noopener">Open</a>';
+		const out = rewriteHtml( html, map );
+		expect( out ).toContain( 'href="/media/abc123-fiori-catalog.pdf#page=3"' );
+		expect( out ).toContain( 'target="_blank"' );
+		expect( out ).toContain( 'rel="noopener"' );
+	});
+
+	it('leaves unmapped links, anchors and page links alone', () => {
+		const html = '<a href="https://cms.test/about/">About</a><a href="#top">Top</a>';
+		const map = new Map( [ [ 'https://x.example/y.pdf', '/media/y.pdf' ] ] );
+		expect( rewriteHtml( html, map ) ).toBe( html );
 	});
 });
 

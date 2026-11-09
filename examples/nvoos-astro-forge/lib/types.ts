@@ -319,7 +319,7 @@ export interface ForgeDeploy {
 }
 
 /**
- * The media block (Proposal 138) — where images come from and whether the
+ * The media block (Proposal 139) — where images come from and whether the
  * build keeps them local. Every field is optional; absent = the defaults
  * (CMS host only, localization on).
  */
@@ -329,7 +329,7 @@ export interface ForgeMedia {
 	 * image proxy, or a second domain the media still lives on. The CMS host
 	 * is always authorized. Do NOT list a host that serves WordPress media
 	 * under a path that the CMS also serves — a stale `/wp-content/` URL is
-	 * repaired to the CMS origin instead (Proposal 138 §repair).
+	 * repaired to the CMS origin instead (Proposal 139 §repair).
 	 */
 	hosts?: string[];
 	/**
@@ -350,7 +350,7 @@ export interface SiteProfile {
 	/** Display name (discovery fills it when absent). */
 	name?: string;
 	/**
-	 * The media block (Proposal 138) — extra authorized image hosts and the
+	 * The media block (Proposal 139) — extra authorized image hosts and the
 	 * build-time localization pass. Absent = CMS host only, localization on.
 	 */
 	media?: ForgeMedia;

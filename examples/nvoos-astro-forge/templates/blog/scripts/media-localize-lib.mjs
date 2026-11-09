@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // media-localize-lib.mjs — pure helpers for the post-build asset localizer.
 //
-// Proposal 138 — "always available locally". Astro's <Image> already
+// Proposal 139 — "always available locally". Astro's <Image> already
 // downloads and optimizes authorized remote media into dist/_astro/, but
 // three classes of asset never pass through it:
 //   * body-content <img> tags (rendered by set:html from sanitized HTML),
@@ -59,7 +59,50 @@ export const CONTENT_TYPE_EXTENSION = {
 	'font/otf': 'otf',
 	'application/font-woff': 'woff',
 	'application/font-woff2': 'woff2',
+	// Documents (Proposal 139 §documents) — a typed PDF never lands as .bin.
+	'application/pdf': 'pdf',
+	'application/msword': 'doc',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+	'application/vnd.ms-excel': 'xls',
+	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+	'application/vnd.ms-powerpoint': 'ppt',
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+	'application/vnd.oasis.opendocument.text': 'odt',
+	'application/vnd.oasis.opendocument.spreadsheet': 'ods',
+	'application/vnd.oasis.opendocument.presentation': 'odp',
+	'text/csv': 'csv',
+	'text/plain': 'txt',
+	'application/rtf': 'rtf',
+	'application/epub+zip': 'epub',
+	'text/calendar': 'ics',
+	'application/zip': 'zip',
 };
+
+/**
+ * Document extensions the localizer mirrors.
+ *
+ * Deliberately an ALLOWLIST: a link is content, so a mis-typed href must
+ * never cause an executable, installer or unknown archive to be pulled into
+ * the build.
+ */
+export const DOCUMENT_EXTENSIONS = new Set( [
+	'pdf',
+	'doc',
+	'docx',
+	'xls',
+	'xlsx',
+	'ppt',
+	'pptx',
+	'odt',
+	'ods',
+	'odp',
+	'csv',
+	'txt',
+	'rtf',
+	'epub',
+	'ics',
+	'zip',
+] );
 
 /** `/wp-content/...` and `/wp-includes/...` are WordPress-owned paths. */
 const WP_ASSET_PATH = /^\/(?:wp-content|wp-includes)\//i;
@@ -446,6 +489,65 @@ export function rewriteStylesheet( css, baseUrl, map ) {
 }
 
 /**
+ * Split a link value into its path and fragment.
+ *
+ * `brochure.pdf#page=4` must keep its fragment (deep links are content), but
+ * the fragment is not part of the download key.
+ *
+ * @param {string} value Link value.
+ * @returns {{ path: string, hash: string }} The parts.
+ */
+export function splitHash( value ) {
+	const raw = String( value ?? '' );
+	const index = raw.indexOf( '#' );
+	return index < 0 ? { path: raw, hash: '' } : { path: raw.slice( 0, index ), hash: raw.slice( index ) };
+}
+
+/**
+ * The document extension of a URL, when it is one the localizer mirrors.
+ *
+ * @param {string} rawUrl Absolute URL.
+ * @returns {string|undefined} Lower-cased extension, or undefined.
+ */
+export function documentExtension( rawUrl ) {
+	try {
+		const match = /\.([a-z0-9]{1,6})$/i.exec( new URL( rawUrl ).pathname );
+		if ( ! match ) {
+			return undefined;
+		}
+		const extension = match[ 1 ].toLowerCase();
+		return DOCUMENT_EXTENSIONS.has( extension ) ? extension : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Collect the document links a built document carries.
+ *
+ * Only `a[href]` with an absolute http(s) URL and an allowlisted extension —
+ * page links, anchors, `mailto:` and fragments are never candidates. The
+ * fragment is stripped from the returned key (see `splitHash`).
+ *
+ * @param {string} html Built HTML document.
+ * @returns {Set<string>} Absolute document URLs (fragment-free).
+ */
+export function collectDocumentUrls( html ) {
+	const urls = new Set();
+	for ( const match of html.matchAll( /<a\b[^>]*>/gi ) ) {
+		const href = ( attributeValue( match[ 0 ], 'href' ) ?? '' ).trim();
+		if ( ! /^https?:\/\//i.test( href ) ) {
+			continue;
+		}
+		const { path } = splitHash( href );
+		if ( documentExtension( path ) ) {
+			urls.add( path );
+		}
+	}
+	return urls;
+}
+
+/**
  * Collect every asset URL referenced by a stylesheet.
  *
  * @param {string} css CSS source.
@@ -540,6 +642,24 @@ export function rewriteHtml( html, map ) {
 			return rewriteTagAttributes( tag, [ 'href' ], map );
 		}
 		return tag;
+	} );
+	// Documents (Proposal 139 §documents) — only when the href is a DOCUMENT
+	// this build mirrored (an image anchor keeps pointing at the original), and
+	// the fragment is re-attached (`brochure.pdf#page=4`).
+	out = out.replace( /<a\b[^>]*>/gi, ( tag ) => {
+		const href = ( attributeValue( tag, 'href' ) ?? '' ).trim();
+		if ( ! href ) {
+			return tag;
+		}
+		const { path, hash } = splitHash( href );
+		if ( ! documentExtension( path ) ) {
+			return tag;
+		}
+		const local = map.get( path );
+		if ( ! local ) {
+			return tag;
+		}
+		return rewriteTagAttributes( tag, [ 'href' ], new Map( [ [ href, `${ local }${ hash }` ] ] ) );
 	} );
 	out = out.replace( /url\(\s*(?:'|")?([^'")]+?)(?:'|")?\s*\)/gi, ( match, inner ) => {
 		const local = map.get( String( inner ?? '' ).trim() );

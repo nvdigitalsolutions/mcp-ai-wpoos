@@ -472,10 +472,13 @@ describe('forge e2e — emitted site', () => {
 		// script; the section fact rebuilds it as a centered open-CTA (the
 		// slug-ish data-title is backend id, never rendered copy).
 		expect(index).toContain('ds-catalog');
-		// Proposal 139 §repair — the catalogue href is a stored absolute URL;
-		// the render layer re-points it at the configured CMS host (the fixture
-		// profile declares fixture.test, the build runs against the fixture).
-		expect(index).toContain(`${origin}/wp-content/uploads/catalog.pdf`);
+		// Proposal 139 — the stored absolute URL is re-pointed at the CMS host at
+		// render time, then mirrored by the post-build pass. Documents travel too
+		// (the allowlist keeps executables out).
+		const catalogHref = /href="(\/media\/[0-9a-f]{12}-catalog\.pdf)"/.exec(index)?.[1];
+		expect(catalogHref, 'the catalogue PDF was not localized').toBeTruthy();
+		expect(index).not.toContain(`${origin}/wp-content/uploads/catalog.pdf`);
+		expect((await stat(path.join(workDir, 'dist', catalogHref!.slice(1)))).size).toBeGreaterThan(0);
 		expect(index).not.toContain('fiori-digital-catalogue');
 		// The harvested webfont loads (125 §2) — rubik from Google Fonts.
 		expect(index).toContain('fonts.googleapis.com/css2?family=rubik');

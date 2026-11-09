@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// media.ts — the runtime media-origin rules (Proposal 138).
+// media.ts — the runtime media-origin rules (Proposal 139).
 //
 // Astro only downloads + optimizes images from hosts it has been told are
 // authorized (`image.domains` in astro.config.mjs). This module is the
