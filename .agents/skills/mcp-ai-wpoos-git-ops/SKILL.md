@@ -178,6 +178,15 @@ Four rules, each from a session that cost a recovery:
   blanket restore erases it. Same rule for any generated tree
   (`build/`, `dist/`, `public/manage-assets/`): restore or rebuild exactly the
   paths you touched.
+- **Put an agent's own worktree INSIDE the repo (`tmp/<name>`),
+  not in `%TEMP%`.** A worktree under `AppData/Local/Temp` is fine from the
+  shell, but the editor's file tools resolve paths inside the
+  project root: edits there either fail with "path not found" or, worse,
+  silently land in the MAIN worktree you were trying to avoid. `tmp/` is
+  already gitignored (`tmp/forge-sites` is the precedent). A worktree created
+  with `git worktree add` also takes minutes and can be killed mid-checkout on
+  this repo — if it times out, `rm -rf` the leftover, `git worktree prune`,
+  and check the branch was not already registered.
 - **Rebasing with foreign unstaged edits present:** plain `git rebase`
   refuses ("You have unstaged changes"); `git rebase --autostash` stashes
   only tracked changes and pops them back. **Safer variant (2026-11-03,

@@ -543,7 +543,7 @@ the only committed artifact per site.
   framework option. With `Astro-ssr` selected, a mirror branch (prebuilt
   flat files, no package.json) fails `ENOENT package.json` (rc=254). The
   working pattern: the mirror-push emission ships a **no-op package.json
-  stub** (`nvoos-forge-site`, build = `node -e …console.log…`) beside the
+  stub** (`nvoos-forge-site`, build = `node -e "…"` — quoted: `sh -c` rejects a bare `(`) beside the
   built files, and the Velocity Deployment Settings set the **Output
   Directory to the repo root (`.`)** with the default build command
   (`npm run build` — the no-op). The Cloudways MCP exposes no
@@ -652,6 +652,12 @@ atomic JSON data layer is the documented enrichment path. Research:
   Chrome-desktop UA by default (`DEFAULT_USER_AGENT`), overridable per
   deploy via `WP_USER_AGENT` (the scaffolded content.config wires it) —
   UA-less requests are a bot-protection trigger on many hosts.
+- **Clearing a WAF block is not allowlisting the IP (2026-11-10):** MalCare
+  answered the content sync with 403 from both the CI runner and a dev
+  machine. The block is only identifiable from the response **body**
+  (`Blocked because of Malicious Activities`, reference id) — the status
+  alone reads like bad credentials. One unblock let a build through, then
+  the NEXT run 403'd again: it needs a permanent IP whitelist.
 
 ## Proposal 117 — classifier fidelity + section theming (2026-11-06)
 
@@ -1474,6 +1480,10 @@ working. Gotchas: emit `url(/media/…)` **unquoted** (a nested quote breaks a
 `src` does not match inside `data-src`; SSR output lives in `dist/client`;
 and a flaky `EPERM`/`ENOTEMPTY` scaffold timeout under 61 parallel workers is
 the Windows staging race — re-run with `--maxWorkers=4` before debugging code.
+- **In-process fixture server + `spawnSync` deadlocks:** an integration test
+  that serves HTTP from the test process and runs the CLI synchronously
+  hangs until the request timeout — the parent's event loop is blocked,
+  so it can never answer the child. Spawn asynchronously; await the exit.
 
 ## Repo conventions
 
