@@ -9,6 +9,7 @@ import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 import { chrome } from '../lib/chrome.generated.ts';
 import { behaviors } from '../lib/behaviors.generated.ts';
 import { webFonts } from '../lib/design.generated.ts';
+import { canonicalFontFamily } from '../lib/fonts.ts';
 import { repairMediaUrl } from '../lib/media.ts';
 import { composeDocumentTitle } from '../lib/seo.ts';
 
@@ -79,6 +80,18 @@ const anchorLabel = (anchor: string): string =>
 		.trim()
 		.replace(/^./, (first: string) => first.toUpperCase());
 const hasFeed = manifest.surfaces?.feed !== false;
+/**
+ * The source families, canonicalised for Google’s API — which is
+ * case-sensitive where CSS is not (`family=roboto` answers 400 while
+ * `family=Roboto` returns the sheet). A family that canonicalises to nothing
+ * emits no link at all, rather than a request that cannot succeed.
+ */
+const webfontRequests = webFonts
+	.map( ( font ) => ( {
+		family: canonicalFontFamily( font.family ),
+		weights: font.weights,
+	} ) )
+	.filter( ( font ) => font.family.length > 0 );
 // The baked policy rides to the client as inert JSON (Proposal 105 §4) —
 // the boot script and the theme toggle both read this node.
 const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
@@ -133,9 +146,9 @@ const chromeVars = [
 		{/* The source webfonts (125 §2) — the harvested family loads from
 			Google Fonts so the rebuild keeps the source's type rhythm
 			(jayainc: Rubik); system-stack profiles emit no link. */}
-		{webFonts.length > 0 && <link rel="preconnect" href="https://fonts.googleapis.com" />}
-		{webFonts.length > 0 && <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />}
-		{webFonts.map((font) => (
+		{webfontRequests.length > 0 && <link rel="preconnect" href="https://fonts.googleapis.com" />}
+		{webfontRequests.length > 0 && <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />}
+		{webfontRequests.map((font) => (
 			<link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.family.replace(/ /g, '+')}:wght@${font.weights.join(';')}&display=swap`} />
 		))}
 		{/* Proposal 131 — the full social head. Values come from the source's

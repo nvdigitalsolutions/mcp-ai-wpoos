@@ -233,7 +233,7 @@ beforeAll(async () => {
 afterAll(async () => {
 	server?.kill();
 	if (workDir) {
-		await rm(workDir, { recursive: true, force: true });
+		console.log("KEEP_WORKDIR=" + workDir);
 	}
 });
 
@@ -480,8 +480,21 @@ describe('forge e2e — emitted site', () => {
 		expect(index).not.toContain(`${origin}/wp-content/uploads/catalog.pdf`);
 		expect((await stat(path.join(workDir, 'dist', catalogHref!.slice(1)))).size).toBeGreaterThan(0);
 		expect(index).not.toContain('fiori-digital-catalogue');
-		// The harvested webfont loads (125 §2) — rubik from Google Fonts.
-		expect(index).toContain('fonts.googleapis.com/css2?family=rubik');
+		// The harvested webfont (125 §2). Google’s API is case-sensitive, so a
+		// lower-case family 400s — the built link must never carry one. When the
+		// post-build pass can reach Google it mirrors the sheet (140 §3) and the
+		// remote link disappears; offline it may only be canonicalised, which is
+		// still the difference between a font and no font.
+		expect(index).not.toContain('family=rubik');
+		const fontSheet = /href="(\/media\/[0-9a-f]{12}-css2\.css)"/.exec(index)?.[1];
+		if (fontSheet) {
+			expect(index).not.toContain('fonts.googleapis.com');
+			const fontCss = await readFile(path.join(workDir, 'dist', fontSheet.slice(1)), 'utf8');
+			expect(fontCss).not.toContain('fonts.gstatic.com');
+			expect(fontCss).toContain('font-family');
+		} else {
+			expect(index).toContain('fonts.googleapis.com/css2?family=Rubik');
+		}
 		expect(index).toContain('type="application/rss+xml"');
 		// The image pipeline (126 §image): same-host WP media rebuilds
 		// through SmartImage — processed WebP under /_astro/ with a

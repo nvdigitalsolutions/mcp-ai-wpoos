@@ -347,6 +347,19 @@ export function mediaFileName( rawUrl, extension ) {
  * @param {string} name Attribute name.
  * @returns {string|undefined} Raw (still encoded) value.
  */
+/**
+ * Decode the `&amp;` an HTML attribute carries back to `&`.
+ *
+ * A Google Fonts href in markup reads `…:wght@300;400&amp;display=swap`;
+ * the raw attribute is neither a valid request nor the key the rewritten
+ * link should carry.
+ *
+ * @param {string} value Raw attribute text.
+ * @returns {string} The decoded value.
+ */
+function decodeAmp( value ) {
+	return String( value ?? '' ).replace( /&amp;/gi, '&' );
+}
 function attributeValue( tag, name ) {
 	const pattern = new RegExp( `(?:^|\\s)${ name }\\s*=\\s*(["'])([\\s\\S]*?)\\1`, 'i' );
 	const match = pattern.exec( tag );
@@ -438,8 +451,15 @@ export function collectStylesheetUrls( html ) {
 		if ( ! rel || ! /\bstylesheet\b/i.test( rel ) ) {
 			continue;
 		}
-		const href = ( attributeValue( match[ 0 ], 'href' ) ?? '' ).trim();
-		if ( /^https?:\/\//i.test( href ) && /\.css(?:[?#]|$)/i.test( href ) ) {
+		const href = decodeAmp( ( attributeValue( match[ 0 ], 'href' ) ?? '' ).trim() );
+		if ( ! /^https?:\/\//i.test( href ) ) {
+			continue;
+		}
+		// Google’s CSS API carries no `.css` extension (`/css2?family=…`),
+		// so a suffix-only rule silently dropped the webfont sheet — and
+		// with it the chance to self-host it, while the render-blocking
+		// link stayed in the head (Proposal 140 §3).
+		if ( /\.css(?:[?#]|$)/i.test( href ) || isWebfontUrl( href ) ) {
 			urls.add( href );
 		}
 	}
@@ -630,7 +650,7 @@ function rewriteTagAttributes( tag, names, map ) {
 		out = out.replace( pattern, ( match, prefix, quote, value ) => {
 			const next = name.toLowerCase().endsWith( 'srcset' )
 				? rewriteSrcset( value, map )
-				: ( map.get( value.trim() ) ?? value );
+				: ( map.get( value.trim() ) ?? map.get( decodeAmp( value.trim() ) ) ?? value );
 			return next === value ? match : `${ prefix }${ quote }${ next }${ quote }`;
 		} );
 	}

@@ -79,3 +79,12 @@ copy and depends on the bridge.
 - **The gate reads the report**, not `dist/` — `_astro/*` would double-count.
 - **Documents are counted, not judged**: a 50 MB catalogue is a deploy-size
   fact, not a budget failure.
+- **Google’s CSS API is case-sensitive** — `family=roboto` answers 400
+  "Missing font family" while `family=Roboto` returns the sheet (on both
+  `/css` and `/css2`). Profiles store the harvested family lower-case, so
+  `canonicalFontFamily()` runs before the URL is built, with an override
+  table for names title case gets wrong (`IBM`, `DM`, `PT`, `Noto Sans SC`).
+- **A `.css` suffix is not a stylesheet test** — Google’s endpoint is
+  `/css2?family=…`, so `collectStylesheetUrls` accepts a webfont host too.
+  Without that exception the sheet is never mirrored and the render-blocking
+  link survives while everything appears to pass.

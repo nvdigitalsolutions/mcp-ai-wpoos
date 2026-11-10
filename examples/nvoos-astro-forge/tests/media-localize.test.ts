@@ -468,3 +468,25 @@ describe( 'Proposal 140 — dead preconnects', () => {
 		expect( stripPreconnects( head ) ).toBe( head );
 	} );
 } );
+
+describe( 'Proposal 140 — webfont stylesheet collection', () => {
+	const GOOGLE = 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400&display=swap';
+	const ENCODED = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400&amp;display=swap">';
+
+	it( 'collects the Google API even though it has no .css suffix', () => {
+		const urls = [ ...collectStylesheetUrls( ENCODED ) ];
+		expect( urls ).toHaveLength( 1 );
+		// Decoded, so the download URL is the one Google actually accepts.
+		expect( urls[ 0 ] ).toBe( GOOGLE );
+	} );
+
+	it( 'still ignores a stylesheet link that is neither .css nor a webfont', () => {
+		const html = '<link rel="stylesheet" href="https://example.com/api/style?theme=dark">';
+		expect( [ ...collectStylesheetUrls( html ) ] ).toHaveLength( 0 );
+	} );
+
+	it( 'rewrites the encoded link through the map', () => {
+		const map = new Map( [ [ GOOGLE, '/media/x-fonts.css' ] ] );
+		expect( rewriteHtml( ENCODED, map ) ).toContain( 'href="/media/x-fonts.css"' );
+	} );
+} );
