@@ -14,7 +14,7 @@
 
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 
 import type { ForgeGeometry } from './types.ts';
@@ -120,6 +120,16 @@ export interface MeasureOptions {
 	ids: string[];
 	/** `built` reads `[data-section-id]`; `source` reads Elementor's class. */
 	kind: 'built' | 'source';
+	/**
+	 * An explicit SOURCE selector per band id. Elementor sites expose
+	 * `.elementor-element-<id>`; outline-band builders (WPBakery/Brando, Bricks,
+	 * Oxygen) expose no such class at all, so the id selector silently measures
+	 * nothing and the whole baseline comes back empty. Those sources do carry
+	 * the band's own anchor (`#about`, `#contact`… — the one the nav links to),
+	 * which the caller passes here. Tried after the Elementor class so an
+	 * Elementor profile keeps its exact match.
+	 */
+	selectors?: Record< string, string >;
 	viewports?: GeometryViewport[];
 	timeout?: number;
 }
@@ -136,12 +146,56 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 			await page.setViewportSize( { width: viewport.width, height: viewport.height } );
 			await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 			await settle( page );
-			const measured = await page.evaluate( ( { ids, kind } ) => {
+			const measured = await page.evaluate( ( { ids, kind, selectors } ) => {
 				const out: Record< string, Record< string, number > > = {};
 				for ( const id of ids ) {
-					const selector =
-						kind === 'built' ? `[data-section-id="${ id }"]` : `.elementor-element-${ id }`;
-					const element = document.querySelector( selector );
+					// Candidate order is precise-first: the Elementor class is exact
+					// when it exists, and the caller's selector covers outline-band
+					// builders. No `#<id>` fallback — a profile id is a hash
+					// (`45f5e88`), and `#45f5e88` is an INVALID selector that throws,
+					// which used to abort the entire baseline on the first band.
+					const candidates =
+						kind === 'built'
+							? [ `[data-section-id="${ id }"]` ]
+							: [ `.elementor-element-${ id }`, selectors?.[ id ] ].filter(
+									( value ): value is string => Boolean( value )
+							  );
+					// A malformed selector must cost one band, never the whole run.
+					const pick = ( selector: string ): Element | null => {
+						try {
+							return document.querySelector( selector );
+						} catch {
+							return null;
+						}
+					};
+					const matched = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) ) ?? null;
+					// A source anchor can sit on a COLUMN rather than the band row
+					// (Brando puts `id="wifi"` on a `wpb_column`). The rebuild draws the
+					// BAND, so measuring the column compared a half-width box against a
+					// full-width band and reported a phantom 720px/1440px failure.
+					// Promote to the nearest band ancestor — the `<section>` the builder
+					// wraps its rows in, or the row itself when there is no such
+					// wrapper. `<section>` wins over `.row` because the row is an inner
+					// grid that carries none of the band's own padding.
+					const ROW = /(^|\s)(row|vc_row|wpb_row)(\s|$)|brando[_-](inner[_-])?row/;
+					const COLUMN = /(^|\s)(wpb_column|vc_column_container)(\s|$)/;
+					let element = matched;
+					if ( kind === 'source' && element && COLUMN.test( element.getAttribute( 'class' ) ?? '' ) ) {
+						let row: Element | null = null;
+						for ( let up = element.parentElement; up; up = up.parentElement ) {
+							if ( up.tagName === 'SECTION' ) {
+								element = up;
+								row = null;
+								break;
+							}
+							if ( ! row && ROW.test( up.getAttribute( 'class' ) ?? '' ) ) {
+								row = up;
+							}
+						}
+						if ( row ) {
+							element = row;
+						}
+					}
 					if ( ! element ) {
 						continue;
 					}
@@ -152,12 +206,14 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						width: rect.width,
 						paddingTop: parseFloat( style.paddingTop ) || 0,
 						paddingBottom: parseFloat( style.paddingBottom ) || 0,
+						paddingLeft: parseFloat( style.paddingLeft ) || 0,
+						paddingRight: parseFloat( style.paddingRight ) || 0,
 						marginTop: parseFloat( style.marginTop ) || 0,
 						marginBottom: parseFloat( style.marginBottom ) || 0,
 					};
 				}
 				return out;
-			}, { ids: options.ids, kind: options.kind } );
+			}, { ids: options.ids, kind: options.kind, selectors: options.selectors } );
 			for ( const [ id, band ] of Object.entries( measured ) ) {
 				geometry[ id ] ??= {};
 				geometry[ id ][ viewport.name ] = {
@@ -165,6 +221,8 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					width: Math.round( band.width ),
 					paddingTop: Math.round( band.paddingTop ),
 					paddingBottom: Math.round( band.paddingBottom ),
+					paddingLeft: Math.round( band.paddingLeft ),
+					paddingRight: Math.round( band.paddingRight ),
 					marginTop: Math.round( band.marginTop ),
 					marginBottom: Math.round( band.marginBottom ),
 				};
@@ -191,6 +249,25 @@ const MIME: Record< string, string > = {
 	'.woff2': 'font/woff2',
 	'.pdf': 'application/pdf',
 };
+
+/**
+ * The directory to serve a build from.
+ *
+ * Astro writes the browser-facing tree to `dist/client` whenever the project
+ * uses a server output (`output: 'server'` — the managed/SSR template behind
+ * `server.js`). Serving `dist` itself then 404s at `/`, every band measures as
+ * missing, and the geometry/colour/pixel gates report a total wipe-out that
+ * looks like a rebuild regression. Prefer the client tree when it carries a
+ * page, otherwise the flat static build.
+ */
+export async function builtStaticRoot( distDir: string ): Promise< string > {
+	try {
+		await stat( join( distDir, 'client', 'index.html' ) );
+		return join( distDir, 'client' );
+	} catch {
+		return distDir;
+	}
+}
 
 /**
  * Serve a built `dist/` on an ephemeral port. The gate must load the build over

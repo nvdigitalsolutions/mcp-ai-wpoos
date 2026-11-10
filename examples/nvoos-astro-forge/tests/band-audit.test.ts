@@ -136,3 +136,90 @@ describe( 'formatBandReport', () => {
 		expect( text ).toMatch( /2 fail/ );
 	} );
 } );
+
+describe( 'surface facts emitted in scoped CSS', () => {
+	// A per-device value cannot be inlined (an inline declaration outranks the
+	// media queries carrying the tablet/mobile values), so the build emits
+	// `[data-section-id="<id>"]{padding:…}` instead. jayainc's `059421c` failed
+	// the surface check on exactly this: the rule was in the page, the audit
+	// only read the wrap's `style` attribute.
+	const PER_DEVICE: ForgeSection[] = [
+		{
+			id: 'ddd444',
+			bgGradient: 'linear-gradient(137deg, #081a43 0%, #071230 100%)',
+			padding: { desktop: '125px 0px 125px 0px', tablet: '100px 0px 100px 0px', mobile: '100px 0px 100px 0px' },
+		},
+	];
+
+	it( 'passes when the per-device padding reaches the page as scoped CSS', () => {
+		const html =
+			`<style>[data-section-id="ddd444"]{padding:125px 0px 125px 0px}` +
+			`@media (max-width: 1024px){[data-section-id="ddd444"]{padding:100px 0px 100px 0px}}</style>` +
+			WRAP(
+				'ddd444',
+				'background:linear-gradient(137deg, #081a43 0%, #071230 100%)',
+				'<h2>A real headline for the band</h2>'
+			);
+		const report = auditBands( { sections: PER_DEVICE, builtHtml: html } );
+		expect( report.bands[ 0 ].surface.status ).toBe( 'pass' );
+		expect( report.summary.fail ).toBe( 0 );
+	} );
+
+	it( 'still fails when neither channel carries the padding', () => {
+		const html = WRAP(
+			'ddd444',
+			'background:linear-gradient(137deg, #081a43 0%, #071230 100%)',
+			'<h2>A real headline for the band</h2>'
+		);
+		const report = auditBands( { sections: PER_DEVICE, builtHtml: html } );
+		expect( report.bands[ 0 ].surface.status ).toBe( 'fail' );
+		expect( report.bands[ 0 ].surface.detail ).toContain( 'padding none' );
+	} );
+
+	it( 'takes the desktop value, not a media-scoped override', () => {
+		// First occurrence per (id, property) wins — the emitter writes desktop
+		// first, and the mobile value must never be read as the desktop one.
+		const html =
+			`<style>@media (max-width: 767px){[data-section-id="ddd444"]{padding:1px 1px 1px 1px}}` +
+			`[data-section-id="ddd444"]{padding:125px 0px 125px 0px}</style>` +
+			WRAP(
+				'ddd444',
+				'background:linear-gradient(137deg, #081a43 0%, #071230 100%)',
+				'<h2>A real headline for the band</h2>'
+			);
+		const report = auditBands( { sections: PER_DEVICE, builtHtml: html } );
+		expect( report.bands[ 0 ].surface.status ).toBe( 'pass' );
+	} );
+} );
+
+describe( 'spacer bands', () => {
+	// jayainc's `dff3f1a` is a genuinely empty grey strip in the source
+	// (verified: 0 text, 0 images), so an empty rebuild is CORRECT. Without the
+	// pinned fact the audit cannot tell that from lost copy and fails it.
+	const SPACER: ForgeSection[] = [ { id: 'eee555', bgColor: '#e5e5e5', spacer: true } ];
+	const NOT_SPACER: ForgeSection[] = [ { id: 'eee555', bgColor: '#e5e5e5' } ];
+	const html = WRAP( 'eee555', 'background:#e5e5e5', '' );
+
+	it( 'passes an empty band the profile declares a spacer', () => {
+		const report = auditBands( { sections: SPACER, builtHtml: html } );
+		expect( report.bands[ 0 ].content.status ).toBe( 'pass' );
+		expect( report.bands[ 0 ].content.detail ).toContain( 'spacer' );
+		expect( report.summary.fail ).toBe( 0 );
+	} );
+
+	it( 'still fails an empty band with no spacer fact', () => {
+		const report = auditBands( { sections: NOT_SPACER, builtHtml: html } );
+		expect( report.bands[ 0 ].content.status ).toBe( 'fail' );
+		expect( report.bands[ 0 ].content.detail ).toContain( 'empty band' );
+	} );
+
+	it( 'does not suppress a real content failure on a spacer', () => {
+		// Presence and surface still gate: a spacer that loses its background
+		// must fail, it just is not asked for copy.
+		const report = auditBands( {
+			sections: SPACER,
+			builtHtml: WRAP( 'eee555', 'background:#ffffff', '' ),
+		} );
+		expect( report.bands[ 0 ].surface.status ).toBe( 'fail' );
+	} );
+} );

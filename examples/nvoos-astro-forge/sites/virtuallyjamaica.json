@@ -677,5 +677,231 @@
 				"text": "#626262"
 			}
 		}
+	},
+	"geometry": {
+		"45f5e88": {
+			"desktop": {
+				"height": 900,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 1112,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 844,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"1d5804b": {
+			"desktop": {
+				"height": 504,
+				"width": 1440,
+				"paddingTop": 130,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 858,
+				"width": 834,
+				"paddingTop": 80,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 742,
+				"width": 390,
+				"paddingTop": 50,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"1ff4891": {
+			"desktop": {
+				"height": 1076,
+				"width": 1440,
+				"paddingTop": 130,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 1586,
+				"width": 834,
+				"paddingTop": 80,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 2209,
+				"width": 390,
+				"paddingTop": 50,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"860a86e": {
+			"desktop": {
+				"height": 1339,
+				"width": 1440,
+				"paddingTop": 130,
+				"paddingBottom": 130,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 2088,
+				"width": 834,
+				"paddingTop": 80,
+				"paddingBottom": 80,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 1525,
+				"width": 390,
+				"paddingTop": 50,
+				"paddingBottom": 50,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"499464d": {
+			"desktop": {
+				"height": 872,
+				"width": 1440,
+				"paddingTop": 130,
+				"paddingBottom": 130,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 1445,
+				"width": 834,
+				"paddingTop": 80,
+				"paddingBottom": 80,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 1281,
+				"width": 390,
+				"paddingTop": 50,
+				"paddingBottom": 50,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"cd02263": {
+			"desktop": {
+				"height": 649,
+				"width": 1440,
+				"paddingTop": 130,
+				"paddingBottom": 130,
+				"paddingLeft": 144,
+				"paddingRight": 144,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 593,
+				"width": 834,
+				"paddingTop": 80,
+				"paddingBottom": 80,
+				"paddingLeft": 83,
+				"paddingRight": 83,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 558,
+				"width": 390,
+				"paddingTop": 50,
+				"paddingBottom": 50,
+				"paddingLeft": 39,
+				"paddingRight": 39,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"eef1693": {
+			"desktop": {
+				"height": 900,
+				"width": 1440,
+				"paddingTop": 130,
+				"paddingBottom": 130,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 1112,
+				"width": 834,
+				"paddingTop": 80,
+				"paddingBottom": 80,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 844,
+				"width": 390,
+				"paddingTop": 50,
+				"paddingBottom": 50,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		}
 	}
 }

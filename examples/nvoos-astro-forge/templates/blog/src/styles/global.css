@@ -936,11 +936,38 @@ a {
  * rows, owl carousels), re-expressed as flex. Nothing here invents content —
  * it restores the source's own arrangement.
  * ------------------------------------------------------------------------- */
-.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row'], .owl-carousel, .owl-stage) {
-	display: flex;
-	flex-wrap: wrap;
+/* The row is a 12-column GRID, exactly as the builder models it, and that is
+ * what reproduces the source's wrapping: services is 6/6/12 below the desktop
+ * breakpoint, so its third column drops onto a full-width second row. A flex
+ * row keeps all three on one lane. Grid also keeps `gap` honest — a percentage
+ * flex-basis plus a gutter overflows the row and wraps arbitrarily. */
+.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row']) {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
 	align-items: stretch;
 	gap: clamp(1.25rem, 2.5vw, 2.5rem);
+}
+
+/* Carousels are one lane of marks, never a grid, and never a wrap: a fixed
+ * flex-basis times the item count plus the gutters overflowed the lane at 7
+ * logos and dropped the last onto a second row (double height). The source
+ * carousel scrolls; the rebuild shares the lane instead. */
+.ds-section-wrap .post-body :is(.owl-carousel, .owl-stage) {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	gap: clamp(1.25rem, 2.5vw, 2.5rem);
+}
+
+/* Anything that is not a builder column spans the whole row. */
+.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row']) > * {
+	grid-column: 1 / -1;
+	min-width: 0;
+}
+
+/* A column starts as a full row; the span classes below narrow it. */
+.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row']) > :is(.wpb_column, .vc_column_container) {
+	grid-column: span 12;
 }
 
 /* A photo panel is painted on its column, and the source sized that column with
@@ -952,13 +979,60 @@ a {
 }
 
 .ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
-	flex: 1 1 0;
 	min-width: 0;
+}
+
+/*
+ * The source's own column SPANS (WPBakery's `vc_col-lg-N`, `vc_col-md-N`) are
+ * the lane widths — the builder stylesheet that reads them never ships, so
+ * every column fell back to an equal share. virtuallyjamaica's services band is
+ * 3/4/5 of 12 (25% / 33% / 42%), and an equal third of it renders the phone
+ * photo far wider than the source and the navy panel far narrower.
+ *
+ * Expressed as `flex-grow` rather than `flex-basis`, deliberately: a percentage
+ * basis does not account for the row's `gap`, so 25% + 33% + 42% plus two
+ * gutters overflows the row and wraps the last column. Growing in N-share
+ * distributes the free space the gutters leave, which lands on the source's
+ * ratio at any container width.
+ *
+ * `[class~=…]` is a whole-token match — a substring match would make
+ * `vc_col-lg-1` also select `vc_col-lg-10`, `-11` and `-12`.
+ */
+@media (min-width: 1025px) {
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-12'] { grid-column: span 12; }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-12'] { grid-column: span 12; }
 }
 
 /* A logo carousel is one row of marks, never a vertical stack. */
 .ds-section-wrap .post-body .owl-carousel > * {
-	flex: 1 1 8rem;
+	/* Share the lane (basis 0). A fixed basis wraps the last item onto a
+	 * second row once items+gutters exceed the container. */
+	flex: 1 1 0;
 	min-width: 0;
 }
 
@@ -990,7 +1064,9 @@ a {
 }
 @media (max-width: 767px) {
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
-		flex-basis: 100%;
+		/* The source's own mobile column is full-width (`vc_col-sm-12`,
+		 * `col-xs-mobile-fullwidth`). */
+		grid-column: span 12;
 	}
 	.ds-section-wrap .post-body .owl-carousel > * {
 		flex-basis: 40%;

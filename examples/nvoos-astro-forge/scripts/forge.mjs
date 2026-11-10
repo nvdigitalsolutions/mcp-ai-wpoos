@@ -46,7 +46,7 @@ import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, diffGeometry, measureGeometry, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureGeometry, serveDir } from '../lib/geometry.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
@@ -345,13 +345,53 @@ async function runAnalyze( url, options ) {
 	// diff the build against real boxes instead of inferred CSS. Browser-backed,
 	// so it stays opt-in (the parity gate above never needs a browser).
 	if ( options.geometry ) {
-		const ids = ( profile.design?.sections ?? [] ).map( ( section ) => section.id ).filter( Boolean );
+		let bands = profile.design?.sections ?? [];
+		// `--geometry` must not force a design re-analysis: re-extracting the
+		// design block overwrites the hand-tuned chrome/tokens an operator has
+		// already pinned. When the fresh draft has no design block (the common
+		// case — the site is already profiled), read the bands from the profile
+		// being written, exactly as `--text` does below.
+		if ( bands.length === 0 && options.write ) {
+			try {
+				const existing = JSON.parse( await readFile( options.write, 'utf8' ) );
+				bands = existing.design?.sections ?? [];
+			} catch {
+				// No existing profile — nothing to measure.
+			}
+		}
+		const ids = bands.map( ( section ) => section.id ).filter( Boolean );
+		// Outline-band builders (WPBakery/Brando here) emit no Elementor class, so
+		// the id selector alone measures nothing. The band's own anchor is the one
+		// stable handle the source does expose — the nav links to it.
+		const selectors = Object.fromEntries(
+			bands.filter( ( band ) => band.id && band.anchor ).map( ( band ) => [ band.id, `#${ band.anchor }` ] )
+		);
 		if ( ids.length === 0 ) {
-			console.warn( '\u26a0 --geometry needs the design block to know which bands to measure — pass --design too.' );
+			console.warn(
+				'\u26a0 --geometry needs a design block to know which bands to measure — pass --design, or --write an existing profile that already has one.'
+			);
 		} else {
 			try {
-				profile.geometry = await measureGeometry( { url: profile.url, ids, kind: 'source' } );
-				console.log( `\u2713 Geometry baseline: ${ ids.length } band(s) at ${ DEFAULT_GEOMETRY_VIEWPORTS.length } viewports.` );
+				profile.geometry = await measureGeometry( {
+					url: profile.url,
+					ids,
+					kind: 'source',
+					selectors,
+				} );
+				const measured = Object.keys( profile.geometry ).length;
+				console.log(
+					`\u2713 Geometry baseline: ${ measured }/${ ids.length } band(s) at ${ DEFAULT_GEOMETRY_VIEWPORTS.length } viewports.`
+				);
+				// A baseline that measured nothing used to report success, which left
+				// `verify --geometry` with no expectations and silently passing.
+				if ( measured === 0 ) {
+					console.warn(
+						'\u26a0 No band boxes matched — the source uses a builder whose elements carry neither an Elementor class nor the profile anchor. Geometry is NOT recorded.'
+					);
+				} else if ( measured < ids.length ) {
+					const missed = ids.filter( ( id ) => ! profile.geometry[ id ] );
+					console.warn( `\u26a0 ${ missed.length } band(s) measured nothing: ${ missed.join( ', ' ) }` );
+				}
 			} catch ( error ) {
 				console.warn( `\u26a0 Geometry baseline skipped: ${ error instanceof Error ? error.message : error }` );
 			}
@@ -1700,7 +1740,7 @@ async function runVerify( profileRef, options ) {
 		record( 'box geometry', 'skip', 'browser unavailable' );
 	} else if ( options.geometry && profile.geometry ) {
 		const ids = Object.keys( profile.geometry );
-		const served = await serveDir( join( options.target, 'dist' ) );
+		const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
 		try {
 			const built = await measureGeometry( { url: served.url, ids, kind: 'built' } );
 			const deviations = diffGeometry( profile.geometry, built );
@@ -1914,7 +1954,7 @@ async function runVerify( profileRef, options ) {
 		record( 'colour system', 'skip', 'browser unavailable' );
 	} else if ( options.colors && profile.colors ) {
 		const modes = parseColorModes( options.colorsModes );
-		const served = await serveDir( join( options.target, 'dist' ) );
+		const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
 		// Measure the same regions the baseline recorded — including the band
 		// anchors (`band:home`) — so a band surface that stopped rendering is a
 		// reported deviation, not a silent skip.

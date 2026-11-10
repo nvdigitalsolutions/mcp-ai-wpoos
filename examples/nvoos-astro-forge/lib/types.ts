@@ -543,6 +543,10 @@ export interface BandGeometry {
 	paddingBottom: number;
 	marginTop: number;
 	marginBottom: number;
+	/** Horizontal padding. Optional: baselines recorded before it was measured
+	 * stay valid and are simply treated as 0. */
+	paddingLeft?: number;
+	paddingRight?: number;
 }
 
 /** Measured band geometry: section id → viewport name → box. */
@@ -664,6 +668,15 @@ export interface ForgeSection {
 	kind?: ForgeSectionKind;
 	/** The section's own HTML id (the source anchor — #about, #contact…). */
 	anchor?: string;
+	/**
+	 * The source band carries no content of its own — a spacer strip that exists
+	 * only to hold a background and vertical rhythm. The analyzer cannot tell
+	 * "empty by design" from "copy was lost", so this is a human-pinned fact
+	 * (verify the source band really is empty before setting it). The per-band
+	 * audit reads it to stop reporting an intentionally empty band as a content
+	 * failure — jayainc's `dff3f1a` is a 0-text/0-image grey strip.
+	 */
+	spacer?: boolean;
 	bgImage?: string;
 	bgColor?: string;
 	bgGradient?: string;
@@ -684,6 +697,15 @@ export interface ForgeSection {
 	marginTop?: ResponsiveLength;
 	marginBottom?: ResponsiveLength;
 	zIndex?: string;
+	/**
+	 * The band's MEASURED source height (`analyze --geometry`), mirrored as a
+	 * CSS `min-height` floor on the rebuilt band. Band heights are frequently
+	 * declared through builder classes (`full-screen`, `min-height-700`) or an
+	 * inline `min-height` the sanitizer drops, so they cannot be read off the
+	 * markup the way backgrounds can — measurement is the only faithful source.
+	 * It is a FLOOR, never a lock: content that grows past it is never clipped.
+	 */
+	minHeight?: string;
 	/** The top-level column responsive facts (124 §6) — desktop/tablet/
 	 * mobile widths (elementor-col/md/sm-*) + order/visibility flags. The
 	 * split components re-measure from these; absent → the template
