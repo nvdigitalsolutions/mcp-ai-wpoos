@@ -39,6 +39,11 @@ on:
         required: false
         type: boolean
         default: false
+      force_unlock:
+        description: 'Build a site that is LOCKED for hand-editing anyway (destroys custom work — only for an abandoned or mistaken lock)'
+        required: false
+        type: boolean
+        default: false
   repository_dispatch:
     types: [ nvoos-forge-content-changed ]
 
@@ -96,6 +101,8 @@ jobs:
           # Opt-in post-push smoke check (Proposal 135 / C3).
           NVOOS_FORGE_SMOKE: ${{ vars.NVOOS_FORGE_SMOKE }}
           PREVIEW: ${{ github.event.inputs.preview }}
+          # Handoff-lock override (Proposal 141). Empty on push/dispatch-unset.
+          FORCE_UNLOCK: ${{ github.event.inputs.force_unlock }}
           FORGE_WORK: ${{ runner.temp }}/forge-work
           DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
         run: |
@@ -115,9 +122,29 @@ jobs:
             SITES=$(node -e "const fs=require('fs');if(fs.existsSync('sites')){process.stdout.write(fs.readdirSync('sites').filter(f=>f.endsWith('.json')).map(f=>f.slice(0,-5)).join(' '))}")
           fi
           echo "Sites: ${SITES:-<none>}"
+          LOCKED_SITES=""
 
           for name in $SITES; do
             echo "== $name =="
+            # Handoff lock (Proposal 141). Once a site is synced and handed to a
+            # developer, the forge must NOT re-generate it: this runner scaffolds
+            # into a fresh temp target, so there is no forge.lock.json to find —
+            # the ownership record travels on the committed profile (`forge lock`
+            # writes `locked: { at, by, reason }`). Re-forging would replace their
+            # work on the force-pushed mirror branch. SKIP and keep the rest of
+            # this run moving; a hard failure would abort every site after it.
+            # The probe can never abort the run (`|| true`): a malformed profile
+            # already fails loudly at the scaffold step.
+            LOCKED=$(node -e "const fs=require('fs');try{const p=JSON.parse(fs.readFileSync('sites/$name.json','utf8'));const l=p&&p.locked;if(l===true){process.stdout.write('locked (no owner record)')}else if(l&&typeof l==='object'){process.stdout.write(String(l.by||'an operator')+' since '+String(l.at||'unknown')+(l.reason?' - '+l.reason:''))}}catch{}" 2>/dev/null || true)
+            if [ -n "$LOCKED" ]; then
+              if [ "${FORCE_UNLOCK:-}" = "true" ]; then
+                echo "::warning title=Forge locked::$name is locked ($LOCKED) - force_unlock was set, re-forging anyway (the mirror push replaces hand-written work)"
+              else
+                echo "::warning title=Forge locked::$name is locked for hand-editing ($LOCKED) - skipped; the forge no longer owns this site"
+                LOCKED_SITES="$LOCKED_SITES $name"
+                continue
+              fi
+            fi
             target="$FORGE_WORK/$name"
             # Proposal 135: the profile owns the runtime tier. Unset/invalid
             # degrades to "static" (the historical behaviour).
@@ -194,3 +221,20 @@ jobs:
               fi
             fi
           done
+
+          # A locked site is skipped silently otherwise: an operator dispatching a
+          # content-change run would see a green job and assume it deployed.
+          if [ -n "$LOCKED_SITES" ]; then
+            echo "Skipped (locked for hand-editing):${LOCKED_SITES}"
+            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+              {
+                echo "### Skipped - locked for hand-editing"
+                for locked_name in $LOCKED_SITES; do
+                  echo "- $locked_name"
+                done
+                echo ""
+                echo 'These sites were handed to a developer, so the forge does not re-generate them.'
+                echo 'To return one to the forge: forge unlock sites/<name>.json --target <dir> --yes'
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi

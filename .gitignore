@@ -304,3 +304,4 @@ docs/videos/narration/audio/
 # Forge-generated site projects are disposable: sites/<name>.json is the only
 # committed artifact (see examples/nvoos-astro-forge/sites/README.md).
 examples/*-frontend/
+examples/nvoos-astro-forge/*-local/

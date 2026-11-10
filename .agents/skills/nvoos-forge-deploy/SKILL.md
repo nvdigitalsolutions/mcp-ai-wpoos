@@ -33,6 +33,31 @@ The profile splits two origins that are easy to conflate:
 - `deploy.publicOrigin` — the **public** host (`https://client.com`), baked into `ASTRO_SITE`.
   Omit it and every sub-domain site canonicalizes to the CMS host.
 
+### Staging on a Cloudways app host (2026-11-10)
+
+Before DNS cutover the build is served on `<app>-<id>.cloudwaysnodeapps.com`.
+Canonicals must follow the host it is ACTUALLY served on, so `ASTRO_SITE` is a
+per-environment value, not a profile constant:
+
+```sh
+WP_SITE_URL=https://client.com                  # content source — unchanged
+ASTRO_SITE=https://<app>-<id>.cloudwaysnodeapps.com   # public origin of THIS deploy
+NVOOS_FORGE_NOINDEX=1                           # staging must not be indexed
+```
+
+- A staging host that self-canonicals **must not be indexable** — otherwise Google
+treats the preview domain as a duplicate of production. `NVOOS_FORGE_NOINDEX=1`
+emits `<meta name="robots" content="noindex, nofollow">` and `Disallow: /`.
+It is read at render time, so the same artifact is indexable in production when
+unset.
+- Leave `deploy.publicOrigin` at **production**; set the staging origin per
+environment (`FORGE_SITE_URL` in the emitted pipeline, or the app's env vars).
+One profile, two deploys.
+- **Cutover order:** set `ASTRO_SITE` to production, drop `NVOOS_FORGE_NOINDEX`,
+rebuild, publish, then repoint DNS. Reversing it indexes the staging host first.
+- Verify after any build: `canonical`, `og:url` and `sitemap <loc>` must all name
+the host in the address bar, and `robots.txt` must match the intended posture.
+
 ## Tier 1 — static (`deploy.runtime` absent or `"static"`)
 
 Flat `dist/` plus a **no-op `package.json`** stub, because Velocity always runs a
@@ -141,6 +166,19 @@ List the tree instead of guessing: `gh api "repos/.../contents?ref=site/<name>"`
 8. **The domain is still WordPress** (`<meta generator="WordPress …">`). That is
    DNS/topology, not the deploy: the app can be perfect on its
    `cloudwaysnodeapps.com` host while the public domain has not been cut over.
+9. **A staging host that self-canonicals without `noindex`.** The canonical,
+   `og:url` and sitemap all point at the preview domain (correct) — but the
+   preview is then indexable as a duplicate of production. Always pair the two.
+10. **Re-forging a site that a developer now owns.** Two guards, both fail-closed:
+    `scaffold` refuses when the TARGET carries `forge.lock.json`, or when the
+    PROFILE carries `locked` (the CI case — the runner scaffolds into a fresh temp
+    dir, so only the committed profile can carry the record). `forge-sites.yml`
+    reads `profile.locked` per site and SKIPS it with a `::warning` plus a
+    run-summary line, so one locked site never aborts the others; the
+    `workflow_dispatch` input `force_unlock: true` builds anyway (destroys
+    hand-written work — abandoned or mistaken lock only). A skipped site means a
+    WP content-change dispatch did NOT deploy: that is the handoff, not a failure.
+    Full contract: astro-forge `reference/handoff-lock-and-band-gates.md`.
 
 ## Where the rest lives
 

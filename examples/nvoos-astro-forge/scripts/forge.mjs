@@ -34,11 +34,14 @@ import { readFile, readdir, mkdir, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
 import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
+import { auditBands, formatBandReport } from '../lib/band-audit.ts';
+import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { findDroppedPins } from '../lib/pins.ts';
@@ -601,6 +604,7 @@ async function runDeploy( profileRef, options ) {
 			themePolicy: options.themePolicy,
 			strictContrast: options.strictContrast === true,
 			demoContent: options.demoContent === true,
+			unlock: options.unlock === true,
 		} );
 		console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
 		for ( const warning of result.warnings ) {
@@ -759,6 +763,7 @@ async function runScaffold( profileRef, options ) {
 		themePolicy: options.themePolicy,
 		strictContrast: options.strictContrast === true,
 		demoContent: options.demoContent === true,
+		unlock: options.unlock === true,
 		siteSlug,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
@@ -957,6 +962,7 @@ async function runWizard( url, options ) {
 			themePolicy: options.themePolicy,
 			design: options.design === true,
 			strictContrast: options.strictContrast === true,
+			unlock: options.unlock === true,
 			ui,
 			// Local-dev opt-in only — the MCP surface never sets this.
 			allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
@@ -1458,14 +1464,11 @@ async function runVerify( profileRef, options ) {
 	// promoted outline (WPBakery/Divi/Bricks…). Band flow must check the same
 	// set the renderer themes, or an outline-only site passes vacuously.
 	const bands = renderableBands( profile.design );
+	const positional =
+		profile.design?.bandSource === 'outline' || ( profile.design?.sections?.length ?? 0 ) === 0;
 	if ( indexHtml ) {
-		const flow = verifyBandFlow( bands, indexHtml, await readLocalizedMedia( options.target ) );
-		// Outline bands are mapped POSITIONALLY (no Elementor ids exist), so a
-		// count/order difference is an approximation miss, not a proven dropped
-		// band. Report it loudly but never block a deploy on it; Elementor
-		// sections stay a hard gate.
-		const positional =
-			profile.design?.bandSource === 'outline' || ( profile.design?.sections?.length ?? 0 ) === 0;
+		const localizedMedia = await readLocalizedMedia( options.target );
+		const flow = verifyBandFlow( bands, indexHtml, localizedMedia );
 		if ( flow.dropped.length === 0 && flow.mismatched.length === 0 ) {
 			console.log( '\u2713 Band flow: every source band renders with its baked background.' );
 			record( 'band flow', 'pass', `${ bands.length } band(s)${ positional ? ' (positional)' : '' }` );
@@ -1487,6 +1490,42 @@ async function runVerify( profileRef, options ) {
 			console.log(
 				`  source hard cut: ${ seam.fromId ?? '?' } ${ seam.fromEdge ?? '' } → ${ seam.toId ?? '?' } ${ seam.toEdge ?? '' } (ΔE ${ seam.distance })`
 			);
+		}
+		// The per-band audit (band-audit.ts): presence, surface, content, facts,
+		// and — when the baselines exist — text and geometry for EVERY band. The
+		// page-level gates can pass while a single band ships empty, mis-painted
+		// or with its facts unrendered; judging a band at a time is the
+		// section-scoped guidance the visual-regression tooling converged on.
+		if ( options.bands !== false ) {
+			const audit = auditBands( {
+				sections: bands,
+				builtHtml: indexHtml,
+				positional,
+				localizedMedia,
+				text: profile.text,
+				geometry: profile.geometry,
+			} );
+			const reportPath = options.bandsJson ?? join( options.target, 'verify-artifacts', 'bands.json' );
+			try {
+				await mkdir( join( options.target, 'verify-artifacts' ), { recursive: true } );
+				await writeFile( reportPath, `${ JSON.stringify( audit, null, 2 ) }\n`, 'utf8' );
+			} catch ( error ) {
+				console.warn( `\u26a0 Bands: could not write ${ reportPath } (${ error?.message ?? error }).` );
+			}
+			console.log( formatBandReport( audit ) );
+			if ( audit.summary.fail === 0 ) {
+				console.log( `\u2713 Bands: ${ audit.bands.length }/${ audit.bands.length } band(s) passed the per-band audit.` );
+				record( 'bands', 'pass', `${ audit.summary.pass } pass, ${ audit.summary.warn } warn, ${ audit.summary.skip } skip` );
+			} else {
+				const failing = audit.bands.filter( ( band ) => band.status === 'fail' );
+				for ( const band of failing ) {
+					console.warn( `\u2717 Band ${ band.index + 1 }${ band.anchor ? ` (#${ band.anchor })` : ` (${ band.id })` }: ${ band.notes[ 0 ] ?? 'failed' }` );
+				}
+				if ( options.bandsWarn !== true ) {
+					process.exitCode = 1;
+				}
+				record( 'bands', options.bandsWarn === true ? 'warn' : 'fail', `${ audit.summary.fail } of ${ audit.bands.length } band(s) failed` );
+			}
 		}
 	}
 	// One-pager nav (profile `shape`): every anchor the header links must land
@@ -2124,6 +2163,7 @@ program
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
 	.option( '--design', 'extract the source design language and apply it as the rebuild theme' )
 	.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (designAudit: strict)' )
+	.option( '--unlock', 're-forge a target that is LOCKED for hand-editing (destroys custom work)' )
 	.option( '--build', 'run npm install + astro build before finishing' )
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
 	.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
@@ -2160,6 +2200,7 @@ program
 	.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (applied when scaffolding)' )
 	.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
 	.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (applied when scaffolding)' )
+	.option( '--unlock', 're-forge a LOCKED site (destroys hand-written work after a handoff)' )
 	.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )
 	.option( '--cloudflare-project <name>', 'Cloudflare Pages project name' )
 	.option( '--mirror-repo <owner/repo>', 'velocity shared mirror — skip repo creation, mirror prebuilt dist/ to the site branch' )
@@ -2176,6 +2217,9 @@ program
 	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
 	.option( '--all', 'enable every gate (default \u2014 kept as an explicit alias)' )
 	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, text, SEO, tracking)' )
+	.option( '--no-bands', 'skip the per-band audit (presence · surface · content · facts · text · geometry per band)' )
+	.option( '--bands-warn', 'report per-band failures as warnings instead of failing the run' )
+	.option( '--bands-json <path>', 'where to write the per-band report (default <target>/verify-artifacts/bands.json)' )
 	.option( '--threshold <n>', 'parity pass threshold 0-1 (default 0.6)', '0.6' )
 	.option( '--geometry', 'diff the built bands\u0027 boxes against the recorded source geometry (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--geometry-limit <n>', 'how many geometry deviations to print (default 12)', '12' )
@@ -2214,6 +2258,149 @@ program
 	.option( '--strict-visual', 'fail the command when the visual comparison cannot run or scores below --min-fidelity' )
 	.action( async ( profileRef, options ) => {
 		await runVerify( profileRef, options );
+	} );
+
+// -- handoff lock ------------------------------------------------------------
+
+/** The profile's on-disk path, when the ref is a file (registered sites have none). */
+function profilePathOf( ref ) {
+	return existsSync( ref ) ? ref : undefined;
+}
+
+async function generatorLabel() {
+	try {
+		const pkgUrl = new URL( '../package.json', import.meta.url );
+		const pkg = JSON.parse( await readFile( fileURLToPath( pkgUrl ), 'utf8' ) );
+		return `${ pkg.name }@${ pkg.version }`;
+	} catch {
+		return 'nvoos-astro-forge';
+	}
+}
+
+program
+	.command( 'lock' )
+	.description( 'hand a forged project over to custom development (the forge will stop overwriting it, Proposal 141)' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'the scaffolded forge project to lock' )
+	.option( '--by <name>', 'who is taking the site over (recorded in the lock)' )
+	.option( '--reason <text>', 'why (recorded in the lock, e.g. "custom dev handoff")' )
+	.option( '--force', 're-lock a project that is already locked (refreshes the fingerprint)' )
+	.option( '--no-profile', 'do not mark the site profile as locked (project lock only)' )
+	.action( async ( profileRef, options ) => {
+		const profile = await loadProfile( profileRef );
+		if ( ! existsSync( options.target ) ) {
+			console.error( `No such target: ${ options.target }` );
+			process.exit( 1 );
+		}
+		if ( isLocked( options.target ) && options.force !== true ) {
+			const existing = await readLock( options.target );
+			console.error( `Already locked: ${ describeLock( existing ) }` );
+			console.error( 'Pass --force to re-lock and refresh the fingerprint.' );
+			process.exit( 1 );
+		}
+		const lock = await computeLock( options.target, {
+			site: profile.name ?? 'site',
+			source: profile.url,
+			generator: await generatorLabel(),
+			by: options.by,
+			reason: options.reason,
+		} );
+		await writeLock( options.target, lock );
+		console.log( `\u2713 Locked ${ lock.fingerprint ? Object.keys( lock.fingerprint ).length : 0 } managed file(s) in ${ options.target }.` );
+		console.log( `  ${ describeLock( lock ) }` );
+		const profilePath = profilePathOf( profileRef );
+		if ( profilePath && options.profile !== false ) {
+			profile.locked = { at: lock.lockedAt, by: lock.lockedBy, reason: lock.reason };
+			await writeFile( profilePath, `${ JSON.stringify( profile, null, '\t' ) }\n`, 'utf8' );
+			console.log( `  Profile marked locked: ${ profilePath }` );
+		}
+		console.log( '\nWhat changes now:' );
+		console.log( '  \u00b7 scaffold/deploy refuse to overwrite this target (pass --unlock to re-forge)' );
+		console.log( '  \u00b7 the project\u2019s `npm run check` reports hand-edits as expected drift, not failures' );
+		console.log( '  \u00b7 `forge status` shows the owner record and everything changed since handoff' );
+	} );
+
+program
+	.command( 'unlock' )
+	.description( 'return a locked project to the forge (destructive for hand-edits on the next re-forge)' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'the locked forge project' )
+	.option( '--yes', 'required in non-interactive runs (CI, scripts)' )
+	.option( '--no-profile', 'do not clear the site profile\u2019s locked flag' )
+	.action( async ( profileRef, options ) => {
+		if ( ! isLocked( options.target ) ) {
+			console.log( `${ options.target } is not locked \u2014 nothing to unlock.` );
+			return;
+		}
+		const lock = await readLock( options.target );
+		if ( options.yes !== true ) {
+			if ( ! isInteractive() ) {
+				console.error( 'Refusing to unlock without --yes in a non-interactive run.' );
+				process.exit( 1 );
+			}
+			const proceed = await confirm( {
+				message: `Unlock ${ options.target }? The next re-forge will overwrite hand-written work.`,
+				initialValue: false,
+			} );
+			if ( isCancel( proceed ) || proceed !== true ) {
+				console.log( 'Cancelled.' );
+				return;
+			}
+		}
+		await removeLock( options.target );
+		console.log( `\u2713 Unlocked ${ options.target } (${ describeLock( lock ) } removed).` );
+		const profilePath = profilePathOf( profileRef );
+		if ( profilePath && options.profile !== false ) {
+			const profile = await loadProfile( profileRef );
+			delete profile.locked;
+			await writeFile( profilePath, `${ JSON.stringify( profile, null, '\t' ) }\n`, 'utf8' );
+			console.log( `  Profile flag cleared: ${ profilePath }` );
+		}
+	} );
+
+program
+	.command( 'status' )
+	.description( 'report who owns a forged project and what changed since handoff' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'the scaffolded project' )
+	.action( async ( profileRef, options ) => {
+		const profile = await loadProfile( profileRef );
+		const lock = await readLock( options.target );
+		console.log( `Site:   ${ profile.name ?? 'site' } (${ profile.url ?? 'unknown source' })` );
+		console.log( `Target: ${ options.target }` );
+		console.log( `Owner:  ${ describeLock( lock ) }` );
+		if ( lock ) {
+			const drift = await lockDrift( options.target, lock );
+			const total = Object.keys( lock.fingerprint ).length;
+			console.log( `Locked: ${ total } managed file(s), ${ lock.generator }` );
+			console.log( `Since handoff: ${ drift.changed.length } edited, ${ drift.added.length } added, ${ drift.removed.length } removed.` );
+			for ( const path of drift.changed.slice( 0, 10 ) ) {
+				console.log( `  ~ ${ path }` );
+			}
+			for ( const path of drift.added.slice( 0, 10 ) ) {
+				console.log( `  + ${ path }` );
+			}
+			for ( const path of drift.removed.slice( 0, 10 ) ) {
+				console.log( `  - ${ path }` );
+			}
+		}
+		const indexHtml = await readBuiltHtml( options.target );
+		if ( indexHtml ) {
+			const bands = renderableBands( profile.design );
+			const audit = auditBands( {
+				sections: bands,
+				builtHtml: indexHtml,
+				positional:
+					profile.design?.bandSource === 'outline' || ( profile.design?.sections?.length ?? 0 ) === 0,
+				localizedMedia: await readLocalizedMedia( options.target ),
+				text: profile.text,
+				geometry: profile.geometry,
+			} );
+			console.log( '\nBuilt bands:' );
+			console.log( formatBandReport( audit ) );
+		} else {
+			console.log( '\n(No dist/ yet \u2014 run `npm run build` in the target to audit its bands.)' );
+		}
 	} );
 
 const siteCommand = program
@@ -2285,6 +2472,7 @@ function scaffoldOptions( cmd ) {
 		.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (default: auto)' )
 		.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
 		.option( '--overwrite', 'replace a non-forge target directory' )
+		.option( '--unlock', 're-forge a target that is LOCKED for hand-editing (destroys custom work)' )
 		.option( '--check', 'verify collection sizes against the page caps (no scaffold)' )
 		.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (designAudit: strict)' )
 		.option( '--no-agents', 'skip the AGENTS.md/.context agent stubs' )

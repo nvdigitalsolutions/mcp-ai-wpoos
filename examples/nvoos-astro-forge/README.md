@@ -159,6 +159,19 @@ node scripts/forge.mjs verify site.json --target ./customer-frontend --pixel --p
 # 6. Capture the geometry, text and colour baselines alongside the design block:
 node scripts/forge.mjs analyze https://customer.example --design --geometry --text --colors \
   --write site.json
+
+# 7. Every verify run also audits EACH BAND (presence · surface · content · facts ·
+#    text · geometry) and writes <target>/verify-artifacts/bands.json. A check it
+#    cannot evaluate is SKIPPED, never passed; a failing band fails the run
+#    (--bands-warn downgrades, --no-bands opts out).
+node scripts/forge.mjs verify site.json --target ./customer-frontend --minimal
+node scripts/forge.mjs status site.json --target ./customer-frontend   # owner + drift + bands
+
+# 8. When the site is synced and a developer takes over, LOCK it. A locked
+#    project is fail-closed: scaffold/deploy refuse to overwrite it, and the
+#    project's `npm run check` reports hand-edits as expected drift.
+node scripts/forge.mjs lock   site.json --target ./customer-frontend --by "Dev name" --reason "custom dev handoff"
+node scripts/forge.mjs unlock site.json --target ./customer-frontend --yes   # returns it to the forge
 ```
 
 ### Environment per site (build time vs runtime)

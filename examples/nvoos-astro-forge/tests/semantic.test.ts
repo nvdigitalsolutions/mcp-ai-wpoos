@@ -462,3 +462,46 @@ describe( 'seeded widget dictionary — theme/utility widget classes', () => {
 		expect( sections[ 0 ].slots.body ?? '' ).not.toContain( 'aux-shape' );
 	} );
 } );
+
+describe( 'classifyHtml — vendor-agnostic band split (Proposal 137, render half)', () => {
+	// virtuallyjamaica.com (WPBakery + Brando) emits `<section
+	// class="brando_row_…">` bands with `wpb_column` columns and no `vc_row`,
+	// and no Elementor widgets at all. Before the split the whole page
+	// classified as ONE text section, so positional band theming could only
+	// paint the first surface — the red #dd3333 hero covered everything.
+	const BAND = ( id: string, bg: string, inner: string ) =>
+		`<section id="${ id }" class="brando_row_1-2" style="background-color:${ bg };"><div class="container-fluid"><div class="row"><div class="wpb_column brando-column-container"><div class="vc-column-innner-wrapper">${ inner }</div></div></div></div></section>`;
+
+	it( 'splits WPBakery <section> bands into one section each', () => {
+		const html =
+			BAND( 'home', '#dd3333', '<h1>Custom solutions</h1><img src="hero.png" alt="" />' ) +
+			BAND( 'about', '#ededed', '<h2>About us</h2><p>Body copy.</p>' ) +
+			BAND( 'features', '#ededed', '<h2>Feature highlights</h2><p>More copy.</p>' );
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 3 );
+		expect( sections.map( ( section ) => section.anchor ) ).toEqual( [ 'home', 'about', 'features' ] );
+		expect( sections[ 0 ].html ).toContain( 'Custom solutions' );
+		expect( sections[ 2 ].html ).toContain( 'Feature highlights' );
+	} );
+
+	it( 'keeps a single-section document on the post-body path', () => {
+		const html = BAND( 'home', '#dd3333', '<h1>Only band</h1>' );
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 1 );
+		expect( sections[ 0 ].html ).toContain( 'Only band' );
+	} );
+
+	it( 'still splits a form band out of a WPBakery page', () => {
+		const html =
+			BAND( 'home', '#dd3333', '<h1>Hero</h1>' ) +
+			BAND( 'about', '#ededed', '<h2>About</h2>' ) +
+			BAND(
+				'contact',
+				'#ededed',
+				'<form action="/wp-json/contact" method="post"><input type="hidden" name="_wpcf7" value="12" /><input type="text" name="your-name" /><textarea name="your-message"></textarea><button type="submit">Send</button></form>'
+			);
+		const sections = classifyHtml( html );
+		expect( sections ).toHaveLength( 3 );
+		expect( sections.map( ( section ) => section.kind ) ).toEqual( [ 'text', 'text', 'form' ] );
+	} );
+} );

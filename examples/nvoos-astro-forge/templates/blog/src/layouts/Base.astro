@@ -13,6 +13,26 @@ import { canonicalFontFamily } from '../lib/fonts.ts';
 import { repairMediaUrl } from '../lib/media.ts';
 import { composeDocumentTitle } from '../lib/seo.ts';
 
+/**
+ * The source footer's social networks, mapped from ITS icon class to a local
+ * inline glyph. The source ships a Font Awesome sheet we do not load, so the
+ * rebuild draws the four common marks itself — no icon-font dependency, no
+ * remote stylesheet, and an accessible label on every link.
+ */
+const SOCIAL_PATHS: Record<string, string> = {
+	facebook: 'M13.5 22v-8h2.7l.4-3h-3.1V9.1c0-.9.3-1.5 1.6-1.5H17V5c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4V11H8v3h2.6v8h2.9z',
+	twitter: 'M22 5.9a8 8 0 0 1-2.3.6 4 4 0 0 0 1.8-2.2 8 8 0 0 1-2.5 1 4 4 0 0 0-6.9 3.7A11.4 11.4 0 0 1 3.9 4.7a4 4 0 0 0 1.2 5.4 4 4 0 0 1-1.8-.5v.1a4 4 0 0 0 3.2 3.9 4 4 0 0 1-1.8.1 4 4 0 0 0 3.7 2.8A8 8 0 0 1 2 18.3a11.3 11.3 0 0 0 6.1 1.8c7.4 0 11.4-6.1 11.4-11.4v-.5A8 8 0 0 0 22 5.9z',
+	youtube: 'M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8zM10 15V9l5.2 3-5.2 3z',
+	linkedin: 'M6.9 8.6H3.6V21h3.3V8.6zM5.2 3a1.9 1.9 0 1 0 0 3.8 1.9 1.9 0 0 0 0-3.8zM20.4 21h-3.3v-6.4c0-1.6-.6-2.7-2-2.7-1.1 0-1.8.7-2 1.5v7.6H9.8V8.6h3.1V10c.4-.7 1.4-1.7 3.2-1.7 2.3 0 4.3 1.5 4.3 4.8V21z',
+	instagram: 'M12 2.6c-2.6 0-2.9 0-3.9.1-1 0-1.7.2-2.3.4-.6.3-1.2.6-1.7 1.1-.5.5-.8 1-1.1 1.7-.2.6-.4 1.3-.4 2.3-.1 1-.1 1.3-.1 3.9s0 2.9.1 3.9c0 1 .2 1.7.4 2.3.3.6.6 1.2 1.1 1.7.5.5 1 .8 1.7 1.1.6.2 1.3.4 2.3.4 1 .1 1.3.1 3.9.1s2.9 0 3.9-.1c1 0 1.7-.2 2.3-.4.6-.3 1.2-.6 1.7-1.1.5-.5.8-1 1.1-1.7.2-.6.4-1.3.4-2.3.1-1 .1-1.3.1-3.9s0-2.9-.1-3.9c0-1-.2-1.7-.4-2.3a4.7 4.7 0 0 0-1.1-1.7 4.7 4.7 0 0 0-1.7-1.1c-.6-.2-1.3-.4-2.3-.4-1-.1-1.3-.1-3.9-.1zm0 4.6a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6zm0 7.9a3.1 3.1 0 1 1 0-6.2 3.1 3.1 0 0 1 0 6.2zm6.1-8.1a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0z',
+};
+
+/** The network a source icon class names (`fab fa-facebook-f` → facebook). */
+const socialNetwork = ( icon?: string ): string | undefined => {
+	const match = icon?.match( /fa-(facebook|twitter|youtube|linkedin|instagram)/i );
+	return match ? match[ 1 ].toLowerCase() : undefined;
+};
+
 /** The normalized SEO head facts the loader carries (Proposal 131). */
 interface SeoHead {
 	title?: string;
@@ -55,7 +75,12 @@ const fullTitle = title === 'Home' ? siteTitle : composeDocumentTitle(title, sit
 const pageUrl = canonical ?? (Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined);
 // The SOURCE canonical is deliberately not rendered: it points at the
 // WordPress origin. `verify --seo` reports a dropped custom canonical.
-const robots = meta.robots ?? 'index, follow';
+// The page's own robots directive wins, except on a staging/preview host: a
+// site built for a temporary origin must never be indexable, or Google
+// attributes the preview domain as the canonical copy of every page.
+// `NVOOS_FORGE_NOINDEX=1` is the deployment-level switch (Cloudways staging,
+// preview branches); the sitemap/robots endpoint follows the same flag.
+const robots = process.env.NVOOS_FORGE_NOINDEX === '1' ? 'noindex, nofollow' : ( meta.robots ?? 'index, follow' );
 // The page's own description wins; the source SEO description fills the gap
 // (the front page passes no explicit description — 131 §2.5).
 const pageDescription = description ?? meta.description;
@@ -309,6 +334,27 @@ const chromeVars = [
 		<footer class:list={['site-footer', (chrome?.footerBg || chrome?.footerBarBg) && 'site-footer--themed']}>
 			<div class="site-footer-sub">
 				<div class="site-footer-sub-inner">
+					{chrome?.social && chrome.social.length > 0 && (
+						<ul class="site-social">
+							{chrome.social.map((link) => {
+								const network = socialNetwork(link.icon);
+								const path = network ? SOCIAL_PATHS[network] : undefined;
+								return (
+									<li>
+										<a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label ?? network ?? 'Social link'}>
+											{path ? (
+												<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+													<path fill="currentColor" d={path} />
+												</svg>
+											) : (
+												(link.label ?? network ?? '')
+											)}
+										</a>
+									</li>
+								);
+							})}
+						</ul>
+					)}
 					{chrome?.footerLogo?.src && (
 						<div class="site-footer-logo">
 							<img src={chrome.footerLogo.src} alt={chrome.footerLogo.alt ?? siteTitle} />
