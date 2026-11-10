@@ -1274,6 +1274,12 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 
 			expect( await readFile( path.join( target, 'server.js' ), 'utf8' ) ).toContain( "import './dist/server/entry.mjs';" );
 			expect( await readFile( path.join( target, 'scripts/sync-deploy-tree.mjs' ), 'utf8' ) ).toContain( "start: 'node server.js'" );
+			// The tree must be booted before it is published: a managed manifest
+			// without dependencies installs nothing on Velocity and the release
+			// never promotes (2026-11-10).
+			const verifyTree = await readFile( path.join( target, 'scripts/verify-deploy-tree.mjs' ), 'utf8' );
+			expect( verifyTree ).toContain( "spawn(process.execPath, ['server.js']" );
+			expect( verifyTree ).toContain( "'install', '--omit=dev'" );
 
 			const config = await readFile( path.join( target, 'astro.config.mjs' ), 'utf8' );
 			expect( config ).toContain( 'memoryCache' );
@@ -1285,6 +1291,7 @@ describe( 'scaffold — forms bridge block (Proposal 114 §3.9)', () => {
 				scripts?: Record<string, string>;
 			};
 			expect( pkg.scripts?.[ 'sync-deploy-tree' ] ).toBe( 'node scripts/sync-deploy-tree.mjs' );
+			expect( pkg.scripts?.[ 'verify-deploy-tree' ] ).toBe( 'node scripts/verify-deploy-tree.mjs' );
 
 			const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
 			expect( env ).toContain( 'NVOOS_TARGET_SITE=' );
