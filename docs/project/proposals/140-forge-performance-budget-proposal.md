@@ -61,6 +61,13 @@ Fail-soft, as always: if the fetch fails the remote `<link>` survives, which is 
 
 This runs in **both modes**. The managed `/media` proxy only matches uploads, so before this change a managed site kept its font chain cross-origin and render-blocking — and paid for a download it then discarded (the proxy branch returned before the emit step). Proxy mode now mirrors the stylesheets and the fonts they reference, and proxies only the uploads.
 
+Two defects only a real build exposed. The collector required an href ending
+`.css`, and Google’s endpoint is `/css2?family=…` — so the sheet was never
+collected, never mirrored, and the remote link (plus both preconnects)
+survived. And the harvested family is lower-case (`roboto`), which Google
+rejects with 400 on both APIs, so the webfont never loaded at all: every
+forged site had been silently rendering in the system stack. `collectStylesheetUrls`
+now accepts a webfont host, and `canonicalFontFamily()` canonicalises the name.
 Dead `preconnect` hints are the other half: once a host is served locally, `stripPreconnects()` removes its `<link rel="preconnect">`. Only hosts actually present in the localization map are stripped, so a hint that still earns its keep survives.
 
 ### 3.4 `font-display` on every mirrored sheet (§4)
