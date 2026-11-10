@@ -14,10 +14,14 @@ on:
     paths:
       - 'plugins/nvoos-forge-bridge/**'
       - '.github/workflows/phpunit-forge-bridge.yml'
+      - '.github/scripts/check-forge-bridge-public-routes.php'
+      - '.github/scripts/forge-bridge-public-write-routes.txt'
   pull_request:
     paths:
       - 'plugins/nvoos-forge-bridge/**'
       - '.github/workflows/phpunit-forge-bridge.yml'
+      - '.github/scripts/check-forge-bridge-public-routes.php'
+      - '.github/scripts/forge-bridge-public-write-routes.txt'
   workflow_dispatch:
 
 jobs:
@@ -70,6 +74,13 @@ jobs:
       - name: Install plugin Composer dependencies
         working-directory: plugins/nvoos-forge-bridge
         run: composer install --no-interaction --prefer-dist
+
+      - name: Public write-route gate (reviewed allowlist)
+        # Fails when a `permission_callback => '__return_true'` CREATABLE /
+        # EDITABLE / DELETABLE route is not in the reviewed allowlist, or when
+        # an allowlisted route is no longer a public write route. PHPCS and
+        # Plugin Check do not flag this pattern; the wp.org AI reviewer does.
+        run: php .github/scripts/check-forge-bridge-public-routes.php
 
       - name: PHP CodeSniffer (own standard)
         working-directory: plugins/nvoos-forge-bridge

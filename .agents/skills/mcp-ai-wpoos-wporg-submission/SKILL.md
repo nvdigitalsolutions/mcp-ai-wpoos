@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live at 0.5.3; nvoos-content-graph live at 1.0.10; nvoos-design-system in the pipeline). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy, related-issue sweep, reply-email template), readme.txt standards, .wordpress-org listing assets, the main-plugin packaging tri-sync (.distignore / .gitattributes export-ignore / strip-dev-files.sh) and git archive parity checks, and the NV oOS Complete checkout-flow disclosure discipline. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, triaging PCP findings, or capturing listing screenshots."
+description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live at 0.5.3; nvoos-content-graph live at 1.0.10; nvoos-design-system in the pipeline; nvoos-forge-bridge in review at 0.3.1). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy, related-issue sweep, reply-email template), the recurring non-pattern findings the AI reviewer keeps catching (public-endpoint target authorization, forwarding-header trust, wp_send_json/die in REST), readme.txt standards, .wordpress-org listing assets, the main-plugin packaging tri-sync (.distignore / .gitattributes export-ignore / strip-dev-files.sh) and git archive parity checks, and the NV oOS Complete checkout-flow disclosure discipline. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, triaging PCP findings, or capturing listing screenshots."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.11"
   plugin-version-tested: "1.2.11"
-  last-updated: "2026-11-08"
+  last-updated: "2026-11-10"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook
@@ -432,6 +432,49 @@ missing), changelog bullet, signoff section + `WPORG-REVIEW-FINDINGS.md` /
 `WP_DEBUG` on (activation clean, homepage 200, empty debug.log). Upload ZIP
 `build/nvoos-forge-bridge-v0.2.0.zip` (14 files).
 
+**Second review came back (2026-11-10, review
+`R nvoos-forge-bridge/vsamtani/5Nov26/T2 10Nov26/4.4RC1`):** three findings,
+all in the forms bridge, all shipped green by the same gates:
+
+1. **`__return_true` on `/forms/submit` + non-public forms.** The route is
+   correctly public (anonymous submissions), but it resolved a form by ID/title
+   and dispatched without checking that form's visibility — an attacker past
+   the origin gate could submit to a draft/private/password-protected form and
+   trigger its mail/actions. Fix: resolve only `post_status = publish` + empty
+   `post_password` (JFB by ID and by title; the Elementor `_elementor_data`
+   lookup joins `wp_posts` with both conditions) and return the same 404 as a
+   missing form.
+2. **Rate-limit key trusted `X-Forwarded-For`.** Fix: `REMOTE_ADDR` is
+   authoritative; the header is honored only when the direct peer is in the
+   `nvoos_forge_bridge_trusted_proxies` filter (exact IP/CIDR, empty default),
+   then the chain is walked right-to-left and the first untrusted hop wins.
+3. **`wp_send_json()` terminated the REST request.** In a REST request it
+   echoes and calls `die` (it only routes through `wp_die()` when
+   `wp_doing_ajax()`), so the old `wp_die_json_handler` filter never fired.
+   Fix: filter `wp_doing_ajax` true for the dispatch, swap
+   `wp_die_ajax_handler` + `wp_die_json_handler` for a sentinel-throwing
+   callback, buffer the echoed JSON with `ob_start()`, and restore in `finally`
+   (also suppress the now-bogus `_doing_it_wrong` notice for `wp_send_json`).
+
+Why the gates missed them: PCP/PHPCS are pattern matchers (none of the three is
+one), the `--severity=5` PCP run is a narrow claim, the test suite's
+`nvoos_forge_bridge_forms_*_dispatch` seams return arrays and therefore bypass
+`capture_json()`, and the clean-install validation has neither JFB nor
+Elementor installed, so the native dispatch path never ran. **Fixed in 0.3.1:**
+tests for both visibility gates, spoofed XFF (trusted and untrusted), and native
+`wp_send_json_success()` capture (isolated process). Validation: 71/71 tests,
+204 assertions; phpcs 0.
+
+**Same-class audit the review did not list (fixed in 0.3.1):** a submitted
+field could spoof JFB's routing carriers (`_jet_engine_booking_form_id` /
+`_jet_engine_refer`) and re-target the dispatch to another form → strip the
+handler's carriers from the fields and re-assert them last; `maybe_unserialize`
+on the redirect-provider columns → `unserialize(..., ['allowed_classes' =>
+false])`; control characters in redirect sources/targets → reject; uninstall
+now wildcard-deletes the hashed rate-limit transients. CI gained
+`.github/scripts/check-forge-bridge-public-routes.php` + a reviewed allowlist
+(fails on an un-reviewed public write route or a stale entry).
+
 ### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
 
 Docs Hub added the ported commerce stack (upsell card after the settings
@@ -553,7 +596,12 @@ packaging rule and one WP 6.7+ timing bug:
 
 ### Related-issue sweep checklist (always run after fixing the flagged items)
 
-Each review item is a category — grep the whole plugin for siblings:
+Each review item is a category — grep the whole plugin for siblings. None of
+these is reachable by PHPCS/PHPCompatibilityWP, and PCP only reports
+pattern-level issues (the `--severity=5` run is the highest-severity subset),
+so run this sweep by hand on every release that adds or changes a route — not
+only at first submission. The three forge-bridge T2 findings below (2026-11-10)
+all shipped through a green PCP + phpcs + PHPUnit stack.
 
 1. **Context/sensitive-data leaks** — every surface that serves indexed
    content to guests: REST endpoints, sitemap providers, feeds, shortcode
@@ -604,6 +652,34 @@ Each review item is a category — grep the whole plugin for siblings:
    and no test exercised the failure branch. Sibling sweep (2026-11-06):
    docs-hub `checkout-client.php` + `remote-repo.php` and content-graph
    `Vendor` + `HttpClient` are clean (untyped + `is_wp_error` handled).
+9. **Public write endpoints — authorize the *target*, not just the caller.**
+   Grep `permission_callback.*__return_true` and every `CREATABLE` route. A
+   public-by-design write route (form submit, webhook) still has to prove the
+   object it acts on is public: `post_status = publish`, empty password, not
+   trashed. Check every resolver (by ID, by slug/title, by meta `LIKE` join)
+   and return the same 404 for "non-public" as for "missing" so drafts are not
+   enumerable. An origin allowlist is a CSRF gate, not authorization — it says
+   nothing about which object may be acted on. (forge-bridge T2, 2026-11-10:
+   `/forms/submit` dispatched to draft/private/password-protected JFB and
+   Elementor forms.) `.github/scripts/check-forge-bridge-public-routes.php`
+   mechanises this for forge-bridge — it fails on an un-reviewed
+   `__return_true` CREATABLE/EDITABLE/DELETABLE route and on a stale allowlist
+   entry; copy it for the next plugin.
+10. **Forwarding headers are untrusted input.** Grep `x_forwarded_for`,
+   `cf-connecting-ip`, `x-real-ip`. Default to `REMOTE_ADDR`; honor a chain
+   only when the direct peer is a configured trusted proxy (exact IP/CIDR
+   filter), then walk right-to-left and take the first untrusted hop. Document
+   the filter in the readme — managed hosts/CDNs need it or every visitor
+   shares one rate-limit bucket.
+11. **`wp_send_json*()` / `wp_die()` from third-party code in a REST callback.**
+   `wp_send_json()` only calls `wp_die()` when `wp_doing_ajax()` is true;
+   otherwise it calls `die` and no `wp_die_*_handler` filter runs. If your
+   callback invokes a native handler that answers with `wp_send_json`, filter
+   `wp_doing_ajax` true for the call, return a sentinel-throwing callback from
+   `wp_die_ajax_handler` + `wp_die_json_handler`, buffer with `ob_start()`, and
+   restore in `finally`. Unit-test the NATIVE path — a test seam that returns an
+   array bypasses the capture code (that is exactly why forge-bridge shipped
+   the bug).
 
 ### Reviewer reply email (template)
 

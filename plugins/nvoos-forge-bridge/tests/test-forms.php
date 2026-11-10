@@ -317,7 +317,7 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 	 */
 	public function test_jfb_dispatch_success_and_sanitization(): void {
 		$this->enable_forms();
-		$form_id = wp_insert_post( array( 'post_type' => 'jet-form-builder', 'post_title' => 'Contact' ) );
+		$form_id = wp_insert_post( array( 'post_type' => 'jet-form-builder', 'post_title' => 'Contact', 'post_status' => 'publish' ) );
 		$seen    = null;
 		$audited = 0;
 		add_filter( 'nvoos_forge_bridge_forms_jfb_available', '__return_true' );
@@ -361,7 +361,7 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 	 */
 	public function test_jfb_dispatch_failure(): void {
 		$this->enable_forms();
-		$form_id = wp_insert_post( array( 'post_type' => 'jet-form-builder', 'post_title' => 'Contact' ) );
+		$form_id = wp_insert_post( array( 'post_type' => 'jet-form-builder', 'post_title' => 'Contact', 'post_status' => 'publish' ) );
 		add_filter( 'nvoos_forge_bridge_forms_jfb_available', '__return_true' );
 		add_filter(
 			'nvoos_forge_bridge_forms_jfb_dispatch',
@@ -396,7 +396,7 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 	 */
 	public function test_elementor_dispatch(): void {
 		$this->enable_forms();
-		$post_id = wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Contact' ) );
+		$post_id = wp_insert_post( array( 'post_type' => 'page', 'post_title' => 'Contact', 'post_status' => 'publish' ) );
 		update_post_meta(
 			$post_id,
 			'_elementor_data',
@@ -530,7 +530,7 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 	 */
 	public function test_nojs_redirect(): void {
 		$this->enable_forms();
-		$form_id = wp_insert_post( array( 'post_type' => 'jet-form-builder', 'post_title' => 'Contact' ) );
+		$form_id = wp_insert_post( array( 'post_type' => 'jet-form-builder', 'post_title' => 'Contact', 'post_status' => 'publish' ) );
 		add_filter( 'nvoos_forge_bridge_forms_jfb_available', '__return_true' );
 		add_filter(
 			'nvoos_forge_bridge_forms_jfb_dispatch',
@@ -567,5 +567,234 @@ class Test_Forge_Bridge_Forms extends WP_UnitTestCase {
 		$response = $this->server->dispatch( $request );
 		$this->assertSame( 302, $response->get_status() );
 		$this->assertSame( self::ORIGIN . '/?form=ok', $response->get_headers()['Location'] );
+	}
+
+	/**
+	 * Visibility gate: a JetFormBuilder form that is not published (or is
+	 * password protected) is treated as unknown — the public route never
+	 * dispatches into non-public content.
+	 */
+	public function test_jfb_nonpublic_form_404(): void {
+		$this->enable_forms();
+		add_filter( 'nvoos_forge_bridge_forms_jfb_available', '__return_true' );
+
+		$draft = wp_insert_post(
+			array(
+				'post_type'   => 'jet-form-builder',
+				'post_title'  => 'Draft Contact',
+				'post_status' => 'draft',
+			)
+		);
+		$private   = wp_insert_post(
+			array(
+				'post_type'   => 'jet-form-builder',
+				'post_title'  => 'Private Contact',
+				'post_status' => 'private',
+			)
+		);
+		$protected = wp_insert_post(
+			array(
+				'post_type'     => 'jet-form-builder',
+				'post_title'    => 'Locked Contact',
+				'post_status'   => 'publish',
+				'post_password' => 'secret',
+			)
+		);
+
+		foreach ( array( $draft, $private, $protected ) as $form_id ) {
+			$response = $this->server->dispatch( $this->json_request( $this->valid_payload( array( 'form' => (string) $form_id ) ) ) );
+			$this->assertSame( 404, $response->get_status(), 'Form ' . $form_id . ' must not be dispatchable.' );
+			$this->assertSame( 'nvoos_forge_form_not_found', $response->get_data()['code'] );
+		}
+
+		// Name resolution is status-scoped too: a draft title does not resolve.
+		$response = $this->server->dispatch( $this->json_request( $this->valid_payload( array( 'form' => 'Draft Contact' ) ) ) );
+		$this->assertSame( 404, $response->get_status() );
+	}
+
+	/**
+	 * An Elementor form on a non-public carrier post is not dispatchable.
+	 */
+	public function test_elementor_nonpublic_carrier_404(): void {
+		$this->enable_forms();
+		add_filter( 'nvoos_forge_bridge_forms_elementor_available', '__return_true' );
+
+		$draft = wp_insert_post(
+			array(
+				'post_type'   => 'page',
+				'post_title'  => 'Draft Carrier',
+				'post_status' => 'draft',
+			)
+		);
+		update_post_meta(
+			$draft,
+			'_elementor_data',
+			wp_json_encode(
+				array(
+					array(
+						'widgetType' => 'form',
+						'settings'   => array( 'form_id' => 'draft-widget' ),
+					),
+				)
+			)
+		);
+
+		$response = $this->server->dispatch(
+			$this->json_request( $this->valid_payload( array( 'form' => 'draft-widget', 'post_id' => $draft ) ) )
+		);
+		$this->assertSame( 404, $response->get_status() );
+		$this->assertSame( 'nvoos_forge_form_not_found', $response->get_data()['code'] );
+
+		// The global lookup (no post_id) is scoped to published posts too.
+		$response = $this->server->dispatch( $this->json_request( $this->valid_payload( array( 'form' => 'draft-widget' ) ) ) );
+		$this->assertSame( 404, $response->get_status() );
+	}
+
+	/**
+	 * A spoofed X-Forwarded-For header cannot evade the per-IP rate limit: with
+	 * no trusted proxy configured, REMOTE_ADDR is authoritative.
+	 */
+	public function test_forwarded_for_ignored_without_trusted_proxy(): void {
+		$this->enable_forms();
+		$_SERVER['REMOTE_ADDR'] = '10.0.0.9';
+		set_transient( 'nvoos_forge_bridge_forms_rate_' . md5( '10.0.0.9' ), 5, 600 );
+
+		$request = $this->json_request( $this->valid_payload() );
+		$request->set_header( 'X-Forwarded-For', '203.0.113.7' );
+
+		$response = $this->server->dispatch( $request );
+		$this->assertSame( 429, $response->get_status() );
+		$this->assertSame( 'nvoos_forge_forms_rate_limited', $response->get_data()['code'] );
+	}
+
+	/**
+	 * With a trusted proxy configured, the rightmost untrusted hop is used —
+	 * a client-supplied prefix cannot rewrite its own address.
+	 */
+	public function test_forwarded_for_used_with_trusted_proxy(): void {
+		$this->enable_forms();
+		$form_id = wp_insert_post(
+			array(
+				'post_type'   => 'jet-form-builder',
+				'post_title'  => 'Contact',
+				'post_status' => 'publish',
+			)
+		);
+		add_filter( 'nvoos_forge_bridge_forms_jfb_available', '__return_true' );
+		add_filter(
+			'nvoos_forge_bridge_forms_jfb_dispatch',
+			static function () {
+				return array( 'ok' => true, 'message' => 'Thanks' );
+			}
+		);
+		add_filter(
+			'nvoos_forge_bridge_trusted_proxies',
+			static function () {
+				return array( '10.0.0.0/8' );
+			}
+		);
+		$_SERVER['REMOTE_ADDR'] = '10.1.2.3';
+
+		$seen = null;
+		add_action(
+			'nvoos_forge_bridge_form_submission',
+			static function ( $outcome, $form, $origin, $ip ) use ( &$seen ) {
+				$seen = $ip;
+			},
+			10,
+			4
+		);
+
+		// Chain: spoofed prefix, real client, trusted proxy.
+		$request = $this->json_request( $this->valid_payload( array( 'form' => (string) $form_id ) ) );
+		$request->set_header( 'X-Forwarded-For', '198.51.100.9, 203.0.113.7, 10.9.9.9' );
+
+		$response = $this->server->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( '203.0.113.7', $seen );
+	}
+
+	/**
+	 * A submitted field named like JFB's routing carrier cannot re-target the
+	 * dispatch — the resolved form is the one whose visibility was checked.
+	 */
+	public function test_jfb_routing_carriers_cannot_be_overridden(): void {
+		$fields = Nvoos_Test_Forms_Capture::strip_carriers(
+			array(
+				'_jet_engine_booking_form_id' => '999999',
+				'_jet_engine_refer'           => 'https://evil.example/',
+				'email'                       => 'jane@example.com',
+			),
+			array( '_jet_engine_booking_form_id', '_jet_engine_refer' )
+		);
+
+		$this->assertSame( array( 'email' => 'jane@example.com' ), $fields );
+	}
+
+	/**
+	 * capture_json() establishes the ajax contract, decodes the emitted JSON,
+	 * and restores the environment afterwards.
+	 */
+	public function test_capture_json_emulates_ajax_and_decodes_output(): void {
+		$capture = new Nvoos_Test_Forms_Capture();
+		$seen    = null;
+		$result  = $capture->capture(
+			static function () use ( &$seen ) {
+				$seen = wp_doing_ajax();
+				echo wp_json_encode( array( 'success' => true, 'data' => array( 'message' => 'ok' ) ) );
+			}
+		);
+
+		$this->assertTrue( $seen );
+		$this->assertSame( array( 'success' => true, 'data' => array( 'message' => 'ok' ) ), $result );
+		// The emulation must not leak past the dispatch.
+		$this->assertFalse( wp_doing_ajax() );
+	}
+
+	/**
+	 * A native wp_send_json*() call is captured instead of ending the request.
+	 * Runs isolated: a regression would call exit() and take the suite down.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_capture_json_intercepts_wp_send_json(): void {
+		$capture = new Nvoos_Test_Forms_Capture();
+		$result  = $capture->capture(
+			static function () {
+				wp_send_json_success( array( 'message' => 'native' ) );
+			}
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'native', $result['data']['message'] );
+	}
+}
+
+/**
+ * Test proxy that exposes the protected capture helper.
+ */
+class Nvoos_Test_Forms_Capture extends \NvoosForgeBridge\Rest\Forms {
+
+	/**
+	 * Run the capture helper.
+	 *
+	 * @param callable $dispatch Dispatch.
+	 * @return array|null
+	 */
+	public function capture( callable $dispatch ) {
+		return $this->capture_json( $dispatch );
+	}
+
+	/**
+	 * Expose the carrier-stripping helper.
+	 *
+	 * @param array    $fields   Fields.
+	 * @param string[] $carriers Carriers.
+	 * @return array
+	 */
+	public static function strip_carriers( array $fields, array $carriers ): array {
+		return self::without_reserved_carriers( $fields, $carriers );
 	}
 }

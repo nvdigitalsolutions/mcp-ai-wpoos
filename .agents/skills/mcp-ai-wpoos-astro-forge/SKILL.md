@@ -425,8 +425,9 @@ through WordPress.**
   (`NVOOS_FORGE_FORMS_ENDPOINT`, `NVOOS_FORGE_FORMS_ORIGIN`).
 - **Behavior half (`plugins/nvoos-forge-bridge` 0.2.0):**
   `includes/rest/class-nvoos-forge-bridge-forms.php` — one public route
-  `POST /nvoos-forge/v1/forms/submit` (permission `__return_true` — the
-  gates ARE the auth): disabled→404; origin allowlist (Origin header,
+  `POST /nvoos-forge/v1/forms/submit` (permission `__return_true` — public
+  by design; the gates are CSRF/abuse controls, NOT authorization — see the
+  invariants below): disabled→404; origin allowlist (Origin header,
   Referer fallback, normalized via `Settings::normalize_origin`)→403;
   per-IP rate limit (transient, 5/10min)→429; honeypot non-empty or
   timestamp outside ±2h (JSON path; optional on the no-JS form-encoded
@@ -443,10 +444,11 @@ through WordPress.**
   'elementor_pro_forms')`; form existence via a bounded `_elementor_data`
   LIKE) → typed 404 `nvoos_forge_form_not_found` / 501
   `nvoos_forge_no_form_handler`. Both native dispatches are wrapped in
-  `capture_json()` — the `wp_die_json_handler` filter intercepts the
-  handler's process-ending `wp_send_json*` and captures its data (both
-  `{status,…}` JFB and `{success,data}` shapes map into the envelope
-  `{ok,message,errors?}`). Version-drift seams: `nvoos_forge_bridge_forms_
+  `capture_json()`: it filters `wp_doing_ajax` true (otherwise `wp_send_json`
+  calls `die` directly and no die-handler filter runs), swaps
+  `wp_die_ajax_handler`/`wp_die_json_handler` for a sentinel thrower, and
+  buffers the echoed JSON (both `{status,…}` JFB and `{success,data}` shapes
+  map into the envelope `{ok,message,errors?}`). Version-drift seams: `nvoos_forge_bridge_forms_
   jfb_available|elementor_available` (bool filters) + `…_jfb_dispatch|
   elementor_dispatch` (return an envelope array or WP_Error to pin a
   specific plugin release; null = native). Audit seam: the
@@ -455,6 +457,16 @@ through WordPress.**
   with `?form=ok|error` (open-redirect guarded). Settings: `OPTION_FORMS_*`
   (enabled, origins textarea, captcha provider/site key/secret) + UI
   section + `option_keys()` + redacted health fields.
+- **Security invariants (0.3.1, do not regress):** only `post_status = publish`
+  + empty `post_password` forms resolve (JFB by ID and title; Elementor
+  `_elementor_data` lookup joins `wp_posts`); non-public forms return the same
+  404 as missing ones (no draft enumeration). The rate-limit IP is
+  `REMOTE_ADDR` unless the direct peer is in the
+  `nvoos_forge_bridge_trusted_proxies` filter, then the rightmost untrusted
+  hop. The route is public by design, so the origin allowlist is a CSRF gate,
+  never authorization. A submitted field can never re-target the dispatch:
+  JFB's routing carriers (`_jet_engine_booking_form_id` / `_jet_engine_refer`)
+  are stripped from the fields and re-asserted last.
 - **Tests:** forge — sanitizer form allowlist + XSS vectors, semantic form
   classification (search/submit/cta/JFB/CF7/postId/options), scaffold forms
   emission, e2e fixture forms (xss-trap search+Elementor form, contact JFB
@@ -1284,6 +1296,31 @@ builder themes declare rhythm in classes the sanitizer strips, so
   `flex-wrap: nowrap` + `flex: 1 1 0`, or 7 logos wrap onto a second row.
 - `verify --geometry` must serve `dist/client` for a server output — serving
   `dist` 404s and reports every band as "build missing".
+
+## Measured band typography + the sticky header (2026-11-10)
+
+The two passes that closed "the sections still don't match": the raw-HTML band
+path had NO heading scale (a 40px source `<h3>` rendered at 15.21px = `1.17em`
+of the 13px body), and a sticky header's SCROLLED state was never captured. Both
+are browser facts on `analyze --geometry`, stored as `profile.bandFacts` and
+`profile.stickyHeader`. Full contract:
+[`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md).
+
+- `bandFacts[id]` = per-heading computed facts (size/weight/line-height/
+  letter-spacing/transform/**text-align**), the body paragraph, and the inner
+  `containerWidth`. Scaffold emits `[data-section-id] h3{…}` + `--ds-title-*`,
+  and derives the band `measure` from the container (fluid bands stop rendering
+  at the site measure).
+- `stickyHeader` = rest vs pinned background/ink/height. `Base.astro` adds
+  `site-header--pinned`; global.css rebuilds it as a `scroll(root)` timeline
+  (rest state is the BASE — a header's finished state is the scrolled one, and a
+  solid strip over the hero at scrollY 0 is the louder error).
+- Gotchas: read the pinned snapshot after a real wait (the live page's header
+  colours land a beat after the scroll class); the fact audit cannot see a
+  scoped rule that sits before the band, so its marker needs a `present`
+  predicate over the whole page; and on Virtually Jamaica's builder the coloured
+  panels need `padding-four-all` (measured 3.4rem) or their copy sits flush
+  against the panel edge.
 
 ## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
 

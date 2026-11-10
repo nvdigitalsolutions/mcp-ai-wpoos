@@ -31,6 +31,8 @@ class Health extends \WP_REST_Controller {
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_health' ),
+				// Public by design — booleans, versions, and a redacted webhook
+				// host only; never tokens, secrets, or full URLs.
 				'permission_callback' => '__return_true',
 			)
 		);

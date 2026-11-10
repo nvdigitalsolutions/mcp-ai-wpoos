@@ -75,8 +75,18 @@ class Forms extends \WP_REST_Controller {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_submit' ),
-				// Public by design — the origin allowlist, rate limit, spam
-				// ladder, and optional captcha below ARE the authorization.
+
+				/*
+				 * Public by design: anonymous visitors submit forms from the forged
+				 * static site, so no WordPress capability applies. Authorization is
+				 * enforced inside handle_submit()/dispatch() instead — the origin
+				 * allowlist, per-IP rate limit, honeypot + timestamp ladder, optional
+				 * captcha, and a server-side visibility check that only ever
+				 * dispatches to a PUBLISHED, non-password-protected form. The Origin
+				 * header is a CSRF-style gate (it keeps other sites from posting
+				 * through a visitor's browser), not an identity claim, so it is never
+				 * treated as authorization on its own.
+				 */
 				'permission_callback' => '__return_true',
 			)
 		);
@@ -264,22 +274,129 @@ class Forms extends \WP_REST_Controller {
 	}
 
 	/**
-	 * The client IP (best-effort, for rate limiting and captcha only).
+	 * The client IP, for rate limiting and captcha only.
+	 *
+	 * `REMOTE_ADDR` is the only value a client cannot forge, so it is the
+	 * default. A forwarding header is honored ONLY when the direct peer is a
+	 * configured trusted proxy (the `nvoos_forge_bridge_trusted_proxies`
+	 * filter); the chain is then walked from the right, skipping trusted
+	 * hops, so a client-supplied prefix cannot spoof the result.
 	 *
 	 * @param \WP_REST_Request $request Request.
 	 * @return string
 	 */
 	private function client_ip( \WP_REST_Request $request ): string {
-		$forwarded = trim( (string) $request->get_header( 'x_forwarded_for' ) );
-		if ( '' !== $forwarded ) {
-			$parts = explode( ',', $forwarded );
-			$ip    = trim( $parts[0] );
-			if ( '' !== $ip ) {
-				return sanitize_text_field( $ip );
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR
+		$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$remote = $this->normalize_ip( $remote );
+		if ( '' === $remote ) {
+			return 'unknown';
+		}
+
+		/**
+		 * Trusted reverse-proxy addresses (exact IPs or CIDR ranges). Empty by
+		 * default: a forwarding header is ignored unless the direct peer is
+		 * listed here, which prevents clients from spoofing their IP.
+		 *
+		 * @param string[] $proxies Trusted proxy IPs / CIDRs.
+		 */
+		$trusted = apply_filters( 'nvoos_forge_bridge_trusted_proxies', array() );
+		if ( ! is_array( $trusted ) || array() === $trusted || ! $this->ip_in_list( $remote, $trusted ) ) {
+			return $remote;
+		}
+
+		$forwarded = (string) $request->get_header( 'x_forwarded_for' );
+		if ( '' === $forwarded ) {
+			return $remote;
+		}
+
+		$client = $remote;
+		foreach ( array_reverse( explode( ',', $forwarded ) ) as $hop ) {
+			$hop = $this->normalize_ip( $hop );
+			if ( '' === $hop ) {
+				break;
+			}
+			$client = $hop;
+			if ( ! $this->ip_in_list( $hop, $trusted ) ) {
+				break;
 			}
 		}
-		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR
-		return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		return $client;
+	}
+
+	/**
+	 * Validate + trim an IP address ('' when invalid).
+	 *
+	 * @param string $ip Candidate IP.
+	 * @return string
+	 */
+	private function normalize_ip( string $ip ): string {
+		$ip = trim( $ip );
+		return '' !== $ip && false !== rest_is_ip_address( $ip ) ? $ip : '';
+	}
+
+	/**
+	 * Whether an IP is in a list of exact IPs / CIDR ranges.
+	 *
+	 * @param string   $ip      IP.
+	 * @param string[] $entries Trusted entries.
+	 * @return bool
+	 */
+	private function ip_in_list( string $ip, array $entries ): bool {
+		foreach ( $entries as $entry ) {
+			$entry = trim( (string) $entry );
+			if ( '' === $entry ) {
+				continue;
+			}
+			if ( false !== strpos( $entry, '/' ) ) {
+				if ( $this->ip_in_cidr( $ip, $entry ) ) {
+					return true;
+				}
+				continue;
+			}
+			if ( $ip === $this->normalize_ip( $entry ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether an IP falls inside a CIDR range.
+	 *
+	 * @param string $ip   IP.
+	 * @param string $cidr Range (e.g. 10.0.0.0/8 or 2001:db8::/32).
+	 * @return bool
+	 */
+	private function ip_in_cidr( string $ip, string $cidr ): bool {
+		$parts = explode( '/', $cidr, 2 );
+		if ( ! isset( $parts[1] ) || ! is_numeric( $parts[1] ) ) {
+			return false;
+		}
+		$subnet = $this->normalize_ip( $parts[0] );
+		if ( '' === $subnet ) {
+			return false;
+		}
+		$bits    = (int) $parts[1];
+		$ip_bin  = inet_pton( $ip );
+		$sub_bin = inet_pton( $subnet );
+		if ( false === $ip_bin || false === $sub_bin || strlen( $ip_bin ) !== strlen( $sub_bin ) ) {
+			return false;
+		}
+		$max = strlen( $ip_bin ) * 8;
+		if ( $bits < 0 || $bits > $max ) {
+			return false;
+		}
+		$bytes = intdiv( $bits, 8 );
+		$rem   = $bits % 8;
+		if ( $bytes > 0 && substr( $ip_bin, 0, $bytes ) !== substr( $sub_bin, 0, $bytes ) ) {
+			return false;
+		}
+		if ( 0 === $rem ) {
+			return true;
+		}
+		$mask = ( 0xff << ( 8 - $rem ) ) & 0xff;
+		return ( ord( $ip_bin[ $bytes ] ) & $mask ) === ( ord( $sub_bin[ $bytes ] ) & $mask );
 	}
 
 	/**
@@ -446,6 +563,10 @@ class Forms extends \WP_REST_Controller {
 	/**
 	 * Resolve a form id/name to a JetFormBuilder form post ID.
 	 *
+	 * Only a PUBLISHED, non-password-protected form resolves; a draft,
+	 * pending, private, trashed, or password-protected form is treated as
+	 * unknown so the public route can never dispatch into non-public content.
+	 *
 	 * @param string $form Identifier.
 	 * @return int 0 when unresolved.
 	 */
@@ -453,9 +574,22 @@ class Forms extends \WP_REST_Controller {
 		$id = absint( $form );
 		if ( $id > 0 ) {
 			$post = get_post( $id );
-			return $post && 'jet-form-builder' === $post->post_type ? $id : 0;
+			if ( ! $post || 'jet-form-builder' !== $post->post_type || ! self::is_public_post( $post ) ) {
+				return 0;
+			}
+			return $id;
 		}
 		return self::jfb_form_by_title( $form );
+	}
+
+	/**
+	 * Whether a post is publicly viewable (published, no password).
+	 *
+	 * @param \WP_Post $post Post.
+	 * @return bool
+	 */
+	private static function is_public_post( \WP_Post $post ): bool {
+		return 'publish' === $post->post_status && '' === (string) $post->post_password;
 	}
 
 	/**
@@ -469,6 +603,8 @@ class Forms extends \WP_REST_Controller {
 		$query = new \WP_Query(
 			array(
 				'post_type'      => 'jet-form-builder',
+				'post_status'    => 'publish',
+				'has_password'   => false,
 				'title'          => $form,
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
@@ -479,7 +615,11 @@ class Forms extends \WP_REST_Controller {
 	}
 
 	/**
-	 * Whether an Elementor Pro form widget with this id exists.
+	 * Whether an Elementor Pro form widget with this id exists on a PUBLIC post.
+	 *
+	 * The lookup joins `wp_posts` so a form embedded in a draft, pending,
+	 * private, trashed, or password-protected post is never found — the public
+	 * submission route must not dispatch into non-public content.
 	 *
 	 * The table/column names are constants (never user input); the LIKE term
 	 * is esc_like()d and every placeholder is bound by prepare().
@@ -495,8 +635,8 @@ class Forms extends \WP_REST_Controller {
 		if ( $post_id > 0 ) {
 			$rows = $wpdb->get_col(
 				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is the constant wpdb property; the term + id are bound below.
-					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_elementor_data' AND meta_value LIKE %s AND post_id = %d LIMIT 1",
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are constant wpdb properties; the term + id are bound below.
+					"SELECT pm.post_id FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = '_elementor_data' AND pm.meta_value LIKE %s AND pm.post_id = %d AND p.post_status = 'publish' AND p.post_password = '' LIMIT 1",
 					$term,
 					$post_id
 				)
@@ -504,8 +644,8 @@ class Forms extends \WP_REST_Controller {
 		} else {
 			$rows = $wpdb->get_col(
 				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is the constant wpdb property; the term is bound below.
-					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_elementor_data' AND meta_value LIKE %s LIMIT 1",
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are constant wpdb properties; the term is bound below.
+					"SELECT pm.post_id FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = '_elementor_data' AND pm.meta_value LIKE %s AND p.post_status = 'publish' AND p.post_password = '' LIMIT 1",
 					$term
 				)
 			);
@@ -518,9 +658,10 @@ class Forms extends \WP_REST_Controller {
 	 * Dispatch through JetFormBuilder's own form processor.
 	 *
 	 * The public pipeline: the form id + refer carriers go into the request,
-	 * `process_form()` runs validation, spam checks, actions, and mail, and
-	 * the JSON response is captured (the handler's `wp_send_json` is a
-	 * process-ending call, so it is intercepted at the die handler).
+	 * `process_form()` runs validation, spam checks, actions, and mail, and the
+	 * JSON response is captured by capture_json() — the handler's `wp_send_json`
+	 * exits the process in a REST request, so the dispatch is run under an
+	 * ajax-equivalent environment and its echoed payload is buffered.
 	 *
 	 * @param int    $form_id JFB form post ID.
 	 * @param array  $fields  Fields.
@@ -552,13 +693,19 @@ class Forms extends \WP_REST_Controller {
 		$form_key  = isset( $handler->form_key ) ? (string) $handler->form_key : '_jet_engine_booking_form_id';
 		$refer_key = isset( $handler->refer_key ) ? (string) $handler->refer_key : '_jet_engine_refer';
 
+		// A submitted field must never re-target the dispatch: the identifier
+		// resolved above is the one whose visibility was checked, so drop any
+		// field that collides with the handler's routing carriers.
+		$fields = self::without_reserved_carriers( $fields, array( $form_key, $refer_key ) );
+
 		// Feed the handler the request exactly the way its rendered form does.
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- this IS the submission surface (JFB's own forms are nonce-free).
-		$_POST[ $form_key ]  = $form_id;
-		$_POST[ $refer_key ] = '' !== $page ? $page : home_url( '/' );
 		foreach ( $fields as $name => $value ) {
 			$_POST[ $name ] = $value;
 		}
+		// Carriers last, so nothing above can overwrite them (defense in depth).
+		$_POST[ $form_key ]  = $form_id;
+		$_POST[ $refer_key ] = '' !== $page ? $page : home_url( '/' );
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 		if ( function_exists( 'jet_fb_context' ) ) {
 			foreach ( $fields as $name => $value ) {
@@ -578,6 +725,20 @@ class Forms extends \WP_REST_Controller {
 			return new \WP_Error( 'nvoos_forge_no_form_handler', __( 'The JetFormBuilder handler did not produce a response.', 'nvoos-forge-bridge' ), array( 'status' => 501 ) );
 		}
 		return $this->map_handler_json( $captured );
+	}
+
+	/**
+	 * Remove field names that collide with the handler's routing carriers.
+	 *
+	 * @param array    $fields   Sanitized fields.
+	 * @param string[] $carriers Reserved POST keys.
+	 * @return array
+	 */
+	protected static function without_reserved_carriers( array $fields, array $carriers ): array {
+		foreach ( $carriers as $carrier ) {
+			unset( $fields[ (string) $carrier ] );
+		}
+		return $fields;
 	}
 
 	/**
@@ -708,41 +869,82 @@ class Forms extends \WP_REST_Controller {
 	}
 
 	/**
-	 * Run a dispatch that ends in `wp_send_json*` and capture the data it
-	 * would have emitted, without letting it terminate the request.
+	 * Run a dispatch that ends in `wp_send_json*` (or `wp_die()`) and capture
+	 * the payload it would have emitted, without letting it terminate the REST
+	 * request.
+	 *
+	 * In a REST request `wp_send_json()` echoes the payload and then calls
+	 * `die` directly, so the `wp_die_*_handler` filters never run and the
+	 * native response would cut our request short. This method therefore:
+	 *
+	 *  1. makes `wp_doing_ajax()` true for the duration of the dispatch — the
+	 *     ajax contract the native handlers are written for — so
+	 *     `wp_send_json()` routes through `wp_die()` instead of `die`;
+	 *  2. swaps the die handler for one that throws a capture sentinel; and
+	 *  3. buffers the echoed JSON so it can be decoded.
+	 *
+	 * Every filter is removed and every buffer is closed, including on error,
+	 * so nothing leaks into the rest of the request.
 	 *
 	 * @param callable $dispatch Dispatch.
 	 * @return array|null The captured response data, or null when the handler
 	 *                    never emitted JSON.
-	 * @throws \RuntimeException When the dispatch throws anything other than
-	 *                           the capture sentinel.
+	 * @throws \Throwable Anything the dispatch throws other than the sentinel.
 	 */
-	private function capture_json( callable $dispatch ) {
-		$captured = null;
-		$filter   = function () use ( &$captured ) {
-			return function ( $message, $title, $args ) use ( &$captured ) {
-				$captured = array(
-					'message' => $message,
-					'title'   => $title,
-					'args'    => $args,
-				);
+	protected function capture_json( callable $dispatch ) {
+		$level   = ob_get_level();
+		$failure = null;
+
+		// `wp_send_json()` only calls `wp_die()` when `wp_doing_ajax()` is
+		// true; otherwise it calls `die` directly and nothing can intercept it.
+		$doing_ajax = static function () {
+			return true;
+		};
+		// `apply_filters( 'wp_die_*_handler', … )` filters the CALLBACK, so
+		// return a callback that aborts with the sentinel instead of exiting.
+		$die_handler = static function () {
+			return static function () {
 				throw new \RuntimeException( 'nvoos_forge_bridge_json_captured' );
 			};
 		};
-		add_filter( 'wp_die_json_handler', $filter );
+		// The native handlers answer with `wp_send_json*()`. WordPress suggests
+		// a REST response in that context, but we deliberately run the ajax
+		// contract and return the envelope ourselves, so its debug notice is
+		// noise for the site owner.
+		$suppress_notice = static function ( $trigger, $function_name ) {
+			return 0 === strpos( (string) $function_name, 'wp_send_json' ) ? false : $trigger;
+		};
+
+		add_filter( 'wp_doing_ajax', $doing_ajax );
+		add_filter( 'wp_die_ajax_handler', $die_handler );
+		add_filter( 'wp_die_json_handler', $die_handler );
+		add_filter( 'doing_it_wrong_trigger_error', $suppress_notice, 10, 2 );
+
+		ob_start();
 		try {
 			$dispatch();
-		} catch ( \RuntimeException $exception ) {
+		} catch ( \Throwable $exception ) {
 			if ( 'nvoos_forge_bridge_json_captured' !== $exception->getMessage() ) {
-				throw $exception;
+				$failure = $exception;
 			}
 		} finally {
-			remove_filter( 'wp_die_json_handler', $filter );
+			remove_filter( 'wp_doing_ajax', $doing_ajax );
+			remove_filter( 'wp_die_ajax_handler', $die_handler );
+			remove_filter( 'wp_die_json_handler', $die_handler );
+			remove_filter( 'doing_it_wrong_trigger_error', $suppress_notice, 10 );
+
+			$output = '';
+			while ( ob_get_level() > $level ) {
+				$output = (string) ob_get_clean() . $output;
+			}
 		}
-		if ( null === $captured || ! is_array( $captured['message'] ) ) {
-			return null;
+
+		if ( null !== $failure ) {
+			throw $failure;
 		}
-		return $captured['message'];
+
+		$decoded = json_decode( trim( $output ), true );
+		return is_array( $decoded ) ? $decoded : null;
 	}
 
 	/**

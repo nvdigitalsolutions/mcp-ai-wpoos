@@ -52,6 +52,8 @@ class Rebuild extends \WP_REST_Controller {
 				// change), and state-changing routes must not ride on GET.
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_verify' ),
+				// Public by design — the single-use bearer token in the body is the
+				// proof; an unauthenticated build has no WordPress capability.
 				'permission_callback' => '__return_true',
 				'args'                => array(
 					'token' => array(

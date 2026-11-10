@@ -438,11 +438,8 @@ class Redirects extends \WP_REST_Controller {
 			return array();
 		}
 
-		$decoded = json_decode( $raw, true );
-		if ( ! is_array( $decoded ) ) {
-			$decoded = maybe_unserialize( $raw );
-		}
-		if ( ! is_array( $decoded ) ) {
+		$decoded = self::decode_array( $raw );
+		if ( array() === $decoded ) {
 			return array();
 		}
 
@@ -476,14 +473,32 @@ class Redirects extends \WP_REST_Controller {
 		if ( '' === $raw ) {
 			return '';
 		}
-		$decoded = json_decode( $raw, true );
-		if ( ! is_array( $decoded ) ) {
-			$decoded = maybe_unserialize( $raw );
-		}
-		if ( ! is_array( $decoded ) || ! isset( $decoded['url'] ) || ! is_string( $decoded['url'] ) ) {
+		$decoded = self::decode_array( $raw );
+		if ( ! isset( $decoded['url'] ) || ! is_string( $decoded['url'] ) ) {
 			return '';
 		}
 		return trim( $decoded['url'] );
+	}
+
+	/**
+	 * Decode JSON or PHP-serialized provider data WITHOUT instantiating
+	 * objects. The column is third-party data; a tampered row must not become
+	 * a PHP object-injection primitive.
+	 *
+	 * @param string $raw Raw column.
+	 * @return array
+	 */
+	private static function decode_array( string $raw ): array {
+		$decoded = json_decode( $raw, true );
+		if ( is_array( $decoded ) ) {
+			return $decoded;
+		}
+		if ( ! is_serialized( $raw ) ) {
+			return array();
+		}
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize, WordPress.PHP.NoSilencedErrors.Discouraged -- allowed_classes=false blocks object instantiation; malformed rows must not emit warnings.
+		$decoded = @unserialize( $raw, array( 'allowed_classes' => false ) );
+		return is_array( $decoded ) ? $decoded : array();
 	}
 
 	/**
@@ -510,6 +525,10 @@ class Redirects extends \WP_REST_Controller {
 		}
 
 		$target = self::normalize_target( $target );
+		if ( in_array( $code, self::REDIRECT_CODES, true ) && '' === $target ) {
+			++$collected['skipped']['invalid'];
+			return false;
+		}
 		if ( $source === $target ) {
 			++$collected['skipped']['invalid'];
 			return false;
@@ -532,7 +551,7 @@ class Redirects extends \WP_REST_Controller {
 	 */
 	private static function normalize_source( string $source ): string {
 		$source = trim( $source );
-		if ( '' === $source ) {
+		if ( '' === $source || preg_match( '/[\x00-\x1F\x7F]/', $source ) ) {
 			return '';
 		}
 
@@ -561,7 +580,7 @@ class Redirects extends \WP_REST_Controller {
 	 */
 	private static function normalize_target( string $target ): string {
 		$target = trim( $target );
-		if ( '' === $target ) {
+		if ( '' === $target || preg_match( '/[\x00-\x1F\x7F]/', $target ) ) {
 			return '';
 		}
 		if ( 1 === preg_match( '#^https?://#i', $target ) ) {
