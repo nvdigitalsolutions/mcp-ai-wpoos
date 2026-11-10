@@ -231,3 +231,23 @@ jobs:
       - name: Run PHP Compatibility Check on all files
         if: github.event_name == 'push'
         run: composer run lint:compat
+
+  public-write-routes:
+    name: Public Write-Route Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Run the public write-route gate
+        # Fails when a public CREATABLE/EDITABLE/DELETABLE route is not in
+        # .github/scripts/public-write-routes.txt, or an allowlisted route
+        # goes stale. PHPCS and Plugin Check cannot reason about this pattern.
+        run: php .github/scripts/check-public-write-routes.php

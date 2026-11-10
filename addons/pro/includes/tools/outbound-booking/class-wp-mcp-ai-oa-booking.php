@@ -170,6 +170,11 @@ class WP_MCP_AI_OA_Booking {
 		if ( ! $post || WP_MCP_AI_OA_Booking_Link_CPT::POST_TYPE !== $post->post_type ) {
 			return new WP_Error( 'invalid_link', __( 'Invalid booking link.', 'mcp-ai-wpoos-pro' ) );
 		}
+		// The public endpoint must not act on a non-public target: a draft,
+		// pending, private, or trashed link is treated as unknown.
+		if ( 'publish' !== $post->post_status ) {
+			return new WP_Error( 'invalid_link', __( 'Invalid booking link.', 'mcp-ai-wpoos-pro' ) );
+		}
 		if ( '1' !== get_post_meta( $booking_link_id, '_oa_booking_active', true ) ) {
 			return new WP_Error( 'inactive_link', __( 'This booking link is not active.', 'mcp-ai-wpoos-pro' ) );
 		}

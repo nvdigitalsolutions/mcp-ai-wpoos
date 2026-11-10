@@ -317,12 +317,24 @@ class WP_MCP_AI_REST_Triggers_Controller extends WP_REST_Controller {
 		}
 		$config_json = get_post_meta( $id, '_wp_mcp_ai_trigger_config', true );
 		$config      = ! empty( $config_json ) ? json_decode( $config_json, true ) : array();
-		$secret      = ! empty( $config['secret'] ) ? $config['secret'] : '';
-		if ( ! empty( $secret ) ) {
-			$signature = (string) $request->get_header( 'X-WP-MCP-AI-Signature-256' );
-			if ( ! WP_MCP_AI_Outbound_Webhook::get_instance()->verify_signature( $request->get_body(), $signature, $secret ) ) {
-				return new WP_Error( 'invalid_signature', __( 'Signature verification failed.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
-			}
+		$secret      = is_array( $config ) && ! empty( $config['secret'] ) ? (string) $config['secret'] : '';
+
+		/*
+		 * Fail closed: a trigger without a signing secret must never be
+		 * executable by an unauthenticated caller. Previously an empty secret
+		 * skipped verification entirely, so an enabled trigger with no secret
+		 * was an open workflow-execution endpoint. The CPT is private and drafts
+		 * are legitimate configuration records, so `_wp_mcp_ai_trigger_enabled`
+		 * (not post_status) is the live flag; the HMAC below is the
+		 * authorization.
+		 */
+		if ( '' === $secret ) {
+			return new WP_Error( 'trigger_not_configured', __( 'This trigger has no signing secret configured.', 'mcp-ai-wpoos' ), array( 'status' => 503 ) );
+		}
+
+		$signature = (string) $request->get_header( 'X-WP-MCP-AI-Signature-256' );
+		if ( ! WP_MCP_AI_Outbound_Webhook::get_instance()->verify_signature( $request->get_body(), $signature, $secret ) ) {
+			return new WP_Error( 'invalid_signature', __( 'Signature verification failed.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
 		}
 		$workflow_id = (int) get_post_meta( $id, '_wp_mcp_ai_trigger_workflow_id', true );
 		$json_params = $request->get_json_params();
