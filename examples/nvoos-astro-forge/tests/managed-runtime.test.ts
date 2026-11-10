@@ -182,3 +182,13 @@ describe( 'managed runtime — entry + deploy tree', () => {
 		expect( src ).toContain( 'server.js is missing' );
 	} );
 } );
+
+describe( 'managed runtime — deploy tree package.json', () => {
+	it( 'emits a shell-safe no-op build script', () => {
+		const src = renderSyncDeployTree();
+		// npm runs scripts through `sh -c`; an unquoted `(` is a syntax
+		// error, and Velocity reports the whole deploy as failed.
+		expect( src ).toContain( ' "process.exit(0)"' );
+		expect( src ).not.toContain( 'node -e process.exit(0)' );
+		} );
+} );

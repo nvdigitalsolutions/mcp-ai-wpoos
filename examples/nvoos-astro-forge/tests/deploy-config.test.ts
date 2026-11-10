@@ -97,6 +97,11 @@ describe( 'emitDeployConfig', () => {
 		expect( script ).toContain( "'checkout', '--orphan'" );
 		expect( script ).toContain( "'push', '--force'" );
 		expect( script ).toContain( 'mirror-push: attempt' );
+		// Velocity runs the deploy tree's `npm run build` through `sh -c`,
+		// where an unquoted `(` is a syntax error — the whole deploy failed
+		// with `sh: 1: Syntax error: "(" unexpected`.
+		expect( script ).toContain( ' "process.exit(0)"' );
+		expect( script ).not.toContain( 'node -e process.exit(0)' );
 		expect( script ).toContain( 'Atomics.wait' );
 		expect( script ).not.toMatch( /ghp_/ );
 		// Velocity-compat (2026-11-06): Velocity requires a build command —

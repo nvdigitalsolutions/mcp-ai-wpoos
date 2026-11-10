@@ -428,7 +428,7 @@ function mirrorPushScript( runtime: DeployRuntime = 'static' ): string {
 		'// Managed tier (Proposal 135): a real start command. The app owns',
 		'// /api/*, /manage, /mcp and /api/revalidate through src/fetch.ts.',
 		'if ( managed ) {',
-		"\tconst managedPkg = { name: 'nvoos-forge-site', version: '1.0.0', private: true, type: 'module', scripts: { build: 'node -e process.exit(0)', start: 'node server.js' }, engines: { node: '>=22.23.4' } };",
+		"\tconst managedPkg = { name: 'nvoos-forge-site', version: '1.0.0', private: true, type: 'module', scripts: { build: 'node -e \"process.exit(0)\"', start: 'node server.js' }, engines: { node: '>=22.23.4' } };",
 		"\twriteFileSync( join( tmp, 'package.json' ), JSON.stringify( managedPkg, null, 2 ) );",
 		'} else {',
 		'\twriteFileSync( join( tmp, \'package.json\' ), JSON.stringify( { name: \'nvoos-forge-site\', version: \'1.0.0\', private: true, scripts: { build: \'node -e "console.log(\\\'prebuilt static site\\\')"\' } }, null, 2 ) + \'\\n\' );',

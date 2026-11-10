@@ -404,7 +404,7 @@ export function renderSyncDeployTree(): string {
 		"\t\t\tversion: '1.0.0',",
 		'\t\t\tprivate: true,',
 		"\t\t\ttype: 'module',",
-		"\t\t\tscripts: { build: 'node -e process.exit(0)', start: 'node server.js' },",
+		"\t\t\tscripts: { build: 'node -e \"process.exit(0)\"', start: 'node server.js' },",
 		"\t\t\tengines: { node: '>=22.23.4' },",
 		'\t\t},',
 		'\t\tnull,',

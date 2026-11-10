@@ -160,3 +160,20 @@ curl -H 'Cookie: nvoos_preview=x' http://localhost:4398/preview/behind-the-scene
 scaffold, not before. `astro check` needs the collections the template's
 routes reference (`posts` **and** `pages`), or you get type errors that are
 profile faults, not feature faults.
+
+## Deploy-tree `build` script must be shell-safe
+
+Velocity runs the mirror branch's `npm run build` through `sh -c`.
+An unquoted `(` is a shell syntax error, so a stub emitted as
+`node -e process.exit(0)` fails the whole deploy:
+
+```
+[stderr] sh: 1: Syntax error: "(" unexpected
+[exit_code: 2]
+```
+
+while the forge build and the mirror push both report success. The emitted
+value must be `node -e "process.exit(0)"`. The static stub already quoted its
+argument; only the managed branch (`renderSyncDeployTree`, `mirrorPushScript`)
+did not — now pinned by `tests/managed-runtime.test.ts` and
+`tests/deploy-config.test.ts`.
