@@ -185,6 +185,14 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 			parts.push( 'padding-bottom:0' );
 		}
 	}
+	// The band's MEASURED source height (114 §3.6) — a floor, never a lock: a
+	// band whose rebuilt content is already taller keeps its own height. Placed
+	// BEFORE the hero's early return below, because the hero band is exactly the
+	// one a source height pins (virtuallyjamaica's full-screen contact band).
+	// A per-device map is emitted as scoped CSS; only a plain value goes inline.
+	if ( theme.minHeight && typeof theme.minHeight === 'string' ) {
+		parts.push( `min-height:${ theme.minHeight }` );
+	}
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
@@ -267,7 +275,10 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	// from the source's per-device widths/order instead of the template's
 	// fixed ratio (jayainc's services split is 50/50, not 5fr/7fr).
 	const columns = theme.columns ?? [];
-	if ( columns.length >= 2 && columns[ 0 ].width && columns[ 1 ].width ) {
+	// Exactly two: `--ds-split-ratio` feeds a two-lane grid (`.ds-hero-split`).
+	// A three-lane band (services is 3/4/5) used to inherit a truncated
+	// first-two-fr ratio here, which then applied 25/33 to a two-lane grid.
+	if ( columns.length === 2 && columns[ 0 ].width && columns[ 1 ].width ) {
 		parts.push( `--ds-split-ratio:minmax(0,${ columns[ 0 ].width / 100 }fr) minmax(0,${ columns[ 1 ].width / 100 }fr)` );
 	}
 	if ( columns.some( ( column ) => column.reverseMobile ) ) {
@@ -282,10 +293,16 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 const responsiveBandCss = sections
 	.map( ( section, index ) => {
 		const theme = themeFor( section, index );
+		// The scoped selector must be the SAME id the wrap renders
+		// (`section.id ?? theme.id`). Outline-band sources carry no section id of
+		// their own, so keying off `section.id` alone emitted no rule at all and
+		// every forged band silently fell back to the template's own padding.
+		const id = section.id ?? theme?.id;
 		return (
-			responsiveDeviceCss( section.id, 'margin-top', theme?.marginTop ) +
-			responsiveDeviceCss( section.id, 'margin-bottom', theme?.marginBottom ) +
-			responsiveDeviceCss( section.id, 'padding', theme?.padding )
+			responsiveDeviceCss( id, 'margin-top', theme?.marginTop ) +
+			responsiveDeviceCss( id, 'margin-bottom', theme?.marginBottom ) +
+			responsiveDeviceCss( id, 'padding', theme?.padding ) +
+			responsiveDeviceCss( id, 'min-height', theme?.minHeight )
 		);
 	} )
 	.join( '' );

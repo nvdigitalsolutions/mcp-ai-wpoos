@@ -26,7 +26,7 @@ import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree } from './managed-runtime.ts';
 import { consentCategoryFor, cspDirectivesFor } from './tracking.ts';
-import type { ForgeColorModes, ForgeContact, ForgeDesign, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -883,6 +883,74 @@ export function renderTokensDtcg( profile: SiteProfile, tokens: Record<string, s
 }
 
 /**
+ * Below this the band is a strip (a logo rail, a spacer, a one-line banner)
+ * whose height is content-driven anyway; mirroring it would pin a value the
+ * rebuild's own type scale should decide.
+ */
+const MIN_MIRRORED_BAND_HEIGHT = 120;
+
+/**
+ * The band's MEASURED padding (114 §3.6), per device.
+ *
+ * Builder sources express band rhythm through classes — Brando's
+ * `padding-four-all`, `no-padding-tb`, `padding-ten-lr` — whose stylesheet never
+ * ships with the rebuild, so a band that carries 130px of vertical padding in
+ * the source renders flush here. The computed box is the only faithful source,
+ * and it is captured per viewport so a band that tightens on mobile stays
+ * tightened.
+ *
+ * Returns a plain string when all three viewports agree (the common case) and a
+ * per-device map when they differ, which is the shape `SectionTheme.padding`
+ * and `responsiveDeviceCss` already handle. A band measured FLUSH returns `0`
+ * (a fact — it overrides the template rhythm); only a band with no measurement
+ * at all returns `undefined`.
+ */
+function measuredBandPadding(
+	section: ForgeSection,
+	geometry?: ForgeGeometry
+): ResponsiveLength | undefined {
+	if ( ! section.id || ! geometry ) {
+		return undefined;
+	}
+	const box = geometry[ section.id ];
+	if ( ! box ) {
+		return undefined;
+	}
+	const shorthand = ( viewport: string ): string | undefined => {
+		const band = box[ viewport ];
+		if ( ! band ) {
+			return undefined;
+		}
+		const top = Math.round( band.paddingTop );
+		const right = Math.round( band.paddingRight ?? 0 );
+		const bottom = Math.round( band.paddingBottom );
+		const left = Math.round( band.paddingLeft ?? 0 );
+		if ( top === 0 && right === 0 && bottom === 0 && left === 0 ) {
+			// A band measured FLUSH is a fact, not an absence: `padding: 0`
+			// overrides the template's own rhythm, which a missing value leaves
+			// in place (virtuallyjamaica's hero is `no-padding-tb` and rendered
+			// with 32px of template padding the source never had).
+			return '0';
+		}
+		return `${ top }px ${ right }px ${ bottom }px ${ left }px`;
+	};
+	const desktop = shorthand( 'desktop' );
+	if ( ! desktop ) {
+		return undefined;
+	}
+	const tablet = shorthand( 'tablet' );
+	const mobile = shorthand( 'mobile' );
+	if ( tablet === desktop && mobile === desktop ) {
+		return desktop;
+	}
+	return {
+		desktop,
+		...( tablet ? { tablet } : {} ),
+		...( mobile ? { mobile } : {} ),
+	};
+}
+
+/**
  * Render the generated section-theme module (117 §2) —
  * src/lib/sections.generated.ts. The source section backgrounds (profile
  * design.sections) bake into a deterministic array keyed by section id,
@@ -948,7 +1016,12 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * per-device map where the source scopes the pull to a range. */',
 		'\tmarginTop?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\tmarginBottom?: string | { desktop?: string; tablet?: string; mobile?: string };',
-		'\tzIndex?: string;',
+		'	zIndex?: string;',
+		'\t/** The band\'s MEASURED source height (`analyze --geometry`) — applied as a',
+		'\t * CSS min-height FLOOR, never a lock: content that grows past it is never',
+		'\t * clipped. A per-device map when the source band changes height per',
+		'\t * breakpoint. Absent → the band sizes to its content. */',
+		'\tminHeight?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\t/** The top-level column responsive facts (124 §6) — widths per',
 		'\t * device + order/visibility; the split components re-measure. */',
 		'\tcolumns?: Array<{',
@@ -1015,10 +1088,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 				entry.push( `bg: ${ tsString( bg ) }` );
 			}
 		}
-		// The source band's declared padding (jayainc: 100px bands vs the
-		// flush content-tight bands) — the wrap applies it inline.
-		if ( section.padding ) {
-			entry.push( `padding: ${ tsLength( section.padding ) }` );
+		// The band's padding: an explicit profile fact wins; otherwise the MEASURED
+		// source padding (114 §3.6) — see `measuredBandPadding`.
+		const padding = section.padding ?? measuredBandPadding( section, profile.geometry );
+		if ( padding ) {
+			entry.push( `padding: ${ tsLength( padding ) }` );
 		}
 		// The boxed container measure + column gap (124 §3) — the inner
 		// column re-measures to the source's container width.
@@ -1036,6 +1110,33 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		}
 		if ( section.zIndex ) {
 			entry.push( `zIndex: ${ tsString( section.zIndex ) }` );
+		}
+		// The band's MEASURED source height (114 §3.6). Builder sources declare
+		// band heights through classes (`full-screen`, `min-height-800`) or an
+		// inline min-height the sanitizer drops, so the only faithful source is
+		// the browser measurement. Emitted as a floor — a band whose rebuilt
+		// content is already taller keeps its own height. Per device, because a
+		// band that stacks at tablet/mobile is taller there than on desktop.
+		const box = section.id ? profile.geometry?.[ section.id ] : undefined;
+		const heightOf = ( viewport: string ): string | undefined => {
+			const height = box?.[ viewport ]?.height;
+			return typeof height === 'number' && height >= MIN_MIRRORED_BAND_HEIGHT
+				? `${ Math.round( height ) }px`
+				: undefined;
+		};
+		const desktopHeight = heightOf( 'desktop' );
+		if ( desktopHeight ) {
+			const tabletHeight = heightOf( 'tablet' );
+			const mobileHeight = heightOf( 'mobile' );
+			const value =
+				tabletHeight === desktopHeight && mobileHeight === desktopHeight
+					? desktopHeight
+					: {
+							desktop: desktopHeight,
+							...( tabletHeight ? { tablet: tabletHeight } : {} ),
+							...( mobileHeight ? { mobile: mobileHeight } : {} ),
+						};
+			entry.push( `minHeight: ${ tsLength( value ) }` );
 		}
 		if ( section.columns && section.columns.length > 0 ) {
 			const columns = section.columns.map( ( column ) => {

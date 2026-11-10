@@ -1247,6 +1247,34 @@ Two capabilities ship with it — full contract in
   `WP_SITE_URL` stays the CMS. A staging host that self-canonicals must also set
   `NVOOS_FORGE_NOINDEX=1` (meta robots + `Disallow: /`).
 
+## Band geometry — matching the source's BOXES (2026-11-10)
+
+The same rebuild had the right content, colours and order but the wrong SIZE
+(hero 746 vs 900, contact 675 vs 900). Rule: **measure, never scavenge** —
+builder themes declare rhythm in classes the sanitizer strips, so
+`getComputedStyle` is the only faithful source. Full contract:
+[`reference/band-geometry.md`](reference/band-geometry.md).
+
+- `analyze --geometry` now reads bands from the profile being written, so it no
+  longer forces `--design` (which overwrote hand-tuned `design.chrome`/`tokens`).
+- Source selector order: `.elementor-element-<id>` → caller's anchor `#about`.
+  **No `#<id>` fallback** — `#45f5e88` is an invalid selector that throws, and a
+  throw aborted the WHOLE baseline. Every candidate is `try/catch`ed.
+- A source anchor on a COLUMN (`id="wifi"` on `wpb_column`) is promoted to the
+  nearest `<section>`, else the row — the box actually rebuilt.
+- Scaffold emits per-device `padding` (four sides) and per-device `minHeight`
+  from the measurement. Measured FLUSH emits `'0'`, not nothing: absent leaves
+  the template's own 32px rhythm in place.
+- `minHeight` is a floor, never a lock — it closes UNDERSHOOT only. Overshoot is
+  a content-scale difference and must be reported as such.
+- `min-height` must be applied **before** the hero early return in `wrapStyle`,
+  or the one band a source height pins never gets it.
+- Rows are a **12-column GRID**, not equal-share flex: `grid-column: span N` from
+  `vc_col-{lg,md}-N` with `[class~=…]` (whole token). Carousels stay
+  `flex-wrap: nowrap` + `flex: 1 1 0`, or 7 logos wrap onto a second row.
+- `verify --geometry` must serve `dist/client` for a server output — serving
+  `dist` 404s and reports every band as "build missing".
+
 ## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
 
 The two Astro products share a CONTRACT but not code, so neither suite can see

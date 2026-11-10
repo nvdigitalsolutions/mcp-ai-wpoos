@@ -543,6 +543,10 @@ export interface BandGeometry {
 	paddingBottom: number;
 	marginTop: number;
 	marginBottom: number;
+	/** Horizontal padding. Optional: baselines recorded before it was measured
+	 * stay valid and are simply treated as 0. */
+	paddingLeft?: number;
+	paddingRight?: number;
 }
 
 /** Measured band geometry: section id → viewport name → box. */
@@ -684,6 +688,15 @@ export interface ForgeSection {
 	marginTop?: ResponsiveLength;
 	marginBottom?: ResponsiveLength;
 	zIndex?: string;
+	/**
+	 * The band's MEASURED source height (`analyze --geometry`), mirrored as a
+	 * CSS `min-height` floor on the rebuilt band. Band heights are frequently
+	 * declared through builder classes (`full-screen`, `min-height-700`) or an
+	 * inline `min-height` the sanitizer drops, so they cannot be read off the
+	 * markup the way backgrounds can — measurement is the only faithful source.
+	 * It is a FLOOR, never a lock: content that grows past it is never clipped.
+	 */
+	minHeight?: string;
 	/** The top-level column responsive facts (124 §6) — desktop/tablet/
 	 * mobile widths (elementor-col/md/sm-*) + order/visibility flags. The
 	 * split components re-measure from these; absent → the template
