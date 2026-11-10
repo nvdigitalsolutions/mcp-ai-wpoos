@@ -670,7 +670,10 @@ all shipped through a green PCP + phpcs + PHPUnit stack.
    only when the direct peer is a configured trusted proxy (exact IP/CIDR
    filter), then walk right-to-left and take the first untrusted hop. Document
    the filter in the readme — managed hosts/CDNs need it or every visitor
-   shares one rate-limit bucket.
+   shares one rate-limit bucket. Base+Pro: use `wp_mcp_ai_get_client_ip()` +
+   `wp_mcp_ai_trusted_proxies` (the 17 duplicated `get_client_ip()` helpers
+   were folded into it). The standalone Content Graph plugins still carry their
+   own copies and need a separate port — they cannot call a base-owned global.
 11. **`wp_send_json*()` / `wp_die()` from third-party code in a REST callback.**
    `wp_send_json()` only calls `wp_die()` when `wp_doing_ajax()` is true;
    otherwise it calls `die` and no `wp_die_*_handler` filter runs. If your

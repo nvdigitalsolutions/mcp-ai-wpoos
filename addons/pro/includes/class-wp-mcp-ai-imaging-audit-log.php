@@ -122,23 +122,6 @@ class WP_MCP_AI_Imaging_Audit_Log {
 	 * @return string IP address string, or empty string if not determinable.
 	 */
 	private static function get_client_ip() {
-		$headers = array(
-			'HTTP_CF_CONNECTING_IP',
-			'HTTP_X_FORWARDED_FOR',
-			'HTTP_X_REAL_IP',
-			'REMOTE_ADDR',
-		);
-		foreach ( $headers as $header ) {
-			if ( ! empty( $_SERVER[ $header ] ) ) {
-				$raw = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
-				// X-Forwarded-For may be a comma-separated list; take the first.
-				$parts = explode( ',', $raw );
-				$ip    = trim( $parts[0] );
-				if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-					return $ip;
-				}
-			}
-		}
-		return '';
+		return wp_mcp_ai_get_client_ip();
 	}
 }

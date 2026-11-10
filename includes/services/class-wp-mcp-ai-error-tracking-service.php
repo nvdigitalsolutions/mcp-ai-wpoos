@@ -445,24 +445,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 	 * @return string IP address.
 	 */
 	private function get_client_ip() {
-		$ip = '';
-
-		// Check various headers in order of preference.
-		$headers = array(
-			'HTTP_CF_CONNECTING_IP', // Cloudflare.
-			'HTTP_X_FORWARDED_FOR',
-			'HTTP_X_REAL_IP',
-			'REMOTE_ADDR',
-		);
-
-		foreach ( $headers as $header ) {
-			if ( ! empty( $_SERVER[ $header ] ) ) {
-				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
-				break;
-			}
-		}
-
-		return $ip;
+		return wp_mcp_ai_get_client_ip();
 	}
 
 	/**

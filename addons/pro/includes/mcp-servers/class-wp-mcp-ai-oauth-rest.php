@@ -1113,20 +1113,6 @@ button{font-size:14px;padding:8px 16px;border-radius:3px;cursor:pointer;}
 	 * @return string
 	 */
 	private static function get_client_ip() {
-		if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-			return sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
-		}
-
-		if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-			// Take the first IP in the chain.
-			$ips = explode( ',', sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) );
-			return sanitize_text_field( trim( $ips[0] ) );
-		}
-
-		if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
-			return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-		}
-
-		return '';
+		return wp_mcp_ai_get_client_ip();
 	}
 }

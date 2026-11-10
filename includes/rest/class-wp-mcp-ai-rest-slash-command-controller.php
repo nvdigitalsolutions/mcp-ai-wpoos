@@ -634,18 +634,7 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 	 * @return string Sanitized IP address.
 	 */
 	private function get_client_ip( $request ) {
-		// Try to get forwarded IP first.
-		$forwarded_ip = $request->get_header( 'x-forwarded-for' );
-		if ( $forwarded_ip ) {
-			return sanitize_text_field( wp_unslash( $forwarded_ip ) );
-		}
-
-		// Fallback to REMOTE_ADDR.
-		if ( isset( $_SERVER['REMOTE_ADDR'] ) ) {
-			return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-		}
-
-		return '0.0.0.0';
+		return wp_mcp_ai_get_client_ip();
 	}
 
 	/**

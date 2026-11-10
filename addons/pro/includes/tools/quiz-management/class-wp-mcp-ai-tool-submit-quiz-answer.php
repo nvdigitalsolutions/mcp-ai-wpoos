@@ -418,32 +418,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return string Client IP address.
 	 */
 	private function get_client_ip() {
-		$ip_address = '';
-
-		// Check for various proxy headers.
-		$headers = array(
-			'HTTP_CLIENT_IP',
-			'HTTP_X_FORWARDED_FOR',
-			'HTTP_X_FORWARDED',
-			'HTTP_X_CLUSTER_CLIENT_IP',
-			'HTTP_FORWARDED_FOR',
-			'HTTP_FORWARDED',
-			'REMOTE_ADDR',
-		);
-
-		foreach ( $headers as $header ) {
-			if ( isset( $_SERVER[ $header ] ) && ! empty( $_SERVER[ $header ] ) ) {
-				$ip_address = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
-				// If multiple IPs, take the first one.
-				if ( strpos( $ip_address, ',' ) !== false ) {
-					$ip_parts   = explode( ',', $ip_address );
-					$ip_address = trim( $ip_parts[0] );
-				}
-				break;
-			}
-		}
-
-		return $ip_address;
+		return wp_mcp_ai_get_client_ip();
 	}
 
 	/**

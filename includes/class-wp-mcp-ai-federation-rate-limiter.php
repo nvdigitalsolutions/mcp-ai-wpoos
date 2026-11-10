@@ -96,32 +96,7 @@ class WP_MCP_AI_Federation_Rate_Limiter {
 	 * @return string Client IP address.
 	 */
 	private function get_client_ip() {
-		// Check for proxy headers.
-		$ip_headers = array(
-			'HTTP_CF_CONNECTING_IP', // Cloudflare.
-			'HTTP_X_FORWARDED_FOR',  // Standard proxy header.
-			'HTTP_X_REAL_IP',        // Nginx proxy.
-			'REMOTE_ADDR',           // Direct connection.
-		);
-
-		foreach ( $ip_headers as $header ) {
-			if ( ! empty( $_SERVER[ $header ] ) ) {
-				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
-
-				// Handle comma-separated IPs (X-Forwarded-For can contain multiple IPs).
-				if ( strpos( $ip, ',' ) !== false ) {
-					$ip_list = explode( ',', $ip );
-					$ip      = trim( $ip_list[0] );
-				}
-
-				// Validate IP address.
-				if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-					return $ip;
-				}
-			}
-		}
-
-		return '0.0.0.0'; // Fallback.
+		return wp_mcp_ai_get_client_ip();
 	}
 
 	/**
