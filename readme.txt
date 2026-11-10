@@ -228,6 +228,14 @@ NV oOS itself is free. AI provider costs depend on usage:
 
 Yes, when you use cloud AI providers, your chat messages are sent to their APIs. For complete data privacy, use Ollama for local AI processing. Review the privacy policies of your chosen provider.
 
+= Does per-IP rate limiting work behind a proxy or CDN? =
+
+Yes, once you declare the proxy. IP-based limits and audit logs use the direct connection address (`REMOTE_ADDR`) by default; forwarding headers are ignored because clients can spoof them. If your site sits behind a load balancer, reverse proxy, or CDN, add that proxy's IP or CIDR range with the `wp_mcp_ai_trusted_proxies` filter so the visitor's address is used:
+
+`add_filter( 'wp_mcp_ai_trusted_proxies', function () { return array( '10.0.0.0/8', '2001:db8::/32' ); } );`
+
+A trusted proxy must overwrite `CF-Connecting-IP` / `X-Real-IP` and append to `X-Forwarded-For`; the chain is then read from the right so a client-supplied prefix cannot spoof the result.
+
 = Can I use this without JetEngine? =
 
 Absolutely! NV oOS works perfectly with vanilla WordPress. JetEngine integration is optional and adds:

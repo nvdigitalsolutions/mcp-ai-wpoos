@@ -325,16 +325,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST_Chat_Session_Stream_Controller' ) ) {
 		 * @return string Client IP address, or empty string.
 		 */
 		private function get_client_ip( WP_REST_Request $request ) {
-			$ip = $request->get_header( 'X-Forwarded-For' );
-			if ( ! empty( $ip ) ) {
-				return sanitize_text_field( wp_unslash( $ip ) );
-			}
-
-			if ( isset( $_SERVER['REMOTE_ADDR'] ) ) {
-				return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-			}
-
-			return '';
+			return wp_mcp_ai_get_client_ip();
 		}
 
 		/**

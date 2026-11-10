@@ -1222,6 +1222,161 @@ if ( ! function_exists( 'wp_mcp_ai_safe_unserialize' ) ) :
 	}
 	endif;
 
+if ( ! function_exists( 'wp_mcp_ai_normalize_ip' ) ) :
+	/**
+	 * Validate and trim an IP address.
+	 *
+	 * @since 1.2.19
+	 *
+	 * @param string $ip Candidate IP.
+	 * @return string The IP, or '' when invalid.
+	 */
+	function wp_mcp_ai_normalize_ip( $ip ) {
+		$ip = trim( (string) $ip );
+		return '' !== $ip && false !== filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '';
+	}
+endif;
+
+if ( ! function_exists( 'wp_mcp_ai_ip_in_cidr' ) ) :
+	/**
+	 * Whether an IP falls inside a CIDR range.
+	 *
+	 * @since 1.2.19
+	 *
+	 * @param string $ip   IP.
+	 * @param string $cidr Range (e.g. 10.0.0.0/8 or 2001:db8::/32).
+	 * @return bool
+	 */
+	function wp_mcp_ai_ip_in_cidr( $ip, $cidr ) {
+		$parts = explode( '/', (string) $cidr, 2 );
+		if ( ! isset( $parts[1] ) || ! is_numeric( $parts[1] ) ) {
+			return false;
+		}
+		$subnet = wp_mcp_ai_normalize_ip( $parts[0] );
+		if ( '' === $subnet ) {
+			return false;
+		}
+		$bits    = (int) $parts[1];
+		$ip_bin  = inet_pton( $ip );
+		$sub_bin = inet_pton( $subnet );
+		if ( false === $ip_bin || false === $sub_bin || strlen( $ip_bin ) !== strlen( $sub_bin ) ) {
+			return false;
+		}
+		$max = strlen( $ip_bin ) * 8;
+		if ( $bits < 0 || $bits > $max ) {
+			return false;
+		}
+		$bytes = intdiv( $bits, 8 );
+		$rem   = $bits % 8;
+		if ( $bytes > 0 && substr( $ip_bin, 0, $bytes ) !== substr( $sub_bin, 0, $bytes ) ) {
+			return false;
+		}
+		if ( 0 === $rem ) {
+			return true;
+		}
+		$mask = ( 0xff << ( 8 - $rem ) ) & 0xff;
+		return ( ord( $ip_bin[ $bytes ] ) & $mask ) === ( ord( $sub_bin[ $bytes ] ) & $mask );
+	}
+endif;
+
+if ( ! function_exists( 'wp_mcp_ai_ip_in_list' ) ) :
+	/**
+	 * Whether an IP is in a list of exact IPs / CIDR ranges.
+	 *
+	 * @since 1.2.19
+	 *
+	 * @param string   $ip      IP.
+	 * @param string[] $entries Entries.
+	 * @return bool
+	 */
+	function wp_mcp_ai_ip_in_list( $ip, $entries ) {
+		foreach ( (array) $entries as $entry ) {
+			$entry = trim( (string) $entry );
+			if ( '' === $entry ) {
+				continue;
+			}
+			if ( false !== strpos( $entry, '/' ) ) {
+				if ( wp_mcp_ai_ip_in_cidr( $ip, $entry ) ) {
+					return true;
+				}
+				continue;
+			}
+			if ( wp_mcp_ai_normalize_ip( $entry ) === $ip ) {
+				return true;
+			}
+		}
+		return false;
+	}
+endif;
+
+if ( ! function_exists( 'wp_mcp_ai_get_client_ip' ) ) :
+	/**
+	 * Resolve the client IP address for rate limiting and audit logs.
+	 *
+	 * `REMOTE_ADDR` is authoritative. Forwarding headers are honored only when
+	 * the direct peer is a configured trusted proxy, and the
+	 * `X-Forwarded-For` chain is then walked from the right so a
+	 * client-supplied prefix cannot spoof the value. A trusted proxy must
+	 * overwrite `CF-Connecting-IP` / `X-Real-IP` for those to be trusted.
+	 *
+	 * @since 1.2.19
+	 *
+	 * @return string Client IP, or '0.0.0.0' when it cannot be determined.
+	 */
+	function wp_mcp_ai_get_client_ip() {
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR -- Client IP resolution requires REMOTE_ADDR.
+		$remote = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+		$remote = wp_mcp_ai_normalize_ip( $remote );
+		if ( '' === $remote ) {
+			return '0.0.0.0';
+		}
+
+		/**
+		 * Trusted reverse-proxy addresses (exact IPs or CIDR ranges).
+		 *
+		 * Empty by default: a forwarding header is ignored unless the direct
+		 * peer is listed here, because the header is client-supplied.
+		 *
+		 * @since 1.2.19
+		 *
+		 * @param string[] $proxies Trusted proxy IPs / CIDRs.
+		 */
+		$trusted = apply_filters( 'wp_mcp_ai_trusted_proxies', array() );
+		if ( ! is_array( $trusted ) || array() === $trusted || ! wp_mcp_ai_ip_in_list( $remote, $trusted ) ) {
+			return $remote;
+		}
+
+		// Single-value headers written by the trusted proxy itself.
+		foreach ( array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP' ) as $header ) {
+			if ( empty( $_SERVER[ $header ] ) ) {
+				continue;
+			}
+			$candidate = wp_mcp_ai_normalize_ip( sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) ) );
+			if ( '' !== $candidate ) {
+				return $candidate;
+			}
+		}
+
+		$forwarded = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) : '';
+		if ( '' === $forwarded ) {
+			return $remote;
+		}
+
+		$client = $remote;
+		foreach ( array_reverse( explode( ',', $forwarded ) ) as $hop ) {
+			$hop = wp_mcp_ai_normalize_ip( $hop );
+			if ( '' === $hop ) {
+				break;
+			}
+			$client = $hop;
+			if ( ! wp_mcp_ai_ip_in_list( $hop, $trusted ) ) {
+				break;
+			}
+		}
+		return $client;
+	}
+endif;
+
 if ( ! function_exists( 'wp_mcp_ai_sanitize_filename_strict' ) ) :
 	/**
 	 * Sanitize a filename strictly for safe filesystem operations.

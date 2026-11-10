@@ -2669,32 +2669,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 * @return string Client IP address, or '0.0.0.0' when undeterminable.
 		 */
 		public static function get_client_ip() {
-			$ip_keys = array(
-				'HTTP_CF_CONNECTING_IP', // Cloudflare.
-				'HTTP_X_FORWARDED_FOR',  // Proxy/load balancer.
-				'HTTP_X_REAL_IP',        // Nginx proxy.
-				'REMOTE_ADDR',           // Direct connection.
-			);
-
-			foreach ( $ip_keys as $key ) {
-				if ( ! isset( $_SERVER[ $key ] ) ) {
-					continue;
-				}
-
-				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized on the same line and validated via filter_var() below.
-
-				// X-Forwarded-For can carry multiple comma-separated IPs; the
-				// first entry is the originating client.
-				if ( strpos( $ip, ',' ) !== false ) {
-					$ip = trim( explode( ',', $ip )[0] );
-				}
-
-				if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-					return $ip;
-				}
-			}
-
-			return '0.0.0.0';
+			return wp_mcp_ai_get_client_ip();
 		}
 	}
 }

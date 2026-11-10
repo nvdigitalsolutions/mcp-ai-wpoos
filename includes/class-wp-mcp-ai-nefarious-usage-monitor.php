@@ -640,17 +640,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		 * @return string
 		 */
 		private function get_client_ip() {
-			$ip = '';
-
-			if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-				$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_CLIENT_IP'] ) );
-			} elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-				$ip = sanitize_text_field( wp_unslash( $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
-			} elseif ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
-				$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-			}
-
-			return $ip;
+			return wp_mcp_ai_get_client_ip();
 		}
 
 		/**
