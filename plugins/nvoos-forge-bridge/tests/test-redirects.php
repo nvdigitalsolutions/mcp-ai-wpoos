@@ -459,6 +459,57 @@ class Test_Forge_Bridge_Redirects extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Control characters in a stored source or target are rejected — a newline
+	 * would inject an extra rule into a static `_redirects` file.
+	 *
+	 * @return void
+	 */
+	public function test_control_characters_are_rejected(): void {
+		update_option( Settings::OPTION_REDIRECTS_ENABLED, '1' );
+
+		$this->add_redirection(
+			array(
+				'url'         => "/evil\nX-Injected: 1",
+				'action_data' => wp_json_encode( array( 'url' => '/new/' ) ),
+			)
+		);
+		$this->add_redirection(
+			array(
+				'url'         => '/ok/',
+				'action_data' => wp_json_encode( array( 'url' => "/new/\nX-Injected: 1" ) ),
+			)
+		);
+		$this->add_redirection( array( 'url' => '/fine/', 'action_data' => wp_json_encode( array( 'url' => '/fine-target/' ) ) ) );
+
+		$data = $this->dispatch()->get_data();
+
+		$this->assertSame( 1, $data['count'] );
+		$this->assertSame( '/fine/', $data['redirects'][0]['source'] );
+		$this->assertSame( 2, $data['skipped']['invalid'] );
+	}
+
+	/**
+	 * A serialized OBJECT in the sources column is never instantiated.
+	 *
+	 * @return void
+	 */
+	public function test_serialized_objects_are_not_instantiated(): void {
+		update_option( Settings::OPTION_REDIRECTS_ENABLED, '1' );
+		add_filter(
+			'nvoos_forge_bridge_redirect_providers',
+			static function () {
+				return array( 'rankmath' );
+			}
+		);
+
+		$this->add_rankmath( 'O:8:"stdClass":1:{s:7:"pattern";s:5:"/obj/";}', '/x/' );
+
+		$data = $this->dispatch()->get_data();
+		$this->assertSame( 0, $data['count'] );
+		$this->assertSame( 1, $data['skipped']['invalid'] );
+	}
+
+	/**
 	 * Redaction: rules carry only source/target/type — no ids, hit counts,
 	 * group ids, timestamps, or raw `action_data`.
 	 *

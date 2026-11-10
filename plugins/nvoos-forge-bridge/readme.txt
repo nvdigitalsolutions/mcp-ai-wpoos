@@ -4,7 +4,7 @@ Tags: headless, rebuild, webhook, forms, redirects
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.3.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -53,6 +53,10 @@ Only after you configure it. The rebuild webhook sends one signed POST to the Gi
 
 Only when you enable the optional captcha. With Cloudflare Turnstile selected, each form submission triggers one server-to-server verification call to Cloudflare (`https://challenges.cloudflare.com/turnstile/v0/siteverify`). Without the captcha, the forms bridge makes no external calls at all — it dispatches submissions to your own WordPress form plugins, in-process.
 
+= The site is behind a reverse proxy or CDN — will the per-IP rate limit work? =
+
+The limit keys on the connection's real peer address (`REMOTE_ADDR`). If your host terminates traffic at a trusted proxy (a load balancer, or a CDN that connects from fixed ranges), add that proxy's IP or CIDR range through the `nvoos_forge_bridge_trusted_proxies` filter so the forwarded client address is used. A forwarding header is ignored by default because it is client-supplied and trivially spoofed.
+
 == External Services ==
 
 This plugin connects to the GitHub API (`https://api.github.com`, or the custom dispatches URL you configure) to trigger a rebuild of your generated frontend.
@@ -78,6 +82,14 @@ The uncompiled source of this plugin lives in the public repository at https://g
 2. Settings page after configuring the GitHub dispatches URL, token, and HMAC secret — credentials are write-only, shown masked.
 
 == Changelog ==
+
+= 0.3.1 =
+* Security: the public form endpoint only dispatches to PUBLISHED, non-password-protected forms. A draft, pending, private, trashed, or password-protected JetFormBuilder / Elementor form is treated as unknown (404) instead of being submitted to.
+* Security: a submitted field can no longer spoof JetFormBuilder's routing carriers (`_jet_engine_booking_form_id` / `_jet_engine_refer`) to re-target a dispatch to a different form — the resolved, visibility-checked identifier always wins.
+* Security: the per-IP rate limit no longer trusts a client-supplied `X-Forwarded-For` header. `REMOTE_ADDR` is used by default; a forwarding chain is honored only when the direct peer is a configured trusted proxy (`nvoos_forge_bridge_trusted_proxies`), and then the rightmost untrusted hop is used.
+* Security: the redirects export rejects control characters in stored sources/targets (a newline could inject an extra rule into a static `_redirects` file) and decodes provider columns without instantiating PHP objects.
+* Fix: native `wp_send_json()` calls from JetFormBuilder / Elementor no longer terminate the REST request. The dispatch runs with `wp_doing_ajax()` true and the echoed payload is captured under an output buffer, so the bridge always returns its own envelope.
+* Fix: uninstall now also removes the hashed per-IP rate-limit transients.
 
 = 0.3.0 =
 * New: stored redirect export — `GET /nvoos-forge/v1/redirects` normalizes Redirection (`redirection_items`) and Rank Math (`rank_math_redirections`) rules into `{ source, target, type }` for the forged static site's `_redirects` map. Enabled/group-status aware, exact-URL only, bounded to 500 rules with an explicit `truncated` flag, skipped-count reporting for regex/query/non-URL matches, optional shared-token gate.

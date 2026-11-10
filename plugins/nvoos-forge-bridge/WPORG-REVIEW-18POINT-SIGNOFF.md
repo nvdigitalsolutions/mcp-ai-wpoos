@@ -201,3 +201,51 @@ surface (`GET /nvoos-forge/v1/redirects`) plus its settings/health wiring.
 2. SVN: copy the ZIP contents into `trunk/`, then tag `tags/0.3.0/`.
 3. Optional: capture a third screenshot of the redirects settings section
    (the current two screenshots cover the webhook settings only).
+
+---
+
+## 0.3.1 re-submission — T2 review fixes (2026-11-10)
+
+Review ID: `R nvoos-forge-bridge/vsamtani/5Nov26/T2 10Nov26/4.4RC1 (P0TDX399590HGN)`.
+Full write-up in `WPORG-REVIEW-FINDINGS.md`; the reply draft is
+`WPORG-REVIEW-REPLY.md`.
+
+### Fixes
+
+- **Form visibility gate** — JetFormBuilder and Elementor form resolution now
+  requires a published, non-password-protected carrier. Non-public forms return
+  the same typed 404 as a missing form.
+- **IP source** — `REMOTE_ADDR` is authoritative; `X-Forwarded-For` is only
+  honored behind a configured trusted proxy (`nvoos_forge_bridge_trusted_proxies`,
+  empty by default) and then resolved from the rightmost untrusted hop.
+- **Response capture** — native `wp_send_json()` calls are captured under an
+  ajax-equivalent environment + output buffer instead of terminating the REST
+  request.
+
+### Version sweep (all 0.3.1)
+
+| Location | Value |
+|---|---|
+| `nvoos-forge-bridge.php` header `Version:` | 0.3.1 |
+| `NVOOS_FORGE_BRIDGE_VERSION` constant | 0.3.1 |
+| `readme.txt` `Stable tag:` | 0.3.1 |
+| `readme.txt` changelog | 0.3.1 security/fix entry; 0.3.0 down kept |
+| `languages/nvoos-forge-bridge.pot` `Project-Id-Version` | NV oOS Forge Bridge 0.3.1 |
+| `.wordpress-org/README.md` SVN runbook examples | 0.3.1 |
+| ZIP | `build/nvoos-forge-bridge-v0.3.1.zip` (built by `bin/build-nvoos-forge-bridge.py`) |
+
+### Validation run (2026-11-10)
+
+| Gate | Result |
+|---|---|
+| `php -l` on modified PHP files | No syntax errors |
+| `vendor/bin/phpcs --standard=phpcs.xml.dist .` | 0 violations (exit 0) |
+| `phpcs` on `tests/test-forms.php` | 0 violations |
+| PHPUnit (own config, wp-phpunit, WP 6.9 / PHP 8.2) | **71/71 tests, 204 assertions, OK** |
+| Public write-route gate (`.github/scripts/check-forge-bridge-public-routes.php`) | Exit 0 — both public write routes reviewed; stale allowlist entries fail |
+| `wp plugin check` (PCP) | Not re-run locally this round (Plugin Check is not installed in the local stack); run before upload |
+
+### Remaining owner-side steps (not code)
+
+1. Build + upload `build/nvoos-forge-bridge-v0.3.1.zip`.
+2. SVN: copy the ZIP contents into `trunk/`, then tag `tags/0.3.1/`.

@@ -1,0 +1,20 @@
+# Reviewed public WRITE REST routes for plugins/nvoos-forge-bridge.
+#
+# Format: METHOD /namespace/path   (one per line; '#' starts a comment)
+#
+# Every entry needs a human review of its compensating controls. When a route
+# stops being public, remove its entry — the CI gate fails on stale entries.
+#
+# POST /nvoos-forge/v1/forms/submit
+#   Anonymous visitors submit rebuilt forms from the generated static site.
+#   Controls: origin allowlist (CSRF gate, NOT authorization), per-IP rate
+#   limit, honeypot + timestamp ladder, optional Turnstile (action + hostname
+#   pinned), server-side sanitization, and a PUBLISHED + no-password visibility
+#   check before any native dispatch. Reserved routing carriers are stripped
+#   from submitted fields so a field cannot re-target the dispatch.
+POST /nvoos-forge/v1/forms/submit
+#
+# POST /nvoos-forge/v1/preview-tokens/verify
+#   Unauthenticated build verification. The single-use, 15-minute bearer token
+#   in the body is the proof; the comparison is constant-time and consumes it.
+POST /nvoos-forge/v1/preview-tokens/verify
