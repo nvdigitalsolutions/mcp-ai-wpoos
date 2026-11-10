@@ -145,8 +145,31 @@ print('errors:', p.errors or 'none'); print('unclosed:', p.stack or 'none')
 "
 ```
 
-(Note: self-closing void tags like `<meta … />` fire `handle_startendtag` —
-override it or the parser reports false mismatches on them.)
+(Notes for a real report: strip HTML comments before parsing, because a bare
+`<!-- ... -->` is tokenised as a tag named `!--` and poisons the stack, producing
+a cascade of false "unmatched" errors. Strip `<style>` as well. `<p>`, `<li>`,
+`<dt>`/`<dd>`, `<tr>`/`<td>`, `<th>` and `<thead>`/`<tbody>` also legitimately omit
+their end tags, so treat an implicit close of those as clean rather than an error.)
+
+### Authoring mechanics (learned 2026-11-10)
+
+- Do not trust one large write. A 60 KB `write_file` call silently corrupted the
+  HTML by injecting ~360 stray closing tags mid-sentence (`...Lashan Silva</p>
+  (CEO, Enhan...`, `L</p></strong>ashan`). The tag counts still balanced overall,
+  so only a visual read caught it.
+- Write big deliverables in chunks: `cat >> file <<'EOF'` at 6 KB or less per call.
+  A single terminal command is capped near 8 KB and truncates silently (a 60 KB
+  heredoc died at 8,109 bytes with `here-document delimited by end-of-file`).
+- `file://` is blocked in the browser tool, so a local report cannot be rendered
+  for review. Validate statically, then open it yourself.
+- Screen for the injected-tag signature: `grep -oE '[A-Za-z]</[a-z]+>'`. Normal
+  inline adjacency (`2026</strong>`, `badge</span>`) is fine, so eyeball the hits
+  for closing tags appearing mid-prose or inside a word.
+- Verify the TOC/anchors resolve (`href="#x"` must match `id="x"`), that entity
+  escaping was not doubled (`&amp;amp;`), and that no duplicate `id` values exist.
+- If the user reports odd line breaks, RE-VERIFY THE FILE ON DISK BEFORE EDITING.
+  A stale browser tab or editor preview of a superseded version reproduces old
+  breakage and sends you debugging something already fixed.
 
 ## Step 8 — Verify after deployment (the "check again" pass)
 
