@@ -472,8 +472,9 @@ handler's carriers from the fields and re-assert them last; `maybe_unserialize`
 on the redirect-provider columns → `unserialize(..., ['allowed_classes' =>
 false])`; control characters in redirect sources/targets → reject; uninstall
 now wildcard-deletes the hashed rate-limit transients. CI gained
-`.github/scripts/check-forge-bridge-public-routes.php` + a reviewed allowlist
-(fails on an un-reviewed public write route or a stale entry).
+`.github/scripts/check-public-write-routes.php` + a reviewed allowlist
+(`public-write-routes.txt`) that scans `includes/`, `addons/pro/includes/`, and
+`plugins/` (fails on an un-reviewed public write route or a stale entry).
 
 ### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
 
@@ -661,10 +662,11 @@ all shipped through a green PCP + phpcs + PHPUnit stack.
    enumerable. An origin allowlist is a CSRF gate, not authorization — it says
    nothing about which object may be acted on. (forge-bridge T2, 2026-11-10:
    `/forms/submit` dispatched to draft/private/password-protected JFB and
-   Elementor forms.) `.github/scripts/check-forge-bridge-public-routes.php`
-   mechanises this for forge-bridge — it fails on an un-reviewed
-   `__return_true` CREATABLE/EDITABLE/DELETABLE route and on a stale allowlist
-   entry; copy it for the next plugin.
+   Elementor forms.) `.github/scripts/check-public-write-routes.php`
+   mechanises this repo-wide (`includes/`, `addons/pro/includes/`, `plugins/`) —
+   it fails on an un-reviewed `__return_true` CREATABLE/EDITABLE/DELETABLE
+   route and on a stale allowlist entry. Reviewed entries live in
+   `public-write-routes.txt`, with the compensating controls documented inline.
 10. **Forwarding headers are untrusted input.** Grep `x_forwarded_for`,
    `cf-connecting-ip`, `x-real-ip`. Default to `REMOTE_ADDR`; honor a chain
    only when the direct peer is a configured trusted proxy (exact IP/CIDR
