@@ -215,7 +215,8 @@
 				"id": "dff3f1a",
 				"bgColor": "#e5e5e5",
 				"measure": "1140px",
-				"paddingX": "10px"
+				"paddingX": "10px",
+				"spacer": true
 			},
 			{
 				"id": "d5844b9",

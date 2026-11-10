@@ -173,6 +173,82 @@ function styleValue( style: string, property: string ): string | undefined {
 }
 
 /**
+ * Drop every `@media` block, brace-matched, leaving the top-level (desktop)
+ * declarations. A regex cannot do this safely because media blocks nest rules.
+ */
+function withoutMediaBlocks( css: string ): string {
+	let out = '';
+	let index = 0;
+	while ( index < css.length ) {
+		const at = css.indexOf( '@media', index );
+		if ( at < 0 ) {
+			out += css.slice( index );
+			break;
+		}
+		out += css.slice( index, at );
+		const open = css.indexOf( '{', at );
+		if ( open < 0 ) {
+			break;
+		}
+		let depth = 0;
+		let cursor = open;
+		for ( ; cursor < css.length; cursor++ ) {
+			if ( css[ cursor ] === '{' ) {
+				depth++;
+			} else if ( css[ cursor ] === '}' ) {
+				depth--;
+				if ( depth === 0 ) {
+					cursor++;
+					break;
+				}
+			}
+		}
+		index = cursor;
+	}
+	return out;
+}
+
+/**
+ * Declarations the build emits in SCOPED CSS rather than inline.
+ *
+ * A per-device value (a padding/margin/height map) cannot be inlined: an inline
+ * declaration outranks the media queries that carry the tablet and mobile
+ * values. `responsiveDeviceCss` therefore emits
+ * `[data-section-id="<id>"]{prop:value}` — desktop first, then the two
+ * media-scoped overrides.
+ *
+ * Reading only the wrap's `style` attribute reported such a band as
+ * `padding none`, which is the jayainc `059421c` failure: the build carried
+ * `[data-section-id="059421c"]{padding:125px 0px 125px 0px}` while the audit
+ * looked at the inline attribute and saw nothing.
+ *
+ * First occurrence per (id, property) wins. `@media` blocks are stripped first,
+ * so a media-scoped override can never be read as the desktop value — the
+ * scoped rules are compared at the desktop viewport, which is what the band
+ * fact records (`paddingText` takes the map's `desktop`).
+ */
+function scopedDeclarations( html: string ): Map< string, Map< string, string > > {
+	const byId = new Map< string, Map< string, string > >();
+	for ( const block of html.matchAll( /<style\b[^>]*>([\s\S]*?)<\/style>/gi ) ) {
+		for ( const rule of withoutMediaBlocks( block[ 1 ] ).matchAll( /\[data-section-id="([^"]+)"\]\s*\{([^}]*)\}/g ) ) {
+			const declarations = byId.get( rule[ 1 ] ) ?? new Map< string, string >();
+			for ( const declaration of rule[ 2 ].split( ';' ) ) {
+				const colon = declaration.indexOf( ':' );
+				if ( colon < 1 ) {
+					continue;
+				}
+				const property = declaration.slice( 0, colon ).trim().toLowerCase();
+				if ( ! declarations.has( property ) ) {
+					declarations.set( property, declaration.slice( colon + 1 ).trim() );
+				}
+			}
+			byId.set( rule[ 1 ], declarations );
+		}
+	}
+	return byId;
+}
+
+/**
  * Audit every band of a forged site. Pure: profile facts in, verdicts out.
  */
 export function auditBands( options: BandAuditOptions ): BandAuditReport {
@@ -190,6 +266,8 @@ export function auditBands( options: BandAuditOptions ): BandAuditReport {
 
 	const built = builtBandBlocks( builtHtml );
 	const byId = new Map( built.filter( ( band ) => band.id ).map( ( band ) => [ band.id, band ] ) );
+	// Per-device values live in scoped CSS, not the wrap's style attribute.
+	const scopedById = scopedDeclarations( builtHtml );
 	// `analyze --text` stores per-band baselines as an array; index them by id.
 	const textById = new Map( ( text?.sections ?? [] ).map( ( section ) => [ section.id, section.text ] ) );
 	// Facts resolve by the source section id even when the wrapper rendered
@@ -231,18 +309,22 @@ export function auditBands( options: BandAuditOptions ): BandAuditReport {
 			surface = { status: 'skip', detail: 'band did not render' };
 		} else {
 			const problems: string[] = [];
-			if ( expectedBg && normalizeBg( styleValue( wrap.style, 'background' ) ) !== expectedBg ) {
-				problems.push( `background ${ styleValue( wrap.style, 'background' ) ?? 'none' } ≠ ${ expectedBg }` );
+			// Inline first, then the build's scoped rule for this band — the
+			// channel a per-device value is emitted into.
+			const declared = ( property: string ): string | undefined =>
+				styleValue( wrap.style, property ) ?? scopedById.get( wrap.id )?.get( property );
+			if ( expectedBg && normalizeBg( declared( 'background' ) ) !== expectedBg ) {
+				problems.push( `background ${ declared( 'background' ) ?? 'none' } ≠ ${ expectedBg }` );
 			}
 			if ( expectedImage ) {
-				const actual = styleValue( wrap.style, 'background-image' )?.replace( /^url\(['"]?|['"]?\)$/g, '' );
+				const actual = declared( 'background-image' )?.replace( /^url\(['"]?|['"]?\)$/g, '' );
 				const mirrored = actual !== undefined && localizedMedia?.get( expectedImage ) === actual;
 				if ( actual !== expectedImage && ! mirrored ) {
 					problems.push( `photo ${ actual ?? 'none' } ≠ ${ expectedImage }` );
 				}
 			}
 			if ( expectedPadding ) {
-				const actual = styleValue( wrap.style, 'padding' );
+				const actual = declared( 'padding' );
 				if ( ( actual ?? '' ).replace( /\s+/g, ' ' ) !== expectedPadding.replace( /\s+/g, ' ' ) ) {
 					problems.push( `padding ${ actual ?? 'none' } ≠ ${ expectedPadding }` );
 				}
@@ -261,8 +343,11 @@ export function auditBands( options: BandAuditOptions ): BandAuditReport {
 			const chars = visibleChars( wrap.slice );
 			const media = mediaCount( wrap.slice );
 			// A photo band with no copy is legitimate — the surface IS the band.
+			// A band the profile declares a SPACER is empty by design.
 			if ( chars >= minChars || media > 0 || ( expectedImage && chars === 0 ) ) {
 				content = { status: 'pass', detail: `${ chars } chars, ${ media } media/controls` };
+			} else if ( section.spacer ) {
+				content = { status: 'pass', detail: `spacer band — empty by design (${ chars } chars, ${ media } media)` };
 			} else {
 				const detail = `empty band (${ chars } chars, ${ media } media)`;
 				content = { status: 'fail', detail };

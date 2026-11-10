@@ -1239,6 +1239,16 @@ Two capabilities ship with it — full contract in
   presence · surface · content · facts · text · geometry, per band, to
   `<target>/verify-artifacts/bands.json`. A check that cannot be evaluated is
   SKIPPED, never passed. `--bands-warn` downgrades failures.
+- **A surface fact travels on two channels:** the wrap's inline `style` AND a
+  scoped `<style>` rule. A per-device value cannot be inlined (it would outrank
+  the media queries), so it only ever reaches the scoped rule — the audit read
+  the inline attribute alone and reported `padding none ≠ 125px 0px 125px 0px`
+  on jayainc `059421c` while the rule was in the page. `@media` blocks are
+  stripped before parsing so a mobile value is never read as desktop.
+- **`spacer: true`** pins a band the SOURCE renders empty (verify it first —
+  jayainc `dff3f1a` has 0 text, 0 images). Without it an intentionally empty
+  band fails the content check; with it the band still gates on presence and
+  surface, it is just not asked for copy.
 - **`forge lock | unlock | status`** transfer ownership after sync. Locked is
   fail-closed: `scaffold --overwrite` refuses (name the owner; `--unlock` forces),
   and the project's `npm run check` reports hand-edits as expected drift

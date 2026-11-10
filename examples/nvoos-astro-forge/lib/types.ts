@@ -668,6 +668,15 @@ export interface ForgeSection {
 	kind?: ForgeSectionKind;
 	/** The section's own HTML id (the source anchor — #about, #contact…). */
 	anchor?: string;
+	/**
+	 * The source band carries no content of its own — a spacer strip that exists
+	 * only to hold a background and vertical rhythm. The analyzer cannot tell
+	 * "empty by design" from "copy was lost", so this is a human-pinned fact
+	 * (verify the source band really is empty before setting it). The per-band
+	 * audit reads it to stop reporting an intentionally empty band as a content
+	 * failure — jayainc's `dff3f1a` is a 0-text/0-image grey strip.
+	 */
+	spacer?: boolean;
 	bgImage?: string;
 	bgColor?: string;
 	bgGradient?: string;

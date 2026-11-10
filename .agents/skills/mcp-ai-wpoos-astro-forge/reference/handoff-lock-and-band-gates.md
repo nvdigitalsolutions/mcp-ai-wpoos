@@ -49,6 +49,36 @@ The per-band `text` check only runs when `analyze --text` recorded per-band
 baselines. Outline-only sources frequently have none (`text.sections: []`) —
 the check says `skip`; the page-level `verify --text` still covers their copy.
 
+### Two channels carry a surface fact (2026-11-10)
+
+The audit originally read ONLY the wrapper's `style` attribute. A **per-device**
+value (a `padding` / `margin` map) cannot be inlined — an inline declaration
+outranks the media queries that carry the tablet and mobile values — so the
+build emits `[data-section-id="<id>"]{padding:125px 0px 125px 0px}` in a
+`<style>` block instead. jayainc's `059421c` therefore failed with
+`padding none ≠ 125px 0px 125px 0px` while the rule was present in the page all
+along.
+
+`scopedDeclarations()` now indexes that channel and the surface check reads
+`inline ?? scoped`. Two details:
+
+- `@media` blocks are **stripped before parsing** (brace-matched — a regex
+  cannot do it, media blocks nest rules), so a mobile override can never be read
+  as the desktop value;
+- first occurrence per `(id, property)` wins, which is the desktop rule.
+
+### An empty band is not automatically a defect
+
+A band the SOURCE renders empty fails the content check, which is correct for
+lost copy and wrong for a spacer strip. The analyzer cannot tell the two apart,
+so **pin the fact**: `spacer: true` on the band in the profile. Verify the
+source first — jayainc's `dff3f1a` has 0 text and 0 images in the CMS, so an
+empty rebuild is right.
+
+A spacer still gates on presence and surface (it must render, with its
+background); it simply is not asked for copy. Do not reach for this flag to
+silence a content failure you have not checked.
+
 ## 2. The handoff lock (`lib/lock.ts`, `forge lock|unlock|status`)
 
 A forged project is FORGE-OWNED: `scaffold --overwrite` regenerates it and
