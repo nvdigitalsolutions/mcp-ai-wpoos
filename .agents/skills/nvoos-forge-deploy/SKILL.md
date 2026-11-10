@@ -25,7 +25,7 @@ One repo hosts every client site; one branch per site.
 | Artifact root | **repo root** — the branch is the publish root, not a subfolder |
 | `deploy.json` | `{ runtime, entry, outputDirectory: '.', generator, proposal: 135, generatedAt }` |
 | Static artifact | flat `dist/` at root: `index.html`, `_astro/`, `media/`, `_redirects`, `_headers`, plus the no-op `package.json` |
-| Managed artifact | `server.js` + `dist/client/` + `dist/server/` + `package.json` at root |
+| Managed artifact | `server.js` + `dist/client/` + `dist/server/` + `package.json` at root — the manifest MUST carry the project `dependencies` (+ lockfile), or Velocity installs nothing |
 
 The profile splits two origins that are easy to conflate:
 
@@ -79,6 +79,16 @@ under `dist/media` — see the astro-forge `reference/performance-budget.md`.
   `scripts/sync-deploy-tree.mjs`; `astro.config.mjs` gains `memoryCache` + `routeRules`.
 - **Never `src/fetch.ts`.** A custom fetch handler makes Astro skip sessions,
   actions, middleware and cache — the site silently loses logins and caching.
+- **Ships a real dependency manifest.** `sync-deploy-tree.mjs` copies the
+  project `dependencies` and `package-lock.json` into `.deploy/package.json`, and
+  `mirror-push` refuses a managed tree that declares none. The node adapter
+  externalizes its runtime (`cookie`, `devalue`, `html-escaper`, `piccolore`,
+  `send`, `server-destroy`, `unstorage`, `@oslojs/encoding`, …), so a
+  dependency-free manifest is an unbootable artifact.
+- **`verify-deploy-tree` is a blocking gate.** It copies `.deploy/` to a temp
+  dir, runs `npm install --omit=dev`, boots `node server.js`, and requires an
+  HTTP answer (any status — the runner may not reach the CMS). `forge-sites.yml`
+  runs it before the push, so an unbootable tree never reaches the branch.
 - Velocity settings: Framework `Astro-ssr` · Output Directory `.` ·
   Entry **`server.js`** (PM2 must start the repo-root entry) · Node 24.x.
 
@@ -179,6 +189,15 @@ List the tree instead of guessing: `gh api "repos/.../contents?ref=site/<name>"`
     hand-written work — abandoned or mistaken lock only). A skipped site means a
     WP content-change dispatch did NOT deploy: that is the handoff, not a failure.
     Full contract: astro-forge `reference/handoff-lock-and-band-gates.md`.
+11. **A managed tree that installs nothing.** `package.json` with no
+    `dependencies` → Velocity's `npm install` audits one package → `node
+    server.js` throws `ERR_MODULE_NOT_FOUND` → the release never promotes and
+    the app keeps serving the last good build, so the site freezes while every
+    push stays green. This cost a day on Virtually Jamaica (2026-11-10).
+    Tell: the branch's root `package.json` must contain `"dependencies": {…}`,
+    and `npm run verify-deploy-tree` must print `booted (HTTP 200)`.
+    Boot locally: `git clone -b site/<name> … && npm i --omit=dev && node
+    server.js` — it must not throw at import time.
 
 ## Where the rest lives
 

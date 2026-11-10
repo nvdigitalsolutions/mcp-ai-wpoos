@@ -24,7 +24,7 @@ import { renderDirectFormsEndpointTs } from './forms-direct.ts';
 import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
-import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree } from './managed-runtime.ts';
+import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
 import { consentCategoryFor, cspDirectivesFor } from './tracking.ts';
 import type { ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
@@ -2573,9 +2573,11 @@ async function scaffoldProject(
 
 		await writeFile(path.join(targetDir, 'server.js'), renderServerShim(), 'utf8');
 		await writeFile(path.join(targetDir, 'scripts', 'sync-deploy-tree.mjs'), renderSyncDeployTree(), 'utf8');
+		await writeFile(path.join(targetDir, 'scripts', 'verify-deploy-tree.mjs'), renderVerifyDeployTree(), 'utf8');
 		await mutatePackageJson(targetDir, (pkg) => {
 			const scripts = (pkg.scripts ?? {}) as Record<string, unknown>;
 			scripts['sync-deploy-tree'] = 'node scripts/sync-deploy-tree.mjs';
+			scripts['verify-deploy-tree'] = 'node scripts/verify-deploy-tree.mjs';
 			pkg.scripts = scripts;
 		});
 	}

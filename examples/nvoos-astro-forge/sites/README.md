@@ -29,25 +29,33 @@ site:
 
 Per site the workflow: scaffold → `deploy-config --to velocity
 --mirror-repo … --site-branch site/<name> --runtime <tier>` → `npm install`
-+ `ASTRO_SITE` build → `node scripts/mirror-push.mjs` (force-pushes `dist/`
-to the site branch).
++ `ASTRO_SITE` build → (`managed` only) `sync-deploy-tree` + the
+**blocking** `verify-deploy-tree` boot gate → `node scripts/mirror-push.mjs`
+(force-pushes `dist/` to the site branch).
 
 ## Runtime tiers (Proposal 135)
 
 | Tier | Profile block | Branch content | Velocity settings |
 |---|---|---|---|
 | `static` (default) | absent, or `"deploy": { "runtime": "static" }` | prebuilt flat files + a no-op `package.json` + `deploy.json` | Output directory `.` |
-| `managed` | `"deploy": { "runtime": "managed", "manage": true, "revalidate": true, "forms": "bff-proxied" }` | the BFF deploy tree (`dist/` + `server.js` + runtime `package.json`) + `deploy.json` | Entry file `server.js`, Output directory `.` |
+| `managed` | `"deploy": { "runtime": "managed", "manage": true, "revalidate": true, "forms": "bff-proxied" }` | the BFF deploy tree (`dist/` + `server.js` + runtime `package.json` **with the project `dependencies` and lockfile**) + `deploy.json` | Entry file `server.js`, Output directory `.` |
 
 `mirror-push.mjs` writes a `deploy.json` manifest at every branch root so
 the Velocity settings are reproducible from the branch itself. A `managed`
 profile **fails the mirror push closed** when the deploy tree has no
-`server.js` — a branch that cannot boot is never published.
+`server.js` **or no `dependencies`** — a branch that cannot boot is never
+published. The node adapter externalizes its runtime (`cookie`, `devalue`,
+`send`, `unstorage`, …), so an empty manifest installs nothing and
+`node server.js` dies at import time; Velocity then keeps serving the last
+good release while CI stays green. `scripts/verify-deploy-tree.mjs` proves
+the tree boots (`npm install --omit=dev` + `node server.js` + an HTTP answer)
+before the push.
 
 A `managed` profile implies server output (an explicit `--render static`
 throws) and emits the proxy routes (`src/pages/api/[...path].ts`,
 `api/forms/submit.ts`, `media/[...path].ts`), the token-gated
-`api/revalidate.ts`, `server.js`, and `scripts/sync-deploy-tree.mjs`; the
+`api/revalidate.ts`, `server.js`, `scripts/sync-deploy-tree.mjs` and
+`scripts/verify-deploy-tree.mjs`; the
 emitted `astro.config.mjs` carries `cache: { provider: memoryCache() }` +
 `routeRules`. Set `NVOOS_TARGET_SITE` (the CMS origin), `NVOOS_REVALIDATE_TOKEN`,
 and `ASTRO_SITE` in the Velocity app.

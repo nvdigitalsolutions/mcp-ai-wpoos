@@ -5,7 +5,7 @@
 
 import { createHmac } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { promisify } from 'node:util';
@@ -216,6 +216,43 @@ describe( 'emitDeployConfig', () => {
 		it( 'rejects an unknown RUNTIME from the environment', async () => {
 			await emitDeployConfig( dir, MIRROR );
 			await expect( runPush( { RUNTIME: 'edge', SOURCE_DIR: dir } ) ).rejects.toThrow( /invalid RUNTIME/ );
+		} );
+
+		it( 'refuses a managed tree whose manifest declares no dependencies', async () => {
+			// The 2026-11-10 freeze: a dependency-free manifest makes Velocity's
+			// `npm install` a no-op, `node server.js` throws
+			// ERR_MODULE_NOT_FOUND, the release never promotes, and the app keeps
+			// serving an older build while the job stays green.
+			await emitDeployConfig( dir, MIRROR );
+			const tree = join( dir, 'tree' );
+			await mkdir( tree, { recursive: true } );
+			await writeFile( join( tree, 'server.js' ), '// entry\n' );
+			await writeFile( join( tree, 'package.json' ), JSON.stringify( { name: 'x', scripts: { start: 'node server.js' } } ) );
+			await expect( runPush( { RUNTIME: 'managed', SOURCE_DIR: tree } ) ).rejects.toThrow(
+				/declares no runtime dependencies/
+			);
+		} );
+
+		it( 'refuses a managed tree with no manifest at all', async () => {
+			await emitDeployConfig( dir, MIRROR );
+			const tree = join( dir, 'tree-nopkg' );
+			await mkdir( tree, { recursive: true } );
+			await writeFile( join( tree, 'server.js' ), '// entry\n' );
+			await expect( runPush( { RUNTIME: 'managed', SOURCE_DIR: tree } ) ).rejects.toThrow( /carries no package.json/ );
+		} );
+
+		it( 'guards the manifest before the clone (no network for a tree that cannot boot)', async () => {
+			await emitDeployConfig( dir, { ...MIRROR, runtime: 'managed' } );
+			const script = await readFile( join( dir, 'scripts', 'mirror-push.mjs' ), 'utf8' );
+			expect( script ).toContain( 'readFileSync' );
+			expect( script.indexOf( 'declares no runtime dependencies' ) ).toBeLessThan( script.indexOf( "'clone'" ) );
+		} );
+
+		it( 'normalizes the emitted manifest instead of replacing it', async () => {
+			await emitDeployConfig( dir, { ...MIRROR, runtime: 'managed' } );
+			const script = await readFile( join( dir, 'scripts', 'mirror-push.mjs' ), 'utf8' );
+			expect( script ).toContain( 'managedPkg.scripts ?? {}' );
+			expect( script ).toContain( 'managedPkg.engines ?? {}' );
 		} );
 	} );
 } );

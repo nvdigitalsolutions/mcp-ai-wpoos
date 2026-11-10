@@ -23,6 +23,7 @@ import {
 	renderRevalidateTs,
 	renderServerShim,
 	renderSyncDeployTree,
+	renderVerifyDeployTree,
 } from '../lib/managed-runtime.ts';
 
 describe( 'managed runtime — proxy helper', () => {
@@ -191,4 +192,53 @@ describe( 'managed runtime — deploy tree package.json', () => {
 		expect( src ).toContain( ' "process.exit(0)"' );
 		expect( src ).not.toContain( 'node -e process.exit(0)' );
 		} );
+
+	it( 'carries the project dependencies and its lockfile', () => {
+		const src = renderSyncDeployTree();
+		// The Astro node adapter externalizes its runtime (cookie, devalue,
+		// send, unstorage, @oslojs/encoding…). A manifest with no deps makes
+		// Velocity install nothing and `node server.js` dies with
+		// ERR_MODULE_NOT_FOUND — the release never promotes and the app keeps
+		// serving an older build (2026-11-10).
+		expect( src ).toContain( 'projectPkg.dependencies' );
+		expect( src ).toContain( '\t\t\tdependencies,' );
+		expect( src ).toContain( 'package-lock.json' );
+		expect( src ).toContain( "join(root, 'package.json')" );
+	} );
+
+	it( 'refuses to assemble a tree whose project declares no dependencies', () => {
+		const src = renderSyncDeployTree();
+		expect( src ).toContain( 'package.json declares no dependencies' );
+		expect( src ).toContain( 'process.exit(1);' );
+	} );
+
+	it( 'fails closed when the build imports a package outside the declared closure', () => {
+		const src = renderSyncDeployTree();
+		expect( src ).toContain( 'reachable' );
+		expect( src ).toContain( 'the build imports packages the manifest does not declare' );
+	} );
+} );
+
+describe( 'managed runtime — deploy-tree boot gate', () => {
+	const src = renderVerifyDeployTree();
+
+	it( 'installs from the emitted manifest and starts the entry', () => {
+		expect( src ).toContain( "join(root, '.deploy')" );
+		expect( src ).toContain( "'install', '--omit=dev'" );
+		expect( src ).toContain( "spawn(process.execPath, ['server.js']" );
+	} );
+
+	it( 'fails closed without the assembled tree', () => {
+		expect( src ).toContain( 'run scripts/sync-deploy-tree.mjs first' );
+	} );
+
+	it( 'treats any HTTP answer as booted (the CMS may be unreachable from the runner)', () => {
+		expect( src ).toContain( 'res.statusCode' );
+		expect( src ).toContain( 'no HTTP response on port' );
+	} );
+
+	it( 'never fails a passing gate on Windows temp cleanup', () => {
+		expect( src ).toContain( 'maxRetries' );
+		expect( src ).toContain( '// best effort — the OS reclaims it' );
+	} );
 } );

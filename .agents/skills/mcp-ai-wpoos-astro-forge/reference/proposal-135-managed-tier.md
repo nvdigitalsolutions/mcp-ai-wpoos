@@ -177,3 +177,45 @@ value must be `node -e "process.exit(0)"`. The static stub already quoted its
 argument; only the managed branch (`renderSyncDeployTree`, `mirrorPushScript`)
 did not — now pinned by `tests/managed-runtime.test.ts` and
 `tests/deploy-config.test.ts`.
+
+## Deploy-tree manifest must declare the project's dependencies
+
+The node adapter **externalizes** its runtime, so the built `dist/server/`
+imports bare packages — on Virtually Jamaica: `astro`, `@oslojs/encoding`,
+`clsx`, `cookie`, `devalue`, `html-escaper`, `htmlparser2`, `limax`, `mrmime`,
+`piccolore`, `picomatch`, `sanitize-html`, `send`, `server-destroy`,
+`unstorage`, `zod`. They are satisfied by the project's `dependencies` plus
+their transitive closure, not by the build output.
+
+A manifest without `dependencies` therefore produces an **unbootable artifact**:
+
+```
+npm install --omit=dev   → up to date, audited 1 package
+node server.js           → ERR_MODULE_NOT_FOUND: Cannot find package '@oslojs/encoding'
+```
+
+Velocity fails that release and keeps the previous one serving, so the site
+looks frozen while the workflow stays green — five successful mirror pushes on
+2026-11-10 changed nothing on Virtually Jamaica.
+
+Contract, now enforced:
+
+1. `renderSyncDeployTree()` copies the project `dependencies` (and
+   `package-lock.json` / `npm-shrinkwrap.json` / `.npmrc` when present) into
+   `.deploy/package.json`, and **fails closed** when the project declares none.
+2. It walks the build output's bare imports through the installed dependency
+   closure and fails when one is not reachable — an under-declared manifest is
+   caught at build time, with the package named.
+3. `mirrorPushScript()` **merges** that manifest (normalizing
+   `name`/`version`/`scripts`/`engines`) instead of writing a stub over it, and
+   refuses a managed tree with no manifest or no `dependencies` *before* it
+   clones the mirror.
+4. `renderVerifyDeployTree()` emits `scripts/verify-deploy-tree.mjs`: it copies
+   `.deploy/` to a temp dir, runs `npm install --omit=dev`, boots
+   `node server.js`, and requires an HTTP answer (any status — the runner may
+   not reach the CMS). `forge-sites.yml` runs it as a **blocking** gate before
+   the push.
+
+Pinned by `tests/managed-runtime.test.ts`, `tests/deploy-config.test.ts`,
+`tests/deploy-tree.test.ts` (runs the emitted assembler against fixtures) and
+the managed block of `tests/scaffold.test.ts`.

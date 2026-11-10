@@ -201,10 +201,18 @@ jobs:
               exit 1
             fi
             # Proposal 135: managed branches ship the BFF deploy tree
-            # (dist/ + server.js) rather than the flat static files.
+            # (dist/ + server.js + a runtime manifest carrying the project
+            # dependencies) rather than the flat static files.
             MIRROR_SOURCE="dist"
             if [ "$RUNTIME" = "managed" ]; then
               ( cd "$target" && node scripts/sync-deploy-tree.mjs )
+              # BLOCKING boot gate: install from the emitted manifest and start
+              # the entry, the way Velocity will. A managed tree that builds
+              # but cannot boot is not a deploy: Velocity fails the release and
+              # keeps serving the last good build, so the site freezes while
+              # this job stays green (2026-11-10 — Virtually Jamaica served a
+              # day-old artifact through five successful mirror pushes).
+              ( cd "$target" && node scripts/verify-deploy-tree.mjs )
               MIRROR_SOURCE=".deploy"
             fi
             ( cd "$target" && SOURCE_DIR="$MIRROR_SOURCE" RUNTIME="$RUNTIME" SITE_BRANCH="$SITE_BRANCH" node scripts/mirror-push.mjs )
