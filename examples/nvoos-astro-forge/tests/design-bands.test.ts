@@ -62,6 +62,20 @@ describe( 'sections.generated records where the bands came from', () => {
 		expect( module ).toContain( "anchor: 'about', bg: '#ededed'" );
 	} );
 
+	it( 'keeps the positional flag for a PROMOTED outline profile', () => {
+		// `forge analyze` promotes the outline INTO `sections` while recording
+		// `bandSource: 'outline'`. Deriving the flag from `sections.length`
+		// flipped these to id-matching — and WPBakery builds have no ids, so
+		// every band surface was dropped (virtuallyjamaica, 2026-11-10).
+		const promoted = promoteOutlineBands( OUTLINE );
+		const module = renderSectionsGenerated(
+			profile( { sections: promoted, outline: OUTLINE, bandSource: 'outline' } )
+		);
+		expect( promoted.length ).toBeGreaterThan( 0 );
+		expect( module ).toContain( "export const bandSource: 'sections' | 'outline' = 'outline';" );
+		expect( module ).toContain( "anchor: 'home', bg: '#dd3333'" );
+	} );
+
 	it( 'keeps Elementor profiles on id matching', () => {
 		const module = renderSectionsGenerated(
 			profile( { sections: ELEMENTOR_SECTIONS, bandSource: 'sections' } )

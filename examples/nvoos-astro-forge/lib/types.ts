@@ -490,6 +490,13 @@ export interface SiteProfile {
 	 * block being replaced.
 	 */
 	pins?: DesignPin[];
+	/**
+	 * The handoff lock (see `lib/lock.ts`). Once a site is synced and handed to
+	 * a developer, the profile carries the owner record so CI and the CLI can
+	 * refuse to re-forge it (`forge-sites.yml`, `forge deploy`, `scaffold`).
+	 * Mirrors `forge.lock.json` in the generated project.
+	 */
+	locked?: { at: string; by?: string; reason?: string };
 }
 
 /**
@@ -832,6 +839,10 @@ export interface ForgeChrome {
 	footerHeadingStyle?: ForgeChromeStyle;
 	/** The copyright line. */
 	copyright?: string;
+	/** The footer social links (the source's network badges). `icon` is the
+	 * source's own icon class (e.g. `fab fa-facebook-f`) when one exists — the
+	 * rebuild maps the network to its own inline glyph. */
+	social?: Array<{ label?: string; href: string; icon?: string }>;
 	/** The site favicon (the first <link rel="icon"> href, absolute). */
 	favicon?: string;
 	/** The source icon-font stylesheet (the icons CSS link, e.g. the theme's

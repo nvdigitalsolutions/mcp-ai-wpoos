@@ -895,6 +895,108 @@ a {
 	border: 0;
 }
 
+/* A raw hero band (outline-only source — WPBakery/Brando, Divi, plain HTML)
+ * keeps the source's OWN markup. The source lays its copy and illustration
+ * side by side; without the source stylesheet the wrappers simply stack, so
+ * the band grew to 1232px against the source's 900px. Recognise the ROW
+ * STRUCTURALLY — a container whose direct children include both the h1's
+ * block and the illustration's block — instead of matching theme classes.
+ * The relative selectors are deliberately FLAT: `:has(A:has(B))` is invalid
+ * CSS, and the whole rule is dropped silently when nested. */
+.ds-section-wrap :is(.post-body, .ds-section) :is(div, section):has(> div > h1):has(> div > img) {
+	display: grid;
+	grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr);
+	align-items: center;
+	gap: clamp(1rem, 3vw, 3rem);
+	/* The source hero is a full-screen band (`.full-screen`, min-height 900px). */
+	min-height: clamp(24rem, 72vh, 46rem);
+}
+
+/* Single-column fallback: an illustration inside a hero band never scales to
+ * the full measure. */
+.ds-section-wrap :is(.post-body, .ds-section):has(h1) img {
+	max-width: min(100%, 42rem);
+	height: auto;
+}
+
+@media (max-width: 767px) {
+	.ds-section-wrap :is(.post-body, .ds-section) :is(div, section):has(> div > h1):has(> div > img) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * Builder layout shim — WPBakery / Brando raw bands
+ *
+ * A vendor-agnostic source is rebuilt from its OWN sanitized markup, but the
+ * builder's stylesheet never ships, so every `.row` stacked: the about band's
+ * image sat above its copy, the services band's three columns became three
+ * full-width blocks, and the hardware logos ran down the page. These are the
+ * STRUCTURAL conventions the markup already carries (rows, columns, inner
+ * rows, owl carousels), re-expressed as flex. Nothing here invents content —
+ * it restores the source's own arrangement.
+ * ------------------------------------------------------------------------- */
+.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row'], .owl-carousel, .owl-stage) {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	gap: clamp(1.25rem, 2.5vw, 2.5rem);
+}
+
+/* A photo panel is painted on its column, and the source sized that column with
+ * an inline min-height the sanitizer drops — without this the panel collapses to
+ * zero height and the photo is invisible (virtuallyjamaica's social-login and
+ * phone columns). */
+.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[style*='background-image'] {
+	min-height: clamp(18rem, 36vw, 40rem);
+}
+
+.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+/* A logo carousel is one row of marks, never a vertical stack. */
+.ds-section-wrap .post-body .owl-carousel > * {
+	flex: 1 1 8rem;
+	min-width: 0;
+}
+
+/* A photo panel painted on a column stays a full-bleed panel behind it. */
+.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
+	background-size: cover;
+	background-position: center;
+}
+
+
+/* Icon markers: the source's own icon-font classes (the sheet is linked from
+ * `chrome.iconCss`). `icon-large` is a standalone feature glyph above its
+ * label; the small ones sit inline with their text. A `fa-*` marker whose
+ * sheet the rebuild does not load is hidden rather than left as an empty box. */
+.ds-section-wrap .post-body i[class*='icon-'].icon-large {
+	display: block;
+	font-size: 1.9rem;
+	line-height: 1;
+	margin-bottom: 0.85rem;
+}
+
+.ds-section-wrap .post-body i[class*='icon-']:not(.icon-large) {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.ds-section-wrap .post-body i[class*='fa-']:empty {
+	display: none;
+}
+@media (max-width: 767px) {
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
+		flex-basis: 100%;
+	}
+	.ds-section-wrap .post-body .owl-carousel > * {
+		flex-basis: 40%;
+	}
+}
+
 /* -------------------------------------------------------------------------
  * The split hero (125 §1) — a copy column beside a media collage column,
  * rebuilding the source's two-column hero bands (jayainc's about). No card
@@ -1254,6 +1356,32 @@ a {
 	width: auto;
 	height: 3rem;
 	margin-bottom: var(--forge-space);
+}
+
+/* The footer social row (the source's network badges). The rebuild draws its
+ * own glyphs, so no icon-font stylesheet is required. */
+.site-social {
+	display: flex;
+	gap: 0.75rem;
+	margin: 0 0 1.25rem;
+	padding: 0;
+	list-style: none;
+}
+
+.site-social a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 999px;
+	background: rgba(0, 0, 0, 0.06);
+	color: inherit;
+}
+
+.site-social a:hover,
+.site-social a:focus-visible {
+	background: rgba(0, 0, 0, 0.12);
 }
 
 .ds-lede {

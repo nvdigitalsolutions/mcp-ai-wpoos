@@ -67,10 +67,44 @@ describe('sanitizeHtml — vectors die', () => {
 		expect(out).not.toContain('javascript:');
 	});
 
-	it('strips style attributes (CSS-injection vector)', () => {
+	it('strips style attributes except flat surface facts on bands', () => {
 		const out = sanitizeHtml('<p style="color:red">styled</p>');
 		expect(out).not.toContain('style=');
 		expect(out).toContain('styled');
+
+		// Surface facts for outline-only sources (their markup IS the rebuild).
+		const panel = sanitizeHtml('<div class="panel" style="background-color:#dd3333;">panel</div>');
+		expect(panel).toContain('background-color:#dd3333');
+
+		// The `background` shorthand is normalized to the longhand.
+		const photo = sanitizeHtml('<div style="min-height:700px; background: url(/wp-content/a.jpg) no-repeat;">x</div>');
+		expect(photo).toContain('background-image:url(/wp-content/a.jpg)');
+		expect(photo).not.toContain('min-height');
+
+		// Everything else dies: layout, text colour, and non-http image schemes.
+		const hostile = sanitizeHtml(
+			'<div style="background-color:url(https://evil.test/x.png);width:100vw;color:red;background-image:url(javascript:alert(1))">x</div>'
+		);
+		expect(hostile).not.toContain('width');
+		expect(hostile).not.toContain('color:red');
+		expect(hostile).not.toContain('javascript');
+	});
+
+	it('derives a legible ink for a kept panel colour', () => {
+		// The source's own `color` declarations are dropped, but a dark panel
+		// without a derived ink painted body copy #626262 on #dd3333 (2.6:1).
+		const dark = sanitizeHtml('<div style="background-color:#dd3333">panel</div>');
+		expect(dark).toContain('background-color:#dd3333');
+		expect(dark).toContain('color:#ffffff');
+
+		const light = sanitizeHtml('<div style="background-color:#ededed">panel</div>');
+		expect(light).toContain('color:#1a1a1a');
+	});
+
+	it('drops shortcode artifacts from copy', () => {
+		const out = sanitizeHtml('<p>Intro</p><p>[ultimate_spacer height="25"]</p><p>[citation needed] stays</p>');
+		expect(out).not.toContain('ultimate_spacer');
+		expect(out).not.toContain('[citation needed]');
 	});
 
 	it('drops iframe src from unknown hosts (tag left inert)', () => {
@@ -137,7 +171,7 @@ describe('sanitizeHtml — forms survive, attack surface stays closed (114 §3.9
 
 describe('sanitize contract', () => {
 	it('exposes a versioned allowlist for stale-copy detection', () => {
-		expect(SANITIZE_VERSION).toBe(2); // The 114 §3.9 form allowlist bump.
+		expect(SANITIZE_VERSION).toBe(3); // v3 keeps a flat band `background-color`.
 		expect(SANITIZE_OPTIONS.allowedTags).toContain('figure');
 		expect(SANITIZE_OPTIONS.allowedTags).toContain('form');
 		expect(SANITIZE_OPTIONS.allowedTags).not.toContain('script');

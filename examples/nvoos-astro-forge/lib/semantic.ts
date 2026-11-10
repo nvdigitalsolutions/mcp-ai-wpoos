@@ -269,7 +269,11 @@ const ELEMENTOR_SECTION = /(^|\s)elementor-section(\s|$)/;
 const ELEMENTOR_WIDGET = /(^|\s)elementor-widget(\s|$)/;
 const WIDGET_NAME_RE = /elementor-widget-([\w-]+)/;
 const WP_BLOCK = /(^|\s)wp-block-([\w-]+)(\s|$)/;
-const VC_WRAPPER = /(^|\s)vc_[a-z_]+(\s|$)/;
+// WPBakery (and themes that rewrite it). Brando — virtuallyjamaica.com —
+// emits `wpb_column` inside `<section class="brando_row_…">` and drops the
+// `vc_row` wrapper entirely, so both the column and the row markers matter.
+const VC_WRAPPER = /(^|\s)(?:vc|wpb)_[a-z_]+(\s|$)/;
+const WPB_ROW = /(^|\s)(?:vc_row|wpb_row)(?:[\s-]|$)/;
 
 /**
  * Widget name → role vocabulary (Elementor's widget taxonomy) — the SEEDED
@@ -1048,22 +1052,37 @@ function structuralSection( node: HNode ): SemanticSection | undefined {
 	return undefined;
 }
 
-/** Does this node look like a section boundary (Elementor section / group)? */
+/** Does this node look like a section boundary (Elementor section / group / WPBakery row / <section>)? */
 function isSectionBoundary( node: HNode ): boolean {
+	// A semantic <section> element IS a band. Proposal 137's vendor-agnostic
+	// adapters established this on the analyzer side; the render-side
+	// classifier needs the same rule, or every non-Elementor band collapses
+	// into one text block (virtuallyjamaica.com's 7 Brando sections became a
+	// single 8058px band, so the positional band theming painted the whole
+	// page red).
+	if ( node.name === 'section' ) {
+		return true;
+	}
 	const classes = classList( node.attribs );
 	return classes.some(
 		( c ) =>
 			ELEMENTOR_SECTION.test( c ) ||
 			ELEMENTOR_SECTION.test( ` ${ c } ` ) ||
+			WPB_ROW.test( c ) ||
 			/(^|\s)wp-block-group(\s|$)/.test( c ) ||
 			/(^|\s)wp-block-cover(\s|$)/.test( c )
 	);
 }
 
 function sliceHtml( html: string, node: HNode ): string {
-	// domhandler indices are slice-compatible (endIndex exclusive).
-	if ( typeof node.startIndex === 'number' && typeof node.endIndex === 'number' && node.endIndex > node.startIndex ) {
-		return html.slice( node.startIndex, node.endIndex );
+	// htmlparser2's `endIndex` is the index of the element's LAST character —
+	// the `>` of its closing tag — so the slice end is `endIndex + 1`. Treating
+	// it as exclusive truncated every closing tag by one character, emitting
+	// unbalanced `<\/section` (no `>`); the browser then nested each following
+	// band inside the previous one and every surface stacked into the first
+	// (virtuallyjamaica.com, 2026-11-10).
+	if ( typeof node.startIndex === 'number' && typeof node.endIndex === 'number' && node.endIndex >= node.startIndex ) {
+		return html.slice( node.startIndex, node.endIndex + 1 );
 	}
 	return '';
 }
@@ -1386,6 +1405,28 @@ function formSection( html: string, region: HNode, form: HNode, searchForms?: st
 	return section;
 }
 
+/** The outermost band boundaries within a node list (never a nested one). */
+function boundarySections( nodes: HNode[] ): HNode[] {
+	const found: HNode[] = [];
+	const visit = ( node: HNode ) => {
+		for ( const child of childrenOf( node ) ) {
+			if ( child.type === 'tag' && isSectionBoundary( child ) ) {
+				found.push( child );
+			} else {
+				visit( child );
+			}
+		}
+	};
+	for ( const node of nodes ) {
+		if ( node.type === 'tag' && isSectionBoundary( node ) ) {
+			found.push( node );
+		} else {
+			visit( node );
+		}
+	}
+	return found;
+}
+
 /**
  * Classify a form-free node region with the pre-form pipeline (the
  * builder-marker / Elementor-section grouping path). `fallbackHtml` is the
@@ -1412,6 +1453,27 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 		( widget ) => widget.role.kind === 'container' || widget.role.kind === 'content'
 	);
 	if ( elementorWidgets.length === 0 && ! structuredBlocks ) {
+		// Vendor-agnostic band split (Proposal 137, render half). Builders the
+		// Elementor taxonomy does not describe — WPBakery/Brando, Divi, Bricks,
+		// plain semantic HTML — still carry band boundaries. Splitting them keeps
+		// the source's band flow and lets the positional band theming paint each
+		// surface; without it the whole page is one text section and only the
+		// first band's background can apply (virtuallyjamaica, 2026-11-10).
+		const bands = boundarySections( nodes );
+		if ( bands.length > 1 ) {
+			const banded: SemanticSection[] = [];
+			for ( const band of bands ) {
+				const slice = sliceHtml( html, band );
+				if ( ! slice ) {
+					continue;
+				}
+				const anchor = anchorOfNode( band );
+				banded.push( { kind: 'text', confidence: 'low', slots: {}, html: slice, ...( anchor ? { anchor } : {} ) } );
+			}
+			if ( banded.length > 0 ) {
+				return banded;
+			}
+		}
 		return fallbackHtml.trim().length > 0 ? [ { kind: 'text', confidence: 'low', slots: {}, html: fallbackHtml } ] : [];
 	}
 

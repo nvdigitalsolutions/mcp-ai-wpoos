@@ -189,7 +189,8 @@
 					{
 						"width": 50
 					}
-				]
+				],
+				"anchor": "wifi"
 			},
 			{
 				"id": "860a86e",
@@ -315,7 +316,76 @@
 			"footerBarBg": "#ededed",
 			"favicon": "https://virtuallyjamaica.com/wp-content/uploads/2018/11/cropped-vj-fav-icon-32x32.png",
 			"iconCss": "https://virtuallyjamaica.com/wp-content/themes/brando/assets/css/et-line-icons.css?ver=1.0",
-			"chromeSize": "13px"
+			"chromeSize": "13px",
+			"logo": {
+				"src": "https://virtuallyjamaica.com/wp-content/uploads/2018/11/VJ-Logo-V5-wht-gry.svg",
+				"alt": "Virtually Jamaica"
+			},
+			"headerBg": "#dd3333",
+			"headerInk": "#ffffff",
+			"navInk": "#ffffff",
+			"navStyle": {
+				"weight": "600",
+				"size": "12px",
+				"transform": "uppercase",
+				"letterSpacing": "0.26px"
+			},
+			"nav": [
+				{
+					"label": "About",
+					"href": "/#about"
+				},
+				{
+					"label": "WiFi Marketing",
+					"href": "/#wifi"
+				},
+				{
+					"label": "Features",
+					"href": "/#features"
+				},
+				{
+					"label": "Services",
+					"href": "/#services"
+				},
+				{
+					"label": "Hardware",
+					"href": "/#hardware"
+				},
+				{
+					"label": "Contact",
+					"href": "/#contact"
+				}
+			],
+			"footerLogo": {
+				"src": "https://virtuallyjamaica.com/wp-content/uploads/2018/11/VJ-Logo-V5-red-blk.svg",
+				"alt": "Virtually Jamaica"
+			},
+			"footerBg": "#ededed",
+			"footerInk": "#626262",
+			"footerBarInk": "#626262",
+			"copyright": "© 2023 VIRTUALLY JAMAICA IS POWERED BY NV DIGITAL SOLUTIONS.",
+			"social": [
+				{
+					"label": "Facebook",
+					"href": "https://www.facebook.com/",
+					"icon": "fab fa-facebook-f"
+				},
+				{
+					"label": "Twitter",
+					"href": "https://twitter.com/",
+					"icon": "fab fa-twitter"
+				},
+				{
+					"label": "YouTube",
+					"href": "https://www.youtube.com/",
+					"icon": "fab fa-youtube"
+				},
+				{
+					"label": "LinkedIn",
+					"href": "https://www.linkedin.com/",
+					"icon": "fab fa-linkedin-in"
+				}
+			]
 		},
 		"behavior": {
 			"headerSticky": false,
@@ -452,7 +522,9 @@
 		"ink": "#626262",
 		"muted": "#595959",
 		"line-strong": "#767676",
-		"accent-ink": "#2a2a2a"
+		"accent-ink": "#2a2a2a",
+		"scale-h1": "55px",
+		"scale-h2": "28px"
 	},
 	"pins": [
 		{
@@ -474,6 +546,26 @@
 			"path": "tokens.accent-ink",
 			"value": "#2a2a2a",
 			"why": "The coral accent #fe6c61 with the template default white ink measures 2.79:1; #2a2a2a ink measures 5.15:1."
+		},
+		{
+			"path": "chrome.headerBg",
+			"value": "#dd3333",
+			"why": "The source header is transparent over the red hero (#dd3333). A white header strip was the loudest visual mismatch."
+		},
+		{
+			"path": "chrome.headerInk",
+			"value": "#ffffff",
+			"why": "Source logo and nav render white on the red hero."
+		},
+		{
+			"path": "chrome.navStyle",
+			"value": {
+				"weight": "600",
+				"size": "12px",
+				"transform": "uppercase",
+				"letterSpacing": "0.26px"
+			},
+			"why": "Measured from the live nav links: 12px / 600 / uppercase / 0.26px tracking."
 		}
 	],
 	"shape": "one-pager",

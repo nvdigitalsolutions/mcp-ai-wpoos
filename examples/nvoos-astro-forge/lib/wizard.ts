@@ -83,10 +83,16 @@ export interface WizardOptions {
 	 */
 	design?: boolean;
 	/**
-	 * Strict contrast mode (114 §3.5) — the scaffold's designAudit flips to
+	/** Strict contrast mode (114 §3.5) — the scaffold's designAudit flips to
 	 * 'strict' and the generated build fails on failing pairs.
 	 */
 	strictContrast?: boolean;
+	/**
+	 * Re-forge a target that is LOCKED for hand-editing (its profile carries
+	 * `locked`, or the project carries `forge.lock.json`). Without it the
+	 * scaffold fails closed — ownership was handed to a developer.
+	 */
+	unlock?: boolean;
 	/** Interactive prompt hooks (CLI only). */
 	ui?: WizardUi;
 	/** Emit the AGENTS.md/.context stubs (default true; --no-agents flips it). */
@@ -239,6 +245,7 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 			agents: options.agents,
 			themePolicy,
 			strictContrast: options.strictContrast,
+			unlock: options.unlock === true,
 		} );
 		scaffolded = true;
 	}
