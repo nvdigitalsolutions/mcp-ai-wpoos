@@ -1460,6 +1460,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		);
 
 		/**
+		 * Worker-routed packages with no local runtime.
+		 *
+		 * The vendored copy is a presence marker only and the operation is served
+		 * exclusively by the Media Worker sidecar. Unlike worker-routed packages
+		 * that also have a usable local path (e.g. katex, pdfkit, sharp), these
+		 * must NOT be reported as installed when the worker is unreachable: the
+		 * marker file exists but can never execute. Evidence (2026-11-11):
+		 * `ics/index.js` requires an unshipped `./pipeline` module.
+		 *
+		 * MUST be a subset of WORKER_ROUTED_PACKAGES — the status branch that
+		 * consumes this list is keyed on a worker route existing.
+		 *
+		 * Note: mailparser is likewise marker-only (none of its dependencies are
+		 * vendored), but it is deliberately NOT listed here: nothing in PHP calls
+		 * the worker's /api/email/parse route, so it is not worker-routed either.
+		 */
+		private const SIDECAR_ONLY_PACKAGES = array( 'ics' );
+
+		/**
 		 * Get the worker-routed package map (package => API route).
 		 *
 		 * @return array Package to route map.
@@ -1516,16 +1535,32 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			// package's operations are wired to a worker route, the worker
 			// handles it — even when nothing is installed locally.
 			$worker_routed = self::get_worker_routed_packages();
-			if ( isset( $worker_routed[ $package ] ) && self::is_media_worker_reachable() ) {
-				return array(
-					'available' => true,
-					'source'    => 'sidecar',
-					'message'   => sprintf(
-						/* translators: %s: worker API route */
-						__( 'Handled by Media Worker (%s)', 'mcp-ai-wpoos' ),
-						$worker_routed[ $package ]
-					),
-				);
+			if ( isset( $worker_routed[ $package ] ) ) {
+				if ( self::is_media_worker_reachable() ) {
+					return array(
+						'available' => true,
+						'source'    => 'sidecar',
+						'message'   => sprintf(
+							/* translators: %s: worker API route */
+							__( 'Handled by Media Worker (%s)', 'mcp-ai-wpoos' ),
+							$worker_routed[ $package ]
+						),
+					);
+				}
+
+				// No local runtime exists for these packages, so the vendored
+				// marker file is not evidence of availability.
+				if ( in_array( $package, self::SIDECAR_ONLY_PACKAGES, true ) ) {
+					return array(
+						'available' => false,
+						'source'    => 'sidecar_unreachable',
+						'message'   => sprintf(
+							/* translators: %s: worker API route */
+							__( 'Media Worker unreachable — served by the sidecar (%s)', 'mcp-ai-wpoos' ),
+							$worker_routed[ $package ]
+						),
+					);
+				}
 			}
 
 			// Check if Pro CDN Loader is available and package is CDN-managed.
@@ -1623,6 +1658,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'@turf/turf'                        => 'turf/dist/esm/index.js',
 				'@types/pdfkit'                     => false, // TypeScript types only, no runtime file.
 				'fluent-ffmpeg'                     => 'fluent-ffmpeg/index.js',
+				// Presence marker only; sidecar-served and not loadable locally.
+				// See SIDECAR_ONLY_PACKAGES.
 				'ics'                               => 'ics/index.js',
 				'katex'                             => 'katex/dist/katex.min.js',
 				'mjml'                              => 'mjml/lib/index.js',
@@ -1662,6 +1699,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'validator'                         => 'validator/index.js',
 				'email-validator'                   => 'email-validator/index.js',
 				'libphonenumber-js'                 => 'libphonenumber-js/index.js',
+				// Presence marker only; dependencies are not vendored (not PHP-wired).
 				'mailparser'                        => 'mailparser/lib/mail-parser.js',
 				'csv-parse'                         => 'csv-parse/lib/index.js',
 				'csv-stringify'                     => 'csv-stringify/lib/index.js',

@@ -205,12 +205,12 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		// Check if ICS package is available.
+		// Check that ICS generation is available (sidecar or filter).
 		$ics_available = $this->check_ics_availability();
 		if ( ! $ics_available ) {
 			return new WP_Error(
 				'tool_error',
-				__( 'ICS package is not available. Please ensure Node.js and ICS package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' )
+				__( 'ICS generation is unavailable. Configure the Media Worker sidecar, or hook the wp_mcp_ai_ics_generate_calendar filter to provide an implementation.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -299,22 +299,23 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
-	 * Check if ICS package is available.
+	 * Check whether ICS generation is available.
 	 *
-	 * @return bool True if ICS is available.
+	 * Generation is performed by the Media Worker sidecar (see
+	 * generate_ics_file()), so the real prerequisite is a reachable worker or a
+	 * custom implementation registered on the documented filter. Neither a
+	 * local `node` binary nor the vendored ics marker is required: nothing
+	 * executes the vendored file, and that copy is not loadable in any case.
+	 *
+	 * @return bool True if ICS generation is available.
 	 */
 	private function check_ics_availability() {
-		// Check if package exists in vendor directory (production) or node_modules (development).
-		$vendor_path       = WP_MCP_AI_PRO_PATH . 'assets/vendor/ics/index.js';
-		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/ics/dist/index.js';
-
-		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
-			return false;
+		if ( $this->is_sidecar_available() ) {
+			return true;
 		}
 
-		// Use Process Service to check for Node.js availability.
-		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
-		return $process_service->is_command_available( 'node' );
+		// A deployment may supply its own generator via the documented filter.
+		return (bool) has_filter( 'wp_mcp_ai_ics_generate_calendar' );
 	}
 
 	/**
