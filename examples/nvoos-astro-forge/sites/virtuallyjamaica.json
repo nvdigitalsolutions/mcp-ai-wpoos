@@ -917,6 +917,23 @@
 					}
 				}
 			},
+			"container": {
+				"desktop": {
+					"content": 1410,
+					"padX": 15,
+					"flush": true
+				},
+				"tablet": {
+					"content": 804,
+					"padX": 15,
+					"flush": true
+				},
+				"mobile": {
+					"content": 360,
+					"padX": 15,
+					"flush": true
+				}
+			},
 			"box": {
 				"wpb_column": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -1065,6 +1082,23 @@
 				"family": "Roboto",
 				"mobile": {
 					"align": "center"
+				}
+			},
+			"container": {
+				"desktop": {
+					"content": 1140,
+					"padX": 15,
+					"flush": true
+				},
+				"tablet": {
+					"content": 720,
+					"padX": 15,
+					"flush": true
+				},
+				"mobile": {
+					"content": 360,
+					"padX": 15,
+					"flush": true
 				}
 			},
 			"box": {
@@ -1288,6 +1322,23 @@
 				"transform": "none",
 				"align": "center",
 				"family": "Roboto"
+			},
+			"container": {
+				"desktop": {
+					"content": 1410,
+					"padX": 15,
+					"flush": true
+				},
+				"tablet": {
+					"content": 804,
+					"padX": 15,
+					"flush": true
+				},
+				"mobile": {
+					"content": 360,
+					"padX": 15,
+					"flush": true
+				}
 			},
 			"box": {
 				"brando_column_1526544659-2-63": {
@@ -1593,6 +1644,23 @@
 				"transform": "none",
 				"align": "left",
 				"family": "Roboto"
+			},
+			"container": {
+				"desktop": {
+					"content": 1140,
+					"padX": 15,
+					"flush": true
+				},
+				"tablet": {
+					"content": 720,
+					"padX": 15,
+					"flush": true
+				},
+				"mobile": {
+					"content": 360,
+					"padX": 15,
+					"flush": true
+				}
 			},
 			"box": {
 				"brando_column_1526553936-2-100": {
@@ -1900,6 +1968,23 @@
 				"align": "start",
 				"family": "Montserrat"
 			},
+			"container": {
+				"desktop": {
+					"content": 1410,
+					"padX": 15,
+					"flush": true
+				},
+				"tablet": {
+					"content": 804,
+					"padX": 15,
+					"flush": true
+				},
+				"mobile": {
+					"content": 360,
+					"padX": 15,
+					"flush": true
+				}
+			},
 			"box": {
 				"brando_column_1526550966-2-18": {
 					"base": "padding:57.59px 57.59px 57.59px 57.59px;margin:0px 0px 0px -1px",
@@ -2147,6 +2232,23 @@
 					"transform": "uppercase",
 					"align": "center",
 					"family": "Montserrat"
+				}
+			},
+			"container": {
+				"desktop": {
+					"content": 1122,
+					"padX": 15,
+					"flush": true
+				},
+				"tablet": {
+					"content": 637,
+					"padX": 15,
+					"flush": true
+				},
+				"mobile": {
+					"content": 282,
+					"padX": 15,
+					"flush": true
 				}
 			},
 			"box": {
@@ -2424,6 +2526,23 @@
 				"transform": "none",
 				"align": "center",
 				"family": "Roboto"
+			},
+			"container": {
+				"desktop": {
+					"content": 1140,
+					"padX": 15,
+					"flush": true
+				},
+				"tablet": {
+					"content": 720,
+					"padX": 15,
+					"flush": true
+				},
+				"mobile": {
+					"content": 360,
+					"padX": 15,
+					"flush": true
+				}
 			},
 			"box": {
 				"wpb_column": {
