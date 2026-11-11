@@ -6,6 +6,7 @@
 // unrelated strings. The value and unit sit in ONE node for the same reason
 // (splitting them makes some readers announce "98" then "%" as separate items).
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SectionHeading from './SectionHeading.astro';
 
@@ -39,5 +40,6 @@ const headingId = section.id ? `ds-stats-${ section.id }` : undefined;
 				</div>
 			))}
 		</dl>
+		<SectionLinks section={section} />
 	</section>
 )}

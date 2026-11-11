@@ -768,6 +768,16 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	gap: var(--forge-space-sm);
 }
 
+/* A band-level CTA that follows a grid or list (`SectionLinks`) — one rhythm
+ * step below the content, centred when the band is. */
+.ds-section-links {
+	margin-block-start: var(--forge-space-sm);
+}
+
+.ds-body--center > .ds-section-links {
+	justify-content: center;
+}
+
 	.ds-grid {
 	display: grid;
 	/* The band's measured card gutter (Elementor column gap) — the template's

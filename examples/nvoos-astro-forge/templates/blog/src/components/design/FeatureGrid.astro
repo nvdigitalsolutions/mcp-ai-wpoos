@@ -6,6 +6,7 @@
 // typography vars, the underline divider, and the centered alignment
 // (jayainc's "Let our Expert & Trusted Team…" band).
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 
@@ -68,4 +69,5 @@ const dividerStyle = theme?.titleDivider
 			))}
 		</div>
 	)}
+	<SectionLinks section={section} />
 </section>

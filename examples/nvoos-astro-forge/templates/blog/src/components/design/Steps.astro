@@ -5,6 +5,7 @@
 // deliberately NO HowTo structured data: Google removed the HowTo rich result
 // and its documentation in September 2023, so emitting it would be noise.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SectionHeading from './SectionHeading.astro';
 import SmartImage from '../SmartImage.astro';
@@ -38,5 +39,6 @@ const headingId = section.id ? `ds-steps-${ section.id }` : undefined;
 				</li>
 			))}
 		</ol>
+		<SectionLinks section={section} />
 	</section>
 )}

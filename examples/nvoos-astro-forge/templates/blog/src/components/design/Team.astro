@@ -5,6 +5,7 @@
 // the name + role is its caption. The image alt is the person's NAME, never
 // "team member" — a screen-reader user is navigating people, not decoration.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SectionHeading from './SectionHeading.astro';
 import SmartImage from '../SmartImage.astro';
@@ -53,5 +54,6 @@ const headingId = section.id ? `ds-team-${ section.id }` : undefined;
 				</li>
 			))}
 		</ul>
+		<SectionLinks section={section} />
 	</section>
 )}

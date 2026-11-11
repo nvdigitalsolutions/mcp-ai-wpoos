@@ -197,13 +197,19 @@ gates, visual-regression practice).
   manifest `designAudit: strict` → the build-time `/design-audit.json`
   endpoint THROWS on failures (contrast cannot creep back).
 - **Template:** `src/components/design/` (DesignRenderer + Hero/FeatureGrid/
-  IconList/Testimonial/LogoCloud/Cta/Gallery/TextBlock), wired into
+  IconList/Testimonial/LogoCloud/Cta/Gallery/TextBlock/SectionLinks), wired into
   `[slug].astro` / `posts/[...parts].astro` / `index.astro` via the
   sanitized body — **the body string must be extracted in getStaticPaths**
   (props are serialized; the store's `rendered` object does not survive the
   trip; `entry.body` is never populated). Plain Gutenberg prose and
   non-builder content render identically to before (the e2e XSS/embed/rich-
   content gates pin this).
+  **Band-level CTAs:** `slots.links` is a superset that also carries card
+  links, so a component rendering only `items` drops the band's own button
+  (jayainc's products band shipped without its "ALL SERVICES" CTA). Every
+  grid/list component mounts `SectionLinks`, which renders the leftovers as
+  `.ds-section-links > .ds-button`; it filters against links already visible
+  inside `items`, so a card CTA never renders twice.
 - **`forge verify <profile> --target <dir>`** — re-extracts the built CSS
   bundle and scores parity (default threshold 0.6). Parity is LANGUAGE parity
   (roles/scale/spacing), never pixels; three gates now cover what it cannot
