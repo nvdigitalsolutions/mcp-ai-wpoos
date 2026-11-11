@@ -68,6 +68,8 @@
         "lint:base": "phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
         "lint:base:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 --extensions=php --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
         "format": "phpcbf",
+        "vendor:manifest": "node bin/generate-vendor-manifest.mjs",
+        "vendor:check": "node bin/check-vendor-integrity.mjs",
         "security:red-team": "bash bin/red-team.sh",
         "security:red-team:php": "php bin/red-team.php",
         "pot": "wp i18n make-pot . languages/mcp-ai-wpoos.pot --exclude=vendor,node_modules",
@@ -87,6 +89,7 @@
         "ci:all": [
             "@lint:errors-only",
             "@docs:check-folder-readmes",
+            "@vendor:check",
             "@test:gaps:check",
             "@test:coverage"
         ]
