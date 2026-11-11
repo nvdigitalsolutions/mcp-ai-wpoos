@@ -1,0 +1,107 @@
+---
+// BuilderAccordion — progressive enhancement for accordion markup that arrives
+// inside a RAW band (`.post-body`).
+//
+// The analyzer reproduces the source's RESTING state by emitting `display:none`
+// for subtrees the source hid (`bandFacts[].hidden`) — a closed accordion panel
+// is one of them. But a closed panel has no CSS-only way back open: the source
+// toggled it with the builder's JS, which a rebuild never ships. The page
+// therefore rendered the widget as a dead list of headings (virtuallyjamaica's
+// features band, 8 panels, one stuck open).
+//
+// This restores the interaction on the markup's own terms — no vendor script,
+// no icon font, no content invented:
+//   - a heading toggles its panel's `.in` class (the class the measured
+//     `:not([class~="in"])` selector tests),
+//   - opening a panel closes its siblings in the same group (the source's
+//     `data-parent` contract),
+//   - `aria-expanded` / `aria-controls` / `role=button` are applied, and Space
+//     toggles like Enter,
+//   - `active-accordion` follows the open state so the CSS `+`/`−` marker
+//     swaps (global.css draws it: the source's `fa-plus` needs Font Awesome,
+//     which a forged site does not ship).
+//
+// No JS: the page keeps the source's resting state (its first panel open).
+---
+<script>
+	const GROUP = '.post-body .panel-group';
+	const CONTROL = '.panel-heading a[href^="#"]';
+	let generated = 0;
+
+	function setOpen(panel: Element, open: boolean): void {
+		const body = panel.querySelector('.panel-collapse');
+		if (!(body instanceof HTMLElement)) return;
+		body.classList.toggle('in', open);
+		panel.querySelector('.panel-heading')?.classList.toggle('active-accordion', open);
+		panel.querySelector(CONTROL)?.setAttribute('aria-expanded', String(open));
+	}
+
+	function enhance(group: Element): void {
+		if (group.hasAttribute('data-accordion')) return;
+		const panels = [...group.querySelectorAll('.panel')].filter(
+			(panel) => panel.querySelector('.panel-collapse') && panel.querySelector(CONTROL)
+		);
+		if (panels.length === 0) return;
+		group.setAttribute('data-accordion', '');
+		for (const panel of panels) {
+			const body = panel.querySelector('.panel-collapse');
+			const control = panel.querySelector(CONTROL);
+			if (!(body instanceof HTMLElement) || !(control instanceof HTMLElement)) continue;
+			if (!body.id) {
+				generated += 1;
+				body.id = `forge-accordion-panel-${generated}`;
+			}
+			if (!control.id) control.id = `${body.id}-control`;
+			control.setAttribute('role', 'button');
+			control.setAttribute('aria-controls', body.id);
+			control.setAttribute('aria-expanded', String(body.classList.contains('in')));
+			body.setAttribute('role', 'region');
+			body.setAttribute('aria-labelledby', control.id);
+		}
+	}
+
+	// A same-page link to a collapsed panel (the source's own `#accordion-…`
+	// ids survive sanitisation) opens it instead of landing on a hidden box.
+	function openFromHash(): void {
+		const id = decodeURIComponent(location.hash.slice(1));
+		if (!id) return;
+		const panel = document.getElementById(id)?.closest('.panel');
+		const group = panel?.closest(GROUP);
+		if (!panel || !group) return;
+		for (const other of group.querySelectorAll('.panel')) setOpen(other, false);
+		setOpen(panel, true);
+	}
+
+	function init(): void {
+		for (const group of document.querySelectorAll(GROUP)) enhance(group);
+		openFromHash();
+	}
+
+	document.addEventListener('click', (event) => {
+		const control = event.target instanceof Element ? event.target.closest(CONTROL) : null;
+		if (!control) return;
+		const group = control.closest(GROUP);
+		const panel = control.closest('.panel');
+		if (!group || !panel) return;
+		event.preventDefault();
+		const isOpen = panel.querySelector('.panel-collapse')?.classList.contains('in') ?? false;
+		for (const other of group.querySelectorAll('.panel')) setOpen(other, false);
+		setOpen(panel, !isOpen);
+	});
+
+	document.addEventListener('keydown', (event) => {
+		if (event.key !== ' ' && event.key !== 'Spacebar') return;
+		const control = event.target instanceof Element ? event.target.closest(CONTROL) : null;
+		if (!(control instanceof HTMLElement)) return;
+		event.preventDefault();
+		control.click();
+	});
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+	// View transitions swap the document; the listener would not survive it.
+	document.addEventListener('astro:after-swap', init);
+</script>

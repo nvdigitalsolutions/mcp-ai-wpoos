@@ -531,12 +531,67 @@ const bandBoxCss = sections
 		return `${ emit( theme.box, '' ) }${ emit( theme.media, 'img' ) }`;
 	} )
 	.join( '' );
+
+/**
+ * The controls' measured interaction STATES (`analyze` interaction pass), scoped
+ * to the band that owns them.
+ *
+ * A rebuilt band is the source's own markup with the vendor sheet gone, so a
+ * link that underlined on hover, a button that darkened on press and a field
+ * that lit up on focus all went flat. The analyzer forces each pseudo-class in a
+ * real browser (CDP `forcePseudoState`) and records only the declarations that
+ * CHANGED, keyed by a control signature; this re-states them.
+ *
+ * Three deliberately opinionated choices:
+ *   - `:hover` and `:active` live inside `@media (hover: hover)`. Industry
+ *     practice: a touch device emulates hover on tap and then keeps it, so an
+ *     unguarded hover rule leaves a card stuck in its raised state.
+ *   - the source's easing is emitted under
+ *     `@media (prefers-reduced-motion: no-preference)` — the state still
+ *     changes, it just does not animate for a reader who asked it not to.
+ *   - `:focus-visible` (not `:focus`) carries the keyboard ring; `:focus` is
+ *     kept only for what the source really styles on any focus (fields).
+ */
+const bandInteractionCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const facts = theme?.interactions;
+		if ( ! id || ! facts || facts.length === 0 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		for ( const fact of facts ) {
+			const selector = `${ scoped } ${ fact.selector }`;
+			if ( fact.base ) {
+				rules.push( `${ selector }{${ fact.base }}` );
+			}
+			if ( fact.transition ) {
+				rules.push( `@media (prefers-reduced-motion: no-preference){${ selector }{transition:${ fact.transition }}}` );
+			}
+			if ( fact.hover ) {
+				rules.push( `@media (hover: hover){${ selector }:hover{${ fact.hover }}}` );
+			}
+			if ( fact.focus ) {
+				rules.push( `${ selector }:focus{${ fact.focus }}` );
+			}
+			if ( fact.focusVisible ) {
+				rules.push( `${ selector }:focus-visible{${ fact.focusVisible }}` );
+			}
+			if ( fact.active ) {
+				rules.push( `@media (hover: hover){${ selector }:active{${ fact.active }}}` );
+			}
+		}
+		return rules.join( '' );
+	} )
+	.join( '' );
 ---
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss ) && (
-			<Fragment set:html={ `<style>${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandInteractionCss ) && (
+			<Fragment set:html={ `<style>${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandInteractionCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);

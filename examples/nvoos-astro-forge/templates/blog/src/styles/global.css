@@ -104,6 +104,46 @@ a {
 	color: var(--forge-accent);
 }
 
+/*
+ * Interaction baseline (WCAG 2.2 / 2.1).
+ *
+ * Every forged site, whatever the source looks like, owes three things to a
+ * keyboard or touch reader — and a source usually provides none of them:
+ *
+ *   1. A VISIBLE FOCUS INDICATOR (2.4.7) of at least 2 CSS px with a 3:1
+ *      change of contrast (2.4.13 Focus Appearance) that also contrasts with
+ *      what is adjacent to it (1.4.11 Non-text Contrast). Drawn in
+ *      `currentColor` and offset outwards: the control's own ink already meets
+ *      text contrast against its own band, so the ring does too — a fixed accent
+ *      ring measured 2.79:1 on the light surface of virtuallyjamaica.
+ *   2. `:focus-visible`, not `:focus` (MDN): a mouse click should not paint a
+ *      ring, a keyboard Tab must. Removing outlines is the classic failure
+ *      (F78), so this rule never sets `outline: none`.
+ *   3. A pointer affordance plus NO motion when the reader asks for none
+ *      (prefers-reduced-motion): the state still changes, the animation goes.
+ *      Scoped to rebuilt content so the header's scroll timeline is untouched.
+ */
+body :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+	outline: max(2px, 0.12em) solid currentColor;
+	outline-offset: 2px;
+}
+
+body :is(a[href], button, [role='button'], summary, label[for]) {
+	cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ds-section-wrap .post-body *,
+	.ds-section-wrap .post-body *::before,
+	.ds-section-wrap .post-body *::after {
+		transition-duration: 0.01ms !important;
+		transition-delay: 0s !important;
+		animation-duration: 0.01ms !important;
+		animation-delay: 0s !important;
+		animation-iteration-count: 1 !important;
+	}
+}
+
 .site-header {
 	display: flex;
 	align-items: center;
@@ -1159,9 +1199,59 @@ a {
 	padding: 15px;
 }
 
-.ds-section-wrap .post-body .panel-group .panel-heading a {
+/* The TITLE is the rebuild's accent. The vendor sheet styles links inside its
+ * own widget (`.accordion-style1 a { color:#ababab }`) and the source's
+ * per-element inline colour does not survive sanitisation, so on any page that
+ * links the vendor sheet the title rendered grey instead of the accent — while
+ * on a page that does not, it inherited the rebuild's accent by luck. Declared
+ * here with one class more than the vendor rule, so it wins either way. */
+.ds-section-wrap .post-body .panel-group .panel-heading a,
+.ds-section-wrap .post-body .panel-group .panel-heading a:hover,
+.ds-section-wrap .post-body .panel-group .panel-heading a:hover i {
 	display: block;
 	text-decoration: none;
+	color: var(--forge-accent);
+	cursor: pointer;
+}
+
+/* The title is the positioning context for the marker. The source absolutely
+ * positions its `span.pull-right` (right:15px), so the marker never competes
+ * with the title for width; a floated marker made "CAPTURE USER METADATA"
+ * wrap where the source kept it on one line. */
+.ds-section-wrap .post-body .panel-group .panel-title {
+	position: relative;
+}
+
+/* The `+`/`−` marker is drawn here, not by the vendor's icon font: `fa-plus`
+ * and `fa-minus` need Font Awesome, which a forged site does not ship, so the
+ * control rendered with no affordance at all (the empty `i` is hidden by the
+ * `fa-*` rule below). `active-accordion` is the source's own open-state class;
+ * BuilderAccordion keeps it in sync. */
+.ds-section-wrap .post-body .panel-group .panel-title .pull-right {
+	position: absolute;
+	right: 15px;
+	top: 50%;
+	transform: translateY(-50%);
+	float: none;
+}
+
+.ds-section-wrap .post-body .panel-group .panel-title .pull-right::after {
+	content: '+';
+	display: inline-block;
+	font-family: var(--forge-font-body, inherit);
+	font-weight: 400;
+	line-height: 1;
+}
+
+.ds-section-wrap .post-body .panel-group .panel-heading.active-accordion .panel-title .pull-right::after {
+	content: '\2212';
+}
+
+/* An ENHANCED group hides its own closed panels, so the interaction works even
+ * when the source's resting state was "all open" and there is no measured
+ * `hidden` selector to lean on. */
+.ds-section-wrap .post-body .panel-group[data-accordion] > .panel > .panel-collapse:not(.in) {
+	display: none;
 }
 
 

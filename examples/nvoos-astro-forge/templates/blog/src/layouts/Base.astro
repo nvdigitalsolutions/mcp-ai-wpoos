@@ -5,6 +5,7 @@ import { useCopy } from '../copy/index.ts';
 import ThemeToggle from '../components/ThemeToggle.astro';
 import Tracking from '../components/Tracking.astro';
 import ConsentBanner from '../components/ConsentBanner.astro';
+import BuilderAccordion from '../components/BuilderAccordion.astro';
 import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 import { chrome } from '../lib/chrome.generated.ts';
 import { behaviors } from '../lib/behaviors.generated.ts';
@@ -405,6 +406,9 @@ const chromeVars = [
 				</div>
 			</div>
 		</footer>
+		{/* Proposal 141 follow-up — builder accordions arrive CLOSED (the measured
+			resting state) with no way back open; this restores the toggle. */}
+		<BuilderAccordion />
 		{/* Proposal 130 — the first-party consent banner (mode: forge only). */}
 		<ConsentBanner />
 	</body>

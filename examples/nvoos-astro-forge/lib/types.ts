@@ -727,6 +727,47 @@ export interface ForgeBandContainer {
 	flush?: boolean;
 }
 
+/**
+ * One measured interactive control's STATE deltas (`analyze` interaction pass).
+ *
+ * A rebuilt band is the source's own sanitized markup with the vendor sheet
+ * gone, so every `:hover` / `:focus-visible` / `:active` effect disappears while
+ * the resting page still looks right. The states are measured by forcing each
+ * pseudo-class in a real browser (CDP `CSS.forcePseudoState`, the API behind
+ * DevTools' `:hov` panel) and diffing the computed style.
+ *
+ * Only CHANGED declarations are stored, as kebab-case CSS (`color:rgb(…)`). The
+ * signature (tag + sorted class tokens + input type) is what the scaffold turns
+ * into a band-scoped selector.
+ */
+export interface ForgeInteractionFact {
+	/** Lower-case tag name (`a`, `button`, `input`). */
+	tag: string;
+	/** Every class token on the representative element, sorted. */
+	classes: string[];
+	/** `input`/`button` type attribute, when the element has one. */
+	type?: string;
+	/** How many elements in the band share the signature (diagnostic). */
+	count?: number;
+	/** Rest-state declarations worth re-stating (the source's `cursor`). */
+	base?: string;
+	/** The source's computed `transition` shorthand (the easing BETWEEN states). */
+	transition?: string;
+	/** Pointer-over deltas. */
+	hover?: string;
+	/** Element-focus deltas (mostly form fields). */
+	focus?: string;
+	/** Keyboard-focus deltas — `:focus-visible`, not `:focus` (MDN/WCAG 2.4.7). */
+	focusVisible?: string;
+	/** Pressed deltas; measured as `hover + active` (a source writes `:hover:active`). */
+	active?: string;
+}
+
+/**
+ * One band's measured interactions (see `SiteProfile.interactions`).
+ */
+export type ForgeBandInteractions = ForgeInteractionFact[];
+
 export interface ForgeBandFacts {
 	/**
 	 * The width of the band's own inner container. Builder sources box their
@@ -783,6 +824,14 @@ export interface ForgeBandFacts {
 	 * hand-authored approximation.
 	 */
 	box?: BandBoxFacts;
+	/**
+	 * The band's interactive controls' measured STATE deltas — hover, focus,
+	 * focus-visible, active — plus the source's own pointer cursor and easing.
+	 * Emitted as band-scoped `:hover` / `:focus-visible` / `:active` rules; the
+	 * `:hover` and `:active` ones are wrapped in `@media (hover: hover)` so a
+	 * touch device never keeps a sticky hover.
+	 */
+	interactions?: ForgeBandInteractions;
 	/**
 	 * Cropped-media heights, keyed by class and emitted ONLY as `img.<class>`.
 	 *
@@ -960,6 +1009,14 @@ export interface ForgeSection {
 	 * `display:none` rules. A pin here wins over the measurement.
 	 */
 	hidden?: string[];
+	/**
+	 * The band's measured interaction states (hover / focus / focus-visible /
+	 * active), per control signature — measured by `analyze --geometry`
+	 * (`SiteProfile.bandFacts[].interactions`). A pin here wins over the
+	 * measurement, which is how an operator corrects a state the browser read
+	 * from an unusual control.
+	 */
+	interactions?: ForgeBandInteractions;
 	/** The top-level column responsive facts (124 §6) — desktop/tablet/
 	 * mobile widths (elementor-col/md/sm-*) + order/visibility flags. The
 	 * split components re-measure from these; absent → the template
