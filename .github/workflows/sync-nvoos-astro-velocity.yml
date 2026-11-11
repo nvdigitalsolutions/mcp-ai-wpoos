@@ -150,7 +150,32 @@ jobs:
           # Covers the non-reuse path (a runner without a pre-booted BFF).
           NVOOS_MCP_FETCH_ALLOW_PRIVATE: '1'
         run: |
-          npx playwright install --with-deps chromium
+          # `--with-deps` shells out to apt, which needs the runner to reach the
+          # Ubuntu mirrors; when they are unreachable the install dies with exit
+          # 100 before any test runs (astro-forge hit this twice on 2026-11-11).
+          # Retry with backoff, then fall back to the browser alone and prove it
+          # launches, so a missing dependency fails here rather than later as an
+          # unexplained browser timeout.
+          #
+          # A FUNCTION, not the `exit 0` loop the standalone install steps use:
+          # this run block also executes the e2e, so `exit 0` here would skip it.
+          # The `if` form matters too — under `bash -e`, a bare
+          # `cmd && return 0` aborts the script on the first failure instead of
+          # retrying.
+          install_chromium() {
+            for attempt in 1 2 3; do
+              if npx playwright install --with-deps chromium; then
+                echo "Chromium installed with system deps (attempt $attempt)."
+                return 0
+              fi
+              echo "::warning::Playwright install failed (attempt $attempt/3); retrying in $((attempt * 15))s."
+              sleep $((attempt * 15))
+            done
+            echo "::warning::--with-deps kept failing (the apt mirrors appear unreachable); installing the browser alone."
+            npx playwright install chromium
+            node -e "require('playwright').chromium.launch().then((b) => b.close()).then(() => console.log('Chromium launches.'))"
+          }
+          install_chromium
           npm run test:e2e
 
       - name: Lighthouse CI (Phase 2.6)

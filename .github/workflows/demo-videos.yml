@@ -68,8 +68,27 @@ jobs:
       - name: Install Node.js dependencies
         run: npm ci --prefer-offline --no-audit
 
+      # `--with-deps` shells out to apt, which needs the runner to reach the
+      # Ubuntu mirrors; when they are unreachable the step dies with exit 100
+      # before any test runs (astro-forge hit this twice on 2026-11-11). Retry
+      # with backoff, then fall back to the browser alone — `ubuntu-latest`
+      # already carries Chromium's system libraries — and PROVE it launches, so
+      # a genuinely missing dependency fails here with a clear message instead
+      # of surfacing later as an unexplained browser timeout.
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        timeout-minutes: 20
+        run: |
+          for attempt in 1 2 3; do
+            if npx playwright install --with-deps chromium; then
+              echo "Chromium installed with system deps (attempt $attempt)."
+              exit 0
+            fi
+            echo "::warning::Playwright install failed (attempt $attempt/3); retrying in $((attempt * 15))s."
+            sleep $((attempt * 15))
+          done
+          echo "::warning::--with-deps kept failing (the apt mirrors appear unreachable); installing the browser alone."
+          npx playwright install chromium
+          node -e "require('playwright').chromium.launch().then((b) => b.close()).then(() => console.log('Chromium launches.'))"
 
       - name: Start WordPress with Docker Compose
         run: |
