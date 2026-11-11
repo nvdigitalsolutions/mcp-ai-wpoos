@@ -146,6 +146,22 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		protected $factory = null;
 
 		/**
+		 * Whether the cached Factory must be rebuilt from the stored CCT record.
+		 *
+		 * JetEngine hydrates one Factory per CCT record on `init`. When a sync
+		 * adds columns and persists new field definitions mid-request, the
+		 * registered Factory still lists the old fields — and
+		 * Item_Handler::update_item() only writes fields the Factory knows about,
+		 * so freshly-added columns would silently never be populated. Setting
+		 * this flag rebuilds from the record as persisted after the field sync.
+		 *
+		 * @since 1.10.1
+		 *
+		 * @var bool
+		 */
+		protected $refresh_factory = false;
+
+		/**
 		 * Current tenant type (e.g. 'company', 'school').
 		 *
 		 * Empty string means no tenant context (bypass mode).
@@ -407,21 +423,27 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 
 			$module = self::get_cct_module();
 
-			if ( ! $module || empty( $module->manager ) || ! method_exists( $module->manager, 'get_content_types' ) ) {
+			if ( ! $module || empty( $module->manager ) ) {
 				return null;
 			}
 
-			$factory = $module->manager->get_content_types( $this->cct_slug );
+			// The registered registry is hydrated once on `init`, so it is stale
+			// right after a mid-request field-definition sync — skip it and build
+			// from the freshly-persisted record instead.
+			if ( ! $this->refresh_factory && method_exists( $module->manager, 'get_content_types' ) ) {
+				$factory = $module->manager->get_content_types( $this->cct_slug );
 
-			if ( ! empty( $factory ) && ! is_array( $factory ) ) {
-				$this->factory = $factory;
-				return $this->factory;
+				if ( ! empty( $factory ) && ! is_array( $factory ) ) {
+					$this->factory = $factory;
+					return $this->factory;
+				}
 			}
 
 			// Same-request fallback: the CCT record exists in the DB but the
 			// runtime registry was hydrated before it was created. Build the
 			// Factory manually from the stored record so a sync can proceed
-			// immediately after auto-registration.
+			// immediately after auto-registration. Also used when the registry
+			// is known to be stale (see reset_factory()).
 			$record = $this->get_cct_record_by_slug( $this->cct_slug );
 
 			if ( ! $record ) {
@@ -455,6 +477,24 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			$this->factory = new \Jet_Engine\Modules\Custom_Content_Types\Factory( $args, $fields, $type_id );
 
 			return $this->factory;
+		}
+
+		/**
+		 * Discard the cached Factory so the next lookup sees current field definitions.
+		 *
+		 * Needed because JetEngine hydrates its Factory instances once on `init`,
+		 * before a sync can persist new CCT field definitions. Rebuilding from the
+		 * stored record lets the same request write the columns it just created;
+		 * without it the first sync after a schema change silently stores nothing
+		 * in the new columns (Item_Handler writes only Factory-known fields).
+		 *
+		 * @since 1.10.1
+		 *
+		 * @return void
+		 */
+		protected function reset_factory() {
+			$this->factory         = null;
+			$this->refresh_factory = true;
 		}
 
 		/**
@@ -600,6 +640,16 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				return 0;
 			}
 
+			// Heal duplicate CCT definitions before reading the field list. Two
+			// records sharing a slug share one data table, and JetEngine keeps
+			// whichever Factory it hydrated last — which may be the record this
+			// sync does not update, so new columns would never receive values.
+			$module             = self::get_cct_module();
+			$removed_duplicates = 0;
+			if ( $module && ! empty( $module->manager ) ) {
+				$removed_duplicates = self::maybe_cleanup_duplicate_ccts( $module, $this->cct_slug, true );
+			}
+
 			$existing_fields = $this->get_existing_cct_fields();
 
 			// Track fields missing from JetEngine's meta_fields definition —
@@ -635,6 +685,14 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				if ( is_wp_error( $sync_result ) ) {
 					return $sync_result;
 				}
+			}
+
+			// The registry JetEngine hydrated on `init` still lists the old field
+			// set (whether we just added fields or just removed a duplicate
+			// definition). Rebuild our Factory from the updated record so this
+			// same sync writes the columns it defined.
+			if ( $removed_duplicates > 0 || ! empty( $missing_from_meta ) ) {
+				$this->reset_factory();
 			}
 
 				do_action( 'wp_mcp_ai_flowhub_after_columns_ensure', $this->cct_slug, $created );
@@ -2001,21 +2059,37 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 		 * row from JetEngine's post_types registry does NOT touch the shared
 		 * data table, so no inventory data is lost.
 		 *
-		 * This method runs at most once per slug (guarded by a persistent
-		 * option flag) to avoid repeated queries on every page load.
+		 * This method re-checks on a short throttle rather than latching a
+		 * permanent "already cleaned" flag: a duplicate can appear long after a
+		 * clean pass (concurrent registration, a JetEngine admin save), and a
+		 * permanent flag meant it was never healed.
 		 *
 		 * @since 1.9.3
+		 * @since 1.10.1 Re-checks on a throttle instead of latching permanently,
+		 *              and keeps the same canonical record as
+		 *              {@see get_cct_record_by_slug()} so the field sync and the
+		 *              cleanup agree on which definition is authoritative.
 		 *
 		 * @param \Jet_Engine\Modules\Custom_Content_Types\Module $module CCT module instance.
 		 * @param string                                          $slug   CCT slug.
+		 * @param bool                                            $force  Bypass the throttle.
 		 * @return int Number of duplicate rows removed.
 		 */
-		protected static function maybe_cleanup_duplicate_ccts( $module, $slug ) {
-			// Run at most once per slug.
-			$flag = 'wp_mcp_ai_flowhub_cct_dup_cleanup_' . $slug;
-			if ( get_option( $flag, false ) ) {
+		protected static function maybe_cleanup_duplicate_ccts( $module, $slug, $force = false ) {
+			// Pre-1.10.1 releases latched this option on the first clean pass,
+			// which is exactly why later duplicates were never healed.
+			$legacy_flag = 'wp_mcp_ai_flowhub_cct_dup_cleanup_' . $slug;
+			if ( false !== get_option( $legacy_flag, false ) ) {
+				delete_option( $legacy_flag );
+			}
+
+			// Throttle the re-check so init stays cheap but recovery still happens.
+			$throttle_key = 'wp_mcp_ai_flowhub_cct_dup_check_' . $slug;
+			if ( ! $force && get_transient( $throttle_key ) ) {
 				return 0;
 			}
+
+			set_transient( $throttle_key, true, HOUR_IN_SECONDS );
 
 			if ( empty( $module->manager ) || empty( $module->manager->data ) || empty( $module->manager->data->db ) ) {
 				return 0;
@@ -2034,24 +2108,20 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				false
 			);
 
-			if ( empty( $records ) || count( $records ) < 2 ) {
-				// No duplicates — mark clean so we never query again.
-				update_option( $flag, true, false );
+			if ( ! is_array( $records ) || count( $records ) < 2 ) {
+				// No duplicates. The transient above throttles the next check.
 				return 0;
 			}
 
-			// Sort by ID descending and keep the highest.
-			usort(
-				$records,
-				function ( $a, $b ) {
-					$a_id = is_array( $a ) ? (int) ( $a['id'] ?? 0 ) : (int) ( $a->id ?? 0 );
-					$b_id = is_array( $b ) ? (int) ( $b['id'] ?? 0 ) : (int) ( $b->id ?? 0 );
-					return $b_id - $a_id;
-				}
-			);
+			// Keep the same record get_cct_record_by_slug() treats as canonical
+			// (highest ID) so the field sync and this cleanup never disagree.
+			$kept = self::pick_canonical_cct_record( $records );
 
-			$kept    = array_shift( $records );
-			$keep_id = is_array( $kept ) ? (int) ( $kept['id'] ?? 0 ) : (int) ( $kept->id ?? 0 );
+			if ( ! $kept ) {
+				return 0;
+			}
+
+			$keep_id = isset( $kept['id'] ) ? (int) $kept['id'] : 0;
 			$removed = 0;
 
 			global $wpdb;
@@ -2098,9 +2168,6 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				$data->db->query_raw( 'post_types' );
 			}
 
-			// Mark this slug as cleaned so we never repeat the query.
-			update_option( $flag, true, false );
-
 			return $removed;
 		}
 
@@ -2142,6 +2209,51 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 			return ! empty( $records );
 		}
 
+		/**
+		 * Pick the canonical CCT record when several share the same slug.
+		 *
+		 * JetEngine allows more than one definition row for a slug, and they all
+		 * read from the same data table ({@see wp_jet_cct_<slug>}). Its runtime
+		 * registry keeps whichever Factory it hydrated last, so the toolkit must
+		 * write field definitions to the record it treats as authoritative —
+		 * otherwise a new column can exist in the table yet never receive values.
+		 *
+		 * Highest ID wins, matching the record
+		 * {@see maybe_cleanup_duplicate_ccts()} keeps.
+		 *
+		 * @since 1.10.1
+		 *
+		 * @param array $records CCT records (arrays or objects).
+		 * @return array|null Normalised record array, or null when none are usable.
+		 */
+		protected static function pick_canonical_cct_record( $records ) {
+			if ( ! is_array( $records ) ) {
+				return null;
+			}
+
+			$best    = null;
+			$best_id = -1;
+
+			foreach ( $records as $record ) {
+				if ( is_object( $record ) ) {
+					$record = get_object_vars( $record );
+				}
+
+				if ( ! is_array( $record ) ) {
+					continue;
+				}
+
+				$record_id = isset( $record['id'] ) ? (int) $record['id'] : 0;
+
+				if ( $record_id > $best_id ) {
+					$best_id = $record_id;
+					$best    = $record;
+				}
+			}
+
+			return $best;
+		}
+
 			/**
 			 * Look up a single CCT record by slug.
 			 *
@@ -2180,18 +2292,9 @@ if ( ! class_exists( 'WP_MCP_AI_FlowHub_CCT_Manager' ) ) {
 				return null;
 			}
 
-			$record = reset( $records );
-
-			if ( ! is_array( $record ) && ! is_object( $record ) ) {
-				return null;
-			}
-
-			// Normalise to associative array for consistent access.
-			if ( is_object( $record ) ) {
-				$record = get_object_vars( $record );
-			}
-
-			return $record;
+			// Deterministic pick: duplicates share one data table, and the field
+			// sync must target the same record the cleanup keeps.
+			return self::pick_canonical_cct_record( $records );
 		}
 
 			/**
