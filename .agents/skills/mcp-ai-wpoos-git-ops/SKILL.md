@@ -151,7 +151,7 @@ sync.
 ## Shared worktree discipline (multi-agent repo, learned 2026-10-30)
 
 Parallel agents share the same checkout and switch branches between tasks.
-Four rules, each from a session that cost a recovery:
+Each rule below cost a recovery:
 
 - **Check the branch before committing.** `git branch --show-current` and
   `git log --oneline -1` before `git add`/`commit` — a commit lands on
@@ -165,6 +165,28 @@ Four rules, each from a session that cost a recovery:
   commit to a `fix/` branch + PR; a direct mainline hotfix (e.g. `cb9158501f`,
   the #7400 fixture-sync crash fix) should still be recorded by a small
   follow-up PR for the audit trail.
+- **`git checkout -b` inherits whatever branch is checked out — verify BEFORE
+  creating, not only before committing (2026-11-11).** A `checkout -b feat/x`
+  issued while the worktree sat on another agent's `feat/ezuite-…` produced a
+  branch one commit deep in THEIR work, so the PR would have bundled their
+  commit. `git log --oneline -1` straight after creating the branch shows it in
+  one line. Fix without switching branches:
+  `git reset --mixed origin/alpha-working` moves HEAD and the index only — no
+  working-tree content is lost — then re-stage just your own paths and commit.
+- **Never build a commit tree from the WORKING TREE in a shared checkout
+  (2026-11-11).** After a foreign branch switch, the on-disk copy of a file is
+  the OTHER branch's version, so committing the worktree silently REVERTED 106
+  lines of the agent's own work — `git show --stat` read `+36/−106` for a
+  four-line fix. **The tell is a large DELETION count on a file you barely
+  touched: stop and rebuild from a blob.** No checkout needed:
+  `GIT_INDEX_FILE=.git/tmp-index git read-tree <branch-sha>`, then
+  `git hash-object -w` a copy of `git show <branch-sha>:<path>` with the fix
+  applied, `git update-index --cacheinfo 100644,<blob>,<path>`,
+  `git write-tree`, `git commit-tree <tree> -p <base-sha> -F <msg>`, and
+  `git branch -f <branch> <commit>` (legal only while that branch is NOT
+  checked out). `rm .git/tmp-index` afterwards. This touches nothing the other
+  agent can see and needs no worktree state at all — the recovery of choice
+  whenever a checkout is blocked by their dirty files.
 - **Recovering a stray commit:** cherry-pick it onto your branch, then
   restore the foreign branch with `git reset --mixed <its-old-head>` +
   `git restore --worktree -- <only-the-files-you-touched>`. **Never
