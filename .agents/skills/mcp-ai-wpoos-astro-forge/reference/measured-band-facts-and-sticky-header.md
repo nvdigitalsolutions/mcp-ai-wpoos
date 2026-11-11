@@ -137,7 +137,25 @@ arrows, and three CF7 wrappers. The hand-written rule was then removed from
 `global.css`; the mechanism replaced it.
 
 A closed panel has no CSS-only way back open (the source toggled it with JS).
-The closed state is the faithful RESTING state, which is what a rebuild owes.
+The closed state is the faithful RESTING state, which is what a rebuild owes —
+but a widget whose only control does nothing is not a rebuild either. The
+missing half is behaviour, and `src/components/BuilderAccordion.astro` supplies
+it as progressive enhancement: on any `.post-body .panel-group` it toggles the
+panel's `.in` class (the class the measured selector tests), closes siblings
+(the source's `data-parent` contract), mirrors `aria-expanded`/`aria-controls`
+and `role=button`, handles Space, opens a `#hash` target, and keeps the source's
+`active-accordion` class in sync. It marks the group `data-accordion`, so
+`global.css` can hide a closed panel even when the source rested "all open" and
+no measured selector exists. No JS → the resting state, unchanged.
+
+`global.css` also draws the `+`/`−` marker: the source's glyphs are `fa-plus` /
+`fa-minus` from a Font Awesome sheet a forged site does not ship, so the control
+had no affordance at all. It is absolutely positioned (the source's own
+`span.pull-right` is), or the marker steals title width and wraps headings the
+source kept on one line. The accordion TITLE colour is declared in the same
+block at vendor-beating specificity: `.accordion-style1 a{color:#ababab}` from
+the source sheet otherwise overrides the rebuild's accent, and the source's
+per-element inline colour does not survive sanitisation.
 
 ## 4. The class-coverage audit — the inventory behind all of the above
 

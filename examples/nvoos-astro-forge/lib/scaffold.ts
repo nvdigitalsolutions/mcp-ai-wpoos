@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
+import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit } from './contrast.ts';
 import { designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { renderDirectFormsEndpointTs } from './forms-direct.ts';
@@ -1236,6 +1237,14 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'\t/** Cropped-media heights, emitted as `img.<class>` only. */',
 		'\tmedia?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'\t/** The band\u2019s measured interaction STATES (hover / focus /',
+		'\t * focus-visible / active) per control signature. `selector` is the',
+		'\t * signature\u2019s CSS form (`a[class~="btn"]`), already escaped, so the',
+		'\t * renderer only has to scope and emit it. `transition` is the source\u2019s',
+		'\t * own easing, emitted under `prefers-reduced-motion: no-preference`; the',
+		'\t * `hover`/`active` rules live under `@media (hover: hover)` so touch',
+		'\t * devices never keep a sticky hover. */',
+		'\tinteractions?: Array<{ selector: string; count?: number; base?: string; transition?: string; hover?: string; focus?: string; focusVisible?: string; active?: string }>;',
 		'\t/** The top-level column responsive facts (124 §6) — widths per',
 		'\t * device + order/visibility; the split components re-measure. */',
 		'\tcolumns?: Array<{',
@@ -1409,6 +1418,29 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 				`media: { ${ mediaEntries
 					.map( ( [ name, media ] ) => `${ tsKey( name ) }: ${ tsUtility( media ) }` )
 					.join( ', ' ) } }`
+			);
+		}
+		// The controls' measured STATE deltas (see `measureInteractions`). The
+		// vendor sheet never ships, so a rebuilt control loses every hover/focus/
+		// active effect the source expressed in CSS. The SELECTOR is baked here
+		// (not re-derived in the template) so escaping lives in one place.
+		const interactionEntries = section.interactions ?? bandFacts?.interactions ?? [];
+		if ( interactionEntries.length > 0 ) {
+			entry.push(
+				`interactions: [${ interactionEntries
+					.map( ( fact ) => {
+						const fields = [ `selector: ${ tsString( interactionSelector( fact ) ) }` ];
+						if ( typeof fact.count === 'number' && fact.count > 1 ) {
+							fields.push( `count: ${ fact.count }` );
+						}
+						for ( const key of [ 'base', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] as const ) {
+							if ( fact[ key ] ) {
+								fields.push( `${ key }: ${ tsString( fact[ key ] as string ) }` );
+							}
+						}
+						return `{ ${ fields.join( ', ' ) } }`;
+					} )
+					.join( ', ' ) }]`
 			);
 		}
 		if ( section.columns && section.columns.length > 0 ) {

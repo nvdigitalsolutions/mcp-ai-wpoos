@@ -48,6 +48,7 @@ import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } fr
 import { findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureStickyHeader, serveDir } from '../lib/geometry.ts';
+import { countInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
 import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } from '../lib/gate-policy.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
@@ -408,6 +409,36 @@ async function runAnalyze( url, options ) {
 				} catch ( error ) {
 					console.warn(
 						`\u26a0 Band facts skipped: ${ error instanceof Error ? error.message : error }`
+					);
+				}
+				// Interaction states (hover / focus / focus-visible / active) ride the
+				// same pass. The vendor sheet never ships, so a rebuilt control loses
+				// every state effect the source expressed in CSS — the flatness a
+				// reader notices first. Forced pseudo-classes are the only faithful
+				// source (the rules live behind builder classes and theme variables).
+				try {
+					const interactions = await measureInteractions( {
+						url: profile.url,
+						ids,
+						selectors,
+					} );
+					const bandsWithStates = Object.keys( interactions ).length;
+					if ( profile.bandFacts ) {
+						for ( const [ id, facts ] of Object.entries( interactions ) ) {
+							profile.bandFacts[ id ] = { ...( profile.bandFacts[ id ] ?? {} ), interactions: facts };
+						}
+					}
+					const states = countInteractionStates( interactions );
+					if ( states > 0 ) {
+						console.log(
+							`\u2713 Interaction states: ${ states } state(s) on ${ bandsWithStates } band(s) — hover, focus, focus-visible, active.`
+						);
+					} else {
+						console.log( '  Interaction states: none (the source declares no hover/focus/active effect).' );
+					}
+				} catch ( error ) {
+					console.warn(
+						`\u26a0 Interaction states skipped: ${ error instanceof Error ? error.message : error }`
 					);
 				}
 				// The sticky header rides the same pass: pinning, the scrolled

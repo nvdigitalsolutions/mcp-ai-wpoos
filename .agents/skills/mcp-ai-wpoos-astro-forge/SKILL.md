@@ -124,7 +124,9 @@ before touching the CLI, the scaffold or the sanitizer. The highest-traffic ones
   tag or the builder's styles vanish (headings were missing it until 2026-11-11).
 - **Vendor utilities and the accordion `display:none` are DATA now** — never
   re-introduce them into `global.css`; they come from `bands.ts` +
-  `bandFacts[id].hidden`.
+  `bandFacts[id].hidden`. The CLOSED state is data; REOPENING it is behaviour —
+  `BuilderAccordion.astro` enhances `[data-accordion]` groups so the toggle,
+  exclusivity and aria state are restored without the vendor's JS or icon font.
 - **The class-coverage audit must include the page's inline `<style>`** and treat
   `[class~=…]`/`[class*=…]` as coverage, or correctly-styled bands read as missing.
 
@@ -1161,7 +1163,10 @@ are browser facts on `analyze --geometry`, stored as `profile.bandFacts` and
 - `bandFacts[id].hidden` = the selectors the SOURCE renders hidden at rest
   (accordion panels, tab panes, mobile drawers), hidden at BOTH breakpoints and
   carrying `:not(.in)`-style exclusions so the open panel stays visible. This
-  replaced the hand-written `.panel-collapse.collapse:not(.in)` rule.
+  replaced the hand-written `.panel-collapse.collapse:not(.in)` rule. Reopening
+  is behaviour, not data: `templates/blog/src/components/BuilderAccordion.astro`
+  toggles those classes back — see
+  [`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md) §3.
 - `verify` runs a **class-coverage audit** (report-only; `--strict-classes`
   makes it a gate): every class name in the rebuilt bands that matches no rule,
   written to `verify-artifacts/class-coverage.json`. That list is the inventory
@@ -1245,6 +1250,35 @@ Two bugs fixed: `class` was stripped from `h1`–`h6` (headings lost their measu
 box), and `--dark` set light ink on the WRAP instead of its children.
 virtuallyjamaica: **0 fail** box geometry, **0 drift** colour, **19 of 219**
 classes inert (was 109 of 196).
+
+## Interaction states — hover, focus, press (2026-11-11)
+
+A rebuilt band kept the source's markup and lost the source's STATES: the CTA
+that darkened on hover, the button that pressed in, the field that lit up on
+focus. `analyze --geometry` now measures them by forcing each pseudo-class in a
+real browser (CDP `CSS.forcePseudoState`, the API behind DevTools' `:hov` panel)
+and diffing the computed style. Full contract, standards and gotchas:
+[`reference/interaction-states.md`](reference/interaction-states.md).
+
+- **State set:** `hover`, `focus`, `focus-visible`, `active` (forced as
+  `hover + active` — a source writes `:hover:active`).
+- **Rest paint is part of the fact.** The delta alone painted white ink onto a
+  light band, because the source's red pill lived in a vendor class the rebuild
+  never ships. `base` re-states the measured rest look (ink, background, borders,
+  radius, weight); `font-size`/`padding` stay with the band facts.
+- **`hover`/`active` are emitted inside `@media (hover: hover)`** — a touch device
+  keeps a synthesised hover forever otherwise.
+- **A state that REMOVES the focus ring is dropped** (WCAG F78), and a decoration
+  colour with no decoration line is dropped too.
+- **The source's easing is `prefers-reduced-motion: no-preference` only.**
+- **Every site gets a focus baseline:**
+  `:focus-visible { outline: max(2px, .12em) solid currentColor; outline-offset: 2px }`.
+  `currentColor` is the trick — the control's own ink already meets contrast (a
+  fixed accent ring measured 2.79:1 on virtuallyjamaica's light surface).
+- **`bandFacts[id].interactions[]`** → `sections.generated.ts` (`selector` baked
+  at scaffold time) → band-scoped `[data-section-id] …:hover` rules.
+  virtuallyjamaica: 13 states on 5 bands, ~5 s; the CTA's rest/hover/press now
+  match the source exactly.
 
 ## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
 
@@ -1405,6 +1439,10 @@ the Windows staging race — re-run with `--maxWorkers=4` before debugging code.
   `repository_dispatch` consumer works; the forge is the reference
   consumer). Its wp.org submission track and review conventions live in
   the `mcp-ai-wpoos-wporg-submission` skill.
+- Interaction states (hover / focus / press):
+  [`reference/interaction-states.md`](reference/interaction-states.md) — the
+  CDP forced-pseudo-state mechanism, the rest-paint rule, the WCAG 2.4.13 /
+  1.4.11 focus baseline and the measured virtuallyjamaica numbers.
 
 ## Email delivery
 

@@ -156,7 +156,9 @@ node scripts/forge.mjs verify site.json --target ./customer-frontend --pixel --p
 node scripts/forge.mjs verify site.json --target ./customer-frontend --pixel
 node scripts/forge.mjs verify site.json --target ./customer-frontend --pixel --pixel-live
 
-# 6. Capture the geometry, text and colour baselines alongside the design block:
+# 6. Capture the geometry, text and colour baselines alongside the design block.
+#    `--geometry` also records each band's measured interaction STATES (hover /
+#    focus / focus-visible / active) and the rest paint they are relative to.
 node scripts/forge.mjs analyze https://customer.example --design --geometry --text --colors \
   --write site.json
 
