@@ -130,4 +130,80 @@ class WP_MCP_AI_Pro_Settings_Dependencies_Test extends WP_UnitTestCase {
 		$this->assertTrue( $status['available'], 'node-ensure should be marked as available' );
 		$this->assertEquals( 'Installed', $status['message'], 'node-ensure status message should be "Installed"' );
 	}
+
+	/**
+	 * Seed the cached Media Worker health result.
+	 *
+	 * Seeding this transient bypasses the HTTP probe in
+	 * is_media_worker_reachable(), which makes the assertions deterministic.
+	 *
+	 * @param bool $ok Whether the worker should appear reachable.
+	 */
+	private function set_worker_health( $ok ) {
+		set_transient( 'wp_mcp_ai_worker_health', array( 'ok' => $ok ), MINUTE_IN_SECONDS );
+	}
+
+	/**
+	 * Invoke the private get_package_status() helper.
+	 *
+	 * @param string $package Package name.
+	 * @return array Status array.
+	 */
+	private function get_package_status( $package ) {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Pro_Settings' );
+		$method     = $reflection->getMethod( 'get_package_status' );
+		$method->setAccessible( true );
+
+		return $method->invoke( null, $package );
+	}
+
+	/**
+	 * Clear the seeded worker health cache.
+	 */
+	public function tearDown(): void {
+		delete_transient( 'wp_mcp_ai_worker_health' );
+		parent::tearDown();
+	}
+
+	/**
+	 * Sidecar-only packages are available while the worker is reachable.
+	 */
+	public function test_sidecar_only_packages_available_when_worker_reachable() {
+		$this->set_worker_health( true );
+
+		$status = $this->get_package_status( 'ics' );
+
+		$this->assertTrue( $status['available'], 'ics should be available via the sidecar' );
+		$this->assertSame( 'sidecar', $status['source'], 'ics should report the sidecar as its source' );
+	}
+
+	/**
+	 * Sidecar-only packages must not be reported installed when the worker is down.
+	 *
+	 * Regression guard: the vendored marker files exist on disk but cannot
+	 * execute, so a bare file_exists() probe used to report "Installed" for a
+	 * feature that could not run.
+	 */
+	public function test_sidecar_only_packages_unavailable_when_worker_unreachable() {
+		$this->set_worker_health( false );
+
+		$status = $this->get_package_status( 'ics' );
+
+		$this->assertFalse( $status['available'], 'ics must not be available when the worker is unreachable' );
+		$this->assertSame( 'sidecar_unreachable', $status['source'], 'ics should report the worker as unreachable' );
+	}
+
+	/**
+	 * Locally-capable worker packages keep their local fallback.
+	 *
+	 * Packages such as sharp/katex/pdfkit also have usable local paths, so they
+	 * must not be forced into the sidecar-only "unreachable" state.
+	 */
+	public function test_local_capable_worker_package_falls_through_when_worker_unreachable() {
+		$this->set_worker_health( false );
+
+		$status = $this->get_package_status( 'sharp' );
+
+		$this->assertNotSame( 'sidecar_unreachable', $status['source'], 'Locally-capable worker packages must keep their local fallback' );
+	}
 }
