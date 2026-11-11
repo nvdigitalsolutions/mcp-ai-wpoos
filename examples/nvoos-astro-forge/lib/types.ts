@@ -15,6 +15,7 @@ import type {
 	MarqueeItem,
 	ComparisonRow,
 } from './semantic.ts';
+import type { ForgeVerify } from './gate-policy.ts';
 
 /** One WordPress REST collection (e.g. posts, pages, a CPT). */
 export interface WpCollection {
@@ -469,6 +470,19 @@ export interface SiteProfile {
 	 * with CIEDE2000.
 	 */
 	colors?: ForgeColorModes;
+	/**
+	 * The gate-policy block (`lib/gate-policy.ts`). The forge serves many sites
+	 * built by different page builders, so a gate's MEASUREMENT is shared but its
+	 * BLOCKING-ness cannot be: a pixel diff rides on the source's font
+	 * rasterisation, image renditions and third-party widgets, and a box delta can
+	 * absorb sub-pixel font-metric drift on a band of long prose. This block lets a
+	 * site DOWNGRADE one of the three addressable gates (`pixel parity`,
+	 * `pixel regression`, `box geometry`) to `advisory`, which keeps the
+	 * measurement and the scorecard line without failing the run. Content gates are
+	 * fixed — see the header of `lib/gate-policy.ts` for why. Absent = defaults
+	 * (`pixel parity` resolves `auto`: advisory until a source seam exists).
+	 */
+	verify?: ForgeVerify;
 	/**
 	 * The contact band (issue #7549). A forged site used to lose the source's
 	 * contact block entirely when the band was theme-injected (virtuallyjamaica:
