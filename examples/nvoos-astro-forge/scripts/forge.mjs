@@ -39,7 +39,7 @@ import { fileURLToPath } from 'node:url';
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
-import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredHeader, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
+import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredHeader, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { auditBands, formatBandReport } from '../lib/band-audit.ts';
 import { auditClassCoverage } from '../lib/class-audit.ts';
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
@@ -566,13 +566,23 @@ async function runAnalyze( url, options ) {
 					}
 				} else {
 					const merged = mergeProfileDraft( existing, profile );
-					text = `${ JSON.stringify( reconcileHeader( merged ), null, '\t' ) }\n`;
+					// `reconcileHeader` runs LAST, so the diff must too: it can re-add
+					// header facts, and reporting those as dropped would be a false alarm.
+					const reconciled = reconcileHeader( merged );
+					text = `${ JSON.stringify( reconciled, null, '\t' ) }\n`;
 					mode = 'Draft profile MERGED into';
 					// Pins are re-applied by the merge, so anything still dropped
 					// means the source no longer has that section — say so instead
 					// of letting the operator assume the pin held.
-					for ( const pin of findDroppedPins( merged.design, pins ) ) {
+					for ( const pin of findDroppedPins( reconciled.design, pins ) ) {
 						console.warn( `  \u26a0 Pin "${ pin.path }" could not be re-applied — its section is gone from the source.` );
+					}
+					// Unpinned facts the refresh failed to re-extract. Mostly that is a
+					// REAL source change, but it is not always: virtuallyjamaica's #wifi
+					// anchor was silently lost this way (2026-11-11). Name what went so
+					// the operator can tell the two apart and pin what still exists.
+					for ( const dropped of diffDesignFacts( existing.design, reconciled.design ) ) {
+						console.warn( `  \u26a0 Design refresh dropped ${ dropped } — pin it (pins) if the source still has it.` );
 					}
 				}
 			}

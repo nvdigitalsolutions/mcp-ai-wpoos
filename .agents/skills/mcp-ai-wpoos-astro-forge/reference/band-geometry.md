@@ -87,6 +87,26 @@ the band's padding, so width becomes right and padding is lost (observed:
 `1ff4891` went 720→1440 with padding 58/58 → 0/0, and the band height then read
 1076 instead of 946).
 
+**The band extractor must promote identically (2026-11-11).** `lib/bands.ts →
+anchorWithin` reads a column-carried anchor when the band node has none, so
+`analyze --design` keeps `#wifi` in `design.sections[].anchor`. Without it the
+profile silently lost the anchor while the nav still linked `#wifi`, and the
+next `verify` reported the loss as a parity failure with nothing pointing at the
+cause. Only a column is promoted — the band's other ids are panel internals
+(`accordion-one-link-1`) that pass the slug shape and must never become nav
+targets. The band id seeds on the node, never the anchor, so promoting one does
+not renumber the band (`bandFacts`/`geometry` are keyed by it).
+
+Separately, `analyze --design` REPLACES `profile.design` wholesale, so an
+extraction miss used to vanish without trace. `diffDesignFacts`
+(`lib/design.ts`) now names every dropped section anchor and chrome key at merge
+time. It reports rather than merges on purpose: the same run that lost the
+chrome block showed the site's copyright line had genuinely been removed, so
+re-instating a dropped fact automatically would be wrong in the other direction.
+`profile.pins` remains how a fact is kept deliberately — and note
+`diffDesignFacts` runs AFTER `reconcileHeader` and the pin re-application, or a
+pin-restored fact would be reported as lost.
+
 ## 4. Emitting the measurement into `sections.generated.ts`
 
 `lib/scaffold.ts` → `renderSectionsGenerated()` emits two new fields per band.

@@ -425,11 +425,45 @@ export function inlineBackground( node: BandNode ): Pick< BandCandidate, 'bgColo
 }
 
 /** A nav-target anchor: a plain lowercase slug, never an internal/auto id. */
+const isAnchorId = ( id: string | undefined ): id is string =>
+	Boolean( id ) && /^[a-z][a-z0-9-]{1,31}$/.test( id as string ) && ! /^(?:elementor|aux-|df_|nvoos|rev_slider)/.test( id as string );
+
 const anchorOf = ( node: BandNode ): string | undefined => {
 	const id = node.attribs?.id;
-	return id && /^[a-z][a-z0-9-]{1,31}$/.test( id ) && ! /^(?:elementor|aux-|df_|nvoos|rev_slider)/.test( id )
-		? id
-		: undefined;
+	return id && isAnchorId( id ) ? id : undefined;
+};
+
+/**
+ * The band's nav anchor, PROMOTING a column-carried one to the band.
+ *
+ * Builder sources frequently put the anchor on the inner column rather than the
+ * row: virtuallyjamaica's `#wifi` sits on a `<div class="wpb_column …">` inside
+ * the band, so reading the band node's own id alone lost it — and `analyze
+ * --design` then dropped it from the profile while the nav still linked
+ * `#wifi` (2026-11-11). The BOX pass has always promoted a column anchor (see
+ * reference/band-geometry.md §3); the band extractor has to agree with it or the
+ * two disagree about which sections are addressable.
+ *
+ * ONLY a column is promoted. A band's other ids are panel internals
+ * (`accordion-one-link-1`) — they pass the slug test but must never become nav
+ * targets, so the column class is the gate.
+ */
+const COLUMN_CLASS = /(^|\s)(wpb_column|vc_column_container)(\s|$)/;
+const anchorWithin = ( node: BandNode ): string | undefined => {
+	const walk = ( current: BandNode ): string | undefined => {
+		for ( const child of childElements( current ) ) {
+			const childAnchor = anchorOf( child );
+			if ( childAnchor && COLUMN_CLASS.test( child.attribs?.class ?? '' ) ) {
+				return childAnchor;
+			}
+			const nested = walk( child );
+			if ( nested ) {
+				return nested;
+			}
+		}
+		return undefined;
+	};
+	return walk( node );
 };
 
 /** djb2 → 7 lowercase hex chars: stable across runs, never a vendor id. */
@@ -552,7 +586,7 @@ const toCandidate = ( node: BandNode, adapter: BandAdapter ): BandCandidate | un
 		...bg,
 	};
 
-	const anchor = anchorOf( node );
+	const anchor = anchorOf( node ) ?? anchorWithin( node );
 	if ( anchor ) {
 		candidate.anchor = anchor;
 	}

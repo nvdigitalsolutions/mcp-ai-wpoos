@@ -73,6 +73,50 @@ describe( 'WPBakery (virtuallyjamaica.com)', () => {
 	} );
 } );
 
+describe( 'a column-carried anchor is promoted to its band', () => {
+	// virtuallyjamaica's `#wifi` sits on the inner `wpb_column`, not the row. The
+	// BOX pass has always promoted it (band-geometry.md §3); the band extractor
+	// did not, so `analyze --design` dropped the anchor while the nav still
+	// linked `#wifi` (2026-11-11).
+	const html = page( `
+		<div class="vc_row wpb_row vc_row-fluid" style="background-color:#ededed">
+			<div class="vc_col-sm-6 wpb_column vc_column_container" id="wifi"><h2>WiFi Marketing</h2><p>${ LONG }</p></div>
+			<div class="vc_col-sm-6 wpb_column vc_column_container"><img src="/b.jpg" alt=""></div>
+		</div>
+		<div class="vc_row wpb_row vc_row-fluid" style="background-color:#ededed">
+			<div class="vc_col-sm-12 wpb_column vc_column_container">
+				<ul><li id="accordion-one-link-1"><a href="#">Panel</a></li></ul>
+				<p>${ LONG }</p>
+			</div>
+		</div>` );
+
+	it( 'promotes an id on a wpb_column to the band', () => {
+		const { bands } = extractBandsFromHtml( html );
+		expect( bands[ 0 ].anchor ).toBe( 'wifi' );
+	} );
+
+	it( 'never promotes a panel-internal id', () => {
+		// `accordion-one-link-1` passes the slug shape but is not a column, so it
+		// must not become a nav target.
+		const { bands } = extractBandsFromHtml( html );
+		expect( bands[ 1 ].anchor ).toBeUndefined();
+	} );
+
+	it( 'keeps the band id stable whether the anchor rides the row or a column', () => {
+		// The id seeds on the node, never the anchor, and bandFacts/geometry are
+		// keyed by it — promoting an anchor must not renumber the band.
+		const rowCarried = page(
+			`<div class="vc_row wpb_row vc_row-fluid" id="wifi"><div class="wpb_column"><p>${ LONG }</p></div></div>`
+		);
+		const columnCarried = page(
+			`<div class="vc_row wpb_row vc_row-fluid"><div class="wpb_column" id="wifi"><p>${ LONG }</p></div></div>`
+		);
+		expect( extractBandsFromHtml( rowCarried ).bands[ 0 ].id ).toBe(
+			extractBandsFromHtml( columnCarried ).bands[ 0 ].id
+		);
+	} );
+} );
+
 describe( 'Divi', () => {
 	const html = page( `
 		<div class="et_pb_section et_pb_section_0 et_pb_with_background" style="background-image:url(/hero.jpg)">
