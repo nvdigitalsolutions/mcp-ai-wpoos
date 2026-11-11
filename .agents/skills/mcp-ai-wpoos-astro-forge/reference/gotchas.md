@@ -39,9 +39,34 @@ short digest of the highest-traffic ones stays in `SKILL.md`.
 - **`astro check` on a generated project needs `@types/sanitize-html` and
   `@types/node` in the template devDeps** — the vendored `sanitize.ts` and
   `wp-client.ts` typecheck under the language server.
-- **`--overwrite` re-scaffold is destructive** — it `rm`s the target
-  including `node_modules` (reinstall after). An empty target dir is safe to
-  scaffold into; a non-empty non-forge dir is refused without `overwrite: true`.
+- **A new `lib/*.ts` module that a VENDORED module imports must join
+  `FORGE_LIB_FILES`** (`lib/scaffold.ts`). The scaffold does not copy `lib/`
+  wholesale — step 2 of `scaffoldProject` vendors a fixed list into
+  `src/forge/`. #7574 added `import type { ForgeVerify } from
+  './gate-policy.ts'` to `types.ts` and left the module out, so EVERY generated
+  project failed `astro check` with `ts(2307): Cannot find module
+  './gate-policy.ts'` while `npm run typecheck` and the unit suite stayed green
+  (the module does exist in the repo — just not in the customer repo). **No
+  fast gate can see this class of break**: `vitest run --exclude forge-e2e` is
+  the documented quick gate and it passes. Touching a vendored import means run
+  the e2e, or reproduce cheaply — `forge scaffold <site> --target <dir>` →
+  `npm install` → `npm run check` (~3 min; that also runs the
+  generated-artifact drift check).
+- **`vitest run -t` is unreliable in `forge-e2e.test.ts`** — the fixture server
+  and the derived profiles are built by earlier tests in the same run, so any
+  name filter (test OR describe) skips their creator and every selected test
+  fails with `expected undefined to be defined`. Run the whole file.
+- **EVERY scaffold replaces the target wholesale, `--overwrite` or not** — the
+  project is built in a `<target>.forge-tmp-*` sibling and swapped in
+  (`swapStagedProject`), so the new tree is the TEMPLATE only: `node_modules/`,
+  `dist/`, `.astro/` and **`verify-artifacts/` all disappear**. Budget
+  `npm install` after every re-scaffold, and re-record the pixel seam with
+  `verify --pixel-record-source` — otherwise the parity gate reports "no
+  baseline or source screenshots" and the scorecard shows `–` for a site that
+  was passing. The swap is atomic: it fails before destroying anything when
+  something holds the target open (dev server, watcher, editor), and leaves the
+  old tree intact. An empty target is safe; a non-empty non-forge dir is
+  refused without `overwrite: true`.
 - **Woo sets `price` to the sale price while on sale** — sale state is
   `salePrice !== regularPrice`, never `salePrice !== price` (the first cut
   rendered no strike-throughs at all). wc/v3 needs consumer keys (401
