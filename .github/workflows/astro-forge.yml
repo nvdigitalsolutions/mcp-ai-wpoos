@@ -41,9 +41,30 @@ jobs:
 
       # The axe e2e gate (126 §a11y) runs in real Chromium — install the
       # browser (with system deps) before the e2e step.
+      #
+      # `--with-deps` shells out to apt, which needs the runner to reach the
+      # Ubuntu mirrors. On 2026-11-11 two consecutive runs died there with
+      # "Temporary failure resolving 'security.ubuntu.com'" before a single
+      # test ran (exit 100), so retry with backoff first. If the mirrors stay
+      # unreachable, fall back to the browser alone — `ubuntu-latest` already
+      # carries Chromium's system libraries — and PROVE it launches, so a
+      # genuinely missing dependency still fails here with a clear message
+      # instead of surfacing later as a mysterious axe timeout.
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
         working-directory: examples/nvoos-astro-forge
+        timeout-minutes: 20
+        run: |
+          for attempt in 1 2 3; do
+            if npx playwright install --with-deps chromium; then
+              echo "Chromium installed with system deps (attempt $attempt)."
+              exit 0
+            fi
+            echo "::warning::Playwright install failed (attempt $attempt/3); retrying in $((attempt * 15))s."
+            sleep $((attempt * 15))
+          done
+          echo "::warning::--with-deps kept failing (the apt mirrors appear unreachable); installing the browser alone."
+          npx playwright install chromium
+          node -e "require('playwright').chromium.launch().then((b) => b.close()).then(() => console.log('Chromium launches.'))"
 
       - name: Typecheck
         run: npm run typecheck
