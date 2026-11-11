@@ -42,10 +42,11 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		 * Schema version for auto-discovery of new columns on update.
 		 *
 		 * @since 1.9.0
+		 * @since 1.10.0 Bumped for the printing_name / group_name / remark columns.
 		 *
 		 * @var string
 		 */
-		const SCHEMA_VERSION = '1.9.0';
+		const SCHEMA_VERSION = '1.10.0';
 
 		/**
 		 * Base ID for meta field identifiers.
@@ -87,6 +88,9 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		protected $columns = array(
 			'sku'               => 'text',
 			'name'              => 'text',
+			'printing_name'     => 'text',
+			'group_name'        => 'text',
+			'remark'            => 'text',
 			'quantity'          => 'number',
 			'warehouse'         => 'text',
 			'location_name'     => 'text',
@@ -899,6 +903,9 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			$labels = array(
 				'sku'               => __( 'SKU', 'mcp-ai-wpoos-pro' ),
 				'name'              => __( 'Product Name', 'mcp-ai-wpoos-pro' ),
+				'printing_name'     => __( 'Printing Name', 'mcp-ai-wpoos-pro' ),
+				'group_name'        => __( 'Group Name', 'mcp-ai-wpoos-pro' ),
+				'remark'            => __( 'Remark', 'mcp-ai-wpoos-pro' ),
 				'quantity'          => __( 'Quantity', 'mcp-ai-wpoos-pro' ),
 				'warehouse'         => __( 'Warehouse', 'mcp-ai-wpoos-pro' ),
 				'location_name'     => __( 'Location Name', 'mcp-ai-wpoos-pro' ),
@@ -962,11 +969,11 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 				$query_args[] = $tenant_clause;
 			}
 
-			// Full-text search across name and sku.
+			// Full-text search across name, sku, and the printed item code.
 			if ( ! empty( $filters['search'] ) ) {
 				$query_args['_cct_search'] = array(
 					'keyword' => esc_sql( sanitize_text_field( $filters['search'] ) ),
-					'fields'  => array( 'name', 'sku' ),
+					'fields'  => array( 'name', 'sku', 'printing_name' ),
 				);
 			}
 
@@ -1570,6 +1577,9 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 			return array(
 				'sku'           => 'ItemCode',
 				'name'          => 'Item_Name',
+				'printing_name' => 'Printing_Name',
+				'group_name'    => 'Group_Name',
+				'remark'        => 'Remark',
 				'quantity'      => 'Qty',
 				'warehouse'     => 'Location_Code',
 				'supplier'      => 'Supplier_Name',
@@ -1762,6 +1772,8 @@ if ( ! class_exists( 'WP_MCP_AI_EZuite_CCT_Manager' ) ) {
 		protected function get_orderby_field( $orderby ) {
 			$map = array(
 				'name'          => 'name',
+				'printing_name' => 'printing_name',
+				'group_name'    => 'group_name',
 				'quantity'      => 'quantity',
 				'sku'           => 'sku',
 				'warehouse'     => 'warehouse',

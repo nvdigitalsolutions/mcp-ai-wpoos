@@ -75,7 +75,9 @@ class Test_EZuite_CCT_Manager_API_Shape extends WP_UnitTestCase {
 				'ItemCode'          => '170639',
 				'Item_Name'         => 'Earrings with Stickpin 1500 MC',
 				'Supplier_Name'     => 'Coeur de Lion',
+				'Printing_Name'     => '4239/21-1500',
 				'Group_Name'        => 'Earrings',
+				'Remark'            => '4239/21-1500',
 				'Selling_Price'     => 8200.0,
 				'Qty'               => 1.0,
 				'Stock_By_Location' => array(
@@ -92,6 +94,9 @@ class Test_EZuite_CCT_Manager_API_Shape extends WP_UnitTestCase {
 
 		$this->assertSame( '170639', $row['sku'] );
 		$this->assertSame( 'Earrings with Stickpin 1500 MC', $row['name'] );
+		$this->assertSame( '4239/21-1500', $row['printing_name'] );
+		$this->assertSame( 'Earrings', $row['group_name'] );
+		$this->assertSame( '4239/21-1500', $row['remark'] );
 		$this->assertSame( 'EZCMP316/EZLOC-3', $row['warehouse'] );
 		$this->assertSame( 'A Little Sparkle – One Galle Face', $row['location_name'] );
 		$this->assertSame( 'Coeur de Lion', $row['supplier'] );
@@ -224,6 +229,61 @@ class Test_EZuite_CCT_Manager_API_Shape extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( '', $row['sku'] );
+	}
+
+	/**
+	 * The CCT schema and default field mapping both carry the descriptive
+	 * Printing_Name / Group_Name / Remark fields returned by the API.
+	 */
+	public function test_schema_and_mapping_include_descriptive_fields() {
+		$columns = $this->manager->get_column_definitions();
+		$mapping = WP_MCP_AI_EZuite_CCT_Manager::get_default_field_mapping_static();
+
+		$this->assertSame( 'text', $columns['printing_name'] );
+		$this->assertSame( 'text', $columns['group_name'] );
+		$this->assertSame( 'text', $columns['remark'] );
+
+		$this->assertSame( 'Printing_Name', $mapping['printing_name'] );
+		$this->assertSame( 'Group_Name', $mapping['group_name'] );
+		$this->assertSame( 'Remark', $mapping['remark'] );
+	}
+
+	/**
+	 * An item without the descriptive fields still maps them to empty strings
+	 * so upserts never write null into the new columns.
+	 */
+	public function test_missing_descriptive_fields_map_to_empty_strings() {
+		$row = $this->invoke_map(
+			array(
+				'ItemCode'  => 'BARE-1',
+				'Item_Name' => 'Bare Item',
+				'Qty'       => 2.0,
+			),
+			array(),
+			'conn_bare'
+		);
+
+		$this->assertSame( '', $row['printing_name'] );
+		$this->assertSame( '', $row['group_name'] );
+		$this->assertSame( '', $row['remark'] );
+	}
+
+	/**
+	 * A custom mapping override can point a descriptive column at any field.
+	 */
+	public function test_custom_mapping_override_for_group_name() {
+		$row = $this->invoke_map(
+			array(
+				'ItemCode'   => 'GRP-1',
+				'Item_Name'  => 'Grouped Item',
+				'Group_Name' => 'Rings',
+				'Category'   => 'Rings (legacy)',
+			),
+			array( 'group_name' => 'Category' ),
+			'conn_grp'
+		);
+
+		$this->assertSame( 'Rings (legacy)', $row['group_name'] );
 	}
 
 	/**

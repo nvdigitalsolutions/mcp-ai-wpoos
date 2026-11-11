@@ -139,6 +139,9 @@ The toolkit uses a flexible field mapping system to translate between EZuite ERP
 ### Default mappings include:
 - SKU ← `ItemCode` (legacy `Item_Code` accepted)
 - Product title ← `Item_Name`
+- Printing Name ← `Printing_Name` (the printed shelf-tag code, e.g. `0128/21-1817`)
+- Group Name ← `Group_Name` (the ERP product group, e.g. `Earrings`)
+- Remark ← `Remark` (free-text ERP remark — often repeats the printing name)
 - Quantity ← `Qty` (falls back to the sum of per-location quantities)
 - Warehouse/location ← `Location_Code` (primary `Setup_Location_Code` from `Stock_By_Location` in the current `LX_ItemStockPull` shape)
 - Location Name ← `Location_Name` (primary `Stock_By_Location` entry)
