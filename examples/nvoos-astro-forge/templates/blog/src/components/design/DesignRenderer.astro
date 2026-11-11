@@ -215,6 +215,13 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 		if ( title.align && title.align !== 'start' && title.align !== 'left' ) {
 			parts.push( `--ds-title-align:${ title.align }` );
 		}
+		// The source's own ink. A builder element's colour lives in an inline
+		// `style` the sanitizer drops, so `.ds-title` otherwise inherited the
+		// template's accent — virtuallyjamaica's accordion titles rendered
+		// #fe6c61 where the source is #262626.
+		if ( title.color ) {
+			parts.push( `--ds-title-color:${ title.color }` );
+		}
 	}
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage ) {
@@ -349,7 +356,7 @@ const responsiveBandCss = sections
  * Scoped to the wrap (`[data-section-id]`) and emitted after global.css, so it
  * outranks the template's own prose defaults.
  */
-const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string }, options: { weight?: boolean } = {} ): string =>
+const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string }, options: { weight?: boolean } = {} ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
 		options.weight !== false && fact.weight && `font-weight:${ fact.weight }`,
@@ -360,13 +367,16 @@ const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: 
 		// from a wrapper class, which the sanitizer drops. `start`/`left` is the
 		// template default and needs no rule.
 		fact.align && fact.align !== 'start' && fact.align !== 'left' && `text-align:${ fact.align }`,
+		// The measured ink. Emitted LAST so a band's own colour wins over the
+		// template accent it would otherwise inherit.
+		fact.color && `color:${ fact.color }`,
 	]
 		.filter( Boolean )
 		.join( ';' );
 
 /** A device override, emitted verbatim — `diffTypeFact` already trimmed it to the
  * properties the source changes, so a reset back to `left` must survive. */
-const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string } ): string =>
+const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string } ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
 		fact.weight && `font-weight:${ fact.weight }`,
@@ -374,6 +384,7 @@ const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeigh
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
 		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
 		fact.align && `text-align:${ fact.align }`,
+		fact.color && `color:${ fact.color }`,
 	]
 		.filter( Boolean )
 		.join( ';' );

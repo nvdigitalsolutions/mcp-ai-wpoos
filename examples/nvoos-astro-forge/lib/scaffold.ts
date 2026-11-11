@@ -369,7 +369,7 @@ function tsLength( value: ResponsiveLength ): string {
  */
 function tsTypeFact( fact: BandTypeFact ): string {
 	const properties = ( value: Record< string, unknown >, dropDefaults: boolean ): string[] =>
-		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align' ] as const )
+		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color' ] as const )
 			.filter( ( key ) => {
 				const entry = value[ key ];
 				if ( typeof entry !== 'string' || entry.length === 0 ) {

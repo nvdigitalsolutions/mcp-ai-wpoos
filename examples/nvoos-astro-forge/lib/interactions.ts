@@ -95,6 +95,18 @@ const PROBED_PROPERTIES = [
 	'textTransform',
 ] as const;
 
+/**
+ * Read at REST only, never diffed across states.
+ *
+ * A state that changes `display` or `font-size` is rare and usually a layout
+ * bug, so neither belongs in the state comparison. Their RESTING value is
+ * still part of how a control looks, and both were missing from the emitted
+ * rules: a builder button is `inline-block` (virtuallyjamaica's `.btn`), and
+ * rendered `inline` its 2px border and vertical padding reserve no space, so
+ * the box overlapped the neighbouring line instead of boxing the label.
+ */
+const REST_LAYOUT_PROPERTIES = [ 'display', 'fontSize' ] as const;
+
 /** camelCase → kebab-case, for emitting a measured property as CSS. */
 function kebab( property: string ): string {
 	return property.replace( /[A-Z]/g, ( character ) => `-${ character.toLowerCase() }` );
@@ -428,9 +440,9 @@ function clearProbes(): void {
  * control, and they are measured rather than inferred because the look lives in
  * builder classes (`btn-small-white-background`) the rebuild never ships.
  *
- * `font-size` and `padding` are deliberately absent: the band typography and
- * the measured box facts already carry them, and freezing a desktop size here
- * would pin a control that the source scales responsively.
+ * `padding` is deliberately absent: the measured box facts already carry it.
+ * `font-size` is read at rest (see `REST_LAYOUT_PROPERTIES`) but only emitted for
+ * a control that paints — see `restDeclarations`.
  */
 const REST_PAINT_PROPERTIES = [
 	'color',
@@ -442,6 +454,8 @@ const REST_PAINT_PROPERTIES = [
 	'fontWeight',
 	'letterSpacing',
 	'textTransform',
+	'display',
+	'fontSize',
 ] as const;
 
 /** Border sides, emitted as a shorthand only when the side is actually drawn. */
@@ -461,6 +475,15 @@ export function restDeclarations( rest: RestStyles, cursor: string ): string {
 	if ( cursor && cursor !== 'auto' ) {
 		declarations.push( `cursor:${ cursor }` );
 	}
+	// A control that PAINTS (a fill or a drawn border) is a real button, and its
+	// own type size is part of the look. A bare text link is not: pinning its
+	// size here would freeze responsive copy at the measured viewport, which is
+	// why `font-size` is absent from the state probes entirely.
+	const painted = [ 'Top', 'Right', 'Bottom', 'Left' ].some( ( side ) => {
+		const width = rest[ `border${ side }Width` ];
+		const style = rest[ `border${ side }Style` ];
+		return Boolean( width && width !== '0px' && style && style !== 'none' );
+	} ) || Boolean( rest.backgroundColor && rest.backgroundColor !== 'rgba(0, 0, 0, 0)' );
 	for ( const property of REST_PAINT_PROPERTIES ) {
 		const value = rest[ property ];
 		if ( ! value ) {
@@ -472,9 +495,10 @@ export function restDeclarations( rest: RestStyles, cursor: string ): string {
 		if ( property === 'backgroundImage' && ( value === 'none' || value.includes( 'url(' ) ) ) {
 			continue;
 		}
-		if ( property === 'textDecorationLine' && value === 'none' ) {
-			continue;
-		}
+		// NOT skipped when `none`: the UA default for `a[href]` is UNDERLINE, so a
+		// source button that rests at `none` needs the declaration to stop the
+		// rebuild drawing one (virtuallyjamaica's `.btn` rests on no underline and
+		// the rebuild showed a line through both CTAs).
 		if ( property === 'textDecorationColor' && ( rest.textDecorationLine ?? 'none' ) === 'none' ) {
 			continue;
 		}
@@ -488,6 +512,14 @@ export function restDeclarations( rest: RestStyles, cursor: string ): string {
 			continue;
 		}
 		if ( property === 'borderRadius' && value === '0px' ) {
+			continue;
+		}
+		// `inline` is the UA default for an anchor, so stating it changes nothing
+		// and a button that computes `inline-block` must keep its padding box.
+		if ( property === 'display' && value === 'inline' ) {
+			continue;
+		}
+		if ( property === 'fontSize' && ! painted ) {
 			continue;
 		}
 		declarations.push( `${ kebab( property ) }:${ value }` );
@@ -771,7 +803,7 @@ export async function measureInteractions(
 				probe: candidate.probe,
 				children: candidate.children.map( ( child ) => child.index ),
 			} ) ),
-			properties: [ ...PROBED_PROPERTIES ],
+			properties: [ ...PROBED_PROPERTIES, ...REST_LAYOUT_PROPERTIES ],
 		} );
 
 		await page.addStyleTag( {

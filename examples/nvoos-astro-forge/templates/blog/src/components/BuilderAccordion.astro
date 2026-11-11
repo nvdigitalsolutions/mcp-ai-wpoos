@@ -26,6 +26,14 @@
 <script>
 	const GROUP = '.post-body .panel-group';
 	const CONTROL = '.panel-heading a[href^="#"]';
+	// APG accordion pattern: `aria-expanded` / `aria-controls` on the header, and
+	// `role=region` + `aria-labelledby` on the panel is OPTIONAL — the guide warns
+	// that `region` creates landmark proliferation "in an accordion that contains
+	// more than approximately 6 panels that can be expanded at the same time".
+	// virtuallyjamaica's features band has 8, so the region role is skipped there
+	// and a shorter group still gets it.
+	const MAX_REGION_PANELS = 6;
+
 	let generated = 0;
 
 	function setOpen(panel: Element, open: boolean): void {
@@ -43,6 +51,7 @@
 		);
 		if (panels.length === 0) return;
 		group.setAttribute('data-accordion', '');
+		const asRegion = panels.length <= MAX_REGION_PANELS;
 		for (const panel of panels) {
 			const body = panel.querySelector('.panel-collapse');
 			const control = panel.querySelector(CONTROL);
@@ -55,8 +64,10 @@
 			control.setAttribute('role', 'button');
 			control.setAttribute('aria-controls', body.id);
 			control.setAttribute('aria-expanded', String(body.classList.contains('in')));
-			body.setAttribute('role', 'region');
-			body.setAttribute('aria-labelledby', control.id);
+			if (asRegion) {
+				body.setAttribute('role', 'region');
+				body.setAttribute('aria-labelledby', control.id);
+			}
 		}
 	}
 

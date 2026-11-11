@@ -692,6 +692,10 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	/* The band's MEASURED title alignment (the source centers a band's copy from
 	 * a wrapper class the sanitizer drops). Absent → the template's own. */
 	text-align: var(--ds-title-align, inherit);
+	/* The band's MEASURED title ink. A builder element's colour lives in an inline
+	 * `style` the sanitizer drops, so without this the title inherited the
+	 * template accent (virtuallyjamaica: #fe6c61 where the source is #262626). */
+	color: var(--ds-title-color, inherit);
 }
 
 /* A form band's intro: the source's lead paragraph sits at half the container
@@ -1226,27 +1230,42 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	padding: 15px;
 }
 
-/* The TITLE is the rebuild's accent. The vendor sheet styles links inside its
- * own widget (`.accordion-style1 a { color:#ababab }`) and the source's
- * per-element inline colour does not survive sanitisation, so on any page that
- * links the vendor sheet the title rendered grey instead of the accent — while
- * on a page that does not, it inherited the rebuild's accent by luck. Declared
- * here with one class more than the vendor rule, so it wins either way. */
-.ds-section-wrap .post-body .panel-group .panel-heading a,
-.ds-section-wrap .post-body .panel-group .panel-heading a:hover,
-.ds-section-wrap .post-body .panel-group .panel-heading a:hover i {
-	display: block;
-	text-decoration: none;
-	color: var(--forge-accent);
-	cursor: pointer;
-}
-
-/* The title is the positioning context for the marker. The source absolutely
+/* The TITLE is the positioning context for the marker. The source absolutely
  * positions its `span.pull-right` (right:15px), so the marker never competes
  * with the title for width; a floated marker made "CAPTURE USER METADATA"
  * wrap where the source kept it on one line. */
 .ds-section-wrap .post-body .panel-group .panel-title {
 	position: relative;
+}
+
+/* The control is the row's click target, NOT the icon's layout context.
+ *
+ * These used to share one declaration block with `a:hover i`, which set
+ * `display:block` on the ICON as soon as the pointer entered the row: a block
+ * <i> takes the full content width, so the icon jumped onto its own line and
+ * the title grew from 50px to 64px mid-hover (virtuallyjamaica's features
+ * band). The icon keeps its inline box in every state; only the anchor is a
+ * block.
+ *
+ * `color:inherit` replaces a hard-wired accent. Two reasons it is inherited
+ * rather than assigned: the source's ink arrives from the band's measured
+ * heading fact (`[data-section-id] h4{color:…}`), and the builder's
+ * per-element `style="color:#262626 !important"` does not survive
+ * sanitisation. Declared with one class more than the vendor sheet's
+ * `.accordion-style1 a { color:#ababab }`, so the vendor grey can never win. */
+.ds-section-wrap .post-body .panel-group .panel-heading a,
+.ds-section-wrap .post-body .panel-group .panel-heading a:hover {
+	display: block;
+	text-decoration: none;
+	color: inherit;
+	cursor: pointer;
+}
+
+/* Stated for every state so the hover rule above cannot flip it. */
+.ds-section-wrap .post-body .panel-group .panel-heading a i,
+.ds-section-wrap .post-body .panel-group .panel-heading a:hover i {
+	display: inline-block;
+	vertical-align: middle;
 }
 
 /* The `+`/`−` marker is drawn here, not by the vendor's icon font: `fa-plus`

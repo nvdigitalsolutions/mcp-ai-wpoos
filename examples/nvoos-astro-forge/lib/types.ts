@@ -646,6 +646,19 @@ export interface BandTypeFact {
 	/** The first family of the computed `font-family`. */
 	family?: string;
 	/**
+	 * Computed `color`.
+	 *
+	 * The source's palette does not survive a WordPress round trip: a builder
+	 * writes per-element colours as inline `style="color:#262626 !important"`
+	 * and the sanitizer drops every `style` attribute, so a rebuilt heading fell
+	 * back to whatever the template's accent happened to be (virtuallyjamaica's
+	 * accordion titles rendered `#fe6c61` where the source is `#262626`).
+	 *
+	 * Optional: a profile captured before this fact existed simply carries no
+	 * colour, and the template default applies as before.
+	 */
+	color?: string;
+	/**
 	 * What the source CHANGES at the template's tablet/mobile breakpoints, and
 	 * only that. A 55px hero headline is 22px on a phone — emitting the desktop
 	 * size at every width made every rebuilt band taller than its source at
