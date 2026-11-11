@@ -9,6 +9,7 @@
 // keyboard users can pan it without a pointer; that is the standard pattern
 // for a horizontally scrolling region.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SectionHeading from './SectionHeading.astro';
 
@@ -53,5 +54,6 @@ const headingId = section.id ? `ds-compare-${ section.id }` : undefined;
 				</tbody>
 			</table>
 		</div>
+		<SectionLinks section={section} />
 	</section>
 )}

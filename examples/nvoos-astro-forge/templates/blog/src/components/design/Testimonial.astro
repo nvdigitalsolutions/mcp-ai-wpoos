@@ -1,6 +1,7 @@
 ---
 // Testimonial — quote/review sections rebuilt as blockquotes with citation.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SectionLinks from './SectionLinks.astro';
 
 interface Props {
 	section: SemanticSection;
@@ -18,4 +19,5 @@ const { title, items } = section.slots;
 			{(item.author || item.title) && <footer>— {item.author ?? item.title}</footer>}
 		</blockquote>
 	))}
+	<SectionLinks section={section} />
 </section>

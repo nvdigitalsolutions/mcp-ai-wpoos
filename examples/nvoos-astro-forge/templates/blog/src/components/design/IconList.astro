@@ -10,6 +10,7 @@
 // classes (auxicon-*, fa fa-*, …); with the source's own icon stylesheet
 // (chrome.iconCss) linked in the layout they draw the real glyphs.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 import IconMarker from './IconMarker.astro';
@@ -132,4 +133,5 @@ const dividerStyle = theme?.titleDivider
 			)}
 		</>
 	)}
+	<SectionLinks section={section} />
 </section>
