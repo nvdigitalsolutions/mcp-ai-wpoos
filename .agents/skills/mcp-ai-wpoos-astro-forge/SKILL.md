@@ -127,6 +127,28 @@ before touching the CLI, the scaffold or the sanitizer. The highest-traffic ones
   `bandFacts[id].hidden`. The CLOSED state is data; REOPENING it is behaviour —
   `BuilderAccordion.astro` enhances `[data-accordion]` groups so the toggle,
   exclusivity and aria state are restored without the vendor's JS or icon font.
+  Per the APG accordion pattern the panel `role=region` is OPTIONAL and is
+  skipped past ~6 panels (landmark proliferation), which covers
+  virtuallyjamaica's 8.
+- **The accordion icon must stay inline in EVERY state.** `a:hover i` once
+  shared the control's declaration block, so `display:block` landed on the
+  `<i>` as soon as the pointer entered a row: a block icon takes the content
+  width and the title grew 50px → 64px mid-hover. The icon's `display` is now
+  stated for both the resting and the `:hover` selector; the control rule also
+  uses `color:inherit` rather than naming the accent.
+- **Text ink is a measured fact** (`BandTypeFact.color`, emitted as
+  `[data-section-id] hN{color:…}` and `--ds-title-color`). A builder writes
+  per-element colour as inline `style="… !important"` and sanitisation drops
+  every `style` attribute, so this is the only surviving copy — without it a
+  title inherited the template accent (virtuallyjamaica: `#fe6c61` for a
+  `#262626` source).
+- **A control's resting decoration is measured, not inferred**
+  (`REST_PAINT_PROPERTIES` / `REST_LAYOUT_PROPERTIES` in `lib/interactions.ts`):
+  `text-decoration-line` is emitted even when it is `none`, because the UA
+  default for `a[href]` is UNDERLINE — omitting it drew a line through every
+  builder CTA. A control that PAINTS (a fill or a drawn border) also carries
+  `display` and `font-size`; a bare text link never does (freezing its size
+  would pin responsive copy).
 - **The class-coverage audit must include the page's inline `<style>`** and treat
   `[class~=…]`/`[class*=…]` as coverage, or correctly-styled bands read as missing.
 

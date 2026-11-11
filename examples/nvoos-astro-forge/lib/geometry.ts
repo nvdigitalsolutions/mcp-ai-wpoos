@@ -294,6 +294,9 @@ const pick = ( selector: string ): Element | null => {
 			transform: style.textTransform,
 			align: style.textAlign,
 			family: ( style.fontFamily || '' ).split( ',' )[ 0 ].replace( /["']/g, '' ).trim(),
+			// The source's own ink. Builder colours live in inline `style` that
+			// sanitisation drops, so the computed value is the only surviving copy.
+			color: style.color,
 		};
 	};
 	const facts: Record<
@@ -417,7 +420,7 @@ const pick = ( selector: string ): Element | null => {
 }
 
 /** The typography properties a device override may carry. */
-const TYPE_PROPERTIES = [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align' ] as const;
+const TYPE_PROPERTIES = [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color' ] as const;
 
 /** One class's measured box, as resolved declarations. */
 export interface MeasuredBox {

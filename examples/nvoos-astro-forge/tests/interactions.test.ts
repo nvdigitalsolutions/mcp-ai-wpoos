@@ -64,6 +64,10 @@ function styles( overrides: Record< string, string > = {} ): Record< string, str
 		letterSpacing: 'normal',
 		fontWeight: '400',
 		textTransform: 'none',
+		// Rest-only properties (`REST_LAYOUT_PROPERTIES`): `inline` is the UA
+		// default for an anchor and is never emitted; no `fontSize` means an
+		// unpainted link, whose type size must not be pinned.
+		display: 'inline',
 		...overrides,
 	};
 }
@@ -103,37 +107,70 @@ describe( 'restDeclarations', () => {
 				borderTopWidth: '2px',
 				borderTopStyle: 'solid',
 				borderTopColor: 'rgb(221, 51, 51)',
+				display: 'inline-block',
+				fontSize: '11px',
 			} ),
 			'pointer'
 		);
 
 		expect( declarations ).toBe(
-			'cursor:pointer;color:rgb(226, 226, 226);background-color:rgb(221, 51, 51);font-weight:600;text-transform:uppercase;border-top:2px solid rgb(221, 51, 51)'
+			'cursor:pointer;color:rgb(226, 226, 226);background-color:rgb(221, 51, 51);text-decoration-line:none;font-weight:600;text-transform:uppercase;display:inline-block;font-size:11px;border-top:2px solid rgb(221, 51, 51)'
 		);
+	} );
+
+	it( 'states text-decoration-line even when the source has none', () => {
+		// The UA default for `a[href]` is UNDERLINE, so `none` is a declaration the
+		// rebuild NEEDS — omitting it drew a line through every builder CTA
+		// (virtuallyjamaica's `.btn` rests on no underline).
+		expect( restDeclarations( styles(), 'auto' ) ).toContain( 'text-decoration-line:none' );
+		expect( restDeclarations( styles( { textDecorationLine: 'underline' } ), 'auto' ) ).toContain(
+			'text-decoration-line:underline'
+		);
+	} );
+
+	it( 'keeps a painted button inline-block so its padding box reserves space', () => {
+		// Rendered `inline`, a 2px border and 5px vertical padding reserve nothing
+		// and the box overlaps the line above.
+		const declarations = restDeclarations(
+			styles( { display: 'inline-block', backgroundColor: 'rgb(221, 51, 51)', fontSize: '11px' } ),
+			'auto'
+		);
+		expect( declarations ).toContain( 'display:inline-block' );
+		expect( declarations ).toContain( 'font-size:11px' );
+	} );
+
+	it( 'never pins the type size of an unpainted link', () => {
+		// A bare text link inherits the band's responsive scale; freezing 11px here
+		// would make it look like a button at every viewport.
+		expect( restDeclarations( styles( { fontSize: '11px' } ), 'auto' ) ).not.toContain( 'font-size' );
+	} );
+
+	it( 'never emits the default inline display', () => {
+		expect( restDeclarations( styles( { display: 'inline' } ), 'auto' ) ).not.toContain( 'display:' );
 	} );
 
 	it( 'drops the no-ops a computed style always reports', () => {
 		// The control's INK always survives — it is the source's own colour —
 		// everything else here is a browser default and must not be re-stated.
-		expect( restDeclarations( styles(), 'auto' ) ).toBe( 'color:rgb(0, 0, 0)' );
+		expect( restDeclarations( styles(), 'auto' ) ).toBe( 'color:rgb(0, 0, 0);text-decoration-line:none' );
 		expect( restDeclarations( styles( { borderRadius: '4px' } ), 'auto' ) ).toBe(
-			'color:rgb(0, 0, 0);border-radius:4px'
+			'color:rgb(0, 0, 0);border-radius:4px;text-decoration-line:none'
 		);
 	} );
 
 	it( 'never re-states a background image URL (the media gate owns that)', () => {
 		expect(
 			restDeclarations( styles( { backgroundImage: 'url("https://example.com/a.png")' } ), 'auto' )
-		).toBe( 'color:rgb(0, 0, 0)' );
+		).toBe( 'color:rgb(0, 0, 0);text-decoration-line:none' );
 		expect(
 			restDeclarations( styles( { backgroundImage: 'linear-gradient(red, blue)' } ), 'auto' )
-		).toBe( 'color:rgb(0, 0, 0);background-image:linear-gradient(red, blue)' );
+		).toBe( 'color:rgb(0, 0, 0);background-image:linear-gradient(red, blue);text-decoration-line:none' );
 	} );
 
 	it( 'emits a border side only when it is actually drawn', () => {
 		expect(
 			restDeclarations( styles( { borderLeftWidth: '1px', borderLeftStyle: 'solid' } ), 'auto' )
-		).toBe( 'color:rgb(0, 0, 0);border-left:1px solid rgb(0, 0, 0)' );
+		).toBe( 'color:rgb(0, 0, 0);text-decoration-line:none;border-left:1px solid rgb(0, 0, 0)' );
 	} );
 } );
 

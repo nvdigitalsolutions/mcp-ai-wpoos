@@ -128,3 +128,43 @@ describe( 'sections.generated.ts — device overrides', () => {
 		expect( code ).not.toContain( 'tablet: {' );
 	} );
 } );
+
+describe( 'sections.generated.ts — measured ink', () => {
+	// A builder writes a per-element colour as `style="color:… !important"` and
+	// the sanitizer drops every `style` attribute, so the computed colour is the
+	// only surviving copy of the source's ink. Without it the rebuild inherited
+	// the template accent — virtuallyjamaica's accordion titles rendered
+	// #fe6c61 where the source is #262626.
+	const profile = {
+		url: 'https://example.com',
+		name: 'Fixture',
+		collections: [],
+		design: { sections: [ { id: 'a1b2c3d', bgColor: '#eeeeee' } ] },
+		bandFacts: {
+			a1b2c3d: {
+				containerWidth: 1140,
+				headings: { h4: { size: '13px', color: 'rgb(38, 38, 38)' } },
+			},
+		},
+	} as unknown as SiteProfile;
+
+	it( 'carries the heading colour into the band type facts', () => {
+		const code = renderSectionsGenerated( profile );
+
+		expect( code ).toContain( "color: 'rgb(38, 38, 38)'" );
+		// `title` is the band's largest heading, so it carries the ink too.
+		expect( code ).toContain( "title: { size: '13px', color: 'rgb(38, 38, 38)' }" );
+	} );
+} );
+
+describe( 'diffTypeFact — ink', () => {
+	it( 'records a colour the source changes per device', () => {
+		expect( diffTypeFact( { color: 'rgb(38, 38, 38)' }, { color: 'rgb(255, 255, 255)' } ) ).toEqual( {
+			color: 'rgb(255, 255, 255)',
+		} );
+	} );
+
+	it( 'ignores an unchanged colour', () => {
+		expect( diffTypeFact( { color: 'rgb(38, 38, 38)' }, { color: 'rgb(38, 38, 38)' } ) ).toBeUndefined();
+	} );
+} );

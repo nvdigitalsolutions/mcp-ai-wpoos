@@ -906,6 +906,7 @@
 					"transform": "uppercase",
 					"align": "start",
 					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
 					"tablet": {
 						"size": "36px",
 						"lineHeight": "50px"
@@ -1065,6 +1066,7 @@
 					"transform": "none",
 					"align": "start",
 					"family": "Montserrat",
+					"color": "rgb(0, 0, 0)",
 					"mobile": {
 						"size": "24px",
 						"lineHeight": "28px",
@@ -1080,6 +1082,7 @@
 				"transform": "none",
 				"align": "start",
 				"family": "Roboto",
+				"color": "rgb(98, 98, 98)",
 				"mobile": {
 					"align": "center"
 				}
@@ -1296,7 +1299,7 @@
 						"inner-link"
 					],
 					"count": 1,
-					"base": "cursor:pointer;color:rgb(226, 226, 226);background-color:rgb(221, 51, 51);font-weight:600;letter-spacing:0.26px;text-transform:uppercase;border-top:2px solid rgb(221, 51, 51);border-right:2px solid rgb(221, 51, 51);border-bottom:2px solid rgb(221, 51, 51);border-left:2px solid rgb(221, 51, 51)",
+					"base": "cursor:pointer;color:rgb(226, 226, 226);background-color:rgb(221, 51, 51);text-decoration-line:none;font-weight:600;letter-spacing:0.26px;text-transform:uppercase;display:inline-block;font-size:11px;border-top:2px solid rgb(221, 51, 51);border-right:2px solid rgb(221, 51, 51);border-bottom:2px solid rgb(221, 51, 51);border-left:2px solid rgb(221, 51, 51)",
 					"transition": "0.2s ease-in-out",
 					"hover": "color:rgb(255, 255, 255);background-color:rgba(0, 0, 0, 0)",
 					"focusVisible": "color:rgb(255, 255, 255);background-color:rgba(0, 0, 0, 0)",
@@ -1315,6 +1318,7 @@
 					"transform": "uppercase",
 					"align": "center",
 					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
 					"tablet": {
 						"size": "30px",
 						"lineHeight": "36px"
@@ -1331,7 +1335,8 @@
 					"letterSpacing": "0.26px",
 					"transform": "uppercase",
 					"align": "center",
-					"family": "Montserrat"
+					"family": "Montserrat",
+					"color": "rgb(204, 204, 204)"
 				}
 			},
 			"body": {
@@ -1341,7 +1346,8 @@
 				"letterSpacing": "0.26px",
 				"transform": "none",
 				"align": "center",
-				"family": "Roboto"
+				"family": "Roboto",
+				"color": "rgb(255, 255, 255)"
 			},
 			"container": {
 				"desktop": {
@@ -1628,6 +1634,7 @@
 					"transform": "uppercase",
 					"align": "center",
 					"family": "Montserrat",
+					"color": "rgb(0, 0, 0)",
 					"tablet": {
 						"size": "30px",
 						"lineHeight": "36px"
@@ -1644,7 +1651,8 @@
 					"letterSpacing": "2px",
 					"transform": "uppercase",
 					"align": "left",
-					"family": "Roboto"
+					"family": "Roboto",
+					"color": "rgb(38, 38, 38)"
 				},
 				"h6": {
 					"size": "13px",
@@ -1653,7 +1661,8 @@
 					"letterSpacing": "0.26px",
 					"transform": "uppercase",
 					"align": "center",
-					"family": "Montserrat"
+					"family": "Montserrat",
+					"color": "rgb(146, 146, 146)"
 				}
 			},
 			"body": {
@@ -1663,7 +1672,8 @@
 				"letterSpacing": "0.26px",
 				"transform": "none",
 				"align": "left",
-				"family": "Roboto"
+				"family": "Roboto",
+				"color": "rgb(98, 98, 98)"
 			},
 			"container": {
 				"desktop": {
@@ -1966,7 +1976,7 @@
 					"tag": "a",
 					"classes": [],
 					"count": 8,
-					"base": "cursor:pointer;color:rgb(171, 171, 171);letter-spacing:0.26px",
+					"base": "cursor:pointer;color:rgb(171, 171, 171);text-decoration-line:none;letter-spacing:0.26px",
 					"transition": "0.2s ease-in-out"
 				}
 			]
@@ -1982,6 +1992,7 @@
 					"transform": "none",
 					"align": "start",
 					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
 					"mobile": {
 						"size": "26px",
 						"lineHeight": "32px"
@@ -1995,7 +2006,8 @@
 				"letterSpacing": "0.26px",
 				"transform": "none",
 				"align": "start",
-				"family": "Montserrat"
+				"family": "Montserrat",
+				"color": "rgb(255, 255, 255)"
 			},
 			"container": {
 				"desktop": {
@@ -2246,7 +2258,7 @@
 						"no-margin"
 					],
 					"count": 1,
-					"base": "cursor:pointer;color:rgb(255, 255, 255);font-weight:600;letter-spacing:0.26px;text-transform:uppercase;border-top:2px solid rgb(255, 255, 255);border-right:2px solid rgb(255, 255, 255);border-bottom:2px solid rgb(255, 255, 255);border-left:2px solid rgb(255, 255, 255)",
+					"base": "cursor:pointer;color:rgb(255, 255, 255);text-decoration-line:none;font-weight:600;letter-spacing:0.26px;text-transform:uppercase;display:inline-block;font-size:11px;border-top:2px solid rgb(255, 255, 255);border-right:2px solid rgb(255, 255, 255);border-bottom:2px solid rgb(255, 255, 255);border-left:2px solid rgb(255, 255, 255)",
 					"transition": "0.2s ease-in-out",
 					"hover": "color:rgb(0, 0, 0);background-color:rgb(255, 255, 255)",
 					"focusVisible": "color:rgb(0, 0, 0);background-color:rgb(255, 255, 255)",
@@ -2265,6 +2277,7 @@
 					"transform": "uppercase",
 					"align": "center",
 					"family": "Montserrat",
+					"color": "rgb(0, 0, 0)",
 					"tablet": {
 						"size": "30px",
 						"lineHeight": "36px"
@@ -2281,7 +2294,8 @@
 					"letterSpacing": "0.26px",
 					"transform": "uppercase",
 					"align": "center",
-					"family": "Montserrat"
+					"family": "Montserrat",
+					"color": "rgb(146, 146, 146)"
 				}
 			},
 			"container": {
@@ -2553,7 +2567,7 @@
 						"lightboxgalleryitem"
 					],
 					"count": 7,
-					"base": "cursor:pointer;color:rgb(98, 98, 98);letter-spacing:0.26px",
+					"base": "cursor:pointer;color:rgb(98, 98, 98);text-decoration-line:none;letter-spacing:0.26px",
 					"transition": "ease-in-out",
 					"hover": "color:rgb(39, 39, 39);border-top-color:rgb(39, 39, 39);border-right-color:rgb(39, 39, 39);border-bottom-color:rgb(39, 39, 39);border-left-color:rgb(39, 39, 39)",
 					"focusVisible": "color:rgb(39, 39, 39);border-top-color:rgb(39, 39, 39);border-right-color:rgb(39, 39, 39);border-bottom-color:rgb(39, 39, 39);border-left-color:rgb(39, 39, 39)",
@@ -2566,7 +2580,7 @@
 						"owl-dot"
 					],
 					"count": 1,
-					"base": "cursor:pointer;color:rgb(98, 98, 98)",
+					"base": "cursor:pointer;color:rgb(98, 98, 98);text-decoration-line:none;display:inline-block",
 					"transition": "ease-in-out"
 				},
 				{
@@ -2575,7 +2589,7 @@
 						"owl-dot"
 					],
 					"count": 1,
-					"base": "cursor:pointer;color:rgb(98, 98, 98)",
+					"base": "cursor:pointer;color:rgb(98, 98, 98);text-decoration-line:none;display:inline-block",
 					"transition": "ease-in-out"
 				}
 			]
@@ -2591,6 +2605,7 @@
 					"transform": "none",
 					"align": "center",
 					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
 					"tablet": {
 						"size": "25px",
 						"lineHeight": "30px"
@@ -2608,7 +2623,8 @@
 				"letterSpacing": "0.26px",
 				"transform": "none",
 				"align": "center",
-				"family": "Roboto"
+				"family": "Roboto",
+				"color": "rgba(255, 255, 255, 0.7)"
 			},
 			"container": {
 				"desktop": {
@@ -2794,6 +2810,7 @@
 					"base": "padding:2.6px 13px 2.6px 13px;margin:26px 0px 13px 0px"
 				},
 				"init": {
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
 					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				}
 			},
@@ -2868,7 +2885,7 @@
 					],
 					"type": "email",
 					"count": 1,
-					"base": "cursor:text;color:rgb(98, 98, 98);background-color:rgb(255, 255, 255);border-top:1px solid rgb(223, 223, 223);border-right:1px solid rgb(223, 223, 223);border-bottom:1px solid rgb(223, 223, 223);border-left:1px solid rgb(223, 223, 223)",
+					"base": "cursor:text;color:rgb(98, 98, 98);background-color:rgb(255, 255, 255);text-decoration-line:none;display:inline-block;font-size:13px;border-top:1px solid rgb(223, 223, 223);border-right:1px solid rgb(223, 223, 223);border-bottom:1px solid rgb(223, 223, 223);border-left:1px solid rgb(223, 223, 223)",
 					"transition": "0.2s ease-in-out",
 					"focusVisible": "border-top-color:rgb(152, 152, 152);border-right-color:rgb(152, 152, 152);border-bottom-color:rgb(152, 152, 152);border-left-color:rgb(152, 152, 152)"
 				},
@@ -2881,7 +2898,7 @@
 					],
 					"type": "submit",
 					"count": 1,
-					"base": "cursor:pointer;color:rgb(98, 98, 98);background-color:rgb(240, 240, 240);border-top:1px solid rgb(223, 223, 223);border-right:1px solid rgb(223, 223, 223);border-bottom:1px solid rgb(223, 223, 223);border-left:1px solid rgb(223, 223, 223)",
+					"base": "cursor:pointer;color:rgb(98, 98, 98);background-color:rgb(240, 240, 240);text-decoration-line:none;display:inline-block;font-size:13px;border-top:1px solid rgb(223, 223, 223);border-right:1px solid rgb(223, 223, 223);border-bottom:1px solid rgb(223, 223, 223);border-left:1px solid rgb(223, 223, 223)",
 					"transition": "0.2s ease-in-out",
 					"focusVisible": "border-top-color:rgb(152, 152, 152);border-right-color:rgb(152, 152, 152);border-bottom-color:rgb(152, 152, 152);border-left-color:rgb(152, 152, 152)"
 				},
@@ -2894,7 +2911,7 @@
 					],
 					"type": "text",
 					"count": 1,
-					"base": "cursor:text;color:rgb(98, 98, 98);background-color:rgb(255, 255, 255);border-top:1px solid rgb(223, 223, 223);border-right:1px solid rgb(223, 223, 223);border-bottom:1px solid rgb(223, 223, 223);border-left:1px solid rgb(223, 223, 223)",
+					"base": "cursor:text;color:rgb(98, 98, 98);background-color:rgb(255, 255, 255);text-decoration-line:none;display:inline-block;font-size:13px;border-top:1px solid rgb(223, 223, 223);border-right:1px solid rgb(223, 223, 223);border-bottom:1px solid rgb(223, 223, 223);border-left:1px solid rgb(223, 223, 223)",
 					"transition": "0.2s ease-in-out",
 					"focusVisible": "border-top-color:rgb(152, 152, 152);border-right-color:rgb(152, 152, 152);border-bottom-color:rgb(152, 152, 152);border-left-color:rgb(152, 152, 152)"
 				},
@@ -2905,7 +2922,7 @@
 						"wpcf7-textarea"
 					],
 					"count": 1,
-					"base": "cursor:text;color:rgb(98, 98, 98);background-color:rgb(255, 255, 255);border-top:1px solid rgb(223, 223, 223);border-right:1px solid rgb(223, 223, 223);border-bottom:1px solid rgb(223, 223, 223);border-left:1px solid rgb(223, 223, 223)",
+					"base": "cursor:text;color:rgb(98, 98, 98);background-color:rgb(255, 255, 255);text-decoration-line:none;display:inline-block;font-size:13px;border-top:1px solid rgb(223, 223, 223);border-right:1px solid rgb(223, 223, 223);border-bottom:1px solid rgb(223, 223, 223);border-left:1px solid rgb(223, 223, 223)",
 					"transition": "0.2s ease-in-out",
 					"focusVisible": "border-top-color:rgb(152, 152, 152);border-right-color:rgb(152, 152, 152);border-bottom-color:rgb(152, 152, 152);border-left-color:rgb(152, 152, 152)"
 				}
