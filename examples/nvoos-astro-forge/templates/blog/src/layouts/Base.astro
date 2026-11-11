@@ -127,6 +127,10 @@ const chromeVars = [
 	chrome?.chromeSize && `--forge-chrome-size:${chrome.chromeSize}`,
 	chrome?.headerBg && `--forge-header-bg:${chrome.headerBg}`,
 	chrome?.headerInk && `--forge-header-ink:${chrome.headerInk}`,
+	// The nav LINK colour is separate from the chrome ink: the source keeps the
+	// header container at the body ink while its links paint their own colour
+	// (virtuallyjamaica: container #626262, links #ffffff).
+	chrome?.navInk && `--forge-header-nav-ink:${chrome.navInk}`,
 	chrome?.topbarBg && `--forge-topbar-bg:${chrome.topbarBg}`,
 	chrome?.topbarInk && `--forge-topbar-ink:${chrome.topbarInk}`,
 	chrome?.navStyle?.transform && `--forge-nav-transform:${chrome.navStyle.transform}`,
@@ -145,6 +149,14 @@ const chromeVars = [
 	chrome?.footerBarInk && `--forge-footer-bar-ink:${chrome.footerBarInk}`,
 	chrome?.footerBg && `--forge-footer-bg:${chrome.footerBg}`,
 	chrome?.footerInk && `--forge-footer-ink:${chrome.footerInk}`,
+	// The measured sticky header (analyze --geometry): the pinned background/ink
+	// and the shrinking header's two heights. Absent → the header keeps its
+	// resting appearance when pinned.
+	behaviors.headerPinnedBg && `--forge-header-pinned-bg:${behaviors.headerPinnedBg}`,
+	behaviors.headerPinnedInk && `--forge-header-pinned-ink:${behaviors.headerPinnedInk}`,
+	behaviors.headerPinnedShadow && `--forge-header-pinned-shadow:${behaviors.headerPinnedShadow}`,
+	behaviors.headerRestHeight && `--forge-header-rest-h:${behaviors.headerRestHeight}`,
+	behaviors.headerPinnedHeight && `--forge-header-pinned-h:${behaviors.headerPinnedHeight}`,
 ]
 	.filter(Boolean)
 	.join(';');
@@ -289,7 +301,7 @@ const chromeVars = [
 				))}
 			</div>
 		)}
-		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky', chrome?.headerBg && 'site-header--themed']}>
+		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky', behaviors.headerPosition === 'fixed' && 'site-header--float', chrome?.headerBg && 'site-header--themed', chrome?.headerTransparent && 'site-header--overlay', (behaviors.headerRestHeight || behaviors.headerPinnedHeight) && 'site-header--sized', (behaviors.headerPinnedBg || behaviors.headerPinnedHeight) && 'site-header--pinned']}>
 			<div class="brand-block">
 				<a class="brand" href="/">
 					{chrome?.logo?.src ? <img class="brand-logo" src={chrome.logo.src} alt={chrome.logo.alt ?? siteTitle} /> : siteTitle}

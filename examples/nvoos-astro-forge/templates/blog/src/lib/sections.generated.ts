@@ -8,6 +8,23 @@
 
 export type SectionThemeName = 'hero' | 'dark' | 'alt' | 'light';
 
+/** One measured typography fact (a heading level or the body paragraph), from
+ * the source's COMPUTED styles (`analyze --geometry`). */
+export interface BandTypeFact {
+	size?: string;
+	weight?: string;
+	lineHeight?: string;
+	letterSpacing?: string;
+	transform?: string;
+	align?: string;
+	/** What the source CHANGES below the desktop breakpoint (and only that). */
+	tablet?: BandTypeProperties;
+	mobile?: BandTypeProperties;
+}
+
+/** A BandTypeFact without its own device overrides. */
+export type BandTypeProperties = Omit<BandTypeFact, 'tablet' | 'mobile'>;
+
 export type BandSpacing = 'template' | 'source';
 
 /** Whether a band with no source padding fact keeps the template rhythm
@@ -31,6 +48,21 @@ export interface SectionTheme {
 	overlay?: string;
 	/** The source band padding (the declared padding fact). */
 	padding?: string;
+	/** The band's MEASURED source height — a CSS min-height FLOOR, never a lock. */
+	minHeight?: string | { desktop?: string; tablet?: string; mobile?: string };
+	/** The band's measured TYPOGRAPHY; `title` is its LARGEST heading. */
+	type?: { headings?: Record<string, BandTypeFact>; body?: BandTypeFact; title?: BandTypeFact };
+	/** Selectors for subtrees the SOURCE renders hidden at rest — emitted as
+	 * scoped `display:none` rules. */
+	hidden?: string[];
+	/** The builder's presentation utilities this band uses, with their
+	 * device-scoped variants. */
+	utilities?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
+	/** The MEASURED box (padding/margin/cropped-media height) of the classes
+	 * this band keeps, per device. The builder spacing scale is not a ladder, so
+	 * these are computed values re-stated verbatim. Emitted AFTER `utilities`, so
+	 * a measured value outranks a hand-authored approximation. */
+	box?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
 	/** The boxed container width (the source constrains its content —
 	 * jayainc's Elementor 1140px default). Absent → the site measure. */
 	measure?: string;

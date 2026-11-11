@@ -193,6 +193,27 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	if ( theme.minHeight && typeof theme.minHeight === 'string' ) {
 		parts.push( `min-height:${ theme.minHeight }` );
 	}
+	// The band's measured typography (see bandTypeCss below): the components that
+	// render a `ds-title` size from the source's own heading, not the token scale.
+	// A source band whose title is 35px must not render at the template's h1.
+	if ( theme.type?.title ) {
+		const title = theme.type.title;
+		if ( title.size ) {
+			parts.push( `--ds-title-size:${ title.size }` );
+		}
+		if ( title.weight ) {
+			parts.push( `--ds-title-weight:${ title.weight }` );
+		}
+		if ( title.lineHeight && title.lineHeight !== 'normal' ) {
+			parts.push( `--ds-title-lh:${ title.lineHeight }` );
+		}
+		if ( title.letterSpacing && title.letterSpacing !== 'normal' ) {
+			parts.push( `--ds-title-ls:${ title.letterSpacing }` );
+		}
+		if ( title.align && title.align !== 'start' && title.align !== 'left' ) {
+			parts.push( `--ds-title-align:${ title.align }` );
+		}
+	}
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage ) {
 			parts.push( `background-image:url('${ theme.bgImage }')` );
@@ -306,11 +327,211 @@ const responsiveBandCss = sections
 		);
 	} )
 	.join( '' );
+
+/**
+ * The band's measured typography (analyze --geometry).
+ *
+ * A band the classifier could not give a structural kind renders its sanitized
+ * source HTML through the raw path, and that path carries NO heading scale — so
+ * the browser's default `h3 { font-size: 1.17em }` scaled the 13px body to
+ * 15.21px against the source's 40px. Every band's hierarchy collapsed while the
+ * box-geometry gate passed. These are the source's COMPUTED styles, emitted per
+ * band id, so a 40px eyebrow-to-title band reads like the source without the
+ * template inventing a scale.
+ *
+ * Scoped to the wrap (`[data-section-id]`) and emitted after global.css, so it
+ * outranks the template's own prose defaults.
+ */
+const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string }, options: { weight?: boolean } = {} ): string =>
+	[
+		fact.size && `font-size:${ fact.size }`,
+		options.weight !== false && fact.weight && `font-weight:${ fact.weight }`,
+		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
+		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
+		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
+		// Only a POSITIVE alignment is emitted: the source centers a band's copy
+		// from a wrapper class, which the sanitizer drops. `start`/`left` is the
+		// template default and needs no rule.
+		fact.align && fact.align !== 'start' && fact.align !== 'left' && `text-align:${ fact.align }`,
+	]
+		.filter( Boolean )
+		.join( ';' );
+
+/** A device override, emitted verbatim — `diffTypeFact` already trimmed it to the
+ * properties the source changes, so a reset back to `left` must survive. */
+const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string } ): string =>
+	[
+		fact.size && `font-size:${ fact.size }`,
+		fact.weight && `font-weight:${ fact.weight }`,
+		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
+		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
+		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
+		fact.align && `text-align:${ fact.align }`,
+	]
+		.filter( Boolean )
+		.join( ';' );
+
+const bandTypeCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const type = theme?.type;
+		if ( ! id || ! type ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		// The source scales its type per device (55px hero → 22px on a phone), so a
+		// desktop-only rule made every band taller than its source at 390px. The
+		// overrides ride the template's own breakpoints.
+		const withDevices = ( selector: string, fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; tablet?: Record< string, string >; mobile?: Record< string, string > }, options: { weight?: boolean } = {} ): string[] => {
+			const out: string[] = [];
+			const declarations = typeDeclarations( fact, options );
+			if ( declarations ) {
+				out.push( `${ scoped } ${ selector }{${ declarations }}` );
+			}
+			for ( const [ device, query ] of [ [ 'tablet', 'max-width: 1024px' ], [ 'mobile', 'max-width: 767px' ] ] as const ) {
+				const override = fact[ device ];
+				if ( ! override ) {
+					continue;
+				}
+				const overridden = overrideDeclarations( override );
+				if ( overridden ) {
+					out.push( `@media (${ query }){${ scoped } ${ selector }{${ overridden }}}` );
+				}
+			}
+			return out;
+		};
+		for ( const [ tag, fact ] of Object.entries( type.headings ?? {} ) ) {
+			rules.push( ...withDevices( tag, fact ) );
+		}
+		if ( type.body ) {
+			// Body copy keeps its size and rhythm; a weight on every paragraph would
+			// also hit emphasized inline copy.
+			rules.push( ...withDevices( 'p', type.body, { weight: false } ) );
+		}
+		return rules.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The subtrees the SOURCE renders hidden at rest (analyze --geometry).
+ *
+ * Builders hide their accordion panels, tab panes, mega-menus and mobile
+ * drawers with a class the sanitizer keeps but the rebuilt stylesheet never
+ * reaches — so every panel rendered open and a band became a wall of text
+ * (virtuallyjamaica's features band: 2352 characters against the source's 486).
+ * The analyzer records the source's resting visibility as ready-made selectors
+ * (already carrying the `:not(.in)` that separates a closed panel from the open
+ * one); this emits them, scoped to the band.
+ *
+ * A hidden panel has no CSS-only way back open — the source toggled it with
+ * JavaScript — so the closed state is the faithful resting state.
+ */
+const bandHiddenCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ! theme?.hidden || theme.hidden.length === 0 ) {
+			return '';
+		}
+		return theme.hidden.map( ( selector ) => `[data-section-id="${ id }"] ${ selector }{display:none}` ).join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The builder's presentation utilities, scoped to the band that uses them
+ * (`text-center`, `padding-four-all`, `font-weight-600`, …).
+ *
+ * The sanitizer keeps the source's class names and the vendor sheet never
+ * ships, so these are inert unless restated: virtuallyjamaica's HOW IT WORKS
+ * steps rendered lower-case and left-aligned, and its coloured panels put the
+ * copy flush against the edge. The table lives on the builder adapter
+ * (`lib/bands.ts`), trimmed to the classes the page measured — so a Divi site
+ * gets Divi's conventions and nothing else.
+ */
+const bandUtilityCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const utilities = theme?.utilities;
+		if ( ! id || ! utilities ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return Object.entries( utilities )
+			.map( ( [ name, utility ] ) => {
+				const rules: string[] = [];
+				if ( utility.base ) {
+					rules.push( `${ scoped } .${ name }{${ utility.base }}` );
+				}
+				// Brando scopes a variant in the class name (`md-text-center`,
+				// `xs-padding-40px-tb`) — re-state it on the template's own breakpoints.
+				if ( utility.tablet ) {
+					rules.push( `@media (max-width: 1024px){${ scoped } .${ name }{${ utility.tablet }}}` );
+				}
+				if ( utility.mobile ) {
+					rules.push( `@media (max-width: 767px){${ scoped } .${ name }{${ utility.mobile }}}` );
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The MEASURED box of the classes a band keeps (`analyze --geometry`), scoped to
+ * that band.
+ *
+ * A builder's spacing scale cannot be transcribed from class names — Brando's
+ * `margin-four-bottom` is 7.8px on an icon and 21.6px on a paragraph, and
+ * `padding-four-all` is 3.4rem on desktop but `40px 15.5938px` at 390px. The
+ * computed padding/margin of each class (recorded only when it agrees across
+ * every instance in the band) is the only faithful source, and the per-column
+ * hashes Brando emits appear once, so the column padding the rebuild otherwise
+ * loses arrives exactly.
+ *
+ * Emitted AFTER the utility pack on purpose: a measured value must outrank a
+ * hand-authored approximation of the same class.
+ */
+const bandBoxCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const box = theme?.box;
+		if ( ! id || ! box ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return Object.entries( box )
+			.map( ( [ name, fact ] ) => {
+				const rules: string[] = [];
+				if ( fact.base ) {
+					rules.push( `${ scoped } .${ name }{${ fact.base }}` );
+				}
+				// EXCLUSIVE ranges, unlike the utility pack: a measured value is an
+				// ABSOLUTE box, so a tablet reading must never leak below 768px. A
+				// Bootstrap `.container` measures `margin: 0 42px` at tablet, and a
+				// cascading `max-width: 1024px` query carried that 42px into a 390px
+				// phone (the built column came out 274px against the source's 360).
+				if ( fact.tablet ) {
+					rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ scoped } .${ name }{${ fact.tablet }}}` );
+				}
+				if ( fact.mobile ) {
+					rules.push( `@media (max-width: 767px){${ scoped } .${ name }{${ fact.mobile }}}` );
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
 ---
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{responsiveBandCss && <Fragment set:html={ `<style>${ responsiveBandCss }</style>` } />}
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss ) && (
+			<Fragment set:html={ `<style>${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }</style>` } />
+		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
 			const behavior = behaviorFor(section);

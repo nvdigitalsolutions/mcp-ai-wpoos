@@ -71,6 +71,18 @@ const FACT_MARKERS: FactMarker[] = [
 		when: ( value ) => value === 'center',
 	},
 	{ key: 'titleStyle', label: 'titleStyle', marker: '--ds-title-size' },
+	// The measured band typography: emitted as a scoped `[data-section-id] h3{…}`
+	// rule in a <style> block AHEAD of the band, so it can never appear in the
+	// band's own slice.
+	{
+		key: 'type',
+		label: 'band typography',
+		marker: '[data-section-id] h…{font-size}',
+		present: ( { html, sectionId } ) =>
+			new RegExp( `\\[data-section-id="${ sectionId.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }"\\]\\s+h[1-6]\\{` ).test(
+				html
+			),
+	},
 	{ key: 'titleDivider', label: 'titleDivider', marker: 'ds-title-divider' },
 	{ key: 'catalog', label: 'catalog', marker: 'ds-catalog' },
 	// Proposal 136 §4.2 — the band's classified kind. A DECLARED kind must reach

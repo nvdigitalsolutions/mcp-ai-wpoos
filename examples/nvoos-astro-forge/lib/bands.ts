@@ -61,6 +61,29 @@ export interface BandCandidate {
 }
 
 /**
+ * One presentation utility a builder's markup depends on (Bootstrap/Brando
+ * `text-center`, `padding-four-all`, …).
+ *
+ * The sanitizer keeps the class and the builder's sheet never ships, so the
+ * utility is INERT in a rebuild unless the forge re-states it. Values are
+ * MEASURED off a live source of that builder, not guessed: a utility whose
+ * value is unknown is better left out than approximated.
+ */
+export interface BuilderUtility {
+	/** Declarations applied at every width. */
+	base?: string;
+	/** Declarations applied inside the template's TABLET range (≤1024px).
+	 * Brando/Bootstrap name the scope in the class (`md-`, `sm-`) and often the
+	 * value too (`xs-padding-40px-tb`) — a named value is data, not a guess. */
+	tablet?: string;
+	/** Declarations applied inside the template's MOBILE range (≤767px). */
+	mobile?: string;
+}
+
+/** Class name → the utility it stands for. */
+export type BuilderUtilities = Record< string, BuilderUtility >;
+
+/**
  * One builder's DOM contract. Everything is data — the extractor never branches
  * on a builder name.
  */
@@ -80,6 +103,13 @@ export interface BandAdapter {
 	/** Infer equal-width columns from the band's element children when no
 	 *  column class matches (Bricks/Gutenberg/Oxygen emit flex without widths). */
 	inferColumns?: boolean;
+	/**
+	 * Presentation utilities the builder's markup relies on. Only the ones a
+	 * page actually uses are emitted (the analyzer records each band's class
+	 * list), so this table can stay a complete vendor dictionary without
+	 * costing bytes or leaking another builder's conventions into the build.
+	 */
+	utilities?: BuilderUtilities;
 }
 
 /** n/12 of the grid → percentage. Shared by the 12-column builders. */
@@ -153,6 +183,32 @@ const inlineWidth = ( node: BandNode ): number | undefined => {
 };
 
 /**
+ * The utilities of `builderId` that this band actually uses — class → the
+ * utility's declarations. Absent builder or no measured class list → empty, so a
+ * profile recorded before the class capture emits nothing rather than a guess.
+ */
+export function builderUtilitiesFor(
+	builderId: string | undefined,
+	classes: string[] | undefined
+): Record< string, BuilderUtility > {
+	if ( ! builderId || ! classes || classes.length === 0 ) {
+		return {};
+	}
+	const adapter = BUILDER_ADAPTERS.find( ( candidate ) => candidate.id === builderId );
+	if ( ! adapter?.utilities ) {
+		return {};
+	}
+	const present = new Set( classes );
+	const out: Record< string, BuilderUtility > = {};
+	for ( const [ name, utility ] of Object.entries( adapter.utilities ) ) {
+		if ( ( utility.base || utility.tablet || utility.mobile ) && present.has( name ) ) {
+			out[ name ] = utility;
+		}
+	}
+	return out;
+}
+
+/**
  * The registry. Order matters: the first adapter that yields at least one band
  * wins, so put the most specific builders first. `revolution-slider` is a
  * WIDGET adapter — a slider is a band in its own right (usually the hero), and
@@ -178,6 +234,49 @@ export const BUILDER_ADAPTERS: BandAdapter[] = [
 		// Prefer the LARGEST breakpoint: the markup carries sm/md/lg together
 		// (`vc_col-sm-12 vc_col-lg-6`), and desktop is the base we rebuild.
 		width: ( classes ) => ofBreakpoint( classes, [ 'lg', 'md', 'sm', 'xs' ], 'vc_col' ),
+		// The Brando/Bootstrap presentation utilities the markup leans on. Values
+		// MEASURED on the live virtuallyjamaica source (2026-11-10): `text-medium`
+		// 14px/500/24, `text-small` 11px/500/20, `padding-four-all` 54.39px =
+		// 3.4rem at the same value on a 340px and a 680px column (so a fixed rem,
+		// not a percentage). Only utilities whose meaning is standard are listed —
+		// the numeric margin scale is left out rather than approximated.
+		utilities: {
+			'text-center': { base: 'text-align:center' },
+			'text-left': { base: 'text-align:left' },
+			'text-right': { base: 'text-align:right' },
+			'text-uppercase': { base: 'text-transform:uppercase' },
+			'display-block': { base: 'display:block' },
+			'display-inline-block': { base: 'display:inline-block' },
+			'pull-right': { base: 'float:right' },
+			'pull-left': { base: 'float:left' },
+			'vertical-align-middle': { base: 'vertical-align:middle' },
+			'alt-font': { base: 'font-family:var(--forge-font-display)' },
+			'text-medium': { base: 'font-size:14px;font-weight:500;line-height:24px' },
+			'text-small': { base: 'font-size:11px;font-weight:500;line-height:20px' },
+			'font-weight-300': { base: 'font-weight:300' },
+			'font-weight-400': { base: 'font-weight:400' },
+			'font-weight-500': { base: 'font-weight:500' },
+			'font-weight-600': { base: 'font-weight:600' },
+			'font-weight-700': { base: 'font-weight:700' },
+			'padding-four-all': { base: 'padding:3.4rem' },
+			'no-padding': { base: 'padding:0' },
+			'no-padding-lr': { base: 'padding-left:0;padding-right:0' },
+			'no-padding-tb': { base: 'padding-top:0;padding-bottom:0' },
+			'no-margin': { base: 'margin:0' },
+			'no-border': { base: 'border:0' },
+			// The responsive variants. Brando scopes these in the class name and often
+			// states the value: `xs-padding-40px-tb` is 40px top/bottom below 767px,
+			// `sm-padding-70px-tb` is 70px below 991px. Only the ones whose NAME is the
+			// value are mapped — `xs-padding-thirteen-tb` uses the numeric scale and
+			// stays out. Without these, a `padding-four-all` panel keeps its 3.4rem at
+			// 390px and the band renders taller than its source (virtuallyjamaica's
+			// services band: 1517 vs 1281, the remaining geometry failure).
+			'xs-padding-40px-tb': { mobile: 'padding-top:40px;padding-bottom:40px' },
+			'sm-padding-70px-tb': { tablet: 'padding-top:70px;padding-bottom:70px' },
+			'md-text-center': { tablet: 'text-align:center' },
+			'sm-text-center': { tablet: 'text-align:center' },
+			'xs-text-center': { mobile: 'text-align:center' },
+		},
 	},
 	{
 		id: 'divi',

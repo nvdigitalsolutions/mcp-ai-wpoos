@@ -18,6 +18,7 @@ import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
 import { auditWarnings, contrastAudit } from './contrast.ts';
 import { designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { renderDirectFormsEndpointTs } from './forms-direct.ts';
@@ -26,7 +27,7 @@ import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
 import { consentCategoryFor, cspDirectivesFor } from './tracking.ts';
-import type { ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { BandTypeFact, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -349,6 +350,76 @@ function tsLength( value: ResponsiveLength ): string {
 	const parts = ( [ 'desktop', 'tablet', 'mobile' ] as const )
 		.filter( ( device ) => value[ device ] )
 		.map( ( device ) => `${ device }: ${ tsString( value[ device ] as string ) }` );
+	return `{ ${ parts.join( ', ' ) } }`;
+}
+
+/**
+ * Serialize one measured typography fact. Absent keys are omitted rather than
+ * emitted as `undefined`, so a band with only a size is one short line.
+ *
+ * The tablet/mobile overrides (what the source CHANGES below the desktop
+ * breakpoint — a 55px hero headline is 22px on a phone) are emitted verbatim:
+ * `diffTypeFact` already recorded only the differences, and a device that resets
+ * an alignment to `left` must keep it.
+ */
+function tsTypeFact( fact: BandTypeFact ): string {
+	const properties = ( value: Record< string, unknown >, dropDefaults: boolean ): string[] =>
+		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align' ] as const )
+			.filter( ( key ) => {
+				const entry = value[ key ];
+				if ( typeof entry !== 'string' || entry.length === 0 ) {
+					return false;
+				}
+				return ! ( dropDefaults && ( entry === 'normal' || entry === 'none' || entry === 'start' ) );
+			} )
+			.map( ( key ) => `${ key }: ${ tsString( value[ key ] as string ) }` );
+	const parts = properties( fact as unknown as Record< string, unknown >, true );
+	for ( const device of [ 'tablet', 'mobile' ] as const ) {
+		const override = fact[ device ];
+		if ( ! override ) {
+			continue;
+		}
+		const inner = properties( override as unknown as Record< string, unknown >, false );
+		if ( inner.length > 0 ) {
+			parts.push( `${ device }: { ${ inner.join( ', ' ) } }` );
+		}
+	}
+	return `{ ${ parts.join( ', ' ) } }`;
+}
+
+/**
+ * Serialize the band's type facts: per-heading-level rules plus the body scale,
+ * and `title` = the band's LARGEST heading (its visual title). The renderer
+ * emits `[data-section-id] h3 { … }` from these — the raw-HTML path otherwise
+ * renders at the browser's default 1.17em-of-body heading scale.
+ */
+function tsBandType( type: { headings?: Record< string, BandTypeFact >; body?: BandTypeFact } ): string | undefined {
+	const headings = Object.entries( type.headings ?? {} ).filter( ( [ , fact ] ) => Boolean( fact.size ) );
+	const parts: string[] = [];
+	if ( headings.length > 0 ) {
+		parts.push(
+			`headings: { ${ headings
+				.map( ( [ tag, fact ] ) => `${ tsKey( tag ) }: ${ tsTypeFact( fact ) }` )
+				.join( ', ' ) } }`
+		);
+		const largest = headings
+			.map( ( [ , fact ] ) => fact )
+			.reduce( ( best, fact ) =>
+				( parseFloat( fact.size ?? '0' ) || 0 ) > ( parseFloat( best.size ?? '0' ) || 0 ) ? fact : best
+			);
+		parts.push( `title: ${ tsTypeFact( largest ) }` );
+	}
+	if ( type.body?.size ) {
+		parts.push( `body: ${ tsTypeFact( type.body ) }` );
+	}
+	return parts.length > 0 ? `{ ${ parts.join( ', ' ) } }` : undefined;
+}
+
+/** Serialize one builder utility (base + its device-scoped declarations). */
+function tsUtility( utility: BuilderUtility ): string {
+	const parts = ( [ 'base', 'tablet', 'mobile' ] as const )
+		.filter( ( device ) => utility[ device ] )
+		.map( ( device ) => `${ device }: ${ tsString( utility[ device ] as string ) }` );
 	return `{ ${ parts.join( ', ' ) } }`;
 }
 
@@ -887,6 +958,21 @@ export function renderTokensDtcg( profile: SiteProfile, tokens: Record<string, s
  * whose height is content-driven anyway; mirroring it would pin a value the
  * rebuild's own type scale should decide.
  */
+/**
+ * The template's own side gutter at the desktop breakpoint
+ * (`clamp(1rem, 4vw, 2rem)` = 32px per side). A measured container width is a
+ * CONTENT width, so the band's scoped `max-width` must add the two gutters back
+ * — otherwise every measured band renders 64px narrower than its source.
+ */
+const BAND_GUTTER_PX = 64;
+
+/**
+ * A measured container wider than this is FLUID (`.container-fluid`: 1410px of a
+ * 1440px viewport), not boxed (`.container`: 1140px). The rebuild widens a fluid
+ * band to the viewport; a boxed one keeps the template gutter.
+ */
+const FLUID_CONTAINER_MIN = 1300;
+
 const MIN_MIRRORED_BAND_HEIGHT = 120;
 
 /**
@@ -993,6 +1079,25 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'',
 		"export type SectionThemeName = 'hero' | 'dark' | 'alt' | 'light';",
 		'',
+		'\t/** One measured typography fact (a heading level or the body paragraph).',
+		'\t * Values are the browser\u2019s COMPUTED styles: px, already resolved through',
+		'\t * the source builder\u2019s own stylesheet. */',
+		'export interface BandTypeFact {',
+		'\tsize?: string;',
+		'\tweight?: string;',
+		'\tlineHeight?: string;',
+		'\tletterSpacing?: string;',
+		'\ttransform?: string;',
+		'\talign?: string;',
+		'\t/** What the source CHANGES below the desktop breakpoint (and only that). */',
+		'\ttablet?: BandTypeProperties;',
+		'\tmobile?: BandTypeProperties;',
+		'}',
+		'',
+		'/** A BandTypeFact without its own device overrides. */',
+		"export type BandTypeProperties = Omit<BandTypeFact, 'tablet' | 'mobile'>;",
+		'',
+		'',
 		'export interface SectionTheme {',
 		'\tid?: string;',
 		'\ttheme: SectionThemeName;',
@@ -1017,11 +1122,30 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tmarginTop?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\tmarginBottom?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'	zIndex?: string;',
-		'\t/** The band\'s MEASURED source height (`analyze --geometry`) — applied as a',
+		'\t/** The band\u2019s MEASURED source height (`analyze --geometry`) \u2014 applied as a',
 		'\t * CSS min-height FLOOR, never a lock: content that grows past it is never',
 		'\t * clipped. A per-device map when the source band changes height per',
-		'\t * breakpoint. Absent → the band sizes to its content. */',
+		'\t * breakpoint. Absent \u2192 the band sizes to its content. */',
 		'\tminHeight?: string | { desktop?: string; tablet?: string; mobile?: string };',
+		'\t/** The band\u2019s measured TYPOGRAPHY (`analyze --geometry`) \u2014 the source\u2019s',
+		'\t * computed heading sizes per level plus the body paragraph. A raw-HTML band',
+		'\t * otherwise renders at the browser default heading scale (a 40px source',
+		'\t * `<h3>` came out at 15.21px = 1.17em of the 13px body). `title` is the',
+		'\t * band\u2019s LARGEST heading \u2014 the visual title the components size from. */',
+		'\ttype?: { headings?: Record<string, BandTypeFact>; body?: BandTypeFact; title?: BandTypeFact };',
+		'\t/** Selectors for subtrees the SOURCE renders hidden at rest (accordion',
+		'\t * panels, tab panes) — emitted as scoped `display:none` rules. */',
+		'\thidden?: string[];',
+		'\t/** The builder\u2019s presentation utilities this band uses, as',
+		'\t * class \u2192 declarations (Bootstrap/Brando `text-center`,',
+		'\t * `padding-four-all`), with their device-scoped variants. Trimmed to the',
+		'\t * classes the page carries. */',
+		'\tutilities?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'\t/** The MEASURED box (padding/margin/cropped-media height) of the classes',
+		'\t * this band keeps, per device. The builder spacing scale is not a ladder,',
+		'\t * so these are computed values, re-stated verbatim. Emitted AFTER',
+		'\t * `utilities`, so a measured value outranks a hand-authored approximation. */',
+		'\tbox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'\t/** The top-level column responsive facts (124 §6) — widths per',
 		'\t * device + order/visibility; the split components re-measure. */',
 		'\tcolumns?: Array<{',
@@ -1095,12 +1219,32 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 			entry.push( `padding: ${ tsLength( padding ) }` );
 		}
 		// The boxed container measure + column gap (124 §3) — the inner
-		// column re-measures to the source's container width.
-		if ( section.measure ) {
-			entry.push( `measure: ${ tsString( section.measure ) }` );
+		// column re-measures to the source's container width. An explicit profile
+		// fact wins; otherwise the MEASURED container (`.container` = 1140px,
+		// `.container-fluid` = the viewport) sets it. Without it every band rendered
+		// at the site measure: virtuallyjamaica's services band is fluid (1440px)
+		// and came out at 1136px.
+		const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
+		const measuredMeasure =
+			typeof bandFacts?.containerWidth === 'number' && bandFacts.containerWidth > 0
+				? `${ Math.round( bandFacts.containerWidth ) + BAND_GUTTER_PX }px`
+				: undefined;
+		const measure = section.measure ?? measuredMeasure;
+		if ( measure ) {
+			entry.push( `measure: ${ tsString( measure ) }` );
 		}
-		if ( section.paddingX ) {
-			entry.push( `paddingX: ${ tsString( section.paddingX ) }` );
+		// A FLUID source band spans the viewport, so the template's own side
+		// padding must not inset it: virtuallyjamaica's #wifi is `.container-fluid`
+		// (measured 1410px of 1440), and the default `clamp(1rem, 4vw, 2rem)` inset
+		// rendered it 1376px wide — 64px narrow, which wrapped every inner column
+		// and grew the band 52px. A boxed `.container` (1140px) keeps the inset.
+		const measuredPaddingX =
+			typeof bandFacts?.containerWidth === 'number' && bandFacts.containerWidth >= FLUID_CONTAINER_MIN
+				? '0px'
+				: undefined;
+		const paddingX = section.paddingX ?? measuredPaddingX;
+		if ( paddingX ) {
+			entry.push( `paddingX: ${ tsString( paddingX ) }` );
 		}
 		if ( section.marginTop ) {
 			entry.push( `marginTop: ${ tsLength( section.marginTop ) }` );
@@ -1137,6 +1281,45 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 							...( mobileHeight ? { mobile: mobileHeight } : {} ),
 						};
 			entry.push( `minHeight: ${ tsLength( value ) }` );
+		}
+		// The band's measured typography (see `tsBandType`). A profile pin on
+		// `design.sections[].type` wins over the measurement.
+		const typeLiteral = tsBandType( section.type ?? bandFacts ?? {} );
+		if ( typeLiteral ) {
+			entry.push( `type: ${ typeLiteral }` );
+		}
+		// The subtrees the source hides at rest (see `signaturesHiddenAtBoth`).
+		const hidden = section.hidden ?? bandFacts?.hidden ?? [];
+		if ( hidden.length > 0 ) {
+			entry.push( `hidden: [${ hidden.map( ( selector ) => tsString( selector ) ).join( ', ' ) }]` );
+		}
+		// The builder's presentation utilities this band actually uses. The
+		// sanitizer keeps the class and the vendor sheet never ships, so an
+		// unstated utility is inert (a `text-center` step rendered left-aligned).
+		// Trimmed by the measured class list, never emitted wholesale.
+		const utilities = builderUtilitiesFor( profile.design?.builder, bandFacts?.classes );
+		const utilityEntries = Object.entries( utilities );
+		if ( utilityEntries.length > 0 ) {
+			entry.push(
+				`utilities: { ${ utilityEntries
+					.map( ( [ name, utility ] ) => `${ tsKey( name ) }: ${ tsUtility( utility ) }` )
+					.join( ', ' ) } }`
+			);
+		}
+		// The MEASURED box of the classes this band keeps (see
+		// `collectBandBoxFacts`). The builder's numeric spacing scale cannot be
+		// expressed as a static class table — `padding-four-all` is 3.4rem on
+		// desktop and `40px 15.5938px` at 390px — so the computed box is re-stated
+		// verbatim. This is what keeps a raw-HTML band's column padding and its
+		// cropped media box faithful at every device.
+		const boxFacts = bandFacts?.box;
+		const boxEntries = Object.entries( boxFacts ?? {} );
+		if ( boxEntries.length > 0 ) {
+			entry.push(
+				`box: { ${ boxEntries
+					.map( ( [ name, box ] ) => `${ tsKey( name ) }: ${ tsUtility( box ) }` )
+					.join( ', ' ) } }`
+			);
 		}
 		if ( section.columns && section.columns.length > 0 ) {
 			const columns = section.columns.map( ( column ) => {
@@ -1296,8 +1479,11 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'	nav?: Array<{ label: string; href: string }>;',
 		'	navStyle?: ForgeChromeStyle;',
 		'	navInk?: string;',
-		'	headerBg?: string;',
-		'	headerInk?: string;',
+		'\theaderBg?: string;',
+		'\theaderInk?: string;',
+		'\t/** The MEASURED resting header is fully transparent (it floats over the',
+		'\t * hero); `headerBg` is then absent on purpose. */',
+		'\theaderTransparent?: boolean;',
 		'	call?: { label: string; href: string; bg?: string; ink?: string; style?: ForgeChromeStyle };',
 		'	footerBlocks?: Array<{ title?: string; items: string[] }>;',
 		'	footerHeadingStyle?: ForgeChromeStyle;',
@@ -1366,6 +1552,9 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	}
 	if ( chrome.headerInk ) {
 		entry.push( `headerInk: ${ tsString( chrome.headerInk ) }` );
+	}
+	if ( chrome.headerTransparent ) {
+		entry.push( 'headerTransparent: true' );
 	}
 	if ( chrome.call ) {
 		const call: string[] = [ `label: ${ tsString( chrome.call.label ) }`, `href: ${ tsString( chrome.call.href ) }` ];
@@ -1714,7 +1903,29 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 		'',
 	];
 	if ( entries.length === 0 ) {
-		return [ ...header, 'The source declares no scroll behaviour, so the rebuild has none.', '' ].join( '\n' );
+		const stickyOnly = profile.stickyHeader?.sticky;
+		if ( ! stickyOnly ) {
+			return [ ...header, 'The source declares no scroll behaviour, so the rebuild has none.', '' ].join( '\n' );
+		}
+	}
+	const sticky = profile.stickyHeader;
+	const stickyLines: string[] = [];
+	if ( sticky?.sticky ) {
+		const changes: string[] = [];
+		if ( sticky.bgChanged ) {
+			changes.push(`background ${ sticky.restBg ?? 'transparent' } → ${ sticky.pinnedBg ?? '—' }` );
+		}
+		if ( sticky.heightChanged ) {
+			changes.push( `height ${ sticky.restHeight }px → ${ sticky.pinnedHeight }px` );
+		}
+		stickyLines.push(
+			`**Sticky header** — pins on scroll${ changes.length > 0 ? `, ${ changes.join( ', ' ) }` : '' }. ` +
+				'Rebuilt as a `scroll(root)` timeline; the resting state is the base.'
+		);
+		stickyLines.push( '' );
+	}
+	if ( entries.length === 0 ) {
+		return [ ...header, ...stickyLines, '' ].join( '\n' );
 	}
 	const rows = entries.map( ( entry ) => {
 		const behaviour = entry.effect && entry.kind !== 'sticky' ? `${ entry.kind } (${ entry.effect })` : entry.kind;
@@ -1723,6 +1934,7 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 	} );
 	return [
 		...header,
+		...stickyLines,
 		'| Band | Behaviour | Range | Reduced motion |',
 		'| --- | --- | --- | --- |',
 		...rows,
@@ -1753,7 +1965,22 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 		'\tspeed?: number;',
 		'}',
 		'',
-		'export const behaviors: { headerSticky: boolean; entries: ScrollBehaviorEntry[] } = {',
+		'export const behaviors: {',
+		'\theaderSticky: boolean;',
+		'\t/** The source\u2019s own resting `position` \u2014 `fixed` means the header',
+		'\t * floats OVER the first band instead of holding a row in the flow. */',
+		'\theaderPosition?: string;',
+		'\t/** The pinned header\u2019s measured state (`analyze --geometry`). Present only',
+		'\t * when the source CHANGES the header on scroll; absent \u2192 the header keeps',
+		'\t * its resting appearance when pinned. */',
+		'\theaderPinnedBg?: string;',
+		'\theaderPinnedInk?: string;',
+		'\theaderPinnedShadow?: string;',
+		'\t/** The measured resting and pinned header heights (a shrinking header). */',
+		'\theaderRestHeight?: string;',
+		'\theaderPinnedHeight?: string;',
+		'\tentries: ScrollBehaviorEntry[];',
+		'} = {',
 		'\tentries: [',
 	];
 	const entries = behavior?.entries ?? [];
@@ -1773,7 +2000,32 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 		body.push( `\t\t{ ${ parts.join( ', ' ) } },` );
 	}
 	body.push( '\t\t],' );
-	body.push( `\t\theaderSticky: ${ behavior?.headerSticky ? 'true' : 'false' },` );
+	// The measured sticky header (browser fact). A source that pins its header
+	// counts as sticky even when no CSS class said so statically — the theme may
+	// apply the class from JavaScript.
+	const sticky = profile.stickyHeader;
+	// Facts only for a header that actually pins — a pinned colour on a static
+	// header is a contradiction the emitter must not publish.
+	const pinned = sticky?.sticky ? sticky : undefined;
+	body.push( `\t\theaderSticky: ${ behavior?.headerSticky || sticky?.sticky ? 'true' : 'false' },` );
+	if ( pinned?.position ) {
+		body.push( `\t\theaderPosition: ${ tsString( pinned.position ) },` );
+	}
+	if ( pinned?.pinnedBg ) {
+		body.push( `\t\theaderPinnedBg: ${ tsString( pinned.pinnedBg ) },` );
+	}
+	if ( pinned?.pinnedInk ) {
+		body.push( `\t\theaderPinnedInk: ${ tsString( pinned.pinnedInk ) },` );
+	}
+	if ( pinned?.shadow ) {
+		body.push( `\t\theaderPinnedShadow: ${ tsString( pinned.shadow ) },` );
+	}
+	if ( pinned?.restHeight ) {
+		body.push( `\t\theaderRestHeight: ${ tsString( `${ pinned.restHeight }px` ) },` );
+	}
+	if ( pinned?.pinnedHeight && pinned.pinnedHeight !== pinned.restHeight ) {
+		body.push( `\t\theaderPinnedHeight: ${ tsString( `${ pinned.pinnedHeight }px` ) },` );
+	}
 	body.push( '\t};' );
 	body.push( '' );
 	return [ ...header, ...body ].join( '\n' );

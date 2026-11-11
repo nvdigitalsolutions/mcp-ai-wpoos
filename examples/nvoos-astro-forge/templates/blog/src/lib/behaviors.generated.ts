@@ -16,7 +16,21 @@ export interface ScrollBehaviorEntry {
 	speed?: number;
 }
 
-export const behaviors: { headerSticky: boolean; entries: ScrollBehaviorEntry[] } = {
+export const behaviors: {
+	headerSticky: boolean;
+	/** The source's own resting `position` — `fixed` means the header floats OVER
+	 * the first band instead of holding a row in the flow. */
+	headerPosition?: string;
+	/** The pinned header's measured state (`analyze --geometry`). Present only
+	 * when the source CHANGES the header on scroll. */
+	headerPinnedBg?: string;
+	headerPinnedInk?: string;
+	headerPinnedShadow?: string;
+	/** The measured resting and pinned header heights (a shrinking header). */
+	headerRestHeight?: string;
+	headerPinnedHeight?: string;
+	entries: ScrollBehaviorEntry[];
+} = {
 	entries: [],
 	headerSticky: false,
 };

@@ -27,7 +27,7 @@ import { assertSafeHttpUrl } from './ssrf.ts';
 import { extractBandsFromHtml } from './bands.ts';
 import type { BandCandidate } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
-import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 const nodeRequire = createRequire( import.meta.url );
 
@@ -2012,6 +2012,47 @@ function tagClasses( node: HNodeLike ): string {
 
 function paragraphNodesOf( node: HNodeLike ): HNodeLike[] {
 	return collectNodes( node, ( n ) => n.type === 'tag' && n.name === 'p' );
+}
+
+/**
+ * Reconcile the harvested chrome with the MEASURED sticky header.
+ *
+ * `analyzeChrome` resolves colours from the source's stylesheet because the
+ * homepage HTML alone cannot tell which rule wins. For the header that is not
+ * good enough: Brando declares a red `.navbar` background that a more specific
+ * transparent header variation overrides, so the harvest picks the red the
+ * source never paints. The browser measurement is the tie-breaker.
+ *
+ * Two facts are taken from the measurement:
+ *
+ *  1. The RESTING background. Absent `restBg` means the header is fully
+ *     transparent — it floats over the hero — so `headerBg` is CLEARED rather
+ *     than left at a stylesheet guess, and `headerTransparent` records why.
+ *  2. The CHROME ink. The source keeps the container at the body ink while its
+ *     nav links paint their own colour; `restInk` is that container colour, and
+ *     `chrome.navInk` (unchanged) stays the link colour.
+ *
+ * Pure, so the reconcile is testable without a browser.
+ */
+export function applyMeasuredHeader(
+	chrome: ForgeChrome | undefined,
+	sticky: ForgeStickyHeader | undefined
+): void {
+	if ( ! chrome || ! sticky?.sticky ) {
+		return;
+	}
+	if ( sticky.restBg ) {
+		chrome.headerBg = sticky.restBg;
+		delete chrome.headerTransparent;
+	} else {
+		// A transparent resting header paints nothing — the strip belongs to the
+		// band behind it.
+		delete chrome.headerBg;
+		chrome.headerTransparent = true;
+	}
+	if ( sticky.restInk ) {
+		chrome.headerInk = sticky.restInk;
+	}
 }
 
 /** The header/footer facts of the rendered homepage, or undefined. */
