@@ -11,7 +11,7 @@ metadata:
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
 
-> **Spec current as of v1.2.18** (last verified 2026-11-08). Version-tagged
+> **Spec current as of v1.2.19** (last verified 2026-11-11). Version-tagged
 > facts are CI-enforced by `tests/test-knowledge-base-facts-sync.php`.
 
 Complete operational skill for the NV Digital Open Operator System (oOS)

@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-creation
-description: "End-to-end playbook for creating a new NV oOS Pro toolkit under addons/pro/includes/tools/<toolkit> — folder layout, tool class conventions (canonical envelope, two-gate sanitisation), all eleven registration surfaces (module loader, central registry, admin Tools + Features subtab, settings page/side menu, status map, both WP-CLI commands, schedule + workflow presets, SA Toolkit Manager, coverage manifests), fixture/oracle testing + the phpcs gotcha checklist. Use when asked to build a new Pro toolkit, scaffold toolkit tools, register toolkit presets/toggles, or debug why a new toolkit's tools, toggle, or admin menu don't appear. Complements mcp-ai-wpoos-toolkit-audit and mcp-ai-wpoos-test-suite."
+description: End-to-end playbook for creating a new NV oOS Pro toolkit under addons/pro/includes/tools/<toolkit> — folder layout, tool class conventions (canonical envelope, two-gate sanitisation), all eleven registration surfaces, fixture/oracle testing + the phpcs gotcha checklist. Use when asked to build a new Pro toolkit, scaffold toolkit tools, register toolkit presets/toggles, or debug why a new toolkit's tools, toggle, or admin menu don't appear. Complements mcp-ai-wpoos-toolkit-audit and mcp-ai-wpoos-test-suite.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos

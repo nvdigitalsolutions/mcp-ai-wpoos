@@ -1,7 +1,7 @@
 # NV oOS Pro vs Base Version Guide
 
 > **GSD Context File** — Load this when making decisions about Base vs Pro feature placement.
-> Last reviewed: November 8, 2026 (v1.2.18 — +10 Pro tools from Proposal 129; PHP floor raised to 8.1; live registry authoritative).
+> Last reviewed: November 11, 2026 (v1.2.19 — no tool or feature-placement delta; the window's changes are security and licensing, both applying equally to base and Pro, and the only version move is the standalone `plugins/nvoos-forge-bridge` 0.3.0 → 0.3.1, which is not an `addons/pro` surface. Live registry authoritative).
 
 ---
 
