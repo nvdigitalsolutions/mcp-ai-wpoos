@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 8.1
-Stable tag: 1.2.18
+Stable tag: 1.2.19
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -306,6 +306,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.19 - November 11, 2026 =
+
+Bumped to 1.2.19 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Security hardening leads: seventeen duplicated get_client_ip() implementations across base and Pro collapse into one canonical resolver (REMOTE_ADDR authoritative, forwarding headers honoured only for peers in the new wp_mcp_ai_trusted_proxies filter, X-Forwarded-For walked right-to-left, HTTP_CLIENT_IP no longer read), closing spoofing of IP allow/deny checks, per-IP rate limits and audit-log IPs — proxied hosts must configure the filter. Public write routes must now authorize their target: the workflow-trigger webhook fails closed (503) when no signing secret is configured, outbound booking rejects unpublished links, and a repo-wide CI gate reviews every __return_true write route. nvoos-forge-bridge moves to 0.3.1 from the WordPress.org T2 review (published-form checks, trusted-proxy rate limiting, buffered wp_send_json dispatch, carrier stripping, safe unserialize, redirect control-character rejection). Every source file now declares an SPDX licence header, with a licence-boundary CI gate behind it; includes/ is GPL, lib/core MIT and the Pro tree Proprietary, and GitHub source ZIPs no longer ship the proprietary tree. The Astro Forge gains the managed tier, vendor-agnostic band extraction (Elementor, WPBakery, Divi, Beaver, Bricks, Gutenberg, Oxygen, Flatsome), measured band geometry, text/colour/pixel parity gates and a managed deploy tree that ships its runtime dependencies behind a blocking boot gate. The EZuite inventory CCT gains printing_name, group_name and remark columns, and the vendored Pro dependencies refresh (ics, mailparser, sharp, validator). Fixes: auto-select tool-index cache poisoning, the AJAX coverage inventory, the bundled MCP Adapter deprecation in tests, release-body facts, isomorphic-git past two advisories, and npm ci cache retries. Tool count unchanged: ~358 base + ~1,388 Pro (~1,745 total; live registry authoritative). Coding-time skills 82 -> 83 (nvoos-forge-deploy). Stale 1.2.17 build ZIPs removed.
 
 = 1.2.18 - November 08, 2026 =
 

@@ -1,5 +1,64 @@
 # oOS – Changelog
 
+## [1.2.19] - 2026-11-11
+
+### Security — one client-IP resolver behind trusted proxies (#7570)
+
+- **Seventeen duplicated `get_client_ip()` implementations across base + Pro collapse into one canonical resolver** in `includes/bootstrap/helpers.php`: `wp_mcp_ai_get_client_ip()`, `wp_mcp_ai_normalize_ip()`, `wp_mcp_ai_ip_in_list()` and `wp_mcp_ai_ip_in_cidr()` (IPv4 and IPv6). `REMOTE_ADDR` is authoritative; a forwarding header is honoured **only** when the direct peer is in the new `wp_mcp_ai_trusted_proxies` filter (exact IPs or CIDR ranges, **empty by default**), and the `X-Forwarded-For` chain is then walked **right-to-left** so a client-supplied prefix cannot spoof the result. `HTTP_CLIENT_IP` (fully spoofable) is no longer read at all.
+- **Closes spoofing of** IP allow/deny checks (`check_ip_access`, REST base, magic login), per-IP rate limits (federation, magic login, booking, quiz, OAuth) and audit-log IPs (CRM, healthcare, QMS, imaging, error tracking, root security key, nefarious usage). **Behaviour change:** hosts behind a proxy must configure `wp_mcp_ai_trusted_proxies` or every visitor shares the proxy's bucket — documented in the readme FAQ. `tests/test-client-ip.php` added; `@since 1.2.19`.
+
+### Security — public write routes must authorize their target (#7571)
+
+- **The workflow-trigger webhook now fails closed.** The route is public by necessity and HMAC is its only authorization, but an enabled trigger with **no signing secret configured** skipped verification entirely — an open, unauthenticated workflow-execution endpoint. A missing secret now returns `503 trigger_not_configured`; a bad signature returns `401 invalid_signature`. (No `publish` check was added: the `mcp_ai_trigger` CPT is registered non-public and drafts are intentionally valid triggers.)
+- **Outbound booking rejects non-public targets.** The public `POST /nvoos-outbound/v1/bookings` route resolved a link by ID and only checked `_oa_booking_active`, so draft/pending/private/trashed links stayed actionable; a non-`publish` status now returns `invalid_link`.
+- **The forge-only route scanner becomes a repo-wide gate.** `.github/scripts/check-public-write-routes.php` scans `includes/`, `addons/pro/includes/` and `plugins/` for `register_rest_route()` calls whose permission callback is `__return_true` on a CREATABLE/EDITABLE/DELETABLE method, and fails when the route is not in the reviewed allowlist **or** an allowlist entry goes stale (10 reviewed routes, each with its compensating controls inline). Wired into `php-linting.yml` as a `public-write-routes` job; `phpunit-forge-bridge.yml` points at the new script.
+
+### Security — `nvoos-forge-bridge` 0.3.0 → 0.3.1 (#7569)
+
+- **wp.org T2 review `R nvoos-forge-bridge/vsamtani/5Nov26/T2 10Nov26/4.4RC1`.** The public form route could dispatch to non-public forms (JFB and Elementor lookups now require `post_status = publish` and an empty `post_password`, returning the same typed 404 as a missing form); rate limiting trusted `X-Forwarded-For` (now `REMOTE_ADDR` with a `nvoos_forge_bridge_trusted_proxies` exact/CIDR allowlist walked right-to-left); and `wp_send_json()` ended the REST request before the die-handler filter could run (dispatch now buffers the echoed JSON through a sentinel thrower with `finally` restore).
+- **Same-class audit:** a submitted `_jet_engine_booking_form_id`/`_jet_engine_refer` carrier could re-target the dispatch to a different, unvalidated form — carriers are stripped and re-asserted last; `maybe_unserialize()` on provider columns is replaced with `unserialize(…, ['allowed_classes' => false])`; redirect source/target control characters are rejected (newline injection into a generated `_redirects` file); uninstall wildcard-deletes the hashed per-IP rate-limit transients. 71 tests / 204 assertions, phpcs clean.
+
+### Added — SPDX licence headers and a licence boundary gate (#7545)
+
+- **Every source file now declares its licence**, and the repo's three-way licence split is a build-time check rather than a convention: `includes/` **GPL-3.0-or-later**, `lib/core/src/` **MIT**, `addons/pro/includes/` + `addons/canvas/` **Proprietary**. This fixes 26 files declaring GPL inside the MIT `lib/core` package (the package destined for the proprietary SaaS), 9 Pro files granting GPL on commercial code, and 419 files with no declaration at all.
+- **Tooling and enforcement:** `bin/add-spdx-headers.php` (idempotent, dry-run by default, `--apply` / `--tree=` flags), `bin/check-license-boundary.sh` (12 checks across packaging rules, foreign-licence declarations and licence presence), and `.github/workflows/license-boundary.yml` on PRs plus pushes to `main`/`alpha-working`.
+- **A real leak closed:** `.gitattributes` now `export-ignore`s `addons/pro/` and `addons/canvas/`, so `git archive` (and therefore GitHub release source ZIPs) no longer ships the full proprietary Pro tree. The pattern is deliberately not a bare `addons/`, which would strip `addons/embedded` and `addons/cloud-worker`. Both release builds read the working tree, not `git archive`, so the shipped artefacts are unchanged.
+
+### Changed — EZuite inventory CCT descriptive columns (#7575)
+
+- `LX_ItemStockPull` already returned `Printing_Name`, `Group_Name` and `Remark`, but the cached `ezuite_inventory` CCT dropped them before they reached any surface. The three columns now flow end to end: new `printing_name` / `group_name` / `remark` columns (`SCHEMA_VERSION` 1.9.0 → 1.10.0), default field mappings (also feeding the “Generate Default Mapping” button), human labels, sortable `orderby`, full-text search on `printing_name` (so the printed shelf-tag code users quote is findable), and escaped passthrough in `ezuite_inventory` responses. `ensure_columns()` runs at the start of every full sync, so rows cached before that sync hold empty strings until it repopulates them.
+
+### Changed — vendored Pro dependencies (#7580)
+
+- `addons/pro/assets/vendor/` (runtime-loaded document, media and social packages): `ics` 3.8.1 → 3.12.0, `mailparser` 3.9.4 → 3.9.10, `sharp` 0.33.5 → 0.35.5, `validator` 13.15.26 → 13.15.35 — with transitive `nodemailer` 9.0.0, `html-to-text` 10.0.0, `libmime` 5.3.8, `@zone-eu/mailsplit` 5.4.12, `linkify-it` 5.0.1 and `semver` 7.8.5.
+- **The local CSPRNG OAuth1-nonce patch on `twitter-api-v2` is deliberately retained** — the upstream diff would revert it to `Math.random()` (a CodeQL insecure-randomness regression). Any future re-vendor must re-apply it.
+
+### Fixed
+
+- **Auto-select tool index cache poisoning (#7534).** `WP_MCP_AI_Tool_Presets_Helper::build_tool_index()` cached the first caller's *filtered* tool subset in an unkeyed static, so a narrow two-tool call seeded the cache and later callers could no longer see tools outside it (the profession-defaults auto-select test lost `create_chart`). The index is now keyed by the normalised, sorted, deduped requested set, with an order-independence regression test.
+- **AJAX coverage audit (#7533).** `bin/audit-ajax-handlers.php` normalised path separators so Pro handlers classify correctly on Windows (the committed inventory read `Base 347 / Pro 0`), prunes `vendor/` and `node_modules/` while walking (it previously stalled on large trees), and the inventory is regenerated — **351 handlers: 139 base / 212 Pro**, 285 covered with 69 allow-listed. `tests/AJAX_TESTS_README.md` corrected (broken link, stale table, false allow-list claims), and the missing `wp_ajax_wp_mcp_ai_auto_select_tools` test added.
+- **Bundled MCP Adapter deprecation in tests (#7579).** WooCommerce, Elementor and Rank Math each vendor a copy of `wordpress/mcp-adapter`, whose `init()` fires a `_deprecated_function()` notice whenever `WP_MCP_VERSION` is undefined — always true under PHPUnit, so it failed whichever test booted REST first. `tests/bootstrap.php` now seeds `WP_MCP_VERSION` from the bundled copy's own `VERSION` const at `rest_api_init` priority 0.
+- **Release-body requirement facts (#7531).** Both main-plugin release generators hardcoded `PHP 7.4+ (base)` and `~300 tools`; they now say `PHP 8.1+` and `~358 tools`. The standalone-addon workflows keep their own 7.4 floors deliberately.
+- **isomorphic-git (#7566).** A bounded npm override (`>=1.38.6 <1.39`, resolving 1.38.10) closes **GHSA-9qw7-j9xw-fv9c / CVE-2026-63395** (high — arbitrary file write outside the working tree via a directory symlink during checkout) and **GHSA-cw2g-2vwq-88w6 / CVE-2026-63478** (medium — `..` path traversal on clone/checkout). Upstream `@wp-playground/storage` still pins the vulnerable 1.37.6, so an override is the only remedy; the chain is dev-only.
+- **Build Assets `npm ci` (#7567).** A corrupt `~/.npm/_cacache` entry failed every attempt with `EEXIST`/ENOENT; the install step now retries up to three times with `npm cache clean --force` between attempts.
+
+### Added — Astro Forge managed tier, band extraction and deploy tree (Proposals 135–137, app-side, #7532–#7578)
+
+- **Fidelity and coverage.** The forge gains a managed tier (local content + draft preview), the section-kind vocabulary and agent surfaces, and vendor-agnostic band extraction — a declarative adapter registry covering Elementor, WPBakery, Divi, Beaver, Bricks, Gutenberg, Oxygen and Flatsome plus Revolution Slider as an opaque widget, with a VIPS-lite visual layer that turns full-bleed colour/image/gradient changes into boundaries when the markup has no section wrappers. Text, colour and pixel parity gates ship alongside per-band verify gates, the media performance budget and self-hosted webfonts.
+- **Band geometry is measured, never scavenged.** `analyze --geometry` measures in a real browser, accepts an outline-band source (a source anchor sitting on a column is promoted to the band actually rebuilt), and the scaffold emits per-device `padding` and a `min-height` **floor** (applied before the hero early return, so the band it pins is not skipped). Rows become a real 12-column grid shim instead of equal flex lanes.
+- **The managed deploy tree ships its runtime dependencies.** `renderSyncDeployTree()` copies the project manifest and lockfile and walks the build output's bare imports through the installed dependency closure; `forge-sites.yml` runs a blocking `verify-deploy-tree` gate that installs `--omit=dev` and boots `server.js`. This fixes a silent freeze: a dependency-free tree installed one package, `server.js` threw `ERR_MODULE_NOT_FOUND`, Velocity failed the release and kept serving the previous build through five green mirror pushes.
+- **CI and CSP correctness.** The astro cross-app parity gate moves to `bin/check-astro-app-parity.mjs` (the cross-tree `tsconfig` resolution trap had broken two workflows), prerendered HTML orphans are purged at boot, and inline scripts plus island hydration stay page-invariant so CSP navigation does not break them. The storefront gains `data-section` coverage on the remaining blocks and a block gallery.
+- **New coding-time skill `nvoos-forge-deploy`** — the mirror-branch contract, the static vs managed tiers and their `deploy.json` shapes, the pull-after-push step everyone forgets, CI secrets/vars, verification recipes and eight gotchas.
+
+### Docs & skills
+
+- **New skill `nvoos-forge-deploy` (82 → 83)** — folded into `AGENTS.md` (§1 row + §6 paragraph), `.github/copilot-instructions.md` (both inline lists) and the `README.md` repo map in this pass.
+- **In-place skill updates:** `mcp-ai-wpoos-test-suite` gains pattern 93 (bundled MCP Adapter deprecation); `mcp-ai-wpoos-wporg-submission` records the **target-authorization** rule (a public write route must authorize the visibility/ownership of its dispatch target, not just the caller) and points at the new repo-wide gate; `design-performance-audit` documents the large-file authoring mechanics; `mcp-ai-wpoos-git-ops` records the vanished-worktree rebuild path and the PHP-CI non-gate guidance; the astro skills absorb the Proposal 135–137 capture.
+
+### Versioning
+
+- Bumped to **1.2.19** across plugin header, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md and DOCUMENTATION_INDEX.md. Pro addon: 1.2.19. **Model catalog: v2026.11.03** (251 models, 18 providers — zero diff). **Addon count: 32** (unchanged). Sub-projects: `nvoos-forge-bridge` **0.3.0 → 0.3.1**, astro-forge **0.1.1 → 0.2.0**. **Tool count unchanged: ~358 base + ~1,388 Pro (~1,745 total)** — zero registry registrations in-window; live registry authoritative. **Coding-time skills 82 → 83.** Bundled skills: 77 base + 41 Pro (unchanged). Security classes: **12** (unchanged). **Stale 1.2.17 build ZIPs removed.**
+
 ## [1.2.18] - 2026-11-08
 
 ### Changed — PHP 8.1 baseline, typed engine, and the tool-schema contract gate (#7529)
