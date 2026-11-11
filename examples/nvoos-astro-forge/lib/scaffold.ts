@@ -984,8 +984,34 @@ const FLUID_CONTAINER_MIN = 1300;
  * Below this the band is a strip (a logo rail, a spacer, a one-line banner)
  * whose height is content-driven anyway; mirroring it would pin a value the
  * rebuild's own type scale should decide.
+ *
+ * That reasoning only holds when the band HAS content. A decoration-only band
+ * (jayainc's dff3f1a is a lone `elementor-widget-spacer`) has nothing whose
+ * scale could decide its height, so its measured height is the whole design
+ * and is mirrored at any size — see `contentlessBand` below.
  */
 const MIN_MIRRORED_BAND_HEIGHT = 120;
+
+/**
+ * True when the band carries no content the rebuild can lay out: no heading,
+ * no body copy, no media and no control. Builder sources use such a band as a
+ * spacer (an Elementor `widget-spacer`), and its measured height is the only
+ * thing there is to reproduce.
+ *
+ * `interactions` is part of the test so a band whose sole content is a button
+ * is NOT mistaken for decoration.
+ */
+function contentlessBand( facts: ForgeBandFacts | undefined ): boolean {
+	if ( ! facts ) {
+		return false;
+	}
+	return (
+		Object.keys( facts.headings ?? {} ).length === 0 &&
+		! facts.body &&
+		Object.keys( facts.media ?? {} ).length === 0 &&
+		( facts.interactions ?? [] ).length === 0
+	);
+}
 
 /**
  * The band's MEASURED padding (114 §3.6), per device.
@@ -1351,9 +1377,13 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		// content is already taller keeps its own height. Per device, because a
 		// band that stacks at tablet/mobile is taller there than on desktop.
 		const box = section.id ? profile.geometry?.[ section.id ] : undefined;
+		// A decoration-only band is a spacer: its measured height IS its content, so
+		// the strip threshold does not apply (jayainc's dff3f1a renders a lone
+		// Elementor spacer and collapsed to 0px, shifting every band below it).
+		const minimumHeight = contentlessBand( bandFacts ) ? 1 : MIN_MIRRORED_BAND_HEIGHT;
 		const heightOf = ( viewport: string ): string | undefined => {
 			const height = box?.[ viewport ]?.height;
-			return typeof height === 'number' && height >= MIN_MIRRORED_BAND_HEIGHT
+			return typeof height === 'number' && height >= minimumHeight
 				? `${ Math.round( height ) }px`
 				: undefined;
 		};

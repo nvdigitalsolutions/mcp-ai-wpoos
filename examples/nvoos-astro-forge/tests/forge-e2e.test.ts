@@ -451,7 +451,16 @@ describe('forge e2e — emitted site', () => {
 			// photos past the viewport (measured: 45px of horizontal scroll at
 			// 390px, 21px at 768px). The definite track is the load-bearing fix;
 			// the shape then goes full width at its own ratio.
-			expect(css).toMatch(/\.ds-hero-collage\s*\{[^}]*grid-template-columns:\s*minmax\(\s*0\s*,\s*1fr\s*\)/);
+			//
+			// The tracks are RESPONSIVE, not one full-width column. The source
+			// keeps its photos out of flow (absolutely offset over the shape), so
+			// stacking them full width made the collage far taller than the
+			// source's media column — jayainc's about band measured 1286px at
+			// tablet and 1760px at mobile against 1207/1394. Photos sharing a row
+			// keep the collage under the band's measured height, which is the
+			// floor that pins the band back to the source box.
+			expect(css).toMatch(/\.ds-hero-collage\s*\{[^}]*grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\(\s*9rem\s*,\s*1fr\s*\)\s*\)/);
+			expect(css).toMatch(/\.ds-collage-shape\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/);
 			expect(css).toMatch(/\.ds-collage-shape\[data-fluid\]\s*\{[^}]*aspect-ratio:\s*var\(--ds-shape-ratio\)/);
 		} else {
 			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);

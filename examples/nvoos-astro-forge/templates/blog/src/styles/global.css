@@ -1460,11 +1460,21 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 		 * sized by the 412px shape, so max-width: 100% has no definite
 		 * containing block to resolve against and both the shape and the
 		 * photos spill past the viewport (measured: 45px of horizontal
-		 * scroll at 390px, 72px at 768px). */
-		grid-template-columns: minmax(0, 1fr);
+		 * scroll at 390px, 72px at 768px).
+		 *
+		 * The tracks are RESPONSIVE rather than one full-width column: the
+		 * source keeps its photos out of flow (absolutely offset over the
+		 * backdrop shape), so a stacked single column made the collage far
+		 * taller than the source's media column — jayainc's about band came
+		 * out 1286px at tablet and 1760px at mobile against 1207/1394. Two
+		 * photos sharing a row keep the collage under the band's measured
+		 * height, which is the floor that pins it back to the source. */
+		grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
 		gap: var(--forge-space);
 	}
+	/* The backdrop shape spans the whole row; only the photos share tracks. */
 	.ds-collage-shape {
+		grid-column: 1 / -1;
 		width: 100%;
 		max-width: 100%;
 	}
