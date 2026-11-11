@@ -149,9 +149,59 @@ hover, focus, focusVisible, active }` — the selector is baked at scaffold time
 (`a[class~="btn"][class~="btn-small"]`) so escaping lives in one place, and the
 renderer only scopes it with `[data-section-id="…"]`.
 
-## 8. Verifying a rebuild
+## 8. Verifying a rebuild — the `interaction states` gate
 
-`verify` does not gate states yet. Check by hand (or in a Playwright probe):
+`verify --interactions` (on by default outside `--minimal`) measures the BUILT
+page with the same forced-pseudo-class pass and compares state **presence** with
+the profile. It is an addressable gate: `profile.verify.gates` may downgrade it
+to `advisory`, which still measures and reports.
+
+```bash
+node scripts/forge.mjs verify sites/<site>.json --target <dir> --interactions
+# ✓ Interaction states: 13 state(s) across 5 band(s) — every control keeps its
+#   hover/focus/press and shows a focus ring.
+```
+
+Three findings, and why they are graded differently:
+
+| Kind | Severity | Meaning |
+| --- | --- | --- |
+| `state-missing` | **fail** | the source declared the state and the emitted rule no longer takes effect (cascade, class, sanitizer) |
+| `focus-indicator-missing` | **fail** | a rebuilt control shows no keyboard focus ring (WCAG 2.4.7) |
+| `control-missing` | warn | the band lost a state KIND entirely — the signature is gone AND nothing else in the band exposes that state |
+
+What is deliberately NOT compared:
+
+- **declaration strings.** The rebuild legitimately differs: the template adds
+a focus ring the source never had, a pinned band ink changes a computed colour.
+Comparing strings would fail on improvements.
+- **signatures that changed but kept the behaviour.** The contact band is rebuilt
+as the template form (`.ds-input` / `.ds-button`); its focus treatment is still
+there, on different classes. The comparison follows the STATE, so this is not a
+finding. Only a state kind with no carrier left in the band warns.
+- **controls the source generated in JavaScript** (owl dots, sliders) when they
+declare no states — they are outside the contract.
+
+Proven on virtuallyjamaica (2026-11-11): a clean build reports `0 fail, 0 warn`;
+removing ONE emitted `:hover` rule from the built HTML produces exactly
+
+```
+✗ Interaction states: band 1d5804b: "hover" state lost on a[class~="alt-font"]…[class~="inner-link"]
+  interaction states: 1 fail, 0 warn (12 of 13 expected state(s) present)
+```
+
+and exit 1; the same run with `"interaction states": "advisory"` exits 0 and
+prints the provenance on the scorecard line.
+
+"Present" counts the EXPECTED states, not the built ones: the build adds states
+the source never declared (the focus baseline), so a raw built count read
+`18 of 13` and said nothing.
+
+## 9. Manual spot-check (when the gate is advisory)
+
+`verify --interactions` is the gate; these are the checks to run when it is
+downgraded to `advisory` on a site, or when the finding needs to be seen rather
+than read. In a Playwright probe:
 
 1. hover the control and read `color` / `backgroundColor` / `boxShadow`;
 2. press and hold, then read again (the inset shadow);
@@ -161,7 +211,7 @@ renderer only scopes it with `[data-section-id="…"]`.
 A focus ring observed mid-transition reads `outline-offset: 0px` — the source's
 `transition: all .2s` animates the offset too. Wait ~250 ms before judging it.
 
-## 9. Gotchas
+## 10. Gotchas
 
 - `DOM.querySelector` needs `DOM.enable`; `forcePseudoState` needs `CSS.enable`.
 - Forced states are per-node and persist until cleared — always force `[]` in a

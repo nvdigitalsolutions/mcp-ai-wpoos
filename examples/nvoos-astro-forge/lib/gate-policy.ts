@@ -9,12 +9,19 @@
 //
 // Which gates are addressable is a deliberate, small list. Only the gates whose
 // verdict is RENDER- or THRESHOLD-sensitive are here: a pixel diff rides on the
-// source's font rasterisation, image renditions and third-party widgets, none
-// of which a rebuild can reproduce byte-for-byte, and a box delta can absorb
+// source's font rasterisation, image renditions and third-party widgets, none of
+// which a rebuild can reproduce byte-for-byte, and a box delta can absorb
 // sub-pixel font-metric drift on a band of long prose. Content gates are NOT
 // addressable — `band flow`, `token block`, `text parity` and `design language`
 // prove the rebuild is complete and carries the source's words and colours.
 // Downgrading those is not a policy decision, it is a broken site.
+//
+// `interaction states` qualifies for the same reason as the pixel gate: whether
+// a rebuilt `:hover` or `:focus-visible` still takes effect depends on the
+// CASCADE, and the source's own stylesheet is linked into the build — a vendor
+// selector can legitimately out-specify an emitted state, and a source with
+// aggressive focus overrides may need the baseline strengthened rather than a
+// gate turned red. It is measured, reported, and downgradable per site.
 //
 // Industry anchors (2026 visual-regression practice):
 //   - Playwright runs CI with `updateSnapshots: 'none'` so a MISSING baseline
@@ -35,7 +42,12 @@
  * the list stays short on purpose. `pixel regression` exists as its own gate
  * precisely so a self-comparison can never masquerade as parity.
  */
-export const FORGE_ADDRESSABLE_GATES = [ 'pixel parity', 'pixel regression', 'box geometry' ] as const;
+export const FORGE_ADDRESSABLE_GATES = [
+	'pixel parity',
+	'pixel regression',
+	'box geometry',
+	'interaction states',
+] as const;
 
 /** One addressable gate name. */
 export type ForgeGateName = ( typeof FORGE_ADDRESSABLE_GATES )[ number ];

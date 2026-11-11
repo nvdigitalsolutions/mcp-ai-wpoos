@@ -110,13 +110,18 @@ a pixel diff that `--strict-pixel` could not soften, because the pixel exit was
 unconditional. A multi-site forge cannot block every new site on a first-run
 pixel diff, and it cannot let a site opt out of measuring either.
 
-- **The addressable set is exactly three.** `profile.verify.gates` accepts a
-  policy for `pixel parity`, `pixel regression` and `box geometry`. The content
-  gates (`design language`, `token block`, `band flow`, `text parity`,
-  `nav anchors`, `fact consumption`, `media budget`, `colour system`,
-  `tracking`, `SEO head`, `bands`, `class coverage`) are NOT addressable: they
-  prove the rebuild is complete and carries the source's words and colours.
-  Downgrading those is not a policy decision, it is a broken site.
+- **The addressable set is exactly four.** `profile.verify.gates` accepts a
+  policy for `pixel parity`, `pixel regression`, `box geometry` and
+  `interaction states`. The content gates (`design language`, `token block`,
+  `band flow`, `text parity`, `nav anchors`, `fact consumption`, `media budget`,
+  `colour system`, `tracking`, `SEO head`, `bands`, `class coverage`) are NOT
+  addressable: they prove the rebuild is complete and carries the source's words
+  and colours. Downgrading those is not a policy decision, it is a broken site.
+  `interaction states` qualifies because its verdict rides on the CASCADE: the
+  source's own stylesheet is linked into the build, so a vendor selector can
+  out-specify an emitted `:hover` or the focus baseline, and a site with
+  aggressive focus overrides may need the baseline strengthened rather than a
+  permanent red gate.
   `validateVerifyBlock` runs from `assertProfile`, so scaffold/verify/deploy all
   reject the key by name — a typo in JSON would otherwise keep the DEFAULT
   policy while the operator believes they changed it.
@@ -131,8 +136,8 @@ pixel diff, and it cannot let a site opt out of measuring either.
   noise, not signal. Evidence is `verify-artifacts/source-*.png` or
   `--pixel-live`; present → `gate`, absent → `advisory`. Recording the seam is
   a deliberate human act (`--pixel-record-source`), so the gate tightening after
-  it is expected, not a surprise. `box geometry` and `pixel regression` default
-  to `gate`.
+  it is expected, not a surprise. `box geometry`, `pixel regression` and
+  `interaction states` default to `gate`.
 - **A build baseline is `pixel regression`, never parity.** Two captures of the
   same build differ by ~0, so a `baseline-*.png` comparison reports SSIM
   1.0000 and proves nothing about fidelity. It is recorded under its own gate

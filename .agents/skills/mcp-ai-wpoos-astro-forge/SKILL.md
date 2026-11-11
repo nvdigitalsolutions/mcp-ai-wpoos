@@ -1279,6 +1279,12 @@ and diffing the computed style. Full contract, standards and gotchas:
   at scaffold time) → band-scoped `[data-section-id] …:hover` rules.
   virtuallyjamaica: 13 states on 5 bands, ~5 s; the CTA's rest/hover/press now
   match the source exactly.
+- **`verify --interactions` gates it** (addressable: `profile.verify.gates` may
+  downgrade it to `advisory`). It compares state PRESENCE, never declaration
+  strings — the template legitimately adds a ring the source never had, and a
+  re-rendered band (the contact form) keeps its behaviour on different classes.
+  A lost `:hover` fails the run and names the control; a control the source
+  generated in JS declares no state and is outside the contract.
 
 ## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
 

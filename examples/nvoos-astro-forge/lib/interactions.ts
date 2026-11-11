@@ -544,6 +544,12 @@ export async function measureInteractions(
 	}
 }
 
+/** The states a rebuild is expected to keep. */
+export const COMPARED_INTERACTION_STATES = [ 'hover', 'focus', 'focusVisible', 'active' ] as const;
+
+/** One compared state name. */
+export type InteractionStateKey = ( typeof COMPARED_INTERACTION_STATES )[ number ];
+
 /**
  * Count the states a band's facts carry — used by `analyze`'s summary line.
  */
@@ -551,7 +557,7 @@ export function countInteractionStates( facts: Record< string, ForgeInteractionF
 	let total = 0;
 	for ( const list of Object.values( facts ) ) {
 		for ( const fact of list ) {
-			for ( const key of [ 'hover', 'focus', 'focusVisible', 'active' ] as const ) {
+			for ( const key of COMPARED_INTERACTION_STATES ) {
 				if ( fact[ key ] ) {
 					total += 1;
 				}
@@ -559,4 +565,153 @@ export function countInteractionStates( facts: Record< string, ForgeInteractionF
 		}
 	}
 	return total;
+}
+
+/** A per-band expectation: the profile's `bandFacts[id].interactions`, keyed by id. */
+export type InteractionBaseline = Record< string, ForgeInteractionFact[] >;
+
+/**
+ * What `verify` found wrong with the rebuilt controls.
+ *
+ * `state-missing` is the parity failure: the source declared the state, the
+ * rebuild emits it, so an empty delta means the emitted rule lost the cascade
+ * (a vendor selector with higher specificity, a missing class).
+ *
+ * `control-missing` is a WARN about a state KIND the band lost entirely: the
+ * expected signature is absent because the band was re-rendered through a design
+ * component, or because the source generated the control with JavaScript (owl
+ * dots, sliders). A signature change that still exposes the state (the template
+ * form's own focus rule) is NOT a deviation — this gate compares behaviour, not
+ * markup.
+ *
+ * `focus-indicator-missing` is the accessibility failure: WCAG 2.4.7 requires a
+ * visible indicator on every keyboard-focusable control, and the template's
+ * baseline is what supplies it on a source that has none.
+ */
+export interface InteractionDeviation {
+	sectionId: string;
+	selector: string;
+	kind: 'control-missing' | 'state-missing' | 'focus-indicator-missing';
+	/** The state that went missing (`state-missing` only). */
+	state?: InteractionStateKey;
+	severity: 'fail' | 'warn';
+}
+
+/**
+ * The signature two facts must share to be compared: tag + input type + the
+ * sorted class set. Hashed builder classes are stable per element, so this
+ * identifies the same control on both sides.
+ */
+export function interactionKey(
+	fact: Pick< ForgeInteractionFact, 'tag' | 'classes' | 'type' >
+): string {
+	return `${ fact.tag }|${ fact.type ?? '' }|${ [ ...fact.classes ].sort().join( '.' ) }`;
+}
+
+/**
+ * Compare the source's measured states with the rebuilt page's.
+ *
+ * Presence-only on purpose: comparing declaration STRINGS breaks as soon as the
+ * rebuild legitimately differs (the template adds a focus ring the source never
+ * had, a band's ink is pinned). What must hold is that a control the source
+ * animated still animates, and that every control is focusable-by-sight.
+ */
+export function diffInteractionStates(
+	expected: InteractionBaseline,
+	built: InteractionBaseline
+): InteractionDeviation[] {
+	const deviations: InteractionDeviation[] = [];
+	for ( const [ sectionId, facts ] of Object.entries( expected ) ) {
+		const builtFacts = built[ sectionId ] ?? [];
+		const builtByKey = new Map(
+			builtFacts.map( ( fact ) => [ interactionKey( fact ), fact ] )
+		);
+		// Which state kinds the rebuilt band still exposes anywhere. A band whose
+		// markup was replaced by a design component keeps its behaviour on
+		// DIFFERENT signatures (the template form's `.ds-input:focus`), so the
+		// comparison follows the state, not the original class list.
+		const builtStates = new Set< InteractionStateKey >();
+		for ( const fact of builtFacts ) {
+			for ( const state of COMPARED_INTERACTION_STATES ) {
+				if ( fact[ state ] ) {
+					builtStates.add( state );
+				}
+			}
+		}
+		for ( const fact of facts ) {
+			const declared = COMPARED_INTERACTION_STATES.filter( ( state ) => Boolean( fact[ state ] ) );
+			// A control the source gives no state to (an owl dot, a bare link) is
+			// not part of the interaction contract — nothing to verify.
+			if ( declared.length === 0 ) {
+				continue;
+			}
+			const selector = interactionSelector( fact );
+			const match = builtByKey.get( interactionKey( fact ) );
+			if ( ! match ) {
+				for ( const state of declared ) {
+					if ( builtStates.has( state ) ) {
+						continue;
+					}
+					deviations.push( {
+						sectionId,
+						selector,
+						kind: 'control-missing',
+						state,
+						severity: 'warn',
+					} );
+				}
+				continue;
+			}
+			for ( const state of declared ) {
+				if ( ! match[ state ] ) {
+					deviations.push( {
+						sectionId,
+						selector,
+						kind: 'state-missing',
+						state,
+						severity: 'fail',
+					} );
+				}
+			}
+		}
+	}
+	// The keyboard indicator is checked on EVERY rebuilt control, not only the
+	// ones the source styled: the template's baseline is the only thing standing
+	// between a source with no focus styles and an unusable keyboard page.
+	for ( const [ sectionId, facts ] of Object.entries( built ) ) {
+		for ( const fact of facts ) {
+			if ( ! fact.focus && ! fact.focusVisible ) {
+				deviations.push( {
+					sectionId,
+					selector: interactionSelector( fact ),
+					kind: 'focus-indicator-missing',
+					severity: 'fail',
+				} );
+			}
+		}
+	}
+	const rank = ( deviation: InteractionDeviation ): number =>
+		deviation.severity === 'fail' ? 0 : 1;
+	return deviations.sort(
+		( a, b ) =>
+			rank( a ) - rank( b ) ||
+			a.sectionId.localeCompare( b.sectionId ) ||
+			a.selector.localeCompare( b.selector ) ||
+			( a.state ?? '' ).localeCompare( b.state ?? '' )
+	);
+}
+
+/**
+ * The human line for one deviation — shared by the CLI and the tests so the
+ * wording cannot drift from the finding.
+ */
+export function describeInteractionDeviation( deviation: InteractionDeviation ): string {
+	switch ( deviation.kind ) {
+		case 'state-missing':
+			return `band ${ deviation.sectionId }: "${ deviation.state }" state lost on ${ deviation.selector }`;
+		case 'control-missing':
+			return `band ${ deviation.sectionId }: "${ deviation.state }" states lost with a control the build re-rendered or the source generated in JS \u2014 ${ deviation.selector }`;
+		default:
+			return `band ${ deviation.sectionId }: no keyboard focus indicator — ${ deviation.selector }`;
+	}
 }
