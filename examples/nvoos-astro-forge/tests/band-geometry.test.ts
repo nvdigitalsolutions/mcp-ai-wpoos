@@ -160,6 +160,45 @@ describe( 'band height comes from the measured box', () => {
 	it( 'emits no height when the profile carries no geometry', () => {
 		expect( entriesOf( renderSectionsGenerated( profileWith() ) ) ).not.toContain( 'minHeight' );
 	} );
+
+	it( 'mirrors a sub-threshold height when the band has no content at all', () => {
+		// jayainc's dff3f1a is a lone Elementor `widget-spacer`: 70px tall, no
+		// heading, no body, no media, no control. Its measured height IS its
+		// content, so the strip threshold must not swallow it — it rendered 0px
+		// and shifted every band below it.
+		const profile = profileWith( { abc1234: desktop( { height: 70 } ) } ) as unknown as SiteProfile & {
+			bandFacts: unknown;
+		};
+		profile.bandFacts = { abc1234: { containerWidth: 1140, headings: {}, classes: [] } };
+
+		expect( renderSectionsGenerated( profile ) ).toContain( "minHeight: '70px'" );
+	} );
+
+	it( 'keeps the threshold for a short band that does have content', () => {
+		// A 70px logo rail still belongs to the rebuild's type scale.
+		const profile = profileWith( { abc1234: desktop( { height: 70 } ) } ) as unknown as SiteProfile & {
+			bandFacts: unknown;
+		};
+		profile.bandFacts = {
+			abc1234: { containerWidth: 1140, headings: { h6: { size: '13px' } } },
+		};
+
+		expect( entriesOf( renderSectionsGenerated( profile ) ) ).not.toContain( 'minHeight' );
+	} );
+
+	it( 'treats a band whose only content is a control as content', () => {
+		const profile = profileWith( { abc1234: desktop( { height: 70 } ) } ) as unknown as SiteProfile & {
+			bandFacts: unknown;
+		};
+		profile.bandFacts = {
+			abc1234: {
+				containerWidth: 1140,
+				interactions: [ { tag: 'a', classes: [], base: 'color:red' } ],
+			},
+		};
+
+		expect( entriesOf( renderSectionsGenerated( profile ) ) ).not.toContain( 'minHeight' );
+	} );
 } );
 
 describe( 'builtStaticRoot picks the tree that actually serves the page', () => {

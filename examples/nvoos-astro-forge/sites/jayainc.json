@@ -406,7 +406,6 @@
 			{
 				"id": "fd63522",
 				"bgColor": "#f6f6f6",
-				"padding": "0px 0px 100px 0px",
 				"measure": "1140px",
 				"paddingX": "30px",
 				"catalog": {
@@ -792,11 +791,6 @@
 				"textPadding": "40px"
 			},
 			"why": "The source cards are borderless media cards: 10px widget-wrap padding, no column gutter, 40px-padded text block — measured, not band-scoped CSS."
-		},
-		{
-			"path": "sections.fd63522.padding",
-			"value": "0px 0px 100px 0px",
-			"why": "The catalogue band keeps 100px of bottom air under the button."
 		},
 		{
 			"path": "chrome.footerInk",

@@ -950,6 +950,12 @@ Research-backed (web.dev responsive images, MDN animation-timeline, DTCG
   on phones. Header wraps under 767px (nav full row, tagline hides under
   480px); horizontal reveals degrade to plain fade on phones; the collage
   photos return to static flow below 1152px (the measured band fit).
+  **Those static tracks are RESPONSIVE** (`repeat(auto-fit, minmax(9rem, 1fr))`,
+  shape spans the row): the source keeps its photos out of flow, so stacking
+  them full width made the collage taller than the source's whole media column
+  (jayainc about: 1286 vs 1207 at tablet, 1760 vs 1394 at mobile). Sharing a
+  row drops the collage under the band's measured `minHeight`, which then pins
+  the band to the source box exactly.
 - **Hero headline width (125 §8):** the photo-hero title runs the full
   band measure; the source keeps the 72px headline in a ~66% column.
   `.ds-section-wrap--hero .ds-title { max-width:
@@ -1162,6 +1168,18 @@ builder themes declare rhythm in classes the sanitizer strips, so
   the template's own 32px rhythm in place.
 - `minHeight` is a floor, never a lock — it closes UNDERSHOOT only. Overshoot is
   a content-scale difference and must be reported as such.
+- **A decoration-only band escapes the 120px strip threshold.**
+  `MIN_MIRRORED_BAND_HEIGHT` assumes a short band's height belongs to the
+  rebuild's type scale — true only when there IS content. A band with no
+  heading, body, media or control is a spacer (jayainc's `dff3f1a`, a lone
+  `widget-spacer`): its measured height is the whole design, so
+  `contentlessBand()` mirrors it at any size. A band whose only content is a
+  control is NOT decoration (`interactions` is part of the test).
+- **A profile `padding`/`minHeight` pin outranks the measurement** — the point
+  of a pin, and how a stale one hides. jayainc pinned
+  `sections.fd63522.padding: '0px 0px 100px 0px'` against a source box measured
+  at 0; only `verify --geometry` caught it. When a geometry failure names
+  `paddingBottom`, read `pins[]` before the renderer.
 - `min-height` must be applied **before** the hero early return in `wrapStyle`,
   or the one band a source height pins never gets it.
 - Rows are a **12-column GRID**, not equal-share flex: `grid-column: span N` from
