@@ -27,6 +27,9 @@ export interface ForgeChrome {
 	footerLogo?: { src?: string; alt?: string };
 	/** The footer background color (resolved from the footer-widget CSS). */
 	footerBg?: string;
+	/** True when the SOURCE exposes a theme / colour-mode control; absent means
+	 * the site has none, so the toggle is not rendered. */
+	themeToggle?: boolean;
 }
 
 export const chrome: ForgeChrome | undefined = undefined;

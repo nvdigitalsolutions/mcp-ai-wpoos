@@ -793,7 +793,7 @@ describe('forge e2e — long-tail content tools against the fixture', () => {
 });
 
 describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2)', () => {
-	it( 'the default scaffold bakes auto and wires the policy boot + toggle', async () => {
+	it( 'the default scaffold bakes auto and wires the policy boot', async () => {
 		const generated = await readFile(
 			path.join(workDir, 'src', 'lib', 'theme', 'policy.generated.ts'),
 			'utf8'
@@ -808,7 +808,9 @@ describe( 'forge e2e — theme policy + hybrid local (Proposals 105 §4 / 106 P2
 		expect(index).toContain('"policy":"auto"');
 		expect(index).toContain('forge-theme-policy');
 		expect(index).toContain('astro:after-swap');
-		expect(index).toContain('data-theme-toggle');
+		// The toggle is an ADDITION: it renders only when the source exposes a
+		// theme control (`chrome.themeToggle`), so the default fixture has none.
+		expect(index).not.toContain('data-theme-toggle');
 	} );
 
 	it( 'scaffolding with --theme-policy dark bakes the forced policy', async () => {

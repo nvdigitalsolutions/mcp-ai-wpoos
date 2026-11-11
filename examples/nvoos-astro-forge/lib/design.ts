@@ -2055,6 +2055,71 @@ export function applyMeasuredHeader(
 	}
 }
 
+/**
+ * The tokens that name a theme / colour-mode CONTROL (not a layout class).
+ * Deliberately narrow: `.theme-header` or a `color-mode-banner` must not be
+ * mistaken for a toggle.
+ */
+const THEME_TOGGLE_TOKEN = /(theme[-_]?(toggle|switch)|dark[-_]?mode|darkmode|(?:color|colour)[-_]?(?:mode|scheme)[-_]?(?:toggle|switch)|scheme[-_]?toggle)/i;
+const THEME_TOGGLE_LABEL = /(?:(?:dark|light)\s*(?:mode|theme))|(?:theme\s*(?:toggle|switch|mode))|(?:colou?r\s*scheme)/i;
+
+/**
+ * Does the source expose a theme / colour-mode control?
+ *
+ * The template renders one UNCONDITIONALLY, which is an addition the source may
+ * not have — virtuallyjamaica (a 2018 Brando theme with no dark mode at all)
+ * showed a stray `light` button floating in its header. A site that really has a
+ * toggle keeps it: `[data-theme-toggle]`, `.dark-mode-toggle`, a
+ * `[aria-label="Dark mode"]` button, the WP Dark Mode plugin switch, a
+ * "Colour scheme" menu item.
+ *
+ * Pure, so the heuristic is testable without a browser.
+ */
+export function sourceHasThemeToggle( html: string ): boolean {
+	if ( ! html ) {
+		return false;
+	}
+	// Cheap reject before parsing: most pages never mention a toggle at all.
+	if ( ! /toggle|dark[-_ ]?mode|colou?r[-_ ]?(mode|scheme)/i.test( html ) ) {
+		return false;
+	}
+	const handler = new DomHandler();
+	const parser = new Parser( handler, { lowerCaseTags: true, lowerCaseAttributeNames: true } );
+	parser.write( html );
+	parser.end();
+	const root: HNodeLike = {
+		type: 'tag',
+		name: 'root',
+		attribs: {},
+		children: ( handler.dom ?? [] ) as HNodeLike[],
+	};
+	const CONTROLS = new Set( [ 'button', 'a', 'label', 'input', 'span', 'i' ] );
+	for ( const node of collectNodes( root, ( candidate ) => candidate.type === 'tag' ) ) {
+		const attribs = node.attribs ?? {};
+		if ( 'data-theme-toggle' in attribs || 'data-theme-switch' in attribs ) {
+			return true;
+		}
+		const naming = `${ attribs.class ?? '' } ${ attribs.id ?? '' }`;
+		if ( THEME_TOGGLE_TOKEN.test( naming ) ) {
+			return true;
+		}
+		const label = `${ attribs[ 'aria-label' ] ?? '' } ${ attribs.title ?? '' }`;
+		if ( THEME_TOGGLE_LABEL.test( label ) ) {
+			return true;
+		}
+		// A text-labelled control (`<button>Dark mode</button>`): only on an
+		// interactive tag, and only when the whole label is short — never a
+		// paragraph that happens to mention dark mode.
+		if ( CONTROLS.has( node.name ?? '' ) ) {
+			const text = nodeText( node );
+			if ( text.length > 0 && text.length <= 32 && THEME_TOGGLE_LABEL.test( text ) ) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 /** The header/footer facts of the rendered homepage, or undefined. */
 export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefined {
 	const handler = new DomHandler( undefined, { withStartIndices: true } );
@@ -2501,6 +2566,13 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		if ( chromeSize ) {
 			chrome.chromeSize = chromeSize;
 		}
+	}
+
+	// 10. Does the source expose a theme / colour-mode control? The template
+	// renders one unconditionally, which is an ADDITION — a stray `light` button
+	// in the header of a site with no dark mode at all.
+	if ( sourceHasThemeToggle( input.html ) ) {
+		chrome.themeToggle = true;
 	}
 
 	if ( Object.keys( chrome ).length === 0 ) {

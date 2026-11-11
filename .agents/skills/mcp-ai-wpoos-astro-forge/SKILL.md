@@ -1192,6 +1192,23 @@ all general to builder-based sites (detail: reference §6–§10):
   `verify-artifacts/band-diff.json`. `--diff` forces it for every band. Read the
   contract before writing another throwaway Playwright probe:
   [`reference/band-diff.md`](reference/band-diff.md).
+- **`bandFacts[id].media`** — cropped-image heights, emitted as `img.<class>`
+  ONLY. A class can sit on an image AND a paragraph (`padding-six-lr` does), and
+  a fixed 711.5px image height applied to the paragraph made it 712px tall.
+- **`chrome.themeToggle`** — the template's theme toggle is an ADDITION: it
+  renders only when the SOURCE exposes a theme/colour-mode control
+  (`sourceHasThemeToggle`). A site with no dark mode otherwise shows a stray
+  button (virtuallyjamaica's floating `light`).
+- **The pixel gate is a SOURCE comparison.** `verify --pixel-record-source`
+  captures `verify-artifacts/source-<viewport>.png`; `--pixel` prefers it over a
+  regression `baseline-<viewport>.png` (a baseline shadowing the source reported
+  SSIM 1.0000 and hid real drift). `captureDist` resolves the root through
+  `builtStaticRoot`, because a SERVER-output build keeps its HTML in
+  `dist/client` — serving `dist/` answered `not found` and every capture was a
+  blank page read as a 95% difference.
+- **`<p>` still loses its class** (a known gap): restoring it without per-device
+  paragraph typography overshoots the band heights. See the note in
+  `sanitize.ts` before changing it.
 - **`bandFacts[id].box`** — computed `padding`/`margin` per class per device, plus
   a CROPPED image's rendered height. The numeric scale is not a ladder, so this
   outranks the utilities pack. Always emit `px`; record ZERO; emit the tablet

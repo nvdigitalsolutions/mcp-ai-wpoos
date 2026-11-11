@@ -1146,6 +1146,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * so these are computed values, re-stated verbatim. Emitted AFTER',
 		'\t * `utilities`, so a measured value outranks a hand-authored approximation. */',
 		'\tbox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'\t/** Cropped-media heights, emitted as `img.<class>` only. */',
+		'\tmedia?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'\t/** The top-level column responsive facts (124 §6) — widths per',
 		'\t * device + order/visibility; the split components re-measure. */',
 		'\tcolumns?: Array<{',
@@ -1318,6 +1320,16 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 			entry.push(
 				`box: { ${ boxEntries
 					.map( ( [ name, box ] ) => `${ tsKey( name ) }: ${ tsUtility( box ) }` )
+					.join( ', ' ) } }`
+			);
+		}
+		// Cropped-media heights, emitted as `img.<class>` only — see the split in
+		// `collectBandBoxFacts` (a class on both an image and a paragraph).
+		const mediaEntries = Object.entries( bandFacts?.media ?? {} );
+		if ( mediaEntries.length > 0 ) {
+			entry.push(
+				`media: { ${ mediaEntries
+					.map( ( [ name, media ] ) => `${ tsKey( name ) }: ${ tsUtility( media ) }` )
 					.join( ', ' ) } }`
 			);
 		}
@@ -1507,8 +1519,11 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'	footerBarBg?: string;',
 		'	/** The copyright bar\'s text color (usually translucent white). */',
 		'	footerBarInk?: string;',
-		'	/** The chrome base font-size (the source chrome runs at its own size). */',
-		'	chromeSize?: string;',
+		'\t/** The chrome base font-size (the source chrome runs at its own size). */',
+		'\tchromeSize?: string;',
+		'\t/** True when the SOURCE exposes a theme / colour-mode control; absent',
+		'\t * means the site has none, so the toggle is not rendered. */',
+		'\tthemeToggle?: boolean;',
 		'}',
 		'',
 	];
@@ -1555,6 +1570,9 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	}
 	if ( chrome.headerTransparent ) {
 		entry.push( 'headerTransparent: true' );
+	}
+	if ( chrome.themeToggle ) {
+		entry.push( 'themeToggle: true' );
 	}
 	if ( chrome.call ) {
 		const call: string[] = [ `label: ${ tsString( chrome.call.label ) }`, `href: ${ tsString( chrome.call.href ) }` ];

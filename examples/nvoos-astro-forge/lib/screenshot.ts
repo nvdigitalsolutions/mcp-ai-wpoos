@@ -26,7 +26,7 @@
 
 import type { Browser, Page } from 'playwright';
 
-import { serveDir } from './geometry.ts';
+import { builtStaticRoot, serveDir } from './geometry.ts';
 import type { GeometryViewport } from './geometry.ts';
 
 export type CaptureViewport = GeometryViewport;
@@ -140,6 +140,11 @@ export async function capturePage( options: CaptureOptions ): Promise< CaptureRe
 /**
  * Serve a built `dist/` and capture `/` at each viewport. Serving over HTTP is
  * mandatory: `file://` breaks absolute asset paths (same reason as geometry).
+ *
+ * The root is resolved through `builtStaticRoot` because a SERVER-output build
+ * puts its prerendered HTML under `dist/client/` — serving `dist/` directly
+ * answers `not found` and every capture is a blank page, which reads as a 95%
+ * pixel difference rather than a build error (virtuallyjamaica, 2026-11-11).
  */
 export async function captureDist(
 	distDir: string,
@@ -152,7 +157,7 @@ export async function captureDist(
 		mode?: 'light' | 'dark';
 	} = {}
 ): Promise< Map< string, CaptureResult > > {
-	const served = await serveDir( distDir );
+	const served = await serveDir( await builtStaticRoot( distDir ) );
 	const out = new Map< string, CaptureResult >();
 	try {
 		for ( const viewport of viewports ) {
