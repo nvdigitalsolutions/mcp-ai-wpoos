@@ -1339,6 +1339,38 @@ function collectLinksOutside( region: HNode, form: HNode ): LinkRef[] {
 	return links;
 }
 
+/**
+ * Copy paragraphs in the region OUTSIDE the form subtree — the band's intro
+ * copy.
+ *
+ * A form band used to keep only the heading and the controls, so the source's
+ * own lead paragraph disappeared: virtuallyjamaica's contact band renders
+ * "This deep customer understanding allows our clients to make evidence based
+ * decisions…" above the form, and the rebuilt band carried 15 characters
+ * against the source's 249. `width-50`/`text-center` wrappers are structural,
+ * not content — only the text survives.
+ */
+function paragraphsOutside( region: HNode, form: HNode ): string[] {
+	const found: string[] = [];
+	const walk = ( node: HNode ) => {
+		if ( node === form ) {
+			return;
+		}
+		if ( node.type === 'tag' && node.name === 'p' ) {
+			const text = trimmed( textOf( node ) );
+			if ( text.length > 1 ) {
+				found.push( text );
+			}
+			return;
+		}
+		for ( const child of childrenOf( node ) ) {
+			walk( child );
+		}
+	};
+	walk( region );
+	return found;
+}
+
 /** The first heading in a region that lives OUTSIDE the form subtree. */
 function headingOutside( region: HNode, form: HNode ): string | undefined {
 	const isHeading = ( n: HNode ) => n.type === 'tag' && /^h[1-6]$/.test( n.name ?? '' );
@@ -1385,6 +1417,12 @@ function formSection( html: string, region: HNode, form: HNode, searchForms?: st
 	const title = headingOutside( region, form );
 	if ( title ) {
 		section.slots.title = title;
+	}
+	// The band's intro copy — dropped copy is a content regression the page-level
+	// text gate reports but cannot attribute to a band.
+	const paragraphs = paragraphsOutside( region, form );
+	if ( paragraphs.length > 0 ) {
+		section.slots.body = paragraphs;
 	}
 	if ( info.kind === 'cta' ) {
 		const links = collectLinksOutside( region, form );

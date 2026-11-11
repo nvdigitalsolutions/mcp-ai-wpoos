@@ -321,8 +321,7 @@
 				"src": "https://virtuallyjamaica.com/wp-content/uploads/2018/11/VJ-Logo-V5-wht-gry.svg",
 				"alt": "Virtually Jamaica"
 			},
-			"headerBg": "#dd3333",
-			"headerInk": "#ffffff",
+			"headerInk": "rgb(98, 98, 98)",
 			"navInk": "#ffffff",
 			"navStyle": {
 				"weight": "600",
@@ -385,7 +384,8 @@
 					"href": "https://www.linkedin.com/",
 					"icon": "fab fa-linkedin-in"
 				}
-			]
+			],
+			"headerTransparent": true
 		},
 		"behavior": {
 			"headerSticky": false,
@@ -546,16 +546,6 @@
 			"path": "tokens.accent-ink",
 			"value": "#2a2a2a",
 			"why": "The coral accent #fe6c61 with the template default white ink measures 2.79:1; #2a2a2a ink measures 5.15:1."
-		},
-		{
-			"path": "chrome.headerBg",
-			"value": "#dd3333",
-			"why": "The source header is transparent over the red hero (#dd3333). A white header strip was the loudest visual mismatch."
-		},
-		{
-			"path": "chrome.headerInk",
-			"value": "#ffffff",
-			"why": "Source logo and nav render white on the red hero."
 		},
 		{
 			"path": "chrome.navStyle",
@@ -903,5 +893,1760 @@
 				"marginBottom": 0
 			}
 		}
+	},
+	"bandFacts": {
+		"45f5e88": {
+			"containerWidth": 1410,
+			"headings": {
+				"h1": {
+					"size": "55px",
+					"weight": "700",
+					"lineHeight": "70px",
+					"letterSpacing": "0.26px",
+					"transform": "uppercase",
+					"align": "start",
+					"family": "Montserrat",
+					"tablet": {
+						"size": "36px",
+						"lineHeight": "50px"
+					},
+					"mobile": {
+						"size": "22px",
+						"lineHeight": "22px",
+						"align": "center"
+					}
+				}
+			},
+			"box": {
+				"wpb_column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando-column-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_column_1526976985-2-31": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"col-xs-mobile-fullwidth": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"vc-column-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wpd-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"full-screen": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"xs-home-application-full-screen-auto": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"slider-typography": {
+					"base": "padding:75px 0px 0px 0px;margin:0px 144px 0px 144px",
+					"tablet": "padding:75px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"mobile": "padding:75px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"slider-typography-option7": {
+					"base": "padding:75px 0px 0px 0px;margin:0px 144px 0px 144px",
+					"tablet": "padding:75px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"mobile": "padding:75px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"slider-text-middle-main": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"slider-text-middle": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"content-left": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"text-medium": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 15px 0px"
+				},
+				"font-weight-500": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 15px 0px"
+				},
+				"uppercase": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 15px 0px"
+				},
+				"alt-font": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"white-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"title-extra-large-4": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"font-weight-700": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"brando-font-setting-6af0190b84859": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"app-store": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"image-right": {
+					"base": "padding:0px 0px 0px 34.55px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 0px 0px 24.11px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"attachment-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"size-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"classes": [
+				"alt-font",
+				"app-store",
+				"attachment-full",
+				"brando-column-container",
+				"brando-font-setting-6af0190b84859",
+				"brando_column_1526976985-2-31",
+				"brando_row_1526536355-2-55",
+				"col-xs-mobile-fullwidth",
+				"container-fluid",
+				"content-left",
+				"font-weight-500",
+				"font-weight-700",
+				"full-screen",
+				"image-right",
+				"no-padding-tb",
+				"row",
+				"size-full",
+				"slider-text-middle",
+				"slider-text-middle-main",
+				"slider-typography",
+				"slider-typography-option7",
+				"text-medium",
+				"title-extra-large-4",
+				"uppercase",
+				"vc-column-innner-wrapper",
+				"white-text",
+				"wpb_column",
+				"wpd-innner-wrapper",
+				"xs-home-application-full-screen-auto"
+			]
+		},
+		"1d5804b": {
+			"containerWidth": 1140,
+			"headings": {
+				"h2": {
+					"size": "28px",
+					"weight": "600",
+					"lineHeight": "34px",
+					"letterSpacing": "0.26px",
+					"transform": "none",
+					"align": "start",
+					"family": "Montserrat",
+					"mobile": {
+						"size": "24px",
+						"lineHeight": "28px",
+						"align": "center"
+					}
+				}
+			},
+			"body": {
+				"size": "13px",
+				"weight": "400",
+				"lineHeight": "23px",
+				"letterSpacing": "0.26px",
+				"transform": "none",
+				"align": "start",
+				"family": "Roboto",
+				"mobile": {
+					"align": "center"
+				}
+			},
+			"box": {
+				"wpb_column": {
+					"base": "padding:0px 15px 0px 15px"
+				},
+				"brando-column-container": {
+					"base": "padding:0px 15px 0px 15px"
+				},
+				"brando_column_1526905481-2-68": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px -1px",
+					"mobile": "padding:0px 15px 0px 15px;margin:0px 0px 11.69px 0px"
+				},
+				"vc_col-sm-12": {
+					"base": "padding:0px 15px 0px 15px"
+				},
+				"vc_col-lg-6": {
+					"base": "padding:0px 15px 0px 15px"
+				},
+				"vc_col-md-6": {
+					"base": "padding:0px 15px 0px 15px"
+				},
+				"col-xs-mobile-fullwidth": {
+					"base": "padding:0px 15px 0px 15px"
+				},
+				"xs-margin-three-bottom": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px -1px",
+					"mobile": "padding:0px 15px 0px 15px;margin:0px 0px 11.69px 0px"
+				},
+				"vc-column-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wpd-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_image_1526537328-2-10": {
+					"base": "padding:0px 38.84px 0px 38.84px;margin:0px 0px 0px 0px;height:318.2px",
+					"tablet": "padding:0px 50.39px 0px 50.39px;margin:0px 0px 0px 0px;height:412.81px",
+					"mobile": "padding:0px 25.19px 0px 25.19px;margin:0px 0px 0px 0px;height:206.41px"
+				},
+				"padding-seven-lr": {
+					"base": "padding:0px 38.84px 0px 38.84px;margin:0px 0px 0px 0px;height:318.2px",
+					"tablet": "padding:0px 50.39px 0px 50.39px;margin:0px 0px 0px 0px;height:412.81px",
+					"mobile": "padding:0px 25.19px 0px 25.19px;margin:0px 0px 0px 0px;height:206.41px"
+				},
+				"brando_column_1526991330-2-100": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 52.5px 0px 52.5px;margin:75px 0px 0px 0px",
+					"mobile": "padding:0px 27.3px 0px 27.3px;margin:39px 0px 0px 0px"
+				},
+				"xs-text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 52.5px 0px 52.5px;margin:75px 0px 0px 0px",
+					"mobile": "padding:0px 27.3px 0px 27.3px;margin:39px 0px 0px 0px"
+				},
+				"sm-padding-seven-lr": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 52.5px 0px 52.5px;margin:75px 0px 0px 0px",
+					"mobile": "padding:0px 27.3px 0px 27.3px;margin:39px 0px 0px 0px"
+				},
+				"sm-margin-ten-top": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 52.5px 0px 52.5px;margin:75px 0px 0px 0px",
+					"mobile": "padding:0px 27.3px 0px 27.3px;margin:39px 0px 0px 0px"
+				},
+				"brando_text_1526536968-2-0": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"uppercase": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"medium-gray-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"text-small": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"title-large": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"black-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"font-weight-600": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"text-transform-none": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"width-90": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"sm-width-100": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"xs-title-medium": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"text-extra-large": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 15px 0px"
+				},
+				"margin-15px-bottom": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 15px 0px"
+				},
+				"margin-bottom-30px": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 30px 0px"
+				},
+				"inner-link": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"brando_button_1526883929-2-91": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"btn-small-white-background": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"btn-small": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"button": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"btn": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				}
+			},
+			"classes": [
+				"alt-font",
+				"black-text",
+				"brando-column-container",
+				"brando-row-flex",
+				"brando_button_1526883929-2-91",
+				"brando_column_1526905481-2-68",
+				"brando_column_1526991330-2-100",
+				"brando_image_1526537328-2-10",
+				"brando_row_1526536355-2-55",
+				"brando_text_1526536968-2-0",
+				"btn",
+				"btn-small",
+				"btn-small-white-background",
+				"button",
+				"col-xs-mobile-fullwidth",
+				"container",
+				"font-weight-600",
+				"inner-link",
+				"margin-15px-bottom",
+				"margin-bottom-30px",
+				"medium-gray-text",
+				"no-padding-bottom",
+				"padding-seven-lr",
+				"row",
+				"row-content-middle",
+				"row-equal-height",
+				"sm-margin-ten-top",
+				"sm-padding-seven-lr",
+				"sm-width-100",
+				"text-extra-large",
+				"text-small",
+				"text-transform-none",
+				"title-large",
+				"uppercase",
+				"vc-column-innner-wrapper",
+				"vc_col-lg-6",
+				"vc_col-md-6",
+				"vc_col-sm-12",
+				"width-90",
+				"wpb_column",
+				"wpd-innner-wrapper",
+				"xs-margin-three-bottom",
+				"xs-text-center",
+				"xs-title-medium"
+			]
+		},
+		"1ff4891": {
+			"containerWidth": 1410,
+			"headings": {
+				"h3": {
+					"size": "40px",
+					"weight": "700",
+					"lineHeight": "45px",
+					"letterSpacing": "0.26px",
+					"transform": "uppercase",
+					"align": "center",
+					"family": "Montserrat",
+					"tablet": {
+						"size": "30px",
+						"lineHeight": "36px"
+					},
+					"mobile": {
+						"size": "26px",
+						"lineHeight": "28px"
+					}
+				},
+				"h6": {
+					"size": "13px",
+					"weight": "500",
+					"lineHeight": "23px",
+					"letterSpacing": "0.26px",
+					"transform": "uppercase",
+					"align": "center",
+					"family": "Montserrat"
+				}
+			},
+			"body": {
+				"size": "13px",
+				"weight": "400",
+				"lineHeight": "23px",
+				"letterSpacing": "0.26px",
+				"transform": "none",
+				"align": "center",
+				"family": "Roboto"
+			},
+			"box": {
+				"brando_column_1526544659-2-63": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px -1px",
+					"mobile": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"bg-image-srcset": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px -1px",
+					"mobile": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"parallax-fix": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px -1px",
+					"mobile": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"vc-column-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wpd-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_column_1526544929-2-72": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px;margin:0px 0px 0px 0px",
+					"tablet": "padding:33.36px 33.36px 33.36px 33.36px;margin:0px 0px 0px 0px",
+					"mobile": "padding:50.69px 15.59px 50.69px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"padding-four-all": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px;margin:0px 0px 0px 0px",
+					"tablet": "padding:33.36px 33.36px 33.36px 33.36px;margin:0px 0px 0px 0px",
+					"mobile": "padding:50.69px 15.59px 50.69px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"xs-padding-thirteen-tb": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px;margin:0px 0px 0px 0px",
+					"tablet": "padding:33.36px 33.36px 33.36px 33.36px;margin:0px 0px 0px 0px",
+					"mobile": "padding:50.69px 15.59px 50.69px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"margin-ten": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"no-margin-lr": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"clearfix": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"alt-font": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"font-weight-600": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"brando-font-setting-6af0190b84d08": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"heading-style1": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"no-margin": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_heading_1526545819-2-6": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"brando-remove-frontend-editor-top": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"brando-font-setting-6af0190b84d22": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"white-text": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"heading-style13": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"brando-inner-row-1": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando-inner-row-class": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_inner_column_1526544967-2-30": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"vc_col-sm-6": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"md-text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"sm-text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"xs-text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"service-sub": {
+					"base": "padding:24px 24px 24px 24px;margin:0px 0px 0px 0px"
+				},
+				"brando_featurebox_1526544422-2-43": {
+					"base": "padding:24px 24px 24px 24px;margin:0px 0px 0px 0px"
+				},
+				"margin-four-bottom": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 8.48px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 11.73px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10.75px 0px"
+				},
+				"icon-flag": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 8.48px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 11.73px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10.75px 0px"
+				},
+				"icon-large": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 8.48px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 11.73px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10.75px 0px"
+				},
+				"text-medium": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 4.23px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 5.86px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 5.38px 0px"
+				},
+				"text-uppercase": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 4.23px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 5.86px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 5.38px 0px"
+				},
+				"margin-two-bottom": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 4.23px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 5.86px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 5.38px 0px"
+				},
+				"display-block": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 4.23px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 5.86px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 5.38px 0px"
+				},
+				"brando-title-color": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 4.23px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 5.86px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 5.38px 0px"
+				},
+				"brando_inner_column_1526545039-2-53": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"icon-profile-female": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 8.48px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 11.73px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10.75px 0px"
+				},
+				"brando_inner_row_1526544407-2-24": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_inner_column_1526545056-2-76": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"clear-both": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"icon-target": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 8.48px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 11.73px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10.75px 0px"
+				},
+				"brando_inner_column_1526545068-2-60": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"icon-envelope": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 8.48px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 11.73px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10.75px 0px"
+				},
+				"wpb_column": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"brando-column-container": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"vc_col-sm-12": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"vc_col-lg-6": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"vc_col-md-12": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"col-xs-mobile-fullwidth": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"service": {
+					"mobile": "margin:0px 0px 0px 0px"
+				}
+			},
+			"classes": [
+				"alt-font",
+				"bg-image-srcset",
+				"brando-column-container",
+				"brando-font-setting-6af0190b84d08",
+				"brando-font-setting-6af0190b84d22",
+				"brando-inner-row-1",
+				"brando-inner-row-class",
+				"brando-remove-frontend-editor-top",
+				"brando-title-color",
+				"brando_column_1526544659-2-63",
+				"brando_column_1526544929-2-72",
+				"brando_featurebox_1526544422-2-43",
+				"brando_heading_1526545819-2-6",
+				"brando_inner_column_1526544967-2-30",
+				"brando_inner_column_1526545039-2-53",
+				"brando_inner_column_1526545056-2-76",
+				"brando_inner_column_1526545068-2-60",
+				"brando_inner_row_1526544407-2-24",
+				"brando_row_1526544719-2-66",
+				"clear-both",
+				"clearfix",
+				"col-xs-mobile-fullwidth",
+				"container-fluid",
+				"display-block",
+				"font-weight-600",
+				"heading-style1",
+				"heading-style13",
+				"icon-envelope",
+				"icon-flag",
+				"icon-large",
+				"icon-profile-female",
+				"icon-target",
+				"margin-four-bottom",
+				"margin-ten",
+				"margin-two-bottom",
+				"md-text-center",
+				"no-margin",
+				"no-margin-lr",
+				"no-padding-bottom",
+				"padding-four-all",
+				"parallax-fix",
+				"row",
+				"row-equal-height",
+				"service",
+				"service-sub",
+				"sm-text-center",
+				"text-center",
+				"text-medium",
+				"text-uppercase",
+				"vc-column-innner-wrapper",
+				"vc_col-lg-6",
+				"vc_col-md-12",
+				"vc_col-sm-12",
+				"vc_col-sm-6",
+				"white-text",
+				"wpb_column",
+				"wpd-innner-wrapper",
+				"xs-padding-thirteen-tb",
+				"xs-text-center"
+			]
+		},
+		"860a86e": {
+			"containerWidth": 1140,
+			"headings": {
+				"h3": {
+					"size": "40px",
+					"weight": "700",
+					"lineHeight": "45px",
+					"letterSpacing": "0.26px",
+					"transform": "uppercase",
+					"align": "center",
+					"family": "Montserrat",
+					"tablet": {
+						"size": "30px",
+						"lineHeight": "36px"
+					},
+					"mobile": {
+						"size": "26px",
+						"lineHeight": "28px"
+					}
+				},
+				"h4": {
+					"size": "13px",
+					"weight": "400",
+					"lineHeight": "30px",
+					"letterSpacing": "2px",
+					"transform": "uppercase",
+					"align": "left",
+					"family": "Roboto"
+				},
+				"h6": {
+					"size": "13px",
+					"weight": "500",
+					"lineHeight": "23px",
+					"letterSpacing": "0.26px",
+					"transform": "uppercase",
+					"align": "center",
+					"family": "Montserrat"
+				}
+			},
+			"body": {
+				"size": "14px",
+				"weight": "400",
+				"lineHeight": "24px",
+				"letterSpacing": "0.26px",
+				"transform": "none",
+				"align": "left",
+				"family": "Roboto"
+			},
+			"box": {
+				"brando_column_1526553936-2-100": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"md-text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"vc-column-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wpd-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"margin-ten": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"no-margin-lr": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"clearfix": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"alt-font": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"font-weight-600": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"heading-style1": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"no-margin": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_heading_1526545819-2-6": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"brando-remove-frontend-editor-top": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"black-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"heading-style13": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"row-equal-height": {
+					"base": "padding:0px 0px 0px 0px;margin:91.19px 0px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:57.59px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:28.8px 0px 0px 0px"
+				},
+				"brando_inner_row_1526554049-2-87": {
+					"base": "padding:0px 0px 0px 0px;margin:91.19px 0px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:57.59px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:28.8px 0px 0px 0px"
+				},
+				"brando-inner-row-class": {
+					"base": "padding:0px 0px 0px 0px;margin:91.19px 0px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:57.59px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:28.8px 0px 0px 0px"
+				},
+				"margin-eight-top": {
+					"base": "padding:0px 0px 0px 0px;margin:91.19px 0px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:57.59px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:28.8px 0px 0px 0px"
+				},
+				"brando_inner_column_1526988010-2-21": {
+					"base": "padding:79.8px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"tablet": "padding:50.39px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"mobile": "padding:25.19px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"padding-seven-top": {
+					"base": "padding:79.8px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"tablet": "padding:50.39px 15px 0px 15px;margin:0px 0px 0px 0px",
+					"mobile": "padding:25.19px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"brando_image_1526553791-2-35": {
+					"base": "padding:0px 32.39px 0px 32.39px;margin:0px 0px 0px 0px;height:711.5px",
+					"tablet": "padding:0px 41.39px 0px 41.39px;margin:0px 0px 0px 0px;height:909.14px",
+					"mobile": "padding:0px 19.8px 0px 19.8px;margin:0px 0px 0px 0px;height:434.8px"
+				},
+				"padding-six-lr": {
+					"base": "height:711.5px",
+					"tablet": "height:909.14px",
+					"mobile": "height:434.8px"
+				},
+				"brando_inner_column_1526554583-2-30": {
+					"base": "padding:0px 15px 0px 15px;margin:57px 0px 0px 0px",
+					"tablet": "padding:0px 15px 0px 15px;margin:36px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:18px 0px 0px 0px"
+				},
+				"bottom-border-dark": {
+					"base": "padding:0px 15px 0px 15px;margin:57px 0px 0px 0px",
+					"tablet": "padding:0px 15px 0px 15px;margin:36px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:18px 0px 0px 0px"
+				},
+				"text-left": {
+					"base": "padding:0px 15px 0px 15px;margin:57px 0px 0px 0px",
+					"tablet": "padding:0px 15px 0px 15px;margin:36px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:18px 0px 0px 0px"
+				},
+				"xs-no-padding-lr": {
+					"base": "padding:0px 15px 0px 15px;margin:57px 0px 0px 0px",
+					"tablet": "padding:0px 15px 0px 15px;margin:36px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:18px 0px 0px 0px"
+				},
+				"margin-five-top": {
+					"base": "padding:0px 15px 0px 15px;margin:57px 0px 0px 0px",
+					"tablet": "padding:0px 15px 0px 15px;margin:36px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:18px 0px 0px 0px"
+				},
+				"panel-group": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
+				},
+				"accordion-style1": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
+				},
+				"about-tab-right": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
+				},
+				"panel": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"panel-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"panel-heading": {
+					"base": "padding:15px 15px 15px 15px;margin:0px 0px 0px 0px"
+				},
+				"active-accordion": {
+					"base": "padding:15px 15px 15px 15px;margin:0px 0px 0px 0px"
+				},
+				"panel-title": {
+					"base": "padding:10px 15px 10px 40px;margin:0px 0px 0px 0px"
+				},
+				"icon-mobile": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"icon-small": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"vertical-align-middle": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"pull-right": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fa-solid": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fa-minus": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"panel-collapse": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"collapse": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"in": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"text-medium": {
+					"base": "margin:0px 0px 10px 0px"
+				},
+				"gray-text": {
+					"base": "margin:0px 0px 10px 0px"
+				},
+				"icon-profile-male": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fa-plus": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"icon-key": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"icon-picture": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"icon-pricetags": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"icon-global": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"icon-envelope": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"icon-target": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"hidden": [
+				"[class~=\"collapse\"][class~=\"panel-collapse\"]:not([class~=\"in\"])"
+			],
+			"classes": [
+				"about-tab-right",
+				"accordion-style1",
+				"active-accordion",
+				"alt-font",
+				"black-text",
+				"bottom-border-dark",
+				"brando-column-container",
+				"brando-inner-row-class",
+				"brando-remove-frontend-editor-top",
+				"brando_column_1526553936-2-100",
+				"brando_heading_1526545819-2-6",
+				"brando_image_1526553791-2-35",
+				"brando_inner_column_1526554583-2-30",
+				"brando_inner_column_1526988010-2-21",
+				"brando_inner_row_1526554049-2-87",
+				"brando_row_1541163928-2-53",
+				"clearfix",
+				"col-xs-mobile-fullwidth",
+				"collapse",
+				"container",
+				"fa-minus",
+				"fa-plus",
+				"fa-solid",
+				"font-weight-600",
+				"gray-text",
+				"heading-style1",
+				"heading-style13",
+				"icon-envelope",
+				"icon-global",
+				"icon-key",
+				"icon-mobile",
+				"icon-picture",
+				"icon-pricetags",
+				"icon-profile-male",
+				"icon-small",
+				"icon-target",
+				"in",
+				"margin-eight-top",
+				"margin-five-top",
+				"margin-four-tb",
+				"margin-ten",
+				"md-margin-one-tb",
+				"md-text-center",
+				"no-border",
+				"no-margin",
+				"no-margin-lr",
+				"no-padding-lr",
+				"padding-seven-top",
+				"padding-six-lr",
+				"padding-two-all",
+				"panel",
+				"panel-body",
+				"panel-collapse",
+				"panel-default",
+				"panel-group",
+				"panel-heading",
+				"panel-title",
+				"pull-right",
+				"row",
+				"row-equal-height",
+				"text-center",
+				"text-left",
+				"text-medium",
+				"vc-column-innner-wrapper",
+				"vc_col-lg-6",
+				"vc_col-md-6",
+				"vc_col-sm-12",
+				"vertical-align-middle",
+				"wpb_column",
+				"wpd-innner-wrapper",
+				"xs-no-padding-lr"
+			]
+		},
+		"499464d": {
+			"containerWidth": 1410,
+			"headings": {
+				"h4": {
+					"size": "32px",
+					"weight": "400",
+					"lineHeight": "38px",
+					"letterSpacing": "0.26px",
+					"transform": "none",
+					"align": "start",
+					"family": "Montserrat",
+					"mobile": {
+						"size": "26px",
+						"lineHeight": "32px"
+					}
+				}
+			},
+			"body": {
+				"size": "24px",
+				"weight": "300",
+				"lineHeight": "28px",
+				"letterSpacing": "0.26px",
+				"transform": "none",
+				"align": "start",
+				"family": "Montserrat"
+			},
+			"box": {
+				"brando_column_1526550966-2-18": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px;margin:0px 0px 0px -1px",
+					"tablet": "padding:70px 33.36px 70px 33.36px;margin:0px 0px 0px -1px",
+					"mobile": "padding:40px 15.59px 40px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"vc_col-lg-3": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px;margin:0px 0px 0px -1px",
+					"tablet": "padding:70px 33.36px 70px 33.36px;margin:0px 0px 0px -1px",
+					"mobile": "padding:40px 15.59px 40px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"padding-four-all": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px",
+					"tablet": "padding:70px 33.36px 70px 33.36px",
+					"mobile": "padding:40px 15.59px 40px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"sm-padding-70px-tb": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px",
+					"tablet": "padding:70px 33.36px 70px 33.36px",
+					"mobile": "padding:40px 15.59px 40px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"xs-padding-40px-tb": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px",
+					"tablet": "padding:70px 33.36px 70px 33.36px",
+					"mobile": "padding:40px 15.59px 40px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"vc-column-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wpd-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_text_1526550940-2-89": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"white-text": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"title-medium": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"font-weight-300": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"brando_column_1526552250-2-97": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"vc_col-lg-4": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"agency-skill-bg": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"no-padding": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"bg-image-srcset": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"cover-background": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_column_1526552704-2-67": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px;margin:0px 0px 0px 0px",
+					"tablet": "padding:70px 33.36px 70px 33.36px;margin:0px 0px 0px 0px",
+					"mobile": "padding:40px 15.59px 40px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"vc_col-lg-5": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px;margin:0px 0px 0px 0px",
+					"tablet": "padding:70px 33.36px 70px 33.36px;margin:0px 0px 0px 0px",
+					"mobile": "padding:40px 15.59px 40px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"vc_col-md-12": {
+					"base": "padding:57.59px 57.59px 57.59px 57.59px;margin:0px 0px 0px 0px",
+					"tablet": "padding:70px 33.36px 70px 33.36px;margin:0px 0px 0px 0px",
+					"mobile": "padding:40px 15.59px 40px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"brando-remove-frontend-editor-top": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"heading-style6": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"brando_heading_1526552613-2-56": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 25px 0px"
+				},
+				"brando_text_1526552584-2-33": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"flat-list": {
+					"base": "padding:0px 63.02px 0px 0px;margin:0px 0px 24.23px 0px",
+					"tablet": "padding:0px 99.73px 0px 0px;margin:0px 0px 38.36px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 17.94px 0px"
+				},
+				"flat-list-icon": {
+					"base": "padding:0px 63.02px 0px 0px;margin:0px 0px 24.23px 0px",
+					"tablet": "padding:0px 99.73px 0px 0px;margin:0px 0px 38.36px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 17.94px 0px"
+				},
+				"bottom-line-list-dark": {
+					"base": "padding:0px 63.02px 0px 0px;margin:0px 0px 24.23px 0px",
+					"tablet": "padding:0px 99.73px 0px 0px;margin:0px 0px 38.36px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 17.94px 0px"
+				},
+				"services-list-light": {
+					"base": "padding:0px 63.02px 0px 0px;margin:0px 0px 24.23px 0px",
+					"tablet": "padding:0px 99.73px 0px 0px;margin:0px 0px 38.36px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 17.94px 0px"
+				},
+				"margin-five-bottom": {
+					"base": "padding:0px 63.02px 0px 0px;margin:0px 0px 24.23px 0px",
+					"tablet": "padding:0px 99.73px 0px 0px;margin:0px 0px 38.36px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 17.94px 0px"
+				},
+				"padding-thirteen-right": {
+					"base": "padding:0px 63.02px 0px 0px;margin:0px 0px 24.23px 0px",
+					"tablet": "padding:0px 99.73px 0px 0px;margin:0px 0px 38.36px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 17.94px 0px"
+				},
+				"medium-gray-text": {
+					"base": "padding:0px 63.02px 0px 0px;margin:0px 0px 24.23px 0px",
+					"tablet": "padding:0px 99.73px 0px 0px;margin:0px 0px 38.36px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 17.94px 0px"
+				},
+				"xs-no-padding-right": {
+					"base": "padding:0px 63.02px 0px 0px;margin:0px 0px 24.23px 0px",
+					"tablet": "padding:0px 99.73px 0px 0px;margin:0px 0px 38.36px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 17.94px 0px"
+				},
+				"inner-link": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"brando_button_1526552748-2-26": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"no-margin": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"btn-small-white": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"btn-small": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"button": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"btn": {
+					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				},
+				"wpb_column": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"brando-column-container": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"vc_col-sm-12": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"vc_col-md-6": {
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"col-xs-mobile-fullwidth": {
+					"mobile": "margin:0px 0px 0px 0px"
+				}
+			},
+			"classes": [
+				"agency-skill",
+				"agency-skill-bg",
+				"alt-font",
+				"bg-image-srcset",
+				"bottom-line-list-dark",
+				"brando-column-container",
+				"brando-remove-frontend-editor-top",
+				"brando_button_1526552748-2-26",
+				"brando_column_1526550966-2-18",
+				"brando_column_1526552250-2-97",
+				"brando_column_1526552704-2-67",
+				"brando_heading_1526552613-2-56",
+				"brando_row_1526550681-2-5",
+				"brando_text_1526550940-2-89",
+				"brando_text_1526552584-2-33",
+				"btn",
+				"btn-small",
+				"btn-small-white",
+				"button",
+				"col-xs-mobile-fullwidth",
+				"container-fluid",
+				"cover-background",
+				"flat-list",
+				"flat-list-icon",
+				"font-weight-300",
+				"heading-style6",
+				"inner-link",
+				"margin-five-bottom",
+				"medium-gray-text",
+				"no-margin",
+				"no-padding",
+				"padding-four-all",
+				"padding-thirteen-right",
+				"row",
+				"row-equal-height",
+				"services-list-light",
+				"sm-padding-70px-tb",
+				"title-medium",
+				"vc-column-innner-wrapper",
+				"vc_col-lg-3",
+				"vc_col-lg-4",
+				"vc_col-lg-5",
+				"vc_col-md-12",
+				"vc_col-md-6",
+				"vc_col-sm-12",
+				"white-text",
+				"wpb_column",
+				"wpd-innner-wrapper",
+				"xs-no-padding-right",
+				"xs-padding-40px-tb"
+			]
+		},
+		"cd02263": {
+			"containerWidth": 1122,
+			"headings": {
+				"h3": {
+					"size": "40px",
+					"weight": "700",
+					"lineHeight": "45px",
+					"letterSpacing": "0.26px",
+					"transform": "uppercase",
+					"align": "center",
+					"family": "Montserrat",
+					"tablet": {
+						"size": "30px",
+						"lineHeight": "36px"
+					},
+					"mobile": {
+						"size": "26px",
+						"lineHeight": "28px"
+					}
+				},
+				"h6": {
+					"size": "13px",
+					"weight": "500",
+					"lineHeight": "23px",
+					"letterSpacing": "0.26px",
+					"transform": "uppercase",
+					"align": "center",
+					"family": "Montserrat"
+				}
+			},
+			"box": {
+				"wpb_column": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"brando-column-container": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"brando_column_1526618214-2-56": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"vc_col-sm-12": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"col-xs-mobile-fullwidth": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"md-text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"vc-column-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wpd-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"margin-ten": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"no-margin-lr": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"clearfix": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"alt-font": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"font-weight-600": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"heading-style1": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"no-margin": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando_heading_1526617890-2-64": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando-remove-frontend-editor-top": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 78.53px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 44.59px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 28.19px 0px"
+				},
+				"black-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 78.53px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 44.59px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 28.19px 0px"
+				},
+				"heading-style13": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 78.53px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 44.59px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 28.19px 0px"
+				},
+				"margin-seven-bottom": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 78.53px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 44.59px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 28.19px 0px"
+				},
+				"xs-margin-ten-bottom": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 78.53px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 44.59px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 28.19px 0px"
+				},
+				"brando_heading_1526618016-2-95": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 78.53px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 44.59px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 28.19px 0px"
+				},
+				"owl-carousel": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-theme": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"bottom-pagination": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando-image-carousel": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"image-carousel-1": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"dot-pagination": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"dark-pagination": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"dark-navigation": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"black-cursor": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-loaded": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-drag": {
+					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-stage-outer": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-stage": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-item": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"active": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"titlelightboxgallery": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"lightboxgalleryitem": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"item": {
+					"base": "padding:0px 11.22px 0px 11.22px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 15.92px 0px 15.92px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 14.09px 0px 14.09px;margin:0px 0px 0px 0px"
+				},
+				"padding-five-lr": {
+					"base": "padding:0px 11.22px 0px 11.22px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 15.92px 0px 15.92px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 14.09px 0px 14.09px;margin:0px 0px 0px 0px"
+				},
+				"owl-bg-img": {
+					"base": "padding:0px 11.22px 0px 11.22px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 15.92px 0px 15.92px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 14.09px 0px 14.09px;margin:0px 0px 0px 0px"
+				},
+				"attachment-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"size-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-nav": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"disabled": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-prev": {
+					"base": "padding:0px 0px 0px 0px;margin:-35px 0px 0px 0px"
+				},
+				"fa-solid": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fa-angle-left": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-next": {
+					"base": "padding:0px 0px 0px 0px;margin:-35px 0px 0px 0px"
+				},
+				"fa-angle-right": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-dots": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"owl-dot": {
+					"base": "padding:6px 5px 6px 5px;margin:0px 0px 0px 0px"
+				}
+			},
+			"hidden": [
+				"[class~=\"disabled\"][class~=\"owl-nav\"]"
+			],
+			"classes": [
+				"active",
+				"alt-font",
+				"attachment-full",
+				"black-cursor",
+				"black-text",
+				"bottom-pagination",
+				"brando-column-container",
+				"brando-image-carousel",
+				"brando-remove-frontend-editor-top",
+				"brando_column_1526618214-2-56",
+				"brando_heading_1526617890-2-64",
+				"brando_heading_1526618016-2-95",
+				"brando_row_1526894481-2-12",
+				"clearfix",
+				"col-xs-mobile-fullwidth",
+				"container-fluid",
+				"dark-navigation",
+				"dark-pagination",
+				"disabled",
+				"dot-pagination",
+				"fa-angle-left",
+				"fa-angle-right",
+				"fa-solid",
+				"font-weight-600",
+				"heading-style1",
+				"heading-style13",
+				"image-carousel-1",
+				"item",
+				"lightboxgalleryitem",
+				"margin-seven-bottom",
+				"margin-ten",
+				"md-text-center",
+				"no-margin",
+				"no-margin-lr",
+				"owl-bg-img",
+				"owl-carousel",
+				"owl-dot",
+				"owl-dots",
+				"owl-drag",
+				"owl-item",
+				"owl-loaded",
+				"owl-nav",
+				"owl-next",
+				"owl-prev",
+				"owl-stage",
+				"owl-stage-outer",
+				"owl-theme",
+				"padding-five-lr",
+				"padding-ten-lr",
+				"row",
+				"size-full",
+				"text-center",
+				"titlelightboxgallery",
+				"vc-column-innner-wrapper",
+				"vc_col-sm-12",
+				"wpb_column",
+				"wpd-innner-wrapper",
+				"xs-margin-ten-bottom"
+			]
+		},
+		"eef1693": {
+			"containerWidth": 1140,
+			"headings": {
+				"h3": {
+					"size": "35px",
+					"weight": "500",
+					"lineHeight": "40px",
+					"letterSpacing": "0.26px",
+					"transform": "none",
+					"align": "center",
+					"family": "Montserrat",
+					"tablet": {
+						"size": "25px",
+						"lineHeight": "30px"
+					},
+					"mobile": {
+						"size": "24px",
+						"lineHeight": "36px"
+					}
+				}
+			},
+			"body": {
+				"size": "14px",
+				"weight": "400",
+				"lineHeight": "24px",
+				"letterSpacing": "0.26px",
+				"transform": "none",
+				"align": "center",
+				"family": "Roboto"
+			},
+			"box": {
+				"wpb_column": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"brando-column-container": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"brando_column_1526641231-2-46": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"vc_col-sm-12": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"col-xs-mobile-fullwidth": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"text-center": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px"
+				},
+				"vc-column-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wpd-innner-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"brando-remove-frontend-editor-top": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 22.8px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 14.39px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 7.19px 0px"
+				},
+				"alt-font": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 22.8px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 14.39px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 7.19px 0px"
+				},
+				"white-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 22.8px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 14.39px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 7.19px 0px"
+				},
+				"heading-style3": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 22.8px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 14.39px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 7.19px 0px"
+				},
+				"margin-two-bottom": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 22.8px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 14.39px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 7.19px 0px"
+				},
+				"brando_heading_1526558740-2-18": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 22.8px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 14.39px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 7.19px 0px"
+				},
+				"brando_text_1526558857-2-90": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 45.59px 0px",
+					"tablet": "padding:0px 15px 0px 15px;margin:0px 0px 28.8px 0px",
+					"mobile": "padding:0px 15px 0px 15px;margin:0px 0px 14.39px 0px"
+				},
+				"padding-lr-15px": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 45.59px 0px",
+					"tablet": "padding:0px 15px 0px 15px;margin:0px 0px 28.8px 0px",
+					"mobile": "padding:0px 15px 0px 15px;margin:0px 0px 14.39px 0px"
+				},
+				"margin-four-bottom": {
+					"base": "padding:0px 15px 0px 15px;margin:0px 0px 45.59px 0px",
+					"tablet": "padding:0px 15px 0px 15px;margin:0px 0px 28.8px 0px",
+					"mobile": "padding:0px 15px 0px 15px;margin:0px 0px 14.39px 0px"
+				},
+				"text-medium": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 277.5px 10px 277.5px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"width-50": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 277.5px 10px 277.5px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"sm-width-100": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 277.5px 10px 277.5px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"margin-lr-auto": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 277.5px 10px 277.5px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"transparent-white-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 277.5px 10px 277.5px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"brando_column_1541165343-2-31": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 15.59px 0px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"xs-padding-four-lr": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 15.59px 0px 15.59px;margin:0px 0px 0px 0px"
+				},
+				"wpcf7": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"js": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"screen-reader-response": {
+					"base": "padding:0px 0px 0px 0px;margin:-1px -1px -1px -1px"
+				},
+				"wpcf7-form": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"resetting": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"hidden-fields-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"contact-name": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"wpcf7-form-control-wrap": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wpcf7-form-control": {
+					"base": "padding:12px 15px 12px 15px;margin:0px 0px 20px 0px"
+				},
+				"wpcf7-text": {
+					"base": "padding:12px 15px 12px 15px;margin:0px 0px 20px 0px"
+				},
+				"wpcf7-validates-as-required": {
+					"base": "padding:12px 15px 12px 15px;margin:0px 0px 20px 0px"
+				},
+				"contact-email": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"wpcf7-email": {
+					"base": "padding:12px 15px 12px 15px;margin:0px 0px 20px 0px"
+				},
+				"wpcf7-validates-as-email": {
+					"base": "padding:12px 15px 12px 15px;margin:0px 0px 20px 0px"
+				},
+				"clearfix": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"contact-message": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"wpcf7-textarea": {
+					"base": "padding:12px 15px 12px 15px;margin:0px 0px 20px 0px"
+				},
+				"wpcf7-submit": {
+					"base": "padding:12px 15px 12px 15px;margin:0px 0px 20px 0px"
+				},
+				"has-spinner": {
+					"base": "padding:12px 15px 12px 15px;margin:0px 0px 20px 0px"
+				},
+				"wpcf7-spinner": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 24px 0px 24px"
+				},
+				"wpcf7-response-output": {
+					"base": "padding:2.6px 13px 2.6px 13px;margin:26px 0px 13px 0px"
+				},
+				"init": {
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"hidden": [
+				"[class~=\"screen-reader-response\"]",
+				"[class~=\"hidden-fields-container\"]",
+				"[class~=\"wpcf7-response-output\"]"
+			],
+			"classes": [
+				"alt-font",
+				"bg-image-srcset",
+				"brando-column-container",
+				"brando-remove-frontend-editor-top",
+				"brando_column_1526641231-2-46",
+				"brando_column_1541165343-2-31",
+				"brando_heading_1526558740-2-18",
+				"brando_row_1526641168-2-53",
+				"brando_text_1526558857-2-90",
+				"clearfix",
+				"col-xs-mobile-fullwidth",
+				"contact-email",
+				"contact-message",
+				"contact-name",
+				"container",
+				"cover-background",
+				"full-screen",
+				"has-spinner",
+				"heading-style3",
+				"hidden-fields-container",
+				"init",
+				"js",
+				"margin-four-bottom",
+				"margin-lr-auto",
+				"margin-two-bottom",
+				"padding-lr-15px",
+				"resetting",
+				"row",
+				"screen-reader-response",
+				"sm-width-100",
+				"text-center",
+				"text-medium",
+				"transparent-white-text",
+				"vc-column-innner-wrapper",
+				"vc_col-sm-12",
+				"white-text",
+				"width-50",
+				"wpb_column",
+				"wpcf7",
+				"wpcf7-email",
+				"wpcf7-form",
+				"wpcf7-form-control",
+				"wpcf7-form-control-wrap",
+				"wpcf7-response-output",
+				"wpcf7-spinner",
+				"wpcf7-submit",
+				"wpcf7-text",
+				"wpcf7-textarea",
+				"wpcf7-validates-as-email",
+				"wpcf7-validates-as-required",
+				"wpd-innner-wrapper",
+				"xs-padding-four-lr"
+			]
+		}
+	},
+	"stickyHeader": {
+		"sticky": true,
+		"position": "fixed",
+		"restInk": "rgb(98, 98, 98)",
+		"restHeight": 75,
+		"pinnedBg": "rgba(0, 0, 0, 0.7)",
+		"pinnedInk": "rgb(98, 98, 98)",
+		"pinnedHeight": 70,
+		"bgChanged": true,
+		"heightChanged": true
 	}
 }

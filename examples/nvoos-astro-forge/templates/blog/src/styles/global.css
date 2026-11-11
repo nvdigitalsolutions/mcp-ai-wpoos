@@ -126,6 +126,16 @@ a {
 	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
 }
 
+/*
+ * A header whose height is a measured fact: the source declares 75px at rest and
+ * 70px once pinned, so the strip's own padding must give way to that box or
+ * `min-height` can never shrink it (content 79px against a 70px floor).
+ */
+.site-header--sized {
+	height: var(--forge-header-rest-h, auto);
+	padding-block: 0;
+}
+
 .site-header .brand {
 	font-weight: 700;
 	text-decoration: none;
@@ -138,7 +148,7 @@ a {
 }
 
 .site-header nav a {
-	color: var(--forge-header-ink, var(--forge-accent));
+	color: var(--forge-header-nav-ink, var(--forge-header-ink, var(--forge-accent)));
 	text-decoration: none;
 	/* The source nav's own typography (jayainc: 400/16px/uppercase white). */
 	font-weight: var(--forge-nav-weight, 400);
@@ -171,6 +181,11 @@ a {
 	 * viewport (the measure-constrained default trapped jayainc's gray/navy
 	 * strips in a column); the inner containers re-measure. */
 	margin: 2rem 0 0;
+	/* The footer SURFACE, not just its inner strips: the colour gate reads the
+	 * footer element itself, and a transparent footer resolves to the body
+	 * behind it (virtuallyjamaica read #ffffff against the source's #ededed).
+	 * The sub/copyright strips still paint their own backgrounds over this. */
+	background: var(--forge-footer-bg, transparent);
 	border-top: 1px solid var(--forge-line);
 	/* Body ink, not the muted token: the colour gate measures what the footer
 	 * actually renders, and the source's footer text is body copy
@@ -634,6 +649,36 @@ a {
 	font-weight: 500;
 	line-height: 1.2;
 	margin: 0;
+	/* The band's MEASURED title alignment (the source centers a band's copy from
+	 * a wrapper class the sanitizer drops). Absent → the template's own. */
+	text-align: var(--ds-title-align, inherit);
+}
+
+/* A form band's intro: the source's lead paragraph sits at half the container
+ * and centers with its title. Alignment itself comes from the band's measured
+ * body fact (`[data-section-id] p{text-align:…}`), so a left-aligned source
+ * keeps its copy left. */
+.ds-form-intro {
+	display: grid;
+	gap: var(--forge-space-sm);
+}
+
+/* The source's submit is a content-width button, not a full-bleed bar. */
+.ds-form .ds-button {
+	justify-self: start;
+	width: auto;
+	padding: 0.65rem 1.75rem;
+}
+
+.ds-lede {
+	max-width: 50%;
+	margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+	.ds-lede {
+		max-width: 100%;
+	}
 }
 
 .ds-hero p,
@@ -834,6 +879,14 @@ a {
  * photo gets its overlay tint via --ds-overlay).
  * ------------------------------------------------------------------------ */
 .ds-section-wrap--dark {
+	/* The WRAP keeps the body ink: the source's band element inherits it, and the
+	 * colour gate reads the band element itself. The light foreground belongs to
+	 * the content layer one level in, exactly as `--hero` already does it — so
+	 * every descendant resolves the same colour it did before. */
+	color: var(--forge-ink);
+}
+
+.ds-section-wrap--dark > * {
 	color: #f5f5f4;
 }
 
@@ -997,7 +1050,28 @@ a {
  *
  * `[class~=…]` is a whole-token match — a substring match would make
  * `vc_col-lg-1` also select `vc_col-lg-10`, `-11` and `-12`.
+ *
+ * The blocks are ordered WIDEST-LAST because every rule has the same
+ * specificity: the last matching block wins. `vc_col-sm-*` is the small-screen
+ * span and the only one brando's inner rows use (virtuallyjamaica's HOW IT WORKS
+ * panel is a 2×2 of `vc_col-sm-6` columns — without this block the four steps
+ * stacked vertically in one column).
  */
+@media (min-width: 768px) {
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-12'] { grid-column: span 12; }
+}
+
 @media (min-width: 1025px) {
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-1'] { grid-column: span 1; }
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-2'] { grid-column: span 2; }
@@ -1036,10 +1110,58 @@ a {
 	min-width: 0;
 }
 
+/*
+ * Builder presentation utilities are NOT declared here any more.
+ *
+ * `text-center`, `text-uppercase`, `text-medium`, `padding-four-all`,
+ * `font-weight-600` … are the vendor's own conventions, so they live as DATA on
+ * the builder adapter (`lib/bands.ts` → `BUILDER_ADAPTERS[].utilities`) and the
+ * scaffold emits only the ones a measured page actually uses, scoped to the band
+ * (`[data-section-id="…"] .text-center{…}`). A Divi site therefore gets Divi's
+ * conventions and nothing else, and this sheet stays vendor-neutral.
+ *
+ * A profile recorded before `bandFacts[].classes` existed carries no utilities;
+ * re-run `analyze <url> --geometry --write <profile>`, and `verify`'s class
+ * coverage report lists anything still unstyled.
+ */
+
 /* A photo panel painted on a column stays a full-bleed panel behind it. */
 .ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
 	background-size: cover;
 	background-position: center;
+}
+
+/*
+ * Builder content images are BLOCK-level — every builder sheet sets
+ * `img { display: block }` on its single-image widgets. Left inline inside the
+ * shim's column wrapper the image kept its box but painted NOTHING: the box
+ * geometry gate passed while virtuallyjamaica's features photo and about
+ * illustration both rendered as empty space. Scoped to a column's image
+ * wrappers so an inline icon image in running copy keeps its flow.
+ */
+.ds-section-wrap .post-body :is(.vc-column-innner-wrapper, .wpd-innner-wrapper) > img,
+.ds-section-wrap .post-body :is(.wpb_single_image, .vc_single_image-wrapper, .brando-image-wrapper) img,
+.ds-section-wrap .post-body img[class*='brando_image_'] {
+	display: block;
+}
+
+/*
+ * Hidden-by-source subtrees (accordion panels, tab panes, mega-menus, mobile
+ * drawers) are NOT handled here: the analyzer measures the source's resting
+ * visibility per band (`analyze --geometry` → `bandFacts.hidden`) and the
+ * renderer emits scoped `display:none` rules from it. Hard-coding one builder's
+ * `collapse` class in this sheet was the bug that mechanism replaces.
+ *
+ * The heading rhythm below is the one part that stays static: the source's
+ * panel rows are 15px-padded blocks in every builder that ships this widget.
+ */
+.ds-section-wrap .post-body .panel-group .panel-heading {
+	padding: 15px;
+}
+
+.ds-section-wrap .post-body .panel-group .panel-heading a {
+	display: block;
+	text-decoration: none;
 }
 
 
@@ -1236,6 +1358,67 @@ a {
 	/* The sticky variant must keep the harvested header bg (jayainc's navy
 	 * strip stays navy when pinned) — surface only as the fallback. */
 	background: var(--forge-header-bg, var(--forge-surface));
+}
+
+/*
+ * The source header is `position: fixed` (`analyze --geometry` records the
+ * resting position): it floats OVER the first band, which flows beneath it.
+ * A sticky rebuild keeps the header in the flow, pushing the band down a full
+ * header height — on virtuallyjamaica that left the white logo and white nav
+ * links sitting on the white page above the red hero (invisible). Declared
+ * after the sticky variant so `position` resolves to fixed.
+ */
+.site-header--float {
+	position: fixed;
+	inset: 0 0 auto 0;
+}
+
+/*
+ * The MEASURED resting header is transparent (`chrome.headerTransparent`): it
+ * floats over the hero and paints nothing. Declared AFTER the sticky variant so
+ * the surface fallback above cannot paint the template's own colour over the
+ * photo; the hairline goes too — the strip belongs to the band behind it.
+ */
+.site-header--overlay {
+	background: transparent;
+	border-bottom: none;
+	box-shadow: none;
+}
+
+/*
+ * The MEASURED pinned state (`analyze --geometry`): a header that gains a solid
+ * background, swaps its ink, and/or shrinks once the page moves. Rebuilt as a
+ * scroll() timeline — no JS, no scroll listener.
+ *
+ * The RESTING state is the base, deliberately: the golden rule wants the
+ * finished state as the default, but a header's finished state is the SCROLLED
+ * one, and painting a solid pinned strip over the hero at scrollY 0 is the
+ * louder error. Without support the header simply keeps its resting look.
+ *
+ * `animation-range: 0 120px` is the source's own trigger zone (Brando adds
+ * `shrink` around 100px); it is a constant, not a measured fact.
+ */
+.site-header--pinned {
+	animation: ds-header-pin linear both;
+	animation-timeline: scroll(root);
+	animation-range: 0 120px;
+}
+
+@keyframes ds-header-pin {
+	from {
+		background-color: var(--forge-header-bg, transparent);
+		color: var(--forge-header-ink, inherit);
+		box-shadow: none;
+		/* `height` rather than `min-height`: a measured rest height is a definite
+		 * box (`.site-header--sized`), and a floored height cannot shrink. */
+		height: var(--forge-header-rest-h, auto);
+	}
+	to {
+		background-color: var(--forge-header-pinned-bg, var(--forge-header-bg, var(--forge-surface)));
+		color: var(--forge-header-pinned-ink, var(--forge-header-ink, inherit));
+		box-shadow: var(--forge-header-pinned-shadow, none);
+		height: var(--forge-header-pinned-h, var(--forge-header-rest-h, auto));
+	}
 }
 
 /* Reveals: view() timelines play once as the section enters. */

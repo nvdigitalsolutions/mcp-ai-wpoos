@@ -39,14 +39,16 @@ import { fileURLToPath } from 'node:url';
 import { confirm, isCancel, select, spinner, text } from '@clack/prompts';
 import { Command } from 'commander';
 
-import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
+import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredHeader, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { auditBands, formatBandReport } from '../lib/band-audit.ts';
+import { auditClassCoverage } from '../lib/class-audit.ts';
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureGeometry, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureStickyHeader, serveDir } from '../lib/geometry.ts';
+import { measureBandDiff } from '../lib/band-diff.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
@@ -382,6 +384,44 @@ async function runAnalyze( url, options ) {
 				console.log(
 					`\u2713 Geometry baseline: ${ measured }/${ ids.length } band(s) at ${ DEFAULT_GEOMETRY_VIEWPORTS.length } viewports.`
 				);
+				// The band presentation facts ride the same pass (container width +
+				// the band's own heading/body typography). Without them a raw-HTML
+				// band renders at the browser's default heading scale.
+				try {
+					profile.bandFacts = await measureBandFacts( {
+						url: profile.url,
+						ids,
+						kind: 'source',
+						selectors,
+					} );
+					console.log(
+						`\u2713 Band facts: ${ Object.keys( profile.bandFacts ).length } band(s) — container width + typography.`
+					);
+				} catch ( error ) {
+					console.warn(
+						`\u26a0 Band facts skipped: ${ error instanceof Error ? error.message : error }`
+					);
+				}
+				// The sticky header rides the same pass: pinning, the scrolled
+				// background and the shrink are all browser facts.
+				try {
+					profile.stickyHeader = await measureStickyHeader( { url: profile.url } );
+					const sticky = profile.stickyHeader;
+					if ( sticky.sticky ) {
+						const state = sticky.bgChanged
+							? `bg ${ sticky.restBg ?? 'transparent' } \u2192 ${ sticky.pinnedBg }`
+							: 'bg unchanged';
+						console.log(
+							`\u2713 Sticky header: pinned, ${ state }${ sticky.heightChanged ? `, ${ sticky.restHeight }px \u2192 ${ sticky.pinnedHeight }px` : '' }`
+						);
+					} else {
+						console.log( '  Sticky header: none (the source header does not pin).' );
+					}
+				} catch ( error ) {
+					console.warn(
+						`\u26a0 Sticky header skipped: ${ error instanceof Error ? error.message : error }`
+					);
+				}
 				// A baseline that measured nothing used to report success, which left
 				// `verify --geometry` with no expectations and silently passing.
 				if ( measured === 0 ) {
@@ -491,6 +531,16 @@ async function runAnalyze( url, options ) {
 		}
 	}
 
+	// The MEASURED sticky header outranks the stylesheet harvest, and it has to be
+	// reconciled on the profile that is actually written: a `--geometry` run
+	// without `--design` carries no fresh design block, so the chrome that ships
+	// comes from the merged EXISTING profile (Brando declares a red `.navbar`
+	// background that a transparent variation overrides — only the browser knows).
+	const reconcileHeader = ( target ) => {
+		applyMeasuredHeader( target?.design?.chrome, target?.stickyHeader ?? profile.stickyHeader );
+		return target;
+	};
+	reconcileHeader( profile );
 	const profileJson = `${ JSON.stringify( profile, null, '\t' ) }\n`;
 	if ( options.write ) {
 		// Merge into an existing profile by default (Proposal 118 §3): the
@@ -508,7 +558,7 @@ async function runAnalyze( url, options ) {
 					}
 				} else {
 					const merged = mergeProfileDraft( existing, profile );
-					text = `${ JSON.stringify( merged, null, '\t' ) }\n`;
+					text = `${ JSON.stringify( reconcileHeader( merged ), null, '\t' ) }\n`;
 					mode = 'Draft profile MERGED into';
 					// Pins are re-applied by the merge, so anything still dropped
 					// means the source no longer has that section — say so instead
@@ -1568,6 +1618,50 @@ async function runVerify( profileRef, options ) {
 			}
 		}
 	}
+	// Class coverage (report-only): every class name the rebuilt bands carry that
+	// no stylesheet rule reaches — the inert-class inventory. The sanitizer keeps
+	// the source's classes and the builder's sheet never ships, so this list is
+	// where "why does this band look unstyled" is answered from data instead of
+	// from a screenshot. A class is not REQUIRED to be styled, hence warn unless
+	// `--strict-classes` asks for a gate.
+	if ( options.classes !== false && indexHtml ) {
+		const report = auditClassCoverage( indexHtml, await collectDistCss( options.target ) );
+		const reportPath = options.classesJson ?? join( options.target, 'verify-artifacts', 'class-coverage.json' );
+		try {
+			await mkdir( join( options.target, 'verify-artifacts' ), { recursive: true } );
+			await writeFile( reportPath, `${ JSON.stringify( report, null, 2 ) }\n`, 'utf8' );
+		} catch ( error ) {
+			console.warn( `\u26a0 Class coverage: could not write ${ reportPath } (${ error?.message ?? error }).` );
+		}
+		if ( report.unresolved.length === 0 ) {
+			console.log( `\u2713 Class coverage: all ${ report.used } class name(s) in the rebuilt bands match a rule.` );
+			record( 'class coverage', 'pass', `${ report.used } class name(s)` );
+		} else {
+			const limit = Number( options.classLimit ?? 15 );
+			const ordered = report.unresolved.slice( 0, limit );
+			for ( const entry of ordered ) {
+				console.log(
+					`  ${ entry.name } \u00d7${ entry.count }${ entry.bands.length > 0 ? ` (${ entry.bands.join( ', ' ) })` : '' }`
+				);
+			}
+			if ( report.unresolved.length > limit ) {
+				console.log( `  \u2026 ${ report.unresolved.length - limit } more; see ${ reportPath }` );
+			}
+			const mark = options.strictClasses === true ? '\u2717' : '\u26a0';
+			console.warn(
+				`${ mark } Class coverage: ${ report.unresolved.length } of ${ report.used } class name(s) match no stylesheet rule (${ report.resolved } resolved).`
+			);
+			if ( options.strictClasses === true ) {
+				process.exitCode = 1;
+			}
+			record(
+				'class coverage',
+				options.strictClasses === true ? 'fail' : 'warn',
+				`${ report.unresolved.length } inert of ${ report.used } class name(s)`
+			);
+		}
+	}
+
 	// One-pager nav (profile `shape`): every anchor the header links must land
 	// somewhere. A source band the rebuild dropped — e.g. a section whose only
 	// content was a contact form — leaves a dead nav link. Reported, never silent.
@@ -1725,7 +1819,9 @@ async function runVerify( profileRef, options ) {
 
 	// Geometry (114 §3.6): the build's real boxes against the recorded source
 	// boxes. Language parity cannot see a 903px card or a flat 170px pull; this can.
-	if ( options.geometry && ( ! profile.geometry || Object.keys( profile.geometry ).length === 0 ) ) {
+	// `--diff` asks for the band diff, which needs the same baseline.
+	const geometryRequested = options.geometry === true || options.diff === true;
+	if ( geometryRequested && ( ! profile.geometry || Object.keys( profile.geometry ).length === 0 ) ) {
 		const hasBands = ( profile.design?.sections ?? [] ).length > 0;
 		if ( hasBands ) {
 			console.warn( '\u26a0 Box geometry: no baseline on the profile — run `analyze <url> --geometry --write <profile>`.' );
@@ -1735,10 +1831,10 @@ async function runVerify( profileRef, options ) {
 			record( 'box geometry', 'na', 'no addressable band ids (outline-only site)' );
 		}
 	}
-	if ( options.geometry && profile.geometry && ! ( await browserAvailable() ) ) {
+	if ( geometryRequested && profile.geometry && ! ( await browserAvailable() ) ) {
 		console.warn( '\u26a0 Box geometry: skipped \u2014 Playwright/Chromium is not available in this environment.' );
 		record( 'box geometry', 'skip', 'browser unavailable' );
-	} else if ( options.geometry && profile.geometry ) {
+	} else if ( geometryRequested && profile.geometry ) {
 		const ids = Object.keys( profile.geometry );
 		const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
 		try {
@@ -1769,6 +1865,104 @@ async function runVerify( profileRef, options ) {
 				failures.length > 0 ? 'fail' : warnings.length > 0 ? 'warn' : 'pass',
 				`${ failures.length } fail, ${ warnings.length } warn across ${ ids.length } band(s)`
 			);
+
+			// -----------------------------------------------------------------
+			// The BAND DIFF: WHERE the delta comes from.
+			//
+			// "source 1525px, build 1540px" is the symptom; the diagnosis is
+			// always "walk both band trees and compare the boxes", which is the
+			// step every investigation re-invents. It runs automatically for
+			// EVERY deviating band (so the answer is on screen the moment a gate
+			// fails) and for every band with `--diff`. A clean run pays nothing.
+			// -----------------------------------------------------------------
+			const wantsDiff = options.diff === true || deviations.length > 0;
+			if ( wantsDiff ) {
+				const sectionsById = new Map(
+					( profile.design?.sections ?? [] )
+						.filter( ( section ) => section.id )
+						.map( ( section ) => [ section.id, section ] )
+				);
+				const viewportNames = DEFAULT_GEOMETRY_VIEWPORTS.map( ( viewport ) => viewport.name );
+				const perBand = new Map();
+				const addTarget = ( id, viewport ) => {
+					if ( ! perBand.has( id ) ) {
+						perBand.set( id, { id, anchor: sectionsById.get( id )?.anchor, viewports: [] } );
+					}
+					const entry = perBand.get( id );
+					if ( ! entry.viewports.includes( viewport ) ) {
+						entry.viewports.push( viewport );
+					}
+				};
+				if ( options.diff === true ) {
+					for ( const id of ids ) {
+						for ( const viewport of viewportNames ) {
+							addTarget( id, viewport );
+						}
+					}
+				} else {
+					for ( const deviation of deviations ) {
+						if ( deviation.metric === 'height' && deviation.sectionId ) {
+							addTarget( deviation.sectionId, deviation.viewport );
+						}
+					}
+				}
+				if ( perBand.size > 0 ) {
+					try {
+						const reports = await measureBandDiff( {
+							sourceUrl: profile.url,
+							builtUrl: served.url,
+							bands: [ ...perBand.values() ],
+							viewports: DEFAULT_GEOMETRY_VIEWPORTS,
+							limit: Number( options.diffLimit ?? 5 ),
+						} );
+						if ( reports.length === 0 ) {
+							console.warn( '  \u26a0 Band diff: no comparable band trees (the source may be unreachable, or the band ids do not resolve).' );
+						} else {
+							const px = ( value ) => `${ value > 0 ? '+' : '' }${ Math.round( value ) }px`;
+							const sigOf = ( key ) => key.split( '>' ).pop().replace( /\[\d+\]$/, '' );
+							for ( const report of reports ) {
+								const band = sectionsById.get( report.bandId );
+								console.log(
+									`  \u25b8 Band diff ${ report.bandId }${ band?.anchor ? ` (#${ band.anchor })` : '' } @ ${ report.viewport } \u2014 source ${ Math.round( report.sourceHeight ) }px \u00b7 build ${ Math.round( report.builtHeight ) }px (${ px( report.heightDelta ) })`
+								);
+								if ( report.hotPath.length > 0 ) {
+									console.log( `    hot path  ${ report.hotPath.map( ( entry ) => sigOf( entry.key ) ).join( ' \u203a ' ) }` );
+								}
+								for ( const entry of report.contributors ) {
+									const source = entry.source ? Math.round( entry.source.h ) : null;
+									const built = entry.built ? Math.round( entry.built.h ) : null;
+									// `added` = the build has it and the source does not; `removed` = the reverse.
+									const detail =
+										entry.status === 'added'
+											? `not in source (build ${ built }px)`
+											: entry.status === 'removed'
+											? `missing from build (source ${ source }px)`
+											: `build ${ built } \u00b7 source ${ source }`;
+									console.log( `    ${ px( entry.dH ).padEnd( 8 ) } ${ sigOf( entry.key ).slice( 0, 44 ).padEnd( 44 ) } ${ detail.padEnd( 32 ) } \u00b7 ${ entry.cause }` );
+								}
+								for ( const hint of report.hints ) {
+									console.log( `    hint: ${ hint }` );
+								}
+								if ( report.truncated ) {
+									console.log( '    note: the tree walk hit its node/depth cap \u2014 deeper nodes were not compared.' );
+								}
+							}
+							const diffPath = options.diffJson ?? join( options.target, 'verify-artifacts', 'band-diff.json' );
+							try {
+								await mkdir( join( options.target, 'verify-artifacts' ), { recursive: true } );
+								await writeFile( diffPath, `${ JSON.stringify( reports, null, 2 ) }\n`, 'utf8' );
+								console.log( `  band diff: ${ reports.length } report(s) \u2192 ${ diffPath }` );
+							} catch ( error ) {
+								console.warn( `  \u26a0 Band diff: could not write ${ diffPath } (${ error?.message ?? error }).` );
+							}
+						}
+					} catch ( error ) {
+						// The diff is a diagnostic, never a gate: a browser/source failure
+						// must not change the geometry verdict.
+						console.warn( `  \u26a0 Band diff skipped: ${ error instanceof Error ? error.message : error }` );
+					}
+				}
+			}
 		} finally {
 			served.server.close();
 		}
@@ -2260,9 +2454,16 @@ program
 	.option( '--no-bands', 'skip the per-band audit (presence · surface · content · facts · text · geometry per band)' )
 	.option( '--bands-warn', 'report per-band failures as warnings instead of failing the run' )
 	.option( '--bands-json <path>', 'where to write the per-band report (default <target>/verify-artifacts/bands.json)' )
+	.option( '--no-classes', 'skip the class-coverage audit (which class names in the rebuilt bands match no rule)' )
+	.option( '--class-limit <n>', 'how many inert class names to print (default 15)', '15' )
+	.option( '--classes-json <path>', 'where to write the class-coverage report (default <target>/verify-artifacts/class-coverage.json)' )
+	.option( '--strict-classes', 'fail when any class name in the rebuilt bands matches no stylesheet rule (default: report-only)' )
 	.option( '--threshold <n>', 'parity pass threshold 0-1 (default 0.6)', '0.6' )
 	.option( '--geometry', 'diff the built bands\u0027 boxes against the recorded source geometry (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--geometry-limit <n>', 'how many geometry deviations to print (default 12)', '12' )
+	.option( '--diff', 'with geometry: compare the box tree of EVERY band (not just the deviating ones) and print where the height delta comes from' )
+	.option( '--diff-limit <n>', 'how many per-band contributor nodes to print (default 5)', '5' )
+	.option( '--diff-json <path>', 'where to write the band-diff reports (default <target>/verify-artifacts/band-diff.json)' )
 	.option( '--text', 'diff the build\u0027s visible text against the recorded baseline (needs `analyze --text`)' )
 	.option( '--text-pass <n>', 'with --text: source coverage at/above this passes (default 0.9)', '0.9' )
 	.option( '--text-warn <n>', 'with --text: coverage between warn and pass warns (default 0.75)', '0.75' )

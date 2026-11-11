@@ -320,6 +320,17 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	if ( fresh.geometry ) {
 		merged.geometry = fresh.geometry;
 	}
+	// The measured band presentation facts (container width + typography). Like
+	// geometry they describe the SOURCE, so a re-analysis refreshes them whole; an
+	// operator pin on `design.sections[].type` still wins at scaffold time.
+	if ( fresh.bandFacts ) {
+		merged.bandFacts = fresh.bandFacts;
+	}
+	// The measured sticky-header behaviour — also a source fact, refreshed on
+	// re-analysis (an operator pin on `design.behavior` still drives the classes).
+	if ( fresh.stickyHeader ) {
+		merged.stickyHeader = fresh.stickyHeader;
+	}
 	if ( fresh.text ) {
 		// The content baseline refreshes wholesale: it describes the SOURCE, and
 		// a re-analysis is exactly when the source's words may have changed.

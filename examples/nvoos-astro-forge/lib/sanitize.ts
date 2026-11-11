@@ -82,6 +82,17 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		code: ['class'],
 		pre: ['class'],
 		span: ['class'],
+		// Headings keep their CLASS. A builder styles its headings by class
+		// (`panel-title`, `heading-style13`, `text-medium`), so stripping it left
+		// the rebuilt heading at the template's prose defaults: virtuallyjamaica's
+		// accordion titles lost `panel-title` and rendered 17px margins and no
+		// 40px icon gutter (measured 2026-11-11).
+		h1: ['class'],
+		h2: ['class'],
+		h3: ['class'],
+		h4: ['class'],
+		h5: ['class'],
+		h6: ['class'],
 		// Icon markers (`<i class="icon-flag icon-large">`) — the class is what
 		// selects the glyph in the source's own icon sheet; without it every
 		// feature/accordion icon renders as an empty box.

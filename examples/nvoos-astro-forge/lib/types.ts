@@ -437,6 +437,26 @@ export interface SiteProfile {
 	 */
 	geometry?: ForgeGeometry;
 	/**
+	 * Measured per-band presentation facts that are NOT box geometry — the
+	 * inner container width and the band's own heading/body typography
+	 * (`analyze --geometry`). Kept beside `geometry` rather than inside it
+	 * because geometry is keyed by VIEWPORT name, and these are one-per-band
+	 * facts: a raw-HTML band renders through the template's prose defaults and
+	 * produced UA heading sizes (a 40px source `<h3>` came out at 15.21px =
+	 * 1.17em of the 13px body).
+	 */
+	bandFacts?: Record< string, ForgeBandFacts >;
+	/**
+	 * The measured sticky-header behaviour (`analyze --geometry`). A source
+	 * header that pins on scroll and changes appearance — the classic
+	 * transparent-over-the-hero header that gains a solid background and shrinks
+	 * once the page moves — cannot be inferred from the markup: the class the
+	 * theme adds on scroll (`shrink`, `is-sticky`, `navbar-fixed`) carries no
+	 * colours, and the resting rule is often transparent. The browser is the
+	 * only faithful source, so this is a measurement.
+	 */
+	stickyHeader?: ForgeStickyHeader;
+	/**
 	 * The content baseline (`analyze --text`): the source's normalised visible
 	 * text, page-level and per band. `verify --text` diffs the build against it
 	 * — the gate neither the design-language score nor the fact audit can give
@@ -551,6 +571,144 @@ export interface BandGeometry {
 
 /** Measured band geometry: section id → viewport name → box. */
 export type ForgeGeometry = Record< string, Record< string, BandGeometry > >;
+
+/**
+ * The measured sticky-header facts (see `SiteProfile.stickyHeader`).
+ *
+ * Captured by scrolling the live page and re-reading the computed styles: the
+ * source's scroll handler (or its CSS class) is the only thing that knows what
+ * the pinned header looks like.
+ */
+export interface ForgeStickyHeader {
+	/** The header pins (position fixed/sticky, or a sticky class appeared on
+	 * scroll). */
+	sticky: boolean;
+	/** The source's own `position` at rest — `fixed` means the header floats
+	 * OVER the first band (the band flows beneath it), `sticky` means it holds
+	 * its place in the flow. */
+	position?: string;
+	/** Computed background at scroll position 0 — often fully transparent for
+	 * a header that floats over a hero photo. */
+	restBg?: string;
+	/** Computed text colour at scroll position 0. */
+	restInk?: string;
+	/** The header's height at rest, in px. */
+	restHeight?: number;
+	/** Computed background once the page has scrolled past the trigger. */
+	pinnedBg?: string;
+	/** Computed text colour once the page has scrolled past the trigger. */
+	pinnedInk?: string;
+	/** The pinned header's height, in px (a shrinking sticky header). */
+	pinnedHeight?: number;
+	/** The pinned box-shadow (the sticky strip's separation from the page). */
+	shadow?: string;
+	/** True when scrolling actually CHANGES the background — the fact the
+	 * rebuild animates. */
+	bgChanged?: boolean;
+	/** True when the pinned header is shorter than the resting one. */
+	heightChanged?: boolean;
+}
+
+/**
+ * One measured typography fact (a heading level or the body paragraph).
+ * Values are the browser's COMPUTED styles, so they are already resolved to
+ * px and already include the builder's stylesheet — the rebuild can emit them
+ * verbatim without guessing at the source's theme variables.
+ */
+export interface BandTypeFact {
+	/** Computed `font-size` (px). */
+	size?: string;
+	/** Computed `font-weight`. */
+	weight?: string;
+	/** Computed `line-height` (px when the source resolves it to a length). */
+	lineHeight?: string;
+	/** Computed `letter-spacing` (px). */
+	letterSpacing?: string;
+	/** Computed `text-transform`. */
+	transform?: string;
+	/** Computed `text-align` — the EFFECTIVE (inherited) alignment, which is how
+	 * the source centers a band's copy from a wrapper class. */
+	align?: string;
+	/** The first family of the computed `font-family`. */
+	family?: string;
+	/**
+	 * What the source CHANGES at the template's tablet/mobile breakpoints, and
+	 * only that. A 55px hero headline is 22px on a phone — emitting the desktop
+	 * size at every width made every rebuilt band taller than its source at
+	 * 390px (virtuallyjamaica's features band: 1808px against 1525).
+	 */
+	tablet?: BandTypeProperties;
+	mobile?: BandTypeProperties;
+}
+
+/** A BandTypeFact without its own device overrides (one device's properties). */
+export type BandTypeProperties = Omit< BandTypeFact, 'tablet' | 'mobile' >;
+
+/**
+ * One measured presentation declaration set for a class the band keeps, scoped
+ * to that band (`padding:40px 15.5938px`, `margin:0 0 18px 0`).
+ *
+ * The builder's spacing scale is NOT a fixed ladder — Brando's
+ * `margin-four-bottom` resolves to 7.8px on an icon and 21.6px on a paragraph,
+ * and `padding-four-all` is 3.4rem on desktop but `40px 15.5938px` at 390px.
+ * Only a browser can resolve it, so these are MEASURED per device and re-stated
+ * verbatim rather than guessed from the class name.
+ */
+export interface BandBoxDeclaration {
+	/** Declarations at the desktop breakpoint (the base). */
+	base?: string;
+	/** Declarations the source CHANGES inside the tablet range. */
+	tablet?: string;
+	/** Declarations the source CHANGES inside the mobile range. */
+	mobile?: string;
+}
+
+/**
+ * The measured box facts of one band, keyed by a class the band carries.
+ *
+ * Each entry is recorded only when the class resolves to the SAME padding and
+ * margin on every instance inside that band — a class the source uses at two
+ * different sizes would otherwise get one arbitrary value. Classes that appear
+ * once (Brando's per-column `brando_column_<id>` hashes) are always consistent
+ * and carry the column padding the rebuild otherwise loses.
+ */
+export type BandBoxFacts = Record< string, BandBoxDeclaration >;
+
+/** The measured presentation facts of one source band (see `SiteProfile.bandFacts`). */
+export interface ForgeBandFacts {
+	/**
+	 * The width of the band's own inner container. Builder sources box their
+	 * content (`.container`, 1140px) or run fluid (`.container-fluid`, the
+	 * viewport), and the rebuild's site measure is neither — virtuallyjamaica's
+	 * services band renders 1136px against the source's 1440px.
+	 */
+	containerWidth?: number;
+	/** Heading facts keyed by tag (`h1`…`h6`); the band's LARGEST instance wins. */
+	headings?: Record< string, BandTypeFact >;
+	/** The band's body-paragraph fact (the body scale as rendered, not declared). */
+	body?: BandTypeFact;
+	/**
+	 * Selectors for subtrees the SOURCE renders hidden at rest (accordion panels,
+	 * tab panes, mega-menus, mobile drawers) — hidden at BOTH measured
+	 * breakpoints, so a responsive state is never mistaken for a resting one.
+	 * The rebuild emits them as `display:none` scoped to the band.
+	 */
+	hidden?: string[];
+	/**
+	 * Every class token present in the band (measured). The scaffold trims the
+	 * builder's utility pack to what the page actually uses, so the emitted CSS
+	 * carries only the vendor conventions this site relies on.
+	 */
+	classes?: string[];
+	/**
+	 * The measured padding/margin of the classes this band keeps, per device.
+	 * The class names survive sanitisation, so re-stating their measured box is
+	 * how a raw-HTML band keeps its layout without the vendor stylesheet.
+	 * Emitted AFTER the utility pack, so a measured value always wins over a
+	 * hand-authored approximation.
+	 */
+	box?: BandBoxFacts;
+}
 
 /** The contact band copy (see `SiteProfile.contact`, issue #7549). */
 export interface ForgeContact {
@@ -706,6 +864,19 @@ export interface ForgeSection {
 	 * It is a FLOOR, never a lock: content that grows past it is never clipped.
 	 */
 	minHeight?: string;
+	/**
+	 * The band's typography facts — a per-heading-level map plus the body
+	 * paragraph, measured by `analyze --geometry` (`SiteProfile.bandFacts`).
+	 * A pin here wins over the measurement, which is how an operator corrects a
+	 * band whose largest heading is not the visual title.
+	 */
+	type?: { headings?: Record< string, BandTypeFact >; body?: BandTypeFact };
+	/**
+	 * Selectors for subtrees the SOURCE renders hidden at rest — measured by
+	 * `analyze --geometry` (`SiteProfile.bandFacts`) and emitted as scoped
+	 * `display:none` rules. A pin here wins over the measurement.
+	 */
+	hidden?: string[];
 	/** The top-level column responsive facts (124 §6) — desktop/tablet/
 	 * mobile widths (elementor-col/md/sm-*) + order/visibility flags. The
 	 * split components re-measure from these; absent → the template
@@ -851,6 +1022,13 @@ export interface ForgeChrome {
 	headerBg?: string;
 	/** The header text color (inherits to the brand block). */
 	headerInk?: string;
+	/**
+	 * True when the MEASURED resting header is fully transparent — it floats over
+	 * the hero photo and paints nothing (virtuallyjamaica's Brando navbar).
+	 * `headerBg` is then absent on purpose: a colour harvested from the source
+	 * stylesheet would paint a strip the source does not have.
+	 */
+	headerTransparent?: boolean;
 	/** The tel: call-to-action button — bg/ink carry the source button's
 	 * own colors (the header CTA often wears a distinct color the site
 	 * accent does not), style carries its shape/type facts. */

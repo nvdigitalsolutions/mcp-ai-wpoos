@@ -24,7 +24,7 @@ interface Props {
 }
 
 const { section } = Astro.props;
-const { title, links } = section.slots;
+const { title, body, links } = section.slots;
 const form = section.form;
 
 const configuredEndpoint = (
@@ -51,7 +51,15 @@ const degradeToCta = Boolean(form) && !isSearch && !isSubmit;
 
 {(isSearch || isSubmit || degradeToCta) && (
 	<section class="ds-section ds-hero">
-		{title && <h2 class="ds-title">{title}</h2>}
+		{(title || (body && body.length > 0)) && (
+			<div class="ds-form-intro">
+				{title && <h2 class="ds-title">{title}</h2>}
+				{/* The band's own intro copy, kept off the form subtree (a CF7/
+				 * Elementor band usually leads with a paragraph the classification
+				 * used to drop). */}
+				{body?.map((paragraph) => <p class="ds-lede">{paragraph}</p>)}
+			</div>
+		)}
 		{isSearch && (
 			<form class="ds-form ds-form-search" action="/search/" method="get" role="search">
 				<label class="visually-hidden" for="ds-search-q">{searchField?.label || 'Search the site'}</label>
