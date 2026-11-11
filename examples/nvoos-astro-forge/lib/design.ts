@@ -1873,6 +1873,48 @@ export function bandOutline( input: DesignFetchInput ): {
 }
 
 /**
+ * What a DESIGN REFRESH silently dropped.
+ *
+ * `analyze --design` replaces `profile.design` wholesale, so any fact this run
+ * failed to extract disappears with no trace: virtuallyjamaica's `#wifi` anchor
+ * and its entire `chrome` block vanished that way (2026-11-11), and the loss
+ * surfaced later as a parity failure with nothing pointing at the cause.
+ *
+ * Reported, never merged. A dropped fact is sometimes a REAL source change —
+ * that same run showed the site's copyright line had genuinely been removed —
+ * so re-instating it silently would make the profile wrong in the other
+ * direction. Only the operator can tell the two apart, and `profile.pins` is how
+ * they keep a fact deliberately.
+ */
+export function diffDesignFacts( before: ForgeDesign | undefined, after: ForgeDesign | undefined ): string[] {
+	const dropped: string[] = [];
+	const afterById = new Map( ( after?.sections ?? [] ).map( ( section ) => [ section.id, section ] ) );
+	for ( const section of before?.sections ?? [] ) {
+		if ( ! section.id ) {
+			continue;
+		}
+		const next = afterById.get( section.id );
+		if ( ! next ) {
+			dropped.push( `section ${ section.id }${ section.anchor ? ` (${ section.anchor })` : '' }` );
+			continue;
+		}
+		if ( section.anchor && section.anchor !== next.anchor ) {
+			dropped.push( `section ${ section.id }'s anchor "${ section.anchor }"` );
+		}
+	}
+	// Chrome facts only: a palette or typography role that shifts is a source
+	// change the operator expects, not a silent loss.
+	const beforeChrome = ( before?.chrome ?? {} ) as Record< string, unknown >;
+	const afterChrome = ( after?.chrome ?? {} ) as Record< string, unknown >;
+	for ( const key of Object.keys( beforeChrome ) ) {
+		if ( beforeChrome[ key ] !== undefined && afterChrome[ key ] === undefined ) {
+			dropped.push( `chrome.${ key }` );
+		}
+	}
+	return dropped;
+}
+
+/**
  * Promote outline bands into the renderable band model. The two band shapes
  * carry the same background facts, so the mapping is a field copy — the
  * renderer then themes them positionally (`bandSource: 'outline'`).
