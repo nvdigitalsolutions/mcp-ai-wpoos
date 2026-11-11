@@ -287,6 +287,72 @@ class Test_EZuite_CCT_Manager_API_Shape extends WP_UnitTestCase {
 	}
 
 	/**
+	 * When several CCT definitions share a slug, the highest ID is canonical —
+	 * matching the record the duplicate cleanup keeps, so the field sync and
+	 * the cleanup never disagree about which definition is authoritative.
+	 */
+	public function test_picks_highest_id_record_as_canonical() {
+		$method = new ReflectionMethod( 'WP_MCP_AI_EZuite_CCT_Manager', 'pick_canonical_cct_record' );
+		$method->setAccessible( true );
+
+		$records = array(
+			array(
+				'id'   => 12,
+				'slug' => 'ezuite_inventory',
+			),
+			array(
+				'id'   => 47,
+				'slug' => 'ezuite_inventory',
+			),
+			array(
+				'id'   => 31,
+				'slug' => 'ezuite_inventory',
+			),
+		);
+
+		$canonical = $method->invoke( null, $records );
+		$this->assertSame( 47, $canonical['id'] );
+
+		// Object records (JetEngine can return stdClass rows) normalise too.
+		$objects = array( (object) array( 'id' => 5 ), (object) array( 'id' => 19 ) );
+		$this->assertSame( 19, $method->invoke( null, $objects )['id'] );
+	}
+
+	/**
+	 * A slug with no usable records resolves to null instead of erroring.
+	 */
+	public function test_pick_canonical_returns_null_without_records() {
+		$method = new ReflectionMethod( 'WP_MCP_AI_EZuite_CCT_Manager', 'pick_canonical_cct_record' );
+		$method->setAccessible( true );
+
+		$this->assertNull( $method->invoke( null, array() ) );
+		$this->assertNull( $method->invoke( null, null ) );
+	}
+
+	/**
+	 * Reset the cached Factory so the next lookup rebuilds from the stored
+	 * record — the fix for a sync silently writing nothing into columns it had
+	 * just defined.
+	 */
+	public function test_reset_factory_forces_rebuild_from_stored_record() {
+		$factory_prop = new ReflectionProperty( 'WP_MCP_AI_EZuite_CCT_Manager', 'factory' );
+		$factory_prop->setAccessible( true );
+
+		$refresh_prop = new ReflectionProperty( 'WP_MCP_AI_EZuite_CCT_Manager', 'refresh_factory' );
+		$refresh_prop->setAccessible( true );
+
+		$factory_prop->setValue( $this->manager, new stdClass() );
+		$this->assertFalse( $refresh_prop->getValue( $this->manager ) );
+
+		$reset = new ReflectionMethod( 'WP_MCP_AI_EZuite_CCT_Manager', 'reset_factory' );
+		$reset->setAccessible( true );
+		$reset->invoke( $this->manager );
+
+		$this->assertNull( $factory_prop->getValue( $this->manager ) );
+		$this->assertTrue( $refresh_prop->getValue( $this->manager ) );
+	}
+
+	/**
 	 * Invoke the protected map_ezuite_item_to_cct_row() via reflection.
 	 *
 	 * @param array  $item          Raw EZuite item.
