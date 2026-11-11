@@ -743,6 +743,23 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	text-decoration: none;
 	border-radius: var(--forge-cta-radius, var(--forge-radius-sm));
 	font-weight: 600;
+	/* A semantic CTA REPLACES the source's button markup (jayainc's hero,
+	 * products and services bands), so the measured source states cannot reach
+	 * it. Without these three rules the rebuilt button is the only control on
+	 * the page that does not respond to the pointer — which the `interaction
+	 * states` gate reports. `brightness()` adapts to whatever `--forge-cta` is
+	 * (a flat colour, a gradient, a dark band) instead of hard-coding a shade.
+	 * The `prefers-reduced-motion` block below drops the transition. */
+	transition: filter 150ms ease, transform 150ms ease;
+}
+
+.ds-button:hover {
+	filter: brightness(0.94);
+}
+
+.ds-button:active {
+	filter: brightness(0.88);
+	transform: translateY(1px);
 }
 
 .ds-links {

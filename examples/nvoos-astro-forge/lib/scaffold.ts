@@ -1244,7 +1244,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * own easing, emitted under `prefers-reduced-motion: no-preference`; the',
 		'\t * `hover`/`active` rules live under `@media (hover: hover)` so touch',
 		'\t * devices never keep a sticky hover. */',
-		'\tinteractions?: Array<{ selector: string; count?: number; base?: string; transition?: string; hover?: string; focus?: string; focusVisible?: string; active?: string }>;',
+		'\tinteractions?: Array<{ selector: string; count?: number; base?: string; transition?: string; hover?: string; focus?: string; focusVisible?: string; active?: string; children?: Array<{ selector: string; base?: string; pseudo?: string; transition?: string; hover?: string; focus?: string; focusVisible?: string; active?: string }> }>;',
 		'\t/** The top-level column responsive facts (124 §6) — widths per',
 		'\t * device + order/visibility; the split components re-measure. */',
 		'\tcolumns?: Array<{',
@@ -1437,6 +1437,23 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 							if ( fact[ key ] ) {
 								fields.push( `${ key }: ${ tsString( fact[ key ] as string ) }` );
 							}
+						}
+						// Overlay children: the states a child draws while the control is
+						// hovered (`.aux-overlay`), emitted as `<control>:hover > <child>`.
+						if ( fact.children && fact.children.length > 0 ) {
+							fields.push(
+								`children: [${ fact.children
+									.map( ( child ) => {
+										const childFields = [ `selector: ${ tsString( child.selector ) }` ];
+										for ( const key of [ 'base', 'pseudo', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] as const ) {
+											if ( child[ key ] ) {
+												childFields.push( `${ key }: ${ tsString( child[ key ] as string ) }` );
+											}
+										}
+										return `{ ${ childFields.join( ', ' ) } }`;
+									} )
+									.join( ', ' ) }]`
+							);
 						}
 						return `{ ${ fields.join( ', ' ) } }`;
 					} )

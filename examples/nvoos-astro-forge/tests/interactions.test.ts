@@ -16,10 +16,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+	childPaints,
+	childPseudoDeclarations,
+	childRestDeclarations,
 	describeInteractionDeviation,
 	diffInteractionStates,
+	interactionChildSelector,
 	interactionKey,
 	interactionSelector,
+	relativeTransform,
 	restDeclarations,
 	stateDeclarations,
 } from '../lib/interactions.ts';
@@ -300,6 +305,88 @@ describe( 'interaction states — verify comparison', () => {
 				severity: 'fail',
 			} )
 		).toBe( 'band aaa1111: no keyboard focus indicator \u2014 button' );
+	} );
+} );
+
+describe( 'overlay children — child effects, relative to the control', () => {
+	// jayainc's `aux-button`: a 196x53 pill whose `.aux-overlay` slot is a
+	// 234.67px square, centred, scaled to 0 at rest and to 1 on hover, with the
+	// dark fill on `.aux-overlay::after`.
+	const controlBox = { w: 196.7, h: 52.9 };
+	const childBox = { w: 234.672, h: 234.672 };
+	const layout = {
+		position: 'absolute',
+		top: '26.5px',
+		left: '97.7812px',
+		width: '234.672px',
+		height: '234.672px',
+		transform: 'matrix(0, 0, 0, 0, -117.336, -117.336)',
+	};
+
+	it( 're-expresses a matrix translate as a share of the child box', () => {
+		expect( relativeTransform( 'matrix(0, 0, 0, 0, -117.336, -117.336)', childBox ) ).toBe(
+			'translate(-50%, -50%) scale(0, 0)'
+		);
+		expect( relativeTransform( 'matrix(1, 0, 0, 1, -117.336, -117.336)', childBox ) ).toBe(
+			'translate(-50%, -50%) scale(1, 1)'
+		);
+	} );
+
+	it( 'keeps a rotated matrix verbatim instead of lying about it', () => {
+		const rotated = 'matrix(0.7071, 0.7071, -0.7071, 0.7071, 10, 20)';
+		expect( relativeTransform( rotated, childBox ) ).toBe( rotated );
+	} );
+
+	it( 'expresses the child layout as percentages of the CONTROL', () => {
+		expect( childRestDeclarations( layout, childBox, controlBox ) ).toBe(
+			'position:absolute;top:50.1%;left:49.7%;width:119.3%;height:443.6%;transform:translate(-50%, -50%) scale(0, 0)'
+		);
+	} );
+
+	it( 'leaves a static child alone (nothing to reproduce)', () => {
+		expect(
+			childRestDeclarations(
+				{ position: 'static', top: 'auto', left: 'auto', width: 'auto', height: 'auto', transform: 'none' },
+				childBox,
+				controlBox
+			)
+		).toBe( '' );
+	} );
+
+	it( 're-states the pseudo-element fill that makes the overlay visible', () => {
+		expect(
+			childPseudoDeclarations(
+				{
+					content: '""',
+					backgroundColor: 'rgb(223, 180, 3)',
+					backgroundImage: 'none',
+					width: '234.672px',
+					height: '234.672px',
+				},
+				childBox
+			)
+		).toBe( 'content:"";background-color:rgb(223, 180, 3);width:100%;height:100%' );
+	} );
+
+	it( 'ignores a pseudo-element with no content, or a non-literal one', () => {
+		const base = { backgroundColor: 'rgb(1, 2, 3)', backgroundImage: 'none', width: '1px', height: '1px' };
+		expect( childPseudoDeclarations( { ...base, content: 'none' }, childBox ) ).toBe( '' );
+		expect( childPseudoDeclarations( { ...base, content: 'attr(data-fill)' }, childBox ) ).toBe( '' );
+	} );
+
+	it( 'skips a child that paints nothing and has no reproducible pseudo', () => {
+		const bare = styles();
+		expect( childPaints( bare, false ) ).toBe( false );
+		expect( childPaints( bare, false, 'content:""' ) ).toBe( true );
+		expect( childPaints( styles( { backgroundColor: 'rgb(0, 0, 0)' } ), false ) ).toBe( true );
+		expect( childPaints( bare, true ) ).toBe( true );
+	} );
+
+	it( 'selects a classed child by token and an unclassed one by position', () => {
+		expect( interactionChildSelector( { tag: 'span', classes: [ 'aux-overlay' ], index: 0 } ) ).toBe(
+			'span[class~="aux-overlay"]'
+		);
+		expect( interactionChildSelector( { tag: 'span', classes: [], index: 1 } ) ).toBe( ':nth-child(2)' );
 	} );
 } );
 

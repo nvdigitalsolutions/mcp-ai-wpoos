@@ -1266,6 +1266,12 @@ and diffing the computed style. Full contract, standards and gotchas:
   light band, because the source's red pill lived in a vendor class the rebuild
   never ships. `base` re-states the measured rest look (ink, background, borders,
   radius, weight); `font-size`/`padding` stay with the band facts.
+- **A control can delegate its state to a CHILD.** Auxin buttons paint their
+  hover with `.aux-overlay` scaling from 0 to 1 — the anchor never changes. The
+  pass diffs direct children while the parent is forced and records the child's
+  rest box/`::after` fill in RELATIVE units (percent of the control, decomposed
+  transform), so the overlay survives a reflow. A child with nothing to paint is
+  counted, not faked.
 - **`hover`/`active` are emitted inside `@media (hover: hover)`** — a touch device
   keeps a synthesised hover forever otherwise.
 - **A state that REMOVES the focus ring is dropped** (WCAG F78), and a decoration
@@ -1274,7 +1280,9 @@ and diffing the computed style. Full contract, standards and gotchas:
 - **Every site gets a focus baseline:**
   `:focus-visible { outline: max(2px, .12em) solid currentColor; outline-offset: 2px }`.
   `currentColor` is the trick — the control's own ink already meets contrast (a
-  fixed accent ring measured 2.79:1 on virtuallyjamaica's light surface).
+  fixed accent ring measured 2.79:1 on virtuallyjamaica's light surface). The
+  template's own `.ds-button` also darkens/presses, because a semantic CTA
+  replaces the source's markup and inherits none of its states.
 - **`bandFacts[id].interactions[]`** → `sections.generated.ts` (`selector` baked
   at scaffold time) → band-scoped `[data-section-id] …:hover` rules.
   virtuallyjamaica: 13 states on 5 bands, ~5 s; the CTA's rest/hover/press now

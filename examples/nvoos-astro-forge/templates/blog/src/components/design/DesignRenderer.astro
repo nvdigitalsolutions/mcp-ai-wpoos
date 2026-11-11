@@ -582,6 +582,33 @@ const bandInteractionCss = sections
 			if ( fact.active ) {
 				rules.push( `@media (hover: hover){${ selector }:active{${ fact.active }}}` );
 			}
+			// A child that only repaints while the CONTROL is in a state (the overlay
+			// button): the selector is `<control>:hover > <child>`. The rest layout —
+			// position/size as a share of the control, so it survives a reflow — and the
+			// `::after` fill come first, or the state would animate nothing.
+			for ( const child of fact.children ?? [] ) {
+				if ( child.base ) {
+					rules.push( `${ selector } > ${ child.selector }{${ child.base }}` );
+				}
+				if ( child.pseudo ) {
+					rules.push( `${ selector } > ${ child.selector }::after{${ child.pseudo }}` );
+				}
+				if ( child.transition ) {
+					rules.push( `@media (prefers-reduced-motion: no-preference){${ selector } > ${ child.selector }{transition:${ child.transition }}}` );
+				}
+				if ( child.hover ) {
+					rules.push( `@media (hover: hover){${ selector }:hover > ${ child.selector }{${ child.hover }}}` );
+				}
+				if ( child.focus ) {
+					rules.push( `${ selector }:focus > ${ child.selector }{${ child.focus }}` );
+				}
+				if ( child.focusVisible ) {
+					rules.push( `${ selector }:focus-visible > ${ child.selector }{${ child.focusVisible }}` );
+				}
+				if ( child.active ) {
+					rules.push( `@media (hover: hover){${ selector }:active > ${ child.selector }{${ child.active }}}` );
+				}
+			}
 		}
 		return rules.join( '' );
 	} )

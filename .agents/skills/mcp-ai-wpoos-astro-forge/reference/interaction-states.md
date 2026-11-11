@@ -84,6 +84,50 @@ pseudo-class) wins over its own base.
 - **A decoration COLOUR with no decoration LINE is dropped.** It paints nothing;
   it only bloats the sheet.
 
+## 4.1 Overlay children — when the control itself does not repaint
+
+Some buttons draw their whole hover state with a CHILD. jayainc's Auxin buttons
+are `<a class="aux-button"><span class="aux-overlay"></span><span class="aux-text">`
+— the anchor's computed style does not change at all; the darkening comes from
+the overlay scaling from `scale(0)` to `scale(1)`.
+
+Measured naively, that site has "no states" (the first run recorded exactly
+that, while the button visibly darkened). The pass therefore also diffs each
+control's DIRECT children while the parent is forced, and records them per
+control:
+
+```jsonc
+"children": [{
+  "selector": "span[class~=\"aux-overlay\"]",
+  "base":   "position:absolute;top:50%;left:49.9%;width:119.9%;height:443.4%;transform:translate(-49.9%, -49.9%) scale(0, 0)",
+  "pseudo": "content:\"\";background-color:rgb(223, 180, 3);width:99.9%;height:99.9%",
+  "transition": "transform 0.45s cubic-bezier(0.75, 0.1, 0.25, 0.9)",
+  "hover":  "transform:translate(-49.9%, -49.9%) scale(1, 1)"
+}]
+```
+
+Four rules make that reproducible at every width:
+
+- **The box is relative.** Computed geometry is px measured at 1440 (`width:
+  234.67px; top: 26.5px`); re-expressed as a share of the CONTROL's box
+  (`width:119.9%; top:50%`) it survives a reflow. Read `offsetWidth/offsetHeight`,
+  not `getBoundingClientRect()`: the overlay rests at `scale(0)`, so its client
+  rect is 0×0 and every ratio collapses.
+- **The transform is decomposed.** `matrix(0,0,0,0,-117.3,-117.3)` is
+  `translate(-50%,-50%) scale(0,0)`; a rotated/skewed matrix is kept verbatim
+  rather than guessed at.
+- **The pseudo-element fill is captured.** `.aux-overlay` itself is transparent;
+  its `::after` carries `content:""` and the fill colour. Without it the
+  transform animates a zero-size span forever.
+- **A child that cannot paint is SKIPPED, not faked.** If the child has no text,
+  no fill of its own and no reproducible `::after`, the effect is not
+  reproducible; `analyze` counts it and says so instead of emitting dead CSS.
+
+Emitted as `<control> > <child>{…}`, `<control> > <child>::after{…}`,
+`<control>:hover > <child>{…}` — the same shape the source's own selector has.
+Verified on the jayainc rebuild: the CTA darkens (229,176,17 → 216,166,16) and
+presses darker (202,155,15) with the pill's gradient and radius restored.
+
 ## 5. The baseline every forged site gets
 
 A source usually has no usable focus indicator at all, so `global.css` ships one
@@ -104,6 +148,15 @@ for small text (WCAG 2.4.13 Focus Appearance) and scales with larger controls.
 
 The baseline is `:focus-visible`, never `:focus` — a mouse click should not paint
 a ring, a Tab must — and nothing in the sheet ever sets `outline: none`.
+
+The template's own components get pointer feedback for the same reason: a
+semantic CTA REPLACES the source's button markup, so the measured source states
+cannot reach it. `.ds-button` therefore darkens (`filter: brightness(.94)`) and
+presses (`brightness(.88)` + a 1px drop). `brightness()` adapts to whatever
+`--forge-cta` is — a flat colour, a gradient, a dark band — where a hard-coded
+shade would not. The `interaction states` gate caught this gap on jayainc: three
+source bands render through the Hero/CTA components, and the rebuilt button was
+the only control on the page that did not respond.
 
 Reduced motion: the source's own `transition` is emitted **only** inside
 `@media (prefers-reduced-motion: no-preference)`, and rebuilt content gets a

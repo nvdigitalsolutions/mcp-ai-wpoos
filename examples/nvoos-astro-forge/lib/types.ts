@@ -728,6 +728,31 @@ export interface ForgeBandContainer {
 }
 
 /**
+ * A state effect drawn by a CONTROL'S CHILD rather than the control itself.
+ *
+ * Builder buttons paint their hover fill with an overlay span (Auxin's
+ * `.aux-overlay`, Elementor's `.elementor-button-content-wrapper`) and the anchor
+ * itself reports no computed change at all — jayainc's three buttons were
+ * measured as "no states" before this existed, while the button visibly changed
+ * on hover. The child is diffed only while the PARENT is forced, because that is
+ * how the source's selector works (`a:hover .aux-overlay`).
+ */
+export interface ForgeInteractionChildFact {
+	/** Selector relative to the control (`span[class~="aux-overlay"]`). */
+	selector: string;
+	/** Rest layout as a share of the control (`position:absolute; top:50%; width:119.3%`). */
+	base?: string;
+	/** The child's `::after` slot, when that is what paints the fill. */
+	pseudo?: string;
+	/** The child's own easing, emitted under `prefers-reduced-motion` rules. */
+	transition?: string;
+	hover?: string;
+	focus?: string;
+	focusVisible?: string;
+	active?: string;
+}
+
+/**
  * One measured interactive control's STATE deltas (`analyze` interaction pass).
  *
  * A rebuilt band is the source's own sanitized markup with the vendor sheet
@@ -761,6 +786,13 @@ export interface ForgeInteractionFact {
 	focusVisible?: string;
 	/** Pressed deltas; measured as `hover + active` (a source writes `:hover:active`). */
 	active?: string;
+	/**
+	 * Effects the control's DIRECT CHILDREN draw while the control is in a state
+	 * (the overlay-fill button pattern). Direct children only: that is where
+	 * every builder puts the overlay, and a deeper walk multiplies the pass for
+	 * nothing.
+	 */
+	children?: ForgeInteractionChildFact[];
 }
 
 /**
