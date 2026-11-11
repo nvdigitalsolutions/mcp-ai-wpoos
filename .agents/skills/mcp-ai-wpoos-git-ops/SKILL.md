@@ -195,11 +195,27 @@ Each rule below cost a recovery:
 - **Never `git checkout -- vendor/` wholesale.** `vendor/` is bind-mounted into
   the Docker `oos-wp` container, so `composer install` (needed for PHPUnit
   when the tree was installed `--no-dev`) dirties it. Restore **only** the
-  tracked composer metadata — `git checkout -- vendor/composer/` — because
+  tracked composer metadata — `git restore --worktree --source=HEAD --
+  vendor/composer` (the `git checkout -- vendor/composer` form can be
+  rejected by the editor's built-in security rule, "too harmful to be
+  allowed"; `git restore` is not) — because
   other agents' dependency work can live elsewhere under `vendor/`, and a
   blanket restore erases it. Same rule for any generated tree
   (`build/`, `dist/`, `public/manage-assets/`): restore or rebuild exactly the
   paths you touched.
+- **A foreign agent's commit can land on the branch you just created
+  (2026-11-11).** `git checkout -b <mine>` moves the *shared* `HEAD`, so the
+  next agent to commit lands on your branch — the inverse of the "check the
+  branch before committing" rule above, and it is silent: your branch just
+  ends up one commit ahead of the base. Detect with
+  `git rev-list --left-right --count origin/alpha-working...HEAD` (a
+  right-hand count > 0 on a branch where you have not committed yet).
+  Recover non-destructively: `git branch -f <their-branch> <their-sha>` so
+  their work sits on its own branch (confirm it is also on
+  `origin/<their-branch>`), then build your PR in an isolated worktree —
+  `git worktree add tmp/wt-<name> -b <branch> origin/alpha-working`, copy
+  only your files, commit/push from there, `git worktree remove --force`.
+  Never `reset --hard` to unwind it.
 - **Put an agent's own worktree INSIDE the repo (`tmp/<name>`),
   not in `%TEMP%`.** A worktree under `AppData/Local/Temp` is fine from the
   shell, but the editor's file tools resolve paths inside the

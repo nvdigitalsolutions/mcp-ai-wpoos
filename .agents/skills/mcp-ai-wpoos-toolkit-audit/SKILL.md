@@ -174,6 +174,41 @@ own reviewable cluster. First completed cluster: **document-generation**
     fallback, and content-part flattening. New research tools must call
     `perform_research_completion()` instead of hand-rolling the completion.
 
+13. **CCT-backed toolkit columns that exist but never receive values.** A
+    column added to a JetEngine-CCT toolkit (EZuite, FlowHub, Shopify Sync)
+    can appear in the CCT field list *and* in MySQL while the sync writes
+    nothing into it — silently, with no error in the run log. Three
+    independent causes, all of which must be checked when auditing a CCT
+    manager:
+    - **Factory staleness.** JetEngine hydrates one `Factory` per CCT record
+      on `init`; `Item_Handler::update_item()` builds its payload from
+      `factory->get_formatted_fields()` *only*, so field definitions
+      persisted mid-request by `ensure_columns()` are dropped by that same
+      request. Fix: a `reset_factory()` (clears the cached Factory and sets a
+      `refresh_factory` flag so `get_cct_factory()` skips the registry and
+      rebuilds from the stored record), called after the field sync and
+      after any duplicate cleanup. Without it the *first* sync after a
+      schema change stores nothing — even on a healthy single-record site.
+    - **Duplicate definitions sharing a slug.** Two `post_types` rows with
+      the same slug read the same `wp_jet_cct_<slug>` table, but JetEngine
+      keeps whichever Factory it hydrated last — which may not be the record
+      the field sync updated. Fix: one `pick_canonical_cct_record()`
+      (highest ID) used by both `get_cct_record_by_slug()` and the cleanup,
+      so they agree on the authoritative row.
+    - **Permanently latched cleanup.** `maybe_cleanup_duplicate_ccts()`
+      historically ran `update_option( $flag, true )` on the first *clean*
+      pass, which exempted any duplicate created later — forever. Fix:
+      throttle with a transient, add a `$force` argument used by
+      `ensure_columns()`, and delete the stale latch option.
+
+    All three managers share this code shape, so a fix in one is an audit
+    trigger for the other two. Never delete a duplicate through JetEngine's
+    UI — its item-deletion API drops the shared data table; delete the
+    `wp_jet_post_types` row by `id` instead. Regression tests are cheap and
+    reflection-only (no JetEngine needed): canonical-record selection incl.
+    `stdClass` rows, null handling, and the `reset_factory()` contract.
+    Reference fix: PR #7590 (EZuite), mirrored to FlowHub + Shopify Sync.
+
 ## Scan procedure
 
 Use the grep tool with the **full project-rooted glob** — a bare
