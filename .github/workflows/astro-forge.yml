@@ -39,30 +39,32 @@ jobs:
         run: npm ci --no-audit --no-fund
         working-directory: examples/nvoos-astro-forge
 
-      # The axe e2e gate (126 §a11y) runs in real Chromium — install the
-      # browser (with system deps) before the e2e step.
-      #
-      # `--with-deps` shells out to apt, which needs the runner to reach the
-      # Ubuntu mirrors. On 2026-11-11 two consecutive runs died there with
-      # "Temporary failure resolving 'security.ubuntu.com'" before a single
-      # test ran (exit 100), so retry with backoff first. If the mirrors stay
-      # unreachable, fall back to the browser alone — `ubuntu-latest` already
-      # carries Chromium's system libraries — and PROVE it launches, so a
-      # genuinely missing dependency still fails here with a clear message
-      # instead of surfacing later as a mysterious axe timeout.
+      # The axe e2e gate (126 §a11y) runs in real Chromium. The browser
+      # download does not need the Ubuntu mirrors; `--with-deps` does, and when
+      # they are unreachable apt spends ~10 minutes retrying DNS before exiting
+      # 100 (run #231 of 4ae35eee95 burned its whole 20-minute budget there, so
+      # the browser-only fallback never ran). Take the fast path first — install
+      # the browser alone and PROVE it launches — and only repair system deps,
+      # under a hard timeout, if that proof fails. `ubuntu-latest` already
+      # carries Chromium's system libraries, so the fast path normally needs no
+      # apt at all. A genuinely missing dependency still fails here with a clear
+      # message instead of surfacing later as a mysterious axe timeout.
       - name: Install Playwright Chromium
         working-directory: examples/nvoos-astro-forge
         timeout-minutes: 20
         run: |
-          for attempt in 1 2 3; do
-            if npx playwright install --with-deps chromium; then
-              echo "Chromium installed with system deps (attempt $attempt)."
-              exit 0
-            fi
-            echo "::warning::Playwright install failed (attempt $attempt/3); retrying in $((attempt * 15))s."
-            sleep $((attempt * 15))
-          done
-          echo "::warning::--with-deps kept failing (the apt mirrors appear unreachable); installing the browser alone."
+          # The `if` form matters: `bash -e` would abort on a bare failing
+          # `npx playwright install chromium && node …` list instead of
+          # reaching the deps repair below.
+          if npx playwright install chromium && \
+             node -e "require('playwright').chromium.launch().then((b) => b.close()).then(() => console.log('Chromium launches.'))"; then
+            echo "Chromium launches with the preinstalled system libraries."
+            exit 0
+          fi
+          echo "::warning::Chromium could not launch; repairing system deps (apt, bounded to 5 minutes)."
+          if ! timeout 300 npx playwright install-deps chromium; then
+            echo "::warning::System dependency repair failed or timed out; relying on the preinstalled libraries."
+          fi
           npx playwright install chromium
           node -e "require('playwright').chromium.launch().then((b) => b.close()).then(() => console.log('Chromium launches.'))"
 
