@@ -411,6 +411,40 @@ tests_add_filter( 'mcp_adapter_create_default_server', '__return_false' );
 tests_add_filter( 'wpmedia_mcp_oauth_server_enabled', '__return_false' );
 
 /**
+ * Silence the bundled MCP Adapter's "not the canonical plugin" deprecation.
+ *
+ * `WP\MCP\Core\McpAdapter::init()` (hooked on `rest_api_init` at priority
+ * 15) calls `check_plugin_loaded()`, which fires `_deprecated_function()`
+ * whenever the constant it guards on is undefined — "…is currently loaded
+ * as a bundled dependency instead of via the canonical MCP Adapter plugin.
+ * This is not recommended and may not be supported in future versions…".
+ * Every copy shipped inside another plugin (Elementor, WooCommerce, Rank
+ * Math) is by definition a bundled dependency, so the notice is guaranteed
+ * under PHPUnit. wp-phpunit records it as an unexpected deprecation and
+ * fails whichever test happens to boot the REST server first — the failure
+ * moves between suites as test order changes (e.g.
+ * `Test_MCP_App_Chat_Exposure::test_rest_pre_dispatch_registers_bridges_for_tools_route`
+ * via `rest_get_server()`).
+ *
+ * Defining `WP_MCP_VERSION` is the exact "canonical plugin is loaded" signal
+ * the check looks for. Seed it from the bundled copy's own VERSION (a const
+ * read — no instantiation, so no other adapter code runs early) rather than
+ * a hard-coded value that would drift when the library is bumped. Priority 0
+ * wins the race against the adapter's priority-15 `init`.
+ */
+tests_add_filter(
+	'rest_api_init',
+	static function () {
+		if ( defined( 'WP_MCP_VERSION' ) || ! class_exists( '\WP\MCP\Core\McpAdapter' ) ) {
+			return;
+		}
+
+		define( 'WP_MCP_VERSION', \WP\MCP\Core\McpAdapter::VERSION );
+	},
+	0
+);
+
+/**
  * Test-safe override of the pluggable check_ajax_referer().
  *
  * Bridges two test-environment gaps:
