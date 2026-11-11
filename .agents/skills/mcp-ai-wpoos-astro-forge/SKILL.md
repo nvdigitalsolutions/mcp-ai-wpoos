@@ -1206,6 +1206,14 @@ all general to builder-based sites (detail: reference §6–§10):
   `builtStaticRoot`, because a SERVER-output build keeps its HTML in
   `dist/client` — serving `dist/` answered `not found` and every capture was a
   blank page read as a 95% difference.
+- **Gate policy is per site; the measurement is not.** `analyze` cannot decide
+  whether a pixel diff is acceptable — only the operator can. `profile.verify`
+  downgrades one of three addressable gates (`pixel parity`, `pixel regression`,
+  `box geometry`) to `advisory`: measured and reported, but not blocking.
+  `pixel parity` defaults to `auto` — advisory until a source seam exists, then
+  blocking. There is deliberately no `off`, and a build-vs-build diff is
+  `pixel regression`, never parity. Precedence is flag → profile → default.
+  Full rules in `reference/fidelity-gates.md` §Gate policy.
 - **`<p>` still loses its class** (a known gap): restoring it without per-device
   paragraph typography overshoots the band heights. See the note in
   `sanitize.ts` before changing it.

@@ -97,3 +97,70 @@ callbacks. Fix the specifier (`'../lib/foo.ts'`), not the parameter types.
   60px — the empty-band trap above) and `fd63522` (a `shortcode` band, a 3D
   flipbook a static forge cannot execute; its 100px bottom padding is a
   deliberate operator pin).
+
+## Gate policy — per site (2026-11-11)
+
+The forge runs against many sites, so one proposition splits the scorecard in
+two: a gate's **measurement** is shared (that is what makes it a gate), its
+**blocking-ness** is not. `lib/gate-policy.ts` owns the second half and is pure
+— no I/O, no clock — so the policy a CI run applied is unit-testable.
+
+The trigger was virtuallyjamaica: `verify` reported 11/14 (79%) and exited 1 on
+a pixel diff that `--strict-pixel` could not soften, because the pixel exit was
+unconditional. A multi-site forge cannot block every new site on a first-run
+pixel diff, and it cannot let a site opt out of measuring either.
+
+- **The addressable set is exactly three.** `profile.verify.gates` accepts a
+  policy for `pixel parity`, `pixel regression` and `box geometry`. The content
+  gates (`design language`, `token block`, `band flow`, `text parity`,
+  `nav anchors`, `fact consumption`, `media budget`, `colour system`,
+  `tracking`, `SEO head`, `bands`, `class coverage`) are NOT addressable: they
+  prove the rebuild is complete and carries the source's words and colours.
+  Downgrading those is not a policy decision, it is a broken site.
+  `validateVerifyBlock` runs from `assertProfile`, so scaffold/verify/deploy all
+  reject the key by name — a typo in JSON would otherwise keep the DEFAULT
+  policy while the operator believes they changed it.
+- **`gate | advisory | auto`, and deliberately no `off`.** `advisory` still
+  runs, still prints and still appears on the scorecard; it just does not fail
+  the run. `off` is absent because hiding a gate is what makes the pass rate
+  dishonest, and the legitimate need ("no browser in this job") is already
+  served by `--minimal` / `--no-bands` — flags, so the omission is visible in
+  the pipeline definition rather than buried in a data file.
+- **`pixel parity` defaults to `auto`.** With no source seam there is nothing
+  to be equal to, so a brand-new forge would fail for having no reference:
+  noise, not signal. Evidence is `verify-artifacts/source-*.png` or
+  `--pixel-live`; present → `gate`, absent → `advisory`. Recording the seam is
+  a deliberate human act (`--pixel-record-source`), so the gate tightening after
+  it is expected, not a surprise. `box geometry` and `pixel regression` default
+  to `gate`.
+- **A build baseline is `pixel regression`, never parity.** Two captures of the
+  same build differ by ~0, so a `baseline-*.png` comparison reports SSIM
+  1.0000 and proves nothing about fidelity. It is recorded under its own gate
+  name so it can never be read as parity. This is the discipline Playwright
+  encodes with `updateSnapshots: 'none'` (a missing baseline must fail loudly,
+  not write itself) and the reason a committed baseline needs review: an author
+  committing one is self-approval.
+- **A downgrade is printed, not silent.** The scorecard line carries its
+  provenance — `ℹ pixel parity — 3 capture(s), 3 fail, 0 warn · advisory
+  (profile · advisory)` — and the per-viewport lines say `FAIL · advisory, does
+  not fail the run`. `gateNote()` returns empty for a BLOCKING gate on purpose:
+  the provenance of the norm is noise, only a downgrade needs to be visible.
+- **Scorecard arithmetic.** `applicable = total − na − advisory`. Advisory is
+  excluded from the pass rate *because* it is printed on its own line, so the
+  number and the policy can never disagree in silence. `skip` still counts
+  against 100% (it means "applicable but never applied").
+- **Precedence is flag → profile → default.** `--strict-pixel` now force-sets
+  `pixel parity` to `gate` (it used to cover only the nothing-compared case) —
+  the CLI override a reviewer can see in the pipeline file. A flag of `auto` is
+  ignored: a flag may not delegate the decision back to the profile.
+- **`verify.pixel` travels with the site.** `pixel.masks` (dynamic regions) and
+  `pixel.baseline: 'source' | 'build'` are profile-level so they do not live in
+  a CI flag nobody re-reads; `--pixel-mask` still wins when given, so a one-off
+  investigation can widen the mask without editing the site. `baseline: 'build'`
+  reverses the source-first preference deliberately, for a site whose source
+  cannot be reached.
+
+virtuallyjamaica's own state is unchanged by the policy: a source seam exists,
+so parity resolves to `gate` and a default `verify` still exits 1. The residual
+diff is real work (hero vertical offset, container gutter, image rendition), not
+a site quirk to be waived — declaring `advisory` is the interim call, not a fix.

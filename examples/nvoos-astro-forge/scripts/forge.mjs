@@ -49,6 +49,7 @@ import { findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureStickyHeader, serveDir } from '../lib/geometry.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
+import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } from '../lib/gate-policy.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
@@ -178,6 +179,13 @@ async function loadProfile( ref ) {
 function assertProfile( profile ) {
 	if ( ! profile.url || ! Array.isArray( profile.collections ) || profile.collections.length === 0 ) {
 		console.error( 'site.json must contain { url, collections: [...] }' );
+		process.exit( 1 );
+	}
+	// A typo in the policy block is otherwise SILENT: the site would keep the
+	// default policy while the operator believes they changed it.
+	const verifyProblems = validateVerifyBlock( profile.verify );
+	if ( verifyProblems.length > 0 ) {
+		console.error( `site.json verify block: ${ verifyProblems.join( '; ' ) }` );
 		process.exit( 1 );
 	}
 }
@@ -1353,10 +1361,11 @@ const GATE_ORDER = [
 	'SEO head',
 	'box geometry',
 	'pixel parity',
+	'pixel regression',
 	'visual parity',
 ];
 
-const GATE_MARK = { pass: '\u2713', warn: '\u26a0', fail: '\u2717', skip: '\u2013', na: '\u00b7' };
+const GATE_MARK = { pass: '\u2713', warn: '\u26a0', fail: '\u2717', skip: '\u2013', na: '\u00b7', advisory: '\u2139' };
 
 /** Parse a comma list of colour schemes; unknown values are dropped. */
 function parseColorModes( value, fallback = [ 'light', 'dark' ] ) {
@@ -1379,29 +1388,38 @@ function printGateScorecard( gates ) {
 	const ordered = [ ...gates ].sort(
 		( a, b ) => ( GATE_ORDER.indexOf( a.name ) + 1 || 99 ) - ( GATE_ORDER.indexOf( b.name ) + 1 || 99 )
 	);
-	const counts = { pass: 0, warn: 0, fail: 0, skip: 0, na: 0 };
+	const counts = { pass: 0, warn: 0, fail: 0, skip: 0, na: 0, advisory: 0 };
 	console.log( '\nParity scorecard' );
 	for ( const gate of ordered ) {
 		counts[ gate.status ] = ( counts[ gate.status ] ?? 0 ) + 1;
-		console.log( `  ${ GATE_MARK[ gate.status ] ?? '?' } ${ gate.name }${ gate.note ? ` \u2014 ${ gate.note }` : '' }` );
+		const policy = gate.policy ? ` \u00b7 ${ gate.policy }` : '';
+		console.log(
+			`  ${ GATE_MARK[ gate.status ] ?? '?' } ${ gate.name }${ gate.note ? ` \u2014 ${ gate.note }` : '' }${ policy }`
+		);
 	}
 	const total = gates.length;
 	// `na` = structurally inapplicable (no bands to measure, no tracking block).
 	// `skip` = applicable but not applied (no baseline) — it counts against 100%,
-	// which is what keeps the percentage honest.
-	const applicable = total - counts.na;
-	const percent = applicable === 0 ? 100 : Math.round( ( counts.pass / applicable ) * 100 );
+	// which is what keeps the percentage honest. `advisory` = measured AND
+	// reported, downgraded by the site profile: excluded from the pass rate
+	// precisely because the downgrade is printed on its own line, so the number
+	// and the policy can never disagree in silence.
+	const applicable = total - counts.na - counts.advisory;
+	const percent = applicable <= 0 ? 100 : Math.round( ( counts.pass / applicable ) * 100 );
 	const tail = [
 		counts.warn > 0 ? `${ counts.warn } warn` : '',
 		counts.fail > 0 ? `${ counts.fail } fail` : '',
 		counts.skip > 0 ? `${ counts.skip } skipped` : '',
+		counts.advisory > 0 ? `${ counts.advisory } advisory` : '',
 		counts.na > 0 ? `${ counts.na } n/a` : '',
 	]
 		.filter( Boolean )
 		.join( ', ' );
 	console.log( `  ${ counts.pass }/${ applicable } applicable gates passed (${ percent }%)${ tail ? ` \u2014 ${ tail }` : '' }` );
-	if ( percent === 100 ) {
+	if ( percent === 100 && counts.advisory === 0 ) {
 		console.log( '  \u2713 Every gate applied and passed.' );
+	} else if ( percent === 100 ) {
+		console.log( '  \u2713 Every applicable gate applied and passed \u2014 the advisory gate(s) above are measured, not enforced.' );
 	} else {
 		console.log( '  \u2192 100% needs every gate APPLIED (baselines recorded) and PASSING.' );
 	}
@@ -1434,6 +1452,16 @@ async function hasPixelArtifacts( dir ) {
 	return files.some( ( file ) => /^(?:baseline|source)-.+\.png$/.test( file ) );
 }
 
+/**
+ * Does a SOURCE seam exist? That is the parity gate's reference — as opposed to
+ * a build regression baseline, which cannot prove fidelity (see gate-policy.ts).
+ * `pixel parity` resolves `auto` off this answer.
+ */
+async function hasSourceSeam( dir ) {
+	const files = await readdir( dir ).catch( () => [] );
+	return files.some( ( file ) => /^source-.+\.png$/.test( file ) );
+}
+
 async function runVerify( profileRef, options ) {
 	const profile = await loadProfile( profileRef );
 	assertProfile( profile );
@@ -1452,8 +1480,11 @@ async function runVerify( profileRef, options ) {
 		options.pixel = true;
 	}
 	const gates = [];
-	const record = ( name, status, note = '' ) => {
-		gates.push( { name, status, note } );
+	// `policy` is the human provenance of a DOWNGRADE (e.g. `advisory (default ·
+	// auto · no source seam)`), printed on the gate's own scorecard line so an
+	// advisory gate can never look like a pass.
+	const record = ( name, status, note = '', policy = '' ) => {
+		gates.push( { name, status, note, policy } );
 	};
 	if ( ! profile.design ) {
 		if ( options.tracking || options.seo ) {
@@ -1836,6 +1867,10 @@ async function runVerify( profileRef, options ) {
 		record( 'box geometry', 'skip', 'browser unavailable' );
 	} else if ( geometryRequested && profile.geometry ) {
 		const ids = Object.keys( profile.geometry );
+		// Box geometry is one of the three addressable gates: a band of long prose
+		// can absorb sub-pixel font-metric drift that no CSS change fixes. A site
+		// that accepts it downgrades the gate here instead of shipping a red CI.
+		const geometryPolicy = resolveGateMode( 'box geometry', profile.verify );
 		const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
 		try {
 			const built = await measureGeometry( { url: served.url, ids, kind: 'built' } );
@@ -1858,12 +1893,25 @@ async function runVerify( profileRef, options ) {
 				console.log( `  geometry: ${ failures.length } fail, ${ warnings.length } warn across ${ ids.length } band(s)` );
 			}
 			if ( failures.length > 0 ) {
-				process.exitCode = 1;
+				if ( geometryPolicy.mode === 'gate' ) {
+					process.exitCode = 1;
+				} else {
+					console.warn(
+						`\u2139 Box geometry: ${ failures.length } failure(s) treated as ADVISORY \u2014 the profile downgraded this gate, so the run is not failed.`
+					);
+				}
 			}
 			record(
 				'box geometry',
-				failures.length > 0 ? 'fail' : warnings.length > 0 ? 'warn' : 'pass',
-				`${ failures.length } fail, ${ warnings.length } warn across ${ ids.length } band(s)`
+				failures.length > 0
+					? geometryPolicy.mode === 'advisory'
+						? 'advisory'
+						: 'fail'
+					: warnings.length > 0
+						? 'warn'
+						: 'pass',
+				`${ failures.length } fail, ${ warnings.length } warn across ${ ids.length } band(s)`,
+				gateNote( geometryPolicy )
 			);
 
 			// -----------------------------------------------------------------
@@ -1982,7 +2030,7 @@ async function runVerify( profileRef, options ) {
 		// capture seam is `verify-artifacts/source-<viewport>.png`. Storing it once
 		// keeps the gate repeatable and offline afterwards.
 		const artifacts = join( options.target, 'verify-artifacts' );
-		const masks = Array.isArray( options.pixelMask ) ? options.pixelMask : [];
+		const masks = resolvePixelMasks( profile.verify, options.pixelMask );
 		const sourceModes =
 			options.pixelMode === 'both' ? [ 'light', 'dark' ] : [ options.pixelMode === 'dark' ? 'dark' : 'light' ];
 		const multiMode = sourceModes.length > 1;
@@ -2020,16 +2068,34 @@ async function runVerify( profileRef, options ) {
 		record( 'pixel parity', 'skip', 'no baseline or source screenshots' );
 	} else if ( options.pixel ) {
 		const artifacts = join( options.target, 'verify-artifacts' );
-		const masks = Array.isArray( options.pixelMask ) ? options.pixelMask : [];
+		const masks = resolvePixelMasks( profile.verify, options.pixelMask );
 		const pixelModes =
 			options.pixelMode === 'both'
 				? [ 'light', 'dark' ]
 				: [ options.pixelMode === 'dark' ? 'dark' : 'light' ];
 		const multiMode = pixelModes.length > 1;
 		await mkdir( artifacts, { recursive: true } ).catch( () => {} );
-		let compared = 0;
-		let pixelFailures = 0;
-		let pixelWarnings = 0;
+		// A site whose source cannot be reached opts into the build-vs-build
+		// comparison; everyone else gets parity (the only comparison that can prove
+		// fidelity). The two are DIFFERENT gates with their own policies.
+		const preferBuildBaseline = profile.verify?.pixel?.baseline === 'build';
+		const seamExists = options.pixelLive === true || ( await hasSourceSeam( artifacts ) );
+		// `--strict-pixel` is the CLI override: it force-enables blocking, which is
+		// what its name has always promised. The profile still decides the default.
+		const flagPolicy = options.strictPixel ? 'gate' : undefined;
+		const parityPolicy = resolveGateMode( 'pixel parity', profile.verify, { hasSourceSeam: seamExists }, flagPolicy );
+		const regressionPolicy = resolveGateMode( 'pixel regression', profile.verify, {}, flagPolicy );
+		for ( const resolution of [ parityPolicy, regressionPolicy ] ) {
+			if ( resolution.mode === 'advisory' ) {
+				console.warn( `\u2139 Pixel: running as ADVISORY \u2014 ${ gateNote( resolution ) }. Findings are reported, not enforced.` );
+			}
+		}
+		// Per-origin stats: a SOURCE comparison is parity, a BASELINE comparison is
+		// regression, and they are recorded as separate scorecard lines.
+		const pixelStats = {
+			source: { compared: 0, fail: 0, warn: 0 },
+			baseline: { compared: 0, fail: 0, warn: 0 },
+		};
 		let recorded = 0;
 		for ( const colorMode of pixelModes ) {
 			const suffix = multiMode ? `-${ colorMode }` : '';
@@ -2071,20 +2137,21 @@ async function runVerify( profileRef, options ) {
 				// recorded regression baseline shadow it silently downgrades the run to
 				// build-vs-build — which then reports SSIM 1.0000 and hides real drift
 				// (virtuallyjamaica, 2026-11-11). The baseline is the fallback for sites
-				// whose source cannot be reached.
-				const sourceShot =
+				// whose source cannot be reached, and `verify.pixel.baseline: build`
+				// reverses the preference deliberately.
+				const seamShot =
 					( await readArtifact( artifacts, label ) ) ??
 					( colorMode === 'light' ? await readArtifact( artifacts, `source-${ viewport.name }` ) : undefined );
-				const baseline = sourceShot
-					? undefined
-					: ( await readArtifact( artifacts, `baseline-${ viewport.name }${ suffix }` ) ) ??
-					  ( colorMode === 'light' ? await readArtifact( artifacts, `baseline-${ viewport.name }` ) : undefined );
+				const regressionShot =
+					( await readArtifact( artifacts, `baseline-${ viewport.name }${ suffix }` ) ) ??
+					( colorMode === 'light' ? await readArtifact( artifacts, `baseline-${ viewport.name }` ) : undefined );
+				const preferred = preferBuildBaseline ? regressionShot : seamShot;
+				const fallback = preferBuildBaseline ? seamShot : regressionShot;
+				const chosen = preferred ?? fallback;
+				const origin = preferred ? ( preferBuildBaseline ? 'baseline' : 'source' ) : preferBuildBaseline ? 'source' : 'baseline';
 				let source;
-				const origin = baseline ? 'baseline' : 'source';
-				if ( baseline ) {
-					source = Buffer.from( baseline.data, 'base64' );
-				} else if ( sourceShot ) {
-					source = Buffer.from( sourceShot.data, 'base64' );
+				if ( chosen ) {
+					source = Buffer.from( chosen.data, 'base64' );
 				} else if ( options.pixelLive ) {
 					try {
 						source = ( await capturePage( { url: profile.url, viewport, masks, mode: colorMode } ) ).png;
@@ -2126,10 +2193,18 @@ async function runVerify( profileRef, options ) {
 						}
 					}
 				}
-				compared++;
+				const stat = pixelStats[ origin ];
+				const resolution = origin === 'baseline' ? regressionPolicy : parityPolicy;
+				const advisory = resolution.mode === 'advisory';
+				stat.compared++;
 				const mark = result.verdict === 'fail' ? '\u2717' : result.verdict === 'warn' ? '\u26a0' : '\u2713';
+				const verdictLabel =
+					advisory && result.verdict === 'fail'
+						? 'FAIL \u00b7 advisory, does not fail the run'
+						: result.verdict.toUpperCase();
+				const kind = origin === 'baseline' ? 'Pixel regression' : 'Pixel parity';
 				console.log(
-					`${ mark } Pixel @ ${ viewport.name } [${ colorMode }] (${ origin }): ${ ( result.diffRatio * 100 ).toFixed( 3 ) }% pixels differ, SSIM ${ result.ssim.toFixed( 4 ) } — ${ result.verdict.toUpperCase() }`
+					`${ mark } ${ kind } @ ${ viewport.name } [${ colorMode }] (${ origin }): ${ ( result.diffRatio * 100 ).toFixed( 3 ) }% pixels differ, SSIM ${ result.ssim.toFixed( 4 ) } — ${ verdictLabel }`
 				);
 				for ( const reason of result.reasons ) {
 					console.log( `  ${ reason }` );
@@ -2139,34 +2214,59 @@ async function runVerify( profileRef, options ) {
 					await writeFile( join( artifacts, `pixel-diff-${ viewport.name }${ suffix }.png` ), diff ).catch( () => {} );
 				}
 				if ( result.verdict === 'fail' ) {
-					pixelFailures++;
-					process.exitCode = 1;
+					stat.fail++;
+					if ( ! advisory ) {
+						process.exitCode = 1;
+					}
 				} else if ( result.verdict === 'warn' ) {
-					pixelWarnings++;
+					stat.warn++;
 				}
 			}
 		}
 		if ( recorded > 0 ) {
 			console.log( `\u2713 Pixel baseline: recorded ${ recorded } capture(s) under ${ join( options.target, 'verify-artifacts' ) }.` );
 		}
-		if ( compared === 0 && recorded === 0 ) {
+		const comparedTotal = pixelStats.source.compared + pixelStats.baseline.compared;
+		const failureTotal = pixelStats.source.fail + pixelStats.baseline.fail;
+		if ( comparedTotal === 0 && recorded === 0 ) {
 			console.warn( '\u26a0 Pixel: nothing was compared (no source screenshots). The gate is NOT a pass.' );
 			if ( options.strictPixel ) {
 				process.exitCode = 1;
 			}
-		} else if ( compared > 0 && pixelFailures === 0 ) {
-			console.log( `\u2713 Pixel: ${ compared } capture(s) within tolerance.` );
+		} else if ( comparedTotal > 0 && failureTotal === 0 ) {
+			console.log( `\u2713 Pixel: ${ comparedTotal } capture(s) within tolerance.` );
 		}
-		if ( compared > 0 ) {
+		// One scorecard line per comparison KIND, so a build-vs-build diff can never
+		// be read as parity — the distinction the baseline-review discipline rests on.
+		for ( const [ origin, gateName, resolution ] of [
+			[ 'source', 'pixel parity', parityPolicy ],
+			[ 'baseline', 'pixel regression', regressionPolicy ],
+		] ) {
+			const stat = pixelStats[ origin ];
+			if ( stat.compared === 0 ) {
+				continue;
+			}
+			const status =
+				stat.fail > 0
+					? resolution.mode === 'advisory'
+						? 'advisory'
+						: 'fail'
+					: stat.warn > 0
+						? 'warn'
+						: 'pass';
 			record(
-				'pixel parity',
-				pixelFailures > 0 ? 'fail' : pixelWarnings > 0 ? 'warn' : 'pass',
-				`${ compared } capture(s) (${ pixelModes.join( '+' ) }), ${ pixelFailures } fail, ${ pixelWarnings } warn`
+				gateName,
+				status,
+				`${ stat.compared } capture(s) (${ pixelModes.join( '+' ) }), ${ stat.fail } fail, ${ stat.warn } warn`,
+				gateNote( resolution )
 			);
-		} else if ( recorded > 0 ) {
-			record( 'pixel parity', 'skip', `baseline recorded (${ recorded } capture(s))` );
-		} else {
-			record( 'pixel parity', 'skip', 'no baseline or source screenshots' );
+		}
+		if ( comparedTotal === 0 ) {
+			if ( recorded > 0 ) {
+				record( 'pixel parity', 'skip', `baseline recorded (${ recorded } capture(s))` );
+			} else {
+				record( 'pixel parity', 'skip', 'no baseline or source screenshots' );
+			}
 		}
 	}
 
@@ -2512,7 +2612,7 @@ program
 	.option( '--pixel-threshold <n>', 'with --pixel: per-pixel sensitivity 0-1 (default 0.1)', '0.1' )
 	.option( '--pixel-max-diff <n>', 'with --pixel: fail above this differing-pixel ratio (default 0.001 = 0.1%)', '0.001' )
 	.option( '--pixel-min-ssim <n>', 'with --pixel: fail below this SSIM (default 0.98)', '0.98' )
-	.option( '--strict-pixel', 'with --pixel: fail when no source screenshot could be compared' )
+	.option( '--strict-pixel', 'with --pixel: force the parity gate to BLOCK, overriding verify.gates (also fails when nothing could be compared)' )
 	.option( '--colors', 'diff the build\u0027s computed body/header/footer colours against the recorded baseline (CIEDE2000; needs `analyze --colors`; requires Playwright)' )
 	.option( '--colors-warn <n>', 'with --colors: \u0394E00 at/above this warns (default 3)', '3' )
 	.option( '--colors-fail <n>', 'with --colors: \u0394E00 at/above this fails (default 6)', '6' )
