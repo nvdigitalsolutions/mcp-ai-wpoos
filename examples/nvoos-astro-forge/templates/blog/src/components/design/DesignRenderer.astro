@@ -498,31 +498,30 @@ const bandBoxCss = sections
 	.map( ( section, index ) => {
 		const theme = themeFor( section, index );
 		const id = section.id ?? theme?.id;
-		const box = theme?.box;
-		if ( ! id || ! box ) {
+		if ( ! id || ( ! theme?.box && ! theme?.media ) ) {
 			return '';
 		}
 		const scoped = `[data-section-id="${ id }"]`;
-		return Object.entries( box )
-			.map( ( [ name, fact ] ) => {
-				const rules: string[] = [];
-				if ( fact.base ) {
-					rules.push( `${ scoped } .${ name }{${ fact.base }}` );
-				}
-				// EXCLUSIVE ranges, unlike the utility pack: a measured value is an
-				// ABSOLUTE box, so a tablet reading must never leak below 768px. A
-				// Bootstrap `.container` measures `margin: 0 42px` at tablet, and a
-				// cascading `max-width: 1024px` query carried that 42px into a 390px
-				// phone (the built column came out 274px against the source's 360).
-				if ( fact.tablet ) {
-					rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ scoped } .${ name }{${ fact.tablet }}}` );
-				}
-				if ( fact.mobile ) {
-					rules.push( `@media (max-width: 767px){${ scoped } .${ name }{${ fact.mobile }}}` );
-				}
-				return rules.join( '' );
-			} )
-			.join( '' );
+		// `media` is the cropped-image height map: an IMAGE-only scope, because a
+		// class can sit on a paragraph too (`padding-six-lr` does both) and the
+		// fixed image height must never reach the text.
+		const emit = ( facts: Record< string, { base?: string; tablet?: string; mobile?: string } > | undefined, selectorPrefix: string ): string =>
+			Object.entries( facts ?? {} )
+				.map( ( [ name, fact ] ) => {
+					const rules: string[] = [];
+					if ( fact.base ) {
+						rules.push( `${ scoped } ${ selectorPrefix }.${ name }{${ fact.base }}` );
+					}
+					if ( fact.tablet ) {
+						rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ scoped } ${ selectorPrefix }.${ name }{${ fact.tablet }}}` );
+					}
+					if ( fact.mobile ) {
+						rules.push( `@media (max-width: 767px){${ scoped } ${ selectorPrefix }.${ name }{${ fact.mobile }}}` );
+					}
+					return rules.join( '' );
+				} )
+				.join( '' );
+		return `${ emit( theme.box, '' ) }${ emit( theme.media, 'img' ) }`;
 	} )
 	.join( '' );
 ---

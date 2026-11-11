@@ -46,6 +46,27 @@ describe('sanitizeHtml — content passes', () => {
 		const out = sanitizeHtml('<a href="mailto:hi@example.com">mail</a>');
 		expect(out).toContain('href="mailto:hi@example.com"');
 	});
+
+	it('keeps the builder CLASS on headings (its own type/spacing scale)', () => {
+		// A builder styles by class: `panel-title` carries the accordion heading's
+		// box. Losing it left the rebuilt heading at the template's prose defaults
+		// (virtuallyjamaica, 2026-11-11).
+		const out = sanitizeHtml(
+			'<h4 class="panel-title" style="color:#262626 !important">Title</h4>'
+		);
+
+		expect(out).toContain('class="panel-title"');
+		// The class survives; every other attribute on the tag still dies.
+		expect(out).not.toContain('style=');
+	});
+
+	it('STILL strips the class on <p> — a known gap, not an oversight', () => {
+		// Restoring paragraph classes needs a per-device paragraph type fact first;
+		// without it the measured margins/scale overshoot (see sanitize.ts). This
+		// test documents the current contract so the change is deliberate.
+		const out = sanitizeHtml('<p class="text-extra-large">Body</p>');
+		expect(out).toBe('<p>Body</p>');
+	});
 });
 
 describe('sanitizeHtml — vectors die', () => {

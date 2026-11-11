@@ -337,7 +337,13 @@ const chromeVars = [
 						{chrome.call.label}
 					</a>
 				)}
-				<ThemeToggle />
+				{/*
+				 * The toggle is an ADDITION: it renders only when the SOURCE exposes a
+				 * theme control. A site with no dark mode gets a stray button otherwise
+				 * (virtuallyjamaica's header carried a floating `light` control). Dark
+				 * mode itself still follows `prefers-color-scheme` via the boot ladder.
+				 */}
+				{chrome?.themeToggle && <ThemeToggle />}
 			</div>
 		</header>
 		<main class="site-main">

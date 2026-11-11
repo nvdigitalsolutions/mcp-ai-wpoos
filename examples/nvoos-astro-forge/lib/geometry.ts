@@ -408,7 +408,7 @@ function collectBandBoxFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
-} ): Record< string, Record< string, MeasuredBox > > {
+} ): Record< string, { boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox > } > {
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -441,7 +441,7 @@ function collectBandBoxFacts( input: {
 	// grid, so the measured sheet restates the COLUMN and module boxes — which is
 	// where the source's layout actually lives — and leaves the scaffolding alone.
 	const SCAFFOLDING = /(^|\s)(container|container-fluid|row|vc_row|wpb_row|vc_row-fluid)(\s|$)/;
-	const out: Record< string, Record< string, MeasuredBox > > = {};
+	const out: Record< string, { boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox > } > = {};
 	for ( const id of input.ids ) {
 		// The band root — same ladder as `collectBandTypeFacts`, duplicated because
 		// Playwright ships this function's source without any module scope.
@@ -471,8 +471,12 @@ function collectBandBoxFacts( input: {
 		if ( ! element ) {
 			continue;
 		}
-		// class → the distinct values seen, plus whether any instance is an image.
-		const seen = new Map< string, { pads: Set< string >; mars: Set< string >; heights: Set< string > } >();
+		// class → the distinct values seen. Box facts and MEDIA heights are kept
+		// apart on purpose: a class can sit on an image AND on a paragraph
+		// (`padding-six-lr` does both), and a cropped image's fixed height applied
+		// to the paragraph made it 712px tall (virtuallyjamaica, 2026-11-11).
+		const seen = new Map< string, { pads: Set< string >; mars: Set< string > } >();
+		const mediaHeights = new Map< string, Set< string > >();
 		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
 			const classes = ( node.getAttribute( 'class' ) ?? '' ).split( /\s+/ ).filter( Boolean );
 			if ( classes.length === 0 ) {
@@ -498,13 +502,18 @@ function collectBandBoxFacts( input: {
 			}
 			for ( const name of classes ) {
 				if ( ! seen.has( name ) ) {
-					seen.set( name, { pads: new Set(), mars: new Set(), heights: new Set() } );
+					seen.set( name, { pads: new Set(), mars: new Set() } );
 				}
-				const entry = seen.get( name ) as { pads: Set< string >; mars: Set< string >; heights: Set< string > };
+				const entry = seen.get( name ) as { pads: Set< string >; mars: Set< string > };
 				entry.pads.add( pad );
 				entry.mars.add( mar );
 				if ( height ) {
-					entry.heights.add( height );
+					// Recorded against the class but emitted as `img.<class>` ONLY — a
+					// class shared with a paragraph must never carry the image's height.
+					if ( ! mediaHeights.has( name ) ) {
+						mediaHeights.set( name, new Set() );
+					}
+					( mediaHeights.get( name ) as Set< string > ).add( height );
 				}
 			}
 		}
@@ -523,14 +532,17 @@ function collectBandBoxFacts( input: {
 			if ( entry.mars.size === 1 ) {
 				box.mar = mar;
 			}
-			if ( entry.heights.size === 1 ) {
-				box.height = [ ...entry.heights ][ 0 ];
-			}
 			if ( Object.keys( box ).length > 0 ) {
 				facts[ name ] = box;
 			}
 		}
-		out[ id ] = facts;
+		const media: Record< string, MeasuredBox > = {};
+		for ( const [ name, heights ] of mediaHeights ) {
+			if ( heights.size === 1 ) {
+				media[ name ] = { height: [ ...heights ][ 0 ] };
+			}
+		}
+		out[ id ] = { boxes: facts, media };
 	}
 	return out;
 }
@@ -735,9 +747,14 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< Reco
 				...( desktopFacts.body ? { body: { ...desktopFacts.body } } : {} ),
 			};
 			attachDeviceOverrides( band, tablet[ id ], mobile[ id ] );
-			const box = mergeBoxFacts( desktopBox[ id ], tabletBox[ id ], mobileBox[ id ] );
+			const box = mergeBoxFacts( desktopBox[ id ]?.boxes, tabletBox[ id ]?.boxes, mobileBox[ id ]?.boxes );
 			if ( box ) {
 				band.box = box;
+			}
+			// Cropped-media heights are their own map, emitted as `img.<class>`.
+			const media = mergeBoxFacts( desktopBox[ id ]?.media, tabletBox[ id ]?.media, mobileBox[ id ]?.media );
+			if ( media ) {
+				band.media = media;
 			}
 			const hidden = signaturesHiddenAtBoth( desktopHidden[ id ], mobileHidden[ id ] );
 			if ( hidden.length > 0 ) {

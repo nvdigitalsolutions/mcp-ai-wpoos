@@ -78,6 +78,14 @@ export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
 		img: ['src', 'alt', 'title', 'width', 'height', 'srcset', 'sizes', 'loading', 'decoding', 'class'],
 		figure: ['class'],
 		figcaption: ['class'],
+		// NOTE (2026-11-11): `p` deliberately does NOT keep its class YET. A builder
+		// styles paragraphs by class (`text-extra-large`, `padding-six-lr`), and
+		// stripping them costs fidelity — but restoring them without per-device
+		// PARAGRAPH typography facts overshoots (virtuallyjamaica's about band went
+		// 742 → 777px and features desktop 1339 → 1876px until the media-height
+		// split landed). Land `p: ['class']` together with a paragraph type fact
+		// (`bandFacts[].type.paragraph`) and per-class media scoping.
+		//   p: ['class'],
 		blockquote: ['class', 'cite'],
 		code: ['class'],
 		pre: ['class'],

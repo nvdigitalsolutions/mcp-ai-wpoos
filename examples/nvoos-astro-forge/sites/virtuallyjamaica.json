@@ -1101,14 +1101,14 @@
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"brando_image_1526537328-2-10": {
-					"base": "padding:0px 38.84px 0px 38.84px;margin:0px 0px 0px 0px;height:318.2px",
-					"tablet": "padding:0px 50.39px 0px 50.39px;margin:0px 0px 0px 0px;height:412.81px",
-					"mobile": "padding:0px 25.19px 0px 25.19px;margin:0px 0px 0px 0px;height:206.41px"
+					"base": "padding:0px 38.84px 0px 38.84px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 50.39px 0px 50.39px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 25.19px 0px 25.19px;margin:0px 0px 0px 0px"
 				},
 				"padding-seven-lr": {
-					"base": "padding:0px 38.84px 0px 38.84px;margin:0px 0px 0px 0px;height:318.2px",
-					"tablet": "padding:0px 50.39px 0px 50.39px;margin:0px 0px 0px 0px;height:412.81px",
-					"mobile": "padding:0px 25.19px 0px 25.19px;margin:0px 0px 0px 0px;height:206.41px"
+					"base": "padding:0px 38.84px 0px 38.84px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 50.39px 0px 50.39px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 25.19px 0px 25.19px;margin:0px 0px 0px 0px"
 				},
 				"brando_column_1526991330-2-100": {
 					"base": "padding:0px 15px 0px 15px;margin:0px 0px 0px 0px",
@@ -1189,6 +1189,18 @@
 				},
 				"btn": {
 					"base": "padding:5px 14px 5px 14px;margin:0px 0px 0px 0px"
+				}
+			},
+			"media": {
+				"brando_image_1526537328-2-10": {
+					"base": "height:318.2px",
+					"tablet": "height:412.81px",
+					"mobile": "height:206.41px"
+				},
+				"padding-seven-lr": {
+					"base": "height:318.2px",
+					"tablet": "height:412.81px",
+					"mobile": "height:206.41px"
 				}
 			},
 			"classes": [
@@ -1662,14 +1674,9 @@
 					"mobile": "padding:25.19px 15px 0px 15px;margin:0px 0px 0px 0px"
 				},
 				"brando_image_1526553791-2-35": {
-					"base": "padding:0px 32.39px 0px 32.39px;margin:0px 0px 0px 0px;height:711.5px",
-					"tablet": "padding:0px 41.39px 0px 41.39px;margin:0px 0px 0px 0px;height:909.14px",
-					"mobile": "padding:0px 19.8px 0px 19.8px;margin:0px 0px 0px 0px;height:434.8px"
-				},
-				"padding-six-lr": {
-					"base": "height:711.5px",
-					"tablet": "height:909.14px",
-					"mobile": "height:434.8px"
+					"base": "padding:0px 32.39px 0px 32.39px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 41.39px 0px 41.39px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 19.8px 0px 19.8px;margin:0px 0px 0px 0px"
 				},
 				"brando_inner_column_1526554583-2-30": {
 					"base": "padding:0px 15px 0px 15px;margin:57px 0px 0px 0px",
@@ -1776,6 +1783,18 @@
 				},
 				"icon-target": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"media": {
+				"brando_image_1526553791-2-35": {
+					"base": "height:711.5px",
+					"tablet": "height:909.14px",
+					"mobile": "height:434.8px"
+				},
+				"padding-six-lr": {
+					"base": "height:711.5px",
+					"tablet": "height:909.14px",
+					"mobile": "height:434.8px"
 				}
 			},
 			"hidden": [
@@ -2521,7 +2540,7 @@
 				"wpcf7-form": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"resetting": {
+				"init": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"hidden-fields-container": {
@@ -2571,10 +2590,6 @@
 				},
 				"wpcf7-response-output": {
 					"base": "padding:2.6px 13px 2.6px 13px;margin:26px 0px 13px 0px"
-				},
-				"init": {
-					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
-					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				}
 			},
 			"hidden": [
@@ -2609,7 +2624,6 @@
 				"margin-lr-auto",
 				"margin-two-bottom",
 				"padding-lr-15px",
-				"resetting",
 				"row",
 				"screen-reader-response",
 				"sm-width-100",

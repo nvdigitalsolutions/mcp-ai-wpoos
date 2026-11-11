@@ -708,6 +708,14 @@ export interface ForgeBandFacts {
 	 * hand-authored approximation.
 	 */
 	box?: BandBoxFacts;
+	/**
+	 * Cropped-media heights, keyed by class and emitted ONLY as `img.<class>`.
+	 *
+	 * Kept apart from `box` because a class can sit on an image AND on a
+	 * paragraph (`padding-six-lr` does both) — a fixed 711.5px image height
+	 * applied to the paragraph made it 712px tall (virtuallyjamaica, 2026-11-11).
+	 */
+	media?: BandBoxFacts;
 }
 
 /** The contact band copy (see `SiteProfile.contact`, issue #7549). */
@@ -1062,6 +1070,15 @@ export interface ForgeChrome {
 	footerBarBg?: string;
 	/** The copyright bar's text color (usually translucent white). */
 	footerBarInk?: string;
+	/**
+	 * True when the SOURCE exposes a theme / colour-mode control.
+	 *
+	 * The template ships a theme toggle unconditionally, which is an addition the
+	 * source may not have — virtuallyjamaica has no dark mode at all and rendered
+	 * a stray `light` button in its header. Absent/false → the toggle is not
+	 * rendered (dark mode still follows `prefers-color-scheme`).
+	 */
+	themeToggle?: boolean;
 	/** The chrome base font-size — header/topbar/footer run at the source's
 	 * chrome size, NOT the content body scale (jayainc: 16px chrome over
 	 * a 13px content body). */

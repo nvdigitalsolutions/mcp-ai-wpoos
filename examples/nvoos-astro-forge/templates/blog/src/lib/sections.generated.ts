@@ -63,6 +63,8 @@ export interface SectionTheme {
 	 * these are computed values re-stated verbatim. Emitted AFTER `utilities`, so
 	 * a measured value outranks a hand-authored approximation. */
 	box?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
+	/** Cropped-media heights, emitted as `img.<class>` only. */
+	media?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
 	/** The boxed container width (the source constrains its content —
 	 * jayainc's Elementor 1140px default). Absent → the site measure. */
 	measure?: string;

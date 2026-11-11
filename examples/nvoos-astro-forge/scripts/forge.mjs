@@ -1976,6 +1976,35 @@ async function runVerify( profileRef, options ) {
 	if ( options.pixel && ! ( await browserAvailable() ) ) {
 		console.warn( '\u26a0 Pixel: skipped \u2014 Playwright/Chromium is not available in this environment.' );
 		record( 'pixel parity', 'skip', 'browser unavailable' );
+	} else if ( options.pixel && options.pixelRecordSource ) {
+		// Record the SOURCE side of the pixel gate. `--pixel-baseline` captures the
+		// BUILD (a regression baseline); real parity needs the source, and the
+		// capture seam is `verify-artifacts/source-<viewport>.png`. Storing it once
+		// keeps the gate repeatable and offline afterwards.
+		const artifacts = join( options.target, 'verify-artifacts' );
+		const masks = Array.isArray( options.pixelMask ) ? options.pixelMask : [];
+		const sourceModes =
+			options.pixelMode === 'both' ? [ 'light', 'dark' ] : [ options.pixelMode === 'dark' ? 'dark' : 'light' ];
+		const multiMode = sourceModes.length > 1;
+		await mkdir( artifacts, { recursive: true } ).catch( () => {} );
+		let written = 0;
+		for ( const colorMode of sourceModes ) {
+			const suffix = multiMode ? `-${ colorMode }` : '';
+			for ( const viewport of DEFAULT_GEOMETRY_VIEWPORTS ) {
+				try {
+					const shot = await capturePage( { url: profile.url, viewport, masks, mode: colorMode } );
+					await writeFile( join( artifacts, `source-${ viewport.name }${ suffix }.png` ), shot.png );
+					written++;
+					console.log( `  source @ ${ viewport.name } [${ colorMode }] ${ viewport.width }\u00d7${ viewport.height } \u2014 recorded` );
+				} catch ( error ) {
+					console.warn( `\u26a0 Pixel: source capture failed @ ${ viewport.name } [${ colorMode }] \u2014 ${ error instanceof Error ? error.message : error }` );
+				}
+			}
+		}
+		if ( written > 0 ) {
+			console.log( `\u2713 Pixel source: recorded ${ written } capture(s) under ${ artifacts } \u2014 run \`verify --pixel\` to diff against them.` );
+		}
+		record( 'pixel parity', 'skip', `source recorded (${ written } capture(s))` );
 	} else if (
 		options.pixel &&
 		! options.pixelBaseline &&
@@ -2038,13 +2067,18 @@ async function runVerify( profileRef, options ) {
 					continue;
 				}
 				// Suffixed name first; the unsuffixed name is the light-mode legacy.
-				const baseline =
-					( await readArtifact( artifacts, `baseline-${ viewport.name }${ suffix }` ) ) ??
-					( colorMode === 'light' ? await readArtifact( artifacts, `baseline-${ viewport.name }` ) : undefined );
-				const sourceShot = baseline
+				// PREFER the SOURCE capture: `--pixel` is the parity gate, and letting a
+				// recorded regression baseline shadow it silently downgrades the run to
+				// build-vs-build — which then reports SSIM 1.0000 and hides real drift
+				// (virtuallyjamaica, 2026-11-11). The baseline is the fallback for sites
+				// whose source cannot be reached.
+				const sourceShot =
+					( await readArtifact( artifacts, label ) ) ??
+					( colorMode === 'light' ? await readArtifact( artifacts, `source-${ viewport.name }` ) : undefined );
+				const baseline = sourceShot
 					? undefined
-					: ( await readArtifact( artifacts, label ) ) ??
-						( colorMode === 'light' ? await readArtifact( artifacts, `source-${ viewport.name }` ) : undefined );
+					: ( await readArtifact( artifacts, `baseline-${ viewport.name }${ suffix }` ) ) ??
+					  ( colorMode === 'light' ? await readArtifact( artifacts, `baseline-${ viewport.name }` ) : undefined );
 				let source;
 				const origin = baseline ? 'baseline' : 'source';
 				if ( baseline ) {
@@ -2060,7 +2094,7 @@ async function runVerify( profileRef, options ) {
 				}
 				if ( ! source ) {
 					console.warn(
-						`\u26a0 Pixel: no comparison image for ${ viewport.name } [${ colorMode }] — record one with --pixel-baseline, drop verify-artifacts/${ label }.png (at ${ viewport.width }\u00d7${ viewport.height }) or pass --pixel-live.`
+						`\u26a0 Pixel: no comparison image for ${ viewport.name } [${ colorMode }] \u2014 run \`verify --pixel-record-source\` (the parity seam), drop verify-artifacts/${ label }.png (at ${ viewport.width }\u00d7${ viewport.height }), or pass --pixel-live.`
 					);
 					continue;
 				}
@@ -2472,6 +2506,7 @@ program
 	.option( '--pixel', 'compare SOURCE and BUILT screenshots pixel-for-pixel (pixelmatch delta + SSIM; requires Playwright)' )
 	.option( '--pixel-baseline', 'with --pixel: record THIS build as the pixel baseline (verify-artifacts/baseline-<viewport>.png); later runs diff against it' )
 	.option( '--pixel-live', 'with --pixel: capture the SOURCE live instead of using verify-artifacts/source-<viewport>.png' )
+	.option( '--pixel-record-source', 'capture the SOURCE screenshots into verify-artifacts/source-<viewport>.png (the parity seam) — no comparison; run `verify --pixel` afterwards' )
 	.option( '--pixel-mask <selector...>', 'with --pixel: CSS selectors of dynamic regions to mask (carousels, clocks)', [] )
 	.option( '--pixel-mode <mode>', 'with --pixel: colour scheme to capture — light, dark, or both (default light)', 'light' )
 	.option( '--pixel-threshold <n>', 'with --pixel: per-pixel sensitivity 0-1 (default 0.1)', '0.1' )

@@ -19,6 +19,7 @@ import {
 	normalizeColor,
 	resolveSectionTheme,
 	scoreParity,
+	sourceHasThemeToggle,
 	suggestContrastFixes,
 	stylesheetLinks,
 	verifyBandFlow,
@@ -707,6 +708,42 @@ describe( 'scoreParity + analyzeBuiltCss', () => {
 		const built = analyzeBuiltCss( ':root { --forge-accent: #6ec1e4; }', 'https://shop.example.com' );
 		expect( scoreParity( source, built, 0.4 ).pass ).toBe( true );
 		expect( scoreParity( source, built, 1 ).pass ).toBe( false );
+	} );
+} );
+
+describe( 'sourceHasThemeToggle — is the theme control the SOURCE has, not ours', () => {
+	it( 'returns false for a page that never mentions a toggle', () => {
+		expect( sourceHasThemeToggle( '<html><body><header><nav><a href="/">Home</a></nav></header></body></html>' ) ).toBe( false );
+	} );
+
+	it( 'recognises the common toggle namings', () => {
+		const shapes = [
+			'<button data-theme-toggle></button>',
+			'<button class="theme-toggle"></button>',
+			'<button class="dark-mode-switch"></button>',
+			'<a class="color-mode-toggle" href="#">x</a>',
+			'<button aria-label="Dark mode"></button>',
+			'<button>Colour scheme</button>',
+			'<div class="wp-dark-mode-switch"></div>',
+		];
+		for ( const shape of shapes ) {
+			expect( sourceHasThemeToggle( `<body>${ shape }</body>` ), shape ).toBe( true );
+		}
+	} );
+
+	it( 'does NOT mistake a layout class for a toggle', () => {
+		for ( const shape of [
+			'<header class="theme-header"></header>',
+			'<div class="color-mode-banner"></div>',
+			'<p>We mention dark mode in passing here, at some length.</p>',
+		] ) {
+			expect( sourceHasThemeToggle( `<body>${ shape }</body>` ), shape ).toBe( false );
+		}
+	} );
+
+	it( 'ignores a long paragraph that happens to name a colour scheme', () => {
+		const text = 'Our colour scheme choices are described at length in this paragraph of body copy.';
+		expect( sourceHasThemeToggle( `<body><p>${ text }</p></body>` ) ).toBe( false );
 	} );
 } );
 
