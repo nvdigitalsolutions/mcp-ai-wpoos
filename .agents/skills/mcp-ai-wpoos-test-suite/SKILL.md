@@ -1225,6 +1225,28 @@ the changed files is the substantive gate; plan CI waits accordingly.
       fails intermittently in a full parallel `npm test` run and passes in
       isolation. Re-run the single file before hunting for a real regression —
       and never write to the registry from another suite.
+  93. **A bundled MCP Adapter copy fails whichever test boots REST first**
+      (2026-11-11 CI full suite: `Test_MCP_App_Chat_Exposure::
+      test_rest_pre_dispatch_registers_bridges_for_tools_route`).
+      WooCommerce/Elementor/Rank Math each ship `wordpress/mcp-adapter` in
+      their vendor dirs. `McpAdapter::init()` (hooked on `rest_api_init` at
+      priority 15) calls `check_plugin_loaded()`, which fires
+      `_deprecated_function( 'WP\MCP\Core\McpAdapter', '0.7.0', '…is
+      currently loaded as a bundled dependency instead of via the canonical
+      MCP Adapter plugin…' )` whenever `WP_MCP_VERSION` is undefined — always
+      true under PHPUnit, where the canonical plugin is never loaded. That
+      method then defines the constant, so the notice fires exactly once per
+      process and the failing test moves with test order. Fix in
+      `tests/bootstrap.php` beside the other MCP kill switches: a
+      `rest_api_init` priority-0 callback that seeds
+      `define( 'WP_MCP_VERSION', \WP\MCP\Core\McpAdapter::VERSION )` when
+      the class is autoloadable — the exact signal the check looks for, read
+      from the bundled copy so it cannot drift. Reproduce locally (no
+      WooCommerce/Elementor on this host) with a throwaway, gitignored
+      `.codex-wordpress/wordpress/wp-content/plugins/woocommerce/woocommerce.php`
+      fixture defining the class and hooking `rest_api_init` at 15; a
+      `--bootstrap tests/bootstrap-nofix.php` copy without the callback
+      reproduces the original failure.
 
 ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
