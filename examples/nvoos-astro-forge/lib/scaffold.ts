@@ -27,7 +27,7 @@ import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
 import { consentCategoryFor, cspDirectivesFor } from './tracking.ts';
-import type { BandTypeFact, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -35,6 +35,10 @@ export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
 /** Files vendored into every generated project under `src/forge/`. */
 export const FORGE_LIB_FILES = [
 	'types.ts',
+	// `types.ts` imports `ForgeVerify` from here, so the module must exist in the
+	// customer repo even though only the CLI reads the policy at runtime —
+	// otherwise `astro check` fails ts(2307) in every generated project.
+	'gate-policy.ts',
 	'wp-client.ts',
 	'sanitize.ts',
 	'wp-loader.ts',
@@ -954,25 +958,32 @@ export function renderTokensDtcg( profile: SiteProfile, tokens: Record<string, s
 }
 
 /**
- * Below this the band is a strip (a logo rail, a spacer, a one-line banner)
- * whose height is content-driven anyway; mirroring it would pin a value the
- * rebuild's own type scale should decide.
- */
-/**
  * The template's own side gutter at the desktop breakpoint
  * (`clamp(1rem, 4vw, 2rem)` = 32px per side). A measured container width is a
- * CONTENT width, so the band's scoped `max-width` must add the two gutters back
- * — otherwise every measured band renders 64px narrower than its source.
+ * CONTENT width, so the band's scoped `max-width` must add the two gutters back.
+ *
+ * LEGACY ONLY — a profile measured before `ForgeBandFacts.container` existed has
+ * no per-device gutter to use, and this desktop-derived compensation was wrong
+ * at every other breakpoint (see `measuredContainer`). Re-analysing the site
+ * replaces it with the measured fact.
  */
 const BAND_GUTTER_PX = 64;
 
 /**
  * A measured container wider than this is FLUID (`.container-fluid`: 1410px of a
- * 1440px viewport), not boxed (`.container`: 1140px). The rebuild widens a fluid
- * band to the viewport; a boxed one keeps the template gutter.
+ * 1440px viewport), not boxed (`.container`: 1140px).
+ *
+ * LEGACY ONLY, like `BAND_GUTTER_PX`: it is an ABSOLUTE width applied at every
+ * viewport, which is precisely the per-viewport bug `ForgeBandFacts.container`
+ * fixes. It survives solely so an un-re-analysed profile scaffolds as it did.
  */
 const FLUID_CONTAINER_MIN = 1300;
 
+/**
+ * Below this the band is a strip (a logo rail, a spacer, a one-line banner)
+ * whose height is content-driven anyway; mirroring it would pin a value the
+ * rebuild's own type scale should decide.
+ */
 const MIN_MIRRORED_BAND_HEIGHT = 120;
 
 /**
@@ -1033,6 +1044,80 @@ function measuredBandPadding(
 		desktop,
 		...( tablet ? { tablet } : {} ),
 		...( mobile ? { mobile } : {} ),
+	};
+}
+
+/**
+ * Collapse a per-device length to a plain string when no device that was
+ * actually measured disagrees with desktop.
+ *
+ * An ABSENT device is not a disagreement: the desktop rule is unconditional, so
+ * `{ desktop: '1170px' }` and `'1170px'` emit the same value — the plain form
+ * just stays inline and needs no style-block entry.
+ */
+function collapseDevice( desktop?: string, tablet?: string, mobile?: string ): ResponsiveLength | undefined {
+	if ( ! desktop ) {
+		return undefined;
+	}
+	const differs = ( value?: string ): boolean => value !== undefined && value !== desktop;
+	if ( ! differs( tablet ) && ! differs( mobile ) ) {
+		return desktop;
+	}
+	return { desktop, ...( tablet ? { tablet } : {} ), ...( mobile ? { mobile } : {} ) };
+}
+
+/**
+ * The band's inner container, per device (`ForgeBandFacts.container`).
+ *
+ * Two lengths are needed and neither is a constant. `measure` is the container's
+ * BORDER-BOX width, because the rebuild's `max-width` includes the padding;
+ * `paddingX` is the container's own side gutter. Bootstrap (15px), Elementor
+ * (10px) and Brando (30px) differ from each other, and each differs across
+ * viewports: the old `containerWidth + 64` compensated for a 32px desktop gutter
+ * at 390px, where the template's own gutter is 16, and the fluid branch set 0px
+ * where the source had 15 — so a fluid band rendered 30px wider than its source
+ * on a phone, and wrapped differently.
+ *
+ * A profile analysed before the per-device fact existed falls back to that old
+ * desktop-derived compensation, so re-scaffolding an old profile is unchanged.
+ */
+function measuredContainer(
+	bandFacts: ForgeBandFacts | undefined
+): { measure?: ResponsiveLength; paddingX?: ResponsiveLength } {
+	const at = ( device: 'desktop' | 'tablet' | 'mobile' ): { measure: string; padX: string } | undefined => {
+		const entry = bandFacts?.container?.[ device ];
+		if ( ! entry || ! ( entry.content > 0 ) ) {
+			return undefined;
+		}
+		// 0 is a fact (a genuinely flush container), not an absence — it must
+		// override the template's clamp, exactly as the band padding does.
+		const padX = Number.isFinite( entry.padX ) && entry.padX > 0 ? entry.padX : 0;
+		// A band whose grid cancels the gutter renders FLUSH so its columns span the
+		// container's border-box; the per-column padding is already in the `box`
+		// facts. Applying `padX` there would re-inset a band the source lets bleed
+		// (virtuallyjamaica's #wifi grew 29px taller when it was narrowed by 30px).
+		const sectionPadX = entry.flush ? 0 : padX;
+		return {
+			measure: `${ Math.round( entry.content + padX * 2 ) }px`,
+			padX: `${ Math.round( sectionPadX * 100 ) / 100 }px`,
+		};
+	};
+	const desktop = at( 'desktop' );
+	if ( desktop ) {
+		const tablet = at( 'tablet' );
+		const mobile = at( 'mobile' );
+		return {
+			measure: collapseDevice( desktop.measure, tablet?.measure, mobile?.measure ),
+			paddingX: collapseDevice( desktop.padX, tablet?.padX, mobile?.padX ),
+		};
+	}
+	const width = bandFacts?.containerWidth;
+	if ( typeof width !== 'number' || width <= 0 ) {
+		return {};
+	}
+	return {
+		measure: `${ Math.round( width ) + BAND_GUTTER_PX }px`,
+		paddingX: width >= FLUID_CONTAINER_MIN ? '0px' : undefined,
 	};
 }
 
@@ -1112,10 +1197,13 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t/** The source band padding (the declared padding fact). */',
 		'\tpadding?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\t/** The boxed container width (the source constrains its content —',
-		'\t * jayainc\'s Elementor 1140px default). Absent → the site measure. */',
-		'\tmeasure?: string;',
-		'\t/** The container column-gap gutter (gap-default 10px … wider 30px). */',
-		'\tpaddingX?: string;',
+		'\t * jayainc\'s Elementor 1140px default). Absent → the site measure. A',
+		'\t * per-device map is emitted as scoped CSS: an inline value would',
+		'\t * outrank its own media queries. */',
+		'\tmeasure?: string | { desktop?: string; tablet?: string; mobile?: string };',
+		'\t/** The container side gutter (the source\'s own padding, measured per',
+		'\t * device). Absent → the template clamp. */',
+		'\tpaddingX?: string | { desktop?: string; tablet?: string; mobile?: string };',
 		'\t/** Section-level pull facts (124 §4) — negative margins overlap',
 		'\t * the neighbor band; z-index stacks the overlap. A length may be a',
 		'\t * per-device map where the source scopes the pull to a range. */',
@@ -1227,26 +1315,16 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		// at the site measure: virtuallyjamaica's services band is fluid (1440px)
 		// and came out at 1136px.
 		const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
-		const measuredMeasure =
-			typeof bandFacts?.containerWidth === 'number' && bandFacts.containerWidth > 0
-				? `${ Math.round( bandFacts.containerWidth ) + BAND_GUTTER_PX }px`
-				: undefined;
-		const measure = section.measure ?? measuredMeasure;
+		// The container measure + side gutter, MEASURED per device (114 §3.6). An
+		// explicit profile fact wins; otherwise the source's own container decides.
+		const container = measuredContainer( bandFacts );
+		const measure = section.measure ?? container.measure;
 		if ( measure ) {
-			entry.push( `measure: ${ tsString( measure ) }` );
+			entry.push( `measure: ${ tsLength( measure ) }` );
 		}
-		// A FLUID source band spans the viewport, so the template's own side
-		// padding must not inset it: virtuallyjamaica's #wifi is `.container-fluid`
-		// (measured 1410px of 1440), and the default `clamp(1rem, 4vw, 2rem)` inset
-		// rendered it 1376px wide — 64px narrow, which wrapped every inner column
-		// and grew the band 52px. A boxed `.container` (1140px) keeps the inset.
-		const measuredPaddingX =
-			typeof bandFacts?.containerWidth === 'number' && bandFacts.containerWidth >= FLUID_CONTAINER_MIN
-				? '0px'
-				: undefined;
-		const paddingX = section.paddingX ?? measuredPaddingX;
+		const paddingX = section.paddingX ?? container.paddingX;
 		if ( paddingX ) {
-			entry.push( `paddingX: ${ tsString( paddingX ) }` );
+			entry.push( `paddingX: ${ tsLength( paddingX ) }` );
 		}
 		if ( section.marginTop ) {
 			entry.push( `marginTop: ${ tsLength( section.marginTop ) }` );

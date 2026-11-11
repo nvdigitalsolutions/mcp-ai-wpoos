@@ -1214,6 +1214,17 @@ all general to builder-based sites (detail: reference §6–§10):
   blocking. There is deliberately no `off`, and a build-vs-build diff is
   `pixel regression`, never parity. Precedence is flag → profile → default.
   Full rules in `reference/fidelity-gates.md` §Gate policy.
+- **The band's container is per DEVICE, and neither number is a constant.**
+  `bandFacts[id].container` records the source's inner container per viewport:
+  content width, its own `padX`, and `flush` — whether the band's grid CANCELS
+  that padding (a Bootstrap-family `.row` has a negative margin that pulls the
+  columns back out). `measure` is the BORDER-BOX width (`content + 2*padX`);
+  `paddingX` is `0` when flush. One desktop value plus `BAND_GUTTER_PX = 64` /
+  `FLUID_CONTAINER_MIN = 1300` compensated for a 32px desktop gutter at a viewport
+  where the template's own gutter is 16 — at 834px that rendered boxed bands 770px
+  wide against a 750px source. Both constants are now LEGACY fallbacks only.
+  Per-device maps go to scoped CSS (`responsiveBandCss`), never inline.
+  See `reference/band-geometry.md` §4.
 - **`<p>` still loses its class** (a known gap): restoring it without per-device
   paragraph typography overshoots the band heights. See the note in
   `sanitize.ts` before changing it.

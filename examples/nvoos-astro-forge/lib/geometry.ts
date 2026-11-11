@@ -22,6 +22,7 @@ import type {
 	BandBoxFacts,
 	BandTypeFact,
 	BandTypeProperties,
+	ForgeBandContainer,
 	ForgeBandFacts,
 	ForgeGeometry,
 	ForgeStickyHeader,
@@ -263,8 +264,18 @@ function collectBandTypeFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
-} ): Record< string, { containerWidth: number; headings: Record< string, BandTypeProperties >; body?: BandTypeProperties } > {
-	const pick = ( selector: string ): Element | null => {
+} ): Record<
+		string,
+		{
+				containerWidth: number;
+				containerPadX: number;
+				containerInner: boolean;
+				containerFlush: boolean;
+				headings: Record< string, BandTypeProperties >;
+				body?: BandTypeProperties;
+			}
+	> {
+const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
 		} catch {
@@ -287,8 +298,15 @@ function collectBandTypeFacts( input: {
 	};
 	const facts: Record<
 		string,
-		{ containerWidth: number; headings: Record< string, BandTypeProperties >; body?: BandTypeProperties }
-	> = {};
+		{
+			containerWidth: number;
+			containerPadX: number;
+			containerInner: boolean;
+			containerFlush: boolean;
+			headings: Record< string, BandTypeProperties >;
+			body?: BandTypeProperties;
+		}
+> = {};
 	for ( const id of input.ids ) {
 		const candidates =
 			input.kind === 'built'
@@ -320,17 +338,34 @@ function collectBandTypeFacts( input: {
 		}
 		// The band's inner container: `.container` boxes it, `.container-fluid` is
 		// the viewport. The CONTENT width is what the columns get, so the band's
-		// own gutters are subtracted.
+		// own gutters are subtracted — and recorded, because the rebuild needs them
+		// as its own `--ds-pad-x` (a constant was wrong at every viewport but
+		// desktop).
 		const container =
 			element.querySelector( '.container, .container-fluid' ) ??
 			element.querySelector( '.row, .vc_row, .wpb_row' ) ??
 			element;
+		// Only a DESCENDANT container is a distinct inset. When the band itself is
+		// the container, its padding already reaches the rebuild through the
+		// measured band padding, and emitting it again would double the gutter.
+		const containerInner = container !== element;
 		const containerStyle = getComputedStyle( container );
+		const padLeft = parseFloat( containerStyle.paddingLeft ) || 0;
+		const padRight = parseFloat( containerStyle.paddingRight ) || 0;
 		const containerWidth = Math.round(
-			container.getBoundingClientRect().width -
-				( parseFloat( containerStyle.paddingLeft ) || 0 ) -
-				( parseFloat( containerStyle.paddingRight ) || 0 )
+			container.getBoundingClientRect().width - padLeft - padRight
 		);
+		const containerPadX = Math.round( Math.max( padLeft, padRight ) * 100 ) / 100;
+		// Does the band's own grid cancel that gutter? A Bootstrap-family `.row`
+		// carries a NEGATIVE horizontal margin that pulls its columns back out over
+		// the container's padding. The rebuild's stylesheet never defines `.row`, so
+		// it must compensate with a flush section — measuring the sign is the only
+		// faithful way to know (Brando/Bootstrap: yes; a plain flex theme: no).
+		const firstChild = containerInner ? container.firstElementChild : null;
+		const childMarginLeft = firstChild
+			? parseFloat( getComputedStyle( firstChild ).marginLeft ) || 0
+			: 0;
+		const containerFlush = firstChild !== null && childMarginLeft < 0;
 		const headings: Record< string, BandTypeProperties > = {};
 		for ( const tag of [ 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' ] ) {
 			const nodes = Array.from( element.querySelectorAll( tag ) ).filter(
@@ -369,7 +404,14 @@ function collectBandTypeFacts( input: {
 				body = fact( sampled );
 			}
 		}
-		facts[ id ] = { containerWidth, headings, ...( body ? { body } : {} ) };
+		facts[ id ] = {
+			containerWidth,
+			containerPadX,
+			containerInner,
+			containerFlush,
+			headings,
+			...( body ? { body } : {} ),
+		};
 	}
 	return facts;
 }
@@ -683,7 +725,14 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< Reco
 			device: DeviceKey
 		): Promise< Record<
 			string,
-			{ containerWidth: number; headings: Record< string, BandTypeProperties >; body?: BandTypeProperties }
+			{
+				containerWidth: number;
+				containerPadX: number;
+				containerInner: boolean;
+				containerFlush: boolean;
+				headings: Record< string, BandTypeProperties >;
+				body?: BandTypeProperties;
+			}
 		> > => {
 			const { width, height } = BAND_FACT_VIEWPORTS[ device ];
 			await page.setViewportSize( { width, height } );
@@ -740,12 +789,38 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< Reco
 		} );
 
 		const facts: Record< string, ForgeBandFacts > = {};
+		// The container fact is per device, and only for a container that is a
+		// strict descendant of the band (see `collectBandTypeFacts`): when the band
+		// itself is the container its padding is already the band padding fact.
+		const containerAt = (
+			entry:
+				| {
+						containerWidth: number;
+						containerPadX: number;
+						containerInner: boolean;
+						containerFlush: boolean;
+				  }
+				| undefined
+		): ForgeBandContainer | undefined =>
+			entry && entry.containerInner && entry.containerWidth > 0
+				? { content: entry.containerWidth, padX: entry.containerPadX, flush: entry.containerFlush }
+				: undefined;
 		for ( const [ id, desktopFacts ] of Object.entries( base ) ) {
 			const band: ForgeBandFacts = {
 				containerWidth: desktopFacts.containerWidth,
 				headings: { ...desktopFacts.headings },
 				...( desktopFacts.body ? { body: { ...desktopFacts.body } } : {} ),
 			};
+			const container = {
+				desktop: containerAt( desktopFacts ),
+				tablet: containerAt( tablet[ id ] ),
+				mobile: containerAt( mobile[ id ] ),
+			};
+			if ( container.desktop || container.tablet || container.mobile ) {
+				band.container = Object.fromEntries(
+					Object.entries( container ).filter( ( [ , value ] ) => value !== undefined )
+				) as ForgeBandFacts[ 'container' ];
+			}
 			attachDeviceOverrides( band, tablet[ id ], mobile[ id ] );
 			const box = mergeBoxFacts( desktopBox[ id ]?.boxes, tabletBox[ id ]?.boxes, mobileBox[ id ]?.boxes );
 			if ( box ) {

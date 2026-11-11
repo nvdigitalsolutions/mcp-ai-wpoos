@@ -118,6 +118,48 @@ content. Consequence to state plainly in reports: a floor closes *undershoot*
 (hero 746 → 900) and cannot close *overshoot* (features renders 1439 against a
 1339 source — a content-scale difference, not a box difference).
 
+### `measure` and `paddingX` — per device, and neither is a constant
+
+```ts
+function measuredContainer( bandFacts ): { measure?, paddingX? }
+```
+
+`ForgeBandFacts.container` (`analyze --geometry`) records, per device, the
+source's inner container: its CONTENT width, its own side padding (`padX`), and
+whether the band's grid CANCELS that padding (`flush`).
+
+- **`measure` is the BORDER-BOX width** (`content + 2 * padX`), not the content
+  width. The rebuild's `max-width` includes the padding, so emitting the content
+  width alone renders the band one gutter too narrow.
+- **`paddingX` is `0` when `flush`, otherwise `padX`.** A Bootstrap-family `.row`
+  carries a NEGATIVE horizontal margin that pulls its columns back out over the
+  container's padding — the same pairing that made `.container-fluid` padding and
+  `.row` margin inseparable. The rebuild's stylesheet never defines `.row`, so
+  the section must render flush and let the per-column padding (already in the
+  band's `box` facts) provide the visible gutter. Measured, not assumed: the sign
+  of the first child's `margin-left` decides.
+- **Both are emitted PER DEVICE.** They used to be one desktop value plus the
+  constants `BAND_GUTTER_PX = 64` and `FLUID_CONTAINER_MIN = 1300`, which
+  compensated for a 32px desktop gutter at a viewport where the template's own
+  gutter is 16. Both constants now survive ONLY as the fallback for a profile
+  analysed before the fact existed, so an un-re-analysed profile scaffolds
+  unchanged.
+- A per-device map goes to scoped CSS (`responsiveBandCss`), never inline: an
+  inline value outranks its own media queries. Verified in the built HTML —
+  `[data-section-id="…"]{--ds-measure:1440px}` then
+  `@media (max-width:1024px){…{--ds-measure:834px}}`.
+
+Why it mattered (virtuallyjamaica): at 834px a boxed container measures 720px of
+content with a 15px gutter, so its columns span 750px — the old derivation gave
+770px, 20px wide, and text rewrapped (the sub-1% mobile height warnings). At
+390px a BOXED band rendered 358px against a source 390px.
+
+Verified result: `verify --geometry` went from **0 fail / 2 warn** to **0 fail /
+0 warn** ("every band matches the source box at every viewport"). The pixel gate
+is UNCHANGED by this (11.278% before and after) — the gutter was the geometry
+blocker, not the pixel one, whose causes are the hero offset, the container's
+horizontal placement and an image rendition.
+
 ## 5. Renderer: two bugs worth remembering
 
 `DesignRenderer.astro` `wrapStyle()`:
@@ -196,6 +238,11 @@ Details that matter:
 - `860a86e` features remains: +100 desktop (1439 vs 1339) and +546 mobile. This
   is overshoot, which a `min-height` floor cannot correct. It is a content-scale
   difference inside a raw band.
+
+**2026-11-11:** the two surviving sub-1% mobile warnings (`#features` +15px,
+`#about` +16px) closed with the per-device container measure in §4. `verify
+--geometry` now reports **0 fail / 0 warn** — every band matches the source box at
+every viewport. The pixel gate is unaffected (see §4).
 
 ## 9. Known gap: column inner padding (not yet implemented)
 

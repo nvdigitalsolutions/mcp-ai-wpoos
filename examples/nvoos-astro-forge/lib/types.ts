@@ -689,14 +689,75 @@ export interface BandBoxDeclaration {
 export type BandBoxFacts = Record< string, BandBoxDeclaration >;
 
 /** The measured presentation facts of one source band (see `SiteProfile.bandFacts`). */
+/**
+ * One band's inner container as the browser measured it at one viewport.
+ *
+ * `content` is the width the columns get; `padX` is the container's own side
+ * padding — the source's gutter. Both are needed, because the rebuild's
+ * `max-width` is a BORDER-BOX value: `content + 2 * padX`. Deriving either from
+ * a constant is what made a fluid band full-bleed on a phone (0px of the
+ * source's 15) and left a boxed band 64px-compensated at 390px, where the
+ * template's own gutter is 16.
+ */
+export interface ForgeBandContainer {
+	/** The container's CONTENT width — the columns' available width. */
+	content: number;
+	/**
+	 * The container's own side padding: the LARGER of left/right, in px.
+	 *
+	 * Symmetric in every builder convention (`15px`, `10px`, `1rem`), and
+	 * `--ds-pad-x` can only express one value. On the rare asymmetric container
+	 * this keeps the CONTENT width exact (the `max-width` compensates for both
+	 * sides) and centres a slightly wider box, which is invisible because the
+	 * band background lives on the wrap, not the container.
+	 */
+	padX: number;
+	/**
+	 * Whether the band's own grid CANCELS that gutter.
+	 *
+	 * A Bootstrap-family `.row` carries a NEGATIVE horizontal margin that pulls
+	 * its columns back out over the container's padding — which is why
+	 * `.container` padding and `.row` margin only work as a pair, and why
+	 * restating one without the other shrank virtuallyjamaica's #wifi to 1376px
+	 * against a 1440px source. When this is true the rebuilt band must render
+	 * FLUSH (`--ds-pad-x: 0`) so its columns span the container's border-box; the
+	 * per-column padding is already in the band's `box` facts. False means the
+	 * columns genuinely sit inside the gutter, so `padX` applies.
+	 */
+	flush?: boolean;
+}
+
 export interface ForgeBandFacts {
 	/**
 	 * The width of the band's own inner container. Builder sources box their
 	 * content (`.container`, 1140px) or run fluid (`.container-fluid`, the
 	 * viewport), and the rebuild's site measure is neither — virtuallyjamaica's
 	 * services band renders 1136px against the source's 1440px.
+	 *
+	 * DESKTOP only — legacy. Prefer `container`, which carries every device.
 	 */
 	containerWidth?: number;
+	/**
+	 * The band's inner container, measured per DEVICE (`analyze --geometry`).
+	 *
+	 * One desktop width applied to every viewport made the gutter a desktop
+	 * decision: a fluid band rendered full-bleed on a phone (0px of the source's
+	 * 15) and a boxed band stayed 64px-compensated at 390px, where the template's
+	 * own gutter is 16. The rebuild needs the container's BORDER-BOX width as its
+	 * `max-width` and the container's own side padding as its `--ds-pad-x`, and
+	 * neither is a constant across builders (Bootstrap 15px, Elementor 10px,
+	 * Brando 30px) or across viewports.
+	 *
+	 * Recorded ONLY when the container is a strict descendant of the band. When
+	 * the band itself serves as the container its padding already reaches the
+	 * rebuild through the measured band padding, and emitting it here too would
+	 * apply the same inset twice.
+	 */
+	container?: {
+		desktop?: ForgeBandContainer;
+		tablet?: ForgeBandContainer;
+		mobile?: ForgeBandContainer;
+	};
 	/** Heading facts keyed by tag (`h1`…`h6`); the band's LARGEST instance wins. */
 	headings?: Record< string, BandTypeFact >;
 	/** The band's body-paragraph fact (the body scale as rendered, not declared). */

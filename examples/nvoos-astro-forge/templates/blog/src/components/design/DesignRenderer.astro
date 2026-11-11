@@ -147,14 +147,16 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 		return undefined;
 	}
 	const parts: string[] = [];
-	// The boxed container measure + column gap (124 §3): the inner column
-	// re-measures to the source's container width (jayainc's 1140px +
-	// gap gutter), never the site measure — the band bg stays full-width.
-	// Theme-agnostic: hero bands are boxed too.
-	if ( theme.measure ) {
+	// The boxed container measure + side gutter (124 §3): the inner column
+	// re-measures to the source's container width, never the site measure — the
+	// band bg stays full-width. Theme-agnostic: hero bands are boxed too.
+	//
+	// A per-device map is emitted as scoped CSS below (see `responsiveBandCss`):
+	// an inline value would outrank its own media queries.
+	if ( typeof theme.measure === 'string' ) {
 		parts.push( `--ds-measure:${ theme.measure }` );
 	}
-	if ( theme.paddingX ) {
+	if ( typeof theme.paddingX === 'string' ) {
 		parts.push( `--ds-pad-x:${ theme.paddingX }` );
 	}
 	// The source band's declared padding (jayainc: the 100px bands vs the
@@ -311,6 +313,9 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 // The per-device half of every band margin AND padding — emitted once, scoped
 // by section id. A padding scoped to a device range needs the same CSS
 // treatment as a scoped pull: an inline value would outrank the media queries.
+// The container measure and side gutter join them for the same reason: both are
+// measured per device (`analyze --geometry`), and a desktop value applied at
+// 390px is what left a fluid band 30px wider than its source on a phone.
 const responsiveBandCss = sections
 	.map( ( section, index ) => {
 		const theme = themeFor( section, index );
@@ -323,7 +328,9 @@ const responsiveBandCss = sections
 			responsiveDeviceCss( id, 'margin-top', theme?.marginTop ) +
 			responsiveDeviceCss( id, 'margin-bottom', theme?.marginBottom ) +
 			responsiveDeviceCss( id, 'padding', theme?.padding ) +
-			responsiveDeviceCss( id, 'min-height', theme?.minHeight )
+			responsiveDeviceCss( id, 'min-height', theme?.minHeight ) +
+			responsiveDeviceCss( id, '--ds-measure', theme?.measure ) +
+			responsiveDeviceCss( id, '--ds-pad-x', theme?.paddingX )
 		);
 	} )
 	.join( '' );

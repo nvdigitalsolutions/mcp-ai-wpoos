@@ -66,10 +66,13 @@ export interface SectionTheme {
 	/** Cropped-media heights, emitted as `img.<class>` only. */
 	media?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
 	/** The boxed container width (the source constrains its content —
-	 * jayainc's Elementor 1140px default). Absent → the site measure. */
-	measure?: string;
-	/** The container column-gap gutter (gap-default 10px … wider 30px). */
-	paddingX?: string;
+	 * jayainc's Elementor 1140px default). Absent → the site measure. A
+	 * per-device map is emitted as scoped CSS: an inline value would
+	 * outrank its own media queries. */
+	measure?: string | { desktop?: string; tablet?: string; mobile?: string };
+	/** The container side gutter (the source's own padding, measured per
+	 * device). Absent → the template clamp. */
+	paddingX?: string | { desktop?: string; tablet?: string; mobile?: string };
 	/** Section-level pull facts (124 §4) — negative margins overlap
 	 * the neighbor band; z-index stacks the overlap. */
 	marginTop?: string | { desktop?: string; tablet?: string; mobile?: string };
