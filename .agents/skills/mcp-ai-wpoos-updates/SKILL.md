@@ -908,7 +908,7 @@ previous window — the user will usually want it back-dated.
 ## References
 
 - **Per-version release-window ledger** - the catch-up narrative for every
-  pass, newest first (1.2.18 back through v1.1.58), each with its plan-file
+  pass, newest first (1.2.19 back through v1.1.58), each with its plan-file
   path and the scope rules it executed: `reference/release-window-ledger.md`.
   Read it when a pass needs the precedent behind a classification decision
   ("uncovered PR", superseded build set, bundled-notes re-sync, ...).
