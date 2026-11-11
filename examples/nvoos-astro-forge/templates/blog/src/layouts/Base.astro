@@ -105,6 +105,23 @@ const anchorLabel = (anchor: string): string =>
 		.replace(/\s+/g, ' ')
 		.trim()
 		.replace(/^./, (first: string) => first.toUpperCase());
+/**
+ * The mobile nav disclosure. Presence and breakpoint both come from the source:
+ * `chrome.navToggle` exists only when the source ships a hamburger, and its
+ * measured `visible` map says which widths it appears at (Brando collapses at
+ * 991px, Bootstrap's default at 768px — a guessed breakpoint either strands
+ * links behind a hidden menu or wraps the nav where the source shows a button).
+ */
+const navToggle = chrome?.navToggle;
+const collapseAt: 'all' | 'tablet' | 'mobile' | 'none' = !navToggle
+	? 'none'
+	: navToggle.visible?.desktop
+		? 'all'
+		: navToggle.visible?.tablet
+			? 'tablet'
+			: navToggle.visible?.mobile
+				? 'mobile'
+				: 'none';
 const hasFeed = manifest.surfaces?.feed !== false;
 /**
  * The source families, canonicalised for Google’s API — which is
@@ -309,7 +326,35 @@ const chromeVars = [
 				</a>
 				{chrome?.tagline && <p class="brand-tagline">{chrome.tagline}</p>}
 			</div>
-			<nav aria-label={copy.nav.primaryLabel}>
+			<div
+				class="site-nav-shell"
+				data-nav-shell
+				data-collapse={collapseAt}
+				data-collapsed="false"
+				data-open="false"
+			>
+				{/*
+				 * The source's own mobile disclosure (a Bootstrap `navbar-toggle`),
+				 * rebuilt as the APG disclosure pattern: a real <button> carrying
+				 * `aria-expanded` + `aria-controls`, with Escape closing it and
+				 * returning focus, and focus leaving the region closing it. The
+				 * measured `visible` facts decide WHERE it collapses, so a source that
+				 * collapses at 991px is not rebuilt against Bootstrap's 768px default.
+				 * Rendered only when the SOURCE had one — no invention.
+				 */}
+				{navToggle && (
+					<button
+						class="site-nav-toggle"
+						type="button"
+						aria-expanded="false"
+						aria-controls="site-nav"
+						data-nav-toggle
+					>
+						<span class="site-nav-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+						<span class="visually-hidden">{navToggle.label ?? copy.nav.menu}</span>
+					</button>
+				)}
+				<nav id="site-nav" aria-label={copy.nav.primaryLabel}>
 				{chrome?.nav && chrome.nav.length > 0 ? (
 					chrome.nav.map((item) => (
 						<a href={item.href}>{item.label}</a>
@@ -332,6 +377,7 @@ const chromeVars = [
 					</>
 				)}
 			</nav>
+		</div>
 			<div class="header-actions">
 				{chrome?.call && (
 					<a class="call-button" href={chrome.call.href} style={chrome.call.bg ? `background:${chrome.call.bg};color:${chrome.call.ink ?? '#ffffff'};` : undefined}>
@@ -407,8 +453,78 @@ const chromeVars = [
 			</div>
 		</footer>
 		{/* Proposal 141 follow-up — builder accordions arrive CLOSED (the measured
-			resting state) with no way back open; this restores the toggle. */}
+				resting state) with no way back open; this restores the toggle. */}
 		<BuilderAccordion />
+		{/* The mobile nav disclosure (APG disclosure pattern). Progressive
+				enhancement: JS-off leaves the nav inline at every width, which is why
+				the stylesheet hides nothing until `data-collapsed` is set here. */}
+		<script>
+			const COLLAPSE_AT: Record<string, string> = {
+				mobile: '(max-width: 767px)',
+				tablet: '(max-width: 1151px)',
+				all: '(max-width: 100000px)',
+				none: '(max-width: 0px)',
+			};
+
+			function initNav(): void {
+				for (const shell of document.querySelectorAll('.site-nav-shell')) {
+					if (!(shell instanceof HTMLElement) || shell.dataset.navReady) continue;
+					shell.dataset.navReady = '1';
+					const toggle = shell.querySelector('.site-nav-toggle');
+					const nav = shell.querySelector('nav');
+					if (!(toggle instanceof HTMLElement) || !nav) continue;
+
+					const query = COLLAPSE_AT[shell.dataset.collapse ?? 'none'] ?? COLLAPSE_AT.none;
+					const mq = window.matchMedia(query);
+					const close = (): void => {
+						shell.dataset.open = 'false';
+						toggle.setAttribute('aria-expanded', 'false');
+					};
+					const sync = (): void => {
+						const collapsed = mq.matches;
+						shell.dataset.collapsed = String(collapsed);
+						if (!collapsed) close();
+						if (collapsed) toggle.setAttribute('aria-expanded', String(shell.dataset.open === 'true'));
+					};
+
+					toggle.addEventListener('click', () => {
+						const open = shell.dataset.open === 'true';
+						shell.dataset.open = String(!open);
+						toggle.setAttribute('aria-expanded', String(!open));
+					});
+
+					// APG: Escape closes and returns focus to the controlling button.
+					shell.addEventListener('keydown', (event) => {
+						if (event.key !== 'Escape' || shell.dataset.open !== 'true') return;
+						event.stopPropagation();
+						close();
+						toggle.focus();
+					});
+
+					// APG / WCAG 1.4.13: moving focus out of the region closes it.
+					shell.addEventListener('focusout', (event) => {
+						const next = event.relatedTarget;
+						if (next instanceof Node && !shell.contains(next)) close();
+					});
+
+					// A same-page anchor leaves the drawer covering the target.
+					nav.addEventListener('click', (event) => {
+						if (event.target instanceof Element && event.target.closest('a')) close();
+					});
+
+					sync();
+					mq.addEventListener('change', sync);
+				}
+			}
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initNav);
+			} else {
+				initNav();
+			}
+			// View transitions swap the document; the listeners would not survive it.
+			document.addEventListener('astro:after-swap', initNav);
+		</script>
 		{/* Proposal 130 — the first-party consent banner (mode: forge only). */}
 		<ConsentBanner />
 	</body>

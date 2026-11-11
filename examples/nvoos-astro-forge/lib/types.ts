@@ -1202,6 +1202,22 @@ export interface ForgeChrome {
 	navStyle?: ForgeChromeStyle;
 	/** The nav link color (usually white on a dark header). */
 	navInk?: string;
+	/**
+	 * The source's own mobile nav disclosure (a Bootstrap `navbar-toggle`, a
+	 * builder's hamburger button).
+	 *
+	 * Absent when the source never collapses its nav — the rebuild then keeps
+	 * the nav inline at every width, which is what the source does too.
+	 * `visible` is the MEASURED presence of the control per viewport, so the
+	 * rebuild collapses exactly where the source does instead of guessing a
+	 * breakpoint (Brando collapses at 991px, Bootstrap's default at 768px).
+	 */
+	navToggle?: {
+		/** The control's accessible name (`Toggle navigation`, `Menu`, …). */
+		label?: string;
+		/** Per-viewport visibility of the control in the source. */
+		visible?: { desktop?: boolean; tablet?: boolean; mobile?: boolean };
+	};
 	/** The header's own background (many one-pagers run a dark header the
 	 * default white chrome must not paint over). */
 	headerBg?: string;

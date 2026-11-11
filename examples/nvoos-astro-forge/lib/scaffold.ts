@@ -1651,6 +1651,13 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'	nav?: Array<{ label: string; href: string }>;',
 		'	navStyle?: ForgeChromeStyle;',
 		'	navInk?: string;',
+		'	/** The source\u2019s own mobile nav disclosure, when it ships one. `visible`',
+		'	 * is the MEASURED presence per viewport, so the rebuild collapses exactly',
+		'	 * where the source does instead of guessing a breakpoint. */',
+		'	navToggle?: {',
+		'		label?: string;',
+		'		visible?: { desktop?: boolean; tablet?: boolean; mobile?: boolean };',
+		'	};',
 		'\theaderBg?: string;',
 		'\theaderInk?: string;',
 		'\t/** The MEASURED resting header is fully transparent (it floats over the',
@@ -1721,6 +1728,24 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	}
 	if ( chrome.navInk ) {
 		entry.push( `navInk: ${ tsString( chrome.navInk ) }` );
+	}
+	if ( chrome.navToggle ) {
+		const toggle: string[] = [];
+		if ( chrome.navToggle.label ) {
+			toggle.push( `label: ${ tsString( chrome.navToggle.label ) }` );
+		}
+		const visible = chrome.navToggle.visible;
+		if ( visible ) {
+			const devices = ( [ 'desktop', 'tablet', 'mobile' ] as const )
+				.filter( ( device ) => typeof visible[ device ] === 'boolean' )
+				.map( ( device ) => `${ device }: ${ visible[ device ] ? 'true' : 'false' }` );
+			if ( devices.length > 0 ) {
+				toggle.push( `visible: { ${ devices.join( ', ' ) } }` );
+			}
+		}
+		if ( toggle.length > 0 ) {
+			entry.push( `navToggle: { ${ toggle.join( ', ' ) } }` );
+		}
 	}
 	if ( chrome.headerBg ) {
 		entry.push( `headerBg: ${ tsString( chrome.headerBg ) }` );

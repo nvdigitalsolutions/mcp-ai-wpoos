@@ -454,6 +454,32 @@ describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
 		delete bare.design!.chrome;
 		expect( renderChromeGenerated( bare ) ).toContain( 'export const chrome: ForgeChrome | undefined = undefined;' );
 	} );
+
+	it( 'bakes the mobile nav disclosure and where it collapses', () => {
+		// Presence + label are markup facts; `visible` is measured in a browser.
+		// A source with no toggle must emit nothing, or every site sprouts a
+		// hamburger over a nav that never collapses.
+		const withToggle: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: {
+					...profile.design!.chrome,
+					navToggle: { label: 'Toggle navigation', visible: { desktop: false, tablet: true, mobile: true } },
+				},
+			},
+		};
+		expect( renderChromeGenerated( withToggle ) ).toContain(
+			"navToggle: { label: 'Toggle navigation', visible: { desktop: false, tablet: true, mobile: true } }"
+		);
+	} );
+
+	it( 'omits the disclosure when the source never collapses its nav', () => {
+		// The interface always declares the field; only the VALUE may be absent.
+		const module = renderChromeGenerated( profile );
+		const value = module.slice( module.indexOf( 'export const chrome' ) );
+		expect( value ).not.toContain( 'navToggle' );
+	} );
 } );
 
 describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {

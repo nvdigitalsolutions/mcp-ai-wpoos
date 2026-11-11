@@ -197,6 +197,74 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	letter-spacing: var(--forge-nav-letter-spacing, normal);
 }
 
+/* -------------------------------------------------------------------------
+ * Mobile nav disclosure (WAI-ARIA APG disclosure pattern)
+ *
+ * The source hides its nav behind a hamburger at narrow widths. A rebuild
+ * without one wrapped the same six links over three rows at 390px, which is
+ * neither the source's layout nor a menu. The shell is `display: contents` so
+ * the nav stays a direct flex child of the header at every width the source
+ * keeps it inline; `data-collapsed` only appears once JS has run, so with JS
+ * off the nav is reachable at every width (progressive enhancement).
+ * ------------------------------------------------------------------------- */
+.site-nav-shell {
+	display: contents;
+}
+
+.site-nav-toggle {
+	display: none;
+}
+
+.site-nav-shell[data-collapsed='true'] > .site-nav-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	/* WCAG 2.5.8: 24×24 is the floor for a pointer target; 44×44 also matches
+	 * the source's own Bootstrap toggle and is comfortable on touch. */
+	min-width: 2.75rem;
+	min-height: 2.75rem;
+	padding: 0 0.5rem;
+	margin-inline-start: auto;
+	border: 1px solid var(--forge-line, #dddddd);
+	border-radius: var(--forge-radius-sm, 4px);
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+}
+
+/* The bars are boxes rather than an icon font: they inherit `currentColor`, so
+ * they follow the header ink and survive forced-colors mode. */
+.site-nav-bars {
+	display: grid;
+	gap: 4px;
+	width: 1.25rem;
+}
+
+.site-nav-bars > span {
+	display: block;
+	height: 2px;
+	background: currentColor;
+}
+
+.site-nav-shell[data-collapsed='true'] > nav {
+	display: none;
+}
+
+.site-nav-shell[data-collapsed='true'][data-open='true'] > nav {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	/* A full-width row under the header: the shell is `display: contents`, so
+	 * the nav is still a flex item of `.site-header`. */
+	flex-basis: 100%;
+}
+
+/* A source that collapses its nav even on a wide screen needs the header to
+ * wrap for that row; the measured `all` breakpoint is the only case. */
+.site-header:has(> .site-nav-shell[data-collapsed='true']) {
+	flex-wrap: wrap;
+}
+
 .site-main {
 	max-width: var(--forge-measure);
 	margin: 0 auto;

@@ -47,7 +47,7 @@ import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureStickyHeader, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureNavToggle, measureStickyHeader, serveDir } from '../lib/geometry.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
 import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } from '../lib/gate-policy.ts';
@@ -464,6 +464,31 @@ async function runAnalyze( url, options ) {
 				} catch ( error ) {
 					console.warn(
 						`\u26a0 Sticky header skipped: ${ error instanceof Error ? error.message : error }`
+					);
+				}
+				// The mobile nav disclosure: presence comes from the markup (design.ts),
+				// the widths it appears at from a browser. Without it the rebuild wraps
+				// the nav into a stack where the source shows a hamburger.
+				try {
+					const toggle = await measureNavToggle( { url: profile.url } );
+					if ( toggle ) {
+						profile.design = profile.design ?? {};
+						profile.design.chrome = profile.design.chrome ?? {};
+						profile.design.chrome.navToggle = {
+							...profile.design.chrome.navToggle,
+							visible: toggle.visible,
+						};
+						const at = Object.entries( toggle.visible )
+							.filter( ( [ , shown ] ) => shown )
+							.map( ( [ device ] ) => device )
+							.join( ', ' );
+						console.log( `\u2713 Nav toggle: visible at ${ at }.` );
+					} else {
+						console.log( '  Nav toggle: none (the source nav never collapses).' );
+					}
+				} catch ( error ) {
+					console.warn(
+						`\u26a0 Nav toggle skipped: ${ error instanceof Error ? error.message : error }`
 					);
 				}
 				// A baseline that measured nothing used to report success, which left

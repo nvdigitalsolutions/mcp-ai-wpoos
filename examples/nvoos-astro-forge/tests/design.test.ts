@@ -933,6 +933,38 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 		expect( chrome?.copyright ).toBe( '© 2026 Jaya Inc. All rights reserved.' );
 	} );
 
+	it( 'never invents a mobile disclosure the source does not ship', () => {
+		// jayainc's header carries no hamburger; the rebuild must not add one.
+		expect( chrome?.navToggle ).toBeUndefined();
+	} );
+
+	it( 'reads a builder hamburger and its accessible name', () => {
+		// virtuallyjamaica's Brando header: Bootstrap 3's navbar-toggle, whose
+		// name is its visible text. The rebuild has to ship a disclosure too, or
+		// six links wrap over three rows at 390px.
+		const html =
+			'<header id="site-header">' +
+			'<nav><a href="#about">About</a><a href="#contact">Contact</a></nav>' +
+			'<button type="button" class="navbar-toggle collapsed">Toggle navigation</button>' +
+			'</header>';
+		const withToggle = analyzeChrome( { url: 'https://x.example.com', html, css: [] } );
+
+		expect( withToggle?.navToggle?.label ).toBe( 'Toggle navigation' );
+		// Visibility is a browser fact — never guessed from the markup.
+		expect( withToggle?.navToggle?.visible ).toBeUndefined();
+	} );
+
+	it( 'prefers the aria-label over the button text', () => {
+		const html =
+			'<header id="site-header">' +
+			'<nav><a href="#about">About</a></nav>' +
+			'<button type="button" class="menu-toggle" aria-label="Open menu"><span class="bars"></span></button>' +
+			'</header>';
+		const withToggle = analyzeChrome( { url: 'https://x.example.com', html, css: [] } );
+
+		expect( withToggle?.navToggle?.label ).toBe( 'Open menu' );
+	} );
+
 	it( 'captures the favicon link as an absolute URL', () => {
 		expect( chrome?.favicon ).toBe( 'https://jayainc.com/wp-content/uploads/cropped-jaya-inc-icon-32x32.png' );
 	} );

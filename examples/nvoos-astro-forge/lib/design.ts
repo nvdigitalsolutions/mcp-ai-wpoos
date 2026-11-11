@@ -2309,6 +2309,38 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 			chrome.headerInk = navResolved.ink;
 		}
 
+		// 4d. The mobile nav disclosure. A builder hides its nav behind a button at
+		//     narrow widths — Bootstrap's `navbar-toggle`, Auxin's `aux-menu-toggle`,
+		//     a `[data-toggle="collapse"]` control. The rebuild has to ship one too,
+		//     or the nav collapses into a wrapped stack instead of a menu
+		//     (virtuallyjamaica renders 6 links over 3 rows at 390px).
+		//     Presence is a markup fact; the per-viewport visibility that decides
+		//     WHERE it collapses is measured by `measureNavToggle`.
+		const TOGGLE_CLASS = /(?:^|\s)(?:navbar-toggle|menu-toggle|nav-toggle|mobile-toggle|hamburger|burger|aux-menu-toggle|toggle-menu)(?:\s|$)/i;
+		const toggleNode = collectNodes( headerNode, ( n ) => n.type === 'tag' ).find( ( n ) => {
+			if ( ! n.name || ! [ 'button', 'a', 'div', 'span' ].includes( n.name ) ) {
+				return false;
+			}
+			const attrs = n.attribs ?? {};
+			const classes = tagClasses( n );
+			// A real control, not a decorative span: a <button>, an accessible-toggle
+			// attribute, or the builder's own hamburger class on an interactive tag.
+			const declared =
+				attrs[ 'aria-expanded' ] !== undefined ||
+				Boolean( attrs[ 'data-toggle' ] || attrs[ 'data-bs-toggle' ] );
+			return declared || ( n.name === 'button' && TOGGLE_CLASS.test( classes ) ) || ( n.name !== 'div' && n.name !== 'span' && TOGGLE_CLASS.test( classes ) );
+		} );
+		if ( toggleNode ) {
+			// The accessible name: `aria-label` first, then the visible text, then a
+			// screen-reader-only span (Bootstrap's "Toggle navigation" is visible
+			// text in BS3 and an sr-only span in BS4/5).
+			const label =
+				( toggleNode.attribs?.[ 'aria-label' ] ?? '' ).trim() ||
+				nodeText( toggleNode ).replace( /\s+/g, ' ' ).trim() ||
+				'Menu';
+			chrome.navToggle = { label: label.slice( 0, 40 ) };
+		}
+
 		// 4c. The header's own background — many one-pagers run a dark
 		// header (jayainc: navy #04132b) the default white chrome must not
 		// paint over.

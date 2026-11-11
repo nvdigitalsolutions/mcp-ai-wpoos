@@ -385,7 +385,15 @@
 					"icon": "fab fa-linkedin-in"
 				}
 			],
-			"headerTransparent": true
+			"headerTransparent": true,
+			"navToggle": {
+				"label": "Toggle navigation",
+				"visible": {
+					"desktop": false,
+					"tablet": true,
+					"mobile": true
+				}
+			}
 		},
 		"behavior": {
 			"headerSticky": false,
