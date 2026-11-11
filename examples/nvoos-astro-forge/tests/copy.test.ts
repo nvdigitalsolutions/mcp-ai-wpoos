@@ -46,7 +46,7 @@ describe( 'copy tables', () => {
 		// The real gate is `astro check`; this asserts the shape the type
 		// derives from — every key path must exist in any `Copy` value.
 		const fr: Copy = {
-			nav: { primaryLabel: 'Principale', home: 'Accueil', products: 'Produits', posts: 'Articles', search: 'Rechercher' },
+			nav: { primaryLabel: 'Principale', home: 'Accueil', products: 'Produits', posts: 'Articles', search: 'Rechercher', menu: 'Menu' },
 			footer: { generatedBy: 'Généré par NV oOS Astro Forge.' },
 			theme: { label: 'Thème', forcedNote: 'Le thème est défini par la politique du site.' },
 			catalog: { open: 'Voir le catalogue' },

@@ -24,6 +24,7 @@ import type {
 	BandTypeProperties,
 	ForgeBandContainer,
 	ForgeBandFacts,
+	ForgeChrome,
 	ForgeGeometry,
 	ForgeStickyHeader,
 } from './types.ts';
@@ -849,6 +850,76 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< Reco
 			facts[ id ] = band;
 		}
 		return facts;
+	} finally {
+		await browser.close();
+	}
+}
+
+/**
+ * Measure the source's mobile nav disclosure: the button a builder shows at
+ * narrow widths to open its menu.
+ *
+ * Presence is a markup fact (`design.ts` reads the control and its label);
+ * WHERE it appears is only knowable from a browser. Brando collapses its nav
+ * below 991px, Bootstrap's default is 768px, and a builder can pick anything —
+ * so the rebuild collapses at the widths the source measured, rather than at a
+ * guessed breakpoint that would either strand links behind a hidden menu on a
+ * wide screen or render a wrapped stack where the source shows a hamburger
+ * (virtuallyjamaica at 390px: 6 links over 3 rows).
+ *
+ * FAIL-SOFT: a page with no toggle returns `undefined` and the rebuild keeps
+ * the nav inline at every width, which is what the source does too.
+ */
+export async function measureNavToggle( options: {
+	url: string;
+	timeout?: number;
+} ): Promise< ForgeChrome[ 'navToggle' ] > {
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const page = await context.newPage();
+		await page.setViewportSize( { width: 1440, height: 900 } );
+		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+		await settle( page );
+
+		const visibleAt = async ( device: DeviceKey ): Promise< boolean > => {
+			const { width, height } = BAND_FACT_VIEWPORTS[ device ];
+			await page.setViewportSize( { width, height } );
+			await page.waitForTimeout( 250 );
+			return page.evaluate( () => {
+				const TOGGLE = /(?:^|\s)(?:navbar-toggle|menu-toggle|nav-toggle|mobile-toggle|hamburger|burger|aux-menu-toggle|toggle-menu)(?:\s|$)/i;
+				const header = document.querySelector( 'header, #masthead, #header, .site-header, nav' ) ?? document.body;
+				for ( const node of header.querySelectorAll( 'button, a, [role="button"]' ) ) {
+					const element = node as HTMLElement;
+					const classes = typeof element.className === 'string' ? element.className : '';
+					const declared =
+						element.hasAttribute( 'aria-expanded' ) ||
+						element.hasAttribute( 'data-toggle' ) ||
+						element.hasAttribute( 'data-bs-toggle' );
+					if ( ! declared && ! TOGGLE.test( classes ) ) {
+						continue;
+					}
+					const style = getComputedStyle( element );
+					const box = element.getBoundingClientRect();
+					if ( style.display === 'none' || style.visibility === 'hidden' || box.width < 1 || box.height < 1 ) {
+						continue;
+					}
+					return true;
+				}
+				return false;
+			} );
+		};
+
+		const visible = {
+			desktop: await visibleAt( 'desktop' ),
+			tablet: await visibleAt( 'tablet' ),
+			mobile: await visibleAt( 'mobile' ),
+		};
+		if ( ! visible.desktop && ! visible.tablet && ! visible.mobile ) {
+			return undefined;
+		}
+		return { visible };
 	} finally {
 		await browser.close();
 	}

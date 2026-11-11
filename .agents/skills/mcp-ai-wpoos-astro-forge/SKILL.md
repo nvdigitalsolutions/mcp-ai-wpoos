@@ -869,6 +869,19 @@ headless-chromium computed styles against the live source.
   Re-scaffold (not manual CSS copies) after template edits — the
   `FORGE:tokens` rewrite only runs in the scaffold pipeline.
 
+### The mobile nav disclosure (`chrome.navToggle`)
+
+The chrome pass captured nav LINKS but nothing about the control that hides
+them; a rebuild without it wrapped six links over three rows at 390px.
+Presence + accessible name are markup facts (`analyzeChrome`); WHERE it appears
+is a browser fact (`measureNavToggle`) — never guess a breakpoint, since Brando
+collapses at 991px and Bootstrap at 768px. The template renders an APG
+disclosure button (Escape closes + returns focus, focus-out closes, resize
+re-syncs) and hides the nav **only** via `data-collapsed`, which JS alone sets,
+so JS-off leaves it inline at every width. A chrome fact needs THREE edits
+(`ForgeChrome`, the emitted interface, the emitted value) or it silently
+disappears — detail: [`reference/mobile-nav-disclosure.md`](reference/mobile-nav-disclosure.md).
+
 ## Proposal 125 — split hero, webfonts, catalog (2026-11-06)
 
 The live jayainc rebuild taught four rebuild gaps; all fixed in the
