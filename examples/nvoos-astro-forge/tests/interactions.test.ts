@@ -15,7 +15,14 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { interactionSelector, restDeclarations, stateDeclarations } from '../lib/interactions.ts';
+import {
+	describeInteractionDeviation,
+	diffInteractionStates,
+	interactionKey,
+	interactionSelector,
+	restDeclarations,
+	stateDeclarations,
+} from '../lib/interactions.ts';
 import { renderSectionsGenerated } from '../lib/scaffold.ts';
 import type { SiteProfile } from '../lib/types.ts';
 
@@ -174,6 +181,125 @@ describe( 'stateDeclarations', () => {
 		const hover = styles( { backgroundImage: 'url("https://example.com/hover.png")' } );
 
 		expect( stateDeclarations( styles(), hover ) ).toBe( '' );
+	} );
+} );
+
+describe( 'interaction states — verify comparison', () => {
+	const sourceFact = {
+		tag: 'a',
+		classes: [ 'btn', 'btn-small' ],
+		count: 1,
+		base: 'cursor:pointer',
+		hover: 'color:rgb(255, 255, 255)',
+		focusVisible: 'color:rgb(255, 255, 255)',
+		active: 'box-shadow:rgba(0, 0, 0, 0.125) 0px 3px 5px 0px inset',
+	};
+
+	it( 'keys a control by tag, type and the sorted class set', () => {
+		expect( interactionKey( { tag: 'a', classes: [ 'btn-small', 'btn' ] } ) ).toBe( 'a||btn.btn-small' );
+		expect( interactionKey( { tag: 'input', classes: [], type: 'submit' } ) ).toBe( 'input|submit|' );
+	} );
+
+	it( 'passes when the rebuilt control keeps every state the source declared', () => {
+		expect(
+			diffInteractionStates( { band1: [ sourceFact ] }, { band1: [ sourceFact ] } )
+		).toEqual( [] );
+	} );
+
+	it( 'fails the state the rebuild lost, once per state', () => {
+		// The rebuild kept the rest paint and the focus ring, lost hover + press.
+		const built = [
+			{
+				tag: 'a',
+				classes: [ 'btn', 'btn-small' ],
+				count: 1,
+				base: 'cursor:pointer',
+				focusVisible: 'color:rgb(255, 255, 255)',
+			},
+		];
+		const deviations = diffInteractionStates( { band1: [ sourceFact ] }, { band1: built } );
+
+		expect( deviations.every( ( deviation ) => deviation.kind === 'state-missing' ) ).toBe( true );
+		expect( deviations.every( ( deviation ) => deviation.severity === 'fail' ) ).toBe( true );
+		expect( deviations.map( ( deviation ) => deviation.state ).sort() ).toEqual( [ 'active', 'hover' ] );
+		expect( deviations[ 0 ].selector ).toBe( 'a[class~="btn"][class~="btn-small"]' );
+	} );
+
+	it( 'warns once per state KIND a re-rendered band loses entirely', () => {
+		const deviations = diffInteractionStates( { band1: [ sourceFact ] }, { band1: [] } );
+
+		expect( deviations.map( ( deviation ) => deviation.kind ) ).toEqual( [
+			'control-missing',
+			'control-missing',
+			'control-missing',
+		] );
+		expect( deviations.map( ( deviation ) => deviation.state ).sort() ).toEqual( [
+			'active',
+			'focusVisible',
+			'hover',
+		] );
+		expect( deviations.every( ( deviation ) => deviation.severity === 'warn' ) ).toBe( true );
+	} );
+
+	it( 'stays silent when a re-rendered band still exposes the same state kinds', () => {
+		// The contact band is rebuilt as the template form: different signatures,
+		// but the band still has a focus treatment, so nothing was LOST.
+		const templateField = {
+			tag: 'button',
+			classes: [ 'ds-button' ],
+			hover: 'background:rgb(0, 0, 0)',
+			focusVisible: 'outline:2px solid rgb(254, 108, 97);outline-offset:1px',
+			active: 'transform:translateY(1px)',
+		};
+		const deviations = diffInteractionStates( { band1: [ sourceFact ] }, { band1: [ templateField ] } );
+
+		expect( deviations ).toEqual( [] );
+	} );
+
+	it( 'fails a rebuilt control with no keyboard focus indicator', () => {
+		const unfocusable = { tag: 'button', classes: [ 'owl-dot' ], base: 'cursor:pointer' };
+		const deviations = diffInteractionStates( {}, { band2: [ unfocusable ] } );
+
+		expect( deviations ).toEqual( [
+			{
+				sectionId: 'band2',
+				selector: 'button[class~="owl-dot"]',
+				kind: 'focus-indicator-missing',
+				severity: 'fail',
+			},
+		] );
+	} );
+
+	it( 'does not compare a signature the source never had', () => {
+		// A control only the BUILD has (a template addition) with its own focus
+		// ring is not a parity deviation — only the source's declarations are owed.
+		const extra = {
+			tag: 'a',
+			classes: [ 'wp-block-button__link' ],
+			hover: 'color:rgb(0, 0, 0)',
+			focusVisible: 'outline-offset:2px',
+		};
+		expect( diffInteractionStates( { band1: [ sourceFact ] }, { band1: [ sourceFact, extra ] } ) ).toEqual( [] );
+	} );
+
+	it( 'describes a finding in the scorecard\u0027s voice', () => {
+		expect(
+			describeInteractionDeviation( {
+				sectionId: 'aaa1111',
+				selector: 'a',
+				kind: 'state-missing',
+				state: 'hover',
+				severity: 'fail',
+			} )
+		).toBe( 'band aaa1111: "hover" state lost on a' );
+		expect(
+			describeInteractionDeviation( {
+				sectionId: 'aaa1111',
+				selector: 'button',
+				kind: 'focus-indicator-missing',
+				severity: 'fail',
+			} )
+		).toBe( 'band aaa1111: no keyboard focus indicator \u2014 button' );
 	} );
 } );
 

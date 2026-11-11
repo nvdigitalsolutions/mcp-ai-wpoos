@@ -113,23 +113,26 @@ node scripts/forge.mjs site.json --target ./customer-frontend
 
 # 4. Verify after a build. EVERY gate runs by default — language parity, token
 #    block, band flow, nav anchors, fact consumption, text, SEO, tracking, box
-#    geometry, colour system and pixel — and prints a scorecard (gate, verdict,
-#    pass rate). `--minimal` keeps only the deterministic, browser-free gates;
-#    that is what the CI blocking step uses. Individual flags still select one
-#    gate:
+#    geometry, interaction states, colour system and pixel — and prints a
+#    scorecard (gate, verdict, pass rate). `--minimal` keeps only the
+#    deterministic, browser-free gates; that is what the CI blocking step uses.
+#    Individual flags still select one gate:
 #    language parity (always on), fact consumption (always on — every fact a
 #    band declares must leave its marker in that band's HTML; --strict-facts
 #    to fail), box geometry (--geometry — measures each band at 1440/834/390
 #    and diffs against the baseline `analyze --geometry` recorded in the
-#    profile), content parity (--text — the build's visible text against the
-#    baseline `analyze --text` recorded; normalised 3-word shingles, coverage
-#    of the SOURCE is the gate), the colour system (--colors — computed
-#    background/text of body, header and footer, diffed with CIEDE2000), and
-#    pixel parity (--pixel — deterministic screenshots diffed with pixelmatch's
-#    delta + SSIM). Geometry, pixel and colour need Playwright; when the
-#    browser is not installed those gates record `skip` rather than aborting
-#    the run (a skip still counts against 100%). Language/text parity never
-#    need a browser.
+#    profile), interaction states (--interactions — forces hover / focus /
+#    focus-visible / active on the BUILT page and requires every state the
+#    source declared plus a keyboard focus ring on every control; per-site
+#    `verify.gates` may downgrade it to advisory), content parity (--text — the
+#    build's visible text against the baseline `analyze --text` recorded;
+#    normalised 3-word shingles, coverage of the SOURCE is the gate), the colour
+#    system (--colors — computed background/text of body, header and footer,
+#    diffed with CIEDE2000), and pixel parity (--pixel — deterministic
+#    screenshots diffed with pixelmatch's delta + SSIM). Geometry, interactions,
+#    pixel and colour need Playwright; when the browser is not installed those
+#    gates record `skip` rather than aborting the run (a skip still counts
+#    against 100%). Language/text parity never need a browser.
 #
 #    Scorecard semantics: `pass`/`warn`/`fail` are verdicts, `skip` means a
 #    gate is APPLICABLE but has no baseline (it counts against 100%), and

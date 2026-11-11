@@ -48,7 +48,7 @@ import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } fr
 import { findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureStickyHeader, serveDir } from '../lib/geometry.ts';
-import { countInteractionStates, measureInteractions } from '../lib/interactions.ts';
+import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
 import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } from '../lib/gate-policy.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
@@ -1401,6 +1401,7 @@ const GATE_ORDER = [
 	'tracking',
 	'SEO head',
 	'box geometry',
+	'interaction states',
 	'pixel parity',
 	'pixel regression',
 	'visual parity',
@@ -1518,6 +1519,7 @@ async function runVerify( profileRef, options ) {
 		options.text = true;
 		options.colors = true;
 		options.geometry = true;
+		options.interactions = true;
 		options.pixel = true;
 	}
 	const gates = [];
@@ -2054,6 +2056,93 @@ async function runVerify( profileRef, options ) {
 			}
 		} finally {
 			served.server.close();
+		}
+	}
+
+	// Interaction states (hover / focus / focus-visible / active). The rebuilt
+	// bands are the source's own markup with the vendor sheet gone, so a control
+	// can look right at rest and be inert on hover — and a source's own stylesheet
+	// is linked into the build, so a vendor selector can out-specify the emitted
+	// state (which is exactly how the accordion titles once went grey). This
+	// measures the BUILT page with the same forced-pseudo-class pass the analyzer
+	// used, then compares state PRESENCE, not declaration strings: the template
+	// legitimately adds things the source never had (the focus ring).
+	if ( options.interactions ) {
+		const expected = Object.fromEntries(
+			Object.entries( profile.bandFacts ?? {})
+				.map( ( [ id, facts ] ) => [ id, facts.interactions ?? [] ] )
+				.filter( ( [ , list ] ) => list.length > 0 )
+		);
+		const ids = Object.keys( expected );
+		if ( ids.length === 0 ) {
+			console.warn(
+				'\u26a0 Interaction states: no baseline on the profile \u2014 run `analyze <url> --geometry --write <profile>`.'
+			);
+			record( 'interaction states', 'skip', 'no baseline (analyze --geometry)' );
+		} else if ( ! ( await browserAvailable() ) ) {
+			console.warn( '\u26a0 Interaction states: skipped \u2014 Playwright/Chromium is not available in this environment.' );
+			record( 'interaction states', 'skip', 'browser unavailable' );
+		} else {
+			const policy = resolveGateMode( 'interaction states', profile.verify );
+			const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
+			try {
+				// The built page addresses its bands by data attribute (the anchor ids
+				// survive sanitisation, but a one-pager repeats them on the wrapper).
+				const selectors = Object.fromEntries(
+					ids.map( ( id ) => [ id, `[data-section-id="${ id }"]` ] )
+				);
+				const built = await measureInteractions( { url: served.url, ids, selectors } );
+				const deviations = diffInteractionStates( expected, built );
+				const failures = deviations.filter( ( deviation ) => deviation.severity === 'fail' );
+				const warnings = deviations.filter( ( deviation ) => deviation.severity === 'warn' );
+				const expectedStates = countInteractionStates( expected );
+				// "Present" is measured against the EXPECTED set: the build legitimately
+				// adds states the source never declared (the template's focus ring), so a
+				// raw count of the built side reads 18-of-13 and says nothing.
+				const presentStates =
+					expectedStates -
+					failures.filter( ( deviation ) => deviation.kind === 'state-missing' ).length;
+				if ( deviations.length === 0 ) {
+					console.log(
+						`\u2713 Interaction states: ${ expectedStates } state(s) across ${ ids.length } band(s) \u2014 every control keeps its hover/focus/press and shows a focus ring.`
+					);
+				} else {
+					const limit = Number( options.interactionsLimit ?? 12 );
+					for ( const deviation of deviations.slice( 0, limit ) ) {
+						const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
+						console.warn( `${ mark } Interaction states: ${ describeInteractionDeviation( deviation ) }` );
+					}
+					if ( deviations.length > limit ) {
+						console.warn( `  \u2026 ${ deviations.length - limit } more finding(s); raise --interactions-limit to see them.` );
+					}
+					console.log(
+						`  interaction states: ${ failures.length } fail, ${ warnings.length } warn (${ presentStates } of ${ expectedStates } expected state(s) present)`
+					);
+				}
+				if ( failures.length > 0 ) {
+					if ( policy.mode === 'gate' ) {
+						process.exitCode = 1;
+					} else {
+						console.warn(
+							`\u2139 Interaction states: ${ failures.length } failure(s) treated as ADVISORY \u2014 the profile downgraded this gate, so the run is not failed.`
+						);
+					}
+				}
+				record(
+					'interaction states',
+					failures.length > 0
+						? policy.mode === 'advisory'
+							? 'advisory'
+							: 'fail'
+						: warnings.length > 0
+							? 'warn'
+							: 'pass',
+					`${ failures.length } fail, ${ warnings.length } warn across ${ ids.length } band(s)`,
+					gateNote( policy )
+				);
+			} finally {
+				served.server.close();
+			}
 		}
 	}
 
@@ -2636,6 +2725,8 @@ program
 	.option( '--threshold <n>', 'parity pass threshold 0-1 (default 0.6)', '0.6' )
 	.option( '--geometry', 'diff the built bands\u0027 boxes against the recorded source geometry (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--geometry-limit <n>', 'how many geometry deviations to print (default 12)', '12' )
+	.option( '--interactions', 'verify the rebuilt controls keep the source\u0027s hover / focus / focus-visible / active states and show a keyboard focus ring (needs `analyze --geometry`; requires Playwright)' )
+	.option( '--interactions-limit <n>', 'how many interaction findings to print (default 12)', '12' )
 	.option( '--diff', 'with geometry: compare the box tree of EVERY band (not just the deviating ones) and print where the height delta comes from' )
 	.option( '--diff-limit <n>', 'how many per-band contributor nodes to print (default 5)', '5' )
 	.option( '--diff-json <path>', 'where to write the band-diff reports (default <target>/verify-artifacts/band-diff.json)' )
