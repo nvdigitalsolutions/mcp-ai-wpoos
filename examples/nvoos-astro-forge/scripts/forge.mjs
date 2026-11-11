@@ -417,7 +417,7 @@ async function runAnalyze( url, options ) {
 				// reader notices first. Forced pseudo-classes are the only faithful
 				// source (the rules live behind builder classes and theme variables).
 				try {
-					const interactions = await measureInteractions( {
+					const { facts: interactions, skippedChildStates } = await measureInteractions( {
 						url: profile.url,
 						ids,
 						selectors,
@@ -435,6 +435,11 @@ async function runAnalyze( url, options ) {
 						);
 					} else {
 						console.log( '  Interaction states: none (the source declares no hover/focus/active effect).' );
+					}
+					if ( skippedChildStates > 0 ) {
+						console.log(
+							`  \u2139 ${ skippedChildStates } child effect(s) NOT recorded \u2014 the child is a bare slot whose fill lives on a pseudo-element (an overlay ::after), which a rebuild does not ship.`
+						);
 					}
 				} catch ( error ) {
 					console.warn(
@@ -2091,17 +2096,21 @@ async function runVerify( profileRef, options ) {
 				const selectors = Object.fromEntries(
 					ids.map( ( id ) => [ id, `[data-section-id="${ id }"]` ] )
 				);
-				const built = await measureInteractions( { url: served.url, ids, selectors } );
+				const { facts: built } = await measureInteractions( { url: served.url, ids, selectors, kind: 'built' } );
 				const deviations = diffInteractionStates( expected, built );
 				const failures = deviations.filter( ( deviation ) => deviation.severity === 'fail' );
 				const warnings = deviations.filter( ( deviation ) => deviation.severity === 'warn' );
 				const expectedStates = countInteractionStates( expected );
 				// "Present" is measured against the EXPECTED set: the build legitimately
 				// adds states the source never declared (the template's focus ring), so a
-				// raw count of the built side reads 18-of-13 and says nothing.
+				// raw count of the built side reads 18-of-13 and says nothing. A state is
+				// absent whether the control vanished or only lost the state.
 				const presentStates =
 					expectedStates -
-					failures.filter( ( deviation ) => deviation.kind === 'state-missing' ).length;
+					deviations.filter(
+						( deviation ) =>
+							deviation.kind === 'state-missing' || deviation.kind === 'control-missing'
+					).length;
 				if ( deviations.length === 0 ) {
 					console.log(
 						`\u2713 Interaction states: ${ expectedStates } state(s) across ${ ids.length } band(s) \u2014 every control keeps its hover/focus/press and shows a focus ring.`

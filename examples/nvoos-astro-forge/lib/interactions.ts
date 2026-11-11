@@ -41,7 +41,7 @@
  */
 
 import type { Page } from 'playwright';
-import type { ForgeInteractionFact } from './types.ts';
+import type { ForgeInteractionChildFact, ForgeInteractionFact } from './types.ts';
 import { loadChromium } from './geometry.ts';
 
 /** The band heights and type are measured at this viewport; states match it. */
@@ -115,12 +115,19 @@ const PROBE_STATES: Array< { key: 'hover' | 'focus' | 'focusVisible' | 'active';
 ];
 
 export interface MeasureInteractionsOptions {
-	/** The live source URL. */
+	/** The live source URL (or the served built site, with `kind: 'built'`). */
 	url: string;
 	/** The band ids to attribute the controls to. */
 	ids: string[];
 	/** Band id → the source selector that resolves the band (`#anchor`). */
 	selectors?: Record< string, string >;
+	/**
+	 * Which side is being measured. The band-root ladder differs:
+	 * `source` tries `.elementor-element-<id>` before the anchor (an Elementor
+	 * band often has no anchor at all — jayainc: 5 of 9), `built` uses the
+	 * `[data-section-id]` the scaffold emits. Defaults to `source`.
+	 */
+	kind?: 'source' | 'built';
 	timeout?: number;
 	/** Override for tests; defaults to MAX_SIGNATURES_PER_BAND. */
 	maxSignatures?: number;
@@ -137,10 +144,40 @@ interface ProbeCandidate {
 	classes: string[];
 	type?: string;
 	count: number;
+	/**
+	 * Direct element children to diff while the control is forced (the overlay
+	 * pattern). `index` is the child's position in `element.children`.
+	 */
+	children: Array<{ index: number; tag: string; classes: string[] }>;
 }
+
+/**
+ * How many direct children per control are probed.
+ *
+ * Every builder overlay is the FIRST child of the anchor and a button rarely has
+ * more than a wrapper plus a label, so four is generous. The cap keeps a
+ * pathological control (a card with a dozen wrappers) from multiplying the pass.
+ */
+const MAX_CHILDREN_PER_CONTROL = 4;
+
+/** The control's border box, in px, as the browser laid it out. */
+type Box = { w: number; h: number };
 
 /** Rest declarations the state deltas are measured against. */
 type RestStyles = Record< string, string >;
+
+/** Where a child sits, and what its `::after` paints. */
+interface ChildRest {
+	index: number;
+	props: RestStyles;
+	transition: string;
+	hasText: boolean;
+	box: Box;
+	/** `position`, `top`, `left`, `width`, `height`, `transform` (computed). */
+	layout: Record< string, string >;
+	/** The `::after` slot an overlay fill usually lives in. */
+	pseudo: { content: string; backgroundColor: string; backgroundImage: string; width: string; height: string };
+}
 
 /**
  * Collect one representative per (tag + class-set + input type) signature per
@@ -153,12 +190,40 @@ type RestStyles = Record< string, string >;
 function collectCandidates( input: {
 	ids: string[];
 	selectors?: Record< string, string >;
+	kind: 'source' | 'built';
 	max: number;
+	maxChildren: number;
 } ): ProbeCandidate[] {
 	const INTERACTIVE =
 		'a[href], button, summary, [role="button"], input:not([type="hidden"]), select, textarea';
 	const out: ProbeCandidate[] = [];
 	let counter = 0;
+
+	const pick = ( selector: string ): Element | null => {
+		try {
+			return document.querySelector( selector );
+		} catch {
+			return null;
+		}
+	};
+
+	/**
+	 * The band root — the SAME ladder `collectBandTypeFacts` walks, so a band
+	 * measured for typography is measured for interaction states too. An Elementor
+	 * band carries its id as a class and frequently has no anchor at all.
+	 */
+	const bandRoot = ( id: string ): Element | null => {
+		const candidates =
+			input.kind === 'built'
+				? [ input.selectors?.[ id ], `[data-section-id="${ id }"]` ]
+				: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ];
+		return (
+			candidates
+				.filter( ( selector ): selector is string => Boolean( selector ) )
+				.map( pick )
+				.find( ( node ): node is Element => Boolean( node ) ) ?? null
+		);
+	};
 
 	const usable = ( element: Element ): boolean => {
 		if ( ! ( element instanceof HTMLElement ) ) {
@@ -173,8 +238,7 @@ function collectCandidates( input: {
 	};
 
 	for ( const bandId of input.ids ) {
-		const selector = input.selectors?.[ bandId ];
-		const band = selector ? document.querySelector( selector ) : null;
+		const band = bandRoot( bandId );
 		if ( ! band ) {
 			continue;
 		}
@@ -202,6 +266,18 @@ function collectCandidates( input: {
 			counter += 1;
 			const probe = String( counter );
 			group.element.setAttribute( 'data-forge-interaction-probe', probe );
+			const children: ProbeCandidate[ 'children' ] = [];
+			[ ...group.element.children ].slice( 0, input.maxChildren ).forEach( ( child, index ) => {
+				// A nested control is its own probe; its states are not the parent's.
+				if ( child.matches( INTERACTIVE ) ) {
+					return;
+				}
+				children.push( {
+					index,
+					tag: child.tagName.toLowerCase(),
+					classes: [ ...child.classList ].sort(),
+				} );
+			} );
 			out.push( {
 				bandId,
 				probe,
@@ -209,49 +285,129 @@ function collectCandidates( input: {
 				classes: [ ...group.element.classList ].sort(),
 				...( type ? { type } : {} ),
 				count: group.count,
+				children,
 			} );
 		}
 	}
 	return out;
 }
 
-/** Read the rest computed values for every probed element, plus cursor/transition. */
-function readRestStyles( input: { probes: string[]; properties: string[] } ): Record<
+/** One probed control at rest, plus its children. */
+interface RestEntry {
+	props: RestStyles;
+	cursor: string;
+	transition: string;
+	box: Box;
+	children: ChildRest[];
+}
+
+/**
+ * Read the rest computed values for every probed element, plus its children.
+ *
+ * Runs IN the page (Playwright serialises it), so it must not close over module
+ * scope; every constant it needs arrives in `input`.
+ */
+function readRestStyles( input: { targets: Array< { probe: string; children: number[] } >; properties: string[] } ): Record<
 	string,
-	{ props: RestStyles; cursor: string; transition: string }
+	RestEntry
 > {
-	const out: Record< string, { props: RestStyles; cursor: string; transition: string } > = {};
-	for ( const probe of input.probes ) {
-		const element = document.querySelector( `[data-forge-interaction-probe="${ probe }"]` );
+	const kebab = ( property: string ): string =>
+		property.replace( /[A-Z]/g, ( character ) => `-${ character.toLowerCase() }` );
+	const readProps = ( element: Element ): RestStyles => {
+		const style = getComputedStyle( element );
+		const props: RestStyles = {};
+		for ( const property of input.properties ) {
+			props[ property ] = style.getPropertyValue( kebab( property ) );
+		}
+		return props;
+	};
+	const boxOf = ( element: Element ): Box => {
+		// LAYOUT box, not the client rect: the overlay rests at `scale(0)`, so its
+		// getBoundingClientRect() is 0×0 and every ratio built from it collapsed.
+		const layout = element as Element & { offsetWidth?: number; offsetHeight?: number };
+		if ( typeof layout.offsetWidth === 'number' && layout.offsetWidth > 0 ) {
+			return { w: layout.offsetWidth, h: layout.offsetHeight ?? layout.offsetWidth };
+		}
+		const rect = element.getBoundingClientRect();
+		return { w: rect.width, h: rect.height };
+	};
+	const out: Record< string, RestEntry > = {};
+	for ( const target of input.targets ) {
+		const element = document.querySelector( `[data-forge-interaction-probe="${ target.probe }"]` );
 		if ( ! ( element instanceof HTMLElement ) ) {
 			continue;
 		}
 		const style = getComputedStyle( element );
+		const children: ChildRest[] = [];
+		for ( const index of target.children ) {
+			const child = element.children[ index ];
+			if ( ! child ) {
+				continue;
+			}
+			const childStyle = getComputedStyle( child );
+			const after = getComputedStyle( child, '::after' );
+			children.push( {
+				index,
+				props: readProps( child ),
+				transition: childStyle.transition,
+				hasText: ( child.textContent ?? '' ).trim().length > 0,
+				box: boxOf( child ),
+				layout: {
+					position: childStyle.position,
+					top: childStyle.top,
+					left: childStyle.left,
+					width: childStyle.width,
+					height: childStyle.height,
+					transform: childStyle.transform,
+				},
+				pseudo: {
+					content: after.content,
+					backgroundColor: after.backgroundColor,
+					backgroundImage: after.backgroundImage,
+					width: after.width,
+					height: after.height,
+				},
+			} );
+		}
+		out[ target.probe ] = {
+			props: readProps( element ),
+			cursor: style.cursor,
+			transition: style.transition,
+			box: boxOf( element ),
+			children,
+		};
+	}
+	return out;
+}
+
+/** Read one element's current computed values (after a forced state). */
+function readStateStyles( input: {
+	probe: string;
+	children: number[];
+	properties: string[];
+} ): { props: RestStyles; children: Array< { index: number; props: RestStyles } > } | null {
+	const element = document.querySelector( `[data-forge-interaction-probe="${ input.probe }"]` );
+	if ( ! ( element instanceof HTMLElement ) ) {
+		return null;
+	}
+	const readProps = ( node: Element ): RestStyles => {
+		const style = getComputedStyle( node );
 		const props: RestStyles = {};
 		for ( const property of input.properties ) {
 			props[ property ] = style.getPropertyValue(
 				property.replace( /[A-Z]/g, ( character ) => `-${ character.toLowerCase() }` )
 			);
 		}
-		out[ probe ] = { props, cursor: style.cursor, transition: style.transition };
+		return props;
+	};
+	const children: Array< { index: number; props: RestStyles } > = [];
+	for ( const index of input.children ) {
+		const child = element.children[ index ];
+		if ( child ) {
+			children.push( { index, props: readProps( child ) } );
+		}
 	}
-	return out;
-}
-
-/** Read one element's current computed values (after a forced state). */
-function readStateStyles( input: { probe: string; properties: string[] } ): RestStyles | null {
-	const element = document.querySelector( `[data-forge-interaction-probe="${ input.probe }"]` );
-	if ( ! ( element instanceof HTMLElement ) ) {
-		return null;
-	}
-	const style = getComputedStyle( element );
-	const props: RestStyles = {};
-	for ( const property of input.properties ) {
-		props[ property ] = style.getPropertyValue(
-			property.replace( /[A-Z]/g, ( character ) => `-${ character.toLowerCase() }` )
-		);
-	}
-	return props;
+	return { props: readProps( element ), children };
 }
 
 /** Drop every temporary probe attribute. */
@@ -349,6 +505,136 @@ export function restDeclarations( rest: RestStyles, cursor: string ): string {
 }
 
 /**
+ * Whether a child can show its own state at all.
+ *
+ * A child that paints nothing itself and has no text only becomes visible
+ * through a PSEUDO-ELEMENT fill (`.aux-overlay::after { background: … }`). When
+ * that pseudo-element is reproducible the child is kept; when it is not, the
+ * transform would animate a zero-size span forever, so the child is skipped and
+ * counted instead of silently faked.
+ */
+export function childPaints( props: RestStyles, hasText: boolean, pseudo = '' ): boolean {
+	if ( hasText || pseudo ) {
+		return true;
+	}
+	if ( props.backgroundColor && props.backgroundColor !== 'rgba(0, 0, 0, 0)' ) {
+		return true;
+	}
+	if ( props.backgroundImage && props.backgroundImage !== 'none' ) {
+		return true;
+	}
+	if ( props.boxShadow && props.boxShadow !== 'none' ) {
+		return true;
+	}
+	return BORDER_SIDES.some( ( side ) => {
+		const width = props[ `border${ side }Width` ];
+		const style = props[ `border${ side }Style` ];
+		return Boolean( width && width !== '0px' && style && style !== 'none' );
+	} );
+}
+
+/** px → a percentage of a reference length, rounded to one decimal. */
+function percentOf( value: number, reference: number ): string {
+	if ( ! Number.isFinite( value ) || reference <= 0 ) {
+		return '0%';
+	}
+	return `${ Math.round( ( value / reference ) * 1000 ) / 10 }%`;
+}
+
+/**
+ * `matrix(a,b,c,d,e,f)` → `translate(tx%, ty%) scale(sx, sy)`.
+ *
+ * An overlay's measured transform is a px translate of half its own box, which
+ * only lands correctly at the width it was measured at. Re-expressing the
+ * translate as a percentage of the CHILD's box is exactly equivalent and
+ * survives every breakpoint. A rotated/skewed matrix is kept verbatim — the
+ * decomposition would be a lie.
+ */
+export function relativeTransform( matrix: string, box: Box ): string {
+	const match = /matrix\(\s*(-?[\d.]+),\s*(-?[\d.]+),\s*(-?[\d.]+),\s*(-?[\d.]+),\s*(-?[\d.]+),\s*(-?[\d.]+)\s*\)/.exec(
+		matrix
+	);
+	if ( ! match || box.w <= 0 || box.h <= 0 ) {
+		return matrix;
+	}
+	const [ a, b, c, d, e, f ] = match.slice( 1 ).map( Number );
+	if ( b !== 0 || c !== 0 ) {
+		return matrix;
+	}
+	return `translate(${ percentOf( e, box.w ) }, ${ percentOf( f, box.h ) }) scale(${ a }, ${ d })`;
+}
+
+/**
+ * The child's REST layout, expressed relative to the control it fills.
+ *
+ * The source's computed geometry is px (`width:234.672px; top:26.5px`), measured
+ * at one viewport. Percentages of the control's box are the same layout for the
+ * overlay pattern (absolute child, centred, sized as a share of the button) and
+ * stay correct when the button reflows.
+ */
+export function childRestDeclarations(
+	layout: Record< string, string >,
+	box: Box,
+	controlBox: Box
+): string {
+	const declarations: string[] = [];
+	if ( layout.position && layout.position !== 'static' ) {
+		declarations.push( `position:${ layout.position }` );
+		for ( const side of [ 'top', 'left' ] as const ) {
+			const value = Number.parseFloat( layout[ side ] ?? '' );
+			const reference = side === 'top' ? controlBox.h : controlBox.w;
+			if ( Number.isFinite( value ) && reference > 0 ) {
+				declarations.push( `${ side }:${ percentOf( value, reference ) }` );
+			}
+		}
+		if ( box.w > 0 && controlBox.w > 0 ) {
+			declarations.push( `width:${ percentOf( box.w, controlBox.w ) }` );
+		}
+		if ( box.h > 0 && controlBox.h > 0 ) {
+			declarations.push( `height:${ percentOf( box.h, controlBox.h ) }` );
+		}
+	}
+	if ( layout.transform && layout.transform !== 'none' ) {
+		declarations.push( `transform:${ relativeTransform( layout.transform, box ) }` );
+	}
+	return declarations.join( ';' );
+}
+
+/**
+ * The `::after` slot an overlay fill usually lives in (`content:""`, background,
+ * size as a share of the child). Returns `''` when there is no reproducible
+ * pseudo-element (no content, or a non-literal one such as `attr()`).
+ */
+export function childPseudoDeclarations(
+	pseudo: { content: string; backgroundColor: string; backgroundImage: string; width: string; height: string },
+	box: Box
+): string {
+	const content = ( pseudo.content ?? '' ).trim();
+	if ( ! content || content === 'none' || content === 'normal' ) {
+		return '';
+	}
+	if ( ! /^(["']).*\1$/.test( content ) ) {
+		return '';
+	}
+	const declarations = [ `content:${ content }` ];
+	if ( pseudo.backgroundColor && pseudo.backgroundColor !== 'rgba(0, 0, 0, 0)' ) {
+		declarations.push( `background-color:${ pseudo.backgroundColor }` );
+	}
+	if ( pseudo.backgroundImage && pseudo.backgroundImage !== 'none' && ! pseudo.backgroundImage.includes( 'url(' ) ) {
+		declarations.push( `background-image:${ pseudo.backgroundImage }` );
+	}
+	const width = Number.parseFloat( pseudo.width ?? '' );
+	if ( Number.isFinite( width ) && box.w > 0 ) {
+		declarations.push( `width:${ percentOf( width, box.w ) }` );
+	}
+	const height = Number.parseFloat( pseudo.height ?? '' );
+	if ( Number.isFinite( height ) && box.h > 0 ) {
+		declarations.push( `height:${ percentOf( height, box.h ) }` );
+	}
+	return declarations.join( ';' );
+}
+
+/**
  * Turn one state's computed values into a declaration string, keeping only what
  * actually CHANGED from rest.
  *
@@ -414,6 +700,26 @@ export function interactionSelector( fact: Pick< ForgeInteractionFact, 'tag' | '
 	return parts.join( '' );
 }
 
+/**
+ * The selector for a control's CHILD, emitted after `> `.
+ *
+ * A classled child gets the same tag + whole-token form as a control. An
+ * unclassed one falls back to `:nth-child(n)` — a bare `> span` would also catch
+ * a sibling the source never styled, and the child's index is stable because the
+ * parent's subtree is not mutated between the rest read and the state pass.
+ */
+export function interactionChildSelector( child: {
+	tag: string;
+	classes: string[];
+	index: number;
+} ): string {
+	const classes = child.classes.filter( ( token ) => token && !/["\\\]]/.test( token ) );
+	if ( classes.length === 0 ) {
+		return `:nth-child(${ child.index + 1 })`;
+	}
+	return [ child.tag, ...classes.map( ( token ) => `[class~="${ token }"]` ) ].join( '' );
+}
+
 /** Wait for fonts + a paint before measuring. */
 async function settle( page: Page ): Promise< void > {
 	await page.evaluate( async () => {
@@ -433,7 +739,7 @@ async function settle( page: Page ): Promise< void > {
  */
 export async function measureInteractions(
 	options: MeasureInteractionsOptions
-): Promise< Record< string, ForgeInteractionFact[] > > {
+): Promise< { facts: Record< string, ForgeInteractionFact[] >; skippedChildStates: number } > {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
@@ -449,17 +755,22 @@ export async function measureInteractions(
 		const candidates = await page.evaluate( collectCandidates, {
 			ids: options.ids,
 			selectors: options.selectors,
+			kind: options.kind ?? 'source',
 			max: options.maxSignatures ?? MAX_SIGNATURES_PER_BAND,
+			maxChildren: MAX_CHILDREN_PER_CONTROL,
 		} );
 		if ( candidates.length === 0 ) {
-			return {};
+			return { facts: {}, skippedChildStates: 0 };
 		}
 
 		// Rest state INCLUDING `transition` — the transition killer below is what
 		// makes the forced states read their target value instead of a frame of
 		// interpolation, but it also erases the property we want to record.
 		const rest = await page.evaluate( readRestStyles, {
-			probes: candidates.map( ( candidate ) => candidate.probe ),
+			targets: candidates.map( ( candidate ) => ( {
+				probe: candidate.probe,
+				children: candidate.children.map( ( child ) => child.index ),
+			} ) ),
 			properties: [ ...PROBED_PROPERTIES ],
 		} );
 
@@ -474,6 +785,7 @@ export async function measureInteractions(
 		const { root } = await cdp.send( 'DOM.getDocument', { depth: 0 } );
 
 		const facts: Record< string, ForgeInteractionFact[] > = {};
+		let skippedChildStates = 0;
 		try {
 			for ( const candidate of candidates ) {
 				const restEntry = rest[ candidate.probe ];
@@ -504,18 +816,61 @@ export async function measureInteractions(
 				if ( restEntry.transition && restEntry.transition !== 'all 0s ease 0s' ) {
 					fact.transition = restEntry.transition;
 				}
+				const childFacts = new Map< string, ForgeInteractionChildFact >();
 				for ( const state of PROBE_STATES ) {
 					await cdp.send( 'CSS.forcePseudoState', { nodeId, forcedPseudoClasses: state.force } );
 					const styles = await page.evaluate( readStateStyles, {
 						probe: candidate.probe,
+						children: candidate.children.map( ( child ) => child.index ),
 						properties: [ ...PROBED_PROPERTIES ],
 					} );
 					if ( ! styles ) {
 						continue;
 					}
-					const declarations = stateDeclarations( restEntry.props, styles );
+					const declarations = stateDeclarations( restEntry.props, styles.props );
 					if ( declarations ) {
 						fact[ state.key ] = declarations;
+					}
+					// The overlay pattern: the control itself reports nothing while a child
+					// repaints. Recorded against the child, keyed by its selector, with the
+					// rest layout/paint the state needs in order to be visible.
+					for ( const childState of styles.children ) {
+						const meta = candidate.children.find( ( child ) => child.index === childState.index );
+						const childRest = restEntry.children.find( ( child ) => child.index === childState.index );
+						if ( ! meta || ! childRest ) {
+							continue;
+						}
+						const rawDeclarations = stateDeclarations( childRest.props, childState.props );
+						if ( ! rawDeclarations ) {
+							continue;
+						}
+						// A px transform of half the child's own box becomes the relative
+						// form the rebuild can apply at every width.
+						const childDeclarations = rawDeclarations.replace(
+							/transform:(matrix\([^)]*\))/g,
+							( _match, matrix: string ) => `transform:${ relativeTransform( matrix, childRest.box ) }`
+						);
+						const pseudo = childPseudoDeclarations( childRest.pseudo, childRest.box );
+						// Not reproducible: the child paints nothing and has no pseudo-element
+						// fill to reproduce — count it instead of emitting a no-op.
+						if ( ! childPaints( childRest.props, childRest.hasText, pseudo ) ) {
+							skippedChildStates += 1;
+							continue;
+						}
+						const selector = interactionChildSelector( meta );
+						const entry = childFacts.get( selector ) ?? { selector };
+						if ( childRest.transition && childRest.transition !== 'all 0s ease 0s' ) {
+							entry.transition = childRest.transition;
+						}
+						const base = childRestDeclarations( childRest.layout, childRest.box, restEntry.box );
+						if ( base ) {
+							entry.base = base;
+						}
+						if ( pseudo ) {
+							entry.pseudo = pseudo;
+						}
+						entry[ state.key ] = childDeclarations;
+						childFacts.set( selector, entry );
 					}
 				}
 				await cdp.send( 'CSS.forcePseudoState', { nodeId, forcedPseudoClasses: [] } );
@@ -526,7 +881,20 @@ export async function measureInteractions(
 				if ( fact.focus && fact.focus === fact.focusVisible ) {
 					delete fact.focus;
 				}
-				if ( fact.base || fact.transition || fact.hover || fact.focus || fact.focusVisible || fact.active ) {
+				if ( childFacts.size > 0 ) {
+					fact.children = [ ...childFacts.values() ].sort( ( a, b ) =>
+						a.selector.localeCompare( b.selector )
+					);
+				}
+				if (
+					fact.base ||
+					fact.transition ||
+					fact.hover ||
+					fact.focus ||
+					fact.focusVisible ||
+					fact.active ||
+					fact.children
+				) {
 					( facts[ candidate.bandId ] ??= [] ).push( fact );
 				}
 			}
@@ -538,7 +906,7 @@ export async function measureInteractions(
 		for ( const list of Object.values( facts ) ) {
 			list.sort( ( a, b ) => interactionSelector( a ).localeCompare( interactionSelector( b ) ) );
 		}
-		return facts;
+		return { facts, skippedChildStates };
 	} finally {
 		await browser.close();
 	}
@@ -560,6 +928,13 @@ export function countInteractionStates( facts: Record< string, ForgeInteractionF
 			for ( const key of COMPARED_INTERACTION_STATES ) {
 				if ( fact[ key ] ) {
 					total += 1;
+				}
+			}
+			for ( const child of fact.children ?? [] ) {
+				for ( const key of COMPARED_INTERACTION_STATES ) {
+					if ( child[ key ] ) {
+						total += 1;
+					}
 				}
 			}
 		}
@@ -594,6 +969,8 @@ export interface InteractionDeviation {
 	kind: 'control-missing' | 'state-missing' | 'focus-indicator-missing';
 	/** The state that went missing (`state-missing` only). */
 	state?: InteractionStateKey;
+	/** The control's CHILD that carried the state, when it was an overlay. */
+	child?: string;
 	severity: 'fail' | 'warn';
 }
 
@@ -637,12 +1014,25 @@ export function diffInteractionStates(
 					builtStates.add( state );
 				}
 			}
+			for ( const child of fact.children ?? [] ) {
+				for ( const state of COMPARED_INTERACTION_STATES ) {
+					if ( child[ state ] ) {
+						builtStates.add( state );
+					}
+				}
+			}
 		}
 		for ( const fact of facts ) {
 			const declared = COMPARED_INTERACTION_STATES.filter( ( state ) => Boolean( fact[ state ] ) );
+			const childContracts = ( fact.children ?? [] )
+				.map( ( child ) => ( {
+					child,
+					states: COMPARED_INTERACTION_STATES.filter( ( state ) => Boolean( child[ state ] ) ),
+				} ) )
+				.filter( ( contract ) => contract.states.length > 0 );
 			// A control the source gives no state to (an owl dot, a bare link) is
 			// not part of the interaction contract — nothing to verify.
-			if ( declared.length === 0 ) {
+			if ( declared.length === 0 && childContracts.length === 0 ) {
 				continue;
 			}
 			const selector = interactionSelector( fact );
@@ -660,6 +1050,21 @@ export function diffInteractionStates(
 						severity: 'warn',
 					} );
 				}
+				for ( const contract of childContracts ) {
+					for ( const state of contract.states ) {
+						if ( builtStates.has( state ) ) {
+							continue;
+						}
+						deviations.push( {
+							sectionId,
+							selector,
+							kind: 'control-missing',
+							state,
+							child: contract.child.selector,
+							severity: 'warn',
+						} );
+					}
+				}
 				continue;
 			}
 			for ( const state of declared ) {
@@ -669,6 +1074,27 @@ export function diffInteractionStates(
 						selector,
 						kind: 'state-missing',
 						state,
+						severity: 'fail',
+					} );
+				}
+			}
+			// The overlay half: the control exists, so a state its child drew and
+			// no longer draws is a real loss (the child is not re-rendered markup —
+			// it is inside the control the rebuild kept).
+			for ( const contract of childContracts ) {
+				const builtChild = ( match.children ?? [] ).find(
+					( child ) => child.selector === contract.child.selector
+				);
+				for ( const state of contract.states ) {
+					if ( builtChild?.[ state ] ) {
+						continue;
+					}
+					deviations.push( {
+						sectionId,
+						selector,
+						kind: 'state-missing',
+						state,
+						child: contract.child.selector,
 						severity: 'fail',
 					} );
 				}
@@ -706,12 +1132,13 @@ export function diffInteractionStates(
  * wording cannot drift from the finding.
  */
 export function describeInteractionDeviation( deviation: InteractionDeviation ): string {
+	const child = deviation.child ? ` > ${ deviation.child }` : '';
 	switch ( deviation.kind ) {
 		case 'state-missing':
-			return `band ${ deviation.sectionId }: "${ deviation.state }" state lost on ${ deviation.selector }`;
+			return `band ${ deviation.sectionId }: "${ deviation.state }" state lost on ${ deviation.selector }${ child }`;
 		case 'control-missing':
-			return `band ${ deviation.sectionId }: "${ deviation.state }" states lost with a control the build re-rendered or the source generated in JS \u2014 ${ deviation.selector }`;
+			return `band ${ deviation.sectionId }: "${ deviation.state }" states lost with a control the build re-rendered or the source generated in JS \u2014 ${ deviation.selector }${ child }`;
 		default:
-			return `band ${ deviation.sectionId }: no keyboard focus indicator — ${ deviation.selector }`;
+			return `band ${ deviation.sectionId }: no keyboard focus indicator \u2014 ${ deviation.selector }`;
 	}
 }
