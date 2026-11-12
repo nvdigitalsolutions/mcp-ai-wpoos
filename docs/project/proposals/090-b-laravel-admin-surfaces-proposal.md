@@ -65,6 +65,12 @@ The remaining WordPress-native screens stay in WordPress by design (Proposal 084
 4. WordPress keeps every T5 surface (Elementor, JetEngine, WooCommerce, WPCode, Rank Math,
    plugin/theme screens, network admin) and remains a peer during the transition.
 5. The work is sequenced in five gated phases; "credible admin" is T0–T2, Pro is demand-driven.
+6. Runtime profile is **one artifact** selected by `NVOOS_BACKEND`, with a startup contract assertion
+   (Q1 resolved, ADR-6).
+7. Console auth is **Sanctum SPA cookie mode, same-origin only**; `X-WP-Nonce` remains an alias
+   through Phase 4 and is removed in Phase 5 (Q2 resolved, ADR-4).
+8. Pro entitlement is a **seam** (`ProEntitlement` + dev `allow` driver), not a build blocker; the
+   commercial source is decided before selling, not before building (Q3 resolved, ADR-7).
 
 ---
 
@@ -179,8 +185,12 @@ must be expressed as manifest fields or a documented hook.
   token, so the SPA's request modules need no edit in Phase 0. The SPA migrates to `X-XSRF-TOKEN` in Phase 5.
 - API/MCP: bearer tokens (Sanctum abilities), never cookies.
 - Authorization: Laravel Policies + a fixed capability map (§10.1).
+- Same-origin only: the console proxies; no cross-site cookie and no credentialed CORS. Fortify/full
+  session auth is deferred unless Laravel becomes the identity source.
+- Nonce alias lifecycle: `X-WP-Nonce` is accepted in Phases 0–4 and removed in Phase 5, once the SPA
+  sends `X-XSRF-TOKEN`.
 **Consequences.** One middleware class replaces a client-wide refactor. CSRF semantics stay
-server-enforced.
+server-enforced, and the compatibility shim has an explicit removal release.
 
 ### ADR-5 — Strangler, with WordPress as a peer (accepted)
 
@@ -193,9 +203,31 @@ WooCommerce admin, WPCode, Rank Math, plugin/theme install, network admin.
 ### ADR-6 — One console, two runtime profiles (accepted)
 
 **Decision.** `serve.mjs` gains `NVOOS_BACKEND=wordpress|laravel`; the runtime config gains a
-Laravel profile. Deployment, caching, and the mirror release process are unchanged.
+Laravel profile. The Laravel profile performs a **startup contract assertion** against
+`GET /api/v1/features`; a missing or mismatched contract fails the page load instead of rendering
+empty screens. Deployment, caching, and the mirror release process are unchanged.
 **Consequences.** The Service Exchange can deploy the same console artifact for both estate types
-(§7.5).
+(§7.5). The mirror repo owns the env contract and must document `NVOOS_BACKEND` and
+`NVOOS_TARGET_SITE`.
+
+### ADR-7 — Pro entitlement is a seam, not a blocker (accepted)
+
+**Context.** The current licence is a WordPress **record**, not a runtime gate:
+`WP_MCP_AI_Pro_License::is_pro_active()` defaults to true, the key/status/plan/expires are WP
+options activated against a licence server with `get_site_url()`, and the Pro addon loads by plugin
+presence. A Laravel port therefore needs a commercial/distribution decision, not a feature check to
+boot.
+
+**Decision.**
+
+- Define `ProEntitlement` with `allows(string $feature): bool` and a typed
+  `not_supported_on_runtime` result.
+- Ship an `allow` driver for dev/CI and a `deny` driver for base-only builds.
+- Keep paid surfaces behind the seam; do not invent a licence server for Phase 4.
+- Choose the commercial source (the existing licence server with a Laravel instance ID, or the
+  gateway/commerce entitlement) before GA/selling, not before Phase 4.
+**Consequences.** Phase 4 can ship without a licence decision; commercial launch cannot. Fail-closed
+is a configuration choice, not a code fork.
 
 ---
 
@@ -227,7 +259,7 @@ Tier definitions are Proposal 084's, unchanged:
 | Tokens & security | token manager, key rotation, Auth0 setup, audit/monitor/training | T1 | `AuthProvider`, `RateLimiter`, audit store |
 | Media & content | media columns, datasets, OKF bundles, asset inventory | T1/T2 | `FileStore`, `FileUploadService` |
 | Integrations | Elementor, JetEngine, WooCommerce, plugins, Crawl4AI, Gmail | T5 | Keep in WordPress |
-| Pro bridge | Pro dashboard shell, license, database, REST | T2 | Pro license decision (§13 Q3) |
+| Pro bridge | Pro dashboard shell, license, database, REST | T2 | `ProEntitlement` seam (ADR-7) |
 | User profile | chat profile, memory | T1 | `MemoryStore` |
 
 ### 5.2 Pro admin families
@@ -399,12 +431,12 @@ valid **T0 fallback** only if the console cannot be made backend-neutral (it can
 
 | Phase | Scope | Effort | Gate |
 |---|---|---|---|
-| **0 — Contract freeze** | Capture golden fixtures; capability map; runtime-config profile; `serve.mjs` switch; feature flags | 1 week | Console boots against a stub Laravel backend with no WP |
+| **0 — Contract freeze** | Capture golden fixtures; capability map; runtime-config profile; `serve.mjs` switch; feature flags; `ProEntitlement` seam + `allow`/`deny` drivers; startup contract assertion | 1 week | Console boots against a stub Laravel backend with no WP; a missing contract fails loudly |
 | **1 — T0 ops console** | Health, diagnostics, operations, tools (read-only), settings (read-only), chat | 2 weeks | G1: console renders 5 pages + chat against Laravel; zero WP requests |
 | **2 — T1 assistant studio** | `AssistantService`, Eloquent models, portability, assistant CRUD/test, blueprints, teams (basic), tool enable/disable | 4–6 weeks | G2: assistant create → export → import round-trip; bundle imported from the Service Exchange |
 | **3 — T2 core operations** | Transcripts, memory, sessions, tokens, cost/usage, approvals, schedules, triggers, analytics, security center, records, paper store (~20 adapters) | 6–8 weeks | G3: contract suite green for every enabled family; auth matrix green |
-| **4 — T3 Pro families** | Manifest engine (5 generic screens) + 3 pilot toolkits (commerce, media, documents), then demand-driven | 4–6 weeks engine + 2–4 per family | G4: pilot toolkit installed from a manifest with zero bespoke PHP pages |
-| **5 — GA hardening** | SSO, CSRF header migration (`X-XSRF-TOKEN`), capability-filtered nav, upgrade path, observability, docs | 3–4 weeks | G5: two consecutive releases with no contract drift |
+| **4 — T3 Pro families** | Manifest engine (5 generic screens) + 3 pilot toolkits (commerce, media, documents), all behind `ProEntitlement`, then demand-driven | 4–6 weeks engine + 2–4 per family | G4: pilot toolkit installed from a manifest with zero bespoke PHP pages; paid surfaces return the typed entitlement error under the `deny` driver |
+| **5 — GA hardening** | SSO, CSRF header migration (`X-XSRF-TOKEN`), capability-filtered nav, commercial entitlement source wired (if selling), upgrade path, observability, docs | 3–4 weeks | G5: two consecutive releases with no contract drift; nonce alias removed |
 
 **Definition of "credible admin":** Phases 0–3. Everything after that is demand-driven.
 
@@ -535,6 +567,9 @@ Indicative person-weeks; confidence medium until Phase 0 fixtures exist.
 | **Credible admin (0–3)** | **13–17** |
 | **Pro parity** | **Not scheduled; demand-driven** |
 
+Phase 0 includes the `ProEntitlement` seam and the startup assertion; both are multi-day, not
+multi-week, and do not change the estimate.
+
 For comparison, a literal 1:1 port of ~290 PHP admin files at 0.5–2 days each is **7–24 months**
 before test and design work — and it would produce a second UI to maintain.
 
@@ -549,7 +584,7 @@ before test and design work — and it would produce a second UI to maintain.
 | Contract drift between WP and Laravel | High | Golden fixtures + CI diff + a single contract owner |
 | Two backends double the bug surface | Medium | One UI; parity suite; feature flags per family |
 | Auth mismatch (nonce vs CSRF, cookie domains) | Medium | Compatibility middleware; same-origin only; no cross-site cookies |
-| Pro licence/entitlement is WordPress-bound | High | Decide the licence source before Phase 4 (§Q3); typed `not_supported` until then |
+| Pro licence/entitlement is WordPress-bound | Low (technical) | **Resolved:** the licence is a WP record, not a runtime gate. Build behind `ProEntitlement`; decide the commercial source before selling (ADR-7) |
 | Octane state leaks across requests | Medium | `scoped` bindings, no mutable singletons, soak gate |
 | Proxy cache serves authenticated pages | Low | Keep the default-deny micro-cache and `Vary: Cookie` rules |
 | WP-native integrations silently disappear | High | Manifest `wp_only` + explicit "unavailable on this runtime" UI |
@@ -564,19 +599,21 @@ before test and design work — and it would produce a second UI to maintain.
 - A Blade/Filament admin.
 - Migrating WP-native integrations (Elementor, JetEngine, WooCommerce admin, WPCode, Rank Math).
 
+### Resolved decisions (2026-11-12)
+
+| ID | Decision | ADR |
+|---|---|---|
+| Q1 — Runtime profile | One artifact + `NVOOS_BACKEND` + startup contract assertion | ADR-6 |
+| Q2 — Session model | Sanctum SPA cookie mode, same-origin only; nonce alias through Phase 4, XSRF from Phase 5 | ADR-4 |
+| Q3 — Pro entitlement | `ProEntitlement` seam + dev `allow` driver; commercial source before GA, not before Phase 4 | ADR-7 |
+
 ### Open questions
 
-1. **Q1 — Runtime profile ownership.** Should the Laravel profile ship in the same `dist/` with an
-   env switch (recommended), or as a second build target?
-2. **Q2 — Session model.** Sanctum SPA cookie mode (recommended) or full Laravel session/Fortify
-   with a login screen?
-3. **Q3 — Pro entitlement.** Is the licence checked by a Laravel licence service, the gateway, or a
-   WordPress peer? This blocks Phase 4.
-4. **Q4 — Pro toolkits as peers.** Do any Pro toolkits stay WordPress-only indefinitely (federation),
+1. **Q4 — Pro toolkits as peers.** Do any Pro toolkits stay WordPress-only indefinitely (federation),
    or is every family ultimately portable?
-5. **Q5 — Minimum Laravel admin.** Should the Service Exchange require T0 only for a Laravel estate,
+2. **Q5 — Minimum Laravel admin.** Should the Service Exchange require T0 only for a Laravel estate,
    with T1 as an upsell?
-6. **Q6 — SSO.** Does the console share a cookie/domain with the Laravel app, or does it always proxy
+3. **Q6 — SSO.** Does the console share a cookie/domain with the Laravel app, or does it always proxy
    same-origin?
 
 ---
@@ -591,6 +628,7 @@ before test and design work — and it would produce a second UI to maintain.
 - `examples/nvoos-complete-velocity/README.md`, `src/runtime-config.ts`, `scripts/serve.mjs`
 - `addons/pro/assets/spa-v2/src/features/`, `src/api/`
 - `lib/core/src/Domain/Contract/`, `lib/laravel-adapter/src/Adapter/`, `lib/wordpress-adapter/src/Adapter/`
+- `includes/admin/class-wp-mcp-ai-pro-license.php`, `addons/pro/mcp-ai-wpoos-pro.php` (licence record vs. runtime gate)
 - Laravel: Sanctum SPA authentication, Policies, Octane worker lifecycle, Form Requests
 - OWASP: session management, CSRF prevention, file upload security
 - Fowler, "Strangler Fig Application"
