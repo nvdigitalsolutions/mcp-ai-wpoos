@@ -5,7 +5,7 @@
   "description": "Catalog and stock operations for a product business.",
   "icon": "🛍️",
   "feature": "commerce",
-  "screens": ["settings", "entities", "dashboard"],
+  "screens": ["settings", "entities", "consolidate", "dashboard"],
   "settings": [
     {
       "key": "currency",
@@ -65,6 +65,16 @@
         "aggregate": "sum",
         "column": "stock",
         "filter": { "column": "status", "op": "eq", "value": "active" }
+      },
+      {
+        "key": "low_stock",
+        "label": "Low stock",
+        "source": "entity:product",
+        "aggregate": "count",
+        "filter": [
+          { "column": "status", "op": "eq", "value": "active" },
+          { "column": "stock", "op": "lte", "setting": "low_stock_threshold" }
+        ]
       }
     ]
   }

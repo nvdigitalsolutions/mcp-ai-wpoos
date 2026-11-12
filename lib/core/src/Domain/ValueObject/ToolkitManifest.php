@@ -25,7 +25,7 @@ namespace Nvoos\Core\Domain\ValueObject;
 final class ToolkitManifest {
 
 	/** Screens the console can render from a manifest. */
-	public const SCREENS = array( 'settings', 'entities', 'research', 'dashboard' );
+	public const SCREENS = array( 'settings', 'entities', 'research', 'consolidate', 'dashboard' );
 
 	/** Setting widget types. */
 	public const SETTING_TYPES = array( 'text', 'number', 'boolean', 'select', 'secret' );
@@ -135,7 +135,7 @@ final class ToolkitManifest {
 		$entities = self::validateEntities( $raw, $errors );
 
 		self::validateSettings( $raw, $errors );
-		self::validateDashboard( $raw, $errors, $entities );
+		self::validateDashboard( $raw, $errors, $entities, self::settingKeys( $raw ) );
 
 		return $errors;
 	}
@@ -355,8 +355,9 @@ final class ToolkitManifest {
 	 * @param array<string, mixed>                $raw
 	 * @param array<int, string>                  $errors   Passed by reference.
 	 * @param array<string, array<string, mixed>> $entities Validated entities by key.
+	 * @param array<string, true>                 $settings Declared setting keys.
 	 */
-	private static function validateDashboard( array $raw, array &$errors, array $entities ): void {
+	private static function validateDashboard( array $raw, array &$errors, array $entities, array $settings ): void {
 		if ( ! isset( $raw['dashboard'] ) ) {
 			return;
 		}
@@ -421,24 +422,69 @@ final class ToolkitManifest {
 			}
 
 			if ( isset( $card['filter'] ) ) {
-				$filter = $card['filter'];
+				$declared = $card['filter'];
+				$isList   = \is_array( $declared ) && \array_is_list( $declared );
+				$filters  = $isList ? $declared : array( $declared );
 
-				if ( ! \is_array( $filter ) ) {
-					$errors[] = $path . '.filter must be an object';
-					continue;
+				if ( $isList && array() === $declared ) {
+					$errors[] = $path . '.filter must declare at least one filter when given as a list';
 				}
 
-				$column = (string) ( $filter['column'] ?? '' );
+				foreach ( $filters as $filterIndex => $filter ) {
+					$filterPath = $isList ? $path . '.filter[' . $filterIndex . ']' : $path . '.filter';
 
-				if ( null !== $entity && ! self::entityHasColumn( $entity, $column ) ) {
-					$errors[] = $path . '.filter.column "' . $column . '" is not a column of that entity';
-				}
+					if ( ! \is_array( $filter ) ) {
+						$errors[] = $filterPath . ' must be an object';
+						continue;
+					}
 
-				if ( ! \in_array( (string) ( $filter['op'] ?? '' ), self::FILTER_OPS, true ) ) {
-					$errors[] = $path . '.filter.op must be one of ' . \implode( '/', self::FILTER_OPS );
+					$column = (string) ( $filter['column'] ?? '' );
+
+					if ( null !== $entity && ! self::entityHasColumn( $entity, $column ) ) {
+						$errors[] = $filterPath . '.column "' . $column . '" is not a column of that entity';
+					}
+
+					if ( ! \in_array( (string) ( $filter['op'] ?? '' ), self::FILTER_OPS, true ) ) {
+						$errors[] = $filterPath . '.op must be one of ' . \implode( '/', self::FILTER_OPS );
+					}
+
+					// A filter value is either a literal (value) or the runtime value of
+					// one of the toolkit's own settings (setting). Never both.
+					$hasValue   = \array_key_exists( 'value', $filter );
+					$hasSetting = \array_key_exists( 'setting', $filter );
+
+					if ( $hasValue === $hasSetting ) {
+						$errors[] = $filterPath . ' must declare exactly one of value or setting';
+					} elseif ( $hasSetting ) {
+						$setting = $filter['setting'];
+
+						if ( ! \is_string( $setting ) || ! isset( $settings[ $setting ] ) ) {
+							$errors[] = $filterPath . '.setting "' . (string) $setting . '" is not a declared setting';
+						}
+					}
 				}
 			}
 		}
+	}
+
+	/**
+	 * Declared setting keys, so dashboard filters can bind to them.
+	 *
+	 * @param array<string, mixed> $raw
+	 * @return array<string, true>
+	 */
+	private static function settingKeys( array $raw ): array {
+		$keys = array();
+
+		foreach ( (array) ( $raw['settings'] ?? array() ) as $setting ) {
+			$key = \is_array( $setting ) ? (string) ( $setting['key'] ?? '' ) : '';
+
+			if ( '' !== $key ) {
+				$keys[ $key ] = true;
+			}
+		}
+
+		return $keys;
 	}
 
 	/**

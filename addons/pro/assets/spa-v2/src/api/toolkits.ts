@@ -44,6 +44,14 @@ export interface ToolkitSettingField {
 	options?: string[] | Record< string, string >;
 }
 
+/** One dashboard filter. `value` is a literal; `setting` reads a toolkit setting. */
+export interface ToolkitDashboardFilter {
+	column: string;
+	op: 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte' | 'like';
+	value?: unknown;
+	setting?: string;
+}
+
 /** A dashboard card the engine aggregates server-side. */
 export interface ToolkitDashboardCard {
 	key: string;
@@ -51,7 +59,7 @@ export interface ToolkitDashboardCard {
 	source: string;
 	aggregate: 'count' | 'sum' | 'avg' | 'min' | 'max';
 	column?: string;
-	filter?: { column: string; op: string; value?: unknown };
+	filter?: ToolkitDashboardFilter | ToolkitDashboardFilter[];
 }
 
 /** The full manifest document. */
@@ -111,16 +119,56 @@ export interface ToolkitDashboardCardResult {
 	value: number;
 }
 
+/** One group of records that share a value in the grouped column. */
+export interface ToolkitDuplicateGroup {
+	value: string;
+	count: number;
+	records: ToolkitRecord[];
+}
+
+/** Server-side duplicate scan for one entity column. */
+export interface ToolkitDuplicatesResult {
+	column: string;
+	scanned: number;
+	groups: ToolkitDuplicateGroup[];
+	truncated: boolean;
+}
+
+/** One rejected row in a bulk import. */
+export interface ToolkitImportFailure {
+	index: number;
+	fields: Record< string, string >;
+}
+
+/** Result of a bulk import, or of its dry run when `preview` is true. */
+export interface ToolkitImportResult {
+	preview: boolean;
+	total: number;
+	valid?: number;
+	created?: number;
+	duplicates: number;
+	failed: ToolkitImportFailure[];
+	rows?: Array< Record< string, unknown > >;
+}
+
 /** Typed API failure — `fields` carries per-field validation messages. */
 export class ToolkitsApiError extends Error {
 	readonly code: string;
 	readonly fields: Record< string, string >;
+	/** HTTP status, or 0 for a transport failure. */
+	readonly status: number;
 
-	constructor( message: string, code = 'request_failed', fields: Record< string, string > = {} ) {
+	constructor(
+		message: string,
+		code = 'request_failed',
+		fields: Record< string, string > = {},
+		status = 0
+	) {
 		super( message );
 		this.name = 'ToolkitsApiError';
 		this.code = code;
 		this.fields = fields;
+		this.status = status;
 	}
 }
 
@@ -220,6 +268,71 @@ export class ToolkitsClient {
 		);
 
 		return Array.isArray( data?.cards ) ? data.cards : [];
+	}
+
+	/**
+	 * Server-side duplicate scan for one text/enum column.
+	 *
+	 * The backend groups the whole entity, so this is not limited to the loaded
+	 * page. `truncated` says the group cap was hit.
+	 */
+	async duplicates(
+		slug: string,
+		entity: string,
+		column: string,
+		signal?: AbortSignal
+	): Promise< ToolkitDuplicatesResult > {
+		const params = new URLSearchParams( { column } );
+
+		const data = await this.request< {
+			column?: string;
+			scanned?: number;
+			groups?: ToolkitDuplicateGroup[];
+			truncated?: boolean;
+		} >(
+			'GET',
+			`/${ encodeURIComponent( slug ) }/entities/${ encodeURIComponent( entity ) }/duplicates?${ params.toString() }`,
+			undefined,
+			signal
+		);
+
+		return {
+			column: typeof data?.column === 'string' ? data.column : column,
+			scanned: typeof data?.scanned === 'number' ? data.scanned : 0,
+			groups: Array.isArray( data?.groups ) ? data.groups : [],
+			truncated: data?.truncated === true,
+		};
+	}
+
+	/**
+	 * Bulk create. With `preview` the server validates and returns the plan
+	 * without writing anything.
+	 */
+	async importRows(
+		slug: string,
+		entity: string,
+		rows: Array< Record< string, unknown > >,
+		options: { preview?: boolean; skipExisting?: boolean } = {}
+	): Promise< ToolkitImportResult > {
+		const data = await this.request< Partial< ToolkitImportResult > >(
+			'POST',
+			`/${ encodeURIComponent( slug ) }/entities/${ encodeURIComponent( entity ) }/import`,
+			{
+				rows,
+				preview: options.preview === true,
+				skip_existing: options.skipExisting !== false,
+			}
+		);
+
+		return {
+			preview: data?.preview === true,
+			total: typeof data?.total === 'number' ? data.total : rows.length,
+			valid: typeof data?.valid === 'number' ? data.valid : undefined,
+			created: typeof data?.created === 'number' ? data.created : undefined,
+			duplicates: typeof data?.duplicates === 'number' ? data.duplicates : 0,
+			failed: Array.isArray( data?.failed ) ? data.failed : [],
+			rows: Array.isArray( data?.rows ) ? data.rows : undefined,
+		};
 	}
 
 	/** One page of records for an entity. */
@@ -362,7 +475,8 @@ export class ToolkitsClient {
 			throw new ToolkitsApiError(
 				envelope?.error?.message ?? envelope?.message ?? __( 'Toolkit request failed.', 'nvoos-pro-spa' ),
 				envelope?.error?.code ?? 'request_failed',
-				envelope?.error?.fields ?? {}
+				envelope?.error?.fields ?? {},
+				response.status
 			);
 		}
 

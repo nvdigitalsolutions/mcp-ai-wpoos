@@ -151,6 +151,7 @@ class ToolkitsController
         string $slug,
         ToolkitManifestLoader $loader,
         ProEntitlementInterface $entitlement,
+        SettingsStoreInterface $store,
     ): JsonResponse {
         [$manifest, $error] = $this->resolve($slug, $loader, $entitlement);
 
@@ -158,6 +159,9 @@ class ToolkitsController
             return $error;
         }
 
+        // Dashboard filters may bind to a toolkit setting, so resolve the
+        // stored values once and hand them to the filter compiler.
+        $settings = $this->settingsValues($manifest, $store);
         $cards = [];
 
         foreach ($manifest->dashboardCards() as $card) {
@@ -173,7 +177,7 @@ class ToolkitsController
                 ->where('toolkit', $manifest->slug())
                 ->where('entity', $entityKey);
 
-            $this->applyFilter($query, $card['filter'] ?? null);
+            $this->applyFilters($query, $card['filter'] ?? null, $settings);
 
             $aggregate = (string) ($card['aggregate'] ?? 'count');
             $value = 0;
@@ -433,6 +437,249 @@ class ToolkitsController
         return $deleted > 0
             ? $this->ok(['deleted' => true])
             : $this->fail('record_not_found', 'Record not found.', 404);
+    }
+
+    /**
+     * Server-side duplicate detection for one text/enum column.
+     *
+     * Groups the whole entity, not a page: `GROUP BY json_extract(...)` with a
+     * `HAVING COUNT(*) > 1` is the same statement on MySQL and SQLite, so the
+     * consolidate screen no longer has to load every record to scan it.
+     *
+     * Group count is capped (`limit`, default 25, max 100) and the response
+     * says when it was truncated. Records inside a group are capped at 25.
+     */
+    public function duplicates(
+        Request $request,
+        string $slug,
+        string $entity,
+        ToolkitManifestLoader $loader,
+        ProEntitlementInterface $entitlement,
+    ): JsonResponse {
+        [$manifest, $error] = $this->resolve($slug, $loader, $entitlement);
+
+        if ($error !== null) {
+            return $error;
+        }
+
+        $config = $manifest->entity($entity);
+
+        if ($config === null) {
+            return $this->fail('entity_not_found', 'Unknown entity "'.$entity.'".', 404);
+        }
+
+        $column = (string) $request->query('column', '');
+        $declared = null;
+
+        foreach ((array) ($config['columns'] ?? []) as $candidate) {
+            if ((string) ($candidate['key'] ?? '') === $column) {
+                $declared = $candidate;
+                break;
+            }
+        }
+
+        if ($declared === null) {
+            return $this->validationFailed(['column' => 'Choose a column of this entity.']);
+        }
+
+        if (! in_array((string) ($declared['type'] ?? ''), ['string', 'enum'], true)) {
+            return $this->validationFailed(['column' => 'Only text or list columns can be grouped.']);
+        }
+
+        $limit = (int) $request->query('limit', 25);
+        $limit = max(1, min(100, $limit));
+
+        $expression = $this->jsonPath($column);
+        $base = DB::table('nvoos_toolkit_records')
+            ->where('toolkit', $manifest->slug())
+            ->where('entity', $entity);
+
+        $scanned = (clone $base)->count();
+
+        $collisions = (clone $base)
+            ->selectRaw($expression.' as group_value, COUNT(*) as total')
+            ->whereRaw($expression.' IS NOT NULL')
+            ->groupByRaw($expression)
+            ->havingRaw('COUNT(*) > 1')
+            ->orderByRaw('COUNT(*) DESC')
+            ->limit($limit)
+            ->get();
+
+        $values = [];
+
+        foreach ($collisions as $row) {
+            $values[] = (string) $row->group_value;
+        }
+
+        $groups = [];
+
+        if ($values !== []) {
+            $rows = (clone $base)
+                ->where(function ($where) use ($expression, $values): void {
+                    foreach ($values as $value) {
+                        $where->orWhereRaw($expression.' = ?', [$value]);
+                    }
+                })
+                ->orderBy('id')
+                ->get();
+
+            $buckets = [];
+
+            foreach ($rows as $row) {
+                $record = $this->record($row);
+                $key = isset($record['data'][$column]) ? (string) $record['data'][$column] : '';
+
+                if (! in_array($key, $values, true)) {
+                    continue;
+                }
+
+                $buckets[$key][] = $record;
+            }
+
+            foreach ($values as $value) {
+                if (! isset($buckets[$value])) {
+                    continue;
+                }
+
+                $groups[] = [
+                    'value' => $value,
+                    'count' => count($buckets[$value]),
+                    'records' => array_slice($buckets[$value], 0, 25),
+                ];
+            }
+        }
+
+        return $this->ok([
+            'column' => $column,
+            'scanned' => $scanned,
+            'groups' => $groups,
+            'truncated' => count($groups) >= $limit,
+        ]);
+    }
+
+    /**
+     * Bulk create with a dry-run preview.
+     *
+     * Rows are validated with the same compiler as `storeEntity`, so a pasted
+     * sheet behaves exactly like the form. Existing business keys are skipped
+     * (default) or reported as failures — the caller chooses.
+     */
+    public function importEntity(
+        Request $request,
+        string $slug,
+        string $entity,
+        ToolkitManifestLoader $loader,
+        ProEntitlementInterface $entitlement,
+    ): JsonResponse {
+        [$manifest, $error] = $this->resolve($slug, $loader, $entitlement);
+
+        if ($error !== null) {
+            return $error;
+        }
+
+        $config = $manifest->entity($entity);
+
+        if ($config === null) {
+            return $this->fail('entity_not_found', 'Unknown entity "'.$entity.'".', 404);
+        }
+
+        $rows = $request->input('rows');
+
+        if (! is_array($rows) || ! array_is_list($rows)) {
+            return $this->fail('invalid_payload', 'Send `rows` as a list of record objects.', 422);
+        }
+
+        if (count($rows) > 500) {
+            return $this->fail('too_many_rows', 'Import at most 500 rows at a time.', 422);
+        }
+
+        $preview = $request->boolean('preview');
+        $skipExisting = $request->boolean('skip_existing', true);
+        $idField = (string) $config['id_field'];
+
+        $seen = [];
+        $valid = [];
+        $failed = [];
+        $duplicates = 0;
+
+        foreach ($rows as $index => $row) {
+            if (! is_array($row)) {
+                $failed[] = ['index' => $index, 'fields' => ['row' => 'Each row must be an object.']];
+                continue;
+            }
+
+            [$errors, $normalized] = $this->validatePayload($config, $row, true);
+
+            if ($errors !== []) {
+                $failed[] = ['index' => $index, 'fields' => $errors];
+                continue;
+            }
+
+            $externalId = (string) $normalized[$idField];
+
+            if (isset($seen[$externalId]) || $this->findRow($manifest->slug(), $entity, $externalId) !== null) {
+                if ($skipExisting) {
+                    $duplicates++;
+                    continue;
+                }
+
+                // Reported, not skipped: `duplicates` counts skipped rows only,
+                // so valid + duplicates + failed always equals the batch size.
+                $failed[] = [
+                    'index' => $index,
+                    'fields' => [$idField => 'A record with that value already exists.'],
+                ];
+                continue;
+            }
+
+            $seen[$externalId] = true;
+            $valid[] = $normalized;
+        }
+
+        if ($preview) {
+            return $this->ok([
+                'preview' => true,
+                'total' => count($rows),
+                'valid' => count($valid),
+                'duplicates' => $duplicates,
+                'failed' => $failed,
+                'rows' => $valid,
+            ]);
+        }
+
+        $created = 0;
+
+        if ($valid !== []) {
+            $now = now();
+
+            DB::transaction(function () use ($valid, $manifest, $entity, $idField, $now, &$created): void {
+                foreach (array_chunk($valid, 100) as $chunk) {
+                    $insert = [];
+
+                    foreach ($chunk as $normalized) {
+                        $insert[] = [
+                            'toolkit' => $manifest->slug(),
+                            'entity' => $entity,
+                            'external_id' => (string) $normalized[$idField],
+                            'data' => json_encode($normalized, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ];
+                    }
+
+                    DB::table('nvoos_toolkit_records')->insert($insert);
+                    $created += count($chunk);
+                }
+            });
+        }
+
+        return $this->ok([
+            'preview' => false,
+            'total' => count($rows),
+            'created' => $created,
+            'duplicates' => $duplicates,
+            'failed' => $failed,
+        ]);
     }
 
     /**
@@ -712,13 +959,45 @@ class ToolkitsController
     /**
      * Portable JSON path expression. The column name always comes from a
      * validated manifest (key pattern), so interpolation is safe.
+     *
+     * MySQL returns a JSON value from `json_extract`, so a string comes back
+     * quoted (`"Tee"`) and every comparison, group and aggregate would miss.
+     * SQLite already unquotes, so only MySQL gets the wrapper — tests run on
+     * SQLite and would not surface the difference.
      */
     private function jsonPath(string $column): string
     {
-        return "json_extract(data, '$.".str_replace("'", '', $column)."')";
+        $path = "'$.".str_replace("'", '', $column)."'";
+
+        return DB::connection()->getDriverName() === 'mysql'
+            ? 'json_unquote(json_extract(data, '.$path.'))'
+            : 'json_extract(data, '.$path.')';
     }
 
-    private function applyFilter(object $query, mixed $filter): void
+    private function applyFilters(object $query, mixed $filters, array $settings = []): void
+    {
+        if (! is_array($filters) || $filters === []) {
+            return;
+        }
+
+        // One filter object = one condition; a list is ANDed.
+        if (! array_is_list($filters)) {
+            $filters = [$filters];
+        }
+
+        foreach ($filters as $filter) {
+            $this->applyFilter($query, $filter, $settings);
+        }
+    }
+
+    /**
+     * Apply one dashboard filter.
+     *
+     * A filter's value is either a literal (`value`) or the runtime value of a
+     * declared setting (`setting`). A setting that is unset or null disables
+     * that condition rather than filtering everything out.
+     */
+    private function applyFilter(object $query, mixed $filter, array $settings = []): void
     {
         if (! is_array($filter)) {
             return;
@@ -726,7 +1005,18 @@ class ToolkitsController
 
         $column = (string) ($filter['column'] ?? '');
         $expression = $this->jsonPath($column);
-        $value = $filter['value'] ?? null;
+
+        if (array_key_exists('setting', $filter)) {
+            $settingKey = (string) $filter['setting'];
+
+            if (! array_key_exists($settingKey, $settings) || $settings[$settingKey] === null) {
+                return;
+            }
+
+            $value = $settings[$settingKey];
+        } else {
+            $value = $filter['value'] ?? null;
+        }
 
         switch ((string) ($filter['op'] ?? 'eq')) {
             case 'neq':

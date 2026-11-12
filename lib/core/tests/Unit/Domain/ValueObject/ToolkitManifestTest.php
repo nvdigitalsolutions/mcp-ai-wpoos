@@ -128,6 +128,19 @@ final class ToolkitManifestTest extends TestCase {
 		$this->assertStringContainsString( 'version must be semantic', $errors );
 	}
 
+	public function testEveryDeclaredScreenIsAccepted(): void {
+		foreach ( ToolkitManifest::SCREENS as $screen ) {
+			$raw             = $this->validManifest();
+			$raw['screens']  = array( $screen );
+
+			$this->assertSame(
+				array(),
+				ToolkitManifest::validate( $raw ),
+				'Declared screen "' . $screen . '" must validate.'
+			);
+		}
+	}
+
 	public function testUnknownScreenIsRejected(): void {
 		$raw            = $this->validManifest();
 		$raw['screens'] = array( 'settings', 'reports' );
@@ -193,6 +206,63 @@ final class ToolkitManifestTest extends TestCase {
 		$raw['dashboard']['cards'][1]['filter']['op'] = 'between';
 
 		$this->assertStringContainsString( 'filter.op must be one of', implode( ' ', ToolkitManifest::validate( $raw ) ) );
+	}
+
+	public function testFilterListIsAccepted(): void {
+		$raw                                    = $this->validManifest();
+		$raw['dashboard']['cards'][1]['filter'] = array(
+			array( 'column' => 'status', 'op' => 'eq', 'value' => 'active' ),
+			array( 'column' => 'stock', 'op' => 'lte', 'value' => 5 ),
+		);
+
+		$this->assertSame( array(), ToolkitManifest::validate( $raw ) );
+	}
+
+	public function testFilterCanBindToADeclaredSetting(): void {
+		$raw                                    = $this->validManifest();
+		$raw['dashboard']['cards'][1]['filter'] = array( 'column' => 'stock', 'op' => 'lte', 'setting' => 'currency' );
+
+		$this->assertSame( array(), ToolkitManifest::validate( $raw ) );
+	}
+
+	public function testFilterRejectsAnUnknownSetting(): void {
+		$raw                                    = $this->validManifest();
+		$raw['dashboard']['cards'][1]['filter'] = array( 'column' => 'stock', 'op' => 'lte', 'setting' => 'missing' );
+
+		$this->assertStringContainsString( 'is not a declared setting', implode( ' ', ToolkitManifest::validate( $raw ) ) );
+	}
+
+	public function testFilterRejectsBothValueAndSetting(): void {
+		$raw                                    = $this->validManifest();
+		$raw['dashboard']['cards'][1]['filter'] = array(
+			'column'  => 'stock',
+			'op'      => 'lte',
+			'value'   => 5,
+			'setting' => 'currency',
+		);
+
+		$this->assertStringContainsString( 'exactly one of value or setting', implode( ' ', ToolkitManifest::validate( $raw ) ) );
+	}
+
+	public function testFilterRequiresAValueOrASetting(): void {
+		$raw                                    = $this->validManifest();
+		$raw['dashboard']['cards'][1]['filter'] = array( 'column' => 'stock', 'op' => 'lte' );
+
+		$this->assertStringContainsString( 'exactly one of value or setting', implode( ' ', ToolkitManifest::validate( $raw ) ) );
+	}
+
+	public function testEmptyFilterListIsRejected(): void {
+		$raw                                    = $this->validManifest();
+		$raw['dashboard']['cards'][1]['filter'] = array();
+
+		$this->assertStringContainsString( 'at least one filter', implode( ' ', ToolkitManifest::validate( $raw ) ) );
+	}
+
+	public function testFilterListEntryMustBeAnObject(): void {
+		$raw                                    = $this->validManifest();
+		$raw['dashboard']['cards'][1]['filter'] = array( 'nope' );
+
+		$this->assertStringContainsString( 'must be an object', implode( ' ', ToolkitManifest::validate( $raw ) ) );
 	}
 
 	public function testFromArrayThrowsOnInvalidDocument(): void {

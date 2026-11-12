@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<ruleset name="NV oOS Laravel">
+	<description>PSR-12 conformance for the Laravel runtime trees.</description>
+
+	<!-- The Laravel app skeleton and the adapter are excluded from the main
+	     WPCS ruleset (phpcs.xml.dist excludes lib/ and docker/), so they had
+	     no style gate at all. This ruleset gives them one without forcing the
+	     WordPress tree to PSR-12. -->
+	<file>lib/laravel-adapter/src</file>
+	<file>lib/laravel-adapter/tests</file>
+	<file>docker/laravel/app-skeleton/app</file>
+	<file>docker/laravel/app-skeleton/bootstrap</file>
+	<file>docker/laravel/app-skeleton/database</file>
+	<file>docker/laravel/app-skeleton/routes</file>
+	<file>docker/laravel/app-skeleton/tests</file>
+
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/bootstrap/cache/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg value="ps"/>
+	<arg name="colors"/>
+
+	<!-- Laravel app skeleton: full PSR-12. -->
+	<rule ref="PSR12">
+		<exclude-pattern>*/lib/laravel-adapter/*</exclude-pattern>
+	</rule>
+
+	<!--
+		PHPUnit test methods use the `test_snake_case` convention across this
+		repo (and WordPress's test suite). PSR-1's CamelCaps rule does not apply
+		to them; renaming would break the house convention for no runtime gain.
+	-->
+	<rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
+		<exclude-pattern>*/tests/*</exclude-pattern>
+	</rule>
+
+	<!--
+		Framework-agnostic adapter: PSR-12 structure, but tab indentation is the
+		convention for shared PHP in this repo. Reformatting the 24 adapter
+		files is a whitespace-only change that would collide with the open
+		Laravel PR stack; the indentation sniffs are revisited once that stack
+		has merged.
+	-->
+	<rule ref="PSR12">
+		<exclude-pattern>*/docker/laravel/*</exclude-pattern>
+		<exclude name="Generic.WhiteSpace.DisallowTabIndent"/>
+		<exclude name="Generic.WhiteSpace.ScopeIndent"/>
+	</rule>
+</ruleset>

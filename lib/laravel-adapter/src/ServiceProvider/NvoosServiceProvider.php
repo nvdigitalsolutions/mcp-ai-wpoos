@@ -38,7 +38,7 @@ use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
-use Nvoos\Core\Tool\ColorConvertTool;
+use Nvoos\Laravel\Tool\CoreToolCatalogue;
 use Nvoos\Laravel\Adapter\AuthProvider;
 use Nvoos\Laravel\Adapter\CacheStore;
 use Nvoos\Laravel\Adapter\ContentStore;
@@ -177,18 +177,21 @@ class NvoosServiceProvider extends ServiceProvider {
 	}
 
 	/**
-	 * Seed the tool registry with the self-contained core tools.
+	 * Seed the tool registry.
 	 *
-	 * The spike starts with a small, key-free set. Additional tools are
-	 * registered incrementally as their constructor dependencies are
-	 * wired into the Laravel container.
+	 * Everything in {@see CoreToolCatalogue} needs only the error factory, so it
+	 * is safe to register without keys or provider configuration. Tools that
+	 * need a service are registered here explicitly, one at a time, as their
+	 * dependencies are wired into the container.
 	 */
 	private function registerTools(): void {
 		$registry = $this->app->make( ToolRegistry::class );
 		$errors   = $this->app->make( ErrorFactoryInterface::class );
 
-		if ( ! $registry->has( 'color_convert' ) ) {
-			$registry->register( new ColorConvertTool( $errors ) );
+		foreach ( CoreToolCatalogue::build( $errors ) as $tool ) {
+			if ( ! $registry->has( $tool->getSlug() ) ) {
+				$registry->register( $tool );
+			}
 		}
 
 		$registry->notifyRegistered();
