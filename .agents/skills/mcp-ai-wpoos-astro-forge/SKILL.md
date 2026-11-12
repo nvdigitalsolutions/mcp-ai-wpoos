@@ -254,7 +254,9 @@ gates, visual-regression practice).
     A 903px card from a missing `height: auto` is invisible to CSS review and
     obvious here. It also measures each COLUMN's height, `attachment` and
     `size` — a 700px fixed photo beside 946px of copy is a fact the sanitized
-    markup cannot carry. See `reference/band-geometry.md` §11.
+    markup cannot carry — and each CAROUSEL's slides-per-view, gutter and dot
+    count (a slider's `items` lives in its JS options). See
+    `reference/band-geometry.md` §11–§12.
   - Extraction now reads `@media` bodies (`rulesInMedia`) for `margin-top`/
     `margin-bottom`: a band flush on desktop but pulled on tablet/mobile is
     captured as `{ desktop, tablet, mobile }`, not flattened. An inline margin
