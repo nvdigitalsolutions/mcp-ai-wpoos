@@ -135,6 +135,11 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		approvals: `${core}/approvals`,
 		triggers: `${core}/orchestration/triggers`,
 		teams: `${core}/teams`,
+		// Laravel-only contracts: WordPress has neither a profession catalogue
+		// route nor org-team storage, so both surfaces stay hidden rather than
+		// firing requests that 404.
+		professions: '',
+		orgTeams: '',
 		portability: `${core}/assistants`,
 		security: `${core}/security`,
 		operations: `${core}/operations`,
