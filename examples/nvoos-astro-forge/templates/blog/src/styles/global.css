@@ -1427,12 +1427,69 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 /* Carousels are one lane of marks, never a grid, and never a wrap: a fixed
  * flex-basis times the item count plus the gutters overflowed the lane at 7
  * logos and dropped the last onto a second row (double height). The source
- * carousel scrolls; the rebuild shares the lane instead. */
+ * carousel scrolls; the rebuild shares the lane instead.
+ *
+ * The GAP is a measured fact when the band carries one (`--ds-carousel-gap`):
+ * virtuallyjamaica's gallery is 0 — the builder pads each SLIDE — and keeping
+ * the guessed clamp there put 20px of dead space between slides the source
+ * butts together. */
 .ds-section-wrap .post-body :is(.owl-carousel, .owl-stage) {
 	display: flex;
 	flex-wrap: nowrap;
 	align-items: stretch;
-	gap: clamp(1.25rem, 2.5vw, 2.5rem);
+	gap: var(--ds-carousel-gap, clamp(1.25rem, 2.5vw, 2.5rem));
+}
+
+/* `scrollbar-width` covers Firefox; WebKit ignores it and would draw a bar
+ * under a track whose source shows pagination dots instead. */
+.ds-section-wrap .post-body :is(.owl-carousel, .owl-stage)::-webkit-scrollbar {
+	display: none;
+}
+
+/* The pagination a measured carousel gets from `BuilderCarousel.astro` (the
+ * source's own was drawn by its slider JS). These live here, not in that
+ * component's scoped <style>: the dots are created at RUNTIME, so they never
+ * carry Astro's scope attribute and a scoped selector would not match them. */
+.ds-carousel-dots {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.25rem;
+	margin-block-start: 1rem;
+}
+
+.ds-carousel-dot {
+	width: 1.5rem;
+	height: 1.5rem;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	cursor: pointer;
+	display: grid;
+	place-items: center;
+}
+
+.ds-carousel-dot::before {
+	content: '';
+	width: 0.5rem;
+	height: 0.5rem;
+	border-radius: 50%;
+	background: currentColor;
+	opacity: 0.35;
+	transition: opacity 0.15s ease;
+}
+
+.ds-carousel-dot:hover::before,
+.ds-carousel-dot:focus-visible::before,
+.ds-carousel-dot[aria-current='true']::before {
+	opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ds-carousel-dot::before {
+		transition: none;
+	}
 }
 
 /* Anything that is not a builder column spans the whole row. */
@@ -1559,12 +1616,19 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-12'] { grid-column: span 12; }
 }
 
-/* A logo carousel is one row of marks, never a vertical stack. */
+/* A carousel's items share the lane by default (`flex: 1 1 0`) — the right
+ * answer for a logo strip, and a WRONG one for a gallery whose source pages:
+ * seven slides became seven 129px columns where the source shows five at
+ * 222px. A band that measured its carousel sets `--ds-carousel-item-flex`
+ * (slides-per-view, in the generated rules); reading it here means the guess
+ * and the fact use the same property, so neither has to out-weigh the other.
+ *
+ * `scroll-snap-align` makes the swipe land on a slide boundary; `min-width: 0`
+ * stays because a fixed basis on a long caption still overflows its lane. */
 .ds-section-wrap .post-body .owl-carousel > * {
-	/* Share the lane (basis 0). A fixed basis wraps the last item onto a
-	 * second row once items+gutters exceed the container. */
-	flex: 1 1 0;
+	flex: var(--ds-carousel-item-flex, 1 1 0);
 	min-width: 0;
+	scroll-snap-align: start;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1933,7 +1997,11 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 		grid-column: span 12;
 	}
 	.ds-section-wrap .post-body .owl-carousel > * {
-		flex-basis: 40%;
+		/* The same property the base rule reads, so a MEASURED carousel keeps its
+		 * own slide width here. The fallback is this rule's original guess —
+		 * `flex-basis: 40%` with the default grow/shrink — expressed as a shorthand
+		 * so the two rules cannot disagree about which one set the basis. */
+		flex: var(--ds-carousel-item-flex, 1 1 40%);
 	}
 }
 

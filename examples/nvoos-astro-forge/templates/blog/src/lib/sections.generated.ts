@@ -70,6 +70,11 @@ export interface SectionTheme {
 	 * and size. Emitted as band-scoped `.class` rules (the sanitizer keeps the
 	 * class but drops the inline layout, and the vendor sheet never ships). */
 	columnBox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
+	/** The band's measured CAROUSEL geometry, keyed by the carousel's unique
+	 * class: slides-per-view, gutter and the track's scroll behaviour. A vendor
+	 * slider keeps `items` in its JS options, so the markup cannot say how many
+	 * slides are on screen. */
+	carouselBox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
 	/** The boxed container width (the source constrains its content —
 	 * jayainc's Elementor 1140px default). Absent → the site measure. A
 	 * per-device map is emitted as scoped CSS: an inline value would
