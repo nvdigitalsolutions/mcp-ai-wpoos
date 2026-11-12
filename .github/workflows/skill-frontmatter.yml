@@ -1,0 +1,50 @@
+name: Skill Frontmatter
+
+# Validates every SKILL.md frontmatter in both skill roots.
+#
+# Why: an unquoted ": " inside `description:` is invalid YAML and makes Zed
+# silently drop the skill from its catalog. Four skills were caught this way
+# on 2026-11-12 (see AGENTS.md, "Skill frontmatter validation").
+#
+# The validator lives in the Service Exchange app because that app already
+# pins the `yaml` devDependency; the global (~/.agents/skills) root does not
+# exist in CI and is skipped by the script.
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - '.agents/skills/**'
+      - 'examples/nvoos-service-exchange/scripts/validate-skill-frontmatter.mjs'
+      - 'examples/nvoos-service-exchange/package.json'
+      - '.github/workflows/skill-frontmatter.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/**'
+      - 'examples/nvoos-service-exchange/scripts/validate-skill-frontmatter.mjs'
+      - 'examples/nvoos-service-exchange/package.json'
+      - '.github/workflows/skill-frontmatter.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Install only the validator dependency (the app's full toolchain is
+      # not needed for a frontmatter check).
+      - name: Install validator dependency
+        working-directory: examples/nvoos-service-exchange
+        run: npm install --no-save --no-audit --no-fund yaml@^2
+
+      - name: Validate skill frontmatter
+        working-directory: examples/nvoos-service-exchange
+        run: npm run validate:skills

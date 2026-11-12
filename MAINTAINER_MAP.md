@@ -186,7 +186,7 @@ mcp-ai-wpoos/
 │   ├─ src/Infrastructure/     ← 12 AI provider clients, SSE handler, cost calculator
 │   └─ src/Tool/               ← 109 framework-agnostic tool classes
 │
-├─ .agents/skills/             ← 52 coding-time agent skills for Zed editor (20 wp-* + 31 design-* + mcp-ai-wpoos-plugin)
+├─ .agents/skills/             ← 84 coding-time agent skills for Zed editor (20 wp-* + 36 design-* + 28 operational guides incl. mcp-ai-wpoos-service-exchange)
 ├─ .bmad/                      ← 6 BMAD workflow agent YAML definitions + team composition
 ├─ .context/                   ← Subsystem context files (8 topics + 5 templates + active/archive)
 │
@@ -385,7 +385,7 @@ This repository is developed with multiple AI coding agents. Each agent has a de
 | **GitHub Copilot** | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | Repo-level instructions for Copilot chat and completions |
 | **OpenAI Codex** | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox bootstrap script |
 | **BMAD Agents** | [`.bmad/agents/*.yaml`](.bmad/agents/) | Six specialized roles for the GSD × BMAD workflow |
-| **Zed Agent Skills** | [`.agents/skills/*.md`](.agents/skills/) | 52 coding-time skills (20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide) auto-discovered by Zed |
+| **Zed Agent Skills** | [`.agents/skills/*.md`](.agents/skills/) | 84 coding-time skills (20 wp-* WordPress plugin development patterns + 36 design-* skills + 28 operational guides incl. mcp-ai-wpoos-service-exchange) auto-discovered by Zed |
 
 The full agent inventory, capabilities, and context-loading strategy are documented in [`AGENTS.md`](AGENTS.md).
 

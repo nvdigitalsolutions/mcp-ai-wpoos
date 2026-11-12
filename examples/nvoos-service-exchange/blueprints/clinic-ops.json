@@ -1,0 +1,57 @@
+{
+  "blueprint_version": 1,
+  "name": "Clinic Operations Copilot",
+  "slug": "clinic-ops",
+  "tagline": "Bookings, stock and compliance for small clinics",
+  "industry": "healthcare",
+  "bundle": {
+    "format": "nvoos-assistant",
+    "format_version": 1,
+    "plugin_version": "1.1.80",
+    "exported_at": "2026-11-12T00:00:00Z",
+    "exported_by": 0,
+    "assistants": [
+      {
+        "title": "Clinic Operations Copilot",
+        "slug": "clinic-operations-copilot",
+        "status": "publish",
+        "content": "You are the operations copilot for a small clinic. You help the clinic manager triage booking requests, keep stock levels healthy, and prepare compliance summaries. Be concise, cite the records you used, and never invent patient data.",
+        "excerpt": "Operations copilot for small clinics.",
+        "meta": {
+          "_wp_mcp_ai_tools": [ "get_environment_status", "deep_research" ],
+          "_wp_mcp_ai_provider": "openai",
+          "_wp_mcp_ai_model": "gpt-4o-mini",
+          "_wp_mcp_ai_temperature": 0.2
+        }
+      }
+    ]
+  },
+  "toolkits": [ "crm" ],
+  "mcp_apps": [],
+  "site": {
+    "region": "us",
+    "size_hint": "small",
+    "php": "8.1",
+    "domain": null,
+    "wp_manager": true
+  },
+  "console": { "enable": true, "template": "complete-velocity" },
+  "storefront": { "enable": false, "template": null },
+  "gateway": {
+    "visibility": "private",
+    "tool_allowlist": [ "get_environment_status" ],
+    "rate_limit_profile": "standard"
+  },
+  "commerce": {
+    "stripe_price_id": null,
+    "trial_days": 14,
+    "metered": false
+  },
+  "listing": {
+    "summary": "An operations assistant for small clinics and private practices: booking triage, stock alerts and compliance summaries.",
+    "use_cases": [ "Booking triage", "Stock level alerts", "Monthly compliance summary" ],
+    "pricing_note": "Billed monthly per clinic.",
+    "connect_snippets": true
+  },
+  "_meta": { "author": "exchange-seed", "source": "exchange-seed" }
+}

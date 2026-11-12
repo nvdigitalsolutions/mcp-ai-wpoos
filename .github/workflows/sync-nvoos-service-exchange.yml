@@ -1,0 +1,124 @@
+name: Sync nvoos-service-exchange
+
+# One-way mirror of the NV oOS Service Exchange app to
+# nvdigitalsolutions/nvoos-service-exchange.
+#
+# The app ships a prebuilt Vite bundle (dist/) plus the zero-dependency Node
+# control plane (server/ + scripts/serve.mjs). The bundle is built here in
+# the monorepo; the mirror runs no build step. Runtime dependencies are
+# stripped (node: builtins only), so Velocity's npm install is a no-op.
+#
+# The mirror history is intentionally flat (one commit per sync, force-pushed).
+# Never commit to the mirror directly.
+#
+# Activation (owner steps, one-time):
+#   1. Create the repo nvdigitalsolutions/nvoos-service-exchange.
+#   2. Add a repo-scoped deploy token as the repository secret
+#      NVOOS_SERVICE_EXCHANGE_REPO_TOKEN.
+#   3. Run this workflow once via workflow_dispatch (backfills the mirror).
+#   4. In Velocity: connect the mirror repo, root directory = repo root,
+#      entry server.js, no build command, Node 22 LTS, and set the env from
+#      docs/operations/deployment/service-exchange-velocity-setup.md.
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'examples/nvoos-service-exchange/**'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check mirror token
+        id: gate
+        run: |
+          if [ -z "${{ secrets.NVOOS_SERVICE_EXCHANGE_REPO_TOKEN }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Mirror sync skipped::NVOOS_SERVICE_EXCHANGE_REPO_TOKEN is not configured; see docs/operations/deployment/service-exchange-velocity-setup.md §2."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install and test (wizard + server)
+        working-directory: examples/nvoos-service-exchange
+        run: |
+          npm ci
+          npm test
+          node --test "server/**/*.test.js"
+
+      - name: Build the wizard bundle
+        working-directory: examples/nvoos-service-exchange
+        run: npm run build
+
+      - name: Smoke-test the full stack (mock mode)
+        working-directory: examples/nvoos-service-exchange
+        run: npm run smoke
+
+      - name: Assemble mirror tree
+        run: |
+          rm -rf /tmp/nvoos-service-exchange
+          mkdir -p /tmp/nvoos-service-exchange
+          # Runtime only: server + scripts + seeds + built dist.
+          cp -r examples/nvoos-service-exchange/server /tmp/nvoos-service-exchange/
+          cp -r examples/nvoos-service-exchange/scripts /tmp/nvoos-service-exchange/
+          cp -r examples/nvoos-service-exchange/blueprints /tmp/nvoos-service-exchange/
+          cp -r examples/nvoos-service-exchange/dist /tmp/nvoos-service-exchange/
+          cp examples/nvoos-service-exchange/server.js /tmp/nvoos-service-exchange/
+          cp examples/nvoos-service-exchange/package.json /tmp/nvoos-service-exchange/
+          cp examples/nvoos-service-exchange/README.md /tmp/nvoos-service-exchange/
+          # The smoke script is dev-only (it writes data-smoke/ and expects
+          # the repo layout); tests are not part of the runtime.
+          rm -f /tmp/nvoos-service-exchange/scripts/smoke.mjs \
+            /tmp/nvoos-service-exchange/scripts/cloudways-api-probe.mjs \
+            /tmp/nvoos-service-exchange/scripts/cloudways-mcp-probe.mjs \
+            /tmp/nvoos-service-exchange/scripts/validate-skill-frontmatter.mjs
+          find /tmp/nvoos-service-exchange -name '*.test.js' -delete
+          cd /tmp/nvoos-service-exchange
+          # Zero-dependency runtime: strip deps and no-op the monorepo-only
+          # scripts so Velocity's default pipeline never fails the deploy.
+          node -e '
+            const fs = require("fs");
+            const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const noop = "node -e \"process.exit(0)\"";
+            for (const s of ["build", "dev", "preview", "typecheck", "test", "test:watch", "test:server", "smoke", "sync:dist"]) {
+              p.scripts[s] = noop;
+            }
+            delete p.dependencies;
+            delete p.devDependencies;
+            fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n");
+          '
+          git init -q -b main
+          git add .
+          git -c user.name="GitHub Actions" -c user.email="actions@github.com" commit -q -m "Sync NV oOS Service Exchange app ($GITHUB_SHA)"
+
+      - name: Smoke-test the assembled app
+        working-directory: /tmp/nvoos-service-exchange
+        run: |
+          node --check scripts/serve.mjs
+          node --check server.js
+          test -f dist/index.html
+          test -f blueprints/clinic-ops.json
+          test -f server/blueprint/validate.js
+          EXCHANGE_MODE=mock PORT=4183 EXCHANGE_AUTOSTART=1 node server.js > /tmp/exchange-smoke.log 2>&1 &
+          SERVER_PID=$!
+          sleep 1
+          curl -sf http://localhost:4183/api/v1/health | grep -q '"mode":"mock"' || { cat /tmp/exchange-smoke.log; kill $SERVER_PID; exit 1; }
+          curl -sf http://localhost:4183/api/v1/blueprints | grep -q 'clinic-ops' || { cat /tmp/exchange-smoke.log; kill $SERVER_PID; exit 1; }
+          curl -sf -o /dev/null http://localhost:4183/ || { cat /tmp/exchange-smoke.log; kill $SERVER_PID; exit 1; }
+          kill $SERVER_PID
+
+      - name: Push to nvoos-service-exchange
+        if: steps.gate.outputs.configured == 'true'
+        working-directory: /tmp/nvoos-service-exchange
+        run: |
+          git push https://x-access-token:${{ secrets.NVOOS_SERVICE_EXCHANGE_REPO_TOKEN }}@github.com/nvdigitalsolutions/nvoos-service-exchange.git main --force
