@@ -12,10 +12,15 @@
 // colour, and does its ink match. Contrast alone is NOT enough — white on
 // virtuallyjamaica's red hero is 4.57:1, so a WCAG-only check would have passed
 // the broken menu.
+//
+// The same shape covers the header BOX (P4): a source that constrains its
+// brand/nav row to a centred container is rebuilt as a full-width flex row, so
+// the logo pins to the viewport edge and the bar stretches on a wide monitor.
+// `compareChromeGeometry` diffs the measured caps and gutters per viewport.
 // ---------------------------------------------------------------------------
 
 import { colorDeltaE, GRADIENT_SURFACE_RE, normalizeCssColor, normalizeCssValue } from './region-colors.ts';
-import type { ForgeMobileNav } from './types.ts';
+import type { ForgeChromeGeometry, ForgeMobileNav } from './types.ts';
 
 export interface ChromeDeviation {
 	/** The fact that drifted, e.g. `mobileNav.background`. */
@@ -185,6 +190,100 @@ export function compareMobileNav(
 				deltaE: null,
 				severity: 'warn',
 			} );
+		}
+	}
+
+	return { deviations, compared, skipped };
+}
+
+/** The viewports the header box is compared at, widest first. */
+const GEOMETRY_DEVICES = [ 'wide', 'desktop', 'tablet', 'mobile' ] as const;
+
+/**
+ * Diff the header's BOX per viewport: source vs build.
+ *
+ * The BOX is a design decision, not a pixel contract — a 4px gutter drift is a
+ * warning. The hard failure is the one the reader actually sees on a wide
+ * monitor: the source constrains the row to a container and the build runs it
+ * full-bleed, pinning the logo to the viewport edge (jayainc, 2026-11-12).
+ *
+ * A device the source measured but the build did not is only skipped when the
+ * source itself reported no cap there (a full-bleed viewport with a gutter);
+ * the gutter is compared whenever both sides recorded one.
+ */
+export function compareChromeGeometry(
+	expected: ForgeChromeGeometry | undefined,
+	actual: ForgeChromeGeometry | undefined,
+	options: ChromeAuditOptions = {}
+): ChromeAuditReport {
+	const tolerance = options.lengthTolerance ?? 4;
+	const deviations: ChromeDeviation[] = [];
+	const skipped: string[] = [];
+	let compared = 0;
+
+	const devices = GEOMETRY_DEVICES.filter( ( device ) => expected?.[ device ] );
+	if ( devices.length === 0 ) {
+		skipped.push( 'header box (not measured on the source)' );
+		return { deviations, compared, skipped };
+	}
+	if ( ! actual ) {
+		deviations.push( {
+			fact: 'header box',
+			expected: 'the source\u2019s container',
+			actual: null,
+			deltaE: null,
+			severity: 'fail',
+			note: 'the build has no measurable header container at all',
+		} );
+		return { deviations, compared: 1, skipped };
+	}
+
+	for ( const device of devices ) {
+		const from = expected![ device ]!;
+		const to = actual[ device ];
+
+		if ( typeof from.measure === 'number' ) {
+			compared++;
+			if ( typeof to?.measure !== 'number' ) {
+				deviations.push( {
+					fact: `header box [${ device }].measure`,
+					expected: `${ from.measure }px box`,
+					actual: 'full-bleed',
+					deltaE: null,
+					severity: 'fail',
+					note: 'the source centres the header content in a container; the build stretches it across the viewport and pins the logo to the edge',
+				} );
+			} else if ( Math.abs( from.measure - to.measure ) > tolerance ) {
+				deviations.push( {
+					fact: `header box [${ device }].measure`,
+					expected: `${ from.measure }px`,
+					actual: `${ to.measure }px`,
+					deltaE: null,
+					severity: 'warn',
+				} );
+			}
+		}
+
+		if ( typeof from.padX === 'number' ) {
+			compared++;
+			if ( typeof to?.padX !== 'number' ) {
+				deviations.push( {
+					fact: `header box [${ device }].padX`,
+					expected: `${ from.padX }px gutter`,
+					actual: null,
+					deltaE: null,
+					severity: 'warn',
+					note: 'the build records no gutter, so the brand sits on the container edge',
+				} );
+			} else if ( Math.abs( from.padX - to.padX ) > tolerance ) {
+				deviations.push( {
+					fact: `header box [${ device }].padX`,
+					expected: `${ from.padX }px`,
+					actual: `${ to.padX }px`,
+					deltaE: null,
+					severity: 'warn',
+				} );
+			}
 		}
 	}
 

@@ -24,7 +24,9 @@ import type {
 	BandTypeProperties,
 	ForgeBandContainer,
 	ForgeBandFacts,
+	ForgeChromeBox,
 	ForgeChrome,
+	ForgeChromeGeometry,
 	ForgeGeometry,
 	ForgeMobileNav,
 	ForgeStickyHeader,
@@ -256,6 +258,18 @@ export const BAND_FACT_VIEWPORTS = {
 } as const;
 
 type DeviceKey = keyof typeof BAND_FACT_VIEWPORTS;
+
+/**
+ * The viewports the header box is measured at. `wide` is the only one where a
+ * large container cap (jayainc: 1670px) is narrower than the viewport, so it is
+ * the fact that distinguishes "boxed" from "full width" on a wide monitor.
+ */
+export const GEOMETRY_VIEWPORTS = {
+	wide: { width: 1920, height: 1080 },
+	desktop: { width: 1440, height: 900 },
+	tablet: { width: 834, height: 1112 },
+	mobile: { width: 390, height: 844 },
+} as const;
 
 /**
  * One band's typography at the CURRENT viewport.
@@ -1092,6 +1106,112 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			facts[ id ] = band;
 		}
 		return { bands: facts, ...( pageBackground ? { pageBackground } : {} ) };
+	} finally {
+		await browser.close();
+	}
+}
+
+/**
+ * Measure the header's BOX at each viewport — does the source constrain its
+ * brand/nav row to a container, and with what gutter?
+ *
+ * Two container shapes matter:
+ *   • a declared cap — jayainc's `.aux-container { max-width:1670px; padding:0
+ *     35px; margin:auto }`;
+ *   • a per-breakpoint width — virtuallyjamaica's Bootstrap `.container`
+ *     (1170px at 1440, 970 at 1024, 100% below 992) with 15px padding.
+ *
+ * The first is read from computed `max-width` (the design constant, stable
+ * across viewports); the second from the measured box. `measure` is recorded
+ * only where the cap is BINDING (box narrower than the header) so a 1670px cap
+ * at a 1440px viewport reads as "full-bleed here" on both sides of the gate.
+ * The 1920px viewport exists to make a cap that large visible at all.
+ *
+ * `padX` is the container's INLINE PADDING, not the brand's offset: it stays
+ * true for a source that centres its brand under a breakpoint (jayainc centres
+ * it at 1024/834), where a brand-relative inset would be nonsense.
+ *
+ * FAIL-SOFT: no header or no brand returns `{}` and the template keeps its own
+ * gutter.
+ */
+export async function measureChromeGeometry( options: {
+	url: string;
+	timeout?: number;
+} ): Promise< ForgeChromeGeometry > {
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const page = await context.newPage();
+		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+		await settle( page );
+		const out: ForgeChromeGeometry = {};
+		for ( const device of [ 'wide', 'desktop', 'tablet', 'mobile' ] as const ) {
+			const { width, height } = GEOMETRY_VIEWPORTS[ device ];
+			await page.setViewportSize( { width, height } );
+			await page.waitForTimeout( 300 );
+			const box = await page.evaluate( () => {
+				const header = document.querySelector( 'header, #masthead, #header, .site-header, nav.navbar, nav' );
+				if ( ! header ) {
+					return null;
+				}
+				const headerRect = header.getBoundingClientRect();
+				const brand =
+					header.querySelector( 'a[rel="home"], .site-logo, .navbar-brand, a[href="/"]' ) ?? header.querySelector( 'a' );
+				if ( ! brand ) {
+					return null;
+				}
+				const brandRect = brand.getBoundingClientRect();
+				const read = ( node: Element ) => {
+					const style = getComputedStyle( node );
+					const rect = node.getBoundingClientRect();
+					return {
+						node,
+						rect,
+						maxWidth: Number.parseFloat( style.maxWidth ),
+						padLeft: Number.parseFloat( style.paddingLeft ) || 0,
+					};
+				};
+				const chain = [];
+				for ( let node = brand.parentElement; node && node !== header; node = node.parentElement ) {
+					chain.push( read( node ) );
+				}
+				// A `max-width` below ~60% of the header (or 480px) is a logo cell, not
+				// the row container. `.aux-logo-anchor` itself computes `max-width:226px`.
+				const plausible = Math.max( 480, headerRect.width * 0.6 );
+				const capped = chain.find(
+					( entry ) => Number.isFinite( entry.maxWidth ) && entry.maxWidth >= plausible
+				);
+				const binding = capped && capped.maxWidth <= headerRect.width - 8 ? capped : null;
+				// The container is the OUTERMOST padded ancestor wide enough to be the
+				// row — walking up, not down: a Bootstrap row and its `.container`
+				// share a width, and the row is the one without the gutter. Reversing
+				// also skips the logo COLUMN (virtuallyjamaica's 785px `.col-lg-2` at
+				// tablet), which is padded but is not the header's box.
+				const padded = [ ...chain ]
+					.reverse()
+					.find( ( entry ) => entry.padLeft > 0 && entry.rect.width >= headerRect.width * 0.6 );
+				const boxed = padded && padded.rect.width <= headerRect.width - 8 ? padded : null;
+				return {
+					measure: binding ? Math.round( binding.maxWidth ) : boxed ? Math.round( boxed.rect.width ) : undefined,
+					padX: Math.round( ( padded ?? capped )?.padLeft ?? brandRect.x - headerRect.x ),
+				};
+			} );
+			if ( ! box ) {
+				continue;
+			}
+			const entry: ForgeChromeBox = {};
+			if ( typeof box.measure === 'number' && box.measure > 0 ) {
+				entry.measure = box.measure;
+			}
+			if ( typeof box.padX === 'number' && box.padX >= 0 ) {
+				entry.padX = box.padX;
+			}
+			if ( Object.keys( entry ).length > 0 ) {
+				out[ device ] = entry;
+			}
+		}
+		return out;
 	} finally {
 		await browser.close();
 	}

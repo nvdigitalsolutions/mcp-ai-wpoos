@@ -830,6 +830,33 @@ export interface MeasureColorOptions {
 							const colors = image.match( /rgba?\([^)]+\)/g ) ?? [];
 							return colors.every( ( color ) => alphaOf( color ) >= 0.95 );
 						};
+						//
+						// P5 — a builder paints many bands on a PSEUDO layer: a hero's
+						// `::before { inset:0; background: linear-gradient(...) }` overlay, a
+						// section's tinted `::after`. Computed styles do not chain through
+						// pseudos, so the band read as transparent and the gate fell through to
+						// the page canvas. Only POSITIONED pseudos qualify: a static pseudo is
+						// in-flow decoration (a divider bar), and calling that the band's
+						// surface would compare a 125×6 rule against a full-height band.
+						const pseudoSurface = ( element: Element ): { color: string; image?: string } | undefined => {
+							for ( const name of [ '::before', '::after' ] ) {
+								const style = getComputedStyle( element, name );
+								if ( ! style || style.content === 'none' || style.content === 'normal' || style.content === '' ) {
+									continue;
+								}
+								if ( style.position !== 'absolute' && style.position !== 'fixed' ) {
+									continue;
+								}
+								const image = style.backgroundImage;
+								if ( imageIsSurface( image ) ) {
+									return { color: style.backgroundColor, image };
+								}
+								if ( isOpaque( style.backgroundColor ) ) {
+									return { color: style.backgroundColor };
+								}
+							}
+							return undefined;
+						};
 						const readBackground = (
 							element: Element,
 							effective: boolean,
@@ -841,7 +868,12 @@ export interface MeasureColorOptions {
 								// The band's OWN surface outranks its children. `.section {
 								// background-image: linear-gradient(…) }` has a TRANSPARENT
 								// background-colour, so keying the return on the colour alone missed
-								// the most common gradient form.
+								// the most common gradient form. A positioned overlay pseudo paints
+								// ABOVE that surface, so it is read first (P5).
+								const ownPseudo = pseudoSurface( element );
+								if ( ownPseudo ) {
+									return ownPseudo;
+								}
 								const ownImage = ownStyle.backgroundImage;
 								const ownHasImage = imageIsSurface( ownImage );
 								if ( ownHasImage || isOpaque( own ) ) {
@@ -850,6 +882,12 @@ export interface MeasureColorOptions {
 							}
 							if ( ! effective ) {
 								return { color: own };
+							}
+							// A chrome region (header/footer) painted on an overlay pseudo — the
+							// same P5 rule, before the ancestor walk can report the page canvas.
+							const overlay = pseudoSurface( element );
+							if ( overlay ) {
+								return overlay;
 							}
 							if ( descendantFill ) {
 								// The band's fill layer: the largest surface descendant box. A
@@ -871,12 +909,15 @@ export interface MeasureColorOptions {
 									// layer may still paint a gradient, so fall through to the
 									// image check below.
 									const fillAlpha = background === 'transparent' ? 0 : alphaOf( background );
-									if ( fillAlpha > 0 && fillAlpha < 0.95 ) {
-										continue;
-									}
 									const backgroundImage = style.backgroundImage;
 									const hasImage = imageIsSurface( backgroundImage );
-									if ( fillAlpha === 0 && ! hasImage ) {
+									const nodePseudo = pseudoSurface( node );
+									// A translucent colour is a tint over the layer below — unless an
+									// opaque overlay pseudo paints the node (P5).
+									if ( fillAlpha > 0 && fillAlpha < 0.95 && ! nodePseudo ) {
+										continue;
+									}
+									if ( fillAlpha === 0 && ! hasImage && ! nodePseudo ) {
 										continue;
 									}
 									const rect = node.getBoundingClientRect();
@@ -884,8 +925,8 @@ export interface MeasureColorOptions {
 										continue;
 									}
 									candidates.push( {
-										bg: background,
-										...( hasImage ? { image: backgroundImage } : {} ),
+										bg: nodePseudo?.color ?? background,
+										...( nodePseudo?.image || hasImage ? { image: nodePseudo?.image ?? backgroundImage } : {} ),
 										area: rect.width * rect.height,
 										w: rect.width,
 									} );
@@ -925,12 +966,24 @@ export interface MeasureColorOptions {
 							while ( node ) {
 								const style = getComputedStyle( node );
 								const background = style.backgroundColor;
+								const backgroundImage = style.backgroundImage;
 								const rect = node.getBoundingClientRect();
-								if ( isOpaque( background ) && rect.width * rect.height <= ownArea * 2 ) {
-									const backgroundImage = style.backgroundImage;
-									return imageIsSurface( backgroundImage )
-										? { color: background, image: backgroundImage }
-										: { color: background };
+								const sameScale = rect.width * rect.height <= ownArea * 2;
+								// P6 — an inner-section anchor (`#products` is an Elementor
+								// `inner-section`) carries no surface of its own; its parent band
+								// does, and that surface is a GRADIENT as often as a colour. The
+								// walk used to accept only `background-color`, so it stepped past
+								// the gradient band to the page canvas and the gate compared the
+								// wrong layer. Accept either paint, and a positioned pseudo.
+								if ( sameScale ) {
+									const nodePseudo = pseudoSurface( node );
+									if ( nodePseudo ) {
+										return nodePseudo;
+									}
+									const hasImage = imageIsSurface( backgroundImage );
+									if ( isOpaque( background ) || hasImage ) {
+										return hasImage ? { color: background, image: backgroundImage } : { color: background };
+									}
 								}
 								// `<html>`'s background is the VIEWPORT CANVAS (visible on
 								// overscroll and before first paint), not a region's surface.

@@ -1376,6 +1376,45 @@ export interface ForgeTopbarFacts {
 }
 
 /**
+ * The header's BOX at one viewport, measured (`measureChromeGeometry`).
+ *
+ * A builder rarely runs its header content full-bleed. jayainc wraps the row in
+ * `.aux-container { max-width:1670px; padding:0 35px }`; virtuallyjamaica uses
+ * Bootstrap's per-breakpoint `.container` (1170/970/…, 15px padding). A rebuild
+ * that keeps `.site-header` as a full-width flex row pins the logo to the
+ * viewport edge and the header stretches on a wide monitor — the "logo on the
+ * left, should be boxed and not full width" drift (2026-11-12).
+ */
+export interface ForgeChromeBox {
+	/**
+	 * The container's cap (border-box px) — recorded only at a viewport where it
+	 * is actually BINDING (box narrower than the header), so the fact means "the
+	 * row is Npx wide here", not "some ancestor declares a max-width".
+	 */
+	measure?: number;
+	/**
+	 * The container's inline padding (the gutter between the box edge and the
+	 * brand/nav, px). Read from the container's computed `padding-left`, so it is
+	 * valid for a centred brand too — unlike a brand-relative inset.
+	 */
+	padX?: number;
+}
+
+/**
+ * The header box per viewport. Sparse: a device with nothing to say is absent.
+ *
+ * `wide` (1920) exists because a container cap only becomes VISIBLE above it:
+ * jayainc's 1670px box looks full-bleed at 1440 (35px gutters) and only shows
+ * its centred box at 1920. Without it the gate could never see the cap.
+ */
+export interface ForgeChromeGeometry {
+	wide?: ForgeChromeBox;
+	desktop?: ForgeChromeBox;
+	tablet?: ForgeChromeBox;
+	mobile?: ForgeChromeBox;
+}
+
+/**
  * The source's opened mobile menu, as the browser paints it.
  *
  * A collapsed nav is not just a hidden list: the source puts it on a SURFACE.
@@ -1447,6 +1486,11 @@ export interface ForgeChrome {
 	 * from the header surface (or the page surface) so it is never transparent.
 	 */
 	mobileNav?: ForgeMobileNav;
+	/**
+	 * The header's BOX per viewport: the source's container cap and gutter.
+	 * Absent → the template's own full-width flex row and gutter.
+	 */
+	geometry?: ForgeChromeGeometry;
 	/**
 	 * The source's own mobile nav disclosure (a Bootstrap `navbar-toggle`, a
 	 * builder's hamburger button).

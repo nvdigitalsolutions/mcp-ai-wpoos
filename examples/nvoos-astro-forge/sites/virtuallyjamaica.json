@@ -402,6 +402,22 @@
 				"itemPitch": 30,
 				"overlay": true,
 				"fullWidth": true
+			},
+			"geometry": {
+				"wide": {
+					"measure": 1170,
+					"padX": 15
+				},
+				"desktop": {
+					"measure": 1170,
+					"padX": 15
+				},
+				"tablet": {
+					"padX": 15
+				},
+				"mobile": {
+					"padX": 15
+				}
 			}
 		},
 		"behavior": {

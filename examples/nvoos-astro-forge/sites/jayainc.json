@@ -632,7 +632,22 @@
 					"icon": "auxicon-googleplus",
 					"href": "https://www.google.lk/maps/place/Jaya+Inc/@25.8040054,-80.3775633,15z/data=!4m5!3m4!1s0x0:0x2cc675bcbef019d2!8m2!3d25.8040054!4d-80.3775633"
 				}
-			]
+			],
+			"geometry": {
+				"wide": {
+					"measure": 1670,
+					"padX": 35
+				},
+				"desktop": {
+					"padX": 35
+				},
+				"tablet": {
+					"padX": 35
+				},
+				"mobile": {
+					"padX": 35
+				}
+			}
 		},
 		"behavior": {
 			"headerSticky": true,

@@ -92,15 +92,86 @@ from its content: **47px against the source's 75px**. The panel then started
 It is now always recorded for a sticky header. Scope: the pass measures at
 1440px, so the fact assumes the resting height does not change per device —
 true for virtuallyjamaica (75/75/75), and non-sticky headers (jayainc: 100/160/100)
-never reach this branch. A header that changes height per device needs the
-per-device chrome-geometry pass (P4 in the roadmap), not this one.
+never reach this branch. A header that changes height per device is covered by
+the header-box pass (section 5) for its BOX, not for its height.
 
-## Roadmap (not built)
+## 5. The header BOX — `analyze --geometry` → `chrome.geometry` → `verify --chrome`
 
-- **P4 — per-device chrome geometry**: header height/alignment, brand and
-  toggle boxes at 1440/834/390, diffed like band boxes. This is the gate that
-  makes "the header is centred / 28px short" a test instead of a conversation.
-- **P5 — pseudo-element surfaces**: read `::before`/`::after` paint when the
-  element's own surface is transparent (jayainc's footer gradient lives there).
-- **P6 — inner-section anchors**: when an anchor lands on an inner section, fall
-  through to the ancestor band's painted layer so its gradient is gated.
+The reported drift was *"the header still looks wrong with the logo on the left,
+it should be boxed and not full width"*. It is invisible at 1440 on jayainc: the
+source's container is `1670px` wide with `35px` gutters, so at 1440 it spans
+the viewport. At 1920 the source keeps its 1670px box (brand at x=160) while a
+full-width rebuild pins the logo to the edge (x=35) and stretches the bar.
+
+`measureChromeGeometry` (lib/geometry.ts) measures at **1920 / 1440 / 834 / 390**
+and records, per viewport:
+
+| fact | meaning |
+|---|---|
+| `measure` | the container's cap, only where it is **binding** (box narrower than the header) |
+| `padX` | the container's computed `padding-left` — the gutter inside the box |
+
+Two container shapes are recognised:
+
+- a declared cap — jayainc's `.aux-container { max-width:1670px; padding:0 35px;
+  margin:auto }`, read from computed `max-width` (stable across viewports);
+- a per-breakpoint width — virtuallyjamaica's Bootstrap `.container`
+  (1170 at 1440, 970 at 1024, 100% below 992) with 15px padding, read from the
+  measured box.
+
+The container is chosen as the **outermost padded ancestor** wide enough to be
+the row (≥60% of the header). Walking up rather than down matters: a Bootstrap
+row and its `.container` share a width, and the row is the one without the
+gutter; walking down would also latch onto the logo COLUMN (virtuallyjamaica's
+785px `.col-lg-2` at 834), which is padded but is not the header's box.
+
+Grading (`compareChromeGeometry`):
+
+| fact | grading |
+|---|---|
+| source has `measure`, build reports none | **fail** — the build runs full-bleed and pins the logo to the edge |
+| `measure` Δ > 4px | warn — the cap is a design decision, not a pixel contract |
+| source has `padX`, build none | warn — the brand sits on the container edge |
+| `padX` Δ > 4px | warn |
+
+Rendering: the scaffold emits `geometry` into `chrome.generated.ts`; Base.astro
+builds one inline rule from the widest measurement plus per-breakpoint
+gutters, at `.site-header > .site-header-inner, .site-topbar > .site-topbar-inner`
+specificity so it wins over the template default regardless of stylesheet
+order. The header/topbar keep the full-bleed SURFACE; only the ROW is boxed
+(jayainc: 1670px, 35px gutters; virtuallyjamaica: 1170px, 15px). The topbar is
+included because the source aligns its social glyph and contact group to the
+same container.
+
+Both pilots verify clean: jayainc 5 metrics (wide cap + four gutters),
+virtuallyjamaica 6 metrics.
+
+## 6. Pseudo surfaces (P5) and ancestor gradients (P6)
+
+`readBackground` (lib/region-colors.ts) now resolves two layers it used to skip:
+
+- **P5 — `::before`/`::after` paint.** A builder paints many bands on a pseudo
+  layer (a hero's overlay, a tinted `::after`). Computed styles do not chain
+  through pseudos, so the band read as transparent and the gate fell through to
+  the page canvas. Only **positioned** pseudos qualify — a static pseudo is an
+  in-flow decoration (a 125×6 divider bar), and calling that the band surface
+  would compare a rule against a full-height band. The pseudo is read after the
+  element's own opaque colour/image (an overlay paints ABOVE it) and before the
+  descendant scan and ancestor walk; it applies to plain chrome regions too
+  (header/footer), not just `descendantFill` bands.
+- **P6 — gradient ancestors.** An inner-section anchor (`#products` is an
+  Elementor `inner-section`) has no surface of its own; the ancestor band does,
+  and that surface is a gradient as often as a colour. The ancestor walk accepted
+  only `background-color` and stepped past the gradient to the page canvas.
+  It now accepts an opaque `background-image` (or a positioned pseudo) under the
+  same 2× area guard.
+
+Covered by `tests/region-surfaces-browser.test.ts` (hermetic fixture: inner
+section inside a gradient band, positioned `::before` overlay, static pseudo
+ignored, overlay above an own colour).
+
+## Roadmap (remaining)
+
+- **Header height/alignment per device** — the box gate covers width and
+  gutter; the 160px two-row tablet header (jayainc centres its brand at
+  834/1024) is a layout variant the rebuild does not ship yet.

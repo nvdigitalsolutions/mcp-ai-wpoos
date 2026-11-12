@@ -48,7 +48,7 @@ import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
@@ -57,7 +57,7 @@ import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
 import { applyBandSurfaces, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
-import { compareMobileNav } from '../lib/chrome-audit.ts';
+import { compareChromeGeometry, compareMobileNav } from '../lib/chrome-audit.ts';
 import { duplicateIds, inPageTargets } from '../lib/html-ids.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
@@ -631,6 +631,32 @@ async function runAnalyze( url, options ) {
 					console.warn(
 						`\u26a0 Nav toggle skipped: ${ error instanceof Error ? error.message : error }`
 					);
+				}
+				// The header's BOX per device: a builder wraps the brand/nav row in its
+				// grid container (virtuallyjamaica: 1170px centred; jayainc: 1670px with
+				// 35px gutters), so a rebuild that keeps a full-width flex row pins the
+				// logo to the viewport edge and stretches the bar on a wide monitor.
+				try {
+					const geometry = await measureChromeGeometry( { url: profile.url } );
+					if ( Object.keys( geometry ).length > 0 ) {
+						profile.design = profile.design ?? {};
+						profile.design.chrome = profile.design.chrome ?? {};
+						profile.design.chrome.geometry = geometry;
+						const describe = ( box ) =>
+							`${ box.measure ? `${ box.measure }px box` : 'full-bleed' }${ box.padX !== undefined ? `, ${ box.padX }px inset` : '' }`;
+						// `wide` carries the cap when it only binds above 1440 (jayainc's 1670).
+						const parts = [ 'desktop', 'tablet', 'mobile' ]
+							.filter( ( device ) => geometry[ device ] )
+							.map( ( device ) => `${ device } ${ describe( geometry[ device ] ) }` );
+						if ( geometry.wide ) {
+							parts.unshift( `wide ${ describe( geometry.wide ) }` );
+						}
+						console.log( `\u2713 Header box: ${ parts.join( ', ' ) }.` );
+					} else {
+						console.log( '  Header box: not measurable (no header/brand found).' );
+					}
+				} catch ( error ) {
+					console.warn( `\u26A0 Header box skipped: ${ error instanceof Error ? error.message : error }` );
 				}
 				// The OPENED mobile menu: its surface, ink and row rhythm. A collapsed nav
 				// that only toggles `display` paints white links onto whatever band is
@@ -3100,6 +3126,53 @@ async function runVerify( profileRef, options ) {
 				`${ report.compared } metric(s), ${ report.deviations.length } drift`
 			);
 		}
+
+		// The header BOX: does the source constrain its brand/nav row to a
+		// container, and does the build reproduce that container's cap and
+		// gutter? The reported drift was "the logo is on the left, the header
+		// should be boxed and not full width" — invisible at 1440 on a source
+		// with a 1670px cap, obvious at 1920, where the build stretched.
+		if ( profile.design?.chrome?.geometry ) {
+			if ( ! ( await browserAvailable() ) ) {
+				console.warn( '\u26a0 Header box: skipped \u2014 Playwright/Chromium is not available in this environment.' );
+				record( 'header box', 'skip', 'browser unavailable' );
+			} else {
+				const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
+				let actualBox;
+				try {
+					actualBox = await measureChromeGeometry( { url: served.url } );
+				} catch ( error ) {
+					fail( `Header-box measurement failed \u2014 ${ error instanceof Error ? error.message : error }` );
+				} finally {
+					served.server.close();
+				}
+				const boxReport = compareChromeGeometry( profile.design.chrome.geometry, actualBox );
+				const failed = boxReport.deviations.filter( ( deviation ) => deviation.severity === 'fail' );
+				for ( const deviation of [ ...failed, ...boxReport.deviations.filter( ( d ) => d.severity === 'warn' ) ] ) {
+					const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
+					console.warn(
+						`${ mark } Header box: ${ deviation.fact } \u2014 source ${ deviation.expected ?? '\u2014' }, build ${ deviation.actual ?? '\u2014' }${ deviation.note ? ` \u2014 ${ deviation.note }` : '' }`
+					);
+				}
+				for ( const skipped of boxReport.skipped ) {
+					console.log( `  header box: ${ skipped } not compared` );
+				}
+				if ( failed.length > 0 ) {
+					process.exitCode = 1;
+				}
+				if ( boxReport.deviations.length === 0 ) {
+					console.log( `\u2713 Header box: the build keeps the source\u2019s container cap and gutter (${ boxReport.compared } metric(s)).` );
+				}
+				record(
+					'header box',
+					failed.length > 0 ? 'fail' : boxReport.deviations.length > 0 ? 'warn' : 'pass',
+					`${ boxReport.compared } metric(s), ${ boxReport.deviations.length } drift`
+				);
+			}
+		} else {
+			console.log( '  Header box: not measured on the source \u2014 run `analyze --geometry --write` to record it.' );
+			record( 'header box', 'skip', 'no measured fact (analyze --geometry)' );
+		}
 	}
 
 	if ( options.visual ) {
@@ -3400,7 +3473,7 @@ program
 	.option( '--colors-fail <n>', 'with --colors: \u0394E00 at/above this fails (default 6)', '6' )
 	.option( '--colors-modes <modes>', 'with --colors: colour schemes to measure, comma-separated (default light,dark)', 'light,dark' )
 	.option( '--strict-colors', 'with --colors: fail when a region the source had is missing from the build, or resolved to an empty element' )
-	.option( '--chrome', 'gate chrome STATES the colour gate cannot see \u2014 the opened mobile menu\u0027s surface and ink vs the source\u0027s measured panel (needs `analyze --geometry`; requires Playwright)' )
+	.option( '--chrome', 'gate chrome STATES the colour gate cannot see \u2014 the opened mobile menu\u0027s surface and ink, and the header\u0027s container cap and gutter vs the source (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--strict-facts', 'fail when a declared band fact did not reach the built HTML (default: report only)' )
 	.option( '--strict-media', 'fail when the artifact still ships a JPEG/PNG the localizer could not re-encode (Proposal 140)' )
 	.option( '--tracking', 'gate the tracking block: consent ordering, verification tokens/files, event ownership, CSP allowlist (Proposal 130)' )
