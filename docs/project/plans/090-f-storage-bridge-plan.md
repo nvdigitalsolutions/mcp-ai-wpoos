@@ -82,6 +82,12 @@ each one honest on both runtimes:
 | Paper Store collections | `PaperStoreInterface` (new, narrow) | Phase 3 |
 | OKF bundles | OKF engine + a bundle root setting | Phase 4 |
 | Schedules | `ScheduleStoreInterface` (new, narrow) | Phase 5 |
+| Assistants, teams, professions | `AssistantServiceInterface`, `TeamServiceInterface` (new), `ProfessionRepositoryInterface` | `090-g-identity-and-org-storage-plan.md` |
+
+Identity and org data are out of scope here: an assistant is an entity, a team
+is a membership graph and a profession is versioned reference data. They are
+specified in `090-g`, with the same rule (one owner per domain, one contract
+across runtimes).
 
 A generic `RecordStoreInterface` is explicitly rejected: it would duplicate
 `ContentStoreInterface` for CPT data and Paper Store's collection semantics

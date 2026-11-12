@@ -146,7 +146,7 @@ requests.
 | 2.2 | CRUD endpoints + default handling | `AssistantController` | ✅ |
 | 2.3 | Bundle v1 export/import (core fields + full meta) | `AssistantPortabilityController` | ✅ (Laravel-native; WP meta parity ⏳) |
 | 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ⏳ |
-| 2.5 | Teams (basic CRUD + membership) | `TeamController` | ⏳ |
+| 2.5 | Teams (basic CRUD + membership) — schema and contract in `090-g` §4.2 | `TeamController` | ⏳ |
 | 2.6 | Per-assistant tool assignment | `tools` field on the model | ✅ |
 | 2.7 | Test-assistant dry run | `AssistantTestController` | ⏳ |
 | 2.8 | Contract fixtures + round-trip tests | `AssistantStudioTest` | ✅ (shape/round-trip; WP fixtures ⏳) |
