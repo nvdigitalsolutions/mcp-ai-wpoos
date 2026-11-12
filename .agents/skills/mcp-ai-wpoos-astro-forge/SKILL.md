@@ -877,12 +877,9 @@ so JS-off leaves it inline at every width. A chrome fact needs THREE edits
 (`ForgeChrome`, the emitted interface, the emitted value) or it silently
 disappears — detail: [`reference/mobile-nav-disclosure.md`](reference/mobile-nav-disclosure.md).
 
-**The OPENED panel is a measured SURFACE** (`measureMobileNav`): the source
-paints a sheet (virtuallyjamaica: `rgba(0,0,0,0.95)` under a transparent
-header), so toggling `display` alone paints white links onto the band behind it.
-`chrome.mobileNav` carries background/ink/inset/row pitch; the fallback chain
-(measured → header surface → page surface) keeps it readable even when the
-source's own panel is transparent.
+**The OPENED panel is a measured SURFACE** (`chrome.mobileNav`), and
+`verify --chrome` diffs it (plus id uniqueness and colour-region resolution) —
+[`reference/chrome-gates.md`](reference/chrome-gates.md).
 
 ## Proposal 125 — split hero, webfonts, catalog (2026-11-06)
 

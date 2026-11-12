@@ -424,6 +424,33 @@ export interface RegionColorOptions {
 	failAt?: number;
 }
 
+/**
+ * HOW a region resolved: the selector that matched, the element's box and how
+ * much ink was on it.
+ *
+ * A region that resolves to the WRONG element (or to an empty one) used to be
+ * indistinguishable from a region that is honestly transparent: jayainc's
+ * `footer` ladder matched WordPress's empty `footer.entry-meta`, so the gate
+ * measured nothing and *skipped* — a silent blind spot instead of a finding
+ * (2026-11-12). Resolution is reported separately from the colours so the gate
+ * can say "this region has no ink" without changing the baseline shape.
+ */
+export interface RegionResolution {
+	region: string;
+	/** The first selector in the ladder that matched (absent when none did). */
+	selector?: string;
+	found: boolean;
+	width: number;
+	height: number;
+	/** Text-bearing elements measured inside the region (0 = no ink at all). */
+	inkSamples: number;
+}
+
+export interface MeasuredColorModes {
+	modes: ForgeColorModes;
+	resolutions: Record< string, RegionResolution >;
+}
+
 export interface RegionColorDeviation {
 	region: string;
 	mode: string;
@@ -443,6 +470,41 @@ export interface RegionColorReport {
 	/** Schemes the SOURCE does not implement (nothing to compare against). */
 	unimplemented: string[];
 	compared: number;
+}
+
+/**
+ * Chrome regions whose measurement says NOTHING — the signal a selector ladder
+ * that matched the wrong element used to hide.
+ *
+ * jayainc's `footer` ladder matched WordPress's `footer.entry-meta` (an empty
+ * post-meta row) because the bare tag came first: the region was found, had a
+ * box, carried no text, read `transparent`, and every metric on it was
+ * `skipped`. A gate that says "nothing to compare" is telling you it could not
+ * see — not that the page is right.
+ *
+ * `no-ink` is a warning, never a failure: an icon-only header has no text nodes
+ * either, and the operator is the one who can tell the two apart.
+ */
+export function unresolvedChromeRegions(
+	resolutions: Record< string, RegionResolution >,
+	names: string[] = [ 'body', 'header', 'footer' ]
+): Array< { region: string; reason: 'missing' | 'empty' | 'no-ink' } > {
+	const out: Array< { region: string; reason: 'missing' | 'empty' | 'no-ink' } > = [];
+	for ( const name of names ) {
+		const resolution = resolutions[ name ];
+		if ( ! resolution || ! resolution.found ) {
+			out.push( { region: name, reason: 'missing' } );
+			continue;
+		}
+		if ( resolution.width < 2 || resolution.height < 2 ) {
+			out.push( { region: name, reason: 'empty' } );
+			continue;
+		}
+		if ( resolution.inkSamples === 0 ) {
+			out.push( { region: name, reason: 'no-ink' } );
+		}
+	}
+	return out;
 }
 
 /**
@@ -703,15 +765,22 @@ export interface MeasureColorOptions {
  * media query — the only way to see a dark header or a themed dark mode.
  * Regions whose ladder matches nothing are omitted — the caller reports them
  * (absence is data, not a silent pass).
- */
-export async function measureRegionColors(
-	options: MeasureColorOptions
-): Promise< ForgeColorModes > {
-	const chromium = await loadChromium();
-	const viewport = options.viewport ?? { width: 1440, height: 900 };
-	const modes = options.modes && options.modes.length > 0 ? options.modes : [ ...COLOR_MODES ];
-	const regions = options.regions ?? DEFAULT_COLOR_REGIONS;
-	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+ /**
+  * Measure every region's colours, with the resolution of each region.
+  *
+  * `modes` is the baseline that ships in the profile; `resolutions` is diagnostics
+  * (a selector ladder that matched an EMPTY element looks identical to a region
+  * that is honestly transparent until you know what it matched).
+  */
+ export async function measureRegionColorsDetailed(
+ 	options: MeasureColorOptions
+ ): Promise< MeasuredColorModes > {
+ 	const chromium = await loadChromium();
+ 	const viewport = options.viewport ?? { width: 1440, height: 900 };
+ 	const modes = options.modes && options.modes.length > 0 ? options.modes : [ ...COLOR_MODES ];
+ 	const regions = options.regions ?? DEFAULT_COLOR_REGIONS;
+ 	const resolutions: Record< string, RegionResolution > = {};
+ 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
 		const measured: ForgeColorModes = {};
 		for ( const mode of modes ) {
@@ -874,7 +943,14 @@ export async function measureRegionColors(
 						};
 						const out: Record<
 							string,
-							{ background: string; image?: string; inks: Array< { color: string; mass: number } > }
+							{
+								background: string;
+								image?: string;
+								inks: Array< { color: string; mass: number } >;
+								selector: string;
+								width: number;
+								height: number;
+							}
 						> = {};
 						// The ink a region RENDERS is not the element's inherited `color` on a
 						// builder site: the theme sets a global body colour and paints the
@@ -943,9 +1019,14 @@ export async function measureRegionColors(
 										args.effective,
 										region.descendantFill === true
 									);
+									const box = element.getBoundingClientRect();
+									const inks = readInk( element );
 									out[ region.name ] = {
 										background: surface.color,
-										inks: readInk( element ),
+										inks,
+										selector,
+										width: box.width,
+										height: box.height,
 										...( surface.image ? { image: surface.image } : {} ),
 									};
 									break;
@@ -973,15 +1054,45 @@ export async function measureRegionColors(
 						...( values.image ? { image: values.image } : {} ),
 					};
 				}
+				// Resolution is a DOM fact, so one mode is enough: the element a ladder
+				// matched does not depend on the colour scheme.
+				if ( Object.keys( resolutions ).length === 0 ) {
+					for ( const [ region, values ] of Object.entries( colors ) ) {
+						resolutions[ region ] = {
+							region,
+							selector: values.selector,
+							found: true,
+							width: Math.round( values.width ),
+							height: Math.round( values.height ),
+							inkSamples: values.inks.length,
+						};
+					}
+					for ( const region of regions ) {
+						if ( ! resolutions[ region.name ] ) {
+							resolutions[ region.name ] = {
+								region: region.name,
+								found: false,
+								width: 0,
+								height: 0,
+								inkSamples: 0,
+							};
+						}
+					}
+				}
 				measured[ mode ] = baseline;
 			} finally {
 				await context.close();
 			}
 		}
-		return measured;
+		return { modes: measured, resolutions };
 	} finally {
 		await browser.close();
 	}
+}
+
+/** The baseline alone — what goes into the profile. */
+export async function measureRegionColors( options: MeasureColorOptions ): Promise< ForgeColorModes > {
+	return ( await measureRegionColorsDetailed( options ) ).modes;
 }
 
 /** Convenience for callers building a profile draft. */

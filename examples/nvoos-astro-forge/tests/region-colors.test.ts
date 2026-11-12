@@ -23,6 +23,7 @@ import {
 	parseCssColor,
 	srgbToLab,
 	summarizeInk,
+	unresolvedChromeRegions,
 } from '../lib/region-colors.ts';
 import type { ForgeSection, RegionColors } from '../lib/types.ts';
 
@@ -288,6 +289,40 @@ describe( 'region selector ladder', () => {
 		expect( ladder.indexOf( '.site-footer' ) ).toBeLessThan( ladder.length - 1 );
 		expect( ladder ).toContain( 'footer:not(.entry-meta):not(.post-meta)' );
 		expect( ladder ).toContain( '#sitefooter' );
+	} );
+} );
+
+describe( 'unresolvedChromeRegions', () => {
+	it( 'names a ladder that matched nothing, an empty element, and an ink-less one', () => {
+		// jayainc's `footer` ladder matched WordPress's empty `footer.entry-meta`:
+		// found, boxed, no text — every metric on it skipped, which read as a pass.
+		const resolved = {
+			body: { region: 'body', found: true, width: 1440, height: 8000, inkSamples: 40 },
+			header: { region: 'header', found: true, width: 1440, height: 98, inkSamples: 9 },
+			footer: { region: 'footer', found: true, selector: 'footer', width: 1440, height: 24, inkSamples: 0 },
+		};
+		expect( unresolvedChromeRegions( resolved ) ).toEqual( [ { region: 'footer', reason: 'no-ink' } ] );
+
+		// A missing region is reported, never silently dropped.
+		expect(
+			unresolvedChromeRegions( {
+				body: { region: 'body', found: true, width: 1440, height: 8000, inkSamples: 40 },
+				header: { region: 'header', found: true, width: 1440, height: 0, inkSamples: 0 },
+			} )
+		).toEqual( [
+			{ region: 'header', reason: 'empty' },
+			{ region: 'footer', reason: 'missing' },
+		] );
+	} );
+
+	it( 'says nothing about a fully resolved chrome', () => {
+		const resolutions = Object.fromEntries(
+			[ 'body', 'header', 'footer' ].map( ( region ) => [
+				region,
+				{ region, found: true, width: 1440, height: 100, inkSamples: 3 },
+			] )
+		);
+		expect( unresolvedChromeRegions( resolutions ) ).toEqual( [] );
 	} );
 } );
 

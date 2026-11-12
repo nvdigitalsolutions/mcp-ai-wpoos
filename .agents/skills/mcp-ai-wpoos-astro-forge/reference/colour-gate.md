@@ -132,6 +132,22 @@ reports the metric's history as build drift.
   cannot see; the design harvest records it as `chrome.footerBg`, so the build is
   correct and the surface simply stays ungated). Resolving pseudo-element
   surfaces is the next measurement step, not a reason to loosen a threshold.
+- `⚠ Colour: footer resolved to an element with no text in the build` — the
+  region is ungated, not fine. See §5a.
+
+## 5a. A region that measures nothing is a FINDING
+
+`measureRegionColorsDetailed` reports how each region resolved: the selector that
+matched, the element's box, and how many text-bearing elements carried ink.
+`unresolvedChromeRegions` classifies a chrome region as `missing` (no selector
+matched), `empty` (no box) or `no-ink` (no text).
+
+That is the shape of a **ladder that won**: jayainc's `footer` list had the bare
+`footer` tag first, so it matched WordPress's empty `footer.entry-meta` — found,
+boxed, transparent, no ink. Every metric on the region was skipped and the gate
+reported nothing, which reads exactly like a pass. `analyze --colors` warns at
+record time, `verify --colors` warns at gate time, and `--strict-colors` fails.
+`no-ink` stays a warning: an icon-only header has no text either.
 
 ## 6. Measured results (2026-11-12, 1440×900)
 

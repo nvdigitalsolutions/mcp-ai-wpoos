@@ -1751,7 +1751,11 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 				position: rest.position,
 				...( restBg ? { restBg } : {} ),
 				...( clean( restInk ) ? { restInk: clean( restInk ) } : {} ),
-				...( headerShrank || stripInfo ? {} : { restHeight: rest.height } ),
+				// The resting height is a fact whether or not the header also shrinks:
+				// the rebuild renders the header at REST and shrinks it when pinned, so
+				// omitting it left a 47px header where the source has 75px (and the
+				// opened mobile panel then sat 28px too high, 2026-11-12).
+				restHeight: rest.height,
 				...( bgChanged && pinnedBg ? { pinnedBg } : {} ),
 				...( bgChanged && stripInk && stripInk !== restInk ? { pinnedInk: stripInk } : {} ),
 				...( pinnedHeight ? { pinnedHeight } : {} ),
