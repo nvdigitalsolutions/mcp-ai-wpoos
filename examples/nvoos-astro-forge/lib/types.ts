@@ -811,6 +811,43 @@ export interface BandColumnFacts {
 	mobile?: ForgeBandColumnFact[];
 }
 
+/**
+ * One PAGED carousel inside a band, measured per device
+ * (`collectBandCarouselFacts`).
+ *
+ * A slider's geometry lives entirely in the vendor's JS options — `items: 5`,
+ * `margin: 0`, `responsive: { 834: { items: 2 } }` — which neither the markup
+ * nor the sanitized stylesheet carries. The rebuild therefore guessed with
+ * `flex: 1 1 0` ("one lane of marks", correct for a logo strip) and squeezed
+ * virtuallyjamaica's seven-slide gallery into seven 129px columns at 1440, where
+ * the source shows five 222px slides and paginates the remaining two.
+ *
+ * `perView` is the only number the layout needs: a slide is
+ * `(100% - (perView - 1) * gap) / perView` of the track. `dots` is recorded so
+ * the rebuild can reproduce the source's own pagination (`ceil(count / perView)`
+ * at every measured viewport) instead of inventing one.
+ */
+export interface ForgeBandCarouselFact {
+	/** The carousel root's unique class token inside the band. */
+	selector: string;
+	/** Slides in the track. */
+	count: number;
+	/** Slides visible at rest (rounded track width ÷ slide width). */
+	perView: number;
+	/** Space between slides (px). Builders usually pad the SLIDE instead, so
+	 * this is frequently 0 and the visual gutter comes from a box fact. */
+	gap?: number;
+	/** Pagination dots the source rendered (0 when the slider has none). */
+	dots?: number;
+}
+
+/** The band's carousels per device. Sparse: a device without one is absent. */
+export interface BandCarouselFacts {
+	desktop?: ForgeBandCarouselFact[];
+	tablet?: ForgeBandCarouselFact[];
+	mobile?: ForgeBandCarouselFact[];
+}
+
 /** The measured presentation facts of one source band (see `SiteProfile.bandFacts`). */
 /**
  * One band's inner container as the browser measured it at one viewport.
@@ -1022,6 +1059,20 @@ export interface ForgeBandFacts {
 	 */
 	splitColumns?: number[];
 	/**
+	 * The band's grid COLUMNS per device: rendered heights, background photos
+	 * and their attachment (`collectBandColumnFacts`). Emitted by the scaffold
+	 * as band-scoped `.column-class` rules, because the sanitized markup keeps
+	 * the classes but the vendor sheet — and the inline min-height — is gone.
+	 */
+	columns?: BandColumnFacts;
+	/**
+	 * The band's PAGED carousels per device (`collectBandCarouselFacts`): how
+	 * many slides the source shows at once and how it paginates them. The vendor
+	 * slider's `items` option is the only place that number exists, so without
+	 * this fact every gallery rebuilds as an equal split of the track.
+	 */
+	carousel?: BandCarouselFacts;
+	/**
 	 * The band contains the source's OWN vertical-centring device: a
 	 * `table-cell` with `vertical-align: middle` (Brando's slider), or a
 	 * flex/grid container filling half the band with centred items
@@ -1029,13 +1080,6 @@ export interface ForgeBandFacts {
 	 * virtuallyjamaica's contact band is top-aligned under 130px of padding,
 	 * and centring it moved the copy 151px down.
 	 */
-	/**
-	 * The band's grid COLUMNS per device: rendered heights, background photos
-	 * and their attachment (`collectBandColumnFacts`). Emitted by the scaffold
-	 * as band-scoped `.column-class` rules, because the sanitized markup keeps
-	 * the classes but the vendor sheet — and the inline min-height — is gone.
-	 */
-	columns?: BandColumnFacts;
 	centeredContent?: boolean;
 }
 
@@ -1286,6 +1330,13 @@ export interface ForgeSection {
 	 * CSS; absent → the columns size themselves.
 	 */
 	columnBox?: BandBoxFacts;
+	/**
+	 * The band's measured CAROUSEL geometry, keyed by the carousel root's unique
+	 * class (`bandFacts[id].carousel`) — the per-view slide count and the track's
+	 * own scroll behaviour. Emitted as band-scoped CSS; absent → the shim's
+	 * "one lane of marks" fallback (correct only for a logo strip).
+	 */
+	carouselBox?: BandBoxFacts;
 	/** The section's content rhythm (125 §1) — 'split' = the source's
 	 * two-column hero band: a copy column (heading + divider + body +
 	 * links) beside a media collage column (jayainc's about band). */

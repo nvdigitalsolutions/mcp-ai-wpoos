@@ -451,8 +451,7 @@
 					"logo": "center",
 					"socials": "center",
 					"logoHeight": "62px"
-				},
-				"divider": true
+				}
 			}
 		},
 		"behavior": {
@@ -2846,6 +2845,35 @@
 				"owl-dot": {
 					"base": "padding:6px 5px 6px 5px;margin:0px 0px 0px 0px"
 				}
+			},
+			"carousel": {
+				"desktop": [
+					{
+						"selector": "owl-carousel",
+						"count": 7,
+						"perView": 5,
+						"gap": 0,
+						"dots": 2
+					}
+				],
+				"tablet": [
+					{
+						"selector": "owl-carousel",
+						"count": 7,
+						"perView": 2,
+						"gap": 0,
+						"dots": 4
+					}
+				],
+				"mobile": [
+					{
+						"selector": "owl-carousel",
+						"count": 7,
+						"perView": 1,
+						"gap": 0,
+						"dots": 7
+					}
+				]
 			},
 			"hidden": [
 				"[class~=\"disabled\"][class~=\"owl-nav\"]"

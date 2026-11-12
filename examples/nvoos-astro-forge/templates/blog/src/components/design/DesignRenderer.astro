@@ -736,6 +736,47 @@ const bandColumnCss = sections
 	.join( '' );
 
 /**
+ * The band's measured CAROUSELS (`bandFacts[id].carousel`).
+ *
+ * A vendor slider keeps its geometry in JS options — `items: 5`,
+ * `responsive: { 834: { items: 2 } }` — so the markup cannot say how many
+ * slides are on screen. The shim's guess (`flex: 1 1 0`, one lane of marks) is
+ * right for a logo strip and wrong for a gallery: virtuallyjamaica's seven
+ * slides rendered as seven 129px columns at 1440 where the source shows five at
+ * 222px. These declarations hand the shim the numbers it needs.
+ *
+ * The slide width lives in `--ds-carousel-item-flex`, the property the shim's
+ * item rule reads, so the fallback still works for an unmeasured carousel.
+ */
+const bandCarouselCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const carouselBox = theme?.carouselBox;
+		if ( ! id || ! carouselBox ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return Object.entries( carouselBox )
+			.map( ( [ name, fact ] ) => {
+				const selector = `${ scoped } .post-body .${ name }, ${ scoped } .${ name }`;
+				const rules: string[] = [];
+				if ( fact.base ) {
+					rules.push( `${ selector }{${ fact.base }}` );
+				}
+				if ( fact.tablet ) {
+					rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selector }{${ fact.tablet }}}` );
+				}
+				if ( fact.mobile ) {
+					rules.push( `@media (max-width: 767px){${ selector }{${ fact.mobile }}}` );
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
+/**
  * The controls' measured interaction STATES (`analyze` interaction pass), scoped
  * to the band that owns them.
  *
@@ -834,8 +875,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandColumnCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandColumnCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandColumnCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);

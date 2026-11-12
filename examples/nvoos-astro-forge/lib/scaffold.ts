@@ -19,7 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, columnBoxFacts } from './geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './geometry.ts';
 import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit } from './contrast.ts';
@@ -1409,6 +1409,19 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 				.join( ', ' ) } }`
 		);
 	}
+	// The band's measured CAROUSELS (see `collectBandCarouselFacts`): slides per
+	// view, the gutter and the track's own scroll behaviour, scoped to the
+	// carousel's class. The vendor slider's `items` option lives nowhere else, so
+	// without this every gallery rebuilds as an equal split of the track —
+	// 7 slides at 129px each where the source shows 5 at 222px.
+	const carouselEntries = Object.entries( carouselBoxFacts( bandFacts?.carousel ?? {} ) );
+	if ( carouselEntries.length > 0 ) {
+		entry.push(
+			`carouselBox: { ${ carouselEntries
+				.map( ( [ name, carousel ] ) => `${ tsKey( name ) }: ${ tsUtility( carousel ) }` )
+				.join( ', ' ) } }`
+		);
+	}
 	// The controls' measured STATE deltas (see `measureInteractions`). The
 	// vendor sheet never ships, so a rebuilt control loses every hover/focus/
 	// active effect the source expressed in CSS. The SELECTOR is baked here
@@ -1723,8 +1736,13 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * unique class: a rendered `min-height` floor plus a fixed background',
 		'\t * photo\u2019s attachment/size. Emitted as band-scoped `.class` rules \u2014 the',
 		'\t * sanitizer keeps the class but drops the inline layout, and the vendor',
-		'\t * sheet never ships. */',
-		'\tcolumnBox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'	 * sheet never ships. */',
+		'	columnBox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'	/** The band\u2019s measured CAROUSEL geometry, keyed by the carousel\u2019s',
+		'	 * unique class: slides-per-view, gutter and the track\u2019s scroll',
+		'	 * behaviour. A vendor slider keeps `items` in its JS options, so the',
+		'	 * markup cannot say how many slides are on screen. */',
+		'	carouselBox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'\t/** The band\u2019s measured interaction STATES (hover / focus /',
 		'\t * focus-visible / active) per control signature. `selector` is the',
 		'\t * signature\u2019s CSS form (`a[class~="btn"]`), already escaped, so the',
