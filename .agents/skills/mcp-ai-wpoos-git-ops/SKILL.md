@@ -48,6 +48,14 @@ git push --force-with-lease origin <branch>
   investigate before continuing.
 - After the rebase the PR shows only your delta; re-verify
   `gh pr view <n> --json mergeable,mergeStateStatus` (`MERGEABLE`).
+- **Never merge the child into a parent branch that has already merged
+  (2026-11-12).** #7604 (base `feat/release-mirror-artifacts`) was merged
+  15 s AFTER #7603 squash-merged into `alpha-working`; the child's commit
+  landed on the now-dead parent branch and never reached `alpha-working`.
+  Immediately before merging a stacked child, check
+  `gh pr view <parent> --json state,mergedAt`; if the parent is already
+  `MERGED`, do not merge the child into its base — replay the delta onto
+  `alpha-working` as a fresh PR (recovery: #7606).
 - GitHub Docs reference: "Managing stacked pull requests" /
   "Troubleshooting stacked pull requests" (`gh stack rebase` alternative).
 
