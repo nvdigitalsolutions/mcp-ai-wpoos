@@ -15,6 +15,7 @@ use App\Http\Controllers\PaperStoreController;
 use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
 use App\Http\Controllers\Pro\SchedulesController;
+use App\Http\Controllers\Pro\ToolkitsController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
@@ -153,6 +154,22 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::get('/remote/{entity}', [RecordsController::class, 'remoteIndex']);
                 Route::get('/remote/{entity}/{id}', [RecordsController::class, 'remoteShow'])->whereNumber('id');
                 Route::post('/{entity}/research', [RecordsController::class, 'research']);
+            });
+
+            // Phase 4 — manifest-driven Pro toolkits. Entitlement is checked
+            // per manifest (`feature`) inside the controller, so the list can
+            // filter unentitled families instead of failing wholesale.
+            Route::prefix('pro/toolkits')->group(function (): void {
+                Route::get('/', [ToolkitsController::class, 'index']);
+                Route::get('/{slug}', [ToolkitsController::class, 'show']);
+                Route::get('/{slug}/settings', [ToolkitsController::class, 'settings']);
+                Route::post('/{slug}/settings', [ToolkitsController::class, 'updateSettings']);
+                Route::get('/{slug}/dashboard', [ToolkitsController::class, 'dashboard']);
+                Route::get('/{slug}/entities/{entity}', [ToolkitsController::class, 'indexEntity']);
+                Route::post('/{slug}/entities/{entity}', [ToolkitsController::class, 'storeEntity']);
+                Route::get('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'showEntity']);
+                Route::put('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'updateEntity']);
+                Route::delete('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'destroyEntity']);
             });
 
             // Phase 3c — WordPress-compatible content shim. The Laravel

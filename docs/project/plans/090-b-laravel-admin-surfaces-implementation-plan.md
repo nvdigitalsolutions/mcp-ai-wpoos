@@ -63,14 +63,16 @@ Rank Math).
 | Records schema + `wp/v2` content shim | **Done (Phase 3c)** | `Pro\RecordsController`, `Wp\ContentController` over `nvoos_posts` |
 | Pro entitlement middleware on Pro routes | **Done (Phase 3c)** | `EnsureProEntitlement` (402 typed error, fails closed) |
 | Media library (list, read, multipart upload) | **Done (Phase 3d)** | `MediaController` + `Laravel\Adapter\FileUploadService` over `nvoos_files` |
-| Schedule presets, record remote/research, thumbnails, Pro manifests | **Pending (Phases 3–4)** | §7 remainder + §8 |
+| Manifest-driven Pro toolkits | **Done (Phase 4.1/4.3)** | `ToolkitManifest`, `ToolkitManifestLoader`, `Pro\ToolkitsController`, `nvoos_toolkit_records` |
+| Schedule presets, record remote/research, thumbnails, generic SPA screens | **Pending (Phases 3–4)** | §7–§8 remainder |
 
 **Validation record (2026-11-12):**
 
 - Adapter PHPUnit: **34 tests, 101 assertions**
 - Console Vitest: **12 files, 112 tests**
 - Console typecheck: clean
-- Laravel app PHPUnit: **80 tests, 563 assertions**
+- Laravel app PHPUnit: **96 tests, 672 assertions**
+- Core PHPUnit: **937 tests, 2,017 assertions** — 14 new `ToolkitManifestTest` tests pass; the 5 errors in `ToolRegistryIntegrationTest` are pre-existing (its discovery loop instantiates the abstract `AbstractResultTool`) and unrelated to this work
 - Phase 3b soak (30 min, 2026-11-12): **1,644 iterations / 19,731 requests / 0 violations** — p50 81.9 ms · p95 212.4 ms · p99 338.8 ms · max 982.2 ms at 10.96 req/s; app RSS flat (203 → 194 MiB), DB flat
 - `node --check scripts/serve.mjs`: clean
 
@@ -226,15 +228,29 @@ author/viewer/guest/bearer) passes on every mutating route.
 
 ## 8. Phase 4 — T3 Pro families (engine 4–6 weeks + 2–4 per family)
 
-| ID | Task | Files | Acceptance |
-|---|---|---|---|
-| 4.1 | `ToolkitManifest` schema + validator + loader | `lib/core`/app support | Invalid manifests fail closed |
-| 4.2 | Five generic console screens (settings, entity workbench, research & add, consolidate, dashboard) | `addons/pro/assets/spa-v2/src/features` | Screens render from a manifest |
-| 4.3 | Generic resource controller + settings schema endpoint | `ToolkitController` | `/api/v1/pro/toolkits/{slug}` |
-| 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error |
-| 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 |
-| 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages |
-| 4.7 | Contract fixtures per family | fixtures | Parity suite |
+| ID | Task | Files | Acceptance | Status |
+|---|---|---|---|---|
+| 4.1 | `ToolkitManifest` schema + validator + loader | `lib/core` + `App\Support\Pro` | Invalid manifests fail closed | ✅ |
+| 4.2 | Five generic console screens (settings, entity workbench, research & add, consolidate, dashboard) | `addons/pro/assets/spa-v2/src/features` | Screens render from a manifest | ⏳ |
+| 4.3 | Generic resource controller + settings schema endpoint | `ToolkitController` | `/api/v1/pro/toolkits/{slug}` | ✅ list/show/settings/dashboard/entity CRUD |
+| 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error | ✅ route middleware + per-manifest feature checks |
+| 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | ⏳ commerce + documents manifests shipped (data only); media is the built-in library |
+| 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | ⏳ |
+| 4.7 | Contract fixtures per family | fixtures | Parity suite | ⏳ |
+
+**Phase 4 notes**
+
+- **A toolkit is data.** `ToolkitManifest` validates slug/version/screens/settings/entities/
+  dashboard and rejects unknown keys, dangling `entity:` references and unknown types, so a
+  bad manifest is skipped and reported through `GET /api/v1/pro/toolkits` → `invalid`.
+- **One controller, one table.** `nvoos_toolkit_records` stores `{toolkit, entity, external_id,
+  data}`; filters and aggregates run through `json_extract`, which behaves the same on MySQL
+  and SQLite. Entity payloads are validated against the manifest's columns (types, enums,
+  required, unknown-field rejection), and the `id_field` is immutable after create.
+- **Entitlement is per manifest, not per route.** The list filters unentitled families; direct
+  access answers the typed 402 carrying the manifest's `feature`.
+- **Remaining before G4:** the five generic SPA screens (4.2) and the service layer behind the
+  toolkits (4.5–4.7). The backend contract they render against is complete.
 
 **Gate G4:** a pilot toolkit installs from a manifest with zero bespoke PHP pages; paid surfaces
 return the typed entitlement error under the `deny` driver.
@@ -288,10 +304,12 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `lib/laravel-adapter/src/Adapter/ProEntitlement.php` (new)
 - `lib/laravel-adapter/src/Adapter/JobStatusStore.php` (`counts()`, raw rows, retry/dismiss)
 - `lib/laravel-adapter/src/Adapter/{TranscriptStore,MemoryStore,SessionLogStore,TokenUsage,RateLimiter}.php` (new)
+- `lib/core/src/Domain/ValueObject/ToolkitManifest.php` (new)
 - `lib/laravel-adapter/src/Adapter/FileUploadService.php` (new)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000009..000012_*.php` (new)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000013..000016_*.php` (new — approvals, triggers, security snapshots, paper records)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000017..000018_*.php` (new — schedules console columns, schedule runs)
+- `lib/laravel-adapter/database/migrations/2026_01_01_000019_create_nvoos_toolkit_records_table.php` (new)
 - `lib/laravel-adapter/config/nvoos.php` (`pro_entitlement`, `features`)
 - `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` (binding)
 - `lib/laravel-adapter/tests/ProEntitlementTest.php` (new)
@@ -315,6 +333,8 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Controllers/Pro/{SchedulesController,PresetsController,RecordsController}.php`
 - `app/Http/Controllers/Wp/ContentController.php` (wp/v2 content shim)
 - `app/Http/Controllers/MediaController.php` (wp/v2/media shim)
+- `app/Support/Pro/ToolkitManifestLoader.php` + `app/Http/Controllers/Pro/ToolkitsController.php`
+- `resources/pro-toolkits/{commerce,documents}.json`
 - `app/Http/Middleware/EnsureProEntitlement.php`
 - `app/Http/Controllers/{AssistantController,AssistantPortabilityController}.php`
 - `app/Support/{CapabilityMap,SettingsSchema}.php`
@@ -323,7 +343,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Middleware/AcceptWpNonce.php`
 - `routes/api.php`
 - `bootstrap/app.php` (`statefulApi()`, CSRF alias)
-- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest}.php`
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest,Phase4Test}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
 
 ---
@@ -335,7 +355,8 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
 | Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 112 pass |
 | Console types | `npm run typecheck` | clean |
-| Laravel app | `docker exec oos-laravel-app php artisan test` | 80 pass |
+| Laravel app | `docker exec oos-laravel-app php artisan test` | 96 pass |
+| Core | `cd lib/core && php -d extension=fileinfo vendor/bin/phpunit` | 937 tests (5 pre-existing `ToolRegistryIntegrationTest` errors) |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
 CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
@@ -383,6 +404,7 @@ so only approval history grows during a run.
 | `NVOOS_CONSOLE_RATE_LIMIT` | Laravel adapter | Console CRUD requests/minute per user (default `600`); tool execution keeps `throttle:tools` at 60/min |
 | `NVOOS_MEDIA_DISK` | Laravel adapter | Disk for uploads (default `public`); must be publicly served |
 | `NVOOS_UPLOAD_MAX_BYTES` | Laravel adapter | Maximum upload size in bytes (default `10485760`) |
+| `NVOOS_TOOLKIT_MANIFESTS` | Laravel adapter | Directory of toolkit JSON manifests; empty falls back to `resources/pro-toolkits` |
 
 **Deployment:** the Service Exchange deploys the same console artifact; `NVOOS_BACKEND=laravel` plus
 `NVOOS_TARGET_SITE=<laravel-origin>` satisfies `console_deployed`. **Rollback:** flip
@@ -425,5 +447,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 3b — approvals, workflow triggers, security center (posture/headers/snapshots/self-test), paper store
 - [x] Phase 3c — schedule manager, records schema, `wp/v2` content shim, Pro entitlement middleware
 - [x] Phase 3d — media library + upload service (task 3.11)
-- [ ] Phase 4 — Pro manifest engine + pilot families
+- [x] Phase 4.1 + 4.3 — toolkit manifest contract, loader, generic engine
+- [ ] Phase 4.2 — five generic console screens
+- [ ] Phase 4.5–4.7 — toolkit service layer + contract fixtures
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates

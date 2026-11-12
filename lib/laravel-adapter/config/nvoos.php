@@ -100,6 +100,17 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Pro toolkit manifests
+	|--------------------------------------------------------------------------
+	|
+	| Directory of JSON toolkit manifests. Empty falls back to
+	| resources/pro-toolkits in the app.
+	|
+	*/
+	'toolkit_manifests_path' => env( 'NVOOS_TOOLKIT_MANIFESTS', '' ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Feature Flags
 	|--------------------------------------------------------------------------
 	*/
