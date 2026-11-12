@@ -23,6 +23,106 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Content schema
+	|--------------------------------------------------------------------------
+	|
+	| Declarative equivalent of WordPress's register_post_type() and
+	| register_taxonomy(). SchemaStoreInterface reads these keys so core tools
+	| can introspect the content model the same way on both runtimes.
+	|
+	| The shape deliberately mirrors WordPress's post type arguments, and the
+	| `supports` list mirrors post_type_supports(), so a ported tool cannot tell
+	| which runtime answered.
+	|
+	*/
+	'content_types'    => array(
+		'post' => array(
+			'label'        => 'Posts',
+			'description'  => 'Default blog content type.',
+			'public'       => true,
+			'hierarchical' => false,
+			'has_archive'  => true,
+			'show_in_rest' => true,
+			'rest_base'    => 'posts',
+			'labels'       => array(
+				'name'          => 'Posts',
+				'singular_name' => 'Post',
+				'add_new_item'  => 'Add New Post',
+				'edit_item'     => 'Edit Post',
+				'view_item'     => 'View Post',
+				'search_items'  => 'Search Posts',
+				'not_found'     => 'No posts found.',
+				'all_items'     => 'All Posts',
+			),
+			'capabilities' => array(
+				'edit_post'     => 'edit_post',
+				'read_post'     => 'read_post',
+				'delete_post'   => 'delete_post',
+				'edit_posts'    => 'edit_posts',
+				'publish_posts' => 'publish_posts',
+			),
+			'supports'     => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'revisions', 'custom-fields' ),
+			'statuses'     => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+			'meta_fields'  => array(),
+		),
+		'page' => array(
+			'label'        => 'Pages',
+			'description'  => 'Hierarchical static content.',
+			'public'       => true,
+			'hierarchical' => true,
+			'has_archive'  => false,
+			'show_in_rest' => true,
+			'rest_base'    => 'pages',
+			'labels'       => array(
+				'name'          => 'Pages',
+				'singular_name' => 'Page',
+				'add_new_item'  => 'Add New Page',
+				'edit_item'     => 'Edit Page',
+				'view_item'     => 'View Page',
+				'search_items'  => 'Search Pages',
+				'not_found'     => 'No pages found.',
+				'all_items'     => 'All Pages',
+			),
+			'capabilities' => array(
+				'edit_page'     => 'edit_page',
+				'read_page'     => 'read_page',
+				'delete_page'   => 'delete_page',
+				'edit_pages'    => 'edit_pages',
+				'publish_pages' => 'publish_pages',
+			),
+			'supports'     => array( 'title', 'editor', 'author', 'thumbnail', 'page-attributes', 'custom-fields', 'revisions' ),
+			'statuses'     => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+			'meta_fields'  => array(),
+		),
+	),
+
+	'content_statuses' => array(
+		'publish' => 'Published',
+		'future'  => 'Scheduled',
+		'draft'   => 'Draft',
+		'pending' => 'Pending Review',
+		'private' => 'Private',
+	),
+
+	'taxonomies'       => array(
+		'category' => array(
+			'label'        => 'Categories',
+			'hierarchical' => true,
+			'public'       => true,
+			'description'  => '',
+			'post_types'   => array( 'post' ),
+		),
+		'post_tag' => array(
+			'label'        => 'Tags',
+			'hierarchical' => false,
+			'public'       => true,
+			'description'  => '',
+			'post_types'   => array( 'post' ),
+		),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| AI Provider API Keys
 	|--------------------------------------------------------------------------
 	|

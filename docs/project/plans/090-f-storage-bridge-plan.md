@@ -1,6 +1,6 @@
 # Proposal 090-F — Storage bridge: make the content port trustworthy
 
-Status: Phase 1 in progress (Laravel `ContentStore` fidelity).
+Status: Phase 1 shipped (#7635, #7636); Phase 2 pre-req (Laravel SchemaStore) shipped.
 Depends on: `090-d-selective-tool-port.md` (what to port), `090-e-cpt-cct-schema-port.md` (which families).
 
 ---
@@ -132,6 +132,14 @@ Acceptance:
 - [ ] Existing round-trip and adapter suites stay green.
 
 ### Phase 2 — First CPT family (project management)
+
+**Pre-req shipped.** `SchemaStoreInterface` now has a Laravel adapter
+(`lib/laravel-adapter/src/Adapter/SchemaStore.php`) reading
+`oos.content_types`, `oos.content_statuses` and `oos.taxonomies`. It returns
+the same `PostTypeSchema` / `TaxonomySchema` the WordPress adapter builds from
+`register_post_type()`, so `getPostType('mcp_ai_task')` and
+`postTypeSupports()` answer identically on both runtimes. Declaring the family
+is a config change, not an adapter change.
 
 Model `mcp_ai_task` + `mcp_ai_project` as one manifest (`090-e` §7 #1),
 seed the Laravel `nvoos_posts` rows with `type` + `meta`, and rewire the
