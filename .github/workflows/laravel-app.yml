@@ -6,8 +6,9 @@ name: Laravel App
 # phpunit.xml the container uses — including FixtureReplayTest.
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, alpha-working ]
     paths:
       - 'docker/laravel/**'
       - 'lib/core/**'
