@@ -189,13 +189,21 @@ the unit of work is a **cluster**, not a slug.
 | Cluster | Contents | Pre-req | Est. |
 |---|---|---|---|
 | **1. Pure computation** | `verify_information`, `generate_email_template`, `validate_tool_schema`, `scope_memory`, `list_prompt_cues`, `enable_reasoning_mode`, `get_loop_metrics`, `import_email_marketing_blueprint` | none | 1 PR |
-| **2. Auth-scoped reads** | `okf_*`, `paper_store_*`, schedule reads | capability/auth port | 1–2 PRs |
+| **2. Auth-scoped reads** | `okf_*`, `paper_store_*`, schedule reads | capability/auth port **+ the store seam (090-F)** | 1–2 PRs |
 | **3. Store-backed** | `*_capture_*`, classroom reads | storage port | 1–2 PRs |
 | **4. HTTP wrappers** | GTmetrix, DietPi, social metrics | `HttpClientInterface` binding | 1–2 PRs |
 | **Deferred** | `git_*`, shell, uploads | separate security proposal | — |
 
 Cluster 1 is the recommended first PR: eight tools, one file each, no I/O, and
 it proves the recipe end-to-end (port → parity test → registry → classifier).
+
+**Cluster 2 correction (2026-11-12).** The pre-req is not auth —
+`AuthProviderInterface::userCan()` already exists and Laravel's execution
+paths inject it. The blocker is storage: the Laravel `ContentStore` accepted
+`metaQuery` / `taxQuery` and silently ignored both, so any ported CPT-shaped
+tool would have returned unfiltered rows. `090-f-storage-bridge-plan.md`
+Phase 1 fixes that (meta/tax translation, order mapping, pagination clamp);
+cluster 2 proceeds once it lands.
 
 ---
 
