@@ -21,9 +21,10 @@ is a `workflow_call` workflow that:
    targeting the mirror's `main` — the branch every `sync-*.yml` workflow
    force-pushes.
 3. Uploads the assets with `--clobber`, making re-runs idempotent.
-4. When `version_file` is set, waits up to 60 s for the mirror's plugin
-   header to match the release version (the sync normally lands first), then
-   warns instead of failing if `main` is still behind.
+4. When `version_file` is set, waits up to 60 s for the mirror's version to
+   match the release (a PHP plugin header by default, or `package.json` with
+   `version_format: json`), then warns instead of failing if `main` is still
+   behind.
 
 The release body gets a provenance footer pointing at the monorepo tag and
 the source commit.
@@ -36,6 +37,7 @@ the source commit.
 | `build-nvoos-content-graph-ai.yml` | `nvdigitalsolutions/nvoos-content-graph-ai` | `NVOOS_CONTENT_GRAPH_AI_REPO_TOKEN` |
 | `build-nvoos-content-graph-ai-platform.yml` | `nvdigitalsolutions/nvoos-content-graph-ai-platform` | `NVOOS_CONTENT_GRAPH_AI_PLATFORM_REPO_TOKEN` |
 | `build-spa-addons.yml`, `release-spa-addons.yml` (docs-hub only) | `nvdigitalsolutions/nvoos-docs-hub` | `NVOOS_DOCS_HUB_REPO_TOKEN` |
+| `mirror-nvoos-cognition-release.yml` (manual dispatch) | `nvdigitalsolutions/nvoos-cognition` | `NVOOS_COGNITION_REPO_TOKEN` |
 
 The token is the same PAT the corresponding `sync-*.yml` workflow already
 uses to push `main`. It needs `contents: write` on the mirror repo. When the
@@ -77,6 +79,10 @@ publish — the caller stays green.
   build exists yet, so there is no release to mirror.
 - **npm packages** (`nvoos-core`, adapters, `nvoos-astro-forge`) — npm is the
   artifact channel; no GitHub Release is produced in the monorepo.
-- **`nvoos-cognition`** — the desktop app's updater feed points at the
-  monorepo release URL (`tauri.conf.json`), so mirroring its assets needs a
-  separate decision about which repo owns the update feed.
+- **`nvoos-cognition` updates** — `mirror-nvoos-cognition-release.yml`
+  mirrors the installers (`.exe`, `.msi`, `.dmg`, `latest.json`) after you
+  publish the draft monorepo release (dispatch it from `alpha-working`; the
+  self-referential push trigger registers the workflow before it reaches
+  `main`), but `latest.json` and `tauri.conf.json`
+  still point at the monorepo feed. Moving the update channel to the mirror
+  is a separate change.
