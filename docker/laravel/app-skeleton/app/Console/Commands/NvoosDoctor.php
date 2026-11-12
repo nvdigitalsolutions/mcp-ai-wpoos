@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
@@ -54,6 +56,91 @@ class NvoosDoctor extends Command
         $this->line('Runtime: '.(function_exists('frankenphp_handle_request') ? 'frankenphp-worker' : 'php-cli'));
         $this->line('ABSPATH defined: '.(defined('ABSPATH') ? 'yes' : 'no'));
 
-        return self::SUCCESS;
+        $healthy = $this->reportVersionState();
+
+        return $healthy && ! $this->hasFailures($rows) ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * Report contract and schema versions plus any pending migrations.
+     *
+     * An upgrade is only complete when all three agree, so the doctor exits
+     * non-zero when they do not — that makes it usable as a post-deploy gate
+     * rather than something an operator has to read carefully.
+     */
+    private function reportVersionState(): bool
+    {
+        $healthy = true;
+
+        $contract = (int) config('oos.contract_version', 1);
+        $expected = (int) config('oos.schema_version', 1);
+
+        $this->line('Contract version: '.$contract.' (console expects 1)');
+
+        if (1 !== $contract) {
+            $healthy = false;
+            $this->error('  FAIL: the console only speaks contract v1.');
+        }
+
+        $pending = $this->pendingMigrations();
+
+        if ([] === $pending) {
+            $this->line('Pending migrations: none');
+        } else {
+            $healthy = false;
+            $this->error('  FAIL: '.count($pending).' pending migration(s): '.implode(', ', $pending));
+            $this->line('  Run: php artisan migrate');
+        }
+
+        if (! Schema::hasTable('nvoos_meta')) {
+            $healthy = false;
+            $this->error('  FAIL: nvoos_meta is missing — run: php artisan migrate');
+
+            return false;
+        }
+
+        $actual = (string) DB::table('nvoos_meta')->where('key', 'schema_version')->value('value');
+        $this->line('Schema version: '.($actual !== '' ? $actual : 'unset').' (expected '.$expected.')');
+
+        if ((string) $expected !== $actual) {
+            $healthy = false;
+            $this->error('  FAIL: schema version mismatch — run: php artisan migrate');
+        }
+
+        return $healthy;
+    }
+
+    /**
+     * Migration names that exist on disk but have not run.
+     *
+     * @return list<string>
+     */
+    private function pendingMigrations(): array
+    {
+        $migrator = app('migrator');
+
+        if (! $migrator->repositoryExists()) {
+            return array_keys($migrator->getMigrationFiles(database_path('migrations')));
+        }
+
+        $files = array_keys($migrator->getMigrationFiles(database_path('migrations')));
+
+        return array_values(array_diff($files, $migrator->getRepository()->getRan()));
+    }
+
+    /**
+     * Whether any binding row failed.
+     *
+     * @param list<array{0:string,1:string}> $rows Binding rows.
+     */
+    private function hasFailures(array $rows): bool
+    {
+        foreach ($rows as $row) {
+            if (str_starts_with($row[1], 'FAIL')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

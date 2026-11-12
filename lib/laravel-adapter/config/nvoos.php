@@ -407,6 +407,20 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Contract and schema versions
+	|--------------------------------------------------------------------------
+	|
+	| `contract_version` is the HTTP contract the console speaks; it asserts
+	| `mcp-ai/v1` + version 1 on boot and refuses to run against anything else.
+	| `schema_version` is written into `nvoos_meta` so `nvoos:doctor` can tell an
+	| operator to migrate instead of failing on a missing column.
+	|
+	*/
+	'contract_version'     => (int) env( 'NVOOS_CONTRACT_VERSION', 1 ),
+	'schema_version'       => (int) env( 'NVOOS_SCHEMA_VERSION', 1 ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Media uploads
 	|--------------------------------------------------------------------------
 	|

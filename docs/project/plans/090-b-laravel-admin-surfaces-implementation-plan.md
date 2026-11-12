@@ -281,7 +281,7 @@ return the typed entitlement error under the `deny` driver.
 | 5.2 | Retire the `X-WP-Nonce` alias; the console sends Laravel's own CSRF header | ✅ Compatibility middleware deleted; console mirrors the token into `X-CSRF-TOKEN` |
 | 5.3 | SSO/cookie-domain decision (same-origin proxy vs shared domain) | Documented + tested |
 | 5.4 | Rate limits, audit parity, observability, read-only profile | ✅ `ReadOnlyToolGuard` + security checklist below |
-| 5.5 | Upgrade/migration path (schema versions, contract versioning) | One documented upgrade |
+| 5.5 | Upgrade/migration path (schema versions, contract versioning) | ✅ `nvoos:doctor` gate + runbook below |
 | 5.6 | 30-minute soak + performance gates | 0 errors; p95 within budget |
 
 **Gate G5:** two consecutive releases with no contract drift; the nonce alias is gone.
@@ -385,6 +385,38 @@ Every WordPress control either has a Laravel counterpart or an explicit accepted
 The three ⚠️ rows are the honest remainder. None of them is reachable from a ported surface today;
 if a later phase exposes a destructive action or an operator-supplied URL, its row must move to ✅
 first.
+
+### 5.5 implementation note — version gates and the upgrade runbook
+
+Two version numbers, one gate:
+
+| Version | Lives in | Meaning |
+|---|---|---|
+| `oos.contract_version` | config | The HTTP contract the console speaks. It asserts `mcp-ai/v1` + version 1 on boot and refuses to run otherwise. |
+| `oos.schema_version` | config, mirrored into `nvoos_meta` | What the data means. Written by the migration that changes it. |
+
+Laravel's `migrations` table already records *which* migrations ran. It does not record what the
+data means, so an app pointed at an older database fails later with "column not found" somewhere
+deep in a controller. `nvoos_meta` closes that gap.
+
+`php artisan nvoos:doctor` is the gate. It checks container bindings, tools, providers, **contract
+version**, **pending migrations** and the **schema version**, and exits non-zero on any failure — so
+it can run as a post-deploy step rather than something a human has to read carefully.
+
+#### Upgrade runbook
+
+1. **Back up** the database (`php artisan nvoos:doctor` is read-only; `migrate` is not).
+2. **Deploy the code** (`git pull`, `composer install --no-dev --optimize-autoloader`).
+3. **Migrate**: `php artisan migrate --force`.
+4. **Clear caches**: `php artisan optimize:clear`. Under Octane also run
+   `php artisan octane:reload` — workers keep the old route collection and container in memory.
+5. **Gate**: `php artisan nvoos:doctor` must exit `0`. A schema mismatch means step 3 did not run; a
+   contract mismatch means the console build and the API are from different releases.
+6. **Smoke**: `GET /api/v1/features` returns the expected `contract_version`.
+
+Rolling back is `php artisan migrate:rollback --step=1` followed by redeploying the previous code;
+`nvoos_meta` is dropped by its own `down()`, so a rollback leaves no version row behind to
+confuse the next doctor run.
 
 ---
 
