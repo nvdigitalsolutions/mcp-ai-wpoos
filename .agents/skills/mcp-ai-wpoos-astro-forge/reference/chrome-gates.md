@@ -170,6 +170,40 @@ Covered by `tests/region-surfaces-browser.test.ts` (hermetic fixture: inner
 section inside a gradient band, positioned `::before` overlay, static pseudo
 ignored, overlay above an own colour).
 
+## 7. The footer BRAND ROW — `chrome.footerBrand`
+
+virtuallyjamaica's Brando footer is an 8/4 row: the social icons in a
+`text-left` column, the logo in a `text-right` column, both `xs-text-center` at
+mobile, with a `border-bottom` hairline above the copyright bar. The rebuild
+stacked the logo under the icons on the left — every surface and colour matched,
+so no gate objected (2026-11-12).
+
+`measureFooterBrand` reads the footer at 1920/1440/834/390 and records, per
+viewport, where the logo and the social group sit inside their common-ancestor
+ROW (in thirds: `start` / `center` / `end`), plus `divider` — the hairline above
+the copyright bar, read from the row's bottom border or (build side) the
+copyright bar's top border.
+
+The social group is measured as the **union of its icon links' boxes**, not the
+wrapper: builders often put a full-width block around an inline icon strip
+(virtuallyjamaica's `.footer-social`), so the wrapper's own box reads centred
+even when the icons hug the left edge.
+
+Rendering: the socials and the standalone logo share `.site-footer-brand-row`;
+the generated rule (`.site-footer .site-footer-brand-row` — higher specificity
+than the template default, order-independent) sets `justify-content` per
+viewport from the measured pair: `space-between` for socials-start + logo-end,
+`center` when both centre at mobile. The divider becomes the copyright bar's
+`border-top`. A footer with no social icons records nothing and keeps the
+stacked layout (jayainc's logo stays inside its first footer block).
+
+Grading (`compareFooterBrand`): a side **inversion** (`start` ↔ `end`) is a
+**fail** — the mark on the wrong side of the footer; `center` ↔ side, a missing
+measurement, and a lost/gained divider are **warn**.
+
+Verified on the real build: virtuallyjamaica 9 metrics, 0 drift (logo `end`,
+socials `start`, hairline; both `center` at mobile).
+
 ## Roadmap (remaining)
 
 - **Header height/alignment per device** — the box gate covers width and

@@ -20,7 +20,7 @@
 // ---------------------------------------------------------------------------
 
 import { colorDeltaE, GRADIENT_SURFACE_RE, normalizeCssColor, normalizeCssValue } from './region-colors.ts';
-import type { ForgeChromeGeometry, ForgeMobileNav } from './types.ts';
+import type { ForgeChromeGeometry, ForgeFooterBrand, ForgeMobileNav } from './types.ts';
 
 export interface ChromeDeviation {
 	/** The fact that drifted, e.g. `mobileNav.background`. */
@@ -196,8 +196,102 @@ export function compareMobileNav(
 	return { deviations, compared, skipped };
 }
 
-/** The viewports the header box is compared at, widest first. */
 const GEOMETRY_DEVICES = [ 'wide', 'desktop', 'tablet', 'mobile' ] as const;
+
+/**
+ * Diff the footer's brand ROW: where the logo and the social icons sit.
+ *
+ * virtuallyjamaica's footer puts the logo at the END of the row (`text-right`
+ * column) and the social icons at the start, both centred at mobile. A rebuild
+ * that stacks them left matches every colour and still reads wrong, so the
+ * alignment is measured per viewport rather than inferred from the markup.
+ *
+ * A side INVERSION (`start` ↔ `end`) is the failure the reader sees — the mark
+ * on the wrong side of the footer. `center` ↔ side is a warning: it changes the
+ * rhythm but not which edge the mark anchors to.
+ */
+export function compareFooterBrand(
+	expected: ForgeFooterBrand | undefined,
+	actual: ForgeFooterBrand | undefined,
+	options: ChromeAuditOptions = {}
+): ChromeAuditReport {
+	const deviations: ChromeDeviation[] = [];
+	const skipped: string[] = [];
+	let compared = 0;
+
+	const devices = GEOMETRY_DEVICES.filter( ( device ) => expected?.[ device ] );
+	if ( devices.length === 0 ) {
+		skipped.push( 'footer brand row (not measured on the source)' );
+		return { deviations, compared, skipped };
+	}
+	if ( ! actual ) {
+		deviations.push( {
+			fact: 'footer brand row',
+			expected: 'a measured social row',
+			actual: null,
+			deltaE: null,
+			severity: 'fail',
+			note: 'the build has no measurable footer social row',
+		} );
+		return { deviations, compared: 1, skipped };
+	}
+
+	for ( const device of devices ) {
+		const from = expected![ device ]!;
+		const to = actual[ device ];
+		for ( const key of [ 'logo', 'socials' ] as const ) {
+			const want = from[ key ];
+			if ( ! want ) {
+				continue;
+			}
+			compared++;
+			const got = to?.[ key ];
+			if ( ! got ) {
+				deviations.push( {
+					fact: `footer brand [${ device }].${ key }`,
+					expected: want,
+					actual: null,
+					deltaE: null,
+					severity: 'warn',
+					note: `the build records no position for the footer ${ key }`,
+				} );
+				continue;
+			}
+			if ( got === want ) {
+				continue;
+			}
+			const inverted =
+				( want === 'start' && got === 'end' ) || ( want === 'end' && got === 'start' );
+			deviations.push( {
+				fact: `footer brand [${ device }].${ key }`,
+				expected: want,
+				actual: got,
+				deltaE: null,
+				severity: inverted ? 'fail' : 'warn',
+				note: inverted
+					? `the footer ${ key } sits on the wrong side of the row`
+					: undefined,
+			} );
+		}
+	}
+
+	if ( typeof expected!.divider === 'boolean' ) {
+		compared++;
+		const got = actual.divider;
+		if ( got !== expected!.divider ) {
+			deviations.push( {
+				fact: 'footer brand.divider',
+				expected: expected!.divider ? 'a hairline' : 'no hairline',
+				actual: got === undefined ? null : got ? 'a hairline' : 'no hairline',
+				deltaE: null,
+				severity: 'warn',
+				note: 'the sub-footer row’s divider above the copyright bar',
+			} );
+		}
+	}
+
+	return { deviations, compared, skipped };
+}
 
 /**
  * Diff the header's BOX per viewport: source vs build.

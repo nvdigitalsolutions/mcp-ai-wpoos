@@ -878,9 +878,9 @@ so JS-off leaves it inline at every width. A chrome fact needs THREE edits
 disappears — detail: [`reference/mobile-nav-disclosure.md`](reference/mobile-nav-disclosure.md).
 
 **The OPENED panel is a measured SURFACE** (`chrome.mobileNav`), and
-`verify --chrome` diffs it (plus the header BOX — `chrome.geometry`, measured at
-1920/1440/834/390: a 1670px cap is invisible at 1440, so "boxed vs full width"
-needs the wide pass) and colour-region resolution —
+`verify --chrome` diffs it (plus the header BOX — `chrome.geometry` — the footer
+brand ROW — `chrome.footerBrand`: logo/social positions per viewport — and
+colour-region resolution) —
 [`reference/chrome-gates.md`](reference/chrome-gates.md).
 
 ## Proposal 125 — split hero, webfonts, catalog (2026-11-06)

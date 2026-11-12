@@ -27,6 +27,7 @@ import type {
 	ForgeChromeBox,
 	ForgeChrome,
 	ForgeChromeGeometry,
+	ForgeFooterBrand,
 	ForgeGeometry,
 	ForgeMobileNav,
 	ForgeStickyHeader,
@@ -1209,6 +1210,169 @@ export async function measureChromeGeometry( options: {
 			}
 			if ( Object.keys( entry ).length > 0 ) {
 				out[ device ] = entry;
+			}
+		}
+		return out;
+	} finally {
+		await browser.close();
+	}
+}
+
+/**
+ * Measure the footer's BRAND ROW — where the brand mark and the social icons
+ * sit inside it, per viewport.
+ *
+ * virtuallyjamaica's Brando footer is an 8/4 row: six social icons in a
+ * `text-left` column, the logo in a `text-right` column, both `xs-text-center`
+ * at mobile. A rebuild that stacks the logo under the icons reads wrong at
+ * every width while passing the colour and band gates (2026-11-12).
+ *
+ * Alignment is relative to the ROW (the social group's and the logo's common
+ * ancestor), not the viewport: a third of the row each side is `start`/`end`,
+ * the middle third `center`. Needs a social row of at least two icon links —
+ * a footer with no social icons has no row to align and returns `{}`.
+ */
+export async function measureFooterBrand( options: {
+	url: string;
+	timeout?: number;
+} ): Promise< ForgeFooterBrand > {
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const page = await context.newPage();
+		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+		await settle( page );
+		const out: ForgeFooterBrand = {};
+		for ( const device of [ 'wide', 'desktop', 'tablet', 'mobile' ] as const ) {
+			const { width, height } = GEOMETRY_VIEWPORTS[ device ];
+			await page.setViewportSize( { width, height } );
+			await page.waitForTimeout( 300 );
+			const measured = await page.evaluate( () => {
+				const footer = document.querySelector(
+					'footer, .site-footer, #footer, .brando-footer, [role="contentinfo"]'
+				);
+				if ( ! footer ) {
+					return null;
+				}
+				const box = ( element: Element ) => element.getBoundingClientRect();
+				// Icon-only links: a compact anchor around an icon glyph or an svg/img.
+				const iconLinks = [ ...footer.querySelectorAll( 'a' ) ].filter( ( anchor ) => {
+					const rect = box( anchor );
+					return (
+						rect.width > 8 &&
+						rect.width < 80 &&
+						rect.height > 8 &&
+						rect.height < 80 &&
+						Boolean( anchor.querySelector( 'i, svg, img' ) )
+					);
+				} );
+				if ( iconLinks.length < 2 ) {
+					return null;
+				}
+				// The social GROUP: the links' SMALLEST common ancestor (their strip).
+				// `parentElement.parentElement` picked the whole 8/12 column on
+				// virtuallyjamaica and read a left-aligned strip as centred.
+				const firstChain = new Set< Element >();
+				for ( let node: Element | null = iconLinks[ 0 ]; node; node = node.parentElement ) {
+					firstChain.add( node );
+				}
+				let socials: Element | null = iconLinks[ iconLinks.length - 1 ];
+				while ( socials && ! firstChain.has( socials ) ) {
+					socials = socials.parentElement;
+				}
+				if ( ! socials ) {
+					return null;
+				}
+				// The VISIBLE social strip: the union of its icon links' boxes. The
+				// wrapper is often a full-width block with the icons left-aligned
+				// inside it (virtuallyjamaica's `.footer-social`), so the wrapper's own
+				// box reads as centred even when the icons hug the left edge.
+				const groupLinks = iconLinks.filter( ( anchor ) => socials.contains( anchor ) );
+				const union = ( elements: Element[] ) => {
+					const rects = elements.map( box );
+					if ( rects.length === 0 ) {
+						return null;
+					}
+					const left = Math.min( ...rects.map( ( rect ) => rect.x ) );
+					const right = Math.max( ...rects.map( ( rect ) => rect.x + rect.width ) );
+					const top = Math.min( ...rects.map( ( rect ) => rect.y ) );
+					const bottom = Math.max( ...rects.map( ( rect ) => rect.y + rect.height ) );
+					return { x: left, y: top, width: right - left, height: bottom - top };
+				};
+				const socialsRect = union( groupLinks.length > 0 ? groupLinks : iconLinks );
+				const logo =
+					[ ...footer.querySelectorAll( 'img' ) ].find( ( img ) =>
+						/logo|brand/i.test( img.getAttribute( 'src' ) ?? '' )
+					) ?? footer.querySelector( '.site-footer-logo img' );
+				// The ROW: the social group's and the logo's common ancestor.
+				const ancestors = new Set< Element >();
+				for ( let node: Element | null = logo ?? socials; node; node = node.parentElement ) {
+					ancestors.add( node );
+				}
+				let row: Element | null = socials;
+				while ( row && ! ancestors.has( row ) ) {
+					row = row.parentElement;
+				}
+				const rowRect = ( row ?? footer ).getBoundingClientRect();
+				const alignOf = ( rect: DOMRect | ReturnType< typeof union > | null ): 'start' | 'center' | 'end' | undefined => {
+					if ( ! rect || rect.width <= 0 ) {
+						return undefined;
+					}
+					const centre = rect.x + rect.width / 2;
+					if ( centre < rowRect.x + rowRect.width / 3 ) {
+						return 'start';
+					}
+					if ( centre > rowRect.x + ( rowRect.width * 2 ) / 3 ) {
+						return 'end';
+					}
+					return 'center';
+				};
+				const entry: { logo?: string; socials?: string; divider?: boolean } = {};
+				const logoAlign = alignOf( logo ? box( logo ) : null );
+				if ( logoAlign ) {
+					entry.logo = logoAlign;
+				}
+				const socialsAlign = alignOf( socialsRect );
+				if ( socialsAlign ) {
+					entry.socials = socialsAlign;
+				}
+				// The hairline above the copyright bar. A builder puts it on the row's
+				// bottom edge (virtuallyjamaica's `.row.footer-border.border-bottom`); a
+				// rebuild carries it as the copyright bar's top border. Either counts,
+				// on either side.
+				let divider = false;
+				if ( row && row !== footer ) {
+					divider = Number.parseFloat( getComputedStyle( row ).borderBottomWidth ) > 0;
+				}
+				if ( ! divider ) {
+					const copyrightNode =
+						footer.querySelector( '.site-copyright, [class*="copyright" i], small' ) ?? null;
+					for ( let node = copyrightNode; node && node !== footer; node = node.parentElement ) {
+						if ( Number.parseFloat( getComputedStyle( node ).borderTopWidth ) > 0 ) {
+							divider = true;
+							break;
+						}
+					}
+				}
+				entry.divider = divider;
+				return entry;
+			} );
+			if ( ! measured ) {
+				continue;
+			}
+			const entry: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' } = {};
+			if ( measured.logo === 'start' || measured.logo === 'center' || measured.logo === 'end' ) {
+				entry.logo = measured.logo;
+			}
+			if ( measured.socials === 'start' || measured.socials === 'center' || measured.socials === 'end' ) {
+				entry.socials = measured.socials;
+			}
+			if ( Object.keys( entry ).length > 0 ) {
+				out[ device ] = entry;
+			}
+			if ( device === 'desktop' && typeof measured.divider === 'boolean' ) {
+				out.divider = measured.divider;
 			}
 		}
 		return out;
