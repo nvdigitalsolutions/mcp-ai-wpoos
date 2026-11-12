@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AcceptWpNonce;
+use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'spike.local' => EnsureSpikeEnvironment::class,
+            'pro.entitlement' => EnsureProEntitlement::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

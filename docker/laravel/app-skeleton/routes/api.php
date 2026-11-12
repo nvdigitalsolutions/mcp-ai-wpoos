@@ -11,6 +11,9 @@ use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
 use App\Http\Controllers\PaperStoreController;
+use App\Http\Controllers\Pro\PresetsController;
+use App\Http\Controllers\Pro\RecordsController;
+use App\Http\Controllers\Pro\SchedulesController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
@@ -19,6 +22,7 @@ use App\Http\Controllers\ToolController;
 use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\TranscriptsController;
 use App\Http\Controllers\TriggersController;
+use App\Http\Controllers\Wp\ContentController as WpContentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -94,11 +98,15 @@ Route::prefix('api/v1')->group(function (): void {
             Route::post('/approvals/{id}/{action}', [ApprovalsController::class, 'resolve'])
                 ->whereIn('action', ['approve', 'deny']);
 
-            // Phase 3b — workflow triggers.
-            Route::get('/triggers', [TriggersController::class, 'index']);
-            Route::post('/triggers', [TriggersController::class, 'store']);
-            Route::put('/triggers/{id}', [TriggersController::class, 'update']);
-            Route::delete('/triggers/{id}', [TriggersController::class, 'destroy']);
+            // Phase 3b — workflow triggers. The console points `triggers` at
+            // `/orchestration/triggers`; `/triggers` stays as the client-default
+            // alias and the WordPress route parity.
+            foreach (['/triggers', '/orchestration/triggers'] as $triggersPath) {
+                Route::get($triggersPath, [TriggersController::class, 'index']);
+                Route::post($triggersPath, [TriggersController::class, 'store']);
+                Route::put($triggersPath.'/{id}', [TriggersController::class, 'update']);
+                Route::delete($triggersPath.'/{id}', [TriggersController::class, 'destroy']);
+            }
 
             // Phase 3b — security posture, snapshots, self-test.
             Route::get('/security/posture', [SecurityController::class, 'posture']);
@@ -116,6 +124,41 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/paper-store/{collection}/{id}', [PaperStoreController::class, 'show']);
             Route::put('/paper-store/{collection}/{id}', [PaperStoreController::class, 'update']);
             Route::delete('/paper-store/{collection}/{id}', [PaperStoreController::class, 'destroy']);
+
+            // Phase 3c — Pro Schedule Manager. The console's `scheduleManager`
+            // endpoint is `${pro}`, so these live under /api/v1/pro.
+            Route::middleware('pro.entitlement:schedules')->prefix('pro')->group(function (): void {
+                Route::get('/schedules', [SchedulesController::class, 'index']);
+                Route::post('/schedules', [SchedulesController::class, 'store']);
+                Route::get('/schedules/fleet-stats', [SchedulesController::class, 'fleetStats']);
+                Route::get('/schedules/{id}', [SchedulesController::class, 'show']);
+                Route::post('/schedules/{id}', [SchedulesController::class, 'update']);
+                Route::delete('/schedules/{id}', [SchedulesController::class, 'destroy']);
+                Route::post('/schedules/{id}/toggle', [SchedulesController::class, 'toggle']);
+                Route::post('/schedules/{id}/trigger', [SchedulesController::class, 'trigger']);
+                Route::get('/schedules/{id}/history', [SchedulesController::class, 'history']);
+                Route::get('/schedules/{id}/results', [SchedulesController::class, 'results']);
+
+                Route::get('/presets', [PresetsController::class, 'index']);
+                Route::post('/presets/{id}/install', [PresetsController::class, 'install']);
+            });
+
+            // Phase 3c — Pro Records schema (content entities only).
+            Route::middleware('pro.entitlement:records')->prefix('pro/records')->group(function (): void {
+                Route::get('/schema', [RecordsController::class, 'schema']);
+
+                // Not ported: WordPress-to-WordPress proxy and the
+                // deep_research create flow. Answer 501, not 404.
+                Route::get('/remote/{entity}', [RecordsController::class, 'remoteIndex']);
+                Route::get('/remote/{entity}/{id}', [RecordsController::class, 'remoteShow'])->whereNumber('id');
+                Route::post('/{entity}/research', [RecordsController::class, 'research']);
+            });
+
+            // Phase 3c — WordPress-compatible content shim. The Laravel
+            // profile points the console's `wpBase` at /api/v1/wp.
+            Route::get('/wp/{restBase}', [WpContentController::class, 'index']);
+            Route::post('/wp/{restBase}', [WpContentController::class, 'store']);
+            Route::get('/wp/{restBase}/{id}', [WpContentController::class, 'show'])->whereNumber('id');
         });
     });
 });
