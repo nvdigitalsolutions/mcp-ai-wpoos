@@ -84,6 +84,54 @@ describe( 'diffGeometry', () => {
 
 		expect( deviations ).toEqual( [] );
 	} );
+
+	it( 'compares the COLUMNS pairwise and grades a big gap as a defect', () => {
+		// virtuallyjamaica #wifi: the source keeps a 700px photo beside 946px of
+		// copy; a stretched grid renders both at 946 and the photo grows 246px.
+		const source = geometry( band( { columns: [ 700, 946 ] } ) );
+		const built = geometry( band( { columns: [ 946, 946 ] } ) );
+
+		const deviations = diffGeometry( source, built );
+
+		expect( deviations ).toHaveLength( 1 );
+		expect( deviations[ 0 ] ).toMatchObject( {
+			metric: 'column 1',
+			expected: 700,
+			actual: 946,
+			severity: 'fail',
+		} );
+	} );
+
+	it( 'warns — never fails — when the column COUNT differs', () => {
+		const deviations = diffGeometry(
+			geometry( band( { columns: [ 700, 946 ] } ) ),
+			geometry( band( { columns: [ 700 ] } ) )
+		);
+
+		expect( deviations ).toHaveLength( 1 );
+		expect( deviations[ 0 ] ).toMatchObject( { metric: 'columns', expected: 2, actual: 1, severity: 'warn' } );
+	} );
+
+	it( 'ignores columns on a band the forge rebuilt as a COMPONENT', () => {
+		// A hero is forged from a component, so it has no builder columns by
+		// design. The source row still measured two — that absence is not a
+		// regression, and warning on it flagged every hero band on every site.
+		const deviations = diffGeometry(
+			geometry( band( { columns: [ 180, 493 ] } ) ),
+			geometry( band( { kind: 'hero' } ) )
+		);
+
+		expect( deviations ).toEqual( [] );
+	} );
+
+	it( 'still compares columns on a rebuilt band that owns raw markup', () => {
+		const deviations = diffGeometry(
+			geometry( band( { columns: [ 700, 946 ] } ) ),
+			geometry( band( { kind: 'text' } ) )
+		);
+
+		expect( deviations.map( ( deviation ) => deviation.metric ) ).toEqual( [ 'columns' ] );
+	} );
 } );
 
 describe( 'geometry survives analyze --write (118 §3)', () => {

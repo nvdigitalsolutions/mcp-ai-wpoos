@@ -1386,7 +1386,14 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	min-height: 0;
+	/* A COLUMN is part of this chain too (section → container → row → column),
+	 * and its height is a MEASURED fact. The `0` here is what lets a wrapper
+	 * centre inside its parent without pinning a floor; on a column it zeroed
+	 * the source's own box (virtuallyjamaica's about band: 374px measured,
+	 * 338px rendered). Read the same `--ds-col-min-h` bridge the photo-panel
+	 * clamp uses, so a measured column height survives the centring chain
+	 * while an unmeasured wrapper still gets 0. */
+	min-height: var(--ds-col-min-h, 0);
 }
 
 /* ---------------------------------------------------------------------------
@@ -1440,15 +1447,39 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 }
 
 /* A photo panel is painted on its column, and the source sized that column with
- * an inline min-height the sanitizer drops — without this the panel collapses to
+ * an inline min-height the sanitizer drops — without a floor the panel collapses to
  * zero height and the photo is invisible (virtuallyjamaica's social-login and
- * phone columns). */
-.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[style*='background-image'] {
-	min-height: clamp(18rem, 36vw, 40rem);
+ * phone columns).
+ *
+ * The clamp is a GUESS, so it is only the FALLBACK: `analyze` measures the real
+ * column height per device and the band-scoped rule sets `--ds-col-min-h`
+ * (virtuallyjamaica #wifi: 700px, against a 531.72px clamp). Reading the
+ * property here — rather than out-weighing this selector — means a measured
+ * height wins on VALUE, which gives the same answer whichever rule wins the
+ * cascade. Raising specificity instead would be a permanent war: the generated
+ * rules would have to grow a selector token every time this one does.
+ *
+ * The DIRECT-CHILD form is load-bearing. The property inherits, so a column
+ * nested inside a photo panel would otherwise pick up the panel's floor; scoping
+ * the rule to row children (the only place a panel is ever painted) means a
+ * nested column never matches it at all. */
+.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row']) > :is(.wpb_column, .vc_column_container)[style*='background-image'] {
+	min-height: var(--ds-col-min-h, clamp(18rem, 36vw, 40rem));
 }
 
 .ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
 	min-width: 0;
+}
+
+/* Builders zero the LEADING edge of a text stack — WPBakery's own sheet ships
+ * `.wpb_wrapper > :first-child { margin-top: 0 }` — and the layout depends on
+ * it. virtuallyjamaica's red panel is one paragraph, so the base `p` margin-top
+ * collapses up through the wrappers and adds 24px the source does not have
+ * (measured 314, built 352). The TRAILING margin stays: the source keeps its
+ * 10px INSIDE the column's padding, and zeroing it would trade one drift for
+ * another in the opposite direction. */
+.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) > :first-child :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, figure):first-child {
+	margin-top: 0;
 }
 
 /*
@@ -1467,11 +1498,21 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  * `[class~=…]` is a whole-token match — a substring match would make
  * `vc_col-lg-1` also select `vc_col-lg-10`, `-11` and `-12`.
  *
+ * The BOUNDARIES are Bootstrap 3's, because that is what WPBakery compiles
+ * against: sm ≥ 768, md ≥ 992, lg ≥ 1200. Reading them as the template's own
+ * 768 / 1025 breakpoints is wrong in both directions — virtuallyjamaica's about
+ * band is `vc_col-sm-12 vc_col-md-6 vc_col-lg-6`, so the SOURCE stacks at 834
+ * (750px wide columns, 413 / 290) and splits 6/6 only from 992 (485 / 485 at
+ * 1100). With md mapped to 768–1024 the rebuild split 6/6 at tablet, squeezed
+ * the same copy into 375px, and its columns measured 510 / 348 against the
+ * source's 413 / 290. The measured column heights are what exposed it.
+ *
  * The blocks are ordered WIDEST-LAST because every rule has the same
- * specificity: the last matching block wins. `vc_col-sm-*` is the small-screen
- * span and the only one brando's inner rows use (virtuallyjamaica's HOW IT WORKS
- * panel is a 2×2 of `vc_col-sm-6` columns — without this block the four steps
- * stacked vertically in one column).
+ * specificity: the last matching block wins. The ranges are disjoint, so at any
+ * width exactly one of md / lg joins `sm` and it is always the later one.
+ * `vc_col-sm-*` is the small-screen span and the only one brando's inner rows
+ * use (virtuallyjamaica's HOW IT WORKS panel is a 2×2 of `vc_col-sm-6` columns —
+ * without this block the four steps stacked vertically in one column).
  */
 @media (min-width: 768px) {
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-1'] { grid-column: span 1; }
@@ -1488,7 +1529,7 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-12'] { grid-column: span 12; }
 }
 
-@media (min-width: 1025px) {
+@media (min-width: 1200px) {
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-1'] { grid-column: span 1; }
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-2'] { grid-column: span 2; }
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-3'] { grid-column: span 3; }
@@ -1503,7 +1544,7 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-12'] { grid-column: span 12; }
 }
 
-@media (min-width: 768px) and (max-width: 1024px) {
+@media (min-width: 992px) and (max-width: 1199px) {
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-1'] { grid-column: span 1; }
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-2'] { grid-column: span 2; }
 	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-3'] { grid-column: span 3; }

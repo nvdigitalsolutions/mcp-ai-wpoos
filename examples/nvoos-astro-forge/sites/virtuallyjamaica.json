@@ -441,6 +441,7 @@
 					"socials": "start",
 					"logoHeight": "62px"
 				},
+				"divider": true,
 				"tablet": {
 					"logo": "end",
 					"socials": "start",
@@ -844,7 +845,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					374,
+					374
+				]
 			},
 			"tablet": {
 				"height": 858,
@@ -854,7 +859,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					413,
+					290
+				]
 			},
 			"mobile": {
 				"height": 742,
@@ -864,7 +873,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					206,
+					435
+				]
 			}
 		},
 		"1ff4891": {
@@ -876,7 +889,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					700,
+					946
+				]
 			},
 			"tablet": {
 				"height": 1586,
@@ -886,7 +903,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					700,
+					806
+				]
 			},
 			"mobile": {
 				"height": 2209,
@@ -896,7 +917,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					700,
+					1459
+				]
 			}
 		},
 		"860a86e": {
@@ -940,7 +965,12 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					500,
+					500,
+					612
+				]
 			},
 			"tablet": {
 				"height": 1445,
@@ -950,7 +980,12 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					262,
+					540,
+					483
+				]
 			},
 			"mobile": {
 				"height": 1281,
@@ -960,7 +995,12 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					314,
+					320,
+					547
+				]
 			}
 		},
 		"cd02263": {
@@ -1004,7 +1044,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					180,
+					493
+				]
 			},
 			"tablet": {
 				"height": 1112,
@@ -1014,7 +1058,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					145,
+					458
+				]
 			},
 			"mobile": {
 				"height": 844,
@@ -1024,7 +1072,11 @@
 				"paddingLeft": 0,
 				"paddingRight": 0,
 				"marginTop": 0,
-				"marginBottom": 0
+				"marginBottom": 0,
+				"columns": [
+					202,
+					323
+				]
 			}
 		}
 	},
@@ -1383,6 +1435,38 @@
 					"mobile": "height:206.41px"
 				}
 			},
+			"columns": {
+				"desktop": [
+					{
+						"selector": "brando_column_1526905481-2-68",
+						"height": 374
+					},
+					{
+						"selector": "brando_column_1526991330-2-100",
+						"height": 374
+					}
+				],
+				"tablet": [
+					{
+						"selector": "brando_column_1526905481-2-68",
+						"height": 413
+					},
+					{
+						"selector": "brando_column_1526991330-2-100",
+						"height": 290
+					}
+				],
+				"mobile": [
+					{
+						"selector": "brando_column_1526905481-2-68",
+						"height": 206
+					},
+					{
+						"selector": "brando_column_1526991330-2-100",
+						"height": 435
+					}
+				]
+			},
 			"classes": [
 				"alt-font",
 				"black-text",
@@ -1706,6 +1790,47 @@
 				"service": {
 					"mobile": "margin:0px 0px 0px 0px"
 				}
+			},
+			"columns": {
+				"desktop": [
+					{
+						"selector": "brando_column_1526544659-2-63",
+						"height": 700,
+						"image": true,
+						"attachment": "fixed",
+						"size": "cover"
+					},
+					{
+						"selector": "brando_column_1526544929-2-72",
+						"height": 946
+					}
+				],
+				"tablet": [
+					{
+						"selector": "brando_column_1526544659-2-63",
+						"height": 700,
+						"image": true,
+						"attachment": "scroll",
+						"size": "cover"
+					},
+					{
+						"selector": "brando_column_1526544929-2-72",
+						"height": 806
+					}
+				],
+				"mobile": [
+					{
+						"selector": "brando_column_1526544659-2-63",
+						"height": 700,
+						"image": true,
+						"attachment": "scroll",
+						"size": "cover"
+					},
+					{
+						"selector": "brando_column_1526544929-2-72",
+						"height": 1459
+					}
+				]
 			},
 			"classes": [
 				"alt-font",
@@ -2362,6 +2487,59 @@
 					"mobile": "margin:0px 0px 0px 0px"
 				}
 			},
+			"columns": {
+				"desktop": [
+					{
+						"selector": "brando_column_1526550966-2-18",
+						"height": 500
+					},
+					{
+						"selector": "brando_column_1526552250-2-97",
+						"height": 500,
+						"image": true,
+						"attachment": "scroll",
+						"size": "cover"
+					},
+					{
+						"selector": "brando_column_1526552704-2-67",
+						"height": 612
+					}
+				],
+				"tablet": [
+					{
+						"selector": "brando_column_1526550966-2-18",
+						"height": 262
+					},
+					{
+						"selector": "brando_column_1526552250-2-97",
+						"height": 540,
+						"image": true,
+						"attachment": "scroll",
+						"size": "cover"
+					},
+					{
+						"selector": "brando_column_1526552704-2-67",
+						"height": 483
+					}
+				],
+				"mobile": [
+					{
+						"selector": "brando_column_1526550966-2-18",
+						"height": 314
+					},
+					{
+						"selector": "brando_column_1526552250-2-97",
+						"height": 320,
+						"image": true,
+						"attachment": "scroll",
+						"size": "cover"
+					},
+					{
+						"selector": "brando_column_1526552704-2-67",
+						"height": 547
+					}
+				]
+			},
 			"classes": [
 				"agency-skill",
 				"agency-skill-bg",
@@ -2987,6 +3165,38 @@
 					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
 					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				}
+			},
+			"columns": {
+				"desktop": [
+					{
+						"selector": "brando_column_1526641231-2-46",
+						"height": 180
+					},
+					{
+						"selector": "brando_column_1541165343-2-31",
+						"height": 493
+					}
+				],
+				"tablet": [
+					{
+						"selector": "brando_column_1526641231-2-46",
+						"height": 145
+					},
+					{
+						"selector": "brando_column_1541165343-2-31",
+						"height": 458
+					}
+				],
+				"mobile": [
+					{
+						"selector": "brando_column_1526641231-2-46",
+						"height": 202
+					},
+					{
+						"selector": "brando_column_1541165343-2-31",
+						"height": 323
+					}
+				]
 			},
 			"hidden": [
 				"[class~=\"screen-reader-response\"]",

@@ -610,6 +610,29 @@ export interface BandGeometry {
 	 * stay valid and are simply treated as 0. */
 	paddingLeft?: number;
 	paddingRight?: number;
+	/**
+	 * The heights of the band's direct COLUMNS, in DOM order (px).
+	 *
+	 * A builder row often gives its columns deliberately different heights —
+	 * virtuallyjamaica's HOW IT WORKS row is a 700px fixed-photo column beside a
+	 * 948px copy column — and a rebuilt grid that stretches or equalises them
+	 * shows a gap the source does not have. Recorded so `diffGeometry` can catch
+	 * the drift instead of leaving it to a screenshot.
+	 */
+	columns?: number[];
+	/**
+	 * The REBUILT band's kind (`data-section` on the wrapper), recorded only when
+	 * measuring a build.
+	 *
+	 * A component band (a `hero`, a `split`, an `icon-list`, …) is forged from a
+	 * component, not from the source's raw markup, so it legitimately has no
+	 * builder columns — virtuallyjamaica's contact hero measures 2 source
+	 * columns and 0 build columns and that is CORRECT. Without this tag the
+	 * column diff reads the absence as a lost row and warns on every component
+	 * band; with it, the diff grades the band box and leaves the internal
+	 * arrangement to the component's own gates.
+	 */
+	kind?: string;
 }
 
 /** Measured band geometry: section id → viewport name → box. */
@@ -757,6 +780,36 @@ export interface BandBoxDeclaration {
  * and carry the column padding the rebuild otherwise loses.
  */
 export type BandBoxFacts = Record< string, BandBoxDeclaration >;
+
+/**
+ * One column of a band's grid, measured (`collectBandColumnFacts`).
+ *
+ * Builder columns carry layout the markup cannot express once the vendor
+ * stylesheet is gone: virtuallyjamaica's left column is `min-height: 700px`
+ * with `background: url(...) fixed / cover`, its sibling 948px of copy. The
+ * sanitizer drops the inline `min-height` (layout fights the band rhythm), so
+ * the browser measurement is the only faithful source.
+ */
+export interface ForgeBandColumnFact {
+	/** The unique class token that identifies the column (the renderer scopes
+	 * it to the band, so it must be CSS-safe and appear once in the band). */
+	selector: string;
+	/** The rendered border-box height (px). */
+	height?: number;
+	/** The rendered background attachment — `fixed` is a parallax/fixed photo. */
+	attachment?: 'fixed' | 'scroll';
+	/** The rendered `background-size` (`cover`, `contain`, `auto`). */
+	size?: string;
+	/** The column paints a background image. */
+	image?: boolean;
+}
+
+/** The band's columns per device. Sparse: a device with no grid is absent. */
+export interface BandColumnFacts {
+	desktop?: ForgeBandColumnFact[];
+	tablet?: ForgeBandColumnFact[];
+	mobile?: ForgeBandColumnFact[];
+}
 
 /** The measured presentation facts of one source band (see `SiteProfile.bandFacts`). */
 /**
@@ -976,6 +1029,13 @@ export interface ForgeBandFacts {
 	 * virtuallyjamaica's contact band is top-aligned under 130px of padding,
 	 * and centring it moved the copy 151px down.
 	 */
+	/**
+	 * The band's grid COLUMNS per device: rendered heights, background photos
+	 * and their attachment (`collectBandColumnFacts`). Emitted by the scaffold
+	 * as band-scoped `.column-class` rules, because the sanitized markup keeps
+	 * the classes but the vendor sheet — and the inline min-height — is gone.
+	 */
+	columns?: BandColumnFacts;
 	centeredContent?: boolean;
 }
 
@@ -1219,6 +1279,13 @@ export interface ForgeSection {
 	 * split components re-measure from these; absent → the template
 	 * default ratio. */
 	columns?: ForgeSectionColumn[];
+	/**
+	 * The band's measured COLUMN geometry, keyed by the column's unique class —
+	 * a rendered `min-height` floor plus a fixed background photo's attachment
+	 * and size (`bandFacts[id].columns`). Emitted by the renderer as band-scoped
+	 * CSS; absent → the columns size themselves.
+	 */
+	columnBox?: BandBoxFacts;
 	/** The section's content rhythm (125 §1) — 'split' = the source's
 	 * two-column hero band: a copy column (heading + divider + body +
 	 * links) beside a media collage column (jayainc's about band). */

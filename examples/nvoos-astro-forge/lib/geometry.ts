@@ -20,9 +20,11 @@ import { extname, join, normalize, sep } from 'node:path';
 import type {
 	BandBoxDeclaration,
 	BandBoxFacts,
+	BandColumnFacts,
 	BandTypeFact,
 	BandTypeProperties,
 	ForgeBandContainer,
+	ForgeBandColumnFact,
 	ForgeBandFacts,
 	ForgeChromeBox,
 	ForgeChrome,
@@ -164,7 +166,21 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 			await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 			await settle( page );
 			const measured = await page.evaluate( ( { ids, kind, selectors } ) => {
-				const out: Record< string, Record< string, number > > = {};
+				const out: Record<
+					string,
+					{
+						height: number;
+						width: number;
+						paddingTop: number;
+						paddingBottom: number;
+						paddingLeft: number;
+						paddingRight: number;
+						marginTop: number;
+						marginBottom: number;
+						columns?: number[];
+						kind?: string;
+					}
+				> = {};
 				for ( const id of ids ) {
 					// Candidate order is precise-first: the Elementor class is exact
 					// when it exists, and the caller's selector covers outline-band
@@ -218,6 +234,48 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					}
 					const rect = element.getBoundingClientRect();
 					const style = getComputedStyle( element );
+					// The band's direct COLUMNS (see `collectBandColumnFacts`): a row
+					// whose children sit side by side and tile the row. Recorded so a
+					// rebuilt grid that stretches equal-height columns is a reported
+					// deviation (virtuallyjamaica's 700px + 948px pair).
+					const columnsOf = ( band: Element ): number[] | undefined => {
+						let row: Element = band;
+						for ( let guard = 0; guard < 6 && row.children.length === 1; guard++ ) {
+							row = row.children[ 0 ] as Element;
+						}
+						const kids = [ ...row.children ].filter( ( child ) => {
+							const box = child.getBoundingClientRect();
+							const style = getComputedStyle( child );
+							// A column narrower than 40px or shorter than 8px is not a lane —
+							// it is a spacer (virtuallyjamaica's contact band has a pair of
+							// 2px-tall spacer columns that read as a 2px "row" and then
+							// disagree with the facts pass, which skips them).
+							return box.width >= 40 && box.height >= 8 && style.display !== 'none';
+						} );
+						if ( kids.length < 2 ) {
+							return undefined;
+						}
+						const rects = kids.map( ( child ) => child.getBoundingClientRect() );
+						const sameTop = rects.every(
+							( box ) => Math.abs( box.top - rects[ 0 ].top ) <= Math.max( 8, box.height * 0.25 )
+						);
+						const tiled =
+							rects.reduce( ( sum, box ) => sum + box.width, 0 ) >= row.getBoundingClientRect().width * 0.9;
+						// A grid stays a grid when it stacks (see `collectBandColumnFacts`).
+						const ROW = /(^|\s)(row|vc_row|wpb_row)(\s|$)|brando[_-](inner[_-])?row/;
+						const isGrid =
+							ROW.test( row.getAttribute( 'class' ) ?? '' ) ||
+							kids.some( ( child ) => /column|e-con/i.test( child.getAttribute( 'class' ) ?? '' ) );
+						if ( ! isGrid && ( ! sameTop || ! tiled ) ) {
+							return undefined;
+						}
+						return rects.map( ( box ) => Math.round( box.height ) );
+					};
+					const columns = columnsOf( element );
+					// A COMPONENT band is forged from a component, so its DOM has no
+					// builder columns even when the source row did. Tag the kind so the
+					// column diff can tell that apart from a row that went missing.
+					const bandKind = kind === 'built' ? element.getAttribute( 'data-section' ) : null;
 					out[ id ] = {
 						height: rect.height,
 						width: rect.width,
@@ -227,6 +285,8 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 						paddingRight: parseFloat( style.paddingRight ) || 0,
 						marginTop: parseFloat( style.marginTop ) || 0,
 						marginBottom: parseFloat( style.marginBottom ) || 0,
+						...( columns ? { columns } : {} ),
+						...( bandKind ? { kind: bandKind } : {} ),
 					};
 				}
 				return out;
@@ -242,6 +302,8 @@ export async function measureGeometry( options: MeasureOptions ): Promise< Forge
 					paddingRight: Math.round( band.paddingRight ),
 					marginTop: Math.round( band.marginTop ),
 					marginBottom: Math.round( band.marginBottom ),
+					...( band.columns ? { columns: band.columns } : {} ),
+					...( band.kind ? { kind: band.kind } : {} ),
 				};
 			}
 		}
@@ -687,6 +749,135 @@ function collectBandBoxFacts( input: {
 }
 
 /**
+ * Measure each band's grid COLUMNS — the rendered height of every direct child
+ * of the band's row, plus a background photo's attachment and size.
+ *
+ * Why this cannot be read from the markup: the sanitizer keeps the classes and
+ * drops inline layout (`min-height: 700px` — layout fights the band rhythm), and
+ * the vendor sheet that declared `background-attachment: fixed` never ships. A
+ * rebuilt column therefore sizes to its content and its fixed photo scrolls
+ * (virtuallyjamaica's HOW IT WORKS band, 2026-11-12).
+ *
+ * The row is found by descending single-child wrappers (`section >
+ * .container-fluid > .row`) until a node has 2+ element children. The children
+ * only count as COLUMNS when they sit side by side (shared top) and tile at
+ * least 90% of the row's width — otherwise a content block with two paragraphs
+ * would be read as a grid.
+ */
+function collectBandColumnFacts( input: {
+	ids: string[];
+	kind: 'built' | 'source';
+	selectors?: Record< string, string >;
+} ): Record< string, ForgeBandColumnFact[] > {
+	const pick = ( selector: string ): Element | null => {
+		try {
+			return document.querySelector( selector );
+		} catch {
+			return null;
+		}
+	};
+	const COLUMN = /(^|\s)(wpb_column|vc_column_container)(\s|$)/;
+	const ROW = /(^|\s)(row|vc_row|wpb_row)(\s|$)|brando[_-](inner[_-])?row/;
+	// A class token the renderer can emit as `.token`: CSS-safe and UNIQUE in
+	// the band (the first tag column's hash appears once; `wpb_column` is shared
+	// by every column and would style them all).
+	const tokenOf = ( band: Element, column: Element ): string | undefined => {
+		const tokens = [ ...column.classList ].filter( ( token ) => /^[a-zA-Z_-][a-zA-Z0-9_-]*$/.test( token ) );
+		const preferred = tokens.filter( ( token ) => /column|col-|e-con|vc_col/.test( token ) );
+		for ( const token of [ ...preferred, ...tokens ] ) {
+			try {
+				if ( band.querySelectorAll( `.${ token }` ).length === 1 ) {
+					return token;
+				}
+			} catch {
+				// Not a valid selector — try the next token.
+			}
+		}
+		return undefined;
+	};
+	const out: Record< string, ForgeBandColumnFact[] > = {};
+	for ( const id of input.ids ) {
+		const candidates =
+			input.kind === 'built'
+				? [ `[data-section-id="${ id }"]` ]
+				: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ].filter(
+						( value ): value is string => Boolean( value )
+				  );
+		let band = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) ) ?? null;
+		if ( input.kind === 'source' && band && COLUMN.test( band.getAttribute( 'class' ) ?? '' ) ) {
+			let row: Element | null = null;
+			for ( let up = band.parentElement; up; up = up.parentElement ) {
+				if ( up.tagName === 'SECTION' ) {
+					band = up;
+					row = null;
+					break;
+				}
+				if ( ! row && ROW.test( up.getAttribute( 'class' ) ?? '' ) ) {
+					row = up;
+				}
+			}
+			if ( row ) {
+				band = row;
+			}
+		}
+		if ( ! band ) {
+			continue;
+		}
+		let row: Element = band;
+		for ( let guard = 0; guard < 6 && row.children.length === 1; guard++ ) {
+			row = row.children[ 0 ] as Element;
+		}
+		const kids = [ ...row.children ].filter( ( child ) => {
+			const rect = child.getBoundingClientRect();
+			// Not a lane: a spacer column (see the twin filter in
+			// `measureGeometry`). virtuallyjamaica's contact band ships a pair of
+			// 2px-tall spacers whose heights are not a layout fact.
+			return rect.width >= 40 && rect.height >= 8 && getComputedStyle( child ).display !== 'none';
+		} );
+		if ( kids.length < 2 ) {
+			continue;
+		}
+		const rects = kids.map( ( child ) => child.getBoundingClientRect() );
+		const sameTop = rects.every( ( rect ) => Math.abs( rect.top - rects[ 0 ].top ) <= Math.max( 8, rect.height * 0.25 ) );
+		const tiled = rects.reduce( ( sum, rect ) => sum + rect.width, 0 ) >= row.getBoundingClientRect().width * 0.9;
+		// A GRID is a row even when it STACKS (the source's `col-md-12` columns at
+		// tablet/mobile): the class family proves it, and their heights still have
+		// to be recorded per device or a stacked photo panel loses its box.
+		const isGrid =
+			ROW.test( row.getAttribute( 'class' ) ?? '' ) ||
+			kids.some( ( child ) => COLUMN.test( child.getAttribute( 'class' ) ?? '' ) || /column|e-con/i.test( child.getAttribute( 'class' ) ?? '' ) );
+		if ( ! isGrid && ( ! sameTop || ! tiled ) ) {
+			continue;
+		}
+		const facts: ForgeBandColumnFact[] = [];
+		kids.forEach( ( child, index ) => {
+			const selector = tokenOf( band!, child );
+			if ( ! selector ) {
+				return;
+			}
+			const style = getComputedStyle( child );
+			const image = style.backgroundImage !== 'none';
+			const fact: ForgeBandColumnFact = {
+				selector,
+				height: Math.round( rects[ index ].height ),
+			};
+			if ( image ) {
+				fact.image = true;
+				fact.attachment = style.backgroundAttachment.includes( 'fixed' ) ? 'fixed' : 'scroll';
+				if ( style.backgroundSize && style.backgroundSize !== 'auto' ) {
+					fact.size = style.backgroundSize;
+				}
+			}
+			facts.push( fact );
+		} );
+		if ( facts.length >= 2 ) {
+			out[ id ] = facts;
+		}
+	}
+	return out;
+}
+
+/**
  * The hero track's column SPLIT and the band's VERTICAL-CENTRING mechanism,
  * measured.
  *
@@ -862,6 +1053,103 @@ export function mergeBoxFacts(
 	return Object.keys( out ).length > 0 ? out : undefined;
 }
 
+/**
+ * One measured column's declarations: a rendered height FLOOR plus the paint of
+ * a fixed photo (`background-attachment`/`size`). The sanitizer drops the
+ * source's inline `min-height`, and the vendor sheet that declared the fixed
+ * attachment never ships, so these are the only faithful source.
+ *
+ * `--ds-col-min-h` rides along with `min-height` on purpose. The builder shim in
+ * `global.css` gives a photo column a guessed `clamp()` floor so an unmeasured
+ * panel never collapses; that shim rule is more specific than any band-scoped
+ * rule can be without escalating a specificity war. The shim reads this property
+ * with the clamp as its FALLBACK instead, so a measured height wins on value
+ * rather than on selector weight — no `!important`, no order dependency.
+ */
+export function columnDeclarations( fact: ForgeBandColumnFact | undefined, unequal: boolean ): string {
+	if ( ! fact ) {
+		return '';
+	}
+	const parts: string[] = [];
+	if ( typeof fact.height === 'number' && fact.height > 0 ) {
+		parts.push( `--ds-col-min-h:${ fact.height }px` );
+		parts.push( `min-height:${ fact.height }px` );
+	}
+	// The builder's row is a grid here, and grid items STRETCH by default. The
+	// source's columns are floats: unequal heights stay unequal (virtuallyjamaica
+	// 700 beside 946), so a stretched row shows height the source does not have.
+	if ( unequal && typeof fact.height === 'number' && fact.height > 0 ) {
+		parts.push( 'align-self:start' );
+	}
+	if ( fact.image ) {
+		// Both are emitted on EVERY device, including the values that look like
+		// no-ops. A media query that omits `background-attachment` does not undo
+		// the base rule's `fixed` — the desktop declaration would leak into the
+		// tablet viewport, where the source is deliberately `scroll` (iOS ignores
+		// fixed panels). A missing `size` means the computed value was `auto`.
+		if ( fact.attachment ) {
+			parts.push( `background-attachment:${ fact.attachment }` );
+		}
+		parts.push( `background-size:${ fact.size ?? 'auto' }` );
+	}
+	return parts.join( ';' );
+}
+
+/**
+ * The band's measured columns as band-scoped CSS facts, keyed by class.
+ *
+ * Per breakpoint on purpose: the source's desktop column is a 700px photo
+ * panel, but a stacked mobile column must NOT inherit that floor (the band
+ * would grow by the photo's height on every phone). A device whose fact says
+ * nothing while the base declares a height gets an explicit `min-height:0`.
+ *
+ * Pure and exported so the merge is testable without a browser.
+ */
+export function columnBoxFacts( columns: BandColumnFacts ): BandBoxFacts {
+	const bySelector = new Map<
+		string,
+		{ desktop?: ForgeBandColumnFact; tablet?: ForgeBandColumnFact; mobile?: ForgeBandColumnFact }
+	>();
+	for ( const device of [ 'desktop', 'tablet', 'mobile' ] as const ) {
+		for ( const column of columns[ device ] ?? [] ) {
+			const entry = bySelector.get( column.selector ) ?? {};
+			entry[ device ] = column;
+			bySelector.set( column.selector, entry );
+		}
+	}
+	const out: BandBoxFacts = {};
+	for ( const [ selector, entry ] of bySelector ) {
+		const unequalAt = ( device: 'desktop' | 'tablet' | 'mobile' ): boolean => {
+			const heights = ( columns[ device ] ?? [] )
+				.map( ( column ) => column.height )
+				.filter( ( height ): height is number => typeof height === 'number' && height > 0 );
+			return heights.length >= 2 && Math.max( ...heights ) - Math.min( ...heights ) > 8;
+		};
+		const base = columnDeclarations( entry.desktop, unequalAt( 'desktop' ) );
+		const baseHasHeight = /min-height:/.test( base );
+		const declaration: BandBoxDeclaration = {};
+		if ( base ) {
+			declaration.base = base;
+		}
+		for ( const device of [ 'tablet', 'mobile' ] as const ) {
+			const value = columnDeclarations( entry[ device ], unequalAt( device ) );
+			if ( value && value !== base ) {
+				declaration[ device ] = value;
+			} else if ( baseHasHeight && ! value ) {
+				// `initial` (not 0) on the property: the device has no measured
+				// height, so the shim's own clamp is the right fallback for a photo
+				// panel. A literal 0 would be inherited by no one but would also
+				// pin a non-panel column flat.
+				declaration[ device ] = '--ds-col-min-h:initial;min-height:0';
+			}
+		}
+		if ( Object.keys( declaration ).length > 0 ) {
+			out[ selector ] = declaration;
+		}
+	}
+	return out;
+}
+
 /** What `other` changes relative to `base`, or undefined when nothing differs.
  * Only the differences are recorded, so a band whose headings do not scale per
  * device emits no media query at all.
@@ -996,6 +1284,13 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		// The band's grid columns (rendered heights + fixed-photo attachment), per
+		// device — read while each device's viewport is still current.
+		const desktopColumns = await page.evaluate( collectBandColumnFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		// The hero track's column split + the band's centring device (see
 		// `collectBandLayoutFacts`). Desktop only: a split hero collapses to one
 		// column below the breakpoint, and the rebuild's mobile rule stacks.
@@ -1021,8 +1316,18 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		const tabletColumns = await page.evaluate( collectBandColumnFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		const mobile = await measureTypeAt( 'mobile' );
 		const mobileBox = await page.evaluate( collectBandBoxFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
+		const mobileColumns = await page.evaluate( collectBandColumnFacts, {
 			ids: options.ids,
 			kind: options.kind,
 			selectors: options.selectors,
@@ -1084,6 +1389,19 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			const media = mergeBoxFacts( desktopBox[ id ]?.media, tabletBox[ id ]?.media, mobileBox[ id ]?.media );
 			if ( media ) {
 				band.media = media;
+			}
+			// The band's grid columns per device: rendered heights and the
+			// background attachment/size of a fixed photo (see
+			// `collectBandColumnFacts`).
+			const columns = {
+				desktop: desktopColumns[ id ],
+				tablet: tabletColumns[ id ],
+				mobile: mobileColumns[ id ],
+			};
+			if ( columns.desktop || columns.tablet || columns.mobile ) {
+				band.columns = Object.fromEntries(
+					Object.entries( columns ).filter( ( [ , value ] ) => value !== undefined )
+				) as ForgeBandFacts[ 'columns' ];
 			}
 			// The source's crop anchor (desktop wins; the crop rarely changes per
 			// device, and a per-device map would need its own scoped CSS).
@@ -2445,6 +2763,47 @@ export function diffGeometry(
 					delta,
 					severity: Math.abs( delta ) > limit * 2 ? 'fail' : 'warn',
 				} );
+			}
+			// The band's COLUMNS: a row whose columns are deliberately unequal
+			// (virtuallyjamaica's 700px photo beside 948px of copy) is a worse
+			// defect than a band-height drift — the reader sees a gap. Compare
+			// pairwise, with the height tolerance (a column's content reflows a
+			// few px even when the layout is right).
+			const expectedColumns = expected.columns;
+			// A COMPONENT band (hero / split / icon-list / …) is forged from a
+			// component, so it has no builder columns by design — comparing its
+			// absence against the source row would flag every hero on the site.
+			const rebuiltComponent = actual.kind !== undefined && actual.kind !== 'text' && actual.kind !== 'raw';
+			if ( expectedColumns && expectedColumns.length >= 2 && ! rebuiltComponent ) {
+				const actualColumns = actual.columns;
+				if ( ! actualColumns || actualColumns.length !== expectedColumns.length ) {
+					deviations.push( {
+						sectionId: id,
+						viewport,
+						metric: 'columns',
+						expected: expectedColumns.length,
+						actual: actualColumns?.length ?? null,
+						delta: 0,
+						severity: 'warn',
+					} );
+				} else {
+					const limit = tolerance.height;
+					expectedColumns.forEach( ( height, index ) => {
+						const delta = actualColumns[ index ] - height;
+						if ( Math.abs( delta ) <= limit ) {
+							return;
+						}
+						deviations.push( {
+							sectionId: id,
+							viewport,
+							metric: `column ${ index + 1 }`,
+							expected: height,
+							actual: actualColumns[ index ],
+							delta,
+							severity: Math.abs( delta ) > limit * 3 ? 'fail' : 'warn',
+						} );
+					} );
+				}
 			}
 		}
 	}

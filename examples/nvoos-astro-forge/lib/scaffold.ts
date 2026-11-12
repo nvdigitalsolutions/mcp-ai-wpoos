@@ -19,7 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS } from './geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, columnBoxFacts } from './geometry.ts';
 import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit } from './contrast.ts';
@@ -30,7 +30,7 @@ import { readLock } from './lock.ts';
 import { applyPresetToProfile, isValidThemePolicy, PRESETS, type PresetName, type PresetSurfaces, type RenderMode } from './presets.ts';
 import { renderApiProxyTs, renderFormsProxyTs, renderManagedGenerated, renderMediaProxyTs, renderPreviewApiTs, renderPreviewPageTs, renderProxyHelperTs, renderRevalidateTs, renderServerShim, renderSyncDeployTree, renderVerifyDeployTree } from './managed-runtime.ts';
 import { consentCategoryFor, cspDirectivesFor } from './tracking.ts';
-import type { BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
+import type { BandBoxFacts, BandTypeFact, ForgeBandFacts, ForgeColorModes, ForgeContact, ForgeDesign, ForgeGeometry, ForgeSection, ResponsiveLength, SiteProfile, WpCollection } from './types.ts';
 
 /** Package root (lib/..). */
 export const FORGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
@@ -1396,6 +1396,19 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 				.join( ', ' ) } }`
 		);
 	}
+	// The band's measured COLUMN geometry (see `collectBandColumnFacts`): the
+	// rendered height floor and a fixed photo's attachment/size, scoped to the
+	// column's own class. The sanitizer keeps the class but drops the inline
+	// min-height, and the vendor sheet never ships — without this the image
+	// column collapses to its content and its "fixed" photo scrolls.
+	const columnEntries = Object.entries( columnBoxFacts( bandFacts?.columns ?? {} ) );
+	if ( columnEntries.length > 0 ) {
+		entry.push(
+			`columnBox: { ${ columnEntries
+				.map( ( [ name, column ] ) => `${ tsKey( name ) }: ${ tsUtility( column ) }` )
+				.join( ', ' ) } }`
+		);
+	}
 	// The controls' measured STATE deltas (see `measureInteractions`). The
 	// vendor sheet never ships, so a rebuilt control loses every hover/focus/
 	// active effect the source expressed in CSS. The SELECTOR is baked here
@@ -1706,6 +1719,12 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'\t/** Cropped-media heights, emitted as `img.<class>` only. */',
 		'\tmedia?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'\t/** The band\u2019s measured COLUMN geometry, keyed by the column\u2019s',
+		'\t * unique class: a rendered `min-height` floor plus a fixed background',
+		'\t * photo\u2019s attachment/size. Emitted as band-scoped `.class` rules \u2014 the',
+		'\t * sanitizer keeps the class but drops the inline layout, and the vendor',
+		'\t * sheet never ships. */',
+		'\tcolumnBox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'\t/** The band\u2019s measured interaction STATES (hover / focus /',
 		'\t * focus-visible / active) per control signature. `selector` is the',
 		'\t * signature\u2019s CSS form (`a[class~="btn"]`), already escaped, so the',
