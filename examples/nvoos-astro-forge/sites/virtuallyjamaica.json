@@ -418,6 +418,25 @@
 				"mobile": {
 					"padX": 15
 				}
+			},
+			"footerBrand": {
+				"wide": {
+					"logo": "end",
+					"socials": "start"
+				},
+				"desktop": {
+					"logo": "end",
+					"socials": "start"
+				},
+				"tablet": {
+					"logo": "end",
+					"socials": "start"
+				},
+				"mobile": {
+					"logo": "center",
+					"socials": "center"
+				},
+				"divider": true
 			}
 		},
 		"behavior": {

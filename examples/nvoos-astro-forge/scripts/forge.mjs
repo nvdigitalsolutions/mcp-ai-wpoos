@@ -48,7 +48,7 @@ import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
@@ -57,7 +57,7 @@ import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
 import { applyBandSurfaces, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
-import { compareChromeGeometry, compareMobileNav } from '../lib/chrome-audit.ts';
+import { compareChromeGeometry, compareFooterBrand, compareMobileNav } from '../lib/chrome-audit.ts';
 import { duplicateIds, inPageTargets } from '../lib/html-ids.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
@@ -657,6 +657,25 @@ async function runAnalyze( url, options ) {
 					}
 				} catch ( error ) {
 					console.warn( `\u26A0 Header box skipped: ${ error instanceof Error ? error.message : error }` );
+				}
+				// The footer's BRAND ROW: the logo sits in its own column on a builder
+				// footer (virtuallyjamaica: socials `text-left`, logo `text-right`), so a
+				// rebuild that stacks them left puts the mark on the wrong side.
+				try {
+					const footerBrand = await measureFooterBrand( { url: profile.url } );
+					if ( Object.keys( footerBrand ).length > 0 ) {
+						profile.design = profile.design ?? {};
+						profile.design.chrome = profile.design.chrome ?? {};
+						profile.design.chrome.footerBrand = footerBrand;
+						const desktop = footerBrand.desktop ?? footerBrand.wide ?? {};
+						console.log(
+							`\u2713 Footer brand: logo ${ desktop.logo ?? '—' }, socials ${ desktop.socials ?? '—' }${ footerBrand.divider ? ', hairline above the copyright bar' : '' }.`
+						);
+					} else {
+						console.log( '  Footer brand: no social row to measure (a footer with no icon links).' );
+					}
+				} catch ( error ) {
+					console.warn( `\u26A0 Footer brand skipped: ${ error instanceof Error ? error.message : error }` );
 				}
 				// The OPENED mobile menu: its surface, ink and row rhythm. A collapsed nav
 				// that only toggles `display` paints white links onto whatever band is
@@ -3172,6 +3191,50 @@ async function runVerify( profileRef, options ) {
 		} else {
 			console.log( '  Header box: not measured on the source \u2014 run `analyze --geometry --write` to record it.' );
 			record( 'header box', 'skip', 'no measured fact (analyze --geometry)' );
+		}
+
+		// The footer's BRAND ROW: does the build put the logo and the social icons
+		// where the source does? virtuallyjamaica's footer right-aligns the mark;
+		// a rebuild that stacks it under the icons matches every colour and still
+		// reads wrong.
+		const footerExpected = profile.design?.chrome?.footerBrand;
+		if ( footerExpected && profile.design?.chrome?.social?.length ) {
+			if ( ! ( await browserAvailable() ) ) {
+				console.warn( '\u26a0 Footer brand: skipped \u2014 Playwright/Chromium is not available in this environment.' );
+				record( 'footer brand', 'skip', 'browser unavailable' );
+			} else {
+				const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
+				let actualFooter;
+				try {
+					actualFooter = await measureFooterBrand( { url: served.url } );
+				} catch ( error ) {
+					fail( `Footer-brand measurement failed \u2014 ${ error instanceof Error ? error.message : error }` );
+				} finally {
+					served.server.close();
+				}
+				const footerReport = compareFooterBrand( footerExpected, actualFooter );
+				const footerFailed = footerReport.deviations.filter( ( deviation ) => deviation.severity === 'fail' );
+				for ( const deviation of [ ...footerFailed, ...footerReport.deviations.filter( ( d ) => d.severity === 'warn' ) ] ) {
+					const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
+					console.warn(
+						`${ mark } Footer brand: ${ deviation.fact } \u2014 source ${ deviation.expected ?? '\u2014' }, build ${ deviation.actual ?? '\u2014' }${ deviation.note ? ` \u2014 ${ deviation.note }` : '' }`
+					);
+				}
+				for ( const skipped of footerReport.skipped ) {
+					console.log( `  footer brand: ${ skipped } not compared` );
+				}
+				if ( footerFailed.length > 0 ) {
+					process.exitCode = 1;
+				}
+				if ( footerReport.deviations.length === 0 ) {
+					console.log( `\u2713 Footer brand: the logo and social icons keep the source\u2019s positions (${ footerReport.compared } metric(s)).` );
+				}
+				record(
+					'footer brand',
+					footerFailed.length > 0 ? 'fail' : footerReport.deviations.length > 0 ? 'warn' : 'pass',
+					`${ footerReport.compared } metric(s), ${ footerReport.deviations.length } drift`
+				);
+			}
 		}
 	}
 

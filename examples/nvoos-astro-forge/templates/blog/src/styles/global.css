@@ -2361,6 +2361,24 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	}
 }
 
+/* The footer brand ROW (measured, `chrome.footerBrand`): the social icons and
+ * the standalone brand mark share one flex row. The generated rule from
+ * Base.astro sets `justify-content` per viewport — virtuallyjamaica right-aligns
+ * the logo against a left-aligned social row, both centred at mobile. */
+.site-footer-brand-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.5rem;
+}
+
+/* Inside the row the stacks' own bottom margins would break the centring. */
+.site-footer-brand-row .site-social,
+.site-footer-brand-row .site-footer-logo img {
+	margin-bottom: 0;
+}
+
 /* The footer brand logo (the footer-widget media image). */
 .site-footer-logo img {
 	width: auto;

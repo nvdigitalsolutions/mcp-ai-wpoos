@@ -1414,6 +1414,38 @@ export interface ForgeChromeGeometry {
 	mobile?: ForgeChromeBox;
 }
 
+/** Where a footer group sits horizontally inside the footer's brand row. */
+export type ForgeFooterAlign = 'start' | 'center' | 'end';
+
+/**
+ * The footer brand ROW at one viewport: the brand mark and the social icons.
+ *
+ * A builder lays the footer out as columns (virtuallyjamaica: an 8/4 row — the
+ * social icons in the left column, the logo `text-right` in the right one, both
+ * `xs-text-center` at mobile). A rebuild that stacks them left reads wrong even
+ * though every surface and colour matches (2026-11-12).
+ */
+export interface ForgeFooterBrandAlign {
+	/** The brand mark's horizontal position inside the row. */
+	logo?: ForgeFooterAlign;
+	/** The social icon group's horizontal position inside the row. */
+	socials?: ForgeFooterAlign;
+}
+
+/**
+ * The footer brand row per viewport. Sparse: a viewport with nothing to say is
+ * absent. `divider` is a whole-element fact (the hairline above the copyright
+ * bar) and therefore lives outside the per-viewport map.
+ */
+export interface ForgeFooterBrand {
+	wide?: ForgeFooterBrandAlign;
+	desktop?: ForgeFooterBrandAlign;
+	tablet?: ForgeFooterBrandAlign;
+	mobile?: ForgeFooterBrandAlign;
+	/** The sub-footer row paints a bottom hairline above the copyright bar. */
+	divider?: boolean;
+}
+
 /**
  * The source's opened mobile menu, as the browser paints it.
  *
@@ -1491,6 +1523,11 @@ export interface ForgeChrome {
 	 * Absent → the template's own full-width flex row and gutter.
 	 */
 	geometry?: ForgeChromeGeometry;
+	/**
+	 * The footer brand ROW: where the logo and the social icons sit, measured
+	 * per viewport (`measureFooterBrand`). Absent → the template stacks them.
+	 */
+	footerBrand?: ForgeFooterBrand;
 	/**
 	 * The source's own mobile nav disclosure (a Bootstrap `navbar-toggle`, a
 	 * builder's hamburger button).

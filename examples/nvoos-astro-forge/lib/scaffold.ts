@@ -1915,6 +1915,16 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t\ttablet?: { measure?: number; padX?: number };',
 		'\t\tmobile?: { measure?: number; padX?: number };',
 		'\t};',
+		'\t/** The footer brand ROW: where the brand mark and the social icons sit',
+		'\t * inside it, per viewport (measured at 1920/1440/834/390). */',
+		'\tfooterBrand?: {',
+		"\t\twide?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' };",
+		"\t\tdesktop?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' };",
+		"\t\ttablet?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' };",
+		"\t\tmobile?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' };",
+		'\t\t/** The sub-footer row paints a hairline above the copyright bar. */',
+		'\t\tdivider?: boolean;',
+		'\t};',
 		'\t/** True when the SOURCE exposes a theme / colour-mode control; absent',
 		'\t * means the site has none, so the toggle is not rendered. */',
 		'\tthemeToggle?: boolean;',
@@ -2039,6 +2049,31 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		}
 		if ( devices.length > 0 ) {
 			entry.push( `geometry: { ${ devices.join( ', ' ) } }` );
+		}
+	}
+	if ( chrome.footerBrand ) {
+		const parts: string[] = [];
+		for ( const device of [ 'wide', 'desktop', 'tablet', 'mobile' ] as const ) {
+			const align = chrome.footerBrand[ device ];
+			if ( ! align ) {
+				continue;
+			}
+			const fields: string[] = [];
+			if ( align.logo ) {
+				fields.push( `logo: ${ tsString( align.logo ) }` );
+			}
+			if ( align.socials ) {
+				fields.push( `socials: ${ tsString( align.socials ) }` );
+			}
+			if ( fields.length > 0 ) {
+				parts.push( `${ device }: { ${ fields.join( ', ' ) } }` );
+			}
+		}
+		if ( typeof chrome.footerBrand.divider === 'boolean' ) {
+			parts.push( `divider: ${ chrome.footerBrand.divider }` );
+		}
+		if ( parts.length > 0 ) {
+			entry.push( `footerBrand: { ${ parts.join( ', ' ) } }` );
 		}
 	}
 	if ( chrome.navToggle ) {

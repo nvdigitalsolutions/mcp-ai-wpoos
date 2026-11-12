@@ -9,8 +9,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { compareChromeGeometry, compareMobileNav } from '../lib/chrome-audit.ts';
-import type { ForgeChromeGeometry, ForgeMobileNav } from '../lib/types.ts';
+import { compareChromeGeometry, compareFooterBrand, compareMobileNav } from '../lib/chrome-audit.ts';
+import type { ForgeChromeGeometry, ForgeFooterBrand, ForgeMobileNav } from '../lib/types.ts';
 
 const brando: ForgeMobileNav = {
 	background: 'rgba(0, 0, 0, 0.95)',
@@ -190,5 +190,90 @@ describe( 'compareChromeGeometry', () => {
 		const report = compareChromeGeometry( jayaBox, undefined );
 
 		expect( report.deviations[ 0 ] ).toMatchObject( { fact: 'header box', severity: 'fail' } );
+	} );
+} );
+
+// virtuallyjamaica's footer: socials left, brand mark right, a hairline above
+// the copyright bar; both groups centred at mobile.
+const brandoFooter: ForgeFooterBrand = {
+	wide: { logo: 'end', socials: 'start' },
+	desktop: { logo: 'end', socials: 'start' },
+	tablet: { logo: 'end', socials: 'start' },
+	mobile: { logo: 'center', socials: 'center' },
+	divider: true,
+};
+
+describe( 'compareFooterBrand', () => {
+	it( 'passes the source against itself', () => {
+		const report = compareFooterBrand( brandoFooter, brandoFooter );
+
+		expect( report.deviations ).toEqual( [] );
+		// Four viewports × logo + socials, plus the divider.
+		expect( report.compared ).toBe( 9 );
+	} );
+
+	it( 'FAILS when the brand mark sits on the wrong side', () => {
+		// The reported drift: the rebuild stacked the logo left under the icons.
+		const report = compareFooterBrand( brandoFooter, {
+			...brandoFooter,
+			desktop: { logo: 'start', socials: 'start' },
+		} );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( {
+			fact: 'footer brand [desktop].logo',
+			expected: 'end',
+			actual: 'start',
+			severity: 'fail',
+		} );
+		 expect( report.deviations[ 0 ].note ).toContain( 'wrong side' );
+	} );
+
+	it( 'warns when a centred group moves to a side', () => {
+		const report = compareFooterBrand( brandoFooter, {
+			...brandoFooter,
+			mobile: { logo: 'start', socials: 'center' },
+		} );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( {
+			fact: 'footer brand [mobile].logo',
+			severity: 'warn',
+		} );
+	} );
+
+	it( 'warns when the build records no position', () => {
+		const report = compareFooterBrand( brandoFooter, {
+			...brandoFooter,
+			desktop: {},
+		} );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( {
+			fact: 'footer brand [desktop].logo',
+			actual: null,
+			severity: 'warn',
+		} );
+	} );
+
+	it( 'warns when the divider disappears', () => {
+		const report = compareFooterBrand( brandoFooter, { ...brandoFooter, divider: false } );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( {
+			fact: 'footer brand.divider',
+			expected: 'a hairline',
+			severity: 'warn',
+		} );
+	} );
+
+	it( 'skips when the source has no measured footer row', () => {
+		const report = compareFooterBrand( undefined, brandoFooter );
+
+		expect( report.deviations ).toEqual( [] );
+		expect( report.compared ).toBe( 0 );
+		expect( report.skipped.join( ' ' ) ).toContain( 'not measured on the source' );
+	} );
+
+	it( 'fails when the build has no measurable social row', () => {
+		const report = compareFooterBrand( brandoFooter, undefined );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( { fact: 'footer brand row', severity: 'fail' } );
 	} );
 } );
