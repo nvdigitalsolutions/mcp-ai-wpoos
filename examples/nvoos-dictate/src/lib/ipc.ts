@@ -380,7 +380,19 @@ export interface DiagnosticsInfo {
     capture_stall_ms: number;
     capture_errors: number;
     capture_last_error: string | null;
+    capture_mode: string;
+    paused: boolean;
+    last_resume_ms: number;
   };
+  paste: {
+    backend: string;
+    snapshot_kind: string;
+    restored: boolean;
+    restore_skipped: string | null;
+    partial_formats: number;
+    elapsed_ms: number;
+    at: string;
+  } | null;
   engine: {
     configured: string;
     model: string;

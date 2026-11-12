@@ -24,9 +24,10 @@ repo root for the full design).
   plain dictation. A remote fallback ("Embedded") transcribes on your own
   NV oOS site when no local engine is available.
 - **Deterministic cleanup** — punctuation, capitalization, filler removal,
-  number normalization ("five two nine" → 529), custom vocabulary, per-app
-  profiles (chat drops the trailing period; code preserves identifiers).
-  Golden-tested, no LLM required.
+  number normalization ("five two nine" → 529; ambiguous prose such as
+  "one or two" is left alone), custom vocabulary, per-app profiles (chat drops
+  the trailing period; code preserves identifiers). Golden-tested, no LLM
+  required.
 - **Optional AI polish** — Stage-2 pass via your NV oOS WordPress assistant
   (transcript text only, assistant credential in the OS keychain) or any
   OpenAI-compatible endpoint. A provider failure never blocks the paste.
@@ -199,6 +200,94 @@ npm run test:ui                     # Playwright smoke (dev server on :1420)
 - Model downloads are SHA-256-verified where upstream publishes hashes and
   logged for pinning where it doesn't.
 - Telemetry: none, permanently.
+
+### Microphone and privacy
+
+The capture stream is **resident** by default: it opens when the app starts and
+runs until the app quits, feeding a rolling in-memory buffer so push-to-talk
+can keep the first syllable. The consequence is that the OS
+microphone-in-use indicator stays lit for as long as the app is running. That
+is real, and it is why `audio.capture_mode` exists.
+
+**On-demand** pauses the stream when idle and resumes it on key-down (a
+`cpal` pause/play on the same stream object). The indicator clears while
+paused and the audio endpoint can idle. The costs are the pre-roll window (you
+can lose the first syllable if you speak the instant you press) and a measured
+resume latency; the dictation window only opens once the first callback has
+actually arrived. Pre-pause audio is discarded on pause, so an old buffer can
+never leak into a new utterance.
+
+Set `audio.capture_mode` to `resident` (default) or `on_demand` in
+`config.json`. Measured on the reference machine (25 s windows, 48 kHz stereo
+device, `cargo run --example capture_probe -- 25 10`): resident capture
+delivered ~100 callbacks/s and used 93.8 ms of process CPU over 25 s (0.38% of
+one core); paused delivered **zero** callbacks and 0.0 ms; resume latency was
+2 ms at both p50 and p95. That is CPU, not wall-plug power — battery figures
+still need an external meter — but on this hardware on-demand is close to free
+except for the lost pre-roll, so the choice is a trade-off rather than a cost.
+Resident stays the default pending that decision.
+`audio.linger_ms` keeps the stream running briefly after a dictation so a quick
+follow-up does not pay the resume cost again. Full method and caveats:
+[`docs/capture-residency-measurements.md`](docs/capture-residency-measurements.md).
+
+### Clipboard behaviour
+
+Paste uses the clipboard plus a real Ctrl+V (a synthesized unicode paste is
+ignored by Chromium and WebView2). Before writing the transcript the app
+snapshots **every format the clipboard holds** as raw bytes — text, file lists,
+bitmaps, HTML, RTF and private application formats — and replays them after the
+paste. The target app gets `paste.restore_delay_ms` (default 250 ms) to read
+the clipboard before it is put back.
+
+A few details worth knowing:
+
+- The transcript write is marked with Microsoft's documented
+  `ExcludeClipboardContentFromMonitorProcessing` and
+  `CanIncludeInClipboardHistory = 0` formats, so dictation does not fill your
+  `Win+V` history.
+- The restore is skipped if something else wrote to the clipboard during the
+  paste (`GetClipboardSequenceNumber`), so copying something mid-paste does not
+  get overwritten.
+- Formats whose payload is a GDI handle rather than a global memory block
+  (`CF_BITMAP`, `CF_PALETTE`, metafiles) cannot be copied as bytes. They are
+  counted and shown as "not copyable" in Diagnostics (`partial_formats`) —
+  the rest of the clipboard is still restored.
+- Snapshots are capped at 64 MiB total on Windows (1 MiB text / 32 MiB image on
+  the other platforms). Above the cap the snapshot is reported as oversized
+  and nothing is restored, rather than copying an unbounded amount into
+  memory.
+- Rich formats are preserved on Windows. macOS and Linux still restore text and
+  images only (`arboard`), which is a documented limitation.
+
+`paste.restore_clipboard = false` leaves the transcript on the clipboard
+instead of restoring the previous contents.
+
+### Text normalisation
+
+Stage-1 cleanup converts spoken numbers to written ones in confidence tiers,
+following the published inverse-text-normalization practice that precision
+beats recall: a wrong digit substitution is silent, so ambiguous forms are
+left in spoken form.
+
+| Tier | Rule | Example | Default |
+|---|---|---|---|
+| T1 | Digit runs of 3+ single digits | `five two nine` → `529` | always on |
+| T2 | Explicit unit present | `twenty dollars` → `$20` | always on |
+| T3 | Compound cardinals | `twenty three` → `23` | on |
+| T4 | Bare cardinals, no cue or unit | `one or two` → `1 or 2` | **off** |
+
+A numeric cue (`page one`, `version two`) promotes a bare cardinal. Idioms
+such as "one or two", "one of", "no one", "ten to one" and "one another" are
+never rewritten. Sequences that are not English numerals are left in speech:
+`five thirty` (a time or a score) does not become `35`. A digit run followed by
+a scale word concatenates before scaling, so `five two nine thousand` is
+`529,000`. `Code` and `Terminal` skip the rule entirely, and prose categories
+group thousands (`$1,000`).
+
+Override in `config.json` under `cleanup.numbers`: `enabled` (master switch),
+`bare_small` (tier 4), `in_code` (run the rule in Code/Terminal), and
+`thousands_separator`. History keeps the raw ASR output alongside the cleaned
+result, so a rule change is always inspectable after the fact.
 
 ## Platform notes
 

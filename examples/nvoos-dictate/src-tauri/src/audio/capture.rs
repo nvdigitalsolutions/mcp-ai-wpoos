@@ -12,12 +12,21 @@
 //! ring stayed empty, dictation reported "no speech detected"). The worker
 //! loop owns the stream for the handle's lifetime.
 //!
-//! PTT semantics mean we never *listen*, we only retain a short rolling
-//! window (never written to disk). The OS shows its own microphone-in-use
-//! indicator while the stream is open.
+//! Capture modes (Proposal 144 §4.3):
+//!
+//! - **Resident** — the stream runs continuously so the pre-roll ring always
+//!   holds audio from before key-down. The OS microphone-in-use indicator
+//!   stays lit while the app runs. This is the historical behaviour.
+//! - **On-demand** — the stream is paused when idle and resumed on key-down.
+//!   The indicator clears while paused and the audio endpoint can idle, at the
+//!   cost of the pre-roll window and a resume latency (`resume()` waits for
+//!   the first real callback before the caller starts an utterance).
+//!
+//! PTT semantics mean we never *listen*: we retain a short rolling window,
+//! never written to disk.
 
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::mpsc::{channel, Sender};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::mpsc::{channel, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -25,6 +34,13 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 use crate::audio::ring_buffer::RingBuffer;
 use crate::error::{AppError, AppResult};
+
+/// Worker-thread control messages.
+enum Control {
+    Pause,
+    Resume,
+    Stop,
+}
 
 /// Live health of the resident stream, updated by the audio callbacks and
 /// surfaced on the Diagnostics page ("is capture actually delivering?").
@@ -43,9 +59,15 @@ pub struct MicCapture {
     channels: u16,
     device_name: String,
     stats: Arc<StreamStats>,
-    /// Wakes the worker thread so it can drop the cpal stream (device swap,
-    /// shutdown). Sending fails harmlessly if the thread already exited.
-    stop_tx: Option<Sender<()>>,
+    /// Controls the worker (pause/resume/shutdown). Sending fails harmlessly
+    /// if the thread already exited.
+    control_tx: Option<Sender<Control>>,
+    /// Whether the stream is currently paused (worker-owned truth).
+    paused: Arc<AtomicBool>,
+    /// How long to wait for the first callback after `Resume`.
+    resume_timeout_ms: u64,
+    /// Measured pause -> first-callback latency of the last resume.
+    last_resume_ms: Arc<AtomicU64>,
 }
 
 impl MicCapture {
@@ -53,13 +75,19 @@ impl MicCapture {
     /// handle. `device_name` selects a specific device by display name
     /// (Settings picker); `None` means the OS default. The stream runs
     /// until the handle is dropped; the worker thread owns it meanwhile.
-    pub fn start(ring_capacity_secs: usize, device_name: Option<&str>) -> AppResult<Self> {
+    pub fn start(
+        ring_capacity_secs: usize,
+        device_name: Option<&str>,
+        resume_timeout_ms: u64,
+    ) -> AppResult<Self> {
         let (tx, rx) = channel::<AppResult<(u32, u16, String, Arc<Mutex<RingBuffer>>)>>();
-        let (stop_tx, stop_rx) = channel::<()>();
+        let (control_tx, control_rx) = channel::<Control>();
         let capacity = ring_capacity_secs.max(5);
         let requested = device_name.map(|s| s.to_string());
         let stats = Arc::new(StreamStats::default());
         let worker_stats = stats.clone();
+        let paused = Arc::new(AtomicBool::new(false));
+        let worker_paused = paused.clone();
 
         let worker = std::thread::Builder::new()
             .name("nvoos-mic".into())
@@ -80,19 +108,40 @@ impl MicCapture {
                         return;
                     }
                 };
-                // Hold the stream (and the device handles) on this thread
-                // until the stop channel fires — dropping a playing stream
-                // stops capture, so it must never drop before shutdown.
-                let _stream_holder = (stream, device_name, ring, sample_rate, channels);
+                // Hold the stream (and the device identity) on this thread
+                // until Stop fires — dropping a playing stream stops capture,
+                // so it must never drop before shutdown. `ring` is kept here
+                // so a Pause can discard pre-pause audio.
+                let _device_identity = (device_name, sample_rate, channels);
                 loop {
-                    if stop_rx.try_recv().is_ok() {
-                        break;
+                    match control_rx.recv_timeout(Duration::from_millis(250)) {
+                        Ok(Control::Pause) => {
+                            if !worker_paused.swap(true, Ordering::SeqCst) {
+                                // Pre-pause samples must not resurface through a
+                                // pre-roll window on the next utterance.
+                                ring.lock().unwrap().clear();
+                                if let Err(e) = stream.pause() {
+                                    tracing::warn!("microphone pause failed: {e}");
+                                    worker_paused.store(false, Ordering::SeqCst);
+                                }
+                            }
+                        }
+                        Ok(Control::Resume) => {
+                            if worker_paused.swap(false, Ordering::SeqCst) {
+                                if let Err(e) = stream.play() {
+                                    tracing::warn!("microphone resume failed: {e}");
+                                    worker_paused.store(true, Ordering::SeqCst);
+                                }
+                            }
+                        }
+                        Ok(Control::Stop) => break,
+                        Err(RecvTimeoutError::Timeout) => {}
+                        Err(RecvTimeoutError::Disconnected) => break,
                     }
-                    std::thread::park_timeout(Duration::from_millis(250));
                 }
             })
             .map_err(|e| AppError::Audio(e.to_string()))?;
-        // Detach: the thread outlives this function by design; the stop
+        // Detach: the thread outlives this function by design; the control
         // channel (via Drop) is the only thing that ends it.
         drop(worker);
 
@@ -104,7 +153,10 @@ impl MicCapture {
             channels,
             device_name,
             stats,
-            stop_tx: Some(stop_tx),
+            control_tx: Some(control_tx),
+            paused,
+            resume_timeout_ms: resume_timeout_ms.max(1),
+            last_resume_ms: Arc::new(AtomicU64::new(0)),
         })
     }
 
@@ -153,6 +205,61 @@ impl MicCapture {
         self.ring.lock().unwrap().snapshot_range(from, to)
     }
 
+    // ---- Capture modes (Proposal 144 §4.3) -------------------------------
+
+    /// Whether the stream is currently paused (On-demand mode at idle).
+    pub fn is_paused(&self) -> bool {
+        self.paused.load(Ordering::Relaxed)
+    }
+
+    /// Pause -> first-callback latency of the last resume, in ms.
+    pub fn last_resume_ms(&self) -> u64 {
+        self.last_resume_ms.load(Ordering::Relaxed)
+    }
+
+    /// Resume capture and wait for the first real callback.
+    ///
+    /// Returning only once audio is flowing is what stops On-demand mode from
+    /// clipping the first syllable: the caller opens its utterance window
+    /// after this returns, not after the key-down. Returns the measured
+    /// latency (0 when the stream was already running).
+    pub fn resume(&self) -> AppResult<u64> {
+        if !self.paused.load(Ordering::Relaxed) {
+            return Ok(0);
+        }
+        let before = self.callback_count();
+        self.send(Control::Resume)?;
+
+        let started = Instant::now();
+        let timeout = Duration::from_millis(self.resume_timeout_ms);
+        while self.callback_count() == before {
+            if started.elapsed() >= timeout {
+                return Err(AppError::Audio(format!(
+                    "microphone did not resume within {} ms",
+                    self.resume_timeout_ms
+                )));
+            }
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        let elapsed = started.elapsed().as_millis() as u64;
+        self.last_resume_ms.store(elapsed, Ordering::Relaxed);
+        Ok(elapsed)
+    }
+
+    /// Pause capture. The stream object stays alive, so a later `resume()` is
+    /// cheap and the OS indicator clears while paused.
+    pub fn pause(&self) -> AppResult<()> {
+        self.send(Control::Pause)
+    }
+
+    fn send(&self, control: Control) -> AppResult<()> {
+        self.control_tx
+            .as_ref()
+            .ok_or_else(|| AppError::Audio("microphone worker is not running".into()))?
+            .send(control)
+            .map_err(|_| AppError::Audio("microphone worker stopped".into()))
+    }
+
     // ---- Stream health (diagnostics) -------------------------------------
 
     /// Audio callbacks delivered since this handle started.
@@ -183,8 +290,8 @@ impl MicCapture {
 
 impl Drop for MicCapture {
     fn drop(&mut self) {
-        if let Some(tx) = self.stop_tx.take() {
-            let _ = tx.send(());
+        if let Some(tx) = self.control_tx.take() {
+            let _ = tx.send(Control::Stop);
         }
     }
 }
@@ -254,20 +361,26 @@ fn build_stream(
     let errors = stats.errors.clone();
     let last_error = stats.last_error.clone();
 
+    // Reused across callbacks: allocating in the audio callback is a real
+    // (if small) glitch/energy cost, and the buffer never needs to grow.
+    let mut mono_buf: Vec<f32> = Vec::new();
+
     let stream = device.build_input_stream(
         &stream_config,
         move |data: &[f32], _info| {
             callbacks.fetch_add(1, Ordering::Relaxed);
             *last_callback.lock().unwrap() = Some(Instant::now());
             // Downmix interleaved multi-channel audio to mono.
-            let mono: Vec<f32> = if channels_usize == 1 {
-                data.to_vec()
+            mono_buf.clear();
+            if channels_usize == 1 {
+                mono_buf.extend_from_slice(data);
             } else {
-                data.chunks(channels_usize)
-                    .map(|frame| frame.iter().sum::<f32>() / channels_usize as f32)
-                    .collect()
-            };
-            writer.lock().unwrap().push(&mono);
+                mono_buf.extend(
+                    data.chunks(channels_usize)
+                        .map(|frame| frame.iter().sum::<f32>() / channels_usize as f32),
+                );
+            }
+            writer.lock().unwrap().push(&mono_buf);
         },
         move |err| {
             errors.fetch_add(1, Ordering::Relaxed);
@@ -285,6 +398,12 @@ fn build_stream(
 mod tests {
     use super::*;
 
+    #[test]
+    fn rms_and_peak_of_silence_are_zero() {
+        assert_eq!(rms_peak(&[]), (0.0, 0.0));
+        assert_eq!(rms_peak(&[0.0, 0.0]), (0.0, 0.0));
+    }
+
     /// The regression that shipped "no speech detected" on healthy mics:
     /// dropping the stream stopped capture. Requires a real audio device,
     /// so it is ignored in CI — run it manually on a dev machine:
@@ -292,7 +411,7 @@ mod tests {
     #[test]
     #[ignore = "requires a real audio device"]
     fn live_capture_delivers_samples() {
-        let mic = MicCapture::start(5, None).expect("open default input device");
+        let mic = MicCapture::start(5, None, 250).expect("open default input device");
         let deadline = Instant::now() + Duration::from_secs(5);
         while Instant::now() < deadline && mic.callback_count() == 0 {
             std::thread::sleep(Duration::from_millis(50));
@@ -306,6 +425,39 @@ mod tests {
             "callbacks fired but the ring stayed empty"
         );
         assert_eq!(mic.stream_error_count(), 0);
+        drop(mic);
+    }
+
+    /// On-demand round trip: pause stops callbacks, resume restarts them and
+    /// reports a latency. Ignored in CI (no audio device).
+    #[test]
+    #[ignore = "requires a real audio device"]
+    fn live_pause_resume_round_trip() {
+        let mic = MicCapture::start(5, None, 2000).expect("open default input device");
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while Instant::now() < deadline && mic.callback_count() == 0 {
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(mic.callback_count() > 0, "capture never started");
+
+        mic.pause().expect("pause");
+        std::thread::sleep(Duration::from_millis(300));
+        assert!(mic.is_paused(), "pause was not applied");
+        let paused_at = mic.callback_count();
+        std::thread::sleep(Duration::from_millis(300));
+        assert_eq!(
+            mic.callback_count(),
+            paused_at,
+            "callbacks continued while paused"
+        );
+
+        let latency = mic.resume().expect("resume");
+        assert!(!mic.is_paused(), "resume was not applied");
+        assert!(
+            mic.callback_count() > paused_at,
+            "no callbacks after resume"
+        );
+        assert!(latency <= 2000, "resume latency exceeded the timeout");
         drop(mic);
     }
 }

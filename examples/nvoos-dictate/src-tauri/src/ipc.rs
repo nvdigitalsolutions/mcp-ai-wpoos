@@ -301,6 +301,29 @@ pub struct DiagnosticsInfo {
     pub document: DocumentDiagnostics,
     pub memory: crate::memory::MemoryStatus,
     pub last_dictation: Option<crate::dictation::LastDictationStats>,
+    /// Most recent paste attempt (Proposal 144 W4). Never carries clipboard
+    /// contents — only the snapshot kind and the restore outcome.
+    pub paste: Option<PasteDiagnostics>,
+}
+
+/// Result of the most recent paste, for the Diagnostics page.
+#[derive(Debug, Clone, Serialize)]
+pub struct PasteDiagnostics {
+    /// `clipboard_keystroke` | `macos_cgevent`.
+    pub backend: String,
+    /// What was on the clipboard before the transcript write.
+    pub snapshot_kind: String,
+    /// Whether the previous contents were restored.
+    pub restored: bool,
+    /// Why the restore did not run, when it did not.
+    pub restore_skipped: Option<String>,
+    /// Formats present but not copyable as bytes (GDI handles). Non-zero means
+    /// the restore could not be fully faithful.
+    pub partial_formats: usize,
+    /// Total time spent in the paste path, including the settle delay.
+    pub elapsed_ms: u64,
+    /// UTC timestamp of the attempt.
+    pub at: String,
 }
 
 /// Document pipeline health (Proposal 109), mirroring the snippet block.
@@ -380,6 +403,13 @@ pub struct MicDiagnostics {
     pub live_peak: f32,
     /// VAD implementation in use: `energy` or `silero`.
     pub vad_kind: &'static str,
+    /// `resident` (continuous) or `on_demand` (paused when idle).
+    pub capture_mode: &'static str,
+    /// Whether the capture stream is paused right now (on-demand at idle).
+    pub paused: bool,
+    /// Measured pause -> first-callback latency of the last resume (0 when the
+    /// stream was already running).
+    pub last_resume_ms: u64,
     /// Capture stream health: callbacks delivered, stall age, errors.
     pub capture_callbacks: u64,
     pub capture_stall_ms: u64,
@@ -490,6 +520,9 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
                 live_rms,
                 live_peak,
                 vad_kind: crate::audio::vad::implementation(),
+                capture_mode: settings.audio.capture_mode.id(),
+                paused: m.is_paused(),
+                last_resume_ms: m.last_resume_ms(),
                 capture_callbacks: m.callback_count(),
                 capture_stall_ms: m.stall_ms(),
                 capture_errors: m.stream_error_count(),
@@ -505,6 +538,9 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
             live_rms: 0.0,
             live_peak: 0.0,
             vad_kind: crate::audio::vad::implementation(),
+            capture_mode: settings.audio.capture_mode.id(),
+            paused: false,
+            last_resume_ms: 0,
             capture_callbacks: 0,
             capture_stall_ms: 0,
             capture_errors: 0,
@@ -543,6 +579,15 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
             .memory
             .status(&state.db, &settings, &state.models_dir())?,
         last_dictation: crate::dictation::last_dictation_stats(),
+        paste: state.last_paste().map(|p| PasteDiagnostics {
+            backend: p.outcome.backend.to_string(),
+            snapshot_kind: p.outcome.snapshot_kind.to_string(),
+            restored: p.outcome.restored,
+            restore_skipped: p.outcome.restore_skipped.map(|s| s.to_string()),
+            partial_formats: p.outcome.partial_formats,
+            elapsed_ms: p.outcome.elapsed_ms,
+            at: p.at,
+        }),
     })
 }
 
@@ -660,6 +705,9 @@ pub fn restart_microphone(state: State<'_, AppState>) -> AppResult<MicDiagnostic
         live_rms,
         live_peak,
         vad_kind: crate::audio::vad::implementation(),
+        capture_mode: state.settings_snapshot().audio.capture_mode.id(),
+        paused: m.is_paused(),
+        last_resume_ms: m.last_resume_ms(),
         capture_callbacks: m.callback_count(),
         capture_stall_ms: m.stall_ms(),
         capture_errors: m.stream_error_count(),

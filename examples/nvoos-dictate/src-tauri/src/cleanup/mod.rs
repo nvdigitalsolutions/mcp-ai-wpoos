@@ -13,7 +13,7 @@
 pub mod providers;
 pub mod rules;
 
-use crate::config::{AppCategory, Settings};
+use crate::config::{AppCategory, NumberRuleConfig, Settings};
 
 /// Result of the full cleanup run.
 #[derive(Debug, Clone)]
@@ -47,6 +47,18 @@ pub fn run_deterministic(
     raw_passthrough: bool,
 ) -> String {
     rules::apply(text, category, dictionary, raw_passthrough)
+}
+
+/// Run Stage-1 deterministic cleanup with the user's number policy
+/// (Proposal 144 §4.1).
+pub fn run_deterministic_with(
+    text: &str,
+    category: AppCategory,
+    dictionary: &[(String, String)],
+    raw_passthrough: bool,
+    numbers: &NumberRuleConfig,
+) -> String {
+    rules::apply_with(text, category, dictionary, raw_passthrough, numbers)
 }
 
 /// Build the configured Stage-2 provider (None when disabled/unconfigured).
