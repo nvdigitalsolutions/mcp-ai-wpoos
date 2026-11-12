@@ -166,5 +166,5 @@ the pattern, and it unlocks the most tools per unit of schema.
 |---|---|
 | Coupling measured | ✅ 654 / 1,434 |
 | Mapping agreed | ✅ this document |
-| First family chosen | ⏳ recommend project management |
-| Schema ported | ⏳ none |
+| First family chosen | ✅ project management (`mcp_ai_task` + `mcp_ai_project`, 62 refs) |
+| Schema ported | 🟡 read path only — registry entries, `list_projects` / `list_tasks` / `get_task_dependencies`, seeder (090-f Phase 2). Writes, import and the admin page remain. |

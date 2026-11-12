@@ -145,16 +145,16 @@ class ContentStore implements ContentStoreInterface {
 			: 'DESC';
 		$builder->orderBy( $this->orderColumn( $query->orderBy ), $order );
 
-		// Pagination (documented range is 1–100; 0 means "use the default").
+		// Pagination (documented range is 1–200; 0 means "use the default").
 		// A negative value is WP_Query's "return everything" idiom, which this
 		// contract does not offer — clamping it to one row would be worse than
 		// failing.
 		if ( $query->perPage < 0 ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
-			throw new \InvalidArgumentException( "perPage must be 0-100; got {$query->perPage}." );
+			throw new \InvalidArgumentException( "perPage must be 0-200; got {$query->perPage}." );
 		}
 
-		$perPage = min( 100, max( 1, $query->perPage > 0 ? $query->perPage : 20 ) );
+		$perPage = min( 200, max( 1, $query->perPage > 0 ? $query->perPage : 20 ) );
 		$page    = max( 1, $query->page );
 
 		$paginator = $builder->paginate(
