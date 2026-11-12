@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-model-catalog.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-response.php';
@@ -36,6 +37,25 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Video_Response;
+
+	/**
+	 * Models this tool can select.
+	 *
+	 * "omni" is the recommended path and the implicit default; the two Veo
+	 * generations remain selectable for compatibility.
+	 */
+	const MODELS = array( 'omni', 'veo-3.1', 'veo-2.0' );
+
+	/**
+	 * Models whose capabilities the schema enums describe.
+	 *
+	 * "omni" is selectable through this tool but its capabilities are described
+	 * by generate_omni_video. Including it here would widen the aspect-ratio enum
+	 * to 16:9 / 9:16, which the native Veo path cannot honour — and this tool
+	 * passes aspect_ratio through to the service unclamped, so an over-wide enum
+	 * becomes a provider-side error rather than a graceful fallback.
+	 */
+	const NATIVE_MODELS = array( 'veo-3.1', 'veo-2.0' );
 
 	/**
 	 * {@inheritdoc}
@@ -73,9 +93,140 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
+	 * Model ids this tool can select.
+	 *
+	 * Const filtered by the capability registry (a model is selectable when the
+	 * registry assigns it to this tool). Falls back to the const when the registry
+	 * is unavailable, so a missing data file cannot narrow the schema.
+	 *
+	 * Divergence between MODELS and the registry is caught by
+	 * tests/test-media-tool-catalog-parity.php.
+	 *
+	 * @return string[]
+	 */
+	public function get_supported_models() {
+		return $this->intersect_with_registry( self::MODELS );
+	}
+
+	/**
+	 * Models whose capabilities the schema enums describe.
+	 *
+	 * @return string[]
+	 */
+	public function get_capability_models() {
+		return $this->intersect_with_registry( self::NATIVE_MODELS );
+	}
+
+	/**
+	 * Keep only the models the registry assigns to this tool, preserving order.
+	 *
+	 * @param string[] $models Candidate ids.
+	 * @return string[]
+	 */
+	protected function intersect_with_registry( $models ) {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return $models;
+		}
+
+		$registered = array_keys(
+			WP_MCP_AI_Media_Model_Catalog::get_models( array( 'tool' => $this->get_slug() ) )
+		);
+
+		if ( empty( $registered ) ) {
+			return $models;
+		}
+
+		$supported = array_values( array_intersect( $models, $registered ) );
+
+		return empty( $supported ) ? $models : $supported;
+	}
+
+	/**
+	 * Union of a capability field across the native models.
+	 *
+	 * @param string $field Registry field: aspect_ratios or resolutions.
+	 * @return string[]
+	 */
+	protected function get_registry_union( $field ) {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return array();
+		}
+
+		$union = array();
+
+		foreach ( $this->get_capability_models() as $model ) {
+			foreach ( WP_MCP_AI_Media_Model_Catalog::get_enum( $model, $field ) as $value ) {
+				if ( ! in_array( $value, $union, true ) ) {
+					$union[] = $value;
+				}
+			}
+		}
+
+		return $union;
+	}
+
+	/**
+	 * Aspect-ratio values the native Veo path accepts.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_aspect_ratios() {
+		$union = $this->get_registry_union( 'aspect_ratios' );
+
+		return empty( $union ) ? array( '1:1', '2:3', '3:2', 'auto' ) : $union;
+	}
+
+	/**
+	 * Resolution values the native Veo path accepts.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_resolutions() {
+		$union = $this->get_registry_union( 'resolutions' );
+
+		return empty( $union ) ? array( '720p', '1080p' ) : $union;
+	}
+
+	/**
+	 * Duration bounds spanned by the native models.
+	 *
+	 * @return array{min:int,max:int}
+	 */
+	public function get_duration_bounds() {
+		$bounds = array(
+			'min' => 5,
+			'max' => 8,
+		);
+
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return $bounds;
+		}
+
+		$ranges = array();
+
+		foreach ( $this->get_capability_models() as $model ) {
+			$range = WP_MCP_AI_Media_Model_Catalog::get_duration_range( $model );
+
+			if ( null !== $range ) {
+				$ranges[] = $range;
+			}
+		}
+
+		if ( empty( $ranges ) ) {
+			return $bounds;
+		}
+
+		$bounds['min'] = min( array_column( $ranges, 'min' ) );
+		$bounds['max'] = max( array_column( $ranges, 'max' ) );
+
+		return $bounds;
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
+		$duration_bounds = $this->get_duration_bounds();
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
@@ -86,20 +237,20 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'duration'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Video duration in seconds (5-8). Default is 5 seconds. The 5-second minimum works with both Veo 3.1 and Veo 2.0. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
-					'minimum'     => 5,
-					'maximum'     => 8,
+					'minimum'     => $duration_bounds['min'],
+					'maximum'     => $duration_bounds['max'],
 					'default'     => 5,
 				),
 				'aspect_ratio'            => array(
 					'type'        => 'string',
 					'description' => __( 'Video aspect ratio. Supported values: "3:2" for landscape (default), "2:3" for portrait, "1:1" for square, or "auto" to let the model decide.', 'mcp-ai-wpoos' ),
-					'enum'        => array( '1:1', '2:3', '3:2', 'auto' ),
+					'enum'        => $this->get_allowed_aspect_ratios(),
 					'default'     => '3:2',
 				),
 				'resolution'              => array(
 					'type'        => 'string',
 					'description' => __( 'Video resolution. "720p" (default, supported by all models and durations) or "1080p" (Veo 3.1 only, automatically sets 8 seconds duration). Veo 2.0 always outputs 720p regardless of this parameter.', 'mcp-ai-wpoos' ),
-					'enum'        => array( '720p', '1080p' ),
+					'enum'        => $this->get_allowed_resolutions(),
 					'default'     => '720p',
 				),
 				'style'                   => array(
@@ -133,7 +284,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'model'                   => array(
 					'type'        => 'string',
 					'description' => __( 'Force a specific model: "omni" (Gemini Omni Flash — recommended, 10s, audio, editing), "veo-3.1" (legacy, 1080p), or "veo-2.0" (legacy, 720p deprecated). If not specified, uses Omni Flash with fallback to Veo on availability issues.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'omni', 'veo-3.1', 'veo-2.0' ),
+					'enum'        => $this->get_supported_models(),
 				),
 				'design_context'          => array(
 					'type'        => 'boolean',

@@ -84,6 +84,7 @@ wp-mcp-ai-tool-edit-gemini-image-validated
 wp-mcp-ai-tool-edit-omni-video
 wp-mcp-ai-tool-edit-openai-image
 wp-mcp-ai-tool-enable-reasoning-mode
+wp-mcp-ai-tool-enhance-media-prompt
 wp-mcp-ai-tool-erlang-c-concurrency-advisor
 wp-mcp-ai-tool-erlang-c-queue-health
 wp-mcp-ai-tool-erlang-c-staffing-advisor
@@ -212,6 +213,7 @@ wp-mcp-ai-tool-manage-context-lifecycle
 wp-mcp-ai-tool-manage-vector-store-files
 wp-mcp-ai-tool-mcp-server-info
 wp-mcp-ai-tool-media-library-optimizer
+wp-mcp-ai-tool-media-model-capabilities
 wp-mcp-ai-tool-memory-audit-trail
 wp-mcp-ai-tool-mine-agent-memory
 wp-mcp-ai-tool-moderate-content

@@ -39,6 +39,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-model-catalog.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-response.php';
 
@@ -198,10 +199,137 @@ class WP_MCP_AI_Tool_Generate_Higgsfield_Video implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
+	 * Model ids this tool can actually serve.
+	 *
+	 * Intersection of the verified endpoint map (VIDEO_MODELS) and the models the
+	 * capability registry assigns to this tool, in VIDEO_MODELS order. Two
+	 * properties fall out:
+	 *
+	 *  - the schema can never advertise a model this tool cannot build an
+	 *    endpoint for;
+	 *  - the pre-existing order — and therefore the default model — is unchanged.
+	 *
+	 * Divergence in either direction is a bug, caught by
+	 * tests/test-higgsfield-video-catalog-parity.php. This method keeps the
+	 * schema safe between a const edit and a registry edit; the test is what makes
+	 * the two sets converge again.
+	 *
+	 * @return string[]
+	 */
+	public function get_supported_models() {
+		$declared = array_keys( self::VIDEO_MODELS );
+
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return $declared;
+		}
+
+		$registered = array_keys(
+			WP_MCP_AI_Media_Model_Catalog::get_models( array( 'tool' => $this->get_slug() ) )
+		);
+
+		if ( empty( $registered ) ) {
+			return $declared;
+		}
+
+		$supported = array_values( array_intersect( $declared, $registered ) );
+
+		return empty( $supported ) ? $declared : $supported;
+	}
+
+	/**
+	 * Union of a capability field across the models this tool serves.
+	 *
+	 * Values keep first-seen order, which for the shipped catalog reproduces the
+	 * ALLOWED_* constants exactly — so deriving the schema changes nothing until
+	 * the const and the registry actually disagree.
+	 *
+	 * @param string $field Registry field: aspect_ratios or resolutions.
+	 * @return string[]
+	 */
+	protected function get_registry_union( $field ) {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return array();
+		}
+
+		$union = array();
+
+		foreach ( $this->get_supported_models() as $model ) {
+			foreach ( WP_MCP_AI_Media_Model_Catalog::get_enum( $model, $field ) as $value ) {
+				if ( ! in_array( $value, $union, true ) ) {
+					$union[] = $value;
+				}
+			}
+		}
+
+		return $union;
+	}
+
+	/**
+	 * Aspect-ratio values accepted by at least one served model.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_aspect_ratios() {
+		$union = $this->get_registry_union( 'aspect_ratios' );
+
+		return empty( $union ) ? self::ALLOWED_ASPECT_RATIOS : $union;
+	}
+
+	/**
+	 * Resolution values accepted by at least one served model.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_resolutions() {
+		$union = $this->get_registry_union( 'resolutions' );
+
+		return empty( $union ) ? self::ALLOWED_RESOLUTIONS : $union;
+	}
+
+	/**
+	 * Duration bounds spanned by the served models.
+	 *
+	 * Falls back to the pre-registry union (2-30s) when the registry is
+	 * unavailable, so a missing data file cannot narrow what the tool accepts.
+	 *
+	 * @return array{min:int,max:int}
+	 */
+	public function get_duration_bounds() {
+		$bounds = array(
+			'min' => 2,
+			'max' => 30,
+		);
+
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return $bounds;
+		}
+
+		$ranges = array();
+
+		foreach ( $this->get_supported_models() as $model ) {
+			$range = WP_MCP_AI_Media_Model_Catalog::get_duration_range( $model );
+
+			if ( null !== $range ) {
+				$ranges[] = $range;
+			}
+		}
+
+		if ( empty( $ranges ) ) {
+			return $bounds;
+		}
+
+		$bounds['min'] = min( array_column( $ranges, 'min' ) );
+		$bounds['max'] = max( array_column( $ranges, 'max' ) );
+
+		return $bounds;
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
-		$defaults = $this->get_configured_defaults();
+		$defaults        = $this->get_configured_defaults();
+		$duration_bounds = $this->get_duration_bounds();
 
 		return array(
 			'type'                 => 'object',
@@ -213,26 +341,26 @@ class WP_MCP_AI_Tool_Generate_Higgsfield_Video implements WP_MCP_AI_Tool_Interfa
 				'model'               => array(
 					'type'        => 'string',
 					'description' => __( 'Higgsfield video model to use. cinema-studio-4.0 (default) supports camera/genre/era controls; seedance-2.5 and seedance-2.0 are ByteDance models (2.0 supports up to 4k); wan-3.0 supports 1080p, adaptive aspect ratio, and seed; kling-3.0 supports multi-shot prompts but no reference media on this endpoint.', 'mcp-ai-wpoos' ),
-					'enum'        => array_keys( self::VIDEO_MODELS ),
+					'enum'        => $this->get_supported_models(),
 					'default'     => self::DEFAULT_MODEL,
 				),
 				'duration'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Video duration in seconds. Supported range varies per model (2-30s; clamped per model). Default is 5. Billing is per second of output.', 'mcp-ai-wpoos' ),
-					'minimum'     => 2,
-					'maximum'     => 30,
+					'minimum'     => $duration_bounds['min'],
+					'maximum'     => $duration_bounds['max'],
 					'default'     => $defaults['duration'],
 				),
 				'resolution'          => array(
 					'type'        => 'string',
 					'description' => __( 'Output resolution tier. Availability varies per model (e.g. 4k only on seedance-2.0, 1080p on seedance-2.0/wan-3.0). Unsupported values are omitted or clamped.', 'mcp-ai-wpoos' ),
-					'enum'        => self::ALLOWED_RESOLUTIONS,
+					'enum'        => $this->get_allowed_resolutions(),
 					'default'     => $defaults['resolution'],
 				),
 				'aspect_ratio'        => array(
 					'type'        => 'string',
 					'description' => __( 'Output width-to-height ratio. "adaptive" is supported by wan-3.0 only. Unsupported values fall back to the model default.', 'mcp-ai-wpoos' ),
-					'enum'        => self::ALLOWED_ASPECT_RATIOS,
+					'enum'        => $this->get_allowed_aspect_ratios(),
 					'default'     => $defaults['aspect_ratio'],
 				),
 				'generate_audio'      => array(
@@ -331,17 +459,19 @@ class WP_MCP_AI_Tool_Generate_Higgsfield_Video implements WP_MCP_AI_Tool_Interfa
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-		if ( ! empty( $settings['higgsfield_video_resolution'] ) && in_array( $settings['higgsfield_video_resolution'], self::ALLOWED_RESOLUTIONS, true ) ) {
+		if ( ! empty( $settings['higgsfield_video_resolution'] ) && in_array( $settings['higgsfield_video_resolution'], $this->get_allowed_resolutions(), true ) ) {
 			$defaults['resolution'] = sanitize_text_field( $settings['higgsfield_video_resolution'] );
 		}
 
-		if ( ! empty( $settings['higgsfield_video_aspect_ratio'] ) && in_array( $settings['higgsfield_video_aspect_ratio'], self::ALLOWED_ASPECT_RATIOS, true ) ) {
+		if ( ! empty( $settings['higgsfield_video_aspect_ratio'] ) && in_array( $settings['higgsfield_video_aspect_ratio'], $this->get_allowed_aspect_ratios(), true ) ) {
 			$defaults['aspect_ratio'] = sanitize_text_field( $settings['higgsfield_video_aspect_ratio'] );
 		}
 
 		if ( ! empty( $settings['higgsfield_video_duration'] ) ) {
 			$duration = absint( $settings['higgsfield_video_duration'] );
-			if ( $duration >= 2 && $duration <= 30 ) {
+			$bounds   = $this->get_duration_bounds();
+
+			if ( $duration >= $bounds['min'] && $duration <= $bounds['max'] ) {
 				$defaults['duration'] = $duration;
 			}
 		}

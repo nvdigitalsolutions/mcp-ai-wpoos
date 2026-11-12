@@ -326,6 +326,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🎨 Media Generation', 'mcp-ai-wpoos' ),
 				'description' => __( 'Image, video, and audio generation tools across multiple AI providers', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Capability registry + deterministic prompt craft (Proposal 141).
+					'media_model_capabilities',
+					'enhance_media_prompt',
 					// Image generation.
 					'generate_openai_image',
 					'cloudflareai_text_to_image',

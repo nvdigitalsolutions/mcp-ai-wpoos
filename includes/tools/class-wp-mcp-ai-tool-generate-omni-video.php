@@ -34,6 +34,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-asyn
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-omni-service.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-model-catalog.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-response.php';
@@ -45,6 +46,131 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 	use WP_MCP_AI_Tool_Video_Response;
+
+	/**
+	 * The single model this tool generates with (Gemini Omni Flash).
+	 */
+	const MODEL = 'omni';
+
+	/**
+	 * Model ids whose capabilities the schema enums describe.
+	 *
+	 * Resolved through the registry so a rename of the catalog id surfaces here
+	 * rather than as a silent mismatch.
+	 *
+	 * @return string[]
+	 */
+	public function get_capability_models() {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return array( self::MODEL );
+		}
+
+		$registered = array_keys(
+			WP_MCP_AI_Media_Model_Catalog::get_models( array( 'tool' => $this->get_slug() ) )
+		);
+
+		return empty( $registered ) ? array( self::MODEL ) : $registered;
+	}
+
+	/**
+	 * Union of a capability field across this tool's models.
+	 *
+	 * @param string $field Registry field.
+	 * @return array
+	 */
+	protected function get_registry_union( $field ) {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return array();
+		}
+
+		$union = array();
+
+		foreach ( $this->get_capability_models() as $model ) {
+			foreach ( WP_MCP_AI_Media_Model_Catalog::get_enum( $model, $field ) as $value ) {
+				if ( ! in_array( $value, $union, true ) ) {
+					$union[] = $value;
+				}
+			}
+		}
+
+		return $union;
+	}
+
+	/**
+	 * Aspect-ratio values accepted by the model.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_aspect_ratios() {
+		$union = $this->get_registry_union( 'aspect_ratios' );
+
+		return empty( $union ) ? array( '1:1', '2:3', '3:2', '16:9', '9:16' ) : $union;
+	}
+
+	/**
+	 * Resolution values accepted by the model.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_resolutions() {
+		$union = $this->get_registry_union( 'resolutions' );
+
+		return empty( $union ) ? array( '720p', '1080p' ) : $union;
+	}
+
+	/**
+	 * Duration bounds for the model.
+	 *
+	 * @return array{min:int,max:int}
+	 */
+	public function get_duration_bounds() {
+		$bounds = array(
+			'min' => 4,
+			'max' => 10,
+		);
+
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return $bounds;
+		}
+
+		$ranges = array();
+
+		foreach ( $this->get_capability_models() as $model ) {
+			$range = WP_MCP_AI_Media_Model_Catalog::get_duration_range( $model );
+
+			if ( null !== $range ) {
+				$ranges[] = $range;
+			}
+		}
+
+		if ( empty( $ranges ) ) {
+			return $bounds;
+		}
+
+		$bounds['min'] = min( array_column( $ranges, 'min' ) );
+		$bounds['max'] = max( array_column( $ranges, 'max' ) );
+
+		return $bounds;
+	}
+
+	/**
+	 * Maximum reference images the model accepts.
+	 *
+	 * @return int
+	 */
+	public function get_max_reference_images() {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return 5;
+		}
+
+		$max = 0;
+
+		foreach ( $this->get_capability_models() as $model ) {
+			$max = max( $max, WP_MCP_AI_Media_Model_Catalog::max_reference_images( $model ) );
+		}
+
+		return $max > 0 ? $max : 5;
+	}
 
 	/**
 	 * {@inheritdoc}
@@ -92,6 +218,8 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
+		$duration_bounds = $this->get_duration_bounds();
+
 		return array(
 			'type'       => 'object',
 			'properties' => array(
@@ -102,20 +230,20 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 				'duration'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Video duration in seconds (4-10). Default is 5 seconds. Omni Flash supports up to 10 seconds. If Veo fallback is used, max is 8 seconds.', 'mcp-ai-wpoos' ),
-					'minimum'     => 4,
-					'maximum'     => 10,
+					'minimum'     => $duration_bounds['min'],
+					'maximum'     => $duration_bounds['max'],
 					'default'     => 5,
 				),
 				'aspect_ratio'     => array(
 					'type'        => 'string',
 					'description' => __( 'Video aspect ratio. Supported: "16:9" for widescreen (default), "9:16" for vertical, "1:1" for square, "3:2" for landscape, "2:3" for portrait.', 'mcp-ai-wpoos' ),
-					'enum'        => array( '1:1', '2:3', '3:2', '16:9', '9:16' ),
+					'enum'        => $this->get_allowed_aspect_ratios(),
 					'default'     => '16:9',
 				),
 				'resolution'       => array(
 					'type'        => 'string',
 					'description' => __( 'Video resolution. "720p" (default) or "1080p". Note: 1080p requires 16:9 aspect ratio and 8 seconds duration.', 'mcp-ai-wpoos' ),
-					'enum'        => array( '720p', '1080p' ),
+					'enum'        => $this->get_allowed_resolutions(),
 					'default'     => '720p',
 				),
 				'reference_images' => array(
@@ -125,7 +253,7 @@ class WP_MCP_AI_Tool_Generate_Omni_Video implements WP_MCP_AI_Tool_Interface, WP
 						'type'    => 'integer',
 						'minimum' => 1,
 					),
-					'maxItems'    => 5,
+					'maxItems'    => $this->get_max_reference_images(),
 				),
 				'reference_video'  => array(
 					'type'        => 'integer',
