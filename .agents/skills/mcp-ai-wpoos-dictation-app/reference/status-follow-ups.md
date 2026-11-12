@@ -359,3 +359,20 @@ New this session (2026-11-04, evening): **Proposal 111 implemented**
   restored it; the probe exe needs `pdfium.dll` copied beside it in
   `target/debug/examples/` (bind() searches next to the exe; build.rs
   stages at `target/debug/` for the main binary only).
+
+New this session (2026-11-12): **v0.4.0 release bump + mirror-sync test
+  prep.** Version moved 0.3.0 → 0.4.0 across `package.json`,
+  `package-lock.json` (which had drifted at 0.2.0 through the 0.3.0 bump —
+  both root and `packages[""]`), `tauri.conf.json`, `Cargo.toml` and the
+  crate's `Cargo.lock` entry. Unreleased since `nvoos-dictate-v0.3.0`
+  (2026-11-02): document-OCR pipeline M0–M4 + raster-image input +
+  hOCR/ALTO word boxes + searchable PDF, the DeepSeek-OCR model tier with
+  Ollama native `/api/chat` routing, PDFium in Windows bundles, and the
+  memory layer with safety gates (each covered above). Docs: README gained
+  Document OCR / memory bullets, the `document`/`snippet-pdf`/`memory`
+  build+test commands, a Releases section (tag → publish draft → dispatch
+  mirror) and the corrected proprietary license; `CHANGELOG.md` added
+  (the publish workflow body already referenced one); skill metadata
+  bumped. Release-sync test path: tag `nvoos-dictate-v0.4.0`, publish the
+  draft release, then dispatch
+  `mirror-nvoos-cognition-release.yml` with the tag.

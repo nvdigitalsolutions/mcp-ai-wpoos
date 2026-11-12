@@ -5,10 +5,10 @@ description: "Operational guide for the NV oOS Cognition desktop app (Tauri v2 +
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
-  app-version: "0.3.0"
+  app-version: "0.4.0"
   proposal: "067"
   pr: "7043"
-  last-updated: "2026-11-02"
+  last-updated: "2026-11-12"
 ---
 # NV oOS Cognition App — Build, Engines, and Verification Guide
 
@@ -221,6 +221,25 @@ The GitHub macOS runner is the remote Mac. The full remote loop:
   (CMake + LLVM via Chocolatey, `LIBCLANG_PATH`) with a 30 s
   boot-residency gate and uploads `nvoos-dictate-windows-exe`; both app
   artifacts retain 90 days.
+- **Mirror release (v0.4.0, PR #7606):** `publish-nvoos-dictate.yml`
+  creates a **draft** release, and a read-only mirror token cannot
+  download drafts — so `mirror-nvoos-cognition-release.yml` is
+  dispatch-only. Publish the monorepo draft first, then dispatch it with
+  `tag: nvoos-dictate-vX.Y.Z` (dispatch from `alpha-working`; the
+  self-referential push trigger registers the workflow before it reaches
+  `main`). It reuses `mirror-release.yml` with
+  `version_file: package.json` (JSON format) and copies `*.exe`, `*.msi`,
+  `*.dmg`, `latest.json`, `*.sig` into
+  `nvdigitalsolutions/nvoos-cognition` with `--clobber` (idempotent).
+  Secret: `NVOOS_COGNITION_REPO_TOKEN`. `latest.json` and
+  `tauri.conf.json` still point at the monorepo feed — mirroring the
+  installers does **not** move the updater channel.
+- **Version bump files (all five move together):** `package.json`,
+  `package-lock.json` (root + `packages[""]`), `src-tauri/tauri.conf.json`,
+  `src-tauri/Cargo.toml` and this crate's entry in `src-tauri/Cargo.lock`.
+  `package-lock.json` drifted at 0.2.0 through the 0.3.0 bump — check it
+  explicitly. Tag from the commit that carries the bump; tag-triggered
+  runs evaluate the workflow file from the tag's commit.
 
 Remote-Mac landscape (2026-10): **Cirrus CI shut down 2026-06-01**
 (Cirrus Labs joined OpenAI) — do not recommend it. Docker/QEMU macOS
