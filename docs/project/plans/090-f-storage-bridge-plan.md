@@ -1,6 +1,6 @@
 # Proposal 090-F — Storage bridge: make the content port trustworthy
 
-Status: Phase 1 shipped (#7635, #7636); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped.
+Status: Phase 1 shipped (#7635, #7636) and its acceptance gates verified (2026-11-13, 104 adapter tests); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped.
 Depends on: `090-d-selective-tool-port.md` (what to port), `090-e-cpt-cct-schema-port.md` (which families).
 
 ---
@@ -129,14 +129,22 @@ argument map is the best statement of what the contract means.
 
 Acceptance:
 
-- [ ] Parity test per compare operator, asserting rows and **counts**.
-- [ ] A clause with no matches returns zero rows (not all rows).
-- [ ] `EXISTS` / `NOT EXISTS` match rows with and without the key.
-- [ ] Tax `IN`, `NOT IN` and `AND` return the same sets as `WP_Query`.
-- [ ] `orderBy('date')` orders by `created_at`; unknown fields throw.
-- [ ] `statuses: ['any']` returns every status.
-- [ ] `search` matches an excerpt-only hit.
-- [ ] Existing round-trip and adapter suites stay green.
+- [x] Parity test per compare operator, asserting rows and **counts**.
+- [x] A clause with no matches returns zero rows (not all rows).
+- [x] `EXISTS` / `NOT EXISTS` match rows with and without the key.
+- [x] Tax `IN`, `NOT IN` and `AND` return the same sets as `WP_Query`.
+- [x] `orderBy('date')` orders by `created_at`; unknown fields throw.
+- [x] `statuses: ['any']` returns every status.
+- [x] `search` matches an excerpt-only hit.
+- [x] Existing round-trip and adapter suites stay green.
+
+*(All eight verified 2026-11-13 — 104 adapter tests. Writing the numeric-operator
+parity test exposed a real bug: `>` bound the operand as text, and SQL orders
+numbers before strings, so every decimal clause silently returned zero rows.
+The adapter now casts both sides for `>`, `>=`, `<`, `<=`, `BETWEEN` and
+`NOT BETWEEN`, **but only when the clause declares a numeric `type`** —
+`WP_Meta_Query` casts only then, and untyped ordering must stay lexical for date
+ranges. Both behaviours are pinned by tests.)*
 
 ### Phase 2 — First CPT family (project management)
 
