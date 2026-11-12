@@ -20,6 +20,8 @@ use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\TeamCatalogueController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\TranscriptsController;
@@ -97,6 +99,28 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/assistants/{assistant}', [AssistantController::class, 'show']);
             Route::match(['put', 'patch'], '/assistants/{assistant}', [AssistantController::class, 'update']);
             Route::delete('/assistants/{assistant}', [AssistantController::class, 'destroy']);
+
+            // Phase 4 parity — WordPress's read-only team catalogue.
+            Route::get('/teams', [TeamCatalogueController::class, 'index']);
+            Route::get('/teams/{team}/members', [TeamCatalogueController::class, 'members']);
+
+            // 090-g Phase 3 — org teams and user membership.
+            //
+            // `/teams` is already the WordPress agent-team surface (a named
+            // collection of professions, consumed by the SPA's TeamsPage), so
+            // the org primitive — users with roles — mounts under `/org`.
+            // Reusing `/teams` would return a different shape at the same URL
+            // and silently break the shared console.
+            Route::prefix('org')->group(function (): void {
+                Route::get('/teams', [TeamController::class, 'index']);
+                Route::post('/teams', [TeamController::class, 'store']);
+                Route::get('/teams/{team}', [TeamController::class, 'show']);
+                Route::match(['put', 'patch'], '/teams/{team}', [TeamController::class, 'update']);
+                Route::delete('/teams/{team}', [TeamController::class, 'destroy']);
+                Route::post('/teams/{team}/members', [TeamController::class, 'storeMember']);
+                Route::match(['put', 'patch'], '/teams/{team}/members/{user}', [TeamController::class, 'updateMember']);
+                Route::delete('/teams/{team}/members/{user}', [TeamController::class, 'destroyMember']);
+            });
 
             Route::get('/tools', ToolsController::class);
             Route::get('/pro/ops/overview', OpsController::class);

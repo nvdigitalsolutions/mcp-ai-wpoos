@@ -234,6 +234,61 @@ return array(
 				),
 			),
 		),
+		/*
+		 * Multi-agent teams (090-g Phase 4 parity). Mirrors the WordPress
+		 * mcp_ai_team CPT and the meta keys its REST controller reads, so the
+		 * shared console TeamsPage gets the same contract on both runtimes.
+		 * Members are profession catalogue slugs rather than post IDs: the
+		 * catalogue is reference data here.
+		 */
+		'mcp_ai_team'    => array(
+			'label'        => 'Teams',
+			'description'  => 'Multi-agent teams composed of profession members.',
+			'public'       => false,
+			'hierarchical' => false,
+			'has_archive'  => false,
+			'show_in_rest' => true,
+			'rest_base'    => 'teams',
+			'labels'       => array(
+				'name'          => 'Teams',
+				'singular_name' => 'Team',
+				'add_new_item'  => 'Add New Team',
+				'edit_item'     => 'Edit Team',
+				'view_item'     => 'View Team',
+				'search_items'  => 'Search Teams',
+				'not_found'     => 'No teams found.',
+				'all_items'     => 'All Teams',
+			),
+			'capabilities' => array(
+				'edit_post'     => 'edit_post',
+				'read_post'     => 'read_post',
+				'delete_post'   => 'delete_post',
+				'edit_posts'    => 'edit_posts',
+				'publish_posts' => 'publish_posts',
+			),
+			'supports'     => array( 'title', 'editor', 'author', 'thumbnail' ),
+			'statuses'     => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+			'meta_fields'  => array(
+				'_wp_mcp_ai_team_members'             => array(
+					'label'       => 'Profession Members',
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => 'Array of profession catalogue slugs.',
+				),
+				'_wp_mcp_ai_team_orchestration_mode'  => array(
+					'label' => 'Orchestration Mode',
+					'type'  => 'string',
+				),
+				'_wp_mcp_ai_team_result_aggregation'  => array(
+					'label' => 'Result Aggregation',
+					'type'  => 'string',
+				),
+				'_wp_mcp_ai_team_driver_assistant'    => array(
+					'label' => 'Driver Assistant',
+					'type'  => 'integer',
+				),
+			),
+		),
 	),
 
 	'content_statuses' => array(
@@ -441,6 +496,10 @@ return array(
 		'ezuite'             => false,
 		'shopify_sync'       => false,
 		'flowhub'            => false,
+		// The teams catalogue is readable, but the multi-agent orchestration
+		// engine is not ported, so the runtime cannot execute a team. Flip
+		// this only alongside a real orchestration implementation.
+		'multi_agent_teams'  => false,
 		'content_records'    => false,
 		'knowledge_graph'    => false,
 		'docs_hub'           => false,

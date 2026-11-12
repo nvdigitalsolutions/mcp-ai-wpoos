@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Assistant;
+use App\Support\TenantContext;
 use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 
 /**
@@ -16,7 +17,7 @@ class LaravelAssistantService implements AssistantServiceInterface
 {
     public function validate(int $assistantId, int $userId = 0): array
     {
-        $assistant = Assistant::find($assistantId);
+        $assistant = $this->find($assistantId);
 
         if ($assistant === null) {
             return ['valid' => false, 'error' => 'Assistant not found.'];
@@ -34,7 +35,7 @@ class LaravelAssistantService implements AssistantServiceInterface
 
     public function getConfig(int $assistantId): array
     {
-        $assistant = Assistant::find($assistantId);
+        $assistant = $this->find($assistantId);
 
         return $assistant === null
             ? ['found' => false]
@@ -43,8 +44,14 @@ class LaravelAssistantService implements AssistantServiceInterface
 
     public function getDefault(): array
     {
-        $assistant = Assistant::query()->where('is_default', true)->first()
-            ?? Assistant::query()->orderBy('id')->first();
+        $assistant = Assistant::query()
+            ->where('tenant_id', TenantContext::current())
+            ->where('is_default', true)
+            ->first()
+            ?? Assistant::query()
+                ->where('tenant_id', TenantContext::current())
+                ->orderBy('id')
+                ->first();
 
         return $assistant === null
             ? ['found' => false]
@@ -58,6 +65,7 @@ class LaravelAssistantService implements AssistantServiceInterface
     public function listForUser(int $userId = 0): array
     {
         return Assistant::query()
+            ->where('tenant_id', TenantContext::current())
             ->orderBy('title')
             ->get()
             ->map(static fn (Assistant $assistant): array => [
@@ -67,5 +75,16 @@ class LaravelAssistantService implements AssistantServiceInterface
                 'capabilities' => $assistant->tools ?? [],
             ])
             ->all();
+    }
+
+    /**
+     * Tenancy is a runtime concern: the contract carries no tenant argument.
+     */
+    private function find(int $assistantId): ?Assistant
+    {
+        return Assistant::query()
+            ->where('tenant_id', TenantContext::current())
+            ->whereKey($assistantId)
+            ->first();
     }
 }
