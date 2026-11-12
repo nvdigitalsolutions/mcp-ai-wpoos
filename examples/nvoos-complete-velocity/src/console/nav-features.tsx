@@ -89,6 +89,7 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
   			{ path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options', feature: 'project_management' },
   			{ path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options' },
   			{ path: '/teams', label: 'Teams', icon: '👥', capability: 'manage_options' },
+  			{ path: '/org-teams', label: 'Org Teams', icon: '🧑‍🤝‍🧑', capability: 'manage_options' },
   			{ path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options', feature: 'calendar_booking' },
   			{ path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options', feature: 'fnb' },
   			{ path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },

@@ -33,6 +33,9 @@ const ApprovalsPage = lazy( () => import( './features/approvals/ApprovalsPage' )
 const SlashCommandsPage = lazy( () => import( './features/slash-commands/SlashCommandsPage' ).then( ( m ) => ( { default: m.SlashCommandsPage } ) ) );
 const TriggersPage = lazy( () => import( './features/triggers/TriggersPage' ).then( ( m ) => ( { default: m.TriggersPage } ) ) );
 const TeamsPage = lazy( () => import( './features/teams/TeamsPage' ).then( ( m ) => ( { default: m.TeamsPage } ) ) );
+const OrgTeamsPage = lazy( () =>
+	import( './features/org-teams/OrgTeamsPage' ).then( ( m ) => ( { default: m.OrgTeamsPage } ) )
+);
 const PortabilityPage = lazy( () => import( './features/portability/PortabilityPage' ).then( ( m ) => ( { default: m.PortabilityPage } ) ) );
 const SecurityCenterPage = lazy( () => import( './features/security-center/SecurityCenterPage' ).then( ( m ) => ( { default: m.SecurityCenterPage } ) ) );
 const OperationsPage = lazy( () => import( './features/operations/OperationsPage' ).then( ( m ) => ( { default: m.OperationsPage } ) ) );
@@ -85,6 +88,7 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/slash-commands" element={ <SlashCommandsPage /> } />
 				<Route path="/triggers" element={ <TriggersPage /> } />
 				<Route path="/teams" element={ <TeamsPage /> } />
+				<Route path="/org-teams" element={ <OrgTeamsPage /> } />
 				<Route path="/crm" element={ <RecordsPage group="crm" /> } />
 				<Route path="/pm" element={ <RecordsPage group="pm" /> } />
 				<Route path="/professions" element={ <RecordsPage group="professions" /> } />
