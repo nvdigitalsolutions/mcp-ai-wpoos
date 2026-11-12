@@ -98,15 +98,19 @@ class ContentStore implements ContentStoreInterface {
 			$builder->whereIn( 'type', $query->types );
 		}
 
-		// Filter by status.
-		if ( array() !== $query->statuses ) {
+		// Filter by status. WP_Query's 'any' means "no status filter"; the
+		// Laravel column has no such value, so translating it to whereIn()
+		// would return zero rows.
+		if ( array() !== $query->statuses && ! in_array( 'any', $query->statuses, true ) ) {
 			$builder->whereIn( 'status', $query->statuses );
 		}
 
-		// Full-text search.
-		if ( '' !== $query->search ) {
+		// Full-text search. WP_Query's `s` covers title, excerpt and content;
+		// matching only two of the three changes the result set.
+		if ( null !== $query->search && '' !== $query->search ) {
 			$builder->where( function ( $q ) use ( $query ) {
 				$q->where( 'title', 'like', "%{$query->search}%" )
+				  ->orWhere( 'excerpt', 'like', "%{$query->search}%" )
 				  ->orWhere( 'content', 'like', "%{$query->search}%" );
 			} );
 		}
@@ -141,7 +145,15 @@ class ContentStore implements ContentStoreInterface {
 			: 'DESC';
 		$builder->orderBy( $this->orderColumn( $query->orderBy ), $order );
 
-		// Pagination (documented range is 1–100).
+		// Pagination (documented range is 1–100; 0 means "use the default").
+		// A negative value is WP_Query's "return everything" idiom, which this
+		// contract does not offer — clamping it to one row would be worse than
+		// failing.
+		if ( $query->perPage < 0 ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
+			throw new \InvalidArgumentException( "perPage must be 0-100; got {$query->perPage}." );
+		}
+
 		$perPage = min( 100, max( 1, $query->perPage > 0 ? $query->perPage : 20 ) );
 		$page    = max( 1, $query->page );
 
@@ -172,7 +184,8 @@ class ContentStore implements ContentStoreInterface {
 	 * @return string
 	 */
 	private function orderColumn( string $orderBy ): string {
-		switch ( strtolower( $orderBy ) ) {
+		switch ( strtolower( trim( $orderBy ) ) ) {
+			case '':
 			case 'date':
 				return 'created_at';
 			case 'modified':
@@ -182,7 +195,10 @@ class ContentStore implements ContentStoreInterface {
 			case 'id':
 				return 'id';
 			default:
-				return 'created_at';
+				// ContentQuery documents exactly four fields. Silently sorting by
+				// created_at for anything else would hide a caller bug.
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
+				throw new \InvalidArgumentException( "Unsupported order field '{$orderBy}'." );
 		}
 	}
 
