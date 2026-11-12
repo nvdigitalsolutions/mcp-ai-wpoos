@@ -8,12 +8,14 @@ use App\Http\Controllers\ChatStreamController;
 use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\FeaturesController;
 use App\Http\Controllers\MemoryController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
 use App\Http\Controllers\PaperStoreController;
 use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
 use App\Http\Controllers\Pro\SchedulesController;
+use App\Http\Controllers\Pro\ToolkitsController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
@@ -38,13 +40,20 @@ Route::prefix('api/v1')->group(function (): void {
     Route::get('/features', FeaturesController::class);
     Route::get('/site', SiteController::class);
 
+    // The nonce is a plain GET and must always have a session, so it keeps the
+    // `web` group. Login/logout deliberately stay on the `api` group:
+    // `statefulApi()` already starts the session (and validates CSRF) for
+    // console-origin requests, and wrapping them in `web` a second time started
+    // two session stores, the outer of which overwrote the authenticated
+    // payload.
     Route::middleware('web')->group(function (): void {
         Route::get('/session/nonce', [SessionController::class, 'nonce']);
-        Route::post('/session/login', [SessionController::class, 'login'])
-            ->middleware('throttle:6,1');
-        Route::post('/session/logout', [SessionController::class, 'logout'])
-            ->middleware('auth');
     });
+
+    Route::post('/session/login', [SessionController::class, 'login'])
+        ->middleware('throttle:6,1');
+    Route::post('/session/logout', [SessionController::class, 'logout'])
+        ->middleware('auth');
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/session/me', [SessionController::class, 'me']);
@@ -154,11 +163,34 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::post('/{entity}/research', [RecordsController::class, 'research']);
             });
 
+            // Phase 4 — manifest-driven Pro toolkits. Entitlement is checked
+            // per manifest (`feature`) inside the controller, so the list can
+            // filter unentitled families instead of failing wholesale.
+            Route::prefix('pro/toolkits')->group(function (): void {
+                Route::get('/', [ToolkitsController::class, 'index']);
+                Route::get('/{slug}', [ToolkitsController::class, 'show']);
+                Route::get('/{slug}/settings', [ToolkitsController::class, 'settings']);
+                Route::post('/{slug}/settings', [ToolkitsController::class, 'updateSettings']);
+                Route::get('/{slug}/dashboard', [ToolkitsController::class, 'dashboard']);
+                Route::get('/{slug}/entities/{entity}', [ToolkitsController::class, 'indexEntity']);
+                Route::post('/{slug}/entities/{entity}', [ToolkitsController::class, 'storeEntity']);
+                Route::get('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'showEntity']);
+                Route::put('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'updateEntity']);
+                Route::delete('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'destroyEntity']);
+            });
+
             // Phase 3c — WordPress-compatible content shim. The Laravel
             // profile points the console's `wpBase` at /api/v1/wp.
             Route::get('/wp/{restBase}', [WpContentController::class, 'index']);
             Route::post('/wp/{restBase}', [WpContentController::class, 'store']);
             Route::get('/wp/{restBase}/{id}', [WpContentController::class, 'show'])->whereNumber('id');
+
+            // Phase 3d — media library. `wp/v2/media`-shaped list, read and
+            // multipart upload (`file` field) for the console's Media Library
+            // and the chat attachment picker.
+            Route::get('/media', [MediaController::class, 'index']);
+            Route::post('/media', [MediaController::class, 'store']);
+            Route::get('/media/{id}', [MediaController::class, 'show'])->whereNumber('id');
         });
     });
 });

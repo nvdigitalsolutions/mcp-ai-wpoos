@@ -15,6 +15,17 @@ class Phase1ConsoleTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The console is a stateful SPA. Sanctum only starts the session when
+        // the request looks first-party, so the session tests must look that
+        // way too. CSRF validation is skipped under `runningUnitTests()`.
+        config(['sanctum.stateful' => ['localhost', '127.0.0.1']]);
+        $this->withHeader('Referer', 'http://localhost');
+    }
+
     public function test_settings_schema_and_masked_values(): void
     {
         Sanctum::actingAs(User::factory()->create());

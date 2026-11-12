@@ -385,8 +385,12 @@ function proxyRequest(req, res) {
 
   const headers = { ...req.headers };
   delete headers.host; // Replaced below.
-  delete headers.origin; // Browser origin — meaningless to the upstream.
-  delete headers.referer; // Would leak the app origin into WP logs.
+  if (BACKEND !== 'laravel') {
+    // WordPress: the app origin is meaningless upstream and would leak into
+    // WP logs. Laravel's Sanctum stateful check reads it, so keep it there.
+    delete headers.origin;
+    delete headers.referer;
+  }
   if (isLoginPage) delete headers['accept-encoding']; // Identity body, so it can be rewritten.
   headers.host = upstreamUrl.host;
 

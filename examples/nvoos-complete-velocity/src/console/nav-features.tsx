@@ -59,6 +59,7 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
       		{ path: '/blueprints', label: 'Blueprints', icon: '🗂️', capability: 'edit_posts' },
       		{ path: '/tools', label: 'Tools', icon: '🧰' },
       		{ path: '/paper-store', label: 'Paper Store', icon: '📝', capability: 'manage_options' },
+      		{ path: '/toolkits', label: 'Toolkits', icon: '🧩', capability: 'manage_options' },
     ],
   },
   {
