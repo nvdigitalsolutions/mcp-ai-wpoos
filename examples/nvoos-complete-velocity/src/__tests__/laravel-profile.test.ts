@@ -83,6 +83,9 @@ describe('backendPaths', () => {
     // Laravel-only until the contract is ported.
     expect(runtime.endpoints.teams).toBe(`${origin()}/wp-json/mcp-ai/v1/teams`);
     expect(runtime.endpoints.orgTeams).toBe('');
+    // WordPress has no professions REST route; the assistant editor hides the
+    // selector rather than firing a doomed request.
+    expect(runtime.endpoints.professions).toBe('');
   });
 });
 
@@ -104,6 +107,8 @@ describe('buildConsoleRuntime (laravel)', () => {
     // Org teams (users + roles) are a Laravel-only contract; the WordPress
     // agent-team catalogue keeps `/teams`.
     expect(runtime.endpoints.orgTeams).toBe(`${origin()}/api/v1/org/teams`);
+    // The assistant editor's profession selector.
+    expect(runtime.endpoints.professions).toBe(`${origin()}/api/v1/professions`);
   });
 
   it('marks the WordPress-only addon surfaces unavailable', () => {
@@ -128,6 +133,7 @@ describe('buildConsoleRuntime (laravel)', () => {
     expect(runtime.endpoints.proOps).toBe('');
     expect(runtime.endpoints.assistants).toBe(`${origin()}/api/v1/assistants`);
     expect(runtime.endpoints.orgTeams).toBe('');
+    expect(runtime.endpoints.professions).toBe('');
   });
 });
 

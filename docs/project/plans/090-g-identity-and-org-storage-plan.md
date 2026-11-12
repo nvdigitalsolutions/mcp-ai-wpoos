@@ -240,6 +240,20 @@ starter; it deliberately does **not** copy the plugin's 544 K GPL corpus.
   promotes it to a flat `primary_role_slugs` field, the controller validates
   each slug against the catalogue and caps the list at three, and an update
   without the key leaves an existing selection untouched.
+- **HTTP source.** `GET /api/v1/professions` lists the catalogue
+  (`slug`, `title`, `category`, `category_slug`, `description`, `expertise`,
+  `tools_count`, plus `total` and `catalogue_version`);
+  `GET /api/v1/professions/{slug}` returns the full record including the
+  knowledge base and recommended tools. The list item shape is the same one
+  the team-catalogue members use, so the console renders a profession
+  identically in both places. Before this, the catalogue was only reachable
+  through the `list_professions` / `get_profession` tools, which a page cannot
+  call.
+- **Selector.** `AssistantsPage` renders a multi-select capped at three,
+  wired to `primary_role_slugs` and driven by
+  `runtime.endpoints.professions`. The endpoint is **empty on WordPress**
+  (no professions REST route there), which hides the field instead of firing a
+  request the runtime cannot answer; the nav/editor needs no feature flag.
 - WordPress keeps its existing service/loader; the core contract is the only
   shared surface.
 

@@ -145,6 +145,13 @@ export interface ProSpaEndpoints {
 	/** Media command-center REST base (mcp-ai-pro/v1/media-cc, 2.4.0). */
 	mediaCc: string;
 	/**
+	 * Profession catalogue base (api/v1/professions, Laravel only).
+	 *
+	 * The assistant editor's primary-profession selector. Empty on runtimes
+	 * without the contract, so the selector is hidden rather than broken.
+	 */
+	professions: string;
+	/**
 	 * Org teams base (api/v1/org/teams, Laravel only).
 	 *
 	 * Distinct from `teams`: that surface is the WordPress agent-team
@@ -356,6 +363,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
 			remoteSites: typeof e.remoteSites === 'string' ? e.remoteSites : '',
 			mediaCc: typeof e.mediaCc === 'string' ? e.mediaCc : '',
+			professions: typeof e.professions === 'string' ? e.professions : '',
 			orgTeams: typeof e.orgTeams === 'string' ? e.orgTeams : '',
 			blueprints: typeof e.blueprints === 'string' ? e.blueprints : '',
 			commandCenter: typeof e.commandCenter === 'string' ? e.commandCenter : '',
