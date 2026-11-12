@@ -387,6 +387,12 @@ function wp_mcp_ai_oos_orchestrator() {
 	$tool_registry->register( new Nvoos\Core\Tool\GenerateSimpleJWTTokenTool( $error_factory ) );
 
 	// Profession tools.
+	//
+	// The same adapter serves reads and writes: it implements
+	// ProfessionRepositoryInterface plus the optional ProfessionWriteInterface
+	// (CPT + postmeta). Runtimes without a writable catalogue — the Laravel
+	// adapter — implement only the read contract and do not register
+	// save_profession at all.
 	$professions = new Nvoos\WordPress\Adapter\ProfessionRepository();
 	$tool_registry->register( new Nvoos\Core\Tool\GetProfessionTool( $error_factory, $professions ) );
 	$tool_registry->register( new Nvoos\Core\Tool\ListProfessionsTool( $error_factory, $professions ) );

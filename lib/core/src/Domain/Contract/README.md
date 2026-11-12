@@ -21,6 +21,8 @@ Holds every interface the oOS core engine exports — pure contracts with zero i
 | `ContentStoreInterface` | `ContentStoreInterface.php` | Read/write tools (`GetPostTool`, `CreatePostTool`, etc.) |
 | `AuthProviderInterface` | `AuthProviderInterface.php` | `GetUserInfoTool`, agentic loop auth context |
 | `TeamServiceInterface` | `TeamServiceInterface.php` | Team console pages (`TeamController`), org tools |
+| `ProfessionRepositoryInterface` | `ProfessionRepositoryInterface.php` | Profession console pages, `list_professions` / `get_profession` |
+| `ProfessionWriteInterface` | `ProfessionWriteInterface.php` | `save_profession` — optional; only runtimes with a writable catalogue implement it |
 | `SettingsStoreInterface` | `SettingsStoreInterface.php` | All provider clients (API keys, base URLs) |
 | `FileStoreInterface` | `FileStoreInterface.php` | `SearchAttachmentsTool`, image/audio generation tools |
 | `CacheStoreInterface` | `CacheStoreInterface.php` | Domain-owned cache contract with transient-style API |
