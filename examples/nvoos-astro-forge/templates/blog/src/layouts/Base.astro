@@ -9,6 +9,7 @@ import BuilderAccordion from '../components/BuilderAccordion.astro';
 import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 import { chrome } from '../lib/chrome.generated.ts';
 import { behaviors } from '../lib/behaviors.generated.ts';
+import { hasInfiniteMotion } from '../lib/animations.generated.ts';
 import { webFonts } from '../lib/design.generated.ts';
 import { canonicalFontFamily } from '../lib/fonts.ts';
 import { repairMediaUrl } from '../lib/media.ts';
@@ -382,6 +383,17 @@ const chromeVars = [
 			</nav>
 		</div>
 			<div class="header-actions">
+				{/*
+				 * WCAG 2.2.2: an infinite rebuilt animation ships only when this
+				 * control exists. A checkbox is the no-JS pause affordance; CSS
+				 * pauses every generated animation while it is checked.
+				 */}
+				{hasInfiniteMotion && (
+					<label class="motion-toggle">
+						<input type="checkbox" aria-label={copy.nav.pauseMotion} />
+						<span>{copy.nav.pauseMotion}</span>
+					</label>
+				)}
 				{chrome?.call && (
 					<a class="call-button" href={chrome.call.href} style={chrome.call.bg ? `background:${chrome.call.bg};color:${chrome.call.ink ?? '#ffffff'};` : undefined}>
 						{chrome.call.label}

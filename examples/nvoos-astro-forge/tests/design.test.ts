@@ -979,13 +979,30 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 } );
 
 describe( 'analyzeScrollBehavior (Proposal 121)', () => {
+	const MOTION_SETTINGS =
+		'&quot;motion_fx_motion_fx_scrolling&quot;:&quot;yes&quot;,&quot;motion_fx_translateY_effect&quot;:&quot;yes&quot;,&quot;motion_fx_translateY_direction&quot;:&quot;negative&quot;,&quot;motion_fx_translateY_speed&quot;:{&quot;unit&quot;:&quot;px&quot;,&quot;size&quot;:2,&quot;sizes&quot;:[]},&quot;motion_fx_translateY_affectedRange&quot;:{&quot;unit&quot;:&quot;%&quot;,&quot;size&quot;:&quot;&quot;,&quot;sizes&quot;:{&quot;start&quot;:10,&quot;end&quot;:90}},&quot;motion_fx_devices&quot;:[&quot;desktop&quot;,&quot;tablet&quot;,&quot;mobile&quot;]';
 	const BEHAVIOR_HTML =
 		'<header id="site-header">' +
 		'<img class="aux-logo-sticky" src="/logo.svg" alt="">' +
 		'</header>' +
 		'<section class="elementor-section elementor-top-section elementor-element elementor-element-a4ad586"><h2>Hero</h2></section>' +
+		// A bare Phlox container is NOT motion: AvertaParallaxBox returns when it
+		// has no `aux-parallax-piece` targets (jayainc has 24 of these markers).
+		'<section class="elementor-section elementor-top-section elementor-element elementor-element-8888888">' +
+		'<div class="aux-parallax-section elementor-column elementor-element elementor-element-ba4e001"></div>' +
+		'</section>' +
+		// A real moving collage: a top section containing an INNER section whose
+		// pieces must roll up to the TOP section id (9999999), not the inner one.
 		'<section class="elementor-section elementor-top-section elementor-element elementor-element-9999999">' +
-		'<div class="aux-parallax-section elementor-column elementor-element elementor-element-ab8540a"></div>' +
+		'<div class="elementor-section elementor-inner-section elementor-element elementor-element-1a2b3c4">' +
+		'<div class="aux-parallax-section elementor-column elementor-element elementor-element-ab8540a">' +
+		'<div class="aux-parallax-piece elementor-element elementor-element-a10001" data-parallax-origin="bottom" data-parallax-depth="-0.1" data-parallax-off="1024" data-settings="{' +
+		MOTION_SETTINGS +
+		'}"><img src="/a.jpg" alt=""></div>' +
+		'<div class="aux-parallax-piece elementor-element elementor-element-a10002" data-parallax-origin="bottom" data-parallax-depth="0.1" data-parallax-off="1024"><img src="/b.jpg" alt=""></div>' +
+		'</div>' +
+		'</div>' +
+		'<div class="aux-parallax-piece elementor-element elementor-element-a10003" data-parallax-depth="0.1"><img src="/c.jpg" alt=""></div>' +
 		'</section>' +
 		'<div class="elementor-element elementor-element-1111111 aux-appear-watch-animation aux-fade-in-up"><h3>Reveal up</h3></div>' +
 		'<div class="elementor-element elementor-element-2222222 aux-appear-watch-animation aux-unknown-effect"><h3>Reveal unknown</h3></div>' +
@@ -1000,13 +1017,39 @@ describe( 'analyzeScrollBehavior (Proposal 121)', () => {
 		expect( pass.headerSticky ).toBe( true );
 	} );
 
-	it( 'classifies the theme parallax column and rolls it up to its top-level section', () => {
-		// The parallax column (ab8540a) lives INSIDE a top-level section — the
-		// rebuilt renderer only wraps top-level sections, so the behavior must
-		// attach to the containing section id (9999999).
+	it( 'does NOT treat a bare aux-parallax-section container as parallax', () => {
+		// The container is a candidate; the theme only activates it when it finds
+		// `aux-parallax-piece` targets. jayainc has 24 containers, 2 real pieces.
+		expect( pass.entries.some( ( behavior ) => behavior.id === '8888888' ) ).toBe( false );
+	} );
+
+	it( 'rolls the inner-section pieces up to the top-level band with their facts', () => {
 		const rolled = pass.entries.find( ( behavior ) => behavior.id === '9999999' );
 		expect( rolled?.kind ).toBe( 'parallax' );
+		expect( rolled?.speed ).toBe( 2 );
+		expect( pass.entries.some( ( behavior ) => behavior.id === '1a2b3c4' ) ).toBe( false );
 		expect( pass.entries.some( ( behavior ) => behavior.id === 'ab8540a' ) ).toBe( false );
+		expect( rolled?.pieces ).toHaveLength( 3 );
+	} );
+
+	it( 'captures Phlox depth/origin/off + Elementor direction/speed/range/devices per piece', () => {
+		const entry = pass.entries.find( ( behavior ) => behavior.id === '9999999' );
+		const first = entry?.pieces?.[ 0 ];
+		expect( first ).toMatchObject( {
+			id: 'a10001',
+			src: '/a.jpg',
+			index: 0,
+			depth: -0.1,
+			origin: 'bottom',
+			off: 1024,
+			direction: 'negative',
+			speed: 2,
+			range: { start: 10, end: 90 },
+			devices: [ 'desktop', 'tablet', 'mobile' ],
+		} );
+		const second = entry?.pieces?.[ 1 ];
+		expect( second ).toMatchObject( { id: 'a10002', src: '/b.jpg', index: 1, depth: 0.1, origin: 'bottom', off: 1024 } );
+		expect( second?.direction ).toBeUndefined();
 	} );
 
 	it( 'maps the aux reveal effect onto the canonical vocabulary', () => {
@@ -1019,9 +1062,12 @@ describe( 'analyzeScrollBehavior (Proposal 121)', () => {
 		expect( entry ).toEqual( { id: '2222222', kind: 'reveal', effect: 'fade' } );
 	} );
 
-	it( 'reads the Elementor motion_fx scrolling payload as parallax with its speed', () => {
+	it( 'reads the Elementor motion_fx scrolling payload as a piece with its speed', () => {
 		const entry = pass.entries.find( ( behavior ) => behavior.id === '3333333' );
-		expect( entry ).toEqual( { id: '3333333', kind: 'parallax', speed: 2 } );
+		expect( entry?.kind ).toBe( 'parallax' );
+		expect( entry?.speed ).toBe( 2 );
+		expect( entry?.pieces ).toHaveLength( 1 );
+		expect( entry?.pieces?.[ 0 ] ).toMatchObject( { id: '3333333', speed: 2 } );
 	} );
 
 	it( 'classifies a sticky CSS rule scoped to the element id', () => {

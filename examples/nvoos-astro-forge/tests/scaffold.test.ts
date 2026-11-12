@@ -153,6 +153,7 @@ describe('scaffold — production blog template', () => {
 			'src/lib/pages.generated.ts',
 			'src/lib/chrome.generated.ts',
 			'src/lib/behaviors.generated.ts',
+			'src/lib/animations.generated.ts',
 			'src/lib/vocabulary.generated.ts',
 			'src/lib/tracking.generated.ts',
 			'src/lib/managed.generated.ts',

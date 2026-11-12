@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
+import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit } from './contrast.ts';
 import { designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
@@ -457,6 +458,7 @@ async function writeGeneratedManifest( targetDir: string ): Promise<void> {
 		'src/lib/pages.generated.ts',
 		'src/lib/chrome.generated.ts',
 		'src/lib/behaviors.generated.ts',
+		'src/lib/animations.generated.ts',
 		'src/lib/vocabulary.generated.ts',
 		'src/lib/tracking.generated.ts',
 		'src/lib/managed.generated.ts',
@@ -2176,6 +2178,7 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 		kind: string;
 		effect?: string;
 		speed?: number;
+		pieces?: Array<{ depth?: number; origin?: string; off?: number; direction?: string; speed?: number }>;
 	}>;
 	const header = [
 		'# Motion contract',
@@ -2187,6 +2190,13 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 	if ( entries.length === 0 ) {
 		const stickyOnly = profile.stickyHeader?.sticky;
 		if ( ! stickyOnly ) {
+			// A site can have no scroll behaviour but still carry CSS keyframes /
+			// transitions. Report the animated effects instead of claiming the
+			// source has no motion at all.
+			const animationLines = animationDocLines( profile );
+			if ( animationLines.length > 0 ) {
+				return [ ...header, ...animationLines, ...pageAnimationDocLines( profile ), '' ].join( '\n' );
+			}
 			return [ ...header, 'The source declares no scroll behaviour, so the rebuild has none.', '' ].join( '\n' );
 		}
 	}
@@ -2207,11 +2217,17 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 		stickyLines.push( '' );
 	}
 	if ( entries.length === 0 ) {
-		return [ ...header, ...stickyLines, '' ].join( '\n' );
+		return [ ...header, ...stickyLines, ...animationDocLines( profile ), '' ].join( '\n' );
 	}
 	const rows = entries.map( ( entry ) => {
 		const behaviour = entry.effect && entry.kind !== 'sticky' ? `${ entry.kind } (${ entry.effect })` : entry.kind;
-		const range = entry.kind === 'parallax' && entry.speed ? `±${ Math.min( entry.speed, 4 ) * 24 }px` : '—';
+		const baseRange = entry.kind === 'parallax' && entry.speed ? `±${ Math.min( entry.speed, 4 ) * 24 }px` : '—';
+		// A piece-level parallax band names its sources: depth/origin/off decide
+		// direction and the mobile gate, so a reviewer can check the source facts.
+		const range =
+			entry.kind === 'parallax' && entry.pieces && entry.pieces.length > 0
+				? `${ baseRange } × ${ entry.pieces.length } piece${ entry.pieces.length === 1 ? '' : 's' }`
+				: baseRange;
 		return `| \`${ entry.id }\` | ${ behaviour } | ${ range } | static |`;
 	} );
 	return [
@@ -2221,9 +2237,77 @@ export function renderMotionDoc( profile: SiteProfile ): string {
 		'| --- | --- | --- | --- |',
 		...rows,
 		'',
+		...animationDocLines( profile ),
+		...pageAnimationDocLines( profile ),
 		'Generated from `profile.design.behavior` by nvoos-astro-forge — re-scaffolding overwrites this file.',
 		'',
 	].join( '\n' );
+}
+
+/**
+ * The animated-effects table (2026-11-12) — the measured inventory and the
+ * rebuild decision. Infinite motion and JS runtimes are named as deferred,
+ * never silently dropped.
+ */
+function animationDocLines( profile: SiteProfile ): string[] {
+	const inventory = profile.animations;
+	if ( ! inventory || ( ( inventory.facts?.length ?? 0 ) === 0 && ( inventory.libraries?.length ?? 0 ) === 0 ) ) {
+		return [];
+	}
+	const facts = planAnimationRebuild( inventory.facts ?? [], profile.design?.behavior, {
+		allowInfinite: true,
+	} );
+	const lines = [ '## Animated effects', '' ];
+	if ( inventory.libraries && inventory.libraries.length > 0 ) {
+		lines.push( `Detected runtimes: ${ inventory.libraries.join( ', ' ) }.`, '' );
+	}
+	lines.push( '| Band | Effect | Target | Timing | Rebuild |', '| --- | --- | --- | --- | --- |' );
+	for ( const fact of facts.slice( 0, 60 ) ) {
+		const target =
+			fact.target === 'media' && fact.mediaIndex !== undefined ? `media #${ fact.mediaIndex + 1 }` : fact.target ?? '—';
+		const timing = [ fact.duration, fact.easing, fact.iterations ].filter( Boolean ).join( ' ' );
+		const rebuild =
+			fact.rebuild === 'css'
+				? fact.infinite
+					? 'CSS keyframes (Pause motion control)'
+					: 'CSS keyframes'
+				: fact.rebuild === 'mapped'
+					? 'mapped'
+					: `deferred${ fact.note ? ` — ${ fact.note }` : '' }`;
+		lines.push( `| \`${ fact.bandId ?? '—' }\` | ${ fact.name } | ${ target } | ${ timing || '—' } | ${ rebuild } |` );
+	}
+	lines.push(
+		'',
+		'Infinite motion ships only with the page Pause motion control; JS runtimes are reported, never shipped.',
+		''
+	);
+	return lines;
+}
+
+/**
+ * The per-page animation summary (`analyze --animations-pages`). The generated
+ * CSS is built from the HOMEPAGE inventory; a sub-page's facts are reported so
+ * the operator can see what moved without pretending the homepage band ids
+ * apply there.
+ */
+function pageAnimationDocLines( profile: SiteProfile ): string[] {
+	const pages = profile.pageAnimations;
+	if ( ! pages || Object.keys( pages ).length === 0 ) {
+		return [];
+	}
+	const lines = [
+		'## Per-page animated effects',
+		'',
+		'| Page | Facts | CSS rebuild | Deferred |',
+		'| --- | --- | --- | --- |',
+	];
+	for ( const [ slug, inventory ] of Object.entries( pages ) ) {
+		const facts = planAnimationRebuild( inventory.facts ?? [], profile.design?.behavior, { allowInfinite: true } );
+		const counts = countAnimations( facts );
+		lines.push( `| \`/${ slug }/\` | ${ facts.length } | ${ counts[ 'rebuild:css' ] ?? 0 } | ${ counts[ 'rebuild:deferred' ] ?? 0 } |` );
+	}
+	lines.push( '', 'The homepage inventory drives animations.generated.ts; per-page facts are reports.', '' );
+	return lines;
 }
 
 export function renderBehaviorsGenerated( profile: SiteProfile ): string {
@@ -2240,11 +2324,31 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 		'export type BehaviorKind = \'sticky\' | \'reveal\' | \'parallax\';',
 		'export type RevealEffect = \'fade-up\' | \'fade-down\' | \'fade-left\' | \'fade-right\' | \'scale-up\' | \'blur\' | \'fade\';',
 		'',
+		'/** One moving piece inside a parallax band (Proposal 121 + the element pass).',
+		' * Phlox `aux-parallax-piece` (`depth`/`origin`/`off`) and Elementor',
+		' * Motion Effects (`direction`/`speed`/`range`/`devices`) both land here.',
+		' * Facts only — the template rebuilds them with its CSS scroll timeline. */',
+		'export interface ParallaxPiece {',
+		'\tid?: string;',
+		'\tsrc?: string;',
+		'\tindex?: number;',
+		'\ttype?: \'position\' | \'background\';',
+		'\tdepth?: number;',
+		'\torigin?: \'top\' | \'bottom\' | \'middle\';',
+		'\toff?: number;',
+		'\tdirection?: \'negative\' | \'positive\';',
+		'\tspeed?: number;',
+		'\trange?: { start?: number; end?: number };',
+		'\tdevices?: string[];',
+		'}',
+		'',
 		'export interface ScrollBehaviorEntry {',
 		'\tid?: string;',
 		'\tkind: BehaviorKind;',
 		'\teffect?: RevealEffect;',
 		'\tspeed?: number;',
+		'\t/** The band’s moving pieces, source order (parallax only). */',
+		'\tpieces?: ParallaxPiece[];',
 		'}',
 		'',
 		'export const behaviors: {',
@@ -2279,6 +2383,50 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 		if ( entry.speed !== undefined ) {
 			parts.push( `speed: ${ entry.speed }` );
 		}
+		if ( entry.pieces && entry.pieces.length > 0 ) {
+			const pieces = entry.pieces.map( ( piece ) => {
+				const fields: string[] = [];
+				if ( piece.id ) {
+					fields.push( `id: ${ tsString( piece.id ) }` );
+				}
+				if ( piece.src ) {
+					fields.push( `src: ${ tsString( piece.src ) }` );
+				}
+				if ( piece.index !== undefined ) {
+					fields.push( `index: ${ piece.index }` );
+				}
+				if ( piece.type ) {
+					fields.push( `type: ${ tsString( piece.type ) }` );
+				}
+				if ( piece.depth !== undefined ) {
+					fields.push( `depth: ${ piece.depth }` );
+				}
+				if ( piece.origin ) {
+					fields.push( `origin: ${ tsString( piece.origin ) }` );
+				}
+				if ( piece.off !== undefined ) {
+					fields.push( `off: ${ piece.off }` );
+				}
+				if ( piece.direction ) {
+					fields.push( `direction: ${ tsString( piece.direction ) }` );
+				}
+				if ( piece.speed !== undefined ) {
+					fields.push( `speed: ${ piece.speed }` );
+				}
+				if ( piece.range && ( piece.range.start !== undefined || piece.range.end !== undefined ) ) {
+					const rangeFields = [
+						piece.range.start !== undefined ? `start: ${ piece.range.start }` : '',
+						piece.range.end !== undefined ? `end: ${ piece.range.end }` : '',
+					].filter( Boolean );
+					fields.push( `range: { ${ rangeFields.join( ', ' ) } }` );
+				}
+				if ( piece.devices && piece.devices.length > 0 ) {
+					fields.push( `devices: [${ piece.devices.map( ( device ) => tsString( device ) ).join( ', ' ) }]` );
+				}
+				return `{ ${ fields.join( ', ' ) } }`;
+			} );
+			parts.push( `pieces: [${ pieces.join( ', ' ) }]` );
+		}
 		body.push( `\t\t{ ${ parts.join( ', ' ) } },` );
 	}
 	body.push( '\t\t],' );
@@ -2311,6 +2459,32 @@ export function renderBehaviorsGenerated( profile: SiteProfile ): string {
 	body.push( '\t};' );
 	body.push( '' );
 	return [ ...header, ...body ].join( '\n' );
+}
+
+/**
+ * Render `src/lib/animations.generated.ts` — the finite, layout-safe CSS
+ * keyframe rebuild (2026-11-12). JS runtimes and infinite motion never reach
+ * this file; they live in MOTION.md as deferred facts.
+ */
+export function renderAnimationsGenerated( profile: SiteProfile ): string {
+	const facts = planAnimationRebuild( profile.animations?.facts ?? [], profile.design?.behavior, {
+		allowInfinite: true,
+	} );
+	const css = animationRebuildCss( facts );
+	const hasInfiniteMotion = facts.some( ( fact ) => fact.rebuild === 'css' && fact.infinite === true );
+	return [
+		'// ---------------------------------------------------------------------------',
+		'// animations.generated.ts — generated by nvoos-astro-forge (analyze --animations);',
+		'// edits are overwritten on re-scaffold. Finite, layout-safe CSS keyframes the',
+		'// source runs, rebuilt as scoped CSS. JS runtimes are in MOTION.md, never',
+		'// shipped. Infinite motion ships only with the page Pause motion control.',
+		'// ---------------------------------------------------------------------------',
+		'',
+		`export const animationCss = ${ tsString( css ) };`,
+		'',
+		`export const hasInfiniteMotion = ${ hasInfiniteMotion ? 'true' : 'false' };`,
+		'',
+	].join( '\n' );
 }
 
 /**
@@ -2879,6 +3053,18 @@ async function scaffoldProject(
 			renderBehaviorsGenerated( profile ),
 			'utf8'
 		);
+		// The animation inventory's safe CSS rebuild (2026-11-12) — templates
+		// without the module (the builtin fixture) skip the write.
+		try {
+			await stat( path.join( targetDir, 'src', 'lib', 'animations.generated.ts' ) );
+			await writeFile(
+				path.join( targetDir, 'src', 'lib', 'animations.generated.ts' ),
+				renderAnimationsGenerated( profile ),
+				'utf8'
+			);
+		} catch {
+			// Template without the animations module.
+		}
 		// MOTION.md — the human/agent-readable motion contract (136 §4.4). The
 		// behaviours are already baked into behaviors.generated.ts; this is the
 		// same facts written down so an operator (or an agent) can review what

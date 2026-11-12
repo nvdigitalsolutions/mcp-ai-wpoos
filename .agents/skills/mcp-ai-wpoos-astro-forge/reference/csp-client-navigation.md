@@ -20,6 +20,29 @@ the Cloudflare finding): `mcp-ai-wpoos-astro-storefront` → `## CSP + ClientRou
 Those two facts are why the outage that hit velocity does **not** affect forge
 output today — and they are the two things to keep from drifting.
 
+### Inline `<style>` blocks (the design rebuild + motion)
+
+`renderTrackingHeaders` emits `style-src 'self' 'unsafe-inline'
+https://fonts.googleapis.com` alongside the script directive. That is
+load-bearing for the design rebuild: `DesignRenderer` ships ONE inline `<style>`
+block carrying the per-band type scale, hidden subtrees, builder utilities, box
+facts, interaction states, parallax endpoints and the animation rebuild
+(`animationCss`). Astro cannot extract dynamically-composed CSS into the bundle
+— it only extracts statically-analysed `<style>` tags — so the block is inline
+by construction.
+
+Consequences when a project tightens CSP:
+
+- **`style-src` without `'unsafe-inline'` blocks every design band's styling**,
+  not just motion. A hash-scoped `style-src` must hash the assembled block per
+  build (it changes with every profile edit) — generate it at build time and
+  keep it out of hand-written `_headers`.
+- Motion degrades first and most visibly (the page renders at the finished
+  state, which is safe), but the band theme and measured typography go with it.
+- Keep `style-src 'self' 'unsafe-inline'` unless the project deliberately
+  accepts a build-time style hasher; document the decision in the project's
+  profile notes.
+
 ## The hazard, stated generally
 
 A hash-scoped `script-src` is computed per **document**, and a client-side

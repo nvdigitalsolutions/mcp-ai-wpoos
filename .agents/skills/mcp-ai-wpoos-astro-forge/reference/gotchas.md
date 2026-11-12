@@ -214,3 +214,25 @@ short digest of the highest-traffic ones stays in `SKILL.md`.
   console report was wrong). Now `path.relative` + a dot-slash regression
   test (2026-11-06) — keep path reporting relative-based.
 
+- **A hero band's content is VERTICALLY centred and its copy is WHITE.**
+  The generic `.ds-section-wrap` Flatsome shim later makes every wrap a
+  COLUMN, so `.ds-section-wrap--hero`'s `align-items:center` centres only
+  horizontally — without `justify-content:center` the section sits at the TOP
+  of the 724px band (measured 2026-11-12: section y=139 against band centre
+  501; source content centre 552 vs band centre 562). And `.ds-text`'s muted
+  default (`--forge-muted` = #505050) painted the hero paragraph grey on the
+  photo; the source measures `rgb(255,255,255)`. The hero rule must let
+  `.ds-text`/`.ds-hero p` inherit the hero ink. Both are pinned in
+  `tests/motion.test.ts` (the template-CSS contract).
+- **`Animation.rangeStart` is a DICTIONARY, not a string.**
+  `document.getAnimations()` returns `{ rangeName, offset: CSSUnitValue }` for a
+  scroll-driven animation; `String()` yields `[object Object]` and the emitter
+  once wrote `animation-range:[object Object] [object Object]` (invalid CSS the
+  browser drops silently). Serialize `offset.value` + `offset.unit` (`cover
+  10%`), normalize `normal`/`auto` to absent, and keep an emitter-side guard.
+  The hermetic browser test (`tests/animations-browser.test.ts`) round-trips an
+  emitted `scroll(root)` + `cover 10% cover 90%` rule back into Chrome — a
+  string-only assertion on the emitted CSS would have missed this.
+- **A browser test that skips is not a test that passed.** The new browser
+  suite uses `describe.skipIf(!hasChromium)` and vitest reports the skip; CI
+  installs Chromium BEFORE `npm test`, so a green run proves the probe ran.

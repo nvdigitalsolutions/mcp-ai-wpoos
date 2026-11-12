@@ -467,6 +467,19 @@ export interface SiteProfile {
 	 */
 	stickyHeader?: ForgeStickyHeader;
 	/**
+	 * The animated-effect inventory (`analyze --animations`) — CSS keyframes,
+	 * transitions, WAAPI, library signatures, video/SMIL. `verify --animations`
+	 * compares the built page's `document.getAnimations()` against it.
+	 */
+	animations?: ForgeAnimationInventory;
+	/**
+	 * Per-page animation inventories (`analyze --animations-pages N`). The
+	 * homepage inventory drives the generated CSS; these are reported in
+	 * MOTION.md so a sub-page's motion is visible without pretending the
+	 * homepage's band ids apply there. Refreshed only by a run that measures them.
+	 */
+	pageAnimations?: Record< string, ForgeAnimationInventory >;
+	/**
 	 * The content baseline (`analyze --text`): the source's normalised visible
 	 * text, page-level and per band. `verify --text` diffs the build against it
 	 * — the gate neither the design-language score nor the fact audit can give
@@ -1336,6 +1349,52 @@ export interface ForgeChrome {
 }
 
 /**
+ * One moving piece inside a parallax band (Proposal 121 + the 2026-11-12
+ * element pass). Two source systems produce these:
+ *
+ * - Phlox's `aux-parallax-piece` — `data-parallax-depth/origin/off`. The
+ *   theme's `AvertaParallaxBox` flips the depth sign
+ *   (`depth = depth < 0 ? 1 : -1`), derives the raw travel from the element's
+ *   viewport position (`top`/`bottom`/`middle` origin), clamps it to one
+ *   viewport height and disables the effect at `innerWidth <= off`.
+ * - Elementor Motion Effects — `motion_fx_*` scrolling JSON. `direction`
+ *   `negative` also renders a POSITIVE translateY (measured live on the
+ *   jayainc about collage), `speed.size` is the px travel, `affectedRange`
+ *   narrows the viewport window and `devices` scopes the breakpoints.
+ *
+ * Facts only: the rebuild maps them onto a CSS `scroll(root)` timeline.
+ */
+export interface ParallaxPiece {
+	/** The source element id (`elementor-element-<id>` / `data-id`). */
+	id?: string;
+	/** The piece's image URL when it carries one — the rebuild's media slot
+	 * can be matched by src (index is the deterministic fallback). */
+	src?: string;
+	/** 0-based ordinal among the band's `<img>` elements in document order. */
+	index?: number;
+	/** `translate` (the default) or `background` (the source animates
+	 * `background-position`; the rebuild does not fake it with a transform). */
+	type?: 'position' | 'background';
+	/** Phlox `data-parallax-depth` — sign AND magnitude. Negative depth moves
+	 * DOWN as the page scrolls (the theme flips the sign). */
+	depth?: number;
+	/** Phlox `data-parallax-origin` — where the raw travel starts. Absent on
+	 * Elementor-only pieces (symmetric travel). */
+	origin?: 'top' | 'bottom' | 'middle';
+	/** The viewport width at or below which the source disables the effect
+	 * (`data-parallax-off`; Phlox compares `disablePoint >= innerWidth`). */
+	off?: number;
+	/** Elementor motion_fx translate direction. */
+	direction?: 'negative' | 'positive';
+	/** Elementor motion_fx translate speed (`motion_fx_*_speed.size`, px). */
+	speed?: number;
+	/** Elementor motion_fx affected viewport range (percent, 0-100). */
+	range?: { start?: number; end?: number };
+	/** Elementor motion_fx device list (`desktop`, `tablet`, `mobile`). */
+	devices?: string[];
+}
+
+/**
  * The scroll-behavior pass (Proposal 121) — the source's motion, keyed by
  * the same elementor-element-<id> the sections pass uses: sticky elements,
  * reveal-on-scroll effects (once), and parallax/scroll-tied effects
@@ -1351,12 +1410,97 @@ export interface ScrollBehaviorEntry {
 	effect?: 'fade-up' | 'fade-down' | 'fade-left' | 'fade-right' | 'scale-up' | 'blur' | 'fade';
 	/** The parallax speed (motion_fx_translateY_speed.size; default 1). */
 	speed?: number;
+	/** The band's moving pieces, source order (parallax only). A band with
+	 * pieces is a REAL parallax band; an `aux-parallax-section` column with
+	 * none is only a theme container and must not move on its own. */
+	pieces?: ParallaxPiece[];
 }
 
 export interface ScrollBehaviorPass {
 	/** The source header is sticky (aux-logo-sticky / elementor-sticky). */
 	headerSticky: boolean;
 	entries: ScrollBehaviorEntry[];
+}
+
+/** One keyframe step in a CSS `@keyframes` fact. */
+export interface ForgeAnimationStep {
+	/** `from`, `to` or a percentage. */
+	offset: string;
+	/** Property → value (kebab-case properties). */
+	declarations: Record< string, string >;
+}
+
+/**
+ * One animated effect the source runs. Sources:
+ * - `css-keyframes` / `css-transition` — `document.getAnimations()`
+ *   (CSSAnimation / CSSTransition), with the computed keyframes.
+ * - `waapi` — a script-driven Web Animation (no vendor CSS to copy).
+ * - `library` — a script/markup signature for GSAP, Lottie, Swiper, … (the
+ *   runtime is NOT vendored; the fact is reported and deferred).
+ * - `video` / `smil` — autoplaying media / SMIL nodes.
+ */
+export interface ForgeAnimationFact {
+	kind: 'css-keyframes' | 'css-transition' | 'waapi' | 'library' | 'video' | 'smil';
+	/** CSS animation-name, transition property, library name, or `video`/`smil`. */
+	name: string;
+	/** The source band id (`elementor-element-<id>` / `data-section-id`). */
+	bandId?: string;
+	/** The target's role in a rebuilt band. */
+	target?: 'band' | 'media' | 'control' | 'text' | 'other';
+	/** 0-based media ordinal in the band (target = media). */
+	mediaIndex?: number;
+	/** A diagnostic selector for the source target. */
+	selector?: string;
+	/** The source target's tag/classes — the conservative control/text mapping. */
+	targetTag?: string;
+	targetClasses?: string[];
+	/** Measured timing (`animation-duration` etc.; strings keep `auto`). */
+	duration?: string;
+	delay?: string;
+	easing?: string;
+	iterations?: string;
+	direction?: string;
+	fill?: string;
+	playState?: string;
+	/** `DocumentTimeline`, `ScrollTimeline` or `ViewTimeline`. */
+	timeline?: string;
+	rangeStart?: string;
+	rangeEnd?: string;
+	/** The animated CSS properties. */
+	properties?: string[];
+	/** Computed keyframes (capped) — the replication input. */
+	keyframes?: ForgeAnimationStep[];
+	/** True for an unbounded animation (iterations: infinite). */
+	infinite?: boolean;
+	/** The library signature when kind = library. */
+	library?: string;
+	/** A source asset URL (Lottie JSON, Rive .riv, video src) — the static
+	 * fallback the operator can inspect/render; the runtime is never shipped. */
+	asset?: string;
+	/** A static poster/first-frame image for a video or Lottie player. */
+	poster?: string;
+	/** The rebuild decision. */
+	rebuild?: 'css' | 'mapped' | 'deferred';
+	/** Why it was deferred / mapped. */
+	note?: string;
+}
+
+/** The measured/declared animation inventory (`analyze --animations`). */
+export interface ForgeAnimationInventory {
+	/** Measured at rest and after scrolling (IntersectionObserver-triggered). */
+	facts: ForgeAnimationFact[];
+	/** Static library signatures from scripts/markup. */
+	libraries?: string[];
+	/** CSS keyframes declared by the source sheets (name → steps). */
+	keyframes?: Record< string, ForgeAnimationStep[] >;
+	/** Counts by kind and rebuild outcome, for the report. */
+	counts?: Record< string, number >;
+	/** `<video>` nodes seen. */
+	video?: number;
+	/** SMIL nodes (`animate`/`animateTransform`/`animateMotion`) seen. */
+	smil?: number;
+	/** Populated when the browser probe could not run. */
+	error?: string;
 }
 
 /**
