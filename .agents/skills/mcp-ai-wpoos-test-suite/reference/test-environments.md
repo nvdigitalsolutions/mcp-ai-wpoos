@@ -311,3 +311,191 @@ with only warnings/deprecations/skips is a pass.
   entries (hit on the 1.0.12 pass: the first build shipped the scratch
   config).
 
+### No-dev vendor shim (PHPUnit without `composer install`)
+
+Use when the plugin's `vendor/` is a `--no-dev` install (PHPUnit package
+files present but unmapped: `Class "PHPUnit\TextUI\Application" not found`)
+**and** `composer` is unavailable in the container (`which composer` → 127),
+so the `composer install` + `git restore vendor/composer` route cannot run —
+on this box the committed `vendor/composer` map is itself no-dev (2026-11-12),
+so restoring it re-breaks PHPUnit anyway.
+
+Write this shim to the repo root (the bind mount makes it visible in the
+container), run PHPUnit through it, then **delete it — never commit it**:
+
+```php
+<?php
+/**
+ * Throwaway harness: rebuild PSR-4/classmap maps for dev packages that exist
+ * on disk but were dropped from the no-dev composer map, then run PHPUnit.
+ */
+
+$root     = __DIR__;
+$maps     = array();
+$classmap = array();
+$files    = array(
+	$root . '/vendor/phpunit/phpunit/src/Framework/Assert/Functions.php',
+);
+
+require $root . '/vendor/autoload.php';
+
+/**
+ * Extract declared class-like names from one PHP file.
+ *
+ * @param string $path File path.
+ * @return array<string,string> Class name => path.
+ */
+function tmp_scan_classmap( $path ) {
+	$tokens = token_get_all( (string) file_get_contents( $path ) );
+	$count  = count( $tokens );
+	$ns     = '';
+	$out    = array();
+
+	for ( $i = 0; $i < $count; $i++ ) {
+		$token = $tokens[ $i ];
+		if ( ! is_array( $token ) ) {
+			continue;
+		}
+
+		if ( T_NAMESPACE === $token[0] ) {
+			$ns = '';
+			for ( $j = $i + 1; $j < $count; $j++ ) {
+				$next = $tokens[ $j ];
+				if ( is_array( $next ) && in_array( $next[0], array( T_STRING, T_NAME_QUALIFIED, T_NS_SEPARATOR ), true ) ) {
+					$ns .= $next[1];
+					continue;
+				}
+				if ( is_string( $next ) && ( ';' === $next || '{' === $next ) ) {
+					break;
+				}
+			}
+			continue;
+		}
+
+		if ( ! in_array( $token[0], array( T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM ), true ) ) {
+			continue;
+		}
+
+		// Skip `::class` and anonymous classes.
+		$prev = $i - 1;
+		while ( $prev >= 0 && is_array( $tokens[ $prev ] ) && T_WHITESPACE === $tokens[ $prev ][0] ) {
+			--$prev;
+		}
+		if ( $prev >= 0 && is_array( $tokens[ $prev ] ) && T_DOUBLE_COLON === $tokens[ $prev ][0] ) {
+			continue;
+		}
+
+		$j = $i + 1;
+		while ( $j < $count && is_array( $tokens[ $j ] ) && T_WHITESPACE === $tokens[ $j ][0] ) {
+			++$j;
+		}
+		if ( $j < $count && is_array( $tokens[ $j ] ) && T_STRING === $tokens[ $j ][0] ) {
+			$out[ ( '' !== $ns ? $ns . '\\' : '' ) . $tokens[ $j ][1] ] = $path;
+		}
+	}
+
+	return $out;
+}
+
+foreach ( glob( $root . '/vendor/*/*/composer.json' ) as $file ) {
+	$data = json_decode( (string) file_get_contents( $file ), true );
+	if ( ! is_array( $data ) || empty( $data['autoload'] ) ) {
+		continue;
+	}
+
+	$base = dirname( $file );
+
+	foreach ( (array) ( isset( $data['autoload']['psr-4'] ) ? $data['autoload']['psr-4'] : array() ) as $prefix => $paths ) {
+		foreach ( (array) $paths as $p ) {
+			$maps[ $prefix ][] = rtrim( $base . '/' . ltrim( (string) $p, '/' ), '/' ) . '/';
+		}
+	}
+
+	if ( ! empty( $data['autoload']['classmap'] ) ) {
+		foreach ( (array) $data['autoload']['classmap'] as $p ) {
+			$path = $base . '/' . ltrim( (string) $p, '/' );
+			if ( is_dir( $path ) ) {
+				$iterator = new RecursiveIteratorIterator(
+					new RecursiveDirectoryIterator( $path, FilesystemIterator::SKIP_DOTS )
+				);
+				foreach ( $iterator as $entry ) {
+					if ( $entry->isFile() && 'php' === strtolower( $entry->getExtension() ) ) {
+						$classmap += tmp_scan_classmap( $entry->getPathname() );
+					}
+				}
+			} elseif ( is_file( $path ) ) {
+				$classmap += tmp_scan_classmap( $path );
+			}
+		}
+	}
+
+	if ( ! empty( $data['autoload']['files'] ) ) {
+		foreach ( (array) $data['autoload']['files'] as $p ) {
+			$files[] = $base . '/' . ltrim( (string) $p, '/' );
+		}
+	}
+}
+
+spl_autoload_register(
+	static function ( $class ) use ( $maps, $classmap ) {
+		if ( isset( $classmap[ $class ] ) ) {
+			require $classmap[ $class ];
+			return;
+		}
+		foreach ( $maps as $prefix => $dirs ) {
+			if ( 0 !== strpos( $class, $prefix ) ) {
+				continue;
+			}
+			$rel = str_replace( '\\', '/', substr( $class, strlen( $prefix ) ) ) . '.php';
+			foreach ( $dirs as $dir ) {
+				if ( is_file( $dir . $rel ) ) {
+					require $dir . $rel;
+					return;
+				}
+			}
+		}
+	}
+);
+
+foreach ( $files as $file ) {
+	if ( is_file( $file ) ) {
+		require_once $file;
+	}
+}
+
+$_SERVER['argv'] = $argv;
+$argv[0]         = 'phpunit';
+
+exit( ( new PHPUnit\TextUI\Application() )->run( $argv ) );
+```
+
+Invoke (normal PHPUnit flags pass through; config resolves from cwd):
+
+```bash
+MSYS_NO_PATHCONV=1 docker exec -e WP_CORE_DIR=/var/www/html -e WP_DB_HOST=db \
+  -e WP_DB_NAME=wordpress_test -e WP_DB_USER=wordpress -e WP_DB_PASSWORD=wordpress \
+  oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && \
+  php -d memory_limit=1G tmp-dev-phpunit.php --no-coverage tests/test_foo.php 2>&1'
+rm tmp-dev-phpunit.php   # host side, after the run
+```
+
+Gotchas baked into the shim (each was a real failure while building it):
+
+- `require vendor/autoload.php` does **not** return the Composer
+  `ClassLoader` in Composer 2 — find it with `spl_autoload_functions()`.
+- PHPUnit 11 declares `classmap: ["src/"]`, not PSR-4, and its `src/` is
+  **not** strictly PSR-4 (`PHPUnit\Event\DispatchingEmitter` lives in
+  `src/Event/Emitter/DispatchingEmitter.php`) — a PSR-4-only shim fatals on
+  the first such class. Each `classmap` package is token-scanned instead.
+- PHPUnit 11's entry point is `( new Application() )->run( $argv )`;
+  `Application::main()` was the PHPUnit 9 API.
+- `sebastian/version` etc. are classmap packages too — the same scan covers
+  them, plus every package's `autoload.files` (Assert functions, polyfills).
+- Expected harmless noise:
+  `PHP Warning: proc_open(): posix_spawn() failed` from
+  `vendor/sebastian/version/src/Version.php` (git-describe version lookup).
+- Still pair this with the **hyphen-filename temp-copy** rule above when
+  running individual test files; the shim does not change the loader.
+- Prefer a completed `*-vendor` volume when one exists (see cross-worktree
+  runs) — this shim is the fallback, not the default.
+

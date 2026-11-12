@@ -202,10 +202,14 @@ class WP_MCP_AI_Prompt_Craft {
 	/**
 	 * Available aperture keys (without the "f/" prefix).
 	 *
+	 * PHP casts numeric-string array keys such as "4" and "11" to integers,
+	 * so the keys are re-cast to strings to keep the vocabulary strictly
+	 * string-typed for schema enums and strict comparisons.
+	 *
 	 * @return string[]
 	 */
 	public static function get_apertures() {
-		return array_keys( self::APERTURES );
+		return array_map( 'strval', array_keys( self::APERTURES ) );
 	}
 
 	/**
