@@ -26,9 +26,14 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
+use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Contract\RateLimiterInterface;
+use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\TokenUsageInterface;
+use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
@@ -41,10 +46,15 @@ use Nvoos\Laravel\Adapter\EventDispatcher;
 use Nvoos\Laravel\Adapter\FileStore;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
+use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlement;
 use Nvoos\Laravel\Adapter\QueueClient;
+use Nvoos\Laravel\Adapter\RateLimiter;
+use Nvoos\Laravel\Adapter\SessionLogStore;
 use Nvoos\Laravel\Adapter\SettingsStore;
+use Nvoos\Laravel\Adapter\TokenUsage;
+use Nvoos\Laravel\Adapter\TranscriptStore;
 use Nvoos\Laravel\Provider\ProviderRegistrar;
 
 class NvoosServiceProvider extends ServiceProvider {
@@ -69,6 +79,11 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( AuthProviderInterface::class, AuthProvider::class );
 		$this->app->bind( ContentStoreInterface::class, ContentStore::class );
 		$this->app->bind( HttpClientInterface::class, HttpClient::class );
+		$this->app->bind( TranscriptStoreInterface::class, TranscriptStore::class );
+		$this->app->bind( MemoryStoreInterface::class, MemoryStore::class );
+		$this->app->bind( SessionLogStoreInterface::class, SessionLogStore::class );
+		$this->app->bind( TokenUsageInterface::class, TokenUsage::class );
+		$this->app->bind( RateLimiterInterface::class, RateLimiter::class );
 
 		// Pro entitlement — configuration-driven until the commercial source
 		// is chosen; unknown drivers fail closed (Proposal 090-B, ADR-7).

@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\AssistantPortabilityController;
 use App\Http\Controllers\ChatStreamController;
 use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\FeaturesController;
+use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
 use App\Http\Controllers\SessionController;
@@ -12,6 +14,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\ToolsController;
+use App\Http\Controllers\TranscriptsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,6 +57,23 @@ Route::prefix('api/v1')->group(function (): void {
 
             Route::post('/assistants/export', [AssistantPortabilityController::class, 'export']);
             Route::post('/assistants/import', [AssistantPortabilityController::class, 'import']);
+
+            Route::get('/chat-transcripts', [TranscriptsController::class, 'index']);
+            Route::post('/chat-transcripts', [TranscriptsController::class, 'store']);
+            Route::get('/chat-transcripts/{sessionKey}', [TranscriptsController::class, 'show']);
+            Route::delete('/chat-transcripts/{sessionKey}', [TranscriptsController::class, 'destroy']);
+
+            Route::get('/chat-memory/preferences', [MemoryController::class, 'preferences']);
+            Route::post('/chat-memory/preferences', [MemoryController::class, 'updatePreferences']);
+            Route::get('/chat-memory/recall', [MemoryController::class, 'recall']);
+            Route::post('/chat-memory/store', [MemoryController::class, 'store']);
+            Route::get('/chat-memory/audit', [MemoryController::class, 'audit']);
+            Route::match(['put', 'patch'], '/chat-memory/{id}', [MemoryController::class, 'update']);
+            Route::delete('/chat-memory/{id}', [MemoryController::class, 'destroy']);
+
+            Route::get('/cost/dashboard-summary', [AnalyticsController::class, 'summary']);
+            Route::get('/cost/trend', [AnalyticsController::class, 'trend']);
+            Route::get('/cost/by-provider', [AnalyticsController::class, 'byProvider']);
 
             Route::get('/assistants', [AssistantController::class, 'index']);
             Route::post('/assistants', [AssistantController::class, 'store']);
