@@ -22,6 +22,7 @@ use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Contract\SchemaStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 
@@ -37,6 +38,7 @@ final class ServiceProviderTest extends TestCase {
 			QueueClientInterface::class,
 			AuthProviderInterface::class,
 			ContentStoreInterface::class,
+			SchemaStoreInterface::class,
 			HttpClientInterface::class,
 		);
 
