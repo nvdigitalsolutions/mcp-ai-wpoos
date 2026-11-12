@@ -25,6 +25,7 @@ use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
+use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
@@ -44,6 +45,7 @@ use Nvoos\Laravel\Adapter\ContentStore;
 use Nvoos\Laravel\Adapter\ErrorFactory;
 use Nvoos\Laravel\Adapter\EventDispatcher;
 use Nvoos\Laravel\Adapter\FileStore;
+use Nvoos\Laravel\Adapter\FileUploadService;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
 use Nvoos\Laravel\Adapter\MemoryStore;
@@ -75,6 +77,12 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( SettingsStoreInterface::class, SettingsStore::class );
 		$this->app->bind( EventDispatcherInterface::class, EventDispatcher::class );
 		$this->app->bind( FileStoreInterface::class, FileStore::class );
+		$this->app->bind( FileUploadServiceInterface::class, function ( $app ) {
+			return new FileUploadService(
+				disk: (string) $app['config']->get( 'oos.media_disk', 'public' ),
+				maxBytes: (int) $app['config']->get( 'oos.upload_max_bytes', FileUploadServiceInterface::DEFAULT_MAX_FILE_SIZE ),
+			);
+		} );
 		$this->app->bind( QueueClientInterface::class, QueueClient::class );
 		$this->app->bind( AuthProviderInterface::class, AuthProvider::class );
 		$this->app->bind( ContentStoreInterface::class, ContentStore::class );

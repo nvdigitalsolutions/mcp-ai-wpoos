@@ -8,6 +8,7 @@ use App\Http\Controllers\ChatStreamController;
 use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\FeaturesController;
 use App\Http\Controllers\MemoryController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
 use App\Http\Controllers\PaperStoreController;
@@ -159,6 +160,13 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/wp/{restBase}', [WpContentController::class, 'index']);
             Route::post('/wp/{restBase}', [WpContentController::class, 'store']);
             Route::get('/wp/{restBase}/{id}', [WpContentController::class, 'show'])->whereNumber('id');
+
+            // Phase 3d — media library. `wp/v2/media`-shaped list, read and
+            // multipart upload (`file` field) for the console's Media Library
+            // and the chat attachment picker.
+            Route::get('/media', [MediaController::class, 'index']);
+            Route::post('/media', [MediaController::class, 'store']);
+            Route::get('/media/{id}', [MediaController::class, 'show'])->whereNumber('id');
         });
     });
 });
