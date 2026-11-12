@@ -27,7 +27,7 @@ reject exactly the same documents.
 |---|---|---|
 | `WP_MCP_AI_Pro_Toolkit_Manifests` | `class-wp-mcp-ai-pro-toolkit-manifests.php` | Manifest discovery + validation, `{prefix}nvoos_toolkit_records` schema, per-toolkit settings |
 | `WP_MCP_AI_Pro_Toolkit_Records` | `class-wp-mcp-ai-pro-toolkit-records.php` | Record query/CRUD, payload validation, dashboard aggregates, duplicate scan, bulk import |
-| `WP_MCP_AI_Pro_Toolkit_REST_Controller` | [`../rest/class-wp-mcp-ai-pro-toolkit-rest-controller.php`](../rest/class-wp-mcp-ai-pro-toolkit-rest-controller.php) | `mcp-ai-pro/v1/toolkits…` routes |
+| `WP_MCP_AI_Pro_Toolkit_REST_Controller` | [`../rest/class-wp-mcp-ai-pro-toolkit-rest-controller.php`](../rest/class-wp-mcp-ai-pro-toolkit-rest-controller.php) | `mcp-ai-pro/v1/toolkit-manifests…` routes |
 
 Manifests ship in [`manifests/`](manifests/). Third parties can register more
 with the `wp_mcp_ai_pro_toolkit_manifest_dirs` and
