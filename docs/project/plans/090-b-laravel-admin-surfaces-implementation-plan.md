@@ -40,7 +40,7 @@ Rank Math).
 | Startup contract assertion | **Done** | `assertBackendContract()` + `src/main.tsx` |
 | Proxy backend switch | **Done** | `scripts/serve.mjs` (`NVOOS_BACKEND`) |
 | T0 endpoints | **Done** | `/api/v1/{features,site,session/*,tools,pro/ops/overview}` |
-| `X-WP-Nonce` CSRF compatibility | **Done** | `app/Http/Middleware/AcceptWpNonce.php` |
+| CSRF for stateful console requests | **Done** | Laravel `ValidateCsrfToken` + console sends `X-CSRF-TOKEN` (`src/fetch-wrapper.ts`) |
 | Phase 0 tests | **Done** | `Phase0ContractTest`, `AcceptWpNonceTest` |
 | Settings (schema/values/update) | **Done** | `SettingsController`, `SettingsSchema` |
 | Diagnostics overview | **Done** | `DiagnosticsController` |
@@ -278,13 +278,34 @@ return the typed entitlement error under the `deny` driver.
 | ID | Task | Acceptance |
 |---|---|---|
 | 5.1 | Wire the commercial entitlement source behind `ProEntitlement` (licence server instance ID or gateway/commerce) | Sold Laravel Pro resolves entitlements |
-| 5.2 | Migrate the SPA to `X-XSRF-TOKEN`; remove the `X-WP-Nonce` alias | Compatibility middleware deleted |
+| 5.2 | Retire the `X-WP-Nonce` alias; the console sends Laravel's own CSRF header | ✅ Compatibility middleware deleted; console mirrors the token into `X-CSRF-TOKEN` |
 | 5.3 | SSO/cookie-domain decision (same-origin proxy vs shared domain) | Documented + tested |
 | 5.4 | Rate limits, audit parity, observability, read-only profile | Security checklist green |
 | 5.5 | Upgrade/migration path (schema versions, contract versioning) | One documented upgrade |
 | 5.6 | 30-minute soak + performance gates | 0 errors; p95 within budget |
 
 **Gate G5:** two consecutive releases with no contract drift; the nonce alias is gone.
+
+### 5.2 implementation note — `X-CSRF-TOKEN`, not `X-XSRF-TOKEN`
+
+Laravel **decrypts** `X-XSRF-TOKEN`, so that header only accepts the value of the `XSRF-TOKEN`
+cookie. The console obtains its token from a JSON endpoint (`GET /api/v1/session/nonce`), not
+from a cookie, so the correct header is `X-CSRF-TOKEN`, which `ValidateCsrfToken` compares
+directly against the session token. Concretely:
+
+- `AcceptWpNonce` middleware + its unit test deleted; `bootstrap/app.php` no longer registers it.
+- `examples/nvoos-complete-velocity/src/fetch-wrapper.ts` mirrors the fetched nonce into
+  `X-CSRF-TOKEN` (fetch wrapper **and** the jQuery `ajaxPrefilter`), guarded so it only fires when
+  the token is non-empty and `X-CSRF-TOKEN` is absent. WordPress ignores the extra header, so one
+  client build serves both runtimes.
+- Coverage: `Phase1ConsoleTest` proves a bare `X-WP-Nonce` gets `419` and `X-CSRF-TOKEN` gets `200`.
+  Both tests flip `app['env']` for the request because `VerifyCsrfToken::runningUnitTests()`
+  short-circuits validation whenever the app reports `testing` — without the flip the suite can
+  never observe a 419.
+
+**5.3 is folded into 5.2.** The runtime is API-only and the console is served same-origin (Vite dev
+proxy, `scripts/serve.mjs`), so no shared cookie domain or SSO proxy is needed. Revisit only if a
+deployment serves the console from a different origin than the API.
 
 ---
 
