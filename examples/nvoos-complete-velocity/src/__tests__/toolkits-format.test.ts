@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 
-import type { ToolkitEntity } from '@nvoos/pro-spa-v2/api/toolkits';
+import type { ToolkitColumn, ToolkitEntity } from '@nvoos/pro-spa-v2/api/toolkits';
 import {
 	coerceFormValue,
 	formatCellValue,
@@ -13,6 +13,7 @@ import {
 	isNumericColumn,
 	payloadFromFormState,
 	formStateFromRecord,
+	parseDelimitedRows,
 } from '@nvoos/pro-spa-v2/features/toolkits/format';
 
 const ENTITY: ToolkitEntity = {
@@ -131,5 +132,77 @@ describe('form state', () => {
 		// Untouched controls are not in the state at all, and a cleared optional
 		// field is dropped rather than sent as null.
 		expect( payload ).toEqual( { sku: 'A-1', stock: 9 } );
+	});
+});
+
+describe('parseDelimitedRows', () => {
+	const columns: ToolkitColumn[] = [
+		{ key: 'sku', label: 'SKU', type: 'string', required: true },
+		{ key: 'name', label: 'Name', type: 'string' },
+		{ key: 'price', label: 'Price', type: 'currency' },
+	];
+
+	it('maps a tab-separated header row onto column keys', () => {
+		const parsed = parseDelimitedRows(
+			'sku\tname\tprice\nA-1\tClassic Tee\t29.5\nA-2\tCap\t9',
+			columns,
+		);
+
+		expect( parsed.delimiter ).toBe( '\t' );
+		expect( parsed.rows ).toHaveLength( 2 );
+		expect( parsed.rows[ 0 ] ).toEqual( { sku: 'A-1', name: 'Classic Tee', price: '29.5' } );
+	});
+
+	it('falls back to column order when there is no header', () => {
+		const parsed = parseDelimitedRows( 'A-1,Classic Tee,29.5', columns );
+
+		expect( parsed.delimiter ).toBe( ',' );
+		expect( parsed.rows ).toEqual( [
+			{ sku: 'A-1', name: 'Classic Tee', price: '29.5' },
+		] );
+	});
+
+	it('accepts labels as headers and ignores unknown columns', () => {
+		const parsed = parseDelimitedRows(
+			'SKU | Name | Colours\nA-1 | Classic Tee | red',
+			columns,
+		);
+
+		expect( parsed.delimiter ).toBe( '|' );
+		expect( parsed.unknownHeaders ).toEqual( [ 'Colours' ] );
+		expect( parsed.rows[ 0 ] ).toEqual( { sku: 'A-1', name: 'Classic Tee' } );
+	});
+
+	it('skips rows with more cells than headers instead of shifting values', () => {
+		const parsed = parseDelimitedRows(
+			'sku\tname\nA-1\tClassic Tee\textra\nA-2\tCap',
+			columns,
+		);
+
+		expect( parsed.total ).toBe( 2 );
+		expect( parsed.skipped ).toBe( 1 );
+		expect( parsed.rows ).toEqual( [ { sku: 'A-2', name: 'Cap' } ] );
+	});
+
+	it('drops blank cells so optional fields stay absent', () => {
+		const parsed = parseDelimitedRows( 'sku\tname\tprice\nA-1\tTee\t', columns );
+
+		expect( parsed.rows[ 0 ] ).toEqual( { sku: 'A-1', name: 'Tee' } );
+	});
+
+	it('unwraps quoted cells', () => {
+		const parsed = parseDelimitedRows(
+			'sku\tname\n"A-1"\t"Classic, Tee"',
+			columns,
+		);
+
+		expect( parsed.rows[ 0 ] ).toEqual( { sku: 'A-1', name: 'Classic, Tee' } );
+	});
+
+	it('returns nothing for empty input', () => {
+		const parsed = parseDelimitedRows( '   \n\n', columns );
+
+		expect( parsed.rows ).toEqual( [] );
+		expect( parsed.total ).toBe( 0 );
 	});
 });

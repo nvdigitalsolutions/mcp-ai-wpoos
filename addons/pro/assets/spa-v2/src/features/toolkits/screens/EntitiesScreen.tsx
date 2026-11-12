@@ -25,6 +25,7 @@ import {
 } from '../../../components/shared/DataTable';
 import { Pagination } from '../../../components/shared/Pagination';
 import { EntityForm } from '../components/EntityForm';
+import { ImportDialog } from '../components/ImportDialog';
 import { formatCellValue, isNumericColumn } from '../format';
 import type { ToolkitScreenProps } from '../ToolkitPage';
 
@@ -48,6 +49,7 @@ export function EntitiesScreen( { client, manifest }: ToolkitScreenProps ): JSX.
 	const [ error, setError ] = useState< string | null >( null );
 
 	const [ mode, setMode ] = useState< 'create' | null >( null );
+	const [ importing, setImporting ] = useState< boolean >( false );
 	const [ editing, setEditing ] = useState< ToolkitRecord | null >( null );
 	const [ fieldErrors, setFieldErrors ] = useState< Record< string, string > >( {} );
 	const [ busy, setBusy ] = useState< boolean >( false );
@@ -333,18 +335,28 @@ export function EntitiesScreen( { client, manifest }: ToolkitScreenProps ): JSX.
 					</label>
 				</div>
 
-				<button
-					type="button"
-					className="nvoos-pro-spa-toolkits__btn"
-					onClick={ () => {
-						setFieldErrors( {} );
-						setEditing( null );
-						setMode( 'create' );
-					} }
-				>
-					<span aria-hidden="true">＋</span> { __( 'New', 'nvoos-pro-spa' ) }{ ' ' }
-					{ entity.singular.toLowerCase() }
-				</button>
+				<div className="nvoos-pro-spa-toolkits__toolbar-end">
+					<button
+						type="button"
+						className="nvoos-pro-spa-toolkits__btn nvoos-pro-spa-toolkits__btn--ghost"
+						onClick={ () => setImporting( true ) }
+					>
+						<span aria-hidden="true">⇪</span> { __( 'Import', 'nvoos-pro-spa' ) }
+					</button>
+
+					<button
+						type="button"
+						className="nvoos-pro-spa-toolkits__btn"
+						onClick={ () => {
+							setFieldErrors( {} );
+							setEditing( null );
+							setMode( 'create' );
+						} }
+					>
+						<span aria-hidden="true">＋</span> { __( 'New', 'nvoos-pro-spa' ) }{ ' ' }
+						{ entity.singular.toLowerCase() }
+					</button>
+				</div>
 			</div>
 
 			{ error && (
@@ -386,6 +398,20 @@ export function EntitiesScreen( { client, manifest }: ToolkitScreenProps ): JSX.
 					/>
 				}
 			/>
+
+			{ importing && (
+				<ImportDialog
+					slug={ manifest.slug }
+					entity={ entity }
+					client={ client }
+					onCancel={ () => setImporting( false ) }
+					onImported={ () => {
+						setImporting( false );
+						setPage( 1 );
+						void load();
+					} }
+				/>
+			) }
 
 			{ ( mode === 'create' || editing !== null ) && (
 				<EntityForm
