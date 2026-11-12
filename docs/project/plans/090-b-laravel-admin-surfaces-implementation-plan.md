@@ -280,7 +280,7 @@ return the typed entitlement error under the `deny` driver.
 | 5.1 | Wire the commercial entitlement source behind `ProEntitlement` (licence server instance ID or gateway/commerce) | ✅ `license` driver + `LicensedProEntitlement`; plan table shared with WordPress via `ProPlanCatalog` |
 | 5.2 | Retire the `X-WP-Nonce` alias; the console sends Laravel's own CSRF header | ✅ Compatibility middleware deleted; console mirrors the token into `X-CSRF-TOKEN` |
 | 5.3 | SSO/cookie-domain decision (same-origin proxy vs shared domain) | Documented + tested |
-| 5.4 | Rate limits, audit parity, observability, read-only profile | Security checklist green |
+| 5.4 | Rate limits, audit parity, observability, read-only profile | ✅ `ReadOnlyToolGuard` + security checklist below |
 | 5.5 | Upgrade/migration path (schema versions, contract versioning) | One documented upgrade |
 | 5.6 | 30-minute soak + performance gates | 0 errors; p95 within budget |
 
@@ -335,6 +335,56 @@ directly against the session token. Concretely:
 **5.3 is folded into 5.2.** The runtime is API-only and the console is served same-origin (Vite dev
 proxy, `scripts/serve.mjs`), so no shared cookie domain or SSO proxy is needed. Revisit only if a
 deployment serves the console from a different origin than the API.
+
+### 5.4 implementation note — read-only profile + security checklist
+
+**Rate limits** were already in place and are unchanged: `chat`, `mcp`, `tools` and `console`
+limiters in `AppServiceProvider`, applied by route group. Pro routes inherit `throttle:console`
+because they sit inside that group.
+
+**Read-only profile** is the piece that was missing. `ReadOnlyToolGuard`
+(`lib/core/src/Application/Tool/`) registers as a **monotonic deny-only guard** on `ToolRegistry`,
+so it runs after every `tools/pre_execute` listener and no listener can undo a denial. Enabled by
+`oos.read_only.enabled` (`NVOOS_READ_ONLY`).
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `gated_flags` | `write`, `state_changing`, `mutating`, `destructive`, `external_side_effect` | Flags that disqualify a tool |
+| `allowed_slugs` | `[]` | Slugs that always run |
+| `block_undeclared` | `true` | Deny tools that declare no flags |
+
+Decision shape mirrors the WordPress `read-only` chat profile
+(`WP_MCP_AI_Read_Only_Profile_Gate::is_tool_allowed()`): allowlist first, then a flag
+intersection. It is deliberately **stricter in one direction** — a tool with no declared flags is
+blocked by default. WordPress can lean on its flag table because the profile is scoped and
+selectable; a runtime-wide switch cannot, and "I could not tell whether this writes" is not a
+reason to let it write. Operators relax it with `block_undeclared: false` or an allowlist.
+
+A blocked call returns the registry's existing `tool_guarded` envelope, so callers need no new
+error handling.
+
+#### Security checklist
+
+Every WordPress control either has a Laravel counterpart or an explicit accepted gap.
+
+| Control | WordPress | Laravel | State |
+|---|---|---|---|
+| Authentication | nonce, credential tokens, Auth0, guest tokens | Sanctum session cookie + bearer | ✅ |
+| CSRF | `X-WP-Nonce` | `X-CSRF-TOKEN` (5.2) | ✅ |
+| Authorization | `current_user_can` | WP-role matrix + `can:` gates per route group | ✅ |
+| Rate limiting | request guard | four named limiters, per user/IP | ✅ |
+| Read-only profile | `Read_Only_Profile_Gate` (profile-scoped) | `ReadOnlyToolGuard` (runtime-wide, 5.4) | ✅ |
+| Cost tracking | cost tracker | `TokenUsage` + `/cost/*` | ✅ |
+| Security posture | 21 signals | 8 native signals (`/security/posture`) | ✅ documented subset |
+| Security headers | CSP headers | `/security/preview-headers` + posture signal | ✅ |
+| Audit trail | audit logger + durable rows | `nvoos_jobs`, `nvoos_approvals` are durable | ⚠️ memory audit is a Phase 3 follow-up |
+| Destructive-ops confirmation | destructive ops gate | not ported — no confirmation UI in the console | ⚠️ accepted (no destructive actions exposed) |
+| Outbound URL guard | URL guard (SSRF) | outbound goes through `HttpClientInterface`; no allowlist | ⚠️ open — tracked separately |
+| CORS | CORS guard | not configured — console is same-origin | ✅ not applicable |
+
+The three ⚠️ rows are the honest remainder. None of them is reachable from a ported surface today;
+if a later phase exposes a destructive action or an operator-supplied URL, its row must move to ✅
+first.
 
 ---
 

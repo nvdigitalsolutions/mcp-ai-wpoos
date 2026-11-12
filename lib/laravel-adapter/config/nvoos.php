@@ -516,6 +516,24 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Read-only deployment profile
+	|--------------------------------------------------------------------------
+	|
+	| Blocks state-changing tools at the last pre-dispatch point. Intended for
+	| staging mirrors, demos and audit-only access. Tools that declare no
+	| capability flags are blocked by default — "I could not tell whether this
+	| writes" is not a reason to let it write. Allowlist the slugs you trust.
+	|
+	*/
+	'read_only' => array(
+		'enabled'          => (bool) env( 'NVOOS_READ_ONLY', false ),
+		'gated_flags'      => array( 'write', 'state_changing', 'mutating', 'destructive', 'external_side_effect' ),
+		'allowed_slugs'    => array(),
+		'block_undeclared' => (bool) env( 'NVOOS_READ_ONLY_BLOCK_UNDECLARED', true ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Console Feature Map
 	|--------------------------------------------------------------------------
 	|

@@ -18,6 +18,7 @@ namespace Nvoos\Laravel\ServiceProvider;
 use Illuminate\Support\ServiceProvider;
 use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
@@ -151,6 +152,26 @@ class NvoosServiceProvider extends ServiceProvider {
 			$app->make( EventDispatcherInterface::class ),
 			$app->make( ErrorFactoryInterface::class ),
 		) );
+
+		// Read-only deployment profile (Phase 5.4). Registered as a monotonic
+		// guard, so it runs after every pre-execute listener and cannot be
+		// undone by one. Off unless `oos.read_only.enabled` is set.
+		$this->app->afterResolving( ToolRegistry::class, function ( ToolRegistry $registry, $app ): void {
+			$readOnly = (array) $app['config']->get( 'oos.read_only', array() );
+
+			if ( empty( $readOnly['enabled'] ) ) {
+				return;
+			}
+
+			$registry->addGuard(
+				new ReadOnlyToolGuard(
+					$registry,
+					(array) ( $readOnly['gated_flags'] ?? ReadOnlyToolGuard::DEFAULT_GATED_FLAGS ),
+					(array) ( $readOnly['allowed_slugs'] ?? array() ),
+					(bool) ( $readOnly['block_undeclared'] ?? true ),
+				)
+			);
+		} );
 
 		// Provider router — configured once; holds mutable health/fallback
 		// state, not request/user state.
