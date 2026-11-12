@@ -45,23 +45,24 @@ import { auditClassCoverage } from '../lib/class-audit.ts';
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
-import { findDroppedPins } from '../lib/pins.ts';
+import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureNavToggle, measureStickyHeader, serveDir } from '../lib/geometry.ts';
+import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
 import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } from '../lib/gate-policy.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
-import { compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors } from '../lib/region-colors.ts';
+import { applyBandSurfaces, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors } from '../lib/region-colors.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
 import { discoverInventory, fetchText } from '../lib/inventory.ts';
 import { PRESETS, PRESET_NAMES, RENDER_MODES, isValidThemePolicy } from '../lib/presets.ts';
 import { collectProjectFiles, slugify } from '../lib/project-files.ts';
-import { auditTokenBlock, mergeTokens, scaffold } from '../lib/scaffold.ts';
+import { auditTokenBlock, mergeTokens, rewriteGlobalCss, scaffold } from '../lib/scaffold.ts';
 import { auditSeo, scanSeoHtml } from '../lib/seo-audit.ts';
 import { analyzeTracking, mergeTrackingDraft, renderTrackingReport, trackingFromReport } from '../lib/tracking.ts';
 import { auditTracking } from '../lib/tracking-audit.ts';
@@ -211,6 +212,48 @@ function trackingPageUrls( profile, options ) {
 		.map( ( path ) => new URL( path, base ).href );
 }
 
+/**
+ * The pages a `--pages` run measures: the pages collection's live entries,
+ * minus the front page (it renders at `/`) and the operator's exclusions.
+ * Wireframe placeholders are not here — they 404 on the source.
+ */
+async function listSourcePages( profile ) {
+	const collection = ( profile.collections ?? [] ).find( ( entry ) => entry.slug === 'pages' );
+	const restBase = collection?.restBase ?? 'wp/v2/pages';
+	const excluded = new Set( collection?.exclude ?? [] );
+	const base = String( profile.url ).replace( /\/+$/, '' );
+	const response = await fetch( `${ base }/wp-json/${ restBase }?per_page=100&_fields=slug,link` );
+	if ( ! response.ok ) {
+		throw new Error( `page listing returned HTTP ${ response.status }` );
+	}
+	const items = await response.json();
+	if ( ! Array.isArray( items ) ) {
+		return [];
+	}
+	return items
+		.filter( ( item ) => item && item.slug && item.link && item.slug !== profile.frontPage && ! excluded.has( item.slug ) )
+		.map( ( item ) => ( { slug: String( item.slug ), url: String( item.link ) } ) );
+}
+
+/**
+ * Apply the operator's top-level `pins` to a freshly analyzed design block.
+ * Used by `analyze` BEFORE the measurement passes so a pinned band anchor is
+ * addressable (`--geometry`, `--text`, `--colors`) in the same run that
+ * re-extracts the design. Absent/unreadable profile = no pins.
+ */
+async function applyWritePins( design, writePath ) {
+	if ( ! writePath ) {
+		return design;
+	}
+	try {
+		const existing = JSON.parse( await readFile( writePath, 'utf8' ) );
+		const pins = Array.isArray( existing?.pins ) ? existing.pins : [];
+		return pins.length > 0 ? applyDesignPins( design, pins ) : design;
+	} catch {
+		return design;
+	}
+}
+
 async function runAnalyze( url, options ) {
 	if ( ! url || ! /^https?:\/\//.test( url ) ) {
 		fail( 'analyze needs an https?:// URL.' );
@@ -256,7 +299,12 @@ async function runAnalyze( url, options ) {
 				console.log( `\u2713 Head description captured: ${ headFacts.metas.description.slice( 0, 60 ) }${ headFacts.metas.description.length > 60 ? '\u2026' : '' }` );
 			}
 			const design = analyzeDesignInput( input );
-			profile.design = design;
+			// Operator pins apply to the FRESH design before the measurement passes
+			// run: `--geometry`/`--text` address a band by its anchor, and an
+			// outline-only builder (Flatsome, WPBakery…) carries none until the
+			// operator pins one. Applying them at merge time was too late — the
+			// baseline had already measured nothing (2026-11-11).
+			profile.design = await applyWritePins( design, options.write );
 			designCss = ( input.css ?? [] ).join( '\n' );
 			console.log( `\u2713 Design language extracted: ${ design.concept }` );
 			const roles = Object.keys( design.palette.roles );
@@ -355,7 +403,7 @@ async function runAnalyze( url, options ) {
 	// --geometry (114 §3.6): measure the SOURCE bands so `verify --geometry` can
 	// diff the build against real boxes instead of inferred CSS. Browser-backed,
 	// so it stays opt-in (the parity gate above never needs a browser).
-	if ( options.geometry ) {
+	if ( options.geometry || options.pages ) {
 		let bands = profile.design?.sections ?? [];
 		// `--geometry` must not force a design re-analysis: re-extracting the
 		// design block overwrites the hand-tuned chrome/tokens an operator has
@@ -505,6 +553,32 @@ async function runAnalyze( url, options ) {
 				console.warn( `\u26a0 Geometry baseline skipped: ${ error instanceof Error ? error.message : error }` );
 			}
 		}
+
+		// --pages: the same measurement for EVERY page the rebuild renders. A
+		// positional band list is per-PAGE data — the front page's heights and
+		// surfaces applied to a sub-page pinned a 7,497px article band.
+		if ( options.pages ) {
+			try {
+				const targets = await listSourcePages( profile );
+				const measured = await measurePageBands( {
+					pages: targets,
+					limit: Number( options.pagesLimit ?? 8 ),
+					onPage: ( slug, result, error ) => {
+						if ( error ) {
+							console.warn( `  \u26a0 /${ slug }/: skipped (${ error instanceof Error ? error.message : error }).` );
+						} else if ( ! result ) {
+							console.log( `  \u2013 /${ slug }/: no bands found (nothing to measure).` );
+						} else {
+							console.log( `  \u2713 /${ slug }/: ${ Object.keys( result.geometry ).length }/${ result.sections.length } band(s).` );
+						}
+					},
+				} );
+				profile.pageBands = measured;
+				console.log( `\u2713 Per-page bands: ${ Object.keys( measured ).length } page(s) measured.` );
+			} catch ( error ) {
+				console.warn( `\u26a0 Per-page bands skipped: ${ error instanceof Error ? error.message : error }` );
+			}
+		}
 	}
 
 	// --text: record the source's normalised visible text so `verify --text`
@@ -512,17 +586,26 @@ async function runAnalyze( url, options ) {
 	// same baseline discipline `--geometry` uses). Pure extraction — no model,
 	// no browser.
 	if ( options.text ) {
-		let ids = ( profile.design?.sections ?? [] ).map( ( section ) => section.id ).filter( Boolean );
+		let bands = profile.design?.sections ?? [];
 		// `--text` should not force a design re-analysis: when the fresh draft
-		// has no design block, take the band ids from the profile being written.
-		if ( ids.length === 0 && options.write ) {
+		// has no design block, take the bands from the profile being written.
+		if ( bands.length === 0 && options.write ) {
 			try {
 				const existing = JSON.parse( await readFile( options.write, 'utf8' ) );
-				ids = ( existing.design?.sections ?? [] ).map( ( section ) => section.id ).filter( Boolean );
+				bands = existing.design?.sections ?? [];
 			} catch {
 				// No existing profile — page-level text only.
 			}
 		}
+		const ids = bands.map( ( section ) => section.id ).filter( Boolean );
+		// An outline band's source node carries the vendor DOM id, never the
+		// stable hash — pass the anchor as a locator alias so the baseline keeps
+		// per-band text (Proposal 115's band check) instead of going page-level.
+		const selectors = Object.fromEntries(
+			bands
+				.filter( ( section ) => section.id && section.anchor )
+				.map( ( section ) => [ section.id, section.anchor ] )
+		);
 		try {
 			const home = designInput?.html
 				? { status: 200, text: designInput.html }
@@ -533,6 +616,7 @@ async function runAnalyze( url, options ) {
 				profile.text = textBaselineFromHtml( home.text, {
 					url: profile.url,
 					ids,
+					selectors,
 					includeAlt: options.textAlt === true,
 				} );
 				console.log(
@@ -540,7 +624,7 @@ async function runAnalyze( url, options ) {
 				);
 				if ( profile.text.sections.length === 0 && ( profile.design?.outline ?? [] ).length > 0 ) {
 					console.log(
-						'  per-band text needs addressable band ids (design.sections); this site is outline-only, so the baseline is page-level.'
+						'  per-band text needs addressable band ids (design.sections + an anchor/domId); this site is outline-only and unanchored, so the baseline is page-level.'
 					);
 				}
 			}
@@ -567,6 +651,19 @@ async function runAnalyze( url, options ) {
 						console.warn( `  \u26a0 ${ region } not found in the source markup (${ mode } selector ladder missed it).` );
 					}
 				}
+			}
+			// Bake the measured band SURFACES into the homepage's band facts: a
+			// gradient painted on a child layer is invisible to the CSS harvest (the
+			// sanitizer drops the `<style>` that declared it), and an outline band
+			// carries no facts at all. Pinned facts win — `applyBandSurfaces` never
+			// overwrites a surface that is already set.
+			const light = profile.colors.light ?? {};
+			if ( profile.design ) {
+				applyBandSurfaces(
+					profile.design.sections ?? [],
+					( section ) => ( section.anchor ? light[ `band:${ section.anchor }` ] : undefined ),
+					light.body?.background
+				);
 			}
 		} catch ( error ) {
 			console.warn( `\u26a0 Colour baseline skipped: ${ error instanceof Error ? error.message : error }` );
@@ -890,6 +987,49 @@ async function runDeploy( profileRef, options ) {
 	}
 }
 
+/**
+ * Re-apply the profile's design tokens to an EXISTING forged project.
+ *
+ * The token block is rewritten only inside the scaffold pipeline, so a project
+ * whose `global.css` was replaced or hand-copied (the usual way a template CSS
+ * fix reaches a built site) silently loses every `--forge-*` token and builds
+ * with the template defaults. A full re-scaffold fixes it but also wipes
+ * `node_modules`; this rewrites just the FORGE:tokens span.
+ */
+async function runTokens( profileRef, options ) {
+	if ( ! options.target ) {
+		fail( '--target <dir> is required.' );
+	}
+	const profile = await loadProfile( profileRef );
+	assertProfile( profile );
+	const cssPath = join( options.target, 'src', 'styles', 'global.css' );
+	const css = await readFile( cssPath, 'utf8' ).catch( () => null );
+	if ( css === null ) {
+		fail( `Cannot read ${ cssPath} — is that a forged project?` );
+	}
+	const tokens = mergeTokens( profile.design, profile.tokens, profile.colors );
+	const audit = auditTokenBlock( css, tokens );
+	if ( ! audit.markers ) {
+		fail( 'global.css has no FORGE:tokens span — re-scaffold the project.' );
+	}
+	if ( options.check ) {
+		if ( audit.drifted.length === 0 ) {
+			console.log( `\u2713 Token block: all ${ Object.keys( tokens ).length } token(s) match the profile.` );
+			return;
+		}
+		for ( const drift of audit.drifted ) {
+			console.error( `\u2717 --forge-${ drift.name }: on disk ${ drift.actual ?? '(missing)' }, profile ${ drift.expected }` );
+		}
+		process.exitCode = 1;
+		return;
+	}
+	await writeFile( cssPath, rewriteGlobalCss( css, tokens ), 'utf8' );
+	console.log( `\u2713 Re-applied ${ Object.keys( tokens ).length } token(s) to ${ cssPath }` );
+	for ( const drift of audit.drifted ) {
+		console.log( `  ${ drift.name }: ${ drift.actual ?? '(missing)' } \u2192 ${ drift.expected }` );
+	}
+}
+
 async function runScaffold( profileRef, options ) {
 	if ( ! options.target ) {
 		fail( '--target <dir> is required.' );
@@ -1169,7 +1309,13 @@ function bandColorRegions( bands ) {
 	const anchors = bands
 		.map( ( band ) => band.anchor )
 		.filter( ( anchor, index, list ) => Boolean( anchor ) && list.indexOf( anchor ) === index );
-	return anchors.map( ( anchor ) => ( { name: `band:${ anchor }`, selectors: [ `#${ anchor }` ] } ) );
+	// `descendantFill`: a builder paints a band's surface on a child layer, so the
+	// ancestor walk alone reads the page body for every band.
+	return anchors.map( ( anchor ) => ( {
+		name: `band:${ anchor }`,
+		selectors: [ `#${ anchor }` ],
+		descendantFill: true,
+	} ) );
 }
 
 /** Every built HTML page (homepage first), bounded — the SEO gate walks them. */
@@ -1987,6 +2133,57 @@ async function runVerify( profileRef, options ) {
 				gateNote( geometryPolicy )
 			);
 
+			// Per-page bands (`analyze --pages`): every measured sub-page gets the
+			// same box diff against its OWN recorded geometry — the homepage's boxes
+			// are not a sub-page's (a 7,497px article band, 2026-11-11).
+			if ( options.pages && profile.pageBands ) {
+				let compared = 0;
+				let pageFailures = 0;
+				let pageWarnings = 0;
+				for ( const [ slug, page ] of Object.entries( profile.pageBands ) ) {
+					const pageIds = Object.keys( page.geometry ?? {} );
+					if ( pageIds.length === 0 ) {
+						continue;
+					}
+					try {
+						const builtPage = await measureGeometry( { url: `${ served.url }${ slug }/`, ids: pageIds, kind: 'built' } );
+						const pageDeviations = diffGeometry( page.geometry, builtPage );
+						compared += pageIds.length;
+						pageFailures += pageDeviations.filter( ( deviation ) => deviation.severity === 'fail' ).length;
+						pageWarnings += pageDeviations.filter( ( deviation ) => deviation.severity === 'warn' ).length;
+						if ( pageDeviations.length === 0 ) {
+							console.log( `\u2713 Geometry /${ slug }/: every band matches its own source box.` );
+						} else {
+							for ( const deviation of pageDeviations.slice( 0, 6 ) ) {
+								const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
+								const actual = deviation.actual === null ? 'missing' : `${ deviation.actual }px`;
+								console.warn(
+									`${ mark } Geometry /${ slug }/ band ${ deviation.sectionId } @ ${ deviation.viewport } ${ deviation.metric } \u2014 source ${ deviation.expected }px, build ${ actual }`
+								);
+							}
+						}
+					} catch ( error ) {
+						console.warn( `  \u26a0 Geometry /${ slug }/: skipped (${ error instanceof Error ? error.message : error }).` );
+					}
+				}
+				if ( compared > 0 ) {
+					console.log( `  per-page geometry: ${ pageFailures } fail, ${ pageWarnings } warn across ${ compared } band(s)` );
+					if ( pageFailures > 0 ) {
+						// A sub-page band that outgrows its source box is usually CONTENT
+						// SCALE (an image gallery rendering a row the source cropped away),
+						// not a missing fact — the homepage gate stays the blocking one and
+						// `--strict-pages` opts into failing here.
+						if ( options.strictPages ) {
+							process.exitCode = 1;
+						} else {
+							console.warn(
+								`  \u2139 Per-page geometry: ${ pageFailures } failure(s) reported ADVISORY (content-scale overshoot) \u2014 pass --strict-pages to fail the run.`
+							);
+						}
+					}
+				}
+			}
+
 			// -----------------------------------------------------------------
 			// The BAND DIFF: WHERE the delta comes from.
 			//
@@ -2459,7 +2656,10 @@ async function runVerify( profileRef, options ) {
 		];
 		const regions = [
 			...DEFAULT_COLOR_REGIONS,
-			...bandNames.map( ( name ) => ( { name, selectors: [ `#${ name.slice( 5 ) }` ] } ) ),
+			// `descendantFill`: the source baseline was measured that way, so the
+			// build must be too — a rebuilt band's surface can sit on the wrap or on
+			// a child layer, and a gradient has no `background-color` at all.
+			...bandNames.map( ( name ) => ( { name, selectors: [ `#${ name.slice( 5 ) }` ], descendantFill: true } ) ),
 		];
 		let builtColors;
 		try {
@@ -2476,8 +2676,9 @@ async function runVerify( profileRef, options ) {
 		const failures = report.deviations.filter( ( deviation ) => deviation.severity === 'fail' );
 		for ( const deviation of [ ...failures, ...report.deviations.filter( ( d ) => d.severity === 'warn' ) ] ) {
 			const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
+			const metric = deviation.deltaE === null ? '' : ` (\u0394E00 ${ deviation.deltaE })`;
 			console.warn(
-				`${ mark } Colour [${ deviation.mode }]: ${ deviation.region } ${ deviation.metric } \u2014 source ${ deviation.expected }, build ${ deviation.actual } (\u0394E00 ${ deviation.deltaE })`
+				`${ mark } Colour [${ deviation.mode }]: ${ deviation.region } ${ deviation.metric } \u2014 source ${ deviation.expected }, build ${ deviation.actual }${ metric }`
 			);
 		}
 		for ( const region of report.missing ) {
@@ -2671,6 +2872,8 @@ program
 	.option( '--wayback', 'add Wayback CDX discovery to the inventory (deleted pages)' )
 	.option( '--vocabulary', 'learn the widget/block vocabulary (block-types registry + rendered widget names, Proposal 116)' )
 	.option( '--geometry', 'measure each source band\u0027s box at 3 viewports so `verify --geometry` can diff the build (needs --design; requires Playwright)' )
+	.option( '--pages', 'measure EVERY page\u0027s bands too (per-page geometry + surfaces; implies --geometry)' )
+	.option( '--pages-limit <n>', 'with --pages: how many pages to measure (default 8)', '8' )
 	.option( '--text', 'record the homepage\u0027s normalised visible text so `verify --text` can diff the build\u0027s content (needs --design)' )
 	.option( '--text-alt', 'with --text: include <img alt> text in the baseline' )
 	.option( '--colors', 'record the computed background/text colour of body, header and footer so `verify --colors` can diff the build (requires Playwright)' )
@@ -2758,6 +2961,8 @@ program
 	.option( '--strict-classes', 'fail when any class name in the rebuilt bands matches no stylesheet rule (default: report-only)' )
 	.option( '--threshold <n>', 'parity pass threshold 0-1 (default 0.6)', '0.6' )
 	.option( '--geometry', 'diff the built bands\u0027 boxes against the recorded source geometry (needs `analyze --geometry`; requires Playwright)' )
+	.option( '--pages', 'with --geometry: also diff every page measured by `analyze --pages`' )
+	.option( '--strict-pages', 'with --pages: fail the run on a sub-page band that misses its own source box (default: advisory — content-scale overshoot)' )
 	.option( '--geometry-limit <n>', 'how many geometry deviations to print (default 12)', '12' )
 	.option( '--interactions', 'verify the rebuilt controls keep the source\u0027s hover / focus / focus-visible / active states and show a keyboard focus ring (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--interactions-limit <n>', 'how many interaction findings to print (default 12)', '12' )
@@ -3035,5 +3240,15 @@ scaffoldOptions( forgeCommand ).action( async ( profileRef, options ) => {
 	}
 	await runScaffold( profileRef, options );
 } );
+
+program
+	.command( 'tokens' )
+	.description( 're-apply a profile\'s design tokens to an existing forged project (no re-scaffold)' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.option( '--target <dir>', 'the forged project directory' )
+	.option( '--check', 'report drift only; exit 1 when the block does not match the profile' )
+	.action( async ( profileRef, options ) => {
+		await runTokens( profileRef, options );
+	} );
 
 await program.parseAsync( process.argv );

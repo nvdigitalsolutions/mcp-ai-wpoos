@@ -337,3 +337,63 @@ describe( 'determinism and ids', () => {
 		expect( contact?.bgImage ).toBe( '/c.jpg' );
 	} );
 } );
+
+describe( 'a vendor DOM id the anchor rules reject becomes domId (Flatsome)', () => {
+	// Flatsome's UX Builder ids its bands `section_<digits>`. The underscore is
+	// legal CSS but not a nav slug, so `isAnchorId` rejects it — and before the
+	// `domId` field the band had NO addressable handle at all: `--geometry`,
+	// `--colors` and the band-colour regions measured 0 bands on
+	// monicarajiv.com and every band needed an operator pin (2026-11-11).
+	const html = page( `
+		<section class="section" id="section_150552065">
+			<div class="section-bg fill"></div>
+			<div class="section-content relative">
+				<div class="banner has-hover"><div class="banner-layers container"><p>${ LONG }</p></div></div>
+			</div>
+		</section>` );
+
+	it( 'captures the section id as domId, never as a nav anchor', () => {
+		const { bands } = extractBandsFromHtml( html );
+		expect( bands ).toHaveLength( 1 );
+		expect( bands[ 0 ].id ).toMatch( /^[0-9a-f]{7}$/ );
+		expect( bands[ 0 ].anchor ).toBeUndefined();
+		expect( bands[ 0 ].domId ).toBe( 'section_150552065' );
+	} );
+
+	it( 'never treats a site-level landmark id as a DOM-id handle', () => {
+		// `main` is a valid nav slug, so the anchor rule claims it — the domId
+		// fallback must not ALSO claim it (two handles on one band).
+		const landmark = page( `
+			<section class="section" id="main">
+				<div class="section-content relative"><p>${ LONG }</p></div>
+			</section>` );
+		const [ band ] = extractBandsFromHtml( landmark ).bands;
+		expect( band.domId ).toBeUndefined();
+	} );
+} );
+
+describe( 'band ids are STRUCTURAL (dynamic copy must never renumber a band)', () => {
+	// A live band carries dynamic text — a countdown, a rotated testimonial. The
+	// id seeds on structure (adapter, tag, classes, ordinal), so a changing timer
+	// cannot orphan `bandFacts`/`geometry`/`colors` or an operator pin
+	// (monicarajiv.com moved ids by 4 bytes between two analyses, 2026-11-11).
+	const build = ( timer: string ) => page( `
+		<section class="section" id="section_a">
+			<div class="section-content relative"><p>${ LONG }</p><span class="ux-timer">${ timer }</span></div>
+		</section>
+		<section class="section" id="section_b">
+			<div class="section-content relative"><p>${ LONG }</p></div>
+		</section>` );
+
+	it( 'keeps ids stable when the countdown text changes length', () => {
+		const first = extractBandsFromHtml( build( '2 days 3 hours' ) ).bands.map( ( band ) => band.id );
+		const second = extractBandsFromHtml( build( '1 day 23 hours 59 minutes 59 secs' ) ).bands.map( ( band ) => band.id );
+		expect( first ).toEqual( second );
+	} );
+
+	it( 'still separates sibling bands that share a class list', () => {
+		const ids = extractBandsFromHtml( build( 'x' ) ).bands.map( ( band ) => band.id );
+		expect( ids ).toHaveLength( 2 );
+		expect( new Set( ids ).size ).toBe( ids.length );
+	} );
+} );

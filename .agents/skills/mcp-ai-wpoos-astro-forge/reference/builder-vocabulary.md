@@ -65,3 +65,14 @@ filter, so the unknown bucket is actionable:
 3. Title/divider facts for generic bands (Elementor-only today).
 4. JS-rendered detail pages: sliders/tabs fetch markup at runtime, which is why
    `revolution-slider` is one opaque band.
+
+## "Two data rows" is the ANALYZER half only (Flatsome, 2026-11-11)
+
+The first Flatsome site proved the claim above is necessary but not sufficient:
+`BUILDER_ADAPTERS` + `WIDGET_PATTERNS` segmented the bands, and the rebuild then
+rendered them as four stacked raw text blocks with no surfaces. A builder whose
+stylesheet never ships also needs (a) a **render shim** for its layout
+conventions, (b) a **DOM-id handle** when its section ids are not nav anchors
+(`section_<digits>`), and (c) the **render-side** band split (semantic.ts) to
+fire without a builder-marker class. Contract + measured numbers:
+[`flatsome-and-outline-rebuild.md`](flatsome-and-outline-rebuild.md).

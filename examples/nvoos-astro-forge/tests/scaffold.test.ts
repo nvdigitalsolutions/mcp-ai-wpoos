@@ -12,7 +12,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { auditTokenBlock, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { auditTokenBlock, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -150,6 +150,7 @@ describe('scaffold — production blog template', () => {
 			'src/styles/global.css',
 			'src/lib/design.generated.ts',
 			'src/lib/sections.generated.ts',
+			'src/lib/pages.generated.ts',
 			'src/lib/chrome.generated.ts',
 			'src/lib/behaviors.generated.ts',
 			'src/lib/vocabulary.generated.ts',
@@ -299,6 +300,39 @@ describe('scaffold — safety guards', () => {
 	it('rejects unknown built-in template names', async () => {
 		const root = await tempDir();
 		await expect(resolveTemplateDir('does-not-exist')).rejects.toThrow(/not found/);
+	});
+});
+
+describe('renderPagesGenerated (per-page band lists)', () => {
+	it('bakes an empty record when no page bands were measured', () => {
+		const out = renderPagesGenerated({ url: 'https://x.test', collections: [] } as unknown as SiteProfile);
+		expect(out).toContain('export const pageBands: Record<string, SectionTheme[]> = {');
+		expect(out).toContain('};');
+	});
+
+	it('emits one positional list per page carrying THAT page\'s facts', () => {
+		const profile = {
+			url: 'https://x.test',
+			collections: [],
+			bandSpacing: 'source',
+			pageBands: {
+				doomsday: {
+					url: 'https://x.test/doomsday/',
+					measuredAt: 'now',
+					builder: 'flatsome',
+					sections: [ { id: 'aaaaaaa', anchor: 'section_1', bgColor: '#dd3333' } ],
+					geometry: { aaaaaaa: { desktop: { height: 600 } } },
+					bandFacts: {},
+				},
+			},
+		} as unknown as SiteProfile;
+		const out = renderPagesGenerated(profile);
+		expect(out).toContain("'doomsday': [");
+		expect(out).toContain("id: 'aaaaaaa'");
+		expect(out).toContain("minHeight: { desktop: '600px' }");
+		expect(out).toContain("bg: '#dd3333'");
+		// A band the measurement could not box must not emit `NaNpx` CSS.
+		expect(out).not.toContain('NaN');
 	});
 });
 

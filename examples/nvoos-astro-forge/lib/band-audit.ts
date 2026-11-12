@@ -32,7 +32,7 @@
 
 import { auditFacts } from './fact-audit.ts';
 import { DEFAULT_GEOMETRY_TOLERANCE, type GeometryTolerance } from './geometry.ts';
-import { compareText, normalizeText } from './text-parity.ts';
+import { compareText, normalizeText, textFromHtml } from './text-parity.ts';
 import type { ForgeGeometry, ForgeSection, ForgeTextBaseline } from './types.ts';
 
 export type BandCheckStatus = 'pass' | 'warn' | 'fail' | 'skip';
@@ -148,13 +148,16 @@ function mediaCount( html: string ): number {
 	);
 }
 
-/** The band's visible text, for the per-band text comparison. */
+/**
+ * The band's visible text, for the per-band text comparison.
+ *
+ * Parsed with the SAME extractor as the baseline (`textFromHtml`), not a tag
+ * regex: a regex leaves entities undecoded (`Monica &amp; rajiv`), which breaks
+ * every 3-gram that crosses the ampersand and reported an 80% coverage on bands
+ * whose text is byte-identical (monicarajiv.com, 2026-11-11).
+ */
 function bandText( html: string ): string {
-	const stripped = html
-		.replace( /<script\b[\s\S]*?<\/script>/gi, ' ' )
-		.replace( /<style\b[\s\S]*?<\/style>/gi, ' ' )
-		.replace( /<[^>]+>/g, ' ' );
-	return normalizeText( stripped );
+	return textFromHtml( html );
 }
 
 function normalizeBg( value: string | undefined ): string {

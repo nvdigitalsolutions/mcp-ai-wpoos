@@ -1474,7 +1474,34 @@ function boundarySections( nodes: HNode[] ): HNode[] {
 function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, options: ClassifyOptions ): SemanticSection[] {
 	const root: HNode = { type: 'root', children: nodes, startIndex: 0, endIndex: html.length - 1 };
 
+	// Vendor-agnostic band split (Proposal 137, render half): 2+ semantic
+	// boundaries (`<section>`, Elementor section, WPBakery row, wp-block-group/
+	// cover) mean the document IS banded, even when no builder MARKER class is
+	// present. Flatsome's UX Builder emits `<section class="section">` +
+	// `.section-content` with no Elementor/WPBakery/wp-block class at all, so
+	// the marker gate alone collapsed four bands into one raw text section and
+	// only the first band's surface could apply (monicarajiv.com, 2026-11-11).
+	const bands = boundarySections( nodes );
+	const bandedSections = (): SemanticSection[] => {
+		const out: SemanticSection[] = [];
+		for ( const band of bands ) {
+			const slice = sliceHtml( html, band );
+			if ( ! slice ) {
+				continue;
+			}
+			const anchor = anchorOfNode( band );
+			out.push( { kind: 'text', confidence: 'low', slots: {}, html: slice, ...( anchor ? { anchor } : {} ) } );
+		}
+		return out;
+	};
+
 	if ( ! hasBuilderMarkers( root ) ) {
+		if ( bands.length > 1 ) {
+			const split = bandedSections();
+			if ( split.length > 0 ) {
+				return split;
+			}
+		}
 		return fallbackHtml.trim().length > 0 ? [ { kind: 'text', confidence: 'low', slots: {}, html: fallbackHtml } ] : [];
 	}
 
@@ -1493,23 +1520,14 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 	if ( elementorWidgets.length === 0 && ! structuredBlocks ) {
 		// Vendor-agnostic band split (Proposal 137, render half). Builders the
 		// Elementor taxonomy does not describe — WPBakery/Brando, Divi, Bricks,
-		// plain semantic HTML — still carry band boundaries. Splitting them keeps
-		// the source's band flow and lets the positional band theming paint each
-		// surface; without it the whole page is one text section and only the
-		// first band's background can apply (virtuallyjamaica, 2026-11-10).
-		const bands = boundarySections( nodes );
+		// Flatsome, plain semantic HTML — still carry band boundaries. Splitting
+		// them keeps the source's band flow and lets the positional band theming
+		// paint each surface; without it the whole page is one text section and
+		// only the first band's background can apply (virtuallyjamaica, 2026-11-10).
 		if ( bands.length > 1 ) {
-			const banded: SemanticSection[] = [];
-			for ( const band of bands ) {
-				const slice = sliceHtml( html, band );
-				if ( ! slice ) {
-					continue;
-				}
-				const anchor = anchorOfNode( band );
-				banded.push( { kind: 'text', confidence: 'low', slots: {}, html: slice, ...( anchor ? { anchor } : {} ) } );
-			}
-			if ( banded.length > 0 ) {
-				return banded;
+			const split = bandedSections();
+			if ( split.length > 0 ) {
+				return split;
 			}
 		}
 		return fallbackHtml.trim().length > 0 ? [ { kind: 'text', confidence: 'low', slots: {}, html: fallbackHtml } ] : [];

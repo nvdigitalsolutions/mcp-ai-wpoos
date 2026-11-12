@@ -59,7 +59,7 @@ const contactBlock = (manifest as { contact?: { heading?: string } }).contact;
 	seo={frontPage?.data.seo}
 >
 	{frontPage && frontBody ? (
-		<DesignRenderer html={frontBody} />
+		<DesignRenderer html={frontBody} bandGeometry />
 	) : frontPage && frontContent ? (
 		<div class="post-body">
 			<frontContent.Content />

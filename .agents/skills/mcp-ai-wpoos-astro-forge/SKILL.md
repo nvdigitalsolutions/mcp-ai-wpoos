@@ -78,6 +78,10 @@ node scripts/forge.mjs site.json --target ./out           # scaffold the project
 2. `--check` first — a build must never silently truncate.
 3. Scaffold → `cd <target> && npm install && npm run build` with `ASTRO_SITE` set.
 4. Design language (098 `design_theme` output) applies over the template's `--forge-*` tokens in `src/styles/global.css` — content is re-themed, never re-cloned.
+5. Template CSS edits after the fact: `forge tokens <profile> --target <dir>`
+   re-applies the token block in place (`--check` reports drift). Copying a
+   template `global.css` over the project wipes the block, and only the scaffold
+   pipeline rewrites it — see `reference/flatsome-and-outline-rebuild.md`.
 
 Pick a preset with `--preset blog|storefront|minimal` (or let the wizard
 suggest one from the analysis — Woo/products detected → `storefront`).
@@ -1003,8 +1007,8 @@ Research-backed (web.dev responsive images, MDN animation-timeline, DTCG
 
 ## Capture surfaces — tracking, SEO head, stored redirects (130 / 131 / 132)
 
-Three shipped passes close the "capture everything the site does beyond
-content" gap. Full operational notes: `reference/capture-arc.md`.
+Three passes close the "capture everything beyond content" gap — notes:
+`reference/capture-arc.md`.
 
 - **130** — tracker/consent detection + `verify --tracking`, a consent-first
   rebuild, Report-Only CSP headers.
@@ -1028,10 +1032,10 @@ render drifted" blind spot:
 - `verify --text` diffs the build's normalised visible text against the
   `analyze --text` baseline (3-word w-shingles; **coverage of the source** is
   the gate — added copy never fails a rebuild).
-- `verify --colors` diffs the COMPUTED body/header/footer background+text
-  colour with CIEDE2000 (warn ≥ 3, fail ≥ 6); transparent surfaces skipped.
-  The token block proves the CSS carries the colours — this proves the browser
-  renders them.
+- `verify --colors` diffs the COMPUTED background+text per region — chrome AND
+  every band — with CIEDE2000 (warn ≥ 3, fail ≥ 6); transparent skipped. A
+  band's gradient is a third metric: absent in the build fails, differing warns,
+  a photo url is not compared.
 - `verify --pixel` diffs deterministic screenshots with pixelmatch's YIQ delta
   **and** SSIM against a recorded baseline (build-vs-build regression) or the
   live source (`--pixel-live`, near-clone work only). Determinism is proven,
@@ -1075,24 +1079,11 @@ builder contracts, surface table, deferred work):
 
 ## CSP + client navigation (transferred from velocity, 2026-11-09)
 
-Generated sites use `script-src 'self' 'unsafe-inline'` (`lib/scaffold.ts`),
-because the template ships several `is:inline` scripts — and the template has
-**no** `ClientRouter` and **no** `client:*` islands. Those two facts are why the
+Generated sites use `script-src 'self' 'unsafe-inline'` and the template ships
+**no** `ClientRouter` and **no** `client:*` islands — that pair is why the
 velocity CSP outage does not affect forge output; keep both from drifting.
-
-A hashed `script-src` + client-side routing is unsafe by construction: a
-navigation keeps the SOURCE document's policy, so any inline script the target
-page adds is blocked — and `client:visible`/`client:idle` each emit a per-page
-inline bootstrap (only `client:load` adds none).
-
-Managed/SSR mode emits `routeRules` with `swr: 600` for `/products/**` and
-`/posts/**`; stale HTML plus a hashed CSP is the same failure. And incremental
-hosts never delete files that leave the tree, so an orphaned
-`dist/client/**/*.html` shadows the SSR route indefinitely — purge it at boot
-**only** when the project is fully SSR (a `prerender = true` project must not).
-
-Details, the generated-config inventory and the one-route-stale triage rule:
-`reference/csp-client-navigation.md`.
+Managed/SSR `routeRules`, the orphaned `dist/client` shadow and the hashed-CSP
+trap: `reference/csp-client-navigation.md`.
 
 ## Builder vocabulary (Proposal 137, 2026-11-09)
 
@@ -1134,7 +1125,12 @@ the RENDER side; the rules that fixed it are in
   whole rule silently;
 - `rm -rf .astro` after a sanitizer change (the content layer caches);
 - pin `design.chrome` for header/footer/social facts the analyzer misses;
-  a pin under `tokens.*` writes an unread `design.tokens` — a silent no-op.
+  a pin under `tokens.*` writes an unread `design.tokens` — a silent no-op;
+- **Flatsome** ids bands `section_<digits>` (no anchor, sheet never ships): the
+  template needs a shim, `domId` promotes the vendor id (no pins), band ids seed
+  on STRUCTURE (dynamic copy renumbered them), band facts are PER PAGE
+  (`analyze --pages`), and surfaces — opaque gradients, 2-col tiled fills — come
+  from the browser: [`reference/flatsome-and-outline-rebuild.md`](reference/flatsome-and-outline-rebuild.md).
 
 Two capabilities ship with it — full contract in
 [`reference/handoff-lock-and-band-gates.md`](reference/handoff-lock-and-band-gates.md):

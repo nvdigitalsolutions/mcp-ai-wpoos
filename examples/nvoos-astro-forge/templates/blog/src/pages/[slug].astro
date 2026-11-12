@@ -6,6 +6,7 @@ import Base from '../layouts/Base.astro';
 import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
 import DesignRenderer from '../components/design/DesignRenderer.astro';
+import { pageBands } from '../lib/pages.generated.ts';
 import { jsonLdFor, renderJsonLd } from '../lib/seo.ts';
 import { buildGraph, homeCrumb } from '../lib/seo-graph.ts';
 
@@ -63,7 +64,7 @@ const jsonLd = buildGraph(
 	<article class="post">
 		<h1>{page.data.title}</h1>
 		{body ? (
-			<DesignRenderer html={body} />
+			<DesignRenderer html={body} bandThemes={pageBands[page.data.slug]} />
 		) : (
 			<div class="post-body">
 				<Content />

@@ -157,6 +157,30 @@ describe( 'extractSectionTexts', () => {
 		expect( extractSectionTexts( html, [ 'about-band' ] ).texts[ 'about-band' ] ).toBe( 'class band' );
 	} );
 
+	it( 'locates an outline band through its source DOM-id alias', () => {
+		// A Flatsome band is keyed by the stable hash while its node carries
+		// `section_<digits>`; without the alias the baseline went page-level and
+		// the per-band words check could not run (monicarajiv.com, 2026-11-11).
+		const html =
+			'<section class="section" id="section_150552065"><p>Band copy</p></section>';
+		const found = extractSectionTexts( html, [ '84a6c14' ], {
+			selectors: { '84a6c14': 'section_150552065' },
+		} );
+		expect( found.texts[ '84a6c14' ] ).toBe( 'band copy' );
+		expect( found.missing ).toEqual( [] );
+	} );
+
+	it( 'keeps the id lookup first when a band and its alias disagree', () => {
+		const html = [
+			'<div id="about"><p>Real band</p></div>',
+			'<div id="alias"><p>Wrong node</p></div>',
+		].join( '' );
+		const found = extractSectionTexts( html, [ 'about' ], {
+			selectors: { about: 'alias' },
+		} );
+		expect( found.texts.about ).toBe( 'real band' );
+	} );
+
 	it( 'reports bands it cannot locate instead of failing', () => {
 		const result = extractSectionTexts( '<div></div>', [ 'nope' ] );
 		expect( result.texts ).toEqual( {} );

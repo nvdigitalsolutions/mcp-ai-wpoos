@@ -9,16 +9,18 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+	applyBandSurfaces,
 	colorDeltaE,
 	compareRegionColorModes,
 	compareRegionColors,
 	deltaE2000,
+	GRADIENT_SURFACE_RE,
 	normalizeColorModes,
 	normalizeCssColor,
 	parseCssColor,
 	srgbToLab,
 } from '../lib/region-colors.ts';
-import type { RegionColors } from '../lib/types.ts';
+import type { ForgeSection, RegionColors } from '../lib/types.ts';
 
 /** The single-scheme regions shape the per-mode comparer works on. */
 type ForgeColorBaseline = Record< string, RegionColors >;
@@ -141,6 +143,120 @@ describe( 'compareRegionColors', () => {
 
 		expect( report.skipped ).toEqual( [ 'light.header.background' ] );
 		expect( report.deviations ).toEqual( [] );
+	} );
+} );
+
+describe( 'band surfaces (gradient / photo / flat)', () => {
+	const gradient =
+		'linear-gradient(rgb(4, 19, 43) 0%, rgb(8, 26, 67) 100%)';
+
+	it( 'classifies the gradient forms the browser emits', () => {
+		expect( GRADIENT_SURFACE_RE.test( gradient ) ).toBe( true );
+		expect( GRADIENT_SURFACE_RE.test( 'radial-gradient(circle, #fff, #000)' ) ).toBe( true );
+		expect( GRADIENT_SURFACE_RE.test( 'conic-gradient(#fff, #000)' ) ).toBe( true );
+		expect( GRADIENT_SURFACE_RE.test( 'repeating-linear-gradient(45deg, #fff 0 10px, #000 10px 20px)' ) ).toBe( true );
+		expect( GRADIENT_SURFACE_RE.test( 'url("https://example.com/hero.jpg")' ) ).toBe( false );
+		expect( GRADIENT_SURFACE_RE.test( '#dd3333' ) ).toBe( false );
+	} );
+
+	it( 'writes a measured gradient into bgGradient, not bgColor', () => {
+		const sections: ForgeSection[] = [ { id: 'a1', anchor: 'hero' } ];
+		applyBandSurfaces( sections, () => ( { background: '#04132b', text: '#ffffff', image: gradient } ) );
+
+		expect( sections[ 0 ].bgGradient ).toBe( gradient );
+		expect( sections[ 0 ].bgColor ).toBeUndefined();
+	} );
+
+	it( 'writes a measured flat fill into bgColor', () => {
+		const sections: ForgeSection[] = [ { id: 'a1' } ];
+		applyBandSurfaces( sections, () => ( { background: '#dd3333', text: '#ffffff' } ) );
+
+		expect( sections[ 0 ].bgColor ).toBe( '#dd3333' );
+		expect( sections[ 0 ].bgGradient ).toBeUndefined();
+	} );
+
+	it( 'captures a photo url without wiring it (bgImage means hero)', () => {
+		const sections: ForgeSection[] = [ { id: 'a1' } ];
+		const photo = 'url("https://example.com/hero.jpg")';
+		applyBandSurfaces( sections, () => ( { background: '#000000', text: '#ffffff', image: photo } ) );
+
+		expect( sections[ 0 ].bgImage ).toBeUndefined();
+		expect( sections[ 0 ].bgGradient ).toBeUndefined();
+		expect( sections[ 0 ].bgColor ).toBe( '#000000' );
+	} );
+
+	it( 'never overwrites a pinned surface', () => {
+		const pinned: ForgeSection = { id: 'a1', bgColor: '#dd3333' };
+		applyBandSurfaces( [ pinned ], () => ( { background: '#000000', text: '#ffffff', image: gradient } ) );
+
+		expect( pinned.bgColor ).toBe( '#dd3333' );
+		expect( pinned.bgGradient ).toBe( gradient );
+	} );
+
+	it( 'skips a transparency reading (the body surface showing through)', () => {
+		const sections: ForgeSection[] = [ { id: 'a1' } ];
+		applyBandSurfaces( sections, () => ( { background: 'transparent', text: '#ffffff' } ) );
+		expect( sections[ 0 ].bgColor ).toBeUndefined();
+	} );
+
+	it( 'treats a fill identical to the page body as transparent', () => {
+		const sections: ForgeSection[] = [ { id: 'a1' } ];
+		applyBandSurfaces( sections, () => ( { background: '#ffffff', text: '#000000' } ), '#ffffff' );
+		expect( sections[ 0 ].bgColor ).toBeUndefined();
+	} );
+
+	it( 'leaves a band with no measured region untouched', () => {
+		const sections: ForgeSection[] = [ { id: 'a1' } ];
+		applyBandSurfaces( sections, () => undefined );
+		expect( sections[ 0 ] ).toEqual( { id: 'a1' } );
+	} );
+} );
+
+describe( 'compareRegionColors with a band image', () => {
+	const gradient = 'linear-gradient(rgb(0, 0, 0), rgb(4, 19, 43))';
+
+	it( 'fails when the source painted a gradient and the build did not', () => {
+		const source: ForgeColorBaseline = { band: { background: '#04132b', text: '#ffffff', image: gradient } };
+		const built: ForgeColorBaseline = { band: { background: '#04132b', text: '#ffffff' } };
+		const report = compareRegionColors( source, built );
+
+		expect( report.compared ).toBe( 3 );
+		expect( report.deviations ).toEqual( [
+			expect.objectContaining( { region: 'band', metric: 'image', severity: 'fail', actual: null, deltaE: null } ),
+		] );
+	} );
+
+	it( 'ignores whitespace and quote differences in the same gradient', () => {
+		const source: ForgeColorBaseline = { band: { background: '#000000', text: '#ffffff', image: gradient } };
+		const built: ForgeColorBaseline = {
+			band: { background: '#000000', text: '#ffffff', image: 'linear-gradient( rgb(0, 0, 0), rgb(4, 19, 43) )' },
+		};
+		const report = compareRegionColors( source, built );
+
+		expect( report.deviations ).toEqual( [] );
+	} );
+
+	it( 'warns (does not fail) on a differing gradient', () => {
+		const source: ForgeColorBaseline = { band: { background: '#000000', text: '#ffffff', image: gradient } };
+		const built: ForgeColorBaseline = {
+			band: { background: '#000000', text: '#ffffff', image: 'linear-gradient(rgb(0, 0, 0), rgb(255, 0, 0))' },
+		};
+		const report = compareRegionColors( source, built );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( { metric: 'image', severity: 'warn', deltaE: null } );
+	} );
+
+	it( 'does not compare a photo url (the localizer rewrites it)', () => {
+		const source: ForgeColorBaseline = {
+			band: { background: '#000000', text: '#ffffff', image: 'url("https://source.example/hero.jpg")' },
+		};
+		const built: ForgeColorBaseline = {
+			band: { background: '#000000', text: '#ffffff', image: 'url("/media/abc-hero.jpg")' },
+		};
+		const report = compareRegionColors( source, built );
+
+		expect( report.deviations ).toEqual( [] );
+		expect( report.compared ).toBe( 2 );
 	} );
 } );
 

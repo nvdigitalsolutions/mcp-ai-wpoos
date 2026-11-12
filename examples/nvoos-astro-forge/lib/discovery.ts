@@ -301,11 +301,24 @@ export function profileFromDiscovery(report: DiscoveryReport): SiteProfile {
  * over the refreshed design so a regenerate cannot silently drop a
  * hand-tuned fact.
  */
+/**
+ * Is this a real design analysis (rather than the `{ chrome }` stub the
+ * nav-toggle measurement writes)? A genuine block carries the `mode`
+ * discriminator; fixtures and older profiles may carry bands only.
+ */
+function isAnalyzedDesign( design: NonNullable< SiteProfile[ 'design' ] > ): boolean {
+	return Boolean( design.mode ) || ( design.sections?.length ?? 0 ) > 0 || ( design.outline?.length ?? 0 ) > 0;
+}
+
 export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): SiteProfile {
 	const merged: SiteProfile = { ...existing };
 	merged.url = existing.url || fresh.url;
 	merged.name = existing.name ?? fresh.name;
-	if ( fresh.design ) {
+	// Only a REAL analysis replaces the design block. The nav-toggle measurement
+	// writes `{ chrome: { navToggle } }` when no `--design` pass ran, and a stub
+	// like that must never clobber an analyzed design (2026-11-11: a plain
+	// `analyze --geometry --write` left the profile with `design: { chrome }`).
+	if ( fresh.design && isAnalyzedDesign( fresh.design ) ) {
 		merged.design = applyDesignPins( fresh.design, existing.pins );
 	}
 	if ( fresh.vocabulary ) {
@@ -319,6 +332,11 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	}
 	if ( fresh.geometry ) {
 		merged.geometry = fresh.geometry;
+	}
+	// Per-page band facts are measured facts too — a re-analysis with --pages
+	// refreshes them wholesale (the front page's own facts are `geometry`).
+	if ( fresh.pageBands ) {
+		merged.pageBands = fresh.pageBands;
 	}
 	// The measured band presentation facts (container width + typography). Like
 	// geometry they describe the SOURCE, so a re-analysis refreshes them whole; an
