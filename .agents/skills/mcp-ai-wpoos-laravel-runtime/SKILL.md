@@ -56,6 +56,7 @@ cp -R docker/laravel/app-skeleton/app/.      docker/laravel/app/app/
 cp -R docker/laravel/app-skeleton/routes/.   docker/laravel/app/routes/
 cp -R docker/laravel/app-skeleton/database/. docker/laravel/app/database/
 cp -R docker/laravel/app-skeleton/tests/.    docker/laravel/app/tests/
+cp -R docker/laravel/app-skeleton/fixtures/. docker/laravel/app/fixtures/
 
 MSYS_NO_PATHCONV=1 docker exec oos-laravel-app php artisan optimize:clear
 MSYS_NO_PATHCONV=1 docker exec oos-laravel-app php artisan octane:reload   # long-running workers
@@ -63,6 +64,16 @@ MSYS_NO_PATHCONV=1 docker exec oos-laravel-app php artisan octane:reload   # lon
 
 If a new file is missing at runtime, check the copy step first — the skeleton
 is what CI sees, `app/` is what the container sees.
+
+**Contract fixtures** live in `app-skeleton/fixtures/` and are copied the same
+way. `FixtureReplayTest` reads `base_path('fixtures')`, so a fresh checkout in
+the container needs the copy above. `php artisan fixtures:capture` writes a
+fresh set (it defaults to `base_path('fixtures')`; the repo mount is read-only
+inside the container, so capture there and copy back into the skeleton to
+commit). `NVOOS_FIXTURES_DIR` overrides the path.
+
+The `.github/workflows/laravel-app.yml` job runs the whole suite on SQLite with
+the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 ## 3. Validation matrix
 

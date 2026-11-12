@@ -1,0 +1,60 @@
+{
+    "request": {
+        "method": "GET",
+        "uri": "/api/v1/pro/toolkits/commerce/entities/product"
+    },
+    "status": 200,
+    "headers": {
+        "content-type": "application/json"
+    },
+    "body": {
+        "success": true,
+        "data": {
+            "entity": "product",
+            "records": [
+                {
+                    "id": "TEE-003",
+                    "entity": "product",
+                    "data": {
+                        "sku": "TEE-003",
+                        "name": "Cap",
+                        "price": 9,
+                        "stock": 40,
+                        "status": "active"
+                    },
+                    "created_at": "2026-11-12 13:48:50",
+                    "updated_at": "2026-11-12 13:48:50"
+                },
+                {
+                    "id": "TEE-002",
+                    "entity": "product",
+                    "data": {
+                        "sku": "TEE-002",
+                        "name": "Classic Tee",
+                        "price": 29.5,
+                        "stock": 3,
+                        "status": "active"
+                    },
+                    "created_at": "2026-11-12 13:48:50",
+                    "updated_at": "2026-11-12 13:48:50"
+                },
+                {
+                    "id": "TEE-001",
+                    "entity": "product",
+                    "data": {
+                        "sku": "TEE-001",
+                        "name": "Classic Tee",
+                        "price": 29.5,
+                        "stock": 12,
+                        "status": "active"
+                    },
+                    "created_at": "2026-11-12 13:27:04",
+                    "updated_at": "2026-11-12 13:27:04"
+                }
+            ],
+            "total": 3,
+            "page": 1,
+            "per_page": 25
+        }
+    }
+}

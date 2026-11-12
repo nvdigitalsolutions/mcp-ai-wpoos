@@ -1,0 +1,107 @@
+{
+    "request": {
+        "method": "GET",
+        "uri": "/api/v1/pro/toolkits/documents"
+    },
+    "status": 200,
+    "headers": {
+        "content-type": "application/json"
+    },
+    "body": {
+        "success": true,
+        "data": {
+            "toolkit": {
+                "slug": "documents",
+                "name": "Documents",
+                "version": "1.0.0",
+                "description": "Policy and knowledge document register.",
+                "icon": "📄",
+                "feature": "documents",
+                "screens": [
+                    "settings",
+                    "entities",
+                    "dashboard"
+                ],
+                "settings": [
+                    {
+                        "key": "default_collection",
+                        "label": "Default collection",
+                        "type": "text",
+                        "default": "knowledge",
+                        "description": "Paper Store collection used when a document is filed."
+                    },
+                    {
+                        "key": "auto_summarize",
+                        "label": "Summarise on import",
+                        "type": "boolean",
+                        "default": false
+                    }
+                ],
+                "entities": [
+                    {
+                        "key": "document",
+                        "label": "Documents",
+                        "singular": "Document",
+                        "icon": "📘",
+                        "id_field": "doc_id",
+                        "columns": [
+                            {
+                                "key": "doc_id",
+                                "label": "Document ID",
+                                "type": "string",
+                                "required": true
+                            },
+                            {
+                                "key": "title",
+                                "label": "Title",
+                                "type": "string",
+                                "required": true
+                            },
+                            {
+                                "key": "kind",
+                                "label": "Kind",
+                                "type": "enum",
+                                "enum": [
+                                    "policy",
+                                    "guide",
+                                    "report"
+                                ]
+                            },
+                            {
+                                "key": "updated_on",
+                                "label": "Updated",
+                                "type": "date"
+                            },
+                            {
+                                "key": "pages",
+                                "label": "Pages",
+                                "type": "number"
+                            }
+                        ]
+                    }
+                ],
+                "dashboard": {
+                    "cards": [
+                        {
+                            "key": "total_documents",
+                            "label": "Documents",
+                            "source": "entity:document",
+                            "aggregate": "count"
+                        },
+                        {
+                            "key": "policy_documents",
+                            "label": "Policies",
+                            "source": "entity:document",
+                            "aggregate": "count",
+                            "filter": {
+                                "column": "kind",
+                                "op": "eq",
+                                "value": "policy"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}
