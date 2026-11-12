@@ -151,6 +151,13 @@ export interface ToolkitImportResult {
 	rows?: Array< Record< string, unknown > >;
 }
 
+/** A server-drafted record awaiting review — not saved. */
+export interface ToolkitResearchDraft {
+	entity: string;
+	draft: Record< string, unknown >;
+	provider: string;
+}
+
 /** Typed API failure — `fields` carries per-field validation messages. */
 export class ToolkitsApiError extends Error {
 	readonly code: string;
@@ -332,6 +339,32 @@ export class ToolkitsClient {
 			duplicates: typeof data?.duplicates === 'number' ? data.duplicates : 0,
 			failed: Array.isArray( data?.failed ) ? data.failed : [],
 			rows: Array.isArray( data?.rows ) ? data.rows : undefined,
+		};
+	}
+
+	/**
+	 * Draft one record from a natural-language query.
+	 *
+	 * The server returns a draft only — saving still goes through
+	 * `createRecord`, so the manifest's column validation stays the single
+	 * gate into the table.
+	 */
+	async research(
+		slug: string,
+		entity: string,
+		query: string,
+		signal?: AbortSignal
+	): Promise< ToolkitResearchDraft > {
+		const data = await this.request< {
+			entity?: string;
+			draft?: Record< string, unknown >;
+			provider?: string;
+		} >( 'POST', `/${ encodeURIComponent( slug ) }/research`, { entity, query }, signal );
+
+		return {
+			entity: typeof data?.entity === 'string' ? data.entity : entity,
+			draft: data?.draft && typeof data.draft === 'object' ? data.draft : {},
+			provider: typeof data?.provider === 'string' ? data.provider : '',
 		};
 	}
 

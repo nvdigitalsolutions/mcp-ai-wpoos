@@ -238,6 +238,9 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::get('/{slug}', [ToolkitsController::class, 'show']);
                 Route::get('/{slug}/settings', [ToolkitsController::class, 'settings']);
                 Route::post('/{slug}/settings', [ToolkitsController::class, 'updateSettings']);
+                // Draft-from-query. Returns a draft for review; saving still goes
+                // through storeEntity so one validation path governs writes.
+                Route::post('/{slug}/research', [ToolkitsController::class, 'research']);
                 Route::get('/{slug}/dashboard', [ToolkitsController::class, 'dashboard']);
                 Route::get('/{slug}/entities/{entity}', [ToolkitsController::class, 'indexEntity']);
                 Route::post('/{slug}/entities/{entity}', [ToolkitsController::class, 'storeEntity']);

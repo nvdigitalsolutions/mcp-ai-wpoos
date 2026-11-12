@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Pro;
 
 use App\Support\Pro\ToolkitManifestLoader;
+use App\Support\Pro\ToolkitResearchService;
 use App\Support\SettingsSchema;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,6 +55,52 @@ class ToolkitsController
         }
 
         return $this->ok(['toolkit' => $manifest->toArray()]);
+    }
+
+    /**
+     * Draft one record from a natural-language query (Phase 4.5).
+     *
+     * The draft is returned for review, never written: the console saves it
+     * through `storeEntity`, so the manifest's column validation stays the
+     * single gate into the table.
+     */
+    public function research(
+        Request $request,
+        string $slug,
+        ToolkitManifestLoader $loader,
+        ProEntitlementInterface $entitlement,
+        ToolkitResearchService $research,
+    ): JsonResponse {
+        [$manifest, $error] = $this->resolve($slug, $loader, $entitlement);
+
+        if ($error !== null) {
+            return $error;
+        }
+
+        $data = $request->validate([
+            'entity' => ['required', 'string'],
+            'query' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $config = $manifest->entity($data['entity']);
+
+        if ($config === null) {
+            return $this->fail('entity_not_found', 'Unknown entity "'.$data['entity'].'".', 404);
+        }
+
+        $result = $research->draft($manifest, $config, (string) $data['query']);
+
+        if ($result['error'] !== null) {
+            $status = $result['error'] === 'ai_unavailable' ? 503 : 502;
+
+            return $this->fail($result['error'], (string) $result['message'], $status);
+        }
+
+        return $this->ok([
+            'entity' => $data['entity'],
+            'draft' => $result['draft'],
+            'provider' => $result['provider'],
+        ]);
     }
 
     public function settings(

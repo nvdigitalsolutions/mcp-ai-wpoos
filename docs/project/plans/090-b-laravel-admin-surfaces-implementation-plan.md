@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–3d implemented and verified — the base console and the Phase 3 Pro surfaces run on the Laravel adapter (2026-11-12) · Phases 4–5 planned
+**Status:** Phases 0–3d and 4.1–4.5 implemented and verified — the base console, the Phase 3 Pro surfaces and the manifest-driven toolkit engine (including draft-from-query research) run on the Laravel adapter (2026-11-13) · Phases 4.6–5 planned
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -237,7 +237,7 @@ author/viewer/guest/bearer) passes on every mutating route.
 | 4.2 | Five generic console screens (settings, entity workbench, research & add, consolidate, dashboard) | `addons/pro/assets/spa-v2/src/features/toolkits` | Screens render from a manifest | ✅ settings / entities / dashboard live; research + consolidate shipped as scaffolds |
 | 4.3 | Generic resource controller + settings schema endpoint | `ToolkitController` | `/api/v1/pro/toolkits/{slug}` | ✅ list/show/settings/dashboard/entity CRUD |
 | 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error | ✅ route middleware + per-manifest feature checks |
-| 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | ⏳ commerce + documents manifests shipped (data only); media is the built-in library |
+| 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | 🟡 commerce + documents manifests shipped; **research drafting wired**; media is the built-in library |
 | 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | ⏳ |
 | 4.7 | Contract fixtures per family | fixtures | Parity suite | ⏳ |
 
@@ -478,7 +478,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 | Media thumbnails / alt text | Not ported | `media_details.sizes` is empty and `alt_text` is write-once blank; add a thumbnail pipeline and an update route when the media toolkit is ported |
 | WP-native integrations | Non-goal | Deep-link or mark unavailable |
 | Pro tool catalogue on Laravel | **Decided (option 3)** | Selective port by cluster: 18 tools are dependency-free, 143 need one adapter, 860 stay in the plugin. Tracker + recipe: `090-d-selective-tool-port.md`; regenerate with `bin/classify-tool-portability.php` |
-| Toolkit `research` screen | Scaffold | Renders the manifest's prompt + existing records; returns no AI drafting because the Laravel runtime has no `deep_research` pipeline. Wire it to the provider router in Phase 4.5 |
+| Toolkit `research` screen | **Done (4.5)** | `POST /pro/toolkits/{slug}/research` drafts one record from the manifest's column schema through `ProviderRouter` (`temperature 0.2`, JSON-only reply, unknown keys dropped). The draft is reviewed in the console and saved through `storeEntity`, so one validation path governs writes. No provider → typed `ai_unavailable` 503. |
 | Toolkit `consolidate` screen | Bounded | Scans the first 100 records of each entity (one page) to keep the request O(1). Move to a queued job when a family needs full-catalogue dedupe |
 | `/pro/toolkits` on the WordPress runtime | Not ported | The WordPress Pro SPA config returns `toolkits: ''`; `ToolkitsClient.available` is false and the nav entry is hidden. Port the REST controller in Phase 4.6 when families migrate |
 | Non-stateful session login | Decided | A POST to `/session/login` without a first-party `Referer`/`Origin` answers a typed 419 `session_required` instead of a 500 (browser-only flow) |
@@ -495,6 +495,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 3c — schedule manager, records schema, `wp/v2` content shim, Pro entitlement middleware
 - [x] Phase 3d — media library + upload service (task 3.11)
 - [x] Phase 4.1 + 4.3 — toolkit manifest contract, loader, generic engine
-- [x] Phase 4.2 — generic toolkit console screens (settings, workbench, dashboard live; research + consolidate scaffolds)
-- [ ] Phase 4.5–4.7 — toolkit service layer + contract fixtures
+- [x] Phase 4.2 — generic toolkit console screens (settings, workbench, dashboard, consolidate live; research scaffold replaced in 4.5)
+- [x] Phase 4.5 — toolkit research service: draft-from-query endpoint + console wiring (draft only; saving still goes through `storeEntity`)
+- [ ] Phase 4.6–4.7 — migrate families one at a time (WP peer) + golden contract fixtures
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates
