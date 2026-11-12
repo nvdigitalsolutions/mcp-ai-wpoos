@@ -477,6 +477,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 | Schedule execution model | Synchronous | `trigger` runs the handler inline and records the run; move to queued execution when long-running toolkits are ported |
 | Media thumbnails / alt text | Not ported | `media_details.sizes` is empty and `alt_text` is write-once blank; add a thumbnail pipeline and an update route when the media toolkit is ported |
 | WP-native integrations | Non-goal | Deep-link or mark unavailable |
+| Pro tool catalogue on Laravel | **Decided (option 3)** | Selective port by cluster: 18 tools are dependency-free, 143 need one adapter, 860 stay in the plugin. Tracker + recipe: `090-d-selective-tool-port.md`; regenerate with `bin/classify-tool-portability.php` |
 | Toolkit `research` screen | Scaffold | Renders the manifest's prompt + existing records; returns no AI drafting because the Laravel runtime has no `deep_research` pipeline. Wire it to the provider router in Phase 4.5 |
 | Toolkit `consolidate` screen | Bounded | Scans the first 100 records of each entity (one page) to keep the request O(1). Move to a queued job when a family needs full-catalogue dedupe |
 | `/pro/toolkits` on the WordPress runtime | Not ported | The WordPress Pro SPA config returns `toolkits: ''`; `ToolkitsClient.available` is false and the nav entry is hidden. Port the REST controller in Phase 4.6 when families migrate |

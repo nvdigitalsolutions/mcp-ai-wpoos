@@ -677,6 +677,34 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Module_Registry' ) ) {
 			);
 
 			$this->add_module(
+				'rest_toolkits',
+				'Toolkit Engine REST',
+				array(),
+				array(),
+				function () use ( $p ) {
+					// Manifest-driven Pro toolkits (Proposal 090-B §8/4.6). The
+					// controller only hooks rest_api_init and gates every route on
+					// manage_options, so it is safe to load outside wp-admin.
+					$manifests = $p . 'toolkits/class-wp-mcp-ai-pro-toolkit-manifests.php';
+					$records   = $p . 'toolkits/class-wp-mcp-ai-pro-toolkit-records.php';
+					$rest      = $p . 'rest/class-wp-mcp-ai-pro-toolkit-rest-controller.php';
+
+					if ( ! file_exists( $manifests ) || ! file_exists( $records ) || ! file_exists( $rest ) ) {
+						return;
+					}
+
+					require_once $manifests;
+					require_once $records;
+					require_once $rest;
+
+					// Create/migrate the shared records table when the schema
+					// version moved — covers fresh activations and in-place updates.
+					add_action( 'init', array( 'WP_MCP_AI_Pro_Toolkit_Manifests', 'maybe_install' ) );
+					add_action( 'rest_api_init', array( 'WP_MCP_AI_Pro_Toolkit_REST_Controller', 'register_routes' ) );
+				}
+			);
+
+			$this->add_module(
 				'rest_remote_sites',
 				'Remote Sites REST',
 				array(),

@@ -74,6 +74,16 @@ jobs:
           vendor/bin/phpcs --standard=addons/nvoos-astro-bridge/phpcs.xml.dist \
             addons/nvoos-astro-bridge/includes addons/nvoos-astro-bridge/nvoos-astro-bridge.php addons/nvoos-astro-bridge/uninstall.php
 
+      - name: Run PSR-12 on the Laravel trees (own ruleset)
+        run: |
+          # phpcs.xml.dist excludes lib/ and docker/, so the Laravel adapter and
+          # the app skeleton had no style gate at all. They are checked here
+          # with phpcs-laravel.xml.dist: full PSR-12 for the app skeleton,
+          # PSR-12 minus indentation for the tab-indented adapter. Line length
+          # stays advisory (PSR-12's 120-column soft limit).
+          vendor/bin/phpcs --standard=phpcs-laravel.xml.dist \
+            --error-severity=1 --warning-severity=8
+
       - name: Run WPCS on changed files
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
         run: |

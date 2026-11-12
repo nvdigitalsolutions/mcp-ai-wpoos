@@ -67,6 +67,8 @@
         "lint:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 --extensions=php --ignore=vendor,node_modules,addons/pro/vendor,assets/examples,bin,docker,tests/helpers,tests/fixtures .",
         "lint:base": "phpcs --error-severity=1 --warning-severity=8 --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
         "lint:base:compat": "phpcs --standard=PHPCompatibilityWP --runtime-set testVersion 8.1-8.4 --extensions=php --ignore=vendor,node_modules,addons/pro,addons/pro/vendor,assets/examples,examples,bin,docker,tests .",
+        "lint:laravel": "phpcs --standard=phpcs-laravel.xml.dist --error-severity=1 --warning-severity=8",
+        "format:laravel": "phpcbf --standard=phpcs-laravel.xml.dist",
         "format": "phpcbf",
         "vendor:manifest": "node bin/generate-vendor-manifest.mjs",
         "vendor:check": "node bin/check-vendor-integrity.mjs",

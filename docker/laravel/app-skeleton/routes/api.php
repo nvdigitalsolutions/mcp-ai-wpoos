@@ -174,6 +174,9 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::get('/{slug}/dashboard', [ToolkitsController::class, 'dashboard']);
                 Route::get('/{slug}/entities/{entity}', [ToolkitsController::class, 'indexEntity']);
                 Route::post('/{slug}/entities/{entity}', [ToolkitsController::class, 'storeEntity']);
+                // Registered before `{id}` so the literal segments win the match.
+                Route::get('/{slug}/entities/{entity}/duplicates', [ToolkitsController::class, 'duplicates']);
+                Route::post('/{slug}/entities/{entity}/import', [ToolkitsController::class, 'importEntity']);
                 Route::get('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'showEntity']);
                 Route::put('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'updateEntity']);
                 Route::delete('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'destroyEntity']);
