@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Pro;
 
 use App\Support\Pro\ToolkitManifestLoader;
-use App\Support\Pro\ToolkitResearchService;
 use App\Support\SettingsSchema;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Nvoos\Core\Application\Toolkit\ToolkitResearchService;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\ValueObject\ToolkitManifest;
