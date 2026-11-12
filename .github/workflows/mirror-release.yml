@@ -9,8 +9,9 @@
 #
 # The mirror tag is created at the mirror's `main` HEAD — the branch every
 # sync workflow force-pushes. `version_file` optionally reads that HEAD's
-# plugin header and warns (does not fail) when the mirror lags the release,
-# which is the normal state while a sync run is still in flight.
+# version (a PHP plugin header by default, or `package.json` with
+# `version_format: json`) and warns (does not fail) when the mirror lags the
+# release, which is the normal state while a sync run is still in flight.
 #
 # Auth: MIRROR_TOKEN is the same `*_REPO_TOKEN` secret the sync workflow
 # already uses — a PAT with `contents: write` on the mirror repo. When the
@@ -55,6 +56,11 @@ on:
         required: false
         type: string
         default: ''
+      version_format:
+        description: "How to read version_file: 'php_header' (default) or 'json' (package.json)."
+        required: false
+        type: string
+        default: php_header
       draft:
         description: 'Create the mirror release as a draft.'
         required: false
@@ -131,18 +137,33 @@ jobs:
           GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
           MIRROR_REPO: ${{ inputs.mirror_repo }}
           VERSION_FILE: ${{ inputs.version_file }}
+          VERSION_FORMAT: ${{ inputs.version_format }}
           TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
           release_version="${TAG##*-v}"
 
           read_version() {
-            gh api "repos/${MIRROR_REPO}/contents/${VERSION_FILE}?ref=main" \
+            local content
+            content="$(gh api "repos/${MIRROR_REPO}/contents/${VERSION_FILE}?ref=main" \
               --jq '.content' 2>/dev/null \
               | base64 -d 2>/dev/null \
-              | grep -iE 'Version:' | head -n1 \
-              | sed 's/.*[Vv]ersion:[[:space:]]*//' | tr -d '[:space:]*' \
-              || true
+              || true)"
+            case "${VERSION_FORMAT}" in
+              json)
+                printf '%s' "${content}" \
+                  | grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' \
+                  | head -n1 \
+                  | sed 's/.*"\([^"]*\)"$/\1/' \
+                  || true
+                ;;
+              *)
+                printf '%s\n' "${content}" \
+                  | grep -iE 'Version:' | head -n1 \
+                  | sed 's/.*[Vv]ersion:[[:space:]]*//' | tr -d '[:space:]*' \
+                  || true
+                ;;
+            esac
           }
 
           # The sync workflow runs on the branch push, not on the tag push, so
