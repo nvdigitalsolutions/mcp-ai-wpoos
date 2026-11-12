@@ -24,6 +24,22 @@ namespace Nvoos\Core\Domain\Contract;
 interface ProfessionRepositoryInterface
 {
     /**
+     * Catalogue version — the cache epoch for this repository.
+     *
+     * A change to this value invalidates every cached catalogue read without
+     * a purge: cache keys embed it, so the previous generation becomes
+     * unreachable in one constant-time step and expires on its own TTL.
+     *
+     * Read-only runtimes report their manifest version; writable runtimes bump
+     * a counter when the catalogue changes. The value is opaque to consumers.
+     *
+     * @since 2.1.0
+     *
+     * @return string Version string (never empty).
+     */
+    public function catalogueVersion(): string;
+
+    /**
      * Get all available professions.
      *
      * @return array<string, array{name: string, slug: string, category: string, description: string, recommended_tools: array<int, string>}>

@@ -26,9 +26,11 @@ class CacheStore implements CacheStoreInterface {
 	/**
 	 * Laravel cache store name (e.g. 'redis', 'memcached', 'file').
 	 *
-	 * When empty, uses the application default.
+	 * Null means "the application default". Stored as null rather than an empty
+	 * string because `Cache::store('')` resolves a store literally named ""
+	 * and throws; only null coalesces to the default driver.
 	 */
-	private string $storeName;
+	private ?string $storeName;
 
 	/**
 	 * Prefix added to all keys to avoid collisions with other cache consumers.
@@ -40,16 +42,14 @@ class CacheStore implements CacheStoreInterface {
 	 *                           Defaults to the application default when empty.
 	 */
 	public function __construct( string $storeName = '' ) {
-		$this->storeName = $storeName;
+		$this->storeName = '' !== $storeName ? $storeName : null;
 	}
 
 	/**
 	 * Get the Cache store instance.
 	 */
 	private function store(): \Illuminate\Contracts\Cache\Store {
-		return '' !== $this->storeName
-			? Cache::store( $this->storeName )->getStore()
-			: Cache::store()->getStore();
+		return Cache::store( $this->storeName )->getStore();
 	}
 
 	/**

@@ -330,6 +330,14 @@ return array(
 	*/
 	'professions'      => array(
 		'path' => env( 'NVOOS_PROFESSIONS_PATH', __DIR__ . '/../resources/professions' ),
+
+		/*
+		| Catalogue reads are cached under a key that embeds the manifest's
+		| `catalogue_version`. Bumping the version invalidates every entry without
+		| a purge; entries from the previous generation expire on their own TTL.
+		| Set to 0 to disable caching (every read goes to disk).
+		*/
+		'cache_ttl' => (int) env( 'NVOOS_PROFESSIONS_CACHE_TTL', 86400 ),
 	),
 
 	/*

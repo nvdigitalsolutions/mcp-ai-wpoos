@@ -318,6 +318,36 @@ missing so a database that grew one out of band keeps its values.
 [cerb]: https://www.cerbos.dev/blog/how-to-implement-scalable-multitenant-authorization
 [sso]: https://ssojet.com/blog/multi-tenant-identity-management
 
+### 4.5 Catalogue cache — generational invalidation
+
+**Status: shipped.** Reads used to hit the CPT query (WordPress) or the
+catalogue directory (Laravel) on every call. Both runtimes now share one
+read-through decorator in `lib/core`, so the policy is written once:
+
+- `catalogueVersion()` is on `ProfessionRepositoryInterface`. It is the cache
+  epoch; consumers treat the value as opaque.
+- `CachedProfessionRepository` writes each read under
+  `professions.catalogue.{version}.{read}`. Incrementing the version makes the
+  previous generation unreachable in one constant-time step — no purge, no key
+  scan — and old entries expire on their own TTL ([Redisson][red], [SO][so]).
+- Empty answers and missed slugs are not cached: a storage hiccup must not pin
+  an empty catalogue, and arbitrary slugs must not be able to fill the store.
+- **WordPress** derives the epoch from `wp_mcp_ai_profession_catalogue_version`,
+  a counter bumped by `WP_MCP_AI_Profession_CPT` on `save_post_mcp_ai_profession`
+  and on deleting a profession. Admin edits, WP-CLI imports and programmatic
+  saves all bump it, because `wp_insert_post()` fires `save_post`.
+- **Laravel** derives it from the manifest's `catalogue_version`, falling back
+  to a filename/size/mtime fingerprint when a deployment ships no manifest.
+- TTL is a garbage collector, not the invalidation mechanism: 24h by default,
+  filterable in WordPress (`wp_mcp_ai_profession_catalogue_cache_ttl`) and
+  configurable in Laravel (`oos.professions.cache_ttl`); `0` disables caching.
+
+Writes never go through the decorator. `save_profession` keeps the raw adapter,
+which owns the CPT and is what bumps the epoch.
+
+[red]: https://redisson.pro/glossary/cache-invalidation.html
+[so]: https://www.systemoverflow.com/learn/caching/cache-invalidation/versioned-and-generational-keys-avoiding-delete-storms-with-namespace-epochs
+
 ## 5. Sequencing
 
 | Phase | Work | Unlocks |
@@ -327,6 +357,7 @@ missing so a database that grew one out of band keeps its values.
 | 3 | Teams tables, `TeamServiceInterface`, `TeamController` (`090-b` 2.5) — **shipped** | Team CRUD + membership |
 | 4 | Surfaces: profession selector, org-team pages, team-catalogue parity — **shipped** | User-facing |
 | 5 | Site roles (WP vocabulary) + team-scoped abilities, route enforcement, backfill — **shipped** | Enforced authorization |
+| 6 | Catalogue cache: contract version, version-keyed read-through decorator, WP epoch bump on save/delete — **shipped** | Cheap catalogue reads |
 
 ## 6. Acceptance gates
 
@@ -336,12 +367,13 @@ missing so a database that grew one out of band keeps its values.
 - [x] `UNIQUE (team_id, user_id)` and a constrained role set, enforced at the
       database level, not only in PHP.
 - [x] "My teams" and "team members" queries both hit an index.
-- [ ] The profession catalogue reports a version, and a version bump
-      invalidates the cache without a manual purge. *(Version is exposed via
-      `catalogueVersion()`, but there is no shared cache layer yet — the
-      repository only memoizes per instance, so a deploy is visible on the
-      next resolve. A persisted cache keyed by `catalogue_version` is
-      deliberately deferred until something needs it.)*
+- [x] The profession catalogue reports a version, and a version bump
+      invalidates the cache without a manual purge. *(`catalogueVersion()` is
+      on `ProfessionRepositoryInterface`; reads go through
+      `CachedProfessionRepository`, which embeds the version in every key. The
+      WordPress epoch is a counter bumped by `WP_MCP_AI_Profession_CPT` on
+      save and delete; the Laravel epoch is the manifest version, with a
+      filesystem fingerprint when a deployment ships no manifest.)*
 - [x] Every tenant-owned table has `tenant_id` as the leading index column and
       inside its unique constraints.
 - [x] A subscriber is rejected (403) by every `manage_options` surface, and an

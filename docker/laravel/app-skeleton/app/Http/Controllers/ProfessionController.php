@@ -38,11 +38,8 @@ class ProfessionController
         return response()->json(array(
             'professions' => $items,
             'total' => count($items),
-            // The concrete adapter exposes this; the interface does not, because
-            // WordPress has no catalogue version.
-            'catalogue_version' => method_exists($this->professions, 'catalogueVersion')
-                ? $this->professions->catalogueVersion()
-                : null,
+            // The epoch every cached catalogue read is keyed by (090-g Phase 6).
+            'catalogue_version' => $this->professions->catalogueVersion(),
         ));
     }
 

@@ -29,6 +29,14 @@ class WP_MCP_AI_Profession_CPT {
 	const POST_TYPE = 'mcp_ai_profession';
 
 	/**
+	 * Option holding the catalogue version — the cache epoch for catalogue reads.
+	 *
+	 * Bumped on every profession save and delete, so a version-keyed cache is
+	 * invalidated without a manual purge. Consumers treat the value as opaque.
+	 */
+	const OPTION_CATALOGUE_VERSION = 'wp_mcp_ai_profession_catalogue_version';
+
+	/**
 	 * Meta key for profession category (advisory, creative, technical, etc.).
 	 */
 	const META_CATEGORY = '_wp_mcp_ai_profession_category';
@@ -169,9 +177,64 @@ class WP_MCP_AI_Profession_CPT {
 		add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
 		add_action( 'do_meta_boxes', array( $this, 'remove_custom_fields_metabox' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_post' ), 10, 2 );
+		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'bump_catalogue_version' ), 20, 2 );
+		add_action( 'deleted_post', array( $this, 'bump_catalogue_version_on_delete' ), 10, 2 );
 		add_filter( 'use_block_editor_for_post_type', array( $this, 'disable_block_editor' ), 10, 2 );
 		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', array( $this, 'add_admin_columns' ) );
 		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( $this, 'render_admin_columns' ), 10, 2 );
+	}
+
+	/**
+	 * Current catalogue version.
+	 *
+	 * Stored as an incrementing counter, so it never depends on clock
+	 * resolution and two edits in the same second still invalidate.
+	 *
+	 * @return int Version, never below 1.
+	 */
+	public static function catalogue_version() {
+		return max( 1, (int) get_option( self::OPTION_CATALOGUE_VERSION, 1 ) );
+	}
+
+	/**
+	 * Bump the catalogue version after a profession is created or updated.
+	 *
+	 * Registered alongside save_post at a later priority so it runs even when
+	 * the meta handler bails (programmatic saves carry no nonce). Autosaves and
+	 * revisions are ignored — they do not change the catalogue.
+	 *
+	 * @param int          $post_id Saved post ID.
+	 * @param WP_Post|null $post    Post object.
+	 */
+	public function bump_catalogue_version( $post_id, $post = null ) {
+		unset( $post );
+
+		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+			return;
+		}
+
+		update_option( self::OPTION_CATALOGUE_VERSION, self::catalogue_version() + 1 );
+	}
+
+	/**
+	 * Bump the catalogue version when a profession is deleted.
+	 *
+	 * `deleted_post` fires for every post type; the post object is checked
+	 * before the option is touched.
+	 *
+	 * @param int          $post_id Deleted post ID.
+	 * @param WP_Post|null $post    Post object.
+	 */
+	public function bump_catalogue_version_on_delete( $post_id, $post = null ) {
+		$type = is_object( $post ) && isset( $post->post_type )
+			? $post->post_type
+			: get_post_type( $post_id );
+
+		if ( self::POST_TYPE !== $type ) {
+			return;
+		}
+
+		update_option( self::OPTION_CATALOGUE_VERSION, self::catalogue_version() + 1 );
 	}
 
 	/**

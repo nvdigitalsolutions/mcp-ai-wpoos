@@ -89,6 +89,25 @@ final class ProfessionRepository implements ProfessionRepositoryInterface, Profe
         return \is_array($professions) ? $professions : [];
     }
 
+    /**
+     * {@inheritdoc}
+     *
+     * The catalogue is CPT-backed, so the version is a counter bumped by
+     * WP_MCP_AI_Profession_CPT on every save and delete. The option name is
+     * inlined rather than read from the CPT class: this package must remain
+     * usable when the base plugin did not boot.
+     */
+    public function catalogueVersion(): string
+    {
+        if (!\function_exists('get_option')) {
+            return '0';
+        }
+
+        $version = \get_option('wp_mcp_ai_profession_catalogue_version', 1);
+
+        return (string) (\is_scalar($version) ? $version : 1);
+    }
+
     public function getBySlug(string $slug): array
     {
         if ($this->service === null) {
