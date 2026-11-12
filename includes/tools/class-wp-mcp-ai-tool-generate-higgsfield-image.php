@@ -32,6 +32,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-model-catalog.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
@@ -63,6 +64,14 @@ class WP_MCP_AI_Tool_Generate_Higgsfield_Image implements WP_MCP_AI_Tool_Interfa
 	 * Aspect ratios shared by the verified SOUL workflows.
 	 */
 	const ALLOWED_ASPECT_RATIOS = array( '9:16', '16:9', '4:3', '3:4', '1:1', '2:3', '3:2' );
+
+	/**
+	 * Output counts both SOUL workflows accept.
+	 *
+	 * Named so the schema and the payload clamp cannot disagree — they were two
+	 * separate `array( 1, 4 )` literals before Proposal 141.
+	 */
+	const ALLOWED_BATCH_SIZES = array( 1, 4 );
 
 	/**
 	 * {@inheritdoc}
@@ -100,6 +109,121 @@ class WP_MCP_AI_Tool_Generate_Higgsfield_Image implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
+	 * Model ids this tool can actually serve.
+	 *
+	 * Intersection of the verified endpoint map (IMAGE_MODELS) and the models the
+	 * capability registry assigns to this tool, in IMAGE_MODELS order. The schema
+	 * can therefore never advertise a workflow this tool cannot build an endpoint
+	 * for, and the default model stays first.
+	 *
+	 * Divergence in either direction is a bug, caught by
+	 * tests/test-higgsfield-image-catalog-parity.php.
+	 *
+	 * @return string[]
+	 */
+	public function get_supported_models() {
+		$declared = array_keys( self::IMAGE_MODELS );
+
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return $declared;
+		}
+
+		$registered = array_keys(
+			WP_MCP_AI_Media_Model_Catalog::get_models( array( 'tool' => $this->get_slug() ) )
+		);
+
+		if ( empty( $registered ) ) {
+			return $declared;
+		}
+
+		$supported = array_values( array_intersect( $declared, $registered ) );
+
+		return empty( $supported ) ? $declared : $supported;
+	}
+
+	/**
+	 * Union of a capability field across the models this tool serves.
+	 *
+	 * Values keep first-seen order, which for the shipped catalog reproduces the
+	 * ALLOWED_* constants exactly — so deriving the schema changes nothing until
+	 * the const and the registry actually disagree.
+	 *
+	 * @param string $field Registry field: aspect_ratios or resolutions.
+	 * @return string[]
+	 */
+	protected function get_registry_union( $field ) {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return array();
+		}
+
+		$union = array();
+
+		foreach ( $this->get_supported_models() as $model ) {
+			foreach ( WP_MCP_AI_Media_Model_Catalog::get_enum( $model, $field ) as $value ) {
+				if ( ! in_array( $value, $union, true ) ) {
+					$union[] = $value;
+				}
+			}
+		}
+
+		return $union;
+	}
+
+	/**
+	 * Aspect-ratio values accepted by at least one served model.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_aspect_ratios() {
+		$union = $this->get_registry_union( 'aspect_ratios' );
+
+		return empty( $union ) ? self::ALLOWED_ASPECT_RATIOS : $union;
+	}
+
+	/**
+	 * Resolution values accepted by at least one served model.
+	 *
+	 * The fallback is derived from IMAGE_MODELS rather than restated, so the
+	 * const remains the only place a workflow's resolutions are declared.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_resolutions() {
+		$union = $this->get_registry_union( 'resolutions' );
+
+		if ( ! empty( $union ) ) {
+			return $union;
+		}
+
+		$declared = array();
+
+		foreach ( self::IMAGE_MODELS as $spec ) {
+			foreach ( $spec['resolutions'] as $resolution ) {
+				if ( ! in_array( $resolution, $declared, true ) ) {
+					$declared[] = $resolution;
+				}
+			}
+		}
+
+		return empty( $declared ) ? array( '720p' ) : $declared;
+	}
+
+	/**
+	 * Output counts accepted by at least one served model.
+	 *
+	 * @return int[]
+	 */
+	public function get_allowed_batch_sizes() {
+		$union = $this->get_registry_union( 'batch_sizes' );
+
+		if ( empty( $union ) ) {
+			return self::ALLOWED_BATCH_SIZES;
+		}
+
+		return array_map( 'intval', $union );
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
@@ -113,19 +237,19 @@ class WP_MCP_AI_Tool_Generate_Higgsfield_Image implements WP_MCP_AI_Tool_Interfa
 				'model'          => array(
 					'type'        => 'string',
 					'description' => __( 'Higgsfield image workflow: "soul-2" (portraits, fashion, editorial; optional style_id) or "soul-cinema" (cinema-inspired stills; fixed cinematic style).', 'mcp-ai-wpoos' ),
-					'enum'        => array_keys( self::IMAGE_MODELS ),
+					'enum'        => $this->get_supported_models(),
 					'default'     => self::DEFAULT_MODEL,
 				),
 				'aspect_ratio'   => array(
 					'type'        => 'string',
 					'description' => __( 'Output width-to-height ratio.', 'mcp-ai-wpoos' ),
-					'enum'        => self::ALLOWED_ASPECT_RATIOS,
+					'enum'        => $this->get_allowed_aspect_ratios(),
 					'default'     => '1:1',
 				),
 				'resolution'     => array(
 					'type'        => 'string',
 					'description' => __( 'Output resolution tier: "720p" (default) or "1080p".', 'mcp-ai-wpoos' ),
-					'enum'        => array( '720p', '1080p' ),
+					'enum'        => $this->get_allowed_resolutions(),
 					'default'     => '720p',
 				),
 				'enhance_prompt' => array(
@@ -142,7 +266,7 @@ class WP_MCP_AI_Tool_Generate_Higgsfield_Image implements WP_MCP_AI_Tool_Interfa
 				'batch_size'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of output images: 1 or 4.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 1, 4 ),
+					'enum'        => $this->get_allowed_batch_sizes(),
 					'default'     => 1,
 				),
 				'style_id'       => array(
@@ -335,7 +459,7 @@ class WP_MCP_AI_Tool_Generate_Higgsfield_Image implements WP_MCP_AI_Tool_Interfa
 		$enhance_prompt = isset( $arguments['enhance_prompt'] ) ? (bool) $arguments['enhance_prompt'] : false;
 
 		$batch_size = isset( $arguments['batch_size'] ) ? absint( $arguments['batch_size'] ) : 1;
-		$batch_size = in_array( $batch_size, array( 1, 4 ), true ) ? $batch_size : 1;
+		$batch_size = in_array( $batch_size, self::ALLOWED_BATCH_SIZES, true ) ? $batch_size : 1;
 
 		$payload = array(
 			'prompt'         => $prompt,

@@ -2205,6 +2205,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Higgsfield_Image' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-higgsfield-image.php',
 				'WP_MCP_AI_Tool_Check_Higgsfield_Request'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-higgsfield-request.php',
 				'WP_MCP_AI_Tool_Cancel_Higgsfield_Request' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-cancel-higgsfield-request.php',
+				// Generative-media capability registry + deterministic prompt craft (Proposal 141).
+				'WP_MCP_AI_Tool_Media_Model_Capabilities'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-media-model-capabilities.php',
+				'WP_MCP_AI_Tool_Enhance_Media_Prompt'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-enhance-media-prompt.php',
 				'WP_MCP_AI_Tool_Check_Video_Status'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-video-status.php',
 				'WP_MCP_AI_Tool_Generate_Music'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music.php',
 				'WP_MCP_AI_Tool_Submit_Document_Prompt'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php',

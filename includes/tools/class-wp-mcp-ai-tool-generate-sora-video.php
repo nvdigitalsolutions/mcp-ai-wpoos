@@ -20,6 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-model-catalog.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-response.php';
 
@@ -34,6 +35,11 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	const DEFAULT_SIZE     = '1080p';
 	const DEFAULT_DURATION = 5;
 	const API_ENDPOINT     = 'https://api.openai.com/v1/videos';
+
+	/**
+	 * Models this tool can select.
+	 */
+	const MODELS = array( 'sora-2', 'sora-2-pro' );
 
 	/**
 	 * {@inheritdoc}
@@ -71,10 +77,119 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
+	 * Model ids this tool can select.
+	 *
+	 * Const filtered by the capability registry, falling back to the const when
+	 * the registry is unavailable. Divergence is caught by
+	 * tests/test-media-tool-catalog-parity.php.
+	 *
+	 * @return string[]
+	 */
+	public function get_supported_models() {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return self::MODELS;
+		}
+
+		$registered = array_keys(
+			WP_MCP_AI_Media_Model_Catalog::get_models( array( 'tool' => $this->get_slug() ) )
+		);
+
+		if ( empty( $registered ) ) {
+			return self::MODELS;
+		}
+
+		$supported = array_values( array_intersect( self::MODELS, $registered ) );
+
+		return empty( $supported ) ? self::MODELS : $supported;
+	}
+
+	/**
+	 * Union of a capability field across this tool's models.
+	 *
+	 * @param string $field Registry field: aspect_ratios or resolutions.
+	 * @return string[]
+	 */
+	protected function get_registry_union( $field ) {
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return array();
+		}
+
+		$union = array();
+
+		foreach ( $this->get_supported_models() as $model ) {
+			foreach ( WP_MCP_AI_Media_Model_Catalog::get_enum( $model, $field ) as $value ) {
+				if ( ! in_array( $value, $union, true ) ) {
+					$union[] = $value;
+				}
+			}
+		}
+
+		return $union;
+	}
+
+	/**
+	 * Aspect-ratio values accepted by at least one model.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_aspect_ratios() {
+		$union = $this->get_registry_union( 'aspect_ratios' );
+
+		return empty( $union ) ? array( '16:9', '9:16', '1:1' ) : $union;
+	}
+
+	/**
+	 * Resolution values accepted by at least one model.
+	 *
+	 * @return string[]
+	 */
+	public function get_allowed_resolutions() {
+		$union = $this->get_registry_union( 'resolutions' );
+
+		return empty( $union ) ? array( '480p', '720p', '1080p' ) : $union;
+	}
+
+	/**
+	 * Duration bounds spanned by this tool's models.
+	 *
+	 * @return array{min:int,max:int}
+	 */
+	public function get_duration_bounds() {
+		$bounds = array(
+			'min' => 5,
+			'max' => 60,
+		);
+
+		if ( ! class_exists( 'WP_MCP_AI_Media_Model_Catalog' ) ) {
+			return $bounds;
+		}
+
+		$ranges = array();
+
+		foreach ( $this->get_supported_models() as $model ) {
+			$range = WP_MCP_AI_Media_Model_Catalog::get_duration_range( $model );
+
+			if ( null !== $range ) {
+				$ranges[] = $range;
+			}
+		}
+
+		if ( empty( $ranges ) ) {
+			return $bounds;
+		}
+
+		$bounds['min'] = min( array_column( $ranges, 'min' ) );
+		$bounds['max'] = max( array_column( $ranges, 'max' ) );
+
+		return $bounds;
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
-		$defaults = $this->get_configured_defaults();
+		$defaults        = $this->get_configured_defaults();
+		$duration_bounds = $this->get_duration_bounds();
 
 		return array(
 			'type'                 => 'object',
@@ -86,26 +201,26 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 				'model'         => array(
 					'type'        => 'string',
 					'description' => __( 'OpenAI video model to use: "sora-2" (standard quality) or "sora-2-pro" (higher quality, more coherent).', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'sora-2', 'sora-2-pro' ),
+					'enum'        => $this->get_supported_models(),
 					'default'     => $defaults['model'],
 				),
 				'size'          => array(
 					'type'        => 'string',
 					'description' => __( 'Resolution of the generated video.', 'mcp-ai-wpoos' ),
-					'enum'        => array( '480p', '720p', '1080p' ),
+					'enum'        => $this->get_allowed_resolutions(),
 					'default'     => $defaults['size'],
 				),
 				'duration'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Video duration in seconds (5-20 for sora-2, 5-60 for sora-2-pro).', 'mcp-ai-wpoos' ),
-					'minimum'     => 5,
-					'maximum'     => 60,
+					'minimum'     => $duration_bounds['min'],
+					'maximum'     => $duration_bounds['max'],
 					'default'     => $defaults['duration'],
 				),
 				'aspect_ratio'  => array(
 					'type'        => 'string',
 					'description' => __( 'Video aspect ratio: "16:9" (landscape), "9:16" (portrait), "1:1" (square).', 'mcp-ai-wpoos' ),
-					'enum'        => array( '16:9', '9:16', '1:1' ),
+					'enum'        => $this->get_allowed_aspect_ratios(),
 					'default'     => '16:9',
 				),
 				'file_name'     => array(
