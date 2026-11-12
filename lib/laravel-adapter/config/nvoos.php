@@ -480,9 +480,38 @@ return array(
 	|
 	*/
 	'pro_entitlement' => array(
-		'driver'   => env( 'NVOOS_PRO_ENTITLEMENT_DRIVER', 'allow' ),
-		'plan'     => env( 'NVOOS_PRO_PLAN', 'compliance' ),
-		'features' => array(),
+		/*
+		 * Driver: allow | deny | config | license.
+		 *
+		 * `license` resolves against the commercial licence server — the same
+		 * endpoint the WordPress plugin uses — keyed on `instance_id` instead
+		 * of a site URL. The configuration drivers cover development, CI and
+		 * fail-closed deployments. Unknown drivers fail closed.
+		 */
+		'driver'      => env( 'NVOOS_PRO_ENTITLEMENT_DRIVER', 'allow' ),
+
+		// Plan label reported by the configuration drivers.
+		'plan'        => env( 'NVOOS_PRO_PLAN', 'compliance' ),
+
+		// Operator overrides, applied last in every driver. An explicit
+		// entry wins in both directions.
+		'features'    => array(),
+
+		// --- `license` driver -------------------------------------------
+		'license_key' => env( 'NVOOS_PRO_LICENSE_KEY', '' ),
+		'server_url'  => env( 'NVOOS_PRO_LICENSE_SERVER', 'https://nvdigitalsolutions.com/api/licenses' ),
+
+		// Stable identity for this installation. Defaults to the app URL
+		// when null, which is what the licence server would see anyway.
+		'instance_id' => env( 'NVOOS_PRO_LICENSE_INSTANCE_ID' ),
+		'product'     => env( 'NVOOS_PRO_LICENSE_PRODUCT', 'mcp-ai-wpoos-pro' ),
+
+		// Seconds a valid answer stays fresh, a negative answer stays
+		// cached, and a stale answer may survive refresh failures.
+		'ttl'         => (int) env( 'NVOOS_PRO_LICENSE_TTL', 43200 ),
+		'denied_ttl'  => (int) env( 'NVOOS_PRO_LICENSE_DENIED_TTL', 300 ),
+		'grace_ttl'   => (int) env( 'NVOOS_PRO_LICENSE_GRACE_TTL', 604800 ),
+		'timeout'     => (int) env( 'NVOOS_PRO_LICENSE_TIMEOUT', 10 ),
 	),
 
 	/*

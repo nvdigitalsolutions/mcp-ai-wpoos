@@ -57,6 +57,7 @@ use Nvoos\Laravel\Adapter\FileStore;
 use Nvoos\Laravel\Adapter\FileUploadService;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
+use Nvoos\Laravel\Adapter\LicensedProEntitlement;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlement;
@@ -112,13 +113,31 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( TokenUsageInterface::class, TokenUsage::class );
 		$this->app->bind( RateLimiterInterface::class, RateLimiter::class );
 
-		// Pro entitlement — configuration-driven until the commercial source
-		// is chosen; unknown drivers fail closed (Proposal 090-B, ADR-7).
+		// Pro entitlement. Three driver families share one contract:
+		// `license` resolves against the commercial licence server, and the
+		// configuration drivers (allow|deny|config) cover development, CI and
+		// fail-closed deployments. Unknown drivers fail closed
+		// (Proposal 090-B, ADR-7, Phase 5.1).
 		$this->app->singleton( ProEntitlementInterface::class, function ( $app ) {
 			$config = $app['config']->get( 'oos.pro_entitlement', array() );
+			$driver = (string) ( $config['driver'] ?? 'allow' );
+
+			if ( 'license' === $driver ) {
+				return new LicensedProEntitlement(
+					licenseKey: (string) ( $config['license_key'] ?? '' ),
+					serverUrl: (string) ( $config['server_url'] ?? '' ),
+					instanceId: (string) ( $config['instance_id'] ?? $app['config']->get( 'app.url', '' ) ),
+					product: (string) ( $config['product'] ?? 'mcp-ai-wpoos-pro' ),
+					featureMap: (array) ( $config['features'] ?? array() ),
+					ttl: (int) ( $config['ttl'] ?? 43200 ),
+					deniedTtl: (int) ( $config['denied_ttl'] ?? 300 ),
+					graceTtl: (int) ( $config['grace_ttl'] ?? 604800 ),
+					timeout: (int) ( $config['timeout'] ?? 10 ),
+				);
+			}
 
 			return new ProEntitlement(
-				driver: (string) ( $config['driver'] ?? 'allow' ),
+				driver: $driver,
 				plan: (string) ( $config['plan'] ?? 'compliance' ),
 				featureMap: (array) ( $config['features'] ?? array() ),
 			);

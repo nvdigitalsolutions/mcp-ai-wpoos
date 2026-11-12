@@ -18,6 +18,7 @@ Houses pure business-logic service implementations — classes that contain doma
 | Symbol | File | Used by |
 |---|---|---|
 | `Nvoos\Core\Domain\Service\Budget\DataBudgetTracker` | `Budget/DataBudgetTracker.php` | ChatOrchestrator, tool execution loop |
+| `Nvoos\Core\Domain\Service\Entitlement\ProPlanCatalog` | `Entitlement/ProPlanCatalog.php` | `WP_MCP_AI_Pro_License::has_feature()`, Laravel `LicensedProEntitlement` |
 | `Nvoos\Core\Domain\Service\Optimization\ErlangC` | `Optimization/ErlangC.php` | Queue analysis tools |
 | `Nvoos\Core\Domain\Service\Text\SemanticCompressor` | `Text/SemanticCompressor.php` | Context compression (TBD — adapter bridges to legacy) |
 
@@ -26,6 +27,7 @@ Houses pure business-logic service implementations — classes that contain doma
 | Folder | Purpose |
 |---|---|
 | `Budget/` | Byte/token budget tracking and accounting |
+| `Entitlement/` | Commercial plan → feature policy table shared by both runtimes |
 | `Text/` | Text processing (compression, chunking, summarization) |
 | `Tool/` | Tool lifecycle descriptors, chain prediction |
 | `Optimization/` | Math/algorithms (PSO, Erlang C, code optimization) |

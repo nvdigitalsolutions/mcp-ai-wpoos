@@ -277,7 +277,7 @@ return the typed entitlement error under the `deny` driver.
 
 | ID | Task | Acceptance |
 |---|---|---|
-| 5.1 | Wire the commercial entitlement source behind `ProEntitlement` (licence server instance ID or gateway/commerce) | Sold Laravel Pro resolves entitlements |
+| 5.1 | Wire the commercial entitlement source behind `ProEntitlement` (licence server instance ID or gateway/commerce) | ✅ `license` driver + `LicensedProEntitlement`; plan table shared with WordPress via `ProPlanCatalog` |
 | 5.2 | Retire the `X-WP-Nonce` alias; the console sends Laravel's own CSRF header | ✅ Compatibility middleware deleted; console mirrors the token into `X-CSRF-TOKEN` |
 | 5.3 | SSO/cookie-domain decision (same-origin proxy vs shared domain) | Documented + tested |
 | 5.4 | Rate limits, audit parity, observability, read-only profile | Security checklist green |
@@ -285,6 +285,35 @@ return the typed entitlement error under the `deny` driver.
 | 5.6 | 30-minute soak + performance gates | 0 errors; p95 within budget |
 
 **Gate G5:** two consecutive releases with no contract drift; the nonce alias is gone.
+
+### 5.1 implementation note — licence server, not a gateway
+
+The blocker was that Pro entitlement looked WordPress-bound. It is not: the plugin's licence is a
+plain HTTP contract, so the Laravel runtime reuses it and swaps the identity field.
+
+| | WordPress | Laravel |
+|---|---|---|
+| Endpoint | `POST {server}/check` | same |
+| Body | `license_key`, `site_url`, `product` | `license_key`, **`site_url` = `instance_id`**, `product` |
+| Verdict | `status === 'valid'` | same, plus an `expires` sanity check |
+| Plans | `compliance` / `professional` / `enterprise` | same table, via `ProPlanCatalog` |
+
+- **One policy table.** `Nvoos\Core\Domain\Service\Entitlement\ProPlanCatalog` now owns the
+  plan → feature map. `WP_MCP_AI_Pro_License::has_feature()` and
+  `LicensedProEntitlement` both read it, so the tiers cannot drift again.
+- **Stale-while-error, never stale-while-deny.** A definitive answer (valid *or* rejected) replaces
+  history. Only a transport failure may re-serve the last known answer, and only from a store entry
+  that outlives its own freshness window — expired cache keys are purged, so freshness is stored in
+  the payload (`fresh_until`) rather than delegated to the store TTL.
+- **Fail closed by default.** No key, no server, an unknown plan, a non-2xx, an unparseable body or
+  a past `expires` all deny. Operator `features` overrides win in both directions but cannot
+  resurrect a denied licence.
+- **Diagnostics.** `LicensedProEntitlement::status()` exposes `plan`, `entitled`, `stale`,
+  `checked_at` and the last error so the ops overview can explain an unavailable surface.
+
+Config: `NVOOS_PRO_ENTITLEMENT_DRIVER=license` plus `NVOOS_PRO_LICENSE_KEY`;
+`NVOOS_PRO_LICENSE_SERVER`, `_INSTANCE_ID`, `_PRODUCT`, `_TTL`, `_DENIED_TTL`, `_GRACE_TTL` and
+`_TIMEOUT` cover the rest. The `allow` / `deny` / `config` drivers are unchanged.
 
 ### 5.2 implementation note — `X-CSRF-TOKEN`, not `X-XSRF-TOKEN`
 
@@ -501,7 +530,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 |---|---|---|
 | Golden fixtures from a live WP site | Harness shipped | Task 0.13; Laravel-captured set committed, re-capture from WordPress when 4.6 lands (needs an operator token) |
 | Laravel login screen / bearer harness for C2 | **Done** | Phase 1; the console branches on the backend |
-| Commercial entitlement source | Decided as a seam; source open | Phase 5 task 5.1 |
+| Commercial entitlement source | Resolved in 5.1: licence server, `instance_id` instead of a site URL | Phase 5 task 5.1 ✅ |
 | Pro toolkits as peers | Open (Q4) | Decide per family in Phase 4 |
 | SSO / cookie domain | Open (Q6) | Phase 5 task 5.3 |
 | Pro `mcp-ai-pro/v1` toolkit endpoints | Not started | Phase 4 |
