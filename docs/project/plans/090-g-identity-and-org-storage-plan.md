@@ -1,6 +1,6 @@
 # Proposal 090-G — Identity and org storage: assistants, teams, professions
 
-Status: design. Phase 1 (assistant hardening) is a small migration.
+Status: Phase 1 shipped. Phase 2 (profession catalogue) next.
 Depends on: `090-f-storage-bridge-plan.md` (the content port), `090-b` §6 (assistant studio).
 
 ---
@@ -80,14 +80,29 @@ WordPress is an implementation detail behind `AssistantServiceInterface`.
 
 | Change | Why |
 |---|---|
-| Add `tenant_id` (nullable = single-tenant install) | Required for scoping |
+| Add `tenant_id` (default `'default'`) | Required for scoping |
 | `UNIQUE (tenant_id, slug)` replaces `slug UNIQUE` | Slugs may repeat across tenants |
-| `is_default` becomes "one default per tenant" | Enforced by a partial unique index or a service-level invariant |
+| `is_default` becomes "one default per tenant" | Service-level, tenant-scoped invariant — see below |
 | `index (tenant_id, status)` | The common listing query |
 | `tools`, `meta` stay JSON | Read/written whole; no membership query today |
 
 Expand → migrate → contract: add `tenant_id` nullable, backfill, add the
 composite unique, drop the global one. No downtime, no rewrite.
+
+**Why `is_default` is not a database constraint.** MySQL has no partial
+unique index, and the portable nullable-unique variant would change
+`is_default` from `false` to `NULL` for every non-default row — a semantic
+change that leaks into the API shape. The invariant is therefore enforced in
+the controller, scoped to the tenant, with a regression test; the schema
+keeps the column for querying.
+
+**Phase 1 shipped.** Migration `2026_11_12_090000_add_tenancy_to_assistants_table`
+adds the column, backfills existing rows, swaps the unique key and adds the
+index. The controller scopes the listing, the slug-collision check and the
+default-clearing write; `tenant_id` is not mass-assignable, so a request body
+can never choose its tenant. `AssistantTenancyTest` covers the same slug in
+two tenants, the same slug rejected within one tenant, a per-tenant collision
+suffix, and a default in tenant B surviving tenant A's default.
 
 ### 4.2 Teams — a small relational graph
 
