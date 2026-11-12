@@ -135,6 +135,10 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     chatChannels: isAdmin ? `${pro}/chat-channels` : '',
     remoteSites: isAdmin ? `${pro}/remote-sites` : '',
     mediaCc: isAdmin ? `${pro}/media-cc` : '',
+    // Profession catalogue (assistant editor selector) — Laravel-only; the
+    // WordPress runtime has no professions REST route, so the editor hides
+    // the selector when this is empty.
+    professions: isAdmin && !isWordPress ? `${core}/professions` : '',
     // Org teams (users + roles) are Laravel-only for now; WordPress has the
     // agent-team catalogue at `teams` instead. Empty disables the page.
     orgTeams: isAdmin && !isWordPress ? `${core}/org/teams` : '',

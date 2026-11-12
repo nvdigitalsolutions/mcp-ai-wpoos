@@ -13,6 +13,13 @@ export interface AssistantRecord {
 	system_prompt?: string;
 	/** Tool slugs enabled for this assistant (the REST `tools` field). */
 	tools?: string[];
+	/**
+	 * Profession catalogue slugs (max 3) assigned to this assistant.
+	 *
+	 * Laravel returns these; WordPress stores profession post IDs in
+	 * `_wp_mcp_ai_primary_roles` and does not expose them through this payload.
+	 */
+	primary_role_slugs?: string[];
 	description?: string;
 	is_default?: boolean;
 	is_preset?: boolean;

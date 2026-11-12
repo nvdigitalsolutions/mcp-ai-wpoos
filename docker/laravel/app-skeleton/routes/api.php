@@ -16,6 +16,7 @@ use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
 use App\Http\Controllers\Pro\SchedulesController;
 use App\Http\Controllers\Pro\ToolkitsController;
+use App\Http\Controllers\ProfessionController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
@@ -103,6 +104,11 @@ Route::prefix('api/v1')->group(function (): void {
             // Phase 4 parity — WordPress's read-only team catalogue.
             Route::get('/teams', [TeamCatalogueController::class, 'index']);
             Route::get('/teams/{team}/members', [TeamCatalogueController::class, 'members']);
+
+            // Phase 4 — profession catalogue (the assistant selector's source).
+            Route::get('/professions', [ProfessionController::class, 'index']);
+            Route::get('/professions/{slug}', [ProfessionController::class, 'show'])
+                ->where('slug', '[a-z0-9_-]+');
 
             // 090-g Phase 3 — org teams and user membership.
             //

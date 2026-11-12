@@ -7,12 +7,13 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import type { JSX } from 'react';
+import type { ChangeEvent, JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 	import { useAssistants } from '../../hooks/useAssistants';
 	import { useBootstrap } from '../../hooks/useBootstrap';
 	import { usePermissions } from '../../auth/permissions';
 	import { useTools } from '../../hooks/useTools';
+import { useProfessions } from '../../hooks/useProfessions';
 import { useModelStore } from '../../stores/modelStore';
 import type { AssistantRecord } from '../../api/assistants';
 import { ToolPicker } from './ToolPicker';
@@ -24,6 +25,8 @@ interface AssistantFormFields {
 	temperature: number;
 	system_prompt: string;
 	tools: string[];
+	/** Profession catalogue slugs (max 3). Laravel-only surface. */
+	primary_role_slugs: string[];
 }
 
 const EMPTY_FORM: AssistantFormFields = {
@@ -33,7 +36,11 @@ const EMPTY_FORM: AssistantFormFields = {
 	temperature: 0.7,
 	system_prompt: '',
 	tools: [],
+	primary_role_slugs: [],
 };
+
+/** The server caps the list at three; the UI mirrors it. */
+const MAX_PRIMARY_PROFESSIONS = 3;
 
 export function AssistantsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
@@ -72,6 +79,19 @@ export function AssistantsPage(): JSX.Element {
 					nonce: runtime.nonce,
 					scope: 'all',
 			  }
+			: { endpoint: '', nonce: '' }
+		);
+
+	// Profession catalogue for the primary-profession selector. Laravel-only:
+	// an empty endpoint hides the field instead of firing a doomed request.
+	const {
+		professions,
+		loading: professionsLoading,
+		error: professionsError,
+		retry: retryProfessions,
+	} = useProfessions(
+		runtime
+			? { endpoint: runtime.endpoints.professions ?? '', nonce: runtime.nonce }
 			: { endpoint: '', nonce: '' }
 	);
 
@@ -118,6 +138,9 @@ export function AssistantsPage(): JSX.Element {
 				temperature: assistant.temperature ?? 0.7,
 				system_prompt: '',
 				tools: Array.isArray( assistant.tools ) ? assistant.tools : [],
+				primary_role_slugs: Array.isArray( assistant.primary_role_slugs )
+					? assistant.primary_role_slugs
+					: [],
 			} );
 			setEditingId( assistant.id );
 			setRecordLoading( true );
@@ -135,6 +158,9 @@ export function AssistantsPage(): JSX.Element {
 					temperature: full.temperature ?? current.temperature,
 					system_prompt: full.system_prompt ?? '',
 					tools: Array.isArray( full.tools ) ? full.tools : current.tools,
+					primary_role_slugs: Array.isArray( full.primary_role_slugs )
+						? full.primary_role_slugs
+						: current.primary_role_slugs,
 				} ) );
 				setRecordLoading( false );
 			} );
@@ -161,6 +187,7 @@ export function AssistantsPage(): JSX.Element {
 			// stored system prompt; the server deletes the meta on ''.
 			system_prompt: formFields.system_prompt,
 			tools: formFields.tools,
+			primary_role_slugs: formFields.primary_role_slugs,
 		};
 		try {
 			if ( editingId !== null ) {
@@ -173,6 +200,23 @@ export function AssistantsPage(): JSX.Element {
 			setSaving( false );
 		}
 	}, [ formFields, editingId, createAssistant, updateAssistant, closeForm ] );
+
+	const handleProfessionsChange = useCallback(
+		( event: ChangeEvent< HTMLSelectElement > ) => {
+			const next = Array.from( event.target.selectedOptions ).map(
+				( option ) => option.value
+			);
+
+			// The server rejects more than three; mirror the cap here so the
+			// user never sees a 422 for a selection the UI allowed.
+			if ( next.length > MAX_PRIMARY_PROFESSIONS ) {
+				return;
+			}
+
+			setFormFields( ( f ) => ( { ...f, primary_role_slugs: next } ) );
+		},
+		[]
+	);
 
 	const handleDelete = useCallback(
 		async ( id: number ) => {
@@ -658,6 +702,71 @@ export function AssistantsPage(): JSX.Element {
 										}
 									/>
 								</div>
+
+								{ runtime?.endpoints.professions ? (
+									<div className="nvoos-pro-spa-assistants-form__field">
+										<label
+											htmlFor="nvoos-pro-spa-assistant-professions"
+											className="nvoos-pro-spa-assistants-form__label"
+										>
+											{ __( 'Primary professions', 'nvoos-pro-spa' ) }
+										</label>
+										<select
+											id="nvoos-pro-spa-assistant-professions"
+											className="nvoos-pro-spa-assistants-form__select"
+											multiple
+											size={ Math.min(
+												6,
+												Math.max( 3, professions.length )
+											) }
+											value={ formFields.primary_role_slugs }
+											disabled={ professionsLoading }
+											onChange={ handleProfessionsChange }
+											aria-describedby="nvoos-pro-spa-assistant-professions-hint"
+										>
+											{ professions.map( ( profession ) => (
+												<option
+													key={ profession.slug }
+													value={ profession.slug }
+													disabled={
+														formFields.primary_role_slugs.length >=
+															MAX_PRIMARY_PROFESSIONS &&
+														! formFields.primary_role_slugs.includes(
+															profession.slug
+														)
+													}
+												>
+													{ profession.title } — { profession.category }
+												</option>
+											) ) }
+										</select>
+										<p
+											id="nvoos-pro-spa-assistant-professions-hint"
+											className="nvoos-pro-spa-assistants-form__hint"
+										>
+											{ professionsLoading
+												? __( 'Loading professions…', 'nvoos-pro-spa' )
+												: `${ formFields.primary_role_slugs.length } / ${ MAX_PRIMARY_PROFESSIONS } — ${ __(
+														'choose up to three; the server rejects more.',
+														'nvoos-pro-spa'
+												  ) }` }
+										</p>
+										{ professionsError && (
+											<p
+												className="nvoos-pro-spa-page__message nvoos-pro-spa-page__message--error"
+												role="alert"
+											>
+												{ professionsError }{ ' ' }
+												<button
+													type="button"
+													onClick={ () => void retryProfessions() }
+												>
+													{ __( 'Retry', 'nvoos-pro-spa' ) }
+												</button>
+											</p>
+										) }
+									</div>
+								) : null }
 							</>
 						) }
 
