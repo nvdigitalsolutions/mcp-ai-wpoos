@@ -23,7 +23,7 @@ class AssistantProfessionTest extends TestCase
     {
         parent::setUp();
 
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
     }
 
     public function test_professions_are_stored_in_meta_and_returned_flat(): void

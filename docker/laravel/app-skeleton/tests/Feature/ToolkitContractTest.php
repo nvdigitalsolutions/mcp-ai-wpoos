@@ -37,7 +37,7 @@ class ToolkitContractTest extends TestCase
 
     private function actAsUser(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
     }
 
     /**

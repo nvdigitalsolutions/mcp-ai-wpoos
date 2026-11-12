@@ -257,6 +257,67 @@ starter; it deliberately does **not** copy the plugin's 544 K GPL corpus.
 - WordPress keeps its existing service/loader; the core contract is the only
   shared surface.
 
+### 4.4 Authorization — WordPress roles, two scopes
+
+**Status: shipped.** Before this, the runtime had **no role storage at all**:
+`CapabilityMap` tried to read `$user->role`, the column did not exist, so every
+account resolved to the non-admin set. The effect was inverted from the usual
+bug — the console *hid* admin buttons while the API accepted the writes, because
+no route carried a `can:` gate.
+
+Two scopes, one vocabulary ([WorkOS][wos], [Cerbos][cerb], [SsoJet][sso] all
+land on the same rule: *a user's role is a property of the membership, not of
+the global user*):
+
+| Scope | Storage | Values | Answers |
+|---|---|---|---|
+| Site | `users.role` | subscriber, contributor, author, editor, administrator | May this user use the console? |
+| Team | `team_members.role` | owner, admin, manager, member, viewer | What may this user do to *this* team? |
+
+Capabilities stay system-wide; roles are what get scoped. `owner` has no site
+equivalent and is deliberately team-only.
+
+**Site role → capabilities** (WP core's definitions; `delete_others_posts` is
+what separates editor from author):
+
+```text
+administrator  manage_options, edit_others_posts, delete_others_posts,
+               publish_posts, edit_posts, delete_posts, upload_files, read
+editor         edit_others_posts, delete_others_posts, publish_posts,
+               edit_posts, delete_posts, upload_files, read
+author         publish_posts, edit_posts, delete_posts, upload_files, read
+contributor    edit_posts, delete_posts, read
+subscriber     read
+```
+
+**Team role → abilities:** `owner` = manage_team + manage_team_members +
+delete_team; `admin` = manage_team + manage_team_members; `manager` =
+manage_team_members; `member` / `viewer` = none (read only).
+
+Enforcement:
+
+- `Gate::before` answers site abilities from the role and returns **null** (not
+  false) otherwise, so host policies still decide.
+- Admin route groups carry `can:manage_options` — the same capability the
+  console's nav uses, so the button and the endpoint can no longer disagree.
+  Content and media use `can:edit_posts` / `can:upload_files`, matching WP.
+- `read_content` / `edit_content` / `delete_content` are capability **plus**
+  ownership: `edit_posts` + (author, or `edit_others_posts`).
+- `TeamAccess` resolves the membership role per request; non-members get **404**
+  (no id disclosure), members who lack the ability get **403**, and a site
+  administrator overrides. `LaravelTeamService` stays authorization-free — the
+  contract is shared with WordPress and a tool must not inherit a console
+  policy.
+
+**Backfill.** The migration adds the column and promotes accounts still on the
+`subscriber` default to `administrator`. Skipping it would demote the operator
+on deploy — the one failure mode of this change. The column is added only when
+missing so a database that grew one out of band keeps its values.
+
+[wos]: https://workos.com/blog/how-to-design-multi-tenant-rbac-saas
+[cerb]: https://www.cerbos.dev/blog/how-to-implement-scalable-multitenant-authorization
+[sso]: https://ssojet.com/blog/multi-tenant-identity-management
+
 ## 5. Sequencing
 
 | Phase | Work | Unlocks |
@@ -265,6 +326,7 @@ starter; it deliberately does **not** copy the plugin's 544 K GPL corpus.
 | 2 | Profession catalogue manifests + `ProfessionRepository` adapter + read tools + tests — **shipped** | Professional selector, recommended tools |
 | 3 | Teams tables, `TeamServiceInterface`, `TeamController` (`090-b` 2.5) — **shipped** | Team CRUD + membership |
 | 4 | Surfaces: profession selector, org-team pages, team-catalogue parity — **shipped** | User-facing |
+| 5 | Site roles (WP vocabulary) + team-scoped abilities, route enforcement, backfill — **shipped** | Enforced authorization |
 
 ## 6. Acceptance gates
 
@@ -282,6 +344,10 @@ starter; it deliberately does **not** copy the plugin's 544 K GPL corpus.
       deliberately deferred until something needs it.)*
 - [x] Every tenant-owned table has `tenant_id` as the leading index column and
       inside its unique constraints.
+- [x] A subscriber is rejected (403) by every `manage_options` surface, and an
+      editor is rejected by the assistant-admin surfaces.
+- [x] A team member cannot manage the roster (403); a non-member gets 404; the
+      owner and a site administrator can.
 
 ## 7. Guardrails
 

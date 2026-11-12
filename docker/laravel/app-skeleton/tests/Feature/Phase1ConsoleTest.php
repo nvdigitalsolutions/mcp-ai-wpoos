@@ -28,7 +28,7 @@ class Phase1ConsoleTest extends TestCase
 
     public function test_settings_schema_and_masked_values(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
         app(SettingsStoreInterface::class)->set('openai_api_key', 'sk-secret');
 
         $this->getJson('/api/v1/settings/schema')
@@ -44,7 +44,7 @@ class Phase1ConsoleTest extends TestCase
 
     public function test_settings_update_ignores_masked_secrets(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
         $store = app(SettingsStoreInterface::class);
         $store->set('openai_api_key', 'sk-secret');
 
@@ -61,7 +61,7 @@ class Phase1ConsoleTest extends TestCase
 
     public function test_settings_update_rejects_an_unknown_provider(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
 
         $this->postJson('/api/v1/settings/values', ['default_provider' => 'bogus'])
             ->assertStatus(422);
@@ -69,7 +69,7 @@ class Phase1ConsoleTest extends TestCase
 
     public function test_diagnostics_overview_shape(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
 
         $this->getJson('/api/v1/diagnostics/overview')
             ->assertOk()
@@ -87,7 +87,7 @@ class Phase1ConsoleTest extends TestCase
 
     public function test_dlq_lists_and_dismisses_failed_jobs(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
         $jobs = app(JobStatusStore::class);
         $jobs->queue('job-1', 'Tests\\Handler', ['assistant_id' => 4]);
         $jobs->markFailed('job-1', new \RuntimeException('boom'));
@@ -107,7 +107,7 @@ class Phase1ConsoleTest extends TestCase
     public function test_dlq_retry_requeues_the_job(): void
     {
         Queue::fake();
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
         $jobs = app(JobStatusStore::class);
         $jobs->queue('job-2', 'Tests\\Handler', ['assistant_id' => 4]);
         $jobs->markFailed('job-2', new \RuntimeException('boom'));
@@ -122,7 +122,7 @@ class Phase1ConsoleTest extends TestCase
 
     public function test_timeline_lists_completed_jobs(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
         $jobs = app(JobStatusStore::class);
         $jobs->queue('job-3', 'Tests\\Handler', ['assistant_id' => 7]);
         $jobs->markRunning('job-3');

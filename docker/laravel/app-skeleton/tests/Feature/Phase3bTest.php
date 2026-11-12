@@ -23,7 +23,7 @@ class Phase3bTest extends TestCase
 
     private function actAsUser(): User
     {
-        $user = User::factory()->create();
+        $user = User::factory()->admin()->create();
         Sanctum::actingAs($user);
 
         return $user;
