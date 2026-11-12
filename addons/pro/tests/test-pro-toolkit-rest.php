@@ -186,6 +186,43 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 		$this->assertSame( 'toolkit_not_found', $response->get_data()['error']['code'] );
 	}
 
+	// -------------------------------------------------------------- research
+
+	/**
+	 * Research validates its inputs before touching a provider.
+	 *
+	 * @return void
+	 */
+	public function test_research_requires_an_entity_and_query(): void {
+		wp_set_current_user( $this->admin );
+
+		$response = $this->request( 'POST', '/toolkit-manifests/commerce/research', array() );
+
+		$this->assertSame( 422, $response->get_status() );
+		$this->assertSame( 'validation_failed', $response->get_data()['error']['code'] );
+	}
+
+	/**
+	 * Research rejects an entity the manifest does not declare.
+	 *
+	 * @return void
+	 */
+	public function test_research_rejects_an_unknown_entity(): void {
+		wp_set_current_user( $this->admin );
+
+		$response = $this->request(
+			'POST',
+			'/toolkit-manifests/commerce/research',
+			array(
+				'entity' => 'spaceship',
+				'query'  => 'anything',
+			)
+		);
+
+		$this->assertSame( 404, $response->get_status() );
+		$this->assertSame( 'entity_not_found', $response->get_data()['error']['code'] );
+	}
+
 	// -------------------------------------------------------------- settings
 
 	/**

@@ -118,6 +118,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 
 			register_rest_route(
 				self::NAMESPACE_V1,
+				self::BASE . '/' . $slug . '/research',
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'research' ),
+					'permission_callback' => array( __CLASS__, 'check_admin_permission' ),
+					'args'                => self::slug_args(),
+				)
+			);
+
+			register_rest_route(
+				self::NAMESPACE_V1,
 				self::BASE . '/' . $slug . '/entities/' . $entity,
 				array(
 					array(
@@ -309,6 +320,62 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 			}
 
 			return self::ok( WP_MCP_AI_Pro_Toolkit_Records::dashboard( $manifest ) );
+		}
+
+		/**
+		 * Draft one record from a natural-language query.
+		 *
+		 * The draft is returned for review and never written here: the console
+		 * saves it through the create endpoint, so the manifest's column
+		 * validation stays the single gate into storage.
+		 *
+		 * @param WP_REST_Request $request Request.
+		 * @return WP_REST_Response
+		 */
+		public static function research( WP_REST_Request $request ): WP_REST_Response {
+			list( $manifest, $error ) = self::resolve( (string) $request['slug'] );
+
+			if ( null !== $error ) {
+				return $error;
+			}
+
+			$entity_key = (string) $request->get_param( 'entity' );
+			$query      = trim( (string) $request->get_param( 'query' ) );
+
+			if ( '' === $entity_key || '' === $query ) {
+				return self::error( 'validation_failed', __( '`entity` and `query` are required.', 'mcp-ai-wpoos-pro' ), 422 );
+			}
+
+			if ( mb_strlen( $query ) > 2000 ) {
+				return self::error( 'validation_failed', __( '`query` is limited to 2000 characters.', 'mcp-ai-wpoos-pro' ), 422 );
+			}
+
+			$entity = $manifest->entity( $entity_key );
+
+			if ( null === $entity ) {
+				return self::error( 'entity_not_found', __( 'Unknown entity.', 'mcp-ai-wpoos-pro' ), 404 );
+			}
+
+			if ( ! function_exists( 'wp_mcp_ai_oos_provider_router' ) ) {
+				return self::error( 'ai_unavailable', __( 'No AI provider is configured for this runtime.', 'mcp-ai-wpoos-pro' ), 503 );
+			}
+
+			$service = new Nvoos\Core\Application\Toolkit\ToolkitResearchService( wp_mcp_ai_oos_provider_router() );
+			$result  = $service->draft( $manifest, $entity, $query );
+
+			if ( null !== $result['error'] ) {
+				$status = 'ai_unavailable' === $result['error'] ? 503 : 502;
+
+				return self::error( $result['error'], (string) $result['message'], $status );
+			}
+
+			return self::ok(
+				array(
+					'entity'   => $entity_key,
+					'draft'    => $result['draft'],
+					'provider' => $result['provider'],
+				)
+			);
 		}
 
 		/**
