@@ -317,15 +317,66 @@ final class ContentStoreQueryTest extends TestCase {
 		$this->assertCount( 3, $result->items );
 	}
 
+	/**
+	 * WP_Query's `post_status => 'any'` means "no status filter".
+	 */
+	public function test_statuses_any_disables_the_status_filter(): void {
+		$this->make( 'Published' );
+		$this->make( 'Draft', array(), 'draft' );
+
+		$result = $this->runQuery( perPage: 20, statuses: array( 'any' ) );
+
+		$this->assertSame( 2, $result->total );
+	}
+
+	/**
+	 * WP_Query's `s` searches title, excerpt and content.
+	 */
+	public function test_search_matches_the_excerpt(): void {
+		$hit   = $this->make( 'Unrelated title' );
+		$other = $this->make( 'Another title' );
+
+		NvoosPost::where( 'id', $hit->id )->update( array( 'excerpt' => 'needle in the excerpt' ) );
+		NvoosPost::where( 'id', $other->id )->update( array( 'excerpt' => 'nothing here' ) );
+
+		$result = $this->store->query(
+			new ContentQuery(
+				types: array( 'record' ),
+				statuses: array( 'publish' ),
+				search: 'needle',
+				orderBy: 'date',
+				order: 'ASC',
+			)
+		);
+
+		$this->assertSame( array( 'Unrelated title' ), $this->titles( $result ) );
+	}
+
+	public function test_unsupported_order_field_fails_loudly(): void {
+		$this->make( 'Anything' );
+
+		$this->expectException( \InvalidArgumentException::class );
+
+		$this->runQuery( array(), array(), 'rand' );
+	}
+
+	public function test_negative_per_page_fails_loudly(): void {
+		$this->make( 'Anything' );
+
+		$this->expectException( \InvalidArgumentException::class );
+
+		$this->runQuery( array(), array(), 'date', 'ASC', -1 );
+	}
+
 	// ─── helpers ───────────────────────────────────────────────────
 
-	private function make( string $title, array $meta = array() ): ContentItem {
+	private function make( string $title, array $meta = array(), string $status = 'publish' ): ContentItem {
 		return $this->store->create(
 			new CreateContentCommand(
 				title: $title,
 				type: 'record',
 				authorId: 0,
-				status: 'publish',
+				status: $status,
 				content: 'body',
 				meta: $meta,
 			)
@@ -359,12 +410,13 @@ final class ContentStoreQueryTest extends TestCase {
 		array $taxQuery = array(),
 		string $orderBy = 'date',
 		string $order = 'ASC',
-		int $perPage = 20
+		int $perPage = 20,
+		array $statuses = array( 'publish' )
 	): ContentCollection {
 		return $this->store->query(
 			new ContentQuery(
 				types: array( 'record' ),
-				statuses: array( 'publish' ),
+				statuses: $statuses,
 				metaQuery: $metaQuery,
 				taxQuery: $taxQuery,
 				orderBy: $orderBy,

@@ -104,8 +104,21 @@ Implement in `lib/laravel-adapter/src/Adapter/ContentStore.php`:
    honouring `taxonomy`, `field` (`term_id` / `slug` / `name`) and
    `operator` (`IN` / `NOT IN` / `AND`).
 3. **`orderBy` mapping** — `date → created_at`, `modified → updated_at`,
-   `title`, `id`; unknown fields fall back to `created_at`.
-4. **`perPage` clamp** — 1–100, default 20.
+   `title`, `id`; any other field **throws**. `ContentQuery` documents exactly
+   four fields, and silently sorting by `created_at` would hide a caller bug
+   (e.g. `rand`, or WP's `meta_value`).
+4. **`perPage`** — 1–100, default 20 when 0. A **negative** value throws:
+   `WP_Query` uses `-1` for "return everything", and clamping that to one row
+   would be worse than failing.
+5. **`statuses: ['any']`** — disables the status filter, matching
+   `post_status => 'any'`. Translated literally to `whereIn()`, it would
+   match zero rows because no record stores the literal status `any`.
+6. **`search`** — title **and excerpt** and content, matching `WP_Query`'s
+   `s`. Matching two of the three silently narrows the result set.
+
+The last two came from reading `lib/wordpress-adapter/src/Adapter/ContentStore.php`
+as the reference: it is deliberately a thin pass-through to `WP_Query`, so its
+argument map is the best statement of what the contract means.
 
 Acceptance:
 
@@ -113,7 +126,9 @@ Acceptance:
 - [ ] A clause with no matches returns zero rows (not all rows).
 - [ ] `EXISTS` / `NOT EXISTS` match rows with and without the key.
 - [ ] Tax `IN`, `NOT IN` and `AND` return the same sets as `WP_Query`.
-- [ ] `orderBy('date')` orders by `created_at`.
+- [ ] `orderBy('date')` orders by `created_at`; unknown fields throw.
+- [ ] `statuses: ['any']` returns every status.
+- [ ] `search` matches an excerpt-only hit.
 - [ ] Existing round-trip and adapter suites stay green.
 
 ### Phase 2 — First CPT family (project management)
