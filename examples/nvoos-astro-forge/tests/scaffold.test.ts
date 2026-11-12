@@ -483,6 +483,28 @@ describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
 		expect( module ).toContain( "footerInk: 'rgba(255, 255, 255, 0.7)'" );
 	} );
 
+	it( 'bakes the footer logo’s block association (the brand column)', () => {
+		// The logo lives INSIDE the first footer block when the source renders it
+		// as that column’s first widget (jayainc’s subfooter).
+		const withLogo: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: {
+					...profile.design!.chrome!,
+					footerLogo: {
+						src: 'https://jayainc.example/wp-content/uploads/logo.png',
+						alt: 'Jaya',
+						blockIndex: 0,
+					},
+				},
+			},
+		};
+		const module = renderChromeGenerated( withLogo );
+		expect( module ).toContain( "footerLogo: { src: 'https://jayainc.example/wp-content/uploads/logo.png', alt: 'Jaya', blockIndex: 0 }" );
+		expect( module ).toContain( 'blockIndex?: number' );
+	} );
+
 	it( 'bakes undefined for a chrome-less profile', () => {
 		const design = profile.design!;
 		const bare: SiteProfile = { ...profile, design: { ...design } };
@@ -514,6 +536,43 @@ describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
 		const module = renderChromeGenerated( profile );
 		const value = module.slice( module.indexOf( 'export const chrome' ) );
 		expect( value ).not.toContain( 'navToggle' );
+	} );
+
+	it( 'bakes the measured top strip (icons, two-line address, alignment, rhythm)', () => {
+		// The strip's STRUCTURE is a browser fact: `analyzeChrome` only sees the
+		// text lines, so the glyphs, the `<br>` and the right alignment came from
+		// `measureTopbar`. jayainc's address is two lines inside one item.
+		const withTopbar: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: {
+					...profile.design!.chrome,
+					topbar: [ '3300 NW 112TH AVE Doral, FL 33172', '+1 (305) 500-9319' ],
+					topbarItems: [
+						{ text: '3300 NW 112TH AVE\nDoral, FL 33172', icon: 'auxicon-location' },
+						{ text: '+1 (305) 500-9319', icon: 'auxicon-phone-classic-on' },
+					],
+					topbarSocials: [ { icon: 'auxicon-googleplus', href: 'https://maps.example/jaya' } ],
+					topbarAlign: 'end',
+					topbarHeight: '100px',
+					topbarIconSize: '40px',
+					topbarIconInk: 'rgb(255, 207, 14)',
+					topbarIconGap: '20px',
+					topbarItemGap: '50px',
+				},
+			},
+		};
+		const module = renderChromeGenerated( withTopbar );
+		// A raw newline inside a single-quoted literal is a syntax error in the
+		// generated module — the fact must be emitted escaped.
+		expect( module ).toContain( "text: '3300 NW 112TH AVE\\nDoral, FL 33172'" );
+		expect( module ).toContain( "icon: 'auxicon-location'" );
+		expect( module ).toContain( "topbarSocials: [{ icon: 'auxicon-googleplus', href: 'https://maps.example/jaya' }]" );
+		expect( module ).toContain( "topbarAlign: 'end'" );
+		expect( module ).toContain( "topbarHeight: '100px'" );
+		expect( module ).toContain( "topbarIconGap: '20px'" );
+		expect( module ).toContain( "topbarItemGap: '50px'" );
 	} );
 } );
 
@@ -1145,8 +1204,34 @@ describe( 'scaffold — design rebuild (Proposal 114)', () => {
 		};
 		const out = renderSectionsGenerated( { ...PROFILE, design } );
 		expect( out ).toContain( "id: 'a4ad586', theme: 'hero', bgImage: 'https://shop.example.com/hero.jpg'" );
-		expect( out ).toContain( "id: '5e78df1', theme: 'dark', bg: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)', measure: '1140px', paddingX: '30px'" );
+		expect( out ).toContain( "id: '5e78df1', theme: 'light', bg: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)', measure: '1140px', paddingX: '30px'" );
 		expect( out ).toContain( "id: '48ace0b', theme: 'light', bg: '#f6f6f6'" );
+	} );
+
+	it( 'bakes the icon-row rhythm per device (the desktop/tablet split)', () => {
+		// The source pads its service rows 63px on desktop and 36/50px at tablet;
+		// a single value baked the TABLET numbers and the height-pinned band showed
+		// ~255px of dead space. Per-device keys must emit a device map.
+		const design: ForgeDesign = {
+			...DESIGN,
+			sections: [
+				{
+					id: 'fcc5e07',
+					bgGradient: 'linear-gradient(180deg, #ffffff 0%, #e5e5e5 100%)',
+					iconRowStyle: {
+						padTop: { desktop: '63.01px', tablet: '36px' },
+						padBottom: { desktop: '63.01px', tablet: '50.01px' },
+						padX: { desktop: '50.01px', tablet: '35px' },
+						titleSize: '27px',
+					},
+				},
+			],
+		};
+		const out = renderSectionsGenerated( { ...PROFILE, design } );
+		expect( out ).toContain( "padTop: { desktop: '63.01px', tablet: '36px' }" );
+		expect( out ).toContain( "padBottom: { desktop: '63.01px', tablet: '50.01px' }" );
+		expect( out ).toContain( "padX: { desktop: '50.01px', tablet: '35px' }" );
+		expect( out ).toContain( "titleSize: '27px'" );
 	} );
 
 	it( 'bakes the section pull facts (124 §4)', () => {

@@ -312,6 +312,20 @@ describe( 'interaction states — verify comparison', () => {
 		] );
 	} );
 
+	it( 'exempts a measured non-focusable content card from the focus requirement', () => {
+		// A builder feature box carries a hover (virtuallyjamaica's `.service-sub`
+		// turns solid black) but is a plain `div`: it can never receive keyboard
+		// focus, so a focus ring is not owed. The negative flag is the measurement.
+		const card = {
+			tag: 'div',
+			classes: [ 'service-sub' ],
+			focusable: false,
+			hover: 'background-color:rgb(0, 0, 0)',
+		};
+
+		expect( diffInteractionStates( {}, { band2: [ card ] } ) ).toEqual( [] );
+	} );
+
 	it( 'does not compare a signature the source never had', () => {
 		// A control only the BUILD has (a template addition) with its own focus
 		// ring is not a parity deviation — only the source's declarations are owed.

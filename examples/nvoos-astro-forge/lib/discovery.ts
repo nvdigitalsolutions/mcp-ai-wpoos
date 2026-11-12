@@ -344,6 +344,11 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	if ( fresh.bandFacts ) {
 		merged.bandFacts = fresh.bandFacts;
 	}
+	// The body background is a measured source fact too (a builder paints it, and
+	// transparent bands + inter-band margins show it).
+	if ( fresh.pageBackground ) {
+		merged.pageBackground = fresh.pageBackground;
+	}
 	// The measured sticky-header behaviour — also a source fact, refreshed on
 	// re-analysis (an operator pin on `design.behavior` still drives the classes).
 	if ( fresh.stickyHeader ) {

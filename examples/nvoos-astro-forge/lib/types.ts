@@ -457,6 +457,13 @@ export interface SiteProfile {
 	 */
 	bandFacts?: Record< string, ForgeBandFacts >;
 	/**
+	 * The measured PAGE background (`analyze --geometry`). A builder paints the
+	 * body, and every band with a transparent surface — plus every margin between
+	 * bands — shows it. jayainc's body is #e5e5e5; the rebuild's white body turned
+	 * the source's own band margins into bright white strips while scrolling.
+	 */
+	pageBackground?: string;
+	/**
 	 * The measured sticky-header behaviour (`analyze --geometry`). A source
 	 * header that pins on scroll and changes appearance — the classic
 	 * transparent-over-the-hero header that gains a solid background and shrinks
@@ -702,6 +709,13 @@ export interface BandTypeFact {
 	 */
 	color?: string;
 	/**
+	 * Computed `max-width` — a heading the builder deliberately narrows.
+	 * jayainc's services title is `max-width: 473px` inside a 640px column and
+	 * wraps to three lines; rendered full width it took two, and the band's
+	 * pinned height exposed the 64px shortfall as dead space.
+	 */
+	maxWidth?: string;
+	/**
 	 * What the source CHANGES at the template's tablet/mobile breakpoints, and
 	 * only that. A 55px hero headline is 22px on a phone — emitting the desktop
 	 * size at every width made every rebuilt band taller than its source at
@@ -843,6 +857,15 @@ export interface ForgeInteractionFact {
 	/** Pressed deltas; measured as `hover + active` (a source writes `:hover:active`). */
 	active?: string;
 	/**
+	 * `false` when the element cannot receive keyboard focus (a content card
+	 * whose hover the source styled, but which is not a link/button/field).
+	 * Emitted only in the negative: an ABSENT flag means focusable, so an older
+	 * profile keeps the focus-indicator requirement for its controls. The
+	 * `verify --interactions` gate skips the WCAG 2.4.7 indicator check for
+	 * these — a non-interactive card has no keyboard state to indicate.
+	 */
+	focusable?: boolean;
+	/**
 	 * Effects the control's DIRECT CHILDREN draw while the control is in a state
 	 * (the overlay-fill button pattern). Direct children only: that is where
 	 * every builder puts the overlay, and a deeper walk multiplies the pass for
@@ -936,6 +959,24 @@ export interface ForgeBandFacts {
 	 * as `--ds-media-pos`; the default (`50% 50%`) is never recorded.
 	 */
 	mediaPosition?: string;
+	/**
+	 * The hero track's column split, measured (`collectBandSplitFacts`): the
+	 * normalised width fraction of each direct child of the structural
+	 * copy + illustration row. The markup carries no width class — the ratio
+	 * lives in the vendor stylesheet — so a guessed ratio wraps the copy
+	 * differently (virtuallyjamaica's 60/40 hero wrapped its H1 to four lines
+	 * at 55/45 where the source has three). Emitted as `--ds-split`.
+	 */
+	splitColumns?: number[];
+	/**
+	 * The band contains the source's OWN vertical-centring device: a
+	 * `table-cell` with `vertical-align: middle` (Brando's slider), or a
+	 * flex/grid container filling half the band with centred items
+	 * (Elementor's `e-con`). A full-height band is not automatically centred —
+	 * virtuallyjamaica's contact band is top-aligned under 130px of padding,
+	 * and centring it moved the copy 151px down.
+	 */
+	centeredContent?: boolean;
 }
 
 /** The contact band copy (see `SiteProfile.contact`, issue #7549). */
@@ -969,10 +1010,29 @@ export interface ForgeTextBaseline {
 	skipped: string[];
 }
 
+/** One ink in a region's palette: a colour plus its share of the region's text. */
+export interface InkShare {
+	color: string;
+	/** Share of the region's rendered text mass, 0–1, rounded to 2 decimals. */
+	share: number;
+}
+
 /** One region's computed surface + text colour (`#rrggbb` or `transparent`). */
 export interface RegionColors {
 	background: string;
 	text: string;
+	/**
+	 * The region's measured ink PALETTE — every colour carrying at least 4% of the
+	 * region's rendered text mass (`inkMass`), dominant first, shares summing to
+	 * roughly 1.
+	 *
+	 * `text` is `inks[0].color` and stays for human output and for baselines
+	 * recorded before the palette existed. The palette exists because a band's
+	 * text is frequently two colours (a white lede over grey list items); gating
+	 * only the dominant one let the minority ink regress silently
+	 * (virtuallyjamaica's `#services` grey `li`s turned white, 2026-11-12).
+	 */
+	inks?: InkShare[];
 	/**
 	 * The region's painted background IMAGE, when it has one — a `linear-gradient(…)`
 	 * or a `url(…)`. Bands only (`ColorRegion.descendantFill`): a builder paints a
@@ -1106,6 +1166,28 @@ export interface ForgeSection {
 	 */
 	minHeight?: string;
 	/**
+	 * The band measured EXACTLY the viewport height at every capture breakpoint
+	 * (`analyze --geometry`): a full-screen stage — Brando's `.full-screen`,
+	 * Elementor's 100vh hero. `minHeight` becomes `100vh` instead of the
+	 * captured pixels, because the captured height IS that device's viewport
+	 * and must not freeze the stage on a different one. The rebuilt wrap also
+	 * carries `ds-section-wrap--full`, which stretches the single-file wrapper
+	 * chain so the copy track can centre vertically, as the source did.
+	 * `false` is an operator override back to the measured pixels.
+	 */
+	fullViewport?: boolean;
+	/** The measured column split of the hero track (`bandFacts.splitColumns`).
+	 * Emitted as `--ds-split`; the structural hero grid consumes it, so the
+	 * copy column keeps the source's width and line breaks. */
+	split?: number[];
+	/** The band measured the source's own vertical-centring device
+	 * (`bandFacts.centeredContent`). `true` adds `ds-section-wrap--centered`
+	 * (restores the height chain and centring the vendor sheet supplied);
+	 * `false` is a MEASURED opt-out — a full-height band the source top-aligns
+	 * under its own padding — and clears the hero default. Absent = not
+	 * measured, so the template default applies. */
+	centered?: boolean;
+	/**
 	 * The band's typography facts — a per-heading-level map plus the body
 	 * paragraph, measured by `analyze --geometry` (`SiteProfile.bandFacts`).
 	 * A pin here wins over the measurement, which is how an operator corrects a
@@ -1167,8 +1249,16 @@ export interface ForgeSection {
 	 * circle with a 45px glyph, 27px/32px titles). Empty → template defaults.
 	 */
 	iconRowStyle?: {
-		padTop?: string;
-		padBottom?: string;
+		/** Per-device: the source pads these rows 63px on desktop and 36/50px at
+		 * tablet and mobile. A single value baked the TABLET number and the pinned
+		 * band height then showed ~255px of dead space. */
+		padTop?: ResponsiveLength;
+		padBottom?: ResponsiveLength;
+		/** The row's horizontal inset (the source's 50px desktop / 35px mobile). */
+		padX?: ResponsiveLength;
+		/** The gap BELOW each row (the source's widget margin — 20px on jayainc).
+		 * The measured `padding-block` alone left the row pitch 45px short. */
+		rowGap?: string;
 		titleSize?: string;
 		titleLineHeight?: string;
 		markerSize?: string;
@@ -1254,9 +1344,62 @@ export interface ForgeChromeStyle {
 	letterSpacing?: string;
 }
 
+/** One item in the source's top contact strip (see `ForgeChrome.topbarItems`). */
+export interface ForgeTopbarItem {
+	/** The item's text. An embedded newline is the source's own `<br>` (the
+	 * address is two lines on jayainc); the template renders it with
+	 * `white-space: pre-line`. */
+	text: string;
+	/** The icon element's class tokens (an `<i class="auxicon-location">` glyph
+	 * the source's icon sheet draws — `chrome.iconCss`). */
+	icon?: string;
+	/** The item's link when the source makes it actionable (`tel:`, a map). */
+	href?: string;
+}
+
+/** The top contact strip as measured (`measureTopbar`). */
+export interface ForgeTopbarFacts {
+	items: ForgeTopbarItem[];
+	/** Icon-only links at the bar's other end (jayainc's Google-Maps glyph at
+	 * the far left). Rendered as a leading group. */
+	socials?: Array<{ icon: string; href?: string }>;
+	/** Where the item group sits in the bar, measured against the bar's content
+	 * edges (jayainc: right). */
+	align?: 'start' | 'center' | 'end';
+	height?: string;
+	iconSize?: string;
+	iconInk?: string;
+	/** The gap between an icon and its text. */
+	iconGap?: string;
+	/** The gap between items. */
+	itemGap?: string;
+}
+
 export interface ForgeChrome {
-	/** The top contact strip lines (address, phone). */
+	/** The top contact strip lines (address, phone). Kept for profiles measured
+	 * before `topbarItems` existed; the structured block wins when present. */
 	topbar?: string[];
+	/**
+	 * The top contact strip's STRUCTURE, measured (`measureTopbar`): each item's
+	 * text, icon glyph and link. jayainc's strip is two flex groups, each an
+	 * icon (`auxicon-location` / `auxicon-phone-classic-on`) beside a two-line
+	 * paragraph — the text-only `topbar` lines could never rebuild that.
+	 */
+	topbarItems?: ForgeTopbarItem[];
+	/** Where the strip's items sit in the bar: measured from the item group's
+	 * box against the bar's content edges (jayainc: right, `float: right`). */
+	topbarAlign?: 'start' | 'center' | 'end';
+	/** The strip's measured height (jayainc: 100px — the icons are large and
+	 * the address is two lines; the template's 0.5rem padding came out ~42px). */
+	topbarHeight?: string;
+	/** The icon glyph's measured size / ink / trailing gap. */
+	topbarIconSize?: string;
+	topbarIconInk?: string;
+	topbarIconGap?: string;
+	/** The measured gap BETWEEN items (jayainc: 50px). */
+	topbarItemGap?: string;
+	/** Icon-only links in the strip (the source's leading social glyphs). */
+	topbarSocials?: Array<{ icon: string; href?: string }>;
 	/** The top strip's own background (jayainc: the navy `#04132b`). */
 	topbarBg?: string;
 	/** The top strip's text color. */
@@ -1325,7 +1468,14 @@ export interface ForgeChrome {
 	 * dark footer — jayainc's rgba(255,255,255,0.7)). */
 	footerInk?: string;
 	/** The footer's brand logo (the footer-widget media image). */
-	footerLogo?: { src?: string; alt?: string };
+	footerLogo?: {
+		src?: string;
+		alt?: string;
+		/** The footer block the logo shares a column with, when the source renders
+		 * it as the first widget of that column (the brand column) instead of a
+		 * standalone strip above the grid. The layout renders it inside the block. */
+		blockIndex?: number;
+	};
 	/** The footer background color (resolved from the footer-widget CSS). */
 	footerBg?: string;
 	/** The copyright bar's own background (jayainc: a translucent navy

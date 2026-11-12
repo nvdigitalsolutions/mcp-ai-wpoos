@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS } from './geometry.ts';
 import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit } from './contrast.ts';
@@ -337,7 +338,17 @@ export async function resolveTemplateDir(template?: string): Promise<string> {
 
 /** Serialize one collection as a TS object literal for content.config.ts. */
 function tsString(value: string): string {
-	return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+	// `\n`/`\r`/`\u2028`/`\u2029` must be escaped: the top strip's address is
+	// two lines (its `<br>` becomes a real newline in the fact), and a raw
+	// newline inside a single-quoted literal is a syntax error in the generated
+	// module.
+	return `'${value
+		.replace(/\\/g, '\\\\')
+		.replace(/'/g, "\\'")
+		.replace(/\r/g, '\\r')
+		.replace(/\n/g, '\\n')
+		.replace(/\u2028/g, '\\u2028')
+		.replace(/\u2029/g, '\\u2029')}'`;
 }
 
 /** A TS object key: bare when it is a valid identifier, quoted otherwise. */
@@ -370,7 +381,7 @@ function tsLength( value: ResponsiveLength ): string {
  */
 function tsTypeFact( fact: BandTypeFact ): string {
 	const properties = ( value: Record< string, unknown >, dropDefaults: boolean ): string[] =>
-		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color' ] as const )
+		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color', 'maxWidth' ] as const )
 			.filter( ( key ) => {
 				const entry = value[ key ];
 				if ( typeof entry !== 'string' || entry.length === 0 ) {
@@ -408,12 +419,16 @@ function tsBandType( type: { headings?: Record< string, BandTypeFact >; body?: B
 				.map( ( [ tag, fact ] ) => `${ tsKey( tag ) }: ${ tsTypeFact( fact ) }` )
 				.join( ', ' ) } }`
 		);
-		const largest = headings
-			.map( ( [ , fact ] ) => fact )
-			.reduce( ( best, fact ) =>
-				( parseFloat( fact.size ?? '0' ) || 0 ) > ( parseFloat( best.size ?? '0' ) || 0 ) ? fact : best
-			);
-		parts.push( `title: ${ tsTypeFact( largest ) }` );
+		const largest = headings.reduce( ( best, entry ) =>
+			( parseFloat( entry[ 1 ].size ?? '0' ) || 0 ) > ( parseFloat( best[ 1 ].size ?? '0' ) || 0 ) ? entry : best
+		);
+		parts.push( `title: ${ tsTypeFact( largest[ 1 ] ) }` );
+		// The LEVEL of that title — the source's own tag. A band whose only
+		// heading is an `<h3>` (virtuallyjamaica's contact form) must not be
+		// promoted to the component's default `<h2>`: the outline is content,
+		// and the level is measurable. The renderer maps an `h1` down to `h2`
+		// (the page article owns the single h1).
+		parts.push( `titleLevel: ${ tsString( largest[ 0 ] ) }` );
 	}
 	if ( type.body?.size ) {
 		parts.push( `body: ${ tsTypeFact( type.body ) }` );
@@ -1119,7 +1134,8 @@ function collapseDevice( desktop?: string, tablet?: string, mobile?: string ): R
  * desktop-derived compensation, so re-scaffolding an old profile is unchanged.
  */
 function measuredContainer(
-	bandFacts: ForgeBandFacts | undefined
+	bandFacts: ForgeBandFacts | undefined,
+	fallbackPadX?: ResponsiveLength
 ): { measure?: ResponsiveLength; paddingX?: ResponsiveLength } {
 	const at = ( device: 'desktop' | 'tablet' | 'mobile' ): { measure: string; padX: string } | undefined => {
 		const entry = bandFacts?.container?.[ device ];
@@ -1151,6 +1167,15 @@ function measuredContainer(
 	const width = bandFacts?.containerWidth;
 	if ( typeof width !== 'number' || width <= 0 ) {
 		return {};
+	}
+	// `containerWidth` is the CONTENT width (the container's own padding is
+	// subtracted at measurement). The rebuild's measure is the BORDER-BOX width,
+	// so the gutter it will apply must be added back. A known analyzed `paddingX`
+	// states that gutter exactly; the legacy constant approximates the template's
+	// clamp (~32px per side) when the source reports none.
+	if ( typeof fallbackPadX === 'string' && /^\d+(?:\.\d+)?px$/.test( fallbackPadX.trim() ) ) {
+		const pad = Number.parseFloat( fallbackPadX );
+		return { measure: `${ Math.round( width + pad * 2 ) }px`, paddingX: fallbackPadX };
 	}
 	return {
 		measure: `${ Math.round( width ) + BAND_GUTTER_PX }px`,
@@ -1206,8 +1231,30 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
 	// The container measure + side gutter, MEASURED per device (114 §3.6). An
 	// explicit profile fact wins; otherwise the source's own container decides.
-	const container = measuredContainer( bandFacts );
-	const measure = section.measure ?? container.measure;
+	const container = measuredContainer( bandFacts, section.paddingX );
+	// An analyzed `section.measure` can be the THEME's container width applied to
+	// a FULL-WIDTH band (jayainc's services band: the CSS says 1140, the live
+	// `.elementor-container` is 1440, so its columns rendered 524 instead of the
+	// source's 660 and the pinned height showed 255px of dead space). The
+	// measured container is the truth when it is WIDER; a NARROWER measurement
+	// means the CSS cap is real (a boxed 1140 band measures 1140).
+	const pxWidth = ( value?: ResponsiveLength ): number | undefined => {
+		// A per-device map is the normal shape (the container is 1440 on desktop,
+		// the viewport at tablet/mobile); compare its DESKTOP value.
+		const text = typeof value === 'string' ? value : value?.desktop;
+		return typeof text === 'string' && /^\d+(?:\.\d+)?px$/.test( text.trim() ) ? Number.parseFloat( text ) : undefined;
+	};
+	const sectionWidth = pxWidth( section.measure );
+	const containerWidth = pxWidth( container.measure );
+	// An operator PIN on the band's measure always wins: it is the escape hatch
+	// for a band whose content is capped narrower than its container (the
+	// contact band: the container is full-width, the form inside is not).
+	const pinnedMeasure = ( profile.pins ?? [] ).some( ( pin ) => pin.path === `sections.${ section.id }.measure` );
+	const measure = pinnedMeasure
+		? section.measure ?? container.measure
+		: sectionWidth !== undefined && containerWidth !== undefined && containerWidth > sectionWidth
+			? container.measure
+			: section.measure ?? container.measure;
 	if ( measure ) {
 		entry.push( `measure: ${ tsLength( measure ) }` );
 	}
@@ -1235,13 +1282,35 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	// the strip threshold does not apply (jayainc's dff3f1a renders a lone
 	// Elementor spacer and collapsed to 0px, shifting every band below it).
 	const minimumHeight = contentlessBand( bandFacts ) ? 1 : MIN_MIRRORED_BAND_HEIGHT;
+	// A band measured at EXACTLY the viewport height on every device is a
+	// full-SCREEN stage (Brando's `.full-screen`, Elementor's `100vh` hero).
+	// The measured pixels are that device's viewport at capture time, so
+	// re-emitting them freezes the stage: a 900px band is right on a 1440×900
+	// laptop and overflows on a 1440×800 window, where the source still fits
+	// the screen and centres its copy. Emit the semantic height instead; the
+	// renderer adds `ds-section-wrap--full`, whose height chain fills the
+	// viewport and lets the copy track centre (see global.css).
+	const bandHeight = ( device: string ): number | undefined => {
+		const height = box?.[ device ]?.height;
+		return typeof height === 'number' ? height : undefined;
+	};
+	const fullViewport = [ 'desktop', 'tablet', 'mobile' ].every( ( device ) => {
+		const height = bandHeight( device );
+		const viewport = DEFAULT_GEOMETRY_VIEWPORTS.find( ( entry ) => entry.name === device )?.height;
+		return height !== undefined && viewport !== undefined && Math.abs( height - viewport ) <= 2;
+	} );
+	const isFullViewport = section.fullViewport ?? fullViewport;
+	if ( isFullViewport ) {
+		entry.push( 'fullViewport: true' );
+		entry.push( `minHeight: ${ tsString( '100vh' ) }` );
+	}
 	const heightOf = ( viewport: string ): string | undefined => {
 		const height = box?.[ viewport ]?.height;
 		return typeof height === 'number' && height >= minimumHeight
 			? `${ Math.round( height ) }px`
 			: undefined;
 	};
-	const desktopHeight = heightOf( 'desktop' );
+	const desktopHeight = isFullViewport ? undefined : heightOf( 'desktop' );
 	if ( desktopHeight ) {
 		const tabletHeight = heightOf( 'tablet' );
 		const mobileHeight = heightOf( 'mobile' );
@@ -1271,6 +1340,23 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	const mediaPosition = section.mediaPosition ?? bandFacts?.mediaPosition;
 	if ( mediaPosition ) {
 		entry.push( `mediaPosition: ${ tsString( mediaPosition ) }` );
+	}
+	// The hero track's measured column split (see `collectBandSplitFacts`) —
+	// the ratio lives in the vendor stylesheet and the markup carries no width
+	// class, so a guessed ratio changes the copy column's line breaks.
+	const split = section.split ?? bandFacts?.splitColumns;
+	if ( split && split.length >= 2 ) {
+		entry.push( `split: [${ split.map( ( value ) => String( value ) ).join( ', ' ) }]` );
+	}
+	// The source's own vertical-centring device (see `collectBandLayoutFacts`).
+	// A measured `false` is emitted so a full-height band the source TOP-aligns
+	// (virtuallyjamaica's contact band) can opt out of the hero default; an
+	// absent fact (an older profile, an unmeasured page) keeps the default.
+	const centered = section.centered ?? bandFacts?.centeredContent;
+	if ( centered === true ) {
+		entry.push( 'centered: true' );
+	} else if ( centered === false ) {
+		entry.push( 'centered: false' );
 	}
 	// The builder's presentation utilities this band actually uses. The
 	// sanitizer keeps the class and the vendor sheet never ships, so an
@@ -1423,9 +1509,16 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 	}
 	if ( section.iconRowStyle ) {
 		const row = section.iconRowStyle;
-		const parts = ( [ 'padTop', 'padBottom', 'titleSize', 'titleLineHeight', 'markerSize', 'markerGlyph', 'markerBackground', 'markerInk' ] as const )
-			.filter( ( key ) => row[ key ] )
-			.map( ( key ) => `${ key }: ${ tsString( row[ key ] as string ) }` );
+		// padTop/padBottom/padX are per-device (the source pads 63px on desktop,
+		// 36/50 at tablet/mobile); everything else is a single measured value.
+		const responsive = new Set< string >( [ 'padTop', 'padBottom', 'padX' ] );
+		const parts = ( [ 'padTop', 'padBottom', 'padX', 'rowGap', 'titleSize', 'titleLineHeight', 'markerSize', 'markerGlyph', 'markerBackground', 'markerInk' ] as const )
+			.filter( ( key ) => row[ key ] !== undefined )
+			.map( ( key ) =>
+				`${ key }: ${
+					responsive.has( key ) ? tsLength( row[ key ] as ResponsiveLength ) : tsString( row[ key ] as string )
+				}`
+			);
 		if ( parts.length > 0 ) {
 			entry.push( `iconRowStyle: { ${ parts.join( ', ' ) } }` );
 		}
@@ -1510,6 +1603,13 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		' * the renderer maps bands POSITIONALLY (section index → band index). */',
 		`export const bandSource: 'sections' | 'outline' = '${ bandSource }';`,
 		'',
+		'/** The measured PAGE background (a builder paints the body; transparent',
+		' * bands and the margins between bands show it). Undefined → the template\u2019s',
+		' * own surface. */',
+		`export const pageBackground: string | undefined = ${
+			profile.pageBackground ? tsString( profile.pageBackground ) : 'undefined'
+		 };`,
+		'',
 		"export type SectionThemeName = 'hero' | 'dark' | 'alt' | 'light';",
 		'',
 		'\t/** One measured typography fact (a heading level or the body paragraph).',
@@ -1525,6 +1625,8 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t/** Computed `color` \u2014 the source\u2019s own ink. A builder writes it as an',
 		'\t * inline `style` the sanitizer drops, so this is the only surviving copy. */',
 		'\tcolor?: string;',
+		'\t/** Computed `max-width` \u2014 a heading the source deliberately narrows. */',
+		'\tmaxWidth?: string;',
 		'\t/** What the source CHANGES below the desktop breakpoint (and only that). */',
 		'\ttablet?: BandTypeProperties;',
 		'\tmobile?: BandTypeProperties;',
@@ -1566,12 +1668,24 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t * clipped. A per-device map when the source band changes height per',
 		'\t * breakpoint. Absent \u2192 the band sizes to its content. */',
 		'\tminHeight?: string | { desktop?: string; tablet?: string; mobile?: string };',
+		'\t/** The band was measured at EXACTLY the viewport height on every device',
+		' * (`minHeight` is then `100vh`). The wrap carries `ds-section-wrap--full`,',
+		' * which fills the viewport and stretches its single-file wrapper chain so the',
+		' * copy track centres vertically — the source’s own full-screen behaviour,',
+		' * which its vendor stylesheet used to supply. */',
+		'\tfullViewport?: boolean;',
+		'\t/** The measured column split of the structural hero track (`--ds-split`).',
+		' * The copy column keeps the source\u2019s width, so its line breaks match. */',
+		'\tsplit?: number[];',
+		'\t/** The band measured the source\u2019s own vertical-centring device;',
+		' * the wrap takes `ds-section-wrap--centered`. */',
+		'\tcentered?: boolean;',
 		'\t/** The band\u2019s measured TYPOGRAPHY (`analyze --geometry`) \u2014 the source\u2019s',
 		'\t * computed heading sizes per level plus the body paragraph. A raw-HTML band',
 		'\t * otherwise renders at the browser default heading scale (a 40px source',
 		'\t * `<h3>` came out at 15.21px = 1.17em of the 13px body). `title` is the',
 		'\t * band\u2019s LARGEST heading \u2014 the visual title the components size from. */',
-		'\ttype?: { headings?: Record<string, BandTypeFact>; body?: BandTypeFact; title?: BandTypeFact };',
+		'\ttype?: { headings?: Record<string, BandTypeFact>; body?: BandTypeFact; title?: BandTypeFact; titleLevel?: string };',
 		'\t/** Selectors for subtrees the SOURCE renders hidden at rest (accordion',
 		'\t * panels, tab panes) — emitted as scoped `display:none` rules. */',
 		'\thidden?: string[];',
@@ -1625,7 +1739,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tmediaShape?: { width: string; height: string; background: string; radius?: string };',
 		'\t/** The card box model of a media grid band (measured; template defaults when absent). */',
 		'\tcardStyle?: { gap?: string; padding?: string; textPadding?: string };',
-		'\ticonRowStyle?: { padTop?: string; padBottom?: string; titleSize?: string; titleLineHeight?: string; markerSize?: string; markerGlyph?: string; markerBackground?: string; markerInk?: string };',
+		'\ticonRowStyle?: { padTop?: string | { desktop?: string; tablet?: string; mobile?: string }; padBottom?: string | { desktop?: string; tablet?: string; mobile?: string }; padX?: string | { desktop?: string; tablet?: string; mobile?: string }; rowGap?: string; titleSize?: string; titleLineHeight?: string; markerSize?: string; markerGlyph?: string; markerBackground?: string; markerInk?: string };',
 		'\t/** Per-image collage offsets (absolute positioning against the collage box). */',
 		'\tmediaOffsets?: Array<{ top?: string; right?: string; bottom?: string; left?: string; shadow?: string }>;',
 		'\t/** The body paragraphs render in N columns (the source\'s sub-column split). */',
@@ -1724,7 +1838,19 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'}',
 		'',
 		'export interface ForgeChrome {',
-		'	topbar?: string[];',
+		'\ttopbar?: string[];',
+		'\t/** The top strip STRUCTURE: text (with the source\u2019s own line breaks),',
+		' * icon glyph class and link per item. Wins over `topbar` when present. */',
+		'\ttopbarItems?: Array<{ text: string; icon?: string; href?: string }>;',
+		'\t/** Where the items sit in the bar (measured against its content edges). */',
+		"\ttopbarAlign?: 'start' | 'center' | 'end';",
+		'\ttopbarHeight?: string;',
+		'\ttopbarIconSize?: string;',
+		'\ttopbarIconInk?: string;',
+		'\ttopbarIconGap?: string;',
+		'\ttopbarItemGap?: string;',
+		'\t/** Icon-only links in the strip (the source\u2019s leading social glyphs). */',
+		'\ttopbarSocials?: Array<{ icon: string; href?: string }>;',
 		'	topbarBg?: string;',
 		'	topbarInk?: string;',
 		'	logo?: { src?: string; alt?: string };',
@@ -1759,8 +1885,10 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t/** The subfooter text color (the source paints white-ish text on its',
 		'\t * dark footer). */',
 		'\tfooterInk?: string;',
-		'\t/** The footer brand logo (the footer-widget media image). */',
-		'	footerLogo?: { src?: string; alt?: string };',
+		'	/** The footer brand logo (the footer-widget media image). `blockIndex` is',
+		'	 * set when the source renders it as the first widget of a footer column',
+		'	 * (the brand column), so the layout puts it INSIDE that block. */',
+		'\tfooterLogo?: { src?: string; alt?: string; blockIndex?: number };',
 		'	/** The footer background color (resolved from the footer-widget CSS). */',
 		'	footerBg?: string;',
 		'	/** The copyright bar\'s own background (a translucent navy on some sources). */',
@@ -1781,6 +1909,45 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	const entry: string[] = [];
 	if ( chrome.topbar && chrome.topbar.length > 0 ) {
 		entry.push( `topbar: ${ JSON.stringify( chrome.topbar ) }` );
+	}
+	if ( chrome.topbarItems && chrome.topbarItems.length > 0 ) {
+		entry.push(
+			`topbarItems: [${ chrome.topbarItems
+				.map( ( item ) => {
+					const parts = [ `text: ${ tsString( item.text ) }` ];
+					if ( item.icon ) parts.push( `icon: ${ tsString( item.icon ) }` );
+					if ( item.href ) parts.push( `href: ${ tsString( item.href ) }` );
+					return `{ ${ parts.join( ', ' ) } }`;
+				} )
+				.join( ', ' ) }]`
+		);
+	}
+	if ( chrome.topbarAlign ) {
+		entry.push( `topbarAlign: ${ tsString( chrome.topbarAlign ) }` );
+	}
+	if ( chrome.topbarHeight ) {
+		entry.push( `topbarHeight: ${ tsString( chrome.topbarHeight ) }` );
+	}
+	if ( chrome.topbarIconSize ) {
+		entry.push( `topbarIconSize: ${ tsString( chrome.topbarIconSize ) }` );
+	}
+	if ( chrome.topbarIconInk ) {
+		entry.push( `topbarIconInk: ${ tsString( chrome.topbarIconInk ) }` );
+	}
+	if ( chrome.topbarIconGap ) {
+		entry.push( `topbarIconGap: ${ tsString( chrome.topbarIconGap ) }` );
+	}
+	if ( chrome.topbarItemGap ) {
+		entry.push( `topbarItemGap: ${ tsString( chrome.topbarItemGap ) }` );
+	}
+	if ( chrome.topbarSocials && chrome.topbarSocials.length > 0 ) {
+		entry.push(
+			`topbarSocials: [${ chrome.topbarSocials
+				.map( ( social ) =>
+					`{ icon: ${ tsString( social.icon ) }${ social.href ? `, href: ${ tsString( social.href ) }` : '' } }`
+				)
+				.join( ', ' ) }]`
+		);
 	}
 	if ( chrome.topbarBg ) {
 		entry.push( `topbarBg: ${ tsString( chrome.topbarBg ) }` );
@@ -1896,6 +2063,9 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		const logo: string[] = [ `src: ${ tsString( chrome.footerLogo.src ) }` ];
 		if ( chrome.footerLogo.alt ) {
 			logo.push( `alt: ${ tsString( chrome.footerLogo.alt ) }` );
+		}
+		if ( chrome.footerLogo.blockIndex !== undefined ) {
+			logo.push( `blockIndex: ${ chrome.footerLogo.blockIndex }` );
 		}
 		entry.push( `footerLogo: { ${ logo.join( ', ' ) } }` );
 	}

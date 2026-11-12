@@ -48,7 +48,7 @@ import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureNavToggle, measureStickyHeader, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
@@ -56,7 +56,7 @@ import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } fro
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
-import { applyBandSurfaces, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors } from '../lib/region-colors.ts';
+import { applyBandSurfaces, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, normalizeColorModes } from '../lib/region-colors.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
@@ -532,14 +532,18 @@ async function runAnalyze( url, options ) {
 				// the band's own heading/body typography). Without them a raw-HTML
 				// band renders at the browser's default heading scale.
 				try {
-					profile.bandFacts = await measureBandFacts( {
+					const bandFacts = await measureBandFacts( {
 						url: profile.url,
 						ids,
 						kind: 'source',
 						selectors,
 					} );
+					profile.bandFacts = bandFacts.bands;
+					if ( bandFacts.pageBackground ) {
+						profile.pageBackground = bandFacts.pageBackground;
+					}
 					console.log(
-						`\u2713 Band facts: ${ Object.keys( profile.bandFacts ).length } band(s) — container width + typography.`
+						`\u2713 Band facts: ${ Object.keys( bandFacts.bands ).length } band(s) — container width + typography.`
 					);
 				} catch ( error ) {
 					console.warn(
@@ -624,6 +628,34 @@ async function runAnalyze( url, options ) {
 				} catch ( error ) {
 					console.warn(
 						`\u26a0 Nav toggle skipped: ${ error instanceof Error ? error.message : error }`
+					);
+				}
+				// The top contact strip's STRUCTURE (icons, two-line address, right
+				// alignment, item gap). `analyzeChrome` only sees its text lines; the
+				// glyphs and the layout are browser facts.
+				try {
+					const topbar = await measureTopbar( { url: profile.url } );
+					if ( topbar ) {
+						profile.design = profile.design ?? {};
+						profile.design.chrome = profile.design.chrome ?? {};
+						const chrome = profile.design.chrome;
+						chrome.topbarItems = topbar.items;
+						if ( topbar.align ) chrome.topbarAlign = topbar.align;
+						if ( topbar.height ) chrome.topbarHeight = topbar.height;
+						if ( topbar.iconSize ) chrome.topbarIconSize = topbar.iconSize;
+						if ( topbar.iconInk ) chrome.topbarIconInk = topbar.iconInk;
+						if ( topbar.iconGap ) chrome.topbarIconGap = topbar.iconGap;
+						if ( topbar.itemGap ) chrome.topbarItemGap = topbar.itemGap;
+						if ( topbar.socials && topbar.socials.length > 0 ) chrome.topbarSocials = topbar.socials;
+						console.log(
+							`\u2713 Topbar: ${ topbar.items.length } item(s), ${ topbar.align ?? 'start' }-aligned${ topbar.iconSize ? `, ${ topbar.iconSize } icons` : '' }.`
+						);
+					} else {
+						console.log( '  Topbar: none (the source has no top contact strip).' );
+					}
+				} catch ( error ) {
+					console.warn(
+						`\u26a0 Topbar skipped: ${ error instanceof Error ? error.message : error }`
 					);
 				}
 				// A baseline that measured nothing used to report success, which left
@@ -1403,6 +1435,56 @@ function bandColorRegions( bands ) {
 		selectors: [ `#${ anchor }` ],
 		descendantFill: true,
 	} ) );
+}
+
+/**
+ * Re-record the colour baseline on its own.
+ *
+ * `analyze --colors` re-harvests the whole profile, which is the wrong tool for
+ * the two cases that actually come up: the ink METRIC changed (every baseline
+ * recorded by the old one is stale), and the SOURCE domain moved (`jayainc.com`
+ * serves the forged build while `cms.jayainc.com` is the WordPress site). Both
+ * need boxes and ink re-read, not geometry re-measured.
+ *
+ * `--url` measures a different host without touching `profile.url`; `--write`
+ * saves, otherwise the diff is printed for review.
+ */
+async function runColors( profileRef, options ) {
+	const profile = await loadProfile( profileRef );
+	if ( ! profile.design ) {
+		console.error( 'This profile has no design block \u2014 run `analyze <url> --write <profile>` first.' );
+		process.exitCode = 1;
+		return;
+	}
+	const url = options.url ?? profile.url;
+	const modes = parseColorModes( options.modes );
+	// The same region set `analyze --colors` and `verify --colors` use: the
+	// defaults plus one region per renderable band anchor.
+	const regions = [ ...DEFAULT_COLOR_REGIONS, ...bandColorRegions( renderableBands( profile.design ) ) ];
+	const measured = await measureRegionColors( { url, modes, regions, effective: true } );
+	const previous = normalizeColorModes( profile.colors );
+	for ( const mode of Object.keys( measured ) ) {
+		console.log( `\n${ mode } \u2014 ${ url }` );
+		for ( const [ region, value ] of Object.entries( measured[ mode ] ) ) {
+			const before = previous[ mode ]?.[ region ];
+			const was = before ? `  (was ${ before.background } / ${ before.text })` : '';
+			const inks = ( value.inks ?? [] ).map( ( ink ) => `${ ink.color } ${ Math.round( ink.share * 100 ) }%` ).join( ', ' );
+			console.log( `  ${ region.padEnd( 22 ) } bg ${ String( value.background ).padEnd( 12 ) } text ${ inks || '\u2014' }${ was }` );
+		}
+	}
+	if ( options.write ) {
+		const profilePath = profilePathOf( profileRef );
+		if ( ! profilePath ) {
+			console.error( 'Cannot write: pass a site.json path (not a registered name) or run from the forge root.' );
+			process.exitCode = 1;
+			return;
+		}
+		profile.colors = measured;
+		await writeFile( profilePath, `${ JSON.stringify( profile, null, '\t' ) }\n`, 'utf8' );
+		console.log( `\n\u2713 Colour baseline written to ${ profilePath }` );
+	} else {
+		console.log( '\n(dry run \u2014 pass --write to save the baseline)' );
+	}
 }
 
 /** Every built HTML page (homepage first), bounded — the SEO gate walks them. */
@@ -2848,15 +2930,23 @@ async function runVerify( profileRef, options ) {
 		for ( const deviation of [ ...failures, ...report.deviations.filter( ( d ) => d.severity === 'warn' ) ] ) {
 			const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
 			const metric = deviation.deltaE === null ? '' : ` (\u0394E00 ${ deviation.deltaE })`;
+			// An ink palette deviation names the SHARE it speaks for: a lost 8%
+			// caption and a lost 40% body are not the same finding.
+			const share = deviation.share === undefined ? '' : ` (${ Math.round( deviation.share * 100 ) }% of text)`;
 			console.warn(
-				`${ mark } Colour [${ deviation.mode }]: ${ deviation.region } ${ deviation.metric } \u2014 source ${ deviation.expected }, build ${ deviation.actual }${ metric }`
+				`${ mark } Colour [${ deviation.mode }]: ${ deviation.region } ${ deviation.metric } \u2014 source ${ deviation.expected }${ share }, build ${ deviation.actual }${ metric }`
 			);
 		}
 		for ( const region of report.missing ) {
 			console.warn( `\u26a0 Colour: ${ region } exists in the source baseline but not in the build (dropped chrome, scheme or markup change).` );
 		}
 		if ( report.skipped.length > 0 ) {
-			console.log( `  colour: ${ report.skipped.length } surface(s) skipped (transparent \u2014 not comparable)` );
+			// Name them. "N skipped" hides WHERE the gate has no opinion — and a
+			// gradient the source measured flat (a `::before` overlay is invisible to
+			// a computed-style read) is the common case.
+			const named = report.skipped.slice( 0, 8 ).join( ', ' );
+			const more = report.skipped.length > 8 ? `, \u2026 +${ report.skipped.length - 8 }` : '';
+			console.log( `  colour: ${ report.skipped.length } surface(s) not comparable (transparent, or a gradient against a flat source): ${ named }${ more }` );
 		}
 		if ( report.unimplemented.length > 0 ) {
 			console.log(
@@ -3116,6 +3206,17 @@ program
 	.option( '--runtime <mode>', 'static | managed — applied to the emitted pipeline (Proposal 135)', 'static' )
 	.action( async ( profileRef, options ) => {
 		await runDeploy( profileRef, options );
+	} );
+
+program
+	.command( 'colors' )
+	.description( 're-record the colour baseline (body, chrome and every band) without re-analyzing the site' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.option( '--url <url>', 'measure this URL instead of the profile\u2019s (e.g. the CMS host when the public domain serves the forge)' )
+	.option( '--modes <modes>', 'colour schemes to measure, comma-separated', 'light,dark' )
+	.option( '--write', 'save the measurement into the profile (default: dry run)' )
+	.action( async ( profileRef, options ) => {
+		await runColors( profileRef, options );
 	} );
 
 program

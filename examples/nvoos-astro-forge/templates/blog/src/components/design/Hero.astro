@@ -12,6 +12,7 @@
 import type { SemanticSection } from '../../forge/semantic.ts';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
+import SectionTitle from './SectionTitle.astro';
 
 interface Props {
 	section: SemanticSection;
@@ -92,7 +93,7 @@ const offsetVars = ( index: number ): string | undefined => {
 {theme?.layout === 'split' ? (
 	<section class="ds-section ds-hero ds-hero-split">
 		<div class="ds-hero-copy">
-			{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+			{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 			{theme.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 			{body && body.length > 0 && (
 				<div class="ds-hero-body" style={theme.bodyColumns ? `--ds-body-cols:${theme.bodyColumns}` : undefined}>
@@ -140,7 +141,7 @@ const offsetVars = ( index: number ): string | undefined => {
 	</section>
 ) : (
 	<section class="ds-section ds-hero">
-		{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+		{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 		{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 		{body?.map((paragraph) => (
 			<p class="ds-text">{paragraph}</p>

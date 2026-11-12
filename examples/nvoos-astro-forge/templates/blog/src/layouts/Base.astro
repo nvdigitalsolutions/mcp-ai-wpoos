@@ -152,6 +152,13 @@ const chromeVars = [
 	chrome?.navInk && `--forge-header-nav-ink:${chrome.navInk}`,
 	chrome?.topbarBg && `--forge-topbar-bg:${chrome.topbarBg}`,
 	chrome?.topbarInk && `--forge-topbar-ink:${chrome.topbarInk}`,
+	// The measured top strip (structure + rhythm). Absent → the template
+	// default strip: text lines, left-aligned, no icons.
+	chrome?.topbarHeight && `--forge-topbar-h:${chrome.topbarHeight}`,
+	chrome?.topbarIconSize && `--forge-topbar-icon-size:${chrome.topbarIconSize}`,
+	chrome?.topbarIconInk && `--forge-topbar-icon-ink:${chrome.topbarIconInk}`,
+	chrome?.topbarIconGap && `--forge-topbar-icon-gap:${chrome.topbarIconGap}`,
+	chrome?.topbarItemGap && `--forge-topbar-item-gap:${chrome.topbarItemGap}`,
 	chrome?.navStyle?.transform && `--forge-nav-transform:${chrome.navStyle.transform}`,
 	chrome?.navStyle?.weight && `--forge-nav-weight:${chrome.navStyle.weight}`,
 	chrome?.navStyle?.size && `--forge-nav-size:${chrome.navStyle.size}`,
@@ -317,10 +324,43 @@ const chromeVars = [
 		    document with chrome needs one too. */}
 		<a class="skip-link" href="#main">Skip to content</a>
 		{chrome?.topbar && chrome.topbar.length > 0 && (
-			<div class="site-topbar">
-				{chrome.topbar.map((line) => (
-					<p>{line}</p>
-				))}
+			<div
+				class:list={[
+					'site-topbar',
+					chrome.topbarAlign === 'end' && 'site-topbar--end',
+					chrome.topbarAlign === 'center' && 'site-topbar--center',
+					chrome.topbarItems && chrome.topbarItems.some((item) => item.icon) && 'site-topbar--icons',
+				]}
+			>
+				{chrome.topbarSocials && chrome.topbarSocials.length > 0 && (
+					<div class="site-topbar-socials">
+						{chrome.topbarSocials.map((social) => (
+							<a
+								class="site-topbar-social"
+								href={social.href ?? '#'}
+								aria-label={social.icon.replace(/^auxicon-/, '').replace(/-/g, ' ')}
+							>
+								<i class={social.icon} aria-hidden="true" />
+							</a>
+						))}
+					</div>
+				)}
+				{chrome.topbarItems && chrome.topbarItems.length > 0
+					? chrome.topbarItems.map((item) => (
+							<div class="site-topbar-item">
+								{item.icon && <i class={item.icon} aria-hidden="true" />}
+								{item.href ? (
+									<a class="site-topbar-link" href={item.href}>
+										{item.text}
+									</a>
+								) : (
+									<p>{item.text}</p>
+								)}
+							</div>
+						))
+					: chrome.topbar.map((line) => (
+							<p>{line}</p>
+						))}
 			</div>
 		)}
 		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky', behaviors.headerPosition === 'fixed' && 'site-header--float', chrome?.headerBg && 'site-header--themed', chrome?.headerTransparent && 'site-header--overlay', (behaviors.headerRestHeight || behaviors.headerPinnedHeight) && 'site-header--sized', (behaviors.headerPinnedBg || behaviors.headerPinnedHeight) && 'site-header--pinned']}>
@@ -435,15 +475,24 @@ const chromeVars = [
 							})}
 						</ul>
 					)}
-					{chrome?.footerLogo?.src && (
+					{/* The brand-column logo (footerLogo.blockIndex): the source renders it as
+					 * the first widget of a column, above the intro copy — a standalone
+					 * strip above the grid is wrong there. Without the fact it stays a
+					 * standalone brand row. */}
+					{chrome?.footerLogo?.src && chrome.footerLogo.blockIndex === undefined && (
 						<div class="site-footer-logo">
 							<img src={chrome.footerLogo.src} alt={chrome.footerLogo.alt ?? siteTitle} />
 						</div>
 					)}
 					{chrome?.footerBlocks && chrome.footerBlocks.length > 0 && (
 						<div class="site-footer-blocks">
-							{chrome.footerBlocks.map((block) => (
+							{chrome.footerBlocks.map((block, index) => (
 								<div class="site-footer-block">
+									{chrome?.footerLogo?.src && chrome.footerLogo.blockIndex === index && (
+										<div class="site-footer-logo">
+											<img src={chrome.footerLogo.src} alt={chrome.footerLogo.alt ?? siteTitle} />
+										</div>
+									)}
 									{block.title && <h3>{block.title}</h3>}
 									{block.items.map((item) => (
 										<p>{item}</p>

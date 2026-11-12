@@ -27,6 +27,7 @@ import type {
 	ForgeChrome,
 	ForgeGeometry,
 	ForgeStickyHeader,
+	ForgeTopbarFacts,
 } from './types.ts';
 
 export interface GeometryViewport {
@@ -298,6 +299,11 @@ const pick = ( selector: string ): Element | null => {
 			// The source's own ink. Builder colours live in inline `style` that
 			// sanitisation drops, so the computed value is the only surviving copy.
 			color: style.color,
+			// A builder can deliberately NARROW a heading (jayainc's services title
+			// is `max-width: 473px` inside a 640px column, so it wraps to three
+			// lines). Without the fact the rebuild renders it full-width, two lines,
+			// and the band's pinned height shows the shortfall as dead space.
+			maxWidth: style.maxWidth,
 		};
 	};
 	const facts: Record<
@@ -341,11 +347,16 @@ const pick = ( selector: string ): Element | null => {
 			continue;
 		}
 		// The band's inner container: `.container` boxes it, `.container-fluid` is
-		// the viewport. The CONTENT width is what the columns get, so the band's
-		// own gutters are subtracted — and recorded, because the rebuild needs them
-		// as its own `--ds-pad-x` (a constant was wrong at every viewport but
-		// desktop).
+		// the viewport. Elementor's `.elementor-container` (and the 4.x
+		// `.e-con-inner`) is the element that actually boxes its columns — without
+		// it the SECTION itself was measured, so every band looked full-width
+		// (jayainc's services band reported 1440 where its own container is the
+		// same but the products band's cap is real). The CONTENT width is what the
+		// columns get, so the band's own gutters are subtracted — and recorded,
+		// because the rebuild needs them as its own `--ds-pad-x` (a constant was
+		// wrong at every viewport but desktop).
 		const container =
+			element.querySelector( '.elementor-container, .e-con-inner' ) ??
 			element.querySelector( '.container, .container-fluid' ) ??
 			element.querySelector( '.row, .vc_row, .wpb_row' ) ??
 			element;
@@ -431,6 +442,19 @@ export interface MeasuredBox {
 	mar?: string;
 	/** An explicitly-sized replaced element's height (a cropped source image). */
 	height?: string;
+	/**
+	 * The `color` this class OVERRIDES on its element — recorded only when the
+	 * class paints the text a colour other than the one it inherits, and only
+	 * when every instance of the class in the band agrees.
+	 *
+	 * A builder declares text ink in its stylesheet (`ul.medium-gray-text {
+	 * color:#929292 }`) and the sanitizer ships the class name without the
+	 * vendor sheet, so the rebuilt copy inherits the panel's colour instead
+	 * (virtuallyjamaica's four grey service bullets rendered white). An
+	 * INHERITED colour is not a fact about the class and is never recorded, so
+	 * restating it can never fight the parent that legitimately sets it.
+	 */
+	color?: string;
 }
 
 /**
@@ -527,13 +551,28 @@ function collectBandBoxFacts( input: {
 		// apart on purpose: a class can sit on an image AND on a paragraph
 		// (`padding-six-lr` does both), and a cropped image's fixed height applied
 		// to the paragraph made it 712px tall (virtuallyjamaica, 2026-11-11).
-		const seen = new Map< string, { pads: Set< string >; mars: Set< string > } >();
+		const seen = new Map< string, { pads: Set< string >; mars: Set< string >; colors: Set< string > } >();
 		const mediaHeights = new Map< string, Set< string > >();
 		// The source's own crop anchor. A builder photo layer is `object-fit: cover`
 		// plus an `object-position` written in a `<style>` block sanitisation drops
 		// (Flatsome's hero is `63% 90%`), so copying the markup without this fact
 		// re-crops every photo to the centre (monicarajiv.com, 2026-11-11).
 		const mediaPositions = new Map< string, number >();
+		// Computed ink, cached: siblings share a parent and this pass already
+		// resolves style four times per node.
+		const colorCache = new Map< Element, string >();
+		const colorOf = ( target: Element | null ): string => {
+			if ( ! target ) {
+				return '';
+			}
+			const cached = colorCache.get( target );
+			if ( cached !== undefined ) {
+				return cached;
+			}
+			const value = getComputedStyle( target ).color;
+			colorCache.set( target, value );
+			return value;
+		};
 		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
 			const classes = ( node.getAttribute( 'class' ) ?? '' ).split( /\s+/ ).filter( Boolean );
 			if ( classes.length === 0 ) {
@@ -544,6 +583,13 @@ function collectBandBoxFacts( input: {
 			}
 			const pad = boxesOf( node );
 			const mar = marginsOf( node );
+			// The class's OWN ink: a colour that differs from the one the node
+			// inherits. An inherited colour says nothing about the class (the parent
+			// already painted it), so it is recorded as the empty string and a class
+			// that overrides on one instance but inherits on another gets no rule.
+			const nodeColor = colorOf( node );
+			const parentColor = colorOf( node.parentElement );
+			const ownColor = parentColor && nodeColor !== parentColor ? nodeColor : '';
 			// A replaced element the source CROPS: its rendered aspect disagrees with
 			// the file's. Recording the height is how the rebuild keeps the source's
 			// band height when it swaps in a differently-sized rendition.
@@ -564,11 +610,12 @@ function collectBandBoxFacts( input: {
 			}
 			for ( const name of classes ) {
 				if ( ! seen.has( name ) ) {
-					seen.set( name, { pads: new Set(), mars: new Set() } );
+					seen.set( name, { pads: new Set(), mars: new Set(), colors: new Set() } );
 				}
-				const entry = seen.get( name ) as { pads: Set< string >; mars: Set< string > };
+				const entry = seen.get( name ) as { pads: Set< string >; mars: Set< string >; colors: Set< string > };
 				entry.pads.add( pad );
 				entry.mars.add( mar );
+				entry.colors.add( ownColor );
 				if ( height ) {
 					// Recorded against the class but emitted as `img.<class>` ONLY — a
 					// class shared with a paragraph must never carry the image's height.
@@ -593,6 +640,10 @@ function collectBandBoxFacts( input: {
 			const mar = [ ...entry.mars ][ 0 ];
 			if ( entry.mars.size === 1 ) {
 				box.mar = mar;
+			}
+			const color = [ ...entry.colors ][ 0 ];
+			if ( entry.colors.size === 1 && color ) {
+				box.color = color;
 			}
 			if ( Object.keys( box ).length > 0 ) {
 				facts[ name ] = box;
@@ -619,11 +670,135 @@ function collectBandBoxFacts( input: {
 	return out;
 }
 
+/**
+ * The hero track's column SPLIT and the band's VERTICAL-CENTRING mechanism,
+ * measured.
+ *
+ * The structural hero rule in the template (`:has(> div > h1):has(> div > img)`)
+ * recognises the source's copy + illustration row, but its ratio was a guess
+ * (`1.15fr / 0.95fr`). virtuallyjamaica's copy column is 60% of the track (691px
+ * of 1152) and the illustration 40%; at the guessed ratio the H1 wrapped to four
+ * lines where the source has three, which also moved the vertically-centred
+ * copy. The ratio lives only in the vendor stylesheet — there is no width class
+ * in the markup — so the browser is the only source.
+ *
+ * `centered` records the source's own centring DEVICE: a `table-cell` with
+ * `vertical-align: middle` (Brando's slider) or a flex/grid container that
+ * fills half the band with centred items (Elementor's `e-con`). Merely being a
+ * full-height band does NOT mean the content is centred — virtuallyjamaica's
+ * contact band is top-aligned under 130px of padding, and centring it moved the
+ * copy 151px down.
+ *
+ * The split is recorded only when the track's children actually sit SIDE BY
+ * SIDE: a stacked layout at the measured breakpoint is not a split. Fractions
+ * are normalised to the children's own widths, so gutters and gaps cancel out.
+ */
+export function collectBandLayoutFacts( input: {
+	ids: string[];
+	kind: 'built' | 'source';
+	selectors?: Record< string, string >;
+} ): Record< string, { split?: number[]; centered?: boolean } > {
+	const pick = ( selector: string ): Element | null => {
+		try {
+			return document.querySelector( selector );
+		} catch {
+			return null;
+		}
+	};
+	const COLUMN = /(^|\s)(wpb_column|vc_column_container)(\s|$)/;
+	const ROW = /(^|\s)(row|vc_row|wpb_row)(\s|$)|brando[_-](inner[_-])?row/;
+	// The SAME structural signature the template's hero rule uses, so a measured
+	// ratio always lands on the element the rule will lay out.
+	const TRACK = ':is(div, section):has(> div > h1):has(> div > img)';
+	const out: Record< string, { split?: number[]; centered?: boolean } > = {};
+	for ( const id of input.ids ) {
+		const candidates =
+			input.kind === 'built'
+				? [ `[data-section-id="${ id }"]` ]
+				: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ].filter(
+						( value ): value is string => Boolean( value )
+				  );
+		let element = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) ) ?? null;
+		if ( input.kind === 'source' && element && COLUMN.test( element.getAttribute( 'class' ) ?? '' ) ) {
+			let row: Element | null = null;
+			for ( let up = element.parentElement; up; up = up.parentElement ) {
+				if ( up.tagName === 'SECTION' ) {
+					element = up;
+					row = null;
+					break;
+				}
+				if ( ! row && ROW.test( up.getAttribute( 'class' ) ?? '' ) ) {
+					row = up;
+				}
+			}
+			if ( row ) {
+				element = row;
+			}
+		}
+		if ( ! element ) {
+			continue;
+		}
+		const bandRect = element.getBoundingClientRect();
+		// Recorded for EVERY resolved band — `false` is a measurement too. The
+		// renderer keeps its historical default for a profile that has no fact
+		// (older profiles, unmeasured pages) and only opts OUT on an explicit
+		// `false`.
+		const entry: { split?: number[]; centered?: boolean } = { centered: false };
+		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
+			const style = getComputedStyle( node );
+			if ( style.display === 'table-cell' && style.verticalAlign === 'middle' ) {
+				entry.centered = true;
+				break;
+			}
+			const isFlexOrGrid = style.display.includes( 'flex' ) || style.display.includes( 'grid' );
+			const centresItems =
+				style.alignItems === 'center' ||
+				style.alignContent === 'center' ||
+				style.placeItems.startsWith( 'center' );
+			if ( isFlexOrGrid && centresItems && node.getBoundingClientRect().height >= bandRect.height * 0.5 ) {
+				entry.centered = true;
+				break;
+			}
+		}
+		let track: Element | null = null;
+		try {
+			track = element.querySelector( TRACK );
+		} catch {
+			track = null;
+		}
+		if ( track ) {
+			const children = Array.from( track.children ).filter( ( child ) => {
+				const rect = child.getBoundingClientRect();
+				return rect.width > 0 && rect.height > 0;
+			} );
+			const rects = children.map( ( child ) => child.getBoundingClientRect() );
+			// Side by side: the first two boxes are adjacent HORIZONTALLY. Their tops
+			// need not agree — a centred track aligns the columns on their middle
+			// (virtuallyjamaica: the copy starts at y=351 while the illustration,
+			// taller, starts at 277). A stacked layout fails the right-edge test.
+			const sideBySide =
+				rects.length >= 2 && ! ( rects[ 0 ].right > rects[ 1 ].left + 2 );
+			const total = rects.reduce( ( sum, rect ) => sum + rect.width, 0 );
+			if ( sideBySide && total > 0 ) {
+				entry.split = rects.map( ( rect ) => Math.round( ( rect.width / total ) * 1000 ) / 1000 );
+			}
+		}
+		if ( entry.split || entry.centered !== undefined ) {
+			out[ id ] = entry;
+		}
+	}
+	return out;
+}
+
 /** Render one measured box as a declaration string (empty when nothing to say). */
 export function boxDeclarations( box: MeasuredBox ): string {
 	return [
 		box.pad && `padding:${ box.pad }`,
 		box.mar && `margin:${ box.mar }`,
+		// The class's own ink override (see `MeasuredBox.color`). Last on purpose:
+		// a declaration string is diffed per device by `mergeBoxFacts`, so the
+		// order only has to be stable.
+		box.color && `color:${ box.color }`,
 		box.height && `height:${ box.height }`,
 	]
 		.filter( Boolean )
@@ -745,7 +920,10 @@ export function attachDeviceOverrides(
  * (`attachDeviceOverrides`) — a rebuild that keeps the desktop size at 390px
  * makes every band taller than its source.
  */
-export async function measureBandFacts( options: MeasureOptions ): Promise< Record< string, ForgeBandFacts > > {
+export async function measureBandFacts( options: MeasureOptions ): Promise< {
+	bands: Record< string, ForgeBandFacts >;
+	pageBackground?: string;
+} > {
 	const chromium = await loadChromium();
 	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
 	try {
@@ -781,10 +959,31 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< Reco
 		await settle( page );
 
 		const base = await measureTypeAt( 'desktop' );
+		// The PAGE background. A builder paints the body, and every band with a
+		// transparent surface (and every margin between bands) shows it —
+		// jayainc's body is #e5e5e5, so the rebuild's white body turned the
+		// source's own band margins into bright white strips while scrolling.
+		const pageBackground = await page.evaluate( () => {
+			const pick = ( value: string ) =>
+				value && value !== 'rgba(0, 0, 0, 0)' && value !== 'transparent' ? value : undefined;
+			const body = pick( getComputedStyle( document.body ).backgroundColor );
+			if ( body ) {
+				return body;
+			}
+			return pick( getComputedStyle( document.documentElement ).backgroundColor );
+		} );
 		// The computed BOX (padding/margin/cropped-media height) per class — the
 		// only faithful source for a builder's numeric spacing scale. Read at each
 		// device while its viewport is still current.
 		const desktopBox = await page.evaluate( collectBandBoxFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
+		// The hero track's column split + the band's centring device (see
+		// `collectBandLayoutFacts`). Desktop only: a split hero collapses to one
+		// column below the breakpoint, and the rebuild's mobile rule stacks.
+		const desktopLayout = await page.evaluate( collectBandLayoutFacts, {
 			ids: options.ids,
 			kind: options.kind,
 			selectors: options.selectors,
@@ -852,6 +1051,15 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< Reco
 				) as ForgeBandFacts[ 'container' ];
 			}
 			attachDeviceOverrides( band, tablet[ id ], mobile[ id ] );
+			// The hero track's measured split + the source's centring device (see
+			// `collectBandLayoutFacts`).
+			const layout = desktopLayout[ id ];
+			if ( layout?.split && layout.split.length >= 2 ) {
+				band.splitColumns = layout.split;
+			}
+			if ( layout?.centered ) {
+				band.centeredContent = true;
+			}
 			const box = mergeBoxFacts( desktopBox[ id ]?.boxes, tabletBox[ id ]?.boxes, mobileBox[ id ]?.boxes );
 			if ( box ) {
 				band.box = box;
@@ -882,7 +1090,7 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< Reco
 			}
 			facts[ id ] = band;
 		}
-		return facts;
+		return { bands: facts, ...( pageBackground ? { pageBackground } : {} ) };
 	} finally {
 		await browser.close();
 	}
@@ -953,6 +1161,192 @@ export async function measureNavToggle( options: {
 			return undefined;
 		}
 		return { visible };
+	} finally {
+		await browser.close();
+	}
+}
+
+/**
+ * The source's top contact strip, as the browser sees it.
+ *
+ * `analyzeChrome` can only read the strip's TEXT (two `<p>` lines). The
+ * structure around that text is what makes the strip recognisable: each line
+ * sits beside an icon glyph (`auxicon-location`, `auxicon-phone-classic-on`),
+ * the address is two lines from a `<br>`, the items are a right-floated flex
+ * group, and the icons are large and painted in the site accent. None of that
+ * is in the text, and none of it is knowable from CSS (the rules live in
+ * vendor classes) — so it is measured, like every other chrome fact.
+ *
+ * FAIL-SOFT: a page with no top strip returns `undefined` and the rebuild keeps
+ * the text-only lines it always rendered.
+ */
+export async function measureTopbar( options: {
+	url: string;
+	timeout?: number;
+} ): Promise< ForgeTopbarFacts | undefined > {
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const page = await context.newPage();
+		await page.setViewportSize( { width: 1440, height: 900 } );
+		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+		// A transition/scroll animation mid-flight moves the strip's box.
+		await page.addStyleTag( {
+			content: '*,*::before,*::after{transition:none!important;animation-duration:0s!important}',
+		} );
+		await settle( page );
+		return await page.evaluate( () => {
+			const TOPBAR = [
+				'#top-header',
+				'[id*="top-header"]',
+				'[class*="top-header"]',
+				'[class*="topbar"]',
+				'[class*="top-bar"]',
+			];
+			let bar: Element | null = null;
+			for ( const selector of TOPBAR ) {
+				try {
+					const node = document.querySelector( selector );
+					if ( node && node.getBoundingClientRect().height >= 10 ) {
+						bar = node;
+						break;
+					}
+				} catch {
+					// Invalid selector — try the next.
+				}
+			}
+			if ( ! bar ) {
+				return undefined;
+			}
+			const barRect = bar.getBoundingClientRect();
+			const barStyle = getComputedStyle( bar );
+			let contentLeft = barRect.left + ( parseFloat( barStyle.paddingLeft ) || 0 );
+			let contentRight = barRect.right - ( parseFloat( barStyle.paddingRight ) || 0 );
+			// The bar itself is usually flush; the GUTTER lives on its inner
+			// container (jayainc: `.aux-container { padding: 0 35px }`). Walk up from
+			// the first item to the nearest padded ancestor, or the alignment
+			// comparison measures against the viewport edge and finds nothing.
+			const paddedAncestor = ( start: Element | null ): Element | null => {
+				for ( let node = start; node && node !== bar; node = node.parentElement ) {
+					const style = getComputedStyle( node );
+					if ( ( parseFloat( style.paddingLeft ) || 0 ) > 0 || ( parseFloat( style.paddingRight ) || 0 ) > 0 ) {
+						return node;
+					}
+				}
+				return null;
+			};
+
+			const isIcon = ( el: Element ): boolean =>
+				/i(?:con|co|glyph)/i.test( el.getAttribute( 'class' ) ?? '' ) && ! ( el.textContent ?? '' ).trim();
+			const itemText = ( el: Element ): string => {
+				const raw = ( ( el as HTMLElement ).innerText ?? el.textContent ?? '' )
+					.replace( /[\t\u00a0 ]+/g, ' ' )
+					.replace( / *\n */g, '\n' )
+					.trim();
+				return raw;
+			};
+
+			// The INNERMOST containers that hold an icon AND real text: the strip's
+			// items. A wrapper above them (the group) holds neither a direct icon
+			// nor text of its own, so it never wins.
+			const itemNodes: Element[] = [];
+			for ( const el of Array.from( bar.querySelectorAll( '*' ) ) ) {
+				if ( itemNodes.some( ( item ) => item.contains( el ) ) ) {
+					continue;
+				}
+				const icon = Array.from( el.children ).find( isIcon );
+				if ( ! icon || itemText( el ).length === 0 ) {
+					continue;
+				}
+				itemNodes.push( el );
+			}
+			// No icons in the source strip — the paragraphs ARE the items.
+			if ( itemNodes.length === 0 ) {
+				for ( const p of Array.from( bar.querySelectorAll( 'p, a' ) ) ) {
+					if ( itemText( p ).length > 0 ) {
+						itemNodes.push( p );
+					}
+				}
+			}
+
+			const items = itemNodes.map( ( el ) => {
+				const icon = Array.from( el.children ).find( isIcon );
+				const link = el.matches( 'a[href]' ) ? el : el.querySelector( 'a[href]' ) ?? el.closest( 'a[href]' );
+				return {
+					text: itemText( el ),
+					...( icon?.getAttribute( 'class' ) ? { icon: ( icon.getAttribute( 'class' ) ?? '' ).trim() } : {} ),
+					...( link?.getAttribute( 'href' ) ? { href: link.getAttribute( 'href' ) as string } : {} ),
+				};
+			} );
+			if ( items.length === 0 ) {
+				return undefined;
+			}
+			// Icon-only links (the source's leading social glyphs). They are not
+			// items — no text — and they sit at the bar's other end.
+			const socials: Array< { icon: string; href?: string } > = [];
+			for ( const link of Array.from( bar.querySelectorAll( 'a[href]' ) ) ) {
+				if ( itemNodes.some( ( item ) => item.contains( link ) ) ) {
+					continue;
+				}
+				if ( ( link.textContent ?? '' ).trim().length > 0 ) {
+					continue;
+				}
+				const icon = Array.from( link.querySelectorAll( 'i, span' ) ).find( isIcon );
+				if ( ! icon ) {
+					continue;
+				}
+				socials.push( {
+					icon: ( icon.getAttribute( 'class' ) ?? '' ).trim(),
+					href: link.getAttribute( 'href' ) as string,
+				} );
+			}
+
+			const rects = itemNodes.map( ( el ) => el.getBoundingClientRect() );
+			const gutterNode = paddedAncestor( itemNodes[ 0 ]?.parentElement ?? null );
+			if ( gutterNode ) {
+				const gutterRect = gutterNode.getBoundingClientRect();
+				const gutterStyle = getComputedStyle( gutterNode );
+				contentLeft = gutterRect.left + ( parseFloat( gutterStyle.paddingLeft ) || 0 );
+				contentRight = gutterRect.right - ( parseFloat( gutterStyle.paddingRight ) || 0 );
+			}
+			const groupLeft = Math.min( ...rects.map( ( rect ) => rect.left ) );
+			const groupRight = Math.max( ...rects.map( ( rect ) => rect.right ) );
+			const groupCenter = ( groupLeft + groupRight ) / 2;
+			const contentCenter = ( contentLeft + contentRight ) / 2;
+			const snap = ( value: number ): string => `${ Math.round( value * 100 ) / 100 }px`;
+			const align =
+				Math.abs( groupRight - contentRight ) <= 40
+					? 'end'
+					: Math.abs( groupLeft - contentLeft ) <= 40
+						? 'start'
+						: Math.abs( groupCenter - contentCenter ) <= 40
+							? 'center'
+							: undefined;
+
+			const firstIcon = bar.querySelector( 'i, span' );
+			const iconStyle = firstIcon ? getComputedStyle( firstIcon ) : null;
+			const ordered = [ ...rects ].sort( ( a, b ) => a.left - b.left );
+			const gaps = ordered
+				.slice( 1 )
+				.map( ( rect, index ) => rect.left - ordered[ index ].right )
+				.filter( ( gap ) => gap > 0 );
+
+			return {
+				items,
+				...( socials.length > 0 ? { socials } : {} ),
+				...( align ? { align } : {} ),
+				height: snap( barRect.height ),
+				...( iconStyle && firstIcon && isIcon( firstIcon )
+					? {
+							iconSize: iconStyle.fontSize,
+							iconInk: iconStyle.color,
+							iconGap: snap( parseFloat( iconStyle.marginRight ) || 0 ),
+						}
+					: {} ),
+				...( gaps.length > 0 ? { itemGap: snap( Math.max( ...gaps ) ) } : {} ),
+			};
+		} );
 	} finally {
 		await browser.close();
 	}

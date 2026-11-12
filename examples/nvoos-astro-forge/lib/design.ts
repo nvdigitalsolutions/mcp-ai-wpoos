@@ -1088,8 +1088,10 @@ function componentVocabulary( html: string ): Record<string, number> {
 type HNodeLike = {
 	type?: string;
 	name?: string;
-	attribs?: Record<string, string>;
+	attribs?: Record< string, string >;
 	children?: HNodeLike[];
+	/** The containing node (htmlparser2/domhandler sets it). */
+	parent?: HNodeLike;
 	/** Source offset (htmlparser2 withStartIndices) — position scoping. */
 	startIndex?: number;
 };
@@ -1961,6 +1963,44 @@ function lastColorOf( gradient: string | undefined ): string | undefined {
 	return colors?.[ colors.length - 1 ];
 }
 
+/** A gradient’s colors in source order. */
+function gradientColorList( gradient: string | undefined ): string[] {
+	if ( ! gradient ) {
+		return [];
+	}
+	return gradient.match( /(?:rgba?|hsla?)\([^)]+\)|#[0-9a-f]{3,8}\b/gi ) ?? [];
+}
+
+/**
+ * The color a band’s CONTENT sits on.
+ *
+ * A builder gradient can sweep from light to dark under a heading that sits at
+ * the TOP (the band’s padding puts the content there). jayainc’s products band
+ * is `linear-gradient(180deg, #ffffff 6%, #04132b 100%)` whose heading measures
+ * `rgb(36, 36, 36)` on the white top — classifying by the terminal navy painted
+ * it white-on-white. A VERTICAL linear gradient therefore resolves to its TOP
+ * stop (`to bottom`/`180deg` → first, `to top`/`0deg` → last), while anything
+ * without a single content side (horizontal/diagonal, radial, conic, or a
+ * non-linear gradient) keeps the terminal-stop heuristic.
+ */
+function contentSideColor( gradient: string | undefined ): string | undefined {
+	const colors = gradientColorList( gradient );
+	if ( colors.length === 0 ) {
+		return undefined;
+	}
+	if ( /^linear-gradient\(/i.test( gradient ?? '' ) ) {
+		const head = /^linear-gradient\(\s*([^,]+),/i.exec( gradient ?? '' )?.[ 1 ]?.trim() ?? '';
+		const angle = /^(?:in\s+\S+\s+)?(-?(?:\d*\.)?\d+)deg$/i.exec( head )?.[ 1 ];
+		const normalized = angle !== undefined ? ( ( Number( angle ) % 360 ) + 360 ) % 360 : undefined;
+		// No explicit direction is the CSS default, `to bottom`.
+		const noDirection = head.length > 0 && ! /^(?:to\s+|in\s+|-?(?:\d*\.)?\d+deg\b)/i.test( head );
+		if ( /^to\s+bottom$/i.test( head ) || noDirection || ( normalized !== undefined && Math.abs( normalized - 180 ) < 0.5 ) ) {
+			return colors[ 0 ];
+		}
+	}
+	return colors[ colors.length - 1 ];
+}
+
 /** Normalize an rgb()/hex color to #rrggbb for the luminance math. */
 function toHex( color: string | undefined ): string | undefined {
 	if ( ! color ) {
@@ -1977,12 +2017,18 @@ function toHex( color: string | undefined ): string | undefined {
  * Resolve a source section's rebuild theme: hero (photo background), dark
  * (navy/black bands), alt (gray bands), light (white/near-white). Baked into
  * sections.generated.ts at scaffold; the renderer wraps each rebuilt section.
+ *
+ * The colour comes from the gradient stop the CONTENT sits on (see
+ * `contentSideColor`), not blindly from the terminal stop — a white→navy sweep
+ * with a dark heading on its white top is a LIGHT band.
  */
 export function resolveSectionTheme( section: ForgeSection ): 'hero' | 'dark' | 'alt' | 'light' {
 	if ( section.bgImage ) {
 		return 'hero';
 	}
-	const candidate = toHex( lastColorOf( section.bgGradient ) ?? section.bgColor );
+	const candidate = toHex(
+		( section.bgGradient ? contentSideColor( section.bgGradient ) : undefined ) ?? section.bgColor
+	);
 	const lum = candidate ? relativeLuminance( candidate ) : undefined;
 	if ( lum !== undefined ) {
 		if ( lum < 0.3 ) {
@@ -2409,6 +2455,9 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		const widgetAside = findFirstNode( root, ( n ) =>
 			n.type === 'tag' && n.name === 'aside' && /subfooter|sub-footer|footer-widget|footbar/i.test( tagClasses( n ) + ' ' + ( n.attribs?.id ?? '' ) )
 		);
+		// The footer logo NODE — the block-association check below needs its column
+		// ancestry, while `footerImg` itself is scoped to the aside branch.
+		let footerLogoNode: HNodeLike | undefined;
 		if ( widgetAside ) {
 			scopes.push( widgetAside );
 			// The footer brand logo — the variant pool spans header + footer
@@ -2499,10 +2548,14 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 			const picked = pickLogoVariant( footerPool, footerSurface, input.logoColors, input.url );
 			const footerImg = picked ?? footerImgs[ 0 ];
 			if ( footerImg ) {
+				footerLogoNode = footerImg;
 				chrome.footerLogo = { src: footerImg.attribs?.src, alt: footerImg.attribs?.alt };
 			}
 		}
 		const blocks: Array<{ title?: string; items: string[] }> = [];
+		// The nodes behind the FIRST block — the brand column when the source
+		// renders its logo above the intro copy. Kept for the logo association below.
+		let firstBlockNodes: HNodeLike[] = [];
 		const byPosition = ( a: HNodeLike, b: HNodeLike ): number => ( a.startIndex ?? 0 ) - ( b.startIndex ?? 0 );
 		const headings = scopes
 			.flatMap( ( scope ) => collectNodes( scope, ( n ) => n.type === 'tag' && /^h[3-6]$/.test( n.name ?? '' ) ) )
@@ -2512,19 +2565,23 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 			.flatMap( ( scope ) => collectNodes( scope, ( n ) => n.type === 'tag' && ( n.name === 'li' || n.name === 'tr' || n.name === 'p' ) ) )
 			.sort( byPosition );
 		if ( headings.length === 0 ) {
-			const items = paragraphs.map( nodeText ).filter( ( text ) => text.length > 0 ).slice( 0, 4 );
+			firstBlockNodes = paragraphs.filter( ( node ) => nodeText( node ).length > 0 ).slice( 0, 4 );
+			const items = firstBlockNodes.map( nodeText );
 			if ( items.length > 0 ) {
 				blocks.push( { items } );
+			} else {
+				firstBlockNodes = [];
 			}
 		} else {
 			const firstHeadingIndex = headings[ 0 ].startIndex ?? Number.POSITIVE_INFINITY;
-			const intro = paragraphs
-				.filter( ( p ) => ( p.startIndex ?? 0 ) < firstHeadingIndex )
-				.map( nodeText )
-				.filter( ( text ) => text.length > 0 )
+			firstBlockNodes = paragraphs
+				.filter( ( p ) => ( p.startIndex ?? 0 ) < firstHeadingIndex && nodeText( p ).length > 0 )
 				.slice( 0, 2 );
+			const intro = firstBlockNodes.map( nodeText );
 			if ( intro.length > 0 ) {
 				blocks.push( { items: intro } );
+			} else {
+				firstBlockNodes = [];
 			}
 			headings.slice( 0, 4 ).forEach( ( heading, index ) => {
 				const nextIndex = headings[ index + 1 ]?.startIndex ?? Number.POSITIVE_INFINITY;
@@ -2547,6 +2604,33 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 		}
 		if ( blocks.length > 0 ) {
 			chrome.footerBlocks = blocks;
+		}
+
+		// Where the logo SITS. A builder renders it as the first widget of the
+		// brand column, directly above the intro copy (jayainc's subfooter: logo
+		// y=5803, paragraph y=5900, the same `.aux-widget-area`). A standalone
+		// logo above the grid gave it a section of its own, so record the column
+		// association rather than guessing at render time.
+		if ( chrome.footerLogo && footerLogoNode && firstBlockNodes.length > 0 ) {
+			const columnOf = ( node: HNodeLike | undefined ): HNodeLike | undefined => {
+				let current = node?.parent;
+				while ( current ) {
+					const classes = current.attribs?.class ?? '';
+					if ( /widget-area|elementor-column|vc_column|wpb_column|aux-col|footer-col|(?:^|\s)column(?:\s|$)/i.test( classes ) ) {
+						return current;
+					}
+					current = current.parent;
+				}
+				return undefined;
+			};
+			const logoColumn = columnOf( footerLogoNode );
+			if (
+				logoColumn &&
+				logoColumn === columnOf( firstBlockNodes[ 0 ] ) &&
+				( footerLogoNode.startIndex ?? 0 ) <= ( firstBlockNodes[ 0 ].startIndex ?? 0 )
+			) {
+				chrome.footerLogo = { ...chrome.footerLogo, blockIndex: 0 };
+			}
 		}
 
 		// 7. The copyright line (the small/.copyright element — conservative,

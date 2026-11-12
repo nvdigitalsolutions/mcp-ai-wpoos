@@ -17,10 +17,11 @@
 // photo with its overlay — so the rebuilt page keeps the source's visual
 // rhythm without copying any markup.
 import type { SemanticSection } from '../../forge/semantic.ts';
-import { bandSpacing, bandSource, sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
+import { bandSpacing, bandSource, pageBackground, sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
 import { behaviors, type ScrollBehaviorEntry } from '../../lib/behaviors.generated.ts';
 import { animationCss } from '../../lib/animations.generated.ts';
 import { classifyBody } from '../../lib/classify.ts';
+import { wrapperAnchor } from '../../lib/anchor.ts';
 import { parallaxBandCss } from '../../lib/motion.ts';
 import Cta from './Cta.astro';
 import Catalog from './Catalog.astro';
@@ -267,12 +268,39 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 		if ( title.color ) {
 			parts.push( `--ds-title-color:${ title.color }` );
 		}
+		// The source's deliberate heading width (jayainc's services title is
+		// max-width 473px inside a 640px column; full-width it wrapped to two
+		// lines and the band's pinned height showed the shortfall).
+		if ( title.maxWidth && title.maxWidth !== 'none' ) {
+			parts.push( `--ds-title-max:${ title.maxWidth }` );
+		} else if ( title.align === 'center' ) {
+			// A CENTRED title is not narrowed. The hero's own 66% cap is a
+			// per-site heuristic; on a centred heading it shrank the box while
+			// leaving it flush left, so the centred text sat 200px off-centre
+			// (virtuallyjamaica's contact band). The source measured full width.
+			parts.push( '--ds-title-max:none' );
+		}
 	}
 	// The source's crop anchor for the band's cover photos (measured
 	// `object-position`). The vendor writes it in a `<style>` block the
 	// sanitizer drops, so without this every rebuilt photo crops to centre.
 	if ( theme.mediaPosition ) {
 		parts.push( `--ds-media-pos:${ theme.mediaPosition }` );
+	}
+	// The hero track's measured column split. The structural hero rule below
+	// defaults to 1.15fr/0.95fr; a source whose copy column is 60% (691 of 1152
+	// on virtuallyjamaica) otherwise wraps its H1 a line wider than the source.
+	// The measured ratio already excludes the source's own gutter (it lives in
+	// the children's padding, which the band box facts restate), so a measured
+	// split also clears the heuristic gap.
+	if ( theme.split && theme.split.length >= 2 ) {
+		parts.push( `--ds-split:${ theme.split.map( ( fraction ) => `${ fraction }fr` ).join( ' ' ) }` );
+		parts.push( '--ds-split-gap:0' );
+	}
+	// A MEASURED `false` clears the hero wrapper's default centring: a full-height
+	// band the source top-aligns under its own padding must not be centred.
+	if ( theme.centered === false ) {
+		parts.push( '--ds-hero-justify:flex-start' );
 	}
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage ) {
@@ -321,14 +349,23 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	}
 	// The icon-row rhythm (measured per band): the source's list rows carry
 	// their own inner padding, a large leading icon box and their own title
-	// size. Absent → the template's own row defaults.
+	// size. Absent → the template's own row defaults. padTop/padBottom/padX can
+	// be per-device maps (75% of the source's desktop rhythm is lost at tablet),
+	// so they go inline only as plain strings; `responsiveBandCss` emits the
+	// media-query half.
 	if ( theme.iconRowStyle ) {
 		const row = theme.iconRowStyle;
-		if ( row.padTop ) {
+		if ( typeof row.padTop === 'string' ) {
 			parts.push( `--ds-icon-row-pad-top:${ row.padTop }` );
 		}
-		if ( row.padBottom ) {
+		if ( typeof row.padBottom === 'string' ) {
 			parts.push( `--ds-icon-row-pad-bottom:${ row.padBottom }` );
+		}
+		if ( typeof row.padX === 'string' ) {
+			parts.push( `--ds-icon-row-pad-x:${ row.padX }` );
+		}
+		if ( row.rowGap ) {
+			parts.push( `--ds-icon-row-gap:${ row.rowGap }` );
 		}
 		if ( row.titleSize ) {
 			parts.push( `--ds-icon-title-size:${ row.titleSize }` );
@@ -352,6 +389,20 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 	if ( theme.zIndex ) {
 		parts.push( `z-index:${ theme.zIndex }` );
 	}
+	// The source's heading-block rhythm (measured `box` facts, mapped onto the
+	// rebuilt title/lede): 30px under the title and 37px above the description on
+	// jayainc's services band. Absent → the template's own spacing (0).
+	const titleMarginBottom = boxEdge( theme.box?.[ 'aux-modern-heading-primary' ], 'margin', 'bottom' );
+	if ( titleMarginBottom && titleMarginBottom !== '0px' ) {
+		parts.push( `--ds-title-margin-bottom:${ titleMarginBottom }` );
+		// The source's margin IS the rhythm — the template's grid gap would stack
+		// on it and push a short band past its measured box.
+		parts.push( '--ds-body-gap:0' );
+	}
+	const ledeMarginTop = boxEdge( theme.box?.[ 'aux-modern-heading-description' ], 'margin', 'top' );
+	if ( ledeMarginTop && ledeMarginTop !== '0px' ) {
+		parts.push( `--ds-lede-margin-top:${ ledeMarginTop }` );
+	}
 	// The column responsive facts (124 §6): the split components re-measure
 	// from the source's per-device widths/order instead of the template's
 	// fixed ratio (jayainc's services split is 50/50, not 5fr/7fr).
@@ -366,6 +417,38 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 		parts.push( '--ds-icon-media-order:2' );
 	}
 	return parts.length > 0 ? parts.join( ';' ) : undefined;
+};
+
+/**
+ * One edge of a measured `padding`/`margin` shorthand (the `box` facts carry
+ * the source’s computed declaration per class). Used to carry the source’s
+ * HEADING rhythm onto the rebuilt title/lede: Phlox’s modern heading is
+ * `primary { margin-bottom: 30px }` … `description { margin-top: 37px }`, and
+ * both were missing from the rebuild — the band’s pinned height then showed
+ * its shortfall as ~120px of dead space at the bottom.
+ */
+const boxEdge = (
+	fact: { base?: string } | undefined,
+	property: 'margin' | 'padding',
+	side: 'top' | 'right' | 'bottom' | 'left'
+): string | undefined => {
+	const declaration = ( fact?.base ?? '' )
+		.split( ';' )
+		.map( ( part ) => part.trim() )
+		.find( ( part ) => part.startsWith( `${ property }:` ) );
+	if ( ! declaration ) {
+		return undefined;
+	}
+	const values = declaration.slice( property.length + 1 ).trim().split( /\s+/ );
+	const expanded =
+		values.length === 1
+			? [ values[ 0 ], values[ 0 ], values[ 0 ], values[ 0 ] ]
+			: values.length === 2
+				? [ values[ 0 ], values[ 1 ], values[ 0 ], values[ 1 ] ]
+				: values.length === 3
+					? [ values[ 0 ], values[ 1 ], values[ 2 ], values[ 1 ] ]
+					: values;
+	return expanded[ [ 'top', 'right', 'bottom', 'left' ].indexOf( side ) ];
 };
 
 // The per-device half of every band margin AND padding — emitted once, scoped
@@ -388,7 +471,10 @@ const responsiveBandCss = sections
 			responsiveDeviceCss( id, 'padding', theme?.padding ) +
 			responsiveDeviceCss( id, 'min-height', theme?.minHeight ) +
 			responsiveDeviceCss( id, '--ds-measure', theme?.measure ) +
-			responsiveDeviceCss( id, '--ds-pad-x', theme?.paddingX )
+			responsiveDeviceCss( id, '--ds-pad-x', theme?.paddingX ) +
+			responsiveDeviceCss( id, '--ds-icon-row-pad-top', theme?.iconRowStyle?.padTop ) +
+			responsiveDeviceCss( id, '--ds-icon-row-pad-bottom', theme?.iconRowStyle?.padBottom ) +
+			responsiveDeviceCss( id, '--ds-icon-row-pad-x', theme?.iconRowStyle?.padX )
 		);
 	} )
 	.join( '' );
@@ -418,6 +504,12 @@ const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: 
 		// from a wrapper class, which the sanitizer drops. `start`/`left` is the
 		// template default and needs no rule.
 		fact.align && fact.align !== 'start' && fact.align !== 'left' && `text-align:${ fact.align }`,
+		// A CENTRED box with a width rule must also be centred in its parent: a
+		// `max-width` alone leaves the box flush left, so the centred text sits
+		// left of the band's centre (virtuallyjamaica's contact heading measured
+		// 772px wide at the container's left edge against the source's full
+		// width). No effect on a full-width box.
+		fact.align === 'center' && 'margin-inline:auto',
 		// The measured ink. Emitted LAST so a band's own colour wins over the
 		// template accent it would otherwise inherit.
 		fact.color && `color:${ fact.color }`,
@@ -700,15 +792,23 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandInteractionCss || bandParallaxCss || animationCss ) && (
-			<Fragment set:html={ `<style>${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
 			const behaviorList = behaviorsFor(section);
 			const behavior = parallaxFor(behaviorList);
+			// The source may already own this id INSIDE the band (`id="wifi"` on a
+			// half-column). Emitting it on the wrapper too duplicates it and makes
+			// `#wifi` resolve to the wrong element — see `lib/anchor.ts`. Only the
+			// kinds that actually RENDER their html can own it: a component band
+			// keeps `section.html` but never emits it, so suppressing there would
+			// drop the anchor entirely.
+			const renderedHtml = section.kind === 'text' || section.kind === 'raw' ? section.html : undefined;
+			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
 			return (
-				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={theme?.anchor ?? section.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (
@@ -716,11 +816,11 @@ const bandParallaxCss = sections
 							{section.kind === 'hero' && <Hero section={section} theme={theme} />}
 							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} theme={theme} />}
 							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} theme={theme} />}
-							{section.kind === 'testimonial' && <Testimonial section={section} />}
-							{section.kind === 'logo-cloud' && <LogoCloud section={section} />}
-							{section.kind === 'cta' && <Cta section={section} />}
-							{section.kind === 'gallery' && <Gallery section={section} />}
-							{section.kind === 'form' && <Form section={section} />}
+							{section.kind === 'testimonial' && <Testimonial section={section} theme={theme} />}
+							{section.kind === 'logo-cloud' && <LogoCloud section={section} theme={theme} />}
+							{section.kind === 'cta' && <Cta section={section} theme={theme} />}
+							{section.kind === 'gallery' && <Gallery section={section} theme={theme} />}
+							{section.kind === 'form' && <Form section={section} theme={theme} />}
 							{section.kind === 'pricing' && <Pricing section={section} theme={theme} />}
 							{section.kind === 'stats' && <Stats section={section} theme={theme} />}
 							{section.kind === 'steps' && <Steps section={section} theme={theme} />}

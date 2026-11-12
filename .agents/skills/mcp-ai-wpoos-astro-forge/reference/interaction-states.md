@@ -264,7 +264,49 @@ than read. In a Playwright probe:
 A focus ring observed mid-transition reads `outline-offset: 0px` — the source's
 `transition: all .2s` animates the offset too. Wait ~250 ms before judging it.
 
-## 10. Gotchas
+## 10. Content blocks — hover on a plain `div` (2026-11-12)
+
+Not every state lives on a control. virtuallyjamaica's `.service-sub` feature
+boxes (four per band) turn solid black under the pointer — `background-color`
+and `border-color` `rgba(0,0,0,0) → rgb(0,0,0)` — and a candidate set of
+`a[href], button, input, select, textarea, summary, [role=button]` misses them
+entirely, so the rebuilt band stayed flat.
+
+- **Structural, not name-based.** `isContentBlock` accepts a block-level box
+  (`display` block/flex/grid) of at least 80×40 that holds real content (≥10
+  characters of text or a media child), excluding the band root and the page
+  scaffolding (`html/body/main/nav/header/footer`). No class-name guessing.
+- **Controls win the budget.** The per-band signature cap (16) is filled by
+  controls first, then blocks — a band with many controls never loses one to a
+  decorative card.
+- **A block needs a REAL state.** A control's rest paint is re-stated even
+  without a state (a `.btn` that must stay `inline-block`); a content block
+  earns a fact only from `hover`/`active`/`children`. Otherwise every wrapper
+  div would emit a no-op rule with the universal `transition: .2s ease-in-out`
+  most themes declare on `*`.
+- **Non-focusable blocks are exempt from the focus gate.** Chromium paints its
+  UA ring on a forced `:focus-visible` even for a `div`; the candidate knows
+  whether the element is really focusable (native control, `[tabindex]`,
+  `[contenteditable]`), drops the focus states when it is not, and emits
+  `focusable: false`. `verify --interactions` skips the WCAG 2.4.7 check for
+  those facts — a non-interactive card has no keyboard state to indicate.
+- **An appear-animation is not a hover.** The rest read and the state reads are
+  separated by several CDP round-trips, and a scroll-in animation
+  (`.aux-animated`, `.aux-appear-watch-animation`, Elementor motion effects)
+  keeps moving `opacity`/`transform` in between — jayainc emitted phantom hovers
+  (`opacity:1; transform:matrix(1,0,0,1,0,0)`) on four animated wrappers. Two
+  fixes: the animation killer (`animation-duration: 0s`) is installed BEFORE the
+  rest read (the transition killer stays after it, because the transition string
+  is a fact), and `isIdentityTransform` + `opacity === 1` are dropped from a
+  state delta.
+
+virtuallyjamaica after the change: 15 states on 6 bands, the `.service-sub`
+hover reproduced exactly (`[data-section-id="1ff4891"]
+div[class~="brando_featurebox_1526544422-2-43"][class~="service-sub"]:hover`),
+under `@media (hover: hover)` with the source's transition under
+`prefers-reduced-motion: no-preference`.
+
+## 11. Gotchas
 
 - `DOM.querySelector` needs `DOM.enable`; `forcePseudoState` needs `CSS.enable`.
 - Forced states are per-node and persist until cleared — always force `[]` in a

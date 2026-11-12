@@ -9,6 +9,7 @@ import type { SemanticSection } from '../../forge/semantic.ts';
 import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
+import SectionTitle from './SectionTitle.astro';
 
 interface Props {
 	section: SemanticSection;
@@ -44,7 +45,7 @@ const dividerStyle = theme?.titleDivider
 ---
 
 <section class:list={['ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center']}>
-	{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+	{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 	{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 	{body && body.length > 0 && (
 		<div class="ds-lede">

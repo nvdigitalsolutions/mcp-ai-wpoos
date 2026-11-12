@@ -6,6 +6,7 @@
 // The heading facts (125 §7/§8) re-apply the source's rhythm: typography vars,
 // the underline divider, and the centered alignment.
 import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SectionTitle from './SectionTitle.astro';
 
 interface Props {
 	title?: string;
@@ -40,9 +41,7 @@ const dividerStyle = theme?.titleDivider
 {(title || theme?.titleDivider) && (
 	<>
 		{title && (
-			<h2 class="ds-title" id={headingId} style={titleVars || undefined}>
-				{title}
-			</h2>
+			<SectionTitle title={title} theme={theme} id={headingId} style={titleVars || undefined} />
 		)}
 		{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 	</>

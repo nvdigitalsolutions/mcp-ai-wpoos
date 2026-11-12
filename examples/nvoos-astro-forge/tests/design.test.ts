@@ -105,9 +105,24 @@ describe( 'analyzeSections / resolveSectionTheme (Proposal 117 §2)', () => {
 
 	it( 'resolves hero from a photo, dark from a navy gradient, light from near-white', () => {
 		expect( resolveSectionTheme( { id: 'a', bgImage: 'x.jpg' } ) ).toBe( 'hero' );
-		expect( resolveSectionTheme( { id: 'b', bgGradient: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)' } ) ).toBe( 'dark' );
 		expect( resolveSectionTheme( { id: 'c', bgColor: '#f6f6f6' } ) ).toBe( 'light' );
 		expect( resolveSectionTheme( { id: 'd', bgColor: '#e5e5e5' } ) ).toBe( 'alt' );
+	} );
+
+	it( 'resolves a VERTICAL gradient from the stop its content sits on', () => {
+		// jayainc's products band: white at the top where the 43px heading sits
+		// (source ink rgb(36,36,36)), navy at the bottom. Classifying by the
+		// terminal stop painted the title white-on-white.
+		expect( resolveSectionTheme( { id: 'b', bgGradient: 'linear-gradient(180deg, #ffffff 6%, rgb(4, 19, 43) 100%)' } ) ).toBe( 'light' );
+		// A navy-top sweep is dark, whichever spelling the source used.
+		expect( resolveSectionTheme( { id: 'e', bgGradient: 'linear-gradient(to bottom, #04132b 0%, #ffffff 100%)' } ) ).toBe( 'dark' );
+		expect( resolveSectionTheme( { id: 'f', bgGradient: 'linear-gradient(rgb(4, 19, 43), #ffffff)' } ) ).toBe( 'dark' );
+		// `0deg` points UP, so the TOP stop is the LAST colour.
+		expect( resolveSectionTheme( { id: 'g', bgGradient: 'linear-gradient(0deg, #ffffff 0%, #04132b 100%)' } ) ).toBe( 'dark' );
+		// A horizontal sweep has no single content side — the terminal stop stays.
+		expect( resolveSectionTheme( { id: 'h', bgGradient: 'linear-gradient(90deg, #ffffff 0%, #04132b 100%)' } ) ).toBe( 'dark' );
+		// A radial gradient keeps the old heuristic too.
+		expect( resolveSectionTheme( { id: 'i', bgGradient: 'radial-gradient(circle, #ffffff 0%, #04132b 100%)' } ) ).toBe( 'dark' );
 	} );
 
 	it( 'drops the background-color underlay when a photo exists (the source renders it invisibly)', () => {
@@ -824,6 +839,34 @@ describe( 'analyzeChrome (Proposal 120 §2)', () => {
 		// the effective fill, never the #f3f3f3 under it.
 		expect( styled?.footerBg ).toBe( 'linear-gradient(107deg, #081a43 0%, #071230 100%)' );
 		expect( styled?.footerInk ).toBe( '#ffffff' );
+	} );
+
+	it( 'associates a footer logo with the first block when they share a column (brand column)', () => {
+		// jayainc's subfooter: the logo is the FIRST widget of column 1, directly
+		// above the intro paragraph (logo y=5803, paragraph y=5900, same
+		// `.aux-widget-area`). Rendering it as a standalone strip above the grid
+		// gave it a section of its own.
+		const html =
+			'<aside class="aux-subfooter"><div class="aux-row">' +
+			'<div class="aux-widget-area aux-1-2"><img class="wp-image-1" src="/footer-logo.png" alt=""><p>Your needs are our top priority and we guarantee the highest quality of support.</p></div>' +
+			'<div class="aux-widget-area aux-1-4"><h3>Products</h3><p>Consumer Electronics</p></div>' +
+			'<div class="aux-widget-area aux-1-4"><h3>Contact</h3><p>Phone: +1 (305) 500-9319</p></div>' +
+			'</div></aside>' +
+			'<footer id="sitefooter"><small>© 2026 Site</small></footer>';
+		const chrome = analyzeChrome( { url: 'https://jayainc.com', html, css: [] } );
+		expect( chrome?.footerLogo?.src ).toContain( 'footer-logo.png' );
+		expect( chrome?.footerLogo?.blockIndex ).toBe( 0 );
+	} );
+
+	it( 'leaves the logo standalone when it does not share the first block’s column', () => {
+		const html =
+			'<aside class="aux-subfooter"><img src="/footer-logo.png" alt="">' +
+			'<div class="aux-row"><div class="aux-widget-area aux-1-2"><p>Intro copy long enough to become a block item.</p></div>' +
+			'<div class="aux-widget-area aux-1-4"><h3>Products</h3><p>Consumer Electronics</p></div></div></aside>' +
+			'<footer id="sitefooter"><small>© 2026 Site</small></footer>';
+		const chrome = analyzeChrome( { url: 'https://jayainc.com', html, css: [] } );
+		expect( chrome?.footerLogo?.src ).toContain( 'footer-logo.png' );
+		expect( chrome?.footerLogo?.blockIndex ).toBeUndefined();
 	} );
 
 	it( 'assigns the footer logo variant by contrast against the footer surface (124 §1)', () => {
