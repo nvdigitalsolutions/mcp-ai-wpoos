@@ -106,6 +106,7 @@ When the flag is off, the legacy `handle_chat_request()` path is completely unch
 - **15/15 provider clients** — complete (12 concrete + OpenAiCompatibleClient + AbstractProviderClient + Baseten)
 - **8/8 WordPress adapters** — complete
 - **8/8 Laravel adapters** — complete
+- **Laravel adapter spike (2026-11-12):** P1–P7 dev-verified on Laravel 12.72 / Octane 2.24 / FrankenPHP (PHP 8.3) with MySQL + Redis; dual-era MCP (2026-07-28 + 2025-06-18) passes; formal 30-minute 10-stream soak clean (75,899 requests, 0 errors). Evidence: `docs/project/plans/090-laravel-adapter-spike-report.md`.
 - **8/8 Craft CMS adapters** — complete
 - **82/~195 tools migrated** — 42% (verified via `grep -c` on bridge registrations)
 - **Tests: 29 files, 227 tests, 772 assertions** — entities (10/10), errors (5/5), providers (5/15 with tests), tools (11 tool test files), integration (12 tests via ToolRegistryIntegrationTest)

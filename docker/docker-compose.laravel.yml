@@ -1,57 +1,106 @@
-# ───────────────────────────────────────────────
-# oOS Engine → Laravel Integration Dev Environment
-# ───────────────────────────────────────────────
-# Start:  docker compose -f docker/docker-compose.laravel.yml up -d
+# ───────────────────────────────────────────────────────────────
+# NV oOS Laravel Spike — FrankenPHP/Octane + MySQL + Redis
+# ───────────────────────────────────────────────────────────────
+# Start:  docker compose -f docker/docker-compose.laravel.yml up -d --build
 # Stop:   docker compose -f docker/docker-compose.laravel.yml down -v
 # Shell:  docker compose -f docker/docker-compose.laravel.yml exec app bash
+#
+# The one-shot `setup` service bootstraps the app skeleton, installs
+# Composer dependencies, and runs migrations. The app and worker wait
+# for it to complete.
 
 name: oos-laravel
 
+x-spike-environment: &spike-environment
+  APP_ENV: local
+  APP_DEBUG: "true"
+  APP_URL: http://localhost:8001
+  DB_CONNECTION: mysql
+  DB_HOST: db
+  DB_PORT: "3306"
+  DB_DATABASE: laravel
+  DB_USERNAME: laravel
+  DB_PASSWORD: laravel
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  CACHE_STORE: redis
+  QUEUE_CONNECTION: redis
+  NVOOS_QUEUE_CONNECTION: redis
+  SESSION_DRIVER: redis
+  OCTANE_SERVER: frankenphp
+  LOG_CHANNEL: stderr
+
+x-spike-volumes: &spike-volumes
+  - ../:/workspace/oos:ro
+  - ./laravel/app:/app
+  - laravel_vendor:/app/vendor
+  - laravel_storage:/app/storage
+
 services:
-  # ── PHP Application Server ──────────────────
-  app:
+  # ── One-shot bootstrap ──────────────────────
+  setup:
     build:
-      context: ..
-      dockerfile: docker/laravel/Dockerfile
-    container_name: oos-laravel-app
-    restart: unless-stopped
+      context: ./laravel
+      dockerfile: Dockerfile
+    container_name: oos-laravel-setup
+    restart: "no"
+    environment:
+      <<: *spike-environment
+      CONTAINER_ROLE: setup
+    volumes: *spike-volumes
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+
+  # ── PHP Application Server (Octane/FrankenPHP) ──
+  app:
+    build:
+      context: ./laravel
+      dockerfile: Dockerfile
+    container_name: oos-laravel-app
+    restart: unless-stopped
     ports:
       - "8001:8000"
     environment:
-      APP_ENV: local
-      APP_DEBUG: "true"
-      DB_CONNECTION: mysql
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: laravel
-      DB_USERNAME: laravel
-      DB_PASSWORD: laravel
-      REDIS_HOST: redis
-      CACHE_DRIVER: redis
-      QUEUE_CONNECTION: redis
-      SESSION_DRIVER: redis
-      # oOS engine settings
-      OOS_DEFAULT_PROVIDER: openai
-      OOS_DEFAULT_MODEL: gpt-4o-mini
-      OOS_CACHE_STORE: redis
-      OOS_QUEUE_CONNECTION: redis
-      OOS_STORAGE_DISK: public
-      OOS_MESH_API_KEY:
-    volumes:
-      # Mount the whole project so lib/{core,laravel-adapter} are available
-      - ../:/workspace/oos:ro
-      # The app itself lives at docker/laravel/app/
-      - ./laravel/app:/var/www/html
-      - laravel_storage:/var/www/html/storage
-      - laravel_vendor:/var/www/html/vendor
-    working_dir: /var/www/html
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      <<: *spike-environment
+      CONTAINER_ROLE: app
+      OCTANE_WORKERS: "2"
+      OCTANE_MAX_REQUESTS: "${OCTANE_MAX_REQUESTS:-1}"
+    volumes: *spike-volumes
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # ── Queue Worker ────────────────────────────
+  worker:
+    build:
+      context: ./laravel
+      dockerfile: Dockerfile
+    container_name: oos-laravel-worker
+    restart: unless-stopped
+    environment:
+      <<: *spike-environment
+      CONTAINER_ROLE: worker
+    volumes: *spike-volumes
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   # ── MySQL 8.0 ───────────────────────────────
   db:
@@ -67,17 +116,23 @@ services:
     volumes:
       - laravel_db:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-plaravel", "--ssl-mode=DISABLED"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot", "--ssl-mode=DISABLED"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
   # ── Redis (cache + queue broker) ────────────
   redis:
     image: redis:7-alpine
     container_name: oos-laravel-redis
+    restart: unless-stopped
     volumes:
       - laravel_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   laravel_db:

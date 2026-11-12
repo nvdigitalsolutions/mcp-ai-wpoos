@@ -1,6 +1,6 @@
 # Proposal 090 — Laravel Adapter Spike (v1.4.0) Implementation Plan
 
-**Status:** Proposal (awaiting execution)
+**Status:** Implemented (dev-verified 2026-11-12) — see [implementation plan](../plans/090-laravel-adapter-spike-implementation-plan.md) and [execution report](../plans/090-laravel-adapter-spike-report.md)
 **Date:** 2026-10-25
 **Relates to:** ROADMAP v1.4.0 "Laravel Adapter Spike" · `laravel-scale-deployment-architecture.md` · `085-funiq-laravel-standalone-integration-appendix.md` (Phase B gate 3) · `fastapi-porting-implementation-plan.md` §18 decision #15 · `cross-platform-extraction-architecture.md` · `PROPOSALS_COMPLETION_STATUS.md` (next-priority #2)
 **Author:** NV oOS coding agent (Zed)

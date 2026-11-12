@@ -232,7 +232,7 @@
 
 ### Next Priority Actions
 1. Accelerate Cross-Platform Extraction Phase 3 — tool migration + test suite
-2. Laravel adapter spike for v1.4.0
+2. Laravel adapter spike for v1.4.0 — **dev-verified 2026-11-12** (P1–P7 green; formal 30-minute soak clean) — see `plans/090-laravel-adapter-spike-report.md`
 3. Pro tool OOS migration kickoff
 4. Clean up stale pending proposals per retirement log
 

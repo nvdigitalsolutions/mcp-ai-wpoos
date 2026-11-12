@@ -41,7 +41,7 @@ class FileStore implements FileStoreInterface {
 	 *                      Defaults to the NVOOS_STORAGE_DISK env or 'public'.
 	 */
 	public function __construct( string $disk = '' ) {
-		$this->disk = '' !== $disk ? $disk : ( env( 'NVOOS_STORAGE_DISK', 'public' ) ?: 'public' );
+		$this->disk = '' !== $disk ? $disk : ( (string) config( 'oos.storage_disk', config( 'filesystems.default', 'public' ) ) ?: 'public' );
 	}
 
 	/**

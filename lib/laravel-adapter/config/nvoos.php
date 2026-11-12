@@ -19,7 +19,7 @@ return array(
 	| author_id, created_at, updated_at columns.
 	|
 	*/
-	'content_model' => env( 'NVNVOOS_CONTENT_MODEL', \Nvoos\Laravel\Models\NvoosPost::class ),
+	'content_model' => env( 'NVOOS_CONTENT_MODEL', \Nvoos\Laravel\Models\NvoosPost::class ),
 
 	/*
 	|--------------------------------------------------------------------------
@@ -100,9 +100,9 @@ return array(
 	| Cache & Queue Configuration
 	|--------------------------------------------------------------------------
 	*/
-	'cache_store'      => env( 'NVOOS_CACHE_STORE', 'redis' ),
-	'queue_connection' => env( 'NVOOS_QUEUE_CONNECTION', 'database' ),
-	'storage_disk'     => env( 'NVOOS_STORAGE_DISK', 'public' ),
+	'cache_store'      => env( 'NVOOS_CACHE_STORE', env( 'CACHE_STORE', 'redis' ) ),
+	'queue_connection' => env( 'NVOOS_QUEUE_CONNECTION', env( 'OOS_QUEUE_CONNECTION', env( 'QUEUE_CONNECTION', 'database' ) ) ),
+	'storage_disk'     => env( 'NVOOS_STORAGE_DISK', env( 'FILESYSTEM_DISK', 'public' ) ),
 
 	/*
 	|--------------------------------------------------------------------------
