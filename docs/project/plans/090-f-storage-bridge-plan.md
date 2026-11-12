@@ -1,6 +1,6 @@
 # Proposal 090-F — Storage bridge: make the content port trustworthy
 
-Status: Phase 1 shipped (#7635, #7636); Phase 2 pre-req (Laravel SchemaStore) shipped.
+Status: Phase 1 shipped (#7635, #7636); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped.
 Depends on: `090-d-selective-tool-port.md` (what to port), `090-e-cpt-cct-schema-port.md` (which families).
 
 ---
@@ -107,9 +107,10 @@ Implement in `lib/laravel-adapter/src/Adapter/ContentStore.php`:
    `title`, `id`; any other field **throws**. `ContentQuery` documents exactly
    four fields, and silently sorting by `created_at` would hide a caller bug
    (e.g. `rand`, or WP's `meta_value`).
-4. **`perPage`** — 1–100, default 20 when 0. A **negative** value throws:
+4. **`perPage`** — 1–200, default 20 when 0. A **negative** value throws:
    `WP_Query` uses `-1` for "return everything", and clamping that to one row
-   would be worse than failing.
+   would be worse than failing. (200, not 100, because `list_tasks` documents
+   a 200-row ceiling.)
 5. **`statuses: ['any']`** — disables the status filter, matching
    `post_status => 'any'`. Translated literally to `whereIn()`, it would
    match zero rows because no record stores the literal status `any`.
@@ -145,6 +146,23 @@ Model `mcp_ai_task` + `mcp_ai_project` as one manifest (`090-e` §7 #1),
 seed the Laravel `nvoos_posts` rows with `type` + `meta`, and rewire the
 read tools to `ContentStoreInterface`. Writes follow in a second PR
 (`090-e` §8: reads → writes → import → admin).
+
+**Read path shipped.** The family is declared in `config/nvoos.php`
+(`content_types` with the same labels, supports and meta keys as the CPTs,
+including `_task_depends_on` / `_task_blocks`). Three tools now run on both
+runtimes through `ContentStoreInterface`: `list_projects`, `list_tasks`,
+`get_task_dependencies` — registered in the provider because they need the
+store, not just the error factory. `ProjectManagementSeeder` gives a fresh
+app one project and two tasks (the second depending on the first).
+
+Portability note: `_project_assigned_to` is stored as an array of **string**
+user IDs and filtered with `LIKE '%"<id>"%'`, which matches a JSON array
+element and a PHP-serialized string element alike — the WP tool's serialized
+`:'<id>';` pattern does not translate to a JSON column. The contract ("projects
+assigned to user N") is identical; the encoding is documented in the schema.
+
+Still to do for the family: create/update/delete, bulk import, and the admin
+page.
 
 ### Phase 3 — Paper Store port
 

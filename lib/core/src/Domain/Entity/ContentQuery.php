@@ -30,7 +30,7 @@ final readonly class ContentQuery {
 	 * @param string      $orderBy    Sort field: 'date', 'title', 'modified', 'id'.
 	 * @param string      $order      Sort direction: 'ASC' or 'DESC'.
 	 * @param int         $page       1-based page number.
-	 * @param int         $perPage    Items per page (1–100).
+	 * @param int         $perPage    Items per page (1–200).
 	 * @param int|null    $userId     User context for permission filtering.
 	 */
 	public function __construct(

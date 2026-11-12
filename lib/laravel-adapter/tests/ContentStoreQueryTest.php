@@ -313,7 +313,7 @@ final class ContentStoreQueryTest extends TestCase {
 
 		$result = $this->runQuery( array(), array(), 'date', 'ASC', 500 );
 
-		$this->assertSame( 100, $result->perPage );
+		$this->assertSame( 200, $result->perPage );
 		$this->assertCount( 3, $result->items );
 	}
 

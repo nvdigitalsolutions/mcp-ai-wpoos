@@ -94,6 +94,146 @@ return array(
 			'statuses'     => array( 'publish', 'future', 'draft', 'pending', 'private' ),
 			'meta_fields'  => array(),
 		),
+		/*
+		 * Project management family (090-e §7 #1). Mirrors the WordPress
+		 * mcp_ai_task / mcp_ai_project CPTs: same slugs, labels, supports and
+		 * meta keys, so list_tasks / list_projects return the same rows and
+		 * fields on both runtimes.
+		 */
+		'mcp_ai_task'    => array(
+			'label'        => 'Tasks',
+			'description'  => 'Project management tasks.',
+			'public'       => false,
+			'hierarchical' => false,
+			'has_archive'  => false,
+			'show_in_rest' => true,
+			'rest_base'    => 'tasks',
+			'labels'       => array(
+				'name'          => 'Tasks',
+				'singular_name' => 'Task',
+				'add_new_item'  => 'Add New Task',
+				'edit_item'     => 'Edit Task',
+				'view_item'     => 'View Task',
+				'search_items'  => 'Search Tasks',
+				'not_found'     => 'No tasks found.',
+				'all_items'     => 'All Tasks',
+			),
+			'capabilities' => array(
+				'edit_post'     => 'edit_post',
+				'read_post'     => 'read_post',
+				'delete_post'   => 'delete_post',
+				'edit_posts'    => 'edit_posts',
+				'publish_posts' => 'publish_posts',
+			),
+			'supports'     => array( 'title', 'editor', 'author' ),
+			'statuses'     => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+			'meta_fields'  => array(
+				'_task_status'           => array(
+					'label' => 'Task Status',
+					'type'  => 'string',
+					'enum'  => array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' ),
+				),
+				'_task_priority'         => array(
+					'label' => 'Priority',
+					'type'  => 'string',
+					'enum'  => array( 'low', 'medium', 'high', 'urgent' ),
+				),
+				'_task_category'         => array(
+					'label' => 'Category',
+					'type'  => 'string',
+					'enum'  => array( 'general', 'bug', 'feature', 'maintenance', 'research', 'documentation', 'design', 'testing' ),
+				),
+				'_task_project_id'       => array(
+					'label' => 'Project ID',
+					'type'  => 'integer',
+				),
+				'_task_due_date'         => array(
+					'label'  => 'Due Date',
+					'type'   => 'string',
+					'format' => 'date',
+				),
+				'_task_assigned_to'      => array(
+					'label' => 'Assigned To',
+					'type'  => 'integer',
+				),
+				'_task_tags'             => array(
+					'label' => 'Tags',
+					'type'  => 'string',
+				),
+				'_task_estimated_effort' => array(
+					'label' => 'Estimated Effort (hours)',
+					'type'  => 'number',
+				),
+				'_task_actual_effort'    => array(
+					'label' => 'Actual Effort (hours)',
+					'type'  => 'number',
+				),
+				'_task_depends_on'       => array(
+					'label' => 'Depends On',
+					'type'  => 'array',
+					'items' => array( 'type' => 'integer' ),
+				),
+				'_task_blocks'           => array(
+					'label' => 'Blocks',
+					'type'  => 'array',
+					'items' => array( 'type' => 'integer' ),
+				),
+			),
+		),
+		'mcp_ai_project' => array(
+			'label'        => 'Projects',
+			'description'  => 'Project management projects.',
+			'public'       => false,
+			'hierarchical' => false,
+			'has_archive'  => false,
+			'show_in_rest' => true,
+			'rest_base'    => 'projects',
+			'labels'       => array(
+				'name'          => 'Projects',
+				'singular_name' => 'Project',
+				'add_new_item'  => 'Add New Project',
+				'edit_item'     => 'Edit Project',
+				'view_item'     => 'View Project',
+				'search_items'  => 'Search Projects',
+				'not_found'     => 'No projects found.',
+				'all_items'     => 'All Projects',
+			),
+			'capabilities' => array(
+				'edit_post'     => 'edit_post',
+				'read_post'     => 'read_post',
+				'delete_post'   => 'delete_post',
+				'edit_posts'    => 'edit_posts',
+				'publish_posts' => 'publish_posts',
+			),
+			'supports'     => array( 'title', 'editor', 'author', 'thumbnail' ),
+			'statuses'     => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+			'meta_fields'  => array(
+				'_project_status'      => array(
+					'label' => 'Project Status',
+					'type'  => 'string',
+					'enum'  => array( 'planning', 'active', 'on-hold', 'completed', 'cancelled' ),
+				),
+				'_project_start_date'  => array(
+					'label'  => 'Start Date',
+					'type'   => 'string',
+					'format' => 'date',
+				),
+				'_project_end_date'    => array(
+					'label'  => 'End Date',
+					'type'   => 'string',
+					'format' => 'date',
+				),
+				'_project_assigned_to' => array(
+					'label'       => 'Assigned To',
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					// String IDs keep membership matching portable: the filter
+					// is LIKE '%"<id>"%', which matches a JSON array element
+					// and a PHP-serialized string element alike.
+					'description' => 'Array of user IDs stored as strings.',
+				),
+			),
+		),
 	),
 
 	'content_statuses' => array(

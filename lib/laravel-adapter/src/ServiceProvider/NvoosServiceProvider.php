@@ -39,6 +39,9 @@ use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\Core\Tool\GetTaskDependenciesTool;
+use Nvoos\Core\Tool\ListProjectsTool;
+use Nvoos\Core\Tool\ListTasksTool;
 use Nvoos\Laravel\Tool\CoreToolCatalogue;
 use Nvoos\Laravel\Adapter\AuthProvider;
 use Nvoos\Laravel\Adapter\CacheStore;
@@ -192,6 +195,21 @@ class NvoosServiceProvider extends ServiceProvider {
 		$errors   = $this->app->make( ErrorFactoryInterface::class );
 
 		foreach ( CoreToolCatalogue::build( $errors ) as $tool ) {
+			if ( ! $registry->has( $tool->getSlug() ) ) {
+				$registry->register( $tool );
+			}
+		}
+
+		// Tools that need a service rather than just the error factory.
+		$content = $this->app->make( ContentStoreInterface::class );
+
+		$service_tools = array(
+			new ListProjectsTool( $errors, $content ),
+			new ListTasksTool( $errors, $content ),
+			new GetTaskDependenciesTool( $errors, $content ),
+		);
+
+		foreach ( $service_tools as $tool ) {
 			if ( ! $registry->has( $tool->getSlug() ) ) {
 				$registry->register( $tool );
 			}
