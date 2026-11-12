@@ -260,6 +260,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 
 			return self::ok(
 				array(
+					'slug'   => $manifest->slug(),
 					'schema' => $manifest->settings(),
 					'values' => WP_MCP_AI_Pro_Toolkit_Manifests::settings( $manifest ),
 				)
@@ -332,15 +333,19 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 			$filters = $request->get_param( 'filter' );
 
 			return self::ok(
-				WP_MCP_AI_Pro_Toolkit_Records::query(
-					$manifest,
-					$entity,
-					array(
-						'page'     => (int) $request->get_param( 'page' ),
-						'per_page' => (int) $request->get_param( 'per_page' ),
-						'search'   => (string) $request->get_param( 'search' ),
-						'filter'   => is_array( $filters ) ? $filters : array(),
-					)
+				array_merge(
+					WP_MCP_AI_Pro_Toolkit_Records::query(
+						$manifest,
+						$entity,
+						array(
+							'page'     => (int) $request->get_param( 'page' ),
+							'per_page' => (int) $request->get_param( 'per_page' ),
+							'search'   => (string) $request->get_param( 'search' ),
+							'filter'   => is_array( $filters ) ? $filters : array(),
+						)
+					),
+					// The shared console reads `entity` from the page envelope.
+					array( 'entity' => $entity )
 				)
 			);
 		}

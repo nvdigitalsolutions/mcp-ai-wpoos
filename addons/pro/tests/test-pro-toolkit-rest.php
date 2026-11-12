@@ -198,6 +198,8 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$initial = $this->request( 'GET', '/toolkit-manifests/commerce/settings' )->get_data();
 
+		// The shared console's envelope carries the slug (Laravel parity).
+		$this->assertSame( 'commerce', $initial['data']['slug'] );
 		$this->assertSame( 'USD', $initial['data']['values']['currency'] );
 		$this->assertSame( 5, $initial['data']['values']['low_stock_threshold'] );
 
@@ -253,6 +255,8 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$listed = $this->request( 'GET', '/toolkit-manifests/commerce/entities/product' )->get_data();
 
+		// The shared console's page envelope carries the entity key (Laravel parity).
+		$this->assertSame( 'product', $listed['data']['entity'] );
 		$this->assertSame( 1, $listed['data']['total'] );
 
 		$updated = $this->request(
