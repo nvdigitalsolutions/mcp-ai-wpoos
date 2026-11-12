@@ -77,24 +77,40 @@ tiers  A 18 · B 143 · C 413 · D 634 · E 226
 
 ## 4. Tier A backlog — the "pure" cluster
 
-| Origin | Tool | Notes |
-|---|---|---|
-| base | `list_prompt_cues` | Prompt-cue catalogue read |
-| base | `scope_memory` | Pure scoping maths |
-| base | `enable_reasoning_mode` | Flag toggle |
-| pro | `verify_information` | Keyword-overlap verification; no I/O |
-| pro | `generate_email_template` | String templating |
-| pro | `validate_tool_schema` | JSON-schema validation |
-| pro | `get_loop_metrics` | Aggregates from supplied context |
-| pro | `import_email_marketing_blueprint` | Parses a supplied blueprint |
-| pro | `classroom_course_analytics` | Pure aggregation over inputs |
-| pro | `list_classroom_courses` / `list_classroom_guardians` / `list_classroom_submissions` | Return supplied/derived data |
-| pro | `git_inspect` / `git_change` | **Excluded from cluster 1** — needs a process port, and shell access deserves its own security review |
+`hard: 0` from the classifier is necessary but **not sufficient**. The
+classifier scores `wp_`/`WP_`/`$wpdb`/`wc_`/`jet_engine` symbols plus WP
+functions such as `sanitize_text_field`; it does not follow calls to plugin
+**classes** outside the file's `require_once` set. Read the tool body for
+`WP_MCP_AI_*` service calls before assuming a port is one file. Two of the
+eight cluster-1 candidates survived that check.
+
+| Origin | Tool | State | Blocker for a core port |
+|---|---|---|---|
+| pro | `verify_information` | ✅ ported | — |
+| pro | `validate_tool_schema` | ✅ ported | — |
+| base | `list_prompt_cues` | ⏳ | `WP_MCP_AI_Prompt_Cue_Library` (cue data catalogue) |
+| base | `scope_memory` | ⏳ | `WP_MCP_AI_Harness_Profile` + `WP_MCP_AI_Tool_Schema_Helper` |
+| base | `enable_reasoning_mode` | ⏳ | `WP_MCP_AI_Reasoning_Controller` (stateful) |
+| pro | `generate_email_template` | ⏳ | `WP_MCP_AI_MJML_Service` + `WP_MCP_AI_PRO_PATH` |
+| pro | `import_email_marketing_blueprint` | ⏳ | `WP_MCP_AI_Blueprint_Installer` + `WP_MCP_AI_PRO_PATH` |
+| pro | `get_loop_metrics` | ⏳ | `WP_MCP_AI_Execution_History_CCT` — a 090-E family, not an adapter |
+| pro | `classroom_course_analytics` / `list_classroom_courses` / `list_classroom_guardians` / `list_classroom_submissions` | ⏳ | classroom store — cluster 3 |
+| pro | `git_inspect` / `git_change` | ⏳ | **excluded** — needs a process port and its own security review |
 
 Four `*_capture_*` tools (`pm_capture_decision`,
 `social_capture_post_performance`, `docgen_capture_style_memory`,
 `health_capture_encounter`) also score A, but each pulls a second file — they
 are cluster 3 candidates once that store is understood.
+
+**Port evidence.** The two shipped ports live at
+`lib/core/src/Tool/VerifyInformationTool.php` and
+`lib/core/src/Tool/ValidateToolSchemaTool.php`, with
+`lib/core/tests/Unit/Tool/PortedClusterOneToolsTest.php` (18 tests, 51
+assertions) and registration in `CoreToolCatalogue`. Boundaries are
+deliberate: the core envelope nests the fields under `data`, and
+`validate_tool_schema` does not reproduce the WordPress tool's
+caller-supplied file read (its extractor is a stub that always yields an
+empty schema).
 
 ---
 
@@ -189,7 +205,8 @@ it proves the recipe end-to-end (port → parity test → registry → classifie
 |---|---|
 | Classifier | ✅ `bin/classify-tool-portability.php` |
 | Backlog generated | ✅ this document |
-| Cluster 1 ported | ⏳ not started |
+| Registry seeded with self-contained core tools | ✅ 23 tools bound in the Laravel provider (`CoreToolCatalogue`) — no slugs moved, the gap is unchanged |
+| Cluster 1 ported | 🟡 2 of 8 — `verify_information`, `validate_tool_schema`; the other six need a service (see §4) |
 | Cluster 2–4 | ⏳ |
 | CPT/CCT families | ⏳ design: `090-e-cpt-cct-schema-port.md` (654 tools are storage-shaped) |
 | Console parity note | ⏳ add the "runtime tool count" line to the Tools page empty state |
