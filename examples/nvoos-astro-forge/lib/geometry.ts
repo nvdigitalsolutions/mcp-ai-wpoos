@@ -1328,10 +1328,18 @@ export async function measureFooterBrand( options: {
 					}
 					return 'center';
 				};
-				const entry: { logo?: string; socials?: string; divider?: boolean } = {};
+				const entry: { logo?: string; socials?: string; logoHeight?: string; divider?: boolean } = {};
 				const logoAlign = alignOf( logo ? box( logo ) : null );
 				if ( logoAlign ) {
 					entry.logo = logoAlign;
+				}
+				// The mark's RENDERED height: the template caps it at 3rem, while a
+				// builder footer often renders the full asset (virtuallyjamaica: 62px).
+				if ( logo ) {
+					const height = Math.round( box( logo ).height );
+					if ( height > 0 ) {
+						entry.logoHeight = `${ height }px`;
+					}
 				}
 				const socialsAlign = alignOf( socialsRect );
 				if ( socialsAlign ) {
@@ -1361,12 +1369,19 @@ export async function measureFooterBrand( options: {
 			if ( ! measured ) {
 				continue;
 			}
-			const entry: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' } = {};
+			const entry: {
+				logo?: 'start' | 'center' | 'end';
+				socials?: 'start' | 'center' | 'end';
+				logoHeight?: string;
+			} = {};
 			if ( measured.logo === 'start' || measured.logo === 'center' || measured.logo === 'end' ) {
 				entry.logo = measured.logo;
 			}
 			if ( measured.socials === 'start' || measured.socials === 'center' || measured.socials === 'end' ) {
 				entry.socials = measured.socials;
+			}
+			if ( typeof measured.logoHeight === 'string' && /^\d+px$/.test( measured.logoHeight ) ) {
+				entry.logoHeight = measured.logoHeight;
 			}
 			if ( Object.keys( entry ).length > 0 ) {
 				out[ device ] = entry;
@@ -1376,6 +1391,100 @@ export async function measureFooterBrand( options: {
 			}
 		}
 		return out;
+	} finally {
+		await browser.close();
+	}
+}
+
+/**
+ * Measure the source's footer SOCIAL links — every icon-only anchor in the
+ * footer's social group, with its href, icon class and a readable label.
+ *
+ * The old `chrome.social` fact was never written by a harvester (the four links
+ * on virtuallyjamaica were hand-seeded), so two of the source's six networks
+ * were dropped. The browser is the right reader: it sees the rendered anchors,
+ * their resolved hrefs and the source's own `fab fa-*` classes, which the
+ * rebuild can draw with the source's FontAwesome sheet (`socialIconCss`).
+ *
+ * FAIL-SOFT: no footer or no icon links returns an empty array.
+ */
+export async function measureFooterSocials( options: {
+	url: string;
+	timeout?: number;
+} ): Promise< NonNullable< ForgeChrome[ 'social' ] > > {
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const context = await browser.newContext( { deviceScaleFactor: 1 } );
+		const page = await context.newPage();
+		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+		await settle( page );
+		return await page.evaluate( () => {
+			const footer = document.querySelector(
+				'footer, .site-footer, #footer, .brando-footer, [role="contentinfo"]'
+			);
+			if ( ! footer ) {
+				return [];
+			}
+			const readable = ( value: string ): string => {
+				const words = value
+					.replace( /^(?:fab|fas|far|fal|fa)\s+/i, '' )
+					.replace( /^fa-/, '' )
+					.replace( /-(?:g|in|alt|square|f)$/i, '' )
+					.split( /[-_\s]+/ )
+					.filter( Boolean );
+				const key = words.join( ' ' ).toLowerCase();
+				const known: Record< string, string > = {
+					facebook: 'Facebook',
+					twitter: 'Twitter',
+					x: 'X',
+					youtube: 'YouTube',
+					linkedin: 'LinkedIn',
+					instagram: 'Instagram',
+					dribbble: 'Dribbble',
+					'google plus': 'Google Plus',
+					googleplus: 'Google Plus',
+					pinterest: 'Pinterest',
+					tiktok: 'TikTok',
+					whatsapp: 'WhatsApp',
+				};
+				if ( known[ key ] ) {
+					return known[ key ];
+				}
+				return words
+					.map( ( part ) => part.charAt( 0 ).toUpperCase() + part.slice( 1 ) )
+					.join( ' ' );
+			};
+			const links: Array< { label?: string; href: string; icon?: string } > = [];
+			const seen = new Set< string >();
+			for ( const anchor of [ ...footer.querySelectorAll( 'a' ) ] ) {
+				const rect = anchor.getBoundingClientRect();
+				if ( rect.width < 8 || rect.width > 80 || rect.height < 8 || rect.height > 80 ) {
+					continue;
+				}
+				const glyph = anchor.querySelector( 'i' );
+				const hasGraphic = Boolean( glyph || anchor.querySelector( 'svg, img' ) );
+				if ( ! hasGraphic ) {
+					continue;
+				}
+				const href = anchor.getAttribute( 'href' ) ?? '';
+				const icon = glyph ? String( glyph.getAttribute( 'class' ) ?? '' ).trim() : undefined;
+				const label =
+					anchor.getAttribute( 'aria-label' )?.trim() ||
+					anchor.getAttribute( 'title' )?.trim() ||
+					( icon ? readable( icon ) : undefined );
+				const key = `${ href }|${ icon ?? '' }|${ label ?? '' }`;
+				if ( seen.has( key ) ) {
+					continue;
+				}
+				seen.add( key );
+				links.push( { ...( label ? { label } : {} ), href, ...( icon ? { icon } : {} ) } );
+				if ( links.length >= 12 ) {
+					break;
+				}
+			}
+			return links;
+		} );
 	} finally {
 		await browser.close();
 	}

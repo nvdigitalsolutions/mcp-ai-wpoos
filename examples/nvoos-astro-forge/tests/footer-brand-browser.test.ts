@@ -16,7 +16,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { chromium } from 'playwright';
 
-import { measureFooterBrand } from '../lib/geometry.ts';
+import { measureFooterBrand, measureFooterSocials } from '../lib/geometry.ts';
 import type { ForgeFooterBrand } from '../lib/types.ts';
 
 const hasChromium = ( () => {
@@ -28,6 +28,8 @@ const hasChromium = ( () => {
 } )();
 
 const ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle></svg>';
+const LOGO_SVG =
+	'<svg xmlns="http://www.w3.org/2000/svg" width="200" height="40"><rect width="200" height="40" fill="#c00"></rect></svg>';
 
 const FIXTURE_HTML = `<!doctype html>
 <html lang="en">
@@ -63,11 +65,11 @@ const FIXTURE_HTML = `<!doctype html>
 	<footer>
 		<div class="footer-row">
 			<div class="socials">
-				<a href="#">${ ICON }</a>
-				<a href="#">${ ICON }</a>
-				<a href="#">${ ICON }</a>
+				<a href="https://facebook.com/"><i class="fab fa-facebook-f"></i></a>
+				<a href="https://dribbble.com/"><i class="fab fa-dribbble"></i></a>
+				<a href="https://example.test/">${ ICON }</a>
 			</div>
-			<div class="logo"><img src="https://example.test/vj-logo.svg" alt="Logo"></div>
+			<div class="logo"><img src="/vj-logo.svg" alt="Logo"></div>
 		</div>
 		<p class="copyright">© 2026 Example</p>
 	</footer>
@@ -77,43 +79,98 @@ const FIXTURE_HTML = `<!doctype html>
 /** A footer with no social icons has no brand row to align. */
 const NO_SOCIALS_HTML = FIXTURE_HTML.replace( /<div class="socials">[\s\S]*?<\/div>\s*/u, '' );
 
-describe.skipIf( ! hasChromium )( 'measureFooterBrand (hermetic browser probe)', () => {
-	let server: Server;
-	let brand: ForgeFooterBrand;
-	let empty: ForgeFooterBrand;
+/** One handler for both probes: the HTML fixture plus the brand SVG asset. */
+const serveFixture = ( request: import( 'node:http' ).IncomingMessage, response: import( 'node:http' ).ServerResponse ) => {
+	if ( request.url?.startsWith( '/vj-logo.svg' ) ) {
+		response.writeHead( 200, { 'content-type': 'image/svg+xml' } );
+		response.end( LOGO_SVG );
+		return;
+	}
+	const body = request.url?.startsWith( '/no-socials' ) ? NO_SOCIALS_HTML : FIXTURE_HTML;
+	response.writeHead( 200, { 'content-type': 'text/html; charset=utf-8' } );
+	response.end( body );
+};
 
-	beforeAll( async () => {
-		server = createServer( ( request, response ) => {
-			const body = request.url?.startsWith( '/no-socials' ) ? NO_SOCIALS_HTML : FIXTURE_HTML;
-			response.writeHead( 200, { 'content-type': 'text/html; charset=utf-8' } );
-			response.end( body );
+	describe.skipIf( ! hasChromium )( 'measureFooterBrand (hermetic browser probe)', () => {
+		let server: Server;
+		let brand: ForgeFooterBrand;
+		let empty: ForgeFooterBrand;
+
+		beforeAll( async () => {
+			server = createServer( serveFixture );
+			await new Promise< void >( ( resolve ) => server.listen( 0, '127.0.0.1', resolve ) );
+			const address = server.address();
+			const port = typeof address === 'object' && address ? address.port : 0;
+			brand = await measureFooterBrand( { url: `http://127.0.0.1:${ port }/`, timeout: 30000 } );
+			empty = await measureFooterBrand( { url: `http://127.0.0.1:${ port }/no-socials`, timeout: 30000 } );
+		}, 120000 );
+
+		afterAll( async () => {
+			if ( server ) {
+				await new Promise< void >( ( resolve ) => server.close( () => resolve() ) );
+			}
 		} );
-		await new Promise< void >( ( resolve ) => server.listen( 0, '127.0.0.1', resolve ) );
-		const address = server.address();
-		const port = typeof address === 'object' && address ? address.port : 0;
-		brand = await measureFooterBrand( { url: `http://127.0.0.1:${ port }/`, timeout: 30000 } );
-		empty = await measureFooterBrand( { url: `http://127.0.0.1:${ port }/no-socials`, timeout: 30000 } );
-	}, 120000 );
 
-	afterAll( async () => {
-		if ( server ) {
-			await new Promise< void >( ( resolve ) => server.close( () => resolve() ) );
-		}
+		it( 'reads the logo at the END of the row on desktop', () => {
+			expect( brand.desktop ).toEqual( { logo: 'end', socials: 'start', logoHeight: '40px' } );
+		} );
+
+		it( 'reads both groups centred at mobile', () => {
+			expect( brand.mobile ).toEqual( { logo: 'center', socials: 'center', logoHeight: '40px' } );
+		} );
+
+		it( 'records the mark’s rendered height', () => {
+			expect( brand.desktop?.logoHeight ).toBe( '40px' );
+		} );
+
+		it( 'records the hairline above the copyright bar', () => {
+			expect( brand.divider ).toBe( true );
+		} );
+
+		it( 'returns no fact when the footer has no social icons', () => {
+			expect( empty ).toEqual( {} );
+		} );
 	} );
 
-	it( 'reads the logo at the END of the row on desktop', () => {
-		expect( brand.desktop ).toEqual( { logo: 'end', socials: 'start' } );
-	} );
+	describe.skipIf( ! hasChromium )( 'measureFooterSocials (hermetic browser probe)', () => {
+		let server: Server;
+		let links: Awaited< ReturnType< typeof measureFooterSocials > >;
 
-	it( 'reads both groups centred at mobile', () => {
-		expect( brand.mobile ).toEqual( { logo: 'center', socials: 'center' } );
-	} );
+		beforeAll( async () => {
+			server = createServer( serveFixture );
+			await new Promise< void >( ( resolve ) => server.listen( 0, '127.0.0.1', resolve ) );
+			const address = server.address();
+			const port = typeof address === 'object' && address ? address.port : 0;
+			links = await measureFooterSocials( { url: `http://127.0.0.1:${ port }/`, timeout: 30000 } );
+		}, 120000 );
 
-	it( 'records the hairline above the copyright bar', () => {
-		expect( brand.divider ).toBe( true );
-	} );
+		afterAll( async () => {
+			if ( server ) {
+				await new Promise< void >( ( resolve ) => server.close( () => resolve() ) );
+			}
+		} );
 
-	it( 'returns no fact when the footer has no social icons', () => {
-		expect( empty ).toEqual( {} );
+		it( 'captures EVERY icon anchor, not just the known networks', () => {
+			expect( links ).toHaveLength( 3 );
+		} );
+
+		it( 'keeps the source glyph class and derives a readable label', () => {
+			expect( links[ 0 ] ).toMatchObject( {
+				label: 'Facebook',
+				href: 'https://facebook.com/',
+				icon: 'fab fa-facebook-f',
+			} );
+			expect( links[ 1 ] ).toMatchObject( {
+				label: 'Dribbble',
+				href: 'https://dribbble.com/',
+				icon: 'fab fa-dribbble',
+			} );
+		} );
+
+		it( 'leaves an svg-only link without an icon class', () => {
+			const svgOnly = links.find( ( link ) => link.href === 'https://example.test/' );
+
+			expect( svgOnly ).toBeDefined();
+			expect( svgOnly?.icon ).toBeUndefined();
+		} );
 	} );
-} );

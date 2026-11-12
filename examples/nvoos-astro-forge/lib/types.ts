@@ -1430,6 +1430,11 @@ export interface ForgeFooterBrandAlign {
 	logo?: ForgeFooterAlign;
 	/** The social icon group's horizontal position inside the row. */
 	socials?: ForgeFooterAlign;
+	/**
+	 * The brand mark's RENDERED height at this viewport (`62px`), so the rebuild
+	 * matches the source's mark instead of the template's fixed 3rem.
+	 */
+	logoHeight?: string;
 }
 
 /**
@@ -1577,6 +1582,13 @@ export interface ForgeChrome {
 	 * classes and this sheet draws them (the customer's own asset, like the
 	 * content media URLs). */
 	iconCss?: string;
+	/**
+	 * The brand-icon sheet that draws the footer's `fab fa-*` glyphs
+	 * (FontAwesome). Separate from `iconCss`: a source often ships a theme icon
+	 * font AND FontAwesome, and an unknown network renders with the source's own
+	 * glyph class rather than a fabricated inline path.
+	 */
+	socialIconCss?: string;
 	/** The subfooter text color (the source paints white-ish text on its
 	 * dark footer — jayainc's rgba(255,255,255,0.7)). */
 	footerInk?: string;

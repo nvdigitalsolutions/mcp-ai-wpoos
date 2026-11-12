@@ -2412,6 +2412,13 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	background: rgba(0, 0, 0, 0.12);
 }
 
+/* A network the rebuild has no inline glyph for is drawn by the SOURCE's own
+ * brand-icon sheet (FontAwesome), using the source's glyph class. */
+.site-social i {
+	font-size: 1rem;
+	line-height: 1;
+}
+
 .ds-lede {
 	/* The source's divider→description gap (Phlox's modern heading carries a
 	 * 37px margin-top); absent → flush, as before. */

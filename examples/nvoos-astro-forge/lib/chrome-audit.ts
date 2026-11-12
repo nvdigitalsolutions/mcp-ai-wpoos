@@ -215,6 +215,7 @@ export function compareFooterBrand(
 	actual: ForgeFooterBrand | undefined,
 	options: ChromeAuditOptions = {}
 ): ChromeAuditReport {
+	const tolerance = options.lengthTolerance ?? 4;
 	const deviations: ChromeDeviation[] = [];
 	const skipped: string[] = [];
 	let compared = 0;
@@ -272,6 +273,32 @@ export function compareFooterBrand(
 					? `the footer ${ key } sits on the wrong side of the row`
 					: undefined,
 			} );
+		}
+		// The mark's rendered height. A drift here changes the footer's whole
+		// scale (virtuallyjamaica's source renders it at 62px, not the template's
+		// 48px), so it is measured and compared rather than left to the template.
+		const wantHeight = Number.parseFloat( from.logoHeight ?? '' );
+		if ( Number.isFinite( wantHeight ) ) {
+			compared++;
+			const gotHeight = Number.parseFloat( to?.logoHeight ?? '' );
+			if ( ! Number.isFinite( gotHeight ) ) {
+				deviations.push( {
+					fact: `footer brand [${ device }].logoHeight`,
+					expected: from.logoHeight ?? null,
+					actual: null,
+					deltaE: null,
+					severity: 'warn',
+					note: 'the build records no rendered height for the footer mark',
+				} );
+			} else if ( Math.abs( wantHeight - gotHeight ) > tolerance ) {
+				deviations.push( {
+					fact: `footer brand [${ device }].logoHeight`,
+					expected: from.logoHeight ?? `${ Math.round( wantHeight ) }px`,
+					actual: to?.logoHeight ?? `${ Math.round( gotHeight ) }px`,
+					deltaE: null,
+					severity: 'warn',
+				} );
+			}
 		}
 	}
 
