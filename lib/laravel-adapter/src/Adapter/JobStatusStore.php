@@ -184,6 +184,78 @@ class JobStatusStore {
 	}
 
 	/**
+	 * Read a single raw job row (handler/payload for diagnostics and retry).
+	 */
+	public function row( string $jobId ): ?object {
+		if ( ! $this->isAvailable() ) {
+			return null;
+		}
+
+		return DB::table( self::TABLE )->where( 'id', $jobId )->first();
+	}
+
+	/**
+	 * List raw job rows, newest first.
+	 *
+	 * @param array<string, mixed> $filters Optional status/handler filters.
+	 * @return array<int, object>
+	 */
+	public function rows( array $filters = array(), int $limit = 50 ): array {
+		if ( ! $this->isAvailable() ) {
+			return array();
+		}
+
+		$query = DB::table( self::TABLE );
+
+		if ( ! empty( $filters['status'] ) ) {
+			$query->where( 'status', (string) $filters['status'] );
+		}
+
+		if ( ! empty( $filters['handler'] ) ) {
+			$query->where( 'handler', (string) $filters['handler'] );
+		}
+
+		$limit = min( 100, max( 1, $limit ) );
+
+		return $query->orderBy( 'queued_at', 'desc' )->limit( $limit )->get()->all();
+	}
+
+	/**
+	 * Reset a failed job to queued so it can be re-dispatched.
+	 */
+	public function markQueued( string $jobId ): bool {
+		if ( ! $this->isAvailable() ) {
+			return false;
+		}
+
+		return DB::table( self::TABLE )
+			->where( 'id', $jobId )
+			->update( array(
+				'status'       => 'queued',
+				'error'        => null,
+				'started_at'   => null,
+				'completed_at' => null,
+			) ) > 0;
+	}
+
+	/**
+	 * Dismiss a failed dead-letter row by moving it to cancelled.
+	 */
+	public function dismiss( string $jobId ): bool {
+		if ( ! $this->isAvailable() ) {
+			return false;
+		}
+
+		return DB::table( self::TABLE )
+			->where( 'id', $jobId )
+			->where( 'status', 'failed' )
+			->update( array(
+				'status'       => 'cancelled',
+				'completed_at' => now(),
+			) ) > 0;
+	}
+
+	/**
 	 * Convert a table row to the domain entity.
 	 */
 	private function hydrate( object $row ): JobStatus {

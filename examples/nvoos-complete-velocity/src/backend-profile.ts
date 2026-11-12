@@ -27,8 +27,12 @@ export function resolveBackend(value?: string | null): ConsoleBackend {
   return 'wordpress';
 }
 
-/** Read the build-time backend profile (Vite injects `import.meta.env`). */
+/** Read the backend profile from the build env, with an optional runtime override. */
 export function buildTimeBackend(): ConsoleBackend {
+  const override = (globalThis as { __NVOOS_BACKEND__?: string }).__NVOOS_BACKEND__;
+  if (override) {
+    return resolveBackend(override);
+  }
   const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
   return resolveBackend(env?.VITE_NVOOS_BACKEND);
 }
