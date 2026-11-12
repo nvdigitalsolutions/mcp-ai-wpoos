@@ -1,0 +1,81 @@
+{
+  "slug": "commerce",
+  "name": "Commerce",
+  "version": "1.0.0",
+  "description": "Catalog and stock operations for a product business.",
+  "icon": "🛍️",
+  "feature": "commerce",
+  "screens": ["settings", "entities", "consolidate", "dashboard"],
+  "settings": [
+    {
+      "key": "currency",
+      "label": "Display currency",
+      "type": "text",
+      "default": "USD",
+      "description": "ISO 4217 code used in the workbench and dashboard."
+    },
+    {
+      "key": "low_stock_threshold",
+      "label": "Low stock threshold",
+      "type": "number",
+      "default": 5,
+      "description": "Products at or below this stock level are flagged."
+    }
+  ],
+  "entities": [
+    {
+      "key": "product",
+      "label": "Products",
+      "singular": "Product",
+      "icon": "📦",
+      "id_field": "sku",
+      "columns": [
+        { "key": "sku", "label": "SKU", "type": "string", "required": true },
+        { "key": "name", "label": "Name", "type": "string", "required": true },
+        { "key": "price", "label": "Price", "type": "currency" },
+        { "key": "stock", "label": "Stock", "type": "number" },
+        {
+          "key": "status",
+          "label": "Status",
+          "type": "enum",
+          "enum": ["draft", "active", "archived"]
+        }
+      ]
+    }
+  ],
+  "dashboard": {
+    "cards": [
+      {
+        "key": "total_products",
+        "label": "Products",
+        "source": "entity:product",
+        "aggregate": "count"
+      },
+      {
+        "key": "active_products",
+        "label": "Active products",
+        "source": "entity:product",
+        "aggregate": "count",
+        "filter": { "column": "status", "op": "eq", "value": "active" }
+      },
+      {
+        "key": "stock_value",
+        "label": "Units in stock",
+        "source": "entity:product",
+        "aggregate": "sum",
+        "column": "stock",
+        "filter": { "column": "status", "op": "eq", "value": "active" }
+      },
+      {
+        "key": "low_stock",
+        "label": "Low stock",
+        "source": "entity:product",
+        "aggregate": "count",
+        "filter": [
+          { "column": "status", "op": "eq", "value": "active" },
+          { "column": "stock", "op": "lte", "setting": "low_stock_threshold" }
+        ]
+      }
+    ]
+  }
+}
