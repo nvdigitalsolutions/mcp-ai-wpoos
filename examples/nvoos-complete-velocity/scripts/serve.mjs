@@ -18,6 +18,10 @@
  * inside the proxy — otherwise the auth cookies would be set for the
  * WordPress host and the app origin would never see the session.
  *
+ * Backend profile: NVOOS_BACKEND=wordpress|laravel|hybrid selects the proxy
+ * prefixes. The console build must use the matching VITE_NVOOS_BACKEND;
+ * runtime-config.ts asserts the contract at boot (Proposal 090-B, ADR-6).
+ *
  * Caching contract (keeps browser + Velocity CDN load off WordPress):
  *   - index.html → `Cache-Control: no-cache` + weak ETag → 304 revalidation
  *     instead of a full-body re-download on every navigation.
@@ -58,7 +62,25 @@ const PORT = Number(process.env.PORT || 4181);
 const ROOT = fileURLToPath(new URL('../dist', import.meta.url));
 
 const PROXY_TARGET = (process.env.NVOOS_TARGET_SITE || '').replace(/\/+$/, '');
-const PROXY_PREFIXES = ['/wp-json', '/wp-admin', '/wp-login.php', '/wp-includes'];
+// Backend profile (Proposal 090-B). Keep in sync with src/backend-profile.ts.
+//   wordpress : WP REST + admin/login surfaces (today's default)
+//   laravel   : /api + /mcp + /sanctum on the Laravel origin
+//   hybrid    : both, during a migration window
+const BACKEND = (process.env.NVOOS_BACKEND || 'wordpress').toLowerCase();
+const BACKEND_PREFIXES = {
+  wordpress: ['/wp-json', '/wp-admin', '/wp-login.php', '/wp-includes'],
+  laravel: ['/api', '/mcp', '/sanctum'],
+  hybrid: [
+    '/wp-json',
+    '/wp-admin',
+    '/wp-login.php',
+    '/wp-includes',
+    '/api',
+    '/mcp',
+    '/sanctum',
+  ],
+};
+const PROXY_PREFIXES = BACKEND_PREFIXES[BACKEND] || BACKEND_PREFIXES.wordpress;
 // Hop-by-hop headers Node manages itself — passing them through would
 // conflict with its own framing/connection handling.
 const HOP_BY_HOP = new Set([
@@ -580,14 +602,14 @@ server.listen(PORT, () => {
   console.log(`[nvoos-complete-console] serving dist/ on :${PORT}`);
   if (PROXY_TARGET) {
     console.log(
-      `[nvoos-complete-console] proxying ${PROXY_PREFIXES.join(', ')} → ${PROXY_TARGET} (cookie auth enabled)`,
+      `[nvoos-complete-console] backend=${BACKEND} · proxying ${PROXY_PREFIXES.join(', ')} → ${PROXY_TARGET} (cookie auth enabled)`,
     );
     console.log(
       `[nvoos-complete-console] proxy micro-cache ${PROXY_CACHE_ENABLED ? `on (TTL cap ${PROXY_CACHE_TTL_CAP}s)` : 'off (NVOOS_PROXY_CACHE=0)'}`,
     );
   } else {
     console.log(
-      '[nvoos-complete-console] no NVOOS_TARGET_SITE set — the SPA loads, but REST/auth calls have no backend (set it to your WordPress site URL)',
+      '[nvoos-complete-console] no NVOOS_TARGET_SITE set — the SPA loads, but REST/auth calls have no backend (set it to your WordPress or Laravel site URL)',
     );
   }
 });

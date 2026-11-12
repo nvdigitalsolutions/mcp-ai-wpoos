@@ -117,6 +117,50 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Pro Entitlement
+	|--------------------------------------------------------------------------
+	|
+	| The WordPress licence record does not exist outside WordPress. Choose a
+	| driver explicitly: allow (development/CI), deny (base-only), or config
+	| (only the features listed below). Unknown drivers fail closed. The
+	| commercial source is wired behind this same contract later.
+	|
+	*/
+	'pro_entitlement' => array(
+		'driver'   => env( 'NVOOS_PRO_ENTITLEMENT_DRIVER', 'allow' ),
+		'plan'     => env( 'NVOOS_PRO_PLAN', 'compliance' ),
+		'features' => array(),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
+	| Console Feature Map
+	|--------------------------------------------------------------------------
+	|
+	| Keys the Complete Console's nav reads (GET /api/v1/features). WordPress
+	| addon surfaces are disabled on a pure Laravel runtime until their
+	| endpoints are ported (Proposal 090-B, Phase 4).
+	|
+	*/
+	'features' => array(
+		'crm'                => false,
+		'project_management' => false,
+		'calendar_booking'   => false,
+		'fnb'                => false,
+		'ecommerce'          => false,
+		'ezuite'             => false,
+		'shopify_sync'       => false,
+		'flowhub'            => false,
+		'content_records'    => false,
+		'knowledge_graph'    => false,
+		'docs_hub'           => false,
+		'media_studio'       => false,
+		'document_editor'    => false,
+		'okf'                => false,
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Mesh API Key
 	|--------------------------------------------------------------------------
 	|

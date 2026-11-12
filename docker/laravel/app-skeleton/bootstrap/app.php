@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AcceptWpNonce;
 use App\Http\Middleware\EnsureSpikeEnvironment;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,15 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Console/Commands',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        // Sanctum SPA cookie mode (Proposal 090-B, ADR-4). Same-origin
+        // console requests authenticate with the session cookie; MCP/API
+        // clients keep using bearer tokens.
+        $middleware->statefulApi();
+
+        // Map the console's X-WP-Nonce onto Laravel's raw CSRF header before
+        // validation (Proposal 090-B, ADR-4, Phases 0-4).
+        $middleware->web(prepend: [AcceptWpNonce::class]);
+
         $middleware->alias([
             'spike.local' => EnsureSpikeEnvironment::class,
         ]);

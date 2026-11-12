@@ -21,6 +21,7 @@ import { useUIStore } from '@nvoos/pro-spa-v2/stores/uiStore';
 import './shell.css';
 
 import {
+  assertBackendContract,
   buildConsoleRuntime,
   fetchCurrentUser,
   fetchFeatureMap,
@@ -87,6 +88,10 @@ function Console(): JSX.Element {
               : { phase: 'login', notice: 'Please click the button below.' },
           ),
       });
+
+      // Fail fast when the console and the backend disagree about the
+      // runtime (Proposal 090-B, ADR-6). WordPress is a no-op.
+      await assertBackendContract();
 
       const nonce = await fetchSessionNonce();
       const { user, nonce: effectiveNonce } = await fetchCurrentUser(nonce);
