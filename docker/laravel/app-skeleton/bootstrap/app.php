@@ -25,8 +25,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
 
         // Map the console's X-WP-Nonce onto Laravel's raw CSRF header before
-        // validation (Proposal 090-B, ADR-4, Phases 0-4).
+        // validation (Proposal 090-B, ADR-4, Phases 0-4). Registered on the
+        // api group too: the console's session and CRUD routes live there, and
+        // the stateful pipeline validates CSRF before the controller runs.
         $middleware->web(prepend: [AcceptWpNonce::class]);
+        $middleware->api(prepend: [AcceptWpNonce::class]);
 
         $middleware->alias([
             'spike.local' => EnsureSpikeEnvironment::class,

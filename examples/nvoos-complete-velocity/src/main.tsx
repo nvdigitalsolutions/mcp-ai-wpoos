@@ -15,6 +15,7 @@ import { createRoot } from 'react-dom/client';
 import { lazy, Suspense, useCallback, useEffect, useState, type JSX } from 'react';
 
 import '@nvoos/pro-spa-v2/styles/main.css';
+import '@nvoos/pro-spa-v2/styles/toolkits.css';
 import '@nvoos/pro-spa-v2/styles/drawers.css';
 import '@nvoos/pro-spa-v2/styles/embedded.css';
 import { useUIStore } from '@nvoos/pro-spa-v2/stores/uiStore';

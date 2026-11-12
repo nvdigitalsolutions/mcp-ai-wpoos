@@ -21,14 +21,17 @@ class AcceptWpNonceTest extends TestCase
         $this->assertSame('session-token', $request->headers->get('X-CSRF-TOKEN'));
     }
 
-    public function test_mismatched_nonce_is_not_mapped(): void
+    public function test_mismatched_nonce_is_mapped_and_rejected_downstream(): void
     {
         $request = $this->requestWithSessionToken('session-token');
         $request->headers->set('X-WP-Nonce', 'attacker-token');
 
         (new AcceptWpNonce())->handle($request, fn (): Response => new Response('ok'));
 
-        $this->assertNull($request->headers->get('X-CSRF-TOKEN'));
+        // The shim is a pure header alias; `ValidateCsrfToken` runs afterwards
+        // and rejects the mismatch. Asserting the mapping here keeps the
+        // responsibility boundary explicit.
+        $this->assertSame('attacker-token', $request->headers->get('X-CSRF-TOKEN'));
     }
 
     public function test_existing_csrf_header_is_preserved(): void
@@ -42,14 +45,16 @@ class AcceptWpNonceTest extends TestCase
         $this->assertSame('explicit-token', $request->headers->get('X-CSRF-TOKEN'));
     }
 
-    public function test_request_without_a_session_is_untouched(): void
+    public function test_request_without_a_session_is_still_mapped(): void
     {
+        // The middleware is registered on the `api` group, where it runs
+        // before Sanctum starts the session, so it cannot depend on one.
         $request = Request::create('/', 'POST');
         $request->headers->set('X-WP-Nonce', 'session-token');
 
         (new AcceptWpNonce())->handle($request, fn (): Response => new Response('ok'));
 
-        $this->assertNull($request->headers->get('X-CSRF-TOKEN'));
+        $this->assertSame('session-token', $request->headers->get('X-CSRF-TOKEN'));
     }
 
     private function requestWithSessionToken(string $token): Request

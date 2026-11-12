@@ -193,7 +193,7 @@ class SecurityController
         $storageOk = false;
 
         try {
-            $disk = Storage::disk((string) config('nvoos.storage_disk', 'local'));
+            $disk = Storage::disk((string) config('oos.storage_disk', 'local'));
             $path = 'nvoos-security-self-test.txt';
             $disk->put($path, 'ok');
             $storageOk = $disk->exists($path);

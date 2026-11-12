@@ -348,6 +348,10 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'recordsSchema'       => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/records/schema' ) )
 					: '',
+				// Manifest-driven toolkit engine (Proposal 090-B §8). Empty until
+				// the WordPress runtime exposes the routes; the pages then render
+				// their unavailable state instead of firing a request.
+				'toolkits'            => '',
 				'dashboardsSchema'    => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/dashboards/schema' ) )
 					: '',

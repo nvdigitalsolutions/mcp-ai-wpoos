@@ -13,9 +13,9 @@ class SessionController
     /**
      * Mint the session-bound token the console sends as `X-WP-Nonce`.
      *
-     * The compatibility middleware validates that header against this token,
-     * so the SPA's request modules need no changes in Phase 0 (Proposal
-     * 090-B, ADR-4).
+     * The compatibility middleware aliases that header onto `X-CSRF-TOKEN`;
+     * Laravel's `ValidateCsrfToken` then compares it with this token, so the
+     * SPA's request modules need no changes in Phase 0 (Proposal 090-B, ADR-4).
      */
     public function nonce(Request $request): JsonResponse
     {
@@ -33,6 +33,16 @@ class SessionController
      */
     public function login(Request $request): JsonResponse
     {
+        if (! $request->hasSession()) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'session_required',
+                    'message' => 'Session login requires a first-party console origin.',
+                ],
+            ], 419);
+        }
+
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],

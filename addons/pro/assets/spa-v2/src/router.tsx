@@ -47,6 +47,8 @@ const ChatChannelsPage = lazy( () => import( './features/chat-channels/ChatChann
 const MediaOpsPage = lazy( () => import( './features/media-ops/MediaOpsPage' ).then( ( m ) => ( { default: m.MediaOpsPage } ) ) );
 const BlueprintsPage = lazy( () => import( './features/blueprints/BlueprintsPage' ).then( ( m ) => ( { default: m.BlueprintsPage } ) ) );
 const PaperStorePage = lazy( () => import( './features/paper-store/PaperStorePage' ).then( ( m ) => ( { default: m.PaperStorePage } ) ) );
+const ToolkitsPage = lazy( () => import( './features/toolkits/ToolkitsPage' ).then( ( m ) => ( { default: m.ToolkitsPage } ) ) );
+const ToolkitPage = lazy( () => import( './features/toolkits/ToolkitPage' ).then( ( m ) => ( { default: m.ToolkitPage } ) ) );
 
 export interface AppRouterProps {
 	/** Shared transcript hook result from Layout. */
@@ -93,6 +95,8 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/media-ops" element={ <MediaOpsPage /> } />
 				<Route path="/blueprints" element={ <BlueprintsPage /> } />
 				<Route path="/paper-store" element={ <PaperStorePage /> } />
+				<Route path="/toolkits" element={ <ToolkitsPage /> } />
+				<Route path="/toolkits/:slug" element={ <ToolkitPage /> } />
 				<Route path="/portability" element={ <PortabilityPage /> } />
 				<Route path="/security-center" element={ <SecurityCenterPage /> } />
 				<Route path="/operations" element={ <OperationsPage /> } />

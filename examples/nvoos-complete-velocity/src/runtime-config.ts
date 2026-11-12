@@ -128,6 +128,9 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     workflowRuns: isAdmin ? `${core}/orchestration/runs` : '',
     wpBase: wp,
     recordsSchema: isAdmin ? `${pro}/records/schema` : '',
+    // The manifest engine is Laravel-only for now; the WordPress runtime has
+    // no /toolkits route yet, so the pages render their unavailable state.
+    toolkits: isAdmin && !isWordPress ? `${pro}/toolkits` : '',
     dashboardsSchema: isAdmin ? `${pro}/dashboards/schema` : '',
     chatChannels: isAdmin ? `${pro}/chat-channels` : '',
     remoteSites: isAdmin ? `${pro}/remote-sites` : '',

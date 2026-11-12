@@ -126,6 +126,12 @@ export interface ProSpaEndpoints {
 	wpBase: string;
 	/** Records schema REST base (mcp-ai-pro/v1/records/schema, 2.4.0). */
 	recordsSchema: string;
+	/**
+	 * Manifest-driven toolkit engine base (mcp-ai-pro/v1/toolkits, 2.5.0).
+	 * Empty when the runtime has no toolkit engine — the pages render their
+	 * unavailable state instead of firing requests.
+	 */
+	toolkits: string;
 	/** Dashboards schema REST base (mcp-ai-pro/v1/dashboards/schema, 2.4.0). */
 	dashboardsSchema: string;
 	/** Chat channels REST base (mcp-ai-pro/v1/chat-channels, 2.4.0). */
@@ -336,6 +342,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			workflowRuns: typeof e.workflowRuns === 'string' ? e.workflowRuns : '',
 			wpBase: typeof e.wpBase === 'string' ? e.wpBase : '',
 			recordsSchema: typeof e.recordsSchema === 'string' ? e.recordsSchema : '',
+			toolkits: typeof e.toolkits === 'string' ? e.toolkits : '',
 			dashboardsSchema: typeof e.dashboardsSchema === 'string' ? e.dashboardsSchema : '',
 			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
 			remoteSites: typeof e.remoteSites === 'string' ? e.remoteSites : '',

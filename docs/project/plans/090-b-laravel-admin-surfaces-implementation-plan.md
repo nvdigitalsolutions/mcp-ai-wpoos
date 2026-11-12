@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–3c implemented and verified; Phase 2 assistant-studio foundation and the Phase 3a/3b/3c persistence + operations + Pro-surfaces clusters implemented (2026-11-12) · Phases 4–5 planned
+**Status:** Phases 0–3d implemented and verified — the base console and the Phase 3 Pro surfaces run on the Laravel adapter (2026-11-12) · Phases 4–5 planned
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -62,14 +62,20 @@ Rank Math).
 | Schedule Manager (CRUD, toggle, trigger, history, results, fleet stats) | **Done (Phase 3c)** | `Pro\SchedulesController`, `nvoos_schedules` + `nvoos_schedule_runs` |
 | Records schema + `wp/v2` content shim | **Done (Phase 3c)** | `Pro\RecordsController`, `Wp\ContentController` over `nvoos_posts` |
 | Pro entitlement middleware on Pro routes | **Done (Phase 3c)** | `EnsureProEntitlement` (402 typed error, fails closed) |
-| File uploads, schedule presets, record remote/research, Pro manifests | **Pending (Phases 3b–4)** | §7 remainder + §8 |
+| Media library (list, read, multipart upload) | **Done (Phase 3d)** | `MediaController` + `Laravel\Adapter\FileUploadService` over `nvoos_files` |
+| Manifest-driven Pro toolkits | **Done (Phase 4.1/4.3)** | `ToolkitManifest`, `ToolkitManifestLoader`, `Pro\ToolkitsController`, `nvoos_toolkit_records` |
+| Schedule presets, record remote/research, thumbnails | **Pending (Phases 3–4)** | §7–§8 remainder |
+| Generic toolkit console screens | **Done (Phase 4.2)** | `spa-v2/src/features/toolkits/**`, `api/toolkits.ts`, `styles/toolkits.css` |
+| Console session/CSRF regression fixes | **Done** | single session store on login (`routes/api.php`), `AcceptWpNonce` header alias, stateful test origin |
 
 **Validation record (2026-11-12):**
 
 - Adapter PHPUnit: **34 tests, 101 assertions**
-- Console Vitest: **12 files, 112 tests**
+- Console Vitest: **14 files, 132 tests**
 - Console typecheck: clean
-- Laravel app PHPUnit: **72 tests, 508 assertions**
+- Laravel app PHPUnit: **96 tests, 672 assertions**
+- Console smoke (Laravel runtime, 2026-11-12): login → `/pro/toolkits` catalogue → Commerce settings / workbench create / dashboard aggregates all render against the seeded app at `:8001`
+- Core PHPUnit: **937 tests, 2,017 assertions** — 14 new `ToolkitManifestTest` tests pass; the 5 errors in `ToolRegistryIntegrationTest` are pre-existing (its discovery loop instantiates the abstract `AbstractResultTool`) and unrelated to this work
 - Phase 3b soak (30 min, 2026-11-12): **1,644 iterations / 19,731 requests / 0 violations** — p50 81.9 ms · p95 212.4 ms · p99 338.8 ms · max 982.2 ms at 10.96 req/s; app RSS flat (203 → 194 MiB), DB flat
 - `node --check scripts/serve.mjs`: clean
 
@@ -164,7 +170,7 @@ the estate reaches `bundle_imported`.
 | 3.8 | Analytics + performance monitor | `PerformanceMonitorInterface` | ✅ analytics; performance monitor ⏳ |
 | 3.9 | Security center + audit log | audit store | ✅ posture/headers/snapshots/self-test (8 native signals — see §14) |
 | 3.10 | Records + paper store | `ContentStoreInterface` + storage | ✅ Paper Store; ✅ content records via the `wp/v2` shim (posts/pages, list/get/create) |
-| 3.11 | File upload/validation | `FileUploadServiceInterface` | ⏳ |
+| 3.11 | File upload/validation | `FileUploadServiceInterface` | ✅ MIME-sniffed, size-capped, media disk + `wp/v2/media`-shaped surface |
 
 **Phase 3b notes**
 
@@ -205,19 +211,62 @@ the estate reaches `bundle_imported`.
 **Gate G3:** the contract suite is green for every enabled family; the auth matrix (admin/editor/
 author/viewer/guest/bearer) passes on every mutating route.
 
+**Phase 3d notes**
+
+- **Uploads are MIME-sniffed, not extension-trusted.** `Laravel\Adapter\FileUploadService`
+  keeps the core's allowlist (no SVG), caps at `NVOOS_UPLOAD_MAX_BYTES` (10 MiB default),
+  and derives the stored extension from the sniffed type, so a renamed `.php` cannot land
+  as executable content.
+- **Media has its own disk.** `NVOOS_MEDIA_DISK` defaults to `public`; the general storage
+  disk is often private. `Storage::url()` is normalised to an app-relative path so the
+  console loads media from its own origin. The entrypoint runs `storage:link`.
+- **Same `wp/v2` shape as content records.** `GET /api/v1/media` returns a JSON array with
+  `X-WP-Total` / `X-WP-TotalPages`; `media_details.sizes` is empty, so the client falls back
+  to `source_url` for every size (no thumbnail pipeline yet).
+- **Config namespace is `oos`, not `nvoos`.** The provider merges the adapter config under
+  `oos`; two Phase 3b/3c reads that used `nvoos.*` were corrected here (storage disk in the
+  security self-test, console rate limit).
+
 ---
 
 ## 8. Phase 4 — T3 Pro families (engine 4–6 weeks + 2–4 per family)
 
-| ID | Task | Files | Acceptance |
-|---|---|---|---|
-| 4.1 | `ToolkitManifest` schema + validator + loader | `lib/core`/app support | Invalid manifests fail closed |
-| 4.2 | Five generic console screens (settings, entity workbench, research & add, consolidate, dashboard) | `addons/pro/assets/spa-v2/src/features` | Screens render from a manifest |
-| 4.3 | Generic resource controller + settings schema endpoint | `ToolkitController` | `/api/v1/pro/toolkits/{slug}` |
-| 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error |
-| 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 |
-| 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages |
-| 4.7 | Contract fixtures per family | fixtures | Parity suite |
+| ID | Task | Files | Acceptance | Status |
+|---|---|---|---|---|
+| 4.1 | `ToolkitManifest` schema + validator + loader | `lib/core` + `App\Support\Pro` | Invalid manifests fail closed | ✅ |
+| 4.2 | Five generic console screens (settings, entity workbench, research & add, consolidate, dashboard) | `addons/pro/assets/spa-v2/src/features/toolkits` | Screens render from a manifest | ✅ settings / entities / dashboard live; research + consolidate shipped as scaffolds |
+| 4.3 | Generic resource controller + settings schema endpoint | `ToolkitController` | `/api/v1/pro/toolkits/{slug}` | ✅ list/show/settings/dashboard/entity CRUD |
+| 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error | ✅ route middleware + per-manifest feature checks |
+| 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | ⏳ commerce + documents manifests shipped (data only); media is the built-in library |
+| 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | ⏳ |
+| 4.7 | Contract fixtures per family | fixtures | Parity suite | ⏳ |
+
+**Phase 4 notes**
+
+- **A toolkit is data.** `ToolkitManifest` validates slug/version/screens/settings/entities/
+  dashboard and rejects unknown keys, dangling `entity:` references and unknown types, so a
+  bad manifest is skipped and reported through `GET /api/v1/pro/toolkits` → `invalid`.
+- **One controller, one table.** `nvoos_toolkit_records` stores `{toolkit, entity, external_id,
+  data}`; filters and aggregates run through `json_extract`, which behaves the same on MySQL
+  and SQLite. Entity payloads are validated against the manifest's columns (types, enums,
+  required, unknown-field rejection), and the `id_field` is immutable after create.
+- **Entitlement is per manifest, not per route.** The list filters unentitled families; direct
+  access answers the typed 402 carrying the manifest's `feature`.
+- **Remaining before G4:** the service layer behind the toolkits (4.5–4.7). The five console
+  screens exist; `research` and `consolidate` are deliberate scaffolds (see §14).
+
+**Phase 4.2 notes**
+
+- **One shell, manifest-driven tabs.** `ToolkitPage` renders only the screens the manifest
+  declares, in a fixed order, from a single `SCREEN_META` map — adding a screen to a manifest
+  adds a tab with no host changes.
+- **The client is typed.** `ToolkitsClient` raises `ToolkitsApiError` carrying `code` and `fields`,
+  so the forms surface per-field validation messages from the backend rather than a generic
+  banner. `available` is false when the runtime has no toolkit endpoint (the WordPress runtime
+  today), and the nav entry is capability-gated so it simply does not appear there.
+- **Screens own their data.** The shell owns the manifest and the active tab only; each screen
+  loads its own slice, which keeps the entity table's paging/search independent of the
+  dashboard aggregates.
 
 **Gate G4:** a pilot toolkit installs from a manifest with zero bespoke PHP pages; paid surfaces
 return the typed entitlement error under the `deny` driver.
@@ -271,9 +320,12 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `lib/laravel-adapter/src/Adapter/ProEntitlement.php` (new)
 - `lib/laravel-adapter/src/Adapter/JobStatusStore.php` (`counts()`, raw rows, retry/dismiss)
 - `lib/laravel-adapter/src/Adapter/{TranscriptStore,MemoryStore,SessionLogStore,TokenUsage,RateLimiter}.php` (new)
+- `lib/core/src/Domain/ValueObject/ToolkitManifest.php` (new)
+- `lib/laravel-adapter/src/Adapter/FileUploadService.php` (new)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000009..000012_*.php` (new)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000013..000016_*.php` (new — approvals, triggers, security snapshots, paper records)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000017..000018_*.php` (new — schedules console columns, schedule runs)
+- `lib/laravel-adapter/database/migrations/2026_01_01_000019_create_nvoos_toolkit_records_table.php` (new)
 - `lib/laravel-adapter/config/nvoos.php` (`pro_entitlement`, `features`)
 - `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` (binding)
 - `lib/laravel-adapter/tests/ProEntitlementTest.php` (new)
@@ -288,6 +340,20 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `examples/nvoos-complete-velocity/src/__tests__/laravel-profile.test.ts` (new)
 - `examples/nvoos-complete-velocity/src/__tests__/laravel-login.test.ts` (new)
 
+**Console — Phase 4.2 toolkit screens**
+
+- `addons/pro/assets/spa-v2/src/api/toolkits.ts` (`ToolkitsClient`, `ToolkitsApiError`)
+- `addons/pro/assets/spa-v2/src/features/toolkits/{ToolkitsPage,ToolkitPage}.tsx`
+- `addons/pro/assets/spa-v2/src/features/toolkits/screens/{Settings,Entities,Dashboard,Research,Consolidate}Screen.tsx`
+- `addons/pro/assets/spa-v2/src/features/toolkits/components/EntityForm.tsx`
+- `addons/pro/assets/spa-v2/src/features/toolkits/format.ts`
+- `addons/pro/assets/spa-v2/src/styles/toolkits.css`
+- `addons/pro/assets/spa-v2/src/{router.tsx,index.tsx,api/config.ts}` (routes, CSS import, endpoint)
+- `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php` (`toolkits` endpoint)
+- `examples/nvoos-complete-velocity/src/console/{ConsoleShell.tsx,nav-features.tsx}` (routes + nav)
+- `examples/nvoos-complete-velocity/src/runtime-config.ts` (Laravel-only endpoint)
+- `examples/nvoos-complete-velocity/src/__tests__/toolkits-{client,format}.test.ts` (new)
+
 **Laravel app skeleton**
 
 - `app/Http/Controllers/{FeaturesController,SessionController,SiteController,ToolsController,OpsController}.php`
@@ -296,6 +362,9 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Controllers/{ApprovalsController,TriggersController,SecurityController,PaperStoreController}.php`
 - `app/Http/Controllers/Pro/{SchedulesController,PresetsController,RecordsController}.php`
 - `app/Http/Controllers/Wp/ContentController.php` (wp/v2 content shim)
+- `app/Http/Controllers/MediaController.php` (wp/v2/media shim)
+- `app/Support/Pro/ToolkitManifestLoader.php` + `app/Http/Controllers/Pro/ToolkitsController.php`
+- `resources/pro-toolkits/{commerce,documents}.json`
 - `app/Http/Middleware/EnsureProEntitlement.php`
 - `app/Http/Controllers/{AssistantController,AssistantPortabilityController}.php`
 - `app/Support/{CapabilityMap,SettingsSchema}.php`
@@ -304,8 +373,20 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Middleware/AcceptWpNonce.php`
 - `routes/api.php`
 - `bootstrap/app.php` (`statefulApi()`, CSRF alias)
-- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest}.php`
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest,Phase4Test}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
+
+**Runtime plumbing (Phase 4.2)**
+
+- `routes/api.php` — login/logout stay on the `api` group so Sanctum owns a single session;
+  only `/session/nonce` keeps `web` (a GET always needs a session to mint from).
+- `app/Http/Middleware/AcceptWpNonce.php` — pure header alias, registered on both groups. It
+  runs before `StartSession`, so it must not compare against a session token;
+  `ValidateCsrfToken` still performs the comparison.
+- `bootstrap/app.php` — `statefulApi()` plus the alias on `web` and `api`.
+- `scripts/serve.mjs` — keeps `Origin`/`Referer` for the Laravel backend; Sanctum's stateful
+  check reads them (`NVOOS_BACKEND=wordpress` still strips them).
+- `docker/laravel/entrypoint.sh` — idempotent `php artisan storage:link` for media uploads.
 
 ---
 
@@ -314,9 +395,10 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 | Layer | Command | Current |
 |---|---|---|
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
-| Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 112 pass |
+| Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 132 pass |
 | Console types | `npm run typecheck` | clean |
-| Laravel app | `docker exec oos-laravel-app php artisan test` | 72 pass |
+| Laravel app | `docker exec oos-laravel-app php artisan test` | 96 pass |
+| Core | `cd lib/core && php -d extension=fileinfo vendor/bin/phpunit` | 937 tests (5 pre-existing `ToolRegistryIntegrationTest` errors) |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
 CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
@@ -362,6 +444,9 @@ so only approval history grows during a run.
 | `NVOOS_PRO_PLAN` | Laravel adapter | plan label for diagnostics |
 | `NVOOS_PRO_ENTITLEMENT_FEATURES` | Laravel adapter | JSON map for the `config` driver (optional) |
 | `NVOOS_CONSOLE_RATE_LIMIT` | Laravel adapter | Console CRUD requests/minute per user (default `600`); tool execution keeps `throttle:tools` at 60/min |
+| `NVOOS_MEDIA_DISK` | Laravel adapter | Disk for uploads (default `public`); must be publicly served |
+| `NVOOS_UPLOAD_MAX_BYTES` | Laravel adapter | Maximum upload size in bytes (default `10485760`) |
+| `NVOOS_TOOLKIT_MANIFESTS` | Laravel adapter | Directory of toolkit JSON manifests; empty falls back to `resources/pro-toolkits` |
 
 **Deployment:** the Service Exchange deploys the same console artifact; `NVOOS_BACKEND=laravel` plus
 `NVOOS_TARGET_SITE=<laravel-origin>` satisfies `console_deployed`. **Rollback:** flip
@@ -390,7 +475,12 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 | Records remote proxy + create-from-research | Not ported | Bound to Remote Sites and the Pro `deep_research` pipeline; both answer 501 with a typed message |
 | Schedule presets | Not ported | `/api/v1/pro/presets` returns an empty catalogue; install answers 404 |
 | Schedule execution model | Synchronous | `trigger` runs the handler inline and records the run; move to queued execution when long-running toolkits are ported |
+| Media thumbnails / alt text | Not ported | `media_details.sizes` is empty and `alt_text` is write-once blank; add a thumbnail pipeline and an update route when the media toolkit is ported |
 | WP-native integrations | Non-goal | Deep-link or mark unavailable |
+| Toolkit `research` screen | Scaffold | Renders the manifest's prompt + existing records; returns no AI drafting because the Laravel runtime has no `deep_research` pipeline. Wire it to the provider router in Phase 4.5 |
+| Toolkit `consolidate` screen | Bounded | Scans the first 100 records of each entity (one page) to keep the request O(1). Move to a queued job when a family needs full-catalogue dedupe |
+| `/pro/toolkits` on the WordPress runtime | Not ported | The WordPress Pro SPA config returns `toolkits: ''`; `ToolkitsClient.available` is false and the nav entry is hidden. Port the REST controller in Phase 4.6 when families migrate |
+| Non-stateful session login | Decided | A POST to `/session/login` without a first-party `Referer`/`Origin` answers a typed 419 `session_required` instead of a 500 (browser-only flow) |
 
 ---
 
@@ -402,6 +492,8 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 3a — transcripts, memory, session logs, token usage/cost, rate limiter
 - [x] Phase 3b — approvals, workflow triggers, security center (posture/headers/snapshots/self-test), paper store
 - [x] Phase 3c — schedule manager, records schema, `wp/v2` content shim, Pro entitlement middleware
-- [ ] Phase 3 remainder — file uploads (task 3.11)
-- [ ] Phase 4 — Pro manifest engine + pilot families
+- [x] Phase 3d — media library + upload service (task 3.11)
+- [x] Phase 4.1 + 4.3 — toolkit manifest contract, loader, generic engine
+- [x] Phase 4.2 — generic toolkit console screens (settings, workbench, dashboard live; research + consolidate scaffolds)
+- [ ] Phase 4.5–4.7 — toolkit service layer + contract fixtures
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates
