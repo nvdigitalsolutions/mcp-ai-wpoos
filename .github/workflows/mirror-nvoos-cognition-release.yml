@@ -1,0 +1,90 @@
+# Mirror the NV oOS Cognition desktop release into nvdigitalsolutions/nvoos-cognition.
+#
+# publish-nvoos-dictate.yml cuts the app release on `nvoos-dictate-v*` tags,
+# but it creates a DRAFT release — a read-only token cannot download drafts.
+# So this workflow is dispatch-only: publish the monorepo release first, then
+# dispatch it with the tag.
+#
+# Artifacts are mirrored only. latest.json and src-tauri/tauri.conf.json keep
+# pointing at the monorepo release feed, so installed apps still auto-update
+# from mcp-ai-wpoos. See docs/project/releases/MIRROR_RELEASES.md.
+
+name: Mirror NV oOS Cognition Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published monorepo release tag (nvoos-dictate-vX.Y.Z)'
+        required: true
+        type: string
+  # Self-referential only: GitHub registers a dispatch-only workflow once it
+  # has run from a push, so this makes it dispatchable on alpha-working before
+  # the file reaches main. Every job is guarded to workflow_dispatch below.
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - '.github/workflows/mirror-nvoos-cognition-release.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    name: Resolve release tag
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Validate tag
+        id: version
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          case "${TAG}" in
+            nvoos-dictate-v*) ;;
+            *)
+              echo "::error::tag must match nvoos-dictate-v<semver> (got '${TAG}')."
+              exit 1
+              ;;
+          esac
+          VERSION="${TAG#nvoos-dictate-v}"
+          if ! printf '%s' "${VERSION}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$'; then
+            echo "::error::'${VERSION}' is not a semver version."
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+  mirror-release:
+    name: Mirror Release
+    if: github.event_name == 'workflow_dispatch'
+    needs: resolve
+    uses: ./.github/workflows/mirror-release.yml
+    with:
+      mirror_repo: nvdigitalsolutions/nvoos-cognition
+      tag: ${{ inputs.tag }}
+      source_tag: ${{ inputs.tag }}
+      release_name: NV oOS Cognition v${{ needs.resolve.outputs.version }}
+      version_file: package.json
+      version_format: json
+      asset_patterns: |
+        *.exe
+        *.msi
+        *.dmg
+        latest.json
+        *.sig
+      body: |
+        ## NV oOS Cognition v${{ needs.resolve.outputs.version }}
+
+        Windows installer (NSIS + MSI) and a universal macOS DMG
+        (Apple Silicon + Intel, macOS 13+).
+
+        **Unsigned builds** — SmartScreen on Windows and Gatekeeper on
+        macOS may warn; on macOS use right-click → Open.
+
+        Mirror of the monorepo release. The in-app updater continues to
+        check the monorepo release feed.
+    secrets:
+      MIRROR_TOKEN: ${{ secrets.NVOOS_COGNITION_REPO_TOKEN }}
