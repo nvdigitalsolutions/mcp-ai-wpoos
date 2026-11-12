@@ -1,0 +1,7 @@
+# Build context is docker/laravel. Only the runtime image inputs are needed.
+app-skeleton/vendor/
+app-skeleton/node_modules/
+app-skeleton/.env
+app-skeleton/storage/
+app-skeleton/database/*.sqlite
+app/

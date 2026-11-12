@@ -204,6 +204,20 @@ class SseHandler {
 	}
 
 	/**
+	 * Mark headers as already sent by the platform.
+	 *
+	 * Framework integrations that own the HTTP response (for example a
+	 * Laravel StreamedResponse) set the SSE headers themselves before
+	 * invoking the handler. Calling this method prevents sendHeaders()
+	 * from emitting global headers a second time.
+	 *
+	 * @since 1.4.0
+	 */
+	public function markHeadersSent(): void {
+		$this->headersSent = true;
+	}
+
+	/**
 	 * Whether headers have already been sent.
 	 */
 	public function isActive(): bool {

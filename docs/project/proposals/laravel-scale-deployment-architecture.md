@@ -2,7 +2,7 @@
 
 ## Proposal: Central Laravel Orchestrator with Redis Queue, Reverb WebSockets, pgvector, and Federated Mesh Routing
 
-**Status:** Proposal  
+**Status:** Proposal (production orchestrator). **Dev spike implemented 2026-11-12** — `nvoos/core` + `nvoos/laravel-adapter` on Laravel 12.72 / Octane 2.24 / FrankenPHP, P1–P7 green; see [`090-laravel-adapter-spike-report.md`](../plans/090-laravel-adapter-spike-report.md). Horizon/Reverb/pgvector production wiring remains proposal-only.  
 **Author:** AI Agent (Zed) — Multi-Agent Ecosystem Review  
 **Date:** 2026-07-01  
 **Version:** 1.0.0  
@@ -329,7 +329,7 @@ Deploy the oOS Core on **Laravel Octane** with:
        'https' => true,
        'workers' => env('OCTANE_WORKERS', 'auto'),  // 1 per CPU core + 1
        'max_requests' => 500,
-       'warm' => true,  // Pre-fork workers
+       'warm' => [...\Laravel\Octane\Octane::defaultServicesToWarm()],  // Pre-fork/warm services
    ];
    ```
 
@@ -347,12 +347,14 @@ Deploy the oOS Core on **Laravel Octane** with:
 
 #### 4.1.3 Deliverables
 
-- [x] `deploy/laravel-orchestrator/` Laravel application scaffolded
+> **Status correction (2026-11-12):** the dev spike lives in `docker/laravel/` (`Dockerfile`, `entrypoint.sh`, `app-skeleton/`) and the companion `docker/docker-compose.laravel.yml`. The `deploy/laravel-orchestrator/` paths below were aspirational and are **not** present in the repo; treat them as the production follow-up.
+
+- [ ] `deploy/laravel-orchestrator/` Laravel application scaffolded
 - [x] `NvoosServiceProvider` registering all bindings
-- [x] `config/oos.php` with all environment-driven settings
-- [x] Octane configured with FrankenPHP, warmed workers
-- [x] Supervisor/systemd production config
-- [x] README with setup instructions
+- [x] `config/nvoos.php` merged as `oos` (package config; no app-level publish needed)
+- [x] Octane configured with FrankenPHP (`docker/laravel/app-skeleton/config/octane.php`)
+- [ ] Supervisor/systemd production config
+- [x] README with setup instructions (`docker/laravel/README.md`)
 
 ---
 

@@ -318,10 +318,12 @@ README pointers, and workflow targets.
 - [x] Owner confirms **Laravel over FastAPI** — resolved 2026-10-25
       (decision #15, `fastapi-porting-implementation-plan.md` §18; flip
       conditions in `090-laravel-adapter-spike-implementation-plan.md` §8).
-- [ ] **Laravel adapter spike** completed in dev: `nvoos/core` +
+- [x] **Laravel adapter spike** completed in dev: `nvoos/core` +
       `nvoos/laravel-adapter` on Octane (FrankenPHP) with one real tool
       executed end-to-end — the repo's stated v1.4.0 spike, de-risking the
-      adapter's missing production track record.
+      adapter's missing production track record. Evidence:
+      [`090-laravel-adapter-spike-report.md`](../plans/090-laravel-adapter-spike-report.md)
+      (P1–P7 green 2026-11-12; formal 30-minute soak clean).
 - [ ] Golden-contract suite captured: the bridge REST responses frozen as
       fixtures (the PWA-facing Payload envelope is the migration invariant).
 

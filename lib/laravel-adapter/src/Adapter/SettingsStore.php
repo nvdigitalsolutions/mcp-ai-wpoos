@@ -58,13 +58,6 @@ class SettingsStore implements SettingsStoreInterface {
 	);
 
 	/**
-	 * Cached merged settings to avoid repeated DB + config reads per request.
-	 *
-	 * @var array<string, mixed>|null
-	 */
-	private ?array $cached = null;
-
-	/**
 	 * @param string $table  Database table for runtime settings. Defaults to 'nvoos_settings'.
 	 */
 	public function __construct( string $table = 'nvoos_settings' ) {
@@ -94,20 +87,14 @@ class SettingsStore implements SettingsStoreInterface {
 	 * @return array<string, mixed>
 	 */
 	public function all(): array {
-		if ( null !== $this->cached ) {
-			return $this->cached;
-		}
+		$fileSettings = Config::get( self::CONFIG_KEY, array() );
+		$dbSettings   = $this->loadFromDatabase();
 
-		$fileSettings   = Config::get( self::CONFIG_KEY, array() );
-		$dbSettings     = $this->loadFromDatabase();
-
-		$this->cached = array_merge(
+		return array_merge(
 			self::DEFAULTS,
 			is_array( $fileSettings ) ? $fileSettings : array(),
 			$dbSettings,
 		);
-
-		return $this->cached;
 	}
 
 	/**
@@ -131,9 +118,6 @@ class SettingsStore implements SettingsStoreInterface {
 			array( 'key' ),
 			array( 'value', 'updated_at' ),
 		);
-
-		// Bust the in-memory cache so the next all() picks up the change.
-		$this->cached = null;
 	}
 
 	/**
@@ -145,7 +129,6 @@ class SettingsStore implements SettingsStoreInterface {
 	 */
 	public function delete( string $key ): void {
 		DB::table( $this->table )->where( 'key', $key )->delete();
-		$this->cached = null;
 	}
 
 	/**
