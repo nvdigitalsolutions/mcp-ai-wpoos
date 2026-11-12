@@ -1,0 +1,36 @@
+{
+    "request": {
+        "method": "GET",
+        "uri": "/api/v1/pro/toolkits/commerce/settings"
+    },
+    "status": 200,
+    "headers": {
+        "content-type": "application/json"
+    },
+    "body": {
+        "success": true,
+        "data": {
+            "slug": "commerce",
+            "schema": [
+                {
+                    "key": "currency",
+                    "label": "Display currency",
+                    "type": "text",
+                    "default": "USD",
+                    "description": "ISO 4217 code used in the workbench and dashboard."
+                },
+                {
+                    "key": "low_stock_threshold",
+                    "label": "Low stock threshold",
+                    "type": "number",
+                    "default": 5,
+                    "description": "Products at or below this stock level are flagged."
+                }
+            ],
+            "values": {
+                "currency": "USD",
+                "low_stock_threshold": 5
+            }
+        }
+    }
+}

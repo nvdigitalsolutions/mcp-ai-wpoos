@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–3d and 4.1–4.5 implemented and verified — the base console, the Phase 3 Pro surfaces and the manifest-driven toolkit engine (including draft-from-query research) run on the Laravel adapter (2026-11-13) · Phases 4.6–5 planned
+**Status:** Phases 0–3d and 4.1–4.7 implemented and verified — the base console, the Phase 3 Pro surfaces, the manifest-driven toolkit engine and its contract fixture harness run on the Laravel adapter (2026-11-13) · Phase 4.6 and 5 planned
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -112,7 +112,7 @@ Rank Math).
 | 0.10 | Enable Sanctum SPA cookie mode (`statefulApi()`) | `bootstrap/app.php` | ✅ |
 | 0.11 | Add `JobStatusStore::counts()` for ops diagnostics | `lib/laravel-adapter/src/Adapter/JobStatusStore.php` | ✅ |
 | 0.12 | Feature/unit tests for all of the above | `tests/Feature/Phase0ContractTest.php`, `tests/Unit/AcceptWpNonceTest.php`, adapter test | ✅ |
-| 0.13 | Capture golden fixtures from a live WordPress Complete site | `docker/laravel/fixtures/` | ⏳ |
+| 0.13 | Capture golden fixtures from a live WordPress Complete site | `docker/laravel/app-skeleton/fixtures/` | 🟡 harness shipped (Laravel-captured); WP capture blocked on 4.6 |
 | 0.14 | Document the env contract and rollback | this document | ✅ |
 
 **Exit gate:** met — console boots against a stub/Laravel backend, fails loudly on a contract
@@ -239,7 +239,7 @@ author/viewer/guest/bearer) passes on every mutating route.
 | 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error | ✅ route middleware + per-manifest feature checks |
 | 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | 🟡 commerce + documents manifests shipped; **research drafting wired**; media is the built-in library |
 | 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | ⏳ |
-| 4.7 | Contract fixtures per family | fixtures | Parity suite | ⏳ |
+| 4.7 | Contract fixtures per family | fixtures | Parity suite | ✅ capture command + 6 fixtures + shape replay + CI job |
 
 **Phase 4 notes**
 
@@ -290,25 +290,38 @@ return the typed entitlement error under the `deny` driver.
 
 ## 10. Contract fixture harness
 
+Shipped (4.7). Fixtures live beside the skeleton and ship with it:
+
 ```
-docker/laravel/fixtures/
-  mcp-ai-v1/
-    features.json
-    session-me.json
-    tools.json
-    assistants/list.json
+docker/laravel/app-skeleton/fixtures/
   mcp-ai-pro-v1/
-    ops-overview.json
+    toolkits/index.json
     toolkits/commerce.json
+    toolkits/commerce.settings.json
+    toolkits/commerce.dashboard.json
+    toolkits/commerce.entities.product.json
+    toolkits/documents.json
 ```
 
-- Capture: a read-only script hits the WordPress Complete site with an operator token and writes
-  `{ request, status, headers, body }` per route.
-- Replay: Laravel feature tests assert the response shape against the fixture (keys, types, envelope,
-  pagination), not byte equality.
-- CI: a fixture diff job fails when a WP contract changes without a corresponding Laravel update.
+- **Capture.** `php artisan fixtures:capture` runs the routes in-process through
+the HTTP kernel with a short-lived Sanctum bearer token — the same path an
+operator token uses — and writes `{ request, status, headers, body }` per route.
+It reuses an existing administrator or creates and deletes a temporary one.
+- **Refresh.** Capture into the runtime copy (`base_path('fixtures')`), then copy
+the files back into `app-skeleton/fixtures/`: the repo mount is read-only inside
+the container.
+- **Replay.** `FixtureReplayTest` asserts the live response's **shape** (keys and
+types, recursively) and its status — not values. Captured rows and totals do not
+need to match the CI database, while a renamed key, a dropped field or a
+stringified number fails.
+- **CI.** `.github/workflows/laravel-app.yml` runs the suite on SQLite with the
+same `phpunit.xml` the container uses, so the replay test gates every change
+under `docker/laravel/**`, `lib/core/**` and `lib/laravel-adapter/**`.
 
-Phase 0 shape tests stand in until a live site is available for capture (task 0.13).
+The `mcp-ai-v1/` fixtures and a WordPress-captured set still depend on task 0.13
+(a live site + operator token). Until 4.6 ports the toolkit controller to
+WordPress, the toolkit fixtures are Laravel-captured — they pin the contract the
+engine serves today, and are re-captured from WordPress when the peer lands.
 
 ---
 
@@ -465,7 +478,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 
 | Item | Status | Next |
 |---|---|---|
-| Golden fixtures from a live WP site | Pending | Task 0.13; needs an operator token |
+| Golden fixtures from a live WP site | Harness shipped | Task 0.13; Laravel-captured set committed, re-capture from WordPress when 4.6 lands (needs an operator token) |
 | Laravel login screen / bearer harness for C2 | **Done** | Phase 1; the console branches on the backend |
 | Commercial entitlement source | Decided as a seam; source open | Phase 5 task 5.1 |
 | Pro toolkits as peers | Open (Q4) | Decide per family in Phase 4 |
@@ -497,5 +510,6 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 4.1 + 4.3 — toolkit manifest contract, loader, generic engine
 - [x] Phase 4.2 — generic toolkit console screens (settings, workbench, dashboard, consolidate live; research scaffold replaced in 4.5)
 - [x] Phase 4.5 — toolkit research service: draft-from-query endpoint + console wiring (draft only; saving still goes through `storeEntity`)
-- [ ] Phase 4.6–4.7 — migrate families one at a time (WP peer) + golden contract fixtures
+- [x] Phase 4.7 — contract fixtures: `fixtures:capture`, per-family fixtures, shape replay, CI job
+- [ ] Phase 4.6 — migrate families one at a time (WordPress peer)
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates

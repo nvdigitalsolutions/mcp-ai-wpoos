@@ -1,0 +1,67 @@
+name: Laravel App
+
+# The Laravel runtime had no CI coverage: `docker exec … php artisan test` was
+# the only way to know it worked, and the fixture replay gate (090-b §10) had
+# nothing enforcing it. This job runs the skeleton's suite on SQLite — the same
+# phpunit.xml the container uses — including FixtureReplayTest.
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docker/laravel/**'
+      - 'lib/core/**'
+      - 'lib/laravel-adapter/**'
+      - '.github/workflows/laravel-app.yml'
+  pull_request:
+    paths:
+      - 'docker/laravel/**'
+      - 'lib/core/**'
+      - 'lib/laravel-adapter/**'
+      - '.github/workflows/laravel-app.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    name: App suite (SQLite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docker/laravel/app-skeleton
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: fileinfo, mbstring, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-laravel-app-${{ hashFiles('docker/laravel/app-skeleton/composer.lock', 'lib/core/composer.json', 'lib/laravel-adapter/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-laravel-app-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Prepare the application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Run the suite
+        run: php artisan test
