@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–1 implemented and verified; Phase 2 assistant-studio foundation implemented (2026-11-12) · Phases 3–5 planned
+**Status:** Phases 0–1 implemented and verified; Phase 2 assistant-studio foundation and Phase 3a persistence cluster implemented (2026-11-12) · Phases 3b–5 planned
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -49,17 +49,20 @@ Rank Math).
 | Assistant CRUD + default handling | **Done (Phase 2)** | `AssistantController`, `Assistant` model |
 | Bundle v1 export/import | **Done (Phase 2)** | `AssistantPortabilityController` |
 | Assistant domain contract | **Done (Phase 2)** | `LaravelAssistantService` |
+| Transcripts + memory + session logs | **Done (Phase 3a)** | `TranscriptStore`, `MemoryStore`, `SessionLogStore`, console endpoints |
+| Token usage + cost analytics | **Done (Phase 3a)** | `TokenUsage`, `AnalyticsController` |
+| Rate limiter | **Done (Phase 3a)** | `RateLimiter` adapter |
 | Golden fixtures captured from WordPress | **Pending** | Shape tests stand in; capture requires a live Complete site |
 | Playwright T0 smoke (G1) | **Pending** | Phase 1 task 1.7 |
 | Blueprints/teams/test-assistant | **Pending (Phase 2)** | See §6 |
-| Core ops adapters, Pro manifests | **Pending (Phases 3–4)** | See §7–§8 |
+| Approvals/schedules/security/records/uploads, Pro manifests | **Pending (Phases 3b–4)** | See §7–§8 |
 
 **Validation record (2026-11-12):**
 
 - Adapter PHPUnit: **34 tests, 101 assertions**
 - Console Vitest: **12 files, 112 tests**
 - Console typecheck: clean
-- Laravel app PHPUnit: **34 tests, 141 assertions**
+| Laravel app PHPUnit: **38 tests, 192 assertions**
 - `node --check scripts/serve.mjs`: clean
 
 ---
@@ -141,19 +144,19 @@ the estate reaches `bundle_imported`.
 
 ## 7. Phase 3 — T2 core operations (6–8 weeks)
 
-| ID | Task | Contract | Acceptance |
+| ID | Task | Contract | Status |
 |---|---|---|---|
-| 3.1 | Transcript store + endpoints | `TranscriptStoreInterface` | list/get/export |
-| 3.2 | Memory store (preferences, facts, search) | `MemoryStoreInterface` | Console Memory surfaces |
-| 3.3 | Session log store | `SessionLogStoreInterface` | Session history |
-| 3.4 | Token usage + cost tracking | `TokenUsageInterface`, `CostTrackingServiceInterface` | Analytics numbers match usage |
-| 3.5 | Rate limiter adapter | `RateLimiterInterface` | Per-ability limits |
-| 3.6 | Approvals + orchestration control | `OrchestrationControlInterface` | Approve/reject flow |
-| 3.7 | Schedules + triggers | queue + cron status | Schedule Manager works |
-| 3.8 | Analytics + performance monitor | `PerformanceMonitorInterface` | Analytics page |
-| 3.9 | Security center + audit log | `ErrorTrackingServiceInterface` + audit | Security page |
-| 3.10 | Records + paper store | `ContentStoreInterface` + storage | Records/Paper Store pages |
-| 3.11 | File upload/validation | `FileUploadServiceInterface`, `FileValidationServiceInterface` | Media upload works |
+| 3.1 | Transcript store + endpoints | `TranscriptStoreInterface` | ✅ |
+| 3.2 | Memory store (preferences, recall, store, update, delete, audit) | `MemoryStoreInterface` | ✅ |
+| 3.3 | Session log store | `SessionLogStoreInterface` | ✅ (adapter; no console surface yet) |
+| 3.4 | Token usage + cost aggregation | `TokenUsageInterface` | ✅ |
+| 3.5 | Rate limiter adapter | `RateLimiterInterface` | ✅ |
+| 3.6 | Approvals + orchestration control | `OrchestrationControlInterface` | ⏳ |
+| 3.7 | Schedules + triggers | queue + cron status | ⏳ |
+| 3.8 | Analytics + performance monitor | `PerformanceMonitorInterface` | ✅ analytics; performance monitor ⏳ |
+| 3.9 | Security center + audit log | audit store | ⏳ |
+| 3.10 | Records + paper store | `ContentStoreInterface` + storage | ⏳ |
+| 3.11 | File upload/validation | `FileUploadServiceInterface` | ⏳ |
 
 **Gate G3:** the contract suite is green for every enabled family; the auth matrix (admin/editor/
 author/viewer/guest/bearer) passes on every mutating route.
@@ -216,13 +219,15 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 
 ---
 
-## 11. File map (Phases 0–2 implementation)
+## 11. File map (Phases 0–3a implementation)
 
 **Core / adapter**
 
 - `lib/core/src/Domain/Contract/ProEntitlementInterface.php` (new)
 - `lib/laravel-adapter/src/Adapter/ProEntitlement.php` (new)
 - `lib/laravel-adapter/src/Adapter/JobStatusStore.php` (`counts()`, raw rows, retry/dismiss)
+- `lib/laravel-adapter/src/Adapter/{TranscriptStore,MemoryStore,SessionLogStore,TokenUsage,RateLimiter}.php` (new)
+- `lib/laravel-adapter/database/migrations/2026_01_01_000009..000012_*.php` (new)
 - `lib/laravel-adapter/config/nvoos.php` (`pro_entitlement`, `features`)
 - `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` (binding)
 - `lib/laravel-adapter/tests/ProEntitlementTest.php` (new)
@@ -241,6 +246,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 
 - `app/Http/Controllers/{FeaturesController,SessionController,SiteController,ToolsController,OpsController}.php`
 - `app/Http/Controllers/{SettingsController,DiagnosticsController,OperationsController}.php`
+- `app/Http/Controllers/{TranscriptsController,MemoryController,AnalyticsController}.php`
 - `app/Http/Controllers/{AssistantController,AssistantPortabilityController}.php`
 - `app/Support/{CapabilityMap,SettingsSchema}.php`
 - `app/Services/LaravelAssistantService.php`
@@ -248,7 +254,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Middleware/AcceptWpNonce.php`
 - `routes/api.php`
 - `bootstrap/app.php` (`statefulApi()`, CSRF alias)
-- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest}.php`
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
 
 ---
@@ -260,7 +266,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
 | Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 112 pass |
 | Console types | `npm run typecheck` | clean |
-| Laravel app | `docker exec oos-laravel-app php artisan test` | 34 pass |
+| Laravel app | `docker exec oos-laravel-app php artisan test` | 38 pass |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
 CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
@@ -305,6 +311,7 @@ run the Laravel app suite on PRs touching `docker/laravel/**`.
 - [x] Phase 0 — contract freeze, runtime profile, assertion, T0 endpoints, CSRF alias
 - [x] Phase 1 — T0 ops console (Playwright smoke pending)
 - [x] Phase 2 foundation — assistant CRUD + bundle export/import (blueprints/teams/test-assistant pending)
-- [ ] Phase 3 — core operations (transcripts, memory, tokens, approvals, analytics, records)
+- [x] Phase 3a — transcripts, memory, session logs, token usage/cost, rate limiter
+- [ ] Phase 3b — approvals, schedules/triggers, security/audit, records/paper store, uploads
 - [ ] Phase 4 — Pro manifest engine + pilot families
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates
