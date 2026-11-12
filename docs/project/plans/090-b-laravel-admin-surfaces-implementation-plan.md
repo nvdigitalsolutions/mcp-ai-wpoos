@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–3c implemented and verified; Phase 2 assistant-studio foundation and the Phase 3a/3b/3c persistence + operations + Pro-surfaces clusters implemented (2026-11-12) · Phases 4–5 planned
+**Status:** Phases 0–3d implemented and verified — the base console and the Phase 3 Pro surfaces run on the Laravel adapter (2026-11-12) · Phases 4–5 planned
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -62,14 +62,15 @@ Rank Math).
 | Schedule Manager (CRUD, toggle, trigger, history, results, fleet stats) | **Done (Phase 3c)** | `Pro\SchedulesController`, `nvoos_schedules` + `nvoos_schedule_runs` |
 | Records schema + `wp/v2` content shim | **Done (Phase 3c)** | `Pro\RecordsController`, `Wp\ContentController` over `nvoos_posts` |
 | Pro entitlement middleware on Pro routes | **Done (Phase 3c)** | `EnsureProEntitlement` (402 typed error, fails closed) |
-| File uploads, schedule presets, record remote/research, Pro manifests | **Pending (Phases 3b–4)** | §7 remainder + §8 |
+| Media library (list, read, multipart upload) | **Done (Phase 3d)** | `MediaController` + `Laravel\Adapter\FileUploadService` over `nvoos_files` |
+| Schedule presets, record remote/research, thumbnails, Pro manifests | **Pending (Phases 3–4)** | §7 remainder + §8 |
 
 **Validation record (2026-11-12):**
 
 - Adapter PHPUnit: **34 tests, 101 assertions**
 - Console Vitest: **12 files, 112 tests**
 - Console typecheck: clean
-- Laravel app PHPUnit: **72 tests, 508 assertions**
+- Laravel app PHPUnit: **80 tests, 563 assertions**
 - Phase 3b soak (30 min, 2026-11-12): **1,644 iterations / 19,731 requests / 0 violations** — p50 81.9 ms · p95 212.4 ms · p99 338.8 ms · max 982.2 ms at 10.96 req/s; app RSS flat (203 → 194 MiB), DB flat
 - `node --check scripts/serve.mjs`: clean
 
@@ -164,7 +165,7 @@ the estate reaches `bundle_imported`.
 | 3.8 | Analytics + performance monitor | `PerformanceMonitorInterface` | ✅ analytics; performance monitor ⏳ |
 | 3.9 | Security center + audit log | audit store | ✅ posture/headers/snapshots/self-test (8 native signals — see §14) |
 | 3.10 | Records + paper store | `ContentStoreInterface` + storage | ✅ Paper Store; ✅ content records via the `wp/v2` shim (posts/pages, list/get/create) |
-| 3.11 | File upload/validation | `FileUploadServiceInterface` | ⏳ |
+| 3.11 | File upload/validation | `FileUploadServiceInterface` | ✅ MIME-sniffed, size-capped, media disk + `wp/v2/media`-shaped surface |
 
 **Phase 3b notes**
 
@@ -204,6 +205,22 @@ the estate reaches `bundle_imported`.
 
 **Gate G3:** the contract suite is green for every enabled family; the auth matrix (admin/editor/
 author/viewer/guest/bearer) passes on every mutating route.
+
+**Phase 3d notes**
+
+- **Uploads are MIME-sniffed, not extension-trusted.** `Laravel\Adapter\FileUploadService`
+  keeps the core's allowlist (no SVG), caps at `NVOOS_UPLOAD_MAX_BYTES` (10 MiB default),
+  and derives the stored extension from the sniffed type, so a renamed `.php` cannot land
+  as executable content.
+- **Media has its own disk.** `NVOOS_MEDIA_DISK` defaults to `public`; the general storage
+  disk is often private. `Storage::url()` is normalised to an app-relative path so the
+  console loads media from its own origin. The entrypoint runs `storage:link`.
+- **Same `wp/v2` shape as content records.** `GET /api/v1/media` returns a JSON array with
+  `X-WP-Total` / `X-WP-TotalPages`; `media_details.sizes` is empty, so the client falls back
+  to `source_url` for every size (no thumbnail pipeline yet).
+- **Config namespace is `oos`, not `nvoos`.** The provider merges the adapter config under
+  `oos`; two Phase 3b/3c reads that used `nvoos.*` were corrected here (storage disk in the
+  security self-test, console rate limit).
 
 ---
 
@@ -271,6 +288,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `lib/laravel-adapter/src/Adapter/ProEntitlement.php` (new)
 - `lib/laravel-adapter/src/Adapter/JobStatusStore.php` (`counts()`, raw rows, retry/dismiss)
 - `lib/laravel-adapter/src/Adapter/{TranscriptStore,MemoryStore,SessionLogStore,TokenUsage,RateLimiter}.php` (new)
+- `lib/laravel-adapter/src/Adapter/FileUploadService.php` (new)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000009..000012_*.php` (new)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000013..000016_*.php` (new — approvals, triggers, security snapshots, paper records)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000017..000018_*.php` (new — schedules console columns, schedule runs)
@@ -296,6 +314,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Controllers/{ApprovalsController,TriggersController,SecurityController,PaperStoreController}.php`
 - `app/Http/Controllers/Pro/{SchedulesController,PresetsController,RecordsController}.php`
 - `app/Http/Controllers/Wp/ContentController.php` (wp/v2 content shim)
+- `app/Http/Controllers/MediaController.php` (wp/v2/media shim)
 - `app/Http/Middleware/EnsureProEntitlement.php`
 - `app/Http/Controllers/{AssistantController,AssistantPortabilityController}.php`
 - `app/Support/{CapabilityMap,SettingsSchema}.php`
@@ -304,7 +323,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Middleware/AcceptWpNonce.php`
 - `routes/api.php`
 - `bootstrap/app.php` (`statefulApi()`, CSRF alias)
-- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest}.php`
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
 
 ---
@@ -316,7 +335,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
 | Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 112 pass |
 | Console types | `npm run typecheck` | clean |
-| Laravel app | `docker exec oos-laravel-app php artisan test` | 72 pass |
+| Laravel app | `docker exec oos-laravel-app php artisan test` | 80 pass |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
 CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
@@ -362,6 +381,8 @@ so only approval history grows during a run.
 | `NVOOS_PRO_PLAN` | Laravel adapter | plan label for diagnostics |
 | `NVOOS_PRO_ENTITLEMENT_FEATURES` | Laravel adapter | JSON map for the `config` driver (optional) |
 | `NVOOS_CONSOLE_RATE_LIMIT` | Laravel adapter | Console CRUD requests/minute per user (default `600`); tool execution keeps `throttle:tools` at 60/min |
+| `NVOOS_MEDIA_DISK` | Laravel adapter | Disk for uploads (default `public`); must be publicly served |
+| `NVOOS_UPLOAD_MAX_BYTES` | Laravel adapter | Maximum upload size in bytes (default `10485760`) |
 
 **Deployment:** the Service Exchange deploys the same console artifact; `NVOOS_BACKEND=laravel` plus
 `NVOOS_TARGET_SITE=<laravel-origin>` satisfies `console_deployed`. **Rollback:** flip
@@ -390,6 +411,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 | Records remote proxy + create-from-research | Not ported | Bound to Remote Sites and the Pro `deep_research` pipeline; both answer 501 with a typed message |
 | Schedule presets | Not ported | `/api/v1/pro/presets` returns an empty catalogue; install answers 404 |
 | Schedule execution model | Synchronous | `trigger` runs the handler inline and records the run; move to queued execution when long-running toolkits are ported |
+| Media thumbnails / alt text | Not ported | `media_details.sizes` is empty and `alt_text` is write-once blank; add a thumbnail pipeline and an update route when the media toolkit is ported |
 | WP-native integrations | Non-goal | Deep-link or mark unavailable |
 
 ---
@@ -402,6 +424,6 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 3a — transcripts, memory, session logs, token usage/cost, rate limiter
 - [x] Phase 3b — approvals, workflow triggers, security center (posture/headers/snapshots/self-test), paper store
 - [x] Phase 3c — schedule manager, records schema, `wp/v2` content shim, Pro entitlement middleware
-- [ ] Phase 3 remainder — file uploads (task 3.11)
+- [x] Phase 3d — media library + upload service (task 3.11)
 - [ ] Phase 4 — Pro manifest engine + pilot families
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates

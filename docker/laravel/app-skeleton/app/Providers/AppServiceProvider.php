@@ -46,7 +46,7 @@ class AppServiceProvider extends ServiceProvider
         // reads, so the 60/min tool budget would starve the SPA.
         $consoleLimit = app()->environment(['local', 'testing'])
             ? 60000
-            : (int) config('nvoos.console_rate_limit', 600);
+            : (int) config('oos.console_rate_limit', 600);
 
         RateLimiter::for('chat', fn (Request $request) => Limit::perMinute($chatLimit)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('mcp', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));

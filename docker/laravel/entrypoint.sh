@@ -64,6 +64,9 @@ fi
 echo "[spike] running migrations"
 php artisan migrate --force --no-interaction
 
+# Serve uploaded media from the public disk (idempotent).
+php artisan storage:link >/dev/null 2>&1 || true
+
 if [ "$ROLE" = "setup" ]; then
     echo "[spike] setup complete"
     exit 0

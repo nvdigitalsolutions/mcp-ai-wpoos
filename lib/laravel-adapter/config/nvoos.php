@@ -88,6 +88,18 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Media uploads
+	|--------------------------------------------------------------------------
+	|
+	| Uploads live on their own disk because the media library must serve
+	| public URLs; the general storage disk may be private (S3, local).
+	|
+	*/
+	'media_disk'           => env( 'NVOOS_MEDIA_DISK', 'public' ),
+	'upload_max_bytes'     => (int) env( 'NVOOS_UPLOAD_MAX_BYTES', 10485760 ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Feature Flags
 	|--------------------------------------------------------------------------
 	*/
