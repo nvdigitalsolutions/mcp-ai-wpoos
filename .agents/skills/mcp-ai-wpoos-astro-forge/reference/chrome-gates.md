@@ -199,10 +199,39 @@ stacked layout (jayainc's logo stays inside its first footer block).
 
 Grading (`compareFooterBrand`): a side **inversion** (`start` ↔ `end`) is a
 **fail** — the mark on the wrong side of the footer; `center` ↔ side, a missing
-measurement, and a lost/gained divider are **warn**.
+measurement, a rendered-height drift beyond 4px, and a lost/gained divider are
+**warn**.
 
-Verified on the real build: virtuallyjamaica 9 metrics, 0 drift (logo `end`,
-socials `start`, hairline; both `center` at mobile).
+### The mark's rendered height
+
+A builder footer renders the full asset (virtuallyjamaica: **62px** tall, 356px
+wide), while the template capped it at `3rem`. The height is measured with the
+row (per viewport) and emitted as `.site-footer .site-footer-logo img{height:…}`
+— higher specificity than the template default, with a per-breakpoint override
+when the source resizes the mark on mobile.
+
+### Every social link, with the source's own glyphs
+
+`chrome.social` used to be hand-seeded: the four links on virtuallyjamaica were
+written by an earlier session, so the source's **six** networks lost Google+ and
+Dribbble — and nothing could re-harvest it. `measureFooterSocials` now reads every
+icon-only anchor in the footer and records `{ label, href, icon }`:
+
+- `icon` is the source's own glyph class (`fab fa-google-plus-g`) when the anchor
+  wraps an `<i>`;
+- `label` comes from `aria-label`/`title`, else the class is turned into a
+  readable name (`fa-google-plus-g` → Google Plus, `fa-youtube` → YouTube).
+
+The template draws the five networks with inline SVG paths it owns and, for any
+other network, renders the source's glyph class against the source's own
+brand-icon sheet — harvested separately as `chrome.socialIconCss` (a source can
+ship a theme icon font AND FontAwesome; jayainc's `iconCss` is auxin-icon.css
+while virtuallyjamaica's footer glyphs come from font-awesome.min.css). No
+fabricated path data and no bare text label inside a round badge.
+
+Verified on the real build: virtuallyjamaica 13 metrics, 0 drift (logo `end`,
+socials `start`, 62px mark, hairline; both `center` at mobile), six social links
+rendered in the source order.
 
 ## Roadmap (remaining)
 

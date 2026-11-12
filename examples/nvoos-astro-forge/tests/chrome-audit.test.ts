@@ -263,6 +263,24 @@ describe( 'compareFooterBrand', () => {
 		} );
 	} );
 
+	it( 'warns when the mark’s rendered height drifts', () => {
+		const expected: ForgeFooterBrand = {
+			...brandoFooter,
+			desktop: { logo: 'end', socials: 'start', logoHeight: '62px' },
+		};
+		const report = compareFooterBrand( expected, {
+			...expected,
+			desktop: { logo: 'end', socials: 'start', logoHeight: '48px' },
+		} );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( {
+			fact: 'footer brand [desktop].logoHeight',
+			expected: '62px',
+			actual: '48px',
+			severity: 'warn',
+		} );
+	} );
+
 	it( 'skips when the source has no measured footer row', () => {
 		const report = compareFooterBrand( undefined, brandoFooter );
 

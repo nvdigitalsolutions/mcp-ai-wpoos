@@ -1882,6 +1882,9 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t * auxin-icon.css) — the rebuild\'s icon markers carry the source glyph',
 		'\t * classes and this sheet draws them (the customer\'s own asset). */',
 		'\ticonCss?: string;',
+		'\t/** The brand-icon sheet (FontAwesome) that draws the footer socials\u2019',
+		'\t * `fab fa-*` glyphs. */',
+		'\tsocialIconCss?: string;',
 		'\t/** The subfooter text color (the source paints white-ish text on its',
 		'\t * dark footer). */',
 		'\tfooterInk?: string;',
@@ -1918,10 +1921,10 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t/** The footer brand ROW: where the brand mark and the social icons sit',
 		'\t * inside it, per viewport (measured at 1920/1440/834/390). */',
 		'\tfooterBrand?: {',
-		"\t\twide?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' };",
-		"\t\tdesktop?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' };",
-		"\t\ttablet?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' };",
-		"\t\tmobile?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end' };",
+		"\t\twide?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end'; logoHeight?: string };",
+		"\t\tdesktop?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end'; logoHeight?: string };",
+		"\t\ttablet?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end'; logoHeight?: string };",
+		"\t\tmobile?: { logo?: 'start' | 'center' | 'end'; socials?: 'start' | 'center' | 'end'; logoHeight?: string };",
 		'\t\t/** The sub-footer row paints a hairline above the copyright bar. */',
 		'\t\tdivider?: boolean;',
 		'\t};',
@@ -2065,6 +2068,9 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 			if ( align.socials ) {
 				fields.push( `socials: ${ tsString( align.socials ) }` );
 			}
+			if ( align.logoHeight ) {
+				fields.push( `logoHeight: ${ tsString( align.logoHeight ) }` );
+			}
 			if ( fields.length > 0 ) {
 				parts.push( `${ device }: { ${ fields.join( ', ' ) } }` );
 			}
@@ -2154,6 +2160,9 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	}
 	if ( chrome.iconCss ) {
 		entry.push( `iconCss: ${ tsString( chrome.iconCss ) }` );
+	}
+	if ( chrome.socialIconCss ) {
+		entry.push( `socialIconCss: ${ tsString( chrome.socialIconCss ) }` );
 	}
 	if ( chrome.footerInk ) {
 		entry.push( `footerInk: ${ tsString( chrome.footerInk ) }` );

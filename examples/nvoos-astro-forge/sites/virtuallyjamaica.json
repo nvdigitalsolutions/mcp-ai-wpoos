@@ -316,6 +316,7 @@
 			"footerBarBg": "#ededed",
 			"favicon": "https://virtuallyjamaica.com/wp-content/uploads/2018/11/cropped-vj-fav-icon-32x32.png",
 			"iconCss": "https://virtuallyjamaica.com/wp-content/themes/brando/assets/css/et-line-icons.css?ver=1.0",
+			"socialIconCss": "https://virtuallyjamaica.com/wp-content/themes/brando/assets/css/font-awesome.min.css?ver=6.7.2",
 			"chromeSize": "13px",
 			"logo": {
 				"src": "https://virtuallyjamaica.com/wp-content/uploads/2018/11/VJ-Logo-V5-wht-gry.svg",
@@ -375,6 +376,16 @@
 					"icon": "fab fa-twitter"
 				},
 				{
+					"label": "Google Plus",
+					"href": "https://plus.google.com",
+					"icon": "fab fa-google-plus-g"
+				},
+				{
+					"label": "Dribbble",
+					"href": "https://dribbble.com/",
+					"icon": "fab fa-dribbble"
+				},
+				{
 					"label": "YouTube",
 					"href": "https://www.youtube.com/",
 					"icon": "fab fa-youtube"
@@ -422,19 +433,23 @@
 			"footerBrand": {
 				"wide": {
 					"logo": "end",
-					"socials": "start"
+					"socials": "start",
+					"logoHeight": "62px"
 				},
 				"desktop": {
 					"logo": "end",
-					"socials": "start"
+					"socials": "start",
+					"logoHeight": "62px"
 				},
 				"tablet": {
 					"logo": "end",
-					"socials": "start"
+					"socials": "start",
+					"logoHeight": "62px"
 				},
 				"mobile": {
 					"logo": "center",
-					"socials": "center"
+					"socials": "center",
+					"logoHeight": "62px"
 				},
 				"divider": true
 			}

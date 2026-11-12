@@ -48,7 +48,7 @@ import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureChromeGeometry, measureFooterBrand, measureFooterSocials, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
@@ -669,13 +669,27 @@ async function runAnalyze( url, options ) {
 						profile.design.chrome.footerBrand = footerBrand;
 						const desktop = footerBrand.desktop ?? footerBrand.wide ?? {};
 						console.log(
-							`\u2713 Footer brand: logo ${ desktop.logo ?? '—' }, socials ${ desktop.socials ?? '—' }${ footerBrand.divider ? ', hairline above the copyright bar' : '' }.`
+							`\u2713 Footer brand: logo ${ desktop.logo ?? '—' }, socials ${ desktop.socials ?? '—' }${ desktop.logoHeight ? `, ${ desktop.logoHeight } tall` : '' }${ footerBrand.divider ? ', hairline above the copyright bar' : '' }.`
 						);
 					} else {
 						console.log( '  Footer brand: no social row to measure (a footer with no icon links).' );
 					}
 				} catch ( error ) {
 					console.warn( `\u26A0 Footer brand skipped: ${ error instanceof Error ? error.message : error }` );
+				}
+				// The footer's SOCIAL links: every icon-only anchor, with the source's
+				// own glyph class. The legacy fact carried only the networks with inline
+				// paths, so two of virtuallyjamaica's six were dropped.
+				try {
+					const socials = await measureFooterSocials( { url: profile.url } );
+					if ( socials.length > 0 ) {
+						profile.design = profile.design ?? {};
+						profile.design.chrome = profile.design.chrome ?? {};
+						profile.design.chrome.social = socials;
+						console.log( `\u2713 Footer socials: ${ socials.length } link(s) \u2014 ${ socials.map( ( link ) => link.label ?? link.href ).join( ', ' ) }.` );
+					}
+				} catch ( error ) {
+					console.warn( `\u26A0 Footer socials skipped: ${ error instanceof Error ? error.message : error }` );
 				}
 				// The OPENED mobile menu: its surface, ink and row rhythm. A collapsed nav
 				// that only toggles `display` paints white links onto whatever band is

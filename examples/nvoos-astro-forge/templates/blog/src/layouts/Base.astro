@@ -276,7 +276,22 @@ const footerBrandCss = footerBaseJustify
 	: chrome?.footerBrand?.divider
 		? `.site-footer > .site-footer-bar > .site-footer-bar-inner{border-top:1px solid var(--forge-line, currentColor)}`
 		: '';
-const chromeGeneratedCss = [chromeBoxCss, footerBrandCss].filter(Boolean).join('\n');
+// The footer mark's RENDERED height (virtuallyjamaica: 62px against the
+// template's 3rem), measured per viewport with the row's alignment.
+const footerLogoHeight = (align?: { logoHeight?: string }) =>
+	align?.logoHeight && /^\d+px$/.test(align.logoHeight) ? align.logoHeight : undefined;
+const footerLogoSelector = '.site-footer .site-footer-logo img';
+const logoBaseHeight = footerLogoHeight(chrome?.footerBrand?.desktop ?? chrome?.footerBrand?.wide);
+const logoOverrides = ([
+	['1199px', chrome?.footerBrand?.tablet],
+	['767px', chrome?.footerBrand?.mobile],
+] as const)
+	.filter(([, align]) => align && footerLogoHeight(align) && footerLogoHeight(align) !== logoBaseHeight)
+	.map(([width, align]) => `@media (max-width:${width}){${footerLogoSelector}{height:${footerLogoHeight(align)}}}`);
+const footerLogoCss = logoBaseHeight
+	? [`${footerLogoSelector}{height:${logoBaseHeight}}`, ...logoOverrides].join('\n')
+	: '';
+const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(Boolean).join('\n');
 ---
 
 <!doctype html>
@@ -297,6 +312,9 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss].filter(Boolean).join('
 		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
 		{chrome?.favicon && <link rel="icon" href={chrome.favicon} />}
 		{chrome?.iconCss && <link rel="stylesheet" href={repairMediaUrl(chrome.iconCss)} media="all" />}
+		{/* The brand-icon sheet (FontAwesome) — draws the footer socials' source
+		 * glyph classes for networks the rebuild has no inline path for. */}
+		{chrome?.socialIconCss && <link rel="stylesheet" href={repairMediaUrl(chrome.socialIconCss)} media="all" />}
 		{/* The source webfonts (125 §2) — the harvested family loads from
 			Google Fonts so the rebuild keeps the source's type rhythm
 			(jayainc: Rubik); system-stack profiles emit no link. */}
@@ -582,6 +600,11 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss].filter(Boolean).join('
 														<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
 															<path fill="currentColor" d={path} />
 														</svg>
+													) : chrome?.socialIconCss && link.icon ? (
+														/* No inline glyph for this network — draw the SOURCE's own icon
+														 * class with the source's brand-icon sheet (never a fabricated
+														 * path, and never a bare text label in a round badge). */
+														<i class={link.icon} aria-hidden="true" />
 													) : (
 														(link.label ?? network ?? '')
 													)}

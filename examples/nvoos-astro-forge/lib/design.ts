@@ -2718,6 +2718,32 @@ export function analyzeChrome( input: DesignFetchInput ): ForgeChrome | undefine
 			// Unparseable href — skip.
 		}
 	}
+	// The brand-icon sheet (FontAwesome) — the footer's `fab fa-*` glyphs. A
+	// theme icon font (et-line-icons) and FontAwesome are different sheets, and
+	// the footer's unknown networks carry the source's own glyph classes.
+	const socialIconCssLink = findFirstNode( root, ( n ) => {
+		if ( n.type !== 'tag' || n.name !== 'link' || ! n.attribs?.href ) {
+			return false;
+		}
+		if ( ! /(?:^|\s)stylesheet(?:\s|$)/i.test( n.attribs?.rel ?? '' ) ) {
+			return false;
+		}
+		const id = n.attribs?.id ?? '';
+		const basename = ( n.attribs?.href ?? '' ).split( '?' )[ 0 ].split( '/' ).pop() ?? '';
+		return /(?:font[\s-]?awesome|brands)/i.test( `${ id } ${ basename }` );
+	} );
+	if ( socialIconCssLink ) {
+		try {
+			const socialIconCss = new URL( socialIconCssLink.attribs?.href ?? '', input.url ).href;
+			// Never emit the same sheet twice when FontAwesome is the site's only
+			// icon font (it already rides as `iconCss`).
+			if ( socialIconCss !== chrome.iconCss ) {
+				chrome.socialIconCss = socialIconCss;
+			}
+		} catch {
+			// Unparseable href — skip.
+		}
+	}
 
 	// 9. The chrome base font-size — header/topbar/footer run at the source's
 	// chrome size (jayainc: 16px), NOT the content body scale (13px). The
