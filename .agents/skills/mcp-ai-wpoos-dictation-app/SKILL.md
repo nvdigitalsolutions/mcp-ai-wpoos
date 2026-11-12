@@ -79,17 +79,22 @@ examples/nvoos-dictate/
   `target/debug/nvoos-dictate.exe --mcp < /dev/null` — headless mode loads
   the configured engine and prints whisper.cpp's model-load log on
   success, or "engine unavailable in headless mode: …" on failure.
-  **Debug-exe size is roughly 56 MB — that is correct, not a partial build.**
-  `--debug --no-bundle` skips the installer/MSI + WebView2 bootstrap (the app
-  runs on the system WebView2 Win11 ships), and the engine *weights* (whisper
-  ~142 MB, parakeet ~600 MB, fastconformer ~162 MB) are downloaded at runtime
-  into `%APPDATA%/nvoos-dictate/models/`, never compiled in. To **prove** a
-  build has everything, scan the PE for feature strings (MSYS `strings` is
-  usually missing; write a `.ps1` file and use
-  `[System.IO.File]::ReadAllBytes` + a regex count — plain `powershell
-  -Command` with `$var` gets mangled by MSYS, so always `-File x.ps1`):
-  the presence of `fastconformer`/`parakeet`/`whisper`/`sherpa-onnx` means
-  the engines are linked; `Assistant` means the SPA tab shipped.
+  **Debug-exe size tracks the feature set — never read completeness from it.**
+  Engines-only builds land near 56 MB; the FULL union is ~100 MB (99.8 MB
+  measured with debuginfo). `--debug --no-bundle` skips the installer/MSI +
+  WebView2 bootstrap (the app runs on the system WebView2 Win11 ships), and
+  the engine *weights* (whisper ~142 MB, parakeet ~600 MB, fastconformer
+  ~162 MB) are downloaded at runtime into `%APPDATA%/nvoos-dictate/models/`,
+  never compiled in. To **prove** a build has everything, scan the PE for
+  feature strings (MSYS `strings` is usually missing; write a `.ps1` file and
+  use `[System.IO.File]::ReadAllBytes` + a regex count — plain `powershell
+  -Command` with `$var` gets mangled by MSYS, so always `-File x.ps1`).
+  A one-liner usually suffices:
+  `grep -a -o fastconformer nvoos-dictate.exe | wc -l`. The presence of
+  `fastconformer`/`parakeet`/`whisper`/`sherpa-onnx` means the engines are
+  linked; `Assistant` means the SPA tab shipped. **This only proves linkage,
+  not that the surface renders** — for that use the WebView2 CDP check under
+  *Verification harnesses*.
   **Release trap:** the `nvoos-agent` marker (a thread-name literal) is
   DCE'd by release optimizations — the script also matches the agent
   controller's spawn-error string (`could not spawn agent worker`), which
@@ -113,7 +118,12 @@ examples/nvoos-dictate/
   — proof the `force-debug` wiring survives release profiles. Bundles are
   unsigned dev artifacts (`pubkey: ""`).
 - `generate_context!` embeds the frontend `dist` at compile time — run
-  `npm run build` before any cargo step in CI.
+  `npm run build` before **any** cargo step in CI, and in a fresh worktree
+  copy it in (`cp -r <main-tree>/dist ./dist`): even `cargo test --lib` fails
+  without it, because the macro expands inside `lib.rs`. A new worktree also
+  has a cold `target/`, so budget a full dependency rebuild (~6 min for
+  `cargo test --lib` on default features) — validate in the main tree when
+  the change allows it.
 - Boot smoke test: `cmd //c start "" <exe>` → `tasklist //FI "IMAGENAME eq
   nvoos-dictate.exe"` after ~10 s (process alive = boot OK); kill with
   `taskkill //IM nvoos-dictate.exe //F`. A running app locks the exe — kill
@@ -500,6 +510,40 @@ cargo run --features parakeet --example transcribe_file -- ../speech.wav --engin
 - Reference-PC numbers (debug build, 4.27 s sample): parakeet 1187 ms
   (RTF 0.28), whisper tiny.en 1095 ms (WER 7.7%). Both beat the 1.5 s
   key-up→paste budget; release is faster.
+
+### Prove the UI actually renders (WebView2 CDP, no synthetic input)
+
+A string probe proves linkage; it does not prove the window loaded the bundled
+`dist` or that a view renders. WebView2 exposes CDP when you launch with:
+
+```bash
+export WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--remote-debugging-port=9222 --remote-allow-origins=*"
+cmd //c start "" "…\target\debug\nvoos-dictate.exe"
+curl -s http://127.0.0.1:9222/json      # three page targets
+```
+
+Targets are the **main window** (`http://tauri.localhost/`), the recording
+overlay (`?window=overlay`) and the snippet palette (`?window=snippet`) —
+drive the one whose url ends in `/`. Node 22+ ships a global `WebSocket`, so a
+~30-line `.mjs` can `Runtime.evaluate` a click
+(`[...document.querySelectorAll('button')].find(b => b.textContent.trim() ===
+'Diagnostics').click()`), dump `document.body.innerText` (Diagnostics prints
+capture device, capture mode, clipboard state, configured/resident engine and
+the installed model list — the fastest way to confirm a build's real wires),
+and `Page.captureScreenshot`. Kill and relaunch WITHOUT the env var
+afterwards: an open 9222 is a local control surface.
+
+Synthetic input is a dead end on this box. `SetForegroundWindow` is blocked by
+the Windows foreground lock (wrap it in `AttachThreadInput`, or it silently
+does nothing); `CopyFromScreen` grabs whatever window is on top, not the one
+you named; and `SetCursorPos` + `mouse_event` no-op under DPI/input
+virtualization. If you must capture a window without CDP, use
+`PrintWindow(hwnd, hdc, 2)` (`PW_RENDERFULLCONTENT`) — it renders WebView2
+content even when the window is fully occluded.
+
+Zed cannot `read_file` anything under `target/` (it matches
+`file_scan_exclusions`) or outside the project root; copy screenshots into the
+gitignored `dist/` to inspect them.
 
 ## Known Rust pitfalls (this codebase)
 
