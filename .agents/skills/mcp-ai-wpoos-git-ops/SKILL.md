@@ -11,7 +11,10 @@ description: Git/GitHub workflow discipline for the mcp-ai-wpoos repo — PRs ag
   merge their own PRs. Clusters land as one PR per cluster (see the
   `mcp-ai-wpoos-test-suite` skill for the cluster workflow).
 - Branch naming: `feat/<track>-<descriptor>`; stack dependent work on top of
-  the unmerged parent branch and say so in the PR body.
+  the unmerged parent branch, open the child PR with **base = the parent
+  branch** (so the diff is only the delta), and name the parent PR number in
+  the body. If the parent merges and its branch is deleted, retarget the child
+  to `alpha-working` and rebase the delta.
 - **Stage explicitly.** Never `git add -A` — the worktree often holds build
   artifacts and local state (e.g. `.lighthouseci/`, `test-results/`). Use
   explicit paths, or pathspec exclusions:
@@ -101,6 +104,23 @@ that passes the result into a CLI flag silently sends `""` (the
 forge-sites `--mirror-repo` failure). Default env values belong in the
 shell: `VAR="${VAR:-default}"` in the `run:` block, with the raw variable
 left in `env:` as the override point.
+
+## Reusable workflows: secrets must be mapped by name (2026-11-12)
+
+GitHub Actions cannot resolve a secret through a dynamic name
+(`secrets[format(...)]` is not supported — it evaluates empty). Declare one
+generic secret on the `workflow_call` boundary and map each caller's real
+secret into it:
+
+```yaml
+uses: ./.github/workflows/mirror-release.yml
+secrets:
+  MIRROR_TOKEN: ${{ secrets.NVOOS_CONTENT_GRAPH_REPO_TOKEN }}
+```
+
+Keep the declared secret `required: false` when callers should stay green
+before the token exists, and probe it in a preflight job
+(`[ -n "$TOKEN" ]`) — `if:` cannot read `secrets`.
 
 ## alpha-working → main squash-sync (the release-sync recipe)
 
@@ -216,15 +236,20 @@ Each rule below cost a recovery:
   `git worktree add tmp/wt-<name> -b <branch> origin/alpha-working`, copy
   only your files, commit/push from there, `git worktree remove --force`.
   Never `reset --hard` to unwind it.
-- **Put an agent's own worktree INSIDE the repo (`tmp/<name>`),
-  not in `%TEMP%`.** A worktree under `AppData/Local/Temp` is fine from the
-  shell, but the editor's file tools resolve paths inside the
-  project root: edits there either fail with "path not found" or, worse,
-  silently land in the MAIN worktree you were trying to avoid. `tmp/` is
-  already gitignored (`tmp/forge-sites` is the precedent). A worktree created
-  with `git worktree add` also takes minutes and can be killed mid-checkout on
-  this repo — if it times out, `rm -rf` the leftover, `git worktree prune`,
-  and check the branch was not already registered.
+- **Put an agent's own worktree INSIDE the repo, not in `%TEMP%`.** A
+  worktree under `AppData/Local/Temp` is fine from the shell, but the
+  editor's file tools resolve paths inside the project root: edits there
+  either fail with "path not found" or, worse, silently land in the MAIN
+  worktree you were trying to avoid. **`tmp/<name>` is also invisible to the
+  editor's file tools (2026-11-12)** — the dir is gitignored and excluded from
+  the file index (`list_directory`/`edit_file` return "path not found"), so
+  `tmp/` worktrees are shell-only (apply edits with a Python/sed script, or
+  copy files out → edit → copy back). When editor editing is required, use an
+  in-repo `.wt-<name>` worktree instead (untracked, so it IS indexed; verified
+  2026-11-12). A worktree created with `git worktree add` also takes minutes
+  and can be killed mid-checkout on this repo — if it times out, `rm -rf` the
+  leftover, `git worktree prune`, and check the branch was not already
+  registered.
 - **Rebasing with foreign unstaged edits present:** plain `git rebase`
   refuses ("You have unstaged changes"); `git rebase --autostash` stashes
   only tracked changes and pops them back. **Safer variant (2026-11-03,

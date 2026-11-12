@@ -27,6 +27,7 @@ management — adapted to this repo's conventions.
 - "Catch up docs/release notes for vX.Y.Z" / "do the same exercise for this version"
 - A window of PRs merged on `alpha-working` has no release-note coverage
 - Version bump + changelog + agent-context sweep for a new release
+- Cutting a standalone mirror release / mirroring ZIPs to the synced repos
 
 **Track B — Model Catalog & Config Updates:**
 - "Update model configs" / "refresh the model catalog" / "new model lineup"
@@ -446,6 +447,32 @@ Per `AGENTS.md` §6, when adding a skill under `.agents/skills/[slug]/`:
   `gh workflow run sync-mcp-gateway.yml --ref alpha-working`.
 - PR structure: Summary / What's in / Validation / Notes, listing deferred
   open items explicitly.
+
+### A8. Standalone mirror releases (tag time)
+
+The standalone repos (`nvoos-content-graph`, `-ai`, `-ai-platform`,
+`nvoos-docs-hub`, `nvoos-cognition`) are synced by `sync-*.yml` — source
+only. Their installable ZIPs/installers are mirrored into each mirror's **own
+GitHub Release** by the reusable `.github/workflows/mirror-release.yml`;
+never commit a package to a mirror, because the next sync force-pushes `main`
+and wipes it.
+
+- **Only published releases can be mirrored.** `gh release download` with the
+  read-only `GITHUB_TOKEN` 404s on a draft; publish the monorepo release
+  first (or pass a write-capable source token).
+- **Tags are shared** between the monorepo and the mirror. The mirror tag is
+  cut at the mirror's `main` HEAD after a 60 s wait for the synced
+  `version_file` to match.
+- **Wired callers:** the content-graph build workflows and the SPA-addon
+  workflows (docs-hub only) mirror automatically after their `release` job.
+  Cognition is a manual dispatch (`mirror-nvoos-cognition-release.yml`)
+  because its release starts as a draft; it mirrors installers only — the
+  Tauri updater feed still points at the monorepo.
+- `version_format: php_header` (default) or `json` (`package.json`) picks how
+  the wait check reads the mirror version.
+- A missing mirror token only warns (preflight job), so CI stays green.
+
+Full reference: `docs/project/releases/MIRROR_RELEASES.md`.
 
 ---
 
@@ -913,6 +940,7 @@ previous window — the user will usually want it back-dated.
   Read it when a pass needs the precedent behind a classification decision
   ("uncovered PR", superseded build set, bundled-notes re-sync, ...).
 - Standing open items: `docs/project/plans/docs-catch-up-open-items.md`
+- Standalone mirror releases: `docs/project/releases/MIRROR_RELEASES.md`
 - Executed PR deferred-item sweep (2026-09-17): issues #6646–#6655; closed
   #6389 as complete
 - Model process: `docs/reference/models/model-update-process-2026-07.md`,
