@@ -49,6 +49,8 @@ use Nvoos\Core\Tool\SuggestBestModelTool;
 use Nvoos\Core\Tool\TimeAgoTool;
 use Nvoos\Core\Tool\TruncateTextTool;
 use Nvoos\Core\Tool\ValidateJsonTool;
+use Nvoos\Core\Tool\ValidateToolSchemaTool;
+use Nvoos\Core\Tool\VerifyInformationTool;
 
 final class CoreToolCatalogue {
 
@@ -92,10 +94,15 @@ final class CoreToolCatalogue {
 			// half needs no provider, no HTTP client and no stored state.
 			ClientSummarizeTextTool::class,
 			ClientTranslateTextTool::class,
-			ClientSemanticSearchTool::class,
-			ClientExtractEntitiesTool::class,
-			ClientAnalyzeSentimentTool::class,
-			ClientQuestionAnsweringTool::class,
+		ClientSemanticSearchTool::class,
+		ClientExtractEntitiesTool::class,
+		ClientAnalyzeSentimentTool::class,
+		ClientQuestionAnsweringTool::class,
+
+			// Ported from the WordPress plugin (090-D cluster 1): identical
+			// slug, parameter schema and result fields, canonical envelope.
+			VerifyInformationTool::class,
+			ValidateToolSchemaTool::class,
 		);
 	}
 
