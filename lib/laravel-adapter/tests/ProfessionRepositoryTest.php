@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Nvoos\Laravel\Tests;
 
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
+use Nvoos\Core\Domain\Contract\ProfessionWriteInterface;
 use Nvoos\Laravel\Adapter\ProfessionRepository;
 
 final class ProfessionRepositoryTest extends TestCase {
@@ -31,6 +32,14 @@ final class ProfessionRepositoryTest extends TestCase {
 		$repo = $this->app->make( ProfessionRepository::class );
 
 		$this->assertSame( '1.0.0', $repo->catalogueVersion() );
+	}
+
+	public function test_the_laravel_catalogue_is_read_only(): void {
+		// The catalogue is code-owned reference data (090-g §4.3). A save()
+		// here would have to write somewhere, and the design says nowhere —
+		// save_profession is registered only on a runtime with a writable
+		// catalogue (the WordPress CPT).
+		$this->assertNotInstanceOf( ProfessionWriteInterface::class, $this->repo );
 	}
 
 	public function test_get_all_returns_slug_to_title_ordered_by_title(): void {

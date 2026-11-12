@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Nvoos\WordPress\Adapter;
 
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
+use Nvoos\Core\Domain\Contract\ProfessionWriteInterface;
 
 /**
  * WordPress adapter for profession data access.
@@ -21,7 +22,7 @@ use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
  *
  * @since 2.0.0
  */
-final class ProfessionRepository implements ProfessionRepositoryInterface
+final class ProfessionRepository implements ProfessionRepositoryInterface, ProfessionWriteInterface
 {
     /**
      * Legacy profession service.
@@ -44,6 +45,17 @@ final class ProfessionRepository implements ProfessionRepositoryInterface
      */
     private $toolRecommender;
 
+    /**
+     * Legacy writable repository (CPT + postmeta).
+     *
+     * Kept separately from the read service: the service exposes queries, while
+     * writes go through WP_MCP_AI_Profession_Repository::save(). Null when the
+     * base plugin did not boot.
+     *
+     * @var \WP_MCP_AI_Profession_Repository|null
+     */
+    private $writer;
+
     public function __construct()
     {
         // Standalone: probe base classes only when the base booted (its
@@ -52,6 +64,7 @@ final class ProfessionRepository implements ProfessionRepositoryInterface
             if (\class_exists('WP_MCP_AI_Profession_Service') && \class_exists('WP_MCP_AI_Profession_Repository')) {
                 $repo    = new \WP_MCP_AI_Profession_Repository();
                 $this->service = new \WP_MCP_AI_Profession_Service($repo);
+                $this->writer  = $repo;
             }
 
             if (\class_exists('WP_MCP_AI_Profession_Knowledge_Base_Loader')) {
@@ -160,5 +173,56 @@ final class ProfessionRepository implements ProfessionRepositoryInterface
         $categories = $this->service->get_categories();
 
         return \is_array($categories) ? $categories : [];
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * Delegates to the legacy repository's save(), which writes the profession
+     * CPT and its meta. Returns an array rather than a WP_Error so the core
+     * tool can branch without knowing the host's error type.
+     */
+    public function save(array $data): array
+    {
+        if ($this->writer === null || !\method_exists($this->writer, 'save')) {
+            return [
+                'saved' => false,
+                'error' => 'Profession writes are not available on this runtime.',
+            ];
+        }
+
+        $slug  = isset($data['slug']) ? \sanitize_title((string) $data['slug']) : '';
+        $title = isset($data['title']) ? (string) $data['title'] : '';
+
+        if ('' === $slug || '' === $title) {
+            return [
+                'saved' => false,
+                'error' => 'title and slug are required.',
+            ];
+        }
+
+        $existing = $this->writer->find_one($slug);
+        $payload  = $data;
+
+        if (\is_object($existing) && isset($existing->ID)) {
+            $payload['id'] = (int) $existing->ID;
+        }
+
+        $result = $this->writer->save($payload);
+
+        if (\function_exists('is_wp_error') && \is_wp_error($result)) {
+            return [
+                'saved' => false,
+                'error' => $result->get_error_message(),
+            ];
+        }
+
+        $profession = $this->getBySlug($slug);
+
+        return [
+            'saved'      => true,
+            'action'     => \is_object($existing) ? 'updated' : 'created',
+            'profession' => $profession['profession'] ?? [],
+        ];
     }
 }
