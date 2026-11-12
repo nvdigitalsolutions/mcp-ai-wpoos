@@ -40,6 +40,11 @@ class ProfessionRepository implements ProfessionRepositoryInterface {
 	 */
 	private ?array $catalogue = null;
 
+	/**
+	 * Resolved catalogue version, memoised for the instance.
+	 */
+	private ?string $version = null;
+
 	public function __construct( Repository $config ) {
 		$this->path = (string) $config->get(
 			'oos.professions.path',
@@ -148,21 +153,57 @@ class ProfessionRepository implements ProfessionRepositoryInterface {
 	}
 
 	/**
-	 * Catalogue version declared by the manifest, for cache keys and logging.
+	 * {@inheritdoc}
+	 *
+	 * The manifest's `catalogue_version` is the contract: deployments that edit
+	 * a catalogue must bump it. A catalogue without a manifest falls back to a
+	 * content fingerprint, so an edit is still visible without a purge — it just
+	 * costs a directory stat per request instead of being operator-controlled.
 	 */
 	public function catalogueVersion(): string {
-		$file = $this->path . '/manifest.json';
-
-		if ( ! is_readable( $file ) ) {
-			return '0';
+		if ( null !== $this->version ) {
+			return $this->version;
 		}
 
-		$raw = file_get_contents( $file );
-		$doc = false === $raw ? null : json_decode( $raw, true );
+		$file = $this->path . '/manifest.json';
 
-		return is_array( $doc ) && isset( $doc['catalogue_version'] )
-			? (string) $doc['catalogue_version']
-			: '0';
+		if ( is_readable( $file ) ) {
+			$raw = @file_get_contents( $file );
+			$doc = false === $raw ? null : json_decode( $raw, true );
+
+			if ( is_array( $doc ) && isset( $doc['catalogue_version'] ) && is_scalar( $doc['catalogue_version'] ) ) {
+				return $this->version = (string) $doc['catalogue_version'];
+			}
+		}
+
+		return $this->version = $this->fingerprint();
+	}
+
+	/**
+	 * Content fingerprint for a catalogue without a manifest.
+	 *
+	 * Filename, size and mtime per document: cheap (a stat per file, no reads)
+	 * and changes whenever a document is added, removed or rewritten.
+	 */
+	private function fingerprint(): string {
+		$files = glob( $this->path . '/*.json' );
+		$files = false === $files ? array() : $files;
+
+		sort( $files );
+
+		$parts = array();
+
+		foreach ( $files as $file ) {
+			$parts[] = basename( $file )
+				. ':' . (string) @filesize( $file )
+				. ':' . (string) @filemtime( $file );
+		}
+
+		return 'fp-' . substr(
+			hash( 'sha256', $this->path . '|' . implode( '|', $parts ) ),
+			0,
+			16
+		);
 	}
 
 	/**

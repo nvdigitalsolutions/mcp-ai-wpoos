@@ -17,6 +17,7 @@ namespace Nvoos\Laravel\Tests;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 use Nvoos\Core\Domain\Contract\ProfessionWriteInterface;
 use Nvoos\Laravel\Adapter\ProfessionRepository;
+use Illuminate\Support\Facades\Cache;
 
 final class ProfessionRepositoryTest extends TestCase {
 
@@ -166,6 +167,52 @@ final class ProfessionRepositoryTest extends TestCase {
 		$this->assertSame( '9.9.9', $repo->catalogueVersion() );
 
 		unlink( $dir . '/custom.json' );
+		unlink( $dir . '/manifest.json' );
+		rmdir( $dir );
+	}
+
+	public function test_catalogue_reads_are_cached_under_the_version(): void {
+		$all = $this->repo->getAll();
+
+		$this->assertCount( 9, $all );
+		$this->assertSame(
+			$all,
+			Cache::get( 'nvoos_cache_professions.catalogue.1.0.0.all' )
+		);
+	}
+
+	public function test_a_version_bump_serves_the_new_catalogue_without_a_purge(): void {
+		$dir = sys_get_temp_dir() . '/nvoos-professions-' . uniqid();
+		mkdir( $dir );
+
+		$write = static function ( string $name, array $professions ) use ( $dir ): void {
+			file_put_contents(
+				$dir . '/' . $name,
+				json_encode( array( 'professions' => $professions ) )
+			);
+		};
+
+		$write( 'a.json', array( array( 'title' => 'Accountant', 'slug' => 'accountant' ) ) );
+		file_put_contents( $dir . '/manifest.json', json_encode( array( 'catalogue_version' => '1' ) ) );
+
+		$this->app['config']->set( 'oos.professions.path', $dir );
+
+		$first = $this->app->make( ProfessionRepositoryInterface::class );
+		$this->assertSame( array( 'accountant' => 'Accountant' ), $first->getAll() );
+
+		// New document plus a version bump: no cache flush anywhere in between.
+		$write( 'b.json', array( array( 'title' => 'Lawyer', 'slug' => 'lawyer' ) ) );
+		file_put_contents( $dir . '/manifest.json', json_encode( array( 'catalogue_version' => '2' ) ) );
+
+		$second = $this->app->make( ProfessionRepositoryInterface::class );
+
+		$this->assertSame(
+			array( 'accountant' => 'Accountant', 'lawyer' => 'Lawyer' ),
+			$second->getAll()
+		);
+
+		unlink( $dir . '/a.json' );
+		unlink( $dir . '/b.json' );
 		unlink( $dir . '/manifest.json' );
 		rmdir( $dir );
 	}

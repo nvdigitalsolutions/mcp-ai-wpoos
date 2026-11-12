@@ -393,11 +393,21 @@ function wp_mcp_ai_oos_orchestrator() {
 	// (CPT + postmeta). Runtimes without a writable catalogue — the Laravel
 	// adapter — implement only the read contract and do not register
 	// save_profession at all.
-	$professions = new Nvoos\WordPress\Adapter\ProfessionRepository();
+	$profession_writer = new Nvoos\WordPress\Adapter\ProfessionRepository();
+
+	// Reads go through a version-keyed cache (090-g Phase 6). Writes stay on the
+	// raw adapter: it owns the CPT and bumps the catalogue version, which is what
+	// makes the cached generation unreachable without a purge.
+	$professions = new Nvoos\Core\Infrastructure\Profession\CachedProfessionRepository(
+		$profession_writer,
+		new Nvoos\WordPress\Adapter\CacheStore(),
+		(int) apply_filters( 'wp_mcp_ai_profession_catalogue_cache_ttl', DAY_IN_SECONDS )
+	);
+
 	$tool_registry->register( new Nvoos\Core\Tool\GetProfessionTool( $error_factory, $professions ) );
 	$tool_registry->register( new Nvoos\Core\Tool\ListProfessionsTool( $error_factory, $professions ) );
 	$tool_registry->register( new Nvoos\Core\Tool\ProfessionStatsTool( $error_factory, $professions ) );
-	$tool_registry->register( new Nvoos\Core\Tool\SaveProfessionTool( $error_factory, $professions ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SaveProfessionTool( $error_factory, $profession_writer ) );
 
 	// Email tools.
 	$email = new Nvoos\WordPress\Adapter\EmailService();

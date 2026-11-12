@@ -38,6 +38,7 @@ use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
+use Nvoos\Core\Infrastructure\Profession\CachedProfessionRepository;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\Core\Tool\GetProfessionTool;
@@ -97,7 +98,13 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( AuthProviderInterface::class, AuthProvider::class );
 		$this->app->bind( ContentStoreInterface::class, ContentStore::class );
 		$this->app->bind( SchemaStoreInterface::class, SchemaStore::class );
-		$this->app->bind( ProfessionRepositoryInterface::class, ProfessionRepository::class );
+		$this->app->bind( ProfessionRepositoryInterface::class, function ( $app ) {
+			return new CachedProfessionRepository(
+				new ProfessionRepository( $app['config'] ),
+				$app->make( CacheStoreInterface::class ),
+				(int) $app['config']->get( 'oos.professions.cache_ttl', 86400 ),
+			);
+		} );
 		$this->app->bind( HttpClientInterface::class, HttpClient::class );
 		$this->app->bind( TranscriptStoreInterface::class, TranscriptStore::class );
 		$this->app->bind( MemoryStoreInterface::class, MemoryStore::class );
