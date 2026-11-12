@@ -147,6 +147,8 @@ Two operational notes:
   `--design` pass happened to run). `navToggle` merges field-wise so the
   harvested `label` survives.
 - Opening the panel must not reflow the page: it is `position: absolute`
-  against the header (`:has()` adds `position: relative` only while a collapsed
-  shell exists). The source overlays too — verified by an unchanged
-  `scrollHeight`.
+  against the header, and `:where(.site-header:has(> .site-nav-shell[data-collapsed='true']))`
+  supplies `position: relative` at ZERO specificity so it can only fill in a
+  missing containing block. A `:has()` rule at normal specificity would outrank
+  `.site-header--sticky`/`--float` and flatten a pinned header to `relative`.
+  The source overlays too — verified by an unchanged `scrollHeight`.

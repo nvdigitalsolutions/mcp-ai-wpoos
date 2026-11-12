@@ -283,9 +283,12 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	color: inherit;
 }
 
-/* The panel is positioned against the header it belongs to. A header that is
- * already positioned (fixed/sticky/overlay) keeps its own containing block. */
-.site-header:has(> .site-nav-shell[data-collapsed='true']) {
+/* The panel is positioned against the header it belongs to. `:where()` keeps this
+ * at ZERO specificity so it can only ever supply a missing containing block:
+ * any header variant that positions itself (`--sticky`, `--float`, a
+ * scroll-driven animation) outranks it, instead of being flattened to
+ * `relative` by a `:has()` rule that would win on specificity. */
+:where(.site-header:has(> .site-nav-shell[data-collapsed='true'])) {
 	position: relative;
 }
 
