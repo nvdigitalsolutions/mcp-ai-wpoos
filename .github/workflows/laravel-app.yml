@@ -38,7 +38,9 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          # The lock file needs 8.3: laminas-diactoros 3.10 and pint 1.32 both
+          # require it. The dev container runs 8.3 too.
+          php-version: '8.3'
           extensions: fileinfo, mbstring, pdo_sqlite, sqlite3
           coverage: none
           tools: composer
