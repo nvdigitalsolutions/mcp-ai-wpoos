@@ -435,6 +435,14 @@ can appear in the repo root. Two failure modes follow:
   `npm run build -- --target`): plain `rm --target` fails with
   `rm: unknown option` — use the double-dash form `rm -- --target` (the
   error message itself suggests it).
+- **Multi-paragraph `git commit -m` bodies with embedded quotes corrupt easily
+  at the sh boundary (2026-11-13):** a body quoting a separator
+  (`", parakeet"`) landed in the commit as `"$"` — a `"` next to `$` inside a
+  double-quoted `-m` is not preserved the way you wrote it. Write the body to a
+  file and commit with `-F` (`git commit -F /tmp/msg.txt`,
+  `git commit --amend -F /tmp/msg.txt`), then confirm with
+  `git --no-pager log -1 --format=%B` **before** pushing. Amending is safe
+  pre-push; a corrupt message that reaches the remote needs a force-push.
 
 ## Pathspec commits, shared-index races, workflow YAML (learned 2026-11-02, Cognition rebrand session)
 
