@@ -16,6 +16,7 @@
 //! - `e2e_ms` (key-up -> pasted) is recorded per transcript — the
 //!   observability signal for latency regressions.
 
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Instant;
@@ -25,7 +26,7 @@ use tokio::sync::oneshot;
 
 use crate::audio::capture::MicCapture;
 use crate::cleanup;
-use crate::config::AppCategory;
+use crate::config::{AppCategory, CaptureMode};
 use crate::error::AppResult;
 use crate::hotkey::{platform_listener, HotkeyEvent, HotkeyListener};
 use crate::state::AppState;
@@ -150,8 +151,14 @@ impl DictationController {
         match MicCapture::start(
             settings.audio.ring_capacity_secs,
             settings.audio.input_device.as_deref(),
+            settings.audio.resume_timeout_ms,
         ) {
             Ok(mic) => {
+                // On-demand starts quiet: otherwise the indicator stays lit
+                // until the first dictation schedules a pause.
+                if settings.audio.capture_mode == CaptureMode::OnDemand {
+                    let _ = mic.pause();
+                }
                 *state.mic.lock().unwrap() = Some(Arc::new(mic));
             }
             Err(e) => {
@@ -231,6 +238,8 @@ impl DictationController {
             match (phase, event) {
                 (Phase::Idle, HotkeyEvent::Pressed) => {
                     let hint = pending_hint();
+                    // On-demand capture: wait for audio before opening the window.
+                    arm_mic(&app);
                     let press_pos = mic_position(&app);
                     emit(&app, UiEvent::Recording { hint });
                     phase = Phase::Recording {
@@ -240,6 +249,7 @@ impl DictationController {
                 }
                 (Phase::Idle, HotkeyEvent::DoubleTap) => {
                     let hint = pending_hint();
+                    arm_mic(&app);
                     let press_pos = mic_position(&app);
                     emit(&app, UiEvent::Recording { hint });
                     phase = Phase::Recording {
@@ -276,6 +286,7 @@ impl DictationController {
                     phase = Phase::Idle;
                     resolve_pending(Err("dictation cancelled".into()));
                     emit(&app, UiEvent::Cancelled);
+                    schedule_mic_pause(&app);
                     emit_idle_after_delay(&app);
                 }
                 (Phase::Idle, HotkeyEvent::Esc) | (Phase::Idle, HotkeyEvent::Released { .. }) => {
@@ -288,6 +299,58 @@ impl DictationController {
             }
         }
     }
+}
+
+/// Bumped on every dictation start so a deferred pause can tell whether a
+/// newer utterance has begun since it was scheduled.
+static GENERATION: AtomicU64 = AtomicU64::new(0);
+
+/// On-demand capture: resume the mic and wait until audio is genuinely
+/// flowing before the utterance window opens. Without the wait the first
+/// syllable is lost to the resume latency.
+fn arm_mic(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let settings = state.settings_snapshot();
+    if settings.audio.capture_mode != CaptureMode::OnDemand {
+        return;
+    }
+    GENERATION.fetch_add(1, Ordering::SeqCst);
+
+    let mic = state.mic.lock().unwrap().clone();
+    if let Some(mic) = mic {
+        match mic.resume() {
+            Ok(0) => {}
+            Ok(ms) => tracing::debug!(resume_ms = ms, "microphone resumed"),
+            Err(e) => tracing::warn!(error = %e, "microphone resume failed"),
+        }
+    }
+}
+
+/// On-demand capture: pause the mic after the configured linger, unless a new
+/// dictation took over in the meantime.
+fn schedule_mic_pause(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let settings = state.settings_snapshot();
+    if settings.audio.capture_mode != CaptureMode::OnDemand {
+        return;
+    }
+    let generation = GENERATION.load(Ordering::SeqCst);
+    let linger = settings.audio.linger_ms;
+    let app = app.clone();
+
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(linger));
+        if GENERATION.load(Ordering::SeqCst) != generation {
+            return; // a newer dictation is using the mic
+        }
+        let state = app.state::<AppState>();
+        let mic = state.mic.lock().unwrap().clone();
+        if let Some(mic) = mic {
+            if let Err(e) = mic.pause() {
+                tracing::warn!(error = %e, "microphone pause failed");
+            }
+        }
+    });
 }
 
 fn pending_hint() -> Option<String> {
@@ -369,6 +432,8 @@ fn finalize(app: &AppHandle, shift_raw: bool, press_pos: usize, release_pos: usi
     std::thread::spawn(move || {
         let started = Instant::now();
         let result = finalize_inner(&app, shift_raw, started, press_pos, release_pos);
+        // The ring has been snapshotted by now; quiet the mic in on-demand mode.
+        schedule_mic_pause(&app);
         match result {
             Ok((text, raw, provider, e2e_ms)) => {
                 emit(
@@ -567,10 +632,22 @@ fn finalize_inner(
         let category = foreground_category();
         let dictionary = state.db.dictionary()?;
         let stage1 = if settings.cleanup.deterministic_cleanup {
-            cleanup::run_deterministic(&raw, category, &dictionary, shift_raw)
+            cleanup::run_deterministic_with(
+                &raw,
+                category,
+                &dictionary,
+                shift_raw,
+                &settings.cleanup.numbers,
+            )
         } else {
             // Whitespace-only passthrough when the user disabled the rules.
-            cleanup::run_deterministic(&raw, category, &dictionary, true)
+            cleanup::run_deterministic_with(
+                &raw,
+                category,
+                &dictionary,
+                true,
+                &settings.cleanup.numbers,
+            )
         };
 
         let provider = cleanup::create_provider(&settings, state.secrets.as_ref())?;
@@ -659,7 +736,18 @@ fn finalize_inner(
 
         if delivered_to_console != Some(true) {
             // Paste (Stage-1 or polished text — never blocked by provider failure).
-            state.paste.paste(&final_text)?;
+            // The outcome is logged for Diagnostics; clipboard contents are
+            // deliberately never included.
+            let outcome = state.paste_backend().paste(&final_text)?;
+            tracing::debug!(
+                backend = outcome.backend,
+                snapshot = outcome.snapshot_kind,
+                restored = outcome.restored,
+                restore_skipped = outcome.restore_skipped.unwrap_or(""),
+                elapsed_ms = outcome.elapsed_ms,
+                "paste complete"
+            );
+            state.record_paste(outcome);
         }
 
         let e2e_ms = started.elapsed().as_millis() as i64;

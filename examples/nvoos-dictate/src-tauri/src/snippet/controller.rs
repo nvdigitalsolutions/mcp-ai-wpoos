@@ -430,7 +430,13 @@ fn recognize_and_deliver(
         .set_text(clean.clone())
         .map_err(|e| AppError::Paste(e.to_string()))?;
     let pasted = if settings.snippet.auto_paste {
-        state.paste.paste(&clean).is_ok()
+        match state.paste_backend().paste(&clean) {
+            Ok(outcome) => {
+                state.record_paste(outcome);
+                true
+            }
+            Err(_) => false,
+        }
     } else {
         false
     };

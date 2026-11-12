@@ -92,6 +92,14 @@ impl SecretStore for InMemorySecretStore {
 }
 
 /// The shared application state.
+/// Most recent paste outcome, shown on the Diagnostics page (Proposal 144 W4).
+/// Never carries clipboard contents.
+#[derive(Debug, Clone)]
+pub struct LastPaste {
+    pub outcome: crate::paste::PasteOutcome,
+    pub at: String,
+}
+
 pub struct AppState {
     pub settings: RwLock<Settings>,
     pub db: std::sync::Arc<Db>,
@@ -119,7 +127,9 @@ pub struct AppState {
     pub memory: std::sync::Arc<crate::memory::controller::MemoryController>,
     /// Resident STT engine (swapped on settings change).
     pub engine: RwLock<Option<Arc<dyn SttEngine>>>,
-    pub paste: Arc<dyn PasteBackend>,
+    pub paste: RwLock<Arc<dyn PasteBackend>>,
+    /// Most recent paste outcome (diagnostics only).
+    pub last_paste: Mutex<Option<LastPaste>>,
     pub recorder: Arc<MeetingRecorder>,
 }
 
@@ -141,15 +151,42 @@ impl AppState {
             snippet: std::sync::Arc::new(crate::snippet::controller::SnippetController::new()),
             document: std::sync::Arc::new(crate::document::controller::DocumentController::new()),
             engine: RwLock::new(None),
-            paste: platform_backend(),
+            paste: RwLock::new(platform_backend(
+                &Settings::load().unwrap_or_default().paste,
+            )),
+            last_paste: Mutex::new(None),
             recorder: Arc::new(MeetingRecorder::new(16000)),
         }
+    }
+
+    /// Clone the active paste backend (cheap: `Arc`).
+    pub fn paste_backend(&self) -> Arc<dyn PasteBackend> {
+        self.paste.read().unwrap().clone()
+    }
+
+    /// Rebuild the paste backend from the clipboard settings.
+    fn rebuild_paste_backend(&self, settings: &Settings) {
+        *self.paste.write().unwrap() = platform_backend(&settings.paste);
+    }
+
+    /// Record the outcome of a paste attempt for Diagnostics.
+    pub fn record_paste(&self, outcome: crate::paste::PasteOutcome) {
+        *self.last_paste.lock().unwrap() = Some(LastPaste {
+            outcome,
+            at: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        });
+    }
+
+    /// Most recent paste outcome, if any.
+    pub fn last_paste(&self) -> Option<LastPaste> {
+        self.last_paste.lock().unwrap().clone()
     }
 
     /// Reload the persisted settings file.
     pub fn reload_settings(&self) -> AppResult<Settings> {
         let settings = Settings::load()?;
         *self.settings.write().unwrap() = settings.clone();
+        self.rebuild_paste_backend(&settings);
         Ok(settings)
     }
 
@@ -164,6 +201,7 @@ impl AppState {
         )?;
         settings.save()?;
         *self.settings.write().unwrap() = settings.clone();
+        self.rebuild_paste_backend(&settings);
         // Re-apply the memory encoder + poll gate. Failure-soft by
         // contract: a missing model leaves keyword-only retrieval.
         self.memory.apply_settings(&settings, &self.models_dir());
@@ -286,8 +324,12 @@ impl AppState {
         match MicCapture::start(
             settings.audio.ring_capacity_secs,
             settings.audio.input_device.as_deref(),
+            settings.audio.resume_timeout_ms,
         ) {
             Ok(mic) => {
+                if settings.audio.capture_mode == crate::config::CaptureMode::OnDemand {
+                    let _ = mic.pause();
+                }
                 tracing::info!(
                     device = mic.device_name(),
                     rate = mic.sample_rate(),

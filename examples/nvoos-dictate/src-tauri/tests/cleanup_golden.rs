@@ -143,3 +143,41 @@ fn golden_fixture_meeting1() {
     let expected = std::fs::read_to_string("tests/fixtures/cleanup/meeting1.expected.txt").unwrap();
     assert_eq!(clean(raw.trim(), AppCategory::Default), expected.trim());
 }
+
+// ---- Proposal 144: number-policy regressions ---------------------------
+// These pin the corrected behaviour. The old rule rewrote all of them.
+
+#[test]
+fn golden_prose_cardinals_left_alone() {
+    assert_eq!(
+        clean("one or two things", AppCategory::Default),
+        "One or two things."
+    );
+    assert_eq!(
+        clean("i have one thing to say", AppCategory::Default),
+        "I have one thing to say."
+    );
+    assert_eq!(clean("no one knows", AppCategory::Default), "No one knows.");
+}
+
+#[test]
+fn golden_digit_runs_still_convert() {
+    // T1 must survive the policy change: this is the case that earns its keep.
+    assert_eq!(
+        clean("my number is five two nine", AppCategory::Default),
+        "My number is 529."
+    );
+}
+
+#[test]
+fn golden_currency_groups_thousands() {
+    assert_eq!(clean("a thousand dollars", AppCategory::Default), "$1,000.");
+}
+
+#[test]
+fn golden_code_category_skips_number_rules() {
+    assert_eq!(
+        clean("twenty three items", AppCategory::Code),
+        "twenty three items"
+    );
+}

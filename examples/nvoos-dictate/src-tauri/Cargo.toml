@@ -60,6 +60,13 @@ name = "embed_probe"
 path = "examples/embed_probe.rs"
 required-features = ["memory"]
 
+# Capture-residency probe (Proposal 144 §4.3, Phase 0): idle callbacks + process
+# CPU in resident vs paused mode, plus pause -> first-callback latency.
+# Default features only (no model or C toolchain needed).
+[[example]]
+name = "capture_probe"
+path = "examples/capture_probe.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -185,6 +192,12 @@ windows = { version = "0.58", features = [
   # feature surfaces as "cannot find module" at compile time.
   "Win32_Graphics_Gdi",
   "Win32_System_WinRT",
+  # Clipboard fidelity (Proposal 144 §4.2): format enumeration/restore,
+  # HGLOBAL allocation for clipboard payloads, CF_HDROP file lists, and the
+  # documented history-exclusion formats.
+  "Win32_System_DataExchange",
+  "Win32_System_Memory",
+  "Win32_UI_Shell",
   "Foundation",
   "Foundation_Collections",
   "Globalization",

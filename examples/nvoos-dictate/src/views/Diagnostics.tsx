@@ -102,6 +102,19 @@ export default function DiagnosticsView() {
             <span>Voice activity detection</span>
             <span>{info.mic.vad_kind}</span>
           </li>
+          <li>
+            <span>Capture mode</span>
+            <span>
+              {info.mic.capture_mode}
+              {info.mic.paused ? ' · paused' : ' · running'}
+            </span>
+          </li>
+          {info.mic.capture_mode === 'on_demand' && (
+            <li>
+              <span>Last resume</span>
+              <span>{info.mic.last_resume_ms} ms</span>
+            </li>
+          )}
         </ul>
         <div className="btn-row">
           <button
@@ -121,6 +134,55 @@ export default function DiagnosticsView() {
             ? ' The level is flat: the app is not hearing this microphone (muted, unplugged, or a different default device).'
             : ' The meter moving means the app is hearing the microphone — if dictation still fails, see Last dictation below.'}
         </p>
+      </section>
+
+      <section className="card">
+        <h2>Clipboard</h2>
+        {info.paste ? (
+          <>
+            <ul className="kv">
+              <li>
+                <span>Backend</span>
+                <span>{info.paste.backend}</span>
+              </li>
+              <li>
+                <span>Previous contents</span>
+                <span>
+                  {info.paste.snapshot_kind === 'formats'
+                    ? 'all formats'
+                    : info.paste.snapshot_kind}
+                </span>
+              </li>
+              {info.paste.partial_formats > 0 && (
+                <li>
+                  <span>Not copyable</span>
+                  <span className="badge warn">
+                    {info.paste.partial_formats} format
+                    {info.paste.partial_formats === 1 ? '' : 's'}
+                  </span>
+                </li>
+              )}
+              <li>
+                <span>Restored</span>
+                <span className={badge(info.paste.restored)}>
+                  {info.paste.restored
+                    ? 'yes'
+                    : `no${info.paste.restore_skipped ? ` (${info.paste.restore_skipped})` : ''}`}
+                </span>
+              </li>
+              <li>
+                <span>Paste time</span>
+                <span>{info.paste.elapsed_ms} ms</span>
+              </li>
+            </ul>
+            <p className="muted small">
+              Last attempt {info.paste.at} UTC. Clipboard contents are never recorded here —
+              only what kind of content was present and whether it was put back.
+            </p>
+          </>
+        ) : (
+          <p className="muted">No dictation has been pasted yet.</p>
+        )}
       </section>
 
       <section className="card">

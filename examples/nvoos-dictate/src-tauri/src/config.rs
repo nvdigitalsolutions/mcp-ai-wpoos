@@ -190,6 +190,35 @@ mod num_cpus {
     }
 }
 
+/// Stage-1 number normalization (Proposal 144 §4.1). The rule is tiered: the
+/// unambiguous tiers are always on, and the tier that rewrote ordinary prose
+/// (bare cardinals) is opt-in.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct NumberRuleConfig {
+    /// Master switch for the number rule.
+    pub enabled: bool,
+    /// T4: convert a bare cardinal ("one", "twenty") that has neither a numeric
+    /// cue before it nor a unit after it. Off by default.
+    pub bare_small: bool,
+    /// Run the rule in the Code and Terminal categories (off by default: those
+    /// profiles care about identifiers, not prose).
+    pub in_code: bool,
+    /// Group thousands in prose output (`$1,000` rather than `$1000`).
+    pub thousands_separator: bool,
+}
+
+impl Default for NumberRuleConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            bare_small: false,
+            in_code: false,
+            thousands_separator: true,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct CleanupConfig {
@@ -209,6 +238,8 @@ pub struct CleanupConfig {
     pub replace_on_completion: bool,
     /// Disable Stage-1 rules entirely (raw ASR output, spacing only).
     pub deterministic_cleanup: bool,
+    /// Tiered number normalization (Proposal 144).
+    pub numbers: NumberRuleConfig,
 }
 
 impl Default for CleanupConfig {
@@ -219,6 +250,7 @@ impl Default for CleanupConfig {
             wait_for_llm_ms: 1500,
             replace_on_completion: true,
             deterministic_cleanup: true,
+            numbers: NumberRuleConfig::default(),
         }
     }
 }
@@ -321,6 +353,31 @@ impl Default for OllamaConfig {
     }
 }
 
+/// Microphone capture strategy (Proposal 144 §4.3).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum CaptureMode {
+    /// The stream runs continuously: zero resume latency and a full pre-roll
+    /// window, at the cost of the OS microphone-in-use indicator staying lit
+    /// while the app runs.
+    #[default]
+    Resident,
+    /// The stream is paused when idle and resumed on key-down. The indicator
+    /// clears and the audio endpoint can idle; pre-roll is given up and a
+    /// resume latency is paid per dictation.
+    OnDemand,
+}
+
+impl CaptureMode {
+    /// Stable id used in settings JSON and diagnostics.
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Resident => "resident",
+            Self::OnDemand => "on_demand",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct AudioConfig {
@@ -336,6 +393,14 @@ pub struct AudioConfig {
     /// default device at start; the actual device is always visible on the
     /// Diagnostics page.
     pub input_device: Option<String>,
+    /// Resident (default) or on-demand capture (Proposal 144 §4.3).
+    pub capture_mode: CaptureMode,
+    /// On-demand only: keep the stream running this long after a dictation so
+    /// a quick follow-up does not pay the resume cost again.
+    pub linger_ms: u64,
+    /// On-demand only: how long to wait for the first callback after a resume
+    /// before reporting that capture did not come back.
+    pub resume_timeout_ms: u64,
 }
 
 impl Default for AudioConfig {
@@ -346,6 +411,9 @@ impl Default for AudioConfig {
             ring_capacity_secs: 60,
             min_utterance_ms: 120,
             input_device: None,
+            capture_mode: CaptureMode::Resident,
+            linger_ms: 2000,
+            resume_timeout_ms: 250,
         }
     }
 }
@@ -648,6 +716,26 @@ impl Default for MemoryConfig {
     }
 }
 
+/// Clipboard behaviour for the paste path (Proposal 144 §4.2).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct PasteConfig {
+    /// Put the previous clipboard content back after the paste.
+    pub restore_clipboard: bool,
+    /// Settle time before restoring. A slow target (RDP, large IDE) needs a
+    /// longer window or it pastes the restored content instead of the text.
+    pub restore_delay_ms: u64,
+}
+
+impl Default for PasteConfig {
+    fn default() -> Self {
+        Self {
+            restore_clipboard: true,
+            restore_delay_ms: 250,
+        }
+    }
+}
+
 /// The complete persisted settings blob.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
@@ -660,6 +748,7 @@ pub struct Settings {
     pub lm_studio: LmStudioConfig,
     pub ollama: OllamaConfig,
     pub audio: AudioConfig,
+    pub paste: PasteConfig,
     pub camera: CameraConfig,
     pub vision: VisionConfig,
     pub agent: AgentConfig,
