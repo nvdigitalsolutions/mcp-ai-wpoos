@@ -386,6 +386,7 @@ Hash-check first: a file byte-identical to the incoming blob is safe to drop;
 anything else is real work.
 
 ```sh
+export MSYS_NO_PATHCONV=1
 git fetch origin alpha-working
 git diff --name-only HEAD origin/alpha-working > /tmp/incoming.txt
 git status --porcelain=v1 | sed 's/^...//' > /tmp/dirty.txt
@@ -408,6 +409,12 @@ done
 - **Untracked directories do not appear as file paths** in `git status`; they
   collapse to one `?? dir/` entry, so `comm` misses them. Enumerate with
   `git ls-files --others --exclude-standard` and hash-check those separately.
+- **On Windows Git Bash, run this block with `MSYS_NO_PATHCONV=1`.** MSYS
+  rewrites the `:` in `origin/alpha-working:path` into a Windows path, so
+  `git rev-parse` returns an empty string and every file mis-reports as
+  `DIFFERS` — a false positive that invites hand-merging files that were
+  already identical (2026-11-13: six files flagged after a squash merge, all
+  byte-identical).
 - `rm -f a b c` combined with `git checkout HEAD -- …` in one command can trip
   the editor's built-in security rule ("too harmful"). Run the `rm` and the
   `checkout` as separate calls.
