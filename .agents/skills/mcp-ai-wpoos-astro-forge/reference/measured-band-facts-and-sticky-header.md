@@ -78,6 +78,18 @@ plus `headerPinnedBg|Ink|Shadow`, `headerRestHeight`, `headerPinnedHeight`), and
 `Base.astro` turns them into `--forge-header-pinned-*` / `--forge-header-rest-h`
 vars on `<body>` plus a `site-header--pinned` class.
 
+**`restHeight` is recorded unconditionally.** It used to be omitted whenever a
+pinned strip existed or the header shrank, so `--forge-header-rest-h` was never
+emitted and the rebuild sized the header from its content: **47px against the
+source's 75px**. The opened mobile panel then started 28px too high and the hero
+copy showed through its 95%-black sheet (2026-11-12).
+
+The pass measures at 1440px, so the fact assumes the resting height is the same
+at every width — true for virtuallyjamaica (75/75/75). A non-sticky header
+(jayainc: 100/160/100) never reaches this branch, and a STICKY header that
+changes height per device needs the per-device chrome-geometry pass, not this
+one.
+
 The rebuild is **CSS-only** — a `scroll(root)` timeline, no scroll listener:
 
 ```css

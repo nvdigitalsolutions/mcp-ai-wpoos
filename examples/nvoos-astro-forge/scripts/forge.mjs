@@ -56,7 +56,9 @@ import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } fro
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
-import { applyBandSurfaces, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, normalizeColorModes } from '../lib/region-colors.ts';
+import { applyBandSurfaces, compareRegionColorModes, DEFAULT_COLOR_REGIONS, measureRegionColors, measureRegionColorsDetailed, normalizeColorModes, unresolvedChromeRegions } from '../lib/region-colors.ts';
+import { compareMobileNav } from '../lib/chrome-audit.ts';
+import { duplicateIds, inPageTargets } from '../lib/html-ids.ts';
 import { captureDist, capturePage } from '../lib/screenshot.ts';
 import { compareText, extractSectionTexts, textBaselineFromHtml, textFromHtml } from '../lib/text-parity.ts';
 import { createOctokitClient, GitHubDeploy } from '../lib/github.ts';
@@ -782,15 +784,22 @@ async function runAnalyze( url, options ) {
 			// The band surfaces matter as much as the chrome: measure one region per
 			// renderable band anchor, with the composited background.
 			const regions = [ ...DEFAULT_COLOR_REGIONS, ...bandColorRegions( renderableBands( profile.design ) ) ];
-			profile.colors = await measureRegionColors( { url: profile.url, modes, regions, effective: true } );
+			const measured = await measureRegionColorsDetailed( { url: profile.url, modes, regions, effective: true } );
+			profile.colors = measured.modes;
 			for ( const mode of Object.keys( profile.colors ) ) {
 				const regions = Object.keys( profile.colors[ mode ] );
 				console.log( `\u2713 Colour baseline (${ mode }): ${ regions.length } region(s) \u2014 ${ regions.join( ', ' ) || 'none' }.` );
-				for ( const region of [ 'body', 'header', 'footer' ] ) {
-					if ( ! profile.colors[ mode ][ region ] ) {
-						console.warn( `  \u26a0 ${ region } not found in the source markup (${ mode } selector ladder missed it).` );
-					}
-				}
+			}
+			// A region that resolved to the WRONG element measures nothing, and the gate
+			// then skips it — which reads as a pass. Name it at record time.
+			for ( const finding of unresolvedChromeRegions( measured.resolutions ) ) {
+				const why =
+					finding.reason === 'missing'
+						? 'no selector in the ladder matched'
+						: finding.reason === 'empty'
+							? 'matched an element with no box'
+							: 'matched an element that carries no text (check the ladder — an empty post-meta footer can win it)';
+				console.warn( `  \u26a0 ${ finding.region }: ${ why } \u2014 every colour metric on it will be skipped.` );
 			}
 			// Bake the measured band SURFACES into the homepage's band facts: a
 			// gradient painted on a child layer is invisible to the CSS harvest (the
@@ -1482,11 +1491,14 @@ async function runColors( profileRef, options ) {
 	// The same region set `analyze --colors` and `verify --colors` use: the
 	// defaults plus one region per renderable band anchor.
 	const regions = [ ...DEFAULT_COLOR_REGIONS, ...bandColorRegions( renderableBands( profile.design ) ) ];
-	const measured = await measureRegionColors( { url, modes, regions, effective: true } );
+	const measured = await measureRegionColorsDetailed( { url, modes, regions, effective: true } );
+	for ( const finding of unresolvedChromeRegions( measured.resolutions ) ) {
+		console.warn( `  \u26a0 ${ finding.region }: ${ finding.reason } \u2014 its colour metrics will be skipped.` );
+	}
 	const previous = normalizeColorModes( profile.colors );
-	for ( const mode of Object.keys( measured ) ) {
+	for ( const mode of Object.keys( measured.modes ) ) {
 		console.log( `\n${ mode } \u2014 ${ url }` );
-		for ( const [ region, value ] of Object.entries( measured[ mode ] ) ) {
+		for ( const [ region, value ] of Object.entries( measured.modes[ mode ] ) ) {
 			const before = previous[ mode ]?.[ region ];
 			const was = before ? `  (was ${ before.background } / ${ before.text })` : '';
 			const inks = ( value.inks ?? [] ).map( ( ink ) => `${ ink.color } ${ Math.round( ink.share * 100 ) }%` ).join( ', ' );
@@ -1500,7 +1512,7 @@ async function runColors( profileRef, options ) {
 			process.exitCode = 1;
 			return;
 		}
-		profile.colors = measured;
+		profile.colors = measured.modes;
 		await writeFile( profilePath, `${ JSON.stringify( profile, null, '\t' ) }\n`, 'utf8' );
 		console.log( `\n\u2713 Colour baseline written to ${ profilePath }` );
 	} else {
@@ -1760,10 +1772,12 @@ const GATE_ORDER = [
 	'token block',
 	'band flow',
 	'nav anchors',
+	'built ids',
 	'fact consumption',
 	'media budget',
 	'text parity',
 	'colour system',
+	'mobile menu',
 	'tracking',
 	'SEO head',
 	'box geometry',
@@ -2118,6 +2132,41 @@ async function runVerify( profileRef, options ) {
 		}
 		if ( anchors.length > 0 && dead.length > 0 ) {
 			record( 'nav anchors', 'warn', `dead: #${ dead.join( ', #' ) }` );
+		}
+	}
+	// Id uniqueness. A builder's in-page anchor can live INSIDE the band
+	// (`id="wifi"` on a half-column) and the wrapper emitted it a second time, so
+	// `#wifi` resolved to the wrapper: links landed on the band instead of the
+	// panel, and the colour gate then compared two different boxes and reported a
+	// drift that did not exist (virtuallyjamaica, 2026-11-12). Duplicates are
+	// invalid HTML everywhere; they BREAK the document where something links to
+	// them, which is the case that must fail.
+	if ( indexHtml ) {
+		const duplicates = duplicateIds( indexHtml );
+		const targets = inPageTargets( indexHtml );
+		const broken = duplicates.filter( ( entry ) => targets.has( entry.id ) );
+		const stray = duplicates.filter( ( entry ) => ! targets.has( entry.id ) );
+		for ( const entry of broken ) {
+			console.warn(
+				`\u2717 Built ids: #${ entry.id } appears ${ entry.count }\u00d7 and is an in-page link target \u2014 the browser resolves every link to the FIRST one.`
+			);
+		}
+		if ( stray.length > 0 ) {
+			const named = stray.slice( 0, 6 ).map( ( entry ) => `#${ entry.id } \u00d7${ entry.count }` ).join( ', ' );
+			console.warn( `\u26a0 Built ids: ${ stray.length } duplicated id(s) nothing links to: ${ named }` );
+		}
+		if ( duplicates.length === 0 ) {
+			console.log( '\u2713 Built ids: every id in the page is unique.' );
+			record( 'built ids', 'pass', 'all ids unique' );
+		} else {
+			if ( broken.length > 0 ) {
+				process.exitCode = 1;
+			}
+			record(
+				'built ids',
+				broken.length > 0 ? 'fail' : 'warn',
+				`${ duplicates.length } duplicate id(s), ${ broken.length } targeted`
+			);
 		}
 	}
 	// Fact consumption (the "a component ignored the fact" class): every fact a
@@ -2936,12 +2985,26 @@ async function runVerify( profileRef, options ) {
 			...bandNames.map( ( name ) => ( { name, selectors: [ `#${ name.slice( 5 ) }` ], descendantFill: true } ) ),
 		];
 		let builtColors;
+		let builtResolutions = {};
 		try {
-			builtColors = await measureRegionColors( { url: served.url, modes, regions, effective: true } );
+			const built = await measureRegionColorsDetailed( { url: served.url, modes, regions, effective: true } );
+			builtColors = built.modes;
+			builtResolutions = built.resolutions;
 		} catch ( error ) {
 			fail( `Colour measurement failed — ${ error instanceof Error ? error.message : error }` );
 		} finally {
 			served.server.close();
+		}
+		// A region that resolved to an EMPTY element on either side measures
+		// nothing, and every metric on it is skipped — a blind spot, not a pass.
+		const unresolved = unresolvedChromeRegions( builtResolutions );
+		for ( const finding of unresolved ) {
+			console.warn(
+				`\u26a0 Colour: ${ finding.region } resolved to ${ finding.reason === 'missing' ? 'no element' : finding.reason === 'empty' ? 'an element with no box' : 'an element with no text' } in the build \u2014 its metrics are skipped, so this gate has no opinion on it.`
+			);
+		}
+		if ( unresolved.length > 0 && options.strictColors ) {
+			process.exitCode = 1;
 		}
 		const report = compareRegionColorModes( profile.colors, builtColors, {
 			warnAt: Number( options.colorsWarn ?? 3 ),
@@ -2983,8 +3046,60 @@ async function runVerify( profileRef, options ) {
 			record(
 			'colour system',
 			failures.length > 0 ? 'fail' : report.deviations.length > 0 || report.missing.length > 0 ? 'warn' : 'pass',
-			`${ report.compared } surface metric(s) (${ modes.join( '+' ) }), ${ report.deviations.length } drift, ${ report.missing.length } missing${ report.unimplemented.length > 0 ? `, ${ report.unimplemented.join( '/' ) } n/a (source has none)` : '' }`
+			`${ report.compared } surface metric(s) (${ modes.join( '+' ) }), ${ report.deviations.length } drift, ${ report.missing.length } missing${ report.unimplemented.length > 0 ? `, ${ report.unimplemented.join( '/' ) } n/a (source has none)` : '' }${ unresolved.length > 0 ? `, ${ unresolved.length } unresolved` : '' }`
 		);
+	}
+
+	// The OPENED mobile menu: a chrome STATE the colour gate cannot see (that
+	// one measures 1440px at rest). The profile carries the source's panel
+	// (`analyze --geometry` → `chrome.mobileNav`); the build is measured the
+	// same way, so the diff is like-for-like. Contrast alone would NOT catch
+	// this: white links on virtuallyjamaica's red hero measure 4.57:1.
+	if ( options.chrome ) {
+		const expectedNav = profile.design?.chrome?.mobileNav;
+		if ( ! expectedNav ) {
+			console.log( '  Mobile menu: not measured on the source \u2014 run `analyze --geometry --write` to record it.' );
+			record( 'mobile menu', 'skip', 'no measured fact (analyze --geometry)' );
+		} else if ( ! ( await browserAvailable() ) ) {
+			console.warn( '\u26a0 Mobile menu: skipped \u2014 Playwright/Chromium is not available in this environment.' );
+			record( 'mobile menu', 'skip', 'browser unavailable' );
+		} else {
+			const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
+			let actualNav;
+			try {
+				actualNav = await measureMobileNav( { url: served.url } );
+			} catch ( error ) {
+				fail( `Mobile-menu measurement failed — ${ error instanceof Error ? error.message : error }` );
+			} finally {
+				served.server.close();
+			}
+			const report = compareMobileNav( expectedNav, actualNav, {
+				warnAt: Number( options.colorsWarn ?? 3 ),
+				failAt: Number( options.colorsFail ?? 6 ),
+			} );
+			const failed = report.deviations.filter( ( deviation ) => deviation.severity === 'fail' );
+			for ( const deviation of [ ...failed, ...report.deviations.filter( ( d ) => d.severity === 'warn' ) ] ) {
+				const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
+				const metric = deviation.deltaE === null ? '' : ` (\u0394E00 ${ deviation.deltaE })`;
+				console.warn(
+					`${ mark } Mobile menu: ${ deviation.fact } \u2014 source ${ deviation.expected ?? '\u2014' }, build ${ deviation.actual ?? '\u2014' }${ metric }${ deviation.note ? ` \u2014 ${ deviation.note }` : '' }`
+				);
+			}
+			for ( const skipped of report.skipped ) {
+				console.log( `  mobile menu: ${ skipped } not compared` );
+			}
+			if ( failed.length > 0 ) {
+				process.exitCode = 1;
+			}
+			if ( report.deviations.length === 0 ) {
+				console.log( `\u2713 Mobile menu: the opened panel keeps the source's surface and ink (${ report.compared } metric(s)).` );
+			}
+			record(
+				'mobile menu',
+				failed.length > 0 ? 'fail' : report.deviations.length > 0 ? 'warn' : 'pass',
+				`${ report.compared } metric(s), ${ report.deviations.length } drift`
+			);
+		}
 	}
 
 	if ( options.visual ) {
@@ -3284,7 +3399,8 @@ program
 	.option( '--colors-warn <n>', 'with --colors: \u0394E00 at/above this warns (default 3)', '3' )
 	.option( '--colors-fail <n>', 'with --colors: \u0394E00 at/above this fails (default 6)', '6' )
 	.option( '--colors-modes <modes>', 'with --colors: colour schemes to measure, comma-separated (default light,dark)', 'light,dark' )
-	.option( '--strict-colors', 'with --colors: fail when a region the source had is missing from the build' )
+	.option( '--strict-colors', 'with --colors: fail when a region the source had is missing from the build, or resolved to an empty element' )
+	.option( '--chrome', 'gate chrome STATES the colour gate cannot see \u2014 the opened mobile menu\u0027s surface and ink vs the source\u0027s measured panel (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--strict-facts', 'fail when a declared band fact did not reach the built HTML (default: report only)' )
 	.option( '--strict-media', 'fail when the artifact still ships a JPEG/PNG the localizer could not re-encode (Proposal 140)' )
 	.option( '--tracking', 'gate the tracking block: consent ordering, verification tokens/files, event ownership, CSP allowlist (Proposal 130)' )

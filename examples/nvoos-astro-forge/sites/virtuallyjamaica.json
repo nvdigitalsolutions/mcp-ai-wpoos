@@ -3057,6 +3057,7 @@
 		"sticky": true,
 		"position": "fixed",
 		"restInk": "rgb(255, 255, 255)",
+		"restHeight": 75,
 		"pinnedBg": "rgba(0, 0, 0, 0.7)",
 		"pinnedHeight": 70,
 		"bgChanged": true,

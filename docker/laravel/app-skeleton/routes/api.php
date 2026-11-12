@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\ApprovalsController;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\AssistantPortabilityController;
 use App\Http\Controllers\ChatStreamController;
@@ -9,12 +10,15 @@ use App\Http\Controllers\FeaturesController;
 use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
+use App\Http\Controllers\PaperStoreController;
+use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\TranscriptsController;
+use App\Http\Controllers\TriggersController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -83,6 +87,35 @@ Route::prefix('api/v1')->group(function (): void {
 
             Route::get('/tools', ToolsController::class);
             Route::get('/pro/ops/overview', OpsController::class);
+
+            // Phase 3b — HITL approvals.
+            Route::get('/approvals', [ApprovalsController::class, 'index']);
+            Route::post('/approvals', [ApprovalsController::class, 'store']);
+            Route::post('/approvals/{id}/{action}', [ApprovalsController::class, 'resolve'])
+                ->whereIn('action', ['approve', 'deny']);
+
+            // Phase 3b — workflow triggers.
+            Route::get('/triggers', [TriggersController::class, 'index']);
+            Route::post('/triggers', [TriggersController::class, 'store']);
+            Route::put('/triggers/{id}', [TriggersController::class, 'update']);
+            Route::delete('/triggers/{id}', [TriggersController::class, 'destroy']);
+
+            // Phase 3b — security posture, snapshots, self-test.
+            Route::get('/security/posture', [SecurityController::class, 'posture']);
+            Route::get('/security/preview-headers', [SecurityController::class, 'previewHeaders']);
+            Route::get('/security/snapshots', [SecurityController::class, 'snapshots']);
+            Route::post('/security/snapshot', [SecurityController::class, 'saveSnapshot']);
+            Route::post('/security/restore', [SecurityController::class, 'restoreSnapshot']);
+            Route::post('/security/self-test', [SecurityController::class, 'selfTest']);
+
+            // Phase 3b — Paper Store. `/search` must precede `{collection}`.
+            Route::get('/paper-store', [PaperStoreController::class, 'collections']);
+            Route::get('/paper-store/search', [PaperStoreController::class, 'search']);
+            Route::get('/paper-store/{collection}', [PaperStoreController::class, 'records']);
+            Route::post('/paper-store/{collection}', [PaperStoreController::class, 'store']);
+            Route::get('/paper-store/{collection}/{id}', [PaperStoreController::class, 'show']);
+            Route::put('/paper-store/{collection}/{id}', [PaperStoreController::class, 'update']);
+            Route::delete('/paper-store/{collection}/{id}', [PaperStoreController::class, 'destroy']);
         });
     });
 });

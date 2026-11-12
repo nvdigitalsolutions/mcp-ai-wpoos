@@ -246,4 +246,6 @@ short digest of the highest-traffic ones stays in `SKILL.md`.
   already matches — attribute-aware, so `id="wifi"` written in prose does not
   count, and `id="wifi-panel"` does not either. Only the kinds that actually
   emit `section.html` (`text`, `raw`) are checked: a component band keeps the
-  html but never renders it, so suppressing there would drop the anchor.
+  html but never renders it, so suppressing there would drop the anchor. The
+  output is gated too: `verify` fails a duplicated id that anything links to
+  (`built ids`) — see [`chrome-gates.md`](chrome-gates.md).
