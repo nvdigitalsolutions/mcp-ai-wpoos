@@ -42,4 +42,33 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Give the user a site role (090-g Phase 5).
+     *
+     * `role` is deliberately not mass-assignable — a request body must never
+     * choose it — so the state force-fills the column instead.
+     */
+    public function role(string $role): static
+    {
+        return $this->afterMaking(
+            fn (User $user) => $user->forceFill(['role' => $role])
+        );
+    }
+
+    /**
+     * An administrator (manage_options).
+     */
+    public function admin(): static
+    {
+        return $this->role('administrator');
+    }
+
+    /**
+     * An editor (can edit other users' content).
+     */
+    public function editor(): static
+    {
+        return $this->role('editor');
+    }
 }

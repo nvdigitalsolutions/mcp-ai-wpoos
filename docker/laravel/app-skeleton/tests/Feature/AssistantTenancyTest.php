@@ -23,7 +23,7 @@ class AssistantTenancyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
     }
 
     public function test_api_created_assistants_land_in_the_default_tenant(): void

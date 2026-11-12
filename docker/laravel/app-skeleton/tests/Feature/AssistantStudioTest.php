@@ -14,7 +14,7 @@ class AssistantStudioTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
     }
 
     public function test_create_list_show_update_delete(): void

@@ -29,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // resolves `route('login')` before the exception handler runs, which
         // surfaced as a 500 instead of a 401. A null redirect target makes it
         // throw AuthenticationException, which renders as JSON.
-        $middleware->redirectGuestsTo(static fn (): ?string => null );
+        $middleware->redirectGuestsTo(static fn (): ?string => null);
 
         // Map the console's X-WP-Nonce onto Laravel's raw CSRF header before
         // validation (Proposal 090-B, ADR-4, Phases 0-4). Registered on the

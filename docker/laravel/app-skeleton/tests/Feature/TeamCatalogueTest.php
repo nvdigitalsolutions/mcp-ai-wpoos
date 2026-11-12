@@ -23,7 +23,7 @@ class TeamCatalogueTest extends TestCase
     {
         parent::setUp();
 
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
     }
 
     public function test_index_lists_published_teams_with_member_counts(): void

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\TeamMember;
+use App\Support\CapabilityMap;
+use App\Support\TeamAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -36,8 +38,12 @@ class TeamController
         ]);
     }
 
-    public function show(string $team): JsonResponse
+    public function show(Request $request, string $team): JsonResponse
     {
+        // Non-members get 404 rather than 403 so the API does not disclose
+        // that a team id exists. Site administrators override.
+        $this->guard($request, (int) $team);
+
         $result = $this->teams->get((int) $team);
 
         if (! $result['found']) {
@@ -66,6 +72,8 @@ class TeamController
 
     public function update(Request $request, string $team): JsonResponse
     {
+        $this->guard($request, (int) $team, CapabilityMap::ABILITY_MANAGE_TEAM);
+
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'slug' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -81,8 +89,10 @@ class TeamController
         return response()->json(['success' => true, 'data' => $result['team']]);
     }
 
-    public function destroy(string $team): Response
+    public function destroy(Request $request, string $team): Response
     {
+        $this->guard($request, (int) $team, CapabilityMap::ABILITY_DELETE_TEAM);
+
         $result = $this->teams->delete((int) $team);
 
         return $result['deleted']
@@ -92,6 +102,8 @@ class TeamController
 
     public function storeMember(Request $request, string $team): JsonResponse
     {
+        $this->guard($request, (int) $team, CapabilityMap::ABILITY_MANAGE_TEAM_MEMBERS);
+
         $data = $request->validate([
             'user_id' => ['required', 'integer', 'min:1'],
             'role' => ['sometimes', 'string', 'in:'.implode(',', TeamMember::ROLES)],
@@ -126,6 +138,8 @@ class TeamController
 
     public function updateMember(Request $request, string $team, string $user): JsonResponse
     {
+        $this->guard($request, (int) $team, CapabilityMap::ABILITY_MANAGE_TEAM_MEMBERS);
+
         $data = $request->validate([
             'role' => ['required', 'string', 'in:'.implode(',', TeamMember::ROLES)],
         ]);
@@ -139,8 +153,10 @@ class TeamController
         return response()->json(['success' => true, 'data' => $result['member']]);
     }
 
-    public function destroyMember(string $team, string $user): JsonResponse
+    public function destroyMember(Request $request, string $team, string $user): JsonResponse
     {
+        $this->guard($request, (int) $team, CapabilityMap::ABILITY_MANAGE_TEAM_MEMBERS);
+
         $result = $this->teams->removeMember((int) $team, (int) $user);
 
         if (! $result['removed']) {
@@ -148,5 +164,24 @@ class TeamController
         }
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Enforce team-scoped authorization.
+     *
+     * Non-members get a 404 (no existence disclosure); members who lack the
+     * ability get a 403. A site administrator passes both checks.
+     */
+    private function guard(Request $request, int $teamId, ?string $ability = null): void
+    {
+        $user = $request->user();
+
+        if (! TeamAccess::isMember($user, $teamId)) {
+            abort(404);
+        }
+
+        if ($ability !== null) {
+            abort_unless(TeamAccess::allows($user, $teamId, $ability), 403);
+        }
     }
 }

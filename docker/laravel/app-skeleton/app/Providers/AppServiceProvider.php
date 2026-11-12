@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Services\LaravelAssistantService;
 use App\Services\LaravelTeamService;
+use App\Support\CapabilityMap;
 use App\Spike\SpikeStreamingProvider;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -35,12 +38,67 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // The spike uses permissive Gates; production apps replace these
-        // with real policy checks.
-        Gate::define('read', fn ($user) => true);
-        Gate::define('read_content', fn ($user, $id = null, $userId = null) => true);
-        Gate::define('edit_content', fn ($user, $id = null, $userId = null) => true);
-        Gate::define('delete_content', fn ($user, $id = null, $userId = null) => true);
+        // ── Authorization (090-g Phase 5) ────────────────────────────
+        //
+        // Site roles are WordPress's: subscriber → administrator. `before`
+        // answers from the role and returns null (not false) for anything it
+        // does not grant, so anything else — host policies included — still
+        // decides for itself.
+        Gate::before(
+            static fn ($user, string $ability): ?bool => CapabilityMap::has($user, $ability)
+                ? true
+                : null
+        );
+
+        // Content abilities: capability first, then ownership. The content
+        // store passes [id, userId] instead of relying on the session, because
+        // a tool may act for a different user than the request.
+        Gate::define(
+            'read_content',
+            static function ($user, $id = null, $userId = null): bool {
+                $target = self::contentUser($user, $userId);
+
+                return $target !== null && CapabilityMap::has($target, 'read');
+            }
+        );
+        Gate::define(
+            'edit_content',
+            static function ($user, $id = null, $userId = null): bool {
+                $target = self::contentUser($user, $userId);
+
+                if ($target === null || ! CapabilityMap::has($target, 'edit_posts')) {
+                    return false;
+                }
+
+                if (CapabilityMap::has($target, 'edit_others_posts')) {
+                    return true;
+                }
+
+                $record = self::contentRecord($id);
+
+                return $record !== null
+                    && (int) ($record->author_id ?? 0) === (int) $target->getAuthIdentifier();
+            }
+        );
+        Gate::define(
+            'delete_content',
+            static function ($user, $id = null, $userId = null): bool {
+                $target = self::contentUser($user, $userId);
+
+                if ($target === null || ! CapabilityMap::has($target, 'delete_posts')) {
+                    return false;
+                }
+
+                if (CapabilityMap::has($target, 'delete_others_posts')) {
+                    return true;
+                }
+
+                $record = self::contentRecord($id);
+
+                return $record !== null
+                    && (int) ($record->author_id ?? 0) === (int) $target->getAuthIdentifier();
+            }
+        );
 
         // Local/testing soak runs need headroom; production keeps 60/min.
         $chatLimit = app()->environment(['local', 'testing']) ? 60000 : 60;
@@ -65,5 +123,40 @@ class AppServiceProvider extends ServiceProvider
                 $this->app->make(ErrorFactoryInterface::class),
             ));
         }
+    }
+
+    /**
+     * Resolve the user a content ability is being checked for.
+     *
+     * The console passes the acting user id alongside the record id; a null
+     * or zero id means "the session user".
+     */
+    private static function contentUser(mixed $user, mixed $userId): ?Authenticatable
+    {
+        if (null === $userId || 0 === (int) $userId) {
+            return $user instanceof Authenticatable ? $user : null;
+        }
+
+        $found = User::query()->find((int) $userId);
+
+        return $found instanceof Authenticatable ? $found : null;
+    }
+
+    /**
+     * Load a content record through the configured content model.
+     */
+    private static function contentRecord(mixed $id): ?object
+    {
+        if (null === $id || (int) $id <= 0) {
+            return null;
+        }
+
+        $model = (string) config('oos.content_model', \Nvoos\Laravel\Models\NvoosPost::class);
+
+        if (! class_exists($model)) {
+            return null;
+        }
+
+        return $model::query()->find((int) $id);
     }
 }

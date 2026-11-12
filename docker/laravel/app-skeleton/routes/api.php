@@ -38,6 +38,10 @@ use Illuminate\Support\Facades\Route;
 | Paths mirror the console's expected `/api/v1` base. Auth-bearing routes use
 | Sanctum (bearer or the SPA cookie mode enabled in bootstrap/app.php).
 |
+| Authorization (090-g Phase 5): site roles are WordPress's, and the admin
+| surfaces below carry `can:manage_options` — the same gate the console's nav
+| uses. Hiding a button is UX; the middleware is the enforcement.
+|
 */
 Route::prefix('api/v1')->group(function (): void {
     Route::get('/features', FeaturesController::class);
@@ -61,23 +65,11 @@ Route::prefix('api/v1')->group(function (): void {
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/session/me', [SessionController::class, 'me']);
 
+        // ── Available to any authenticated user ──────────────────────────
+        // Chat and its satellite surfaces are per-user, not administrative.
+        // `wp/*` and `media` mirror WordPress's own capabilities: authors may
+        // create content and upload files, subscribers may not.
         Route::middleware('throttle:console')->group(function (): void {
-            Route::get('/settings', [SettingsController::class, 'index']);
-            Route::get('/settings/schema', [SettingsController::class, 'schema']);
-            Route::get('/settings/values', [SettingsController::class, 'values']);
-            Route::post('/settings/values', [SettingsController::class, 'updateValues']);
-
-            Route::get('/diagnostics/overview', DiagnosticsController::class);
-            Route::get('/operations/cron', [OperationsController::class, 'cron']);
-            Route::delete('/operations/cron/{jobId}', [OperationsController::class, 'removeCron']);
-            Route::get('/operations/dlq', [OperationsController::class, 'dlq']);
-            Route::post('/operations/dlq/{itemId}/retry', [OperationsController::class, 'retry']);
-            Route::post('/operations/dlq/{itemId}/dismiss', [OperationsController::class, 'dismiss']);
-            Route::get('/operations/timeline', [OperationsController::class, 'timeline']);
-
-            Route::post('/assistants/export', [AssistantPortabilityController::class, 'export']);
-            Route::post('/assistants/import', [AssistantPortabilityController::class, 'import']);
-
             Route::get('/chat-transcripts', [TranscriptsController::class, 'index']);
             Route::post('/chat-transcripts', [TranscriptsController::class, 'store']);
             Route::get('/chat-transcripts/{sessionKey}', [TranscriptsController::class, 'show']);
@@ -91,11 +83,75 @@ Route::prefix('api/v1')->group(function (): void {
             Route::match(['put', 'patch'], '/chat-memory/{id}', [MemoryController::class, 'update']);
             Route::delete('/chat-memory/{id}', [MemoryController::class, 'destroy']);
 
+            Route::get('/tools', ToolsController::class);
+
+            // The list stays readable: the console shows every role the
+            // assistant catalogue. Everything below it is administrative.
+            Route::get('/assistants', [AssistantController::class, 'index']);
+
+            // 090-g Phase 3 — org teams and user membership.
+            //
+            // `/teams` is already the WordPress agent-team surface (a named
+            // collection of professions, consumed by the SPA's TeamsPage), so
+            // the org primitive — users with roles — mounts under `/org`.
+            // Reusing `/teams` would return a different shape at the same URL
+            // and silently break the shared console.
+            //
+            // No `manage_options` here: membership is the authorization, and
+            // TeamAccess decides per ability (a site administrator overrides).
+            Route::prefix('org')->group(function (): void {
+                Route::get('/teams', [TeamController::class, 'index']);
+                Route::post('/teams', [TeamController::class, 'store']);
+                Route::get('/teams/{team}', [TeamController::class, 'show']);
+                Route::match(['put', 'patch'], '/teams/{team}', [TeamController::class, 'update']);
+                Route::delete('/teams/{team}', [TeamController::class, 'destroy']);
+                Route::post('/teams/{team}/members', [TeamController::class, 'storeMember']);
+                Route::match(['put', 'patch'], '/teams/{team}/members/{user}', [TeamController::class, 'updateMember']);
+                Route::delete('/teams/{team}/members/{user}', [TeamController::class, 'destroyMember']);
+            });
+
+            Route::middleware('can:edit_posts')->group(function (): void {
+                // Phase 3c — WordPress-compatible content shim. The Laravel
+                // profile points the console's `wpBase` at /api/v1/wp.
+                Route::get('/wp/{restBase}', [WpContentController::class, 'index']);
+                Route::post('/wp/{restBase}', [WpContentController::class, 'store']);
+                Route::get('/wp/{restBase}/{id}', [WpContentController::class, 'show'])
+                    ->whereNumber('id');
+            });
+
+            Route::middleware('can:upload_files')->group(function (): void {
+                // Phase 3d — media library. `wp/v2/media`-shaped list, read and
+                // multipart upload (`file` field) for the console's Media
+                // Library and the chat attachment picker.
+                Route::get('/media', [MediaController::class, 'index']);
+                Route::post('/media', [MediaController::class, 'store']);
+                Route::get('/media/{id}', [MediaController::class, 'show'])->whereNumber('id');
+            });
+        });
+
+        // ── Administrative surfaces (manage_options) ─────────────────────
+        Route::middleware(['throttle:console', 'can:manage_options'])->group(function (): void {
+            Route::get('/settings', [SettingsController::class, 'index']);
+            Route::get('/settings/schema', [SettingsController::class, 'schema']);
+            Route::get('/settings/values', [SettingsController::class, 'values']);
+            Route::post('/settings/values', [SettingsController::class, 'updateValues']);
+
+            Route::get('/diagnostics/overview', DiagnosticsController::class);
+            Route::get('/operations/cron', [OperationsController::class, 'cron']);
+            Route::delete('/operations/cron/{jobId}', [OperationsController::class, 'removeCron']);
+            Route::get('/operations/dlq', [OperationsController::class, 'dlq']);
+            Route::post('/operations/dlq/{itemId}/retry', [OperationsController::class, 'retry']);
+            Route::post('/operations/dlq/{itemId}/dismiss', [OperationsController::class, 'dismiss']);
+            Route::get('/operations/timeline', [OperationsController::class, 'timeline']);
+
+            // Portability mutates the whole assistant catalogue.
+            Route::post('/assistants/export', [AssistantPortabilityController::class, 'export']);
+            Route::post('/assistants/import', [AssistantPortabilityController::class, 'import']);
+
             Route::get('/cost/dashboard-summary', [AnalyticsController::class, 'summary']);
             Route::get('/cost/trend', [AnalyticsController::class, 'trend']);
             Route::get('/cost/by-provider', [AnalyticsController::class, 'byProvider']);
 
-            Route::get('/assistants', [AssistantController::class, 'index']);
             Route::post('/assistants', [AssistantController::class, 'store']);
             Route::get('/assistants/{assistant}', [AssistantController::class, 'show']);
             Route::match(['put', 'patch'], '/assistants/{assistant}', [AssistantController::class, 'update']);
@@ -110,25 +166,6 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/professions/{slug}', [ProfessionController::class, 'show'])
                 ->where('slug', '[a-z0-9_-]+');
 
-            // 090-g Phase 3 — org teams and user membership.
-            //
-            // `/teams` is already the WordPress agent-team surface (a named
-            // collection of professions, consumed by the SPA's TeamsPage), so
-            // the org primitive — users with roles — mounts under `/org`.
-            // Reusing `/teams` would return a different shape at the same URL
-            // and silently break the shared console.
-            Route::prefix('org')->group(function (): void {
-                Route::get('/teams', [TeamController::class, 'index']);
-                Route::post('/teams', [TeamController::class, 'store']);
-                Route::get('/teams/{team}', [TeamController::class, 'show']);
-                Route::match(['put', 'patch'], '/teams/{team}', [TeamController::class, 'update']);
-                Route::delete('/teams/{team}', [TeamController::class, 'destroy']);
-                Route::post('/teams/{team}/members', [TeamController::class, 'storeMember']);
-                Route::match(['put', 'patch'], '/teams/{team}/members/{user}', [TeamController::class, 'updateMember']);
-                Route::delete('/teams/{team}/members/{user}', [TeamController::class, 'destroyMember']);
-            });
-
-            Route::get('/tools', ToolsController::class);
             Route::get('/pro/ops/overview', OpsController::class);
 
             // Phase 3b — HITL approvals.
@@ -211,19 +248,6 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::put('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'updateEntity']);
                 Route::delete('/{slug}/entities/{entity}/{id}', [ToolkitsController::class, 'destroyEntity']);
             });
-
-            // Phase 3c — WordPress-compatible content shim. The Laravel
-            // profile points the console's `wpBase` at /api/v1/wp.
-            Route::get('/wp/{restBase}', [WpContentController::class, 'index']);
-            Route::post('/wp/{restBase}', [WpContentController::class, 'store']);
-            Route::get('/wp/{restBase}/{id}', [WpContentController::class, 'show'])->whereNumber('id');
-
-            // Phase 3d — media library. `wp/v2/media`-shaped list, read and
-            // multipart upload (`file` field) for the console's Media Library
-            // and the chat attachment picker.
-            Route::get('/media', [MediaController::class, 'index']);
-            Route::post('/media', [MediaController::class, 'store']);
-            Route::get('/media/{id}', [MediaController::class, 'show'])->whereNumber('id');
         });
     });
 });

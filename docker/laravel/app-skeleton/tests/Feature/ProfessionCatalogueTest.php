@@ -21,7 +21,7 @@ class ProfessionCatalogueTest extends TestCase
     {
         parent::setUp();
 
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
     }
 
     public function test_index_lists_the_whole_catalogue_by_title(): void

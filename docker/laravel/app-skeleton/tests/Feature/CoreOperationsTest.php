@@ -16,7 +16,7 @@ class CoreOperationsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Sanctum::actingAs(User::factory()->create(['name' => 'Owner']));
+        Sanctum::actingAs(User::factory()->admin()->create(['name' => 'Owner']));
     }
 
     public function test_transcripts_round_trip_and_upsert(): void

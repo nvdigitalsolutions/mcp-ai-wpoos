@@ -42,7 +42,7 @@ class Phase0ContractTest extends TestCase
 
     public function test_tools_list_the_registered_registry(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
 
         $this->getJson('/api/v1/tools')
             ->assertOk()
@@ -72,7 +72,7 @@ class Phase0ContractTest extends TestCase
 
     public function test_ops_overview_returns_the_t0_shape(): void
     {
-        Sanctum::actingAs(User::factory()->create());
+        Sanctum::actingAs(User::factory()->admin()->create());
 
         $this->getJson('/api/v1/pro/ops/overview')
             ->assertOk()
