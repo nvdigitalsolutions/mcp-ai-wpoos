@@ -18,6 +18,8 @@
  * re-runs the session bootstrap afterwards — the authoritative check.
  */
 
+import { buildTimeBackend, resolveBackend } from './backend-profile';
+
 export interface WpLoginInput {
   username: string;
   password: string;
@@ -35,6 +37,74 @@ export interface WpLoginResult {
 const LOGIN_PATH = '/wp-login.php';
 const UNAVAILABLE_MESSAGE = 'Sign-in is temporarily unavailable. Please try again.';
 const INVALID_MESSAGE = 'Invalid username or password.';
+
+/** Fetch the session-bound token used as the CSRF alias. */
+async function fetchLaravelNonce(): Promise<string> {
+  try {
+    const response = await fetch('/api/v1/session/nonce', {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) return '';
+    const data = (await response.json()) as { nonce?: string };
+    return typeof data?.nonce === 'string' ? data.nonce : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Password sign-in against the Laravel runtime (`POST /api/v1/session/login`).
+ * Same-origin cookies; the nonce is the CSRF alias, not a bearer token.
+ */
+export async function submitLaravelLogin(input: WpLoginInput): Promise<WpLoginResult> {
+  const { username, password, remember = false, signal } = input;
+  const nonce = await fetchLaravelNonce();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  };
+  if (nonce) headers['X-WP-Nonce'] = nonce;
+
+  let response: Response;
+  try {
+    response = await fetch('/api/v1/session/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+      signal,
+      body: JSON.stringify({ email: username, password, remember }),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    return { ok: false, message: UNAVAILABLE_MESSAGE };
+  }
+
+  if (response.ok) return { ok: true, message: '' };
+  if (response.status === 401 || response.status === 422) {
+    return { ok: false, message: INVALID_MESSAGE };
+  }
+  return { ok: false, message: UNAVAILABLE_MESSAGE };
+}
+
+async function logoutFromLaravel(): Promise<{ ok: boolean; message: string }> {
+  const nonce = await fetchLaravelNonce();
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (nonce) headers['X-WP-Nonce'] = nonce;
+
+  try {
+    const response = await fetch('/api/v1/session/logout', {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+    });
+    return response.ok
+      ? { ok: true, message: '' }
+      : { ok: false, message: 'Sign-out did not complete.' };
+  } catch {
+    return { ok: false, message: 'Sign-out did not complete.' };
+  }
+}
 
 /**
  * Extract the human-readable text from WordPress' `#login_error` div and
@@ -66,6 +136,10 @@ export function extractWpLoginError(html: string): string {
  * messages prevent account enumeration (OWASP A07:2025).
  */
 export async function submitWpLogin(input: WpLoginInput): Promise<WpLoginResult> {
+  if (resolveBackend(buildTimeBackend()) !== 'wordpress') {
+    return submitLaravelLogin(input);
+  }
+
   const { username, password, remember = false, signal } = input;
 
   // 1. Seed the test cookie exactly like a browser visiting the login page
@@ -154,6 +228,10 @@ function extractLogoutNonce(html: string): string {
  * on that response and we never follow its redirect.
  */
 export async function logoutFromWordPress(): Promise<{ ok: boolean; message: string }> {
+  if (resolveBackend(buildTimeBackend()) !== 'wordpress') {
+    return logoutFromLaravel();
+  }
+
   const sources = [LOGOUT_CONFIRM_PATH, '/wp-admin/'];
   let nonce = '';
   for (const source of sources) {

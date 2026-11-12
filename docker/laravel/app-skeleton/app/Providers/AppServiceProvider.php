@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\LaravelAssistantService;
 use App\Spike\SpikeStreamingProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
@@ -20,7 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // The assistant contract is host-specific (Eloquent model), so it is
+        // bound here rather than in the package provider.
+        $this->app->bind(AssistantServiceInterface::class, LaravelAssistantService::class);
     }
 
     /**

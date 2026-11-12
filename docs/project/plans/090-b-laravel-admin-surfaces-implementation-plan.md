@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phase 0 implemented and verified (2026-11-12) · Phases 1–5 planned
+**Status:** Phases 0–1 implemented and verified; Phase 2 assistant-studio foundation implemented (2026-11-12) · Phases 3–5 planned
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -39,21 +39,27 @@ Rank Math).
 | Runtime profile in `buildConsoleRuntime` | **Done** | `src/runtime-config.ts` |
 | Startup contract assertion | **Done** | `assertBackendContract()` + `src/main.tsx` |
 | Proxy backend switch | **Done** | `scripts/serve.mjs` (`NVOOS_BACKEND`) |
-| T0 endpoints | **Done** | `/api/v1/{features,site,session/nonce,session/me,tools,pro/ops/overview}` |
+| T0 endpoints | **Done** | `/api/v1/{features,site,session/*,tools,pro/ops/overview}` |
 | `X-WP-Nonce` CSRF compatibility | **Done** | `app/Http/Middleware/AcceptWpNonce.php` |
-| Feature tests | **Done** | `Phase0ContractTest`, `AcceptWpNonceTest` |
+| Phase 0 tests | **Done** | `Phase0ContractTest`, `AcceptWpNonceTest` |
+| Settings (schema/values/update) | **Done** | `SettingsController`, `SettingsSchema` |
+| Diagnostics overview | **Done** | `DiagnosticsController` |
+| Operations (cron/DLQ/retry/dismiss/timeline) | **Done** | `OperationsController`, `JobStatusStore` |
+| Laravel login/logout (C2) | **Done** | `SessionController`, console `login.ts` |
+| Assistant CRUD + default handling | **Done (Phase 2)** | `AssistantController`, `Assistant` model |
+| Bundle v1 export/import | **Done (Phase 2)** | `AssistantPortabilityController` |
+| Assistant domain contract | **Done (Phase 2)** | `LaravelAssistantService` |
 | Golden fixtures captured from WordPress | **Pending** | Shape tests stand in; capture requires a live Complete site |
-| Read-only settings endpoint | **Pending (Phase 1)** | Console Settings page |
-| Diagnostics/operations job detail | **Partial (Phase 1)** | `ops/overview` exists; list/retry/cancel pending |
-| Laravel login/session flow for C2 | **Pending (Phase 1)** | Today the console uses bearer or an existing session |
-| Assistant studio, core ops, Pro manifests | **Pending (Phases 2–4)** | See below |
+| Playwright T0 smoke (G1) | **Pending** | Phase 1 task 1.7 |
+| Blueprints/teams/test-assistant | **Pending (Phase 2)** | See §6 |
+| Core ops adapters, Pro manifests | **Pending (Phases 3–4)** | See §7–§8 |
 
 **Validation record (2026-11-12):**
 
 - Adapter PHPUnit: **34 tests, 101 assertions**
-- Console Vitest: **11 files, 109 tests**
+- Console Vitest: **12 files, 112 tests**
 - Console typecheck: clean
-- Laravel app PHPUnit: **20 tests, 68 assertions**
+- Laravel app PHPUnit: **34 tests, 141 assertions**
 - `node --check scripts/serve.mjs`: clean
 
 ---
@@ -99,16 +105,16 @@ mismatch, and all suites are green.
 
 ## 5. Phase 1 — T0 ops console (2 weeks)
 
-| ID | Task | Files | Acceptance |
+| ID | Task | Files | Status |
 |---|---|---|---|
-| 1.1 | Read-only settings: `GET /api/v1/settings` (schema + masked values) | `SettingsController`, `SettingsStore` | Console Settings page renders; secrets masked |
-| 1.2 | Diagnostics: `GET /api/v1/diagnostics/overview` (bindings, versions, providers, queue) | `DiagnosticsController` | Diagnostics page renders |
-| 1.3 | Operations: `GET /api/v1/operations/jobs`, `POST /jobs/{id}/{retry,cancel}` | `OperationsController`, `JobStatusStore` | Jobs list + actions work |
-| 1.4 | Chat dock against Laravel | existing `ChatStreamController` | Streaming + abort/reconnect pass |
-| 1.5 | Capability-filtered nav | `ConsoleSidebar.tsx`, session payload | Admin/author sessions see different nav |
-| 1.6 | Laravel login/session flow for C2 (session endpoint or documented bearer harness) | `routes/web.php`/auth config | Console signs in without WordPress |
-| 1.7 | Playwright smoke: login → dashboard → tools → operations → diagnostics → chat | `e2e/` | G1 |
-| 1.8 | Map `oos.features` to the console's nav keys | `config/nvoos.php`, `features` endpoint | WP-only pages hidden |
+| 1.1 | Settings: schema, masked values, validated update | `SettingsController`, `SettingsSchema` | ✅ |
+| 1.2 | Diagnostics overview (bindings, versions, providers, queue) | `DiagnosticsController` | ✅ |
+| 1.3 | Operations: cron/DLQ/retry/dismiss/timeline | `OperationsController`, `JobStatusStore` | ✅ |
+| 1.4 | Chat dock against Laravel | existing `ChatStreamController` | ✅ (090 SSE) |
+| 1.5 | Capability-filtered nav | `ConsoleSidebar.tsx`, session payload | ✅ |
+| 1.6 | Laravel login/logout for C2 | `SessionController`, console `login.ts` | ✅ |
+| 1.7 | Playwright smoke: login → 5 pages → chat | `e2e/` | ⏳ |
+| 1.8 | Feature map → nav keys | `config/nvoos.php`, `features` endpoint | ✅ |
 
 **Gate G1:** 5 T0 pages + chat render against Laravel; the network log shows zero WordPress
 requests.
@@ -117,16 +123,16 @@ requests.
 
 ## 6. Phase 2 — T1 assistant studio (4–6 weeks)
 
-| ID | Task | Files | Acceptance |
+| ID | Task | Files | Status |
 |---|---|---|---|
-| 2.1 | Implement `AssistantServiceInterface` on Eloquent (assistant + meta tables) | `lib/laravel-adapter/src/Adapter/AssistantService.php`, migrations | CRUD green |
-| 2.2 | Assistant endpoints: list/get/create/update/delete, tools, default | `AssistantController` | Console Assistants page works |
-| 2.3 | Port the assistant portability engine (bundle v1 export/import, redaction) | shared service in `lib/core` | Round-trip fixture equality |
-| 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | Blueprints page works |
-| 2.5 | Teams (basic CRUD + membership) | `TeamController` | Teams page works |
-| 2.6 | Per-assistant tool enable/disable | registry + assistant meta | Tools page respects the assignment |
-| 2.7 | Test-assistant endpoint (dry run, no tool side effects) | `AssistantTestController` | Test page works |
-| 2.8 | Contract fixtures + round-trip tests | `tests/Feature/Assistant*` | G2 |
+| 2.1 | Durable assistant model + core contract service | `Assistant`, migration, `LaravelAssistantService` | ✅ |
+| 2.2 | CRUD endpoints + default handling | `AssistantController` | ✅ |
+| 2.3 | Bundle v1 export/import (core fields + full meta) | `AssistantPortabilityController` | ✅ (Laravel-native; WP meta parity ⏳) |
+| 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ⏳ |
+| 2.5 | Teams (basic CRUD + membership) | `TeamController` | ⏳ |
+| 2.6 | Per-assistant tool assignment | `tools` field on the model | ✅ |
+| 2.7 | Test-assistant dry run | `AssistantTestController` | ⏳ |
+| 2.8 | Contract fixtures + round-trip tests | `AssistantStudioTest` | ✅ (shape/round-trip; WP fixtures ⏳) |
 
 **Gate G2:** assistant create → export → import round-trip; a Service Exchange bundle imports and
 the estate reaches `bundle_imported`.
@@ -210,13 +216,13 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 
 ---
 
-## 11. File map (Phase 0 implementation)
+## 11. File map (Phases 0–2 implementation)
 
 **Core / adapter**
 
 - `lib/core/src/Domain/Contract/ProEntitlementInterface.php` (new)
 - `lib/laravel-adapter/src/Adapter/ProEntitlement.php` (new)
-- `lib/laravel-adapter/src/Adapter/JobStatusStore.php` (`counts()`)
+- `lib/laravel-adapter/src/Adapter/JobStatusStore.php` (`counts()`, raw rows, retry/dismiss)
 - `lib/laravel-adapter/config/nvoos.php` (`pro_entitlement`, `features`)
 - `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` (binding)
 - `lib/laravel-adapter/tests/ProEntitlementTest.php` (new)
@@ -226,17 +232,23 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `examples/nvoos-complete-velocity/src/backend-profile.ts` (new)
 - `examples/nvoos-complete-velocity/src/runtime-config.ts` (Laravel profile + assertion)
 - `examples/nvoos-complete-velocity/src/main.tsx` (startup assertion)
+- `examples/nvoos-complete-velocity/src/login.ts` (Laravel login/logout branch)
 - `examples/nvoos-complete-velocity/scripts/serve.mjs` (`NVOOS_BACKEND`)
 - `examples/nvoos-complete-velocity/src/__tests__/laravel-profile.test.ts` (new)
+- `examples/nvoos-complete-velocity/src/__tests__/laravel-login.test.ts` (new)
 
 **Laravel app skeleton**
 
 - `app/Http/Controllers/{FeaturesController,SessionController,SiteController,ToolsController,OpsController}.php`
-- `app/Support/CapabilityMap.php`
+- `app/Http/Controllers/{SettingsController,DiagnosticsController,OperationsController}.php`
+- `app/Http/Controllers/{AssistantController,AssistantPortabilityController}.php`
+- `app/Support/{CapabilityMap,SettingsSchema}.php`
+- `app/Services/LaravelAssistantService.php`
+- `app/Models/Assistant.php` + `database/migrations/2026_01_02_000001_create_assistants_table.php`
 - `app/Http/Middleware/AcceptWpNonce.php`
 - `routes/api.php`
 - `bootstrap/app.php` (`statefulApi()`, CSRF alias)
-- `tests/Feature/Phase0ContractTest.php`
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
 
 ---
@@ -246,9 +258,9 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 | Layer | Command | Current |
 |---|---|---|
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
-| Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 109 pass |
+| Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 112 pass |
 | Console types | `npm run typecheck` | clean |
-| Laravel app | `docker exec oos-laravel-app php artisan test` | 20 pass |
+| Laravel app | `docker exec oos-laravel-app php artisan test` | 34 pass |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
 CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
@@ -261,6 +273,7 @@ run the Laravel app suite on PRs touching `docker/laravel/**`.
 | Variable | Owner | Values |
 |---|---|---|
 | `VITE_NVOOS_BACKEND` | Console build | `wordpress` (default), `laravel`, `hybrid` |
+| `__NVOOS_BACKEND__` | Console runtime | Optional global override (tests, static-host injection); wins over the build env |
 | `NVOOS_BACKEND` | `serve.mjs` | same values; must match the build |
 | `NVOOS_TARGET_SITE` | `serve.mjs` | backend origin (WP or Laravel) |
 | `NVOOS_PRO_ENTITLEMENT_DRIVER` | Laravel adapter | `allow`, `deny`, `config` |
@@ -278,7 +291,7 @@ run the Laravel app suite on PRs touching `docker/laravel/**`.
 | Item | Status | Next |
 |---|---|---|
 | Golden fixtures from a live WP site | Pending | Task 0.13; needs an operator token |
-| Laravel login screen / bearer harness for C2 | Pending | Phase 1 task 1.6 |
+| Laravel login screen / bearer harness for C2 | **Done** | Phase 1; the console branches on the backend |
 | Commercial entitlement source | Decided as a seam; source open | Phase 5 task 5.1 |
 | Pro toolkits as peers | Open (Q4) | Decide per family in Phase 4 |
 | SSO / cookie domain | Open (Q6) | Phase 5 task 5.3 |
@@ -290,8 +303,8 @@ run the Laravel app suite on PRs touching `docker/laravel/**`.
 ## 15. Phase checklist
 
 - [x] Phase 0 — contract freeze, runtime profile, assertion, T0 endpoints, CSRF alias
-- [ ] Phase 1 — T0 ops console (settings, diagnostics, operations, login, E2E)
-- [ ] Phase 2 — assistant studio + portability
+- [x] Phase 1 — T0 ops console (Playwright smoke pending)
+- [x] Phase 2 foundation — assistant CRUD + bundle export/import (blueprints/teams/test-assistant pending)
 - [ ] Phase 3 — core operations (transcripts, memory, tokens, approvals, analytics, records)
 - [ ] Phase 4 — Pro manifest engine + pilot families
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates
