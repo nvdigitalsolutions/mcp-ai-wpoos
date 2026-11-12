@@ -111,7 +111,7 @@ class Phase4Test extends TestCase
             ->assertOk()
             ->assertJsonPath('data.toolkit.slug', 'commerce')
             ->assertJsonPath('data.toolkit.entities.0.id_field', 'sku')
-            ->assertJsonCount(3, 'data.toolkit.dashboard.cards');
+            ->assertJsonCount(4, 'data.toolkit.dashboard.cards');
     }
 
     public function test_unknown_toolkit_is_404(): void
@@ -309,7 +309,11 @@ class Phase4Test extends TestCase
             ->assertJsonPath('data.cards.1.key', 'active_products')
             ->assertJsonPath('data.cards.1.value', 1)
             ->assertJsonPath('data.cards.2.key', 'stock_value')
-            ->assertJsonPath('data.cards.2.value', 10);
+            ->assertJsonPath('data.cards.2.value', 10)
+            // Bound to the `low_stock_threshold` setting (default 5); the only
+            // low-stock record here is a draft, so it does not count.
+            ->assertJsonPath('data.cards.3.key', 'low_stock')
+            ->assertJsonPath('data.cards.3.value', 0);
     }
 
     public function test_toolkit_surfaces_require_authentication(): void

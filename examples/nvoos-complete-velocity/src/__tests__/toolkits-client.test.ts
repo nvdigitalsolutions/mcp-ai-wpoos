@@ -119,4 +119,66 @@ describe('ToolkitsClient', () => {
 
 		await expect(client.list()).rejects.toMatchObject({ code: 'unavailable' });
 	});
+
+	it('asks for a duplicate scan of one column and normalises the payload', async () => {
+		mockFetch({
+			success: true,
+			data: {
+				column: 'name',
+				scanned: 120,
+				groups: [ { value: 'tee', count: 2, records: [] } ],
+				truncated: false,
+			},
+		});
+
+		const client = new ToolkitsClient({ endpoint: BASE, nonce: 'n' });
+		const result = await client.duplicates('commerce', 'product', 'name');
+
+		expect(global.fetch).toHaveBeenCalledWith(
+			`${BASE}/commerce/entities/product/duplicates?column=name`,
+			expect.objectContaining({ method: 'GET' }),
+		);
+		expect(result.scanned).toBe(120);
+		expect(result.groups).toHaveLength(1);
+		expect(result.truncated).toBe(false);
+	});
+
+	it('previews an import and skips existing rows by default', async () => {
+		mockFetch({
+			success: true,
+			data: { preview: true, total: 3, valid: 2, duplicates: 1, failed: [], rows: [] },
+		});
+
+		const client = new ToolkitsClient({ endpoint: BASE, nonce: 'n' });
+		const result = await client.importRows('commerce', 'product', [ { sku: 'A-1' } ], {
+			preview: true,
+		});
+
+		const [ url, init ] = vi.mocked(global.fetch ).mock.calls[ 0 ];
+
+		expect(url).toBe(`${BASE}/commerce/entities/product/import`);
+		expect(JSON.parse(String(init?.body))).toEqual({
+			rows: [ { sku: 'A-1' } ],
+			preview: true,
+			skip_existing: true,
+		});
+		expect(result.preview).toBe(true);
+		expect(result.valid).toBe(2);
+		expect(result.duplicates).toBe(1);
+	});
+
+	it('carries the HTTP status on a failure', async () => {
+		mockFetch({ success: false, error: { code: 'not_found', message: 'Missing.' } }, false, 404);
+
+		const client = new ToolkitsClient({ endpoint: BASE, nonce: 'n' });
+
+		try {
+			await client.duplicates('commerce', 'product', 'name');
+			throw new Error('expected a rejection');
+		} catch (error) {
+			expect(error).toBeInstanceOf(ToolkitsApiError);
+			expect((error as ToolkitsApiError).status).toBe(404);
+			expect((error as ToolkitsApiError).code).toBe('not_found');
+		}
+	});
 });

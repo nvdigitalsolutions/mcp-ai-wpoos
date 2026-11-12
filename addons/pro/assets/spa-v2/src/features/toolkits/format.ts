@@ -140,6 +140,158 @@ export function payloadFromFormState(
 	return payload;
 }
 
+/**
+ * Parse a pasted sheet into record objects for the bulk importer.
+ *
+ * Tab, comma and pipe are auto-detected from the first line (tab wins ties,
+ * because a spreadsheet paste uses tabs). The first line is treated as a
+ * header when at least half of its cells match a column key or label;
+ * otherwise cells are mapped positionally to the manifest's column order.
+ * Blank cells are omitted so optional columns stay absent rather than empty,
+ * and rows with more cells than headers are skipped instead of silently
+ * shifting every value one column left.
+ */
+export type DelimitedRow = Record< string, string >;
+
+export interface ParsedDelimitedRows {
+	delimiter: '\t' | ',' | '|';
+	headers: string[];
+	unknownHeaders: string[];
+	rows: DelimitedRow[];
+	total: number;
+	skipped: number;
+}
+
+export function parseDelimitedRows(
+	text: string,
+	columns: ToolkitColumn[],
+): ParsedDelimitedRows {
+	const lines = text
+		.split( /\r\n|\r|\n/ )
+		.map( ( line ) => line.trimEnd() )
+		.filter( ( line ) => line.trim() !== '' );
+
+	const headers = columns.map( ( column ) => column.key );
+	const empty: ParsedDelimitedRows = {
+		delimiter: '\t',
+		headers,
+		unknownHeaders: [],
+		rows: [],
+		total: 0,
+		skipped: 0,
+	};
+
+	if ( lines.length === 0 || columns.length === 0 ) {
+		return empty;
+	}
+
+	const delimiter = detectDelimiter( lines[ 0 ] );
+	const first = splitLine( lines[ 0 ], delimiter );
+
+	const byName = new Map< string, string >();
+	for ( const column of columns ) {
+		byName.set( column.key.toLowerCase(), column.key );
+		byName.set( column.label.toLowerCase(), column.key );
+	}
+
+	const matched = first.map( ( cell ) => byName.get( cell.toLowerCase() ) ?? '' );
+	const matchedCount = matched.filter( ( key ) => key !== '' ).length;
+	const hasHeader = matchedCount >= 2 && matchedCount * 2 >= first.length;
+
+	const unknownHeaders = hasHeader
+		? first.filter( ( cell, index ) => cell !== '' && matched[ index ] === '' )
+		: [];
+
+	const activeHeaders = hasHeader ? matched : columns.map( ( column ) => column.key );
+	const body = hasHeader ? lines.slice( 1 ) : lines;
+
+	const rows: DelimitedRow[] = [];
+	let skipped = 0;
+
+	for ( const line of body ) {
+		const cells = trimTrailingEmpty( splitLine( line, delimiter ) );
+
+		if ( cells.length > activeHeaders.length ) {
+			skipped++;
+			continue;
+		}
+
+		const record: DelimitedRow = {};
+
+		cells.forEach( ( cell, index ) => {
+			const key = activeHeaders[ index ];
+
+			if ( key && cell !== '' ) {
+				record[ key ] = cell;
+			}
+		} );
+
+		if ( Object.keys( record ).length > 0 ) {
+			rows.push( record );
+		} else {
+			skipped++;
+		}
+	}
+
+	return {
+		delimiter,
+		headers: activeHeaders.filter( ( key ) => key !== '' ),
+		unknownHeaders,
+		rows,
+		total: body.length,
+		skipped,
+	};
+}
+
+function detectDelimiter( line: string ): '\t' | ',' | '|' {
+	const counts: Array< [ '\t' | ',' | '|', number ] > = [
+		[ '\t', ( line.match( /\t/g ) ?? [] ).length ],
+		[ ',', ( line.match( /,/g ) ?? [] ).length ],
+		[ '|', ( line.match( /\|/g ) ?? [] ).length ],
+	];
+
+	let winner: '\t' | ',' | '|' = '\t';
+	let best = 0;
+
+	for ( const [ candidate, count ] of counts ) {
+		if ( count > best ) {
+			best = count;
+			winner = candidate;
+		}
+	}
+
+	return winner;
+}
+
+function splitLine( line: string, delimiter: string ): string[] {
+	return line.split( delimiter ).map( ( cell ) => unquote( cell.trim() ) );
+}
+
+function unquote( cell: string ): string {
+	if ( cell.length < 2 ) {
+		return cell;
+	}
+
+	const first = cell[ 0 ];
+	const last = cell[ cell.length - 1 ];
+
+	if ( ( first === '"' || first === "'" ) && first === last ) {
+		return cell.slice( 1, -1 ).trim();
+	}
+
+	return cell;
+}
+
+function trimTrailingEmpty( cells: string[] ): string[] {
+	const trimmed = [ ...cells ];
+
+	while ( trimmed.length > 0 && trimmed[ trimmed.length - 1 ] === '' ) {
+		trimmed.pop();
+	}
+
+	return trimmed;
+}
+
 function formatNumber( value: unknown, currency?: string ): string {
 	const numeric = typeof value === 'number' ? value : Number( value );
 

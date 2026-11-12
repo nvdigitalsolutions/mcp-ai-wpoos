@@ -66,15 +66,20 @@ Rank Math).
 | Manifest-driven Pro toolkits | **Done (Phase 4.1/4.3)** | `ToolkitManifest`, `ToolkitManifestLoader`, `Pro\ToolkitsController`, `nvoos_toolkit_records` |
 | Schedule presets, record remote/research, thumbnails | **Pending (Phases 3–4)** | §7–§8 remainder |
 | Generic toolkit console screens | **Done (Phase 4.2)** | `spa-v2/src/features/toolkits/**`, `api/toolkits.ts`, `styles/toolkits.css` |
+| Settings bound to dashboard filters | **Done (Phase 4.5)** | `ToolkitManifest` filter lists + `filter.setting`; `low_stock` card consumes `low_stock_threshold` |
+| Server-side consolidation | **Done (Phase 4.5)** | `Pro\ToolkitsController::duplicates` + `ConsolidateScreen` (whole entity, not one page) |
+| Bulk import with dry run | **Done (Phase 4.5)** | `Pro\ToolkitsController::importEntity`, `ImportDialog`, `parseDelimitedRows` |
+| Per-family contract suite | **Done (Phase 4.7)** | `tests/Feature/ToolkitContractTest.php` over every shipped manifest |
 | Console session/CSRF regression fixes | **Done** | single session store on login (`routes/api.php`), `AcceptWpNonce` header alias, stateful test origin |
 
 **Validation record (2026-11-12):**
 
 - Adapter PHPUnit: **34 tests, 101 assertions**
-- Console Vitest: **14 files, 132 tests**
-- Console typecheck: clean
-- Laravel app PHPUnit: **96 tests, 672 assertions**
-- Console smoke (Laravel runtime, 2026-11-12): login → `/pro/toolkits` catalogue → Commerce settings / workbench create / dashboard aggregates all render against the seeded app at `:8001`
+- Console Vitest: **14 files, 142 tests**
+- Console typecheck: clean; `lint:a11y` clean
+- Laravel app PHPUnit: **108 tests, 788 assertions**
+- Core PHPUnit: **945 tests, 2,029 assertions** — 29 `ToolkitManifestTest` tests pass; the 5 `ToolRegistryIntegrationTest` errors are the pre-existing abstract-class discovery bug
+- Console smoke (Laravel runtime, 2026-11-12): login → catalogue → Commerce settings / workbench create / **bulk import (preview 2 ready + 1 duplicate, then commit)** / **server-side duplicate scan** / dashboard with the setting-bound `low_stock` card — all against the MySQL-backed app at `:8001`
 - Core PHPUnit: **937 tests, 2,017 assertions** — 14 new `ToolkitManifestTest` tests pass; the 5 errors in `ToolRegistryIntegrationTest` are pre-existing (its discovery loop instantiates the abstract `AbstractResultTool`) and unrelated to this work
 - Phase 3b soak (30 min, 2026-11-12): **1,644 iterations / 19,731 requests / 0 violations** — p50 81.9 ms · p95 212.4 ms · p99 338.8 ms · max 982.2 ms at 10.96 req/s; app RSS flat (203 → 194 MiB), DB flat
 - `node --check scripts/serve.mjs`: clean
@@ -237,9 +242,9 @@ author/viewer/guest/bearer) passes on every mutating route.
 | 4.2 | Five generic console screens (settings, entity workbench, research & add, consolidate, dashboard) | `addons/pro/assets/spa-v2/src/features/toolkits` | Screens render from a manifest | ✅ settings / entities / dashboard live; research + consolidate shipped as scaffolds |
 | 4.3 | Generic resource controller + settings schema endpoint | `ToolkitController` | `/api/v1/pro/toolkits/{slug}` | ✅ list/show/settings/dashboard/entity CRUD |
 | 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error | ✅ route middleware + per-manifest feature checks |
-| 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | ⏳ commerce + documents manifests shipped (data only); media is the built-in library |
+| 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | ✅ commerce + documents ship settings-bound cards, server-side duplicates and bulk import; media remains the built-in library |
 | 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | ⏳ |
-| 4.7 | Contract fixtures per family | fixtures | Parity suite | ⏳ |
+| 4.7 | Contract fixtures per family | fixtures | Parity suite | ✅ `ToolkitContractTest` drives every shipped manifest through catalogue → settings → lifecycle → dashboard → duplicates → import |
 
 **Phase 4 notes**
 
@@ -267,6 +272,28 @@ author/viewer/guest/bearer) passes on every mutating route.
 - **Screens own their data.** The shell owns the manifest and the active tab only; each screen
   loads its own slice, which keeps the entity table's paging/search independent of the
   dashboard aggregates.
+
+**Phase 4.5/4.7 notes**
+
+- **Settings are no longer inert.** A dashboard filter may bind to a declared setting
+  (`{"column":"stock","op":"lte","setting":"low_stock_threshold"}`), and `filter` may be a list
+  (ANDed). An unset/null setting disables that condition instead of filtering everything out, so
+  a half-configured toolkit still reports honest numbers. The `low_stock` card is the proof.
+- **Consolidation is a query, not a page.** `GET …/entities/{entity}/duplicates?column=` groups
+  the whole entity (`GROUP BY <json path> HAVING COUNT(*) > 1`), caps the groups and says when it
+  truncated. The screen no longer loads records to scan them.
+- **Import is dry-run first.** `POST …/entities/{entity}/import` accepts up to 500 rows and
+  returns the same validation the form uses. With `preview` it writes nothing. `duplicates`
+  counts *skipped* rows only, so `valid + duplicates + failed` always equals the batch size.
+  The dialog parses pasted tab/comma/pipe sheets client-side (pure, unit-tested) and refuses to
+  import before a preview has passed.
+- **One portable JSON path.** MySQL's `json_extract` returns a quoted JSON string, so grouping and
+  comparing on it silently misses every row; SQLite does not. `jsonPath()` wraps MySQL in
+  `json_unquote()`, which is the difference between the duplicate scan working and returning an
+  empty list. Tests run on SQLite, so this is only visible on a real MySQL app.
+- **The contract suite is the parity gate.** `ToolkitContractTest` loops every manifest in
+  `resources/pro-toolkits`; a new family is covered the moment its manifest lands, and a manifest
+  that declares something the engine cannot serve fails CI.
 
 **Gate G4:** a pilot toolkit installs from a manifest with zero bespoke PHP pages; paid surfaces
 return the typed entitlement error under the `deny` driver.
@@ -346,6 +373,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `addons/pro/assets/spa-v2/src/features/toolkits/{ToolkitsPage,ToolkitPage}.tsx`
 - `addons/pro/assets/spa-v2/src/features/toolkits/screens/{Settings,Entities,Dashboard,Research,Consolidate}Screen.tsx`
 - `addons/pro/assets/spa-v2/src/features/toolkits/components/EntityForm.tsx`
+- `addons/pro/assets/spa-v2/src/features/toolkits/components/ImportDialog.tsx`
 - `addons/pro/assets/spa-v2/src/features/toolkits/format.ts`
 - `addons/pro/assets/spa-v2/src/styles/toolkits.css`
 - `addons/pro/assets/spa-v2/src/{router.tsx,index.tsx,api/config.ts}` (routes, CSS import, endpoint)
@@ -373,7 +401,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Middleware/AcceptWpNonce.php`
 - `routes/api.php`
 - `bootstrap/app.php` (`statefulApi()`, CSRF alias)
-- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest,Phase4Test}.php`
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest,Phase4Test,ToolkitContractTest}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
 
 **Runtime plumbing (Phase 4.2)**
@@ -395,10 +423,10 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 | Layer | Command | Current |
 |---|---|---|
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
-| Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 132 pass |
+| Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 142 pass |
 | Console types | `npm run typecheck` | clean |
-| Laravel app | `docker exec oos-laravel-app php artisan test` | 96 pass |
-| Core | `cd lib/core && php -d extension=fileinfo vendor/bin/phpunit` | 937 tests (5 pre-existing `ToolRegistryIntegrationTest` errors) |
+| Laravel app | `docker exec oos-laravel-app php artisan test` | 108 pass |
+| Core | `cd lib/core && php -d extension=fileinfo vendor/bin/phpunit` | 945 tests (5 pre-existing `ToolRegistryIntegrationTest` errors) |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
 CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
@@ -477,8 +505,9 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 | Schedule execution model | Synchronous | `trigger` runs the handler inline and records the run; move to queued execution when long-running toolkits are ported |
 | Media thumbnails / alt text | Not ported | `media_details.sizes` is empty and `alt_text` is write-once blank; add a thumbnail pipeline and an update route when the media toolkit is ported |
 | WP-native integrations | Non-goal | Deep-link or mark unavailable |
-| Toolkit `research` screen | Scaffold | Renders the manifest's prompt + existing records; returns no AI drafting because the Laravel runtime has no `deep_research` pipeline. Wire it to the provider router in Phase 4.5 |
-| Toolkit `consolidate` screen | Bounded | Scans the first 100 records of each entity (one page) to keep the request O(1). Move to a queued job when a family needs full-catalogue dedupe |
+| Toolkit `consolidate` screen | Fixed | Server-side `GROUP BY` over the whole entity; only the number of groups is capped |
+| MySQL vs SQLite JSON semantics | Fixed | MySQL returns quoted JSON from `json_extract`; `jsonPath()` adds `json_unquote()` on MySQL. Tests run on SQLite, so keep a MySQL smoke in the loop for JSON-path changes |
+| Toolkit `research` screen | Scaffold | Renders the manifest's prompt + existing records; returns no AI drafting because the Laravel runtime has no `deep_research` pipeline. Bulk add now lives in the workbench instead |
 | `/pro/toolkits` on the WordPress runtime | Not ported | The WordPress Pro SPA config returns `toolkits: ''`; `ToolkitsClient.available` is false and the nav entry is hidden. Port the REST controller in Phase 4.6 when families migrate |
 | Non-stateful session login | Decided | A POST to `/session/login` without a first-party `Referer`/`Origin` answers a typed 419 `session_required` instead of a 500 (browser-only flow) |
 
@@ -495,5 +524,6 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 3d — media library + upload service (task 3.11)
 - [x] Phase 4.1 + 4.3 — toolkit manifest contract, loader, generic engine
 - [x] Phase 4.2 — generic toolkit console screens (settings, workbench, dashboard live; research + consolidate scaffolds)
-- [ ] Phase 4.5–4.7 — toolkit service layer + contract fixtures
+- [x] Phase 4.5 + 4.7 — settings-bound cards, server-side consolidation, dry-run bulk import, per-family contract suite
+- [ ] Phase 4.6 — migrate families one at a time, keeping WordPress a peer
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates
