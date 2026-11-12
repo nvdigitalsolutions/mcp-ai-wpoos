@@ -34,6 +34,24 @@ class JobStatusStore {
 	}
 
 	/**
+	 * Count jobs by status.
+	 *
+	 * @return array<string, int>
+	 */
+	public function counts(): array {
+		if ( ! $this->isAvailable() ) {
+			return array();
+		}
+
+		return DB::table( self::TABLE )
+			->select( 'status', DB::raw( 'count(*) as total' ) )
+			->groupBy( 'status' )
+			->pluck( 'total', 'status' )
+			->map( static fn ( $total ) => (int) $total )
+			->all();
+	}
+
+	/**
 	 * Record a newly queued job.
 	 *
 	 * @param array<string, mixed> $payload Job payload.

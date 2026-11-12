@@ -12,6 +12,13 @@
 
 import type { ProSpaRuntime, ProSpaUser, ProSpaEndpoints } from '@nvoos/pro-spa-v2/api/config';
 
+import {
+  backendPaths,
+  buildTimeBackend,
+  resolveBackend,
+  type ConsoleBackend,
+} from './backend-profile';
+
 // Island bundles for Media Studio / Document Editor (Proposal 087 Phase 3).
 // Vite copies these self-contained IIFE bundles into the console build and
 // rewrites the imports to hashed asset URLs; the page components load them
@@ -57,9 +64,11 @@ async function readJson<T>(response: Response, context: string): Promise<T> {
  * (`GET /wp-json/` → `name`). Used for the console's branded nav logo.
  * Fail-open: any failure yields '' and the caller falls back.
  */
-export async function fetchSiteName(): Promise<string> {
+export async function fetchSiteName(
+  backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
+): Promise<string> {
   try {
-    const response = await fetch(`${window.location.origin}/wp-json/`, {
+    const response = await fetch(backendPaths(window.location.origin, backend).site, {
       credentials: 'same-origin',
     });
     if (!response.ok) {
@@ -79,12 +88,15 @@ export async function fetchSiteName(): Promise<string> {
  * fetch instead of hitting a 403. Keep this matrix in sync with the
  * server and with src/auth/permissions.ts in spa-v2.
  */
-function buildEndpoints(origin: string, capabilities: string[]): ProSpaEndpoints {
+function buildEndpoints(origin: string, capabilities: string[], backend: ConsoleBackend): ProSpaEndpoints {
   const isAdmin = capabilities.includes('manage_options');
   const canEdit = capabilities.includes('edit_posts');
-  const api = `${origin}/wp-json`;
-  const core = `${api}/mcp-ai/v1`;
-  const pro = `${api}/mcp-ai-pro/v1`;
+  const paths = backendPaths(origin, backend);
+  const core = paths.apiBase;
+  const pro = paths.proBase;
+  const wp = paths.wpBase;
+  const wpApi = `${origin}/wp-json`;
+  const isWordPress = backend === 'wordpress';
   return {
     chat: `${core}/chat`,
     chatClient: `${core}/chat-client`,
@@ -94,7 +106,7 @@ function buildEndpoints(origin: string, capabilities: string[]): ProSpaEndpoints
     tools: `${core}/tools`,
     assistants: `${core}/assistants`,
     settings: `${core}/settings`,
-    upload: `${api}/wp/v2/media`,
+    upload: isWordPress ? `${wp}/media` : `${core}/media`,
     workflows: isAdmin ? `${pro}/workflows` : '',
     analytics: isAdmin ? `${core}/analytics` : '',
     cost: isAdmin ? `${core}/cost` : '',
@@ -114,7 +126,7 @@ function buildEndpoints(origin: string, capabilities: string[]): ProSpaEndpoints
     workflowPresets: isAdmin ? `${pro}/workflow-presets` : '',
     workflowNodes: isAdmin ? `${pro}/workflow-builder` : '',
     workflowRuns: isAdmin ? `${core}/orchestration/runs` : '',
-    wpBase: `${api}/wp/v2`,
+    wpBase: wp,
     recordsSchema: isAdmin ? `${pro}/records/schema` : '',
     dashboardsSchema: isAdmin ? `${pro}/dashboards/schema` : '',
     chatChannels: isAdmin ? `${pro}/chat-channels` : '',
@@ -124,23 +136,23 @@ function buildEndpoints(origin: string, capabilities: string[]): ProSpaEndpoints
     commandCenter: isAdmin ? `${pro}/command-center` : '',
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
-    		okf: `${pro}/okf`,
+    		okf: isWordPress ? `${pro}/okf` : '',
     		// NV oOS Content Graph (standalone plugin) — the knowledge-graph page
     		// renders an unavailable state when the site doesn't expose it.
-    		contentGraph: `${api}/nvoos-content-graph/v1`,
+    		contentGraph: isWordPress ? `${wpApi}/nvoos-content-graph/v1` : '',
     		// NV oOS Docs Hub — the #/docs page mounts the vendored Docs Hub island
     		// against this local REST base and renders an unavailable state when
     		// the connected site does not expose the plugin (same contract as
     		// contentGraph above).
-    		docsHub: `${api}/nvoos-docs/v1`,
+    		docsHub: isWordPress ? `${wpApi}/nvoos-docs/v1` : '',
     		// NV oOS Media Studio / Document Editor — the #/media and #/documents
     		// pages mount the lazily-loaded islands against these local REST bases
     		// (unconditional like contentGraph: the island's own error UI covers
     		// sites without the addon). Asset URLs come from this app's build.
-    		mediaStudio: `${api}/nvoos-media-studio/v1`,
+    		mediaStudio: isWordPress ? `${wpApi}/nvoos-media-studio/v1` : '',
     		mediaStudioAsset: mediaStudioAssetUrl,
     		mediaStudioCss: mediaStudioCssUrl,
-    		documentEditor: `${api}/nvoos-document-editor/v1`,
+    		documentEditor: isWordPress ? `${wpApi}/nvoos-document-editor/v1` : '',
     		documentEditorAsset: documentEditorAssetUrl,
     		documentEditorCss: documentEditorCssUrl,
   };
@@ -151,6 +163,11 @@ export interface ConsoleRuntimeOptions {
   assistantId?: number;
   /** Platform-provisioned default assistant id, used when assistantId is 0. */
   defaultAssistantId?: number;
+  /**
+   * Backend profile. Defaults to the build-time `VITE_NVOOS_BACKEND`,
+   * falling back to `wordpress` (Proposal 090-B, ADR-6).
+   */
+  backend?: ConsoleBackend;
   nonce?: string;
   user?: Partial<ProSpaUser>;
   /**
@@ -171,13 +188,15 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
   const origin =
     typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
   const assistantId = options.assistantId ?? options.defaultAssistantId ?? 0;
+  const backend = resolveBackend(options.backend ?? buildTimeBackend());
+  const paths = backendPaths(origin, backend);
   const features = options.features ?? {};
 
   // Optional surfaces resolve to an empty endpoint when the server reports
   // them unavailable — their pages then render the unavailable state instead
   // of framing a dead URL (and the nav hides them entirely). Admin-gated
   // surfaces were already emptied for non-admin users inside buildEndpoints().
-  const endpoints = buildEndpoints(origin, options.user?.capabilities ?? []);
+  const endpoints = buildEndpoints(origin, options.user?.capabilities ?? [], backend);
   if (features.docs_hub === false) {
     endpoints.docsHub = '';
   }
@@ -195,8 +214,8 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
   	}
 
   return {
-    apiUrl: `${origin}/wp-json/mcp-ai/v1`,
-    proApi: `${origin}/wp-json/mcp-ai-pro/v1`,
+    apiUrl: paths.apiBase,
+    proApi: paths.proBase,
     nonce: options.nonce ?? '',
     config: {
       assistantId,
@@ -238,12 +257,15 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
  * authenticated REST call fail with 403 `rest_cookie_invalid_nonce`
  * ("Cookie check failed").
  */
-export async function fetchSessionNonce(): Promise<string> {
+export async function fetchSessionNonce(
+  backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
+): Promise<string> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
+  const paths = backendPaths(base, backend);
 
   let mintError = '';
   try {
-    const response = await fetch(`${base}/wp-json/mcp-ai/v1/session/nonce`, {
+    const response = await fetch(paths.nonce, {
       credentials: 'include',
     });
     if (response.ok) {
@@ -260,22 +282,26 @@ export async function fetchSessionNonce(): Promise<string> {
     mintError = error instanceof Error ? error.message : String(error);
   }
 
-  try {
-    const admin = await fetch(`${base}/wp-admin/`, { credentials: 'include' });
-    if (admin.ok) {
-      const html = await admin.text();
-      const match = html.match(/"nonce":"([a-f0-9]{10})"/);
-      if (match?.[1]) {
-        return match[1];
+  if (backend === 'wordpress') {
+    try {
+      const admin = await fetch(`${base}/wp-admin/`, { credentials: 'include' });
+      if (admin.ok) {
+        const html = await admin.text();
+        const match = html.match(/"nonce":"([a-f0-9]{10})"/);
+        if (match?.[1]) {
+          return match[1];
+        }
       }
+    } catch {
+      // Fall through to the error below.
     }
-  } catch {
-    // Fall through to the error below.
   }
 
   throw new Error(
     mintError ||
-      'Could not obtain a wp_rest nonce — the session/nonce endpoint and the wp-admin scrape both failed',
+      (backend === 'wordpress'
+        ? 'Could not obtain a wp_rest nonce — the session/nonce endpoint and the wp-admin scrape both failed'
+        : 'Could not obtain a session nonce from /api/v1/session/nonce — check that NVOOS_BACKEND=laravel and the Laravel app is reachable.'),
   );
 }
 
@@ -325,7 +351,13 @@ export interface CurrentUserResult {
   nonce: string;
 }
 
-export async function fetchCurrentUser(nonce = ''): Promise<CurrentUserResult> {
+export async function fetchCurrentUser(
+  nonce = '',
+  backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
+): Promise<CurrentUserResult> {
+  if (backend !== 'wordpress') {
+    return fetchLaravelCurrentUser(nonce, backend);
+  }
   const base = typeof window !== 'undefined' ? window.location.origin : '';
   const headers: Record<string, string> = {};
   if (nonce) {
@@ -350,6 +382,47 @@ export async function fetchCurrentUser(nonce = ''): Promise<CurrentUserResult> {
     user: mapCurrentUser(
       await readJson<CurrentUserPayload>(response, 'wp/v2/users/me'),
     ),
+    nonce,
+  };
+}
+
+/**
+ * Laravel session probe (`/api/v1/session/me`). The response is already in the
+ * SPA user shape; the nonce travels unchanged and the compatibility middleware
+ * validates it against the session token.
+ */
+async function fetchLaravelCurrentUser(
+  nonce: string,
+  backend: ConsoleBackend,
+): Promise<CurrentUserResult> {
+  const base = typeof window !== 'undefined' ? window.location.origin : '';
+  const paths = backendPaths(base, backend);
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (nonce) {
+    headers['X-WP-Nonce'] = nonce;
+  }
+  const response = await fetch(paths.me, { credentials: 'include', headers });
+  if (response.status === 401) {
+    throw new UnauthorizedError(
+      `session/me returned ${response.status} — no Laravel session`,
+    );
+  }
+  if (!response.ok) {
+    throw new Error(`Session expired, please login first (${response.status})`);
+  }
+  const data = await readJson<{
+    id?: number;
+    login?: string;
+    displayName?: string;
+    capabilities?: string[];
+  }>(response, 'session/me');
+  return {
+    user: {
+      id: data.id ?? 0,
+      login: data.login ?? '',
+      displayName: data.displayName ?? '',
+      capabilities: Array.isArray(data.capabilities) ? data.capabilities : [],
+    },
     nonce,
   };
 }
@@ -468,14 +541,17 @@ async function mintSessionNonce(): Promise<string> {
  * is never hidden by a transient error — the feature pages render their own
  * unavailable states, and the server still enforces every capability.
  */
-export async function fetchFeatureMap(nonce = ''): Promise<Record<string, boolean>> {
+export async function fetchFeatureMap(
+  nonce = '',
+  backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
+): Promise<Record<string, boolean>> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
   try {
     const headers: Record<string, string> = {};
     if (nonce) {
       headers['X-WP-Nonce'] = nonce;
     }
-    const response = await fetch(`${base}/wp-json/mcp-ai/v1/features`, {
+    const response = await fetch(backendPaths(base, backend).features, {
       credentials: 'include',
       headers,
     });
@@ -499,5 +575,55 @@ export async function fetchFeatureMap(nonce = ''): Promise<Record<string, boolea
       `features fetch failed (${error instanceof Error ? error.message : String(error)}) — showing all nav items`,
     );
     return {};
+  }
+}
+
+/**
+ * Startup contract assertion (Proposal 090-B, ADR-6).
+ *
+ * The console must not render a Laravel-backed admin against a WordPress
+ * origin (or vice versa) — every page would show an empty state with no
+ * actionable error. This probe fails the boot with a precise message when the
+ * backend contract is missing or mismatched. WordPress is a no-op: its
+ * contract is the plugin version, not a JSON envelope.
+ */
+export async function assertBackendContract(
+  backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
+): Promise<void> {
+  if (backend === 'wordpress') {
+    return;
+  }
+  const base = typeof window !== 'undefined' ? window.location.origin : '';
+  const paths = backendPaths(base, backend);
+  const response = await fetch(paths.features, {
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(
+      `Backend contract assertion failed: ${paths.features} returned ${response.status}. ` +
+        'Check NVOOS_BACKEND and that the Laravel app is reachable through the proxy.',
+    );
+  }
+  const payload = await readJson<{
+    success?: boolean;
+    data?: {
+      backend?: string;
+      contract?: string;
+      contract_version?: number;
+    };
+  }>(response, 'backend contract');
+  const contract = payload?.data;
+  if (
+    !contract ||
+    contract.backend !== 'laravel' ||
+    contract.contract !== 'mcp-ai/v1' ||
+    contract.contract_version !== 1
+  ) {
+    throw new Error(
+      `Backend contract mismatch: expected laravel / mcp-ai/v1 / v1, got ${JSON.stringify(
+        contract ?? {},
+      )}.`,
+    );
   }
 }
