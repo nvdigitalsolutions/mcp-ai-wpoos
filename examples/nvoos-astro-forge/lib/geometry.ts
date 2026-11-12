@@ -26,6 +26,7 @@ import type {
 	ForgeBandFacts,
 	ForgeChrome,
 	ForgeGeometry,
+	ForgeMobileNav,
 	ForgeStickyHeader,
 	ForgeTopbarFacts,
 } from './types.ts';
@@ -1091,6 +1092,193 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			facts[ id ] = band;
 		}
 		return { bands: facts, ...( pageBackground ? { pageBackground } : {} ) };
+	} finally {
+		await browser.close();
+	}
+}
+
+/**
+ * Measure the source's OPENED mobile menu — the surface, ink and rhythm of the
+ * panel a collapsed nav reveals.
+ *
+ * Toggling `display` is not enough: a builder paints the panel on its own layer.
+ * virtuallyjamaica's Brando menu is an absolutely positioned
+ * `rgba(0,0,0,0.95)` panel under a fixed TRANSPARENT header, so a rebuild that
+ * only shows the links paints white text straight onto the hero photo — the
+ * menu is unreadable on any band that is not dark (2026-11-12).
+ *
+ * Method: load at 390×844, click the measured toggle, then find the panel as the
+ * EYE does — the painted box that starts at the header's bottom edge (or covers
+ * the screen) and carries an opaque surface or a gradient. Everything else (the
+ * link pitch, the inset, the overlay behaviour) is read off that box.
+ *
+ * FAIL-SOFT: no toggle → `undefined`; a toggle whose panel stays invisible →
+ * `{ overlay: false }`, and the rebuild derives a readable surface instead.
+ */
+export async function measureMobileNav( options: {
+	url: string;
+	timeout?: number;
+} ): Promise< ForgeMobileNav | undefined > {
+	const chromium = await loadChromium();
+	const browser = await chromium.launch( { args: [ '--force-device-scale-factor=1' ] } );
+	try {
+		const context = await browser.newContext( {
+			viewport: { width: 390, height: 844 },
+			deviceScaleFactor: 1,
+			isMobile: true,
+			hasTouch: true,
+		} );
+		const page = await context.newPage();
+		await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
+		await settle( page );
+		const closed = await page.evaluate( () => {
+			const TOGGLE = /(?:^|\s)(?:navbar-toggle|menu-toggle|nav-toggle|mobile-toggle|hamburger|burger|aux-menu-toggle|toggle-menu)(?:\s|$)/i;
+			const header = document.querySelector( 'header, #masthead, #header, .site-header, nav' ) ?? document.body;
+			for ( const node of header.querySelectorAll( 'button, a, [role="button"]' ) ) {
+				const element = node as HTMLElement;
+				const classes = typeof element.className === 'string' ? element.className : '';
+				const declared =
+					element.hasAttribute( 'aria-expanded' ) ||
+					element.hasAttribute( 'data-toggle' ) ||
+					element.hasAttribute( 'data-bs-toggle' );
+				if ( ! declared && ! TOGGLE.test( classes ) ) {
+					continue;
+				}
+				const style = getComputedStyle( element );
+				const box = element.getBoundingClientRect();
+				if ( style.display === 'none' || style.visibility === 'hidden' || box.width < 1 || box.height < 1 ) {
+					continue;
+				}
+				// Measure the CLOSED layout first, then open it: the panel can grow the
+				// header (in-flow disclosure) and the header's bottom edge would move.
+				const before = {
+					headerBottom: Math.round( header.getBoundingClientRect().bottom ),
+					scrollHeight: document.documentElement.scrollHeight,
+				};
+				element.click();
+				return before;
+			}
+			return null;
+		} );
+		if ( ! closed ) {
+			return undefined;
+		}
+		await page.waitForTimeout( 800 );
+		const facts = await page.evaluate( ( closed ) => {
+			const alpha = ( value: string ): number => {
+				const match = /rgba?\(([^)]+)\)/.exec( value );
+				if ( ! match ) {
+					return value === 'transparent' ? 0 : 1;
+				}
+				const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() ).filter( Boolean );
+				return parts.length >= 4 ? Number( parts[ 3 ] ) : 1;
+			};
+			// The panel is found the way the EYE finds it: the container of the menu
+			// links, then the first ancestor that actually PAINTS a surface. Picking
+			// the biggest painted box instead caught the page band behind the header
+			// (virtuallyjamaica's red hero, 8302px tall).
+			const header = document.querySelector( 'header, #masthead, #header, .site-header, nav' ) ?? document.body;
+			const toggle = ( () => {
+				for ( const node of header.querySelectorAll( 'button, a, [role="button"]' ) ) {
+					const element = node as HTMLElement;
+					const classes = typeof element.className === 'string' ? element.className : '';
+					const declared =
+						element.hasAttribute( 'aria-expanded' ) ||
+						element.hasAttribute( 'data-toggle' ) ||
+						element.hasAttribute( 'data-bs-toggle' );
+					if ( declared || /(?:^|\s)(?:navbar-toggle|menu-toggle|nav-toggle|mobile-toggle|hamburger|burger|aux-menu-toggle|toggle-menu)(?:\s|$)/i.test( classes ) ) {
+						return element;
+					}
+				}
+				return null;
+			} )();
+			const menuLinks = [ ...header.querySelectorAll( 'a' ) ].filter( ( link ) => {
+				const box = link.getBoundingClientRect();
+				return (
+					box.height >= 8 &&
+					box.width >= 20 &&
+					box.top >= closed.headerBottom - 4 &&
+					box.top < innerHeight &&
+					link.textContent.trim().length > 0
+				);
+			} );
+			if ( menuLinks.length === 0 ) {
+				return { overlay: false };
+			}
+			// The deepest node containing EVERY menu link — the list/panel wrapper.
+			const shared = new Set< Element >();
+			for ( let node: Element | null = menuLinks[ 0 ]; node; node = node.parentElement ) {
+				shared.add( node );
+			}
+			for ( const link of menuLinks.slice( 1 ) ) {
+				for ( const node of [ ...shared ] ) {
+					if ( ! node.contains( link ) ) {
+						shared.delete( node );
+					}
+				}
+			}
+			let list: Element | null = null;
+			for ( let node = menuLinks[ 0 ].parentElement; node; node = node.parentElement ) {
+				if ( shared.has( node ) ) {
+					list = node;
+					break;
+				}
+			}
+			if ( ! list ) {
+				return { overlay: false };
+			}
+			// Walk UP for the painted surface, and stop at the disclosure's own row:
+			// past it lies the page, and the page is not the menu.
+			const stopAt = toggle ? ( toggle.parentElement ?? header ) : header;
+			let panel: Element | null = null;
+			for ( let node: Element | null = list; node; node = node.parentElement ) {
+				const style = getComputedStyle( node );
+				const hasGradient = Boolean( style.backgroundImage ) && style.backgroundImage !== 'none';
+				if ( alpha( style.backgroundColor ) >= 0.9 || hasGradient ) {
+					panel = node;
+					break;
+				}
+				if ( node === stopAt || node === header ) {
+					break;
+				}
+			}
+			const surface = panel ?? list;
+			const surfaceStyle = getComputedStyle( surface );
+			const surfaceBox = surface.getBoundingClientRect();
+			const opaque = alpha( surfaceStyle.backgroundColor ) >= 0.9;
+			const boxes = menuLinks.map( ( link ) => {
+				const box = link.getBoundingClientRect();
+				return {
+					top: box.top,
+					color: getComputedStyle( link ).color,
+					area: box.width * box.height,
+				};
+			} );
+			const pitches: number[] = [];
+			for ( let i = 1; i < boxes.length; i += 1 ) {
+				const pitch = boxes[ i ].top - boxes[ i - 1 ].top;
+				if ( pitch > 4 ) {
+					pitches.push( pitch );
+				}
+			}
+			pitches.sort( ( a, b ) => a - b );
+			const biggest = [ ...boxes ].sort( ( a, b ) => b.area - a.area )[ 0 ];
+			const position = getComputedStyle( panel ?? list ).position;
+			return {
+				...( opaque
+					? { background: surfaceStyle.backgroundColor }
+					: panel && surfaceStyle.backgroundImage !== 'none'
+						? { background: surfaceStyle.backgroundImage }
+						: {} ),
+				...( biggest ? { ink: biggest.color } : {} ),
+				padX: Math.round( Number.parseFloat( surfaceStyle.paddingLeft ) || 0 ),
+				padY: Math.round( Number.parseFloat( surfaceStyle.paddingTop ) || 0 ),
+				...( pitches.length > 0 ? { itemPitch: Math.round( pitches[ Math.floor( pitches.length / 2 ) ] ) } : {} ),
+				overlay: position === 'absolute' || position === 'fixed' || document.documentElement.scrollHeight <= closed.scrollHeight + 4,
+				fullWidth: surfaceBox.width >= innerWidth - 2,
+			};
+		}, closed );
+		return facts;
 	} finally {
 		await browser.close();
 	}

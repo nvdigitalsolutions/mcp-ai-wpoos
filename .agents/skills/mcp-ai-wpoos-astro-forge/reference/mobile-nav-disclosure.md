@@ -89,3 +89,64 @@ fails `astro check`, which is the e2e exit gate's first step. That abort takes
 the fixture scaffold down and reports as four unrelated failures (missing
 Pagefind index, un-localized catalogue PDF, invisible consent banner, a
 `false` where `true` was expected).
+
+## The OPENED panel is a surface, not a naked list
+
+Hiding/showing the links is only half of a disclosure. A builder paints the
+panel too, and that paint is invisible to every stylesheet harvest (the rules
+live behind vendor classes and a `<style>` block sanitisation drops).
+virtuallyjamaica's Brando menu opens an absolutely positioned
+`rgba(0,0,0,0.95)` sheet under a fixed TRANSPARENT header; a rebuild that only
+toggled `display` painted white links straight onto the photo hero — the menu
+was unreadable over every band that is not dark (2026-11-12).
+
+`measureMobileNav` (`lib/geometry.ts`) opens the menu at 390×844 and records
+`chrome.mobileNav`:
+
+| fact | source | how |
+|---|---|---|
+| `background` | `rgba(0,0,0,0.95)` | first ancestor of the link container that PAINTS (α ≥ 0.9 or a gradient) |
+| `ink` | `rgb(255,255,255)` | the biggest visible menu link's computed colour |
+| `padX` / `padY` | `15px` / `0` | the panel's own padding |
+| `itemPitch` | `30` | median gap between consecutive link tops |
+| `overlay` | `true` | panel is absolute/fixed, or the document height did not grow |
+| `fullWidth` | `true` | panel width ≈ viewport |
+
+Finding the panel is the delicate part. Picking the largest painted box under
+the header caught the page band (the hero is 8,302px tall), so the pass finds
+the **deepest common ancestor of the visible menu links** and walks UP from
+there for the first painted layer — stopping at the disclosure's own row,
+because past that lies the page and the page is not the menu. That single rule
+returns the black sheet on virtuallyjamaica and `no measured surface` when the
+source's own panel is transparent.
+
+Template contract (`global.css`):
+
+```css
+.site-nav-shell[data-collapsed='true'][data-open='true'] > nav {
+  position: absolute; inset-inline: 0; top: 100%; z-index: 30;
+  background: var(--forge-mobile-nav-bg, var(--forge-surface));
+  color: var(--forge-mobile-nav-ink, var(--forge-ink));
+  padding: var(--forge-mobile-nav-pad-y, .5rem) var(--forge-mobile-nav-pad-x, 1rem);
+}
+.site-nav-shell[data-collapsed='true'][data-open='true'] > nav a {
+  min-height: var(--forge-mobile-nav-row-h, 2.75rem); color: inherit;
+}
+```
+
+The fallback chain is the point: measured panel → the header's own surface when
+it is a real colour (`Base.astro` decides; a `headerTransparent` header has
+none) → the page surface. A panel is therefore never transparent, even on a
+source whose own menu is, and never white-on-white when the header is light.
+
+Two operational notes:
+
+- A `--geometry` run measures this fact, and `mergeProfileDraft` now takes
+  MEASURED chrome from a design-less run (it used to keep the existing chrome
+  and drop every fresh measurement — the topbar facts only survived because a
+  `--design` pass happened to run). `navToggle` merges field-wise so the
+  harvested `label` survives.
+- Opening the panel must not reflow the page: it is `position: absolute`
+  against the header (`:has()` adds `position: relative` only while a collapsed
+  shell exists). The source overlays too — verified by an unchanged
+  `scrollHeight`.

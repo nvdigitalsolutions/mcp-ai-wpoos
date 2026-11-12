@@ -48,7 +48,7 @@ import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
 import { applyDesignPins, findDroppedPins } from '../lib/pins.ts';
 import { resolveSiteShape, siteNavAnchors } from '../lib/inventory.ts';
-import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
+import { DEFAULT_GEOMETRY_VIEWPORTS, builtStaticRoot, diffGeometry, measureBandFacts, measureGeometry, measureMobileNav, measureNavToggle, measureStickyHeader, measureTopbar, serveDir } from '../lib/geometry.ts';
 import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
@@ -628,6 +628,27 @@ async function runAnalyze( url, options ) {
 				} catch ( error ) {
 					console.warn(
 						`\u26a0 Nav toggle skipped: ${ error instanceof Error ? error.message : error }`
+					);
+				}
+				// The OPENED mobile menu: its surface, ink and row rhythm. A collapsed nav
+				// that only toggles `display` paints white links onto whatever band is
+				// behind it (virtuallyjamaica's transparent header over a photo hero).
+				try {
+					const mobileNav = await measureMobileNav( { url: profile.url } );
+					if ( mobileNav ) {
+						profile.design = profile.design ?? {};
+						profile.design.chrome = profile.design.chrome ?? {};
+						profile.design.chrome.mobileNav = mobileNav;
+						const surface = mobileNav.background ?? 'no measured surface (the source panel is transparent too)';
+						console.log(
+							`\u2713 Mobile menu: ${ surface }${ mobileNav.overlay ? ', overlays the page' : ', in flow' }${ mobileNav.itemPitch ? `, ${ mobileNav.itemPitch }px rows` : '' }.`
+						);
+					} else {
+						console.log( '  Mobile menu: none (the source never collapses its nav).' );
+					}
+				} catch ( error ) {
+					console.warn(
+						`\u26a0 Mobile menu skipped: ${ error instanceof Error ? error.message : error }`
 					);
 				}
 				// The top contact strip's STRUCTURE (icons, two-line address, right

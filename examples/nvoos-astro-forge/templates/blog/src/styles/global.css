@@ -250,19 +250,43 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	display: none;
 }
 
+/*
+ * The OPENED panel is a SURFACE, not a naked list. A builder paints it: Brando's
+ * menu is an absolutely positioned `rgba(0,0,0,0.95)` sheet under the header.
+ * Toggling `display` alone put the rebuilt links straight onto the band behind
+ * the header — white text on virtuallyjamaica's photo hero, unreadable
+ * (2026-11-12). `--forge-mobile-nav-*` are MEASURED (`analyze --geometry`); the
+ * fallbacks keep the panel readable when the source's own panel is transparent:
+ * the header's surface when it has one, else the page surface.
+ */
 .site-nav-shell[data-collapsed='true'][data-open='true'] > nav {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	/* A full-width row under the header: the shell is `display: contents`, so
-	 * the nav is still a flex item of `.site-header`. */
-	flex-basis: 100%;
+	/* An overlay, not a flex row: the panel must not reflow the page under it. */
+	position: absolute;
+	inset-inline: 0;
+	top: 100%;
+	z-index: 30;
+	background: var(--forge-mobile-nav-bg, var(--forge-surface));
+	color: var(--forge-mobile-nav-ink, var(--forge-ink));
+	padding: var(--forge-mobile-nav-pad-y, 0.5rem) var(--forge-mobile-nav-pad-x, 1rem);
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
 }
 
-/* A source that collapses its nav even on a wide screen needs the header to
- * wrap for that row; the measured `all` breakpoint is the only case. */
+/* One tappable row per link at the source's pitch (44px minimum per WCAG 2.5.8). */
+.site-nav-shell[data-collapsed='true'][data-open='true'] > nav a {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	min-height: var(--forge-mobile-nav-row-h, 2.75rem);
+	color: inherit;
+}
+
+/* The panel is positioned against the header it belongs to. A header that is
+ * already positioned (fixed/sticky/overlay) keeps its own containing block. */
 .site-header:has(> .site-nav-shell[data-collapsed='true']) {
-	flex-wrap: wrap;
+	position: relative;
 }
 
 .site-main {

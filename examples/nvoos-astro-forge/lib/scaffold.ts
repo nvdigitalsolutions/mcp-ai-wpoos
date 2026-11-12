@@ -1897,6 +1897,16 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'	footerBarInk?: string;',
 		'\t/** The chrome base font-size (the source chrome runs at its own size). */',
 		'\tchromeSize?: string;',
+		'\t/** The opened mobile menu\'s surface + rhythm (measured at 390px). */',
+		'\tmobileNav?: {',
+		'\t\tbackground?: string;',
+		'\t\tink?: string;',
+		'\t\tpadX?: number;',
+		'\t\tpadY?: number;',
+		'\t\titemPitch?: number;',
+		'\t\toverlay?: boolean;',
+		'\t\tfullWidth?: boolean;',
+		'\t};',
 		'\t/** True when the SOURCE exposes a theme / colour-mode control; absent',
 		'\t * means the site has none, so the toggle is not rendered. */',
 		'\tthemeToggle?: boolean;',
@@ -1976,6 +1986,30 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 	}
 	if ( chrome.navInk ) {
 		entry.push( `navInk: ${ tsString( chrome.navInk ) }` );
+	}
+	if ( chrome.mobileNav ) {
+		const mobile = chrome.mobileNav;
+		const parts: string[] = [];
+		if ( mobile.background ) {
+			parts.push( `background: ${ tsString( mobile.background ) }` );
+		}
+		if ( mobile.ink ) {
+			parts.push( `ink: ${ tsString( mobile.ink ) }` );
+		}
+		for ( const key of [ 'padX', 'padY', 'itemPitch' ] as const ) {
+			if ( typeof mobile[ key ] === 'number' ) {
+				parts.push( `${ key }: ${ mobile[ key ] }` );
+			}
+		}
+		if ( typeof mobile.overlay === 'boolean' ) {
+			parts.push( `overlay: ${ mobile.overlay }` );
+		}
+		if ( typeof mobile.fullWidth === 'boolean' ) {
+			parts.push( `fullWidth: ${ mobile.fullWidth }` );
+		}
+		if ( parts.length > 0 ) {
+			entry.push( `mobileNav: { ${ parts.join( ', ' ) } }` );
+		}
 	}
 	if ( chrome.navToggle ) {
 		const toggle: string[] = [];

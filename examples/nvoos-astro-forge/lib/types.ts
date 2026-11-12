@@ -1375,6 +1375,32 @@ export interface ForgeTopbarFacts {
 	itemGap?: string;
 }
 
+/**
+ * The source's opened mobile menu, as the browser paints it.
+ *
+ * A collapsed nav is not just a hidden list: the source puts it on a SURFACE.
+ * virtuallyjamaica's Brando menu is an absolutely positioned panel at
+ * `rgba(0,0,0,0.95)` under a transparent fixed header — so a rebuild that only
+ * toggles `display` paints white links straight onto the hero photo and the menu
+ * is unreadable. Every field is measured with the panel OPEN at 390×844.
+ */
+export interface ForgeMobileNav {
+	/** The panel's painted background (a colour, or the gradient image). */
+	background?: string;
+	/** The ink the panel's links render in. */
+	ink?: string;
+	/** The panel's own horizontal padding (px) — the source's link inset. */
+	padX?: number;
+	/** The panel's own vertical padding (px). */
+	padY?: number;
+	/** The pitch between link rows (px) — the source's row height. */
+	itemPitch?: number;
+	/** The panel overlays the page (absolute/fixed) instead of pushing it. */
+	overlay?: boolean;
+	/** The panel spans the viewport width. */
+	fullWidth?: boolean;
+}
+
 export interface ForgeChrome {
 	/** The top contact strip lines (address, phone). Kept for profiles measured
 	 * before `topbarItems` existed; the structured block wins when present. */
@@ -1415,6 +1441,12 @@ export interface ForgeChrome {
 	navStyle?: ForgeChromeStyle;
 	/** The nav link color (usually white on a dark header). */
 	navInk?: string;
+	/**
+	 * The opened mobile menu's SURFACE and rhythm, measured at 390px with the
+	 * panel open (`measureMobileNav`). Absent → the rebuild derives the panel
+	 * from the header surface (or the page surface) so it is never transparent.
+	 */
+	mobileNav?: ForgeMobileNav;
 	/**
 	 * The source's own mobile nav disclosure (a Bootstrap `navbar-toggle`, a
 	 * builder's hamburger button).

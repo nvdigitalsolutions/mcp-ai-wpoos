@@ -320,6 +320,19 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	// `analyze --geometry --write` left the profile with `design: { chrome }`).
 	if ( fresh.design && isAnalyzedDesign( fresh.design ) ) {
 		merged.design = applyDesignPins( fresh.design, existing.pins );
+	} else if ( fresh.design?.chrome && existing.design?.chrome ) {
+		// A `--geometry` run measures CHROME facts (the top strip, the mobile menu,
+		// the nav disclosure) but carries no design block, so the merge kept the
+		// EXISTING chrome and every fresh chrome measurement was dropped. Those are
+		// measurements, not editorial: take them, and leave the harvest-only fields
+		// (`headerBg`, `navInk`…) alone because they are not in a geometry stub.
+		const chrome = { ...existing.design.chrome, ...fresh.design.chrome };
+		// `navToggle` is BOTH a measured fact (`visible`) and a harvested one
+		// (`label`): replacing the object wholesale dropped the label.
+		if ( existing.design.chrome.navToggle || fresh.design.chrome.navToggle ) {
+			chrome.navToggle = { ...existing.design.chrome.navToggle, ...fresh.design.chrome.navToggle };
+		}
+		merged.design = { ...existing.design, chrome };
 	}
 	if ( fresh.vocabulary ) {
 		merged.vocabulary = fresh.vocabulary;

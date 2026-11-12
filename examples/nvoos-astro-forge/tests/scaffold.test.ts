@@ -538,6 +538,39 @@ describe( 'renderChromeGenerated (Proposal 123 facts)', () => {
 		expect( value ).not.toContain( 'navToggle' );
 	} );
 
+	it( 'bakes the OPENED mobile menu surface and rhythm', () => {
+		// A collapsed nav is a SURFACE, not just a hidden list: virtuallyjamaica's
+		// Brando panel is rgba(0,0,0,0.95) with 15px inset and 30px rows. Without
+		// the fact the rebuilt panel painted white links onto the hero photo.
+		const withMenu: SiteProfile = {
+			...profile,
+			design: {
+				...profile.design!,
+				chrome: {
+					...profile.design!.chrome,
+					mobileNav: {
+						background: 'rgba(0, 0, 0, 0.95)',
+						ink: 'rgb(255, 255, 255)',
+						padX: 15,
+						padY: 0,
+						itemPitch: 30,
+						overlay: true,
+						fullWidth: true,
+					},
+				},
+			},
+		};
+		expect( renderChromeGenerated( withMenu ) ).toContain(
+			"mobileNav: { background: 'rgba(0, 0, 0, 0.95)', ink: 'rgb(255, 255, 255)', padX: 15, padY: 0, itemPitch: 30, overlay: true, fullWidth: true }"
+		);
+	} );
+
+	it( 'omits the mobile menu when the source never collapses its nav', () => {
+		const module = renderChromeGenerated( profile );
+		const value = module.slice( module.indexOf( 'export const chrome' ) );
+		expect( value ).not.toContain( 'mobileNav' );
+	} );
+
 	it( 'bakes the measured top strip (icons, two-line address, alignment, rhythm)', () => {
 		// The strip's STRUCTURE is a browser fact: `analyzeChrome` only sees the
 		// text lines, so the glyphs, the `<br>` and the right alignment came from

@@ -877,6 +877,13 @@ so JS-off leaves it inline at every width. A chrome fact needs THREE edits
 (`ForgeChrome`, the emitted interface, the emitted value) or it silently
 disappears — detail: [`reference/mobile-nav-disclosure.md`](reference/mobile-nav-disclosure.md).
 
+**The OPENED panel is a measured SURFACE** (`measureMobileNav`): the source
+paints a sheet (virtuallyjamaica: `rgba(0,0,0,0.95)` under a transparent
+header), so toggling `display` alone paints white links onto the band behind it.
+`chrome.mobileNav` carries background/ink/inset/row pitch; the fallback chain
+(measured → header surface → page surface) keeps it readable even when the
+source's own panel is transparent.
+
 ## Proposal 125 — split hero, webfonts, catalog (2026-11-06)
 
 The live jayainc rebuild taught four rebuild gaps; all fixed in the
@@ -1025,12 +1032,10 @@ render drifted" blind spot:
   the gate — added copy never fails a rebuild).
 - `verify --colors` diffs the COMPUTED background+text per region — chrome AND
   every band — with CIEDE2000 (warn ≥ 3, fail ≥ 6); transparent skipped. A
-  band's gradient is a third metric: absent in the build fails, differing warns,
-  a photo url is not compared. INK is a PALETTE weighted by rendered glyph area
-  (chars × font-size²); every ink carrying ≥15% of a region's text is gated, so
-  a rebuild cannot lose a band's minority colour, and text the region does not
-  contain is not its ink. `colors <profile> [--url …] --write` re-records the
-  baseline without re-analysing. See `reference/colour-gate.md`.
+  band's gradient is a third metric (absent fails, differing warns). INK is a
+  PALETTE weighted by rendered glyph area; every ink ≥ 15% of a region's text is
+  gated, so a rebuild cannot lose a minority colour. `colors <profile> --write`
+  re-records a baseline. See `reference/colour-gate.md`.
 - `verify --pixel` diffs deterministic screenshots with pixelmatch's YIQ delta
   **and** SSIM against a recorded baseline (build-vs-build regression) or the
   live source (`--pixel-live`, near-clone work only). Determinism is proven,

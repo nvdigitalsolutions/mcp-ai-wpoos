@@ -177,4 +177,23 @@ describe( 'global.css motion contract', () => {
 		expect( css ).toContain( 'body:has(.motion-toggle input:checked)' );
 		expect( css ).toContain( 'animation-play-state: paused' );
 	} );
+
+	it( 'gives the opened mobile menu a real SURFACE (readable over any band)', () => {
+		// The panel used to be a bare full-width row: white links landed straight on
+		// whatever band sat behind the header (virtuallyjamaica's photo hero).
+		expect( css ).toMatch(
+			/\.site-nav-shell\[data-collapsed='true'\]\[data-open='true'\] > nav\s*\{[^}]*background:\s*var\(--forge-mobile-nav-bg,\s*var\(--forge-surface\)\)/
+		);
+		expect( css ).toMatch(
+			/\.site-nav-shell\[data-collapsed='true'\]\[data-open='true'\] > nav\s*\{[^}]*color:\s*var\(--forge-mobile-nav-ink,\s*var\(--forge-ink\)\)/
+		);
+		// An overlay, not a flex row: opening the menu must not reflow the page.
+		expect( css ).toMatch( /\.site-nav-shell\[data-collapsed='true'\]\[data-open='true'\] > nav\s*\{[^}]*position:\s*absolute/ );
+		// Its links inherit the panel ink instead of the header's nav colour.
+		expect( css ).toMatch( /\.site-nav-shell\[data-collapsed='true'\]\[data-open='true'\] > nav a\s*\{[^}]*color:\s*inherit/ );
+	} );
+
+	it( 'gives each opened menu row the measured pitch (44px touch floor)', () => {
+		expect( css ).toMatch( /\.site-nav-shell\[data-collapsed='true'\]\[data-open='true'\] > nav a\s*\{[^}]*min-height:\s*var\(--forge-mobile-nav-row-h,\s*2\.75rem\)/ );
+	} );
 } );

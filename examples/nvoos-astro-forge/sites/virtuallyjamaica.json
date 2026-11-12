@@ -393,6 +393,15 @@
 					"tablet": true,
 					"mobile": true
 				}
+			},
+			"mobileNav": {
+				"background": "rgba(0, 0, 0, 0.95)",
+				"ink": "rgb(255, 255, 255)",
+				"padX": 15,
+				"padY": 0,
+				"itemPitch": 30,
+				"overlay": true,
+				"fullWidth": true
 			}
 		},
 		"behavior": {

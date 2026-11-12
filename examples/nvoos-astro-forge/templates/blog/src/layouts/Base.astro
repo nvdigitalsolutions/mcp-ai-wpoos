@@ -142,6 +142,15 @@ const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
 // The chrome typography/shape facts (Proposal 123) ride as CSS custom
 // properties on <body> — global.css reads them with template-default
 // fallbacks, so sites without the facts keep the default chrome.
+//
+// The opened MOBILE MENU's surface. Without one the panel paints its links
+// straight onto whatever band is behind the header — virtuallyjamaica's
+// transparent header over a photo hero made the menu unreadable. Fallback
+// order: the measured panel, the header's own surface when it is a real
+// colour, then (in CSS) the page surface.
+const opaqueHeaderSurface = chrome?.headerBg && chrome.headerTransparent !== true ? chrome.headerBg : undefined;
+const mobileNavBg = chrome?.mobileNav?.background ?? opaqueHeaderSurface;
+const mobileNavInk = chrome?.mobileNav?.ink ?? chrome?.navInk ?? ( opaqueHeaderSurface ? chrome?.headerInk : undefined );
 const chromeVars = [
 	chrome?.chromeSize && `--forge-chrome-size:${chrome.chromeSize}`,
 	chrome?.headerBg && `--forge-header-bg:${chrome.headerBg}`,
@@ -163,6 +172,13 @@ const chromeVars = [
 	chrome?.navStyle?.weight && `--forge-nav-weight:${chrome.navStyle.weight}`,
 	chrome?.navStyle?.size && `--forge-nav-size:${chrome.navStyle.size}`,
 	chrome?.navStyle?.letterSpacing && `--forge-nav-letter-spacing:${chrome.navStyle.letterSpacing}`,
+	// The OPENED mobile menu (measured at 390px with the panel open). See
+	// `mobileNavBg` above for the fallback order.
+	mobileNavBg && `--forge-mobile-nav-bg:${mobileNavBg}`,
+	mobileNavInk && `--forge-mobile-nav-ink:${mobileNavInk}`,
+	chrome?.mobileNav?.padX !== undefined && `--forge-mobile-nav-pad-x:${chrome.mobileNav.padX}px`,
+	chrome?.mobileNav?.padY !== undefined && `--forge-mobile-nav-pad-y:${chrome.mobileNav.padY}px`,
+	chrome?.mobileNav?.itemPitch !== undefined && `--forge-mobile-nav-row-h:${chrome.mobileNav.itemPitch}px`,
 	chrome?.call?.style?.padding && `--forge-call-pad:${chrome.call.style.padding}`,
 	chrome?.call?.style?.radius && `--forge-call-radius:${chrome.call.style.radius}`,
 	chrome?.call?.style?.weight && `--forge-call-weight:${chrome.call.style.weight}`,
