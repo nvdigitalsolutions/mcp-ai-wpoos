@@ -396,19 +396,29 @@ jobs:
       - name: Generate icons
         run: node scripts/gen-icons.mjs
 
-      # ort-sys rc.9 (the ONNX Runtime binding behind vision / silero-vad /
-      # snippet-onnx / memory) copies the runtime DLLs into THREE destinations
-      # — target/debug, target/debug/examples and target/debug/deps
-      # (build.rs `copy_libraries`). On a cold runner `examples/` has never
-      # been created, GitHub's Windows runners refuse symlinks without
-      # Developer Mode, and the crate's fallback is an unwrapped fs::copy
-      # (build.rs:109) — so the build dies with
-      # `Os { code: 3, NotFound }` (ERROR_PATH_NOT_FOUND) before linking.
-      # Locally the directory exists because examples have been built, which
-      # masks it; a Cargo.lock change rotates the cache key and brings it
-      # back. Pre-create the destinations (no-op when they already exist).
+      # ort-sys rc.9 derives its DLL destinations from
+      # `OUT_DIR.ancestors().nth(3)` and then symlinks/copies into that dir
+      # plus its `examples/` and `deps/` children (`copy_libraries`,
+      # build.rs:83). rustc 1.100 moved the build dir to
+      # `target/debug/build/<pkg>/<hash>/out` (1.99 used
+      # `build/<pkg>-<hash>/out`), so nth(3) is now `target/debug/build` — a
+      # directory whose `examples/` and `deps/` children do not exist.
+      # symlink_file succeeds for the first destination (that's why its
+      # rerun-if-changed lines print) but fails for the two children (missing
+      # parent), and the crate's fallback is an unwrapped fs::copy
+      # (build.rs:109) -> `Os { code: 3, NotFound }` / ERROR_PATH_NOT_FOUND
+      # before linking. Pre-create the children for BOTH layouts; the
+      # target/debug/* pair covers rustc <= 1.99.
       - name: Pre-create ort-sys DLL destinations
-        run: New-Item -ItemType Directory -Force -Path src-tauri/target/debug, src-tauri/target/debug/examples, src-tauri/target/debug/deps | Out-Null
+        run: |
+          $dirs = @(
+            'src-tauri/target/debug',
+            'src-tauri/target/debug/examples',
+            'src-tauri/target/debug/deps',
+            'src-tauri/target/debug/build/examples',
+            'src-tauri/target/debug/build/deps'
+          )
+          New-Item -ItemType Directory -Force -Path $dirs | Out-Null
 
       # tauri build runs beforeBuildCommand (npm run build = webview dist,
       # required by generate_context!) automatically. --no-bundle skips the
@@ -418,6 +428,21 @@ jobs:
       # the binding loads the library at runtime, not at build time.
       - name: Build debug exe (complete feature union)
         run: npm run tauri -- build --debug --no-bundle --features fastconformer,parakeet,whisper,silero-vad,camera,vision,agent,mcp,snippet,snippet-onnx,document,snippet-pdf,memory
+
+      # On rustc 1.100 the DLLs land in target/debug/build, not beside the
+      # exe, so the boot smoke (and anyone running the artifact) could fail
+      # to load ONNX Runtime. Stage them next to the exe — a no-op on the
+      # older layout where they are already there.
+      - name: Stage ONNX Runtime DLLs next to the exe
+        run: |
+          $src = 'src-tauri/target/debug/build'
+          $dst = 'src-tauri/target/debug'
+          if (Test-Path $src) {
+            Get-ChildItem -Path $src -Filter 'onnxruntime*.dll' -File |
+              Copy-Item -Destination $dst -Force
+          }
+          Get-ChildItem -Path $dst -Filter 'onnxruntime*.dll' -File |
+            Select-Object -ExpandProperty Name
 
       # Boot residency gate: the GUI must survive startup on the runner's
       # desktop session (catches crash-at-boot regressions in the Windows

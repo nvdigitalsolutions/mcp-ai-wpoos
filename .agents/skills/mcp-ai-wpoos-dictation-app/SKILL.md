@@ -124,20 +124,26 @@ examples/nvoos-dictate/
   has a cold `target/`, so budget a full dependency rebuild (~6 min for
   `cargo test --lib` on default features) — validate in the main tree when
   the change allows it.
-- **Windows CI: ort-sys rc.9 needs `target/debug/examples` to already exist
-  (2026-11-13).** Any build touching `vision`, `silero-vad`, `snippet-onnx` or
-  `memory` routes through ort-sys's `copy_libraries`, which copies the ONNX
-  Runtime DLLs into **three** destinations: `target/debug`,
-  `target/debug/examples` and `target/debug/deps`. On a cold GitHub runner
-  `examples/` has never been created, symlink creation is refused without
-  Developer Mode, and the crate's fallback is an unwrapped `fs::copy`
-  (`build.rs:109`) — the build dies with `Os { code: 3, NotFound }`
-  (`ERROR_PATH_NOT_FOUND`) right after printing the `rerun-if-changed` lines
-  for the first destination. It never reproduces locally because examples have
-  been built there; a `Cargo.lock` change rotates the CI cache key and revives
-  it. Fix: `New-Item -ItemType Directory -Force` the three paths in a workflow
-  step before the build (the `windows-bundle` job in
-  `build-nvoos-dictate.yml` does this).
+- **Windows CI: ort-sys rc.9 breaks on rustc 1.100's build-dir layout
+  (2026-11-13).** Any build touching `vision` / `silero-vad` / `snippet-onnx`
+  / `memory` runs ort-sys's `copy_libraries`, which derives its destinations
+  from `OUT_DIR.ancestors().nth(3)` and then symlinks the ONNX Runtime DLLs
+  into that dir plus its `examples/` and `deps/` children.
+
+  1.99 put `OUT_DIR` at `target/debug/build/<pkg>-<hash>/out`, so `nth(3)` was
+  `target/debug`. **1.100 moved it to `build/<pkg>/<hash>/out`**, so `nth(3)`
+  is now `target/debug/build`. The first symlink still succeeds (that is why
+  its `rerun-if-changed` lines print), but `build/examples` and `build/deps`
+  have never been created, so `symlink_file` fails there and the crate's
+  fallback — an unwrapped `fs::copy` at `build.rs:109` — panics with
+  `Os { code: 3, NotFound }` (`ERROR_PATH_NOT_FOUND`) before linking.
+
+  It never reproduces on a 1.99 toolchain, or locally where the dirs already
+  exist. Fix: pre-create `target/debug/{examples,deps}` **and**
+  `target/debug/build/{examples,deps}` in a workflow step, then stage
+  `onnxruntime*.dll` from `target/debug/build/` next to the exe so the binary
+  can still load ORT (the `windows-bundle` job in
+  `build-nvoos-dictate.yml` does both).
 - Boot smoke test: `cmd //c start "" <exe>` → `tasklist //FI "IMAGENAME eq
   nvoos-dictate.exe"` after ~10 s (process alive = boot OK); kill with
   `taskkill //IM nvoos-dictate.exe //F`. A running app locks the exe — kill
