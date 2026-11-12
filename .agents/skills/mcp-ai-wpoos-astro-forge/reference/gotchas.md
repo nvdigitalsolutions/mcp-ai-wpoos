@@ -236,3 +236,14 @@ short digest of the highest-traffic ones stays in `SKILL.md`.
 - **A browser test that skips is not a test that passed.** The new browser
   suite uses `describe.skipIf(!hasChromium)` and vitest reports the skip; CI
   installs Chromium BEFORE `npm test`, so a green run proves the probe ran.
+- **The band wrapper must not duplicate an id its own markup owns.** A builder
+  may put the in-page anchor on an element INSIDE the band — Brando puts
+  `id="wifi"` on the red half-column — and the harvested markup keeps it. The
+  wrapper emitted the same id, so `#wifi` resolved to the wrapper: links landed
+  on the band instead of the panel, and `verify --colors` compared the band's
+  `#ededed` surface against the source's `#dd3333` panel. `wrapperAnchor()`
+  (`templates/blog/src/lib/anchor.ts`) yields when a rendered `id` attribute
+  already matches — attribute-aware, so `id="wifi"` written in prose does not
+  count, and `id="wifi-panel"` does not either. Only the kinds that actually
+  emit `section.html` (`text`, `raw`) are checked: a component band keeps the
+  html but never renders it, so suppressing there would drop the anchor.

@@ -14,6 +14,7 @@ import SectionLinks from './SectionLinks.astro';
 import type { SectionTheme } from '../../lib/sections.generated.ts';
 import SmartImage from '../SmartImage.astro';
 import IconMarker from './IconMarker.astro';
+import SectionTitle from './SectionTitle.astro';
 
 interface Props {
 	section: SemanticSection;
@@ -57,7 +58,7 @@ const dividerStyle = theme?.titleDivider
 				{media.map((entry) => entry.src && <SmartImage src={entry.src} alt={entry.alt ?? title ?? ''} />)}
 			</div>
 			<div class="ds-icon-content">
-				{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+				{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 				{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 				{body && body.length > 0 && (
 					<div class="ds-lede">
@@ -96,7 +97,7 @@ const dividerStyle = theme?.titleDivider
 		</div>
 	) : (
 		<>
-			{title && <h2 class="ds-title" style={titleVars || undefined}>{title}</h2>}
+			{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
 			{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
 			{body && body.length > 0 && (
 				<div class="ds-lede">

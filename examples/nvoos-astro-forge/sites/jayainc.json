@@ -332,14 +332,28 @@
 					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
 				},
 				"iconRowStyle": {
-					"padTop": "36px",
-					"padBottom": "50px",
+					"padTop": {
+						"desktop": "63.01px",
+						"tablet": "36px",
+						"mobile": "36px"
+					},
+					"padBottom": {
+						"desktop": "63.01px",
+						"tablet": "50.01px",
+						"mobile": "50.01px"
+					},
+					"padX": {
+						"desktop": "50.01px",
+						"tablet": "35px",
+						"mobile": "35px"
+					},
 					"titleSize": "27px",
 					"titleLineHeight": "32px",
 					"markerSize": "81px",
 					"markerGlyph": "45px",
 					"markerBackground": "transparent",
-					"markerInk": "#242424"
+					"markerInk": "#242424",
+					"rowGap": "20px"
 				}
 			},
 			{
@@ -373,7 +387,9 @@
 					"height": "6px",
 					"background": "#ffcf0e",
 					"shadow": "0px 4px 8px 0px rgba(255,207,14,0.5)"
-				}
+				},
+				"measure": "1200px",
+				"paddingX": "32px"
 			},
 			{
 				"id": "48ace0b",
@@ -559,7 +575,8 @@
 			"footerInk": "rgba(255, 255, 255, 0.7)",
 			"footerLogo": {
 				"src": "https://jayainc.com/wp-content/uploads/2018/09/JAYAINC-LOGO-V1-wht-v2.png",
-				"alt": ""
+				"alt": "",
+				"blockIndex": 0
 			},
 			"footerBlocks": [
 				{
@@ -593,7 +610,29 @@
 			},
 			"favicon": "https://jayainc.com/wp-content/uploads/2018/09/cropped-jaya-inc-icon-32x32.png",
 			"iconCss": "https://jayainc.com/wp-content/themes/phlox-pro/css/auxin-icon.css?ver=5.17.20",
-			"chromeSize": "16px"
+			"chromeSize": "16px",
+			"topbarItems": [
+				{
+					"text": "3300 NW 112TH AVE\nDoral, FL 33172",
+					"icon": "auxicon-location"
+				},
+				{
+					"text": "+1 (305) 500-9319",
+					"icon": "auxicon-phone-classic-on"
+				}
+			],
+			"topbarAlign": "end",
+			"topbarHeight": "100px",
+			"topbarIconSize": "40px",
+			"topbarIconInk": "rgb(255, 207, 14)",
+			"topbarIconGap": "20px",
+			"topbarItemGap": "50px",
+			"topbarSocials": [
+				{
+					"icon": "auxicon-googleplus",
+					"href": "https://www.google.lk/maps/place/Jaya+Inc/@25.8040054,-80.3775633,15z/data=!4m5!3m4!1s0x0:0x2cc675bcbef019d2!8m2!3d25.8040054!4d-80.3775633"
+				}
+			]
 		},
 		"behavior": {
 			"headerSticky": true,
@@ -785,16 +824,30 @@
 		{
 			"path": "sections.fcc5e07.iconRowStyle",
 			"value": {
-				"padTop": "36px",
-				"padBottom": "50px",
+				"padTop": {
+					"desktop": "63.01px",
+					"tablet": "36px",
+					"mobile": "36px"
+				},
+				"padBottom": {
+					"desktop": "63.01px",
+					"tablet": "50.01px",
+					"mobile": "50.01px"
+				},
+				"padX": {
+					"desktop": "50.01px",
+					"tablet": "35px",
+					"mobile": "35px"
+				},
 				"titleSize": "27px",
 				"titleLineHeight": "32px",
 				"markerSize": "81px",
 				"markerGlyph": "45px",
 				"markerBackground": "transparent",
-				"markerInk": "#242424"
+				"markerInk": "#242424",
+				"rowGap": "20px"
 			},
-			"why": "The services rows are Auxin advanced-text widgets: 36px/50px inner padding, an 81px unfilled icon circle with a 45px glyph, and 27px/32px titles — measured live, not band-scoped CSS."
+			"why": "The services rows are Auxin advanced-text widgets: 63px above/below and 50px inset on desktop, 36/50/35 at tablet and mobile, plus a 20px widget margin (pitch 273px); an 81px unfilled icon circle with a 45px glyph, and 27px/32px titles — measured from bandFacts.box + the live row boxes."
 		},
 		{
 			"path": "typography.bodyPx",
@@ -809,6 +862,16 @@
 				"mobile": "100px 0px 100px 0px"
 			},
 			"why": "The source scopes this band padding to a device range: 125px on desktop, 100px on tablet and mobile. A single shorthand forced 125px everywhere and over-padded tablet/mobile by 25px."
+		},
+		{
+			"path": "sections.059421c.measure",
+			"value": "1200px",
+			"why": "This band's content is capped NARROWER than its full-width Elementor container: the container measures 1440 but the rebuilt form at that width grew the band 26px past the source box (343px). The template default 1200 reproduces the source box; pin it."
+		},
+		{
+			"path": "sections.059421c.paddingX",
+			"value": "32px",
+			"why": "The template clamp the band rendered with before the measured-container pass; keeps the content box at 1136px (the source's 343px height)."
 		}
 	],
 	"vocabulary": {
@@ -1169,6 +1232,8 @@
 					"transform": "none",
 					"align": "start",
 					"family": "Rubik",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none",
 					"tablet": {
 						"size": "62px",
 						"lineHeight": "76px"
@@ -1186,7 +1251,26 @@
 				"letterSpacing": "normal",
 				"transform": "none",
 				"align": "start",
-				"family": "Rubik"
+				"family": "Rubik",
+				"color": "rgb(255, 255, 255)",
+				"maxWidth": "none"
+			},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
 			},
 			"box": {
 				"elementor-background-overlay": {
@@ -1332,7 +1416,7 @@
 				"aux-alignnone": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-aufe572af9": {
+				"aux-parent-au143838c9": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-media-hint-frame": {
@@ -1360,7 +1444,7 @@
 				"aux-none",
 				"aux-overlay",
 				"aux-parallax-section",
-				"aux-parent-aufe572af9",
+				"aux-parent-au143838c9",
 				"aux-scale-down",
 				"aux-scale-up",
 				"aux-text",
@@ -1411,7 +1495,7 @@
 						"aux-uppercase"
 					],
 					"count": 1,
-					"base": "cursor:pointer;color:rgb(255, 255, 255);background-image:linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%);border-radius:1200.12px;font-weight:500;text-transform:uppercase",
+					"base": "cursor:pointer;color:rgb(255, 255, 255);background-image:linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%);border-radius:1200.12px;text-decoration-line:none;font-weight:500;text-transform:uppercase;display:inline-block",
 					"transition": "0.45s",
 					"children": [
 						{
@@ -1437,11 +1521,30 @@
 				"transform": "none",
 				"align": "left",
 				"family": "Rubik",
+				"color": "rgb(36, 36, 36)",
+				"maxWidth": "none",
 				"tablet": {
 					"size": "24px"
 				},
 				"mobile": {
 					"size": "24px"
+				}
+			},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
 				}
 			},
 			"box": {
@@ -1507,7 +1610,7 @@
 				"aux-widget-quote": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au1e161bdf": {
+				"aux-parent-au87e9627e": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-elem-quote": {
@@ -1537,7 +1640,7 @@
 				"aux-blockquote-normal",
 				"aux-elem-quote",
 				"aux-parallax-section",
-				"aux-parent-au1e161bdf",
+				"aux-parent-au87e9627e",
 				"aux-quote-symbol",
 				"aux-scale-down",
 				"aux-text-align-left",
@@ -1567,6 +1670,23 @@
 		"dff3f1a": {
 			"containerWidth": 1440,
 			"headings": {},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
+			},
 			"box": {
 				"elementor-container": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -1652,6 +1772,8 @@
 					"transform": "none",
 					"align": "start",
 					"family": "Rubik",
+					"color": "rgb(36, 36, 36)",
+					"maxWidth": "572px",
 					"tablet": {
 						"size": "35px",
 						"lineHeight": "47px"
@@ -1669,7 +1791,26 @@
 				"letterSpacing": "normal",
 				"transform": "none",
 				"align": "start",
-				"family": "Rubik"
+				"family": "Rubik",
+				"color": "rgb(107, 107, 107)",
+				"maxWidth": "none"
+			},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
 			},
 			"box": {
 				"elementor-container": {
@@ -1858,7 +1999,7 @@
 				"aux-alignnone": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au55bf5378": {
+				"aux-parent-au4315157b": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-media-hint-frame": {
@@ -1879,7 +2020,7 @@
 				"elementor-element-37ebddc": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au7c75c092": {
+				"aux-parent-au8eefd004": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-attachment-id-128": {
@@ -1909,8 +2050,8 @@
 				"aux-overlay",
 				"aux-parallax-piece",
 				"aux-parallax-section",
-				"aux-parent-au55bf5378",
-				"aux-parent-au7c75c092",
+				"aux-parent-au4315157b",
+				"aux-parent-au8eefd004",
 				"aux-shpe-type-rectangle",
 				"aux-simple-shape-container",
 				"aux-text",
@@ -1975,7 +2116,7 @@
 						"aux-uppercase"
 					],
 					"count": 1,
-					"base": "cursor:pointer;color:rgb(255, 255, 255);background-image:linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%);border-radius:1200.12px;font-weight:500;text-transform:uppercase",
+					"base": "cursor:pointer;color:rgb(255, 255, 255);background-image:linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%);border-radius:1200.12px;text-decoration-line:none;font-weight:500;text-transform:uppercase;display:inline-block",
 					"transition": "0.45s",
 					"children": [
 						{
@@ -2001,6 +2142,8 @@
 					"transform": "none",
 					"align": "center",
 					"family": "Rubik",
+					"color": "rgb(36, 36, 36)",
+					"maxWidth": "none",
 					"tablet": {
 						"size": "35px",
 						"lineHeight": "47px"
@@ -2017,7 +2160,26 @@
 					"letterSpacing": "normal",
 					"transform": "none",
 					"align": "left",
-					"family": "Rubik"
+					"family": "Rubik",
+					"color": "rgb(36, 36, 36)",
+					"maxWidth": "none"
+				}
+			},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
 				}
 			},
 			"box": {
@@ -2128,7 +2290,7 @@
 				"aux-widget-text": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au177285ef": {
+				"aux-parent-au91770a03": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-widget-advanced-text": {
@@ -2206,7 +2368,7 @@
 				"elementor-element-73c23f8": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-aua70ea250": {
+				"aux-parent-audd921cc0": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-attachment-id-164": {
@@ -2218,7 +2380,7 @@
 				"elementor-element-b9ee1ba": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au03d641f0": {
+				"aux-parent-au843eddf1": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-attachment-id-166": {
@@ -2230,7 +2392,7 @@
 				"elementor-element-04eb33f": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au2c462cfc": {
+				"aux-parent-au60e6a6f0": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-attachment-id-172": {
@@ -2303,10 +2465,10 @@
 				"aux-none",
 				"aux-overlay",
 				"aux-parallax-section",
-				"aux-parent-au03d641f0",
-				"aux-parent-au177285ef",
-				"aux-parent-au2c462cfc",
-				"aux-parent-aua70ea250",
+				"aux-parent-au60e6a6f0",
+				"aux-parent-au843eddf1",
+				"aux-parent-au91770a03",
+				"aux-parent-audd921cc0",
 				"aux-text",
 				"aux-text-color-dark",
 				"aux-text-inner",
@@ -2373,7 +2535,7 @@
 						"aux-uppercase"
 					],
 					"count": 1,
-					"base": "cursor:pointer;color:rgb(255, 255, 255);background-image:linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%);border-radius:1200.12px;font-weight:500;text-transform:uppercase",
+					"base": "cursor:pointer;color:rgb(255, 255, 255);background-image:linear-gradient(98deg, rgb(255, 207, 14) 0%, rgb(255, 183, 14) 100%);border-radius:1200.12px;text-decoration-line:none;font-weight:500;text-transform:uppercase;display:inline-block",
 					"transition": "0.45s",
 					"children": [
 						{
@@ -2399,6 +2561,8 @@
 					"transform": "none",
 					"align": "start",
 					"family": "Rubik",
+					"color": "rgb(36, 36, 36)",
+					"maxWidth": "473px",
 					"tablet": {
 						"size": "35px",
 						"lineHeight": "47px"
@@ -2415,7 +2579,9 @@
 					"letterSpacing": "normal",
 					"transform": "none",
 					"align": "left",
-					"family": "Rubik"
+					"family": "Rubik",
+					"color": "rgb(36, 36, 36)",
+					"maxWidth": "none"
 				}
 			},
 			"body": {
@@ -2425,7 +2591,26 @@
 				"letterSpacing": "normal",
 				"transform": "none",
 				"align": "start",
-				"family": "Rubik"
+				"family": "Rubik",
+				"color": "rgb(107, 107, 107)",
+				"maxWidth": "none"
+			},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
 			},
 			"box": {
 				"elementor-container": {
@@ -2495,7 +2680,7 @@
 				"aux-alignnone": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-auf1711d5f": {
+				"aux-parent-au90403866": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-media-hint-frame": {
@@ -2549,7 +2734,7 @@
 				"aux-widget-text": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au3a4143be": {
+				"aux-parent-au5901c697": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-widget-advanced-text": {
@@ -2622,7 +2807,7 @@
 				"elementor-element-0bfc0f2": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
 				},
-				"aux-parent-au69bf9856": {
+				"aux-parent-aubbb79e59": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"auxicon-factory-lift-streamline-warehouse": {
@@ -2631,7 +2816,7 @@
 				"elementor-element-0d8cea9": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-auf24005c7": {
+				"aux-parent-au9cd8f37f": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"auxicon-box-open": {
@@ -2660,10 +2845,10 @@
 				"aux-modern-heading-divider",
 				"aux-modern-heading-primary",
 				"aux-parallax-section",
-				"aux-parent-au3a4143be",
-				"aux-parent-au69bf9856",
-				"aux-parent-auf1711d5f",
-				"aux-parent-auf24005c7",
+				"aux-parent-au5901c697",
+				"aux-parent-au90403866",
+				"aux-parent-au9cd8f37f",
+				"aux-parent-aubbb79e59",
 				"aux-scale-up",
 				"aux-text-color-dark",
 				"aux-text-inner",
@@ -2725,6 +2910,8 @@
 					"transform": "none",
 					"align": "center",
 					"family": "Rubik",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none",
 					"tablet": {
 						"size": "35px",
 						"lineHeight": "47px"
@@ -2733,6 +2920,23 @@
 						"size": "35px",
 						"lineHeight": "47px"
 					}
+				}
+			},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
 				}
 			},
 			"box": {
@@ -2839,6 +3043,23 @@
 		"48ace0b": {
 			"containerWidth": 1440,
 			"headings": {},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
+			},
 			"box": {
 				"elementor-container": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -2903,7 +3124,7 @@
 				"aux-alignnone": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-auf5d12357": {
+				"aux-parent-auec68f03c": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-media-hint-frame": {
@@ -2924,7 +3145,7 @@
 				"elementor-element-d98d294": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au0d144894": {
+				"aux-parent-aubc87751c": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"elementor-element-f87df15": {
@@ -2933,7 +3154,7 @@
 				"elementor-element-c12d3e1": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-auf62d1671": {
+				"aux-parent-au1edac0f4": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"elementor-element-33c8a9c": {
@@ -2942,7 +3163,7 @@
 				"elementor-element-75338de": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au73dfb797": {
+				"aux-parent-aufc4b8714": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-attachment": {
@@ -2960,7 +3181,7 @@
 				"elementor-element-06d2cf6": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-auc5d94793": {
+				"aux-parent-au0ffd0d4f": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"elementor-element-de5eadf": {
@@ -2969,7 +3190,7 @@
 				"elementor-element-0b43787": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
-				"aux-parent-au74709cd3": {
+				"aux-parent-au1aaaa6c0": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 				},
 				"aux-attachment-id-2024": {
@@ -2991,12 +3212,12 @@
 				"aux-media-hint-frame",
 				"aux-media-image",
 				"aux-parallax-section",
-				"aux-parent-au0d144894",
-				"aux-parent-au73dfb797",
-				"aux-parent-au74709cd3",
-				"aux-parent-auc5d94793",
-				"aux-parent-auf5d12357",
-				"aux-parent-auf62d1671",
+				"aux-parent-au0ffd0d4f",
+				"aux-parent-au1aaaa6c0",
+				"aux-parent-au1edac0f4",
+				"aux-parent-aubc87751c",
+				"aux-parent-auec68f03c",
+				"aux-parent-aufc4b8714",
 				"aux-widget-image",
 				"elementor-col-16",
 				"elementor-column",
@@ -3034,6 +3255,23 @@
 		"fd63522": {
 			"containerWidth": 1440,
 			"headings": {},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
+			},
 			"box": {
 				"elementor-container": {
 					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -5548,5 +5786,96 @@
 		},
 		"video": 0,
 		"smil": 0
+	},
+	"pageBackground": "rgb(229, 229, 229)",
+	"colors": {
+		"light": {
+			"body": {
+				"background": "#e5e5e5",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 0.4
+					},
+					{
+						"color": "#242424",
+						"share": 0.38
+					},
+					{
+						"color": "#6b6b6b",
+						"share": 0.21
+					}
+				]
+			},
+			"header": {
+				"background": "#04132b",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 0.82
+					},
+					{
+						"color": "#242424",
+						"share": 0.18
+					}
+				]
+			},
+			"footer": {
+				"background": "#081a43",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				]
+			},
+			"band:about": {
+				"background": "transparent",
+				"text": "#242424",
+				"inks": [
+					{
+						"color": "#242424",
+						"share": 0.57
+					},
+					{
+						"color": "#6b6b6b",
+						"share": 0.43
+					}
+				],
+				"image": "linear-gradient(rgb(229, 229, 229) 0%, rgb(255, 255, 255) 100%)"
+			},
+			"band:products": {
+				"background": "#ffffff",
+				"text": "#242424",
+				"inks": [
+					{
+						"color": "#242424",
+						"share": 1
+					}
+				]
+			},
+			"band:services": {
+				"background": "transparent",
+				"text": "#6b6b6b",
+				"inks": [
+					{
+						"color": "#6b6b6b",
+						"share": 0.58
+					},
+					{
+						"color": "#242424",
+						"share": 0.42
+					}
+				],
+				"image": "linear-gradient(rgb(255, 255, 255) 0%, rgb(229, 229, 229) 100%)"
+			},
+			"band:contact": {
+				"background": "#f6f6f6",
+				"text": "transparent"
+			}
+		}
 	}
 }

@@ -69,7 +69,8 @@ export async function measurePageBands( options: MeasurePagesOptions ): Promise<
 			const ids = sections.map( ( section ) => section.id ).filter( ( id ): id is string => Boolean( id ) );
 			const selectors = selectorsFor( sections );
 			const geometry = await measureGeometry( { url: page.url, ids, kind: 'source', selectors } );
-			const bandFacts = await measureBandFacts( { url: page.url, ids, kind: 'source', selectors } );
+			const measured = await measureBandFacts( { url: page.url, ids, kind: 'source', selectors } );
+			const bandFacts = measured.bands;
 			// The band's own surface: a composited background equal to the page body
 			// is "transparent" (the site surface already paints it), so it is not
 			// recorded — otherwise every band would carry the body colour.

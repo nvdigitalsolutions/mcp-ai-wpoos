@@ -522,8 +522,10 @@ describe('forge e2e — emitted site', () => {
 			expect(css).toMatch(/\.ds-logos\s+img\s*\{[^}]*height:\s*auto/);
 			// The hero headline constraint (125 §8): the band title does not
 			// span the full measure on desktop (jayainc's 72px headline sits
-			// in a ~66% column; the var is the per-site seam).
-			expect(css).toMatch(/\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*max-width:\s*var\(--ds-hero-title-max/);
+			// in a ~66% column; the var is the per-site seam). A MEASURED
+			// max-width outranks the per-site cap (a centred title also clears
+			// it — `--ds-title-max: none`).
+			expect(css).toMatch(/\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*max-width:\s*var\(--ds-title-max,\s*var\(--ds-hero-title-max/);
 			// The title-to-grid rhythm (125 §8): the card grid opens with
 			// breathing room below the band heading.
 			expect(css).toMatch(/\.ds-grid\s*\{[^}]*margin-top:\s*var\(--forge-space\)/);

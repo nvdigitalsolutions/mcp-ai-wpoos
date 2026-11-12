@@ -13,12 +13,16 @@ import {
 	colorDeltaE,
 	compareRegionColorModes,
 	compareRegionColors,
+	DEFAULT_COLOR_REGIONS,
 	deltaE2000,
+	GATED_INK_SHARE,
 	GRADIENT_SURFACE_RE,
+	inkMass,
 	normalizeColorModes,
 	normalizeCssColor,
 	parseCssColor,
 	srgbToLab,
+	summarizeInk,
 } from '../lib/region-colors.ts';
 import type { ForgeSection, RegionColors } from '../lib/types.ts';
 
@@ -143,6 +147,147 @@ describe( 'compareRegionColors', () => {
 
 		expect( report.skipped ).toEqual( [ 'light.header.background' ] );
 		expect( report.deviations ).toEqual( [] );
+	} );
+} );
+
+describe( 'ink measurement', () => {
+	it( 'weights a run of text by its rendered glyph area', () => {
+		// Glyph area grows with the square of the size: 10 characters at 72px paint
+		// more than 100 at 12px.
+		expect( inkMass( 10, 72 ) ).toBeGreaterThan( inkMass( 100, 12 ) );
+	} );
+
+	it( 'picks the ink that carries the most text, not the most elements', () => {
+		// The regression this metric exists for, using the masses measured on
+		// virtuallyjamaica's `#services` (2026-11-12): a white lede + heading
+		// (~202k) over four grey list items (~72k). Counting ELEMENTS made the four
+		// grey `li`s beat the one white paragraph.
+		const inks = summarizeInk( [
+			{ color: 'rgb(255, 255, 255)', mass: 201786 },
+			{ color: 'rgb(146, 146, 146)', mass: 71994 },
+		] );
+
+		expect( inks[ 0 ] ).toEqual( { color: '#ffffff', share: 0.74 } );
+		expect( inks[ 1 ] ).toEqual( { color: '#929292', share: 0.26 } );
+	} );
+
+	it( 'merges a translucent copy of the dominant ink instead of splitting the vote', () => {
+		// `rgba(255,255,255,0.7)` over a photo is white copy, not a second colour.
+		const inks = summarizeInk( [
+			{ color: 'rgba(255, 255, 255, 0.7)', mass: 46844 },
+			{ color: 'rgb(255, 255, 255)', mass: 12250 },
+		] );
+
+		expect( inks ).toEqual( [ { color: '#ffffff', share: 1 } ] );
+	} );
+
+	it( 'drops invisible text and keeps the palette bounded', () => {
+		const inks = summarizeInk( [
+			{ color: 'transparent', mass: 900000 },
+			{ color: 'rgb(0, 0, 0)', mass: 100 },
+			{ color: 'rgb(20, 20, 20)', mass: 90 },
+			{ color: 'rgb(40, 40, 40)', mass: 80 },
+			{ color: 'rgb(60, 60, 60)', mass: 70 },
+			{ color: 'rgb(80, 80, 80)', mass: 1 },
+		] );
+
+		expect( inks ).toHaveLength( 4 );
+		expect( inks[ 0 ].color ).toBe( '#000000' );
+		// `#505050` carries 0.3% — decoration, never gated.
+		expect( inks.some( ( ink ) => ink.color === '#505050' ) ).toBe( false );
+	} );
+
+	it( 'reports no palette for a region that renders no text', () => {
+		expect( summarizeInk( [] ) ).toEqual( [] );
+	} );
+} );
+
+describe( 'compareRegionColors with an ink palette', () => {
+	const source: ForgeColorBaseline = {
+		band: {
+			background: '#ededed',
+			text: '#ffffff',
+			inks: [
+				{ color: '#ffffff', share: 0.74 },
+				{ color: '#929292', share: 0.26 },
+			],
+		},
+	};
+
+	it( 'passes when every significant ink survives', () => {
+		const report = compareRegionColors( source, source );
+		expect( report.deviations ).toEqual( [] );
+		expect( report.compared ).toBe( 3 );
+	} );
+
+	it( 'fails a minority ink the build repainted', () => {
+		// The dominant white is intact and the 26% grey list items turned white:
+		// a single-colour baseline scored this a pass.
+		const built: ForgeColorBaseline = {
+			band: { background: '#ededed', text: '#ffffff', inks: [ { color: '#ffffff', share: 1 } ] },
+		};
+		const report = compareRegionColors( source, built );
+
+		expect( report.deviations ).toHaveLength( 1 );
+		expect( report.deviations[ 0 ] ).toMatchObject( {
+			region: 'band',
+			metric: 'text',
+			expected: '#929292',
+			actual: '#ffffff',
+			share: 0.26,
+			severity: 'fail',
+		} );
+	} );
+
+	it( 'does not gate an ink below the share threshold', () => {
+		// A caption is decoration: repainting it is typographic drift, not a
+		// colour-system regression.
+		const withCaption: ForgeColorBaseline = {
+			band: {
+				background: '#ededed',
+				text: '#ffffff',
+				inks: [
+					{ color: '#ffffff', share: 0.88 },
+					{ color: '#929292', share: 0.12 },
+				],
+			},
+		};
+		const built: ForgeColorBaseline = {
+			band: { background: '#ededed', text: '#ffffff', inks: [ { color: '#ffffff', share: 1 } ] },
+		};
+		const report = compareRegionColors( withCaption, built );
+
+		expect( report.deviations ).toEqual( [] );
+		expect( report.compared ).toBe( 2 );
+	} );
+
+	it( 'falls back to the single `text` colour for a baseline recorded before palettes', () => {
+		const legacy: ForgeColorBaseline = { band: { background: '#ededed', text: '#626262' } };
+		const report = compareRegionColors( legacy, { band: { background: '#ededed', text: '#626262' } } );
+
+		expect( report.deviations ).toEqual( [] );
+		expect( report.compared ).toBe( 2 );
+	} );
+
+	it( 'gates at least one ink for every region with text', () => {
+		// The dominant ink is always ≥ 1/4 of a bounded palette, so a region can
+		// never slip through ungated.
+		expect( GATED_INK_SHARE ).toBeLessThanOrEqual( 0.25 );
+	} );
+} );
+
+describe( 'region selector ladder', () => {
+	it( 'puts the bare `footer` tag last so a post-meta footer cannot win', () => {
+		// WordPress themes emit `footer.entry-meta` inside the loop; with the tag
+		// first it matched an EMPTY element and jayainc's real
+		// `footer#sitefooter` was never measured.
+		const footer = DEFAULT_COLOR_REGIONS.find( ( region ) => region.name === 'footer' );
+		const ladder = footer?.selectors ?? [];
+
+		expect( ladder[ ladder.length - 1 ] ).toBe( 'footer' );
+		expect( ladder.indexOf( '.site-footer' ) ).toBeLessThan( ladder.length - 1 );
+		expect( ladder ).toContain( 'footer:not(.entry-meta):not(.post-meta)' );
+		expect( ladder ).toContain( '#sitefooter' );
 	} );
 } );
 

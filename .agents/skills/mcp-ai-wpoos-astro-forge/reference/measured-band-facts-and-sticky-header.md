@@ -262,7 +262,8 @@ to MEASURE the computed box, per class, per device.
 for every class the band keeps, the computed `padding` and `margin` shorthands in
 px — **plus the rendered height of any `img` whose rendered aspect disagrees with
 the file's** (the source crops it; virtuallyjamaica's features image is `330×435`
-from a `390×584` file, so `height:435px` is a real fact).
+from a `390×584` file, so `height:435px` is a real fact) — **plus the `color` the
+class OVERRIDES** (see §6a).
 
 `mergeBoxFacts` keeps the desktop value as `base` and records a device only where
 it differs (same discipline as `attachDeviceOverrides`). The scaffold writes
@@ -293,6 +294,30 @@ Rules that cost a fix, in the order they cost it:
   per-column hashes (`brando_column_<id>`) appear once, so the column padding the
   rebuild otherwise loses is always captured. A shared class used at two sizes
   (`panel-body` open vs closed) gets no rule rather than an arbitrary one.
+
+### 6a. Class ink — the third fact on the same sheet
+
+A builder declares text colour in its stylesheet (`ul.medium-gray-text {
+color:#929292 }`). The sanitizer keeps the class name and drops the vendor sheet,
+so the rebuilt copy inherits the panel's colour: virtuallyjamaica's red WiFi
+panel has a white lede and GREY bullets, and every bullet rebuilt white.
+
+`MeasuredBox.color` is recorded only when the class paints its element a colour
+**other than the one it inherits**, and only when every instance of the class in
+the band agrees. `boxDeclarations` appends it, so it flows through
+`mergeBoxFacts` (per device) and `bandBoxCss` (band-scoped) with no new wiring.
+An inherited colour is never a fact about the class, so the rule cannot fight a
+parent that legitimately sets the colour.
+
+Two operational consequences:
+
+- The fact only reaches the profile on an `analyze --geometry --write` run. If
+the source's builder cache has regenerated its hash classes since the last
+analysis, the design HTML is stale relative to the facts — re-run with `--design`
+so markup and facts refresh together (jayainc's `aux-parent-*` hashes rotated on
+2026-11-12, which is why its profile was left on its last consistent pair).
+- `verify --colors` is what proves it landed: a band's minority ink share is
+  gated, so a grey bullet that rebuilt white fails with `(26% of text)`.
 
 ## 7. The header is a LAYOUT fact, not only a colour
 
@@ -373,3 +398,51 @@ Two Windows notes: `--overwrite` replaces the target directory, so `node_modules
 goes with it (move it aside and back to skip a 60s install); and scaffolding a
 live target without `--overwrite` hits the documented `EPERM` rename race on the
 `.forge-tmp-*` directory.
+
+## 11. The top contact strip — structure, not just text (2026-11-12)
+
+`analyzeChrome` reads the strip's TEXT (`.topbar`, the `<p>` lines). That is
+all it can see: jayainc's rebuilt strip rendered two bare paragraphs flush
+LEFT, while the source is a right-floated group of two icon+text units in a
+100px navy bar. The structure is a browser fact, so `measureTopbar` records it
+in the same `analyze --geometry` pass as the sticky header / nav toggle.
+
+Facts (all in `design.chrome`, merged by `scripts/forge.mjs`):
+
+| Field | jayainc | Meaning |
+|---|---|---|
+| `topbarItems` | 2 | `{ text, icon?, href? }` — `text` keeps the source's own `\n` (the address is two `<br>` lines), `icon` is the glyph element's class (`auxicon-location`), `href` when the item is actionable |
+| `topbarSocials` | 1 | Icon-only links at the bar's other end (`auxicon-googleplus` → Google Maps) |
+| `topbarAlign` | `end` | The item group's box against the bar's CONTENT edges |
+| `topbarHeight` | `100px` | The strip's measured height (the template's own padding produced 42px) |
+| `topbarIconSize` / `topbarIconInk` / `topbarIconGap` | `40px` / `rgb(255, 207, 14)` / `20px` | The glyph and the gap to its text |
+| `topbarItemGap` | `50px` | Between items |
+
+Implementation notes:
+
+- **Items are structural**: the innermost containers that hold a direct icon
+  child (`i`/`span` whose class matches `icon|ico|glyph` and has no text) AND
+  real text. A wrapper above them holds neither, so it never wins; a strip with
+  no icons falls back to its `<p>`/`<a>` lines (the old text-only behaviour).
+- **Alignment measures against the GUTTER ancestor**, not the bar's own padding.
+  The bar is usually flush and the inset lives on an inner container
+  (jayainc: `.aux-container { padding: 0 35px }`); comparing against the
+  viewport edge made `|1393 − 1440| = 47px` miss a 40px window and report no
+  alignment at all. Walk up from the first item to the nearest padded ancestor.
+- **`tsString` must escape `\n`/`\r`.** The address fact is two lines, and a raw
+  newline inside the generated `chrome.generated.ts` single-quoted literal is a
+  syntax error — the scaffold's `tsString` now escapes them (with
+  `\u2028`/`\u2029` for completeness).
+- **Template wiring:** `Base.astro` renders `topbarSocials` first (with
+  `margin-right: auto`, so the item group keeps its measured edge), then one
+  `.site-topbar-item` per item (`gap` = icon gap, `white-space: pre-line` for
+  the address). The glyphs are drawn by the source's own `chrome.iconCss`, and
+  the vars ride `<body>` (`--forge-topbar-h`, `--forge-topbar-icon-size`,
+  `--forge-topbar-icon-ink`, `--forge-topbar-icon-gap`,
+  `--forge-topbar-item-gap`). The old text-only `topbar` array is still emitted
+  and still the fallback.
+- **OPERATIONAL:** on 2026-11-12 `https://jayainc.com` served the FORGED build
+  (`<meta name="generator" content="NV oOS Astro Forge">`, 199 DOM elements) —
+  the original WordPress/Elementor site is `https://cms.jayainc.com`. Measuring
+  the apex would record the rebuild's own chrome (no icons) as the source.
+  Point `profile.url` at the CMS host before the next `analyze --write`.

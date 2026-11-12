@@ -346,11 +346,80 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 .site-topbar {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.25rem 2rem;
+	align-items: center;
+	/* The measured gap between items (jayainc: 50px) — the default keeps the
+	 * text-only strip's rhythm. */
+	gap: var(--forge-topbar-item-gap, 2rem);
+	/* The measured strip height (the source's large icons + a two-line address
+	 * make a 100px bar; the template's own padding produced ~42px). A min-height
+	 * keeps the bar's rhythm while its content stays centred. */
+	min-height: var(--forge-topbar-h, 0);
 	padding: 0.5rem clamp(1rem, 4vw, 2rem);
 	background: var(--forge-topbar-bg, var(--forge-surface-alt));
 	color: var(--forge-topbar-ink, var(--forge-muted));
 	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
+}
+
+/* Where the source puts the item group: measured against the bar's content
+ * edges. jayainc floats its address + phone to the right. */
+.site-topbar--end {
+	justify-content: flex-end;
+}
+
+.site-topbar--center {
+	justify-content: center;
+}
+
+/* The leading icon-only links (the source's social glyphs) sit at the bar's
+ * other end; `margin-right: auto` pushes the item group back to its measured
+ * edge. They paint in the bar's own ink, not the accent. */
+.site-topbar-socials {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-right: auto;
+}
+
+.site-topbar-social {
+	display: inline-flex;
+	align-items: center;
+	color: inherit;
+	text-decoration: none;
+}
+
+.site-topbar-social i {
+	font-size: var(--forge-topbar-social-size, 1.5em);
+	line-height: 1;
+	font-style: normal;
+}
+
+/* One icon + text unit. The source's address is two lines (a `<br>` in its
+ * own markup), so the text keeps its newline. */
+.site-topbar-item {
+	display: flex;
+	align-items: center;
+	gap: var(--forge-topbar-icon-gap, 0.6em);
+	min-width: 0;
+}
+
+.site-topbar-item p,
+.site-topbar-link {
+	margin: 0;
+	white-space: pre-line;
+	color: inherit;
+}
+
+.site-topbar-link {
+	text-decoration: none;
+}
+
+/* The icon glyph is drawn by the source's own icon sheet (`chrome.iconCss`),
+ * painted in the measured accent ink. */
+.site-topbar--icons .site-topbar-item i {
+	font-size: var(--forge-topbar-icon-size, 1.25em);
+	line-height: 1;
+	font-style: normal;
+	color: var(--forge-topbar-icon-ink, var(--forge-accent));
 }
 
 /* WCAG 2.4.1 — visible on keyboard focus, out of the way otherwise. */
@@ -800,7 +869,12 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	font-size: clamp(1.5rem, 2.5vw + 0.5rem, var(--forge-scale-h2, 1.75rem));
 	font-weight: 500;
 	line-height: 1.2;
-	margin: 0;
+	/* The band's MEASURED title→divider gap (Phlox's modern heading carries a
+	 * 30px margin-bottom); absent → flush, as before. */
+	margin: 0 0 var(--ds-title-margin-bottom, 0);
+	/* A heading the source deliberately narrows (473px on jayainc's services
+	 * band). The hero's own 66% cap is more specific and still wins. */
+	max-width: var(--ds-title-max, none);
 	/* The band's MEASURED title alignment (the source centers a band's copy from
 	 * a wrapper class the sanitizer drops). Absent → the template's own. */
 	text-align: var(--ds-title-align, inherit);
@@ -1095,7 +1169,11 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 }
 
 .ds-section-wrap--dark :is(h1, h2, h3, h4, h5, h6) {
-	color: #ffffff;
+	/* A MEASURED title ink outranks the band default: `bandFacts` emits the
+	 * source’s computed colour (and `titleStyle` its `--ds-title-color`), so a
+	 * dark band whose source heading is dark — jayainc’s white→navy products
+	 * gradient — must not be repainted white. */
+	color: var(--ds-title-color, #ffffff);
 }
 
 .ds-section-wrap--dark .ds-card {
@@ -1127,7 +1205,10 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	 * centers the hero section on the vertical (main) axis. */
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	/* A MEASURED `centered: false` sets `--ds-hero-justify: flex-start` — the
+	 * source top-aligns this band under its own padding (virtuallyjamaica's
+	 * contact band), so centring it moved the copy 151px down. */
+	justify-content: var(--ds-hero-justify, center);
 	min-height: clamp(22rem, 75vh, 48rem);
 }
 
@@ -1166,9 +1247,13 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  * CSS, and the whole rule is dropped silently when nested. */
 .ds-section-wrap :is(.post-body, .ds-section) :is(div, section):has(> div > h1):has(> div > img) {
 	display: grid;
-	grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr);
+	grid-template-columns: var(--ds-split, minmax(0, 1.15fr) minmax(0, 0.95fr));
 	align-items: center;
-	gap: clamp(1rem, 3vw, 3rem);
+	/* The measured split already excludes the source's own gutter (it sits in the
+	 * children's padding, which the band box facts restate), so a measured ratio
+	 * also clears the heuristic gap — otherwise the gap shrinks the copy column
+	 * below its source width (665 of the source's 691). */
+	gap: var(--ds-split-gap, clamp(1rem, 3vw, 3rem));
 	/* The source hero is a full-screen band (`.full-screen`, min-height 900px). */
 	min-height: clamp(24rem, 72vh, 46rem);
 }
@@ -1187,6 +1272,59 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 }
 
 /* ---------------------------------------------------------------------------
+ * Full-viewport bands — `SectionTheme.fullViewport` / `SectionTheme.centered`
+ *
+ * A band measured at EXACTLY the viewport height on every capture breakpoint
+ * is the screen itself: Brando's `.full-screen` carries `min-height: 100vh`;
+ * Elementor and Divi spell the same thing with `100vh`. The measured pixels
+ * are the capture viewport, not a fixed height, so the scaffold emits `100vh`
+ * instead — a 900px band overflows a 1440×800 window where the source still
+ * fills the screen.
+ *
+ * Centring is a SEPARATE measured fact (`centered`): the source had to contain
+ * its own centring device — a `table-cell` with `vertical-align: middle` or a
+ * flex/grid container filling half the band with centred items. Without the
+ * fact the height chain collapsed to the content height and the copy sat at
+ * the top of the band (virtuallyjamaica: copy at y=238 in a 900px band, the
+ * source at y=339), while centring a band that the source top-aligns moved the
+ * contact copy 151px DOWN.
+ *
+ * The chain from the band child to the copy track is single-file in every
+ * builder (section → container → row → column → wrappers). Every wrapper that
+ * holds exactly ONE element child centres it (`:has(> :only-child)`); the last
+ * such wrapper is the copy track's own parent, so the track is centred as a
+ * unit and its internal display model (a grid in the hero-split case) is never
+ * touched. Rows and carousels keep their own models — a grid re-flowed to flex
+ * would collapse the columns. Centring composes, so the copy lands at the same
+ * offset the source's table cell produced at any content height, and a band
+ * whose copy is taller than the screen simply grows and scrolls.
+ */
+.ds-section-wrap--full {
+	min-height: 100vh;
+}
+
+/* Only a band that MEASURED the source's centring device centres its content
+ * (`SectionTheme.centered`). A full-height band is not automatically centred:
+ * virtuallyjamaica's contact band is top-aligned under its own 130px padding,
+ * and centring it moved the copy 151px below the source. */
+.ds-section-wrap--centered {
+	justify-content: center;
+}
+
+.ds-section-wrap--centered > .post-body.ds-section {
+	/* The raw builder path: `.post-body` fills the wrap (flex: 1), so the band
+	 * must be centred inside IT. */
+	justify-content: center;
+}
+
+.ds-section-wrap--centered .post-body :is(div, section):has(> :only-child):not(.row):not(.vc_row):not(.owl-carousel):not(.owl-stage):not([class*='brando-inner-row']):not([class*='brando_inner_row']) {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-height: 0;
+}
+
+/* ---------------------------------------------------------------------------
  * Builder layout shim — WPBakery / Brando raw bands
  *
  * A vendor-agnostic source is rebuilt from its OWN sanitized markup, but the
@@ -1200,13 +1338,18 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 /* The row is a 12-column GRID, exactly as the builder models it, and that is
  * what reproduces the source's wrapping: services is 6/6/12 below the desktop
  * breakpoint, so its third column drops onto a full-width second row. A flex
- * row keeps all three on one lane. Grid also keeps `gap` honest — a percentage
- * flex-basis plus a gutter overflows the row and wraps arbitrarily. */
+ * row keeps all three on one lane. Grid also keeps the track math honest. */
 .ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row']) {
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));
 	align-items: stretch;
-	gap: clamp(1.25rem, 2.5vw, 2.5rem);
+	/* NO row gap. WPBakery/VC put the gutter in the COLUMN’s own padding
+	 * (measured `box` facts: 15px, or 57.59px where `padding-four-all`
+	 * applies), and the source’s columns TOUCH — virtuallyjamaica #wifi: the
+	 * photo column ends at x=719 and the red panel starts there (gutter 0).
+	 * A row gap shrank the columns to (100% − gap)/2 and opened a 40px seam
+	 * the live site does not have. */
+	gap: 0;
 }
 
 /* Carousels are one lane of marks, never a grid, and never a wrap: a fixed
@@ -1734,7 +1877,8 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
  * 1140px band. Mobile keeps the full width; the var is the per-site seam. */
 @media (width>767px) {
 	.ds-section-wrap--hero .ds-title {
-		max-width: var(--ds-hero-title-max, 66%);
+		/* A measured max-width outranks the per-site hero cap. */
+		max-width: var(--ds-title-max, var(--ds-hero-title-max, 66%));
 	}
 }
 
@@ -1951,26 +2095,32 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	}
 }
 
-/* Reveals: view() timelines play once as the section enters. */
+/* Reveals: view() timelines play once as the section enters.
+ *
+ * The animation targets the band's CONTENT (`> .ds-section`), never the band
+ * wrapper: the wrapper paints the full-bleed background, so a `translate` or
+ * `scale` on it lifted the band off its neighbour and exposed the white body
+ * as a 40-42px strip while scrolling (the source reveals its widgets over a
+ * static band surface). */
 @supports (animation-timeline: view()) {
 	@media (prefers-reduced-motion: no-preference) {
-		.ds-reveal {
+		.ds-reveal > .ds-section {
 			animation: ds-fade linear both;
 			animation-timeline: view();
 			animation-range: entry 0% entry 60%;
 		}
-		.ds-reveal--fade-up { animation-name: ds-fade-up; }
-		.ds-reveal--fade-down { animation-name: ds-fade-down; }
-		.ds-reveal--fade-left { animation-name: ds-fade-left; }
-		.ds-reveal--fade-right { animation-name: ds-fade-right; }
-		.ds-reveal--scale-up { animation-name: ds-scale-up; }
-		.ds-reveal--blur { animation-name: ds-blur; }
+		.ds-reveal--fade-up > .ds-section { animation-name: ds-fade-up; }
+		.ds-reveal--fade-down > .ds-section { animation-name: ds-fade-down; }
+		.ds-reveal--fade-left > .ds-section { animation-name: ds-fade-left; }
+		.ds-reveal--fade-right > .ds-section { animation-name: ds-fade-right; }
+		.ds-reveal--scale-up > .ds-section { animation-name: ds-scale-up; }
+		.ds-reveal--blur > .ds-section { animation-name: ds-blur; }
 		/* The horizontal reveals translate the band ±48px — on phones the
 		 * bands are full-bleed and the body clip would shear the edge; the
 		 * entrance degrades to the plain fade. */
 		@media (width<=767px) {
-			.ds-reveal--fade-left,
-			.ds-reveal--fade-right {
+			.ds-reveal--fade-left > .ds-section,
+			.ds-reveal--fade-right > .ds-section {
 				animation-name: ds-fade;
 			}
 		}
@@ -2073,9 +2223,15 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	display: flex;
 	gap: var(--forge-space);
 	align-items: flex-start;
-	/* The source's rows carry their own inner rhythm (jayainc: 36px above,
-	 * 50px below). Measured per band; absent → flush, as before. */
+	/* The source's rows carry their own inner rhythm — jayainc's services rows
+	 * are 63px above/below with a 50px inset on desktop, 36/50/35 at tablet and
+	 * mobile. The values are MEASURED per band AND per device; the single
+	 * (tablet) value left the height-pinned band with 255px of dead space. */
 	padding-block: var(--ds-icon-row-pad-top, 0) var(--ds-icon-row-pad-bottom, 0);
+	padding-inline: var(--ds-icon-row-pad-x, 0);
+	/* The source's per-widget gap (20px on jayainc). The padding alone left the
+	 * row pitch 45px short, which read as dead space under a pinned band. */
+	margin-bottom: var(--ds-icon-row-gap, 0);
 }
 
 .ds-icon-row .ds-icon-marker {
@@ -2174,12 +2330,18 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 }
 
 .ds-lede {
+	/* The source's divider→description gap (Phlox's modern heading carries a
+	 * 37px margin-top); absent → flush, as before. */
+	margin-top: var(--ds-lede-margin-top, 0);
 	margin-bottom: var(--forge-space);
 }
 
 .ds-body {
 	display: grid;
-	gap: var(--forge-space);
+	/* The source's own measured margins define the heading rhythm on bands that
+	 * carry one; the template gap must then not stack on top of them (it grew
+	 * the contact band 26px past its source box). */
+	gap: var(--ds-body-gap, var(--forge-space));
 }
 
 /* The catalog band (125 §4) — the flipbook's titled open-CTA, centered

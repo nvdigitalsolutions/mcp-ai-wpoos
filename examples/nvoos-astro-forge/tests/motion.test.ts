@@ -168,7 +168,9 @@ describe( 'global.css motion contract', () => {
 	it( 'centers hero content VERTICALLY (the generic wrap is a column)', () => {
 		// `.ds-section-wrap` later makes every wrap a column; without
 		// justify-content the hero section sits at the top of its 724px band.
-		expect( css ).toMatch( /\.ds-section-wrap--hero\s*\{[^}]*justify-content:\s*center/ );
+		// The default is now a var so a MEASURED `centered: false` (a full-height
+		// band the source top-aligns under its own padding) can opt out.
+		expect( css ).toMatch( /\.ds-section-wrap--hero\s*\{[^}]*justify-content:\s*var\(--ds-hero-justify,\s*center\)/ );
 	} );
 
 	it( 'pauses generated motion from the WCAG 2.2.2 checkbox', () => {

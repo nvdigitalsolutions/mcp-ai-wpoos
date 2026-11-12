@@ -46,19 +46,27 @@ export function stripAtMedia( css: string ): string {
 	}
 }
 
-/** The scoped stylesheet padding per band — the desktop (unqueried) value,
- *  which is what a device-scoped map compares on. */
-export function scopedPaddingOf( html: string ): Map< string, string > {
+/** The scoped stylesheet value of one declaration per band — the desktop
+ *  (unqueried) value, which is what a device-scoped map compares on. */
+export function scopedDeclarationOf( html: string, property: string ): Map< string, string > {
 	const scoped = new Map< string, string >();
 	const styleBlocks = [ ...html.matchAll( /<style[^>]*>([\s\S]*?)<\/style>/gi ) ].map( ( match ) => match[ 1 ] ).join( '\n' );
 	if ( ! styleBlocks ) {
 		return scoped;
 	}
+	const escaped = property.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+	const declaration = new RegExp( `(?:^|;)\\s*${ escaped }\\s*:\\s*([^;]+)`, 'i' );
 	for ( const match of stripAtMedia( styleBlocks ).matchAll( /\[data-section-id="([^"]+)"\]\s*\{([^}]*)\}/g ) ) {
-		const padding = /(?:^|;)\s*padding:\s*([^;]+)/i.exec( match[ 2 ] )?.[ 1 ]?.trim();
-		if ( padding && ! scoped.has( match[ 1 ] ) ) {
-			scoped.set( match[ 1 ], padding );
+		const value = declaration.exec( match[ 2 ] )?.[ 1 ]?.trim();
+		if ( value && ! scoped.has( match[ 1 ] ) ) {
+			scoped.set( match[ 1 ], value );
 		}
 	}
 	return scoped;
+}
+
+/** The scoped stylesheet padding per band — the desktop (unqueried) value,
+ *  which is what a device-scoped map compares on. */
+export function scopedPaddingOf( html: string ): Map< string, string > {
+	return scopedDeclarationOf( html, 'padding' );
 }

@@ -26,13 +26,23 @@
 //    IMAGE of a BAND (a gradient, or a photo URL) — a builder paints both on a
 //    child layer and the sanitizer drops the `<style>` that declared them, so
 //    the browser is the only source. Borders stay with pixel parity.
+//  * INK is a PALETTE, not one colour (2026-11-12). Each text-bearing element
+//    contributes `chars x font-size^2` of rendered glyph area to its colour, and
+//    every colour carrying GATED_INK_SHARE of that mass is compared. Counting
+//    ELEMENTS instead let a lone caption outvote a paragraph, and recording
+//    only the winner hid a band's minority ink turning the wrong colour on the
+//    rebuild (virtuallyjamaica's grey service bullets went white). Text the
+//    region does not CONTAIN (a legacy descendant rendered under the next band)
+//    is not its ink.
 //  * A band's photo `url()` is CAPTURED but not yet WIRED (`ForgeSection.bgImage`
 //    makes the band resolve as `hero`, which is wrong for a content band).
 //    Gradients are wired; the URL is kept for the future photo-surface pass.
 // ---------------------------------------------------------------------------
 
 import { hexToRgb, rgbToHex } from './color.ts';
-import type { ForgeColorModes, ForgeSection, RegionColors } from './types.ts';
+import type { ForgeColorModes, ForgeSection, InkShare, RegionColors } from './types.ts';
+
+export type { InkShare } from './types.ts';
 
 /** The colour schemes measured separately — a dark header in light mode and a
  * themed `prefers-color-scheme: dark` are different bugs, and one measurement
@@ -80,12 +90,22 @@ export const DEFAULT_COLOR_REGIONS: ColorRegion[] = [
 	{
 		name: 'footer',
 		selectors: [
-			'footer',
 			'[role="contentinfo"]',
 			'.site-footer',
 			'#colophon',
 			'.elementor-location-footer',
+			// Phlox/Auxin ships `footer#sitefooter.aux-site-footer`.
+			'#sitefooter',
+			'.aux-site-footer',
+			// The bare `footer` TAG must come last. WordPress themes emit
+			// `footer.entry-meta` / `footer.post-meta` for a post's own meta row, and
+			// with the tag first that empty element won the ladder — jayainc's real
+			// `footer#sitefooter` was never measured, so the region read
+			// `transparent` with no ink and the gate silently skipped the chrome it
+			// exists to protect (2026-11-12).
+			'footer:not(.entry-meta):not(.post-meta)',
 			'.footer',
+			'footer',
 		],
 	},
 ];
@@ -185,7 +205,8 @@ export const GRADIENT_SURFACE_RE = /(?:repeating-)?(?:linear|radial|conic)-gradi
  * `<style>` block the sanitizer drops, so the browser measurement is the only
  * exact source. Gradients go to the existing `bgGradient` field (the renderer
  * emits it as the `background` shorthand; `resolveSectionTheme` classifies from
- * its last stop). Flat fills go to `bgColor`, unless the composited value is
+ * the stop its content sits on). Flat fills go to `bgColor`, unless the
+ * composited value is
  * the page body's own — that is "transparent", not a band fact.
  *
  * `pinned` facts win: an existing `bgColor`/`bgGradient`/`bgImage` is never
@@ -318,6 +339,84 @@ export function colorDeltaE( a: string, b: string ): number | undefined {
 	);
 }
 
+/** A raw per-colour text measurement from the browser (see `summarizeInk`). */
+export interface InkSample {
+	color: string;
+	mass: number;
+}
+
+/**
+ * How much text a single element carries, as RENDERED INK AREA.
+ *
+ * Glyph area scales with the square of the font size, so `chars × px²`
+ * approximates how much of the page a run of text paints. Counting ELEMENTS
+ * instead made a region's ink snap to whichever colour happened to sit on the
+ * most nodes — a lone white caption beat a 2000-character grey body because it
+ * was one `<p>` against one `<p>` (virtuallyjamaica's services band measured
+ * `#929292` on a source that is dominated by a white 24px lede, 2026-11-12).
+ */
+export function inkMass( characters: number, fontPx: number ): number {
+	return characters * fontPx * fontPx;
+}
+
+/** Near-identical inks are one ink — `rgba(255,255,255,0.7)` is white copy. */
+const INK_MERGE_DELTA_E = 2;
+
+/**
+ * Collapse per-colour measurements into a region's ink PALETTE.
+ *
+ * A band's ink is not always one colour: virtuallyjamaica's `#services` is a
+ * white lede and heading (74% of its text mass) over four grey `li`s (26%).
+ * Recording only the winner hides a real regression when the minority ink is
+ * the one that breaks, so the palette is recorded and every ink that carries a
+ * meaningful share is gated (see `compareRegionColors`).
+ *
+ * Colours within ΔE00 2 merge onto the heavier one first, so a translucent copy
+ * of the dominant ink never splits the vote. `transparent` samples are dropped
+ * — invisible text is not ink. Pure and exported so the metric is testable
+ * without a browser.
+ */
+export function summarizeInk(
+	samples: InkSample[],
+	options: { limit?: number; minShare?: number } = {}
+): InkShare[] {
+	const limit = options.limit ?? 4;
+	const minShare = options.minShare ?? 0.04;
+	const merged: InkSample[] = [];
+	for ( const sample of samples ) {
+		if ( ! Number.isFinite( sample.mass ) || sample.mass <= 0 ) {
+			continue;
+		}
+		const color = normalizeCssColor( sample.color );
+		if ( color === TRANSPARENT ) {
+			continue;
+		}
+		const twin = merged.find( ( entry ) => ( colorDeltaE( entry.color, color ) ?? Infinity ) <= INK_MERGE_DELTA_E );
+		if ( twin ) {
+			twin.mass += sample.mass;
+			continue;
+		}
+		merged.push( { color, mass: sample.mass } );
+	}
+	const total = merged.reduce( ( sum, entry ) => sum + entry.mass, 0 );
+	if ( total <= 0 ) {
+		return [];
+	}
+	return merged
+		.map( ( entry ) => ( { color: entry.color, share: entry.mass / total } ) )
+		.sort( ( a, b ) => b.share - a.share )
+		.slice( 0, limit )
+		.filter( ( entry ) => entry.share >= minShare )
+		.map( ( entry ) => ( { color: entry.color, share: Math.round( entry.share * 100 ) / 100 } ) );
+}
+
+/**
+ * An ink must carry at least this share of a region's text to be GATED. Below
+ * it the colour is decoration (a caption, a badge) and comparing it makes the
+ * gate fire on typographic drift rather than on colour drift.
+ */
+export const GATED_INK_SHARE = 0.15;
+
 export interface RegionColorOptions {
 	/** ΔE00 at/above this warns (default 3 — clearly visible). */
 	warnAt?: number;
@@ -333,6 +432,8 @@ export interface RegionColorDeviation {
 	actual: string | null;
 	deltaE: number | null;
 	severity: 'warn' | 'fail';
+	/** For `text`: the share of the region's text mass the expected ink carries. */
+	share?: number;
 }
 
 export interface RegionColorReport {
@@ -382,27 +483,84 @@ export function compareRegionColors(
 			missing.push( region );
 			continue;
 		}
-		for ( const metric of [ 'background', 'text' ] as const ) {
-			const from = expected[ metric ];
-			const to = actual[ metric ];
-			const delta = colorDeltaE( from, to );
+		{
+			const delta = colorDeltaE( expected.background, actual.background );
 			if ( delta === undefined ) {
-				skipped.push( `${ mode }.${ region }.${ metric }` );
-				continue;
+				skipped.push( `${ mode }.${ region }.background` );
+			} else {
+				compared++;
+				if ( delta >= warnAt ) {
+					deviations.push( {
+						region,
+						mode,
+						metric: 'background',
+						expected: expected.background,
+						actual: actual.background,
+						deltaE: Math.round( delta * 100 ) / 100,
+						severity: delta >= failAt ? 'fail' : 'warn',
+					} );
+				}
 			}
-			compared++;
-			if ( delta < warnAt ) {
-				continue;
+		}
+		// INK. A region's text is a PALETTE, not one colour: virtuallyjamaica's
+		// `#services` is a white lede + heading (74% of its text mass) over four
+		// grey `li`s (26%). Gating only the winner hid the grey list items turning
+		// white; gating every colour fired on captions. So every ink carrying a
+		// GATED_INK_SHARE of the region's text is matched against the build's
+		// palette and compared on its own ΔE — a lost minority ink is a failure,
+		// a lost caption is not.
+		const expectedInks = expected.inks && expected.inks.length > 0 ? expected.inks : undefined;
+		const actualInks = actual.inks && actual.inks.length > 0 ? actual.inks : undefined;
+		if ( expectedInks && actualInks ) {
+			for ( const ink of expectedInks ) {
+				if ( ink.share < GATED_INK_SHARE ) {
+					continue;
+				}
+				let best: { color: string; delta: number } | undefined;
+				for ( const candidate of actualInks ) {
+					const delta = colorDeltaE( ink.color, candidate.color );
+					if ( delta === undefined || ( best && delta >= best.delta ) ) {
+						continue;
+					}
+					best = { color: candidate.color, delta };
+				}
+				if ( ! best ) {
+					skipped.push( `${ mode }.${ region }.text` );
+					continue;
+				}
+				compared++;
+				if ( best.delta < warnAt ) {
+					continue;
+				}
+				deviations.push( {
+					region,
+					mode,
+					metric: 'text',
+					expected: ink.color,
+					actual: best.color,
+					deltaE: Math.round( best.delta * 100 ) / 100,
+					severity: best.delta >= failAt ? 'fail' : 'warn',
+					share: ink.share,
+				} );
 			}
-			deviations.push( {
-				region,
-				mode,
-				metric,
-				expected: from,
-				actual: to,
-				deltaE: Math.round( delta * 100 ) / 100,
-				severity: delta >= failAt ? 'fail' : 'warn',
-			} );
+		} else {
+			const delta = colorDeltaE( expected.text, actual.text );
+			if ( delta === undefined ) {
+				skipped.push( `${ mode }.${ region }.text` );
+			} else {
+				compared++;
+				if ( delta >= warnAt ) {
+					deviations.push( {
+						region,
+						mode,
+						metric: 'text',
+						expected: expected.text,
+						actual: actual.text,
+						deltaE: Math.round( delta * 100 ) / 100,
+						severity: delta >= failAt ? 'fail' : 'warn',
+					} );
+				}
+			}
 		}
 		// The painted IMAGE is invisible to a colour comparison: a gradient band
 		// rebuilt flat keeps the same `backgroundColor`. Compare only GRADIENTS
@@ -714,44 +872,67 @@ export async function measureRegionColors(
 							}
 							return { color: 'transparent' };
 						};
-						const out: Record< string, { background: string; text: string; image?: string } > = {};
+						const out: Record<
+							string,
+							{ background: string; image?: string; inks: Array< { color: string; mass: number } > }
+						> = {};
 						// The ink a region RENDERS is not the element's inherited `color` on a
 						// builder site: the theme sets a global body colour and paints the
 						// visible text from a context class on inner containers (Flatsome's
 						// `.dark` — monicarajiv.com computes `body { color: #000 }` while every
-						// rendered word is white). The most frequent colour among text-bearing
-						// descendants is what the region actually shows.
-						const readInk = ( element: Element ): string => {
-							const counts = new Map< string, number >();
+						// rendered word is white). Every text-bearing descendant is measured
+						// and weighted by its RENDERED INK AREA (`inkMass`), so the palette is
+						// the share of the region's text each colour actually paints. Counting
+						// ELEMENTS instead is what made a lone caption outvote a paragraph.
+						const readInk = ( element: Element ): Array< { color: string; mass: number } > => {
+							const masses = new Map< string, number >();
+							// The region's OWN painted box. A builder leaves legacy descendants
+							// in the DOM that render outside the element and are covered by the
+							// next band — jayainc's site-title link sits 23px under its hero, so
+							// its cyan ink was counted against a header that never shows it
+							// (2026-11-12). Text the region does not contain is not its ink.
+							const regionRect = element.getBoundingClientRect();
 							let seen = 0;
 							const consider = ( node: Element ): void => {
 								if ( seen > 1200 ) {
 									return;
 								}
 								seen += 1;
-								const carriesText = [ ...node.childNodes ].some(
-									( child ) => child.nodeType === 3 && ( child.textContent ?? '' ).trim().length > 0
-								);
-								if ( ! carriesText ) {
+								let characters = 0;
+								for ( const child of [ ...node.childNodes ] ) {
+									if ( child.nodeType === 3 ) {
+										characters += ( child.textContent ?? '' ).trim().length;
+									}
+								}
+								if ( characters === 0 ) {
 									return;
 								}
 								const rect = node.getBoundingClientRect();
 								if ( rect.width < 2 || rect.height < 2 ) {
 									return;
 								}
-								const color = getComputedStyle( node ).color;
-								counts.set( color, ( counts.get( color ) ?? 0 ) + 1 );
+								const offRegion =
+									rect.bottom < regionRect.top + 1 ||
+									rect.top > regionRect.bottom - 1 ||
+									rect.right < regionRect.left + 1 ||
+									rect.left > regionRect.right - 1;
+								if ( offRegion ) {
+									return;
+								}
+								const style = getComputedStyle( node );
+								const fontPx = Number.parseFloat( style.fontSize ) || 16;
+								const mass = characters * fontPx * fontPx;
+								masses.set( style.color, ( masses.get( style.color ) ?? 0 ) + mass );
 							};
 							consider( element );
 							for ( const node of element.querySelectorAll( '*' ) ) {
 								consider( node );
 							}
-							const best = [ ...counts.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ];
 							// A region with NO text renders no ink — comparing its inherited
 							// colour reports a difference between two invisible values (the hero
-							// band is an image + a chevron). `transparent` is skipped by the
-							// ΔE comparison, so the metric simply does not apply.
-							return best ? best[ 0 ] : 'transparent';
+							// band is an image + a chevron). An empty palette makes the ink
+							// metric not apply, exactly like a transparent surface.
+							return [ ...masses.entries() ].map( ( [ color, mass ] ) => ( { color, mass } ) );
 						};
 						for ( const region of args.regions ) {
 							for ( const selector of region.selectors ) {
@@ -764,7 +945,7 @@ export async function measureRegionColors(
 									);
 									out[ region.name ] = {
 										background: surface.color,
-										text: readInk( element ),
+										inks: readInk( element ),
 										...( surface.image ? { image: surface.image } : {} ),
 									};
 									break;
@@ -777,9 +958,16 @@ export async function measureRegionColors(
 				);
 				const baseline: Record< string, RegionColors > = {};
 				for ( const [ region, values ] of Object.entries( colors ) ) {
+					// The palette is summarised in Node, not the page: it is pure maths
+					// (alpha collapse, ΔE merge, share rounding) and belongs in a unit test.
+					const inks = summarizeInk( values.inks );
 					baseline[ region ] = {
 						background: normalizeCssColor( values.background ),
-						text: normalizeCssColor( values.text ),
+						// `text` stays the DOMINANT ink so a baseline recorded before palettes
+						// existed still verifies, and the human-readable output keeps one
+						// colour per region. `inks` carries the whole measured palette.
+						text: inks[ 0 ]?.color ?? TRANSPARENT,
+						...( inks.length > 0 ? { inks } : {} ),
 						// A gradient/URL is not a colour — pass it through verbatim rather
 						// than letting `normalizeCssColor` collapse it to `transparent`.
 						...( values.image ? { image: values.image } : {} ),

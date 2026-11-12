@@ -16,7 +16,7 @@
 
 import type { ForgeSection } from './types.ts';
 import { isSectionKind } from './types.ts';
-import { scopedPaddingOf } from './scoped-css.ts';
+import { scopedDeclarationOf, scopedPaddingOf } from './scoped-css.ts';
 
 export interface UnrenderedFact {
 	sectionId: string;
@@ -41,6 +41,7 @@ interface FactMarker {
 		sectionId: string;
 		value: unknown;
 		scopedPadding: Map< string, string >;
+		scopedMeasure: Map< string, string >;
 	} ) => boolean;
 }
 
@@ -63,7 +64,12 @@ const FACT_MARKERS: FactMarker[] = [
 		present: ( { html, sectionId, value, scopedPadding } ) =>
 			typeof value === 'string' ? html.includes( 'padding:' ) : scopedPadding.has( sectionId ),
 	},
-	{ key: 'measure', label: 'measure', marker: '--ds-measure' },
+	{ key: 'measure', label: 'measure', marker: '--ds-measure',
+		// A measured container is now a per-device map (1440 / 834 / 390), which
+		// cannot be inline; a plain string stays inline. Check both channels.
+		present: ( { html, sectionId, value, scopedMeasure } ) =>
+			typeof value === 'string' ? html.includes( '--ds-measure' ) || scopedMeasure.has( sectionId ) : scopedMeasure.has( sectionId ),
+	},
 	{
 		key: 'titleAlign',
 		label: 'titleAlign: center',
@@ -126,6 +132,7 @@ function sectionHtml( html: string, id: string ): string | undefined {
 export function auditFacts( sections: ForgeSection[], builtHtml: string ): UnrenderedFact[] {
 	const unrendered: UnrenderedFact[] = [];
 	const scopedPadding = scopedPaddingOf( builtHtml );
+	const scopedMeasure = scopedDeclarationOf( builtHtml, '--ds-measure' );
 	for ( const section of sections ) {
 		if ( ! section.id ) {
 			continue;
@@ -144,7 +151,7 @@ export function auditFacts( sections: ForgeSection[], builtHtml: string ): Unren
 				continue;
 			}
 			const rendered = fact.present
-				? fact.present( { html, sectionId: section.id, value, scopedPadding } )
+				? fact.present( { html, sectionId: section.id, value, scopedPadding, scopedMeasure } )
 				: html.includes( fact.marker );
 			if ( ! rendered ) {
 				unrendered.push( { sectionId: section.id, fact: fact.label, marker: fact.marker } );

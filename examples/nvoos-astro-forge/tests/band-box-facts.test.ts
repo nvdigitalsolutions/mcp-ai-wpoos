@@ -31,6 +31,14 @@ describe( 'boxDeclarations', () => {
 		// grid), so a box never carries a frozen centering pair.
 		expect( boxDeclarations( { mar: '0px 135px 0px 135px' } ) ).toBe( 'margin:0px 135px 0px 135px' );
 	} );
+
+	it( 're-states the ink a class OVERRIDES, after its box', () => {
+		// virtuallyjamaica's `ul.medium-gray-text` paints `#929292` over the
+		// panel's inherited white; without this fact the bullets rebuild white.
+		expect( boxDeclarations( { mar: '0px 0px 24px 0px', color: 'rgb(146, 146, 146)' } ) ).toBe(
+			'margin:0px 0px 24px 0px;color:rgb(146, 146, 146)'
+		);
+	} );
 } );
 
 describe( 'mergeBoxFacts', () => {
@@ -77,5 +85,25 @@ describe( 'mergeBoxFacts', () => {
 		expect( box ).toEqual( {
 			brando_image_1: { base: 'height:620px', mobile: 'height:435px' },
 		} );
+	} );
+
+	it( 'keeps an ink override steady across devices', () => {
+		const same = { 'medium-gray-text': { color: 'rgb(146, 146, 146)' } };
+		expect( mergeBoxFacts( same, same, same ) ).toEqual( {
+			'medium-gray-text': { base: 'color:rgb(146, 146, 146)' },
+		} );
+	} );
+
+	it( 'records the base ink once and emits no device override where it agrees', () => {
+		// A device is recorded only where it CHANGES a value (`mergeBoxFacts`), so
+		// an ink the source paints the same way at every width ships as one base
+		// rule and inherits down.
+		const box = mergeBoxFacts(
+			{ 'medium-gray-text': { color: 'rgb(146, 146, 146)' } },
+			{ 'medium-gray-text': { color: 'rgb(146, 146, 146)' } },
+			{ 'medium-gray-text': {} }
+		);
+
+		expect( box ).toEqual( { 'medium-gray-text': { base: 'color:rgb(146, 146, 146)' } } );
 	} );
 } );

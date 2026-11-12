@@ -11,7 +11,9 @@
 // The bridge URL is resolved env-first (NVOOS_FORGE_FORMS_ENDPOINT), then
 // from the scaffolded manifest default — never hardcoded.
 import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
 import manifestJson from '../../../nvoos.json';
+import SectionTitle from './SectionTitle.astro';
 
 // The manifest's inferred JSON type has no `forms` key on profiles that
 // omit the block — read it through an explicit shape.
@@ -21,9 +23,10 @@ const manifest = manifestJson as {
 
 interface Props {
 	section: SemanticSection;
+	theme?: SectionTheme;
 }
 
-const { section } = Astro.props;
+const { section, theme } = Astro.props;
 const { title, body, links } = section.slots;
 const form = section.form;
 
@@ -53,7 +56,7 @@ const degradeToCta = Boolean(form) && !isSearch && !isSubmit;
 	<section class="ds-section ds-hero">
 		{(title || (body && body.length > 0)) && (
 			<div class="ds-form-intro">
-				{title && <h2 class="ds-title">{title}</h2>}
+				{title && <SectionTitle title={title} theme={theme} />}
 				{/* The band's own intro copy, kept off the form subtree (a CF7/
 				 * Elementor band usually leads with a paragraph the classification
 				 * used to drop). */}

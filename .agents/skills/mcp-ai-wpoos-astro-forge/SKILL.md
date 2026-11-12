@@ -858,6 +858,11 @@ headless-chromium computed styles against the live source.
   computed styles per chrome element and diff against the live source.
   Re-scaffold (not manual CSS copies) after template edits — the
   `FORGE:tokens` rewrite only runs in the scaffold pipeline.
+- **The top strip's STRUCTURE is measured** (`measureTopbar`, 2026-11-12):
+  items (icon + text, the address's own line break), icon-only socials,
+  alignment, height and the icon/item rhythm — `analyzeChrome` only reads its
+  text lines. Contract + the `tsString` newline gotcha:
+  [`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md) §11.
 
 ### The mobile nav disclosure (`chrome.navToggle`)
 
@@ -1021,7 +1026,11 @@ render drifted" blind spot:
 - `verify --colors` diffs the COMPUTED background+text per region — chrome AND
   every band — with CIEDE2000 (warn ≥ 3, fail ≥ 6); transparent skipped. A
   band's gradient is a third metric: absent in the build fails, differing warns,
-  a photo url is not compared.
+  a photo url is not compared. INK is a PALETTE weighted by rendered glyph area
+  (chars × font-size²); every ink carrying ≥15% of a region's text is gated, so
+  a rebuild cannot lose a band's minority colour, and text the region does not
+  contain is not its ink. `colors <profile> [--url …] --write` re-records the
+  baseline without re-analysing. See `reference/colour-gate.md`.
 - `verify --pixel` diffs deterministic screenshots with pixelmatch's YIQ delta
   **and** SSIM against a recorded baseline (build-vs-build regression) or the
   live source (`--pixel-live`, near-clone work only). Determinism is proven,
@@ -1035,10 +1044,8 @@ recipe, measured virtuallyjamaica numbers and the industry basis:
 
 ## Phase roadmap (096 §5) — see reference
 
-The phase-by-phase SHIPPED status (Phase 0 → 4, the publishing lessons, the
-wp.org submission state) moved to `reference/phase-roadmap.md` on 2026-11-10
-when this skill hit Zed's load limit. Operational rules stay below; read the
-reference only for "what landed when".
+The phase-by-phase SHIPPED status moved to `reference/phase-roadmap.md` on
+2026-11-10 when this skill hit Zed's load limit; operational rules stay below.
 
 ## Proposal 136 — section vocabulary + agent surfaces (2026-11-09)
 
@@ -1334,6 +1341,36 @@ and diffing the computed style. Full contract, standards and gotchas:
   re-rendered band (the contact form) keeps its behaviour on different classes.
   A lost `:hover` fails the run and names the control; a control the source
   generated in JS declares no state and is outside the contract.
+- **Content blocks carry states too** (2026-11-12): a feature box, card or tile
+  is a plain `div` and was never a candidate, so virtuallyjamaica's
+  `.service-sub` (black on hover) rebuilt flat. Candidates now include
+  structural content blocks (controls first in the per-band budget), a block
+  earns a fact only from a REAL state, and non-focusable blocks are exempt from
+  the focus gate (`focusable: false`). An appear animation is not a hover — the
+  animation killer runs before the rest read and identity `transform`/`opacity:1`
+  deltas are dropped. Detail: `reference/interaction-states.md` §10.
+
+## Measured heading LEVEL, stage and split (2026-11-12)
+
+Four more measured facts (detail:
+[`reference/proposal-122-fidelity-round.md`](reference/proposal-122-fidelity-round.md) §2):
+
+- **`type.titleLevel`** — the tag of the band's largest heading.
+  `<SectionTitle>` renders it, so an `<h3>`-only band stops becoming `<h2>`;
+  `h1` maps down to `h2` (the article owns the single h1).
+- **`fullViewport`** — exactly the viewport height on EVERY capture breakpoint
+  → `min-height: 100vh` + `ds-section-wrap--full` (never the captured px).
+- **`centered`** — the band CONTAINS the source's centring device (`table-cell`
+  + `vertical-align: middle`, or a flex/grid container ≥½ the band with centred
+  items). `true` → `ds-section-wrap--centered`; `false` → `--ds-hero-justify:
+  flex-start`. A full-height band is NOT automatically centred (a 151px drift
+  on virtuallyjamaica's contact band).
+- **`splitColumns`** → `--ds-split` (+ `--ds-split-gap: 0`) for the structural
+  hero track; the guessed `1.15fr/0.95fr` wrapped a 3-line H1 to four lines.
+  Side-by-side means adjacent RIGHT edges, not equal tops (the columns centre).
+- **A centred title is never narrowed by the hero's 66% cap**: `--ds-title-max:
+  none` when `align: center` with no measured max-width, and `margin-inline:
+  auto` rides the centred type rule (otherwise the text sat ~200px off-centre).
 
 ## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
 

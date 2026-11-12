@@ -156,6 +156,14 @@ interface ProbeCandidate {
 	classes: string[];
 	type?: string;
 	count: number;
+	/** A real control (link/button/field) — its rest paint is re-stated even
+	 * when it declares no state. A content BLOCK only earns a fact from a real
+	 * state delta (see the push condition). */
+	control: boolean;
+	/** Can receive keyboard focus in reality. A forced `:focus-visible` on a
+	 * plain `div` paints Chromium's UA ring, which is an artefact of the probe,
+	 * not a source style — non-focusable candidates drop it. */
+	focusable: boolean;
 	/**
 	 * Direct element children to diff while the control is forced (the overlay
 	 * pattern). `index` is the child's position in `element.children`.
@@ -208,6 +216,44 @@ function collectCandidates( input: {
 } ): ProbeCandidate[] {
 	const INTERACTIVE =
 		'a[href], button, summary, [role="button"], input:not([type="hidden"]), select, textarea';
+	/**
+	 * A CONTENT BLOCK that can carry a state of its own.
+	 *
+	 * Builder feature boxes, pricing columns, portfolio tiles and image cards
+	 * express their hover on a plain `div`/`li`/`figure`: virtuallyjamaica's
+	 * `.service-sub` turns solid black under the pointer, and the
+	 * anchor/button-only candidate set missed it entirely, so the rebuilt card
+	 * stayed flat. The predicate is STRUCTURAL — a block-level box of
+	 * non-trivial size that holds real content — never a class-name guess.
+	 * Blocks are probed only after every control (controls are the priority
+	 * within the per-band signature budget), and a block whose forced states
+	 * change nothing emits no fact.
+	 */
+	const isContentBlock = ( element: Element, band: Element ): boolean => {
+		if ( ! ( element instanceof HTMLElement ) || element === band ) {
+			return false;
+		}
+		if ( element.matches( INTERACTIVE ) ) {
+			return false;
+		}
+		const tag = element.tagName.toLowerCase();
+		if ( tag === 'html' || tag === 'body' || tag === 'main' || tag === 'nav' || tag === 'header' || tag === 'footer' ) {
+			return false;
+		}
+		const style = getComputedStyle( element );
+		const isBlockLevel =
+			style.display.includes( 'block' ) || style.display.includes( 'flex' ) || style.display.includes( 'grid' );
+		if ( ! isBlockLevel ) {
+			return false;
+		}
+		const rect = element.getBoundingClientRect();
+		if ( rect.width < 80 || rect.height < 40 ) {
+			return false;
+		}
+		const text = ( element.textContent ?? '' ).trim();
+		const hasMedia = element.querySelector( 'img, svg, picture, video' ) !== null;
+		return text.length >= 10 || hasMedia;
+	};
 	const out: ProbeCandidate[] = [];
 	let counter = 0;
 
@@ -254,10 +300,10 @@ function collectCandidates( input: {
 		if ( ! band ) {
 			continue;
 		}
-		const groups = new Map< string, { element: Element; count: number } >();
-		for ( const element of band.querySelectorAll( INTERACTIVE ) ) {
+		const groups = new Map< string, { element: Element; count: number; control: boolean } >();
+		const collect = ( element: Element, control: boolean ): void => {
 			if ( ! usable( element ) ) {
-				continue;
+				return;
 			}
 			const tag = element.tagName.toLowerCase();
 			const classes = [ ...element.classList ].sort();
@@ -266,18 +312,36 @@ function collectCandidates( input: {
 			const existing = groups.get( signature );
 			if ( existing ) {
 				existing.count += 1;
+				existing.control = existing.control || control;
 			} else {
-				groups.set( signature, { element, count: 1 } );
+				groups.set( signature, { element, count: 1, control } );
+			}
+		};
+		// Controls first so they always win the per-band budget; then the content
+		// blocks (a feature box, a card, a tile) that carry their own hover.
+		for ( const element of band.querySelectorAll( INTERACTIVE ) ) {
+			collect( element, true );
+		}
+		for ( const element of band.querySelectorAll( 'div, section, article, li, figure, a' ) ) {
+			if ( isContentBlock( element, band ) ) {
+				collect( element, false );
 			}
 		}
 		const ordered = [ ...groups.entries() ]
-			.sort( ( a, b ) => b[ 1 ].count - a[ 1 ].count || a[ 0 ].localeCompare( b[ 0 ] ) )
+			.sort( ( a, b ) =>
+				Number( b[ 1 ].control ) - Number( a[ 1 ].control ) ||
+				b[ 1 ].count - a[ 1 ].count ||
+				a[ 0 ].localeCompare( b[ 0 ] )
+			)
 			.slice( 0, input.max );
 		for ( const [ signature, group ] of ordered ) {
 			const [ tag, type ] = signature.split( '|' );
 			counter += 1;
 			const probe = String( counter );
 			group.element.setAttribute( 'data-forge-interaction-probe', probe );
+			const focusable = group.element.matches(
+				'a[href], button, input:not([type="hidden"]), select, textarea, summary, [tabindex], [contenteditable="true"]'
+			);
 			const children: ProbeCandidate[ 'children' ] = [];
 			[ ...group.element.children ].slice( 0, input.maxChildren ).forEach( ( child, index ) => {
 				// A nested control is its own probe; its states are not the parent's.
@@ -297,6 +361,8 @@ function collectCandidates( input: {
 				classes: [ ...group.element.classList ].sort(),
 				...( type ? { type } : {} ),
 				count: group.count,
+				control: group.control,
+				focusable,
 				children,
 			} );
 		}
@@ -574,6 +640,28 @@ function percentOf( value: number, reference: number ): string {
 }
 
 /**
+ * Is a computed `transform` the identity?
+ *
+ * `none` and an identity `matrix()` describe "no movement". A scroll-in
+ * animation that finished between the rest read and the state read leaves
+ * exactly this value, and re-stating it as a hover effect is noise (jayainc's
+ * `.aux-animated` sections and `.elementor-container` each produced a phantom
+ * hover this way).
+ */
+export function isIdentityTransform( value: string ): boolean {
+	if ( ! value || value === 'none' ) {
+		return true;
+	}
+	const matrix = /^matrix\(([^)]*)\)$/.exec( value );
+	if ( ! matrix ) {
+		return false;
+	}
+	const parts = matrix[ 1 ].split( ',' ).map( ( part ) => Number.parseFloat( part.trim() ) );
+	const [ a, b, c, d, e, f ] = parts;
+	return parts.length === 6 && a === 1 && b === 0 && c === 0 && d === 1 && e === 0 && f === 0;
+}
+
+/**
  * `matrix(a,b,c,d,e,f)` → `translate(tx%, ty%) scale(sx, sy)`.
  *
  * An overlay's measured transform is a px translate of half its own box, which
@@ -691,6 +779,17 @@ export function stateDeclarations( rest: RestStyles, state: RestStyles ): string
 		if ( property === 'backgroundImage' && after.includes( 'url(' ) ) {
 			continue;
 		}
+		// An IDENTITY transform or full opacity is "the appear animation finished",
+		// not a state effect. A builder's scroll-in animation moves `opacity`/`transform`
+		// between the two reads (their resting value was mid-animation), which painted
+		// phantom hover rules onto jayainc's `.aux-animated` sections and
+		// `.elementor-container`. A real state effect changes something else as well.
+		if ( property === 'transform' && isIdentityTransform( after ) ) {
+			continue;
+		}
+		if ( property === 'opacity' && Number( after ) === 1 ) {
+			continue;
+		}
 		// A state that REMOVES (or does not draw) the focus ring is not an effect
 		// to reproduce — it is the classic focus-visible failure (WCAG F78 /
 		// SC 2.4.7). Keeping it would let a hovered control lose the keyboard
@@ -795,6 +894,14 @@ export async function measureInteractions(
 			return { facts: {}, skippedChildStates: 0 };
 		}
 
+		// Kill ANIMATIONS before the rest read. A builder's scroll-in/appear animation
+		// (`aux-appear-watch-animation`, Elementor's motion effects) keeps moving
+		// `opacity`/`transform` while the probes run, so the rest read and the state
+		// read disagree and every animated section emits a phantom hover. Transitions
+		// stay alive here: the source's easing is itself a fact.
+		await page.addStyleTag( {
+			content: '*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important}',
+		} );
 		// Rest state INCLUDING `transition` — the transition killer below is what
 		// makes the forced states read their target value instead of a frame of
 		// interpolation, but it also erases the property we want to record.
@@ -808,7 +915,7 @@ export async function measureInteractions(
 
 		await page.addStyleTag( {
 			content:
-				'*,*::before,*::after{transition-duration:0s!important;transition-delay:0s!important;animation-duration:0s!important;animation-delay:0s!important}',
+				'*,*::before,*::after{transition-duration:0s!important;transition-delay:0s!important}',
 		} );
 
 		const cdp = await context.newCDPSession( page );
@@ -836,6 +943,9 @@ export async function measureInteractions(
 					classes: candidate.classes,
 					...( candidate.type ? { type: candidate.type } : {} ),
 					count: candidate.count,
+					// Negative only: a non-focusable card has no keyboard state, so the
+					// verify gate must not demand a focus ring the source never had.
+					...( candidate.focusable ? {} : { focusable: false } ),
 				};
 				// Re-state the source's own resting paint, pointer affordance and
 				// easing. A cursor is not a state and a transition is the timing
@@ -906,6 +1016,13 @@ export async function measureInteractions(
 					}
 				}
 				await cdp.send( 'CSS.forcePseudoState', { nodeId, forcedPseudoClasses: [] } );
+				// A forced `:focus-visible` on a non-focusable element paints Chromium's
+				// default ring — an artefact of the probe (every wrapper div measured it),
+				// not a source style. A real control always keeps its focus states.
+				if ( ! candidate.focusable ) {
+					delete fact.focus;
+					delete fact.focusVisible;
+				}
 				// A source styles `:focus` and `:focus-visible` identically far more
 				// often than not (browsers already apply `:focus-visible` to text
 				// fields on click), so emitting both only doubles the CSS. Keep the
@@ -918,15 +1035,12 @@ export async function measureInteractions(
 						a.selector.localeCompare( b.selector )
 					);
 				}
-				if (
-					fact.base ||
-					fact.transition ||
-					fact.hover ||
-					fact.focus ||
-					fact.focusVisible ||
-					fact.active ||
-					fact.children
-				) {
+				// A CONTROL's rest paint is a fact on its own (a builder button is
+				// `inline-block` with a border; without `display` the box collapses).
+				// A content BLOCK earns a fact only from a REAL state delta — its rest
+				// paint and inherited transition describe nothing worth re-stating.
+				const hasState = Boolean( fact.hover || fact.focus || fact.focusVisible || fact.active || fact.children );
+				if ( hasState || ( candidate.control && ( fact.base || fact.transition ) ) ) {
 					( facts[ candidate.bandId ] ??= [] ).push( fact );
 				}
 			}
@@ -1135,9 +1249,14 @@ export function diffInteractionStates(
 	}
 	// The keyboard indicator is checked on EVERY rebuilt control, not only the
 	// ones the source styled: the template's baseline is the only thing standing
-	// between a source with no focus styles and an unusable keyboard page.
+	// between a source with no focus styles and an unusable keyboard page. A
+	// measured non-focusable content block (a feature card whose hover the source
+	// styled) is exempt: it has no keyboard state to indicate.
 	for ( const [ sectionId, facts ] of Object.entries( built ) ) {
 		for ( const fact of facts ) {
+			if ( fact.focusable === false ) {
+				continue;
+			}
 			if ( ! fact.focus && ! fact.focusVisible ) {
 				deviations.push( {
 					sectionId,
