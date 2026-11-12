@@ -352,8 +352,9 @@ jobs:
   # MSVC — WHISPER_DONT_GENERATE_BINDINGS is Linux-only), and the
   # VS-bundled CMake is not on PATH by default, so both come from
   # Chocolatey. Engine weights are never compiled in — they download at
-  # runtime into %APPDATA%/nvoos-dictate/models/ (the ~56 MB exe is a
-  # correct, complete build).
+  # runtime into %APPDATA%/nvoos-dictate/models/ (engines-only builds are
+  # ~56 MB, the full feature union ~100 MB — size is not a completeness
+  # signal).
   windows-bundle:
     name: Windows debug exe (complete features) + boot smoke
     runs-on: windows-latest
@@ -394,6 +395,20 @@ jobs:
 
       - name: Generate icons
         run: node scripts/gen-icons.mjs
+
+      # ort-sys rc.9 (the ONNX Runtime binding behind vision / silero-vad /
+      # snippet-onnx / memory) copies the runtime DLLs into THREE destinations
+      # — target/debug, target/debug/examples and target/debug/deps
+      # (build.rs `copy_libraries`). On a cold runner `examples/` has never
+      # been created, GitHub's Windows runners refuse symlinks without
+      # Developer Mode, and the crate's fallback is an unwrapped fs::copy
+      # (build.rs:109) — so the build dies with
+      # `Os { code: 3, NotFound }` (ERROR_PATH_NOT_FOUND) before linking.
+      # Locally the directory exists because examples have been built, which
+      # masks it; a Cargo.lock change rotates the cache key and brings it
+      # back. Pre-create the destinations (no-op when they already exist).
+      - name: Pre-create ort-sys DLL destinations
+        run: New-Item -ItemType Directory -Force -Path src-tauri/target/debug, src-tauri/target/debug/examples, src-tauri/target/debug/deps | Out-Null
 
       # tauri build runs beforeBuildCommand (npm run build = webview dist,
       # required by generate_context!) automatically. --no-bundle skips the
