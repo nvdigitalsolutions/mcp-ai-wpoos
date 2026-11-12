@@ -9,6 +9,7 @@ management.
 - NPM package distribution and publishing guides
 - Alpha publishing workflow
 - Release process
+- Standalone mirror releases (assets are copied into each synced repo's own release)
 - Dependency bundling guide
 - NPM package strategy and component analysis
 
