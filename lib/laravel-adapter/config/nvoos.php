@@ -263,6 +263,22 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Profession catalogue
+	|--------------------------------------------------------------------------
+	|
+	| Professions are reference data: code-owned, versioned and read-only.
+	| Point this at a licensed catalogue directory containing JSON documents
+	| with a `professions` array — the same shape the WordPress plugin seeds
+	| its profession CPT from. The shipped starter catalogue is MIT-licensed;
+	| a deployment can point NVOOS_PROFESSIONS_PATH at a fuller one.
+	|
+	*/
+	'professions'      => array(
+		'path' => env( 'NVOOS_PROFESSIONS_PATH', __DIR__ . '/../resources/professions' ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| AI Provider API Keys
 	|--------------------------------------------------------------------------
 	|

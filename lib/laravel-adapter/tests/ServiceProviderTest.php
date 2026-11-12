@@ -22,6 +22,7 @@ use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
+use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 use Nvoos\Core\Domain\Contract\SchemaStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
@@ -39,6 +40,7 @@ final class ServiceProviderTest extends TestCase {
 			AuthProviderInterface::class,
 			ContentStoreInterface::class,
 			SchemaStoreInterface::class,
+			ProfessionRepositoryInterface::class,
 			HttpClientInterface::class,
 		);
 
@@ -59,6 +61,14 @@ final class ServiceProviderTest extends TestCase {
 		$registry = $this->app->make( ToolRegistry::class );
 
 		$this->assertTrue( $registry->has( 'color_convert' ) );
+	}
+
+	public function test_service_backed_tools_are_registered(): void {
+		$registry = $this->app->make( ToolRegistry::class );
+
+		foreach ( array( 'list_projects', 'list_tasks', 'get_task_dependencies', 'list_professions', 'get_profession', 'profession_stats' ) as $slug ) {
+			$this->assertTrue( $registry->has( $slug ), "Expected the {$slug} tool to be registered." );
+		}
 	}
 
 	public function test_provider_router_registers_core_providers(): void {

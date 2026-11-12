@@ -1,0 +1,4 @@
+{
+  "catalogue_version": "1.0.0",
+  "description": "Starter profession catalogue shipped with the Laravel adapter. Deployments may point oos.professions.path at a fuller, licensed catalogue."
+}
