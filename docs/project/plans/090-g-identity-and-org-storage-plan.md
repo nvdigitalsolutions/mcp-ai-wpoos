@@ -125,8 +125,61 @@ is a later template feature, not v1.
 
 Contract: new `TeamServiceInterface` in `lib/core` — `listForUser()`,
 `get()`, `create()`, `update()`, `addMember()`, `removeMember()`,
-`changeRole()`. It mirrors `AssistantServiceInterface`'s style, so the
-console and tools consume either runtime identically.
+`changeRole()`, plus `delete()` for CRUD parity. It mirrors
+`AssistantServiceInterface`'s style, so the console and tools consume either
+runtime identically. Tenancy is a runtime concern, so the contract carries no
+tenant argument.
+
+**Phase 3 shipped.** Migration `2026_11_12_100000_create_teams_tables` creates
+both tables; `role` is a database enum (MySQL `ENUM`, SQLite `varchar … check`,
+both emitted by Laravel's own grammar) so the role set holds for writes that
+bypass the application. `LaravelTeamService` scopes every query through
+`TenantContext` and enforces the two invariants the schema cannot express:
+“a team keeps at least one owner” and “re-adding a member is a role change”.
+`TeamController` serves `/api/v1/org/teams` + `/members`; `TeamTest` covers 15
+cases including both database-level constraints, the tenancy indexes, and the
+401-without-Accept-header regression.
+
+**Why `/org`, not `/teams`.** `mcp-ai/v1/teams` already exists on WordPress
+and means a *collection of professions* (the multi-agent collaboration
+surface the SPA `TeamsPage` consumes, shaped `{ id, title, member_count }`).
+The org primitive here is users-with-roles and returns a different shape, so
+mounting it on `/teams` would silently break the shared console. The two
+concepts stay separate: `/teams` = agent teams (profession collections),
+`/org/teams` = the tenant's people.
+
+### 4.2a Multi-agent team catalogue (parity) — shipped
+
+The profession-team surface is now served on both runtimes, so the shared
+console `TeamsPage` no longer 404s on Laravel:
+
+```text
+GET /api/v1/teams                 { success, teams: [{ id, title, member_count }] }
+GET /api/v1/teams/{id}/members    { team_id, team_title, driver_assistant_id,
+                                    has_driver_assistant, members[], count,
+                                    orchestration_mode, result_aggregation,
+                                    multi_agent_enabled, supports_unified_mode }
+```
+
+- Storage is a `mcp_ai_team` **content type** (the `SchemaStore` added in
+  #7637), with the same meta keys WordPress uses:
+  `_wp_mcp_ai_team_members`, `_wp_mcp_ai_team_orchestration_mode`,
+  `_wp_mcp_ai_team_result_aggregation`, `_wp_mcp_ai_team_driver_assistant`.
+- Members are **profession catalogue slugs**, not post IDs. `members[].id` is
+  therefore omitted (the SPA already falls back to the array index for its
+  React key) and `members[].slug` is added.
+- `member_count` counts the raw membership, exactly as WordPress does, so a
+  slug that no longer resolves still counts; it is skipped from `members`
+  rather than failing the request.
+- `multi_agent_enabled` reads `oos.features.multi_agent_teams`, which is
+  **false** on Laravel: the catalogue is readable, but the orchestration
+  engine is not ported, so claiming otherwise would be a lie.
+
+Phase 1 gained the matching runtime fix: `LaravelAssistantService` had been
+querying `is_default` and the listing without a tenant predicate (only the
+controller was scoped), so the orchestrator could resolve another tenant's
+default. Both now go through `TenantContext`, model-bound assistant routes
+return 404 across tenants, and `AssistantTenancyTest` pins it.
 
 ### 4.3 Professions — versioned reference data
 
@@ -170,6 +223,12 @@ starter; it deliberately does **not** copy the plugin's 544 K GPL corpus.
   the tool is a no-op stub that reports success without persisting.
 - Assignment lives in the tenant's data (`team_members.profession_slug`), not
   in the catalogue.
+- **Assistant selection.** WordPress keeps up to three profession post IDs in
+  `_wp_mcp_ai_primary_roles`. On Laravel the slug is the identity, so the
+  selection lives in `meta.primary_role_slugs`; `Assistant::toRecord()`
+  promotes it to a flat `primary_role_slugs` field, the controller validates
+  each slug against the catalogue and caps the list at three, and an update
+  without the key leaves an existing selection untouched.
 - WordPress keeps its existing service/loader; the core contract is the only
   shared surface.
 
@@ -179,20 +238,24 @@ starter; it deliberately does **not** copy the plugin's 544 K GPL corpus.
 |---|---|---|
 | 1 | Assistant hardening (tenant, composite unique, default) + regression tests | Correct multi-tenant assistants |
 | 2 | Profession catalogue manifests + `ProfessionRepository` adapter + read tools + tests — **shipped** | Professional selector, recommended tools |
-| 3 | Teams tables, `TeamServiceInterface`, `TeamController` (`090-b` 2.5) | Team CRUD + membership |
-| 4 | Surfaces: profession selector, team pages (reuse the Content Graph page patterns) | User-facing |
+| 3 | Teams tables, `TeamServiceInterface`, `TeamController` (`090-b` 2.5) — **shipped** | Team CRUD + membership |
+| 4 | Surfaces: profession selector, org-team pages, team-catalogue parity — **catalogue parity shipped**; org-team pages pending | User-facing |
 
 ## 6. Acceptance gates
 
-- [ ] Two tenants can own the same assistant slug; a third cannot duplicate
+- [x] Two tenants can own the same assistant slug; a third cannot duplicate
       it within its own tenant.
-- [ ] Exactly one default assistant per tenant, enforced by test.
-- [ ] `UNIQUE (team_id, user_id)` and a constrained role set, enforced at the
+- [x] Exactly one default assistant per tenant, enforced by test.
+- [x] `UNIQUE (team_id, user_id)` and a constrained role set, enforced at the
       database level, not only in PHP.
-- [ ] "My teams" and "team members" queries both hit an index.
+- [x] "My teams" and "team members" queries both hit an index.
 - [ ] The profession catalogue reports a version, and a version bump
-      invalidates the cache without a manual purge.
-- [ ] Every tenant-owned table has `tenant_id` as the leading index column and
+      invalidates the cache without a manual purge. *(Version is exposed via
+      `catalogueVersion()`, but there is no shared cache layer yet — the
+      repository only memoizes per instance, so a deploy is visible on the
+      next resolve. A persisted cache keyed by `catalogue_version` is
+      deliberately deferred until something needs it.)*
+- [x] Every tenant-owned table has `tenant_id` as the leading index column and
       inside its unique constraints.
 
 ## 7. Guardrails

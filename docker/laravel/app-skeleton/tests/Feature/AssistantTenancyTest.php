@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Tests\TestCase;
 
 /**
@@ -77,6 +78,30 @@ class AssistantTenancyTest extends TestCase
             'id' => $other->id,
             'is_default' => true,
         ]);
+    }
+
+    public function test_the_runtime_service_only_sees_the_current_tenant(): void
+    {
+        $mine = $this->makeAssistant('default', 'mine');
+        $theirs = $this->makeAssistant('tenant-b', 'theirs', true);
+
+        $service = $this->app->make(AssistantServiceInterface::class);
+
+        $this->assertSame(['found' => false], $service->getConfig((int) $theirs->id));
+        $this->assertFalse($service->validate((int) $theirs->id)['valid']);
+        $this->assertSame((int) $mine->id, $service->getDefault()['assistant_id']);
+        $this->assertSame(['Mine'], array_column($service->listForUser(), 'title'));
+    }
+
+    public function test_model_bound_routes_reject_another_tenants_assistant(): void
+    {
+        $theirs = $this->makeAssistant('tenant-b', 'theirs');
+
+        $this->getJson("/api/v1/assistants/{$theirs->id}")->assertNotFound();
+        $this->patchJson("/api/v1/assistants/{$theirs->id}", ['title' => 'Mine now'])->assertNotFound();
+        $this->deleteJson("/api/v1/assistants/{$theirs->id}")->assertNotFound();
+
+        $this->assertDatabaseHas('assistants', ['id' => $theirs->id, 'title' => 'Theirs']);
     }
 
     private function makeAssistant(string $tenant, string $slug, bool $isDefault = false): Assistant

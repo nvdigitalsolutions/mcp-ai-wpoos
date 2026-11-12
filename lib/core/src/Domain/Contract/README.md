@@ -20,6 +20,7 @@ Holds every interface the oOS core engine exports — pure contracts with zero i
 | `ErrorFactoryInterface` | `ErrorFactoryInterface.php` | Every tool, provider, and service — canonical error envelope |
 | `ContentStoreInterface` | `ContentStoreInterface.php` | Read/write tools (`GetPostTool`, `CreatePostTool`, etc.) |
 | `AuthProviderInterface` | `AuthProviderInterface.php` | `GetUserInfoTool`, agentic loop auth context |
+| `TeamServiceInterface` | `TeamServiceInterface.php` | Team console pages (`TeamController`), org tools |
 | `SettingsStoreInterface` | `SettingsStoreInterface.php` | All provider clients (API keys, base URLs) |
 | `FileStoreInterface` | `FileStoreInterface.php` | `SearchAttachmentsTool`, image/audio generation tools |
 | `CacheStoreInterface` | `CacheStoreInterface.php` | Domain-owned cache contract with transient-style API |

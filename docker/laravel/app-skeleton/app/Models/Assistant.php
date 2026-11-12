@@ -61,7 +61,24 @@ class Assistant extends Model
             'meta' => $this->meta ?? [],
             'is_default' => (bool) $this->is_default,
             'is_preset' => false,
+            'primary_role_slugs' => $this->primaryRoleSlugs(),
         ];
+    }
+
+    /**
+     * Profession catalogue slugs assigned to this assistant.
+     *
+     * WordPress stores up to three profession post IDs in
+     * `_wp_mcp_ai_primary_roles`. The catalogue is reference data here, so the
+     * slug is the identity; the array lives in `meta` to keep the schema flat.
+     *
+     * @return string[]
+     */
+    public function primaryRoleSlugs(): array
+    {
+        $slugs = $this->meta['primary_role_slugs'] ?? [];
+
+        return is_array($slugs) ? array_values(array_filter($slugs, 'is_string')) : [];
     }
 
     /**

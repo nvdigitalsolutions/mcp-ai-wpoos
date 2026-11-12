@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\LaravelAssistantService;
+use App\Services\LaravelTeamService;
 use App\Spike\SpikeStreamingProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Nvoos\Core\Domain\Contract\AssistantServiceInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\TeamServiceInterface;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,9 +24,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // The assistant contract is host-specific (Eloquent model), so it is
-        // bound here rather than in the package provider.
+        // The assistant and team contracts are host-specific (Eloquent
+        // models), so they are bound here rather than in the package provider.
         $this->app->bind(AssistantServiceInterface::class, LaravelAssistantService::class);
+        $this->app->bind(TeamServiceInterface::class, LaravelTeamService::class);
     }
 
     /**
