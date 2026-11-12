@@ -42,9 +42,16 @@ class AppServiceProvider extends ServiceProvider
         // Local/testing soak runs need headroom; production keeps 60/min.
         $chatLimit = app()->environment(['local', 'testing']) ? 60000 : 60;
 
+        // Console CRUD is not tool execution: a page load fans out into several
+        // reads, so the 60/min tool budget would starve the SPA.
+        $consoleLimit = app()->environment(['local', 'testing'])
+            ? 60000
+            : (int) config('nvoos.console_rate_limit', 600);
+
         RateLimiter::for('chat', fn (Request $request) => Limit::perMinute($chatLimit)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('mcp', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('tools', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
+        RateLimiter::for('console', fn (Request $request) => Limit::perMinute($consoleLimit)->by($request->user()?->id ?: $request->ip()));
 
         $router = $this->app->make(ProviderRouter::class);
 

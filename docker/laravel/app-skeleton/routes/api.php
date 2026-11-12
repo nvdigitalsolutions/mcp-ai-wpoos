@@ -45,7 +45,7 @@ Route::prefix('api/v1')->group(function (): void {
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/session/me', [SessionController::class, 'me']);
 
-        Route::middleware('throttle:tools')->group(function (): void {
+        Route::middleware('throttle:console')->group(function (): void {
             Route::get('/settings', [SettingsController::class, 'index']);
             Route::get('/settings/schema', [SettingsController::class, 'schema']);
             Route::get('/settings/values', [SettingsController::class, 'values']);

@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–1 implemented and verified; Phase 2 assistant-studio foundation and Phase 3a persistence cluster implemented (2026-11-12) · Phases 3b–5 planned
+**Status:** Phases 0–3b implemented and verified; Phase 2 assistant-studio foundation and the Phase 3a/3b persistence + operations clusters implemented (2026-11-12) · Phases 4–5 planned
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -55,14 +55,19 @@ Rank Math).
 | Golden fixtures captured from WordPress | **Pending** | Shape tests stand in; capture requires a live Complete site |
 | Playwright T0 smoke (G1) | **Pending** | Phase 1 task 1.7 |
 | Blueprints/teams/test-assistant | **Pending (Phase 2)** | See §6 |
-| Approvals/schedules/security/records/uploads, Pro manifests | **Pending (Phases 3b–4)** | See §7–§8 |
+| Approvals queue (list/create/approve/deny) | **Done (Phase 3b)** | `ApprovalsController`, `nvoos_approvals` |
+| Workflow triggers (list/create/update/delete) | **Done (Phase 3b)** | `TriggersController`, `nvoos_triggers` |
+| Security posture / header preview / snapshots / self-test | **Done (Phase 3b)** | `SecurityController`, `nvoos_security_snapshots` |
+| Paper Store (collections, record CRUD, search) | **Done (Phase 3b)** | `PaperStoreController`, `nvoos_paper_records` |
+| Schedule CRUD, content records, file uploads, Pro manifests | **Pending (Phases 3b–4)** | §7 remainder + §8 |
 
 **Validation record (2026-11-12):**
 
 - Adapter PHPUnit: **34 tests, 101 assertions**
 - Console Vitest: **12 files, 112 tests**
 - Console typecheck: clean
-| Laravel app PHPUnit: **38 tests, 192 assertions**
+- Laravel app PHPUnit: **55 tests, 335 assertions**
+- Phase 3b soak (30 min, 2026-11-12): **1,644 iterations / 19,731 requests / 0 violations** — p50 81.9 ms · p95 212.4 ms · p99 338.8 ms · max 982.2 ms at 10.96 req/s; app RSS flat (203 → 194 MiB), DB flat
 - `node --check scripts/serve.mjs`: clean
 
 ---
@@ -151,12 +156,29 @@ the estate reaches `bundle_imported`.
 | 3.3 | Session log store | `SessionLogStoreInterface` | ✅ (adapter; no console surface yet) |
 | 3.4 | Token usage + cost aggregation | `TokenUsageInterface` | ✅ |
 | 3.5 | Rate limiter adapter | `RateLimiterInterface` | ✅ |
-| 3.6 | Approvals + orchestration control | `OrchestrationControlInterface` | ⏳ |
-| 3.7 | Schedules + triggers | queue + cron status | ⏳ |
+| 3.6 | Approvals + orchestration control | `OrchestrationControlInterface` | ✅ list/create/approve/deny, 409 on double-resolve |
+| 3.7 | Schedules + triggers | queue + cron status | ✅ trigger CRUD + toggle; ❌ schedule CRUD (`schedule-manager.ts`) open |
 | 3.8 | Analytics + performance monitor | `PerformanceMonitorInterface` | ✅ analytics; performance monitor ⏳ |
-| 3.9 | Security center + audit log | audit store | ⏳ |
-| 3.10 | Records + paper store | `ContentStoreInterface` + storage | ⏳ |
+| 3.9 | Security center + audit log | audit store | ✅ posture/headers/snapshots/self-test (8 native signals — see §14) |
+| 3.10 | Records + paper store | `ContentStoreInterface` + storage | ✅ Paper Store (collections, CRUD, search, filters); ❌ content records (`records.ts`) open |
 | 3.11 | File upload/validation | `FileUploadServiceInterface` | ⏳ |
+
+**Phase 3b notes**
+
+- **Console limiter split.** Every console CRUD route originally shared
+  `throttle:tools` (60/min). One console page fans out into several reads, so the
+  budget starved the SPA and blocked sustained load tests. Console routes now use a
+  `console` limiter (600/min per user, `NVOOS_CONSOLE_RATE_LIMIT`); actual tool
+  execution keeps `throttle:tools`.
+- **Snapshots never persist secrets.** `SettingsSchema::sensitiveKeys()` replaces
+  provider credentials with the masked placeholder before the payload is stored, and
+  `restore` skips that placeholder — a restore can never write `**************` over
+  a live key.
+- **Posture is a native subset.** The Laravel report ships 8 signals across the same
+  four subtabs. The SPA parser is defensive, so it renders fewer cards rather than
+  breaking; parity is tracked in §14.
+- **Paper Store ids** are slugged and uniquified per collection (`same-title`,
+  `same-title-2`), matching the WordPress store's read shape.
 
 **Gate G3:** the contract suite is green for every enabled family; the auth matrix (admin/editor/
 author/viewer/guest/bearer) passes on every mutating route.
@@ -219,7 +241,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 
 ---
 
-## 11. File map (Phases 0–3a implementation)
+## 11. File map (Phases 0–3b implementation)
 
 **Core / adapter**
 
@@ -228,6 +250,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `lib/laravel-adapter/src/Adapter/JobStatusStore.php` (`counts()`, raw rows, retry/dismiss)
 - `lib/laravel-adapter/src/Adapter/{TranscriptStore,MemoryStore,SessionLogStore,TokenUsage,RateLimiter}.php` (new)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000009..000012_*.php` (new)
+- `lib/laravel-adapter/database/migrations/2026_01_01_000013..000016_*.php` (new — approvals, triggers, security snapshots, paper records)
 - `lib/laravel-adapter/config/nvoos.php` (`pro_entitlement`, `features`)
 - `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` (binding)
 - `lib/laravel-adapter/tests/ProEntitlementTest.php` (new)
@@ -247,6 +270,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Controllers/{FeaturesController,SessionController,SiteController,ToolsController,OpsController}.php`
 - `app/Http/Controllers/{SettingsController,DiagnosticsController,OperationsController}.php`
 - `app/Http/Controllers/{TranscriptsController,MemoryController,AnalyticsController}.php`
+- `app/Http/Controllers/{ApprovalsController,TriggersController,SecurityController,PaperStoreController}.php`
 - `app/Http/Controllers/{AssistantController,AssistantPortabilityController}.php`
 - `app/Support/{CapabilityMap,SettingsSchema}.php`
 - `app/Services/LaravelAssistantService.php`
@@ -254,7 +278,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Middleware/AcceptWpNonce.php`
 - `routes/api.php`
 - `bootstrap/app.php` (`statefulApi()`, CSRF alias)
-- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest}.php`
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
 
 ---
@@ -266,11 +290,37 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
 | Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 112 pass |
 | Console types | `npm run typecheck` | clean |
-| Laravel app | `docker exec oos-laravel-app php artisan test` | 38 pass |
+| Laravel app | `docker exec oos-laravel-app php artisan test` | 55 pass |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
 CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
 run the Laravel app suite on PRs touching `docker/laravel/**`.
+
+### Soak harness
+
+`docker/laravel/soak/phase3b-soak.php` exercises every Phase 3b surface for a fixed
+wall-clock duration and exits non-zero on any contract violation or when p95 latency
+exceeds 500 ms.
+
+```bash
+# Mint a bearer token for the soak user
+docker exec oos-laravel-app php artisan tinker \
+  --execute="echo \App\Models\User::first()->createToken('soak')->plainTextToken;"
+
+# 30-minute run at ~1 iteration/second (~10 requests/second)
+php docker/laravel/soak/phase3b-soak.php \
+  --base=http://127.0.0.1:8001 \
+  --token='<sanctum-bearer>' \
+  --minutes=30 --rate=1 \
+  --out=docker/laravel/soak/phase3b-30min-report.json
+
+# Clean up the append-only approval rows afterwards
+docker exec oos-laravel-app php artisan tinker \
+  --execute="\DB::table('nvoos_approvals')->where('session_id','soak')->delete();"
+```
+
+The harness creates and deletes its own paper records and reuses a single trigger,
+so only approval history grows during a run.
 
 ---
 
@@ -285,6 +335,7 @@ run the Laravel app suite on PRs touching `docker/laravel/**`.
 | `NVOOS_PRO_ENTITLEMENT_DRIVER` | Laravel adapter | `allow`, `deny`, `config` |
 | `NVOOS_PRO_PLAN` | Laravel adapter | plan label for diagnostics |
 | `NVOOS_PRO_ENTITLEMENT_FEATURES` | Laravel adapter | JSON map for the `config` driver (optional) |
+| `NVOOS_CONSOLE_RATE_LIMIT` | Laravel adapter | Console CRUD requests/minute per user (default `600`); tool execution keeps `throttle:tools` at 60/min |
 
 **Deployment:** the Service Exchange deploys the same console artifact; `NVOOS_BACKEND=laravel` plus
 `NVOOS_TARGET_SITE=<laravel-origin>` satisfies `console_deployed`. **Rollback:** flip
@@ -302,6 +353,7 @@ run the Laravel app suite on PRs touching `docker/laravel/**`.
 | Pro toolkits as peers | Open (Q4) | Decide per family in Phase 4 |
 | SSO / cookie domain | Open (Q6) | Phase 5 task 5.3 |
 | Pro `mcp-ai-pro/v1` toolkit endpoints | Not started | Phase 4 |
+| Laravel posture parity | Open | The Laravel report ships 8 native signals; WordPress ships 21. The SPA parser is defensive, so fewer cards render — decide in Phase 5 whether to expand or document the runtime-specific set |
 | WP-native integrations | Non-goal | Deep-link or mark unavailable |
 
 ---
@@ -312,6 +364,7 @@ run the Laravel app suite on PRs touching `docker/laravel/**`.
 - [x] Phase 1 — T0 ops console (Playwright smoke pending)
 - [x] Phase 2 foundation — assistant CRUD + bundle export/import (blueprints/teams/test-assistant pending)
 - [x] Phase 3a — transcripts, memory, session logs, token usage/cost, rate limiter
-- [ ] Phase 3b — approvals, schedules/triggers, security/audit, records/paper store, uploads
+- [x] Phase 3b — approvals, workflow triggers, security center (posture/headers/snapshots/self-test), paper store
+- [ ] Phase 3b remainder — schedule CRUD, content records, file uploads
 - [ ] Phase 4 — Pro manifest engine + pilot families
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates

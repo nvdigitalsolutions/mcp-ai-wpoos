@@ -77,6 +77,17 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Console rate limit
+	|--------------------------------------------------------------------------
+	|
+	| The console issues many small reads per page. Tool execution keeps its
+	| own tighter limiter (`throttle:tools`); this budget covers admin CRUD.
+	|
+	*/
+	'console_rate_limit'   => (int) env( 'NVOOS_CONSOLE_RATE_LIMIT', 600 ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Feature Flags
 	|--------------------------------------------------------------------------
 	*/

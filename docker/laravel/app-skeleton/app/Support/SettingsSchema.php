@@ -149,4 +149,18 @@ final class SettingsSchema
     {
         return array_column(self::fields(), 'key');
     }
+
+    /**
+     * Keys whose values must never be written to a durable record (backups,
+     * snapshots, logs). Only the masked placeholder may be persisted.
+     *
+     * @return list<string>
+     */
+    public static function sensitiveKeys(): array
+    {
+        return array_column(
+            array_filter(self::fields(), static fn (array $field): bool => (bool) ($field['sensitive'] ?? false)),
+            'key',
+        );
+    }
 }
