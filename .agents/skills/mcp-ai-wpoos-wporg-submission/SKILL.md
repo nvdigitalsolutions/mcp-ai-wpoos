@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub, nvoos-content-graph, nvoos-design-system, nvoos-forge-bridge). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop, the recurring non-pattern findings the AI reviewer keeps catching (public-endpoint target authorization, forwarding-header trust, wp_send_json/die in REST), readme.txt standards, .wordpress-org listing assets, the main-plugin packaging tri-sync and git archive parity, and the NV oOS Complete checkout-flow disclosure discipline. Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, triaging PCP findings, or capturing listing screenshots."
+description: "WordPress.org submission readiness for NV oOS standalone plugins (docs-hub, content-graph, design-system, forge-bridge): the 18 guidelines, the Plugin Check (PCP) CI/Docker gate, finding triage, reviewer replies (public-endpoint authz, forwarding-header trust, wp_send_json/die), readme.txt + listing assets, packaging tri-sync and git archive parity, and Complete checkout disclosures. Use when preparing a submission, fixing plugin-check, or triaging PCP findings."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos

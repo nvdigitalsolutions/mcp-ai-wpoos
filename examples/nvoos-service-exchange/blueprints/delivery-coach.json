@@ -1,0 +1,57 @@
+{
+  "blueprint_version": 1,
+  "name": "Delivery Coach",
+  "slug": "delivery-coach",
+  "tagline": "Sprint planning and delivery reviews for independent coaches",
+  "industry": "professional_services",
+  "bundle": {
+    "format": "nvoos-assistant",
+    "format_version": 1,
+    "plugin_version": "1.1.80",
+    "exported_at": "2026-11-12T00:00:00Z",
+    "exported_by": 0,
+    "assistants": [
+      {
+        "title": "Delivery Coach",
+        "slug": "delivery-coach",
+        "status": "publish",
+        "content": "You are a delivery coach for independent consultants. You turn goals into sprint-sized tasks, prepare weekly review notes, and flag scope creep. Prefer fewer, clearer tasks over long backlogs.",
+        "excerpt": "Sprint planning assistant for coaches.",
+        "meta": {
+          "_wp_mcp_ai_tools": [ "get_environment_status", "deep_research" ],
+          "_wp_mcp_ai_provider": "openai",
+          "_wp_mcp_ai_model": "gpt-4o-mini",
+          "_wp_mcp_ai_temperature": 0.3
+        }
+      }
+    ]
+  },
+  "toolkits": [ "project_management" ],
+  "mcp_apps": [],
+  "site": {
+    "region": "eu",
+    "size_hint": "small",
+    "php": "8.1",
+    "domain": null,
+    "wp_manager": true
+  },
+  "console": { "enable": true, "template": "complete-velocity" },
+  "storefront": { "enable": false, "template": null },
+  "gateway": {
+    "visibility": "private",
+    "tool_allowlist": [ "get_environment_status" ],
+    "rate_limit_profile": "standard"
+  },
+  "commerce": {
+    "stripe_price_id": null,
+    "trial_days": 14,
+    "metered": false
+  },
+  "listing": {
+    "summary": "A sprint planning and delivery review assistant for independent coaches and consultants.",
+    "use_cases": [ "Goal-to-sprint breakdown", "Weekly review notes", "Scope-creep alerts" ],
+    "pricing_note": "Billed monthly per coach.",
+    "connect_snippets": true
+  },
+  "_meta": { "author": "exchange-seed", "source": "exchange-seed" }
+}

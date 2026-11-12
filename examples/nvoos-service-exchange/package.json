@@ -1,0 +1,47 @@
+{
+  "name": "nvoos-service-exchange",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "UNLICENSED",
+  "description": "NV oOS Service Exchange — provisioning wizard and control plane for expert-deployed MCP SaaS estates on Cloudways. Vite wizard + zero-dependency Node control plane.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:server": "node --test \"server/**/*.test.js\"",
+    "serve": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "probe:cloudways": "node scripts/cloudways-api-probe.mjs",
+    "probe:mcp": "node scripts/cloudways-mcp-probe.mjs",
+    "validate:skills": "node scripts/validate-skill-frontmatter.mjs"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "22.15.17",
+    "@types/react": "19.1.4",
+    "@types/react-dom": "19.1.4",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^29.1.1",
+    "typescript": "5.8.3",
+    "vite": "^8.3.4",
+    "vitest": "^4.1.11",
+    "yaml": "^2.9.1"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

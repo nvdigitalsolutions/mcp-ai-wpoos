@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-dictation-app
-description: Operational guide for the NV oOS Cognition desktop companion app (Tauri v2 + Rust, examples/nvoos-dictate) — the local-first engine track (parakeet/whisper/fastconformer/moonshine/silero-vad), the Stage-2 polish provider track (disabled/openai_compat/nvoos + local LM Studio and Ollama), the camera/object-detection + VLM relabeling tracks, the screen-OCR snippet track, the document-OCR input track (PDF/multi-page TIFF via pdfium-render, plus the DeepSeek-OCR local model tier), the CDP browser-control agent (feature agent) + FastConformer engine, and the test/clippy gate matrix. Use when building, extending, or debugging the dictation app, adding an engine/model, a polish provider, the browser agent, file/video transcription, camera/vision detection, VLM relabeling, screen OCR, document OCR, or the DeepSeek-OCR model tier.
+description: "Operational guide for the NV oOS Cognition desktop app (Tauri v2 + Rust, examples/nvoos-dictate): local-first engines (parakeet/whisper/fastconformer/moonshine/silero-vad), Stage-2 polish providers (openai_compat/nvoos, LM Studio, Ollama), camera detection + VLM relabeling, screen and document OCR (pdfium-render, DeepSeek-OCR), the CDP browser agent, and the test/clippy gates. Use when building/debugging the dictation app, adding an engine, provider, vision/OCR feature, or the browser agent."
 license: Proprietary. See examples/nvoos-dictate/LICENSE.txt
 metadata:
   app: nvoos-dictate
