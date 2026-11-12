@@ -1,0 +1,207 @@
+# Mirror a monorepo GitHub Release into its synced standalone repo.
+#
+# The monorepo stays the build authority: every ZIP/SHA256 is built exactly
+# once, by the workflow that owns the package. This reusable workflow copies
+# the assets already attached to that release into a release on the mirror
+# repo (the target of the matching sync-*.yml subtree push), so the standalone
+# repo is installable on its own instead of sending users back to the
+# monorepo for downloads.
+#
+# The mirror tag is created at the mirror's `main` HEAD — the branch every
+# sync workflow force-pushes. `version_file` optionally reads that HEAD's
+# plugin header and warns (does not fail) when the mirror lags the release,
+# which is the normal state while a sync run is still in flight.
+#
+# Auth: MIRROR_TOKEN is the same `*_REPO_TOKEN` secret the sync workflow
+# already uses — a PAT with `contents: write` on the mirror repo. When the
+# secret is absent the preflight job skips the mirror publish and the caller
+# stays green.
+
+name: Mirror Release
+
+on:
+  workflow_call:
+    inputs:
+      mirror_repo:
+        description: 'Mirror repository (owner/name).'
+        required: true
+        type: string
+      tag:
+        description: 'Release tag; the same tag is created in both repositories.'
+        required: true
+        type: string
+      release_name:
+        description: 'Release title shown on the mirror.'
+        required: true
+        type: string
+      source_tag:
+        description: 'Monorepo release tag whose assets are copied.'
+        required: true
+        type: string
+      body:
+        description: 'Release notes. A provenance footer is appended.'
+        required: false
+        type: string
+        default: ''
+      asset_patterns:
+        description: 'Newline-separated `gh release download` patterns.'
+        required: false
+        type: string
+        default: |
+          *.zip
+          *.sha256
+      version_file:
+        description: 'Optional mirror-relative plugin header file used to verify the release version.'
+        required: false
+        type: string
+        default: ''
+      draft:
+        description: 'Create the mirror release as a draft.'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      MIRROR_TOKEN:
+        description: 'PAT with contents:write on the mirror repo (the sync workflow token).'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Check mirror token
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - name: Check MIRROR_TOKEN
+        id: check
+        env:
+          TOKEN: ${{ secrets.MIRROR_TOKEN }}
+        run: |
+          if [ -n "${TOKEN}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::MIRROR_TOKEN is not configured — skipping the release mirror to ${{ inputs.mirror_repo }}."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  mirror:
+    name: Publish ${{ inputs.tag }} to ${{ inputs.mirror_repo }}
+    needs: preflight
+    if: needs.preflight.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download assets from the source release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ASSET_PATTERNS: ${{ inputs.asset_patterns }}
+          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_TAG: ${{ inputs.source_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+
+          patterns=()
+          while IFS= read -r pattern; do
+            # Normalise CRLF from the caller's block scalar.
+            pattern="${pattern%$'\r'}"
+            if [ -n "${pattern//[[:space:]]/}" ]; then
+              patterns+=(--pattern "${pattern}")
+            fi
+          done <<< "${ASSET_PATTERNS}"
+
+          gh release download "${SOURCE_TAG}" \
+            --repo "${SOURCE_REPO}" \
+            --dir dist \
+            ${patterns[@]+"${patterns[@]}"}
+
+          count="$(find dist -maxdepth 1 -type f | wc -l)"
+          echo "Downloaded ${count} asset(s) from ${SOURCE_REPO}@${SOURCE_TAG}:"
+          find dist -maxdepth 1 -type f -printf '%f\n' | sort
+          if [ "${count}" -eq 0 ]; then
+            echo "::error::No assets matched the source release ${SOURCE_TAG}."
+            exit 1
+          fi
+
+      - name: Wait for the mirror source to catch up
+        if: inputs.version_file != ''
+        env:
+          GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          MIRROR_REPO: ${{ inputs.mirror_repo }}
+          VERSION_FILE: ${{ inputs.version_file }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          release_version="${TAG##*-v}"
+
+          read_version() {
+            gh api "repos/${MIRROR_REPO}/contents/${VERSION_FILE}?ref=main" \
+              --jq '.content' 2>/dev/null \
+              | base64 -d 2>/dev/null \
+              | grep -iE 'Version:' | head -n1 \
+              | sed 's/.*[Vv]ersion:[[:space:]]*//' | tr -d '[:space:]*' \
+              || true
+          }
+
+          # The sync workflow runs on the branch push, not on the tag push, so
+          # main is normally current already. Give an in-flight sync a minute
+          # to land before the tag is created, then proceed anyway — the
+          # warning is actionable and the assets stay correct.
+          for attempt in 1 2 3 4 5 6; do
+            mirror_version="$(read_version)"
+            if [ "${mirror_version}" = "${release_version}" ]; then
+              echo "Mirror main is at ${release_version} (attempt ${attempt})."
+              exit 0
+            fi
+            echo "Mirror main is at ${mirror_version:-unknown}; expected ${release_version} (attempt ${attempt}/6)."
+            sleep 10
+          done
+
+          echo "::warning::${MIRROR_REPO}@main did not reach ${release_version} within 60s — the mirror tag may point at the previous sync."
+
+      - name: Create or update the mirror release
+        env:
+          GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          MIRROR_REPO: ${{ inputs.mirror_repo }}
+          TAG: ${{ inputs.tag }}
+          RELEASE_NAME: ${{ inputs.release_name }}
+          RELEASE_BODY: ${{ inputs.body }}
+          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_TAG: ${{ inputs.source_tag }}
+          IS_DRAFT: ${{ inputs.draft }}
+        run: |
+          set -euo pipefail
+          source_url="https://github.com/${SOURCE_REPO}/releases/tag/${SOURCE_TAG}"
+          footer="$(printf '\n\n---\n\nMirrored from [%s@%s](%s) at commit %s. The monorepo release remains the canonical build.' \
+            "${SOURCE_REPO}" "${SOURCE_TAG}" "${source_url}" "${GITHUB_SHA}")"
+          body="${RELEASE_BODY}${footer}"
+
+          if gh release view "${TAG}" --repo "${MIRROR_REPO}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists on ${MIRROR_REPO} — updating it."
+            gh release edit "${TAG}" --repo "${MIRROR_REPO}" \
+              --title "${RELEASE_NAME}" --notes "${body}"
+          else
+            args=(--title "${RELEASE_NAME}" --notes "${body}" --target main)
+            if [ "${IS_DRAFT}" = "true" ]; then
+              args+=(--draft)
+            fi
+            gh release create "${TAG}" --repo "${MIRROR_REPO}" "${args[@]}"
+          fi
+
+      - name: Upload assets to the mirror release
+        env:
+          GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          MIRROR_REPO: ${{ inputs.mirror_repo }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(dist/*)
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "::error::No files left to upload."
+            exit 1
+          fi
+          gh release upload "${TAG}" "${files[@]}" \
+            --repo "${MIRROR_REPO}" --clobber

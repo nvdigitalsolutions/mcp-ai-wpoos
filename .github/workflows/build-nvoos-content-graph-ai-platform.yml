@@ -273,3 +273,36 @@ jobs:
             artifacts/*.sha256
           draft: false
           prerelease: false
+
+  # ===========================================================================
+  # Mirror the release assets into the standalone repo
+  # (nvdigitalsolutions/nvoos-content-graph-ai-platform). See
+  # .github/workflows/mirror-release.yml.
+  # ===========================================================================
+  mirror-release:
+    name: Mirror Release
+    needs: [build, release]
+    if: needs.release.result == 'success'
+    uses: ./.github/workflows/mirror-release.yml
+    with:
+      mirror_repo: nvdigitalsolutions/nvoos-content-graph-ai-platform
+      tag: content-graph-ai-platform-v${{ needs.build.outputs.version }}
+      source_tag: content-graph-ai-platform-v${{ needs.build.outputs.version }}
+      release_name: NV oOS Content Graph AI Platform v${{ needs.build.outputs.version }}
+      version_file: nvoos-content-graph-ai-platform.php
+      body: |
+        ## NV oOS Content Graph AI Platform v${{ needs.build.outputs.version }}
+
+        Platform layer for NV oOS Content Graph. Adds agents, skills, slash-commands, harness, measurement, professions, A2A, ACP, federation, and blueprints on top of the AI addon.
+
+        ### Requirements
+
+        - WordPress 6.5+
+        - PHP 8.1+
+        - NV oOS Content Graph AI addon active
+
+        ### Checksum
+
+        See the `.sha256` file attached to this release.
+    secrets:
+      MIRROR_TOKEN: ${{ secrets.NVOOS_CONTENT_GRAPH_AI_PLATFORM_REPO_TOKEN }}

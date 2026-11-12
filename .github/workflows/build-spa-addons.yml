@@ -674,3 +674,65 @@ jobs:
             artifacts/*.sha256
           draft: false
           prerelease: false
+
+  # ===========================================================================
+  # Resolve the docs-hub version for the mirror release. A dedicated job is
+  # needed because `release` is a matrix job — its step outputs are not
+  # addressable from a downstream job.
+  # ===========================================================================
+  docs-hub-version:
+    name: Resolve docs-hub version
+    needs: matrix-prep
+    runs-on: ubuntu-latest
+    if: contains(fromJSON(needs.matrix-prep.outputs.addons).*.slug, 'docs-hub')
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [[ "$GITHUB_REF" == refs/tags/docs-hub-v* ]]; then
+            VERSION="${GITHUB_REF_NAME#docs-hub-v}"
+          else
+            VERSION=$(grep -E "^\s*\*\s*Version:" addons/docs-hub/nvoos-docs-hub.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+            VERSION="${VERSION:-dev}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+  # ===========================================================================
+  # Mirror the docs-hub release into nvdigitalsolutions/nvoos-docs-hub so the
+  # standalone repo carries its own downloadable ZIP. See
+  # .github/workflows/mirror-release.yml.
+  # ===========================================================================
+  mirror-release:
+    name: Mirror Release (docs-hub)
+    needs: [matrix-prep, docs-hub-version, release]
+    if: |
+      needs.release.result == 'success' &&
+      contains(fromJSON(needs.matrix-prep.outputs.addons).*.slug, 'docs-hub')
+    uses: ./.github/workflows/mirror-release.yml
+    with:
+      mirror_repo: nvdigitalsolutions/nvoos-docs-hub
+      tag: docs-hub-v${{ needs.docs-hub-version.outputs.version }}
+      source_tag: docs-hub-v${{ needs.docs-hub-version.outputs.version }}
+      release_name: NV oOS docs-hub Addon v${{ needs.docs-hub-version.outputs.version }}
+      version_file: nvoos-docs-hub.php
+      body: |
+        ## NV oOS docs-hub Addon v${{ needs.docs-hub-version.outputs.version }}
+
+        Pre-built SPA addon for the NV oOS platform. Ships with compiled assets — no build step required on your server.
+
+        ### Requirements
+
+        - NV oOS Base Plugin active
+        - WordPress 6.0+
+        - PHP 7.4+
+
+        ### Checksum
+
+        See the `.sha256` file attached to this release.
+    secrets:
+      MIRROR_TOKEN: ${{ secrets.NVOOS_DOCS_HUB_REPO_TOKEN }}
