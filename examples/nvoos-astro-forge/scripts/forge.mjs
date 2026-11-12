@@ -2401,8 +2401,13 @@ async function runVerify( profileRef, options ) {
 				const ordered = [ ...failures, ...warnings ];
 				for ( const deviation of ordered.slice( 0, limit ) ) {
 					const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
-					const actual = deviation.actual === null ? 'missing' : `${ deviation.actual }px`;
-					console.warn( `${ mark } Geometry: band ${ deviation.sectionId } @ ${ deviation.viewport } ${ deviation.metric } — source ${ deviation.expected }px, build ${ actual }` );
+					// The `columns` metric compares how MANY lanes the row has, not
+					// their heights — printing "source 2px" read as a 2-pixel column.
+					const countMetric = deviation.metric === 'columns';
+					const unit = countMetric ? ' column(s)' : 'px';
+					const actual =
+						deviation.actual === null ? 'missing' : `${ deviation.actual }${ unit }`;
+					console.warn( `${ mark } Geometry: band ${ deviation.sectionId } @ ${ deviation.viewport } ${ deviation.metric } — source ${ deviation.expected }${ unit }, build ${ actual }` );
 				}
 				if ( ordered.length > limit ) {
 					console.warn( `  \u2026 ${ ordered.length - limit } more deviation(s); raise --geometry-limit to see them.` );

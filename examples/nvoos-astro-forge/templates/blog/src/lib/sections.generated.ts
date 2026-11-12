@@ -65,6 +65,11 @@ export interface SectionTheme {
 	box?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
 	/** Cropped-media heights, emitted as `img.<class>` only. */
 	media?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
+	/** The band's measured COLUMN geometry, keyed by the column's unique class:
+	 * a rendered `min-height` floor plus a fixed background photo's attachment
+	 * and size. Emitted as band-scoped `.class` rules (the sanitizer keeps the
+	 * class but drops the inline layout, and the vendor sheet never ships). */
+	columnBox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;
 	/** The boxed container width (the source constrains its content —
 	 * jayainc's Elementor 1140px default). Absent → the site measure. A
 	 * per-device map is emitted as scoped CSS: an inline value would

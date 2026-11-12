@@ -694,6 +694,48 @@ const bandBoxCss = sections
 	.join( '' );
 
 /**
+ * The band's measured COLUMN geometry (`bandFacts.columns` → `columnBox`),
+ * scoped to the band and keyed by the column's own class.
+ *
+ * Two facts the sanitized markup cannot carry: the rendered `min-height` floor
+ * (the sanitizer drops inline layout) and a fixed background photo's
+ * `background-attachment`/`size` (declared by the vendor sheet, which never
+ * ships). virtuallyjamaica's HOW IT WORKS band is a 700px fixed-photo column
+ * beside 948px of copy — without this the image column collapsed to its empty
+ * wrapper and the photo scrolled.
+ */
+const bandColumnCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const columnBox = theme?.columnBox;
+		if ( ! id || ! columnBox ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return Object.entries( columnBox )
+			.map( ( [ name, fact ] ) => {
+				// The `.post-body` form outranks the builder shim's photo-panel
+				// `min-height` clamp (equal specificity today, order-dependent); the
+				// plain form keeps a non-passthrough band working.
+				const selector = `${ scoped } .post-body .${ name }, ${ scoped } .${ name }`;
+				const rules: string[] = [];
+				if ( fact.base ) {
+					rules.push( `${ selector }{${ fact.base }}` );
+				}
+				if ( fact.tablet ) {
+					rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selector }{${ fact.tablet }}}` );
+				}
+				if ( fact.mobile ) {
+					rules.push( `@media (max-width: 767px){${ selector }{${ fact.mobile }}}` );
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
+/**
  * The controls' measured interaction STATES (`analyze` interaction pass), scoped
  * to the band that owns them.
  *
@@ -792,8 +834,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandColumnCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandColumnCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);

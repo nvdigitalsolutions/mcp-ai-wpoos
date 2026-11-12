@@ -304,3 +304,102 @@ node scripts/forge.mjs verify sites/virtuallyjamaica.json \
 `--geometry` needs Playwright (`npm i -D playwright`, `npx playwright install
 chromium`). It is opt-in on the CLI and skipped with a warning — never a pass —
 when the browser or the baseline is absent.
+
+## 11. Columns: measured heights, fixed photos, unequal rows
+
+`analyze --geometry` measures each band's **direct columns** at all three
+viewports, not just the band box, because two of the source's most visible
+properties live only in the columns:
+
+* a photo column's height (the sanitizer drops the inline `min-height: 700px`);
+* its `background-attachment: fixed` + `background-size: cover` (the vendor
+  sheet that declared them never ships).
+
+`collectBandColumnFacts` (`lib/geometry.ts`) descends single-child wrappers
+(`section > .container-fluid > .row`), takes the children that are ≥40px wide
+**and ≥8px tall**, and accepts them as a row only when it is a grid by class
+(`row|vc_row|wpb_row|brando*row`, or a child with `column|e-con`) or when the
+children share a top and tile ≥90% of the width. The 8px floor exists because
+builders ship 2px spacer columns that otherwise read as a "row" and disagree
+between the facts pass and the geometry pass.
+
+Each fact is keyed by a **unique CSS-safe class token in that band** (preferring
+`column|col-|e-con|vc_col`). `wpb_column` is shared by every column and would
+style them all.
+
+Recorded per device, then re-stated by `columnBoxFacts` (`lib/geometry.ts`) as
+band-scoped `columnBox` CSS, emitted by `DesignRenderer.astro`:
+
+| measured | declaration |
+| --- | --- |
+| height 700 | `--ds-col-min-h:700px; min-height:700px` |
+| heights differ by >8px | `align-self:start` (otherwise the grid stretches) |
+| image, `fixed` | `background-attachment:fixed` |
+| image | `background-size:<size>` (`auto` when the fact carries none) |
+
+`geometry.desktop.columns = [700, 946]` is also stored, and `diffGeometry`
+compares the build's columns pairwise — a warn at `tolerance.height`, a fail at
+3× — plus a **count** warn when the lane count differs.
+
+### 11.1 Why `--ds-col-min-h` instead of a higher-specificity rule
+
+The builder shim in `templates/blog/src/styles/global.css` gives a photo column a
+guessed `clamp(18rem, 36vw, 40rem)` floor so an unmeasured panel never collapses.
+That selector is `.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[style*='background-image']`
+(specificity 0,4,0) and out-weighs any band-scoped rule (0,3,0). Raising the
+generated rule's weight would be a permanent war — every future shim token would
+need a matching one. Instead the **shim reads the property**:
+
+```css
+min-height: var(--ds-col-min-h, clamp(18rem, 36vw, 40rem));
+```
+
+so a measured height wins on VALUE and the result is identical whichever rule
+wins the cascade. Two consequences are load-bearing:
+
+* the shim rule is scoped to **direct row children**, because the property
+  inherits and a column nested inside a photo panel must not pick up its floor;
+* the centring chain's `min-height: 0` became `var(--ds-col-min-h, 0)` — a
+  centred band's column is part of that chain, and the literal `0` zeroed the
+  source's own 374px about-band column.
+
+### 11.2 A device must be able to UNDO the base
+
+Media queries add declarations; they do not remove the base rule. So:
+
+* `background-attachment` and `background-size` are emitted on **every** device,
+  not just when they look interesting — virtuallyjamaica is `fixed` at desktop
+  and `scroll` at tablet/mobile (iOS ignores fixed panels), and an omitted
+  tablet declaration left the desktop `fixed` in force;
+* a device that measured no height emits `--ds-col-min-h:initial;min-height:0`
+  (`initial` restores the shim's clamp as the fallback rather than pinning 0).
+
+### 11.3 Builder breakpoints are Bootstrap 3's
+
+The span map in the shim maps `vc_col-*` at **768 / 992 / 1200**, not at the
+template's own 768 / 1025. WPBakery compiles against Bootstrap 3, so:
+
+* `vc_col-sm-12 vc_col-md-6 vc_col-lg-6` **stacks at 834** (750px columns,
+  413 / 290) and splits 6/6 only from 992 (485 / 485 at 1100);
+* with `md` mapped to 768–1024 the rebuild split 6/6 at tablet, squeezed the copy
+  into 375px, and its columns measured 510 / 348 against the source's 413 / 290.
+
+The measured column heights are what exposed this — a band-height gate alone
+could not see it.
+
+### 11.4 Component bands are exempt from the column diff
+
+A band forged from a component (`hero`, `split`, `icon-list`, …) has no builder
+columns by design. `measureGeometry` tags built bands with `kind`
+(`data-section`), and `diffGeometry` skips the column comparison for anything
+that is not `text` / `raw` — otherwise every hero on every site warned about two
+"missing" source columns.
+
+### 11.5 Builder convention: the leading paragraph margin is zero
+
+WPBakery's sheet ships `.wpb_wrapper > :first-child { margin-top: 0 }`, and the
+source's box depends on it. virtuallyjamaica's red panel is one paragraph: the
+template's `p { margin: 24px 0 }` pushed the column 24px past the source. The shim
+zeroes `margin-top` on the first text child of a column and **keeps the trailing
+margin** (the source keeps its 10px inside the column's padding); the remaining
++14px is reported as a geometry warn, not silently absorbed.

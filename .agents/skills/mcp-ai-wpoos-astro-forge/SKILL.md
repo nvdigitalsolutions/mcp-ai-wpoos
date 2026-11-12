@@ -252,7 +252,9 @@ gates, visual-regression practice).
     fail at 2×; `--geometry-limit` caps output). Box metrics survive font and
     anti-aliasing differences, so no pixel thresholds or Docker font pinning.
     A 903px card from a missing `height: auto` is invisible to CSS review and
-    obvious here.
+    obvious here. It also measures each COLUMN's height, `attachment` and
+    `size` — a 700px fixed photo beside 946px of copy is a fact the sanitized
+    markup cannot carry. See `reference/band-geometry.md` §11.
   - Extraction now reads `@media` bodies (`rulesInMedia`) for `margin-top`/
     `margin-bottom`: a band flush on desktop but pulled on tablet/mobile is
     captured as `{ desktop, tablet, mobile }`, not flattened. An inline margin
@@ -1240,68 +1242,19 @@ are browser facts on `analyze --geometry`, stored as `profile.bandFacts` and
 
 ### Addendum (2026-11-11) — box facts, header LAYOUT, two sanitizer bugs
 
-Typography and scrolled colours were not sufficient. Four more measured facts,
-all general to builder-based sites (detail: reference §6–§10):
+Typography and scrolled colours were not sufficient: four more measured facts
+(box facts, header LAYOUT, `stickyHeader.position`, container-per-device) plus
+two sanitizer bugs. The bullets — box diff, `media`, `themeToggle`, the pixel
+gate's source seam, gate policy, the per-device container, the `<p>`-class gap,
+`box`, `stickyHeader.position`, chrome-vs-nav ink and the fluid-band rule — moved
+to
+[`reference/measured-band-facts-and-sticky-header.md`](reference/measured-band-facts-and-sticky-header.md)
+§11 rather than restating the reference here. Read it before touching
+`bandFacts`, `chrome.headerBg` or the gate policy.
 
-- **`verify --geometry` now explains itself.** Any deviating band gets a box-tree
-  diff: the wrapper-vs-content split, the `hot path`, and the top contributors
-  (Layout-Instability-style attribution, capped at five), written to
-  `verify-artifacts/band-diff.json`. `--diff` forces it for every band. Read the
-  contract before writing another throwaway Playwright probe:
-  [`reference/band-diff.md`](reference/band-diff.md).
-- **`bandFacts[id].media`** — cropped-image heights, emitted as `img.<class>`
-  ONLY. A class can sit on an image AND a paragraph (`padding-six-lr` does), and
-  a fixed 711.5px image height applied to the paragraph made it 712px tall.
-- **`chrome.themeToggle`** — the template's theme toggle is an ADDITION: it
-  renders only when the SOURCE exposes a theme/colour-mode control
-  (`sourceHasThemeToggle`). A site with no dark mode otherwise shows a stray
-  button (virtuallyjamaica's floating `light`).
-- **The pixel gate is a SOURCE comparison.** `verify --pixel-record-source`
-  captures `verify-artifacts/source-<viewport>.png`; `--pixel` prefers it over a
-  regression `baseline-<viewport>.png` (a baseline shadowing the source reported
-  SSIM 1.0000 and hid real drift). `captureDist` resolves the root through
-  `builtStaticRoot`, because a SERVER-output build keeps its HTML in
-  `dist/client` — serving `dist/` answered `not found` and every capture was a
-  blank page read as a 95% difference.
-- **Gate policy is per site; the measurement is not.** `analyze` cannot decide
-  whether a pixel diff is acceptable — only the operator can. `profile.verify`
-  downgrades one of three addressable gates (`pixel parity`, `pixel regression`,
-  `box geometry`) to `advisory`: measured and reported, but not blocking.
-  `pixel parity` defaults to `auto` — advisory until a source seam exists, then
-  blocking. There is deliberately no `off`, and a build-vs-build diff is
-  `pixel regression`, never parity. Precedence is flag → profile → default.
-  Full rules in `reference/fidelity-gates.md` §Gate policy.
-- **The band's container is per DEVICE, and neither number is a constant.**
-  `bandFacts[id].container` records the source's inner container per viewport:
-  content width, its own `padX`, and `flush` — whether the band's grid CANCELS
-  that padding (a Bootstrap-family `.row` has a negative margin that pulls the
-  columns back out). `measure` is the BORDER-BOX width (`content + 2*padX`);
-  `paddingX` is `0` when flush. One desktop value plus `BAND_GUTTER_PX = 64` /
-  `FLUID_CONTAINER_MIN = 1300` compensated for a 32px desktop gutter at a viewport
-  where the template's own gutter is 16 — at 834px that rendered boxed bands 770px
-  wide against a 750px source. Both constants are now LEGACY fallbacks only.
-  Per-device maps go to scoped CSS (`responsiveBandCss`), never inline.
-  See `reference/band-geometry.md` §4.
-- **`<p>` still loses its class** (a known gap): restoring it without per-device
-  paragraph typography overshoots the band heights. See the note in
-  `sanitize.ts` before changing it.
-- **`bandFacts[id].box`** — computed `padding`/`margin` per class per device, plus
-  a CROPPED image's rendered height. The numeric scale is not a ladder, so this
-  outranks the utilities pack. Always emit `px`; record ZERO; emit the tablet
-  range EXCLUSIVELY (a cascading `max-width:1024` leaks into phones); and NEVER
-  restate half the Bootstrap grid (`container|container-fluid|row|vc_row|wpb_row`
-  are excluded — their padding and negative margin only work as a pair).
-- **`stickyHeader.position`** — a `fixed` source header floats OVER the first
-  band. Sticky pushed it down a full header height, leaving virtuallyjamaica's
-  WHITE logo/nav on the white page above the red hero. `site-header--float`.
-- **Chrome ink ≠ nav-link ink** (`--forge-header-nav-ink`), and a transparent rest
-  header CLEARS `chrome.headerBg` (`applyMeasuredHeader` reconciles the harvest).
-- **A fluid band must not be inset** — `paddingX: 0` when `containerWidth >= 1300`.
-
-Two bugs fixed: `class` was stripped from `h1`–`h6` (headings lost their measured
-box), and `--dark` set light ink on the WRAP instead of its children.
-virtuallyjamaica: **0 fail** box geometry, **0 drift** colour, **19 of 219**
-classes inert (was 109 of 196).
+Two bugs fixed in that pass: `class` was stripped from `h1`–`h6` (headings lost
+their measured box), and `--dark` set light ink on the WRAP instead of its
+children. virtuallyjamaica: **0 fail** box geometry, **0 drift** colour.
 
 ## Interaction states — hover, focus, press (2026-11-11)
 
