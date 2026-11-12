@@ -1,7 +1,7 @@
 /**
  * Pro SPA v2 — Toolkit engine client (Proposal 090-B §8).
  *
- * Wraps `/mcp-ai-pro/v1/toolkits` (WordPress) and `/api/v1/pro/toolkits`
+ * Wraps `/mcp-ai-pro/v1/toolkit-manifests` (WordPress) and `/api/v1/pro/toolkits`
  * (Laravel) — the manifest-driven Pro surface. Every family is described by
  * one manifest document; this client is the only place that knows the wire
  * shape, so the five generic screens stay declarative.

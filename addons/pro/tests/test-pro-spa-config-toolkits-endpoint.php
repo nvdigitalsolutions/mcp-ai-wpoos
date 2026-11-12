@@ -44,7 +44,7 @@ class Test_Pro_Spa_Config_Toolkits_Endpoint extends WP_UnitTestCase {
 		$runtime = WP_MCP_AI_Pro_SPA_Config::build();
 
 		$this->assertSame(
-			rest_url( 'mcp-ai-pro/v1/toolkits' ),
+			rest_url( 'mcp-ai-pro/v1/toolkit-manifests' ),
 			$runtime['endpoints']['toolkits']
 		);
 	}

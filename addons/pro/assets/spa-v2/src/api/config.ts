@@ -127,7 +127,7 @@ export interface ProSpaEndpoints {
 	/** Records schema REST base (mcp-ai-pro/v1/records/schema, 2.4.0). */
 	recordsSchema: string;
 	/**
-	 * Manifest-driven toolkit engine base (mcp-ai-pro/v1/toolkits, 2.5.0).
+	 * Manifest-driven toolkit engine base (mcp-ai-pro/v1/toolkit-manifests, 2.5.0).
 	 * Empty when the runtime has no toolkit engine — the pages render their
 	 * unavailable state instead of firing requests.
 	 */

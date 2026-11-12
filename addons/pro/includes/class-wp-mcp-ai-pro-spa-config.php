@@ -350,9 +350,10 @@ class WP_MCP_AI_Pro_SPA_Config {
 					: '',
 				// Manifest-driven toolkit engine (Proposal 090-B §8). The generic
 				// screens are shared with the Laravel runtime; the manifests live
-				// in includes/toolkits/manifests/.
+				// in includes/toolkits/manifests/. Base is /toolkit-manifests, not
+				// /toolkits, which the schedule-anything controller owns.
 				'toolkits'            => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
-					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/toolkits' ) )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/toolkit-manifests' ) )
 					: '',
 				'dashboardsSchema'    => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/dashboards/schema' ) )

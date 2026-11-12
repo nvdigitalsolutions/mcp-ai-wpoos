@@ -9,6 +9,10 @@
  * is the only PHP a new toolkit needs.
  *
  * Namespace: `mcp-ai-pro/v1` (Pro-only CRUD surface).
+ * Base: `/toolkit-manifests`. The schedule-anything controller owns
+ * `mcp-ai-pro/v1/toolkits` (per-tenant toggles), and `register_rest_route()`
+ * keys handlers by route + method, so the second registration for a route
+ * silently replaces the first. Keep the two bases distinct.
  * Auth: cookie + nonce; every route requires `manage_options`.
  * Envelope: `{ success: true, data: … }` / `{ success: false, error:
  * { code, message, fields? } }` — identical to the Laravel runtime so the
@@ -43,6 +47,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 		const NAMESPACE_V1 = 'mcp-ai-pro/v1';
 
 		/**
+		 * Route base.
+		 *
+		 * Not `/toolkits`: the schedule-anything controller registers that route
+		 * with a different payload, and duplicate route + method registrations
+		 * overwrite each other in WP_REST_Server.
+		 */
+		const BASE = '/toolkit-manifests';
+
+		/**
 		 * Register the toolkit routes.
 		 *
 		 * @return void
@@ -54,7 +67,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 
 			register_rest_route(
 				self::NAMESPACE_V1,
-				'/toolkits',
+				self::BASE,
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( __CLASS__, 'index' ),
@@ -64,7 +77,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 
 			register_rest_route(
 				self::NAMESPACE_V1,
-				'/toolkits/' . $slug,
+				self::BASE . '/' . $slug,
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( __CLASS__, 'show' ),
@@ -75,7 +88,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 
 			register_rest_route(
 				self::NAMESPACE_V1,
-				'/toolkits/' . $slug . '/settings',
+				self::BASE . '/' . $slug . '/settings',
 				array(
 					array(
 						'methods'             => WP_REST_Server::READABLE,
@@ -94,7 +107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 
 			register_rest_route(
 				self::NAMESPACE_V1,
-				'/toolkits/' . $slug . '/dashboard',
+				self::BASE . '/' . $slug . '/dashboard',
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( __CLASS__, 'dashboard' ),
@@ -105,7 +118,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 
 			register_rest_route(
 				self::NAMESPACE_V1,
-				'/toolkits/' . $slug . '/entities/' . $entity,
+				self::BASE . '/' . $slug . '/entities/' . $entity,
 				array(
 					array(
 						'methods'             => WP_REST_Server::READABLE,
@@ -125,7 +138,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 			// Literal segments before `{id}` so they win the match.
 			register_rest_route(
 				self::NAMESPACE_V1,
-				'/toolkits/' . $slug . '/entities/' . $entity . '/duplicates',
+				self::BASE . '/' . $slug . '/entities/' . $entity . '/duplicates',
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( __CLASS__, 'duplicates' ),
@@ -150,7 +163,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 
 			register_rest_route(
 				self::NAMESPACE_V1,
-				'/toolkits/' . $slug . '/entities/' . $entity . '/import',
+				self::BASE . '/' . $slug . '/entities/' . $entity . '/import',
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( __CLASS__, 'import' ),
@@ -161,7 +174,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Toolkit_REST_Controller' ) ) {
 
 			register_rest_route(
 				self::NAMESPACE_V1,
-				'/toolkits/' . $slug . '/entities/' . $entity . '/' . $id,
+				self::BASE . '/' . $slug . '/entities/' . $entity . '/' . $id,
 				array(
 					array(
 						'methods'             => WP_REST_Server::READABLE,

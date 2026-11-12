@@ -107,7 +107,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 	private function create_product( array $data ): WP_REST_Response {
 		return $this->request(
 			'POST',
-			'/toolkits/commerce/entities/product',
+			'/toolkit-manifests/commerce/entities/product',
 			array( 'data' => $data )
 		);
 	}
@@ -122,18 +122,18 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 	public function test_routes_require_manage_options(): void {
 		wp_set_current_user( 0 );
 
-		$anonymous = $this->request( 'GET', '/toolkits' );
+		$anonymous = $this->request( 'GET', '/toolkit-manifests' );
 
 		$this->assertContains( $anonymous->get_status(), array( 401, 403 ) );
 
 		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $subscriber );
 
-		$this->assertSame( 403, $this->request( 'GET', '/toolkits' )->get_status() );
+		$this->assertSame( 403, $this->request( 'GET', '/toolkit-manifests' )->get_status() );
 
 		wp_set_current_user( $this->admin );
 
-		$this->assertSame( 200, $this->request( 'GET', '/toolkits' )->get_status() );
+		$this->assertSame( 200, $this->request( 'GET', '/toolkit-manifests' )->get_status() );
 	}
 
 	// ------------------------------------------------------------- catalogue
@@ -146,7 +146,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 	public function test_catalogue_lists_the_shipped_manifests(): void {
 		wp_set_current_user( $this->admin );
 
-		$data = $this->request( 'GET', '/toolkits' )->get_data();
+		$data = $this->request( 'GET', '/toolkit-manifests' )->get_data();
 
 		$this->assertTrue( $data['success'] );
 		$this->assertSame( array(), $data['data']['invalid'] );
@@ -165,7 +165,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 	public function test_manifest_is_served(): void {
 		wp_set_current_user( $this->admin );
 
-		$data = $this->request( 'GET', '/toolkits/commerce' )->get_data();
+		$data = $this->request( 'GET', '/toolkit-manifests/commerce' )->get_data();
 
 		$this->assertSame( 'commerce', $data['data']['toolkit']['slug'] );
 		$this->assertContains( 'entities', $data['data']['toolkit']['screens'] );
@@ -180,7 +180,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 	public function test_unknown_toolkit_is_404(): void {
 		wp_set_current_user( $this->admin );
 
-		$response = $this->request( 'GET', '/toolkits/nope' );
+		$response = $this->request( 'GET', '/toolkit-manifests/nope' );
 
 		$this->assertSame( 404, $response->get_status() );
 		$this->assertSame( 'toolkit_not_found', $response->get_data()['error']['code'] );
@@ -196,14 +196,14 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 	public function test_settings_round_trip(): void {
 		wp_set_current_user( $this->admin );
 
-		$initial = $this->request( 'GET', '/toolkits/commerce/settings' )->get_data();
+		$initial = $this->request( 'GET', '/toolkit-manifests/commerce/settings' )->get_data();
 
 		$this->assertSame( 'USD', $initial['data']['values']['currency'] );
 		$this->assertSame( 5, $initial['data']['values']['low_stock_threshold'] );
 
 		$saved = $this->request(
 			'POST',
-			'/toolkits/commerce/settings',
+			'/toolkit-manifests/commerce/settings',
 			array( 'values' => array( 'low_stock_threshold' => 9 ) )
 		)->get_data();
 
@@ -220,7 +220,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$response = $this->request(
 			'POST',
-			'/toolkits/commerce/settings',
+			'/toolkit-manifests/commerce/settings',
 			array( 'values' => array( 'low_stock_threshold' => 'many' ) )
 		);
 
@@ -251,25 +251,25 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 		$this->assertSame( 201, $created->get_status() );
 		$this->assertSame( 'WP-1', $created->get_data()['data']['record']['id'] );
 
-		$listed = $this->request( 'GET', '/toolkits/commerce/entities/product' )->get_data();
+		$listed = $this->request( 'GET', '/toolkit-manifests/commerce/entities/product' )->get_data();
 
 		$this->assertSame( 1, $listed['data']['total'] );
 
 		$updated = $this->request(
 			'PUT',
-			'/toolkits/commerce/entities/product/WP-1',
+			'/toolkit-manifests/commerce/entities/product/WP-1',
 			array( 'data' => array( 'name' => 'Updated' ) )
 		)->get_data();
 
 		$this->assertSame( 'Updated', $updated['data']['record']['data']['name'] );
 		$this->assertSame( 29.5, $updated['data']['record']['data']['price'] );
 
-		$deleted = $this->request( 'DELETE', '/toolkits/commerce/entities/product/WP-1' );
+		$deleted = $this->request( 'DELETE', '/toolkit-manifests/commerce/entities/product/WP-1' );
 
 		$this->assertSame( 200, $deleted->get_status() );
 		$this->assertTrue( $deleted->get_data()['data']['deleted'] );
 
-		$this->assertSame( 404, $this->request( 'GET', '/toolkits/commerce/entities/product/WP-1' )->get_status() );
+		$this->assertSame( 404, $this->request( 'GET', '/toolkit-manifests/commerce/entities/product/WP-1' )->get_status() );
 	}
 
 	/**
@@ -300,7 +300,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$immutable = $this->request(
 			'PUT',
-			'/toolkits/commerce/entities/product/WP-3',
+			'/toolkit-manifests/commerce/entities/product/WP-3',
 			array( 'data' => array( 'sku' => 'WP-4' ) )
 		);
 
@@ -335,7 +335,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 			)
 		);
 
-		$cards = $this->request( 'GET', '/toolkits/commerce/dashboard' )->get_data()['data']['cards'];
+		$cards = $this->request( 'GET', '/toolkit-manifests/commerce/dashboard' )->get_data()['data']['cards'];
 
 		$by_key = array_column( $cards, 'value', 'key' );
 
@@ -345,12 +345,12 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$this->request(
 			'POST',
-			'/toolkits/commerce/settings',
+			'/toolkit-manifests/commerce/settings',
 			array( 'values' => array( 'low_stock_threshold' => 1 ) )
 		);
 
 		$after = array_column(
-			$this->request( 'GET', '/toolkits/commerce/dashboard' )->get_data()['data']['cards'],
+			$this->request( 'GET', '/toolkit-manifests/commerce/dashboard' )->get_data()['data']['cards'],
 			'value',
 			'key'
 		);
@@ -379,7 +379,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$data = $this->request(
 			'GET',
-			'/toolkits/commerce/entities/product/duplicates',
+			'/toolkit-manifests/commerce/entities/product/duplicates',
 			array( 'column' => 'name' )
 		)->get_data()['data'];
 
@@ -399,7 +399,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$response = $this->request(
 			'GET',
-			'/toolkits/commerce/entities/product/duplicates',
+			'/toolkit-manifests/commerce/entities/product/duplicates',
 			array( 'column' => 'stock' )
 		);
 
@@ -438,7 +438,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$preview = $this->request(
 			'POST',
-			'/toolkits/commerce/entities/product/import',
+			'/toolkit-manifests/commerce/entities/product/import',
 			array(
 				'rows'    => $rows,
 				'preview' => true,
@@ -450,20 +450,20 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 		$this->assertSame( 1, $preview['duplicates'] );
 		$this->assertCount( 1, $preview['failed'] );
 
-		$after_preview = $this->request( 'GET', '/toolkits/commerce/entities/product' )->get_data()['data'];
+		$after_preview = $this->request( 'GET', '/toolkit-manifests/commerce/entities/product' )->get_data()['data'];
 
 		$this->assertSame( 1, $after_preview['total'] );
 
 		$committed = $this->request(
 			'POST',
-			'/toolkits/commerce/entities/product/import',
+			'/toolkit-manifests/commerce/entities/product/import',
 			array( 'rows' => $rows )
 		)->get_data()['data'];
 
 		$this->assertSame( 1, $committed['created'] );
 		$this->assertSame( 1, $committed['duplicates'] );
 
-		$after_commit = $this->request( 'GET', '/toolkits/commerce/entities/product' )->get_data()['data'];
+		$after_commit = $this->request( 'GET', '/toolkit-manifests/commerce/entities/product' )->get_data()['data'];
 
 		$this->assertSame( 2, $after_commit['total'] );
 	}
@@ -485,7 +485,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$data = $this->request(
 			'POST',
-			'/toolkits/commerce/entities/product/import',
+			'/toolkit-manifests/commerce/entities/product/import',
 			array(
 				'rows'          => array(
 					array(
@@ -512,7 +512,7 @@ class Test_Pro_Toolkit_Rest extends WP_UnitTestCase {
 
 		$response = $this->request(
 			'POST',
-			'/toolkits/commerce/entities/product/import',
+			'/toolkit-manifests/commerce/entities/product/import',
 			array(
 				'rows' => array_fill(
 					0,
