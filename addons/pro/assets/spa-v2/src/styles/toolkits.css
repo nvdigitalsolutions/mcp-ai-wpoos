@@ -1063,3 +1063,56 @@
 	padding-left: 18px;
 	font-size: 12px;
 }
+
+/* --------------------------------------------------------- research */
+
+.nvoos-pro-spa-toolkits__draft {
+	padding: 12px 14px;
+	background: var(--nvoos-bg);
+	border: 1px solid var(--nvoos-border);
+	border-radius: 9px;
+}
+
+.nvoos-pro-spa-toolkits__draft-title {
+	margin: 0 0 10px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--nvoos-text-muted);
+}
+
+.nvoos-pro-spa-toolkits__draft-provider {
+	font-weight: 400;
+	letter-spacing: 0;
+	text-transform: none;
+}
+
+.nvoos-pro-spa-toolkits__draft-list {
+	display: grid;
+	gap: 6px;
+	margin: 0;
+}
+
+.nvoos-pro-spa-toolkits__draft-row {
+	display: grid;
+	grid-template-columns: minmax(120px, 34%) 1fr;
+	gap: 12px;
+	font-size: 13px;
+}
+
+.nvoos-pro-spa-toolkits__draft-row dt {
+	color: var(--nvoos-text-muted);
+}
+
+.nvoos-pro-spa-toolkits__draft-row dd {
+	margin: 0;
+	color: var(--nvoos-text);
+	overflow-wrap: anywhere;
+}
+
+.nvoos-pro-spa-toolkits__draft-hint {
+	margin: 10px 0 0;
+	font-size: 12px;
+	color: var(--nvoos-text-muted);
+}
