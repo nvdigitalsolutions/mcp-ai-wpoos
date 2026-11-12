@@ -202,6 +202,41 @@ const chromeVars = [
 ]
 	.filter(Boolean)
 	.join(';');
+// The header's BOX (P4). A source that constrains its brand/nav row to a
+// container is rebuilt with the same cap and gutter; without that the logo pins
+// to the viewport edge and the bar stretches across a wide monitor (jayainc's
+// 1670px box reads full-bleed at 1440 and only shows at 1920). The values are
+// MEASURED per viewport (`analyze --geometry` → chrome.geometry), so a source
+// that never boxes its header emits nothing and keeps the template default.
+const geometryProps = (box?: { measure?: number; padX?: number }) =>
+	[
+		box?.measure !== undefined && `max-width:${box.measure}px`,
+		box?.padX !== undefined && `padding-inline:${box.padX}px`,
+	]
+		.filter(Boolean)
+		.join(';');
+const boxBase = chrome?.geometry?.wide ?? chrome?.geometry?.desktop;
+const boxDesktop = chrome?.geometry?.desktop ?? boxBase;
+const boxWideRule = geometryProps({
+	measure: boxBase?.measure ?? boxDesktop?.measure,
+	padX: boxDesktop?.padX ?? boxBase?.padX,
+});
+const boxSelector = '.site-header > .site-header-inner, .site-topbar > .site-topbar-inner';
+const boxOverrides = ([
+	['1199px', chrome?.geometry?.tablet],
+	['767px', chrome?.geometry?.mobile],
+] as const)
+	.filter(([, box]) => {
+		if (!box) return false;
+		return (
+			(box.measure !== undefined && box.measure !== boxBase?.measure) ||
+			(box.padX !== undefined && box.padX !== (boxDesktop?.padX ?? boxBase?.padX))
+		);
+	})
+	.map(([width, box]) => `@media (max-width:${width}){${boxSelector}{${geometryProps(box)}}}`);
+const chromeBoxCss = boxWideRule
+	? [`${boxSelector}{${boxWideRule}}`, ...boxOverrides].join('\n')
+	: '';
 ---
 
 <!doctype html>
@@ -334,6 +369,7 @@ const chromeVars = [
 				document.addEventListener('astro:after-swap', apply);
 			})();
 		</script>
+		{chromeBoxCss && <style is:inline set:html={chromeBoxCss}></style>}
 	</head>
 	<body style={chromeVars || undefined}>
 		{/* WCAG 2.4.1 — the source builder ships its own skip link; a rebuilt
@@ -348,6 +384,10 @@ const chromeVars = [
 					chrome.topbarItems && chrome.topbarItems.some((item) => item.icon) && 'site-topbar--icons',
 				]}
 			>
+				{/* The same measured BOX as the header row: the source aligns the strip's
+				 * social glyph and contact group to the header container, not to the
+				 * viewport edge. */}
+				<div class="site-topbar-inner">
 				{chrome.topbarSocials && chrome.topbarSocials.length > 0 && (
 					<div class="site-topbar-socials">
 						{chrome.topbarSocials.map((social) => (
@@ -377,9 +417,18 @@ const chromeVars = [
 					: chrome.topbar.map((line) => (
 							<p>{line}</p>
 						))}
+				</div>
 			</div>
 		)}
 		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky', behaviors.headerPosition === 'fixed' && 'site-header--float', chrome?.headerBg && 'site-header--themed', chrome?.headerTransparent && 'site-header--overlay', (behaviors.headerRestHeight || behaviors.headerPinnedHeight) && 'site-header--sized', (behaviors.headerPinnedBg || behaviors.headerPinnedHeight) && 'site-header--pinned']}>
+			{/*
+			 * The BOX (P4). The source constrains its brand/nav row to a container
+			 * (jayainc: 1670px, 35px gutters; virtuallyjamaica: Bootstrap's 1170px,
+			 * 15px). The header keeps the full-bleed surface; this row carries the
+			 * measured cap and gutter, or the template's own when the source runs
+			 * the row full-bleed.
+			 */}
+			<div class="site-header-inner">
 			<div class="brand-block">
 				<a class="brand" href="/">
 					{chrome?.logo?.src ? <img class="brand-logo" src={chrome.logo.src} alt={chrome.logo.alt ?? siteTitle} /> : siteTitle}
@@ -463,6 +512,7 @@ const chromeVars = [
 				 */}
 				{chrome?.themeToggle && <ThemeToggle />}
 			</div>
+		</div>
 		</header>
 		<main class="site-main" id="main">
 			<slot />

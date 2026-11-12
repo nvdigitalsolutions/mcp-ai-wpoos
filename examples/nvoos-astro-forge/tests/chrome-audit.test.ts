@@ -9,8 +9,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { compareMobileNav } from '../lib/chrome-audit.ts';
-import type { ForgeMobileNav } from '../lib/types.ts';
+import { compareChromeGeometry, compareMobileNav } from '../lib/chrome-audit.ts';
+import type { ForgeChromeGeometry, ForgeMobileNav } from '../lib/types.ts';
 
 const brando: ForgeMobileNav = {
 	background: 'rgba(0, 0, 0, 0.95)',
@@ -108,5 +108,87 @@ describe( 'compareMobileNav', () => {
 		expect( report.deviations ).toEqual( [] );
 		expect( report.compared ).toBe( 0 );
 		expect( report.skipped ).toEqual( [ 'mobileNav (the source never collapses its nav)' ] );
+	} );
+} );
+
+// jayainc's measured box: a 1670px cap visible only at 1920, with a 35px
+// gutter at every viewport.
+const jayaBox: ForgeChromeGeometry = {
+	wide: { measure: 1670, padX: 35 },
+	desktop: { padX: 35 },
+	tablet: { padX: 35 },
+	mobile: { padX: 35 },
+};
+
+describe( 'compareChromeGeometry', () => {
+	it( 'passes the source against itself', () => {
+		const report = compareChromeGeometry( jayaBox, jayaBox );
+
+		expect( report.deviations ).toEqual( [] );
+		// wide: measure + padX; desktop/tablet/mobile: padX each.
+		expect( report.compared ).toBe( 5 );
+	} );
+
+	it( 'FAILS when the source boxes the row and the build runs full-bleed', () => {
+		// The reported drift: the build keeps one full-width flex row, so at 1920
+		// there is no container to measure.
+		const build: ForgeChromeGeometry = {
+			desktop: { padX: 35 },
+			tablet: { padX: 35 },
+			mobile: { padX: 35 },
+		};
+		const report = compareChromeGeometry( jayaBox, build );
+		const failure = report.deviations.find( ( deviation ) => deviation.severity === 'fail' );
+
+		expect( failure ).toMatchObject( {
+			fact: 'header box [wide].measure',
+			expected: '1670px box',
+			actual: 'full-bleed',
+		} );
+	} );
+
+	it( 'warns (not fails) on a small cap drift — the box is a design decision', () => {
+		const report = compareChromeGeometry( jayaBox, { ...jayaBox, wide: { measure: 1640, padX: 35 } } );
+
+		expect( report.deviations ).toHaveLength( 1 );
+		expect( report.deviations[ 0 ] ).toMatchObject( {
+			fact: 'header box [wide].measure',
+			severity: 'warn',
+		} );
+	} );
+
+	it( 'warns when the gutter drifts between the source and the build', () => {
+		const report = compareChromeGeometry( jayaBox, { ...jayaBox, desktop: { measure: 1670, padX: 16 } } );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( {
+			fact: 'header box [desktop].padX',
+			expected: '35px',
+			actual: '16px',
+			severity: 'warn',
+		} );
+	} );
+
+	it( 'warns when the build records no gutter at all', () => {
+		const report = compareChromeGeometry( jayaBox, { ...jayaBox, mobile: {} } );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( {
+			fact: 'header box [mobile].padX',
+			actual: null,
+			severity: 'warn',
+		} );
+	} );
+
+	it( 'skips when the source never measured a box', () => {
+		const report = compareChromeGeometry( undefined, jayaBox );
+
+		expect( report.deviations ).toEqual( [] );
+		expect( report.compared ).toBe( 0 );
+		expect( report.skipped.join( ' ' ) ).toContain( 'not measured on the source' );
+	} );
+
+	it( 'fails when the build has no measurable header at all', () => {
+		const report = compareChromeGeometry( jayaBox, undefined );
+
+		expect( report.deviations[ 0 ] ).toMatchObject( { fact: 'header box', severity: 'fail' } );
 	} );
 } );

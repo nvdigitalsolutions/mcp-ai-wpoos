@@ -1897,7 +1897,7 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'	footerBarInk?: string;',
 		'\t/** The chrome base font-size (the source chrome runs at its own size). */',
 		'\tchromeSize?: string;',
-		'\t/** The opened mobile menu\'s surface + rhythm (measured at 390px). */',
+		'\t/** The opened mobile menu\u2019s surface + rhythm (measured at 390px). */',
 		'\tmobileNav?: {',
 		'\t\tbackground?: string;',
 		'\t\tink?: string;',
@@ -1906,6 +1906,14 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		'\t\titemPitch?: number;',
 		'\t\toverlay?: boolean;',
 		'\t\tfullWidth?: boolean;',
+		'\t};',
+		'\t/** The header\u2019s BOX per viewport (measured): the container\u2019s cap and',
+		'\t * gutter. `measure` is present only where the cap is binding. */',
+		'\tgeometry?: {',
+		'\t\twide?: { measure?: number; padX?: number };',
+		'\t\tdesktop?: { measure?: number; padX?: number };',
+		'\t\ttablet?: { measure?: number; padX?: number };',
+		'\t\tmobile?: { measure?: number; padX?: number };',
 		'\t};',
 		'\t/** True when the SOURCE exposes a theme / colour-mode control; absent',
 		'\t * means the site has none, so the toggle is not rendered. */',
@@ -2009,6 +2017,28 @@ export function renderChromeGenerated( profile: SiteProfile ): string {
 		}
 		if ( parts.length > 0 ) {
 			entry.push( `mobileNav: { ${ parts.join( ', ' ) } }` );
+		}
+	}
+	if ( chrome.geometry ) {
+		const devices: string[] = [];
+		for ( const device of [ 'wide', 'desktop', 'tablet', 'mobile' ] as const ) {
+			const box = chrome.geometry[ device ];
+			if ( ! box ) {
+				continue;
+			}
+			const fields: string[] = [];
+			if ( typeof box.measure === 'number' ) {
+				fields.push( `measure: ${ box.measure }` );
+			}
+			if ( typeof box.padX === 'number' ) {
+				fields.push( `padX: ${ box.padX }` );
+			}
+			if ( fields.length > 0 ) {
+				devices.push( `${ device }: { ${ fields.join( ', ' ) } }` );
+			}
+		}
+		if ( devices.length > 0 ) {
+			entry.push( `geometry: { ${ devices.join( ', ' ) } }` );
 		}
 	}
 	if ( chrome.navToggle ) {

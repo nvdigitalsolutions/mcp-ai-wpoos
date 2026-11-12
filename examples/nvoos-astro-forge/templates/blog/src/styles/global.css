@@ -145,11 +145,15 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 }
 
 .site-header {
+	/*
+	 * The full-bleed BAND: surface, divider and typography stay on the header so
+	 * the painted strip spans the viewport. The brand/nav ROW lives in
+	 * `.site-header-inner`, because the source constrains the row to a container
+	 * while keeping the strip full width (P4 — jayainc boxes the row at 1670px
+	 * with 35px gutters; a full-width flex header pinned the logo to the edge).
+	 */
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	gap: 1rem;
-	padding: 1rem clamp(1rem, 4vw, 2rem);
 	border-bottom: 1px solid var(--forge-line);
 	/* The source chrome runs at its own size (16px over a 13px content
 	 * body on jayainc), and dark headers paint their own bg/ink (Proposal
@@ -157,6 +161,21 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	font-size: var(--forge-chrome-size, inherit);
 	background: var(--forge-header-bg, transparent);
 	color: var(--forge-header-ink, var(--forge-ink));
+}
+
+/* The header ROW. `max-width`/`padding-inline` are overridden by the measured
+ * rule Base.astro emits from `chrome.geometry` (`.site-header >
+ * .site-header-inner`, higher specificity, order-independent); these are the
+ * template defaults for a source that runs its header full-bleed. */
+.site-header-inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	width: 100%;
+	margin-inline: auto;
+	padding-block: 1rem;
+	padding-inline: clamp(1rem, 4vw, 2rem);
 }
 
 /* A harvested header bg means the source runs a colored header — drop the
@@ -168,11 +187,15 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 
 /*
  * A header whose height is a measured fact: the source declares 75px at rest and
- * 70px once pinned, so the strip's own padding must give way to that box or
+ * 70px once pinned, so the row's own padding must give way to that box or
  * `min-height` can never shrink it (content 79px against a 70px floor).
  */
 .site-header--sized {
 	height: var(--forge-header-rest-h, auto);
+}
+
+.site-header--sized > .site-header-inner {
+	height: 100%;
 	padding-block: 0;
 }
 
@@ -287,8 +310,10 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
  * at ZERO specificity so it can only ever supply a missing containing block:
  * any header variant that positions itself (`--sticky`, `--float`, a
  * scroll-driven animation) outranks it, instead of being flattened to
- * `relative` by a `:has()` rule that would win on specificity. */
-:where(.site-header:has(> .site-nav-shell[data-collapsed='true'])) {
+ * `relative` by a `:has()` rule that would win on specificity. The shell is
+ * matched as a DESCENDANT: the row wrapper (`.site-header-inner`) sits between
+ * the header and the shell. */
+:where(.site-header:has(.site-nav-shell[data-collapsed='true'])) {
 	position: relative;
 }
 
@@ -371,29 +396,42 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
  * columns, copyright. Absent chrome keeps the default minimal chrome.
  * ------------------------------------------------------------------------ */
 .site-topbar {
+	/*
+	 * The full-bleed strip; the measured BOX lives on `.site-topbar-inner` so the
+	 * social glyph and the contact group align with the header container
+	 * (jayainc: both inside a 1670px box), not with the viewport edge.
+	 */
+	display: flex;
+	align-items: center;
+	/* The measured strip height (the source's large icons + a two-line address
+	 * make a 100px bar; the template's own padding produced ~42px). A min-height
+	 * keeps the bar's rhythm while its content stays centred. */
+	min-height: var(--forge-topbar-h, 0);
+	background: var(--forge-topbar-bg, var(--forge-surface-alt));
+	color: var(--forge-topbar-ink, var(--forge-muted));
+	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
+}
+
+.site-topbar-inner {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	/* The measured gap between items (jayainc: 50px) — the default keeps the
 	 * text-only strip's rhythm. */
 	gap: var(--forge-topbar-item-gap, 2rem);
-	/* The measured strip height (the source's large icons + a two-line address
-	 * make a 100px bar; the template's own padding produced ~42px). A min-height
-	 * keeps the bar's rhythm while its content stays centred. */
-	min-height: var(--forge-topbar-h, 0);
-	padding: 0.5rem clamp(1rem, 4vw, 2rem);
-	background: var(--forge-topbar-bg, var(--forge-surface-alt));
-	color: var(--forge-topbar-ink, var(--forge-muted));
-	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
+	width: 100%;
+	margin-inline: auto;
+	padding-block: 0.5rem;
+	padding-inline: clamp(1rem, 4vw, 2rem);
 }
 
 /* Where the source puts the item group: measured against the bar's content
  * edges. jayainc floats its address + phone to the right. */
-.site-topbar--end {
+.site-topbar--end > .site-topbar-inner {
 	justify-content: flex-end;
 }
 
-.site-topbar--center {
+.site-topbar--center > .site-topbar-inner {
 	justify-content: center;
 }
 
