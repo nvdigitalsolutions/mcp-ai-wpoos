@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Assistant extends Model
 {
+    /**
+     * Tenant used until tenant resolution exists (090-g Phase 1).
+     *
+     * Not part of $fillable: the tenant is never supplied by a request body.
+     */
+    public const DEFAULT_TENANT = 'default';
+
     protected $fillable = [
         'title',
         'slug',

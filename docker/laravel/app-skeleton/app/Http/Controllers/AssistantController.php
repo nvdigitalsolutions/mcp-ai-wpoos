@@ -12,7 +12,9 @@ class AssistantController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Assistant::query()->orderBy('title');
+        $query = Assistant::query()
+            ->where('tenant_id', Assistant::DEFAULT_TENANT)
+            ->orderBy('title');
 
         if ($request->filled('status')) {
             $query->where('status', (string) $request->query('status'));
@@ -44,7 +46,9 @@ class AssistantController
         $data['status'] = $data['status'] ?? 'draft';
 
         if (! empty($data['is_default'])) {
-            Assistant::query()->update(['is_default' => false]);
+            Assistant::query()
+                ->where('tenant_id', Assistant::DEFAULT_TENANT)
+                ->update(['is_default' => false]);
         }
 
         $assistant = Assistant::create($data);
@@ -62,7 +66,10 @@ class AssistantController
         }
 
         if (! empty($data['is_default'])) {
-            Assistant::query()->where('id', '!=', $assistant->id)->update(['is_default' => false]);
+            Assistant::query()
+                ->where('tenant_id', $assistant->tenant_id)
+                ->where('id', '!=', $assistant->id)
+                ->update(['is_default' => false]);
         }
 
         $assistant->fill($data)->save();
@@ -111,6 +118,7 @@ class AssistantController
         $suffix = 2;
 
         while (Assistant::query()
+            ->where('tenant_id', Assistant::DEFAULT_TENANT)
             ->where('slug', $slug)
             ->when($ignoreId !== null, static fn ($query) => $query->where('id', '!=', $ignoreId))
             ->exists()
