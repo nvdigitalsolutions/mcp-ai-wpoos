@@ -201,4 +201,17 @@ describe( 'mergeProfileDraft (Proposal 118 §3)', () => {
 		expect( merged.frontPage ).toBe( 'home' );
 		expect( merged.name ).toBe( 'JAYAINC' );
 	} );
+
+	it( 'refreshes the animation inventory only when the draft measured one', () => {
+		const existing = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		existing.animations = { facts: [ { kind: 'css-keyframes', name: 'stored' } ] };
+
+		// A --geometry run carries no animation block: the stored inventory survives.
+		expect( mergeProfileDraft( existing, fresh ).animations?.facts?.[ 0 ]?.name ).toBe( 'stored' );
+
+		// A --animations run replaces it wholesale.
+		const measured = JSON.parse( JSON.stringify( fresh ) ) as typeof fresh;
+		measured.animations = { facts: [ { kind: 'css-keyframes', name: 'fresh' } ] };
+		expect( mergeProfileDraft( existing, measured ).animations?.facts?.[ 0 ]?.name ).toBe( 'fresh' );
+	} );
 } );

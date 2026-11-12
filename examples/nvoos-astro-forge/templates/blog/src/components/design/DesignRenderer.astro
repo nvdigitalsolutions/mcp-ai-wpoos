@@ -18,8 +18,10 @@
 // rhythm without copying any markup.
 import type { SemanticSection } from '../../forge/semantic.ts';
 import { bandSpacing, bandSource, sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
-import { behaviors } from '../../lib/behaviors.generated.ts';
+import { behaviors, type ScrollBehaviorEntry } from '../../lib/behaviors.generated.ts';
+import { animationCss } from '../../lib/animations.generated.ts';
 import { classifyBody } from '../../lib/classify.ts';
+import { parallaxBandCss } from '../../lib/motion.ts';
 import Cta from './Cta.astro';
 import Catalog from './Catalog.astro';
 import Comparison from './Comparison.astro';
@@ -107,25 +109,32 @@ const themeFor = ( section: SemanticSection, index: number ): SectionTheme | und
 		overlay: positional.overlay,
 	};
 };
-/** The source scroll behavior for a section (Proposal 121) — sticky /
- * reveal / parallax, keyed by the same element id. */
-const behaviorFor = ( section: SemanticSection ) =>
-	section.id ? behaviors.entries.find( ( behavior ) => behavior.id === section.id ) : undefined;
-const behaviorClasses = ( behavior: ReturnType<typeof behaviorFor> ): string[] => {
-	if ( ! behavior ) {
-		return [];
+/** ALL source behaviors for a section. A band can be BOTH parallax and reveal
+ * (jayainc's about band is); the old single `find` returned whichever entry came
+ * first, so a reveal-first band silently lost its parallax class and range. */
+const behaviorsFor = ( section: SemanticSection ): ScrollBehaviorEntry[] =>
+	section.id ? behaviors.entries.filter( ( behavior ) => behavior.id === section.id ) : [];
+const behaviorClasses = ( list: ScrollBehaviorEntry[] ): string[] => {
+	const classes: string[] = [];
+	if ( list.some( ( behavior ) => behavior.kind === 'parallax' ) ) {
+		classes.push( 'ds-parallax' );
 	}
-	if ( behavior.kind === 'reveal' ) {
-		return [ 'ds-reveal', `ds-reveal--${ behavior.effect ?? 'fade' }` ];
+	// One reveal per band: the first in source order wins (the generated list can
+	// carry several — the outer heading and each inner widget).
+	const reveal = list.find( ( behavior ) => behavior.kind === 'reveal' );
+	if ( reveal ) {
+		classes.push( 'ds-reveal', `ds-reveal--${ reveal.effect ?? 'fade' }` );
 	}
-	if ( behavior.kind === 'parallax' ) {
-		return [ 'ds-parallax' ];
+	if ( list.some( ( behavior ) => behavior.kind === 'sticky' ) ) {
+		classes.push( 'ds-sticky' );
 	}
-	return [ 'ds-sticky' ];
+	return classes;
 };
+const parallaxFor = ( list: ScrollBehaviorEntry[] ): ScrollBehaviorEntry | undefined =>
+	list.find( ( behavior ) => behavior.kind === 'parallax' );
 /** The parallax travel range scales with the source's motion_fx speed. */
-const parallaxStyle = ( behavior: ReturnType<typeof behaviorFor> ): string | undefined =>
-	behavior?.kind === 'parallax' && behavior.speed !== undefined && behavior.speed > 1
+const parallaxStyle = ( behavior: ScrollBehaviorEntry | undefined ): string | undefined =>
+	behavior?.speed !== undefined && behavior.speed > 1
 		? `--ds-parallax-range:${ Math.min( behavior.speed, 4 ) * 24 }px`
 		: undefined;
 /** A band length (margin or padding) — one value, or a per-device map
@@ -673,18 +682,33 @@ const bandInteractionCss = sections
 		return rules.join( '' );
 	} )
 	.join( '' );
+
+/**
+ * The band's PIECE-LEVEL parallax (Proposal 121 + the element pass).
+ *
+ * A band is parallax only when the source has real moving pieces. Each piece
+ * carries its own depth/origin/off (Phlox) or direction/speed/range/devices
+ * (Elementor), so one scoped rule sets the keyframe endpoints and the
+ * breakpoint gate per media carrier. The band-level `.ds-parallax` animation in
+ * global.css consumes them; a band without pieces emits nothing (a bare
+ * `aux-parallax-section` container is not motion).
+ */
+const bandParallaxCss = sections
+	.map( ( section ) => parallaxBandCss( { id: section.id, kind: section.kind }, parallaxFor( behaviorsFor( section ) ) ) )
+	.join( '' );
 ---
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandInteractionCss ) && (
-			<Fragment set:html={ `<style>${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandInteractionCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandInteractionCss || bandParallaxCss || animationCss ) && (
+			<Fragment set:html={ `<style>${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
-			const behavior = behaviorFor(section);
+			const behaviorList = behaviorsFor(section);
+			const behavior = parallaxFor(behaviorList);
 			return (
-				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={theme?.anchor ?? section.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behavior)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={theme?.anchor ?? section.anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
 					{theme?.catalog ? (
 						<Catalog theme={theme} />
 					) : (

@@ -47,6 +47,7 @@ export const FORGE_ADDRESSABLE_GATES = [
 	'pixel regression',
 	'box geometry',
 	'interaction states',
+	'animated effects',
 ] as const;
 
 /** One addressable gate name. */
@@ -119,12 +120,20 @@ export interface GateResolution {
 }
 
 /**
- * Gates whose default is not `gate`. Only parity is listed: with no source seam
+ * Gates whose default is not `gate`. Parity is `auto` (with no source seam
  * there is nothing to be equal to, so a brand-new forge would fail its own
- * first run for having no reference — noise, not signal.
+ * first run for having no reference — noise, not signal). `animated effects`
+ * is ADVISORY because a JS-driven source animation (GSAP/Lottie/Rive) cannot
+ * be reproduced by a no-JS template; the inventory still reports every fact,
+ * and a site that wants the strict gate opts in via `verify.gates`.
  */
 const AUTO_DEFAULTS: Partial< Record< ForgeGateName, ForgeGatePolicy > > = {
 	'pixel parity': 'auto',
+	// A JS-driven source animation (GSAP/Lottie/Rive) cannot be reproduced by a
+	// no-JS template, so the inventory reports by default instead of blocking.
+	// A site that wants the strict gate sets `verify.gates["animated effects"]`
+	// to `gate`.
+	'animated effects': 'advisory',
 };
 
 /** Resolve `auto` from the site's own evidence. */

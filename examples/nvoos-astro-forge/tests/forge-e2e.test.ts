@@ -124,6 +124,71 @@ const PROFILE: SiteProfile = {
 				catalog: { title: 'fiori-digital-catalogue', source: 'https://fixture.test/wp-content/uploads/catalog.pdf' },
 			},
 		],
+		// The element-pass motion fixture: the split hero is BOTH parallax and
+		// reveal, and its two collage photos move in opposite directions (Phlox
+		// depth -0.1/+0.1, origin bottom, disabled at <= 1024px).
+		behavior: {
+			headerSticky: false,
+			entries: [
+				{
+					id: 'a1b2c3d',
+					kind: 'parallax',
+					speed: 2,
+					pieces: [
+						{ id: 'a10001', index: 0, depth: -0.1, origin: 'bottom', off: 1024, direction: 'negative', speed: 2, range: { start: 0, end: 100 }, devices: [ 'desktop', 'tablet', 'mobile' ] },
+						{ id: 'a10002', index: 1, depth: 0.1, origin: 'bottom', off: 1024, speed: 2 },
+					],
+				},
+				{ id: 'a1b2c3d', kind: 'reveal', effect: 'fade-up' },
+			],
+		},
+	},
+	// The animation inventory fixture (2026-11-12): a finite, layout-safe CSS
+	// keyframe on the split hero's first media. The scaffold must bake the
+	// generated keyframes into animations.generated.ts and the build must serve
+	// the scoped rule; an infinite/JS effect would be reported, not rebuilt.
+	animations: {
+		facts: [
+			{
+				kind: 'css-keyframes',
+				name: 'fixture-pulse',
+				bandId: 'a1b2c3d',
+				target: 'media',
+				mediaIndex: 0,
+				duration: '1200ms',
+				easing: 'ease-in-out',
+				iterations: '1',
+				direction: 'normal',
+				fill: 'both',
+				properties: [ 'opacity' ],
+				keyframes: [
+					{ offset: '0%', declarations: { opacity: '0' } },
+					{ offset: '100%', declarations: { opacity: '1' } },
+				],
+				timeline: 'DocumentTimeline',
+				infinite: false,
+			},
+			{
+				kind: 'css-keyframes',
+				name: 'fixture-spin',
+				bandId: 'a1b2c3d',
+				target: 'media',
+				mediaIndex: 1,
+				duration: '2000ms',
+				easing: 'linear',
+				iterations: 'infinite',
+				direction: 'normal',
+				fill: 'both',
+				properties: [ 'transform' ],
+				keyframes: [
+					{ offset: '0%', declarations: { transform: 'rotate(0deg)' } },
+					{ offset: '100%', declarations: { transform: 'rotate(360deg)' } },
+				],
+				timeline: 'DocumentTimeline',
+				infinite: true,
+			},
+		],
+		libraries: [ 'gsap' ],
 	},
 	// The form bridge (114 §3.9) — the default endpoint derives from the
 	// profile URL; the rebuilt forms POST there, never to WP directly.
@@ -409,6 +474,35 @@ describe('forge e2e — emitted site', () => {
 		// threshold, so the tokens now ship in the linked stylesheet — resolve
 		// the href and assert there (or inline when the bundle is small again).
 		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
+		// The element-pass parallax (2026-11-12): the split hero is BOTH parallax
+		// and reveal (the old single-behavior lookup dropped one), and each piece
+		// carries its own endpoints + the source's <=1024px off gate.
+		expect(index).toContain('ds-parallax ds-reveal ds-reveal--fade-up');
+		expect(index).toContain('[data-section-id="a1b2c3d"].ds-parallax .ds-media:nth-of-type(1)');
+		expect(index).toContain('[data-section-id="a1b2c3d"].ds-parallax .ds-media:nth-of-type(2)');
+		expect(index).toContain('--ds-parallax-from:0px');
+		expect(index).toContain('--ds-parallax-to:48px');
+		expect(index).toContain('--ds-parallax-to:-48px');
+		expect(index).toContain('@media (min-width:1025px)');
+		// The animation inventory's safe rebuild (2026-11-12): a finite, layout-safe
+		// CSS keyframe on the hero's first media becomes a scoped forge-anim rule.
+		expect(index).toContain('@keyframes forge-anim-');
+		expect(index).toContain('[data-section-id="a1b2c3d"] .ds-media:nth-of-type(1)');
+		expect(index).toContain('prefers-reduced-motion: no-preference');
+		// The rebuild's carriers must be REAL elements, not dead CSS: the split
+		// hero's collage photos are plain `<img class="ds-media ds-collage-media">`
+		// siblings, and the post-build media mirror rewrites src/srcset only — so
+		// `:nth-of-type(n)` still resolves after localization. SmartImage puts the
+		// class on its own `<img>` (never a `<picture>` wrapper).
+		expect(index).toMatch(/<img class="ds-media ds-collage-media" src="\/media\/[^"]+"/);
+		expect((index.match(/class="[^"]*\bds-media\b/g) ?? []).length).toBeGreaterThanOrEqual(2);
+		// The infinite fixture ships only with the WCAG 2.2.2 pause control.
+		expect(index).toContain('motion-toggle');
+		expect(index).toContain('animation-iteration-count:infinite');
+		const motionDoc = await readFile(path.join(workDir, 'MOTION.md'), 'utf8');
+		expect(motionDoc).toContain('## Animated effects');
+		expect(motionDoc).toContain('fixture-pulse');
+		expect(motionDoc).toContain('Detected runtimes: gsap');
 		const cssHref = /href="(\/_astro\/[^"]+\.css)"/.exec(index)?.[1];
 		if (cssHref) {
 			const css = await readFile(path.join(workDir, 'dist', cssHref.replace(/^\//, '')), 'utf8');

@@ -130,3 +130,60 @@ unknown vendor effects never drop.
 - `templates/blog/src/styles/global.css` — the `@supports` runtime.
 - `tests/design.test.ts` — the behavior fixture suite.
 - Skill: `mcp-ai-wpoos-astro-forge` gets the 121 section + gotchas.
+
+## Addendum (2026-11-12) — element-level parallax
+
+The shipped pass classified parallax from the `aux-parallax-section` class.
+That class is a **container marker**: Phlox's `AvertaParallaxBox` returns when
+the container has no `.aux-parallax-piece` targets. jayainc's home has 24
+markers and 2 real pieces, so the rebuilt page drifted five bands that never
+moved in the source.
+
+The element pass (full contract:
+`../.agents/skills/mcp-ai-wpoos-astro-forge/reference/parallax-element-pass.md`)
+reads the source's own facts:
+
+- **Pieces**: `aux-parallax-piece` + `data-parallax-depth/origin/off` (Phlox)
+  and Elementor `motion_fx_*` scrolling JSON (`direction`, `speed`,
+  `affectedRange`, `devices`). `ParallaxPiece` rides on
+  `ScrollBehaviorEntry.pieces[]`; `src` + `index` bind it to a rebuilt media
+  slot.
+- **Sign**: Phlox flips the depth sign (`depth = depth < 0 ? 1 : -1`), so
+  negative depth renders a POSITIVE translateY. Measured on the live collage:
+  depth -0.1 → `translateY(+81.44px)`, depth +0.1 → `translateY(-81.44px)`.
+  Elementor's `direction: negative` does the same.
+- **Roll-up**: pieces inside `elementor-inner-section` elements attach to the
+  nearest `elementor-top-section`; the renderer only wraps top-level bands.
+- **Rebuild**: `templates/blog/src/lib/motion.ts` emits a scoped rule per piece
+  (`--ds-parallax-from/to`, `animation-range` when affectedRange is non-default,
+  `@media (min-width: off+1)` / device gate). `global.css` keyframes consume the
+  endpoints; the symmetric even/odd pair remains the fallback.
+- **All behaviors per band**: the old single `behaviors.find` returned the first
+  entry only, so a band that was both parallax and reveal lost one class. The
+  renderer now mounts every behavior and picks the first reveal.
+
+One template fix rode along: `.ds-lede` was globally `max-width: 50%` with auto
+margins. The source hero's description is 673px inside a 1345px row (centered),
+but a left-aligned split band is full-width (jayainc services: 640px inside
+640px), so every left-aligned intro paragraph was inset by a quarter of its
+column. The constraint now applies only to `.ds-body--center` and
+`.ds-section-wrap--hero`.
+
+Standards basis (researched 2026-11-12):
+
+- CSS scroll-driven animations for the timeline (main-thread-free):
+  <https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_scroll-driven_animations>,
+  <https://developer.chrome.com/docs/css-ui/scroll-driven-animations>.
+  `animation-timeline` stays a longhand (Chrome drops a shorthand carrying a
+  timeline; lightningcss merges it back — the esbuild pin and the e2e assert).
+- `prefers-reduced-motion` (WCAG 2.2.2 / 2.3.3): motion is additive, the
+  at-rest page is complete. <https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion>
+- `translate` as the independent property so the band's
+  `transform: translateX(-50%)` centering survives. <https://developer.mozilla.org/en-US/docs/Web/CSS/translate>
+- The source's own mobile gate (`data-parallax-off` / `motion_fx_devices`) is
+  the measured breakpoint; no guessed device split.
+
+Validation: `tests/design.test.ts` (container ≠ motion, inner roll-up, piece
+facts), `tests/motion.test.ts` (fact → CSS), `tests/forge-e2e.test.ts` (astro
+check + build + built rules), and the live jayainc rebuild (About collage
+`+10.99px` / `-10.99px` at scroll 1200; services paragraph full-width).

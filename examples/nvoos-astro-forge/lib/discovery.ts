@@ -349,6 +349,15 @@ export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): 
 	if ( fresh.stickyHeader ) {
 		merged.stickyHeader = fresh.stickyHeader;
 	}
+	// The animated-effect inventory (142) is a source fact too. Only a draft
+	// that MEASURED it replaces the stored one; a `--geometry` run must not wipe
+	// a previous `--animations` inventory.
+	if ( fresh.animations ) {
+		merged.animations = fresh.animations;
+	}
+	if ( fresh.pageAnimations && Object.keys( fresh.pageAnimations ).length > 0 ) {
+		merged.pageAnimations = fresh.pageAnimations;
+	}
 	if ( fresh.text ) {
 		// The content baseline refreshes wholesale: it describes the SOURCE, and
 		// a re-analysis is exactly when the source's words may have changed.

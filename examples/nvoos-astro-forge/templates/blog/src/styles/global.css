@@ -399,6 +399,31 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	gap: 0.75rem;
 }
 
+/* The page-level motion control (WCAG 2.2.2) — rendered only when the
+ * generated module reports an infinite rebuilt animation. A checkbox is the
+ * no-JS affordance; the checked state pauses every generated/band animation. */
+.motion-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: var(--forge-chrome-size, inherit);
+	color: var(--forge-header-nav-ink, var(--forge-header-ink, var(--forge-ink)));
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.motion-toggle input {
+	inline-size: 1rem;
+	block-size: 1rem;
+	margin: 0;
+	accent-color: var(--forge-accent);
+}
+
+body:has(.motion-toggle input:checked) .design-sections [data-section-id],
+body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
+	animation-play-state: paused !important;
+}
+
 .call-button {
 	display: inline-block;
 	/* The source call button's own shape (jayainc: 14px 43px, pill radius,
@@ -801,13 +826,24 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	padding: 0.65rem 1.75rem;
 }
 
+/* The source's intro copy is CONTENT-width by default. Only a centered band
+ * constrains it: the source hero's description measured 673px inside a 1345px
+ * row, while the left-aligned services band measured 640px inside 640px. The
+ * previous blanket 50% + auto margins inset every paragraph by a quarter of its
+ * column on desktop (the "weird left padding" report). */
 .ds-lede {
+	max-width: 100%;
+}
+
+.ds-body--center .ds-lede,
+.ds-section-wrap--hero .ds-lede {
 	max-width: 50%;
 	margin-inline: auto;
 }
 
 @media (max-width: 767px) {
-	.ds-lede {
+	.ds-body--center .ds-lede,
+	.ds-section-wrap--hero .ds-lede {
 		max-width: 100%;
 	}
 }
@@ -816,6 +852,16 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 .ds-text {
 	margin: 0;
 	color: var(--forge-muted);
+}
+
+/* A hero band paints its copy WHITE (the source's hero description measured
+ * rgb(255,255,255) over the photo). The muted `.ds-text` default exists for
+ * content bands; inheriting it painted the hero paragraph #505050 on a dark
+ * photo. `inherit` keeps the hero's own ink (the wrap sets #fff) and leaves a
+ * measured per-band ink free to override the wrapper. */
+.ds-section-wrap--hero .ds-text,
+.ds-section-wrap--hero .ds-hero p {
+	color: inherit;
 }
 
 .ds-media {
@@ -1075,9 +1121,13 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	background-size: cover;
 	background-position: center;
 	/* The source hero is a tall photo band (jayainc: 724px) with the
-	 * content vertically centered. */
+	 * content vertically centered. The generic `.ds-section-wrap` shim below
+	 * makes every wrap a COLUMN (so a raw Flatsome banner can grow), so
+	 * `align-items` alone only centers horizontally — `justify-content`
+	 * centers the hero section on the vertical (main) axis. */
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	min-height: clamp(22rem, 75vh, 48rem);
 }
 
@@ -1935,13 +1985,17 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 @keyframes ds-scale-up { from { opacity: 0; scale: 0.94; } }
 @keyframes ds-blur { from { opacity: 0; filter: blur(8px); } }
 
-/* Parallax: scroll() timelines tie the band to the page scroll; the range
- * scales with the source's motion_fx speed (--ds-parallax-range). The
- * carrier matches the source: hero bands drift as a whole (their photo IS
- * the background), every other parallax section drifts its MEDIA elements
- * (the source's parallax columns carry the imagery — jayainc's about
- * photos, the services portrait, the product cards — while the text
- * stays); alternate directions give the source's independent-column feel. */
+/* Parallax: scroll() timelines tie the band to the page scroll. The band-level
+ * range scales with the source's motion_fx speed (--ds-parallax-range); a
+ * piece-level rule emitted by the renderer overrides the keyframe endpoints
+ * (--ds-parallax-from/to) from the source's depth/origin, and gates the
+ * breakpoint where the source disabled the effect (data-parallax-off /
+ * motion_fx_devices). The carrier matches the source: hero bands drift as a
+ * whole (their photo IS the background), every other parallax section drifts
+ * its MEDIA elements (the source's parallax columns carry the imagery —
+ * jayainc's about photos, the services portrait, the product cards — while the
+ * text stays). The even/odd fallback keeps the independent-column feel for a
+ * band whose source declares no piece facts. */
 @supports (animation-timeline: scroll()) {
 	@media (prefers-reduced-motion: no-preference) {
 		/* The hero band is STATIC (125 §5): the source hero's photo is a
@@ -1958,19 +2012,15 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 		}
 		.ds-parallax:not(.ds-section-wrap--hero) .ds-media:nth-child(even),
 		.ds-parallax:not(.ds-section-wrap--hero) .ds-icon-media img:nth-child(even) {
-			animation-name: ds-parallax-media-reverse;
+			--ds-parallax-from: calc(var(--ds-parallax-range, 24px) * -1);
+			--ds-parallax-to: var(--ds-parallax-range, 24px);
 		}
 	}
 }
 
 @keyframes ds-parallax-media {
-	from { translate: 0 var(--ds-parallax-range, 24px); }
-	to { translate: 0 calc(var(--ds-parallax-range, 24px) * -1); }
-}
-
-@keyframes ds-parallax-media-reverse {
-	from { translate: 0 calc(var(--ds-parallax-range, 24px) * -1); }
-	to { translate: 0 var(--ds-parallax-range, 24px); }
+	from { translate: 0 var(--ds-parallax-from, var(--ds-parallax-range, 24px)); }
+	to { translate: 0 var(--ds-parallax-to, calc(var(--ds-parallax-range, 24px) * -1)); }
 }
 
 /* The hero/about media: all images, side by side (the source two-up). */

@@ -27,7 +27,7 @@ import { assertSafeHttpUrl } from './ssrf.ts';
 import { extractBandsFromHtml } from './bands.ts';
 import type { BandCandidate } from './bands.ts';
 import { scopedPaddingOf } from './scoped-css.ts';
-import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
+import type { ForgeChrome, ForgeChromeStyle, ForgeDesign, ForgeSection, ForgeSectionColumn, ForgeStickyHeader, ParallaxPiece, ResponsiveLength, ScrollBehaviorEntry, ScrollBehaviorPass } from './types.ts';
 
 const nodeRequire = createRequire( import.meta.url );
 
@@ -2687,7 +2687,14 @@ const REVEAL_EFFECTS: Array<{ pattern: RegExp; effect: NonNullable<ScrollBehavio
 
 const STICKY_CLASS_RE = /(?:^|\s)(elementor-sticky|aux-top-sticky|aux-logo-sticky)(?:\s|$)/;
 const APPEAR_CLASS_RE = /(?:^|\s)aux-appear-watch-animation(?:\s|$)/;
-const PARALLAX_CLASS_RE = /(?:^|\s)aux-parallax-section(?:\s|$)/;
+// Phlox's MOVING piece. `aux-parallax-section` is deliberately NOT a motion
+// signal: it is a container marker the theme only activates when it contains
+// `aux-parallax-piece` targets (AvertaParallaxBox's `init` returns when the
+// target count is 0). Treating the container as parallax made every second
+// band drift (jayainc: 24 markers, 2 real pieces).
+const PIECE_CLASS_RE = /(?:^|\s)(?:aux-parallax-piece|parallax-item|js-parallax|rellax)(?:\s|$)/;
+const PIECE_DEPTH_ATTRS = [ 'data-parallax-depth', 'data-parallax-speed', 'data-rellax-speed', 'data-scroll-speed', 'data-depth' ];
+const TRANSLATE_KEYS = [ 'translateY', 'translateX' ];
 
 /** Decode the &quot;/&#39; entities Elementor writes into data-settings. */
 function decodeEntities( value: string ): string {
@@ -2712,14 +2719,103 @@ function motionFxValue( settings: Record<string, unknown> | undefined, key: stri
 	return settings?.[ key ];
 }
 
+/** A finite number from an attribute/JSON value, or undefined. */
+function numberOf( value: unknown ): number | undefined {
+	if ( typeof value === 'number' ) {
+		return Number.isFinite( value ) ? value : undefined;
+	}
+	if ( typeof value === 'string' && value.trim() !== '' ) {
+		const parsed = Number.parseFloat( value );
+		return Number.isFinite( parsed ) ? parsed : undefined;
+	}
+	return undefined;
+}
+
 /** Extract the source element id (elementor-element-<id>) from a class list. */
 function elementIdOf( classes: string ): string | undefined {
 	return classes.split( /\s+/ ).map( ( cls ) => SECTION_ID_RE.exec( cls ) ).find( Boolean )?.[ 1 ];
 }
 
 /**
+ * One moving piece's facts (Phlox `aux-parallax-piece` / Elementor motion_fx /
+ * the generic `data-parallax-*` conventions). The src + image ordinal are
+ * filled in by the walk when it reaches the piece's `<img>`.
+ */
+function parallaxPieceOf( node: HNodeLike, settings: Record<string, unknown> | undefined, classes: string ): ParallaxPiece | undefined {
+	const attrs = node.attribs ?? {};
+	const hasPieceClass = PIECE_CLASS_RE.test( classes );
+	let depth: number | undefined;
+	for ( const key of PIECE_DEPTH_ATTRS ) {
+		depth = numberOf( attrs[ key ] );
+		if ( depth !== undefined ) {
+			break;
+		}
+	}
+	const scrolling = motionFxValue( settings, 'motion_fx_motion_fx_scrolling' ) === 'yes';
+	const translate = TRANSLATE_KEYS.some( ( key ) => motionFxValue( settings, `motion_fx_${ key }_effect` ) === 'yes' );
+	const motionPiece = settings !== undefined && scrolling && translate;
+	if ( ! hasPieceClass && depth === undefined && ! motionPiece ) {
+		return undefined;
+	}
+
+	const piece: ParallaxPiece = {};
+	const id = elementIdOf( classes ) ?? attrs[ 'data-id' ];
+	if ( id ) {
+		piece.id = id;
+	}
+	if ( attrs[ 'data-parallax-type' ] === 'background' || attrs[ 'data-parallax-type' ] === 'position' ) {
+		piece.type = attrs[ 'data-parallax-type' ];
+	}
+	if ( depth !== undefined ) {
+		piece.depth = depth;
+	}
+	const origin = attrs[ 'data-parallax-origin' ];
+	if ( origin === 'top' || origin === 'bottom' || origin === 'middle' ) {
+		piece.origin = origin;
+	} else if ( depth !== undefined ) {
+		// AvertaParallaxBox's default when a depth exists but no origin does.
+		piece.origin = 'top';
+	}
+	const off = numberOf( attrs[ 'data-parallax-off' ] );
+	if ( off !== undefined ) {
+		piece.off = off;
+	}
+
+	if ( motionPiece ) {
+		const direction = motionFxValue( settings, 'motion_fx_translateY_direction' ) ?? motionFxValue( settings, 'motion_fx_translateX_direction' );
+		piece.direction = direction === 'negative' ? 'negative' : 'positive';
+		const speedEntry = ( motionFxValue( settings, 'motion_fx_translateY_speed' ) ?? motionFxValue( settings, 'motion_fx_translateX_speed' ) ) as { size?: unknown } | undefined;
+		const speed = numberOf( speedEntry?.size );
+		if ( speed !== undefined && speed > 0 ) {
+			piece.speed = speed;
+		}
+		const rangeEntry = ( motionFxValue( settings, 'motion_fx_translateY_affectedRange' ) ?? motionFxValue( settings, 'motion_fx_translateX_affectedRange' ) ) as { sizes?: { start?: unknown; end?: unknown } } | undefined;
+		const start = numberOf( rangeEntry?.sizes?.start );
+		const end = numberOf( rangeEntry?.sizes?.end );
+		if ( start !== undefined || end !== undefined ) {
+			piece.range = { ...( start !== undefined ? { start } : {} ), ...( end !== undefined ? { end } : {} ) };
+		}
+		const devices = motionFxValue( settings, 'motion_fx_devices' );
+		if ( Array.isArray( devices ) ) {
+			const list = devices.filter( ( device ): device is string => typeof device === 'string' );
+			if ( list.length > 0 ) {
+				piece.devices = list;
+			}
+		}
+	}
+
+	return piece;
+}
+
+/**
  * The per-element scroll-behavior classification (121 §2.2). Deterministic;
  * an empty html yields an empty pass.
+ *
+ * The walk classifies EVERY element, but rolls the facts up to the nearest
+ * `elementor-top-section` — the renderer only wraps top-level bands. Inner
+ * sections (Elementor's `elementor-section elementor-inner-section`) are
+ * LAYOUT inside a band; treating them as bands detached jayainc's collage
+ * pieces from the section the renderer actually rebuilds.
  */
 export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehaviorPass {
 	const handler = new DomHandler( undefined, {} );
@@ -2728,6 +2824,7 @@ export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehavior
 	parser.end();
 	const root = handler.root as unknown as HNodeLike;
 	const cssText = input.css.join( '\n' );
+	const rules = topLevelRules( cssText );
 
 	const pass: ScrollBehaviorPass = { headerSticky: false, entries: [] };
 	const seen = new Set<string>();
@@ -2740,23 +2837,60 @@ export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehavior
 		pass.entries.push( entry );
 	};
 
+	// One parallax entry per band; pieces append in source order. A band that
+	// already has a reveal entry keeps it — the renderer mounts all behaviors.
+	const parallaxById = new Map<string, ScrollBehaviorEntry>();
+	const parallaxFor = ( id: string ): ScrollBehaviorEntry => {
+		let entry = parallaxById.get( id );
+		if ( ! entry ) {
+			entry = { id, kind: 'parallax' };
+			parallaxById.set( id, entry );
+			pass.entries.push( entry );
+		}
+		return entry;
+	};
+
 	const headerNode = findFirstNode( root, ( n ) => n.type === 'tag' && ( n.name === 'header' || /site-header|master-header/i.test( tagClasses( n ) + ' ' + ( n.attribs?.id ?? '' ) ) ) );
 
-	// The walk: EVERY element (the one-pager loop), classified in order.
-	// Behaviors ROLL UP to the nearest top-level section: a parallax column
-	// inside the hero makes the rebuilt HERO section parallax (the renderer
-	// only ever wraps top-level sections). The section stack tracks the
-	// current containing elementor-top-section id.
-	const sectionStack: string[] = [];
+	// The band stack: top-level sections are the roll-up target; a standalone
+	// `elementor-section` (no `elementor-top-section` ancestor) is the fallback.
+	interface SectionFrame {
+		id: string;
+		top: boolean;
+	}
+	const sectionStack: SectionFrame[] = [];
+	const bandIdOf = (): string | undefined => {
+		for ( let i = sectionStack.length - 1; i >= 0; i-- ) {
+			if ( sectionStack[ i ].top ) {
+				return sectionStack[ i ].id;
+			}
+		}
+		return sectionStack[ sectionStack.length - 1 ]?.id;
+	};
+
+	// The piece context carries the source element's facts down to its <img>,
+	// which is where the media ordinal and src are observable.
+	interface PieceContext {
+		bandId: string;
+		piece: ParallaxPiece;
+	}
+	let pieceContext: PieceContext | undefined;
+	const imageCounts = new Map<string, number>();
+
 	const walk = ( node: HNodeLike ): void => {
+		let pushedFrame = false;
+		const outerPiece = pieceContext;
 		if ( node.type === 'tag' ) {
 			const classes = tagClasses( node );
 			const id = elementIdOf( classes );
-			const isTopSection = sectionClasses( node ).some( ( cls ) => cls === 'elementor-top-section' || cls === 'elementor-section' );
-			if ( isTopSection && id ) {
-				sectionStack.push( id );
+			const classList = sectionClasses( node );
+			const isTopSection = classList.includes( 'elementor-top-section' );
+			const isSection = classList.includes( 'elementor-section' );
+			if ( ( isTopSection || isSection ) && id ) {
+				sectionStack.push( { id, top: isTopSection } );
+				pushedFrame = true;
 			}
-			const sectionId = id !== undefined && isTopSection ? id : sectionStack[ sectionStack.length - 1 ] ?? id;
+			const sectionId = bandIdOf() ?? id;
 			const settings = motionFxSettings( node );
 			const scrolling = motionFxValue( settings, 'motion_fx_motion_fx_scrolling' ) === 'yes';
 			const hasMotionKeys = settings !== undefined && Object.keys( settings ).some( ( key ) => /^motion_fx_(translate|rotate|scale|opacity|blur)[xy]?_effect$/i.test( key ) );
@@ -2771,7 +2905,7 @@ export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehavior
 					push( { id: sectionId, kind: 'sticky' } );
 				}
 			} else if ( id ) {
-				for ( const rule of topLevelRules( cssText ) ) {
+				for ( const rule of rules ) {
 					if ( ! rule.selector.includes( `elementor-element-${ id }` ) ) {
 						continue;
 					}
@@ -2782,20 +2916,24 @@ export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehavior
 				}
 			}
 
-			// 2. Parallax — the theme class, the Elementor scroll-tied
-			//    translate effect, or a fixed-attachment background rule.
-			if ( PARALLAX_CLASS_RE.test( classes ) || ( scrolling && hasMotionKeys ) ) {
-				if ( sectionId ) {
-					const speed = settings ? ( ( motionFxValue( settings, 'motion_fx_translateY_speed' ) as { size?: number } | undefined )?.size ?? 1 ) : 1;
-					push( { id: sectionId, kind: 'parallax', speed: Number.isFinite( speed ) && speed > 0 ? speed : 1 } );
+			// 2. Parallax — a real MOVING PIECE (Phlox piece/depth attrs,
+			//    Elementor scrolling motion), or a fixed-attachment background
+			//    rule. A bare `aux-parallax-section` container is not motion.
+			const piece = parallaxPieceOf( node, settings, classes );
+			if ( piece && sectionId ) {
+				const entry = parallaxFor( sectionId );
+				entry.pieces = [ ...( entry.pieces ?? [] ), piece ];
+				if ( piece.speed !== undefined ) {
+					entry.speed = Math.max( entry.speed ?? 1, piece.speed );
 				}
+				pieceContext = { bandId: sectionId, piece };
 			} else if ( id ) {
-				for ( const rule of topLevelRules( cssText ) ) {
+				for ( const rule of rules ) {
 					if ( ! rule.selector.includes( `elementor-element-${ id }` ) ) {
 						continue;
 					}
 					if ( /background-attachment\s*:\s*fixed/i.test( rule.body ) ) {
-						push( { id: sectionId, kind: 'parallax' } );
+						parallaxFor( sectionId ?? id );
 					}
 					break;
 				}
@@ -2813,11 +2951,29 @@ export function analyzeScrollBehavior( input: DesignFetchInput ): ScrollBehavior
 					push( { id: sectionId, kind: 'reveal', effect } );
 				}
 			}
+
+			// The piece's media identity: the FIRST <img> under the piece, plus
+			// its ordinal among the band's images in document order.
+			if ( node.name === 'img' ) {
+				const bandId = bandIdOf() ?? pieceContext?.bandId;
+				if ( bandId ) {
+					const ordinal = imageCounts.get( bandId ) ?? 0;
+					if ( pieceContext && pieceContext.bandId === bandId && pieceContext.piece.src === undefined ) {
+						const src = node.attribs?.src ?? node.attribs?.[ 'data-src' ];
+						if ( src ) {
+							pieceContext.piece.src = src;
+							pieceContext.piece.index = ordinal;
+						}
+					}
+					imageCounts.set( bandId, ordinal + 1 );
+				}
+			}
 		}
 		for ( const child of childNodes( node ) ) {
 			walk( child );
 		}
-		if ( node.type === 'tag' && sectionClasses( node ).some( ( cls ) => cls === 'elementor-top-section' || cls === 'elementor-section' ) ) {
+		pieceContext = outerPiece;
+		if ( pushedFrame ) {
 			sectionStack.pop();
 		}
 	};

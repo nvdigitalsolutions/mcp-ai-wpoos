@@ -45,6 +45,7 @@ notes below). Full context: `docs/project/proposals/096-astro-forge-wp-generator
 | `lib/tracking-audit.ts` | 130 `verify --tracking` gate — consent ordering, verification token/file presence, deferred static-HTML purity, purchase ownership, CSP superset/stale |
 | `lib/seo-audit.ts` | 131 `verify --seo` gate — double-branded titles, robots, canonical, OG/Twitter, JSON-LD graph, html lang |
 | `lib/redirects.ts` | 096 §3.3 + 132 redirect-map generator — URL-structure 301s merged beneath the bridge's stored Redirection/Rank Math rules (rebuild wins conflicts), fail-soft |
+| `lib/animations.ts` | 142 animated-effect inventory — `@keyframes` + library signatures, `document.getAnimations()` probe (rest/50%/bottom), planner (finite/safe → scoped CSS; infinite/JS/non-band → deferred), diff |
 | `lib/ssrf.ts` | URL guard — private/literal-range refusal, registry allowlist + `NVOOS_FORGE_OPEN_ANALYZE` opt-in, CLI-only loopback exemption |
 | `lib/vision.ts` | 118 §1 optional vision layer — OpenAI-compatible chat-completions, DATA-URL images in the body, fail-soft `{ok}` outcomes |
 | `lib/capture.ts` | 118 §2 screenshot contract — `NVOOS_FORGE_CAPTURE_URL` endpoint or dropped `verify-artifacts/` files (browser-free) |
@@ -726,6 +727,16 @@ sticky / reveal / parallax, and the template rebuilds the motion with a
   cut emitted `],` with no opener — the e2e's astro check caught it with
   `ts(2695)`); the `data-settings` JSON is entity-encoded (`&quot;`) —
   decode before `JSON.parse`.
+- **The 2026-11-12 element pass (do not regress):** `aux-parallax-section` is a
+  CONTAINER, not motion — Phlox's `AvertaParallaxBox` returns when it has no
+  `aux-parallax-piece` targets (jayainc: 24 markers, 2 real pieces → only the
+  About band is parallax). Pieces carry depth/origin/off + Elementor
+  direction/speed/range/devices; the renderer emits per-media
+  `--ds-parallax-from/to` rules with the source's `off`/device gate, and mounts
+  ALL behaviors for a band (the old single `find` dropped one when a band was
+  both reveal and parallax). `.ds-lede` is content-width except in centered/
+  hero bands. Full contract:
+  [`reference/parallax-element-pass.md`](reference/parallax-element-pass.md).
 - **The CSS minifier can silently kill every scroll animation (cost the
   jayainc parallax 2026-11-06):** Chrome (as of 157) drops the ENTIRE
   `animation` declaration when a timeline value (`scroll()`/`view()`)
@@ -752,61 +763,36 @@ sticky / reveal / parallax, and the template rebuilds the motion with a
   `--overwrite` fails EBUSY until the preview PID is killed (`netstat -ano |
   grep <port>`).
 
+## Proposal 142 — animation inventory (2026-11-12)
+
+`analyze --animations` measures the source's animated effects with
+`document.getAnimations()` (rest + 50% + bottom scroll) plus static
+`@keyframes`/library signatures; `verify --animations` matches the generated
+`forge-anim-<hash>` rules on the built page (default **advisory** — a JS runtime
+cannot be reproduced by a no-JS template). Finite, layout-safe CSS keyframes on
+a band/media/control/title target rebuild as scoped CSS under `prefers-reduced-
+motion: no-preference`; infinite motion ships with a page-level **Pause motion**
+control (WCAG 2.2.2); JS runtimes (GSAP/Lottie/Rive) and non-band targets are
+reported in `MOTION.md`, never vendored. `--animations-pages N` covers sub-pages.
+The browser half is pinned hermetically (`tests/animations-browser.test.ts`:
+CSS keyframe, WAAPI, IO reveal, and a `scroll(root)`/`cover 10%` round-trip
+through the emitter back into Chrome) plus the reduced-motion base state.
+**`Animation.rangeStart` is a dictionary, not a string** — `String()` gives
+`[object Object]`; see the reference. **REA (`morluto/rea`) is a
+reverse-engineering MCP, not an animation library — do not add it to the
+package**; it is an operator-side investigation tool only. jayainc records
+`verify.gates["animated effects"] = "gate"`. Full contract:
+[`reference/animation-inventory.md`](reference/animation-inventory.md).
+
 ## Proposal 122 — fidelity round (2026-11-06)
 
-Four jayainc drift reports fixed in one round (PR #7486): section widths,
-button shape, the missing services image, and the footer. All verified
-on-screen with computed styles + pixel sampling before merge.
-
-- **Measure is site, not prose (the width root cause):** the template's
-  `--forge-measure: 72ch` (~470px at the rebuilt 13px body) squeezed EVERY
-  band into a prose column — the rebuild looked like a blog, not the
-  source. `measure` now defaults `75rem` in `DEFAULT_TOKENS` (scaffold.ts)
-  and the template. NEVER reintroduce a ch-based measure; site bands are
-  rem-bounded, not line-length bounded.
-- **Full-bleed centering + motion composition:** `width: 100vw` +
-  single-sided `margin-left` sits 7px left (100vw includes the scrollbar).
-  Ship `margin-left: 50%; transform: translateX(-50%)` (self-referential,
-  no calc) and move the reveal/parallax keyframes off `transform` onto the
-  independent `translate`/`scale` properties — a keyframe `transform`
-  REPLACES the centering transform (reveals jumped +40px, parallax bands
-  shifted). `body { overflow-x: clip }` stays for the scrollbar sliver.
-- **Section padding facts (band rhythm):** `sections.generated.ts` now
-  emits the source's declared `padding` per band (jayainc: flush bands AND
-  100px/125px bands), applied inline via `wrapStyle()`; template
-  `.ds-section` default tightened to space-3/space-4. Same-origin CSS per
-  section id is the fact source, as in 117.
-- **CTA shape harvest (`dominantCtaFillFromHtml`):** new `cta` palette
-  role + `design.ctaStyle` (padding/radius). Walks actual `<a>`/`<button>`
-  elements (button-ish class filter `button|btn|cta|aux-ac|aux-call|
-  pricing`), resolves each property through a specificity-APPROXIMATED
-  cascade — per rule, `matchCount * 1000000 + ruleIndex` (the rule
-  matching the MOST of the element's classes wins; ties by source order).
-  The old frequency vote let base rules (`padding: 12px 23px`, `radius:
-  5px`) out-vote the real pill rules. **Gradient fill ALWAYS beats flat
-  color** — a flat hover/outline color (`#ebde68` on jayainc) otherwise
-  wins over the gradient `background-image` that is the effective fill
-  (this regressed once and was caught). Emits `--forge-cta`,
-  `--forge-cta-ink`, `--forge-cta-pad`, `--forge-cta-radius`. jayainc
-  pinned via `profile.tokens`: `cta-pad: "16px 50px"`, `cta-radius:
-  "999px"` (the majority size — the source's CALL US is `14px 43px` at
-  1600px, the rest `16px 50px`); yellow gradient `#ffcf0e → #ffb70e`,
-  dark ink `#111111` for WCAG (source uses white ink on the yellow).
-- **Icon-list split media:** `IconList.astro` renders `slots.media` in a
-  `.ds-icon-split` two-column layout — the "Why Choose Us" portrait photo
-  (`jaya-2-fix-784x1236.jpg`) returned after being silently dropped.
-- **Footer logo/bg + favicon:** `analyzeChrome` captures `footerLogo`
-  (img inside the footer/aside scope — jayainc's white PNG), `footerBg`
-  (the `.subfooter` terminal rule — jayainc `#f3f3f3`), and `favicon`
-  (first `<link rel="icon">`, absolute — `cropped-jaya-inc-icon-32x32`);
-  `Base.astro` wires all three.
-- **Operator pins survive `analyze --write`:** the tokens merge preserves
-  hand-tuned `cta-pad`/`cta-radius`/`measure` keys. Facts INSIDE the analyzed
-  `design` block are replaced wholesale, so declare those at the profile's top
-  level in `pins` — `{ "path": "sections.5e78df1.marginTop", "value": "170px" }`
-  or `{ "path": "chrome.footerInk", "value": "…" }`; `mergeProfileDraft`
-  re-applies them (`lib/pins.ts`) and `tests/pins.test.ts` fails when the
-  committed profile stops satisfying one. `--fresh` still drops them (it warns).
+Ten jayainc drift reports fixed in one round (PR #7486): section widths, button
+shape, the missing services image, the footer, CTA shape, pins. Full notes:
+[`reference/proposal-122-fidelity-round.md`](reference/proposal-122-fidelity-round.md).
+The three rules that still bite: **measure is site, not prose** (never a ch-based
+`--forge-measure`), **full-bleed centering must use
+`margin-left:50%;transform:translateX(-50%)`** (never `100vw - calc`), and motion
+keyframes use `translate`/`scale`, never `transform` (it replaces the centering).
 
 ## Proposal 123 — chrome typography pass (2026-11-06)
 

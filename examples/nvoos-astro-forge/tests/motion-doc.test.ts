@@ -43,4 +43,20 @@ describe( 'renderMotionDoc', () => {
 		expect( renderMotionDoc( input ) ).toBe( first );
 		expect( first ).not.toMatch( /\d{4}-\d{2}-\d{2}T/ );
 	} );
+
+	it( 'names the piece count on a piece-level parallax band', () => {
+		const doc = renderMotionDoc(
+			profile( {
+				entries: [
+					{
+						id: 'd5844b9',
+						kind: 'parallax',
+						speed: 2,
+						pieces: [ { depth: -0.1, origin: 'bottom' }, { depth: 0.1, origin: 'bottom' } ],
+					},
+				],
+			} )
+		);
+		expect( doc ).toContain( '| `d5844b9` | parallax | ±48px × 2 pieces | static |' );
+	} );
 } );

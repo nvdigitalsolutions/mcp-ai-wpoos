@@ -41,6 +41,7 @@ import { Command } from 'commander';
 
 import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredHeader, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { auditBands, formatBandReport } from '../lib/band-audit.ts';
+import { countAnimations, diffAnimations, measureAnimations, planAnimationRebuild } from '../lib/animations.ts';
 import { auditClassCoverage } from '../lib/class-audit.ts';
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
@@ -397,6 +398,92 @@ async function runAnalyze( url, options ) {
 			}
 		} catch ( error ) {
 			console.error( `\u26a0 Vocabulary learning failed (continuing without): ${ error instanceof Error ? error.message : error }` );
+		}
+	}
+
+	// --animations (2026-11-12): inventory the source's animated effects. The
+	// static pass reads @keyframes + library signatures from the HTML/CSS the
+	// design pass already fetched; the browser pass uses document.getAnimations()
+	// at rest and after scrolling. The browser is the only standards-based way to
+	// see CSS *and* script-driven Web Animations. Fail-soft: an unavailable
+	// browser or a WAF block never stops the draft.
+	if ( options.animations ) {
+		try {
+			let animationInput = designInput;
+			if ( ! animationInput ) {
+				try {
+					animationInput = await fetchDesignInput( profile.url, fetch, {
+						allowLoopback: process.env.NVOOS_FORGE_ALLOW_LOOPBACK === '1',
+					} );
+				} catch ( error ) {
+					console.warn(
+						`\u26a0 Animated effects: the homepage stylesheets could not be fetched (${ error instanceof Error ? error.message : error }); the browser probe still runs.`
+					);
+				}
+			}
+			const inventory = await measureAnimations( {
+				url: profile.url,
+				html: animationInput?.html ?? '',
+				css: animationInput?.css ?? [],
+				timeout: 90000,
+			} );
+			if ( inventory.error ) {
+				console.warn( `\u26a0 Animated effects: ${ inventory.error }` );
+			} else {
+				// A fresh `--animations` run may not carry `--design`; the site's
+				// committed profile still owns the reveal/parallax entries, so use them
+				// for the rebuild decision (the merge at --write keeps the design).
+				let animationBehavior = profile.design?.behavior;
+				if ( ! animationBehavior && options.write ) {
+					try {
+						const existing = JSON.parse( await readFile( options.write, 'utf8' ) );
+						animationBehavior = existing.design?.behavior;
+					} catch {
+						// Fresh draft — no existing design to map against.
+					}
+				}
+				const planned = planAnimationRebuild( inventory.facts, animationBehavior, { allowInfinite: true } );
+				profile.animations = { ...inventory, facts: planned, counts: countAnimations( planned ) };
+				const counts = countAnimations( planned );
+				console.log(
+					`\u2713 Animated effects: ${ planned.length } measured \u2014 ${ counts[ 'rebuild:css' ] ?? 0 } CSS rebuild, ${ counts[ 'rebuild:mapped' ] ?? 0 } mapped, ${ counts[ 'rebuild:deferred' ] ?? 0 } deferred; runtimes: ${ ( inventory.libraries ?? [] ).join( ', ' ) || '(none)' }.`
+				);
+				for ( const fact of planned.filter( ( entry ) => entry.rebuild === 'deferred' ).slice( 0, 8 ) ) {
+					console.log( `  \u2013 ${ fact.bandId ?? '?' } ${ fact.name } (${ fact.target ?? '?' }): ${ fact.note ?? 'deferred' }` );
+				}
+				// Per-page inventory (opt-in): the homepage drives the generated CSS;
+				// a sub-page's facts are reported in MOTION.md so the operator can see
+				// what moves there without pretending the homepage band ids apply.
+				const pageLimit = Number( options.animationsPages ?? 0 );
+				if ( Number.isFinite( pageLimit ) && pageLimit > 0 ) {
+					try {
+						const pages = await listSourcePages( profile );
+						profile.pageAnimations = {};
+						for ( const page of pages.slice( 0, pageLimit ) ) {
+							const pageInventory = await measureAnimations( { url: page.url, timeout: 90000 } );
+							if ( pageInventory.error ) {
+								console.warn( `  \u26a0 /${ page.slug }/: ${ pageInventory.error }` );
+								continue;
+							}
+							const pagePlanned = planAnimationRebuild( pageInventory.facts, animationBehavior, {
+								allowInfinite: true,
+							} );
+							profile.pageAnimations[ page.slug ] = {
+								...pageInventory,
+								facts: pagePlanned,
+								counts: countAnimations( pagePlanned ),
+							};
+							console.log( `  \u2013 /${ page.slug }/: ${ pagePlanned.length } animated fact(s)` );
+						}
+					} catch ( error ) {
+						console.warn(
+							`\u26a0 Per-page animation inventory skipped: ${ error instanceof Error ? error.message : error }`
+						);
+					}
+				}
+			}
+		} catch ( error ) {
+			console.error( `\u26a0 Animated effects failed (continuing without): ${ error instanceof Error ? error.message : error }` );
 		}
 	}
 
@@ -2377,6 +2464,90 @@ async function runVerify( profileRef, options ) {
 		}
 	}
 
+	// Animated effects (2026-11-12): the source inventory's finite CSS keyframe
+	// rebuilds should appear on the built page. Presence-based, like the
+	// interaction gate: the generated animation name is deterministic, so a
+	// `forge-anim-<hash>` missing from the build is a real regression. Mapped and
+	// deferred facts are reported, never failed (a JS runtime cannot be rebuilt
+	// by a no-JS template; infinite motion needs a pause control first).
+	if ( options.animations ) {
+		const inventory = profile.animations;
+		const sourceFacts = planAnimationRebuild( inventory?.facts ?? [], profile.design?.behavior );
+		const rebuiltFacts = sourceFacts.filter( ( fact ) => fact.rebuild === 'css' );
+		if ( ! inventory || ( ( inventory.facts?.length ?? 0 ) === 0 && ( inventory.libraries?.length ?? 0 ) === 0 ) ) {
+			console.warn(
+				'\u26a0 Animated effects: no baseline on the profile \u2014 run `analyze <url> --animations --write <profile>`.'
+			);
+			record( 'animated effects', 'skip', 'no baseline (analyze --animations)' );
+		} else if ( ! ( await browserAvailable() ) ) {
+			console.warn( '\u26a0 Animated effects: skipped \u2014 Playwright/Chromium is not available in this environment.' );
+			record( 'animated effects', 'skip', 'browser unavailable' );
+		} else {
+			const policy = resolveGateMode( 'animated effects', profile.verify );
+			const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
+			try {
+				const built = await measureAnimations( { url: served.url, maxFacts: 400 } );
+				if ( built.error ) {
+					console.warn( `\u26a0 Animated effects: ${ built.error }` );
+					record( 'animated effects', 'skip', built.error );
+				} else {
+					// The built HTML is the presence fallback for a finished animation
+					// that getAnimations() no longer reports; it also carries the CSS for
+					// the timing check. A failed fetch is non-fatal (facts still decide).
+					let builtHtml = '';
+					try {
+						const response = await fetch( served.url );
+						if ( response.ok ) {
+							builtHtml = await response.text();
+						}
+					} catch {
+						// Presence falls back to the measured facts only.
+					}
+					const diff = diffAnimations( sourceFacts, built.facts, builtHtml );
+					if ( rebuiltFacts.length === 0 ) {
+						console.log(
+							`\u2713 Animated effects: ${ sourceFacts.length } fact(s) inventoried \u2014 none needs a CSS rebuild (mapped/deferred).`
+						);
+					} else if ( diff.missing.length === 0 ) {
+						console.log( `\u2713 Animated effects: ${ diff.matched }/${ rebuiltFacts.length } CSS rebuild(s) present on the built page.` );
+					} else {
+						for ( const fact of diff.missing.slice( 0, 12 ) ) {
+							console.warn(
+								`\u2717 Animated effects: ${ fact.bandId ?? '?' } ${ fact.name } (${ fact.target ?? '?' }) is missing from the built page.`
+							);
+						}
+						if ( diff.missing.length > 12 ) {
+							console.warn( `  \u2026 ${ diff.missing.length - 12 } more missing rebuild(s).` );
+						}
+						if ( policy.mode === 'gate' ) {
+							process.exitCode = 1;
+						} else {
+							console.warn(
+								`\u2139 Animated effects: ${ diff.missing.length } missing rebuild(s) treated as ADVISORY \u2014 ${ gateNote( policy ) }.`
+							);
+						}
+					}
+					for ( const mismatch of diff.timing.slice( 0, 12 ) ) {
+						console.warn(
+							`\u26a0 Animated effects: ${ mismatch.fact.bandId ?? '?' } ${ mismatch.fact.name } ${ mismatch.property } ${ mismatch.expected } \u2192 ${ mismatch.actual }`
+						);
+					}
+					if ( diff.timing.length > 12 ) {
+						console.warn( `  \u2026 ${ diff.timing.length - 12 } more timing warning(s).` );
+					}
+					record(
+						'animated effects',
+						diff.missing.length > 0 ? ( policy.mode === 'advisory' ? 'advisory' : 'fail' ) : diff.timing.length > 0 ? 'warn' : 'pass',
+						`${ diff.matched }/${ rebuiltFacts.length } rebuilt fact(s) present, ${ diff.timing.length } timing warning(s)`,
+						gateNote( policy )
+					);
+				}
+			} finally {
+				served.server.close();
+			}
+		}
+	}
+
 	// Pixel gate (the renders gate): per-pixel delta with the anti-alias filter
 	// plus SSIM. The SOURCE screenshot comes from `verify-artifacts/` (the
 	// capture seam) or, with --pixel-live, from a headless capture of the
@@ -2871,6 +3042,8 @@ program
 	.option( '--wireframes', 'imply --inventory and extract wireframes for the missing pages (Proposal 115)' )
 	.option( '--wayback', 'add Wayback CDX discovery to the inventory (deleted pages)' )
 	.option( '--vocabulary', 'learn the widget/block vocabulary (block-types registry + rendered widget names, Proposal 116)' )
+	.option( '--animations', 'inventory the source\'s animated effects (CSS keyframes, transitions, WAAPI, libraries, video/SMIL) with Playwright' )
+	.option( '--animations-pages <n>', 'with --animations: also measure this many sub-pages (default 0 = homepage only)', '0' )
 	.option( '--geometry', 'measure each source band\u0027s box at 3 viewports so `verify --geometry` can diff the build (needs --design; requires Playwright)' )
 	.option( '--pages', 'measure EVERY page\u0027s bands too (per-page geometry + surfaces; implies --geometry)' )
 	.option( '--pages-limit <n>', 'with --pages: how many pages to measure (default 8)', '8' )
@@ -2964,8 +3137,9 @@ program
 	.option( '--pages', 'with --geometry: also diff every page measured by `analyze --pages`' )
 	.option( '--strict-pages', 'with --pages: fail the run on a sub-page band that misses its own source box (default: advisory — content-scale overshoot)' )
 	.option( '--geometry-limit <n>', 'how many geometry deviations to print (default 12)', '12' )
-	.option( '--interactions', 'verify the rebuilt controls keep the source\u0027s hover / focus / focus-visible / active states and show a keyboard focus ring (needs `analyze --geometry`; requires Playwright)' )
+	.option( '--interactions', 'verify the rebuilt controls keep the source\'s hover / focus / focus-visible / active states and show a keyboard focus ring (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--interactions-limit <n>', 'how many interaction findings to print (default 12)', '12' )
+	.option( '--animations', 'verify the source CSS keyframe rebuilds appear on the built page (needs `analyze --animations`; requires Playwright)' )
 	.option( '--diff', 'with geometry: compare the box tree of EVERY band (not just the deviating ones) and print where the height delta comes from' )
 	.option( '--diff-limit <n>', 'how many per-band contributor nodes to print (default 5)', '5' )
 	.option( '--diff-json <path>', 'where to write the band-diff reports (default <target>/verify-artifacts/band-diff.json)' )
