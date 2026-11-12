@@ -238,7 +238,7 @@ author/viewer/guest/bearer) passes on every mutating route.
 | 4.3 | Generic resource controller + settings schema endpoint | `ToolkitController` | `/api/v1/pro/toolkits/{slug}` | ✅ list/show/settings/dashboard/entity CRUD |
 | 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error | ✅ route middleware + per-manifest feature checks |
 | 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | 🟡 commerce + documents manifests shipped; **research drafting wired**; media is the built-in library |
-| 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | ⏳ |
+| 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | 🟡 read surface at parity — 6/6 fixtures, 0 drift; `research` not ported |
 | 4.7 | Contract fixtures per family | fixtures | Parity suite | ✅ capture command + 6 fixtures + shape replay + CI job |
 
 **Phase 4 notes**
@@ -493,7 +493,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 | Pro tool catalogue on Laravel | **Decided (option 3)** | Selective port by cluster: 18 tools are dependency-free, 143 need one adapter, 860 stay in the plugin. Tracker + recipe: `090-d-selective-tool-port.md`; regenerate with `bin/classify-tool-portability.php` |
 | Toolkit `research` screen | **Done (4.5)** | `POST /pro/toolkits/{slug}/research` drafts one record from the manifest's column schema through `ProviderRouter` (`temperature 0.2`, JSON-only reply, unknown keys dropped). The draft is reviewed in the console and saved through `storeEntity`, so one validation path governs writes. No provider → typed `ai_unavailable` 503. |
 | Toolkit `consolidate` screen | Bounded | Scans the first 100 records of each entity (one page) to keep the request O(1). Move to a queued job when a family needs full-catalogue dedupe |
-| `/pro/toolkits` on the WordPress runtime | Not ported | The WordPress Pro SPA config returns `toolkits: ''`; `ToolkitsClient.available` is false and the nav entry is hidden. Port the REST controller in Phase 4.6 when families migrate |
+| `/pro/toolkits` on the WordPress runtime | **Done** (read surface) | `mcp-ai-pro/v1/toolkit-manifests` serves the same envelope as Laravel — verified route-by-route against the committed fixtures (6/6, 0 drift). `research` is not ported: `POST …/research` is absent there. |
 | Non-stateful session login | Decided | A POST to `/session/login` without a first-party `Referer`/`Origin` answers a typed 419 `session_required` instead of a 500 (browser-only flow) |
 
 ---
