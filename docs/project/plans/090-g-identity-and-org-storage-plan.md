@@ -130,19 +130,44 @@ console and tools consume either runtime identically.
 
 ### 4.3 Professions — versioned reference data
 
+**Status: shipped** (`ProfessionRepository` + starter catalogue + the three
+read tools, PR #7641).
+
 ```text
 lib/laravel-adapter/resources/professions/
-  index.json                  { catalogue_version: "1.0.0", professions: [...] }
-  <slug>.json                 { slug, label, category, description,
-                                knowledge_base: [...], recommended_tools: [...] }
+  manifest.json               { catalogue_version: "1.0.0", description }
+  <domain>.json               { category, description,
+                                professions: [ { title, slug, description,
+                                  category, role_description, expertise[],
+                                  warnings[], knowledge_base,
+                                  default_tools[] } ] }
 ```
 
+The loader globs `*.json` and merges every document that has a `professions`
+array, so `manifest.json` (no `professions` key) is metadata only and a
+deployment can point `oos.professions.path` at a fuller, licensed catalogue
+without changing code. The shipped catalogue is a nine-role MIT-authored
+starter; it deliberately does **not** copy the plugin's 544 K GPL corpus.
+
 - Code-owned and versioned per release; **never** written at runtime.
-- `ProfessionRepositoryInterface` reads the manifest; the six methods map
-  directly (`getAll`, `getBySlug`, `getByCategory`, `loadKnowledgeBase`,
-  `getRecommendedTools`, `getCategories`).
-- Cache key includes `catalogue_version`, so a deploy invalidates cleanly
-  without a manual purge.
+- `ProfessionRepositoryInterface` is implemented on Laravel; the six methods
+  map directly (`getAll`, `getBySlug`, `getByCategory`, `loadKnowledgeBase`,
+  `getRecommendedTools`, `getCategories`). `ProfessionRepository::catalogueVersion()`
+  exposes the manifest version for cache keys and logging.
+- Shapes match `WP_MCP_AI_Profession_Service` so a tool cannot tell which
+  runtime answered. Two upstream stubs are mirrored deliberately rather than
+  invented on one side:
+  - `loadKnowledgeBase()` returns `['knowledge' => [], 'playbook' => []]` — the
+    legacy loader has no `load_for_profession()` entry point. Inline knowledge
+    lives in `getBySlug()['profession']['knowledge_base']`.
+  - The WordPress adapter's `getCategories()` returns `[]` because the legacy
+    service has no `get_categories()` method. **Laravel implements the
+    contract shape** (grouped `category => professions`), because
+    `ProfessionStatsTool` consumes it.
+- `list_professions`, `get_profession` and `profession_stats` are registered
+  on Laravel in `NvoosServiceProvider::registerTools()`. `save_profession` is
+  **not** registered: `ProfessionRepositoryInterface` has no write method, so
+  the tool is a no-op stub that reports success without persisting.
 - Assignment lives in the tenant's data (`team_members.profession_slug`), not
   in the catalogue.
 - WordPress keeps its existing service/loader; the core contract is the only
@@ -153,7 +178,7 @@ lib/laravel-adapter/resources/professions/
 | Phase | Work | Unlocks |
 |---|---|---|
 | 1 | Assistant hardening (tenant, composite unique, default) + regression tests | Correct multi-tenant assistants |
-| 2 | Profession catalogue manifests + `ProfessionRepository` adapter + tests | Professional selector, recommended tools |
+| 2 | Profession catalogue manifests + `ProfessionRepository` adapter + read tools + tests — **shipped** | Professional selector, recommended tools |
 | 3 | Teams tables, `TeamServiceInterface`, `TeamController` (`090-b` 2.5) | Team CRUD + membership |
 | 4 | Surfaces: profession selector, team pages (reuse the Content Graph page patterns) | User-facing |
 

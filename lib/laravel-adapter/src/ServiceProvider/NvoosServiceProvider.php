@@ -29,6 +29,7 @@ use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
+use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SchemaStoreInterface;
@@ -39,9 +40,12 @@ use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\Core\Tool\GetProfessionTool;
 use Nvoos\Core\Tool\GetTaskDependenciesTool;
+use Nvoos\Core\Tool\ListProfessionsTool;
 use Nvoos\Core\Tool\ListProjectsTool;
 use Nvoos\Core\Tool\ListTasksTool;
+use Nvoos\Core\Tool\ProfessionStatsTool;
 use Nvoos\Laravel\Tool\CoreToolCatalogue;
 use Nvoos\Laravel\Adapter\AuthProvider;
 use Nvoos\Laravel\Adapter\CacheStore;
@@ -55,6 +59,7 @@ use Nvoos\Laravel\Adapter\JobStatusStore;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlement;
+use Nvoos\Laravel\Adapter\ProfessionRepository;
 use Nvoos\Laravel\Adapter\QueueClient;
 use Nvoos\Laravel\Adapter\RateLimiter;
 use Nvoos\Laravel\Adapter\SchemaStore;
@@ -92,6 +97,7 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( AuthProviderInterface::class, AuthProvider::class );
 		$this->app->bind( ContentStoreInterface::class, ContentStore::class );
 		$this->app->bind( SchemaStoreInterface::class, SchemaStore::class );
+		$this->app->bind( ProfessionRepositoryInterface::class, ProfessionRepository::class );
 		$this->app->bind( HttpClientInterface::class, HttpClient::class );
 		$this->app->bind( TranscriptStoreInterface::class, TranscriptStore::class );
 		$this->app->bind( MemoryStoreInterface::class, MemoryStore::class );
@@ -201,12 +207,16 @@ class NvoosServiceProvider extends ServiceProvider {
 		}
 
 		// Tools that need a service rather than just the error factory.
-		$content = $this->app->make( ContentStoreInterface::class );
+		$content     = $this->app->make( ContentStoreInterface::class );
+		$professions = $this->app->make( ProfessionRepositoryInterface::class );
 
 		$service_tools = array(
 			new ListProjectsTool( $errors, $content ),
 			new ListTasksTool( $errors, $content ),
 			new GetTaskDependenciesTool( $errors, $content ),
+			new ListProfessionsTool( $errors, $professions ),
+			new GetProfessionTool( $errors, $professions ),
+			new ProfessionStatsTool( $errors, $professions ),
 		);
 
 		foreach ( $service_tools as $tool ) {
