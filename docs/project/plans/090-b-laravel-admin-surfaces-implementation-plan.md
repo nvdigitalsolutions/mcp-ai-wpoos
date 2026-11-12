@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–3b implemented and verified; Phase 2 assistant-studio foundation and the Phase 3a/3b persistence + operations clusters implemented (2026-11-12) · Phases 4–5 planned
+**Status:** Phases 0–3c implemented and verified; Phase 2 assistant-studio foundation and the Phase 3a/3b/3c persistence + operations + Pro-surfaces clusters implemented (2026-11-12) · Phases 4–5 planned
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -56,17 +56,20 @@ Rank Math).
 | Playwright T0 smoke (G1) | **Pending** | Phase 1 task 1.7 |
 | Blueprints/teams/test-assistant | **Pending (Phase 2)** | See §6 |
 | Approvals queue (list/create/approve/deny) | **Done (Phase 3b)** | `ApprovalsController`, `nvoos_approvals` |
-| Workflow triggers (list/create/update/delete) | **Done (Phase 3b)** | `TriggersController`, `nvoos_triggers` |
+| Workflow triggers (list/create/update/delete) | **Done (Phase 3b)** | `TriggersController`, `nvoos_triggers` — served at `/triggers` and the console's `/orchestration/triggers` |
 | Security posture / header preview / snapshots / self-test | **Done (Phase 3b)** | `SecurityController`, `nvoos_security_snapshots` |
 | Paper Store (collections, record CRUD, search) | **Done (Phase 3b)** | `PaperStoreController`, `nvoos_paper_records` |
-| Schedule CRUD, content records, file uploads, Pro manifests | **Pending (Phases 3b–4)** | §7 remainder + §8 |
+| Schedule Manager (CRUD, toggle, trigger, history, results, fleet stats) | **Done (Phase 3c)** | `Pro\SchedulesController`, `nvoos_schedules` + `nvoos_schedule_runs` |
+| Records schema + `wp/v2` content shim | **Done (Phase 3c)** | `Pro\RecordsController`, `Wp\ContentController` over `nvoos_posts` |
+| Pro entitlement middleware on Pro routes | **Done (Phase 3c)** | `EnsureProEntitlement` (402 typed error, fails closed) |
+| File uploads, schedule presets, record remote/research, Pro manifests | **Pending (Phases 3b–4)** | §7 remainder + §8 |
 
 **Validation record (2026-11-12):**
 
 - Adapter PHPUnit: **34 tests, 101 assertions**
 - Console Vitest: **12 files, 112 tests**
 - Console typecheck: clean
-- Laravel app PHPUnit: **55 tests, 335 assertions**
+- Laravel app PHPUnit: **72 tests, 508 assertions**
 - Phase 3b soak (30 min, 2026-11-12): **1,644 iterations / 19,731 requests / 0 violations** — p50 81.9 ms · p95 212.4 ms · p99 338.8 ms · max 982.2 ms at 10.96 req/s; app RSS flat (203 → 194 MiB), DB flat
 - `node --check scripts/serve.mjs`: clean
 
@@ -157,10 +160,10 @@ the estate reaches `bundle_imported`.
 | 3.4 | Token usage + cost aggregation | `TokenUsageInterface` | ✅ |
 | 3.5 | Rate limiter adapter | `RateLimiterInterface` | ✅ |
 | 3.6 | Approvals + orchestration control | `OrchestrationControlInterface` | ✅ list/create/approve/deny, 409 on double-resolve |
-| 3.7 | Schedules + triggers | queue + cron status | ✅ trigger CRUD + toggle; ❌ schedule CRUD (`schedule-manager.ts`) open |
+| 3.7 | Schedules + triggers | queue + cron status | ✅ trigger CRUD + toggle; ✅ schedule CRUD/toggle/trigger/history/results/fleet-stats |
 | 3.8 | Analytics + performance monitor | `PerformanceMonitorInterface` | ✅ analytics; performance monitor ⏳ |
 | 3.9 | Security center + audit log | audit store | ✅ posture/headers/snapshots/self-test (8 native signals — see §14) |
-| 3.10 | Records + paper store | `ContentStoreInterface` + storage | ✅ Paper Store (collections, CRUD, search, filters); ❌ content records (`records.ts`) open |
+| 3.10 | Records + paper store | `ContentStoreInterface` + storage | ✅ Paper Store; ✅ content records via the `wp/v2` shim (posts/pages, list/get/create) |
 | 3.11 | File upload/validation | `FileUploadServiceInterface` | ⏳ |
 
 **Phase 3b notes**
@@ -179,6 +182,25 @@ the estate reaches `bundle_imported`.
   breaking; parity is tracked in §14.
 - **Paper Store ids** are slugged and uniquified per collection (`same-title`,
   `same-title-2`), matching the WordPress store's read shape.
+
+**Phase 3c notes**
+
+- **The console's trigger path is `/orchestration/triggers`.** `runtime-config.ts` maps
+  `triggers` to `${core}/orchestration/triggers`, not `${core}/triggers`. Both paths are
+  now registered from one loop so they cannot drift again.
+- **`wp/v2` is a shim, not an emulation.** The Records pages call `wp/v2/{restBase}`
+  directly and paginate from `X-WP-Total` / `X-WP-TotalPages`. `Wp\ContentController`
+  serves list/get/create for `posts` and `pages` from `nvoos_posts`; every other base
+  answers a WP-style `rest_no_route` 404. Remote browsing and create-from-research
+  answer 501 with a typed message rather than a bare 404.
+- **Schedule runs are a real ledger.** `trigger` executes the schedule's handler through
+  `ToolRegistry` synchronously and writes a `nvoos_schedule_runs` row, so history,
+  results and fleet stats read from recorded runs instead of being synthesised.
+- **Pro routes fail closed.** `EnsureProEntitlement` guards every `/api/v1/pro/*` route;
+  the `deny` driver returns 402 `pro_entitlement_required`.
+- **Octane keeps routes in memory.** After adding routes or classes on the FrankenPHP
+  runtime, run `php artisan octane:reload` — `route:clear` alone leaves the live workers
+  on the old route collection (see §13).
 
 **Gate G3:** the contract suite is green for every enabled family; the auth matrix (admin/editor/
 author/viewer/guest/bearer) passes on every mutating route.
@@ -251,6 +273,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `lib/laravel-adapter/src/Adapter/{TranscriptStore,MemoryStore,SessionLogStore,TokenUsage,RateLimiter}.php` (new)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000009..000012_*.php` (new)
 - `lib/laravel-adapter/database/migrations/2026_01_01_000013..000016_*.php` (new — approvals, triggers, security snapshots, paper records)
+- `lib/laravel-adapter/database/migrations/2026_01_01_000017..000018_*.php` (new — schedules console columns, schedule runs)
 - `lib/laravel-adapter/config/nvoos.php` (`pro_entitlement`, `features`)
 - `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` (binding)
 - `lib/laravel-adapter/tests/ProEntitlementTest.php` (new)
@@ -271,6 +294,9 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Controllers/{SettingsController,DiagnosticsController,OperationsController}.php`
 - `app/Http/Controllers/{TranscriptsController,MemoryController,AnalyticsController}.php`
 - `app/Http/Controllers/{ApprovalsController,TriggersController,SecurityController,PaperStoreController}.php`
+- `app/Http/Controllers/Pro/{SchedulesController,PresetsController,RecordsController}.php`
+- `app/Http/Controllers/Wp/ContentController.php` (wp/v2 content shim)
+- `app/Http/Middleware/EnsureProEntitlement.php`
 - `app/Http/Controllers/{AssistantController,AssistantPortabilityController}.php`
 - `app/Support/{CapabilityMap,SettingsSchema}.php`
 - `app/Services/LaravelAssistantService.php`
@@ -278,7 +304,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `app/Http/Middleware/AcceptWpNonce.php`
 - `routes/api.php`
 - `bootstrap/app.php` (`statefulApi()`, CSRF alias)
-- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest}.php`
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
 
 ---
@@ -290,7 +316,7 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
 | Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 112 pass |
 | Console types | `npm run typecheck` | clean |
-| Laravel app | `docker exec oos-laravel-app php artisan test` | 55 pass |
+| Laravel app | `docker exec oos-laravel-app php artisan test` | 72 pass |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
 CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
@@ -341,6 +367,13 @@ so only approval history grows during a run.
 `NVOOS_TARGET_SITE=<laravel-origin>` satisfies `console_deployed`. **Rollback:** flip
 `NVOOS_BACKEND=wordpress` and the console returns to the WordPress estate — no rebuild.
 
+**Runtime reload (Octane/FrankenPHP):** the container serves the app through Octane, which
+keeps the booted application — including the route collection and resolved controllers —
+in worker memory. After deploying new routes or classes, `php artisan octane:reload` is
+required; `config:clear` / `route:clear` alone leave live workers answering from the old
+route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
+`/pro/schedules/{id}/trigger` still 404'd until the reload).
+
 ---
 
 ## 14. Risks and open items
@@ -354,6 +387,9 @@ so only approval history grows during a run.
 | SSO / cookie domain | Open (Q6) | Phase 5 task 5.3 |
 | Pro `mcp-ai-pro/v1` toolkit endpoints | Not started | Phase 4 |
 | Laravel posture parity | Open | The Laravel report ships 8 native signals; WordPress ships 21. The SPA parser is defensive, so fewer cards render — decide in Phase 5 whether to expand or document the runtime-specific set |
+| Records remote proxy + create-from-research | Not ported | Bound to Remote Sites and the Pro `deep_research` pipeline; both answer 501 with a typed message |
+| Schedule presets | Not ported | `/api/v1/pro/presets` returns an empty catalogue; install answers 404 |
+| Schedule execution model | Synchronous | `trigger` runs the handler inline and records the run; move to queued execution when long-running toolkits are ported |
 | WP-native integrations | Non-goal | Deep-link or mark unavailable |
 
 ---
@@ -365,6 +401,7 @@ so only approval history grows during a run.
 - [x] Phase 2 foundation — assistant CRUD + bundle export/import (blueprints/teams/test-assistant pending)
 - [x] Phase 3a — transcripts, memory, session logs, token usage/cost, rate limiter
 - [x] Phase 3b — approvals, workflow triggers, security center (posture/headers/snapshots/self-test), paper store
-- [ ] Phase 3b remainder — schedule CRUD, content records, file uploads
+- [x] Phase 3c — schedule manager, records schema, `wp/v2` content shim, Pro entitlement middleware
+- [ ] Phase 3 remainder — file uploads (task 3.11)
 - [ ] Phase 4 — Pro manifest engine + pilot families
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates
