@@ -6,6 +6,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 import Tracking from '../components/Tracking.astro';
 import ConsentBanner from '../components/ConsentBanner.astro';
 import BuilderAccordion from '../components/BuilderAccordion.astro';
+import BuilderCarousel from '../components/BuilderCarousel.astro';
 import { generatedPolicy } from '../lib/theme/policy.generated.ts';
 import { chrome } from '../lib/chrome.generated.ts';
 import { behaviors } from '../lib/behaviors.generated.ts';
@@ -659,6 +660,9 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 		{/* Proposal 141 follow-up — builder accordions arrive CLOSED (the measured
 				resting state) with no way back open; this restores the toggle. */}
 		<BuilderAccordion />
+		{/* A measured builder carousel keeps its per-view WIDTH from CSS; this adds
+			the source's dot control, which only its slider JS could render. */}
+		<BuilderCarousel />
 		{/* The mobile nav disclosure (APG disclosure pattern). Progressive
 				enhancement: JS-off leaves the nav inline at every width, which is why
 				the stylesheet hides nothing until `data-collapsed` is set here. */}

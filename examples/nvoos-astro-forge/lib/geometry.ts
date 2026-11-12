@@ -21,9 +21,11 @@ import type {
 	BandBoxDeclaration,
 	BandBoxFacts,
 	BandColumnFacts,
+	BandCarouselFacts,
 	BandTypeFact,
 	BandTypeProperties,
 	ForgeBandContainer,
+	ForgeBandCarouselFact,
 	ForgeBandColumnFact,
 	ForgeBandFacts,
 	ForgeChromeBox,
@@ -878,6 +880,131 @@ function collectBandColumnFacts( input: {
 }
 
 /**
+ * The band's PAGED carousels, per device (`ForgeBandFacts.carousel`).
+ *
+ * A slider keeps its geometry in the vendor's JS options — `items: 5`,
+ * `margin: 0`, `responsive: { 834: { items: 2 } }` — so neither the markup nor
+ * the sanitized stylesheet knows how many slides are on screen. The shim had to
+ * guess, and its guess (`flex: 1 1 0`, one lane of marks) is right for a logo
+ * strip and wrong for a gallery: virtuallyjamaica's seven slides rendered as
+ * seven 129px columns at 1440 where the source shows five 222px slides.
+ *
+ * `perView` is the ratio the browser resolves, rounded because Owl distributes
+ * the last pixel (838 / 279 = 3.003 → 3). `gap` is measured from the slides
+ * themselves: the track's `column-gap` is 0 in every builder seen so far, and
+ * the visual gutter is the slide's OWN padding (a box fact). `dots` is read from
+ * the source's pagination so the rebuild can reproduce it rather than invent it.
+ *
+ * Scope: OWL carousels, which is what both measured builders ship. Another
+ * library needs its own track/slide selectors — extend `ROOT` deliberately
+ * rather than widening it to `[class*="carousel"]`, which would also match
+ * `.carousel-control` and the per-slide wrappers inside the same track.
+ *
+ * Module scope on purpose: Playwright serialises the function, so it can close
+ * over nothing.
+ */
+export function collectBandCarouselFacts( input: {
+	ids: string[];
+	kind: 'built' | 'source';
+	selectors?: Record< string, string >;
+} ): Record< string, ForgeBandCarouselFact[] > {
+	const ROOT = '.owl-carousel';
+	const pick = ( selector: string ): Element | null => {
+		try {
+			return document.querySelector( selector );
+		} catch {
+			return null;
+		}
+	};
+	const COLUMN = /(^|\s)(wpb_column|vc_column_container)(\s|$)/;
+	const ROW = /(^|\s)(row|vc_row|wpb_row)(\s|$)|brando[_-](inner[_-])?row/;
+	// The same unique-token rule the column collector uses: a class that appears
+	// ONCE in the band, so the emitted rule cannot style a sibling.
+	const tokenOf = ( band: Element, node: Element ): string | undefined => {
+		const tokens = [ ...node.classList ].filter( ( token ) => /^[a-zA-Z_-][a-zA-Z0-9_-]*$/.test( token ) );
+		const preferred = tokens.filter( ( token ) => /carousel|slider|gallery|owl/.test( token ) );
+		for ( const token of [ ...preferred, ...tokens ] ) {
+			try {
+				if ( band.querySelectorAll( `.${ token }` ).length === 1 ) {
+					return token;
+				}
+			} catch {
+				// Not a valid selector — try the next token.
+			}
+		}
+		return undefined;
+	};
+	const out: Record< string, ForgeBandCarouselFact[] > = {};
+	for ( const id of input.ids ) {
+		const candidates =
+			input.kind === 'built'
+				? [ `[data-section-id="${ id }"]` ]
+				: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ].filter(
+						( value ): value is string => Boolean( value )
+				  );
+		let band = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) ) ?? null;
+		if ( input.kind === 'source' && band && COLUMN.test( band.getAttribute( 'class' ) ?? '' ) ) {
+			let row: Element | null = null;
+			for ( let up = band.parentElement; up; up = up.parentElement ) {
+				if ( up.tagName === 'SECTION' ) {
+					band = up;
+					row = null;
+					break;
+				}
+				if ( ! row && ROW.test( up.getAttribute( 'class' ) ?? '' ) ) {
+					row = up;
+				}
+			}
+			if ( row ) {
+				band = row;
+			}
+		}
+		if ( ! band ) {
+			continue;
+		}
+		const facts: ForgeBandCarouselFact[] = [];
+		for ( const root of [ ...band.querySelectorAll( ROOT ) ] ) {
+			const selector = tokenOf( band, root );
+			if ( ! selector ) {
+				continue;
+			}
+			// The VIEWPORT is the carousel root (Owl's `.owl-stage-outer` only ever
+			// clips it); the SLIDES live one level down when Owl has wrapped them.
+			const track = root;
+			const slideParent = root.querySelector( '.owl-stage' ) ?? root;
+			const slides = [ ...slideParent.children ].filter( ( child ) => {
+				const rect = child.getBoundingClientRect();
+				return rect.width >= 20 && getComputedStyle( child ).display !== 'none';
+			} );
+			const trackWidth = track.getBoundingClientRect().width;
+			if ( slides.length < 2 || trackWidth < 40 ) {
+				continue;
+			}
+			const first = slides[ 0 ].getBoundingClientRect();
+			const second = slides[ 1 ].getBoundingClientRect();
+			const fact: ForgeBandCarouselFact = {
+				selector,
+				count: slides.length,
+				perView: Math.max( 1, Math.round( trackWidth / first.width ) ),
+				gap: Math.max( 0, Math.round( second.left - first.right ) ),
+			};
+			// Owl renders its pagination as a SIBLING of the track (`.owl-dots`),
+			// so it is searched from the parent. A single dot is a "no pagination"
+			// control in Owl (one page) — recorded as-is and read that way.
+			const dotCount = root.parentElement?.querySelectorAll( '.owl-dot' ).length ?? 0;
+			if ( dotCount > 0 ) {
+				fact.dots = dotCount;
+			}
+			facts.push( fact );
+		}
+		if ( facts.length > 0 ) {
+			out[ id ] = facts;
+		}
+	}
+	return out;
+}
+
+/**
  * The hero track's column SPLIT and the band's VERTICAL-CENTRING mechanism,
  * measured.
  *
@@ -1150,6 +1277,87 @@ export function columnBoxFacts( columns: BandColumnFacts ): BandBoxFacts {
 	return out;
 }
 
+/**
+ * One carousel's declarations: the per-view slide count and gutter as custom
+ * properties, plus the track's own scroll behaviour.
+ *
+ * The SLIDES are sized by the renderer, not here — a `flex` on the track's
+ * root would be a flex item of the band. `--ds-carousel-per` / `--ds-carousel-gap`
+ * are still emitted because the pagination script reads them and because a
+ * single place should hold the two numbers the width is derived from.
+ */
+export function carouselDeclarations( fact: ForgeBandCarouselFact | undefined, withScroll: boolean ): string {
+	if ( ! fact ) {
+		return '';
+	}
+	const per = Math.max( 1, Math.round( fact.perView ) );
+	// A builder pads the SLIDE, so the measured gutter is usually 0 — but a
+	// negative value (overlapping slides) is not a lane and would invert the
+	// width math.
+	const gap = Math.max( 0, Math.round( fact.gap ?? 0 ) );
+	// `0 0` (no grow, no SHRINK) is load-bearing in the slide width: with the
+	// default `shrink: 1` the seven slides would compress into the track
+	// instead of overflowing it, so there would be nothing to swipe.
+	const parts = [
+		`--ds-carousel-per:${ per }`,
+		`--ds-carousel-gap:${ gap }px`,
+		`--ds-carousel-item-flex:0 0 calc((100% - ${ per - 1 } * ${ gap }px) / ${ per })`,
+	];
+	if ( withScroll ) {
+		// A paged slider SCROLLS: Owl moved a track with a transform, the rebuild
+		// moves the same track with the platform's own scrolling, which is what
+		// makes it swipeable on touch without shipping the vendor's JS. The
+		// scrollbar is hidden because the source draws pagination dots instead.
+		parts.push( 'overflow-x:auto' );
+		parts.push( 'scroll-snap-type:x mandatory' );
+		parts.push( 'overscroll-behavior-x:contain' );
+		parts.push( 'scrollbar-width:none' );
+	}
+	return parts.join( ';' );
+}
+
+/**
+ * The band's measured carousels as band-scoped CSS facts, keyed by class.
+ *
+ * Same shape as `columnBoxFacts`: desktop is the base, and a device that differs
+ * gets its own media query. The scroll behaviour is emitted with the BASE only —
+ * it is the same at every viewport — so a tablet override carries just the two
+ * numbers that changed.
+ *
+ * Pure and exported so the merge is testable without a browser.
+ */
+export function carouselBoxFacts( carousels: BandCarouselFacts ): BandBoxFacts {
+	const bySelector = new Map<
+		string,
+		{ desktop?: ForgeBandCarouselFact; tablet?: ForgeBandCarouselFact; mobile?: ForgeBandCarouselFact }
+	>();
+	for ( const device of [ 'desktop', 'tablet', 'mobile' ] as const ) {
+		for ( const carousel of carousels[ device ] ?? [] ) {
+			const entry = bySelector.get( carousel.selector ) ?? {};
+			entry[ device ] = carousel;
+			bySelector.set( carousel.selector, entry );
+		}
+	}
+	const out: BandBoxFacts = {};
+	for ( const [ selector, entry ] of bySelector ) {
+		const base = carouselDeclarations( entry.desktop, true );
+		const declaration: BandBoxDeclaration = {};
+		if ( base ) {
+			declaration.base = base;
+		}
+		for ( const device of [ 'tablet', 'mobile' ] as const ) {
+			const value = carouselDeclarations( entry[ device ], false );
+			if ( value ) {
+				declaration[ device ] = value;
+			}
+		}
+		if ( Object.keys( declaration ).length > 0 ) {
+			out[ selector ] = declaration;
+		}
+	}
+	return out;
+}
+
 /** What `other` changes relative to `base`, or undefined when nothing differs.
  * Only the differences are recorded, so a band whose headings do not scale per
  * device emits no media query at all.
@@ -1291,6 +1499,14 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		// The band's paged carousels (slides-per-view, gap, dots), per device — a
+		// vendor slider's `items` option exists nowhere else (see
+		// `collectBandCarouselFacts`).
+		const desktopCarousels = await page.evaluate( collectBandCarouselFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		// The hero track's column split + the band's centring device (see
 		// `collectBandLayoutFacts`). Desktop only: a split hero collapses to one
 		// column below the breakpoint, and the rebuild's mobile rule stacks.
@@ -1321,6 +1537,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		const tabletCarousels = await page.evaluate( collectBandCarouselFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		const mobile = await measureTypeAt( 'mobile' );
 		const mobileBox = await page.evaluate( collectBandBoxFacts, {
 			ids: options.ids,
@@ -1328,6 +1549,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			selectors: options.selectors,
 		} );
 		const mobileColumns = await page.evaluate( collectBandColumnFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
+		const mobileCarousels = await page.evaluate( collectBandCarouselFacts, {
 			ids: options.ids,
 			kind: options.kind,
 			selectors: options.selectors,
@@ -1402,6 +1628,18 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 				band.columns = Object.fromEntries(
 					Object.entries( columns ).filter( ( [ , value ] ) => value !== undefined )
 				) as ForgeBandFacts[ 'columns' ];
+			}
+			// The band's paged carousels per device: slides-per-view, gap and the
+			// source's own dot count (see `collectBandCarouselFacts`).
+			const carousel = {
+				desktop: desktopCarousels[ id ],
+				tablet: tabletCarousels[ id ],
+				mobile: mobileCarousels[ id ],
+			};
+			if ( carousel.desktop || carousel.tablet || carousel.mobile ) {
+				band.carousel = Object.fromEntries(
+					Object.entries( carousel ).filter( ( [ , value ] ) => value !== undefined )
+				) as ForgeBandFacts[ 'carousel' ];
 			}
 			// The source's crop anchor (desktop wins; the crop rarely changes per
 			// device, and a per-device map would need its own scoped CSS).

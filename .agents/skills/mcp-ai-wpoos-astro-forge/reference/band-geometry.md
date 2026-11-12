@@ -403,3 +403,129 @@ template's `p { margin: 24px 0 }` pushed the column 24px past the source. The sh
 zeroes `margin-top` on the first text child of a column and **keeps the trailing
 margin** (the source keeps its 10px inside the column's padding); the remaining
 +14px is reported as a geometry warn, not silently absorbed.
+
+## 12. Carousels: slides-per-view is a measurement, not a guess
+
+A slider's geometry lives in the vendor's JS options — `items: 5`, `margin: 0`,
+`responsive: { 834: { items: 2 } }` — so neither the markup nor the sanitized
+stylesheet knows how many slides are on screen. The shim guessed `flex: 1 1 0`
+("one lane of marks"), which is right for a logo strip and wrong for a gallery:
+virtuallyjamaica's seven slides rendered as seven 129px columns at 1440 (132px
+tall) where the source shows **five at 222px** (218px tall) and paginates the
+remaining two.
+
+`collectBandCarouselFacts` measures, per device, for every `.owl-carousel` in
+the band:
+
+| field | how |
+| --- | --- |
+| `selector` | a class token unique in the band (prefers `carousel|slider|gallery|owl`) |
+| `count` | the slides in the track |
+| `perView` | `round(track width / slide width)` — the browser's own answer |
+| `gap` | the measured distance between two slides (usually **0**; builders pad the slide) |
+| `dots` | the source's own `.owl-dot` count |
+
+virtuallyjamaica measures 5 / 2 / 1 per view at 1440 / 834 / 390, with 2 / 4 / 7
+dots — and `ceil(count / perView)` reproduces those dot counts exactly, so the
+pagination is derivable rather than invented.
+
+### 12.1 The layout: one property, two rules
+
+`carouselBoxFacts` emits, per device, on the carousel root:
+
+```
+--ds-carousel-per:5; --ds-carousel-gap:0px;
+--ds-carousel-item-flex:0 0 calc((100% - 4 * 0px) / 5);
+overflow-x:auto; scroll-snap-type:x mandatory; overscroll-behavior-x:contain; scrollbar-width:none;
+```
+
+`0 0` (no grow, no **shrink**) is load-bearing: with the default `shrink: 1` the
+slides would compress into the track instead of overflowing it, so there would be
+nothing to swipe. The scroll behaviour is emitted with the BASE only — it is the
+same at every viewport, and only the two numbers change.
+
+The shim's item rule reads the property, with its original guess as the fallback:
+
+```css
+.ds-section-wrap .post-body .owl-carousel > * {
+	flex: var(--ds-carousel-item-flex, 1 1 0);
+}
+@media (max-width: 767px) {
+	.ds-section-wrap .post-body .owl-carousel > * {
+		flex: var(--ds-carousel-item-flex, 1 1 40%);   /* was `flex-basis: 40%` */
+	}
+}
+```
+
+Expressing the mobile override as the SAME property is what keeps a measured
+1-up gallery from being narrowed to 40%: the fallback changed shape, the
+measured value did not. (A `flex-basis` longhand there would have silently won —
+it is a later declaration of the same longhand the shorthand set.)
+
+### 12.2 The dots are behaviour, the width is CSS
+
+`templates/blog/src/components/BuilderCarousel.astro` restores the source's
+dot control, which only its slider JS could render — the same
+progressive-enhancement shape as `BuilderAccordion`:
+
+- only a **measured** track (`--ds-carousel-per` present) that actually overflows
+  gets dots; an unmeasured logo strip keeps its static row;
+- the page count comes from `ceil(scrollWidth / clientWidth)`, so it follows the
+  breakpoint and a resize;
+- a dot scrolls by **one page width**, `scrollWidth / pages` — **not**
+  `clientWidth`. The last page is usually partial (7 slides 5-up = 449px of
+  scroll in a 1122px track), so stepping a full `clientWidth` overshoots and
+  dividing by it reads the last page as page 0;
+- `aria-current` follows the track's own scroll position, so a touch swipe keeps
+  the dots honest.
+
+Its styles live in `global.css`, **not** in the component's scoped `<style>`:
+the dots are created at runtime, so they never carry Astro's scope attribute and
+a scoped selector would not match them (the mark rendered as a 16×6 unstyled
+button until this was caught).
+
+The source's page 2 is right-aligned (`translateX(-444)` on a 1554px stage in a
+1110px track = `scrollWidth - clientWidth`), which is exactly where the browser
+clamps a scroll to the last page — so no extra padding is needed to match it.
+
+## 13. The rules these passes produced
+
+Five properties of a builder source have no faithful markup form, because the
+vendor's JS or its stylesheet is the only place they exist. Every one of them
+was a reported drift that survived CSS review:
+
+| what | where it lives | works around |
+| --- | --- | --- |
+| column height + fixed photo | inline `min-height`, vendor sheet | `collectBandColumnFacts` |
+| carousel slides-per-view | the slider's JS options | `collectBandCarouselFacts` |
+| computed spacing of a class | the vendor sheet | `collectBandBoxFacts` |
+| interactions (`:hover`…) | the vendor sheet | `measureInteractions` |
+| scrolled header state | the theme's scroll handler | `measureStickyHeader` |
+
+So the default answer to "why is this band wrong?" is not a new template rule —
+it is a measurement plus a re-statement. Five rules keep that honest:
+
+1. **Measure in the browser, per device.** One desktop value applied to every
+   viewport is how a boxed band stayed 64px-compensated at 390px and how a
+   gallery stayed 5-up at 834.
+2. **Give the shim a value, not a fight.** When a guess must coexist with a
+   fact, have the shim read a custom property with the guess as its fallback
+   (`var(--ds-col-min-h, clamp(...))`). A generated rule can then win on VALUE
+   at any specificity, and the fallback still serves an unmeasured site.
+   Escalating selectors instead is a permanent war: every new shim token would
+   need a matching one in the generated CSS.
+3. **A media query ADDS; it does not undo.** Re-emit `background-attachment`,
+   `background-size` and the whole slide width on every device, and reset a
+   property (`initial`) where the device measured nothing.
+4. **Scope to a token unique in the band.** `wpb_column`, `owl-carousel` and
+   `.item` are shared; a hash class (`brando_column_<id>`) or a per-instance
+   token (`image-carousel-1`) is not.
+5. **Do not compare what a component replaced.** A band forged from a component
+   (`hero`, `split`, `icon-list`) has no builder columns by design; grading its
+   absence flagged every hero on every site. Tag the built band's `kind` and
+   skip the comparison.
+
+Corollary, learned the hard way twice: a generated rule's *selector* must match
+the shape the shim uses (`.post-body` and the band scope), and a rule that
+creates DOM at runtime cannot live in an Astro scoped `<style>` — the node never
+carries the scope attribute.
