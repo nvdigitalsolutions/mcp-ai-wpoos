@@ -353,6 +353,25 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
 }
 
+/* WCAG 2.4.1 — visible on keyboard focus, out of the way otherwise. */
+.skip-link {
+	position: absolute;
+	top: 0;
+	left: -9999px;
+	z-index: 200;
+	padding: 0.75rem 1.25rem;
+	background: var(--forge-surface);
+	color: var(--forge-ink);
+	border: 1px solid var(--forge-line-strong, var(--forge-line));
+	border-radius: var(--forge-radius);
+	text-decoration: none;
+}
+
+.skip-link:focus {
+	left: 0.75rem;
+	top: 0.75rem;
+}
+
 .site-topbar p {
 	margin: 0;
 }
@@ -1249,6 +1268,226 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	min-width: 0;
 }
 
+/* ---------------------------------------------------------------------------
+ * Builder layout shim — Flatsome (UX Builder) raw bands
+ *
+ * Flatsome's structure is `<section class="section">` → `.section-content` →
+ * `.banner` / `.row` → `.col large-6 medium-6 small-12`. A banner is a PHOTO
+ * LAYER (`.banner-bg` holding an `<img>`), not a CSS background, and the vendor
+ * sheet that positions it never ships: the source's 900px cover hero rendered
+ * as a letterboxed inline image and every `.col` stacked (monicarajiv.com,
+ * 2026-11-11). Nothing here invents content — these are the arrangement rules
+ * the source markup already carries.
+ * ------------------------------------------------------------------------- */
+.ds-section-wrap .post-body .section-content {
+	position: relative;
+}
+
+/* The band's own content column fills the measured band box so a `.banner`
+ * set to `is-full-height` can grow into it. A percentage min-height cannot
+ * resolve against the wrap's `min-height`, and `min-height: inherit` on the
+ * child adds the wrap's PADDING a second time (a 535px source band became 597
+ * when the wrap carried 31px top+bottom) — so the wrap is a column and the
+ * inner GROWS into its content box instead. */
+.ds-section-wrap {
+	display: flex;
+	flex-direction: column;
+}
+
+.ds-section-wrap .post-body.ds-section {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+
+.ds-section-wrap .post-body.ds-section > .section {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+
+/* The banner is the band's own box: the copy centers vertically inside it,
+ * exactly as the builder's banner layers did (its `padding-top: 600px` never
+ * reaches the rebuild — the sanitizer drops `<style>` blocks). */
+.ds-section-wrap .post-body .section-content {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	flex: 1;
+}
+
+.ds-section-wrap .post-body .banner {
+	position: relative;
+	overflow: hidden;
+}
+
+/* The builder's BAND-LEVEL banner is a full-bleed stage, not a boxed image:
+ * the photo runs edge to edge while only `.banner-layers` (the container) is
+ * measured. `margin-left: 50%` + `translateX(-50%)` is the scrollbar-safe
+ * centering (a `calc(50% - 50vw)` form sits 7px left, Proposal 122). A banner
+ * INSIDE a column is that column's media panel and stays in its lane. */
+.ds-section-wrap .post-body .section-content > .banner {
+	width: 100vw;
+	margin-left: 50%;
+	transform: translateX(-50%);
+}
+
+/* A photo banner inside a column is the column's media panel. The builder sized
+ * it with an inline `padding-top: <n>%` in a `<style>` block the sanitizer
+ * drops, so the rebuild gives it the builder's default square stage. */
+.ds-section-wrap .post-body .col .banner {
+	aspect-ratio: 1 / 1;
+}
+
+/* The photo is a LAYER behind the copy, not an inline image. */
+.ds-section-wrap .post-body .banner-bg {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+}
+
+.ds-section-wrap .post-body .banner-bg > img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	/* The source's own crop anchor, measured (`analyze --geometry` →
+	 * `bandFacts.mediaPosition`). The default is the browser's centre. */
+	object-position: var(--ds-media-pos, 50% 50%);
+}
+
+/* The vendor's darkening overlay rides the photo layer. */
+.ds-section-wrap .post-body .banner-bg .overlay {
+	position: absolute;
+	inset: 0;
+}
+
+/* The banner's copy is a layer ABOVE the photo, centered in the band. The
+ * photo layer is absolute, so the inner stage must fill the banner explicitly
+ * or it collapses to 0 and every `top: 50%` layer resolves to 0 and renders
+ * ABOVE the band (monicarajiv.com, 2026-11-11). */
+.ds-section-wrap .post-body .banner-inner {
+	position: absolute;
+	inset: 0;
+}
+
+.ds-section-wrap .post-body .banner-layers {
+	position: relative;
+	z-index: 1;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.ds-section-wrap .post-body .banner.is-full-height {
+	flex: 1;
+}
+
+/* A banner layer without the vendor's x/y utilities stacks in flow. */
+.ds-section-wrap .post-body .text-box {
+	width: 100%;
+}
+
+/* Banner LAYERS are absolutely positioned stages (`x50` centers on the x axis,
+ * `y50`/`y100` center / bottom-anchor). The vendor utilities that express this
+ * live in the builder sheet, so they ship here as part of the band shim —
+ * without them the copy stacked UNDER the banner's padding and grew the band
+ * (600px banner + 235px copy = 835px instead of the source's 600px). */
+.ds-section-wrap .post-body .banner-layer[class~='x50'] {
+	position: absolute;
+	left: 50%;
+	width: min(80%, 810px);
+	transform: translate(-50%, 0);
+}
+.ds-section-wrap .post-body .banner-layer[class~='y50'] {
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+.ds-section-wrap .post-body .banner-layer[class~='y100'] {
+	top: 100%;
+	transform: translate(-50%, 0);
+}
+
+.ds-section-wrap .post-body .text-inner.text-center {
+	text-align: center;
+}
+
+/* A builder SLIDER is a one-slide stage: without the vendor JS every slide
+ * stacks (doomsday's testimonial carousel rendered as a 6,000px column). The
+ * first slide shows; its banner copy flows so the stage keeps a height
+ * (an absolutely positioned layer inside a 0-height slide would vanish). */
+.ds-section-wrap .post-body .slider > *:not(:first-child) {
+	display: none;
+}
+
+.ds-section-wrap .post-body .slider .banner-layer {
+	position: static;
+	width: auto;
+	transform: none;
+}
+
+/* Flatsome's row modifiers: a collapsed row has NO gutters, and `align-middle`
+ * centers the columns vertically (the source's alternating character rows). */
+.ds-section-wrap .post-body .row.row-collapse {
+	gap: 0;
+}
+
+.ds-section-wrap .post-body .row.align-middle {
+	align-items: center;
+}
+
+/* Flatsome columns: `.col large-N medium-N small-N` of 12 inside the `.row`
+ * grid above. Narrow→wide so the wider breakpoint wins at equal specificity
+ * (`[class~=…]` is a whole-token match: `large-1` must not select `large-10`). */
+.ds-section-wrap .post-body .col {
+	min-width: 0;
+	grid-column: span 12;
+}
+.ds-section-wrap .post-body .col[class~='small-1'] { grid-column: span 1; }
+.ds-section-wrap .post-body .col[class~='small-2'] { grid-column: span 2; }
+.ds-section-wrap .post-body .col[class~='small-3'] { grid-column: span 3; }
+.ds-section-wrap .post-body .col[class~='small-4'] { grid-column: span 4; }
+.ds-section-wrap .post-body .col[class~='small-5'] { grid-column: span 5; }
+.ds-section-wrap .post-body .col[class~='small-6'] { grid-column: span 6; }
+.ds-section-wrap .post-body .col[class~='small-7'] { grid-column: span 7; }
+.ds-section-wrap .post-body .col[class~='small-8'] { grid-column: span 8; }
+.ds-section-wrap .post-body .col[class~='small-9'] { grid-column: span 9; }
+.ds-section-wrap .post-body .col[class~='small-10'] { grid-column: span 10; }
+.ds-section-wrap .post-body .col[class~='small-11'] { grid-column: span 11; }
+.ds-section-wrap .post-body .col[class~='small-12'] { grid-column: span 12; }
+
+@media (min-width: 550px) {
+	.ds-section-wrap .post-body .col[class~='medium-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body .col[class~='medium-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body .col[class~='medium-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body .col[class~='medium-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body .col[class~='medium-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body .col[class~='medium-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body .col[class~='medium-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body .col[class~='medium-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body .col[class~='medium-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body .col[class~='medium-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body .col[class~='medium-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body .col[class~='medium-12'] { grid-column: span 12; }
+}
+
+@media (min-width: 850px) {
+	.ds-section-wrap .post-body .col[class~='large-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body .col[class~='large-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body .col[class~='large-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body .col[class~='large-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body .col[class~='large-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body .col[class~='large-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body .col[class~='large-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body .col[class~='large-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body .col[class~='large-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body .col[class~='large-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body .col[class~='large-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body .col[class~='large-12'] { grid-column: span 12; }
+}
+
 /*
  * Builder presentation utilities are NOT declared here any more.
  *
@@ -1597,6 +1836,33 @@ body :is(a[href], button, [role='button'], summary, label[for]) {
 	background: transparent;
 	border-bottom: none;
 	box-shadow: none;
+}
+
+/*
+ * The source's RESTING header floats over the first band (a measured
+ * `position: absolute`), then jumps to a fixed strip once the page moves
+ * (Flatsome's `sticky-jump` clone). Rebuilt as a DISCRETE scroll-timeline
+ * switch on `position` — no JS, and the resting state stays the base for a
+ * browser without animation-timeline support (the header simply keeps its
+ * overlay position and scrolls away). Composes with the pinned bg/height
+ * animation above rather than replacing it.
+ */
+.site-header--overlay.site-header--pinned {
+	position: absolute;
+	right: 0;
+	left: 0;
+	/* `top: auto` keeps the header at its STATIC position (directly below the
+	 * topbar) — the sticky base rule sets `top: 0`, which would pin an absolute
+	 * header over the topbar at rest. */
+	top: auto;
+	animation: ds-header-pin linear both, ds-header-position linear both;
+	animation-timeline: scroll(root), scroll(root);
+	animation-range: 0 120px, 0 120px;
+}
+
+@keyframes ds-header-position {
+	from { position: absolute; }
+	to { position: fixed; top: 0; }
 }
 
 /*

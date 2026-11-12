@@ -454,6 +454,7 @@ async function writeGeneratedManifest( targetDir: string ): Promise<void> {
 		'src/styles/global.css',
 		'src/lib/design.generated.ts',
 		'src/lib/sections.generated.ts',
+		'src/lib/pages.generated.ts',
 		'src/lib/chrome.generated.ts',
 		'src/lib/behaviors.generated.ts',
 		'src/lib/vocabulary.generated.ts',
@@ -1045,6 +1046,13 @@ function measuredBandPadding(
 		if ( ! band ) {
 			return undefined;
 		}
+		// A band the measurement could not box carries no padding fields; emitting
+		// `Math.round( undefined )` wrote `NaNpx` into the theme (invalid CSS the
+		// browser drops silently) — a fixture caught it, a partial page measurement
+		// would have shipped it.
+		if ( ! Number.isFinite( band.paddingTop ) || ! Number.isFinite( band.paddingBottom ) ) {
+			return undefined;
+		}
 		const top = Math.round( band.paddingTop );
 		const right = Math.round( band.paddingRight ?? 0 );
 		const bottom = Math.round( band.paddingBottom );
@@ -1146,6 +1154,317 @@ function measuredContainer(
 		measure: `${ Math.round( width ) + BAND_GUTTER_PX }px`,
 		paddingX: width >= FLUID_CONTAINER_MIN ? '0px' : undefined,
 	};
+}
+
+/**
+ * One `SectionTheme` entry — shared by the homepage module and each page’s
+ * positional list (`renderPagesGenerated`). Every fact is read from the
+ * `profile` passed in, so a per-page view (its own `bandFacts`/`geometry`/
+ * builder) renders through exactly the same emitter as the front page.
+ */
+function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ): string {
+	const theme = resolveSectionTheme( section );
+	const entry: string[] = [];
+	if ( section.id ) {
+		entry.push( `id: ${ tsString( section.id ) }` );
+	}
+	entry.push( `theme: ${ tsString( theme ) }` );
+	if ( section.anchor ) {
+		entry.push( `anchor: ${ tsString( section.anchor ) }` );
+	}
+	if ( theme === 'hero' ) {
+		if ( section.bgImage ) {
+			entry.push( `bgImage: ${ tsString( section.bgImage ) }` );
+		}
+		// The hero tint (the section's own color shows through the photo).
+		if ( section.bgColor && section.bgColor !== 'transparent' ) {
+			entry.push( `bg: ${ tsString( section.bgColor ) }` );
+		}
+		if ( section.overlay && section.overlay !== 'transparent' ) {
+			entry.push( `overlay: ${ tsString( section.overlay ) }` );
+		}
+	} else {
+		const bg = section.bgGradient ?? section.bgColor;
+		if ( bg && bg !== 'transparent' ) {
+			entry.push( `bg: ${ tsString( bg ) }` );
+		}
+	}
+	// The band's padding: an explicit profile fact wins; otherwise the MEASURED
+	// source padding (114 §3.6) — see `measuredBandPadding`.
+	const padding = section.padding ?? measuredBandPadding( section, profile.geometry );
+	if ( padding ) {
+		entry.push( `padding: ${ tsLength( padding ) }` );
+	}
+	// The boxed container measure + column gap (124 §3) — the inner
+	// column re-measures to the source's container width. An explicit profile
+	// fact wins; otherwise the MEASURED container (`.container` = 1140px,
+	// `.container-fluid` = the viewport) sets it. Without it every band rendered
+	// at the site measure: virtuallyjamaica's services band is fluid (1440px)
+	// and came out at 1136px.
+	const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
+	// The container measure + side gutter, MEASURED per device (114 §3.6). An
+	// explicit profile fact wins; otherwise the source's own container decides.
+	const container = measuredContainer( bandFacts );
+	const measure = section.measure ?? container.measure;
+	if ( measure ) {
+		entry.push( `measure: ${ tsLength( measure ) }` );
+	}
+	const paddingX = section.paddingX ?? container.paddingX;
+	if ( paddingX ) {
+		entry.push( `paddingX: ${ tsLength( paddingX ) }` );
+	}
+	if ( section.marginTop ) {
+		entry.push( `marginTop: ${ tsLength( section.marginTop ) }` );
+	}
+	if ( section.marginBottom ) {
+		entry.push( `marginBottom: ${ tsLength( section.marginBottom ) }` );
+	}
+	if ( section.zIndex ) {
+		entry.push( `zIndex: ${ tsString( section.zIndex ) }` );
+	}
+	// The band's MEASURED source height (114 §3.6). Builder sources declare
+	// band heights through classes (`full-screen`, `min-height-800`) or an
+	// inline min-height the sanitizer drops, so the only faithful source is
+	// the browser measurement. Emitted as a floor — a band whose rebuilt
+	// content is already taller keeps its own height. Per device, because a
+	// band that stacks at tablet/mobile is taller there than on desktop.
+	const box = section.id ? profile.geometry?.[ section.id ] : undefined;
+	// A decoration-only band is a spacer: its measured height IS its content, so
+	// the strip threshold does not apply (jayainc's dff3f1a renders a lone
+	// Elementor spacer and collapsed to 0px, shifting every band below it).
+	const minimumHeight = contentlessBand( bandFacts ) ? 1 : MIN_MIRRORED_BAND_HEIGHT;
+	const heightOf = ( viewport: string ): string | undefined => {
+		const height = box?.[ viewport ]?.height;
+		return typeof height === 'number' && height >= minimumHeight
+			? `${ Math.round( height ) }px`
+			: undefined;
+	};
+	const desktopHeight = heightOf( 'desktop' );
+	if ( desktopHeight ) {
+		const tabletHeight = heightOf( 'tablet' );
+		const mobileHeight = heightOf( 'mobile' );
+		const value =
+			tabletHeight === desktopHeight && mobileHeight === desktopHeight
+				? desktopHeight
+				: {
+						desktop: desktopHeight,
+						...( tabletHeight ? { tablet: tabletHeight } : {} ),
+						...( mobileHeight ? { mobile: mobileHeight } : {} ),
+					};
+		entry.push( `minHeight: ${ tsLength( value ) }` );
+	}
+	// The band's measured typography (see `tsBandType`). A profile pin on
+	// `design.sections[].type` wins over the measurement.
+	const typeLiteral = tsBandType( section.type ?? bandFacts ?? {} );
+	if ( typeLiteral ) {
+		entry.push( `type: ${ typeLiteral }` );
+	}
+	// The subtrees the source hides at rest (see `signaturesHiddenAtBoth`).
+	const hidden = section.hidden ?? bandFacts?.hidden ?? [];
+	if ( hidden.length > 0 ) {
+		entry.push( `hidden: [${ hidden.map( ( selector ) => tsString( selector ) ).join( ', ' ) }]` );
+	}
+	// The source's crop anchor for this band's cover photos (an operator pin
+	// wins over the measurement).
+	const mediaPosition = section.mediaPosition ?? bandFacts?.mediaPosition;
+	if ( mediaPosition ) {
+		entry.push( `mediaPosition: ${ tsString( mediaPosition ) }` );
+	}
+	// The builder's presentation utilities this band actually uses. The
+	// sanitizer keeps the class and the vendor sheet never ships, so an
+	// unstated utility is inert (a `text-center` step rendered left-aligned).
+	// Trimmed by the measured class list, never emitted wholesale.
+	const utilities = builderUtilitiesFor( profile.design?.builder, bandFacts?.classes );
+	const utilityEntries = Object.entries( utilities );
+	if ( utilityEntries.length > 0 ) {
+		entry.push(
+			`utilities: { ${ utilityEntries
+				.map( ( [ name, utility ] ) => `${ tsKey( name ) }: ${ tsUtility( utility ) }` )
+				.join( ', ' ) } }`
+		);
+	}
+	// The MEASURED box of the classes this band keeps (see
+	// `collectBandBoxFacts`). The builder's numeric spacing scale cannot be
+	// expressed as a static class table — `padding-four-all` is 3.4rem on
+	// desktop and `40px 15.5938px` at 390px — so the computed box is re-stated
+	// verbatim. This is what keeps a raw-HTML band's column padding and its
+	// cropped media box faithful at every device.
+	const boxFacts = bandFacts?.box;
+	const boxEntries = Object.entries( boxFacts ?? {} );
+	if ( boxEntries.length > 0 ) {
+		entry.push(
+			`box: { ${ boxEntries
+				.map( ( [ name, box ] ) => `${ tsKey( name ) }: ${ tsUtility( box ) }` )
+				.join( ', ' ) } }`
+		);
+	}
+	// Cropped-media heights, emitted as `img.<class>` only — see the split in
+	// `collectBandBoxFacts` (a class on both an image and a paragraph).
+	const mediaEntries = Object.entries( bandFacts?.media ?? {} );
+	if ( mediaEntries.length > 0 ) {
+		entry.push(
+			`media: { ${ mediaEntries
+				.map( ( [ name, media ] ) => `${ tsKey( name ) }: ${ tsUtility( media ) }` )
+				.join( ', ' ) } }`
+		);
+	}
+	// The controls' measured STATE deltas (see `measureInteractions`). The
+	// vendor sheet never ships, so a rebuilt control loses every hover/focus/
+	// active effect the source expressed in CSS. The SELECTOR is baked here
+	// (not re-derived in the template) so escaping lives in one place.
+	const interactionEntries = section.interactions ?? bandFacts?.interactions ?? [];
+	if ( interactionEntries.length > 0 ) {
+		entry.push(
+			`interactions: [${ interactionEntries
+				.map( ( fact ) => {
+					const fields = [ `selector: ${ tsString( interactionSelector( fact ) ) }` ];
+					if ( typeof fact.count === 'number' && fact.count > 1 ) {
+						fields.push( `count: ${ fact.count }` );
+					}
+					for ( const key of [ 'base', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] as const ) {
+						if ( fact[ key ] ) {
+							fields.push( `${ key }: ${ tsString( fact[ key ] as string ) }` );
+						}
+					}
+					// Overlay children: the states a child draws while the control is
+					// hovered (`.aux-overlay`), emitted as `<control>:hover > <child>`.
+					if ( fact.children && fact.children.length > 0 ) {
+						fields.push(
+							`children: [${ fact.children
+								.map( ( child ) => {
+									const childFields = [ `selector: ${ tsString( child.selector ) }` ];
+									for ( const key of [ 'base', 'pseudo', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] as const ) {
+										if ( child[ key ] ) {
+											childFields.push( `${ key }: ${ tsString( child[ key ] as string ) }` );
+										}
+									}
+									return `{ ${ childFields.join( ', ' ) } }`;
+								} )
+								.join( ', ' ) }]`
+						);
+					}
+					return `{ ${ fields.join( ', ' ) } }`;
+				} )
+				.join( ', ' ) }]`
+		);
+	}
+	if ( section.columns && section.columns.length > 0 ) {
+		const columns = section.columns.map( ( column ) => {
+			const parts: string[] = [];
+			if ( column.width !== undefined ) {
+				parts.push( `width: ${ column.width }` );
+			}
+			if ( column.widthTablet !== undefined ) {
+				parts.push( `widthTablet: ${ column.widthTablet }` );
+			}
+			if ( column.widthMobile !== undefined ) {
+				parts.push( `widthMobile: ${ column.widthMobile }` );
+			}
+			if ( column.reverseMobile ) {
+				parts.push( 'reverseMobile: true' );
+			}
+			if ( column.reverseTablet ) {
+				parts.push( 'reverseTablet: true' );
+			}
+			if ( column.hiddenMobile ) {
+				parts.push( 'hiddenMobile: true' );
+			}
+			if ( column.hiddenTablet ) {
+				parts.push( 'hiddenTablet: true' );
+			}
+			if ( column.hiddenDesktop ) {
+				parts.push( 'hiddenDesktop: true' );
+			}
+			return `{ ${ parts.join( ', ' ) } }`;
+		} );
+		entry.push( `columns: [${ columns.join( ', ' ) }]` );
+	}
+	// The split-hero + collage facts (125 §1) — layout, divider, heading
+	// type, backdrop shape, per-photo offsets, body columns.
+	if ( section.layout ) {
+		entry.push( `layout: ${ tsString( section.layout ) }` );
+	}
+	if ( section.titleDivider ) {
+		const divider = section.titleDivider;
+		entry.push(
+			`titleDivider: { width: ${ tsString( divider.width ) }, height: ${ tsString( divider.height ) }, background: ${ tsString( divider.background ) }${ divider.shadow ? `, shadow: ${ tsString( divider.shadow ) }` : '' } }`
+		);
+	}
+	if ( section.titleStyle ) {
+		const style = section.titleStyle;
+		const parts: string[] = [];
+		if ( style.size ) {
+			parts.push( `size: ${ tsString( style.size ) }` );
+		}
+		if ( style.weight ) {
+			parts.push( `weight: ${ tsString( style.weight ) }` );
+		}
+		if ( style.lineHeight ) {
+			parts.push( `lineHeight: ${ tsString( style.lineHeight ) }` );
+		}
+		if ( style.letterSpacing ) {
+			parts.push( `letterSpacing: ${ tsString( style.letterSpacing ) }` );
+		}
+		entry.push( `titleStyle: { ${ parts.join( ', ' ) } }` );
+	}
+	if ( section.titleAlign ) {
+		entry.push( `titleAlign: ${ tsString( section.titleAlign ) }` );
+	}
+	if ( section.cardStyle ) {
+		const card = section.cardStyle;
+		const parts = ( [ 'gap', 'padding', 'textPadding' ] as const )
+			.filter( ( key ) => card[ key ] )
+			.map( ( key ) => `${ key }: ${ tsString( card[ key ] as string ) }` );
+		if ( parts.length > 0 ) {
+			entry.push( `cardStyle: { ${ parts.join( ', ' ) } }` );
+		}
+	}
+	if ( section.iconRowStyle ) {
+		const row = section.iconRowStyle;
+		const parts = ( [ 'padTop', 'padBottom', 'titleSize', 'titleLineHeight', 'markerSize', 'markerGlyph', 'markerBackground', 'markerInk' ] as const )
+			.filter( ( key ) => row[ key ] )
+			.map( ( key ) => `${ key }: ${ tsString( row[ key ] as string ) }` );
+		if ( parts.length > 0 ) {
+			entry.push( `iconRowStyle: { ${ parts.join( ', ' ) } }` );
+		}
+	}
+	if ( section.mediaShape ) {
+		const shape = section.mediaShape;
+		entry.push(
+			`mediaShape: { width: ${ tsString( shape.width ) }, height: ${ tsString( shape.height ) }, background: ${ tsString( shape.background ) }${ shape.radius ? `, radius: ${ tsString( shape.radius ) }` : '' } }`
+		);
+	}
+	if ( section.mediaOffsets && section.mediaOffsets.length > 0 ) {
+		const offsets = section.mediaOffsets.map( ( offset ) => {
+			const parts: string[] = [];
+			if ( offset.top ) {
+				parts.push( `top: ${ tsString( offset.top ) }` );
+			}
+			if ( offset.right ) {
+				parts.push( `right: ${ tsString( offset.right ) }` );
+			}
+			if ( offset.bottom ) {
+				parts.push( `bottom: ${ tsString( offset.bottom ) }` );
+			}
+			if ( offset.left ) {
+				parts.push( `left: ${ tsString( offset.left ) }` );
+			}
+			if ( offset.shadow ) {
+				parts.push( `shadow: ${ tsString( offset.shadow ) }` );
+			}
+			return `{ ${ parts.join( ', ' ) } }`;
+		} );
+		entry.push( `mediaOffsets: [${ offsets.join( ', ' ) }]` );
+	}
+	if ( section.bodyColumns ) {
+		entry.push( `bodyColumns: ${ section.bodyColumns }` );
+	}
+	if ( section.catalog ) {
+		entry.push(
+			`catalog: { ${ section.catalog.title ? `title: ${ tsString( section.catalog.title ) }, ` : '' }source: ${ tsString( section.catalog.source ) } }`
+		);
+	}
+	return `	{ ${ entry.join( ', ' ) } },`;
 }
 
 /**
@@ -1254,6 +1573,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t/** Selectors for subtrees the SOURCE renders hidden at rest (accordion',
 		'\t * panels, tab panes) — emitted as scoped `display:none` rules. */',
 		'\thidden?: string[];',
+		'\t/** The source\u2019s crop anchor for this band\u2019s cover photos',
+		'\t * (`object-position`, e.g. `63% 90%`) — emitted as `--ds-media-pos` on',
+		'\t * the band wrapper. The source writes it in a `<style>` block the',
+		'\t * sanitizer drops, so without this fact every photo re-crops to centre. */',
+		'\tmediaPosition?: string;',
 		'\t/** The builder\u2019s presentation utilities this band uses, as',
 		'\t * class \u2192 declarations (Bootstrap/Brando `text-center`,',
 		'\t * `padding-four-all`), with their device-scoped variants. Trimmed to the',
@@ -1314,304 +1638,59 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 	];
 	const body: string[] = [];
 	for ( const section of source ) {
-		const theme = resolveSectionTheme( section );
-		const entry: string[] = [];
-		if ( section.id ) {
-			entry.push( `id: ${ tsString( section.id ) }` );
-		}
-		entry.push( `theme: ${ tsString( theme ) }` );
-		if ( section.anchor ) {
-			entry.push( `anchor: ${ tsString( section.anchor ) }` );
-		}
-		if ( theme === 'hero' ) {
-			if ( section.bgImage ) {
-				entry.push( `bgImage: ${ tsString( section.bgImage ) }` );
-			}
-			// The hero tint (the section's own color shows through the photo).
-			if ( section.bgColor && section.bgColor !== 'transparent' ) {
-				entry.push( `bg: ${ tsString( section.bgColor ) }` );
-			}
-			if ( section.overlay && section.overlay !== 'transparent' ) {
-				entry.push( `overlay: ${ tsString( section.overlay ) }` );
-			}
-		} else {
-			const bg = section.bgGradient ?? section.bgColor;
-			if ( bg && bg !== 'transparent' ) {
-				entry.push( `bg: ${ tsString( bg ) }` );
-			}
-		}
-		// The band's padding: an explicit profile fact wins; otherwise the MEASURED
-		// source padding (114 §3.6) — see `measuredBandPadding`.
-		const padding = section.padding ?? measuredBandPadding( section, profile.geometry );
-		if ( padding ) {
-			entry.push( `padding: ${ tsLength( padding ) }` );
-		}
-		// The boxed container measure + column gap (124 §3) — the inner
-		// column re-measures to the source's container width. An explicit profile
-		// fact wins; otherwise the MEASURED container (`.container` = 1140px,
-		// `.container-fluid` = the viewport) sets it. Without it every band rendered
-		// at the site measure: virtuallyjamaica's services band is fluid (1440px)
-		// and came out at 1136px.
-		const bandFacts = section.id ? profile.bandFacts?.[ section.id ] : undefined;
-		// The container measure + side gutter, MEASURED per device (114 §3.6). An
-		// explicit profile fact wins; otherwise the source's own container decides.
-		const container = measuredContainer( bandFacts );
-		const measure = section.measure ?? container.measure;
-		if ( measure ) {
-			entry.push( `measure: ${ tsLength( measure ) }` );
-		}
-		const paddingX = section.paddingX ?? container.paddingX;
-		if ( paddingX ) {
-			entry.push( `paddingX: ${ tsLength( paddingX ) }` );
-		}
-		if ( section.marginTop ) {
-			entry.push( `marginTop: ${ tsLength( section.marginTop ) }` );
-		}
-		if ( section.marginBottom ) {
-			entry.push( `marginBottom: ${ tsLength( section.marginBottom ) }` );
-		}
-		if ( section.zIndex ) {
-			entry.push( `zIndex: ${ tsString( section.zIndex ) }` );
-		}
-		// The band's MEASURED source height (114 §3.6). Builder sources declare
-		// band heights through classes (`full-screen`, `min-height-800`) or an
-		// inline min-height the sanitizer drops, so the only faithful source is
-		// the browser measurement. Emitted as a floor — a band whose rebuilt
-		// content is already taller keeps its own height. Per device, because a
-		// band that stacks at tablet/mobile is taller there than on desktop.
-		const box = section.id ? profile.geometry?.[ section.id ] : undefined;
-		// A decoration-only band is a spacer: its measured height IS its content, so
-		// the strip threshold does not apply (jayainc's dff3f1a renders a lone
-		// Elementor spacer and collapsed to 0px, shifting every band below it).
-		const minimumHeight = contentlessBand( bandFacts ) ? 1 : MIN_MIRRORED_BAND_HEIGHT;
-		const heightOf = ( viewport: string ): string | undefined => {
-			const height = box?.[ viewport ]?.height;
-			return typeof height === 'number' && height >= minimumHeight
-				? `${ Math.round( height ) }px`
-				: undefined;
-		};
-		const desktopHeight = heightOf( 'desktop' );
-		if ( desktopHeight ) {
-			const tabletHeight = heightOf( 'tablet' );
-			const mobileHeight = heightOf( 'mobile' );
-			const value =
-				tabletHeight === desktopHeight && mobileHeight === desktopHeight
-					? desktopHeight
-					: {
-							desktop: desktopHeight,
-							...( tabletHeight ? { tablet: tabletHeight } : {} ),
-							...( mobileHeight ? { mobile: mobileHeight } : {} ),
-						};
-			entry.push( `minHeight: ${ tsLength( value ) }` );
-		}
-		// The band's measured typography (see `tsBandType`). A profile pin on
-		// `design.sections[].type` wins over the measurement.
-		const typeLiteral = tsBandType( section.type ?? bandFacts ?? {} );
-		if ( typeLiteral ) {
-			entry.push( `type: ${ typeLiteral }` );
-		}
-		// The subtrees the source hides at rest (see `signaturesHiddenAtBoth`).
-		const hidden = section.hidden ?? bandFacts?.hidden ?? [];
-		if ( hidden.length > 0 ) {
-			entry.push( `hidden: [${ hidden.map( ( selector ) => tsString( selector ) ).join( ', ' ) }]` );
-		}
-		// The builder's presentation utilities this band actually uses. The
-		// sanitizer keeps the class and the vendor sheet never ships, so an
-		// unstated utility is inert (a `text-center` step rendered left-aligned).
-		// Trimmed by the measured class list, never emitted wholesale.
-		const utilities = builderUtilitiesFor( profile.design?.builder, bandFacts?.classes );
-		const utilityEntries = Object.entries( utilities );
-		if ( utilityEntries.length > 0 ) {
-			entry.push(
-				`utilities: { ${ utilityEntries
-					.map( ( [ name, utility ] ) => `${ tsKey( name ) }: ${ tsUtility( utility ) }` )
-					.join( ', ' ) } }`
-			);
-		}
-		// The MEASURED box of the classes this band keeps (see
-		// `collectBandBoxFacts`). The builder's numeric spacing scale cannot be
-		// expressed as a static class table — `padding-four-all` is 3.4rem on
-		// desktop and `40px 15.5938px` at 390px — so the computed box is re-stated
-		// verbatim. This is what keeps a raw-HTML band's column padding and its
-		// cropped media box faithful at every device.
-		const boxFacts = bandFacts?.box;
-		const boxEntries = Object.entries( boxFacts ?? {} );
-		if ( boxEntries.length > 0 ) {
-			entry.push(
-				`box: { ${ boxEntries
-					.map( ( [ name, box ] ) => `${ tsKey( name ) }: ${ tsUtility( box ) }` )
-					.join( ', ' ) } }`
-			);
-		}
-		// Cropped-media heights, emitted as `img.<class>` only — see the split in
-		// `collectBandBoxFacts` (a class on both an image and a paragraph).
-		const mediaEntries = Object.entries( bandFacts?.media ?? {} );
-		if ( mediaEntries.length > 0 ) {
-			entry.push(
-				`media: { ${ mediaEntries
-					.map( ( [ name, media ] ) => `${ tsKey( name ) }: ${ tsUtility( media ) }` )
-					.join( ', ' ) } }`
-			);
-		}
-		// The controls' measured STATE deltas (see `measureInteractions`). The
-		// vendor sheet never ships, so a rebuilt control loses every hover/focus/
-		// active effect the source expressed in CSS. The SELECTOR is baked here
-		// (not re-derived in the template) so escaping lives in one place.
-		const interactionEntries = section.interactions ?? bandFacts?.interactions ?? [];
-		if ( interactionEntries.length > 0 ) {
-			entry.push(
-				`interactions: [${ interactionEntries
-					.map( ( fact ) => {
-						const fields = [ `selector: ${ tsString( interactionSelector( fact ) ) }` ];
-						if ( typeof fact.count === 'number' && fact.count > 1 ) {
-							fields.push( `count: ${ fact.count }` );
-						}
-						for ( const key of [ 'base', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] as const ) {
-							if ( fact[ key ] ) {
-								fields.push( `${ key }: ${ tsString( fact[ key ] as string ) }` );
-							}
-						}
-						// Overlay children: the states a child draws while the control is
-						// hovered (`.aux-overlay`), emitted as `<control>:hover > <child>`.
-						if ( fact.children && fact.children.length > 0 ) {
-							fields.push(
-								`children: [${ fact.children
-									.map( ( child ) => {
-										const childFields = [ `selector: ${ tsString( child.selector ) }` ];
-										for ( const key of [ 'base', 'pseudo', 'transition', 'hover', 'focus', 'focusVisible', 'active' ] as const ) {
-											if ( child[ key ] ) {
-												childFields.push( `${ key }: ${ tsString( child[ key ] as string ) }` );
-											}
-										}
-										return `{ ${ childFields.join( ', ' ) } }`;
-									} )
-									.join( ', ' ) }]`
-							);
-						}
-						return `{ ${ fields.join( ', ' ) } }`;
-					} )
-					.join( ', ' ) }]`
-			);
-		}
-		if ( section.columns && section.columns.length > 0 ) {
-			const columns = section.columns.map( ( column ) => {
-				const parts: string[] = [];
-				if ( column.width !== undefined ) {
-					parts.push( `width: ${ column.width }` );
-				}
-				if ( column.widthTablet !== undefined ) {
-					parts.push( `widthTablet: ${ column.widthTablet }` );
-				}
-				if ( column.widthMobile !== undefined ) {
-					parts.push( `widthMobile: ${ column.widthMobile }` );
-				}
-				if ( column.reverseMobile ) {
-					parts.push( 'reverseMobile: true' );
-				}
-				if ( column.reverseTablet ) {
-					parts.push( 'reverseTablet: true' );
-				}
-				if ( column.hiddenMobile ) {
-					parts.push( 'hiddenMobile: true' );
-				}
-				if ( column.hiddenTablet ) {
-					parts.push( 'hiddenTablet: true' );
-				}
-				if ( column.hiddenDesktop ) {
-					parts.push( 'hiddenDesktop: true' );
-				}
-				return `{ ${ parts.join( ', ' ) } }`;
-			} );
-			entry.push( `columns: [${ columns.join( ', ' ) }]` );
-		}
-		// The split-hero + collage facts (125 §1) — layout, divider, heading
-		// type, backdrop shape, per-photo offsets, body columns.
-		if ( section.layout ) {
-			entry.push( `layout: ${ tsString( section.layout ) }` );
-		}
-		if ( section.titleDivider ) {
-			const divider = section.titleDivider;
-			entry.push(
-				`titleDivider: { width: ${ tsString( divider.width ) }, height: ${ tsString( divider.height ) }, background: ${ tsString( divider.background ) }${ divider.shadow ? `, shadow: ${ tsString( divider.shadow ) }` : '' } }`
-			);
-		}
-		if ( section.titleStyle ) {
-			const style = section.titleStyle;
-			const parts: string[] = [];
-			if ( style.size ) {
-				parts.push( `size: ${ tsString( style.size ) }` );
-			}
-			if ( style.weight ) {
-				parts.push( `weight: ${ tsString( style.weight ) }` );
-			}
-			if ( style.lineHeight ) {
-				parts.push( `lineHeight: ${ tsString( style.lineHeight ) }` );
-			}
-			if ( style.letterSpacing ) {
-				parts.push( `letterSpacing: ${ tsString( style.letterSpacing ) }` );
-			}
-			entry.push( `titleStyle: { ${ parts.join( ', ' ) } }` );
-		}
-		if ( section.titleAlign ) {
-			entry.push( `titleAlign: ${ tsString( section.titleAlign ) }` );
-		}
-		if ( section.cardStyle ) {
-			const card = section.cardStyle;
-			const parts = ( [ 'gap', 'padding', 'textPadding' ] as const )
-				.filter( ( key ) => card[ key ] )
-				.map( ( key ) => `${ key }: ${ tsString( card[ key ] as string ) }` );
-			if ( parts.length > 0 ) {
-				entry.push( `cardStyle: { ${ parts.join( ', ' ) } }` );
-			}
-		}
-		if ( section.iconRowStyle ) {
-			const row = section.iconRowStyle;
-			const parts = ( [ 'padTop', 'padBottom', 'titleSize', 'titleLineHeight', 'markerSize', 'markerGlyph', 'markerBackground', 'markerInk' ] as const )
-				.filter( ( key ) => row[ key ] )
-				.map( ( key ) => `${ key }: ${ tsString( row[ key ] as string ) }` );
-			if ( parts.length > 0 ) {
-				entry.push( `iconRowStyle: { ${ parts.join( ', ' ) } }` );
-			}
-		}
-		if ( section.mediaShape ) {
-			const shape = section.mediaShape;
-			entry.push(
-				`mediaShape: { width: ${ tsString( shape.width ) }, height: ${ tsString( shape.height ) }, background: ${ tsString( shape.background ) }${ shape.radius ? `, radius: ${ tsString( shape.radius ) }` : '' } }`
-			);
-		}
-		if ( section.mediaOffsets && section.mediaOffsets.length > 0 ) {
-			const offsets = section.mediaOffsets.map( ( offset ) => {
-				const parts: string[] = [];
-				if ( offset.top ) {
-					parts.push( `top: ${ tsString( offset.top ) }` );
-				}
-				if ( offset.right ) {
-					parts.push( `right: ${ tsString( offset.right ) }` );
-				}
-				if ( offset.bottom ) {
-					parts.push( `bottom: ${ tsString( offset.bottom ) }` );
-				}
-				if ( offset.left ) {
-					parts.push( `left: ${ tsString( offset.left ) }` );
-				}
-				if ( offset.shadow ) {
-					parts.push( `shadow: ${ tsString( offset.shadow ) }` );
-				}
-				return `{ ${ parts.join( ', ' ) } }`;
-			} );
-			entry.push( `mediaOffsets: [${ offsets.join( ', ' ) }]` );
-		}
-		if ( section.bodyColumns ) {
-			entry.push( `bodyColumns: ${ section.bodyColumns }` );
-		}
-		if ( section.catalog ) {
-			entry.push(
-				`catalog: { ${ section.catalog.title ? `title: ${ tsString( section.catalog.title ) }, ` : '' }source: ${ tsString( section.catalog.source ) } }`
-			);
-		}
-		body.push( `\t{ ${ entry.join( ', ' ) } },` );
+		body.push( renderSectionThemeEntry( section, profile ) );
 	}
 	body.push( '];' );
+	body.push( '' );
+	return [ ...header, ...body ].join( '\n' );
+}
+
+/**
+ * Render the per-page band module (`src/lib/pages.generated.ts`) — the same
+ * measurement the homepage gets, one POSITIONAL list per page slug
+ * (`analyze --geometry --pages`).
+ *
+ * A page whose bands were not measured is omitted; the renderer then keeps the
+ * homepage list positionally, which is the pre-existing behaviour. The entry
+ * emitter is shared with `renderSectionsGenerated`, so a sub-page carries every
+ * fact the front page does (surfaces, measured box heights, typography, crop
+ * anchors, utilities, states).
+ */
+export function renderPagesGenerated( profile: SiteProfile ): string {
+	const pages = profile.pageBands ?? {};
+	const header = [
+		'// ---------------------------------------------------------------------------',
+		'// pages.generated.ts — generated by nvoos-astro-forge (Proposal 115 ext.);',
+		'// edits are overwritten on re-scaffold. One positional SectionTheme list per',
+		'// sub-page, measured from THAT page’s own bands. The renderer applies the list',
+		'// positionally, exactly like the homepage list. Deterministic: same profile,',
+		'// same bytes.',
+		'// ---------------------------------------------------------------------------',
+		'',
+		"import type { SectionTheme } from './sections.generated.ts';",
+		'',
+		'export const pageBands: Record<string, SectionTheme[]> = {',
+	];
+	const body: string[] = [];
+	for ( const [ slug, page ] of Object.entries( pages ).sort( ( [ a ], [ b ] ) => a.localeCompare( b ) ) ) {
+		// A page view: the site profile with THIS page's measured facts. Only
+		// `bandFacts`/`geometry`/`design.builder` are read by the emitter.
+		const view = {
+			...profile,
+			bandFacts: page.bandFacts,
+			geometry: page.geometry,
+			design: {
+				...profile.design,
+				builder: page.builder ?? profile.design?.builder,
+			},
+		} as SiteProfile;
+		body.push( `\t${ tsString( slug ) }: [` );
+		for ( const section of page.sections ) {
+			body.push( `\t${ renderSectionThemeEntry( section, view ) }` );
+		}
+		body.push( '\t],' );
+	}
+	body.push( '};' );
 	body.push( '' );
 	return [ ...header, ...body ].join( '\n' );
 }
@@ -2779,6 +2858,13 @@ async function scaffoldProject(
 		await writeFile(
 			path.join( targetDir, 'src', 'lib', 'sections.generated.ts' ),
 			renderSectionsGenerated( profile ),
+			'utf8'
+		);
+		// The per-page band module (multi-page geometry) — one positional list per
+		// measured sub-page so a page never inherits the front page's band heights.
+		await writeFile(
+			path.join( targetDir, 'src', 'lib', 'pages.generated.ts' ),
+			renderPagesGenerated( profile ),
 			'utf8'
 		);
 		// The site-chrome module (120 §2) — the source header/footer facts

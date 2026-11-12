@@ -162,3 +162,14 @@ profile:
 Remaining deltas are source `min-height`/padding we do not harvest, and equal
 column widths where the source authored 25/33/41 (the profile HAS the measured
 widths; emitting per-column `flex-basis` is the next increment).
+
+## Flatsome / UX Builder (2026-11-11)
+
+The first Flatsome rebuild added three render-side rules the WPBakery arc did
+not need: a **Flatsome shim** (banner photo layer, full-bleed band banner vs
+in-column media panel, `.banner-layer` x/y, `.col large-N/medium-N`, collapsed
+rows, one-slide sliders); a **per-page band-fact scope** (`bandGeometry` prop —
+band facts describe the page they were measured on, or a sub-page inherits the
+front page's 1800px band); and a **cloned sticky header** measurement
+(`.header-wrapper.stuck` lives in another subtree). Full contract, gotchas and
+the measured result: [`flatsome-and-outline-rebuild.md`](flatsome-and-outline-rebuild.md).

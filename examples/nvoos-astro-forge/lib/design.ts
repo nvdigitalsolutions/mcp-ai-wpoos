@@ -1918,11 +1918,17 @@ export function diffDesignFacts( before: ForgeDesign | undefined, after: ForgeDe
  * Promote outline bands into the renderable band model. The two band shapes
  * carry the same background facts, so the mapping is a field copy — the
  * renderer then themes them positionally (`bandSource: 'outline'`).
+ *
+ * A vendor DOM id (`domId`) becomes the band's anchor when the source exposes
+ * no nav anchor: Flatsome's `section_150552065` is the ONLY handle its scoped
+ * CSS and the browser give a band, and without it `--geometry`, `--text` and
+ * the band-colour regions measured nothing at all (monicarajiv.com,
+ * 2026-11-11 — it used to take an operator pin per band).
  */
 export function promoteOutlineBands( bands?: BandCandidate[] ): ForgeSection[] {
 	return ( bands ?? [] ).map( ( band ) => ( {
 		id: band.id,
-		anchor: band.anchor,
+		anchor: band.anchor ?? band.domId,
 		bgColor: band.bgColor,
 		bgImage: band.bgImage,
 		bgGradient: band.bgGradient,

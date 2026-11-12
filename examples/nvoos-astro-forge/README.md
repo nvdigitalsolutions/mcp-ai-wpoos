@@ -143,8 +143,12 @@ node scripts/forge.mjs site.json --target ./customer-frontend
 #    a dark header in light mode and an invented dark mode both surface; it now
 #    also measures ONE REGION PER BAND ANCHOR (`band:home`, `band:about`…) using
 #    the COMPOSITED background, so a band surface that stops rendering is a
-#    deviation instead of a silent transparent skip. Pixel captures default to
-#    light and take --pixel-mode light|dark|both.
+#    deviation instead of a silent transparent skip. Bands are read with
+#    `descendantFill` on BOTH sides (the rebuild paints the surface on the
+#    `.ds-section-wrap` or a child), and the painted gradient is a third metric:
+#    a source gradient missing from the build fails, a differing one warns, a
+#    photo url is never compared (the localizer rewrites it). Pixel captures
+#    default to light and take --pixel-mode light|dark|both.
 node scripts/forge.mjs verify site.json --target ./customer-frontend            # every gate
 node scripts/forge.mjs verify site.json --target ./customer-frontend --minimal  # browser-free gates (CI blocking)
 node scripts/forge.mjs verify site.json --target ./customer-frontend --geometry
@@ -177,6 +181,13 @@ node scripts/forge.mjs status site.json --target ./customer-frontend   # owner +
 #    project's `npm run check` reports hand-edits as expected drift.
 node scripts/forge.mjs lock   site.json --target ./customer-frontend --by "Dev name" --reason "custom dev handoff"
 node scripts/forge.mjs unlock site.json --target ./customer-frontend --yes   # returns it to the forge
+
+# 9. Template CSS fixes that reach a BUILT project (a hand-copied global.css, a
+#    cherry-picked shim) wipe the `--forge-*` token block — only the scaffold
+#    pipeline rewrites it, so the build silently falls back to template defaults.
+#    Re-apply just that span instead of re-scaffolding (which reinstalls deps).
+node scripts/forge.mjs tokens site.json --target ./customer-frontend --check   # drift report, exit 1
+node scripts/forge.mjs tokens site.json --target ./customer-frontend           # rewrite in place
 ```
 
 ### Environment per site (build time vs runtime)

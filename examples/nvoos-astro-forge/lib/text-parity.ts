@@ -278,21 +278,29 @@ export function textFromHtml( html: string, options: ExtractOptions = {} ): stri
 }
 
 /** The selector ladder a source band id may be findable under. */
-function matchesSection( node: HNode, id: string ): boolean {
+function matchesSection( node: HNode, id: string, alias?: string ): boolean {
 	const attribs = node.attribs ?? {};
 	if ( attribs[ 'data-section-id' ] === id || attribs.id === id ) {
+		return true;
+	}
+	// An outline source keeps a stable-hash band id while its node carries a
+	// vendor DOM id the anchor rules rejected (`section_150552065` on a Flatsome
+	// band). The alias is what makes per-band text addressable at all — without
+	// it the baseline stayed page-level and the words gate could not see a band
+	// going empty (monicarajiv.com, 2026-11-11).
+	if ( alias && attribs.id === alias ) {
 		return true;
 	}
 	const classes = ( attribs.class ?? '' ).split( /\s+/ );
 	return classes.includes( `elementor-element-${ id }` ) || classes.includes( id );
 }
 
-function firstSectionNode( node: HNode, id: string ): HNode | undefined {
-	if ( node.type === 'tag' && matchesSection( node, id ) ) {
+function firstSectionNode( node: HNode, id: string, alias?: string ): HNode | undefined {
+	if ( node.type === 'tag' && matchesSection( node, id, alias ) ) {
 		return node;
 	}
 	for ( const child of childrenOf( node ) ) {
-		const found = firstSectionNode( child, id );
+		const found = firstSectionNode( child, id, alias );
 		if ( found ) {
 			return found;
 		}
@@ -309,7 +317,7 @@ function firstSectionNode( node: HNode, id: string ): HNode | undefined {
 export function extractSectionTexts(
 	html: string,
 	ids: string[],
-	options: ExtractOptions = {}
+	options: ExtractOptions & { selectors?: Record< string, string > } = {}
 ): { texts: Record< string, string >; missing: string[] } {
 	const texts: Record< string, string > = {};
 	const missing: string[] = [];
@@ -318,7 +326,7 @@ export function extractSectionTexts(
 	}
 	const root = parseRoot( html );
 	for ( const id of ids ) {
-		const node = firstSectionNode( root, id );
+		const node = firstSectionNode( root, id, options.selectors?.[ id ] );
 		if ( ! node ) {
 			missing.push( id );
 			continue;
@@ -333,11 +341,19 @@ export function extractSectionTexts(
 /** Build the `analyze --text` baseline from the source homepage. */
 export function textBaselineFromHtml(
 	html: string,
-	meta: { url: string; ids?: string[]; includeAlt?: boolean; capturedAt?: string }
+	meta: {
+		url: string;
+		ids?: string[];
+		/** Band id → the SOURCE node's DOM id, for outline bands whose stable
+		 *  hash never appears in the markup (`section_150552065`). */
+		selectors?: Record< string, string >;
+		includeAlt?: boolean;
+		capturedAt?: string;
+	}
 ): ForgeTextBaseline {
 	const options: ExtractOptions = { includeAlt: meta.includeAlt === true };
 	const ids = meta.ids ?? [];
-	const extracted = extractSectionTexts( html, ids, options );
+	const extracted = extractSectionTexts( html, ids, { ...options, selectors: meta.selectors } );
 	const sections: ForgeTextSection[] = [];
 	const skipped: string[] = [];
 	for ( const id of ids ) {

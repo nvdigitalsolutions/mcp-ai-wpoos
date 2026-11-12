@@ -432,6 +432,15 @@ export interface SiteProfile {
 	 */
 	seo?: { description?: string; ogDescription?: string };
 	/**
+	 * Per-page band facts (Proposal 115 extension) — the same home-page
+	 * measurement applied to every page the rebuild renders, keyed by page slug.
+	 * A positional band list is per-PAGE data: the front page's band heights and
+	 * surfaces are not the sub-pages' (a doomsday article rendered as a 7,497px
+	 * band before this existed). Absent → sub-pages keep the homepage surfaces
+	 * positionally, as before.
+	 */
+	pageBands?: Record< string, ForgePageBands >;
+	/**
 	 * Measured source geometry (`analyze --geometry`), one box per band per
 	 * viewport. `verify --geometry` diffs the built site against it — the gate
 	 * the language-parity score cannot provide (Proposal 114 §3.6).
@@ -585,6 +594,27 @@ export interface BandGeometry {
 
 /** Measured band geometry: section id → viewport name → box. */
 export type ForgeGeometry = Record< string, Record< string, BandGeometry > >;
+
+/**
+ * One page's measured bands (`analyze --geometry --pages`).
+ *
+ * A positional band list is PER-PAGE data: the homepage's `minHeight`,
+ * padding and typography are not the sub-pages', and applying them positionally
+ * to every page forced a 7,497px article band (monicarajiv.com, 2026-11-11).
+ * The sections keep the same stable-band ids the scaffold bakes into
+ * `pages.generated.ts`, so a built sub-page's `data-section-id` matches.
+ */
+export interface ForgePageBands {
+	/** The source URL this page's bands were measured from. */
+	url: string;
+	measuredAt: string;
+	/** The builder adapter that segmented the page (`flatsome`, `elementor`…). */
+	builder?: string;
+	/** The page's bands in DOM order (surfaces + measured facts). */
+	sections: ForgeSection[];
+	geometry: ForgeGeometry;
+	bandFacts: Record< string, ForgeBandFacts >;
+}
 
 /**
  * The measured sticky-header facts (see `SiteProfile.stickyHeader`).
@@ -885,6 +915,14 @@ export interface ForgeBandFacts {
 	 * applied to the paragraph made it 712px tall (virtuallyjamaica, 2026-11-11).
 	 */
 	media?: BandBoxFacts;
+	/**
+	 * The source's crop anchor for this band's `object-fit: cover` photos —
+	 * `object-position` as computed (`63% 90%`). A builder writes it in a
+	 * `<style>` block sanitisation drops, so copying the markup re-crops every
+	 * photo to the centre (Flatsome's hero, monicarajiv.com 2026-11-11). Emitted
+	 * as `--ds-media-pos`; the default (`50% 50%`) is never recorded.
+	 */
+	mediaPosition?: string;
 }
 
 /** The contact band copy (see `SiteProfile.contact`, issue #7549). */
@@ -922,6 +960,19 @@ export interface ForgeTextBaseline {
 export interface RegionColors {
 	background: string;
 	text: string;
+	/**
+	 * The region's painted background IMAGE, when it has one — a `linear-gradient(…)`
+	 * or a `url(…)`. Bands only (`ColorRegion.descendantFill`): a builder paints a
+	 * band's gradient on a child layer and the sanitizer drops the `<style>` that
+	 * declared it, so the browser is the only source. Absent on body/header/footer
+	 * and on flat surfaces.
+	 *
+	 * A gradient is WIRED (`applyBandSurfaces` → `ForgeSection.bgGradient`); a photo
+	 * `url()` is captured but NOT wired — setting `bgImage` makes
+	 * `resolveSectionTheme` return `hero`, which is wrong for a content band.
+	 * `verify --colors` gates the gradient (`metric: 'image'`), never the URL.
+	 */
+	image?: string;
 }
 
 /**
@@ -1054,6 +1105,12 @@ export interface ForgeSection {
 	 * `display:none` rules. A pin here wins over the measurement.
 	 */
 	hidden?: string[];
+	/**
+	 * The source's crop anchor for this band's cover photos (`object-position`,
+	 * e.g. `63% 90%`) — measured by `analyze --geometry` (`bandFacts`) and
+	 * emitted as `--ds-media-pos`. A pin here wins over the measurement.
+	 */
+	mediaPosition?: string;
 	/**
 	 * The band's measured interaction states (hover / focus / focus-visible /
 	 * active), per control signature — measured by `analyze --geometry`

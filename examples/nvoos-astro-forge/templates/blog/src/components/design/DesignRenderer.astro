@@ -49,9 +49,23 @@ interface Props {
 	/** Pre-classified wireframe sections — take precedence over `html` and
 	 *  carry per-breakpoint column behavior (115 §4). */
 	wireframeSections?: WireframeSectionInput[];
+	/**
+	 * Apply the measured band GEOMETRY (box height, padding, typography). True
+	 * only on the page the facts were measured from — the front page. A
+	 * sub-page reuses `sections.generated.ts` POSITIONALLY for its SURFACES
+	 * only: the homepage's 1800px band height there pinned a 7497px article
+	 * (monicarajiv.com, 2026-11-11).
+	 */
+	bandGeometry?: boolean;
+	/**
+	 * The page's OWN measured band list (`pages.generated.ts`). When present it
+	 * wins over the homepage list and implies `bandGeometry`: the facts were
+	 * measured on this page, so its heights/padding/typography are its own.
+	 */
+	bandThemes?: SectionTheme[];
 }
 
-const { html = '', wireframeSections } = Astro.props;
+const { html = '', wireframeSections, bandGeometry = false, bandThemes } = Astro.props;
 const sections: SemanticSection[] = wireframeSections
 	? wireframeSections.map( ( w ) => w.section )
 	: classifyBody( html );
@@ -65,11 +79,33 @@ const columnsFor = ( index: number ): Record<string, number> | undefined => wire
  * defaults instead of the source's own surfaces (virtuallyjamaica's red hero).
  */
 const themeFor = ( section: SemanticSection, index: number ): SectionTheme | undefined => {
+	// The page's OWN measured list wins: its bands were measured on this page,
+	// so position is the identity and every fact applies as-is.
+	if ( bandThemes ) {
+		return ( section.id ? bandThemes.find( ( theme ) => theme.id === section.id ) : undefined ) ?? bandThemes[ index ];
+	}
 	const byId = section.id ? sectionThemes.find( ( theme ) => theme.id === section.id ) : undefined;
 	if ( byId ) {
 		return byId;
 	}
-	return bandSource === 'outline' ? sectionThemes[ index ] : undefined;
+	if ( bandSource !== 'outline' ) {
+		return undefined;
+	}
+	const positional = sectionThemes[ index ];
+	if ( ! positional || bandGeometry ) {
+		return positional;
+	}
+	// Surfaces only — the geometry facts describe the page they were measured
+	// on, so a sub-page keeps the source's palette and rhythm but not its
+	// homepage box heights.
+	return {
+		id: positional.id,
+		theme: positional.theme,
+		anchor: positional.anchor,
+		bg: positional.bg,
+		bgImage: positional.bgImage,
+		overlay: positional.overlay,
+	};
 };
 /** The source scroll behavior for a section (Proposal 121) — sticky /
  * reveal / parallax, keyed by the same element id. */
@@ -222,6 +258,12 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 		if ( title.color ) {
 			parts.push( `--ds-title-color:${ title.color }` );
 		}
+	}
+	// The source's crop anchor for the band's cover photos (measured
+	// `object-position`). The vendor writes it in a `<style>` block the
+	// sanitizer drops, so without this every rebuilt photo crops to centre.
+	if ( theme.mediaPosition ) {
+		parts.push( `--ds-media-pos:${ theme.mediaPosition }` );
 	}
 	if ( theme.theme === 'hero' ) {
 		if ( theme.bgImage ) {
@@ -522,19 +564,26 @@ const bandBoxCss = sections
 		const scoped = `[data-section-id="${ id }"]`;
 		// `media` is the cropped-image height map: an IMAGE-only scope, because a
 		// class can sit on a paragraph too (`padding-six-lr` does both) and the
-		// fixed image height must never reach the text.
+		// fixed image height must never reach the text. The `.post-body` variant
+		// exists to outrank the Flatsome shim's `.banner-bg > img { height:100% }`
+		// (3 classes + element): without it a builder banner's measured 420px crop
+		// lost to the shim and the band grew (accommodations, 2026-11-11).
 		const emit = ( facts: Record< string, { base?: string; tablet?: string; mobile?: string } > | undefined, selectorPrefix: string ): string =>
 			Object.entries( facts ?? {} )
 				.map( ( [ name, fact ] ) => {
+					const selectors =
+						selectorPrefix === 'img'
+							? `${ scoped } img.${ name }, ${ scoped } .post-body img.${ name }`
+							: `${ scoped } ${ selectorPrefix }.${ name }`;
 					const rules: string[] = [];
 					if ( fact.base ) {
-						rules.push( `${ scoped } ${ selectorPrefix }.${ name }{${ fact.base }}` );
+						rules.push( `${ selectors }{${ fact.base }}` );
 					}
 					if ( fact.tablet ) {
-						rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ scoped } ${ selectorPrefix }.${ name }{${ fact.tablet }}}` );
+						rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selectors }{${ fact.tablet }}}` );
 					}
 					if ( fact.mobile ) {
-						rules.push( `@media (max-width: 767px){${ scoped } ${ selectorPrefix }.${ name }{${ fact.mobile }}}` );
+						rules.push( `@media (max-width: 767px){${ selectors }{${ fact.mobile }}}` );
 					}
 					return rules.join( '' );
 				} )

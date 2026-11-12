@@ -454,7 +454,10 @@ function collectBandBoxFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
-} ): Record< string, { boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox > } > {
+} ): Record<
+	string,
+	{ boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox >; mediaPosition?: string }
+> {
 	const pick = ( selector: string ): Element | null => {
 		try {
 			return document.querySelector( selector );
@@ -487,7 +490,10 @@ function collectBandBoxFacts( input: {
 	// grid, so the measured sheet restates the COLUMN and module boxes — which is
 	// where the source's layout actually lives — and leaves the scaffolding alone.
 	const SCAFFOLDING = /(^|\s)(container|container-fluid|row|vc_row|wpb_row|vc_row-fluid)(\s|$)/;
-	const out: Record< string, { boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox > } > = {};
+	const out: Record<
+		string,
+		{ boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox >; mediaPosition?: string }
+	> = {};
 	for ( const id of input.ids ) {
 		// The band root — same ladder as `collectBandTypeFacts`, duplicated because
 		// Playwright ships this function's source without any module scope.
@@ -523,6 +529,11 @@ function collectBandBoxFacts( input: {
 		// to the paragraph made it 712px tall (virtuallyjamaica, 2026-11-11).
 		const seen = new Map< string, { pads: Set< string >; mars: Set< string > } >();
 		const mediaHeights = new Map< string, Set< string > >();
+		// The source's own crop anchor. A builder photo layer is `object-fit: cover`
+		// plus an `object-position` written in a `<style>` block sanitisation drops
+		// (Flatsome's hero is `63% 90%`), so copying the markup without this fact
+		// re-crops every photo to the centre (monicarajiv.com, 2026-11-11).
+		const mediaPositions = new Map< string, number >();
 		for ( const node of Array.from( element.querySelectorAll( '*' ) ) ) {
 			const classes = ( node.getAttribute( 'class' ) ?? '' ).split( /\s+/ ).filter( Boolean );
 			if ( classes.length === 0 ) {
@@ -544,6 +555,11 @@ function collectBandBoxFacts( input: {
 				const rendered = rect.height / ( rect.width || 1 );
 				if ( rect.height > 0 && img.naturalWidth > 0 && Math.abs( natural - rendered ) > 0.02 ) {
 					height = `${ round( String( rect.height ) ) }px`;
+				}
+				// A cropped cover image carries the source's crop anchor.
+				if ( rect.height > 0 && rect.width > 0 && getComputedStyle( node ).objectFit === 'cover' ) {
+					const position = getComputedStyle( node ).objectPosition || '50% 50%';
+					mediaPositions.set( position, ( mediaPositions.get( position ) ?? 0 ) + 1 );
 				}
 			}
 			for ( const name of classes ) {
@@ -588,7 +604,17 @@ function collectBandBoxFacts( input: {
 				media[ name ] = { height: [ ...heights ][ 0 ] };
 			}
 		}
-		out[ id ] = { boxes: facts, media };
+		out[ id ] = {
+			boxes: facts,
+			media,
+			// Default is not a fact: the rebuild already centres.
+			...( mediaPositions.size > 0
+				? ( () => {
+						const [ best ] = [ ...mediaPositions.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] );
+						return best && best[ 0 ] !== '50% 50%' ? { mediaPosition: best[ 0 ] } : {};
+				  } )()
+				: {} ),
+		};
 	}
 	return out;
 }
@@ -835,6 +861,13 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< Reco
 			if ( media ) {
 				band.media = media;
 			}
+			// The source's crop anchor (desktop wins; the crop rarely changes per
+			// device, and a per-device map would need its own scoped CSS).
+			const mediaPosition =
+				desktopBox[ id ]?.mediaPosition ?? tabletBox[ id ]?.mediaPosition ?? mobileBox[ id ]?.mediaPosition;
+			if ( mediaPosition ) {
+				band.mediaPosition = mediaPosition;
+			}
 			const hidden = signaturesHiddenAtBoth( desktopHidden[ id ], mobileHidden[ id ] );
 			if ( hidden.length > 0 ) {
 				band.hidden = hidden;
@@ -989,51 +1022,160 @@ export async function measureStickyHeader( options: { url: string; timeout?: num
 			if ( ! header ) {
 				return { sticky: false };
 			}
-			const snapshot = () => {
-				const style = getComputedStyle( header as Element );
-				const rect = ( header as Element ).getBoundingClientRect();
+			const read = ( el: Element ) => {
+				const style = getComputedStyle( el );
+				const rect = el.getBoundingClientRect();
 				return {
 					bg: style.backgroundColor,
-					ink: style.color,
 					shadow: style.boxShadow,
 					height: Math.round( rect.height ),
 					position: style.position,
-					classes: ( header as Element ).getAttribute( 'class' ) ?? '',
+					classes: el.getAttribute( 'class' ) ?? '',
 				};
 			};
-			const rest = snapshot();
+			// The chrome ink lives on the TEXT nodes, never on the header element
+			// itself (a transparent header computes black) nor on the first anchor
+			// (Flatsome's first anchor is an empty banner link that computes the
+			// accent red). The most frequent colour among text-bearing nodes is the
+			// ink the source actually renders.
+			const inkOf = ( el: Element | null ): string | undefined => {
+				if ( ! el ) {
+					return undefined;
+				}
+				const counts = new Map< string, number >();
+				for ( const node of [ el, ...el.querySelectorAll( '*' ) ] ) {
+					const carriesText = [ ...node.childNodes ].some(
+						( child ) => child.nodeType === 3 && ( child.textContent ?? '' ).trim().length > 0
+					);
+					if ( ! carriesText ) {
+						continue;
+					}
+					const rect = node.getBoundingClientRect();
+					if ( rect.width < 2 || rect.height < 2 ) {
+						continue;
+					}
+					const color = getComputedStyle( node ).color;
+					counts.set( color, ( counts.get( color ) ?? 0 ) + 1 );
+				}
+				const best = [ ...counts.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ];
+				if ( best ) {
+					return best[ 0 ];
+				}
+				const link = el.querySelector( 'a' );
+				return link ? getComputedStyle( link ).color : undefined;
+			};
+			// The strip itself is often a painted CHILD, not the header element
+			// (Flatsome's `.header-bg-color` paints #0a0a0a; the header stays
+			// transparent). Returns the first full-width painted descendant.
+			const fillOf = ( el: Element | null, minHeight = 30 ) => {
+				if ( ! el ) {
+					return undefined;
+				}
+				return [ ...el.querySelectorAll( '*' ) ]
+					.map( ( node ) => ( { style: getComputedStyle( node ), rect: node.getBoundingClientRect() } ) )
+					.filter(
+						( { style, rect } ) =>
+							!/^rgba\(0, 0, 0, 0\)$/.test( style.backgroundColor ) &&
+							rect.height >= minHeight &&
+							rect.width >= window.innerWidth * 0.8
+					)
+					.map( ( { style, rect } ) => ( { bg: style.backgroundColor, height: Math.round( rect.height ) } ) )[ 0 ];
+			};
+			// Header-ish nodes only — a `position: fixed` ad bar must never win.
+			const headerish = [ ...document.querySelectorAll( 'header, [class*="header"], [class*="masthead"], [class*="navbar"], [class*="sticky"], [class*="stuck"]' ) ];
+			const fixedAtRest = new Set(
+				headerish.filter( ( node ) => {
+					try {
+						return getComputedStyle( node ).position === 'fixed';
+					} catch {
+						return false;
+					}
+				} )
+			);
+
+			const rest = read( header );
+			const restInk = inkOf( header );
+			// A fill only stands for the header's OWN surface when it covers most of
+			// the header box — the topbar is a 30px strip inside a 158px header and
+			// must not repaint the whole chrome red.
+			const restFill = fillOf( header, Math.max( 30, rest.height * 0.6 ) );
 			window.scrollTo( 0, Math.min( 600, Math.max( 200, window.innerHeight ) ) );
 			window.dispatchEvent( new Event( 'scroll' ) );
-			await new Promise( ( resolve ) => setTimeout( resolve, 900 ) );
-			const pinned = snapshot();
+			await new Promise( ( resolve ) => setTimeout( resolve, 1200 ) );
+			const pinned = read( header );
+			// The pinned strip can be a JS-injected CLONE in another subtree: Flatsome's
+			// `sticky-jump` duplicates the header into a fixed `.header-wrapper.stuck`
+			// (70px, #0a0a0a) and leaves the original where it was. Anything header-ish
+			// that is fixed/sticky at the top of the viewport after scrolling and was
+			// not fixed at rest IS the source's pinned header.
+			const strip = headerish
+				.filter( ( node ) => {
+					if ( fixedAtRest.has( node ) ) {
+						return false;
+					}
+					let style: CSSStyleDeclaration;
+					let rect: DOMRect;
+					try {
+						style = getComputedStyle( node );
+						rect = node.getBoundingClientRect();
+					} catch {
+						return false;
+					}
+					return (
+						( style.position === 'fixed' || style.position === 'sticky' ) &&
+						rect.height >= 30 &&
+						rect.width >= window.innerWidth * 0.6 &&
+						rect.top <= 8 &&
+						Boolean( node.querySelector( 'a' ) )
+					);
+				} )
+				.sort( ( a, b ) => a.getBoundingClientRect().top - b.getBoundingClientRect().top )[ 0 ];
+			const stripInfo = strip ? read( strip ) : undefined;
+			const stripInk = inkOf( strip );
+			const stripFill = stripInfo ? fillOf( strip, Math.max( 30, stripInfo.height * 0.5 ) ) : undefined;
 			window.scrollTo( 0, 0 );
-			const pinsByStyle = rest.position === 'fixed' || rest.position === 'sticky' || pinned.position === 'fixed' || pinned.position === 'sticky';
-			const classGained = pinned.classes
-				.split( /\s+/ )
-				.some( ( name ) => name && ! rest.classes.split( /\s+/ ).includes( name ) && /sticky|shrink|pinned|scrolled|scroll-nav|is-scroll/i.test( name ) );
+
+			const gained = ( from: ReturnType< typeof read >, to: ReturnType< typeof read > ) =>
+				to.classes
+					.split( /\s+/ )
+					.some( ( name ) => name && !from.classes.split( /\s+/ ).includes( name ) && /sticky|shrink|pinned|scrolled|scroll-nav|is-scroll|stuck/i.test( name ) );
+			const classGained = gained( rest, pinned );
+			const pinsByStyle =
+				[ rest, pinned, stripInfo ]
+					.filter( ( value ): value is NonNullable< typeof value > => Boolean( value ) )
+					.some( ( value ) => value.position === 'fixed' || value.position === 'sticky' );
 			const sticky = pinsByStyle || classGained;
-			const bgChanged = pinned.bg !== rest.bg && pinned.bg !== 'rgba(0, 0, 0, 0)';
-			const heightChanged = Math.abs( pinned.height - rest.height ) >= 2;
 			if ( ! sticky ) {
 				return { sticky: false };
 			}
-			const clean = ( value: string ) => ( /^rgba\(0, 0, 0, 0\)$/.test( value ) ? undefined : value );
-			const shadow = pinned.shadow === 'none' ? undefined : pinned.shadow;
+			const clean = ( value: string | undefined ) => ( value === undefined || /^rgba\(0, 0, 0, 0\)$/.test( value ) ? undefined : value );
+			const shadow = ( stripInfo?.shadow ?? pinned.shadow ) === 'none' ? undefined : stripInfo?.shadow ?? pinned.shadow;
+			// Background: the injected strip's fill wins, then the strip, then the header.
+			const restBg = clean( restFill?.bg ) ?? clean( rest.bg );
+			const pinnedBg = clean( stripFill?.bg ) ?? clean( stripInfo?.bg ) ?? clean( pinned.bg );
+			const bgChanged = Boolean( pinnedBg ) && pinnedBg !== restBg;
+			// Height: the strip's own box when a clone exists, else a shrunk header.
+			const headerShrank = Math.abs( pinned.height - rest.height ) >= 2;
+			const pinnedHeight = stripInfo
+				? stripInfo.height
+				: headerShrank
+					? pinned.height
+					: stripFill?.height;
 			return {
 				sticky: true,
 				// `fixed` — not `sticky` — is the source's own overlay: the header
 				// floats OVER the first band, so a sticky rebuild pushes that band down
 				// and leaves white chrome on the page background.
 				position: rest.position,
-				...( clean( rest.bg ) ? { restBg: clean( rest.bg ) } : {} ),
-				...( clean( rest.ink ) ? { restInk: clean( rest.ink ) } : {} ),
-				restHeight: rest.height,
-				...( bgChanged && clean( pinned.bg ) ? { pinnedBg: clean( pinned.bg ) } : {} ),
-				...( bgChanged && clean( pinned.ink ) ? { pinnedInk: clean( pinned.ink ) } : {} ),
-				...( heightChanged ? { pinnedHeight: pinned.height } : {} ),
+				...( restBg ? { restBg } : {} ),
+				...( clean( restInk ) ? { restInk: clean( restInk ) } : {} ),
+				...( headerShrank || stripInfo ? {} : { restHeight: rest.height } ),
+				...( bgChanged && pinnedBg ? { pinnedBg } : {} ),
+				...( bgChanged && stripInk && stripInk !== restInk ? { pinnedInk: stripInk } : {} ),
+				...( pinnedHeight ? { pinnedHeight } : {} ),
 				...( shadow ? { shadow } : {} ),
 				bgChanged,
-				heightChanged,
+				heightChanged: headerShrank || Boolean( stripInfo && Math.abs( stripInfo.height - rest.height ) >= 2 ),
 			};
 		} );
 	} finally {

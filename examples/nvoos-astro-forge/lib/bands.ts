@@ -50,6 +50,15 @@ export interface BandCandidate {
 	id: string;
 	/** The source anchor the chrome nav links to (#about, #contact…). */
 	anchor?: string;
+	/**
+	 * The vendor's OWN DOM id when it is a valid CSS identifier but not a nav
+	 * anchor — Flatsome's `section_150552065`. `isAnchorId` rejects it (an
+	 * underscore is not a nav slug), yet it is the only stable handle the
+	 * builder's scoped CSS and the browser expose, so `--geometry`, `--colors`
+	 * and the band-colour regions can only address the band through it.
+	 * Promoted into `ForgeSection.anchor` by `promoteOutlineBands`.
+	 */
+	domId?: string;
 	bgColor?: string;
 	bgImage?: string;
 	bgGradient?: string;
@@ -428,6 +437,25 @@ export function inlineBackground( node: BandNode ): Pick< BandCandidate, 'bgColo
 const isAnchorId = ( id: string | undefined ): id is string =>
 	Boolean( id ) && /^[a-z][a-z0-9-]{1,31}$/.test( id as string ) && ! /^(?:elementor|aux-|df_|nvoos|rev_slider)/.test( id as string );
 
+/** Ids every theme gives a site-level landmark — never a band handle. */
+const RESERVED_DOM_IDS = /^(?:main|content|page|wrapper|primary|header|footer|top|sidebar|site|container|app)$/i;
+
+/**
+ * The band node's own `id` when it is a valid CSS identifier but NOT a nav
+ * anchor (see `BandCandidate.domId`). A nav slug is handled by `anchorOf` /
+ * `anchorWithin`; this only picks up the ids those deliberately reject.
+ */
+const domIdOf = ( node: BandNode ): string | undefined => {
+	const id = node.attribs?.id?.trim();
+	if ( ! id || RESERVED_DOM_IDS.test( id ) ) {
+		return undefined;
+	}
+	if ( ! /^[A-Za-z][A-Za-z0-9_:-]{1,63}$/.test( id ) ) {
+		return undefined;
+	}
+	return isAnchorId( id ) ? undefined : id;
+};
+
 const anchorOf = ( node: BandNode ): string | undefined => {
 	const id = node.attribs?.id;
 	return id && isAnchorId( id ) ? id : undefined;
@@ -466,7 +494,17 @@ const anchorWithin = ( node: BandNode ): string | undefined => {
 	return walk( node );
 };
 
-/** djb2 → 7 lowercase hex chars: stable across runs, never a vendor id. */
+/**
+ * djb2 → 7 lowercase hex chars: stable across runs, never a vendor id.
+ *
+ * The seed is STRUCTURAL (adapter, tag, classes, the band's ordinal in document
+ * order) and deliberately excludes the band's text: live sites carry dynamic
+ * copy — a countdown timer, a rotated testimonial — and a text-seeded id moved
+ * by 4 bytes between two analyses of the same page, orphaning every
+ * `bandFacts`/`geometry`/`colors` key and every operator pin keyed by it
+ * (monicarajiv.com, 2026-11-11). Flatsome even re-mints its own section ids
+ * per render, so structure is the only stable identity.
+ */
 export const stableBandId = ( seed: string ): string => {
 	let hash = 5381;
 	for ( let i = 0; i < seed.length; i += 1 ) {
@@ -568,7 +606,7 @@ const collectBands = ( root: BandNode, adapter: BandAdapter, out: BandNode[] = [
 const docMentions = ( html: string, adapter: BandAdapter ): boolean =>
 	adapter.detect.some( ( re ) => re.test( html ) );
 
-const toCandidate = ( node: BandNode, adapter: BandAdapter ): BandCandidate | undefined => {
+const toCandidate = ( node: BandNode, adapter: BandAdapter, index = 0 ): BandCandidate | undefined => {
 	const text = textLength( node );
 	const media = hasMedia( node );
 	const bg = inlineBackground( node );
@@ -581,7 +619,8 @@ const toCandidate = ( node: BandNode, adapter: BandAdapter ): BandCandidate | un
 
 	const classes = classList( node ).join( '.' );
 	const candidate: BandCandidate = {
-		id: stableBandId( `${ adapter.id }:${ node.name ?? '' }:${ classes }:${ text }` ),
+		// Structure, not content — see `stableBandId`.
+		id: stableBandId( `${ adapter.id }:${ node.name ?? '' }:${ classes }:${ index }` ),
 		via: adapter.id,
 		...bg,
 	};
@@ -589,6 +628,10 @@ const toCandidate = ( node: BandNode, adapter: BandAdapter ): BandCandidate | un
 	const anchor = anchorOf( node ) ?? anchorWithin( node );
 	if ( anchor ) {
 		candidate.anchor = anchor;
+	}
+	const domId = domIdOf( node );
+	if ( domId ) {
+		candidate.domId = domId;
 	}
 
 	const columns = columnsOf( node, adapter );
@@ -644,7 +687,7 @@ export function semanticBands( root: BandNode ): BandCandidate[] {
 	// there are at least two: a lone wrapper is not a band list, and claiming it
 	// here would stop the VIPS-lite pass from ever running.
 	const fromMain = childElements( scope )
-		.map( ( child ) => toCandidate( child, synthetic ) )
+		.map( ( child, index ) => toCandidate( child, synthetic, index ) )
 		.filter( ( candidate ): candidate is BandCandidate => Boolean( candidate ) );
 	if ( fromMain.length >= 2 ) {
 		return fromMain;
@@ -652,7 +695,7 @@ export function semanticBands( root: BandNode ): BandCandidate[] {
 
 	// Otherwise any top-level landmark elements.
 	const landmarks = collectBands( root, synthetic )
-		.map( ( node ) => toCandidate( node, synthetic ) )
+		.map( ( node, index ) => toCandidate( node, synthetic, index ) )
 		.filter( ( candidate ): candidate is BandCandidate => Boolean( candidate ) );
 	return landmarks;
 }
@@ -682,7 +725,7 @@ export function visualBands( root: BandNode ): BandCandidate[] {
 	visit( root );
 
 	return best
-		.map( ( node ) => toCandidate( node, synthetic ) )
+		.map( ( node, index ) => toCandidate( node, synthetic, index ) )
 		.filter( ( candidate ): candidate is BandCandidate => Boolean( candidate ) );
 }
 
@@ -740,7 +783,7 @@ export function extractBandsFromHtml(
 		builder = builder ?? adapter.id;
 		const nodes = collectBands( root, adapter );
 		const bands = nodes
-			.map( ( node ) => toCandidate( node, adapter ) )
+			.map( ( node, index ) => toCandidate( node, adapter, index ) )
 			.filter( ( candidate ): candidate is BandCandidate => Boolean( candidate ) );
 		if ( bands.length > 0 ) {
 			return { bands, adapter: adapter.id, builder };

@@ -22,12 +22,17 @@
 //  * Transparent surfaces are SKIPPED, not compared. `transparent` over a white
 //    body is visually white, but the gate cannot see the backdrop — guessing
 //    would manufacture both false passes and false failures.
-//  * Only background + text colour per region. Gradients, images and borders
-//    stay with band flow / pixel parity.
+//  * Background colour + text colour per region, plus the painted background
+//    IMAGE of a BAND (a gradient, or a photo URL) — a builder paints both on a
+//    child layer and the sanitizer drops the `<style>` that declared them, so
+//    the browser is the only source. Borders stay with pixel parity.
+//  * A band's photo `url()` is CAPTURED but not yet WIRED (`ForgeSection.bgImage`
+//    makes the band resolve as `hero`, which is wrong for a content band).
+//    Gradients are wired; the URL is kept for the future photo-surface pass.
 // ---------------------------------------------------------------------------
 
 import { hexToRgb, rgbToHex } from './color.ts';
-import type { ForgeColorModes, RegionColors } from './types.ts';
+import type { ForgeColorModes, ForgeSection, RegionColors } from './types.ts';
 
 /** The colour schemes measured separately — a dark header in light mode and a
  * themed `prefers-color-scheme: dark` are different bugs, and one measurement
@@ -39,6 +44,15 @@ export interface ColorRegion {
 	name: string;
 	/** First selector that matches wins — the builder-agnostic ladder. */
 	selectors: string[];
+	/**
+	 * Resolve the surface from the region's OWN fill layer as well as its
+	 * ancestors. A builder paints a band's background on a child (`.section-bg`,
+	 * `.banner`), never on the band element, so the ancestor walk reads the page
+	 * body and every band looks transparent (Flatsome, 2026-11-11). Only set this
+	 * for BANDS — a header's child topbar would otherwise lend it the topbar's
+	 * colour.
+	 */
+	descendantFill?: boolean;
 }
 
 /**
@@ -143,6 +157,64 @@ export function normalizeCssColor( input: string ): string {
 		return TRANSPARENT;
 	}
 	return rgbToHex( parsed.r, parsed.g, parsed.b );
+}
+
+/** Canonical form of a CSS VALUE (a gradient, a list) for equality: whitespace,
+ * quote style and case carry no meaning and differ between the browser's
+ * computed serialisation and the style attribute we re-emit. */
+export function normalizeCssValue( input: string ): string {
+	return input
+		.replace( /"+/g, "'" )
+		.replace( /\s*([(),\/])\s*/g, '$1' )
+		.replace( /\s+/g, ' ' )
+		.trim()
+		.toLowerCase();
+}
+
+/** A gradient painted as the surface — `linear`, `radial` and `conic`, including
+ * the `repeating-` forms. Photos (`url(…)`) are surfaced by `RegionColors.image`
+ * too, but they are deliberately NOT classified as gradients: wiring a photo
+ * into `ForgeSection.bgImage` makes `resolveSectionTheme` return `hero`, which is
+ * wrong for a content band. */
+export const GRADIENT_SURFACE_RE = /(?:repeating-)?(?:linear|radial|conic)-gradient\(/i;
+
+/**
+ * Copy a measured BAND surface onto the section facts.
+ *
+ * A builder paints a band's surface on a child layer and declares it in a
+ * `<style>` block the sanitizer drops, so the browser measurement is the only
+ * exact source. Gradients go to the existing `bgGradient` field (the renderer
+ * emits it as the `background` shorthand; `resolveSectionTheme` classifies from
+ * its last stop). Flat fills go to `bgColor`, unless the composited value is
+ * the page body's own — that is "transparent", not a band fact.
+ *
+ * `pinned` facts win: an existing `bgColor`/`bgGradient`/`bgImage` is never
+ * overwritten, so an operator pin survives a re-analysis.
+ */
+export function applyBandSurfaces(
+	sections: ForgeSection[],
+	lookup: ( section: ForgeSection ) => RegionColors | undefined,
+	bodyBackground?: string
+): void {
+	for ( const section of sections ) {
+		const surface = lookup( section );
+		if ( ! surface ) {
+			continue;
+		}
+		if ( surface.image && ! section.bgGradient && ! section.bgImage && GRADIENT_SURFACE_RE.test( surface.image ) ) {
+			section.bgGradient = surface.image;
+		}
+		const background = surface.background;
+		if (
+			background &&
+			background !== TRANSPARENT &&
+			background !== bodyBackground &&
+			! section.bgColor &&
+			! section.bgGradient
+		) {
+			section.bgColor = background;
+		}
+	}
 }
 
 /** sRGB → CIE Lab (D65 white point), the space CIEDE2000 works in. */
@@ -256,7 +328,7 @@ export interface RegionColorOptions {
 export interface RegionColorDeviation {
 	region: string;
 	mode: string;
-	metric: 'background' | 'text' | 'region';
+	metric: 'background' | 'text' | 'region' | 'image';
 	expected: string | null;
 	actual: string | null;
 	deltaE: number | null;
@@ -331,6 +403,37 @@ export function compareRegionColors(
 				deltaE: Math.round( delta * 100 ) / 100,
 				severity: delta >= failAt ? 'fail' : 'warn',
 			} );
+		}
+		// The painted IMAGE is invisible to a colour comparison: a gradient band
+		// rebuilt flat keeps the same `backgroundColor`. Compare only GRADIENTS
+		// — the media localizer rewrites a photo URL (`/media/<hash>-slug.jpg`),
+		// so a URL difference is not a deviation. A gradient that vanished is a
+		// fail; a differing gradient is a warn (serialisations legitimately vary).
+		const fromImage = expected.image;
+		if ( fromImage && GRADIENT_SURFACE_RE.test( fromImage ) ) {
+			compared++;
+			const toImage = actual.image;
+			if ( ! toImage ) {
+				deviations.push( {
+					region,
+					mode,
+					metric: 'image',
+					expected: fromImage,
+					actual: null,
+					deltaE: null,
+					severity: 'fail',
+				} );
+			} else if ( normalizeCssValue( fromImage ) !== normalizeCssValue( toImage ) ) {
+				deviations.push( {
+					region,
+					mode,
+					metric: 'image',
+					expected: fromImage,
+					actual: toImage,
+					deltaE: null,
+					severity: 'warn',
+				} );
+			}
 		}
 	}
 	return { deviations, missing, skipped, unimplemented: [], compared };
@@ -423,10 +526,15 @@ export interface MeasureColorOptions {
 	/**
 	 * Resolve the COMPOSITED background instead of the element's own one: when
 	 * a region is transparent, walk its ancestors to the first opaque
-	 * background. A transparent header sitting on a coloured hero is that
-	 * colour to the eye, and band surfaces are usually painted by a wrapper —
-	 * reading only `backgroundColor` reports `transparent` and the gate skips
-	 * the very surface that is wrong.
+	 * background. A band surface is often painted by a wrapper, and reading only
+	 * `backgroundColor` reports `transparent` for the very surface that is wrong.
+	 *
+	 * The walk stops at the PAGE CANVAS: an ancestor more than 2× the region's
+	 * area, and always `<html>`. Those paint the page backdrop (Flatsome's
+	 * `#main`/`#wrapper` are black so transitions never flash), not the
+	 * region's own surface — deriving the surface from them reported `#000000`
+	 * for a transparent header over a hero and for every transparent band
+	 * (monicarajiv.com, 2026-11-12).
 	 */
 	effective?: boolean;
 }
@@ -462,35 +570,202 @@ export async function measureRegionColors(
 				await page.goto( options.url, { waitUntil: 'load', timeout: options.timeout ?? 90000 } );
 				const colors = await page.evaluate(
 					( args ) => {
+						// Alpha is the FOURTH colour component — never the blue channel. A
+						// `rgb(r, g, b)` triple has no alpha, so reading the last number treated
+						// `rgb(0, 0, 0)` and `rgb(255, 255, 0)` as translucent and skipped the
+						// surface entirely (black bands read transparent; 2026-11-12).
+						const alphaOf = ( value: string ): number => {
+							const match = /rgba?\(([^)]+)\)/.exec( value );
+							if ( ! match ) {
+								return 1;
+							}
+							const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() ).filter( Boolean );
+							return parts.length >= 4 ? Number( parts[ 3 ] ) : 1;
+						};
 						const isOpaque = ( value: string ): boolean => {
 							if ( ! value || value === 'transparent' ) {
 								return false;
 							}
-							const alpha = /rgba?\([^)]*,\s*([0-9.]+)\s*\)/.exec( value );
-							return ! alpha || Number( alpha[ 1 ] ) >= 0.5;
+							return alphaOf( value ) >= 0.5;
 						};
-						const readBackground = ( element: Element, effective: boolean ): string => {
-							if ( ! effective ) {
-								return getComputedStyle( element ).backgroundColor;
+						// A gradient is a SURFACE only when every stop is opaque — a low-alpha
+						// gradient is a tint over the layer below, exactly like a translucent
+						// background colour. A photo `url()` is always a surface. Chromium
+						// serialises every colour inside `background-image` to `rgb()`/`rgba()`,
+						// so scanning the colours is sufficient (`transparent` included).
+						const imageIsSurface = ( image: string ): boolean => {
+							if ( ! image || image === 'none' ) {
+								return false;
 							}
+							if ( image.includes( 'url(' ) ) {
+								return true;
+							}
+							const colors = image.match( /rgba?\([^)]+\)/g ) ?? [];
+							return colors.every( ( color ) => alphaOf( color ) >= 0.95 );
+						};
+						const readBackground = (
+							element: Element,
+							effective: boolean,
+							descendantFill: boolean
+						): { color: string; image?: string } => {
+							const ownStyle = getComputedStyle( element );
+							const own = ownStyle.backgroundColor;
+							if ( descendantFill ) {
+								// The band's OWN surface outranks its children. `.section {
+								// background-image: linear-gradient(…) }` has a TRANSPARENT
+								// background-colour, so keying the return on the colour alone missed
+								// the most common gradient form.
+								const ownImage = ownStyle.backgroundImage;
+								const ownHasImage = imageIsSurface( ownImage );
+								if ( ownHasImage || isOpaque( own ) ) {
+									return { color: own, ...( ownHasImage ? { image: ownImage } : {} ) };
+								}
+							}
+							if ( ! effective ) {
+								return { color: own };
+							}
+							if ( descendantFill ) {
+								// The band's fill layer: the largest surface descendant box. A
+								// builder paints the surface on a child wrapper, so the ancestor
+								// walk alone reports the page body for every band. A node
+								// qualifies on an opaque fill OR an opaque background-image —
+								// `.section { background-image: linear-gradient(…) }` has a
+								// transparent background-colour (Flatsome).
+								const bandRect = element.getBoundingClientRect();
+								const width = bandRect.width;
+								const candidates: Array< { bg: string; image?: string; area: number; w: number } > = [];
+								for ( const node of element.querySelectorAll( '*' ) ) {
+									const style = getComputedStyle( node );
+									const background = style.backgroundColor;
+									// A FILL is opaque or unpainted. A TRANSLUCENT colour
+									// (`rgba(0,0,0,0.5)`) is a tint over the surface, not the
+									// surface — taking it painted every photo hero black
+									// (monicarajiv.com, 2026-11-11). Alpha 0 is "no colour": the
+									// layer may still paint a gradient, so fall through to the
+									// image check below.
+									const fillAlpha = background === 'transparent' ? 0 : alphaOf( background );
+									if ( fillAlpha > 0 && fillAlpha < 0.95 ) {
+										continue;
+									}
+									const backgroundImage = style.backgroundImage;
+									const hasImage = imageIsSurface( backgroundImage );
+									if ( fillAlpha === 0 && ! hasImage ) {
+										continue;
+									}
+									const rect = node.getBoundingClientRect();
+									if ( rect.height < 20 ) {
+										continue;
+									}
+									candidates.push( {
+										bg: background,
+										...( hasImage ? { image: backgroundImage } : {} ),
+										area: rect.width * rect.height,
+										w: rect.width,
+									} );
+								}
+								let best: ( typeof candidates )[ number ] | undefined;
+								for ( const candidate of candidates ) {
+									if ( ! best || candidate.area > best.area ) {
+										best = candidate;
+									}
+								}
+								// Two half-width columns paint the band between them without any
+								// SINGLE layer reaching 60% of its width (Flatsome's 2-col banner
+								// row, monicarajiv.com). Accept the winning colour when same-coloured
+								// siblings TILE at least 90% of the band width.
+								if ( best && best.w < width * 0.6 ) {
+									const tiled = candidates
+										.filter( ( candidate ) => candidate.bg === best!.bg && candidate.image === best!.image )
+										.reduce( ( sum, candidate ) => sum + candidate.w, 0 );
+									if ( tiled < width * 0.9 ) {
+										best = undefined;
+									}
+								}
+								if ( best ) {
+									return { color: best.bg, ...( best.image ? { image: best.image } : {} ) };
+								}
+							}
+							// A surface must be comparable in size to the region it backs. An
+							// ancestor more than twice the region is the PAGE CANVAS
+							// (Flatsome paints `#main`/`#wrapper` black so page transitions never
+							// flash), not the region's own surface — taking it reported `#000000`
+							// for a transparent header whose hero covers it, and for every
+							// transparent band (monicarajiv.com, 2026-11-12). A band nested in a
+							// coloured wrapper of similar height still resolves correctly.
+							const ownRect = element.getBoundingClientRect();
+							const ownArea = Math.max( 1, ownRect.width * ownRect.height );
 							let node: Element | null = element;
 							while ( node ) {
-								const background = getComputedStyle( node ).backgroundColor;
-								if ( isOpaque( background ) ) {
-									return background;
+								const style = getComputedStyle( node );
+								const background = style.backgroundColor;
+								const rect = node.getBoundingClientRect();
+								if ( isOpaque( background ) && rect.width * rect.height <= ownArea * 2 ) {
+									const backgroundImage = style.backgroundImage;
+									return imageIsSurface( backgroundImage )
+										? { color: background, image: backgroundImage }
+										: { color: background };
 								}
+								// `<html>`'s background is the VIEWPORT CANVAS (visible on
+								// overscroll and before first paint), not a region's surface.
 								node = node.parentElement;
+								if ( node && node.tagName === 'HTML' ) {
+									break;
+								}
 							}
-							return 'transparent';
+							return { color: 'transparent' };
 						};
-						const out: Record< string, { background: string; text: string } > = {};
+						const out: Record< string, { background: string; text: string; image?: string } > = {};
+						// The ink a region RENDERS is not the element's inherited `color` on a
+						// builder site: the theme sets a global body colour and paints the
+						// visible text from a context class on inner containers (Flatsome's
+						// `.dark` — monicarajiv.com computes `body { color: #000 }` while every
+						// rendered word is white). The most frequent colour among text-bearing
+						// descendants is what the region actually shows.
+						const readInk = ( element: Element ): string => {
+							const counts = new Map< string, number >();
+							let seen = 0;
+							const consider = ( node: Element ): void => {
+								if ( seen > 1200 ) {
+									return;
+								}
+								seen += 1;
+								const carriesText = [ ...node.childNodes ].some(
+									( child ) => child.nodeType === 3 && ( child.textContent ?? '' ).trim().length > 0
+								);
+								if ( ! carriesText ) {
+									return;
+								}
+								const rect = node.getBoundingClientRect();
+								if ( rect.width < 2 || rect.height < 2 ) {
+									return;
+								}
+								const color = getComputedStyle( node ).color;
+								counts.set( color, ( counts.get( color ) ?? 0 ) + 1 );
+							};
+							consider( element );
+							for ( const node of element.querySelectorAll( '*' ) ) {
+								consider( node );
+							}
+							const best = [ ...counts.entries() ].sort( ( a, b ) => b[ 1 ] - a[ 1 ] )[ 0 ];
+							// A region with NO text renders no ink — comparing its inherited
+							// colour reports a difference between two invisible values (the hero
+							// band is an image + a chevron). `transparent` is skipped by the
+							// ΔE comparison, so the metric simply does not apply.
+							return best ? best[ 0 ] : 'transparent';
+						};
 						for ( const region of args.regions ) {
 							for ( const selector of region.selectors ) {
 								const element = document.querySelector( selector );
 								if ( element ) {
+									const surface = readBackground(
+										element,
+										args.effective,
+										region.descendantFill === true
+									);
 									out[ region.name ] = {
-										background: readBackground( element, args.effective ),
-										text: getComputedStyle( element ).color,
+										background: surface.color,
+										text: readInk( element ),
+										...( surface.image ? { image: surface.image } : {} ),
 									};
 									break;
 								}
@@ -505,6 +780,9 @@ export async function measureRegionColors(
 					baseline[ region ] = {
 						background: normalizeCssColor( values.background ),
 						text: normalizeCssColor( values.text ),
+						// A gradient/URL is not a colour — pass it through verbatim rather
+						// than letting `normalizeCssColor` collapse it to `transparent`.
+						...( values.image ? { image: values.image } : {} ),
 					};
 				}
 				measured[ mode ] = baseline;

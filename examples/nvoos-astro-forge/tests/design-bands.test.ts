@@ -84,3 +84,19 @@ describe( 'sections.generated records where the bands came from', () => {
 		expect( module ).toContain( "id: 'a1b2c3d'" );
 	} );
 } );
+
+describe( 'a vendor DOM id becomes the band anchor when the source has none', () => {
+	it( 'promotes domId so geometry/colours can address a Flatsome band', () => {
+		const [ band ] = promoteOutlineBands( [
+			{ id: '84a6c14', domId: 'section_150552065', bgColor: '#dd3333', via: 'flatsome' },
+		] as BandCandidate[] );
+		expect( band.anchor ).toBe( 'section_150552065' );
+	} );
+
+	it( 'leaves a real nav anchor in charge when both exist', () => {
+		const [ band ] = promoteOutlineBands( [
+			{ id: '45f5e88', anchor: 'about', domId: 'section_99', via: 'flatsome' },
+		] as BandCandidate[] );
+		expect( band.anchor ).toBe( 'about' );
+	} );
+} );

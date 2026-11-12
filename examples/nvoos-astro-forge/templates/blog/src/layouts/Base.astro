@@ -312,6 +312,9 @@ const chromeVars = [
 		</script>
 	</head>
 	<body style={chromeVars || undefined}>
+		{/* WCAG 2.4.1 — the source builder ships its own skip link; a rebuilt
+		    document with chrome needs one too. */}
+		<a class="skip-link" href="#main">Skip to content</a>
 		{chrome?.topbar && chrome.topbar.length > 0 && (
 			<div class="site-topbar">
 				{chrome.topbar.map((line) => (
@@ -393,7 +396,7 @@ const chromeVars = [
 				{chrome?.themeToggle && <ThemeToggle />}
 			</div>
 		</header>
-		<main class="site-main">
+		<main class="site-main" id="main">
 			<slot />
 		</main>
 		<footer class:list={['site-footer', (chrome?.footerBg || chrome?.footerBarBg) && 'site-footer--themed']}>
