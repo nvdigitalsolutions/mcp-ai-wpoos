@@ -71,6 +71,19 @@ describe('backendPaths', () => {
       features: `${origin()}/wp-json/mcp-ai/v1/features`,
     });
   });
+
+  it('leaves the org-team surface empty on WordPress', () => {
+    const runtime = buildConsoleRuntime({
+      backend: 'wordpress',
+      nonce: 'nonce-1',
+      user: { id: 1, capabilities: ['manage_options'] },
+    });
+
+    // WordPress has the agent-team catalogue at `teams`; users-with-roles is
+    // Laravel-only until the contract is ported.
+    expect(runtime.endpoints.teams).toBe(`${origin()}/wp-json/mcp-ai/v1/teams`);
+    expect(runtime.endpoints.orgTeams).toBe('');
+  });
 });
 
 describe('buildConsoleRuntime (laravel)', () => {
@@ -88,6 +101,9 @@ describe('buildConsoleRuntime (laravel)', () => {
     expect(runtime.endpoints.proOps).toBe(`${origin()}/api/v1/pro/ops`);
     expect(runtime.endpoints.upload).toBe(`${origin()}/api/v1/media`);
     expect(runtime.endpoints.wpBase).toBe(`${origin()}/api/v1/wp`);
+    // Org teams (users + roles) are a Laravel-only contract; the WordPress
+    // agent-team catalogue keeps `/teams`.
+    expect(runtime.endpoints.orgTeams).toBe(`${origin()}/api/v1/org/teams`);
   });
 
   it('marks the WordPress-only addon surfaces unavailable', () => {
@@ -111,6 +127,7 @@ describe('buildConsoleRuntime (laravel)', () => {
 
     expect(runtime.endpoints.proOps).toBe('');
     expect(runtime.endpoints.assistants).toBe(`${origin()}/api/v1/assistants`);
+    expect(runtime.endpoints.orgTeams).toBe('');
   });
 });
 

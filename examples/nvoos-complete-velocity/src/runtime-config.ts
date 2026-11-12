@@ -135,6 +135,9 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     chatChannels: isAdmin ? `${pro}/chat-channels` : '',
     remoteSites: isAdmin ? `${pro}/remote-sites` : '',
     mediaCc: isAdmin ? `${pro}/media-cc` : '',
+    // Org teams (users + roles) are Laravel-only for now; WordPress has the
+    // agent-team catalogue at `teams` instead. Empty disables the page.
+    orgTeams: isAdmin && !isWordPress ? `${core}/org/teams` : '',
     blueprints: canEdit ? `${pro}/blueprints` : '',
     commandCenter: isAdmin ? `${pro}/command-center` : '',
     shortcuts: `${pro}/tool-shortcuts`,

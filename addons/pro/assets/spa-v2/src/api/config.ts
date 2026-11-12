@@ -145,6 +145,15 @@ export interface ProSpaEndpoints {
 	/** Media command-center REST base (mcp-ai-pro/v1/media-cc, 2.4.0). */
 	mediaCc: string;
 	/**
+	 * Org teams base (api/v1/org/teams, Laravel only).
+	 *
+	 * Distinct from `teams`: that surface is the WordPress agent-team
+	 * catalogue (a collection of professions), while an org team is a set of
+	 * users with roles. Empty on runtimes without the contract, so the page
+	 * renders its unavailable state instead of firing requests.
+	 */
+	orgTeams: string;
+	/**
 	 * Assistant blueprints REST base (mcp-ai-pro/v1/blueprints, 2.4.0) —
 	 * the blueprint catalogue + install flow. Empty for sessions without
 	 * edit_posts (the endpoints mirror the wp-admin page's gate).
@@ -347,6 +356,7 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
 			remoteSites: typeof e.remoteSites === 'string' ? e.remoteSites : '',
 			mediaCc: typeof e.mediaCc === 'string' ? e.mediaCc : '',
+			orgTeams: typeof e.orgTeams === 'string' ? e.orgTeams : '',
 			blueprints: typeof e.blueprints === 'string' ? e.blueprints : '',
 			commandCenter: typeof e.commandCenter === 'string' ? e.commandCenter : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',

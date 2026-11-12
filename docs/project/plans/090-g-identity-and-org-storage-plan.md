@@ -175,6 +175,17 @@ GET /api/v1/teams/{id}/members    { team_id, team_title, driver_assistant_id,
   **false** on Laravel: the catalogue is readable, but the orchestration
   engine is not ported, so claiming otherwise would be a lie.
 
+**The console surface.** `OrgTeamsPage` (`features/org-teams/`) renders the
+list, the create form, and a per-team member panel with role changes and
+removal. It is wired through `runtime.endpoints.orgTeams`, which the console
+computes as `${core}/org/teams` **only** for a Laravel backend with
+`manage_options` — on WordPress the endpoint is `''` and the page renders the
+standard unavailable state (the same pattern as ToolkitsPage). No new server
+feature flag is needed: an empty endpoint is the gate.
+
+`/teams` (agent teams) and `/org-teams` (people) sit next to each other in
+the Command Centers nav so the distinction is visible, not just documented.
+
 Phase 1 gained the matching runtime fix: `LaravelAssistantService` had been
 querying `is_default` and the listing without a tenant predicate (only the
 controller was scoped), so the orchestrator could resolve another tenant's
@@ -239,7 +250,7 @@ starter; it deliberately does **not** copy the plugin's 544 K GPL corpus.
 | 1 | Assistant hardening (tenant, composite unique, default) + regression tests | Correct multi-tenant assistants |
 | 2 | Profession catalogue manifests + `ProfessionRepository` adapter + read tools + tests — **shipped** | Professional selector, recommended tools |
 | 3 | Teams tables, `TeamServiceInterface`, `TeamController` (`090-b` 2.5) — **shipped** | Team CRUD + membership |
-| 4 | Surfaces: profession selector, org-team pages, team-catalogue parity — **catalogue parity shipped**; org-team pages pending | User-facing |
+| 4 | Surfaces: profession selector, org-team pages, team-catalogue parity — **shipped** | User-facing |
 
 ## 6. Acceptance gates
 
