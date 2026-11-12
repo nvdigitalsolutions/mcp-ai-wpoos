@@ -45,6 +45,22 @@ class Test_Prompt_Craft extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Aperture vocabulary stays strictly string-typed.
+	 *
+	 * PHP casts numeric-string array keys ("4", "11") to integers, which makes
+	 * `type: string` schema enums invalid and breaks strict `in_array()` checks
+	 * in the consuming tool. The getter must re-cast them back to strings.
+	 */
+	public function test_aperture_vocabulary_is_string_typed() {
+		$apertures = WP_MCP_AI_Prompt_Craft::get_apertures();
+
+		$this->assertSame( array( '1.4', '4', '11' ), $apertures );
+		foreach ( $apertures as $aperture ) {
+			$this->assertIsString( $aperture );
+		}
+	}
+
+	/**
 	 * The style enum accepts the slugs the video tools already expose.
 	 */
 	public function test_styles_cover_video_tool_enum() {

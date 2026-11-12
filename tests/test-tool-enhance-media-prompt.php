@@ -107,6 +107,28 @@ class Test_Tool_Enhance_Media_Prompt extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Whole-stop apertures are accepted, not just the decimal one.
+	 *
+	 * Numeric-string keys like "4" and "11" arrive as integers from PHP's
+	 * array-key casting; a strict comparison against the raw keys silently
+	 * dropped them from the composed prompt.
+	 */
+	public function test_whole_stop_apertures_are_applied() {
+		foreach ( array( '4', '11' ) as $aperture ) {
+			$result = $this->tool->execute(
+				array(
+					'prompt'   => 'A serum bottle on marble',
+					'aperture' => $aperture,
+				),
+				array( 'user_id' => $this->user_id )
+			);
+
+			$this->assertIsArray( $result );
+			$this->assertStringContainsString( 'aperture f/' . $aperture, $result['data']['enhanced_prompt'] );
+		}
+	}
+
+	/**
 	 * Quality tags are on by default and can be turned off.
 	 */
 	public function test_quality_tags_default_on_and_toggleable() {
