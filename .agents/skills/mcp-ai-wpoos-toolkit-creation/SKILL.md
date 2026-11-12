@@ -80,6 +80,12 @@ class WP_MCP_AI_Tool_Foo extends WP_MCP_AI_Foo_Tool_Base // implements WP_MCP_AI
   `get_usage_guidance()` (when_to_use / when_not_to_use / related_tools /
   notes) — give EVERY method a `{@inheritdoc}` or full docblock; WPCS
   WordPress-Docs errors on missing doc comments (the #1 first-pass failure).
+- Schema enums: never build a `'type' => 'string'` `enum` with `array_keys()`
+  over a map keyed by numeric strings (`'4'`, `'11'`, `'1.0'`) — PHP casts
+  those keys to int, so the registry contract test
+  (`tests/test-tool-schema-contract.php`) fails with `enum_type_mismatch`
+  and a strict `in_array()` in `execute()` silently drops the value. Cast at
+  the vocabulary getter: `array_map( 'strval', array_keys( self::MAP ) )`.
 - `get_required_capability()` (`read` for read tools), `requires_base_pro()`
   returns true, `get_capability_flags()` e.g.
   `array( 'pro', 'read-only', 'cacheable', 'local-only', 'idempotent' )`.

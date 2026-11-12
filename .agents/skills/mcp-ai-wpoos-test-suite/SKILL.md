@@ -77,6 +77,21 @@ Rules:
   reverts to the committed no-dev list — so PHPUnit stays unmapped and you
   get `Class "PHPUnit\TextUI\Application" not found` again. Always re-run
   `composer install` after a vendor restore, never `dump-autoload`.
+- **`composer install` is not always an option (2026-11-12).** `oos-wp` has
+  no `composer` binary (`which composer` → exit 127), and this worktree's
+  **committed** `vendor/composer` map is itself no-dev (`grep -c PHPUnit
+  vendor/composer/autoload_psr4.php` → 0), so the restore route above would
+  re-break PHPUnit even if it ran. Working fallback: a throwaway PSR-4 +
+  classmap autoloader shim that re-registers the dev packages already on
+  disk. Three traps it must handle: `require vendor/autoload.php` does NOT
+  return the ClassLoader (find it via `spl_autoload_functions()`); PHPUnit
+  11 is a `classmap` package whose `src/` is NOT strictly PSR-4
+  (`PHPUnit\Event\DispatchingEmitter` lives in
+  `src/Event/Emitter/DispatchingEmitter.php`), so a PSR-4-only shim dies on
+  the first such class; and the entry point is
+  `( new Application() )->run( $argv )` (`Application::main()` was PHPUnit
+  9). Full recipe: `reference/test-environments.md` § "No-dev vendor shim".
+  Delete the shim before committing.
 - **PHPUnit 11.5 single-file args need the class name to match the
   basename.** `TestSuiteLoader::load()` requires the test class short name
   to *end with* the file basename and does not normalise `-` to `_`, so
@@ -1272,6 +1287,22 @@ the changed files is the substantive gate; plan CI waits accordingly.
       fixture defining the class and hooking `rest_api_init` at 15; a
       `--bootstrap tests/bootstrap-nofix.php` copy without the callback
       reproduces the original failure.
+
+  94. **`enum_type_mismatch` on a registry schema — numeric-string array
+      keys cast to integers (2026-11-12, `enhance_media_prompt`).**
+      `WP_MCP_AI_Tool_Schema_Contract_Test::test_registry_schema_contract_is_clean`
+      fails with `{tool}: enum_type_mismatch` at
+      `$.properties.<prop>.enum` and `Enum value 4 does not match the
+      declared type "string"` when a `type: string` enum is built from
+      `array_keys()` of a map keyed by numeric strings (`'1.4'`, `'4'`,
+      `'11'` — PHP casts `'4'`/`'11'` to int, so the enum is mixed
+      string/int). Fix at the **vocabulary getter**, not the schema:
+      `array_map( 'strval', array_keys( $map ) )`. The same root cause
+      silently breaks consumers — `in_array( '4', array( '1.4', 4, 11 ),
+      true )` is false, so the tool dropped those values with no error.
+      Pin both layers: the getter's types (`assertIsString` per value)
+      and the value reaching the tool output. Grep every vocabulary
+      getter for `array_keys( self::CONST )` when one instance appears.
 
 ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
