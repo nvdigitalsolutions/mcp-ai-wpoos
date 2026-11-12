@@ -161,6 +161,191 @@ final class ContentStoreQueryTest extends TestCase {
 		$this->assertSame( array( 'Mid' ), $this->titles( $result ) );
 	}
 
+	public function test_meta_numeric_comparisons_match_rows_and_counts(): void {
+		$this->make( 'Alpha', array( 'score' => 1 ) );
+		$this->make( 'Bravo', array( 'score' => 5 ) );
+		$this->make( 'Charlie', array( 'score' => 9 ) );
+
+		$expectations = array(
+			'>'  => array( array( 'Charlie' ), 1 ),
+			'>=' => array( array( 'Bravo', 'Charlie' ), 2 ),
+			'<'  => array( array( 'Alpha' ), 1 ),
+			'<=' => array( array( 'Alpha', 'Bravo' ), 2 ),
+		);
+
+		foreach ( $expectations as $compare => $expected ) {
+			$result = $this->runQuery(
+				array(
+					array(
+						'key'     => 'score',
+						'value'   => 5,
+						'compare' => $compare,
+						'type'    => 'NUMERIC',
+					),
+				),
+				array(),
+				'title'
+			);
+
+			$this->assertSame( $expected[0], $this->titles( $result ), "rows for {$compare}" );
+			$this->assertSame( $expected[1], $result->total, "count for {$compare}" );
+		}
+	}
+
+	/**
+	 * WP_Meta_Query casts to DECIMAL for numeric compares, so a decimal meta
+	 * value must compare numerically — not as text against a string binding.
+	 */
+	public function test_meta_numeric_comparisons_handle_decimal_values(): void {
+		$this->make( 'Cheap', array( 'price' => 9.99 ) );
+		$this->make( 'Mid', array( 'price' => 19.5 ) );
+		$this->make( 'Dear', array( 'price' => 49.0 ) );
+
+		$result = $this->runQuery(
+			array(
+				array(
+					'key'     => 'price',
+					'value'   => 19.4,
+					'compare' => '>',
+					'type'    => 'NUMERIC',
+				),
+			),
+			array(),
+			'title'
+		);
+
+		$this->assertSame( array( 'Dear', 'Mid' ), $this->titles( $result ) );
+		$this->assertSame( 2, $result->total );
+	}
+
+	/**
+	 * Untyped ordering is a CHAR comparison in WP_Meta_Query — the reason
+	 * `list_projects` can filter `_project_start_date` with `>=`.
+	 */
+	public function test_meta_untyped_ordering_stays_lexical_for_dates(): void {
+		$this->make( 'Early', array( 'start_date' => '2026-01-10' ) );
+		$this->make( 'Late', array( 'start_date' => '2026-06-10' ) );
+
+		$result = $this->runQuery(
+			array(
+				array(
+					'key'     => 'start_date',
+					'value'   => '2026-03-01',
+					'compare' => '>=',
+				),
+			),
+			array(),
+			'title'
+		);
+
+		$this->assertSame( array( 'Late' ), $this->titles( $result ) );
+		$this->assertSame( 1, $result->total );
+	}
+
+	public function test_meta_like_and_not_like_match_rows_and_counts(): void {
+		$this->make( 'Alpha', array( 'code' => 'ABC-100' ) );
+		$this->make( 'Bravo', array( 'code' => 'XYZ-200' ) );
+		$this->make( 'Charlie' );
+
+		$like = $this->runQuery(
+			array(
+				array(
+					'key'     => 'code',
+					'value'   => '%ABC%',
+					'compare' => 'LIKE',
+				),
+			),
+			array(),
+			'title'
+		);
+
+		$this->assertSame( array( 'Alpha' ), $this->titles( $like ) );
+		$this->assertSame( 1, $like->total );
+
+		// NOT LIKE keeps plain SQL semantics: a missing key is NULL and does not
+		// satisfy the predicate. WP_Query's behaviour here is undocumented.
+		$notLike = $this->runQuery(
+			array(
+				array(
+					'key'     => 'code',
+					'value'   => '%ABC%',
+					'compare' => 'NOT LIKE',
+				),
+			),
+			array(),
+			'title'
+		);
+
+		$this->assertSame( array( 'Bravo' ), $this->titles( $notLike ) );
+		$this->assertSame( 1, $notLike->total );
+	}
+
+	public function test_meta_not_between_matches_rows_and_counts(): void {
+		$this->make( 'Low', array( 'score' => 10 ) );
+		$this->make( 'Mid', array( 'score' => 50 ) );
+		$this->make( 'High', array( 'score' => 90 ) );
+
+		$result = $this->runQuery(
+			array(
+				array(
+					'key'     => 'score',
+					'value'   => array( 20, 80 ),
+					'compare' => 'NOT BETWEEN',
+					'type'    => 'NUMERIC',
+				),
+			),
+			array(),
+			'title'
+		);
+
+		$this->assertSame( array( 'High', 'Low' ), $this->titles( $result ) );
+		$this->assertSame( 2, $result->total );
+	}
+
+	/**
+	 * The guardrail: an unmatched clause must return nothing, never everything.
+	 */
+	public function test_a_clause_with_no_matches_returns_zero_rows(): void {
+		$this->make( 'High', array( 'priority' => 'high' ) );
+		$this->make( 'Low', array( 'priority' => 'low' ) );
+
+		$result = $this->runQuery(
+			array(
+				array(
+					'key'   => 'priority',
+					'value' => 'urgent',
+				),
+			)
+		);
+
+		$this->assertSame( array(), $result->items );
+		$this->assertSame( 0, $result->total );
+	}
+
+	public function test_total_comes_from_the_filtered_query_not_the_page(): void {
+		$this->make( 'Alpha', array( 'priority' => 'high' ) );
+		$this->make( 'Bravo', array( 'priority' => 'high' ) );
+		$this->make( 'Charlie', array( 'priority' => 'high' ) );
+		$this->make( 'Delta', array( 'priority' => 'low' ) );
+
+		$result = $this->runQuery(
+			array(
+				array(
+					'key'   => 'priority',
+					'value' => 'high',
+				),
+			),
+			array(),
+			'title',
+			'ASC',
+			1
+		);
+
+		$this->assertCount( 1, $result->items );
+		$this->assertSame( 3, $result->total, 'total must ignore the page size and the unfiltered rows' );
+		$this->assertSame( 3, $result->totalPages );
+	}
+
 	public function test_meta_relation_or_matches_either_clause(): void {
 		$this->make( 'ByPriority', array( 'priority' => 'high' ) );
 		$this->make( 'ByFlag', array( 'flag' => 'yes' ) );
@@ -236,6 +421,7 @@ final class ContentStoreQueryTest extends TestCase {
 		);
 
 		$this->assertSame( array( 'High' ), $this->titles( $result ) );
+		$this->assertSame( 1, $result->total );
 	}
 
 	public function test_tax_and_requires_every_term(): void {
@@ -264,6 +450,7 @@ final class ContentStoreQueryTest extends TestCase {
 		);
 
 		$this->assertSame( array( 'Both' ), $this->titles( $result ) );
+		$this->assertSame( 1, $result->total );
 	}
 
 	public function test_tax_not_in_includes_untagged_rows(): void {
@@ -287,6 +474,7 @@ final class ContentStoreQueryTest extends TestCase {
 		);
 
 		$this->assertSame( array( 'Low', 'Untagged' ), $this->titles( $result ) );
+		$this->assertSame( 2, $result->total );
 	}
 
 	// ─── ordering + pagination ─────────────────────────────────────

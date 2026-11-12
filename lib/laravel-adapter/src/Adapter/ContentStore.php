@@ -281,6 +281,15 @@ class ContentStore implements ContentStoreInterface {
 		$value   = $clause['value'] ?? null;
 		$path    = 'meta->' . $key;
 
+		// WP_Meta_Query casts to a numeric type only when the clause declares
+		// one. An untyped `>` is a CHAR comparison, which is how date ranges
+		// (`2026-01-10` > `2026-03-01`) work.
+		$type    = strtoupper( trim( (string) ( $clause['type'] ?? '' ) ) );
+		$numeric = 1 === preg_match(
+			'/^(?:NUMERIC|SIGNED|UNSIGNED|DECIMAL(?:\(\d+(?:,\s?\d+)?\))?)$/',
+			$type
+		);
+
 		switch ( $compare ) {
 			case 'EXISTS':
 				$group->whereNotNull( $path, $boolean );
@@ -307,7 +316,9 @@ class ContentStore implements ContentStoreInterface {
 					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
 					throw new \InvalidArgumentException( "BETWEEN needs exactly two values for '{$key}'." );
 				}
-				if ( 'BETWEEN' === $compare ) {
+				if ( $numeric ) {
+					$this->whereMetaNumeric( $group, $path, $compare, array( $values[0], $values[1] ), $boolean );
+				} elseif ( 'BETWEEN' === $compare ) {
 					$group->whereBetween( $path, array( $values[0], $values[1] ), $boolean );
 				} else {
 					$group->whereNotBetween( $path, array( $values[0], $values[1] ), $boolean );
@@ -338,9 +349,71 @@ class ContentStore implements ContentStoreInterface {
 					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
 					throw new \InvalidArgumentException( "Unsupported meta compare '{$compare}'." );
 				}
+
+				// Ordering operators cast only when the clause declares a numeric
+				// type; untyped comparisons stay lexical, matching WP_Meta_Query.
+				if ( $numeric && in_array( $compare, array( '>', '>=', '<', '<=' ), true ) ) {
+					$this->whereMetaNumeric( $group, $path, $compare, $value, $boolean );
+					return;
+				}
+
 				$group->where( $path, $compare, $value, $boolean );
 			}
 		}
+
+	/**
+	 * Compare a JSON meta path numerically, the way WP_Meta_Query does.
+	 *
+	 * A plain `where( $path, '>', 19.99 )` binds the operand as text, and SQL
+	 * orders numbers before strings — so every numeric row fails the predicate
+	 * and the query silently returns zero rows. WP_Meta_Query casts the meta
+	 * value to DECIMAL (or SIGNED) for numeric operators; casting both sides
+	 * here restores that behaviour, including numeric strings.
+	 *
+	 * @param Builder      $group    Group builder.
+	 * @param string       $path     JSON path (`meta->key`).
+	 * @param string       $operator One of `>`, `>=`, `<`, `<=`, `BETWEEN`, `NOT BETWEEN`.
+	 * @param mixed        $value    Operand, or `[low, high]` for BETWEEN.
+	 * @param string       $boolean  `and` or `or`.
+	 * @return void
+	 */
+	private function whereMetaNumeric( Builder $group, string $path, string $operator, mixed $value, string $boolean ): void {
+		$allowed = array( '>', '>=', '<', '<=', 'BETWEEN', 'NOT BETWEEN' );
+
+		if ( ! in_array( $operator, $allowed, true ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
+			throw new \InvalidArgumentException( "Unsupported numeric compare '{$operator}'." );
+		}
+
+		$connection = $group->getConnection();
+		$cast       = $this->numericCastType( $connection->getDriverName() );
+		$selector   = $connection->getQueryGrammar()->wrap( $path );
+
+		$operands = is_array( $value ) ? array_values( $value ) : array( $value );
+		$placeholders = implode( ' AND ', array_fill( 0, count( $operands ), "CAST(? AS {$cast})" ) );
+
+		$group->whereRaw(
+			"CAST({$selector} AS {$cast}) {$operator} {$placeholders}",
+			$operands,
+			$boolean
+		);
+	}
+
+	/**
+	 * Numeric cast type for the active driver.
+	 *
+	 * SQLite is dynamically typed and accepts NUMERIC; MySQL needs a concrete
+	 * DECIMAL precision; Postgres is strict, so a non-numeric meta value fails
+	 * loudly there instead of coercing to zero (the MySQL/SQLite behaviour, and
+	 * what WP_Meta_Query's SIGNED cast does).
+	 */
+	private function numericCastType( string $driver ): string {
+		return match ( $driver ) {
+			'mysql', 'mariadb' => 'DECIMAL(65,10)',
+			'pgsql' => 'DOUBLE PRECISION',
+			default => 'NUMERIC',
+		};
+	}
 
 	/**
 	 * Apply a WP_Query-style taxonomy clause list.
