@@ -70,6 +70,7 @@ Rank Math).
 | Server-side consolidation | **Done (Phase 4.5)** | `Pro\ToolkitsController::duplicates` + `ConsolidateScreen` (whole entity, not one page) |
 | Bulk import with dry run | **Done (Phase 4.5)** | `Pro\ToolkitsController::importEntity`, `ImportDialog`, `parseDelimitedRows` |
 | Per-family contract suite | **Done (Phase 4.7)** | `tests/Feature/ToolkitContractTest.php` over every shipped manifest |
+| WordPress toolkit surface | **Done (Phase 4.6)** | `addons/pro/includes/toolkits/**`, `Pro\Toolkit_REST_Controller`, `toolkits` endpoint in the SPA config |
 | Console session/CSRF regression fixes | **Done** | single session store on login (`routes/api.php`), `AcceptWpNonce` header alias, stateful test origin |
 
 **Validation record (2026-11-12):**
@@ -80,6 +81,7 @@ Rank Math).
 - Laravel app PHPUnit: **108 tests, 788 assertions**
 - Core PHPUnit: **945 tests, 2,029 assertions** — 29 `ToolkitManifestTest` tests pass; the 5 `ToolRegistryIntegrationTest` errors are the pre-existing abstract-class discovery bug
 - Console smoke (Laravel runtime, 2026-11-12): login → catalogue → Commerce settings / workbench create / **bulk import (preview 2 ready + 1 duplicate, then commit)** / **server-side duplicate scan** / dashboard with the setting-bound `low_stock` card — all against the MySQL-backed app at `:8001`
+- WordPress Pro suite (2026-11-12): **16 tests** — `test-pro-toolkit-rest.php` (14) mirrors the Laravel contract suite, `test-pro-spa-config-toolkits-endpoint.php` (2) pins the endpoint gating
 - Core PHPUnit: **937 tests, 2,017 assertions** — 14 new `ToolkitManifestTest` tests pass; the 5 errors in `ToolRegistryIntegrationTest` are pre-existing (its discovery loop instantiates the abstract `AbstractResultTool`) and unrelated to this work
 - Phase 3b soak (30 min, 2026-11-12): **1,644 iterations / 19,731 requests / 0 violations** — p50 81.9 ms · p95 212.4 ms · p99 338.8 ms · max 982.2 ms at 10.96 req/s; app RSS flat (203 → 194 MiB), DB flat
 - `node --check scripts/serve.mjs`: clean
@@ -243,7 +245,7 @@ author/viewer/guest/bearer) passes on every mutating route.
 | 4.3 | Generic resource controller + settings schema endpoint | `ToolkitController` | `/api/v1/pro/toolkits/{slug}` | ✅ list/show/settings/dashboard/entity CRUD |
 | 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error | ✅ route middleware + per-manifest feature checks |
 | 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | ✅ commerce + documents ship settings-bound cards, server-side duplicates and bulk import; media remains the built-in library |
-| 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | ⏳ |
+| 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | ✅ WordPress now serves the same contract at `mcp-ai-pro/v1/toolkits` off `addons/pro/includes/toolkits/manifests/` |
 | 4.7 | Contract fixtures per family | fixtures | Parity suite | ✅ `ToolkitContractTest` drives every shipped manifest through catalogue → settings → lifecycle → dashboard → duplicates → import |
 
 **Phase 4 notes**
@@ -294,6 +296,24 @@ author/viewer/guest/bearer) passes on every mutating route.
 - **The contract suite is the parity gate.** `ToolkitContractTest` loops every manifest in
   `resources/pro-toolkits`; a new family is covered the moment its manifest lands, and a manifest
   that declares something the engine cannot serve fails CI.
+
+**Phase 4.6 notes — WordPress parity**
+
+- **Same contract, two runtimes.** `mcp-ai-pro/v1/toolkits…` mirrors every Laravel route and the
+  same `{ success, data }` / `{ success, error: { code, message, fields? } }` envelope, so the
+  shared screens cannot tell the backends apart. The manifests live in
+  `addons/pro/includes/toolkits/manifests/` and are validated by the same `lib/core` class.
+- **One table, installed on demand.** `{prefix}nvoos_toolkit_records` is created by `dbDelta`
+  when the `wp_mcp_ai_pro_toolkit_db_version` option moves, so fresh activations and in-place
+  plugin updates both work without a re-activation step.
+- **Admin-only.** Every route requires `manage_options`; the SPA config only emits the endpoint
+  for admins, so non-admins never see the nav entry.
+- **MySQL quoting.** WordPress is always MySQL/MariaDB, where `json_extract` returns a quoted
+  JSON string; `json_path()` wraps it in `json_unquote()` for every comparison, group and
+  aggregate.
+- **Parity is tested, not assumed.** `test-pro-toolkit-rest.php` mirrors the Laravel contract
+  suite case for case (14 tests), and `test-pro-spa-config-toolkits-endpoint.php` pins the
+  endpoint gating.
 
 **Gate G4:** a pilot toolkit installs from a manifest with zero bespoke PHP pages; paid surfaces
 return the typed entitlement error under the `deny` driver.
@@ -404,6 +424,16 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 - `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest,Phase4Test,ToolkitContractTest}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
 
+**WordPress Pro (Phase 4.6)**
+
+- `addons/pro/includes/toolkits/class-wp-mcp-ai-pro-toolkit-manifests.php`
+- `addons/pro/includes/toolkits/class-wp-mcp-ai-pro-toolkit-records.php`
+- `addons/pro/includes/toolkits/manifests/{commerce,documents}.json`
+- `addons/pro/includes/rest/class-wp-mcp-ai-pro-toolkit-rest-controller.php`
+- `addons/pro/includes/class-wp-mcp-ai-pro-module-registry.php` (module `rest_toolkits`)
+- `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php` (`toolkits` endpoint)
+- `addons/pro/tests/test-pro-toolkit-rest.php` + `test-pro-spa-config-toolkits-endpoint.php`
+
 **Runtime plumbing (Phase 4.2)**
 
 - `routes/api.php` — login/logout stay on the `api` group so Sanctum owns a single session;
@@ -426,6 +456,8 @@ Phase 0 shape tests stand in until a live site is available for capture (task 0.
 | Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 142 pass |
 | Console types | `npm run typecheck` | clean |
 | Laravel app | `docker exec oos-laravel-app php artisan test` | 108 pass |
+| WordPress (Pro toolkit) | `bin/run-tests-docker.sh addons/pro/tests/test-pro-toolkit-rest.php` | 14 pass |
+| WordPress (SPA config) | `bin/run-tests-docker.sh addons/pro/tests/test-pro-spa-config-toolkits-endpoint.php` | 2 pass |
 | Core | `cd lib/core && php -d extension=fileinfo vendor/bin/phpunit` | 945 tests (5 pre-existing `ToolRegistryIntegrationTest` errors) |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
@@ -508,7 +540,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 | Toolkit `consolidate` screen | Fixed | Server-side `GROUP BY` over the whole entity; only the number of groups is capped |
 | MySQL vs SQLite JSON semantics | Fixed | MySQL returns quoted JSON from `json_extract`; `jsonPath()` adds `json_unquote()` on MySQL. Tests run on SQLite, so keep a MySQL smoke in the loop for JSON-path changes |
 | Toolkit `research` screen | Scaffold | Renders the manifest's prompt + existing records; returns no AI drafting because the Laravel runtime has no `deep_research` pipeline. Bulk add now lives in the workbench instead |
-| `/pro/toolkits` on the WordPress runtime | Not ported | The WordPress Pro SPA config returns `toolkits: ''`; `ToolkitsClient.available` is false and the nav entry is hidden. Port the REST controller in Phase 4.6 when families migrate |
+| `/pro/toolkits` on the WordPress runtime | **Done (Phase 4.6)** | Served at `mcp-ai-pro/v1/toolkits`; the SPA config emits it for admins |
 | Non-stateful session login | Decided | A POST to `/session/login` without a first-party `Referer`/`Origin` answers a typed 419 `session_required` instead of a 500 (browser-only flow) |
 
 ---
@@ -525,5 +557,5 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 4.1 + 4.3 — toolkit manifest contract, loader, generic engine
 - [x] Phase 4.2 — generic toolkit console screens (settings, workbench, dashboard live; research + consolidate scaffolds)
 - [x] Phase 4.5 + 4.7 — settings-bound cards, server-side consolidation, dry-run bulk import, per-family contract suite
-- [ ] Phase 4.6 — migrate families one at a time, keeping WordPress a peer
+- [x] Phase 4.6 — WordPress serves the same toolkit contract (`mcp-ai-pro/v1/toolkits`)
 - [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates
