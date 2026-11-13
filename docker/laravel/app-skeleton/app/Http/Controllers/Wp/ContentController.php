@@ -31,6 +31,12 @@ class ContentController
     private const TYPES = [
         'posts' => 'post',
         'pages' => 'page',
+        // Project-management family (090-F Phase 2 admin surface). The CPTs
+        // already declare these REST bases in `oos.content_types`, so the
+        // console's Records page can address them the same way it addresses
+        // posts and pages.
+        'tasks' => 'mcp_ai_task',
+        'projects' => 'mcp_ai_project',
     ];
 
     public function index(Request $request, string $restBase): JsonResponse

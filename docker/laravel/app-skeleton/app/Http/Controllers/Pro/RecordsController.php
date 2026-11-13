@@ -37,6 +37,22 @@ class RecordsController
             'icon' => '📄',
             'group' => 'content',
         ],
+        'task' => [
+            'post_type' => 'mcp_ai_task',
+            'rest_base' => 'tasks',
+            'label' => 'Tasks',
+            'singular' => 'Task',
+            'icon' => '✅',
+            'group' => 'pm',
+        ],
+        'project' => [
+            'post_type' => 'mcp_ai_project',
+            'rest_base' => 'projects',
+            'label' => 'Projects',
+            'singular' => 'Project',
+            'icon' => '📁',
+            'group' => 'pm',
+        ],
     ];
 
     public function schema(): JsonResponse

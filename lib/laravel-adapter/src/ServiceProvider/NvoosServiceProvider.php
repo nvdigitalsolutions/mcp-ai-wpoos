@@ -44,10 +44,13 @@ use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Profession\CachedProfessionRepository;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
+use Nvoos\Core\Tool\BulkImportTool;
 use Nvoos\Core\Tool\CreateProjectTool;
 use Nvoos\Core\Tool\CreateTaskTool;
 use Nvoos\Core\Tool\DeleteProjectTool;
 use Nvoos\Core\Tool\DeleteTaskTool;
+use Nvoos\Core\Tool\UpdateProjectTool;
+use Nvoos\Core\Tool\UpdateTaskTool;
 use Nvoos\Core\Tool\GetProfessionTool;
 use Nvoos\Core\Tool\GetTaskDependenciesTool;
 use Nvoos\Core\Tool\ListProfessionsTool;
@@ -284,6 +287,9 @@ class NvoosServiceProvider extends ServiceProvider {
 			new DeleteTaskTool( $errors, $content ),
 			new CreateProjectTool( $errors, $content ),
 			new DeleteProjectTool( $errors, $content ),
+			new UpdateTaskTool( $errors, $content ),
+			new UpdateProjectTool( $errors, $content ),
+			new BulkImportTool( $errors, $content ),
 			new ListProfessionsTool( $errors, $professions ),
 			new GetProfessionTool( $errors, $professions ),
 			new ProfessionStatsTool( $errors, $professions ),
