@@ -200,10 +200,38 @@ final class ToolRegistryIntegrationTest extends TestCase
                 ProfessionRepositoryInterface::class => $this->profs,
                 EmailServiceInterface::class        => $this->email,
                 CronStatusInterface::class          => $this->cron,
-                default                             => $this->createMock($t->getName()),
+                default                             => $this->makeCollaborator($t->getName()),
             };
         }
 
         return $rc->newInstanceArgs($args);
+    }
+
+    /**
+     * Provide a collaborator for a constructor parameter with no canned binding.
+     *
+     * Interfaces and open classes are doubled. A `final` class cannot be — and
+     * doubling a concrete domain service was never the intent — so it is
+     * constructed for real. That only works when it has no required
+     * dependencies of its own, which is the same bar this harness applies to
+     * the tools themselves.
+     */
+    private function makeCollaborator(string $type): object
+    {
+        $rc = new \ReflectionClass($type);
+
+        if ($rc->isFinal()) {
+            $ctor = $rc->getConstructor();
+
+            if ($ctor === null || $ctor->getNumberOfRequiredParameters() === 0) {
+                return $rc->newInstance();
+            }
+
+            throw new \RuntimeException(
+                "{$type} is final and needs constructor arguments; add a binding to make()."
+            );
+        }
+
+        return $this->createMock($type);
     }
 }

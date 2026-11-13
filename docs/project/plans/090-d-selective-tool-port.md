@@ -43,7 +43,10 @@ delegate to a shared client).
 `bin/classify-tool-portability.php` therefore:
 
 1. extracts every `get_slug()` / `getSlug()` literal from
-   `includes/tools/`, `addons/pro/includes/tools/` and `lib/core/src/`;
+   `includes/tools/`, `addons/pro/includes/tools/` and `lib/core/src/` — plus a
+   second sweep of `addons/pro/includes/` restricted to classes that implement
+   `WP_MCP_AI_Tool_Interface`, because six tools live outside `tools/` (the five
+   foundry/harness exporters and the MCP-App bridge, which has no fixed slug);
 2. diffs WP against `lib/core` (the gap);
 3. walks each gap tool's **closure** — the file, its `extends` parent, and the
    files it `require_once`s (one hop, depth-capped);
@@ -63,15 +66,23 @@ every tier by ~1,000 tools.
 | **D** | 11–30 | WordPress-shaped — port only with a strong reason |
 | **E** | 31+ | WordPress-bound — stays in the plugin |
 
-### Current inventory (2026-11-12)
+### Current inventory (2026-11-13)
 
 ```text
-slugs  base 328 · pro 1270 · core 194 · gap 1434
-tiers  A 18 · B 143 · C 413 · D 634 · E 226
+slugs  base 328 · pro 1275 · core 209 · gap 1425
+tiers  A 13 · B 143 · C 413 · D 632 · E 224
 ```
 
-**Interpretation:** 161 tools (A+B) are plausible port candidates; 413 more
-(C) become portable once a shared adapter exists. **860 (D+E) should stay.**
+**Interpretation:** 156 tools (A+B) are plausible port candidates; 413 more
+(C) become portable once a shared adapter exists. **856 (D+E) should stay.**
+
+**Corrected 2026-11-13.** The previous inventory read `pro 1270 · gap 1434`
+because the scan covered only `addons/pro/includes/tools`. Five tools in
+sibling directories were invisible to it — `export_trajectory_corpus` (D, 18),
+`export_preference_pairs` (C, 9), `export_plugin_docs_corpus` (D, 13),
+`export_fine_tune_curriculum` (D, 16) and `suggest_workflows_from_history`
+(C, 4). The Corpus Foundry exporters are therefore *in* the backlog, and
+classified C/D: they are a store-plus-filesystem port, not a cluster-1 move.
 
 ---
 
@@ -88,7 +99,7 @@ eight cluster-1 candidates survived that check.
 |---|---|---|---|
 | pro | `verify_information` | ✅ ported | — |
 | pro | `validate_tool_schema` | ✅ ported | — |
-| base | `list_prompt_cues` | ⏳ | not data: `Prompt_Cue_Library` is a **registry** with `update_option`, `do_action` and `apply_filters`, so the catalogue needs a source port and its cue text needs a licence note |
+| base | `list_prompt_cues` | ✅ ported | `ListPromptCuesTool` + `PromptCueLibrary` in `lib/core`. The catalogue moved with the tool (eight seeded cues, relicensed MIT — see `docs/developer/licence-transitions.md`); the WordPress `do_action` and discovered-cue option stay behind |
 | base | `scope_memory` | ✅ ported | `ScopeMemoryTool` + `HarnessProfileProviderInterface`. Tag computation is pure; the only store read (`memory.pii_filter`) goes through the provider, which is optional — a runtime without harness storage reports the documented default |
 | base | `enable_reasoning_mode` | ⏳ | `Reasoning_Controller` is stateful **and** networked (3 `get_option`, 2 `update_option`, 2 `wp_remote_`) — a store port, not a move |
 | pro | `generate_email_template` | ✅ ported | `MjmlCompilerInterface` + `GenerateEmailTemplateTool`; branding/footer moved to `MjmlTemplateBuilder::withBrandingHeader()` / `withFooter()`. The compiler stays optional — without one the tool serves `output_format: mjml` and reports a 501 for `html` |
@@ -223,7 +234,7 @@ cluster 2 proceeds once it lands.
 | Classifier | ✅ `bin/classify-tool-portability.php` |
 | Backlog generated | ✅ this document |
 | Registry seeded with self-contained core tools | ✅ 23 tools bound in the Laravel provider (`CoreToolCatalogue`) — no slugs moved, the gap is unchanged |
-| Cluster 1 ported | 🟡 4 of 8 — `verify_information`, `validate_tool_schema`, `generate_email_template`, `scope_memory`; the rest need a service (see §4) |
+| Cluster 1 ported | 🟡 5 of 8 — `verify_information`, `validate_tool_schema`, `generate_email_template`, `scope_memory`, `list_prompt_cues`; the rest need a service (see §4) |
 | Cluster 2–4 | ⏳ |
 | CPT/CCT families | ⏳ design: `090-e-cpt-cct-schema-port.md` (654 tools are storage-shaped) |
 | Console parity note | ⏳ add the "runtime tool count" line to the Tools page empty state |

@@ -42,6 +42,7 @@ use Nvoos\Core\Tool\GenerateEmailTemplateTool;
 use Nvoos\Core\Tool\GenerateSlugTool;
 use Nvoos\Core\Tool\GenerateUuidTool;
 use Nvoos\Core\Tool\HashStringTool;
+use Nvoos\Core\Tool\ListPromptCuesTool;
 use Nvoos\Core\Tool\MathEvalTool;
 use Nvoos\Core\Tool\MergeArraysTool;
 use Nvoos\Core\Tool\ParseCsvTool;
@@ -117,6 +118,11 @@ final class CoreToolCatalogue {
 			// `pii_filter` reports the documented default when no provider is
 			// bound.
 			ScopeMemoryTool::class,
+
+			// 090-D cluster 1, harness family. The cue catalogue moves with the
+			// tool, so this serves the same eight seeded cues everywhere; a
+			// caller that registers extra cues passes its own library.
+			ListPromptCuesTool::class,
 		);
 	}
 

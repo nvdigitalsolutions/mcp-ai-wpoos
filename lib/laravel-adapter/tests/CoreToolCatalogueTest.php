@@ -101,6 +101,26 @@ final class CoreToolCatalogueTest extends TestCase {
 	}
 
 	/**
+	 * The 090-D cluster-1 cue catalogue registers with its own library.
+	 *
+	 * `list_prompt_cues` is the first ported tool that carries its data with
+	 * it, so the point here is that Laravel serves the real catalogue, not an
+	 * empty one.
+	 */
+	public function testListPromptCuesServesTheSeededCatalogue(): void {
+		$registry = $this->app->make( ToolRegistry::class );
+
+		$this->assertTrue( $registry->has( 'list_prompt_cues' ) );
+
+		$result = $registry->get( 'list_prompt_cues' )->execute( array( 'task_class' => 'math' ) );
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 1, $result['data']['count'] );
+		$this->assertSame( 'chain_of_thought', $result['data']['cues'][0]['slug'] );
+	}
+
+	/**
 	 * Every listed tool must expose the minimum surface the registry needs.
 	 */
 	public function testEachToolDeclaresItsSurface(): void {
