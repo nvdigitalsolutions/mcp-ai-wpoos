@@ -300,6 +300,103 @@ docblock that documents the mapping.
 
 **Gate G3:** WordPress reader tests unchanged and green; corpus parity for browse/traverse/search.
 
+#### Phase 3 — harness shipped (reader corpus)
+
+The characterisation half of Phase 3 is in place; the port itself is next.
+
+| File | Purpose |
+|---|---|
+| `tests/support/okf-reader-corpus.php` | Three hand-authored bundle trees, case inputs, materialiser, normaliser |
+| `tests/manual/run-okf-reader-corpus.php` | Offline runner + `--write`; stubs `WP_Error`, `sanitize_text_field`, `wp_normalize_path`, `untrailingslashit` |
+| `tests/fixtures/okf/reader/*.json` | 36 committed cases across `basic`, `metadata`, `links` |
+| `tests/test-okf-reader-corpus.php` | PHPUnit twin + a traversal test the corpus cannot express |
+
+A reader fixture is one bundle plus its cases, because operations share a tree:
+
+```json
+{ "tree": { "tables/orders.md": "---\ntype: Table\n..." },
+  "cases": [ { "name": "get-concept", "op": "get_concept", "args": {...}, "expected": ... } ] }
+```
+
+Covered operations: `get_concept`, `browse`, `traverse`, `search`, `get_types`,
+`find_broken_links`, `get_trust_tier`, `is_stale`, `file_to_concept_id`.
+
+**Determinism.** `search()` walks a `RecursiveDirectoryIterator`, so its result order is
+filesystem-dependent; the normaliser sorts by concept ID. Staleness cases use dates at 2000 and
+2999 so the recorded expectation cannot rot.
+
+**Four behaviours the corpus pinned.** Three were defects and are fixed; one is intended.
+
+1. **`traverse` resolved relative links against the bundle root, not the concept's directory.**
+   `[Orders](orders.md)` inside `tables/customers.md` became concept ID `orders`, which does not
+   exist, so traversal returned an error node where `find_broken_links` (which uses
+   `resolve_link_target()`) resolved it correctly. The two APIs disagreed on the same link.
+   **Fixed** — `extract_concept_links()` became the public `concept_links( $body, $concept_id )` and
+   delegates to `resolve_link_target()`, so there is now one resolution rule: leading `/` is
+   bundle-absolute, anything else is concept-relative, external URIs are dropped.
+2. **`./` prefixes survived.** `[Beta](./beta.md)` produced concept ID `./beta`; only `../` was
+   stripped. **Fixed** — `normalize_concept_id()` collapses a leading `./` so IDs stay canonical.
+3. **External links were not skipped by `traverse`.** `https://example.com/x.md` became an
+   `okf_not_found` error node. **Fixed** by the same change; external targets are not in the graph.
+4. **A non-existent escape target reports `okf_not_found`, not `okf_path_traversal`.** `../outside`
+   fails the `file_exists()` check before the `realpath()` containment check runs. Unchanged and
+   intended: containment still holds, and the twin asserts `okf_path_traversal` by creating a real
+   sibling directory that shares the root prefix.
+
+**One consumer fixture had to change**, and it is worth being explicit: `test-pro-okf-rest.php`
+seeded `[exchanges](policies/exchanges.md)` from concept `policies/refunds`. That path is
+root-relative but lacks the leading `/`, so under correct §6.1 resolution it points at
+`policies/policies/exchanges`. The seed now uses both conforming forms — `exchanges.md` and
+`/policies/exchanges.md` — and asserts they resolve to the same concept. Bundles in the wild that
+relied on the old sloppy form will see links resolve differently; `find_broken_links()` already
+reported them as broken, so such a bundle was internally inconsistent before this change.
+
+The Pro REST drawer no longer carries its own copy of the link extractor; it calls
+`WP_MCP_AI_OKF_Reader::concept_links()`, so the two surfaces cannot drift again.
+
+Verification after the fix: offline **36 passed, 0 failed**; reader twin **38 tests**; core OKF
+cluster **124 tests**; Pro OKF REST **21 tests**; `phpcs` clean on both changed files. Fixture diff
+contained exactly three intended changes and nothing else.
+
+#### Phase 3 — shipped (reader port)
+
+Gate G3 is satisfied for the reader.
+
+| File | Purpose |
+|---|---|
+| `lib/core/src/Domain/Contract/BundleRootInterface.php` | `root()`, `pathFor()`, `contains()` |
+| `lib/core/src/Domain/Okf/OkfReadException.php` | Stable `errorCode` mirroring the WP codes |
+| `lib/core/src/Domain/Okf/OkfReaderInterface.php` | Twelve read operations |
+| `lib/core/src/Domain/Okf/OkfReader.php` | The port; filesystem work only through the port |
+| `lib/core/src/Infrastructure/Okf/FilesystemBundleRoot.php` | Plain-directory adapter (standalone + tests) |
+| `lib/core/tests/Unit/Domain/Okf/OkfReaderCorpusTest.php` | Replays the reader corpus in plain PHP |
+| `tests/test-okf-reader-differential.php` | Asserts core == WordPress on every reader case |
+
+**API decisions.**
+
+- `contains( string $path ): bool` replaces the sketched `assertContained( $path )`. `assert` implies
+  throwing, and the thrown code (`okf_path_traversal`) belongs to the reader, not to a storage
+  contract that other features will also implement. The primitive stays a predicate; the reader
+  turns it into a domain error.
+- A **missing** path returns `true` from `contains()` when it is lexically inside the root. That is
+  deliberate: folding "absent" into "escapes the root" would report a typo as an attack, and it
+  would change the WP error code from `okf_not_found` to `okf_path_traversal`.
+- Parser failures are caught in `getConcept()` and re-thrown as `OkfReadException`, so the reader has
+  one error type. The code is preserved.
+
+**One rule for links, in both runtimes.** `conceptLinks()` delegates to the same resolver
+`findBrokenLinks()` uses, so the divergence fixed in the previous commit cannot reappear in the port.
+
+**Both sides ran green first time.** The core corpus replay passed all 36 cases on first execution,
+as did the differential — the fixture gate doing its job across a second subsystem.
+
+Verification: core reader corpus **37 tests**; differential **37 tests / 74 assertions**; full
+`lib/core` suite **1095 tests / 3968 assertions**; PHPStan level 8 `[OK] No errors`; `phpcs` clean;
+no WordPress calls in the new core files outside docblock references.
+
+`WpBundleRoot` in `lib/wordpress-adapter` and delegation from `WP_MCP_AI_OKF_Reader` remain Phase 4,
+for the same reason as the parser: the differential oracle needs two independent implementations.
+
 ### Phase 4 — Licence, gates, documentation
 
 - `lib/core` files carry `@license MIT` + `SPDX-License-Identifier: MIT`; the WP wrappers stay
