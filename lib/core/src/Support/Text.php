@@ -45,4 +45,18 @@ final class Text {
 
 		return (string) preg_replace( '/[^a-z0-9_\-]/', '', $value );
 	}
+
+	/**
+	 * Strip markup from a value while keeping its line structure.
+	 *
+	 * Matches `sanitize_textarea_field()`, including the part PHP's `strip_tags()`
+	 * does not do: `<script>` and `<style>` blocks are removed with their
+	 * contents, not just their tags.
+	 */
+	public static function multiline( string $value ): string {
+		$value = (string) preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $value );
+		$value = strip_tags( $value );
+
+		return trim( $value );
+	}
 }
