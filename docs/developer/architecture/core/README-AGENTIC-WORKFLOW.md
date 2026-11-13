@@ -271,7 +271,7 @@ Result: Automated site audit
 
 ## 🔗 Related Documentation
 
-- **[Tool Reference](../../reference/tools/tool-reference.md)** - All tools catalog (~1,745; live registry authoritative)
+- **[Tool Reference](../../reference/tools/tool-reference.md)** - All tools catalog (~1,747; live registry authoritative)
 - **[REST API](../../reference/api/rest-api.md)** - API documentation
 - **[Best Practices](../../guides/developer/best-practices/BEST_PRACTICES.md)** - Usage recommendations
 - **[Authentication](../../reference/api/mcp-server-authentication.md)** - Security setup

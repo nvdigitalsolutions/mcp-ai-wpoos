@@ -254,7 +254,7 @@ function_exists( 'rank_math' )
 
 ## Related Documentation
 
-- [Tool Reference](../../../reference/tools/tool-reference.md) - Complete list of all ~1,745 tools (~358 base + ~1,388 Pro; live registry authoritative) with examples
+- [Tool Reference](../../../reference/tools/tool-reference.md) - Complete list of all ~1,747 tools (~360 base + ~1,388 Pro; live registry authoritative) with examples
 - [Tool Grouping](../../../reference/tools/tool-grouping.md) - Detailed categorization system
 - [Tool Selection Presets](../../user/assistants/tool-selection-presets.md) - Pre-configured tool sets for assistants
 - [High Token Tool Handling](../../../features/tools/presets/high-token-tool-handling.md) - Managing resource-intensive tools
