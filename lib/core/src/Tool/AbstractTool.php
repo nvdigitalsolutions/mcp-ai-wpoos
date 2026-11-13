@@ -294,6 +294,58 @@ abstract class AbstractTool implements ToolInterface {
 	}
 
 	/**
+	 * Whether a value is a real `YYYY-MM-DD` date.
+	 *
+	 * `checkdate()` rejects `2026-02-31`, which a regex alone would accept.
+	 * Shared so the task and project tools cannot disagree about what a valid
+	 * date is.
+	 */
+	protected function isIsoDate( string $value ): bool {
+		if ( 1 !== preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m ) ) {
+			return false;
+		}
+
+		return checkdate( (int) $m[2], (int) $m[3], (int) $m[1] );
+	}
+
+	/**
+	 * Keys the caller supplied with a usable value.
+	 *
+	 * Partial-update tools need to distinguish "not given" from "given as
+	 * empty". A blank string and a non-positive integer count as not given:
+	 * neither tool has a field where clearing to empty is meaningful, and
+	 * treating them as absent avoids writing `''` over a real value.
+	 *
+	 * @param ToolArgs     $arguments Raw tool arguments.
+	 * @param list<string> $keys      Keys to inspect.
+	 *
+	 * @return list<string>
+	 */
+	protected function providedParams( array $arguments, array $keys ): array {
+		$present = array();
+
+		foreach ( $keys as $key ) {
+			if ( ! \array_key_exists( $key, $arguments ) ) {
+				continue;
+			}
+
+			$value = $arguments[ $key ];
+
+			if ( \is_string( $value ) && '' === \trim( $value ) ) {
+				continue;
+			}
+
+			if ( \is_int( $value ) && $value <= 0 ) {
+				continue;
+			}
+
+			$present[] = $key;
+		}
+
+		return $present;
+	}
+
+	/**
 	 * Sanitize a string parameter from arguments.
 	 * @param ToolArgs $arguments Raw tool arguments.
 	 */

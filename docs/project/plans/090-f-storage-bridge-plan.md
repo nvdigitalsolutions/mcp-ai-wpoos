@@ -218,6 +218,65 @@ defaults to `planning`; `end_date` may not precede `start_date`.
 Remaining for the family: bulk import and the admin page (writes now cover
 tasks and projects), plus the `update_task` partial-update tool.
 
+**Partial-update tools shipped.** `update_task` and `update_project` close the
+last behavioural gap with WordPress. `create_task` / `create_project` are
+upserts that require a title or name; these change only the fields supplied, so
+a caller can mark a task `completed` without re-sending everything.
+
+- **Nothing-to-update is an error**, not a silent no-op: an empty call returns
+  `nothing_to_update` instead of reporting success for a write that did nothing.
+- **Dates are validated against the merged result.** Changing only `end_date`
+  still cannot invert a stored `start_date` — the failure a per-field check
+  misses, and it has its own test.
+- **Type-checked ids.** `update_project` refuses a task id (and vice versa) with
+the same `not found` answer, so a mixed-up id cannot quietly rewrite the wrong
+kind of record.
+- Results carry the updated row, matching `create_*`. WordPress returns only
+the id; the richer shape is a deliberate superset that saves a follow-up read.
+
+`AbstractTool` gained `isIsoDate()` and `providedParams()` so the four write
+tools share one date validator and one "was this field really supplied" rule
+instead of four slightly different copies.
+
+**Bulk import shipped.** `bulk_import` takes `entity` (`tasks` | `projects`), a
+`rows` list, `preview` and `skip_existing`, and follows the toolkit import
+contract (`090-e` §5):
+
+- **The report reconciles.** `valid + duplicates + failed === total`, always —
+  a row that passes validation but fails to persist is moved into `failed`
+rather than silently vanishing from the count.
+- **`preview` writes nothing** and returns the normalised rows, so a caller can
+  show the operator what would happen before anything lands.
+- **The natural key is the title** (or project name), compared case- and
+  whitespace-insensitively. There is no external id on this family, so two rows
+  with the same title in one batch are a duplicate — the honest consequence of
+  having nothing else to tell them apart. Matching is exact after a database
+  search narrows the field, because `ContentQuery::search` is a substring match
+  and would treat "Alpha" as a duplicate of "Alpha Two".
+- **500 rows per call**, matching the toolkit import.
+
+`ProjectManagement\Vocabulary` now holds the status/priority/category lists.
+They were duplicated across four tools, which is exactly how a schema and its
+validator drift apart.
+
+**Admin surface shipped.** The family's `/pm` console page was blocked on two
+small pieces, both fixed here:
+
+- `Wp\ContentController` now maps the `tasks` and `projects` REST bases to
+  `mcp_ai_task` / `mcp_ai_project`. The console's Records page addresses records
+  through `wp/v2/{restBase}`, so without these two entries it got a
+  `rest_no_route` 404 for a post type the runtime already stores.
+- `Pro\RecordsController::ENTITIES` advertises both entities under group `pm`,
+  which is what the Records page reads to decide what to render.
+- `oos.features.project_management` flips to `true`, so the console nav shows
+  `/pm` at all.
+
+Writes from the page carry meta, so `_task_status` and friends round-trip
+through the same `nvoos_posts` rows the tools read.
+
+**Phase 2 is complete**: reads, writes, partial updates, bulk import and the
+admin page all run on both runtimes.
+
 ### Phase 3 — Paper Store port
 
 `PaperStoreInterface` (`lib/core/src/Domain/Contract/`) with
