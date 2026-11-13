@@ -126,17 +126,21 @@ class CreateTaskTool extends AbstractTool {
 
 		$status = $this->stringParam( $arguments, 'status' );
 		if ( '' !== $status && ! in_array( $status, Vocabulary::TASK_STATUSES, true ) ) {
-			return $this->errors->create( 'invalid_argument', 'Unknown task status.' );
+			// WordPress coerces an unknown status to the default and echoes the
+			// stored value back, so the caller still sees what was written.
+			// Matching that keeps one model transcript valid on both runtimes
+			// (090-e write parity); `pending` is the case that found this.
+			$status = 'todo';
 		}
 
 		$priority = $this->stringParam( $arguments, 'priority' );
 		if ( '' !== $priority && ! in_array( $priority, Vocabulary::TASK_PRIORITIES, true ) ) {
-			return $this->errors->create( 'invalid_argument', 'Unknown task priority.' );
+			$priority = 'medium';
 		}
 
 		$category = $this->stringParam( $arguments, 'category' );
 		if ( '' !== $category && ! in_array( $category, Vocabulary::TASK_CATEGORIES, true ) ) {
-			return $this->errors->create( 'invalid_argument', 'Unknown task category.' );
+			$category = 'general';
 		}
 
 		$due_date = $this->stringParam( $arguments, 'due_date' );
@@ -223,7 +227,7 @@ class CreateTaskTool extends AbstractTool {
 		}
 
 		return $this->success(
-			sprintf( 'Task created: %s', $item->title ),
+			'Task created successfully.',
 			array(
 				'task_id' => $item->id,
 				'task'    => TaskRow::from( $item ),

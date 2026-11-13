@@ -116,7 +116,11 @@ class CreateProjectTool extends AbstractTool {
 
 		$status = $this->stringParam( $arguments, 'status' );
 		if ( '' !== $status && ! in_array( $status, Vocabulary::PROJECT_STATUSES, true ) ) {
-			return $this->errors->create( 'invalid_argument', 'Unknown project status.' );
+			// The WordPress tool falls back to the default rather than failing,
+			// and the response echoes the stored status, so the caller still
+			// sees what was written. Coercing keeps one model transcript valid
+			// on both runtimes (090-e write parity).
+			$status = 'planning';
 		}
 
 		$start_date = $this->stringParam( $arguments, 'start_date' );
@@ -184,7 +188,7 @@ class CreateProjectTool extends AbstractTool {
 		}
 
 		return $this->success(
-			sprintf( 'Project created: %s', $item->title ),
+			'Project created successfully.',
 			array(
 				'project_id' => $item->id,
 				'project'    => ProjectRow::from( $item ),

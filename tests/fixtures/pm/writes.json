@@ -1,0 +1,186 @@
+{
+    "create-project": {
+        "tool": "create_project",
+        "args": {
+            "name": "Delta Onboarding",
+            "description": "Stand up the new starter flow.",
+            "status": "planning",
+            "start_date": "2026-05-01",
+            "end_date": "2026-06-30",
+            "assigned_to": [
+                "<user>"
+            ]
+        },
+        "expected": {
+            "success": true,
+            "message": "Project created successfully.",
+            "project_id": "<id>",
+            "project": {
+                "id": "<id>",
+                "name": "Delta Onboarding",
+                "description": "Stand up the new starter flow.",
+                "status": "planning",
+                "start_date": "<date>",
+                "end_date": "<date>",
+                "assigned_to": [
+                    "<id>"
+                ],
+                "created_at": "<date>"
+            },
+            "updated": false
+        }
+    },
+    "create-project-upsert": {
+        "tool": "create_project",
+        "args": {
+            "project_id": "<project:beacon>",
+            "name": "Beacon Audit (revised)",
+            "description": "Scope widened to the checkout flow.",
+            "status": "active",
+            "start_date": "2025-12-01",
+            "end_date": "2026-03-15",
+            "assigned_to": [
+                "<user>"
+            ]
+        },
+        "expected": {
+            "success": true,
+            "message": "Project updated: Beacon Audit (revised)",
+            "project_id": "<id>",
+            "project": {
+                "id": "<id>",
+                "name": "Beacon Audit (revised)",
+                "description": "Scope widened to the checkout flow.",
+                "status": "active",
+                "start_date": "<date>",
+                "end_date": "<date>",
+                "assigned_to": [
+                    "<id>"
+                ],
+                "updated_at": "<date>"
+            },
+            "updated": "<date>"
+        }
+    },
+    "update-project": {
+        "tool": "update_project",
+        "args": {
+            "project_id": "<project:atlas>",
+            "name": "Atlas Migration",
+            "description": "Move the estate, phase two.",
+            "status": "completed",
+            "end_date": "2026-04-15"
+        },
+        "expected": {
+            "success": true,
+            "message": "Project updated successfully.",
+            "project_id": "<id>"
+        }
+    },
+    "delete-project": {
+        "tool": "delete_project",
+        "args": {
+            "project_id": "<project:cinder>"
+        },
+        "expected": {
+            "success": true,
+            "message": "Project deleted successfully.",
+            "project_id": "<id>"
+        }
+    },
+    "create-task": {
+        "tool": "create_task",
+        "args": {
+            "title": "Provision accounts",
+            "description": "Create the starter accounts.",
+            "project_id": "<project:atlas>",
+            "status": "pending",
+            "priority": "medium",
+            "due_date": "2026-05-15",
+            "assigned_to": "<user>",
+            "category": "general"
+        },
+        "expected": {
+            "success": true,
+            "message": "Task created successfully.",
+            "task_id": "<id>",
+            "task": {
+                "id": "<id>",
+                "title": "Provision accounts",
+                "description": "Create the starter accounts.",
+                "project_id": "<id>",
+                "status": "todo",
+                "priority": "medium",
+                "category": "general",
+                "tags": "",
+                "due_date": "<date>",
+                "assigned_to": "<id>",
+                "estimated_effort": null,
+                "actual_effort": null,
+                "created_at": "<date>"
+            },
+            "updated": false
+        }
+    },
+    "create-task-upsert": {
+        "tool": "create_task",
+        "args": {
+            "task_id": "<task:plan>",
+            "title": "Draft the cutover plan",
+            "description": "Rewrite against the phase-two scope.",
+            "project_id": "<project:atlas>",
+            "status": "in-progress",
+            "priority": "high",
+            "category": "maintenance",
+            "tags": "cutover,phase-two",
+            "due_date": "2026-06-10",
+            "assigned_to": "<user>"
+        },
+        "expected": {
+            "success": true,
+            "message": "Task updated: Draft the cutover plan",
+            "task_id": "<id>",
+            "task": {
+                "id": "<id>",
+                "title": "Draft the cutover plan",
+                "description": "Rewrite against the phase-two scope.",
+                "project_id": "<id>",
+                "status": "in-progress",
+                "priority": "high",
+                "category": "maintenance",
+                "tags": "cutover,phase-two",
+                "due_date": "<date>",
+                "assigned_to": "<id>",
+                "estimated_effort": null,
+                "actual_effort": null,
+                "updated_at": "<date>"
+            },
+            "updated": "<date>"
+        }
+    },
+    "update-task": {
+        "tool": "update_task",
+        "args": {
+            "task_id": "<task:contrast>",
+            "title": "Run the contrast sweep",
+            "status": "completed",
+            "priority": "medium"
+        },
+        "expected": {
+            "success": true,
+            "message": "Task updated successfully.",
+            "task_id": "<id>"
+        }
+    },
+    "delete-task": {
+        "tool": "delete_task",
+        "args": {
+            "task_id": "<task:contrast>"
+        },
+        "expected": {
+            "success": true,
+            "message": "Task deleted successfully.",
+            "task_id": "<id>"
+        }
+    }
+}

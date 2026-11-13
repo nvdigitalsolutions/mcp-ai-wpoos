@@ -167,7 +167,7 @@ class UpdateTaskTool extends AbstractTool {
 		}
 
 		return $this->success(
-			sprintf( 'Task updated: %s', $item->title ),
+			'Task updated successfully.',
 			array(
 				'task_id' => $item->id,
 				'task'    => TaskRow::from( $item ),

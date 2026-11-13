@@ -190,7 +190,7 @@ class UpdateProjectTool extends AbstractTool {
 		}
 
 		return $this->success(
-			sprintf( 'Project updated: %s', $item->title ),
+			'Project updated successfully.',
 			array(
 				'project_id' => $item->id,
 				'project'    => ProjectRow::from( $item ),
