@@ -124,11 +124,18 @@ final class CachedProfessionRepository implements ProfessionRepositoryInterface 
 	/**
 	 * Read through the cache, computing and storing on a miss.
 	 *
-	 * @param string        $suffix Cache-key suffix identifying the read.
-	 * @param callable      $load   Produces the value on a miss.
-	 * @param callable|null $store  Whether the computed value is worth caching.
-	 *                              Defaults to "non-empty array".
-	 * @return array
+	 * Generic over the shape so each caller keeps the return type its
+	 * interface declares: without the template every decorated read widened
+	 * to plain `array` and stopped matching `ProfessionRepositoryInterface`.
+	 *
+	 * @template T of array
+	 *
+	 * @param string                $suffix Cache-key suffix identifying the read.
+	 * @param callable():T          $load   Produces the value on a miss.
+	 * @param callable(T):bool|null $store  Whether the computed value is worth caching.
+	 *                                      Defaults to "non-empty array".
+	 *
+	 * @return T
 	 */
 	private function remember( string $suffix, callable $load, ?callable $store = null ): array {
 		if ( $this->ttl <= 0 ) {
@@ -139,6 +146,7 @@ final class CachedProfessionRepository implements ProfessionRepositoryInterface 
 		$hit = $this->cache->getValue( $key );
 
 		if ( is_array( $hit ) ) {
+			/** @var T $hit */
 			return $hit;
 		}
 

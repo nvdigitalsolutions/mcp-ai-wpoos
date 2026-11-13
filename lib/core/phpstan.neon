@@ -37,7 +37,7 @@ parameters:
         # Dependencies kept in public constructors while the stubbed
         # implementations below are completed. These classes are part of the
         # published `nvoos/core` API, so dropping a constructor parameter for
-        # a lint pass would be a needless BC break. Scoped to one rule and six
+        # a lint pass would be a needless BC break. Scoped to one rule and five
         # files — no other rule is relaxed for them.
         # Tracked in Proposal 134 §14.4.
         -
@@ -48,4 +48,3 @@ parameters:
                 - src/Tool/ErlangCStaffingAdvisorTool.php
                 - src/Tool/QueryRemoteSiteTool.php
                 - src/Tool/RunOpenAIExternalActionTool.php
-                - src/Tool/SaveProfessionTool.php
