@@ -228,11 +228,17 @@ Coverage (19 cases): `no-frontmatter`, `unclosed-frontmatter`, `empty-frontmatte
 `blank-lines`, `crlf-endings`, `bom-prefixed`, `unicode`, `body-preserved`, `value-with-colon`,
 `v01-skill`, `v02-provenance`, `long-value`.
 
-**Finding to settle in Phase 2 — UTF-8 BOM.** A file beginning `EF BB BF ---` returns `null`: `trim()`
-never strips a BOM, so the first-line `strpos( $content, '---' ) === 0` check misses. The fixture
-`bom-prefixed.json` currently records `{ "null": true }`. Phase 2 must choose explicitly between
-matching the behaviour (document BOM files as unsupported) and stripping the BOM in core (then
-regenerate that one fixture). Either way the choice becomes a tested contract rather than an accident.
+**Finding, now fixed — UTF-8 BOM.** A file beginning `EF BB BF ---` used to return `null`: `trim()`
+never strips a BOM, so the first-line `strpos( $content, '---' ) === 0` check missed and the document
+was silently invisible to the reader, the bundle manager, the writer's round-trip and the skill
+generator — every consumer goes through `parse()`.
+
+Decision: **strip the BOM in the parser**, not in core alone. `WP_MCP_AI_OKF_Parser::parse()` now
+drops a leading `EF BB BF` before the delimiter check, and `bom-prefixed.json` records the parsed
+document instead of `null`. Fixing it at the WordPress source means the Phase 2 port inherits correct
+behaviour rather than porting a known defect and diverging in the same commit that is supposed to prove
+parity. UTF-16 BOMs remain unsupported — OKF is a UTF-8 format and a UTF-16 file would fail far
+earlier.
 
 ### Phase 2 — Parser into `lib/core`
 
