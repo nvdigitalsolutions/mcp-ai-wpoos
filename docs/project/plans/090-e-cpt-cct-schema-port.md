@@ -167,4 +167,8 @@ the pattern, and it unlocks the most tools per unit of schema.
 | Coupling measured | ✅ 654 / 1,434 |
 | Mapping agreed | ✅ this document |
 | First family chosen | ✅ project management (`mcp_ai_task` + `mcp_ai_project`, 62 refs) |
-| Schema ported | 🟡 read path only — registry entries, `list_projects` / `list_tasks` / `get_task_dependencies`, seeder (090-f Phase 2). Writes, import and the admin page remain. |
+| Schema ported | ✅ read **and** write — registry entries, the three read tools, the six write tools, seeder (090-f Phase 2), and the `/pro/records/schema` + `wp/v2` admin surface (`ProjectManagementAdminTest`). The status here previously said "read path only"; that was stale. |
+| Read-tool parity (step 6) | ✅ `tests/fixtures/pm/tools.json` — 7 cases captured from the WordPress tools, replayed by the WordPress suite and by `ProjectManagementToolParityTest` on Laravel. Ids and dates are normalised; everything else is compared verbatim |
+| Write-tool parity (step 6) | ⏳ next increment; 090-E §8 guardrail 6 keeps writes out of the read-tool PR |
+| Import path (step 5) | ⏳ — only needed when a live WordPress site is migrated; not built speculatively |
+| Next family | ⏳ CRM per §7, but its CRUD tools classify D (11–20 hard refs), so the family is a bigger lift than project management was |
