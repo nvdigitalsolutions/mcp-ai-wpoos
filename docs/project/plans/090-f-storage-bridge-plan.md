@@ -218,6 +218,26 @@ defaults to `planning`; `end_date` may not precede `start_date`.
 Remaining for the family: bulk import and the admin page (writes now cover
 tasks and projects), plus the `update_task` partial-update tool.
 
+**Partial-update tools shipped.** `update_task` and `update_project` close the
+last behavioural gap with WordPress. `create_task` / `create_project` are
+upserts that require a title or name; these change only the fields supplied, so
+a caller can mark a task `completed` without re-sending everything.
+
+- **Nothing-to-update is an error**, not a silent no-op: an empty call returns
+  `nothing_to_update` instead of reporting success for a write that did nothing.
+- **Dates are validated against the merged result.** Changing only `end_date`
+  still cannot invert a stored `start_date` — the failure a per-field check
+  misses, and it has its own test.
+- **Type-checked ids.** `update_project` refuses a task id (and vice versa) with
+the same `not found` answer, so a mixed-up id cannot quietly rewrite the wrong
+kind of record.
+- Results carry the updated row, matching `create_*`. WordPress returns only
+the id; the richer shape is a deliberate superset that saves a follow-up read.
+
+`AbstractTool` gained `isIsoDate()` and `providedParams()` so the four write
+tools share one date validator and one "was this field really supplied" rule
+instead of four slightly different copies.
+
 ### Phase 3 — Paper Store port
 
 `PaperStoreInterface` (`lib/core/src/Domain/Contract/`) with

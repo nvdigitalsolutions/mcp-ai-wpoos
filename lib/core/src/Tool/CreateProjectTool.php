@@ -120,12 +120,12 @@ class CreateProjectTool extends AbstractTool {
 		}
 
 		$start_date = $this->stringParam( $arguments, 'start_date' );
-		if ( '' !== $start_date && ! $this->isDate( $start_date ) ) {
+		if ( '' !== $start_date && ! $this->isIsoDate( $start_date ) ) {
 			return $this->errors->create( 'invalid_argument', 'start_date must be YYYY-MM-DD.' );
 		}
 
 		$end_date = $this->stringParam( $arguments, 'end_date' );
-		if ( '' !== $end_date && ! $this->isDate( $end_date ) ) {
+		if ( '' !== $end_date && ! $this->isIsoDate( $end_date ) ) {
 			return $this->errors->create( 'invalid_argument', 'end_date must be YYYY-MM-DD.' );
 		}
 
@@ -230,13 +230,5 @@ class CreateProjectTool extends AbstractTool {
 				'updated'    => true,
 			)
 		);
-	}
-
-	private function isDate( string $value ): bool {
-		if ( 1 !== preg_match( '/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m ) ) {
-			return false;
-		}
-
-		return checkdate( (int) $m[2], (int) $m[3], (int) $m[1] );
 	}
 }
