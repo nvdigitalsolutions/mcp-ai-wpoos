@@ -16,6 +16,7 @@ use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ToolRegistryIntegrationTest extends TestCase
@@ -63,27 +64,39 @@ final class ToolRegistryIntegrationTest extends TestCase
     public static function allToolClasses(): array
     {
         $toolDir = dirname(__DIR__, 3) . '/src/Tool/';
-        $files   = glob($toolDir . '*Tool.php');
+        $files   = glob($toolDir . '*Tool.php') ?: [];
         $cases   = [];
 
         foreach ($files as $file) {
             $name = basename($file, '.php');
-            if (in_array($name, ['AbstractTool','AbstractClientSideTool','AbstractHuggingFaceTool'], true)) continue;
             $fqcn = "Nvoos\\Core\\Tool\\{$name}";
+
+            if (!class_exists($fqcn)) {
+                continue;
+            }
+
+            // Abstract bases live in this directory too. Reflect instead of
+            // keeping a denylist — the old list silently missed
+            // AbstractResultTool, which failed five tests with "cannot
+            // instantiate abstract class".
+            if (!(new \ReflectionClass($fqcn))->isInstantiable()) {
+                continue;
+            }
+
             $cases[$name] = [$fqcn];
         }
 
         return $cases;
     }
 
-    /** @dataProvider allToolClasses */
+    #[DataProvider('allToolClasses')]
     public function testInstantiation(string $fqcn): void
     {
         $instance = $this->make($fqcn);
         $this->assertInstanceOf($fqcn, $instance);
     }
 
-    /** @dataProvider allToolClasses */
+    #[DataProvider('allToolClasses')]
     public function testRegistration(string $fqcn): void
     {
         $tool = $this->make($fqcn);
