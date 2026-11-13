@@ -169,6 +169,26 @@ the pattern, and it unlocks the most tools per unit of schema.
 | First family chosen | ✅ project management (`mcp_ai_task` + `mcp_ai_project`, 62 refs) |
 | Schema ported | ✅ read **and** write — registry entries, the three read tools, the six write tools, seeder (090-f Phase 2), and the `/pro/records/schema` + `wp/v2` admin surface (`ProjectManagementAdminTest`). The status here previously said "read path only"; that was stale. |
 | Read-tool parity (step 6) | ✅ `tests/fixtures/pm/tools.json` — 7 cases captured from the WordPress tools, replayed by the WordPress suite and by `ProjectManagementToolParityTest` on Laravel. Ids and dates are normalised; everything else is compared verbatim |
-| Write-tool parity (step 6) | ⏳ next increment; 090-E §8 guardrail 6 keeps writes out of the read-tool PR |
+| Write-tool parity (step 6) | ✅ `tests/fixtures/pm/writes.json` — 8 cases (both upsert branches, update, delete, for projects and tasks), captured by `tests/manual/capture-pm-writes.php` and replayed by `tests/test-pm-writes-parity.php` and `ProjectManagementWriteParityTest`. The port returns a **superset**, so the replay asserts “every recorded field matches, extras are on a four-key allowlist” rather than equality — see §9.1 |
 | Import path (step 5) | ⏳ — only needed when a live WordPress site is migrated; not built speculatively |
 | Next family | ⏳ CRM per §7, but its CRUD tools classify D (11–20 hard refs), so the family is a bigger lift than project management was |
+
+### 9.1 Write-parity decisions
+
+The write corpus found three places where the WordPress tools and the port
+disagreed. Two were drift in the port and were fixed; one is a deliberate
+difference and is not reproduced.
+
+| Difference | Decision |
+|---|---|
+| `create_project` / `create_task` said `"Project created: X"` where WordPress says `"Project created successfully."` (likewise for tasks) | **Fixed in the port.** `message` is part of what the model sees, so it belongs to the contract |
+| WordPress **coerces** an unknown `status`/`priority`/`category` on create (e.g. `pending` → `todo`); the port rejected it with `invalid_argument` | **Fixed in the port.** The response echoes the stored value, so coercion is observable rather than silent, and one transcript now behaves the same on both runtimes |
+| A **partial upsert** (`create_project`/`create_task` with an id but only some fields) reports the *arguments* on WordPress — including empty strings for fields it left alone — while the port returns the **stored row** | **Divergence kept.** The port's answer is the true one; reproducing the WordPress reply would make the response lie about the row. The corpus therefore fully specifies both upsert cases, and `update_project`/`update_task` (which return only an id on WordPress) carry the partial-update coverage |
+
+Two mechanical notes for anyone editing the corpus:
+
+- The `updated` flag normalises to `<date>` on an upsert because the key
+  contains `date`; `false` casts to an empty string, falls through, and stays a
+  boolean. Both shapes are recorded, so the quirk is load-bearing.
+- The caller is recorded as `<user>`, not a number: user 1 in a dev database is
+  not user 1 in a fresh test database, the same reason record ids are symbolic.
