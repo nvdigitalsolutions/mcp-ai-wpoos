@@ -407,6 +407,20 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Contract and schema versions
+	|--------------------------------------------------------------------------
+	|
+	| `contract_version` is the HTTP contract the console speaks; it asserts
+	| `mcp-ai/v1` + version 1 on boot and refuses to run against anything else.
+	| `schema_version` is written into `nvoos_meta` so `nvoos:doctor` can tell an
+	| operator to migrate instead of failing on a missing column.
+	|
+	*/
+	'contract_version'     => (int) env( 'NVOOS_CONTRACT_VERSION', 1 ),
+	'schema_version'       => (int) env( 'NVOOS_SCHEMA_VERSION', 1 ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Media uploads
 	|--------------------------------------------------------------------------
 	|
@@ -512,6 +526,24 @@ return array(
 		'denied_ttl'  => (int) env( 'NVOOS_PRO_LICENSE_DENIED_TTL', 300 ),
 		'grace_ttl'   => (int) env( 'NVOOS_PRO_LICENSE_GRACE_TTL', 604800 ),
 		'timeout'     => (int) env( 'NVOOS_PRO_LICENSE_TIMEOUT', 10 ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
+	| Read-only deployment profile
+	|--------------------------------------------------------------------------
+	|
+	| Blocks state-changing tools at the last pre-dispatch point. Intended for
+	| staging mirrors, demos and audit-only access. Tools that declare no
+	| capability flags are blocked by default — "I could not tell whether this
+	| writes" is not a reason to let it write. Allowlist the slugs you trust.
+	|
+	*/
+	'read_only' => array(
+		'enabled'          => (bool) env( 'NVOOS_READ_ONLY', false ),
+		'gated_flags'      => array( 'write', 'state_changing', 'mutating', 'destructive', 'external_side_effect' ),
+		'allowed_slugs'    => array(),
+		'block_undeclared' => (bool) env( 'NVOOS_READ_ONLY_BLOCK_UNDECLARED', true ),
 	),
 
 	/*
