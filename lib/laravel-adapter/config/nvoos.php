@@ -548,6 +548,18 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Paper Store root
+	|--------------------------------------------------------------------------
+	|
+	| Flat-file Paper Store collections live here: one JSON file per record at
+	| `{root}/{collection}/{id}.json`, the same layout WordPress uses. Null means
+	| `storage_path('paper-store')`.
+	|
+	*/
+	'paper_store_root' => env( 'NVOOS_PAPER_STORE_ROOT' ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Console Feature Map
 	|--------------------------------------------------------------------------
 	|

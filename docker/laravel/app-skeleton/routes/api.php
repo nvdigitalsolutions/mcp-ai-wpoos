@@ -192,14 +192,24 @@ Route::prefix('api/v1')->group(function (): void {
             Route::post('/security/restore', [SecurityController::class, 'restoreSnapshot']);
             Route::post('/security/self-test', [SecurityController::class, 'selfTest']);
 
-            // Phase 3b — Paper Store. `/search` must precede `{collection}`.
+            // Phase 3b — Paper Store (090-f Phase 3). `/search` must precede
+            // `{collection}`. Segments are constrained to what the store accepts
+            // as a path segment, so a traversal attempt is a 404 rather than an
+            // exception from inside the store.
+            $paperSegment = '[A-Za-z0-9][A-Za-z0-9_-]{0,63}';
+
             Route::get('/paper-store', [PaperStoreController::class, 'collections']);
             Route::get('/paper-store/search', [PaperStoreController::class, 'search']);
-            Route::get('/paper-store/{collection}', [PaperStoreController::class, 'records']);
-            Route::post('/paper-store/{collection}', [PaperStoreController::class, 'store']);
-            Route::get('/paper-store/{collection}/{id}', [PaperStoreController::class, 'show']);
-            Route::put('/paper-store/{collection}/{id}', [PaperStoreController::class, 'update']);
-            Route::delete('/paper-store/{collection}/{id}', [PaperStoreController::class, 'destroy']);
+            Route::get('/paper-store/{collection}', [PaperStoreController::class, 'records'])
+                ->where('collection', $paperSegment);
+            Route::post('/paper-store/{collection}', [PaperStoreController::class, 'store'])
+                ->where('collection', $paperSegment);
+            Route::get('/paper-store/{collection}/{id}', [PaperStoreController::class, 'show'])
+                ->where(['collection' => $paperSegment, 'id' => $paperSegment]);
+            Route::put('/paper-store/{collection}/{id}', [PaperStoreController::class, 'update'])
+                ->where(['collection' => $paperSegment, 'id' => $paperSegment]);
+            Route::delete('/paper-store/{collection}/{id}', [PaperStoreController::class, 'destroy'])
+                ->where(['collection' => $paperSegment, 'id' => $paperSegment]);
 
             // Phase 3c — Pro Schedule Manager. The console's `scheduleManager`
             // endpoint is `${pro}`, so these live under /api/v1/pro.

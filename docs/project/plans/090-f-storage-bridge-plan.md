@@ -1,6 +1,6 @@
 # Proposal 090-F — Storage bridge: make the content port trustworthy
 
-Status: Phase 1 shipped (#7635, #7636) and its acceptance gates verified (2026-11-13, 104 adapter tests); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped.
+Status: Phase 1 shipped (#7635, #7636) and its acceptance gates verified (2026-11-13, 104 adapter tests); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped; Phase 3 shipped (2026-11-13, 18 core + 10 app tests).
 Depends on: `090-d-selective-tool-port.md` (what to port), `090-e-cpt-cct-schema-port.md` (which families).
 
 ---
@@ -180,9 +180,54 @@ page.
 
 ### Phase 3 — Paper Store port
 
-`PaperStoreInterface` with `collections()`, `find()`, `query()`,
-`save()`, `delete()`; a JSON adapter using atomic temp-file + rename under a
-configured root, with path containment and `schemaVersion` stamping.
+`PaperStoreInterface` (`lib/core/src/Domain/Contract/`) with
+`collections()`, `has()`, `find()`, `query()`, `save()`, `delete()`; a
+`JsonPaperStore` (`lib/core/src/Infrastructure/PaperStore/`) writing
+`{root}/{collection}/{id}.json` — the layout WordPress already uses, so one
+directory serves both runtimes.
+
+Design decisions worth keeping:
+
+- **Atomic replacement.** The payload is written to a temporary file in the
+destination directory and renamed over the target. `rename()` replaces the
+target on POSIX *and* Windows, so a reader sees the old record or the new one,
+never a partial file.
+- **Reject, do not normalise.** Collection names and ids must match
+  `^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`. Anything with a separator, a drive letter
+  or `..` throws; silently rewriting a caller's id would turn a traversal
+  attempt into a successful write somewhere else. The API routes carry the same
+  pattern as a route constraint, so a bad segment is a 404 before it reaches the
+  store.
+- **The store owns its stamps.** `id` (slugged from the title when absent),
+  `collection`, `type` (defaults to the collection), `schemaVersion`,
+  `created_at` and `updated_at` are assigned on write. `created_at` is preserved
+  from the existing record on replace; a caller-supplied value is ignored.
+- **`query()` returns `{records, total}`.** A flat-file store reads the
+  candidate set to filter it, so returning the count from the same pass avoids
+  doing the work twice for every page.
+- **Unknown `order_by` throws**, and it throws *before* the empty-collection
+  shortcut — otherwise the same caller bug would be silent on a fresh install
+  and loud once data existed.
+
+Acceptance:
+
+- [x] Save stamps `id`, `collection`, `type`, `schemaVersion`, `created_at`,
+      `updated_at`; a replacement keeps `created_at`.
+- [x] A missing title throws; a traversal id or collection throws.
+- [x] Records are written as pretty-printed JSON with `schemaVersion: 1`.
+- [x] `collections()` lists only directories that hold records.
+- [x] `query()` filters by tag, status and search, pages with `limit`/`offset`,
+      reports the full total, and orders by `updated_at` desc by default.
+- [x] An unknown `order_by` throws even when the collection is empty.
+- [x] `delete()` reports the second delete as absent.
+- [x] The API keeps its existing response shapes; a record created through
+      `POST /api/v1/paper-store/{collection}` lands on disk in the shared layout.
+
+*(Verified 2026-11-13 — 18 `JsonPaperStoreTest` cases in `lib/core`, 10
+`PaperStoreTest` cases in the app. The routes previously pointed at
+`nvoos_paper_records`, a table **no migration ever created**, so every Paper
+Store call failed; the store replaces that dead path rather than adding a second
+backend.)*
 
 ### Phase 4 — OKF bundles
 
