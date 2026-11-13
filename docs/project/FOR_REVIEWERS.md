@@ -19,10 +19,10 @@ The repo is a **monorepo** containing:
 - A **standalone Core plugin** (lightweight MCP server, v1.0.0) — `core/`
 - A **Cloudflare Worker** (SaaS backend, not a WP plugin) — `addons/cloud-worker/`
 
-**Current version:** 1.2.19 (November 2026)
+**Current version:** 1.2.20 (November 2026)
 **Tested up to:** WordPress 6.10
 **Total PHP files:** ~5,000 (base + pro + addons + lib/core; excl. vendor/node_modules)
-**Total tools:** ~1,745 (~358 base + ~1,388 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
+**Total tools:** ~1,747 (~360 base + ~1,388 Pro; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative)
 
 ---
 
@@ -50,7 +50,7 @@ includes/                     ← 1,060 PHP files
 ├── class-wp-mcp-ai-plugin.php ← Kernel / DI container / singleton
 ├── class-wp-mcp-ai-rest.php   ← REST route registration (151 calls, 36 files)
 ├── class-wp-mcp-ai-tool-registry.php ← Central tool registry
-├── tools/                     ← ~358 base tool classes (~1,745 total registered through the singleton registry)
+├── tools/                     ← ~360 base tool classes (~1,747 total registered through the singleton registry)
 ├── admin/                     ← Admin UI, settings, dashboards
 ├── rest/                      ← REST controllers (chat, MCP, webhooks)
 ├── assistants/                ← Assistant CPT & CCT management

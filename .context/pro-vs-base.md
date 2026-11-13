@@ -1,7 +1,8 @@
 # NV oOS Pro vs Base Version Guide
 
 > **GSD Context File** — Load this when making decisions about Base vs Pro feature placement.
-> Last reviewed: November 11, 2026 (v1.2.19 — no tool or feature-placement delta; the window's changes are security and licensing, both applying equally to base and Pro, and the only version move is the standalone `plugins/nvoos-forge-bridge` 0.3.0 → 0.3.1, which is not an `addons/pro` surface. Live registry authoritative).
+> Last reviewed: November 13, 2026 (v1.2.20 — **+2 base tools**; the Pro toolkit engine is Pro, while the shared services are `lib/core`).
+> **New in v1.2.20:** `media_model_capabilities` and `enhance_media_prompt` are **base** tools (+2 base → ~360 base + ~1,388 Pro, ~1,747 total). The **toolkit manifest engine** (`addons/pro/includes/toolkits/`, the `mcp-ai-pro/v1/toolkit-manifests` controller and the console screens) is **Pro**; its validator, records contract and research service live in `lib/core` so the Laravel host shares them. **Commercial entitlement** (`ProPlanCatalog` + `LicensedProEntitlement`) and `ReadOnlyToolGuard` are runtime-wide concerns, not tool-placement decisions. The `lib/core` ports keep their own registry (dual-layer rule) and are never counted in base/Pro totals.
 
 ---
 
@@ -12,7 +13,7 @@ NV oOS has two distribution modes:
 | Mode | Constant | Tools | Description |
 |------|---------|-------|-------------|
 | **Base** | `WP_MCP_AI_BASE_VERSION = true` | ~358 core tools | Open-source, WordPress.org compatible |
-| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,745 tools (~358 base + ~1,388 Pro; live registry authoritative) | Premium addon with third-party integrations |
+| **Full (Pro)** | `WP_MCP_AI_BASE_VERSION = false` | ~1,747 tools (~360 base + ~1,388 Pro; live registry authoritative) | Premium addon with third-party integrations |
 
 ---
 

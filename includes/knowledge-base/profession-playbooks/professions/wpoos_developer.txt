@@ -7,14 +7,14 @@ Includes: global.txt + categories/technical.txt + this file
 Author: NV Digital Solutions
 Website: https://nvdigitalsolutions.com
 
-Spec current as of v1.2.19 (2026-11-11). Facts are version-tagged; the CI
+Spec current as of v1.2.20 (2026-11-13). Facts are version-tagged; the CI
 test tests/test-knowledge-base-facts-sync.php fails when this file drifts
 from the plugin header. Refresh this playbook on every release.
 
 Intent
 - Provide expert guidance on the NV Digital Open Operator System (oOS) — NV oOS — WordPress plugin development, integration, and usage.
 - Cover WordPress development, assistant creation, tool usage, REST API integration, and content creation workflows.
-- Enable developers to leverage the full suite of ~1,745 built-in tools (~358 base + ~1,388 Pro; live registry authoritative), the MCP protocol, and 18-provider AI integrations.
+- Enable developers to leverage the full suite of ~1,747 built-in tools (~360 base + ~1,388 Pro; live registry authoritative), the MCP protocol, and 18-provider AI integrations.
 
 Category guidance
 - Emphasize requirements, correctness, security, testing, and clear implementation steps.
@@ -26,7 +26,7 @@ Do:
 - Integrate OpenAI GPT models (current lineup via the model catalog, e.g. gpt-6.1-sol)
 - Integrate Google Gemini models (current lineup via the model catalog, e.g. gemini-3.5-flash)
 - Integrate DeepSeek (the default provider on NV oOS cloud installs) and Ollama for local AI deployment
-- Utilize all ~1,745 built-in tools (~358 base + ~1,388 Pro; live registry authoritative: content management, media generation, WooCommerce, JetEngine, etc.)
+- Utilize all ~1,747 built-in tools (~360 base + ~1,388 Pro; live registry authoritative: content management, media generation, WooCommerce, JetEngine, etc.)
 - Build custom REST API integrations using MCP protocol
 - Create profession-based playbooks and knowledge bases
 - Implement server-sent events (SSE) for streaming responses
@@ -968,7 +968,7 @@ PLUGIN ARCHITECTURE:
 - **Profession**: Custom post type defining AI assistant specialization with tools, knowledge, and boundaries
 - **Assistant**: Custom post type representing configured AI agent linked to a profession
 - **Tool**: Reusable function exposed to AI models for executing WordPress operations
-- **Tool Registry**: Central system managing all available tools (~1,745: ~358 base + ~1,388 Pro; live registry authoritative)
+- **Tool Registry**: Central system managing all available tools (~1,747: ~360 base + ~1,388 Pro; live registry authoritative)
 - **Playbook**: Structured instruction document defining profession behavior and workflows
 - **Knowledge Base**: RAG documents providing profession-specific reference material
 - **CCT**: Custom Content Type (JetEngine) for optional persistent storage
@@ -1063,7 +1063,7 @@ AI MODEL SELECTION (model IDs change monthly via the model catalog):
 
 Common Tools & Libraries:
 
-NV oOS BUILT-IN TOOLS (~1,745: ~358 base + ~1,388 Pro; live registry authoritative):
+NV oOS BUILT-IN TOOLS (~1,747: ~360 base + ~1,388 Pro; live registry authoritative):
 Content Management:
 - search_content, get_recent_posts, save_post, search_attachments
 
@@ -1115,12 +1115,14 @@ TESTING & QUALITY:
 
 DOCUMENTATION:
 - **Plugin Docs**: ~1,600 documentation files in docs/
-- **Tool Reference**: docs/tool-reference.md (all ~1,745 tools; live registry authoritative)
+- **Tool Reference**: docs/tool-reference.md (all ~1,747 tools; live registry authoritative)
 - **REST API**: docs/rest-api.md (complete API reference)
 - **Quick Reference**: docs/QUICK_REFERENCE.md (fast lookup)
 - **Best Practices**: docs/BEST_PRACTICES.md (usage recommendations)
 
 Change log
+2026-11-13: Refreshed for v1.2.20 — tool count moves to ~360 base + ~1,388 Pro = ~1,747 (Proposal 141 registers media_model_capabilities and enhance_media_prompt; live registry authoritative; the lib/core ports and toolkit manifests are described, not counted). Product name, the 18-provider list and the model-catalog pointers are unchanged. Security posture adds commercial Pro entitlement (ProPlanCatalog), the X-CSRF-TOKEN console header (the X-WP-Nonce shim is gone) and the deny-only ReadOnlyToolGuard.
+
 2026-11-11: Refreshed for v1.2.19 — tool count unchanged (~358 base + ~1,388 Pro = ~1,745; live registry authoritative) and the PHP requirement stays 8.1. Security posture changed: client IPs resolve through one canonical helper with `REMOTE_ADDR` authoritative and forwarding headers honoured only for trusted proxies, and every public write route must authorize its dispatch target. Product name, the 18-provider list (DeepSeek default on cloud installs) and the model-catalog pointers are unchanged.
 2026-11-08: Refreshed for v1.2.18 — tool count moves to ~358 base + ~1,388 Pro = ~1,745 (Proposal 129 adds ten CRM admissibility tools; live registry authoritative) and the PHP requirement is now 8.1. Product name, the 18-provider list (DeepSeek default on cloud installs) and the model-catalog pointers are unchanged.
 2026-11-06: Refreshed for v1.2.17 — corrected product name (NV Digital Open Operator System), the 18-provider list (DeepSeek default on cloud installs), the tool count (~358 base + ~1,378 Pro = ~1,735; live registry authoritative), and model-catalog pointers. Version-tagged; CI-enforced by tests/test-knowledge-base-facts-sync.php.

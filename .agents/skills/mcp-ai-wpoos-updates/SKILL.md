@@ -224,6 +224,19 @@ weekly (or on demand), independent of any release.
   tree). Cross-check the previous changelog for the PR number during
   orientation — the v1.1.88 window's #6787 (gateway express bump) merged
   24 min before the #6788 catch-up and was absent from the 1.1.87 changelog.
+- **A PR may show MERGED without its commits reaching trunk.** The 1.2.20
+  window's #7674/#7675/#7676 each merged into a *previous feature branch*, not
+  `alpha-working`; #7679 (“Merge the project-management storage stack”) is the
+  missing trunk merge. A MERGED badge is not evidence of trunk presence —
+  confirm each PR's commits exist in the window tree
+  (`git log <prev-catchup>..HEAD --grep "#<n>"`) and list the catch-up merge
+  when one was needed.
+- **The shared tree may carry another agent's uncommitted work — it is never
+  in-window.** The 1.2.20 pass found Cognition 0.5.0 + MJML-compiler edits
+  unstaged in the worktree while `HEAD` shipped Cognition 0.4.0. Cut the
+  branch from `origin/alpha-working`, stage explicit paths only, verify every
+  commit's file list, and never describe the uncommitted work in the
+  changelog (it is not in the release).
 - **A PR may explicitly defer its own changelog entry to the catch-up.** The
   v1.1.88 window's #6792 (decision-model Phase A) carried a "CHANGELOG entry
   at merge time (v1.1.88+ window)" note — grep PR bodies for
@@ -935,7 +948,7 @@ previous window — the user will usually want it back-dated.
 ## References
 
 - **Per-version release-window ledger** - the catch-up narrative for every
-  pass, newest first (1.2.19 back through v1.1.58), each with its plan-file
+  pass, newest first (1.2.20 back through v1.1.58), each with its plan-file
   path and the scope rules it executed: `reference/release-window-ledger.md`.
   Read it when a pass needs the precedent behind a classification decision
   ("uncovered PR", superseded build set, bundled-notes re-sync, ...).

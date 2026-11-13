@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ UPDATED - November 2026 (v1.2.19)
-**Tool Count:** ~358 base tools + ~1,388 Pro tools = ~1,745 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; **+10 Pro in v1.2.18** — Proposal 129 registers ten CRM admissibility tools (`verify_lead_email`, `check_sending_domain`, `get_sending_readiness`, `manage_sending_warmup`, `collect_prospect_signals`, `explain_prospect_fit`, `query_signal_cohort`, `export_outreach_csv`, `preview_pre_send_gate`, `review_held_send`; #7513). Zero base registrations. The forge/storefront/bridge/QB-MCP surfaces are app-side or sub-project-owned (described, not counted), #7529 audits the registry (446 tools) without registering, and #7490 changes tool selection, not the catalog.)
-**Last Updated:** November 11, 2026 (v1.2.19 — zero registry registrations in-window, ~358 base + ~1,388 Pro, ~1,745 total unchanged; #7545 touched the registry file only to insert its SPDX licence header, and #7575 changed an existing tool's response shape rather than adding one)
+**Status:** ✅ UPDATED - November 2026 (v1.2.20)
+**Tool Count:** ~360 base tools + ~1,388 Pro tools = ~1,747 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; **+2 base in v1.2.20** — Proposal 141 registers `media_model_capabilities` and `enhance_media_prompt` (#7598). The `lib/core` ports (`verify_information`, `validate_tool_schema`, the project-management write tools) keep their own registry and are never counted in base/Pro totals; the Pro toolkit manifest engine is data + REST, not tool registrations; the forge/storefront/bridge/Cognition surfaces are app-side or sub-project-owned.)
+**Last Updated:** November 13, 2026 (v1.2.20 — +2 base registrations in-window, ~360 base + ~1,388 Pro, ~1,747 total; the media-model catalog is a generative-media registry and is not a chat provider)
 
 ## Data contracts (ID handoffs between tools)
 

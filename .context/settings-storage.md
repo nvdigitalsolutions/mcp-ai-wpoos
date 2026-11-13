@@ -1,7 +1,9 @@
 # NV oOS Settings Storage Context
 
 > **GSD Context File** — Load this when working on settings, credentials, import/export, or admin save flow.
-> Last reviewed: October 10, 2026 (v1.2.3).
+> Last reviewed: November 13, 2026 (v1.2.20).
+>
+> **New in v1.2.20 (Laravel storage + toolkit records):** the Laravel runtime now ships migrations for **eight `nvoos_*` tables** that previously existed only in the dev database — `nvoos_schedules`, `nvoos_schedule_runs`, `nvoos_triggers`, `nvoos_approvals`, `nvoos_files`, `nvoos_posts`, `nvoos_security_snapshots`, `nvoos_toolkit_records` — plus `users`, `teams`, `team_members`, `nvoos_meta`, `personal_access_tokens`, sessions/cache/jobs. `nvoos_toolkit_records` is one table for every manifest family (created by dbDelta when the schema-version option moves). The **Paper Store** is a shared on-disk JSON contract (`{root}/{collection}/{id}.json`, atomic write, store-owned stamps), not a DB table. The profession catalogue is cached under a **version key** (`catalogueVersion()`), so a bump invalidates it without a manual purge. Toolkit settings are manifest-declared and stored per family, not as ad-hoc options.
 >
 > **New in v1.2.3 (PR #6986):** the new `cors_allowed_origins` setting (Security → Network textarea, one origin per line) validates each entry as `scheme://host[:port]` and feeds `WP_MCP_AI_CORS_Guard`'s exact-allowlist in `site` mode — the site's own origin is always allowed; the `wp_mcp_ai_cors_allowed_origins` filter appends programmatic entries and the legacy `wp_mcp_ai_cors_allow_origin` filter remains the final override. Enforcement defaults to `/mcp-ai/v1` only — widen via `wp_mcp_ai_cors_guard_route_prefixes` for `/mcp-ai-pro/v1` SPA surfaces.
 >
