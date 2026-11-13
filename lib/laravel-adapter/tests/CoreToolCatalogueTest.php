@@ -71,6 +71,36 @@ final class CoreToolCatalogueTest extends TestCase {
 	}
 
 	/**
+	 * The 090-D cluster-1 harness tool registers without a profile provider.
+	 *
+	 * `scope_memory` is the second ported tool with an optional collaborator.
+	 * Laravel has no harness-profile storage, so the tool must still compute
+	 * tags and report the documented default for the PII filter.
+	 */
+	public function testScopeMemoryRegistersWithoutAProfileProvider(): void {
+		$registry = $this->app->make( ToolRegistry::class );
+
+		$this->assertTrue( $registry->has( 'scope_memory' ) );
+
+		$result = $registry->get( 'scope_memory' )->execute(
+			array(
+				'assistant_id' => 7,
+				'task_class'   => 'math',
+				'wing'         => 'client-acme',
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame(
+			array( 'task_class:math', 'assistant:7', 'wing:client-acme' ),
+			$result['data']['tags']
+		);
+		$this->assertTrue( $result['data']['reserved'] );
+		$this->assertTrue( $result['data']['pii_filter'] );
+	}
+
+	/**
 	 * Every listed tool must expose the minimum surface the registry needs.
 	 */
 	public function testEachToolDeclaresItsSurface(): void {

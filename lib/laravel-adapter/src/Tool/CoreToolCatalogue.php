@@ -45,6 +45,7 @@ use Nvoos\Core\Tool\HashStringTool;
 use Nvoos\Core\Tool\MathEvalTool;
 use Nvoos\Core\Tool\MergeArraysTool;
 use Nvoos\Core\Tool\ParseCsvTool;
+use Nvoos\Core\Tool\ScopeMemoryTool;
 use Nvoos\Core\Tool\StripHtmlTool;
 use Nvoos\Core\Tool\SuggestBestModelTool;
 use Nvoos\Core\Tool\TimeAgoTool;
@@ -110,6 +111,12 @@ final class CoreToolCatalogue {
 			// `mjml`-only output work here, and `html` reports that the runtime
 			// has no compiler instead of failing obscurely.
 			GenerateEmailTemplateTool::class,
+
+			// 090-D cluster 1, harness family. Same shape: the harness-profile
+			// provider is optional, so tag computation works anywhere and
+			// `pii_filter` reports the documented default when no provider is
+			// bound.
+			ScopeMemoryTool::class,
 		);
 	}
 

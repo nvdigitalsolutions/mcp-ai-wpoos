@@ -1,0 +1,2119 @@
+{
+    "no-profile-defaults": {
+        "args": [],
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general"
+            ],
+            "pii_filter": true
+        }
+    },
+    "assistant-and-task": {
+        "args": {
+            "assistant_id": 42,
+            "task_class": "math"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "math",
+            "reserved": true,
+            "tags": [
+                "task_class:math",
+                "assistant:42"
+            ],
+            "pii_filter": true
+        }
+    },
+    "assistant-zero-omits-tag": {
+        "args": {
+            "assistant_id": 0,
+            "task_class": "code"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "code",
+            "reserved": true,
+            "tags": [
+                "task_class:code"
+            ],
+            "pii_filter": true
+        }
+    },
+    "assistant-negative-omits-tag": {
+        "args": {
+            "assistant_id": -5,
+            "task_class": "qa"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "qa",
+            "reserved": true,
+            "tags": [
+                "task_class:qa"
+            ],
+            "pii_filter": true
+        }
+    },
+    "wing-tag": {
+        "args": {
+            "assistant_id": 7,
+            "task_class": "research",
+            "wing": "client-acme"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "research",
+            "reserved": true,
+            "tags": [
+                "task_class:research",
+                "assistant:7",
+                "wing:client-acme"
+            ],
+            "pii_filter": true
+        }
+    },
+    "wing-sanitised": {
+        "args": {
+            "task_class": "rag",
+            "wing": "  <b>Alpha</b>\n\n  Beta  "
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "rag",
+            "reserved": true,
+            "tags": [
+                "task_class:rag",
+                "wing:Alpha Beta"
+            ],
+            "pii_filter": true
+        }
+    },
+    "task-missing": {
+        "args": {
+            "assistant_id": 1
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general",
+                "assistant:1"
+            ],
+            "pii_filter": true
+        }
+    },
+    "task-empty": {
+        "args": {
+            "task_class": ""
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general"
+            ],
+            "pii_filter": true
+        }
+    },
+    "task-upper-and-spaces": {
+        "args": {
+            "task_class": "Math Reasoning"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "mathreasoning",
+            "reserved": false,
+            "tags": [
+                "task_class:mathreasoning"
+            ],
+            "pii_filter": true
+        }
+    },
+    "task-punctuation": {
+        "args": {
+            "task_class": "math!@#$%^&*()"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "math",
+            "reserved": true,
+            "tags": [
+                "task_class:math"
+            ],
+            "pii_filter": true
+        }
+    },
+    "task-non-ascii": {
+        "args": {
+            "task_class": "Māth"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "mth",
+            "reserved": false,
+            "tags": [
+                "task_class:mth"
+            ],
+            "pii_filter": true
+        }
+    },
+    "task-custom-bucket": {
+        "args": {
+            "task_class": "my-own-bucket"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "my-own-bucket",
+            "reserved": false,
+            "tags": [
+                "task_class:my-own-bucket"
+            ],
+            "pii_filter": true
+        }
+    },
+    "pii-default-on": {
+        "args": {
+            "assistant_id": 9
+        },
+        "profile": {
+            "enabled": true,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "resolved": {
+            "enabled": true,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general",
+                "assistant:9"
+            ],
+            "pii_filter": true
+        }
+    },
+    "pii-explicitly-off": {
+        "args": {
+            "assistant_id": 9
+        },
+        "profile": {
+            "enabled": true,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": false
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "resolved": {
+            "enabled": true,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": false
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general",
+                "assistant:9"
+            ],
+            "pii_filter": false
+        }
+    },
+    "pii-explicitly-on": {
+        "args": {
+            "assistant_id": 9
+        },
+        "profile": {
+            "enabled": true,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "resolved": {
+            "enabled": true,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general",
+                "assistant:9"
+            ],
+            "pii_filter": true
+        }
+    },
+    "pii-memory-key-missing": {
+        "args": {
+            "assistant_id": 9
+        },
+        "profile": {
+            "enabled": true
+        },
+        "resolved": {
+            "enabled": true
+        },
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general",
+                "assistant:9"
+            ],
+            "pii_filter": false
+        }
+    },
+    "pii-profile-empty": {
+        "args": {
+            "assistant_id": 9
+        },
+        "profile": [],
+        "resolved": [],
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general",
+                "assistant:9"
+            ],
+            "pii_filter": false
+        }
+    },
+    "pii-harness-disabled": {
+        "args": {
+            "assistant_id": 9
+        },
+        "profile": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": false
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": false
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general",
+                "assistant:9"
+            ],
+            "pii_filter": false
+        }
+    },
+    "reserved-general": {
+        "args": {
+            "task_class": "general"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "general",
+            "reserved": true,
+            "tags": [
+                "task_class:general"
+            ],
+            "pii_filter": true
+        }
+    },
+    "reserved-math": {
+        "args": {
+            "task_class": "math"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "math",
+            "reserved": true,
+            "tags": [
+                "task_class:math"
+            ],
+            "pii_filter": true
+        }
+    },
+    "reserved-code": {
+        "args": {
+            "task_class": "code"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "code",
+            "reserved": true,
+            "tags": [
+                "task_class:code"
+            ],
+            "pii_filter": true
+        }
+    },
+    "reserved-qa": {
+        "args": {
+            "task_class": "qa"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "qa",
+            "reserved": true,
+            "tags": [
+                "task_class:qa"
+            ],
+            "pii_filter": true
+        }
+    },
+    "reserved-rag": {
+        "args": {
+            "task_class": "rag"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "rag",
+            "reserved": true,
+            "tags": [
+                "task_class:rag"
+            ],
+            "pii_filter": true
+        }
+    },
+    "reserved-research": {
+        "args": {
+            "task_class": "research"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "research",
+            "reserved": true,
+            "tags": [
+                "task_class:research"
+            ],
+            "pii_filter": true
+        }
+    },
+    "reserved-reasoning": {
+        "args": {
+            "task_class": "reasoning"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "reasoning",
+            "reserved": true,
+            "tags": [
+                "task_class:reasoning"
+            ],
+            "pii_filter": true
+        }
+    },
+    "reserved-agentic": {
+        "args": {
+            "task_class": "agentic"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "agentic",
+            "reserved": true,
+            "tags": [
+                "task_class:agentic"
+            ],
+            "pii_filter": true
+        }
+    },
+    "reserved-this-site": {
+        "args": {
+            "task_class": "this-site"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "this-site",
+            "reserved": true,
+            "tags": [
+                "task_class:this-site"
+            ],
+            "pii_filter": true
+        }
+    },
+    "reserved-this-user": {
+        "args": {
+            "task_class": "this-user"
+        },
+        "profile": null,
+        "resolved": {
+            "enabled": false,
+            "cues": [],
+            "reasoning": {
+                "enabled": false,
+                "n_samples": 1,
+                "max_iters": 1
+            },
+            "tools": {
+                "router": "fixed",
+                "preset_weights": []
+            },
+            "retrieval": {
+                "enabled": false,
+                "k": 5,
+                "require_citations": false
+            },
+            "refine": {
+                "enabled": false,
+                "max_iters": 1
+            },
+            "memory": {
+                "scoped": false,
+                "task_class": "general",
+                "pii_filter": true
+            },
+            "guardrails": {
+                "enabled": false,
+                "strictness": "medium",
+                "mode": "warn",
+                "allowed_topics": []
+            },
+            "necessity_gate": {
+                "enabled": false,
+                "strictness": "medium",
+                "auto_skip": true,
+                "require_approval_for_irreversible": true
+            },
+            "output_guard": {
+                "enabled": false,
+                "mode": "warn",
+                "strictness": "medium"
+            },
+            "citation_verify": {
+                "enabled": false,
+                "min_similarity": 0.3,
+                "annotate_unverified": true
+            },
+            "evals_enabled": [],
+            "verifiers": [],
+            "trace_capture": {
+                "enabled": false,
+                "retention_runs": 50
+            },
+            "cost_ceiling_usd": 1
+        },
+        "expected": {
+            "success": true,
+            "task_class": "this-user",
+            "reserved": true,
+            "tags": [
+                "task_class:this-user"
+            ],
+            "pii_filter": true
+        }
+    }
+}
