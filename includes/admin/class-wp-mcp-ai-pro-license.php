@@ -82,49 +82,23 @@ class WP_MCP_AI_Pro_License {
 	 * This method determines which features belong to which plan tier
 	 * for informational purposes and future external add-on support.
 	 *
+	 * The plan → feature table lives in `Nvoos\Core` so the WordPress
+	 * plugin and the Laravel adapter cannot drift apart
+	 * (`ProPlanCatalog`, Proposal 090-B, Phase 5.1).
+	 *
 	 * @param string $feature Feature name.
 	 * @return bool
 	 */
 	public static function has_feature( $feature ) {
-		$plan     = self::get_pro_plan();
-		$features = array(
-			'compliance'   => array(
-				'dashboard',
-				'controls_management',
-				'reports_basic',
-				'audit_trail',
-				'evidence_collection',
-			),
-			'professional' => array(
-				'dashboard',
-				'controls_management',
-				'reports_basic',
-				'reports_advanced',
-				'audit_trail',
-				'evidence_collection',
-				'risk_matrix',
-				'multi_framework',
-				'siem_integration',
-			),
-			'enterprise'   => array(
-				'dashboard',
-				'controls_management',
-				'reports_basic',
-				'reports_advanced',
-				'audit_trail',
-				'evidence_collection',
-				'risk_matrix',
-				'multi_framework',
-				'siem_integration',
-				'white_label',
-				'priority_support',
-				'custom_development',
-			),
+		if ( ! class_exists( 'Nvoos\\Core\\Domain\\Service\\Entitlement\\ProPlanCatalog' ) ) {
+			// Fail closed: a build without lib/core must not grant a paid surface.
+			return false;
+		}
+
+		return \Nvoos\Core\Domain\Service\Entitlement\ProPlanCatalog::allows(
+			self::get_pro_plan(),
+			(string) $feature
 		);
-
-		$plan_features = $features[ $plan ] ?? array();
-
-		return in_array( $feature, $plan_features, true );
 	}
 
 	/**

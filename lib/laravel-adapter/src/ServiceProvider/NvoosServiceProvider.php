@@ -18,6 +18,7 @@ namespace Nvoos\Laravel\ServiceProvider;
 use Illuminate\Support\ServiceProvider;
 use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
@@ -57,6 +58,7 @@ use Nvoos\Laravel\Adapter\FileStore;
 use Nvoos\Laravel\Adapter\FileUploadService;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
+use Nvoos\Laravel\Adapter\LicensedProEntitlement;
 use Nvoos\Laravel\Adapter\MemoryStore;
 use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlement;
@@ -112,13 +114,31 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( TokenUsageInterface::class, TokenUsage::class );
 		$this->app->bind( RateLimiterInterface::class, RateLimiter::class );
 
-		// Pro entitlement — configuration-driven until the commercial source
-		// is chosen; unknown drivers fail closed (Proposal 090-B, ADR-7).
+		// Pro entitlement. Three driver families share one contract:
+		// `license` resolves against the commercial licence server, and the
+		// configuration drivers (allow|deny|config) cover development, CI and
+		// fail-closed deployments. Unknown drivers fail closed
+		// (Proposal 090-B, ADR-7, Phase 5.1).
 		$this->app->singleton( ProEntitlementInterface::class, function ( $app ) {
 			$config = $app['config']->get( 'oos.pro_entitlement', array() );
+			$driver = (string) ( $config['driver'] ?? 'allow' );
+
+			if ( 'license' === $driver ) {
+				return new LicensedProEntitlement(
+					licenseKey: (string) ( $config['license_key'] ?? '' ),
+					serverUrl: (string) ( $config['server_url'] ?? '' ),
+					instanceId: (string) ( $config['instance_id'] ?? $app['config']->get( 'app.url', '' ) ),
+					product: (string) ( $config['product'] ?? 'mcp-ai-wpoos-pro' ),
+					featureMap: (array) ( $config['features'] ?? array() ),
+					ttl: (int) ( $config['ttl'] ?? 43200 ),
+					deniedTtl: (int) ( $config['denied_ttl'] ?? 300 ),
+					graceTtl: (int) ( $config['grace_ttl'] ?? 604800 ),
+					timeout: (int) ( $config['timeout'] ?? 10 ),
+				);
+			}
 
 			return new ProEntitlement(
-				driver: (string) ( $config['driver'] ?? 'allow' ),
+				driver: $driver,
 				plan: (string) ( $config['plan'] ?? 'compliance' ),
 				featureMap: (array) ( $config['features'] ?? array() ),
 			);
@@ -132,6 +152,26 @@ class NvoosServiceProvider extends ServiceProvider {
 			$app->make( EventDispatcherInterface::class ),
 			$app->make( ErrorFactoryInterface::class ),
 		) );
+
+		// Read-only deployment profile (Phase 5.4). Registered as a monotonic
+		// guard, so it runs after every pre-execute listener and cannot be
+		// undone by one. Off unless `oos.read_only.enabled` is set.
+		$this->app->afterResolving( ToolRegistry::class, function ( ToolRegistry $registry, $app ): void {
+			$readOnly = (array) $app['config']->get( 'oos.read_only', array() );
+
+			if ( empty( $readOnly['enabled'] ) ) {
+				return;
+			}
+
+			$registry->addGuard(
+				new ReadOnlyToolGuard(
+					$registry,
+					(array) ( $readOnly['gated_flags'] ?? ReadOnlyToolGuard::DEFAULT_GATED_FLAGS ),
+					(array) ( $readOnly['allowed_slugs'] ?? array() ),
+					(bool) ( $readOnly['block_undeclared'] ?? true ),
+				)
+			);
+		} );
 
 		// Provider router — configured once; holds mutable health/fallback
 		// state, not request/user state.
