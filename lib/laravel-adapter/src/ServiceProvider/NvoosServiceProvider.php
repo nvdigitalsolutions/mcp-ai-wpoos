@@ -20,6 +20,7 @@ use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolRegistry;
+use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\CacheStoreInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
@@ -29,6 +30,7 @@ use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
+use Nvoos\Core\Domain\Contract\PaperStoreInterface;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
@@ -142,6 +144,19 @@ class NvoosServiceProvider extends ServiceProvider {
 				plan: (string) ( $config['plan'] ?? 'compliance' ),
 				featureMap: (array) ( $config['features'] ?? array() ),
 			);
+		} );
+
+		// Paper Store — flat-file JSON, one directory per collection, the same
+		// layout WordPress writes (090-f Phase 3). Framework-agnostic store, so
+		// this binding is only about where the root lives.
+		$this->app->singleton( PaperStoreInterface::class, function ( $app ) {
+			$root = (string) ( $app['config']->get( 'oos.paper_store_root' ) ?? '' );
+
+			if ( '' === trim( $root ) ) {
+				$root = $app->storagePath( 'paper-store' );
+			}
+
+			return new JsonPaperStore( $root );
 		} );
 
 		// Durable job status rows (driver-agnostic).

@@ -4,45 +4,40 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Nvoos\Core\Domain\Contract\PaperStoreInterface;
 
+/**
+ * Paper Store API (090-f Phase 3).
+ *
+ * Backed by the framework-agnostic `PaperStoreInterface` rather than a database
+ * table: the store is flat-file JSON on both runtimes, so a record written by
+ * WordPress is readable here and vice versa. Response shapes are unchanged from
+ * the database-backed version.
+ */
 class PaperStoreController
 {
+    public function __construct(private readonly PaperStoreInterface $store)
+    {
+    }
+
     public function collections(): JsonResponse
     {
-        $collections = DB::table('nvoos_paper_records')
-            ->select('collection')
-            ->distinct()
-            ->orderBy('collection')
-            ->pluck('collection')
-            ->all();
-
-        return response()->json(['collections' => $collections]);
+        return response()->json(['collections' => $this->store->collections()]);
     }
 
     public function records(string $collection, Request $request): JsonResponse
     {
-        $limit = min(200, max(1, (int) $request->query('limit', 25)));
-        $offset = max(0, (int) $request->query('offset', 0));
-
-        $query = DB::table('nvoos_paper_records')->where('collection', $collection);
-
-        if ($request->filled('tag')) {
-            $tag = (string) $request->query('tag');
-            $query->where('tags', 'like', '%"'.$tag.'"%');
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', (string) $request->query('status'));
-        }
-
-        $total = (clone $query)->count();
-        $rows = $query->orderByDesc('updated_at')->offset($offset)->limit($limit)->get();
+        $page = $this->store->query($collection, [
+            'tags' => (string) $request->query('tag', ''),
+            'status' => (string) $request->query('status', ''),
+            'limit' => (int) $request->query('limit', 25),
+            'offset' => (int) $request->query('offset', 0),
+        ]);
 
         return response()->json([
-            'records' => array_map([$this, 'record'], $rows->all()),
-            'total' => $total,
+            'records' => array_map([$this, 'record'], $page['records']),
+            'total' => $page['total'],
         ]);
     }
 
@@ -54,30 +49,42 @@ class PaperStoreController
             return response()->json(['records' => []]);
         }
 
-        $builder = DB::table('nvoos_paper_records')
-            ->where(function ($where) use ($query): void {
-                $where->where('title', 'like', '%'.$query.'%')
-                    ->orWhere('description', 'like', '%'.$query.'%');
-            });
+        $limit = min(50, max(1, (int) $request->query('limit', 50)));
+        $collection = (string) $request->query('collection', '');
 
-        if ($request->filled('collection')) {
-            $builder->where('collection', (string) $request->query('collection'));
+        $collections = $collection !== '' ? [$collection] : $this->store->collections();
+
+        $records = [];
+
+        foreach ($collections as $name) {
+            $page = $this->store->query($name, [
+                'search' => $query,
+                'limit' => $limit,
+            ]);
+
+            $records = array_merge($records, $page['records']);
         }
 
-        $rows = $builder->orderByDesc('updated_at')
-            ->limit(min(50, max(1, (int) $request->query('limit', 50))))
-            ->get();
+        usort(
+            $records,
+            static fn (array $a, array $b): int => strcmp(
+                (string) ($b['updated_at'] ?? ''),
+                (string) ($a['updated_at'] ?? '')
+            )
+        );
 
-        return response()->json(['records' => array_map([$this, 'record'], $rows->all())]);
+        return response()->json([
+            'records' => array_map([$this, 'record'], array_slice($records, 0, $limit)),
+        ]);
     }
 
     public function show(string $collection, string $id): JsonResponse
     {
-        $row = $this->find($collection, $id);
+        $record = $this->store->find($collection, $id);
 
-        return $row === null
+        return $record === null
             ? $this->missing()
-            : response()->json($this->record($row));
+            : response()->json($this->record($record));
     }
 
     public function store(string $collection, Request $request): JsonResponse
@@ -94,30 +101,18 @@ class PaperStoreController
             'meta' => ['sometimes', 'array'],
         ]);
 
-        $id = $this->uniqueId((string) ($data['id'] ?? $data['title']));
+        $data['id'] = $this->uniqueId($collection, (string) ($data['id'] ?? $data['title']));
 
-        DB::table('nvoos_paper_records')->insert([
-            'id' => $id,
-            'collection' => $collection,
-            'title' => $data['title'],
-            'description' => $data['description'] ?? null,
-            'tags' => json_encode(array_values($data['tags'] ?? []), JSON_UNESCAPED_UNICODE),
-            'status' => $data['status'] ?? 'draft',
-            'type' => $data['type'] ?? null,
-            'body' => array_key_exists('body', $data) ? json_encode($data['body'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null,
-            'meta' => json_encode($data['meta'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $record = $this->store->save($collection, $data);
 
-        return response()->json($this->record($this->find($collection, $id)), 201);
+        return response()->json($this->record($record), 201);
     }
 
     public function update(string $collection, string $id, Request $request): JsonResponse
     {
-        $row = $this->find($collection, $id);
+        $existing = $this->store->find($collection, $id);
 
-        if ($row === null) {
+        if ($existing === null) {
             return $this->missing();
         }
 
@@ -132,61 +127,29 @@ class PaperStoreController
             'meta' => ['sometimes', 'array'],
         ]);
 
-        $update = ['updated_at' => now()];
+        $record = $this->store->save($collection, array_merge($existing, $data, ['id' => $id]));
 
-        foreach (['title', 'description', 'status', 'type'] as $field) {
-            if (array_key_exists($field, $data)) {
-                $update[$field] = $data[$field];
-            }
-        }
-
-        if (array_key_exists('tags', $data)) {
-            $update['tags'] = json_encode(array_values($data['tags']), JSON_UNESCAPED_UNICODE);
-        }
-
-        if (array_key_exists('body', $data)) {
-            $update['body'] = json_encode($data['body'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        }
-
-        if (array_key_exists('meta', $data)) {
-            $update['meta'] = json_encode($data['meta'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        }
-
-        DB::table('nvoos_paper_records')
-            ->where('collection', $collection)
-            ->where('id', $id)
-            ->update($update);
-
-        return response()->json($this->record($this->find($collection, $id)));
+        return response()->json($this->record($record));
     }
 
     public function destroy(string $collection, string $id): JsonResponse
     {
-        $deleted = DB::table('nvoos_paper_records')
-            ->where('collection', $collection)
-            ->where('id', $id)
-            ->delete();
-
-        return $deleted > 0
+        return $this->store->delete($collection, $id)
             ? response()->json(['ok' => true])
             : $this->missing();
     }
 
-    private function find(string $collection, string $id): ?object
-    {
-        return DB::table('nvoos_paper_records')
-            ->where('collection', $collection)
-            ->where('id', $id)
-            ->first();
-    }
-
-    private function uniqueId(string $value): string
+    /**
+     * Slugify the requested id and make it unique within the collection.
+     */
+    private function uniqueId(string $collection, string $value): string
     {
         $base = Str::slug($value) ?: (string) Str::uuid();
+        $base = substr($base, 0, 64);
         $id = $base;
         $suffix = 2;
 
-        while (DB::table('nvoos_paper_records')->where('id', $id)->exists()) {
+        while ($this->store->has($collection, $id)) {
             $id = $base.'-'.$suffix;
             $suffix++;
         }
@@ -195,21 +158,27 @@ class PaperStoreController
     }
 
     /**
+     * Shape a stored record for the API.
+     *
+     * The key set is unchanged from the database-backed version — the console
+     * reads these fields positionally in its list and detail views.
+     *
+     * @param array<string, mixed> $record
      * @return array<string, mixed>
      */
-    private function record(object $row): array
+    private function record(array $record): array
     {
         return [
-            'id' => (string) $row->id,
-            'collection' => (string) $row->collection,
-            'title' => (string) $row->title,
-            'description' => $row->description,
-            'tags' => json_decode((string) ($row->tags ?? ''), true) ?: [],
-            'status' => (string) $row->status,
-            'type' => $row->type,
-            'body' => json_decode((string) ($row->body ?? ''), true),
-            'meta' => json_decode((string) ($row->meta ?? ''), true) ?: [],
-            'updated_at' => (string) ($row->updated_at ?? ''),
+            'id' => (string) $record['id'],
+            'collection' => (string) $record['collection'],
+            'title' => (string) $record['title'],
+            'description' => $record['description'] === '' ? null : (string) $record['description'],
+            'tags' => array_values((array) $record['tags']),
+            'status' => (string) $record['status'],
+            'type' => $record['type'] === '' ? null : (string) $record['type'],
+            'body' => $record['body'],
+            'meta' => (array) $record['meta'],
+            'updated_at' => (string) ($record['updated_at'] ?? ''),
         ];
     }
 

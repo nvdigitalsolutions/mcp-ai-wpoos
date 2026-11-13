@@ -1,6 +1,6 @@
 # Proposal 090-F — Storage bridge: make the content port trustworthy
 
-Status: Phase 1 shipped (#7635, #7636) and its acceptance gates verified (2026-11-13, 104 adapter tests); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped.
+Status: Phase 1 shipped (#7635, #7636) and its acceptance gates verified (2026-11-13, 104 adapter tests); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped; Phase 3 shipped (2026-11-13, 18 core + 10 app tests); Phase 5 shipped (missing runtime schema + test isolation); Phase 4 moved to Proposal 145.
 Depends on: `090-d-selective-tool-port.md` (what to port), `090-e-cpt-cct-schema-port.md` (which families).
 
 ---
@@ -180,19 +180,127 @@ page.
 
 ### Phase 3 — Paper Store port
 
-`PaperStoreInterface` with `collections()`, `find()`, `query()`,
-`save()`, `delete()`; a JSON adapter using atomic temp-file + rename under a
-configured root, with path containment and `schemaVersion` stamping.
+`PaperStoreInterface` (`lib/core/src/Domain/Contract/`) with
+`collections()`, `has()`, `find()`, `query()`, `save()`, `delete()`; a
+`JsonPaperStore` (`lib/core/src/Infrastructure/PaperStore/`) writing
+`{root}/{collection}/{id}.json` — the layout WordPress already uses, so one
+directory serves both runtimes.
+
+Design decisions worth keeping:
+
+- **Atomic replacement.** The payload is written to a temporary file in the
+destination directory and renamed over the target. `rename()` replaces the
+target on POSIX *and* Windows, so a reader sees the old record or the new one,
+never a partial file.
+- **Reject, do not normalise.** Collection names and ids must match
+  `^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`. Anything with a separator, a drive letter
+  or `..` throws; silently rewriting a caller's id would turn a traversal
+  attempt into a successful write somewhere else. The API routes carry the same
+  pattern as a route constraint, so a bad segment is a 404 before it reaches the
+  store.
+- **The store owns its stamps.** `id` (slugged from the title when absent),
+  `collection`, `type` (defaults to the collection), `schemaVersion`,
+  `created_at` and `updated_at` are assigned on write. `created_at` is preserved
+  from the existing record on replace; a caller-supplied value is ignored.
+- **`query()` returns `{records, total}`.** A flat-file store reads the
+  candidate set to filter it, so returning the count from the same pass avoids
+  doing the work twice for every page.
+- **Unknown `order_by` throws**, and it throws *before* the empty-collection
+  shortcut — otherwise the same caller bug would be silent on a fresh install
+  and loud once data existed.
+
+Acceptance:
+
+- [x] Save stamps `id`, `collection`, `type`, `schemaVersion`, `created_at`,
+      `updated_at`; a replacement keeps `created_at`.
+- [x] A missing title throws; a traversal id or collection throws.
+- [x] Records are written as pretty-printed JSON with `schemaVersion: 1`.
+- [x] `collections()` lists only directories that hold records.
+- [x] `query()` filters by tag, status and search, pages with `limit`/`offset`,
+      reports the full total, and orders by `updated_at` desc by default.
+- [x] An unknown `order_by` throws even when the collection is empty.
+- [x] `delete()` reports the second delete as absent.
+- [x] The API keeps its existing response shapes; a record created through
+      `POST /api/v1/paper-store/{collection}` lands on disk in the shared layout.
+
+*(Verified 2026-11-13 — 18 `JsonPaperStoreTest` cases in `lib/core`, 10
+`PaperStoreTest` cases in the app. The routes previously pointed at
+`nvoos_paper_records`, a table **no migration ever created**, so every Paper
+Store call failed; the store replaces that dead path rather than adding a second
+backend.)*
 
 ### Phase 4 — OKF bundles
 
 Move the parser/reader to a pure core engine with an injected bundle root;
 the WP adapter keeps `wp_upload_dir()` as the root source.
 
+**Deferred — and why.** OKF has no Laravel consumer: the console builds `endpoints.okf` as
+`isWordPress ? ... : ''` and nulls it when the feature flag is off, and the runtime exposes no OKF
+route or tool. Two things also make "move" the wrong verb:
+
+1. **Licence boundary.** `includes/okf/` is GPL-3.0 and `lib/core` is MIT. The parser (817 lines)
+   and reader (808 lines) cannot be copied across that line — they would have to be re-authored
+   from the format description, which is a project in its own right, not a refactor.
+2. **Nothing to prove it against.** Without a Laravel surface there is no parity test to write, so
+   an extraction would be verified only by the WordPress suite that already covers it.
+
+Revisit when a Laravel surface needs OKF (bundle browsing in the console is the likely trigger).
+At that point the honest shape is a clean-room core parser with the existing WP tests as the
+specification, not a file move.
+
+**Superseded.** [`145-okf-core-extraction-and-licence-proposal.md`](../proposals/145-okf-core-extraction-and-licence-proposal.md)
+revises that conclusion: the OKF code is first-party, so relicensing is available and a clean-room
+rewrite is unnecessary. The blocker is the WordPress coupling and the parser/reader having no
+automated tests, so proposal 145 replaces Phase 4 with a characterised port (golden corpus →
+differential test → licence change). Track the work there.
+
 ### Phase 5 — Schedules
 
-A narrow schedule store over `nvoos_schedules` (already migrated), so
-schedule reads return the same shape on both runtimes.
+**Premise corrected.** The plan said `nvoos_schedules` was "already migrated". It was not —
+and neither were seven other tables the app queries. Every one existed only in the dev database:
+
+| Table | Used by |
+|---|---|
+| `nvoos_schedules`, `nvoos_schedule_runs` | Pro Schedule Manager |
+| `nvoos_triggers` | Triggers |
+| `nvoos_approvals` | Approval queue |
+| `nvoos_files` | Media / FileStore |
+| `nvoos_posts` | Content store |
+| `nvoos_security_snapshots` | Security center |
+| `nvoos_toolkit_records` | Toolkit records |
+
+A fresh `php artisan migrate` on an empty database therefore produced an app whose Pro surfaces
+failed at runtime with "table not found", while the dev box worked because the tables had been
+created by hand at some point and never captured.
+
+Shipped:
+
+- **`2026_11_13_010000_create_nvoos_runtime_tables`** — all eight tables, read back from the live
+  schema (`SHOW CREATE TABLE`) so nothing changes behaviourally, each guarded by
+  `Schema::hasTable()` so installs that already have them record the migration without touching
+  data. `nvoos_posts` carries both a unique index and a plain index on `slug`; only the unique one
+  is recreated, because the second adds write cost for no lookup the unique index cannot serve.
+- **`RuntimeSchemaTest`** — asserts every table plus the key columns and the toolkit-record unique
+  identity. `RefreshDatabase` builds the schema from migrations alone, so this fails the moment a
+  `DB::table(...)` call is added without a migration.
+
+**Test isolation fix.** Making the Paper Store file-backed exposed a leak: `Phase3bTest`'s Paper
+Store cases shared the default `storage/paper-store` directory, so records accumulated between
+tests *and between runs* and `total` counts drifted (3 → 12 on the second run). The base
+`Tests\TestCase` now gives every test its own root and removes it in `tearDown()`. The suite is
+idempotent: two consecutive runs are both 179 passing.
+
+Schedule shape parity is already covered by `Phase3cTest`, so no separate store interface was
+extracted — the missing piece was the schema, not the abstraction.
+
+Acceptance:
+
+- [x] Every table the app queries is created by a migration.
+- [x] The migration is a no-op on an install that already has the tables.
+- [x] Key columns and the toolkit-record unique index are asserted.
+- [x] The full suite is green on a schema built from migrations only, twice in a row.
+
+*(Verified 2026-11-13 — 179 app tests, 1341 assertions.)*
 
 ## 5. Guardrails
 
