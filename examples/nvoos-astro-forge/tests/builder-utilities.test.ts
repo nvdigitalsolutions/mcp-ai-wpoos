@@ -62,6 +62,48 @@ describe( 'builderUtilitiesFor', () => {
 	} );
 } );
 
+describe( 'wpbakery — the semantic utilities a BOX rule can hide', () => {
+	// The class-coverage audit asks "does ANY rule mention this class?". A class
+	// that got only its measured box (`padding`/`margin`/`color`) answers yes, so
+	// the audit cannot see a missing DECLARATION. That is exactly how
+	// virtuallyjamaica's `<span class="uppercase …">` rendered lowercase: the
+	// class resolved to a box rule and carried no `text-transform` at all.
+	// These assertions are the missing half of that audit.
+	const DECLARED: Record< string, string > = {
+		// Brando's own casing utility (Bootstrap ships only the `text-*` spelling).
+		uppercase: 'text-transform:uppercase',
+		'text-uppercase': 'text-transform:uppercase',
+		'text-lowercase': 'text-transform:lowercase',
+		'text-capitalize': 'text-transform:capitalize',
+		'text-transform-none': 'text-transform:none',
+		'clear-both': 'clear:both',
+		'margin-lr-auto': 'margin-left:auto;margin-right:auto',
+		'width-50': 'width:50%',
+		'width-90': 'width:90%',
+		'no-padding-bottom': 'padding-bottom:0',
+		'cover-background':
+			'position:relative;overflow:hidden;background-size:cover;background-position:center center;background-repeat:no-repeat',
+	};
+
+	it( 'declares every standard utility the sheet defines', () => {
+		const wpbakery = BUILDER_ADAPTERS.find( ( adapter ) => adapter.id === 'wpbakery' );
+		expect( wpbakery?.utilities ).toBeDefined();
+		for ( const [ name, declaration ] of Object.entries( DECLARED ) ) {
+			expect( wpbakery?.utilities?.[ name ]?.base, `wpbakery:${ name }` ).toBe( declaration );
+		}
+	} );
+
+	it( 'emits the casing utility for a band that measures it', () => {
+		const utilities = builderUtilitiesFor( 'wpbakery', [ 'uppercase', 'alt-font', 'medium-gray-text' ] );
+
+		expect( utilities.uppercase ).toEqual( { base: 'text-transform:uppercase' } );
+		// `medium-gray-text` is deliberately NOT a utility: its measured box
+		// already carries the source's `color`, so a declaration here would
+		// duplicate a measured fact.
+		expect( utilities[ 'medium-gray-text' ] ).toBeUndefined();
+	} );
+} );
+
 describe( 'sections.generated.ts — utility pack', () => {
 	const profile = ( builder: string, classes: string[] ): SiteProfile =>
 		( {

@@ -1938,11 +1938,26 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	vertical-align: middle;
 }
 
-/* The `+`/`−` marker is drawn here, not by the vendor's icon font: `fa-plus`
- * and `fa-minus` need Font Awesome, which a forged site does not ship, so the
- * control rendered with no affordance at all (the empty `i` is hidden by the
- * `fa-*` rule below). `active-accordion` is the source's own open-state class;
- * BuilderAccordion keeps it in sync. */
+/* The vendor's own marker is an EMPTY `<i class="fa-solid fa-plus">`. A forged
+ * site that loads Font Awesome — any chrome with social icons does
+ * (`chrome.socialIconCss`) — gives that `i` a real glyph, so the row painted
+ * the font's plus AND the marker this sheet draws beside it: virtuallyjamaica
+ * showed "+ +" on every closed row. The generic `i[class*='fa-']:empty` guard
+ * below is (0,4,1) and LOSES to the `display:inline-block` stated above
+ * (0,4,2), so the hide is restated at the control's own weight. Raising the
+ * generic rule instead would take the source's real `fa-*` icons with it.
+ * The left `icon-*` glyph is empty too — this only ever touches `fa-*`. */
+.ds-section-wrap .post-body .panel-group .panel-heading a i[class*='fa-']:empty,
+.ds-section-wrap .post-body .panel-group .panel-heading a:hover i[class*='fa-']:empty {
+	display: none;
+}
+
+/* The `+`/`−` marker is drawn here, not by the vendor's icon font: the source's
+ * own JS swapped `fa-plus` for `fa-minus` on toggle, and a rebuild ships no
+ * vendor JS, so `active-accordion` — which BuilderAccordion keeps in sync —
+ * drives the glyph instead. The vendor's empty `i` is hidden above, because a
+ * site that DOES load Font Awesome (its footer socials need it) would
+ * otherwise paint the font's glyph and this one side by side. */
 .ds-section-wrap .post-body .panel-group .panel-title .pull-right {
 	position: absolute;
 	right: 15px;
