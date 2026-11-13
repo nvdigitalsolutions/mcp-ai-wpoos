@@ -89,7 +89,7 @@ eight cluster-1 candidates survived that check.
 | pro | `verify_information` | ✅ ported | — |
 | pro | `validate_tool_schema` | ✅ ported | — |
 | base | `list_prompt_cues` | ⏳ | not data: `Prompt_Cue_Library` is a **registry** with `update_option`, `do_action` and `apply_filters`, so the catalogue needs a source port and its cue text needs a licence note |
-| base | `scope_memory` | ⏳ | `Harness_Profile` reads an option and a filter; `Tool_Schema_Helper` is genuinely pure (self-references only) |
+| base | `scope_memory` | ✅ ported | `ScopeMemoryTool` + `HarnessProfileProviderInterface`. Tag computation is pure; the only store read (`memory.pii_filter`) goes through the provider, which is optional — a runtime without harness storage reports the documented default |
 | base | `enable_reasoning_mode` | ⏳ | `Reasoning_Controller` is stateful **and** networked (3 `get_option`, 2 `update_option`, 2 `wp_remote_`) — a store port, not a move |
 | pro | `generate_email_template` | ✅ ported | `MjmlCompilerInterface` + `GenerateEmailTemplateTool`; branding/footer moved to `MjmlTemplateBuilder::withBrandingHeader()` / `withFooter()`. The compiler stays optional — without one the tool serves `output_format: mjml` and reports a 501 for `html` |
 | pro | `import_email_marketing_blueprint` | ⏳ | a 138-line wrapper over `Blueprint_Installer::install()`. **Correction (2026-11-13):** this is *not* a drop-in for `ContentStoreInterface`. Create and update are covered (`CreateContentCommand` / `UpdateContentCommand` both carry `meta`, and `update()` merges it), but the installer also needs an **exact title lookup** (its create-vs-update idempotency key, which `ContentQuery::search` does not provide) and `delete_post_meta`, which the contract has no method for. Either add `findByTitle()` + `deleteMeta()` to the contract (3 implementers) or leave the tool WP-only |
@@ -223,7 +223,7 @@ cluster 2 proceeds once it lands.
 | Classifier | ✅ `bin/classify-tool-portability.php` |
 | Backlog generated | ✅ this document |
 | Registry seeded with self-contained core tools | ✅ 23 tools bound in the Laravel provider (`CoreToolCatalogue`) — no slugs moved, the gap is unchanged |
-| Cluster 1 ported | 🟡 3 of 8 — `verify_information`, `validate_tool_schema`, `generate_email_template`; the rest need a service (see §4) |
+| Cluster 1 ported | 🟡 4 of 8 — `verify_information`, `validate_tool_schema`, `generate_email_template`, `scope_memory`; the rest need a service (see §4) |
 | Cluster 2–4 | ⏳ |
 | CPT/CCT families | ⏳ design: `090-e-cpt-cct-schema-port.md` (654 tools are storage-shaped) |
 | Console parity note | ⏳ add the "runtime tool count" line to the Tools page empty state |

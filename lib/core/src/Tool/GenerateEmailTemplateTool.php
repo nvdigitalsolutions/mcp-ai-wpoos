@@ -31,6 +31,7 @@ namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\MjmlCompilerInterface;
 use Nvoos\Core\Domain\Service\Mjml\MjmlTemplateBuilder;
+use Nvoos\Core\Support\Text;
 
 class GenerateEmailTemplateTool extends AbstractTool {
 
@@ -251,9 +252,6 @@ class GenerateEmailTemplateTool extends AbstractTool {
 	 * header-level options (no tags, no control characters, single spaces).
 	 */
 	private function singleLine( string $value ): string {
-		$value = strip_tags( $value );
-		$value = (string) preg_replace( '/[\r\n\t ]+/', ' ', $value );
-
-		return trim( $value );
+		return Text::singleLine( $value );
 	}
 }

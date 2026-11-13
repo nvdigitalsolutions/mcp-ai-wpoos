@@ -30,6 +30,7 @@ Holds every interface the oOS core engine exports — pure contracts with zero i
 | `EventDispatcherInterface` | `EventDispatcherInterface.php` | Domain-owned event dispatcher with filter semantics |
 | `HttpClientInterface` | `HttpClientInterface.php` | Domain-owned HTTP client contract |
 | `MjmlCompilerInterface` | `MjmlCompilerInterface.php` | `GenerateEmailTemplateTool` — optional; only runtimes with a JS engine or MJML sidecar implement it |
+| `HarnessProfileProviderInterface` | `HarnessProfileProviderInterface.php` | `ScopeMemoryTool` — optional; the WordPress adapter wraps `WP_MCP_AI_Harness_Profile`, a runtime without harness storage omits it |
 | `ToolInterface` + 5 sub-interfaces | `ToolInterface.php` | Every tool in `../../Tool/` |
 
 ## Inputs / Outputs / Neighbors
