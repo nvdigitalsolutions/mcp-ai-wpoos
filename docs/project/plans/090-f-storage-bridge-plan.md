@@ -259,7 +259,23 @@ rather than silently vanishing from the count.
 They were duplicated across four tools, which is exactly how a schema and its
 validator drift apart.
 
-Remaining for the family: the admin page.
+**Admin surface shipped.** The family's `/pm` console page was blocked on two
+small pieces, both fixed here:
+
+- `Wp\ContentController` now maps the `tasks` and `projects` REST bases to
+  `mcp_ai_task` / `mcp_ai_project`. The console's Records page addresses records
+  through `wp/v2/{restBase}`, so without these two entries it got a
+  `rest_no_route` 404 for a post type the runtime already stores.
+- `Pro\RecordsController::ENTITIES` advertises both entities under group `pm`,
+  which is what the Records page reads to decide what to render.
+- `oos.features.project_management` flips to `true`, so the console nav shows
+  `/pm` at all.
+
+Writes from the page carry meta, so `_task_status` and friends round-trip
+through the same `nvoos_posts` rows the tools read.
+
+**Phase 2 is complete**: reads, writes, partial updates, bulk import and the
+admin page all run on both runtimes.
 
 ### Phase 3 — Paper Store port
 
