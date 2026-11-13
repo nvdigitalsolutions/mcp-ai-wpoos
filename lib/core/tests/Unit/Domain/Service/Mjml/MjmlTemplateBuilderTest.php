@@ -147,6 +147,140 @@ final class MjmlTemplateBuilderTest extends TestCase {
 	}
 
 	/**
+	 * Captured decoration corpus, at the repository root.
+	 *
+	 * Branding-header and footer markup, recorded from the WordPress tool before
+	 * it was replaced by a call to this builder.
+	 */
+	private static function decorationsFile(): string {
+		return dirname( __DIR__, 7 ) . '/tests/fixtures/email/mjml-decorations.json';
+	}
+
+	/**
+	 * Decoration cases, keyed by name.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function decorations(): array {
+		$file = self::decorationsFile();
+
+		if ( ! is_file( $file ) ) {
+			return array();
+		}
+
+		$decoded = json_decode( (string) file_get_contents( $file ), true );
+
+		return is_array( $decoded ) ? $decoded : array();
+	}
+
+	/**
+	 * One decoration case per captured name.
+	 *
+	 * @return array<string, array{0: string, 1: array<string, mixed>, 2: array<int, array<string, mixed>>|null, 3: string}>
+	 */
+	public static function decorationCases(): array {
+		$cases = array();
+
+		foreach ( self::decorations() as $name => $case ) {
+			$cases[ $name ] = array(
+				$case['mjml'],
+				$case['branding'],
+				$case['footer_links'],
+				$case['expected'],
+			);
+		}
+
+		return $cases;
+	}
+
+	/**
+	 * A missing corpus is a broken checkout, not a pass.
+	 */
+	public function testTheDecorationCorpusIsPresent(): void {
+		$this->assertGreaterThanOrEqual(
+			10,
+			count( self::decorations() ),
+			'MJML decoration corpus not found at ' . self::decorationsFile()
+		);
+	}
+
+	/**
+	 * Header and footer decoration reproduces the recorded WordPress markup.
+	 *
+	 * @param string                                  $mjml        Base document.
+	 * @param array<string, mixed>                    $branding    Branding options.
+	 * @param array<int, array<string, mixed>>|null   $footerLinks Footer links, or null when the case has none.
+	 * @param string                                  $expected    Recorded markup.
+	 */
+	#[DataProvider( 'decorationCases' )]
+	public function testDecorationMatchesTheRecordedMarkup( string $mjml, array $branding, ?array $footerLinks, string $expected ): void {
+		$builder = new MjmlTemplateBuilder();
+		$actual  = $mjml;
+
+		if ( array() !== $branding ) {
+			$actual = $builder->withBrandingHeader( $actual, $branding );
+		}
+
+		if ( null !== $footerLinks ) {
+			$actual = $builder->withFooter( $actual, $footerLinks, $branding );
+		}
+
+		$this->assertSame( $expected, $actual );
+	}
+
+	/**
+	 * A branding block without a logo leaves the document alone.
+	 */
+	public function testBrandingWithoutALogoIsANoOp(): void {
+		$builder = new MjmlTemplateBuilder();
+		$mjml    = $builder->build( array( array( 'type' => 'text', 'content' => 'x' ) ) );
+
+		$this->assertSame( $mjml, $builder->withBrandingHeader( $mjml, array( 'company_name' => 'Acme' ) ) );
+	}
+
+	/**
+	 * Hostile link schemes are dropped, not emitted.
+	 *
+	 * `esc_url()` returns an empty string for a bad protocol; the builder keeps
+	 * that behaviour so an email cannot carry a `javascript:` payload.
+	 */
+	public function testHostileLinkSchemesAreDropped(): void {
+		$mjml = ( new MjmlTemplateBuilder() )->build( array() );
+
+		foreach ( array( 'javascript:alert(1)', 'data:text/html,<script>', 'vbscript:msgbox' ) as $url ) {
+			$out = ( new MjmlTemplateBuilder() )->withFooter(
+				$mjml,
+				array( array( 'text' => 'Click', 'url' => $url ) )
+			);
+
+			$this->assertStringContainsString( 'href=""', $out, $url );
+		}
+	}
+
+	/**
+	 * Non-scalar values are skipped instead of triggering array-to-string notices.
+	 */
+	public function testNonScalarDecorationValuesAreSkipped(): void {
+		$builder = new MjmlTemplateBuilder();
+		$mjml    = $builder->build( array( array( 'type' => 'text', 'content' => 'x' ) ) );
+
+		$this->assertSame(
+			$mjml,
+			$builder->withBrandingHeader( $mjml, array( 'logo_url' => array( 'nope' ) ) )
+		);
+
+		$footer = $builder->withFooter(
+			$mjml,
+			array( array( 'text' => array( 'nope' ), 'url' => 'https://a.test' ) ),
+			array( 'company_name' => array( 'nope' ) )
+		);
+
+		$this->assertStringContainsString( 'padding="20px">', $footer );
+		$this->assertStringNotContainsString( 'nope', $footer );
+		$this->assertStringNotContainsString( '<a href=', $footer );
+	}
+
+	/**
 	 * Option values are escaped, and existing entities are not double-encoded.
 	 */
 	public function testOptionsAreEscapedOnce(): void {

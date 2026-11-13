@@ -16,6 +16,8 @@ declare(strict_types=1);
 namespace Nvoos\Core\Tests\Unit\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\MjmlCompilerInterface;
+use Nvoos\Core\Tool\GenerateEmailTemplateTool;
 use Nvoos\Core\Tool\ValidateToolSchemaTool;
 use Nvoos\Core\Tool\VerifyInformationTool;
 use PHPUnit\Framework\TestCase;
@@ -256,6 +258,155 @@ final class PortedClusterOneToolsTest extends TestCase {
 		$this->assertArrayHasKey( 'schema', $tool->getParametersSchema()['properties'] );
 	}
 
+	// ─── GenerateEmailTemplateTool ──────────────────────────────────
+
+	public function testEmailTemplateDeclaresTheContract(): void {
+		$tool = new GenerateEmailTemplateTool( new FakeErrorFactory() );
+
+		$this->assertSame( 'generate_email_template', $tool->getSlug() );
+		$this->assertSame( 'edit_posts', $tool->getRequiredCapability() );
+		$this->assertSame( array( 'components' ), $tool->getParametersSchema()['required'] );
+		$this->assertSame(
+			array( 'html', 'mjml', 'both' ),
+			$tool->getParametersSchema()['properties']['output_format']['enum']
+		);
+	}
+
+	public function testEmailTemplateRejectsMissingComponents(): void {
+		$tool   = new GenerateEmailTemplateTool( new FakeErrorFactory() );
+		$result = $tool->execute( array( 'components' => array() ) );
+
+		$this->assertSame( 'validation_failed', $result['error'] );
+		$this->assertArrayHasKey( 'components', $result['data']['errors'] );
+	}
+
+	public function testEmailTemplateReturnsMjmlWithoutACompiler(): void {
+		$result = $this->email( array( 'output_format' => 'mjml' ) );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'mjml', $result['data'] );
+		$this->assertArrayNotHasKey( 'html', $result['data'] );
+		$this->assertStringContainsString( '<mj-text>Hello</mj-text>', $result['data']['mjml'] );
+	}
+
+	public function testEmailTemplateExplainsAMissingCompiler(): void {
+		$result = $this->email( array() );
+
+		$this->assertSame( 'mjml_compile_unavailable', $result['error'] );
+		$this->assertSame( 501, $result['data']['status'] );
+		$this->assertArrayHasKey( 'mjml', $result['data'] );
+	}
+
+	public function testEmailTemplateReportsAnUnavailableCompiler(): void {
+		$compiler          = new FakeMjmlCompiler();
+		$compiler->available = false;
+
+		$result = $this->email( array(), $compiler );
+
+		$this->assertSame( 'mjml_compile_unavailable', $result['error'] );
+	}
+
+	public function testEmailTemplateCompilesWhenACompilerIsPresent(): void {
+		$compiler = new FakeMjmlCompiler();
+		$result   = $this->email( array(), $compiler );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( '<html>compiled</html>', $result['data']['html'] );
+		$this->assertArrayNotHasKey( 'mjml', $result['data'] );
+		$this->assertTrue( $compiler->options['beautify'] );
+		$this->assertFalse( $compiler->options['minify'] );
+		$this->assertSame( 'soft', $compiler->options['validationLevel'] );
+	}
+
+	public function testEmailTemplateMinifyFlipsBeautify(): void {
+		$compiler = new FakeMjmlCompiler();
+
+		$this->email( array( 'minify' => true ), $compiler );
+
+		$this->assertTrue( $compiler->options['minify'] );
+		$this->assertFalse( $compiler->options['beautify'] );
+	}
+
+	public function testEmailTemplateIncludesMjmlWhenBothRequested(): void {
+		$result = $this->email( array( 'output_format' => 'both' ), new FakeMjmlCompiler() );
+
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'html', $result['data'] );
+		$this->assertArrayHasKey( 'mjml', $result['data'] );
+	}
+
+	public function testEmailTemplateSurfacesCompilerFailures(): void {
+		$compiler          = new FakeMjmlCompiler();
+		$compiler->failure = 'boilerplate exploded';
+
+		$result = $this->email( array(), $compiler );
+
+		$this->assertSame( 'mjml_compilation_failed', $result['error'] );
+		$this->assertStringContainsString( 'boilerplate exploded', $result['message'] );
+		$this->assertArrayHasKey( 'mjml', $result['data'] );
+	}
+
+	public function testEmailTemplateAppliesBrandingAndFooter(): void {
+		$result = $this->email(
+			array(
+				'output_format' => 'mjml',
+				'branding'      => array(
+					'logo_url'        => 'https://cdn.test/logo.png',
+					'company_name'    => 'Acme & Co',
+					'company_address' => '1 Main St',
+				),
+				'footer_links'  => array(
+					array( 'text' => 'Unsubscribe', 'url' => 'https://acme.test/u?e=1&t=2' ),
+				),
+			)
+		);
+
+		$mjml = $result['data']['mjml'];
+
+		$this->assertStringContainsString( '<mj-image src="https://cdn.test/logo.png" alt="Acme &amp; Co"', $mjml );
+		$this->assertStringContainsString( '<strong>Acme &amp; Co</strong><br />1 Main St', $mjml );
+		$this->assertStringContainsString( 'href="https://acme.test/u?e=1&#038;t=2"', $mjml );
+		$this->assertStringContainsString( 'Unsubscribe</a>', $mjml );
+	}
+
+	public function testEmailTemplateCollapsesHeaderOptions(): void {
+		$result = $this->email(
+			array(
+				'output_format' => 'mjml',
+				'subject'       => "  <b>Big</b>\n\n  news  ",
+				'preview_text'  => "first\tsecond",
+			)
+		);
+
+		$this->assertStringContainsString( '<mj-title>Big news</mj-title>', $result['data']['mjml'] );
+		$this->assertStringContainsString( '<mj-preview>first second</mj-preview>', $result['data']['mjml'] );
+
+		// The result echoes the parameter as core sanitised it (`stringParam()`
+		// trims and strips tags), while the template option is collapsed further
+		// to a single line.
+		$this->assertSame( "Big\n\n  news", $result['data']['subject'] );
+		$this->assertSame( "first\tsecond", $result['data']['preview_text'] );
+	}
+
+	/**
+	 * @param array<string, mixed> $extra Extra arguments.
+	 * @return array<string, mixed>
+	 */
+	private function email( array $extra, ?MjmlCompilerInterface $compiler = null ): array {
+		$tool = new GenerateEmailTemplateTool( new FakeErrorFactory(), $compiler );
+
+		return $tool->execute(
+			array_merge(
+				array(
+					'components' => array(
+						array( 'type' => 'text', 'content' => 'Hello' ),
+					),
+				),
+				$extra
+			)
+		);
+	}
+
 	// ─── helpers ────────────────────────────────────────────────────
 
 	/**
@@ -298,6 +449,37 @@ final class PortedClusterOneToolsTest extends TestCase {
 			),
 			'required'   => array( 'term' ),
 		);
+	}
+}
+
+/**
+ * Compiler stub: records the options it was called with and returns fixed HTML.
+ */
+final class FakeMjmlCompiler implements MjmlCompilerInterface {
+
+	public bool $available = true;
+
+	public ?string $failure = null;
+
+	/** @var array<string, mixed> */
+	public array $options = array();
+
+	public function isAvailable(): bool {
+		return $this->available;
+	}
+
+	public function compile( string $mjml, array $options = array() ): string {
+		$this->options = $options;
+
+		if ( null !== $this->failure ) {
+			throw new \RuntimeException( $this->failure );
+		}
+
+		return '<html>compiled</html>';
+	}
+
+	public function validate( string $mjml ): array {
+		return array( 'valid' => true, 'errors' => array() );
 	}
 }
 
