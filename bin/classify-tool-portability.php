@@ -62,7 +62,7 @@ foreach ( array_slice( $argv, 1 ) as $argument ) {
  * @param string|null $filename Optional filename pattern.
  * @return array<string, string> Slug => absolute path.
  */
-function nvoos_slugs_from( string $dir, ?string $filename = null ): array {
+function nvoos_slugs_from( string $dir, ?string $filename = null, ?string $implements = null ): array {
 	if ( ! is_dir( $dir ) ) {
 		return array();
 	}
@@ -81,6 +81,10 @@ function nvoos_slugs_from( string $dir, ?string $filename = null ): array {
 
 		$code = (string) file_get_contents( $file->getPathname() );
 
+		if ( null !== $implements && ! nvoos_class_implements( $code, $implements ) ) {
+			continue;
+		}
+
 		if ( preg_match_all( '/function\s+get_?[sS]lug\s*\([^)]*\)[^{;]*\{\s*return\s+\'([^\']+)\'/s', $code, $matches ) ) {
 			foreach ( $matches[1] as $slug ) {
 				$slugs[ $slug ] = $file->getPathname();
@@ -89,6 +93,24 @@ function nvoos_slugs_from( string $dir, ?string $filename = null ): array {
 	}
 
 	return $slugs;
+}
+
+/**
+ * Does a file declare a class that implements an interface?
+ *
+ * Deliberately line-oriented: every tool in this repository declares its
+ * `implements` list on the class line. A declaration split across lines is
+ * reported as "no" rather than guessed at, which under-includes instead of
+ * inventing a tool.
+ *
+ * @param string $code       File contents.
+ * @param string $interface  Interface name to look for.
+ */
+function nvoos_class_implements( string $code, string $interface ): bool {
+	return 1 === preg_match(
+		'/^[ \t]*(?:final[ \t]+|abstract[ \t]+)*class[ \t]+\w+[^\n]*\bimplements\b[^\n]*\b' . preg_quote( $interface, '/' ) . '\b/m',
+		$code
+	);
 }
 
 /**
@@ -177,6 +199,16 @@ $hard_references = array(
 
 $base_tools = nvoos_slugs_from( $root . '/includes/tools', '/^class-wp-mcp-ai-tool-.*\.php$/' );
 $pro_tools  = nvoos_slugs_from( $root . '/addons/pro/includes/tools' );
+
+// Tools that live outside `…/includes/tools`: the model-foundry exporters, the
+// harness pair and the MCP-App bridge. A bare scan of `addons/pro/includes`
+// would also sweep in ~50 classes that carry a `get_slug()` for a different
+// purpose — CCTs name their record type, MCP servers name their endpoint,
+// booking adapters name the provider — so the scan is restricted to classes
+// that implement the tool interface. Without this, the exporters were absent
+// from the inventory entirely and the gap under-reported the real surface.
+$pro_tools += nvoos_slugs_from( $root . '/addons/pro/includes', null, 'WP_MCP_AI_Tool_Interface' );
+
 $core_tools = nvoos_slugs_from( $root . '/lib/core/src' );
 $classes    = nvoos_class_index( array( $root . '/includes', $root . '/addons/pro/includes' ) );
 
