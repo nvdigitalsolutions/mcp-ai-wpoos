@@ -44,6 +44,33 @@ final class CoreToolCatalogueTest extends TestCase {
 	}
 
 	/**
+	 * The 090-D cluster-1 email tool arrives without a compiler.
+	 *
+	 * `generate_email_template` is the first ported tool with an *optional*
+	 * collaborator: the catalogue contract is "constructs with the error factory
+	 * alone", so this pins that the MJML compiler really is optional and that
+	 * the tool still produces markup.
+	 */
+	public function testEmailTemplateRegistersWithoutACompiler(): void {
+		$registry = $this->app->make( ToolRegistry::class );
+
+		$this->assertTrue( $registry->has( 'generate_email_template' ) );
+
+		$tool = $registry->get( 'generate_email_template' );
+
+		$result = $tool->execute(
+			array(
+				'components'    => array( array( 'type' => 'text', 'content' => 'Hello' ) ),
+				'output_format' => 'mjml',
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertStringContainsString( '<mj-text>Hello</mj-text>', $result['data']['mjml'] );
+	}
+
+	/**
 	 * Every listed tool must expose the minimum surface the registry needs.
 	 */
 	public function testEachToolDeclaresItsSurface(): void {

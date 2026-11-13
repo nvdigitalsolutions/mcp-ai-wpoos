@@ -285,29 +285,23 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * Add branding header to MJML template
+	 * Add branding header to MJML template.
+	 *
+	 * @since 1.2.20 Delegates to `MjmlTemplateBuilder` in lib/core (090-D).
 	 *
 	 * @param string $mjml     MJML markup.
 	 * @param array  $branding Branding options.
 	 * @return string Modified MJML markup.
 	 */
 	private function add_branding_to_mjml( $mjml, $branding ) {
-		// Insert logo header before first section.
-		if ( isset( $branding['logo_url'] ) && ! empty( $branding['logo_url'] ) ) {
-			$logo_section  = '<mj-section background-color="#ffffff" padding="20px 0">';
-			$logo_section .= '<mj-column>';
-			$logo_section .= '<mj-image src="' . esc_url( $branding['logo_url'] ) . '" alt="' . esc_attr( isset( $branding['company_name'] ) ? $branding['company_name'] : 'Logo' ) . '" width="150px" align="center" />';
-			$logo_section .= '</mj-column>';
-			$logo_section .= '</mj-section>';
-
-			$mjml = str_replace( '<mj-body>', '<mj-body>' . $logo_section, $mjml );
-		}
-
-		return $mjml;
+		return ( new \Nvoos\Core\Domain\Service\Mjml\MjmlTemplateBuilder() )
+			->withBrandingHeader( (string) $mjml, is_array( $branding ) ? $branding : array() );
 	}
 
 	/**
-	 * Add footer to MJML template
+	 * Add footer to MJML template.
+	 *
+	 * @since 1.2.20 Delegates to `MjmlTemplateBuilder` in lib/core (090-D).
 	 *
 	 * @param string $mjml         MJML markup.
 	 * @param array  $footer_links Footer links.
@@ -315,38 +309,7 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 	 * @return string Modified MJML markup.
 	 */
 	private function add_footer_to_mjml( $mjml, $footer_links, $branding ) {
-		$footer  = '<mj-section background-color="#333333" padding="20px">';
-		$footer .= '<mj-column>';
-
-		// Company info.
-		if ( isset( $branding['company_name'] ) ) {
-			$footer .= '<mj-text color="#ffffff" align="center" font-size="12px">';
-			$footer .= '<strong>' . esc_html( $branding['company_name'] ) . '</strong>';
-			if ( isset( $branding['company_address'] ) ) {
-				$footer .= '<br />' . esc_html( $branding['company_address'] );
-			}
-			$footer .= '</mj-text>';
-		}
-
-		// Footer links.
-		if ( ! empty( $footer_links ) ) {
-			$footer    .= '<mj-text color="#ffffff" align="center" font-size="12px">';
-			$link_texts = array();
-			foreach ( $footer_links as $link ) {
-				if ( isset( $link['text'] ) && isset( $link['url'] ) ) {
-					$link_texts[] = '<a href="' . esc_url( $link['url'] ) . '" style="color: #ffffff;">' . esc_html( $link['text'] ) . '</a>';
-				}
-			}
-			$footer .= implode( ' | ', $link_texts );
-			$footer .= '</mj-text>';
-		}
-
-		$footer .= '</mj-column>';
-		$footer .= '</mj-section>';
-
-		// Insert footer before closing body tag.
-		$mjml = str_replace( '</mj-body>', $footer . '</mj-body>', $mjml );
-
-		return $mjml;
+		return ( new \Nvoos\Core\Domain\Service\Mjml\MjmlTemplateBuilder() )
+			->withFooter( (string) $mjml, is_array( $footer_links ) ? $footer_links : array(), is_array( $branding ) ? $branding : array() );
 	}
 }

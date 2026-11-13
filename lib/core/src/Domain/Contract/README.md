@@ -29,6 +29,7 @@ Holds every interface the oOS core engine exports — pure contracts with zero i
 | `QueueClientInterface` | `QueueClientInterface.php` | Async tool execution, cron scheduling |
 | `EventDispatcherInterface` | `EventDispatcherInterface.php` | Domain-owned event dispatcher with filter semantics |
 | `HttpClientInterface` | `HttpClientInterface.php` | Domain-owned HTTP client contract |
+| `MjmlCompilerInterface` | `MjmlCompilerInterface.php` | `GenerateEmailTemplateTool` — optional; only runtimes with a JS engine or MJML sidecar implement it |
 | `ToolInterface` + 5 sub-interfaces | `ToolInterface.php` | Every tool in `../../Tool/` |
 
 ## Inputs / Outputs / Neighbors

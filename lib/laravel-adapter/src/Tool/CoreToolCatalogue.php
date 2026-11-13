@@ -38,6 +38,7 @@ use Nvoos\Core\Tool\CountTokensTool;
 use Nvoos\Core\Tool\ExtractDomainTool;
 use Nvoos\Core\Tool\FormatBytesTool;
 use Nvoos\Core\Tool\FormatDateTool;
+use Nvoos\Core\Tool\GenerateEmailTemplateTool;
 use Nvoos\Core\Tool\GenerateSlugTool;
 use Nvoos\Core\Tool\GenerateUuidTool;
 use Nvoos\Core\Tool\HashStringTool;
@@ -103,6 +104,12 @@ final class CoreToolCatalogue {
 			// slug, parameter schema and result fields, canonical envelope.
 			VerifyInformationTool::class,
 			ValidateToolSchemaTool::class,
+
+			// 090-D cluster 1, email family. The MJML compiler is an optional
+			// constructor argument, so this registers without one: `mjml` and
+			// `mjml`-only output work here, and `html` reports that the runtime
+			// has no compiler instead of failing obscurely.
+			GenerateEmailTemplateTool::class,
 		);
 	}
 
