@@ -250,6 +250,47 @@ earlier.
 
 **Gate G2:** differential test green; `lib/core` still contains zero WordPress calls (grep gate).
 
+#### Phase 2 — shipped (parser)
+
+Gate G2 is satisfied. The parser now exists twice, on purpose.
+
+| File | Purpose |
+|---|---|
+| `lib/core/src/Domain/Okf/OkfDocument.php` | Frontmatter + body value object, `toArray()` matches the WP return shape |
+| `lib/core/src/Domain/Okf/OkfParseException.php` | Carries the stable `errorCode` the WP side returns through `WP_Error` |
+| `lib/core/src/Domain/Okf/OkfParserInterface.php` | `parse(string): ?OkfDocument` |
+| `lib/core/src/Domain/Okf/OkfParser.php` | Recursive-descent port; no filesystem, no globals |
+| `lib/core/tests/Unit/Domain/Okf/OkfParserCorpusTest.php` | Replays the corpus in plain PHP |
+| `tests/test-okf-parser-differential.php` | Asserts core == WordPress on every corpus entry |
+
+**API decision — the interface narrows the proposal's `parse(string): OkfDocument`.** The corpus
+encodes three outcomes, and a non-nullable return can only express one of them:
+
+| Corpus shape | Core result |
+|---|---|
+| `{ "frontmatter": …, "body": … }` | `OkfDocument` |
+| `{ "null": true }` | `null` — a body-only concept is legitimate OKF, not an error |
+| `{ "error": "okf_unclosed_frontmatter" }` | `OkfParseException` carrying that code |
+
+Throwing on malformed input matches the rest of `lib/core` (which already ships `NotFoundException`,
+`AccessDeniedException`, `ValidationException`) and avoids threading a framework error factory
+through a pure string function.
+
+**`serialize()` deliberately stayed in WordPress.** It belongs with the writer (Phase 3), and porting
+it now would add an untested-by-oracle surface to a PR whose whole value is provable parity.
+
+**The WordPress class still owns its own implementation.** Delegation is deliberately deferred to
+Phase 4: the differential test only has teeth while the two sides are independent. Delegating now
+would make it compare a class to itself.
+
+Removed in passing: `SCALAR_PATTERNS` is declared in the WordPress parser but never read; the port
+does not carry it, and it can be dropped from the original in Phase 4.
+
+Verification: 19 fixtures replayed in core (**20 tests**), differential **20 tests / 40 assertions**,
+`lib/core` suite **1058 tests / 3930 assertions**, PHPStan level 8 `[OK] No errors`,
+`bin/check-license-boundary.sh` green, and the only `WP_Error` occurrence in the new files is a
+docblock that documents the mapping.
+
 ### Phase 3 — Reader and writer
 
 - `BundleRootInterface` (`root()`, `pathFor($conceptId)`, `assertContained($path)`).
