@@ -129,6 +129,13 @@ class WP_MCP_AI_MJML_Service {
 	/**
 	 * Generate email template from components
 	 *
+	 * Markup building lives in `Nvoos\Core\Domain\Service\Mjml\MjmlTemplateBuilder`
+	 * so the Laravel runtime can use it too. This method keeps the WordPress
+	 * concerns: the empty-input guard and rich-text sanitisation.
+	 *
+	 * @since 1.1.0
+	 * @since 1.2.20 Delegates markup building to lib/core.
+	 *
 	 * @param array $components Email components.
 	 * @param array $options    Generation options.
 	 * @return string|WP_Error MJML markup or error.
@@ -142,116 +149,21 @@ class WP_MCP_AI_MJML_Service {
 			);
 		}
 
-		$defaults = array(
-			'title'            => '',
-			'preview_text'     => '',
-			'font_family'      => 'Arial, sans-serif',
-			'background_color' => '#f4f4f4',
-			'container_width'  => '600px',
-		);
+		// Rich text is sanitised here, at the WordPress boundary: the core
+		// builder injects component content verbatim by design.
+		$sanitised = array();
 
-		$options = wp_parse_args( $options, $defaults );
-
-		// Build MJML structure.
-		$mjml  = '<mjml>';
-		$mjml .= '<mj-head>';
-
-		if ( ! empty( $options['title'] ) ) {
-			$mjml .= '<mj-title>' . esc_html( $options['title'] ) . '</mj-title>';
-		}
-
-		if ( ! empty( $options['preview_text'] ) ) {
-			$mjml .= '<mj-preview>' . esc_html( $options['preview_text'] ) . '</mj-preview>';
-		}
-
-		$mjml .= '<mj-attributes>';
-		$mjml .= '<mj-all font-family="' . esc_attr( $options['font_family'] ) . '" />';
-		$mjml .= '<mj-body background-color="' . esc_attr( $options['background_color'] ) . '" />';
-		$mjml .= '<mj-container background-color="#ffffff" width="' . esc_attr( $options['container_width'] ) . '" />';
-		$mjml .= '</mj-attributes>';
-		$mjml .= '</mj-head>';
-
-		$mjml .= '<mj-body>';
-		$mjml .= '<mj-section>';
-		$mjml .= '<mj-column>';
-
-		// Add components.
 		foreach ( $components as $component ) {
-			$mjml .= $this->render_component( $component );
+			if ( is_array( $component ) && isset( $component['content'] ) ) {
+				$component['content'] = wp_kses_post( (string) $component['content'] );
+			}
+
+			$sanitised[] = $component;
 		}
 
-		$mjml .= '</mj-column>';
-		$mjml .= '</mj-section>';
-		$mjml .= '</mj-body>';
-		$mjml .= '</mjml>';
+		$builder = new \Nvoos\Core\Domain\Service\Mjml\MjmlTemplateBuilder();
 
-		return $mjml;
-	}
-
-	/**
-	 * Render individual email component
-	 *
-	 * @param array $component Component data.
-	 * @return string MJML component markup.
-	 */
-	private function render_component( $component ) {
-		$type = isset( $component['type'] ) ? $component['type'] : 'text';
-
-		switch ( $type ) {
-			case 'text':
-				return sprintf(
-					'<mj-text%s>%s</mj-text>',
-					isset( $component['attributes'] ) ? $this->build_attributes( $component['attributes'] ) : '',
-					isset( $component['content'] ) ? wp_kses_post( $component['content'] ) : ''
-				);
-
-			case 'button':
-				return sprintf(
-					'<mj-button%s>%s</mj-button>',
-					isset( $component['attributes'] ) ? $this->build_attributes( $component['attributes'] ) : '',
-					isset( $component['text'] ) ? esc_html( $component['text'] ) : 'Click Here'
-				);
-
-			case 'image':
-				return sprintf(
-					'<mj-image%s />',
-					isset( $component['attributes'] ) ? $this->build_attributes( $component['attributes'] ) : ''
-				);
-
-			case 'divider':
-				return sprintf(
-					'<mj-divider%s />',
-					isset( $component['attributes'] ) ? $this->build_attributes( $component['attributes'] ) : ''
-				);
-
-			case 'spacer':
-				return sprintf(
-					'<mj-spacer%s />',
-					isset( $component['attributes'] ) ? $this->build_attributes( $component['attributes'] ) : ''
-				);
-
-			default:
-				return '';
-		}
-	}
-
-	/**
-	 * Build HTML attributes string
-	 *
-	 * @param array $attributes Attributes array.
-	 * @return string Attributes string.
-	 */
-	private function build_attributes( $attributes ) {
-		if ( empty( $attributes ) || ! is_array( $attributes ) ) {
-			return '';
-		}
-
-		$attr_string = '';
-		foreach ( $attributes as $key => $value ) {
-			$attr_string .= ' ' . esc_attr( $key ) . '="' . esc_attr( $value ) . '"';
-		}
-
-		return $attr_string;
+		return $builder->build( $sanitised, wp_parse_args( $options, array() ) );
 	}
 
 	/**
