@@ -118,6 +118,13 @@ function installJQueryCredentialPrefilter(): void {
         delete headers['X-WP-Nonce'];
       }
 
+      // Laravel reads the raw session token from `X-CSRF-TOKEN`. It decrypts
+      // `X-XSRF-TOKEN`, so a fetched token cannot go there. Mirror the
+      // WordPress nonce; WordPress ignores the header.
+      if (headers['X-WP-Nonce'] && !headers['X-CSRF-TOKEN']) {
+        headers['X-CSRF-TOKEN'] = headers['X-WP-Nonce'];
+      }
+
       options.headers = headers;
     } catch {
       // Never throw from a prefilter; let the request proceed unmodified.
@@ -207,6 +214,16 @@ export function installFetchWrapper(options: FetchWrapperOptions): () => void {
     // requests that carry an empty nonce header, so drop it for token auth.
     if ((options.bearer || options.guest || options.basic) && headers.get('X-WP-Nonce') === '') {
       headers.delete('X-WP-Nonce');
+    }
+
+    // Laravel validates the raw session token in `X-CSRF-TOKEN`. `X-XSRF-TOKEN`
+    // is not usable here: Laravel decrypts that header, so it only accepts the
+    // `XSRF-TOKEN` cookie value, not the token the console fetches from
+    // `/session/nonce`. Mirror the WordPress nonce; WordPress ignores the
+    // header. This replaces the AcceptWpNonce server shim (090-b Phase 5.2).
+    const nonce = headers.get('X-WP-Nonce');
+    if (nonce && !headers.has('X-CSRF-TOKEN')) {
+      headers.set('X-CSRF-TOKEN', nonce);
     }
 
     const promise = original(input, { ...init, headers });

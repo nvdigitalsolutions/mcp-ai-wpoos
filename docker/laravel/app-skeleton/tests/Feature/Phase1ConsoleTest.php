@@ -144,7 +144,7 @@ class Phase1ConsoleTest extends TestCase
 
         $nonce = $this->getJson('/api/v1/session/nonce')->json('nonce');
 
-        $this->withHeader('X-WP-Nonce', $nonce)
+        $this->withHeader('X-CSRF-TOKEN', $nonce)
             ->postJson('/api/v1/session/login', [
                 'email' => 'owner@example.com',
                 'password' => 'secret',
@@ -152,6 +152,59 @@ class Phase1ConsoleTest extends TestCase
             ->assertOk()
             ->assertJsonPath('id', $user->id)
             ->assertJsonPath('login', 'owner@example.com');
+    }
+
+    /**
+     * The Phase 0–4 `X-WP-Nonce` translation shim is gone (Phase 5.2).
+     */
+    /**
+     * The Phase 0-4 `AcceptWpNonce` shim translated `X-WP-Nonce` into the
+     * session token. It is gone, so the header must now be inert: Laravel only
+     * reads `_token`, `X-CSRF-TOKEN` and `X-XSRF-TOKEN`.
+     *
+     * `VerifyCsrfToken::runningUnitTests()` short-circuits validation whenever
+     * the app reports the `testing` environment, so this test flips the env for
+     * the duration of the request to exercise the real production path.
+     */
+    public function test_the_wordpress_nonce_header_is_no_longer_a_csrf_token(): void
+    {
+        $nonce = $this->getJson('/api/v1/session/nonce')->json('nonce');
+
+        $this->app['env'] = 'local';
+
+        $this->withHeader('X-WP-Nonce', $nonce)
+            ->withHeader('Origin', 'http://localhost')
+            ->withHeader('Referer', 'http://localhost/')
+            ->postJson('/api/v1/session/login', [
+                'email' => 'owner@example.com',
+                'password' => 'secret',
+            ])
+            ->assertStatus(419);
+    }
+
+    /**
+     * Counterpart to the test above: the header the console now sends is
+     * accepted by the same production CSRF path.
+     */
+    public function test_the_console_csrf_header_is_accepted(): void
+    {
+        User::factory()->create([
+            'email' => 'owner@example.com',
+            'password' => bcrypt('secret'),
+        ]);
+
+        $nonce = $this->getJson('/api/v1/session/nonce')->json('nonce');
+
+        $this->app['env'] = 'local';
+
+        $this->withHeader('X-CSRF-TOKEN', $nonce)
+            ->withHeader('Origin', 'http://localhost')
+            ->withHeader('Referer', 'http://localhost/')
+            ->postJson('/api/v1/session/login', [
+                'email' => 'owner@example.com',
+                'password' => 'secret',
+            ])
+            ->assertOk();
     }
 
     public function test_laravel_login_rejects_bad_credentials(): void
@@ -163,7 +216,7 @@ class Phase1ConsoleTest extends TestCase
 
         $nonce = $this->getJson('/api/v1/session/nonce')->json('nonce');
 
-        $this->withHeader('X-WP-Nonce', $nonce)
+        $this->withHeader('X-CSRF-TOKEN', $nonce)
             ->postJson('/api/v1/session/login', [
                 'email' => 'owner@example.com',
                 'password' => 'wrong',

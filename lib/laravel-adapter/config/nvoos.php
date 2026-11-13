@@ -407,6 +407,20 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Contract and schema versions
+	|--------------------------------------------------------------------------
+	|
+	| `contract_version` is the HTTP contract the console speaks; it asserts
+	| `mcp-ai/v1` + version 1 on boot and refuses to run against anything else.
+	| `schema_version` is written into `nvoos_meta` so `nvoos:doctor` can tell an
+	| operator to migrate instead of failing on a missing column.
+	|
+	*/
+	'contract_version'     => (int) env( 'NVOOS_CONTRACT_VERSION', 1 ),
+	'schema_version'       => (int) env( 'NVOOS_SCHEMA_VERSION', 1 ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Media uploads
 	|--------------------------------------------------------------------------
 	|
@@ -480,9 +494,56 @@ return array(
 	|
 	*/
 	'pro_entitlement' => array(
-		'driver'   => env( 'NVOOS_PRO_ENTITLEMENT_DRIVER', 'allow' ),
-		'plan'     => env( 'NVOOS_PRO_PLAN', 'compliance' ),
-		'features' => array(),
+		/*
+		 * Driver: allow | deny | config | license.
+		 *
+		 * `license` resolves against the commercial licence server — the same
+		 * endpoint the WordPress plugin uses — keyed on `instance_id` instead
+		 * of a site URL. The configuration drivers cover development, CI and
+		 * fail-closed deployments. Unknown drivers fail closed.
+		 */
+		'driver'      => env( 'NVOOS_PRO_ENTITLEMENT_DRIVER', 'allow' ),
+
+		// Plan label reported by the configuration drivers.
+		'plan'        => env( 'NVOOS_PRO_PLAN', 'compliance' ),
+
+		// Operator overrides, applied last in every driver. An explicit
+		// entry wins in both directions.
+		'features'    => array(),
+
+		// --- `license` driver -------------------------------------------
+		'license_key' => env( 'NVOOS_PRO_LICENSE_KEY', '' ),
+		'server_url'  => env( 'NVOOS_PRO_LICENSE_SERVER', 'https://nvdigitalsolutions.com/api/licenses' ),
+
+		// Stable identity for this installation. Defaults to the app URL
+		// when null, which is what the licence server would see anyway.
+		'instance_id' => env( 'NVOOS_PRO_LICENSE_INSTANCE_ID' ),
+		'product'     => env( 'NVOOS_PRO_LICENSE_PRODUCT', 'mcp-ai-wpoos-pro' ),
+
+		// Seconds a valid answer stays fresh, a negative answer stays
+		// cached, and a stale answer may survive refresh failures.
+		'ttl'         => (int) env( 'NVOOS_PRO_LICENSE_TTL', 43200 ),
+		'denied_ttl'  => (int) env( 'NVOOS_PRO_LICENSE_DENIED_TTL', 300 ),
+		'grace_ttl'   => (int) env( 'NVOOS_PRO_LICENSE_GRACE_TTL', 604800 ),
+		'timeout'     => (int) env( 'NVOOS_PRO_LICENSE_TIMEOUT', 10 ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
+	| Read-only deployment profile
+	|--------------------------------------------------------------------------
+	|
+	| Blocks state-changing tools at the last pre-dispatch point. Intended for
+	| staging mirrors, demos and audit-only access. Tools that declare no
+	| capability flags are blocked by default — "I could not tell whether this
+	| writes" is not a reason to let it write. Allowlist the slugs you trust.
+	|
+	*/
+	'read_only' => array(
+		'enabled'          => (bool) env( 'NVOOS_READ_ONLY', false ),
+		'gated_flags'      => array( 'write', 'state_changing', 'mutating', 'destructive', 'external_side_effect' ),
+		'allowed_slugs'    => array(),
+		'block_undeclared' => (bool) env( 'NVOOS_READ_ONLY_BLOCK_UNDECLARED', true ),
 	),
 
 	/*

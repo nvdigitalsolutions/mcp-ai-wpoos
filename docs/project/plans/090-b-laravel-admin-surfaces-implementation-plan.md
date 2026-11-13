@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–3d and 4.1–4.7 implemented and verified — the base console, the Phase 3 Pro surfaces, the manifest-driven toolkit engine (both runtimes) and its contract fixture harness run on the Laravel adapter (2026-11-13) · Phase 5 planned
+**Status:** Phases 0–5 implemented and verified — the base console, the Phase 3 Pro surfaces, the manifest-driven toolkit engine (both runtimes), its contract fixture harness, the commercial licence source, the read-only profile, the schema/contract version gate and the 30-minute soak all run on the Laravel adapter (2026-11-13) · Phase 5 delivered in PRs #7664–#7668
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -40,7 +40,7 @@ Rank Math).
 | Startup contract assertion | **Done** | `assertBackendContract()` + `src/main.tsx` |
 | Proxy backend switch | **Done** | `scripts/serve.mjs` (`NVOOS_BACKEND`) |
 | T0 endpoints | **Done** | `/api/v1/{features,site,session/*,tools,pro/ops/overview}` |
-| `X-WP-Nonce` CSRF compatibility | **Done** | `app/Http/Middleware/AcceptWpNonce.php` |
+| CSRF for stateful console requests | **Done** | Laravel `ValidateCsrfToken` + console sends `X-CSRF-TOKEN` (`src/fetch-wrapper.ts`) |
 | Phase 0 tests | **Done** | `Phase0ContractTest`, `AcceptWpNonceTest` |
 | Settings (schema/values/update) | **Done** | `SettingsController`, `SettingsSchema` |
 | Diagnostics overview | **Done** | `DiagnosticsController` |
@@ -277,14 +277,193 @@ return the typed entitlement error under the `deny` driver.
 
 | ID | Task | Acceptance |
 |---|---|---|
-| 5.1 | Wire the commercial entitlement source behind `ProEntitlement` (licence server instance ID or gateway/commerce) | Sold Laravel Pro resolves entitlements |
-| 5.2 | Migrate the SPA to `X-XSRF-TOKEN`; remove the `X-WP-Nonce` alias | Compatibility middleware deleted |
-| 5.3 | SSO/cookie-domain decision (same-origin proxy vs shared domain) | Documented + tested |
-| 5.4 | Rate limits, audit parity, observability, read-only profile | Security checklist green |
-| 5.5 | Upgrade/migration path (schema versions, contract versioning) | One documented upgrade |
-| 5.6 | 30-minute soak + performance gates | 0 errors; p95 within budget |
+| 5.1 | Wire the commercial entitlement source behind `ProEntitlement` (licence server instance ID or gateway/commerce) | ✅ `license` driver + `LicensedProEntitlement`; plan table shared with WordPress via `ProPlanCatalog` |
+| 5.2 | Retire the `X-WP-Nonce` alias; the console sends Laravel's own CSRF header | ✅ Compatibility middleware deleted; console mirrors the token into `X-CSRF-TOKEN` |
+| 5.3 | SSO/cookie-domain decision (same-origin proxy vs shared domain) | ✅ Folded into 5.2 — same-origin, no cookie domain needed |
+| 5.4 | Rate limits, audit parity, observability, read-only profile | ✅ `ReadOnlyToolGuard` + security checklist below |
+| 5.5 | Upgrade/migration path (schema versions, contract versioning) | ✅ `nvoos:doctor` gate + runbook below |
+| 5.6 | 30-minute soak + performance gates | ✅ 22,486 requests, 0 errors; p95 0.587 s |
 
 **Gate G5:** two consecutive releases with no contract drift; the nonce alias is gone.
+
+### 5.1 implementation note — licence server, not a gateway
+
+The blocker was that Pro entitlement looked WordPress-bound. It is not: the plugin's licence is a
+plain HTTP contract, so the Laravel runtime reuses it and swaps the identity field.
+
+| | WordPress | Laravel |
+|---|---|---|
+| Endpoint | `POST {server}/check` | same |
+| Body | `license_key`, `site_url`, `product` | `license_key`, **`site_url` = `instance_id`**, `product` |
+| Verdict | `status === 'valid'` | same, plus an `expires` sanity check |
+| Plans | `compliance` / `professional` / `enterprise` | same table, via `ProPlanCatalog` |
+
+- **One policy table.** `Nvoos\Core\Domain\Service\Entitlement\ProPlanCatalog` now owns the
+  plan → feature map. `WP_MCP_AI_Pro_License::has_feature()` and
+  `LicensedProEntitlement` both read it, so the tiers cannot drift again.
+- **Stale-while-error, never stale-while-deny.** A definitive answer (valid *or* rejected) replaces
+  history. Only a transport failure may re-serve the last known answer, and only from a store entry
+  that outlives its own freshness window — expired cache keys are purged, so freshness is stored in
+  the payload (`fresh_until`) rather than delegated to the store TTL.
+- **Fail closed by default.** No key, no server, an unknown plan, a non-2xx, an unparseable body or
+  a past `expires` all deny. Operator `features` overrides win in both directions but cannot
+  resurrect a denied licence.
+- **Diagnostics.** `LicensedProEntitlement::status()` exposes `plan`, `entitled`, `stale`,
+  `checked_at` and the last error so the ops overview can explain an unavailable surface.
+
+Config: `NVOOS_PRO_ENTITLEMENT_DRIVER=license` plus `NVOOS_PRO_LICENSE_KEY`;
+`NVOOS_PRO_LICENSE_SERVER`, `_INSTANCE_ID`, `_PRODUCT`, `_TTL`, `_DENIED_TTL`, `_GRACE_TTL` and
+`_TIMEOUT` cover the rest. The `allow` / `deny` / `config` drivers are unchanged.
+
+### 5.2 implementation note — `X-CSRF-TOKEN`, not `X-XSRF-TOKEN`
+
+Laravel **decrypts** `X-XSRF-TOKEN`, so that header only accepts the value of the `XSRF-TOKEN`
+cookie. The console obtains its token from a JSON endpoint (`GET /api/v1/session/nonce`), not
+from a cookie, so the correct header is `X-CSRF-TOKEN`, which `ValidateCsrfToken` compares
+directly against the session token. Concretely:
+
+- `AcceptWpNonce` middleware + its unit test deleted; `bootstrap/app.php` no longer registers it.
+- `examples/nvoos-complete-velocity/src/fetch-wrapper.ts` mirrors the fetched nonce into
+  `X-CSRF-TOKEN` (fetch wrapper **and** the jQuery `ajaxPrefilter`), guarded so it only fires when
+  the token is non-empty and `X-CSRF-TOKEN` is absent. WordPress ignores the extra header, so one
+  client build serves both runtimes.
+- Coverage: `Phase1ConsoleTest` proves a bare `X-WP-Nonce` gets `419` and `X-CSRF-TOKEN` gets `200`.
+  Both tests flip `app['env']` for the request because `VerifyCsrfToken::runningUnitTests()`
+  short-circuits validation whenever the app reports `testing` — without the flip the suite can
+  never observe a 419.
+
+**5.3 is folded into 5.2.** The runtime is API-only and the console is served same-origin (Vite dev
+proxy, `scripts/serve.mjs`), so no shared cookie domain or SSO proxy is needed. Revisit only if a
+deployment serves the console from a different origin than the API.
+
+### 5.4 implementation note — read-only profile + security checklist
+
+**Rate limits** were already in place and are unchanged: `chat`, `mcp`, `tools` and `console`
+limiters in `AppServiceProvider`, applied by route group. Pro routes inherit `throttle:console`
+because they sit inside that group.
+
+**Read-only profile** is the piece that was missing. `ReadOnlyToolGuard`
+(`lib/core/src/Application/Tool/`) registers as a **monotonic deny-only guard** on `ToolRegistry`,
+so it runs after every `tools/pre_execute` listener and no listener can undo a denial. Enabled by
+`oos.read_only.enabled` (`NVOOS_READ_ONLY`).
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `gated_flags` | `write`, `state_changing`, `mutating`, `destructive`, `external_side_effect` | Flags that disqualify a tool |
+| `allowed_slugs` | `[]` | Slugs that always run |
+| `block_undeclared` | `true` | Deny tools that declare no flags |
+
+Decision shape mirrors the WordPress `read-only` chat profile
+(`WP_MCP_AI_Read_Only_Profile_Gate::is_tool_allowed()`): allowlist first, then a flag
+intersection. It is deliberately **stricter in one direction** — a tool with no declared flags is
+blocked by default. WordPress can lean on its flag table because the profile is scoped and
+selectable; a runtime-wide switch cannot, and "I could not tell whether this writes" is not a
+reason to let it write. Operators relax it with `block_undeclared: false` or an allowlist.
+
+A blocked call returns the registry's existing `tool_guarded` envelope, so callers need no new
+error handling.
+
+#### Security checklist
+
+Every WordPress control either has a Laravel counterpart or an explicit accepted gap.
+
+| Control | WordPress | Laravel | State |
+|---|---|---|---|
+| Authentication | nonce, credential tokens, Auth0, guest tokens | Sanctum session cookie + bearer | ✅ |
+| CSRF | `X-WP-Nonce` | `X-CSRF-TOKEN` (5.2) | ✅ |
+| Authorization | `current_user_can` | WP-role matrix + `can:` gates per route group | ✅ |
+| Rate limiting | request guard | four named limiters, per user/IP | ✅ |
+| Read-only profile | `Read_Only_Profile_Gate` (profile-scoped) | `ReadOnlyToolGuard` (runtime-wide, 5.4) | ✅ |
+| Cost tracking | cost tracker | `TokenUsage` + `/cost/*` | ✅ |
+| Security posture | 21 signals | 8 native signals (`/security/posture`) | ✅ documented subset |
+| Security headers | CSP headers | `/security/preview-headers` + posture signal | ✅ |
+| Audit trail | audit logger + durable rows | `nvoos_jobs`, `nvoos_approvals` are durable | ⚠️ memory audit is a Phase 3 follow-up |
+| Destructive-ops confirmation | destructive ops gate | not ported — no confirmation UI in the console | ⚠️ accepted (no destructive actions exposed) |
+| Outbound URL guard | URL guard (SSRF) | outbound goes through `HttpClientInterface`; no allowlist | ⚠️ open — tracked separately |
+| CORS | CORS guard | not configured — console is same-origin | ✅ not applicable |
+
+The three ⚠️ rows are the honest remainder. None of them is reachable from a ported surface today;
+if a later phase exposes a destructive action or an operator-supplied URL, its row must move to ✅
+first.
+
+### 5.5 implementation note — version gates and the upgrade runbook
+
+Two version numbers, one gate:
+
+| Version | Lives in | Meaning |
+|---|---|---|
+| `oos.contract_version` | config | The HTTP contract the console speaks. It asserts `mcp-ai/v1` + version 1 on boot and refuses to run otherwise. |
+| `oos.schema_version` | config, mirrored into `nvoos_meta` | What the data means. Written by the migration that changes it. |
+
+Laravel's `migrations` table already records *which* migrations ran. It does not record what the
+data means, so an app pointed at an older database fails later with "column not found" somewhere
+deep in a controller. `nvoos_meta` closes that gap.
+
+`php artisan nvoos:doctor` is the gate. It checks container bindings, tools, providers, **contract
+version**, **pending migrations** and the **schema version**, and exits non-zero on any failure — so
+it can run as a post-deploy step rather than something a human has to read carefully.
+
+#### Upgrade runbook
+
+1. **Back up** the database (`php artisan nvoos:doctor` is read-only; `migrate` is not).
+2. **Deploy the code** (`git pull`, `composer install --no-dev --optimize-autoloader`).
+3. **Migrate**: `php artisan migrate --force`.
+4. **Clear caches**: `php artisan optimize:clear`. Under Octane also run
+   `php artisan octane:reload` — workers keep the old route collection and container in memory.
+5. **Gate**: `php artisan nvoos:doctor` must exit `0`. A schema mismatch means step 3 did not run; a
+   contract mismatch means the console build and the API are from different releases.
+6. **Smoke**: `GET /api/v1/features` returns the expected `contract_version`.
+
+Rolling back is `php artisan migrate:rollback --step=1` followed by redeploying the previous code;
+`nvoos_meta` is dropped by its own `down()`, so a rollback leaves no version row behind to
+confuse the next doctor run.
+
+### 5.6 implementation note — soak and performance gates
+
+The soak harness (`bin/laravel-spike-soak.php`) now records per-request latency, time-to-first-byte
+and the HTTP status histogram, and exits non-zero on any error or on zero completions. TTFB is
+drained when a handle completes — `spl_object_id()` is recycled once a handle is freed, so a probe
+left in place makes every later handle inherit it and silently stop recording.
+
+#### Gates
+
+| Gate | Budget | Rationale |
+|---|---|---|
+| Errors | `0` | Any non-200 is a failure, not a blip |
+| Latency p95 | ≤ 1.0 s | Total SSE stream time at 5 concurrent streams |
+| Latency p99 | ≤ 1.5 s | Tail must not stall the console |
+| TTFB p95 | ≤ 0.75 s | What a user actually feels before the first token |
+| CPU | < 80 % | On the 2 vCPU dev box at 5 streams |
+
+#### Formal run — 2026-11-13
+
+5 concurrent SSE streams for 1800 s against `oos-laravel-app` (`/chat/stream`, spike provider):
+
+```
+started=22491  completed=22486  errors=0
+statuses: 200:22486
+done markers: 22486
+bytes: 26,129,726 (24.9 MiB)
+latency: p50=0.405s p95=0.587s p99=0.672s max=1.387s (n=22486)
+```
+
+The 5 uncompleted requests were in flight at the deadline and torn down by the harness. Every
+completed request carried a `[DONE]` marker — no truncated streams. Container CPU settled at 45 %
+and memory at 297 MiB; Redis and MySQL stayed under 5 %.
+
+A 60 s baseline re-run with the fixed TTFB instrumentation:
+
+```
+latency: p50=0.403s p95=0.562s p99=0.642s max=0.793s (n=749)
+ttfb:    p50=0.277s p95=0.405s p99=0.485s max=0.641s (n=749)
+```
+
+All five gates pass with headroom. Reproduce with:
+
+```sh
+php artisan nvoos:doctor                       # must exit 0 first
+SPIKE_TOKEN=<token> php bin/laravel-spike-soak.php --streams=5 --seconds=1800
+```
 
 ---
 
@@ -480,7 +659,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 |---|---|---|
 | Golden fixtures from a live WP site | Harness shipped | Task 0.13; Laravel-captured set committed, re-capture from WordPress when 4.6 lands (needs an operator token) |
 | Laravel login screen / bearer harness for C2 | **Done** | Phase 1; the console branches on the backend |
-| Commercial entitlement source | Decided as a seam; source open | Phase 5 task 5.1 |
+| Commercial entitlement source | Resolved in 5.1: licence server, `instance_id` instead of a site URL | Phase 5 task 5.1 ✅ |
 | Pro toolkits as peers | Open (Q4) | Decide per family in Phase 4 |
 | SSO / cookie domain | Open (Q6) | Phase 5 task 5.3 |
 | Pro `mcp-ai-pro/v1` toolkit endpoints | Not started | Phase 4 |

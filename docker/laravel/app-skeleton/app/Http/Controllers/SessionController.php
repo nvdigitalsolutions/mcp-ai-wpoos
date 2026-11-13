@@ -11,7 +11,7 @@ use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
 class SessionController
 {
     /**
-     * Mint the session-bound token the console sends as `X-WP-Nonce`.
+     * Mint the session-bound token the console sends as `X-CSRF-TOKEN`.
      *
      * The compatibility middleware aliases that header onto `X-CSRF-TOKEN`;
      * Laravel's `ValidateCsrfToken` then compares it with this token, so the
@@ -29,7 +29,7 @@ class SessionController
      * Password sign-in for the Laravel runtime (C2).
      *
      * The console fetches the session nonce first and sends it as
-     * `X-WP-Nonce`; the CSRF middleware maps it before validating the POST.
+     * `X-CSRF-TOKEN`; Laravel's CSRF middleware validates it on POST.
      */
     public function login(Request $request): JsonResponse
     {
