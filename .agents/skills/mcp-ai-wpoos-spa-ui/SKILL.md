@@ -915,6 +915,16 @@ for saas-controller (2k+ deps). npm on dev machines blocks dependency install
 scripts (esbuild postinstall etc.) — harmless, platform binaries ship via
 optional deps.
 
+**Prove the build carries the new code (learned 2026-11-13, assistant parity
+PR).** Churn-probing only shows the bundle *changed*; it does not show it
+contains your change. Pick a stable literal from the new UI (translatable
+strings survive minification — section legends are ideal) and grep **both**
+artifacts:
+`grep -c "<literal>" addons/pro/assets/spa-v2/assets/dist/pro-spa.js` and
+`grep -lc "<literal>" examples/nvoos-complete-velocity/dist/assets/<Page>-*.js`.
+Zero in either tree means that app was not rebuilt (or is serving a stale
+chunk list).
+
 **Two-bundle rule for spa-v2 (learned 2026-10-20, PR #7158/#7159):** the
 auto `build: update compiled assets [skip ci]` commit covers neither of
 the two spa-v2 trees, so a spa-v2 change reaches production only when
