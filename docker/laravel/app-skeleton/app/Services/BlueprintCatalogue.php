@@ -110,6 +110,16 @@ final class BlueprintCatalogue
     }
 
     /**
+     * The raw decoded blueprint, or null when it does not exist.
+     *
+     * @return array<string,mixed>|null
+     */
+    public function raw(string $toolkit, string $slug): ?array
+    {
+        return $this->load($toolkit, $slug);
+    }
+
+    /**
      * The detail payload for one blueprint, or null when it does not exist.
      *
      * @return array{name:string, description:string, instructions:string, tools:array<int,mixed>, defaults:array<string,mixed>|null}|null

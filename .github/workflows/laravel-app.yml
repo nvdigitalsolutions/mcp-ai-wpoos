@@ -61,6 +61,14 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
+      - name: Blueprint mirror is current
+        # The app reads a committed copy of the Pro toolkit blueprints
+        # (addons/pro/includes/tools/<toolkit>/examples), because a deployment
+        # does not ship addons/ and lib/ is excluded from wp.org builds. Fail
+        # when that copy has drifted, so the duplication cannot go stale.
+        working-directory: ${{ github.workspace }}
+        run: php bin/sync-blueprints.php --check
+
       - name: Prepare the application
         run: |
           cp .env.example .env

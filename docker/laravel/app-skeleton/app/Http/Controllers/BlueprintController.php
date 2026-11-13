@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\BlueprintCatalogue;
+use App\Services\BlueprintInstaller;
+use App\Support\BlueprintInstallException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Assistant blueprint catalogue — the Laravel half of
@@ -54,6 +57,41 @@ final class BlueprintController
                 ],
                 $detail
             ),
+        ]);
+    }
+
+    /**
+     * Install a blueprint as a new assistant.
+     *
+     * Mirrors `WP_MCP_AI_Pro_Blueprints_REST_Controller::install()`: the same
+     * `{success, data}` envelope, a 404 when the blueprint is unknown and a 409
+     * when an assistant with that title already exists and `overwrite` is off.
+     */
+    public function install(
+        Request $request,
+        BlueprintInstaller $installer,
+        string $toolkit,
+        string $slug
+    ): JsonResponse {
+        try {
+            $result = $installer->install($toolkit, $slug, $request->boolean('overwrite'));
+        } catch (BlueprintInstallException $exception) {
+            return response()->json(
+                [
+                    'success' => false,
+                    'message' => $exception->getMessage(),
+                ],
+                $exception->status()
+            );
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'toolkit' => $toolkit,
+                'slug' => $slug,
+                'assistant_id' => $result['assistant_id'],
+            ],
         ]);
     }
 }
