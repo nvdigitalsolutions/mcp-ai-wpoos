@@ -178,6 +178,46 @@ assigned to user N") is identical; the encoding is documented in the schema.
 Still to do for the family: create/update/delete, bulk import, and the admin
 page.
 
+**Write path shipped (tasks).** `create_task` and `delete_task` are now core
+tools registered by the provider, so both runtimes write through
+`ContentStoreInterface`:
+
+- `create_task` mirrors the WordPress contract exactly — one slug that creates,
+  and updates instead when `task_id` is supplied. Same parameter names, same
+  `required`, same result fields (`task_id`, `task`, `updated`).
+- `delete_task` takes `task_id` and reports the deleted id; an unknown id is an
+  error, not a silent success.
+- Validation is explicit: blank title, unknown status/priority/category and an
+  impossible `due_date` (e.g. `2026-02-31`) each return a typed error rather
+  than writing a half-valid row.
+- **One projection.** `Tool\ProjectManagement\TaskRow` renders a task for both
+  `list_tasks` and the write tools, so a read and a write can no longer present
+different shapes. `list_tasks` now delegates to it.
+- `AbstractTool::floatParam()` was added: non-numeric input falls back to the
+default instead of casting to `0`, so "high" cannot silently become zero hours.
+
+Remaining for the family: project create/update/delete, bulk import, the admin
+page, and an `update_task` partial-update tool (today `create_task` requires a
+title, matching WordPress).
+
+**Project write path shipped.** `create_project` and `delete_project` follow the
+same shape as the task pair:
+
+- `create_project` creates, or updates when `project_id` is supplied. Status
+defaults to `planning`; `end_date` may not precede `start_date`.
+- `assigned_to` is persisted as an array of **string** ids — the encoding the
+  read path's JSON `LIKE` filter matches (`090-e` §7). Ids are de-duplicated and
+  non-numerics dropped on the way in, so `[1, "1", "x"]` stores `["1"]`.
+  A supplied list **replaces** the previous one; it does not append.
+- `Tool\ProjectManagement\ProjectRow` is shared with `list_projects`, and the
+  parity test asserts a written project reads back identically.
+- Deleting a project does **not** cascade to its tasks — `_task_project_id` is
+  plain meta on both runtimes, and the WordPress tool behaves the same way. The
+  behaviour is pinned by a test so a future cascade is a deliberate change.
+
+Remaining for the family: bulk import and the admin page (writes now cover
+tasks and projects), plus the `update_task` partial-update tool.
+
 ### Phase 3 — Paper Store port
 
 `PaperStoreInterface` (`lib/core/src/Domain/Contract/`) with
