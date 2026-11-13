@@ -230,7 +230,7 @@ class WP_MCP_AI_OKF_Reader {
 		$concept['links'] = array();
 
 		if ( $depth > 0 ) {
-			$linked_ids = $this->extract_concept_links( $concept['body'] );
+			$linked_ids = $this->concept_links( $concept['body'], $concept_id );
 			foreach ( $linked_ids as $linked_id ) {
 				$child = $this->traverse_recursive( $linked_id, $depth - 1, $visited );
 				if ( null !== $child ) {
@@ -433,6 +433,10 @@ class WP_MCP_AI_OKF_Reader {
 		if ( '.md' === substr( $concept_id, -3 ) ) {
 			$concept_id = substr( $concept_id, 0, -3 );
 		}
+		// Collapse leading `./` so `./a` and `a` name the same concept.
+		while ( 0 === strpos( $concept_id, './' ) ) {
+			$concept_id = substr( $concept_id, 2 );
+		}
 		return $concept_id;
 	}
 
@@ -551,32 +555,39 @@ class WP_MCP_AI_OKF_Reader {
 	}
 
 	/**
-	 * Extract concept cross-links from markdown body text.
+	 * Extract the concept IDs a body links to, resolved against the concept.
 	 *
-	 * Matches `[text](path.md)` patterns where the path ends in `.md`.
+	 * Resolution matches find_broken_links(): a leading `/` means
+	 * bundle-absolute, anything else resolves against the concept's own
+	 * directory. External URIs are dropped — they are not part of the bundle
+	 * graph — so traversal never reports them as missing concepts.
 	 *
 	 * @since 2.1.0
+	 * @since 1.2.20 Resolves relative links against the concept instead of the
+	 *               bundle root, and skips external targets.
 	 *
-	 * @param string $body Markdown body text.
-	 * @return string[] Array of concept IDs (without .md suffix).
+	 * @param string $body       Markdown body text.
+	 * @param string $concept_id Concept that owns the body.
+	 * @return string[] Resolved concept IDs, de-duplicated.
 	 */
-	private function extract_concept_links( $body ) {
+	public function concept_links( $body, $concept_id ) {
 		$links = array();
+
 		if ( preg_match_all( '/\[([^\]]*)\]\(([^)]+\.md)\)/', $body, $matches ) ) {
 			foreach ( $matches[2] as $link_path ) {
 				// Remove anchor fragments.
 				$link_path = preg_replace( '/#.*$/', '', $link_path );
 
-				// Resolve relative paths against the bundle root.
-				$concept_id = ltrim( $link_path, '/' );
-				$concept_id = $this->normalize_concept_id( $concept_id );
+				$resolved = $this->resolve_link_target( $concept_id, $link_path );
 
-				// Remove leading ../ sequences.
-				$concept_id = preg_replace( '#^(\.\./)+#', '', $concept_id );
+				if ( '' === $resolved ) {
+					continue;
+				}
 
-				$links[] = $concept_id;
+				$links[] = $resolved;
 			}
 		}
+
 		return array_unique( $links );
 	}
 

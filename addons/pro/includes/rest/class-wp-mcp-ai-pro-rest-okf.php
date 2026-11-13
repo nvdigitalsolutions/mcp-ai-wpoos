@@ -348,7 +348,7 @@ class WP_MCP_AI_Pro_REST_Okf {
 				'concept_id'  => $concept['concept_id'],
 				'frontmatter' => self::allowlisted_frontmatter( $fm ),
 				'body'        => $concept['body'],
-				'links'       => self::extract_cross_links( $concept['body'] ),
+				'links'       => $reader->concept_links( $concept['body'], $concept['concept_id'] ),
 				'trust_tier'  => $reader->get_trust_tier( $fm ),
 				'stale'       => $reader->is_stale( $fm ),
 			),
@@ -613,34 +613,5 @@ class WP_MCP_AI_Pro_REST_Okf {
 			}
 		}
 		return $out;
-	}
-
-	/**
-	 * Extract cross-links (concept IDs) from a concept body.
-	 *
-	 * Mirrors WP_MCP_AI_OKF_Reader::extract_concept_links (private) so the
-	 * drawer can render navigable links without exposing the reader internals.
-	 *
-	 * @since 2.1.1
-	 * @param string $body Markdown body text.
-	 * @return string[] Concept IDs (without .md suffix), de-duplicated.
-	 */
-	private static function extract_cross_links( $body ) {
-		$links = array();
-		if ( preg_match_all( '/\[([^\]]*)\]\(([^)]+\.md)\)/', $body, $matches ) ) {
-			foreach ( $matches[2] as $link_path ) {
-				$link_path = preg_replace( '/#.*$/', '', $link_path );
-				$link_path = ltrim( $link_path, '/' );
-				// Strip the .md suffix (mirrors WP_MCP_AI_OKF_Reader::normalize_concept_id).
-				if ( '.md' === substr( $link_path, -3 ) ) {
-					$link_path = substr( $link_path, 0, -3 );
-				}
-				$link_path = rtrim( $link_path, '/' );
-				if ( '' !== $link_path && ! in_array( $link_path, $links, true ) ) {
-					$links[] = $link_path;
-				}
-			}
-		}
-		return $links;
 	}
 }
