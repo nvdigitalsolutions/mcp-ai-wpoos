@@ -31,9 +31,15 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 		$tool = $registry->get_tool( 'create_assistant' );
 		$this->assertNotNull( $tool );
 
-		// The registry auto-upgrades base slugs to their *_validated variant
-		// when one is registered.
-		$this->assertSame( 'create_assistant_validated', $tool->get_slug() );
+		// The registry auto-upgrades the base slug to its *_validated variant
+		// when one is registered. That registration belongs to the optional OOS
+		// bridge (lib/ ships only in the complete build), so assert the contract
+		// that applies to this install instead of assuming the bridge loaded.
+		$expected_slug = class_exists( '\Nvoos\WordPress\Tool\CreateAssistantValidatedTool' )
+			? 'create_assistant_validated'
+			: 'create_assistant';
+
+		$this->assertSame( $expected_slug, $tool->get_slug() );
 		$this->assertNotEmpty( $tool->get_name() );
 		$this->assertNotEmpty( $tool->get_description() );
 	}
