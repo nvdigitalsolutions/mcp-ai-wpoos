@@ -1,0 +1,10 @@
+{
+    "input": "---\ntype: Skill\n\ntitle: Spaced\n\n---\n\nBody starts after a blank line.\n",
+    "expected": {
+        "frontmatter": {
+            "type": "Skill",
+            "title": "Spaced"
+        },
+        "body": "Body starts after a blank line."
+    }
+}

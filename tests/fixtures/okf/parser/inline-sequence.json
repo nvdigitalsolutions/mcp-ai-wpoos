@@ -1,0 +1,13 @@
+{
+    "input": "---\ntags: [alpha, beta, gamma]\n---\nBody.\n",
+    "expected": {
+        "frontmatter": {
+            "tags": [
+                "alpha",
+                "beta",
+                "gamma"
+            ]
+        },
+        "body": "Body."
+    }
+}

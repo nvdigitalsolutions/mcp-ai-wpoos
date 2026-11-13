@@ -1,0 +1,12 @@
+{
+    "input": "---\ntrust:\n  tier: high\n  score: 9\n---\nBody.\n",
+    "expected": {
+        "frontmatter": {
+            "trust": {
+                "tier": "high",
+                "score": 9
+            }
+        },
+        "body": "Body."
+    }
+}

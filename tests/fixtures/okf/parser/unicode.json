@@ -1,0 +1,13 @@
+{
+    "input": "---\ntitle: Café — 日本語 — 🚀\ntags:\n  - naïve\n  - Ωmega\n---\nConteúdo.\n",
+    "expected": {
+        "frontmatter": {
+            "title": "Café — 日本語 — 🚀",
+            "tags": [
+                "naïve",
+                "Ωmega"
+            ]
+        },
+        "body": "Conteúdo."
+    }
+}

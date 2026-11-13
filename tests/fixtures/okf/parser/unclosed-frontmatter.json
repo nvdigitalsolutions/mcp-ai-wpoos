@@ -1,0 +1,6 @@
+{
+    "input": "---\ntype: Skill\ntitle: Broken\n",
+    "expected": {
+        "error": "okf_unclosed_frontmatter"
+    }
+}

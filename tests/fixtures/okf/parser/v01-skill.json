@@ -1,0 +1,15 @@
+{
+    "input": "---\ntype: Skill\ntitle: Test Skill\ndescription: A simple test\ntags:\n  - security\n  - wordpress\n---\n# Heading\n",
+    "expected": {
+        "frontmatter": {
+            "type": "Skill",
+            "title": "Test Skill",
+            "description": "A simple test",
+            "tags": [
+                "security",
+                "wordpress"
+            ]
+        },
+        "body": "# Heading"
+    }
+}

@@ -1,0 +1,6 @@
+{
+    "input": "﻿---\ntype: Skill\n---\nBody.\n",
+    "expected": {
+        "null": true
+    }
+}

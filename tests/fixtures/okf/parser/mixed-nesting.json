@@ -1,0 +1,21 @@
+{
+    "input": "---\ngenerated:\n  by: agent\n  consumers:\n    - kind: assistant\n      id: 7\n    - kind: tool\n      id: 9\n---\nBody.\n",
+    "expected": {
+        "frontmatter": {
+            "generated": {
+                "by": "agent",
+                "consumers": [
+                    {
+                        "kind": "assistant",
+                        "id": 7
+                    },
+                    {
+                        "kind": "tool",
+                        "id": 9
+                    }
+                ]
+            }
+        },
+        "body": "Body."
+    }
+}

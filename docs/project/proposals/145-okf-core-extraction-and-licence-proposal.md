@@ -193,6 +193,47 @@ includes/okf/                            # GPL — unchanged public surface
 **Gate G1:** the harness passes against the current WP classes, and the corpus contains at least
 one case per behaviour the parser implements.
 
+#### Phase 1 — shipped (parser)
+
+Gate G1 is satisfied for the **parser** slice. The reader slice is deliberately deferred to Phase 3
+(it needs a bundle-tree fixture shape plus `sanitize_text_field` parity, neither of which exists yet).
+
+| File | Purpose |
+|---|---|
+| `tests/fixtures/okf/parser/*.json` | 19 golden cases, one behaviour each (see table below) |
+| `tests/support/okf-corpus.php` | Case inputs, structure normaliser, fixture load/write helpers |
+| `tests/manual/run-okf-corpus.php` | Offline runner + `--write` regenerator; stubs `__`, `WP_Error`, `is_wp_error` |
+| `tests/test-okf-parser-corpus.php` | PHPUnit twin, `WP_UnitTestCase` + data provider, runs in CI |
+
+Fixture shape — one file per case:
+
+```json
+{ "input": "---\ntitle: X\n---\nbody", "expected": { "frontmatter": { "title": "X" }, "body": "body" } }
+{ "input": "no frontmatter here",    "expected": { "null": true } }
+{ "input": "---\ntitle: X\n",       "expected": { "error": "okf_unclosed_frontmatter" } }
+```
+
+Three outcomes are encoded, matching the parser's real contract: a parsed document, a `null` return
+(no frontmatter block at all), and a `WP_Error` code. `expected` is normalised through a shared
+helper so array ordering and scalar coercion cannot produce spurious diffs.
+
+**Why two runners.** The offline runner is the fast local loop — it needs no database, no WordPress
+bootstrap and no vendor autoload, so `php tests/manual/run-okf-corpus.php` answers in under a second.
+The PHPUnit twin is the CI gate and proves the same corpus inside a real WordPress bootstrap; it also
+runs locally via `docker exec oos-wp vendor/bin/phpunit tests/test-okf-parser-corpus.php`. Both read
+the same fixtures, so drift between them is a fixture bug, not a test bug.
+
+Coverage (19 cases): `no-frontmatter`, `unclosed-frontmatter`, `empty-frontmatter`, `scalars`,
+`block-list`, `nested-map`, `list-of-objects`, `inline-mapping`, `inline-sequence`, `mixed-nesting`,
+`blank-lines`, `crlf-endings`, `bom-prefixed`, `unicode`, `body-preserved`, `value-with-colon`,
+`v01-skill`, `v02-provenance`, `long-value`.
+
+**Finding to settle in Phase 2 — UTF-8 BOM.** A file beginning `EF BB BF ---` returns `null`: `trim()`
+never strips a BOM, so the first-line `strpos( $content, '---' ) === 0` check misses. The fixture
+`bom-prefixed.json` currently records `{ "null": true }`. Phase 2 must choose explicitly between
+matching the behaviour (document BOM files as unsupported) and stripping the BOM in core (then
+regenerate that one fixture). Either way the choice becomes a tested contract rather than an accident.
+
 ### Phase 2 — Parser into `lib/core`
 
 - `OkfParser` implements `OkfParserInterface`, depends on nothing but PHP 8.1.
