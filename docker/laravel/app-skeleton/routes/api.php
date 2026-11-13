@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ApprovalsController;
 use App\Http\Controllers\AssistantController;
+use App\Http\Controllers\BlueprintController;
 use App\Http\Controllers\AssistantPortabilityController;
 use App\Http\Controllers\ChatStreamController;
 use App\Http\Controllers\DiagnosticsController;
@@ -156,6 +157,11 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/assistants/{assistant}', [AssistantController::class, 'show']);
             Route::match(['put', 'patch'], '/assistants/{assistant}', [AssistantController::class, 'update']);
             Route::delete('/assistants/{assistant}', [AssistantController::class, 'destroy']);
+
+            // Assistant blueprint catalogue (090-b task 2.4, read half).
+            Route::get('/blueprints', [BlueprintController::class, 'index']);
+            Route::get('/blueprints/{toolkit}/{slug}', [BlueprintController::class, 'show'])
+                ->where(['toolkit' => '[a-z0-9-]+', 'slug' => '[a-z0-9-]+']);
 
             // Phase 4 parity — WordPress's read-only team catalogue.
             Route::get('/teams', [TeamCatalogueController::class, 'index']);
