@@ -35,6 +35,10 @@
             <exclude>tests/pro/tools/food-beverage/smoke-run.php</exclude>
             <exclude>tests/pro/tools/food-beverage/validate-assistant-packs.php</exclude>
             <exclude>tests/helpers</exclude>
+            <!-- Shared corpus/harness helpers: plain functions, no TestCase
+                 subclass, so discovery warns "Class <name> cannot be found".
+                 Each consumer require_once's the file it needs. -->
+            <exclude>tests/support</exclude>
             <exclude>tests/abilities/class-wp-mcp-ai-ability-bridge-mock-tool.php</exclude>
             <exclude>tests/abilities/trait-wp-mcp-ai-ability-test-bootstrap.php</exclude>
             <exclude>tests/graphify/bootstrap.php</exclude>
