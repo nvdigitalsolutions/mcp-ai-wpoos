@@ -168,6 +168,8 @@ class SaveProfessionTool extends AbstractTool {
 	/**
 	 * Read a string array, dropping non-strings and empty entries.
 	 *
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 *
 	 * @return string[]
 	 */
 	private function stringList( array $arguments, string $key ): array {
