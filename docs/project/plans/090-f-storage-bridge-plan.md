@@ -200,6 +200,24 @@ Remaining for the family: project create/update/delete, bulk import, the admin
 page, and an `update_task` partial-update tool (today `create_task` requires a
 title, matching WordPress).
 
+**Project write path shipped.** `create_project` and `delete_project` follow the
+same shape as the task pair:
+
+- `create_project` creates, or updates when `project_id` is supplied. Status
+defaults to `planning`; `end_date` may not precede `start_date`.
+- `assigned_to` is persisted as an array of **string** ids — the encoding the
+  read path's JSON `LIKE` filter matches (`090-e` §7). Ids are de-duplicated and
+  non-numerics dropped on the way in, so `[1, "1", "x"]` stores `["1"]`.
+  A supplied list **replaces** the previous one; it does not append.
+- `Tool\ProjectManagement\ProjectRow` is shared with `list_projects`, and the
+  parity test asserts a written project reads back identically.
+- Deleting a project does **not** cascade to its tasks — `_task_project_id` is
+  plain meta on both runtimes, and the WordPress tool behaves the same way. The
+  behaviour is pinned by a test so a future cascade is a deliberate change.
+
+Remaining for the family: bulk import and the admin page (writes now cover
+tasks and projects), plus the `update_task` partial-update tool.
+
 ### Phase 3 — Paper Store port
 
 `PaperStoreInterface` (`lib/core/src/Domain/Contract/`) with
