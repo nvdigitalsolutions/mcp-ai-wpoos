@@ -1,6 +1,6 @@
 # Proposal 090-F — Storage bridge: make the content port trustworthy
 
-Status: Phase 1 shipped (#7635, #7636) and its acceptance gates verified (2026-11-13, 104 adapter tests); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped; Phase 3 shipped (2026-11-13, 18 core + 10 app tests).
+Status: Phase 1 shipped (#7635, #7636) and its acceptance gates verified (2026-11-13, 104 adapter tests); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped; Phase 3 shipped (2026-11-13, 18 core + 10 app tests); Phase 5 shipped (missing runtime schema + test isolation); Phase 4 moved to Proposal 145.
 Depends on: `090-d-selective-tool-port.md` (what to port), `090-e-cpt-cct-schema-port.md` (which families).
 
 ---
@@ -234,10 +234,73 @@ backend.)*
 Move the parser/reader to a pure core engine with an injected bundle root;
 the WP adapter keeps `wp_upload_dir()` as the root source.
 
+**Deferred — and why.** OKF has no Laravel consumer: the console builds `endpoints.okf` as
+`isWordPress ? ... : ''` and nulls it when the feature flag is off, and the runtime exposes no OKF
+route or tool. Two things also make "move" the wrong verb:
+
+1. **Licence boundary.** `includes/okf/` is GPL-3.0 and `lib/core` is MIT. The parser (817 lines)
+   and reader (808 lines) cannot be copied across that line — they would have to be re-authored
+   from the format description, which is a project in its own right, not a refactor.
+2. **Nothing to prove it against.** Without a Laravel surface there is no parity test to write, so
+   an extraction would be verified only by the WordPress suite that already covers it.
+
+Revisit when a Laravel surface needs OKF (bundle browsing in the console is the likely trigger).
+At that point the honest shape is a clean-room core parser with the existing WP tests as the
+specification, not a file move.
+
+**Superseded.** [`145-okf-core-extraction-and-licence-proposal.md`](../proposals/145-okf-core-extraction-and-licence-proposal.md)
+revises that conclusion: the OKF code is first-party, so relicensing is available and a clean-room
+rewrite is unnecessary. The blocker is the WordPress coupling and the parser/reader having no
+automated tests, so proposal 145 replaces Phase 4 with a characterised port (golden corpus →
+differential test → licence change). Track the work there.
+
 ### Phase 5 — Schedules
 
-A narrow schedule store over `nvoos_schedules` (already migrated), so
-schedule reads return the same shape on both runtimes.
+**Premise corrected.** The plan said `nvoos_schedules` was "already migrated". It was not —
+and neither were seven other tables the app queries. Every one existed only in the dev database:
+
+| Table | Used by |
+|---|---|
+| `nvoos_schedules`, `nvoos_schedule_runs` | Pro Schedule Manager |
+| `nvoos_triggers` | Triggers |
+| `nvoos_approvals` | Approval queue |
+| `nvoos_files` | Media / FileStore |
+| `nvoos_posts` | Content store |
+| `nvoos_security_snapshots` | Security center |
+| `nvoos_toolkit_records` | Toolkit records |
+
+A fresh `php artisan migrate` on an empty database therefore produced an app whose Pro surfaces
+failed at runtime with "table not found", while the dev box worked because the tables had been
+created by hand at some point and never captured.
+
+Shipped:
+
+- **`2026_11_13_010000_create_nvoos_runtime_tables`** — all eight tables, read back from the live
+  schema (`SHOW CREATE TABLE`) so nothing changes behaviourally, each guarded by
+  `Schema::hasTable()` so installs that already have them record the migration without touching
+  data. `nvoos_posts` carries both a unique index and a plain index on `slug`; only the unique one
+  is recreated, because the second adds write cost for no lookup the unique index cannot serve.
+- **`RuntimeSchemaTest`** — asserts every table plus the key columns and the toolkit-record unique
+  identity. `RefreshDatabase` builds the schema from migrations alone, so this fails the moment a
+  `DB::table(...)` call is added without a migration.
+
+**Test isolation fix.** Making the Paper Store file-backed exposed a leak: `Phase3bTest`'s Paper
+Store cases shared the default `storage/paper-store` directory, so records accumulated between
+tests *and between runs* and `total` counts drifted (3 → 12 on the second run). The base
+`Tests\TestCase` now gives every test its own root and removes it in `tearDown()`. The suite is
+idempotent: two consecutive runs are both 179 passing.
+
+Schedule shape parity is already covered by `Phase3cTest`, so no separate store interface was
+extracted — the missing piece was the schema, not the abstraction.
+
+Acceptance:
+
+- [x] Every table the app queries is created by a migration.
+- [x] The migration is a no-op on an install that already has the tables.
+- [x] Key columns and the toolkit-record unique index are asserted.
+- [x] The full suite is green on a schema built from migrations only, twice in a row.
+
+*(Verified 2026-11-13 — 179 app tests, 1341 assertions.)*
 
 ## 5. Guardrails
 
