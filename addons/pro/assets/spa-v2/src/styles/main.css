@@ -4871,6 +4871,349 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	color: #646970;
 }
 
+/* Advanced section (090-B assistant edit parity) */
+.nvoos-pro-spa-assistants-form__advanced {
+	margin: 8px 0 16px;
+	padding-top: 12px;
+	border-top: 1px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-assistants-form__advanced-summary {
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+	padding: 4px 0;
+}
+
+.nvoos-pro-spa-assistants-form__advanced-summary:focus-visible {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: 2px;
+}
+
+.nvoos-pro-spa-assistants-form__checkbox-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	font-size: 13px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+/* =========================================================================
+   Advanced assistant fields (090-B assistant edit parity)
+   -------------------------------------------------------------------------
+   Semantic fieldset/legend layout; native controls stay in the tab order
+   (W3C ARIA APG: a grid widget would own roving tabindex and Enter/F2 cell
+   editing — unnecessary for a handful of rows). Targets are >= 24px tall to
+   satisfy WCAG 2.2 SC 2.5.8.
+   ========================================================================= */
+
+.nvoos-pro-spa-visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.nvoos-pro-spa-advanced__intro {
+	margin: 4px 0 16px;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #646970);
+}
+
+.nvoos-pro-spa-advanced__section {
+	margin: 0 0 20px;
+	padding: 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg-secondary, #fff);
+}
+
+.nvoos-pro-spa-advanced__legend {
+	padding: 0 6px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-advanced__section-hint {
+	margin: 4px 0 12px;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #646970);
+}
+
+.nvoos-pro-spa-advanced__field {
+	margin-bottom: 12px;
+	flex: 1;
+	min-width: 0;
+}
+
+.nvoos-pro-spa-advanced__label {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+	margin-bottom: 4px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-advanced__required {
+	color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-advanced__input,
+.nvoos-pro-spa-advanced__select,
+.nvoos-pro-spa-advanced__textarea {
+	width: 100%;
+	padding: 6px 10px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	font-size: 14px;
+	font-family: inherit;
+	box-sizing: border-box;
+	background: var(--nvoos-bg, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-advanced__textarea {
+	resize: vertical;
+	min-height: 56px;
+}
+
+.nvoos-pro-spa-advanced__textarea--code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 12px;
+	min-height: 120px;
+}
+
+.nvoos-pro-spa-advanced__input:focus-visible,
+.nvoos-pro-spa-advanced__select:focus-visible,
+.nvoos-pro-spa-advanced__textarea:focus-visible,
+.nvoos-pro-spa-advanced__btn:focus-visible,
+.nvoos-pro-spa-advanced__icon-btn:focus-visible,
+.nvoos-pro-spa-advanced__link-btn:focus-visible,
+.nvoos-pro-spa-advanced__json-summary:focus-visible {
+	outline: 2px solid var(--nvoos-primary, #2271b1);
+	outline-offset: 2px;
+}
+
+.nvoos-pro-spa-advanced__input[aria-invalid='true'],
+.nvoos-pro-spa-advanced__textarea[aria-invalid='true'] {
+	border-color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-advanced__hint {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #646970);
+}
+
+.nvoos-pro-spa-advanced__error {
+	margin: 4px 0 0;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--nvoos-danger, #d63638);
+}
+
+.nvoos-pro-spa-advanced__warning {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: var(--nvoos-warning, #b26a00);
+}
+
+.nvoos-pro-spa-advanced__row {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.nvoos-pro-spa-advanced__items {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.nvoos-pro-spa-advanced__item {
+	padding: 12px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 8px;
+	background: var(--nvoos-bg, #fff);
+}
+
+.nvoos-pro-spa-advanced__item-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.nvoos-pro-spa-advanced__item-title {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-advanced__item-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.nvoos-pro-spa-advanced__icon-btn {
+	min-width: 28px;
+	min-height: 28px;
+	padding: 2px 6px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	cursor: pointer;
+	font-size: 13px;
+	line-height: 1;
+}
+
+.nvoos-pro-spa-advanced__icon-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.nvoos-pro-spa-advanced__link-btn {
+	min-height: 28px;
+	padding: 2px 8px;
+	border: 0;
+	background: none;
+	color: var(--nvoos-danger, #d63638);
+	cursor: pointer;
+	font-size: 12px;
+	text-decoration: underline;
+}
+
+.nvoos-pro-spa-advanced__btn {
+	min-height: 32px;
+	padding: 6px 14px;
+	border: 1px solid var(--nvoos-primary, #2271b1);
+	border-radius: 6px;
+	background: var(--nvoos-primary, #2271b1);
+	color: #fff;
+	cursor: pointer;
+	font-size: 13px;
+	font-family: inherit;
+}
+
+.nvoos-pro-spa-advanced__btn--secondary {
+	background: var(--nvoos-bg-secondary, #fff);
+	color: var(--nvoos-text, #1e1e1e);
+	border-color: var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-advanced__btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.nvoos-pro-spa-advanced__checkbox-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 28px;
+	font-size: 13px;
+	color: var(--nvoos-text, #1e1e1e);
+}
+
+.nvoos-pro-spa-advanced__flags {
+	margin: 4px 0 8px;
+	padding: 8px 10px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+}
+
+.nvoos-pro-spa-advanced__json {
+	margin: 8px 0 12px;
+	padding: 8px 10px;
+	border: 1px dashed var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+}
+
+.nvoos-pro-spa-advanced__json-summary {
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--nvoos-text, #1e1e1e);
+	min-height: 28px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.nvoos-pro-spa-advanced__badge {
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--nvoos-chip-bg, #f0f0f1);
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--nvoos-text-secondary, #646970);
+}
+
+.nvoos-pro-spa-advanced__json-body {
+	margin-top: 8px;
+}
+
+.nvoos-pro-spa-advanced__json-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.nvoos-pro-spa-advanced__status {
+	margin: 8px 0 0;
+	min-height: 1em;
+	font-size: 12px;
+	color: var(--nvoos-text-secondary, #646970);
+}
+
+.nvoos-pro-spa-advanced__empty {
+	margin: 0;
+	font-size: 13px;
+	color: var(--nvoos-text-secondary, #646970);
+	font-style: italic;
+}
+
+.nvoos-pro-spa-advanced__skill-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	max-height: 320px;
+	overflow-y: auto;
+	padding: 8px;
+	margin-bottom: 8px;
+	border: 1px solid var(--nvoos-border, #dcdcde);
+	border-radius: 6px;
+}
+
+.nvoos-pro-spa-advanced__skill-list .nvoos-pro-spa-advanced__checkbox-row {
+	align-items: flex-start;
+}
+
+.nvoos-pro-spa-advanced__nested {
+	margin-top: 8px;
+	padding-left: 12px;
+	border-left: 2px solid var(--nvoos-border, #dcdcde);
+}
+
+.nvoos-pro-spa-advanced__add-row {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px dashed var(--nvoos-border, #dcdcde);
+}
+
 .nvoos-pro-spa-assistants-form__actions {
 	display: flex;
 	gap: 8px;

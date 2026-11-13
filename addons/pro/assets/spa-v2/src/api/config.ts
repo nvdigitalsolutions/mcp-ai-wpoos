@@ -142,6 +142,10 @@ export interface ProSpaEndpoints {
 	 * non-admin sessions (the endpoints are manage_options-gated).
 	 */
 	remoteSites: string;
+	/** Installed Agent Skills catalogue (mcp-ai/v1/skills). Empty hides the picker. */
+	skills: string;
+	/** Assistant MCP apps base (mcp-ai/v1/mcp-apps). Pro-only; empty hides the panel. */
+	mcpApps: string;
 	/** Media command-center REST base (mcp-ai-pro/v1/media-cc, 2.4.0). */
 	mediaCc: string;
 	/**
@@ -362,6 +366,8 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			dashboardsSchema: typeof e.dashboardsSchema === 'string' ? e.dashboardsSchema : '',
 			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
 			remoteSites: typeof e.remoteSites === 'string' ? e.remoteSites : '',
+			skills: typeof e.skills === 'string' ? e.skills : '',
+			mcpApps: typeof e.mcpApps === 'string' ? e.mcpApps : '',
 			mediaCc: typeof e.mediaCc === 'string' ? e.mediaCc : '',
 			professions: typeof e.professions === 'string' ? e.professions : '',
 			orgTeams: typeof e.orgTeams === 'string' ? e.orgTeams : '',

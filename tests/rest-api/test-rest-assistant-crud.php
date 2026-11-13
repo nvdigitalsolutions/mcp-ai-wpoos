@@ -156,18 +156,223 @@ class WP_MCP_AI_REST_Assistant_Crud_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Unknown assistant IDs are refused.
+	 * The full record exposes the advanced object (090-B parity).
 	 */
-	public function test_unknown_assistant_is_refused() {
+	public function test_admin_get_returns_advanced_fields() {
+		$assistant_id = $this->create_assistant();
+
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_FALLBACK_CHAIN, array( 'openai', 'anthropic' ) );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_VECTOR_STORE_ID, 'vs_test' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROMPT_CACHING, true );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY, 'manage_options' );
+
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user_id );
 
 		$request = $this->nonce_request();
-		$request->set_param( 'id', 999999 );
+		$request->set_param( 'id', $assistant_id );
 
 		$result = $this->controller->handle_assistant_get( $request );
+		$this->assertNotWPError( $result );
 
-		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_assistant_forbidden', $result->get_error_code() );
+		$data     = $result->get_data();
+		$advanced = $data['data']['advanced'];
+
+		$this->assertSame( array( 'openai', 'anthropic' ), $advanced['fallback_chain'] );
+		$this->assertSame( 'vs_test', $advanced['vector_store_id'] );
+		$this->assertTrue( $advanced['prompt_caching'] );
+		$this->assertSame( 'manage_options', $advanced['required_capability'] );
+
+		// Unset keys read as their type default, never null.
+		$this->assertSame( array(), $advanced['memory_files'] );
+		$this->assertSame( '', $advanced['corpus_name'] );
+		$this->assertFalse( $advanced['disable_tool_shortcuts'] );
+	}
+
+	/**
+	 * The update handler applies the advanced object through the CPT
+	 * sanitizers and echoes it back.
+	 */
+	public function test_admin_update_applies_advanced_fields() {
+		$assistant_id = $this->create_assistant();
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = $this->nonce_request( 'PUT' );
+		$request->set_param( 'id', $assistant_id );
+		$request->set_param(
+			'advanced',
+			array(
+				'fallback_chain'       => array( 'ollama', 'openai' ),
+				'vector_store_id'      => 'vs_new',
+				'prompt_caching'       => true,
+				'adaptive_tool_cap'    => 'off',
+				'external_action_type' => 'workflow',
+				'required_capability'  => 'edit_posts',
+				'unknown_key'          => 'ignored',
+			)
+		);
+
+		$result = $this->controller->handle_assistant_update( $request );
+		$this->assertNotWPError( $result );
+
+		$this->assertSame( array( 'ollama', 'openai' ), get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_FALLBACK_CHAIN, true ) );
+		$this->assertSame( 'vs_new', get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_VECTOR_STORE_ID, true ) );
+		$this->assertTrue( (bool) get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROMPT_CACHING, true ) );
+		$this->assertSame( 'off', get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_ADAPTIVE_TOOL_CAP, true ) );
+		$this->assertSame( 'workflow', get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_EXTERNAL_ACTION_TYPE, true ) );
+		$this->assertSame( 'edit_posts', get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY, true ) );
+
+		$data = $result->get_data();
+		$this->assertSame( array( 'ollama', 'openai' ), $data['data']['advanced']['fallback_chain'] );
+	}
+
+	/**
+	 * Empty advanced values delete the meta row (metabox semantics).
+	 */
+	public function test_update_clears_advanced_fields_on_empty() {
+		$assistant_id = $this->create_assistant();
+
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_FALLBACK_CHAIN, array( 'openai' ) );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_VECTOR_STORE_ID, 'vs_test' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROMPT_CACHING, true );
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = $this->nonce_request( 'PUT' );
+		$request->set_param( 'id', $assistant_id );
+		$request->set_param(
+			'advanced',
+			array(
+				'fallback_chain'  => array(),
+				'vector_store_id' => '',
+				'prompt_caching'  => false,
+			)
+		);
+
+		$result = $this->controller->handle_assistant_update( $request );
+		$this->assertNotWPError( $result );
+
+		$this->assertSame( '', get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_FALLBACK_CHAIN, true ) );
+		$this->assertSame( '', get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_VECTOR_STORE_ID, true ) );
+		$this->assertSame( '', get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROMPT_CACHING, true ) );
+	}
+
+	/**
+	 * Credentials are never part of the advanced surface.
+	 */
+	public function test_advanced_never_exposes_credentials() {
+		$assistant_id = $this->create_assistant();
+
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_CREDENTIALS, array( array( 'token' => 'cred_test.secret' ) ) );
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = $this->nonce_request();
+		$request->set_param( 'id', $assistant_id );
+
+		$result   = $this->controller->handle_assistant_get( $request );
+		$advanced = $result->get_data()['data']['advanced'];
+
+		$this->assertArrayNotHasKey( 'credentials', $advanced );
+		$this->assertArrayNotHasKey( '_wp_mcp_ai_credentials', $advanced );
+
+		$map = WP_MCP_AI_REST::get_assistant_advanced_field_map();
+		$this->assertArrayNotHasKey( 'credentials', $map );
+		foreach ( $map as $definition ) {
+			$this->assertNotSame( WP_MCP_AI_Assistant_CPT::META_CREDENTIALS, $definition['meta_key'] );
+		}
+	}
+
+	/**
+	 * Skills ride the advanced object: sanitized, deduped and echoed back.
+	 */
+	public function test_advanced_skills_round_trip() {
+		$assistant_id = $this->create_assistant();
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = $this->nonce_request( 'PUT' );
+		$request->set_param( 'id', $assistant_id );
+		$request->set_param(
+			'advanced',
+			array(
+				'skills'             => array( 'alpha-skill', 'beta-skill', 'alpha-skill' ),
+				'skills_progressive' => true,
+			)
+		);
+
+		$result = $this->controller->handle_assistant_update( $request );
+		$this->assertNotWPError( $result );
+
+		$this->assertSame(
+			array( 'alpha-skill', 'beta-skill' ),
+			get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SKILLS, true )
+		);
+		$this->assertSame( 1, (int) get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SKILLS_PROGRESSIVE, true ) );
+
+		$advanced = $result->get_data()['data']['advanced'];
+
+		$this->assertSame( array( 'alpha-skill', 'beta-skill' ), $advanced['skills'] );
+		$this->assertTrue( $advanced['skills_progressive'] );
+
+		// The full record read path serves the same shape.
+		$get = $this->nonce_request();
+		$get->set_param( 'id', $assistant_id );
+
+		$read = $this->controller->handle_assistant_get( $get )->get_data()['data']['advanced'];
+
+		$this->assertSame( array( 'alpha-skill', 'beta-skill' ), $read['skills'] );
+		$this->assertTrue( $read['skills_progressive'] );
+	}
+
+	/**
+	 * Invalid skill slugs are dropped by the CPT sanitizer, and an empty list
+	 * deletes the meta row.
+	 */
+	public function test_advanced_skills_drop_invalid_slugs_and_clear_on_empty() {
+		$assistant_id = $this->create_assistant();
+
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SKILLS, array( 'alpha-skill' ) );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SKILLS_PROGRESSIVE, 1 );
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$request = $this->nonce_request( 'PUT' );
+		$request->set_param( 'id', $assistant_id );
+		$request->set_param(
+			'advanced',
+			array(
+				'skills' => array( 'Valid-Slug', 'bad skill', 'double--hyphen', 'good-skill' ),
+			)
+		);
+
+		$this->controller->handle_assistant_update( $request );
+
+		$this->assertSame(
+			array( 'good-skill' ),
+			get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SKILLS, true )
+		);
+
+		// Unticking progressive disclosure removes the row, not stores 0.
+		$second = $this->nonce_request( 'PUT' );
+		$second->set_param( 'id', $assistant_id );
+		$second->set_param(
+			'advanced',
+			array(
+				'skills'             => array(),
+				'skills_progressive' => false,
+			)
+		);
+
+		$this->controller->handle_assistant_update( $second );
+
+		$this->assertSame( '', get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SKILLS, true ) );
+		$this->assertSame( '', get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SKILLS_PROGRESSIVE, true ) );
 	}
 }

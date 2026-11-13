@@ -6,7 +6,7 @@
  * for endpoint runtime config.
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { ChangeEvent, JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 	import { useAssistants } from '../../hooks/useAssistants';
@@ -15,7 +15,14 @@ import { __ } from '@wordpress/i18n';
 	import { useTools } from '../../hooks/useTools';
 import { useProfessions } from '../../hooks/useProfessions';
 import { useModelStore } from '../../stores/modelStore';
-import type { AssistantRecord } from '../../api/assistants';
+import type { AssistantAdvancedFields, AssistantRecord } from '../../api/assistants';
+import {
+	emptyAdvancedFields,
+	normaliseAdvancedFields,
+} from '../../api/assistants';
+import { AdvancedFieldsEditor } from './AdvancedFieldsEditor';
+import { SkillsClient } from '../../api/skills';
+import type { SkillOption } from '../../api/skills';
 import { ToolPicker } from './ToolPicker';
 
 interface AssistantFormFields {
@@ -27,17 +34,22 @@ interface AssistantFormFields {
 	tools: string[];
 	/** Profession catalogue slugs (max 3). Laravel-only surface. */
 	primary_role_slugs: string[];
+	/** Advanced settings (090-B assistant edit parity) — both runtimes. */
+	advanced: AssistantAdvancedFields;
 }
 
-const EMPTY_FORM: AssistantFormFields = {
-	title: '',
-	model: '',
-	provider: 'openai',
-	temperature: 0.7,
-	system_prompt: '',
-	tools: [],
-	primary_role_slugs: [],
-};
+function createEmptyForm(): AssistantFormFields {
+	return {
+		title: '',
+		model: '',
+		provider: 'openai',
+		temperature: 0.7,
+		system_prompt: '',
+		tools: [],
+		primary_role_slugs: [],
+		advanced: emptyAdvancedFields(),
+	};
+}
 
 /** The server caps the list at three; the UI mirrors it. */
 const MAX_PRIMARY_PROFESSIONS = 3;
@@ -97,7 +109,9 @@ export function AssistantsPage(): JSX.Element {
 
 	const [ formOpen, setFormOpen ] = useState< boolean >( false );
 	const [ editingId, setEditingId ] = useState< number | null >( null );
-	const [ formFields, setFormFields ] = useState< AssistantFormFields >( EMPTY_FORM );
+	const [ formFields, setFormFields ] = useState< AssistantFormFields >(
+		createEmptyForm
+	);
 	const [ saving, setSaving ] = useState< boolean >( false );
 	// True while the full record (system prompt + tools) is fetched for an
 	// edit — the form is seeded from the list row first, so without this
@@ -105,6 +119,9 @@ export function AssistantsPage(): JSX.Element {
 	// overwrite the stored prompt with ''.
 	const [ recordLoading, setRecordLoading ] = useState< boolean >( false );
 	const [ deleteConfirm, setDeleteConfirm ] = useState< number | null >( null );
+	// True while an advanced field has an inline error or an unapplied JSON
+	// draft — Save is disabled so a partially applied edit can never ship.
+	const [ advancedBlocked, setAdvancedBlocked ] = useState< boolean >( false );
 
 	const providers = useMemo< string[] >( () => {
 		const set = new Set(
@@ -113,11 +130,52 @@ export function AssistantsPage(): JSX.Element {
 		return Array.from( set ).sort();
 	}, [ availableModels ] );
 
+	// Installed Agent Skills catalogue — loaded once per form open (admin-only
+	// route; an empty endpoint leaves the picker hidden).
+	const skillsEndpoint = runtime?.endpoints.skills ?? '';
+	const [ skillsCatalogue, setSkillsCatalogue ] = useState< SkillOption[] >( [] );
+	const [ skillsLoading, setSkillsLoading ] = useState< boolean >( false );
+	const [ skillsError, setSkillsError ] = useState< string | null >( null );
+
+	const loadSkills = useCallback( async () => {
+		if ( ! skillsEndpoint || ! runtime?.nonce ) {
+			return;
+		}
+
+		setSkillsLoading( true );
+		setSkillsError( null );
+
+		try {
+			const client = new SkillsClient( {
+				endpoint: skillsEndpoint,
+				nonce: runtime.nonce,
+			} );
+			setSkillsCatalogue( await client.list() );
+		} catch ( err ) {
+			setSkillsError(
+				err instanceof Error
+					? err.message
+					: __( 'Could not load the skills catalogue.', 'nvoos-pro-spa' )
+			);
+		} finally {
+			setSkillsLoading( false );
+		}
+	}, [ skillsEndpoint, runtime?.nonce ] );
+
+	useEffect( () => {
+		if ( ! formOpen || ! skillsEndpoint ) {
+			return;
+		}
+
+		void loadSkills();
+	}, [ formOpen, skillsEndpoint, loadSkills ] );
+
 	const openCreate = useCallback( () => {
-			setFormFields( EMPTY_FORM );
-			setEditingId( null );
-			setRecordLoading( false );
-			setFormOpen( true );
+		setFormFields( createEmptyForm() );
+		setAdvancedBlocked( false );
+		setEditingId( null );
+		setRecordLoading( false );
+		setFormOpen( true );
 	}, [] );
 
 	const openEdit = useCallback(
@@ -131,6 +189,7 @@ export function AssistantsPage(): JSX.Element {
 			// Seed the form from the list record immediately, then replace
 			// with the full record (system prompt + tools) from the new
 			// GET /assistants/{id} route.
+			const seededAdvanced = normaliseAdvancedFields( assistant.advanced );
 			setFormFields( {
 				title: assistant.title ?? '',
 				model: assistant.model ?? '',
@@ -141,7 +200,9 @@ export function AssistantsPage(): JSX.Element {
 				primary_role_slugs: Array.isArray( assistant.primary_role_slugs )
 					? assistant.primary_role_slugs
 					: [],
+				advanced: seededAdvanced,
 			} );
+			setAdvancedBlocked( false );
 			setEditingId( assistant.id );
 			setRecordLoading( true );
 			setFormOpen( true );
@@ -162,6 +223,19 @@ export function AssistantsPage(): JSX.Element {
 						? full.primary_role_slugs
 						: current.primary_role_slugs,
 				} ) );
+
+				// Only replace when the backend actually served the object — a
+				// runtime that predates the advanced contract must not wipe the
+				// values seeded from the list row.
+				if ( full.advanced ) {
+					const fullAdvanced = normaliseAdvancedFields(
+						full.advanced
+					);
+					setFormFields( ( current ) => ( {
+						...current,
+						advanced: fullAdvanced,
+					} ) );
+				}
 				setRecordLoading( false );
 			} );
 		},
@@ -171,12 +245,18 @@ export function AssistantsPage(): JSX.Element {
 	const closeForm = useCallback( () => {
 		setFormOpen( false );
 		setEditingId( null );
-		setFormFields( EMPTY_FORM );
+		setFormFields( createEmptyForm() );
+		setAdvancedBlocked( false );
 		setRecordLoading( false );
 	}, [] );
 
 	const handleSave = useCallback( async () => {
-		if ( ! formFields.title.trim() ) return;
+		// `recordLoading` guards the edit flow: saving before the full record
+		// arrives would post the seeded defaults over the stored advanced
+		// values (the Save button is hidden then, but a stale handler could
+		// still fire).
+		if ( ! formFields.title.trim() || recordLoading ) return;
+		if ( advancedBlocked ) return;
 		setSaving( true );
 		const payload: Partial< AssistantRecord > = {
 			title: formFields.title.trim(),
@@ -188,6 +268,7 @@ export function AssistantsPage(): JSX.Element {
 			system_prompt: formFields.system_prompt,
 			tools: formFields.tools,
 			primary_role_slugs: formFields.primary_role_slugs,
+			advanced: formFields.advanced,
 		};
 		try {
 			if ( editingId !== null ) {
@@ -199,7 +280,15 @@ export function AssistantsPage(): JSX.Element {
 		} finally {
 			setSaving( false );
 		}
-	}, [ formFields, editingId, createAssistant, updateAssistant, closeForm ] );
+	}, [
+		formFields,
+		editingId,
+		createAssistant,
+		updateAssistant,
+		closeForm,
+		recordLoading,
+		advancedBlocked,
+	] );
 
 	const handleProfessionsChange = useCallback(
 		( event: ChangeEvent< HTMLSelectElement > ) => {
@@ -767,6 +856,33 @@ export function AssistantsPage(): JSX.Element {
 										) }
 									</div>
 								) : null }
+
+								<AdvancedFieldsEditor
+									value={ formFields.advanced }
+									onChange={ ( advanced ) =>
+										setFormFields( ( current ) => ( {
+											...current,
+											advanced,
+										} ) )
+									}
+									onBlockedChange={ setAdvancedBlocked }
+									tools={ registryTools }
+									skills={ skillsCatalogue }
+									skillsEndpoint={ skillsEndpoint }
+									skillsLoading={ skillsLoading }
+									skillsError={ skillsError }
+									onRetrySkills={ () => void loadSkills() }
+									mcpApps={ {
+										endpoint: runtime?.endpoints.mcpApps ?? '',
+										remoteSitesEndpoint:
+											runtime?.endpoints.remoteSites ?? '',
+										nonce: runtime?.nonce ?? '',
+										assistantId: editingId,
+									} }
+									idPrefix={ `nvoos-pro-spa-advanced-${
+										editingId ?? 'new'
+									}` }
+								/>
 							</>
 						) }
 
@@ -776,7 +892,11 @@ export function AssistantsPage(): JSX.Element {
 									type="button"
 									className="nvoos-pro-spa-assistants-form__save-btn"
 									onClick={ () => void handleSave() }
-									disabled={ saving || ! formFields.title.trim() }
+									disabled={
+										saving ||
+										! formFields.title.trim() ||
+										advancedBlocked
+									}
 								>
 									{ saving
 										? __(

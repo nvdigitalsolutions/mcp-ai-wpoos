@@ -364,6 +364,12 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'remoteSites'         => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/remote-sites' ) )
 					: '',
+				'skills'              => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/skills' ) )
+					: '',
+				'mcpApps'             => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai/v1/mcp-apps' ) )
+					: '',
 				'mediaCc'             => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/media-cc' ) )
 					: '',
