@@ -27,15 +27,13 @@ use Nvoos\Core\Domain\Entity\UpdateContentCommand;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\Error\NotFoundException;
 use Nvoos\Core\Tool\ProjectManagement\TaskRow;
+use Nvoos\Core\Tool\ProjectManagement\Vocabulary;
 
 class CreateTaskTool extends AbstractTool {
 
 	/** Content type this tool writes. */
 	private const TYPE = 'mcp_ai_task';
 
-	private const STATUSES   = array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' );
-	private const PRIORITIES = array( 'low', 'medium', 'high', 'urgent' );
-	private const CATEGORIES = array( 'general', 'bug', 'feature', 'maintenance', 'research', 'documentation', 'design', 'testing' );
 
 	public function __construct(
 		ErrorFactoryInterface $errors,
@@ -79,12 +77,12 @@ class CreateTaskTool extends AbstractTool {
 				'status'           => array(
 					'type'        => 'string',
 					'description' => 'Task status (optional).',
-					'enum'        => self::STATUSES,
+					'enum'        => Vocabulary::TASK_STATUSES,
 				),
 				'priority'         => array(
 					'type'        => 'string',
 					'description' => 'Task priority (optional).',
-					'enum'        => self::PRIORITIES,
+					'enum'        => Vocabulary::TASK_PRIORITIES,
 				),
 				'due_date'         => array(
 					'type'        => 'string',
@@ -98,7 +96,7 @@ class CreateTaskTool extends AbstractTool {
 				'category'         => array(
 					'type'        => 'string',
 					'description' => 'Task category/type (optional).',
-					'enum'        => self::CATEGORIES,
+					'enum'        => Vocabulary::TASK_CATEGORIES,
 				),
 				'tags'             => array(
 					'type'        => 'string',
@@ -127,17 +125,17 @@ class CreateTaskTool extends AbstractTool {
 		}
 
 		$status = $this->stringParam( $arguments, 'status' );
-		if ( '' !== $status && ! in_array( $status, self::STATUSES, true ) ) {
+		if ( '' !== $status && ! in_array( $status, Vocabulary::TASK_STATUSES, true ) ) {
 			return $this->errors->create( 'invalid_argument', 'Unknown task status.' );
 		}
 
 		$priority = $this->stringParam( $arguments, 'priority' );
-		if ( '' !== $priority && ! in_array( $priority, self::PRIORITIES, true ) ) {
+		if ( '' !== $priority && ! in_array( $priority, Vocabulary::TASK_PRIORITIES, true ) ) {
 			return $this->errors->create( 'invalid_argument', 'Unknown task priority.' );
 		}
 
 		$category = $this->stringParam( $arguments, 'category' );
-		if ( '' !== $category && ! in_array( $category, self::CATEGORIES, true ) ) {
+		if ( '' !== $category && ! in_array( $category, Vocabulary::TASK_CATEGORIES, true ) ) {
 			return $this->errors->create( 'invalid_argument', 'Unknown task category.' );
 		}
 

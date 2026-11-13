@@ -29,12 +29,12 @@ use Nvoos\Core\Domain\Entity\UpdateContentCommand;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\Error\NotFoundException;
 use Nvoos\Core\Tool\ProjectManagement\ProjectRow;
+use Nvoos\Core\Tool\ProjectManagement\Vocabulary;
 
 class CreateProjectTool extends AbstractTool {
 
 	private const TYPE = 'mcp_ai_project';
 
-	private const STATUSES = array( 'planning', 'active', 'on-hold', 'completed', 'cancelled' );
 
 	public function __construct(
 		ErrorFactoryInterface $errors,
@@ -77,7 +77,7 @@ class CreateProjectTool extends AbstractTool {
 				'status'      => array(
 					'type'        => 'string',
 					'description' => 'Project status (optional).',
-					'enum'        => self::STATUSES,
+					'enum'        => Vocabulary::PROJECT_STATUSES,
 					'default'     => 'planning',
 				),
 				'start_date'  => array(
@@ -115,7 +115,7 @@ class CreateProjectTool extends AbstractTool {
 		}
 
 		$status = $this->stringParam( $arguments, 'status' );
-		if ( '' !== $status && ! in_array( $status, self::STATUSES, true ) ) {
+		if ( '' !== $status && ! in_array( $status, Vocabulary::PROJECT_STATUSES, true ) ) {
 			return $this->errors->create( 'invalid_argument', 'Unknown project status.' );
 		}
 

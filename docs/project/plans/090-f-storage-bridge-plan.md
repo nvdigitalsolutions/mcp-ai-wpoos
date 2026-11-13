@@ -238,6 +238,45 @@ the id; the richer shape is a deliberate superset that saves a follow-up read.
 tools share one date validator and one "was this field really supplied" rule
 instead of four slightly different copies.
 
+**Bulk import shipped.** `bulk_import` takes `entity` (`tasks` | `projects`), a
+`rows` list, `preview` and `skip_existing`, and follows the toolkit import
+contract (`090-e` §5):
+
+- **The report reconciles.** `valid + duplicates + failed === total`, always —
+  a row that passes validation but fails to persist is moved into `failed`
+rather than silently vanishing from the count.
+- **`preview` writes nothing** and returns the normalised rows, so a caller can
+  show the operator what would happen before anything lands.
+- **The natural key is the title** (or project name), compared case- and
+  whitespace-insensitively. There is no external id on this family, so two rows
+  with the same title in one batch are a duplicate — the honest consequence of
+  having nothing else to tell them apart. Matching is exact after a database
+  search narrows the field, because `ContentQuery::search` is a substring match
+  and would treat "Alpha" as a duplicate of "Alpha Two".
+- **500 rows per call**, matching the toolkit import.
+
+`ProjectManagement\Vocabulary` now holds the status/priority/category lists.
+They were duplicated across four tools, which is exactly how a schema and its
+validator drift apart.
+
+**Admin surface shipped.** The family's `/pm` console page was blocked on two
+small pieces, both fixed here:
+
+- `Wp\ContentController` now maps the `tasks` and `projects` REST bases to
+  `mcp_ai_task` / `mcp_ai_project`. The console's Records page addresses records
+  through `wp/v2/{restBase}`, so without these two entries it got a
+  `rest_no_route` 404 for a post type the runtime already stores.
+- `Pro\RecordsController::ENTITIES` advertises both entities under group `pm`,
+  which is what the Records page reads to decide what to render.
+- `oos.features.project_management` flips to `true`, so the console nav shows
+  `/pm` at all.
+
+Writes from the page carry meta, so `_task_status` and friends round-trip
+through the same `nvoos_posts` rows the tools read.
+
+**Phase 2 is complete**: reads, writes, partial updates, bulk import and the
+admin page all run on both runtimes.
+
 ### Phase 3 — Paper Store port
 
 `PaperStoreInterface` (`lib/core/src/Domain/Contract/`) with

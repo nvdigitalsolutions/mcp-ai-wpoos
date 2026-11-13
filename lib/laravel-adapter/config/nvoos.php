@@ -570,7 +570,7 @@ return array(
 	*/
 	'features' => array(
 		'crm'                => false,
-		'project_management' => false,
+		'project_management' => true,
 		'calendar_booking'   => false,
 		'fnb'                => false,
 		'ecommerce'          => false,
