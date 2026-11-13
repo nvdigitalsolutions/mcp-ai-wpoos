@@ -29,6 +29,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Slash_Command_Audit {
 
 	/**
+	 * Current audit table schema version.
+	 *
+	 * @since 1.2.20
+	 * @var string
+	 */
+	const DB_VERSION = '1.0';
+
+	/**
+	 * Option holding the installed schema version.
+	 *
+	 * @since 1.2.20
+	 * @var string
+	 */
+	const VERSION_OPTION = 'wp_mcp_ai_slash_audit_table_version';
+
+	/**
 	 * Database table name
 	 *
 	 * @var string
@@ -80,11 +96,34 @@ class WP_MCP_AI_Slash_Command_Audit {
 		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $this->table_name ) ) === $this->table_name;
 
 		if ( $table_exists ) {
-			update_option( 'wp_mcp_ai_slash_audit_table_version', '1.0' );
+			update_option( self::VERSION_OPTION, self::DB_VERSION );
 			return true;
 		}
 
 		return false;
+	}
+
+	/**
+	 * Create the audit table if it is missing or out of date.
+	 *
+	 * Activation covers fresh installs, but a site that updates the plugin
+	 * without deactivating never runs the activation hook. Without the table
+	 * every slash-command request logs a database error and no audit trail is
+	 * kept, so the schema is reconciled on `init` instead.
+	 *
+	 * dbDelta only runs when the stored version differs, so the steady state is
+	 * a single option read.
+	 *
+	 * @since 1.2.20
+	 *
+	 * @return void
+	 */
+	public function maybe_create_table() {
+		if ( self::DB_VERSION === get_option( self::VERSION_OPTION ) ) {
+			return;
+		}
+
+		$this->create_table();
 	}
 
 	/**

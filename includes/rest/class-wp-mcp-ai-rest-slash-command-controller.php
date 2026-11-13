@@ -645,16 +645,19 @@ class WP_MCP_AI_REST_Slash_Command_Controller extends WP_REST_Controller {
 	private function write_audit_log( $log_data ) {
 		global $wpdb;
 
-		// Check if audit table exists.
 		$table_name = $wpdb->prefix . 'mcp_ai_slash_command_audit';
 
-		// Try to insert into table (will silently fail if table doesn't exist).
+		// Best-effort write. The option fallback below keeps the entry when the
+		// table is unavailable, so a failed insert must not surface as a
+		// database error on every slash-command request.
+		$suppress = $wpdb->suppress_errors( true );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Direct query required for custom plugin table access; WP_Query does not support custom table queries.
 		$wpdb->insert(
 			$table_name,
 			$log_data,
 			array( '%s', '%d', '%s', '%f', '%s', '%s', '%s', '%s' )
 		);
+		$wpdb->suppress_errors( $suppress );
 
 		// Also store in WordPress options as fallback (keep last 1000 entries).
 		$audit_logs = get_option( 'wp_mcp_ai_slash_command_audit', array() );
