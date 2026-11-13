@@ -17,8 +17,8 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
-use Nvoos\Core\Domain\Entity\ContentItem;
 use Nvoos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Tool\ProjectManagement\TaskRow;
 
 class ListTasksTool extends AbstractTool {
 
@@ -164,7 +164,7 @@ class ListTasksTool extends AbstractTool {
 		$tasks = array();
 
 		foreach ( $collection->items as $item ) {
-			$tasks[] = $this->row( $item );
+			$tasks[] = TaskRow::from( $item );
 		}
 
 		return $this->success(
@@ -177,43 +177,4 @@ class ListTasksTool extends AbstractTool {
 		);
 	}
 
-	/**
-	 * @return array<string, mixed>
-	 */
-	private function row( ContentItem $item ): array {
-		$meta = $item->meta;
-
-		$project_id = isset( $meta['_task_project_id'] ) && (int) $meta['_task_project_id'] > 0
-			? (int) $meta['_task_project_id']
-			: null;
-
-		$assigned = isset( $meta['_task_assigned_to'] ) && (int) $meta['_task_assigned_to'] > 0
-			? (int) $meta['_task_assigned_to']
-			: null;
-
-		$estimated = isset( $meta['_task_estimated_effort'] ) && is_numeric( $meta['_task_estimated_effort'] )
-			? (float) $meta['_task_estimated_effort']
-			: null;
-
-		$actual = isset( $meta['_task_actual_effort'] ) && is_numeric( $meta['_task_actual_effort'] )
-			? (float) $meta['_task_actual_effort']
-			: null;
-
-		return array(
-			'id'               => $item->id,
-			'title'            => $item->title,
-			'description'      => $item->content,
-			'project_id'       => $project_id,
-			'status'           => (string) ( $meta['_task_status'] ?? 'todo' ),
-			'priority'         => (string) ( $meta['_task_priority'] ?? 'medium' ),
-			'category'         => (string) ( $meta['_task_category'] ?? 'general' ),
-			'tags'             => (string) ( $meta['_task_tags'] ?? '' ),
-			'due_date'         => (string) ( $meta['_task_due_date'] ?? '' ),
-			'assigned_to'      => $assigned,
-			'estimated_effort' => $estimated,
-			'actual_effort'    => $actual,
-			'created_at'       => $item->createdAt->format( \DateTimeInterface::ATOM ),
-			'updated_at'       => $item->updatedAt->format( \DateTimeInterface::ATOM ),
-		);
-	}
 }

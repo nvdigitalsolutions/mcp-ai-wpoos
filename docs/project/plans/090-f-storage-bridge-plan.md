@@ -178,6 +178,28 @@ assigned to user N") is identical; the encoding is documented in the schema.
 Still to do for the family: create/update/delete, bulk import, and the admin
 page.
 
+**Write path shipped (tasks).** `create_task` and `delete_task` are now core
+tools registered by the provider, so both runtimes write through
+`ContentStoreInterface`:
+
+- `create_task` mirrors the WordPress contract exactly — one slug that creates,
+  and updates instead when `task_id` is supplied. Same parameter names, same
+  `required`, same result fields (`task_id`, `task`, `updated`).
+- `delete_task` takes `task_id` and reports the deleted id; an unknown id is an
+  error, not a silent success.
+- Validation is explicit: blank title, unknown status/priority/category and an
+  impossible `due_date` (e.g. `2026-02-31`) each return a typed error rather
+  than writing a half-valid row.
+- **One projection.** `Tool\ProjectManagement\TaskRow` renders a task for both
+  `list_tasks` and the write tools, so a read and a write can no longer present
+different shapes. `list_tasks` now delegates to it.
+- `AbstractTool::floatParam()` was added: non-numeric input falls back to the
+default instead of casting to `0`, so "high" cannot silently become zero hours.
+
+Remaining for the family: project create/update/delete, bulk import, the admin
+page, and an `update_task` partial-update tool (today `create_task` requires a
+title, matching WordPress).
+
 ### Phase 3 — Paper Store port
 
 `PaperStoreInterface` (`lib/core/src/Domain/Contract/`) with

@@ -250,6 +250,23 @@ abstract class AbstractTool implements ToolInterface {
 	}
 
 	/**
+	 * Sanitize a float parameter from arguments.
+	 *
+	 * Non-numeric input falls back to the default rather than casting to 0 — a
+	 * caller that passed "high" for an hour estimate should not silently write
+	 * zero effort.
+	 *
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 */
+	protected function floatParam( array $arguments, string $key, float $default = 0.0 ): float {
+		if ( ! isset( $arguments[ $key ] ) || ! is_numeric( $arguments[ $key ] ) ) {
+			return $default;
+		}
+
+		return (float) $arguments[ $key ];
+	}
+
+	/**
 	 * Sanitize a string parameter from arguments.
 	 * @param ToolArgs $arguments Raw tool arguments.
 	 */
