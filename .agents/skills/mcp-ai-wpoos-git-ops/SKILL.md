@@ -333,6 +333,16 @@ Each rule below cost a recovery:
   (`fs.symlinkSync(...,'junction')`) — cargo validation is then
   near-instant instead of recompiling ort; both dirs are gitignored, so
   the worktree removal stays clean.
+- **Large change sets into a fresh worktree: script the copy
+  (2026-11-13, 199-path assistant-parity PR).** Hand-copying breaks down at
+  ~100 paths, and the usual miss is *deletions*: a rebuilt `dist/` removes
+  old hash chunks, and if you only copy additions the worktree still ships
+  both hash sets. Drive it from `git status --porcelain -z` in the main
+  tree — expand `?? dir/` entries by walking the directory, `rm` the target
+  for each `D` entry, `copyFileSync` the rest — then prove it: the
+  worktree's `git status --short` must show the same A/D/M counts as the
+  main tree, and `cmp -s` a couple of large artifacts. Repo root, node, no
+  deps.
 - **De-stack a PR without `reset --hard`:** move the branch back with
   `git reset --mixed <parent>` (worktree untouched), restore only your own
   paths with `git restore --worktree -- <your-paths>` (a file you created

@@ -54,11 +54,15 @@ MSYS_NO_PATHCONV=1 docker exec -e WP_CORE_DIR=/var/www/html -e WP_DB_HOST=db -e 
 **phpcs (the CI gate counts ERRORS, not warnings):**
 
 ```bash
-MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php vendor/bin/phpcs --standard=phpcs.xml.dist --error-severity=1 --warning-severity=1 --report=summary <paths> 2>&1'
+MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php -d memory_limit=1G vendor/bin/phpcs --standard=phpcs.xml.dist --error-severity=1 --warning-severity=1 --report=summary <paths> 2>&1'
 ```
 
 Rules:
 
+- **phpcs/phpcbf need `-d memory_limit=1G`.** The container's CLI default is
+  128M and WPCS tokenising exhausts it even on a handful of files ("Allowed
+  memory size of 134217728 bytes exhausted" in `Tokenizer.php`). Same flag
+  for `phpcbf` (2026-11-13).
 - **Never run two `docker exec phpunit` concurrently** — they collide on the
   shared `wordpress_test` DB (the second times out with a connection error
   rather than failing cleanly).
