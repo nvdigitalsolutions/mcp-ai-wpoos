@@ -389,6 +389,31 @@ class Test_Phase_6_Security_Audit extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test: audit table self-heals when the schema version is missing.
+	 *
+	 * Activation is not the only path that must end with a usable table. A site
+	 * that updates the plugin without deactivating never runs the activation
+	 * hook, so the schema has to be reconciled on init instead.
+	 *
+	 * @group audit-logging
+	 */
+	public function test_maybe_create_table_records_the_schema_version() {
+		require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php';
+
+		// Simulate the state left by an update that never ran activation.
+		delete_option( WP_MCP_AI_Slash_Command_Audit::VERSION_OPTION );
+
+		$audit = new WP_MCP_AI_Slash_Command_Audit();
+		$audit->maybe_create_table();
+
+		$this->assertSame(
+			WP_MCP_AI_Slash_Command_Audit::DB_VERSION,
+			get_option( WP_MCP_AI_Slash_Command_Audit::VERSION_OPTION ),
+			'maybe_create_table() should record the schema version once the table exists.'
+		);
+	}
+
+	/**
 	 * Test: Privilege Escalation Prevention
 	 *
 	 * @group privilege-escalation
