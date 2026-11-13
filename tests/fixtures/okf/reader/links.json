@@ -61,7 +61,7 @@
                         "links": []
                     },
                     {
-                        "concept_id": "./beta",
+                        "concept_id": "beta",
                         "frontmatter": {
                             "type": "Concept",
                             "title": "Beta"
@@ -76,11 +76,6 @@
                             "title": "Top"
                         },
                         "body": "Top level.",
-                        "links": []
-                    },
-                    {
-                        "concept_id": "https://example.com/x",
-                        "error": "Concept not found: https://example.com/x",
                         "links": []
                     },
                     {

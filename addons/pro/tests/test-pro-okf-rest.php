@@ -116,7 +116,7 @@ class Test_Pro_Okf_Rest extends WP_UnitTestCase {
 					),
 				),
 			),
-			'# Policy' . "\n\n" . 'Refunds within 30 days. See [exchanges](policies/exchanges.md).'
+			'# Policy' . "\n\n" . 'Refunds within 30 days. See [exchanges](exchanges.md) or [the policy](/policies/exchanges.md).'
 		);
 		$writer->write_concept(
 			'policies/exchanges',
