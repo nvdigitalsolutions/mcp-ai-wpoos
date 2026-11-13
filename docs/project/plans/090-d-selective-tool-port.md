@@ -91,7 +91,7 @@ eight cluster-1 candidates survived that check.
 | base | `list_prompt_cues` | ⏳ | `WP_MCP_AI_Prompt_Cue_Library` (cue data catalogue) |
 | base | `scope_memory` | ⏳ | `WP_MCP_AI_Harness_Profile` + `WP_MCP_AI_Tool_Schema_Helper` |
 | base | `enable_reasoning_mode` | ⏳ | `WP_MCP_AI_Reasoning_Controller` (stateful) |
-| pro | `generate_email_template` | ⏳ | `WP_MCP_AI_MJML_Service` + `WP_MCP_AI_PRO_PATH` |
+| pro | `generate_email_template` | 🟡 | markup building moved to `MjmlTemplateBuilder` in `lib/core`; the HTML path still needs a `compile()` port (sidecar/Node) |
 | pro | `import_email_marketing_blueprint` | ⏳ | `WP_MCP_AI_Blueprint_Installer` + `WP_MCP_AI_PRO_PATH` |
 | pro | `get_loop_metrics` | ⏳ | `WP_MCP_AI_Execution_History_CCT` — a 090-E family, not an adapter |
 | pro | `classroom_course_analytics` / `list_classroom_courses` / `list_classroom_guardians` / `list_classroom_submissions` | ⏳ | classroom store — cluster 3 |
@@ -214,7 +214,7 @@ cluster 2 proceeds once it lands.
 | Classifier | ✅ `bin/classify-tool-portability.php` |
 | Backlog generated | ✅ this document |
 | Registry seeded with self-contained core tools | ✅ 23 tools bound in the Laravel provider (`CoreToolCatalogue`) — no slugs moved, the gap is unchanged |
-| Cluster 1 ported | 🟡 2 of 8 — `verify_information`, `validate_tool_schema`; the other six need a service (see §4) |
+| Cluster 1 ported | 🟡 2 of 8 — `verify_information`, `validate_tool_schema`; `generate_email_template` had its pure builder extracted to `lib/core` (the compile path still needs a port); the rest need a service (see §4) |
 | Cluster 2–4 | ⏳ |
 | CPT/CCT families | ⏳ design: `090-e-cpt-cct-schema-port.md` (654 tools are storage-shaped) |
 | Console parity note | ⏳ add the "runtime tool count" line to the Tools page empty state |
