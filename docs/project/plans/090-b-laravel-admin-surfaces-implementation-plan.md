@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–3d and 4.1–4.7 implemented and verified — the base console, the Phase 3 Pro surfaces, the manifest-driven toolkit engine (both runtimes) and its contract fixture harness run on the Laravel adapter (2026-11-13) · Phase 5 planned
+**Status:** Phases 0–5 implemented and verified — the base console, the Phase 3 Pro surfaces, the manifest-driven toolkit engine (both runtimes), its contract fixture harness, the commercial licence source, the read-only profile, the schema/contract version gate and the 30-minute soak all run on the Laravel adapter (2026-11-13) · Phase 5 delivered in PRs #7664–#7668
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -279,10 +279,10 @@ return the typed entitlement error under the `deny` driver.
 |---|---|---|
 | 5.1 | Wire the commercial entitlement source behind `ProEntitlement` (licence server instance ID or gateway/commerce) | ✅ `license` driver + `LicensedProEntitlement`; plan table shared with WordPress via `ProPlanCatalog` |
 | 5.2 | Retire the `X-WP-Nonce` alias; the console sends Laravel's own CSRF header | ✅ Compatibility middleware deleted; console mirrors the token into `X-CSRF-TOKEN` |
-| 5.3 | SSO/cookie-domain decision (same-origin proxy vs shared domain) | Documented + tested |
+| 5.3 | SSO/cookie-domain decision (same-origin proxy vs shared domain) | ✅ Folded into 5.2 — same-origin, no cookie domain needed |
 | 5.4 | Rate limits, audit parity, observability, read-only profile | ✅ `ReadOnlyToolGuard` + security checklist below |
-| 5.5 | Upgrade/migration path (schema versions, contract versioning) | One documented upgrade |
-| 5.6 | 30-minute soak + performance gates | 0 errors; p95 within budget |
+| 5.5 | Upgrade/migration path (schema versions, contract versioning) | ✅ `nvoos:doctor` gate + runbook below |
+| 5.6 | 30-minute soak + performance gates | ✅ 22,486 requests, 0 errors; p95 0.587 s |
 
 **Gate G5:** two consecutive releases with no contract drift; the nonce alias is gone.
 
@@ -385,6 +385,85 @@ Every WordPress control either has a Laravel counterpart or an explicit accepted
 The three ⚠️ rows are the honest remainder. None of them is reachable from a ported surface today;
 if a later phase exposes a destructive action or an operator-supplied URL, its row must move to ✅
 first.
+
+### 5.5 implementation note — version gates and the upgrade runbook
+
+Two version numbers, one gate:
+
+| Version | Lives in | Meaning |
+|---|---|---|
+| `oos.contract_version` | config | The HTTP contract the console speaks. It asserts `mcp-ai/v1` + version 1 on boot and refuses to run otherwise. |
+| `oos.schema_version` | config, mirrored into `nvoos_meta` | What the data means. Written by the migration that changes it. |
+
+Laravel's `migrations` table already records *which* migrations ran. It does not record what the
+data means, so an app pointed at an older database fails later with "column not found" somewhere
+deep in a controller. `nvoos_meta` closes that gap.
+
+`php artisan nvoos:doctor` is the gate. It checks container bindings, tools, providers, **contract
+version**, **pending migrations** and the **schema version**, and exits non-zero on any failure — so
+it can run as a post-deploy step rather than something a human has to read carefully.
+
+#### Upgrade runbook
+
+1. **Back up** the database (`php artisan nvoos:doctor` is read-only; `migrate` is not).
+2. **Deploy the code** (`git pull`, `composer install --no-dev --optimize-autoloader`).
+3. **Migrate**: `php artisan migrate --force`.
+4. **Clear caches**: `php artisan optimize:clear`. Under Octane also run
+   `php artisan octane:reload` — workers keep the old route collection and container in memory.
+5. **Gate**: `php artisan nvoos:doctor` must exit `0`. A schema mismatch means step 3 did not run; a
+   contract mismatch means the console build and the API are from different releases.
+6. **Smoke**: `GET /api/v1/features` returns the expected `contract_version`.
+
+Rolling back is `php artisan migrate:rollback --step=1` followed by redeploying the previous code;
+`nvoos_meta` is dropped by its own `down()`, so a rollback leaves no version row behind to
+confuse the next doctor run.
+
+### 5.6 implementation note — soak and performance gates
+
+The soak harness (`bin/laravel-spike-soak.php`) now records per-request latency, time-to-first-byte
+and the HTTP status histogram, and exits non-zero on any error or on zero completions. TTFB is
+drained when a handle completes — `spl_object_id()` is recycled once a handle is freed, so a probe
+left in place makes every later handle inherit it and silently stop recording.
+
+#### Gates
+
+| Gate | Budget | Rationale |
+|---|---|---|
+| Errors | `0` | Any non-200 is a failure, not a blip |
+| Latency p95 | ≤ 1.0 s | Total SSE stream time at 5 concurrent streams |
+| Latency p99 | ≤ 1.5 s | Tail must not stall the console |
+| TTFB p95 | ≤ 0.75 s | What a user actually feels before the first token |
+| CPU | < 80 % | On the 2 vCPU dev box at 5 streams |
+
+#### Formal run — 2026-11-13
+
+5 concurrent SSE streams for 1800 s against `oos-laravel-app` (`/chat/stream`, spike provider):
+
+```
+started=22491  completed=22486  errors=0
+statuses: 200:22486
+done markers: 22486
+bytes: 26,129,726 (24.9 MiB)
+latency: p50=0.405s p95=0.587s p99=0.672s max=1.387s (n=22486)
+```
+
+The 5 uncompleted requests were in flight at the deadline and torn down by the harness. Every
+completed request carried a `[DONE]` marker — no truncated streams. Container CPU settled at 45 %
+and memory at 297 MiB; Redis and MySQL stayed under 5 %.
+
+A 60 s baseline re-run with the fixed TTFB instrumentation:
+
+```
+latency: p50=0.403s p95=0.562s p99=0.642s max=0.793s (n=749)
+ttfb:    p50=0.277s p95=0.405s p99=0.485s max=0.641s (n=749)
+```
+
+All five gates pass with headroom. Reproduce with:
+
+```sh
+php artisan nvoos:doctor                       # must exit 0 first
+SPIKE_TOKEN=<token> php bin/laravel-spike-soak.php --streams=5 --seconds=1800
+```
 
 ---
 
