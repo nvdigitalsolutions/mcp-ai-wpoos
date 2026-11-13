@@ -69,11 +69,11 @@ every tier by ~1,000 tools.
 ### Current inventory (2026-11-13)
 
 ```text
-slugs  base 328 · pro 1275 · core 209 · gap 1425
-tiers  A 13 · B 143 · C 413 · D 632 · E 224
+slugs  base 328 · pro 1275 · core 210 · gap 1424
+tiers  A 12 · B 143 · C 413 · D 632 · E 224
 ```
 
-**Interpretation:** 156 tools (A+B) are plausible port candidates; 413 more
+**Interpretation:** 155 tools (A+B) are plausible port candidates; 413 more
 (C) become portable once a shared adapter exists. **856 (D+E) should stay.**
 
 **Corrected 2026-11-13.** The previous inventory read `pro 1270 · gap 1434`
@@ -101,7 +101,7 @@ eight cluster-1 candidates survived that check.
 | pro | `validate_tool_schema` | ✅ ported | — |
 | base | `list_prompt_cues` | ✅ ported | `ListPromptCuesTool` + `PromptCueLibrary` in `lib/core`. The catalogue moved with the tool (eight seeded cues, relicensed MIT — see `docs/developer/licence-transitions.md`); the WordPress `do_action` and discovered-cue option stay behind |
 | base | `scope_memory` | ✅ ported | `ScopeMemoryTool` + `HarnessProfileProviderInterface`. Tag computation is pure; the only store read (`memory.pii_filter`) goes through the provider, which is optional — a runtime without harness storage reports the documented default |
-| base | `enable_reasoning_mode` | ⏳ | `Reasoning_Controller` is stateful **and** networked (3 `get_option`, 2 `update_option`, 2 `wp_remote_`) — a store port, not a move |
+| base | `enable_reasoning_mode` | ✅ ported | `EnableReasoningModeTool` + `ReasoningController` in `lib/core`. Scoring is pure; the port drops the WordPress learning-loop history write (nothing reads it, and it never affects a response) and has no hook seam. The clock is injectable for deterministic tests |
 | pro | `generate_email_template` | ✅ ported | `MjmlCompilerInterface` + `GenerateEmailTemplateTool`; branding/footer moved to `MjmlTemplateBuilder::withBrandingHeader()` / `withFooter()`. The compiler stays optional — without one the tool serves `output_format: mjml` and reports a 501 for `html` |
 | pro | `import_email_marketing_blueprint` | ⏳ | a 138-line wrapper over `Blueprint_Installer::install()`. **Correction (2026-11-13):** this is *not* a drop-in for `ContentStoreInterface`. Create and update are covered (`CreateContentCommand` / `UpdateContentCommand` both carry `meta`, and `update()` merges it), but the installer also needs an **exact title lookup** (its create-vs-update idempotency key, which `ContentQuery::search` does not provide) and `delete_post_meta`, which the contract has no method for. Either add `findByTitle()` + `deleteMeta()` to the contract (3 implementers) or leave the tool WP-only |
 | pro | `get_loop_metrics` | ⏳ | `WP_MCP_AI_Execution_History_CCT` — a 090-E family, not an adapter |
@@ -234,7 +234,7 @@ cluster 2 proceeds once it lands.
 | Classifier | ✅ `bin/classify-tool-portability.php` |
 | Backlog generated | ✅ this document |
 | Registry seeded with self-contained core tools | ✅ 23 tools bound in the Laravel provider (`CoreToolCatalogue`) — no slugs moved, the gap is unchanged |
-| Cluster 1 ported | 🟡 5 of 8 — `verify_information`, `validate_tool_schema`, `generate_email_template`, `scope_memory`, `list_prompt_cues`; the rest need a service (see §4) |
+| Cluster 1 ported | 🟡 6 of 8 — `verify_information`, `validate_tool_schema`, `generate_email_template`, `scope_memory`, `list_prompt_cues`, `enable_reasoning_mode`; `get_loop_metrics` is a 090-E storage family and `import_email_marketing_blueprint` needs two `ContentStoreInterface` methods (see §4) |
 | Cluster 2–4 | ⏳ |
 | CPT/CCT families | ⏳ design: `090-e-cpt-cct-schema-port.md` (654 tools are storage-shaped) |
 | Console parity note | ⏳ add the "runtime tool count" line to the Tools page empty state |

@@ -121,6 +121,24 @@ final class CoreToolCatalogueTest extends TestCase {
 	}
 
 	/**
+	 * The 090-D cluster-1 reasoning tool registers with pure scoring.
+	 */
+	public function testEnableReasoningModeScoresWithoutAService(): void {
+		$registry = $this->app->make( ToolRegistry::class );
+
+		$this->assertTrue( $registry->has( 'enable_reasoning_mode' ) );
+
+		$result = $registry->get( 'enable_reasoning_mode' )->execute(
+			array( 'task' => 'What is the capital of France?' )
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertFalse( $result['data']['reasoning_recommended'] );
+		$this->assertFalse( $result['data']['reasoning_activated'] );
+	}
+
+	/**
 	 * Every listed tool must expose the minimum surface the registry needs.
 	 */
 	public function testEachToolDeclaresItsSurface(): void {

@@ -35,6 +35,7 @@ use Nvoos\Core\Tool\ClientSummarizeTextTool;
 use Nvoos\Core\Tool\ClientTranslateTextTool;
 use Nvoos\Core\Tool\ColorConvertTool;
 use Nvoos\Core\Tool\CountTokensTool;
+use Nvoos\Core\Tool\EnableReasoningModeTool;
 use Nvoos\Core\Tool\ExtractDomainTool;
 use Nvoos\Core\Tool\FormatBytesTool;
 use Nvoos\Core\Tool\FormatDateTool;
@@ -123,6 +124,11 @@ final class CoreToolCatalogue {
 			// tool, so this serves the same eight seeded cues everywhere; a
 			// caller that registers extra cues passes its own library.
 			ListPromptCuesTool::class,
+
+			// 090-D cluster 1, reasoning family. Scoring is pure, so this needs
+			// no service; the optional controller exists so a caller can pin the
+			// clock that stamps `reasoning_metadata.activated_at`.
+			EnableReasoningModeTool::class,
 		);
 	}
 

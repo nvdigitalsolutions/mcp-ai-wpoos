@@ -1,0 +1,530 @@
+{
+    "simple": {
+        "args": {
+            "task": "What is the capital of France?"
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "What is the capital of France?",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "multi-step-keywords": {
+        "args": {
+            "task": "First gather the data, then clean it, finally publish it."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "First gather the data, then clean it, finally publish it.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "multi-step-flag": {
+        "args": {
+            "task": "Do the thing.",
+            "context": {
+                "multi_step": true
+            }
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Do the thing.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "numbered-steps": {
+        "args": {
+            "task": "1. Read the file 2. Fix the bug 3. Ship it"
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "1. Read the file 2. Fix the bug 3. Ship it",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "logical-keywords": {
+        "args": {
+            "task": "If A holds because B, therefore C unless D however E."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "If A holds because B, therefore C unless D however E.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "analytical-keywords": {
+        "args": {
+            "task": "Analyze and compare the two options, then evaluate and verify each."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Analyze and compare the two options, then evaluate and verify each.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "code-keywords": {
+        "args": {
+            "task": "Write code in PHP that implements a function."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Write code in PHP that implements a function.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "code-fence": {
+        "args": {
+            "task": "Refactor this:\n```php\necho 1;\n```"
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Refactor this:\n```php\necho 1;\n```",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "code-task-type": {
+        "args": {
+            "task": "Do the needful.",
+            "context": {
+                "task_type": "code_generation"
+            }
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Do the needful.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "code-line-count": {
+        "args": {
+            "task": "Produce 200 lines of code for the importer."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Produce 200 lines of code for the importer.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "domain-keywords": {
+        "args": {
+            "task": "Apply technical best practice for regulatory compliance."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Apply technical best practice for regulatory compliance.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "domain-profession": {
+        "args": {
+            "task": "Draft the filing.",
+            "context": {
+                "profession_slug": "architect"
+            }
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Draft the filing.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "domain-acronyms": {
+        "args": {
+            "task": "Map the AWS IAM S3 policy."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Map the AWS IAM S3 policy.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "verification-keywords": {
+        "args": {
+            "task": "Verify, validate, check, confirm and test the result."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Verify, validate, check, confirm and test the result.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "critical-keywords": {
+        "args": {
+            "task": "This is critical production security work."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "This is critical production security work.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "long-task": {
+        "args": {
+            "task": "Analyze the following requirements and then produce a plan. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. "
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Analyze the following requirements and then produce a plan. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words. This sentence exists to push the word count comfortably past fifty words.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "mid-task": {
+        "args": {
+            "task": "Another clause to reach thirty one words in total. Another clause to reach thirty one words in total. Another clause to reach thirty one words in total. Another clause to reach thirty one words in total. Another clause to reach thirty one words in total. "
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Another clause to reach thirty one words in total. Another clause to reach thirty one words in total. Another clause to reach thirty one words in total. Another clause to reach thirty one words in total. Another clause to reach thirty one words in total.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "model-config-cool": {
+        "args": {
+            "task": "First do A, then B, then C.",
+            "model_config": {
+                "temperature": 0.2,
+                "model": "gpt-4o"
+            }
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "First do A, then B, then C.",
+                "reasoning_activated": false,
+                "enhanced_config": {
+                    "temperature": 0.2,
+                    "model": "gpt-4o"
+                },
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "model-config-warm": {
+        "args": {
+            "task": "First do A, then B, then C.",
+            "model_config": {
+                "temperature": 0.9,
+                "model": "gpt-4o"
+            }
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "First do A, then B, then C.",
+                "reasoning_activated": false,
+                "enhanced_config": {
+                    "temperature": 0.9,
+                    "model": "gpt-4o"
+                },
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "model-config-prompt": {
+        "args": {
+            "task": "First do A, then B, then C.",
+            "model_config": {
+                "system_prompt": "You are a careful assistant."
+            }
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "First do A, then B, then C.",
+                "reasoning_activated": false,
+                "enhanced_config": {
+                    "system_prompt": "You are a careful assistant."
+                },
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "script-in-task": {
+        "args": {
+            "task": "First <script>alert(1)</script>then publish."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "First then publish.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "newlines-in-task": {
+        "args": {
+            "task": "First gather.\n\nThen publish."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "First gather.\n\nThen publish.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "high-all-indicators": {
+        "args": {
+            "task": "First do the following step by step, then next finally second; if unless because therefore however although whereas given that assuming; code function class method script program implement write code develop php javascript python css html; technical specialized expert professional industry compliance regulatory best practice; verify validate check confirm ensure test review double-check accuracy."
+        },
+        "expected": {
+            "message": "Enhanced reasoning mode activated for general task. Configuration includes chain-of-thought prompting, adjusted temperature (0.3), and verification steps.",
+            "data": {
+                "reasoning_recommended": true,
+                "task": "First do the following step by step, then next finally second; if unless because therefore however although whereas given that assuming; code function class method script program implement write code develop php javascript python css html; technical specialized expert professional industry compliance regulatory best practice; verify validate check confirm ensure test review double-check accuracy.",
+                "reasoning_activated": true,
+                "enhanced_config": {
+                    "system_prompt": "Enhanced Reasoning Mode Activated:\n\nPlease approach this task with careful, step-by-step reasoning:\n1. Break down the problem into clear steps\n2. State your assumptions explicitly\n3. Show your reasoning for each step\n4. Verify your conclusions\n5. Consider alternative approaches if needed\n\n",
+                    "temperature": 0.3,
+                    "reasoning_enabled": true,
+                    "reasoning_type": "chain_of_thought",
+                    "verify_steps": true,
+                    "reasoning_metadata": {
+                        "activated_at": "<timestamp>",
+                        "task_type": "general",
+                        "complexity": "high"
+                    }
+                },
+                "enhancements": {
+                    "chain_of_thought": true,
+                    "temperature": 0.3,
+                    "verification": true
+                },
+                "message": "Enhanced reasoning mode activated for general task. Configuration includes chain-of-thought prompting, adjusted temperature (0.3), and verification steps."
+            }
+        }
+    },
+    "activated-config-warm": {
+        "args": {
+            "task": "First do the following step by step, then next finally second; if unless because therefore however although whereas given that assuming; code function class method script program implement write code develop php javascript python css html; technical specialized expert professional industry compliance regulatory best practice; verify validate check confirm ensure test review double-check accuracy.",
+            "model_config": {
+                "temperature": 0.9,
+                "model": "gpt-4o"
+            }
+        },
+        "expected": {
+            "message": "Enhanced reasoning mode activated for general task. Configuration includes chain-of-thought prompting, adjusted temperature (0.3), and verification steps.",
+            "data": {
+                "reasoning_recommended": true,
+                "task": "First do the following step by step, then next finally second; if unless because therefore however although whereas given that assuming; code function class method script program implement write code develop php javascript python css html; technical specialized expert professional industry compliance regulatory best practice; verify validate check confirm ensure test review double-check accuracy.",
+                "reasoning_activated": true,
+                "enhanced_config": {
+                    "temperature": 0.3,
+                    "model": "gpt-4o",
+                    "system_prompt": "Enhanced Reasoning Mode Activated:\n\nPlease approach this task with careful, step-by-step reasoning:\n1. Break down the problem into clear steps\n2. State your assumptions explicitly\n3. Show your reasoning for each step\n4. Verify your conclusions\n5. Consider alternative approaches if needed\n\n",
+                    "reasoning_enabled": true,
+                    "reasoning_type": "chain_of_thought",
+                    "verify_steps": true,
+                    "reasoning_metadata": {
+                        "activated_at": "<timestamp>",
+                        "task_type": "general",
+                        "complexity": "high"
+                    }
+                },
+                "enhancements": {
+                    "chain_of_thought": true,
+                    "temperature": 0.3,
+                    "verification": true
+                },
+                "message": "Enhanced reasoning mode activated for general task. Configuration includes chain-of-thought prompting, adjusted temperature (0.3), and verification steps."
+            }
+        }
+    },
+    "activated-config-cool": {
+        "args": {
+            "task": "First do the following step by step, then next finally second; if unless because therefore however although whereas given that assuming; code function class method script program implement write code develop php javascript python css html; technical specialized expert professional industry compliance regulatory best practice; verify validate check confirm ensure test review double-check accuracy.",
+            "model_config": {
+                "temperature": 0.2,
+                "model": "gpt-4o"
+            }
+        },
+        "expected": {
+            "message": "Enhanced reasoning mode activated for general task. Configuration includes chain-of-thought prompting, adjusted temperature (0.3), and verification steps.",
+            "data": {
+                "reasoning_recommended": true,
+                "task": "First do the following step by step, then next finally second; if unless because therefore however although whereas given that assuming; code function class method script program implement write code develop php javascript python css html; technical specialized expert professional industry compliance regulatory best practice; verify validate check confirm ensure test review double-check accuracy.",
+                "reasoning_activated": true,
+                "enhanced_config": {
+                    "temperature": 0.2,
+                    "model": "gpt-4o",
+                    "system_prompt": "Enhanced Reasoning Mode Activated:\n\nPlease approach this task with careful, step-by-step reasoning:\n1. Break down the problem into clear steps\n2. State your assumptions explicitly\n3. Show your reasoning for each step\n4. Verify your conclusions\n5. Consider alternative approaches if needed\n\n",
+                    "reasoning_enabled": true,
+                    "reasoning_type": "chain_of_thought",
+                    "verify_steps": true,
+                    "reasoning_metadata": {
+                        "activated_at": "<timestamp>",
+                        "task_type": "general",
+                        "complexity": "high"
+                    }
+                },
+                "enhancements": {
+                    "chain_of_thought": true,
+                    "temperature": 0.2,
+                    "verification": true
+                },
+                "message": "Enhanced reasoning mode activated for general task. Configuration includes chain-of-thought prompting, adjusted temperature (0.3), and verification steps."
+            }
+        }
+    },
+    "activated-prompt": {
+        "args": {
+            "task": "First do the following step by step, then next finally second; if unless because therefore however although whereas given that assuming; code function class method script program implement write code develop php javascript python css html; technical specialized expert professional industry compliance regulatory best practice; verify validate check confirm ensure test review double-check accuracy.",
+            "model_config": {
+                "system_prompt": "You are a careful assistant."
+            }
+        },
+        "expected": {
+            "message": "Enhanced reasoning mode activated for general task. Configuration includes chain-of-thought prompting, adjusted temperature (0.3), and verification steps.",
+            "data": {
+                "reasoning_recommended": true,
+                "task": "First do the following step by step, then next finally second; if unless because therefore however although whereas given that assuming; code function class method script program implement write code develop php javascript python css html; technical specialized expert professional industry compliance regulatory best practice; verify validate check confirm ensure test review double-check accuracy.",
+                "reasoning_activated": true,
+                "enhanced_config": {
+                    "system_prompt": "You are a careful assistant.\n\nEnhanced Reasoning Mode Activated:\n\nPlease approach this task with careful, step-by-step reasoning:\n1. Break down the problem into clear steps\n2. State your assumptions explicitly\n3. Show your reasoning for each step\n4. Verify your conclusions\n5. Consider alternative approaches if needed\n\n",
+                    "temperature": 0.3,
+                    "reasoning_enabled": true,
+                    "reasoning_type": "chain_of_thought",
+                    "verify_steps": true,
+                    "reasoning_metadata": {
+                        "activated_at": "<timestamp>",
+                        "task_type": "general",
+                        "complexity": "high"
+                    }
+                },
+                "enhancements": {
+                    "chain_of_thought": true,
+                    "temperature": 0.3,
+                    "verification": true
+                },
+                "message": "Enhanced reasoning mode activated for general task. Configuration includes chain-of-thought prompting, adjusted temperature (0.3), and verification steps."
+            }
+        }
+    },
+    "high-code-review": {
+        "args": {
+            "task": "First write code in PHP that implements the importer, then validate it, check the tests, and ensure production security.",
+            "context": {
+                "task_type": "code_generation"
+            }
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "First write code in PHP that implements the importer, then validate it, check the tests, and ensure production security.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    },
+    "high-research": {
+        "args": {
+            "task": "Analyze and compare the sources because the evidence conflicts, therefore verify each claim and review the citations carefully."
+        },
+        "expected": {
+            "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used.",
+            "data": {
+                "reasoning_recommended": false,
+                "task": "Analyze and compare the sources because the evidence conflicts, therefore verify each claim and review the citations carefully.",
+                "reasoning_activated": false,
+                "enhanced_config": [],
+                "message": "Task complexity does not require enhanced reasoning mode. Standard configuration will be used."
+            }
+        }
+    }
+}
