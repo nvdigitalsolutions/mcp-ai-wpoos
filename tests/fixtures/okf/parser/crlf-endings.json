@@ -1,0 +1,10 @@
+{
+    "input": "---\r\ntype: Skill\r\ntitle: Windows\r\n---\r\nBody.\r\n",
+    "expected": {
+        "frontmatter": {
+            "type": "Skill",
+            "title": "Windows"
+        },
+        "body": "Body."
+    }
+}

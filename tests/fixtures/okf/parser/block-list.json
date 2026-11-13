@@ -1,0 +1,13 @@
+{
+    "input": "---\ntags:\n  - security\n  - wordpress\n  - 'quoted item'\n---\nBody.\n",
+    "expected": {
+        "frontmatter": {
+            "tags": [
+                "security",
+                "wordpress",
+                "quoted item"
+            ]
+        },
+        "body": "Body."
+    }
+}
