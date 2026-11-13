@@ -1,0 +1,314 @@
+{
+    "tree": {
+        "index.md": "# Demo Bundle\n\n* [Tables](tables/index.md) - Table concepts\n* [Guides](guides/getting-started.md) - How to start\n",
+        "tables/index.md": "* [Orders](orders.md) - Order records\n* [Customers](customers.md) - Customer records\n",
+        "tables/orders.md": "---\ntype: Table\ntitle: Orders\ndescription: Order records\ntags:\n  - sales\n  - core\n---\n# Orders\n\nOrder rows.\n",
+        "tables/customers.md": "---\ntype: Table\ntitle: Customers\ndescription: Customer records\ntags: [crm, sales]\n---\nSee [Orders](orders.md).\n",
+        "guides/getting-started.md": "---\ntype: Guide\ntitle: Getting Started\ndescription: First steps\n---\nStart with [Orders](/tables/orders.md).\n",
+        "broken.md": "---\ntype: Broken\ntitle: Broken\n",
+        "orphan.md": "Just a body, no frontmatter.\n",
+        "log.md": "---\ntype: Log\ntitle: Change Log\n---\nReserved filename.\n"
+    },
+    "cases": [
+        {
+            "name": "get-concept",
+            "op": "get_concept",
+            "args": {
+                "concept_id": "tables/orders"
+            },
+            "expected": {
+                "concept_id": "tables/orders",
+                "frontmatter": {
+                    "type": "Table",
+                    "title": "Orders",
+                    "description": "Order records",
+                    "tags": [
+                        "sales",
+                        "core"
+                    ]
+                },
+                "body": "# Orders\n\nOrder rows."
+            }
+        },
+        {
+            "name": "get-concept-strips-md-suffix",
+            "op": "get_concept",
+            "args": {
+                "concept_id": "tables/orders.md"
+            },
+            "expected": {
+                "concept_id": "tables/orders",
+                "frontmatter": {
+                    "type": "Table",
+                    "title": "Orders",
+                    "description": "Order records",
+                    "tags": [
+                        "sales",
+                        "core"
+                    ]
+                },
+                "body": "# Orders\n\nOrder rows."
+            }
+        },
+        {
+            "name": "get-concept-nested",
+            "op": "get_concept",
+            "args": {
+                "concept_id": "guides/getting-started"
+            },
+            "expected": {
+                "concept_id": "guides/getting-started",
+                "frontmatter": {
+                    "type": "Guide",
+                    "title": "Getting Started",
+                    "description": "First steps"
+                },
+                "body": "Start with [Orders](/tables/orders.md)."
+            }
+        },
+        {
+            "name": "get-concept-missing",
+            "op": "get_concept",
+            "args": {
+                "concept_id": "does/not/exist"
+            },
+            "expected": {
+                "error": "okf_not_found"
+            }
+        },
+        {
+            "name": "get-concept-dotdot-outside-root",
+            "op": "get_concept",
+            "args": {
+                "concept_id": "../outside"
+            },
+            "expected": {
+                "error": "okf_not_found"
+            }
+        },
+        {
+            "name": "get-concept-unclosed-frontmatter",
+            "op": "get_concept",
+            "args": {
+                "concept_id": "broken"
+            },
+            "expected": {
+                "error": "okf_unclosed_frontmatter"
+            }
+        },
+        {
+            "name": "get-concept-no-frontmatter",
+            "op": "get_concept",
+            "args": {
+                "concept_id": "orphan"
+            },
+            "expected": {
+                "error": "okf_no_frontmatter"
+            }
+        },
+        {
+            "name": "browse-root-uses-index",
+            "op": "browse",
+            "args": {
+                "path": ""
+            },
+            "expected": [
+                {
+                    "title": "Tables",
+                    "path": "tables/index.md",
+                    "description": "Table concepts"
+                },
+                {
+                    "title": "Guides",
+                    "path": "guides/getting-started.md",
+                    "description": "How to start"
+                }
+            ]
+        },
+        {
+            "name": "browse-subdirectory-uses-index",
+            "op": "browse",
+            "args": {
+                "path": "tables"
+            },
+            "expected": [
+                {
+                    "title": "Orders",
+                    "path": "orders.md",
+                    "description": "Order records"
+                },
+                {
+                    "title": "Customers",
+                    "path": "customers.md",
+                    "description": "Customer records"
+                }
+            ]
+        },
+        {
+            "name": "browse-falls-back-to-scan",
+            "op": "browse",
+            "args": {
+                "path": "guides"
+            },
+            "expected": [
+                {
+                    "title": "Getting Started",
+                    "path": "guides/getting-started.md",
+                    "description": "First steps"
+                }
+            ]
+        },
+        {
+            "name": "browse-missing-directory",
+            "op": "browse",
+            "args": {
+                "path": "nope"
+            },
+            "expected": {
+                "error": "okf_not_found"
+            }
+        },
+        {
+            "name": "traverse-depth-1",
+            "op": "traverse",
+            "args": {
+                "concept_id": "tables/customers",
+                "max_depth": 1
+            },
+            "expected": {
+                "concept_id": "tables/customers",
+                "frontmatter": {
+                    "type": "Table",
+                    "title": "Customers",
+                    "description": "Customer records",
+                    "tags": [
+                        "crm",
+                        "sales"
+                    ]
+                },
+                "body": "See [Orders](orders.md).",
+                "links": [
+                    {
+                        "concept_id": "orders",
+                        "error": "Concept not found: orders",
+                        "links": []
+                    }
+                ]
+            }
+        },
+        {
+            "name": "traverse-depth-0-clamps-to-1",
+            "op": "traverse",
+            "args": {
+                "concept_id": "tables/customers",
+                "max_depth": 0
+            },
+            "expected": {
+                "concept_id": "tables/customers",
+                "frontmatter": {
+                    "type": "Table",
+                    "title": "Customers",
+                    "description": "Customer records",
+                    "tags": [
+                        "crm",
+                        "sales"
+                    ]
+                },
+                "body": "See [Orders](orders.md).",
+                "links": [
+                    {
+                        "concept_id": "orders",
+                        "error": "Concept not found: orders",
+                        "links": []
+                    }
+                ]
+            }
+        },
+        {
+            "name": "get-types",
+            "op": "get_types",
+            "args": [],
+            "expected": [
+                "Guide",
+                "Table"
+            ]
+        },
+        {
+            "name": "search-by-type",
+            "op": "search",
+            "args": {
+                "criteria": {
+                    "type": "Table"
+                }
+            },
+            "expected": [
+                {
+                    "concept_id": "tables/customers",
+                    "type": "Table",
+                    "title": "Customers",
+                    "description": "Customer records",
+                    "tags": [
+                        "crm",
+                        "sales"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "unverified",
+                    "stale": false
+                },
+                {
+                    "concept_id": "tables/orders",
+                    "type": "Table",
+                    "title": "Orders",
+                    "description": "Order records",
+                    "tags": [
+                        "sales",
+                        "core"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "unverified",
+                    "stale": false
+                }
+            ]
+        },
+        {
+            "name": "search-tag-is-case-insensitive",
+            "op": "search",
+            "args": {
+                "criteria": {
+                    "tag": "CRM"
+                }
+            },
+            "expected": [
+                {
+                    "concept_id": "tables/customers",
+                    "type": "Table",
+                    "title": "Customers",
+                    "description": "Customer records",
+                    "tags": [
+                        "crm",
+                        "sales"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "unverified",
+                    "stale": false
+                }
+            ]
+        },
+        {
+            "name": "file-to-concept-id-relative",
+            "op": "file_to_concept_id",
+            "args": {
+                "path": "tables/orders.md"
+            },
+            "expected": "tables/orders"
+        },
+        {
+            "name": "file-to-concept-id-root-index",
+            "op": "file_to_concept_id",
+            "args": {
+                "path": "index.md"
+            },
+            "expected": "index"
+        }
+    ]
+}

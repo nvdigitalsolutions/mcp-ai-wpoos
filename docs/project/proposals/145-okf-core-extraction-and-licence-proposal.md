@@ -300,6 +300,51 @@ docblock that documents the mapping.
 
 **Gate G3:** WordPress reader tests unchanged and green; corpus parity for browse/traverse/search.
 
+#### Phase 3 — harness shipped (reader corpus)
+
+The characterisation half of Phase 3 is in place; the port itself is next.
+
+| File | Purpose |
+|---|---|
+| `tests/support/okf-reader-corpus.php` | Three hand-authored bundle trees, case inputs, materialiser, normaliser |
+| `tests/manual/run-okf-reader-corpus.php` | Offline runner + `--write`; stubs `WP_Error`, `sanitize_text_field`, `wp_normalize_path`, `untrailingslashit` |
+| `tests/fixtures/okf/reader/*.json` | 36 committed cases across `basic`, `metadata`, `links` |
+| `tests/test-okf-reader-corpus.php` | PHPUnit twin + a traversal test the corpus cannot express |
+
+A reader fixture is one bundle plus its cases, because operations share a tree:
+
+```json
+{ "tree": { "tables/orders.md": "---\ntype: Table\n..." },
+  "cases": [ { "name": "get-concept", "op": "get_concept", "args": {...}, "expected": ... } ] }
+```
+
+Covered operations: `get_concept`, `browse`, `traverse`, `search`, `get_types`,
+`find_broken_links`, `get_trust_tier`, `is_stale`, `file_to_concept_id`.
+
+**Determinism.** `search()` walks a `RecursiveDirectoryIterator`, so its result order is
+filesystem-dependent; the normaliser sorts by concept ID. Staleness cases use dates at 2000 and
+2999 so the recorded expectation cannot rot.
+
+**Four behaviours the corpus pinned, all of which the port must reproduce.**
+
+1. **`traverse` resolves relative links against the bundle root, not the concept's directory.**
+   `[Orders](orders.md)` inside `tables/customers.md` becomes concept ID `orders`, which does not
+   exist, so traversal returns an error node where `find_broken_links` (which uses
+   `resolve_link_target()`) correctly resolves it. The two disagree on the same link. This looks
+   like a genuine defect in `traverse` and should be decided before the port reproduces it —
+   matching it would import the bug into `lib/core`.
+2. **`./` prefixes survive.** `[Beta](./beta.md)` yields concept ID `./beta`; only `../` is stripped.
+   The read still succeeds, so the artefact is an inconsistent ID rather than a failure.
+3. **External links are not skipped by `traverse`.** `https://example.com/x.md` becomes an error
+   node (`okf_not_found`) in the traversal tree.
+4. **Missing traversal targets report `okf_not_found`, not `okf_path_traversal`.** `../outside`
+   fails the `file_exists()` check before the `realpath()` containment check runs. Containment is
+   still enforced — a test in the twin creates a real sibling directory sharing the root prefix
+   and asserts `okf_path_traversal`.
+
+Verification: offline **36 passed, 0 failed**; PHPUnit twin **38 tests, 40 assertions**;
+`phpcs` clean.
+
 ### Phase 4 — Licence, gates, documentation
 
 - `lib/core` files carry `@license MIT` + `SPDX-License-Identifier: MIT`; the WP wrappers stay
