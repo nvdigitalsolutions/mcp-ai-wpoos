@@ -267,6 +267,33 @@ abstract class AbstractTool implements ToolInterface {
 	}
 
 	/**
+	 * Sanitize a list-of-integers parameter from arguments.
+	 *
+	 * Non-numeric entries are dropped and duplicates collapse, so a caller that
+	 * sends `[1, "1", "x"]` stores two elements rather than something a JSON
+	 * filter will never match again.
+	 *
+	 * @param ToolArgs $arguments Raw tool arguments.
+	 *
+	 * @return list<int>
+	 */
+	protected function intListParam( array $arguments, string $key ): array {
+		if ( ! isset( $arguments[ $key ] ) || ! is_array( $arguments[ $key ] ) ) {
+			return array();
+		}
+
+		$values = array();
+
+		foreach ( $arguments[ $key ] as $value ) {
+			if ( is_numeric( $value ) ) {
+				$values[] = (int) $value;
+			}
+		}
+
+		return array_values( array_unique( $values ) );
+	}
+
+	/**
 	 * Sanitize a string parameter from arguments.
 	 * @param ToolArgs $arguments Raw tool arguments.
 	 */

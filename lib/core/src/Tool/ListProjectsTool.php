@@ -19,8 +19,8 @@ namespace Nvoos\Core\Tool;
 
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
-use Nvoos\Core\Domain\Entity\ContentItem;
 use Nvoos\Core\Domain\Entity\ContentQuery;
+use Nvoos\Core\Tool\ProjectManagement\ProjectRow;
 
 class ListProjectsTool extends AbstractTool {
 
@@ -142,7 +142,7 @@ class ListProjectsTool extends AbstractTool {
 		$projects = array();
 
 		foreach ( $collection->items as $item ) {
-			$projects[] = $this->row( $item );
+			$projects[] = ProjectRow::from( $item );
 		}
 
 		return $this->success(
@@ -155,23 +155,4 @@ class ListProjectsTool extends AbstractTool {
 		);
 	}
 
-	/**
-	 * @return array<string, mixed>
-	 */
-	private function row( ContentItem $item ): array {
-		$meta     = $item->meta;
-		$assigned = $meta['_project_assigned_to'] ?? array();
-
-		return array(
-			'id'          => $item->id,
-			'name'        => $item->title,
-			'description' => $item->content,
-			'status'      => (string) ( $meta['_project_status'] ?? 'planning' ),
-			'start_date'  => (string) ( $meta['_project_start_date'] ?? '' ),
-			'end_date'    => (string) ( $meta['_project_end_date'] ?? '' ),
-			'assigned_to' => is_array( $assigned ) ? array_values( $assigned ) : array(),
-			'created_at'  => $item->createdAt->format( \DateTimeInterface::ATOM ),
-			'updated_at'  => $item->updatedAt->format( \DateTimeInterface::ATOM ),
-		);
-	}
 }
