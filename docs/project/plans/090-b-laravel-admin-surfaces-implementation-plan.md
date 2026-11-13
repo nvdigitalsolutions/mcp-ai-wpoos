@@ -145,7 +145,7 @@ requests.
 | 2.1 | Durable assistant model + core contract service | `Assistant`, migration, `LaravelAssistantService` | ✅ |
 | 2.2 | CRUD endpoints + default handling | `AssistantController` | ✅ |
 | 2.3 | Bundle v1 export/import (core fields + full meta) | `AssistantPortabilityController` | ✅ Laravel-native. **Edit-form meta parity shipped** for 16 design-time keys via the additive `advanced` object on both runtimes (skills + progressive disclosure included), plus a base skills catalogue route and a Pro MCP-apps write route for the console — see [`090-b-assistant-edit-field-parity.md`](090-b-assistant-edit-field-parity.md) §4.1–4.2. Credentials, harness profiles, primary-role ID mapping and mesh routing remain explicit deferrals (§6 of that doc); the Laravel runtime hides the skills and MCP-apps pickers until it exposes those endpoints |
-| 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ⏳ |
+| 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ✅ catalogue + detail (`BlueprintTest`, 5 cases) — ⏳ install (§6.1) |
 | 2.5 | Teams (basic CRUD + membership) — schema and contract in `090-g` §4.2 | `TeamController` | ✅ |
 | 2.6 | Per-assistant tool assignment | `tools` field on the model | ✅ |
 | 2.7 | Test-assistant dry run | `AssistantTestController` | ⏳ |
@@ -177,6 +177,16 @@ Decision: **mirror the JSON into the Laravel app** at
 `docker/laravel/app-skeleton/blueprints/<toolkit>/<slug>.json`, committed, with
 a sync script and a CI drift check that fails when the two trees differ.
 Duplication is explicit and tested rather than implicit.
+
+**Shipped (read half).** `BlueprintController` serves the two GET routes from
+`App\Services\BlueprintCatalogue`, reading the committed mirror — 69 blueprints
+across 27 toolkits, synced by `bin/sync-blueprints.php` (which also takes
+`--check` for the drift gate). Two deliberate differences from WordPress:
+Laravel lists **every** mirrored toolkit, because there is no
+`wp_mcp_ai_settings` equivalent to enable one; and the routes sit under
+`can:manage_options` with the rest of the console, where WordPress gates on
+`edit_posts`. Both are stated in the service docblock so they cannot be
+mistaken for drift later.
 
 **Sequencing.** Reads first, the same rule the 090-E families follow:
 
