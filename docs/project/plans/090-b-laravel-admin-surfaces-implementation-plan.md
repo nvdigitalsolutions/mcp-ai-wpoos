@@ -144,15 +144,58 @@ requests.
 |---|---|---|---|
 | 2.1 | Durable assistant model + core contract service | `Assistant`, migration, `LaravelAssistantService` | ✅ |
 | 2.2 | CRUD endpoints + default handling | `AssistantController` | ✅ |
-| 2.3 | Bundle v1 export/import (core fields + full meta) | `AssistantPortabilityController` | ✅ (Laravel-native; WP meta parity ⏳) |
+| 2.3 | Bundle v1 export/import (core fields + full meta) | `AssistantPortabilityController` | ✅ Laravel-native. **Edit-form meta parity shipped** for 16 design-time keys via the additive `advanced` object on both runtimes (skills + progressive disclosure included), plus a base skills catalogue route and a Pro MCP-apps write route for the console — see [`090-b-assistant-edit-field-parity.md`](090-b-assistant-edit-field-parity.md) §4.1–4.2. Credentials, harness profiles, primary-role ID mapping and mesh routing remain explicit deferrals (§6 of that doc); the Laravel runtime hides the skills and MCP-apps pickers until it exposes those endpoints |
 | 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ⏳ |
-| 2.5 | Teams (basic CRUD + membership) — schema and contract in `090-g` §4.2 | `TeamController` | ⏳ |
+| 2.5 | Teams (basic CRUD + membership) — schema and contract in `090-g` §4.2 | `TeamController` | ✅ |
 | 2.6 | Per-assistant tool assignment | `tools` field on the model | ✅ |
 | 2.7 | Test-assistant dry run | `AssistantTestController` | ⏳ |
 | 2.8 | Contract fixtures + round-trip tests | `AssistantStudioTest` | ✅ (shape/round-trip; WP fixtures ⏳) |
 
 **Gate G2:** assistant create → export → import round-trip; a Service Exchange bundle imports and
 the estate reaches `bundle_imported`.
+
+### 6.1 Task 2.4 — Blueprints on Laravel
+
+The console already ships `BlueprintsPage` and `api/blueprints.ts`; the Laravel
+backend is the only missing half. WordPress serves the same three endpoints from
+`WP_MCP_AI_Pro_Blueprints_REST_Controller`, which delegates to the promoted
+`WP_MCP_AI_Unified_Blueprints_Page` seams:
+
+| Endpoint | Payload |
+|---|---|
+| `GET /blueprints` | `{ total, toolkits: [{ slug, label, blueprints: [{ slug, name, description, tool_count, installed, assistant_id }] }] }` |
+| `GET /blueprints/{toolkit}/{slug}` | `{ toolkit, slug, name, description, instructions, tools[], defaults }` |
+| `POST /blueprints/{toolkit}/{slug}/install` | body `{ overwrite }` → `{ toolkit, slug, assistant_id }` |
+
+**Where the data lives.** A blueprint is a JSON file at
+`addons/pro/includes/tools/<toolkit>/examples/<slug>.json` (69 files today),
+read through `WP_MCP_AI_Blueprint_Installer::list_blueprints()` and
+`load_blueprint()`. A Laravel deployment does not ship `addons/`, and `lib/` is
+excluded from wp.org builds, so neither tree can be the shared home.
+
+Decision: **mirror the JSON into the Laravel app** at
+`docker/laravel/app-skeleton/blueprints/<toolkit>/<slug>.json`, committed, with
+a sync script and a CI drift check that fails when the two trees differ.
+Duplication is explicit and tested rather than implicit.
+
+**Sequencing.** Reads first, the same rule the 090-E families follow:
+
+1. `GET /blueprints` and `GET /blueprints/{toolkit}/{slug}` — catalogue loader,
+   toolkit enablement, detail normalisation, `BlueprintTest`.
+2. `POST …/install` — only worth doing once the non-mechanical parts of
+   `WP_MCP_AI_Blueprint_Installer::install()` have a home: profession slug →
+   catalogue lookup (`find_profession_post_id()` becomes an adapter call), CRM
+   meta remapping (`remap_crm_meta_to_canonical()`), `_blueprint_source`
+   bookkeeping, and `overwrite` semantics.
+
+**Installed map.** WordPress keys installed blueprints by assistant *title*
+among assistants carrying `_blueprint_source`. Laravel should record the same
+provenance and derive the map the same way, so both runtimes answer `installed`
+and `assistant_id` identically.
+
+**Tests.** `BlueprintTest` for shape, 404s and the enablement gate, plus a
+contract fixture captured from the WordPress REST responses and replayed on
+Laravel, the way the project-management corpus does it.
 
 ---
 

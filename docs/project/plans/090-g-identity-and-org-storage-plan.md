@@ -27,10 +27,14 @@ deployment, and one contract across runtimes**.
 |---|---|---|
 | Assistant storage | CPT `mcp_ai_assistant` + postmeta | `assistants` table (app-level migration) |
 | Assistant contract | `AssistantServiceInterface` (core) | `LaravelAssistantService` ✅ |
-| Team storage | — | **none** (no model, no migration) |
-| Team contract | — | **none** (`090-b` §6 task 2.5 `⏳`) |
-| Profession storage | PHP service + knowledge-base loader | **none** |
-| Profession contract | `ProfessionRepositoryInterface` (core) | **no adapter** |
+| Team storage | — | `teams` + `team_members` (migration `2026_11_12_100000_create_teams_tables`), tenant-scoped |
+| Team contract | — | `TeamServiceInterface` (core) + `LaravelTeamService` ✅ — `/api/v1/org/teams` (§4.2) |
+| Profession storage | PHP service + knowledge-base loader | catalogue-backed, no table by design (§4.3) |
+| Profession contract | `ProfessionRepositoryInterface` (core) | `ProfessionRepository` adapter, bound in `NvoosServiceProvider` ✅ |
+
+These four rows previously read "none" / "no adapter". That was stale: the team
+graph, both contracts and the profession adapter shipped in Phase 3, and
+`TeamTest` + `TeamCatalogueTest` pass (23 tests, 91 assertions).
 | Profession pages | WP admin pages | Content Graph addon only |
 
 **Two defects in the current `assistants` migration** (both only visible once
