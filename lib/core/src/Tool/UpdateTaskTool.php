@@ -27,13 +27,11 @@ use Nvoos\Core\Domain\Entity\UpdateContentCommand;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\Error\NotFoundException;
 use Nvoos\Core\Tool\ProjectManagement\TaskRow;
+use Nvoos\Core\Tool\ProjectManagement\Vocabulary;
 
 class UpdateTaskTool extends AbstractTool {
 
 	private const TYPE = 'mcp_ai_task';
-
-	private const STATUSES   = array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' );
-	private const PRIORITIES = array( 'low', 'medium', 'high', 'urgent' );
 
 	public function __construct(
 		ErrorFactoryInterface $errors,
@@ -73,12 +71,12 @@ class UpdateTaskTool extends AbstractTool {
 				'status'      => array(
 					'type'        => 'string',
 					'description' => 'New task status (optional).',
-					'enum'        => self::STATUSES,
+					'enum'        => Vocabulary::TASK_STATUSES,
 				),
 				'priority'    => array(
 					'type'        => 'string',
 					'description' => 'New task priority (optional).',
-					'enum'        => self::PRIORITIES,
+					'enum'        => Vocabulary::TASK_PRIORITIES,
 				),
 				'due_date'    => array(
 					'type'        => 'string',
@@ -114,12 +112,12 @@ class UpdateTaskTool extends AbstractTool {
 		}
 
 		$status = $this->stringParam( $arguments, 'status' );
-		if ( '' !== $status && ! in_array( $status, self::STATUSES, true ) ) {
+		if ( '' !== $status && ! in_array( $status, Vocabulary::TASK_STATUSES, true ) ) {
 			return $this->errors->create( 'invalid_argument', 'Unknown task status.' );
 		}
 
 		$priority = $this->stringParam( $arguments, 'priority' );
-		if ( '' !== $priority && ! in_array( $priority, self::PRIORITIES, true ) ) {
+		if ( '' !== $priority && ! in_array( $priority, Vocabulary::TASK_PRIORITIES, true ) ) {
 			return $this->errors->create( 'invalid_argument', 'Unknown task priority.' );
 		}
 
