@@ -5,9 +5,9 @@ description: End-to-end playbook for creating a new NV oOS Pro toolkit under add
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.15"
-  plugin-version-tested: "1.2.15"
-  last-updated: "2026-11-01"
+  plugin-version: "1.2.20"
+  plugin-version-tested: "1.2.20"
+  last-updated: "2026-11-13"
 ---
 
 # NV oOS Pro Toolkit Creation Loop
@@ -28,6 +28,19 @@ page) — both now called out in §4.
 - "The `<toolkit>` tools/presets/toggle don't show up — where do I register them?"
 - Scaffolding `addons/pro/includes/tools/<new-toolkit>/` for the first time
 - A plan/proposal (e.g. `docs/project/proposals/06x-*.md`) is being implemented
+
+## Related: manifest-driven console families (090-B)
+
+The manifest engine (`addons/pro/includes/toolkits/manifests/*.json` +
+`WP_MCP_AI_Pro_Toolkit_Manifests` / `WP_MCP_AI_Pro_Toolkit_Records` / the
+`mcp-ai-pro/v1/toolkit-manifests` controller) is a **different surface** from
+the tool-class toolkits this skill creates. A manifest family is a JSON
+document that declares screens, settings, entities and dashboard cards, and
+one console shell renders it on **both** WordPress and Laravel. If the ask is
+"add a console family" rather than "add tool classes", copy
+`addons/pro/includes/toolkits/manifests/commerce.json` and follow the
+`mcp-ai-wpoos-laravel-runtime` skill §8 / `mcp-ai-wpoos-spa-ui` — do not
+scaffold `addons/pro/includes/tools/<toolkit>/`.
 
 ## 1. Plan first, then build
 

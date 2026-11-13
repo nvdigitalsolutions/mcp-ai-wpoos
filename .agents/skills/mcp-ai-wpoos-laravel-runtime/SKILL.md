@@ -77,11 +77,11 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 ## 3. Validation matrix
 
-| Suite | Command (cwd) | Baseline @ 2026-11-13 |
+| Suite | Command (cwd) | Baseline (captured 2026-11-13) |
 |---|---|---|
-| App | `docker exec oos-laravel-app php artisan test` | 158 passed / 982 assertions |
-| Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 97 passed / 368 assertions |
-| Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 987 tests; **5 known pre-existing** `ToolRegistryIntegrationTest` errors — do not chase |
+| App | `docker exec oos-laravel-app php artisan test` | 158 passed / 982 assertions at #7654 — later PRs add the Paper Store, PM-write and toolkit suites, so re-capture before citing a number |
+| Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 175 passed / 640 assertions (after #7679) |
+| Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1105 tests / 3982 assertions (after #7689); **5 known pre-existing** `ToolRegistryIntegrationTest` errors — do not chase |
 
 **No CI job runs `php artisan test`.** The only gate on `docker/**` is PSR-12
 via `phpcs-laravel.xml.dist` plus the licence boundary. A green local run is
@@ -126,7 +126,7 @@ committing.
 
 ## 5. Authorization model (Proposal 090-g Phase 5)
 
-Two scopes, one vocabulary.
+Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gates landed, every authenticated user could `POST /api/v1/assistants`, rewrite settings, retry dead-letter jobs or export the catalogue — the console hid the buttons, the API did not care. Hiding a button is UX, not authorization.
 
 | Scope | Storage | Values |
 |---|---|---|
@@ -145,6 +145,8 @@ Two scopes, one vocabulary.
 - `/org` routes are **outside** `manage_options` on purpose — membership is
   the authorization there. Moving them inside breaks open-team creation.
 - Legacy `role = 'admin'` is normalised to `administrator`.
+- **CSRF:** the console sends `X-CSRF-TOKEN` (from `GET /api/v1/session/nonce`) in both the fetch wrapper and the jQuery prefilter. `X-XSRF-TOKEN` is wrong here — Laravel *decrypts* it and it only accepts the cookie value. The WordPress-shaped `AcceptWpNonce` shim is deleted; a bare `X-WP-Nonce` gets `419`. WordPress ignores the extra header, so one client build serves both hosts.
+- **Read-only profile:** `ReadOnlyToolGuard` binds as a **monotonic deny-only** guard after every `tools/pre_execute` listener (`NVOOS_READ_ONLY`). It denies `write`/`state_changing`/`mutating`/`destructive`/`external_side_effect` and, stricter than the WordPress chat profile, undeclared tools unless `block_undeclared: false` or an allowlist is set.
 
 ## 6. Gotchas (each cost a cycle)
 
@@ -154,6 +156,12 @@ Two scopes, one vocabulary.
   promote rows still on the default — a dev DB can grow a column out of band.
 - **Route order**: `/assistants/export|import` before `/assistants/{assistant}`;
   `/paper-store/search` before `/paper-store/{collection}`.
+- **Paper Store paths are constraints, not string cleaning** — reject invalid
+  segments (`.`, `..`, separators) at the route/store boundary; normalising a
+  caller's id turns a traversal attempt into a successful write elsewhere.
+- **WordPress is always MySQL, Laravel may not be** — wrap every
+  `json_extract()` in `json_unquote()` or the raw value comes back quoted and
+  every filter silently misses.
 - **Octane**: a bound (not singleton) repository is rebuilt per request; do not
   promote stateful readers to singletons or a long-lived worker serves stale
   data.
@@ -169,9 +177,17 @@ Two scopes, one vocabulary.
 | Plan | State |
 |---|---|
 | `090-…-spike…` | Implemented, dev-verified |
-| `090-b` admin surfaces | Phases 0–3d shipped; 4.5–4.7 toolkit service layer + Phase 5 entitlement open |
-| `090-c` research screen | Plan only; no drafting pipeline |
-| `090-d` tool port | Plan + backlog; no tool ported (194 tools served vs 328 base + 1,270 Pro slugs) |
+| `090-b` admin surfaces | Phases 0–3d shipped; 4.5–4.7 toolkit service + research shipped (#7619–#7663); Phase 5 entitlement/read-only shipped (#7664–#7666) |
+| `090-c` research screen | Shipped — `POST /api/v1/pro/toolkits/{slug}/research` wired to the provider router (#7658), WordPress parity via `ToolkitResearchService` (#7663) |
+| `090-d` tool port | Cluster 1 in progress: `verify_information`, `validate_tool_schema`, create/update/delete task/project + bulk import, and the MJML builder ported; dependency labels corrected by measurement (#7690) |
 | `090-e` CPT/CCT schema | Design only; the unit of work is a family schema, not a tool |
-| `090-f` storage bridge | Phase 1 + SchemaStore + family read path shipped; 8 parity tests open |
+| `090-f` storage bridge | Paper Store contract + task/project write path + the 8 missing runtime tables shipped (#7669–#7679); parity gates complete (#7655) |
 | `090-g` identity/org | Shipped — 6 phases, 10/10 gates |
+
+## 8. v1.2.20 storage and toolkit surfaces
+
+- **Paper Store** — `PaperStoreInterface` + `JsonPaperStore`: `{root}/{collection}/{id}.json`, atomic temp-file + `rename`, store-owned stamps (`id`, `collection`, `type`, `schemaVersion`, `created_at`, `updated_at`), rejects invalid path segments (never normalises), `query()` returns `{records, total}`. The old `nvoos_paper_records` table is dead.
+- **Runtime tables** — `nvoos_schedules`, `nvoos_schedule_runs`, `nvoos_triggers`, `nvoos_approvals`, `nvoos_files`, `nvoos_posts`, `nvoos_security_snapshots`, `nvoos_toolkit_records` ship as migrations. A fresh `php artisan migrate` must create them; if a surface says "table not found", the migration did not run.
+- **Toolkit manifests** — `ToolkitManifest` (`lib/core`) validates `addons/pro/includes/toolkits/manifests/*.json`; the Laravel `Pro\ToolkitsController` serves the same `mcp-ai-pro/v1/toolkit-manifests` envelope as WordPress.
+- **Profession catalogue** — `ProfessionRepositoryInterface::catalogueVersion()` + `CachedProfessionRepository` key the cache by version; a catalogue change bumps the version and invalidates without a manual purge. `save_profession` writes through `ProfessionWriteInterface` on WordPress and is deliberately **not** registered on Laravel.
+- **MJML** — `MjmlTemplateBuilder` (`lib/core`) builds markup; `compile()`/`validate()` stay WordPress-side because they call the Media Worker sidecar.

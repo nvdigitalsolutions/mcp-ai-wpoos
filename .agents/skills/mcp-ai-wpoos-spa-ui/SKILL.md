@@ -5,9 +5,9 @@ description: "UI stack, build, and test conventions for NV oOS React SPA addons 
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.13"
-  plugin-version-tested: "1.2.13"
-  last-updated: "2026-11-03"
+  plugin-version: "1.2.20"
+  plugin-version-tested: "1.2.20"
+  last-updated: "2026-11-13"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -182,6 +182,7 @@ app. Read this map when landing in either folder:
 | island bundles (`addons/media-studio/assets/dist/*`, `addons/document-editor/assets/dist/*`) | both apps import them via `?url` in their `runtime-config.ts`; the console `vitest.config.ts` needs `fs.allow` for them | `?url` imports are per-app — update BOTH runtime-configs |
 | `src/features/remote-sites/RemoteSitesPage.tsx` (Connections page) + `src/api/remote-sites.ts` | mounted ONLY by the console: `ConsoleShell.tsx` lazy route `/connections` + `nav-features.tsx` item under Command Centers → Channels. Its REST base `mcp-ai-pro/v1/remote-sites` (manage_options-gated controller in `addons/pro/includes/rest/`) is NOT in spa-v2's own router — a page wired this way needs no spa-v2 bundle rebuild (see the churn rule below) | new console-only page = console dist rebuild only |
 | `src/features/commerce/CommerceToolkitPage.tsx` + `src/api/commerce.ts` + `SettingsForm.tsx` extraction | mounted by BOTH apps: spa-v2's router (`/ecommerce` `/ezuite` `/shopify-sync` `/flowhub` `/products` `/content`) AND the console nav (Command Centers group). Backed by `mcp-ai-pro/v1/commerce/sync-runs` (read-only) + the SitePicker proxying through the shared `remoteSites` endpoint (wordpress-type Remote Sites) | commerce pages touch both routers → rebuild BOTH bundles |
+| `src/features/toolkits/` (`ToolkitsPage`, `ToolkitPage`, `screens/{Settings,Entities,Dashboard,Research,Consolidate}Screen`, `components/ImportDialog`, `api/toolkits.ts`) | mounted by both apps; renders whatever JSON manifest the backend serves (`mcp-ai-pro/v1/toolkit-manifests`, identical envelope on WordPress + Laravel). Phase 4.2 of 090-B. | a **new toolkit family is a manifest** (`addons/pro/includes/toolkits/manifests/*.json`) — no JS rebuild; a new *screen type* is a spa-v2 change → rebuild BOTH bundles |
 | `src/features/paper-store/PaperStorePage.tsx` + `src/api/paper-store.ts` | mounted by both apps (`#/paper-store` route in spa-v2's router + guarded console nav; `endpoints.paperStore` = `mcp-ai/v1/paper-store`) | four-point endpoint wiring (see the paperStore rule below) |
 | `src/features/assistants/ToolPicker.tsx` (Proposal 088) | the spa-v2 assistant editor (AssistantsPage — the surface the console mounts); its registry fetch calls `ToolsClient.list(…, scope: 'all')` — the server's new `scope=all` route arg (default assistant resolution unchanged for unscoped requests) | picker is spa-v2-only → spa-v2 dist rebuild suffices; the `scope`/`flags` contract is server-side additive |
 | vendored island (`src/features/docs-hub/upstream/`) | consumed by both apps through spa-v2's DocsPage | byte-identical upstream discipline |

@@ -1,7 +1,20 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.19)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.20)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
+
+---
+
+## Media Registry, Toolkit Manifests, Laravel Parity (v1.2.20)
+
+- **Generative-media capability registry (Proposal 141, #7598/#7615)** — `includes/data/media-model-catalog.json` (v1.1.0, 12 models) is the single source for aspect ratios, resolutions, batch sizes, durations, reference-image limits and feature flags. `WP_MCP_AI_Media_Model_Catalog` validates it; `WP_MCP_AI_Prompt_Craft` composes deterministic prompts. **+2 base tools:** `media_model_capabilities`, `enhance_media_prompt`. The five media-generation tools derive their schema enums from the registry (the aperture getter is string-cast).
+- **Pro toolkit manifest engine (090-B Phases 4.1–4.7, #7619–#7663)** — `addons/pro/includes/toolkits/manifests/{commerce,documents}.json` declare screens/settings/entities/cards; `WP_MCP_AI_Pro_Toolkit_Manifests` validates them with the shared `lib/core` class and `WP_MCP_AI_Pro_Toolkit_Records` stores every family in `nvoos_toolkit_records`. WordPress and Laravel serve the same `mcp-ai-pro/v1/toolkit-manifests` envelope (research/consolidate/import included); the Schedule Anything `GET mcp-ai-pro/v1/toolkits` collision is fixed.
+- **Commercial entitlement + read-only (090-b Phases 5.1–5.4, #7664/#7665/#7666)** — `ProPlanCatalog` (`lib/core`) owns the plan → feature table; `LicensedProEntitlement` reuses the licence HTTP contract. The `X-WP-Nonce` shim (`AcceptWpNonce`) is **deleted**: the console sends `X-CSRF-TOKEN`, a bare `X-WP-Nonce` gets `419`. `ReadOnlyToolGuard` (`NVOOS_READ_ONLY`) is a monotonic deny-only `ToolRegistry` guard after every `tools/pre_execute` listener.
+- **Laravel parity (090-b/f/g, #7610–#7679)** — admin surfaces, tenant scoping, WP-role authorization with `can:` gates, profession catalogue + versioned cache, teams, meta/tax-aware content store, the shared atomic `JsonPaperStore`, project-management writes + bulk import, and **eight `nvoos_*` tables now shipped as migrations**. `save_profession` writes through `ProfessionWriteInterface` (Laravel stays read-only); `verify_information` and `validate_tool_schema` run natively in `lib/core`.
+- **OKF hardening (Proposal 145, #7677–#7687)** — 19-case parser + 36-case reader corpora, a differential parity test, one concept-relative link rule (`concept_links()`), external URIs dropped, UTF-8 BOM stripped before frontmatter detection, and the Pro REST link-extraction duplicate removed.
+- **CCT sync + ICS (#7590/#7592, #7582)** — EZuite/FlowHub/Shopify re-heal duplicate CCT definitions on a throttle, use the highest-ID canonical record, and rebuild the JetEngine Factory after `ensure_columns()` (schema 1.10.1). ICS availability gates on the sidecar or a `wp_mcp_ai_ics_generate_calendar` filter, not a local Node install.
+- **App-side** — new Service Exchange (Proposal 143, `examples/nvoos-service-exchange` + skill), Cognition **v0.4.0** (tag `nvoos-dictate-v0.4.0`), and the Astro Forge interaction/chrome/colour gates + gradient/parallax/motion inventory.
+- **Counts** — tools **~360 base + ~1,388 Pro (~1,747 total, +2 base)**; coding-time skills **85**; addons **32** (unchanged); model catalog **v2026.11.03** (unchanged); security classes **12**; stale **1.2.18** build set removed (30 files).
 
 ---
 
