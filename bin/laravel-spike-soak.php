@@ -33,7 +33,18 @@ $payload = json_encode(
 );
 
 $multi = curl_multi_init();
-$stats = array( 'started' => 0, 'completed' => 0, 'errors' => 0, 'bytes' => 0, 'done_markers' => 0 );
+$stats = array(
+	'started'      => 0,
+	'completed'    => 0,
+	'errors'       => 0,
+	'bytes'        => 0,
+	'done_markers' => 0,
+	'inflight'     => array(),
+	'latencies'    => array(),
+	'ttfb'         => array(),
+	'ttfbs'        => array(),
+	'statuses'     => array(),
+);
 $live  = array();
 
 /**
@@ -56,6 +67,14 @@ function add_stream( $multi, string $url, string $token, string $payload, array 
 		),
 		CURLOPT_TIMEOUT        => 60,
 		CURLOPT_WRITEFUNCTION  => static function ( $ch, string $chunk ) use ( &$local, &$stats ): int {
+			$id = spl_object_id( $ch );
+
+			// Time to first byte matters as much as total latency for SSE:
+			// a slow first chunk is what a console user actually feels.
+			if ( '' !== $chunk && ! isset( $stats['ttfb'][ $id ] ) && isset( $stats['inflight'][ $id ] ) ) {
+				$stats['ttfb'][ $id ] = microtime( true ) - $stats['inflight'][ $id ];
+			}
+
 			$local['bytes'] += strlen( $chunk );
 			$stats['bytes'] += strlen( $chunk );
 			if ( false !== strpos( $chunk, '[DONE]' ) ) {
@@ -65,6 +84,8 @@ function add_stream( $multi, string $url, string $token, string $payload, array 
 			return strlen( $chunk );
 		},
 	) );
+
+	$stats['inflight'][ spl_object_id( $handle ) ] = microtime( true );
 
 	curl_multi_add_handle( $multi, $handle );
 	++$stats['started'];
@@ -90,7 +111,23 @@ while ( microtime( true ) < $deadline ) {
 
 	while ( false !== ( $info = curl_multi_info_read( $multi ) ) ) {
 		$handle = $info['handle'];
+		$id     = spl_object_id( $handle );
 		$code   = (int) curl_getinfo( $handle, CURLINFO_RESPONSE_CODE );
+
+		$stats['statuses'][ $code ] = ( $stats['statuses'][ $code ] ?? 0 ) + 1;
+
+		if ( isset( $stats['inflight'][ $id ] ) ) {
+			$stats['latencies'][] = microtime( true ) - $stats['inflight'][ $id ];
+			unset( $stats['inflight'][ $id ] );
+		}
+
+		// Spl_object_id is recycled once the handle is freed, so the TTFB
+		// probe has to be drained here — otherwise a later handle inherits
+		// the id, sees `isset()`, and never records its own first byte.
+		if ( isset( $stats['ttfb'][ $id ] ) ) {
+			$stats['ttfbs'][] = $stats['ttfb'][ $id ];
+			unset( $stats['ttfb'][ $id ] );
+		}
 
 		if ( CURLMSG_DONE === $info['msg'] && 200 !== $code ) {
 			++$stats['errors'];
@@ -142,4 +179,51 @@ echo '  errors:    ' . $stats['errors'] . "\n";
 echo '  bytes:     ' . $stats['bytes'] . "\n";
 echo '  done:      ' . $stats['done_markers'] . "\n";
 
-exit( $stats['errors'] > 0 ? 1 : 0 );
+ksort( $stats['statuses'] );
+echo '  statuses:  ' . ( $stats['statuses'] ? status_histogram( $stats['statuses'] ) : 'none' ) . "\n";
+
+echo '  latency:   ' . percentiles( $stats['latencies'] ) . "\n";
+echo '  ttfb:      ' . percentiles( $stats['ttfbs'] ) . "\n";
+
+exit( $stats['errors'] > 0 || 0 === $stats['completed'] ? 1 : 0 );
+
+/**
+ * Render a percentile summary for a set of observations.
+ *
+ * @param float[] $values Observations in seconds.
+ */
+function percentiles( array $values ): string {
+	if ( array() === $values ) {
+		return 'n/a';
+	}
+
+	sort( $values );
+	$pick = static function ( float $p ) use ( $values ): float {
+		$index = (int) ceil( $p * count( $values ) ) - 1;
+		return $values[ max( 0, min( $index, count( $values ) - 1 ) ) ];
+	};
+
+	return sprintf(
+		'p50=%.3fs p95=%.3fs p99=%.3fs max=%.3fs (n=%d)',
+		$pick( 0.50 ),
+		$pick( 0.95 ),
+		$pick( 0.99 ),
+		$values[ count( $values ) - 1 ],
+		count( $values )
+	);
+}
+
+/**
+ * JSON-encode a status histogram without the JSON extension dependency games.
+ *
+ * @param array<int,int> $histogram Status code → count.
+ */
+function status_histogram( array $histogram ): string {
+	$parts = array();
+
+	foreach ( $histogram as $code => $count ) {
+		$parts[] = $code . ':' . $count;
+	}
+
+	return implode( ' ', $parts );
+}
