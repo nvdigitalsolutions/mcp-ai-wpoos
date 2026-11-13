@@ -1,6 +1,6 @@
 # Proposal 090-F — Storage bridge: make the content port trustworthy
 
-Status: Phase 1 shipped (#7635, #7636) and its acceptance gates verified (2026-11-13, 104 adapter tests); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped; Phase 3 shipped (2026-11-13, 18 core + 10 app tests); Phase 5 shipped (missing runtime schema + test isolation); Phase 4 open — no Laravel consumer.
+Status: Phase 1 shipped (#7635, #7636) and its acceptance gates verified (2026-11-13, 104 adapter tests); Phase 2 pre-req (Laravel SchemaStore, #7637) and the family read path shipped; Phase 3 shipped (2026-11-13, 18 core + 10 app tests); Phase 5 shipped (missing runtime schema + test isolation); Phase 4 moved to Proposal 145.
 Depends on: `090-d-selective-tool-port.md` (what to port), `090-e-cpt-cct-schema-port.md` (which families).
 
 ---
@@ -247,6 +247,12 @@ route or tool. Two things also make "move" the wrong verb:
 Revisit when a Laravel surface needs OKF (bundle browsing in the console is the likely trigger).
 At that point the honest shape is a clean-room core parser with the existing WP tests as the
 specification, not a file move.
+
+**Superseded.** [`145-okf-core-extraction-and-licence-proposal.md`](../proposals/145-okf-core-extraction-and-licence-proposal.md)
+revises that conclusion: the OKF code is first-party, so relicensing is available and a clean-room
+rewrite is unnecessary. The blocker is the WordPress coupling and the parser/reader having no
+automated tests, so proposal 145 replaces Phase 4 with a characterised port (golden corpus →
+differential test → licence change). Track the work there.
 
 ### Phase 5 — Schedules
 
