@@ -981,6 +981,15 @@ function wp_mcp_ai_init_test_database_tables() {
 		WP_MCP_AI_Async_Job_Queue::create_table();
 	}
 
+	// Ensure the slash-command audit table exists for tests. It is created on
+	// plugin activation, which never runs under PHPUnit; without it every
+	// slash-command REST request logs "table doesn't exist" database errors
+	// from WP_MCP_AI_REST_Slash_Command_Controller::write_audit_log(), and any
+	// test that inspects the audit trail silently sees an empty table.
+	if ( function_exists( 'wp_mcp_ai_create_slash_command_audit_table' ) ) {
+		wp_mcp_ai_create_slash_command_audit_table();
+	}
+
 	// Ensure the content embedding table exists for tests. In production it
 	// is created on plugin activation, which never runs under PHPUnit, but
 	// the delete_post hook fires during the WP PHPUnit bootstrap cleanup
