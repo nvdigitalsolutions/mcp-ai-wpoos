@@ -88,12 +88,20 @@ class WP_MCP_AI_OKF_Parser {
 	 * Returns a WP_Error if the frontmatter is malformed.
 	 *
 	 * @since 2.1.0
+	 * @since 1.2.20 Strip a leading UTF-8 BOM before looking for the frontmatter delimiter.
 	 *
 	 * @param string $content Raw markdown file content.
 	 * @return array{frontmatter: array, body: string}|null|WP_Error
 	 */
 	public function parse( $content ) {
 		$content = trim( $content );
+
+		// A UTF-8 BOM is not whitespace to trim(), so without this a BOM-prefixed
+		// file looks like it has no frontmatter block at all. Editors on Windows
+		// write one by default, which makes the failure silent and confusing.
+		if ( 0 === strncmp( $content, "\xEF\xBB\xBF", 3 ) ) {
+			$content = trim( substr( $content, 3 ) );
+		}
 
 		// Frontmatter must start with --- on the first line.
 		if ( 0 !== strpos( $content, '---' ) ) {

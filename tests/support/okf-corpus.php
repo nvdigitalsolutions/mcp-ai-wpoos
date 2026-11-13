@@ -126,6 +126,8 @@ function wp_mcp_ai_okf_corpus_inputs(): array {
 
 		'crlf-endings'         => "---\r\ntype: Skill\r\ntitle: Windows\r\n---\r\nBody.\r\n",
 
+		// Regression guard: a BOM is not whitespace to trim(), so before the parser
+		// stripped it this document parsed as null and was silently invisible.
 		'bom-prefixed'         => "\xEF\xBB\xBF---\ntype: Skill\n---\nBody.\n",
 
 		'unicode'              => "---\n"
