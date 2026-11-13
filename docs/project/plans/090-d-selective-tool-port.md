@@ -88,11 +88,11 @@ eight cluster-1 candidates survived that check.
 |---|---|---|---|
 | pro | `verify_information` | ✅ ported | — |
 | pro | `validate_tool_schema` | ✅ ported | — |
-| base | `list_prompt_cues` | ⏳ | `WP_MCP_AI_Prompt_Cue_Library` (cue data catalogue) |
-| base | `scope_memory` | ⏳ | `WP_MCP_AI_Harness_Profile` + `WP_MCP_AI_Tool_Schema_Helper` |
-| base | `enable_reasoning_mode` | ⏳ | `WP_MCP_AI_Reasoning_Controller` (stateful) |
+| base | `list_prompt_cues` | ⏳ | not data: `Prompt_Cue_Library` is a **registry** with `update_option`, `do_action` and `apply_filters`, so the catalogue needs a source port and its cue text needs a licence note |
+| base | `scope_memory` | ⏳ | `Harness_Profile` reads an option and a filter; `Tool_Schema_Helper` is genuinely pure (self-references only) |
+| base | `enable_reasoning_mode` | ⏳ | `Reasoning_Controller` is stateful **and** networked (3 `get_option`, 2 `update_option`, 2 `wp_remote_`) — a store port, not a move |
 | pro | `generate_email_template` | 🟡 | markup building moved to `MjmlTemplateBuilder` in `lib/core`; the HTML path still needs a `compile()` port (sidecar/Node) |
-| pro | `import_email_marketing_blueprint` | ⏳ | `WP_MCP_AI_Blueprint_Installer` + `WP_MCP_AI_PRO_PATH` |
+| pro | `import_email_marketing_blueprint` | ⏳ | `Blueprint_Installer` writes via `wp_insert_post` ×2 and nothing else — **reuses the existing `ContentStoreInterface`**, no new port needed |
 | pro | `get_loop_metrics` | ⏳ | `WP_MCP_AI_Execution_History_CCT` — a 090-E family, not an adapter |
 | pro | `classroom_course_analytics` / `list_classroom_courses` / `list_classroom_guardians` / `list_classroom_submissions` | ⏳ | classroom store — cluster 3 |
 | pro | `git_inspect` / `git_change` | ⏳ | **excluded** — needs a process port and its own security review |
@@ -111,6 +111,15 @@ deliberate: the core envelope nests the fields under `data`, and
 `validate_tool_schema` does not reproduce the WordPress tool's
 caller-supplied file read (its extractor is a stub that always yields an
 empty schema).
+
+**Verification recipe for the remaining rows.** Every candidate that looked
+like a file move so far has hidden a call behind a trait or a sibling class
+— `WP_MCP_AI_MJML_Service` looked pure until `sidecar_request()` turned out
+to be an HTTP call from a trait. Before classifying a row, grep the file
+**and every class it names** for `use .*Trait`, `get_option`, `update_option`,
+`apply_filters`, `do_action`, `wp_remote_`, `wp_insert_post` and
+`file_put_contents`. A row is only "move to core" when that set is empty
+except for escaping and `__()`.
 
 ---
 
