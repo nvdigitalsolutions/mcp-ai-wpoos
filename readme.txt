@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 8.1
-Stable tag: 1.2.19
+Stable tag: 1.2.20
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -306,6 +306,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.20 - November 13, 2026 =
+
+Bumped to 1.2.20 across plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md, and DOCUMENTATION_INDEX.md. Generative media gets a declarative capability registry (Proposal 141): a validated 12-model media-model-catalog.json now drives the schema enums of the Sora, Veo, Omni and Higgsfield image/video tools, and two new base tools ship (media_model_capabilities and enhance_media_prompt, with a string-typed aperture enum). The Pro toolkit engine becomes manifest-driven (Proposal 090-B): commerce and documents manifests, one nvoos_toolkit_records table, identical mcp-ai-pro/v1/toolkit-manifests envelopes on WordPress and Laravel, console catalogue/settings/entity/dashboard/research screens, server-side consolidation and previewed bulk import, plus the Schedule Anything route-collision fix. Commercial Pro entitlement moves into lib/core (ProPlanCatalog; the new LicensedProEntitlement driver reuses the licence HTTP contract), the X-WP-Nonce CSRF shim is retired for X-CSRF-TOKEN, and ReadOnlyToolGuard is a deny-only runtime profile (NVOOS_READ_ONLY). The Laravel runtime reaches parity (Proposal 090-b/f/g): admin surfaces, tenant-scoped assistants, WordPress-role authorization on every route, a version-keyed profession catalogue, team storage, meta/tax-aware content store, the project-management read/write stack, the shared atomic Paper Store contract, and the eight missing nvoos_* tables now shipped as migrations. save_profession actually writes, verify_information and validate_tool_schema run natively in lib/core, and the OKF engine gains 19-case parser and 36-case reader corpus harnesses, concept-relative link resolution and BOM stripping. EZuite, FlowHub and Shopify Sync no longer silently drop new CCT columns (throttled duplicate healing, highest-ID canonical record, Factory rebuild; schema 1.10.1), and ICS availability gates on the sidecar or filter instead of a local Node install. App-side: new Service Exchange (Proposal 143), Cognition v0.4.0 (tag nvoos-dictate-v0.4.0), and the Astro Forge interaction/chrome/colour gates, gradient and parallax surfaces, animation inventory and band/carousel measurement. Two new coding-time skills (mcp-ai-wpoos-laravel-runtime, mcp-ai-wpoos-service-exchange) take the catalog to 85. Tool count: ~360 base + ~1,388 Pro (~1,747 total; +2 base; live registry authoritative). Model catalog v2026.11.03 unchanged (251 models, 18 providers); addons 32 unchanged. Stale 1.2.18 build ZIPs removed.
 
 = 1.2.19 - November 11, 2026 =
 

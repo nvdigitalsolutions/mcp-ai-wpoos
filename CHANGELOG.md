@@ -1,5 +1,71 @@
 # oOS – Changelog
 
+## [1.2.20] - 2026-11-13
+
+### Added — Generative-media capability registry and deterministic prompt craft (Proposal 141, #7598/#7615)
+
+- **One validated data file now owns every media-model capability.** `includes/data/media-model-catalog.json` (**v1.1.0**, 12 models) declares aspect ratios, resolutions, batch sizes, durations, reference-image limits and per-model feature flags for the generative image/video endpoints. `WP_MCP_AI_Media_Model_Catalog` loads and validates it and exposes list / describe / recommend / validate queries plus the schema-derivation helpers. The five media tools (`generate_sora_video`, `generate_veo_video`, `generate_omni_video`, `generate_higgsfield_image`, `generate_higgsfield_video`) derive their schema enums from the registry instead of duplicating literals.
+- **Two new base tools:** `media_model_capabilities` (query the registry) and `enhance_media_prompt` (deterministic prompt craft over a versioned vocabulary — camera, lens, aperture, lighting, composition). `WP_MCP_AI_Prompt_Craft` casts numeric-string aperture keys (`'4'`, `'11'`) back to strings, fixing a mixed `type: string` enum that failed the tool-schema contract gate and silently dropped whole-stop apertures from composed prompts (#7615).
+
+### Added — Pro toolkit manifest engine (090-B Phases 4.1–4.7, #7619/#7621/#7623/#7625/#7633/#7658/#7660/#7663)
+
+- **A Pro toolkit family is now a JSON manifest, not a bespoke PHP page.** `addons/pro/includes/toolkits/manifests/{commerce,documents}.json` declare screens, settings, entities, columns and dashboard cards; `WP_MCP_AI_Pro_Toolkit_Manifests` validates them with the same `lib/core` class the Laravel loader uses, and `WP_MCP_AI_Pro_Toolkit_Records` stores every family's rows in one `nvoos_toolkit_records` table (created by dbDelta when the schema-version option moves).
+- **WordPress and Laravel serve the same envelope** at `mcp-ai-pro/v1/toolkit-manifests` (index, manifest, settings, dashboard, entity CRUD, duplicates, import), and the research route exists on both runtimes with one `ToolkitResearchService` implementation in `lib/core`. The parity probe found and fixed three envelope-key differences (`settings.slug`, `entities/{entity}.entity`).
+- **The console renders whatever the manifest declares** — typed `ToolkitsClient`, catalogue/detail pages, settings, entity workbench, dashboard cards, research and consolidate scaffolds. Settings bind to dashboard filters/cards (`low_stock_threshold`), consolidation groups server-side, and bulk import previews the same validation the form uses before writing.
+- **Route-collision fix:** two controllers registered `GET mcp-ai-pro/v1/toolkits`; the Pro manifest controller and the Schedule Anything per-tenant controller now coexist (the SA suite's 33-slug map is intact).
+
+### Added — Commercial entitlement and a read-only runtime profile (090-b Phases 5.1–5.4, #7664/#7665/#7666)
+
+- **Pro entitlement now exists outside WordPress.** `ProPlanCatalog` in `lib/core` owns the plan → feature table (WordPress `has_feature()` and the Laravel adapter both read it), and the new `LicensedProEntitlement` driver reuses the licence HTTP contract with `site_url = instance_id`. The `allow` / `deny` / `config` drivers are untouched, and `has_feature()` fails closed if `lib/core` is absent.
+- **The WordPress-shaped CSRF shim is gone.** The console mirrors the fetched session nonce into `X-CSRF-TOKEN` in both the fetch wrapper and the jQuery prefilter (Laravel compares it directly; WordPress ignores it), `AcceptWpNonce` and its unit test are deleted, and a bare `X-WP-Nonce` now gets a typed `419`.
+- **`ReadOnlyToolGuard` is a monotonic deny-only guard** on the core `ToolRegistry` (`NVOOS_READ_ONLY`) — it runs after every `tools/pre_execute` listener, so no listener can re-allow a denied tool. Defaults deny `write` / `state_changing` / `mutating` / `destructive` / `external_side_effect` and, stricter than WordPress's chat profile, deny undeclared tools unless `block_undeclared: false` or an allowlist is set. The phase's security checklist is recorded in the 090-b plan.
+
+### Added — Laravel runtime parity stack (090-b/090-f/090-g, #7610–#7655, #7665–#7676, #7679)
+
+- **The Laravel host now matches the WordPress runtime across admin, content, teams and tools.** In-window: admin Phase 0 contract, Phase 1 + assistant studio, Phase 3b operations, the media library/upload service, Pro schedules/records surfaces, the org-teams page and the profession selector; tenant-scoped assistants; the WP role → capability map enforced on every route (`can:` gates, editor vs author separated by `delete_others_posts`); a profession catalogue with a version-keyed read-through cache (`ProfessionRepositoryInterface::catalogueVersion()` + `CachedProfessionRepository`); team storage + catalogue parity; a content store that honours meta/tax queries with a schema source for content types; and the project-management read/write stack (`create/update/delete project/task`, bulk import with dry run).
+- **Eight tables that existed only in the dev database now ship as migrations** — `nvoos_schedules`, `nvoos_schedule_runs`, `nvoos_triggers`, `nvoos_approvals`, `nvoos_files`, `nvoos_posts`, `nvoos_security_snapshots`, `nvoos_toolkit_records` — so a fresh `php artisan migrate` no longer boots an app whose Paper Store, schedules, triggers, approvals, media, content and toolkit surfaces all fail with "table not found".
+- **The Paper Store became one shared on-disk contract.** `PaperStoreInterface` + `JsonPaperStore` write `{root}/{collection}/{id}.json` with atomic temp-file + `rename` writes, reject invalid path segments rather than normalising them, own their stamps, and replace the dead `nvoos_paper_records` backend that no migration ever created.
+- **`save_profession` actually saves.** The core `SaveProfessionTool` reported success and wrote nothing; the new optional `ProfessionWriteInterface` lets the WordPress adapter delegate to `WP_MCP_AI_Profession_Repository`, the tool mirrors the WordPress schema and result envelope, absent optional fields are omitted, and Laravel stays deliberately read-only (asserted by test).
+- **Tool parity:** `verify_information` and `validate_tool_schema` now run natively in `lib/core` with canonical `ErrorFactory` failures. Cluster-1 dependency labels were corrected by measurement: `list_prompt_cues` needs a source port plus a licence note, `enable_reasoning_mode` is stateful **and** networked, and `import_email_marketing_blueprint` reuses `ContentStoreInterface` (no new port).
+- **Quality gates:** PSR-12 over the Laravel trees, the `lib/core` PHPStan baseline cleared, a contract-fixture harness + app CI, and a schema-version gate in `nvoos:doctor`.
+
+### Added — OKF engine hardening (Proposal 145, #7677/#7685/#7686/#7687)
+
+- **Corpus-first, characterised ports.** A 19-case parser corpus and a 36-case reader corpus were written against the WordPress implementation first; the MIT `lib/core` `OkfParser` then ran green on its first execution, and a differential test asserts core == WordPress on every fixture. A leading UTF-8 BOM is now stripped before the frontmatter delimiter is sought (#7678).
+- **One link-resolution rule.** `traverse()` and `find_broken_links()` disagreed about relative links (`tables/orders` vs `orders`), kept `./` prefixes and walked external URIs. `concept_links($body, $concept_id)` now delegates to `resolve_link_target()` (leading `/` = bundle-absolute, everything else = concept-relative, external schemes dropped), and the Pro REST drawer's 28-line duplicate is deleted.
+
+### Fixed — CCT field sync silently dropped new columns (#7590/#7592)
+
+- **Root cause:** two CCT definitions sharing a slug share one data table, but JetEngine hydrates one Factory per record (last wins) while `get_cct_record_by_slug()` used the *first* row and `maybe_cleanup_duplicate_ccts()` latched a permanent "clean" option on the first pass. New fields therefore appeared in JetEngine and MySQL but were dropped by `Item_Handler::update_item()` (which writes only Factory-known fields). The managers now re-check duplicates on a throttle, use the highest-ID record as canonical (matching the cleanup), and rebuild the Factory after `ensure_columns()`. Applied to **EZuite**, **FlowHub** and **Shopify Sync** (schema version 1.10.0 → 1.10.1).
+
+### Fixed — ICS availability told operators to install Node (#7582)
+
+- The ICS export gate required a local `node` binary and an `assets/vendor/ics/index.js` that requires an unvendored `pipeline.js` — neither is how ICS is produced (filter → Media Worker sidecar). The gate now accepts `is_sidecar_available()` or a `wp_mcp_ai_ics_generate_calendar` filter, and the Pro settings matrix stops reporting `available: installed` when the worker is unreachable.
+
+### Fixed — other
+
+- **Cognition `available_features()`** emitted `, parakeet, whisper…` (a separator before the first engine) in Diagnostics and the "not compiled" error (#7646); recognition/paste-fidelity hardening (#7644).
+- **Tool discovery** in the registry integration test (#7680); the slash-command audit table is generated in tests and self-heals its drift (#7681/#7683).
+- **MJML** template building is extracted into `lib/core` (`MjmlTemplateBuilder`) with a corpus proving byte-identical output; `compile()`/`validate()` deliberately stay WordPress-side (#7689).
+- **SPA build** fixed for the new Laravel endpoints (#7653); Windows CI `ort-sys` DLL handling fixed (#7652/#7657); Playwright Chromium installs retried with a launch proof (#7595–#7597).
+- **Vendored-dependency integrity gate** (#7583); mirror-release assets wired for the synced repos (#7603–#7606).
+
+### Added — Service Exchange, Cognition 0.4.0 and the Astro Forge fidelity wave (app-side)
+
+- **Service Exchange (Proposal 143, #7601):** new `examples/nvoos-service-exchange` — a Vite/React wizard plus a zero-dependency Node control plane that deploys an expert's MCP SaaS estate on Cloudways (Service Blueprint v1, estate state machine, api→ssh→manual tiers, verified Cloudways API v2 contract, probes, security invariants), with the new `mcp-ai-wpoos-service-exchange` skill and its public mirror.
+- **Cognition v0.4.0** (tag `nvoos-dictate-v0.4.0`): document OCR, the memory layer, the proprietary licence and the tag → draft → mirror release flow documented; all five version files moved together (the lockfile had drifted at 0.2.0), and the app CHANGELOG the release body referenced now exists.
+- **Astro Forge** gains interaction-state capture/gating and mobile-nav disclosure, the colour gate + chrome-state gate, header/footer box gates, gradient/parallax surfaces and the motion inventory, band-column/fixed-photo measurement, carousel slides-per-view + dots, and accordion/CTA/uppercase fixes; the skill gains `reference/` sheets for animation inventory, chrome gates, colour gate, Flatsome/outline rebuild, interaction states, mobile-nav disclosure, parallax and the Proposal 122 fidelity round (#7584–#7600, #7609–#7628, #7682).
+
+### Docs & skills
+
+- **Two new coding-time skills:** `mcp-ai-wpoos-laravel-runtime` (#7654 — app-skeleton vs the gitignored `app/` bind mount, the `oos-laravel-*` containers, three PHPUnit suites and baselines, WP-role authorization, gotchas) and `mcp-ai-wpoos-service-exchange` (#7601). The count surfaces (`AGENTS.md`, copilot-instructions, README repo map) were already updated to **85** in-window; this pass verifies rather than folds in.
+- **Description budget re-validated:** `npm run validate:skills` reports **92 skills / 47,759 B** against the ~50 KB cap.
+- **In-place updates:** CCT sync gotchas (toolkit audit/creation + test-suite), MSYS colon-mangling + stacked-child merge order + mirror-release lessons (git-ops), the enum-type pattern + no-dev vendor runbook (test-suite), Cognition build/verification gotchas (dictation-app), the astro-forge reference set, plus `wp-action-scheduler`, `wp-plugin-dto`, `wp-plugin-lifecycle`, `wp-rest-api`, `mcp-ai-wpoos-spa-ui`, `mcp-ai-wpoos-wporg-submission` and `mcp-ai-wpoos-updates`.
+
+### Versioning
+
+- Bumped to **1.2.20** across plugin header, `WP_MCP_AI_VERSION`, `WP_MCP_AI_PRO_VERSION`, `package.json`, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md and DOCUMENTATION_INDEX.md. Pro addon: 1.2.20. **Model catalog: v2026.11.03** (251 models, 18 providers — zero diff; the new `media-model-catalog.json` is a generative-media registry, not a chat provider). **Addon count: 32** (unchanged — no `addons/` version moves in-window). Sub-projects: Cognition **0.4.0**, new Service Exchange **0.1.0**; astro-forge 0.2.0 and the packages unchanged. **Tool count: ~360 base + ~1,388 Pro (~1,747 total — +2 base: `media_model_capabilities`, `enhance_media_prompt`)**; live registry authoritative. **Coding-time skills: 85** (83 → 85 in-window). Bundled skills: 77 base + 41 Pro (unchanged). Security classes: **12** (unchanged). **Stale 1.2.18 build ZIPs removed** (30 files).
+
 ## [1.2.19] - 2026-11-11
 
 ### Security — one client-IP resolver behind trusted proxies (#7570)
