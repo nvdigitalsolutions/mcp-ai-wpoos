@@ -61,11 +61,14 @@ describe( 'builder accordion — control row', () => {
 	} );
 
 	it( 'inherits its ink instead of hard-wiring the accent', async () => {
+		// The rule ON the anchor — not a rule on its icon. `! /\bi$/.test()` used to
+		// stand in for that, but it also let the marker's `i[class*='fa-']:empty`
+		// through; the selector must end at the control itself.
 		const control = blocks( await templateCss() ).filter(
 			( block ) =>
 				block.sel.includes( '.panel-group' ) &&
 				block.sel.includes( '.panel-heading a' ) &&
-				! /\bi$/.test( block.sel )
+				/\ba(?::[-a-z]+)?$/.test( block.sel )
 		);
 
 		expect( control.length ).toBeGreaterThan( 0 );
@@ -81,5 +84,95 @@ describe( 'measured ink plumbing', () => {
 		const css = await templateCss();
 
 		expect( css ).toMatch( /\.ds-title\s*\{[^}]*color:\s*var\(--ds-title-color/s );
+	} );
+} );
+
+// ---------------------------------------------------------------------------
+// The MARKER: one glyph, not two.
+//
+// The vendor's expander is an EMPTY `<i class="fa-solid fa-plus">` and this
+// sheet draws the +/− itself, because the builder's JS (which swapped fa-plus
+// for fa-minus) is never shipped. A site whose chrome loads Font Awesome —
+// virtuallyjamaica's does, for the footer socials — resolves that empty `i` to
+// a REAL glyph, so the row painted the font's plus AND the drawn marker beside
+// it: "+ +" on all 8 rows. The generic `i[class*='fa-']:empty` guard was meant
+// to stop a bare box but is (0,4,1) and loses to the control's own
+// `display:inline-block` (0,4,2), which is stated for rest AND hover.
+//
+// This is a SPECIFICITY invariant, not a marker-text one: whatever hides the
+// empty marker must out-rank every rule that paints the row's icon.
+// ---------------------------------------------------------------------------
+
+/** The cascade weight of one selector, as the [ id, class, element ] triple. */
+function specificity( selector: string ): number[] {
+	const ids = ( selector.match( /#[-\w]+/g ) ?? [] ).length;
+	const rest = selector.replace( /#[-\w]+/g, '' );
+	const classes =
+		( rest.match( /\.[-\w]+/g ) ?? [] ).length +
+		( rest.match( /\[[^\]]*\]/g ) ?? [] ).length +
+		( rest.match( /(?<!:):[-a-z]+/gi ) ?? [] ).length;
+	const elements =
+		( rest.match( /::[-a-z]+/gi ) ?? [] ).length +
+		( rest.replace( /\.[-\w]+|\[[^\]]*\]|::?[-a-z]+/gi, ' ' ).match( /[a-z][-\w]*/gi ) ?? [] ).length;
+	return [ ids, classes, elements ];
+}
+
+/** True when `a` wins the cascade against `b` from any source position. */
+function outranks( a: number[], b: number[] ): boolean {
+	for ( let i = 0; i < a.length; i += 1 ) {
+		if ( a[ i ] !== b[ i ] ) return a[ i ] > b[ i ];
+	}
+	return true;
+}
+
+function worst( block: { sel: string } ): number[] {
+	return block.sel
+		.split( ',' )
+		.map( ( one ) => specificity( one.trim() ) )
+		.reduce( ( a, b ) => ( outranks( b, a ) ? b : a ) );
+}
+
+describe( 'builder accordion — the expander marker', () => {
+	it( "hides the vendor's empty fa-* icon, and only that icon", async () => {
+		const rows = blocks( await templateCss() );
+		const hide = rows.filter(
+			( block ) =>
+				block.sel.includes( '.panel-group' ) &&
+				block.sel.includes( '[class*=\'fa-\']' ) &&
+				block.sel.includes( ':empty' ) &&
+				/display:\s*none/.test( block.decl )
+		);
+
+		expect( hide.length ).toBeGreaterThan( 0 );
+		// The LEFT glyph is `<i class="icon-profile-male">` — empty too, but its
+		// font IS shipped, so a bare `:empty` hide would delete the source's icon.
+		for ( const block of hide ) {
+			expect( block.sel ).not.toMatch( /\[class\*='icon-'\]/ );
+		}
+	} );
+
+	it( 'out-ranks every rule that paints the row icon, in every state', async () => {
+		const rows = blocks( await templateCss() );
+		const hide = rows.filter(
+			( block ) =>
+				block.sel.includes( '.panel-group' ) &&
+				block.sel.includes( '[class*=\'fa-\']' ) &&
+				block.sel.includes( ':empty' )
+		);
+		const paints = rows.filter(
+			( block ) =>
+				block.sel.includes( '.panel-group' ) &&
+				/\bi$/.test( block.sel ) &&
+				/display:\s*(?!none)\S+/.test( block.decl )
+		);
+
+		expect( hide.length ).toBeGreaterThan( 0 );
+		expect( paints.length ).toBeGreaterThan( 0 );
+		for ( const paint of paints ) {
+			expect(
+				outranks( worst( hide[ 0 ] ), worst( paint ) ),
+				`${ hide[ 0 ].sel } must win against ${ paint.sel }`
+			).toBe( true );
+		}
 	} );
 } );

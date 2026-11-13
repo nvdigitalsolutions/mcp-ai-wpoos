@@ -249,3 +249,22 @@ short digest of the highest-traffic ones stays in `SKILL.md`.
   html but never renders it, so suppressing there would drop the anchor. The
   output is gated too: `verify` fails a duplicated id that anything links to
   (`built ids`) — see [`chrome-gates.md`](chrome-gates.md).
+- **A measured BOX rule makes the class-coverage audit blind to a missing
+  DECLARATION** (2026-11-13). `class-audit.ts` answers "does any rule name this
+  class?" — and every measured class gets one: its `bandFacts` box
+  (`padding`/`margin`/`color`). So `<span class="uppercase …">` read as
+  *resolved* while carrying no `text-transform` at all, and the copy rendered
+  lowercase. The utility pack is the only place a class's MEANING lives, and
+  Brando ships its own casing utility beside Bootstrap's spelling
+  (`.uppercase{text-transform:uppercase}` — verified in the source sheet, not
+  inferable from `.text-uppercase`). Adding a row is half the fix; the other
+  half is `tests/builder-utilities.test.ts` → *"the semantic utilities a BOX
+  rule can hide"*, which pins the casing family plus the verified layout
+  utilities (`clear-both`, `margin-lr-auto`, `width-50/90`,
+  `no-padding-bottom`, `cover-background`). Before porting a candidate, resolve
+  its standalone `.class{…}` rule in the LIVE sheets — `flat-list`,
+  `bottom-border-dark`, `services-list-light`, `clearfix`, `full-screen` have
+  no standalone rule (they style children or are shimmed) and must NOT be
+  invented. The named type scale (`title-large`, `title-extra-large-4`, …)
+  needs no rows: the measured `type.headings` facts already apply those sizes
+  and match the source's computed value.

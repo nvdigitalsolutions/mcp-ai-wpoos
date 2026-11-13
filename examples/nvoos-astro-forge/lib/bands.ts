@@ -254,10 +254,32 @@ export const BUILDER_ADAPTERS: BandAdapter[] = [
 			'text-left': { base: 'text-align:left' },
 			'text-right': { base: 'text-align:right' },
 			'text-uppercase': { base: 'text-transform:uppercase' },
+			'text-lowercase': { base: 'text-transform:lowercase' },
+			'text-capitalize': { base: 'text-transform:capitalize' },
+			// Brando ships its OWN casing utility alongside Bootstrap's `text-*`
+			// spelling: `.uppercase{text-transform:uppercase}` (measured in the
+			// source sheet, 2026-11-13). Without this row the class still gets a
+			// rule — its measured BOX (`padding`/`margin`/`color`) — so the
+			// class-coverage audit counts it resolved while the copy renders
+			// lowercase. virtuallyjamaica's "social wifi marketing solution"
+			// eyebrow was the report that surfaced it.
+			'uppercase': { base: 'text-transform:uppercase' },
+			'text-transform-none': { base: 'text-transform:none' },
 			'display-block': { base: 'display:block' },
 			'display-inline-block': { base: 'display:inline-block' },
 			'pull-right': { base: 'float:right' },
 			'pull-left': { base: 'float:left' },
+			'clear-both': { base: 'clear:both' },
+			// Measured on the live source (2026-11-13) — each of these had a
+			// standalone rule in Brando's sheet and no row here, so the class was
+			// emitted with its box only and the declaration was lost.
+			'margin-lr-auto': { base: 'margin-left:auto;margin-right:auto' },
+			'width-50': { base: 'width:50%' },
+			'width-90': { base: 'width:90%' },
+			'no-padding-bottom': { base: 'padding-bottom:0' },
+			'cover-background': {
+				base: 'position:relative;overflow:hidden;background-size:cover;background-position:center center;background-repeat:no-repeat',
+			},
 			'vertical-align-middle': { base: 'vertical-align:middle' },
 			'alt-font': { base: 'font-family:var(--forge-font-display)' },
 			'text-medium': { base: 'font-size:14px;font-weight:500;line-height:24px' },
