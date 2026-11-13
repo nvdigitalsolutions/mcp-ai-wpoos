@@ -179,6 +179,26 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 						),
 					),
 				),
+				// Console write path (090-B follow-up): replaces the app list while
+				// preserving secrets the read route masks. Secret-bearing fields
+				// (token, oauth_data) are restored from the stored config by
+				// identity; masked echo-back is discarded defensively.
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( $this, 'update_assistant_apps' ),
+					'permission_callback' => array( $this, 'check_admin_permissions' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'type'              => 'integer',
+							'required'          => true,
+							'sanitize_callback' => 'absint',
+						),
+						'apps'         => array(
+							'type'     => 'array',
+							'required' => true,
+						),
+					),
+				),
 			)
 		);
 
@@ -598,28 +618,9 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			);
 		}
 
-		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
-		$apps     = $registry->get_apps( $assistant_id );
-
-		// Mask tokens in response.
-		$safe_apps = array();
-		foreach ( $apps as $app ) {
-			$app_copy = $app;
-			if ( ! empty( $app_copy['token'] ) ) {
-				$token_length      = strlen( $app_copy['token'] );
-				$app_copy['token'] = ( $token_length > 8 )
-					? '••••••••' . substr( $app_copy['token'], -4 )
-					: '••••••••';
-			}
-			// Mask OAuth tokens too.
-			if ( ! empty( $app_copy['oauth_data']['access_token'] ) ) {
-				$app_copy['oauth_data']['access_token'] = '••••••••';
-			}
-			if ( ! empty( $app_copy['oauth_data']['refresh_token'] ) ) {
-				$app_copy['oauth_data']['refresh_token'] = '••••••••';
-			}
-			$safe_apps[] = $app_copy;
-		}
+		$registry  = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$apps      = $registry->get_apps( $assistant_id );
+		$safe_apps = $this->mask_apps( $apps );
 
 		return rest_ensure_response(
 			array(
@@ -629,6 +630,185 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 				'app_count'    => count( $safe_apps ),
 			)
 		);
+	}
+
+	/**
+	 * Replace an assistant's MCP app list from the console editor.
+	 *
+	 * Secrets are write-only by contract: the read route masks `token` and
+	 * `oauth_data`, so callers cannot send real credentials back. This handler
+	 * restores the stored credential blob for every entry it can match by
+	 * `connection_ref` (or `server_url`), and discards any masked echo before
+	 * re-saving.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function update_assistant_apps( WP_REST_Request $request ) {
+		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+
+		$post = get_post( $assistant_id );
+		if ( ! $post || 'mcp_ai_assistant' !== $post->post_type ) {
+			return new WP_Error(
+				'wp_mcp_ai_not_found',
+				__( 'Assistant not found.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Registry' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_mcp_apps_unavailable',
+				__( 'The MCP Apps registry is not available.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 501 )
+			);
+		}
+
+		$incoming = $request->get_param( 'apps' );
+		if ( ! is_array( $incoming ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_apps',
+				__( 'The apps parameter must be an array.', 'mcp-ai-wpoos-pro' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$stored   = $registry->get_apps( $assistant_id );
+		$apps     = array();
+
+		foreach ( $incoming as $app ) {
+			if ( ! is_array( $app ) ) {
+				continue;
+			}
+
+			$app       = $this->preserve_app_secrets( $app, $stored );
+			$sanitized = WP_MCP_AI_MCP_App_Registry::sanitize_app_config( $app );
+
+			// Same acceptance rule as the metabox save: a usable endpoint or a
+			// global connection reference.
+			if ( ! empty( $sanitized['server_url'] ) || ! empty( $sanitized['connection_ref'] ) ) {
+				$apps[] = $sanitized;
+			}
+		}
+
+		$registry->save_apps( $assistant_id, $apps );
+
+		$saved = $registry->get_apps( $assistant_id );
+
+		return rest_ensure_response(
+			array(
+				'success'      => true,
+				'assistant_id' => $assistant_id,
+				'apps'         => $this->mask_apps( $saved ),
+				'app_count'    => count( $saved ),
+			)
+		);
+	}
+
+	/**
+	 * Mask secret fields in an app list (shared by the read and write routes).
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $apps App configurations.
+	 * @return array Masked copies.
+	 */
+	private function mask_apps( array $apps ) {
+		$safe = array();
+
+		foreach ( $apps as $app ) {
+			if ( ! is_array( $app ) ) {
+				continue;
+			}
+
+			if ( ! empty( $app['token'] ) ) {
+				$token_length = strlen( (string) $app['token'] );
+				$app['token'] = ( $token_length > 8 )
+					? '••••••••' . substr( (string) $app['token'], -4 )
+					: '••••••••';
+			}
+
+			if ( ! empty( $app['oauth_data']['access_token'] ) ) {
+				$app['oauth_data']['access_token'] = '••••••••';
+			}
+
+			if ( ! empty( $app['oauth_data']['refresh_token'] ) ) {
+				$app['oauth_data']['refresh_token'] = '••••••••';
+			}
+
+			$safe[] = $app;
+		}
+
+		return $safe;
+	}
+
+	/**
+	 * Restore stored secrets for an incoming app entry.
+	 *
+	 * Matching is by `connection_ref` when present, otherwise by
+	 * `server_url`. Masked values (the `••` bullets the read route emits) are
+	 * dropped first so a client that echoes the read payload cannot corrupt
+	 * the stored credential.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $app    Incoming app configuration.
+	 * @param array $stored Stored app configurations (decrypted).
+	 * @return array Incoming configuration with secrets restored.
+	 */
+	private function preserve_app_secrets( array $app, array $stored ) {
+		// Discard masked echo-back.
+		if ( isset( $app['token'] ) && is_string( $app['token'] ) && false !== strpos( $app['token'], '••' ) ) {
+			unset( $app['token'] );
+		}
+
+		if ( isset( $app['oauth_data'] ) && is_array( $app['oauth_data'] ) ) {
+			foreach ( array( 'access_token', 'refresh_token' ) as $field ) {
+				if ( isset( $app['oauth_data'][ $field ] ) && is_string( $app['oauth_data'][ $field ] ) && false !== strpos( $app['oauth_data'][ $field ], '••' ) ) {
+					unset( $app['oauth_data'][ $field ] );
+				}
+			}
+		}
+
+		$ref = isset( $app['connection_ref'] ) ? sanitize_key( $app['connection_ref'] ) : '';
+		$url = isset( $app['server_url'] ) ? esc_url_raw( $app['server_url'] ) : '';
+
+		if ( '' === $ref && '' === $url ) {
+			return $app;
+		}
+
+		foreach ( $stored as $existing ) {
+			if ( ! is_array( $existing ) ) {
+				continue;
+			}
+
+			$matches = ( '' !== $ref )
+				? ( isset( $existing['connection_ref'] ) && $ref === $existing['connection_ref'] )
+				: ( isset( $existing['server_url'] ) && $url === $existing['server_url'] );
+
+			if ( ! $matches ) {
+				continue;
+			}
+
+			if ( empty( $app['token'] ) && ! empty( $existing['token'] ) ) {
+				$app['token'] = $existing['token'];
+			}
+
+			if (
+				isset( $app['auth_type'] ) && 'oauth' === $app['auth_type'] &&
+				empty( $app['oauth_data']['access_token'] ) &&
+				! empty( $existing['oauth_data']['access_token'] )
+			) {
+				$app['oauth_data'] = $existing['oauth_data'];
+			}
+
+			break;
+		}
+
+		return $app;
 	}
 
 	// -----------------------------------------------------------------------

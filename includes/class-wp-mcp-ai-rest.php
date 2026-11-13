@@ -2758,6 +2758,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array_unique( $valid_tools ) );
 			}
 
+			$advanced = $request->get_param( 'advanced' );
+			if ( is_array( $advanced ) ) {
+				$this->apply_assistant_advanced_fields( $assistant_id, $advanced );
+			}
+
 			/**
 			 * Fires after an assistant is created via REST API.
 			 *
@@ -2776,6 +2781,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$default_assistant = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 
 			$response_data = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
+
+			$response_data['advanced'] = $this->get_assistant_advanced_fields( $assistant_id );
 
 			$response = new WP_REST_Response( $response_data, 201 );
 			$response->header( 'Location', rest_url( self::REST_NAMESPACE . '/assistants/' . $assistant_id ) );
@@ -2814,6 +2821,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$record                  = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
 			$config                  = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 			$record['system_prompt'] = isset( $config['system_prompt'] ) ? (string) $config['system_prompt'] : '';
+			$record['advanced']      = $this->get_assistant_advanced_fields( $assistant_id );
 
 			return rest_ensure_response(
 				array(
@@ -2917,6 +2925,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array_values( array_unique( $valid_tools ) ) );
 			}
 
+			$advanced = $request->get_param( 'advanced' );
+			if ( is_array( $advanced ) ) {
+				$this->apply_assistant_advanced_fields( $assistant_id, $advanced );
+			}
+
 			/**
 			 * Fires after an assistant is updated via REST API.
 			 *
@@ -2931,12 +2944,195 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$default_assistant = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 			$summary           = $this->summarize_assistant_for_directory( get_post( $assistant_id ), $default_assistant, $settings, $request );
 
+			// Echo the advanced object back so the console can keep its state in
+			// sync without a second GET (same shape handle_assistant_get() serves).
+			$summary['advanced'] = $this->get_assistant_advanced_fields( $assistant_id );
+
 			return rest_ensure_response(
 				array(
 					'success' => true,
 					'data'    => $summary,
 				)
 			);
+		}
+
+		/**
+		 * Advanced assistant fields the console editor may read and write.
+		 *
+		 * Maps the additive `advanced` object onto the assistant CPT's own
+		 * post-meta keys and sanitizers so the REST path and the metabox save
+		 * path cannot drift. Credentials (`_wp_mcp_ai_credentials`) are
+		 * deliberately absent: token issuance has its own service, capability
+		 * and audit path, and must never be written from a generic config save.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @return array<string, array{meta_key:string, sanitizer:callable, type:string}> Field map.
+		 */
+		public static function get_assistant_advanced_field_map() {
+			return array(
+				'fallback_chain'          => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_FALLBACK_CHAIN,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_fallback_chain_meta' ),
+					'type'      => 'array',
+				),
+				'adaptive_tool_cap'       => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_ADAPTIVE_TOOL_CAP,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_adaptive_tool_cap_meta' ),
+					'type'      => 'string',
+				),
+				'memory_files'            => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_MEMORY_FILES,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_memory_files_meta' ),
+					'type'      => 'array',
+				),
+				'vector_store_id'         => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_VECTOR_STORE_ID,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_vector_store_meta' ),
+					'type'      => 'string',
+				),
+				'corpus_name'             => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_CORPUS_NAME,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_corpus_name_meta' ),
+					'type'      => 'string',
+				),
+				'prompt_caching'          => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_PROMPT_CACHING,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_prompt_caching_meta' ),
+					'type'      => 'bool',
+				),
+				'disable_tool_shortcuts'  => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_DISABLE_TOOL_SHORTCUTS,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_disable_tool_shortcuts_meta' ),
+					'type'      => 'bool',
+				),
+				'tool_shortcuts'          => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_TOOL_SHORTCUTS,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_tool_shortcuts_meta' ),
+					'type'      => 'array',
+				),
+				'tool_prebuilt_shortcuts' => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_TOOL_PREBUILT_SHORTCUTS,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_prebuilt_tool_shortcuts_meta' ),
+					'type'      => 'object',
+				),
+				'tool_role_rules'         => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_TOOL_ROLE_RULES,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_tool_role_rules_meta' ),
+					'type'      => 'array',
+				),
+				'external_action_id'      => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_EXTERNAL_ACTION_ID,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_external_action_id_meta' ),
+					'type'      => 'string',
+				),
+				'external_action_type'    => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_EXTERNAL_ACTION_TYPE,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_external_action_type_meta' ),
+					'type'      => 'string',
+				),
+				'required_capability'     => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_required_capability_meta' ),
+					'type'      => 'string',
+				),
+				'preferred_datasets'      => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_PREFERRED_DATASETS,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_preferred_datasets_meta' ),
+					'type'      => 'array',
+				),
+				'skills'                  => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_SKILLS,
+					'sanitizer' => array( 'WP_MCP_AI_Assistant_CPT', 'sanitize_skills_meta' ),
+					'type'      => 'array',
+				),
+				'skills_progressive'      => array(
+					'meta_key'  => WP_MCP_AI_Assistant_CPT::META_SKILLS_PROGRESSIVE,
+					'sanitizer' => 'wp_validate_boolean',
+					'type'      => 'bool',
+				),
+			);
+		}
+
+		/**
+		 * Read the advanced assistant fields for the console editor.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int $assistant_id Assistant post ID.
+		 * @return array<string, mixed> Advanced field values keyed by wire name.
+		 */
+		protected function get_assistant_advanced_fields( $assistant_id ) {
+			$assistant_id = absint( $assistant_id );
+			$fields       = array();
+
+			foreach ( self::get_assistant_advanced_field_map() as $field => $definition ) {
+				$value = get_post_meta( $assistant_id, $definition['meta_key'], true );
+
+				switch ( $definition['type'] ) {
+					case 'bool':
+						$value = (bool) $value;
+						break;
+					case 'array':
+					case 'object':
+						$value = is_array( $value ) ? $value : array();
+						break;
+					default:
+						$value = is_string( $value ) ? $value : '';
+						break;
+				}
+
+				$fields[ $field ] = $value;
+			}
+
+			return $fields;
+		}
+
+		/**
+		 * Apply an `advanced` payload to an assistant.
+		 *
+		 * Absent keys are left untouched; present-but-empty values delete the
+		 * meta row (mirrors the CPT save handler: an unticked box removes the
+		 * row rather than storing 0). Unknown keys are ignored.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param int                  $assistant_id Assistant post ID.
+		 * @param array<string, mixed> $advanced     Advanced field values keyed by wire name.
+		 * @return void
+		 */
+		protected function apply_assistant_advanced_fields( $assistant_id, $advanced ) {
+			$assistant_id = absint( $assistant_id );
+
+			if ( ! $assistant_id || ! is_array( $advanced ) ) {
+				return;
+			}
+
+			foreach ( self::get_assistant_advanced_field_map() as $field => $definition ) {
+				if ( ! array_key_exists( $field, $advanced ) ) {
+					continue;
+				}
+
+				$raw = $advanced[ $field ];
+
+				if ( 'bool' === $definition['type'] ) {
+					if ( ! empty( $raw ) ) {
+						update_post_meta( $assistant_id, $definition['meta_key'], true );
+					} else {
+						delete_post_meta( $assistant_id, $definition['meta_key'] );
+					}
+					continue;
+				}
+
+				$value = call_user_func( $definition['sanitizer'], $raw );
+
+				if ( '' === $value || null === $value || array() === $value ) {
+					delete_post_meta( $assistant_id, $definition['meta_key'] );
+					continue;
+				}
+
+				update_post_meta( $assistant_id, $definition['meta_key'], $value );
+			}
 		}
 
 		/**

@@ -134,6 +134,10 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     dashboardsSchema: isAdmin ? `${pro}/dashboards/schema` : '',
     chatChannels: isAdmin ? `${pro}/chat-channels` : '',
     remoteSites: isAdmin ? `${pro}/remote-sites` : '',
+    // Installed Agent Skills catalogue (base route).
+    skills: isAdmin ? `${core}/skills` : '',
+    // MCP Apps: Pro-only route; empty hides the panel instead of firing 404s.
+    mcpApps: isAdmin ? `${core}/mcp-apps` : '',
     mediaCc: isAdmin ? `${pro}/media-cc` : '',
     // Profession catalogue (assistant editor selector) — Laravel-only; the
     // WordPress runtime has no professions REST route, so the editor hides

@@ -13,6 +13,32 @@ class Assistant extends Model
      */
     public const DEFAULT_TENANT = 'default';
 
+    /**
+     * Advanced settings promoted from the flat `meta` keys to `advanced`.
+     *
+     * Same wire names and defaults as the WordPress REST contract
+     * (090-B assistant edit parity), so the console can render one form
+     * against either runtime.
+     *
+     * @var array<string, mixed>
+     */
+    public const ADVANCED_FIELD_DEFAULTS = [
+        'fallback_chain' => [],
+        'adaptive_tool_cap' => '',
+        'memory_files' => [],
+        'vector_store_id' => '',
+        'corpus_name' => '',
+        'prompt_caching' => false,
+        'disable_tool_shortcuts' => false,
+        'tool_shortcuts' => [],
+        'tool_prebuilt_shortcuts' => [],
+        'tool_role_rules' => [],
+        'external_action_id' => '',
+        'external_action_type' => '',
+        'required_capability' => '',
+        'preferred_datasets' => [],
+    ];
+
     protected $fillable = [
         'title',
         'slug',
@@ -62,7 +88,28 @@ class Assistant extends Model
             'is_default' => (bool) $this->is_default,
             'is_preset' => false,
             'primary_role_slugs' => $this->primaryRoleSlugs(),
+            'advanced' => $this->advancedFields(),
         ];
+    }
+
+    /**
+     * Advanced settings, promoted from the flat `meta` keys.
+     *
+     * Missing keys read as their type default (empty string, empty list,
+     * false), matching the WordPress read shape.
+     *
+     * @return array<string, mixed>
+     */
+    public function advancedFields(): array
+    {
+        $meta = is_array($this->meta) ? $this->meta : [];
+        $fields = [];
+
+        foreach (self::ADVANCED_FIELD_DEFAULTS as $field => $default) {
+            $fields[$field] = array_key_exists($field, $meta) ? $meta[$field] : $default;
+        }
+
+        return $fields;
     }
 
     /**

@@ -284,6 +284,11 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'enum'              => array( 'publish', 'draft', 'private' ),
 							'sanitize_callback' => 'sanitize_key',
 						),
+						'advanced'      => array(
+							'description' => __( 'Advanced assistant settings (fallback chain, memory files, vector store, shortcuts, access control). Unknown keys are ignored.', 'mcp-ai-wpoos' ),
+							'type'        => 'object',
+							'required'    => false,
+						),
 					),
 				),
 			),
@@ -371,6 +376,11 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'enum'              => array( 'publish', 'draft', 'private' ),
 							'sanitize_callback' => 'sanitize_key',
 						),
+						'advanced'      => array(
+							'description' => __( 'Advanced assistant settings (fallback chain, memory files, vector store, shortcuts, access control). Unknown keys are ignored; absent keys are left untouched.', 'mcp-ai-wpoos' ),
+							'type'        => 'object',
+							'required'    => false,
+						),
 					),
 				),
 				array(
@@ -385,6 +395,23 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'sanitize_callback' => 'absint',
 						),
 					),
+				),
+			),
+			true
+		);
+
+		// /skills - installed Agent Skills catalogue (console assistant editor).
+		// Base plugin surface: the skills registry lives in includes/, so this
+		// route works without the Pro addon. Administrators only — the same
+		// gate the assistant editor and the skills manager use.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/skills',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check_skills_catalogue' ),
+					'callback'            => array( $this, 'handle_skills_catalogue' ),
 				),
 			),
 			true
@@ -681,6 +708,82 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				'deleted' => true,
 				'id'      => $assistant_id,
+			)
+		);
+	}
+
+	/**
+	 * Permission check for the installed-skills catalogue.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return true|WP_Error
+	 */
+	public function permissions_check_skills_catalogue( $request ) {
+		unset( $request );
+
+		if ( current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+
+		return new WP_Error(
+			'rest_forbidden',
+			__( 'Administrator access required.', 'mcp-ai-wpoos' ),
+			array( 'status' => 403 )
+		);
+	}
+
+	/**
+	 * List installed Agent Skills for the console assistant editor.
+	 *
+	 * Returns catalogue metadata only (name/description/license/
+	 * compatibility). Skill instructions are injected server-side by the
+	 * prompt builder and are never shipped on this route.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_skills_catalogue( $request ) {
+		unset( $request );
+
+		if ( ! class_exists( 'WP_MCP_AI_Skill_Registry' ) ) {
+			return $this->error(
+				'wp_mcp_ai_skills_unavailable',
+				__( 'The Agent Skills registry is not available.', 'mcp-ai-wpoos' ),
+				501
+			);
+		}
+
+		$registry = WP_MCP_AI_Skill_Registry::instance();
+		$skills   = $registry->get_all_skills();
+		$data     = array();
+
+		foreach ( $skills as $skill ) {
+			if ( ! is_array( $skill ) ) {
+				continue;
+			}
+
+			$name = isset( $skill['name'] ) ? sanitize_text_field( (string) $skill['name'] ) : '';
+
+			if ( '' === $name ) {
+				continue;
+			}
+
+			$data[] = array(
+				'name'          => $name,
+				'description'   => isset( $skill['description'] ) ? sanitize_text_field( (string) $skill['description'] ) : '',
+				'license'       => isset( $skill['license'] ) ? sanitize_text_field( (string) $skill['license'] ) : '',
+				'compatibility' => isset( $skill['compatibility'] ) ? sanitize_text_field( (string) $skill['compatibility'] ) : '',
+			);
+		}
+
+		return $this->success(
+			array(
+				'skills' => $data,
+				'total'  => count( $data ),
 			)
 		);
 	}

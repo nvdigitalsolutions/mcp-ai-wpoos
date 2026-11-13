@@ -165,6 +165,8 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		dashboardsSchema: `${pro}/dashboards/schema`,
 		chatChannels: `${pro}/chat-channels`,
 		remoteSites: `${pro}/remote-sites`,
+		skills: `${core}/skills`,
+		mcpApps: `${core}/mcp-apps`,
 		mediaCc: `${pro}/media-cc`,
 		// Assistant blueprints — empty for sessions without edit_posts.
 		blueprints: `${pro}/blueprints`,

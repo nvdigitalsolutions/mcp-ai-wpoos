@@ -144,7 +144,7 @@ requests.
 |---|---|---|---|
 | 2.1 | Durable assistant model + core contract service | `Assistant`, migration, `LaravelAssistantService` | ✅ |
 | 2.2 | CRUD endpoints + default handling | `AssistantController` | ✅ |
-| 2.3 | Bundle v1 export/import (core fields + full meta) | `AssistantPortabilityController` | ✅ (Laravel-native; WP meta parity ⏳) |
+| 2.3 | Bundle v1 export/import (core fields + full meta) | `AssistantPortabilityController` | ✅ Laravel-native. **Edit-form meta parity shipped** for 16 design-time keys via the additive `advanced` object on both runtimes (skills + progressive disclosure included), plus a base skills catalogue route and a Pro MCP-apps write route for the console — see [`090-b-assistant-edit-field-parity.md`](090-b-assistant-edit-field-parity.md) §4.1–4.2. Credentials, harness profiles, primary-role ID mapping and mesh routing remain explicit deferrals (§6 of that doc); the Laravel runtime hides the skills and MCP-apps pickers until it exposes those endpoints |
 | 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ⏳ |
 | 2.5 | Teams (basic CRUD + membership) — schema and contract in `090-g` §4.2 | `TeamController` | ⏳ |
 | 2.6 | Per-assistant tool assignment | `tools` field on the model | ✅ |
