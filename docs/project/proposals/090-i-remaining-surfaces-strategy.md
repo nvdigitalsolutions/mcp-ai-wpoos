@@ -1,7 +1,7 @@
 # Proposal 090-i — The remaining eleven console surfaces
 
-**Status:** Recommendation recorded 2026-11-14; MCP apps, tool shortcuts, the command centre and slash commands shipped the same day. **38 of 45** route-backed keys now report `true` from `/features`.
-**Remaining:** `chatChannels`, `remoteSites`, `mediaCc`, `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` — one feature-sized port, a toolkit-shaped family, a connected-service probe and four discovered products.
+**Status:** Recommendation recorded 2026-11-14; MCP apps, tool shortcuts, the command centre, slash commands, media processing and remote sites shipped the same day. **39 of 45** route-backed keys now report `true` from `/features`.
+**Remaining:** `chatChannels`, `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` — a toolkit-shaped family and four discovered products.
 **Related:** `090-b-laravel-admin-surfaces-proposal.md` (ADR-6, ADR-8), `090-d-selective-tool-port.md`, `090-h-workflow-engine-proposal.md`.
 
 ---
@@ -27,7 +27,7 @@ Continuing key-by-key would produce two failure modes the repo has already paid 
 | Key | What the console actually calls | Class | Recommendation |
 |---|---|---|---|
 | `mcpApps` | `GET/PUT mcp-ai/v1/mcp-apps/{assistant_id}` (assigned MCP servers, secrets masked) | **A** | **Build in core.** The only remaining key that unlocks a family rather than a page |
-| `remoteSites` | `mcp-ai-pro/v1/remote-sites` (connections to other WordPress sites) | **A→B** | **Fold into the mcpApps connection registry** as a second connection kind; keep the key as an alias |
+| `remoteSites` | `mcp-ai-pro/v1/remote-sites` (connections to other WordPress sites) | **A→B** | **Shipped** for the two types the runtime can verify; vendor types stay in wp-admin |
 | `commandCenter` | `mcp-ai-pro/v1/command-center/overview` (KPI row over agents/workflows/cost) | **A** | Port — it aggregates data this runtime already owns |
 | `shortcuts` | `mcp-ai-pro/v1/tool-shortcuts` (assistant-scoped tool presets) | **A** | Port — a small record read |
 | `slashCommands` | catalogue + `/slash-commands/execute` + audit table | **A** | Port a **native subset** — the base executor plus the Pro state-mutating handlers are not portable |
@@ -97,7 +97,7 @@ The four products are separate plugins with their own REST bases (`nvoos-content
 | Key | Verdict | Effort | Depends on |
 |---|---|---|---|
 | `mcpApps` | **Extract to core**, add connection store + REST + tool bridging | **L** (3 PRs) | Licence decision (§9), `HttpClientInterface` |
-| `remoteSites` | **Fold into the connection registry**; alias the key once generic connections land | M | `mcpApps` |
+| `remoteSites` | **Shipped** — catalogue + CRUD + real verification for `wordpress` and `mcp_server`; vendor provider types remain wp-admin | **M** | — |
 | `commandCenter` | Port — aggregate agents, runs, schedules, cost | **S** | Health + activity stores (shipped #7748) |
 | `shortcuts` | Port — assistant-scoped presets record | **S** | — |
 | `slashCommands` | **Shipped** — native subset (7 commands) + audited executor; the nine Pro handlers stay out of scope | **S** | — |
@@ -169,7 +169,11 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
 
    **Decomposition, in dependency order:** (a) a `CredentialStore` over `Crypt` plus a `nvoos_remote_sites` table with redacted reads — this also unblocks storing MCP app tokens, which #7743 deliberately refused to accept on a plaintext route; (b) the type catalogue as data and the wizard wiring; (c) per-provider verification. The key can flip only after (c): a Connections page whose Test button fails for every row is worse than a hidden page.
 
-   **Step (a) shipped (2026-11-14).** `CredentialStore` landed in #7747 (sealed field map, undecryptable values degrade to absent, uniform mask). The record followed: `nvoos_remote_sites` is a **generic** row — `name`, `url`, `connection_type`, `auth_type`, `config`, sealed `credentials`, `enabled`, test status — rather than WordPress's ~50-field flat array, which is where most of its 6,452 lines come from. `App\Support\RemoteSites\RemoteSiteStore` enforces three rules rather than documenting them: no read returns a credential (`has_credentials` + a uniform mask only), `config` rejects known secret field names so a secret cannot be echoed back on a list, and a blank credential on update **keeps** the stored value (filtered before the merge — merging first would delete it). `RemoteSiteStoreTest` (15 cases). Steps (b) and (c), and the key flip, remain.
+   **Steps (a)–(c) shipped for two types (2026-11-14).** `CredentialStore` landed in #7747 (sealed field map, undecryptable values degrade to absent, uniform mask). The record followed: `nvoos_remote_sites` is a **generic** row — `name`, `url`, `connection_type`, `auth_type`, `config`, sealed `credentials`, `enabled`, test status — rather than WordPress's ~50-field flat array, which is where most of its 6,452 lines come from. `App\Support\RemoteSites\RemoteSiteStore` enforces three rules rather than documenting them: no read returns a credential (`has_credentials` + a uniform mask only), `config` rejects known secret field names so a secret cannot be echoed back on a list, and a blank credential on update **keeps** the stored value (filtered before the merge — merging first would delete it). `RemoteSiteStoreTest` (15 cases).
+
+   The surface then shipped for the two types this runtime can honestly verify: **`wordpress`** (application password, checked against `wp-json/wp/v2/users/me`) and **`mcp_server`** (the shared `McpAppClient` handshake and `tools/list`). `Pro\RemoteSitesController` serves list, catalogue, create, update, delete and test; the wizard's **flat** payload is split into `config`/sealed `credentials` on the way in and flattened back on the way out, because `openEdit()` reads `connection[field.key]`. A 401 is reported as *reached, rejected* — not as an outage — and an unimplemented type says so instead of pretending. `RemoteSitesApiTest` (14 cases).
+
+   **Deliberately absent:** the thirteen vendor types (Gmail, Telegram, WhatsApp, QuickBooks MCP, Upwork, FlowHub…). Listing one before its integration exists would put a Test button on screen that can only fail, which is the outcome this section warned about. Their records still open in the console list; editing them points at wp-admin. Adding a type is one entry in `RemoteSiteTypes` plus a branch in `RemoteSiteVerifier`.
 
 5. **`slashCommands` — shipped as a native subset, not a port.** The earlier `toolkit-shaped` classification was right about the Pro half and too broad about the whole: WordPress registers 24 base commands and nine Pro ones, and most of the base set is WordPress-development operations (`/ship`, `/clean-content`, `/sync-docs`, `/markup-stats`). Reimplementing them would produce commands that parse and then do nothing useful. What shipped is seven commands that run against stores this runtime owns — `/help`, `/status`, `/model`, `/jobs`, `/tools`, `/cost`, `/workflow` — listed in `App\Support\SlashCommands\SlashCommandCatalogue`. The drawer only ever sees commands that can run, and per-command capability is enforced at execution, not just filtered in the catalogue.
    - **The grammar is shared.** `Nvoos\Core\Domain\SlashCommand\SlashCommandParser` owns the tokenising rules with 22 unit tests. It is deliberately *not* wired into the WordPress plugin: the wp.org base build strips `lib/`, so `WP_MCP_AI_Slash_Command_Parser` keeps its standalone implementation. The quirk where `--key=` (empty value) falls through to the positional list is pinned rather than fixed.
