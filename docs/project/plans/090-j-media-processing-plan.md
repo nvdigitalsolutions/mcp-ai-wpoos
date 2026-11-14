@@ -1,6 +1,6 @@
 # Proposal 090-j — Media Processing on the Laravel Runtime
 
-**Status:** Slices 1–3 shipped 2026-11-14 — the read-only snapshot, alt-text storage and the worker-backed compression sweep.
+**Status:** All four slices shipped 2026-11-14 — the read-only snapshot, alt-text storage, the worker-backed compression sweep and the schedule summary.
 **Parent:** [`090-i-remaining-surfaces-strategy.md`](../proposals/090-i-remaining-surfaces-strategy.md) §9.6.
 **Related:** 090-b (admin surfaces), 090-f (storage bridge), `addons/media-worker`.
 
@@ -17,6 +17,8 @@ The worker is configured with:
 | `NVOOS_MEDIA_WORKER_URL` | Base URL. Empty = the surface is unavailable. |
 | `NVOOS_MEDIA_WORKER_TOKEN` | Sent as `X-Site-Token`; single-tenant (`WORKER_API_TOKEN`) or multi-tenant (`SITE_TOKENS`). |
 | `NVOOS_MEDIA_WORKER_TIMEOUT` | Health-probe timeout, default 3s. |
+| `NVOOS_MEDIA_WORKER_OPTIMIZE_TIMEOUT` | Per-image optimisation timeout, default 60s. |
+| `NVOOS_MEDIA_SWEEP_SCHEDULE` | Cron expression for the sweep. Empty disables it; the schedule is registered only when the expression is valid. |
 
 Contract used (identical to `WP_MCP_AI_Media_Worker_Client`):
 
@@ -60,9 +62,13 @@ Contract used (identical to `WP_MCP_AI_Media_Worker_Client`):
 4. Snapshot: `compression` = `sum(savings_bytes)` over positive rows; `capabilities.sweep` is `true`, so the console action appears without a client change.
 5. Acceptance: a sweep of 2 images queues 2 `media.optimize` jobs and the page shows `pending: 2`; running a job writes a derivative and `compression` increases by the reported saving.
 
-## 5. Slice 4 — schedule summary (S, optional, not started)
+## 5. Slice 4 — schedule summary (shipped)
 
-`active` / `ran_today` / `overdue` / `next_run` from the code-defined schedule plus `nvoos_jobs` timestamps. Only worth doing once a recurring media job exists (e.g. a nightly sweep). Until then zeros are truthful, and the snapshot says so.
+- `NVOOS_MEDIA_SWEEP_SCHEDULE` is a cron expression. `bootstrap/app.php` registers `nvoos:sweep-media` with `->cron(...)->withoutOverlapping()` only when the expression parses, so an empty value schedules nothing.
+- The command writes a `media.sweep` row per invocation. That row is the schedule's history, which is what the summary reads — a **manual** sweep deliberately does not write one, or the schedule would look healthier than it is.
+- Snapshot: `active` (1 when configured), `next_run` (next cron slot), `ran_today` (completed `media.sweep` rows since midnight), `overdue` (last completed run earlier than the most recent slot; a first run is never overdue).
+- `overdue` ignores cancelled rows: a slot skipped because a sweep was already running was skipped, not missed.
+- Uses `Cron\CronExpression` directly — Laravel 12 removed `Illuminate\Console\Scheduling\CronExpression`.
 
 ## 6. Security and operations
 

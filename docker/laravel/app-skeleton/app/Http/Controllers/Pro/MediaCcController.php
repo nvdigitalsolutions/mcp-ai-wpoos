@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Pro;
 
-use App\Jobs\OptimizeMediaFile;
-use App\Support\ActivityRecorder;
+use App\Support\Media\MediaSweeper;
 use App\Support\Media\MediaWorkerClient;
+use Cron\CronExpression;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Nvoos\Laravel\Adapter\JobStatusStore;
 
 /**
  * The media command centre (`/api/v1/pro/media-cc`).
@@ -33,9 +32,6 @@ use Nvoos\Laravel\Adapter\JobStatusStore;
  */
 class MediaCcController
 {
-    /** WordPress's image mime list (`get_attachment_stats()`). */
-    private const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
-
     /** Filename prefixes WordPress treats as generic (`IMG_1234`, `screenshot-…`). */
     private const GENERIC_PREFIXES = [
         'img_',
@@ -49,9 +45,6 @@ class MediaCcController
         'dsc_',
         'DSC_',
     ];
-
-    /** Files queued per sweep; keeps the queue visible instead of dumping a library. */
-    private const SWEEP_BATCH = 50;
 
     /**
      * GET /media-cc/health — the snapshot, in the shape `api/media-ops.ts` parses.
@@ -79,14 +72,7 @@ class MediaCcController
             'nextgen_pct' => $library['nextgen_pct'],
             'compression' => $this->compression(),
             'queue' => $this->queue(),
-            // No recurring media job exists yet, so there is no schedule to
-            // summarise. Zeros here are measured, not invented.
-            'schedule' => [
-                'active' => 0,
-                'ran_today' => 0,
-                'overdue' => 0,
-                'next_run' => '',
-            ],
+            'schedule' => $this->schedule(),
             'capabilities' => ['sweep' => true],
             'worker' => ['configured' => true] + $worker->health(),
         ]);
@@ -95,60 +81,20 @@ class MediaCcController
     /**
      * POST /media-cc/compression-sweep — queue optimisation for unprocessed images.
      *
-     * Deduped, like WordPress's `as_has_scheduled_action` check: a second click
-     * while work is in flight is refused rather than stacking a duplicate run.
+     * The decision of what to queue lives in {@see MediaSweeper} so this and the
+     * scheduled command cannot drift.
      */
-    public function sweep(MediaWorkerClient $worker, JobStatusStore $jobs, ActivityRecorder $activity): JsonResponse
+    public function sweep(MediaWorkerClient $worker, MediaSweeper $sweeper): JsonResponse
     {
         if (! $worker->configured()) {
             return $this->notConfigured();
         }
 
-        if ($this->sweepInFlight()) {
-            return response()->json([
-                'queued' => false,
-                'message' => 'A compression sweep is already running.',
-            ]);
-        }
-
-        $query = DB::table('nvoos_files')
-            ->whereIn('mime_type', self::IMAGE_MIMES)
-            ->orderBy('id')
-            ->limit(self::SWEEP_BATCH);
-
-        if (Schema::hasTable('nvoos_media_derivatives')) {
-            $query->whereNotIn('id', DB::table('nvoos_media_derivatives')
-                ->where('format', 'webp')
-                ->select('file_id'));
-        }
-
-        $files = $query->get(['id']);
-
-        foreach ($files as $file) {
-            $fileId = (int) $file->id;
-
-            $jobs->queue(OptimizeMediaFile::jobId($fileId), 'media.optimize', [
-                'file_id' => $fileId,
-                'format' => 'webp',
-            ]);
-
-            OptimizeMediaFile::dispatch($fileId);
-        }
-
-        $queued = $files->count();
-
-        if ($queued > 0) {
-            $activity->record(
-                'media.sweep.queued',
-                sprintf('%d file%s queued for optimisation.', $queued, 1 === $queued ? '' : 's'),
-            );
-        }
+        $result = $sweeper->sweep();
 
         return response()->json([
-            'queued' => $queued > 0,
-            'message' => $queued > 0
-                ? sprintf('%d file%s queued for optimisation.', $queued, 1 === $queued ? '' : 's')
-                : 'Nothing to optimise.',
+            'queued' => $result['queued'] > 0,
+            'message' => $result['message'],
         ]);
     }
 
@@ -170,7 +116,7 @@ class MediaCcController
             ];
         }
 
-        $images = static fn () => DB::table('nvoos_files')->whereIn('mime_type', self::IMAGE_MIMES);
+        $images = static fn () => DB::table('nvoos_files')->whereIn('mime_type', MediaSweeper::IMAGE_MIMES);
 
         $imageCount = (int) $images()->count();
         $withAlt = (int) $images()
@@ -218,18 +164,56 @@ class MediaCcController
     }
 
     /**
-     * Whether an optimisation is already queued or running.
+     * The media schedule summary.
+     *
+     * `active` and `next_run` come from the configured cron expression; the
+     * command itself is registered in `bootstrap/app.php`, so nothing is
+     * scheduled when the config is empty. `ran_today` counts completed
+     * `media.sweep` rows — only the scheduled command writes those, so a manual
+     * sweep does not inflate the number.
+     *
+     * `overdue` is a real comparison: the last completed run is earlier than
+     * the most recent scheduled slot. With no run on record there is nothing to
+     * be overdue, which is why a fresh install reports zero.
+     *
+     * @return array{active: int, ran_today: int, overdue: int, next_run: string}
      */
-    private function sweepInFlight(): bool
+    private function schedule(): array
     {
-        if (! Schema::hasTable('nvoos_jobs')) {
-            return false;
+        $cron = (string) config('oos.media_worker.sweep_schedule', '');
+        $configured = '' !== $cron && CronExpression::isValidExpression($cron);
+
+        $ranToday = 0;
+        $last = null;
+
+        if (Schema::hasTable('nvoos_jobs')) {
+            $ranToday = (int) DB::table('nvoos_jobs')
+                ->where('handler', 'media.sweep')
+                ->where('status', 'completed')
+                ->where('completed_at', '>=', now()->startOfDay())
+                ->count();
+
+            $last = DB::table('nvoos_jobs')
+                ->where('handler', 'media.sweep')
+                ->where('status', 'completed')
+                ->max('completed_at');
         }
 
-        return DB::table('nvoos_jobs')
-            ->where('handler', 'media.optimize')
-            ->whereIn('status', ['queued', 'running'])
-            ->exists();
+        if (! $configured) {
+            return ['active' => 0, 'ran_today' => $ranToday, 'overdue' => 0, 'next_run' => ''];
+        }
+
+        $expression = new CronExpression($cron);
+
+        $overdue = null !== $last
+            && strtotime((string) $last) < $expression->getPreviousRunDate(now())->getTimestamp();
+
+        return [
+            'active' => 1,
+            'ran_today' => $ranToday,
+            'overdue' => $overdue ? 1 : 0,
+            'next_run' => $expression->getNextRunDate(now())->format('Y-m-d H:i:s'),
+        ];
     }
 
     /**

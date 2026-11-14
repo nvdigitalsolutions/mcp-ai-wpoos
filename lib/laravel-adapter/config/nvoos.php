@@ -33,6 +33,10 @@ return array(
 		'timeout' => (int) env( 'NVOOS_MEDIA_WORKER_TIMEOUT', 3 ),
 		// Per-image optimisation is a real Sharp pipeline, not a probe.
 		'optimize_timeout' => (int) env( 'NVOOS_MEDIA_WORKER_OPTIMIZE_TIMEOUT', 60 ),
+		// Cron expression for the nightly sweep; empty disables it. The
+		// schedule is registered in `bootstrap/app.php` only when this is a
+		// valid expression, so an empty value schedules nothing.
+		'sweep_schedule' => env( 'NVOOS_MEDIA_SWEEP_SCHEDULE', '' ),
 	),
 
 	/*

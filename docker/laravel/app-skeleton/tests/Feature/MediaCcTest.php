@@ -364,4 +364,149 @@ final class MediaCcTest extends TestCase
             ->assertJsonPath('data.endpoint_reasons.mediaCc', 'connected-service')
             ->assertJsonPath('data.endpoint_gaps', []);
     }
+
+    public function test_the_schedule_is_inactive_without_a_cron_expression(): void
+    {
+        $this->actAsAdmin();
+        $this->configureWorker();
+        $this->fakeHealthyWorker();
+
+        $schedule = $this->getJson('/api/v1/pro/media-cc/health')->assertOk()->json('schedule');
+
+        $this->assertSame(0, $schedule['active']);
+        $this->assertSame('', $schedule['next_run']);
+        $this->assertSame(0, $schedule['ran_today']);
+    }
+
+    public function test_the_schedule_reports_the_configured_expression(): void
+    {
+        $this->actAsAdmin();
+        $this->configureWorker();
+        $this->fakeHealthyWorker();
+        config(['oos.media_worker.sweep_schedule' => '0 3 * * *']);
+
+        $schedule = $this->getJson('/api/v1/pro/media-cc/health')->assertOk()->json('schedule');
+
+        $this->assertSame(1, $schedule['active']);
+        $this->assertStringEndsWith(' 03:00:00', $schedule['next_run']);
+    }
+
+    public function test_ran_today_counts_completed_scheduled_sweeps_only(): void
+    {
+        $this->actAsAdmin();
+        $this->configureWorker();
+        $this->fakeHealthyWorker();
+        config(['oos.media_worker.sweep_schedule' => '0 3 * * *']);
+
+        DB::table('nvoos_jobs')->insert([
+            [
+                'id' => 'media.sweep:today',
+                'handler' => 'media.sweep',
+                'payload' => null,
+                'status' => 'completed',
+                'attempts' => 1,
+                'queued_at' => now(),
+                'completed_at' => now(),
+            ],
+            [
+                // A cancelled slot (another sweep was running) is not a run.
+                'id' => 'media.sweep:cancelled',
+                'handler' => 'media.sweep',
+                'payload' => null,
+                'status' => 'cancelled',
+                'attempts' => 1,
+                'queued_at' => now(),
+                'completed_at' => now(),
+            ],
+        ]);
+
+        $this->assertSame(
+            1,
+            $this->getJson('/api/v1/pro/media-cc/health')->assertOk()->json('schedule.ran_today'),
+        );
+    }
+
+    public function test_a_missed_slot_is_reported_as_overdue(): void
+    {
+        $this->actAsAdmin();
+        $this->configureWorker();
+        $this->fakeHealthyWorker();
+        config(['oos.media_worker.sweep_schedule' => '* * * * *']);
+
+        DB::table('nvoos_jobs')->insert([
+            'id' => 'media.sweep:old',
+            'handler' => 'media.sweep',
+            'payload' => null,
+            'status' => 'completed',
+            'attempts' => 1,
+            'queued_at' => now()->subHours(2),
+            'completed_at' => now()->subHours(2),
+        ]);
+
+        $schedule = $this->getJson('/api/v1/pro/media-cc/health')->assertOk()->json('schedule');
+
+        // The most recent slot was a minute ago; the last run was two hours ago.
+        $this->assertSame(1, $schedule['overdue']);
+    }
+
+    public function test_a_first_run_is_not_overdue(): void
+    {
+        $this->actAsAdmin();
+        $this->configureWorker();
+        $this->fakeHealthyWorker();
+        config(['oos.media_worker.sweep_schedule' => '* * * * *']);
+
+        // Nothing has run yet, so no slot has been missed.
+        $this->assertSame(
+            0,
+            $this->getJson('/api/v1/pro/media-cc/health')->assertOk()->json('schedule.overdue'),
+        );
+    }
+
+    public function test_the_command_queues_a_sweep_and_records_its_run(): void
+    {
+        $this->actAsAdmin();
+        $this->configureWorker();
+        $this->fakeHealthyWorker();
+        config(['oos.media_worker.sweep_schedule' => '0 3 * * *']);
+        Queue::fake();
+        $this->addFiles();
+
+        $this->artisan('nvoos:sweep-media')->assertSuccessful();
+
+        Queue::assertPushed(OptimizeMediaFile::class, 2);
+
+        $record = DB::table('nvoos_jobs')->where('handler', 'media.sweep')->first();
+
+        $this->assertNotNull($record);
+        $this->assertSame('completed', $record->status);
+
+        $this->assertSame(
+            1,
+            $this->getJson('/api/v1/pro/media-cc/health')->assertOk()->json('schedule.ran_today'),
+        );
+    }
+
+    public function test_the_command_records_a_refused_sweep_as_cancelled(): void
+    {
+        $this->actAsAdmin();
+        $this->configureWorker();
+        $this->fakeHealthyWorker();
+        config(['oos.media_worker.sweep_schedule' => '0 3 * * *']);
+        Queue::fake();
+        $this->addFiles();
+
+        $jobs = $this->app->make(JobStatusStore::class);
+        $jobs->queue('media.optimize:1:webp', 'media.optimize', []);
+        $jobs->markRunning('media.optimize:1:webp');
+
+        $this->artisan('nvoos:sweep-media')->assertSuccessful();
+
+        Queue::assertNothingPushed();
+
+        $this->assertSame(
+            1,
+            DB::table('nvoos_jobs')->where('handler', 'media.sweep')->where('status', 'cancelled')->count(),
+        );
+    }
 }

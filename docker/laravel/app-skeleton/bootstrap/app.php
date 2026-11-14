@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
+use Cron\CronExpression;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -38,6 +39,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('nvoos:sample-health')
             ->everyFiveMinutes()
             ->withoutOverlapping();
+
+        // 090-j — the media compression sweep. The expression is configuration
+        // rather than code: how often a library should be re-optimised is an
+        // operator decision, and an empty value schedules nothing (the console
+        // action still works). The command writes a `media.sweep` row, which
+        // is what the command centre's schedule summary reads.
+        $sweepSchedule = (string) config('oos.media_worker.sweep_schedule', '');
+
+        if ('' !== $sweepSchedule && CronExpression::isValidExpression($sweepSchedule)) {
+            $schedule->command('nvoos:sweep-media')
+                ->cron($sweepSchedule)
+                ->withoutOverlapping();
+        }
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // Sanctum SPA cookie mode (Proposal 090-B, ADR-4). Same-origin
