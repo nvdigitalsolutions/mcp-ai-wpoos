@@ -80,7 +80,7 @@
     "settings": "route",
     "shortcuts": "route",
     "skills": "route",
-    "slashCommands": "toolkit-shaped",
+    "slashCommands": "route",
     "teams": "route",
     "tokenManager": "route",
     "toolkits": "route",

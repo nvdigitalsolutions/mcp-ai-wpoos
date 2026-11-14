@@ -20,6 +20,7 @@ use App\Http\Controllers\Pro\DashboardsController;
 use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
 use App\Http\Controllers\Pro\SchedulesController;
+use App\Http\Controllers\Pro\SlashCommandsController;
 use App\Http\Controllers\Pro\ToolkitsController;
 use App\Http\Controllers\Pro\WorkflowNodeController;
 use App\Http\Controllers\Pro\WorkflowPresetsController;
@@ -150,6 +151,13 @@ Route::prefix('api/v1')->group(function (): void {
                 // Pro route, shared through lib/core; editors only, matching
                 // the console's permission matrix for this surface.
                 Route::get('/pro/tool-shortcuts', [ToolShortcutsController::class, 'index']);
+
+                // Slash commands (090-i). The console's chat drawer reads the
+                // catalogue and the composer POSTs `/execute`. Per-command
+                // capability is enforced by the executor, which is why this
+                // group is edit_posts rather than manage_options.
+                Route::get('/pro/slash-commands', [SlashCommandsController::class, 'index']);
+                Route::post('/pro/slash-commands/execute', [SlashCommandsController::class, 'execute']);
             });
 
             Route::middleware('can:upload_files')->group(function (): void {

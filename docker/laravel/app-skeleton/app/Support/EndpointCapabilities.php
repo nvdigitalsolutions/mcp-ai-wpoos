@@ -170,7 +170,7 @@ final class EndpointCapabilities
         'settings' => self::ROUTE,
         'shortcuts' => self::ROUTE,
         'skills' => self::ROUTE,
-        'slashCommands' => self::TOOLKIT_SHAPED,
+        'slashCommands' => self::ROUTE,
         'teams' => self::ROUTE,
         'tokenManager' => self::ROUTE,
         'toolkits' => self::ROUTE,

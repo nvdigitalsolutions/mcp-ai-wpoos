@@ -1,7 +1,7 @@
 # Proposal 090-i — The remaining eleven console surfaces
 
-**Status:** Recommendation recorded 2026-11-14; MCP apps, tool shortcuts and the command centre shipped the same day. **37 of 45** route-backed keys now report `true` from `/features`.
-**Remaining:** `chatChannels`, `remoteSites`, `mediaCc`, `slashCommands`, `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` — one feature-sized port, two toolkit/external dependencies, four discovered products and one unbuilt manifest engine.
+**Status:** Recommendation recorded 2026-11-14; MCP apps, tool shortcuts, the command centre and slash commands shipped the same day. **38 of 45** route-backed keys now report `true` from `/features`.
+**Remaining:** `chatChannels`, `remoteSites`, `mediaCc`, `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` — one feature-sized port, a toolkit-shaped family, a connected-service probe and four discovered products.
 **Related:** `090-b-laravel-admin-surfaces-proposal.md` (ADR-6, ADR-8), `090-d-selective-tool-port.md`, `090-h-workflow-engine-proposal.md`.
 
 ---
@@ -30,7 +30,7 @@ Continuing key-by-key would produce two failure modes the repo has already paid 
 | `remoteSites` | `mcp-ai-pro/v1/remote-sites` (connections to other WordPress sites) | **A→B** | **Fold into the mcpApps connection registry** as a second connection kind; keep the key as an alias |
 | `commandCenter` | `mcp-ai-pro/v1/command-center/overview` (KPI row over agents/workflows/cost) | **A** | Port — it aggregates data this runtime already owns |
 | `shortcuts` | `mcp-ai-pro/v1/tool-shortcuts` (assistant-scoped tool presets) | **A** | Port — a small record read |
-| `slashCommands` | catalogue + `/slash-commands/execute` + audit table | **A** | Port the catalogue and executor onto `ToolRegistry`, keeping the audit row |
+| `slashCommands` | catalogue + `/slash-commands/execute` + audit table | **A** | Port a **native subset** — the base executor plus the Pro state-mutating handlers are not portable |
 | `chatChannels` | channel command center (messages, contacts, delivery) | **A**, but a **toolkit family** | Model as a manifest-driven communications toolkit, not a bespoke controller |
 | `mediaCc` | `mcp-ai-pro/v1/media-cc/health` + sweep trigger | **D** | Integrate an upstream health probe; unavailable when no worker is configured |
 | `contentGraph` | `nvoos-content-graph/v1` (separate plugin) | **C** | Discover, don't port |
@@ -100,7 +100,7 @@ The four products are separate plugins with their own REST bases (`nvoos-content
 | `remoteSites` | **Fold into the connection registry**; alias the key once generic connections land | M | `mcpApps` |
 | `commandCenter` | Port — aggregate agents, runs, schedules, cost | **S** | Health + activity stores (shipped #7748) |
 | `shortcuts` | Port — assistant-scoped presets record | **S** | — |
-| `slashCommands` | Port catalogue + executor over `ToolRegistry`; keep the audit table | M | — |
+| `slashCommands` | **Shipped** — native subset (7 commands) + audited executor; the nine Pro handlers stay out of scope | **S** | — |
 | `chatChannels` | Manifest-driven communications toolkit (`toolkits` engine) | M | Toolkit manifest(s) |
 | `mediaCc` | Upstream health probe; unavailable when `MEDIA_WORKER_URL` is unset | **S** | A configured worker |
 | `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` | **Discover, don't port.** `connectedApps` registry + product-side MCP server/UI | L (product-side) | Product work, not runtime work |
@@ -114,7 +114,7 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
 (a) extract the client + wire corpus; (b) connection store + `GET/PUT /api/v1/mcp-apps/{assistant}` with masked secrets and an SSRF/allowlist guard; (c) tool bridging into the registry as `mcp__<connection>__<tool>`, inheriting each tool's capability gate. *Acceptance:* a connection to a local MCP server lists tools, calls one, and a private-IP target is refused with a typed error; `mcpApps` reports `true`.
 
 **Phase 3 — The cheap data surfaces (2 PRs, S+M).**
-`commandCenter` ✅ (with `shortcuts` in #7744), then `slashCommands` (catalogue + executor + audit), `mediaCc` probe. *Acceptance:* each key flips; slash-command execution writes an audit row and honours `required_capability`.
+`commandCenter` ✅ (with `shortcuts` in #7744) and `slashCommands` ✅, then `mediaCc` probe. *Acceptance:* each key flips; slash-command execution writes an audit row and honours `required_capability`.
 
 **Phase 4 — Connected apps (product-owned).**
 `connectedApps` registry + REST probe; start with Content Graph (its `nvoos-content-graph/v1` contract is already the console's target). `remoteSites` folds into Phase 2 as a second connection kind. *Acceptance:* a configured upstream lights its island; an unconfigured one reports `external_product` with no 404 noise. A product that later exposes an MCP server moves from probe to `mcpApps` with no console change.
@@ -158,14 +158,20 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
    The two stores were built in #7748 (`nvoos_health_samples`, `nvoos_activity_events`, `nvoos:sample-health`), which is exactly what this section asked for, and `GET /api/v1/pro/command-center/overview` followed. Two details make the surface honest rather than merely present: **`uptime` is `null`** until a sample exists (the console renders an em dash, not `0%`), and **`agents_online` is `publish` assistants** — this runtime has no presence channel, so "online" means "enabled", the same reading `orchestration/stats` uses. `agent_statuses.last_active` is `updated_at`, not a heartbeat, and `active_tasks` is queue depth, because workflow runs here are synchronous. The token table is now created by an app migration — the adapter shipped one, but the app never loaded it, so `tokens_today` and the Analytics page read zero on a fresh install.
 
 4. **`remoteSites` — deferred: feature-sized, not a slice.** The Pro implementation is 6,452 lines across a 5,276-line manager and a 1,176-line controller. It is not a thin surface over stored data:
-      - **Credential storage with its own scheme.** The manager encrypts per-field with AES-256-CBC behind a `V2` prefix, detects legacy plaintext and re-encrypts on save, and re-encrypts on export/import.
-      - **Fifteen connection types** across `website`, `ai`, `email`, `google` and `chat` categories, each with its own field schema.
-      - **Per-provider verification** (`POST /{id}/test`), which is integrations rather than parity.
-      - **Base-plugin bridging**: the list merges a synthetic `base` Gmail row read from the base settings.
+   - **Credential storage with its own scheme.** The manager encrypts per-field with AES-256-CBC behind a `V2` prefix, detects legacy plaintext and re-encrypts on save, and re-encrypts on export/import.
+   - **Fifteen connection types** across `website`, `ai`, `email`, `google` and `chat` categories, each with its own field schema.
+   - **Per-provider verification** (`POST /{id}/test`), which is integrations rather than parity.
+   - **Base-plugin bridging**: the list merges a synthetic `base` Gmail row read from the base settings.
 
-      The one real design question is cheap to settle now: ADR-8 already says the two runtimes are separate backends, so **connections never migrate between them**. Each runtime therefore owns its own scheme — WordPress keeps the existing `V2` format, Laravel uses `Crypt` (AES-256-GCM under the app key). Nobody needs to reimplement the WordPress cipher.
+   The one real design question is cheap to settle now: ADR-8 already says the two runtimes are separate backends, so **connections never migrate between them**. Each runtime therefore owns its own scheme — WordPress keeps the existing `V2` format, Laravel uses `Crypt` (AES-256-GCM under the app key). Nobody needs to reimplement the WordPress cipher.
 
-      **Decomposition, in dependency order:** (a) a `CredentialStore` over `Crypt` plus a `nvoos_remote_sites` table with redacted reads — this also unblocks storing MCP app tokens, which #7743 deliberately refused to accept on a plaintext route; (b) the type catalogue as data and the wizard wiring; (c) per-provider verification. The key can flip only after (c): a Connections page whose Test button fails for every row is worse than a hidden page.
+   **Decomposition, in dependency order:** (a) a `CredentialStore` over `Crypt` plus a `nvoos_remote_sites` table with redacted reads — this also unblocks storing MCP app tokens, which #7743 deliberately refused to accept on a plaintext route; (b) the type catalogue as data and the wizard wiring; (c) per-provider verification. The key can flip only after (c): a Connections page whose Test button fails for every row is worse than a hidden page.
+
+5. **`slashCommands` — shipped as a native subset, not a port.** The earlier `toolkit-shaped` classification was right about the Pro half and too broad about the whole: WordPress registers 24 base commands and nine Pro ones, and most of the base set is WordPress-development operations (`/ship`, `/clean-content`, `/sync-docs`, `/markup-stats`). Reimplementing them would produce commands that parse and then do nothing useful. What shipped is seven commands that run against stores this runtime owns — `/help`, `/status`, `/model`, `/jobs`, `/tools`, `/cost`, `/workflow` — listed in `App\Support\SlashCommands\SlashCommandCatalogue`. The drawer only ever sees commands that can run, and per-command capability is enforced at execution, not just filtered in the catalogue.
+   - **The grammar is shared.** `Nvoos\Core\Domain\SlashCommand\SlashCommandParser` owns the tokenising rules with 22 unit tests. It is deliberately *not* wired into the WordPress plugin: the wp.org base build strips `lib/`, so `WP_MCP_AI_Slash_Command_Parser` keeps its standalone implementation. The quirk where `--key=` (empty value) falls through to the positional list is pinned rather than fixed.
+   - **The audit row matches WordPress.** `nvoos_slash_command_audit` mirrors `wp_mcp_ai_slash_command_audit`, and a failed command is still a row. A parse failure is not: no command name was established, so there is nothing to attribute.
+   - **Errors use WordPress's flat `{code, message, data}` shape**, not this app's `{success, error}` envelope. `ChatPage` reads a top-level `message`; without it the composer would show "HTTP 400" instead of the reason.
+   - **`/jobs` reports an honest empty state.** `Nvoos\Laravel\Adapter\JobStatusStore` reads `nvoos_jobs`, and the adapter's migration for it is not loaded by the app — the same gap `nvoos_token_usage` had. That fix belongs with a jobs/operations pass, not this one.
 
 ## Sources
 

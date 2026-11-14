@@ -39,6 +39,7 @@ class RuntimeSchemaTest extends TestCase
             'nvoos_health_samples',
             'nvoos_activity_events',
             'nvoos_token_usage',
+            'nvoos_slash_command_audit',
         ];
     }
 

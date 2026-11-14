@@ -85,6 +85,8 @@ class EndpointCapabilitiesTest extends TestCase
             'shortcuts',
             // 090-i — the command-centre overview (sourced KPIs + activity feed).
             'commandCenter',
+            // 090-i — slash commands: native subset catalogue + audited executor.
+            'slashCommands',
         ] as $key) {
             $this->assertTrue($endpoints[$key] ?? false, $key.' should be available.');
         }
@@ -99,11 +101,6 @@ class EndpointCapabilitiesTest extends TestCase
             'chatChannels',
             'remoteSites',
             'mediaCc',
-            // Nine command handlers that mutate Pro state (schedules,
-            // workflows, agents) plus the base executor — a toolkit, not a
-            // port. Reclassified from runtime-adaptable once the Pro
-            // catalogue was read.
-            'slashCommands',
             'contentGraph',
             'docsHub',
             'mediaStudio',
