@@ -398,6 +398,26 @@ return array(
 					'type'  => 'array',
 					'items' => array( 'type' => 'integer' ),
 				),
+				// Per-enrolment records. Nothing in the ECA family writes this
+				// key — enrolment tools maintain `_eca_student_enrollments` —
+				// but the WordPress detail tool reads it and a synced site may
+				// have it populated, so the port accepts it too.
+				'_eca_enrollments'          => array(
+					'label' => 'Enrolment Records',
+					'type'  => 'array',
+				),
+				'_eca_currency'             => array(
+					'label' => 'Currency',
+					'type'  => 'string',
+				),
+				'_eca_term'                 => array(
+					'label' => 'Term',
+					'type'  => 'string',
+				),
+				'_eca_sessions'             => array(
+					'label' => 'Sessions',
+					'type'  => 'array',
+				),
 				'_eca_attendance_log'       => array(
 					'label' => 'Attendance Log',
 					'type'  => 'array',
