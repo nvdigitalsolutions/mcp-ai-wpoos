@@ -82,7 +82,6 @@ class EndpointCapabilitiesTest extends TestCase
             // Surfaces whose stores exist but whose routes do not.
             'tokenManager',
             'threads',
-            'analytics',
             'dashboardsSchema',
             // Deliberately deferred inside the assistant editor.
             'skills',
@@ -106,24 +105,20 @@ class EndpointCapabilitiesTest extends TestCase
 
     public function test_the_map_covers_the_console_contract_exactly(): void
     {
-        // Mirrors ProSpaEndpoints in spa-v2/src/api/config.ts, minus the four
-        // island asset URLs, which are build outputs rather than routes.
-        $expected = [
-            'analytics', 'approvals', 'assistants', 'blueprints', 'chat',
-            'chatChannels', 'chatClient', 'commandCenter', 'contentGraph',
-            'cost', 'dashboardsSchema', 'diagnostics', 'docsHub',
-            'documentEditor', 'mediaCc', 'mediaStudio', 'mcpApps', 'memory',
-            'okf', 'operations', 'orchestrationStats', 'orgTeams',
-            'paperStore', 'portability', 'proOps', 'professions',
-            'recordsSchema', 'remoteSites', 'scheduleManager', 'security',
-            'settings', 'shortcuts', 'skills', 'slashCommands',
-            'teams', 'threads', 'tokenManager', 'toolkits', 'tools',
-            'transcripts', 'triggers', 'upload', 'workflows',
-            'workflowBuilder', 'workflowNodes', 'workflowPresets',
-            'workflowRuns', 'wpBase',
-        ];
+        // The shared contract, asserted from the console's Vitest suite too —
+        // drift fails on both CIs instead of on a user's browser. Add a key
+        // there first, then wire it here.
+        $contract = json_decode(
+            (string) file_get_contents(base_path('contracts/console-endpoints.json')),
+            true
+        );
 
-        $actual = array_keys($this->endpoints());
+        $this->assertIsArray($contract, 'contracts/console-endpoints.json must be valid JSON.');
+
+        $expected = (array) ( $contract['route_backed'] ?? array() );
+        $actual   = array_keys($this->endpoints());
+
+        $this->assertNotEmpty($expected, 'The contract must list the route-backed keys.');
 
         sort($expected);
         sort($actual);

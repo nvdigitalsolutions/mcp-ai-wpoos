@@ -108,7 +108,6 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     settings: `${core}/settings`,
     upload: isWordPress ? `${wp}/media` : `${core}/media`,
     workflows: isAdmin ? `${pro}/workflows` : '',
-    analytics: isAdmin ? `${core}/analytics` : '',
     cost: isAdmin ? `${core}/cost` : '',
     approvals: isAdmin ? `${core}/approvals` : '',
     triggers: isAdmin ? `${core}/orchestration/triggers` : '',

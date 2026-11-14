@@ -4,6 +4,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import {
   buildConsoleRuntime,
@@ -265,6 +267,27 @@ describe('endpoint availability (090-B)', () => {
 
     expect(runtime.endpoints.workflows).not.toBe('');
     expect(runtime.endpoints.tokenManager).not.toBe('');
+  });
+
+  it('covers exactly the shared console endpoint contract', () => {
+    // The backend asserts the same file (EndpointCapabilitiesTest), so a key
+    // added on one side without the other fails on both CIs instead of on a
+    // user's browser.
+    const contractPath = resolve(
+      process.cwd(),
+      '../../docker/laravel/app-skeleton/contracts/console-endpoints.json',
+    );
+
+    const contract = JSON.parse(readFileSync(contractPath, 'utf8')) as {
+      route_backed: string[];
+      asset: string[];
+    };
+
+    const runtime = buildConsoleRuntime({ user: admin });
+
+    expect(Object.keys(runtime.endpoints).sort()).toEqual(
+      [...contract.route_backed, ...contract.asset].sort(),
+    );
   });
 });
 

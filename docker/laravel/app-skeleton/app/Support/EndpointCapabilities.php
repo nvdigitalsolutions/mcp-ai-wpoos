@@ -47,7 +47,6 @@ final class EndpointCapabilities
         'assistants' => 'api/v1/assistants',
         'settings' => 'api/v1/settings',
         'workflows' => 'api/v1/pro/workflows',
-        'analytics' => 'api/v1/analytics',
         'approvals' => 'api/v1/approvals',
         'triggers' => 'api/v1/orchestration/triggers',
         'teams' => 'api/v1/teams',
