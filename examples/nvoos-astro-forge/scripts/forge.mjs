@@ -3591,6 +3591,28 @@ async function generatorLabel() {
 	}
 }
 
+/**
+ * The profile's ownership record in lock shape (no fingerprint). The CI path
+ * scaffolds into a fresh temp target, so `forge.lock.json` never exists there —
+ * `forge lock` writes `locked: { at, by, reason }` on the committed profile
+ * instead (see the scaffold guard's comment).
+ */
+function profileLockRecord( profile ) {
+	const locked = profile.locked;
+	if ( ! locked || typeof locked !== 'object' ) {
+		return undefined;
+	}
+	return {
+		version: 1,
+		generator: 'site profile',
+		site: profile.name ?? 'site',
+		lockedAt: locked.at ?? 'unknown',
+		lockedBy: locked.by,
+		reason: locked.reason,
+		fingerprint: {},
+	};
+}
+
 program
 	.command( 'lock' )
 	.description( 'hand a forged project over to custom development (the forge will stop overwriting it, Proposal 141)' )
@@ -3679,11 +3701,15 @@ program
 	.requiredOption( '--target <dir>', 'the scaffolded project' )
 	.action( async ( profileRef, options ) => {
 		const profile = await loadProfile( profileRef );
-		const lock = await readLock( options.target );
+		// The ownership record may live on the committed profile alone (the CI
+		// path has no project tree to fingerprint). Without the fallback a locked
+		// site with no local `forge.lock.json` reports as forge-owned.
+		const projectLock = await readLock( options.target );
+		const lock = projectLock ?? profileLockRecord( profile );
 		console.log( `Site:   ${ profile.name ?? 'site' } (${ profile.url ?? 'unknown source' })` );
 		console.log( `Target: ${ options.target }` );
 		console.log( `Owner:  ${ describeLock( lock ) }` );
-		if ( lock ) {
+		if ( projectLock ) {
 			const drift = await lockDrift( options.target, lock );
 			const total = Object.keys( lock.fingerprint ).length;
 			console.log( `Locked: ${ total } managed file(s), ${ lock.generator }` );
