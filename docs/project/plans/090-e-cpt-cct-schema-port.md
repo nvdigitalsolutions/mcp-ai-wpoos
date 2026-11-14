@@ -1,6 +1,8 @@
 # Proposal 090-E — CPT/CCT-backed Tools: Schema Port
 
-**Status:** design (no schema ported yet)
+**Status:** shipped for two families — project management (090-f Phase 2)
+and classroom/ECA (090-d cluster 3). CRM, clinical and legal are unstarted;
+see §9 for the corrected tracker.
 **Parent:** `090-d-selective-tool-port.md` (tier D/E tools)
 **Question answered:** *can CPT/CCT-backed tools be posted to the Laravel
 database, with their schema?*
@@ -171,7 +173,8 @@ the pattern, and it unlocks the most tools per unit of schema.
 | Read-tool parity (step 6) | ✅ `tests/fixtures/pm/tools.json` — 7 cases captured from the WordPress tools, replayed by the WordPress suite and by `ProjectManagementToolParityTest` on Laravel. Ids and dates are normalised; everything else is compared verbatim |
 | Write-tool parity (step 6) | ✅ `tests/fixtures/pm/writes.json` — 8 cases (both upsert branches, update, delete, for projects and tasks), captured by `tests/manual/capture-pm-writes.php` and replayed by `tests/test-pm-writes-parity.php` and `ProjectManagementWriteParityTest`. The port returns a **superset**, so the replay asserts “every recorded field matches, extras are on a four-key allowlist” rather than equality — see §9.1 |
 | Import path (step 5) | ⏳ — only needed when a live WordPress site is migrated; not built speculatively |
-| Next family | ⏳ CRM per §7, but its CRUD tools classify D (11–20 hard refs), so the family is a bigger lift than project management was |
+| Classroom / ECA family | ✅ `mcp_ai_eca` + `mcp_ai_student` + `mcp_ai_eca_category` descriptors, `ClassroomSeeder`, and six tools (`list_ecas`, `get_eca`, `list_students`, `get_student`, `enroll_student_eca`, `mark_eca_attendance`). Scope is the **local mirror**: the Google Classroom / ISAMS sync stays WordPress-only. Enrolment and attendance each have their own map shape — see 090-d |
+| Next family | ⏳ **CRM deferred.** §7 ordered CRM second, but its CRUD tools classify D (11–20 hard refs), so the family is a bigger lift than project management was. ECA (order 3) went first instead because 090-d cluster 3 was already open. CRM's schema is still the next commercial priority |
 
 ### 9.1 Write-parity decisions
 

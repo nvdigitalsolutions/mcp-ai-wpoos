@@ -1,6 +1,10 @@
 # Proposal 090-D — Tool Parity: Selective Port
 
-**Status:** plan + backlog (no tool ported yet)
+**Status:** in progress (2026-11-14) — see §9 for the corrected tracker.
+Cluster 1 is 6 of 8; cluster 2's storage pre-req shipped but its tools did not
+(the console reads Paper Store and Schedules over REST); cluster 3
+(classroom/ECA) is 6 tools in; cluster 4 is untouched. There is no "done" state
+for this document — the backlog is the classifier output.
 **Decision:** D-2 from `090-c-research-screen-ai-drafting-plan.md` §11 —
 *selective port of tools with no WordPress dependency* (option 3)
 **Tracker:** `bin/classify-tool-portability.php` (regenerate the backlog any time)
@@ -9,14 +13,15 @@
 
 ## 1. The decision, in one paragraph
 
-The Laravel runtime serves **194** tools from `lib/core`; the WordPress plugin
-declares **328 base + 1,270 Pro** slugs. Porting all ~1,434 is neither feasible
-nor desirable — most need WordPress, WooCommerce, JetEngine or the media stack
-to do anything at all. We port **on demand and by cluster**: a tool moves into
-`lib/core` only when (a) a Laravel customer actually needs it and (b) its
-**dependency closure** is free of hard WordPress coupling. Everything else
-stays in the plugin, and the console tells the truth about which runtime can
-execute what.
+The Laravel runtime serves the core catalogue plus the service-backed tools —
+`GET /api/v1/tools` is the live count (48 registered on 2026-11-14); the
+WordPress plugin declares several hundred base and Pro slugs. Porting all of
+them is neither feasible nor desirable — most need WordPress, WooCommerce,
+JetEngine or the media stack to do anything at all. We port **on demand and by
+cluster**: a tool moves into `lib/core` only when (a) a Laravel customer
+actually needs it and (b) its **dependency closure** is free of hard WordPress
+coupling. Everything else stays in the plugin, and the console tells the truth
+about which runtime can execute what.
 
 ---
 
@@ -253,10 +258,12 @@ cluster 2 proceeds once it lands.
 |---|---|
 | Classifier | ✅ `bin/classify-tool-portability.php` |
 | Backlog generated | ✅ this document |
-| Registry seeded with self-contained core tools | ✅ 23 tools bound in the Laravel provider (`CoreToolCatalogue`) — no slugs moved, the gap is unchanged |
+| Registry seeded with self-contained core tools | ✅ 48 slugs at 2026-11-14 (`GET /api/v1/tools` is the live count; this table said 23 before) |
 | Cluster 1 ported | 🟡 6 of 8 — `verify_information`, `validate_tool_schema`, `generate_email_template`, `scope_memory`, `list_prompt_cues`, `enable_reasoning_mode`. The other two are not portable as written: `import_email_marketing_blueprint` installs a blueprint whose tools do not exist in core, and `get_loop_metrics` would have to change data source (see §4) |
-| Cluster 2–4 | ⏳ |
-| CPT/CCT families | ⏳ design: `090-e-cpt-cct-schema-port.md` (654 tools are storage-shaped) |
+| Cluster 2 (auth-scoped reads) | 🟡 **pre-req only.** The storage seam landed (090-f Phase 1), but no `okf_*`, `paper_store_*` or schedule-read **tool** is registered. The console gets that data from REST controllers instead (`PaperStoreController`, `Pro\SchedulesController`), and `okf_*` has a reader (`Domain/Okf`) with no tool in front of it. Porting the tools is still open work, and worth questioning now that the REST surfaces exist |
+| Cluster 3 (store-backed) | 🟡 classroom/ECA: `list_ecas`, `get_eca`, `list_students`, `get_student`, `enroll_student_eca`, `mark_eca_attendance` — local-mirror scope. Project management shipped through 090-e/090-f rather than this table. The four `*_capture_*` tools are untouched |
+| Cluster 4 (HTTP wrappers) | ⏳ untouched — needs an `HttpClientInterface` binding first |
+| CPT/CCT families | 🟡 project management ✅ and classroom/ECA ✅; CRM, clinical and legal unstarted — `090-e-cpt-cct-schema-port.md` §9 |
 | Console parity note | ⏳ add the "runtime tool count" line to the Tools page empty state |
 
 ---

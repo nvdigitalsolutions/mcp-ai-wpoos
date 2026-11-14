@@ -52,9 +52,11 @@ Rank Math).
 | Transcripts + memory + session logs | **Done (Phase 3a)** | `TranscriptStore`, `MemoryStore`, `SessionLogStore`, console endpoints |
 | Token usage + cost analytics | **Done (Phase 3a)** | `TokenUsage`, `AnalyticsController` |
 | Rate limiter | **Done (Phase 3a)** | `RateLimiter` adapter |
-| Golden fixtures captured from WordPress | **Pending** | Shape tests stand in; capture requires a live Complete site |
+| Golden fixtures captured from WordPress | **Partial** | The capture harness and a Laravel-captured set are committed (task 0.13, 🟡); re-capturing from a live Complete site needs an operator token |
 | Playwright T0 smoke (G1) | **Pending** | Phase 1 task 1.7 |
-| Blueprints/teams/test-assistant | **Pending (Phase 2)** | See §6 |
+| Blueprints | **Done (Phase 2.4)** | `BlueprintController`, `BlueprintTest` (9 cases), mirror drift gate in the SQLite CI job |
+| Teams (agent teams + org teams) | **Done (Phase 2.5, 090-g)** | `TeamController`, `TeamCatalogueController`, `TeamTest` + `TeamCatalogueTest` |
+| Test-assistant dry run | **Pending (Phase 2.7)** | No `AssistantTestController` yet |
 | Approvals queue (list/create/approve/deny) | **Done (Phase 3b)** | `ApprovalsController`, `nvoos_approvals` |
 | Workflow triggers (list/create/update/delete) | **Done (Phase 3b)** | `TriggersController`, `nvoos_triggers` — served at `/triggers` and the console's `/orchestration/triggers` |
 | Security posture / header preview / snapshots / self-test | **Done (Phase 3b)** | `SecurityController`, `nvoos_security_snapshots` |
@@ -741,7 +743,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 | Commercial entitlement source | Resolved in 5.1: licence server, `instance_id` instead of a site URL | Phase 5 task 5.1 ✅ |
 | Pro toolkits as peers | Open (Q4) | Decide per family in Phase 4 |
 | SSO / cookie domain | Open (Q6) | Phase 5 task 5.3 |
-| Pro `mcp-ai-pro/v1` toolkit endpoints | Not started | Phase 4 |
+| Pro `mcp-ai-pro/v1` toolkit endpoints | **Done** | WordPress serves `toolkit-manifests` with the same envelope as Laravel (6/6 fixtures, 0 drift); `research` runs through the shared core service — see the last two rows of this table |
 | Laravel posture parity | Open | The Laravel report ships 8 native signals; WordPress ships 21. The SPA parser is defensive, so fewer cards render — decide in Phase 5 whether to expand or document the runtime-specific set |
 | Records remote proxy + create-from-research | Not ported | Bound to Remote Sites and the Pro `deep_research` pipeline; both answer 501 with a typed message |
 | Schedule presets | Not ported | `/api/v1/pro/presets` returns an empty catalogue; install answers 404 |
@@ -760,7 +762,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 
 - [x] Phase 0 — contract freeze, runtime profile, assertion, T0 endpoints, CSRF alias
 - [x] Phase 1 — T0 ops console (Playwright smoke pending)
-- [x] Phase 2 foundation — assistant CRUD + bundle export/import (blueprints/teams/test-assistant pending)
+- [x] Phase 2 foundation — assistant CRUD + bundle export/import, blueprints, teams (test-assistant dry run outstanding)
 - [x] Phase 3a — transcripts, memory, session logs, token usage/cost, rate limiter
 - [x] Phase 3b — approvals, workflow triggers, security center (posture/headers/snapshots/self-test), paper store
 - [x] Phase 3c — schedule manager, records schema, `wp/v2` content shim, Pro entitlement middleware
@@ -770,4 +772,4 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 4.5 — toolkit research service: draft-from-query endpoint + console wiring (draft only; saving still goes through `storeEntity`)
 - [x] Phase 4.7 — contract fixtures: `fixtures:capture`, per-family fixtures, shape replay, CI job
 - [x] Phase 4.6 — WordPress peer: read surface at parity (6/6 fixtures) and `research` ported through the shared core service
-- [ ] Phase 5 — commercial entitlement, CSRF migration, GA gates
+- [x] Phase 5 — commercial entitlement, CSRF migration, GA gates (residual items live in §14: Playwright smoke, test-assistant dry run, posture-card parity, presets, thumbnails)
