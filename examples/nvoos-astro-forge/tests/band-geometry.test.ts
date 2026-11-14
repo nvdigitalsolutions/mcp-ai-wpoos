@@ -142,6 +142,18 @@ describe( 'band height comes from the measured box', () => {
 		);
 	} );
 
+	it( 'lets an explicit profile minHeight win over the measurement', () => {
+		// The pin contract: an operator's authored floor outranks the measured
+		// box (jayainc's catalogue band measures 520px, ships at 220px).
+		const profile = profileWith( { abc1234: desktop( { height: 520 } ) } );
+		( profile.design as ForgeDesign ).sections = [
+			{ id: 'abc1234', anchor: 'about', bgColor: '#ededed', minHeight: '220px' },
+		];
+		const module = renderSectionsGenerated( profile );
+		expect( module ).toContain( "minHeight: '220px'" );
+		expect( module ).not.toContain( "minHeight: '520px'" );
+	} );
+
 	it( 'ignores a strip too short to be a band', () => {
 		// Content decides a 100px logo rail; pinning it would fight the rebuild's
 		// own type scale.

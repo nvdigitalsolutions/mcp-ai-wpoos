@@ -1267,6 +1267,8 @@ export interface ForgeSection {
 	 * inline `min-height` the sanitizer drops, so they cannot be read off the
 	 * markup the way backgrounds can — measurement is the only faithful source.
 	 * It is a FLOOR, never a lock: content that grows past it is never clipped.
+	 * An explicit profile fact (or a `sections.<id>.minHeight` operator pin)
+	 * wins over the measurement; the measured box stays provenance.
 	 */
 	minHeight?: string;
 	/**
