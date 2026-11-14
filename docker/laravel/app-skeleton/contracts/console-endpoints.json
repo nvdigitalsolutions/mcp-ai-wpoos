@@ -54,7 +54,7 @@
     "chat": "route",
     "chatChannels": "toolkit-shaped",
     "chatClient": "route",
-    "commandCenter": "runtime-adaptable",
+    "commandCenter": "route",
     "contentGraph": "external-product",
     "cost": "route",
     "dashboardsSchema": "route",

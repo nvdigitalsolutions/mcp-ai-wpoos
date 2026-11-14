@@ -292,7 +292,12 @@ export function DashboardPage(props: DashboardPageProps): JSX.Element {
             </div>
             <div className="nvoos-console-card nvoos-console-stat">
               <p className="nvoos-console-stat__label">System uptime</p>
-              <p className="nvoos-console-stat__value">{kpis.uptime}%</p>
+              <p
+                className="nvoos-console-stat__value"
+                title={kpis.uptime === null ? 'No health samples recorded yet' : undefined}
+              >
+                {kpis.uptime === null ? '—' : `${kpis.uptime}%`}
+              </p>
             </div>
           </div>
 
