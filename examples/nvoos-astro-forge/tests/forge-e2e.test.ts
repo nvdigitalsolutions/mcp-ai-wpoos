@@ -512,14 +512,16 @@ describe('forge e2e — emitted site', () => {
 			// The 2026-11-06 regressions must never come back: (a) a minifier
 			// that merges the timeline into the `animation` shorthand kills
 			// every parallax + reveal; (b) the brand strips must stay equal
-			// columns (the 3rem-height flex row made jayainc's wide banners
-			// dominate, shrank the square marks, and wrapped the row).
+			// columns — now a fixed 6-up grid whose contained logo box keeps
+			// the wide banners (Duracell) and the square marks (VO5) in one
+			// optical row instead of sizing to their own ratios.
 			expect(css).toContain('animation-timeline:scroll(root)');
 			expect(css).toContain('animation-timeline:view()');
 			expect(css).not.toMatch(/animation:[^;}]*scroll\(root\)/);
 			expect(css).not.toMatch(/animation:[^;}]*view\(\)/);
-			expect(css).toMatch(/grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\(\s*8rem\s*,\s*1fr\s*\)\s*\)/);
-			expect(css).toMatch(/\.ds-logos\s+img\s*\{[^}]*height:\s*auto/);
+			expect(css).toMatch(/grid-template-columns:\s*repeat\(\s*6\s*,\s*minmax\(\s*0\s*,\s*1fr\s*\)\s*\)/);
+			expect(css).toMatch(/\.ds-logos\s+img\s*\{[^}]*height:\s*72px/);
+			expect(css).toMatch(/\.ds-logos\s+img\s*\{[^}]*object-fit:\s*contain/);
 			// The hero headline constraint (125 §8): the band title does not
 			// span the full measure on desktop (jayainc's 72px headline sits
 			// in a ~66% column; the var is the per-site seam). A MEASURED
