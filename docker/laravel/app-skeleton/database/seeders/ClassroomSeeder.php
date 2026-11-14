@@ -62,7 +62,7 @@ class ClassroomSeeder extends Seeder
                     meta: array(
                         '_student_first_name'     => $first,
                         '_student_last_name'      => $last,
-                        '_student_email'          => strtolower( $first . '.' . $last ) . '@example.org',
+                        '_student_email'          => strtolower($first . '.' . $last) . '@example.org',
                         '_student_year_group'     => $year,
                         '_student_house'          => $house,
                         '_student_eca_enrollments' => array(),
@@ -72,7 +72,7 @@ class ClassroomSeeder extends Seeder
         }
 
         $student_ids = array_map(
-            static fn ( $student ) => $student->id,
+            static fn ($student) => $student->id,
             $students
         );
 
@@ -112,7 +112,7 @@ class ClassroomSeeder extends Seeder
                     '_eca_is_paid'             => 'yes',
                     '_eca_requires_audition'   => 'no',
                     '_eca_max_students'        => 16,
-                    '_eca_current_enrollment'  => count( $student_ids ),
+                    '_eca_current_enrollment'  => count($student_ids),
                     '_eca_teachers'            => array( 1 ),
                     '_eca_year_groups'         => array( '9', '10' ),
                     '_eca_student_enrollments' => $enrollments,
