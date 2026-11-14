@@ -74,7 +74,7 @@
     "proOps": "route",
     "professions": "route",
     "recordsSchema": "route",
-    "remoteSites": "runtime-adaptable",
+    "remoteSites": "route",
     "scheduleManager": "route",
     "security": "route",
     "settings": "route",

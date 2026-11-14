@@ -87,6 +87,8 @@ class EndpointCapabilitiesTest extends TestCase
             'commandCenter',
             // 090-i — slash commands: native subset catalogue + audited executor.
             'slashCommands',
+            // 090-i — remote sites: catalogue, CRUD and real verification.
+            'remoteSites',
         ] as $key) {
             $this->assertTrue($endpoints[$key] ?? false, $key.' should be available.');
         }
@@ -99,7 +101,6 @@ class EndpointCapabilitiesTest extends TestCase
         foreach ([
             // WordPress-only concepts.
             'chatChannels',
-            'remoteSites',
             'contentGraph',
             'docsHub',
             'mediaStudio',
@@ -282,7 +283,7 @@ class EndpointCapabilitiesTest extends TestCase
             ->assertJsonPath('data.endpoint_contract_version', EndpointCapabilities::CONTRACT_VERSION)
             ->assertJsonPath('data.endpoint_reasons.chat', 'route')
             ->assertJsonPath('data.endpoint_reasons.mcpApps', 'route')
-            ->assertJsonPath('data.endpoint_reasons.remoteSites', 'runtime-adaptable')
+            ->assertJsonPath('data.endpoint_reasons.remoteSites', 'route')
             ->assertJsonPath('data.endpoint_reasons.contentGraph', 'external-product')
             ->assertJsonPath('data.endpoint_gaps', array());
     }

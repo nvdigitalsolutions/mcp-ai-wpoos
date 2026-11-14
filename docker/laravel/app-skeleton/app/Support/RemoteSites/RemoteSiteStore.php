@@ -236,6 +236,26 @@ final class RemoteSiteStore
     }
 
     /**
+     * Record the outcome of a verification.
+     *
+     * Written by the Test action, not by the store's write methods: a
+     * connection can exist before it has ever been tested, and an edit does not
+     * make a previous test result fresh again.
+     */
+    public function recordTest(string $id, bool $success): void
+    {
+        if (! Schema::hasTable('nvoos_remote_sites')) {
+            return;
+        }
+
+        DB::table('nvoos_remote_sites')->where('id', $id)->update([
+            'last_tested_at' => now(),
+            'last_test_status' => $success ? 'ok' : 'failed',
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
      * The write shape: everything a caller may see.
      *
      * @return array<string, mixed>

@@ -166,7 +166,7 @@ final class EndpointCapabilities
         'proOps' => self::ROUTE,
         'professions' => self::ROUTE,
         'recordsSchema' => self::ROUTE,
-        'remoteSites' => self::RUNTIME_ADAPTABLE,
+        'remoteSites' => self::ROUTE,
         'scheduleManager' => self::ROUTE,
         'security' => self::ROUTE,
         'settings' => self::ROUTE,

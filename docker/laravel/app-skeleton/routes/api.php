@@ -20,6 +20,7 @@ use App\Http\Controllers\Pro\DashboardsController;
 use App\Http\Controllers\Pro\MediaCcController;
 use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
+use App\Http\Controllers\Pro\RemoteSitesController;
 use App\Http\Controllers\Pro\SchedulesController;
 use App\Http\Controllers\Pro\SlashCommandsController;
 use App\Http\Controllers\Pro\ToolkitsController;
@@ -221,6 +222,16 @@ Route::prefix('api/v1')->group(function (): void {
             // there is nothing to report.
             Route::get('/pro/media-cc/health', [MediaCcController::class, 'health']);
             Route::post('/pro/media-cc/compression-sweep', [MediaCcController::class, 'sweep']);
+
+            // 090-i — remote sites (Connections). The wizard posts flat
+            // fields and reads them back flat, so the controller owns the
+            // split into config/credentials.
+            Route::get('/pro/remote-sites', [RemoteSitesController::class, 'index']);
+            Route::get('/pro/remote-sites/types', [RemoteSitesController::class, 'types']);
+            Route::post('/pro/remote-sites', [RemoteSitesController::class, 'store']);
+            Route::post('/pro/remote-sites/{id}', [RemoteSitesController::class, 'update']);
+            Route::delete('/pro/remote-sites/{id}', [RemoteSitesController::class, 'destroy']);
+            Route::post('/pro/remote-sites/{id}/test', [RemoteSitesController::class, 'test']);
 
             // 090-i — the console Dashboard's command-centre section. Six
             // sourced KPIs, a derived agent-status map and the activity feed.
