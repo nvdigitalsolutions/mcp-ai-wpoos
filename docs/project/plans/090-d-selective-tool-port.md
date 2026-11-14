@@ -106,9 +106,24 @@ eight cluster-1 candidates survived that check.
 | pro | `import_email_marketing_blueprint` | ❌ WordPress-only | **Corrected 2026-11-13.** The contract gap is real (`ContentStoreInterface` has no exact-title lookup and no `deleteMeta`), but the tool also installs the `email-campaign-manager` blueprint, whose 12 tools include 8 that do not exist in `lib/core` (`send_brevo_email`, `send_mailjet_email`, `send_mailgun_email`, `manage_brevo_contacts`, `manage_mailjet_contacts`, `get_brevo_statistics`, `get_mailjet_statistics`, `unified_channel_broadcast`). Porting it would produce an assistant Laravel cannot serve. It stays in the plugin |
 | pro | `get_loop_metrics` | ⏳ blocked on a decision | Reads `WP_MCP_AI_Execution_History_CCT::get_session_history()` — a JetEngine CCT that is not even provisioned in the test environment. `period` is accepted but never used; the tool is purely session-scoped. Core records overlapping data through `SessionLogStoreInterface` (`TYPE_TOOL_RESULT` carries `name`, `outcome`, `duration_ms`), so a port is possible — but it would read a *different source* than the WordPress tool, which is a design decision rather than a mechanical move |
 | pro | `list_ecas` | ✅ ported | `lib/core/src/Tool/Classroom/ListEcasTool.php` + `EcaRow`. Same slug, filters, pagination envelope and row key order as `WP_MCP_AI_Tool_List_ECAs`. Two documented divergences: `sort_by` accepts `name` / `created_date` only (WordPress also sorts by `day` / `type` through `meta_value`, which `ContentQuery` does not expose) and `url` is always empty |
+| pro | `get_eca` | ✅ ported | `GetEcaTool` + `EcaRow::detail()`. Same fields in the same order, plus the optional `include_enrollments` student list. Divergence: `enrollment_breakdown` counts `_eca_student_enrollments` when the per-enrolment records are absent — see the defect note below |
+| pro | `list_students` | ✅ ported | `ListStudentsTool` + `StudentRow`. Same row keys, filters (`year_group`, `house`, `search`) and `pagination` envelope. `per_page` outside 1–100 resets to 20 rather than clamping, matching WordPress. `enrollment_count` reads the reverse link, so it stays 0 until `enroll_student_eca` is ported — the mirror records enrolment on the activity side |
 | pro | `list_classroom_courses` / `list_classroom_guardians` / `list_classroom_submissions` / `classroom_course_analytics` | ❌ WordPress-only | **Corrected 2026-11-14.** All four are Google API client tools — they call `WP_MCP_AI_ECA_Classroom_Helper::get_client()` and read Google Classroom directly, so there is no store a local mirror could serve them from. The cluster-3 port target is the **37 local-only ECA tools** instead (`get_eca`, `list_students`, `get_student`, `enroll_student_eca`, `mark_eca_attendance`, …) |
 | pro | ECA / student store | ✅ store landed | `mcp_ai_eca` + `mcp_ai_student` + `mcp_ai_eca_category` descriptors, `ClassroomSeeder`, `ClassroomSchemaTest`. Local-mirror scope: the Google Classroom / ISAMS sync stays WordPress-only, and its fields are mirrored as empty strings. `_eca_is_paid` and `_eca_requires_audition` are declared as `yes`/`no` strings because that is the encoding `get_post_meta(...) === 'yes'` expects |
 | pro | `git_inspect` / `git_change` | ⏳ | **excluded** — needs a process port and its own security review |
+
+**WordPress defect found while porting `get_eca` (2026-11-14).**
+`WP_MCP_AI_Tool_Get_ECA` builds its `enrollment_breakdown` and
+`include_enrollments` list from `_eca_enrollments`, but nothing in the family
+writes that key: `enroll_student_eca`, `bulk_enroll_students`,
+`manage_eca_waitlist`, `create_eca` and `delete_eca` all maintain
+`_eca_student_enrollments` (a list of student ids). On real WordPress data the
+breakdown is therefore always
+`{confirmed: 0, waitlist: 0, trial: 0, preference: 0}` and the enrolment list is
+always empty. The Laravel port keeps the record shape when records exist and
+otherwise counts the authoritative id list, so it reports real numbers; the
+WordPress tool still has the defect. Left unfixed here because changing it
+alters production output and belongs in its own PR.
 
 Four `*_capture_*` tools (`pm_capture_decision`,
 `social_capture_post_performance`, `docgen_capture_style_memory`,
