@@ -82,22 +82,27 @@ jobs:
           # Dependencies are stripped too — the runtime is zero-dependency
           # Node (node: builtins only), so Velocity's `npm install` becomes
           # a no-op and npm-audit noise never appears in deploy logs.
-          node -e '
+          # Quoted heredoc, not node -e with single quotes: an apostrophe or
+          # a backtick in the JS (even inside a comment) would close the shell
+          # quoting and the remainder would run as commands — that is how the
+          # first version of this block broke the sync. A quoted delimiter
+          # makes the body literal.
+          node - <<'NODE'
             const fs = require("fs");
             const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
             const noop = "node -e \"process.exit(0)\"";
             for (const s of ["build", "dev", "preview", "typecheck", "lint:a11y", "test", "test:watch", "sync:dist"]) {
               p.scripts[s] = noop;
             }
-            // The e2e scripts are deleted, not no-op'd: a silent exit 0 for
-            // `test:e2e` would claim a green smoke that never ran.
+            // Delete the e2e scripts rather than shimming them: a silent
+            // exit 0 for test:e2e would claim a green smoke that never ran.
             for (const s of ["build:e2e", "test:e2e", "test:e2e:headed", "report:e2e"]) {
               delete p.scripts[s];
             }
             delete p.dependencies;
             delete p.devDependencies;
             fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n");
-          '
+          NODE
           # Pin the initial branch to main: git init alone honours the runner's
           # init.defaultBranch (or falls back to master), which makes the later
           # `git push ... main --force` fail with "src refspec main does not match any".
