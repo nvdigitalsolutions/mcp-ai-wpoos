@@ -63,6 +63,7 @@ class EndpointCapabilitiesTest extends TestCase
             'tokenManager',
             'wpBase',
             'recordsSchema',
+            'dashboardsSchema',
             'toolkits',
             'professions',
             'orgTeams',
@@ -79,13 +80,10 @@ class EndpointCapabilitiesTest extends TestCase
         foreach ([
             // Orchestration engine — not ported. The overview route exists
             // (`orchestrationStats`), the builder and runs do not.
-            'workflows',
             'workflowBuilder',
             'workflowPresets',
             'workflowNodes',
             'workflowRuns',
-            // Surfaces whose stores exist but whose routes do not.
-            'dashboardsSchema',
             // Deliberately deferred inside the assistant editor.
             'skills',
             'mcpApps',

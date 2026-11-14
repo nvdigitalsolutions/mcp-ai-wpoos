@@ -286,12 +286,6 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'upload'              => esc_url_raw( rest_url( 'wp/v2/media' ) ),
 
 				// Pro endpoints (mcp-ai-pro/v1).
-				'workflows'           => $is_admin
-					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflows' ) )
-					: '',
-				'analytics'           => $is_admin && ! $guest
-					? esc_url_raw( rest_url( 'mcp-ai/v1/analytics' ) )
-					: '',
 				'cost'                => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/cost' ) )
 					: '',

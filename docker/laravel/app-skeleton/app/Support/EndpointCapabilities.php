@@ -46,7 +46,6 @@ final class EndpointCapabilities
         'upload' => 'api/v1/media',
         'assistants' => 'api/v1/assistants',
         'settings' => 'api/v1/settings',
-        'workflows' => 'api/v1/pro/workflows',
         'approvals' => 'api/v1/approvals',
         'triggers' => 'api/v1/orchestration/triggers',
         'teams' => 'api/v1/teams',

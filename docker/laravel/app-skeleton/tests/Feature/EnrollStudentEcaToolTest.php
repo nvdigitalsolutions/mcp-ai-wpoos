@@ -108,7 +108,7 @@ class EnrollStudentEcaToolTest extends TestCase
             'eca_id' => $this->roboticsId,
         ]);
 
-        $this->assertSame( 'Nina Patel has been enrolled in Robotics Club.', $result['message'] );
+        $this->assertSame('Nina Patel has been enrolled in Robotics Club.', $result['message']);
 
         $this->assertSame(
             [
@@ -137,8 +137,8 @@ class EnrollStudentEcaToolTest extends TestCase
         // Activity side, with the record keyed by student id.
         $ecaMap = $this->eca()->meta['_eca_student_enrollments'];
 
-        $this->assertArrayHasKey( $this->ninaId, $ecaMap );
-        $this->assertSame( 'confirmed', $ecaMap[ $this->ninaId ]['enrollment_type'] );
+        $this->assertArrayHasKey($this->ninaId, $ecaMap);
+        $this->assertSame('confirmed', $ecaMap[ $this->ninaId ]['enrollment_type']);
         $this->assertMatchesRegularExpression(
             '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/',
             $ecaMap[ $this->ninaId ]['enrollment_date']
@@ -383,12 +383,12 @@ class EnrollStudentEcaToolTest extends TestCase
 
     public function test_missing_ids_are_a_validation_error(): void
     {
-        $result = $this->app->make( ToolRegistry::class )
-            ->get( 'enroll_student_eca' )
-            ->execute( array( 'student_id' => $this->ninaId ), array( 'user_id' => 1 ) );
+        $result = $this->app->make(ToolRegistry::class)
+            ->get('enroll_student_eca')
+            ->execute(array( 'student_id' => $this->ninaId ), array( 'user_id' => 1 ));
 
-        $this->assertInstanceOf( RuntimeException::class, $result );
-        $this->assertStringContainsString( 'Both student_id and eca_id are required', $result->getMessage() );
+        $this->assertInstanceOf(RuntimeException::class, $result);
+        $this->assertStringContainsString('Both student_id and eca_id are required', $result->getMessage());
     }
 
     public function test_an_activity_id_is_not_a_student(): void
