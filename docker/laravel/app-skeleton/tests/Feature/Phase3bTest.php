@@ -7,6 +7,7 @@ use App\Support\SettingsSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
+use Nvoos\Core\Application\Security\PostureScorer;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Tests\TestCase;
 
@@ -161,35 +162,68 @@ class Phase3bTest extends TestCase
         $response = $this->getJson('/api/v1/security/posture')
             ->assertOk()
             ->assertJsonStructure([
-                'score', 'grade', 'signals', 'quick_wins', 'computed_at',
+                'score', 'grade', 'passed_weight', 'applicable_weight', 'signals', 'quick_wins', 'computed_at',
             ]);
 
         $signals = $response->json('signals');
         $score = $response->json('score');
         $grade = $response->json('grade');
 
-        $this->assertSame(100, array_sum(array_column($signals, 'weight')));
+        // The catalogue is shared with the WordPress runtime, so WordPress-only
+        // controls ship as not-applicable cards instead of disappearing — the
+        // console renders the same check list on both backends.
+        $this->assertCount(27, $signals);
+
+        $applicable = array_values(array_filter($signals, static fn (array $s): bool => $s['applicable']));
+        $notApplicable = array_values(array_filter($signals, static fn (array $s): bool => ! $s['applicable']));
+
+        $this->assertCount(18, $applicable);
+        $this->assertCount(9, $notApplicable);
 
         foreach ($signals as $signal) {
             $this->assertContains($signal['subtab'], ['network', 'access', 'audit', 'ai_safety']);
             $this->assertIsBool($signal['passed']);
+            $this->assertContains($signal['status'], ['pass', 'fail', 'not_applicable']);
         }
 
-        $failed = array_values(array_filter($signals, static fn (array $s): bool => ! $s['passed']));
-        $this->assertCount(count($failed), $response->json('quick_wins'));
+        // A control this runtime has no primitive for is neither a pass nor a
+        // fail, and it never reaches the score.
+        foreach ($notApplicable as $signal) {
+            $this->assertFalse($signal['passed']);
+            $this->assertSame('not_applicable', $signal['status']);
+        }
 
-        $expectedGrade = match (true) {
-            $score >= 90 => 'A',
-            $score >= 80 => 'B',
-            $score >= 70 => 'C',
-            $score >= 60 => 'D',
-            default => 'F',
-        };
-        $this->assertSame($expectedGrade, $grade);
+        $this->assertSame(
+            array_sum(array_column($applicable, 'weight')),
+            $response->json('applicable_weight')
+        );
+        $this->assertLessThan(
+            array_sum(array_column($signals, 'weight')),
+            $response->json('applicable_weight')
+        );
+
+        // Quick wins surface only applicable failures, capped at three and
+        // ordered by weight so the top item is the biggest available win.
+        $failed = array_values(array_filter($applicable, static fn (array $s): bool => ! $s['passed']));
+        $quickWins = $response->json('quick_wins');
+        $this->assertLessThanOrEqual(3, count($quickWins));
+        $this->assertCount(min(3, count($failed)), $quickWins);
+
+        $weights = array_column($quickWins, 'weight');
+        $sorted = $weights;
+        rsort($sorted);
+        $this->assertSame($sorted, $weights, 'Quick wins must be ordered by weight, highest first.');
+
+        foreach ($quickWins as $win) {
+            $this->assertTrue($win['applicable'], 'An inapplicable control cannot be a quick win.');
+            $this->assertFalse($win['passed']);
+        }
+
+        $this->assertSame(PostureScorer::gradeFor($score), $grade);
 
         // Durable stores exist under RefreshDatabase, so this signal must pass.
-        $audit = array_values(array_filter($signals, static fn (array $s): bool => $s['id'] === 'audit'));
-        $this->assertTrue($audit[0]['passed']);
+        $audit = array_values(array_filter($signals, static fn (array $s): bool => $s['id'] === 'audit_log_on'));
+        $this->assertSame('pass', $audit[0]['status']);
     }
 
     public function test_preview_headers_returns_the_baseline_header_set(): void

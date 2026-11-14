@@ -91,13 +91,13 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Grade is one of the five expected letter grades.
+	 * Grade is one of the Mozilla Observatory bands the scorer implements.
 	 */
 	public function test_posture_grade_is_valid() {
 		$posture = new WP_MCP_AI_Security_Posture();
 		$report  = $posture->get_report( true );
 
-		$this->assertContains( $report['grade'], array( 'A', 'B', 'C', 'D', 'F' ) );
+		$this->assertContains( $report['grade'], array( 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F' ) );
 	}
 
 	/**
@@ -138,7 +138,8 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Every signal has 'id', 'label', 'weight', 'passed', 'detail', 'subtab'.
+	 * Every signal carries the shared-catalogue fields, including the
+	 * applicable flag the console needs to separate runtime-specific cards.
 	 */
 	public function test_signal_structure() {
 		$posture = new WP_MCP_AI_Security_Posture();
@@ -151,7 +152,45 @@ class Test_Security_Center extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'passed', $signal, "Signal missing 'passed'" );
 			$this->assertArrayHasKey( 'detail', $signal, "Signal missing 'detail'" );
 			$this->assertArrayHasKey( 'subtab', $signal, "Signal missing 'subtab'" );
+			$this->assertArrayHasKey( 'applicable', $signal, "Signal missing 'applicable'" );
+			$this->assertIsBool( $signal['applicable'] );
+			$this->assertContains( $signal['status'], array( 'pass', 'fail', 'not_applicable' ) );
 		}
+	}
+
+	/**
+	 * The not-applicable controls (Laravel-only checks) never count towards
+	 * the WordPress score or the quick-win list.
+	 */
+	public function test_not_applicable_signals_are_excluded() {
+		if ( ! class_exists( '\Nvoos\Core\Application\Security\PostureScorer' ) ) {
+			$this->markTestSkipped( 'lib/core is not loaded in this build.' );
+		}
+
+		$posture = new WP_MCP_AI_Security_Posture();
+		$report  = $posture->get_report( true );
+
+		$not_applicable = array_filter(
+			$report['signals'],
+			function ( $signal ) {
+				return isset( $signal['applicable'] ) && ! $signal['applicable'];
+			}
+		);
+
+		$this->assertNotEmpty( $not_applicable, 'Laravel-only controls should be reported as not applicable' );
+
+		foreach ( $not_applicable as $signal ) {
+			$this->assertSame( 'not_applicable', $signal['status'] );
+			$this->assertFalse( $signal['passed'] );
+		}
+
+		$quick_win_ids = array_column( $report['quick_wins'], 'id' );
+		foreach ( $not_applicable as $signal ) {
+			$this->assertNotContains( $signal['id'], $quick_win_ids );
+		}
+
+		$this->assertArrayHasKey( 'applicable_weight', $report );
+		$this->assertLessThan( array_sum( array_column( $report['signals'], 'weight' ) ), $report['applicable_weight'] );
 	}
 
 	/**

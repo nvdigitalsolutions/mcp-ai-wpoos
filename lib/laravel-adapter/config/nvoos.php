@@ -905,6 +905,26 @@ return array(
 	| endpoints are ported (Proposal 090-B, Phase 4).
 	|
 	*/
+	/*
+	|--------------------------------------------------------------------------
+	| Security posture controls
+	|--------------------------------------------------------------------------
+	|
+	| The shared signal catalogue (lib/core `SecuritySignalCatalogue`) scores
+	| both runtimes. These keys are the Laravel side's inputs; a value that
+	| cannot be met honestly scores as a finding rather than being skipped.
+	|
+	| `hsts_max_age` is what this app can *claim*; the console proxy owns the
+	| actual header and currently ships a 1-day ramp.
+	|
+	*/
+	'security' => array(
+		'hsts_max_age'         => (int) env( 'NVOOS_HSTS_MAX_AGE', 0 ),
+		'headers'              => filter_var( env( 'NVOOS_SECURITY_HEADERS', 'true' ), FILTER_VALIDATE_BOOLEAN ),
+		'csp_frame_ancestors'  => (string) env( 'NVOOS_CSP_FRAME_ANCESTORS', '' ),
+		'audit_retention_days' => (int) env( 'NVOOS_AUDIT_RETENTION_DAYS', 30 ),
+	),
+
 	'features' => array(
 		'crm'                => false,
 		'project_management' => true,

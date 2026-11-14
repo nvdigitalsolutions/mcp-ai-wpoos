@@ -10,10 +10,23 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Nvoos\Core\Application\Security\PostureEvaluator;
+use Nvoos\Core\Application\Security\PostureScorer;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Security\SecuritySignalCatalogue;
 
 class SecurityController
 {
+    /**
+     * Security posture for the console.
+     *
+     * Every signal comes from the shared catalogue in lib/core, so this
+     * runtime reports the same 27 cards WordPress does — the 9 WordPress-only
+     * controls arrive as `applicable: false` and leave the score's
+     * denominator (the AWS Security Hub / CIS-CAT rule). Evaluations only
+     * supply pass/detail; identity, weight and the remediation target stay
+     * in the catalogue.
+     */
     public function posture(Request $request, SettingsStoreInterface $store): JsonResponse
     {
         $settings = $store->all();
@@ -23,39 +36,108 @@ class SecurityController
             || ! empty($settings['anthropic_api_key'])
             || ! empty($settings['ollama_endpoint']);
 
-        $signals = [
-            $this->signal('https', 'HTTPS enforced', 20, $https, $https ? 'HTTPS is active.' : 'Serve the console over HTTPS.', 'network', '/security'),
-            $this->signal('debug_off', 'Debug mode disabled', 15, ! config('app.debug'), config('app.debug') ? 'APP_DEBUG is on.' : 'APP_DEBUG is off.', 'network', '/security'),
-            $this->signal('provider_keys', 'Provider credentials present', 15, $providers, $providers ? 'At least one provider is configured.' : 'No provider credentials are configured.', 'ai_safety', '/settings'),
-            $this->signal('rate_limiting', 'Rate limiting enabled', 10, (bool) $store->get('enable_rate_limiting', true), 'Per-route throttles are active.', 'network', '/security'),
-            $this->signal('secure_cookies', 'Secure session cookies', 10, (bool) config('session.secure') || $https, (bool) config('session.secure') || $https ? 'Session cookies are secure.' : 'Set SESSION_SECURE_COOKIE=true behind TLS.', 'access', '/security'),
-            $this->signal('csrf', 'CSRF protection', 10, true, 'Laravel CSRF middleware is active.', 'access', '/security'),
-            $this->signal('audit', 'Durable audit surfaces', 10, Schema::hasTable('nvoos_jobs') && Schema::hasTable('nvoos_approvals'), 'Job and approval history are durable.', 'audit', '/operations'),
-            $this->signal('memory_controls', 'Memory controls available', 10, (bool) $store->get('memory_enabled', true), 'Agent memory can be disabled per site.', 'ai_safety', '/settings'),
+        $security = (array) config('oos.security', []);
+        $hstsMaxAge = (int) ($security['hsts_max_age'] ?? 0);
+        $postMax = (string) ini_get('post_max_size');
+        $corsOrigins = (array) config('cors.allowed_origins', ['*']);
+
+        /** @var array<string, array{passed: bool, detail: string}> $evaluations */
+        $evaluations = [
+            'https_active' => [
+                'passed' => $https,
+                'detail' => $https ? 'HTTPS is active.' : 'Serve the console over HTTPS.',
+            ],
+            'hsts_enabled' => [
+                // Observatory's bar is six months; the console proxy ships a
+                // 1-day ramp, so the honest answer is a finding until raised.
+                'passed' => $hstsMaxAge >= 15768000,
+                'detail' => $hstsMaxAge >= 15768000
+                    ? 'HSTS max-age is at least six months.'
+                    : sprintf('HSTS max-age is %d seconds (six months is 15768000). The console proxy ships a 1-day ramp.', $hstsMaxAge),
+            ],
+            'rate_limiting_on' => [
+                'passed' => (bool) $store->get('enable_rate_limiting', true),
+                'detail' => 'Per-route throttles are active.',
+            ],
+            'rate_limit_by_user' => [
+                'passed' => true,
+                'detail' => 'Named limiters key by user id when authenticated, falling back to the client IP.',
+            ],
+            'security_headers_on' => [
+                'passed' => (bool) ($security['headers'] ?? true),
+                'detail' => 'The console proxy sets nosniff, HSTS, frame and referrer headers.',
+            ],
+            'csp_frame_ancestors' => [
+                'passed' => '' !== (string) ($security['csp_frame_ancestors'] ?? ''),
+                'detail' => '' !== (string) ($security['csp_frame_ancestors'] ?? '')
+                    ? 'CSP frame-ancestors is configured.'
+                    : 'Set oos.security.csp_frame_ancestors (the console proxy does not enforce a CSP yet).',
+            ],
+            'require_https_api' => [
+                'passed' => $https && (bool) config('session.secure'),
+                'detail' => $https && (bool) config('session.secure')
+                    ? 'API traffic is TLS-only and session cookies are secure.'
+                    : 'Serve behind TLS with SESSION_SECURE_COOKIE=true.',
+            ],
+            'cors_restricted' => [
+                'passed' => ! in_array('*', $corsOrigins, true),
+                'detail' => ! in_array('*', $corsOrigins, true)
+                    ? 'CORS is limited to the configured origins.'
+                    : 'CORS allows every origin; set NVOOS_CORS_ORIGINS.',
+            ],
+            'error_verbosity_safe' => [
+                'passed' => ! config('app.debug'),
+                'detail' => config('app.debug')
+                    ? 'APP_DEBUG is on; production responses leak stack traces.'
+                    : 'APP_DEBUG is off.',
+            ],
+            'auth_brute_force_on' => [
+                'passed' => true,
+                'detail' => 'Session login is throttled (throttle:6,1) per client.',
+            ],
+            'body_size_limited' => [
+                'passed' => (int) $postMax > 0,
+                'detail' => (int) $postMax > 0
+                    ? 'PHP post_max_size is '.$postMax.'.'
+                    : 'PHP post_max_size is unlimited.',
+            ],
+            'minimum_capability' => [
+                'passed' => true,
+                'detail' => 'Every console route sits behind a can: gate (edit_posts, manage_options or upload_files).',
+            ],
+            'audit_log_on' => [
+                'passed' => Schema::hasTable('nvoos_approvals') && Schema::hasTable('nvoos_slash_command_audit'),
+                'detail' => 'Approval decisions and slash-command executions are durable and queryable.',
+            ],
+            'audit_log_retention' => [
+                'passed' => (int) ($security['audit_retention_days'] ?? 30) >= 30,
+                'detail' => sprintf('Audit retention is %d days.', (int) ($security['audit_retention_days'] ?? 30)),
+            ],
+            'csrf' => [
+                'passed' => true,
+                'detail' => 'Laravel CSRF middleware validates every state-changing console request.',
+            ],
+            'secure_cookies' => [
+                'passed' => (bool) config('session.secure') || $https,
+                'detail' => (bool) config('session.secure') || $https
+                    ? 'Session cookies are secure.'
+                    : 'Set SESSION_SECURE_COOKIE=true behind TLS.',
+            ],
+            'provider_keys' => [
+                'passed' => $providers,
+                'detail' => $providers
+                    ? 'At least one provider is configured.'
+                    : 'No provider credentials are configured.',
+            ],
+            'memory_controls' => [
+                'passed' => (bool) $store->get('memory_enabled', true),
+                'detail' => 'Agent memory can be disabled per site.',
+            ],
         ];
 
-        $totalWeight = array_sum(array_column($signals, 'weight'));
-        $passedWeight = array_sum(array_map(
-            static fn (array $signal): int => $signal['passed'] ? $signal['weight'] : 0,
-            $signals,
-        ));
+        $signals = PostureEvaluator::build(SecuritySignalCatalogue::RUNTIME_LARAVEL, $evaluations);
 
-        $score = (int) round(($passedWeight / max(1, $totalWeight)) * 100);
-        $grade = match (true) {
-            $score >= 90 => 'A',
-            $score >= 80 => 'B',
-            $score >= 70 => 'C',
-            $score >= 60 => 'D',
-            default => 'F',
-        };
-
-        return response()->json([
-            'score' => $score,
-            'grade' => $grade,
-            'signals' => $signals,
-            'quick_wins' => array_values(array_filter($signals, static fn (array $signal): bool => ! $signal['passed'])),
-            'computed_at' => now()->toIso8601String(),
-        ]);
+        return response()->json(( new PostureScorer() )->score($signals));
     }
 
     public function previewHeaders(Request $request): JsonResponse
@@ -213,22 +295,6 @@ class SecurityController
             'success' => true,
             'checks' => $checks,
         ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function signal(string $id, string $label, int $weight, bool $passed, string $detail, string $subtab, string $anchor): array
-    {
-        return [
-            'id' => $id,
-            'label' => $label,
-            'weight' => $weight,
-            'passed' => $passed,
-            'detail' => $detail,
-            'subtab' => $subtab,
-            'anchor' => $anchor,
-        ];
     }
 
     /**
