@@ -40,6 +40,14 @@ return Application::configure(basePath: dirname(__DIR__))
             ->everyFiveMinutes()
             ->withoutOverlapping();
 
+        // 090-b — the Schedule Manager tick. Installed presets and hand-made
+        // schedules only fire where this runs: the `scheduler` container role
+        // runs `php artisan schedule:work`, and `nvoos:run-schedules --dry-run`
+        // lists what would fire.
+        $schedule->command('nvoos:run-schedules')
+            ->everyMinute()
+            ->withoutOverlapping();
+
         // 090-j — the media compression sweep. The expression is configuration
         // rather than code: how often a library should be re-optimised is an
         // operator decision, and an empty value schedules nothing (the console

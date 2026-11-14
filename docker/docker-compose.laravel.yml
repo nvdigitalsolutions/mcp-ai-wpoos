@@ -107,6 +107,28 @@ services:
       redis:
         condition: service_healthy
 
+  # ── Scheduler ──────────────────────────
+  # `php artisan schedule:work` — ticks routes/console.php every minute,
+  # which is what makes installed schedule presets and any Laravel scheduled
+  # task actually fire. Without it nvoos_schedules is a list that never runs.
+  scheduler:
+    build:
+      context: ./laravel
+      dockerfile: Dockerfile
+    container_name: oos-laravel-scheduler
+    restart: unless-stopped
+    environment:
+      <<: *spike-environment
+      CONTAINER_ROLE: scheduler
+    volumes: *spike-volumes
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   # ── MySQL 8.0 ───────────────────────────────
   db:
     image: mysql:8.0

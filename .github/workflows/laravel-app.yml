@@ -69,6 +69,13 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: php bin/sync-blueprints.php --check
 
+      - name: Schedule preset mirror is current
+        # Same contract for the Schedule Anything preset catalogue: the app
+        # serves resources/schedule-presets.json, mirrored from the Pro
+        # catalogue class by bin/sync-schedule-presets.php.
+        working-directory: ${{ github.workspace }}
+        run: php bin/sync-schedule-presets.php --check
+
       - name: Prepare the application
         run: |
           cp .env.example .env

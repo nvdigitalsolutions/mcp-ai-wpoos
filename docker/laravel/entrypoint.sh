@@ -82,6 +82,13 @@ if [ "$ROLE" = "worker" ]; then
         --max-jobs=500
 fi
 
+if [ "$ROLE" = "scheduler" ]; then
+    echo "[spike] starting scheduler"
+    # Runs routes/console.php every minute: nvoos:run-schedules (the Schedule
+    # Manager tick) and Laravel's own scheduled tasks.
+    exec php artisan schedule:work
+fi
+
 echo "[spike] starting Octane/FrankenPHP"
 exec php artisan octane:frankenphp \
     --host=0.0.0.0 \

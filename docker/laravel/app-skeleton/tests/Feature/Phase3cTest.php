@@ -195,19 +195,19 @@ class Phase3cTest extends TestCase
             ->assertJsonPath('stats.success_rate', 100);
     }
 
-    public function test_presets_are_empty_and_install_fails_closed(): void
+    public function test_presets_are_served_from_the_mirrored_catalogue(): void
     {
         $this->actAsUser();
 
         $this->getJson('/api/v1/pro/presets')
             ->assertOk()
             ->assertJsonPath('ok', true)
-            ->assertJsonPath('presets', [])
-            ->assertJsonPath('total', 0);
+            ->assertJsonPath('total', 12);
 
         $this->postJson('/api/v1/pro/presets/none/install')
             ->assertNotFound()
-            ->assertJsonPath('ok', false);
+            ->assertJsonPath('ok', false)
+            ->assertJsonPath('code', 'sa_preset_not_found');
     }
 
     // ------------------------------------------------------------- entitlement

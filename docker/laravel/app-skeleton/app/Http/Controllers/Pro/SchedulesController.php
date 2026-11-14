@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Pro;
 
+use App\Support\Schedules\SchedulePresenter;
+use App\Support\Schedules\ScheduleRunner;
+use App\Support\Schedules\ScheduleTiming;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Nvoos\Core\Application\Tool\ToolRegistry;
-use Nvoos\Core\Domain\Contract\AuthProviderInterface;
-use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 
 /**
  * Pro Schedule Manager — the console surface at `/api/v1/pro/schedules`.
@@ -18,8 +18,8 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
  * the Phase 1-3 base console.
  *
  * `trigger` executes the schedule's tool handler synchronously and records
- * the outcome in `nvoos_schedule_runs`; queued execution lands when the
- * long-running toolkits are ported.
+ * the outcome in `nvoos_schedule_runs`; the same execution lives in
+ * `ScheduleRunner`, which `nvoos:run-schedules` drives every minute.
  */
 class SchedulesController
 {
@@ -69,7 +69,7 @@ class SchedulesController
             'description' => $data['description'] ?? null,
             'schedule_type' => $data['schedule_type'] ?? 'cron',
             'enabled' => (bool) ($data['enabled'] ?? true),
-            'next_run_at' => null,
+            'next_run_at' => ScheduleTiming::nextRunAt((string) $data['schedule']),
             'last_run_at' => null,
             'priority' => (int) ($data['priority'] ?? 10),
             'tags' => json_encode(array_values($data['tags'] ?? []), JSON_UNESCAPED_UNICODE),
@@ -115,6 +115,14 @@ class SchedulesController
 
         if (array_key_exists('schedule', $data)) {
             $update['cron_expression'] = $data['schedule'];
+            $update['next_run_at'] = ScheduleTiming::nextRunAt((string) $data['schedule']);
+        }
+
+        // Enabling a schedule that was never timed needs a clock before the
+        // next tick, otherwise ScheduleRunner::due() skips it forever.
+        if (array_key_exists('enabled', $data) && $data['enabled']
+            && ! array_key_exists('schedule', $data) && null === $row->next_run_at) {
+            $update['next_run_at'] = ScheduleTiming::nextRunAt((string) $row->cron_expression);
         }
 
         if (array_key_exists('tags', $data)) {
@@ -152,11 +160,17 @@ class SchedulesController
         }
 
         $enabled = ! (bool) ($row->enabled ?? true);
-
-        DB::table('nvoos_schedules')->where('id', $id)->update([
+        $update = [
             'enabled' => $enabled,
             'updated_at' => now(),
-        ]);
+        ];
+
+        // Same rule as update(): a schedule that comes back on needs a clock.
+        if ($enabled && null === $row->next_run_at) {
+            $update['next_run_at'] = ScheduleTiming::nextRunAt((string) $row->cron_expression);
+        }
+
+        DB::table('nvoos_schedules')->where('id', $id)->update($update);
 
         return $this->ok([
             'enabled' => $enabled,
@@ -164,7 +178,7 @@ class SchedulesController
         ]);
     }
 
-    public function trigger(Request $request, string $id): JsonResponse
+    public function trigger(Request $request, string $id, ScheduleRunner $runner): JsonResponse
     {
         $row = DB::table('nvoos_schedules')->find($id);
 
@@ -172,68 +186,12 @@ class SchedulesController
             return $this->missing();
         }
 
-        $handler = (string) $row->handler;
-        $arguments = json_decode((string) ($row->payload ?? ''), true);
-        $arguments = is_array($arguments) ? $arguments : [];
-
-        $errors = app(ErrorFactoryInterface::class);
-        $startedAt = now();
-        $clock = microtime(true);
-
-        $runId = DB::table('nvoos_schedule_runs')->insertGetId([
-            'schedule_id' => $id,
-            'status' => 'running',
-            'started_at' => $startedAt,
-            'created_at' => $startedAt,
-            'updated_at' => $startedAt,
-        ]);
-
-        $failure = null;
-        $result = null;
-
-        try {
-            $result = app(ToolRegistry::class)->execute($handler, $arguments, [
-                'user_id' => (int) ($request->user()?->id ?? 0),
-                'auth_provider' => app(AuthProviderInterface::class),
-            ]);
-        } catch (\Throwable $e) {
-            $failure = $e->getMessage();
-        }
-
-        $duration = round(microtime(true) - $clock, 4);
-
-        if ($failure !== null || $result === null || $errors->isError($result)) {
-            $normalized = $result === null ? [] : $errors->normalize($result);
-            $error = $failure ?? (string) ($normalized['message'] ?? 'Schedule handler failed.');
-            $status = 'failure';
-            $log = null;
-        } else {
-            $error = null;
-            $status = 'success';
-            $log = $this->encodeLog($result);
-        }
-
-        $finishedAt = now();
-
-        DB::table('nvoos_schedule_runs')->where('id', $runId)->update([
-            'status' => $status,
-            'finished_at' => $finishedAt,
-            'duration' => $duration,
-            'error' => $error,
-            'log' => $log,
-            'updated_at' => $finishedAt,
-        ]);
-
-        DB::table('nvoos_schedules')->where('id', $id)->update([
-            'last_run_at' => $finishedAt,
-            'run_count' => (int) ($row->run_count ?? 0) + 1,
-            'updated_at' => $finishedAt,
-        ]);
+        $result = $runner->run($row, (int) ($request->user()?->id ?? 0));
 
         return $this->ok([
-            'run' => $this->runRecord(DB::table('nvoos_schedule_runs')->find($runId)),
+            'run' => $this->runRecord(DB::table('nvoos_schedule_runs')->find($result['run_id'])),
             'schedule' => $this->record(DB::table('nvoos_schedules')->find($id)),
-        ], $status === 'success' ? 200 : 422);
+        ], 'success' === $result['status'] ? 200 : 422);
     }
 
     public function history(string $id): JsonResponse
@@ -340,23 +298,7 @@ class SchedulesController
      */
     private function record(object $row): array
     {
-        $tags = json_decode((string) ($row->tags ?? ''), true);
-
-        return [
-            'id' => (string) $row->id,
-            'name' => (string) ($row->name ?? ''),
-            'description' => $row->description,
-            'schedule_type' => (string) ($row->schedule_type ?? 'cron'),
-            'schedule' => (string) ($row->cron_expression ?? ''),
-            'enabled' => (bool) ($row->enabled ?? true),
-            'next_run' => $row->next_run_at !== null ? (string) $row->next_run_at : null,
-            'last_run' => $row->last_run_at !== null ? (string) $row->last_run_at : null,
-            'priority' => (int) ($row->priority ?? 10),
-            'tags' => is_array($tags) ? array_values($tags) : [],
-            'run_count' => (int) ($row->run_count ?? 0),
-            'handler' => (string) $row->handler,
-            'payload' => json_decode((string) ($row->payload ?? ''), true),
-        ];
+        return SchedulePresenter::present($row);
     }
 
     /**
@@ -400,16 +342,5 @@ class SchedulesController
         }
 
         return json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    }
-
-    private function encodeLog(mixed $result): ?string
-    {
-        if ($result === null) {
-            return null;
-        }
-
-        $encoded = json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-
-        return $encoded === false ? null : $encoded;
     }
 }
