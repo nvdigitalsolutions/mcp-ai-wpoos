@@ -278,7 +278,6 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'chatClient'          => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
 				'transcripts'         => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
 				'memory'              => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
-				'threads'             => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
 				'tools'               => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
 				'assistants'          => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
 				'settings'            => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),

@@ -102,7 +102,6 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     chatClient: `${core}/chat-client`,
     transcripts: `${core}/chat-transcripts`,
     memory: `${core}/chat-memory`,
-    threads: `${core}/threads`,
     tools: `${core}/tools`,
     assistants: `${core}/assistants`,
     settings: `${core}/settings`,
