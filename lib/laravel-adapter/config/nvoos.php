@@ -630,6 +630,24 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| OKF knowledge bundles
+	|--------------------------------------------------------------------------
+	|
+	| One directory per bundle, each containing Markdown concepts with YAML
+	| frontmatter (the OKF format). The console's chat drawer browses and
+	| searches these through `GET /api/v1/okf/*`.
+	|
+	| WordPress keeps bundles in `uploads/mcp-ai-wpoos/knowledge`; this runtime
+	| reads its own storage. A missing root is an empty bundle list, not an
+	| error.
+	|
+	*/
+	'okf'              => array(
+		'path' => env( 'NVOOS_OKF_PATH', storage_path( 'app/knowledge' ) ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| AI Provider API Keys
 	|--------------------------------------------------------------------------
 	|
@@ -874,7 +892,9 @@ return array(
 		'docs_hub'           => false,
 		'media_studio'       => false,
 		'document_editor'    => false,
-		'okf'                => false,
+		// The OKF knowledge drawer reads bundles from storage; browse, concept
+		// and search are served. Grant-backed /okf/skills is honest-empty.
+		'okf'                => true,
 	),
 
 	/*

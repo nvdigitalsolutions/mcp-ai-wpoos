@@ -10,6 +10,7 @@ use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\FeaturesController;
 use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\OkfController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
 use App\Http\Controllers\OrchestrationStatsController;
@@ -150,6 +151,23 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::get('/media', [MediaController::class, 'index']);
                 Route::post('/media', [MediaController::class, 'store']);
                 Route::get('/media/{id}', [MediaController::class, 'show'])->whereNumber('id');
+            });
+
+            // OKF knowledge drawer. Any authenticated reader — the drawer sits
+            // in the chat toolbar for every console user, which is the same
+            // `read` permission WordPress requires on this surface. The `pro`
+            // prefix matches `EndpointCapabilities::ROUTES['okf']` and the
+            // console's `proApi` base.
+            Route::prefix('pro/okf')->group(function (): void {
+                Route::get('/bundles', [OkfController::class, 'bundles']);
+                Route::get('/bundles/{bundle}/concepts', [OkfController::class, 'concepts'])
+                    ->where('bundle', '[a-z0-9][a-z0-9_-]{0,99}');
+                // Concept ids carry slashes (bundle-relative paths) and arrive
+                // URL-encoded, so the segment constraint must allow them.
+                Route::get('/bundles/{bundle}/concepts/{concept}', [OkfController::class, 'concept'])
+                    ->where(['bundle' => '[a-z0-9][a-z0-9_-]{0,99}', 'concept' => '.+']);
+                Route::get('/search', [OkfController::class, 'search']);
+                Route::get('/skills', [OkfController::class, 'skills']);
             });
         });
 

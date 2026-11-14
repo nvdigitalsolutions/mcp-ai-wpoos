@@ -109,6 +109,8 @@ describe('buildConsoleRuntime (laravel)', () => {
     expect(runtime.endpoints.orgTeams).toBe(`${origin()}/api/v1/org/teams`);
     // The assistant editor's profession selector.
     expect(runtime.endpoints.professions).toBe(`${origin()}/api/v1/professions`);
+    // The OKF knowledge drawer is served on both runtimes.
+    expect(runtime.endpoints.okf).toBe(`${origin()}/api/v1/pro/okf`);
   });
 
   it('marks the WordPress-only addon surfaces unavailable', () => {
@@ -121,7 +123,6 @@ describe('buildConsoleRuntime (laravel)', () => {
     expect(runtime.endpoints.docsHub).toBe('');
     expect(runtime.endpoints.mediaStudio).toBe('');
     expect(runtime.endpoints.documentEditor).toBe('');
-    expect(runtime.endpoints.okf).toBe('');
   });
 
   it('keeps capability gating for admin surfaces', () => {

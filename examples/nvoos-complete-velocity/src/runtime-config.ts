@@ -147,7 +147,10 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     commandCenter: isAdmin ? `${pro}/command-center` : '',
     shortcuts: `${pro}/tool-shortcuts`,
     slashCommands: `${pro}/slash-commands`,
-    		okf: isWordPress ? `${pro}/okf` : '',
+	// OKF knowledge drawer (Pro surface, both runtimes). Laravel serves it
+	// from `pro/okf` over its own knowledge root; `/skills` is empty there
+	// because no grant store exists.
+	okf: `${pro}/okf`,
     		// NV oOS Content Graph (standalone plugin) — the knowledge-graph page
     		// renders an unavailable state when the site doesn't expose it.
     		contentGraph: isWordPress ? `${wpApi}/nvoos-content-graph/v1` : '',

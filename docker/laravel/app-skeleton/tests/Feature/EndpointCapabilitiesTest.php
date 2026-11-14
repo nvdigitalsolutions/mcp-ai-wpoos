@@ -76,6 +76,9 @@ class EndpointCapabilitiesTest extends TestCase
             'workflowRuns',
             // 090-b — the Agent Skills catalogue (read-only slice).
             'skills',
+            // 090-b — the OKF knowledge drawer (read-only: bundles, concepts,
+            // search). `/skills` is honest-empty; there is no grant store.
+            'okf',
         ] as $key) {
             $this->assertTrue($endpoints[$key] ?? false, $key.' should be available.');
         }
@@ -96,7 +99,6 @@ class EndpointCapabilitiesTest extends TestCase
             'commandCenter',
             'shortcuts',
             'slashCommands',
-            'okf',
             'contentGraph',
             'docsHub',
             'mediaStudio',

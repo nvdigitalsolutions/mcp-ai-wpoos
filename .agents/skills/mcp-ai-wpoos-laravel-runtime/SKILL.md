@@ -88,7 +88,7 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 | Suite | Command (cwd) | Baseline (2026-11-14) |
 |---|---|---|
-| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 461 passed / 3067 assertions (after the skills catalogue) |
+| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 472 passed / 3117 assertions (after the OKF drawer) |
 | Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 175 passed / 640 assertions (after #7679) |
 | Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1264 tests / 4537 assertions (after the skills catalogue); green apart from the no-coverage-driver warning |
 
@@ -257,6 +257,7 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
 - **MJML** — `MjmlTemplateBuilder` (`lib/core`) builds markup; `compile()`/`validate()` stay WordPress-side because they call the Media Worker sidecar.
 - **Workflows** — `mcp_ai_workflow` content records with WordPress's meta keys (`_wp_mcp_ai_workflow_graph`, `_version`, `_tags`), read tolerantly (WP stores graph/tags as JSON *strings*; this runtime writes native JSON). `lib/core/Application/Workflow` holds the executor and the no-eval template/condition resolver. Runs live in `nvoos_workflow_runs`.
 - **Agent Skills** — `GET /api/v1/skills` serves `{success, skills, total}` from `config('oos.skills.path')` (default `storage/app/skills`, env `NVOOS_SKILLS_PATH`); one folder per skill with a `SKILL.md`. Read-only: the WordPress manager (install/replace/delete) is deliberately absent, so writes 404. `SkillRegistry::parseSkillMd()` returns name, description, licence and compatibility; the parser is in core and shared.
+- **OKF knowledge** — `GET /api/v1/pro/okf/*` (`bundles`, `concepts`, `concept`, `search`, `skills`) reads `config('oos.okf.path')` (default `storage/app/knowledge`, env `NVOOS_OKF_PATH`) through core's `OkfReader` + `FilesystemBundleRoot`. `features.okf` is true and `runtime-config.ts` builds the endpoint for both runtimes, so the chat drawer works. `/skills` is empty by design (no grant store). Descriptors report `conformant`/`issue_count` from parse + broken-link checks only — a documented subset of the WordPress validator.
 
 ## 9. Porting a WordPress catalogue to this runtime
 
