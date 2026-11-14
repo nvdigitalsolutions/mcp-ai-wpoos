@@ -27,6 +27,11 @@ x-spike-environment: &spike-environment
   QUEUE_CONNECTION: redis
   NVOOS_QUEUE_CONNECTION: redis
   SESSION_DRIVER: redis
+  # First-party console origins Sanctum treats as stateful (SPA cookie auth).
+  # The e2e smoke serves the built console on :4318 through
+  # examples/nvoos-complete-velocity/scripts/serve.mjs; add any other console
+  # origin here or a browser sign-in answers 419 session_required.
+  SANCTUM_STATEFUL_DOMAINS: "localhost:8001,localhost:4318,127.0.0.1:4318,localhost,127.0.0.1"
   OCTANE_SERVER: frankenphp
   LOG_CHANNEL: stderr
 

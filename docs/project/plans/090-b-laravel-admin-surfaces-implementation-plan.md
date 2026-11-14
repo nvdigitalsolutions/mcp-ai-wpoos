@@ -1,6 +1,6 @@
 # Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
 
-**Status:** Phases 0–5 implemented and verified — the base console, the Phase 3 Pro surfaces, the manifest-driven toolkit engine (both runtimes), its contract fixture harness, the commercial licence source, the read-only profile, the schema/contract version gate and the 30-minute soak all run on the Laravel adapter (2026-11-13) · Phase 5 delivered in PRs #7664–#7668
+**Status:** Phases 0–5 implemented and verified — the base console, the Phase 3 Pro surfaces, the manifest-driven toolkit engine (both runtimes), its contract fixture harness, the commercial licence source, the read-only profile, the schema/contract version gate and the 30-minute soak all run on the Laravel adapter (2026-11-13) · Phase 5 delivered in PRs #7664–#7668 · the T0 Playwright smoke is green (2026-11-14, `npm run test:e2e`)
 **Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
 **Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
 (Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
@@ -53,7 +53,7 @@ Rank Math).
 | Token usage + cost analytics | **Done (Phase 3a)** | `TokenUsage`, `AnalyticsController` |
 | Rate limiter | **Done (Phase 3a)** | `RateLimiter` adapter |
 | Golden fixtures captured from WordPress | **Partial** | The capture harness and a Laravel-captured set are committed (task 0.13, 🟡); re-capturing from a live Complete site needs an operator token |
-| Playwright T0 smoke (G1) | **Pending** | Phase 1 task 1.7 |
+| Playwright T0 smoke (G1) | **Done (2026-11-14)** | `examples/nvoos-complete-velocity/e2e/` — 6 tests / 30.2 s against the built Laravel-profile bundle through the proxy (`npm run test:e2e`) |
 | Blueprints | **Done (Phase 2.4)** | `BlueprintController`, `BlueprintTest` (9 cases), mirror drift gate in the SQLite CI job |
 | Teams (agent teams + org teams) | **Done (Phase 2.5, 090-g)** | `TeamController`, `TeamCatalogueController`, `TeamTest` + `TeamCatalogueTest` |
 | Test-assistant dry run | **Pending (Phase 2.7)** | No `AssistantTestController` yet |
@@ -79,6 +79,13 @@ Rank Math).
 | Remote-site store | **Done (2026-11-14, step a)** | `nvoos_remote_sites` + `App\Support\RemoteSites\RemoteSiteStore`. Generic row (`config` + sealed `credentials`) rather than WordPress's ~50-field array. No read returns a credential — `has_credentials` plus a uniform mask — and `config` rejects known secret names so a secret cannot ride back on a list. A blank credential on update keeps the stored value. `RemoteSiteStoreTest` (15 cases). The key stays `false` until verification (step c) lands |
 | Remote sites surface | **Done (2026-11-14, steps b–c)** | `GET/POST/DELETE /api/v1/pro/remote-sites` plus `/types` and `/{id}/test` — `Pro\RemoteSitesController`. Catalogue is the two types the runtime can verify: `wordpress` (application password → `wp-json/wp/v2/users/me`) and `mcp_server` (`McpAppClient` handshake + `tools/list`). The wizard's flat payload is split into `config` + sealed `credentials` on the way in and flattened back on the way out, because `openEdit()` reads `connection[field.key]`. A 401 reads as *reached, rejected*, an unimplemented type says so, and vendor types are deliberately absent. `remoteSites` flips to `route`. `RemoteSitesApiTest` (14 cases) |
 | Credential issuance was unreachable | **Fixed (2026-11-14)** | `AuthProvider::issueCredential()` gates on a `manage_oos` ability that was **never defined** anywhere — so no credential could be issued on this runtime at all. Added to the administrator capability set in `CapabilityMap`, matching the WordPress token manager's admin-only gate. Found by writing the token-manager fixture through the real issuance path rather than inserting rows |
+
+**Validation record (2026-11-14, Playwright T0 smoke / gate G1):**
+
+- `cd examples/nvoos-complete-velocity && npm run test:e2e`: **6 tests pass in 30.2 s** — auth setup (branded login → Sanctum session), the `/api/v1/features` contract (`backend: laravel`, `contract: mcp-ai/v1`, empty `endpoint_gaps`, five T0 keys `true`), all five T0 pages rendering, the chat composer, **zero WordPress requests** across a full sweep, and the capability-gated nav
+- Build path: `vite build --mode laravel --outDir .e2e-dist` (`.env.laravel` sets `VITE_NVOOS_BACKEND=laravel`) served by `scripts/serve.mjs` with `NVOOS_BACKEND=laravel`; the committed `dist/` is untouched
+- Console Vitest still **14 files / 159 tests**; `npm run typecheck` clean; `node --check scripts/serve.mjs` clean
+- Enabling change: `SANCTUM_STATEFUL_DOMAINS` now lists the smoke origin (`localhost:4318`) in `docker/docker-compose.laravel.yml`; without it the login answers `419 session_required`
 
 **Validation record (2026-11-12):**
 
@@ -142,7 +149,7 @@ mismatch, and all suites are green.
 | 1.4 | Chat dock against Laravel | existing `ChatStreamController` | ✅ (090 SSE) |
 | 1.5 | Capability-filtered nav | `ConsoleSidebar.tsx`, session payload | ✅ |
 | 1.6 | Laravel login/logout for C2 | `SessionController`, console `login.ts` | ✅ |
-| 1.7 | Playwright smoke: login → 5 pages → chat | `e2e/` | ⏳ |
+| 1.7 | Playwright smoke: login → 5 pages → chat | `e2e/` | ✅ `examples/nvoos-complete-velocity/e2e/` — login (setup project) → 5 T0 pages + chat, zero WordPress requests, `endpoint_gaps` empty. `npm run test:e2e` (builds `.e2e-dist/`, serves it via `scripts/serve.mjs`) |
 | 1.8 | Feature map → nav keys | `config/nvoos.php`, `features` endpoint | ✅ |
 
 **Gate G1:** 5 T0 pages + chat render against Laravel; the network log shows zero WordPress
@@ -678,14 +685,17 @@ engine serves today, and are re-captured from WordPress when the peer lands.
 | Layer | Command | Current |
 |---|---|---|
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
-| Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 132 pass |
+| Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 14 files / 159 pass |
 | Console types | `npm run typecheck` | clean |
+| Console smoke (G1) | `cd examples/nvoos-complete-velocity && npm run test:e2e` | 6 pass / 30.2 s |
 | Laravel app | `docker exec oos-laravel-app php artisan test` | 96 pass |
 | Core | `cd lib/core && php -d extension=fileinfo vendor/bin/phpunit` | 937 tests (5 pre-existing `ToolRegistryIntegrationTest` errors) |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
 CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
-run the Laravel app suite on PRs touching `docker/laravel/**`.
+run the Laravel app suite on PRs touching `docker/laravel/**`. The console smoke needs the full
+stack (MySQL + Redis + Octane + a built SPA), so it stays a local/pre-release gate — see
+`examples/nvoos-complete-velocity/e2e/README.md`.
 
 ### Soak harness
 
@@ -778,7 +788,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 ## 15. Phase checklist
 
 - [x] Phase 0 — contract freeze, runtime profile, assertion, T0 endpoints, CSRF alias
-- [x] Phase 1 — T0 ops console (Playwright smoke pending)
+- [x] Phase 1 — T0 ops console (Playwright smoke green 2026-11-14)
 - [x] Phase 2 foundation — assistant CRUD + bundle export/import, blueprints, teams (test-assistant dry run outstanding)
 - [x] Phase 3a — transcripts, memory, session logs, token usage/cost, rate limiter
 - [x] Phase 3b — approvals, workflow triggers, security center (posture/headers/snapshots/self-test), paper store
@@ -789,4 +799,4 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 4.5 — toolkit research service: draft-from-query endpoint + console wiring (draft only; saving still goes through `storeEntity`)
 - [x] Phase 4.7 — contract fixtures: `fixtures:capture`, per-family fixtures, shape replay, CI job
 - [x] Phase 4.6 — WordPress peer: read surface at parity (6/6 fixtures) and `research` ported through the shared core service
-- [x] Phase 5 — commercial entitlement, CSRF migration, GA gates (residual items live in §14: Playwright smoke, test-assistant dry run, posture-card parity, presets, thumbnails)
+- [x] Phase 5 — commercial entitlement, CSRF migration, GA gates (residual items live in §14: test-assistant dry run, posture-card parity, presets, thumbnails)

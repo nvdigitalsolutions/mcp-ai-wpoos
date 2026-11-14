@@ -62,7 +62,13 @@ npm run typecheck    # full spa-v2 import graph must resolve
 npm test             # vitest (host bootstrap)
 npm run lint:a11y
 npm run serve        # node scripts/serve.mjs (needs dist/ + NVOOS_TARGET_SITE)
+npm run test:e2e     # Playwright T0 smoke against the Laravel runtime (see e2e/README.md)
 ```
+
+The T0 smoke builds a Laravel-profile bundle into `.e2e-dist/` and serves it
+through `scripts/serve.mjs`, so the committed `dist/` is never rewritten. It
+needs the Laravel stack up and its origin in `SANCTUM_STATEFUL_DOMAINS` — the
+prerequisites are in [`e2e/README.md`](e2e/README.md).
 
 ## Deploy sync
 
