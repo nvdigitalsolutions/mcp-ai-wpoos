@@ -394,9 +394,21 @@ return array(
 					'items' => array( 'type' => 'string' ),
 				),
 				'_eca_student_enrollments'  => array(
-					'label' => 'Student Enrolments',
-					'type'  => 'array',
-					'items' => array( 'type' => 'integer' ),
+					'label'                => 'Student Enrolments',
+					// Id-keyed map of enrolment records, not a list of ids:
+					// every consumer reads `$enrolments[ $student_id ]`.
+					'type'                 => 'object',
+					'additionalProperties' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'enrollment_type' => array( 'type' => 'string' ),
+							'enrollment_date' => array( 'type' => 'string' ),
+							'payment_status'  => array( 'type' => 'string' ),
+							'amount_due'      => array( 'type' => 'number' ),
+							'notes'           => array( 'type' => 'string' ),
+							'enrolled_by'     => array( 'type' => 'integer' ),
+						),
+					),
 				),
 				// Per-enrolment records. Nothing in the ECA family writes this
 				// key — enrolment tools maintain `_eca_student_enrollments` —
@@ -486,9 +498,21 @@ return array(
 					'type'  => 'string',
 				),
 				'_student_eca_enrollments' => array(
-					'label' => 'ECA Enrolments',
-					'type'  => 'array',
-					'items' => array( 'type' => 'integer' ),
+					'label'                => 'ECA Enrolments',
+					// Id-keyed map of enrolment records, mirroring
+					// `_eca_student_enrollments` on the activity side.
+					'type'                 => 'object',
+					'additionalProperties' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'enrollment_type' => array( 'type' => 'string' ),
+							'enrollment_date' => array( 'type' => 'string' ),
+							'payment_status'  => array( 'type' => 'string' ),
+							'amount_due'      => array( 'type' => 'number' ),
+							'notes'           => array( 'type' => 'string' ),
+							'enrolled_by'     => array( 'type' => 'integer' ),
+						),
+					),
 				),
 				// Populated by the WordPress-only Classroom / ISAMS sync.
 				'_student_google_id'      => array(
@@ -498,6 +522,11 @@ return array(
 				'_student_isams_id'       => array(
 					'label' => 'ISAMS ID',
 					'type'  => 'string',
+				),
+				'_student_isams_synced'   => array(
+					'label' => 'ISAMS Synced',
+					'type'  => 'string',
+					'enum'  => array( 'yes', 'no' ),
 				),
 			),
 		),

@@ -112,53 +112,39 @@ class GetEcaTool extends AbstractTool {
 	/**
 	 * Resolve the enrolled student list to the WordPress wire shape.
 	 *
-	 * `enrollment_date` and `payment_status` are empty strings: the local
-	 * mirror stores the enrolment as a bare id list, so there is nothing to
-	 * report for either. A student that no longer resolves is kept (as
-	 * `Unknown`) rather than dropped, so the count never disagrees with the
+	 * Enrolments are an id-keyed map on both runtimes; {@see Enrollments} also
+	 * accepts a plain id list from hand-written data. `enrollment_date` and
+	 * `payment_status` fall back to empty strings when the record has no value,
+	 * which is what WordPress reports. A student that no longer resolves is kept
+	 * (as `Unknown`) rather than dropped, so the list never disagrees with the
 	 * activity's `current_enrollment`.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function enrollments( ContentItem $eca ): array {
-		$records = $eca->meta['_eca_enrollments'] ?? array();
+		$records = Enrollments::map( $eca->meta['_eca_enrollments'] ?? array() );
 
-		// Per-enrolment records win when a site has them.
-		if ( is_array( $records ) && array() !== $records ) {
-			$rows = array();
-
-			foreach ( $records as $record ) {
-				if ( ! is_array( $record ) ) {
-					continue;
-				}
-
-				$student_id = isset( $record['student_id'] ) ? (int) $record['student_id'] : 0;
-
-				if ( $student_id <= 0 ) {
-					continue;
-				}
-
-				$rows[] = $this->enrollmentRow(
-					$student_id,
-					isset( $record['enrollment_type'] ) && is_string( $record['enrollment_type'] )
-						? $record['enrollment_type']
-						: 'confirmed',
-					isset( $record['enrollment_date'] ) && is_scalar( $record['enrollment_date'] )
-						? (string) $record['enrollment_date']
-						: '',
-					isset( $record['payment_status'] ) && is_scalar( $record['payment_status'] )
-						? (string) $record['payment_status']
-						: ''
-				);
-			}
-
-			return $rows;
+		// Per-enrolment records win when a site has them; otherwise fall back to
+		// the key the enrolment tools actually maintain.
+		if ( array() === $records ) {
+			$records = EcaRow::enrollments( $eca );
 		}
 
 		$rows = array();
 
-		foreach ( EcaRow::enrollmentIds( $eca ) as $student_id ) {
-			$rows[] = $this->enrollmentRow( $student_id, 'confirmed', '', '' );
+		foreach ( $records as $student_id => $record ) {
+			$rows[] = $this->enrollmentRow(
+				(int) $student_id,
+				isset( $record['enrollment_type'] ) && is_string( $record['enrollment_type'] )
+					? $record['enrollment_type']
+					: 'confirmed',
+				isset( $record['enrollment_date'] ) && is_scalar( $record['enrollment_date'] )
+					? (string) $record['enrollment_date']
+					: '',
+				isset( $record['payment_status'] ) && is_scalar( $record['payment_status'] )
+					? (string) $record['payment_status']
+					: ''
+			);
 		}
 
 		return $rows;

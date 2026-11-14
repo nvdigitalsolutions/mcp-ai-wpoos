@@ -28,12 +28,13 @@ final class StudentRow {
 	/**
 	 * The `list_students` shape.
 	 *
+	 * `enrollment_count` matches the WordPress tool: it counts the reverse link
+	 * the enrolment tools maintain, not the activity side.
+	 *
 	 * @return array<string, mixed>
 	 */
 	public static function from( ContentItem $item ): array {
 		$meta = $item->meta;
-
-		$enrollments = $meta['_student_eca_enrollments'] ?? array();
 
 		return array(
 			'id'               => $item->id,
@@ -43,31 +44,29 @@ final class StudentRow {
 			'year_group'       => self::toText( $meta['_student_year_group'] ?? '' ),
 			'house'            => self::toText( $meta['_student_house'] ?? '' ),
 			'email'            => self::toText( $meta['_student_email'] ?? '' ),
-			'enrollment_count' => is_array( $enrollments ) ? count( $enrollments ) : 0,
+			'enrollment_count' => Enrollments::count( $meta['_student_eca_enrollments'] ?? array() ),
 		);
 	}
 
 	/**
 	 * Enrolled activity ids, in the order they were added.
 	 *
+	 * `_student_eca_enrollments` is an id-keyed map on WordPress; {@see Enrollments}
+	 * also accepts a plain list from hand-written data.
+	 *
 	 * @return array<int, int>
 	 */
 	public static function enrollmentIds( ContentItem $item ): array {
-		$ids = array();
+		return Enrollments::ids( $item->meta['_student_eca_enrollments'] ?? array() );
+	}
 
-		$enrollments = $item->meta['_student_eca_enrollments'] ?? array();
-
-		if ( ! is_array( $enrollments ) ) {
-			return $ids;
-		}
-
-		foreach ( $enrollments as $value ) {
-			if ( is_numeric( $value ) && (int) $value > 0 ) {
-				$ids[] = (int) $value;
-			}
-		}
-
-		return $ids;
+	/**
+	 * Enrolment records keyed by activity id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function enrollments( ContentItem $item ): array {
+		return Enrollments::map( $item->meta['_student_eca_enrollments'] ?? array() );
 	}
 
 	/**
