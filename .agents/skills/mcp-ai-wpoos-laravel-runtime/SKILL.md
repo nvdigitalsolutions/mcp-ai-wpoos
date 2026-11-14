@@ -91,6 +91,18 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 | App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 619 passed / 3599 assertions (2026-11-14, after the remote-sites surface) |
 | Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 175 passed / 640 assertions (after #7679) |
 | Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1264 tests / 4537 assertions (after the skills catalogue); green apart from the no-coverage-driver warning |
+| Console smoke (G1) | `npm run test:e2e` (`examples/nvoos-complete-velocity`) | 6 passed / ~30 s (2026-11-14). Builds `.e2e-dist/` (`--mode laravel`) and serves it through `scripts/serve.mjs`; the committed `dist/` is untouched. Needs the stack up and `localhost:4318` in `SANCTUM_STATEFUL_DOMAINS` |
+
+**The console smoke is the only gate that exercises both halves at once.**
+It signs in through the branded login (Sanctum cookie + `X-CSRF-TOKEN` via the
+proxy), asserts `/api/v1/features` reports `backend: laravel` with an **empty
+`endpoint_gaps`**, renders the five T0 pages and the chat composer, and proves
+**zero WordPress requests** across the sweep. Run it before tagging a release
+that touches `docker/laravel/**`, `lib/laravel-adapter/**` or the console — it
+is a local/pre-release gate, not a CI job (the stack is too heavy for
+`ubuntu-latest`). If the login answers `419 session_required`, the console
+origin is missing from `SANCTUM_STATEFUL_DOMAINS` and the app container must
+be recreated.
 
 **CI does run the app suite.** `.github/workflows/laravel-app.yml` installs the
 skeleton on SQLite and runs `php artisan test`, so an app-suite regression does

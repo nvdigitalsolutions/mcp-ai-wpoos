@@ -54,12 +54,30 @@ import { createServer } from 'node:http';
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { readFile, stat } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync, brotliCompressSync } from 'node:zlib';
 
 const PORT = Number(process.env.PORT || 4181);
-const ROOT = fileURLToPath(new URL('../dist', import.meta.url));
+
+/**
+ * Served artifact directory, relative to this app.
+ *
+ * Defaults to `dist` — the committed build Velocity ships. The e2e suite
+ * (`npm run test:e2e`) builds the Laravel-profile artifact into `.e2e-dist`
+ * and serves it here, so the smoke never rewrites the committed WordPress
+ * build. The value is operator-controlled config: resolve it under the app
+ * directory and reject anything that escapes.
+ */
+const APP_DIR = fileURLToPath(new URL('..', import.meta.url));
+const DIST_DIR = process.env.NVOOS_CONSOLE_ROOT || 'dist';
+const ROOT = resolve(APP_DIR, DIST_DIR);
+if (ROOT !== APP_DIR.replace(/[\\/]$/, '') && !ROOT.startsWith(APP_DIR.replace(/[\\/]$/, '') + sep)) {
+  console.error(
+    `[nvoos-complete-console] NVOOS_CONSOLE_ROOT must stay inside ${APP_DIR} (got ${DIST_DIR})`,
+  );
+  process.exit(1);
+}
 
 const PROXY_TARGET = (process.env.NVOOS_TARGET_SITE || '').replace(/\/+$/, '');
 // Backend profile (Proposal 090-B). Keep in sync with src/backend-profile.ts.
@@ -603,7 +621,7 @@ server.on('error', (error) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[nvoos-complete-console] serving dist/ on :${PORT}`);
+  console.log(`[nvoos-complete-console] serving ${DIST_DIR} on :${PORT}`);
   if (PROXY_TARGET) {
     console.log(
       `[nvoos-complete-console] backend=${BACKEND} · proxying ${PROXY_PREFIXES.join(', ')} → ${PROXY_TARGET} (cookie auth enabled)`,
