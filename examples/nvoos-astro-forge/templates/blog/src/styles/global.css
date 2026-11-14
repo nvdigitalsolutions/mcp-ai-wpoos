@@ -574,6 +574,28 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	white-space: nowrap;
 }
 
+/* On phones the header row has to hold the brand, the hamburger and this
+ * button. The source's 14px/43px pill is a desktop shape: at 390px it ran
+ * past the header edge (150px wide), so shrink it and tighten the row gap. */
+@media (max-width: 767px) {
+	.site-header-inner {
+		gap: 0.5rem;
+	}
+
+	.call-button {
+		padding: 9px 16px;
+		font-size: 13px;
+	}
+}
+
+/* The smallest phones cannot fit the full brand mark beside the button and
+ * the hamburger; shrink the logo rather than clip the button. */
+@media (max-width: 380px) {
+	.brand-logo {
+		height: 1.75rem;
+	}
+}
+
 /* Chrome reflow (125 §8): the header is a single flex row (logo block,
  * five nav links, call button, toggle) needing ~850px of content, so it
  * cannot fit a phone or tablet viewport — at 768px the call button was
@@ -1170,36 +1192,47 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	font-style: normal;
 }
 
+/* The logo-cloud band's boxed section must FILL the wrapper: the centred
+ * auto margins make it a shrink-to-fit flex item, and a band whose only
+ * children are images collapsed to one 128px track (six logos stacked at
+ * every width). Pin the box so the logo grid has the container to lay out. */
+[data-section="logo-cloud"] > .ds-section {
+	width: 100%;
+}
+
 .ds-logos {
-	/* Source brand strips are equal-width columns (Elementor col-16 grids),
-	 * not height-normalized flex rows — jayainc's six brands sit in one
-	 * 6-up row at ~166px per column. A uniform 3rem height instead made
-	 * the wide banners (Duracell) dominate, shrank the square marks
-	 * (VO5), and wrapped the row. Equal columns with natural-ratio logos
-	 * keep the source's rhythm (mobile collapses via auto-fit). */
+	/* Equal columns keep the source's brand-strip rhythm; a contained logo
+	 * box makes the wide banners (Duracell) and the square marks (VO5) share
+	 * one optical row instead of sizing to their own aspect ratios. */
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+	grid-template-columns: repeat(6, minmax(0, 1fr));
 	align-items: center;
-	gap: var(--forge-space);
+	gap: 2rem 1.5rem;
 }
 
 .ds-logos img {
+	display: block;
 	width: 100%;
-	height: auto;
+	height: 72px;
+	object-fit: contain;
 }
 
-/* Elementor's col-16 brand columns reflow to 50% at tablet and 100% at mobile.
- * auto-fit alone packed FIVE logos into 142px tracks at 834px and held the
- * strip to 158px against the source's 844px; the source shows two per row. */
+/* Tablets reflow to three brand columns, phones to two; the logo box
+ * shortens so the marks do not dominate the phone row. */
 @media (max-width: 1025px) {
 	.ds-logos {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
 }
 
 @media (max-width: 767px) {
 	.ds-logos {
-		grid-template-columns: minmax(0, 1fr);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1.5rem 1rem;
+	}
+
+	.ds-logos img {
+		height: 56px;
 	}
 }
 
