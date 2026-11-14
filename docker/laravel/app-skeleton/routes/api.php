@@ -162,6 +162,8 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/blueprints', [BlueprintController::class, 'index']);
             Route::get('/blueprints/{toolkit}/{slug}', [BlueprintController::class, 'show'])
                 ->where(['toolkit' => '[a-z0-9-]+', 'slug' => '[a-z0-9-]+']);
+            Route::post('/blueprints/{toolkit}/{slug}/install', [BlueprintController::class, 'install'])
+                ->where(['toolkit' => '[a-z0-9-]+', 'slug' => '[a-z0-9-]+']);
 
             // Phase 4 parity — WordPress's read-only team catalogue.
             Route::get('/teams', [TeamCatalogueController::class, 'index']);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Assistant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -109,5 +110,81 @@ class BlueprintTest extends TestCase
     public function test_the_catalogue_requires_authentication(): void
     {
         $this->getJson('/api/v1/blueprints')->assertUnauthorized();
+    }
+
+    public function test_installing_a_blueprint_creates_an_assistant(): void
+    {
+        $this->actingAsAdmin();
+
+        $response = $this->postJson($this->installUrl());
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.toolkit', self::SAMPLE['toolkit'])
+            ->assertJsonPath('data.slug', self::SAMPLE['slug']);
+
+        $assistantId = $response->json('data.assistant_id');
+
+        $this->assertGreaterThan(0, $assistantId);
+
+        $assistant = Assistant::findOrFail($assistantId);
+
+        $this->assertSame('publish', $assistant->status);
+        $this->assertSame(self::SAMPLE['slug'], $assistant->meta['_blueprint_source']);
+        $this->assertNotEmpty($assistant->system_prompt);
+        $this->assertCount(19, $assistant->tools);
+
+        // The CRM schema's profession and framework survive the remap.
+        $this->assertArrayHasKey('primary_role_slugs', $assistant->meta);
+        $this->assertArrayHasKey('framework', $assistant->meta);
+
+        // …and the catalogue now reports it as installed, by id.
+        $catalogue = $this->getJson('/api/v1/blueprints')->json('data');
+        $crm = collect($catalogue['toolkits'])->firstWhere('slug', self::SAMPLE['toolkit']);
+        $blueprint = collect($crm['blueprints'])->firstWhere('slug', self::SAMPLE['slug']);
+
+        $this->assertTrue($blueprint['installed']);
+        $this->assertSame($assistantId, $blueprint['assistant_id']);
+    }
+
+    public function test_installing_twice_conflicts_without_overwrite(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->postJson($this->installUrl())->assertOk();
+
+        $this->postJson($this->installUrl())
+            ->assertStatus(409)
+            ->assertJsonPath('success', false);
+
+        $this->assertSame(1, Assistant::query()->count());
+    }
+
+    public function test_overwrite_replaces_the_existing_assistant(): void
+    {
+        $this->actingAsAdmin();
+
+        $first = $this->postJson($this->installUrl())->json('data.assistant_id');
+
+        $second = $this->postJson($this->installUrl(), ['overwrite' => true])
+            ->assertOk()
+            ->json('data.assistant_id');
+
+        $this->assertSame($first, $second, 'Overwrite should update in place, not duplicate.');
+        $this->assertSame(1, Assistant::query()->count());
+    }
+
+    public function test_installing_an_unknown_blueprint_is_a_404(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/v1/blueprints/'.self::SAMPLE['toolkit'].'/not-a-blueprint/install')
+            ->assertNotFound()
+            ->assertJsonPath('success', false);
+    }
+
+    private function installUrl(): string
+    {
+        return '/api/v1/blueprints/'.self::SAMPLE['toolkit'].'/'.self::SAMPLE['slug'].'/install';
     }
 }

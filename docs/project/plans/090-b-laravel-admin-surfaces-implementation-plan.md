@@ -145,7 +145,7 @@ requests.
 | 2.1 | Durable assistant model + core contract service | `Assistant`, migration, `LaravelAssistantService` | ✅ |
 | 2.2 | CRUD endpoints + default handling | `AssistantController` | ✅ |
 | 2.3 | Bundle v1 export/import (core fields + full meta) | `AssistantPortabilityController` | ✅ Laravel-native. **Edit-form meta parity shipped** for 16 design-time keys via the additive `advanced` object on both runtimes (skills + progressive disclosure included), plus a base skills catalogue route and a Pro MCP-apps write route for the console — see [`090-b-assistant-edit-field-parity.md`](090-b-assistant-edit-field-parity.md) §4.1–4.2. Credentials, harness profiles, primary-role ID mapping and mesh routing remain explicit deferrals (§6 of that doc); the Laravel runtime hides the skills and MCP-apps pickers until it exposes those endpoints |
-| 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ✅ catalogue + detail (`BlueprintTest`, 5 cases) — ⏳ install (§6.1) |
+| 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ✅ `BlueprintTest`, 9 cases; mirror drift gate in the `App suite (SQLite)` job |
 | 2.5 | Teams (basic CRUD + membership) — schema and contract in `090-g` §4.2 | `TeamController` | ✅ |
 | 2.6 | Per-assistant tool assignment | `tools` field on the model | ✅ |
 | 2.7 | Test-assistant dry run | `AssistantTestController` | ⏳ |
@@ -178,15 +178,21 @@ Decision: **mirror the JSON into the Laravel app** at
 a sync script and a CI drift check that fails when the two trees differ.
 Duplication is explicit and tested rather than implicit.
 
-**Shipped (read half).** `BlueprintController` serves the two GET routes from
-`App\Services\BlueprintCatalogue`, reading the committed mirror — 69 blueprints
-across 27 toolkits, synced by `bin/sync-blueprints.php` (which also takes
-`--check` for the drift gate). Two deliberate differences from WordPress:
-Laravel lists **every** mirrored toolkit, because there is no
-`wp_mcp_ai_settings` equivalent to enable one; and the routes sit under
-`can:manage_options` with the rest of the console, where WordPress gates on
-`edit_posts`. Both are stated in the service docblock so they cannot be
-mistaken for drift later.
+**Shipped.** `BlueprintController` serves the full surface from
+`App\Services\BlueprintCatalogue` and `App\Services\BlueprintInstaller`, reading
+the committed mirror — 69 blueprints across 27 toolkits, synced by
+`bin/sync-blueprints.php`, whose `--check` runs in the `App suite (SQLite)` job.
+`BlueprintTest` covers 9 cases: catalogue shape, detail normalisation, install,
+the 409 duplicate, overwrite-in-place (same id, no second row) and both 404s.
+
+Three deliberate differences, each stated in the service docblocks: Laravel
+lists **every** mirrored toolkit because it has no `wp_mcp_ai_settings`
+equivalent; the routes sit under `can:manage_options` with the rest of the
+console where WordPress gates on `edit_posts`; and a blueprint's profession
+lands in `meta.primary_role_slugs` (slug identity) rather than
+`_wp_mcp_ai_primary_roles` (post ID), while the model stays at the runtime
+default when the blueprint does not name one — WordPress invents a per-provider
+default out of settings this runtime does not have.
 
 **Sequencing.** Reads first, the same rule the 090-E families follow:
 
