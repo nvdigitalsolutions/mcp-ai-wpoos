@@ -431,8 +431,24 @@ return array(
 					'type'  => 'array',
 				),
 				'_eca_attendance_log'       => array(
-					'label' => 'Attendance Log',
-					'type'  => 'array',
+					'label'                => 'Attendance Log',
+					// Date-keyed map of session records: `[ '2026-11-14' => … ]`.
+					// Distinct from the enrolment maps, which are id-keyed.
+					'type'                 => 'object',
+					'additionalProperties' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'date'          => array( 'type' => 'string' ),
+							'recorded_by'   => array( 'type' => 'integer' ),
+							'recorded_at'   => array( 'type' => 'string' ),
+							'session_notes' => array( 'type' => 'string' ),
+							'attendees'     => array( 'type' => 'array' ),
+							'present_count' => array( 'type' => 'integer' ),
+							'absent_count'  => array( 'type' => 'integer' ),
+							'late_count'    => array( 'type' => 'integer' ),
+							'excused_count' => array( 'type' => 'integer' ),
+						),
+					),
 				),
 				// Populated by the WordPress-only Google Classroom sync.
 				'_eca_google_course_id'     => array(
