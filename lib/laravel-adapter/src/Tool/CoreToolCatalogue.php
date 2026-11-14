@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace Nvoos\Laravel\Tool;
 
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
 use Nvoos\Core\Tool\Base64Tool;
 use Nvoos\Core\Tool\ClientAnalyzeSentimentTool;
@@ -138,9 +139,23 @@ final class CoreToolCatalogue {
 	 * @param ErrorFactoryInterface $errors Error factory.
 	 * @return array<int, ToolInterface>
 	 */
-	public static function build( ErrorFactoryInterface $errors ): array {
+	/**
+	 * Instantiate the self-contained tools.
+	 *
+	 * Every tool in the list takes only the error factory, with one exception:
+	 * {@see ScopeMemoryTool} also accepts a harness-profile provider. It is still
+	 * self-contained — the provider is optional and absence means "this runtime
+	 * has no harness storage" — but a runtime that binds one gets resolved
+	 * values instead of the documented defaults.
+	 */
+	public static function build(
+		ErrorFactoryInterface $errors,
+		?HarnessProfileProviderInterface $harnessProfiles = null,
+	): array {
 		return array_map(
-			static fn ( string $class ): ToolInterface => new $class( $errors ),
+			static fn ( string $class ): ToolInterface => ScopeMemoryTool::class === $class
+				? new ScopeMemoryTool( $errors, $harnessProfiles )
+				: new $class( $errors ),
 			self::selfContained()
 		);
 	}
