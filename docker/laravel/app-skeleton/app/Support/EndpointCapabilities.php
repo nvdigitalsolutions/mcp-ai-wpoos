@@ -86,6 +86,106 @@ final class EndpointCapabilities
     );
 
     /**
+     * Contract version carried by the capability manifest.
+     *
+     * v1 was the bare `endpoints` boolean map. v2 adds a supply class per key
+     * (`reasons`) and the derived `gaps` list. The boolean map is unchanged, so
+     * a console that ignores the new fields behaves exactly as it did before.
+     */
+    public const CONTRACT_VERSION = 2;
+
+    /** This runtime is meant to serve the key, and does. */
+    private const ROUTE = 'route';
+
+    /** Portable surface WordPress already has; not ported to this runtime yet. */
+    private const RUNTIME_ADAPTABLE = 'runtime-adaptable';
+
+    /** Supplied by the toolkit manifest engine, which does not exist yet. */
+    private const TOOLKIT_SHAPED = 'toolkit-shaped';
+
+    /** Needs an external messaging or media service to be configured first. */
+    private const CONNECTED_SERVICE = 'connected-service';
+
+    /** Supplied by a separate plugin or product — discover it, never reimplement it. */
+    private const EXTERNAL_PRODUCT = 'external-product';
+
+    /**
+     * The reason vocabulary, in the order a reader should meet it.
+     *
+     * Public so the contract tests and the console can assert membership
+     * without keeping a second copy of the list.
+     *
+     * @var string[]
+     */
+    public const REASON_CODES = array(
+        self::ROUTE,
+        self::RUNTIME_ADAPTABLE,
+        self::TOOLKIT_SHAPED,
+        self::CONNECTED_SERVICE,
+        self::EXTERNAL_PRODUCT,
+    );
+
+    /**
+     * Endpoint key => why this runtime either serves it or deliberately does not.
+     *
+     * Availability is runtime truth, read from the router. This is the supply
+     * class, and the two together answer the question a `false` cannot answer on
+     * its own: is this a regression, or is it expected? Only a `route` key is
+     * meant to be served here, so only a `false` `route` key is a gap.
+     *
+     * Mirrored in `contracts/console-endpoints.json`; the contract test fails if
+     * the two disagree. That file is what the console's Vitest suite reads, so a
+     * key classified on one side only fails on both CIs.
+     */
+    private const REASONS = array(
+        'approvals' => self::ROUTE,
+        'assistants' => self::ROUTE,
+        'blueprints' => self::ROUTE,
+        'chat' => self::ROUTE,
+        'chatChannels' => self::TOOLKIT_SHAPED,
+        'chatClient' => self::ROUTE,
+        'commandCenter' => self::RUNTIME_ADAPTABLE,
+        'contentGraph' => self::EXTERNAL_PRODUCT,
+        'cost' => self::ROUTE,
+        'dashboardsSchema' => self::ROUTE,
+        'diagnostics' => self::ROUTE,
+        'docsHub' => self::EXTERNAL_PRODUCT,
+        'documentEditor' => self::EXTERNAL_PRODUCT,
+        'mediaCc' => self::CONNECTED_SERVICE,
+        'mediaStudio' => self::EXTERNAL_PRODUCT,
+        'mcpApps' => self::RUNTIME_ADAPTABLE,
+        'memory' => self::ROUTE,
+        'okf' => self::ROUTE,
+        'operations' => self::ROUTE,
+        'orchestrationStats' => self::ROUTE,
+        'orgTeams' => self::ROUTE,
+        'paperStore' => self::ROUTE,
+        'portability' => self::ROUTE,
+        'proOps' => self::ROUTE,
+        'professions' => self::ROUTE,
+        'recordsSchema' => self::ROUTE,
+        'remoteSites' => self::RUNTIME_ADAPTABLE,
+        'scheduleManager' => self::ROUTE,
+        'security' => self::ROUTE,
+        'settings' => self::ROUTE,
+        'shortcuts' => self::RUNTIME_ADAPTABLE,
+        'skills' => self::ROUTE,
+        'slashCommands' => self::RUNTIME_ADAPTABLE,
+        'teams' => self::ROUTE,
+        'tokenManager' => self::ROUTE,
+        'toolkits' => self::ROUTE,
+        'tools' => self::ROUTE,
+        'transcripts' => self::ROUTE,
+        'triggers' => self::ROUTE,
+        'upload' => self::ROUTE,
+        'workflowBuilder' => self::ROUTE,
+        'workflowNodes' => self::ROUTE,
+        'workflowPresets' => self::ROUTE,
+        'workflowRuns' => self::ROUTE,
+        'wpBase' => self::ROUTE,
+    );
+
+    /**
      * Resolve every key against the registered routes.
      *
      * @return array<string, bool> Endpoint key => servable.
@@ -100,6 +200,66 @@ final class EndpointCapabilities
         }
 
         return $map;
+    }
+
+    /**
+     * The capability manifest (090-i phase 1).
+     *
+     * `endpoints` is runtime truth, `reasons` the supply class, and `gaps` the
+     * derived answer to "what is missing that should not be". An empty `gaps`
+     * list is the invariant: every unavailable key is unavailable on purpose.
+     *
+     * @return array{version: int, endpoints: array<string, bool>, reasons: array<string, string>, gaps: string[]}
+     */
+    public static function manifest(): array
+    {
+        $endpoints = self::map();
+
+        return array(
+            'version' => self::CONTRACT_VERSION,
+            'endpoints' => $endpoints,
+            'reasons' => self::REASONS,
+            'gaps' => self::gaps($endpoints),
+        );
+    }
+
+    /**
+     * Supply class per endpoint key.
+     *
+     * @return array<string, string>
+     */
+    public static function reasons(): array
+    {
+        return self::REASONS;
+    }
+
+    /**
+     * Keys this runtime is meant to serve but currently does not.
+     *
+     * An unclassified key counts as a gap: if the manifest cannot say a key is
+     * deliberate, it has to say it is missing.
+     *
+     * @param array<string, bool>|null $endpoints Pre-computed map, to avoid a
+     *                                            second router walk.
+     *
+     * @return string[]
+     */
+    public static function gaps(?array $endpoints = null): array
+    {
+        $endpoints = $endpoints ?? self::map();
+        $gaps = array();
+
+        foreach ($endpoints as $key => $available) {
+            if ($available) {
+                continue;
+            }
+
+            if (self::ROUTE === (self::REASONS[$key] ?? self::ROUTE)) {
+                $gaps[] = $key;
+            }
+        }
+
+        return $gaps;
     }
 
     /**

@@ -155,12 +155,7 @@ class EndpointCapabilitiesTest extends TestCase
         // The shared contract, asserted from the console's Vitest suite too —
         // drift fails on both CIs instead of on a user's browser. Add a key
         // there first, then wire it here.
-        $contract = json_decode(
-            (string) file_get_contents(base_path('contracts/console-endpoints.json')),
-            true
-        );
-
-        $this->assertIsArray($contract, 'contracts/console-endpoints.json must be valid JSON.');
+        $contract = $this->contract();
 
         $expected = (array) ( $contract['route_backed'] ?? array() );
         $actual   = array_keys($this->endpoints());
@@ -175,6 +170,116 @@ class EndpointCapabilitiesTest extends TestCase
             $actual,
             'A key was added to, or dropped from, the console endpoint contract.'
         );
+    }
+
+    public function test_the_contract_classifies_every_route_backed_key(): void
+    {
+        // The reason map is what turns a `false` into a fact rather than a
+        // mystery. Every key the console builds needs exactly one class, and the
+        // class must come from the shared vocabulary — otherwise a typo reads as
+        // a deliberate deferral.
+        $contract    = $this->contract();
+        $routeBacked = (array) ( $contract['route_backed'] ?? array() );
+        $reasons     = (array) ( $contract['reasons'] ?? array() );
+
+        $classified = array_keys($reasons);
+
+        sort($routeBacked);
+        sort($classified);
+
+        $this->assertSame(
+            $routeBacked,
+            $classified,
+            'Every route-backed key needs exactly one reason in contracts/console-endpoints.json.'
+        );
+
+        $unknown = array_values(array_diff(array_values($reasons), EndpointCapabilities::REASON_CODES));
+
+        $this->assertSame(
+            array(),
+            $unknown,
+            'Unknown reason codes in the contract: '.implode(', ', $unknown)
+        );
+    }
+
+    public function test_the_contract_reasons_match_the_runtime(): void
+    {
+        // Two copies of the classification exist by design: the JSON is read by
+        // the console suite, the constant by the backend. They must not drift,
+        // or a page can be told "not yet" while the backend says "missing"
+        // (or the reverse).
+        $expected = (array) ( $this->contract()['reasons'] ?? array() );
+        $actual   = EndpointCapabilities::reasons();
+
+        ksort($expected);
+        ksort($actual);
+
+        $this->assertSame(
+            $expected,
+            $actual,
+            'EndpointCapabilities::REASONS and contracts/console-endpoints.json disagree.'
+        );
+    }
+
+    public function test_no_route_supplied_endpoint_is_a_gap(): void
+    {
+        // The invariant the manifest exists for: a key this runtime is meant to
+        // serve must not be silently missing. A non-empty list names either the
+        // route that was dropped or the key nobody classified.
+        $manifest = EndpointCapabilities::manifest();
+
+        $this->assertSame(
+            array(),
+            $manifest['gaps'],
+            'Unexplained endpoint gaps: '.implode(', ', $manifest['gaps'])
+        );
+    }
+
+    public function test_unavailable_endpoints_are_not_classified_as_route_supplied(): void
+    {
+        // The complement of the gap check: nothing that is false may claim to be
+        // served. Together the two assertions make `false` mean something.
+        $manifest = EndpointCapabilities::manifest();
+
+        foreach ($manifest['endpoints'] as $key => $available) {
+            if ($available) {
+                continue;
+            }
+
+            $this->assertNotSame(
+                EndpointCapabilities::REASON_CODES[0],
+                $manifest['reasons'][$key] ?? '',
+                $key.' is unavailable, so it cannot be classified as route-served.'
+            );
+        }
+    }
+
+    public function test_the_features_endpoint_reports_the_manifest_version(): void
+    {
+        $this->getJson('/api/v1/features')
+            ->assertOk()
+            ->assertJsonPath('data.endpoint_contract_version', EndpointCapabilities::CONTRACT_VERSION)
+            ->assertJsonPath('data.endpoint_reasons.chat', 'route')
+            ->assertJsonPath('data.endpoint_reasons.mcpApps', 'runtime-adaptable')
+            ->assertJsonPath('data.endpoint_reasons.contentGraph', 'external-product')
+            ->assertJsonPath('data.endpoint_gaps', array());
+    }
+
+    /**
+     * The shared console endpoint contract, parsed.
+     *
+     * @return array<string, mixed>
+     */
+    private function contract(): array
+    {
+        $contract = json_decode(
+            (string) file_get_contents(base_path('contracts/console-endpoints.json')),
+            true
+        );
+
+        $this->assertIsArray($contract, 'contracts/console-endpoints.json must be valid JSON.');
+
+        return $contract;
     }
 
     /**

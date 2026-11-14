@@ -289,6 +289,40 @@ describe('endpoint availability (090-B)', () => {
       [...contract.route_backed, ...contract.asset].sort(),
     );
   });
+
+  it('classifies every route-backed key in the shared contract', () => {
+    // The same file the PHP suite asserts. The reason is what lets the console
+    // tell "not built on this backend yet" from "install the plugin" from
+    // "connect a service"; an unclassified key would render as one of those by
+    // accident.
+    const contractPath = resolve(
+      process.cwd(),
+      '../../docker/laravel/app-skeleton/contracts/console-endpoints.json',
+    );
+
+    const contract = JSON.parse(readFileSync(contractPath, 'utf8')) as {
+      route_backed: string[];
+      reasons?: Record<string, string>;
+    };
+
+    const reasons = contract.reasons ?? {};
+
+    expect(Object.keys(reasons).sort()).toEqual([...contract.route_backed].sort());
+
+    const taxonomy = [
+      'route',
+      'runtime-adaptable',
+      'toolkit-shaped',
+      'connected-service',
+      'external-product',
+    ];
+
+    const unknown = Object.entries(reasons)
+      .filter(([, reason]) => !taxonomy.includes(reason))
+      .map(([key, reason]) => `${key}=${reason}`);
+
+    expect(unknown).toEqual([]);
+  });
 });
 
 describe('fetchRuntimeAvailability', () => {
