@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\TriggerDispatcher;
+use App\Support\TriggerNotRunnable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +85,43 @@ class TriggersController
         return $deleted > 0
             ? response()->json(['deleted' => true])
             : $this->missing();
+    }
+
+    /**
+     * POST /orchestration/triggers/{id}/fire — run the trigger's workflow now.
+     *
+     * 090-h — the manual half of `trigger → execute`. WordPress has no such
+     * endpoint because its triggers are hooked to WP actions; here it is also
+     * how an operator verifies a trigger before relying on the scheduler.
+     */
+    public function fire(Request $request, int $id): JsonResponse
+    {
+        $row = DB::table('nvoos_triggers')->find($id);
+
+        if (null === $row) {
+            return $this->missing();
+        }
+
+        $payload = $request->input('input', $request->input('payload', []));
+        $payload = is_array($payload) ? $payload : [];
+
+        try {
+            $result = app(TriggerDispatcher::class)->fire(
+                $row,
+                $payload,
+                (int) $request->user()->getAuthIdentifier(),
+            );
+        } catch (TriggerNotRunnable $exception) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => $exception->reason,
+                    'message' => $exception->getMessage(),
+                ],
+            ], $exception->status);
+        }
+
+        return response()->json($result, $result['success'] ? 200 : 500);
     }
 
     /**

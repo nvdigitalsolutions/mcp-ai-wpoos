@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\AgentNodeRunner;
 use App\Support\WorkflowRecords;
+use App\Support\WorkflowRunner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Nvoos\Core\Application\Tool\ToolRegistry;
-use Nvoos\Core\Application\Workflow\WorkflowExecutor;
-use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
-use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 
 /**
  * Workflow execution and run history (090-h H3).
@@ -22,12 +18,11 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
  *
  * WordPress's Engine V2 describes the graph to an LLM-planned
  * `execute_workflow` tool; this runtime executes the graph node by node with
- * {@see WorkflowExecutor}. The divergence is deliberate and recorded in
- * 090-h §7: a deterministic run is testable, names the failing node, and
- * bounds its own cost.
+ * `WorkflowExecutor`. The divergence is deliberate and recorded in 090-h §7.
  *
- * Runs are append-only rows in `nvoos_workflow_runs` (090-h §4) — they are
- * never edited, so they do not belong in `nvoos_posts` meta.
+ * The run itself is written by {@see WorkflowRunner}, which the trigger
+ * dispatcher shares — so a console run and a triggered run are the same row
+ * apart from `source`/`trigger_id`.
  */
 class WorkflowRunController
 {
@@ -55,58 +50,14 @@ class WorkflowRunController
         $input = $request->input('input', []);
         $input = is_array($input) ? $input : [];
 
-        $userId = (int) $request->user()->getAuthIdentifier();
-        $startedAt = microtime(true);
-
-        $runId = DB::table('nvoos_workflow_runs')->insertGetId([
-            'workflow_id' => $id,
-            'status' => 'running',
-            'input' => json_encode($input, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-            'started_at' => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $executor = new WorkflowExecutor(
-            app(ToolRegistry::class),
-            app(ErrorFactoryInterface::class),
-        );
-
-        $result = $executor->execute(
-            WorkflowRecords::readGraph($workflow),
+        $result = app(WorkflowRunner::class)->run(
+            $workflow,
             $input,
-            [
-                'user_id' => $userId,
-                'auth_provider' => app(AuthProviderInterface::class),
-                'agent_runner' => new AgentNodeRunner($userId),
-            ],
+            (int) $request->user()->getAuthIdentifier(),
+            'manual',
         );
 
-        $duration = round(microtime(true) - $startedAt, 3);
-
-        DB::table('nvoos_workflow_runs')->where('id', $runId)->update([
-            'status' => (string) $result['status'],
-            'tool_calls' => (int) $result['tool_calls'],
-            'output' => json_encode(
-                ['nodes' => $result['nodes']],
-                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
-            ),
-            'events' => json_encode($result['nodes'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-            'error' => $result['error'],
-            'finished_at' => now(),
-            'duration' => $duration,
-            'updated_at' => now(),
-        ]);
-
-        return response()->json([
-            'success' => (bool) $result['success'],
-            'status' => (string) $result['status'],
-            'run_id' => $runId,
-            'workflow_id' => $id,
-            'tool_calls' => (int) $result['tool_calls'],
-            'results' => $result['nodes'],
-            'message' => (string) $result['message'],
-        ], $result['success'] ? 200 : 500);
+        return response()->json($result, $result['success'] ? 200 : 500);
     }
 
     /**
@@ -162,6 +113,8 @@ class WorkflowRunController
             'id' => (int) $row->id,
             'workflow_id' => (int) $row->workflow_id,
             'status' => (string) $row->status,
+            'source' => (string) ($row->source ?? 'manual'),
+            'trigger_id' => null === ($row->trigger_id ?? null) ? null : (int) $row->trigger_id,
             'tool_calls' => (int) $row->tool_calls,
             'started_at' => $row->started_at,
             'finished_at' => $row->finished_at,

@@ -88,7 +88,7 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 | Suite | Command (cwd) | Baseline (2026-11-14) |
 |---|---|---|
-| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 443 passed / 3014 assertions (after 090-h H3) |
+| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 456 passed / 3055 assertions (after the trigger wiring) |
 | Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 175 passed / 640 assertions (after #7679) |
 | Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1257 tests / 4520 assertions (after 090-h H3); green apart from the no-coverage-driver warning |
 
@@ -218,6 +218,15 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   default assistant; with neither it throws a typed message the executor
   records against that node. Tests that only exercise tool nodes need no
   assistant fixture.
+- **The scheduler is not running by default.** `docker/laravel/entrypoint.sh`
+  starts `queue:work redis` for the `worker` role; nothing runs
+  `schedule:work`. Anything registered via `->withSchedule()` in
+  `bootstrap/app.php` (currently `nvoos:fire-triggers`, every minute) is
+  therefore a no-op in the compose stack. Verify with
+  `php artisan schedule:list` (shows the next due time) and
+  `php artisan nvoos:fire-triggers --dry-run` (lists due triggers without
+  firing). A deployment that relies on cron-style triggers must run the
+  scheduler container or a `schedule:run` cron.
 
 ## 7. Plan map
 
@@ -232,7 +241,7 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
 | `090-e` CPT/CCT schema | Design only; the unit of work is a family schema, not a tool |
 | `090-f` storage bridge | Paper Store contract + task/project write path + the 8 missing runtime tables shipped (#7669–#7679); parity gates complete (#7655) |
 | `090-g` identity/org | Shipped — 6 phases, 10/10 gates |
-| `090-h` workflow engine | Shipped — H1 (33-preset catalogue), H2 (`mcp_ai_workflow` CRUD + graph validation), H3 (Kahn executor + `nvoos_workflow_runs` + node runner). All four engine keys report `true`; `trigger → execute` is the remaining wiring |
+| `090-h` workflow engine | Shipped — H1 (33-preset catalogue), H2 (`mcp_ai_workflow` CRUD + graph validation), H3 (Kahn executor + `nvoos_workflow_runs` + node runner + `trigger → execute`). All four engine keys report `true`. `POST /orchestration/triggers/{id}/fire` runs a trigger now; `nvoos:fire-triggers` handles `cron_schedule` and is registered `everyMinute()->withoutOverlapping()` — but **only fires where the Laravel scheduler runs** (`schedule:work` or a `schedule:run` cron), and the compose worker runs `queue:work` alone |
 
 ## 8. v1.2.20 storage and toolkit surfaces
 

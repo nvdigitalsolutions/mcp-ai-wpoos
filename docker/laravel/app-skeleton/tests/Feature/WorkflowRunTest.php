@@ -125,7 +125,17 @@ class WorkflowRunTest extends TestCase
         $all = $this->getJson('/api/v1/orchestration/runs')->assertOk()->json();
         $this->assertCount(2, $all);
         $this->assertSame(
-            ['id', 'workflow_id', 'status', 'tool_calls', 'started_at', 'finished_at', 'duration'],
+            [
+                'id',
+                'workflow_id',
+                'status',
+                'source',
+                'trigger_id',
+                'tool_calls',
+                'started_at',
+                'finished_at',
+                'duration',
+            ],
             array_keys($all[0])
         );
 
