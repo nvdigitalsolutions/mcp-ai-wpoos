@@ -1349,7 +1349,23 @@ export interface ForgeSection {
 	titleDivider?: { width: string; height: string; background: string; shadow?: string };
 	/** The heading typography (the source's modern-heading rule) — size/
 	 * weight/line-height/letter-spacing. Absent → the template tokens. */
-	titleStyle?: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string };
+	titleStyle?: {
+		size?: string;
+		weight?: string;
+		lineHeight?: string;
+		letterSpacing?: string;
+		/**
+		 * The leading the source resolves below the desktop range — and only
+		 * what it CHANGES. The desktop value rides ONE inline `--ds-title-lh`,
+		 * so without these the pinned px also applies under the clamp-shrunk
+		 * phone headline (jayainc's 80px read as 1.11 under a 72px headline
+		 * and 2.70 under a 29.65px phone one). Emitted as `--ds-title-lh-md`
+		 * and `--ds-title-lh-sm`; the template media queries fall back to a
+		 * relative leading when absent.
+		 */
+		tablet?: { lineHeight?: string };
+		mobile?: { lineHeight?: string };
+	};
 	/** The heading is centered (the source's aux-widget-inner centering —
 	 * jayainc's "Other Featured Products" band). */
 	titleAlign?: 'center';

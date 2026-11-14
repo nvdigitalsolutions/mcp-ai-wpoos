@@ -35,6 +35,8 @@ const titleVars = [
 	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
 	theme?.titleStyle?.weight && `--ds-title-weight:${ theme.titleStyle.weight }`,
 	theme?.titleStyle?.lineHeight && `--ds-title-lh:${ theme.titleStyle.lineHeight }`,
+	theme?.titleStyle?.tablet?.lineHeight && `--ds-title-lh-md:${ theme.titleStyle.tablet.lineHeight }`,
+	theme?.titleStyle?.mobile?.lineHeight && `--ds-title-lh-sm:${ theme.titleStyle.mobile.lineHeight }`,
 	theme?.titleStyle?.letterSpacing && `--ds-title-ls:${ theme.titleStyle.letterSpacing }`,
 ]
 	.filter( Boolean )

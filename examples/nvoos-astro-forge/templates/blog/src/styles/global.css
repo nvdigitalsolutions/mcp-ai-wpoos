@@ -2107,11 +2107,28 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 /* The type fact reaches the DOM as ONE inline `--ds-title-lh`, while the size
  * is a clamp() — so a px leading measured on desktop also lands under the
  * shrunken phone/tablet headline (jayainc: 80px of leading under a 29.65px
- * phone headline read as a 2.7 ratio). Hold the pinned px only where the font
- * is near its cap; below the desktop range the leading stays relative. */
+ * phone headline read as a 2.7 ratio). A profile can carry the narrower
+ * leading as `titleStyle.tablet/mobile.lineHeight`; the hero falls back to a
+ * relative value, so an unpinned site never over-spaces a small headline. */
 @media (width<=1200px) {
+	.ds-hero-split .ds-title,
 	.ds-section-wrap--hero .ds-title {
-		line-height: 1.15;
+		line-height: var(--ds-title-lh-md, 1.15);
+	}
+
+	.ds-body .ds-title {
+		line-height: var(--ds-title-lh-md, var(--ds-title-lh, 1.2));
+	}
+}
+
+@media (width<=767px) {
+	.ds-hero-split .ds-title,
+	.ds-section-wrap--hero .ds-title {
+		line-height: var(--ds-title-lh-sm, var(--ds-title-lh-md, 1.15));
+	}
+
+	.ds-body .ds-title {
+		line-height: var(--ds-title-lh-sm, var(--ds-title-lh-md, var(--ds-title-lh, 1.2)));
 	}
 }
 

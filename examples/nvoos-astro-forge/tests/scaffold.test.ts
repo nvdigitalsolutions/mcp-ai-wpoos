@@ -687,6 +687,25 @@ describe( 'renderSectionsGenerated + renderDesignGenerated (125 facts)', () => {
 		expect( module ).toContain( "catalog: { title: 'fiori-digital-catalogue', source: 'https://jayainc.example/wp-content/uploads/catalog.pdf' }" );
 	} );
 
+	it( 'emits the per-breakpoint title leading (the clamp needs it)', () => {
+		// The desktop fact rides ONE inline `--ds-title-lh`; the narrower
+		// leading rides `--ds-title-lh-md` / `-sm`, which the template media
+		// queries consume (jayainc: phones 45px under a 72px desktop one).
+		const module = renderSectionsGenerated( {
+			...profile,
+			design: {
+				...profile.design!,
+				sections: [
+					{
+						id: 'a4ad586',
+						titleStyle: { size: '72px', lineHeight: '80px', mobile: { lineHeight: '45px' } },
+					},
+				],
+			},
+		} );
+		expect( module ).toContain( "titleStyle: { size: '72px', lineHeight: '80px', mobile: { lineHeight: '45px' } }" );
+	} );
+
 	it( 'emits the harvested webfont for Google Fonts loading (125 §2)', () => {
 		const module = renderDesignGenerated( profile, { accent: '#0b5f4e' } );
 		expect( module ).toContain( 'export const webFonts' );
