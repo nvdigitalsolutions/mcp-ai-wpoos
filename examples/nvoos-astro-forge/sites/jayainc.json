@@ -271,7 +271,8 @@
 				"anchor": "products",
 				"bgGradient": "linear-gradient(180deg, #ffffff 6%, #04132b 100%)",
 				"bgColor": "transparent",
-				"padding": "100px 0px 100px 0px",
+				"padding": "100px 0px 40px 0px",
+				"minHeight": "0",
 				"marginTop": {
 					"desktop": "0px",
 					"tablet": "170px",
@@ -907,6 +908,16 @@
 				}
 			},
 			"why": "Operator request: the source measured no disclosure control, but the rebuilt nav needs one on phones. Collapse at <=767px via the template's existing APG disclosure."
+		},
+		{
+			"path": "sections.5e78df1.padding",
+			"value": "100px 0px 40px 0px",
+			"why": "Operator override: the products band's 100px bottom padding plus the measured 1216px floor left ~328px below the ALL SERVICES CTA while the grid sat 8px above it. The band now sizes to content with an even 40px above and below the CTA."
+		},
+		{
+			"path": "sections.5e78df1.minHeight",
+			"value": "0",
+			"why": "Drop the measured 1216px floor so the products band sizes to its content; the CTA rhythm is controlled by the 40px padding-bottom and the frontend's 40px links margin."
 		}
 	],
 	"vocabulary": {
