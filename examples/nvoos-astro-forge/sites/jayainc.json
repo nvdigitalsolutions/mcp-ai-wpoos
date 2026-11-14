@@ -424,6 +424,7 @@
 				"bgColor": "#f6f6f6",
 				"measure": "1140px",
 				"paddingX": "30px",
+				"minHeight": "220px",
 				"catalog": {
 					"source": "https://jayainc.com/wp-content/uploads/2021/01/FIORI-CATALOG-2021.pdf",
 					"title": "fiori-digital-catalogue"
@@ -556,6 +557,11 @@
 				"transform": "uppercase"
 			},
 			"navInk": "#ffffff",
+			"navToggle": {
+				"visible": {
+					"mobile": true
+				}
+			},
 			"headerInk": "#ffffff",
 			"headerBg": "#04132b",
 			"call": {
@@ -887,6 +893,20 @@
 			"path": "sections.059421c.paddingX",
 			"value": "32px",
 			"why": "The template clamp the band rendered with before the measured-container pass; keeps the content box at 1136px (the source's 343px height)."
+		},
+		{
+			"path": "sections.fd63522.minHeight",
+			"value": "220px",
+			"why": "Operator override: the catalogue band is a single View catalogue control and the measured 520px box leaves roughly 300px of dead space below it. The shipped hand-edited frontend uses a 220px floor; the geometry measurement stays provenance."
+		},
+		{
+			"path": "chrome.navToggle",
+			"value": {
+				"visible": {
+					"mobile": true
+				}
+			},
+			"why": "Operator request: the source measured no disclosure control, but the rebuilt nav needs one on phones. Collapse at <=767px via the template's existing APG disclosure."
 		}
 	],
 	"vocabulary": {

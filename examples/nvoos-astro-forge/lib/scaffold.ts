@@ -1300,8 +1300,17 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		return height !== undefined && viewport !== undefined && Math.abs( height - viewport ) <= 2;
 	} );
 	const isFullViewport = section.fullViewport ?? fullViewport;
+	// An explicit profile fact (or an operator `sections.<id>.minHeight` pin)
+	// wins over the measurement — the same contract as `section.padding` above.
+	// The measured box stays provenance; the authored floor is the operator's
+	// call (jayainc's catalogue band is one control in a 520px measured box).
+	const explicitHeight = section.minHeight;
 	if ( isFullViewport ) {
 		entry.push( 'fullViewport: true' );
+	}
+	if ( explicitHeight ) {
+		entry.push( `minHeight: ${ tsLength( explicitHeight ) }` );
+	} else if ( isFullViewport ) {
 		entry.push( `minHeight: ${ tsString( '100vh' ) }` );
 	}
 	const heightOf = ( viewport: string ): string | undefined => {
@@ -1310,7 +1319,7 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			? `${ Math.round( height ) }px`
 			: undefined;
 	};
-	const desktopHeight = isFullViewport ? undefined : heightOf( 'desktop' );
+	const desktopHeight = isFullViewport || Boolean( explicitHeight ) ? undefined : heightOf( 'desktop' );
 	if ( desktopHeight ) {
 		const tabletHeight = heightOf( 'tablet' );
 		const mobileHeight = heightOf( 'mobile' );
