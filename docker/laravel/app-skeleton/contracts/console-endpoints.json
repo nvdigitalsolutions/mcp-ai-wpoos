@@ -63,7 +63,7 @@
     "documentEditor": "external-product",
     "mediaCc": "connected-service",
     "mediaStudio": "external-product",
-    "mcpApps": "runtime-adaptable",
+    "mcpApps": "route",
     "memory": "route",
     "okf": "route",
     "operations": "route",
