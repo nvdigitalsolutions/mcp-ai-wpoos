@@ -104,12 +104,29 @@ live PDP (200 + `Product` JSON-LD + cache header, 301 slug convergence,
 `suggestPreset` path. The workflow runs on
 `paths: examples/nvoos-astro-forge/**`.
 
+**Template CSS pins are part of the gate.** The CSS assertions read the
+**minified** `dist/_astro/*.css` and pin exact values — the logo-cloud band,
+for instance, asserts `grid-template-columns: repeat(6, minmax(0, 1fr))` plus
+`.ds-logos img { … height: 72px; object-fit: contain }`. So a change to
+`templates/blog/src/styles/global.css` that touches a pinned rule must update
+`tests/forge-e2e.test.ts` **in the same PR**, and the regex must be checked
+against a real build's output first — minifiers rewrite the spacing
+(`grep -o '\.ds-logos[^}]*}' dist/_astro/*.css` in a forged project). #7771
+merged with that check red, which left `alpha-working`'s gate failing on a
+CSS-only PR and forced a second PR to repair it: a merged PR cannot be
+reopened, so re-base the fix onto `alpha-working` instead of pushing to the
+old branch.
+
 ## Gotchas (each cost a fix — do not re-hit)
 
 The **full list** lives in [`reference/gotchas.md`](reference/gotchas.md) (split
 out 2026-11-11 to keep this file under Zed's ~100 KB skill-load limit). Read it
 before touching the CLI, the scaffold or the sanitizer. The highest-traffic ones:
 
+- **e2e CSS asserts pin the minified template CSS** — changing a `global.css`
+  rule the gate asserts (grid tracks, the logo box, the call button) means
+  updating the matching `forge-e2e.test.ts` regex in the same PR, or
+  `alpha-working` goes red on an otherwise-clean merge.
 - **Astro 7 spread params are flat slash-joined strings, NOT arrays** —
   `params: { parts: '1/slug' }`, never `['1','slug']`.
 - **`forge.mjs` is plain JS** — `.mjs` gets no type stripping; `import type` and
@@ -1330,6 +1347,14 @@ Four more measured facts (detail:
 - **A centred title is never narrowed by the hero's 66% cap**: `--ds-title-max:
   none` when `align: center` with no measured max-width, and `margin-inline:
   auto` rides the centred type rule (otherwise the text sat ~200px off-centre).
+- **A section `lineHeight` fact is one value for every breakpoint.** It reaches
+  the DOM as a single inline `--ds-title-lh`, while the title's size comes from
+  a `clamp()`, so a px leading measured on desktop also applies at phone
+  widths — jayainc's 80px read fine under the 72px headline (1.11) but floated
+  the two lines of a 29.65px phone headline apart (2.70). Measure the leading
+  per breakpoint and scope the fix in the site's `global.css` (phones 45px, the
+  tablet band relative, desktop the pinned px); the profile pin carries the
+  desktop fact only.
 
 ## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
 
