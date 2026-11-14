@@ -198,6 +198,20 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   `php artisan tinker --execute='$m=App\Support\EndpointCapabilities::map(); echo count($m);'`
   (single quotes — a double-quoted `$m` is interpolated by the shell)
   before updating a tracker that cites a true/false count.
+
+- **A console key now carries two facts, not one.** The boolean map says whether
+  this runtime serves the key right now; `EndpointCapabilities::REASONS` says
+  which *supply class* the key belongs to. Only `route` keys are meant to be
+  served here, so `manifest()['gaps']` must stay `[]` — a non-empty list means a
+  route was dropped or a key was never classified. The classification is
+  duplicated in `contracts/console-endpoints.json` because the console's Vitest
+  suite reads that file; the contract test fails if the two copies disagree.
+  Vocabulary: `route`, `runtime-adaptable`, `toolkit-shaped`,
+  `connected-service`, `external-product`. `GET /api/v1/features` exposes it as
+  `data.endpoint_contract_version`, `data.endpoint_reasons` and
+  `data.endpoint_gaps`. WordPress does **not** emit this map yet — on that
+  backend the console still blanks keys from the `isWordPress` matrix inside
+  `runtime-config.ts`.
 - **Response envelopes differ per client — read the client.** Most Laravel
   controllers use `{success, data}`, but `WorkflowBuilderClient` reads bare
   arrays/objects (WordPress's `rest_ensure_response()` shape),
