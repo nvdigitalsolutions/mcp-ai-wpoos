@@ -81,6 +81,8 @@ class EndpointCapabilitiesTest extends TestCase
             'okf',
             // 090-i — assistant MCP app assignments (read + replace).
             'mcpApps',
+            // 090-i — assistant tool shortcuts (read-only, shared shaping).
+            'shortcuts',
         ] as $key) {
             $this->assertTrue($endpoints[$key] ?? false, $key.' should be available.');
         }
@@ -96,7 +98,10 @@ class EndpointCapabilitiesTest extends TestCase
             'remoteSites',
             'mediaCc',
             'commandCenter',
-            'shortcuts',
+            // Nine command handlers that mutate Pro state (schedules,
+            // workflows, agents) plus the base executor — a toolkit, not a
+            // port. Reclassified from runtime-adaptable once the Pro
+            // catalogue was read.
             'slashCommands',
             'contentGraph',
             'docsHub',

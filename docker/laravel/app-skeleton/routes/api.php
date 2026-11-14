@@ -33,6 +33,7 @@ use App\Http\Controllers\TeamCatalogueController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TokenManagerController;
 use App\Http\Controllers\ToolController;
+use App\Http\Controllers\ToolShortcutsController;
 use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\TranscriptsController;
 use App\Http\Controllers\TriggersController;
@@ -143,6 +144,11 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::post('/wp/{restBase}', [WpContentController::class, 'store']);
                 Route::get('/wp/{restBase}/{id}', [WpContentController::class, 'show'])
                     ->whereNumber('id');
+
+                // Assistant tool shortcuts (090-i). Same shaping rules as the
+                // Pro route, shared through lib/core; editors only, matching
+                // the console's permission matrix for this surface.
+                Route::get('/pro/tool-shortcuts', [ToolShortcutsController::class, 'index']);
             });
 
             Route::middleware('can:upload_files')->group(function (): void {
