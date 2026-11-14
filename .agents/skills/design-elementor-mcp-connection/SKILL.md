@@ -157,6 +157,15 @@ storage), create it once in **NV oOS Pro → Remote Sites → Add Connection**:
    flow-state transient, so the callback/complete/probe/refresh/revoke
    handlers rebuild the client with the same options — geo-blocked
    deployments can complete the web login, not just the connection test.
+   **(v1.2.21):** **QuickBooks Online MCP** connections use a dedicated
+   `connection_type: quickbooks_mcp` — the official hosted endpoint
+   `https://ai-inc.quickbooks.intuit.com/v1/mcp` by default, or a self-hosted
+   Streamable HTTP wrapper. `get_mcp_app_connections()` merges them,
+   `is_mcp_app_connection()` accepts them, `resolve_connection_ref()` resolves
+   via `build_quickbooks_mcp_app_config()`, and the OAuth client now supports
+   **pre-registered Intuit clients** (client ID + secret → HTTP Basic token
+   requests per RFC 6749 §2.3.1, DCR skipped; client IDs keep their case).
+   Setup, auth modes, and troubleshooting: `docs/quickbooks-mcp-connect.md`.
 
 ### Path B — inline MCP App (per-assistant)
 

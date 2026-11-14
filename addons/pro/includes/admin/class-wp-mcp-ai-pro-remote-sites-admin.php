@@ -532,6 +532,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					$client_id = isset( $_POST['flowhub_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['flowhub_client_id'] ) ) : '';
 					break;
 				case 'quickbooks':
+				case 'quickbooks_mcp':
 					$client_id     = isset( $_POST['quickbooks_client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['quickbooks_client_id'] ) ) : '';
 					$client_secret = isset( $_POST['quickbooks_client_secret'] ) ? wp_unslash( $_POST['quickbooks_client_secret'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 					break;
@@ -711,6 +712,19 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( 'upwork' === $connection_type ) {
 				$url       = 'https://api.upwork.com/graphql';
 				$auth_type = 'none'; // Upwork uses OAuth, not standard auth types.
+			}
+
+			// For QuickBooks Online MCP connections, default to Intuit's official
+			// hosted endpoint. Self-hosted Streamable HTTP wrappers save their own
+			// URL. OAuth is the default auth mode; bearer/custom-header/none are
+			// accepted for on-prem and gateway deployments.
+			if ( 'quickbooks_mcp' === $connection_type ) {
+				if ( '' === $url ) {
+					$url = WP_MCP_AI_Pro_Remote_Site_Manager::QUICKBOOKS_MCP_DEFAULT_URL;
+				}
+				if ( ! in_array( $auth_type, array( 'none', 'bearer', 'jwt', 'basic_auth', 'application_password', 'custom_header', 'oauth' ), true ) ) {
+					$auth_type = 'oauth';
+				}
 			}
 
 			// For ShipEngine connections, always use the ShipEngine API URL.
@@ -1122,14 +1136,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				'custom_post_types'              => isset( $_POST['custom_post_types'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_post_types'] ) ) : '',
 				// JetEngine CCT access controls.
 				'jetengine_cct_access'           => $this->resolve_jetengine_cct_access(),
-				// MCP Server fields (Elementor MCP / WordPress MCP Adapter).
-				'mcp_header_name'                => 'mcp_server' === $connection_type && isset( $_POST['mcp_header_name'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				// MCP Server fields (Elementor MCP / WordPress MCP Adapter / QuickBooks MCP).
+				'mcp_header_name'                => in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp' ), true ) && isset( $_POST['mcp_header_name'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? sanitize_text_field( wp_unslash( $_POST['mcp_header_name'] ) ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized above.
 					: '',
-				'mcp_verify_ssl'                 => 'mcp_server' === $connection_type ? empty( $_POST['mcp_verify_ssl'] ) : true, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
-				'mcp_timeout'                    => 'mcp_server' === $connection_type && isset( $_POST['mcp_timeout'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				'mcp_verify_ssl'                 => in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp' ), true ) ? empty( $_POST['mcp_verify_ssl'] ) : true, // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked state only.
+				'mcp_timeout'                    => in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp' ), true ) && isset( $_POST['mcp_timeout'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 					? absint( $_POST['mcp_timeout'] ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- absint above.
 					: 30,
+				// QuickBooks Online MCP environment (sandbox/production).
+				'quickbooks_environment'         => 'quickbooks_mcp' === $connection_type && isset( $_POST['quickbooks_environment'] ) && in_array( $_POST['quickbooks_environment'], array( 'sandbox', 'production' ), true )
+					? sanitize_key( wp_unslash( $_POST['quickbooks_environment'] ) )
+					: 'production',
 			);
 
 			// Google Classroom uses its own scope-profile select; fold it into the
@@ -1942,6 +1960,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'flowhub'            => __( 'Flowhub', 'mcp-ai-wpoos-pro' ),
 									'payhere'            => __( 'PayHere', 'mcp-ai-wpoos-pro' ),
 									'quickbooks'         => __( 'QuickBooks', 'mcp-ai-wpoos-pro' ),
+									'quickbooks_mcp'     => __( 'QuickBooks MCP', 'mcp-ai-wpoos-pro' ),
 									'quickbooks_desktop' => __( 'QB Desktop', 'mcp-ai-wpoos-pro' ),
 									'ezuite_erp'         => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
 									'gmail'              => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
@@ -1975,6 +1994,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									'flowhub'            => '#00a32a',
 									'payhere'            => '#f0b849',
 									'quickbooks'         => '#2c9f47',
+									'quickbooks_mcp'     => '#22c55e',
 									'quickbooks_desktop' => '#1a7a32',
 									'ezuite_erp'         => '#8c50a7',
 									'gmail'              => '#ea4335', // Google red color.
@@ -2261,6 +2281,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<p class="description" id="url-description-flowhub" style="display: none;">
 							<?php esc_html_e( 'FlowHub uses a fixed API URL. This field is automatically set to https://api.flowhub.co', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
+						<p class="description" id="url-description-quickbooks-mcp" style="display: none;">
+							<?php esc_html_e( 'The QuickBooks MCP endpoint. The official hosted endpoint is https://ai-inc.quickbooks.intuit.com/v1/mcp — self-hosted Streamable HTTP wrappers use their own URL. The host must be allowed in Settings → Security Center → Network & Headers when an MCP App allowlist is configured.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
 					</td>
 				</tr>
 
@@ -2299,6 +2322,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							</option>
 							<option value="quickbooks_desktop" <?php selected( $connection_type, 'quickbooks_desktop' ); ?>>
 								<?php esc_html_e( 'QuickBooks Desktop (QODBC)', 'mcp-ai-wpoos-pro' ); ?>
+							</option>
+							<option value="quickbooks_mcp" <?php selected( $connection_type, 'quickbooks_mcp' ); ?>>
+								<?php esc_html_e( 'QuickBooks Online (MCP)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="ezuite_erp" <?php selected( $connection_type, 'ezuite_erp' ); ?>>
 								<?php esc_html_e( 'EZuite ERP (Inventory)', 'mcp-ai-wpoos-pro' ); ?>
@@ -2459,7 +2485,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				</tr>
 
 				<!-- MCP Server specific fields (Elementor MCP, WordPress MCP Adapter, or any Streamable HTTP MCP endpoint). -->
-				<tr class="mcp_server-only-field" id="mcp_header_name_field" style="display: none;">
+				<tr class="mcp_server-only-field quickbooks_mcp-only-field" id="mcp_header_name_field" style="display: none;">
 					<th scope="row">
 						<label for="mcp_header_name"><?php esc_html_e( 'Header Name', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -2469,7 +2495,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
-				<tr class="mcp_server-only-field" style="display: none;">
+				<tr class="mcp_server-only-field quickbooks_mcp-only-field" style="display: none;">
 					<th scope="row">
 						<label for="mcp_timeout"><?php esc_html_e( 'Timeout (seconds)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -2478,7 +2504,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</td>
 				</tr>
 
-				<tr class="mcp_server-only-field" style="display: none;">
+				<tr class="mcp_server-only-field quickbooks_mcp-only-field" style="display: none;">
 					<th scope="row">
 						<label for="mcp_verify_ssl"><?php esc_html_e( 'Verify SSL', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
@@ -2487,7 +2513,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<input type="checkbox" name="mcp_verify_ssl" id="mcp_verify_ssl" value="1" <?php checked( $is_edit ? ! array_key_exists( 'mcp_verify_ssl', $connection ) || ! empty( $connection['mcp_verify_ssl'] ) : true ); ?> />
 							<?php esc_html_e( 'Verify the SSL certificate of the MCP endpoint.', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
-						<p class="description"><?php esc_html_e( 'Elementor MCP endpoints live on your WordPress site at /wp-json/mcp/&lt;server-slug&gt;. Use an application password (Basic Auth) or a bearer token to authenticate.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'WordPress MCP endpoints live at /wp-json/mcp/&lt;server-slug&gt;; vendor-hosted endpoints use their documented URL. Use the authentication type the server documents.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -3482,6 +3508,58 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<td>
 						<input type="text" name="company_id" id="company_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['company_id'] ) ? esc_attr( $connection['company_id'] ) : ''; ?>" autocomplete="off">
 						<p class="description"><?php esc_html_e( 'The QuickBooks company/realm ID.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Type-specific fields for QuickBooks Online (MCP) -->
+				<tr class="quickbooks_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="quickbooks_mcp_client_id"><?php esc_html_e( 'Intuit Client ID', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="quickbooks_client_id" id="quickbooks_mcp_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from the Intuit Developer Portal. Optional for the official hosted endpoint (sign-in completes through the MCP Apps login); required by self-hosted wrappers that hold Intuit app credentials.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="quickbooks_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="quickbooks_mcp_client_secret"><?php esc_html_e( 'Intuit Client Secret', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<textarea name="quickbooks_client_secret" id="quickbooks_mcp_client_secret" class="large-text" rows="2" autocomplete="off"></textarea>
+						<?php if ( $is_edit ) : ?>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep the existing client secret.', 'mcp-ai-wpoos-pro' ); ?></p>
+						<?php endif; ?>
+						<p class="description"><?php esc_html_e( 'Encrypted at rest. Never sent to the browser after save.', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="quickbooks_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="quickbooks_mcp_company_id"><?php esc_html_e( 'Company ID (Realm ID)', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="company_id" id="quickbooks_mcp_company_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['company_id'] ) ? esc_attr( $connection['company_id'] ) : ''; ?>" autocomplete="off">
+						<p class="description"><?php esc_html_e( 'The QuickBooks company/realm ID returned by the Intuit OAuth callback. Stored for diagnostics and for wrappers that scope by realm (X-QB-Realm-Id).', 'mcp-ai-wpoos-pro' ); ?></p>
+					</td>
+				</tr>
+
+				<tr class="quickbooks_mcp-only-field" style="display: none;">
+					<th scope="row">
+						<label for="quickbooks_environment"><?php esc_html_e( 'Intuit Environment', 'mcp-ai-wpoos-pro' ); ?></label>
+					</th>
+					<td>
+						<?php
+						$saved_quickbooks_environment = $is_edit && ! empty( $connection['quickbooks_environment'] )
+							? $connection['quickbooks_environment']
+							: 'production';
+						?>
+						<select name="quickbooks_environment" id="quickbooks_environment">
+							<option value="production" <?php selected( $saved_quickbooks_environment, 'production' ); ?>><?php esc_html_e( 'Production', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="sandbox" <?php selected( $saved_quickbooks_environment, 'sandbox' ); ?>><?php esc_html_e( 'Sandbox', 'mcp-ai-wpoos-pro' ); ?></option>
+						</select>
+						<p class="description"><?php esc_html_e( 'Use Sandbox while validating the integration against a test company. Production is required for live books.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
@@ -7892,7 +7970,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				consumerKeyField.style.display = 'table-row';
 				consumerSecretField.style.display = 'table-row';
 			} else if (authType === 'custom_header') {
-				if (mcpHeaderField && connectionType === 'mcp_server') {
+				if (mcpHeaderField && (connectionType === 'mcp_server' || connectionType === 'quickbooks_mcp')) {
 					mcpHeaderField.style.display = 'table-row';
 				}
 				tokenField.style.display = 'table-row';
@@ -7906,6 +7984,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var flowhubFields = document.querySelectorAll('.flowhub-only-field');
 			var payhereFields = document.querySelectorAll('.payhere-only-field');
 			var quickbooksFields = document.querySelectorAll('.quickbooks-only-field');
+			var quickbooksMcpFields = document.querySelectorAll('.quickbooks_mcp-only-field');
 			var quickbooksDesktopFields = document.querySelectorAll('.quickbooks_desktop-only-field');
 			var ezuiteFields = document.querySelectorAll('.ezuite_erp-only-field');
 			var gmailFields = document.querySelectorAll('.gmail-only-field');
@@ -7938,6 +8017,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			var urlField = document.getElementById('url');
 			var urlDescription = document.getElementById('url-description');
 			var urlDescriptionFlowhub = document.getElementById('url-description-flowhub');
+			var urlDescriptionQuickbooksMcp = document.getElementById('url-description-quickbooks-mcp');
 
 			// Hide all type-specific fields first
 			wordpressFields.forEach(function(field) {
@@ -7956,6 +8036,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				field.style.display = 'none';
 			});
 			quickbooksFields.forEach(function(field) {
+				field.style.display = 'none';
+			});
+			quickbooksMcpFields.forEach(function(field) {
 				field.style.display = 'none';
 			});
 			quickbooksDesktopFields.forEach(function(field) {
@@ -8045,6 +8128,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			urlField.style.backgroundColor = '';
 			urlDescription.style.display = 'block';
 			urlDescriptionFlowhub.style.display = 'none';
+			if (urlDescriptionQuickbooksMcp) {
+				urlDescriptionQuickbooksMcp.style.display = 'none';
+			}
 
 			// Show/hide auth_type field based on connection type
 				// Only show for WordPress and Generic API connections.
@@ -8052,7 +8138,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					// toLowerCase() normalises both old and new casing.
 				var ctLower = (connectionType || '').toLowerCase();
 				
-				if (ctLower === <?php echo wp_json_encode( strtolower( 'WordPress' ) ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText ?> || ctLower === 'generic' || ctLower === 'mcp_server') {
+				if (ctLower === <?php echo wp_json_encode( strtolower( 'WordPress' ) ); // phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText ?> || ctLower === 'generic' || ctLower === 'mcp_server' || ctLower === 'quickbooks_mcp') {
 					authTypeRow.style.display = 'table-row';
 				// Sync the credential fields (username/password/token/consumer keys)
 				// with the current auth_type dropdown value so the correct fields
@@ -8102,6 +8188,28 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				quickbooksFields.forEach(function(field) {
 					field.style.display = 'table-row';
 				});
+			} else if (connectionType === 'quickbooks_mcp') {
+				quickbooksMcpFields.forEach(function(field) {
+					field.style.display = 'table-row';
+				});
+				// QuickBooks Online MCP defaults to Intuit's official hosted endpoint
+				// and the MCP OAuth sign-in; self-hosted wrappers override the URL
+				// and may use bearer/custom-header auth instead.
+				if (!urlField.value) {
+					urlField.value = <?php echo wp_json_encode( WP_MCP_AI_Pro_Remote_Site_Manager::QUICKBOOKS_MCP_DEFAULT_URL ); ?>;
+				}
+				urlField.readOnly = false;
+				urlField.style.backgroundColor = '';
+				urlDescription.style.display = 'none';
+				if (urlDescriptionQuickbooksMcp) {
+					urlDescriptionQuickbooksMcp.style.display = 'block';
+				}
+				if (!authTypeSelect.value || authTypeSelect.value === 'none') {
+					authTypeSelect.value = 'oauth';
+				}
+				if (typeof toggleAuthFields === 'function') {
+					toggleAuthFields(authTypeSelect.value);
+				}
 			} else if (connectionType === 'quickbooks_desktop') {
 				quickbooksDesktopFields.forEach(function(field) {
 					field.style.display = 'table-row';

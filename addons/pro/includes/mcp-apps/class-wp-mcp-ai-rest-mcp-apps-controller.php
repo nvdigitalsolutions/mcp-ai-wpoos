@@ -863,6 +863,10 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 			return WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
 		}
 
+		if ( 'quickbooks_mcp' === $type ) {
+			return WP_MCP_AI_Pro_Remote_Site_Manager::build_quickbooks_mcp_app_config( $connection );
+		}
+
 		return array();
 	}
 
@@ -925,6 +929,10 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 					: 'https://mcp.upwork.com/mcp';
 			} elseif ( 'mcp_server' === $type ) {
 				$candidate = isset( $connection['url'] ) ? (string) $connection['url'] : '';
+			} elseif ( 'quickbooks_mcp' === $type ) {
+				$candidate = isset( $connection['url'] ) && '' !== trim( (string) $connection['url'] )
+					? esc_url_raw( $connection['url'] )
+					: WP_MCP_AI_Pro_Remote_Site_Manager::QUICKBOOKS_MCP_DEFAULT_URL;
 			}
 
 			if ( '' === $candidate ) {
@@ -1007,6 +1015,22 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		if ( ! empty( $flow_state['proxy_url'] ) ) {
 			$options['proxy_url']  = (string) $flow_state['proxy_url'];
 			$options['proxy_auth'] = isset( $flow_state['proxy_auth'] ) ? (string) $flow_state['proxy_auth'] : '';
+		}
+
+		// Pre-registered confidential clients (QuickBooks/Intuit) need the
+		// secret for the HTTP Basic token request in the callback/complete
+		// handlers, which run in a fresh request. Re-resolve it from the
+		// encrypted central connection instead of keeping the secret in the
+		// short-lived flow-state transient.
+		if ( ! empty( $flow_state['connection_ref'] ) && $this->load_remote_site_manager() ) {
+			$pre_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $flow_state['connection_ref'] );
+			if (
+				is_array( $pre_connection ) &&
+				'quickbooks_mcp' === ( isset( $pre_connection['connection_type'] ) ? $pre_connection['connection_type'] : '' ) &&
+				! empty( $pre_connection['client_secret'] )
+			) {
+				$options['client_secret'] = trim( (string) WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( (string) $pre_connection['client_secret'] ) );
+			}
 		}
 
 		return $options;
@@ -1104,6 +1128,22 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		$oauth_options = $this->get_oauth_client_options( $server_url, $connection_ref );
 		$oauth_client  = new WP_MCP_AI_MCP_App_OAuth_Client( $server_url, $oauth_options );
 
+		// QuickBooks/Intuit apps are pre-registered confidential clients: the
+		// connection stores the Intuit client ID + secret, and the token
+		// endpoint authenticates with HTTP Basic. Resolve them before discovery
+		// so the flow skips DCR and uses the operator's app registration.
+		if ( '' !== $connection_ref && $this->load_remote_site_manager() ) {
+			$pre_connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_ref );
+			if ( is_array( $pre_connection ) && 'quickbooks_mcp' === ( isset( $pre_connection['connection_type'] ) ? $pre_connection['connection_type'] : '' ) ) {
+				$pre_client_id = isset( $pre_connection['client_id'] ) ? trim( (string) $pre_connection['client_id'] ) : '';
+				$pre_secret    = isset( $pre_connection['client_secret'] ) ? trim( (string) WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( (string) $pre_connection['client_secret'] ) ) : '';
+				if ( '' !== $pre_client_id && '' !== $pre_secret ) {
+					$oauth_client->set_client_id( $pre_client_id );
+					$oauth_client->set_client_secret( $pre_secret );
+				}
+			}
+		}
+
 		// Check if OAuth is supported.
 		$discovery = $oauth_client->discover_metadata();
 		if ( is_wp_error( $discovery ) ) {
@@ -1141,6 +1181,7 @@ class WP_MCP_AI_REST_MCP_Apps_Controller {
 		// accept loopback redirect URIs, so when the registration rejects the
 		// site's callback URL we fall back to a manual loopback flow in which
 		// the admin pastes the localhost callback URL back into the UI.
+		// Pre-registered QuickBooks clients short-circuit registration.
 		$reg_result    = $oauth_client->register_client();
 		$redirect_mode = 'redirect';
 

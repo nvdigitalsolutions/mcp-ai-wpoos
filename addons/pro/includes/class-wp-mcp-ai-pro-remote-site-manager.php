@@ -33,6 +33,20 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	const OPTION_NAME = 'wp_mcp_ai_pro_remote_sites';
 
 	/**
+	 * Default endpoint for the official QuickBooks Online hosted MCP server.
+	 *
+	 * Intuit publishes this publisher-listed remote endpoint alongside the
+	 * stdio reference server (github.com/intuit/quickbooks-online-mcp-server).
+	 * Self-hosted Streamable HTTP wrappers — the upstream HTTP transport PR or
+	 * community Cloudflare Workers builds — override it by saving their own
+	 * URL on the connection.
+	 *
+	 * @since 1.2.21
+	 * @var string
+	 */
+	const QUICKBOOKS_MCP_DEFAULT_URL = 'https://ai-inc.quickbooks.intuit.com/v1/mcp';
+
+	/**
 	 * Supported authentication types.
 	 *
 	 * @var array<string>
@@ -674,10 +688,17 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		// Prepare connection data.
+		// MCP endpoints are exact routes — Intuit's hosted QuickBooks gateway
+		// (and most vendor MCP gateways) 404 on an appended slash, so preserve
+		// the operator-supplied URL verbatim for quickbooks_mcp connections.
+		$is_quickbooks_mcp = isset( $connection_data['connection_type'] ) && 'quickbooks_mcp' === sanitize_key( $connection_data['connection_type'] );
+
 		$connection = array(
 			'id'                             => $connection_id,
 			'name'                           => sanitize_text_field( $connection_data['name'] ),
-			'url'                            => esc_url_raw( trailingslashit( $connection_data['url'] ) ),
+			'url'                            => $is_quickbooks_mcp
+				? esc_url_raw( (string) $connection_data['url'] )
+				: esc_url_raw( trailingslashit( $connection_data['url'] ) ),
 			'connection_type'                => isset( $connection_data['connection_type'] ) ? sanitize_key( $connection_data['connection_type'] ) : 'wordpress',
 			'auth_type'                      => isset( $connection_data['auth_type'] ) ? sanitize_key( $connection_data['auth_type'] ) : 'none',
 			'username'                       => isset( $connection_data['username'] ) ? sanitize_text_field( $connection_data['username'] ) : '',
@@ -883,6 +904,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'mcp_verify_ssl'                 => array_key_exists( 'mcp_verify_ssl', $connection_data ) ? (bool) $connection_data['mcp_verify_ssl'] : true,
 			'mcp_timeout'                    => isset( $connection_data['mcp_timeout'] ) ? max( 5, min( 120, absint( $connection_data['mcp_timeout'] ) ) ) : 30,
 			'mcp_oauth'                      => isset( $connection_data['mcp_oauth'] ) ? $connection_data['mcp_oauth'] : '',
+			// QuickBooks Online MCP: Intuit environment is stored for operator
+			// diagnostics and for self-hosted wrappers that scope by environment.
+			'quickbooks_environment'         => isset( $connection_data['quickbooks_environment'] ) && in_array( $connection_data['quickbooks_environment'], array( 'sandbox', 'production' ), true )
+				? $connection_data['quickbooks_environment']
+				: 'production',
 			'mcp_protocol_version'           => isset( $connection_data['mcp_protocol_version'] ) ? sanitize_text_field( $connection_data['mcp_protocol_version'] ) : '',
 			'mcp_server_name'                => isset( $connection_data['mcp_server_name'] ) ? sanitize_text_field( $connection_data['mcp_server_name'] ) : '',
 			'mcp_tool_count'                 => isset( $connection_data['mcp_tool_count'] ) ? absint( $connection_data['mcp_tool_count'] ) : 0,
@@ -1042,12 +1068,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
 		$auth_type       = isset( $connection['auth_type'] ) ? $connection['auth_type'] : '';
 
-		// Only OAuth MCP Server connections, Upwork connections in MCP mode, and
-		// FlowHub connections in MCP mode carry an mcp_oauth blob.
-		$is_mcp_server  = 'mcp_server' === $connection_type && 'oauth' === $auth_type;
-		$is_upwork_mcp  = 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' );
-		$is_flowhub_mcp = 'flowhub' === $connection_type && 'mcp' === ( isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : '' );
-		if ( ! $is_mcp_server && ! $is_upwork_mcp && ! $is_flowhub_mcp ) {
+		// Only OAuth MCP Server connections, QuickBooks Online MCP connections,
+		// Upwork connections in MCP mode, and FlowHub connections in MCP mode
+		// carry an mcp_oauth blob.
+		$is_mcp_server     = 'mcp_server' === $connection_type && 'oauth' === $auth_type;
+		$is_quickbooks_mcp = 'quickbooks_mcp' === $connection_type;
+		$is_upwork_mcp     = 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' );
+		$is_flowhub_mcp    = 'flowhub' === $connection_type && 'mcp' === ( isset( $connection['flowhub_mode'] ) ? $connection['flowhub_mode'] : '' );
+		if ( ! $is_mcp_server && ! $is_quickbooks_mcp && ! $is_upwork_mcp && ! $is_flowhub_mcp ) {
 			return false;
 		}
 
@@ -1469,6 +1497,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			return self::test_mcp_server_connection( $connection );
 		}
 
+		// Handle QuickBooks Online MCP connections separately — the official
+		// hosted endpoint or a self-hosted Streamable HTTP wrapper.
+		if ( 'quickbooks_mcp' === $connection_type ) {
+			return self::test_quickbooks_mcp_connection( $connection );
+		}
+
 		// Pre-flight DNS reachability check (non-blocking diagnostic).
 		$parsed_url = wp_parse_url( $connection['url'] );
 		$host       = isset( $parsed_url['host'] ) ? $parsed_url['host'] : '';
@@ -1717,6 +1751,170 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	}
 
 	/**
+	 * Map a stored QuickBooks Online MCP connection onto an MCP App client config.
+	 *
+	 * Three deployment shapes are supported, mirroring industry practice for
+	 * QuickBooks MCP integrations:
+	 *
+	 * - Official hosted endpoint ({@see QUICKBOOKS_MCP_DEFAULT_URL}) — the
+	 *   connection signs in through the MCP Apps OAuth flow.
+	 * - Self-hosted Streamable HTTP wrapper (Intuit's `http` transport, forks,
+	 *   Cloudflare Workers builds) — the connection carries its own bearer or
+	 *   custom-header credential, or no auth at all on a private network.
+	 * - OAuth against a wrapper that holds Intuit app credentials — the token
+	 *   blob is stored in the encrypted `mcp_oauth` field, exactly like the
+	 *   Upwork and FlowHub gateways.
+	 *
+	 * The realm/company ID and environment are persisted on the connection for
+	 * operator diagnostics and so self-hosted wrappers that scope by realm or
+	 * environment (`X-QB-Realm-Id` / `X-QB-Environment`) can be configured with
+	 * the matching custom-header credential. They are not auto-injected into
+	 * the app config.
+	 *
+	 * @since 1.2.21
+	 *
+	 * @param array $connection Stored QuickBooks MCP connection array.
+	 * @return array MCP App client config.
+	 */
+	public static function build_quickbooks_mcp_app_config( $connection ) {
+		$server_url = isset( $connection['url'] ) && '' !== trim( (string) $connection['url'] )
+			? esc_url_raw( $connection['url'] )
+			: self::QUICKBOOKS_MCP_DEFAULT_URL;
+
+		$auth_type = isset( $connection['auth_type'] ) ? sanitize_key( (string) $connection['auth_type'] ) : 'oauth';
+		if ( ! in_array( $auth_type, array( 'none', 'bearer', 'jwt', 'basic_auth', 'application_password', 'custom_header', 'oauth' ), true ) ) {
+			$auth_type = 'oauth';
+		}
+
+		$config = array(
+			'server_url'  => $server_url,
+			'auth_type'   => 'none',
+			'token'       => '',
+			'header_name' => isset( $connection['mcp_header_name'] ) ? $connection['mcp_header_name'] : '',
+			'verify_ssl'  => array_key_exists( 'mcp_verify_ssl', $connection ) ? (bool) $connection['mcp_verify_ssl'] : true,
+			'timeout'     => ! empty( $connection['mcp_timeout'] ) ? (int) $connection['mcp_timeout'] : 30,
+		);
+
+		switch ( $auth_type ) {
+			case 'none':
+				$config['auth_type'] = 'none';
+				break;
+
+			case 'bearer':
+			case 'jwt':
+				$config['auth_type'] = 'bearer';
+				$config['token']     = isset( $connection['token'] ) ? self::decrypt_value( (string) $connection['token'] ) : '';
+				break;
+
+			case 'basic_auth':
+			case 'application_password':
+				$config['auth_type'] = 'basic';
+				$username            = isset( $connection['username'] ) ? (string) $connection['username'] : '';
+				$password            = isset( $connection['password'] ) ? self::decrypt_value( (string) $connection['password'] ) : '';
+				$config['token']     = $username . ':' . $password;
+				break;
+
+			case 'custom_header':
+				$config['auth_type'] = 'header';
+				$config['token']     = isset( $connection['token'] ) ? self::decrypt_value( (string) $connection['token'] ) : '';
+				break;
+
+			case 'oauth':
+			default:
+				$config['auth_type'] = 'oauth';
+				$oauth_blob          = isset( $connection['mcp_oauth'] ) ? self::decrypt_value( (string) $connection['mcp_oauth'] ) : '';
+				if ( '' !== $oauth_blob ) {
+					$decoded = json_decode( $oauth_blob, true );
+					if ( is_array( $decoded ) ) {
+						$config['oauth_data'] = $decoded;
+						if ( ! empty( $decoded['access_token'] ) ) {
+							$config['token'] = $decoded['access_token'];
+						}
+					}
+				}
+				break;
+		}
+
+		// Carry the Intuit app registration so the OAuth client can authenticate
+		// token requests with HTTP Basic (RFC 6749 §2.3.1) instead of relying on
+		// dynamic client registration. The secret is only held in memory —
+		// sanitize_app_config() never persists these keys to assistant meta.
+		$client_id     = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+		$client_secret = isset( $connection['client_secret'] ) ? trim( (string) self::decrypt_value( (string) $connection['client_secret'] ) ) : '';
+		if ( '' !== $client_id ) {
+			$config['client_id'] = $client_id;
+		}
+		if ( '' !== $client_id && '' !== $client_secret ) {
+			$config['client_secret'] = $client_secret;
+		}
+
+		// Route automatic OAuth refreshes back to the central store.
+		if ( ! empty( $connection['id'] ) ) {
+			$config['connection_ref'] = $connection['id'];
+		}
+
+		return $config;
+	}
+
+	/**
+	 * Test a QuickBooks Online MCP connection with a real JSON-RPC handshake.
+	 *
+	 * OAuth connections without stored tokens return a saved-credentials
+	 * acknowledgement so the admin can finish the browser sign-in from the
+	 * assistant MCP Apps metabox, matching the Upwork/FlowHub behaviour.
+	 *
+	 * @since 1.2.21
+	 *
+	 * @param array $connection Stored QuickBooks MCP connection array.
+	 * @return array|WP_Error Connection test results or error.
+	 */
+	protected static function test_quickbooks_mcp_connection( $connection ) {
+		$config = self::build_quickbooks_mcp_app_config( $connection );
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			$client_file = WP_MCP_AI_PRO_PATH . 'includes/mcp-apps/class-wp-mcp-ai-mcp-app-client.php';
+			if ( file_exists( $client_file ) ) {
+				require_once $client_file;
+			}
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_pro_mcp_client_missing',
+				__( 'The MCP App client is not available.', 'mcp-ai-wpoos-pro' )
+			);
+		}
+
+		if ( 'oauth' === $config['auth_type'] && empty( $config['token'] ) ) {
+			return array(
+				'success'        => true,
+				'quickbooks_mcp' => true,
+				'mcp'            => true,
+				'message'        => __( 'QuickBooks MCP OAuth credentials saved. Complete the sign-in from an assistant MCP Apps connection to finish setup.', 'mcp-ai-wpoos-pro' ),
+			);
+		}
+
+		$client = new WP_MCP_AI_MCP_App_Client( $config );
+		$result = $client->test_connection();
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return array(
+			'success'        => true,
+			'quickbooks_mcp' => true,
+			'mcp'            => true,
+			'message'        => __( 'QuickBooks MCP handshake successful.', 'mcp-ai-wpoos-pro' ),
+			'handshake'      => isset( $result['handshake'] ) ? $result['handshake'] : '',
+			'protocol'       => isset( $result['protocol'] ) ? $result['protocol'] : '',
+			'server_info'    => isset( $result['server_info'] ) ? $result['server_info'] : array(),
+			'tool_count'     => isset( $result['tool_count'] ) ? $result['tool_count'] : null,
+			'latency_ms'     => isset( $result['latency_ms'] ) ? $result['latency_ms'] : null,
+		);
+	}
+
+	/**
 	 * Test an Upwork MCP-mode connection with a real JSON-RPC handshake.
 	 *
 	 * Mirrors {@see test_mcp_server_connection()} for the freelance
@@ -1918,11 +2116,17 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
-		$config = self::build_mcp_app_config_from_connection( $connection );
+		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
 
-		// Route automatic OAuth refreshes back to the central store.
-		if ( ! empty( $connection['id'] ) ) {
-			$config['connection_ref'] = $connection['id'];
+		if ( 'quickbooks_mcp' === $connection_type ) {
+			$config = self::build_quickbooks_mcp_app_config( $connection );
+		} else {
+			$config = self::build_mcp_app_config_from_connection( $connection );
+
+			// Route automatic OAuth refreshes back to the central store.
+			if ( ! empty( $connection['id'] ) ) {
+				$config['connection_ref'] = $connection['id'];
+			}
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_MCP_App_Client' ) ) {
@@ -1939,7 +2143,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			);
 		}
 
-		$cache_key = 'wp_mcp_ai_mcp_server_tools_' . md5( $config['server_url'] . '|' . $config['auth_type'] . '|' . $config['header_name'] );
+		$cache_key = 'wp_mcp_ai_mcp_server_tools_' . md5( $connection_type . '|' . $config['server_url'] . '|' . $config['auth_type'] . '|' . $config['header_name'] );
 
 		if ( ! $refresh ) {
 			$cached = get_transient( $cache_key );
@@ -1982,7 +2186,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				is_wp_error( $tools ) ? 'MCP Server tool discovery failed' : 'MCP Server tools discovered',
 				array(
 					'connection_id'   => $connection['id'],
-					'connection_type' => 'mcp_server',
+					'connection_type' => $connection_type,
 					'url'             => isset( $connection['url'] ) ? $connection['url'] : '',
 					'tool_count'      => is_wp_error( $tools ) ? 0 : count( $tools ),
 				)
@@ -2015,12 +2219,15 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	 * Whether a stored connection can back an MCP App reference entry.
 	 *
 	 * Reference entries may point at dedicated MCP Server connections, at
-	 * Upwork connections running in MCP mode (the official Upwork MCP
-	 * gateway), or at FlowHub connections running in MCP mode (the official
-	 * FlowHub MCP gateway) — all authenticated through the MCP Apps OAuth flow.
+	 * QuickBooks Online MCP connections (the official hosted endpoint or a
+	 * self-hosted Streamable HTTP wrapper), at Upwork connections running in
+	 * MCP mode (the official Upwork MCP gateway), or at FlowHub connections
+	 * running in MCP mode (the official FlowHub MCP gateway) — all
+	 * authenticated through the MCP Apps OAuth flow.
 	 *
 	 * @since 1.1.90
 	 * @since 1.1.92 FlowHub MCP-mode connections are referenceable.
+	 * @since 1.2.21 QuickBooks Online MCP connections are referenceable.
 	 *
 	 * @param array $connection Stored connection array.
 	 * @return bool True when the connection is referenceable from MCP Apps.
@@ -2033,6 +2240,10 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$connection_type = isset( $connection['connection_type'] ) ? $connection['connection_type'] : '';
 
 		if ( 'mcp_server' === $connection_type ) {
+			return true;
+		}
+
+		if ( 'quickbooks_mcp' === $connection_type ) {
 			return true;
 		}
 
@@ -2100,21 +2311,47 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 	/**
 	 * List stored connections that can back an MCP App reference entry.
 	 *
-	 * Merges dedicated MCP Server connections with Upwork and FlowHub
-	 * connections in MCP mode. Used by the assistant MCP Apps metabox to
-	 * offer centrally managed connections as one-click reference entries.
+	 * Merges dedicated MCP Server connections with QuickBooks Online MCP,
+	 * Upwork MCP, and FlowHub MCP connections. Used by the assistant MCP Apps
+	 * metabox to offer centrally managed connections as one-click reference
+	 * entries.
 	 *
 	 * @since 1.1.90
 	 * @since 1.1.92 FlowHub MCP-mode connections are included.
+	 * @since 1.2.21 QuickBooks Online MCP connections are included.
 	 *
 	 * @return array<int, array> Referenceable connection arrays.
 	 */
 	public static function get_mcp_app_connections() {
 		return array_merge(
 			self::get_mcp_server_connections(),
+			self::get_quickbooks_mcp_connections(),
 			self::get_upwork_mcp_connections(),
 			self::get_flowhub_mcp_connections()
 		);
+	}
+
+	/**
+	 * List stored QuickBooks Online MCP connections.
+	 *
+	 * QuickBooks MCP connections point at the official hosted endpoint (or a
+	 * self-hosted Streamable HTTP wrapper) and are offered alongside mcp_server
+	 * connections in the assistant MCP Apps metabox.
+	 *
+	 * @since 1.2.21
+	 *
+	 * @return array<int, array> QuickBooks MCP connection arrays.
+	 */
+	public static function get_quickbooks_mcp_connections() {
+		$quickbooks = array();
+
+		foreach ( self::get_all_connections() as $connection ) {
+			if ( is_array( $connection ) && 'quickbooks_mcp' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) {
+				$quickbooks[] = $connection;
+			}
+		}
+
+		return $quickbooks;
 	}
 
 	/**
@@ -4196,10 +4433,11 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		}
 
 		if ( empty( $connection['url'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_pro_missing_url',
-				__( 'Connection URL is required.', 'mcp-ai-wpoos-pro' )
-			);
+			$url_required_message = isset( $connection['connection_type'] ) && 'quickbooks_mcp' === $connection['connection_type']
+				? __( 'The QuickBooks MCP endpoint URL is required. Use the official hosted endpoint or your self-hosted Streamable HTTP wrapper.', 'mcp-ai-wpoos-pro' )
+				: __( 'Connection URL is required.', 'mcp-ai-wpoos-pro' );
+
+			return new WP_Error( 'wp_mcp_ai_pro_missing_url', $url_required_message );
 		}
 
 		if ( ! filter_var( $connection['url'], FILTER_VALIDATE_URL ) ) {
@@ -4273,21 +4511,25 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		// MCP Server auth-specific requirements. The generic basic/application
 		// password check above covers the Elementor MCP application-password
 		// flow; bearer and custom-header MCP auth need their own checks.
-		if ( 'mcp_server' === $connection_type ) {
+		if ( in_array( $connection_type, array( 'mcp_server', 'quickbooks_mcp' ), true ) ) {
 			if ( 'custom_header' === $auth_type && ( empty( $connection['mcp_header_name'] ) || empty( $connection['token'] ) ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_mcp_header',
-					__( 'Header name and header value are required for custom header authentication on MCP Server connections.', 'mcp-ai-wpoos-pro' )
+					__( 'Header name and header value are required for custom header authentication on MCP connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
 			if ( 'bearer' === $auth_type && empty( $connection['token'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_mcp_bearer',
-					__( 'A bearer token is required for bearer authentication on MCP Server connections.', 'mcp-ai-wpoos-pro' )
+					__( 'A bearer token is required for bearer authentication on MCP connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
+
+		// QuickBooks MCP OAuth connections are intentionally allowed to save
+		// before the browser sign-in completes; the MCP Apps metabox finishes
+		// the flow. The endpoint URL is covered by the generic check above.
 
 		// Validate connection type specific requirements.
 		if ( 'ezuite_erp' === $connection_type ) {
@@ -4562,6 +4804,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'flowhub',
 			'payhere',
 			'quickbooks',
+			'quickbooks_mcp',
 			'quickbooks_desktop',
 			'ezuite_erp',
 			'shipengine',
