@@ -83,6 +83,8 @@ class EndpointCapabilitiesTest extends TestCase
             'mcpApps',
             // 090-i — assistant tool shortcuts (read-only, shared shaping).
             'shortcuts',
+            // 090-i — the command-centre overview (sourced KPIs + activity feed).
+            'commandCenter',
         ] as $key) {
             $this->assertTrue($endpoints[$key] ?? false, $key.' should be available.');
         }
@@ -97,7 +99,6 @@ class EndpointCapabilitiesTest extends TestCase
             'chatChannels',
             'remoteSites',
             'mediaCc',
-            'commandCenter',
             // Nine command handlers that mutate Pro state (schedules,
             // workflows, agents) plus the base executor — a toolkit, not a
             // port. Reclassified from runtime-adaptable once the Pro

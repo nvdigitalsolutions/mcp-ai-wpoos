@@ -21,7 +21,13 @@ export interface CommandCenterKpis {
 	active_tasks: number;
 	pending_approvals: number;
 	tokens_today: number;
-	uptime: number;
+	/**
+	 * Healthy share of the health samples in the window, or `null` when none
+	 * have been recorded. WordPress always reports a number; the Laravel
+	 * runtime reports `null` until its sampler has run, and the console renders
+	 * an em dash rather than a misleading `0`.
+	 */
+	uptime: number | null;
 }
 
 export interface AgentStatusEntry {

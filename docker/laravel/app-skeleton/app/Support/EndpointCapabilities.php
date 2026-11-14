@@ -144,7 +144,7 @@ final class EndpointCapabilities
         'chat' => self::ROUTE,
         'chatChannels' => self::TOOLKIT_SHAPED,
         'chatClient' => self::ROUTE,
-        'commandCenter' => self::RUNTIME_ADAPTABLE,
+        'commandCenter' => self::ROUTE,
         'contentGraph' => self::EXTERNAL_PRODUCT,
         'cost' => self::ROUTE,
         'dashboardsSchema' => self::ROUTE,

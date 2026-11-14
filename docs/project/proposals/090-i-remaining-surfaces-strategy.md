@@ -1,8 +1,7 @@
 # Proposal 090-i — The remaining eleven console surfaces
 
-**Status:** Recommendation recorded 2026-11-14. Decision needed on two items (§9).
-**Context:** `090-b` has driven the console contract from 17 unavailable keys to 11. Every *portable* key is now live: **34 of 45** route-backed keys report `true` from `/features`.
-**Remaining:** `mcpApps`, `chatChannels`, `remoteSites`, `mediaCc`, `commandCenter`, `shortcuts`, `slashCommands`, `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor`.
+**Status:** Recommendation recorded 2026-11-14; MCP apps, tool shortcuts and the command centre shipped the same day. **37 of 45** route-backed keys now report `true` from `/features`.
+**Remaining:** `chatChannels`, `remoteSites`, `mediaCc`, `slashCommands`, `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` — one feature-sized port, two toolkit/external dependencies, four discovered products and one unbuilt manifest engine.
 **Related:** `090-b-laravel-admin-surfaces-proposal.md` (ADR-6, ADR-8), `090-d-selective-tool-port.md`, `090-h-workflow-engine-proposal.md`.
 
 ---
@@ -99,7 +98,7 @@ The four products are separate plugins with their own REST bases (`nvoos-content
 |---|---|---|---|
 | `mcpApps` | **Extract to core**, add connection store + REST + tool bridging | **L** (3 PRs) | Licence decision (§9), `HttpClientInterface` |
 | `remoteSites` | **Fold into the connection registry**; alias the key once generic connections land | M | `mcpApps` |
-| `commandCenter` | Port — aggregate agents, runs, schedules, cost | **S** | — |
+| `commandCenter` | Port — aggregate agents, runs, schedules, cost | **S** | Health + activity stores (shipped #7748) |
 | `shortcuts` | Port — assistant-scoped presets record | **S** | — |
 | `slashCommands` | Port catalogue + executor over `ToolRegistry`; keep the audit table | M | — |
 | `chatChannels` | Manifest-driven communications toolkit (`toolkits` engine) | M | Toolkit manifest(s) |
@@ -115,7 +114,7 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
 (a) extract the client + wire corpus; (b) connection store + `GET/PUT /api/v1/mcp-apps/{assistant}` with masked secrets and an SSRF/allowlist guard; (c) tool bridging into the registry as `mcp__<connection>__<tool>`, inheriting each tool's capability gate. *Acceptance:* a connection to a local MCP server lists tools, calls one, and a private-IP target is refused with a typed error; `mcpApps` reports `true`.
 
 **Phase 3 — The cheap data surfaces (2 PRs, S+M).**
-`commandCenter`, `shortcuts`, then `slashCommands` (catalogue + executor + audit), `mediaCc` probe. *Acceptance:* each key flips; slash-command execution writes an audit row and honours `required_capability`.
+`commandCenter` ✅ (with `shortcuts` in #7744), then `slashCommands` (catalogue + executor + audit), `mediaCc` probe. *Acceptance:* each key flips; slash-command execution writes an audit row and honours `required_capability`.
 
 **Phase 4 — Connected apps (product-owned).**
 `connectedApps` registry + REST probe; start with Content Graph (its `nvoos-content-graph/v1` contract is already the console's target). `remoteSites` folds into Phase 2 as a second connection kind. *Acceptance:* a configured upstream lights its island; an unconfigured one reports `external_product` with no 404 noise. A product that later exposes an MCP server moves from probe to `mcpApps` with no console change.
@@ -152,11 +151,13 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
    - The licence gate gained the rule that made the earlier gap visible: it banned GPL inside a proprietary tree but not MIT, so a mechanical copy would have passed CI. It now checks the direction as well as the crossing.
    - Remaining slices all shipped: request envelopes (#7741), OAuth discovery (#7740) and the Laravel client (#7742). The Laravel surfaces that consume them landed in #7743 (MCP apps) and #7744 (tool shortcuts).
 2. **`chatChannels` scope — open.** A communications toolkit is only worth porting if a Laravel estate actually sends SMS/email. **Recommendation:** defer until a toolkit manifest exists; classify it `toolkit-shaped` in the capability manifest meanwhile (that is the shipped reason code — `not_implemented` was superseded when the v2 taxonomy landed in #7737).
-3. **`commandCenter` — deferred: a telemetry gap, not a port.** The Pro overview aggregates agent sessions, presence, approvals, token spend, uptime and an activity feed from `WP_MCP_AI_Pro_Agent_Command_Center`'s static collectors. Four of the six KPIs have honest sources here — `assistants` for agents, `nvoos_approvals` for pending approvals, `Nvoos\Laravel\Adapter\TokenUsage` for tokens today, `nvoos_workflow_runs` for active work — and two do not:
-   - **`uptime`** has no metrics store. A KPI row cannot ship a fabricated percentage, and a `0` beside four real numbers reads as an outage. `orchestration/stats` reports health as a single status, which is not the same measurement.
-   - **`recent_events`** is an *agent activity* feed in Pro. Workflow runs and approvals are a different semantic, so substituting them would populate the feed with the wrong events while looking correct.
-   Five real tiles make the missing sixth *more* dangerous, not less. **Recommendation:** keep the key `false` at `runtime-adaptable` until two stores exist — a `nvoos_health_samples` table with a windowed uptime calculation, and an activity-event store that both the chat path and the orchestration path write to. Both are product decisions rather than parity work, which is why they are recorded here instead of being invented in a controller.
-   4. **`remoteSites` — deferred: feature-sized, not a slice.** The Pro implementation is 6,452 lines across a 5,276-line manager and a 1,176-line controller. It is not a thin surface over stored data:
+3. **`commandCenter` — shipped once the two missing stores existed.** The Pro overview aggregates agent sessions, presence, approvals, token spend, uptime and an activity feed from `WP_MCP_AI_Pro_Agent_Command_Center`'s static collectors. Four of the six KPIs had honest sources here — `assistants` for agents, `nvoos_approvals` for pending approvals, `Nvoos\Laravel\Adapter\TokenUsage` for tokens today, `nvoos_workflow_runs` for active work — and two did not:
+   - **`uptime`** had no metrics store. A KPI row cannot ship a fabricated percentage, and a `0` beside four real numbers reads as an outage.
+   - **`recent_events`** is an *agent activity* feed in Pro. Substituting workflow runs would have populated the feed with the wrong semantic while looking correct.
+
+   The two stores were built in #7748 (`nvoos_health_samples`, `nvoos_activity_events`, `nvoos:sample-health`), which is exactly what this section asked for, and `GET /api/v1/pro/command-center/overview` followed. Two details make the surface honest rather than merely present: **`uptime` is `null`** until a sample exists (the console renders an em dash, not `0%`), and **`agents_online` is `publish` assistants** — this runtime has no presence channel, so "online" means "enabled", the same reading `orchestration/stats` uses. `agent_statuses.last_active` is `updated_at`, not a heartbeat, and `active_tasks` is queue depth, because workflow runs here are synchronous. The token table is now created by an app migration — the adapter shipped one, but the app never loaded it, so `tokens_today` and the Analytics page read zero on a fresh install.
+
+4. **`remoteSites` — deferred: feature-sized, not a slice.** The Pro implementation is 6,452 lines across a 5,276-line manager and a 1,176-line controller. It is not a thin surface over stored data:
       - **Credential storage with its own scheme.** The manager encrypts per-field with AES-256-CBC behind a `V2` prefix, detects legacy plaintext and re-encrypts on save, and re-encrypts on export/import.
       - **Fifteen connection types** across `website`, `ai`, `email`, `google` and `chat` categories, each with its own field schema.
       - **Per-provider verification** (`POST /{id}/test`), which is integrations rather than parity.

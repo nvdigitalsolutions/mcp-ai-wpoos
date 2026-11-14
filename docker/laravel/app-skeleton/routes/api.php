@@ -5,6 +5,7 @@ use App\Http\Controllers\ApprovalsController;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\BlueprintController;
 use App\Http\Controllers\AssistantPortabilityController;
+use App\Http\Controllers\CommandCenterController;
 use App\Http\Controllers\ChatStreamController;
 use App\Http\Controllers\DiagnosticsController;
 use App\Http\Controllers\FeaturesController;
@@ -200,6 +201,10 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/cost/dashboard-summary', [AnalyticsController::class, 'summary']);
             Route::get('/cost/trend', [AnalyticsController::class, 'trend']);
             Route::get('/cost/by-provider', [AnalyticsController::class, 'byProvider']);
+
+            // 090-i — the console Dashboard's command-centre section. Six
+            // sourced KPIs, a derived agent-status map and the activity feed.
+            Route::get('/pro/command-center/overview', [CommandCenterController::class, 'overview']);
 
             Route::post('/assistants', [AssistantController::class, 'store']);
             Route::get('/assistants/{assistant}', [AssistantController::class, 'show']);
