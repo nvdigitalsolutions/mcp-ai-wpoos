@@ -19,6 +19,7 @@ Services:
 | `setup` | One-shot: copy `app-skeleton`, Composer install, migrate, exit |
 | `app` | Octane/FrankenPHP on <http://localhost:8001> |
 | `worker` | `queue:work redis --queue=oos` |
+| `scheduler` | `schedule:work` — one tick a minute: `nvoos:run-schedules` (due Schedule Manager rows), `nvoos:fire-triggers`, `nvoos:sample-health`, the optional media sweep |
 | `db` | MySQL 8 |
 | `redis` | Redis 7 (cache + queue) |
 

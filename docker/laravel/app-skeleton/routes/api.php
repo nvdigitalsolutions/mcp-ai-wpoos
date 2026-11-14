@@ -380,6 +380,7 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::get('/schedules/{id}/results', [SchedulesController::class, 'results']);
 
                 Route::get('/presets', [PresetsController::class, 'index']);
+                Route::get('/presets/{id}', [PresetsController::class, 'show']);
                 Route::post('/presets/{id}/install', [PresetsController::class, 'install']);
             });
 
