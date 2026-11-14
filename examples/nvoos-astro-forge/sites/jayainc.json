@@ -186,7 +186,7 @@
 				"titleStyle": {
 					"size": "72px",
 					"weight": "500",
-					"lineHeight": "79px",
+					"lineHeight": "52px",
 					"letterSpacing": "-2.1px"
 				},
 				"titleDivider": {
@@ -396,7 +396,8 @@
 				"id": "48ace0b",
 				"anchor": "contact",
 				"bgColor": "#f6f6f6",
-				"padding": "100px 0px 0px 0px",
+				"padding": "100px 0px 64px 0px",
+				"minHeight": "0",
 				"columns": [
 					{
 						"width": 16
@@ -918,6 +919,26 @@
 			"path": "sections.5e78df1.minHeight",
 			"value": "0",
 			"why": "Drop the measured 1216px floor so the products band sizes to its content; the CTA rhythm is controlled by the 40px padding-bottom and the frontend's 40px links margin."
+		},
+		{
+			"path": "sections.48ace0b.padding",
+			"value": "100px 0px 64px 0px",
+			"why": "Operator override: the logo band's measured 1533px mobile floor assumed the logos stacked. The responsive 6/3/2-column grid sizes to content, and the 64px bottom pad separates it from the footer."
+		},
+		{
+			"path": "sections.48ace0b.minHeight",
+			"value": "0",
+			"why": "Drop the measured 316/956/1533px floor so the logo band sizes to its responsive grid instead of leaving a large empty strip."
+		},
+		{
+			"path": "sections.a4ad586.titleStyle",
+			"value": {
+				"size": "72px",
+				"weight": "500",
+				"lineHeight": "52px",
+				"letterSpacing": "-2.1px"
+			},
+			"why": "Operator override: the 72px hero headline reads too loose at the source's 79px line-height; tighten it to 52px. Tablet/mobile facts stay as measured."
 		}
 	],
 	"vocabulary": {
@@ -1273,7 +1294,7 @@
 				"h2": {
 					"size": "72px",
 					"weight": "500",
-					"lineHeight": "79px",
+					"lineHeight": "52px",
 					"letterSpacing": "-2.1px",
 					"transform": "none",
 					"align": "start",
