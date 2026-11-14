@@ -1,7 +1,7 @@
 # Proposal 090-h — The workflow engine on the Laravel runtime
 
 **Status:** Decision recorded 2026-11-14 — **Laravel-native, phased, three increments.**
-**Shipped:** H1 + H2 + H3 (2026-11-14). All four engine keys report `true`; no workflow key remains false in the console contract.
+**Shipped:** H1 + H2 + H3, including the `trigger → execute` wiring (2026-11-14). All four engine keys report `true`; no workflow key remains false in the console contract.
 **Unblocks:** `workflowBuilder`, `workflowPresets`, `workflowNodes`, `workflowRuns` (4 of the 17 remaining console endpoint keys).
 **Related:** `090-b-laravel-admin-surfaces-proposal.md` ADR-5, ADR-6, ADR-8; `090-d-selective-tool-port.md`.
 
@@ -102,7 +102,9 @@ and that gate belongs to the H3 executor, not the catalogue.
 - `POST /api/v1/orchestration/workflows/{id}/execute` — Kahn topological order over the saved graph, one node at a time, each node's output available downstream.
 - `GET /api/v1/orchestration/runs?workflow_id=` — run summaries, newest first (50); `GET /runs/{id}` adds input, output, per-node events and the error.
 - `POST /api/v1/pro/workflow-builder/nodes/execute` — the canvas's per-node run button.
-- Runs are append-only rows in `nvoos_workflow_runs`: status `running|completed|failed`, tool-call count, duration, and the executor's per-node record in `events`.
+- `POST /api/v1/orchestration/triggers/{id}/fire` — run a trigger's workflow now; the manual half of `trigger → execute`, and how an operator checks a trigger before trusting the scheduler.
+- `php artisan nvoos:fire-triggers` — evaluates `cron_schedule` triggers (`config.cron` or `config.schedule`, accepting `hourly`/`twicedaily`/`daily`/`weekly`/`monthly` or a five-field expression, with `config.every_minutes` as a fallback) and fires the slots that have not run. Registered `everyMinute()->withoutOverlapping()`, so it fires only where the Laravel scheduler runs.
+- Runs are append-only rows in `nvoos_workflow_runs`: status `running|completed|failed`, `source` (`manual`/`trigger`), `trigger_id`, tool-call count, duration, and the executor's per-node record in `events`.
 
 **Node types.** `tool` (registry call, capability-gated), `condition` (`node_2.pageviews < 100`), `agent` (chat orchestrator, assistant resolved by id or the site default), `delay` (capped), plus `input`/`output` pass-throughs. Any other type without a `toolSlug` is a no-op, so a graph authored for WordPress still runs its tool nodes here.
 
@@ -112,7 +114,7 @@ and that gate belongs to the H3 executor, not the catalogue.
 
 **Cost and safety.** Tool nodes reuse `ToolRegistry::execute()`, so each tool's `required_capability` and the pre-execution listener (destructive-ops gate) apply unchanged; the caller's identity is carried, never elevated. The executor adds a 200-node and a 50-tool-call ceiling per run. Agent nodes run through `ChatOrchestrator` with the assistant's own provider/model/tools and a 5-iteration cap.
 
-**Not carried over.** `action` nodes need a command bus this runtime does not have, so the single-node endpoint answers 501 and the executor treats them as no-ops. Loops and human-in-the-loop pauses stay out of scope.
+**Not carried over.** `action` nodes need a command bus this runtime does not have, so the single-node endpoint answers 501 and the executor treats them as no-ops. Event-sourced trigger types (`comment_published`, `file_upload`, a WordPress `save_post`) have no Laravel counterpart yet — they are stored and manually fireable, but nothing dispatches them; `cron_schedule` is the scheduled type. Loops and human-in-the-loop pauses stay out of scope.
 
 **Acceptance:** a two-node preset executes end-to-end against the registry, the run row records status/duration/tool calls, a missing tool fails the run and names the node, and a deliberately cyclic graph is rejected at save time rather than at execution time. All four are covered by `WorkflowTest`, `WorkflowRunTest` and the core executor suite.
 
@@ -123,7 +125,7 @@ and that gate belongs to the H3 executor, not the catalogue.
 | The executor is an arbitrary tool-invocation surface | It runs through the registry and inherits each tool's `required_capability`; the caller's identity is carried, never elevated. Same gate as `POST /tools`. |
 | Runaway cost from a wide graph | Per-node iteration cap plus a run-level tool-call ceiling; the run row records spend so the existing cost surface accounts for it. |
 | Graph drift between runtimes | The graph is JSON in a documented shape; a WP-exported graph imports unchanged, and H2's save-time validation catches what it cannot execute. |
-| Scope creep into triggers | Triggers already ship. H3 wires `trigger → execute` last, so a broken engine cannot break scheduling. |
+| Scope creep into triggers | Triggers already ship. The dispatcher landed **after** the executor was proven (2026-11-14), so a broken engine could never break scheduling: `nvoos:fire-triggers` reuses the same `WorkflowRunner` the console uses and records the same run row. |
 
 ## 7. What this does not settle
 

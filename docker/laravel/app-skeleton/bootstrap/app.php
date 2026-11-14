@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureProEntitlement;
 use App\Http\Middleware\EnsureSpikeEnvironment;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,6 +19,17 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         __DIR__.'/../app/Console/Commands',
     ])
+    ->withSchedule(function (Schedule $schedule): void {
+        // 090-h — `cron_schedule` workflow triggers. This entry only fires
+        // where the Laravel scheduler runs (`php artisan schedule:work`, or
+        // `schedule:run` from cron); the default compose worker runs
+        // `queue:work` alone, so a deployment that relies on triggers must
+        // run the scheduler too. `nvoos:fire-triggers --dry-run` lists what
+        // would fire.
+        $schedule->command('nvoos:fire-triggers')
+            ->everyMinute()
+            ->withoutOverlapping();
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         // Sanctum SPA cookie mode (Proposal 090-B, ADR-4). Same-origin
         // console requests authenticate with the session cookie; MCP/API

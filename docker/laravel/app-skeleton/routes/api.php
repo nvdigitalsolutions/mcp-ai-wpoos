@@ -212,6 +212,10 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::post($triggersPath, [TriggersController::class, 'store']);
                 Route::put($triggersPath.'/{id}', [TriggersController::class, 'update']);
                 Route::delete($triggersPath.'/{id}', [TriggersController::class, 'destroy']);
+                // 090-h — fire the trigger's workflow now (manual half of
+                // trigger → execute; the scheduled half is nvoos:fire-triggers).
+                Route::post($triggersPath.'/{id}/fire', [TriggersController::class, 'fire'])
+                    ->whereNumber('id');
             }
 
             // Token manager — the credentials `AuthProvider::issueCredential()`
