@@ -85,7 +85,6 @@ class EndpointCapabilitiesTest extends TestCase
             'workflowNodes',
             'workflowRuns',
             // Surfaces whose stores exist but whose routes do not.
-            'threads',
             'dashboardsSchema',
             // Deliberately deferred inside the assistant editor.
             'skills',

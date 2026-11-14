@@ -77,7 +77,6 @@ export interface ProSpaEndpoints {
 	chatClient: string;
 	transcripts: string;
 	memory: string;
-	threads: string;
 	tools: string;
 	/** WordPress media upload endpoint (v0.9.0). */
 	upload: string;
@@ -318,7 +317,6 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 		typeof e.chatClient !== 'string' ||
 		typeof e.chat !== 'string' ||
 		typeof e.transcripts !== 'string' ||
-		typeof e.threads !== 'string' ||
 		typeof e.tools !== 'string' ||
 		typeof e.assistants !== 'string' ||
 		typeof e.settings !== 'string'
@@ -335,7 +333,6 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			chatClient: e.chatClient,
 			transcripts: e.transcripts,
 			memory: typeof e.memory === 'string' ? e.memory : '',
-			threads: e.threads,
 			tools: e.tools,
 			upload: typeof e.upload === 'string' ? e.upload : '',
 			assistants: e.assistants,

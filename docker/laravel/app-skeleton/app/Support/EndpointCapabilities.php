@@ -42,7 +42,6 @@ final class EndpointCapabilities
         'chatClient' => 'api/v1/chat-client',
         'transcripts' => 'api/v1/chat-transcripts',
         'memory' => 'api/v1/chat-memory',
-        'threads' => 'api/v1/threads',
         'tools' => 'api/v1/tools',
         'upload' => 'api/v1/media',
         'assistants' => 'api/v1/assistants',

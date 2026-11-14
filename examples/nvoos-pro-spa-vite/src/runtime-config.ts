@@ -7,7 +7,7 @@
  * plugin's REST conventions for any WordPress site running NV oOS:
  *
  *   {site}/wp-json/mcp-ai/v1/{chat,chat-client,chat-transcripts,chat-memory,
- *     threads,tools,assistants,settings,approvals}
+ *     tools,assistants,settings,approvals}
  *   {site}/wp-json/mcp-ai-pro/v1/{workflows,tool-shortcuts,
  *     slash-commands,okf}
  *   {site}/wp-json/wp/v2/media
@@ -120,7 +120,6 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		chatClient: `${core}/chat-client`,
 		transcripts: `${core}/chat-transcripts`,
 		memory: `${core}/chat-memory`,
-		threads: `${core}/threads`,
 		tools: `${core}/tools`,
 		assistants: `${core}/assistants`,
 		// GET/POST /mcp-ai/v1/settings (manage_options, secrets masked) — the
