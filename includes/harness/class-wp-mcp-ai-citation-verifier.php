@@ -81,34 +81,62 @@ class WP_MCP_AI_Citation_Verifier {
 			return $content;
 		}
 
-		// Extract factual claims from the response.
-		$claims = self::extract_claims( $content );
-		if ( empty( $claims ) ) {
-			return $content;
-		}
-
-		// Verify each claim against retrieved sources.
+		// The analysis lives in lib/core so both runtimes judge claims the same
+		// way. The warning text stays here because it is translated. lib/ is
+		// stripped from wp.org base builds, so the local path below remains.
 		$unverified_count = 0;
-		$verified_claims  = array();
+		$verified_count   = 0;
+		$total_claims     = 0;
 		$annotations      = array();
 
-		foreach ( $claims as $claim ) {
-			$verified = false;
-			$best_source = '';
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\CitationVerifier' ) ) {
+			$result = \Nvoos\Core\Domain\Service\Harness\CitationVerifier::verify( $content, $sources );
 
-			foreach ( $sources as $source ) {
-				$similarity = self::compute_similarity( $claim, $source );
-				if ( $similarity >= self::MIN_SIMILARITY ) {
-					$verified     = true;
-					$best_source  = $source;
-					break;
-				}
+			$total_claims     = (int) $result['total'];
+			$unverified_count = (int) $result['unverified'];
+			$verified_count   = (int) $result['verified'];
+
+			if ( 0 === $total_claims ) {
+				return $content;
 			}
 
-			if ( $verified ) {
-				$verified_claims[] = $claim;
-			} else {
-				$unverified_count++;
+			foreach ( $result['claims'] as $claim ) {
+				if ( ! empty( $claim['verified'] ) ) {
+					continue;
+				}
+
+				$annotations[] = sprintf(
+					/* translators: %s: the unverified claim text */
+					__( '[⚠️ Unverified claim: "%s"]', 'mcp-ai-wpoos' ),
+					wp_trim_words( $claim['text'], 15 )
+				);
+			}
+		} else {
+			// Extract factual claims from the response.
+			$claims = self::extract_claims( $content );
+			if ( empty( $claims ) ) {
+				return $content;
+			}
+
+			$total_claims = count( $claims );
+
+			// Verify each claim against retrieved sources.
+			foreach ( $claims as $claim ) {
+				$verified = false;
+
+				foreach ( $sources as $source ) {
+					if ( self::compute_similarity( $claim, $source ) >= self::MIN_SIMILARITY ) {
+						$verified = true;
+						break;
+					}
+				}
+
+				if ( $verified ) {
+					++$verified_count;
+					continue;
+				}
+
+				++$unverified_count;
 				$annotations[] = sprintf(
 					/* translators: %s: the unverified claim text */
 					__( '[⚠️ Unverified claim: "%s"]', 'mcp-ai-wpoos' ),
@@ -119,7 +147,6 @@ class WP_MCP_AI_Citation_Verifier {
 
 		// If there are unverified claims, prepend a warning.
 		if ( $unverified_count > 0 ) {
-			$total_claims = count( $claims );
 			$warning = sprintf(
 				"\n\n---\n🔍 *%d of %d claims in this response could not be verified against retrieved sources. Please verify independently.*\n",
 				$unverified_count,
@@ -147,7 +174,7 @@ class WP_MCP_AI_Citation_Verifier {
 		 * @param int    $unverified_count Number of unverified claims.
 		 * @param int    $total_claims     Total claims extracted.
 		 */
-		do_action( 'wp_mcp_ai_citation_verification_complete', $content, $assistant_id, count( $verified_claims ), $unverified_count, count( $claims ) );
+		do_action( 'wp_mcp_ai_citation_verification_complete', $content, $assistant_id, $verified_count, $unverified_count, $total_claims );
 
 		return $content;
 	}
