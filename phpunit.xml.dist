@@ -54,6 +54,7 @@
                  breaks the bare-environment feature-flag contract. -->
             <exclude>addons/pro/tests/class-media-studio-stub.php</exclude>
             <exclude>addons/pro/tests/class-document-editor-stub.php</exclude>
+            <exclude>addons/pro/tests/class-wp-mcp-ai-test-capture-mcp-client.php</exclude>
             <exclude>addons/saas-controller/tests/bootstrap.php</exclude>
             <exclude>addons/checkout-api/tests/bootstrap.php</exclude>
             <exclude>addons/nvoos-design-system/tests/bootstrap.php</exclude>

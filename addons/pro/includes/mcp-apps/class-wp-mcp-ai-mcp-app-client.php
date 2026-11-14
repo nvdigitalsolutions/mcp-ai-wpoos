@@ -327,15 +327,10 @@ class WP_MCP_AI_MCP_App_Client {
 	 * @return array _meta parameters to merge into request params.
 	 */
 	protected function build_request_meta() {
-		return array(
-			'_meta' => array(
-				'io.modelcontextprotocol/protocolVersion' => self::PROTOCOL_VERSION,
-				'io.modelcontextprotocol/clientInfo'      => array(
-					'name'    => 'NV oOS MCP App Client',
-					'version' => defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.9.0',
-				),
-				'io.modelcontextprotocol/clientCapabilities' => new stdClass(),
-			),
+		return \Nvoos\Core\Domain\Mcp\McpRequestEnvelope::meta(
+			self::PROTOCOL_VERSION,
+			'NV oOS MCP App Client',
+			defined( 'WP_MCP_AI_PRO_VERSION' ) ? WP_MCP_AI_PRO_VERSION : '1.9.0'
 		);
 	}
 
@@ -512,22 +507,21 @@ class WP_MCP_AI_MCP_App_Client {
 	 * @return array|WP_Error Array of tool definitions on success, WP_Error on failure.
 	 */
 	public function list_tools() {
-		$result = $this->send_request( 'tools/list', new stdClass() );
+		$result = $this->send_request(
+			'tools/list',
+			\Nvoos\Core\Domain\Mcp\McpRequestEnvelope::toolsListParams()
+		);
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
-		if ( ! isset( $result['tools'] ) || ! is_array( $result['tools'] ) ) {
-			return array();
-		}
-
 		// Remember the server-declared freshness bound for the discovery
 		// cache (SEP-2549): the registry caps its transient TTL at this
 		// value so a server that changes its catalog is re-polled on time.
-		$this->last_tools_ttl_ms = isset( $result['ttlMs'] ) ? absint( $result['ttlMs'] ) : 0;
+		$this->last_tools_ttl_ms = \Nvoos\Core\Domain\Mcp\McpRequestEnvelope::toolsTtlMs( $result );
 
-		return $result['tools'];
+		return \Nvoos\Core\Domain\Mcp\McpRequestEnvelope::tools( $result );
 	}
 
 	/**
@@ -550,9 +544,11 @@ class WP_MCP_AI_MCP_App_Client {
 	 * @return array|WP_Error Tool result on success, WP_Error on failure.
 	 */
 	public function call_tool( $tool_name, array $arguments = array() ) {
-		$params = array(
-			'name'      => sanitize_text_field( $tool_name ),
-			'arguments' => ! empty( $arguments ) ? $arguments : new stdClass(),
+		// Sanitisation stays here — it is a WordPress boundary concern; the
+		// shared envelope owns only the wire shape.
+		$params = \Nvoos\Core\Domain\Mcp\McpRequestEnvelope::toolCallParams(
+			sanitize_text_field( $tool_name ),
+			$arguments
 		);
 
 		return $this->send_request( 'tools/call', $params );
@@ -565,17 +561,16 @@ class WP_MCP_AI_MCP_App_Client {
 	 * @return array|WP_Error Array of resource definitions, WP_Error on failure.
 	 */
 	public function list_resources() {
-		$result = $this->send_request( 'resources/list', new stdClass() );
+		$result = $this->send_request(
+			'resources/list',
+			\Nvoos\Core\Domain\Mcp\McpRequestEnvelope::resourcesListParams()
+		);
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
 
-		if ( ! isset( $result['resources'] ) || ! is_array( $result['resources'] ) ) {
-			return array();
-		}
-
-		return $result['resources'];
+		return \Nvoos\Core\Domain\Mcp\McpRequestEnvelope::resources( $result );
 	}
 
 	/**
@@ -586,8 +581,8 @@ class WP_MCP_AI_MCP_App_Client {
 	 * @return array|WP_Error Resource content, WP_Error on failure.
 	 */
 	public function read_resource( $uri ) {
-		$params = array(
-			'uri' => sanitize_text_field( $uri ),
+		$params = \Nvoos\Core\Domain\Mcp\McpRequestEnvelope::resourceReadParams(
+			sanitize_text_field( $uri )
 		);
 
 		return $this->send_request( 'resources/read', $params );
@@ -688,7 +683,7 @@ class WP_MCP_AI_MCP_App_Client {
 		// Inject _meta for every request except initialize and server/discover.
 		// The _meta envelope is a 2026-07-28 construct — skip it when a legacy
 		// session negotiated an older protocol version.
-		if ( ! in_array( $method, array( 'initialize', 'server/discover' ), true ) && '' === $this->negotiated_protocol_version ) {
+		if ( \Nvoos\Core\Domain\Mcp\McpRequestEnvelope::injectsMeta( $method, $this->negotiated_protocol_version ) ) {
 			// list_tools() and friends pass new stdClass() as params; the
 			// _meta envelope requires an array before merging.
 			if ( ! is_array( $params ) ) {
