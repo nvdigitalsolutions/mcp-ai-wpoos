@@ -9,6 +9,7 @@ import {
   buildConsoleRuntime,
   fetchCurrentUser,
   fetchFeatureMap,
+  fetchRuntimeAvailability,
   fetchSessionNonce,
   UnauthorizedError,
 } from '../runtime-config';
@@ -219,6 +220,104 @@ describe('fetchFeatureMap', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
     await expect(fetchFeatureMap()).resolves.toEqual({});
+    expect(warn).toHaveBeenCalled();
+  });
+});
+
+describe('endpoint availability (090-B)', () => {
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const admin = { id: 7, capabilities: ['manage_options', 'edit_posts'] };
+
+  it('blanks an endpoint the backend reports it cannot serve', () => {
+    const runtime = buildConsoleRuntime({
+      user: admin,
+      endpoints: { workflows: false, tokenManager: false },
+    });
+
+    expect(runtime.endpoints.workflows).toBe('');
+    expect(runtime.endpoints.tokenManager).toBe('');
+
+    // Everything the backend did not disclaim still resolves.
+    expect(runtime.endpoints.assistants).toContain('/assistants');
+  });
+
+  it('keeps endpoints when the backend serves them', () => {
+    const runtime = buildConsoleRuntime({
+      user: admin,
+      endpoints: { workflows: true, approvals: true },
+    });
+
+    expect(runtime.endpoints.workflows).not.toBe('');
+    expect(runtime.endpoints.approvals).not.toBe('');
+  });
+
+  it('fails open when the backend sends no endpoint map', () => {
+    // Older builds predate the map; hiding every page would be worse than a
+    // page that reports its own unavailable state.
+    const runtime = buildConsoleRuntime({ user: admin });
+
+    expect(runtime.endpoints.workflows).not.toBe('');
+    expect(runtime.endpoints.tokenManager).not.toBe('');
+  });
+});
+
+describe('fetchRuntimeAvailability', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns both maps from a single request', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: {
+          features: { docs_hub: false },
+          endpoints: { workflows: false, assistants: true },
+        },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchRuntimeAvailability('nonce')).resolves.toEqual({
+      features: { docs_hub: false },
+      endpoints: { workflows: false, assistants: true },
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails open to empty maps when the endpoint map is absent', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({ success: true, data: { features: { pro: true } } }),
+      ),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: { pro: true },
+      endpoints: {},
+    });
+  });
+
+  it('fails open to empty maps on HTTP errors', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ code: 'rest_forbidden' }, 403)),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: {},
+      endpoints: {},
+    });
     expect(warn).toHaveBeenCalled();
   });
 });

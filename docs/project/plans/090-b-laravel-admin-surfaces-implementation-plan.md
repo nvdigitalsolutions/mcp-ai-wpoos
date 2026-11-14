@@ -69,6 +69,7 @@ Rank Math).
 | Schedule presets, record remote/research, thumbnails | **Pending (Phases 3–4)** | §7–§8 remainder |
 | Generic toolkit console screens | **Done (Phase 4.2)** | `spa-v2/src/features/toolkits/**`, `api/toolkits.ts`, `styles/toolkits.css` |
 | Console session/CSRF regression fixes | **Done** | single session store on login (`routes/api.php`), `AcceptWpNonce` header alias, stateful test origin |
+| Endpoint availability map | **Done (2026-11-14)** | `GET /api/v1/features` → `data.endpoints`, derived from the router by `App\Support\EndpointCapabilities`; the console blanks a `false` key in `runtime-config.ts`, so the page renders its existing unavailable state instead of a 404. `EndpointCapabilitiesTest` pins both directions and the key set |
 
 **Validation record (2026-11-12):**
 
@@ -750,6 +751,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 | Schedule execution model | Synchronous | `trigger` runs the handler inline and records the run; move to queued execution when long-running toolkits are ported |
 | Media thumbnails / alt text | Not ported | `media_details.sizes` is empty and `alt_text` is write-once blank; add a thumbnail pipeline and an update route when the media toolkit is ported |
 | WP-native integrations | Non-goal | Deep-link or mark unavailable |
+| Console endpoints with no Laravel route | **Now visible** | 23 of the console's ~47 endpoint keys report `false` from `/features` and are blanked client-side: the orchestration engine (`workflows`, builder/presets/nodes/runs, `orchestrationStats`), `tokenManager`, `threads`, `analytics`, `dashboardsSchema`, `skills`, `mcpApps`, and the WordPress-only surfaces. Wiring each one is now a page-at-a-time decision with the gap visible in the UI instead of a 404. Add a CI check that every non-empty endpoint resolves on each backend before adding more pages |
 | Pro tool catalogue on Laravel | **Decided (option 3)** | Selective port by cluster: 18 tools are dependency-free, 143 need one adapter, 860 stay in the plugin. Tracker + recipe: `090-d-selective-tool-port.md`; regenerate with `bin/classify-tool-portability.php` |
 | Toolkit `research` screen | **Done (4.5)** | `POST /pro/toolkits/{slug}/research` (Laravel) and `POST …/toolkit-manifests/{slug}/research` (WordPress) both call the shared core service: the prompt is built from the manifest's columns and the draft is filtered back to them. The draft is never written by the service — the console saves it through the create endpoint, so one validation path governs writes. No provider → typed `ai_unavailable` 503. |
 | Toolkit `consolidate` screen | Bounded | Scans the first 100 records of each entity (one page) to keep the request O(1). Move to a queued job when a family needs full-catalogue dedupe |

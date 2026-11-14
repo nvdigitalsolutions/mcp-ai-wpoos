@@ -25,7 +25,7 @@ import {
   assertBackendContract,
   buildConsoleRuntime,
   fetchCurrentUser,
-  fetchFeatureMap,
+  fetchRuntimeAvailability,
   fetchSessionNonce,
   fetchSiteName,
   UnauthorizedError,
@@ -96,8 +96,11 @@ function Console(): JSX.Element {
 
       const nonce = await fetchSessionNonce();
       const { user, nonce: effectiveNonce } = await fetchCurrentUser(nonce);
-      // Feature map fails open — never block boot on optional surfaces.
-      const features = await fetchFeatureMap(effectiveNonce);
+      // Availability map fails open — never block boot on optional surfaces.
+      // One read returns both the feature flags and which routes this
+      // backend serves, so a missing route blanks its endpoint instead of
+      // 404ing when the user opens the page.
+      const { features, endpoints } = await fetchRuntimeAvailability(effectiveNonce);
       // Site title fails open too ('' → branding surfaces fall back to the
       // product name). It also feeds the browser tab title.
       const siteName = await fetchSiteName();
@@ -107,6 +110,7 @@ function Console(): JSX.Element {
         nonce: effectiveNonce,
         user,
         features,
+        endpoints,
         siteName,
       });
       setBoot({ phase: 'ready' });
