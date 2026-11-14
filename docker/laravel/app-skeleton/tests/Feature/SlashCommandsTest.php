@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
+use Nvoos\Laravel\Adapter\JobStatusStore;
 use Tests\TestCase;
 
 /**
@@ -289,13 +290,34 @@ final class SlashCommandsTest extends TestCase
         $this->assertStringContainsString('Model:', $result);
     }
 
-    public function test_jobs_reports_the_empty_state_without_a_job_table(): void
+    public function test_jobs_reports_zeroes_on_an_empty_queue(): void
     {
         $this->actAsAdmin();
 
-        // The adapter's job table has no app migration yet, so the honest
-        // answer is "no records", not a fabricated zero count.
-        $this->assertStringContainsString('No job records', $this->execute('/jobs')['result']);
+        $result = $this->execute('/jobs')['result'];
+
+        // The adapter's `nvoos_jobs` table is loaded through package discovery,
+        // so an empty queue is a measured zero for every known status.
+        $this->assertStringContainsString('Jobs by status:', $result);
+        $this->assertStringContainsString('queued', $result);
+        $this->assertMatchesRegularExpression('/queued\s+0/', $result);
+        $this->assertMatchesRegularExpression('/failed\s+0/', $result);
+    }
+
+    public function test_jobs_reports_statuses_and_recent_failures(): void
+    {
+        $this->actAsAdmin();
+
+        $jobs = $this->app->make(JobStatusStore::class);
+        $jobs->queue('job-a', 'Tests\\Handler', array());
+        $jobs->markFailed('job-a', new \RuntimeException('boom'));
+
+        $result = $this->execute('/jobs')['result'];
+
+        $this->assertMatchesRegularExpression('/failed\s+1/', $result);
+        $this->assertStringContainsString('Recent failures:', $result);
+        $this->assertStringContainsString('Tests\\Handler', $result);
+        $this->assertStringContainsString('boom', $result);
     }
 
     public function test_workflow_lists_and_shows_a_record(): void

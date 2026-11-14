@@ -216,10 +216,16 @@ final class SlashCommandExecutor
 
     private function jobs(): string
     {
+        if (! $this->jobs->isAvailable()) {
+            return 'Job storage is not available on this runtime.';
+        }
+
         $counts = $this->jobs->counts();
 
-        if ([] === $counts) {
-            return 'No job records on this runtime yet.';
+        // An absent status is a true zero, not "unknown": the store groups
+        // real rows, so a missing key means no job ever held that status.
+        foreach (['queued', 'running', 'completed', 'failed', 'cancelled'] as $status) {
+            $counts[$status] ??= 0;
         }
 
         ksort($counts);
