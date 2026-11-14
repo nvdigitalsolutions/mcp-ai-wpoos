@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ApprovalsController;
 use App\Http\Controllers\AssistantController;
+use App\Http\Controllers\AssistantTestController;
 use App\Http\Controllers\BlueprintController;
 use App\Http\Controllers\AssistantPortabilityController;
 use App\Http\Controllers\CommandCenterController;
@@ -241,6 +242,11 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/assistants/{assistant}', [AssistantController::class, 'show']);
             Route::match(['put', 'patch'], '/assistants/{assistant}', [AssistantController::class, 'update']);
             Route::delete('/assistants/{assistant}', [AssistantController::class, 'destroy']);
+
+            // 090-b task 2.7 — the Test Assistant surface (WordPress's
+            // Admin → AI Assistants → Test Assistant). Empty body resolves the
+            // plan; a message runs one non-streaming turn and persists nothing.
+            Route::post('/assistants/{assistant}/test', AssistantTestController::class);
 
             // Agent Skills catalogue — the assistant editor's skill picker
             // (090-b; WordPress serves the same shape from the base MCP

@@ -56,7 +56,7 @@ Rank Math).
 | Playwright T0 smoke (G1) | **Done (2026-11-14)** | `examples/nvoos-complete-velocity/e2e/` — 6 tests / 30.2 s against the built Laravel-profile bundle through the proxy (`npm run test:e2e`) |
 | Blueprints | **Done (Phase 2.4)** | `BlueprintController`, `BlueprintTest` (9 cases), mirror drift gate in the SQLite CI job |
 | Teams (agent teams + org teams) | **Done (Phase 2.5, 090-g)** | `TeamController`, `TeamCatalogueController`, `TeamTest` + `TeamCatalogueTest` |
-| Test-assistant dry run | **Pending (Phase 2.7)** | No `AssistantTestController` yet |
+| Test-assistant dry run | **Done (Phase 2.7, 2026-11-14)** | `AssistantTestController` at `POST /api/v1/assistants/{id}/test` — resolves the plan and runs one non-streaming turn only when a message is supplied; persists nothing. `AssistantTestTest` (7 cases) |
 | Approvals queue (list/create/approve/deny) | **Done (Phase 3b)** | `ApprovalsController`, `nvoos_approvals` |
 | Workflow triggers (list/create/update/delete) | **Done (Phase 3b)** | `TriggersController`, `nvoos_triggers` — served at `/triggers` and the console's `/orchestration/triggers` |
 | Security posture / header preview / snapshots / self-test | **Done (Phase 3b)** | `SecurityController`, `nvoos_security_snapshots` |
@@ -79,6 +79,12 @@ Rank Math).
 | Remote-site store | **Done (2026-11-14, step a)** | `nvoos_remote_sites` + `App\Support\RemoteSites\RemoteSiteStore`. Generic row (`config` + sealed `credentials`) rather than WordPress's ~50-field array. No read returns a credential — `has_credentials` plus a uniform mask — and `config` rejects known secret names so a secret cannot ride back on a list. A blank credential on update keeps the stored value. `RemoteSiteStoreTest` (15 cases). The key stays `false` until verification (step c) lands |
 | Remote sites surface | **Done (2026-11-14, steps b–c)** | `GET/POST/DELETE /api/v1/pro/remote-sites` plus `/types` and `/{id}/test` — `Pro\RemoteSitesController`. Catalogue is the two types the runtime can verify: `wordpress` (application password → `wp-json/wp/v2/users/me`) and `mcp_server` (`McpAppClient` handshake + `tools/list`). The wizard's flat payload is split into `config` + sealed `credentials` on the way in and flattened back on the way out, because `openEdit()` reads `connection[field.key]`. A 401 reads as *reached, rejected*, an unimplemented type says so, and vendor types are deliberately absent. `remoteSites` flips to `route`. `RemoteSitesApiTest` (14 cases) |
 | Credential issuance was unreachable | **Fixed (2026-11-14)** | `AuthProvider::issueCredential()` gates on a `manage_oos` ability that was **never defined** anywhere — so no credential could be issued on this runtime at all. Added to the administrator capability set in `CapabilityMap`, matching the WordPress token manager's admin-only gate. Found by writing the token-manager fixture through the real issuance path rather than inserting rows |
+
+**Validation record (2026-11-14, task 2.7 — assistant test / dry run):**
+
+- `docker exec -w /app oos-laravel-app php artisan test --filter=AssistantTestTest`: **7 tests pass** — empty body returns the resolved plan without touching a provider; every degraded state is named (`no_provider`, `provider_unavailable`, `no_model`, `no_system_prompt`, `no_tools`, `tool_not_registered:<slug>`); a message runs one turn and writes **zero** transcript rows; a message with no provider is a typed `503 ai_unavailable`; another tenant's assistant is a 404; an editor is a 403; an invalid message role is a 422
+- Full app suite (with the PM fixtures env): **626 passed / 3,637 assertions** (was 619 / 3,599)
+- `phpcs --standard=phpcs-laravel.xml.dist` on the controller, test and route file: clean
 
 **Validation record (2026-11-14, Playwright T0 smoke / gate G1):**
 
@@ -167,7 +173,7 @@ requests.
 | 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ✅ `BlueprintTest`, 9 cases; mirror drift gate in the `App suite (SQLite)` job |
 | 2.5 | Teams (basic CRUD + membership) — schema and contract in `090-g` §4.2 | `TeamController` | ✅ |
 | 2.6 | Per-assistant tool assignment | `tools` field on the model | ✅ |
-| 2.7 | Test-assistant dry run | `AssistantTestController` | ⏳ |
+| 2.7 | Test-assistant dry run | `AssistantTestController` | ✅ `POST /assistants/{id}/test` — empty body returns the resolved plan (provider/prompt/tools/warnings); a message runs one turn; `dry_run` never writes a transcript. `AssistantTestTest` |
 | 2.8 | Contract fixtures + round-trip tests | `AssistantStudioTest` | ✅ (shape/round-trip; WP fixtures ⏳) |
 
 **Gate G2:** assistant create → export → import round-trip; a Service Exchange bundle imports and
@@ -656,14 +662,14 @@ engine serves today, and are re-captured from WordPress when the peer lands.
 - `app/Support/Pro/ToolkitManifestLoader.php` + `app/Http/Controllers/Pro/ToolkitsController.php`
 - `resources/pro-toolkits/{commerce,documents}.json`
 - `app/Http/Middleware/EnsureProEntitlement.php`
-- `app/Http/Controllers/{AssistantController,AssistantPortabilityController}.php`
+- `app/Http/Controllers/{AssistantController,AssistantPortabilityController,AssistantTestController}.php`
 - `app/Support/{CapabilityMap,SettingsSchema}.php`
 - `app/Services/LaravelAssistantService.php`
 - `app/Models/Assistant.php` + `database/migrations/2026_01_02_000001_create_assistants_table.php`
 - `app/Http/Middleware/AcceptWpNonce.php`
 - `routes/api.php`
 - `bootstrap/app.php` (`statefulApi()`, CSRF alias)
-- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest,Phase4Test}.php`
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,AssistantTestTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest,Phase4Test}.php`
 - `tests/Unit/AcceptWpNonceTest.php`
 
 **Runtime plumbing (Phase 4.2)**
@@ -688,7 +694,7 @@ engine serves today, and are re-captured from WordPress when the peer lands.
 | Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 14 files / 159 pass |
 | Console types | `npm run typecheck` | clean (also typechecks `e2e/` via `tsc -p e2e/tsconfig.json`) |
 | Console smoke (G1) | `cd examples/nvoos-complete-velocity && npm run test:e2e` | 6 pass / 30.2 s |
-| Laravel app | `docker exec oos-laravel-app php artisan test` | 96 pass |
+| Laravel app | `docker exec -w /app -e NVOOS_PM_FIXTURE=… -e NVOOS_PM_WRITES_FIXTURE=… oos-laravel-app php artisan test` | 626 pass / 3,637 assertions |
 | Core | `cd lib/core && php -d extension=fileinfo vendor/bin/phpunit` | 937 tests (5 pre-existing `ToolRegistryIntegrationTest` errors) |
 | Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
 
@@ -789,7 +795,7 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 
 - [x] Phase 0 — contract freeze, runtime profile, assertion, T0 endpoints, CSRF alias
 - [x] Phase 1 — T0 ops console (Playwright smoke green 2026-11-14)
-- [x] Phase 2 foundation — assistant CRUD + bundle export/import, blueprints, teams (test-assistant dry run outstanding)
+- [x] Phase 2 foundation — assistant CRUD + bundle export/import, blueprints, teams (test-assistant dry run shipped 2026-11-14)
 - [x] Phase 3a — transcripts, memory, session logs, token usage/cost, rate limiter
 - [x] Phase 3b — approvals, workflow triggers, security center (posture/headers/snapshots/self-test), paper store
 - [x] Phase 3c — schedule manager, records schema, `wp/v2` content shim, Pro entitlement middleware
@@ -799,4 +805,4 @@ route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
 - [x] Phase 4.5 — toolkit research service: draft-from-query endpoint + console wiring (draft only; saving still goes through `storeEntity`)
 - [x] Phase 4.7 — contract fixtures: `fixtures:capture`, per-family fixtures, shape replay, CI job
 - [x] Phase 4.6 — WordPress peer: read surface at parity (6/6 fixtures) and `research` ported through the shared core service
-- [x] Phase 5 — commercial entitlement, CSRF migration, GA gates (residual items live in §14: test-assistant dry run, posture-card parity, presets, thumbnails)
+- [x] Phase 5 — commercial entitlement, CSRF migration, GA gates (residual items live in §14: posture-card parity, presets, thumbnails)
