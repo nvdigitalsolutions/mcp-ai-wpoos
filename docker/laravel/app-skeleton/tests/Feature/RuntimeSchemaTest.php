@@ -35,6 +35,10 @@ class RuntimeSchemaTest extends TestCase
             'nvoos_posts',
             'nvoos_security_snapshots',
             'nvoos_toolkit_records',
+            // 090-i telemetry and spend: the command-centre sources.
+            'nvoos_health_samples',
+            'nvoos_activity_events',
+            'nvoos_token_usage',
         ];
     }
 
