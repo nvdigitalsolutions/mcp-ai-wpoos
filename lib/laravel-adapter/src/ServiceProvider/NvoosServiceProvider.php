@@ -47,6 +47,7 @@ use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\Core\Tool\BulkImportTool;
 use Nvoos\Core\Tool\Classroom\GetEcaTool;
 use Nvoos\Core\Tool\Classroom\ListEcasTool;
+use Nvoos\Core\Tool\Classroom\ListStudentsTool;
 use Nvoos\Core\Tool\CreateProjectTool;
 use Nvoos\Core\Tool\CreateTaskTool;
 use Nvoos\Core\Tool\DeleteProjectTool;
@@ -285,6 +286,7 @@ class NvoosServiceProvider extends ServiceProvider {
 			new ListProjectsTool( $errors, $content ),
 			new ListEcasTool( $errors, $content ),
 			new GetEcaTool( $errors, $content ),
+			new ListStudentsTool( $errors, $content ),
 			new ListTasksTool( $errors, $content ),
 			new GetTaskDependenciesTool( $errors, $content ),
 			new CreateTaskTool( $errors, $content ),
