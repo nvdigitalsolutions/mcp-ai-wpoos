@@ -38,9 +38,11 @@ use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SchemaStoreInterface;
+use Nvoos\Core\Domain\Service\Harness\RetrievalHarness;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
+use Nvoos\Core\Domain\Contract\ToolInvokerInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Profession\CachedProfessionRepository;
@@ -89,6 +91,7 @@ use Nvoos\Laravel\Adapter\PlatformFlush;
 use Nvoos\Laravel\Adapter\ProEntitlement;
 use Nvoos\Laravel\Adapter\ProfessionRepository;
 use Nvoos\Laravel\Adapter\QueueClient;
+use Nvoos\Laravel\Adapter\RegistryToolInvoker;
 use Nvoos\Laravel\Adapter\RateLimiter;
 use Nvoos\Laravel\Adapter\SchemaStore;
 use Nvoos\Laravel\Adapter\SessionLogStore;
@@ -114,6 +117,11 @@ class NvoosServiceProvider extends ServiceProvider {
 		$this->app->bind( HarnessProfileProviderInterface::class, HarnessProfileProvider::class );
 		$this->app->bind( CacheStoreInterface::class, CacheStore::class );
 		$this->app->bind( SettingsStoreInterface::class, SettingsStore::class );
+		$this->app->bind( ToolInvokerInterface::class, RegistryToolInvoker::class );
+		$this->app->bind(
+			RetrievalHarness::class,
+			fn ( $app ) => new RetrievalHarness( $app->make( ToolInvokerInterface::class ) ),
+		);
 		$this->app->bind( EventDispatcherInterface::class, EventDispatcher::class );
 		$this->app->bind( FileStoreInterface::class, FileStore::class );
 		$this->app->bind( FileUploadServiceInterface::class, function ( $app ) {

@@ -38,6 +38,13 @@ class WP_MCP_AI_Retrieval_Harness {
 	const HARD_K_CAP = 50;
 
 	/**
+	 * Lazily-built shared implementation (null until first use).
+	 *
+	 * @var \Nvoos\Core\Domain\Service\Harness\RetrievalHarness|null
+	 */
+	private static $core = null;
+
+	/**
 	 * Source tools tried, in order of preference. Each entry: array(
 	 *   'tool_slug', 'arg_factory_callable', 'extractor_callable'
 	 * ).
@@ -68,6 +75,23 @@ class WP_MCP_AI_Retrieval_Harness {
 	 * }
 	 */
 	public static function retrieve( $query, array $scope = array(), $k = 5, array $context = array() ) {
+		// The pipeline lives in lib/core so both runtimes rank identically. The
+		// WordPress-only filter is applied through the callback, so behaviour
+		// here is unchanged; lib/ is stripped from wp.org base builds and the
+		// local implementation below stays as the fallback.
+		$core = self::core();
+		if ( null !== $core ) {
+			return $core->retrieve(
+				(string) $query,
+				$scope,
+				(int) $k,
+				$context,
+				static function ( $top ) use ( $query, $scope, $context ) {
+					return apply_filters( 'wp_mcp_ai_retrieval_passages', $top, $query, $scope, $context );
+				}
+			);
+		}
+
 		$query = (string) $query;
 		$k     = max( 1, min( self::HARD_K_CAP, (int) $k ) );
 
@@ -177,6 +201,17 @@ class WP_MCP_AI_Retrieval_Harness {
 	 * }
 	 */
 	public static function verify_citations( $answer, array $passages ) {
+		$core = self::core();
+		if ( null !== $core ) {
+			return $core->verifyCitations(
+				(string) $answer,
+				$passages,
+				static function ( $is_supported, $sentence, $list ) {
+					return apply_filters( 'wp_mcp_ai_retrieval_claim_supported', $is_supported, $sentence, $list );
+				}
+			);
+		}
+
 		$answer = trim( (string) $answer );
 		if ( '' === $answer ) {
 			return array(
@@ -449,5 +484,54 @@ class WP_MCP_AI_Retrieval_Harness {
 			return null;
 		}
 		return WP_MCP_AI_Tool_Registry::get_instance();
+	}
+
+	/**
+	 * Resolve the shared implementation, or null when lib/ is absent.
+	 *
+	 * @return \Nvoos\Core\Domain\Service\Harness\RetrievalHarness|null
+	 */
+	private static function core() {
+		if ( ! class_exists( '\Nvoos\Core\Domain\Service\Harness\RetrievalHarness' ) ) {
+			return null;
+		}
+
+		if ( null !== self::$core ) {
+			return self::$core;
+		}
+
+		self::$core = new \Nvoos\Core\Domain\Service\Harness\RetrievalHarness(
+			new class() implements \Nvoos\Core\Domain\Contract\ToolInvokerInterface {
+				/**
+				 * Invoke a registered WordPress tool.
+				 *
+				 * Every failure mode collapses to null, which the harness reads as
+				 * "skip this source".
+				 *
+				 * @param string $slug      Tool slug.
+				 * @param array  $arguments Tool arguments.
+				 * @param array  $context   Execution context.
+				 * @return mixed
+				 */
+				public function invoke( string $slug, array $arguments, array $context ): mixed {
+					$registry = class_exists( 'WP_MCP_AI_Tool_Registry' ) ? WP_MCP_AI_Tool_Registry::get_instance() : null;
+					$tool     = $registry ? $registry->get_tool( $slug ) : null;
+
+					if ( ! $tool instanceof WP_MCP_AI_Tool_Interface ) {
+						return null;
+					}
+
+					try {
+						$raw = $tool->execute( $arguments, $context );
+					} catch ( \Throwable $e ) {
+						return null;
+					}
+
+					return is_wp_error( $raw ) ? null : $raw;
+				}
+			}
+		);
+
+		return self::$core;
 	}
 }
