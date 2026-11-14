@@ -79,6 +79,8 @@ class EndpointCapabilitiesTest extends TestCase
             // 090-b — the OKF knowledge drawer (read-only: bundles, concepts,
             // search). `/skills` is honest-empty; there is no grant store.
             'okf',
+            // 090-i — assistant MCP app assignments (read + replace).
+            'mcpApps',
         ] as $key) {
             $this->assertTrue($endpoints[$key] ?? false, $key.' should be available.');
         }
@@ -89,9 +91,6 @@ class EndpointCapabilitiesTest extends TestCase
         $endpoints = $this->endpoints();
 
         foreach ([
-            // Deferred: an outbound MCP client plus a connection store, which
-            // is a feature rather than a port.
-            'mcpApps',
             // WordPress-only concepts.
             'chatChannels',
             'remoteSites',
@@ -260,7 +259,8 @@ class EndpointCapabilitiesTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.endpoint_contract_version', EndpointCapabilities::CONTRACT_VERSION)
             ->assertJsonPath('data.endpoint_reasons.chat', 'route')
-            ->assertJsonPath('data.endpoint_reasons.mcpApps', 'runtime-adaptable')
+            ->assertJsonPath('data.endpoint_reasons.mcpApps', 'route')
+            ->assertJsonPath('data.endpoint_reasons.remoteSites', 'runtime-adaptable')
             ->assertJsonPath('data.endpoint_reasons.contentGraph', 'external-product')
             ->assertJsonPath('data.endpoint_gaps', array());
     }

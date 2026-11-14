@@ -22,6 +22,7 @@ use App\Http\Controllers\Pro\SchedulesController;
 use App\Http\Controllers\Pro\ToolkitsController;
 use App\Http\Controllers\Pro\WorkflowNodeController;
 use App\Http\Controllers\Pro\WorkflowPresetsController;
+use App\Http\Controllers\McpAppsController;
 use App\Http\Controllers\ProfessionController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
@@ -203,6 +204,12 @@ Route::prefix('api/v1')->group(function (): void {
             // (090-b; WordPress serves the same shape from the base MCP
             // controller, administrators only). Read-only here.
             Route::get('/skills', [SkillController::class, 'index']);
+
+            // Assistant MCP app assignments (090-i). The console's
+            // McpAppsClient reads and replaces this list; secrets never
+            // travel over it.
+            Route::get('/mcp-apps/{assistant}', [McpAppsController::class, 'show']);
+            Route::put('/mcp-apps/{assistant}', [McpAppsController::class, 'update']);
 
             // Assistant blueprint catalogue (090-b task 2.4, read half).
             Route::get('/blueprints', [BlueprintController::class, 'index']);

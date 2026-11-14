@@ -153,7 +153,7 @@ final class EndpointCapabilities
         'documentEditor' => self::EXTERNAL_PRODUCT,
         'mediaCc' => self::CONNECTED_SERVICE,
         'mediaStudio' => self::EXTERNAL_PRODUCT,
-        'mcpApps' => self::RUNTIME_ADAPTABLE,
+        'mcpApps' => self::ROUTE,
         'memory' => self::ROUTE,
         'okf' => self::ROUTE,
         'operations' => self::ROUTE,
