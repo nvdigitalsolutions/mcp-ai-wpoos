@@ -6313,6 +6313,12 @@ body.toplevel_page_wp-mcp-ai-spa #wp-mcp-ai-pro-spa-root {
 	color: #b32d2e;
 }
 
+/* A control the runtime has no primitive for is neither a pass nor a fail. */
+.nvoos-pro-spa-security__badge--muted {
+	background: rgba( 120, 124, 130, 0.12 );
+	color: var(--nvoos-text-secondary, #787c82);
+}
+
 .nvoos-pro-spa-security__header-status {
 	margin: 0 0 10px;
 }
