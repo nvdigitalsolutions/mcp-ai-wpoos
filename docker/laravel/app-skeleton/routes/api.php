@@ -17,6 +17,7 @@ use App\Http\Controllers\OpsController;
 use App\Http\Controllers\OrchestrationStatsController;
 use App\Http\Controllers\PaperStoreController;
 use App\Http\Controllers\Pro\DashboardsController;
+use App\Http\Controllers\Pro\MediaCcController;
 use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
 use App\Http\Controllers\Pro\SchedulesController;
@@ -209,6 +210,12 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/cost/dashboard-summary', [AnalyticsController::class, 'summary']);
             Route::get('/cost/trend', [AnalyticsController::class, 'trend']);
             Route::get('/cost/by-provider', [AnalyticsController::class, 'byProvider']);
+
+            // 090-i — the media command centre. Registered unconditionally so
+            // the capability manifest can see the route; availability is
+            // config-gated on `oos.media_worker.url`, because with no worker
+            // there is nothing to report.
+            Route::get('/pro/media-cc/health', [MediaCcController::class, 'health']);
 
             // 090-i — the console Dashboard's command-centre section. Six
             // sourced KPIs, a derived agent-status map and the activity feed.

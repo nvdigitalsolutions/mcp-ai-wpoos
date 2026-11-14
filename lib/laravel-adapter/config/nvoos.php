@@ -10,6 +10,31 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Media worker
+	|--------------------------------------------------------------------------
+	|
+	| The media worker is the same sidecar the WordPress plugin uses
+	| (`addons/media-worker`): `GET /api/health`, `POST /api/image/optimize`.
+	| Reusing it means the Laravel runtime gets Sharp-based processing without
+	| a PHP image pipeline of its own.
+	|
+	| `url` empty means the media command centre is reported unavailable —
+	| the console hides Media Ops rather than opening a dead page.
+	|
+	| `token` is sent as `X-Site-Token`; the worker accepts it in single-tenant
+	| mode (`WORKER_API_TOKEN`) or maps it to a site in multi-tenant mode
+	| (`SITE_TOKENS`). An empty token is only valid against a lenient
+	| development worker.
+	|
+	*/
+	'media_worker' => array(
+		'url'     => env( 'NVOOS_MEDIA_WORKER_URL', '' ),
+		'token'   => env( 'NVOOS_MEDIA_WORKER_TOKEN', '' ),
+		'timeout' => (int) env( 'NVOOS_MEDIA_WORKER_TIMEOUT', 3 ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Content Model
 	|--------------------------------------------------------------------------
 	|

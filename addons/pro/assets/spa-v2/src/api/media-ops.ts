@@ -32,15 +32,28 @@ export interface MediaHealthSnapshot {
 	attachments: {
 		total: number;
 		image_count: number;
-		with_alt: number;
-		descriptive_filename_count: number;
+		/**
+		 * `null` when the runtime has no alt-text store. The console renders an
+		 * em dash, so a missing pipeline never reads as "0% coverage".
+		 */
+		with_alt: number | null;
+		descriptive_filename_count: number | null;
 	};
 	storage: number;
-	alt_pct: number;
+	alt_pct: number | null;
 	nextgen_pct: number;
-	compression: number;
+	compression: number | null;
 	queue: MediaQueueStatus;
 	schedule: MediaScheduleSummary;
+	/** Which actions this backend can actually perform. */
+	capabilities?: { sweep?: boolean };
+	/** Present when the runtime reports on an external media worker. */
+	worker?: {
+		configured: boolean;
+		available: boolean;
+		version: string | null;
+		uptime: number | null;
+	};
 	[ k: string ]: unknown;
 }
 
@@ -111,14 +124,16 @@ export class MediaOpsClient {
 	}
 }
 
-/** Format a byte count as a human-readable size. */
+/** Format a byte count as a human-readable size, or `—` when unknown. */
 export function formatBytes( bytes: unknown ): string {
-	const numeric = typeof bytes === 'number' && isFinite( bytes ) ? bytes : 0;
-	if ( numeric < 1024 ) {
-		return `${ numeric } B`;
+	if ( typeof bytes !== 'number' || ! isFinite( bytes ) ) {
+		return '—';
+	}
+	if ( bytes < 1024 ) {
+		return `${ bytes } B`;
 	}
 	const units = [ 'KB', 'MB', 'GB', 'TB' ];
-	let value = numeric;
+	let value = bytes;
 	let unit = -1;
 	do {
 		value /= 1024;
@@ -127,8 +142,18 @@ export function formatBytes( bytes: unknown ): string {
 	return `${ value.toFixed( 1 ) } ${ units[ unit ] }`;
 }
 
-/** Format a 0-100 coverage percentage with a fallback for non-numeric data. */
+/** Format a 0-100 percentage, or `—` when unknown. */
 export function formatPercent( value: unknown ): string {
-	const numeric = typeof value === 'number' && isFinite( value ) ? value : 0;
-	return `${ numeric }%`;
+	if ( typeof value !== 'number' || ! isFinite( value ) ) {
+		return '—';
+	}
+	return `${ value }%`;
+}
+
+/** Format a whole count, or `—` when unknown. */
+export function formatCount( value: unknown ): string {
+	if ( typeof value !== 'number' || ! isFinite( value ) ) {
+		return '—';
+	}
+	return new Intl.NumberFormat( 'en-US' ).format( value );
 }

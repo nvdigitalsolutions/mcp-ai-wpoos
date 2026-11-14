@@ -100,7 +100,6 @@ class EndpointCapabilitiesTest extends TestCase
             // WordPress-only concepts.
             'chatChannels',
             'remoteSites',
-            'mediaCc',
             'contentGraph',
             'docsHub',
             'mediaStudio',
@@ -108,6 +107,26 @@ class EndpointCapabilitiesTest extends TestCase
         ] as $key) {
             $this->assertFalse($endpoints[$key] ?? true, $key.' should be unavailable.');
         }
+    }
+
+    public function test_a_config_gated_route_is_unavailable_until_configured(): void
+    {
+        // The route is registered, but the media command centre is served by
+        // an external worker: without one there is nothing to report, so the
+        // key must read false or the console would offer a page that always
+        // fails.
+        $this->assertFalse(EndpointCapabilities::map()['mediaCc']);
+
+        config(['oos.media_worker.url' => 'http://worker.test']);
+
+        $this->assertTrue(EndpointCapabilities::map()['mediaCc']);
+    }
+
+    public function test_a_config_gated_key_is_not_a_gap_when_unconfigured(): void
+    {
+        // `connected-service` is the vocabulary's "configure this first" class,
+        // so an unconfigured worker is expected rather than a regression.
+        $this->assertNotContains('mediaCc', EndpointCapabilities::gaps());
     }
 
     public function test_the_matcher_is_boundary_aware(): void

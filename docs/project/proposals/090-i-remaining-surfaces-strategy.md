@@ -32,7 +32,7 @@ Continuing key-by-key would produce two failure modes the repo has already paid 
 | `shortcuts` | `mcp-ai-pro/v1/tool-shortcuts` (assistant-scoped tool presets) | **A** | Port — a small record read |
 | `slashCommands` | catalogue + `/slash-commands/execute` + audit table | **A** | Port a **native subset** — the base executor plus the Pro state-mutating handlers are not portable |
 | `chatChannels` | channel command center (messages, contacts, delivery) | **A**, but a **toolkit family** | Model as a manifest-driven communications toolkit, not a bespoke controller |
-| `mediaCc` | `mcp-ai-pro/v1/media-cc/health` + sweep trigger | **D** | **Measured, not a probe**: the WP endpoint reads the *local* media library, so keep `false` and hide the page |
+| `mediaCc` | `mcp-ai-pro/v1/media-cc/health` + sweep trigger | **D** | **Worker-backed**: local counts + worker health; `null` for the three sections the store cannot answer |
 | `contentGraph` | `nvoos-content-graph/v1` (separate plugin) | **C** | Discover, don't port |
 | `docsHub` | `nvoos-docs/v1` (separate plugin) | **C** | Discover, don't port |
 | `mediaStudio` | `nvoos-media-studio/v1` (island addon) | **C** | Discover, don't port |
@@ -102,7 +102,7 @@ The four products are separate plugins with their own REST bases (`nvoos-content
 | `shortcuts` | Port — assistant-scoped presets record | **S** | — |
 | `slashCommands` | **Shipped** — native subset (7 commands) + audited executor; the nine Pro handlers stay out of scope | **S** | — |
 | `chatChannels` | Manifest-driven communications toolkit (`toolkits` engine) | M | Toolkit manifest(s) |
-| `mediaCc` | **Deferred after measurement** — a media subsystem, not a probe; the console nav now hides the page when the key is `false` | **L, not S** | Media storage: alt text, compression stats, processing queue |
+| `mediaCc` | **Worker-backed partial snapshot shipped** — local counts/storage/next-gen, worker health and the media job queue; `null` for alt/compression/schedule. Sweep + alt storage remain | **M** | `addons/media-worker` at `NVOOS_MEDIA_WORKER_URL` |
 | `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` | **Discover, don't port.** `connectedApps` registry + product-side MCP server/UI | L (product-side) | Product work, not runtime work |
 
 ## 5. Sequenced plan
@@ -185,7 +185,16 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
 
    It is not a worker proxy, so there is no upstream health probe to integrate. On this runtime `nvoos_files` carries path, disk, filename, mime type and size — that is `attachments.total`, `image_count`, `storage` and `nextgen_pct`. The other three have no source at all: no alt-text column, no original-size column for compression savings, no media processing queue, and no scheduler to summarise. The console page renders all seven sections, so shipping the computable half would paint `0%` alt coverage and `0 B` savings — a false diagnosis of a pipeline that does not exist.
 
-   **Decision:** keep `mediaCc` `false`. What shipped instead is the UI half the key was missing: the console nav now honours endpoint availability (`NavGate.endpoint`), so a `false` key hides its page rather than opening an empty error panel, and Media Ops states plainly that the backend does not serve it. That fix applies to every optional surface, not just this one. A real Media Ops page needs a media storage pass (alt text, derivatives, queue), which is a proposal of its own.
+   **Decision (revised):** reuse the media worker. The WordPress plugin already talks to `addons/media-worker` (`GET /api/health`, `POST /api/image/optimize`, `X-Site-Token`), so the Laravel runtime points at the same sidecar rather than growing a PHP image pipeline that would duplicate Sharp. `GET /api/v1/pro/media-cc/health` now returns:
+   - **real** — `attachments.total`, `image_count`, `storage`, `nextgen_pct` from `nvoos_files`, and `queue` from `nvoos_jobs` filtered to `media.*` handlers;
+   - **null** — `with_alt`, `descriptive_filename_count`, `alt_pct`, `compression`, so the console renders an em dash instead of a false `0`;
+   - **worker** — `{configured, available, version, uptime}` from the sidecar. A worker that is down is reported, not thrown: the local numbers still render beside it.
+
+   Availability is **config-gated**: the route is always registered, but `EndpointCapabilities` reports `mediaCc` false until `oos.media_worker.url` is set, so an install with no worker hides the page instead of offering a dead one. The reason stays `connected-service` — the vocabulary's own "configure this first" class — so an unconfigured worker is not counted as a gap.
+
+   The console gained two things that apply beyond this page: the nav hides any item whose endpoint is blank (`NavGate.endpoint`), and `formatBytes`/`formatPercent`/`formatCount` render `—` for unknown values rather than `0`.
+
+   **Still open:** `capabilities.sweep` is `false` and the console hides the action. The next slice is the compression sweep (`POST /api/image/optimize` per file, savings recorded so `compression` becomes real) and alt-text storage on `nvoos_files` so `alt_pct` becomes real. See [`090-j-media-processing-plan.md`](../plans/090-j-media-processing-plan.md).
 
 ## Sources
 

@@ -14,6 +14,7 @@ import { useBootstrap } from '../../hooks/useBootstrap';
 import {
 	MediaOpsClient,
 	formatBytes,
+	formatCount,
 	formatPercent,
 	type MediaHealthSnapshot,
 } from '../../api/media-ops';
@@ -137,6 +138,13 @@ export function MediaOpsPage(): JSX.Element {
 				<p className="nvoos-pro-spa-page__subtitle">
 					{ __( 'Media library health: coverage, storage, compression and background jobs.', 'nvoos-pro-spa' ) }
 				</p>
+				{ snapshot.worker && (
+					<p className="nvoos-pro-spa-page__subtitle" role="status">
+						{ snapshot.worker.available
+							? __( 'Media worker connected.', 'nvoos-pro-spa' )
+							: __( 'Media worker unreachable.', 'nvoos-pro-spa' ) }
+					</p>
+				) }
 				<button
 					type="button"
 					className="nvoos-pro-spa-page__retry"
@@ -159,11 +167,11 @@ export function MediaOpsPage(): JSX.Element {
 				<dl className="nvoos-pro-spa-records-detail__grid">
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Attachments', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( attachments.total ) }</dd>
+						<dd>{ formatCount( attachments.total ) }</dd>
 					</div>
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Images', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( attachments.image_count ) }</dd>
+						<dd>{ formatCount( attachments.image_count ) }</dd>
 					</div>
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Alt-text coverage', 'nvoos-pro-spa' ) }</dt>
@@ -175,7 +183,7 @@ export function MediaOpsPage(): JSX.Element {
 					</div>
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Descriptive filenames', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( attachments.descriptive_filename_count ) }</dd>
+						<dd>{ formatCount( attachments.descriptive_filename_count ) }</dd>
 					</div>
 				</dl>
 			</section>
@@ -199,19 +207,19 @@ export function MediaOpsPage(): JSX.Element {
 				<dl className="nvoos-pro-spa-records-detail__grid">
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Pending', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( queue.pending ) }</dd>
+						<dd>{ formatCount( queue.pending ) }</dd>
 					</div>
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Completed today', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( queue.completed_today ) }</dd>
+						<dd>{ formatCount( queue.completed_today ) }</dd>
 					</div>
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Failed', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( queue.failed ) }</dd>
+						<dd>{ formatCount( queue.failed ) }</dd>
 					</div>
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Total processed', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( queue.total_processed ) }</dd>
+						<dd>{ formatCount( queue.total_processed ) }</dd>
 					</div>
 				</dl>
 			</section>
@@ -221,15 +229,15 @@ export function MediaOpsPage(): JSX.Element {
 				<dl className="nvoos-pro-spa-records-detail__grid">
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Active', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( schedule.active ) }</dd>
+						<dd>{ formatCount( schedule.active ) }</dd>
 					</div>
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Ran today', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( schedule.ran_today ) }</dd>
+						<dd>{ formatCount( schedule.ran_today ) }</dd>
 					</div>
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Overdue', 'nvoos-pro-spa' ) }</dt>
-						<dd>{ new Intl.NumberFormat( 'en-US' ).format( schedule.overdue ) }</dd>
+						<dd>{ formatCount( schedule.overdue ) }</dd>
 					</div>
 					<div className="nvoos-pro-spa-records-detail__item">
 						<dt>{ __( 'Next run', 'nvoos-pro-spa' ) }</dt>
@@ -240,18 +248,24 @@ export function MediaOpsPage(): JSX.Element {
 
 			<section className="nvoos-pro-spa-records-detail" aria-label={ __( 'Actions', 'nvoos-pro-spa' ) }>
 				<h3 className="nvoos-pro-spa-records-detail__title">{ __( 'Actions', 'nvoos-pro-spa' ) }</h3>
-				<button
-					type="button"
-					className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
-					disabled={ sweepBusy }
-					onClick={ () => {
-						void runSweep();
-					} }
-				>
-					{ sweepBusy
-						? __( 'Queuing…', 'nvoos-pro-spa' )
-						: __( 'Run compression sweep', 'nvoos-pro-spa' ) }
-				</button>
+				{ snapshot.capabilities?.sweep ? (
+					<button
+						type="button"
+						className="nvoos-pro-spa-page__retry nvoos-pro-spa-page__retry--primary"
+						disabled={ sweepBusy }
+						onClick={ () => {
+							void runSweep();
+						} }
+					>
+						{ sweepBusy
+							? __( 'Queuing…', 'nvoos-pro-spa' )
+							: __( 'Run compression sweep', 'nvoos-pro-spa' ) }
+					</button>
+				) : (
+					<p className="nvoos-pro-spa-page__message">
+						{ __( 'Compression sweeps are not available on this backend.', 'nvoos-pro-spa' ) }
+					</p>
+				) }
 				{ sweepMessage && (
 					<p className="nvoos-pro-spa-page__message" role="status">
 						{ sweepMessage }
