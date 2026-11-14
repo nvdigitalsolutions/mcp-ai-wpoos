@@ -32,7 +32,7 @@ Continuing key-by-key would produce two failure modes the repo has already paid 
 | `shortcuts` | `mcp-ai-pro/v1/tool-shortcuts` (assistant-scoped tool presets) | **A** | Port — a small record read |
 | `slashCommands` | catalogue + `/slash-commands/execute` + audit table | **A** | Port a **native subset** — the base executor plus the Pro state-mutating handlers are not portable |
 | `chatChannels` | channel command center (messages, contacts, delivery) | **A**, but a **toolkit family** | Model as a manifest-driven communications toolkit, not a bespoke controller |
-| `mediaCc` | `mcp-ai-pro/v1/media-cc/health` + sweep trigger | **D** | Integrate an upstream health probe; unavailable when no worker is configured |
+| `mediaCc` | `mcp-ai-pro/v1/media-cc/health` + sweep trigger | **D** | **Measured, not a probe**: the WP endpoint reads the *local* media library, so keep `false` and hide the page |
 | `contentGraph` | `nvoos-content-graph/v1` (separate plugin) | **C** | Discover, don't port |
 | `docsHub` | `nvoos-docs/v1` (separate plugin) | **C** | Discover, don't port |
 | `mediaStudio` | `nvoos-media-studio/v1` (island addon) | **C** | Discover, don't port |
@@ -102,7 +102,7 @@ The four products are separate plugins with their own REST bases (`nvoos-content
 | `shortcuts` | Port — assistant-scoped presets record | **S** | — |
 | `slashCommands` | **Shipped** — native subset (7 commands) + audited executor; the nine Pro handlers stay out of scope | **S** | — |
 | `chatChannels` | Manifest-driven communications toolkit (`toolkits` engine) | M | Toolkit manifest(s) |
-| `mediaCc` | Upstream health probe; unavailable when `MEDIA_WORKER_URL` is unset | **S** | A configured worker |
+| `mediaCc` | **Deferred after measurement** — a media subsystem, not a probe; the console nav now hides the page when the key is `false` | **L, not S** | Media storage: alt text, compression stats, processing queue |
 | `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` | **Discover, don't port.** `connectedApps` registry + product-side MCP server/UI | L (product-side) | Product work, not runtime work |
 
 ## 5. Sequenced plan
@@ -172,6 +172,18 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
    - **The audit row matches WordPress.** `nvoos_slash_command_audit` mirrors `wp_mcp_ai_slash_command_audit`, and a failed command is still a row. A parse failure is not: no command name was established, so there is nothing to attribute.
    - **Errors use WordPress's flat `{code, message, data}` shape**, not this app's `{success, error}` envelope. `ChatPage` reads a top-level `message`; without it the composer would show "HTTP 400" instead of the reason.
    - **`/jobs` reports an honest empty state.** `Nvoos\Laravel\Adapter\JobStatusStore` reads `nvoos_jobs`, and the adapter's migration for it is not loaded by the app — the same gap `nvoos_token_usage` had. That fix belongs with a jobs/operations pass, not this one.
+
+6. **`mediaCc` — deferred after measurement; the "small probe" estimate was wrong.** Reading `WP_MCP_AI_Media_Command_Center_Page::get_health_snapshot()` shows seven gatherers, all of them **local WordPress** state:
+   - attachment posts and `_wp_attachment_image_alt` meta (`with_alt`, `alt_pct`),
+   - a `filesize()` walk of the uploads directory (`storage`),
+   - mime-type counts (`nextgen_pct`),
+   - the `wp_mcp_ai_media_compression_stats` option (`compression`),
+   - the `wp_mcp_ai_media_processing_queue` option (`queue`),
+   - Action Scheduler over three media hooks (`schedule`).
+
+   It is not a worker proxy, so there is no upstream health probe to integrate. On this runtime `nvoos_files` carries path, disk, filename, mime type and size — that is `attachments.total`, `image_count`, `storage` and `nextgen_pct`. The other three have no source at all: no alt-text column, no original-size column for compression savings, no media processing queue, and no scheduler to summarise. The console page renders all seven sections, so shipping the computable half would paint `0%` alt coverage and `0 B` savings — a false diagnosis of a pipeline that does not exist.
+
+   **Decision:** keep `mediaCc` `false`. What shipped instead is the UI half the key was missing: the console nav now honours endpoint availability (`NavGate.endpoint`), so a `false` key hides its page rather than opening an empty error panel, and Media Ops states plainly that the backend does not serve it. That fix applies to every optional surface, not just this one. A real Media Ops page needs a media storage pass (alt text, derivatives, queue), which is a proposal of its own.
 
 ## Sources
 
