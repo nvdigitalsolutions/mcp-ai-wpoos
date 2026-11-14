@@ -255,6 +255,12 @@ const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string
 		if ( title.lineHeight && title.lineHeight !== 'normal' ) {
 			parts.push( `--ds-title-lh:${ title.lineHeight }` );
 		}
+		if ( title.tablet?.lineHeight && title.tablet.lineHeight !== 'normal' ) {
+			parts.push( `--ds-title-lh-md:${ title.tablet.lineHeight }` );
+		}
+		if ( title.mobile?.lineHeight && title.mobile.lineHeight !== 'normal' ) {
+			parts.push( `--ds-title-lh-sm:${ title.mobile.lineHeight }` );
+		}
 		if ( title.letterSpacing && title.letterSpacing !== 'normal' ) {
 			parts.push( `--ds-title-ls:${ title.letterSpacing }` );
 		}

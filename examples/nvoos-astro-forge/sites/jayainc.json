@@ -187,7 +187,10 @@
 					"size": "72px",
 					"weight": "500",
 					"lineHeight": "80px",
-					"letterSpacing": "-2.1px"
+					"letterSpacing": "-2.1px",
+					"mobile": {
+						"lineHeight": "45px"
+					}
 				},
 				"titleDivider": {
 					"width": "125px",
@@ -936,9 +939,12 @@
 				"size": "72px",
 				"weight": "500",
 				"lineHeight": "80px",
-				"letterSpacing": "-2.1px"
+				"letterSpacing": "-2.1px",
+				"mobile": {
+					"lineHeight": "45px"
+				}
 			},
-			"why": "Operator override: the 72px hero headline needs ~1.1 leading on desktop, so the line-height is 80px; the 52px first pass read too tight. Tablet/mobile facts stay as measured."
+			"why": "Operator override: the 72px hero headline needs ~1.1 leading on desktop, so the line-height is 80px; the 52px first pass read too tight. Phones carry an explicit 45px via titleStyle.mobile.lineHeight (the template maps it to --ds-title-lh-sm), and the tablet band keeps the relative fallback."
 		}
 	],
 	"vocabulary": {

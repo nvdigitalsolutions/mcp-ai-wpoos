@@ -1528,6 +1528,12 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		if ( style.letterSpacing ) {
 			parts.push( `letterSpacing: ${ tsString( style.letterSpacing ) }` );
 		}
+		for ( const device of [ 'tablet', 'mobile' ] as const ) {
+			const lineHeight = style[ device ]?.lineHeight;
+			if ( lineHeight ) {
+				parts.push( `${ device }: { lineHeight: ${ tsString( lineHeight ) } }` );
+			}
+		}
 		entry.push( `titleStyle: { ${ parts.join( ', ' ) } }` );
 	}
 	if ( section.titleAlign ) {
@@ -1778,7 +1784,7 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\t/** The heading\'s underline divider facts (width/height/background/shadow). */',
 		'\ttitleDivider?: { width: string; height: string; background: string; shadow?: string };',
 		'\t/** The heading typography (size/weight/line-height/letter-spacing). */',
-		'\ttitleStyle?: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string };',
+		'\ttitleStyle?: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; tablet?: { lineHeight?: string }; mobile?: { lineHeight?: string } };',
 		'\t/** The heading is centered (the source\'s aux-widget-inner centering). */',
 		"\ttitleAlign?: 'center';",
 		'\t/** The media collage backdrop shape (width/height/background/radius). */',

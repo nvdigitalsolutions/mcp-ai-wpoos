@@ -111,7 +111,7 @@ const PROFILE: SiteProfile = {
 				layout: 'split',
 				bodyColumns: 2,
 				titleDivider: { width: '125px', height: '6px', background: '#0b5f4e', shadow: '0px 4px 8px 0px rgba(11,95,78,0.5)' },
-				titleStyle: { size: '43px', weight: '500', lineHeight: '57px', letterSpacing: '-1.5px' },
+				titleStyle: { size: '43px', weight: '500', lineHeight: '57px', letterSpacing: '-1.5px', mobile: { lineHeight: '24px' } },
 				mediaShape: { width: '412px', height: '450px', background: 'linear-gradient(39deg, #0b5f4e 0%, #0a8a71 100%)' },
 				mediaOffsets: [
 					{ top: '-25%', left: '0px', shadow: '0px 3px 34px 0px rgba(0,0,0,0.16)' },
@@ -529,10 +529,13 @@ describe('forge e2e — emitted site', () => {
 			// it — `--ds-title-max: none`).
 			expect(css).toMatch(/\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*max-width:\s*var\(--ds-title-max,\s*var\(--ds-hero-title-max/);
 			// The hero title's leading: the inline `--ds-title-lh` carries the
-			// fact as a SINGLE px value while the size is a clamp(), so the
-			// pinned leading must stay relative below the desktop range —
-			// otherwise a desktop measurement over-spaces the phone headline.
-			expect(css).toMatch(/@media[^{]*\{\s*\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*line-height:\s*1\.15/);
+			// desktop fact as a SINGLE px value while the size is a clamp(), so
+			// the narrower leading comes from `--ds-title-lh-md` / `-sm` (the
+			// profile's `titleStyle.tablet/mobile.lineHeight`) and falls back to
+			// a relative value — a desktop measurement must never over-space a
+			// phone headline.
+			expect(css).toMatch(/@media[^{]*\{[^}]*\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*line-height:\s*var\(--ds-title-lh-md,\s*1\.15\)/);
+			expect(css).toMatch(/@media[^{]*\{[^}]*\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*line-height:\s*var\(--ds-title-lh-sm,\s*var\(--ds-title-lh-md,\s*1\.15\)/);
 			// The title-to-grid rhythm (125 §8): the card grid opens with
 			// breathing room below the band heading.
 			expect(css).toMatch(/\.ds-grid\s*\{[^}]*margin-top:\s*var\(--forge-space\)/);
