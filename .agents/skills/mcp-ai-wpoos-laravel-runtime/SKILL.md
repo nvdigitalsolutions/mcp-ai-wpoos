@@ -88,7 +88,7 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 | Suite | Command (cwd) | Baseline (2026-11-14) |
 |---|---|---|
-| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 472 passed / 3117 assertions (after the OKF drawer) |
+| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 619 passed / 3599 assertions (2026-11-14, after the remote-sites surface) |
 | Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 175 passed / 640 assertions (after #7679) |
 | Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1264 tests / 4537 assertions (after the skills catalogue); green apart from the no-coverage-driver warning |
 

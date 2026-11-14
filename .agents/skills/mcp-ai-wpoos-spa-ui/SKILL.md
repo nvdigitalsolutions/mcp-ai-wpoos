@@ -176,6 +176,7 @@ app. Read this map when landing in either folder:
 | spa-v2 source | Console mirror / consumer | Sync rule |
 |---|---|---|
 | `addons/pro/assets/spa-v2/src/**` | aliased as `@nvoos/pro-spa-v2` in the console `vite.config.ts` **and** `vitest.config.ts` (the vitest config must repeat every alias + `server.fs.allow: [appRoot, repoRoot]`) | edit spa-v2 once; never copy |
+| spa-v2 **bare imports** (`@xyflow/react`, `jquery`, `cytoscape`, `@ai-sdk/*`, …) | each host app declares them itself: `package.json` + lockfile, `tsconfig` `paths` (needs a `pkg/*` wildcard), and a `vite` alias | a new bare import in spa-v2 is a **three-place change per app, in both apps** — see “The bare-import perimeter” below |
 | `src/api/config.ts` (`ProSpaRuntime` / `ProSpaEndpoints` / `readProSpaConfig`) | `examples/nvoos-complete-velocity/src/runtime-config.ts` `buildConsoleRuntime()` builds the same `window.NVOOS_PRO_SPA` shape; the PHP emitter `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php` is the canonical shape both apps mirror | new endpoint key = **5** wiring points: the type, the PHP emitter, the Complete console, the normaliser fallback, and **`examples/nvoos-pro-spa-vite/src/runtime-config.ts`** — the standalone mirror's source. Miss that last one and `alpha-working` is green while the mirror's `tsc --noEmit` fails on `TS2739 missing properties from type ProSpaEndpoints` (#7649 → #7653). Island PRs must update the console's endpoint VALUES too |
 | `src/stores/uiStore.ts` | shared by both trees — the console shell renders `data-theme` from `useUIStore().theme`, so spa-v2 pages can follow the console theme | one store instance per app tree (alias forces the same module) |
 | `src/styles/main.css` / `drawers.css` / `embedded.css` | imported by the console `main.tsx`; console-only rules live in `src/shell.css` | never move spa-v2 tokens into shell.css or vice versa |
@@ -446,6 +447,45 @@ the lost types). Rules:
   same commit.
 - Verify with the exact gate before pushing:
   `rm -rf node_modules && npm ci && npm run build`.
+
+#### The bare-import perimeter — the lockfile is only half the fix (#7762)
+
+The same `TS2307` also fires when the dependency is declared **nowhere**.
+`npm ci` then installs a perfectly correct tree that simply lacks the
+module, so the lockfile rule above cannot catch it. Every app that aliases
+spa-v2 must independently carry spa-v2's *bare imports* in **three**
+places:
+
+| Place | What |
+|---|---|
+| `package.json` + lockfile | the dependency itself (`npm install`) |
+| `tsconfig.json` → `paths` | the exact key **plus a `pkg/*` wildcard** — the wildcard is what makes a `pkg/dist/style.css` import typecheck |
+| `vite.config.ts` → `resolve.alias` | the console's `nodeModulesAlias('<pkg>')` helper; the alias is a prefix match, so it covers the css subpath too |
+
+The perimeter today: `react`, `react-dom`, `react-router-dom`, `zustand`,
+`@ai-sdk/react`, `@ai-sdk/ui-utils`, `marked`, `dompurify`, `jquery`,
+`cytoscape`, `cytoscape-fcose`, `@xyflow/react` (+ `@xyflow/system`).
+**Both** apps need a new entry — `examples/nvoos-complete-velocity` **and**
+`examples/nvoos-pro-spa-vite`. #7251 gave the xyflow triple to the standalone
+app only; the console kept compiling locally for weeks because vite/tsc
+resolve the bare import from `addons/pro/assets/spa-v2/node_modules`, which
+exists in a developer checkout and in **no** CI checkout.
+
+Diagnostics that separate a real fix from a config that merely stopped
+compiling the files:
+
+- Prove the file is in the program:
+  `npx tsc --noEmit --listFiles | grep 'spa-v2/src/features/workflows/'`
+  (six files; `grep -c 'node_modules/@xyflow/'` should be ~104).
+- Reproduce the CI tree: copy the app + `spa-v2` + **both island `dist/`
+  directories** into a scratch tree (gitignored `tmp/` works), `rm -rf` both
+  `node_modules`, then `npm ci && npm run build`. Omitting the island dists
+  yields four false `UNRESOLVED_IMPORT` errors in `runtime-config.ts`.
+- Verify under `npm ci`, never `npm install` — only the former is what CI runs.
+- A build-config-only change needs **no** `dist/` rebuild when the resolved
+  module version is unchanged: check the committed bundle already contains it
+  (`grep -l 'react-flow__' dist/assets/*.css`) before restoring with
+  `git restore --source=HEAD --worktree <dist>` + `git clean -fdq <dist>`.
 
 ## Porting a plugin JS widget into spa-v2 (vendored-upstream pattern)
 
