@@ -33,6 +33,25 @@ Per site the workflow: scaffold → `deploy-config --to velocity
 **blocking** `verify-deploy-tree` boot gate → `node scripts/mirror-push.mjs`
 (force-pushes `dist/` to the site branch).
 
+## Locked sites (handoff)
+
+`forge lock sites/<name>.json --target <dir> --by <name> --reason <text>`
+records the owner on the profile (`locked: { at, by, reason }`) and writes a
+`forge.lock.json` fingerprint into the project. A locked site is **fail-closed**:
+
+- `forge-sites.yml` skips it with a `::warning` + run-summary entry (never a
+  silent green run)
+- `scaffold` / `deploy` refuse to overwrite it (`--unlock` forces, destroying
+  hand-written work)
+- the project's `npm run check` reports hand-edits as expected drift, not failures
+- `forge status` reports the owner record, including a profile-only lock
+
+Return it with `forge unlock sites/<name>.json --target <dir> --yes`; a manual
+dispatch of the workflow may pass `force_unlock: true` for a mistaken lock.
+
+`jayainc` is locked: the frontend is hand-edited from here on and the
+`cms.jayainc.com` CMS connection is retired.
+
 ## Runtime tiers (Proposal 135)
 
 | Tier | Profile block | Branch content | Velocity settings |
