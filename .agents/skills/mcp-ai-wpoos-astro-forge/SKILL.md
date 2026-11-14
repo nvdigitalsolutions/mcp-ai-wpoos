@@ -1347,6 +1347,14 @@ Four more measured facts (detail:
 - **A centred title is never narrowed by the hero's 66% cap**: `--ds-title-max:
   none` when `align: center` with no measured max-width, and `margin-inline:
   auto` rides the centred type rule (otherwise the text sat ~200px off-centre).
+- **A section `lineHeight` fact is one value for every breakpoint.** It reaches
+  the DOM as a single inline `--ds-title-lh`, while the title's size comes from
+  a `clamp()`, so a px leading measured on desktop also applies at phone
+  widths — jayainc's 80px read fine under the 72px headline (1.11) but floated
+  the two lines of a 29.65px phone headline apart (2.70). Measure the leading
+  per breakpoint and scope the fix in the site's `global.css` (phones 45px, the
+  tablet band relative, desktop the pinned px); the profile pin carries the
+  desktop fact only.
 
 ## Cross-app parity gate (forge ↔ velocity, 2026-11-09)
 
