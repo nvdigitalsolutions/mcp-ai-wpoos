@@ -56,6 +56,7 @@ class EndpointCapabilitiesTest extends TestCase
             'cost',
             'proOps',
             'scheduleManager',
+            'orchestrationStats',
             'wpBase',
             'recordsSchema',
             'toolkits',
@@ -72,13 +73,13 @@ class EndpointCapabilitiesTest extends TestCase
         $endpoints = $this->endpoints();
 
         foreach ([
-            // Orchestration engine — not ported.
+            // Orchestration engine — not ported. The overview route exists
+            // (`orchestrationStats`), the builder and runs do not.
             'workflows',
             'workflowBuilder',
             'workflowPresets',
             'workflowNodes',
             'workflowRuns',
-            'orchestrationStats',
             // Surfaces whose stores exist but whose routes do not.
             'tokenManager',
             'threads',
