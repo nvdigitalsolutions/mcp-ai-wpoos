@@ -94,13 +94,22 @@ under `dist/media` — see the astro-forge `reference/performance-budget.md`.
 
 ## The step everyone forgets
 
-**A mirror push does not redeploy the app.** The CI job force-pushes
-`site/<name>` and exits green; Cloudways keeps serving whatever it last pulled.
-Two deploys in this repo's history were "done" while the live site was hours old.
+**A mirror push does not always redeploy the app — check `auto_deploy` first.**
+`velocity_vcs_app_repo_get` reports the linked repo/branch and its `auto_deploy`
+flag:
 
-After a push, **pull** the app (Cloudways panel → Deployment via Git → Pull, or
-the `git_pull` API action) and confirm the artifact changed. Three cheap tells,
-in order of strength:
+- `auto_deploy: true` → the push fires a Velocity **webhook deployment**
+  automatically. Do not pull again; poll `velocity_deployment_history_list` until
+  the newest entry matches the pushed commit and reads `success` (2026-11-14:
+  jayainc auto-deployed in 10–14 s). `operation_status` may return **403** for a
+  Velocity operation id from the MCP — the deployment history is the reliable
+  poll.
+- `auto_deploy: false` → the CI job force-pushes `site/<name>` and exits green;
+  Cloudways keeps serving whatever it last pulled. **Pull** the app (Cloudways
+  panel → Deployment via Git → Pull, or the `git_pull` API action).
+
+Either way, confirm the artifact changed. Three cheap tells, in order of
+strength:
 
 ```bash
 curl -sI "https://<app-host>/?cb=$(date +%s)" | grep -i last-modified   # compare to the run time
@@ -113,6 +122,41 @@ curl -s  "https://<app-host>/" | grep -o 'name="generator" content="[^"]*"'
 Read the app root, not the domain: `deploy.publicOrigin` may equal `url`, so
 `https://<domain>/` can still be WordPress while the forged app runs on
 `https://<something>.cloudwaysnodeapps.com/`.
+
+### Locked / hand-edited sites
+
+A locked site (`profile.locked` + `forge.lock.json`) is **not** rebuilt by
+`forge-sites.yml`, and merging a profile PR does **not** deploy it. The live
+source is the gitignored `<site>-frontend` project: edit it, rebuild it, then
+force-push `dist/`.
+
+Hand-edited projects may not carry `scripts/mirror-push.mjs` (the scaffold owns
+it). Emit it without touching the source:
+
+```bash
+node scripts/forge.mjs deploy-config sites/<name>.json --target ./<name>-frontend \
+  --to velocity --mirror-repo nvdigitalsolutions/nvoos-forge-sites \
+  --site-branch site/<name> --runtime static
+```
+
+`deploy-config` only writes `.github/workflows/{deploy,rebuild}.yml`,
+`scripts/verify-dispatch.mjs` and `scripts/mirror-push.mjs`.
+
+Run the push from the frontend:
+
+```bash
+MIRROR_URL=https://github.com/nvdigitalsolutions/nvoos-forge-sites.git \
+MIRROR_TOKEN=<repo-scoped token> SITE_BRANCH=site/<name> RUNTIME=static \
+SOURCE_DIR=./dist node scripts/mirror-push.mjs
+```
+
+Never echo the token. For an operator run, read it with `gh auth token` inside a
+small wrapper (`execFileSync('gh', ['auth','token'])`) and pass it via env.
+
+Then follow the `auto_deploy` branch above. Verify the live page with a
+cache-buster (`?cb=deploy-<sha>`); `last-modified` should match the deploy and
+`cf-cache-status` is normally `DYNAMIC` (no purge needed). Current example:
+jayainc app `6771968` on server `1685799`, branch `site/jayainc`.
 
 ## CI — `.github/workflows/forge-sites.yml`
 
@@ -154,8 +198,10 @@ List the tree instead of guessing: `gh api "repos/.../contents?ref=site/<name>"`
 
 ## Gotchas — each one cost a deploy
 
-1. **Green mirror push, stale site.** Nothing auto-pulls. Check `last-modified`
-   against the run time before believing a deploy.
+1. **Green mirror push, stale site.** With `auto_deploy: false` nothing pulls.
+   With `auto_deploy: true` the push triggers a webhook deploy — poll
+   `velocity_deployment_history_list`, not `operation_status` (403 for Velocity
+   ops from the MCP). Either way, check `last-modified` against the deploy time.
 2. **`sh: 1: Syntax error: "(" unexpected` (rc=2).** Velocity runs `npm run build`
    through `sh -c`; a stub emitted as `node -e process.exit(0)` is invalid shell.
    It must be `node -e "process.exit(0)"`. The forge build and the push both stay
