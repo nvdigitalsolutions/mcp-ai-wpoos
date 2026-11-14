@@ -45,6 +45,7 @@ use Nvoos\Core\Infrastructure\Profession\CachedProfessionRepository;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\Core\Tool\BulkImportTool;
+use Nvoos\Core\Tool\Classroom\EnrollStudentEcaTool;
 use Nvoos\Core\Tool\Classroom\GetEcaTool;
 use Nvoos\Core\Tool\Classroom\GetStudentTool;
 use Nvoos\Core\Tool\Classroom\ListEcasTool;
@@ -287,6 +288,7 @@ class NvoosServiceProvider extends ServiceProvider {
 			new ListProjectsTool( $errors, $content ),
 			new ListEcasTool( $errors, $content ),
 			new GetEcaTool( $errors, $content ),
+			new EnrollStudentEcaTool( $errors, $content ),
 			new GetStudentTool( $errors, $content ),
 			new ListStudentsTool( $errors, $content ),
 			new ListTasksTool( $errors, $content ),
