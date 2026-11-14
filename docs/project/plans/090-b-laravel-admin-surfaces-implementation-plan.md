@@ -686,7 +686,7 @@ engine serves today, and are re-captured from WordPress when the peer lands.
 |---|---|---|
 | Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
 | Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 14 files / 159 pass |
-| Console types | `npm run typecheck` | clean |
+| Console types | `npm run typecheck` | clean (also typechecks `e2e/` via `tsc -p e2e/tsconfig.json`) |
 | Console smoke (G1) | `cd examples/nvoos-complete-velocity && npm run test:e2e` | 6 pass / 30.2 s |
 | Laravel app | `docker exec oos-laravel-app php artisan test` | 96 pass |
 | Core | `cd lib/core && php -d extension=fileinfo vendor/bin/phpunit` | 937 tests (5 pre-existing `ToolRegistryIntegrationTest` errors) |

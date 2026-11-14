@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p e2e/tsconfig.json",
     "lint:a11y": "eslint --max-warnings 0 src/",
     "test": "vitest run",
     "test:watch": "vitest",
