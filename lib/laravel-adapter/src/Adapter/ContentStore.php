@@ -338,9 +338,9 @@ class ContentStore implements ContentStoreInterface {
 				return;
 
 			case 'NOT LIKE':
-				// Plain SQL semantics. WP_Query's NOT LIKE behaviour for
-				// absent keys is not documented; do not guess.
-				$group->where( $path, 'NOT LIKE', $value, $boolean );
+				// Plain SQL semantics for a missing key (NULL does not satisfy the
+				// predicate). WP_Query's behaviour here is undocumented; do not guess.
+				$group->where( $path, 'NOT LIKE', $this->likePattern( $value ), $boolean );
 				return;
 
 			default:
@@ -357,9 +357,34 @@ class ContentStore implements ContentStoreInterface {
 					return;
 				}
 
-				$group->where( $path, $compare, $value, $boolean );
+				$operand = 'LIKE' === $compare ? $this->likePattern( $value ) : $value;
+
+				$group->where( $path, $compare, $operand, $boolean );
 			}
 		}
+
+	/**
+	 * Wrap a LIKE operand the way WP_Meta_Query does.
+	 *
+	 * WP_Meta_Query turns `'compare' => 'LIKE'` into `%value%`, so a core tool
+	 * that passes a bare term matches substrings on WordPress. The WordPress
+	 * adapter forwards `metaQuery` straight into `WP_Query`, which means a raw
+	 * SQL `LIKE` here would silently return different rows for the same tool on
+	 * the two runtimes — the exact drift this port exists to prevent.
+	 *
+	 * Values that already carry wildcards keep working; the result is just
+	 * `%%value%%`. The one residual difference is that WP escapes `%` and `_`
+	 * in the operand while this stays plain, because SQLite needs an explicit
+	 * `ESCAPE` clause that the query builder does not emit. A caller that needs
+	 * a literal metacharacter must escape it for the target database.
+	 *
+	 * @param mixed $value Raw clause value.
+	 */
+	private function likePattern( mixed $value ): string {
+		$raw = is_scalar( $value ) ? (string) $value : '';
+
+		return '%' . $raw . '%';
+	}
 
 	/**
 	 * Compare a JSON meta path numerically, the way WP_Meta_Query does.

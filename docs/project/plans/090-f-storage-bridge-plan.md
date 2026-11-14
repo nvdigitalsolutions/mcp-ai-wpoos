@@ -146,6 +146,17 @@ The adapter now casts both sides for `>`, `>=`, `<`, `<=`, `BETWEEN` and
 `WP_Meta_Query` casts only then, and untyped ordering must stay lexical for date
 ranges. Both behaviours are pinned by tests.)*
 
+**LIKE wrapping (2026-11-14, cluster 3).** The first `LIKE` clause written by a
+core tool — `list_ecas` filtering `_eca_venue` — returned zero rows on Laravel
+and matched on WordPress. `WP_Meta_Query` wraps a `LIKE` / `NOT LIKE` operand in
+`%…%`; the adapter was passing it through raw, so the same tool disagreed with
+itself across runtimes. `ContentStore::likePattern()` now does the wrapping.
+Callers that already pass wildcards (e.g. `ListProjectsTool`) are unaffected —
+the pattern simply becomes `%%…%%`, which matches the same rows. The residual
+difference is that WordPress also escapes `%` and `_` in the operand while this
+stays plain, because SQLite needs an explicit `ESCAPE` clause the query builder
+does not emit. Pinned by `test_meta_like_matches_a_bare_term_like_wp_meta_query`.
+
 ### Phase 2 — First CPT family (project management)
 
 **Pre-req shipped.** `SchemaStoreInterface` now has a Laravel adapter

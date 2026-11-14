@@ -45,6 +45,7 @@ use Nvoos\Core\Infrastructure\Profession\CachedProfessionRepository;
 use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\Core\Tool\BulkImportTool;
+use Nvoos\Core\Tool\Classroom\ListEcasTool;
 use Nvoos\Core\Tool\CreateProjectTool;
 use Nvoos\Core\Tool\CreateTaskTool;
 use Nvoos\Core\Tool\DeleteProjectTool;
@@ -281,6 +282,7 @@ class NvoosServiceProvider extends ServiceProvider {
 
 		$service_tools = array(
 			new ListProjectsTool( $errors, $content ),
+			new ListEcasTool( $errors, $content ),
 			new ListTasksTool( $errors, $content ),
 			new GetTaskDependenciesTool( $errors, $content ),
 			new CreateTaskTool( $errors, $content ),
