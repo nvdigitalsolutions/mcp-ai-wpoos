@@ -55,8 +55,9 @@ function useMediaOps( endpoint: string, nonce: string ): {
 
 export function MediaOpsPage(): JSX.Element {
 	const { runtime, loading: bootstrapLoading } = useBootstrap();
+	const endpoint = runtime?.endpoints.mediaCc ?? '';
 	const { snapshot, loading, error, refresh } = useMediaOps(
-		runtime?.endpoints.mediaCc ?? '',
+		endpoint,
 		runtime?.nonce ?? ''
 	);
 
@@ -82,6 +83,20 @@ export function MediaOpsPage(): JSX.Element {
 			.catch( ( err: Error ) => setSweepMessage( err.message ) )
 			.finally( () => setSweepBusy( false ) );
 	}, [ runtime, refresh ] );
+
+	if ( ! bootstrapLoading && ! endpoint ) {
+		// The backend does not serve the media command centre (its `/features`
+		// map reports `mediaCc` unavailable, which also blanks the URL). Say so
+		// instead of rendering an error with a Retry that cannot succeed.
+		return (
+			<div className="nvoos-pro-spa-page nvoos-pro-spa-page--error" role="status">
+				<h2 className="nvoos-pro-spa-page__title">{ __( 'Media Ops', 'nvoos-pro-spa' ) }</h2>
+				<p className="nvoos-pro-spa-page__message">
+					{ __( 'Media Ops is not available on this backend.', 'nvoos-pro-spa' ) }
+				</p>
+			</div>
+		);
+	}
 
 	if ( bootstrapLoading || loading ) {
 		return (

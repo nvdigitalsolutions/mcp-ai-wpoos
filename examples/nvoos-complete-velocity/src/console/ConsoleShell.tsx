@@ -320,6 +320,7 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
         isChatRoute={isChatRoute}
         user={runtime.user}
         features={features}
+        endpoints={runtime.endpoints}
         onSignOut={onSignOut}
       />
 

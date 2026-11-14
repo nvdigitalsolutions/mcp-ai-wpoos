@@ -53,6 +53,47 @@ describe('isNavItemVisible', () => {
     ).toBe(true);
   });
 
+  it('hides items whose endpoint the backend does not serve', () => {
+    const gate = { capability: 'manage_options', endpoint: 'mediaCc' as const };
+
+    expect(isNavItemVisible(gate, undefined, ADMIN_CAPS, { mediaCc: '' })).toBe(false);
+    expect(isNavItemVisible(gate, undefined, ADMIN_CAPS, { mediaCc: '/api/v1/pro/media-cc' })).toBe(
+      true,
+    );
+  });
+
+  it('fails open when the endpoint map is absent', () => {
+    // Same rule as the feature map: a failed `/features` call must not empty
+    // the sidebar.
+    expect(
+      isNavItemVisible(
+        { capability: 'manage_options', endpoint: 'mediaCc' },
+        undefined,
+        ADMIN_CAPS,
+        undefined,
+      ),
+    ).toBe(true);
+  });
+
+  it('declares an endpoint gate for the surfaces a backend may not serve', () => {
+    const gated = CONSOLE_NAV_ITEMS.filter((item) => item.endpoint).map((item) => item.path);
+
+    expect(gated).toEqual(
+      expect.arrayContaining([
+        '/toolkits',
+        '/professions',
+        '/org-teams',
+        '/chat-channels',
+        '/connections',
+        '/media-ops',
+        '/knowledge-graph',
+        '/docs',
+        '/media',
+        '/documents',
+      ]),
+    );
+  });
+
   it('shows gated items when capability + feature are both satisfied', () => {
     expect(
       isNavItemVisible(

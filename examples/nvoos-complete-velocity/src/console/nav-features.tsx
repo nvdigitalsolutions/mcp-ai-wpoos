@@ -9,14 +9,32 @@
 
 import { Navigate } from 'react-router-dom';
 import type { JSX, ReactNode } from 'react';
+import type { ProSpaEndpoints } from '@nvoos/pro-spa-v2/api/config';
 
-/** Gate for a nav item / route. Both fields optional = always visible. */
+/** Gate for a nav item / route. All fields optional = always visible. */
 export interface NavGate {
   /** Required WordPress capability (from users/me capabilities). */
   capability?: string;
   /** Required server-side feature key (from GET /mcp-ai/v1/features). */
   feature?: string;
+  /**
+   * Required runtime endpoint (a key of `ProSpaEndpoints`).
+   *
+   * A blank endpoint means this backend does not serve the surface — the
+   * console blanks the URL when `/features` reports the key unavailable — so
+   * the item is hidden rather than opening a page whose every request would
+   * fail. Omit it for routes that are served on every runtime.
+   */
+  endpoint?: keyof ProSpaEndpoints;
 }
+
+/**
+ * Endpoint availability: each key mapped to its URL (blank = not served).
+ *
+ * The concrete `ProSpaEndpoints` has no index signature, so it is widened here
+ * rather than cast at every call site.
+ */
+export type EndpointMap = Partial<Record<keyof ProSpaEndpoints, string>>;
 
 /** A console nav entry — path/label/icon shared by sidebar and guards. */
 export interface ConsoleNavItem extends NavGate {
@@ -59,7 +77,7 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
       		{ path: '/blueprints', label: 'Blueprints', icon: '🗂️', capability: 'edit_posts' },
       		{ path: '/tools', label: 'Tools', icon: '🧰' },
       		{ path: '/paper-store', label: 'Paper Store', icon: '📝', capability: 'manage_options' },
-      		{ path: '/toolkits', label: 'Toolkits', icon: '🧩', capability: 'manage_options' },
+      		{ path: '/toolkits', label: 'Toolkits', icon: '🧩', capability: 'manage_options', endpoint: 'toolkits' },
     ],
   },
   {
@@ -87,14 +105,14 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
   		items: [
   			{ path: '/crm', label: 'CRM', icon: '🏢', capability: 'manage_options', feature: 'crm' },
   			{ path: '/pm', label: 'Projects', icon: '📁', capability: 'manage_options', feature: 'project_management' },
-  			{ path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options' },
-  			{ path: '/teams', label: 'Teams', icon: '👥', capability: 'manage_options' },
-  			{ path: '/org-teams', label: 'Org Teams', icon: '🧑‍🤝‍🧑', capability: 'manage_options' },
+	  		{ path: '/professions', label: 'Professions', icon: '👔', capability: 'manage_options', endpoint: 'professions' },
+	  		{ path: '/teams', label: 'Teams', icon: '👥', capability: 'manage_options' },
+	  		{ path: '/org-teams', label: 'Org Teams', icon: '🧑‍🤝‍🧑', capability: 'manage_options', endpoint: 'orgTeams' },
   			{ path: '/calendar', label: 'Calendar', icon: '📅', capability: 'manage_options', feature: 'calendar_booking' },
   			{ path: '/fnb', label: 'Food & Beverage', icon: '🍽️', capability: 'manage_options', feature: 'fnb' },
-  			{ path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options' },
-  			{ path: '/connections', label: 'Connections', icon: '🔌', capability: 'manage_options' },
-  			{ path: '/media-ops', label: 'Media Ops', icon: '🎞️', capability: 'manage_options' },
+	  		{ path: '/chat-channels', label: 'Channels', icon: '📨', capability: 'manage_options', endpoint: 'chatChannels' },
+	  		{ path: '/connections', label: 'Connections', icon: '🔌', capability: 'manage_options', endpoint: 'remoteSites' },
+	  		{ path: '/media-ops', label: 'Media Ops', icon: '🎞️', capability: 'manage_options', endpoint: 'mediaCc' },
   		],
   	},
   	{
@@ -144,6 +162,7 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
         icon: '🕸️',
         capability: 'manage_options',
         feature: 'knowledge_graph',
+        endpoint: 'contentGraph',
       },
       {
         path: '/docs',
@@ -151,6 +170,7 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
         icon: '📚',
         capability: 'manage_options',
         feature: 'docs_hub',
+        endpoint: 'docsHub',
       },
       {
         path: '/media',
@@ -158,6 +178,7 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
         icon: '🎨',
         capability: 'manage_options',
         feature: 'media_studio',
+        endpoint: 'mediaStudio',
       },
       {
         path: '/documents',
@@ -165,6 +186,7 @@ export const CONSOLE_NAV_GROUPS: ConsoleNavGroup[] = [
         icon: '📄',
         capability: 'manage_options',
         feature: 'document_editor',
+        endpoint: 'documentEditor',
       },
       { path: '/settings', label: 'Settings', icon: '⚙️', capability: 'manage_options' },
     ],
@@ -193,11 +215,17 @@ export function isNavItemVisible(
   gate: NavGate,
   features?: Record<string, boolean>,
   capabilities?: string[],
+  endpoints?: EndpointMap,
 ): boolean {
   if (gate.capability && !(capabilities ?? []).includes(gate.capability)) {
     return false;
   }
   if (gate.feature && features && features[gate.feature] === false) {
+    return false;
+  }
+  // Fail open when the endpoint map is absent, for the same reason the feature
+  // map does: a transient `/features` failure must not empty the sidebar.
+  if (gate.endpoint && endpoints && !endpoints[gate.endpoint]) {
     return false;
   }
   return true;

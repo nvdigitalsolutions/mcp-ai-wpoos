@@ -132,6 +132,25 @@ describe('ConsoleSidebar', () => {
     }
   });
 
+  it('hides items whose endpoint the backend does not serve', async () => {
+    renderSidebar({
+      endpoints: { mediaCc: '', chatChannels: '/chat-channels', remoteSites: '/remote-sites' },
+    });
+    await userEvent.click(screen.getByRole('button', { name: /command centers/i }));
+
+    // Blank URL = the surface is not served here, so the item is not offered.
+    expect(screen.queryByRole('link', { name: 'Media Ops' })).not.toBeInTheDocument();
+    // Served surfaces stay.
+    expect(screen.getByRole('link', { name: 'Channels' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Connections' })).toBeInTheDocument();
+  });
+
+  it('fails open when the endpoint map is absent', async () => {
+    renderSidebar({ endpoints: undefined });
+    await userEvent.click(screen.getByRole('button', { name: /command centers/i }));
+    expect(screen.getByRole('link', { name: 'Media Ops' })).toBeInTheDocument();
+  });
+
   it('auto-expands the group holding the active route', () => {
     renderSidebar({}, '/crm');
     const toggle = screen.getByRole('button', { name: /command centers/i });
