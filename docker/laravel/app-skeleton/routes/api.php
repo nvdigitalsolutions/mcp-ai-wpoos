@@ -12,6 +12,7 @@ use App\Http\Controllers\MemoryController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
+use App\Http\Controllers\OrchestrationStatsController;
 use App\Http\Controllers\PaperStoreController;
 use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
@@ -191,6 +192,11 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::put($triggersPath.'/{id}', [TriggersController::class, 'update']);
                 Route::delete($triggersPath.'/{id}', [TriggersController::class, 'destroy']);
             }
+
+            // Orchestration overview — the console's Orchestration page. An
+            // agent is an assistant record on this runtime, so the inventory
+            // is real; workflow fields are honestly empty (no engine).
+            Route::get('/orchestration/stats', OrchestrationStatsController::class);
 
             // Phase 3b — security posture, snapshots, self-test.
             Route::get('/security/posture', [SecurityController::class, 'posture']);
