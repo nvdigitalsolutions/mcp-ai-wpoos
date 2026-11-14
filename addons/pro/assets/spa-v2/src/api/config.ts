@@ -84,7 +84,6 @@ export interface ProSpaEndpoints {
 	assistants: string;
 	settings: string;
 	workflows: string;
-	analytics: string;
 	approvals: string;
 	/** Workflow triggers REST base (mcp-ai/v1/orchestration/triggers, 2.4.0). */
 	triggers: string;
@@ -342,7 +341,6 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			assistants: e.assistants,
 			settings: e.settings,
 			workflows: typeof e.workflows === 'string' ? e.workflows : '',
-			analytics: typeof e.analytics === 'string' ? e.analytics : '',
 			approvals: typeof e.approvals === 'string' ? e.approvals : '',
 			triggers: typeof e.triggers === 'string' ? e.triggers : '',
 			teams: typeof e.teams === 'string' ? e.teams : '',
