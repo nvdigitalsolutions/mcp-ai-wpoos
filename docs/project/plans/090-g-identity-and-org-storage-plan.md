@@ -1,6 +1,7 @@
 # Proposal 090-G — Identity and org storage: assistants, teams, professions
 
-Status: Phase 1 shipped. Phase 2 (profession catalogue) next.
+Status: all six sequencing phases shipped (2026-11-14). The only remaining
+surface gap is profession *management pages* — §2, last row.
 Depends on: `090-f-storage-bridge-plan.md` (the content port), `090-b` §6 (assistant studio).
 
 ---
@@ -31,14 +32,22 @@ deployment, and one contract across runtimes**.
 | Team contract | — | `TeamServiceInterface` (core) + `LaravelTeamService` ✅ — `/api/v1/org/teams` (§4.2) |
 | Profession storage | PHP service + knowledge-base loader | catalogue-backed, no table by design (§4.3) |
 | Profession contract | `ProfessionRepositoryInterface` (core) | `ProfessionRepository` adapter, bound in `NvoosServiceProvider` ✅ |
-
-These four rows previously read "none" / "no adapter". That was stale: the team
-graph, both contracts and the profession adapter shipped in Phase 3, and
-`TeamTest` + `TeamCatalogueTest` pass (23 tests, 91 assertions).
 | Profession pages | WP admin pages | Content Graph addon only |
 
-**Two defects in the current `assistants` migration** (both only visible once
-tenancy is considered):
+These rows previously read "none" / "no adapter", and the header said "Phase 2
+next". That was stale: the team graph, both contracts, the profession adapter,
+the role model and the catalogue cache all shipped. `TeamTest` +
+`TeamCatalogueTest` pass (23 tests, 91 assertions); `ProfessionCatalogueTest`
+and `AuthorizationTest` cover the rest.
+
+The last row is the one real gap: Laravel has the profession **catalogue and
+contract** but no management page. Editing a profession is still a WordPress
+admin task or a Content Graph addon task, because §7 guardrail 3 says reference
+data changes on release, not at runtime — so this is deliberate, not a port
+backlog item.
+
+**Two defects the original `assistants` migration had** (both only visible once
+tenancy is considered; both fixed in Phase 1 — see §4.1):
 
 ```php
 $table->string('slug')->unique();          // global — two tenants cannot both have "support-bot"
