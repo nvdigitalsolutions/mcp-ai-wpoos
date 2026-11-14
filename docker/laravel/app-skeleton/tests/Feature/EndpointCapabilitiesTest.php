@@ -57,6 +57,7 @@ class EndpointCapabilitiesTest extends TestCase
             'proOps',
             'scheduleManager',
             'orchestrationStats',
+            'tokenManager',
             'wpBase',
             'recordsSchema',
             'toolkits',
@@ -81,7 +82,6 @@ class EndpointCapabilitiesTest extends TestCase
             'workflowNodes',
             'workflowRuns',
             // Surfaces whose stores exist but whose routes do not.
-            'tokenManager',
             'threads',
             'dashboardsSchema',
             // Deliberately deferred inside the assistant editor.

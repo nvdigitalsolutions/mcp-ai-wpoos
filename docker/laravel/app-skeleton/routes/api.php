@@ -25,6 +25,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
 use App\Http\Controllers\TeamCatalogueController;
 use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TokenManagerController;
 use App\Http\Controllers\ToolController;
 use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\TranscriptsController;
@@ -192,6 +193,16 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::put($triggersPath.'/{id}', [TriggersController::class, 'update']);
                 Route::delete($triggersPath.'/{id}', [TriggersController::class, 'destroy']);
             }
+
+            // Token manager — the credentials `AuthProvider::issueCredential()`
+            // creates (Sanctum tokens named `oos-assistant-{id}`).
+            Route::get( '/token-manager/overview', [ TokenManagerController::class, 'overview' ] );
+            Route::post( '/token-manager/credentials/{assistant}/{credential}/revoke', [ TokenManagerController::class, 'revoke' ] )
+                ->whereNumber( 'assistant' );
+            Route::post( '/token-manager/credentials/{assistant}/{credential}/delete', [ TokenManagerController::class, 'delete' ] )
+                ->whereNumber( 'assistant' );
+            Route::post( '/token-manager/restrictions/{user}/lift', [ TokenManagerController::class, 'liftRestriction' ] )
+                ->whereNumber( 'user' );
 
             // Orchestration overview — the console's Orchestration page. An
             // agent is an assistant record on this runtime, so the inventory
