@@ -50,6 +50,7 @@ use Nvoos\Core\Tool\Classroom\GetEcaTool;
 use Nvoos\Core\Tool\Classroom\GetStudentTool;
 use Nvoos\Core\Tool\Classroom\ListEcasTool;
 use Nvoos\Core\Tool\Classroom\ListStudentsTool;
+use Nvoos\Core\Tool\Classroom\MarkEcaAttendanceTool;
 use Nvoos\Core\Tool\CreateProjectTool;
 use Nvoos\Core\Tool\CreateTaskTool;
 use Nvoos\Core\Tool\DeleteProjectTool;
@@ -291,6 +292,7 @@ class NvoosServiceProvider extends ServiceProvider {
 			new EnrollStudentEcaTool( $errors, $content ),
 			new GetStudentTool( $errors, $content ),
 			new ListStudentsTool( $errors, $content ),
+			new MarkEcaAttendanceTool( $errors, $content ),
 			new ListTasksTool( $errors, $content ),
 			new GetTaskDependenciesTool( $errors, $content ),
 			new CreateTaskTool( $errors, $content ),
