@@ -54,6 +54,12 @@ export default defineConfig(({ mode }) => {
         ...nodeModulesAlias('dompurify'),
         ...nodeModulesAlias('@ai-sdk/react'),
         ...nodeModulesAlias('@ai-sdk/ui-utils'),
+        // Workflow Builder canvas: the spa-v2 sources have no node_modules of
+        // their own outside the monorepo, so force the canvas onto this app's
+        // tree like react/zustand above. The alias is a prefix match, so it
+        // also covers the '@xyflow/react/dist/style.css' subpath import.
+        ...nodeModulesAlias('@xyflow/react'),
+        ...nodeModulesAlias('@xyflow/system'),
         // Knowledge-graph page deps: a second cytoscape instance would break
         // extension registration.
         ...nodeModulesAlias('jquery'),
