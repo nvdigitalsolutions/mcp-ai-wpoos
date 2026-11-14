@@ -67,9 +67,16 @@ Env knobs (all optional):
 
 ## Notes
 
+- `npm run typecheck` also runs `tsc -p e2e/tsconfig.json`. Playwright
+  transpiles TypeScript without typechecking, so without this the suite rots
+  silently the first time a client type changes.
 - `reuseExistingServer` is **off**: a stray server on the port would serve a
   different artifact and fail the request gate for the wrong reason.
 - Artifacts (`.e2e-dist/`, `e2e/.auth/`, reports) are gitignored.
+- This directory does **not** ship to the standalone
+  `nvoos-complete-velocity` mirror: `.github/workflows/sync-nvoos-complete-velocity.yml`
+  prunes it (and `.env.laravel`, and the e2e scripts) because the mirror has no
+  spa-v2 sources, Vite or Laravel stack.
 - CI runs the Laravel app **PHPUnit** suite (`.github/workflows/laravel-app.yml`).
   This smoke needs the full stack (MySQL + Redis + Octane + a built SPA), so it
   is a local/pre-release gate — run it before a release tag that touches
