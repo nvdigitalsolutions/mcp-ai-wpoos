@@ -156,6 +156,15 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
    - **`uptime`** has no metrics store. A KPI row cannot ship a fabricated percentage, and a `0` beside four real numbers reads as an outage. `orchestration/stats` reports health as a single status, which is not the same measurement.
    - **`recent_events`** is an *agent activity* feed in Pro. Workflow runs and approvals are a different semantic, so substituting them would populate the feed with the wrong events while looking correct.
    Five real tiles make the missing sixth *more* dangerous, not less. **Recommendation:** keep the key `false` at `runtime-adaptable` until two stores exist — a `nvoos_health_samples` table with a windowed uptime calculation, and an activity-event store that both the chat path and the orchestration path write to. Both are product decisions rather than parity work, which is why they are recorded here instead of being invented in a controller.
+   4. **`remoteSites` — deferred: feature-sized, not a slice.** The Pro implementation is 6,452 lines across a 5,276-line manager and a 1,176-line controller. It is not a thin surface over stored data:
+      - **Credential storage with its own scheme.** The manager encrypts per-field with AES-256-CBC behind a `V2` prefix, detects legacy plaintext and re-encrypts on save, and re-encrypts on export/import.
+      - **Fifteen connection types** across `website`, `ai`, `email`, `google` and `chat` categories, each with its own field schema.
+      - **Per-provider verification** (`POST /{id}/test`), which is integrations rather than parity.
+      - **Base-plugin bridging**: the list merges a synthetic `base` Gmail row read from the base settings.
+
+      The one real design question is cheap to settle now: ADR-8 already says the two runtimes are separate backends, so **connections never migrate between them**. Each runtime therefore owns its own scheme — WordPress keeps the existing `V2` format, Laravel uses `Crypt` (AES-256-GCM under the app key). Nobody needs to reimplement the WordPress cipher.
+
+      **Decomposition, in dependency order:** (a) a `CredentialStore` over `Crypt` plus a `nvoos_remote_sites` table with redacted reads — this also unblocks storing MCP app tokens, which #7743 deliberately refused to accept on a plaintext route; (b) the type catalogue as data and the wizard wiring; (c) per-provider verification. The key can flip only after (c): a Connections page whose Test button fails for every row is worse than a hidden page.
 
 ## Sources
 
