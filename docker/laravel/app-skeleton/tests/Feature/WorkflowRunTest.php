@@ -71,6 +71,12 @@ class WorkflowRunTest extends TestCase
         $this->assertTrue($body['success']);
         $this->assertSame('completed', $body['status']);
         $this->assertSame(1, $body['tool_calls']);
+
+        // 090-i — the run writes one command-centre activity event. Recorded in
+        // WorkflowRunner so a triggered run produces the same entry.
+        $this->assertDatabaseHas('nvoos_activity_events', array(
+            'type' => 'workflow.completed',
+        ));
         $this->assertSame('completed', $body['results']['node_1']['status']);
         $this->assertSame('completed', $body['results']['node_2']['status']);
 

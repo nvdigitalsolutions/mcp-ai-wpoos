@@ -92,6 +92,24 @@ final class WorkflowRunner
             'updated_at' => now(),
         ]);
 
+        // One feed entry per run, regardless of whether a person or a trigger
+        // started it — both go through this method, which is why the recorder
+        // lives here rather than in the controller.
+        app(ActivityRecorder::class)->record(
+            $result['success'] ? 'workflow.completed' : 'workflow.failed',
+            sprintf(
+                'Workflow #%d %s',
+                (int) $workflow->id,
+                $result['success'] ? 'completed' : 'failed'
+            ),
+            null,
+            array(
+                'run_id' => $runId,
+                'workflow_id' => (int) $workflow->id,
+                'tool_calls' => (int) $result['tool_calls'],
+            )
+        );
+
         return [
             'success' => (bool) $result['success'],
             'status' => (string) $result['status'],
