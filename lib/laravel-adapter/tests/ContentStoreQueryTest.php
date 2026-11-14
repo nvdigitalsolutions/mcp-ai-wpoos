@@ -280,6 +280,28 @@ final class ContentStoreQueryTest extends TestCase {
 		$this->assertSame( 1, $notLike->total );
 	}
 
+	public function test_meta_like_matches_a_bare_term_like_wp_meta_query(): void {
+		$this->make( 'Alpha', array( 'venue' => 'Design Lab' ) );
+		$this->make( 'Bravo', array( 'venue' => 'Gym' ) );
+
+		$result = $this->runQuery(
+			array(
+				array(
+					'key'     => 'venue',
+					'value'   => 'Design',
+					'compare' => 'LIKE',
+				),
+			),
+			array(),
+			'title'
+		);
+
+		// WP_Meta_Query wraps the operand in `%…%`; the adapter has to do the
+		// same or the same tool returns different rows on the two runtimes.
+		$this->assertSame( array( 'Alpha' ), $this->titles( $result ) );
+		$this->assertSame( 1, $result->total );
+	}
+
 	public function test_meta_not_between_matches_rows_and_counts(): void {
 		$this->make( 'Low', array( 'score' => 10 ) );
 		$this->make( 'Mid', array( 'score' => 50 ) );

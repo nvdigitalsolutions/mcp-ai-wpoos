@@ -365,11 +365,15 @@ return array(
 				),
 				'_eca_is_paid'              => array(
 					'label' => 'Paid',
-					'type'  => 'boolean',
+					// WordPress stores the checkbox encoding, not a boolean
+					// (`get_post_meta(...) === 'yes'` in the ECA tools).
+					'type'  => 'string',
+					'enum'  => array( 'yes', 'no' ),
 				),
 				'_eca_requires_audition'    => array(
 					'label' => 'Requires Audition',
-					'type'  => 'boolean',
+					'type'  => 'string',
+					'enum'  => array( 'yes', 'no' ),
 				),
 				'_eca_max_students'         => array(
 					'label' => 'Maximum Students',
