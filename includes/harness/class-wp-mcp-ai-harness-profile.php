@@ -53,6 +53,13 @@ class WP_MCP_AI_Harness_Profile {
 	 * @return array
 	 */
 	public static function defaults() {
+		// The canonical shape lives in lib/core so both runtimes resolve the same
+		// profile. lib/ is stripped from wp.org base builds, so the local copy
+		// below stays as the self-contained fallback.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\HarnessProfile' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\HarnessProfile::defaults();
+		}
+
 		return array(
 			'enabled'          => false,
 			'cues'             => array(),
@@ -118,6 +125,10 @@ class WP_MCP_AI_Harness_Profile {
 	 * @return array
 	 */
 	public static function sanitize( $raw ) {
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\HarnessProfile' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\HarnessProfile::sanitize( $raw );
+		}
+
 		if ( is_string( $raw ) ) {
 			$decoded = json_decode( $raw, true );
 			$raw     = is_array( $decoded ) ? $decoded : array();

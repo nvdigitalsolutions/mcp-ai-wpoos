@@ -29,6 +29,7 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\FileStoreInterface;
 use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
+use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\PaperStoreInterface;
@@ -79,6 +80,7 @@ use Nvoos\Laravel\Adapter\ErrorFactory;
 use Nvoos\Laravel\Adapter\EventDispatcher;
 use Nvoos\Laravel\Adapter\FileStore;
 use Nvoos\Laravel\Adapter\FileUploadService;
+use Nvoos\Laravel\Adapter\HarnessProfileProvider;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
 use Nvoos\Laravel\Adapter\LicensedProEntitlement;
@@ -109,6 +111,7 @@ class NvoosServiceProvider extends ServiceProvider {
 
 		// Bind domain interfaces → adapter implementations.
 		$this->app->bind( ErrorFactoryInterface::class, ErrorFactory::class );
+		$this->app->bind( HarnessProfileProviderInterface::class, HarnessProfileProvider::class );
 		$this->app->bind( CacheStoreInterface::class, CacheStore::class );
 		$this->app->bind( SettingsStoreInterface::class, SettingsStore::class );
 		$this->app->bind( EventDispatcherInterface::class, EventDispatcher::class );
@@ -312,7 +315,7 @@ class NvoosServiceProvider extends ServiceProvider {
 		$registry = $this->app->make( ToolRegistry::class );
 		$errors   = $this->app->make( ErrorFactoryInterface::class );
 
-		foreach ( CoreToolCatalogue::build( $errors ) as $tool ) {
+		foreach ( CoreToolCatalogue::build( $errors, $this->app->make( HarnessProfileProviderInterface::class ) ) as $tool ) {
 			if ( ! $registry->has( $tool->getSlug() ) ) {
 				$registry->register( $tool );
 			}
