@@ -145,10 +145,13 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
 - Add an OAuth flow without PKCE, or accept tokens not issued for the connection.
 - Invent a second feature-flag mechanism; §3.1 extends the existing map.
 
-## 9. Open decisions
+## 9. Decisions
 
-1. **Licence of the extracted MCP stack.** Moving ~6.6k lines from `addons/pro` (Proprietary) into `lib/core` (MIT) is a relicensing act, not a refactor. Options: (a) relicense as MIT — consistent with the `OkfParser` extraction, owner's call; (b) keep the client in Pro and have the Laravel app depend on Pro — breaks the base/MIT boundary; (c) write a smaller client in core and leave Pro untouched — least risk, most duplicated protocol code. **Recommendation: (a)**, because two MCP implementations will drift on exactly the handshake edge cases the Pro stack already paid for.
-2. **`chatChannels` scope.** A communications toolkit is only worth porting if a Laravel estate actually sends SMS/email. **Recommendation:** defer until a toolkit manifest exists; flip the reason to `not_implemented` meanwhile.
+1. **Licence of the extracted MCP stack — decided: (a), relicensed as MIT.** The owner confirmed the copyright position; the history for `addons/pro/includes/mcp-apps/` carries a single author identity, so there is no third-party grant to obtain. The cut was drawn during execution and is narrower than the original ~6.6k-line framing: only the protocol *decisions* move to `lib/core`; the WordPress transport, credentials, `WP_Error` mapping and the registry stay proprietary. Three of the six files are the adapter, and the two protocol files are written against `WP_Error` and `wp_remote_*` throughout, so a block move was never available.
+   - Shipped in #7738: `Nvoos\Core\Domain\Mcp\McpHandshakePolicy`, pinned by `tests/fixtures/mcp/handshake-cases.json` and replayed from both the core and the WordPress suites.
+   - The licence gate gained the rule that made the earlier gap visible: it banned GPL inside a proprietary tree but not MIT, so a mechanical copy would have passed CI. It now checks the direction as well as the crossing.
+   - Remaining slices, each independently mergeable: tool/resource request shaping; OAuth metadata discovery order; the Laravel-side client.
+2. **`chatChannels` scope — open.** A communications toolkit is only worth porting if a Laravel estate actually sends SMS/email. **Recommendation:** defer until a toolkit manifest exists; classify it `toolkit-shaped` in the capability manifest meanwhile (that is the shipped reason code — `not_implemented` was superseded when the v2 taxonomy landed in #7737).
 
 ## Sources
 
