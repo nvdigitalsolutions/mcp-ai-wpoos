@@ -450,6 +450,11 @@ return array(
 						),
 					),
 				),
+				'_eca_change_history'       => array(
+					'label' => 'Change History',
+					// Plain list of audit records (withdrawals today), appended to.
+					'type'  => 'array',
+				),
 				// Populated by the WordPress-only Google Classroom sync.
 				'_eca_google_course_id'     => array(
 					'label' => 'Google Course ID',
