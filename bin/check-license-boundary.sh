@@ -14,6 +14,11 @@
 # both layers: that each source tree declares the right licence in its file
 # headers, AND that the packaging rules keep the trees in separate artefacts.
 #
+# Direction is checked, not just crossing: MIT may be consumed by GPL and by
+# proprietary code, but neither may flow back into lib/core, and an MIT header
+# inside a proprietary tree is a relicensing bug even though it is not a
+# GPL violation.
+#
 # Usage:  bin/check-license-boundary.sh
 # Exit:   0 = boundary intact, 1 = violation(s) found
 #
@@ -92,6 +97,32 @@ check_tree "includes" "Proprietary" "Proprietary (package is GPL)"
 # The commercial addons are proprietary.
 check_tree "addons/pro/includes" "GPL" "GPL (package is Proprietary)"
 check_tree "addons/canvas" "GPL" "GPL (package is Proprietary)"
+
+# Direction matters as much as crossing. A permissive header inside a
+# proprietary tree is how a relicensing mistake ships quietly: MIT code may be
+# consumed by GPL and by proprietary code, but a proprietary file must not
+# grant MIT rights. The GPL-versus-Proprietary rule above would not catch a
+# mechanical copy of an MIT file into addons/pro.
+check_tree "addons/pro/includes" "MIT" "MIT (package is Proprietary)"
+check_tree "addons/canvas" "MIT" "MIT (package is Proprietary)"
+
+# The engine must positively declare MIT, not merely avoid declaring GPL.
+require_tree() {
+	local tree="$1" want_pattern="$2" label="$3"
+	[ -d "$tree" ] || { pass "$tree absent, skipped"; return; }
+
+	local offenders
+	offenders=$(grep -rLE "@license.*${want_pattern}" --include="*.php" "$tree" 2>/dev/null || true)
+
+	if [ -z "$offenders" ]; then
+		pass "$tree — every file declares ${label}"
+	else
+		fail "$tree contains files NOT declaring ${label}"
+		show_offenders "$offenders"
+	fi
+}
+
+require_tree "lib/core/src" "MIT" "MIT (package is MIT)"
 
 # ---------------------------------------------------------------------------
 # 3. Every source file must declare a licence at all.

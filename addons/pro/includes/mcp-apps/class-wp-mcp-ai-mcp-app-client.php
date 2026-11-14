@@ -361,7 +361,9 @@ class WP_MCP_AI_MCP_App_Client {
 	 *                         result); WP_Error when both paths fail.
 	 */
 	public function handshake() {
-		if ( $this->has_legacy_hint() ) {
+		$first = \Nvoos\Core\Domain\Mcp\McpHandshakePolicy::firstAttempt( $this->has_legacy_hint() );
+
+		if ( \Nvoos\Core\Domain\Mcp\McpHandshakePolicy::INITIALIZE === $first ) {
 			$result = $this->initialize();
 
 			if ( ! is_wp_error( $result ) ) {
@@ -429,11 +431,13 @@ class WP_MCP_AI_MCP_App_Client {
 		$data      = $error->get_error_data();
 		$rpc_code  = is_array( $data ) && isset( $data['rpc_code'] ) ? $data['rpc_code'] : 0;
 		$http_code = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
-		$message   = strtolower( $error->get_error_message() );
 
-		return in_array( $rpc_code, array( -32601, -32600 ), true )
-			|| false !== strpos( $message, 'session' )
-			|| in_array( $http_code, array( 400, 404, 405, 501 ), true );
+		// The rule lives in lib/core so the Laravel runtime can share it.
+		return \Nvoos\Core\Domain\Mcp\McpHandshakePolicy::isLegacyRejection(
+			$http_code,
+			is_int( $rpc_code ) ? $rpc_code : null,
+			$error->get_error_message()
+		);
 	}
 
 	/**
@@ -454,8 +458,11 @@ class WP_MCP_AI_MCP_App_Client {
 		$rpc_code  = is_array( $data ) && isset( $data['rpc_code'] ) ? $data['rpc_code'] : 0;
 		$http_code = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
 
-		return in_array( $rpc_code, array( -32601, -32600 ), true )
-			|| in_array( $http_code, array( 400, 404, 405, 501 ), true );
+		// Deliberately ignores the message; see McpHandshakePolicy.
+		return \Nvoos\Core\Domain\Mcp\McpHandshakePolicy::isStatelessRejection(
+			$http_code,
+			is_int( $rpc_code ) ? $rpc_code : null
+		);
 	}
 
 	/**
