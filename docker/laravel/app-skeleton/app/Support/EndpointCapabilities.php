@@ -21,8 +21,9 @@ use Illuminate\Support\Facades\Route as RouteFacade;
  *
  * Each key mirrors `ProSpaEndpoints` in `addons/pro/assets/spa-v2/src/api/config.ts`.
  * The value is a URI fragment that must match at least one registered route;
- * prefix matching is used so a collection root (e.g. `api/v1/pro/schedules`)
- * counts when only sub-routes are registered.
+ * matching is boundary-aware so a collection root (e.g. `api/v1/pro/schedules`)
+ * counts when only sub-routes are registered, while a sibling that merely shares
+ * a prefix (`api/v1/chat-transcripts` for `api/v1/chat`) does not.
  *
  * Adding a route to `routes/api.php` flips its key to `true` with no change
  * here — the map is read from the router, not maintained by hand.
@@ -104,6 +105,31 @@ final class EndpointCapabilities
     }
 
     /**
+     * Does a registered URI serve this endpoint fragment?
+     *
+     * The match is boundary-aware: a fragment matches itself or any route
+     * underneath it, never a sibling that merely shares a prefix. A plain
+     * `str_starts_with()` check said `api/v1/chat` was served by
+     * `api/v1/chat-transcripts` and `api/v1/chat-memory`, which is how the
+     * `chat` key could read true while no chat route existed at all.
+     *
+     * Public so the rule can be unit-tested without a router.
+     *
+     * @param string $uri      Registered route URI, without a leading slash.
+     * @param string $fragment Endpoint fragment the key maps to.
+     */
+    public static function matches(string $uri, string $fragment): bool
+    {
+        $fragment = rtrim($fragment, '/');
+
+        if ('' === $fragment) {
+            return false;
+        }
+
+        return $uri === $fragment || str_starts_with($uri, $fragment . '/');
+    }
+
+    /**
      * Every registered URI, normalised (no leading slash).
      *
      * @return string[]
@@ -126,7 +152,7 @@ final class EndpointCapabilities
     private static function hasFragment(array $uris, string $fragment): bool
     {
         foreach ($uris as $uri) {
-            if (str_starts_with($uri, $fragment)) {
+            if (self::matches($uri, $fragment)) {
                 return true;
             }
         }

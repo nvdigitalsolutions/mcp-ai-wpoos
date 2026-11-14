@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Support\EndpointCapabilities;
+use Illuminate\Support\Facades\Route as RouteFacade;
 use Tests\TestCase;
 
 /**
@@ -39,6 +41,7 @@ class EndpointCapabilitiesTest extends TestCase
         // One per phase of the port, so a regression in any area shows up.
         foreach ([
             'chat',
+            'chatClient',
             'transcripts',
             'memory',
             'tools',
@@ -102,6 +105,48 @@ class EndpointCapabilitiesTest extends TestCase
         ] as $key) {
             $this->assertFalse($endpoints[$key] ?? true, $key.' should be unavailable.');
         }
+    }
+
+    public function test_the_matcher_is_boundary_aware(): void
+    {
+        // The defect this pins: a plain prefix check said `api/v1/chat` was
+        // served by `api/v1/chat-transcripts` and `api/v1/chat-memory`, so the
+        // `chat` key could read true while no chat route existed at all.
+        $this->assertFalse(EndpointCapabilities::matches('api/v1/chat-transcripts', 'api/v1/chat'));
+        $this->assertFalse(EndpointCapabilities::matches('api/v1/chat-memory', 'api/v1/chat'));
+        $this->assertFalse(EndpointCapabilities::matches('api/v1/chat-client', 'api/v1/chat'));
+
+        // Exact and descendant matches still count — a collection root is
+        // served when only its sub-routes are registered.
+        $this->assertTrue(EndpointCapabilities::matches('api/v1/chat', 'api/v1/chat'));
+        $this->assertTrue(EndpointCapabilities::matches('api/v1/chat/stream', 'api/v1/chat'));
+        $this->assertTrue(EndpointCapabilities::matches('api/v1/pro/schedules/7', 'api/v1/pro/schedules'));
+
+        // A trailing slash on the fragment is normalised; an empty one never
+        // matches, so a misconfigured key fails closed.
+        $this->assertTrue(EndpointCapabilities::matches('api/v1/tools', 'api/v1/tools/'));
+        $this->assertFalse(EndpointCapabilities::matches('api/v1/tools', '/'));
+        $this->assertFalse(EndpointCapabilities::matches('api/v1/tools', ''));
+    }
+
+    public function test_the_chat_client_route_is_registered_and_authenticated(): void
+    {
+        $route = null;
+
+        foreach (RouteFacade::getRoutes() as $candidate) {
+            if ('api/v1/chat-client' === $candidate->uri()) {
+                $route = $candidate;
+            }
+        }
+
+        $this->assertNotNull($route, 'The console chat transport POSTs to /api/v1/chat-client.');
+        $this->assertContains('POST', $route->methods());
+        $this->assertContains('auth:sanctum', $route->gatherMiddleware());
+
+        // Declared but unreachable would still read `true` from the map, so the
+        // route is exercised too. No DB needed: auth rejects before validation.
+        $this->postJson('/api/v1/chat-client', ['messages' => []])
+            ->assertStatus(401);
     }
 
     public function test_the_map_covers_the_console_contract_exactly(): void

@@ -68,6 +68,21 @@ Route::prefix('api/v1')->group(function (): void {
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/session/me', [SessionController::class, 'me']);
 
+        // Chat streams. Its own limiter, tighter than the console default,
+        // because a stream holds the connection open.
+        //
+        // `/chat-client` is the console's transport: `useChatSpoke` →
+        // `createChatFetch` POSTs here and translates the OpenAI-compatible
+        // SSE frames into the AI SDK data-stream protocol client-side, so the
+        // controller's `event: message` + `choices[].delta` output is the
+        // whole contract. WordPress serves the same path and differs from
+        // `/chat` only by its agentic-iteration ceiling (15 vs 5); the
+        // orchestrator default is already 15.
+        Route::middleware('throttle:chat')->group(function (): void {
+            Route::post('/chat/stream', ChatStreamController::class);
+            Route::post('/chat-client', ChatStreamController::class);
+        });
+
         // ── Available to any authenticated user ──────────────────────────
         // Chat and its satellite surfaces are per-user, not administrative.
         // `wp/*` and `media` mirror WordPress's own capabilities: authors may
@@ -196,13 +211,13 @@ Route::prefix('api/v1')->group(function (): void {
 
             // Token manager — the credentials `AuthProvider::issueCredential()`
             // creates (Sanctum tokens named `oos-assistant-{id}`).
-            Route::get( '/token-manager/overview', [ TokenManagerController::class, 'overview' ] );
-            Route::post( '/token-manager/credentials/{assistant}/{credential}/revoke', [ TokenManagerController::class, 'revoke' ] )
-                ->whereNumber( 'assistant' );
-            Route::post( '/token-manager/credentials/{assistant}/{credential}/delete', [ TokenManagerController::class, 'delete' ] )
-                ->whereNumber( 'assistant' );
-            Route::post( '/token-manager/restrictions/{user}/lift', [ TokenManagerController::class, 'liftRestriction' ] )
-                ->whereNumber( 'user' );
+            Route::get('/token-manager/overview', [ TokenManagerController::class, 'overview' ]);
+            Route::post('/token-manager/credentials/{assistant}/{credential}/revoke', [ TokenManagerController::class, 'revoke' ])
+                ->whereNumber('assistant');
+            Route::post('/token-manager/credentials/{assistant}/{credential}/delete', [ TokenManagerController::class, 'delete' ])
+                ->whereNumber('assistant');
+            Route::post('/token-manager/restrictions/{user}/lift', [ TokenManagerController::class, 'liftRestriction' ])
+                ->whereNumber('user');
 
             // Orchestration overview — the console's Orchestration page. An
             // agent is an assistant record on this runtime, so the inventory
@@ -292,6 +307,3 @@ Route::prefix('api/v1')->group(function (): void {
 
 Route::middleware(['auth:sanctum', 'throttle:tools', 'spike.local'])
     ->post('/dev/tools/{slug}', ToolController::class);
-
-Route::middleware(['auth:sanctum', 'throttle:chat'])
-    ->post('/chat/stream', ChatStreamController::class);
