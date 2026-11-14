@@ -186,7 +186,7 @@
 				"titleStyle": {
 					"size": "72px",
 					"weight": "500",
-					"lineHeight": "52px",
+					"lineHeight": "80px",
 					"letterSpacing": "-2.1px"
 				},
 				"titleDivider": {
@@ -935,10 +935,10 @@
 			"value": {
 				"size": "72px",
 				"weight": "500",
-				"lineHeight": "52px",
+				"lineHeight": "80px",
 				"letterSpacing": "-2.1px"
 			},
-			"why": "Operator override: the 72px hero headline reads too loose at the source's 79px line-height; tighten it to 52px. Tablet/mobile facts stay as measured."
+			"why": "Operator override: the 72px hero headline needs ~1.1 leading on desktop, so the line-height is 80px; the 52px first pass read too tight. Tablet/mobile facts stay as measured."
 		}
 	],
 	"vocabulary": {
@@ -1294,7 +1294,7 @@
 				"h2": {
 					"size": "72px",
 					"weight": "500",
-					"lineHeight": "52px",
+					"lineHeight": "80px",
 					"letterSpacing": "-2.1px",
 					"transform": "none",
 					"align": "start",
