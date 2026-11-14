@@ -8,7 +8,7 @@
  *
  *   {site}/wp-json/mcp-ai/v1/{chat,chat-client,chat-transcripts,chat-memory,
  *     threads,tools,assistants,settings,approvals}
- *   {site}/wp-json/mcp-ai-pro/v1/{workflows,analytics,tool-shortcuts,
+ *   {site}/wp-json/mcp-ai-pro/v1/{workflows,tool-shortcuts,
  *     slash-commands,okf}
  *   {site}/wp-json/wp/v2/media
  *   {site}/wp-json/mcp-ai/v1/session/nonce   (fresh wp_rest nonce, cookie auth)
@@ -129,9 +129,6 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		settings: `${core}/settings`,
 		upload: `${api}/wp/v2/media`,
 		workflows: `${pro}/workflows`,
-		// Site-wide usage analytics (core namespace, admin-gated) — matches the
-		// canonical PHP config (class-wp-mcp-ai-pro-spa-config.php).
-		analytics: `${core}/analytics`,
 		approvals: `${core}/approvals`,
 		triggers: `${core}/orchestration/triggers`,
 		teams: `${core}/teams`,
