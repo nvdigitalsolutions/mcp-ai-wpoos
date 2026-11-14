@@ -1,7 +1,7 @@
 # Proposal 090-h — The workflow engine on the Laravel runtime
 
 **Status:** Decision recorded 2026-11-14 — **Laravel-native, phased, three increments.**
-**Shipped:** H1 + H2 (2026-11-14) — `workflowPresets` and `workflowBuilder` report `true`. H3 (execution + runs) remains.
+**Shipped:** H1 + H2 + H3 (2026-11-14). All four engine keys report `true`; no workflow key remains false in the console contract.
 **Unblocks:** `workflowBuilder`, `workflowPresets`, `workflowNodes`, `workflowRuns` (4 of the 17 remaining console endpoint keys).
 **Related:** `090-b-laravel-admin-surfaces-proposal.md` ADR-5, ADR-6, ADR-8; `090-d-selective-tool-port.md`.
 
@@ -97,16 +97,24 @@ and that gate belongs to the H3 executor, not the catalogue.
 
 **Acceptance:** create → save → reload round-trips the graph byte-identically; an unauthenticated or under-privileged write is refused by middleware, not by a controller check.
 
-### H3 — Execution + runs (unblocks `workflowRuns`, and makes `execute` real)
+### H3 — Execution + runs (unblocks `workflowRuns` and `workflowNodes`, and makes `execute` real)
 
-- `POST /api/v1/orchestration/workflows/{id}/execute` — Kahn topological order over the saved graph.
-- `GET /api/v1/orchestration/runs?workflow_id=` — run summaries; `GET /runs/{id}` for the step detail.
-- Node types, in this order: **tool** (registry call), **condition** (branch on a previous result), **agent** (assistant run via the orchestrator), **delay**. Templates use `{{ node.xyz.output }}` resolution against the run context.
-- Execution reuses `ChatOrchestrator`'s limits: `max_agentic_iterations` per node, plus a run-level tool-call ceiling. Cost tracking already exists, so a run reports its own spend.
+- `POST /api/v1/orchestration/workflows/{id}/execute` — Kahn topological order over the saved graph, one node at a time, each node's output available downstream.
+- `GET /api/v1/orchestration/runs?workflow_id=` — run summaries, newest first (50); `GET /runs/{id}` adds input, output, per-node events and the error.
+- `POST /api/v1/pro/workflow-builder/nodes/execute` — the canvas's per-node run button.
+- Runs are append-only rows in `nvoos_workflow_runs`: status `running|completed|failed`, tool-call count, duration, and the executor's per-node record in `events`.
 
-**Not in H3:** loops, human-in-the-loop pauses (approvals exist but wiring a pause/resume into a run is its own phase), cross-runtime run history.
+**Node types.** `tool` (registry call, capability-gated), `condition` (`node_2.pageviews < 100`), `agent` (chat orchestrator, assistant resolved by id or the site default), `delay` (capped), plus `input`/`output` pass-throughs. Any other type without a `toolSlug` is a no-op, so a graph authored for WordPress still runs its tool nodes here.
 
-**Acceptance:** a two-node preset executes end-to-end against a spike provider, the run row records status/duration/tool calls, and a deliberately cyclic graph is rejected at save time rather than at execution time.
+**Templates.** `{{ input.key }}` and `{{ node_id.key.0.nested }}`, resolved by `TemplateResolver`: an exact single template keeps its type (array, number, bool), embedded ones interpolate. Conditions use the same resolver with a five-operator grammar (`=== !== == != > >= < <=`). No `eval` — a stored graph can never execute PHP.
+
+**Divergence from the reference — deliberate.** WordPress's Engine V2 does **not** walk the graph: it renders the nodes into a description and hands the whole thing to an LLM-planned `execute_workflow` tool. The Laravel runtime executes the graph deterministically. That makes a run testable, names the failing node, and bounds its cost — but it is not what WordPress does, so a graph whose steps depend on model judgement can produce different results on the two runtimes. Recorded per §7 and in 090-d.
+
+**Cost and safety.** Tool nodes reuse `ToolRegistry::execute()`, so each tool's `required_capability` and the pre-execution listener (destructive-ops gate) apply unchanged; the caller's identity is carried, never elevated. The executor adds a 200-node and a 50-tool-call ceiling per run. Agent nodes run through `ChatOrchestrator` with the assistant's own provider/model/tools and a 5-iteration cap.
+
+**Not carried over.** `action` nodes need a command bus this runtime does not have, so the single-node endpoint answers 501 and the executor treats them as no-ops. Loops and human-in-the-loop pauses stay out of scope.
+
+**Acceptance:** a two-node preset executes end-to-end against the registry, the run row records status/duration/tool calls, a missing tool fails the run and names the node, and a deliberately cyclic graph is rejected at save time rather than at execution time. All four are covered by `WorkflowTest`, `WorkflowRunTest` and the core executor suite.
 
 ## 6. Risks
 

@@ -122,10 +122,31 @@ class OrchestrationStatsTest extends TestCase
         $this->assertSame('ok', $system['health']['status']);
     }
 
-    public function test_workflow_fields_are_honestly_empty(): void
+    public function test_recent_workflows_are_empty_before_any_run(): void
     {
-        // There is no workflow engine on this runtime; the console reports the
-        // `workflows` endpoint unavailable, and this list stays empty.
         $this->assertSame([], $this->overview()['recent_workflows']);
+    }
+
+    public function test_recent_workflows_list_the_last_runs(): void
+    {
+        $workflowId = (int) $this->postJson('/api/v1/orchestration/workflows', [
+            'name' => 'Overview run',
+            'graph' => [
+                'nodes' => [
+                    ['id' => 'node_1', 'type' => 'tool', 'data' => ['toolSlug' => 'generate_uuid']],
+                ],
+                'edges' => [],
+            ],
+        ])->json('id');
+
+        $this->postJson("/api/v1/orchestration/workflows/{$workflowId}/execute")->assertOk();
+
+        $recent = $this->overview()['recent_workflows'];
+
+        $this->assertCount(1, $recent);
+        $this->assertSame((string) $workflowId, $recent[0]['workflow_id']);
+        $this->assertSame('completed', $recent[0]['state']);
+        $this->assertSame(1, $recent[0]['tasks_total']);
+        $this->assertSame(1, $recent[0]['tasks_done']);
     }
 }
