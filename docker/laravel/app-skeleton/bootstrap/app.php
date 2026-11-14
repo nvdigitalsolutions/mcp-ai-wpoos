@@ -29,6 +29,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('nvoos:fire-triggers')
             ->everyMinute()
             ->withoutOverlapping();
+
+        // 090-i — one health sample every five minutes gives the command
+        // centre's uptime KPI a denominator. Five-minute granularity over a
+        // 24h window is 288 samples: enough to show a degradation, cheap
+        // enough to ignore. Like the entry above, this only runs where the
+        // scheduler does.
+        $schedule->command('nvoos:sample-health')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         // Sanctum SPA cookie mode (Proposal 090-B, ADR-4). Same-origin
