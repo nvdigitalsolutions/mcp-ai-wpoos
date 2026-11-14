@@ -26,6 +26,7 @@ use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SiteController;
+use App\Http\Controllers\SkillController;
 use App\Http\Controllers\TeamCatalogueController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TokenManagerController;
@@ -179,6 +180,11 @@ Route::prefix('api/v1')->group(function (): void {
             Route::get('/assistants/{assistant}', [AssistantController::class, 'show']);
             Route::match(['put', 'patch'], '/assistants/{assistant}', [AssistantController::class, 'update']);
             Route::delete('/assistants/{assistant}', [AssistantController::class, 'destroy']);
+
+            // Agent Skills catalogue — the assistant editor's skill picker
+            // (090-b; WordPress serves the same shape from the base MCP
+            // controller, administrators only). Read-only here.
+            Route::get('/skills', [SkillController::class, 'index']);
 
             // Assistant blueprint catalogue (090-b task 2.4, read half).
             Route::get('/blueprints', [BlueprintController::class, 'index']);

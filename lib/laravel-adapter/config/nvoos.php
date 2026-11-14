@@ -611,6 +611,25 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Skill catalogue
+	|--------------------------------------------------------------------------
+	|
+	| Installed Agent Skills: one directory per skill, each holding a SKILL.md
+	| whose YAML frontmatter declares `name` and `description`, optionally
+	| `license` and `compatibility`. The console's assistant editor lists this
+	| catalogue to populate its skill picker.
+	|
+	| A missing directory is an empty catalogue, not an error — a fresh install
+	| has no skills. Installing or editing a skill is not available on this
+	| runtime yet (the WordPress side ships a full manager).
+	|
+	*/
+	'skills'           => array(
+		'path' => env( 'NVOOS_SKILLS_PATH', storage_path( 'app/skills' ) ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| AI Provider API Keys
 	|--------------------------------------------------------------------------
 	|

@@ -29,7 +29,10 @@ class SkillRegistry {
 	/**
 	 * Register a skill from its SKILL.md parsed data.
 	 *
-	 * @param array{name: string, description: string, body: string} $skill
+	 * `license` and `compatibility` are optional; a registry that only needs
+	 * name/description can pass the three required keys alone.
+	 *
+	 * @param array{name: string, description: string, body: string, license?: string, compatibility?: string} $skill
 	 */
 	public function register( array $skill ): void {
 		$this->skills[ $skill['name'] ] = $skill;
@@ -111,7 +114,12 @@ class SkillRegistry {
 	/**
 	 * Parse a SKILL.md file into its structured components.
 	 *
-	 * @return array{name: string, description: string, body: string}|null
+	 * The frontmatter fields are the ones the assistant editor's picker shows:
+	 * `name` and `description` are required, `license` and `compatibility` are
+	 * optional and default to an empty string — the same contract the WordPress
+	 * catalogue route serves.
+	 *
+	 * @return array{name: string, description: string, license: string, compatibility: string, body: string}|null
 	 */
 	public static function parseSkillMd( string $content ): ?array {
 		// Parse YAML frontmatter.
@@ -122,8 +130,10 @@ class SkillRegistry {
 		$frontmatter = $matches[1];
 		$body        = \trim( $matches[2] );
 
-		$name        = '';
-		$description = '';
+		$name          = '';
+		$description   = '';
+		$license       = '';
+		$compatibility = '';
 
 		foreach ( \explode( "\n", $frontmatter ) as $line ) {
 			if ( \preg_match( '/^name:\s*(.+)$/i', $line, $m ) ) {
@@ -132,6 +142,12 @@ class SkillRegistry {
 			if ( \preg_match( '/^description:\s*(.+)$/i', $line, $m ) ) {
 				$description = \trim( $m[1] );
 			}
+			if ( \preg_match( '/^license:\s*(.+)$/i', $line, $m ) ) {
+				$license = \trim( $m[1] );
+			}
+			if ( \preg_match( '/^compatibility:\s*(.+)$/i', $line, $m ) ) {
+				$compatibility = \trim( $m[1] );
+			}
 		}
 
 		if ( '' === $name ) {
@@ -139,9 +155,11 @@ class SkillRegistry {
 		}
 
 		return array(
-			'name'        => $name,
-			'description' => $description,
-			'body'        => $body,
+			'name'          => $name,
+			'description'   => $description,
+			'license'       => $license,
+			'compatibility' => $compatibility,
+			'body'          => $body,
 		);
 	}
 

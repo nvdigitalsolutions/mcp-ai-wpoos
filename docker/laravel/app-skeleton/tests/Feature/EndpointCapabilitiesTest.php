@@ -74,6 +74,8 @@ class EndpointCapabilitiesTest extends TestCase
             // 090-h H3 — execution, run history and the per-node runner.
             'workflowNodes',
             'workflowRuns',
+            // 090-b — the Agent Skills catalogue (read-only slice).
+            'skills',
         ] as $key) {
             $this->assertTrue($endpoints[$key] ?? false, $key.' should be available.');
         }
@@ -84,8 +86,8 @@ class EndpointCapabilitiesTest extends TestCase
         $endpoints = $this->endpoints();
 
         foreach ([
-            // Deliberately deferred inside the assistant editor.
-            'skills',
+            // Deferred: an outbound MCP client plus a connection store, which
+            // is a feature rather than a port.
             'mcpApps',
             // WordPress-only concepts.
             'chatChannels',

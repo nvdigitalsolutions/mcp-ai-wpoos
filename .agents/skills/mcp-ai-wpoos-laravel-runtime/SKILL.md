@@ -88,9 +88,9 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 | Suite | Command (cwd) | Baseline (2026-11-14) |
 |---|---|---|
-| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 456 passed / 3055 assertions (after the trigger wiring) |
+| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 461 passed / 3067 assertions (after the skills catalogue) |
 | Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 175 passed / 640 assertions (after #7679) |
-| Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1257 tests / 4520 assertions (after 090-h H3); green apart from the no-coverage-driver warning |
+| Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1264 tests / 4537 assertions (after the skills catalogue); green apart from the no-coverage-driver warning |
 
 **CI does run the app suite.** `.github/workflows/laravel-app.yml` installs the
 skeleton on SQLite and runs `php artisan test`, so an app-suite regression does
@@ -218,6 +218,11 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   default assistant; with neither it throws a typed message the executor
   records against that node. Tests that only exercise tool nodes need no
   assistant fixture.
+- **Never write a literal `*/` inside a PHP docblock.** `` `*/SKILL.md` `` in a
+  comment closes the block early and the rest of the line becomes code —
+  `ParseError: syntax error, unexpected token "`"`, reported at the *caller*
+  (`Composer\Autoload\…->loadClass`), not at the file. Describe paths as
+  "one folder per skill, each holding a SKILL.md" instead.
 - **The scheduler is not running by default.** `docker/laravel/entrypoint.sh`
   starts `queue:work redis` for the `worker` role; nothing runs
   `schedule:work`. Anything registered via `->withSchedule()` in
@@ -251,6 +256,7 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
 - **Profession catalogue** — `ProfessionRepositoryInterface::catalogueVersion()` + `CachedProfessionRepository` key the cache by version; a catalogue change bumps the version and invalidates without a manual purge. `save_profession` writes through `ProfessionWriteInterface` on WordPress and is deliberately **not** registered on Laravel.
 - **MJML** — `MjmlTemplateBuilder` (`lib/core`) builds markup; `compile()`/`validate()` stay WordPress-side because they call the Media Worker sidecar.
 - **Workflows** — `mcp_ai_workflow` content records with WordPress's meta keys (`_wp_mcp_ai_workflow_graph`, `_version`, `_tags`), read tolerantly (WP stores graph/tags as JSON *strings*; this runtime writes native JSON). `lib/core/Application/Workflow` holds the executor and the no-eval template/condition resolver. Runs live in `nvoos_workflow_runs`.
+- **Agent Skills** — `GET /api/v1/skills` serves `{success, skills, total}` from `config('oos.skills.path')` (default `storage/app/skills`, env `NVOOS_SKILLS_PATH`); one folder per skill with a `SKILL.md`. Read-only: the WordPress manager (install/replace/delete) is deliberately absent, so writes 404. `SkillRegistry::parseSkillMd()` returns name, description, licence and compatibility; the parser is in core and shared.
 
 ## 9. Porting a WordPress catalogue to this runtime
 
