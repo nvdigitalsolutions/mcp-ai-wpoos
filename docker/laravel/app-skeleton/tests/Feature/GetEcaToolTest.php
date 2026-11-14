@@ -147,8 +147,8 @@ class GetEcaToolTest extends TestCase
         );
         $this->assertSame('Amara Okafor', $first['student_name']);
         $this->assertSame('confirmed', $first['enrollment_type']);
-        $this->assertSame('', $first['enrollment_date']);
-        $this->assertSame('', $first['payment_status']);
+        $this->assertSame('2026-09-01 09:00:00', $first['enrollment_date']);
+        $this->assertSame('n/a', $first['payment_status']);
     }
 
     public function test_per_enrolment_records_win_when_present(): void

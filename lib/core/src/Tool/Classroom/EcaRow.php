@@ -136,16 +136,12 @@ final class EcaRow {
 	/**
 	 * Enrolment counts by type.
 	 *
-	 * `_eca_enrollments` holds per-enrolment records **when something wrote
-	 * them**, and the WordPress detail tool reads only that key. Nothing in the
-	 * ECA family writes it — enrolment tools maintain
-	 * `_eca_student_enrollments` (a list of student ids) instead — so on real
-	 * WordPress data the breakdown is always zero.
-	 *
-	 * The port keeps the record shape when records are present and otherwise
-	 * counts the authoritative id list, so the numbers it reports are real.
-	 * That is a deliberate divergence from a WordPress defect, recorded in
-	 * 090-d §5.
+	 * Reads the id-keyed map through {@see Enrollments}. WordPress builds this
+	 * from `_eca_enrollments`, a key nothing in the family writes, so its
+	 * breakdown is always zero on real data. The port prefers `_eca_enrollments`
+	 * when it exists and otherwise counts the authoritative
+	 * `_eca_student_enrollments`, so the numbers it reports are real. That is a
+	 * deliberate divergence from a WordPress defect, recorded in 090-d §5.
 	 *
 	 * @return array<string, int>
 	 */
@@ -157,27 +153,21 @@ final class EcaRow {
 			'preference' => 0,
 		);
 
-		$records = $item->meta['_eca_enrollments'] ?? array();
+		$records = Enrollments::map( $item->meta['_eca_enrollments'] ?? array() );
 
-		if ( is_array( $records ) && array() !== $records ) {
-			foreach ( $records as $record ) {
-				if ( ! is_array( $record ) ) {
-					continue;
-				}
-
-				$type = isset( $record['enrollment_type'] ) && is_string( $record['enrollment_type'] )
-					? $record['enrollment_type']
-					: 'confirmed';
-
-				if ( isset( $counts[ $type ] ) ) {
-					++$counts[ $type ];
-				}
-			}
-
-			return $counts;
+		if ( array() === $records ) {
+			$records = Enrollments::map( $item->meta['_eca_student_enrollments'] ?? array() );
 		}
 
-		$counts['confirmed'] = count( self::enrollmentIds( $item ) );
+		foreach ( $records as $record ) {
+			$type = isset( $record['enrollment_type'] ) && is_string( $record['enrollment_type'] )
+				? $record['enrollment_type']
+				: 'confirmed';
+
+			if ( isset( $counts[ $type ] ) ) {
+				++$counts[ $type ];
+			}
+		}
 
 		return $counts;
 	}
@@ -185,18 +175,22 @@ final class EcaRow {
 	/**
 	 * Enrolled student ids, in the order they were added.
 	 *
+	 * `_eca_student_enrollments` is an id-keyed map on WordPress, but a
+	 * hand-written mirror may hold a plain list; {@see Enrollments} accepts both.
+	 *
 	 * @return array<int, int>
 	 */
 	public static function enrollmentIds( ContentItem $item ): array {
-		$ids = array();
+		return Enrollments::ids( $item->meta['_eca_student_enrollments'] ?? array() );
+	}
 
-		foreach ( self::toList( $item->meta['_eca_student_enrollments'] ?? array() ) as $value ) {
-			if ( is_numeric( $value ) && (int) $value > 0 ) {
-				$ids[] = (int) $value;
-			}
-		}
-
-		return $ids;
+	/**
+	 * Enrolment records keyed by student id.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function enrollments( ContentItem $item ): array {
+		return Enrollments::map( $item->meta['_eca_student_enrollments'] ?? array() );
 	}
 
 	/**

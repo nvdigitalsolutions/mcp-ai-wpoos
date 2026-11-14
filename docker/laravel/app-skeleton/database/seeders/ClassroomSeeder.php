@@ -16,10 +16,12 @@ use Nvoos\Core\Domain\Entity\CreateContentCommand;
  * is ported, so the read tools have data to answer from without implying an
  * integration this runtime does not have.
  *
- * Enrolment is recorded on the activity (`_eca_student_enrollments`). The
- * reverse `_student_eca_enrollments` link is left empty: back-filling it needs
- * `ContentStore::update()`, which requires an editor identity a seeder does not
- * have, and inventing one would be worse than an asymmetric seed.
+ * Enrolment is recorded on the activity (`_eca_student_enrollments`) in the
+ * id-keyed map shape WordPress uses, so `get_eca` returns real enrolment
+ * records. The reverse `_student_eca_enrollments` link is left empty:
+ * back-filling it needs `ContentStore::update()`, which requires an editor
+ * identity a seeder does not have, and inventing one would be worse than an
+ * asymmetric seed. `enroll_student_eca` will maintain both sides once ported.
  */
 class ClassroomSeeder extends Seeder
 {
@@ -74,6 +76,21 @@ class ClassroomSeeder extends Seeder
             $students
         );
 
+        $enrollments = array();
+
+        foreach ( $student_ids as $student_id ) {
+            // WordPress stores this as an id-keyed map of records, not a list
+            // of ids; every consumer reads `$enrollments[ $id ]`.
+            $enrollments[ $student_id ] = array(
+                'enrollment_type' => 'confirmed',
+                'enrollment_date' => '2026-09-01 09:00:00',
+                'payment_status'  => 'n/a',
+                'amount_due'      => 0,
+                'notes'           => '',
+                'enrolled_by'     => 0,
+            );
+        }
+
         $eca = $store->create(
             new CreateContentCommand(
                 title: 'Robotics Club',
@@ -98,7 +115,7 @@ class ClassroomSeeder extends Seeder
                     '_eca_current_enrollment'  => count( $student_ids ),
                     '_eca_teachers'            => array( 1 ),
                     '_eca_year_groups'         => array( '9', '10' ),
-                    '_eca_student_enrollments' => $student_ids,
+                    '_eca_student_enrollments' => $enrollments,
                 ),
             )
         );
