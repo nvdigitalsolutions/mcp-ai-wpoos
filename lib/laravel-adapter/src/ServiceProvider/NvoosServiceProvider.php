@@ -46,6 +46,7 @@ use Nvoos\Core\Infrastructure\Streaming\PlatformFlushInterface;
 use Nvoos\Core\Infrastructure\Streaming\SseHandler;
 use Nvoos\Core\Tool\BulkImportTool;
 use Nvoos\Core\Tool\Classroom\BulkEnrollStudentsTool;
+use Nvoos\Core\Tool\Classroom\CreateEcaTool;
 use Nvoos\Core\Tool\Classroom\EnrollStudentEcaTool;
 use Nvoos\Core\Tool\Classroom\GetEcaTool;
 use Nvoos\Core\Tool\Classroom\GetStudentTool;
@@ -53,6 +54,7 @@ use Nvoos\Core\Tool\Classroom\ListEcasTool;
 use Nvoos\Core\Tool\Classroom\ListStudentsTool;
 use Nvoos\Core\Tool\Classroom\ManageEcaWaitlistTool;
 use Nvoos\Core\Tool\Classroom\MarkEcaAttendanceTool;
+use Nvoos\Core\Tool\Classroom\UpdateEcaTool;
 use Nvoos\Core\Tool\Classroom\WithdrawStudentEcaTool;
 use Nvoos\Core\Tool\CreateProjectTool;
 use Nvoos\Core\Tool\CreateTaskTool;
@@ -299,6 +301,8 @@ class NvoosServiceProvider extends ServiceProvider {
 			new WithdrawStudentEcaTool( $errors, $content ),
 			new BulkEnrollStudentsTool( $errors, $content ),
 			new ManageEcaWaitlistTool( $errors, $content ),
+			new CreateEcaTool( $errors, $content ),
+			new UpdateEcaTool( $errors, $content ),
 			new ListTasksTool( $errors, $content ),
 			new GetTaskDependenciesTool( $errors, $content ),
 			new CreateTaskTool( $errors, $content ),
