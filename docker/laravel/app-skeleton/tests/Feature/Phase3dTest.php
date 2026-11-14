@@ -168,4 +168,65 @@ class Phase3dTest extends TestCase
         $this->getJson('/api/v1/media')->assertUnauthorized();
         $this->post('/api/v1/media', [], ['Accept' => 'application/json'])->assertUnauthorized();
     }
+
+    public function test_upload_accepts_alt_text(): void
+    {
+        $this->actAsUser();
+
+        $response = $this->post('/api/v1/media', [
+            'file' => $this->png('hero.png'),
+            'alt_text' => 'A blue square',
+        ], ['Accept' => 'application/json'])->assertCreated();
+
+        $this->assertSame('A blue square', $response->json('alt_text'));
+
+        $this->getJson('/api/v1/media/'.$response->json('id'))
+            ->assertOk()
+            ->assertJsonPath('alt_text', 'A blue square');
+    }
+
+    public function test_alt_text_can_be_updated_and_cleared(): void
+    {
+        $this->actAsUser();
+
+        $id = $this->post('/api/v1/media', ['file' => $this->png()], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('alt_text', '')
+            ->json('id');
+
+        $this->patchJson('/api/v1/media/'.$id, ['alt_text' => 'Described'])
+            ->assertOk()
+            ->assertJsonPath('alt_text', 'Described');
+
+        // An empty string is how a caller clears it.
+        $this->patchJson('/api/v1/media/'.$id, ['alt_text' => ''])
+            ->assertOk()
+            ->assertJsonPath('alt_text', '');
+    }
+
+    public function test_the_update_route_requires_alt_text(): void
+    {
+        $this->actAsUser();
+
+        $id = $this->post('/api/v1/media', ['file' => $this->png()], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->json('id');
+
+        $this->patchJson('/api/v1/media/'.$id, [])
+            ->assertStatus(400)
+            ->assertJsonPath('code', 'rest_invalid_param');
+    }
+
+    public function test_a_subscriber_cannot_edit_alt_text(): void
+    {
+        $this->actAsUser();
+
+        $id = $this->post('/api/v1/media', ['file' => $this->png()], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->json('id');
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'subscriber']));
+
+        $this->patchJson('/api/v1/media/'.$id, ['alt_text' => 'Nope'])->assertForbidden();
+    }
 }

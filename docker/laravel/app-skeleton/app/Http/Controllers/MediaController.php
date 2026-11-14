@@ -16,8 +16,10 @@ use Nvoos\Core\Domain\Contract\FileUploadServiceInterface;
  * `X-WP-TotalPages`, single-item reads, and a multipart upload whose field is
  * `file`. The Laravel runtime serves the same shape from `nvoos_files`.
  *
- * Thumbnails and alt-text mutation are not implemented: `media_details.sizes`
- * is an empty object, so the client falls back to `source_url` for every size.
+ * Thumbnails are not generated: `media_details.sizes` is an empty object, so
+ * the client falls back to `source_url` for every size. Alt text **is**
+ * mutable (090-j slice 2) — the command centre's alt-coverage metric needs a
+ * source, and an empty string is how a caller clears it.
  */
 class MediaController
 {
@@ -97,7 +99,60 @@ class MediaController
 
         $row = DB::table('nvoos_files')->find((int) $result['attachment_id']);
 
+        $alt = $request->input('alt_text');
+        if (is_string($alt) && $row !== null) {
+            DB::table('nvoos_files')->where('id', (int) $row->id)->update([
+                'alt_text' => mb_substr(trim($alt), 0, 500),
+                'updated_at' => now(),
+            ]);
+
+            $row = DB::table('nvoos_files')->find((int) $row->id);
+        }
+
         return response()->json($this->record($row), 201);
+    }
+
+    /**
+     * PATCH /media/{id} — mutate the fields the console can edit.
+     *
+     * Alt text only, deliberately: captions and descriptions have no column
+     * and no consumer yet, and an endpoint that silently ignores them is
+     * worse than one that does not offer them.
+     */
+    public function update(int $id, Request $request): JsonResponse
+    {
+        $row = DB::table('nvoos_files')->find($id);
+
+        if ($row === null) {
+            return $this->invalidId();
+        }
+
+        if (! $request->exists('alt_text')) {
+            return response()->json([
+                'code' => 'rest_invalid_param',
+                'message' => 'Send alt_text. It is the only mutable field on this route.',
+                'data' => ['status' => 400],
+            ], 400);
+        }
+
+        $alt = $request->input('alt_text');
+
+        if (null !== $alt && ! is_string($alt)) {
+            return response()->json([
+                'code' => 'rest_invalid_param',
+                'message' => 'alt_text must be a string.',
+                'data' => ['status' => 400],
+            ], 400);
+        }
+
+        DB::table('nvoos_files')->where('id', $id)->update([
+            // `ConvertEmptyStringsToNull` turns `""` into null, which is the
+            // framework's way of saying "clear it"; both spellings land here.
+            'alt_text' => is_string($alt) ? mb_substr(trim($alt), 0, 500) : '',
+            'updated_at' => now(),
+        ]);
+
+        return response()->json($this->record(DB::table('nvoos_files')->find($id)));
     }
 
     /**
@@ -119,7 +174,7 @@ class MediaController
             'type' => 'attachment',
             'title' => ['rendered' => $filename],
             'caption' => ['rendered' => ''],
-            'alt_text' => '',
+            'alt_text' => (string) ($row->alt_text ?? ''),
             'description' => ['rendered' => ''],
             'mime_type' => $mime,
             'source_url' => $this->url($row),

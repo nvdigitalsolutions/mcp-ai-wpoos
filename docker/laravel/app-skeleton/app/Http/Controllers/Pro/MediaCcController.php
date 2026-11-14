@@ -2,27 +2,30 @@
 
 namespace App\Http\Controllers\Pro;
 
+use App\Jobs\OptimizeMediaFile;
+use App\Support\ActivityRecorder;
 use App\Support\Media\MediaWorkerClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Nvoos\Laravel\Adapter\JobStatusStore;
 
 /**
- * The media command centre (`GET /api/v1/pro/media-cc/health`).
+ * The media command centre (`/api/v1/pro/media-cc`).
  *
  * A hybrid of the two things it can honestly report:
  *
- *  - **The local library** — counts, storage and next-gen coverage come from
- *    `nvoos_files`. That is four of the seven sections WordPress computes,
- *    because this store has no alt-text column, no original-size column and no
- *    scheduler.
- *  - **The media worker** — version and uptime from `GET /api/health`, plus
- *    the queue counts for `media.*` handlers in `nvoos_jobs`.
+ *  - **The local library** — counts, storage, alt coverage and next-gen
+ *    coverage come from `nvoos_files`. The image list and the filename
+ *    heuristic mirror WordPress's own gatherers, so the same library reports
+ *    the same percentages on either runtime.
+ *  - **The worker** — version and uptime from `GET /api/health`, plus the
+ *    queue counts for `media.*` handlers in `nvoos_jobs`.
  *
- * The three uncomputable sections are returned as **null**, never zero: the
- * console renders `—` so a missing pipeline reads as unknown rather than as
- * "0% alt coverage, 0 B saved". `capabilities.sweep` is `false` until the
- * compression job ships, and the console hides the action.
+ * `compression` is the sum of recorded derivative savings, so a saving is only
+ * ever reported once the optimised bytes exist. `schedule` is the one section
+ * still without a source: the scheduler is code-defined and no recurring media
+ * job exists yet, so zeros are truthful.
  *
  * The route is always registered; availability comes from configuration —
  * a runtime with no worker reports `mediaCc` false and hides the page
@@ -30,71 +33,203 @@ use Illuminate\Support\Facades\Schema;
  */
 class MediaCcController
 {
+    /** WordPress's image mime list (`get_attachment_stats()`). */
+    private const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+
+    /** Filename prefixes WordPress treats as generic (`IMG_1234`, `screenshot-…`). */
+    private const GENERIC_PREFIXES = [
+        'img_',
+        'IMG_',
+        'screenshot-',
+        'Screenshot_',
+        'image-',
+        'Image_',
+        'photo-',
+        'Photo_',
+        'dsc_',
+        'DSC_',
+    ];
+
+    /** Files queued per sweep; keeps the queue visible instead of dumping a library. */
+    private const SWEEP_BATCH = 50;
+
     /**
-     * The snapshot, in the shape `api/media-ops.ts` parses.
+     * GET /media-cc/health — the snapshot, in the shape `api/media-ops.ts` parses.
      */
     public function health(MediaWorkerClient $worker): JsonResponse
     {
         if (! $worker->configured()) {
-            return response()->json(
-                [
-                    'code' => 'media_cc_not_configured',
-                    'message' => 'The media worker is not configured on this runtime.',
-                    'data' => ['status' => 503],
-                ],
-                503,
-            );
+            return $this->notConfigured();
         }
 
-        [$total, $images, $storage, $nextgenPct] = $this->library();
+        $library = $this->library();
 
         return response()->json([
             'attachments' => [
-                'total' => $total,
-                'image_count' => $images,
-                // No alt-text column on `nvoos_files`.
-                'with_alt' => null,
-                'descriptive_filename_count' => null,
+                'total' => $library['total'],
+                'image_count' => $library['image_count'],
+                'with_alt' => $library['with_alt'],
+                'descriptive_filename_count' => $library['descriptive'],
             ],
-            'storage' => $storage,
-            // Derived from `with_alt`, so unknown here.
-            'alt_pct' => null,
-            'nextgen_pct' => $nextgenPct,
-            // No original-size column, so savings cannot be measured.
-            'compression' => null,
+            'storage' => $library['storage'],
+            // WordPress reports 100 when there is nothing to measure; mirror it.
+            'alt_pct' => $library['image_count'] < 1
+                ? 100
+                : (int) round($library['with_alt'] / $library['image_count'] * 100),
+            'nextgen_pct' => $library['nextgen_pct'],
+            'compression' => $this->compression(),
             'queue' => $this->queue(),
-            // The scheduler is code-defined; until the sweep ships there is
-            // no media schedule to summarise.
+            // No recurring media job exists yet, so there is no schedule to
+            // summarise. Zeros here are measured, not invented.
             'schedule' => [
                 'active' => 0,
                 'ran_today' => 0,
                 'overdue' => 0,
                 'next_run' => '',
             ],
-            'capabilities' => ['sweep' => false],
+            'capabilities' => ['sweep' => true],
             'worker' => ['configured' => true] + $worker->health(),
+        ]);
+    }
+
+    /**
+     * POST /media-cc/compression-sweep — queue optimisation for unprocessed images.
+     *
+     * Deduped, like WordPress's `as_has_scheduled_action` check: a second click
+     * while work is in flight is refused rather than stacking a duplicate run.
+     */
+    public function sweep(MediaWorkerClient $worker, JobStatusStore $jobs, ActivityRecorder $activity): JsonResponse
+    {
+        if (! $worker->configured()) {
+            return $this->notConfigured();
+        }
+
+        if ($this->sweepInFlight()) {
+            return response()->json([
+                'queued' => false,
+                'message' => 'A compression sweep is already running.',
+            ]);
+        }
+
+        $query = DB::table('nvoos_files')
+            ->whereIn('mime_type', self::IMAGE_MIMES)
+            ->orderBy('id')
+            ->limit(self::SWEEP_BATCH);
+
+        if (Schema::hasTable('nvoos_media_derivatives')) {
+            $query->whereNotIn('id', DB::table('nvoos_media_derivatives')
+                ->where('format', 'webp')
+                ->select('file_id'));
+        }
+
+        $files = $query->get(['id']);
+
+        foreach ($files as $file) {
+            $fileId = (int) $file->id;
+
+            $jobs->queue(OptimizeMediaFile::jobId($fileId), 'media.optimize', [
+                'file_id' => $fileId,
+                'format' => 'webp',
+            ]);
+
+            OptimizeMediaFile::dispatch($fileId);
+        }
+
+        $queued = $files->count();
+
+        if ($queued > 0) {
+            $activity->record(
+                'media.sweep.queued',
+                sprintf('%d file%s queued for optimisation.', $queued, 1 === $queued ? '' : 's'),
+            );
+        }
+
+        return response()->json([
+            'queued' => $queued > 0,
+            'message' => $queued > 0
+                ? sprintf('%d file%s queued for optimisation.', $queued, 1 === $queued ? '' : 's')
+                : 'Nothing to optimise.',
         ]);
     }
 
     /**
      * Library totals from `nvoos_files`.
      *
-     * @return array{0: int, 1: int, 2: int, 3: int} total, image count, bytes, next-gen percentage
+     * @return array{total: int, image_count: int, with_alt: int, descriptive: int, storage: int, nextgen_pct: int}
      */
     private function library(): array
     {
         if (! Schema::hasTable('nvoos_files')) {
-            return [0, 0, 0, 0];
+            return [
+                'total' => 0,
+                'image_count' => 0,
+                'with_alt' => 0,
+                'descriptive' => 0,
+                'storage' => 0,
+                'nextgen_pct' => 0,
+            ];
         }
 
-        $total = (int) DB::table('nvoos_files')->count();
-        $images = (int) DB::table('nvoos_files')->where('mime_type', 'like', 'image/%')->count();
-        $storage = (int) DB::table('nvoos_files')->sum('size_bytes');
-        $nextgen = (int) DB::table('nvoos_files')
+        $images = static fn () => DB::table('nvoos_files')->whereIn('mime_type', self::IMAGE_MIMES);
+
+        $imageCount = (int) $images()->count();
+        $withAlt = (int) $images()
+            ->whereNotNull('alt_text')
+            ->where('alt_text', '!=', '')
+            ->count();
+
+        $descriptive = (int) $images()
+            ->where(static function ($query): void {
+                foreach (self::GENERIC_PREFIXES as $prefix) {
+                    $query->where('filename', 'not like', $prefix.'%');
+                }
+            })
+            ->count();
+
+        $nextgen = (int) $images()
             ->whereIn('mime_type', ['image/webp', 'image/avif'])
             ->count();
 
-        return [$total, $images, $storage, $images > 0 ? (int) round($nextgen / $images * 100) : 0];
+        return [
+            'total' => (int) DB::table('nvoos_files')->count(),
+            'image_count' => $imageCount,
+            'with_alt' => $withAlt,
+            'descriptive' => $descriptive,
+            'storage' => (int) DB::table('nvoos_files')->sum('size_bytes'),
+            'nextgen_pct' => $imageCount > 0 ? (int) round($nextgen / $imageCount * 100) : 0,
+        ];
+    }
+
+    /**
+     * Recorded savings across every derivative.
+     *
+     * Only positive savings count: an "optimised" file that came out larger is
+     * a miss, not a negative saving that offsets the wins.
+     */
+    private function compression(): int
+    {
+        if (! Schema::hasTable('nvoos_media_derivatives')) {
+            return 0;
+        }
+
+        return (int) DB::table('nvoos_media_derivatives')
+            ->where('savings_bytes', '>', 0)
+            ->sum('savings_bytes');
+    }
+
+    /**
+     * Whether an optimisation is already queued or running.
+     */
+    private function sweepInFlight(): bool
+    {
+        if (! Schema::hasTable('nvoos_jobs')) {
+            return false;
+        }
+
+        return DB::table('nvoos_jobs')
+            ->where('handler', 'media.optimize')
+            ->whereIn('status', ['queued', 'running'])
+            ->exists();
     }
 
     /**
@@ -143,5 +278,17 @@ class MediaCcController
                 $recent->all(),
             ),
         ];
+    }
+
+    private function notConfigured(): JsonResponse
+    {
+        return response()->json(
+            [
+                'code' => 'media_cc_not_configured',
+                'message' => 'The media worker is not configured on this runtime.',
+                'data' => ['status' => 503],
+            ],
+            503,
+        );
     }
 }

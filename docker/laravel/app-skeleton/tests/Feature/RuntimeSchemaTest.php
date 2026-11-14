@@ -43,6 +43,7 @@ class RuntimeSchemaTest extends TestCase
             // package discovery rather than an app migration.
             'nvoos_jobs',
             'nvoos_slash_command_audit',
+            'nvoos_media_derivatives',
         ];
     }
 
