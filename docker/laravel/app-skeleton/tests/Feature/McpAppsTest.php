@@ -96,11 +96,11 @@ final class McpAppsTest extends TestCase
         );
     }
 
-    public function test_secret_fields_are_never_stored(): void
+    public function test_a_token_is_sealed_and_projected_as_a_mask(): void
     {
         $id = $this->assistant();
 
-        $this->putJson("/api/v1/mcp-apps/{$id}", array(
+        $put = $this->putJson("/api/v1/mcp-apps/{$id}", array(
             'apps' => array(
                 array(
                     'server_url' => 'https://mcp.example.com/mcp',
@@ -110,14 +110,51 @@ final class McpAppsTest extends TestCase
             ),
         ))
             ->assertOk()
-            ->assertJsonMissingPath('apps.0.token')
             ->assertJsonMissingPath('apps.0.oauth_data');
+
+        // The response carries a uniform mask, never a tail and never a value.
+        $this->assertSame(
+            "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}",
+            $put->json('apps.0.token')
+        );
 
         $stored = Assistant::find($id)->meta['_wp_mcp_ai_mcp_apps'];
 
+        $this->assertArrayHasKey('token_sealed', $stored[0]);
         $this->assertArrayNotHasKey('token', $stored[0]);
         $this->assertArrayNotHasKey('oauth_data', $stored[0]);
         $this->assertStringNotContainsString('super-secret-token', (string) json_encode($stored));
+
+        // Sealed, not lost: the store can open it.
+        $this->assertSame(
+            'super-secret-token',
+            app(\App\Support\CredentialStore::class)->decrypt($stored[0]['token_sealed'])['token']
+        );
+    }
+
+    public function test_a_blank_token_keeps_the_stored_one(): void
+    {
+        $id = $this->assistant();
+        $url = 'https://mcp.example.com/mcp';
+
+        $this->putJson("/api/v1/mcp-apps/{$id}", array(
+            'apps' => array(array('server_url' => $url, 'token' => 'first-token')),
+        ))->assertOk();
+
+        $sealed = Assistant::find($id)->meta['_wp_mcp_ai_mcp_apps'][0]['token_sealed'];
+
+        // The console's update shape omits token entirely.
+        $this->putJson("/api/v1/mcp-apps/{$id}", array(
+            'apps' => array(array('server_url' => $url, 'label' => 'Renamed')),
+        ))
+            ->assertOk()
+            ->assertJsonPath('apps.0.label', 'Renamed')
+            ->assertJsonPath('apps.0.token', "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}");
+
+        $this->assertSame(
+            $sealed,
+            Assistant::find($id)->meta['_wp_mcp_ai_mcp_apps'][0]['token_sealed']
+        );
     }
 
     public function test_more_than_ten_apps_is_rejected(): void

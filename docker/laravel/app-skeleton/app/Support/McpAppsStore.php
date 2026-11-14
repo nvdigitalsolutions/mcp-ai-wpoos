@@ -12,12 +12,16 @@ use InvalidArgumentException;
  * can read either runtime: the Pro registry keeps the list in the
  * `_wp_mcp_ai_mcp_apps` post meta and caps it at ten.
  *
- * Secrets are deliberately absent from the writable set. The console's client
- * (`spa-v2/src/api/mcp-apps.ts`) strips `token` and `oauth_data` before sending,
- * and this store ignores them if a caller sends them anyway — so there is
- * nothing to mask on read. A future admin surface that accepts a token must
- * encrypt it before it reaches `meta`; storing a plaintext credential here
- * would be the one way to make this endpoint leak.
+ * Tokens are the exception to the "no secrets here" rule that applied until
+ * #7743. They are accepted now, but only through `CredentialStore`: sealed
+ * under the app key, kept at `token_sealed`, and projected back as a uniform
+ * mask. The plaintext never enters `meta`, never appears in a response, and a
+ * blank token means "keep what is stored" — matching the console's update
+ * contract. Identity for that carry-over is `connection_ref` when set, else
+ * `server_url`.
+ *
+ * `oauth_data` stays unsupported: it is a multi-field blob with its own
+ * refresh semantics, and the console never sends it.
  */
 final class McpAppsStore
 {
@@ -30,24 +34,40 @@ final class McpAppsStore
     /** Authentication modes the console can render. */
     private const AUTH_TYPES = ['none', 'bearer', 'basic', 'header', 'oauth'];
 
+    public function __construct(private readonly CredentialStore $credentials)
+    {
+    }
+
     /**
-     * The apps assigned to an assistant.
+     * The apps assigned to an assistant, with tokens masked.
      *
      * @return array<int, array<string, mixed>>
      */
     public function read(Assistant $assistant): array
     {
-        $meta = is_array($assistant->meta) ? $assistant->meta : array();
-        $apps = $meta[self::META_KEY] ?? array();
+        $projected = array();
 
-        return is_array($apps) ? array_values(array_filter($apps, 'is_array')) : array();
+        foreach ($this->stored($assistant) as $app) {
+            $sealed = isset($app['token_sealed']) && is_string($app['token_sealed']) ? $app['token_sealed'] : null;
+            unset($app['token_sealed']);
+
+            $mask = $this->credentials->mask($sealed);
+
+            if ('' !== $mask) {
+                $app['token'] = $mask;
+            }
+
+            $projected[] = $app;
+        }
+
+        return $projected;
     }
 
     /**
      * Replace the assigned apps.
      *
      * @param array<int, mixed> $apps Raw payload entries.
-     * @return array<int, array<string, mixed>> The stored list.
+     * @return array<int, array<string, mixed>> The stored list, tokens masked.
      *
      * @throws InvalidArgumentException When an entry is unusable.
      */
@@ -59,27 +79,86 @@ final class McpAppsStore
             );
         }
 
-        $normalised = array();
+        $previous = $this->sealedByIdentity($assistant);
+        $stored = array();
 
         foreach (array_values($apps) as $index => $app) {
-            $normalised[] = $this->normalise($app, $index);
+            $normalised = $this->normalise($app, $index);
+
+            $token = is_array($app) && is_string($app['token'] ?? null) ? trim($app['token']) : '';
+
+            // A supplied token is sealed; an absent one keeps whatever this
+            // connection already had. Never fall back to another app's token.
+            $sealed = '' !== $token
+                ? $this->credentials->encrypt(array('token' => $token))
+                : ($previous[$this->identity($normalised)] ?? '');
+
+            if ('' !== $sealed) {
+                $normalised['token_sealed'] = $sealed;
+            }
+
+            $stored[] = $normalised;
         }
 
         $meta = is_array($assistant->meta) ? $assistant->meta : array();
-        $meta[self::META_KEY] = $normalised;
+        $meta[self::META_KEY] = $stored;
 
         $assistant->meta = $meta;
         $assistant->save();
 
-        return $normalised;
+        return $this->read($assistant);
+    }
+
+    /**
+     * Stored entries as written, including any sealed token.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function stored(Assistant $assistant): array
+    {
+        $meta = is_array($assistant->meta) ? $assistant->meta : array();
+        $apps = $meta[self::META_KEY] ?? array();
+
+        return is_array($apps) ? array_values(array_filter($apps, 'is_array')) : array();
+    }
+
+    /**
+     * Sealed tokens keyed by connection identity, for the carry-over on update.
+     *
+     * @return array<string, string>
+     */
+    private function sealedByIdentity(Assistant $assistant): array
+    {
+        $sealed = array();
+
+        foreach ($this->stored($assistant) as $app) {
+            if (! isset($app['token_sealed']) || ! is_string($app['token_sealed'])) {
+                continue;
+            }
+
+            $sealed[$this->identity($app)] = $app['token_sealed'];
+        }
+
+        return $sealed;
+    }
+
+    /**
+     * What makes one connection "the same" across an update.
+     *
+     * @param array<string, mixed> $app A stored or normalised entry.
+     */
+    private function identity(array $app): string
+    {
+        $ref = is_string($app['connection_ref'] ?? null) ? trim($app['connection_ref']) : '';
+
+        return '' !== $ref ? $ref : (string) ($app['server_url'] ?? '');
     }
 
     /**
      * Whitelist one entry.
      *
-     * Every field is named explicitly. Unknown keys — including `token` and
-     * `oauth_data` — are dropped rather than passed through, so a caller
-     * cannot widen the stored shape by adding a key.
+     * Every field is named explicitly, so a caller cannot widen the stored
+     * shape by adding a key. `token` is handled separately because it is sealed.
      *
      * @throws InvalidArgumentException
      */
