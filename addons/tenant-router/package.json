@@ -14,7 +14,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "hono": "^4.13.11"
+    "hono": "^4.13.16"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.3",
