@@ -1063,6 +1063,11 @@ the changed files is the substantive gate; plan CI waits accordingly.
         the test docblock instead of pretending they pin it.
 	      - PHPUnit 11 requires data providers to be `public static`; a
 	        non-static provider errors at suite construction, not in the test.
+	      - Providers are evaluated **eagerly, before filtering**: a provider
+	        that reads a missing fixture fails the run even with `--filter`
+	        naming an unrelated test. Pass the fixture env vars
+	        (`NVOOS_PM_FIXTURE`, `NVOOS_PM_WRITES_FIXTURE`) instead of
+	        assuming a filtered run is isolated.
 
 	   76. **Init-time `wp_insert_post()` → "Attempt to read property 'feeds' on
 	      null" (PHP 8, bootstrap logs; 2026-10-24, SSE offload pass).**
@@ -1307,6 +1312,18 @@ the changed files is the substantive gate; plan CI waits accordingly.
       Pin both layers: the getter's types (`assertIsString` per value)
       and the value reaching the tool output. Grep every vocabulary
       getter for `array_keys( self::CONST )` when one instance appears.
+
+  95. **Double-stubbing a PHPUnit mock: the first matcher wins (2026-11-14,
+      Laravel workflow-executor suite).** `$mock->method('isError')`
+      configured to `willReturn(false)` in `setUp()` and re-stubbed with
+      `willReturnCallback(...)` inside one test does **not** override it — both
+      matchers stay registered and the first one answers, so the "failure"
+      test silently runs the success path and fails on an unrelated later
+      assertion (here, an `exactly(2)` call-count expectation tripping on a
+      third call). Configure the behaviour **once**, as a callback that
+      inspects the value (`fn ($v) => $v instanceof \stdClass`), or build a
+      fresh mock per test. Recognition signal: the failure lands on a call
+      count or a downstream assertion rather than on the branch under test.
 
 ## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
