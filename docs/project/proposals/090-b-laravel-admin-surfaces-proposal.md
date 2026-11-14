@@ -229,6 +229,39 @@ boot.
 **Consequences.** Phase 4 can ship without a licence decision; commercial launch cannot. Fail-closed
 is a configuration choice, not a code fork.
 
+### ADR-8 — Two runtimes, three deployment profiles, never a runtime dependency (accepted)
+
+**Context.** ADR-6 defines `NVOOS_BACKEND=wordpress|laravel`. The console goes further:
+`backend-profile.ts` also accepts `hybrid`, and `scripts/serve.mjs` implements it by proxying the
+**union** of both prefix families. The proposal never sanctioned a third profile, so the code and
+the decision had drifted apart.
+
+**Decision.** WordPress and Laravel are **alternatives, not layers**. Neither requires the other at
+runtime. Three deployment profiles are supported, and each is a complete, standalone way to run the
+console:
+
+| Profile | Proxied prefixes | What it means |
+|---|---|---|
+| `wordpress` (default) | `/wp-json`, `/wp-admin`, `/wp-login.php`, `/wp-includes` | The existing same-origin WordPress console. |
+| `laravel` | `/api`, `/mcp`, `/sanctum` | The Laravel console. No WordPress anywhere. |
+| `hybrid` | the union of both | **One origin serving both apps**, for a migration window. |
+
+`hybrid` is a *same-origin strangler*, not dual-upstream: `NVOOS_TARGET_SITE` is a single URL and
+every prefix resolves against it. A Laravel app and a WordPress install on different hosts cannot
+use it, and should not try — that shape needs a second proxy target, per-target cookie scopes and
+per-target redirect rewriting, which is the coupling this ADR exists to prevent.
+
+**Consequences.**
+
+- A Laravel estate never needs WordPress; a WordPress estate never needs Laravel. Both profiles are
+  first-class and independently deployable.
+- `hybrid` is **transitional**. It exists so a site can move surface by surface, not so a feature
+  gap can be closed by proxying to the other runtime. **Anything a runtime cannot do is reported
+  unavailable from `/features`, never forwarded to its peer** — otherwise the capability map decays
+  into a lie and a Laravel-only estate breaks on the day the WordPress half is switched off.
+- An unrecognised `NVOOS_BACKEND` still falls back to `wordpress`, so a stale deployment cannot
+  point at a Laravel API that does not exist.
+
 ---
 
 ## 5. Surface inventory and tiers
