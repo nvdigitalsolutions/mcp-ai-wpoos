@@ -42,6 +42,10 @@ final class CapabilityMap
     private const ROLE_CAPABILITIES = [
         'administrator' => [
             'manage_options',
+            // Credential issuance (`AuthProvider::issueCredential()`). It was
+            // checked but never defined, so no token could be issued on this
+            // runtime at all. WordPress's token manager is admin-only too.
+            'manage_oos',
             'edit_others_posts',
             'delete_others_posts',
             'publish_posts',
