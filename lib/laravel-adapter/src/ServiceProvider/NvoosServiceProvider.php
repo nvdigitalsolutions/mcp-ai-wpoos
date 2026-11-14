@@ -17,6 +17,7 @@ namespace Nvoos\Laravel\ServiceProvider;
 
 use Illuminate\Support\ServiceProvider;
 use Nvoos\Core\Application\Chat\ChatOrchestrator;
+use Nvoos\Core\Application\Security\InputGuard;
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolRegistry;
@@ -234,14 +235,43 @@ class NvoosServiceProvider extends ServiceProvider {
 
 		$this->app->singleton( CostCalculator::class, fn () => new CostCalculator() );
 
-		$this->app->scoped( ChatOrchestrator::class, fn ( $app ) => new ChatOrchestrator(
-			tools: $app->make( ToolRegistry::class ),
-			providers: $app->make( ProviderRouter::class ),
-			events: $app->make( EventDispatcherInterface::class ),
-			errors: $app->make( ErrorFactoryInterface::class ),
-			costs: $app->make( CostCalculator::class ),
-			sse: $app->make( SseHandler::class ),
-		) );
+		$this->app->scoped( ChatOrchestrator::class, function ( $app ) {
+			$orchestrator = new ChatOrchestrator(
+				tools: $app->make( ToolRegistry::class ),
+				providers: $app->make( ProviderRouter::class ),
+				events: $app->make( EventDispatcherInterface::class ),
+				errors: $app->make( ErrorFactoryInterface::class ),
+				costs: $app->make( CostCalculator::class ),
+				sse: $app->make( SseHandler::class ),
+			);
+
+			$orchestrator->setInputGuard( self::inputGuardFromConfig() );
+
+			return $orchestrator;
+		} );
+	}
+
+	/**
+	 * Build the AI-safety input guard from config.
+	 *
+	 * Returns null when both controls are off, so an unconfigured install pays
+	 * nothing for a guard that would never block anyway.
+	 */
+	private static function inputGuardFromConfig(): ?InputGuard {
+		$security = (array) config( 'oos.security', array() );
+		$injection = (bool) ( $security['prompt_injection_detector'] ?? false );
+		$pii = (bool) ( $security['pii_filter'] ?? false );
+
+		if ( ! $injection && ! $pii ) {
+			return null;
+		}
+
+		return new InputGuard(
+			mode: (string) ( $security['prompt_injection_mode'] ?? InputGuard::MODE_LOG ),
+			strictness: (string) ( $security['prompt_injection_sensitivity'] ?? 'medium' ),
+			piiEnabled: $pii,
+			injectionEnabled: $injection,
+		);
 	}
 
 	/**

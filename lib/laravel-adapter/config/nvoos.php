@@ -923,6 +923,14 @@ return array(
 		'headers'              => filter_var( env( 'NVOOS_SECURITY_HEADERS', 'true' ), FILTER_VALIDATE_BOOLEAN ),
 		'csp_frame_ancestors'  => (string) env( 'NVOOS_CSP_FRAME_ANCESTORS', '' ),
 		'audit_retention_days' => (int) env( 'NVOOS_AUDIT_RETENTION_DAYS', 30 ),
+
+		// AI-safety input guard. Both controls are off by default, matching the
+		// WordPress settings. `mode` is log (flag only) | warn | block; `warn`
+		// blocks jailbreak and prompt injection but lets a diversion through.
+		'prompt_injection_detector'    => filter_var( env( 'NVOOS_PROMPT_INJECTION_DETECTOR', 'false' ), FILTER_VALIDATE_BOOLEAN ),
+		'prompt_injection_mode'        => (string) env( 'NVOOS_PROMPT_INJECTION_MODE', 'log' ),
+		'prompt_injection_sensitivity' => (string) env( 'NVOOS_PROMPT_INJECTION_SENSITIVITY', 'medium' ),
+		'pii_filter'                   => filter_var( env( 'NVOOS_PII_FILTER', 'false' ), FILTER_VALIDATE_BOOLEAN ),
 	),
 
 	'features' => array(

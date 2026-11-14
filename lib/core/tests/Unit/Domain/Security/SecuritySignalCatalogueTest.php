@@ -49,8 +49,8 @@ final class SecuritySignalCatalogueTest extends TestCase
 		// WordPress keeps its 23 pre-catalogue signals.
 		$this->assertCount(23, SecuritySignalCatalogue::forRuntime(SecuritySignalCatalogue::RUNTIME_WORDPRESS));
 
-		// Laravel evaluates the 14 shared controls plus its 4 own ones.
-		$this->assertCount(18, SecuritySignalCatalogue::forRuntime(SecuritySignalCatalogue::RUNTIME_LARAVEL));
+		// Laravel evaluates the 16 shared controls plus its 4 own ones.
+		$this->assertCount(20, SecuritySignalCatalogue::forRuntime(SecuritySignalCatalogue::RUNTIME_LARAVEL));
 	}
 
 	public function test_runtime_specific_controls_are_declared_not_hidden(): void
@@ -65,7 +65,11 @@ final class SecuritySignalCatalogueTest extends TestCase
 		);
 
 		$this->assertContains('root_key_set', $wordpress_only);
-		$this->assertContains('prompt_injection_detector', $wordpress_only);
+		$this->assertContains('restriction_registry_on', $wordpress_only);
+		// The AI-safety pair is shared: both runtimes ship the same detector and
+		// filter, so neither reports the other's control as not applicable.
+		$this->assertNotContains('prompt_injection_detector', $wordpress_only);
+		$this->assertNotContains('pii_filter', $wordpress_only);
 		$this->assertContains('secure_cookies', $laravel_only);
 		$this->assertContains('csrf', $laravel_only);
 

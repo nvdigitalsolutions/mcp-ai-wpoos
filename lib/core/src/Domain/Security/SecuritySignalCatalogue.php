@@ -272,7 +272,7 @@ final class SecuritySignalCatalogue
 			'weight'    => 7,
 			'subtab'    => 'ai_safety',
 			'anchor'    => 'enable_prompt_injection_detector',
-			'runtimes'  => array( self::RUNTIME_WORDPRESS ),
+			'runtimes'  => array( self::RUNTIME_WORDPRESS, self::RUNTIME_LARAVEL ),
 			'reference' => 'OWASP Top 10 for LLM Applications — LLM01 Prompt Injection',
 		),
 		array(
@@ -281,7 +281,7 @@ final class SecuritySignalCatalogue
 			'weight'    => 5,
 			'subtab'    => 'ai_safety',
 			'anchor'    => 'enable_pii_filter',
-			'runtimes'  => array( self::RUNTIME_WORDPRESS ),
+			'runtimes'  => array( self::RUNTIME_WORDPRESS, self::RUNTIME_LARAVEL ),
 			'reference' => 'OWASP Top 10 for LLM Applications — LLM02 Sensitive Information Disclosure',
 		),
 		array(
