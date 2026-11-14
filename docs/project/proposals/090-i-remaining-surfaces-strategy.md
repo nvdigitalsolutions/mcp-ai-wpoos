@@ -32,7 +32,7 @@ Continuing key-by-key would produce two failure modes the repo has already paid 
 | `shortcuts` | `mcp-ai-pro/v1/tool-shortcuts` (assistant-scoped tool presets) | **A** | Port — a small record read |
 | `slashCommands` | catalogue + `/slash-commands/execute` + audit table | **A** | Port a **native subset** — the base executor plus the Pro state-mutating handlers are not portable |
 | `chatChannels` | channel command center (messages, contacts, delivery) | **A**, but a **toolkit family** | Model as a manifest-driven communications toolkit, not a bespoke controller |
-| `mediaCc` | `mcp-ai-pro/v1/media-cc/health` + sweep trigger | **D** | **Worker-backed**: local counts + worker health; `null` for the three sections the store cannot answer |
+| `mediaCc` | `mcp-ai-pro/v1/media-cc/health` + sweep trigger | **D** | **Worker-backed**: local library + worker health + real sweep; only `schedule` remains without a source |
 | `contentGraph` | `nvoos-content-graph/v1` (separate plugin) | **C** | Discover, don't port |
 | `docsHub` | `nvoos-docs/v1` (separate plugin) | **C** | Discover, don't port |
 | `mediaStudio` | `nvoos-media-studio/v1` (island addon) | **C** | Discover, don't port |
@@ -102,7 +102,7 @@ The four products are separate plugins with their own REST bases (`nvoos-content
 | `shortcuts` | Port — assistant-scoped presets record | **S** | — |
 | `slashCommands` | **Shipped** — native subset (7 commands) + audited executor; the nine Pro handlers stay out of scope | **S** | — |
 | `chatChannels` | Manifest-driven communications toolkit (`toolkits` engine) | M | Toolkit manifest(s) |
-| `mediaCc` | **Worker-backed partial snapshot shipped** — local counts/storage/next-gen, worker health and the media job queue; `null` for alt/compression/schedule. Sweep + alt storage remain | **M** | `addons/media-worker` at `NVOOS_MEDIA_WORKER_URL` |
+| `mediaCc` | **Worker-backed**, all seven sections live except `schedule`: local counts/storage/alt/next-gen, worker health, media job queue, and `compression` from derivative savings. `POST …/compression-sweep` optimises through the worker | **M** | `addons/media-worker` at `NVOOS_MEDIA_WORKER_URL` |
 | `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` | **Discover, don't port.** `connectedApps` registry + product-side MCP server/UI | L (product-side) | Product work, not runtime work |
 
 ## 5. Sequenced plan
@@ -194,7 +194,7 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
 
    The console gained two things that apply beyond this page: the nav hides any item whose endpoint is blank (`NavGate.endpoint`), and `formatBytes`/`formatPercent`/`formatCount` render `—` for unknown values rather than `0`.
 
-   **Still open:** `capabilities.sweep` is `false` and the console hides the action. The next slice is the compression sweep (`POST /api/image/optimize` per file, savings recorded so `compression` becomes real) and alt-text storage on `nvoos_files` so `alt_pct` becomes real. See [`090-j-media-processing-plan.md`](../plans/090-j-media-processing-plan.md).
+   **Still open:** the schedule summary (slice 4) is zeros — the scheduler is code-defined and no recurring media job exists yet, so a summary would have nothing to say. Alt text and compression are live: `alt_text` is stored on `nvoos_files`, and `compression` is the sum of derivative savings written by `App\Jobs\OptimizeMediaFile`. See [`090-j-media-processing-plan.md`](../plans/090-j-media-processing-plan.md).
 
 ## Sources
 

@@ -31,6 +31,8 @@ return array(
 		'url'     => env( 'NVOOS_MEDIA_WORKER_URL', '' ),
 		'token'   => env( 'NVOOS_MEDIA_WORKER_TOKEN', '' ),
 		'timeout' => (int) env( 'NVOOS_MEDIA_WORKER_TIMEOUT', 3 ),
+		// Per-image optimisation is a real Sharp pipeline, not a probe.
+		'optimize_timeout' => (int) env( 'NVOOS_MEDIA_WORKER_OPTIMIZE_TIMEOUT', 60 ),
 	),
 
 	/*

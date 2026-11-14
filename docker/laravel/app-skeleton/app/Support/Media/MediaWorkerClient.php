@@ -79,6 +79,72 @@ final class MediaWorkerClient
     }
 
     /**
+     * Optimise one image through the worker.
+     *
+     * @param string $localPath Absolute path to the source file.
+     * @param string $filename  Original filename, for the multipart part.
+     * @param string $format    Output format (webp, avif, jpeg, png).
+     * @param int    $quality   Encoder quality, 1-100.
+     *
+     * @return array{optimized_size: int, savings_bytes: int, b64: string}
+     *
+     * @throws \RuntimeException When unconfigured, unreachable, or the worker
+     *                           answers with an error. The caller is a queued
+     *                           job, and a job must fail loudly to retry.
+     */
+    public function optimize(string $localPath, string $filename, string $format = 'webp', int $quality = 80): array
+    {
+        if (! $this->configured()) {
+            throw new \RuntimeException('The media worker is not configured.');
+        }
+
+        $stream = is_file($localPath) ? fopen($localPath, 'rb') : false;
+
+        if (false === $stream) {
+            throw new \RuntimeException('Source file is not readable: '.$localPath);
+        }
+
+        try {
+            $response = Http::timeout(max(1, (int) config('oos.media_worker.optimize_timeout', 60)))
+                ->acceptJson()
+                ->withHeaders($this->headers())
+                ->attach('file', $stream, $filename)
+                ->post($this->url().'/api/image/optimize', [
+                    'format' => $format,
+                    'quality' => max(1, min(100, $quality)),
+                ]);
+        } catch (Throwable $e) {
+            throw new \RuntimeException('Media worker request failed: '.$e->getMessage(), 0, $e);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        $body = $response->json();
+
+        if (! $response->ok() || ! is_array($body)) {
+            $reason = is_array($body) && isset($body['error'])
+                ? (string) $body['error']
+                : 'HTTP '.$response->status();
+
+            throw new \RuntimeException('Media worker error: '.$reason);
+        }
+
+        foreach (['b64', 'optimized_size', 'savings_bytes'] as $required) {
+            if (! array_key_exists($required, $body)) {
+                throw new \RuntimeException('Media worker response is missing `'.$required.'`.');
+            }
+        }
+
+        return [
+            'optimized_size' => (int) $body['optimized_size'],
+            'savings_bytes' => (int) $body['savings_bytes'],
+            'b64' => (string) $body['b64'],
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     private function headers(): array

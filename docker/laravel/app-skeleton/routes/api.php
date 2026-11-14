@@ -168,6 +168,10 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::get('/media', [MediaController::class, 'index']);
                 Route::post('/media', [MediaController::class, 'store']);
                 Route::get('/media/{id}', [MediaController::class, 'show'])->whereNumber('id');
+
+                // 090-j slice 2 — alt text is the one mutable field.
+                Route::match(['put', 'patch'], '/media/{id}', [MediaController::class, 'update'])
+                    ->whereNumber('id');
             });
 
             // OKF knowledge drawer. Any authenticated reader — the drawer sits
@@ -216,6 +220,7 @@ Route::prefix('api/v1')->group(function (): void {
             // config-gated on `oos.media_worker.url`, because with no worker
             // there is nothing to report.
             Route::get('/pro/media-cc/health', [MediaCcController::class, 'health']);
+            Route::post('/pro/media-cc/compression-sweep', [MediaCcController::class, 'sweep']);
 
             // 090-i — the console Dashboard's command-centre section. Six
             // sourced KPIs, a derived agent-status map and the activity feed.
