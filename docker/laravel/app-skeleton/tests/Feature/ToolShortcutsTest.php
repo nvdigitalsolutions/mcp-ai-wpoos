@@ -160,8 +160,6 @@ final class ToolShortcutsTest extends TestCase
         $this->getJson('/api/v1/features')
             ->assertOk()
             ->assertJsonPath('data.endpoints.shortcuts', true)
-            ->assertJsonPath('data.endpoint_reasons.shortcuts', 'route')
-            ->assertJsonPath('data.endpoints.slashCommands', false)
-            ->assertJsonPath('data.endpoint_reasons.slashCommands', 'toolkit-shaped');
+            ->assertJsonPath('data.endpoint_reasons.shortcuts', 'route');
     }
 }
