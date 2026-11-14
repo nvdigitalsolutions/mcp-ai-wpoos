@@ -102,7 +102,7 @@ The four products are separate plugins with their own REST bases (`nvoos-content
 | `shortcuts` | Port — assistant-scoped presets record | **S** | — |
 | `slashCommands` | **Shipped** — native subset (7 commands) + audited executor; the nine Pro handlers stay out of scope | **S** | — |
 | `chatChannels` | Manifest-driven communications toolkit (`toolkits` engine) | M | Toolkit manifest(s) |
-| `mediaCc` | **Worker-backed**, all seven sections live except `schedule`: local counts/storage/alt/next-gen, worker health, media job queue, and `compression` from derivative savings. `POST …/compression-sweep` optimises through the worker | **M** | `addons/media-worker` at `NVOOS_MEDIA_WORKER_URL` |
+| `mediaCc` | **Complete** — all seven sections live: local counts/storage/alt/next-gen, worker health, media job queue, `compression` from derivative savings and the schedule summary. Sweep runs from the console or `NVOOS_MEDIA_SWEEP_SCHEDULE` | **M** | `addons/media-worker` at `NVOOS_MEDIA_WORKER_URL` |
 | `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` | **Discover, don't port.** `connectedApps` registry + product-side MCP server/UI | L (product-side) | Product work, not runtime work |
 
 ## 5. Sequenced plan
@@ -194,7 +194,7 @@ Reasons + `since` for every `false` key, mirrored in `contracts/console-endpoint
 
    The console gained two things that apply beyond this page: the nav hides any item whose endpoint is blank (`NavGate.endpoint`), and `formatBytes`/`formatPercent`/`formatCount` render `—` for unknown values rather than `0`.
 
-   **Still open:** the schedule summary (slice 4) is zeros — the scheduler is code-defined and no recurring media job exists yet, so a summary would have nothing to say. Alt text and compression are live: `alt_text` is stored on `nvoos_files`, and `compression` is the sum of derivative savings written by `App\Jobs\OptimizeMediaFile`. See [`090-j-media-processing-plan.md`](../plans/090-j-media-processing-plan.md).
+   **Complete.** Alt text and compression are live (`alt_text` on `nvoos_files`, `compression` summing derivative savings written by `App\Jobs\OptimizeMediaFile`), and the schedule summary is real: `NVOOS_MEDIA_SWEEP_SCHEDULE` registers `nvoos:sweep-media`, and `active`/`ran_today`/`overdue`/`next_run` read the `media.sweep` rows that command writes. The console's sweep action and the scheduled command share `App\Support\Media\MediaSweeper`, so they cannot drift. See [`090-j-media-processing-plan.md`](../plans/090-j-media-processing-plan.md).
 
 ## Sources
 
