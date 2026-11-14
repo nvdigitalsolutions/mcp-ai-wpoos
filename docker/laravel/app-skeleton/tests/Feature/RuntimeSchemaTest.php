@@ -44,6 +44,7 @@ class RuntimeSchemaTest extends TestCase
             'nvoos_jobs',
             'nvoos_slash_command_audit',
             'nvoos_media_derivatives',
+            'nvoos_remote_sites',
         ];
     }
 
