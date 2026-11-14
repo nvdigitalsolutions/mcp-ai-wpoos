@@ -213,6 +213,26 @@ and `assistant_id` identically.
 contract fixture captured from the WordPress REST responses and replayed on
 Laravel, the way the project-management corpus does it.
 
+### 6.2 Why the performance monitor is parked
+
+Task 3.8 reads "Analytics + performance monitor", and only analytics has a
+surface. Checked before porting:
+
+- `PerformanceMonitorInterface` has exactly one implementation,
+  `lib/wordpress-adapter/src/Adapter/PerformanceMonitor.php`. It delegates to
+  `WP_MCP_AI_Performance_Monitor_Service` and `…_Reporting_Service` inside
+  `class_exists` + `method_exists` guards and returns zeroed aggregates when
+  they are absent, so even on WordPress it is best-effort.
+- Nothing consumes the contract. There is no `PerformanceMonitorInterface`
+  reference in `lib/core/src`, `lib/laravel-adapter/src`, `includes/` or the
+  app providers, no REST route, and no console page or client.
+
+A Laravel adapter written now would have nothing to read (this runtime has no
+metrics store) and nothing to call it — an unused no-op that would look like
+parity work. The unlock is a consumer: either a `performance_metrics` table plus
+a console panel, or folding the metrics into the Analytics page that already
+ships. Until one exists, 3.8 stays parked rather than half-ported.
+
 ---
 
 ## 7. Phase 3 — T2 core operations (6–8 weeks)
@@ -226,7 +246,7 @@ Laravel, the way the project-management corpus does it.
 | 3.5 | Rate limiter adapter | `RateLimiterInterface` | ✅ |
 | 3.6 | Approvals + orchestration control | `OrchestrationControlInterface` | ✅ list/create/approve/deny, 409 on double-resolve |
 | 3.7 | Schedules + triggers | queue + cron status | ✅ trigger CRUD + toggle; ✅ schedule CRUD/toggle/trigger/history/results/fleet-stats |
-| 3.8 | Analytics + performance monitor | `PerformanceMonitorInterface` | ✅ analytics; performance monitor ⏳ |
+| 3.8 | Analytics + performance monitor | `PerformanceMonitorInterface` | ✅ analytics. Performance monitor **parked — no consumer**: the contract has one implementation (best-effort over optional WordPress services) and nothing resolves it — no REST route, no console page, no injection point on either runtime. See §6.2 |
 | 3.9 | Security center + audit log | audit store | ✅ posture/headers/snapshots/self-test (8 native signals — see §14) |
 | 3.10 | Records + paper store | `ContentStoreInterface` + storage | ✅ Paper Store; ✅ content records via the `wp/v2` shim (posts/pages, list/get/create) |
 | 3.11 | File upload/validation | `FileUploadServiceInterface` | ✅ MIME-sniffed, size-capped, media disk + `wp/v2/media`-shaped surface |
