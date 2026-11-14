@@ -14,6 +14,7 @@ use App\Http\Controllers\OperationsController;
 use App\Http\Controllers\OpsController;
 use App\Http\Controllers\OrchestrationStatsController;
 use App\Http\Controllers\PaperStoreController;
+use App\Http\Controllers\Pro\DashboardsController;
 use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
 use App\Http\Controllers\Pro\SchedulesController;
@@ -278,6 +279,17 @@ Route::prefix('api/v1')->group(function (): void {
                 Route::get('/remote/{entity}', [RecordsController::class, 'remoteIndex']);
                 Route::get('/remote/{entity}/{id}', [RecordsController::class, 'remoteShow'])->whereNumber('id');
                 Route::post('/{entity}/research', [RecordsController::class, 'research']);
+            });
+
+            // Proposal 084 — repeating dashboards. The console points
+            // `dashboardsSchema` at `${pro}/dashboards/schema`; `DashboardsClient`
+            // strips the trailing `/schema` and appends `/{id}/data`, so both
+            // routes hang off this prefix. Responses are unwrapped to match
+            // WordPress's `rest_ensure_response()` shape.
+            Route::prefix('pro/dashboards')->group(function (): void {
+                Route::get('/schema', [DashboardsController::class, 'schema']);
+                Route::get('/{id}/data', [DashboardsController::class, 'data'])
+                    ->where('id', '[a-z0-9_-]+');
             });
 
             // Phase 4 — manifest-driven Pro toolkits. Entitlement is checked

@@ -127,7 +127,6 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		// that predate the route.
 		settings: `${core}/settings`,
 		upload: `${api}/wp/v2/media`,
-		workflows: `${pro}/workflows`,
 		approvals: `${core}/approvals`,
 		triggers: `${core}/orchestration/triggers`,
 		teams: `${core}/teams`,

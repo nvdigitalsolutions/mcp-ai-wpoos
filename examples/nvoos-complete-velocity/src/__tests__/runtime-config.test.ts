@@ -45,7 +45,7 @@ describe('buildConsoleRuntime', () => {
     // of hitting a 403.
     expect(runtime.endpoints.commandCenter).toBe('');
     expect(runtime.endpoints.approvals).toBe('');
-    expect(runtime.endpoints.workflows).toBe('');
+    expect(runtime.endpoints.workflowBuilder).toBe('');
     expect(runtime.endpoints.remoteSites).toBe('');
     expect(runtime.endpoints.mediaCc).toBe('');
     // Logged-in surfaces stay available.
@@ -240,10 +240,10 @@ describe('endpoint availability (090-B)', () => {
   it('blanks an endpoint the backend reports it cannot serve', () => {
     const runtime = buildConsoleRuntime({
       user: admin,
-      endpoints: { workflows: false, tokenManager: false },
+      endpoints: { workflowBuilder: false, tokenManager: false },
     });
 
-    expect(runtime.endpoints.workflows).toBe('');
+    expect(runtime.endpoints.workflowBuilder).toBe('');
     expect(runtime.endpoints.tokenManager).toBe('');
 
     // Everything the backend did not disclaim still resolves.
@@ -253,10 +253,10 @@ describe('endpoint availability (090-B)', () => {
   it('keeps endpoints when the backend serves them', () => {
     const runtime = buildConsoleRuntime({
       user: admin,
-      endpoints: { workflows: true, approvals: true },
+      endpoints: { workflowBuilder: true, approvals: true },
     });
 
-    expect(runtime.endpoints.workflows).not.toBe('');
+    expect(runtime.endpoints.workflowBuilder).not.toBe('');
     expect(runtime.endpoints.approvals).not.toBe('');
   });
 
@@ -265,7 +265,7 @@ describe('endpoint availability (090-B)', () => {
     // page that reports its own unavailable state.
     const runtime = buildConsoleRuntime({ user: admin });
 
-    expect(runtime.endpoints.workflows).not.toBe('');
+    expect(runtime.endpoints.workflowBuilder).not.toBe('');
     expect(runtime.endpoints.tokenManager).not.toBe('');
   });
 
@@ -302,7 +302,7 @@ describe('fetchRuntimeAvailability', () => {
         success: true,
         data: {
           features: { docs_hub: false },
-          endpoints: { workflows: false, assistants: true },
+          endpoints: { workflowBuilder: false, assistants: true },
         },
       }),
     );
@@ -310,7 +310,7 @@ describe('fetchRuntimeAvailability', () => {
 
     await expect(fetchRuntimeAvailability('nonce')).resolves.toEqual({
       features: { docs_hub: false },
-      endpoints: { workflows: false, assistants: true },
+      endpoints: { workflowBuilder: false, assistants: true },
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);

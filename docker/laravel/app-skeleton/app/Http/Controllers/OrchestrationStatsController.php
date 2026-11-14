@@ -84,7 +84,7 @@ class OrchestrationStatsController
         $withPatterns = 0;
 
         foreach ($catalogue as $profession ) {
-            if ( is_array( $profession ) && ! empty( $profession['task_patterns'] ) ) {
+            if ( is_array($profession) && ! empty($profession['task_patterns']) ) {
                 ++$withPatterns;
             }
         }
