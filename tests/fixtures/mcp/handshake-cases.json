@@ -1,0 +1,149 @@
+{
+  "_comment": "Shared MCP handshake corpus. Replayed by lib/core/tests/Unit/Domain/Mcp/McpHandshakeCorpusTest.php and by the WordPress-side addons/pro/tests/test-mcp-handshake-policy-parity.php, so the core policy and its WordPress adapter are held to one contract. Each case is a failed handshake: http_status 0 means the transport itself failed. rpc_code null means the body carried no JSON-RPC error envelope, which is the strict-gateway shape.",
+  "cases": [
+    {
+      "name": "strict-gateway-bare-400",
+      "http_status": 400,
+      "rpc_code": null,
+      "message": "Bad Request",
+      "legacy_rejection": true,
+      "stateless_rejection": true,
+      "note": "Upwork-style gateway answers an unknown probe method with no JSON-RPC envelope. The status alone has to count."
+    },
+    {
+      "name": "jsonrpc-method-not-found",
+      "http_status": 200,
+      "rpc_code": -32601,
+      "message": "Method not found",
+      "legacy_rejection": true,
+      "stateless_rejection": true,
+      "note": "Well-formed JSON-RPC rejection of server/discover."
+    },
+    {
+      "name": "jsonrpc-invalid-request",
+      "http_status": 200,
+      "rpc_code": -32600,
+      "message": "Invalid Request",
+      "legacy_rejection": true,
+      "stateless_rejection": true,
+      "note": "Some 2025-era servers answer an unknown method with -32600 rather than -32601."
+    },
+    {
+      "name": "session-header-required",
+      "http_status": 500,
+      "rpc_code": null,
+      "message": "Mcp-Session-Id header is required",
+      "legacy_rejection": true,
+      "stateless_rejection": false,
+      "note": "The decisive asymmetry: a session complaint proves legacy and must never be read as a stateless signal."
+    },
+    {
+      "name": "session-message-uppercase",
+      "http_status": 500,
+      "rpc_code": null,
+      "message": "SESSION EXPIRED",
+      "legacy_rejection": true,
+      "stateless_rejection": false,
+      "note": "The message match is case-insensitive."
+    },
+    {
+      "name": "session-message-on-http-200",
+      "http_status": 200,
+      "rpc_code": null,
+      "message": "Session not found",
+      "legacy_rejection": true,
+      "stateless_rejection": false,
+      "note": "A 200 carrying a session complaint is still a legacy server."
+    },
+    {
+      "name": "method-not-found-plus-session",
+      "http_status": 200,
+      "rpc_code": -32601,
+      "message": "server/discover unsupported in this session",
+      "legacy_rejection": true,
+      "stateless_rejection": true,
+      "note": "Both signals agree."
+    },
+    {
+      "name": "gateway-404",
+      "http_status": 404,
+      "rpc_code": null,
+      "message": "Not Found",
+      "legacy_rejection": true,
+      "stateless_rejection": true,
+      "note": "Endpoint-level rejection of the probe path."
+    },
+    {
+      "name": "gateway-405",
+      "http_status": 405,
+      "rpc_code": null,
+      "message": "Method Not Allowed",
+      "legacy_rejection": true,
+      "stateless_rejection": true,
+      "note": "The probe method is not allowed; the dialect is legacy."
+    },
+    {
+      "name": "gateway-501",
+      "http_status": 501,
+      "rpc_code": null,
+      "message": "Not Implemented",
+      "legacy_rejection": true,
+      "stateless_rejection": true,
+      "note": "Explicitly unimplemented method."
+    },
+    {
+      "name": "server-error-500",
+      "http_status": 500,
+      "rpc_code": null,
+      "message": "Internal Server Error",
+      "legacy_rejection": false,
+      "stateless_rejection": false,
+      "note": "No dialect signal: keep the cached hint and surface the error."
+    },
+    {
+      "name": "auth-401",
+      "http_status": 401,
+      "rpc_code": null,
+      "message": "Unauthorized",
+      "legacy_rejection": false,
+      "stateless_rejection": false,
+      "note": "Credentials problem, not a dialect problem."
+    },
+    {
+      "name": "forbidden-403",
+      "http_status": 403,
+      "rpc_code": null,
+      "message": "Forbidden",
+      "legacy_rejection": false,
+      "stateless_rejection": false,
+      "note": "Scope problem, not a dialect problem."
+    },
+    {
+      "name": "rate-limited-429",
+      "http_status": 429,
+      "rpc_code": null,
+      "message": "Too Many Requests",
+      "legacy_rejection": false,
+      "stateless_rejection": false,
+      "note": "Must not be mistaken for a dialect rejection, or a throttled server would be re-probed with initialize."
+    },
+    {
+      "name": "transport-timeout",
+      "http_status": 0,
+      "rpc_code": null,
+      "message": "cURL error 28: Operation timed out after 10000 milliseconds",
+      "legacy_rejection": false,
+      "stateless_rejection": false,
+      "note": "No response at all. A timeout is not evidence of a dialect."
+    },
+    {
+      "name": "success-shaped-empty",
+      "http_status": 200,
+      "rpc_code": null,
+      "message": "",
+      "legacy_rejection": false,
+      "stateless_rejection": false,
+      "note": "Pins that a clean 200 never classifies as a rejection."
+    }
+  ]
+}
