@@ -189,6 +189,13 @@ export interface ConsoleRuntimeOptions {
    * nav and the optional-surface endpoints. Absent = fail open (show).
    */
   features?: Record<string, boolean>;
+  /**
+   * Server-reported endpoint availability (GET /features → data.endpoints).
+   * A key reported `false` blanks that endpoint, so the page renders its
+   * unavailable state instead of firing a request that 404s. Absent = fail
+   * open (older backends that predate the map).
+   */
+  endpoints?: Record<string, boolean>;
   /** WordPress site title (blogname) for branding surfaces. */
   siteName?: string;
 }
@@ -223,9 +230,20 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
   	if ( features.document_editor === false ) {
   		endpoints.documentEditor = '';
   	}
-  	if ( features.okf === false ) {
-  		endpoints.okf = '';
-  	}
+	  if ( features.okf === false ) {
+	  	endpoints.okf = '';
+	  }
+
+  // Which routes this runtime actually serves. An absent route blanks the
+  // endpoint rather than letting the page discover the gap as a 404 — the
+  // same degradation the feature flags above and the WordPress-only keys in
+  // buildEndpoints() already use. Fail-open: no map means "assume present".
+  const available = options.endpoints ?? {};
+  for (const key of Object.keys(endpoints) as Array<keyof ProSpaEndpoints>) {
+    if (available[key] === false) {
+      endpoints[key] = '';
+    }
+  }
 
   return {
     apiUrl: paths.apiBase,
@@ -548,18 +566,34 @@ async function mintSessionNonce(): Promise<string> {
 }
 
 /**
- * Fetch the server-side feature-availability map (GET /mcp-ai/v1/features).
+ * Server-reported availability, in one request.
+ *
+ * `features` gates optional surfaces (docs hub, knowledge graph, …) and
+ * `endpoints` says which routes this runtime actually serves. Both fail open:
+ * on any failure the maps are empty, so nothing is hidden by a transient
+ * error — the server still enforces every capability.
+ */
+export interface RuntimeAvailability {
+  features: Record<string, boolean>;
+  endpoints: Record<string, boolean>;
+}
+
+/**
+ * Fetch the availability maps (GET /mcp-ai/v1/features).
  *
  * Fail-open by design: on any failure (older plugin without the endpoint,
- * proxy hiccup, non-JSON response) the empty map is returned so a nav item
- * is never hidden by a transient error — the feature pages render their own
- * unavailable states, and the server still enforces every capability.
+ * proxy hiccup, non-JSON response) empty maps are returned so a nav item or
+ * endpoint is never hidden by a transient error — the feature pages render
+ * their own unavailable states, and the server still enforces every
+ * capability.
  */
-export async function fetchFeatureMap(
+export async function fetchRuntimeAvailability(
   nonce = '',
   backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
-): Promise<Record<string, boolean>> {
+): Promise<RuntimeAvailability> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
+  const empty: RuntimeAvailability = { features: {}, endpoints: {} };
+
   try {
     const headers: Record<string, string> = {};
     if (nonce) {
@@ -573,23 +607,46 @@ export async function fetchFeatureMap(
       console.warn(
         `features endpoint returned ${response.status} — showing all nav items`,
       );
-      return {};
+      return empty;
     }
     const data = await readJson<{
       success?: boolean;
-      data?: { features?: Record<string, boolean> };
+      data?: {
+        features?: Record<string, boolean>;
+        endpoints?: Record<string, boolean>;
+      };
     }>(response, 'features endpoint');
+
     const features = data?.data?.features;
-    if (!features || typeof features !== 'object' || Array.isArray(features)) {
-      return {};
-    }
-    return features;
+    const endpoints = data?.data?.endpoints;
+
+    return {
+      features: isBooleanMap(features) ? features : {},
+      endpoints: isBooleanMap(endpoints) ? endpoints : {},
+    };
   } catch (error) {
     console.warn(
       `features fetch failed (${error instanceof Error ? error.message : String(error)}) — showing all nav items`,
     );
-    return {};
+    return empty;
   }
+}
+
+/**
+ * Fetch the server-side feature-availability map only.
+ *
+ * Kept for callers and tests that predate the endpoint map; prefer
+ * {@see fetchRuntimeAvailability} so the availability read happens once.
+ */
+export async function fetchFeatureMap(
+  nonce = '',
+  backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
+): Promise<Record<string, boolean>> {
+  return (await fetchRuntimeAvailability(nonce, backend)).features;
+}
+
+function isBooleanMap(value: unknown): value is Record<string, boolean> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
 }
 
 /**
