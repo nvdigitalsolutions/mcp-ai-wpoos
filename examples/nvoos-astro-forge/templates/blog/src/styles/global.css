@@ -2104,6 +2104,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	}
 }
 
+/* The type fact reaches the DOM as ONE inline `--ds-title-lh`, while the size
+ * is a clamp() — so a px leading measured on desktop also lands under the
+ * shrunken phone/tablet headline (jayainc: 80px of leading under a 29.65px
+ * phone headline read as a 2.7 ratio). Hold the pinned px only where the font
+ * is near its cap; below the desktop range the leading stays relative. */
+@media (width<=1200px) {
+	.ds-section-wrap--hero .ds-title {
+		line-height: 1.15;
+	}
+}
+
 /* The fallback text bands carry the same heading facts (the centered
  * "Other Featured Products" band). */
 .ds-body .ds-title {

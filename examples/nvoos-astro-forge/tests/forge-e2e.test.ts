@@ -528,6 +528,11 @@ describe('forge e2e — emitted site', () => {
 			// max-width outranks the per-site cap (a centred title also clears
 			// it — `--ds-title-max: none`).
 			expect(css).toMatch(/\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*max-width:\s*var\(--ds-title-max,\s*var\(--ds-hero-title-max/);
+			// The hero title's leading: the inline `--ds-title-lh` carries the
+			// fact as a SINGLE px value while the size is a clamp(), so the
+			// pinned leading must stay relative below the desktop range —
+			// otherwise a desktop measurement over-spaces the phone headline.
+			expect(css).toMatch(/@media[^{]*\{\s*\.ds-section-wrap--hero\s+\.ds-title\s*\{[^}]*line-height:\s*1\.15/);
 			// The title-to-grid rhythm (125 §8): the card grid opens with
 			// breathing room below the band heading.
 			expect(css).toMatch(/\.ds-grid\s*\{[^}]*margin-top:\s*var\(--forge-space\)/);
