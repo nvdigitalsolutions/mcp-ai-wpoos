@@ -71,6 +71,9 @@ class EndpointCapabilitiesTest extends TestCase
             // 090-h H1/H2 — the preset catalogue and workflow graph storage.
             'workflowPresets',
             'workflowBuilder',
+            // 090-h H3 — execution, run history and the per-node runner.
+            'workflowNodes',
+            'workflowRuns',
         ] as $key) {
             $this->assertTrue($endpoints[$key] ?? false, $key.' should be available.');
         }
@@ -81,11 +84,6 @@ class EndpointCapabilitiesTest extends TestCase
         $endpoints = $this->endpoints();
 
         foreach ([
-            // Orchestration engine — execution and run history are H3. The
-            // overview and the workflow CRUD routes exist; the node executor
-            // and the runs table do not.
-            'workflowNodes',
-            'workflowRuns',
             // Deliberately deferred inside the assistant editor.
             'skills',
             'mcpApps',

@@ -24,8 +24,8 @@ use Nvoos\Laravel\Adapter\JobStatusStore;
  * Fields with no Laravel counterpart are reported as the honest empty value
  * rather than invented:
  *
- * - `recent_workflows` is `[]` — there is no workflow engine on this runtime
- *   (`workflows` is reported unavailable by `/features`).
+ * - `recent_workflows` lists the last five runs from `nvoos_workflow_runs`
+ *   (090-h H3); `tasks_total`/`tasks_done` are the run's node counts.
  * - `patterns` is `{}` and `with_task_patterns` counts zero — the profession
  *   catalogue carries no task patterns.
  * - `last_used` and `workflow_pattern` are `''` — neither has a column.
@@ -98,6 +98,36 @@ class OrchestrationStatsController
 
         $queue = $jobs->counts();
 
+        $recentWorkflows = DB::table('nvoos_workflow_runs')
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get()
+            ->map(static function (object $run): array {
+                $nodes = json_decode((string) $run->events, true);
+                $nodes = is_array($nodes) ? $nodes : array();
+
+                $done = count(
+                    array_filter(
+                        $nodes,
+                        static fn ($node): bool => is_array($node) && 'completed' === ($node['status'] ?? '')
+                    )
+                );
+
+                return array(
+                    'workflow_id' => (string) $run->workflow_id,
+                    'state' => (string) $run->status,
+                    'tasks_total' => count($nodes),
+                    'tasks_done' => $done,
+                    'created_at' => (string) $run->created_at,
+                    'updated_at' => (string) $run->updated_at,
+                    'started_at' => (string) $run->started_at,
+                    'completed_at' => (string) ( $run->finished_at ?? '' ),
+                    'team_id' => 0,
+                    'task_type' => 'run #' . (string) $run->id,
+                );
+            })
+            ->all();
+
         return response()->json(array(
             'success' => true,
             'data' => array(
@@ -125,7 +155,7 @@ class OrchestrationStatsController
                         'health' => array( 'status' => 'ok' ),
                     ),
                 ),
-                'recent_workflows' => array(),
+                'recent_workflows' => $recentWorkflows,
             ),
         ));
     }

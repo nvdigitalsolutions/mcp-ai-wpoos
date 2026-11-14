@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Support\WorkflowGraphValidator;
+use App\Support\WorkflowRecords;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Nvoos\Core\Domain\Contract\ContentStoreInterface;
-use Nvoos\Core\Domain\Entity\ContentItem;
 use Nvoos\Core\Domain\Entity\ContentQuery;
 use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Domain\Entity\UpdateContentCommand;
@@ -21,10 +21,9 @@ use Nvoos\Core\Domain\Exception\NotFoundException;
  * through `rest_ensure_response()` — so this controller unwraps too rather
  * than using the `{success, data}` envelope.
  *
- * Storage is a content record, not a new table (090-h §4): `mcp_ai_workflow`
- * with the same meta keys WordPress writes. Reading tolerates the WordPress
- * serialisation (graph and tags as JSON strings) so a database copied from a
- * WordPress install lists unchanged; writing uses native arrays.
+ * Storage is a content record, not a new table (090-h §4); the meta contract
+ * lives in {@see WorkflowRecords} because the run controller reads the same
+ * graph.
  *
  * Deletion trashes rather than destroys, matching `wp_trash_post()`. The list
  * query only returns `publish`, so a trashed workflow disappears from the
@@ -32,16 +31,6 @@ use Nvoos\Core\Domain\Exception\NotFoundException;
  */
 class WorkflowController
 {
-    private const TYPE = 'mcp_ai_workflow';
-
-    private const META_GRAPH = '_wp_mcp_ai_workflow_graph';
-
-    private const META_VERSION = '_wp_mcp_ai_workflow_version';
-
-    private const META_TAGS = '_wp_mcp_ai_workflow_tags';
-
-    private const DEFAULT_VERSION = '1.0.0';
-
     public function __construct(private readonly ContentStoreInterface $content)
     {
     }
@@ -52,14 +41,14 @@ class WorkflowController
     public function index(): JsonResponse
     {
         $collection = $this->content->query(new ContentQuery(
-            types: [self::TYPE],
+            types: [WorkflowRecords::TYPE],
             statuses: ['publish'],
             orderBy: 'modified',
             order: 'DESC',
             perPage: 100,
         ));
 
-        return response()->json(array_map([$this, 'summarise'], $collection->items));
+        return response()->json(array_map([WorkflowRecords::class, 'summarise'], $collection->items));
     }
 
     /**
@@ -82,14 +71,14 @@ class WorkflowController
         try {
             $item = $this->content->create(new CreateContentCommand(
                 title: $name,
-                type: self::TYPE,
+                type: WorkflowRecords::TYPE,
                 authorId: (int) $request->user()->getAuthIdentifier(),
                 status: 'publish',
                 content: '',
                 meta: [
-                    self::META_GRAPH => $graph['graph'],
-                    self::META_VERSION => self::DEFAULT_VERSION,
-                    self::META_TAGS => $this->tags($request),
+                    WorkflowRecords::META_GRAPH => $graph['graph'],
+                    WorkflowRecords::META_VERSION => WorkflowRecords::DEFAULT_VERSION,
+                    WorkflowRecords::META_TAGS => $this->tags($request),
                 ],
             ));
         } catch (AccessDeniedException $exception) {
@@ -107,7 +96,7 @@ class WorkflowController
      */
     public function show(int $id): JsonResponse
     {
-        $item = $this->find($id);
+        $item = WorkflowRecords::find($this->content, $id);
 
         if (null === $item) {
             return $this->notFound();
@@ -117,9 +106,9 @@ class WorkflowController
             'id' => $item->id,
             'title' => $item->title,
             'description' => $item->content,
-            'version' => $this->version($item),
-            'tags' => $this->readTags($item),
-            'graph' => $this->readGraph($item),
+            'version' => WorkflowRecords::version($item),
+            'tags' => WorkflowRecords::readTags($item),
+            'graph' => WorkflowRecords::readGraph($item),
             'modified' => $item->updatedAt->format('Y-m-d H:i:s'),
         ]);
     }
@@ -132,7 +121,7 @@ class WorkflowController
      */
     public function update(Request $request, int $id): JsonResponse
     {
-        $item = $this->find($id);
+        $item = WorkflowRecords::find($this->content, $id);
 
         if (null === $item) {
             return $this->notFound();
@@ -147,16 +136,16 @@ class WorkflowController
                 return $this->invalidGraph($graph['errors']);
             }
 
-            $meta[self::META_GRAPH] = $graph['graph'];
+            $meta[WorkflowRecords::META_GRAPH] = $graph['graph'];
         }
 
         if (is_array($request->input('tags'))) {
-            $meta[self::META_TAGS] = $this->tags($request);
+            $meta[WorkflowRecords::META_TAGS] = $this->tags($request);
         }
 
         $name = $this->name($request);
-        $version = $this->bump($this->version($item));
-        $meta[self::META_VERSION] = $version;
+        $version = WorkflowRecords::bump(WorkflowRecords::version($item));
+        $meta[WorkflowRecords::META_VERSION] = $version;
 
         try {
             $this->content->update($id, new UpdateContentCommand(
@@ -182,7 +171,7 @@ class WorkflowController
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $item = $this->find($id);
+        $item = WorkflowRecords::find($this->content, $id);
 
         if (null === $item) {
             return $this->notFound();
@@ -203,102 +192,6 @@ class WorkflowController
             'id' => $id,
             'message' => 'Workflow trashed.',
         ]);
-    }
-
-    /**
-     * Look up a workflow record, refusing other content types.
-     */
-    private function find(int $id): ?ContentItem
-    {
-        try {
-            $item = $this->content->find($id);
-        } catch (NotFoundException) {
-            return null;
-        }
-
-        return $item instanceof ContentItem && self::TYPE === $item->type ? $item : null;
-    }
-
-    /**
-     * Summary row, matching WordPress's `get_items()` payload.
-     *
-     * @return array{id: int, title: string, version: string, tags: list<string>, modified: string}
-     */
-    private function summarise(ContentItem $item): array
-    {
-        return [
-            'id' => $item->id,
-            'title' => $item->title,
-            'version' => $this->version($item),
-            'tags' => $this->readTags($item),
-            'modified' => $item->updatedAt->format('Y-m-d H:i:s'),
-        ];
-    }
-
-    private function version(ContentItem $item): string
-    {
-        $value = $item->meta[self::META_VERSION] ?? '';
-
-        return is_string($value) && '' !== $value ? $value : self::DEFAULT_VERSION;
-    }
-
-    /**
-     * Bump the patch component, mirroring `bump_version()`.
-     */
-    private function bump(string $current): string
-    {
-        $parts = explode('.', $current);
-
-        $major = isset($parts[0]) ? (int) $parts[0] : 1;
-        $minor = isset($parts[1]) ? (int) $parts[1] : 0;
-        $patch = isset($parts[2]) ? (int) $parts[2] : 0;
-
-        return $major.'.'.$minor.'.'.(++$patch);
-    }
-
-    /**
-     * Graph from meta, tolerating WordPress's JSON-string serialisation.
-     *
-     * @return array{nodes: list<mixed>, edges: list<mixed>}
-     */
-    private function readGraph(ContentItem $item): array
-    {
-        $raw = $item->meta[self::META_GRAPH] ?? [];
-
-        if (is_string($raw)) {
-            $decoded = json_decode($raw, true);
-            $raw = is_array($decoded) ? $decoded : [];
-        }
-
-        if (! is_array($raw)) {
-            $raw = [];
-        }
-
-        return [
-            'nodes' => array_values((array) ($raw['nodes'] ?? [])),
-            'edges' => array_values((array) ($raw['edges'] ?? [])),
-        ];
-    }
-
-    /**
-     * Tags from meta, tolerating WordPress's JSON-string serialisation.
-     *
-     * @return list<string>
-     */
-    private function readTags(ContentItem $item): array
-    {
-        $raw = $item->meta[self::META_TAGS] ?? [];
-
-        if (is_string($raw)) {
-            $decoded = json_decode($raw, true);
-            $raw = is_array($decoded) ? $decoded : [];
-        }
-
-        if (! is_array($raw)) {
-            return [];
-        }
-
-        return array_values(array_map('strval', $raw));
     }
 
     /**

@@ -19,6 +19,7 @@ use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
 use App\Http\Controllers\Pro\SchedulesController;
 use App\Http\Controllers\Pro\ToolkitsController;
+use App\Http\Controllers\Pro\WorkflowNodeController;
 use App\Http\Controllers\Pro\WorkflowPresetsController;
 use App\Http\Controllers\ProfessionController;
 use App\Http\Controllers\SecurityController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\TranscriptsController;
 use App\Http\Controllers\TriggersController;
 use App\Http\Controllers\WorkflowController;
+use App\Http\Controllers\WorkflowRunController;
 use App\Http\Controllers\Wp\ContentController as WpContentController;
 use Illuminate\Support\Facades\Route;
 
@@ -240,6 +242,18 @@ Route::prefix('api/v1')->group(function (): void {
                 ->whereNumber('id');
             Route::delete('/orchestration/workflows/{id}', [WorkflowController::class, 'destroy'])
                 ->whereNumber('id');
+
+            // 090-h H3 — execution and run history. The executor walks the
+            // saved graph (Kahn order); WordPress instead hands the graph to
+            // an LLM-planned tool. Divergence recorded in the proposal.
+            Route::post('/orchestration/workflows/{id}/execute', [WorkflowRunController::class, 'execute'])
+                ->whereNumber('id');
+            Route::get('/orchestration/runs', [WorkflowRunController::class, 'index']);
+            Route::get('/orchestration/runs/{id}', [WorkflowRunController::class, 'show'])
+                ->whereNumber('id');
+
+            // 090-h H3 — the canvas's per-node run button.
+            Route::post('/pro/workflow-builder/nodes/execute', [WorkflowNodeController::class, 'execute']);
 
             // Phase 3b — security posture, snapshots, self-test.
             Route::get('/security/posture', [SecurityController::class, 'posture']);
