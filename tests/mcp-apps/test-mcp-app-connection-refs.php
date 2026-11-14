@@ -81,6 +81,26 @@ class Test_MCP_App_Connection_Refs extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Seed a QuickBooks Online MCP connection in the Remote Sites store.
+	 *
+	 * @return string|WP_Error Connection ID or error.
+	 */
+	protected function seed_quickbooks_mcp_connection() {
+		return WP_MCP_AI_Pro_Remote_Site_Manager::save_connection(
+			array(
+				'name'            => 'QuickBooks MCP',
+				'url'             => 'https://ai-inc.quickbooks.intuit.com/v1/mcp',
+				'connection_type' => 'quickbooks_mcp',
+				'auth_type'       => 'oauth',
+				'client_id'       => 'ABcDeFIntuitClient',
+				'client_secret'   => 'intuit-secret-value',
+				'company_id'      => '9130345678901234',
+				'enabled'         => true,
+			)
+		);
+	}
+
+	/**
 	 * Entries that only carry a connection_ref survive sanitize_app_config().
 	 */
 	public function test_sanitize_keeps_reference_entries() {
@@ -149,6 +169,43 @@ class Test_MCP_App_Connection_Refs extends WP_UnitTestCase {
 
 		// Resolved credentials are never written back to post meta.
 		$stored = $registry->get_apps( $this->assistant_id );
+		$this->assertSame( '', $stored[0]['token'] );
+	}
+
+	/**
+	 * A QuickBooks Online MCP reference resolves to the official endpoint and
+	 * the pre-registered Intuit client credentials, without persisting secrets
+	 * to assistant meta.
+	 */
+	public function test_resolve_apps_expands_quickbooks_mcp_reference() {
+		$connection_id = $this->seed_quickbooks_mcp_connection();
+		$this->assertNotWPError( $connection_id );
+
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$registry->save_apps(
+			$this->assistant_id,
+			array(
+				array(
+					'label'          => 'QuickBooks',
+					'connection_ref' => $connection_id,
+					'enabled'        => true,
+				),
+			)
+		);
+
+		$resolved = $registry->resolve_apps( $this->assistant_id );
+
+		$this->assertCount( 1, $resolved );
+		$this->assertStringContainsString( 'ai-inc.quickbooks.intuit.com/v1/mcp', $resolved[0]['server_url'] );
+		$this->assertSame( 'oauth', $resolved[0]['auth_type'] );
+		$this->assertSame( 'ABcDeFIntuitClient', $resolved[0]['client_id'] );
+		$this->assertSame( 'intuit-secret-value', $resolved[0]['client_secret'] );
+		$this->assertSame( $connection_id, $resolved[0]['connection_ref'] );
+		$this->assertSame( 'QuickBooks', $resolved[0]['label'] );
+
+		// Secrets never ride in assistant meta.
+		$stored = $registry->get_apps( $this->assistant_id );
+		$this->assertArrayNotHasKey( 'client_secret', $stored[0] );
 		$this->assertSame( '', $stored[0]['token'] );
 	}
 

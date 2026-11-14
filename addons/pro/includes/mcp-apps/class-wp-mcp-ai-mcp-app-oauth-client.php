@@ -64,6 +64,18 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	protected $client_id = '';
 
 	/**
+	 * Pre-registered client secret (confidential clients).
+	 *
+	 * Empty for dynamic public clients. QuickBooks/Intuit OAuth apps are
+	 * pre-registered and authenticate the token endpoint with HTTP Basic
+	 * (RFC 6749 §2.3.1), so the secret must ride the token requests.
+	 *
+	 * @since 1.2.21
+	 * @var string
+	 */
+	protected $client_secret = '';
+
+	/**
 	 * Redirect URI for the OAuth callback.
 	 *
 	 * @var string
@@ -157,10 +169,11 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @param array  $options {
 	 *     Optional. OAuth client options.
 	 *
-	 *     @type int    $timeout    HTTP request timeout in seconds. Default 30.
-	 *     @type bool   $verify_ssl Whether to verify SSL. Default true.
-	 *     @type string $proxy_url  Optional outbound HTTP proxy (host:port).
-	 *     @type string $proxy_auth Optional proxy credentials (user:pass).
+	 *     @type int    $timeout       HTTP request timeout in seconds. Default 30.
+	 *     @type bool   $verify_ssl    Whether to verify SSL. Default true.
+	 *     @type string $proxy_url     Optional outbound HTTP proxy (host:port).
+	 *     @type string $proxy_auth    Optional proxy credentials (user:pass).
+	 *     @type string $client_secret Optional pre-registered client secret.
 	 * }
 	 */
 	public function __construct( $server_url, array $options = array() ) {
@@ -170,6 +183,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		$this->verify_ssl        = isset( $options['verify_ssl'] ) ? (bool) $options['verify_ssl'] : true;
 		$this->proxy_url         = isset( $options['proxy_url'] ) ? (string) $options['proxy_url'] : '';
 		$this->proxy_auth        = isset( $options['proxy_auth'] ) ? (string) $options['proxy_auth'] : '';
+		$this->client_secret     = isset( $options['client_secret'] ) ? trim( (string) $options['client_secret'] ) : '';
 		$this->redirect_uri      = rest_url( 'mcp-ai/v1/mcp-apps/oauth/callback' );
 	}
 
@@ -496,6 +510,16 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return array|WP_Error Client registration response on success.
 	 */
 	public function register_client() {
+		// Pre-registered confidential clients (Intuit OAuth apps) have no
+		// dynamic registration endpoint. Reuse the stored credentials; the
+		// token endpoint authenticates them with HTTP Basic.
+		if ( ! empty( $this->client_id ) && '' !== $this->client_secret ) {
+			return array(
+				'client_id'     => $this->client_id,
+				'client_secret' => $this->client_secret,
+			);
+		}
+
 		$metadata = $this->discover_metadata();
 		if ( is_wp_error( $metadata ) ) {
 			return $metadata;
@@ -999,7 +1023,31 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return void
 	 */
 	public function set_client_id( $client_id ) {
-		$this->client_id = sanitize_key( $client_id );
+		// OAuth client IDs are case-sensitive opaque strings. sanitize_key()
+		// lowercases and strips characters, which breaks pre-registered Intuit
+		// client IDs — preserve the value as supplied.
+		$this->client_id = trim( sanitize_text_field( (string) $client_id ) );
+	}
+
+	/**
+	 * Set the pre-registered client secret.
+	 *
+	 * @since 1.2.21
+	 * @param string $client_secret Client secret.
+	 * @return void
+	 */
+	public function set_client_secret( $client_secret ) {
+		$this->client_secret = trim( (string) $client_secret );
+	}
+
+	/**
+	 * Get the pre-registered client secret.
+	 *
+	 * @since 1.2.21
+	 * @return string
+	 */
+	public function get_client_secret() {
+		return $this->client_secret;
 	}
 
 	/**
@@ -1090,17 +1138,28 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return array|WP_Error Response array or WP_Error from wp_remote_post.
 	 */
 	protected function post_token_endpoint( $endpoint, array $body ) {
+		$headers = array(
+			'Content-Type' => 'application/json',
+			'Accept'       => 'application/json',
+		);
+
+		// Confidential clients (Intuit/QuickBooks OAuth apps) authenticate the
+		// token endpoint with HTTP Basic per RFC 6749 §2.3.1. RFC 6749 forbids
+		// using two client-authentication methods, so drop the body client_id.
+		if ( '' !== $this->client_secret && '' !== $this->client_id ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- HTTP Basic credentials (RFC 7617), not obfuscation.
+			$headers['Authorization'] = 'Basic ' . base64_encode( $this->client_id . ':' . $this->client_secret );
+			unset( $body['client_id'] );
+		}
+
 		$response = $this->run_proxied_request(
-			function () use ( $endpoint, $body ) {
+			function () use ( $endpoint, $body, $headers ) {
 				return wp_remote_post(
 					$endpoint,
 					array(
 						'timeout'   => $this->timeout,
 						'sslverify' => $this->verify_ssl,
-						'headers'   => array(
-							'Content-Type' => 'application/json',
-							'Accept'       => 'application/json',
-						),
+						'headers'   => $headers,
 						'body'      => wp_json_encode( $body ),
 					)
 				);
@@ -1110,17 +1169,17 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		if ( ! is_wp_error( $response ) && 415 === wp_remote_retrieve_response_code( $response ) ) {
 			// The endpoint does not accept JSON. Retry with form-encoded
 			// parameters, which WordPress encodes from the array body.
+			$form_headers                 = $headers;
+			$form_headers['Content-Type'] = 'application/x-www-form-urlencoded';
+
 			$response = $this->run_proxied_request(
-				function () use ( $endpoint, $body ) {
+				function () use ( $endpoint, $body, $form_headers ) {
 					return wp_remote_post(
 						$endpoint,
 						array(
 							'timeout'   => $this->timeout,
 							'sslverify' => $this->verify_ssl,
-							'headers'   => array(
-								'Content-Type' => 'application/x-www-form-urlencoded',
-								'Accept'       => 'application/json',
-							),
+							'headers'   => $form_headers,
 							'body'      => $body,
 						)
 					);
