@@ -26,7 +26,9 @@ use Illuminate\Support\Facades\Route as RouteFacade;
  * a prefix (`api/v1/chat-transcripts` for `api/v1/chat`) does not.
  *
  * Adding a route to `routes/api.php` flips its key to `true` with no change
- * here — the map is read from the router, not maintained by hand.
+ * here — the map is read from the router, not maintained by hand. The
+ * exception is a config-gated surface (see `CONFIG_GATED`): the route exists,
+ * but the service behind it must be configured before it can answer.
  */
 final class EndpointCapabilities
 {
@@ -186,6 +188,22 @@ final class EndpointCapabilities
     );
 
     /**
+     * Keys whose availability depends on configuration, not only on a route.
+     *
+     * `mediaCc` is served by an external media worker; with no
+     * `oos.media_worker.url` the route cannot answer, so reporting it available
+     * would offer a page that always fails. Its reason stays
+     * `connected-service` — the vocabulary's own description of "an external
+     * media service must be configured first" — so an unconfigured install is
+     * not counted as a gap.
+     *
+     * @var array<string, string> Endpoint key => config key that must be non-empty.
+     */
+    private const CONFIG_GATED = array(
+        'mediaCc' => 'oos.media_worker.url',
+    );
+
+    /**
      * Resolve every key against the registered routes.
      *
      * @return array<string, bool> Endpoint key => servable.
@@ -197,6 +215,10 @@ final class EndpointCapabilities
 
         foreach (self::ROUTES as $key => $fragment) {
             $map[$key] = self::hasFragment($uris, $fragment);
+
+            if ($map[$key] && isset(self::CONFIG_GATED[$key])) {
+                $map[$key] = '' !== (string) config(self::CONFIG_GATED[$key], '');
+            }
         }
 
         return $map;
