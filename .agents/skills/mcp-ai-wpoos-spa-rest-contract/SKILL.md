@@ -314,6 +314,30 @@ class 15).
   envelope (both mask the outage as "no data"; the canonical-envelope sniff
   flags the latter).
 
+## Same client, two backends — three envelopes
+
+The console is one React app against two runtimes, so a ported controller must
+reproduce the shape **the client reads**, not a house style. Three shapes are
+in use, and the wrong one blanks a page without a 4xx:
+
+| Client | Reads | Laravel controller that matches |
+|---|---|---|
+| `WorkflowBuilderClient` | bare array from `list()`, bare object from `get()`, `message` on error | `WorkflowController` — `response()->json( array_map( … ) )`, i.e. WordPress's `rest_ensure_response()` shape |
+| `WorkflowPresetsClient` | `{ ok, categories, presets }`, `{ ok, preset }`; `ok === false` is a failure | `Pro\WorkflowPresetsController` — unwrapped Pro envelope, 404 with `ok: false` |
+| `DashboardsClient` | top-level `dashboards` / `disabled` / `data` | `Pro\DashboardsController` |
+| every other console client | `{ success, data }` | the default Laravel envelope |
+
+Rule: open the client and copy its reader, then take the **error** shape from
+the WordPress controller (`{ code, message, data: { status } }` for the
+workflow family). A port that looks tidier with `{ success, data }` renders an
+empty page instead of failing visibly.
+
+The inverse also bites: a client that reads a key the server never sends is a
+**phantom endpoint key**. Before porting one, grep for a reader
+(`analytics`, `threads` and `workflows` all sat in the contract with none);
+`workflowNodes` was assumed to feed a node palette that is actually a static
+client-side map.
+
 ## Known-good baseline (2026-10-21 audit)
 
 Verified contract-clean: settings, security, diagnostics, operations,

@@ -579,6 +579,14 @@ can appear in the repo root. Two failure modes follow:
   commit.
 - Don't claim validation that wasn't run. Reference files by project-relative
   path.
+- **Run the licence gate before pushing new files.** `bash
+  bin/check-license-boundary.sh` enforces per-tree licence headers: `lib/core/src`
+  must be **MIT** (a GPL `SPDX-License-Identifier` there fails with
+  `lib/core/src contains files declaring GPL (package is MIT)`), `includes/`
+  GPL-only, `addons/pro/includes` + `addons/canvas` Proprietary-only. The
+  `Licence boundary intact` check fails in ~20 s, so this is the cheapest
+  CI failure to prevent — and the easiest to misdiagnose as a code problem
+  when the diff is only a docblock.
 
 ### Format-check drift - verify the toolchain and the commit (2026-11-04)
 
