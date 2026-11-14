@@ -579,6 +579,9 @@ can appear in the repo root. Two failure modes follow:
   commit.
 - Don't claim validation that wasn't run. Reference files by project-relative
   path.
+- **`gh pr create --body` mangles backticks.** Always write the body to a file
+  and pass `--body-file`: `/tmp/` is gitignored, so a scratch body there never
+  risks being committed. Delete it after the PR opens.
 - **Run the licence gate before pushing new files.** `bash
   bin/check-license-boundary.sh` enforces per-tree licence headers: `lib/core/src`
   must be **MIT** (a GPL `SPDX-License-Identifier` there fails with
@@ -601,6 +604,27 @@ can appear in the repo root. Two failure modes follow:
   tested: `gh run list --workflow <file> --json headSha,displayTitle,
   conclusion` - a force-push between the run and your triage makes a
   pasted diff describe a commit you no longer have.
+
+### A pasted CI log may describe a tree you no longer have (2026-11-14)
+
+A failure screenshot can be hours old, or from a sibling app in the same
+matrix. Before editing anything, prove it still exists:
+
+1. **Is it even this PR?** `gh pr checks <n>` lists the PR's own checks. A
+   workflow absent from that list belongs to another branch, another matrix
+   entry, or a mirror repo.
+2. **Is it still reachable?** `git merge-base --is-ancestor <failing-sha>
+   origin/alpha-working`, then diff the files the failure implicates at that
+   SHA against the worktree (`git show <sha>:<path>`). A byte-identical
+   lockfile means the install inputs never changed — the run was stale.
+3. Reproduce that exact tree before touching code.
+
+Two shape traps: a `#13` in an Actions header is a **run number**, not a PR
+number — do not go hunting for PR 13. And with `fail-fast: false`, one
+failure signature can have several causes: `Typecheck SPA apps` runs both
+`nvoos-pro-spa-vite` and `nvoos-complete-velocity`, and the identical
+`TS2307` for `@xyflow/react` was a stale run in the first and a genuinely
+missing dependency in the second.
 
 ## Post-merge CI triage — a MERGED PR can still fail (2026-11-09)
 
