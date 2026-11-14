@@ -289,6 +289,194 @@ return array(
 				),
 			),
 		),
+		/*
+		 * Classroom family (090-d cluster 3), local-mirror scope: the content
+		 * types the ECA tools read, without the Google Classroom sync that
+		 * populates them on WordPress. Google/ISAMS-backed fields are mirrored
+		 * as strings so rows keep their shape and stay empty on this runtime.
+		 */
+		'mcp_ai_eca'     => array(
+			'label'        => 'ECAs',
+			'description'  => 'Extra-curricular activities (courses).',
+			'public'       => false,
+			'hierarchical' => false,
+			'has_archive'  => false,
+			'show_in_rest' => true,
+			'rest_base'    => 'ecas',
+			'labels'       => array(
+				'name'          => 'ECAs',
+				'singular_name' => 'ECA',
+				'add_new_item'  => 'Add New ECA',
+				'edit_item'     => 'Edit ECA',
+				'view_item'     => 'View ECA',
+				'search_items'  => 'Search ECAs',
+				'not_found'     => 'No ECAs found.',
+				'all_items'     => 'All ECAs',
+			),
+			'capabilities' => array(
+				'edit_post'     => 'edit_post',
+				'read_post'     => 'read_post',
+				'delete_post'   => 'delete_post',
+				'edit_posts'    => 'edit_posts',
+				'publish_posts' => 'publish_posts',
+			),
+			'supports'     => array( 'title', 'editor', 'author', 'thumbnail' ),
+			'statuses'     => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+			'meta_fields'  => array(
+				'_eca_status'               => array(
+					'label' => 'Status',
+					'type'  => 'string',
+				),
+				'_eca_type'                 => array(
+					'label' => 'Type',
+					'type'  => 'string',
+				),
+				'_eca_code'                 => array(
+					'label' => 'Code',
+					'type'  => 'string',
+				),
+				'_eca_venue'                => array(
+					'label' => 'Venue',
+					'type'  => 'string',
+				),
+				'_eca_day'                  => array(
+					'label' => 'Day',
+					'type'  => 'string',
+				),
+				'_eca_start_time'           => array(
+					'label' => 'Start Time',
+					'type'  => 'string',
+				),
+				'_eca_end_time'             => array(
+					'label' => 'End Time',
+					'type'  => 'string',
+				),
+				'_eca_booking_type'         => array(
+					'label' => 'Booking Type',
+					'type'  => 'string',
+				),
+				'_eca_cost'                 => array(
+					'label' => 'Cost',
+					'type'  => 'number',
+				),
+				'_eca_cost_period'          => array(
+					'label' => 'Cost Period',
+					'type'  => 'string',
+				),
+				'_eca_is_paid'              => array(
+					'label' => 'Paid',
+					'type'  => 'boolean',
+				),
+				'_eca_requires_audition'    => array(
+					'label' => 'Requires Audition',
+					'type'  => 'boolean',
+				),
+				'_eca_max_students'         => array(
+					'label' => 'Maximum Students',
+					'type'  => 'integer',
+				),
+				'_eca_current_enrollment'   => array(
+					'label' => 'Current Enrolment',
+					'type'  => 'integer',
+				),
+				'_eca_teachers'             => array(
+					'label' => 'Teachers',
+					'type'  => 'array',
+					'items' => array( 'type' => 'integer' ),
+				),
+				'_eca_year_groups'          => array(
+					'label' => 'Year Groups',
+					'type'  => 'array',
+					'items' => array( 'type' => 'string' ),
+				),
+				'_eca_student_enrollments'  => array(
+					'label' => 'Student Enrolments',
+					'type'  => 'array',
+					'items' => array( 'type' => 'integer' ),
+				),
+				'_eca_attendance_log'       => array(
+					'label' => 'Attendance Log',
+					'type'  => 'array',
+				),
+				// Populated by the WordPress-only Google Classroom sync.
+				'_eca_google_course_id'     => array(
+					'label' => 'Google Course ID',
+					'type'  => 'string',
+				),
+				'_eca_classroom_sync'       => array(
+					'label' => 'Classroom Sync State',
+					'type'  => 'string',
+				),
+				'_eca_isams_sync_id'        => array(
+					'label' => 'ISAMS Sync ID',
+					'type'  => 'string',
+				),
+			),
+		),
+		'mcp_ai_student' => array(
+			'label'        => 'Students',
+			'description'  => 'Students enrolled in extra-curricular activities.',
+			'public'       => false,
+			'hierarchical' => false,
+			'has_archive'  => false,
+			'show_in_rest' => true,
+			'rest_base'    => 'students',
+			'labels'       => array(
+				'name'          => 'Students',
+				'singular_name' => 'Student',
+				'add_new_item'  => 'Add New Student',
+				'edit_item'     => 'Edit Student',
+				'view_item'     => 'View Student',
+				'search_items'  => 'Search Students',
+				'not_found'     => 'No students found.',
+				'all_items'     => 'All Students',
+			),
+			'capabilities' => array(
+				'edit_post'     => 'edit_post',
+				'read_post'     => 'read_post',
+				'delete_post'   => 'delete_post',
+				'edit_posts'    => 'edit_posts',
+				'publish_posts' => 'publish_posts',
+			),
+			'supports'     => array( 'title', 'editor', 'author', 'thumbnail' ),
+			'statuses'     => array( 'publish', 'future', 'draft', 'pending', 'private' ),
+			'meta_fields'  => array(
+				'_student_first_name'     => array(
+					'label' => 'First Name',
+					'type'  => 'string',
+				),
+				'_student_last_name'      => array(
+					'label' => 'Last Name',
+					'type'  => 'string',
+				),
+				'_student_email'          => array(
+					'label' => 'Email',
+					'type'  => 'string',
+				),
+				'_student_year_group'     => array(
+					'label' => 'Year Group',
+					'type'  => 'string',
+				),
+				'_student_house'          => array(
+					'label' => 'House',
+					'type'  => 'string',
+				),
+				'_student_eca_enrollments' => array(
+					'label' => 'ECA Enrolments',
+					'type'  => 'array',
+					'items' => array( 'type' => 'integer' ),
+				),
+				// Populated by the WordPress-only Classroom / ISAMS sync.
+				'_student_google_id'      => array(
+					'label' => 'Google User ID',
+					'type'  => 'string',
+				),
+				'_student_isams_id'       => array(
+					'label' => 'ISAMS ID',
+					'type'  => 'string',
+				),
+			),
+		),
 	),
 
 	'content_statuses' => array(
@@ -313,6 +501,13 @@ return array(
 			'public'       => true,
 			'description'  => '',
 			'post_types'   => array( 'post' ),
+		),
+		'mcp_ai_eca_category' => array(
+			'label'        => 'ECA Categories',
+			'hierarchical' => true,
+			'public'       => true,
+			'description'  => 'Categories used to group extra-curricular activities.',
+			'post_types'   => array( 'mcp_ai_eca' ),
 		),
 	),
 
