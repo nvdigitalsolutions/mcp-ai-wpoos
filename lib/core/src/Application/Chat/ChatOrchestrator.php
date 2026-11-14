@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace Nvoos\Core\Application\Chat;
 
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Security\InputGuard;
 use Nvoos\Core\Application\Session\SessionLog;
 use Nvoos\Core\Application\Session\SessionTelemetry;
 use Nvoos\Core\Application\Tool\ToolRegistry;
@@ -169,6 +170,15 @@ class ChatOrchestrator {
 	 */
 	private ?SessionTelemetry $sessionTelemetry = null;
 
+	/**
+	 * Optional input guard (prompt injection / PII).
+	 *
+	 * Only wired by runtimes that want orchestrator-level enforcement. WordPress
+	 * keeps its own harness layer and does not set it, so behaviour there is
+	 * unchanged.
+	 */
+	private ?InputGuard $inputGuard = null;
+
 	public function __construct(
 		private readonly ToolRegistry $tools,
 		private readonly ProviderRouter $providers,
@@ -264,6 +274,49 @@ class ChatOrchestrator {
 	 */
 	public function setSessionTelemetry( ?SessionTelemetry $telemetry ): void {
 		$this->sessionTelemetry = $telemetry;
+	}
+
+	/**
+	 * Wire the input guard for prompt-injection blocking and PII redaction.
+	 *
+	 * Pass null to detach.
+	 */
+	public function setInputGuard( ?InputGuard $guard ): void {
+		$this->inputGuard = $guard;
+	}
+
+	/**
+	 * Inspect the latest user message when a guard is wired.
+	 *
+	 * Only the newest user turn is screened: earlier turns were already
+	 * accepted, and re-screening history would block a conversation the guard
+	 * had previously allowed.
+	 *
+	 * @param array<int, array<string, mixed>> $messages Conversation messages.
+	 * @return array<string, mixed>|null Verdict, or null when there is nothing to screen.
+	 */
+	private function inspectLatestUserMessage( array $messages ): ?array {
+		if ( null === $this->inputGuard ) {
+			return null;
+		}
+
+		for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+			$message = $messages[ $i ];
+
+			if ( ! isset( $message['role'] ) || 'user' !== $message['role'] ) {
+				continue;
+			}
+
+			$content = $message['content'] ?? '';
+
+			if ( ! is_string( $content ) ) {
+				return null;
+			}
+
+			return $this->inputGuard->inspect( $content );
+		}
+
+		return null;
 	}
 
 	/**
@@ -385,6 +438,19 @@ class ChatOrchestrator {
 			$options['prompt_cache_key'] = $assistantConfig['prompt_cache_key'];
 		}
 
+		// Input guard — block a jailbreak/injection before anything is spent.
+		$guardVerdict = $this->inspectLatestUserMessage( $messages );
+		if ( null !== $guardVerdict && $guardVerdict['blocked'] ) {
+			return array(
+				'response'      => $this->errors->validationFailed( $guardVerdict['detail'], array( 'analysis' => $guardVerdict ) ),
+				'tool_results'  => array(),
+				'iterations'    => 0,
+				'cost'          => null,
+				'cancelled'     => false,
+				'cancel_reason' => '',
+			);
+		}
+
 		// Turn boundary + entering messages are the first log facts.
 		$this->recordSessionEvent(
 			SessionLog::TYPE_TURN_STARTED,
@@ -397,9 +463,16 @@ class ChatOrchestrator {
 		);
 		foreach ( $messages as $msg ) {
 			if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+				$content = is_string( $msg['content'] ?? null ) ? $msg['content'] : '';
+
+				// Redact PII/secrets before the message reaches durable storage.
+				if ( null !== $this->inputGuard ) {
+					$content = $this->inputGuard->redact( $content )['text'];
+				}
+
 				$this->recordSessionEvent(
 					SessionLog::TYPE_USER_MESSAGE,
-					array( 'content' => is_string( $msg['content'] ?? null ) ? $msg['content'] : '' ),
+					array( 'content' => $content ),
 					$sessionId,
 				);
 			}
@@ -842,6 +915,28 @@ class ChatOrchestrator {
 			);
 		};
 
+		// Input guard — block a jailbreak/injection before anything is spent.
+		$guardVerdict = $this->inspectLatestUserMessage( $messages );
+		if ( null !== $guardVerdict && $guardVerdict['blocked'] ) {
+			$this->sse->sendEvent(
+				'error',
+				array(
+					'code'    => 'guardrail_blocked',
+					'message' => $guardVerdict['detail'],
+				)
+			);
+			$this->sse->sendDone();
+
+			return array(
+				'response'      => $this->errors->validationFailed( $guardVerdict['detail'], array( 'analysis' => $guardVerdict ) ),
+				'tool_results'  => array(),
+				'iterations'    => 0,
+				'cost'          => null,
+				'cancelled'     => false,
+				'cancel_reason' => '',
+			);
+		}
+
 		// Rate limit + compression before streaming call.
 		if ( null !== $this->rateLimiter ) {
 			$key = 'chat:' . $userId . ':' . $assistantId;
@@ -902,9 +997,16 @@ class ChatOrchestrator {
 		);
 		foreach ( $messages as $msg ) {
 			if ( isset( $msg['role'] ) && 'user' === $msg['role'] ) {
+				$content = is_string( $msg['content'] ?? null ) ? $msg['content'] : '';
+
+				// Redact PII/secrets before the message reaches durable storage.
+				if ( null !== $this->inputGuard ) {
+					$content = $this->inputGuard->redact( $content )['text'];
+				}
+
 				$this->recordSessionEvent(
 					SessionLog::TYPE_USER_MESSAGE,
-					array( 'content' => is_string( $msg['content'] ?? null ) ? $msg['content'] : '' ),
+					array( 'content' => $content ),
 					$sessionId,
 				);
 			}

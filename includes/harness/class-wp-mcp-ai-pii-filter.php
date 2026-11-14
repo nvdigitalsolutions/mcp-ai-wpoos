@@ -86,6 +86,13 @@ class WP_MCP_AI_Pii_Filter {
 		 */
 		$patterns = (array) apply_filters( 'wp_mcp_ai_pii_filter_patterns', $patterns );
 
+		// The redaction mechanics live in lib/core so the Laravel runtime scrubs
+		// the same patterns. lib/ is stripped from wp.org base builds, hence the
+		// guard: the local loop below is the self-contained fallback.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\PiiFilter' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\PiiFilter::scrub( $text, $patterns );
+		}
+
 		$redactions = 0;
 		foreach ( $patterns as $entry ) {
 			if ( ! is_array( $entry ) || count( $entry ) < 2 ) {

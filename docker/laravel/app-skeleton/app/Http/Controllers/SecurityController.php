@@ -133,6 +133,22 @@ class SecurityController
                 'passed' => (bool) $store->get('memory_enabled', true),
                 'detail' => 'Agent memory can be disabled per site.',
             ],
+            'prompt_injection_detector' => [
+                'passed' => (bool) ($security['prompt_injection_detector'] ?? false),
+                'detail' => (bool) ($security['prompt_injection_detector'] ?? false)
+                    ? sprintf(
+                        'The orchestrator screens the latest user turn (%s mode, %s sensitivity) before the provider call.',
+                        (string) ($security['prompt_injection_mode'] ?? 'log'),
+                        (string) ($security['prompt_injection_sensitivity'] ?? 'medium'),
+                    )
+                    : 'Set NVOOS_PROMPT_INJECTION_DETECTOR=true to screen messages for jailbreak and injection patterns.',
+            ],
+            'pii_filter' => [
+                'passed' => (bool) ($security['pii_filter'] ?? false),
+                'detail' => (bool) ($security['pii_filter'] ?? false)
+                    ? 'User messages are redacted before they reach the session log.'
+                    : 'Set NVOOS_PII_FILTER=true to redact emails, phone numbers, card numbers and API keys before persistence.',
+            ],
         ];
 
         $signals = PostureEvaluator::build(SecuritySignalCatalogue::RUNTIME_LARAVEL, $evaluations);

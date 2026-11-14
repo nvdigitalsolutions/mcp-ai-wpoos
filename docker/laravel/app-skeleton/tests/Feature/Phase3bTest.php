@@ -177,8 +177,8 @@ class Phase3bTest extends TestCase
         $applicable = array_values(array_filter($signals, static fn (array $s): bool => $s['applicable']));
         $notApplicable = array_values(array_filter($signals, static fn (array $s): bool => ! $s['applicable']));
 
-        $this->assertCount(18, $applicable);
-        $this->assertCount(9, $notApplicable);
+        $this->assertCount(20, $applicable);
+        $this->assertCount(7, $notApplicable);
 
         foreach ($signals as $signal) {
             $this->assertContains($signal['subtab'], ['network', 'access', 'audit', 'ai_safety']);

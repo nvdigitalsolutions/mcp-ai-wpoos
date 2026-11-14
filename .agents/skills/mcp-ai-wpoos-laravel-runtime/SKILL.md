@@ -89,9 +89,9 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 | Suite | Command (cwd) | Baseline (2026-11-14) |
 |---|---|---|
-| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 663 passed / 4005 assertions (2026-11-15, after the shared security-signal catalogue) |
+| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 668 passed / 4009 assertions (2026-11-15, after the AI-safety detector + filter port) |
 | Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 175 passed / 640 assertions (after #7679) |
-| Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1369 tests / 5066 assertions (2026-11-15, after the security-signal catalogue); green apart from the no-coverage-driver warning |
+| Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1406 tests / 5170 assertions (2026-11-15, after the AI-safety detector + filter port); green apart from the no-coverage-driver warning |
 | Console smoke (G1) | `npm run test:e2e` (`examples/nvoos-complete-velocity`) | 6 passed / ~30 s (2026-11-14). Builds `.e2e-dist/` (`--mode laravel`) and serves it through `scripts/serve.mjs`; the committed `dist/` is untouched. Needs the stack up and `localhost:4318` in `SANCTUM_STATEFUL_DOMAINS` |
 
 **The console smoke is the only gate that exercises both halves at once.**

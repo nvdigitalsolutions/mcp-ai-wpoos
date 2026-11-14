@@ -246,6 +246,13 @@ class WP_MCP_AI_Guardrails {
 		$message    = (string) $message;
 		$strictness = in_array( $strictness, array( 'low', 'medium', 'high' ), true ) ? $strictness : 'medium';
 
+		// The detection rules live in lib/core so both runtimes classify with the
+		// same patterns. lib/ is stripped from wp.org base builds, so fall through
+		// to the local implementation below when it is absent.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\PromptInjectionDetector' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\PromptInjectionDetector::analyze( $message, $strictness );
+		}
+
 		$analysis = array(
 			'result'     => self::RESULT_SAFE,
 			'family'     => '',
