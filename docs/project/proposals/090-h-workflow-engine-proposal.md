@@ -1,6 +1,7 @@
 # Proposal 090-h — The workflow engine on the Laravel runtime
 
 **Status:** Decision recorded 2026-11-14 — **Laravel-native, phased, three increments.**
+**Shipped:** H1 + H2 (2026-11-14) — `workflowPresets` and `workflowBuilder` report `true`. H3 (execution + runs) remains.
 **Unblocks:** `workflowBuilder`, `workflowPresets`, `workflowNodes`, `workflowRuns` (4 of the 17 remaining console endpoint keys).
 **Related:** `090-b-laravel-admin-surfaces-proposal.md` ADR-5, ADR-6, ADR-8; `090-d-selective-tool-port.md`.
 
@@ -52,23 +53,49 @@ Runs are **append-only rows** keyed by workflow id, written by the executor. The
 
 ## 5. Phases
 
-### H1 — Catalogue (unblocks `workflowPresets`, `workflowNodes`)
+### H1 — Catalogue (unblocks `workflowPresets`)
 
 Pure data. No storage, no execution.
 
-- `GET /api/v1/pro/workflow-presets` — the preset catalogue, filtered to presets whose node types exist on this runtime.
-- `POST /api/v1/pro/workflow-presets/{id}/install` — writes a `mcp_ai_workflow` record from the preset definition.
-- `GET /api/v1/pro/workflow-builder/nodes` — node-type catalogue (id, label, category, config schema) so the canvas can render a palette. `POST /nodes/execute` stays 501 until H3.
+- `GET /api/v1/pro/workflow-presets` — the preset catalogue as WordPress serves it.
+- `POST /api/v1/pro/workflow-presets/{id}/install` — the full preset graph.
 
-**Acceptance:** a preset installs and appears in `list()`; the canvas renders a palette; `workflowPresets` and `workflowNodes` report `true` from `/features`.
+**Acceptance:** the catalogue lists with categories; install returns `nodes`/`edges`; `workflowPresets` reports `true` from `/features`.
+
+**Two corrections to the original scope, found while implementing (2026-11-14):**
+
+1. **`install` does not write a record — on either runtime.** WordPress's
+   `install_preset()` returns the graph; the console loads it into the canvas as
+   a *draft* and the user saves it through the workflow `PUT`. Writing a record
+   on install would produce a workflow the user never asked to keep, and would
+   make install depend on H2 for no benefit. The acceptance criterion "a preset
+   installs and appears in `list()`" was therefore wrong; it is now "install
+   returns the graph".
+2. **`workflowNodes` is H3, not H1.** The node palette is client-side static:
+   `spa-v2/src/features/workflows/workflow-graph.ts` owns `NODE_TYPE_LABELS`
+   (`tool`/`action`/`agent`) and `WorkflowCanvas.tsx` owns the xyflow type map.
+   Nothing reads a server palette. Only `POST /nodes/execute` consumes
+   `api/v1/pro/workflow-builder`, and that is H3. `workflowNodes` stays `false`
+   until then.
+
+Because `WorkflowsPage.loadPreset()` requires a **selected** workflow, the
+catalogue is only usable once H2's storage exists — so H1 and H2 shipped
+together rather than as two merges. The proposal's phase order (H1 before H2)
+implied a preset-first world the client does not implement.
+
+**Catalogue breadth:** all 33 presets ship. Filtering by "node types that exist
+on this runtime" is a no-op — the canvas maps any type onto a generic node and
+round-trips the original through `data.rawType`, so `input`/`output`/`condition`
+nodes render and save unchanged. What a preset actually needs is its **tools**,
+and that gate belongs to the H3 executor, not the catalogue.
 
 ### H2 — Graph storage + CRUD (unblocks `workflowBuilder`)
 
-- `GET|POST /api/v1/orchestration/workflows`, `GET|PUT|DELETE /{id}`, `GET /{id}/versions` (optional).
+- `GET|POST /api/v1/orchestration/workflows`, `GET|PUT|DELETE /{id}`.
 - Validation on write: node ids unique, every edge endpoint resolves, no cycle on save (reject with the offending edge, don't silently drop it).
-- Provenance and permissions reuse `ContentStoreInterface` — `edit_posts` to create, ownership/`manage_options` to edit others, the same rule the classroom family uses.
+- Provenance and permissions reuse `ContentStoreInterface`. The gate is **`manage_options`**, not `edit_posts`: `WP_MCP_AI_REST_Workflow_CPT_Controller::permissions_check()` requires `manage_options` on every endpoint, reads included, so the port matches the reference.
 
-**Acceptance:** create → save → reload round-trips the graph byte-identically; an unauthenticated or non-owner write is refused by the store, not by a controller check.
+**Acceptance:** create → save → reload round-trips the graph byte-identically; an unauthenticated or under-privileged write is refused by middleware, not by a controller check.
 
 ### H3 — Execution + runs (unblocks `workflowRuns`, and makes `execute` real)
 
@@ -94,11 +121,13 @@ Pure data. No storage, no execution.
 
 - **`skills` and `mcpApps`** are separate decisions (deferred inside the assistant editor) and are not part of this proposal.
 - **Posture parity** (8 native signals vs WordPress's 21) is independent.
-- **Preset catalogue breadth**: shipping all ten preset categories in H1 is not required. Start with the categories whose node types exist after H3's first cut; add the rest with their node types.
+- **Preset catalogue breadth**: all shipped presets are listed regardless of tool availability (see H1's corrections). Filtering belongs to execution, not to the catalogue.
+- **Divergences from the reference (recorded per 090-d):** save-time graph validation is stricter than WordPress (which validates nothing), deletion trashes rather than destroys, and graph/tags are written as native JSON rather than JSON-in-a-string — reading tolerates both forms so a copied database lists unchanged.
+- **Licensing of the preset data.** The Laravel app is MIT; the preset catalogue is Pro-licensed content. The JSON export carries a `_license` field and the loader states the split, same as the repo's base/Pro boundary. A deployment that must be MIT-only replaces `resources/workflow-presets.json` with its own catalogue — the loader needs no change.
 
 ## 8. Consequences
 
-- Two of the four engine keys flip after H1 with **no executor at all** — the cheapest visible win in the remaining gap list.
+- Two of the four engine keys flip after H1+H2 with **no executor at all** — the cheapest visible win in the remaining gap list. (Shipped 2026-11-14.)
 - The Orchestration page stops reporting `recent_workflows` and `patterns` as honestly-empty once H2 lands.
 - A Laravel estate can run automations without a WordPress peer, which is the whole point of ADR-6/ADR-8.
 - WordPress's Engine V2 stays the reference implementation; where the port diverges (storage, node subset), the divergence is recorded in `090-d` rather than smoothed over.
