@@ -68,6 +68,9 @@ class EndpointCapabilitiesTest extends TestCase
             'professions',
             'orgTeams',
             'blueprints',
+            // 090-h H1/H2 — the preset catalogue and workflow graph storage.
+            'workflowPresets',
+            'workflowBuilder',
         ] as $key) {
             $this->assertTrue($endpoints[$key] ?? false, $key.' should be available.');
         }
@@ -78,10 +81,9 @@ class EndpointCapabilitiesTest extends TestCase
         $endpoints = $this->endpoints();
 
         foreach ([
-            // Orchestration engine — not ported. The overview route exists
-            // (`orchestrationStats`), the builder and runs do not.
-            'workflowBuilder',
-            'workflowPresets',
+            // Orchestration engine — execution and run history are H3. The
+            // overview and the workflow CRUD routes exist; the node executor
+            // and the runs table do not.
             'workflowNodes',
             'workflowRuns',
             // Deliberately deferred inside the assistant editor.

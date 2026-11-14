@@ -19,6 +19,7 @@ use App\Http\Controllers\Pro\PresetsController;
 use App\Http\Controllers\Pro\RecordsController;
 use App\Http\Controllers\Pro\SchedulesController;
 use App\Http\Controllers\Pro\ToolkitsController;
+use App\Http\Controllers\Pro\WorkflowPresetsController;
 use App\Http\Controllers\ProfessionController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\SessionController;
@@ -31,6 +32,7 @@ use App\Http\Controllers\ToolController;
 use App\Http\Controllers\ToolsController;
 use App\Http\Controllers\TranscriptsController;
 use App\Http\Controllers\TriggersController;
+use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\Wp\ContentController as WpContentController;
 use Illuminate\Support\Facades\Route;
 
@@ -225,6 +227,20 @@ Route::prefix('api/v1')->group(function (): void {
             // is real; workflow fields are honestly empty (no engine).
             Route::get('/orchestration/stats', OrchestrationStatsController::class);
 
+            // 090-h H2 — workflow graph storage. A workflow is a content
+            // record (`mcp_ai_workflow`), not a new table. WordPress gates
+            // every one of these endpoints on `manage_options`
+            // (WP_MCP_AI_REST_Workflow_CPT_Controller::permissions_check),
+            // so they sit in this group rather than the edit_posts one.
+            Route::get('/orchestration/workflows', [WorkflowController::class, 'index']);
+            Route::post('/orchestration/workflows', [WorkflowController::class, 'store']);
+            Route::get('/orchestration/workflows/{id}', [WorkflowController::class, 'show'])
+                ->whereNumber('id');
+            Route::match(['put', 'patch'], '/orchestration/workflows/{id}', [WorkflowController::class, 'update'])
+                ->whereNumber('id');
+            Route::delete('/orchestration/workflows/{id}', [WorkflowController::class, 'destroy'])
+                ->whereNumber('id');
+
             // Phase 3b — security posture, snapshots, self-test.
             Route::get('/security/posture', [SecurityController::class, 'posture']);
             Route::get('/security/preview-headers', [SecurityController::class, 'previewHeaders']);
@@ -268,6 +284,14 @@ Route::prefix('api/v1')->group(function (): void {
 
                 Route::get('/presets', [PresetsController::class, 'index']);
                 Route::post('/presets/{id}/install', [PresetsController::class, 'install']);
+            });
+
+            // 090-h H1 — the workflow-preset catalogue. Separate from the
+            // schedule presets above: different controller, different client.
+            Route::prefix('pro/workflow-presets')->group(function (): void {
+                Route::get('/', [WorkflowPresetsController::class, 'index']);
+                Route::post('/{id}/install', [WorkflowPresetsController::class, 'install'])
+                    ->where('id', '[a-z0-9_-]+');
             });
 
             // Phase 3c — Pro Records schema (content entities only).
