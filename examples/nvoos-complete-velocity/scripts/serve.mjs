@@ -22,6 +22,15 @@
  * prefixes. The console build must use the matching VITE_NVOOS_BACKEND;
  * runtime-config.ts asserts the contract at boot (Proposal 090-B, ADR-6).
  *
+ * Connected-app proxy (Proposal 090-p W6): /connected/<key>/* mounts a remote
+ * product same-origin so its island needs no CORS. The upstream origin comes
+ * from NVOOS_CONNECTED_APPS (never from the request), only the four known
+ * product keys are reachable, browser cookies/authorization are dropped, a
+ * per-app token is attached server-side, and the response is no-store unless
+ * the app opts into a public TTL. /features advertises `connected_proxy: true`
+ * so the console only rewrites a discovered URL when this proxy is present.
+ * Never set NVOOS_CONNECTED_APPS to a host you do not control.
+ *
  * Caching contract (keeps browser + Velocity CDN load off WordPress):
  *   - index.html → `Cache-Control: no-cache` + weak ETag → 304 revalidation
  *     instead of a full-body re-download on every navigation.
@@ -57,6 +66,12 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync, brotliCompressSync } from 'node:zlib';
+import {
+  parseConnectedApps,
+  normaliseConnectedPath,
+  buildConnectedRequestHeaders,
+  buildConnectedResponseHeaders,
+} from './connected-apps.mjs';
 
 const PORT = Number(process.env.PORT || 4181);
 
@@ -99,6 +114,31 @@ const BACKEND_PREFIXES = {
   ],
 };
 const PROXY_PREFIXES = BACKEND_PREFIXES[BACKEND] || BACKEND_PREFIXES.wordpress;
+
+// Connected-app proxy (Proposal 090-p W6): a same-origin mount for remote
+// products that cannot send credentialed CORS. Off unless the operator
+// configures an allowlist — a bare console must never expose an open proxy.
+const CONNECTED_PREFIX = '/connected';
+const CONNECTED_APPS = parseConnectedApps(process.env.NVOOS_CONNECTED_APPS);
+const CONNECTED_ENABLED = CONNECTED_APPS.size > 0;
+// Connected products are often self-hosted behind an internal CA. Cert
+// validation stays on by default; opt out only for a product you control.
+const CONNECTED_INSECURE = process.env.NVOOS_CONNECTED_INSECURE === '1';
+// The availability read carries the advertisement (`connected_proxy: true`),
+// so the console only rewrites a discovered URL when this proxy is actually
+// in front of it.
+const FEATURES_PATH = /^\/(?:wp-json\/mcp-ai|mcp-ai|api)\/v1\/features$/;
+
+/**
+ * Is this path the availability read (`/features`) the console consumes?
+ *
+ * @param {string} pathname Request path.
+ * @returns {boolean}
+ */
+function isFeaturesPath(pathname) {
+  return FEATURES_PATH.test(pathname);
+}
+
 // Hop-by-hop headers Node manages itself — passing them through would
 // conflict with its own framing/connection handling.
 const HOP_BY_HOP = new Set([
@@ -382,6 +422,7 @@ function proxyRequest(req, res) {
     clientCacheControl.includes('no-store') ||
     String(req.headers.pragma ?? '').toLowerCase().includes('no-cache') ||
     isLoginPage ||
+    (CONNECTED_ENABLED && isFeaturesPath(incoming.pathname)) ||
     incoming.pathname === '/wp-admin' ||
     incoming.pathname.startsWith('/wp-admin/');
   const cacheKey = bypassCache ? null : proxyCacheKey(req, incoming);
@@ -409,7 +450,9 @@ function proxyRequest(req, res) {
     delete headers.origin;
     delete headers.referer;
   }
-  if (isLoginPage) delete headers['accept-encoding']; // Identity body, so it can be rewritten.
+  if (isLoginPage || (CONNECTED_ENABLED && isFeaturesPath(incoming.pathname))) {
+    delete headers['accept-encoding']; // Identity body, so it can be rewritten.
+  }
   headers.host = upstreamUrl.host;
 
   const upstream = transport(
@@ -429,6 +472,36 @@ function proxyRequest(req, res) {
         isLoginPage &&
         contentType.includes('text/html') &&
         !upRes.headers['content-encoding'];
+      const canAdvertiseConnected =
+        CONNECTED_ENABLED &&
+        isFeaturesPath(incoming.pathname) &&
+        contentType.includes('application/json') &&
+        !upRes.headers['content-encoding'];
+
+      // Additive: the console needs to know a same-origin mount exists before
+      // it rewrites a discovered product URL to it. Buffered because the body
+      // is rewritten; /features is small and already uncached on both
+      // runtimes.
+      if (canAdvertiseConnected) {
+        const chunks = [];
+        upRes.on('data', (chunk) => chunks.push(chunk));
+        upRes.on('end', () => {
+          const raw = Buffer.concat(chunks).toString('utf8');
+          let body = raw;
+          try {
+            body = JSON.stringify(injectConnectedProxy(JSON.parse(raw)));
+          } catch {
+            // Not JSON after all — pass it through untouched.
+          }
+          res.writeHead(upRes.statusCode ?? 502, upRes.statusMessage, {
+            ...outHeaders,
+            'Content-Length': Buffer.byteLength(body),
+          });
+          res.end(body);
+        });
+        upRes.on('error', () => res.destroy());
+        return;
+      }
 
       if (!canRewrite) {
         const ttl = cacheKey ? proxyCacheableTtl(upRes) : 0;
@@ -518,9 +591,154 @@ function proxyRequest(req, res) {
   req.pipe(upstream);
 }
 
+/**
+ * JSON error for the connected-app branch.
+ *
+ * @param {import('node:http').ServerResponse} res     Response.
+ * @param {number}                             status  HTTP status.
+ * @param {string}                             code    Machine code.
+ * @param {string}                             message Operator copy.
+ */
+function connectedError(res, status, code, message) {
+  if (res.headersSent) {
+    res.destroy();
+    return;
+  }
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    ...SECURITY_HEADERS,
+  });
+  res.end(JSON.stringify({ code, message }));
+}
+
+/**
+ * Advertise the proxy on the availability payload.
+ *
+ * The console rewrites a discovered `endpoint_urls` entry to
+ * `/connected/<key>` only when this flag is present, so a deployment
+ * without NVOOS_CONNECTED_APPS keeps using the product's absolute URL.
+ *
+ * @param {unknown} payload Parsed /features body.
+ * @returns {unknown}
+ */
+function injectConnectedProxy(payload) {
+  const advertisement = {
+    connected_proxy: true,
+    connected_apps: [...CONNECTED_APPS.keys()],
+  };
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload;
+  }
+
+  const envelope = /** @type {Record<string, unknown>} */ (payload);
+  const data = envelope.data;
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    return { ...envelope, data: { ...data, ...advertisement } };
+  }
+
+  return { ...envelope, ...advertisement };
+}
+
+/**
+ * Answer a `/connected/<key>/*` request.
+ *
+ * The key selects an upstream from the operator allowlist; the rest of the
+ * path is joined onto that base. Nothing the client sends can name a host —
+ * see scripts/connected-apps.mjs for the threat model.
+ *
+ * @param {import('node:http').IncomingMessage}  req Request.
+ * @param {import('node:http').ServerResponse}   res Response.
+ * @param {URL}                                  url Parsed request URL.
+ */
+function proxyConnectedRequest(req, res, url) {
+  if (!CONNECTED_ENABLED) {
+    connectedError(res, 404, 'nvoos_connected_disabled', 'No connected apps are configured.');
+    return;
+  }
+
+  const match = /^\/connected\/([^/]+)(\/.*)?$/.exec(url.pathname);
+  if (!match) {
+    connectedError(res, 400, 'nvoos_connected_path_invalid', 'Expected /connected/<key>/<path>.');
+    return;
+  }
+
+  const key = match[1];
+  const app = CONNECTED_APPS.get(key);
+  if (!app) {
+    connectedError(res, 404, 'nvoos_connected_unknown_app', `Unknown connected app "${key}".`);
+    return;
+  }
+
+  const rest = normaliseConnectedPath(match[2]);
+  if (rest === null) {
+    connectedError(
+      res,
+      400,
+      'nvoos_connected_path_invalid',
+      'Path must not traverse, encode a separator, or name a host.',
+    );
+    return;
+  }
+
+  let upstreamUrl;
+  try {
+    upstreamUrl = new URL(app.base + rest);
+    upstreamUrl.search = url.search;
+  } catch {
+    connectedError(res, 400, 'nvoos_connected_path_invalid', 'Path is not a valid URL.');
+    return;
+  }
+
+  // Defence in depth: the join must stay on the configured origin.
+  if (upstreamUrl.origin !== new URL(app.base).origin) {
+    connectedError(res, 400, 'nvoos_connected_path_invalid', 'Path escapes the configured origin.');
+    return;
+  }
+
+  const transport = upstreamUrl.protocol === 'https:' ? httpsRequest : httpRequest;
+
+  const upstream = transport(
+    {
+      hostname: upstreamUrl.hostname,
+      port: upstreamUrl.port || (upstreamUrl.protocol === 'https:' ? 443 : 80),
+      path: upstreamUrl.pathname + upstreamUrl.search,
+      method: req.method,
+      headers: buildConnectedRequestHeaders(req.headers, app),
+      rejectUnauthorized: !CONNECTED_INSECURE,
+    },
+    (upRes) => {
+      res.writeHead(
+        upRes.statusCode ?? 502,
+        upRes.statusMessage,
+        buildConnectedResponseHeaders(upRes.headers, app),
+      );
+      upRes.pipe(res);
+    },
+  );
+
+  upstream.on('error', (error) => {
+    connectedError(
+      res,
+      502,
+      'nvoos_connected_bad_gateway',
+      `Connected app "${app.key}" unreachable: ${error.message}`,
+    );
+  });
+
+  req.on('error', () => upstream.destroy());
+  req.pipe(upstream);
+}
+
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? '/', 'http://localhost');
+
+    if (url.pathname === CONNECTED_PREFIX || url.pathname.startsWith(`${CONNECTED_PREFIX}/`)) {
+      proxyConnectedRequest(req, res, url);
+      return;
+    }
 
     if (PROXY_TARGET && isProxyPath(url.pathname)) {
       proxyRequest(req, res);
@@ -632,6 +850,11 @@ server.listen(PORT, () => {
   } else {
     console.log(
       '[nvoos-complete-console] no NVOOS_TARGET_SITE set — the SPA loads, but REST/auth calls have no backend (set it to your WordPress or Laravel site URL)',
+    );
+  }
+  if (CONNECTED_ENABLED) {
+    console.log(
+      `[nvoos-complete-console] connected-app proxy on · ${[...CONNECTED_APPS.keys()].join(', ')} → ${CONNECTED_PREFIX}/<key>/*`,
     );
   }
 });

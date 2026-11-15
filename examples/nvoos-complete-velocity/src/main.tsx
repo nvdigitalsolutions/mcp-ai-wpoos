@@ -100,7 +100,7 @@ function Console(): JSX.Element {
       // One read returns both the feature flags and which routes this
       // backend serves, so a missing route blanks its endpoint instead of
       // 404ing when the user opens the page.
-      const { features, endpoints, endpointUrls, endpointReasons } =
+      const { features, endpoints, endpointUrls, endpointReasons, connectedProxy } =
         await fetchRuntimeAvailability(effectiveNonce);
       // Site title fails open too ('' → branding surfaces fall back to the
       // product name). It also feeds the browser tab title.
@@ -114,6 +114,7 @@ function Console(): JSX.Element {
         endpoints,
         endpointUrls,
         endpointReasons,
+        connectedProxy,
         siteName,
       });
       setBoot({ phase: 'ready' });
