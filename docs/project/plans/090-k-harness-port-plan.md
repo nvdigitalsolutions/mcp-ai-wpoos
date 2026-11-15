@@ -408,3 +408,21 @@ Two notes on the gates. `lib/core` is **not** in `phpcs-laravel.xml.dist`'s `<fi
 **What this leaves.** The chat path now enforces, in order: input guard → provider → output guard → buffered or streamed delivery. Trace capture, the scored router and guardrail prompt injection are still unwired, and each is a separate change.
 
 ---
+
+## 17. Cluster 11 result — guardrail prompt injection
+
+**What shipped.** `ChatOrchestrator` now prepends the guardrail block to the conversation's system turn when the assistant's profile enables the layer, on both `handleChat()` and `handleChatStreaming()`. It resolves the harness profile **once per turn** and shares it with the output-guard resolution from cluster 10, so a turn reads its profile once rather than twice.
+
+**Why it lives in the orchestrator.** WordPress filters one resolved system prompt (`wp_mcp_ai_resolved_system_prompt`). The Laravel chat path has no such seam — in fact it had no system-prompt handling at all, which is a separate gap. Putting the injection in the orchestrator gives both runtimes one place to change and works whether the client sends a system turn or not.
+
+**Three behaviours worth naming.**
+
+- **First system turn, or a new one.** A conversation may carry one `system` message, several, or none. The block goes on the first; when there is none, a system message is inserted. From the model's side those are the same thing.
+- **Idempotent.** If the system content already contains `[Guardrails — Stay on Target]`, nothing is added. Doubling the block would double its weight in the prompt, and a client may well have injected it already.
+- **Opt-in at two levels.** Nothing happens unless the profile is enabled *and* `guardrails.enabled`. That gate lives in `GuardrailPrompt::apply()`, so the orchestrator does not restate it.
+
+**Validation.** `lib/core` **1,623 tests / 5,654 assertions** (7 new); app suite unchanged at **690 / 4,063** because no binding ships; adapter suite 180 / 676 with the same 2 pre-existing project-tool failures; `phpcs-laravel.xml.dist` clean across the 264 in-ruleset files.
+
+The tests assert what the provider actually receives, not what the orchestrator thinks it sent: no profile leaves one message, an enabled layer yields `system` first, an existing system turn is prefixed rather than replaced, a disabled layer injects nothing, a pre-injected block is not duplicated, `high` strictness reaches the block, and the streaming path injects too.
+
+---

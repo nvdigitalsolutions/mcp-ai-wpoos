@@ -33,6 +33,7 @@ use Nvoos\Core\Application\Session\SessionTelemetry;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
+use Nvoos\Core\Domain\Service\Harness\GuardrailPrompt;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
@@ -349,9 +350,9 @@ class ChatOrchestrator {
 	/**
 	 * Resolve the guard that applies to this turn.
 	 */
-	private function resolveOutputGuard( int $assistantId ): ?OutputGuard {
-		if ( null !== $this->harnessProfiles ) {
-			$fromProfile = OutputGuard::fromProfile( $this->harnessProfiles->getProfile( $assistantId ) );
+	private function resolveOutputGuard( ?array $profile ): ?OutputGuard {
+		if ( null !== $profile ) {
+			$fromProfile = OutputGuard::fromProfile( $profile );
 
 			if ( null !== $fromProfile ) {
 				return $fromProfile;
@@ -359,6 +360,74 @@ class ChatOrchestrator {
 		}
 
 		return $this->outputGuard;
+	}
+
+	/**
+	 * Resolve the harness profile once per turn, or null when none is wired.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function resolveProfile( int $assistantId ): ?array {
+		return null === $this->harnessProfiles ? null : $this->harnessProfiles->getProfile( $assistantId );
+	}
+
+	/**
+	 * Prepend the guardrail instruction block to the conversation's system turn.
+	 *
+	 * WordPress filters one resolved system prompt; a conversation here may
+	 * carry a `system` message, several, or none. The block goes on the first one,
+	 * and when there is none a system message is inserted — which is the same
+	 * thing from the model's side.
+	 *
+	 * Idempotence matters: a client may already have injected the block, and a
+	 * second prepend would double its weight in the prompt. The header is the
+	 * marker.
+	 *
+	 * @param array<int, array<string, mixed>> $messages Conversation messages.
+	 * @param array<string, mixed>|null        $profile  Resolved profile, if any.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function applyGuardrailPrompt( array $messages, ?array $profile ): array {
+		if ( null === $profile || empty( $profile['enabled'] ) || empty( $profile['guardrails']['enabled'] ) ) {
+			return $messages;
+		}
+
+		$index    = null;
+		$existing = '';
+
+		foreach ( $messages as $i => $message ) {
+			if ( isset( $message['role'] ) && 'system' === $message['role'] ) {
+				$index    = $i;
+				$existing = \is_string( $message['content'] ?? null ) ? $message['content'] : '';
+				break;
+			}
+		}
+
+		if ( \str_contains( $existing, GuardrailPrompt::HEADER ) ) {
+			return $messages;
+		}
+
+		$augmented = GuardrailPrompt::apply( $existing, $profile );
+
+		if ( '' === $augmented ) {
+			return $messages;
+		}
+
+		if ( null !== $index ) {
+			$messages[ $index ]['content'] = $augmented;
+
+			return $messages;
+		}
+
+		\array_unshift(
+			$messages,
+			array(
+				'role' => 'system',
+				'content' => $augmented,
+			)
+		);
+
+		return $messages;
 	}
 
 	/**
@@ -500,6 +569,11 @@ class ChatOrchestrator {
 
 		$iteration          = 0;
 		$toolResultMessages = array();
+
+		// The harness profile drives both the prompt rails and the response
+		// guard, so it is resolved once per turn.
+		$profile  = $this->resolveProfile( $assistantId );
+		$messages = $this->applyGuardrailPrompt( $messages, $profile );
 
 		// Build tool definitions for this assistant.
 		$allowedToolSlugs = $assistantConfig['tools'] ?? array();
@@ -947,7 +1021,7 @@ class ChatOrchestrator {
 		// The response guard runs before the cost event so a trace consumer sees
 		// what the caller will actually receive. Cost reads `usage`, which the
 		// rewrite does not touch, so the ordering is safe.
-		$guarded            = $this->applyOutputGuard( $response, $this->resolveOutputGuard( $assistantId ) );
+		$guarded            = $this->applyOutputGuard( $response, $this->resolveOutputGuard( $profile ) );
 		$response           = $guarded['response'];
 		$outputGuardVerdict = $guarded['verdict'];
 
@@ -1015,6 +1089,11 @@ class ChatOrchestrator {
 		$maxIterations = (int) ( $assistantConfig['max_agentic_iterations'] ?? self::DEFAULT_MAX_ITERATIONS );
 		$maxIterations = \max( 1, \min( 50, $maxIterations ) );
 
+		// The harness profile drives both the prompt rails and the response
+		// guard, so it is resolved once per turn.
+		$profile  = $this->resolveProfile( $assistantId );
+		$messages = $this->applyGuardrailPrompt( $messages, $profile );
+
 		$iteration          = 0;
 		$toolResultMessages = array();
 
@@ -1056,7 +1135,7 @@ class ChatOrchestrator {
 		// A guard that runs at the end cannot retract a token it has already sent,
 		// so an enabled output guard turns the stream into a single final message.
 		// Nothing else changes on the default path.
-		$runtimeOutputGuard   = $this->resolveOutputGuard( $assistantId );
+		$runtimeOutputGuard   = $this->resolveOutputGuard( $profile );
 		$bufferForOutputGuard = null !== $runtimeOutputGuard && $runtimeOutputGuard->enabled();
 
 		$onStreamChunk = function ( string $token ) use ( $cancellation, $bufferForOutputGuard ): void {
