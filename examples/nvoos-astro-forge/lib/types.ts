@@ -353,6 +353,12 @@ export interface ForgeMedia {
 
 /** One operator-configured WordPress site. */
 export interface SiteProfile {
+	/**
+	 * Where the content comes from. `materialized` means the CMS is gone and
+	 * `<profile>.content/` — the output of `forge materialize` — is the source;
+	 * the scaffold copies it into `src/content/` automatically.
+	 */
+	content?: { source?: 'wordpress' | 'materialized' | 'none' };
 	/** Root URL (https://…). No trailing slash. */
 	url: string;
 	/** Display name (discovery fills it when absent). */

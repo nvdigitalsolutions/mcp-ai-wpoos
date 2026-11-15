@@ -2,6 +2,9 @@
 	"url": "https://virtuallyjamaica.com",
 	"name": "Virtually Jamaica",
 	"frontPage": "application",
+	"content": {
+		"source": "materialized"
+	},
 	"collections": [
 		{
 			"slug": "posts",
@@ -57,7 +60,7 @@
 			],
 			"embed": true,
 			"kind": "page",
-			"optional": false,
+			"optional": true,
 			"exclude": [
 				"login-customizer",
 				"my-account",
