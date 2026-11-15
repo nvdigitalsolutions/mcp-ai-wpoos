@@ -744,14 +744,32 @@ export function collectBandBoxFacts( input: {
 			if ( node.tagName === 'IMG' ) {
 				const img = node as HTMLImageElement;
 				const rect = img.getBoundingClientRect();
+				const imgStyle = getComputedStyle( img );
 				const natural = img.naturalHeight / ( img.naturalWidth || 1 );
 				const rendered = rect.height / ( rect.width || 1 );
-				if ( rect.height > 0 && img.naturalWidth > 0 && Math.abs( natural - rendered ) > 0.02 ) {
+				// A FILL image has no height of its own: `object-fit: cover` inside an
+				// absolutely-positioned, inset-0 wrapper (Flatsome's `.banner-bg.fill`)
+				// derives it from the container, which is `100vh` on a full-height
+				// banner. Its rendered aspect therefore disagrees with the file's on
+				// EVERY measurement, but the mismatch is a container fact, not a crop.
+				// Baking the analyze-time px freezes a viewport-derived height — the
+				// rebuild then fills 900px of a 1277px banner (monicarajiv hero,
+				// 2026-11-15). The `height: 100%` shim is the correct rule here.
+				const host = img.parentElement;
+				const hostRect = host ? host.getBoundingClientRect() : null;
+				const fillsHost =
+					!! host &&
+					!! hostRect &&
+					imgStyle.objectFit === 'cover' &&
+					getComputedStyle( host ).position === 'absolute' &&
+					rect.height > 0 &&
+					Math.abs( hostRect.height - rect.height ) < 1;
+				if ( rect.height > 0 && img.naturalWidth > 0 && ! fillsHost && Math.abs( natural - rendered ) > 0.02 ) {
 					height = `${ round( String( rect.height ) ) }px`;
 				}
 				// A cropped cover image carries the source's crop anchor.
-				if ( rect.height > 0 && rect.width > 0 && getComputedStyle( node ).objectFit === 'cover' ) {
-					const position = getComputedStyle( node ).objectPosition || '50% 50%';
+				if ( rect.height > 0 && rect.width > 0 && imgStyle.objectFit === 'cover' ) {
+					const position = imgStyle.objectPosition || '50% 50%';
 					mediaPositions.set( position, ( mediaPositions.get( position ) ?? 0 ) + 1 );
 				}
 			}
