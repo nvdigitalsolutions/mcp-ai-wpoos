@@ -783,6 +783,50 @@ export function addFontDisplaySwap( css, value = 'swap' ) {
 }
 
 /**
+ * Drop `@font-face` blocks whose `src` points at a URL we could not mirror.
+ *
+ * A mirrored stylesheet must not keep a third-party URL: the point of
+ * localisation is that the artifact is self-contained, and a HALF-mirrored
+ * sheet is the worst of both worlds — it ships a render-blocking cross-origin
+ * chain that a build-to-build network blip decides (measured 2026-11-15: one
+ * failed woff2 left `fonts.gstatic.com` in an otherwise local sheet).
+ *
+ * When a face cannot travel, the family falls back to the stack the page
+ * already declares, which is a legitimate rendering. The caller reports the
+ * loss — this function only keeps the CSS honest.
+ *
+ * `@font-face` cannot nest, so a `[^}]*` block match is exact (same rule as
+ * `addFontDisplaySwap`). Block references are resolved against `baseUrl` the
+ * same way `rewriteStylesheet()` resolves them: a sheet usually writes
+ * `url(fonts/x.woff)`, while the caller holds the absolute download URL.
+ *
+ * @param {string} css Stylesheet source.
+ * @param {Iterable<string>} urls Absolute URLs that were not mirrored.
+ * @param {string} baseUrl The stylesheet's own URL (for relative references).
+ * @returns {string} The stylesheet without those faces.
+ */
+export function dropUnavailableFontFaces( css, urls = [], baseUrl = '' ) {
+	const missing = new Set( [ ...urls ].filter( Boolean ) );
+	if ( missing.size === 0 ) {
+		return String( css ?? '' );
+	}
+	// A relative reference only resolves against a real base; without one, the
+	// reference is compared as written (an absolute URL is then still exact).
+	const reference = ( raw ) => {
+		const resolved = resolveStylesheetAsset( raw, baseUrl );
+		return resolved !== undefined ? resolved : String( raw ?? '' ).trim();
+	};
+	return String( css ?? '' )
+		.replace( /@font-face\s*\{[^}]*\}/gi, ( block ) => {
+			const unavailable = [
+				...block.matchAll( /url\(\s*(?:'|")?([^'")]+?)(?:'|")?\s*\)/gi ),
+			].some( ( match ) => missing.has( reference( match[ 1 ] ?? '' ) ) );
+			return unavailable ? '' : block;
+		} )
+		.replace( /\n{3,}/g, '\n\n' );
+}
+
+/**
  * Read an SVG's intrinsic size without decoding it.
  *
  * `viewBox` wins (it is the drawing's coordinate space, which is what an
