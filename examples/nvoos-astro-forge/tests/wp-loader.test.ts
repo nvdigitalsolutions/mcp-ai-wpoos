@@ -610,15 +610,20 @@ describe( 'hybrid local content (106 P2)', () => {
 		return store.entries;
 	}
 
-	it( 'gives a local entry the rendered.html the semantic renderer reads', async () => {
-		const entries = await load( [
-			{
-				id: 'application',
-				data: { title: 'Application' },
-				digest: 1,
-				body: '<section id="home"><p>Hi</p><script>alert(1)</script></section>',
-			},
-		] );
+	it( 'gives a materialized entry the sanitized rendered.html the semantic renderer reads', async () => {
+		const root = await mkdtemp( join( tmpdir(), 'forge-local-' ) );
+		const dir = join( root, 'src', 'content', 'posts' );
+		await mkdir( dir, { recursive: true } );
+		await writeFile(
+			join( dir, 'application.html' ),
+			'<section id="home"><p>Hi</p><script>alert(1)</script></section>',
+			'utf8'
+		);
+
+		const entries = await load(
+			[ { id: 'application', data: { title: 'Application' }, digest: 1, body: '' } ],
+			pathToFileURL( root )
+		);
 
 		expect( entries ).toHaveLength( 1 );
 		expect( entries[ 0 ].data.slug ).toBe( 'application' );
@@ -627,6 +632,24 @@ describe( 'hybrid local content (106 P2)', () => {
 		expect( entries[ 0 ].rendered?.html ).toContain( '<section id="home">' );
 		// Same sanitizer as the WP path.
 		expect( entries[ 0 ].rendered?.html ).not.toContain( '<script' );
+	} );
+
+	it( 'never promotes the MDX source to rendered.html', async () => {
+		// `body` on a glob entry is the Markdown/MDX SOURCE, not output. Setting
+		// rendered.html from it took the DesignRenderer branch in the post route
+		// and rendered a real MDX post as literal `import` lines and bullets,
+		// shadowing the compiled <Content /> (2026-11-15).
+		const entries = await load( [
+			{
+				id: 'hello-world',
+				data: { title: 'Hello' },
+				digest: 6,
+				body: "import FaqAccordion from '../../components/blocks/FaqAccordion.astro';\n\n- a bullet\n",
+			},
+		] );
+
+		expect( entries ).toHaveLength( 1 );
+		expect( entries[ 0 ].rendered ).toBeUndefined();
 	} );
 
 	it( 'prefers a sibling <id>.html body over the MDX body', async () => {
