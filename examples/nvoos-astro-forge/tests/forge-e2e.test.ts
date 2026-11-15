@@ -621,6 +621,13 @@ describe('forge e2e — emitted site', () => {
 			expect(css).toMatch(/\.ds-hero-collage\s*\{[^}]*grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\(\s*9rem\s*,\s*1fr\s*\)\s*\)/);
 			expect(css).toMatch(/\.ds-collage-shape\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/);
 			expect(css).toMatch(/\.ds-collage-shape\[data-fluid\]\s*\{[^}]*aspect-ratio:\s*var\(--ds-shape-ratio\)/);
+			// A phone keeps a zero-gutter band's copy INSET. A source band that
+			// measured `--ds-pad-x: 0px` (a full-bleed hero photo) ran its form,
+			// fields and Turnstile widget edge-to-edge on a phone, and a CENTRED
+			// band's submit hugged the left edge. The floor is mobile-only;
+			// desktop keeps the measured fact.
+			expect(css).toMatch(/padding-left:\s*max\(\s*var\(--forge-space\)\s*,\s*var\(--ds-pad-x\s*,\s*0px\s*\)\s*\)/);
+			expect(css).toMatch(/\.ds-form\s+\.ds-button\s*,\s*\.ds-form\s+\.cf-turnstile\s*\{[^}]*justify-self:\s*center/);
 		} else {
 			expect(index).toMatch(/--forge-accent:\s*#0b5f4e/);
 		}
