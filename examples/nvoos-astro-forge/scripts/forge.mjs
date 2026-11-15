@@ -1281,6 +1281,7 @@ async function runScaffold( profileRef, options ) {
 		strictContrast: options.strictContrast === true,
 		demoContent: options.demoContent === true,
 		unlock: options.unlock === true,
+		contentDir: options.content,
 		siteSlug,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
@@ -3812,6 +3813,7 @@ function scaffoldOptions( cmd ) {
 		.option( '--theme-policy <policy>', 'auto | light | dark | brand:<slug> (default: auto)' )
 		.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
 		.option( '--overwrite', 'replace a non-forge target directory' )
+		.option( '--content <dir>', 'materialized content directory copied into src/content (a site with no CMS)' )
 		.option( '--unlock', 're-forge a target that is LOCKED for hand-editing (destroys custom work)' )
 		.option( '--check', 'verify collection sizes against the page caps (no scaffold)' )
 		.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (designAudit: strict)' )
@@ -3842,6 +3844,33 @@ program
 	.option( '--check', 'report drift only; exit 1 when the block does not match the profile' )
 	.action( async ( profileRef, options ) => {
 		await runTokens( profileRef, options );
+	} );
+
+program
+	.command( 'materialize' )
+	.description( "recover a built artifact's baked content into local content files (a site that outlived its CMS)" )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--from <dir>', 'the built project that carries dist/server' )
+	.option( '--out <dir>', 'where to write (default: <profile>.content beside the profile)' )
+	.action( async ( profileRef, options ) => {
+		const { findContentStore, materializeContent } = await import( '../lib/materialize.ts' );
+		const storeFile = await findContentStore( options.from );
+		if ( ! storeFile ) {
+			console.error( `No baked content store under ${ options.from }/dist/server/chunks/ — is that a built forge project?` );
+			process.exit( 1 );
+		}
+		const profilePath = profilePathOf( profileRef );
+		const outDir = options.out ?? ( profilePath ? profilePath.replace( /\.json$/, '.content' ) : undefined );
+		if ( ! outDir ) {
+			console.error( 'Could not derive the output directory from the profile — pass --out.' );
+			process.exit( 1 );
+		}
+		const documents = await materializeContent( { storeFile, outDir } );
+		console.log( `\u2713 Materialized ${ documents.length } document(s) into ${ outDir }` );
+		for ( const doc of documents ) {
+			console.log( `  - ${ doc.collection }/${ doc.slug } — ${ doc.htmlBytes } B body` );
+		}
+		console.log( `\nNext: forge <profile> --target <dir> --content ${ outDir }` );
 	} );
 
 await program.parseAsync( process.argv );
