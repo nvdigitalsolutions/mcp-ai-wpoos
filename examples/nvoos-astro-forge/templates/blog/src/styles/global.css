@@ -1025,6 +1025,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	color: inherit;
 }
 
+/* A DARK band carries the same rule — the wrap's content layer is painted
+ * #f5f5f4 (see `.ds-section-wrap--dark > *`), but `.ds-text`'s explicit muted
+ * ink outranks inheritance, so copy inside a dark band rendered dark-on-dark
+ * (virtuallysrilanka.com's red hero: the kicker above the headline came out
+ * #7a7a7a on #dd3333). Cards keep their own surface + ink, so `inherit`
+ * resolves to the card's own colour there. */
+.ds-section-wrap--dark .ds-text,
+.ds-section-wrap--dark .ds-hero p {
+	color: inherit;
+}
+
 .ds-media {
 	max-width: 100%;
 	height: auto;
