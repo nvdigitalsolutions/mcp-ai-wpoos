@@ -5,7 +5,7 @@ Tags: ai assistant, openai, chatbot, mcp, automation
 Requires at least: 6.0
 Tested up to: 6.10
 Requires PHP: 8.1
-Stable tag: 1.2.20
+Stable tag: 1.2.21
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -306,6 +306,10 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.2.21 - November 15, 2026 =
+
+Bumped to 1.2.21 across the plugin header, WP_MCP_AI_VERSION and WP_MCP_AI_PRO_VERSION constants, readme.txt Stable tag, README.md, CHANGELOG.md, QUICK_REFERENCE.md and DOCUMENTATION_INDEX.md. The AI-safety harness is ported into the framework-neutral engine (Proposal 090-K): retrieval, citation verification, the reasoning trace, the self-refine loop plus a trace store, the scored tool router (RRF fusion), the output guardrail and the guardrail prompt/block policy now live in lib/core and are wired into the WordPress chat path, and the port fixed four live defects (output_guard never survived the profile sanitiser, no necessity-gate delegate, unserialised preset weights, and an uncomposed guardrail prompt). Tool registration now derives from a declarative 223-class readiness manifest (090-M) with a Tool Readiness CI auditor, closing both an allowlist that had reached 55 of ~223 classes and nineteen prompt-builder stand-ins sharing a real tool's slug. AI-safety defaults flip two log-only input controls on (pii_filter, prompt_injection_detector in log mode) while output_guard, necessity_gate and the scored router stay off by decision, and the Laravel orchestrator now applies the assistant system prompt server-side on both the streaming and non-streaming paths. One 27-signal security catalogue replaces the two incompatible posture vocabularies (WordPress 21 checks, Laravel a different eight) with per-runtime applicability. The Laravel runtime closes the remaining console surfaces: the workflow engine (storage, preset catalogue, Kahn-order executor, run history, triggers), shared MCP handshake/OAuth/envelope policy with a client and assistant MCP Apps, remote sites with sealed credentials and a QuickBooks Online MCP connection type, command-centre telemetry, the token manager (including the undefined manage_oos gate that blocked credential issuance), slash commands, the read-only agent-skills catalogue, the OKF knowledge drawer, media health/optimise/sweep, and an endpoint-availability contract guarded on both CIs. Thirteen classroom/ECA tools plus generate_email_template, scope_memory, list_prompt_cues, enable_reasoning_mode and the schedule presets are ported to lib/core (core registry only — base/Pro counts unchanged), and the ECA port surfaced a real LIKE-pattern parity bug fixed for every future list tool. lib/core is reformatted to PSR-12 (533 files) and the style gate is switched on at 799 files with zero errors or warnings. Astro Forge gains forge materialize (recovering content from the baked store after a site outlives its CMS), the content-snapshot outage net, a timeout- and RFC 9110-typed managed proxy with a direct forms fallback (Turnstile, clock tolerance, proxy-aware throttling), the CMS-less Virtually Jamaica unlock, and a fidelity wave (host-relative links, fill-image geometry, band minHeight, jayainc hero/logo-cloud, MDX source bodies, font sheets). Retired gemini-2.0 defaults are replaced by gemini-3.8-flash, gemini-3.8-live, gemini-3.5-flash-lite and gemini-nano-banana-2.1 (catalog unchanged). Tool count unchanged: ~360 base + ~1,388 Pro (~1,747 total; live registry authoritative). Model catalog v2026.11.03 unchanged (251 models, 18 providers); addons 32 unchanged; coding-time skills 85 (in-place updates only). Stale 1.2.19 build ZIPs removed (30 files); three npm packages published at 0.1.0-alpha.4.
 
 = 1.2.20 - November 13, 2026 =
 
