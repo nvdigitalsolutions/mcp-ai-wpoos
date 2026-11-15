@@ -35,7 +35,7 @@ final class ToolPresetCatalogueTest extends TestCase
      */
     private function tool(string $slug, array $flags): object
     {
-        return new class($slug, $flags) implements ToolCapabilityFlagsInterface {
+        return new class ($slug, $flags) implements ToolCapabilityFlagsInterface {
             /**
              * @param array<int, string> $flags
              */

@@ -490,6 +490,7 @@ The clusters are done. What is left is either dependency-blocked or deliberately
 | Item | Why it is deferred | What "done" looks like |
 |---|---|---|
 | **Tool preset catalogue on Laravel** | `tools.preset_weights` were inert (§19): the catalogue is WordPress's ~3,100-line translated array and Laravel's `presets` endpoints are *schedule* presets. Capability flags and per-slug `tools.preferences` carried the ranking meanwhile. | **Closed — cluster 17, see §25** (generated core catalogue; `preset_weights` are live) |
+| **Which AI-safety controls ship on** | Both input controls defaulted off, so a fresh install wrote raw user PII to the session log and recorded no injection telemetry, while the posture card reported two red signals with no guidance. | **Closed — cluster 18, see §26** (PII filter and detector on in `log` mode; output guard, necessity gate and `scored` routing stay off by design) |
 | **`tools.router: scored` as default** | The switch is live but off (§19). Changing which tools a model attends to first is a behaviour change that needs measurement. | An eval comparing `fixed` vs `scored` on real assistant tool sets, with a stated tie-break rule for when flags alone are enough. |
 | **Retrieval harness in the chat path** | §7: wiring `retrieve()` changes model input and needs a prompt-budget review. | A budgeted retrieval step with a before/after token and quality comparison. |
 | **`record_reflection()`** | §10: its only write target is `store_agent_context`, and WordPress has no `ToolInvokerInterface` adapter to bridge it. | A WordPress `ToolInvokerInterface` adapter, then the memory-track work that owns `store_agent_context`. |
@@ -502,6 +503,7 @@ The clusters are done. What is left is either dependency-blocked or deliberately
 | **The chat path had no system-prompt handling at all** | §17: guardrail injection had to be added to the orchestrator because nothing assembled a system prompt. | **Closed — cluster 16, see §23** (server-side, matching WordPress) |
 | **`lib/core` has no style gate** | §16: `phpcs-laravel.xml.dist` did not list `lib/core` in its `<file>` set, and `ChatOrchestrator.php` carried 535 PSR-12 spacing errors that no gate reported. | **Closed — cluster 15, see §22** (79,948 violations, not 535; reformatted in #7805, gate on in this cluster) |
 | **One flaky app test** | §16: `ProjectManagementToolParityTest` failed once at `parent::setUp()` and passed on two subsequent full runs. | Catch it with `--repeat` if it recurs; not reproducible now. |
+| **PII redaction is log-only on Laravel** | §26: verification of the default flip showed WordPress scrubs with `pii_filter_side = both` (request before the model, response before the client), while Laravel's two call sites redact only the copy written to the session log. | Payload-side redaction. It rewrites provider-bound content, so it needs the same prompt-budget review as the retrieval harness above. |
 
 ---
 
@@ -638,5 +640,39 @@ Both are recorded here and in the guard's docblock.
 **The index is built once per process.** `ToolRouterHarness::buildPresetIndex()` is O(presets × tools); the catalogue memoises it, and `rank()` accepts a prebuilt `preset_index`, so a ranked turn does no rebuild.
 
 **Validation.** `lib/core` **1,751 tests / 6,185 assertions** (+5 / +218). `phpcs-laravel.xml.dist` clean; `phpcs.xml.dist` clean on the new parity test. The generator reports 70 presets / 1,954 references and `--check` passes.
+
+---
+
+## 26. Posture defaults — which off-by-default controls should be on
+
+**The question.** With both runtimes now carrying the same control vocabulary, the remaining question was not *can* Laravel enforce a control but *should it ship enforcing it*. Two of the AI-safety controls defaulted off, and the console posture card dutifully reported them red on a fresh install.
+
+**The decision rests on what each control costs, not on what it is called.**
+
+| Control | Default | What turning it on actually does |
+|---|---|---|
+| `pii_filter` | **now on** | Redacts user turns as they enter the **session log**. The provider payload is untouched, so a user quoting their own phone number still gets an answer. This is the durable-storage half of the control only. |
+| `prompt_injection_detector` | **now on, `log` mode** | Records a verdict per turn and never blocks. Telemetry, not enforcement. |
+| `output_guard` | **stays off** | **Buffers the stream to a single final message instead of token deltas.** A guard at the end of a stream cannot retract what it already sent, so screening and streaming are mutually exclusive. |
+| `necessity_gate` | **stays off** (`NVOOS_NECESSITY_GATE`) | Changes what the model is *allowed to do*. A deployment decision, matching `oos.read_only`. |
+| `tools.router: scored` | **stays `fixed`** | Changes which tools a model attends to first. Needs the eval described in §20. |
+| `trace_capture` | on (unchanged) | — |
+
+The rule this yields: **a control whose cost is "we record something we did not before" ships on; a control whose cost is "we change what the model sees or sends" ships off and is flipped per deployment.** Neither of the two flips alters a single token of a chat response, which is what makes them safe as defaults.
+
+**A real parity gap, found while verifying the claim.** The old comment justified both defaults as "matching the WordPress settings". The *defaults* matched (WordPress registers `enable_prompt_injection_detector` and `enable_pii_filter` both `false`), but the **scope** does not:
+
+- WordPress's `pii_filter_side` defaults to **`both`** — user messages are scrubbed before the model and model output before the client.
+- Laravel's filter has exactly two call sites, both in `ChatOrchestrator` (`handleChat()` and the streaming path), and both redact a **local copy** passed to `recordSessionEvent()`. `$messages` is never mutated, so nothing is redacted on the way to the provider or on the way back.
+
+So enabling the Laravel flag closes the *storage* gap and leaves the *payload* gap. This is recorded here rather than implied by an "on" flag, and the config comment names it. Closing it is a separate change: it rewrites provider-bound content, so it needs the same prompt-budget scrutiny as the retrieval harness in §20.
+
+**Why not `warn`.** The detector ships in `log` because promotion to `warn` starts refusing turns. A false positive there is a user staring at a blocked message with no recourse. The intended path is: ship `log`, read the session log, tune sensitivity, then promote per deployment — which is also why `prompt_injection_sensitivity` stays `medium`.
+
+**Consequence worth stating.** `inputGuardFromConfig()` documented that it "returns null when both controls are off, so an unconfigured install pays nothing". With both on, that branch is now unreachable by default. The contract is preserved and tested rather than deleted — turning both flags off still builds no guard — but the default install does construct one, so the detector runs on every turn. It is a regex pass over the latest user message, measured in microseconds, and it is the price of having injection telemetry at all.
+
+**Validation.** App suite **694 tests / 4,070 assertions** (+1 / +3: one net new test in `InputGuardWiringTest`, and `SecurityPostureTest`'s two default-direction tests inverted rather than dropped, so both directions stay pinned). `lib/core` **1,751 / 6,185**, unchanged. Adapter suite **180 / 678**, unchanged. `phpcs-laravel.xml.dist` **807 files, 0 errors**.
+
+**Three pre-existing style errors fixed to keep the gate green.** The suite gate was already failing on `alpha-working` before this change — `NecessityGuardTest` (2) and `ToolPresetCatalogueTest` (1), all `PSR12.Classes.AnonClassDeclaration.SpaceAfterKeyword` on anonymous classes (`new class(` → `new class (`). They arrived with #7813 and #7816, and the file count in §22's baseline moved 804 → 807 with them. A gate that is red for reasons unrelated to a PR cannot validate that PR, so the three one-character fixes ship here and the count above is the restored baseline.
 
 ---

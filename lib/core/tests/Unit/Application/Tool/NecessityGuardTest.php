@@ -29,7 +29,7 @@ final class NecessityGuardTest extends TestCase
      */
     private function guard(array $flags, bool $enabled = true, bool $known = true): NecessityGuard
     {
-        $tool = new class($flags) implements ToolInterface, ToolCapabilityFlagsInterface {
+        $tool = new class ($flags) implements ToolInterface, ToolCapabilityFlagsInterface {
             /**
              * @param list<string> $flags
              */
@@ -73,7 +73,7 @@ final class NecessityGuardTest extends TestCase
             }
         };
 
-        $resolver = new class($tool, $known) implements ToolResolverInterface {
+        $resolver = new class ($tool, $known) implements ToolResolverInterface {
             public function __construct(private readonly ToolInterface $tool, private readonly bool $known)
             {
             }
