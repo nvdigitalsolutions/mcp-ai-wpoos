@@ -25,17 +25,17 @@ class SuggestBestModelTool extends AbstractTool
         'writing'     => array(
             'quality' => 'claude-opus-4-6',
             'speed'   => 'gpt-4o-mini',
-            'cost'    => 'gemini-2.0-flash',
+            'cost'    => 'gemini-3.8-flash',
         ),
         'analysis'    => array(
             'quality' => 'gpt-5',
             'speed'   => 'gpt-4o-mini',
-            'cost'    => 'gemini-2.0-flash-lite',
+            'cost'    => 'gemini-3.5-flash-lite',
         ),
         'vision'      => array(
             'quality' => 'gpt-4o',
-            'speed'   => 'gemini-2.0-flash',
-            'cost'    => 'gemini-2.0-flash-lite',
+            'speed'   => 'gemini-3.8-flash',
+            'cost'    => 'gemini-3.5-flash-lite',
         ),
         'math'        => array(
             'quality' => 'o4-mini',
@@ -45,7 +45,7 @@ class SuggestBestModelTool extends AbstractTool
         'translation' => array(
             'quality' => 'claude-sonnet-4-6',
             'speed'   => 'gpt-4o-mini',
-            'cost'    => 'gemini-2.0-flash',
+            'cost'    => 'gemini-3.8-flash',
         ),
     );
 

@@ -56,7 +56,7 @@ class GeminiGeospatialQueryTool extends AbstractTool
         $radius = (float)($arguments['radius_km'] ?? 10);
         $locStr = ( 0.0 !== $lat || 0.0 !== $lng ) ? " Location: {$lat},{$lng} (radius {$radius}km)." : '';
         try {
-            $r = $this->h->send('POST', "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$key}", array('Content-Type' => 'application/json'), $this->jsonBody(array('contents' => array(array('parts' => array(array('text' => "Geospatial analysis: {$q}.{$locStr}")))))));
+            $r = $this->h->send('POST', "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={$key}", array('Content-Type' => 'application/json'), $this->jsonBody(array('contents' => array(array('parts' => array(array('text' => "Geospatial analysis: {$q}.{$locStr}")))))));
             $d = \json_decode($r->body, true);
             if ($r->statusCode >= 400) {
                 $err = $d['error']['message'] ?? 'Gemini error.';

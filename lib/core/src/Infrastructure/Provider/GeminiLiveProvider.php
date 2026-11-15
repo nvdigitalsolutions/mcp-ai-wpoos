@@ -24,7 +24,7 @@ use Nvoos\Core\Domain\Contract\StreamingProviderInterface;
 
 class GeminiLiveProvider implements StreamingProviderInterface
 {
-    private const DEFAULT_MODEL = 'gemini-2.0-flash-live-001';
+    private const DEFAULT_MODEL = 'gemini-3.8-live';
     private const API_BASE_URL  = 'https://generativelanguage.googleapis.com/v1beta';
 
     /** @var array<string, array<string, mixed>> */

@@ -89,7 +89,7 @@ final class SuggestBestModelToolTest extends TestCase
         ));
 
         $this->assertTrue($result['success']);
-        $this->assertSame('gemini-2.0-flash', $result['data']['model']);
+        $this->assertSame('gemini-3.8-flash', $result['data']['model']);
     }
 
     public function testFallbackForUnknownTask(): void
