@@ -4,8 +4,9 @@
  *
  * Catches the failure mode that silently removes skills from Zed's catalog:
  * invalid YAML in frontmatter (e.g. an unquoted description containing
- * ": "), missing/unterminated delimiters, name/directory mismatches, and
- * non-string descriptions.
+ * ": "), missing/unterminated delimiters, name/directory mismatches,
+ * non-string descriptions, and an over-budget description payload (Zed drops
+ * the alphabetically-last skills once the catalog is full).
  *
  * Requires the `yaml` package (dev-only). Run from a directory whose
  * node_modules can resolve it (e.g. examples/nvoos-service-exchange).
@@ -91,6 +92,17 @@ for ( const root of ROOTS ) {
 
 rows.sort( ( a, b ) => b.bytes - a.bytes );
 
+/**
+ * Description-payload budget.
+ *
+ * Zed's catalog ceiling is not the nominal ~50 KB: the tail of the alphabet is
+ * dropped well before that. Observed on 2026-11-15 — 92 skills totalling
+ * 47,759 B shipped fine, but 48,279 B silently dropped wp-security-deep,
+ * wp-security-secrets and wp-utf8-text. Enforce a level that leaves real
+ * headroom rather than rediscovering the cliff in Zed.
+ */
+const DESC_BUDGET_BYTES = 46000;
+
 if ( problems.length ) {
 	console.log( `Frontmatter problems (${ problems.length }):` );
 	for ( const problem of problems ) {
@@ -100,10 +112,29 @@ if ( problems.length ) {
 	console.log( `Frontmatter OK for ${ rows.length } skills.` );
 }
 
-console.log( `Description payload: ${ totalDescBytes } bytes (cap ~50000)` );
+const overBudget = totalDescBytes > DESC_BUDGET_BYTES;
+const headroom = DESC_BUDGET_BYTES - totalDescBytes;
+
+console.log(
+	`Description payload: ${ totalDescBytes } bytes (budget ${ DESC_BUDGET_BYTES }; ${
+		overBudget ? `${ -headroom } bytes over` : `${ headroom } bytes headroom`
+	 })`
+);
 console.log( `Largest: ${ rows
 	.slice( 0, 5 )
 	.map( ( row ) => `${ row.bytes } ${ row.rel }` )
 	.join( ', ' ) }` );
 
-process.exit( problems.length ? 1 : 0 );
+if ( overBudget ) {
+	console.log( '' );
+	console.log(
+		'✗ Description payload is over budget. Zed silently omits the alphabetically-last skills ' +
+			'once the catalog overflows, so trim the largest descriptions before adding more.'
+	);
+	console.log( '  Biggest offenders:' );
+	for ( const row of rows.slice( 0, 10 ) ) {
+		console.log( `    ${ row.bytes } ${ row.rel }` );
+	}
+}
+
+process.exit( problems.length || overBudget ? 1 : 0 );

@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-rest-contract
-description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/*.ts) against their WordPress REST controllers and fix contract drift — phantom fields, ignored params, missing routes/methods, admin-gated route registration, envelope mismatches, field-name drift, settings gates, route collisions, wp/v2 meta-stripping, and empty-then-loaded loading-state flashes. Covers the audit path (config key → PHP emission → route → handler → response shape), the live REST-index cross-check, and the validation matrix. Use when a console page shows blank or wrong data, when adding a console surface, or when asked to "audit the REST contracts".
+description: "Audit NV oOS console SPA clients (spa-v2/src/api/*.ts) against their REST controllers and fix contract drift: phantom fields, ignored params, missing routes/methods, admin-gated route registration, envelope mismatches, field-name drift, settings gates, route collisions, wp/v2 meta stripping, empty-then-loaded flashes. Covers the audit path (config key → PHP emission → route → handler → response), the live REST-index cross-check, and the validation matrix. Use when a console page shows blank or wrong data, or when adding a console surface."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos

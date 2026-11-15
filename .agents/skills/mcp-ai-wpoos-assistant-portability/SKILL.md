@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-assistant-portability
-description: Operational guide for the NV oOS assistant export/import track — the canonical nvoos-assistant bundle format (v1), the shared portability engine, its five surfaces (WP-CLI, REST, admin UI, AI tools, backup provider), the Pro blueprint exporter, credential-redaction rules, legacy/blueprint import compatibility, test conventions, and the Content Graph port checklist. Use when extending or debugging assistant export/import, adding a surface, changing the bundle schema, fixing round-trip fidelity, or continuing the portability track ("continue the portability plan", "add assistant export to X").
+description: "Operational guide for the NV oOS assistant export/import track: the canonical nvoos-assistant bundle format (v1), the shared portability engine, its five surfaces (WP-CLI, REST, admin UI, AI tools, backup provider), the Pro blueprint exporter, credential-redaction rules, legacy/blueprint import compatibility, test conventions, and the Content Graph port checklist. Use when extending or debugging assistant export/import, adding a surface, changing the bundle schema, fixing round-trip fidelity, or continuing the portability plan."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos

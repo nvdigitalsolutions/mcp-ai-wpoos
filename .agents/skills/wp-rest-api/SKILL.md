@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: wp-rest-api
-description: "Scaffolds and reviews WordPress REST endpoints (register_rest_route on rest_api_init): namespace/version, permission_callback authorization (never __return_true on state-changing routes), args validate/sanitize schemas, object-level current_user_can checks, WP_REST_Response/WP_Error envelopes, no sensitive DB columns, X-WP-Nonce cookie auth, REST vs admin-ajax. Recommends better-route past a few endpoints. Use when scaffolding/reviewing endpoints or migrating from admin-ajax. Triggers: register_rest_route, rest_api_init, permission_callback, WP_REST_Request/Response, WP_Error, rest_ensure_response, register_rest_field, /rest/ or /api/ paths."
+description: "Scaffolds and reviews WordPress REST endpoints (register_rest_route on rest_api_init): namespace/version, permission_callback authorization (never __return_true on state-changing routes), args validate/sanitize schemas, object-level current_user_can checks, WP_REST_Response/WP_Error envelopes, no sensitive DB columns, X-WP-Nonce cookie auth, and REST vs admin-ajax. Use when scaffolding or reviewing endpoints or migrating from admin-ajax; triggers: register_rest_route, permission_callback, WP_REST_Response, rest_ensure_response, register_rest_field."
 license: MIT
 metadata:
   type: Skill

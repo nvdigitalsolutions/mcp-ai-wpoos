@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-audit
-description: "Per-toolkit hardening audit loop for NV oOS Pro tools. Scans each addons/pro/includes/tools/<toolkit> (and its plugins/nvoos-content-graph-pro mirror) for the recurring production failure classes — unguarded shell calls, calls to nonexistent client methods, string-assumed provider responses, enum/service mismatches, metric/source column drift, denominator gaps, misleading native-source errors, and silent import truncation — then fixes, tests (Docker PHPUnit), and phpcs-validates before moving to the next toolkit. Use when asked to audit a toolkit, review the X tools for similar issues, do the same for the other toolkits, or continue the toolkit audit loop."
+description: "Per-toolkit hardening audit loop for NV oOS Pro tools. Scans each addons/pro/includes/tools/<toolkit> (and its Content Graph Pro mirror) for recurring production failure classes: unguarded shell calls, nonexistent client methods, string-assumed provider responses, enum/service mismatches, metric column drift, denominator gaps, misleading native-source errors, silent import truncation. Then fixes, tests (Docker PHPUnit), and phpcs-validates. Use when asked to audit a toolkit, review the X tools, or continue the toolkit audit loop."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos

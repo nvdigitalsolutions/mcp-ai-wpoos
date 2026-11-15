@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-gateway-ops
-description: "Operational guide for the NV oOS MCP Gateway (addons/mcp-gateway → mirror nvoos-mcp-gateway → Cloudways Velocity at mcp.nvoos.pro, issue #6902). Covers public-key management (rotation, PUBLIC_SITE_SLUGS privacy filter), the upstream-401 token re-mint loop, deploy verification, the OAuth 2.1 / ChatGPT connector track (Auth0, DCR, PKCE harness, Proposal 099), registry publishing via mcp-publisher, directory-submission packs, and the test gotchas. Use when operating the gateway, debugging gateway auth/upstream errors, deploying to Velocity, working the ChatGPT OAuth connector, or continuing the MCP directory submissions."
+description: "Operational guide for the NV oOS MCP Gateway (addons/mcp-gateway → nvoos-mcp-gateway mirror → Cloudways Velocity at mcp.nvoos.pro): public-key management (rotation, PUBLIC_SITE_SLUGS privacy filter), the upstream-401 token re-mint loop, deploy verification, the OAuth 2.1 / ChatGPT connector track (Auth0, DCR, PKCE harness), registry publishing via mcp-publisher, directory-submission packs, and test gotchas. Use when operating the gateway, debugging gateway auth/upstream errors, deploying to Velocity, or continuing MCP directory submissions."
 ---
 
 # mcp-ai-wpoos — Gateway ops

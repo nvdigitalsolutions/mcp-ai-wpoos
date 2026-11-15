@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-figma-to-elementor
-description: Agentic design-to-build pipeline that turns a Figma design into a built WordPress site using the Figma MCP server (read side) and the Elementor MCP server (write side) attached as MCP Apps on an NV oOS assistant. Covers the 7-stage pipeline (Scope → Read → Plan → Tokenize → Build → Verify → Handoff), the stage rules (get_design_context first, drafts only, never publish), the build-manifest + design-file contracts (reference/), assistant wiring (OAuth + application passwords, host allowlist), and troubleshooting. Use when asked to build a site, page, or landing page from a Figma design, wire Figma or Elementor MCP for design-to-build work, approve or produce a build manifest, or debug a failed design-to-build run.
+description: "Agentic design-to-build pipeline turning a Figma design into a WordPress site via Figma MCP (read) and Elementor MCP (write) as MCP Apps. Covers the 7 stages (Scope through Handoff), stage rules (get_design_context first, drafts only, never publish), build-manifest and design-file contracts, assistant wiring, and troubleshooting. Use when building a site or page from a Figma design, wiring Figma or Elementor MCP, approving a build manifest, or debugging a failed design-to-build run."
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill

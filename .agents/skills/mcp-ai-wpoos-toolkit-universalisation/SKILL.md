@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-universalisation
-description: "Rework an existing NV oOS Pro toolkit from a single-tenant demo into a universal product — currency-neutral schema with legacy aliases, a Tenant Profile + token renderer, a universal single-folder ingestor, CSV/PDF report export, the add-a-tool drift checklist, and the re-seed-on-settings-save gotcha. Use when asked to 'universalise', 'de-demo', 'multi-tenant', 'remove the legacy venue/currency hardcoding', 'point the toolkit at a single Drive folder', 'export reports as CSV/PDF', or 'avoid re-installing assistants on save'. Complements mcp-ai-wpoos-toolkit-creation and mcp-ai-wpoos-toolkit-audit."
+description: "Rework an existing NV oOS Pro toolkit from a single-tenant demo into a universal product: currency-neutral schema with legacy aliases, a Tenant Profile + token renderer, a universal single-folder ingestor, CSV/PDF report export, the add-a-tool drift checklist, and the re-seed-on-settings-save gotcha. Use when asked to universalise, de-demo, multi-tenant, remove legacy venue/currency hardcoding, point the toolkit at a single Drive folder, export reports as CSV/PDF, or avoid re-installing assistants on save."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
