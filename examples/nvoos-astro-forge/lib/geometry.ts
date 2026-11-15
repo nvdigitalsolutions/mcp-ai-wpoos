@@ -25,6 +25,7 @@ import type {
 	BandTypeFact,
 	BandTypeProperties,
 	ForgeBandContainer,
+	ForgeBandElement,
 	ForgeBandCarouselFact,
 	ForgeBandColumnFact,
 	ForgeBandFacts,
@@ -384,6 +385,12 @@ const pick = ( selector: string ): Element | null => {
 			// lines). Without the fact the rebuild renders it full-width, two lines,
 			// and the band's pinned height shows the shortfall as dead space.
 			maxWidth: style.maxWidth,
+			// The heading/paragraph RHYTHM. A builder writes it in the vendor sheet
+			// (Flatsome's box headings are `margin: 0.1em 0`), and an UNCLASSSED
+			// heading has no class for a box fact to hang on — so the rebuild fell back
+			// to the template's prose defaults and every tile grew.
+			marginTop: style.marginTop,
+			marginBottom: style.marginBottom,
 		};
 	};
 	const facts: Record<
@@ -435,11 +442,24 @@ const pick = ( selector: string ): Element | null => {
 		// columns get, so the band's own gutters are subtracted — and recorded,
 		// because the rebuild needs them as its own `--ds-pad-x` (a constant was
 		// wrong at every viewport but desktop).
-		const container =
-			element.querySelector( '.elementor-container, .e-con-inner' ) ??
-			element.querySelector( '.container, .container-fluid' ) ??
-			element.querySelector( '.row, .vc_row, .wpb_row' ) ??
-			element;
+		// The band's content container: the WIDEST `.container`/`.row` it owns,
+		// not the first one in document order. A builder nests rows inside
+		// columns (Flatsome's banner grids, WPBakery's inner rows), and the
+		// first match is routinely a narrow inner row — monicarajiv.com's
+		// accommodations band measured 438px against the source's own 1050px
+		// row, which then clamped the rebuilt band to a strip.
+		const containerPool = [
+			...Array.from( element.querySelectorAll( '.container, .container-fluid' ) ),
+			...Array.from( element.querySelectorAll( '.row, .vc_row, .wpb_row' ) ),
+		];
+		const widest = containerPool.reduce< { node: Element | null; width: number } >(
+			( best, node ) => {
+				const width = node.getBoundingClientRect().width;
+				return width > best.width ? { node, width } : best;
+			},
+			{ node: null, width: 0 }
+		);
+		const container = widest.node ?? element;
 		// Only a DESCENDANT container is a distinct inset. When the band itself is
 		// the container, its padding already reaches the rebuild through the
 		// measured band padding, and emitting it again would double the gutter.
@@ -512,7 +532,20 @@ const pick = ( selector: string ): Element | null => {
 }
 
 /** The typography properties a device override may carry. */
-const TYPE_PROPERTIES = [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color' ] as const;
+const TYPE_PROPERTIES = [
+	'size',
+	'weight',
+	'lineHeight',
+	'letterSpacing',
+	'transform',
+	'align',
+	'color',
+	// The heading/paragraph rhythm. A builder scales it per device along with the
+	// type (a 0.67em margin on a 55px hero is not the same gap on a 22px phone),
+	// so it belongs in the per-device diff.
+	'marginTop',
+	'marginBottom',
+] as const;
 
 /** One class's measured box, as resolved declarations. */
 export interface MeasuredBox {
@@ -554,13 +587,27 @@ export interface MeasuredBox {
  * an arbitrary one. Brando's per-column/per-module hashes appear once, so the
  * column padding the rebuild otherwise loses is always captured.
  */
-function collectBandBoxFacts( input: {
+export function collectBandBoxFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
 } ): Record<
 	string,
-	{ boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox >; mediaPosition?: string }
+	{
+		boxes: Record< string, MeasuredBox >;
+		media: Record< string, MeasuredBox >;
+		mediaPosition?: string;
+		/**
+		 * Classes whose padding was DROPPED because the same token measured
+		 * differently on a scaffolding row and on a content module.
+		 *
+		 * This is the shape of defect that silently doubles a band: the class rule
+		 * is band-wide, so whichever box survived would be painted onto every
+		 * element carrying the token. Reporting the drop makes the missing rule
+		 * visible instead of leaving a rebuild to discover it as a height drift.
+		 */
+		ambiguous?: string[];
+	}
 > {
 	const pick = ( selector: string ): Element | null => {
 		try {
@@ -596,7 +643,12 @@ function collectBandBoxFacts( input: {
 	const SCAFFOLDING = /(^|\s)(container|container-fluid|row|vc_row|wpb_row|vc_row-fluid)(\s|$)/;
 	const out: Record<
 		string,
-		{ boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox >; mediaPosition?: string }
+		{
+			boxes: Record< string, MeasuredBox >;
+			media: Record< string, MeasuredBox >;
+			mediaPosition?: string;
+			ambiguous?: string[];
+		}
 	> = {};
 	for ( const id of input.ids ) {
 		// The band root — same ladder as `collectBandTypeFacts`, duplicated because
@@ -631,7 +683,24 @@ function collectBandBoxFacts( input: {
 		// apart on purpose: a class can sit on an image AND on a paragraph
 		// (`padding-six-lr` does both), and a cropped image's fixed height applied
 		// to the paragraph made it 712px tall (virtuallyjamaica, 2026-11-11).
-		const seen = new Map< string, { pads: Set< string >; mars: Set< string >; colors: Set< string > } >();
+		//
+		// `onModule` records whether the class was seen on a NON-scaffolding node.
+		// Every node is counted for CONSISTENCY, including the rows the facts are
+		// not recorded from: Flatsome's `hide-for-small` sits on both a `.row`
+		// (padding 0) and a `.banner` (padding 420px). Skipping the row before
+		// counting left the class looking consistent and emitted
+		// `.hide-for-small{padding-top:420px}` — which then gave every one of the
+		// six elements carrying that class a 420px pad and doubled the band.
+		const seen = new Map<
+			string,
+			{
+				pads: Set< string >;
+				mars: Set< string >;
+				colors: Set< string >;
+				onModule: boolean;
+				onScaffold: boolean;
+			}
+		>();
 		const mediaHeights = new Map< string, Set< string > >();
 		// The source's own crop anchor. A builder photo layer is `object-fit: cover`
 		// plus an `object-position` written in a `<style>` block sanitisation drops
@@ -658,9 +727,7 @@ function collectBandBoxFacts( input: {
 			if ( classes.length === 0 ) {
 				continue;
 			}
-			if ( SCAFFOLDING.test( node.getAttribute( 'class' ) ?? '' ) ) {
-				continue;
-			}
+			const scaffolding = SCAFFOLDING.test( node.getAttribute( 'class' ) ?? '' );
 			const pad = boxesOf( node );
 			const mar = marginsOf( node );
 			// The class's OWN ink: a colour that differs from the one the node
@@ -690,13 +757,30 @@ function collectBandBoxFacts( input: {
 			}
 			for ( const name of classes ) {
 				if ( ! seen.has( name ) ) {
-					seen.set( name, { pads: new Set(), mars: new Set(), colors: new Set() } );
+					seen.set( name, {
+						pads: new Set(),
+						mars: new Set(),
+						colors: new Set(),
+						onModule: false,
+						onScaffold: false,
+					} );
 				}
-				const entry = seen.get( name ) as { pads: Set< string >; mars: Set< string >; colors: Set< string > };
+				const entry = seen.get( name ) as {
+					pads: Set< string >;
+					mars: Set< string >;
+					colors: Set< string >;
+					onModule: boolean;
+					onScaffold: boolean;
+				};
 				entry.pads.add( pad );
 				entry.mars.add( mar );
 				entry.colors.add( ownColor );
-				if ( height ) {
+				if ( scaffolding ) {
+					entry.onScaffold = true;
+				} else {
+					entry.onModule = true;
+				}
+				if ( height && ! scaffolding ) {
 					// Recorded against the class but emitted as `img.<class>` ONLY — a
 					// class shared with a paragraph must never carry the image's height.
 					if ( ! mediaHeights.has( name ) ) {
@@ -707,7 +791,13 @@ function collectBandBoxFacts( input: {
 			}
 		}
 		const facts: Record< string, MeasuredBox > = {};
+		const ambiguous: string[] = [];
 		for ( const [ name, entry ] of seen ) {
+			// A class that only ever appears on scaffolding (a row, a container) is
+			// the template's business, not a measured fact.
+			if ( ! entry.onModule ) {
+				continue;
+			}
 			const box: MeasuredBox = {};
 			const pad = [ ...entry.pads ][ 0 ];
 			// ZERO IS A FACT, not noise: the source's `margin: 0` on a heading must
@@ -716,6 +806,11 @@ function collectBandBoxFacts( input: {
 			// class is dropped.
 			if ( entry.pads.size === 1 ) {
 				box.pad = pad;
+			} else if ( entry.onScaffold ) {
+				// Dropped, and the drop is worth naming: the same token sizing both a
+				// row and a module is exactly how a band-wide class rule ends up
+				// painting one element's padding onto every other one.
+				ambiguous.push( name );
 			}
 			const mar = [ ...entry.mars ][ 0 ];
 			if ( entry.mars.size === 1 ) {
@@ -745,9 +840,55 @@ function collectBandBoxFacts( input: {
 						return best && best[ 0 ] !== '50% 50%' ? { mediaPosition: best[ 0 ] } : {};
 				  } )()
 				: {} ),
+			...( ambiguous.length > 0 ? { ambiguous: ambiguous.sort() } : {} ),
 		};
 	}
 	return out;
+}
+
+/**
+ * Merge the per-device element lists into one entry per structural path.
+ *
+ * Desktop is the base; a device whose height differs becomes an override, so a
+ * band whose tiles are 900px tall on desktop and 700px on a phone carries both
+ * without recording a redundant map for the common case.
+ */
+export function mergeElementFacts(
+	desktop?: Array< { path: string; bg?: string; height?: number } >,
+	tablet?: Array< { path: string; bg?: string; height?: number } >,
+	mobile?: Array< { path: string; bg?: string; height?: number } >
+): ForgeBandElement[] | undefined {
+	if ( ! desktop || desktop.length === 0 ) {
+		return undefined;
+	}
+	const byPath = new Map< string, ForgeBandElement >();
+	for ( const fact of desktop ) {
+		byPath.set( fact.path, {
+			path: fact.path,
+			...( fact.bg ? { bg: fact.bg } : {} ),
+			...( typeof fact.height === 'number' ? { height: fact.height } : {} ),
+		} );
+	}
+	for ( const [ device, list ] of [
+		[ 'tablet', tablet ],
+		[ 'mobile', mobile ],
+	] as const ) {
+		for ( const fact of list ?? [] ) {
+			const entry = byPath.get( fact.path );
+			if ( ! entry || typeof fact.height !== 'number' ) {
+				continue;
+			}
+			const base = typeof entry.height === 'number' ? entry.height : entry.height?.desktop;
+			if ( fact.height === base ) {
+				continue;
+			}
+			entry.height = {
+				...( typeof entry.height === 'object' ? entry.height : entry.height ? { desktop: entry.height } : {} ),
+				[ device ]: fact.height,
+			};
+		}
+	}
+	return [ ...byPath.values() ];
 }
 
 /**
@@ -766,6 +907,104 @@ function collectBandBoxFacts( input: {
  * least 90% of the row's width — otherwise a content block with two paragraphs
  * would be read as a grid.
  */
+/**
+ * Measure the elements INSIDE each band: the surface each one paints and the
+ * height a stage was pinned to (see `ForgeBandElement`).
+ *
+ * Class-keyed facts cannot express this — a class repeats across bands and
+ * elements — but a raw band keeps the source's markup verbatim, so a
+ * structural path (`div:nth-child(2) > section:nth-child(1)`) resolves to the
+ * same node in the rebuild.
+ *
+ * Only IN-FLOW elements that paint something are recorded: a background layer
+ * (`section-bg`, `banner-bg`) is positioned absolutely and drives no height,
+ * and a plain text block's height is its content, not a fact. A height is
+ * captured only when the element paints a photo or declares one in px — a
+ * card's height follows its copy and must stay free.
+ */
+function collectBandElementFacts( input: {
+	ids: string[];
+	kind: 'built' | 'source';
+	selectors?: Record< string, string >;
+} ): Record< string, Array< { path: string; bg?: string; height?: number } > > {
+	const pick = ( selector: string ): Element | null => {
+		try {
+			return document.querySelector( selector );
+		} catch {
+			return null;
+		}
+	};
+	const alphaOf = ( value: string ): number => {
+		const match = /rgba?\(([^)]*)\)/.exec( value );
+		if ( ! match ) {
+			return value && value !== 'transparent' ? 1 : 0;
+		}
+		const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() );
+		return parts.length >= 4 ? Number.parseFloat( parts[ 3 ] ) : 1;
+	};
+	const segmentOf = ( element: Element ): string => {
+		const tag = element.tagName.toLowerCase();
+		const parent = element.parentElement;
+		const index = parent ? Array.prototype.indexOf.call( parent.children, element ) + 1 : 1;
+		return `${ tag }:nth-child(${ index })`;
+	};
+	const out: Record< string, Array< { path: string; bg?: string; height?: number } > > = {};
+	for ( const id of input.ids ) {
+		const candidates =
+			input.kind === 'built'
+				? [ `[data-section-id="${ id }"]` ]
+				: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ].filter(
+						( value ): value is string => Boolean( value )
+				  );
+		const band = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) );
+		if ( ! band ) {
+			continue;
+		}
+		const facts: Array< { path: string; bg?: string; height?: number } > = [];
+		const walk = ( element: Element, depth: number, prefix: string ): void => {
+			if ( depth > 7 || facts.length >= 48 ) {
+				return;
+			}
+			for ( const child of [ ...element.children ] ) {
+				const path = prefix ? `${ prefix } > ${ segmentOf( child ) }` : segmentOf( child );
+				const style = getComputedStyle( child );
+				const rect = child.getBoundingClientRect();
+				const positioned = style.position !== 'static';
+				const visible = style.display !== 'none' && style.visibility !== 'hidden';
+				if ( visible && rect.width >= 40 && rect.height >= 24 ) {
+					const alpha = alphaOf( style.backgroundColor );
+					const hasImage = style.backgroundImage !== 'none';
+					const paintsColor = alpha >= 0.95;
+					if ( paintsColor || hasImage ) {
+						const fact: { path: string; bg?: string; height?: number } = { path };
+						fact.bg = hasImage
+							? `background-image:${ style.backgroundImage.slice( 0, 400 ) }`
+							: `background-color:${ style.backgroundColor }`;
+						// A PINNED stage keeps its box; a card follows its copy. A builder's
+						// tile grid is often ABSOLUTE-positioned (Flatsome's banner mosaic
+						// gives every tile `position:absolute` and sizes it from the row), so
+						// position is the signal that the height is authored, not content.
+						const declared =
+							positioned ||
+							/^\d+(\.\d+)?px$/.test( style.minHeight ) ||
+							( /^\d+(\.\d+)?px$/.test( style.height ) && style.height !== 'auto' );
+						if ( declared ) {
+							fact.height = Math.round( rect.height );
+						}
+						facts.push( fact );
+					}
+				}
+				walk( child, depth + 1, path );
+			}
+		};
+		walk( band, 0, '' );
+		if ( facts.length > 0 ) {
+			out[ id ] = facts;
+		}
+	}
+	return out;
+}
+
 function collectBandColumnFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
@@ -840,15 +1079,19 @@ function collectBandColumnFacts( input: {
 			continue;
 		}
 		const rects = kids.map( ( child ) => child.getBoundingClientRect() );
-		const sameTop = rects.every( ( rect ) => Math.abs( rect.top - rects[ 0 ].top ) <= Math.max( 8, rect.height * 0.25 ) );
-		const tiled = rects.reduce( ( sum, rect ) => sum + rect.width, 0 ) >= row.getBoundingClientRect().width * 0.9;
 		// A GRID is a row even when it STACKS (the source's `col-md-12` columns at
 		// tablet/mobile): the class family proves it, and their heights still have
 		// to be recorded per device or a stacked photo panel loses its box.
 		const isGrid =
 			ROW.test( row.getAttribute( 'class' ) ?? '' ) ||
 			kids.some( ( child ) => COLUMN.test( child.getAttribute( 'class' ) ?? '' ) || /column|e-con/i.test( child.getAttribute( 'class' ) ?? '' ) );
-		if ( ! isGrid && ( ! sameTop || ! tiled ) ) {
+		// Only a GRID has columns. A band whose single-child chain lands on a
+		// wrapper (Flatsome's `section > section-bg + section-content`) has two
+		// "children" that happen to tile the row and share a top — they are the
+		// band's background layer and its content stage, not lanes. Recording them
+		// pinned both to the band's full height and every nested tile inherited it
+		// (monicarajiv's 900px quadrant became 1800).
+		if ( ! isGrid ) {
 			continue;
 		}
 		const facts: ForgeBandColumnFact[] = [];
@@ -1492,6 +1735,12 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		// Per-ELEMENT surfaces and pinned stage heights (structural paths).
+		const desktopElements = await page.evaluate( collectBandElementFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		// The band's grid columns (rendered heights + fixed-photo attachment), per
 		// device — read while each device's viewport is still current.
 		const desktopColumns = await page.evaluate( collectBandColumnFacts, {
@@ -1532,6 +1781,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		const tabletElements = await page.evaluate( collectBandElementFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		const tabletColumns = await page.evaluate( collectBandColumnFacts, {
 			ids: options.ids,
 			kind: options.kind,
@@ -1544,6 +1798,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 		} );
 		const mobile = await measureTypeAt( 'mobile' );
 		const mobileBox = await page.evaluate( collectBandBoxFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
+		const mobileElements = await page.evaluate( collectBandElementFacts, {
 			ids: options.ids,
 			kind: options.kind,
 			selectors: options.selectors,
@@ -1611,10 +1870,28 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			if ( box ) {
 				band.box = box;
 			}
+			// A class dropped for measuring differently on a row and a module. Unioned
+			// across devices: a token can be ambiguous at one width and consistent at
+			// another, and the operator only needs it named once.
+			const ambiguousBoxClasses = [
+				...new Set( [
+					...( desktopBox[ id ]?.ambiguous ?? [] ),
+					...( tabletBox[ id ]?.ambiguous ?? [] ),
+					...( mobileBox[ id ]?.ambiguous ?? [] ),
+				] ),
+			].sort();
+			if ( ambiguousBoxClasses.length > 0 ) {
+				band.boxWarnings = ambiguousBoxClasses;
+			}
 			// Cropped-media heights are their own map, emitted as `img.<class>`.
 			const media = mergeBoxFacts( desktopBox[ id ]?.media, tabletBox[ id ]?.media, mobileBox[ id ]?.media );
 			if ( media ) {
 				band.media = media;
+			}
+			// Per-element surfaces + pinned stage heights, keyed by structural path.
+			const elements = mergeElementFacts( desktopElements[ id ], tabletElements[ id ], mobileElements[ id ] );
+			if ( elements ) {
+				band.elements = elements;
 			}
 			// The band's grid columns per device: rendered heights and the
 			// background attachment/size of a fixed photo (see
@@ -2958,15 +3235,41 @@ const METRICS: Array<{ key: keyof GeometryTolerance; metric: string } > = [
 ];
 
 /**
+ * How a diff treats a band's COLUMNS (the row's lane heights).
+ *
+ * `fail` (the default) keeps the cascade to a failure once a column is more
+ * than 3× the height tolerance out: the reader sees a gap where the source had
+ * a matched pair, which is a real defect on a band whose lanes are deliberately
+ * unequal (virtuallyjamaica's 700px photo beside 948px of copy).
+ *
+ * `warn` is for the RAW-BUILDER sub-page case. A builder row states its lanes
+ * with `padding`, and the shim deliberately moves that vertical rhythm onto the
+ * band (`.post-body.ds-section` is a flex column with the band's padding) — so
+ * a correct rebuild's lane boxes are systematically one padding apart from the
+ * source's while the BAND height is exact. Comparing them as failures made the
+ * per-page gate report 15 "failures" on a build whose every band matched, which
+ * is how the whole gate ended up parked as opt-in advisory.
+ */
+export interface GeometryDiffOptions {
+	columns?: 'fail' | 'warn';
+}
+
+/**
  * Diff the build against the source geometry. Missing bands fail; a metric
  * beyond tolerance warns, beyond 2× tolerance fails — the pass/warn/fail split
  * the geometry-oracle tooling uses, so a real regression is never buried in
  * warnings.
+ *
+ * The BAND metrics (height, width, padding, margin) always keep that cascade:
+ * band height is what a reader perceives, and it is the one number a
+ * measured-fact defect cannot hide from. `options.columns` decides only how a
+ * lane mismatch is graded (see `GeometryDiffOptions`).
  */
 export function diffGeometry(
 	source: ForgeGeometry,
 	built: ForgeGeometry,
-	tolerance: GeometryTolerance = DEFAULT_GEOMETRY_TOLERANCE
+	tolerance: GeometryTolerance = DEFAULT_GEOMETRY_TOLERANCE,
+	options: GeometryDiffOptions = {}
 ): GeometryDeviation[] {
 	const deviations: GeometryDeviation[] = [];
 	for ( const [ id, viewports ] of Object.entries( source ) ) {
@@ -3038,7 +3341,12 @@ export function diffGeometry(
 							expected: height,
 							actual: actualColumns[ index ],
 							delta,
-							severity: Math.abs( delta ) > limit * 3 ? 'fail' : 'warn',
+							severity:
+								options.columns === 'warn'
+									? 'warn'
+									: Math.abs( delta ) > limit * 3
+										? 'fail'
+										: 'warn',
 						} );
 					} );
 				}

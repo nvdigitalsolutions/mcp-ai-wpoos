@@ -146,6 +146,45 @@ describe( 'classifyHtml — wrapped Elementor documents (the wp-post root)', () 
 		expect( sections ).toHaveLength( 1 );
 		expect( sections[ 0 ].slots.title ).toBe( 'Outer' );
 	} );
+
+	// A form ANYWHERE under the wrapper used to swallow the whole document:
+	// the form walk consumed the top-level node, so every band became one
+	// `form` section (virtuallysrilanka.com — 7 bands collapsed to 1, no
+	// anchors, `verify --bands` 0/7).
+	it( 'keeps every band when a later band carries a form', () => {
+		const html =
+			'<div data-elementor-type="wp-page" class="elementor elementor-5609">' +
+			SECTION( WIDGET( 'heading', '<h2>Hero title</h2>' ) + WIDGET( 'text-editor', '<p>Hero copy.</p>' ) ) +
+			SECTION( WIDGET( 'icon-box', '<h3>Wool</h3><p>Merino.</p>' ) + WIDGET( 'icon-box', '<h3>Linen</h3><p>Washed.</p>' ) ) +
+			SECTION(
+				WIDGET(
+					'form',
+					'<form class="elementor-form">' +
+						'<input type="hidden" name="form_id" value="abc123" />' +
+						'<input type="email" name="form_fields[email]" />' +
+						'<button type="submit">Send</button>' +
+						'</form>'
+				)
+			) +
+			'</div>';
+		const sections = classifyHtml( html );
+		expect( sections.map( ( section ) => section.kind ) ).toEqual( [ 'hero', 'feature-grid', 'form' ] );
+		expect( sections[ 2 ].form ).toMatchObject( { kind: 'submit', handler: 'elementor', formId: 'abc123' } );
+	} );
+
+	it( 'keeps the source section id on a form band (the theming + audit key)', () => {
+		const html =
+			'<section class="elementor-section elementor-top-section elementor-element elementor-element-ccdbf50" id="contact">' +
+			'<div class="elementor-container"><div class="elementor-widget-wrap">' +
+			WIDGET( 'heading', '<h2>CONTACT US</h2>' ) +
+			WIDGET( 'text-editor', '<p>Tell us about your venue.</p>' ) +
+			WIDGET( 'form', '<form class="elementor-form"><input type="hidden" name="form_id" value="abc123" /><input type="email" name="form_fields[email]" /><button type="submit">Send</button></form>' ) +
+			'</div></div></section>';
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'form' );
+		expect( sections[ 0 ].id ).toBe( 'ccdbf50' );
+		expect( sections[ 0 ].anchor ).toBe( 'contact' );
+	} );
 } );
 
 describe( 'classifyHtml — fallbacks', () => {
@@ -209,6 +248,26 @@ describe( 'classifyHtml — Elementor sections', () => {
 		expect( sections[ 0 ].slots.items?.[ 0 ] ).toMatchObject( { title: 'Consumer Electronics', body: 'Cameras and audio.' } );
 	} );
 
+	// The REAL Elementor icon-box markup wraps icon + title + description in
+	// `elementor-icon-box-wrapper`. Treating that wrapper as the icon header
+	// filtered the description out and shipped bare titles.
+	it( 'keeps the description of a real Elementor icon-box', () => {
+		const real = ( title: string, body: string ) =>
+			`<div class="elementor-icon-box-wrapper"><div class="elementor-icon-box-icon"><span class="elementor-icon"><i class="far fa-flag"></i></span></div><div class="elementor-icon-box-content"><h3 class="elementor-icon-box-title"><span>${ title }</span></h3><p class="elementor-icon-box-description">${ body }</p></div></div>`;
+		const html = SECTION(
+			WIDGET( 'icon-box', real( 'LANDING PAGE', 'Advertise your business with your own Wi-Fi start page.' ) ) +
+				WIDGET( 'icon-box', real( 'POP-UP ADS', 'Display ads before the login prompt.' ) )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'icon-list' );
+		expect( sections[ 0 ].slots.items?.[ 0 ] ).toMatchObject( {
+			title: 'LANDING PAGE',
+			body: 'Advertise your business with your own Wi-Fi start page.',
+			icon: true,
+		} );
+		expect( sections[ 0 ].slots.items?.[ 1 ]?.body ).toBe( 'Display ads before the login prompt.' );
+	} );
+
 	it( 'rebuilds testimonials as quote sections', () => {
 		const html = SECTION( WIDGET( 'testimonial', '<p>Fast &amp; easy to work with.</p><div>Kumar</div>' ) );
 		const sections = classifyHtml( html );
@@ -242,6 +301,140 @@ describe( 'classifyHtml — Elementor sections', () => {
 		const sections = classifyHtml( html );
 		expect( sections[ 0 ].kind ).toBe( 'gallery' );
 		expect( sections[ 0 ].slots.media ).toHaveLength( 2 );
+	} );
+} );
+
+describe( 'classifyHtml — two-heading bands (kicker + headline)', () => {
+	it( 'keeps the headline as the title and the kicker as intro copy', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h3>SEE WHAT WE CAN DO FOR YOU</h3>' ) +
+				WIDGET( 'heading', '<h2>WE SPECIALIZE IN CUSTOM SOLUTIONS FOR YOUR BUSINESS</h2>' ) +
+				WIDGET( 'image', '<img src="/wp-content/uploads/a.png" alt="" />' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'WE SPECIALIZE IN CUSTOM SOLUTIONS FOR YOUR BUSINESS' );
+		expect( sections[ 0 ].slots.body ).toContain( 'SEE WHAT WE CAN DO FOR YOU' );
+	} );
+
+	it( 'yields a same-level ALL-CAPS kicker to the line under it', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>WIFI SOCIAL MARKETING</h2>' ) +
+				WIDGET( 'heading', '<h2>How it Works</h2>' ) +
+				WIDGET( 'icon-box', '<h3>LANDING PAGE</h3><p>Custom start page.</p>' ) +
+				WIDGET( 'icon-box', '<h3>POP-UP ADS</h3><p>Promote offers.</p>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'How it Works' );
+		expect( sections[ 0 ].slots.body ).toContain( 'WIFI SOCIAL MARKETING' );
+	} );
+
+	it( 'picks the more important heading inside a single widget', () => {
+		const html = SECTION( WIDGET( 'heading', '<h3>Our promise</h3><h2>Fast, fair, local</h2>' ) );
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'Fast, fair, local' );
+		expect( sections[ 0 ].slots.body ).toContain( 'Our promise' );
+	} );
+
+	it( 'never uses an icon-box caption as the band title', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>What we do</h2>' ) +
+				WIDGET( 'icon-box', '<h3>LANDING PAGE</h3>' ) +
+				WIDGET( 'icon-box', '<h3>POP-UP ADS</h3>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].slots.title ).toBe( 'What we do' );
+	} );
+} );
+
+describe( 'classifyHtml — accordion bands', () => {
+	const PANEL = ( n: number, label: string, text: string ) =>
+		`<div class="elementor-accordion-item"><div class="elementor-tab-title" aria-controls="tab-${ n }"><span class="elementor-accordion-icon"><i class="fas fa-plus"></i></span><a class="elementor-accordion-title">${ label }</a></div><div class="elementor-tab-content" id="tab-${ n }"><p>${ text }</p></div></div>`;
+	const ACCORDION = ( entries: Array< [ string, string ] > ) =>
+		`<div class="elementor-accordion">${ entries
+			.map( ( [ label, text ], index ) => PANEL( index + 1, label, text ) )
+			.join( '' ) }</div>`;
+
+	it( 'rebuilds the tabs as one accordion, not as buttons and flat prose', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>FEATURE HIGHLIGHTS</h2>' ) +
+				WIDGET( 'image', '<img src="/wp-content/uploads/a.jpg" alt="" />' ) +
+				WIDGET(
+					'accordion',
+					ACCORDION( [
+						[ 'Custom Landing Page', 'Advertise your business.' ],
+						[ 'Capture user metadata', 'Ask questions.' ],
+					] )
+				)
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'accordion' );
+		expect( sections[ 0 ].slots.title ).toBe( 'FEATURE HIGHLIGHTS' );
+		expect( sections[ 0 ].slots.items ).toHaveLength( 2 );
+		expect( sections[ 0 ].slots.items?.[ 0 ] ).toMatchObject( {
+			title: 'Custom Landing Page',
+			body: 'Advertise your business.',
+		} );
+		// The tab titles are <a> elements — they must never become buttons, and
+		// the closed panels are not the band's own copy.
+		expect( sections[ 0 ].slots.links ?? [] ).toHaveLength( 0 );
+		expect( sections[ 0 ].slots.body ?? [] ).toHaveLength( 0 );
+		expect( sections[ 0 ].slots.media ).toHaveLength( 1 );
+	} );
+
+	it( 'finds each panel without aria-controls (the sanitizer drops it)', () => {
+		const ITEM = ( label: string, text: string ) =>
+			`<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">${ label }</a></div><div class="elementor-tab-content"><p>${ text }</p></div></div>`;
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Features</h2>' ) +
+				WIDGET(
+					'accordion',
+					`<div class="elementor-accordion">${ ITEM( 'One', 'First panel.' ) }${ ITEM( 'Two', 'Second panel.' ) }</div>`
+				)
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'accordion' );
+		expect( sections[ 0 ].slots.items?.[ 0 ]?.body ).toBe( 'First panel.' );
+		expect( sections[ 0 ].slots.items?.[ 1 ]?.body ).toBe( 'Second panel.' );
+	} );
+
+	it( 'leaves a one-entry accordion on the flat path', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Features</h2>' ) +
+				WIDGET( 'text-editor', '<p>Intro copy.</p>' ) +
+				WIDGET( 'accordion', ACCORDION( [ [ 'Only entry', 'Its body.' ] ] ) )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).not.toBe( 'accordion' );
+	} );
+} );
+
+describe( 'classifyHtml — multi-column bands', () => {
+	const COLUMN = ( inner: string ) =>
+		`<div class="elementor-column elementor-col-33"><div class="elementor-widget-wrap">${ inner }</div></div>`;
+	const ROW = ( columns: string ) =>
+		`<section class="elementor-section elementor-top-section"><div class="elementor-container">${ columns }</div></section>`;
+
+	it( 'rebuilds a copy-only band as one item per source column', () => {
+		const html = ROW(
+			COLUMN( WIDGET( 'text-editor', '<p>Alpha copy.</p>' ) ) +
+				COLUMN( WIDGET( 'text-editor', '<p>Beta copy.</p>' ) ) +
+				COLUMN( WIDGET( 'text-editor', '<p>Gamma copy.</p>' ) )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'feature-grid' );
+		expect( sections[ 0 ].slots.items?.map( ( item ) => item.body ) ).toEqual( [
+			'Alpha copy.',
+			'Beta copy.',
+			'Gamma copy.',
+		] );
+	} );
+
+	it( 'skips a content-less column and leaves a one-column band on the text path', () => {
+		const html = ROW(
+			COLUMN( WIDGET( 'text-editor', '<p>Only copy.</p>' ) ) + COLUMN( '<div class="elementor-spacer"></div>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'text' );
 	} );
 } );
 

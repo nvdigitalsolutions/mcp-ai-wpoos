@@ -30,6 +30,7 @@ import FeatureGrid from './FeatureGrid.astro';
 import Form from './Form.astro';
 import Gallery from './Gallery.astro';
 import Hero from './Hero.astro';
+import Accordion from './Accordion.astro';
 import IconList from './IconList.astro';
 import LogoCloud from './LogoCloud.astro';
 import Marquee from './Marquee.astro';
@@ -72,7 +73,21 @@ const { html = '', wireframeSections, bandGeometry = false, bandThemes } = Astro
 const sections: SemanticSection[] = wireframeSections
 	? wireframeSections.map( ( w ) => w.section )
 	: classifyBody( html );
-const columnsFor = ( index: number ): Record<string, number> | undefined => wireframeSections?.[ index ]?.responsive?.columns;
+const columnsFor = ( index: number, theme?: SectionTheme ): Record< string, number > | undefined => {
+	const wireframe = wireframeSections?.[ index ]?.responsive?.columns;
+	if ( wireframe ) {
+		return wireframe;
+	}
+	// No wireframe inventory: the SOURCE band's own column count is still a
+	// measured fact (design.sections[].columns). Without this fallback a
+	// three-column services band rebuilt as a grid with the template's default
+	// four tracks — the source's columns never reached the grid at all.
+	const count = theme?.columns?.length ?? 0;
+	if ( count < 2 ) {
+		return undefined;
+	}
+	return { desktop: count, tablet: count >= 3 ? 2 : count, mobile: 1 };
+};
 /**
  * The source band theme for a rebuilt section. Elementor sites match by the
  * classifier-carried section id. Outline-only sources (WPBakery/Brando…) carry
@@ -499,13 +514,18 @@ const responsiveBandCss = sections
  * Scoped to the wrap (`[data-section-id]`) and emitted after global.css, so it
  * outranks the template's own prose defaults.
  */
-const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string }, options: { weight?: boolean } = {} ): string =>
+const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string }, options: { weight?: boolean } = {} ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
 		options.weight !== false && fact.weight && `font-weight:${ fact.weight }`,
 		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
 		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
+		// The measured heading/paragraph RHYTHM. An unclassed heading has no class
+		// for a box fact to hang on, so without this the template's prose defaults
+		// (`h1: 0.67em 0`) replaced the builder's (`0.1em 0`) and every tile grew.
+		fact.marginTop && `margin-top:${ fact.marginTop }`,
+		fact.marginBottom && `margin-bottom:${ fact.marginBottom }`,
 		// Only a POSITIVE alignment is emitted: the source centers a band's copy
 		// from a wrapper class, which the sanitizer drops. `start`/`left` is the
 		// template default and needs no rule.
@@ -525,7 +545,7 @@ const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: 
 
 /** A device override, emitted verbatim — `diffTypeFact` already trimmed it to the
  * properties the source changes, so a reset back to `left` must survive. */
-const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string } ): string =>
+const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string } ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
 		fact.weight && `font-weight:${ fact.weight }`,
@@ -533,6 +553,8 @@ const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeigh
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
 		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
 		fact.align && `text-align:${ fact.align }`,
+		fact.marginTop && `margin-top:${ fact.marginTop }`,
+		fact.marginBottom && `margin-bottom:${ fact.marginBottom }`,
 		fact.color && `color:${ fact.color }`,
 	]
 		.filter( Boolean )
@@ -661,6 +683,81 @@ const bandUtilityCss = sections
  * Emitted AFTER the utility pack on purpose: a measured value must outrank a
  * hand-authored approximation of the same class.
  */
+/**
+ * Per-ELEMENT surfaces + pinned stage heights (see `ForgeBandElement`).
+ *
+ * Raw builder bands keep the source's markup verbatim, so the structural path
+ * selects the SAME node here — which is the only way to restore what the
+ * vendor stylesheet painted per element (Flatsome's white tile cards, its red
+ * block) and the box a stage was pinned to. `min-height` rather than `height`
+ * keeps the measured stage while still letting copy grow.
+ *
+ * The path's `:nth-child()` segments give these rules a high specificity, so a
+ * deep path outranks the arrangement shim without `!important`.
+ */
+const bandElementCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ! theme?.elements || theme.elements.length === 0 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return theme.elements
+			.map( ( element ) => {
+				const heights =
+					typeof element.height === 'number' ? { desktop: element.height } : ( element.height ?? {} );
+				const base: string[] = [];
+				if ( element.bg ) {
+					base.push( element.bg );
+				}
+				if ( element.fg ) {
+					base.push( `color:${ element.fg }` );
+				}
+				if ( heights.desktop ) {
+					base.push( `min-height:${ heights.desktop }px` );
+					// A pinned stage must beat the generic in-column banner fallback:
+					// `aspect-ratio` resolves the used height from the WIDTH, and a larger
+					// resolved height outranks `min-height`, so the measured 86px banner
+					// inside a `row-full-width` still rendered at the 5:3 default (560px).
+					base.push( 'aspect-ratio:auto' );
+				}
+				const rules: string[] = [];
+				if ( base.length > 0 ) {
+					rules.push( `${ scoped } ${ element.path }{${ base.join( ';' ) }}` );
+				}
+				// The card's ink must reach its TEXT, not just the box: the band's
+				// measured heading rule sets `color` on `h1…h6` directly, which
+				// outranks inheritance and left white headings on a light card.
+				//
+				// `a` and `button` are deliberately NOT forced: this path selector is
+				// (0,3,3), so it outranks a band's measured state rule
+				// `[data-section-id] a:hover` at (0,2,1). Forcing white there made a
+				// link's base `border-color` resolve to `currentColor` — also white —
+				// so hover/active changed nothing and the state gate read them as
+				// lost. Interactive controls take their colour from the measured
+				// base/hover rules instead, inheriting the card ink they sit in.
+				if ( element.fg ) {
+					rules.push(
+						`${ scoped } ${ element.path } :is(h1, h2, h3, h4, h5, h6, p, li, span){color:${ element.fg }}`
+					);
+				}
+				if ( heights.tablet ) {
+					rules.push(
+						`@media (min-width: 768px) and (max-width: 1024px){${ scoped } ${ element.path }{min-height:${ heights.tablet }px}}`
+					);
+				}
+				if ( heights.mobile ) {
+					rules.push(
+						`@media (max-width: 767px){${ scoped } ${ element.path }{min-height:${ heights.mobile }px}}`
+					);
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
 const bandBoxCss = sections
 	.map( ( section, index ) => {
 		const theme = themeFor( section, index );
@@ -681,16 +778,29 @@ const bandBoxCss = sections
 					const selectors =
 						selectorPrefix === 'img'
 							? `${ scoped } img.${ name }, ${ scoped } .post-body img.${ name }`
-							: `${ scoped } ${ selectorPrefix }.${ name }`;
+							: // The `.post-body .section-content .col` form exists to outrank the
+							  // Flatsome shim's arrangement rules (4 classes): a measured box is
+							  // the source's computed truth, so it must win over a fallback the
+							  // shim guessed. Without it `aspect-ratio:auto` never reached the
+							  // banner and the slider kept the 5:3 default.
+							  `${ scoped } ${ selectorPrefix }.${ name }, ${ scoped } .post-body .section-content .col ${ selectorPrefix }.${ name }`;
+					// A TOP-ONLY `padding` is the builder's height placeholder (`padding:350px
+					// 0 0 0`); the shim's in-column aspect fallback would still resolve a
+					// height from the width and outrank it (doomsday's 350px testimonial
+					// slider rendered 630px at the 5:3 default). A measured placeholder
+					// therefore switches the fallback off for that class.
+					const measuredStage = /(^|;)padding:(?!0px )\S+ 0px 0px 0px/.test( fact.base ?? '' );
+					const withStage = ( value: string | undefined ): string | undefined =>
+						value && measuredStage ? `${ value };aspect-ratio:auto` : value;
 					const rules: string[] = [];
 					if ( fact.base ) {
-						rules.push( `${ selectors }{${ fact.base }}` );
+						rules.push( `${ selectors }{${ withStage( fact.base ) }}` );
 					}
 					if ( fact.tablet ) {
-						rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selectors }{${ fact.tablet }}}` );
+						rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selectors }{${ withStage( fact.tablet ) }}}` );
 					}
 					if ( fact.mobile ) {
-						rules.push( `@media (max-width: 767px){${ selectors }{${ fact.mobile }}}` );
+						rules.push( `@media (max-width: 767px){${ selectors }{${ withStage( fact.mobile ) }}}` );
 					}
 					return rules.join( '' );
 				} )
@@ -881,8 +991,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandColumnCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
@@ -903,8 +1013,9 @@ const bandParallaxCss = sections
 					) : (
 						<>
 							{section.kind === 'hero' && <Hero section={section} theme={theme} />}
-							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} theme={theme} />}
-							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} theme={theme} />}
+							{section.kind === 'accordion' && <Accordion section={section} theme={theme} />}
+							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index, theme)} theme={theme} />}
+							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index, theme)} theme={theme} />}
 							{section.kind === 'testimonial' && <Testimonial section={section} theme={theme} />}
 							{section.kind === 'logo-cloud' && <LogoCloud section={section} theme={theme} />}
 							{section.kind === 'cta' && <Cta section={section} theme={theme} />}

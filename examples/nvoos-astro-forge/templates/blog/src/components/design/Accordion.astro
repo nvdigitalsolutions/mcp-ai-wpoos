@@ -1,0 +1,86 @@
+---
+// Accordion — the source's disclosure band (Proposal 144).
+//
+// The source's accordion is a component, not a pile of headings: Elementor's
+// tabs render their closed panels' copy into the DOM, so the flat classifier
+// expanded an 8-item accordion into 2987px of prose and turned its titles into
+// buttons. The rebuild keeps the component: native <details>/<summary>, no
+// JavaScript, the first panel open (matching the source), and the source's own
+// intro headings centred above the row.
+//
+// Layout: when the band carries media (the source's photo-beside-accordion
+// row), the media takes the first column and the accordion the second.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SmartImage from '../SmartImage.astro';
+import SectionTitle from './SectionTitle.astro';
+
+interface Props {
+	section: SemanticSection;
+	theme?: SectionTheme;
+}
+
+const { section, theme } = Astro.props;
+const { title, body, media, items } = section.slots;
+
+const photo = media?.[ 0 ];
+
+// The heading typography facts ride CSS vars — same contract as Hero.
+const titleVars = [
+	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
+	theme?.titleStyle?.weight && `--ds-title-weight:${ theme.titleStyle.weight }`,
+	theme?.titleStyle?.lineHeight && `--ds-title-lh:${ theme.titleStyle.lineHeight }`,
+	theme?.titleStyle?.tablet?.lineHeight && `--ds-title-lh-md:${ theme.titleStyle.tablet.lineHeight }`,
+	theme?.titleStyle?.mobile?.lineHeight && `--ds-title-lh-sm:${ theme.titleStyle.mobile.lineHeight }`,
+	theme?.titleStyle?.letterSpacing && `--ds-title-ls:${ theme.titleStyle.letterSpacing }`,
+]
+	.filter( Boolean )
+	.join( ';' );
+
+const dividerStyle = theme?.titleDivider
+	? [
+			`width:${ theme.titleDivider.width }`,
+			`height:${ theme.titleDivider.height }`,
+			`background:${ theme.titleDivider.background }`,
+			theme.titleDivider.shadow && `box-shadow:${ theme.titleDivider.shadow }`,
+		]
+			.filter( Boolean )
+			.join( ';' )
+	: undefined;
+---
+
+<section class:list={[ 'ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center' ]}>
+	{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
+	{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
+	{body && body.length > 0 && (
+		<div class="ds-lede">
+			{body.map((paragraph) => (
+				<p>{paragraph}</p>
+			))}
+		</div>
+	)}
+	{items && items.length > 0 && (
+		<div class:list={[ 'ds-accordion-band', photo && 'ds-accordion-band--split' ]}>
+			{photo?.src && (
+				<div class="ds-accordion-media">
+					<SmartImage src={photo.src} alt={photo.alt ?? title ?? ''} sizes="(min-width: 1025px) 50vw, 100vw" />
+				</div>
+			)}
+			<div class="ds-accordion">
+				{items.map((item, index) => (
+					<details class="ds-accordion-item" open={index === 0}>
+						<summary class="ds-accordion-summary">
+							<span class="ds-accordion-label">{item.title}</span>
+							<span class="ds-accordion-marker" aria-hidden="true" />
+						</summary>
+						{item.body && (
+							<div class="ds-accordion-panel">
+								<p>{item.body}</p>
+							</div>
+						)}
+					</details>
+				))}
+			</div>
+		</div>
+	)}
+</section>

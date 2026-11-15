@@ -22,8 +22,8 @@ import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './geometry.ts';
 import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
-import { auditWarnings, contrastAudit } from './contrast.ts';
-import { designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
+import { auditWarnings, contrastAudit, readableInk } from './contrast.ts';
+import { contrast, designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { renderDirectFormsEndpointTs } from './forms-direct.ts';
 import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { readLock } from './lock.ts';
@@ -390,7 +390,7 @@ function tsLength( value: ResponsiveLength ): string {
  */
 function tsTypeFact( fact: BandTypeFact ): string {
 	const properties = ( value: Record< string, unknown >, dropDefaults: boolean ): string[] =>
-		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color', 'maxWidth' ] as const )
+		( [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color', 'maxWidth', 'marginTop', 'marginBottom' ] as const )
 			.filter( ( key ) => {
 				const entry = value[ key ];
 				if ( typeof entry !== 'string' || entry.length === 0 ) {
@@ -443,6 +443,65 @@ function tsBandType( type: { headings?: Record< string, BandTypeFact >; body?: B
 		parts.push( `body: ${ tsTypeFact( type.body ) }` );
 	}
 	return parts.length > 0 ? `{ ${ parts.join( ', ' ) } }` : undefined;
+}
+
+/**
+ * Drop a band's measured BODY INK when it would be unreadable on that band's
+ * own surface.
+ *
+ * The measurement reads what the source RENDERS, and on a builder band whose
+ * copy sits inside a card, that ink is the CARD's (black) while the band paints
+ * something else. The rebuild has no card surface — the vendor sets it per
+ * element in a stylesheet that never ships — so the ink landed black-on-black
+ * and every word in those bands disappeared (monicarajiv.com's airport-transfer
+ * tile band). Falling back to the band/theme ink keeps the copy readable; the
+ * colour gate then reports the drift, which is the honest trade.
+ */
+export function readableBandType< T extends { headings?: Record< string, BandTypeFact >; body?: BandTypeFact } >(
+	type: T,
+	section: ForgeSection,
+	profile: SiteProfile
+): T {
+	const flat = section.bgColor && section.bgColor !== 'transparent' ? section.bgColor : undefined;
+	const surface = flat ?? gradientTail( section.bgGradient ) ?? profile.pageBackground ?? '#ffffff';
+	const readable = ( fact: BandTypeFact | undefined ): BandTypeFact | undefined => {
+		if ( ! fact?.color ) {
+			return fact;
+		}
+		const ratio = contrast( fact.color, surface );
+		if ( ratio === undefined || ratio >= 4.5 ) {
+			return fact;
+		}
+		const next = { ...fact };
+		delete next.color;
+		return next;
+	};
+	let changed = false;
+	const headings: Record< string, BandTypeFact > = {};
+	for ( const [ tag, fact ] of Object.entries( type.headings ?? {} ) ) {
+		const next = readable( fact ) ?? fact;
+		if ( next !== fact ) {
+			changed = true;
+		}
+		headings[ tag ] = next;
+	}
+	const body = readable( type.body );
+	if ( body !== type.body ) {
+		changed = true;
+	}
+	if ( ! changed ) {
+		return type;
+	}
+	return { ...type, ...( type.headings ? { headings } : {} ), ...( body ? { body } : {} ) };
+}
+
+/** The end colour of a CSS gradient — the surface a painted card ends on. */
+function gradientTail( gradient: string | undefined ): string | undefined {
+	if ( ! gradient ) {
+		return undefined;
+	}
+	const colors = gradient.match( /(?:#[0-9a-f]{3,8}|rgba?\([^)]*\)|hsla?\([^)]*\))/gi );
+	return colors && colors.length > 0 ? colors[ colors.length - 1 ] : undefined;
 }
 
 /** Serialize one builder utility (base + its device-scoped declarations). */
@@ -1198,6 +1257,22 @@ function measuredContainer(
  * `profile` passed in, so a per-page view (its own `bandFacts`/`geometry`/
  * builder) renders through exactly the same emitter as the front page.
  */
+/**
+ * The ink a captured ELEMENT surface needs.
+ *
+ * A raw band's copy is painted by the band's own ink, but a card inside it is a
+ * different surface: monicarajiv's tiles are `rgb(240,240,240)`, and the band's
+ * white ink left every word invisible on them. Whichever of black/white reads
+ * better against the captured colour wins.
+ */
+function elementInk( bg: string | undefined ): string | undefined {
+	const prefix = 'background-color:';
+	if ( ! bg || ! bg.startsWith( prefix ) ) {
+		return undefined;
+	}
+	return readableInk( bg.slice( prefix.length ) );
+}
+
 function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ): string {
 	const theme = resolveSectionTheme( section );
 	const entry: string[] = [];
@@ -1343,8 +1418,9 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		entry.push( `minHeight: ${ tsLength( value ) }` );
 	}
 	// The band's measured typography (see `tsBandType`). A profile pin on
-	// `design.sections[].type` wins over the measurement.
-	const typeLiteral = tsBandType( section.type ?? bandFacts ?? {} );
+	// `design.sections[].type` wins over the measurement — but never at the cost
+	// of readable copy (see `readableBandType`).
+	const typeLiteral = tsBandType( readableBandType( section.type ?? bandFacts ?? {}, section, profile ) );
 	if ( typeLiteral ) {
 		entry.push( `type: ${ typeLiteral }` );
 	}
@@ -1412,6 +1488,38 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			`media: { ${ mediaEntries
 				.map( ( [ name, media ] ) => `${ tsKey( name ) }: ${ tsUtility( media ) }` )
 				.join( ', ' ) } }`
+		);
+	}
+	// Per-ELEMENT surfaces + pinned stage heights (see `collectBandElementFacts`),
+	// keyed by a structural path because a class name repeats across bands. Raw
+	// bands keep the source markup verbatim, so the path resolves to the same
+	// node in the rebuild.
+	const elementFacts = section.elements ?? bandFacts?.elements ?? [];
+	if ( elementFacts.length > 0 ) {
+		entry.push(
+			`elements: [ ${ elementFacts
+				.map( ( element ) => {
+					const parts = [ `path: ${ tsString( element.path ) }` ];
+					if ( element.bg ) {
+						parts.push( `bg: ${ tsString( element.bg ) }` );
+						const ink = elementInk( element.bg );
+						if ( ink ) {
+							parts.push( `fg: ${ tsString( ink ) }` );
+						}
+					}
+					if ( typeof element.height === 'number' ) {
+						parts.push( `height: ${ element.height }` );
+					} else if ( element.height ) {
+						const map = Object.entries( element.height )
+							.filter( ( [ , value ] ) => typeof value === 'number' )
+							.map( ( [ device, value ] ) => `${ device }: ${ value }` );
+						if ( map.length > 0 ) {
+							parts.push( `height: { ${ map.join( ', ' ) } }` );
+						}
+					}
+					return `{ ${ parts.join( ', ' ) } }`;
+				} )
+				.join( ', ' ) } ]`
 		);
 	}
 	// The band's measured COLUMN geometry (see `collectBandColumnFacts`): the
@@ -1756,6 +1864,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'\t/** Cropped-media heights, emitted as `img.<class>` only. */',
 		'\tmedia?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'\t/** Per-ELEMENT surfaces + pinned heights inside a raw builder band,',
+		'\t * keyed by a STRUCTURAL path relative to the band (a class name repeats',
+		'\t * across bands and elements). Raw bands keep the source markup, so the',
+		'\t * path resolves to the same node in the rebuild. */',
+		'\telements?: Array<{ path: string; bg?: string; fg?: string; height?: number | { desktop?: number; tablet?: number; mobile?: number } }>;',
 		'\t/** The band\u2019s measured COLUMN geometry, keyed by the column\u2019s',
 		'\t * unique class: a rendered `min-height` floor plus a fixed background',
 		'\t * photo\u2019s attachment/size. Emitted as band-scoped `.class` rules \u2014 the',

@@ -1025,6 +1025,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	color: inherit;
 }
 
+/* A DARK band carries the same rule — the wrap's content layer is painted
+ * #f5f5f4 (see `.ds-section-wrap--dark > *`), but `.ds-text`'s explicit muted
+ * ink outranks inheritance, so copy inside a dark band rendered dark-on-dark
+ * (virtuallysrilanka.com's red hero: the kicker above the headline came out
+ * #7a7a7a on #dd3333). Cards keep their own surface + ink, so `inherit`
+ * resolves to the card's own colour there. */
+.ds-section-wrap--dark .ds-text,
+.ds-section-wrap--dark .ds-hero p {
+	color: inherit;
+}
+
 .ds-media {
 	max-width: 100%;
 	height: auto;
@@ -1130,6 +1141,14 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	margin: 0;
 	color: var(--forge-muted);
 	font-size: var(--forge-scale-small);
+}
+
+/* A card paints its OWN surface, so the band's measured body ink must not
+ * repaint it: `[data-section-id] p` is injected after this sheet and wins on
+ * equal specificity, which put a grey that only works on the source's dark
+ * panel (#7a7a7a, 4.29:1) onto a white card. */
+.ds-section .ds-card p {
+	color: var(--forge-muted);
 }
 
 .ds-card img {
@@ -1679,6 +1698,32 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	position: relative;
 }
 
+/* Flatsome's `.section-bg.fill` is the band's background LAYER.
+ *
+ * `.fill` is the vendor's absolute-fill utility, but applying it to every `.fill`
+ * also repositioned the banner internals (the tile copy vanished). The band's
+ * background layer is the one that matters: in flow it added its own height to
+ * every band (a 600px source band rendered 1200 — bg 600 + content 600). */
+.ds-section-wrap .post-body .section {
+	position: relative;
+}
+
+/* The builder's wrapper chain shrink-wraps instead of stretching (the same
+ * collapse that flattened `.post-body` to 47px): an explicit width is the only
+ * deterministic fix, and it is what the shim already means by "the section and
+ * `.section-content` grow". Without it the band's own stage is 47px wide while
+ * the band paints 1065 — the airport-transfer tile grid rendered as a 47px
+ * column and its banners grew past the band. */
+.ds-section-wrap .post-body > .section,
+.ds-section-wrap .post-body .section-content {
+	width: 100%;
+}
+
+.ds-section-wrap .post-body .section-bg.fill {
+	position: absolute;
+	inset: 0;
+}
+
 /* The band's own content column fills the measured band box so a `.banner`
  * set to `is-full-height` can grow into it. A percentage min-height cannot
  * resolve against the wrap's `min-height`, and `min-height: inherit` on the
@@ -1695,6 +1740,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	flex-direction: column;
 	flex: 1;
 	min-height: 0;
+}
+
+/* A RAW Flatsome band (`.post-body > section.section`) is the band STAGE, not a
+ * prose column: without an explicit width it shrink-wraps to its content's
+ * min-content (47px on monicarajiv's sub-pages, 438-630px elsewhere) and the
+ * measured `max-width` never applies, so every row renders as a narrow strip
+ * down the middle of a 1440px band. An explicit 100% makes the band's own
+ * measured content width the cap, exactly like the source's container. */
+.ds-section-wrap .post-body.ds-section:has(> .section) {
+	width: 100%;
+	margin-inline: auto;
 }
 
 .ds-section-wrap .post-body.ds-section > .section {
@@ -1731,9 +1787,14 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 
 /* A photo banner inside a column is the column's media panel. The builder sized
  * it with an inline `padding-top: <n>%` in a `<style>` block the sanitizer
- * drops, so the rebuild gives it the builder's default square stage. */
+ * drops, so the rebuild has to fall back — but the fallback must be the
+ * builder's own default shape, not a square: Flatsome's tiles render ~5:3 in
+ * the source (499×301, 469×162 on monicarajiv.com), and a square tile doubles
+ * the height of every row as soon as the content container is measured
+ * correctly (a 1080px column gave a 1080px tile and a 1200px band where the
+ * source is 600). */
 .ds-section-wrap .post-body .col .banner {
-	aspect-ratio: 1 / 1;
+	aspect-ratio: var(--ds-banner-ratio, 5 / 3);
 }
 
 /* The photo is a LAYER behind the copy, not an inline image. */
@@ -1757,6 +1818,25 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 .ds-section-wrap .post-body .banner-bg .overlay {
 	position: absolute;
 	inset: 0;
+}
+
+/* A Flatsome `box` tile crops its photo with a `padding-top` PLACEHOLDER on
+ * `.image-cover`, with the <img> absolutely positioned to fill it. The rebuild
+ * keeps the measured padding but lost the layering, so the image sat in flow on
+ * top of its own placeholder and every tile doubled: the services band's
+ * 200px `image-cover` rendered 406px and the band came out 520px too tall. */
+.ds-section-wrap .post-body .image-cover {
+	position: relative;
+	overflow: hidden;
+}
+
+.ds-section-wrap .post-body .image-cover > img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: var(--ds-media-pos, 50% 50%);
 }
 
 /* The banner's copy is a layer ABOVE the photo, centered in the band. The
@@ -1822,6 +1902,35 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	position: static;
 	width: auto;
 	transform: none;
+}
+
+/* Flatsome's responsive VISIBILITY utilities. The source pairs a small-only
+ * row with a desktop-only one (`show-for-small` / `hide-for-small`), so a
+ * rebuild that ignores these renders BOTH at every width and every band with
+ * such a pair comes out roughly twice its source height (accommodations'
+ * 770px band rendered 1540). Values transcribed from flatsome.css 3.20.7 —
+ * they are hide-only rules, so the visible case keeps the element's own
+ * display (`flex` on a row, `block` on a banner). */
+@media ( max-width: 549px ) {
+	.ds-section-wrap .post-body .hide-for-small {
+		display: none !important;
+	}
+}
+@media ( min-width: 550px ) {
+	.ds-section-wrap .post-body .show-for-small {
+		display: none !important;
+	}
+}
+@media ( max-width: 849px ) {
+	.ds-section-wrap .post-body .hide-for-medium {
+		display: none !important;
+	}
+}
+@media ( min-width: 850px ) {
+	.ds-section-wrap .post-body .show-for-medium,
+	.ds-section-wrap .post-body .hide-for-large {
+		display: none !important;
+	}
 }
 
 /* Flatsome's row modifiers: a collapsed row has NO gutters, and `align-middle`
@@ -2163,6 +2272,110 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	display: grid;
 	grid-template-columns: repeat(var(--ds-body-cols, 1), minmax(0, 1fr));
 	gap: var(--forge-space);
+}
+
+/* -------------------------------------------------------------------------
+ * Accordion band (Proposal 144) — the source's disclosure component, rebuilt
+ * as native <details>/<summary>: no JavaScript, keyboard- and screen-reader-
+ * native, and the closed panels stay in the DOM for search engines.
+ * ------------------------------------------------------------------------ */
+.ds-accordion-band {
+	display: grid;
+	gap: var(--forge-space-lg);
+	align-items: start;
+	margin-top: var(--forge-space-lg);
+}
+
+.ds-accordion-band--split {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.ds-accordion-media {
+	min-width: 0;
+}
+
+.ds-accordion-media :is(img) {
+	width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius);
+}
+
+.ds-accordion {
+	display: grid;
+}
+
+.ds-accordion-item {
+	border-top: 1px solid var(--forge-line);
+}
+
+.ds-accordion-item:last-child {
+	border-bottom: 1px solid var(--forge-line);
+}
+
+.ds-accordion-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--forge-space);
+	padding: 1rem 0;
+	cursor: pointer;
+	font-weight: 700;
+	list-style: none;
+}
+
+.ds-accordion-summary::-webkit-details-marker {
+	display: none;
+}
+
+.ds-accordion-label {
+	flex: 1 1 auto;
+}
+
+/* The + / − marker: two hairlines, the vertical one collapsing when open. */
+.ds-accordion-marker {
+	position: relative;
+	flex: none;
+	width: 0.875rem;
+	height: 0.875rem;
+}
+
+.ds-accordion-marker::before,
+.ds-accordion-marker::after {
+	content: '';
+	position: absolute;
+	inset: 50% 0 auto;
+	height: 2px;
+	background: currentColor;
+	transform: translateY(-50%);
+}
+
+.ds-accordion-marker::after {
+	transform: translateY(-50%) rotate(90deg);
+	transition: transform 0.2s ease;
+}
+
+.ds-accordion-item[open] .ds-accordion-marker::after {
+	transform: translateY(-50%) rotate(0deg);
+}
+
+.ds-accordion-panel {
+	padding-bottom: 1rem;
+}
+
+.ds-accordion-panel p {
+	margin: 0 0 0.75rem;
+}
+
+.ds-accordion-panel p:last-child {
+	margin-bottom: 0;
+}
+
+/* Mobile only: the source keeps its photo-beside-accordion row through the
+ * tablet breakpoint (1177px desktop / 1000px tablet) and stacks on a phone. */
+@media (max-width: 767px) {
+	.ds-accordion-band--split {
+		grid-template-columns: minmax(0, 1fr);
+	}
 }
 
 /* The source's link row rides far below the copy (jayainc: 70px). */

@@ -19,8 +19,12 @@ interface Props {
 
 const { section, columns, theme } = Astro.props;
 const { title, body, items } = section.slots;
-const gridStyle = columns
-	? `--ds-cols-desktop: ${ columns.desktop ?? 4 }; --ds-cols-tablet: ${ columns.tablet ?? 2 }; --ds-cols-mobile: ${ columns.mobile ?? 1 };`
+// A grid never declares more tracks than it has items: the source's authored
+// column count (3 in a services band, 4 in a logo wall) can exceed what the
+// classifier rebuilt after merging or skipping an empty column.
+const desktop = columns ? Math.min( columns.desktop ?? 4, Math.max( items?.length ?? 1, 1 ) ) : undefined;
+const gridStyle = columns && desktop
+	? `--ds-cols-desktop: ${ desktop }; --ds-cols-tablet: ${ Math.min( columns.tablet ?? 2, desktop ) }; --ds-cols-mobile: ${ Math.min( columns.mobile ?? 1, desktop ) };`
 	: undefined;
 
 const titleVars = [

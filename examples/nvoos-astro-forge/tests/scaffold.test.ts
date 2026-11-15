@@ -12,7 +12,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { auditTokenBlock, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { auditTokenBlock, readableBandType, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -1243,6 +1243,54 @@ describe( 'scaffold — design rebuild (Proposal 114)', () => {
 		const twice = renderDesignGenerated( { ...PROFILE, design: DESIGN }, merged );
 		expect( once ).toBe( twice );
 		expect( once ).toContain( 'export const resolvedDesign: ResolvedDesign = {' );
+	} );
+
+	it( 'drops a band body ink that would be unreadable on its own surface', () => {
+		// A builder band whose copy sits on a CARD measures the card's black ink
+		// while the band itself paints black: the rebuilt band has no card
+		// surface, so emitting that ink made every word disappear.
+		const black: { body: { size: string; color?: string } } = { body: { size: '13px', color: '#000000' } };
+		const dropped = readableBandType( black, { id: 'x', bgColor: '#000000' }, PROFILE );
+		expect( dropped.body.color ).toBeUndefined();
+		expect( dropped.body.size ).toBe( '13px' );
+
+		// Readable ink survives untouched.
+		const white: { body: { size: string; color?: string } } = { body: { size: '13px', color: '#ffffff' } };
+		const kept = readableBandType( white, { id: 'x', bgColor: '#000000' }, PROFILE );
+		expect( kept.body.color ).toBe( '#ffffff' );
+
+		// A transparent band shows the page canvas — the comparison has to use it.
+		const onCanvas = readableBandType( black, { id: 'x' }, { ...PROFILE, pageBackground: '#000000' } );
+		expect( onCanvas.body.color ).toBeUndefined();
+	} );
+
+	it( 'emits per-element surfaces and pinned heights (structural paths)', () => {
+		// Raw bands keep the source markup, so a structural path is the only key
+		// that can carry a per-ELEMENT fact: a class name repeats across bands and
+		// elements (monicarajiv's `.section-bg` is in every band).
+		const design: ForgeDesign = {
+			...DESIGN,
+			sections: [
+				{
+					id: 'a4ad586',
+					bgColor: '#000000',
+					elements: [
+						{ path: 'div:nth-child(1) > section:nth-child(1)', bg: 'background-color:rgb(255, 255, 255)', height: 900 },
+						{
+							path: 'div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+							bg: 'background-image:url(https://shop.example.com/tile.jpg)',
+							height: { desktop: 900, tablet: 700 },
+						},
+					],
+				},
+			],
+		};
+		const out = renderSectionsGenerated( { ...PROFILE, design } );
+		// The captured surface also carries the ink it needs: white card -> black copy.
+		expect( out ).toContain(
+			"elements: [ { path: 'div:nth-child(1) > section:nth-child(1)', bg: 'background-color:rgb(255, 255, 255)', fg: '#000000', height: 900 }"
+		);
+		expect( out ).toContain( "height: { desktop: 900, tablet: 700 }" );
 	} );
 
 	it( 'renders the generated section-theme module from the design sections (117 §2)', () => {

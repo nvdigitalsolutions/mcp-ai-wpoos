@@ -41,11 +41,20 @@
  * Adding a name here is a promise that `verify` honours `advisory` for it, so
  * the list stays short on purpose. `pixel regression` exists as its own gate
  * precisely so a self-comparison can never masquerade as parity.
+ *
+ * `page bands` is the sub-page counterpart of `box geometry`. It is separate
+ * because the failure modes differ: a sub-page band that misses its own source
+ * box is usually a MEASURED-FACT defect (a class-keyed box leaking onto
+ * scaffolding, a dropped visibility utility) rather than font-metric drift, and
+ * it went undetected for exactly that reason — the homepage gate was the only
+ * one blocking, so nineteen sub-page bands could drift while eight gates
+ * reported green.
  */
 export const FORGE_ADDRESSABLE_GATES = [
 	'pixel parity',
 	'pixel regression',
 	'box geometry',
+	'page bands',
 	'interaction states',
 	'animated effects',
 ] as const;

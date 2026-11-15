@@ -19,13 +19,14 @@ import {
 import type { ForgeVerify } from '../lib/gate-policy.ts';
 
 describe( 'FORGE_ADDRESSABLE_GATES', () => {
-	it( 'is the five render-sensitive gates and nothing else', () => {
+	it( 'is the render-sensitive gates and nothing else', () => {
 		// Widening this list is a promise that `verify` honours `advisory` for the
 		// gate, so it is asserted rather than assumed.
 		expect( [ ...FORGE_ADDRESSABLE_GATES ] ).toEqual( [
 			'pixel parity',
 			'pixel regression',
 			'box geometry',
+			'page bands',
 			'interaction states',
 			'animated effects',
 		] );

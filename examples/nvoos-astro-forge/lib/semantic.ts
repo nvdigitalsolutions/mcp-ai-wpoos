@@ -27,6 +27,7 @@ export type SectionKind =
 	| 'gallery'
 	| 'text'
 	| 'form'
+	| 'accordion'
 	| 'raw'
 	// Proposal 136 §4.1 — the six kinds decided by STRUCTURAL evidence.
 	| 'pricing'
@@ -233,6 +234,7 @@ export const SECTION_MAP: Record<SectionKind, { component: string; label: string
 	gallery: { component: 'Gallery', label: 'Gallery' },
 	text: { component: 'TextBlock', label: 'Text' },
 	form: { component: 'Form', label: 'Form' },
+	accordion: { component: 'Accordion', label: 'Accordion' },
 	raw: { component: 'RawHtml', label: 'Raw HTML' },
 	pricing: { component: 'Pricing', label: 'Pricing' },
 	stats: { component: 'Stats', label: 'Stats' },
@@ -247,11 +249,14 @@ export const SECTION_MAP: Record<SectionKind, { component: string; label: string
 interface HNode {
 	type: string;
 	name?: string;
-	attribs?: Record<string, string>;
+	attribs?: Record< string, string >;
 	children?: HNode[] | null;
 	data?: string;
 	startIndex?: number | null;
 	endIndex?: number | null;
+	/** domhandler links children back to their parent — the accordion extractor
+	 * needs it because the sanitizer drops the tab's `aria-controls`. */
+	parent?: HNode | null;
 }
 
 /** domhandler children are arrays (possibly null) — normalize defensively. */
@@ -281,7 +286,7 @@ const WPB_ROW = /(^|\s)(?:vc_row|wpb_row)(?:[\s-]|$)/;
  * they classify as `content` (slots merge, the section shape decides the
  * kind) and the operator can pin them per-profile via `widgetRoles`.
  */
-export type WidgetRole = { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' | 'content' };
+export type WidgetRole = { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' | 'accordion' | 'content' };
 export type BlockRole = { kind: 'title' | 'body' | 'media' | 'links' | 'quote' | 'gallery' | 'container' | 'content' };
 
 /** The seeded widget dictionary (exported for the learn/report surface). */
@@ -307,6 +312,12 @@ export const SEEDED_WIDGET_ROLES: Record<string, WidgetRole> = {
 	// (form nodes are split out BEFORE widget grouping), so the role only
 	// marks the wrapper; the FormInfo carries the payload.
 	form: { kind: 'form' },
+	// An accordion is a COMPONENT, not a heading list: its titles are <a>
+	// elements the flat merge would collect as buttons and its panels as body
+	// copy (virtuallysrilanka's features band: 8 red chips and a 1177px band
+	// expanded to 2987px).
+	accordion: { kind: 'accordion' },
+	'toggle': { kind: 'accordion' },
 	// Phlox Pro / Auxin widget family (jayainc's live vocabulary, 2026-11-06
 	// run) — same Elementor widget-class contract, vendor-prefixed names.
 	aux_modern_heading: { kind: 'title' },
@@ -394,9 +405,69 @@ function allDescendants( node: HNode, predicate: ( node: HNode ) => boolean ): H
 	return out;
 }
 
+/** A heading with its level — the title picker's input. */
+interface HeadingCandidate {
+	level: number;
+	text: string;
+}
+
+/**
+ * Pick a band's title from its headings.
+ *
+ * A builder band routinely carries TWO headings: a small kicker above the real
+ * headline. Taking the first one dropped the headline entirely
+ * (virtuallysrilanka.com: the hero rendered "SEE WHAT WE CAN DO FOR YOU" and
+ * lost the 55px "WE SPECIALIZE IN CUSTOM SOLUTIONS…" sitting right below it;
+ * the "How it Works" band rendered its kicker instead of its title). The most
+ * important LEVEL wins, and a same-level ALL-CAPS kicker yields to the line
+ * under it.
+ */
+function pickHeadingTitle( headings: HeadingCandidate[] ): HeadingCandidate | undefined {
+	if ( headings.length === 0 ) {
+		return undefined;
+	}
+	let index = 0;
+	for ( let i = 1; i < headings.length; i++ ) {
+		if ( headings[ i ].level < headings[ index ].level ) {
+			index = i;
+		}
+	}
+	if (
+		index === 0 &&
+		headings.length > 1 &&
+		headings[ 0 ].level === headings[ 1 ].level &&
+		isKickerLine( headings[ 0 ].text )
+	) {
+		index = 1;
+	}
+	return headings[ index ];
+}
+
+/** An ALL-CAPS short line — the kicker that sits above a band title. */
+function isKickerLine( text: string ): boolean {
+	const letters = text.replace( /[^A-Za-z]/g, '' );
+	return letters.length > 0 && letters === letters.toUpperCase() && text.trim().split( /\s+/ ).length <= 6;
+}
+
+/** Every heading under a node, in document order. */
+function headingCandidatesIn( node: HNode ): HeadingCandidate[] {
+	const isHeading = ( n: HNode ) => n.type === 'tag' && /^h[1-6]$/.test( n.name ?? '' );
+	const out: HeadingCandidate[] = [];
+	for ( const heading of allDescendants( node, isHeading ) ) {
+		const text = trimmed( textOf( heading ) );
+		if ( text ) {
+			out.push( { level: Number( ( heading.name ?? 'h6' ).slice( 1 ) ), text } );
+		}
+	}
+	return out;
+}
+
+/** The collected slots plus the internal title level (never serialized). */
+type CollectedSlots = SemanticSection['slots'] & { titleLevel?: number };
+
 /** Collect imgs/links/headings/paragraphs inside a widget node. */
-function collectSlots( node: HNode ): SemanticSection['slots'] {
-	const slots: SemanticSection['slots'] = {};
+function collectSlots( node: HNode ): CollectedSlots {
+	const slots: CollectedSlots = {};
 	const media: MediaRef[] = [];
 	const links: LinkRef[] = [];
 	const body: string[] = [];
@@ -418,12 +489,21 @@ function collectSlots( node: HNode ): SemanticSection['slots'] {
 	}
 
 	const isHeading = ( n: HNode ) => n.type === 'tag' && /^h[1-6]$/.test( n.name ?? '' );
-	const heading = findDescendant( node, isHeading );
-	const titleText = heading ? trimmed( textOf( heading ) ) : '';
+	const headings = headingCandidatesIn( node );
+	const title = pickHeadingTitle( headings );
+	const titleText = title?.text ?? '';
 	if ( titleText ) {
 		slots.title = titleText;
+		slots.titleLevel = title?.level;
 	}
+	// A second heading in the same widget is copy, not decoration.
+	const extraHeadings = headings.map( ( heading ) => heading.text ).filter( ( text ) => text !== titleText );
 	const isParagraph = ( n: HNode ) => n.type === 'tag' && n.name === 'p';
+	for ( const extra of extraHeadings ) {
+		if ( ! body.includes( extra ) ) {
+			body.push( extra );
+		}
+	}
 	for ( const p of allDescendants( node, isParagraph ) ) {
 		const value = trimmed( textOf( p ) );
 		if ( value && value !== titleText ) {
@@ -537,8 +617,12 @@ function extractStructuredItem( node: HNode ): { title?: string; body?: string; 
 	}
 	// The header-box class match must not hit the widget's own class
 	// (elementor-widget-icon-box contains 'icon') — only real icon containers:
-	// aux's `aux-ico-box` family and Elementor's icon-box internals.
-	const headerBoxes = allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).some( ( c ) => /ico-box|icon-box-icon|icon-box-wrapper/i.test( c ) ) );
+	// aux's `aux-ico-box` family and Elementor's `elementor-icon-box-icon`.
+	// `elementor-icon-box-wrapper` is NOT one of them: it wraps the icon AND the
+	// title AND the description, so treating it as the header dropped every
+	// card's copy (virtuallysrilanka.com's four icon-boxes rendered as bare
+	// titles — band text coverage 1.2%).
+	const headerBoxes = allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).some( ( c ) => /ico-box|icon-box-icon/i.test( c ) ) );
 	let icon = false;
 	let iconClass: string | undefined;
 	let media: MediaRef | undefined;
@@ -595,16 +679,134 @@ function elementorId( node: HNode ): string | undefined {
 	return match?.[ 1 ];
 }
 
+/**
+ * An accordion's (title, body) entries — Elementor's tab contract.
+ *
+ * The tab title carries `aria-controls` pointing at its panel, so the pair
+ * survives even when the panels are siblings rather than children.
+ */
+function accordionEntries( node: HNode ): SectionItem[] {
+	const titles = titlesOfAccordion( node );
+	const items: SectionItem[] = [];
+	for ( const titleNode of titles ) {
+		// The wrapper also matches `elementor-accordion-title` on the <a>; take
+		// the element that actually owns the label.
+		const label = trimmed( textOf( titleNode ) );
+		if ( ! label ) {
+			continue;
+		}
+		const panel = accordionPanelOf( node, titleNode );
+		const panelText = panel ? trimmed( textOf( panel ) ) : '';
+		items.push( panelText ? { title: label, body: panelText } : { title: label } );
+	}
+	return items;
+}
+
+function titlesOfAccordion( node: HNode ): HNode[] {
+	// Elementor marks BOTH the tab container (`elementor-tab-title`) and its
+	// inner anchor (`elementor-accordion-title`); matching both counted every
+	// panel twice, so a one-entry accordion looked like a two-item one.
+	const titles = allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).includes( 'elementor-tab-title' ) );
+	if ( titles.length > 0 ) {
+		return titles;
+	}
+	return allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).includes( 'elementor-accordion-title' ) );
+}
+
+/** The panel that belongs to a tab title. */
+function accordionPanelOf( node: HNode, titleNode: HNode ): HNode | undefined {
+	// The sanitizer keeps `id` but drops `aria-controls`, so the id reference
+	// resolves only on unsanitized HTML — the structural walk is the reliable
+	// path (the panel is inside the same `.elementor-accordion-item`).
+	const controls = titleNode.attribs?.[ 'aria-controls' ];
+	if ( controls ) {
+		const byId = findDescendant( node, ( n ) => n.attribs?.id === controls );
+		if ( byId ) {
+			return byId;
+		}
+	}
+	let current = titleNode.parent ?? undefined;
+	while ( current ) {
+		if ( classList( current.attribs ).includes( 'elementor-accordion-item' ) ) {
+			return findDescendant( current, ( n ) => classList( n.attribs ).includes( 'elementor-tab-content' ) );
+		}
+		current = current.parent ?? undefined;
+	}
+	return undefined;
+}
+
+/**
+ * One item per SOURCE COLUMN, when a band spreads its content across columns.
+ *
+ * A multi-column band has no flat equivalent: concatenating the columns gave
+ * one long text band (virtuallysrilanka's services band — a red panel, a photo
+ * and a dark copy panel — rebuilt as a single stacked column with the copy
+ * pushed off the right edge). Returns undefined unless at least two columns
+ * carry content, so an ordinary one-column band keeps its old path.
+ */
+function columnItems( section: HNode ): SectionItem[] | undefined {
+	const container = findDescendant(
+		section,
+		( n ) => n.type === 'tag' && classList( n.attribs ).includes( 'elementor-container' )
+	);
+	if ( ! container ) {
+		return undefined;
+	}
+	const columns = childrenOf( container ).filter(
+		( child ) => child.type === 'tag' && classList( child.attribs ).includes( 'elementor-column' )
+	);
+	if ( columns.length < 2 ) {
+		return undefined;
+	}
+	const items: SectionItem[] = [];
+	for ( const column of columns ) {
+		const collected = collectSlots( column );
+		const item: SectionItem = {};
+		if ( collected.title ) {
+			item.title = collected.title;
+		}
+		if ( ( collected.body ?? [] ).length > 0 ) {
+			item.body = ( collected.body ?? [] ).join( ' ' );
+		}
+		if ( ( collected.media ?? [] ).length > 0 ) {
+			item.media = collected.media?.[ 0 ];
+		}
+		if ( ( collected.links ?? [] ).length > 0 ) {
+			item.links = collected.links;
+		}
+		if ( ! item.title && ! item.body && ! item.media ) {
+			// A column with no copy and no media (a photo painted as a CSS
+			// background, a spacer) has no rebuildable content — the flat model
+			// has no per-column surface to paint it with. Skip it rather than
+			// emitting an empty card.
+			continue;
+		}
+		items.push( item );
+	}
+	return items.length >= 2 ? items : undefined;
+}
+
 /** Merge widget slots into one section draft. */
-function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSection {
+function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNode ): SemanticSection {
 	const slots: SemanticSection['slots'] = {};
 	const media: MediaRef[] = [];
 	const links: LinkRef[] = [];
 	const body: string[] = [];
 	const items: SectionItem[] = [];
+	const headingCandidates: HeadingCandidate[] = [];
+	const accordionItems: SectionItem[] = [];
 	const confidence: 'high' | 'medium' | 'low' = 'high';
 
 	for ( const widget of widgets ) {
+		// An accordion owns its own copy: its titles must never become the
+		// band's links and its panels must never join the flat body.
+		if ( widget.role.kind === 'accordion' ) {
+			const entries = accordionEntries( widget.node );
+			if ( entries.length >= 2 ) {
+				accordionItems.push( ...entries );
+			}
+			continue;
+		}
 		// Structured icon-text widgets (an icon/image header + a small heading)
 		// are single-column feature cards — extract them as items BEFORE the
 		// flat slot merge, which loses the captions and flattens the columns.
@@ -633,8 +835,12 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 			continue;
 		}
 		const collected = collectSlots( widget.node );
-		if ( collected.title && ! slots.title ) {
-			slots.title = collected.title;
+		// Item widgets (feature/icon/quote) carry their own headings — those are
+		// card captions, never the band title.
+		const isItemWidget =
+			widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote';
+		if ( collected.title && ! isItemWidget ) {
+			headingCandidates.push( { level: collected.titleLevel ?? 6, text: collected.title } );
 		}
 		for ( const paragraph of collected.body ?? [] ) {
 			if ( ! body.includes( paragraph ) ) {
@@ -675,12 +881,23 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 	if ( items.length > 0 ) {
 		slots.items = items;
 	}
+	const title = pickHeadingTitle( headingCandidates );
+	if ( title ) {
+		slots.title = title.text;
+	}
+	// Every heading that is not the title is still the source's copy — it ships
+	// as the band's intro text so no word is lost (and the title gate stays
+	// green) without changing how the band is classified.
+	const extraHeadings = headingCandidates.map( ( heading ) => heading.text ).filter( ( text ) => text !== title?.text );
 
 	const hasBody = ( slots.body?.length ?? 0 ) > 0;
 	// Unknown-name widgets drop the confidence — the shape decided the kind,
 	// not a recognized vocabulary entry (Proposal 116).
 	const effectiveConfidence = widgets.some( ( widget ) => widget.role.kind === 'content' ) ? 'low' : confidence;
 	const kinds: Array<{ kind: SectionKind; reason: boolean }> = [
+		// An accordion is decided by its own component contract — the band's
+		// headings and media still ride along as the intro.
+		{ kind: 'accordion', reason: accordionItems.length >= 2 },
 		{ kind: 'logo-cloud', reason: media.length >= 3 && ! hasBody && items.length === 0 },
 		{ kind: 'gallery', reason: media.length >= 2 && ! slots.title && ! hasBody },
 		{ kind: 'testimonial', reason: items.length > 0 && items.some( ( item ) => Boolean( item.body ) ) && ! slots.title && ! items.some( ( item ) => Boolean( item.title ) ) },
@@ -691,6 +908,23 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 		{ kind: 'text', reason: true },
 	];
 	const matched = kinds.find( ( entry ) => entry.reason ) ?? kinds[ kinds.length - 1 ];
+	// Extras land AFTER classification, so a kicker never turns a CTA into a
+	// hero. Media-only kinds keep no prose (their slots ignore body).
+	if ( extraHeadings.length > 0 && matched.kind !== 'logo-cloud' && matched.kind !== 'gallery' ) {
+		slots.body = [ ...extraHeadings.filter( ( text ) => ! ( slots.body ?? [] ).includes( text ) ), ...( slots.body ?? [] ) ];
+	}
+	if ( matched.kind === 'accordion' ) {
+		slots.items = accordionItems;
+		return { kind: 'accordion', confidence: effectiveConfidence, slots };
+	}
+	// A band the flat merge could only describe as one text blob, whose source
+	// spreads its copy across columns, rebuilds as a column grid instead.
+	if ( matched.kind === 'text' && section ) {
+		const columns = columnItems( section );
+		if ( columns ) {
+			return { kind: 'feature-grid', confidence: 'low', slots: { items: columns } };
+		}
+	}
 	return { kind: matched.kind, confidence: effectiveConfidence, slots };
 }
 
@@ -1408,6 +1642,13 @@ function formSection( html: string, region: HNode, form: HNode, searchForms?: st
 		return undefined;
 	}
 	const section: SemanticSection = { kind: 'form', confidence: 'high', slots: {} };
+	// The source section id — without it the band has no theming key and the
+	// band audit reports the source band as MISSING from the build
+	// (virtuallysrilanka.com's #contact band).
+	const sourceId = elementorId( region );
+	if ( sourceId ) {
+		section.id = sourceId;
+	}
 	// The band's own id is the nav target (a CF7 form inside
 	// `<section id="contact">` must keep that anchor).
 	const anchor = anchorOfNode( region );
@@ -1588,7 +1829,7 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 			}
 			continue;
 		}
-		const built = sectionFromWidgets( widgets, out.length );
+		const built = sectionFromWidgets( widgets, out.length, section );
 		const empty =
 			! built.slots.title &&
 			( built.slots.body?.length ?? 0 ) === 0 &&
@@ -1638,6 +1879,40 @@ function joinSlices( html: string, nodes: HNode[] ): string {
  * the remaining content runs the pre-form pipeline on its own slices.
  * Empty recognized sections are dropped, never rendered.
  */
+/**
+ * Flatten a builder wrapper down to its section boundaries.
+ *
+ * Elementor (and every other builder) wraps the whole page in ONE container
+ * (`data-elementor-type="wp-page"`), so the document's top-level node is that
+ * wrapper rather than a band. The form walk below consumes any node whose
+ * subtree contains a `<form>` — against a wrapped document that means the
+ * ENTIRE page became a single `form` section, and every other band was lost
+ * (virtuallysrilanka.com: 7 bands → 1 form, `verify --bands` 0/7, no anchors).
+ *
+ * The band boundaries are still there, one level down. Descend to the
+ * OUTERMOST boundaries when a wrapper holds several, and leave the node list
+ * alone otherwise so a genuinely single-band page keeps its wrapper.
+ */
+function bandLevelNodes( nodes: HNode[] ): HNode[] {
+	if ( nodes.some( ( node ) => node.type === 'tag' && isSectionBoundary( node ) ) ) {
+		return nodes;
+	}
+	const boundaries: HNode[] = [];
+	const collectOutermost = ( node: HNode ) => {
+		for ( const child of childrenOf( node ) ) {
+			if ( child.type === 'tag' && isSectionBoundary( child ) ) {
+				boundaries.push( child );
+			} else {
+				collectOutermost( child );
+			}
+		}
+	};
+	for ( const node of nodes ) {
+		collectOutermost( node );
+	}
+	return boundaries.length > 1 ? boundaries : nodes;
+}
+
 export function classifyHtml( html: string, options: ClassifyOptions = {} ): SemanticSection[] {
 	const handler = new DomHandler( undefined, { withStartIndices: true, withEndIndices: true } );
 	const parser = new Parser( handler, { decodeEntities: true, lowerCaseTags: true, lowerCaseAttributeNames: true } );
@@ -1655,18 +1930,19 @@ export function classifyHtml( html: string, options: ClassifyOptions = {} ): Sem
 		return classifyRegion( html, nodes, html, options );
 	}
 
-	// Forms present: walk top-level nodes in document order; nodes whose
+	// Forms present: walk the BAND-level nodes in document order; nodes whose
 	// subtree contains a form become form sections, everything else keeps
 	// its order in the regular pipeline.
 	const sections: SemanticSection[] = [];
 	const pending: HNode[] = [];
+	const walk = bandLevelNodes( nodes );
 	const flushPending = () => {
 		if ( pending.length > 0 ) {
 			sections.push( ...classifyRegion( html, pending, joinSlices( html, pending ), options ) );
 			pending.length = 0;
 		}
 	};
-	for ( const child of nodes ) {
+	for ( const child of walk ) {
 		const forms = collectFormNodes( child );
 		if ( forms.length > 0 ) {
 			flushPending();
