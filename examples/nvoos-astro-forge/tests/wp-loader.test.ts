@@ -6,6 +6,11 @@
 // and the truncation flag propagation (096: never silent truncation).
 // ---------------------------------------------------------------------------
 
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import { createWpLoader, extractPayloadRaw, payloadRestBase, slugify } from '../lib/wp-loader.ts';
@@ -20,7 +25,7 @@ interface StoredEntry {
 }
 
 /** Minimal LoaderContext double — enough surface for the loader. */
-function fakeContext(store: { entries: StoredEntry[]; cleared: boolean }) {
+function fakeContext(store: { entries: StoredEntry[]; cleared: boolean }, root?: URL) {
 	return {
 		collection: 'posts',
 		store: {
@@ -32,10 +37,13 @@ function fakeContext(store: { entries: StoredEntry[]; cleared: boolean }) {
 				store.entries.push(entry);
 				return true;
 			},
+			// The hybrid-local merge reads the store back (it captures local
+			// entries before the WP load clears it).
+			entries: () => store.entries.map((entry) => [entry.id, entry] as [string, StoredEntry]),
 		},
 		meta: { get: () => undefined, set: () => {} },
 		logger: { warn: () => {}, info: () => {} },
-		config: {},
+		config: root ? { root } : {},
 		parseData: async <T extends Record<string, unknown>>(props: { data: T }) => props.data,
 		renderMarkdown: async () => ({ html: '' }),
 		generateDigest: (data: string | Record<string, unknown>) => `digest:${String(data)}`,
@@ -566,6 +574,91 @@ describe( 'local source (Proposal 135 §D4)', () => {
 		}
 
 		expect( store.entries ).toHaveLength( 0 );
+	} );
+} );
+
+describe( 'hybrid local content (106 P2)', () => {
+	type LocalEntry = Record< string, unknown >;
+
+	function loaderWith( entries: LocalEntry[] ) {
+		return createWpLoader( {
+			site: PROFILE,
+			collection: COLLECTION,
+			userAgent: 'test',
+			local: { pattern: '**/*.mdx', base: './src/content/posts' },
+			localLoaderFactory: () =>
+				( {
+					name: 'fake-local',
+					load: async ( context: { store: { set: ( entry: LocalEntry ) => void } } ) => {
+						for ( const entry of entries ) {
+							context.store.set( entry );
+						}
+					},
+				} as never ),
+		} );
+	}
+
+	async function load( entries: LocalEntry[], root?: URL ) {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const originalFetch = globalThis.fetch;
+		( globalThis as { fetch: typeof fetch } ).fetch = cannedFetch( [] );
+		try {
+			await loaderWith( entries ).load( fakeContext( store, root ) );
+		} finally {
+			( globalThis as { fetch: typeof fetch } ).fetch = originalFetch;
+		}
+		return store.entries;
+	}
+
+	it( 'gives a local entry the rendered.html the semantic renderer reads', async () => {
+		const entries = await load( [
+			{
+				id: 'application',
+				data: { title: 'Application' },
+				digest: 1,
+				body: '<section id="home"><p>Hi</p><script>alert(1)</script></section>',
+			},
+		] );
+
+		expect( entries ).toHaveLength( 1 );
+		expect( entries[ 0 ].data.slug ).toBe( 'application' );
+		// The semantic renderer classifies rendered.html: without it a local page
+		// renders unthemed raw markup and the site loses its bands.
+		expect( entries[ 0 ].rendered?.html ).toContain( '<section id="home">' );
+		// Same sanitizer as the WP path.
+		expect( entries[ 0 ].rendered?.html ).not.toContain( '<script' );
+	} );
+
+	it( 'prefers a sibling <id>.html body over the MDX body', async () => {
+		const root = await mkdtemp( join( tmpdir(), 'forge-local-' ) );
+		const dir = join( root, 'src', 'content', 'posts' );
+		await mkdir( dir, { recursive: true } );
+		await writeFile(
+			join( dir, 'application.html' ),
+			'<section id="home"><h1>From file</h1></section>',
+			'utf8'
+		);
+
+		const entries = await load(
+			[ { id: 'application', data: {}, digest: 2, body: 'MDX body is ignored' } ],
+			pathToFileURL( root )
+		);
+
+		expect( entries ).toHaveLength( 1 );
+		expect( entries[ 0 ].rendered?.html ).toContain( 'From file' );
+	} );
+
+	it( 'leaves rendered undefined when local content has no body', async () => {
+		const entries = await load( [ { id: 'bare', data: { title: 'Bare' }, digest: 3, body: '   ' } ] );
+		expect( entries ).toHaveLength( 1 );
+		expect( entries[ 0 ].rendered ).toBeUndefined();
+	} );
+
+	it( 'never ships a local draft', async () => {
+		const entries = await load( [
+			{ id: 'draft', data: { title: 'Draft', draft: true }, digest: 4, body: '<p>x</p>' },
+		] );
+		expect( entries ).toHaveLength( 0 );
 	} );
 } );
 
