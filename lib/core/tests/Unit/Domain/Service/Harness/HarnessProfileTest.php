@@ -118,6 +118,52 @@ final class HarnessProfileTest extends TestCase
 		$this->assertSame('warn', $profile['guardrails']['mode']);
 	}
 
+	/**
+	 * `output_guard` was in the default shape but not in the sanitiser, so
+	 * every consumer saw `enabled => false` no matter what was stored, and the
+	 * WordPress guardrail read raw post meta to work around it. A guardrail the
+	 * profile cannot express is a guardrail a second runtime cannot turn on.
+	 */
+	public function test_the_output_guard_block_survives_the_sanitiser(): void
+	{
+		$profile = HarnessProfile::sanitize(
+			array(
+				'output_guard' => array(
+					'enabled' => true,
+					'mode' => 'block',
+					'strictness' => 'high',
+				),
+			)
+		);
+
+		$this->assertTrue($profile['output_guard']['enabled']);
+		$this->assertSame('block', $profile['output_guard']['mode']);
+		$this->assertSame('high', $profile['output_guard']['strictness']);
+	}
+
+	public function test_output_guard_enums_fall_back_when_out_of_range(): void
+	{
+		$profile = HarnessProfile::sanitize(
+			array(
+				'output_guard' => array(
+					'enabled' => true,
+					'mode' => 'nuke',
+					'strictness' => 'paranoid',
+				),
+			)
+		);
+
+		$this->assertSame('warn', $profile['output_guard']['mode']);
+		$this->assertSame('medium', $profile['output_guard']['strictness']);
+	}
+
+	public function test_the_output_guard_defaults_off(): void
+	{
+		$profile = HarnessProfile::sanitize(array( 'enabled' => true ));
+
+		$this->assertFalse($profile['output_guard']['enabled']);
+	}
+
 	public function test_slugs_are_lowercased_deduplicated_and_emptied_out(): void
 	{
 		$profile = HarnessProfile::sanitize(
