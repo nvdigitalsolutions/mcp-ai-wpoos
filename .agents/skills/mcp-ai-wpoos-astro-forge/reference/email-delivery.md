@@ -141,3 +141,34 @@ cd <dir> && npm install && npx astro check && npx astro build
 
 A `direct` profile needs `deploy.runtime: managed` AND a `forms.mail` block, or
 the scaffold refuses. Secrets are never in the profile or the manifest.
+
+## Provider IP allowlists (2026-11-15)
+
+A key can be scoped to an IP allowlist, and then **the app's egress IP** must be
+on it — not the operator's. Symptom: every submit returns 502 while a manual
+`curl` with the same key succeeds from a laptop that was allowlisted by mistake.
+
+- Brevo answers `401 unauthorized` — "We have detected you are using an
+  unrecognised IP address <ip>" for any non-allowlisted caller. Add the
+  **Cloudways server's public IP** (`server_get.public_ip`), not the client's.
+- Diagnose without burning the throttle: a honeypot POST returns in ~100 ms and
+  a real submit spends ~670 ms outbound before failing. That delta proves the
+  credentials reached the process and the provider is refusing.
+- The endpoint only reports `Delivery failed` (502); the provider detail goes to
+  PM2's log, which the Cloudways API does not expose. Prefer the timing check.
+- A valid key + a valid sender can still 502: verify the sender once with a
+  direct provider call before blaming the code.
+
+## Secret hygiene on the managed tier
+
+`velocity_env_vars_upsert` defaults `is_private: false`, and `env_vars_list`
+then **returns the value in plaintext**. Mark keys private and rotate anything
+that was readable. The MCP token may not carry the write scope
+(`403 insufficient_scope`) — plan for the console.
+
+## The throttle is not per-IP by default
+
+An endpoint that keys its throttle on `clientAddress` is throttling the
+**proxy**, i.e. the whole site (5 submissions / 10 min for every visitor).
+Behind one reverse proxy the rightmost `X-Forwarded-For` hop is the only value
+a client cannot forge (a client-supplied header is prepended, never replaced).
