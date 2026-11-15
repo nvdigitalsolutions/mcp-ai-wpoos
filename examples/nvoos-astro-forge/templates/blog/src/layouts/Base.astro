@@ -72,6 +72,10 @@ const { title, description, canonical, ogImage, seo, markdownHref } = Astro.prop
 const meta: SeoHead = seo ?? {};
 const copy = useCopy();
 const siteTitle = manifest.name ?? 'Forge';
+// Build identity (2026-11-15): a marker the deploy smoke can compare against
+// the artifact it just pushed. Empty on an unstamped local build — the meta
+// tag is then omitted rather than asserting a build that has no identity.
+const buildId = String( import.meta.env.FORGE_BUILD_ID ?? '' ).trim();
 // 131 §2.1 — never double-brand a title that already carries the site name
 // (Rank Math/Yoast titles are final, usually `${page} - ${site}`).
 const fullTitle = title === 'Home' ? siteTitle : composeDocumentTitle(title, siteTitle);
@@ -301,6 +305,7 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content="NV oOS Astro Forge" />
+		{buildId && <meta name="forge-build" content={buildId} />}
 		<title>{fullTitle}</title>
 		{pageDescription && <meta name="description" content={pageDescription} />}
 		{pageUrl && <link rel="canonical" href={pageUrl} />}
@@ -735,5 +740,54 @@ const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(
 		</script>
 		{/* Proposal 130 — the first-party consent banner (mode: forge only). */}
 		<ConsentBanner />
+		{/* A font family the localizer could not ship renders a neutral marker
+		    instead of a blank box. The markup, classes and CSS selectors all
+		    survive a dropped @font-face, so only the font registry can tell the
+		    difference (virtuallyjamaica, 2026-11-15). The element keeps its
+		    measured slot; the glyph becomes a bullet. */}
+		<script is:inline>
+			(function () {
+				function markMissingIcons() {
+					if (!document.fonts || typeof document.fonts.load !== 'function') return;
+					var nodes = document.querySelectorAll(
+						'i[class*="icon-"], i[class~="fa"], i[class*="fa-"], i[class*="auxicon"], i[class*="dashicons"], i[class*="eicon"], span[class*="icon-"]'
+					);
+					var generic = /^(?:inherit|initial|unset|revert|serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i;
+					nodes.forEach(function (node) {
+						if (node.textContent && node.textContent.trim()) return;
+						var style = getComputedStyle(node);
+						var family = (style.fontFamily.split(',')[0] || '').replace(/["']/g, '').trim();
+						if (!family || generic.test(family)) return;
+						var size = style.fontSize || '16px';
+						var weight = style.fontWeight || '400';
+						var fontStyle = style.fontStyle || 'normal';
+						// `check()` reports an UNLOADED face as false, and marking the
+						// icon missing first would prevent the very face from loading
+						// (FA's 900 face is never requested if the glyph is replaced).
+						// LOAD the matching style/weight, then mark only on an empty or
+						// rejected load.
+						if (typeof document.fonts.load !== 'function') return;
+						document.fonts.load(fontStyle + ' ' + weight + ' ' + size + ' "' + family + '"').then(function (faces) {
+							if (!faces || faces.length === 0) node.classList.add('forge-icon-missing');
+						}).catch(function () {
+							node.classList.add('forge-icon-missing');
+						});
+					});
+				}
+				function run() {
+					if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+						document.fonts.ready.then(markMissingIcons);
+					} else {
+						markMissingIcons();
+					}
+				}
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', run);
+				} else {
+					run();
+				}
+				document.addEventListener('astro:after-swap', run);
+			})();
+		</script>
 	</body>
 </html>

@@ -1,0 +1,401 @@
+{
+	"version": 1,
+	"generatedAt": "2026-11-15T16:49:42.918Z",
+	"entries": {
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/VJ-Logo-V5-red-blk.svg": {
+			"file": "media/76556e1c1a26-vj-logo-v5-red-blk.svg",
+			"contentType": "image/svg+xml",
+			"bytes": 3042
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/VJ-Logo-V5-wht-gry.svg": {
+			"file": "media/6f78e38a41ba-vj-logo-v5-wht-gry.svg",
+			"contentType": "image/svg+xml",
+			"bytes": 3147
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/cropped-vj-fav-icon-32x32.png": {
+			"file": "media/413251a5746a-cropped-vj-fav-icon-32x32.webp",
+			"contentType": "image/png",
+			"bytes": 278
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/wifi-marketing-solutions-300x297.png": {
+			"file": "media/f538685d01fc-wifi-marketing-solutions-300x297.webp",
+			"contentType": "image/png",
+			"bytes": 12068
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/wifi-marketing-solutions-420x415.png": {
+			"file": "media/3288b944ba6a-wifi-marketing-solutions-420x415.webp",
+			"contentType": "image/png",
+			"bytes": 17470
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/wifi-marketing-solutions-768x759.png": {
+			"file": "media/38f2acd8ed2e-wifi-marketing-solutions-768x759.webp",
+			"contentType": "image/png",
+			"bytes": 34146
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/wifi-marketing-solutions-708x700.png": {
+			"file": "media/87f7ba7b3aff-wifi-marketing-solutions-708x700.webp",
+			"contentType": "image/png",
+			"bytes": 31196
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/wifi-marketing-solutions-100x100.png": {
+			"file": "media/689f2b095534-wifi-marketing-solutions-100x100.webp",
+			"contentType": "image/png",
+			"bytes": 3560
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/wifi-marketing-solutions-600x593.png": {
+			"file": "media/eb64d8ca39de-wifi-marketing-solutions-600x593.webp",
+			"contentType": "image/png",
+			"bytes": 26034
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/wifi-marketing-solutions.png": {
+			"file": "media/8f5d8debabb7-wifi-marketing-solutions.webp",
+			"contentType": "image/png",
+			"bytes": 38778
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/header-login-300x200.jpg": {
+			"file": "media/4f2a763a20d9-header-login-300x200.webp",
+			"contentType": "image/jpeg",
+			"bytes": 4482
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/wifi-marketing-solutions-1024x1012.png": {
+			"file": "media/12a13a6a0e18-wifi-marketing-solutions-1024x1012.webp",
+			"contentType": "image/png",
+			"bytes": 47002
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/header-login-420x280.jpg": {
+			"file": "media/b68036c7aaab-header-login-420x280.webp",
+			"contentType": "image/jpeg",
+			"bytes": 6832
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/header-login-600x400.jpg": {
+			"file": "media/00eb9d4d9c4e-header-login-600x400.webp",
+			"contentType": "image/jpeg",
+			"bytes": 10314
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/header-login-1024x683.jpg": {
+			"file": "media/b7d507831d10-header-login-1024x683.webp",
+			"contentType": "image/jpeg",
+			"bytes": 20012
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/landing-sample-200x300.jpg": {
+			"file": "media/5aec5b5b3cba-landing-sample-200x300.webp",
+			"contentType": "image/jpeg",
+			"bytes": 5930
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/header-login-1050x700.jpg": {
+			"file": "media/1f9b8b08cef0-header-login-1050x700.webp",
+			"contentType": "image/jpeg",
+			"bytes": 20574
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/landing-sample-420x629.jpg": {
+			"file": "media/f54f46aa0159-landing-sample-420x629.webp",
+			"contentType": "image/jpeg",
+			"bytes": 15126
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/landing-sample-468x700.jpg": {
+			"file": "media/9fe2b18c0efe-landing-sample-468x700.webp",
+			"contentType": "image/jpeg",
+			"bytes": 17260
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/landing-sample.jpg": {
+			"file": "media/ffa3329606fc-landing-sample.webp",
+			"contentType": "image/jpeg",
+			"bytes": 51896
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/header-login.jpg": {
+			"file": "media/99156d99e61a-header-login.webp",
+			"contentType": "image/jpeg",
+			"bytes": 43330
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/landing-sample-600x898.jpg": {
+			"file": "media/b60f3acd318c-landing-sample-600x898.webp",
+			"contentType": "image/jpeg",
+			"bytes": 23346
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/landing-sample-684x1024.jpg": {
+			"file": "media/9fe0346dba7f-landing-sample-684x1024.webp",
+			"contentType": "image/jpeg",
+			"bytes": 27650
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/6.png": {
+			"file": "media/48ad1823840d-6.webp",
+			"contentType": "image/png",
+			"bytes": 4048
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/11-300x225.png": {
+			"file": "media/5ff6e298aade-11-300x225.webp",
+			"contentType": "image/png",
+			"bytes": 2624
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/6-350x263.png": {
+			"file": "media/007510c41912-6-350x263.webp",
+			"contentType": "image/png",
+			"bytes": 2298
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/11.png": {
+			"file": "media/e479171e150f-11.webp",
+			"contentType": "image/png",
+			"bytes": 3818
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/11-350x263.png": {
+			"file": "media/b11bc5756b77-11-350x263.webp",
+			"contentType": "image/png",
+			"bytes": 2102
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/1-300x225.png": {
+			"file": "media/e6a7d7285309-1-300x225.webp",
+			"contentType": "image/png",
+			"bytes": 2978
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/10.png": {
+			"file": "media/48112b1e20bf-10.webp",
+			"contentType": "image/png",
+			"bytes": 4510
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/1-350x263.png": {
+			"file": "media/6d5393c74da0-1-350x263.webp",
+			"contentType": "image/png",
+			"bytes": 2540
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/1.png": {
+			"file": "media/cca5986c959d-1.webp",
+			"contentType": "image/png",
+			"bytes": 4372
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/10-300x225.png": {
+			"file": "media/f3bffd706815-10-300x225.webp",
+			"contentType": "image/png",
+			"bytes": 3014
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/9-300x225.png": {
+			"file": "media/2415e1841c82-9-300x225.webp",
+			"contentType": "image/png",
+			"bytes": 1532
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/9.png": {
+			"file": "media/4bc8f9356b91-9.webp",
+			"contentType": "image/png",
+			"bytes": 1998
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/9-350x263.png": {
+			"file": "media/61bfd8bcee1c-9-350x263.webp",
+			"contentType": "image/png",
+			"bytes": 1764
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/2-300x225.png": {
+			"file": "media/5c27fe37b4d0-2-300x225.webp",
+			"contentType": "image/png",
+			"bytes": 1844
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/2-350x263.png": {
+			"file": "media/c1adcbd394cb-2-350x263.webp",
+			"contentType": "image/png",
+			"bytes": 2348
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/4.png": {
+			"file": "media/81188466786d-4.webp",
+			"contentType": "image/png",
+			"bytes": 3094
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/4-300x225.png": {
+			"file": "media/f3f2db8c571f-4-300x225.webp",
+			"contentType": "image/png",
+			"bytes": 2024
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/4-350x263.png": {
+			"file": "media/cb4c41af6761-4-350x263.webp",
+			"contentType": "image/png",
+			"bytes": 2536
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/2.png": {
+			"file": "media/eabad85ad835-2.png",
+			"contentType": "image/png",
+			"bytes": 25705
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/et-line.eot": {
+			"file": "media/2d402b71b26f-et-line.eot",
+			"contentType": "application/vnd.ms-fontobject",
+			"bytes": 32694
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/et-line.woff": {
+			"file": "media/f54770ac0ccc-et-line.woff",
+			"contentType": "application/font-woff",
+			"bytes": 55220
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/et-line.ttf": {
+			"file": "media/c34f932e1496-et-line.ttf",
+			"contentType": "application/octet-stream",
+			"bytes": 32536
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/et-line.svg": {
+			"file": "media/59e98ae7d55f-et-line.svg",
+			"contentType": "image/svg+xml",
+			"bytes": 176750
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/fa-brands-400.woff2": {
+			"file": "media/807898920747-fa-brands-400.woff2",
+			"contentType": "application/font-woff2",
+			"bytes": 118684
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/fa-brands-400.ttf": {
+			"file": "media/d133c1600cf3-fa-brands-400.ttf",
+			"contentType": "application/octet-stream",
+			"bytes": 210792
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/fa-regular-400.ttf": {
+			"file": "media/50ef15fedb5f-fa-regular-400.ttf",
+			"contentType": "application/octet-stream",
+			"bytes": 68064
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/fa-solid-900.woff2": {
+			"file": "media/e0968824b142-fa-solid-900.woff2",
+			"contentType": "application/font-woff2",
+			"bytes": 158220
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/fa-solid-900.ttf": {
+			"file": "media/87ce1f2aa157-fa-solid-900.ttf",
+			"contentType": "application/octet-stream",
+			"bytes": 426112
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/fa-v4compatibility.woff2": {
+			"file": "media/976e83eed0e1-fa-v4compatibility.woff2",
+			"contentType": "application/font-woff2",
+			"bytes": 4796
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/fa-v4compatibility.ttf": {
+			"file": "media/bec107ae454a-fa-v4compatibility.ttf",
+			"contentType": "application/octet-stream",
+			"bytes": 10836
+		},
+		"https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WRhyzbi.woff2": {
+			"file": "media/0b130f3675bf-jtusjig1-i6t8kchkm459wrhyzbi.woff2",
+			"contentType": "font/woff2",
+			"bytes": 26368
+		},
+		"https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459W1hyzbi.woff2": {
+			"file": "media/2c82b9015a58-jtusjig1-i6t8kchkm459w1hyzbi.woff2",
+			"contentType": "font/woff2",
+			"bytes": 23828
+		},
+		"https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459WZhyzbi.woff2": {
+			"file": "media/51d963d26bc2-jtusjig1-i6t8kchkm459wzhyzbi.woff2",
+			"contentType": "font/woff2",
+			"bytes": 12928
+		},
+		"https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wdhyzbi.woff2": {
+			"file": "media/1e82e2bfa969-jtusjig1-i6t8kchkm459wdhyzbi.woff2",
+			"contentType": "font/woff2",
+			"bytes": 70688
+		},
+		"https://fonts.gstatic.com/s/montserrat/v31/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2": {
+			"file": "media/49e242afe593-jtusjig1-i6t8kchkm459wlhyw.woff2",
+			"contentType": "font/woff2",
+			"bytes": 37956
+		},
+		"https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3GUBGEe.woff2": {
+			"file": "media/210e0792d785-kfo7cnqeu92fr1me7ksn66agldtyluama3gubgee.woff2",
+			"contentType": "font/woff2",
+			"bytes": 36652
+		},
+		"https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3iUBGEe.woff2": {
+			"file": "media/f6655444b182-kfo7cnqeu92fr1me7ksn66agldtyluama3iubgee.woff2",
+			"contentType": "font/woff2",
+			"bytes": 23664
+		},
+		"https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3CUBGEe.woff2": {
+			"file": "media/0249f65a2d22-kfo7cnqeu92fr1me7ksn66agldtyluama3cubgee.woff2",
+			"contentType": "font/woff2",
+			"bytes": 4348
+		},
+		"https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3-UBGEe.woff2": {
+			"file": "media/b5151e8569c4-kfo7cnqeu92fr1me7ksn66agldtyluama3-ubgee.woff2",
+			"contentType": "font/woff2",
+			"bytes": 17624
+		},
+		"https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMawCUBGEe.woff2": {
+			"file": "media/ba5507f28f7c-kfo7cnqeu92fr1me7ksn66agldtyluamawcubgee.woff2",
+			"contentType": "font/woff2",
+			"bytes": 41348
+		},
+		"https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMaxKUBGEe.woff2": {
+			"file": "media/da69b94eb878-kfo7cnqeu92fr1me7ksn66agldtyluamaxkubgee.woff2",
+			"contentType": "font/woff2",
+			"bytes": 20556
+		},
+		"https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3OUBGEe.woff2": {
+			"file": "media/bbbbbd37d619-kfo7cnqeu92fr1me7ksn66agldtyluama3oubgee.woff2",
+			"contentType": "font/woff2",
+			"bytes": 14340
+		},
+		"https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3KUBGEe.woff2": {
+			"file": "media/f0106b441311-kfo7cnqeu92fr1me7ksn66agldtyluama3kubgee.woff2",
+			"contentType": "font/woff2",
+			"bytes": 29392
+		},
+		"https://fonts.gstatic.com/s/roboto/v51/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2": {
+			"file": "media/0f7fcdc8ea1a-kfo7cnqeu92fr1me7ksn66agldtyluama3yuba.woff2",
+			"contentType": "font/woff2",
+			"bytes": 43136
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/phone.jpg": {
+			"file": "media/d8273cb74c9a-phone.webp",
+			"contentType": "image/jpeg",
+			"bytes": 63196
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/social-login.jpg": {
+			"file": "media/5dc4cab34658-social-login.webp",
+			"contentType": "image/jpeg",
+			"bytes": 119196
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/contact-us.jpg": {
+			"file": "media/8364a76f5b89-contact-us.jpg",
+			"contentType": "image/jpeg",
+			"bytes": 64378
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/css/et-line-icons.css?ver=1.0": {
+			"file": "media/f86d9c5151e2-et-line-icons.css",
+			"contentType": "text/css",
+			"bytes": 7117
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/css/font-awesome.min.css?ver=6.7.2": {
+			"file": "media/c289f172ee40-font-awesome-min.css",
+			"contentType": "text/css",
+			"bytes": 73870
+		},
+		"https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap": {
+			"file": "media/18f3fa6c8682-css2.css",
+			"contentType": "text/css",
+			"bytes": 8860
+		},
+		"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap": {
+			"file": "media/b4158b26137e-css2.css",
+			"contentType": "text/css",
+			"bytes": 26975
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/header-login-768x512.jpg": {
+			"file": "media/d22764c30ef3-header-login-768x512.jpg",
+			"contentType": "image/jpeg",
+			"bytes": 28908
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2018/11/landing-sample-768x1150.jpg": {
+			"file": "media/45c746e3365c-landing-sample-768x1150.jpg",
+			"contentType": "image/jpeg",
+			"bytes": 66014
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/6-300x225.png": {
+			"file": "media/b0ef57b47aa4-6-300x225.png",
+			"contentType": "image/png",
+			"bytes": 13150
+		},
+		"https://virtuallyjamaica.com/wp-content/uploads/2017/09/10-350x263.png": {
+			"file": "media/980f1c42f2a8-10-350x263.png",
+			"contentType": "image/png",
+			"bytes": 25106
+		},
+		"https://virtuallyjamaica.com/wp-content/themes/brando/assets/fonts/fa-regular-400.woff2": {
+			"file": "media/49ba8c821125-fa-regular-400.woff2",
+			"contentType": "font/woff2",
+			"bytes": 14844
+		}
+	}
+}

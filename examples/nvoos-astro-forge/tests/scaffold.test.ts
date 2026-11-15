@@ -1860,3 +1860,42 @@ describe( 'scaffold — content snapshot (fallback while the CMS lives)', () => 
 		expect( config ).toContain( "local: { pattern: '**/*.mdx', base: './src/content/posts' }" );
 	} );
 } );
+
+describe( 'scaffold — media snapshot (the CMS-less outage net)', () => {
+	it( 'refuses a media snapshot it cannot find', async () => {
+		// Same promise as content.snapshot: a net that is silently absent is
+		// worse than none.
+		const root = await tempDir();
+		await expect(
+			scaffold( {
+				profile: { ...PROFILE, media: { snapshot: true } },
+				targetDir: path.join( root, 'media-missing' ),
+				template: 'blog',
+			} )
+		).rejects.toThrow( /media\.snapshot: true needs a media snapshot/ );
+	} );
+
+	it( 'copies the snapshot into media-snapshot/ for the post-build localizer', async () => {
+		const root = await tempDir();
+		const snapshot = path.join( root, 'site.media' );
+		await mkdir( path.join( snapshot, 'media' ), { recursive: true } );
+		await writeFile( path.join( snapshot, 'media', 'abc-font.woff' ), 'font', 'utf8' );
+		await writeFile(
+			path.join( snapshot, 'manifest.json' ),
+			JSON.stringify( { version: 1, entries: { 'https://cms.example.com/font.woff': { file: 'media/abc-font.woff' } } } ),
+			'utf8'
+		);
+		const target = path.join( root, 'media-ok' );
+
+		await scaffold( {
+			profile: { ...PROFILE, media: { snapshot: true } },
+			targetDir: target,
+			template: 'blog',
+			mediaDir: snapshot,
+		} );
+
+		await expect( stat( path.join( target, 'media-snapshot', 'media', 'abc-font.woff' ) ) ).resolves.toBeTruthy();
+		const manifest = JSON.parse( await readFile( path.join( target, 'media-snapshot', 'manifest.json' ), 'utf8' ) );
+		expect( manifest.entries[ 'https://cms.example.com/font.woff' ].file ).toBe( 'media/abc-font.woff' );
+	} );
+} );

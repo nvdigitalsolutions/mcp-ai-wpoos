@@ -3342,3 +3342,14 @@ html[data-consent-open] body {
 .ds-compare tbody th {
 	font-weight: 600;
 }
+
+/* A font family the localizer could not ship: keep the measured slot, draw a
+ * neutral marker. A blank box is worse than a bullet, and hiding the element
+ * would collapse the source's spacing. The runtime check in Base.astro adds
+ * `forge-icon-missing` only when the browser has no usable face. */
+i.forge-icon-missing::before,
+span.forge-icon-missing::before {
+	content: "\2022" !important;
+	font-family: var(--forge-font) !important;
+	font-weight: 400;
+}

@@ -73,6 +73,16 @@ copy and depends on the bridge.
   `IMAGE_EXTENSIONS`.
 - **`@font-face` cannot nest**, which is the only reason a `[^}]*` block match
   is exact. Do not reuse that regex for other at-rules.
+- **A face is a SET of encodings, not one file.** Drop only the `src` items
+  that failed. Dropping the whole `@font-face` because the `.ttf` (or `.svg`)
+  404'd removes a family whose woff mirrored fine — virtuallyjamaica's et-line
+  icon glyphs disappeared this way (2026-11-15). Keep the face while any
+  `url()`/`local()` source survives; drop it only when every source is gone.
+  Blank-icon check: the `<i class="icon-…">` markers and their `::before`
+  content are still present; the mirrored `/media/<hash>-…-icons.css` has the
+  glyph rules but no `@font-face`; `document.fonts.check('16px "et-line"')` is
+  false. `.forge-cache/media-localize.json` → `failed` names the derivative
+  that 404'd. A missing face is a localizer failure, not a sanitizer/markup bug.
 - **Webfont hosts are not media hosts** — a separate `webfontHosts` list, so the
   image allowlist cannot widen.
 - **`url()` stays unquoted** in inline `style="…"` (a nested quote truncates).

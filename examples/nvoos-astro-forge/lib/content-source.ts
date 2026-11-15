@@ -50,3 +50,31 @@ export function resolveContentDir( input: ContentDirInput ): string | undefined 
 	}
 	return input.profilePath ? input.profilePath.replace( /\.json$/, '.content' ) : undefined;
 }
+
+export interface MediaDirInput {
+	/** The profile's `media` block. */
+	media?: SiteProfile['media'];
+	/** The resolved `sites/<name>.json` path, when the caller knows it. */
+	profilePath?: string;
+	/** An explicit `--media-snapshot <dir>` override. */
+	explicit?: string;
+}
+
+/**
+ * The committed media snapshot a scaffold should copy, or `undefined` when the
+ * profile asks for none.
+ *
+ * Mirrors `resolveContentDir`: an explicit operator path wins, otherwise
+ * `media.snapshot: true` derives `sites/<name>.media` from the profile path so
+ * a CI rebuild needs no extra flag. A site that keeps its CMS may still leave
+ * an old snapshot on disk; without the flag nothing is copied.
+ */
+export function resolveMediaDir( input: MediaDirInput ): string | undefined {
+	if ( input.explicit ) {
+		return input.explicit;
+	}
+	if ( input.media?.snapshot !== true ) {
+		return undefined;
+	}
+	return input.profilePath ? input.profilePath.replace( /\.json$/, '.media' ) : undefined;
+}

@@ -16,9 +16,14 @@ import {
 	collectCssAssetUrls,
 	collectDocumentUrls,
 	collectStylesheetUrls,
+	classesForFontFamily,
+	cssRules,
 	documentExtension,
+	droppedFontFamilies,
 	dropUnavailableFontFaces,
 	extensionForContentType,
+	fontFaceFamilies,
+	htmlClassTokens,
 	isReencodableImage,
 	isWebfontUrl,
 	mediaFileName,
@@ -492,6 +497,68 @@ describe( 'Proposal 140 — webfont stylesheet collection', () => {
 	} );
 } );
 
+describe( 'Proposal 140 — font-family coverage', () => {
+	const ICON_SHEET = [
+		'@font-face{font-family:"et-line";src:url(fonts/et-line.woff) format("woff")}',
+		'.icon-flag,.icon-target{font-family:\'et-line\';display:inline-block}',
+		'@media (max-width: 767px){.icon-envelope{font-family:"et-line"}}',
+		'.unrelated{color:red}',
+	].join( '\n' );
+
+	it( 'names the families a sheet declares and counts their faces', () => {
+		const families = fontFaceFamilies(
+			'@font-face{font-family:"et-line";src:url(a.woff)}\n@font-face{font-family: et-line;font-weight:700;src:url(b.woff)}'
+		);
+
+		expect( families.get( 'et-line' ) ).toBe( 2 );
+	} );
+
+	it( 'finds the glyph classes a family draws, including inside a media query', () => {
+		const classes = [ ...classesForFontFamily( ICON_SHEET, 'et-line' ) ].sort();
+
+		expect( classes ).toEqual( [ 'icon-envelope', 'icon-flag', 'icon-target' ] );
+	} );
+
+	it( 'reads class tokens from both quote styles', () => {
+		const tokens = htmlClassTokens( '<i class="icon-flag icon-large"></i><span class=\'icon-target\'></span>' );
+
+		expect( [ ...tokens ].sort() ).toEqual( [ 'icon-flag', 'icon-large', 'icon-target' ] );
+	} );
+
+	it( 'reports a dropped family as used only when its class is in the HTML', () => {
+		const after = dropUnavailableFontFaces(
+			ICON_SHEET,
+			[ 'https://cms.example.com/theme/fonts/et-line.woff' ],
+			'https://cms.example.com/theme/icon.css'
+		);
+		const dropped = droppedFontFamilies( ICON_SHEET, after, '<i class="icon-flag"></i>' );
+
+		expect( dropped ).toHaveLength( 1 );
+		expect( dropped[ 0 ] ).toMatchObject( { family: 'et-line', used: true } );
+		expect( droppedFontFamilies( ICON_SHEET, after, '<p>no icons</p>' )[ 0 ].used ).toBe( false );
+	} );
+
+	it( 'does not report a family that kept a usable encoding', () => {
+		const face =
+			'@font-face{font-family:"et-line";src:url(fonts/et-line.woff) format("woff"),url(fonts/et-line.ttf) format("truetype")}\n.icon-flag{font-family:"et-line"}';
+		const after = dropUnavailableFontFaces(
+			face,
+			[ 'https://cms.example.com/theme/fonts/et-line.ttf' ],
+			'https://cms.example.com/theme/icon.css'
+		);
+
+		expect( droppedFontFamilies( face, after, '<i class="icon-flag"></i>' ) ).toEqual( [] );
+	} );
+
+	it( 'parses rules nested in @media and skips at-rule bodies', () => {
+		const selectors = cssRules(
+			'@font-face{font-family:X;src:url(x.woff)}@media (max-width: 600px){.a{color:red}}@keyframes spin{from{opacity:0}to{opacity:1}}.b{color:blue}'
+		).map( ( rule ) => rule.selector );
+
+		expect( selectors ).toEqual( [ '.a', '.b' ] );
+	} );
+} );
+
 describe( 'Proposal 140 — unmirrored webfont faces', () => {
 	// A half-mirrored sheet is the worst outcome: it ships a render-blocking
 	// third-party chain that a build-to-build network blip decides. Measured
@@ -535,6 +602,52 @@ describe( 'Proposal 140 — unmirrored webfont faces', () => {
 		const out = dropUnavailableFontFaces(
 			css,
 			[ 'https://cms.example.com/theme/fonts/x.woff' ],
+			'https://cms.example.com/theme/style.css'
+		);
+
+		expect( out ).not.toContain( '@font-face' );
+	} );
+
+	it( 'keeps a multi-encoding face when one derivative is missing', () => {
+		// A face lists the SAME font in several encodings. Dropping the block
+		// because the `.ttf` (or `.svg`) 404'd took the icon glyphs with it while
+		// the mirrored woff was perfectly usable (virtuallyjamaica, 2026-11-15).
+		const face =
+			'@font-face{font-family:"et-line";src:url(fonts/et-line.eot);src:url(fonts/et-line.eot?#iefix) format("embedded-opentype"),url(fonts/et-line.woff) format("woff"),url(fonts/et-line.ttf) format("truetype"),url(fonts/et-line.svg#et-line) format("svg")}';
+		const out = dropUnavailableFontFaces(
+			face,
+			[ 'https://cms.example.com/theme/fonts/et-line.ttf' ],
+			'https://cms.example.com/theme/style.css'
+		);
+
+		expect( out ).toContain( '@font-face' );
+		expect( out ).toContain( 'et-line.woff' );
+		expect( out ).not.toContain( 'et-line.ttf' );
+		expect( out ).not.toContain( 'truetype' );
+	} );
+
+	it( 'keeps a local() fallback when the network sources all failed', () => {
+		const css = '@font-face{font-family:X;src:local("X"),url(fonts/x.woff)}';
+		const out = dropUnavailableFontFaces(
+			css,
+			[ 'https://cms.example.com/theme/fonts/x.woff' ],
+			'https://cms.example.com/theme/style.css'
+		);
+
+		expect( out ).toContain( '@font-face' );
+		expect( out ).toContain( 'local("X")' );
+		expect( out ).not.toContain( 'x.woff' );
+	} );
+
+	it( 'drops a multi-encoding face when every derivative failed', () => {
+		const face =
+			'@font-face{font-family:"et-line";src:url(fonts/et-line.woff) format("woff"),url(fonts/et-line.ttf) format("truetype")}';
+		const out = dropUnavailableFontFaces(
+			face,
+			[
+				'https://cms.example.com/theme/fonts/et-line.woff',
+				'https://cms.example.com/theme/fonts/et-line.ttf',
+			],
 			'https://cms.example.com/theme/style.css'
 		);
 

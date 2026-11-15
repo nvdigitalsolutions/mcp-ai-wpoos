@@ -210,6 +210,38 @@ cache-buster (`?cb=deploy-<sha>`); `last-modified` should match the deploy and
 `cf-cache-status` is normally `DYNAMIC` (no purge needed). Current example:
 jayainc app `6771968` on server `1685799`, branch `site/jayainc`.
 
+## Post-deploy checklist (a CMS-less site)
+
+The build being green is not the check — the live artifact is. Run these against
+the public origin after the deploy settles:
+
+```bash
+# 1. Identity: the live page must carry THIS build's marker.
+node scripts/forge.mjs deployed sites/<name>.json --target <dir> \
+  --expect-build "$FORGE_BUILD_ID" --strict
+# 2. Icon fonts: every glyph family the page uses has a usable face.
+node scripts/forge.mjs verify sites/<name>.json --target <dir> --minimal --fonts
+# 3. First viewport (manual/Playwright): no blank icon boxes, the paragraph
+#    ink matches bandFacts, and no <img> is a 404. A media snapshot (below)
+#    is what keeps step 3 true as the old CDN derivatives expire.
+```
+
+- **Media.** A CMS-less profile should carry `media.snapshot: true` and a
+  `sites/<name>.media/` snapshot (`forge media-snapshot <profile> --from
+  <built-project>`). Re-run it whenever new media ships; the build then reads
+  the snapshot before the network and a dead derivative cannot silently
+  un-ship a font or photo.
+- **Forms.** The PUBLIC Turnstile site key lives in `forms.turnstile.siteKey`;
+  the paired secret must be set in the **Velocity app environment** as
+  `TURNSTILE_SECRET` (never the profile/repo). After a cutover or key rotation,
+  check the widget renders and submit one real enquiry — a key/secret mismatch
+  is a runtime `siteverify` rejection, not a build failure.
+- **Build id.** `FORGE_BUILD_ID` is baked into every page as
+  `<meta name="forge-build">` and into `deploy.json`; CI sets it from
+  `${GITHUB_SHA}-${GITHUB_RUN_ID}`. The monorepo smoke runs `forge deployed`
+  post-push; the generated pipeline emits `scripts/verify-deployed.mjs` as a
+  non-blocking step.
+
 ## CI — `.github/workflows/forge-sites.yml`
 
 Triggers: a push to `alpha-working` touching `sites/**` (or forge libs/templates),
@@ -254,6 +286,15 @@ List the tree instead of guessing: `gh api "repos/.../contents?ref=site/<name>"`
    With `auto_deploy: true` the push triggers a webhook deploy — poll
    `velocity_deployment_history_list`, not `operation_status` (403 for Velocity
    ops from the MCP). Either way, check `last-modified` against the deploy time.
+   **`last-modified` alone is not proof of the build you think is live.** On
+   2026-11-15 virtuallyjamaica served a release older than the checked-in
+   template: the local build emitted `[data-section-id] p{…color:rgb(255,255,255)}`
+   and the live page omitted it, so the red band's copy rendered gray. The code
+   was already correct — only the deploy was old. Verify a build-only marker
+   (a stamped `<meta name="forge-build">`, a rule/asset introduced by the same
+   commit, or the mirror branch's `deploy.json` build id), not just the clock.
+   When the app has kept the last good release, a failed/partial deploy looks
+   identical to a successful old one from the outside.
 2. **`sh: 1: Syntax error: "(" unexpected` (rc=2).** Velocity runs `npm run build`
    through `sh -c`; a stub emitted as `node -e process.exit(0)` is invalid shell.
    It must be `node -e "process.exit(0)"`. The forge build and the push both stay

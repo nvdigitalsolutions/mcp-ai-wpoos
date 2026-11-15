@@ -635,7 +635,8 @@
 	},
 	"media": {
 		"localize": true,
-		"mode": "local"
+		"mode": "local",
+		"snapshot": true
 	},
 	"forms": {
 		"delivery": "direct",
@@ -645,7 +646,7 @@
 			"to": "info@virtuallyjamaica.com"
 		},
 		"turnstile": {
-			"siteKey": "1x00000000000000000000AA",
+			"siteKey": "0x4AAAAAAGCKYhseWgY5Z15-",
 			"action": "contact",
 			"onProviderError": "allow"
 		}

@@ -377,6 +377,19 @@ export interface ForgeMedia {
 	 * self-contained (a CMS move then never breaks the deploy).
 	 */
 	mode?: 'local' | 'proxy' | 'off';
+	/**
+	 * Keep a committed media snapshot beside the profile (`sites/<name>.media/`,
+	 * written by `forge media-snapshot`).
+	 *
+	 * The CMS-less counterpart to `content.snapshot`: an asset the origin can no
+	 * longer serve is taken from the snapshot instead of being left hotlinked
+	 * or dropped. With `true` the snapshot is authoritative — it is read before
+	 * the network, so a cold rebuild does not depend on surviving CDN
+	 * derivatives (virtuallyjamaica lost its icon font and several photos this
+	 * way, 2026-11-15). The scaffold REFUSES the flag when the directory is
+	 * missing: a net that is silently absent is worse than none.
+	 */
+	snapshot?: boolean;
 }
 
 /** One operator-configured WordPress site. */
