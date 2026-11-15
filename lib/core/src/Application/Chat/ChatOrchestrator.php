@@ -401,26 +401,28 @@ class ChatOrchestrator
     }
 
     /**
-     * Prepend the guardrail instruction block to the conversation's system turn.
+     * Place the assistant's instructions and the guardrail block in the system turn.
      *
-     * WordPress filters one resolved system prompt; a conversation here may
-     * carry a `system` message, several, or none. The block goes on the first one,
-     * and when there is none a system message is inserted — which is the same
-     * thing from the model's side.
+     * WordPress resolves one system prompt server-side: the REST handler reads the
+     * assistant's stored instructions and the provider client emits them as the
+     * first `system` message. This runtime had no equivalent — the console knew a
+     * prompt existed (it warns when one is missing) but never sent it, so every
+     * assistant ran on the user's words alone.
      *
-     * Idempotence matters: a client may already have injected the block, and a
-     * second prepend would double its weight in the prompt. The header is the
-     * marker.
+     * Composition order matches WordPress: the guardrail block first, then the
+     * assistant's instructions, then whatever the conversation itself carried.
+     * Each part is added only when absent, because a client may already have
+     * injected one and a second copy doubles its weight in the prompt.
      *
-     * @param array<int, array<string, mixed>> $messages Conversation messages.
-     * @param array<string, mixed>|null        $profile  Resolved profile, if any.
+     * @param array<int, array<string, mixed>> $messages        Conversation messages.
+     * @param array<string, mixed>             $assistantConfig Assistant configuration; `system_prompt` carries the instructions.
+     * @param array<string, mixed>|null        $profile         Resolved harness profile, if any.
      * @return array<int, array<string, mixed>>
      */
-    private function applyGuardrailPrompt(array $messages, ?array $profile): array
+    private function applySystemPrompt(array $messages, array $assistantConfig, ?array $profile): array
     {
-        if (null === $profile || empty($profile['enabled']) || empty($profile['guardrails']['enabled'])) {
-            return $messages;
-        }
+        $raw          = $assistantConfig['system_prompt'] ?? '';
+        $instructions = \is_string($raw) ? \trim($raw) : '';
 
         $index    = null;
         $existing = '';
@@ -433,18 +435,32 @@ class ChatOrchestrator
             }
         }
 
-        if (\str_contains($existing, GuardrailPrompt::HEADER)) {
+        $parts = array();
+
+        if (! \str_contains($existing, GuardrailPrompt::HEADER)) {
+            $block = \trim(GuardrailPrompt::apply('', $profile ?? array()));
+
+            if ('' !== $block) {
+                $parts[] = $block;
+            }
+        }
+
+        if ('' !== $instructions && ! \str_contains($existing, $instructions)) {
+            $parts[] = $instructions;
+        }
+
+        if (array() === $parts) {
             return $messages;
         }
 
-        $augmented = GuardrailPrompt::apply($existing, $profile);
-
-        if ('' === $augmented) {
-            return $messages;
+        if ('' !== \trim($existing)) {
+            $parts[] = $existing;
         }
+
+        $content = \implode("\n\n", $parts);
 
         if (null !== $index) {
-            $messages[ $index ]['content'] = $augmented;
+            $messages[ $index ]['content'] = $content;
 
             return $messages;
         }
@@ -453,7 +469,7 @@ class ChatOrchestrator
             $messages,
             array(
                 'role' => 'system',
-                'content' => $augmented,
+                'content' => $content,
             )
         );
 
@@ -681,7 +697,7 @@ class ChatOrchestrator
         // The harness profile drives both the prompt rails and the response
         // guard, so it is resolved once per turn.
         $profile  = $this->resolveProfile($assistantId);
-        $messages = $this->applyGuardrailPrompt($messages, $profile);
+        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile);
 
         // Build tool definitions for this assistant.
         $allowedToolSlugs = $assistantConfig['tools'] ?? array();
@@ -1220,7 +1236,7 @@ class ChatOrchestrator
         // The harness profile drives both the prompt rails and the response
         // guard, so it is resolved once per turn.
         $profile  = $this->resolveProfile($assistantId);
-        $messages = $this->applyGuardrailPrompt($messages, $profile);
+        $messages = $this->applySystemPrompt($messages, $assistantConfig, $profile);
 
         $iteration          = 0;
         $toolResultMessages = array();

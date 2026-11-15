@@ -495,7 +495,7 @@ The clusters are done. What is left is either dependency-blocked or deliberately
 | Item | Where it surfaced | What it needs |
 |---|---|---|
 | **`PiiFilter` misses AWS keys, JWTs, private keys and connection strings** | §12: the output guardrail detected these, `PiiFilter` did not redact them on the **input** path. | **Closed — cluster 14, see §21.** |
-| **The chat path had no system-prompt handling at all** | §17: guardrail injection had to be added to the orchestrator because nothing assembled a system prompt. | Decide whether the assistant's `system_prompt` is applied server-side (WordPress does) or client-side, and make both runtimes agree. |
+| **The chat path had no system-prompt handling at all** | §17: guardrail injection had to be added to the orchestrator because nothing assembled a system prompt. | **Closed — cluster 16, see §23** (server-side, matching WordPress) |
 | **`lib/core` has no style gate** | §16: `phpcs-laravel.xml.dist` did not list `lib/core` in its `<file>` set, and `ChatOrchestrator.php` carried 535 PSR-12 spacing errors that no gate reported. | **Closed — cluster 15, see §22** (79,948 violations, not 535; reformatted in #7805, gate on in this cluster) |
 | **One flaky app test** | §16: `ProjectManagementToolParityTest` failed once at `parent::setUp()` and passed on two subsequent full runs. | Catch it with `--repeat` if it recurs; not reproducible now. |
 
@@ -554,5 +554,32 @@ The tests pin what a caller receives rather than what the patterns intend: each 
 **A limitation, documented rather than papered over.** `<exclude name="Generic.WhiteSpace.DisallowTabIndent">` is ruleset-wide; PHPCS cannot scope a sniff exclusion by path. That means the two indentation sniffs are off for `lib/core` and the app skeleton as well as the adapter, so nothing stops a future contributor re-tabbing `lib/core`. Attempting a path-scoped `<rule ref>` instead does not work — the `PSR12` inclusion still reports, which turned the adapter red with 6,139 errors. Enforcing indentation per tree needs a second ruleset and a second CI step; that is written here so it is picked up deliberately. Nothing depends on it today, because the tree is already spaces.
 
 **Validation.** Ruleset run: **799 files, 0 errors**. `lib/core` **1,667 tests / 5,793 assertions** — unchanged from before the reformat and the gate. Token comparison of this cluster's changes: 533 of 534 files identical, and the one that differs does so by exactly 12 lines — six `validate_*` declarations and their six call sites.
+
+---
+
+## 23. Cluster 16 result — server-side system prompt ownership
+
+**What shipped.** `ChatOrchestrator` now applies the assistant's `system_prompt` server-side on both the non-streaming and streaming paths, composed with the guardrail block in the same order WordPress uses: guardrail, then instructions, then whatever the conversation itself carried.
+
+**The gap was narrower than it looked, and worse.** The console already knew the prompt existed — `AssistantTestController` emits a `no_system_prompt` warning when it is empty — but `assistantConfig['system_prompt']` was never read by the orchestrator. Three call sites were already passing it (`AssistantTestController`, `ChatStreamController`, `AgentNodeRunner`); core ignored it. So the console diagnosed a prompt it never used.
+
+**WordPress is the reference, and it is server-side.** The REST handler resolves the assistant's stored instructions and prepends the professional prompt; the provider client emits `['role' => 'system', 'content' => ['text' => …]]` as the first message, then merges memory messages after it. Nothing about the prompt depends on client cooperation, which is the property worth having.
+
+**Composition rules.** `applySystemPrompt()` replaces the guardrail-only `applyGuardrailPrompt()`:
+
+1. The guardrail block is added unless the conversation already carries its header.
+2. The assistant's instructions are added unless the conversation already contains them.
+3. The conversation's own system text is appended last, never dropped.
+4. Anything already present is left alone — a client that injected a block must not get it twice, because doubling it doubles its weight in the prompt.
+
+Each rule is pinned by a test. The four guardrail behaviours that existed (insert, prefix-not-replace, disabled injects nothing, idempotent) are unchanged and still pass untouched.
+
+**A behaviour change worth stating.** The guardrails layer being off no longer takes the instructions with it. Instructions are the assistant's own configuration; the rails are an operator overlay. They were previously coupled only because instructions were never applied at all.
+
+**Trust boundary, noted rather than quietly widened.** `ChatStreamController` (which serves both `/chat-client` and `/chat/stream`) takes the whole `assistant` config from the request body and does not resolve it against the database. Honouring `system_prompt` there means a client can set it. That endpoint already trusts its client for `provider`, `model` and `tools` — `tools` being the more powerful of the four — so this does not create a new class of trust, but it is newly *effective* and is recorded here. The paths where the server knows the assistant (`AssistantTestController`, `AgentNodeRunner`) resolve from the database and are unaffected. Hardening the transport endpoint belongs with the wider question of who owns assistant configuration, not with this cluster.
+
+**A copy inaccuracy left alone.** The guardrail block says "directly related to your assigned purpose and instructions **above**", but both runtimes place the block *before* the instructions, so the instructions are below it. This is identical in WordPress (`$guardrail_prompt . "\n\n" . $system_prompt`) — a pre-existing wording fault in shared prompt text, not a porting slip. Changing prompt text alters model behaviour on both runtimes and needs an eval, so it is recorded rather than edited.
+
+**Validation.** `lib/core` **1,671 tests / 5,802 assertions** (4 new, 9 new assertions); the 46 existing orchestrator tests pass unmodified. App suite **693 / 4,067**, unchanged — no binding ships. `phpcs-laravel.xml.dist` clean, which also exercises the gate added in §22 on a real change for the first time.
 
 ---
