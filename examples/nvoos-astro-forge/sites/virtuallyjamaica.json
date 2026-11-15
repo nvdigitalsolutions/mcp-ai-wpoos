@@ -193,7 +193,20 @@
 						"width": 50
 					}
 				],
-				"anchor": "wifi"
+				"anchor": "wifi",
+				"type": {
+					"headings": {
+						"h3": {
+							"color": "rgb(255, 255, 255)"
+						},
+						"h6": {
+							"color": "rgb(204, 204, 204)"
+						}
+					},
+					"body": {
+						"color": "rgb(255, 255, 255)"
+					}
+				}
 			},
 			{
 				"id": "860a86e",
