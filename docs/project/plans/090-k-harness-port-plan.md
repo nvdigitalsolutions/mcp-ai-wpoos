@@ -158,7 +158,13 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 | 6 | Necessity gate | pending (needs approval queue) |
 | 7 | Harness search engine | **blocked by design** |
 | 8 | Output guardrail — **scope extension** | **done — 2026-11-15** (see §13) |
-| 9 | Guardrail prompt + block policy — **scope extension** | pending (see §12) |
+| 9 | Guardrail prompt + block policy — **scope extension** | **done — 2026-11-15** (see §14) |
+| 10 | Wire the output guard into the chat path | **done — 2026-11-15** (see §16) |
+| 11 | Guardrail prompt injection | **done — 2026-11-15** (see §17) |
+| 12 | Trace capture | **done — 2026-11-15** (see §18) |
+| 13 | Scored tool routing | **done — 2026-11-15** (see §19) |
+
+Open work that is *not* a cluster is tracked in §20.
 
 ---
 
@@ -461,5 +467,36 @@ The trace records the decision: a `routing` record carries the router mode, the 
 **Validation.** `lib/core` **1,644 tests / 5,721 assertions** (4 new); app suite unchanged at **693 / 4,067** because no binding ships; adapter suite 180 / 676 with the same 2 pre-existing project-tool failures; `phpcs-laravel.xml.dist` clean.
 
 The tests assert the definitions the provider received: the default router keeps `writer, reader`; `scored` with `task_class: rag` produces `reader, writer`; scoring reorders without filtering; and the trace records `scored` with `['reader', 'writer']`.
+
+---
+
+## 20. Open items
+
+The clusters are done. What is left is either dependency-blocked or deliberately deferred, and each one is written here so it is picked up intentionally rather than rediscovered. Nothing in this list is a bug in what shipped.
+
+### Blocked on another subsystem
+
+| Item | Blocked on | What "done" looks like |
+|---|---|---|
+| **Cluster 6 — necessity gate** (652 LOC) | The approval queue, which is WordPress-only. | The gate ports with the queue, not before it: a gate that cannot ask for approval can only auto-approve. |
+| **Cluster 7 — harness search engine** (1,324 LOC) | An eval suite/registry **and** the evolution governor. | A parameter search with something to search and a way to judge the result. Until then any port would be a loop over a scoring function nobody can evaluate. |
+
+### Deferred by decision
+
+| Item | Why it is deferred | What "done" looks like |
+|---|---|---|
+| **Tool preset catalogue on Laravel** | `tools.preset_weights` are inert (§19): the catalogue is WordPress's ~3,100-line translated array and Laravel's `presets` endpoints are *schedule* presets. Capability flags and per-slug `tools.preferences` carry the ranking meanwhile. | A tool-preset catalogue in core (data, not translations) plus an index build at boot; parity test asserting the same tool lands in the same families on both runtimes. Belongs with the console's tool-preset UI. |
+| **`tools.router: scored` as default** | The switch is live but off (§19). Changing which tools a model attends to first is a behaviour change that needs measurement. | An eval comparing `fixed` vs `scored` on real assistant tool sets, with a stated tie-break rule for when flags alone are enough. |
+| **Retrieval harness in the chat path** | §7: wiring `retrieve()` changes model input and needs a prompt-budget review. | A budgeted retrieval step with a before/after token and quality comparison. |
+| **`record_reflection()`** | §10: its only write target is `store_agent_context`, and WordPress has no `ToolInvokerInterface` adapter to bridge it. | A WordPress `ToolInvokerInterface` adapter, then the memory-track work that owns `store_agent_context`. |
+
+### Gaps found in passing, not in scope
+
+| Item | Where it surfaced | What it needs |
+|---|---|---|
+| **`PiiFilter` misses AWS keys, JWTs, private keys and connection strings** | §12: the output guardrail detects these, `PiiFilter` does not redact them on the **input** path. Detection and redaction have different precision trade-offs, so this was left alone. | Extend `PiiFilter::patterns()` with the four families and a false-positive test over ordinary prose. |
+| **The chat path had no system-prompt handling at all** | §17: guardrail injection had to be added to the orchestrator because nothing assembled a system prompt. | Decide whether the assistant's `system_prompt` is applied server-side (WordPress does) or client-side, and make both runtimes agree. |
+| **`lib/core` has no style gate** | §16: `phpcs-laravel.xml.dist` does not list `lib/core` in its `<file>` set, and `ChatOrchestrator.php` carries 535 PSR-12 spacing errors that no gate reports. | Add `lib/core/src` and `lib/core/tests` to the ruleset and reformat in one whitespace-only commit, or state explicitly that `lib/core` follows WPCS spacing and add the sniffs that enforce it. |
+| **One flaky app test** | §16: `ProjectManagementToolParityTest` failed once at `parent::setUp()` and passed on two subsequent full runs. | Catch it with `--repeat` if it recurs; not reproducible now. |
 
 ---
