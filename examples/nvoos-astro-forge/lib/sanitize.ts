@@ -12,7 +12,7 @@ import sanitizeHtmlLib from 'sanitize-html';
 import { readableInk } from './contrast.ts';
 
 /** Bump on every allowlist/behaviour change. Generated projects carry this. */
-export const SANITIZE_VERSION = 3;
+export const SANITIZE_VERSION = 4;
 
 /** The default sanitize-html options — Gutenberg output minus scripts/events. */
 export const SANITIZE_OPTIONS: sanitizeHtmlLib.IOptions = {
@@ -311,6 +311,14 @@ function bandAttribs( tagName: string, attribs: { [key: string]: string } ) {
 	return next;
 }
 
+/** The `a` transform shared by both transform maps. */
+function linkAttribs(attribs: { [key: string]: string }) {
+	if (attribs.target === '_blank') {
+		attribs.rel = 'noopener noreferrer';
+	}
+	return { tagName: 'a', attribs };
+}
+
 const transformTags: sanitizeHtmlLib.IOptions['transformTags'] = {
 	// In-page anchors (one-pager navigation). The source's `id` on a section or
 	// div IS the navigation contract — `#about` must land on the rebuilt band —
@@ -319,12 +327,7 @@ const transformTags: sanitizeHtmlLib.IOptions['transformTags'] = {
 	section: (tagName: string, attribs: { [key: string]: string }) => bandAttribs(tagName, attribs),
 	div: (tagName: string, attribs: { [key: string]: string }) => bandAttribs(tagName, attribs),
 	// Every outbound link that opens a new tab gets the safe rel pair.
-	a: (_tagName: string, attribs: { [key: string]: string }) => {
-		if (attribs.target === '_blank') {
-			attribs.rel = 'noopener noreferrer';
-		}
-		return { tagName: 'a', attribs };
-	},
+	a: (_tagName: string, attribs: { [key: string]: string }) => linkAttribs(attribs),
 	// Form-control values that open with a javascript: URL scheme are dropped
 	// (a value is inert text, but the XSS gate is fail-closed by default).
 	input: (tagName: string, attribs: { [key: string]: string }) => {
@@ -347,13 +350,85 @@ const transformTags: sanitizeHtmlLib.IOptions['transformTags'] = {
 	},
 };
 
+/** Options for {@link sanitizeHtml}. */
+export interface SanitizeOptions {
+	/**
+	 * Origins whose absolute links are rewritten to site-relative paths
+	 * (`https://client.com/x` becomes `/x`). The same artifact is served from a
+	 * staging host before cutover, so a hard-coded CMS origin in an `href` sends
+	 * the visitor to production (monicarajiv, 2026-11-15). Apex, `www` and any
+	 * scheme count as one origin.
+	 */
+	internalOrigins?: string[];
+}
+
+/** Compare hosts without the `www.` prefix, so apex and `www` are one origin. */
+function originKey(url: URL): string {
+	const host = url.hostname.toLowerCase().replace(/^www\./, '');
+	return url.port ? `${host}:${url.port}` : host;
+}
+
+/**
+ * Turn an absolute URL that points at one of `origins` into a root-relative path,
+ * keeping its query and fragment. Returns null for everything else (external
+ * hosts, relative links, `mailto:`/`tel:`), so the caller leaves it alone.
+ */
+export function relativizeInternalUrl(href: string, origins: string[]): string | null {
+	if (!origins.length || !/^(https?:)?\/\//i.test(href)) {
+		return null;
+	}
+	let target: URL;
+	try {
+		target = new URL(href.startsWith('//') ? `https:${href}` : href);
+	} catch {
+		return null;
+	}
+	const key = originKey(target);
+	for (const origin of origins) {
+		let candidate: URL;
+		try {
+			candidate = new URL(origin);
+		} catch {
+			// A malformed origin in the profile must not fail the build.
+			continue;
+		}
+		if (originKey(candidate) === key) {
+			return `${target.pathname}${target.search}${target.hash}`;
+		}
+	}
+	return null;
+}
+
+/**
+ * `transformTags` plus the internal-origin rewrite. sanitize-html replaces the
+ * transform map wholesale for a call, so the default map is spread in here
+ * rather than merged by the library.
+ */
+function transformTagsFor(origins: string[]): sanitizeHtmlLib.IOptions['transformTags'] {
+	if (origins.length === 0) {
+		return transformTags;
+	}
+	return {
+		...transformTags,
+		a: (_tagName: string, attribs: { [key: string]: string }) => {
+			if (typeof attribs.href === 'string') {
+				const internal = relativizeInternalUrl(attribs.href, origins);
+				if (internal !== null) {
+					attribs.href = internal;
+				}
+			}
+			return linkAttribs(attribs);
+		},
+	};
+}
+
 /** Sanitize rendered WordPress HTML for `set:html` (allowlist, versioned). */
-export function sanitizeHtml(html: string): string {
+export function sanitizeHtml(html: string, options: SanitizeOptions = {}): string {
 	if (!html) {
 		return '';
 	}
 	return sanitizeHtmlLib(html, {
 		...SANITIZE_OPTIONS,
-		transformTags,
+		transformTags: transformTagsFor(options.internalOrigins ?? []),
 	});
 }

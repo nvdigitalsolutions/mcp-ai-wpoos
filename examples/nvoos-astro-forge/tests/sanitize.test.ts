@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { SANITIZE_VERSION, SANITIZE_OPTIONS, sanitizeHtml } from '../lib/sanitize.ts';
+import { SANITIZE_VERSION, SANITIZE_OPTIONS, relativizeInternalUrl, sanitizeHtml } from '../lib/sanitize.ts';
 
 describe('sanitizeHtml — content passes', () => {
 	it('keeps Gutenberg block markup', () => {
@@ -192,7 +192,7 @@ describe('sanitizeHtml — forms survive, attack surface stays closed (114 §3.9
 
 describe('sanitize contract', () => {
 	it('exposes a versioned allowlist for stale-copy detection', () => {
-		expect(SANITIZE_VERSION).toBe(3); // v3 keeps a flat band `background-color`.
+		expect(SANITIZE_VERSION).toBe(4); // v4 adds the internal-origin link rewrite.
 		expect(SANITIZE_OPTIONS.allowedTags).toContain('figure');
 		expect(SANITIZE_OPTIONS.allowedTags).toContain('form');
 		expect(SANITIZE_OPTIONS.allowedTags).not.toContain('script');
@@ -224,5 +224,85 @@ describe( 'sanitizeHtml — one-pager anchor ids', () => {
 	it( 'still strips ids from tags that do not carry anchors', () => {
 		const html = sanitizeHtml('<p id="legacy">text</p>');
 		expect(html).not.toContain('id="legacy"');
+	} );
+} );
+
+describe( 'sanitizeHtml — internal origins', () => {
+	const origins = ['https://monicarajiv.com'];
+
+	it( 'rewrites a same-origin absolute link to a root-relative path', () => {
+		const html = sanitizeHtml('<a href="https://monicarajiv.com/doomsday/">D</a>', {
+			internalOrigins: origins,
+		});
+		expect(html).toContain('href="/doomsday/"');
+		expect(html).not.toContain('monicarajiv.com');
+	} );
+
+	it( 'keeps the query and the fragment', () => {
+		const html = sanitizeHtml('<a href="https://monicarajiv.com/rooms/?a=1#top">R</a>', {
+			internalOrigins: origins,
+		});
+		expect(html).toContain('href="/rooms/?a=1#top"');
+	} );
+
+	it( 'treats www, the apex and either scheme as one origin', () => {
+		expect(
+			sanitizeHtml('<a href="https://www.monicarajiv.com/x/">x</a>', { internalOrigins: origins })
+		).toContain('href="/x/"');
+		expect(
+			sanitizeHtml('<a href="http://monicarajiv.com/x/">x</a>', { internalOrigins: origins })
+		).toContain('href="/x/"');
+	} );
+
+	it( 'leaves external, relative, mailto and in-page links alone', () => {
+		expect(
+			sanitizeHtml('<a href="https://example.com/x/">e</a>', { internalOrigins: origins })
+		).toContain('href="https://example.com/x/"');
+		expect( sanitizeHtml('<a href="/local/">l</a>', { internalOrigins: origins }) ).toContain(
+			'href="/local/"'
+		);
+		expect(
+			sanitizeHtml('<a href="mailto:hi@example.com">m</a>', { internalOrigins: origins })
+		).toContain('href="mailto:hi@example.com"');
+		expect( sanitizeHtml('<a href="#top">t</a>', { internalOrigins: origins }) ).toContain(
+			'href="#top"'
+		);
+	} );
+
+	it( 'is off by default, so existing callers are unchanged', () => {
+		const html = sanitizeHtml('<a href="https://monicarajiv.com/doomsday/">D</a>');
+		expect(html).toContain('href="https://monicarajiv.com/doomsday/"');
+	} );
+
+	it( 'still applies the noopener rel pair', () => {
+		const html = sanitizeHtml('<a href="https://monicarajiv.com/x/" target="_blank">x</a>', {
+			internalOrigins: origins,
+		});
+		expect(html).toContain('href="/x/"');
+		expect(html).toContain('rel="noopener noreferrer"');
+	} );
+
+	it( 'ignores a malformed configured origin instead of failing the build', () => {
+		const html = sanitizeHtml('<a href="https://monicarajiv.com/x/">x</a>', {
+			internalOrigins: ['not a url'],
+		});
+		expect(html).toContain('href="https://monicarajiv.com/x/"');
+	} );
+} );
+
+describe( 'relativizeInternalUrl', () => {
+	it( 'returns a path for an internal URL and null otherwise', () => {
+		expect(relativizeInternalUrl('https://client.com/a/b?c=1#d', ['https://client.com'])).toBe(
+			'/a/b?c=1#d'
+		);
+		// The bare origin is the root, not an empty path.
+		expect(relativizeInternalUrl('https://client.com', ['https://client.com'])).toBe('/');
+		expect(relativizeInternalUrl('https://other.com/a', ['https://client.com'])).toBeNull();
+		expect(relativizeInternalUrl('/a/b', ['https://client.com'])).toBeNull();
+		expect(relativizeInternalUrl('mailto:x@y.z', ['https://client.com'])).toBeNull();
+	} );
+
+	it( 'handles a protocol-relative URL, which the sanitiser itself drops', () => {
+		expect(relativizeInternalUrl('//client.com/a', ['https://client.com'])).toBe('/a');
 	} );
 } );
