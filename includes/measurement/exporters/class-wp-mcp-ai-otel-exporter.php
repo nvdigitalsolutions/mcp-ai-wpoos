@@ -6,7 +6,7 @@
  * OTLP/JSON-shaped payload. This exporter deliberately does NOT require
  * the opentelemetry-php SDK: shipping the SDK in a WordPress plugin adds
  * significant weight and a PHP 8+ requirement that would break the base
- * plugin's PHP 7.4 floor. The output is the plain OTLP/JSON shape an
+ * plugin's PHP 8.1 floor. The output is the plain OTLP/JSON shape an
  * OpenTelemetry Collector accepts over HTTP, so sites that want full SDK
  * integration can drop this exporter's payload straight into one.
  *
@@ -32,6 +32,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

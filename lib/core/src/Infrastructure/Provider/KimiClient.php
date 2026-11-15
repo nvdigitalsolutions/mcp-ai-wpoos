@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Kimi (Moonshot AI) provider client.
  *
@@ -8,6 +9,8 @@
  * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -18,18 +21,19 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class KimiClient extends OpenAiCompatibleClient {
+class KimiClient extends OpenAiCompatibleClient
+{
+    public function __construct(
+        SettingsStoreInterface $settings,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+        parent::__construct($settings, $http, $errors);
+        $this->providerSlug = 'kimi';
+    }
 
-	public function __construct(
-		SettingsStoreInterface $settings,
-		HttpClientInterface $http,
-		ErrorFactoryInterface $errors,
-	) {
-		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'kimi';
-	}
-
-	protected function getDefaultBaseUrl(): string {
-		return 'https://api.moonshot.ai/v1';
-	}
+    protected function getDefaultBaseUrl(): string
+    {
+        return 'https://api.moonshot.ai/v1';
+    }
 }

@@ -1,14 +1,16 @@
 // ---------------------------------------------------------------------------
 // wizard.ts — setup_wizard: one command from URL to deployed (096 §6.1).
 //
-//   analyze → register site → scaffold → build (optional) → git init →
-//   emit deploy pipeline.
+//   analyze → preset (suggested/confirmed, 104 §4.3) → register site →
+//   scaffold → build (optional) → git init → emit deploy pipeline.
 //
 // The MCP `setup_wizard` tool and the CLI `forge wizard` command share this
 // function. Every step is individually tolerant: an unreachable source
 // fails the wizard (a profile without content is worse than no profile), a
 // failed build returns `built: false` with warnings (never throws), and the
 // deploy config emission is the same adapter-generic Phase 3.3 pipeline.
+// Interactive prompts (clack) arrive through the optional `ui` hooks, so
+// the shared path stays non-interactive for the MCP surface.
 // ---------------------------------------------------------------------------
 
 import { spawnSync } from 'node:child_process';
@@ -16,12 +18,32 @@ import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { emitDeployConfig, type DeployMode } from './deploy-config.ts';
-import { analyzeSite, profileFromDiscovery } from './discovery.ts';
+import { analyzeDesignInput, fetchDesignInput } from './design.ts';
+import { analyzeSite, profileFromDiscovery, type DiscoveryReport } from './discovery.ts';
+import { applyPresetToProfile, isValidThemePolicy, PRESETS, suggestPreset, DEFAULT_THEME_POLICY, type PresetName, type RenderMode } from './presets.ts';
 import { scaffold } from './scaffold.ts';
 import { SitesStore } from './sites.ts';
 import { assertSafeHttpUrl } from './ssrf.ts';
-import type { SiteProfile } from './types.ts';
+import type { ForgeDesign, SiteProfile } from './types.ts';
 import { WpClient } from './wp-client.ts';
+
+/**
+ * Interactive prompt hooks (Proposal 104 §4.3). The CLI wires these to
+ * @clack/prompts; the MCP surface leaves them unset so setup_wizard stays
+ * non-interactive and the preset falls back to suggestPreset().
+ */
+export interface WizardUi {
+	/** Ask which preset to use — null cancels the wizard. */
+	selectPreset?: (suggested: PresetName, report: DiscoveryReport) => Promise<PresetName | null>;
+	/** Ask static vs ssr (storefront preset only, 104 Q4) — null cancels. */
+	selectRender?: (suggested: RenderMode, preset: PresetName) => Promise<RenderMode | null>;
+	/** Ask the theme policy (105 §4, default 'auto') — null cancels. */
+	selectThemePolicy?: ( suggested: string ) => Promise<string | null>;
+	/** Confirm the extracted design language before it becomes the rebuild theme (114 P6). */
+	confirmDesign?: ( design: ForgeDesign ) => Promise<boolean>;
+	/** Final go/no-go before scaffolding — false cancels the wizard. */
+	confirmScaffold?: ( preset: PresetName, targetDir: string ) => Promise<boolean>;
+}
 
 export interface WizardOptions {
 	/** The WordPress source URL (https://…). */
@@ -36,6 +58,45 @@ export interface WizardOptions {
 	cloudflareProject?: string;
 	/** Template name or path (default 'blog'). */
 	template?: string;
+	/**
+	 * Preset (104 §4.3). Absent → suggested from the site_analyze report
+	 * (Woo/products detected → 'storefront'), or chosen interactively via
+	 * ui.selectPreset when provided.
+	 */
+	preset?: PresetName;
+	/**
+	 * Rendering model (104 Q4). Absent → the preset's default ('static');
+	 * the storefront preset offers the choice via ui.selectRender.
+	 */
+	render?: RenderMode;
+	/** Enable the per-post OG cards surface (104 §4.8 / Q5). */
+	ogImages?: boolean;
+	/**
+	 * Theme policy baked into the scaffold (105 §4):
+	 * auto | light | dark | brand:<slug>. Default 'auto'.
+	 */
+	themePolicy?: string;
+	/**
+	 * Extract the source design language (114 P1) and apply it as the
+	 * rebuild theme. Extraction failures degrade to warnings — a wizard
+	 * never dies on a design pass.
+	 */
+	design?: boolean;
+	/**
+	/** Strict contrast mode (114 §3.5) — the scaffold's designAudit flips to
+	 * 'strict' and the generated build fails on failing pairs.
+	 */
+	strictContrast?: boolean;
+	/**
+	 * Re-forge a target that is LOCKED for hand-editing (its profile carries
+	 * `locked`, or the project carries `forge.lock.json`). Without it the
+	 * scaffold fails closed — ownership was handed to a developer.
+	 */
+	unlock?: boolean;
+	/** Interactive prompt hooks (CLI only). */
+	ui?: WizardUi;
+	/** Emit the AGENTS.md/.context stubs (default true; --no-agents flips it). */
+	agents?: boolean;
 	/** Run npm install + astro build before finishing (CI/e2e use this). */
 	build?: boolean;
 	/** Skip registry registration (callers managing their own registry). */
@@ -81,11 +142,78 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 
 	// 1. Discover — the polite site_analyze pass.
 	const report = await analyzeSite( new WpClient( { baseUrl: options.url.replace( /\/+$/, '' ) } ) );
-	const profile = profileFromDiscovery( report );
+
+	// 1b. Preset (104 §4.3): explicit → use it; otherwise suggest from the
+	//     report and offer the interactive choice through the CLI ui hooks.
+	const suggested = suggestPreset( report );
+	let preset: PresetName = options.preset ?? suggested;
+	if ( ! options.preset && options.ui?.selectPreset ) {
+		const chosen = await options.ui.selectPreset( suggested, report );
+		if ( chosen === null ) {
+			throw new Error( 'Wizard cancelled.' );
+		}
+		preset = chosen;
+	}
+	if ( ! options.preset && options.ui?.confirmScaffold ) {
+		const proceed = await options.ui.confirmScaffold( preset, options.targetDir );
+		if ( ! proceed ) {
+			throw new Error( 'Wizard cancelled.' );
+		}
+	}
+
+	const profile = applyPresetToProfile( profileFromDiscovery( report ), preset );
+
+	// 1c. Render mode (104 Q4): explicit flag wins; the storefront preset
+	//     offers the interactive choice; every non-TTY path stays 'static'.
+	let render: RenderMode = options.render ?? 'static';
+	if ( ! options.render && preset === 'storefront' && options.ui?.selectRender ) {
+		const chosen = await options.ui.selectRender( 'static', preset );
+		if ( chosen === null ) {
+			throw new Error( 'Wizard cancelled.' );
+		}
+		render = chosen;
+	}
+
+	// 1d. Theme policy (105 §4): explicit flag wins; the interactive choice
+	//     defaults to 'auto'; every non-TTY path stays 'auto'.
+	let themePolicy: string = options.themePolicy ?? DEFAULT_THEME_POLICY;
+	if ( ! options.themePolicy && options.ui?.selectThemePolicy ) {
+		const chosen = await options.ui.selectThemePolicy( themePolicy );
+		if ( chosen === null ) {
+			throw new Error( 'Wizard cancelled.' );
+		}
+		if ( ! isValidThemePolicy( chosen ) ) {
+			throw new Error( `Invalid theme policy "${ chosen }" — use auto, light, dark or brand:<slug>.` );
+		}
+		themePolicy = chosen;
+	}
 	profile.url = options.url.replace( /\/+$/, '' );
 	if ( options.name ) {
 		profile.name = options.name;
 	}
+
+	// 1e. Design language (114 P1/P6) — extract from the source and attach the
+	//     rebuild block. Deterministic analysis; the ui.confirmDesign hook is
+	//     the interactive gate (TTY only). Failures warn, never cancel.
+	if ( options.design ) {
+		try {
+			const design = analyzeDesignInput(
+				await fetchDesignInput( profile.url, fetch, { allowLoopback: options.allowLoopback === true } )
+			);
+			const apply = options.ui?.confirmDesign ? await options.ui.confirmDesign( design ) : true;
+			if ( apply ) {
+				profile.design = design;
+				warnings.push( `Design language applied: ${ design.concept }` );
+			} else {
+				warnings.push( 'Design language extracted but not applied (declined at the prompt).' );
+			}
+		} catch ( error ) {
+			warnings.push(
+				`Design extraction failed (continuing without): ${ error instanceof Error ? error.message : String( error ) }`
+			);
+		}
+	}
+
 	const siteName = options.name ?? slugFromUrl( options.url );
 
 	// 2. Register (the operator allowlist entry).
@@ -107,7 +235,18 @@ export async function setupWizard( options: WizardOptions ): Promise<WizardResul
 	try {
 		await stat( join( options.targetDir, 'nvoos.json' ) );
 	} catch {
-		await scaffold( { profile, targetDir: options.targetDir, template: options.template } );
+		await scaffold( {
+			profile,
+			targetDir: options.targetDir,
+			template: options.template ?? PRESETS[ preset ].template,
+			preset,
+			render,
+			surfaces: options.ogImages ? { ogImages: true } : undefined,
+			agents: options.agents,
+			themePolicy,
+			strictContrast: options.strictContrast,
+			unlock: options.unlock === true,
+		} );
 		scaffolded = true;
 	}
 

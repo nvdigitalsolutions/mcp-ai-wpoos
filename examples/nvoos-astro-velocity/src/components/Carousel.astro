@@ -20,7 +20,7 @@ const slides = (carousel?.carousel ?? []).map((slide) => ({
 
 {
 	slides.length > 0 && (
-		<section class="carousel" aria-label="Featured promotions">
+		<section class="carousel" aria-label="Featured promotions" tabindex="0">
 			{slides.map((slide) => (
 				<figure>
 					{slide.image && (
@@ -47,6 +47,14 @@ const slides = (carousel?.carousel ?? []).map((slide) => ({
 		gap: 1rem;
 		overflow-x: auto;
 		margin-block: 1rem;
+	}
+
+	/* The track scrolls horizontally, so it must be focusable — otherwise
+		keyboard users cannot pan it in Blink/Firefox (Proposal 136 §4.1).
+		It is user-driven (no auto-advance), so WCAG 2.2.2 needs no pause. */
+	.carousel:focus-visible {
+		outline: 2px solid var(--nv-accent);
+		outline-offset: 2px;
 	}
 
 	.carousel figure {

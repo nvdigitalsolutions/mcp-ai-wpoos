@@ -42,7 +42,10 @@ class SettingsStore implements SettingsStoreInterface {
 	private const DEFAULTS = array(
 		'default_provider'               => 'openai',
 		'default_model'                  => 'gpt-4o-mini',
-		'default_gemini_model'           => 'gemini-2.0-flash',
+		// Keep in step with the WordPress default
+		// (WP_MCP_AI_Admin_Settings_Base::get_default_settings()). A retired model
+		// here silently breaks every Gemini chat on a fresh install.
+		'default_gemini_model'           => 'gemini-3.8-flash',
 		'request_timeout'                => 60,
 		'enable_rate_limiting'           => false,
 		'rate_limit_requests'            => 100,
@@ -56,13 +59,6 @@ class SettingsStore implements SettingsStoreInterface {
 		'rest_enable_assistant_create'   => false,
 		'rest_enable_assistant_delete'   => false,
 	);
-
-	/**
-	 * Cached merged settings to avoid repeated DB + config reads per request.
-	 *
-	 * @var array<string, mixed>|null
-	 */
-	private ?array $cached = null;
 
 	/**
 	 * @param string $table  Database table for runtime settings. Defaults to 'nvoos_settings'.
@@ -94,20 +90,14 @@ class SettingsStore implements SettingsStoreInterface {
 	 * @return array<string, mixed>
 	 */
 	public function all(): array {
-		if ( null !== $this->cached ) {
-			return $this->cached;
-		}
+		$fileSettings = Config::get( self::CONFIG_KEY, array() );
+		$dbSettings   = $this->loadFromDatabase();
 
-		$fileSettings   = Config::get( self::CONFIG_KEY, array() );
-		$dbSettings     = $this->loadFromDatabase();
-
-		$this->cached = array_merge(
+		return array_merge(
 			self::DEFAULTS,
 			is_array( $fileSettings ) ? $fileSettings : array(),
 			$dbSettings,
 		);
-
-		return $this->cached;
 	}
 
 	/**
@@ -131,9 +121,6 @@ class SettingsStore implements SettingsStoreInterface {
 			array( 'key' ),
 			array( 'value', 'updated_at' ),
 		);
-
-		// Bust the in-memory cache so the next all() picks up the change.
-		$this->cached = null;
 	}
 
 	/**
@@ -145,7 +132,6 @@ class SettingsStore implements SettingsStoreInterface {
 	 */
 	public function delete( string $key ): void {
 		DB::table( $this->table )->where( 'key', $key )->delete();
-		$this->cached = null;
 	}
 
 	/**
@@ -168,7 +154,7 @@ class SettingsStore implements SettingsStoreInterface {
 		$provider = $this->getDefaultProvider();
 
 		if ( 'gemini' === $provider ) {
-			return (string) $this->get( 'default_gemini_model', 'gemini-2.0-flash' );
+			return (string) $this->get( 'default_gemini_model', 'gemini-3.8-flash' );
 		}
 
 		return (string) $this->get( 'default_model', 'gpt-4o-mini' );

@@ -1,0 +1,6 @@
+{
+    "input": "Just a body, no delimiters.\n",
+    "expected": {
+        "null": true
+    }
+}

@@ -18,6 +18,7 @@ import { NumberField } from './fields/NumberField';
 import { TextareaField } from './fields/TextareaField';
 import { CheckboxField } from './fields/CheckboxField';
 import { DateField } from './fields/DateField';
+import { SelectField } from './fields/SelectField';
 import { ImageUpload } from './fields/ImageUpload';
 import { RelationshipField } from './fields/RelationshipField';
 import type { CollectionConfig, FieldConfig } from '../config/collections';
@@ -70,6 +71,7 @@ export function EditForm({ config, id, readOnly = false, onBack }: EditFormProps
 				if (f.type === 'checkbox') defaults[f.name] = false;
 				else if (f.type === 'number') defaults[f.name] = f.min ?? 0;
 				else if (f.type === 'array') defaults[f.name] = [];
+				else if (f.type === 'select') defaults[f.name] = f.options?.[0]?.value ?? '';
 				else defaults[f.name] = '';
 			});
 			setFormData(defaults);
@@ -196,6 +198,18 @@ export function EditForm({ config, id, readOnly = false, onBack }: EditFormProps
 						value={formData[field.name] ?? ''}
 						required={field.required}
 						error={fieldError}
+						onChange={(v) => handleChange(field.name, v)}
+					/>
+				);
+			case 'select':
+				return (
+					<SelectField
+						key={field.name}
+						label={field.label}
+						value={formData[field.name] ?? ''}
+						required={field.required}
+						error={fieldError}
+						options={field.options ?? []}
 						onChange={(v) => handleChange(field.name, v)}
 					/>
 				);

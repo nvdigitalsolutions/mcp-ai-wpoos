@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Gemini Live provider — bidirectional audio/video streaming via Gemini.
  *
@@ -8,6 +9,8 @@
  * @package Nvoos\Core
  * @since   2.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -21,17 +24,23 @@ use Nvoos\Core\Domain\Contract\StreamingProviderInterface;
 
 class GeminiLiveProvider implements StreamingProviderInterface
 {
-    private const DEFAULT_MODEL = 'gemini-2.0-flash-live-001';
+    private const DEFAULT_MODEL = 'gemini-3.8-live';
     private const API_BASE_URL  = 'https://generativelanguage.googleapis.com/v1beta';
 
-    /** @var array<string, array> */
+    /** @var array<string, array<string, mixed>> */
     private array $connections = [];
 
+    /**
+     * @param SettingsStoreInterface $settings Provider settings.
+     * @param HttpClientInterface    $http     Reserved for the socket transport.
+     * @param ErrorFactoryInterface  $errors   Reserved for error mapping.
+     */
     public function __construct(
         private readonly SettingsStoreInterface $settings,
-        private readonly HttpClientInterface $http,
-        private readonly ErrorFactoryInterface $errors,
-    ) {}
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+    }
 
     public function connect(array $options = []): array
     {

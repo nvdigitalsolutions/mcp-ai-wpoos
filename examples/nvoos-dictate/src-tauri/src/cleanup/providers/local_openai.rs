@@ -323,8 +323,94 @@ impl LocalOpenAiProvider {
             image_data_uri,
             0.0,
         );
-        let url = format!("{}/chat/completions", self.base_url);
+        self.post_vision(&body).await
+    }
+
+    /// Correct OCR text against a page image (Proposal 109 §3.8 polish).
+    #[cfg(feature = "document")]
+    /// `image_data_uri` is a base64 data-URI PNG of the page; `text` is the
+    /// deterministic OCR output. Returns the raw assistant text — the caller
+    /// strips any fences defensively.
+    pub async fn correct_ocr(&self, image_data_uri: &str, text: &str) -> AppResult<String> {
+        let model = if self.model.is_empty() {
+            None
+        } else {
+            Some(self.model.as_str())
+        };
+        let body = openai_shape::build_vision_body(
+            model,
+            &openai_shape::ocr_polish_prompt(text),
+            image_data_uri,
+            0.1,
+        );
+        self.post_vision(&body).await
+    }
+
+    /// Full-page document understanding (Proposal 111): the page image plus
+    /// the official grounding prompt; returns the model's fence-stripped
+    /// Markdown.
+    #[cfg(feature = "document")]
+    pub async fn understand_document(
+        &self,
+        image_data_uri: &str,
+        prior_text: &str,
+    ) -> AppResult<String> {
+        let model = if self.model.is_empty() {
+            None
+        } else {
+            Some(self.model.as_str())
+        };
+        let body = openai_shape::build_document_model_body(model, image_data_uri, prior_text);
+        let raw = self.post_vision(&body).await?;
+        Ok(openai_shape::parse_document_model_reply(&raw))
+    }
+
+    /// Full-page document understanding via Ollama's NATIVE `/api/chat`
+    /// endpoint. See `build_document_model_body_native` for why the compat
+    /// mount is unreliable for the deepseekocr architecture. The native
+    /// mount sits beside the compat mount: `<base without /v1>/api/chat`.
+    #[cfg(feature = "document")]
+    pub async fn understand_document_native(
+        &self,
+        image_data_uri: &str,
+        prior_text: &str,
+    ) -> AppResult<String> {
+        let b64 = image_data_uri
+            .strip_prefix("data:image/png;base64,")
+            .ok_or_else(|| {
+                AppError::Document("expected a PNG data-URI for the native endpoint".into())
+            })?;
+        let model = if self.model.is_empty() {
+            None
+        } else {
+            Some(self.model.as_str())
+        };
+        let body = openai_shape::build_document_model_body_native(model, b64, prior_text);
+        let base = self.base_url.trim_end_matches('/');
+        let url = match base.strip_suffix("/v1") {
+            Some(host) => format!("{host}/api/chat"),
+            None => format!("{base}/api/chat"),
+        };
         let resp = match self.http.post(&url).json(&body).send().await {
+            Ok(r) => r,
+            Err(e) => return Err(self.map_send_error(e)),
+        };
+        let status = resp.status().as_u16();
+        if !resp.status().is_success() {
+            return Err(AppError::Other(format!(
+                "{} returned HTTP {status} from the native endpoint",
+                self.kind.name
+            )));
+        }
+        let payload: serde_json::Value = resp.json().await?;
+        Ok(openai_shape::parse_document_model_native_reply(&payload))
+    }
+
+    /// Shared multimodal POST (the two polish flavours differ only in prompt).
+    #[cfg(any(feature = "vision", feature = "document"))]
+    async fn post_vision(&self, body: &serde_json::Value) -> AppResult<String> {
+        let url = format!("{}/chat/completions", self.base_url);
+        let resp = match self.http.post(&url).json(body).send().await {
             Ok(r) => r,
             Err(e) => return Err(self.map_send_error(e)),
         };

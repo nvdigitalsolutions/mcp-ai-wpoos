@@ -8,6 +8,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 
@@ -82,4 +84,11 @@ class CreatePostArguments {
 	#[Assert\Positive( message: 'User ID must be a positive integer.' )]
 	#[WPCapability( capability: 'edit_posts' )]
 	public $user_id = null;
+
+	/**
+	 * Describe the write without performing it (Proposal 090-M, ADR M-8).
+	 *
+	 * @var bool
+	 */
+	public $dry_run = false;
 }

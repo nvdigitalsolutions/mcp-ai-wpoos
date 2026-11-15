@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Data Budget Tracker — pure domain service.
  *
@@ -8,7 +9,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -82,6 +85,14 @@ final class DataBudgetTracker implements DataBudgetTrackerInterface
     public function getPerMessageBudget(): int
     {
         return $this->perMessageBudget;
+    }
+
+    /**
+     * Current request identifier, for diagnostics and log correlation.
+     */
+    public function getRequestId(): string
+    {
+        return $this->requestId;
     }
 
     /**

@@ -6,10 +6,15 @@
 // and the truncation flag propagation (096: never silent truncation).
 // ---------------------------------------------------------------------------
 
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
-import { createWpLoader } from '../lib/wp-loader.ts';
-import type { SiteProfile } from '../lib/types.ts';
+import { createWpLoader, extractPayloadRaw, payloadRestBase, slugify } from '../lib/wp-loader.ts';
+import type { SiteProfile, WpCollection } from '../lib/types.ts';
 import type { LoaderContext } from 'astro/loaders';
 
 interface StoredEntry {
@@ -20,7 +25,7 @@ interface StoredEntry {
 }
 
 /** Minimal LoaderContext double — enough surface for the loader. */
-function fakeContext(store: { entries: StoredEntry[]; cleared: boolean }) {
+function fakeContext(store: { entries: StoredEntry[]; cleared: boolean }, root?: URL) {
 	return {
 		collection: 'posts',
 		store: {
@@ -32,10 +37,13 @@ function fakeContext(store: { entries: StoredEntry[]; cleared: boolean }) {
 				store.entries.push(entry);
 				return true;
 			},
+			// The hybrid-local merge reads the store back (it captures local
+			// entries before the WP load clears it).
+			entries: () => store.entries.map((entry) => [entry.id, entry] as [string, StoredEntry]),
 		},
 		meta: { get: () => undefined, set: () => {} },
 		logger: { warn: () => {}, info: () => {} },
-		config: {},
+		config: root ? { root } : {},
 		parseData: async <T extends Record<string, unknown>>(props: { data: T }) => props.data,
 		renderMarkdown: async () => ({ html: '' }),
 		generateDigest: (data: string | Record<string, unknown>) => `digest:${String(data)}`,
@@ -446,3 +454,259 @@ describe('createWpLoader load()', () => {
 		expect(warnings.some((w) => w.includes('incomplete'))).toBe(true);
 	});
 });
+
+describe( 'extractPayloadRaw (nvoos-commerce envelope)', () => {
+	it( 'maps name/description into the entry shape', () => {
+		const raw = extractPayloadRaw( {
+			id: 9,
+			name: 'Aurora Sofa',
+			description: '<p>Deep seat</p>',
+			createdAt: '2026-11-01T10:00:00',
+			updatedAt: '2026-11-02T10:00:00',
+			image: 'https://fixture.test/a.png',
+			images: ['https://fixture.test/b.png'],
+		} );
+
+		expect( raw.title ).toBe( 'Aurora Sofa' );
+		expect( raw.html ).toBe( '<p>Deep seat</p>' );
+		expect( raw.date ).toBe( '2026-11-01T10:00:00' );
+		expect( raw.modified ).toBe( '2026-11-02T10:00:00' );
+		expect( raw.featuredImage ).toBe( 'https://fixture.test/a.png' );
+	} );
+
+	it( 'derives the slug from the title when the document carries none', () => {
+		expect( extractPayloadRaw( { id: 1, name: 'Aurora 3-Seater Sofa' } ).slug ).toBe( 'aurora-3-seater-sofa' );
+	} );
+
+	it( 'prefers an explicit slug (local content keeps its URL on a rename)', () => {
+		const raw = extractPayloadRaw( {
+			id: 7,
+			name: 'Behind The Scenes (renamed)',
+			slug: 'behind-the-scenes',
+		} );
+
+		expect( raw.slug ).toBe( 'behind-the-scenes' );
+	} );
+} );
+
+describe( 'local source (Proposal 135 §D4)', () => {
+	const LOCAL: WpCollection = {
+		slug: 'posts',
+		restBase: '',
+		fields: [],
+		source: 'local',
+	};
+
+	it( 'defaults the REST base to the bridge local collection', () => {
+		expect( payloadRestBase( LOCAL ) ).toBe( 'nvoos-commerce/v1/local' );
+		expect( payloadRestBase( { ...LOCAL, restBase: 'nvoos-commerce/v1/pages' } ) ).toBe( 'nvoos-commerce/v1/pages' );
+	} );
+
+	it( 'loads local documents with their explicit slugs', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader( {
+			site: PROFILE,
+			collection: LOCAL,
+			userAgent: 'test',
+		} );
+
+		const requested: string[] = [];
+		const originalFetch = globalThis.fetch;
+		( globalThis as { fetch: typeof fetch } ).fetch = ( async ( input: string | URL | Request ) => {
+			requested.push( String( input ) );
+			return new Response(
+				JSON.stringify( {
+					docs: [
+						{
+							id: 7,
+							name: 'Behind The Scenes',
+							slug: 'behind-the-scenes',
+							description: '<p>Notes</p><script>alert(1)</script>',
+							seoTitle: 'Behind The Scenes — Studio',
+							createdAt: '2026-11-01T09:00:00',
+							updatedAt: '2026-11-03T09:00:00',
+						},
+					],
+					totalDocs: 1,
+					totalPages: 1,
+				} ),
+				{ status: 200, headers: { 'content-type': 'application/json' } }
+			);
+		} ) as typeof fetch;
+
+		try {
+			await loader.load( fakeContext( store ) );
+		} finally {
+			( globalThis as { fetch: typeof fetch } ).fetch = originalFetch;
+		}
+
+		expect( requested[0] ).toContain( '/wp-json/nvoos-commerce/v1/local' );
+		expect( store.entries ).toHaveLength( 1 );
+
+		const entry = store.entries[0];
+		expect( entry.id ).toBe( '7' );
+		expect( entry.data.slug ).toBe( 'behind-the-scenes' );
+		expect( entry.data.title ).toBe( 'Behind The Scenes' );
+		expect( entry.data.seoTitle ).toBe( 'Behind The Scenes — Studio' );
+		// Sanitizer ran: the script tag is gone.
+		expect( entry.rendered?.html ).toContain( '<p>Notes</p>' );
+		expect( entry.rendered?.html ).not.toContain( '<script' );
+	} );
+
+	it( 'degrades to an empty collection when an optional local source 404s', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const loader = createWpLoader( {
+			site: PROFILE,
+			collection: { ...LOCAL, optional: true },
+		} );
+
+		const originalFetch = globalThis.fetch;
+		( globalThis as { fetch: typeof fetch } ).fetch = ( async () =>
+			new Response( JSON.stringify( { code: 'rest_no_route', message: 'No route.' } ), {
+				status: 404,
+				headers: { 'content-type': 'application/json' },
+			} ) ) as typeof fetch;
+
+		try {
+			await loader.load( fakeContext( store ) );
+		} finally {
+			( globalThis as { fetch: typeof fetch } ).fetch = originalFetch;
+		}
+
+		expect( store.entries ).toHaveLength( 0 );
+	} );
+} );
+
+describe( 'hybrid local content (106 P2)', () => {
+	type LocalEntry = Record< string, unknown >;
+
+	function loaderWith( entries: LocalEntry[] ) {
+		return createWpLoader( {
+			site: PROFILE,
+			collection: COLLECTION,
+			userAgent: 'test',
+			local: { pattern: '**/*.mdx', base: './src/content/posts' },
+			localLoaderFactory: () =>
+				( {
+					name: 'fake-local',
+					load: async ( context: { store: { set: ( entry: LocalEntry ) => void } } ) => {
+						for ( const entry of entries ) {
+							context.store.set( entry );
+						}
+					},
+				} as never ),
+		} );
+	}
+
+	async function load( entries: LocalEntry[], root?: URL ) {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const originalFetch = globalThis.fetch;
+		( globalThis as { fetch: typeof fetch } ).fetch = cannedFetch( [] );
+		try {
+			await loaderWith( entries ).load( fakeContext( store, root ) );
+		} finally {
+			( globalThis as { fetch: typeof fetch } ).fetch = originalFetch;
+		}
+		return store.entries;
+	}
+
+	it( 'gives a materialized entry the sanitized rendered.html the semantic renderer reads', async () => {
+		const root = await mkdtemp( join( tmpdir(), 'forge-local-' ) );
+		const dir = join( root, 'src', 'content', 'posts' );
+		await mkdir( dir, { recursive: true } );
+		await writeFile(
+			join( dir, 'application.html' ),
+			'<section id="home"><p>Hi</p><script>alert(1)</script></section>',
+			'utf8'
+		);
+
+		const entries = await load(
+			[ { id: 'application', data: { title: 'Application' }, digest: 1, body: '' } ],
+			pathToFileURL( root )
+		);
+
+		expect( entries ).toHaveLength( 1 );
+		expect( entries[ 0 ].data.slug ).toBe( 'application' );
+		// The semantic renderer classifies rendered.html: without it a local page
+		// renders unthemed raw markup and the site loses its bands.
+		expect( entries[ 0 ].rendered?.html ).toContain( '<section id="home">' );
+		// Same sanitizer as the WP path.
+		expect( entries[ 0 ].rendered?.html ).not.toContain( '<script' );
+	} );
+
+	it( 'never promotes the MDX source to rendered.html', async () => {
+		// `body` on a glob entry is the Markdown/MDX SOURCE, not output. Setting
+		// rendered.html from it took the DesignRenderer branch in the post route
+		// and rendered a real MDX post as literal `import` lines and bullets,
+		// shadowing the compiled <Content /> (2026-11-15).
+		const entries = await load( [
+			{
+				id: 'hello-world',
+				data: { title: 'Hello' },
+				digest: 6,
+				body: "import FaqAccordion from '../../components/blocks/FaqAccordion.astro';\n\n- a bullet\n",
+			},
+		] );
+
+		expect( entries ).toHaveLength( 1 );
+		expect( entries[ 0 ].rendered ).toBeUndefined();
+	} );
+
+	it( 'prefers a sibling <id>.html body over the MDX body', async () => {
+		const root = await mkdtemp( join( tmpdir(), 'forge-local-' ) );
+		const dir = join( root, 'src', 'content', 'posts' );
+		await mkdir( dir, { recursive: true } );
+		await writeFile(
+			join( dir, 'application.html' ),
+			'<section id="home"><h1>From file</h1></section>',
+			'utf8'
+		);
+
+		const entries = await load(
+			[ { id: 'application', data: {}, digest: 2, body: 'MDX body is ignored' } ],
+			pathToFileURL( root )
+		);
+
+		expect( entries ).toHaveLength( 1 );
+		expect( entries[ 0 ].rendered?.html ).toContain( 'From file' );
+	} );
+
+	it( 'leaves rendered undefined when local content has no body', async () => {
+		const entries = await load( [ { id: 'bare', data: { title: 'Bare' }, digest: 3, body: '   ' } ] );
+		expect( entries ).toHaveLength( 1 );
+		expect( entries[ 0 ].rendered ).toBeUndefined();
+	} );
+
+	it( 'never ships a local draft', async () => {
+		const entries = await load( [
+			{ id: 'draft', data: { title: 'Draft', draft: true }, digest: 4, body: '<p>x</p>' },
+		] );
+		expect( entries ).toHaveLength( 0 );
+	} );
+} );
+
+describe( 'slugify (D4 — limax, matches the velocity rule)', () => {
+	it( 'transliterates accents', () => {
+		expect( slugify( 'Café Crème' ) ).toBe( 'cafe-creme' );
+		expect( slugify( 'Ångström Über' ) ).toBe( 'angstroem-ueber' );
+	} );
+
+	it( 'keeps the plain ASCII behavior', () => {
+		expect( slugify( 'Aurora 3-Seater Sofa' ) ).toBe( 'aurora-3-seater-sofa' );
+		expect( slugify( 'hello_world  ' ) ).toBe( 'hello-world' );
+	} );
+
+	it( 'drops apostrophes, never separates them (velocity parity)', () => {
+		expect( slugify( "Lena's Chair!" ) ).toBe( 'lenas-chair' );
+	} );
+
+	it( 'caps at 80 characters', () => {
+		const long = 'x'.repeat( 120 );
+		expect( slugify( long ) ).toBe( 'x'.repeat( 80 ) );
+	} );
+
+	it( 'falls back to "item" for empty input', () => {
+		expect( slugify( '' ) ).toBe( 'item' );
+		expect( slugify( '---' ) ).toBe( 'item' );
+	} );
+} );

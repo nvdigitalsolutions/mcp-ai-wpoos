@@ -79,6 +79,25 @@ export interface RecordListOptions {
 	signal?: AbortSignal;
 }
 
+/**
+ * Result of the create-from-research pass (POST /records/{entity}/research).
+ *
+ * `researchStatus`/`researchWarnings`/`researchValidation` mirror the server's
+ * deep_research reliability diagnostics: a `partial` status means the report
+ * failed quality checks (or fell back to reasoning output) and the suggested
+ * fields deserve review before saving.
+ */
+export interface ResearchSuggestion {
+	title: string;
+	fields: Record< string, string >;
+	researchStatus: 'complete' | 'partial';
+	researchWarnings: string[];
+	researchValidation: {
+		passed: boolean;
+		issues: string[];
+	};
+}
+
 /** Default page size for record lists (WordPress caps per_page at 100). */
 export const RECORDS_PER_PAGE = 50;
 
@@ -239,20 +258,44 @@ export class RecordsClient {
 		entity: RecordEntityConfig,
 		query: string,
 		signal?: AbortSignal
-	): Promise< { title: string; fields: Record< string, string > } > {
+	): Promise< ResearchSuggestion > {
 		const recordsBase = this.schemaEndpoint.replace( /\/schema\/?$/, '' );
-		const data = await this.request< { title?: string; fields?: Record< string, string > } >(
+		const data = await this.request< {
+			title?: string;
+			fields?: Record< string, string >;
+			research_status?: string;
+			research_warnings?: unknown;
+			research_validation?: unknown;
+		} >(
 			'POST',
 			`${ recordsBase }/${ entity.key }/research`,
 			{ query },
 			signal
 		);
+
+		// Defaults mirror the server contract: absent diagnostics = the legacy
+		// behaviour, where a non-empty report was accepted as complete.
+		const researchValidation =
+			data?.research_validation && typeof data.research_validation === 'object' && ! Array.isArray( data.research_validation )
+				? ( data.research_validation as { passed?: unknown; issues?: unknown } )
+				: {};
+
 		return {
 			title: typeof data?.title === 'string' ? data.title : '',
 			fields:
 				data?.fields && typeof data.fields === 'object' && ! Array.isArray( data.fields )
 					? data.fields
 					: {},
+			researchStatus: typeof data?.research_status === 'string' && 'partial' === data.research_status ? 'partial' : 'complete',
+			researchWarnings: Array.isArray( data?.research_warnings )
+				? data.research_warnings.filter( ( warning ): warning is string => typeof warning === 'string' )
+				: [],
+			researchValidation: {
+				passed: researchValidation.passed !== false,
+				issues: Array.isArray( researchValidation.issues )
+					? researchValidation.issues.filter( ( issue ): issue is string => typeof issue === 'string' )
+					: [],
+			},
 		};
 	}
 

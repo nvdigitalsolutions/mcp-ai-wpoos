@@ -171,6 +171,116 @@ class Test_Forge_Bridge_Webhook extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A failed HTTP request returns a WP_Error without raising a TypeError
+	 * (regression: send() declared `: array`, which fataled at shutdown when
+	 * the transport failed after configuration).
+	 */
+	public function test_failed_request_returns_wp_error_without_typeerror(): void {
+		$this->configure();
+		remove_all_filters( 'pre_http_request' );
+		add_filter(
+			'pre_http_request',
+			function () {
+				return new WP_Error( 'nvoos_forge_bridge_test_transport', 'transport down' );
+			},
+			10,
+			3
+		);
+
+		$result = Rebuild_Webhook::send( 'content' );
+		$this->assertWPError( $result );
+		$this->assertSame( 'nvoos_forge_bridge_test_transport', $result->get_error_code() );
+
+		// The shutdown path must survive a failed send without a fatal error.
+		Rebuild_Webhook::reset_pending();
+		Rebuild_Webhook::on_content_changed();
+		Rebuild_Webhook::send_pending();
+	}
+
+	/**
+	 * Revisions never schedule a dispatch (the revision insert fires the
+	 * real save_post hook; the handler must skip it).
+	 */
+	public function test_revision_is_skipped(): void {
+		$this->configure();
+		$post_id = self::factory()->post->create();
+
+		// The parent publish scheduled a pending send — clear it so only the
+		// revision's own hook outcome is observed.
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		$this->assertNotFalse( wp_save_post_revision( $post_id ) );
+		Rebuild_Webhook::send_pending();
+		$this->assertSame( array(), $this->captured );
+	}
+
+	/**
+	 * Autosaves never schedule a dispatch (the autosave insert fires the
+	 * real save_post hook; the handler must skip it).
+	 */
+	public function test_autosave_is_skipped(): void {
+		$this->configure();
+		$post_id = self::factory()->post->create();
+
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		$this->assertNotFalse(
+			wp_create_post_autosave(
+				array(
+					'post_ID'      => $post_id,
+					'post_type'    => 'post',
+					'post_content' => 'drafting',
+				)
+			)
+		);
+		Rebuild_Webhook::send_pending();
+		$this->assertSame( array(), $this->captured );
+	}
+
+	/**
+	 * Auto-drafts never schedule a dispatch (the insert fires the real
+	 * save_post hook; the handler must skip it).
+	 */
+	public function test_auto_draft_is_skipped(): void {
+		$this->configure();
+		self::factory()->post->create( array( 'post_status' => 'auto-draft' ) );
+
+		Rebuild_Webhook::send_pending();
+		$this->assertSame( array(), $this->captured );
+	}
+
+	/**
+	 * A publish schedules exactly one dispatch via the real save_post hook.
+	 */
+	public function test_publish_schedules_dispatch(): void {
+		$this->configure();
+		self::factory()->post->create( array( 'post_status' => 'publish' ) );
+
+		Rebuild_Webhook::send_pending();
+		$this->assertCount( 1, $this->captured );
+	}
+
+	/**
+	 * Trashing a post schedules a dispatch (content visibly changed) via the
+	 * real trashed_post hook.
+	 */
+	public function test_trash_schedules_dispatch(): void {
+		$this->configure();
+		$post_id = self::factory()->post->create( array( 'post_status' => 'publish' ) );
+
+		// The publish scheduled a pending send — clear it so the trash hook
+		// is observed in isolation.
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		wp_trash_post( $post_id );
+		Rebuild_Webhook::send_pending();
+		$this->assertCount( 1, $this->captured );
+	}
+
+	/**
 	 * HMAC verification fails closed on tampered payloads and junk.
 	 */
 	public function test_verify_fails_closed(): void {
@@ -205,5 +315,115 @@ class Test_Forge_Bridge_Webhook extends WP_UnitTestCase {
 	public function test_sign_empty_without_secret(): void {
 		$this->assertSame( '', Rebuild_Webhook::sign( 'payload' ) );
 		$this->assertFalse( Rebuild_Webhook::verify( 'payload', '' ) );
+	}
+
+	// -----------------------------------------------------------------------
+	// Proposal 135 — the direct invalidation hop (managed frontends).
+	// -----------------------------------------------------------------------
+
+	/**
+	 * Configure the revalidate endpoint alongside the dispatch.
+	 *
+	 * @return void
+	 */
+	private function configure_revalidate(): void {
+		update_option( Settings::OPTION_REVALIDATE_URL, 'https://www.example.com/api/revalidate' );
+		update_option( Settings::OPTION_REVALIDATE_TOKEN, 'revalidate-token' );
+	}
+
+	/**
+	 * A content change posts the collection + document tags to the frontend.
+	 */
+	public function test_revalidate_posts_tags_for_a_post_change(): void {
+		$this->configure();
+		$this->configure_revalidate();
+
+		$post_id = self::factory()->post->create( array( 'post_type' => 'post' ) );
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		Rebuild_Webhook::on_post_changed( $post_id );
+		Rebuild_Webhook::send_pending();
+
+		$this->assertCount( 2, $this->captured );
+
+		$revalidate = $this->captured[1];
+		$this->assertSame( 'https://www.example.com/api/revalidate', $revalidate['url'] );
+		$this->assertSame( 'Bearer revalidate-token', $revalidate['args']['headers']['Authorization'] );
+
+		$body = json_decode( (string) $revalidate['args']['body'], true );
+		$this->assertSame( array( 'posts', 'posts:' . $post_id ), $body['tags'] );
+
+		// The dispatch still carried exactly one body (unchanged contract).
+		$this->assertStringContainsString( 'dispatches', $this->captured[0]['url'] );
+	}
+
+	/**
+	 * A product post type maps to the products collection.
+	 */
+	public function test_revalidate_tags_products_for_a_product_change(): void {
+		$this->configure();
+		$this->configure_revalidate();
+
+		$product_id = self::factory()->post->create( array( 'post_type' => 'product' ) );
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		Rebuild_Webhook::on_post_changed( $product_id );
+		Rebuild_Webhook::send_pending();
+
+		$body = json_decode( (string) $this->captured[1]['args']['body'], true );
+		$this->assertSame( array( 'products', 'products:' . $product_id ), $body['tags'] );
+	}
+
+	/**
+	 * Revalidate works with no GitHub dispatch configured at all.
+	 */
+	public function test_revalidate_runs_without_the_dispatch(): void {
+		$this->configure_revalidate();
+
+		$post_id = self::factory()->post->create( array( 'post_type' => 'page' ) );
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		Rebuild_Webhook::on_post_changed( $post_id );
+		Rebuild_Webhook::send_pending();
+
+		$this->assertCount( 1, $this->captured );
+		$this->assertSame( 'https://www.example.com/api/revalidate', $this->captured[0]['url'] );
+	}
+
+	/**
+	 * A revalidation transport failure never suppresses the dispatch.
+	 */
+	public function test_revalidate_failure_does_not_block_the_dispatch(): void {
+		$this->configure();
+		$this->configure_revalidate();
+
+		remove_all_filters( 'pre_http_request' );
+		$calls = array();
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( &$calls ) {
+				$calls[] = $url;
+				if ( false !== strpos( $url, '/api/revalidate' ) ) {
+					return new WP_Error( 'nvoos_forge_bridge_test_revalidate', 'revalidate down' );
+				}
+				return array( 'response' => array( 'code' => 204, 'message' => 'No Content' ) );
+			},
+			10,
+			3
+		);
+
+		$post_id = self::factory()->post->create( array( 'post_type' => 'post' ) );
+		Rebuild_Webhook::reset_pending();
+		delete_transient( 'nvoos_forge_bridge_webhook_sent' );
+
+		Rebuild_Webhook::on_post_changed( $post_id );
+		Rebuild_Webhook::send_pending();
+
+		$this->assertCount( 2, $calls );
+		$this->assertStringContainsString( 'dispatches', $calls[0] );
+		$this->assertStringContainsString( '/api/revalidate', $calls[1] );
 	}
 }

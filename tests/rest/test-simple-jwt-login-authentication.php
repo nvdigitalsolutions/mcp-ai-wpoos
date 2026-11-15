@@ -18,6 +18,17 @@ namespace SimpleJWTLogin\Modules {
 			public function getUserMeta( $user_id, $key ) {
 				return array();
 			}
+
+			/**
+			 * Present in the 3.x API the integration probes for before it drives
+			 * `SimpleJWTLoginSettings`. The 4.x rewrite removed it.
+			 *
+			 * @param string $key Option key.
+			 * @return mixed
+			 */
+			public function getOptionFromDatabase( $key = '' ) {
+				return array();
+			}
 		}
 	}
 

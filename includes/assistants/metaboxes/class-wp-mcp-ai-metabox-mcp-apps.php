@@ -11,6 +11,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -164,6 +166,10 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 								$remote_config      = WP_MCP_AI_Pro_Remote_Site_Manager::build_upwork_mcp_app_config( $remote_mcp );
 								$remote_server_url  = isset( $remote_config['server_url'] ) ? $remote_config['server_url'] : '';
 								$remote_option_text = $remote_name . ' (' . __( 'Upwork MCP', 'mcp-ai-wpoos' ) . ' — ' . $remote_server_url . ')';
+							} elseif ( 'quickbooks_mcp' === $remote_type && method_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager', 'build_quickbooks_mcp_app_config' ) ) {
+								$remote_config      = WP_MCP_AI_Pro_Remote_Site_Manager::build_quickbooks_mcp_app_config( $remote_mcp );
+								$remote_server_url  = isset( $remote_config['server_url'] ) ? $remote_config['server_url'] : '';
+								$remote_option_text = $remote_name . ' (' . __( 'QuickBooks MCP', 'mcp-ai-wpoos' ) . ' — ' . $remote_server_url . ')';
 							} elseif ( 'flowhub' === $remote_type && method_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager', 'build_flowhub_mcp_app_config' ) ) {
 								$remote_config      = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $remote_mcp );
 								$remote_server_url  = isset( $remote_config['server_url'] ) ? $remote_config['server_url'] : '';
@@ -380,6 +386,11 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 						$ref_config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_upwork_mcp_app_config( $ref_connection );
 						$ref_server_url = isset( $ref_config['server_url'] ) ? $ref_config['server_url'] : '';
 						$ref_authed     = ! empty( $ref_connection['mcp_oauth'] );
+					} elseif ( 'quickbooks_mcp' === $ref_type && method_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager', 'build_quickbooks_mcp_app_config' ) ) {
+						$ref_kind       = 'quickbooks_mcp';
+						$ref_config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_quickbooks_mcp_app_config( $ref_connection );
+						$ref_server_url = isset( $ref_config['server_url'] ) ? $ref_config['server_url'] : '';
+						$ref_authed     = ! empty( $ref_connection['mcp_oauth'] );
 					} elseif ( 'flowhub' === $ref_type && 'mcp' === ( isset( $ref_connection['flowhub_mode'] ) ? $ref_connection['flowhub_mode'] : '' ) && method_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager', 'build_flowhub_mcp_app_config' ) ) {
 						$ref_kind       = 'flowhub';
 						$ref_config     = WP_MCP_AI_Pro_Remote_Site_Manager::build_flowhub_mcp_app_config( $ref_connection );
@@ -428,6 +439,8 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 					<?php
 					if ( 'upwork' === $ref_kind ) {
 						esc_html_e( 'This app connects to the official Upwork MCP gateway through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' );
+					} elseif ( 'quickbooks_mcp' === $ref_kind ) {
+						esc_html_e( 'This app connects to the QuickBooks Online MCP server through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' );
 					} elseif ( 'flowhub' === $ref_kind ) {
 						esc_html_e( 'This app connects to the official FlowHub MCP gateway through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' );
 					} else {
@@ -447,6 +460,8 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 							<?php
 							if ( 'upwork' === $ref_kind ) {
 								esc_html_e( 'Authenticated via Upwork OAuth login. Tokens are stored centrally and refreshed automatically.', 'mcp-ai-wpoos' );
+							} elseif ( 'quickbooks_mcp' === $ref_kind ) {
+								esc_html_e( 'Authenticated via QuickBooks OAuth login. Tokens are stored centrally and refreshed automatically.', 'mcp-ai-wpoos' );
 							} else {
 								esc_html_e( 'Authenticated via FlowHub OAuth login. Tokens are stored centrally and refreshed automatically.', 'mcp-ai-wpoos' );
 							}
@@ -852,23 +867,24 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 		 * @return void
 		 */
 	protected function render_script() {
-		$app_index        = (int) count( $this->get_current_apps_count() );
-		$max_apps_message = esc_js( __( 'Maximum number of MCP Apps reached.', 'mcp-ai-wpoos' ) );
-		$confirm_message  = esc_js( __( 'Remove this MCP App connection?', 'mcp-ai-wpoos' ) );
-		$mcp_app_label    = esc_js( __( 'MCP App', 'mcp-ai-wpoos' ) );
-		$lbl_connected    = esc_js( __( 'Connected', 'mcp-ai-wpoos' ) );
-		$lbl_error        = esc_js( __( 'Error', 'mcp-ai-wpoos' ) );
-		$lbl_not_tested   = esc_js( __( 'Not tested', 'mcp-ai-wpoos' ) );
-		$lbl_tool         = esc_js( __( 'tool', 'mcp-ai-wpoos' ) );
-		$lbl_tools        = esc_js( __( 'tools', 'mcp-ai-wpoos' ) );
-		$lbl_url_required = esc_js( __( 'Please enter a Server URL first.', 'mcp-ai-wpoos' ) );
-		$lbl_invalid_json = esc_js( __( 'The pasted text is not valid JSON. Expected a mcpServers block.', 'mcp-ai-wpoos' ) );
-		$lbl_no_servers   = esc_js( __( 'No mcpServers entries found in the pasted JSON.', 'mcp-ai-wpoos' ) );
-		$lbl_import_limit = esc_js( __( 'Importing these servers would exceed the maximum number of MCP Apps.', 'mcp-ai-wpoos' ) );
-		$lbl_loopback     = esc_js( __( 'This server is on this WordPress site. Same-site REST endpoints are routed in-process to avoid TLS loopback deadlocks.', 'mcp-ai-wpoos' ) );
-		$lbl_managed      = esc_js( __( 'Managed in Remote Sites — run Test Connection or Discover Tools from the Remote Sites page.', 'mcp-ai-wpoos' ) );
-		$lbl_upwork_ref   = esc_js( __( 'This app connects to the official Upwork MCP gateway through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' ) );
-		$lbl_flowhub_ref  = esc_js( __( 'This app connects to the official FlowHub MCP gateway through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' ) );
+		$app_index              = (int) count( $this->get_current_apps_count() );
+		$max_apps_message       = esc_js( __( 'Maximum number of MCP Apps reached.', 'mcp-ai-wpoos' ) );
+		$confirm_message        = esc_js( __( 'Remove this MCP App connection?', 'mcp-ai-wpoos' ) );
+		$mcp_app_label          = esc_js( __( 'MCP App', 'mcp-ai-wpoos' ) );
+		$lbl_connected          = esc_js( __( 'Connected', 'mcp-ai-wpoos' ) );
+		$lbl_error              = esc_js( __( 'Error', 'mcp-ai-wpoos' ) );
+		$lbl_not_tested         = esc_js( __( 'Not tested', 'mcp-ai-wpoos' ) );
+		$lbl_tool               = esc_js( __( 'tool', 'mcp-ai-wpoos' ) );
+		$lbl_tools              = esc_js( __( 'tools', 'mcp-ai-wpoos' ) );
+		$lbl_url_required       = esc_js( __( 'Please enter a Server URL first.', 'mcp-ai-wpoos' ) );
+		$lbl_invalid_json       = esc_js( __( 'The pasted text is not valid JSON. Expected a mcpServers block.', 'mcp-ai-wpoos' ) );
+		$lbl_no_servers         = esc_js( __( 'No mcpServers entries found in the pasted JSON.', 'mcp-ai-wpoos' ) );
+		$lbl_import_limit       = esc_js( __( 'Importing these servers would exceed the maximum number of MCP Apps.', 'mcp-ai-wpoos' ) );
+		$lbl_loopback           = esc_js( __( 'This server is on this WordPress site. Same-site REST endpoints are routed in-process to avoid TLS loopback deadlocks.', 'mcp-ai-wpoos' ) );
+		$lbl_managed            = esc_js( __( 'Managed in Remote Sites — run Test Connection or Discover Tools from the Remote Sites page.', 'mcp-ai-wpoos' ) );
+		$lbl_upwork_ref         = esc_js( __( 'This app connects to the official Upwork MCP gateway through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' ) );
+		$lbl_flowhub_ref        = esc_js( __( 'This app connects to the official FlowHub MCP gateway through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' ) );
+		$lbl_quickbooks_mcp_ref = esc_js( __( 'This app connects to the QuickBooks Online MCP server through a centrally managed Remote Sites connection. Complete the OAuth login below to finish setup.', 'mcp-ai-wpoos' ) );
 
 		ob_start();
 		?>
@@ -891,6 +907,7 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 					var lblManaged = <?php echo wp_json_encode( $lbl_managed ); ?>;
 					var lblUpworkRef = <?php echo wp_json_encode( $lbl_upwork_ref ); ?>;
 					var lblFlowhubRef = <?php echo wp_json_encode( $lbl_flowhub_ref ); ?>;
+					var lblQuickbooksMcpRef = <?php echo wp_json_encode( $lbl_quickbooks_mcp_ref ); ?>;
 					var maxAppsMessage = <?php echo wp_json_encode( $max_apps_message ); ?>;
 					var mcpAppLabel = <?php echo wp_json_encode( $mcp_app_label ); ?>;
 
@@ -1227,9 +1244,9 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 									titleEl.textContent = name || mcpAppLabel;
 								}
 
-								// Upwork/FlowHub MCP connections authenticate through the OAuth login
-								// flow — surface the login UI on the new reference row.
-								if ( type === 'upwork' || type === 'flowhub' ) {
+								// Upwork/FlowHub/QuickBooks MCP connections authenticate through
+								// the OAuth login flow — surface the login UI on the new reference row.
+								if ( type === 'upwork' || type === 'flowhub' || type === 'quickbooks_mcp' ) {
 									var oauthRow = row.querySelector( '.wp-mcp-ai-ref-oauth-row' );
 									if ( oauthRow ) {
 										oauthRow.style.display = '';
@@ -1241,7 +1258,13 @@ class WP_MCP_AI_Metabox_MCP_Apps extends WP_MCP_AI_Metabox_Base {
 									} );
 									var descEl = row.querySelector( '.wp-mcp-ai-ref-description' );
 									if ( descEl ) {
-										descEl.textContent = type === 'upwork' ? lblUpworkRef : lblFlowhubRef;
+										if ( type === 'upwork' ) {
+											descEl.textContent = lblUpworkRef;
+										} else if ( type === 'quickbooks_mcp' ) {
+											descEl.textContent = lblQuickbooksMcpRef;
+										} else {
+											descEl.textContent = lblFlowhubRef;
+										}
 									}
 								}
 

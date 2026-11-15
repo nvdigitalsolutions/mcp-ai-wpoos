@@ -10,6 +10,8 @@
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
  * @see       https://a2a-protocol.org/latest/specification/
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

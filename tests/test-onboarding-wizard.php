@@ -455,20 +455,20 @@ class WP_MCP_AI_Onboarding_Wizard_Test extends WP_UnitTestCase {
 		$method = new ReflectionMethod( $this->wizard, 'resolve_default_model' );
 		$method->setAccessible( true );
 
-		$this->assertSame( 'gpt-4.1', $method->invoke( $this->wizard, array(), 'openai' ) );
+		$this->assertSame( 'gpt-6.1-sol', $method->invoke( $this->wizard, array(), 'openai' ) );
 		$this->assertSame( 'claude-sonnet-5-5', $method->invoke( $this->wizard, array(), 'anthropic' ) );
 		$this->assertSame( 'gemini-3.8-flash', $method->invoke( $this->wizard, array(), 'gemini' ) );
 		$this->assertSame( 'llama4', $method->invoke( $this->wizard, array(), 'ollama' ) );
 	}
 
 	/**
-	 * The resolve_default_model method should return gpt-4.1 for unknown providers.
+	 * The resolve_default_model method should return gpt-6.1-sol for unknown providers.
 	 */
 	public function test_resolve_default_model_unknown_provider() {
 		$method = new ReflectionMethod( $this->wizard, 'resolve_default_model' );
 		$method->setAccessible( true );
 
-		$this->assertSame( 'gpt-4.1', $method->invoke( $this->wizard, array(), 'unknown_provider' ) );
+		$this->assertSame( 'gpt-6.1-sol', $method->invoke( $this->wizard, array(), 'unknown_provider' ) );
 	}
 
 	// -------------------------------------------------------------------------

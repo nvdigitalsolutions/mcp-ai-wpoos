@@ -24,6 +24,26 @@ describe('TokenService', () => {
 		expect(service.resolveActiveSemantic().accent).toBe('#1d4ed8');
 	});
 
+	it('exposes theme versions: static descriptors declare them, light/dark do not, createTheme carries them', () => {
+		const service = new TokenService();
+
+		// Core ADS modes carry no version.
+		expect(service.themeDescriptor('light')?.version).toBeUndefined();
+		expect(service.themeDescriptor('dark')?.version).toBeUndefined();
+
+		// Static brand themes declare SemVer in their DTCG source.
+		expect(service.themeDescriptor('example-brand')?.version).toBe('1.0.0');
+
+		// Runtime themes accept an optional version (surfaced in the footer).
+		const created = service.createTheme({
+			name: 'client-a',
+			version: '2.3.4',
+			tokens: { accent: '#7c3aed' },
+		});
+		expect(created.applied).toBe(true);
+		expect(service.themeDescriptor('client-a')?.version).toBe('2.3.4');
+	});
+
 	it('rejects invalid overrides all-or-nothing (058 transactional rule)', () => {
 		const service = new TokenService();
 		const result = service.applyOverrides({

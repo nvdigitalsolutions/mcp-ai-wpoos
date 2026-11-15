@@ -1,0 +1,47 @@
+name: QB Desktop MCP Tests
+
+# Proposal 113 — offline test suite for the QuickBooks Desktop MCP server
+# (examples/qb-desktop-mcp). Pure-Python replay/unit tests: no Windows and
+# no QuickBooks needed. The VM harness (tests/vm/) is deliberately excluded
+# from CI — it requires a real QuickBooks Desktop on a Windows machine.
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'examples/qb-desktop-mcp/**'
+      - '.github/workflows/qb-desktop-mcp-tests.yml'
+  pull_request:
+    paths:
+      - 'examples/qb-desktop-mcp/**'
+      - '.github/workflows/qb-desktop-mcp-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: offline tests (pytest)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: examples/qb-desktop-mcp
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Pinned to the same uv line used on the Windows dev machine (0.12);
+      # pyproject uses the uv-0.12 [tool.uv] dev-dependencies block.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: '0.12.3'
+
+      - name: Sync project environment
+        run: uv sync --locked
+
+      - name: Run offline test suite
+        run: uv run pytest tests/test_offline.py -q

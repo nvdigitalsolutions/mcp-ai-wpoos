@@ -109,3 +109,26 @@ describe('mintNonce', () => {
 		await expect(mod.mintNonce()).resolves.toBe('abc123');
 	});
 });
+
+describe('createPreviewLink (Proposal 135 Phase 5)', () => {
+	it('POSTs to the local collection preview-token route', async () => {
+		const link = {
+			token: 'abc.def',
+			expiresAt: '2026-11-09T12:00:00+00:00',
+			slug: 'behind-the-scenes',
+			previewUrl: 'https://client.example/api/preview?token=abc.def&slug=behind-the-scenes',
+		};
+		apiFetchMock.mockResolvedValue(link);
+
+		await expect(mod.createPreviewLink('local', 42)).resolves.toEqual(link);
+
+		const call = apiFetchMock.mock.calls[0][0] as {
+			path: string;
+			method: string;
+			headers: Record<string, string>;
+		};
+		expect(call.path).toBe('/api/local/42/preview-token');
+		expect(call.method).toBe('POST');
+		expect(call.headers['X-WP-Nonce']).toBe('abc123');
+	});
+});

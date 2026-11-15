@@ -1,0 +1,80 @@
+---
+// FeatureGrid — icon-box/counter/feature sections rebuilt as a card grid.
+// `columns` (Proposal 115 §4) drives the grid via per-breakpoint CSS custom
+// properties — the wireframe's captured/inferred collapse behavior. The
+// heading facts (125 §7/§8) re-apply the source's modern-heading rhythm:
+// typography vars, the underline divider, and the centered alignment
+// (jayainc's "Let our Expert & Trusted Team…" band).
+import type { SemanticSection } from '../../forge/semantic.ts';
+import SectionLinks from './SectionLinks.astro';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SmartImage from '../SmartImage.astro';
+import SectionTitle from './SectionTitle.astro';
+
+interface Props {
+	section: SemanticSection;
+	columns?: Record<string, number>;
+	theme?: SectionTheme;
+}
+
+const { section, columns, theme } = Astro.props;
+const { title, body, items } = section.slots;
+// A grid never declares more tracks than it has items: the source's authored
+// column count (3 in a services band, 4 in a logo wall) can exceed what the
+// classifier rebuilt after merging or skipping an empty column.
+const desktop = columns ? Math.min( columns.desktop ?? 4, Math.max( items?.length ?? 1, 1 ) ) : undefined;
+const gridStyle = columns && desktop
+	? `--ds-cols-desktop: ${ desktop }; --ds-cols-tablet: ${ Math.min( columns.tablet ?? 2, desktop ) }; --ds-cols-mobile: ${ Math.min( columns.mobile ?? 1, desktop ) };`
+	: undefined;
+
+const titleVars = [
+	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
+	theme?.titleStyle?.weight && `--ds-title-weight:${ theme.titleStyle.weight }`,
+	theme?.titleStyle?.lineHeight && `--ds-title-lh:${ theme.titleStyle.lineHeight }`,
+	theme?.titleStyle?.tablet?.lineHeight && `--ds-title-lh-md:${ theme.titleStyle.tablet.lineHeight }`,
+	theme?.titleStyle?.mobile?.lineHeight && `--ds-title-lh-sm:${ theme.titleStyle.mobile.lineHeight }`,
+	theme?.titleStyle?.letterSpacing && `--ds-title-ls:${ theme.titleStyle.letterSpacing }`,
+]
+	.filter( Boolean )
+	.join( ';' );
+
+const dividerStyle = theme?.titleDivider
+	? [
+			`width:${ theme.titleDivider.width }`,
+			`height:${ theme.titleDivider.height }`,
+			`background:${ theme.titleDivider.background }`,
+			theme.titleDivider.shadow && `box-shadow:${ theme.titleDivider.shadow }`,
+		]
+			.filter( Boolean )
+			.join( ';' )
+	: undefined;
+---
+
+<section class:list={['ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center']}>
+	{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
+	{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
+	{body && body.length > 0 && (
+		<div class="ds-lede">
+			{body.map((paragraph) => (
+				<p>{paragraph}</p>
+			))}
+		</div>
+	)}
+	{items && items.length > 0 && (
+		<div class="ds-grid" style={gridStyle}>
+			{items.map((item) => (
+				<div class="ds-card">
+					{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
+					{item.title && <h3>{item.title}</h3>}
+					{item.body && <p>{item.body}</p>}
+					{item.links?.[0] && (
+						<a class="ds-button" href={item.links[0].href ?? '#'}>
+							{item.links[0].text ?? 'Learn more'}
+						</a>
+					)}
+				</div>
+			))}
+		</div>
+	)}
+	<SectionLinks section={section} />
+</section>

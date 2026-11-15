@@ -13,7 +13,7 @@
 # Usage: bash scripts/macos-matrix-remote.sh [path-to-.app]
 set -euo pipefail
 
-APP="${1:-src-tauri/target/debug/bundle/macos/NV oOS Dictation.app}"
+APP="${1:-src-tauri/target/debug/bundle/macos/NV oOS Cognition.app}"
 OUT="${NVOS_MATRIX_OUT:-/tmp/nvoos-matrix}"
 mkdir -p "$OUT"
 

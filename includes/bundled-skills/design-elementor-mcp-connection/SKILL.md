@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-elementor-mcp-connection
-description: Connect and manage Elementor MCP servers as "MCP Apps" on NV oOS assistants — official Elementor MCP (application passwords, permission inheritance, enable/revoke flows), third-party Elementor MCP plugins, the Pro MCP Apps metabox/slash-command/REST surfaces, the Remote Sites "MCP Server" connection type with assistant connection_ref references, auth-type mapping (basic vs header vs oauth), the host allowlist (Security Center setting, constant, filter), tool discovery/bridging into chat, and troubleshooting (allowlist 403s, restricted hosts, protocol fallback, negative discovery cache, same-site in-process bridge, missing connection_ref). Use when connecting an assistant to Elementor MCP, creating a Remote Sites MCP Server connection, using /mcp-app, fixing Test Connection or Discover Tools failures, allowlisting an Elementor host, or debugging bridged elementor_* tools missing from chat.
+description: Connect and manage Elementor MCP servers as "MCP Apps" on NV oOS assistants — official Elementor MCP (application passwords, enable/revoke flows), the Pro MCP Apps metabox/slash-command/REST surfaces, the Remote Sites "MCP Server" connection type, auth-type mapping (basic vs header vs oauth), the host allowlist, and troubleshooting (allowlist 403s, restricted hosts, protocol fallback, negative discovery cache, missing connection_ref). Use when connecting an assistant to Elementor MCP, creating a Remote Sites MCP Server connection, using /mcp-app, fixing Test Connection or Discover Tools failures, allowlisting an Elementor host, or debugging bridged elementor_* tools missing from chat.
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
@@ -157,6 +157,15 @@ storage), create it once in **NV oOS Pro → Remote Sites → Add Connection**:
    flow-state transient, so the callback/complete/probe/refresh/revoke
    handlers rebuild the client with the same options — geo-blocked
    deployments can complete the web login, not just the connection test.
+   **(v1.2.21):** **QuickBooks Online MCP** connections use a dedicated
+   `connection_type: quickbooks_mcp` — the official hosted endpoint
+   `https://ai-inc.quickbooks.intuit.com/v1/mcp` by default, or a self-hosted
+   Streamable HTTP wrapper. `get_mcp_app_connections()` merges them,
+   `is_mcp_app_connection()` accepts them, `resolve_connection_ref()` resolves
+   via `build_quickbooks_mcp_app_config()`, and the OAuth client now supports
+   **pre-registered Intuit clients** (client ID + secret → HTTP Basic token
+   requests per RFC 6749 §2.3.1, DCR skipped; client IDs keep their case).
+   Setup, auth modes, and troubleshooting: `docs/quickbooks-mcp-connect.md`.
 
 ### Path B — inline MCP App (per-assistant)
 

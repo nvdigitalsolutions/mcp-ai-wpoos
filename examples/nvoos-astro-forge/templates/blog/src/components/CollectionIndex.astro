@@ -1,0 +1,50 @@
+---
+// Listing page for a NON-CORE collection (a WordPress CPT such as `portfolio`).
+//
+// Additive: only a profile that declares an extra collection generates a route
+// that renders this component.
+import Base from '../layouts/Base.astro';
+import manifest from '../../nvoos.json';
+import { getCollection } from 'astro:content';
+
+interface Props {
+	collection: string;
+	/** URL prefix, e.g. `/portfolio`. */
+	basePath: string;
+	title: string;
+	description?: string;
+}
+
+const { collection, basePath, title, description } = Astro.props;
+
+// The collection name is a prop, so the typed overload does not apply; a
+// declared collection always exists at build time.
+const loadCollection = getCollection as unknown as ( name: string ) => Promise< Array< any > >;
+const entries = await loadCollection( collection );
+
+const pageUrl = Astro.site ? new URL( `${ basePath }/`, Astro.site ).href : undefined;
+const pageDescription = description ?? `Every ${ title.toLowerCase() } entry.`;
+
+const items = entries
+	.map( ( entry ) => ( {
+		url: `${ basePath }/${ entry.id }/${ entry.data?.slug ?? entry.id }/`,
+		title: entry.data?.title ?? entry.data?.slug ?? entry.id,
+		excerpt: entry.data?.excerpt ?? entry.data?.seoDescription ?? '',
+		date: entry.data?.date,
+	} ) )
+	.sort( ( a, b ) => String( b.date ?? '' ).localeCompare( String( a.date ?? '' ) ) );
+---
+
+<Base title={title} description={pageDescription} canonical={pageUrl} seo={{}} markdownHref={undefined}>
+	<article class="post">
+		<h1>{title}</h1>
+		<ul class="post-list">
+			{items.map( ( item ) => (
+				<li>
+					<a href={item.url}>{item.title}</a>
+					{item.excerpt && <p>{item.excerpt}</p>}
+				</li>
+			) )}
+		</ul>
+	</article>
+</Base>

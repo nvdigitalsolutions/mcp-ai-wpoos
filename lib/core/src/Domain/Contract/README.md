@@ -20,12 +20,17 @@ Holds every interface the oOS core engine exports — pure contracts with zero i
 | `ErrorFactoryInterface` | `ErrorFactoryInterface.php` | Every tool, provider, and service — canonical error envelope |
 | `ContentStoreInterface` | `ContentStoreInterface.php` | Read/write tools (`GetPostTool`, `CreatePostTool`, etc.) |
 | `AuthProviderInterface` | `AuthProviderInterface.php` | `GetUserInfoTool`, agentic loop auth context |
+| `TeamServiceInterface` | `TeamServiceInterface.php` | Team console pages (`TeamController`), org tools |
+| `ProfessionRepositoryInterface` | `ProfessionRepositoryInterface.php` | Profession console pages, `list_professions` / `get_profession` |
+| `ProfessionWriteInterface` | `ProfessionWriteInterface.php` | `save_profession` — optional; only runtimes with a writable catalogue implement it |
 | `SettingsStoreInterface` | `SettingsStoreInterface.php` | All provider clients (API keys, base URLs) |
 | `FileStoreInterface` | `FileStoreInterface.php` | `SearchAttachmentsTool`, image/audio generation tools |
 | `CacheStoreInterface` | `CacheStoreInterface.php` | Domain-owned cache contract with transient-style API |
 | `QueueClientInterface` | `QueueClientInterface.php` | Async tool execution, cron scheduling |
 | `EventDispatcherInterface` | `EventDispatcherInterface.php` | Domain-owned event dispatcher with filter semantics |
 | `HttpClientInterface` | `HttpClientInterface.php` | Domain-owned HTTP client contract |
+| `MjmlCompilerInterface` | `MjmlCompilerInterface.php` | `GenerateEmailTemplateTool` — optional; only runtimes with a JS engine or MJML sidecar implement it |
+| `HarnessProfileProviderInterface` | `HarnessProfileProviderInterface.php` | `ScopeMemoryTool` — optional; the WordPress adapter wraps `WP_MCP_AI_Harness_Profile`, a runtime without harness storage omits it |
 | `ToolInterface` + 5 sub-interfaces | `ToolInterface.php` | Every tool in `../../Tool/` |
 
 ## Inputs / Outputs / Neighbors

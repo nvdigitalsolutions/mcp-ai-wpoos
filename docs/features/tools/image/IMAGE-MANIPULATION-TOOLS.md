@@ -240,7 +240,7 @@ All tools declare the following capability flags:
 
 ## Requirements
 
-- **PHP**: 7.4+
+- **PHP**: 8.1+
 - **WordPress**: 6.0+
 - **PHP Extensions**: GD or ImageMagick (automatically detected)
 - **Permissions**: User must have `upload_files` capability

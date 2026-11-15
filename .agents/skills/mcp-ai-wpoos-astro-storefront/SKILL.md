@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-astro-storefront
-description: Operational guide for the NV-authored headless storefront (Proposal 092) — the nvoos-astro-bridge Payload-shaped commerce contract (`nvoos-commerce/v1`), the `examples/nvoos-astro-velocity` Astro app, its hermetic dev/test loop (fixture server, vitest, Playwright, Lighthouse CI), the contract drift guard, the rebuild webhook, the sync workflow + public mirror deployment, the ADS design system (DTCG tokens, generator + drift gate, dark/light theming, Proposal 095), and the `nvoos-astro-mcp` assistant-control surface at `/mcp` (dual-era Streamable HTTP, design tool slice, fail-closed write auth). Use when working on the storefront, the bridge contract, image optimization, SEO/crawlability, design tokens/themes, the MCP mount, or the mirror deploy loop.
+description: "Operational guide for the NV-authored headless storefront: the nvoos-astro-bridge Payload-shaped commerce contract (nvoos-commerce/v1), the examples/nvoos-astro-velocity Astro app, its hermetic dev/test loop, sync workflow and mirror deployment, the ADS design system (DTCG tokens, drift gate, theming), the nvoos-astro-mcp control surface at /mcp (dual-era Streamable HTTP, fail-closed write auth), and the native→Woo catalog migration. Use when working on the storefront, bridge contract, tokens/themes, MCP mount, or catalog migration."
 ---
 
 # NV oOS Astro Storefront — ops guide (Proposal 092)
@@ -14,7 +14,7 @@ retire). Full context: `docs/project/proposals/092-astro-storefront-layer-propos
 
 | Piece | Location | Role |
 |---|---|---|
-| Bridge addon | `addons/nvoos-astro-bridge/` | Serves the Payload envelope from WordPress + WooCommerce data (transitional backend; Laravel takes over at T1 per Proposals 085/090) |
+| Bridge addon | `addons/nvoos-astro-bridge/` | Serves the Payload envelope from WordPress + WooCommerce data (transitional backend; Laravel takes over at T1 per Proposals 085/090). Display name: **NV oOS Astro Bridge** (renamed from "Astro Bridge" 2026-11-03; slug/version unchanged) |
 | Storefront source | `examples/nvoos-astro-velocity/` | Astro SSR + prerendered catalog, React islands (cart badge, gallery), View Transitions |
 | Sync workflow | `.github/workflows/sync-nvoos-astro-velocity.yml` | Builds + tests, then rebuilds for the mirror |
 | Public mirror | `nvdigitalsolutions/nvoos-astro-velocity` (PUBLIC) | Assembled deploy tree (Astro `dist/` + server shim) — zero licensed bytes |
@@ -90,9 +90,23 @@ npx playwright install chromium && npm run test:e2e    # 2 specs — JS-disabled
 npm run lhci:ci                                        # CHROME_PATH → Playwright's Chromium
 ```
 
+- **CI's "Build test artifact" step runs `astro check` as a GATE** — the
+  sync workflow fails there before any deploy. Validate the same way
+  locally: capture the exit code unmasked (`cmd > log 2>&1; echo exit=$?`),
+  never through a `grep`/`head` pipe — a masked 2026-11-04 run shipped
+  three `className` type errors in an `.astro` template and the CI gate
+  caught them on the next mirror build. A bare `npx astro build` does NOT
+  type-check; `npm run build` (which chains `astro check`) and CI both do.
+
 - **Windows gotcha:** `astro check` OOMs at the default 4 GB heap on this
   machine — run `NODE_OPTIONS=--max-old-space-size=8192 npm run check` (and
   the same for `npm run build`, which chains `astro check` first).
+- **Windows vitest fork-pool hang (2026-11-03):** the default forks pool
+  times out starting workers for EVERY test file (pre-existing ones
+  included — `[vitest-pool]: Failed to start forks worker`). Run
+  `npx vitest run --pool=threads`. The bridge SPA's own suite
+  (`addons/nvoos-astro-bridge`, `npm run test`) fails the same way — the
+  same flag fixes it.
 - The fixture server returns **401 on `/auth/me` without a cookie** and serves
   a real 1×1 PNG on `/wp-content/uploads/` — keep both behaviours.
 - PHP side (bridge): `php -l` + phpcs, then PHPUnit in Docker (`oos-wp`
@@ -161,11 +175,16 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   the Linux CI `npm run build` at `build:mcp` (PR #7303). Use the esbuild JS
   API (`import { build } from 'esbuild'`) — it resolves the platform binary
   itself; `scripts/build-mcp.mjs` was rewritten this way.
-- **25 tools** (`SERVER_VERSION` 0.2.0): design (14 — `tokens_get/set/import_dtcg/rollback`,
+- **33 tools** (`SERVER_VERSION` 0.3.0): design (14 — `tokens_get/set/import_dtcg/rollback`,
   `theme_*`, `contrast_check`, `design_analyze/compare/plan/theme`; bulk writes transactional: validate → dry-run
   diff → snapshot → all-or-nothing), CMS (6 — `cms_list/get/create/update/delete`,
   `media_upload` over `commerce/client.ts`, collection allowlist, `limit` ≤ 100),
-  ops (5 — `site_status`, `preview_url`, `rebuild_trigger`, `screenshot`,
+  content (8 — `content_list/get/create/update/delete/preview_url/restore/validate`
+  over `content/pages` + `content/posts`, Proposal 107; writes manager-gated,
+  draft-default creates, publish gated on the backend `publish_posts` cap,
+  per-session write quota, post-write route-cache purge — see the
+  "MCP scope — 33 tools" section below), ops (5 — `site_status`, `preview_url`,
+  `rebuild_trigger`, `screenshot`,
   `nds_export` — the NDS DTCG document + mapping report for the 4.2 round-trip).
   The design-import tools (Proposal 098) fetch a source URL (Astro theme repo,
   WordPress site, or any website) and extract its design language — palette
@@ -295,6 +314,24 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## Key gotchas (learned the hard way)
 
+- **A custom `src/fetch.ts` would break the whole app.** A fetch handler that
+  returns a `Response` replaces Astro's request pipeline — Astro then warns
+  that the project's sessions, actions, middleware and cache handlers are NOT
+  wired. A storefront that adopted it would silently lose customer sessions,
+  server actions and route caching. That is why this app keeps its own
+  `serve.mjs` and the forge uses **endpoint proxy routes** instead
+  (Proposal 135).
+- **`home_url()` is not the public origin** (Proposal 135). When the CMS lives
+  on `cms.<client>` and the storefront owns `<client>`, shopper-facing defaults
+  must come from `Schema::public_origin()` / `OPTION_PUBLIC_ORIGIN`, never
+  `home_url()` — otherwise `shop_defaults()` and the checkout/cart/return URL
+  allowlist point at a host that serves no storefront.
+- **`/manage` is proprietary and is NOT redistributed.**
+  `addons/nvoos-astro-bridge/LICENSE` is a commercial licence and the forge
+  template is a separate distribution, so the SPA bundle may only ship where
+  the bridge licence applies (this app and wp-admin). A forged site must load
+  it from the licensed CMS host or use the CMS page — never bundle it into a
+  template.
 - **CartBadge** must hydrate `client:load transition:persist` — `client:idle`
   is too slow for Playwright e2e.
 - Playwright islands with `client:visible` hydrate lazily → use `toPass()` +
@@ -304,6 +341,12 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   output buffers — the class keeps a static `$pending` flag with
   `send_pending()`/`reset_pending()` seams. Test through those seams, not the
   action.
+- **Never grep over the minified bundles (2026-11-03):**
+  `addons/nvoos-astro-bridge/build/standalone/astro-admin.js` and the app's
+  `public/manage-assets/astro-admin.js` are multi-MB single-line esbuild
+  output — a bare grep over the addon or app directory matches the whole
+  file and floods the context window. Always scope with an include pattern
+  (`addons/nvoos-astro-bridge/src/**`) when hunting SPA code.
 - **TestTransformerGolden**: paths use `dirname(__DIR__, 2)`; golden JSON and
   transformer output must both be normalized (`normalize_golden_fields()` —
   floats like `1299.0` vs `1299`, name-sorted terms) before comparison.
@@ -358,6 +401,18 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   (host-only), and `/api/auth/me`'s `canManage` gates everything. The sync
   workflow installs bridge deps (`npm ci` in `addons/nvoos-astro-bridge/`) before
   the app build and re-runs on bridge path changes.
+- **Adding a collection to `/manage` (the four-file rule):** a new collection is
+  `types/index.ts` (`CollectionSlug`), `config/collections.ts` (fields +
+  `statusFilter`/`searchable`/`previewable`/`sortable`), `auth/permissions.ts`
+  (`NAV` entry — the sidebar and the router both read it), then **rebuild the
+  bundle and sync it**: `npm run build && npm run build:standalone` in the addon,
+  then `node scripts/sync-manage-assets.mjs` here (or `npm run build:manage`).
+  Both committed bundles must move together — `build/standalone/*` and
+  `public/manage-assets/*` — or the two-bundle drift gate fails.
+- **A per-row action that mints a link must open the tab synchronously.**
+  `window.open()` after an `await` is treated as a popup and blocked; open
+  `about:blank` first, then `location.replace(url)` once the request resolves
+  (the `local` collection's Preview button, Proposal 135).
 - **Standalone build — jsx-runtime (learned 2026-10-29):**
   `@wordpress/element` ships NO `./jsx-runtime` export — a standalone
   esbuild build with `jsxImportSource: '@wordpress/element'` fails with
@@ -366,6 +421,17 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
   wp-admin build keeps the element shim (window.React.createElement) that
   piggybacks WP's React. Also: output naming comes from an object entryPoint
   (`{ 'astro-admin': 'src/standalone.tsx' }`), not `entryNames`.
+- **The wp-admin page serves the STANDALONE bundle (bridge 1.1.0, learned
+  2026-11-03):** `AdminPage` enqueues `build/standalone/astro-admin.{js,css}`,
+  NOT the externals-based `build/index.js`. Under WP 7.1.4 the externals +
+  JSX-shim pipeline committed an inconsistent tree (products table rows were
+  text-only, zero `<td>` elements — fiber tree and DOM disagreed) while the
+  identical standalone bundle rendered perfectly when injected into the same
+  page. The externals target stays in `esbuild.config.cjs` but nothing
+  enqueues it. Two follow-ups of the same incident: the old enqueue pointed
+  at a non-existent `build/index.css` (the SPA ran unstyled in wp-admin), and
+  `standalone.css` now bleeds the shell edge-to-edge
+  (`body.toplevel_page_astro-cms #wpcontent { padding-left: 0 }`).
 - **`/manage` login triage:** a `401` on `/api/auth/me` in the network
   panel BEFORE sign-in is the expected auth probe (the gate then renders
   the form). A successful login landing on "does not have permission to
@@ -426,6 +492,15 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## Deploy & revalidation
 
+- **Forged client sites (Proposal 114) do NOT get per-app mirror repos.**
+  They deploy through ONE shared private mirror
+  (`nvdigitalsolutions/nvoos-forge-sites`) — one `site/<name>` branch per
+  client with `dist/` at the branch root (force-pushed, flat). Velocity
+  supports per-app **Branch** + **Root directory** settings (official
+  Velocity deployment docs), so each client app connects the shared repo
+  and selects its branch. Ops: the `mcp-ai-wpoos-astro-forge` skill +
+  `docs/project/proposals/114-shared-mirror-deploy-addendum.md`.
+
 - `npm run sync:dist` assembles the deploy tree; the workflow has **two
   builds**: localhost-origin (smoke/e2e/LHCI) and prod-host rebuild (mirror).
 - Rebuild trigger: bridge fires a debounced `nvoos-storefront-content-changed`
@@ -473,20 +548,710 @@ npm run lhci:ci                                        # CHROME_PATH → Playwri
 
 ## Standards this app is built to (research-backed)
 
-- **Hybrid rendering** — prerender the catalog at build; SSR the dynamic
-  pockets (stock, promos). This is the 2026 Astro headless-commerce standard.
+- **On-demand SSR for commerce pages + route caching** (Proposal 104 §3.2 —
+  supersedes 092's build-time PDP prerender): Hydrogen's own guidance is
+  "default to SSR for commerce pages"; the Astro 7 route cache
+  (`memoryCache` provider + `Astro.cache.set` tags + config `routeRules`)
+  is the ISR-equivalent, and the mirror build is now fully hermetic
+  (`npm run build:prod-sim` — no `NVOOS_API_BASE`).
 - **Astro Image** for automatic WebP/AVIF + lazy loading via the runtime
   endpoint (above).
-- **SEO**: canonical single product URL, `Product` JSON-LD in initial HTML
-  with SKU-aligned IDs, `/sitemap.xml`, robots, cache headers + revalidation —
-  verified by the JS-disabled crawlability spec and Lighthouse gates
-  (perf ≥ 0.8, a11y ≥ 0.9, best-practices ≥ 0.9, seo ≥ 0.95).
+- **SEO**: canonical single product URL, real 301s for slug drift, `Product`
+  JSON-LD in initial HTML with SKU-aligned IDs, `/sitemap.xml`, robots,
+  cache headers + revalidation — verified by the JS-disabled crawlability
+  spec, the axe-core e2e gate (D6) and Lighthouse gates (perf ≥ 0.8,
+  a11y ≥ 0.9, best-practices ≥ 0.9, seo ≥ 0.95).
+- **Theme runtime (Proposal 104)**: `src/lib/theme/` is the client theme
+  module — localStorage is truth, application is idempotent, and the boot
+  **re-applies on `astro:after-swap`** (head scripts run once; the
+  ClientRouter swaps the whole `<html>` element, wiping `data-theme`).
+  Bundled component scripts are NOT re-executed on SPA navigation — Theme/
+  ContrastToggle use document-level delegation + after-swap re-sync.
+  `color-scheme` is applied alongside `data-theme` (browser UI parity); a
+  high-contrast axis (`data-contrast="high"`) rides the existing
+  `line-strong` token.
+- **BFF security headers (D12)**: CSP per response with SHA-256 hashes of
+  every inline script (no blanket `unsafe-inline`; inline `on*` handlers
+  are forbidden in src — see the category PLP's delegated auto-submit).
+- **Approved owner items (2026-11-02)**: Q3 — `POST /internal/revalidate/`
+  (bearer `NVOOS_REVALIDATE_TOKEN`, tag-based purge of the in-process route
+  cache; trailing slash is canonical, unset token = 503). Q5 —
+  `GET /og/product/{id}.png` branded OG cards (satori + resvg + Inter via
+  Fontsource, ADS tokens, day-long cache; render failures 302 to the
+  product image); PDPs point `og:image` at it. Fixture server appends a
+  synthetic draft (id 9901) at boot — goldens stay byte-identical.
+
+## CSP + ClientRouter — inline scripts MUST be page-invariant (2026-11-09)
+
+`scripts/lib/security-headers.mjs` builds `script-src` from the **rendered
+document** (SHA-256 per inline script; no `unsafe-inline`). That is correct for
+a full load and **wrong for client-side navigation**: `ClientRouter` swaps in
+another page's markup and re-executes its inline scripts, but the browser keeps
+the **first document's** CSP (a fetched fragment's CSP header is ignored). So
+any inline script present on page B but not page A is blocked on A → B.
+
+**Symptom.** Console spam from `ClientRouter.astro_astro_type_script_index_0_lang.*.js`:
+`Executing inline script violates the following Content Security Policy
+directive 'script-src …'`, listing hashes that do **not** match the ones the
+document allows. The interactive pattern on the target page (tabs, an island)
+is simply dead until a hard reload.
+
+**Diagnose by comparing hash sets across routes** — they must be identical:
+
+```sh
+for p in / /components/ /components/blocks/ /cart/; do
+  curl -sS -D - -o /dev/null "$BASE$p" | grep -i '^content-security-policy' \
+    | grep -o 'sha256-[A-Za-z0-9+/=]*' | tr '\n' ' '; echo " <- $p"
+done
+```
+
+**Fix (landed, two parts):**
+
+1. Bundled/hoisted scripts stay external so `'self'` covers them —
+   `vite.build.assetsInlineLimit: 0` in `astro.config.mjs`. Removed the UiTabs
+   script and the analytics script from the inline set.
+2. **Islands use `client:load` only.** `client:visible` emits a per-page
+   IntersectionObserver bootstrap and `client:idle` a per-page
+   `requestIdleCallback` bootstrap — both inline, both page-variant. Only
+   `client:load` adds nothing to the inline set. With both applied the
+   first-party inline set is **IDENTICAL on every route** (`/`, `/components/`,
+   `/components/blocks/`, `/cart/`, `/checkout/`, `/products/`, a PDP,
+   `/pages/1/about/` → 4 hashes each, 1 distinct set). Guarded by
+   `tests/unit/csp-inline-invariance.test.ts` (asserts `assetsInlineLimit: 0`
+   and that no island uses `client:visible`/`client:idle`; it strips comments
+   first, because prose legitimately names the directives).
+
+**Cloudflare injects a THIRD-PARTY inline script — cannot be allowlisted.**
+The live host sits behind Cloudflare, which appends:
+
+```
+(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);
+ … window.__CF$cv$params={r:'<per-request ray>',t:'…'};
+ … '/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=<ray>' …})()
+```
+
+Its content embeds a **per-request `ray` id**, so its hash changes on every
+response and no CSP hash list can ever contain it. Observed: 2 blocks per
+in-app navigation (one from the source document's injection, one from the
+target's) and 3 when navigating into a `client:visible` page. This is
+Cloudflare **Bot Fight Mode / JS detections**; the correct resolution is to
+disable that feature for the host (Security → Bots) — it is already
+non-functional while blocked, so nothing is lost, and `'unsafe-inline'` is
+the only code-side alternative, which 104 D12 forbids. Confirm with:
+`curl -sS https://<host>/ | grep -o '__CF\$cv\$params'`.
+
+**Test gap this exposes.** Every other e2e does `page.goto()` — a full load that
+never exercises the router. `tests/e2e/component-library.spec.ts` now navigates
+in-app (creates an anchor and clicks it) and asserts **zero** CSP console
+errors plus working tabs. Add that shape for any navigation-critical pattern.
+
+**Site-root assets are not guaranteed in the deployed mirror.**
+`/favicon.svg` returns **404** on the live host even though
+`dist/client/favicon.svg` exists locally and `npm run build`+`serve.mjs` serve
+it 200. Never reference a site-root static file from a page fixture; use a
+self-contained `data:` URI (`img-src 'self' data:` is already allowed).
+
+### Orphaned prerendered HTML shadows SSR (nine-day-stale PDP, 2026-11-09)
+
+**Velocity deploys the mirror INCREMENTALLY — it never deletes files that left
+the repo.** This app is fully SSR (`output: 'server'`), so a correct build emits
+**zero** `.html` under `dist/client`; `@astrojs/server` serves `dist/client`
+*before* falling through to the renderer. An orphaned prerendered page from an
+older build therefore **shadows the SSR route forever**.
+
+Symptom (one route, everything else fine): `/products/1/aurora-3-seater-sofa/`
+served `client="visible"` islands and a chunk (`GalleryLightbox.0OTO-7vP.js`)
+that no current build produces, while home/PLP/cart all matched the local
+build. Nine days stale, surviving **restarts** and **redeploys**, and producing
+CSP violations on every in-app navigation into it.
+
+**Diagnosis — rule out caching, then compare against a local build:**
+
+```sh
+curl -sS "$URL?cb=999" | grep -o 'client="[a-z]*"' | sort | uniq -c   # cache-buster
+curl -sS -D - -o /dev/null "$URL" | grep -Ei 'cf-cache-status|cache-control'
+curl -sS "$URL" | grep -o '<chunk-name>[^"]*\.js'                    # vs dist/client/_astro
+```
+If `cf-cache-status: DYNAMIC`, `Cache-Control: max-age=0`, a cache-buster
+changes nothing, **and the chunk hash is absent from your build**, the origin is
+serving a stale *file*, not a cache. Confirm in the deployed tree with
+`find dist/client -name '*.html'` (should be 0).
+
+**Fix (landed):** a boot-time purge — `scripts/lib/purge-prerendered.mjs`
+(`purgePrerenderedHtml`) deletes every `*.html` under `dist/client` before the
+Astro handler loads, logging what it removed; `scripts/sync-dist.mjs` also
+refuses to assemble a mirror tree containing any `.html`. Self-healing, because
+no redeploy logic depends on Velocity cleaning up. Guarded by
+`tests/unit/purge-prerendered.test.ts`.
+
+**Rule:** when exactly ONE route is stale across restarts *and* redeploys,
+suspect static-file shadowing, not caching. Restarting clears an in-process
+route cache; it does not delete a file.
+
+## Proposals 105 + 106 surfaces (2026-11-03)
+
+- **Bridge theme policy (105)**: `GET/PATCH /globals/theme` —
+  `{ policy: auto|light|dark|brand:<slug>, contrast: auto|standard|high,
+  defaultTheme: light|dark, updatedAt, $extensions }`; PATCH manage-gated,
+  `s-maxage=60`, fires the rebuild webhook. Storefront ladder (one module,
+  `src/lib/theme/policy.ts`): policy → stored pref → system → defaultTheme;
+  forced modes disable the toggles (aria-disabled + note). Prerendered pages
+  bake the policy (`scripts/build-policy.mjs` → `policy.generated.ts`,
+  drift-gated by `check-policy`); SSR reads per request (60 s TTL,
+  `NVOOS_THEME_POLICY_TTL=0` to disable) and cache entries carry
+  `etag: policy.updatedAt`. Unknown brand slugs fail open to `auto`. MCP
+  `theme_apply` is preview-only under a forced policy (`NVOOS_THEME_PREVIEW=1`).
+  The forge template mirrors the ladder (canonical copy in the forge
+  template — keep logic identical; documented divergences: velocity adds
+  `contrastForced`/`storedContrast` and live-doc reads).
+- **CMS content (106)**: `content/pages` + `content/posts` (PostTypeController
+  seam; `contentRendered` = `the_content` output with raw fallback; Rank
+  Math `rank_math_title`/`rank_math_description` → Yoast meta → title/excerpt
+  fallback; `where[slug|category]`; drafts excluded — synthetic draft id
+  9902). Routes `/pages/{id}/{slug}`, `/blog/`, `/blog/{id}/{slug}` (301
+  canonicals, WebPage/CollectionPage/BlogPosting JSON-LD, `['content',…]`
+  cache tags). **Hybrid local**: `src/content.config.ts` globs
+  `src/content/posts|pages/*.md` (NOT mdx — the astro:jsx renderer probes
+  React islands and logs per-render errors; forge has no islands so it uses
+  mdx); `src/lib/content/merge.ts` — envelope wins on slug collision,
+  local fills gaps (L2).
+  **Write contract (107):** POST/PUT accept `title`, `content`
+  (`wp_kses_post`-sanitized), `excerpt`, `status`
+  (publish|draft|pending|future — create defaults to draft), `publishAt`
+  (WP `future` scheduling; normalize the WP 6.9 `rest_parse_date()`
+  timestamp), `blocks` (Portable Text stored as post meta, never rendered
+  server-side), `seoTitle`/`seoDescription` (Rank Math → Yoast
+  write-through), and `submittedBy`; posts also accept `category`
+  (`{ id, name }` or bare id — WP core categories, NOT the commerce
+  `categories` collection). Both types expose `GET /{id}/revisions` +
+  `POST /{id}/restore`; the list's `?status=` filter serves only manager
+  sessions (fail-closed publish-only).
+- **Variants (106)**: additive `variants[]` on single-doc GETs only (woo mode;
+  `WooProductSource` hydrates `WC_Product_Variable` children); listings flat.
+  PDP `VariantSelector` island (radio semantics, sold-out disabled, price +
+  JSON-LD `Offer[]` follow selection); cart lines carry `variantId` +
+  `attributes`.
+- **Checkout handoff (106) → embedded checkout (110)**: `GET/PATCH
+  /globals/shop` (`checkoutUrl` from `home_url('/checkout/')`, display
+  currency; `s-maxage=60`); `buildCheckoutUrl()` (pure) → comma-form
+  `?add-to-cart=1,2` — the NATIVE-mode path and the fail-open fallback.
+  In woo/both modes the cart syncs and continues to the EMBEDDED checkout
+  (`/checkout/`) — see the "Embedded checkout (110)" section below.
+- **Policy e2e isolation**: theme-policy specs run on a second fixture/BFF
+  pair (8124/4322, `NVOOS_THEME_POLICY_TTL=0`) so PATCH→render is
+  deterministic without racing the shared fixture's theme assertions.
+- **Implementation gotchas (2026-11-03 session — each cost a fix):**
+  - **Astro 7 `Astro.cache` has no entry-key args** — the memory-cache key
+    is URL-based. The policy revision rides the cache entry's **`etag`**
+    option (`Astro.cache.set({ ..., etag: policy.updatedAt })`); production
+    invalidation stays the rebuild→redeploy loop.
+  - **Playwright 1.64 has no per-project `webServer`** — isolated
+    fixture/BFF pairs (the policy e2e) go in the **top-level** `webServer`
+    array of `playwright.config.ts`, each with its own ports.
+  - **Stray node processes on Windows survive shell exit** and poison
+    `reuseExistingServer` (fixture/BFF/Playwright servers).
+    `scripts/cleanup-stray-servers.mjs` kills them before test runs.
+  - **Manage-assets cross-cluster sync**: when the bridge SPA changes,
+    `npm run build` here rebuilds `public/manage-assets/astro-admin.js`
+    from the bridge's standalone build — commit src + bundle **together**
+    (the two-bundle drift gate fails the PR otherwise). An uncommitted
+    bridge SPA change mid-session makes the local build overwrite the
+    committed bundle — restore it until the bridge cluster commits.
+  - `NVOOS_THEME_POLICY_TTL` (default 60 s, `0` disables) is the policy-TTL
+    seam; mirrors the `NVOOS_PROXY_CACHE=0` precedent.
+  - Pre-existing `Pagination.astro` bug fixed in this session: `??page=N`
+    double question mark (`url.search` already carries `?`).
+
+## Home page + MCP scope notes (2026-11-03)
+
+- **The home page (`src/pages/index.astro`) is an explainer landing page +
+  commerce pockets.** Hero + "What is this app?" cards + live stats + the
+  stack explorer render first; Featured/Bestsellers (`ProductGrid`) only
+  render when `hasCatalog` (`newest.totalDocs > 0`) — prod ran an empty
+  catalog, so the explainer covers the empty state and the pockets appear
+  automatically once products exist. `src/styles/home.css` is page-scoped
+  CSS (imported in the frontmatter), token-driven via the `--nv-*` aliases.
+- **Islands:** `HomeStats.tsx` (count-up counters; server HTML carries the
+  real totals via `data-count` so no-JS visitors see them; animation gated
+  on `prefers-reduced-motion`) and `StackExplorer.tsx` (WAI-ARIA tabs with
+  arrow/Home/End keys; contract tab does ONE live `fetch('/api/products?limit=1')`
+  on first activation; design tab reads `data-theme`/`data-contrast` from
+  `<html>` and re-syncs on `astro:after-swap`). Both are `client:visible`
+  with the `data-hydrated` marker; `tests/e2e/home.spec.ts` covers no-JS SEO,
+  count-up, and tab keyboard + live reads (fixture counts: 8 products,
+  3 categories, 2 brands, 3 published posts — draft 9902 excluded).
+- **Homepage SSR fan-out:** the page makes six contract round-trips (banner,
+  newest, top-rated, categories, brands, posts — `newest.totalDocs` doubles
+  as the product count; don't add a 7th products fetch). Under full-suite
+  parallel load the shared fixture can be slow before the first byte — the
+  no-JS home spec gives the h1 assertion a 30 s budget.
+- **React self-cancelling effect (cost a debugging session):** a
+  `useEffect` whose deps include the state it sets (`contract.status`),
+  with a `cancelled` cleanup flag, cancels the in-flight fetch the moment
+  the `'loading'` update re-runs the effect — the panel spins forever.
+  Trigger one-shot fetches from the activation dep alone and guard with a
+  `useRef`, or use the updater-function form.
+- **MCP scope — 33 tools (0.3.0, Proposal 107):** the `/mcp` surface writes
+  commerce collections (`cms_*` allowlist: products, categories, brands,
+  colors, media, promotions, promocodes), controls themes/tokens, imports
+  design language, and runs ops. The **content slice** (`content_list/get/
+  create/update/delete/preview_url/restore/validate`, Proposal 107) writes
+  `content/pages` + `content/posts` through the bridge's approval ladder:
+  creates default to **draft**, `publish`/`future`/unpublish require the
+  backend `publish_posts` cap (`content_publish_forbidden` 403 otherwise),
+  and successful writes purge the route-cache tags via `/internal/revalidate`
+  when configured. `content_preview_url` mints a signed token that exchanges
+  for a host-only `nvoos-preview` cookie at `/preview/{type}/{id}` and
+  redirects to the canonical route — draft previews render for logged-in
+  managers only (fail-closed 404), with a draft banner, `noindex` and no
+  caching (the route invalidates its own cache entry first). Agent-authored
+  docs render their Portable Text `blocks` through `src/components/blocks/`;
+  raw-HTML `content` is sanitized at BOTH gates (bridge `wp_kses_post` on
+  write, `sanitize-html` on render). There are still **no chart/dashboard
+  tools** in the app; structural pages (home, layout, routes) remain
+  `.astro`/island source edits shipped via the mirror workflow. On prod
+  mounts, `screenshot` and `rebuild_trigger` are opt-in/disabled (check
+  `site_status` first). Env: `NVOOS_PREVIEW_SECRET`/`NVOOS_PREVIEW_TTL_MS`
+  (preview tokens), `NVOOS_MCP_CONTENT_WRITE_MAX`/`_WINDOW_MS` (write
+  quota, default 30/10 min).
+- **/manage content workbench (2026-11-03, 107 Phase 2 — the editor
+  experience):** the Astro CMS admin SPA now surfaces the governed
+  collections itself — a **Content** sidebar section (Pages, Posts) over
+  `content/pages` + `content/posts`, list views with the status-workflow
+  filter (all/published/draft/pending/scheduled riding the manager-only
+  `?status=` listing), and config-driven edit forms (title, excerpt,
+  content, SEO title/description, scheduled publish, approval status
+  select). Two new config primitives power it: a `select` field type
+  (options + zod enum from one config; `SelectField` associates its label
+  via `useId`/`htmlFor`) and a `statusFilter` collection flag
+  (`ListView` + `useCollection` `status` arg). The publish transition is
+  still the bridge's `publish_posts` gate — the SPA only surfaces it.
+  Bundle flow unchanged: `npm run build:standalone` →
+  `scripts/sync-manage-assets.mjs` → committed
+  `public/manage-assets/astro-admin.{js,css}` (both rebuilt in the same
+  change). Posts category editing is NOT in the form (no WP-category
+  picker source in the SPA; `where[category]` stays MCP-side).
+- **Content-slice gotchas (107 session — each cost a fix):**
+  - **Route-cache poisoning:** the memory provider serves fresh hits BEFORE
+    the route runs and caches any response carrying `CDN-Cache-Control` with
+    maxAge>0 — including a manual `new Response('…', {status:404})` with a
+    body. `Astro.cache.set()` must run ONLY after the 404/redirect gates
+    (never before them), or a public 404 for a draft URL is cached and the
+    preview render is served the cached 404. 404s return
+    `Cache-Control: private, no-store`. Preview renders skip `cache.set` AND
+    `Astro.cache.invalidate({ path })` first.
+  - **Preview cookie `Secure`:** `secure: import.meta.env.PROD` breaks
+    plain-HTTP local dev/e2e (browser refuses to send it) — derive from
+    `x-forwarded-proto` first, then `Astro.url.protocol`.
+  - **ZodEffects has no `.extend`/`.partial`:** a `.refine()`-ed object
+    schema cannot be extended for the create/update variants — extend the
+    plain `z.object` form, refine separately. A registration-time throw
+    breaks EVERY tool call on the mount (-32603).
+  - **sanitize-html in the MCP bundle:** the esbuild CJS shim throws
+    `Dynamic require of "path" is not supported` when the bundle is imported
+    from ESM. `scripts/lib/mcp-build.mjs` injects a `createRequire` banner —
+    any new CJS dep in `mcp/` re-triggers this without it.
+  - **WP 6.9 `rest_parse_date()` returns a Unix timestamp** (older core
+    returns the `'Y-m-d H:i:s'` string) — normalize before `post_date`.
+  - **A future `post_date` always wins:** `wp_insert_post` flips an explicit
+    `publish` to `future` — never publish early.
+  - **Bridge auth-gate tests:** user-0 dispatches re-authenticate via the
+    bootstrap's admin cookie — assert gates with a subscriber (logged in,
+    wrong cap), never anonymous.
+  - **Content e2e isolation:** the content-write spec runs serial on its OWN
+    fixture/BFF pair (8125/4323) — publishing/deleting on the shared pair
+    races the parallel listing-count specs.
+
+## Proposal 126 cross-pollination with the forge (2026-11-07)
+
+- **Scroll-driven reveals:** `.reveal` / `.reveal--fade-up` utilities in
+  `global.css` — `@supports (animation-timeline: view())` + reduced-motion
+  gating, the finished state is the default (no-JS, the forge motion
+  runtime). Applied on the home hero + about cards. **The esbuild pin is
+  mandatory:** `vite.build.cssMinify: 'esbuild'` in astro.config.mjs —
+  lightningcss merges `animation-timeline` into the `animation` shorthand
+  and Chrome drops the whole declaration (verified in the built CSS:
+  `dist/client/_astro/*.css` — the server output nests client assets under
+  `dist/client/`, not `dist/_astro/`).
+- **Webfont harvesting:** `src/lib/webfonts.ts` filters the default
+  theme's `semantic.font` token to named families and builds the Google
+  Fonts CSS2 URL; `BaseLayout` preconnects + links it. The CSP gained
+  `style-src https://fonts.googleapis.com` + `font-src
+  https://fonts.gstatic.com` (pinned in `security-headers.test.ts`).
+  Hermetic-safe: system stacks load nothing. The generated semantic type
+  has ONLY `font` — there is no `font-display` key to index. Runtime
+  theme font overrides ride the next rebuild (the forge static model).
+- **Shared design-import core:** `packages/nvoos-design-import` holds the
+  canonical `webfonts.ts` and `color.ts`; the storefront keeps
+  byte-identical copies (`src/lib/webfonts.ts`,
+  `src/lib/design-import/color.ts`) pinned by
+  `tests/unit/webfonts-drift.test.ts` — edit the package first, never the
+  consumer copy. `design-import/analyzer.ts` imports the color-conversion
+  core; its `lightnessOf` (HSL) and hue/saturation helpers deliberately
+  differ from forge's (WCAG luminance) — do NOT unify them.
+
+## Embedded checkout (Proposal 110, shipped 2026-11-04)
+
+- **The app no longer links out for the common path.** In woo/both modes the
+  cart syncs (108) and continues to `/checkout/` — the embedded checkout.
+  The bridge (`REST/CheckoutController.php`) proxies the Store API with a
+  bridge-minted `wc_store_api` nonce + the session Cart-Token:
+  `GET /checkout` (merged draft-order + cart doc), `POST /checkout/customer`
+  (Woo-side address validation + totals/rates), `POST /checkout/shipping-rate`,
+  `POST /checkout/coupon`, `POST /checkout` (place order — `expected_total`
+  passthrough, 409 drift preserves the refreshed cart, per-session AND per-IP
+  rate limits). All routes fail-closed (501/400 typed) and pin
+  `private, no-store`; the B1 public-cache filter EXCLUDES `/checkout`
+  (per-session draft orders must never be edge-cached).
+- **Payment boundary (INV-1 refined):** no RAW card inputs in the app;
+  gateway-hosted fields are sanctioned. Card collection = Stripe Payment
+  Element (`@stripe/*` v10, `src/islands/CheckoutView.tsx` → StripeSection),
+  token relayed via the Woo-documented `payment_data` keys
+  (`lib/commerce/checkout-api.ts` → `buildStripePaymentData()`). PCI: SAQ A
+  (redirect methods) / SAQ A-EP (embedded Elements). **Apple/Google Pay is
+  DEFERRED** — Stripe.js v10 removed the token-yielding legacy Payment
+  Request Button; ExpressCheckoutElement needs client-secret confirmPayment
+  and can't feed the Store API flow (live-verified follow-up + Apple Pay
+  domain registration).
+- **CSP:** the checkout page opts into the payment scope via the
+  `x-nvoos-csp-payment` response header (stripped before shipping) —
+  `scripts/lib/security-headers.mjs` adds Stripe script/frame/connect/img
+  directives for THAT document only.
+- **Shop globals additions:** read-only `stripePublishableKey` (empty when
+  Stripe inactive — the hermetic fixture ships NO key, so e2e never loads
+  Stripe.js) + `guestCheckout` (Woo switch; the submit button disables when
+  accounts are required).
+- **Thanks page:** `src/pages/checkout/thanks.astro` (the 108 route) reads
+  VALIDATED `order_id`/`order_key` params only (`parseThanksParams`).
+- **CartView:** woo/both success → `window.location.assign('/checkout/')`,
+  handoff event mode `embedded` (was `server-cart`); hosted URL = fail-open
+  fallback on sync error; native mode unchanged.
+- **Fixture:** stateful per-session checkout twin in `fixture-server.mjs`
+  (cart/sync seeds lines; checkout routes mutate; 409 drift simulation;
+  default flat_rate so totals include shipping).
+- **T1 (085/090):** the app binds ONLY the `nvoos-commerce/v1` checkout
+  envelope — Laravel re-implements the five routes and the app survives
+  unchanged.
+- **Tests:** bridge `tests/phpunit/REST/TestCheckoutController.php` (12
+  tests; the header filters are asserted via DIRECT invocation —
+  `rest_post_dispatch` does not run inside `rest_get_server()->dispatch()`,
+  the shop-globals test pattern). App: vitest
+  `tests/unit/checkout-api.test.ts`, e2e `checkout-embedded.spec.ts` +
+  reworked `checkout-woo.spec.ts` on the woo pair (one-shot seedCart via a
+  sessionStorage flag — `addInitScript` re-runs on every navigation and
+  would resurrect the cleared cart; `click()` not `check()` on CONTROLLED
+  radios — the selected state returns from the round-trip).
+- Full doc: `docs/project/proposals/110-embedded-checkout-store-api-proposal.md`.
+- **Version discipline (2026-11-04, owner rule):** `src/lib/version.ts`
+  `APP_VERSION` is the single source of truth — the footer, the MCP
+  handshake (`SERVER_VERSION = APP_VERSION` in `mcp/server.ts`) and the
+  manifests all derive from it. Bump INCREMENTALLY (0.4.0 → 0.4.1, not
+  0.5.0) in version.ts + package.json + package-lock.json (the two ROOT
+  entries only — dependency versions must not move) + the
+  `tests/e2e/home.spec.ts` footer pin (`NV Store v0.x.y`) in one commit.
+  The BRIDGE has its OWN version (plugin header `nvoos-astro-bridge.php`
+  + `CHANGELOG.md`; 1.1.0 → 1.1.1 for 110) — bump it whenever the bridge
+  gains routes so the wp-admin Plugins screen proves the deploy landed.
+- **The merge-deploys-app-not-bridge gap (2026-11-04 outage):** the sync
+  workflow redeploys the APP on alpha-working merge, but the bridge plugin
+  on nvoos.pro is a MANUAL deploy. A cluster that changes both sides leaves
+  the live storefront broken the moment the app ships: the checkout page
+  shows "The checkout could not be loaded — No route was found matching the
+  URL and request method" (`rest_no_route` — the stale bridge has no
+  `/checkout` routes) and the console shows a 404 (the `/api/checkout`
+  fetch). Fix = build the bridge zip and upload ("Replace current with
+  uploaded"): python zipfile (forward slashes, single top-level
+  `nvoos-astro-bridge/` folder), include-set = the main file,
+  `uninstall.php`, `LICENSE`, `README.md`, `CHANGELOG.md`,
+  `THIRD_PARTY_NOTICES.md`, `includes/`, `build/` (the standalone SPA
+  bundle is REQUIRED — wp-admin enqueues it); exclude `src/`, `tests/`,
+  `node_modules/`. Verify the version on the Plugins screen, then retest
+  `/checkout/`. The cart page got the checkout's `no-store` treatment in
+  the same pass (`src/pages/cart/index.astro`).
+
+### 110 hardening — the live 502 / HTML-leak / CSP triad (2026-11-04)
+
+- **`CheckoutController` fataled on ANY bootstrap failure.** Every route did
+  `list( $token, $nonce ) = $this->resolve_token( $session )` BEFORE the
+  `is_wp_error` check — destructuring a `WP_Error` throws
+  `Cannot use object of type WP_Error as array` (line 180), the REST layer
+  500s, and raw "critical error" HTML leaks through the BFF. Discipline:
+  capture first (`$resolved = …; if ( is_wp_error( $resolved ) ) return
+  $resolved; list( … ) = $resolved;`). Pinned by
+  `test_bootstrap_failure_surfaces_clean_502` — a canned 200 bootstrap
+  WITHOUT the `Cart-Token` header (the exact WAF shape), asserted as a typed
+  502. A `list()` on a maybe-`WP_Error` value is the recurring bug class;
+  grep new code for it.
+- **The Store API client looped back over public HTTPS**
+  (`wp_remote_request( home_url('/wp-json/wc/store/v1/…') )`). Cloudways'
+  WAF (Imunify360 / anti-bot) intercepts the server-side POST and answers
+  without the `Cart-Token` header → `astro_cart_token_missing` 502 on every
+  cart bootstrap. The client now dispatches **in-process** via
+  `rest_do_request( new WP_REST_Request( $method, '/wc/store/v1' . $path ) )`
+  — the pattern Woo's Store API docs use for server-side cart work — with
+  the `funiq_bridge_store_api_pre_response` seam still first (zero-HTTP
+  tests unchanged; the seam's `$args` keep `method`/`headers`/`body`).
+  Response headers are lowercased before returning (the `cart-token` key).
+  Nested-dispatch safety was verified: the bridge's `rest_post_dispatch`
+  filters (B1 + no-store) and the `determine_current_user` shim are all
+  route/namespace-scoped, so inner Store API responses pass through
+  untouched. Never reintroduce a loopback `wp_remote_request` to the site's
+  own origin for the Store API.
+- **Stripe.js inline scripts were CSP-blocked.** Hashing can't cover them
+  (content varies per load); Stripe's documented mechanism is a
+  `<meta property="csp-nonce" nonce="…">` tag — Stripe.js reads it and
+  applies the nonce to everything it injects. The checkout page mints a
+  per-render nonce (`randomBytes(16)` from `node:crypto`, gated on
+  `embedded`), emits the meta via the BaseLayout head slot as a
+  `<Fragment slot="head" set:html=…>` (Astro's `MetaHTMLAttributes` has no
+  `nonce` key — a typed `<meta nonce>` fails `astro check`), and
+  `buildCsp()` mirrors it into the payment-scoped `script-src` as
+  `'nonce-…'` (honored ONLY under `x-nvoos-csp-payment`). Also added
+  `https://m.stripe.com` to the payment `connect-src`. No `unsafe-inline`.
+  Pinned in `tests/unit/security-headers.test.ts`.
+- **Cloudways fatal triage without SSH:** the `monitoring` toolset's
+  `get_app_logs` MCP tool (type=error, resource=apache; poll
+  `operation_status`) returns the platform error log — grep it for
+  `PHP Fatal error`. SSH from the dev box stays publickey-denied, so this
+  is the only self-serve path; the 2026-11-04 fatal was found in seconds
+  this way.
+- **Vendor-volume trap (one-off PHPUnit):** `docker volume ls` proves
+  nothing — `alpha-working-vendor` was EMPTY on 2026-11-04 despite the
+  ledger. Probe before mounting (`docker run --rm -v <vol>:/v … ls
+  /v/bin/phpunit`); `astro-105106-vendor` was complete (934 PHPUnit
+  classmap entries) and ran the bridge suites green against the isolated
+  `wordpress_test_astro` DB.
+
+## Component library (Q6, 2026-11-03)
+
+Owner-suggested candidates were researched (registry facts verified
+2026-11-03); the evaluation lives in the gap analysis §10. **Adopted
+hybrid:** Incluud `accessible-astro-components` (MIT, zero-dep, a11y-first)
+adapted into `src/components/ui/` — behavior/markup preserved, styling
+re-tokenized onto ADS (`--nv-*`), attribution headers + NOTICE; Zag.js
+(`@zag-js/dialog` + `@zag-js/combobox` via `@zag-js/react`) powers unstyled
+islands (`src/islands/UiDialog.tsx`, `UiCombobox.tsx`). Demo: `/components/`
+gallery + `tests/e2e/component-library.spec.ts` (axe + keyboard gates).
+`astro-component-kit` (effect showcase), Starwind/bejamas (Tailwind),
+Shoelace (stale) and Lion/AstroUXDS (heavy) were rejected — see the table.
+
+- **Zag 1.47 API (three breaking shapes — each cost a fix):**
+  `dialog.machine` is a machine DEFINITION object, not a factory — all props
+  (incl. `id`) go in `useMachine(machine, userProps)`'s second arg; and
+  `useMachine` returns the `Service` directly (no `[state, send]` tuple) —
+  `connect(service, normalizeProps)` takes it. Type the callbacks from the
+  package exports (`dialog.OpenChangeDetails`, `combobox.InputValueChangeDetails`).
+- **Combobox `composite` default breaks axe:** the roving-tabindex default
+  omits `role="listbox"` from the list while items carry `role="option"` —
+  axe fails `aria-required-parent`/`only-listitems`. Set `composite: false`
+  for the classic listbox ARIA shape.
+- **Island DOM never carries the Astro scope attribute (caught
+  post-deploy on /components/, 2026-11-03):** page-scoped styles targeting
+  island-rendered classes silently don't match — the Zag combobox shipped
+  with default list bullets and no hover highlight. Island-targeting rules
+  in .astro page style blocks must be `:global()`; pin the regression in
+  e2e with `toHaveCSS` (the component-library spec does).
+- **Islands under parallel e2e load:** `page.goto` resolves before
+  `client:load` islands hydrate; an interaction landing on an un-hydrated
+  controlled input sticks its native value and React never sees the event
+  (symptom: the collection never filters, `data-highlighted` never appears —
+  flaky ONLY under full-suite load). Fix: the repo's `data-hydrated` marker
+  convention (HomeStats/StackExplorer) — set it in a mount `useEffect` and
+  `expect(...).toHaveAttribute('data-hydrated', '')` before interacting.
+
+## Proposal 108 + blocks promotion (2026-11-03)
+
+- **108 shipped in full (PR #7414 + follow-up):** Phase 1 — the
+  same-site/allowlist rule on `checkoutUrl`/`cartUrl`/`returnUrl`
+  (`funiq_bridge_checkout_url_allowlist`; userinfo + non-80/443 ports
+  rejected; codes `astro_shop_{checkout_url,cart_url,return_url}_not_allowed`;
+  the camel→snake mapping is `preg_replace('/([a-z])([A-Z])/', '$1_$2', …)`)
+  + `rel="noopener noreferrer"` on the handoff link. Phase 2 — the bridge
+  cart proxy: `POST /nvoos-commerce/v1/cart/sync` (public customer surface,
+  `X-Nvoos-Cart-Session` UUID header, woo/both modes only) reconciles the
+  local cart into the Woo session cart via `Woo/StoreApiClient` (Store API
+  `Cart-Token` guest sessions, transient-cached per session id, zero-HTTP
+  test seam `funiq_bridge_store_api_pre_response` + availability seam
+  `funiq_bridge_store_api_available` — the env's Woo stubs define
+  `wc_get_product`, so `remove_all_filters` alone cannot prove the 501
+  path; add `__return_false`). The app island (`CartView`) syncs then hands
+  off with a CLEAN checkout URL (variants included), fails OPEN to the
+  legacy URL form with the variant note, and fires the
+  `nvoos:checkout-handoff` CustomEvent analytics seam (mode/lines/variants).
+  Phase 3 — `returnUrl` globals + `ReturnUrlFilter` (`woocommerce_get_return_url`
+  → `/checkout/thanks/?order_id=&order_key=`), read-only `paymentMethods`
+  (60 s transient) + `productsSource` in the shop doc, and the opt-in SSO
+  route `GET /woo-login/{token}` (`funiq_bridge_woo_sso_enabled`, 5-min
+  single-use per-user HMAC; `auth_cookie` filter is the test seam for
+  `wp_set_auth_cookie`, which never populates `$_COOKIE` under CLI).
+  Phase 4 — MCP `shop_get`/`shop_update` (SERVER_VERSION 0.4.0, 35 tools;
+  write gate = manager cookie + `NVOOS_MCP_SHOP_WRITE_*` quota). Fixture:
+  the `checkout-woo` e2e project rides its own pair (8126/4324,
+  `NVOOS_FIXTURE_PRODUCTS_SOURCE=woo`) and the fixture serves PATCH
+  `/globals/shop` + POST `/cart/sync`. Docs: `docs/project/proposals/108-*`
+  trio (research + gap analysis with DECISION-1/2 + PCI INV-1) + bridge
+  README route table.
+- **Content blocks promoted to the adopted components:** `faq` renders as
+  the accordion (`UiAccordionItem`, shared `name="nvoos-content-faq"` →
+  native exclusive accordion; solo-item top border restored in scope) and
+  a new `tabs` block type (nested Portable Text per tab, deterministic ids
+  from `_key` or a djb2 of the node JSON, recursive schema). The type/mark
+  map moved to `src/components/blocks/components.ts` (shared by
+  Blocks.astro + TabsBlock.astro — no circular component imports).
+- **Zod recursive-schema recipe (cost a session):** a `z.lazy` schema
+  inside a `z.discriminatedUnion` cannot carry a `z.ZodType<T>` annotation
+  (ts2502/ts2456/ts2345) — declare the recursive member as an INTERFACE
+  (`blocks: PortableTextItem[]` property) and build the item union from
+  the non-recursive members' `z.infer` + the interface. `z.lazy` in the
+  schema, no annotation on the union const.
+- **Deploy-preview recipe:** to preview an unmerged branch's routes on the
+  live site, dispatch the sync workflow on the branch ref
+  (`gh workflow run sync-nvoos-astro-velocity.yml --ref <branch>`) — the
+  mirror push is what Velocity deploys. **Stale-process symptom:** after a
+  mirror push, new static assets return 200 while a new ROUTE 404s — the
+  files are deployed but the Node process still runs the old route table;
+  it resolves when Velocity restarts it (or nudge with another dispatch).
+  Static-asset 200-vs-404 is how you fingerprint which build NGINX serves.
+  Route chunks for pages named `index.astro` hash as `index_<hash>` —
+  there is no `components_*` chunk; locate a nested route by grepping
+  chunk CONTENT (a unique page string), never the filename.
+
+## Native→Woo catalog migration (Proposal 112, PR #7442, bridge 1.1.3)
+
+Owner decision: **Option B — the Woo-owned catalog.** One-time, idempotent
+migration of `funiq_product` into Woo products (no sync layer); the native
+source retires one release after the default flips to `woo`. New internal
+identifiers use **`nvoos_bridge_`** — legacy `funiq_bridge_*`/`funiq/v1` stay
+until a separate global data-migration project. New surfaces:
+
+- **Engine** `addons/nvoos-astro-bridge/includes/Woo/NativeCatalogMigrator.php`
+  — SKU-keyed idempotent upserts (`NV-<id>` via `wc_get_product_id_by_sku()` +
+  `_nvoos_bridge_migrated_from` meta fallback — Woo's own cross-site migration
+doc pattern), WC CRUD setters + `save()`, price mapping identical to
+  `WooProductSource` (price=sale, oldPrice=regular when greater), category→
+  `product_cat`, brand/color via `WooTaxonomy`, promotionId as
+  `_nvoos_bridge_promotion_id` meta, AS cursor sweep
+  (`nvoos_bridge/migrate_native_sweep`, batch filter
+  `nvoos_bridge_migrator_batch_size`, state option `nvoos_bridge_migration_state`).
+- **WP-CLI:** `wp nvoos-astro-bridge migrate-native` (dry-run default,
+  `--run`, `--limit`, `--offset`) + `migration-status`.
+- **Settings page:** Catalog migration panel (dry-run button renders the
+  report inline via a 1-hour transient; run button queues the sweep) +
+  counts/status rows in the System status panel.
+
+Cost-a-session gotchas:
+
+- **WP default-category trap:** saving a product with an EMPTY `product_cat`
+  set makes WordPress assign the default "Uncategorized" term; a deferred
+  term append then leaves the product in BOTH. Migrations must materialize
+  planned terms (`wp_insert_term`) BEFORE `$product->save()`, then re-run the
+  term resolution so real ids flow into `set_category_ids()`. Same applies to
+  any headless create path with category-less products.
+- **By-value foreach stamping:** `foreach ( $issues as $issue ) { $issue['nativeId'] = ...; }`
+  silently does nothing — use `as &$issue` + `unset( $issue )`.
+- **Sweep state machine:** `handle_sweep()` should self-transition
+  `idle → running` (chunks can run without `enqueue_sweep()`, e.g. manual AS
+  runs); `done` is set by the first chunk that finds an empty batch — the
+  cursor is `offset + batch_size` per chunk.
+- **`resolve_term()` native-fallback rule:** when `WooTaxonomy` returns the
+  NATIVE taxonomy (no `pa_brand`/`pa_color` registered) the native term id is
+  already valid — return it directly; recreating terms splits brand identity.
+- **Addon phpcs docblock alignment (WPCS `ParamNotAligned`):** in `@param`
+  groups the `$` column = longest type + 1 space (pad each type to
+  longest+1); descriptions align at longest variable name + 1. Yoda-flip
+  `$taxonomy === Schema::CONST` to `Schema::CONST === $taxonomy`.
+- **Version bump lock-step:** header `Version:` + `NVOOS_ASTRO_BRIDGE_VERSION`
+  + addon `package.json` + `package-lock.json` + CHANGELOG all bump together.
+- **One-off gate runner (no local vendor):** phpcs/phpunit run inside Docker —
+  mount the worktree + the complete vendor volume `astro-105106-vendor` (NOT
+  `alpha-working-vendor`, which is empty) + isolated DB `wordpress_test_astro`;
+  the WP 6.9 image, not the WP 7.1 one (7.1 has no Woo → suite skips). Never
+  run two PHPUnits concurrently — the DB is shared.
+
+Out of scope for the first PR: retiring the native source (Phase 4 — one
+release later), any auto-sync layer (owner chose one-time migration), and
+legacy-identifier renames.
+
+## Proposal 136 — block kinds + agent surfaces (2026-11-09)
+
+- **Cross-app parity gate**: `bin/check-astro-app-parity.mjs`
+  (CI: `.github/workflows/astro-app-parity.yml`, triggered by either app) pins
+  `composeLlmsTxt` against the forge modulo the declared `variant` knob, and the
+  `SECTION_KINDS` relation (shared ∪ declared extras). Adding a kind here fails
+  until it is declared there. Keep `src/lib/llms.ts` and
+  `src/lib/content/section-kinds.ts` dependency-free — the check imports them
+  with only the forge installed.
+- **MCP surface is gated too (2026-11-09).** The tool LISTS differ on purpose
+  from the forge's (generator vs storefront), so the gate pins the shared
+  runtime: the annotation presets in `mcp/tools/util.ts` must carry the same
+  four hints as the forge's `mcp/util.ts`, both `mcp/bff.ts` must keep the
+  fail-closed order (`limiter.allow(` → `validateHost(` → `validateOrigin(` →
+  `authorizeRequest(`) with codes `-32029`/`-32001`, and any tool NAME present
+  in both apps must be declared `SHARED_MCP_TOOLS` (identical title +
+  annotations) or `MCP_NAME_COLLISIONS` with a reason. `rebuild_trigger` is the
+  one declared collision today; the shared set is empty until the forge's
+  managed tier ports the design/ops slices.
+- **Three block types added** (`comparison`, `steps`, `team`). Each needs the
+  four touchpoints in the SAME commit: zod schema in
+  `lib/content/portable-text.ts`, the `CUSTOM_BLOCK_TYPES` allowlist, a
+  component in `components/blocks/`, and the `TYPE_COMPONENTS` map in
+  `components.ts`. `tests/unit/agent-surfaces.test.ts` pins accept + reject.
+- **`data-section` on block roots**: ALL eleven block types now emit it.
+  The three new blocks (comparison/steps/team) plus hero, image, testimonial,
+  `stat` (which emits `data-section="stats"` — the KIND name — while its
+  Portable Text type keeps the name `stat`), and — as of the follow-up pass —
+  `faq`, `tabs`, `productGrid` (`product-grid`), `promotion`.
+- **The `ui/` primitives already forward attributes.** `UiAccordion`,
+  `UiTabs`, `UiTabsList`, `UiTabsPanel`, `UiTabsTab`, `UiAccordionItem` all
+  end with `{...rest}` on their root, so passing `data-section` from the block
+  works with NO primitive change. The earlier note here ("must forward the
+  attribute first") was wrong — check the primitive before assuming; all four
+  missing tags were a one-line edit on the block, not the primitive.
+- **Vocabulary lives in `src/lib/content/section-kinds.ts`**
+  (`SECTION_KINDS`, `isSectionKind`, `BLOCK_TYPE_TO_KIND`). It is
+  storefront-local: the forge has no `faq`/`tabs`/`product-grid`/`promotion`
+  kinds because it does not generate those bands. Two gates:
+  `tests/unit/section-kinds.test.ts` (source grep — every
+  `src/components/blocks/*.astro` declares exactly ONE in-vocabulary
+  `data-section`, every kind has a block; `Blocks.astro` is the dispatcher and
+  `LinkMark` an inline mark, both excluded) and an e2e vocabulary assertion.
+  The unit regex MUST anchor on `data-section="` — `data-section-id="` only
+  matches if you forget the quote.
+- **Block gallery is `/components/blocks/`, not `/components/`.**
+  `/components/` is the Q6 *adoption* record (Incluud vs Zag, cites Proposal
+  107 §10) — adding content fixtures there would corrupt an evaluation.
+  The gallery renders every non-live block from inline fixtures; `productGrid`
+  and `promotion` are documented by mapping only, because they call the
+  commerce client and omit the band when the upstream does not resolve (an
+  empty gallery answers its own question badly). Fixtures are contextually
+  typed by the props, so a block contract change breaks `astro check` here.
+- **`marks` belongs on SPANS, not on the block.** A `_type: 'block'` carries
+  `style` + `children` + `markDefs`; `marks: []` on the block itself is
+  ts2353. The block-level array is `markDefs`.
+- **Agent surfaces**: `src/lib/llms.ts` (`composeLlmsTxt`,
+  `markdownFromPortableText`, `textFromHtml`), `/llms.txt` (fail-soft per
+  collection — never 500 because one collection is down), `.md` variants at
+  `/products|pages|blog/<id>/<slug>/index.md`, and `rel="describedby"` +
+  `markdownHref` in `BaseLayout.astro`. `llms.txt` links markdown for those
+  three collections only; the rest stay HTML under `## Optional`.
+- **`scripts/serve.mjs` serves a PREBUILT `dist/`.** Playwright runs with
+  `reuseExistingServer: true`, so `npm run test:e2e` without `npm run build`
+  tests the PREVIOUS build — a green suite then proves nothing about the
+  change (learned the hard way 2026-11-09: 76/76 "passed" against a stale
+  tree, and the new spec failed only after rebuilding).
+- **`eslint` uses `SwitchCase: 0`** — `case` labels sit at the SAME indent as
+  their `switch`, with case bodies +1. `astro check` passing does NOT mean lint
+  passes: run `npm run lint`, or `npx eslint src --fix`. A `switch` at 2 tabs
+  puts `case` at 2 and its body at 3.
 
 ## References
 
-- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
+- Proposal 092 (design, phases, owner decisions) · Proposal 095 (ADS + nvoos-astro-mcp, PR #7301) · Proposal 096 (Astro Forge — the WP→Astro **generator** in `examples/nvoos-astro-forge/`; ops in the `mcp-ai-wpoos-astro-forge` skill) · Proposal 097 (cross-surface token sharing) · Proposal 098 (design language import — `design_analyze`, `src/lib/design-import/`) · **Proposal 104** (runtime hardening: `-proposal.md`, `-research.md`, `-implementation-plan.md`, `-ecosystem-repo-analysis.md`) · **Proposal 112** (native→Woo catalog migration, Woo-owned catalog — implementation PR #7442) · `docs/operations/deployment/nvoos-astro-velocity-setup.md`
 - `examples/nvoos-astro-velocity/README.md` (architecture, env, commands)
 - `addons/nvoos-astro-bridge/README.md` (REST surface, data map)
 - Related skills: `mcp-ai-sdk-v2-server-ops` (dual-era wire serving), `mcp-ai-wpoos-git-ops`, `mcp-ai-wpoos-astro-forge` (the generator that turns a WP/Woo site into an Astro frontend — this skill covers the serving side)
 - Related: Proposal 085 + appendix (contract invariant, Strangler Fig),
-  Proposal 090 (Laravel backend flip — the storefront survives it unchanged).
+  Proposal 090 (Laravel backend flip — the storefront survives it unchanged),
+  **Proposal 107** (storefront content surface: gap analysis + implementation
+  plan — the 8-tool content slice, Portable Text blocks, preview tokens,
+  approval ladder; this skill's code companion).

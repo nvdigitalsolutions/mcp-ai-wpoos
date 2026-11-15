@@ -1,0 +1,51 @@
+{
+  "$schema": "https://nvoos.pro/schemas/media-model-catalog-1.json",
+  "version": "0.0.1-fixture",
+  "updated_at": "2026-11-11",
+  "description": "Test fixture: exercises duration wire-type coercion and fixed-parameter injection, which no shipped model currently uses.",
+  "models": [
+    {
+      "id": "fixture-number",
+      "provider": "fixture",
+      "tool": "generate_fixture_video",
+      "kind": "video",
+      "label": "Fixture Number",
+      "modes": ["text_to_video"],
+      "aspect_ratios": ["16:9"],
+      "resolutions": ["720p"],
+      "batch_sizes": [],
+      "duration": { "min": 1, "max": 60, "default": 5, "type": "number" },
+      "fixed": { "model": "veo3" },
+      "defaults": { "aspect_ratio": "16:9", "resolution": "720p" },
+      "max_reference_images": 0,
+      "max_reference_videos": 0,
+      "max_reference_audio": 0,
+      "audio": "none",
+      "supports_seed": true,
+      "tier": "standard",
+      "styles": ["realistic"],
+      "notes": "Fixture only."
+    },
+    {
+      "id": "fixture-string",
+      "provider": "fixture",
+      "tool": "generate_fixture_video",
+      "kind": "video",
+      "label": "Fixture String",
+      "modes": ["text_to_video"],
+      "aspect_ratios": ["16:9"],
+      "resolutions": ["720p"],
+      "batch_sizes": [],
+      "duration": { "min": 1, "max": 60, "default": 5, "type": "string" },
+      "defaults": { "aspect_ratio": "16:9", "resolution": "720p" },
+      "max_reference_images": 0,
+      "max_reference_videos": 0,
+      "max_reference_audio": 0,
+      "audio": "none",
+      "supports_seed": true,
+      "tier": "standard",
+      "styles": ["realistic"],
+      "notes": "Fixture only: the provider expects duration as a string."
+    }
+  ]
+}

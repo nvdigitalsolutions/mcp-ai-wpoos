@@ -1,0 +1,184 @@
+---
+// Hero — the hero section component (Proposal 114 P4). Token-driven only;
+// no brand values. The page article already owns the h1, so the hero leads
+// with an h2.
+//
+// Split layout (125 §1): when the section's theme carries `layout: 'split'`
+// (the source's two-column hero band), the hero renders a copy column —
+// heading, underline divider, body paragraphs (in the source's sub-column
+// count), links — beside a media collage column: the source's backdrop
+// shape with the photos absolutely offset over it (jayainc's about band).
+// All values come from the section facts; nothing here hardcodes a brand.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SmartImage from '../SmartImage.astro';
+import SectionTitle from './SectionTitle.astro';
+
+interface Props {
+	section: SemanticSection;
+	theme?: SectionTheme;
+}
+
+const { section, theme } = Astro.props;
+const { title, body, media, links } = section.slots;
+
+/** The heading typography facts ride CSS vars — the .ds-title clamp keeps
+ * its fluid floor so a 43px source heading never breaks a 360px viewport. */
+const titleVars = [
+	theme?.titleStyle?.size && `--ds-title-size:${theme.titleStyle.size}`,
+	theme?.titleStyle?.weight && `--ds-title-weight:${theme.titleStyle.weight}`,
+	theme?.titleStyle?.lineHeight && `--ds-title-lh:${theme.titleStyle.lineHeight}`,
+	theme?.titleStyle?.tablet?.lineHeight && `--ds-title-lh-md:${theme.titleStyle.tablet.lineHeight}`,
+	theme?.titleStyle?.mobile?.lineHeight && `--ds-title-lh-sm:${theme.titleStyle.mobile.lineHeight}`,
+	theme?.titleStyle?.letterSpacing && `--ds-title-ls:${theme.titleStyle.letterSpacing}`,
+]
+	.filter(Boolean)
+	.join(';');
+
+const dividerStyle = theme?.titleDivider
+	? [
+			`width:${theme.titleDivider.width}`,
+			`height:${theme.titleDivider.height}`,
+			`background:${theme.titleDivider.background}`,
+			theme.titleDivider.shadow && `box-shadow:${theme.titleDivider.shadow}`,
+		]
+			.filter(Boolean)
+			.join(';')
+	: undefined;
+
+/** The shape's own px geometry rides custom properties. Inline `width`/`height`
+ * would outrank the tablet/mobile reflow and pin the collage to its desktop
+ * size, letting the 412px shape size the implicit grid column and spill past
+ * the viewport. */
+const shapeRatio = ( () => {
+	const width = theme?.mediaShape?.width ?? '';
+	const height = theme?.mediaShape?.height ?? '';
+	if ( ! /px$/i.test( width ) || ! /px$/i.test( height ) ) {
+		return undefined;
+	}
+	const w = Number.parseFloat( width );
+	const h = Number.parseFloat( height );
+	return w > 0 && h > 0 ? `${ w } / ${ h }` : undefined;
+} )();
+
+const shapeStyle = theme?.mediaShape
+	? [
+			`--ds-shape-w:${theme.mediaShape.width}`,
+			`--ds-shape-h:${theme.mediaShape.height}`,
+			shapeRatio && `--ds-shape-ratio:${shapeRatio}`,
+			`background:${theme.mediaShape.background}`,
+			theme.mediaShape.radius && `border-radius:${theme.mediaShape.radius}`,
+		]
+			.filter(Boolean)
+			.join(';')
+	: undefined;
+
+/** The collage photo offsets ride CSS vars so the mobile reset can switch
+ * the image back to static flow without fighting inline top/right values. */
+const offsetVars = ( index: number ): string | undefined => {
+	const offset = theme?.mediaOffsets?.[index];
+	if (!offset) {
+		return undefined;
+	}
+	return [
+		offset.top && `--ds-off-top:${offset.top}`,
+		offset.right && `--ds-off-right:${offset.right}`,
+		offset.bottom && `--ds-off-bottom:${offset.bottom}`,
+		offset.left && `--ds-off-left:${offset.left}`,
+		offset.shadow && `--ds-shadow:${offset.shadow}`,
+	]
+		.filter(Boolean)
+		.join(';');
+};
+---
+
+{theme?.layout === 'split' ? (
+	<section class="ds-section ds-hero ds-hero-split">
+		<div class="ds-hero-copy">
+			{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
+			{theme.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
+			{body && body.length > 0 && (
+				<div class="ds-hero-body" style={theme.bodyColumns ? `--ds-body-cols:${theme.bodyColumns}` : undefined}>
+					{body.map((paragraph) => (
+						<p class="ds-text">{paragraph}</p>
+					))}
+				</div>
+			)}
+			{links && links.length > 0 && (
+				<div class="ds-links">
+					{links.map((link) => (
+						<a class="ds-button" href={link.href ?? '#'}>
+							{link.text ?? 'Learn more'}
+						</a>
+					))}
+				</div>
+			)}
+		</div>
+		{media && media.length > 0 && (
+			<div class="ds-hero-collage">
+				{theme.mediaShape && (
+					<span
+						class="ds-collage-shape"
+						aria-hidden="true"
+						data-fluid={shapeRatio ? '' : undefined}
+						style={shapeStyle}
+					/>
+				)}
+				{theme.mediaShape || theme.mediaOffsets
+					? media.map(
+							(image, index) =>
+								image.src && (
+									<img
+										class="ds-media ds-collage-media"
+										src={image.src}
+										alt={image.alt ?? ''}
+										width="600"
+										height="600"
+										loading="lazy"
+										style={offsetVars(index)}
+									/>
+								)
+					  )
+					: // A split band whose photos carry no shape and no measured
+					  // offsets is a plain photo COLUMN, not a collage. The absolute
+					  // placement renders at intrinsic size (a 1620px photo pushed
+					  // the document 916px wide), and the 600x600 placeholder
+					  // attributes would squash it square.
+					  media.map(
+							(image, index) =>
+								image.src && (
+									<SmartImage
+										class="ds-media"
+										src={image.src}
+										alt={image.alt ?? ''}
+										sizes="(min-width: 768px) 50vw, 100vw"
+										eager={index === 0}
+									/>
+								)
+					  )}
+			</div>
+		)}
+	</section>
+) : (
+	<section class="ds-section ds-hero">
+		{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
+		{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
+		{body?.map((paragraph) => (
+			<p class="ds-text">{paragraph}</p>
+		))}
+		{media && media.length > 0 && (
+			<div class="ds-media-grid">
+				{media.map((image, index) => (image.src ? <SmartImage class="ds-media" src={image.src} alt={image.alt ?? ''} sizes="(min-width: 768px) 50vw, 100vw" eager={index === 0} /> : null))}
+			</div>
+		)}
+		{links && links.length > 0 && (
+			<div class="ds-links">
+				{links.map((link) => (
+					<a class="ds-button" href={link.href ?? '#'}>
+						{link.text ?? 'Learn more'}
+					</a>
+				))}
+			</div>
+		)}
+	</section>
+)}

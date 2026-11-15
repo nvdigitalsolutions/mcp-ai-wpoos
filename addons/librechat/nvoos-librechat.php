@@ -5,7 +5,7 @@
  * Description: LibreChat-powered AI chat surface for NV oOS. Drop-in shortcode + Gutenberg block that surfaces the LibreChat React UI backed by the existing NV oOS REST chat endpoints (mcp-ai/v1/chat-client, /chat-transcripts, /chat-memory). Adds sandboxed code interpreter, web search with reranking, and speech-to-text/text-to-speech. No Node server is introduced.
  * Version:     0.1.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
  * License: GPLv3 or later

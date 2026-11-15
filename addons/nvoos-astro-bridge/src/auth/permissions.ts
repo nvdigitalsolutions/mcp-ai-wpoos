@@ -78,7 +78,7 @@ export interface NavGate {
 export interface NavEntry extends NavGate {
 	slug: NavSlug;
 	label: string;
-	section: 'catalog' | 'access' | 'system';
+	section: 'catalog' | 'content' | 'access' | 'system';
 }
 
 /** Catalogue-driven nav (the console's CONSOLE_NAV_GROUPS pattern). */
@@ -90,8 +90,14 @@ export const NAV: NavEntry[] = [
 	{ slug: 'statuses', label: 'Statuses', section: 'catalog', readOnlyAware: true },
 	{ slug: 'promotions', label: 'Promotions', section: 'catalog', readOnlyAware: true },
 	{ slug: 'promocodes', label: 'Promocodes', section: 'catalog', readOnlyAware: true },
+	{ slug: 'content/pages', label: 'Pages', section: 'content' },
+	{ slug: 'content/posts', label: 'Posts', section: 'content' },
+	// Proposal 135 §D4 — content the managed site owns (the bridge CPT), not
+	// content mirrored from the source WordPress site.
+	{ slug: 'local', label: 'Local content', section: 'content' },
 	{ slug: 'managers', label: 'Managers', section: 'access' },
 	{ slug: 'design', label: 'Design System', section: 'system' },
+	{ slug: 'settings', label: 'Settings', section: 'system' },
 ];
 
 /**

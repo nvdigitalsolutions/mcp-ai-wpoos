@@ -7,7 +7,7 @@
  * Author URI: https://nvdigitalsolutions.com
  * License: GPL-3.0-or-later
  * Text Domain: mcp-ai-wpoos
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  *
  * @package WP_MCP_AI
  */

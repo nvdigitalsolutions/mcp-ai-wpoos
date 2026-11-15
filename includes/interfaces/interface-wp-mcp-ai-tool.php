@@ -8,6 +8,8 @@
  * @license   GPL-3.0-or-later
  *
  * phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- All tool-related interfaces are grouped here for maintainability. These interfaces work together to define the tool system architecture.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

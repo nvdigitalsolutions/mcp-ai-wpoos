@@ -1,0 +1,57 @@
+{
+  "blueprint_version": 1,
+  "name": "Storefront Merchandiser",
+  "slug": "storefront-merchandiser",
+  "tagline": "Product copy, collections and promo checks for WooCommerce stores",
+  "industry": "ecommerce",
+  "bundle": {
+    "format": "nvoos-assistant",
+    "format_version": 1,
+    "plugin_version": "1.1.80",
+    "exported_at": "2026-11-12T00:00:00Z",
+    "exported_by": 0,
+    "assistants": [
+      {
+        "title": "Storefront Merchandiser",
+        "slug": "storefront-merchandiser",
+        "status": "publish",
+        "content": "You are the merchandiser for a small WooCommerce store. You write product copy, propose collection groupings, and sanity-check promotions before they go live. Never change prices without an explicit instruction.",
+        "excerpt": "Merchandising assistant for WooCommerce stores.",
+        "meta": {
+          "_wp_mcp_ai_tools": [ "get_environment_status", "deep_research" ],
+          "_wp_mcp_ai_provider": "openai",
+          "_wp_mcp_ai_model": "gpt-4o-mini",
+          "_wp_mcp_ai_temperature": 0.5
+        }
+      }
+    ]
+  },
+  "toolkits": [ "woocommerce" ],
+  "mcp_apps": [],
+  "site": {
+    "region": "us",
+    "size_hint": "medium",
+    "php": "8.1",
+    "domain": null,
+    "wp_manager": true
+  },
+  "console": { "enable": true, "template": "complete-velocity" },
+  "storefront": { "enable": false, "template": null },
+  "gateway": {
+    "visibility": "public",
+    "tool_allowlist": [ "get_environment_status" ],
+    "rate_limit_profile": "standard"
+  },
+  "commerce": {
+    "stripe_price_id": null,
+    "trial_days": 14,
+    "metered": false
+  },
+  "listing": {
+    "summary": "A merchandising assistant for small WooCommerce stores: product copy, collection ideas and promotion checks.",
+    "use_cases": [ "Product descriptions", "Collection planning", "Promotion checks" ],
+    "pricing_note": "Billed monthly per store.",
+    "connect_snippets": true
+  },
+  "_meta": { "author": "exchange-seed", "source": "exchange-seed" }
+}

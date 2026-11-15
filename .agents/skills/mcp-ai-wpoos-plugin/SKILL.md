@@ -5,11 +5,16 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.15"
-  plugin-version-tested: "1.2.15"
-  last-updated: "2026-11-01"
+  plugin-version: "1.2.21"
+  plugin-version-tested: "1.2.21"
+  last-updated: "2026-11-15"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
+
+> **Spec current as of v1.2.21** (last verified 2026-11-15). The console
+> install at console.nvoos.cloud runs v1.2.15 with DeepSeek as the default
+> provider. Version-tagged facts are CI-enforced by
+> `tests/test-knowledge-base-facts-sync.php` for the shipped knowledge base.
 
 Complete operational skill for the NV Digital Open Operator System (oOS)
 WordPress plugin running in Docker on Windows/WSL2. Covers the full lifecycle:
@@ -47,7 +52,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~355 base / ~1,732 full tools
+     │  Tool Registry     │  ~360 base + ~1,388 Pro (~1,747 total; live registry authoritative)
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘
@@ -59,6 +64,16 @@ Zed / Claude Desktop / Cursor
   `mcp-ai-wpoos` (dev checkout), `nvdigital-open-operator-system-oos`
   (wp.org base), `nvdigital-open-operator-system-oos-complete` (complete
   bundle).
+- **All three install paths now carry the same tree.** Since 2026-11-08 the
+  dev checkout, `bin/build-plugin-zip.sh` output and the GitHub "Download
+  ZIP" (`git archive`) agree: the archive ships `lib/core/src` +
+  `lib/wordpress-adapter/src` and keeps the runtime
+  `bin/vectorize-image.js`, which `bin/strip-dev-files.sh` also preserves.
+  Before that fix an over-broad `src/` `export-ignore` rule stripped
+  `vendor/*/src`, so a source-ZIP install shipped without a working Composer
+  autoloader. **Diagnostic:** on any install, `vendor/guzzlehttp/guzzle/src/`
+  and `lib/core/src/` must both exist; if they do not, stop and fix the
+  packaging before debugging "class not found" as a plugin bug.
 - **Never declare `Requires Plugins: mcp-ai-wpoos` in an addon.** WordPress
   core matches dependency entries against the installed plugin's **folder
   slug** (`dirname()` of the plugin file) with AND semantics — not the slug
@@ -107,9 +122,11 @@ credentials than this repo's dev compose (verified on the live stack,
 
 | Service | Address |
 |---|---|
-| WordPress | `http://localhost:8092` — admin at `/wp-admin` (**admin / design_admin_2026**) |
+| WordPress | `http://localhost:8092` — admin at `/wp-admin` (**admin / CHANGE_ME**) |
 | Media worker | `http://localhost:3100` |
 | MySQL | `localhost:3308` |
+
+> Substitute the real stack password for `CHANGE_ME` — never commit live credentials.
 
 - The stack mounts the plugin from `design-stack/plugins/mcp-ai-wpoos` — an
   NTFS junction to the plugin repo — so code edits land in this repo.
@@ -601,7 +618,7 @@ Key env vars: `MCP_AI_SSH_REMOTE_HOST`/`MCP_AI_SSH_REMOTE_PORT` (web server
 from the server's perspective; probe with curl over SSH — Cloudways Apache
 may sit on 8080), `MCP_AI_HOST_HEADER` (canonical host override when the
 web server 301-redirects on Host), `MCP_AI_SSH_EXTRA_ARGS` (e.g.
-`"-i C:/keys/id_ed25519 -o ProxyJump=bastion"`), `MCP_AI_ENV_FILE` (default
+`"-i <path-to-ssh-key> -o ProxyJump=bastion"`), `MCP_AI_ENV_FILE` (default
 `~/.nvoos-bridge.env` — keep the token out of settings.json).
 
 Operator-credential audience binding is checked against `home_url()` from

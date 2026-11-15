@@ -31,6 +31,8 @@ class Health extends \WP_REST_Controller {
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_health' ),
+				// Public by design — booleans, versions, and a redacted webhook
+				// host only; never tokens, secrets, or full URLs.
 				'permission_callback' => '__return_true',
 			)
 		);
@@ -43,15 +45,23 @@ class Health extends \WP_REST_Controller {
 	 */
 	public function handle_health(): \WP_REST_Response {
 		global $wp_version;
+		$providers = Redirects::active_providers();
 		return new \WP_REST_Response(
 			array(
-				'status'            => 'ok',
-				'pluginVersion'     => NVOOS_FORGE_BRIDGE_VERSION,
-				'wordpressVersion'  => $wp_version,
-				'phpVersion'        => PHP_VERSION,
-				'rebuildEnabled'    => Settings::rebuild_enabled(),
-				'rebuildConfigured' => Settings::rebuild_configured(),
-				'rebuildUrlHost'    => self::redacted_host( Settings::rebuild_url() ),
+				'status'             => 'ok',
+				'pluginVersion'      => NVOOS_FORGE_BRIDGE_VERSION,
+				'wordpressVersion'   => $wp_version,
+				'phpVersion'         => PHP_VERSION,
+				'rebuildEnabled'     => Settings::rebuild_enabled(),
+				'rebuildConfigured'  => Settings::rebuild_configured(),
+				'rebuildUrlHost'     => self::redacted_host( Settings::rebuild_url() ),
+				'formsEnabled'       => Settings::forms_enabled(),
+				'formsConfigured'    => Settings::forms_configured(),
+				'formsOriginsCount'  => count( Settings::forms_origins() ),
+				'formsCaptcha'       => Settings::forms_captcha_enabled(),
+				'redirectsEnabled'   => Settings::redirects_enabled(),
+				'redirectsAvailable' => array() !== $providers,
+				'redirectsProviders' => $providers,
 			)
 		);
 	}

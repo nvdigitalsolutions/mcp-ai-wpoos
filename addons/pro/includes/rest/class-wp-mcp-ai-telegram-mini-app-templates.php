@@ -18,6 +18,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound

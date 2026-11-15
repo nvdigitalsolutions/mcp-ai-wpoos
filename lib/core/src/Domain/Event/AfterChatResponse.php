@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Fired after a chat response is received from the LLM.
  *
@@ -7,18 +8,25 @@
  * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class AfterChatResponse {
-
-	public function __construct(
-		public readonly int $assistantId,
-		public readonly array $response,
-		public readonly array $requestContext,
-		public readonly float $durationMs,
-	) {}
+final class AfterChatResponse
+{
+    /**
+     * @param array<string, mixed> $requestContext
+     * @param array<string, mixed> $response
+     */
+    public function __construct(
+        public readonly int $assistantId,
+        public readonly array $response,
+        public readonly array $requestContext,
+        public readonly float $durationMs,
+    ) {
+    }
 }

@@ -26,6 +26,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -170,24 +172,6 @@ class WP_MCP_AI_CRM_Audit {
 	 * @return string IP address or empty string.
 	 */
 	private static function get_client_ip() {
-		$sources = array(
-			'HTTP_CLIENT_IP',
-			'HTTP_X_FORWARDED_FOR',
-			'HTTP_X_FORWARDED',
-			'HTTP_FORWARDED_FOR',
-			'HTTP_FORWARDED',
-			'REMOTE_ADDR',
-		);
-
-		foreach ( $sources as $key ) {
-			if ( ! empty( $_SERVER[ $key ] ) ) {
-				$ip = filter_var( wp_unslash( $_SERVER[ $key ] ), FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE | FILTER_FLAG_NO_PRIV_RANGE );
-				if ( $ip ) {
-					return $ip;
-				}
-			}
-		}
-
-		return '';
+		return wp_mcp_ai_get_client_ip();
 	}
 }

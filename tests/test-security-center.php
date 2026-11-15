@@ -17,7 +17,7 @@
 class Test_Security_Center extends WP_UnitTestCase {
 
 	// ------------------------------------------------------------------ //
-	//  Setup / teardown                                                    //
+	// Setup / teardown                                                    //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -60,7 +60,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	// ------------------------------------------------------------------ //
-	//  WP_MCP_AI_Security_Posture                                          //
+	// WP_MCP_AI_Security_Posture                                          //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -91,13 +91,13 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Grade is one of the five expected letter grades.
+	 * Grade is one of the Mozilla Observatory bands the scorer implements.
 	 */
 	public function test_posture_grade_is_valid() {
 		$posture = new WP_MCP_AI_Security_Posture();
 		$report  = $posture->get_report( true );
 
-		$this->assertContains( $report['grade'], array( 'A', 'B', 'C', 'D', 'F' ) );
+		$this->assertContains( $report['grade'], array( 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F' ) );
 	}
 
 	/**
@@ -116,7 +116,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	public function test_more_controls_raises_score() {
 		// Minimal settings.
 		update_option( 'wp_mcp_ai_settings', array() );
-		$posture  = new WP_MCP_AI_Security_Posture();
+		$posture   = new WP_MCP_AI_Security_Posture();
 		$low_score = $posture->get_report( true )['score'];
 
 		// Enable several controls.
@@ -131,14 +131,15 @@ class Test_Security_Center extends WP_UnitTestCase {
 	 * Signals array is non-empty.
 	 */
 	public function test_signals_not_empty() {
-		$posture  = new WP_MCP_AI_Security_Posture();
-		$signals  = $posture->get_report( true )['signals'];
+		$posture = new WP_MCP_AI_Security_Posture();
+		$signals = $posture->get_report( true )['signals'];
 
 		$this->assertNotEmpty( $signals );
 	}
 
 	/**
-	 * Every signal has 'id', 'label', 'weight', 'passed', 'detail', 'subtab'.
+	 * Every signal carries the shared-catalogue fields, including the
+	 * applicable flag the console needs to separate runtime-specific cards.
 	 */
 	public function test_signal_structure() {
 		$posture = new WP_MCP_AI_Security_Posture();
@@ -151,7 +152,45 @@ class Test_Security_Center extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'passed', $signal, "Signal missing 'passed'" );
 			$this->assertArrayHasKey( 'detail', $signal, "Signal missing 'detail'" );
 			$this->assertArrayHasKey( 'subtab', $signal, "Signal missing 'subtab'" );
+			$this->assertArrayHasKey( 'applicable', $signal, "Signal missing 'applicable'" );
+			$this->assertIsBool( $signal['applicable'] );
+			$this->assertContains( $signal['status'], array( 'pass', 'fail', 'not_applicable' ) );
 		}
+	}
+
+	/**
+	 * The not-applicable controls (Laravel-only checks) never count towards
+	 * the WordPress score or the quick-win list.
+	 */
+	public function test_not_applicable_signals_are_excluded() {
+		if ( ! class_exists( '\Nvoos\Core\Application\Security\PostureScorer' ) ) {
+			$this->markTestSkipped( 'lib/core is not loaded in this build.' );
+		}
+
+		$posture = new WP_MCP_AI_Security_Posture();
+		$report  = $posture->get_report( true );
+
+		$not_applicable = array_filter(
+			$report['signals'],
+			function ( $signal ) {
+				return isset( $signal['applicable'] ) && ! $signal['applicable'];
+			}
+		);
+
+		$this->assertNotEmpty( $not_applicable, 'Laravel-only controls should be reported as not applicable' );
+
+		foreach ( $not_applicable as $signal ) {
+			$this->assertSame( 'not_applicable', $signal['status'] );
+			$this->assertFalse( $signal['passed'] );
+		}
+
+		$quick_win_ids = array_column( $report['quick_wins'], 'id' );
+		foreach ( $not_applicable as $signal ) {
+			$this->assertNotContains( $signal['id'], $quick_win_ids );
+		}
+
+		$this->assertArrayHasKey( 'applicable_weight', $report );
+		$this->assertLessThan( array_sum( array_column( $report['signals'], 'weight' ) ), $report['applicable_weight'] );
 	}
 
 	/**
@@ -170,7 +209,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * invalidate_cache() causes a recompute on the next call.
+	 * The invalidate_cache() call causes a recompute on the next call.
 	 */
 	public function test_invalidate_cache_forces_recompute() {
 		// Seed a hardened configuration so the baseline score is meaningfully
@@ -211,7 +250,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * wp_mcp_ai_security_posture_signals filter is applied.
+	 * The wp_mcp_ai_security_posture_signals filter is applied.
 	 */
 	public function test_posture_signals_filter_applied() {
 		$extra_signal = array(
@@ -232,15 +271,15 @@ class Test_Security_Center extends WP_UnitTestCase {
 			}
 		);
 
-		$posture  = new WP_MCP_AI_Security_Posture();
-		$signals  = $posture->get_report( true )['signals'];
-		$ids      = array_column( $signals, 'id' );
+		$posture = new WP_MCP_AI_Security_Posture();
+		$signals = $posture->get_report( true )['signals'];
+		$ids     = array_column( $signals, 'id' );
 
 		$this->assertContains( 'test_extra_signal', $ids );
 	}
 
 	// ------------------------------------------------------------------ //
-	//  WP_MCP_AI_Section_Security sub-tab structure                       //
+	// WP_MCP_AI_Section_Security sub-tab structure                       //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -260,7 +299,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
 
 		// get_subtab_groups() is protected; use reflection.
-		$ref    = new ReflectionMethod( $section, 'get_subtab_groups' );
+		$ref = new ReflectionMethod( $section, 'get_subtab_groups' );
 		$ref->setAccessible( true );
 		$groups = $ref->invoke( $section );
 
@@ -277,7 +316,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	public function test_overview_subtab_has_no_fields() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
 
-		$ref    = new ReflectionMethod( $section, 'get_subtab_groups' );
+		$ref = new ReflectionMethod( $section, 'get_subtab_groups' );
 		$ref->setAccessible( true );
 		$groups = $ref->invoke( $section );
 
@@ -291,7 +330,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 		$section    = WP_MCP_AI_Settings_Registry::get_section( 'security' );
 		$all_fields = $section->get_fields();
 
-		$ref    = new ReflectionMethod( $section, 'get_subtab_groups' );
+		$ref = new ReflectionMethod( $section, 'get_subtab_groups' );
 		$ref->setAccessible( true );
 		$groups = $ref->invoke( $section );
 
@@ -402,7 +441,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * validate() accepts a root key of at least 32 chars.
+	 * The validate() method accepts a root key of at least 32 chars.
 	 */
 	public function test_validate_accepts_valid_root_key() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
@@ -412,7 +451,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * validate() rejects a root key shorter than 32 chars.
+	 * The validate() method rejects a root key shorter than 32 chars.
 	 */
 	public function test_validate_rejects_short_root_key() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
@@ -422,7 +461,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * validate() rejects an out-of-range guest token TTL.
+	 * The validate() method rejects an out-of-range guest token TTL.
 	 */
 	public function test_validate_rejects_invalid_ttl() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
@@ -432,7 +471,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * validate() accepts a valid guest token TTL.
+	 * The validate() method accepts a valid guest token TTL.
 	 */
 	public function test_validate_accepts_valid_ttl() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'security' );
@@ -442,7 +481,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	// ------------------------------------------------------------------ //
-	//  WP_MCP_AI_REST_Security_Center_Controller                          //
+	// WP_MCP_AI_REST_Security_Center_Controller                          //
 	// ------------------------------------------------------------------ //
 
 	/**
@@ -526,7 +565,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * test_ip returns 'allowed' for an IP when no rules are active.
+	 * The test_ip() method returns 'allowed' for an IP when no rules are active.
 	 */
 	public function test_test_ip_allowed_when_no_rules() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
@@ -535,10 +574,13 @@ class Test_Security_Center extends WP_UnitTestCase {
 		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/test-ip' );
 		$request->set_param( 'ip', '203.0.113.5' );
 
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_ip_whitelist' => false,
-			'enable_ip_blacklist' => false,
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ip_whitelist' => false,
+				'enable_ip_blacklist' => false,
+			)
+		);
 
 		$response = $controller->test_ip( $request );
 		$data     = $response->get_data();
@@ -547,16 +589,19 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * test_ip returns 'blocked' when IP is on the blacklist.
+	 * The test_ip() method returns 'blocked' when an IP is on the blacklist.
 	 */
 	public function test_test_ip_blocked_by_blacklist() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_ip_whitelist' => false,
-			'enable_ip_blacklist' => true,
-			'ip_blacklist'        => "203.0.113.5\n203.0.113.6",
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_ip_whitelist' => false,
+				'enable_ip_blacklist' => true,
+				'ip_blacklist'        => "203.0.113.5\n203.0.113.6",
+			)
+		);
 
 		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
 		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/test-ip' );
@@ -569,7 +614,7 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * test_ip rejects an invalid IP address.
+	 * The test_ip() method rejects an invalid IP address.
 	 */
 	public function test_test_ip_invalid_ip_returns_error() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
@@ -584,15 +629,18 @@ class Test_Security_Center extends WP_UnitTestCase {
 	}
 
 	/**
-	 * preview_headers returns a headers array.
+	 * The preview_headers() method returns a headers array.
 	 */
 	public function test_preview_headers_returns_data() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		update_option( 'wp_mcp_ai_settings', array(
-			'enable_security_headers' => true,
-			'enable_hsts'             => false,
-		) );
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_security_headers' => true,
+				'enable_hsts'             => false,
+			)
+		);
 
 		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
 		$request    = new WP_REST_Request( 'GET', '/mcp-ai/v1/security/preview-headers' );
@@ -645,8 +693,8 @@ class Test_Security_Center extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		delete_option( WP_MCP_AI_REST_Security_Center_Controller::SNAPSHOT_OPTION );
 
-		$controller  = new WP_MCP_AI_REST_Security_Center_Controller();
-		$request     = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/restore' );
+		$controller = new WP_MCP_AI_REST_Security_Center_Controller();
+		$request    = new WP_REST_Request( 'POST', '/mcp-ai/v1/security/restore' );
 		$request->set_param( 'snapshot_id', 'nonexistent-uuid' );
 
 		$result = $controller->restore_snapshot( $request );

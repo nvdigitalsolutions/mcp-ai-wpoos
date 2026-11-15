@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tool Execution — domain contract.
  *
@@ -7,7 +8,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -19,6 +22,8 @@ interface ToolExecutionInterface
     /**
      * Execute a tool synchronously.
      *
+     * @param ToolArgs $arguments
+     * @param ToolContext $context
      * @return array{success: bool, result?: mixed, error?: string, duration_ms?: float}
      */
     public function executeSync(string $toolSlug, array $arguments, array $context = []): array;
@@ -26,6 +31,8 @@ interface ToolExecutionInterface
     /**
      * Enqueue a tool for asynchronous execution.
      *
+     * @param ToolArgs $arguments
+     * @param ToolContext $context
      * @return array{success: bool, job_id?: string, error?: string}
      */
     public function executeAsync(string $toolSlug, array $arguments, array $context = []): array;

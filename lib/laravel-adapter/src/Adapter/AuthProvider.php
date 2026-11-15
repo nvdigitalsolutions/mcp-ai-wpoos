@@ -54,7 +54,7 @@ class AuthProvider implements AuthProviderInterface {
 			return true;
 		}
 
-		$user = Auth::getProvider()->retrieveById( $userId );
+		$user = $this->resolveUser( $userId );
 		if ( null === $user ) {
 			return false;
 		}
@@ -115,7 +115,7 @@ class AuthProvider implements AuthProviderInterface {
 			);
 		}
 
-		$user = Auth::getProvider()->retrieveById( $userId );
+		$user = $this->resolveUser( $userId );
 		if ( null === $user ) {
 			throw new AuthenticationException( 'User not found.', 'forbidden' );
 		}
@@ -173,7 +173,7 @@ class AuthProvider implements AuthProviderInterface {
 	 * @return UserInfo|null  Null if the user does not exist.
 	 */
 	public function getUserInfo( int $userId ): ?UserInfo {
-		$user = Auth::getProvider()->retrieveById( $userId );
+		$user = $this->resolveUser( $userId );
 		if ( null === $user ) {
 			return null;
 		}
@@ -246,6 +246,23 @@ class AuthProvider implements AuthProviderInterface {
 				),
 			),
 		);
+	}
+
+	/**
+	 * Resolve a user by ID through the configured provider.
+	 *
+	 * The default guard may be a request guard (Sanctum) whose provider
+	 * is null; fall back to the configured web guard.
+	 */
+	private function resolveUser( int $userId ): mixed {
+		$guard    = (string) config( 'auth.defaults.guard', 'web' );
+		$provider = Auth::guard( $guard )->getProvider();
+
+		if ( null === $provider && 'web' !== $guard ) {
+			$provider = Auth::guard( 'web' )->getProvider();
+		}
+
+		return $provider?->retrieveById( $userId );
 	}
 
 	/**

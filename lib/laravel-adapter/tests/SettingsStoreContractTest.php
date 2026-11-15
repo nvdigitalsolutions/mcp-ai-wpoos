@@ -62,6 +62,29 @@ class SettingsStoreContractTest extends TestCase {
 		}
 	}
 
+	public function test_default_gemini_model_is_not_retired(): void {
+		// A retired default silently breaks every Gemini chat on a fresh
+		// install. 2026-11: the WordPress default had already moved to
+		// gemini-3.8-flash while this one still said gemini-2.0-flash,
+		// which Google had retired.
+		$retired = array(
+			'gemini-2.0-flash',
+			'gemini-2.0-flash-lite',
+			'gemini-2.0-flash-exp',
+			'gemini-2.0-flash-image',
+			'gemini-2.0-flash-live-001',
+		);
+
+		$ref      = new \ReflectionClass( \Nvoos\Laravel\Adapter\SettingsStore::class );
+		$defaults = $ref->getReflectionConstant( 'DEFAULTS' )->getValue();
+
+		$this->assertNotContains(
+			$defaults['default_gemini_model'],
+			$retired,
+			'default_gemini_model points at a model Google has retired.'
+		);
+	}
+
 	public function test_provider_key_map_covers_all_providers(): void {
 		$expected = array(
 			'openai', 'gemini', 'anthropic', 'deepseek',

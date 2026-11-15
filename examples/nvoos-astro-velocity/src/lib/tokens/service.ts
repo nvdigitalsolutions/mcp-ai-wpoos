@@ -32,6 +32,8 @@ export interface TokenBundle {
 export interface ThemeDescriptor {
 	name: string;
 	description?: string;
+	/** Optional SemVer — static themes declare it in their DTCG source; theme_create accepts it. */
+	version?: string;
 	tokens: Record<string, string>;
 }
 
@@ -217,9 +219,14 @@ export class TokenService {
 			const tokens = modes[name] ?? {};
 			return { name, tokens };
 		}
-		const staticTheme = this.bundle.themes[name] as { tokens?: Record<string, string>; description?: string } | undefined;
+		const staticTheme = this.bundle.themes[name] as { tokens?: Record<string, string>; description?: string; version?: string } | undefined;
 		if (staticTheme?.tokens) {
-			return { name, description: staticTheme.description, tokens: staticTheme.tokens };
+			return {
+				name,
+				description: staticTheme.description,
+				version: typeof staticTheme.version === 'string' ? staticTheme.version : undefined,
+				tokens: staticTheme.tokens,
+			};
 		}
 		return this.runtimeThemes[name] ?? null;
 	}

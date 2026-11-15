@@ -88,8 +88,11 @@ Makefile
 Gruntfile.js
 Gulpfile.js
 
-# Source files (only include built bundles)
-src/
+# Source files (only include built bundles).
+# ANCHORED: rsync matches an unanchored `src/` at any depth, which silently
+# stripped vendor/*/src (guzzle, psr, composer) from the WordPress.org
+# deploy output and broke the autoloader. Only the root SPA sources go.
+/src/
 packages/
 
 # Archives

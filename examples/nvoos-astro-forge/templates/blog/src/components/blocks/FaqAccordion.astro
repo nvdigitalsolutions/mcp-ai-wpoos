@@ -1,0 +1,43 @@
+---
+// FaqAccordion — the FAQ content block (Proposal 126 §blocks). A native
+// `<details name>` exclusive accordion: the browser owns the semantics
+// (disclosure, keyboard, focus) — the industry-standard zero-JS answer for
+// static sites. The shared name scopes exclusivity to this list, so opening
+// one answer closes the others while other accordions on the page stay
+// independent.
+interface Props {
+	items: Array<{ question: string; answer: string }>;
+	heading?: string;
+}
+
+const { items, heading } = Astro.props;
+const name = 'nvoos-content-faq';
+---
+
+<section class="nvoos-faq" aria-label={heading ?? 'Frequently asked questions'}>
+	{heading && <h2>{heading}</h2>}
+	{items.map((item) => (
+		<details name={name}>
+			<summary>{item.question}</summary>
+			<p>{item.answer}</p>
+		</details>
+	))}
+</section>
+
+<style>
+	.nvoos-faq details {
+		border: 1px solid var(--forge-line);
+		border-radius: var(--forge-radius);
+		margin-bottom: var(--forge-space-sm);
+	}
+	.nvoos-faq summary {
+		padding: var(--forge-space-sm) var(--forge-space);
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.nvoos-faq p {
+		margin: 0;
+		padding: 0 var(--forge-space) var(--forge-space);
+		color: var(--forge-muted);
+	}
+</style>

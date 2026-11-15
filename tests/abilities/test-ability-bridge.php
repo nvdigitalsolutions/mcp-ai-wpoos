@@ -254,12 +254,14 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure WP_Error from execute() is converted to a structured error array.
+	 * Ensure WP_Error from execute() is returned as-is by default so
+	 * downstream consumers (core Abilities REST run controller, the official
+	 * MCP Adapter) can apply native error semantics.
 	 *
 	 * @since 2.0.0
 	 * @return void
 	 */
-	public function test_wp_error_converted_to_structured_error() {
+	public function test_wp_error_returned_raw_by_default() {
 		if ( ! function_exists( 'wp_register_ability' ) ) {
 			$this->markTestSkipped( 'wp_register_ability() not available.' );
 		}
@@ -275,11 +277,93 @@ class WP_MCP_AI_Ability_Bridge_Test extends WP_UnitTestCase {
 
 		$result = wp_get_ability( 'nvoos/error-tool' )->execute( array() );
 
+		$this->assertWPError( $result, 'WP_Error should pass through unconverted.' );
+		$this->assertSame( 'Test error message.', $result->get_error_message() );
+		$this->assertSame( 'test_error_code', $result->get_error_code() );
+	}
+
+	/**
+	 * Ensure the legacy structured-array envelope remains available through
+	 * the wp_mcp_ai_ability_wp_error_passthrough filter.
+	 *
+	 * @since 2.0.0
+	 * @return void
+	 */
+	public function test_wp_error_legacy_envelope_via_filter() {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'wp_register_ability() not available.' );
+		}
+
+		$this->tool->set_slug( 'error_tool' );
+		$error = new WP_Error( 'test_error_code', 'Test error message.', array( 'detail' => 42 ) );
+		$this->tool->set_result( $error );
+
+		$this->register_mock_tool( $this->tool, 'nvoos-site' );
+		$this->register_mock_tool_in_registry( $this->tool );
+
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		add_filter( 'wp_mcp_ai_ability_wp_error_passthrough', '__return_false' );
+		$result = wp_get_ability( 'nvoos/error-tool' )->execute( array() );
+		remove_filter( 'wp_mcp_ai_ability_wp_error_passthrough', '__return_false' );
+
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'success', $result );
 		$this->assertFalse( $result['success'] );
 		$this->assertSame( 'Test error message.', $result['message'] );
 		$this->assertSame( 'test_error_code', $result['code'] );
+		$this->assertSame( array( 'detail' => 42 ), $result['data'] );
+	}
+
+	/**
+	 * Ensure un-flagged tools default to pessimistic annotations: MCP
+	 * clients must assume destructive until proven otherwise.
+	 *
+	 * @since 2.0.0
+	 * @return void
+	 */
+	public function test_annotations_pessimistic_for_unflagged_tools() {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'wp_register_ability() not available.' );
+		}
+
+		$this->tool->set_flags( array() );
+		$this->tool->set_slug( 'unknown_tool' );
+
+		$this->register_mock_tool( $this->tool, 'nvoos-site' );
+
+		$ability     = wp_get_ability( 'nvoos/unknown-tool' );
+		$annotations = $ability->get_meta()['annotations'];
+
+		$this->assertFalse( $annotations['readOnlyHint'] );
+		$this->assertTrue( $annotations['destructiveHint'], 'Un-flagged tools must not claim to be non-destructive.' );
+		$this->assertFalse( $annotations['idempotentHint'] );
+		$this->assertFalse( $annotations['openWorldHint'] );
+	}
+
+	/**
+	 * Ensure a mutating but explicitly reversible tool is advertised as
+	 * non-destructive.
+	 *
+	 * @since 2.0.0
+	 * @return void
+	 */
+	public function test_annotations_reversible_write_not_destructive() {
+		if ( ! function_exists( 'wp_register_ability' ) ) {
+			$this->markTestSkipped( 'wp_register_ability() not available.' );
+		}
+
+		$this->tool->set_flags( array( 'write', 'state-changing', 'reversible' ) );
+		$this->tool->set_slug( 'undoable_tool' );
+
+		$this->register_mock_tool( $this->tool, 'nvoos-site' );
+
+		$ability     = wp_get_ability( 'nvoos/undoable-tool' );
+		$annotations = $ability->get_meta()['annotations'];
+
+		$this->assertFalse( $annotations['readOnlyHint'] );
+		$this->assertFalse( $annotations['destructiveHint'], 'Reversible writes are not destructive.' );
 	}
 
 	/**

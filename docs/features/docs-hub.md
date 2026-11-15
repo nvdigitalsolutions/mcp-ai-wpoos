@@ -480,4 +480,4 @@ Initial release.
 - Admin settings page with rebuild button and broken-link report.
 - WP-CLI: `wp nvoos-docs sync|clear|status`.
 - PHPUnit tests for scanner, indexer, REST, shortcode.
-- PHP 7.4+ compatible.
+- PHP 8.1+ compatible.

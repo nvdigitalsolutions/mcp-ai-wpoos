@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Queue client contract for the oOS AI orchestration core.
  *
@@ -14,6 +15,8 @@
  * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -24,35 +27,35 @@ use Nvoos\Core\Domain\Entity\JobStatus;
 
 interface QueueClientInterface
 {
-	/**
-	 * Enqueue a job for asynchronous execution.
-	 *
-	 * @param string $handler  Fully-qualified class name or registered handler ID.
-	 * @param array  $payload  Serializable payload passed to the handler.
-	 * @param array  $options  Optional: group, priority, delay_seconds, unique, etc.
-	 *
-	 * @return string  Job ID for tracking.
-	 */
-public function enqueue( string $handler, array $payload, array $options = array() ): string;
+    /**
+     * Enqueue a job for asynchronous execution.
+     *
+     * @param string $handler  Fully-qualified class name or registered handler ID.
+     * @param array<string, mixed>  $payload  Serializable payload passed to the handler.
+     * @param array<string, mixed>  $options  Optional: group, priority, delay_seconds, unique, etc.
+     *
+     * @return string  Job ID for tracking.
+     */
+    public function enqueue(string $handler, array $payload, array $options = array()): string;
 
-	/**
-	 * Get the current status of a queued job.
-	 */
-public function getStatus( string $jobId ): JobStatus;
+    /**
+     * Get the current status of a queued job.
+     */
+    public function getStatus(string $jobId): JobStatus;
 
-	/**
-	 * Cancel a queued but not-yet-running job.
-	 *
-	 * @return bool  True if cancellation succeeded, false if job was already running/completed.
-	 */
-public function cancel( string $jobId ): bool;
+    /**
+     * Cancel a queued but not-yet-running job.
+     *
+     * @return bool  True if cancellation succeeded, false if job was already running/completed.
+     */
+    public function cancel(string $jobId): bool;
 
-	/**
-	 * Schedule a recurring job.
-	 *
-	 * @param string $handler         Handler class name or ID.
-	 * @param array  $payload         Serializable payload.
-	 * @param string $cronExpression  Cron expression (e.g. a 5-minute interval)
+    /**
+     * Schedule a recurring job.
+     *
+     * @param string $handler         Handler class name or ID.
+     * @param array<string, mixed>  $payload         Serializable payload.
+     * @param string $cronExpression  Cron expression (e.g. a 5-minute interval)
      *                                or interval string ('hourly', 'daily', 'twicedaily').
      *
      * @return string  Schedule ID for later unscheduling.
@@ -67,7 +70,7 @@ public function cancel( string $jobId ): bool;
     /**
      * List jobs filtered by status and optional constraints.
      *
-     * @param array $filters  Optional: status, handler, group, user_id, assistant_id.
+     * @param array<string, mixed> $filters  Optional: status, handler, group, user_id, assistant_id.
      * @param int   $limit    Maximum results (1–100).
      *
      * @return JobStatus[]

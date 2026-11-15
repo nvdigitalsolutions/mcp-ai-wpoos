@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Orchestration Control — domain contract.
  *
@@ -7,7 +8,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -24,13 +27,14 @@ interface OrchestrationControlInterface
     /**
      * Get an orchestration preset by name.
      *
-     * @return array{found: bool, preset?: array}
+     * @return array{found: bool, preset?: array<string, mixed>}
      */
     public function getPreset(string $name): array;
 
     /**
      * Save an orchestration preset.
      *
+     * @param array<string, mixed> $config
      * @return array{success: bool, error?: string}
      */
     public function savePreset(string $name, array $config): array;
@@ -38,14 +42,14 @@ interface OrchestrationControlInterface
     /**
      * List all available presets.
      *
-     * @return array<int, array{name: string, description: string, config: array}>
+     * @return array<int, array{name: string, description: string, config: array<string, mixed>}>
      */
     public function listPresets(): array;
 
     /**
      * Get the current orchestration health status.
      *
-     * @return array{healthy: bool, depth: int, active_jobs: int, alerts: array}
+     * @return array{healthy: bool, depth: int, active_jobs: int, alerts: array<int, mixed>}
      */
     public function healthCheck(): array;
 

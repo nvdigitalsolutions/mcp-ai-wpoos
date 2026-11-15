@@ -1,8 +1,8 @@
 # `.codex/` — OpenAI Codex sandbox bootstrap
 
 > **First, read [`AGENTS.md`](../AGENTS.md) and [`CLAUDE.md`](../CLAUDE.md).** They describe the
-> agent inventory, layering rule, naming conventions, PHP-compat floors (PHP 7.4+ base,
-> PHP 8.1+ Pro), and the security expectations that apply to every coding agent — including
+> agent inventory, layering rule, naming conventions, PHP-compat floor (PHP 8.1+ for the
+> base plugin and the Pro addon), and the security expectations that apply to every coding agent — including
 > OpenAI Codex running inside its ephemeral sandbox.
 
 This folder configures the [OpenAI Codex](https://openai.com/codex/) sandbox

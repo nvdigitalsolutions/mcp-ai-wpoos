@@ -295,6 +295,29 @@ jobs:
             VERSION="${{ inputs.version }}"
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_date=$(date -u '+%B %d, %Y')" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          VERSION_ESCAPED=$(echo "$VERSION" | sed 's/\./\\./g')
+          NOTES=$(awk "
+            /^(=|##) *\[?${VERSION_ESCAPED}\]?/ { found=1; next }
+            found && /^(=|##) *\[?[0-9]+\.[0-9]+\.[0-9]+/ { exit }
+            found { print }
+          " CHANGELOG.md | sed 's/^### /#### /')
+          if [ -z "$NOTES" ]; then
+            NOTES="Release version ${VERSION}. See CHANGELOG.md for details."
+          fi
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -309,7 +332,11 @@ jobs:
           tag_name: nvdigital-oos-v${{ steps.version.outputs.version }}
           name: "NV Digital Open Operator System (oOS) v${{ steps.version.outputs.version }}"
           body: |
-            ## NV Digital Open Operator System (oOS) v${{ steps.version.outputs.version }}
+            ## 📜 Release History
+
+            ### v${{ steps.version.outputs.version }} — ${{ steps.version.outputs.release_date }}
+
+            ${{ steps.release_notes.outputs.notes }}
 
             WordPress.org submission packages with compliant text domains.
 
@@ -319,14 +346,14 @@ jobs:
 
             | Package | File | Description |
             |---------|------|-------------|
-            | **Base** | `nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip` | Free base plugin (~300 tools) |
+            | **Base** | `nvdigital-open-operator-system-oos-${{ steps.version.outputs.version }}.zip` | Free base plugin (~358 tools) |
             | **Pro** | `nvdigital-open-operator-system-oos-pro-${{ steps.version.outputs.version }}.zip` | Pro addon (requires base) |
             | **Complete** | `nvdigital-open-operator-system-oos-complete-${{ steps.version.outputs.version }}.zip` | Base + Pro combined |
 
             ### Requirements
 
             - WordPress 6.0+
-            - PHP 7.4+ (base) / PHP 8.1+ (pro)
+            - PHP 8.1+
             - AI provider API key (OpenAI, Gemini, or Ollama)
 
             ### Installation

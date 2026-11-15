@@ -1,0 +1,364 @@
+{
+  "generated_by": "bin/generate-vendor-manifest.mjs",
+  "source_of_truth": {
+    "worker_routes": "includes/admin/class-wp-mcp-ai-pro-settings.php#WORKER_ROUTED_PACKAGES",
+    "vendoring_script": "addons/pro/scripts/copy-dependencies.js"
+  },
+  "note": "Versions and licenses are read from each vendored package.json. Runtime is classifed from WORKER_ROUTED_PACKAGES.",
+  "packages": {
+    "@puppeteer/browsers": {
+      "version": "2.13.0",
+      "license": "Apache-2.0",
+      "runtime": "local",
+      "entry": "@puppeteer/browsers/lib/cjs/main.js",
+      "entry_source": "php"
+    },
+    "@remotion/bundler": {
+      "version": "4.0.436",
+      "license": "SEE LICENSE IN LICENSE.md",
+      "runtime": "local",
+      "entry": "@remotion/bundler/dist/index.js",
+      "entry_source": "php"
+    },
+    "@remotion/renderer": {
+      "version": "4.0.436",
+      "license": "SEE LICENSE IN LICENSE.md",
+      "runtime": "local",
+      "entry": "@remotion/renderer/dist/index.js",
+      "entry_source": "php"
+    },
+    "canvas": {
+      "version": "2.11.2",
+      "license": "MIT",
+      "runtime": "unwired",
+      "entry": "browser.js",
+      "entry_source": "package.json",
+      "note": "Vendored but not referenced by PHP or a worker route."
+    },
+    "cheerio": {
+      "version": "1.2.0",
+      "license": "MIT",
+      "runtime": "unwired",
+      "entry": "dist/commonjs/index.js",
+      "entry_source": "package.json",
+      "note": "Vendored but not referenced by PHP or a worker route."
+    },
+    "cornerstone": {
+      "version": null,
+      "license": null,
+      "runtime": "unwired",
+      "note": "No package.json at the vendored root; version and license unknown."
+    },
+    "csv-parse": {
+      "version": "7.0.2",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "csv-parse/lib/index.js",
+      "entry_source": "php"
+    },
+    "csv-stringify": {
+      "version": "6.6.0",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "csv-stringify/lib/index.js",
+      "entry_source": "php"
+    },
+    "currency.js": {
+      "version": "2.0.4",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "currency.js/currency.min.js",
+      "entry_source": "php"
+    },
+    "docx": {
+      "version": "9.6.1",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/document/word",
+      "entry": "docx/package.json",
+      "entry_source": "php"
+    },
+    "email-validator": {
+      "version": "2.0.4",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "email-validator/index.js",
+      "entry_source": "php"
+    },
+    "exceljs": {
+      "version": "4.4.0",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/document/excel",
+      "entry": "exceljs/dist/exceljs.min.js",
+      "entry_source": "php"
+    },
+    "facebook-nodejs-business-sdk": {
+      "version": "24.0.1",
+      "license": "Platform License",
+      "runtime": "local",
+      "entry": "facebook-nodejs-business-sdk/dist/cjs.js",
+      "entry_source": "php"
+    },
+    "fast-csv": {
+      "version": "5.0.5",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "fast-csv/build/src/index.js",
+      "entry_source": "php"
+    },
+    "ffmpeg-static": {
+      "version": "5.3.0",
+      "license": "GPL-3.0-or-later",
+      "runtime": "local",
+      "entry": "ffmpeg-static/index.js",
+      "entry_source": "php"
+    },
+    "ffprobe-static": {
+      "version": "3.1.0",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "ffprobe-static/index.js",
+      "entry_source": "php"
+    },
+    "fluent-ffmpeg": {
+      "version": "2.1.3",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/video/process",
+      "entry": "fluent-ffmpeg/index.js",
+      "entry_source": "php"
+    },
+    "franc": {
+      "version": "6.2.0",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/data/language-detect",
+      "entry": "franc/index.js",
+      "entry_source": "php"
+    },
+    "gif-encoder": {
+      "version": "0.7.2",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "gif-encoder/lib/GIFEncoder.js",
+      "entry_source": "php"
+    },
+    "google-translate-api-x": {
+      "version": "10.7.2",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/data/translate",
+      "entry": "google-translate-api-x/index.cjs",
+      "entry_source": "php"
+    },
+    "i18next": {
+      "version": "23.16.8",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "i18next/dist/cjs/i18next.js",
+      "entry_source": "php"
+    },
+    "ical-generator": {
+      "version": "8.1.1",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "ical-generator/dist/index.js",
+      "entry_source": "php"
+    },
+    "ics": {
+      "version": "3.12.0",
+      "license": "ISC",
+      "runtime": "sidecar",
+      "worker_route": "/api/data/generate-ics",
+      "entry": "ics/index.js",
+      "entry_source": "php"
+    },
+    "iso-639-1": {
+      "version": "3.1.5",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "iso-639-1/index.js",
+      "entry_source": "php"
+    },
+    "libphonenumber-js": {
+      "version": "1.12.40",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/data/phone-format",
+      "entry": "libphonenumber-js/index.js",
+      "entry_source": "php"
+    },
+    "linkedin-api-client": {
+      "version": "0.3.0",
+      "license": "SEE LICENSE IN LICENSE.md",
+      "runtime": "local",
+      "entry": "linkedin-api-client/dist/lib/auth.js",
+      "entry_source": "php"
+    },
+    "mailparser": {
+      "version": "3.9.10",
+      "license": "MIT",
+      "runtime": "unwired",
+      "entry": "mailparser/lib/mail-parser.js",
+      "entry_source": "php",
+      "note": "Vendored but not referenced by PHP or a worker route."
+    },
+    "mjml": {
+      "version": "5.0.0-beta.1",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/email/compile-mjml",
+      "entry": "mjml/lib/index.js",
+      "entry_source": "php"
+    },
+    "node-ensure": {
+      "version": "0.0.0",
+      "license": "MIT",
+      "runtime": "unwired",
+      "entry": "index.js",
+      "entry_source": "package.json",
+      "note": "Vendored but not referenced by PHP or a worker route."
+    },
+    "nodemailer": {
+      "version": "10.3.1",
+      "license": "MIT-0",
+      "runtime": "sidecar",
+      "worker_route": "/api/email/send",
+      "entry": "nodemailer/lib/nodemailer.js",
+      "entry_source": "php"
+    },
+    "pdf-lib": {
+      "version": "1.17.1",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/pdf/merge",
+      "entry": "pdf-lib/cjs/index.js",
+      "entry_source": "php"
+    },
+    "pdf-parse": {
+      "version": "1.1.4",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/pdf/extract",
+      "entry": "pdf-parse/index.js",
+      "entry_source": "php"
+    },
+    "pdfjs-dist": {
+      "version": "4.10.38",
+      "license": "Apache-2.0",
+      "runtime": "unwired",
+      "note": "Vendored but not referenced by PHP or a worker route."
+    },
+    "pdfkit": {
+      "version": "0.17.2",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/pdf/generate",
+      "entry": "pdfkit/js/pdfkit.standalone.js",
+      "entry_source": "php"
+    },
+    "puppeteer-core": {
+      "version": "21.11.0",
+      "license": "Apache-2.0",
+      "runtime": "local",
+      "entry": "puppeteer-core/lib/cjs/puppeteer/puppeteer-core.js",
+      "entry_source": "php"
+    },
+    "qrcode": {
+      "version": "1.5.4",
+      "license": "MIT",
+      "runtime": "sidecar",
+      "worker_route": "/api/data/qrcode",
+      "entry": "lib/index.js",
+      "entry_source": "package.json"
+    },
+    "regression": {
+      "version": "2.0.1",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "regression/regression.min.js",
+      "entry_source": "php"
+    },
+    "remotion": {
+      "version": "4.0.459",
+      "license": "SEE LICENSE IN LICENSE.md",
+      "runtime": "local",
+      "entry": "remotion/dist/cjs/index.js",
+      "entry_source": "php"
+    },
+    "sharp": {
+      "version": "0.35.5",
+      "license": "Apache-2.0",
+      "runtime": "sidecar",
+      "worker_route": "/api/image/optimize",
+      "entry": "sharp/lib/index.js",
+      "entry_source": "php"
+    },
+    "stripe": {
+      "version": "14.25.0",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "stripe/cjs/stripe.core.js",
+      "entry_source": "php"
+    },
+    "subtitle": {
+      "version": "3.0.0",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "subtitle/dist/index.js",
+      "entry_source": "php"
+    },
+    "tesseract.js": {
+      "version": "5.1.1",
+      "license": "Apache-2.0",
+      "runtime": "unwired",
+      "entry": "src/index.js",
+      "entry_source": "package.json",
+      "note": "Vendored but not referenced by PHP or a worker route."
+    },
+    "turf": {
+      "version": "7.3.4",
+      "license": "MIT",
+      "runtime": "unwired",
+      "entry": "dist/cjs/index.cjs",
+      "entry_source": "package.json",
+      "note": "Vendored but not referenced by PHP or a worker route."
+    },
+    "turndown": {
+      "version": "7.2.2",
+      "license": "MIT",
+      "runtime": "unwired",
+      "entry": "lib/turndown.cjs.js",
+      "entry_source": "package.json",
+      "note": "Vendored but not referenced by PHP or a worker route."
+    },
+    "twitter-api-v2": {
+      "version": "1.29.0",
+      "license": "Apache-2.0",
+      "runtime": "local",
+      "entry": "twitter-api-v2/dist/cjs/index.js",
+      "entry_source": "php"
+    },
+    "validator": {
+      "version": "13.15.35",
+      "license": "MIT",
+      "runtime": "local",
+      "entry": "validator/index.js",
+      "entry_source": "php"
+    },
+    "video-stitch": {
+      "version": "1.7.1",
+      "license": "ISC",
+      "runtime": "local",
+      "entry": "video-stitch/index.js",
+      "entry_source": "php"
+    },
+    "woocommerce-rest-api": {
+      "version": "1.0.2",
+      "license": "MIT",
+      "runtime": "unwired",
+      "note": "Vendored but not referenced by PHP or a worker route."
+    }
+  }
+}

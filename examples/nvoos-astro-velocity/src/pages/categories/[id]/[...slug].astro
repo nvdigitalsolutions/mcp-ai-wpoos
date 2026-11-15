@@ -22,7 +22,7 @@ import {
 import type { SortValue, WhereClause } from '../../../lib/commerce/types';
 import { normalizeProductMedia } from '../../../lib/commerce/normalize';
 import { categoryPath, absoluteUrl } from '../../../lib/url';
-import { breadcrumbJsonLd } from '../../../lib/seo/jsonld';
+import { collectionPageJsonLd } from '../../../lib/seo/jsonld';
 import { pageTitle, plainExcerpt } from '../../../lib/seo/meta';
 
 Astro.response.headers.set(
@@ -75,10 +75,11 @@ const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
 
 const site = Astro.site ?? new URL('https://store.nvoos.cloud');
 const jsonld = [
-	breadcrumbJsonLd([
-		{ name: 'Home', url: absoluteUrl(site, '/') },
-		{ name: category.name, url: canonical },
-	]),
+	collectionPageJsonLd({
+		name: category.name,
+		url: canonical,
+		breadcrumb: [{ name: 'Home', url: absoluteUrl(site, '/') }],
+	}),
 ];
 ---
 
@@ -101,43 +102,43 @@ const jsonld = [
 	<div class="plp">
 		<aside class="filters" aria-label="Filters">
 			<form method="get" action={url.pathname}>
-				<p>
-					<strong>Brands</strong>
-				</p>
-				<select name="brand" class="field" onchange="this.form.submit()">
-					<option value="">All brands</option>
-					{brands.map((brand) => (
-						<option value={brand.id} selected={selectedBrand === brand.id}>
-							{brand.name}
-						</option>
+				<div class="field">
+					<label for="plp-brand">Brand</label>
+					<select name="brand" id="plp-brand" data-auto-submit>
+						<option value="">All brands</option>
+						{brands.map((brand) => (
+							<option value={brand.id} selected={selectedBrand === brand.id}>
+								{brand.name}
+							</option>
+						))}
+					</select>
+				</div>
+				<fieldset class="field">
+					<legend>Filter by colour</legend>
+					{colors.map((color) => (
+						<label class="filter-chip">
+							<input
+								type="checkbox"
+								name="color"
+								value={color.id}
+								checked={selectedColors.includes(color.id)}
+								data-auto-submit
+							/>
+							<span class="swatch" style={`background:${color.hexCode || '#ccc'}`} />
+							{color.name}
+						</label>
 					))}
-				</select>
-				<p>
-					<strong>Colors</strong>
-				</p>
-				{colors.map((color) => (
-					<label class="filter-chip">
-						<input
-							type="checkbox"
-							name="color"
-							value={color.id}
-							checked={selectedColors.includes(color.id)}
-							onchange="this.form.submit()"
-						/>
-						<span class="swatch" style={`background:${color.hexCode || '#ccc'}`} />
-						{color.name}
-					</label>
-				))}
-				<p>
-					<strong>Sort</strong>
-				</p>
-				<select name="sort" class="field" onchange="this.form.submit()">
-					<option value="date" selected={sort === 'date'}>Newest</option>
-					<option value="-price" selected={sort === '-price'}>Price: low to high</option>
-					<option value="price" selected={sort === 'price'}>Price: high to low</option>
-					<option value="-rating" selected={sort === '-rating'}>Top rated</option>
-					<option value="name" selected={sort === 'name'}>Name A–Z</option>
-				</select>
+				</fieldset>
+				<div class="field">
+					<label for="plp-sort">Sort</label>
+					<select name="sort" id="plp-sort" data-auto-submit>
+						<option value="date" selected={sort === 'date'}>Newest</option>
+						<option value="-price" selected={sort === '-price'}>Price: low to high</option>
+						<option value="price" selected={sort === 'price'}>Price: high to low</option>
+						<option value="-rating" selected={sort === '-rating'}>Top rated</option>
+						<option value="name" selected={sort === 'name'}>Name A–Z</option>
+					</select>
+				</div>
 				<noscript>
 					<button type="submit" class="btn">Apply</button>
 				</noscript>
@@ -149,3 +150,17 @@ const jsonld = [
 		</section>
 	</div>
 </BaseLayout>
+
+<script>
+// Auto-submit the filter form on change. Inline onchange handlers are
+// CSP-incompatible (Proposal 104 D12 — hash-only script-src), and the
+// bundled script runs once per full load, so the listener is delegated on
+// document (survives the ClientRouter swap). No-JS visitors use the
+// <noscript> Apply button.
+document.addEventListener('change', (event) => {
+	const target = event.target as Element | null;
+	if (target?.closest('[data-auto-submit]')) {
+		target.closest('form')?.submit();
+	}
+});
+</script>

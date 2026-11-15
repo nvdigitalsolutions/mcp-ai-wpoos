@@ -190,6 +190,35 @@ mod num_cpus {
     }
 }
 
+/// Stage-1 number normalization (Proposal 144 §4.1). The rule is tiered: the
+/// unambiguous tiers are always on, and the tier that rewrote ordinary prose
+/// (bare cardinals) is opt-in.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct NumberRuleConfig {
+    /// Master switch for the number rule.
+    pub enabled: bool,
+    /// T4: convert a bare cardinal ("one", "twenty") that has neither a numeric
+    /// cue before it nor a unit after it. Off by default.
+    pub bare_small: bool,
+    /// Run the rule in the Code and Terminal categories (off by default: those
+    /// profiles care about identifiers, not prose).
+    pub in_code: bool,
+    /// Group thousands in prose output (`$1,000` rather than `$1000`).
+    pub thousands_separator: bool,
+}
+
+impl Default for NumberRuleConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            bare_small: false,
+            in_code: false,
+            thousands_separator: true,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct CleanupConfig {
@@ -209,6 +238,8 @@ pub struct CleanupConfig {
     pub replace_on_completion: bool,
     /// Disable Stage-1 rules entirely (raw ASR output, spacing only).
     pub deterministic_cleanup: bool,
+    /// Tiered number normalization (Proposal 144).
+    pub numbers: NumberRuleConfig,
 }
 
 impl Default for CleanupConfig {
@@ -219,6 +250,7 @@ impl Default for CleanupConfig {
             wait_for_llm_ms: 1500,
             replace_on_completion: true,
             deterministic_cleanup: true,
+            numbers: NumberRuleConfig::default(),
         }
     }
 }
@@ -321,6 +353,31 @@ impl Default for OllamaConfig {
     }
 }
 
+/// Microphone capture strategy (Proposal 144 §4.3).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum CaptureMode {
+    /// The stream runs continuously: zero resume latency and a full pre-roll
+    /// window, at the cost of the OS microphone-in-use indicator staying lit
+    /// while the app runs.
+    #[default]
+    Resident,
+    /// The stream is paused when idle and resumed on key-down. The indicator
+    /// clears and the audio endpoint can idle; pre-roll is given up and a
+    /// resume latency is paid per dictation.
+    OnDemand,
+}
+
+impl CaptureMode {
+    /// Stable id used in settings JSON and diagnostics.
+    pub fn id(self) -> &'static str {
+        match self {
+            Self::Resident => "resident",
+            Self::OnDemand => "on_demand",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(default)]
 pub struct AudioConfig {
@@ -336,6 +393,14 @@ pub struct AudioConfig {
     /// default device at start; the actual device is always visible on the
     /// Diagnostics page.
     pub input_device: Option<String>,
+    /// Resident (default) or on-demand capture (Proposal 144 §4.3).
+    pub capture_mode: CaptureMode,
+    /// On-demand only: keep the stream running this long after a dictation so
+    /// a quick follow-up does not pay the resume cost again.
+    pub linger_ms: u64,
+    /// On-demand only: how long to wait for the first callback after a resume
+    /// before reporting that capture did not come back.
+    pub resume_timeout_ms: u64,
 }
 
 impl Default for AudioConfig {
@@ -346,6 +411,9 @@ impl Default for AudioConfig {
             ring_capacity_secs: 60,
             min_utterance_ms: 120,
             input_device: None,
+            capture_mode: CaptureMode::Resident,
+            linger_ms: 2000,
+            resume_timeout_ms: 250,
         }
     }
 }
@@ -489,9 +557,183 @@ impl Default for UiConfig {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(default)]
 pub struct SpaConfig {
-    /// Full URL of a hosted Pro SPA (e.g. `https://chat.nvoos.cloud`) or a
-    /// WordPress page that renders the `[nvoos_pro_spa]` shortcode.
+    /// Full URL of the NV oOS Complete Velocity console (e.g.
+    /// `https://console.nvoos.cloud`). The Assistant tab embeds this single
+    /// surface — every NV oOS addon UI lives inside the console.
     pub url: String,
+}
+
+/// Screen-to-text snippet OCR (Proposal 100). Platform-native engines are
+/// the zero-download default; the RapidOCR ONNX pack is opt-in.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct SnippetConfig {
+    /// Master switch.
+    pub enabled: bool,
+    /// Global chord (e.g. `Win+Shift+T` on Windows, `Command+Shift+T` on
+    /// macOS). Empty = disabled. Never the PTT hotkey (validated at
+    /// registration).
+    pub hotkey: String,
+    /// `auto` (platform native with ONNX fallback) | `winrt` | `sidecar` |
+    /// `onnx` | `vlm_fallback`.
+    pub engine: String,
+    /// BCP-47-ish language: Windows OCR language on WinRT/Vision, pack id
+    /// (`en`, …) on ONNX. Empty = OS default.
+    pub language: String,
+    /// Opt-in VLM re-recognition for noisy regions (M5; local providers only).
+    pub vlm_fallback: bool,
+    /// Paste into the previously focused app after copying (dictation parity).
+    pub auto_paste: bool,
+    /// `off` | `ocr` (dedicated OCR profile) | `full_stage1` (speech rules).
+    pub cleanup_profile: String,
+    /// Persist snippet results to the local history table (off by default —
+    /// OCR text can contain anything on screen).
+    pub retain_history: bool,
+}
+
+impl Default for SnippetConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            #[cfg(windows)]
+            hotkey: "Win+Shift+T".to_string(),
+            #[cfg(target_os = "macos")]
+            hotkey: "Command+Shift+T".to_string(),
+            #[cfg(all(not(windows), not(target_os = "macos")))]
+            hotkey: String::new(),
+            engine: "auto".to_string(),
+            language: String::new(),
+            vlm_fallback: false,
+            auto_paste: true,
+            cleanup_profile: "ocr".to_string(),
+            retain_history: false,
+        }
+    }
+}
+
+/// Local document-understanding tier (Proposal 111): an optional
+/// DeepSeek-OCR-class model served by LM Studio / Ollama, called for pages
+/// the box-level OCR engines recognize poorly. Off by default.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct DocumentModelConfig {
+    /// Master switch for the tier.
+    pub enabled: bool,
+    /// Provider: `ollama` | `lm_studio`.
+    pub provider: String,
+    /// Model id (`deepseek-ocr` for Ollama; blank = the server's single
+    /// loaded model).
+    pub model: String,
+    /// Escalate pages whose mean engine confidence is below this (0..1).
+    /// `None` = never escalate on confidence. Note: WinRT reports a
+    /// constant 1.0 and ONNX reports None today, so only `all_scans`
+    /// fires until an engine reports real scores.
+    pub min_confidence: Option<f32>,
+    /// Escalate every OCR page regardless of confidence (budgeted).
+    pub all_scans: bool,
+    /// Cap on model-tier pages per document (the tier is slow).
+    pub max_pages: usize,
+    /// Cold-load budget for the local server.
+    pub load_timeout_ms: u64,
+}
+
+impl Default for DocumentModelConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            provider: "ollama".to_string(),
+            model: "deepseek-ocr".to_string(),
+            min_confidence: None,
+            all_scans: false,
+            max_pages: 5,
+            load_timeout_ms: 120_000,
+        }
+    }
+}
+
+/// The complete persisted settings blob.
+/// Document input pipeline settings (Proposal 109).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct DocumentConfig {
+    /// Rasterization DPI for OCR-bound pages (300 standard; 400–600 helps
+    /// small fonts).
+    pub dpi: u32,
+    /// Pages with fewer extracted chars than this route to OCR.
+    pub text_page_min_chars: usize,
+    /// Hard page cap per document (memory/patience bound).
+    pub max_pages: usize,
+    /// Opt-in local VLM correction after deterministic OCR cleanup.
+    pub polish_enabled: bool,
+    /// VLM model for polish (empty = the local server's default).
+    pub polish_model: String,
+    /// Local document-understanding tier (Proposal 111).
+    pub model: DocumentModelConfig,
+}
+
+impl Default for DocumentConfig {
+    fn default() -> Self {
+        Self {
+            dpi: 300,
+            text_page_min_chars: 50,
+            max_pages: 200,
+            polish_enabled: false,
+            polish_model: String::new(),
+            model: DocumentModelConfig::default(),
+        }
+    }
+}
+
+/// Memory layer settings (Proposal 127): the unified, searchable corpus
+/// over transcripts, meetings and snippets.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct MemoryConfig {
+    /// Master switch. Off = the worker never embeds and the corpus is not
+    /// searchable from the Ask panel (chunks already stored stay on disk).
+    pub enabled: bool,
+    /// Catalogue id of the embedder (`granite-97m-r2-int8` default).
+    pub embedder: String,
+    /// Blend weight for the vector leg (0 = keyword-only, 1 = semantic-only).
+    /// 0.85 is the measured plateau for granite-97m-r2 (SurfSense eval).
+    pub semantic_weight: f32,
+    /// Chunks per Ask result.
+    pub top_k: usize,
+    /// Whether Ask also runs a cited answer through the Stage-2 provider
+    /// (`cleanup.provider`). Chunks-only when off or when the provider fails.
+    pub ask_provider_enabled: bool,
+}
+
+impl Default for MemoryConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            embedder: "granite-97m-r2-int8".to_string(),
+            semantic_weight: 0.85,
+            top_k: 5,
+            ask_provider_enabled: true,
+        }
+    }
+}
+
+/// Clipboard behaviour for the paste path (Proposal 144 §4.2).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct PasteConfig {
+    /// Put the previous clipboard content back after the paste.
+    pub restore_clipboard: bool,
+    /// Settle time before restoring. A slow target (RDP, large IDE) needs a
+    /// longer window or it pastes the restored content instead of the text.
+    pub restore_delay_ms: u64,
+}
+
+impl Default for PasteConfig {
+    fn default() -> Self {
+        Self {
+            restore_clipboard: true,
+            restore_delay_ms: 250,
+        }
+    }
 }
 
 /// The complete persisted settings blob.
@@ -506,12 +748,16 @@ pub struct Settings {
     pub lm_studio: LmStudioConfig,
     pub ollama: OllamaConfig,
     pub audio: AudioConfig,
+    pub paste: PasteConfig,
     pub camera: CameraConfig,
     pub vision: VisionConfig,
     pub agent: AgentConfig,
     pub privacy: PrivacyConfig,
     pub ui: UiConfig,
     pub spa: SpaConfig,
+    pub snippet: SnippetConfig,
+    pub document: DocumentConfig,
+    pub memory: MemoryConfig,
 }
 
 impl Settings {

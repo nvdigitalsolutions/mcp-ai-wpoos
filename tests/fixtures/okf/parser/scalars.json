@@ -1,0 +1,21 @@
+{
+    "input": "---\nstring: plain text\nquoted_single: 'single quoted'\nquoted_double: \"double quoted\"\nbool_true: true\nbool_false: false\nnull_word: null\nnull_tilde: ~\ninteger: 42\nnegative_integer: -7\nfloat: 3.5\nnegative_float: -0.25\nlooks_numeric_but_quoted: '0042'\ndate_like: 2026-11-13\n---\nBody.\n",
+    "expected": {
+        "frontmatter": {
+            "string": "plain text",
+            "quoted_single": "single quoted",
+            "quoted_double": "double quoted",
+            "bool_true": true,
+            "bool_false": false,
+            "null_word": null,
+            "null_tilde": null,
+            "integer": 42,
+            "negative_integer": -7,
+            "float": 3.5,
+            "negative_float": -0.25,
+            "looks_numeric_but_quoted": "0042",
+            "date_like": "2026-11-13"
+        },
+        "body": "Body."
+    }
+}

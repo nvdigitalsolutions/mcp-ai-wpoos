@@ -6,6 +6,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -1700,6 +1702,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'add_model_config'                   => 'external-tools',
 				'discover_new_models'                => 'external-tools',
 				'deep_research'                      => 'external-tools',
+				'research_status'                    => 'external-tools',
+				'research_result'                    => 'external-tools',
+				'research_cancel'                    => 'external-tools',
 				'create_text_embeddings'             => 'external-tools',
 				// OpenAI API Integration - Phase 2 Tools.
 				'semantic_content_search'            => 'external-tools',
@@ -2200,6 +2205,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Higgsfield_Image' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-higgsfield-image.php',
 				'WP_MCP_AI_Tool_Check_Higgsfield_Request'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-higgsfield-request.php',
 				'WP_MCP_AI_Tool_Cancel_Higgsfield_Request' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-cancel-higgsfield-request.php',
+				// Generative-media capability registry + deterministic prompt craft (Proposal 141).
+				'WP_MCP_AI_Tool_Media_Model_Capabilities'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-media-model-capabilities.php',
+				'WP_MCP_AI_Tool_Enhance_Media_Prompt'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-enhance-media-prompt.php',
 				'WP_MCP_AI_Tool_Check_Video_Status'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-video-status.php',
 				'WP_MCP_AI_Tool_Generate_Music'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music.php',
 				'WP_MCP_AI_Tool_Submit_Document_Prompt'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php',
@@ -2369,6 +2377,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-recommended-datasets.php',
 				// Deep Research tool.
 				'WP_MCP_AI_Tool_Deep_Research'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-deep-research.php',
+				// Deep Research background job companion tools.
+				'WP_MCP_AI_Tool_Research_Status'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-status.php',
+				'WP_MCP_AI_Tool_Research_Result'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-result.php',
+				'WP_MCP_AI_Tool_Research_Cancel'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-cancel.php',
 				// Excel and Spreadsheet Tools - AI-powered formula generation.
 				'WP_MCP_AI_Tool_Pro_Excel'                 => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-pro-excel.php',
 				// Erlang C queuing-theory tools (Base).

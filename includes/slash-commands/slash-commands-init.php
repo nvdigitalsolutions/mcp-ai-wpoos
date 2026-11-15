@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -1077,6 +1079,25 @@ function wp_mcp_ai_create_slash_command_audit_table() {
 	$audit = new WP_MCP_AI_Slash_Command_Audit();
 	$audit->create_table();
 }
+
+/**
+ * Reconcile the audit table schema after a plugin update.
+ *
+ * `wp_mcp_ai_create_slash_command_audit_table()` only runs from the activation
+ * hook, so a site that updates the plugin without deactivating never creates
+ * the table. Every slash-command request then logs a database error and the
+ * audit trail is silently empty. `maybe_create_table()` is a no-op unless the
+ * stored schema version is missing or stale.
+ *
+ * @since 1.2.20
+ */
+function wp_mcp_ai_maybe_create_slash_command_audit_table() {
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/class-wp-mcp-ai-slash-command-audit.php';
+
+	$audit = new WP_MCP_AI_Slash_Command_Audit();
+	$audit->maybe_create_table();
+}
+add_action( 'init', 'wp_mcp_ai_maybe_create_slash_command_audit_table' );
 
 /**
  * Schedule cleanup of old audit logs

@@ -2831,6 +2831,34 @@ var require_lib = __commonJS({
   }
 });
 
+// node_modules/hono/dist/http-exception.js
+var HTTPException = class extends Error {
+  res;
+  status;
+  /**
+  * Creates an instance of `HTTPException`.
+  * @param status - HTTP status code for the exception. Defaults to 500.
+  * @param options - Additional options for the exception.
+  */
+  constructor(status = 500, options) {
+    super(options?.message, { cause: options?.cause });
+    this.res = options?.res;
+    this.status = status;
+  }
+  /**
+  * Returns the response object associated with the exception.
+  * If a response object is not provided, a new response is created with the error message and status code.
+  * @returns The response object.
+  */
+  getResponse() {
+    if (this.res) return new Response(this.res.body, {
+      status: this.status,
+      headers: this.res.headers
+    });
+    return new Response(this.message, { status: this.status });
+  }
+};
+
 // node_modules/hono/dist/request/constants.js
 var GET_MATCH_RESULT = /* @__PURE__ */ Symbol();
 
@@ -2909,8 +2937,8 @@ var splitPath = (path) => {
   if (paths[0] === "") paths.shift();
   return paths;
 };
-var splitRoutingPath = (routePath) => {
-  const { groups, path } = extractGroupsFromPath(routePath);
+var splitRoutingPath = (routePath2) => {
+  const { groups, path } = extractGroupsFromPath(routePath2);
   const paths = splitPath(path);
   return replaceGroupMarks(paths, groups);
 };
@@ -2975,7 +3003,7 @@ var tryDecode = (str, decoder) => {
     });
   }
 };
-var tryDecodeURI = (str) => tryDecode(str, decodeURI);
+var decodeURIWithPreservedPercent = (value) => decodeURI(value.includes("%25") ? value.replace(/%25/g, "%2525") : value);
 var getPath = (request) => {
   const url = request.url;
   const start = url.indexOf("/", url.indexOf(":") + 4);
@@ -2987,7 +3015,13 @@ var getPath = (request) => {
       const hashIndex = url.indexOf("#", i);
       const end = queryIndex === -1 ? hashIndex === -1 ? void 0 : hashIndex : hashIndex === -1 ? queryIndex : Math.min(queryIndex, hashIndex);
       const path = url.slice(start, end);
-      return tryDecodeURI(path.includes("%25") ? path.replace(/%25/g, "%2525") : path);
+      const decoded = tryDecode(path, decodeURIWithPreservedPercent);
+      if (/%(?![0-9A-Fa-f]{2})/.test(path)) {
+        const rewritten = new URL("http://localhost");
+        rewritten.pathname = decoded.replace(/[\\\t\n\r]/g, encodeURIComponent);
+        if (tryDecode(rewritten.pathname, decodeURIWithPreservedPercent) !== decoded) return tryDecode(path.replace(/%(?![0-9A-Fa-f]{2})/g, "%25"), decodeURIWithPreservedPercent);
+      }
+      return decoded;
     } else if (charCode === 63 || charCode === 35) break;
   }
   return url.slice(start, i);
@@ -3028,17 +3062,22 @@ var _getQueryParam = (url, key, multiple) => {
   const hashIndex = url.indexOf("#", 8);
   if (hashIndex !== -1) url = url.slice(0, hashIndex);
   let encoded;
-  if (!multiple && key && key.indexOf("%") === -1 && key.indexOf("+") === -1) {
-    let keyIndex2 = url.indexOf("?", 8);
+  if (!multiple && key && !/[%+&=]/.test(key)) {
+    const queryIndex = url.indexOf("?", 8);
+    let keyIndex2 = queryIndex;
     if (keyIndex2 === -1) return;
     if (!url.startsWith(key, keyIndex2 + 1)) keyIndex2 = url.indexOf(`&${key}`, keyIndex2 + 1);
     while (keyIndex2 !== -1) {
       const trailingKeyCode = url.charCodeAt(keyIndex2 + key.length + 1);
-      if (trailingKeyCode === 61) {
-        const valueIndex = keyIndex2 + key.length + 2;
-        const endIndex = url.indexOf("&", valueIndex);
-        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? void 0 : endIndex));
-      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) return "";
+      if (trailingKeyCode === 61 || trailingKeyCode === 38 || isNaN(trailingKeyCode)) {
+        if (keyIndex2 > queryIndex && /(?:^|&)[^=&]*[%+]/.test(url.slice(queryIndex + 1, keyIndex2))) break;
+        if (trailingKeyCode === 61) {
+          const valueIndex = keyIndex2 + key.length + 2;
+          const endIndex = url.indexOf("&", valueIndex);
+          return _decodeURI(url.slice(valueIndex, endIndex === -1 ? void 0 : endIndex));
+        }
+        return "";
+      }
       keyIndex2 = url.indexOf(`&${key}`, keyIndex2 + 1);
     }
     encoded = /[%+]/.test(url);
@@ -3571,7 +3610,7 @@ var Context = class {
   * ```
   */
   header = (name, value, options) => {
-    if (this.finalized) this.#res = createResponseInstance(this.#res.body, this.#res);
+    if (this.finalized && !this.#res.bodyUsed) this.#res = createResponseInstance(this.#res.body, this.#res);
     const headers = this.#res ? this.#res.headers : this.#preparedHeaders ??= new Headers();
     if (value === void 0) headers.delete(name);
     else if (options?.append) headers.append(name, value);
@@ -3783,6 +3822,10 @@ var compose = (middleware, onError, onNotFound) => {
   };
 };
 
+// node_modules/hono/dist/helper/route/index.js
+var matchedRoutes = (c) => c.req[GET_MATCH_RESULT][0].map(([[, route]]) => route);
+var routePath = (c, index) => matchedRoutes(c).at(index ?? c.req.routeIndex)?.path ?? "";
+
 // node_modules/hono/dist/router.js
 var METHODS = [
   "get",
@@ -3799,6 +3842,53 @@ var UnsupportedPathError = class extends Error {
 
 // node_modules/hono/dist/utils/constants.js
 var COMPOSED_HANDLER = "__COMPOSED_HANDLER";
+
+// node_modules/hono/dist/utils/mount.js
+var countTrailingSlashes = (path) => {
+  let index = path.length;
+  while (index > 0 && path.charCodeAt(index - 1) === 47) index--;
+  return path.length - index;
+};
+var getPathPrefixLength = (c, pathPrefix, routePath2) => {
+  if (!/[:*]/.test(pathPrefix)) return pathPrefix.length;
+  const path = c.req.path;
+  const matchResult = c.req[GET_MATCH_RESULT];
+  const paramNames = /* @__PURE__ */ new Set();
+  let length = 0;
+  for (const part of splitRoutingPath(pathPrefix)) {
+    if (part[0] === ":" && part.endsWith("}?")) throw new Error(`mount(): Optional regular expression parameters are not supported in "${routePath2}".`);
+    const pattern = getPattern(part);
+    if (pattern && pattern !== "*") {
+      const name = pattern[1];
+      if (paramNames.has(name)) throw new Error(`mount(): Duplicate path parameter "${name}" in "${routePath2}".`);
+      paramNames.add(name);
+    }
+    if (pattern && pattern !== "*" && pattern[2] !== true) {
+      const value = matchResult.length === 2 ? matchResult[1][matchResult[0][c.req.routeIndex][1][pattern[1]]] : matchResult[0][c.req.routeIndex][1][pattern[1]];
+      length += value.length + 1;
+    } else if (pattern || part.endsWith("*")) {
+      const end = path.indexOf("/", length + 1);
+      length = end === -1 ? path.length : end;
+    } else length += part.length + 1;
+  }
+  return length;
+};
+var createMountedRequest = (c, pathPrefix, routePath2) => {
+  if (/[^/]\*$/.test(routePath2)) throw new Error(`mount(): Wildcard must follow "/" in "${routePath2}".`);
+  const prefixLength = getPathPrefixLength(c, pathPrefix, routePath2);
+  const path = c.req.path.slice(prefixLength) || "/";
+  if (prefixLength > c.req.path.length || path[0] !== "/" || /\/(?:\.|%2e){1,2}(?:\/|$)/i.test(path)) throw new HTTPException(400, { message: "Invalid mounted path" });
+  const rawUrl = c.req.raw.url;
+  if (/^[^/?#]*\/\/[^/?#\\]*[?#\\]/.test(rawUrl)) throw new HTTPException(400, { message: "Invalid mounted path" });
+  const rawPathEnd = rawUrl.search(/[?#]/);
+  const rawTrailingSlashes = countTrailingSlashes(rawPathEnd === -1 ? rawUrl : rawUrl.slice(0, rawPathEnd));
+  if (rawTrailingSlashes > 1 && countTrailingSlashes(c.req.path) === rawTrailingSlashes - 1) throw new HTTPException(400, { message: "Invalid mounted path" });
+  const url = new URL(rawUrl);
+  url.pathname = path.replace(/[\\\t\n\r]/g, encodeURIComponent);
+  if (path.includes("%")) {
+  }
+  return new Request(url, c.req.raw);
+};
 
 // node_modules/hono/dist/hono-base.js
 var notFoundHandler = (c) => {
@@ -3976,6 +4066,8 @@ var Hono = class Hono2 {
   * @param {Function} applicationHandler - other Request Handler
   * @param {MountOptions} [options] - options of `.mount()`
   * @returns {Hono} mounted Hono instance
+  * @throws {Error} If automatic request rewriting encounters duplicate path parameter names or an optional regular expression parameter.
+  * @throws {HTTPException} With status 400 if automatic request rewriting cannot safely preserve the routed path.
   *
   * @example
   * ```ts
@@ -4021,17 +4113,12 @@ var Hono = class Hono2 {
       }
       return [c.env, executionContext];
     };
-    replaceRequest ||= (() => {
-      const mergedPath = mergePath(this._basePath, path);
-      const pathPrefixLength = mergedPath === "/" ? 0 : mergedPath.length;
-      return (request) => {
-        const url = new URL(request.url);
-        url.pathname = this.getPath(request).slice(pathPrefixLength) || "/";
-        return new Request(url, request);
-      };
-    })();
+    const defaultReplaceRequest = (c) => {
+      const mountedRoutePath = routePath(c);
+      return createMountedRequest(c, mountedRoutePath.replace(/\/?\*$/, ""), mountedRoutePath);
+    };
     const handler = async (c, next) => {
-      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c));
+      const res = await applicationHandler(replaceRequest ? replaceRequest(c.req.raw) : defaultReplaceRequest(c), ...getOptions(c));
       if (res) return res;
       await next();
     };
@@ -4163,14 +4250,15 @@ function match(method, path) {
 
 // node_modules/hono/dist/router/reg-exp-router/node.js
 var LABEL_REG_EXP_STR = "[^/]+";
-var TAIL_WILDCARD_REG_EXP_STR = "(?:|/.*)";
+var ONLY_WILDCARD_REG_EXP_STR = "[^]*";
+var TAIL_WILDCARD_REG_EXP_STR = "(?:|/[^]*)";
 var PATH_ERROR = /* @__PURE__ */ Symbol();
 var regExpMetaChars = /* @__PURE__ */ new Set(".\\+*[^]$()");
 function compareKey(a, b) {
   if (a.length === 1) return b.length === 1 ? a < b ? -1 : 1 : -1;
   if (b.length === 1) return 1;
-  if (a === ".*" || a === "(?:|/.*)") return b === "(?:|/.*)" ? -1 : 1;
-  else if (b === ".*" || b === "(?:|/.*)") return -1;
+  if (a === "[^]*" || a === "(?:|/[^]*)") return b === "[^]*" ? -1 : 1;
+  else if (b === "[^]*" || b === "(?:|/[^]*)") return -1;
   if (a === "[^/]+") return 1;
   else if (b === "[^/]+") return -1;
   return a.length === b.length ? a < b ? -1 : 1 : b.length - a.length;
@@ -4179,14 +4267,14 @@ var Node = class Node2 {
   #index;
   #varIndex;
   #children = createNullObject();
-  insert(tokens, index, paramMap, context, isStatic) {
+  insert(tokens, index, paramMap, context, keys) {
     let node = this;
     for (let i = 0, len = tokens.length; i < len; i++) {
       const token = tokens[i];
       const pattern = token.length === 1 ? token === "*" ? i === len - 1 ? [
         "",
         "",
-        ".*"
+        ONLY_WILDCARD_REG_EXP_STR
       ] : [
         "",
         "",
@@ -4201,15 +4289,16 @@ var Node = class Node2 {
         const name = pattern[1];
         let regexpStr = pattern[2] || "[^/]+";
         if (name && pattern[2]) {
-          if (regexpStr === ".*") throw PATH_ERROR;
+          if (new RegExp(regexpStr).test("")) throw PATH_ERROR;
           regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, "(?:");
           if (/\((?!\?:)/.test(regexpStr)) throw PATH_ERROR;
           if (regexpStr.length === 1 && regExpMetaChars.has(regexpStr)) throw PATH_ERROR;
         }
+        keys.push(regexpStr);
         nextNode = node.#children[regexpStr];
         if (!nextNode) {
-          if (regexpStr !== ".*" && regexpStr !== "(?:|/.*)") {
-            for (const k in node.#children) if ((regexpStr.length > 1 || k.length > 1) && k !== ".*" && k !== "(?:|/.*)") throw PATH_ERROR;
+          if (regexpStr !== "[^]*" && regexpStr !== "(?:|/[^]*)") {
+            for (const k in node.#children) if ((regexpStr.length > 1 || k.length > 1) && k !== "[^]*" && k !== "(?:|/[^]*)") throw PATH_ERROR;
           }
           nextNode = node.#children[regexpStr] = new Node2();
         }
@@ -4218,16 +4307,17 @@ var Node = class Node2 {
           paramMap.push([name, nextNode.#varIndex]);
         }
       } else {
+        keys.push(token);
         nextNode = node.#children[token];
         if (!nextNode) {
-          for (const k in node.#children) if (k.length > 1 && k !== ".*" && k !== "(?:|/.*)") throw PATH_ERROR;
+          for (const k in node.#children) if (k.length > 1 && k !== "[^]*" && k !== "(?:|/[^]*)") throw PATH_ERROR;
           nextNode = node.#children[token] = new Node2();
         }
       }
       node = nextNode;
     }
     if (node.#index !== void 0) throw PATH_ERROR;
-    node.#index = isStatic ? -1 : index;
+    node.#index = index;
   }
   buildRegExpStr() {
     const strList = Object.keys(this.#children).sort(compareKey).map((k) => {
@@ -4249,8 +4339,14 @@ var Trie = class {
   #index = 0;
   paths = createNullObject();
   insert(path, isStatic) {
+    const keys = [];
     if (isStatic) {
-      this.#root.insert(path.split(""), 0, [], this.#context, true);
+      this.#root.insert(path.split(""), -1, [], this.#context, keys);
+      this.paths[path] = [
+        -1,
+        [],
+        keys
+      ];
       return;
     }
     const paramAssoc = [];
@@ -4258,7 +4354,7 @@ var Trie = class {
     let markedPath = path;
     for (let i = 0; ; ) {
       let replaced = false;
-      markedPath = markedPath.replace(/\{[^}]+\}/g, (m) => {
+      markedPath = markedPath.replace(/\{(?:\{[\d,]+\}|[^}])+\}/g, (m) => {
         const mark = `@\\${i}`;
         groups[i] = [mark, m];
         i++;
@@ -4267,7 +4363,7 @@ var Trie = class {
       });
       if (!replaced) break;
     }
-    const tokens = markedPath.match(/(?::[^\/]+)|(?:\/\*$)|./g) || [];
+    const tokens = markedPath.match(/(?::[^\/]+)|(?:\/\*$)|./gs) || [];
     for (let i = groups.length - 1; i >= 0; i--) {
       const [mark] = groups[i];
       for (let j = tokens.length - 1; j >= 0; j--) if (tokens[j].indexOf(mark) !== -1) {
@@ -4275,8 +4371,12 @@ var Trie = class {
         break;
       }
     }
-    this.#root.insert(tokens, this.#index, paramAssoc, this.#context, false);
-    this.paths[path] = [this.#index++, paramAssoc];
+    this.#root.insert(tokens, this.#index, paramAssoc, this.#context, keys);
+    this.paths[path] = [
+      this.#index++,
+      paramAssoc,
+      keys
+    ];
   }
   buildRegExp() {
     let regexp = this.#root.buildRegExpStr();
@@ -4308,21 +4408,21 @@ var Trie = class {
 };
 
 // node_modules/hono/dist/router/reg-exp-router/router.js
-var wildcardRegExpCache = createNullObject();
-function buildWildcardRegExp(path) {
-  return wildcardRegExpCache[path] ??= new RegExp(`^${path.replace(/\/:[^/{}]+(?:\{\[\^\/]\+})?(?=[/{]|$)|\/?\*$|([.\\+*[^\]$()?{}|])/g, (match2, metaChar) => metaChar ? `\\${metaChar}` : match2 === "/*" ? TAIL_WILDCARD_REG_EXP_STR : match2 === "*" ? ".*" : `/:${LABEL_REG_EXP_STR}`)}$`);
+function endsWithWildcard(keys) {
+  const tail = keys[keys.length - 1];
+  return tail === "[^]*" || tail === "(?:|/[^]*)";
 }
-function findMiddleware(middleware, path) {
-  for (const k of Object.keys(middleware).sort((a, b) => b.length - a.length)) if (buildWildcardRegExp(k).test(path)) return [...middleware[k]];
+function covers(wildcard, target) {
+  const last = wildcard.length - 1;
+  for (let i = 0; i < last; i++) if (wildcard[i] !== target[i]) return false;
+  return wildcard[last] === "[^]*" || target.length === last || target[last] === "/";
 }
 var RegExpRouter = class {
   name = "RegExpRouter";
-  #middleware;
-  #routes;
+  #handlers;
   #tries;
   constructor() {
-    this.#middleware = { ["ALL"]: createNullObject() };
-    this.#routes = { ["ALL"]: createNullObject() };
+    this.#handlers = { ["ALL"]: [] };
     this.#tries = { ["ALL"]: new Trie() };
   }
   #insertPath(method, path) {
@@ -4333,65 +4433,53 @@ var RegExpRouter = class {
     }
   }
   add(method, path, handler) {
-    const middleware = this.#middleware;
-    const routes = this.#routes;
-    if (!middleware) throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT);
-    if (!middleware[method]) {
-      this.#tries[method] = new Trie();
-      for (const handlerMap of [middleware, routes]) {
-        handlerMap[method] = createNullObject();
-        for (const p in handlerMap["ALL"]) {
-          handlerMap[method][p] = [...handlerMap["ALL"][p]];
-          this.#insertPath(method, p);
-        }
-      }
+    const handlers = this.#handlers;
+    if (!handlers) throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT);
+    const tries = this.#tries;
+    if (!handlers[method]) {
+      tries[method] = new Trie();
+      handlers[method] = [...handlers["ALL"]];
+      for (const p in tries["ALL"].paths) this.#insertPath(method, p);
     }
     if (path === "/*") path = "*";
-    const methods = method === "ALL" ? Object.keys(middleware) : [method];
-    if (/\*$/.test(path)) {
-      const re = buildWildcardRegExp(path);
-      for (const m of methods) if (!middleware[m][path]) {
-        this.#insertPath(m, path);
-        middleware[m][path] = findMiddleware(middleware[m], path) || findMiddleware(middleware["ALL"], path) || [];
-      }
-      for (const handlerMap of [middleware, routes]) for (const m of methods) for (const p in handlerMap[m]) re.test(p) && handlerMap[m][p].push([handler, path]);
-      return;
-    }
+    const methods = method === "ALL" ? Object.keys(handlers) : [method];
     const paths = checkOptionalParameter(path) || [path];
     for (const path2 of paths) for (const m of methods) {
-      if (!routes[m][path2]) {
-        this.#insertPath(m, path2);
-        routes[m][path2] = findMiddleware(middleware[m], path2) || findMiddleware(middleware["ALL"], path2) || [];
-      }
-      routes[m][path2].push([handler, path2]);
+      if (!tries[m].paths[path2]) this.#insertPath(m, path2);
+      handlers[m].push([handler, path2]);
     }
   }
   match = match;
   buildAllMatchers() {
     const matchers = createNullObject();
-    for (const method of Object.keys(this.#routes)) matchers[method] = this.#buildMatcher(method);
-    this.#middleware = this.#routes = this.#tries = void 0;
-    wildcardRegExpCache = createNullObject();
+    for (const method of Object.keys(this.#handlers)) matchers[method] = this.#buildMatcher(method);
+    this.#handlers = this.#tries = void 0;
     return matchers;
   }
   #buildMatcher(method) {
-    const middleware = this.#middleware[method];
-    const routes = this.#routes[method];
+    const handlers = this.#handlers[method];
     const trie = this.#tries[method];
     const staticMap = createNullObject();
     const handlerData = [];
     const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp();
-    for (const r of [middleware, routes]) for (const path in r) {
-      const handlers = r[path];
-      const pathData = trie.paths[path];
-      if (!pathData) {
-        staticMap[path] = [handlers.map(([h]) => [h, createNullObject()]), emptyParam];
-        continue;
-      }
-      handlerData[pathData[0]] = handlers.map(([h, handlerPath]) => [h, trie.paths[handlerPath][1].reduceRight((map, [key], i) => {
-        map[key] = paramReplacementMap[pathData[1][i][1]];
+    const own = createNullObject();
+    const entries = handlers.map(([h, p], i) => {
+      (own[p] ??= []).push(i);
+      return [h, trie.paths[p][1].reduceRight((map, [key, varIndex]) => {
+        map[key] = paramReplacementMap[varIndex];
         return map;
-      }, createNullObject())]);
+      }, createNullObject())];
+    });
+    const wildcards = Object.keys(own).filter((p) => endsWithWildcard(trie.paths[p][2]));
+    for (const path in trie.paths) {
+      const [index, , keys] = trie.paths[path];
+      const indexes = [...own[path]];
+      for (const p of wildcards) if (p !== path && covers(trie.paths[p][2], keys)) indexes.push(...own[p]);
+      const data = indexes.sort((a, b) => a - b).map((i) => entries[i]);
+      if (index === -1) {
+        const last = Math.max(-1, ...data.flatMap(([, map]) => Object.values(map)));
+        staticMap[path] = [data, last === -1 ? emptyParam : path.match(regexp).slice(0, last + 1)];
+      } else handlerData[index] = data;
     }
     return [
       regexp,
@@ -4544,7 +4632,7 @@ var Node3 = class Node4 {
             const restPathString = path.slice(partOffsets[i]);
             const m = matcher.exec(restPathString);
             if (m) {
-              params[name] = m[0];
+              if (!Object.hasOwn(params, name)) params[name] = m[0];
               this.#pushHandlerSets(handlerSets, child, method, node.#params, params);
               if (m[0].length === restPathString.length && child.#children["*"]) this.#pushHandlerSets(handlerSets, child.#children["*"], method, node.#params, params);
               for (const _ in child.#children) {
@@ -4557,7 +4645,7 @@ var Node3 = class Node4 {
             }
           }
           if (matcher === true || matcher.test(part)) {
-            params[name] = part;
+            if (!Object.hasOwn(params, name)) params[name] = part;
             if (isLast) {
               this.#pushHandlerSets(handlerSets, child, method, params, node.#params);
               if (child.#children["*"]) this.#pushHandlerSets(handlerSets, child.#children["*"], method, params, node.#params);

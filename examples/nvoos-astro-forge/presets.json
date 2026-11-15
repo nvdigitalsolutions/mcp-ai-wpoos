@@ -1,0 +1,72 @@
+{
+	"version": 1,
+	"presets": [
+		{
+			"id": "blog",
+			"bestFor": "Editorial sites: a blog with pages, search and feeds.",
+			"detect": [
+				"posts outnumber products",
+				"no wc/v3 namespace advertised"
+			],
+			"render": "static",
+			"kinds": [
+				"hero",
+				"feature-grid",
+				"icon-list",
+				"testimonial",
+				"cta",
+				"text",
+				"form"
+			],
+			"surfaces": [
+				"search",
+				"feed",
+				"sitemap"
+			]
+		},
+		{
+			"id": "storefront",
+			"bestFor": "WooCommerce catalogues and product marketing.",
+			"detect": [
+				"wc/v3 advertised",
+				"product post type present"
+			],
+			"render": "static",
+			"kinds": [
+				"hero",
+				"pricing",
+				"feature-grid",
+				"gallery",
+				"stats",
+				"comparison",
+				"testimonial",
+				"cta"
+			],
+			"surfaces": [
+				"search",
+				"feed",
+				"sitemap"
+			]
+		},
+		{
+			"id": "minimal",
+			"bestFor": "The smallest useful site: posts and pages, no search surface.",
+			"detect": [
+				"few pages",
+				"no products",
+				"no search requirement"
+			],
+			"render": "static",
+			"kinds": [
+				"hero",
+				"text",
+				"feature-grid",
+				"cta"
+			],
+			"surfaces": [
+				"feed",
+				"sitemap"
+			]
+		}
+	]
+}

@@ -9,6 +9,10 @@
  * @package WP_MCP_AI_Pro
  * @since 2.3.0
  * @since 2.4.0 Wired to real Twilio and notify.lk APIs; stub removed.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -185,6 +189,24 @@ class WP_MCP_AI_Tool_Send_Lead_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		$message = sanitize_textarea_field( $arguments['message'] );
+
+		// Deterministic pre-send gate.
+		if ( class_exists( 'WP_MCP_AI_CRM_Pre_Send_Gate' ) ) {
+			$gate = WP_MCP_AI_CRM_Pre_Send_Gate::check(
+				array(
+					'lead_id' => $lead_id,
+					'channel' => 'sms',
+					'kind'    => $sequence_id ? 'sequence' : 'one_off',
+					'to'      => $phone,
+					'body'    => $message,
+					'step'    => $sequence_id ? $step_index : 0,
+					'context' => $context,
+				)
+			);
+			if ( is_wp_error( $gate ) ) {
+				return $gate;
+			}
+		}
 
 		// Determine SMS provider and send.
 		$settings    = class_exists( 'WP_MCP_AI_CRM_Engine' )

@@ -9,6 +9,10 @@
  *
  * @package   WP_MCP_AI_Pro
  * @since     1.0.0
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -92,6 +96,20 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 					'permission_callback' => array( $this, 'permission_check' ),
 					'args'                => $this->get_create_args(),
 				),
+			)
+		);
+
+		// Fleet-wide aggregates for the ops dashboard. Registered BEFORE the
+		// (?P<id>...) routes (registration-order discipline — the id pattern
+		// excludes hyphens today, but a future pattern change must never let
+		// this literal win over a schedule id).
+		register_rest_route(
+			$this->namespace,
+			'/schedules/fleet-stats',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_fleet_stats' ),
+				'permission_callback' => array( $this, 'permission_check' ),
 			)
 		);
 
@@ -445,6 +463,26 @@ class WP_MCP_AI_Pro_Schedule_REST_Controller {
 				'schedule_id' => $id,
 				'history'     => $history,
 				'total'       => count( $history ),
+			)
+		);
+	}
+
+	/**
+	 * Fleet-wide schedule run aggregates for the ops dashboard card.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response
+	 */
+	public function get_fleet_stats( $request ) {
+		unset( $request ); // Aggregate endpoint — no request parameters needed.
+		$stats = WP_MCP_AI_Pro_Schedule_Manager::get_fleet_stats();
+
+		return rest_ensure_response(
+			array(
+				'ok'    => true,
+				'stats' => $stats,
 			)
 		);
 	}

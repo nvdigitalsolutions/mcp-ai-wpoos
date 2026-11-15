@@ -1,19 +1,21 @@
 {
 	"name": "@nvdigitalsolutions/nvoos-astro-forge",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"license": "MIT",
 	"description": "Proposal 096 — WP→Astro generation: REST client, content-layer loader, sanitizer, blog template, scaffold CLI, deploy pipeline",
 	"type": "module",
 	"bin": {
-		"nvoos-forge": "./scripts/forge.mjs",
-		"nvoos-forge-mcp": "./scripts/forge-mcp.mjs",
-		"nvoos-forge-mcp-stdio": "./mcp/stdio.ts"
+		"nvoos-forge": "./dist/forge.mjs",
+		"nvoos-forge-mcp": "./dist/forge-mcp.mjs",
+		"nvoos-forge-mcp-stdio": "./dist/forge-mcp-stdio.mjs"
 	},
 	"files": [
 		"lib",
 		"mcp",
 		"scripts",
 		"templates",
+		"dist",
+		"presets.json",
 		"LICENSE",
 		"NOTICE",
 		"README.md"
@@ -41,25 +43,41 @@
 		"typecheck": "tsc --noEmit",
 		"mcp": "node scripts/forge-mcp.mjs",
 		"fixture:wp": "node scripts/wp-fixture-server.mjs",
-		"forge": "node scripts/forge.mjs"
+		"forge": "node scripts/forge.mjs",
+		"prepublishOnly": "node scripts/prepare-dist.mjs"
 	},
 	"engines": {
 		"node": ">=22.6.0"
 	},
 	"dependencies": {
+		"@clack/prompts": "^1.8.1",
 		"@modelcontextprotocol/node": "^2.1.2",
 		"@modelcontextprotocol/server": "^2.4.0",
+		"commander": "^15.0.0",
+		"css-tree": "^3.2.1",
 		"fflate": "^0.8.3",
 		"htmlparser2": "^12.0.0",
+		"limax": "^4.2.3",
 		"octokit": "^5.0.5",
 		"sanitize-html": "^2.18.1",
+		"sitemap": "^10.0.0",
+		"undici": "^6.29.1",
 		"zod": "^4.6.7"
 	},
 	"devDependencies": {
+		"@types/css-tree": "^3.2.0",
 		"@types/node": "^26.6.6",
 		"@types/sanitize-html": "^2.16.2",
-		"astro": "^7.4.4",
+		"astro": "^7.4.7",
+		"axe-core": "^4.14.0",
+		"esbuild": "^0.28.0",
+		"playwright": "^1.65.0",
+		"schema-dts": "^2.1.0",
 		"typescript": "^6.0.3",
 		"vitest": "^5.0.5"
+	},
+	"overrides": {
+		"hono": ">=4.13.16 <5",
+		"@hono/node-server": ">=2.1.6 <3"
 	}
 }

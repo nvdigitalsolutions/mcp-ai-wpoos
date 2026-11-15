@@ -1,0 +1,29 @@
+---
+// SectionTitle — a band title rendered at the SOURCE's heading level.
+//
+// The level rides the measured band facts (`theme.type.titleLevel`); the
+// template's historical `<h2>` is only the fallback. See lib/title-tag.ts for
+// why an `h1` maps down to `h2` (the page article owns the single h1).
+import { titleTag } from '../../lib/title-tag.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+
+interface Props {
+	title?: string;
+	theme?: SectionTheme;
+	/** Extra classes, appended after `ds-title`. */
+	class?: string;
+	/** CSS vars carrying the measured typography. */
+	style?: string;
+	/** Ties the heading to the section's `aria-labelledby`. */
+	id?: string;
+}
+
+const { title, theme, class: className, style, id } = Astro.props;
+const Tag = titleTag( theme?.type );
+---
+
+{title && (
+	<Tag class:list={['ds-title', className]} id={id} style={style || undefined}>
+		{title}
+	</Tag>
+)}

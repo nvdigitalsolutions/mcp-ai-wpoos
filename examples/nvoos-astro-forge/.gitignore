@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.astro/
+test-results/
+
+# Generated frontends (forge.mjs --target output) — never commit into the monorepo
+*-frontend/

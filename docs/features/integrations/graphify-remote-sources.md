@@ -1,7 +1,7 @@
 # Graphify Remote Sources & Federation
 
 > **Feature introduced in**: Graphify 0.6.0  
-> **Requires**: NV oOS 1.0+, PHP 7.4+
+> **Requires**: NV oOS 1.0+, PHP 8.1+
 
 This document describes the remote sources and federation system for the Graphify knowledge-graph addon.
 

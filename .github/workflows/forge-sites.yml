@@ -1,0 +1,260 @@
+# forge-sites.yml — build every committed forge site profile and mirror the
+# built dist/ to the shared mirror repo (branch per site).
+#
+# Shared-mirror model (Proposal 114 addendum, 2026-11-06): ONE mirror repo
+# (`nvdigitalsolutions/nvoos-forge-sites`) hosts every client site on its own
+# `site/<name>` branch. Each Velocity app connects to the mirror, selects its
+# branch, and serves the branch root (Root directory = repo root).
+#
+# Triggers:
+#   - push to alpha-working touching sites/** (or forge libs/templates)
+#   - workflow_dispatch (optional `site` input)
+#   - repository_dispatch `nvoos-forge-content-changed` from
+#     nvoos-forge-bridge on the client WP sites (HMAC proof verified first;
+#     payload.site optionally narrows the run)
+#
+# Secrets (monorepo): NVOOS_FORGE_MIRROR_URL, NVOOS_FORGE_MIRROR_TOKEN,
+# FORGE_WEBHOOK_SECRET. Unset mirror secrets degrade gracefully: the push
+# skips and the job stays green (build-only).
+
+name: Forge Sites
+
+on:
+  push:
+    branches: [ alpha-working ]
+    paths:
+      - 'examples/nvoos-astro-forge/sites/**'
+      - 'examples/nvoos-astro-forge/templates/**'
+      - 'examples/nvoos-astro-forge/lib/**'
+      - 'examples/nvoos-astro-forge/scripts/**'
+      - 'examples/nvoos-astro-forge/package.json'
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 'Site name to build (sites/<name>.json) — blank builds every site'
+        required: false
+        type: string
+      preview:
+        description: 'Build a preview deployment on site/<name>-preview (not production)'
+        required: false
+        type: boolean
+        default: false
+      force_unlock:
+        description: 'Build a site that is LOCKED for hand-editing anyway (destroys custom work — only for an abandoned or mistaken lock)'
+        required: false
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [ nvoos-forge-content-changed ]
+
+permissions:
+  contents: read
+
+# The workflow runs on NV's self-hosted Windows runner (bot-protected sources
+# 403 GitHub's datacenter IPs — see docs/operations/deployment/
+# forge-ci-bot-protection.md). Windows runners default to PowerShell, so the
+# bash steps below need an explicit shell.
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  # One forge-sites run at a time — mirror branches are force-pushed.
+  group: forge-sites
+  cancel-in-progress: false
+
+jobs:
+  forge:
+    # NV's fixed-IP runner (option 1 of the bot-protection runbook) — the
+    # label pins it; `self-hosted` is the required base label.
+    runs-on: [ self-hosted, forge-builder ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install forge dependencies
+        working-directory: examples/nvoos-astro-forge
+        run: npm ci
+
+      - name: Verify dispatch signature
+        if: github.event_name == 'repository_dispatch'
+        env:
+          FORGE_WEBHOOK_SECRET: ${{ secrets.FORGE_WEBHOOK_SECRET }}
+          DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+        run: node .github/forge/verify-dispatch.mjs --event-type nvoos-forge-content-changed --max-age 600
+
+      - name: Build and mirror sites
+        working-directory: examples/nvoos-astro-forge
+        env:
+          MIRROR_URL: ${{ secrets.NVOOS_FORGE_MIRROR_URL }}
+          MIRROR_TOKEN: ${{ secrets.NVOOS_FORGE_MIRROR_TOKEN }}
+          # The shared mirror repo — override via the repo variable. NOTE:
+          # GitHub expressions support `||` only in `if:` conditionals, NOT in
+          # `env:` blocks (an env `vars.X || default` evaluates empty) — the
+          # default therefore lives in the shell below (${VAR:-default}).
+          MIRROR_REPO: ${{ vars.NVOOS_FORGE_MIRROR_REPO }}
+          # Opt-in post-push smoke check (Proposal 135 / C3).
+          NVOOS_FORGE_SMOKE: ${{ vars.NVOOS_FORGE_SMOKE }}
+          PREVIEW: ${{ github.event.inputs.preview }}
+          # Handoff-lock override (Proposal 141). Empty on push/dispatch-unset.
+          FORCE_UNLOCK: ${{ github.event.inputs.force_unlock }}
+          FORGE_WORK: ${{ runner.temp }}/forge-work
+          DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          # Build identity (2026-11-15): stamped into every page and deploy.json
+          # so the post-push check can prove the live site is THIS run's build.
+          FORGE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          MIRROR_REPO="${MIRROR_REPO:-nvdigitalsolutions/nvoos-forge-sites}"
+          mkdir -p "$FORGE_WORK"
+
+          # Resolve the site list: dispatch payload `site` first, then the
+          # manual input, otherwise every sites/*.json.
+          SITES=""
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            SITES=$(node -e "const fs=require('fs');try{const s=JSON.parse(process.env.DISPATCH_PAYLOAD||'{}').site;if(typeof s==='string'&&s)process.stdout.write(s)}catch{}")
+          else
+            SITES="${{ github.event.inputs.site }}"
+          fi
+          if [ -z "$SITES" ]; then
+            SITES=$(node -e "const fs=require('fs');if(fs.existsSync('sites')){process.stdout.write(fs.readdirSync('sites').filter(f=>f.endsWith('.json')).map(f=>f.slice(0,-5)).join(' '))}")
+          fi
+          echo "Sites: ${SITES:-<none>}"
+          LOCKED_SITES=""
+
+          for name in $SITES; do
+            echo "== $name =="
+            # Handoff lock (Proposal 141). Once a site is synced and handed to a
+            # developer, the forge must NOT re-generate it: this runner scaffolds
+            # into a fresh temp target, so there is no forge.lock.json to find —
+            # the ownership record travels on the committed profile (`forge lock`
+            # writes `locked: { at, by, reason }`). Re-forging would replace their
+            # work on the force-pushed mirror branch. SKIP and keep the rest of
+            # this run moving; a hard failure would abort every site after it.
+            # The probe can never abort the run (`|| true`): a malformed profile
+            # already fails loudly at the scaffold step.
+            LOCKED=$(node -e "const fs=require('fs');try{const p=JSON.parse(fs.readFileSync('sites/$name.json','utf8'));const l=p&&p.locked;if(l===true){process.stdout.write('locked (no owner record)')}else if(l&&typeof l==='object'){process.stdout.write(String(l.by||'an operator')+' since '+String(l.at||'unknown')+(l.reason?' - '+l.reason:''))}}catch{}" 2>/dev/null || true)
+            if [ -n "$LOCKED" ]; then
+              if [ "${FORCE_UNLOCK:-}" = "true" ]; then
+                echo "::warning title=Forge locked::$name is locked ($LOCKED) - force_unlock was set, re-forging anyway (the mirror push replaces hand-written work)"
+              else
+                echo "::warning title=Forge locked::$name is locked for hand-editing ($LOCKED) - skipped; the forge no longer owns this site"
+                LOCKED_SITES="$LOCKED_SITES $name"
+                continue
+              fi
+            fi
+            target="$FORGE_WORK/$name"
+            # Proposal 135: the profile owns the runtime tier. Unset/invalid
+            # degrades to "static" (the historical behaviour).
+            RUNTIME=$(node -e "const fs=require('fs');try{const p=JSON.parse(fs.readFileSync('sites/$name.json','utf8'));const r=p&&p.deploy&&p.deploy.runtime;process.stdout.write(r==='managed'?'managed':'static')}catch{process.stdout.write('static')}")
+            echo "   runtime: $RUNTIME"
+            # Preview deployments (Proposal 135 / C1) — an explicit preview
+            # dispatch writes site/<name>-preview, leaving production alone.
+            SITE_BRANCH="site/$name"
+            if [ "${PREVIEW:-}" = "true" ]; then
+              SITE_BRANCH="site/$name-preview"
+              echo "   preview branch: $SITE_BRANCH"
+            fi
+            URL=$(node -e "const fs=require('fs');console.log(JSON.parse(fs.readFileSync('sites/$name.json','utf8')).url)")
+            # Proposal 135: `url` is the WordPress/CMS origin; the PUBLIC origin
+            # (deploy.publicOrigin) is what ASTRO_SITE canonicalizes to.
+            PUBLIC_ORIGIN=$(node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('sites/$name.json','utf8'));const o=(p.deploy&&p.deploy.publicOrigin)||p.url||'';process.stdout.write(o.replace(/\/+$/,''))")
+            echo "   cms: $URL  public: $PUBLIC_ORIGIN"
+            node scripts/forge.mjs "sites/$name.json" --target "$target"
+            node scripts/forge.mjs deploy-config "sites/$name.json" --target "$target" \
+              --to velocity --mirror-repo "$MIRROR_REPO" --site-branch "$SITE_BRANCH" --runtime "$RUNTIME" --site-url "$PUBLIC_ORIGIN"
+            ( cd "$target" && npm install && ASTRO_SITE="$PUBLIC_ORIGIN" npm run build )
+
+            # The per-site gates, BEFORE anything is published. Until now they
+            # only ran when a human typed `forge.mjs verify`, which is exactly
+            # how a broken band-flow parser and a demo post shipped unnoticed.
+            # A failing gate aborts the run (set -euo pipefail), so a regression
+            # can never reach the mirror branch.
+            # Every gate runs by default, so this BLOCKING step narrows to the
+            # deterministic, browser-free set: a missing Chromium build or a
+            # stale screenshot baseline must not stall a legitimate deploy.
+            node scripts/forge.mjs verify "sites/$name.json" --target "$target" --minimal
+
+            # The full parity scorecard (every gate, light + dark). Reported,
+            # never blocking — the gate above is the gate. `tee` keeps the table
+            # in the log and copies it into the run summary.
+            node scripts/forge.mjs verify "sites/$name.json" --target "$target" \
+              --pixel-mode both 2>&1 | tee "$FORGE_WORK/$name.scorecard.txt" \
+              || echo "::warning title=Forge parity::$name reported failing or skipped gates (see the scorecard above)"
+            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+              {
+                echo "### Parity scorecard — $name"
+                echo '```'
+                sed -n '/Parity scorecard/,$p' "$FORGE_WORK/$name.scorecard.txt" 2>/dev/null || true
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            # Demo content must never reach a client site: the hybrid loader
+            # merges local MDX under the WP entries, so a placeholder in
+            # src/content would publish. The scaffold drops it by default;
+            # this catches a regression in that default.
+            if [ -d "$target/dist/posts/hello-world" ]; then
+              echo "::error title=Forge demo content::$name ships /posts/hello-world (demo content reached the build)"
+              exit 1
+            fi
+            # Proposal 135: managed branches ship the BFF deploy tree
+            # (dist/ + server.js + a runtime manifest carrying the project
+            # dependencies) rather than the flat static files.
+            MIRROR_SOURCE="dist"
+            if [ "$RUNTIME" = "managed" ]; then
+              ( cd "$target" && node scripts/sync-deploy-tree.mjs )
+              # BLOCKING boot gate: install from the emitted manifest and start
+              # the entry, the way Velocity will. A managed tree that builds
+              # but cannot boot is not a deploy: Velocity fails the release and
+              # keeps serving the last good build, so the site freezes while
+              # this job stays green (2026-11-10 — Virtually Jamaica served a
+              # day-old artifact through five successful mirror pushes).
+              ( cd "$target" && node scripts/verify-deploy-tree.mjs )
+              MIRROR_SOURCE=".deploy"
+            fi
+            ( cd "$target" && SOURCE_DIR="$MIRROR_SOURCE" RUNTIME="$RUNTIME" SITE_BRANCH="$SITE_BRANCH" node scripts/mirror-push.mjs )
+
+            # Post-push smoke (Proposal 135 / C3): opt-in via NVOOS_FORGE_SMOKE.
+            # Never fatal by default — DNS may not point at the app yet.
+            if [ -n "${NVOOS_FORGE_SMOKE:-}" ] && [ "${PREVIEW:-}" != "true" ]; then
+              code=$( curl -sS -o "$FORGE_WORK/$name.smoke.html" -w '%{http_code}' --max-time 20 "$PUBLIC_ORIGIN" || echo 000 )
+              echo "   smoke $PUBLIC_ORIGIN -> $code"
+              if [ "$code" != "200" ]; then
+                echo "::warning title=Forge smoke::$name returned $code at $PUBLIC_ORIGIN"
+              elif grep -Eqi 'name="robots"[^>]*noindex' "$FORGE_WORK/$name.smoke.html"; then
+                echo "::warning title=Forge smoke::$name serves noindex on the public origin"
+              fi
+              # Stale-release check (2026-11-15): the page carries the build id
+              # stamped by this run. A failed or partial deploy that keeps the
+              # last good release looks identical to a successful old one from
+              # the outside; the marker makes it visible. Non-fatal by default
+              # (`if !`), same contract as the rest of the smoke.
+              if ! node scripts/forge.mjs deployed "sites/$name.json" --target "$target" \
+                --url "$PUBLIC_ORIGIN" --expect-build "${FORGE_BUILD_ID:-}" --strict; then
+                echo "::warning title=Forge smoke::$name is not serving this run's build (stale or missing forge-build marker)"
+              fi
+            fi
+          done
+
+          # A locked site is skipped silently otherwise: an operator dispatching a
+          # content-change run would see a green job and assume it deployed.
+          if [ -n "$LOCKED_SITES" ]; then
+            echo "Skipped (locked for hand-editing):${LOCKED_SITES}"
+            if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+              {
+                echo "### Skipped - locked for hand-editing"
+                for locked_name in $LOCKED_SITES; do
+                  echo "- $locked_name"
+                done
+                echo ""
+                echo 'These sites were handed to a developer, so the forge does not re-generate them.'
+                echo 'To return one to the forge: forge unlock sites/<name>.json --target <dir> --yes'
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi

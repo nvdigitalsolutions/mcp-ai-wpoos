@@ -8,8 +8,14 @@
 
 import { defineCollection } from 'astro:content';
 
+import { configureFetchProxy } from './forge/fetch-proxy.ts';
 import { createWpLoader } from './forge/wp-loader.ts';
 import type { SiteProfile, WpCollection, WpAuth } from './forge/types.ts';
+
+// Install the build-time proxy dispatcher BEFORE anything fetches (content
+// layer + remote image service). No-op when WP_FETCH_PROXY is unset; fails
+// the build loudly when it is misconfigured — never silently bypasses.
+configureFetchProxy();
 
 // FORGE:site
 const siteUrl = (import.meta.env.WP_SITE_URL ?? 'http://127.0.0.1:8473').replace(/\/+$/, '');
@@ -30,7 +36,15 @@ const site: SiteProfile = { url: siteUrl, name: siteName, collections: [] };
 const postsCollection: WpCollection = {
 	slug: 'posts',
 	restBase: 'wp/v2/posts',
-	fields: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
+	// Rank Math + Yoast meta are optional fields — absent plugins/fields are
+	// tolerated by the loader, never a build failure (Proposal 106 §1.2).
+	fields: [
+		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+		'rank_math_title', 'rank_math_description', 'rank_math_canonical_url', 'rank_math_robots',
+		'rank_math_facebook_title', 'rank_math_facebook_description', 'rank_math_facebook_image',
+		'rank_math_twitter_title', 'rank_math_twitter_description', 'rank_math_twitter_image',
+		'yoast_head_json',
+	],
 	embed: true,
 	perPage: 100,
 	maxPages: 50,
@@ -38,7 +52,13 @@ const postsCollection: WpCollection = {
 const pagesCollection: WpCollection = {
 	slug: 'pages',
 	restBase: 'wp/v2/pages',
-	fields: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
+	fields: [
+		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+		'rank_math_title', 'rank_math_description', 'rank_math_canonical_url', 'rank_math_robots',
+		'rank_math_facebook_title', 'rank_math_facebook_description', 'rank_math_facebook_image',
+		'rank_math_twitter_title', 'rank_math_twitter_description', 'rank_math_twitter_image',
+		'yoast_head_json',
+	],
 	embed: true,
 	perPage: 100,
 	maxPages: 50,
@@ -65,14 +85,34 @@ const productsCollection: WpCollection = {
 	],
 	kind: 'product',
 	authMode: 'wc-consumer',
+	// Proposal 131 — wc/v3 carries no SEO fields; merge them from the product
+	// CPT over wp/v2 (one bounded sidecar request, keyed by product id).
+	seoFrom: 'wp/v2/product',
 	optional: true,
 	perPage: 100,
 	maxPages: 50,
 };
 
 export const collections = {
-	posts: defineCollection({ loader: createWpLoader({ site, collection: postsCollection, auth: applicationAuth }) }),
-	pages: defineCollection({ loader: createWpLoader({ site, collection: pagesCollection, auth: applicationAuth }) }),
+	// Hybrid local (106 P2): the local MDX glob merges under the WP entries —
+	// WP wins on collision, local fills the gaps, and an unreachable source
+	// degrades to local-only (demo-runnable with no WP connection).
+	posts: defineCollection({
+		loader: createWpLoader({
+			site,
+			collection: postsCollection,
+			auth: applicationAuth,
+			local: { pattern: '**/*.mdx', base: './src/content/posts' },
+		}),
+	}),
+	pages: defineCollection({
+		loader: createWpLoader({
+			site,
+			collection: pagesCollection,
+			auth: applicationAuth,
+			local: { pattern: '**/*.mdx', base: './src/content/pages' },
+		}),
+	}),
 	products: defineCollection({ loader: createWpLoader({ site, collection: productsCollection, auth: wcAuth }) }),
 };
 // FORGE:collections-end

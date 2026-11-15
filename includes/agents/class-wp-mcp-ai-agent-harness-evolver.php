@@ -23,6 +23,8 @@
  *     an immutable Audit Trail event with before/after snapshots.
  *   - Principle 1 (Human Oversight): Evolutions are non-destructive
  *     (originals preserved); evolved artefacts are opt-in.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

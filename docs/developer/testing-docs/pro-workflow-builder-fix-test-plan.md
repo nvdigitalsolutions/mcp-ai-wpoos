@@ -3,7 +3,7 @@
 ## Test Environment Setup
 
 1. **WordPress Version:** 6.0 or higher
-2. **PHP Version:** 7.4 or higher
+2. **PHP Version:** 8.1 or higher
 3. **Plugin:** NV oOS (Open Operator System) with Pro addons enabled
 4. **User:** Administrator with `manage_options` capability
 

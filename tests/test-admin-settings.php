@@ -25,7 +25,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
 
 		$this->assertArrayHasKey( 'default_model', $defaults );
-		$this->assertSame( 'gpt-4.1', $defaults['default_model'] );
+		$this->assertSame( 'gpt-6.1-sol', $defaults['default_model'] );
 		$this->assertArrayHasKey( 'default_gemini_model', $defaults );
 		$this->assertSame( 'gemini-3.8-flash', $defaults['default_gemini_model'] );
 		$this->assertArrayHasKey( 'default_provider', $defaults );
@@ -95,7 +95,6 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'gpt-4o-mini', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1-mini', $choices );
-		$this->assertArrayHasKey( 'gpt-4.1-nano', $choices );
 		$this->assertArrayHasKey( 'gpt-4.1-turbo', $choices );
 		$this->assertArrayHasKey( 'gpt-5.2', $choices );
 	}

@@ -13,47 +13,308 @@
 	--forge-line: #e4e4e2;
 	--forge-accent: #0f6b4f;
 	--forge-accent-ink: #ffffff;
+	/* The CTA fill (121 §5) — the source's actual button background; falls
+	 * back to the accent when the analysis found no distinct button fill. */
+	--forge-cta: var(--forge-accent);
+	--forge-cta-ink: var(--forge-accent-ink);
+	/* The source button shape (padding + radius) — harvested per-site. */
+	--forge-cta-pad: var(--forge-space-sm) var(--forge-space);
+	--forge-cta-radius: var(--forge-radius-sm);
 	--forge-radius: 8px;
+	--forge-radius-sm: 4px;
+	--forge-radius-lg: 12px;
 	--forge-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--forge-font-display: var(--forge-font);
 	--forge-space: 1rem;
-	--forge-measure: 72ch;
+	--forge-space-sm: 0.5rem;
+	--forge-space-lg: 2rem;
+	/* The site container width — a SITE measure, not a prose measure
+	 * (72ch ≈ 470px at 13px body text squeezed the rebuilt bands into a
+	 * narrow column inside full-width backgrounds). Sites override via a
+	 * profile `tokens.measure`. */
+	--forge-measure: 75rem;
+	--forge-scale-h1: 2.25rem;
+	--forge-scale-h2: 1.75rem;
+	--forge-scale-h3: 1.25rem;
+	--forge-scale-h4: 1.125rem;
+	--forge-scale-body: 1rem;
+	--forge-scale-small: 0.875rem;
+	--forge-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 /* FORGE:tokens-end */
+
+/* -------------------------------------------------------------------------
+   Runtime theming (Proposal 104/105): the theme boot applies data-theme /
+   data-contrast on <html>; these overrides ride on top of the (possibly
+   tokens_apply-rewritten) :root block. `light` is implicit (absent
+   data-theme) — the dark palette mirrors the ADS dark layer.
+   ------------------------------------------------------------------------- */
+[data-theme='dark'] {
+	--forge-ink: #f5f5f4;
+	--forge-muted: #a3a3a3;
+	--forge-surface: #171717;
+	--forge-surface-alt: #262626;
+	--forge-line: #3f3f3f;
+}
+
+[data-contrast='high'] {
+	--forge-muted: var(--forge-ink);
+	--forge-line: var(--forge-ink);
+}
 
 * {
 	box-sizing: border-box;
 }
 
+/* The source one-pager scrolls smoothly to its anchors (jayainc ships
+ * scroll-behavior: smooth) and the sticky header must not cover the
+ * landing band — scroll-padding-top offsets every anchor jump. */
+html {
+	scroll-behavior: smooth;
+	scroll-padding-top: 7rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
+
 body {
 	margin: 0;
 	font-family: var(--forge-font);
+	/* The body token IS the reading size — the rebuilt body text mirrors the
+	 * source's MEASURED reading size (design.typography.bodyPx). A source that
+	 * inherits its body size (relative 100%/1rem) leaves 16px out of the px
+	 * ladder, so the band heuristic would pick the smallest neighbour
+	 * (jayainc: 13px against a real 16px). */
+	font-size: var(--forge-scale-body, 1rem);
+	/* The source body's real weight (jayainc: Rubik 300 — the 400 default
+	 * reads visibly bolder everywhere). */
+	font-weight: var(--forge-body-weight, 400);
 	line-height: 1.6;
 	color: var(--forge-ink);
 	background: var(--forge-surface);
+	/* Full-bleed bands paint 100vw — clip the scrollbar-width sliver
+	 * instead of letting it scroll horizontally. */
+	overflow-x: clip;
 }
 
 a {
 	color: var(--forge-accent);
 }
 
+/*
+ * Interaction baseline (WCAG 2.2 / 2.1).
+ *
+ * Every forged site, whatever the source looks like, owes three things to a
+ * keyboard or touch reader — and a source usually provides none of them:
+ *
+ *   1. A VISIBLE FOCUS INDICATOR (2.4.7) of at least 2 CSS px with a 3:1
+ *      change of contrast (2.4.13 Focus Appearance) that also contrasts with
+ *      what is adjacent to it (1.4.11 Non-text Contrast). Drawn in
+ *      `currentColor` and offset outwards: the control's own ink already meets
+ *      text contrast against its own band, so the ring does too — a fixed accent
+ *      ring measured 2.79:1 on the light surface of virtuallyjamaica.
+ *   2. `:focus-visible`, not `:focus` (MDN): a mouse click should not paint a
+ *      ring, a keyboard Tab must. Removing outlines is the classic failure
+ *      (F78), so this rule never sets `outline: none`.
+ *   3. A pointer affordance plus NO motion when the reader asks for none
+ *      (prefers-reduced-motion): the state still changes, the animation goes.
+ *      Scoped to rebuilt content so the header's scroll timeline is untouched.
+ */
+body :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+	outline: max(2px, 0.12em) solid currentColor;
+	outline-offset: 2px;
+}
+
+body :is(a[href], button, [role='button'], summary, label[for]) {
+	cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ds-section-wrap .post-body *,
+	.ds-section-wrap .post-body *::before,
+	.ds-section-wrap .post-body *::after {
+		transition-duration: 0.01ms !important;
+		transition-delay: 0s !important;
+		animation-duration: 0.01ms !important;
+		animation-delay: 0s !important;
+		animation-iteration-count: 1 !important;
+	}
+}
+
 .site-header {
+	/*
+	 * The full-bleed BAND: surface, divider and typography stay on the header so
+	 * the painted strip spans the viewport. The brand/nav ROW lives in
+	 * `.site-header-inner`, because the source constrains the row to a container
+	 * while keeping the strip full width (P4 — jayainc boxes the row at 1670px
+	 * with 35px gutters; a full-width flex header pinned the logo to the edge).
+	 */
+	display: flex;
+	align-items: center;
+	border-bottom: 1px solid var(--forge-line);
+	/* The source chrome runs at its own size (16px over a 13px content
+	 * body on jayainc), and dark headers paint their own bg/ink (Proposal
+	 * 123 — the vars exist only when the chrome facts were harvested). */
+	font-size: var(--forge-chrome-size, inherit);
+	background: var(--forge-header-bg, transparent);
+	color: var(--forge-header-ink, var(--forge-ink));
+}
+
+/* The header ROW. `max-width`/`padding-inline` are overridden by the measured
+ * rule Base.astro emits from `chrome.geometry` (`.site-header >
+ * .site-header-inner`, higher specificity, order-independent); these are the
+ * template defaults for a source that runs its header full-bleed. */
+.site-header-inner {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 1rem;
-	padding: 1rem clamp(1rem, 4vw, 2rem);
-	border-bottom: 1px solid var(--forge-line);
+	width: 100%;
+	margin-inline: auto;
+	padding-block: 1rem;
+	padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+/* A harvested header bg means the source runs a colored header — drop the
+ * default hairline and lift the strip (the source's own elevation). */
+.site-header--themed {
+	border-bottom: none;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+
+/*
+ * A header whose height is a measured fact: the source declares 75px at rest and
+ * 70px once pinned, so the row's own padding must give way to that box or
+ * `min-height` can never shrink it (content 79px against a 70px floor).
+ */
+.site-header--sized {
+	height: var(--forge-header-rest-h, auto);
+}
+
+.site-header--sized > .site-header-inner {
+	height: 100%;
+	padding-block: 0;
 }
 
 .site-header .brand {
 	font-weight: 700;
 	text-decoration: none;
-	color: var(--forge-ink);
+	color: var(--forge-header-ink, var(--forge-ink));
 }
 
 .site-header nav {
 	display: flex;
 	gap: 1rem;
+}
+
+.site-header nav a {
+	color: var(--forge-header-nav-ink, var(--forge-header-ink, var(--forge-accent)));
+	text-decoration: none;
+	/* The source nav's own typography (jayainc: 400/16px/uppercase white). */
+	font-weight: var(--forge-nav-weight, 400);
+	font-size: var(--forge-nav-size, inherit);
+	text-transform: var(--forge-nav-transform, none);
+	letter-spacing: var(--forge-nav-letter-spacing, normal);
+}
+
+/* -------------------------------------------------------------------------
+ * Mobile nav disclosure (WAI-ARIA APG disclosure pattern)
+ *
+ * The source hides its nav behind a hamburger at narrow widths. A rebuild
+ * without one wrapped the same six links over three rows at 390px, which is
+ * neither the source's layout nor a menu. The shell is `display: contents` so
+ * the nav stays a direct flex child of the header at every width the source
+ * keeps it inline; `data-collapsed` only appears once JS has run, so with JS
+ * off the nav is reachable at every width (progressive enhancement).
+ * ------------------------------------------------------------------------- */
+.site-nav-shell {
+	display: contents;
+}
+
+.site-nav-toggle {
+	display: none;
+}
+
+.site-nav-shell[data-collapsed='true'] > .site-nav-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	/* WCAG 2.5.8: 24×24 is the floor for a pointer target; 44×44 also matches
+	 * the source's own Bootstrap toggle and is comfortable on touch. */
+	min-width: 2.75rem;
+	min-height: 2.75rem;
+	padding: 0 0.5rem;
+	margin-inline-start: auto;
+	border: 1px solid var(--forge-line, #dddddd);
+	border-radius: var(--forge-radius-sm, 4px);
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+}
+
+/* The bars are boxes rather than an icon font: they inherit `currentColor`, so
+ * they follow the header ink and survive forced-colors mode. */
+.site-nav-bars {
+	display: grid;
+	gap: 4px;
+	width: 1.25rem;
+}
+
+.site-nav-bars > span {
+	display: block;
+	height: 2px;
+	background: currentColor;
+}
+
+.site-nav-shell[data-collapsed='true'] > nav {
+	display: none;
+}
+
+/*
+ * The OPENED panel is a SURFACE, not a naked list. A builder paints it: Brando's
+ * menu is an absolutely positioned `rgba(0,0,0,0.95)` sheet under the header.
+ * Toggling `display` alone put the rebuilt links straight onto the band behind
+ * the header — white text on virtuallyjamaica's photo hero, unreadable
+ * (2026-11-12). `--forge-mobile-nav-*` are MEASURED (`analyze --geometry`); the
+ * fallbacks keep the panel readable when the source's own panel is transparent:
+ * the header's surface when it has one, else the page surface.
+ */
+.site-nav-shell[data-collapsed='true'][data-open='true'] > nav {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	/* An overlay, not a flex row: the panel must not reflow the page under it. */
+	position: absolute;
+	inset-inline: 0;
+	top: 100%;
+	z-index: 30;
+	background: var(--forge-mobile-nav-bg, var(--forge-surface));
+	color: var(--forge-mobile-nav-ink, var(--forge-ink));
+	padding: var(--forge-mobile-nav-pad-y, 0.5rem) var(--forge-mobile-nav-pad-x, 1rem);
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+/* One tappable row per link at the source's pitch (44px minimum per WCAG 2.5.8). */
+.site-nav-shell[data-collapsed='true'][data-open='true'] > nav a {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	min-height: var(--forge-mobile-nav-row-h, 2.75rem);
+	color: inherit;
+}
+
+/* The panel is positioned against the header it belongs to. `:where()` keeps this
+ * at ZERO specificity so it can only ever supply a missing containing block:
+ * any header variant that positions itself (`--sticky`, `--float`, a
+ * scroll-driven animation) outranks it, instead of being flattened to
+ * `relative` by a `:has()` rule that would win on specificity. The shell is
+ * matched as a DESCENDANT: the row wrapper (`.site-header-inner`) sits between
+ * the header and the shell. */
+:where(.site-header:has(.site-nav-shell[data-collapsed='true'])) {
+	position: relative;
 }
 
 .site-main {
@@ -62,13 +323,336 @@ a {
 	padding: 2rem clamp(1rem, 4vw, 2rem);
 }
 
+/* Design-rebuild pages: the themed bands are full-bleed and carry their own
+ * rhythm (117/122) — the main padding would open a gap under the header and
+ * above the footer the source does not have (jayainc's bands meet its
+ * chrome flush). Plain/prose pages keep the padding. */
+.site-main:has([class*='ds-section-wrap--']) {
+	padding: 0;
+}
+
+/* Same flush on the footer side — the last band meets the footer strips. */
+.site-main:has([class*='ds-section-wrap--']) + .site-footer {
+	margin-top: 0;
+}
+
 .site-footer {
-	max-width: var(--forge-measure);
-	margin: 2rem auto 0;
-	padding: 1rem clamp(1rem, 4vw, 2rem);
+	/* Full-width strips by default — the source footer bands span the
+	 * viewport (the measure-constrained default trapped jayainc's gray/navy
+	 * strips in a column); the inner containers re-measure. */
+	margin: 2rem 0 0;
+	/* The footer SURFACE, not just its inner strips: the colour gate reads the
+	 * footer element itself, and a transparent footer resolves to the body
+	 * behind it (virtuallyjamaica read #ffffff against the source's #ededed).
+	 * The sub/copyright strips still paint their own backgrounds over this. */
+	background: var(--forge-footer-bg, transparent);
 	border-top: 1px solid var(--forge-line);
-	color: var(--forge-muted);
-	font-size: 0.875rem;
+	/* Body ink, not the muted token: the colour gate measures what the footer
+	 * actually renders, and the source's footer text is body copy
+	 * (virtuallyjamaica: #626262, not the #595959 muted default). */
+	color: var(--forge-ink);
+	/* The chrome size, not the content body scale. */
+	font-size: var(--forge-chrome-size, 0.875rem);
+}
+
+/* A harvested footer bg means the source paints its own strips — the
+ * default hairline/above-margin goes (the gray band touches the content). */
+.site-footer--themed {
+	margin-top: 0;
+	border-top: none;
+}
+
+.site-footer-sub {
+	background: var(--forge-footer-bg, transparent);
+	/* The subfooter ink (the source paints white-ish text on its dark
+	 * footer — jayainc's rgba(255,255,255,0.7)); without a harvested ink the
+	 * subfooter is body copy, not muted. */
+	color: var(--forge-footer-ink, var(--forge-ink));
+}
+
+.site-footer-sub-inner,
+.site-footer-bar-inner {
+	max-width: var(--forge-measure);
+	margin-inline: auto;
+	padding: 1.5rem clamp(1rem, 4vw, 2rem);
+}
+
+/* The copyright bar — its own strip on the source (jayainc: a translucent
+ * navy below the light-gray subfooter, translucent-white text). */
+.site-footer-bar {
+	background: var(--forge-footer-bar-bg, transparent);
+	color: var(--forge-footer-bar-ink, inherit);
+}
+
+.site-footer-bar-inner {
+	text-align: center;
+	padding-top: 1rem;
+	padding-bottom: 1rem;
+}
+
+/* ------------------------------------------------------------------------
+ * Site chrome (Proposal 120 §2) — the source header/footer rebuilt: top
+ * contact strip, logo + tagline, source nav, the call button, footer
+ * columns, copyright. Absent chrome keeps the default minimal chrome.
+ * ------------------------------------------------------------------------ */
+.site-topbar {
+	/*
+	 * The full-bleed strip; the measured BOX lives on `.site-topbar-inner` so the
+	 * social glyph and the contact group align with the header container
+	 * (jayainc: both inside a 1670px box), not with the viewport edge.
+	 */
+	display: flex;
+	align-items: center;
+	/* The measured strip height (the source's large icons + a two-line address
+	 * make a 100px bar; the template's own padding produced ~42px). A min-height
+	 * keeps the bar's rhythm while its content stays centred. */
+	min-height: var(--forge-topbar-h, 0);
+	background: var(--forge-topbar-bg, var(--forge-surface-alt));
+	color: var(--forge-topbar-ink, var(--forge-muted));
+	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
+}
+
+.site-topbar-inner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	/* The measured gap between items (jayainc: 50px) — the default keeps the
+	 * text-only strip's rhythm. */
+	gap: var(--forge-topbar-item-gap, 2rem);
+	width: 100%;
+	margin-inline: auto;
+	padding-block: 0.5rem;
+	padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+/* Where the source puts the item group: measured against the bar's content
+ * edges. jayainc floats its address + phone to the right. */
+.site-topbar--end > .site-topbar-inner {
+	justify-content: flex-end;
+}
+
+.site-topbar--center > .site-topbar-inner {
+	justify-content: center;
+}
+
+/* The leading icon-only links (the source's social glyphs) sit at the bar's
+ * other end; `margin-right: auto` pushes the item group back to its measured
+ * edge. They paint in the bar's own ink, not the accent. */
+.site-topbar-socials {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-right: auto;
+}
+
+.site-topbar-social {
+	display: inline-flex;
+	align-items: center;
+	color: inherit;
+	text-decoration: none;
+}
+
+.site-topbar-social i {
+	font-size: var(--forge-topbar-social-size, 1.5em);
+	line-height: 1;
+	font-style: normal;
+}
+
+/* One icon + text unit. The source's address is two lines (a `<br>` in its
+ * own markup), so the text keeps its newline. */
+.site-topbar-item {
+	display: flex;
+	align-items: center;
+	gap: var(--forge-topbar-icon-gap, 0.6em);
+	min-width: 0;
+}
+
+.site-topbar-item p,
+.site-topbar-link {
+	margin: 0;
+	white-space: pre-line;
+	color: inherit;
+}
+
+.site-topbar-link {
+	text-decoration: none;
+}
+
+/* The icon glyph is drawn by the source's own icon sheet (`chrome.iconCss`),
+ * painted in the measured accent ink. */
+.site-topbar--icons .site-topbar-item i {
+	font-size: var(--forge-topbar-icon-size, 1.25em);
+	line-height: 1;
+	font-style: normal;
+	color: var(--forge-topbar-icon-ink, var(--forge-accent));
+}
+
+/* WCAG 2.4.1 — visible on keyboard focus, out of the way otherwise. */
+.skip-link {
+	position: absolute;
+	top: 0;
+	left: -9999px;
+	z-index: 200;
+	padding: 0.75rem 1.25rem;
+	background: var(--forge-surface);
+	color: var(--forge-ink);
+	border: 1px solid var(--forge-line-strong, var(--forge-line));
+	border-radius: var(--forge-radius);
+	text-decoration: none;
+}
+
+.skip-link:focus {
+	left: 0.75rem;
+	top: 0.75rem;
+}
+
+.site-topbar p {
+	margin: 0;
+}
+
+.brand-block {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.brand-logo {
+	height: 2.5rem;
+	width: auto;
+}
+
+.brand-tagline {
+	margin: 0;
+	font-size: var(--forge-scale-small, 0.875rem);
+	color: var(--forge-header-ink, var(--forge-muted));
+}
+
+.header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+/* The page-level motion control (WCAG 2.2.2) — rendered only when the
+ * generated module reports an infinite rebuilt animation. A checkbox is the
+ * no-JS affordance; the checked state pauses every generated/band animation. */
+.motion-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: var(--forge-chrome-size, inherit);
+	color: var(--forge-header-nav-ink, var(--forge-header-ink, var(--forge-ink)));
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.motion-toggle input {
+	inline-size: 1rem;
+	block-size: 1rem;
+	margin: 0;
+	accent-color: var(--forge-accent);
+}
+
+body:has(.motion-toggle input:checked) .design-sections [data-section-id],
+body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
+	animation-play-state: paused !important;
+}
+
+.call-button {
+	display: inline-block;
+	/* The source call button's own shape (jayainc: 14px 43px, pill radius,
+	 * 400 weight, uppercase) — falls back to the generic CTA shape tokens,
+	 * then the template defaults. */
+	padding: var(--forge-call-pad, var(--forge-cta-pad, var(--forge-space-sm) var(--forge-space)));
+	border-radius: var(--forge-call-radius, var(--forge-cta-radius, var(--forge-radius-sm)));
+	font-weight: var(--forge-call-weight, 600);
+	text-transform: var(--forge-call-transform, none);
+	font-size: var(--forge-call-size, inherit);
+	background: var(--forge-accent);
+	color: var(--forge-accent-ink);
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+/* On phones the header row has to hold the brand, the hamburger and this
+ * button. The source's 14px/43px pill is a desktop shape: at 390px it ran
+ * past the header edge (150px wide), so shrink it and tighten the row gap. */
+@media (max-width: 767px) {
+	.site-header-inner {
+		gap: 0.5rem;
+	}
+
+	.call-button {
+		padding: 9px 16px;
+		font-size: 13px;
+	}
+}
+
+/* The smallest phones cannot fit the full brand mark beside the button and
+ * the hamburger; shrink the logo rather than clip the button. */
+@media (max-width: 380px) {
+	.brand-logo {
+		height: 1.75rem;
+	}
+}
+
+/* Chrome reflow (125 §8): the header is a single flex row (logo block,
+ * five nav links, call button, toggle) needing ~850px of content, so it
+ * cannot fit a phone or tablet viewport — at 768px the call button was
+ * sliced off at the body's clip edge (right edge x=819 on a 753px body).
+ * The source stacks the nav onto its own row up to 1024px and only goes
+ * single-row by 1152px (measured: header 160px tall at 768/900/1024,
+ * 100px at 1152), so the wrap shares the band-reflow breakpoint. That also
+ * stops the tagline from collapsing into three lines on narrow desktops.
+ * The tagline shrinks, then hides on the smallest screens to free the row. */
+@media (width<1152px) {
+	.site-header {
+		flex-wrap: wrap;
+		row-gap: 0.5rem;
+	}
+	.site-header nav {
+		order: 3;
+		flex-basis: 100%;
+		flex-wrap: wrap;
+		justify-content: center;
+		row-gap: 0.25rem;
+	}
+	.brand-tagline {
+		font-size: 0.75rem;
+	}
+}
+
+@media (width<=480px) {
+	.brand-tagline {
+		display: none;
+	}
+}
+
+.site-footer-blocks {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+	gap: var(--forge-space);
+	margin-bottom: var(--forge-space);
+}
+
+.site-footer-block h3 {
+	font-family: var(--forge-font-display);
+	/* The source column-heading typography (jayainc: 500/29px/capitalize). */
+	font-size: var(--forge-footer-heading-size, var(--forge-scale-h4, 1.125rem));
+	font-weight: var(--forge-footer-heading-weight, 700);
+	text-transform: var(--forge-footer-heading-transform, none);
+	color: var(--forge-footer-ink, var(--forge-ink));
+	margin: 0 0 var(--forge-space-sm);
+}
+
+.site-footer-block p {
+	margin: 0 0 var(--forge-space-sm);
+}
+
+.site-copyright,
+.site-credit {
+	margin: 0.25rem 0 0;
+	font-size: var(--forge-chrome-size, var(--forge-scale-small, 0.875rem));
 }
 
 .hero {
@@ -288,4 +872,2484 @@ a {
 .search-status {
 	color: var(--forge-muted);
 	font-size: 0.875rem;
+}
+
+/* -------------------------------------------------------------------------
+   Design rebuild sections (Proposal 114) — the ADS component library renders
+   classified source sections on these token-driven classes. Nothing here
+   hardcodes a brand value; everything rides the --forge-* layer above.
+   ------------------------------------------------------------------------- */
+/* Bands are contiguous on the source — the design-sections container is
+ * plain block flow (no gap, no seams between bands). */
+.ds-section {
+	margin: 0;
+	/* The internal band rhythm (the source keeps its rhythm in inner
+	 * columns; per-band padding facts override via the wrap's inline
+	 * style — --ds-pad-y collapses to 0 so the source's declared bands
+	 * meet their neighbors flush, 124 §5). */
+	padding-top: var(--ds-pad-y, var(--forge-space-3, 1.25rem));
+	padding-bottom: var(--ds-pad-y, var(--forge-space-3, 1.25rem));
+}
+
+/* Full-bleed bands (120 §5): the source band backgrounds span the
+ * viewport edge-to-edge (jayainc's hero photo was trapped inside the
+ * --forge-measure container). The wrap escapes the measure; the inner
+ * section re-measures. */
+.ds-section-wrap--hero,
+.ds-section-wrap--dark,
+.ds-section-wrap--alt,
+.ds-section-wrap--light {
+	/* Full-bleed: 100vw + self-referential centering (margin-left 50% of
+	 * the CONTAINING block, transform -50% of the ELEMENT) — the math
+	 * cancels the scrollbar so the band never sits 7px left of the
+	 * viewport. The motion keyframes below use the independent
+	 * `translate`/`scale` properties so they COMPOSE with this transform
+	 * instead of replacing it. */
+	width: 100vw;
+	margin-left: 50%;
+	transform: translateX(-50%);
+	/* The source bands that declare no padding are content-tight — a
+	 * modest default beats the old 70px (the padded bands carry their
+	 * own inline padding fact). */
+	padding-top: var(--forge-space-4, 2rem);
+	padding-bottom: var(--forge-space-4, 2rem);
+}
+
+.ds-section-wrap--hero .ds-section,
+.ds-section-wrap--dark .ds-section,
+.ds-section-wrap--alt .ds-section,
+.ds-section-wrap--light .ds-section {
+	/* The boxed container measure (124 §3): the source constrains its
+	 * content to the container width (jayainc's 1140px) while the band
+	 * background stays full-width. Absent → the site measure. */
+	max-width: var(--ds-measure, var(--forge-measure));
+	margin-left: auto;
+	margin-right: auto;
+	/* The container's column-gap gutter (gap-default 10px … wider 30px)
+	 * rides as the side padding; absent → the template clamp. */
+	padding-left: var(--ds-pad-x, clamp(1rem, 4vw, 2rem));
+	padding-right: var(--ds-pad-x, clamp(1rem, 4vw, 2rem));
+}
+
+.ds-hero {
+	padding: var(--forge-space-lg);
+	background: var(--forge-surface-alt);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius-lg);
+	display: grid;
+	gap: var(--forge-space);
+}
+
+.ds-hero h1,
+.ds-hero h2 {
+	font-family: var(--forge-font-display);
+	/* The source display size (72px on jayainc) with a fluid floor — a
+	 * 72px heading must not survive a 360px viewport. */
+	font-size: clamp(1.75rem, 3.5vw + 1rem, var(--forge-scale-h1, 2.25rem));
+	font-weight: 500;
+	line-height: 1.15;
+	margin: 0;
+}
+
+.ds-title {
+	font-family: var(--forge-font-display);
+	font-size: clamp(1.5rem, 2.5vw + 0.5rem, var(--forge-scale-h2, 1.75rem));
+	font-weight: 500;
+	line-height: 1.2;
+	/* The band's MEASURED title→divider gap (Phlox's modern heading carries a
+	 * 30px margin-bottom); absent → flush, as before. */
+	margin: 0 0 var(--ds-title-margin-bottom, 0);
+	/* A heading the source deliberately narrows (473px on jayainc's services
+	 * band). The hero's own 66% cap is more specific and still wins. */
+	max-width: var(--ds-title-max, none);
+	/* The band's MEASURED title alignment (the source centers a band's copy from
+	 * a wrapper class the sanitizer drops). Absent → the template's own. */
+	text-align: var(--ds-title-align, inherit);
+	/* The band's MEASURED title ink. A builder element's colour lives in an inline
+	 * `style` the sanitizer drops, so without this the title inherited the
+	 * template accent (virtuallyjamaica: #fe6c61 where the source is #262626). */
+	color: var(--ds-title-color, inherit);
+}
+
+/* A form band's intro: the source's lead paragraph sits at half the container
+ * and centers with its title. Alignment itself comes from the band's measured
+ * body fact (`[data-section-id] p{text-align:…}`), so a left-aligned source
+ * keeps its copy left. */
+.ds-form-intro {
+	display: grid;
+	gap: var(--forge-space-sm);
+}
+
+/* The source's submit is a content-width button, not a full-bleed bar. */
+.ds-form .ds-button {
+	justify-self: start;
+	width: auto;
+	padding: 0.65rem 1.75rem;
+}
+
+/* The source's intro copy is CONTENT-width by default. Only a centered band
+ * constrains it: the source hero's description measured 673px inside a 1345px
+ * row, while the left-aligned services band measured 640px inside 640px. The
+ * previous blanket 50% + auto margins inset every paragraph by a quarter of its
+ * column on desktop (the "weird left padding" report). */
+.ds-lede {
+	max-width: 100%;
+}
+
+.ds-body--center .ds-lede,
+.ds-section-wrap--hero .ds-lede {
+	max-width: 50%;
+	margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+	.ds-body--center .ds-lede,
+	.ds-section-wrap--hero .ds-lede {
+		max-width: 100%;
+	}
+}
+
+.ds-hero p,
+.ds-text {
+	margin: 0;
+	color: var(--forge-muted);
+}
+
+/* A hero band paints its copy WHITE (the source's hero description measured
+ * rgb(255,255,255) over the photo). The muted `.ds-text` default exists for
+ * content bands; inheriting it painted the hero paragraph #505050 on a dark
+ * photo. `inherit` keeps the hero's own ink (the wrap sets #fff) and leaves a
+ * measured per-band ink free to override the wrapper. */
+.ds-section-wrap--hero .ds-text,
+.ds-section-wrap--hero .ds-hero p {
+	color: inherit;
+}
+
+/* A DARK band carries the same rule — the wrap's content layer is painted
+ * #f5f5f4 (see `.ds-section-wrap--dark > *`), but `.ds-text`'s explicit muted
+ * ink outranks inheritance, so copy inside a dark band rendered dark-on-dark
+ * (virtuallysrilanka.com's red hero: the kicker above the headline came out
+ * #7a7a7a on #dd3333). Cards keep their own surface + ink, so `inherit`
+ * resolves to the card's own colour there. */
+.ds-section-wrap--dark .ds-text,
+.ds-section-wrap--dark .ds-hero p {
+	color: inherit;
+}
+
+.ds-media {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius);
+}
+
+.ds-button {
+	display: inline-block;
+	/* The source's button shape (padding + radius) and fill — harvested
+	 * per-site (jayainc: the 14px 43px pill). */
+	padding: var(--forge-cta-pad, var(--forge-space-sm) var(--forge-space));
+	background: var(--forge-cta, var(--forge-accent));
+	color: var(--forge-cta-ink, var(--forge-accent-ink));
+	text-decoration: none;
+	border-radius: var(--forge-cta-radius, var(--forge-radius-sm));
+	font-weight: 600;
+	/* A semantic CTA REPLACES the source's button markup (jayainc's hero,
+	 * products and services bands), so the measured source states cannot reach
+	 * it. Without these three rules the rebuilt button is the only control on
+	 * the page that does not respond to the pointer — which the `interaction
+	 * states` gate reports. `brightness()` adapts to whatever `--forge-cta` is
+	 * (a flat colour, a gradient, a dark band) instead of hard-coding a shade.
+	 * The `prefers-reduced-motion` block below drops the transition. */
+	transition: filter 150ms ease, transform 150ms ease;
+}
+
+.ds-button:hover {
+	filter: brightness(0.94);
+}
+
+.ds-button:active {
+	filter: brightness(0.88);
+	transform: translateY(1px);
+}
+
+.ds-links {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--forge-space-sm);
+}
+
+/* A band-level CTA that follows a grid or list (`SectionLinks`) — one rhythm
+ * step below the content, centred when the band is. */
+.ds-section-links {
+	margin-block-start: var(--forge-space-sm);
+}
+
+.ds-body--center > .ds-section-links {
+	justify-content: center;
+}
+
+	.ds-grid {
+	display: grid;
+	/* The band's measured card gutter (Elementor column gap) — the template's
+	 * own gutter when the source declares none. */
+	gap: var(--ds-card-gap, var(--forge-space));
+	/* The title-to-grid rhythm (125 §8): the source heading sits above
+	 * the cards with breathing room; the zero-margin title otherwise
+	 * touches the first row (jayainc's "Let our Expert & Trusted
+	 * Team…" band). Adjacent lede margins collapse with this one. */
+	margin-top: var(--forge-space);
+	/* Proposal 115 §4: the wireframe's per-breakpoint column behavior rides
+	 * these custom properties; the defaults are the standard 4 → 2 → 1
+	 * collapse at the canonical Elementor widths. */
+	grid-template-columns: repeat(var(--ds-cols-desktop, 4), minmax(0, 1fr));
+}
+@media (max-width: 1025px) {
+	.ds-grid {
+		grid-template-columns: repeat(var(--ds-cols-tablet, 2), minmax(0, 1fr));
+	}
+}
+@media (max-width: 767px) {
+	.ds-grid {
+		grid-template-columns: repeat(var(--ds-cols-mobile, 1), minmax(0, 1fr));
+	}
+}
+
+.ds-card {
+	/* The band's measured card padding (Elementor wraps its card content in a
+	 * 10px-padded widget wrap on jayainc). */
+	padding: var(--ds-card-pad, var(--forge-space));
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius);
+	background: var(--forge-surface-alt);
+	box-shadow: var(--forge-shadow-card);
+	display: grid;
+	gap: var(--forge-space-sm);
+}
+
+.ds-card h3,
+.ds-card h4,
+.ds-card h5 {
+	/* The source pads the card's TEXT BLOCK (40px on jayainc), not the heading
+	 * itself — it is what gives the card its post-image height. */
+	padding: var(--ds-card-text-pad, 0);
+	font-family: var(--forge-font-display);
+	font-size: var(--forge-scale-h3, 1.25rem);
+	font-weight: 500;
+	margin: 0;
+}
+
+.ds-card p {
+	margin: 0;
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+}
+
+/* A card paints its OWN surface, so the band's measured body ink must not
+ * repaint it: `[data-section-id] p` is injected after this sheet and wins on
+ * equal specificity, which put a grey that only works on the source's dark
+ * panel (#7a7a7a, 4.29:1) onto a white card. */
+.ds-section .ds-card p {
+	color: var(--forge-muted);
+}
+
+.ds-card img {
+	width: 100%;
+	/* SmartImage emits width/height attributes; without `height: auto` those
+	 * presentational hints win and the image renders at its full intrinsic
+	 * height (a 687x768 source became a 768px-tall card).
+	 *
+	 * No `aspect-ratio` override: the source cards keep each image's own ratio
+	 * (jayainc's are 687x768 portrait, rendering 325x363 at a 345px card). A
+	 * forced 1/1 square cropped them and lost 139px of card height; a fixed px
+	 * height would be wrong at every other viewport. */
+	height: auto;
+	object-fit: cover;
+	border-radius: var(--forge-radius-sm);
+}
+
+.ds-quote {
+	margin: 0;
+	/* The source's blockquote component (Auxin theme rules): 1.5em padding, a
+	 * hairline rule, italic type and a large decorative open-quote glyph — not
+	 * a filled card. */
+	padding: 1.5em;
+	position: relative;
+	/* The source blockquote's own base is 140% (22.4px at the 16px root) — it
+	 * is what makes the 1.5em padding resolve to the source's 33.6px. */
+	font-size: 1.4rem;
+	border-left: 1px solid var(--forge-line, #ccc);
+	font-style: italic;
+	/* Prose measure: the source's quote column is ~900px wide, so a 1080px
+	 * line would not wrap where the original does. */
+	max-width: 58rem;
+}
+
+/* The pull-quote mark — in flow (the source's ::before is 82px and occupies
+ * its own line), so it carries real height. */
+.ds-quote::before {
+	content: '\201C';
+	display: block;
+	font-size: 5.125rem;
+	line-height: 1.45;
+	color: var(--forge-line, #b9b9b9);
+	font-style: normal;
+}
+
+/* The source testimonial reads as a BIG quote (jayainc: 26px / 46px = 1.77 at
+ * the 16px chrome root) — the body scale reads as plain prose, not a
+ * pull-quote. */
+.ds-quote p {
+	margin: 0;
+	font-size: 1.625rem;
+	line-height: 1.77;
+}
+
+.ds-quote footer {
+	margin-top: var(--forge-space-sm);
+	color: var(--forge-muted);
+	/* The source's attribution is a 13px cite, not the tiny caption scale. */
+	font-size: 0.8125rem;
+	font-style: normal;
+}
+
+/* The logo-cloud band's boxed section must FILL the wrapper: the centred
+ * auto margins make it a shrink-to-fit flex item, and a band whose only
+ * children are images collapsed to one 128px track (six logos stacked at
+ * every width). Pin the box so the logo grid has the container to lay out. */
+[data-section="logo-cloud"] > .ds-section {
+	width: 100%;
+}
+
+.ds-logos {
+	/* Equal columns keep the source's brand-strip rhythm; a contained logo
+	 * box makes the wide banners (Duracell) and the square marks (VO5) share
+	 * one optical row instead of sizing to their own aspect ratios. */
+	display: grid;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
+	align-items: center;
+	gap: 2rem 1.5rem;
+}
+
+.ds-logos img {
+	display: block;
+	width: 100%;
+	height: 72px;
+	object-fit: contain;
+}
+
+/* Tablets reflow to three brand columns, phones to two; the logo box
+ * shortens so the marks do not dominate the phone row. */
+@media (max-width: 1025px) {
+	.ds-logos {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 767px) {
+	.ds-logos {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1.5rem 1rem;
+	}
+
+	.ds-logos img {
+		height: 56px;
+	}
+}
+
+.ds-gallery {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	gap: var(--forge-space-sm);
+}
+
+.ds-gallery img {
+	width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius-sm);
+}
+
+/* ------------------------------------------------------------------------
+ * Section theming (Proposal 117 §2) — the source band re-applied per
+ * rebuilt section. The wrapper carries the source background; the theme
+ * class sets the foreground adaptation (dark bands get light text, the hero
+ * photo gets its overlay tint via --ds-overlay).
+ * ------------------------------------------------------------------------ */
+.ds-section-wrap--dark {
+	/* The WRAP keeps the body ink: the source's band element inherits it, and the
+	 * colour gate reads the band element itself. The light foreground belongs to
+	 * the content layer one level in, exactly as `--hero` already does it — so
+	 * every descendant resolves the same colour it did before. */
+	color: var(--forge-ink);
+}
+
+.ds-section-wrap--dark > * {
+	color: #f5f5f4;
+}
+
+.ds-section-wrap--dark :is(h1, h2, h3, h4, h5, h6) {
+	/* A MEASURED title ink outranks the band default: `bandFacts` emits the
+	 * source’s computed colour (and `titleStyle` its `--ds-title-color`), so a
+	 * dark band whose source heading is dark — jayainc’s white→navy products
+	 * gradient — must not be repainted white. */
+	color: var(--ds-title-color, #ffffff);
+}
+
+.ds-section-wrap--dark .ds-card {
+	background: var(--forge-surface);
+	color: var(--forge-ink);
+}
+
+.ds-section-wrap--dark .ds-card :is(h3, h4) {
+	color: var(--forge-ink);
+}
+
+.ds-section-wrap--dark .ds-quote {
+	background: rgba(255, 255, 255, 0.08);
+	color: #f5f5f4;
+}
+
+.ds-section-wrap--dark .ds-quote footer {
+	color: #d7d7d7;
+}
+
+.ds-section-wrap--hero {
+	position: relative;
+	background-size: cover;
+	background-position: center;
+	/* The source hero is a tall photo band (jayainc: 724px) with the
+	 * content vertically centered. The generic `.ds-section-wrap` shim below
+	 * makes every wrap a COLUMN (so a raw Flatsome banner can grow), so
+	 * `align-items` alone only centers horizontally — `justify-content`
+	 * centers the hero section on the vertical (main) axis. */
+	display: flex;
+	align-items: center;
+	/* A MEASURED `centered: false` sets `--ds-hero-justify: flex-start` — the
+	 * source top-aligns this band under its own padding (virtuallyjamaica's
+	 * contact band), so centring it moved the copy 151px down. */
+	justify-content: var(--ds-hero-justify, center);
+	min-height: clamp(22rem, 75vh, 48rem);
+}
+
+.ds-section-wrap--hero::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	/* No overlay fact → a mild legibility tint only (the source renders
+	 * the raw photo; a 0.9 navy default over-darkened the rebuild). */
+	background: var(--ds-overlay, rgba(0, 0, 0, 0.3));
+}
+
+.ds-section-wrap--hero > * {
+	position: relative;
+	color: #ffffff;
+}
+
+.ds-section-wrap--hero .ds-section {
+	width: 100%;
+	padding-top: var(--ds-pad-y, 6rem);
+	padding-bottom: var(--ds-pad-y, 6rem);
+}
+
+.ds-section-wrap--hero .ds-hero {
+	background: transparent;
+	border: 0;
+}
+
+/* A raw hero band (outline-only source — WPBakery/Brando, Divi, plain HTML)
+ * keeps the source's OWN markup. The source lays its copy and illustration
+ * side by side; without the source stylesheet the wrappers simply stack, so
+ * the band grew to 1232px against the source's 900px. Recognise the ROW
+ * STRUCTURALLY — a container whose direct children include both the h1's
+ * block and the illustration's block — instead of matching theme classes.
+ * The relative selectors are deliberately FLAT: `:has(A:has(B))` is invalid
+ * CSS, and the whole rule is dropped silently when nested. */
+.ds-section-wrap :is(.post-body, .ds-section) :is(div, section):has(> div > h1):has(> div > img) {
+	display: grid;
+	grid-template-columns: var(--ds-split, minmax(0, 1.15fr) minmax(0, 0.95fr));
+	align-items: center;
+	/* The measured split already excludes the source's own gutter (it sits in the
+	 * children's padding, which the band box facts restate), so a measured ratio
+	 * also clears the heuristic gap — otherwise the gap shrinks the copy column
+	 * below its source width (665 of the source's 691). */
+	gap: var(--ds-split-gap, clamp(1rem, 3vw, 3rem));
+	/* The source hero is a full-screen band (`.full-screen`, min-height 900px). */
+	min-height: clamp(24rem, 72vh, 46rem);
+}
+
+/* Single-column fallback: an illustration inside a hero band never scales to
+ * the full measure. */
+.ds-section-wrap :is(.post-body, .ds-section):has(h1) img {
+	max-width: min(100%, 42rem);
+	height: auto;
+}
+
+@media (max-width: 767px) {
+	.ds-section-wrap :is(.post-body, .ds-section) :is(div, section):has(> div > h1):has(> div > img) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* ---------------------------------------------------------------------------
+ * Full-viewport bands — `SectionTheme.fullViewport` / `SectionTheme.centered`
+ *
+ * A band measured at EXACTLY the viewport height on every capture breakpoint
+ * is the screen itself: Brando's `.full-screen` carries `min-height: 100vh`;
+ * Elementor and Divi spell the same thing with `100vh`. The measured pixels
+ * are the capture viewport, not a fixed height, so the scaffold emits `100vh`
+ * instead — a 900px band overflows a 1440×800 window where the source still
+ * fills the screen.
+ *
+ * Centring is a SEPARATE measured fact (`centered`): the source had to contain
+ * its own centring device — a `table-cell` with `vertical-align: middle` or a
+ * flex/grid container filling half the band with centred items. Without the
+ * fact the height chain collapsed to the content height and the copy sat at
+ * the top of the band (virtuallyjamaica: copy at y=238 in a 900px band, the
+ * source at y=339), while centring a band that the source top-aligns moved the
+ * contact copy 151px DOWN.
+ *
+ * The chain from the band child to the copy track is single-file in every
+ * builder (section → container → row → column → wrappers). Every wrapper that
+ * holds exactly ONE element child centres it (`:has(> :only-child)`); the last
+ * such wrapper is the copy track's own parent, so the track is centred as a
+ * unit and its internal display model (a grid in the hero-split case) is never
+ * touched. Rows and carousels keep their own models — a grid re-flowed to flex
+ * would collapse the columns. Centring composes, so the copy lands at the same
+ * offset the source's table cell produced at any content height, and a band
+ * whose copy is taller than the screen simply grows and scrolls.
+ */
+.ds-section-wrap--full {
+	min-height: 100vh;
+}
+
+/* Only a band that MEASURED the source's centring device centres its content
+ * (`SectionTheme.centered`). A full-height band is not automatically centred:
+ * virtuallyjamaica's contact band is top-aligned under its own 130px padding,
+ * and centring it moved the copy 151px below the source. */
+.ds-section-wrap--centered {
+	justify-content: center;
+}
+
+.ds-section-wrap--centered > .post-body.ds-section {
+	/* The raw builder path: `.post-body` fills the wrap (flex: 1), so the band
+	 * must be centred inside IT. */
+	justify-content: center;
+}
+
+.ds-section-wrap--centered .post-body :is(div, section):has(> :only-child):not(.row):not(.vc_row):not(.owl-carousel):not(.owl-stage):not([class*='brando-inner-row']):not([class*='brando_inner_row']) {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	/* A COLUMN is part of this chain too (section → container → row → column),
+	 * and its height is a MEASURED fact. The `0` here is what lets a wrapper
+	 * centre inside its parent without pinning a floor; on a column it zeroed
+	 * the source's own box (virtuallyjamaica's about band: 374px measured,
+	 * 338px rendered). Read the same `--ds-col-min-h` bridge the photo-panel
+	 * clamp uses, so a measured column height survives the centring chain
+	 * while an unmeasured wrapper still gets 0. */
+	min-height: var(--ds-col-min-h, 0);
+}
+
+/* ---------------------------------------------------------------------------
+ * Builder layout shim — WPBakery / Brando raw bands
+ *
+ * A vendor-agnostic source is rebuilt from its OWN sanitized markup, but the
+ * builder's stylesheet never ships, so every `.row` stacked: the about band's
+ * image sat above its copy, the services band's three columns became three
+ * full-width blocks, and the hardware logos ran down the page. These are the
+ * STRUCTURAL conventions the markup already carries (rows, columns, inner
+ * rows, owl carousels), re-expressed as flex. Nothing here invents content —
+ * it restores the source's own arrangement.
+ * ------------------------------------------------------------------------- */
+/* The row is a 12-column GRID, exactly as the builder models it, and that is
+ * what reproduces the source's wrapping: services is 6/6/12 below the desktop
+ * breakpoint, so its third column drops onto a full-width second row. A flex
+ * row keeps all three on one lane. Grid also keeps the track math honest. */
+.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row']) {
+	display: grid;
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	align-items: stretch;
+	/* NO row gap. WPBakery/VC put the gutter in the COLUMN’s own padding
+	 * (measured `box` facts: 15px, or 57.59px where `padding-four-all`
+	 * applies), and the source’s columns TOUCH — virtuallyjamaica #wifi: the
+	 * photo column ends at x=719 and the red panel starts there (gutter 0).
+	 * A row gap shrank the columns to (100% − gap)/2 and opened a 40px seam
+	 * the live site does not have. */
+	gap: 0;
+}
+
+/* Carousels are one lane of marks, never a grid, and never a wrap: a fixed
+ * flex-basis times the item count plus the gutters overflowed the lane at 7
+ * logos and dropped the last onto a second row (double height). The source
+ * carousel scrolls; the rebuild shares the lane instead.
+ *
+ * The GAP is a measured fact when the band carries one (`--ds-carousel-gap`):
+ * virtuallyjamaica's gallery is 0 — the builder pads each SLIDE — and keeping
+ * the guessed clamp there put 20px of dead space between slides the source
+ * butts together. */
+.ds-section-wrap .post-body :is(.owl-carousel, .owl-stage) {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	gap: var(--ds-carousel-gap, clamp(1.25rem, 2.5vw, 2.5rem));
+}
+
+/* `scrollbar-width` covers Firefox; WebKit ignores it and would draw a bar
+ * under a track whose source shows pagination dots instead. */
+.ds-section-wrap .post-body :is(.owl-carousel, .owl-stage)::-webkit-scrollbar {
+	display: none;
+}
+
+/* The pagination a measured carousel gets from `BuilderCarousel.astro` (the
+ * source's own was drawn by its slider JS). These live here, not in that
+ * component's scoped <style>: the dots are created at RUNTIME, so they never
+ * carry Astro's scope attribute and a scoped selector would not match them. */
+.ds-carousel-dots {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.25rem;
+	margin-block-start: 1rem;
+}
+
+.ds-carousel-dot {
+	width: 1.5rem;
+	height: 1.5rem;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	cursor: pointer;
+	display: grid;
+	place-items: center;
+}
+
+.ds-carousel-dot::before {
+	content: '';
+	width: 0.5rem;
+	height: 0.5rem;
+	border-radius: 50%;
+	background: currentColor;
+	opacity: 0.35;
+	transition: opacity 0.15s ease;
+}
+
+.ds-carousel-dot:hover::before,
+.ds-carousel-dot:focus-visible::before,
+.ds-carousel-dot[aria-current='true']::before {
+	opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ds-carousel-dot::before {
+		transition: none;
+	}
+}
+
+/* Anything that is not a builder column spans the whole row. */
+.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row']) > * {
+	grid-column: 1 / -1;
+	min-width: 0;
+}
+
+/* A column starts as a full row; the span classes below narrow it. */
+.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row']) > :is(.wpb_column, .vc_column_container) {
+	grid-column: span 12;
+}
+
+/* A photo panel is painted on its column, and the source sized that column with
+ * an inline min-height the sanitizer drops — without a floor the panel collapses to
+ * zero height and the photo is invisible (virtuallyjamaica's social-login and
+ * phone columns).
+ *
+ * The clamp is a GUESS, so it is only the FALLBACK: `analyze` measures the real
+ * column height per device and the band-scoped rule sets `--ds-col-min-h`
+ * (virtuallyjamaica #wifi: 700px, against a 531.72px clamp). Reading the
+ * property here — rather than out-weighing this selector — means a measured
+ * height wins on VALUE, which gives the same answer whichever rule wins the
+ * cascade. Raising specificity instead would be a permanent war: the generated
+ * rules would have to grow a selector token every time this one does.
+ *
+ * The DIRECT-CHILD form is load-bearing. The property inherits, so a column
+ * nested inside a photo panel would otherwise pick up the panel's floor; scoping
+ * the rule to row children (the only place a panel is ever painted) means a
+ * nested column never matches it at all. */
+.ds-section-wrap .post-body :is(.row, .vc_row, .brando-inner-row-class, [class*='brando-inner-row'], [class*='brando_inner_row']) > :is(.wpb_column, .vc_column_container)[style*='background-image'] {
+	min-height: var(--ds-col-min-h, clamp(18rem, 36vw, 40rem));
+}
+
+.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
+	min-width: 0;
+}
+
+/* Builders zero the LEADING edge of a text stack — WPBakery's own sheet ships
+ * `.wpb_wrapper > :first-child { margin-top: 0 }` — and the layout depends on
+ * it. virtuallyjamaica's red panel is one paragraph, so the base `p` margin-top
+ * collapses up through the wrappers and adds 24px the source does not have
+ * (measured 314, built 352). The TRAILING margin stays: the source keeps its
+ * 10px INSIDE the column's padding, and zeroing it would trade one drift for
+ * another in the opposite direction. */
+.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) > :first-child :is(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, figure):first-child {
+	margin-top: 0;
+}
+
+/*
+ * The source's own column SPANS (WPBakery's `vc_col-lg-N`, `vc_col-md-N`) are
+ * the lane widths — the builder stylesheet that reads them never ships, so
+ * every column fell back to an equal share. virtuallyjamaica's services band is
+ * 3/4/5 of 12 (25% / 33% / 42%), and an equal third of it renders the phone
+ * photo far wider than the source and the navy panel far narrower.
+ *
+ * Expressed as `flex-grow` rather than `flex-basis`, deliberately: a percentage
+ * basis does not account for the row's `gap`, so 25% + 33% + 42% plus two
+ * gutters overflows the row and wraps the last column. Growing in N-share
+ * distributes the free space the gutters leave, which lands on the source's
+ * ratio at any container width.
+ *
+ * `[class~=…]` is a whole-token match — a substring match would make
+ * `vc_col-lg-1` also select `vc_col-lg-10`, `-11` and `-12`.
+ *
+ * The BOUNDARIES are Bootstrap 3's, because that is what WPBakery compiles
+ * against: sm ≥ 768, md ≥ 992, lg ≥ 1200. Reading them as the template's own
+ * 768 / 1025 breakpoints is wrong in both directions — virtuallyjamaica's about
+ * band is `vc_col-sm-12 vc_col-md-6 vc_col-lg-6`, so the SOURCE stacks at 834
+ * (750px wide columns, 413 / 290) and splits 6/6 only from 992 (485 / 485 at
+ * 1100). With md mapped to 768–1024 the rebuild split 6/6 at tablet, squeezed
+ * the same copy into 375px, and its columns measured 510 / 348 against the
+ * source's 413 / 290. The measured column heights are what exposed it.
+ *
+ * The blocks are ordered WIDEST-LAST because every rule has the same
+ * specificity: the last matching block wins. The ranges are disjoint, so at any
+ * width exactly one of md / lg joins `sm` and it is always the later one.
+ * `vc_col-sm-*` is the small-screen span and the only one brando's inner rows
+ * use (virtuallyjamaica's HOW IT WORKS panel is a 2×2 of `vc_col-sm-6` columns —
+ * without this block the four steps stacked vertically in one column).
+ */
+@media (min-width: 768px) {
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-sm-12'] { grid-column: span 12; }
+}
+
+@media (min-width: 1200px) {
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-lg-12'] { grid-column: span 12; }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container)[class~='vc_col-md-12'] { grid-column: span 12; }
+}
+
+/* A carousel's items share the lane by default (`flex: 1 1 0`) — the right
+ * answer for a logo strip, and a WRONG one for a gallery whose source pages:
+ * seven slides became seven 129px columns where the source shows five at
+ * 222px. A band that measured its carousel sets `--ds-carousel-item-flex`
+ * (slides-per-view, in the generated rules); reading it here means the guess
+ * and the fact use the same property, so neither has to out-weigh the other.
+ *
+ * `scroll-snap-align` makes the swipe land on a slide boundary; `min-width: 0`
+ * stays because a fixed basis on a long caption still overflows its lane. */
+.ds-section-wrap .post-body .owl-carousel > * {
+	flex: var(--ds-carousel-item-flex, 1 1 0);
+	min-width: 0;
+	scroll-snap-align: start;
+}
+
+/* ---------------------------------------------------------------------------
+ * Builder layout shim — Flatsome (UX Builder) raw bands
+ *
+ * Flatsome's structure is `<section class="section">` → `.section-content` →
+ * `.banner` / `.row` → `.col large-6 medium-6 small-12`. A banner is a PHOTO
+ * LAYER (`.banner-bg` holding an `<img>`), not a CSS background, and the vendor
+ * sheet that positions it never ships: the source's 900px cover hero rendered
+ * as a letterboxed inline image and every `.col` stacked (monicarajiv.com,
+ * 2026-11-11). Nothing here invents content — these are the arrangement rules
+ * the source markup already carries.
+ * ------------------------------------------------------------------------- */
+.ds-section-wrap .post-body .section-content {
+	position: relative;
+}
+
+/* Flatsome's `.section-bg.fill` is the band's background LAYER.
+ *
+ * `.fill` is the vendor's absolute-fill utility, but applying it to every `.fill`
+ * also repositioned the banner internals (the tile copy vanished). The band's
+ * background layer is the one that matters: in flow it added its own height to
+ * every band (a 600px source band rendered 1200 — bg 600 + content 600). */
+.ds-section-wrap .post-body .section {
+	position: relative;
+}
+
+/* The builder's wrapper chain shrink-wraps instead of stretching (the same
+ * collapse that flattened `.post-body` to 47px): an explicit width is the only
+ * deterministic fix, and it is what the shim already means by "the section and
+ * `.section-content` grow". Without it the band's own stage is 47px wide while
+ * the band paints 1065 — the airport-transfer tile grid rendered as a 47px
+ * column and its banners grew past the band. */
+.ds-section-wrap .post-body > .section,
+.ds-section-wrap .post-body .section-content {
+	width: 100%;
+}
+
+.ds-section-wrap .post-body .section-bg.fill {
+	position: absolute;
+	inset: 0;
+}
+
+/* The band's own content column fills the measured band box so a `.banner`
+ * set to `is-full-height` can grow into it. A percentage min-height cannot
+ * resolve against the wrap's `min-height`, and `min-height: inherit` on the
+ * child adds the wrap's PADDING a second time (a 535px source band became 597
+ * when the wrap carried 31px top+bottom) — so the wrap is a column and the
+ * inner GROWS into its content box instead. */
+.ds-section-wrap {
+	display: flex;
+	flex-direction: column;
+}
+
+.ds-section-wrap .post-body.ds-section {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+
+/* A RAW Flatsome band (`.post-body > section.section`) is the band STAGE, not a
+ * prose column: without an explicit width it shrink-wraps to its content's
+ * min-content (47px on monicarajiv's sub-pages, 438-630px elsewhere) and the
+ * measured `max-width` never applies, so every row renders as a narrow strip
+ * down the middle of a 1440px band. An explicit 100% makes the band's own
+ * measured content width the cap, exactly like the source's container. */
+.ds-section-wrap .post-body.ds-section:has(> .section) {
+	width: 100%;
+	margin-inline: auto;
+}
+
+.ds-section-wrap .post-body.ds-section > .section {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+
+/* The banner is the band's own box: the copy centers vertically inside it,
+ * exactly as the builder's banner layers did (its `padding-top: 600px` never
+ * reaches the rebuild — the sanitizer drops `<style>` blocks). */
+.ds-section-wrap .post-body .section-content {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	flex: 1;
+}
+
+.ds-section-wrap .post-body .banner {
+	position: relative;
+	overflow: hidden;
+}
+
+/* The builder's BAND-LEVEL banner is a full-bleed stage, not a boxed image:
+ * the photo runs edge to edge while only `.banner-layers` (the container) is
+ * measured. `margin-left: 50%` + `translateX(-50%)` is the scrollbar-safe
+ * centering (a `calc(50% - 50vw)` form sits 7px left, Proposal 122). A banner
+ * INSIDE a column is that column's media panel and stays in its lane. */
+.ds-section-wrap .post-body .section-content > .banner {
+	width: 100vw;
+	margin-left: 50%;
+	transform: translateX(-50%);
+}
+
+/* A photo banner inside a column is the column's media panel. The builder sized
+ * it with an inline `padding-top: <n>%` in a `<style>` block the sanitizer
+ * drops, so the rebuild has to fall back — but the fallback must be the
+ * builder's own default shape, not a square: Flatsome's tiles render ~5:3 in
+ * the source (499×301, 469×162 on monicarajiv.com), and a square tile doubles
+ * the height of every row as soon as the content container is measured
+ * correctly (a 1080px column gave a 1080px tile and a 1200px band where the
+ * source is 600). */
+.ds-section-wrap .post-body .col .banner {
+	aspect-ratio: var(--ds-banner-ratio, 5 / 3);
+}
+
+/* The photo is a LAYER behind the copy, not an inline image. */
+.ds-section-wrap .post-body .banner-bg {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+}
+
+.ds-section-wrap .post-body .banner-bg > img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	/* The source's own crop anchor, measured (`analyze --geometry` →
+	 * `bandFacts.mediaPosition`). The default is the browser's centre. */
+	object-position: var(--ds-media-pos, 50% 50%);
+}
+
+/* The vendor's darkening overlay rides the photo layer. */
+.ds-section-wrap .post-body .banner-bg .overlay {
+	position: absolute;
+	inset: 0;
+}
+
+/* A Flatsome `box` tile crops its photo with a `padding-top` PLACEHOLDER on
+ * `.image-cover`, with the <img> absolutely positioned to fill it. The rebuild
+ * keeps the measured padding but lost the layering, so the image sat in flow on
+ * top of its own placeholder and every tile doubled: the services band's
+ * 200px `image-cover` rendered 406px and the band came out 520px too tall. */
+.ds-section-wrap .post-body .image-cover {
+	position: relative;
+	overflow: hidden;
+}
+
+.ds-section-wrap .post-body .image-cover > img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: var(--ds-media-pos, 50% 50%);
+}
+
+/* The banner's copy is a layer ABOVE the photo, centered in the band. The
+ * photo layer is absolute, so the inner stage must fill the banner explicitly
+ * or it collapses to 0 and every `top: 50%` layer resolves to 0 and renders
+ * ABOVE the band (monicarajiv.com, 2026-11-11). */
+.ds-section-wrap .post-body .banner-inner {
+	position: absolute;
+	inset: 0;
+}
+
+.ds-section-wrap .post-body .banner-layers {
+	position: relative;
+	z-index: 1;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.ds-section-wrap .post-body .banner.is-full-height {
+	flex: 1;
+}
+
+/* A banner layer without the vendor's x/y utilities stacks in flow. */
+.ds-section-wrap .post-body .text-box {
+	width: 100%;
+}
+
+/* Banner LAYERS are absolutely positioned stages (`x50` centers on the x axis,
+ * `y50`/`y100` center / bottom-anchor). The vendor utilities that express this
+ * live in the builder sheet, so they ship here as part of the band shim —
+ * without them the copy stacked UNDER the banner's padding and grew the band
+ * (600px banner + 235px copy = 835px instead of the source's 600px). */
+.ds-section-wrap .post-body .banner-layer[class~='x50'] {
+	position: absolute;
+	left: 50%;
+	width: min(80%, 810px);
+	transform: translate(-50%, 0);
+}
+.ds-section-wrap .post-body .banner-layer[class~='y50'] {
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+.ds-section-wrap .post-body .banner-layer[class~='y100'] {
+	top: 100%;
+	transform: translate(-50%, 0);
+}
+
+.ds-section-wrap .post-body .text-inner.text-center {
+	text-align: center;
+}
+
+/* A builder SLIDER is a one-slide stage: without the vendor JS every slide
+ * stacks (doomsday's testimonial carousel rendered as a 6,000px column). The
+ * first slide shows; its banner copy flows so the stage keeps a height
+ * (an absolutely positioned layer inside a 0-height slide would vanish). */
+.ds-section-wrap .post-body .slider > *:not(:first-child) {
+	display: none;
+}
+
+.ds-section-wrap .post-body .slider .banner-layer {
+	position: static;
+	width: auto;
+	transform: none;
+}
+
+/* Flatsome's responsive VISIBILITY utilities. The source pairs a small-only
+ * row with a desktop-only one (`show-for-small` / `hide-for-small`), so a
+ * rebuild that ignores these renders BOTH at every width and every band with
+ * such a pair comes out roughly twice its source height (accommodations'
+ * 770px band rendered 1540). Values transcribed from flatsome.css 3.20.7 —
+ * they are hide-only rules, so the visible case keeps the element's own
+ * display (`flex` on a row, `block` on a banner). */
+@media ( max-width: 549px ) {
+	.ds-section-wrap .post-body .hide-for-small {
+		display: none !important;
+	}
+}
+@media ( min-width: 550px ) {
+	.ds-section-wrap .post-body .show-for-small {
+		display: none !important;
+	}
+}
+@media ( max-width: 849px ) {
+	.ds-section-wrap .post-body .hide-for-medium {
+		display: none !important;
+	}
+}
+@media ( min-width: 850px ) {
+	.ds-section-wrap .post-body .show-for-medium,
+	.ds-section-wrap .post-body .hide-for-large {
+		display: none !important;
+	}
+}
+
+/* Flatsome's row modifiers: a collapsed row has NO gutters, and `align-middle`
+ * centers the columns vertically (the source's alternating character rows). */
+.ds-section-wrap .post-body .row.row-collapse {
+	gap: 0;
+}
+
+.ds-section-wrap .post-body .row.align-middle {
+	align-items: center;
+}
+
+/* Flatsome columns: `.col large-N medium-N small-N` of 12 inside the `.row`
+ * grid above. Narrow→wide so the wider breakpoint wins at equal specificity
+ * (`[class~=…]` is a whole-token match: `large-1` must not select `large-10`). */
+.ds-section-wrap .post-body .col {
+	min-width: 0;
+	grid-column: span 12;
+}
+.ds-section-wrap .post-body .col[class~='small-1'] { grid-column: span 1; }
+.ds-section-wrap .post-body .col[class~='small-2'] { grid-column: span 2; }
+.ds-section-wrap .post-body .col[class~='small-3'] { grid-column: span 3; }
+.ds-section-wrap .post-body .col[class~='small-4'] { grid-column: span 4; }
+.ds-section-wrap .post-body .col[class~='small-5'] { grid-column: span 5; }
+.ds-section-wrap .post-body .col[class~='small-6'] { grid-column: span 6; }
+.ds-section-wrap .post-body .col[class~='small-7'] { grid-column: span 7; }
+.ds-section-wrap .post-body .col[class~='small-8'] { grid-column: span 8; }
+.ds-section-wrap .post-body .col[class~='small-9'] { grid-column: span 9; }
+.ds-section-wrap .post-body .col[class~='small-10'] { grid-column: span 10; }
+.ds-section-wrap .post-body .col[class~='small-11'] { grid-column: span 11; }
+.ds-section-wrap .post-body .col[class~='small-12'] { grid-column: span 12; }
+
+@media (min-width: 550px) {
+	.ds-section-wrap .post-body .col[class~='medium-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body .col[class~='medium-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body .col[class~='medium-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body .col[class~='medium-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body .col[class~='medium-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body .col[class~='medium-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body .col[class~='medium-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body .col[class~='medium-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body .col[class~='medium-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body .col[class~='medium-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body .col[class~='medium-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body .col[class~='medium-12'] { grid-column: span 12; }
+}
+
+@media (min-width: 850px) {
+	.ds-section-wrap .post-body .col[class~='large-1'] { grid-column: span 1; }
+	.ds-section-wrap .post-body .col[class~='large-2'] { grid-column: span 2; }
+	.ds-section-wrap .post-body .col[class~='large-3'] { grid-column: span 3; }
+	.ds-section-wrap .post-body .col[class~='large-4'] { grid-column: span 4; }
+	.ds-section-wrap .post-body .col[class~='large-5'] { grid-column: span 5; }
+	.ds-section-wrap .post-body .col[class~='large-6'] { grid-column: span 6; }
+	.ds-section-wrap .post-body .col[class~='large-7'] { grid-column: span 7; }
+	.ds-section-wrap .post-body .col[class~='large-8'] { grid-column: span 8; }
+	.ds-section-wrap .post-body .col[class~='large-9'] { grid-column: span 9; }
+	.ds-section-wrap .post-body .col[class~='large-10'] { grid-column: span 10; }
+	.ds-section-wrap .post-body .col[class~='large-11'] { grid-column: span 11; }
+	.ds-section-wrap .post-body .col[class~='large-12'] { grid-column: span 12; }
+}
+
+/*
+ * Builder presentation utilities are NOT declared here any more.
+ *
+ * `text-center`, `text-uppercase`, `text-medium`, `padding-four-all`,
+ * `font-weight-600` … are the vendor's own conventions, so they live as DATA on
+ * the builder adapter (`lib/bands.ts` → `BUILDER_ADAPTERS[].utilities`) and the
+ * scaffold emits only the ones a measured page actually uses, scoped to the band
+ * (`[data-section-id="…"] .text-center{…}`). A Divi site therefore gets Divi's
+ * conventions and nothing else, and this sheet stays vendor-neutral.
+ *
+ * A profile recorded before `bandFacts[].classes` existed carries no utilities;
+ * re-run `analyze <url> --geometry --write <profile>`, and `verify`'s class
+ * coverage report lists anything still unstyled.
+ */
+
+/* A photo panel painted on a column stays a full-bleed panel behind it. */
+.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
+	background-size: cover;
+	background-position: center;
+}
+
+/*
+ * Builder content images are BLOCK-level — every builder sheet sets
+ * `img { display: block }` on its single-image widgets. Left inline inside the
+ * shim's column wrapper the image kept its box but painted NOTHING: the box
+ * geometry gate passed while virtuallyjamaica's features photo and about
+ * illustration both rendered as empty space. Scoped to a column's image
+ * wrappers so an inline icon image in running copy keeps its flow.
+ */
+.ds-section-wrap .post-body :is(.vc-column-innner-wrapper, .wpd-innner-wrapper) > img,
+.ds-section-wrap .post-body :is(.wpb_single_image, .vc_single_image-wrapper, .brando-image-wrapper) img,
+.ds-section-wrap .post-body img[class*='brando_image_'] {
+	display: block;
+}
+
+/*
+ * Hidden-by-source subtrees (accordion panels, tab panes, mega-menus, mobile
+ * drawers) are NOT handled here: the analyzer measures the source's resting
+ * visibility per band (`analyze --geometry` → `bandFacts.hidden`) and the
+ * renderer emits scoped `display:none` rules from it. Hard-coding one builder's
+ * `collapse` class in this sheet was the bug that mechanism replaces.
+ *
+ * The heading rhythm below is the one part that stays static: the source's
+ * panel rows are 15px-padded blocks in every builder that ships this widget.
+ */
+.ds-section-wrap .post-body .panel-group .panel-heading {
+	padding: 15px;
+}
+
+/* The TITLE is the positioning context for the marker. The source absolutely
+ * positions its `span.pull-right` (right:15px), so the marker never competes
+ * with the title for width; a floated marker made "CAPTURE USER METADATA"
+ * wrap where the source kept it on one line. */
+.ds-section-wrap .post-body .panel-group .panel-title {
+	position: relative;
+}
+
+/* The control is the row's click target, NOT the icon's layout context.
+ *
+ * These used to share one declaration block with `a:hover i`, which set
+ * `display:block` on the ICON as soon as the pointer entered the row: a block
+ * <i> takes the full content width, so the icon jumped onto its own line and
+ * the title grew from 50px to 64px mid-hover (virtuallyjamaica's features
+ * band). The icon keeps its inline box in every state; only the anchor is a
+ * block.
+ *
+ * `color:inherit` replaces a hard-wired accent. Two reasons it is inherited
+ * rather than assigned: the source's ink arrives from the band's measured
+ * heading fact (`[data-section-id] h4{color:…}`), and the builder's
+ * per-element `style="color:#262626 !important"` does not survive
+ * sanitisation. Declared with one class more than the vendor sheet's
+ * `.accordion-style1 a { color:#ababab }`, so the vendor grey can never win. */
+.ds-section-wrap .post-body .panel-group .panel-heading a,
+.ds-section-wrap .post-body .panel-group .panel-heading a:hover {
+	display: block;
+	text-decoration: none;
+	color: inherit;
+	cursor: pointer;
+}
+
+/* Stated for every state so the hover rule above cannot flip it. */
+.ds-section-wrap .post-body .panel-group .panel-heading a i,
+.ds-section-wrap .post-body .panel-group .panel-heading a:hover i {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+/* The vendor's own marker is an EMPTY `<i class="fa-solid fa-plus">`. A forged
+ * site that loads Font Awesome — any chrome with social icons does
+ * (`chrome.socialIconCss`) — gives that `i` a real glyph, so the row painted
+ * the font's plus AND the marker this sheet draws beside it: virtuallyjamaica
+ * showed "+ +" on every closed row. The generic `i[class*='fa-']:empty` guard
+ * below is (0,4,1) and LOSES to the `display:inline-block` stated above
+ * (0,4,2), so the hide is restated at the control's own weight. Raising the
+ * generic rule instead would take the source's real `fa-*` icons with it.
+ * The left `icon-*` glyph is empty too — this only ever touches `fa-*`. */
+.ds-section-wrap .post-body .panel-group .panel-heading a i[class*='fa-']:empty,
+.ds-section-wrap .post-body .panel-group .panel-heading a:hover i[class*='fa-']:empty {
+	display: none;
+}
+
+/* The `+`/`−` marker is drawn here, not by the vendor's icon font: the source's
+ * own JS swapped `fa-plus` for `fa-minus` on toggle, and a rebuild ships no
+ * vendor JS, so `active-accordion` — which BuilderAccordion keeps in sync —
+ * drives the glyph instead. The vendor's empty `i` is hidden above, because a
+ * site that DOES load Font Awesome (its footer socials need it) would
+ * otherwise paint the font's glyph and this one side by side. */
+.ds-section-wrap .post-body .panel-group .panel-title .pull-right {
+	position: absolute;
+	right: 15px;
+	top: 50%;
+	transform: translateY(-50%);
+	float: none;
+}
+
+.ds-section-wrap .post-body .panel-group .panel-title .pull-right::after {
+	content: '+';
+	display: inline-block;
+	font-family: var(--forge-font-body, inherit);
+	font-weight: 400;
+	line-height: 1;
+}
+
+.ds-section-wrap .post-body .panel-group .panel-heading.active-accordion .panel-title .pull-right::after {
+	content: '\2212';
+}
+
+/* An ENHANCED group hides its own closed panels, so the interaction works even
+ * when the source's resting state was "all open" and there is no measured
+ * `hidden` selector to lean on. */
+.ds-section-wrap .post-body .panel-group[data-accordion] > .panel > .panel-collapse:not(.in) {
+	display: none;
+}
+
+
+/* Icon markers: the source's own icon-font classes (the sheet is linked from
+ * `chrome.iconCss`). `icon-large` is a standalone feature glyph above its
+ * label; the small ones sit inline with their text. A `fa-*` marker whose
+ * sheet the rebuild does not load is hidden rather than left as an empty box. */
+.ds-section-wrap .post-body i[class*='icon-'].icon-large {
+	display: block;
+	font-size: 1.9rem;
+	line-height: 1;
+	margin-bottom: 0.85rem;
+}
+
+.ds-section-wrap .post-body i[class*='icon-']:not(.icon-large) {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.ds-section-wrap .post-body i[class*='fa-']:empty {
+	display: none;
+}
+@media (max-width: 767px) {
+	.ds-section-wrap .post-body :is(.wpb_column, .vc_column_container) {
+		/* The source's own mobile column is full-width (`vc_col-sm-12`,
+		 * `col-xs-mobile-fullwidth`). */
+		grid-column: span 12;
+	}
+	.ds-section-wrap .post-body .owl-carousel > * {
+		/* The same property the base rule reads, so a MEASURED carousel keeps its
+		 * own slide width here. The fallback is this rule's original guess —
+		 * `flex-basis: 40%` with the default grow/shrink — expressed as a shorthand
+		 * so the two rules cannot disagree about which one set the basis. */
+		flex: var(--ds-carousel-item-flex, 1 1 40%);
+	}
+}
+
+/* -------------------------------------------------------------------------
+ * The split hero (125 §1) — a copy column beside a media collage column,
+ * rebuilding the source's two-column hero bands (jayainc's about). No card
+ * chrome: the split sits directly on the band like the source. The wrap's
+ * --ds-split-ratio (the 124 §6 column facts) drives the ratio; the collage
+ * photos are absolutely offset over the backdrop shape via --ds-off-* vars
+ * so the mobile reset can return them to static flow.
+ * ------------------------------------------------------------------------- */
+.ds-hero-split {
+	grid-template-columns: var(--ds-split-ratio, minmax(0, 1fr) minmax(0, 1fr));
+	align-items: center;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	padding: 0;
+	gap: var(--forge-space-lg);
+}
+
+.ds-hero-copy {
+	display: grid;
+	gap: var(--forge-space);
+	justify-items: start;
+}
+
+.ds-hero-split .ds-title {
+	font-size: clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem)));
+	font-weight: var(--ds-title-weight, 500);
+	line-height: var(--ds-title-lh, 1.2);
+	letter-spacing: var(--ds-title-ls, normal);
+}
+
+/* The hero band's own heading facts (125 §7) — the source hero's 72px
+ * title + divider (jayainc). The h1 token is only the no-fact fallback. */
+.ds-section-wrap--hero .ds-title {
+	font-size: clamp(1.75rem, 3.5vw + 1rem, var(--ds-title-size, var(--forge-scale-h1, 2.25rem)));
+	font-weight: var(--ds-title-weight, 500);
+	line-height: var(--ds-title-lh, 1.15);
+	letter-spacing: var(--ds-title-ls, normal);
+}
+
+/* The hero headline does not span the band (125 §8): the source's heading
+ * column sits at ~two-thirds of the container measure — jayainc's 72px
+ * "Ship to South Florida…" wraps inside a narrower column, not the full
+ * 1140px band. Mobile keeps the full width; the var is the per-site seam. */
+@media (width>767px) {
+	.ds-section-wrap--hero .ds-title {
+		/* A measured max-width outranks the per-site hero cap. */
+		max-width: var(--ds-title-max, var(--ds-hero-title-max, 66%));
+	}
+}
+
+/* The type fact reaches the DOM as ONE inline `--ds-title-lh`, while the size
+ * is a clamp() — so a px leading measured on desktop also lands under the
+ * shrunken phone/tablet headline (jayainc: 80px of leading under a 29.65px
+ * phone headline read as a 2.7 ratio). A profile can carry the narrower
+ * leading as `titleStyle.tablet/mobile.lineHeight`; the hero falls back to a
+ * relative value, so an unpinned site never over-spaces a small headline. */
+@media (width<=1200px) {
+	.ds-hero-split .ds-title,
+	.ds-section-wrap--hero .ds-title {
+		line-height: var(--ds-title-lh-md, 1.15);
+	}
+
+	.ds-body .ds-title {
+		line-height: var(--ds-title-lh-md, var(--ds-title-lh, 1.2));
+	}
+}
+
+@media (width<=767px) {
+	.ds-hero-split .ds-title,
+	.ds-section-wrap--hero .ds-title {
+		line-height: var(--ds-title-lh-sm, var(--ds-title-lh-md, 1.15));
+	}
+
+	.ds-body .ds-title {
+		line-height: var(--ds-title-lh-sm, var(--ds-title-lh-md, var(--ds-title-lh, 1.2)));
+	}
+}
+
+/* The fallback text bands carry the same heading facts (the centered
+ * "Other Featured Products" band). */
+.ds-body .ds-title {
+	font-size: clamp(1.5rem, 2.5vw + 0.5rem, var(--ds-title-size, var(--forge-scale-h2, 1.75rem)));
+	font-weight: var(--ds-title-weight, 500);
+	line-height: var(--ds-title-lh, 1.2);
+	letter-spacing: var(--ds-title-ls, normal);
+}
+
+/* The centered heading band (125 §7) — title + divider ride the grid's
+ * justify-items; the text centers like the source's aux-widget-inner. */
+.ds-body--center {
+	justify-items: center;
+	text-align: center;
+}
+
+.ds-title-divider {
+	display: block;
+	margin-top: var(--forge-space-2, 0.625rem);
+}
+
+/* A fixed-width bar centres only inside a centred band — a left-aligned
+ * section keeps its divider on the leading edge. */
+.ds-body--center .ds-title-divider {
+	margin-inline: auto;
+}
+
+.ds-hero-body {
+	display: grid;
+	grid-template-columns: repeat(var(--ds-body-cols, 1), minmax(0, 1fr));
+	gap: var(--forge-space);
+}
+
+/* -------------------------------------------------------------------------
+ * Accordion band (Proposal 144) — the source's disclosure component, rebuilt
+ * as native <details>/<summary>: no JavaScript, keyboard- and screen-reader-
+ * native, and the closed panels stay in the DOM for search engines.
+ * ------------------------------------------------------------------------ */
+.ds-accordion-band {
+	display: grid;
+	gap: var(--forge-space-lg);
+	align-items: start;
+	margin-top: var(--forge-space-lg);
+}
+
+.ds-accordion-band--split {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.ds-accordion-media {
+	min-width: 0;
+}
+
+.ds-accordion-media :is(img) {
+	width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius);
+}
+
+.ds-accordion {
+	display: grid;
+}
+
+.ds-accordion-item {
+	border-top: 1px solid var(--forge-line);
+}
+
+.ds-accordion-item:last-child {
+	border-bottom: 1px solid var(--forge-line);
+}
+
+.ds-accordion-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--forge-space);
+	padding: 1rem 0;
+	cursor: pointer;
+	font-weight: 700;
+	list-style: none;
+}
+
+.ds-accordion-summary::-webkit-details-marker {
+	display: none;
+}
+
+.ds-accordion-label {
+	flex: 1 1 auto;
+}
+
+/* The + / − marker: two hairlines, the vertical one collapsing when open. */
+.ds-accordion-marker {
+	position: relative;
+	flex: none;
+	width: 0.875rem;
+	height: 0.875rem;
+}
+
+.ds-accordion-marker::before,
+.ds-accordion-marker::after {
+	content: '';
+	position: absolute;
+	inset: 50% 0 auto;
+	height: 2px;
+	background: currentColor;
+	transform: translateY(-50%);
+}
+
+.ds-accordion-marker::after {
+	transform: translateY(-50%) rotate(90deg);
+	transition: transform 0.2s ease;
+}
+
+.ds-accordion-item[open] .ds-accordion-marker::after {
+	transform: translateY(-50%) rotate(0deg);
+}
+
+.ds-accordion-panel {
+	padding-bottom: 1rem;
+}
+
+.ds-accordion-panel p {
+	margin: 0 0 0.75rem;
+}
+
+.ds-accordion-panel p:last-child {
+	margin-bottom: 0;
+}
+
+/* Mobile only: the source keeps its photo-beside-accordion row through the
+ * tablet breakpoint (1177px desktop / 1000px tablet) and stacks on a phone. */
+@media (max-width: 767px) {
+	.ds-accordion-band--split {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* The source's link row rides far below the copy (jayainc: 70px). */
+.ds-hero-split .ds-links {
+	margin-top: calc(var(--forge-space-5, 3rem) - var(--forge-space));
+}
+
+.ds-hero-collage {
+	position: relative;
+}
+
+.ds-collage-shape {
+	display: block;
+	margin-inline: auto;
+	width: var(--ds-shape-w, auto);
+	height: var(--ds-shape-h, auto);
+}
+
+.ds-collage-media {
+	position: absolute;
+	top: var(--ds-off-top, auto);
+	right: var(--ds-off-right, auto);
+	bottom: var(--ds-off-bottom, auto);
+	left: var(--ds-off-left, auto);
+	box-shadow: var(--ds-shadow, none);
+	width: auto;
+	max-width: none;
+}
+
+@media (width<=767px) {
+	.ds-hero-split {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* The absolute collage offsets only fit once the measured band fits
+ * (the 1140px measure + gutters). Below that — Elementor's own tablet
+ * reflow — the photos return to static flow inside their column instead
+ * of poking past the viewport edge, where the body's overflow guard
+ * would clip them mid-photo. */
+@media (width<1152px) {
+	.ds-hero-collage {
+		position: static;
+		display: grid;
+		/* A definite track is load-bearing: an implicit auto column is
+		 * sized by the 412px shape, so max-width: 100% has no definite
+		 * containing block to resolve against and both the shape and the
+		 * photos spill past the viewport (measured: 45px of horizontal
+		 * scroll at 390px, 72px at 768px).
+		 *
+		 * The tracks are RESPONSIVE rather than one full-width column: the
+		 * source keeps its photos out of flow (absolutely offset over the
+		 * backdrop shape), so a stacked single column made the collage far
+		 * taller than the source's media column — jayainc's about band came
+		 * out 1286px at tablet and 1760px at mobile against 1207/1394. Two
+		 * photos sharing a row keep the collage under the band's measured
+		 * height, which is the floor that pins it back to the source. */
+		grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+		gap: var(--forge-space);
+	}
+	/* The backdrop shape spans the whole row; only the photos share tracks. */
+	.ds-collage-shape {
+		grid-column: 1 / -1;
+		width: 100%;
+		max-width: 100%;
+	}
+	/* Keep the shape's own proportions once it goes full width, instead of
+	 * stretching it to the desktop height. */
+	.ds-collage-shape[data-fluid] {
+		height: auto;
+		aspect-ratio: var(--ds-shape-ratio);
+	}
+	.ds-collage-media {
+		position: static;
+		width: 100%;
+		height: auto;
+	}
+}
+
+/* -------------------------------------------------------------------------
+ * Scroll behavior (Proposal 121) — the CSS-native motion runtime. The
+ * FINISHED state is the default (the golden rule): browsers without
+ * animation-timeline render correct, animation-free content. Every
+ * animation is gated on @supports + prefers-reduced-motion — no JS.
+ * ------------------------------------------------------------------------- */
+.site-header--sticky {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	/* The sticky variant must keep the harvested header bg (jayainc's navy
+	 * strip stays navy when pinned) — surface only as the fallback. */
+	background: var(--forge-header-bg, var(--forge-surface));
+}
+
+/*
+ * The source header is `position: fixed` (`analyze --geometry` records the
+ * resting position): it floats OVER the first band, which flows beneath it.
+ * A sticky rebuild keeps the header in the flow, pushing the band down a full
+ * header height — on virtuallyjamaica that left the white logo and white nav
+ * links sitting on the white page above the red hero (invisible). Declared
+ * after the sticky variant so `position` resolves to fixed.
+ */
+.site-header--float {
+	position: fixed;
+	inset: 0 0 auto 0;
+}
+
+/*
+ * The MEASURED resting header is transparent (`chrome.headerTransparent`): it
+ * floats over the hero and paints nothing. Declared AFTER the sticky variant so
+ * the surface fallback above cannot paint the template's own colour over the
+ * photo; the hairline goes too — the strip belongs to the band behind it.
+ */
+.site-header--overlay {
+	background: transparent;
+	border-bottom: none;
+	box-shadow: none;
+}
+
+/*
+ * The source's RESTING header floats over the first band (a measured
+ * `position: absolute`), then jumps to a fixed strip once the page moves
+ * (Flatsome's `sticky-jump` clone). Rebuilt as a DISCRETE scroll-timeline
+ * switch on `position` — no JS, and the resting state stays the base for a
+ * browser without animation-timeline support (the header simply keeps its
+ * overlay position and scrolls away). Composes with the pinned bg/height
+ * animation above rather than replacing it.
+ */
+.site-header--overlay.site-header--pinned {
+	position: absolute;
+	right: 0;
+	left: 0;
+	/* `top: auto` keeps the header at its STATIC position (directly below the
+	 * topbar) — the sticky base rule sets `top: 0`, which would pin an absolute
+	 * header over the topbar at rest. */
+	top: auto;
+	animation: ds-header-pin linear both, ds-header-position linear both;
+	animation-timeline: scroll(root), scroll(root);
+	animation-range: 0 120px, 0 120px;
+}
+
+@keyframes ds-header-position {
+	from { position: absolute; }
+	to { position: fixed; top: 0; }
+}
+
+/*
+ * The MEASURED pinned state (`analyze --geometry`): a header that gains a solid
+ * background, swaps its ink, and/or shrinks once the page moves. Rebuilt as a
+ * scroll() timeline — no JS, no scroll listener.
+ *
+ * The RESTING state is the base, deliberately: the golden rule wants the
+ * finished state as the default, but a header's finished state is the SCROLLED
+ * one, and painting a solid pinned strip over the hero at scrollY 0 is the
+ * louder error. Without support the header simply keeps its resting look.
+ *
+ * `animation-range: 0 120px` is the source's own trigger zone (Brando adds
+ * `shrink` around 100px); it is a constant, not a measured fact.
+ */
+.site-header--pinned {
+	animation: ds-header-pin linear both;
+	animation-timeline: scroll(root);
+	animation-range: 0 120px;
+}
+
+@keyframes ds-header-pin {
+	from {
+		background-color: var(--forge-header-bg, transparent);
+		color: var(--forge-header-ink, inherit);
+		box-shadow: none;
+		/* `height` rather than `min-height`: a measured rest height is a definite
+		 * box (`.site-header--sized`), and a floored height cannot shrink. */
+		height: var(--forge-header-rest-h, auto);
+	}
+	to {
+		background-color: var(--forge-header-pinned-bg, var(--forge-header-bg, var(--forge-surface)));
+		color: var(--forge-header-pinned-ink, var(--forge-header-ink, inherit));
+		box-shadow: var(--forge-header-pinned-shadow, none);
+		height: var(--forge-header-pinned-h, var(--forge-header-rest-h, auto));
+	}
+}
+
+/* Reveals: view() timelines play once as the section enters.
+ *
+ * The animation targets the band's CONTENT (`> .ds-section`), never the band
+ * wrapper: the wrapper paints the full-bleed background, so a `translate` or
+ * `scale` on it lifted the band off its neighbour and exposed the white body
+ * as a 40-42px strip while scrolling (the source reveals its widgets over a
+ * static band surface). */
+@supports (animation-timeline: view()) {
+	@media (prefers-reduced-motion: no-preference) {
+		.ds-reveal > .ds-section {
+			animation: ds-fade linear both;
+			animation-timeline: view();
+			animation-range: entry 0% entry 60%;
+		}
+		.ds-reveal--fade-up > .ds-section { animation-name: ds-fade-up; }
+		.ds-reveal--fade-down > .ds-section { animation-name: ds-fade-down; }
+		.ds-reveal--fade-left > .ds-section { animation-name: ds-fade-left; }
+		.ds-reveal--fade-right > .ds-section { animation-name: ds-fade-right; }
+		.ds-reveal--scale-up > .ds-section { animation-name: ds-scale-up; }
+		.ds-reveal--blur > .ds-section { animation-name: ds-blur; }
+		/* The horizontal reveals translate the band ±48px — on phones the
+		 * bands are full-bleed and the body clip would shear the edge; the
+		 * entrance degrades to the plain fade. */
+		@media (width<=767px) {
+			.ds-reveal--fade-left > .ds-section,
+			.ds-reveal--fade-right > .ds-section {
+				animation-name: ds-fade;
+			}
+		}
+	}
+}
+
+@keyframes ds-fade { from { opacity: 0; } }
+@keyframes ds-fade-up { from { opacity: 0; translate: 0 40px; } }
+@keyframes ds-fade-down { from { opacity: 0; translate: 0 -40px; } }
+@keyframes ds-fade-left { from { opacity: 0; translate: -48px 0; } }
+@keyframes ds-fade-right { from { opacity: 0; translate: 48px 0; } }
+@keyframes ds-scale-up { from { opacity: 0; scale: 0.94; } }
+@keyframes ds-blur { from { opacity: 0; filter: blur(8px); } }
+
+/* Parallax: scroll() timelines tie the band to the page scroll. The band-level
+ * range scales with the source's motion_fx speed (--ds-parallax-range); a
+ * piece-level rule emitted by the renderer overrides the keyframe endpoints
+ * (--ds-parallax-from/to) from the source's depth/origin, and gates the
+ * breakpoint where the source disabled the effect (data-parallax-off /
+ * motion_fx_devices). The carrier matches the source: hero bands drift as a
+ * whole (their photo IS the background), every other parallax section drifts
+ * its MEDIA elements (the source's parallax columns carry the imagery —
+ * jayainc's about photos, the services portrait, the product cards — while the
+ * text stays). The even/odd fallback keeps the independent-column feel for a
+ * band whose source declares no piece facts. */
+@supports (animation-timeline: scroll()) {
+	@media (prefers-reduced-motion: no-preference) {
+		/* The hero band is STATIC (125 §5): the source hero's photo is a
+		 * fixed-position background (verified live: constant 50% 50%,
+		 * attachment scroll) — a band translate overlapped the flush
+		 * quote band below (jayainc: "raised up onto the hero"). The
+		 * media-carrier parallax below keeps the source's moving pieces. */
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-media,
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-icon-media img,
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-card {
+			animation: ds-parallax-media linear both;
+			animation-timeline: scroll(root);
+			animation-range: cover 0% cover 100%;
+		}
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-media:nth-child(even),
+		.ds-parallax:not(.ds-section-wrap--hero) .ds-icon-media img:nth-child(even) {
+			--ds-parallax-from: calc(var(--ds-parallax-range, 24px) * -1);
+			--ds-parallax-to: var(--ds-parallax-range, 24px);
+		}
+	}
+}
+
+@keyframes ds-parallax-media {
+	from { translate: 0 var(--ds-parallax-from, var(--ds-parallax-range, 24px)); }
+	to { translate: 0 var(--ds-parallax-to, calc(var(--ds-parallax-range, 24px) * -1)); }
+}
+
+/* The hero/about media: all images, side by side (the source two-up). */
+.ds-media-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: var(--forge-space);
+}
+
+.ds-media-grid .ds-media {
+	width: 100%;
+}
+
+/* The icon-list marker (117 §1) — accent disc with a check glyph.
+ * Glyph-classed markers (auxicon-*, fa fa-*, …) draw the SOURCE glyph via
+ * the source's own icon stylesheet (chrome.iconCss) and carry no fallback
+ * text — the font supplies the glyph, not the rebuild. */
+.ds-icon-marker {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	background: var(--forge-accent);
+	color: var(--forge-accent-ink);
+	font-weight: 700;
+	flex: 0 0 auto;
+}
+
+.ds-icon-marker::before {
+	/* The source icon fonts render their glyph through ::before — the base
+	 * class (auxicon/fa/eicon/dashicons) sizes and colors it. */
+	font-size: 1.05rem;
+}
+
+/* Source-shaped icon rows (123 §6 follow-up): the icon-LEFT list the source
+ * renders (aux-ico-pos-left) — a single-column stack of icon + text rows,
+ * never the icon-above card grid. */
+.ds-icon-rows {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--forge-space);
+}
+
+.ds-icon-row {
+	display: flex;
+	gap: var(--forge-space);
+	align-items: flex-start;
+	/* The source's rows carry their own inner rhythm — jayainc's services rows
+	 * are 63px above/below with a 50px inset on desktop, 36/50/35 at tablet and
+	 * mobile. The values are MEASURED per band AND per device; the single
+	 * (tablet) value left the height-pinned band with 255px of dead space. */
+	padding-block: var(--ds-icon-row-pad-top, 0) var(--ds-icon-row-pad-bottom, 0);
+	padding-inline: var(--ds-icon-row-pad-x, 0);
+	/* The source's per-widget gap (20px on jayainc). The padding alone left the
+	 * row pitch 45px short, which read as dead space under a pinned band. */
+	margin-bottom: var(--ds-icon-row-gap, 0);
+}
+
+.ds-icon-row .ds-icon-marker {
+	margin-top: 0.15em;
+	/* The source's leading icon is a large, unfilled circle around a big
+	 * glyph (jayainc: 81px box, 45px glyph). Measured per band; the template
+	 * keeps its accent-filled 2.5rem default when the band declares none. */
+	inline-size: var(--ds-icon-marker-size, 2.5rem);
+	block-size: var(--ds-icon-marker-size, 2.5rem);
+	background: var(--ds-icon-marker-bg, var(--forge-accent));
+	color: var(--ds-icon-marker-ink, var(--forge-accent-ink));
+}
+
+.ds-icon-row .ds-icon-marker::before {
+	font-size: var(--ds-icon-marker-glyph, 1.05rem);
+}
+
+.ds-icon-row h4 {
+	margin: 0 0 0.25em;
+	/* A row title is a heading, not body copy — without this it inherited the
+	 * 13px body size (the source's is 27px/32px). */
+	font-size: var(--ds-icon-title-size, var(--forge-scale-h4, 1.125rem));
+	line-height: var(--ds-icon-title-lh, 1.2);
+}
+
+.ds-icon-row p {
+	margin: 0;
+}
+
+/* The icon-list split (121 §6): a standalone image beside the content —
+ * jayainc's "Why Choose Us" section pairs a portrait photo with the list.
+ * The ratio comes from the source's column facts (124 §6 — the services
+ * split is 50/50); the template's 5fr/7fr is only the fallback. */
+.ds-icon-split {
+	display: grid;
+	grid-template-columns: var(--ds-split-ratio, minmax(0, 5fr) minmax(0, 7fr));
+	gap: var(--forge-space-lg);
+	align-items: start;
+}
+
+.ds-icon-media img {
+	width: 100%;
+	height: auto;
+	border-radius: var(--forge-radius);
+}
+
+/* Elementor stacks its 50% columns below the TABLET breakpoint, not only on
+ * phones: at 834px the split still held two 371px tracks against the source's
+ * full-width 819px columns, so the portrait photo rendered 585px instead of
+ * ~1220 and the band read 611px against the source's 2272px inner box. */
+@media (max-width: 1025px) {
+	.ds-icon-split {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+@media (max-width: 767px) {
+	/* The source's mobile column order (elementor-reverse-mobile, 124 §6)
+	 * — the wrap's inline --ds-icon-media-order flips the media below. */
+	.ds-icon-media {
+		order: var(--ds-icon-media-order, 0);
+	}
+}
+
+/* The footer brand ROW (measured, `chrome.footerBrand`): the social icons and
+ * the standalone brand mark share one flex row. The generated rule from
+ * Base.astro sets `justify-content` per viewport — virtuallyjamaica right-aligns
+ * the logo against a left-aligned social row, both centred at mobile. */
+.site-footer-brand-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1.5rem;
+}
+
+/* Inside the row the stacks' own bottom margins would break the centring. */
+.site-footer-brand-row .site-social,
+.site-footer-brand-row .site-footer-logo img {
+	margin-bottom: 0;
+}
+
+/* The footer brand logo (the footer-widget media image). */
+.site-footer-logo img {
+	width: auto;
+	height: 3rem;
+	margin-bottom: var(--forge-space);
+}
+
+/* The footer social row (the source's network badges). The rebuild draws its
+ * own glyphs, so no icon-font stylesheet is required. */
+.site-social {
+	display: flex;
+	gap: 0.75rem;
+	margin: 0 0 1.25rem;
+	padding: 0;
+	list-style: none;
+}
+
+.site-social a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 999px;
+	background: rgba(0, 0, 0, 0.06);
+	color: inherit;
+}
+
+.site-social a:hover,
+.site-social a:focus-visible {
+	background: rgba(0, 0, 0, 0.12);
+}
+
+/* A network the rebuild has no inline glyph for is drawn by the SOURCE's own
+ * brand-icon sheet (FontAwesome), using the source's glyph class. */
+.site-social i {
+	font-size: 1rem;
+	line-height: 1;
+}
+
+.ds-lede {
+	/* The source's divider→description gap (Phlox's modern heading carries a
+	 * 37px margin-top); absent → flush, as before. */
+	margin-top: var(--ds-lede-margin-top, 0);
+	margin-bottom: var(--forge-space);
+}
+
+.ds-body {
+	display: grid;
+	/* The source's own measured margins define the heading rhythm on bands that
+	 * carry one; the template gap must then not stack on top of them (it grew
+	 * the contact band 26px past its source box). */
+	gap: var(--ds-body-gap, var(--forge-space));
+}
+
+/* The catalog band (125 §4) — the flipbook's titled open-CTA, centered
+ * like the source's full-width book (jayainc's FIORI catalog). */
+.ds-catalog {
+	justify-items: center;
+	text-align: center;
+}
+
+/* --- Form component (Proposal 114 §3.9) --------------------------------- */
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.ds-form {
+	display: grid;
+	gap: var(--forge-space);
+}
+
+.ds-form-search {
+	grid-template-columns: 1fr auto;
+	align-items: center;
+}
+
+.ds-field {
+	display: grid;
+	gap: var(--forge-space-sm);
+}
+
+.ds-label {
+	font-weight: 600;
+	font-size: var(--forge-scale-small);
+}
+
+.ds-required {
+	color: var(--forge-accent);
+}
+
+.ds-check {
+	display: inline-flex;
+	gap: var(--forge-space-sm);
+	font-size: var(--forge-scale-small);
+	color: var(--forge-muted);
+}
+
+.ds-input {
+	font: inherit;
+	color: var(--forge-ink);
+	background: var(--forge-surface);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius-sm);
+	padding: var(--forge-space-sm);
+	max-width: 100%;
+}
+
+.ds-input:focus {
+	outline: 2px solid var(--forge-accent);
+	outline-offset: 1px;
+}
+
+.ds-form-status {
+	margin: 0;
+	font-size: var(--forge-scale-small);
+	color: var(--forge-muted);
+}
+
+/* The honeypot: invisible to humans, an inviting trap for bots. */
+.ds-honeypot {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ds-button,
+	.ds-card,
+	.ds-media {
+		transition: none;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+   Proposal 130 — consent banner (first-party, mode: forge).
+   The bar is NON-modal: the page stays reachable, so there is no focus trap
+   and no aria-modal claim. Space is reserved on <body> while it is open so
+   the fixed bar can never obscure the focused element (WCAG 2.2 SC 2.4.11).
+   Accept and reject share one button style — equal prominence, reject first.
+   --------------------------------------------------------------------------- */
+html[data-consent-open] body {
+	padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+}
+
+.consent-banner {
+	position: fixed;
+	inset-inline: 0;
+	bottom: 0;
+	z-index: 60;
+	background: var(--forge-surface, #ffffff);
+	color: var(--forge-ink, #111111);
+	border-top: 1px solid var(--forge-line, #dddddd);
+	padding: 1rem clamp(1rem, 4vw, 2rem) calc(1rem + env(safe-area-inset-bottom, 0px));
+}
+
+.consent-banner[hidden] {
+	display: none;
+}
+
+.consent-banner-inner {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem 1.25rem;
+	align-items: center;
+	max-width: var(--forge-measure, 75rem);
+	margin: 0 auto;
+}
+
+.consent-banner-text {
+	flex: 1 1 22rem;
+	margin: 0;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+}
+
+.consent-banner-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.consent-button {
+	appearance: none;
+	border: 1px solid var(--forge-ink, #111111);
+	border-radius: var(--forge-radius, 4px);
+	background: var(--forge-ink, #111111);
+	color: var(--forge-surface, #ffffff);
+	font: inherit;
+	font-size: 0.875rem;
+	padding: 0.5rem 0.9rem;
+	cursor: pointer;
+	min-height: 2.5rem;
+}
+
+.consent-button:hover,
+.consent-button:focus-visible {
+	background: var(--forge-accent, #111111);
+	border-color: var(--forge-accent, #111111);
+}
+
+.consent-link {
+	appearance: none;
+	background: none;
+	border: 0;
+	padding: 0.25rem;
+	font: inherit;
+	font-size: 0.875rem;
+	color: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.consent-policy {
+	font-size: 0.875rem;
+	text-decoration: underline;
+	color: inherit;
+}
+
+.consent-dialog {
+	border: 1px solid var(--forge-line, #dddddd);
+	border-radius: var(--forge-radius, 4px);
+	background: var(--forge-surface, #ffffff);
+	color: var(--forge-ink, #111111);
+	max-width: min(28rem, calc(100vw - 2rem));
+	padding: 1.25rem;
+}
+
+.consent-dialog::backdrop {
+	background: rgb(0 0 0 / 45%);
+}
+
+.consent-dialog-form {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.consent-dialog-form h2 {
+	margin: 0 0 0.25rem;
+	font-size: 1.125rem;
+}
+
+.consent-option {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+	padding: 0.25rem 0;
+	font-size: 0.9375rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.consent-banner,
+	.consent-button,
+	.consent-dialog {
+		transition: none;
+	}
+}
+
+/* ---------------------------------------------------------------------------
+   Proposal 136 — structural section kinds (pricing, stats, steps, team,
+   marquee, comparison).
+
+   Every value here is a token: the six kinds are STRUCTURE, and the palette,
+   type and motion always come from the source's extracted design language.
+   The marquee's pause mechanism is a checkbox so it survives with no JS — see
+   Marquee.astro for the WCAG 2.2.2 rationale.
+--------------------------------------------------------------------------- */
+
+.ds-plans {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+	gap: var(--forge-space-lg);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ds-plan {
+	display: flex;
+	flex-direction: column;
+	gap: var(--forge-space-sm);
+	padding: var(--ds-card-pad, 1.5rem);
+	border: 1px solid var(--forge-line);
+	border-radius: var(--forge-radius-lg);
+	background: var(--forge-surface);
+}
+
+.ds-plan--featured {
+	border-color: var(--forge-accent);
+	box-shadow: var(--forge-shadow-card);
+}
+
+.ds-plan__name {
+	margin: 0;
+	font-size: var(--forge-scale-h3);
+}
+
+.ds-plan__price {
+	display: flex;
+	gap: 0.5rem;
+	align-items: baseline;
+	margin: 0;
+	font-size: var(--forge-scale-h2);
+	font-weight: 700;
+}
+
+.ds-plan__was {
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-body);
+	font-weight: 400;
+}
+
+.ds-plan__features {
+	display: grid;
+	gap: 0.25rem;
+	margin: 0;
+	padding-left: 1.1rem;
+}
+
+.ds-plan__cta {
+	align-self: flex-start;
+	margin-top: auto;
+}
+
+.ds-pricing__note {
+	margin-top: var(--forge-space);
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+}
+
+.ds-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	gap: var(--forge-space-lg);
+	margin: 0;
+}
+
+.ds-stat {
+	text-align: center;
+}
+
+.ds-stat__value {
+	font-size: clamp(2rem, 4vw, var(--forge-scale-h1));
+	font-weight: 700;
+	line-height: 1;
+}
+
+.ds-stat__label {
+	margin: 0.35rem 0 0;
+	color: var(--forge-muted);
+}
+
+.ds-stat__caption {
+	display: block;
+	font-size: var(--forge-scale-small);
+}
+
+.ds-steps {
+	display: grid;
+	gap: var(--forge-space-lg);
+	margin: 0;
+	padding-left: 1.25rem;
+}
+
+.ds-step::marker {
+	color: var(--forge-accent);
+	font-weight: 700;
+}
+
+.ds-step__media img {
+	border-radius: var(--forge-radius);
+}
+
+.ds-step__title {
+	margin: 0.5rem 0 0.25rem;
+	font-size: var(--forge-scale-h3);
+}
+
+.ds-step__body {
+	margin: 0;
+	color: var(--forge-muted);
+}
+
+.ds-team {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+	gap: var(--forge-space-lg);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.ds-person__figure {
+	margin: 0;
+}
+
+.ds-person__figure img {
+	width: 100%;
+	height: auto;
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	border-radius: var(--forge-radius);
+}
+
+.ds-person__caption {
+	display: grid;
+	gap: 0.15rem;
+	margin-top: 0.75rem;
+}
+
+.ds-person__name {
+	font-weight: 700;
+}
+
+.ds-person__role {
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+}
+
+/* -- marquee (WCAG 2.2.2) --------------------------------------------------- */
+
+.ds-marquee {
+	position: relative;
+}
+
+.ds-marquee__viewport {
+	display: flex;
+	gap: var(--forge-space-lg);
+	overflow: hidden;
+}
+
+.ds-marquee__track {
+	flex: 0 0 auto;
+	display: flex;
+	gap: var(--forge-space-lg);
+	min-width: 100%;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	animation: ds-marquee-scroll var(--ds-marquee-speed, 28s) linear infinite;
+}
+
+.ds-marquee__item {
+	white-space: nowrap;
+}
+
+/* The control: a real checkbox, visually hidden but focusable. */
+.ds-marquee__toggle {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	border: 0;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.ds-marquee__pause {
+	display: inline-block;
+	margin-bottom: 0.5rem;
+	padding: 0.25rem 0.75rem;
+	border: 1px solid var(--forge-line);
+	border-radius: 999px;
+	font-size: var(--forge-scale-small);
+	cursor: pointer;
+}
+
+.ds-marquee__label--play {
+	display: none;
+}
+
+.ds-marquee__toggle:focus-visible + .ds-marquee__pause {
+	outline: 2px solid var(--forge-accent);
+	outline-offset: 2px;
+}
+
+.ds-marquee__toggle:not(:checked) ~ .ds-marquee__viewport .ds-marquee__track {
+	animation-play-state: paused;
+}
+
+.ds-marquee__toggle:not(:checked) + .ds-marquee__pause .ds-marquee__label--pause {
+	display: none;
+}
+
+.ds-marquee__toggle:not(:checked) + .ds-marquee__pause .ds-marquee__label--play {
+	display: inline;
+}
+
+@keyframes ds-marquee-scroll {
+	from {
+		transform: translateX(0);
+	}
+
+	to {
+		transform: translateX(calc(-100% - var(--forge-space-lg)));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ds-marquee__track {
+		animation: none;
+	}
+
+	.ds-marquee__toggle,
+	.ds-marquee__pause {
+		display: none;
+	}
+}
+
+/* -- comparison ------------------------------------------------------------- */
+
+.ds-compare__scroll {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.ds-compare__scroll:focus-visible {
+	outline: 2px solid var(--forge-accent);
+	outline-offset: 2px;
+}
+
+.ds-compare {
+	min-width: 100%;
+	border-collapse: collapse;
+}
+
+.ds-compare caption {
+	padding-bottom: 0.5rem;
+	color: var(--forge-muted);
+	font-size: var(--forge-scale-small);
+	text-align: left;
+	caption-side: top;
+}
+
+.ds-compare th,
+.ds-compare td {
+	padding: 0.6rem 0.75rem;
+	border-bottom: 1px solid var(--forge-line);
+	text-align: left;
+	vertical-align: top;
+}
+
+.ds-compare thead th {
+	font-size: var(--forge-scale-small);
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+
+.ds-compare tbody th {
+	font-weight: 600;
+}
+
+/* A font family the localizer could not ship: keep the measured slot, draw a
+ * neutral marker. A blank box is worse than a bullet, and hiding the element
+ * would collapse the source's spacing. The runtime check in Base.astro adds
+ * `forge-icon-missing` only when the browser has no usable face. */
+i.forge-icon-missing::before,
+span.forge-icon-missing::before {
+	content: "\2022" !important;
+	font-family: var(--forge-font) !important;
+	font-weight: 400;
 }

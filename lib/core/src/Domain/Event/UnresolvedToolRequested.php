@@ -1,4 +1,5 @@
 <?php
+
 /**
  * UnresolvedToolRequested — an assistant configured a tool slug that the
  * registry cannot resolve.
@@ -10,16 +11,19 @@
  * @package Nvoos\Core
  * @since   1.3.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class UnresolvedToolRequested {
-
-	public function __construct(
-		public readonly string $slug,
-		public readonly int $assistantId,
-	) {}
+final class UnresolvedToolRequested
+{
+    public function __construct(
+        public readonly string $slug,
+        public readonly int $assistantId,
+    ) {
+    }
 }

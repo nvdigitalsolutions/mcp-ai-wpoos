@@ -78,7 +78,7 @@ onto ungreased baking sheets and bake for 9 to 11 minutes.';
 	);
 
 	$options = array(
-		'model'                => 'gemini-2.5-flash',
+		'model'                => 'gemini-3.5-flash-lite',
 		'response_mime_type'   => 'application/json',
 		'response_json_schema' => $schema,
 	);
@@ -140,7 +140,7 @@ function wp_mcp_ai_example_structured_output() {
 	);
 
 	$options = array(
-		'model'              => 'gemini-2.5-flash',
+		'model'              => 'gemini-3.5-flash-lite',
 		'response_mime_type' => 'application/json',
 		'response_schema'    => $schema,
 	);
@@ -195,7 +195,7 @@ function wp_mcp_ai_example_extract_contact_info( $text ) {
 	);
 
 	$options = array(
-		'model'                => 'gemini-2.5-flash',
+		'model'                => 'gemini-3.5-flash-lite',
 		'response_mime_type'   => 'application/json',
 		'response_json_schema' => $schema,
 	);

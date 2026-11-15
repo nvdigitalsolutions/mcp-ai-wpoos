@@ -1,0 +1,7 @@
+# Build requirements for the 32-bit (x86) build. Install into a 32-bit Python
+# (python.org "Windows installer (32-bit)"), e.g. C:\py32\python.exe -m pip install -r installer\requirements-win32.txt
+# cryptography >= 45 ships no 32-bit Windows wheels (pip would try to compile it); 44.x does.
+cryptography<45
+mcp>=1.10,<2
+pywin32
+pyinstaller

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PHPUnit bootstrap for the nvoos/core package.
  *
@@ -18,7 +19,7 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 // Ensure we're on PHP 8.1+ (the core package requires it).
-if ( PHP_VERSION_ID < 80100 ) {
-	fwrite( STDERR, 'nvoos/core tests require PHP 8.1+.' . PHP_EOL );
-	exit( 1 );
+if (PHP_VERSION_ID < 80100) {
+    fwrite(STDERR, 'nvoos/core tests require PHP 8.1+.' . PHP_EOL);
+    exit(1);
 }

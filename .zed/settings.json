@@ -47,7 +47,13 @@
     "**/vendor",
     "**/target",
     "**/coverage",
-    "**/.phpunit.result.cache"
+    "**/.phpunit.result.cache",
+    // Python/uv project (Proposal 113) — foreign stack, never indexed.
+    "examples/qb-desktop-mcp/.venv",
+    "examples/qb-desktop-mcp/tests/fixtures",
+    "examples/qb-desktop-mcp/tests/vm",
+    "**/__pycache__",
+    "**/.pytest_cache"
   ],
 
   // ---------------------------------------------------------------------------

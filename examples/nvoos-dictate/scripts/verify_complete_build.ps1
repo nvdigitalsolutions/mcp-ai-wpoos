@@ -17,9 +17,20 @@ $markers = @(
     @{ name = "vision (ort)";    re = "ort" },
     @{ name = "camera (nokhwa)"; re = "nokhwa" },
     @{ name = "agent";           re = "nvoos-agent" },
+    # The "nvoos-agent" thread-name literal is DCE'd by release optimizations;
+    # the controller's own spawn-error string survives in both profiles.
+    @{ name = "agent (release-proof)"; re = "could not spawn agent worker" },
     @{ name = "mcp";             re = "mcp" },
+    @{ name = "snippet (OCR)";   re = "snippet" },
+    @{ name = "document (pdfium)"; re = "pdfium library not found" },
+    @{ name = "memory (vec0)";       re = "chunk_vectors" },
+    @{ name = "memory (tokenizers)"; re = "tokenizer truncation" },
+    @{ name = "memory (granite)";    re = "granite-97m-r2-int8" },
     @{ name = "Assistant SPA";   re = "Assistant" },
-    @{ name = "moonshine (should be ABSENT)"; re = "moonshine" }
+    # The plain "moonshine" token also matches sherpa-onnx's own model-zoo
+    # strings (it supports the Moonshine model family), so assert on the
+    # app-specific engine error text instead.
+    @{ name = "moonshine engine (should be ABSENT)"; re = "the moonshine engine is a documented spike" }
 )
 
 Write-Output ("Exe size: {0:N1} MB" -f ($bytes.Length / 1MB))

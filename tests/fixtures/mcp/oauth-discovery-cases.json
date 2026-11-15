@@ -1,0 +1,186 @@
+{
+  "_comment": "Shared OAuth discovery corpus. Replayed by lib/core/tests/Unit/Domain/Mcp/OAuthDiscoveryCorpusTest.php and by addons/pro/tests/test-mcp-oauth-discovery-parity.php, so the core ordering and its WordPress adapter are held to one contract. Expectations were recorded from the pre-extraction adapter, which is why an origin-only server still gets the REST metadata URL appended: that is the shipped behaviour, not an oversight.",
+  "url_cases": [
+    {
+      "name": "mcp-path-on-a-bare-origin",
+      "server_url": "https://mcp.example.com/mcp",
+      "origin": "https://mcp.example.com",
+      "path": "/mcp",
+      "authorization_server_metadata_urls": [
+        "https://mcp.example.com/.well-known/oauth-authorization-server",
+        "https://mcp.example.com/.well-known/openid-configuration",
+        "https://mcp.example.com/wp-json/mcp-ai/v1/oauth/metadata",
+        "https://mcp.example.com/.well-known/oauth-authorization-server/mcp",
+        "https://mcp.example.com/oauth/metadata"
+      ],
+      "protected_resource_urls": [
+        "https://mcp.example.com/.well-known/oauth-protected-resource",
+        "https://mcp.example.com/.well-known/oauth-protected-resource/mcp"
+      ],
+      "rest_metadata_url": "https://mcp.example.com/oauth/metadata"
+    },
+    {
+      "name": "self-hosted-wordpress-rest-route",
+      "server_url": "https://site.example.org/wp-json/mcp-ai/v1/mcp",
+      "origin": "https://site.example.org",
+      "path": "/wp-json/mcp-ai/v1/mcp",
+      "authorization_server_metadata_urls": [
+        "https://site.example.org/.well-known/oauth-authorization-server",
+        "https://site.example.org/.well-known/openid-configuration",
+        "https://site.example.org/wp-json/mcp-ai/v1/oauth/metadata",
+        "https://site.example.org/.well-known/oauth-authorization-server/wp-json/mcp-ai/v1/mcp"
+      ],
+      "protected_resource_urls": [
+        "https://site.example.org/.well-known/oauth-protected-resource",
+        "https://site.example.org/.well-known/oauth-protected-resource/wp-json/mcp-ai/v1/mcp"
+      ],
+      "rest_metadata_url": "https://site.example.org/wp-json/mcp-ai/v1/oauth/metadata",
+      "note": "The REST URL is produced twice — once by the authorization-server list and once by the dedicated builder — and de-duplicated to one."
+    },
+    {
+      "name": "path-scoped-auth-server-with-port",
+      "server_url": "https://auth.example.net:8443/realms/main",
+      "origin": "https://auth.example.net:8443",
+      "path": "/realms/main",
+      "authorization_server_metadata_urls": [
+        "https://auth.example.net:8443/.well-known/oauth-authorization-server",
+        "https://auth.example.net:8443/.well-known/openid-configuration",
+        "https://auth.example.net:8443/wp-json/mcp-ai/v1/oauth/metadata",
+        "https://auth.example.net:8443/.well-known/oauth-authorization-server/realms/main",
+        "https://auth.example.net:8443/realms/main/oauth/metadata"
+      ],
+      "protected_resource_urls": [
+        "https://auth.example.net:8443/.well-known/oauth-protected-resource",
+        "https://auth.example.net:8443/.well-known/oauth-protected-resource/realms/main"
+      ],
+      "rest_metadata_url": "https://auth.example.net:8443/realms/main/oauth/metadata",
+      "note": "Port preserved; the REST rewrite only strips a trailing /mcp, so a /realms path is kept verbatim."
+    },
+    {
+      "name": "origin-only",
+      "server_url": "https://mcp.example.com",
+      "origin": "https://mcp.example.com",
+      "path": "",
+      "authorization_server_metadata_urls": [
+        "https://mcp.example.com/.well-known/oauth-authorization-server",
+        "https://mcp.example.com/.well-known/openid-configuration",
+        "https://mcp.example.com/wp-json/mcp-ai/v1/oauth/metadata",
+        "https://mcp.example.com/oauth/metadata"
+      ],
+      "protected_resource_urls": [
+        "https://mcp.example.com/.well-known/oauth-protected-resource"
+      ],
+      "rest_metadata_url": "https://mcp.example.com/oauth/metadata"
+    },
+    {
+      "name": "trailing-slash-is-normalised",
+      "server_url": "https://mcp.example.com/mcp/",
+      "origin": "https://mcp.example.com",
+      "path": "/mcp",
+      "authorization_server_metadata_urls": [
+        "https://mcp.example.com/.well-known/oauth-authorization-server",
+        "https://mcp.example.com/.well-known/openid-configuration",
+        "https://mcp.example.com/wp-json/mcp-ai/v1/oauth/metadata",
+        "https://mcp.example.com/.well-known/oauth-authorization-server/mcp",
+        "https://mcp.example.com/mcp//oauth/metadata"
+      ],
+      "protected_resource_urls": [
+        "https://mcp.example.com/.well-known/oauth-protected-resource",
+        "https://mcp.example.com/.well-known/oauth-protected-resource/mcp"
+      ],
+      "rest_metadata_url": "https://mcp.example.com/mcp//oauth/metadata",
+      "note": "The path helper trims the slash for the .well-known probes, but the REST rewrite sees the raw path, where /mcp/ no longer ends in /mcp, so the prefix is kept and a double slash results. Recorded as-is: this slice relicenses and shares the code, it does not change behaviour. Worth a follow-up fix on its own."
+    },
+    {
+      "name": "malformed-url",
+      "server_url": "not a url",
+      "origin": "",
+      "path": "/not a url",
+      "authorization_server_metadata_urls": [],
+      "protected_resource_urls": [],
+      "rest_metadata_url": "",
+      "note": "path() is only consumed after origin() succeeds, so this value is never used; it is recorded so the helper stays honest about what it does."
+    }
+  ],
+  "authorization_server_cases": [
+    {
+      "name": "advertised-full-metadata-url",
+      "authorization_server": "https://id.example.com/.well-known/oauth-authorization-server",
+      "urls": [
+        "https://id.example.com/.well-known/oauth-authorization-server"
+      ],
+      "note": "Some servers advertise the metadata document itself; it is fetched directly rather than probed four ways."
+    },
+    {
+      "name": "advertised-origin",
+      "authorization_server": "https://id.example.com",
+      "urls": [
+        "https://id.example.com/.well-known/oauth-authorization-server",
+        "https://id.example.com/.well-known/openid-configuration",
+        "https://id.example.com/wp-json/mcp-ai/v1/oauth/metadata"
+      ]
+    },
+    {
+      "name": "advertised-path-scoped",
+      "authorization_server": "https://id.example.com/tenant/a",
+      "urls": [
+        "https://id.example.com/.well-known/oauth-authorization-server",
+        "https://id.example.com/.well-known/oauth-authorization-server/tenant/a",
+        "https://id.example.com/.well-known/openid-configuration",
+        "https://id.example.com/wp-json/mcp-ai/v1/oauth/metadata"
+      ]
+    },
+    {
+      "name": "advertised-malformed",
+      "authorization_server": "",
+      "urls": []
+    }
+  ],
+  "header_cases": [
+    {
+      "name": "bearer-pointer-and-scope",
+      "header": "Bearer resource_metadata=\"https://mcp.example.com/.well-known/oauth-protected-resource\", scope=\"mcp\"",
+      "params": {
+        "resource_metadata": "https://mcp.example.com/.well-known/oauth-protected-resource",
+        "scope": "mcp"
+      }
+    },
+    {
+      "name": "leading-basic-challenge-does-not-corrupt",
+      "header": "Basic realm=\"example\", Bearer resource_metadata=\"https://mcp.example.com/prm\"",
+      "params": {
+        "realm": "example",
+        "resource_metadata": "https://mcp.example.com/prm"
+      },
+      "note": "The regression this parser was rewritten for: matching across the whole header let Basic's realm win."
+    },
+    {
+      "name": "comma-inside-quoted-value",
+      "header": "Bearer resource_metadata=\"https://mcp.example.com/prm?a=1,b=2\"",
+      "params": {
+        "resource_metadata": "https://mcp.example.com/prm?a=1,b=2"
+      },
+      "note": "A comma inside quotes is data, not a challenge separator."
+    },
+    {
+      "name": "error-description",
+      "header": "Bearer error=\"invalid_token\", error_description=\"The access token expired\"",
+      "params": {
+        "error": "invalid_token",
+        "error_description": "The access token expired"
+      }
+    },
+    {
+      "name": "duplicate-key-first-wins",
+      "header": "Bearer resource_metadata=\"https://first.example/prm\", Bearer resource_metadata=\"https://second.example/prm\"",
+      "params": {
+        "resource_metadata": "https://first.example/prm"
+      }
+    },
+    {
+      "name": "empty-header",
+      "header": "",
+      "params": {}
+    }
+  ]
+}

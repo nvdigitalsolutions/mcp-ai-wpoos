@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Memory Store — domain contract.
  *
@@ -7,7 +8,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -40,7 +43,7 @@ interface MemoryStoreInterface
      *
      * @param string $memoryId Memory identifier.
      *
-     * @return array{found: bool, record?: array}
+     * @return array{found: bool, record?: array<string, mixed>}
      */
     public function get(string $memoryId): array;
 
@@ -48,7 +51,7 @@ interface MemoryStoreInterface
      * Update an existing memory record.
      *
      * @param string $memoryId Memory identifier.
-     * @param array  $patch    Fields to update.
+     * @param array<string, mixed>  $patch    Fields to update.
      *
      * @return array{success: bool, error?: string}
      */
@@ -67,10 +70,10 @@ interface MemoryStoreInterface
      * Search memories by semantic query.
      *
      * @param string $query    Search query text.
-     * @param array  $filters  Optional filters (agent_id, tier, tags, wing, room).
+     * @param array<string, mixed>  $filters  Optional filters (agent_id, tier, tags, wing, room).
      * @param int    $limit    Maximum results.
      *
-     * @return array<int, array{memory_id: string, content: string, title?: string, score?: float, metadata: array}>
+     * @return array<int, array{memory_id: string, content: string, title?: string, score?: float, metadata: array<string, mixed>}>
      */
     public function search(string $query, array $filters = [], int $limit = 10): array;
 
@@ -78,11 +81,11 @@ interface MemoryStoreInterface
      * List memories for an agent with optional filters.
      *
      * @param string $agentId Agent identifier.
-     * @param array  $filters Optional filters (tier, tags, wing).
+     * @param array<string, mixed>  $filters Optional filters (tier, tags, wing).
      * @param int    $limit   Maximum results.
      * @param int    $offset  Pagination offset.
      *
-     * @return array{memories: array, total: int}
+     * @return array{memories: array<int, array<string, mixed>>, total: int}
      */
     public function listByAgent(string $agentId, array $filters = [], int $limit = 50, int $offset = 0): array;
 }

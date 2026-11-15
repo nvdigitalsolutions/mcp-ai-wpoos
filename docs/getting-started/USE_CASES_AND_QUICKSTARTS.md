@@ -64,7 +64,7 @@ This revision covers the 53-release window from plugin 1.1.19 to 1.1.72. Highlig
 
 ### Prerequisites
 
-1. WordPress 6.0+ and PHP 7.4+ installed.
+1. WordPress 6.0+ and PHP 8.1+ installed.
 2. NV oOS plugin installed and activated.
 3. At least one AI provider configured in Settings → NV oOS → Providers.
 4. Optional Pro addon activated for Pro-only toolkits, Chat SPA, Docs Hub, scheduled widgets, and vertical toolkit features. Standalone Content Graph ecosystem plugins (`nvoos-content-graph`, `-ai`, `-ai-platform`, `-pro`) are optional add-ons for graph, chat-runtime, and platform workloads.

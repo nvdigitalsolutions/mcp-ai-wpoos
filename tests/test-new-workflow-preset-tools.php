@@ -518,6 +518,12 @@ class Test_New_Workflow_Preset_Tools extends WP_UnitTestCase {
 				$known_tools = array_merge(
 					array_keys( self::TOOL_MAP ),
 					array(
+						// Proposal 129 outreach & CRM admissibility tools (v1.2.18).
+						'check_sending_domain',
+						'get_sending_readiness',
+						'query_signal_cohort',
+						'review_held_send',
+						// Pre-existing tools referenced by workflow presets.
 						'crm_email_search_correspondence',
 						'crm_email_search_leads',
 						'forecast_pipeline_revenue',

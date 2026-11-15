@@ -5,7 +5,7 @@
  * Description: A modern comic book reader & creator addon for the NV oOS platform. Supports CBR, CBZ, CB7, and CBT formats with a React-based reading interface featuring single/double-page viewing, zoom, library management, and AI-powered comic creation tools.
  * Version:     0.5.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
  * License: GPLv3 or later

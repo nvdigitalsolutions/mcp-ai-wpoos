@@ -20,6 +20,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -42,6 +44,12 @@ class WP_MCP_AI_Reasoning_Trace {
 	 * @return array
 	 */
 	public static function new_trace() {
+		// The schema lives in lib/core so both runtimes produce the same trace.
+		// lib/ is stripped from wp.org base builds, so the local copy below stays.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\ReasoningTrace' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\ReasoningTrace::newTrace();
+		}
+
 		return array(
 			'schema_version'       => '1.0',
 			'task_class'           => 'general',
@@ -63,6 +71,10 @@ class WP_MCP_AI_Reasoning_Trace {
 	 * @return array
 	 */
 	public static function sanitize( $raw ) {
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\ReasoningTrace' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\ReasoningTrace::sanitize( $raw );
+		}
+
 		if ( is_string( $raw ) ) {
 			$decoded = json_decode( $raw, true );
 			$raw     = is_array( $decoded ) ? $decoded : array();
@@ -191,6 +203,10 @@ class WP_MCP_AI_Reasoning_Trace {
 	 * } Vote result.
 	 */
 	public static function self_consistency_vote( array $candidates ) {
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\ReasoningTrace' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\ReasoningTrace::selfConsistencyVote( $candidates );
+		}
+
 		$normalized = array();
 		$display    = array();
 		foreach ( $candidates as $cand ) {

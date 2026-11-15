@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-audit
-description: "Per-toolkit hardening audit loop for NV oOS Pro tools. Systematically scans each addons/pro/includes/tools/<toolkit> (and its plugins/nvoos-content-graph-pro mirror) for the recurring production failure classes — unguarded shell calls that fatal on exec-disabled hosts, calls to nonexistent client methods, string-assuming parsing of provider responses that may be arrays, provider enum/service mismatches, metric/source column drift that silently returns 0, secondary-table denominator gaps, the Chart.js fixed-height loop, misleading native-source errors, and silent import truncation that reports partial writes as success — then fixes, tests (Docker PHPUnit), and validates (phpcs both standards) before moving to the next toolkit. Use when asked to audit a toolkit, review the X tools for similar issues, do the same for the other toolkits, or continue the toolkit audit loop. The first case study (document-generation) found 3 fatal bugs + 1 broken regex; the food-beverage pass added classes 5–10."
+description: "Per-toolkit hardening audit loop for NV oOS Pro tools. Scans each addons/pro/includes/tools/<toolkit> (and its Content Graph Pro mirror) for recurring production failure classes: unguarded shell calls, nonexistent client methods, string-assumed provider responses, enum/service mismatches, metric column drift, denominator gaps, misleading native-source errors, silent import truncation. Then fixes, tests (Docker PHPUnit), and phpcs-validates. Use when asked to audit a toolkit, review the X tools, or continue the toolkit audit loop."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -153,6 +153,61 @@ own reviewable cluster. First completed cluster: **document-generation**
     `DENIED_OPTIONS`-style deny-list covering endpoint/URL/credential-style
     option names, and pin the denial with a test asserting the forbidden
     error code **even for an admin** and that the option is never written.
+
+12. **Thinking-model completions without recovery — empty research output on
+    DeepSeek reasoning models.** Thinking-mode models share `max_tokens`
+    between chain-of-thought and the answer, so a low hardcoded budget
+    (`max_tokens` 2000–4000) can be fully consumed by reasoning: the provider
+    returns empty `content` with `reasoning_content` populated and
+    `finish_reason: length`, and a tool that reads `content` alone returns
+    `invalid_response` or hands a CoT blob to a JSON parser. Audit every
+    `create_chat_completion()` call site in a research/content toolkit for:
+    hardcoded low temperatures on DeepSeek (vendor V4 guidance is 1.0 / top_p
+    1.0 — low temperatures collapse the reasoning trace), no `finish_reason`
+    inspection, no `reasoning_content` handling, and no budget retry. The
+    canonical fix is the shared trait
+    `WP_MCP_AI_Tool_Research_Completion`
+    (`addons/pro/includes/tools/research/trait-wp-mcp-ai-tool-research-completion.php`,
+    filters `wp_mcp_ai_research_completion_*`): provider-aware sampling,
+    a ×4 budget retry on length truncation, a continuation retry for
+    stop-finish reasoning-only outputs, a flagged last-resort reasoning
+    fallback, and content-part flattening. New research tools must call
+    `perform_research_completion()` instead of hand-rolling the completion.
+
+13. **CCT-backed toolkit columns that exist but never receive values.** A
+    column added to a JetEngine-CCT toolkit (EZuite, FlowHub, Shopify Sync)
+    can appear in the CCT field list *and* in MySQL while the sync writes
+    nothing into it — silently, with no error in the run log. Three
+    independent causes, all of which must be checked when auditing a CCT
+    manager:
+    - **Factory staleness.** JetEngine hydrates one `Factory` per CCT record
+      on `init`; `Item_Handler::update_item()` builds its payload from
+      `factory->get_formatted_fields()` *only*, so field definitions
+      persisted mid-request by `ensure_columns()` are dropped by that same
+      request. Fix: a `reset_factory()` (clears the cached Factory and sets a
+      `refresh_factory` flag so `get_cct_factory()` skips the registry and
+      rebuilds from the stored record), called after the field sync and
+      after any duplicate cleanup. Without it the *first* sync after a
+      schema change stores nothing — even on a healthy single-record site.
+    - **Duplicate definitions sharing a slug.** Two `post_types` rows with
+      the same slug read the same `wp_jet_cct_<slug>` table, but JetEngine
+      keeps whichever Factory it hydrated last — which may not be the record
+      the field sync updated. Fix: one `pick_canonical_cct_record()`
+      (highest ID) used by both `get_cct_record_by_slug()` and the cleanup,
+      so they agree on the authoritative row.
+    - **Permanently latched cleanup.** `maybe_cleanup_duplicate_ccts()`
+      historically ran `update_option( $flag, true )` on the first *clean*
+      pass, which exempted any duplicate created later — forever. Fix:
+      throttle with a transient, add a `$force` argument used by
+      `ensure_columns()`, and delete the stale latch option.
+
+    All three managers share this code shape, so a fix in one is an audit
+    trigger for the other two. Never delete a duplicate through JetEngine's
+    UI — its item-deletion API drops the shared data table; delete the
+    `wp_jet_post_types` row by `id` instead. Regression tests are cheap and
+    reflection-only (no JetEngine needed): canonical-record selection incl.
+    `stdClass` rows, null handling, and the `reset_factory()` contract.
+    Reference fix: PR #7590 (EZuite), mirrored to FlowHub + Shopify Sync.
 
 ## Scan procedure
 

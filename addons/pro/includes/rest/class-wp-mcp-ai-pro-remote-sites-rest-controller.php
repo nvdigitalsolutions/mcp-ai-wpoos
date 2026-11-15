@@ -27,6 +27,10 @@
  *
  * @package WP_MCP_AI_Pro
  * @since   2.4.0
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -89,6 +93,7 @@ class WP_MCP_AI_Pro_Remote_Sites_REST_Controller extends WP_REST_Controller {
 		'printful'           => 'https://api.printful.com',
 		'composio'           => 'https://backend.composio.dev',
 		'quickbooks'         => 'https://quickbooks.api.intuit.com',
+		'quickbooks_mcp'     => 'https://ai-inc.quickbooks.intuit.com/v1/mcp',
 		'linkedin'           => 'https://api.linkedin.com',
 	);
 
@@ -116,6 +121,8 @@ class WP_MCP_AI_Pro_Remote_Sites_REST_Controller extends WP_REST_Controller {
 		'mcp_header_name',
 		'mcp_timeout',
 		'mcp_verify_ssl',
+		'company_id',
+		'quickbooks_environment',
 		'graph_api_version',
 		'base_url',
 		'flowhub_mode',
@@ -721,6 +728,29 @@ class WP_MCP_AI_Pro_Remote_Sites_REST_Controller extends WP_REST_Controller {
 					),
 				),
 			),
+			'quickbooks_mcp'     => array(
+				'label'    => __( 'QuickBooks Online (MCP)', 'mcp-ai-wpoos-pro' ),
+				'category' => 'business',
+				'help'     => __( 'Connects to Intuit\'s official hosted QuickBooks MCP endpoint by default; paste a self-hosted Streamable HTTP wrapper URL to override. Sign-in finishes from the assistant MCP Apps metabox.', 'mcp-ai-wpoos-pro' ),
+				'fields'   => array(
+					'url'                    => array(
+						'label'       => __( 'MCP Endpoint URL', 'mcp-ai-wpoos-pro' ),
+						'required'    => true,
+						'placeholder' => 'https://ai-inc.quickbooks.intuit.com/v1/mcp',
+					),
+					'client_id'              => array( 'label' => __( 'Intuit Client ID (optional)', 'mcp-ai-wpoos-pro' ) ),
+					'client_secret'          => array(
+						'label'  => __( 'Intuit Client Secret (optional)', 'mcp-ai-wpoos-pro' ),
+						'secret' => true,
+					),
+					'company_id'             => array( 'label' => __( 'Company ID (Realm ID)', 'mcp-ai-wpoos-pro' ) ),
+					'quickbooks_environment' => array( 'label' => __( 'Intuit Environment (sandbox/production)', 'mcp-ai-wpoos-pro' ) ),
+					'token'                  => array(
+						'label'  => __( 'Bearer Token (optional)', 'mcp-ai-wpoos-pro' ),
+						'secret' => true,
+					),
+				),
+			),
 			'quickbooks_desktop' => array(
 				'label'    => __( 'QuickBooks Desktop (QODBC)', 'mcp-ai-wpoos-pro' ),
 				'category' => 'business',
@@ -1040,6 +1070,14 @@ class WP_MCP_AI_Pro_Remote_Sites_REST_Controller extends WP_REST_Controller {
 			$data['url'] = home_url( '/wp-json/mcp-ai/v1/webhooks/webchat' );
 		}
 
+		// QuickBooks MCP signs in through the MCP Apps OAuth flow by default.
+		// Without this, a console-created connection would save as `none` and
+		// the app would skip the token it just obtained.
+		if ( 'quickbooks_mcp' === $type && empty( $data['auth_type'] ) ) {
+			$data['auth_type'] = 'oauth';
+		}
+
+		// Required-field gate on create only
 		// Required-field gate on create only (updates are partial by design —
 		// blank secret fields must keep the stored value, not fail validation).
 		if ( ! $is_update ) {

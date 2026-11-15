@@ -438,7 +438,7 @@ If you continue experiencing issues:
 2. **Review Documentation**: See `/docs/features/tools/QUIZ_TOOLS.md`
 3. **Enable Debug Mode**: Capture detailed error information
 4. **Check Server Requirements**:
-   - PHP 7.4+
+   - PHP 8.1+
    - WordPress 6.0+
    - Sufficient memory (`memory_limit >= 256M`)
 

@@ -5,6 +5,10 @@
  * @package WP_MCP_AI_Pro
  * @subpackage Outbound_Booking_Toolkit
  * @since 2.12.0
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

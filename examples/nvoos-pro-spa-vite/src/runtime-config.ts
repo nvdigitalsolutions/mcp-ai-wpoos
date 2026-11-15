@@ -7,8 +7,8 @@
  * plugin's REST conventions for any WordPress site running NV oOS:
  *
  *   {site}/wp-json/mcp-ai/v1/{chat,chat-client,chat-transcripts,chat-memory,
- *     threads,tools,assistants,settings,approvals}
- *   {site}/wp-json/mcp-ai-pro/v1/{workflows,analytics,tool-shortcuts,
+ *     tools,assistants,settings,approvals}
+ *   {site}/wp-json/mcp-ai-pro/v1/{workflows,tool-shortcuts,
  *     slash-commands,okf}
  *   {site}/wp-json/wp/v2/media
  *   {site}/wp-json/mcp-ai/v1/session/nonce   (fresh wp_rest nonce, cookie auth)
@@ -120,7 +120,6 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		chatClient: `${core}/chat-client`,
 		transcripts: `${core}/chat-transcripts`,
 		memory: `${core}/chat-memory`,
-		threads: `${core}/threads`,
 		tools: `${core}/tools`,
 		assistants: `${core}/assistants`,
 		// GET/POST /mcp-ai/v1/settings (manage_options, secrets masked) — the
@@ -128,13 +127,14 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		// that predate the route.
 		settings: `${core}/settings`,
 		upload: `${api}/wp/v2/media`,
-		workflows: `${pro}/workflows`,
-		// Site-wide usage analytics (core namespace, admin-gated) — matches the
-		// canonical PHP config (class-wp-mcp-ai-pro-spa-config.php).
-		analytics: `${core}/analytics`,
 		approvals: `${core}/approvals`,
 		triggers: `${core}/orchestration/triggers`,
 		teams: `${core}/teams`,
+		// Laravel-only contracts: WordPress has neither a profession catalogue
+		// route nor org-team storage, so both surfaces stay hidden rather than
+		// firing requests that 404.
+		professions: '',
+		orgTeams: '',
 		portability: `${core}/assistants`,
 		security: `${core}/security`,
 		operations: `${core}/operations`,
@@ -154,9 +154,14 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		workflowRuns: `${core}/orchestration/runs`,
 		wpBase: `${api}/wp/v2`,
 		recordsSchema: `${pro}/records/schema`,
+		// The manifest-driven toolkit engine is Laravel-only for now; leave the
+		// key empty so the pages render their unavailable state on WordPress.
+		toolkits: '',
 		dashboardsSchema: `${pro}/dashboards/schema`,
 		chatChannels: `${pro}/chat-channels`,
 		remoteSites: `${pro}/remote-sites`,
+		skills: `${core}/skills`,
+		mcpApps: `${core}/mcp-apps`,
 		mediaCc: `${pro}/media-cc`,
 		// Assistant blueprints — empty for sessions without edit_posts.
 		blueprints: `${pro}/blueprints`,

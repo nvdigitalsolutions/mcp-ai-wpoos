@@ -161,10 +161,18 @@ const dependencies = [
 	},
 	{
 		name: 'ics',
+		// Copy dist/ in full: index.js requires ./pipeline, which a single-file
+		// copy silently omitted — the vendored copy then threw MODULE_NOT_FOUND
+		// and could never load.
+		dirs: [
+			{ src: 'dist', dest: 'ics' },
+		],
 		files: [
-			{ src: 'dist/index.js', dest: 'ics/index.js' },
 			{ src: 'package.json', dest: 'ics/package.json' },
 		],
+		// Runtime dependencies declared by ics. Without these the copied
+		// index.js cannot resolve nanoid/runes2/yup.
+		dependencies: [ 'nanoid', 'runes2', 'yup' ],
 	},
 	{
 		name: 'sharp',
@@ -434,6 +442,21 @@ const dependencies = [
 		],
 		files: [
 			{ src: 'package.json', dest: 'mailparser/package.json' },
+		],
+		// mailparser declares runtime dependencies; copying only lib/ produced a
+		// package that always failed to load. Keep this list in step with the
+		// "dependencies" block in the vendored package.json.
+		dependencies: [
+			'encoding-japanese',
+			'he',
+			'html-to-text',
+			'iconv-lite',
+			'libmime',
+			'linkify-it',
+			'@zone-eu/mailsplit',
+			'nodemailer',
+			'punycode.js',
+			'tlds',
 		],
 	},
 	{

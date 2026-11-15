@@ -20,6 +20,10 @@
  * @since 2.9.0 Added historyId incremental sync, messageId dedup,
  *              threadId tracking, and message logging via
  *              WP_MCP_AI_CRM_Message_Log.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

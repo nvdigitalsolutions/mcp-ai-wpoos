@@ -1,0 +1,37 @@
+---
+// ---------------------------------------------------------------------------
+// UiAccordion.astro — accordion container (component-library evaluation,
+// 2026-11-03). Adapted from `accessible-astro-components` (Incluud), MIT —
+// https://github.com/incluud/accessible-astro-components — behavior (the
+// native details/summary WAI-ARIA pattern) preserved; styling re-tokenized
+// onto the ADS semantic layer (`--nv-*` aliases).
+// ---------------------------------------------------------------------------
+
+interface Props {
+	/** Additional classes to apply to the accordion container. */
+	class?: string;
+	/** HTML attributes to spread on the accordion. */
+	[key: string]: unknown;
+}
+
+const { class: className, ...rest } = Astro.props;
+---
+
+<ul class:list={['ui-accordion', className]} {...rest}>
+	<slot />
+</ul>
+
+<style>
+	:where(.ui-accordion) {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		padding: 0;
+		margin: 0;
+		list-style: none;
+	}
+
+	:global(:where(.ui-accordion > .ui-accordion-item:first-child .ui-accordion-wrapper)) {
+		border-block-start: none !important;
+	}
+</style>

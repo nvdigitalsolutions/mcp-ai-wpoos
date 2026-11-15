@@ -30,6 +30,8 @@
  * @reference Shang, Xu, Sun, et al. (2026). "When Self-Evolution Backfires:
  *   Pre-Commit Gating against Skill Contamination in LLM Agents."
  *   arXiv:2608.05810.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

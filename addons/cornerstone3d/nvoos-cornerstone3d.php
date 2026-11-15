@@ -5,7 +5,7 @@
  * Description: Pre-built Cornerstone3D ESM bundles for the NV oOS Pro Medical Imaging Viewer. Eliminates the runtime CDN dependency by providing locally-vendored JavaScript modules for DICOM rendering. Requires NV oOS Pro addon to be installed and active.
  * Version:     0.1.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com

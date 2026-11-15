@@ -3,15 +3,22 @@ includes:
     - vendor/phpstan/phpstan-phpunit/rules.neon
 
 parameters:
-    level: 5
+    level: 8
     paths:
         - src/
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false
 
     # Level 8 is the long-term target (ADR recommends it for the core package).
-    # Currently blocked by ~251 "no value type specified in iterable type array"
-    # errors from ToolInterface and provider contracts that use bare `array` types
-    # for PHP 7.4 compatibility in the WordPress adapter.
-    # Once the adapter requires PHP 8.1+, add array shape/value types to all
-    # interface methods and promote to level: 8.
+    # The historical blocker was ~251 "no value type specified in iterable type
+    # array" errors from ToolInterface and provider contracts that used bare
+    # `array` types because the WordPress adapter still supported PHP 7.4.
+    #
+    # That constraint is gone: the plugin floor is now PHP 8.1 (Proposal 133).
+    # Retire the errors with `@phpstan-type` aliases (ToolContext, ToolArgs,
+    # ProviderResponse) and `array<string, mixed>` on the remainder, then
+    # promote to level 8 — see Proposal 134 (functional type signatures).
+    #
+    # Progress (Proposal 134): levels 5-8 are now clean, so level 8 (the
+    # maximum) is enforced here. See Proposal 134 section 14 for the
+    # implementation record.

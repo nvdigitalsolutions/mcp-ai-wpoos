@@ -2,7 +2,7 @@
 
 **Version:** 0.3.8  
 **Location:** `addons/docs-hub/`  
-**Requires:** WordPress 6.0+, PHP 7.4+, NV oOS base plugin
+**Requires:** WordPress 6.0+, PHP 8.1+, NV oOS base plugin
 
 The Docs Hub addon turns any WordPress site into a **documentation portal** — indexing Markdown files from local plugin directories or remote public GitHub repositories and rendering them as a searchable, navigable React SPA.
 

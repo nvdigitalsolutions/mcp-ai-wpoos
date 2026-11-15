@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -539,12 +541,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				),
 				'crm_toolkit'                     => array(
 					'name'          => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
-					'description'   => __( 'Comprehensive customer relationship management and email marketing automation with contact management, campaign creation, list segmentation, email sending with nodemailer, validation, CSV import/export, and calendar integration.', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Comprehensive customer relationship management and email marketing automation with contact management, campaign creation, list segmentation, email sending with nodemailer, validation, CSV import/export, and calendar integration. Since 3.3.0 it also enforces outreach admissibility: a deterministic pre-send gate, address verification and deliverability state, sending readiness/warmup, recipient-local send windows, one-click unsubscribe, signal evidence and held-mail review.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_crm_toolkit'] ),
 					'category'      => 'specialized',
 					'php_functions' => array( 'proc_open', 'proc_close' ),
 					'npm_packages'  => array( 'nodemailer', 'validator', 'email-validator', 'libphonenumber-js', 'mailparser', 'csv-parse', 'csv-stringify', 'ical-generator' ),
-					'tools_count'   => 12,
+					'tools_count'   => 22,
 					'tools'         => array(
 						__( 'create_contact tool', 'mcp-ai-wpoos' ),
 						__( 'update_contact tool', 'mcp-ai-wpoos' ),
@@ -558,6 +560,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'validate_phone tool', 'mcp-ai-wpoos' ),
 						__( 'track_campaign_metrics tool', 'mcp-ai-wpoos' ),
 						__( 'send_calendar_invite tool', 'mcp-ai-wpoos' ),
+						__( 'verify_lead_email tool', 'mcp-ai-wpoos' ),
+						__( 'check_sending_domain tool', 'mcp-ai-wpoos' ),
+						__( 'get_sending_readiness tool', 'mcp-ai-wpoos' ),
+						__( 'manage_sending_warmup tool', 'mcp-ai-wpoos' ),
+						__( 'preview_pre_send_gate tool', 'mcp-ai-wpoos' ),
+						__( 'collect_prospect_signals tool', 'mcp-ai-wpoos' ),
+						__( 'explain_prospect_fit tool', 'mcp-ai-wpoos' ),
+						__( 'query_signal_cohort tool', 'mcp-ai-wpoos' ),
+						__( 'export_outreach_csv tool', 'mcp-ai-wpoos' ),
+						__( 'review_held_send tool', 'mcp-ai-wpoos' ),
 					),
 				),
 				'code_formatting'                 => array(
@@ -1448,6 +1460,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		);
 
 		/**
+		 * Worker-routed packages with no local runtime.
+		 *
+		 * The vendored copy is a presence marker only and the operation is served
+		 * exclusively by the Media Worker sidecar. Unlike worker-routed packages
+		 * that also have a usable local path (e.g. katex, pdfkit, sharp), these
+		 * must NOT be reported as installed when the worker is unreachable: the
+		 * marker file exists but can never execute. Evidence (2026-11-11):
+		 * `ics/index.js` requires an unshipped `./pipeline` module.
+		 *
+		 * MUST be a subset of WORKER_ROUTED_PACKAGES — the status branch that
+		 * consumes this list is keyed on a worker route existing.
+		 *
+		 * Note: mailparser is likewise marker-only (none of its dependencies are
+		 * vendored), but it is deliberately NOT listed here: nothing in PHP calls
+		 * the worker's /api/email/parse route, so it is not worker-routed either.
+		 */
+		private const SIDECAR_ONLY_PACKAGES = array( 'ics' );
+
+		/**
 		 * Get the worker-routed package map (package => API route).
 		 *
 		 * @return array Package to route map.
@@ -1504,16 +1535,32 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			// package's operations are wired to a worker route, the worker
 			// handles it — even when nothing is installed locally.
 			$worker_routed = self::get_worker_routed_packages();
-			if ( isset( $worker_routed[ $package ] ) && self::is_media_worker_reachable() ) {
-				return array(
-					'available' => true,
-					'source'    => 'sidecar',
-					'message'   => sprintf(
-						/* translators: %s: worker API route */
-						__( 'Handled by Media Worker (%s)', 'mcp-ai-wpoos' ),
-						$worker_routed[ $package ]
-					),
-				);
+			if ( isset( $worker_routed[ $package ] ) ) {
+				if ( self::is_media_worker_reachable() ) {
+					return array(
+						'available' => true,
+						'source'    => 'sidecar',
+						'message'   => sprintf(
+							/* translators: %s: worker API route */
+							__( 'Handled by Media Worker (%s)', 'mcp-ai-wpoos' ),
+							$worker_routed[ $package ]
+						),
+					);
+				}
+
+				// No local runtime exists for these packages, so the vendored
+				// marker file is not evidence of availability.
+				if ( in_array( $package, self::SIDECAR_ONLY_PACKAGES, true ) ) {
+					return array(
+						'available' => false,
+						'source'    => 'sidecar_unreachable',
+						'message'   => sprintf(
+							/* translators: %s: worker API route */
+							__( 'Media Worker unreachable — served by the sidecar (%s)', 'mcp-ai-wpoos' ),
+							$worker_routed[ $package ]
+						),
+					);
+				}
 			}
 
 			// Check if Pro CDN Loader is available and package is CDN-managed.
@@ -1611,6 +1658,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'@turf/turf'                        => 'turf/dist/esm/index.js',
 				'@types/pdfkit'                     => false, // TypeScript types only, no runtime file.
 				'fluent-ffmpeg'                     => 'fluent-ffmpeg/index.js',
+				// Presence marker only; sidecar-served and not loadable locally.
+				// See SIDECAR_ONLY_PACKAGES.
 				'ics'                               => 'ics/index.js',
 				'katex'                             => 'katex/dist/katex.min.js',
 				'mjml'                              => 'mjml/lib/index.js',
@@ -1650,6 +1699,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'validator'                         => 'validator/index.js',
 				'email-validator'                   => 'email-validator/index.js',
 				'libphonenumber-js'                 => 'libphonenumber-js/index.js',
+				// Presence marker only; dependencies are not vendored (not PHP-wired).
 				'mailparser'                        => 'mailparser/lib/mail-parser.js',
 				'csv-parse'                         => 'csv-parse/lib/index.js',
 				'csv-stringify'                     => 'csv-stringify/lib/index.js',
@@ -2149,7 +2199,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Register a dummy stylesheet handle so that wp_add_inline_style()
 			// (called at the end of this method) has a valid handle to attach to.
-			wp_register_style( 'wp-mcp-ai-pro-settings', false );
+			// The version only cache-busts the inline block, so the plugin version
+			// is the right source and keeps the handle honest across releases.
+			$style_version = defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0';
+			wp_register_style( 'wp-mcp-ai-pro-settings', false, array(), $style_version );
 			wp_enqueue_style( 'wp-mcp-ai-pro-settings' );
 
 			$packages        = self::get_npm_packages();

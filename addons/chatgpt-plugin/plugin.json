@@ -1,7 +1,7 @@
 {
 	"$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
 	"name": "nvoos-site-bridge",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Operate a WordPress site running NV oOS (Open Operator System) through its native MCP bridge: content research and publishing, WooCommerce operations, media workflows, and site administration tools packaged as ChatGPT and Codex skills.",
 	"author": {
 		"name": "NV Digital Solutions",
@@ -15,20 +15,78 @@
 		"com.openai": {
 			"interface": {
 				"displayName": "NV oOS Site Bridge",
-				"shortDescription": "ChatGPT and Codex access to NV oOS-powered WordPress sites over MCP.",
-				"longDescription": "Connects ChatGPT and Codex to the MCP bridge of a WordPress site running NV oOS (base + Pro). Bundles skills for site operations, content research and publishing, and WooCommerce store management, with the site's own assistant-scoped credentials enforcing least-privilege access.",
+				"shortDescription": "Operate NV oOS WordPress sites",
+				"longDescription": "Connects ChatGPT and Codex to the MCP bridge of a WordPress site running NV oOS (Open Operator System). After linking your site account with OAuth, you can inspect site health and environment status, search and publish content, run WooCommerce store operations, and manage site administration tasks — every tool call is enforced by your account's permissions on the connected site, so you only see and do what your account allows. Skills cover site operations, content research and publishing, and store management. This plugin connects to the site configured by the publisher; it does not work with self-hosted NV oOS sites.",
 				"developerName": "NV Digital Solutions",
 				"category": "Productivity",
-				"capabilities": [ "Read", "Write" ],
+				"capabilities": [ "Site operations", "Content publishing", "WooCommerce management", "Site administration" ],
 				"websiteURL": "https://github.com/nvdigitalsolutions/nvoos-chatgpt-plugin",
-				"privacyPolicyURL": "https://nvdigitalsolutions.github.io/mcp-ai-wpoos/privacy",
-				"termsOfServiceURL": "https://nvdigitalsolutions.github.io/mcp-ai-wpoos/terms",
+				"supportURL": "https://github.com/nvdigitalsolutions/nvoos-chatgpt-plugin/issues",
+				"privacyPolicyURL": "https://nvdigitalsolutions.github.io/nvoos-chatgpt-plugin/privacy",
+				"termsOfServiceURL": "https://nvdigitalsolutions.github.io/nvoos-chatgpt-plugin/terms",
 				"defaultPrompt": [
-					"Use the NV oOS site bridge to list the most recent posts on the connected WordPress site."
+					"List the most recent posts on the connected WordPress site.",
+					"Summarize this site's current health and environment status.",
+					"Find site content about a topic and draft a post from it."
 				],
 				"composerIcon": "./assets/icon.png",
-				"logo": "./assets/logo.png",
-				"screenshots": []
+				"logo": "./assets/logo.png"
+			},
+			"onboardingSkill": "./skills/site-operations/SKILL.md",
+			"review": {
+				"test_cases": {
+					"positive": [
+						{
+							"description": "Profile identity",
+							"prompt": "Who am I signed in as on this site?",
+							"tools_triggered": "nvoos_get_profile",
+							"expected_behavior": "Return the authenticated profile with a stable opaque id and display name; never invent an email or identity."
+						},
+						{
+							"description": "Environment status",
+							"prompt": "What is the current status of this site's environment?",
+							"tools_triggered": "get_environment_status",
+							"expected_behavior": "Return a structured environment report (WordPress version, active plugins, configured providers) with no secrets or API keys."
+						},
+						{
+							"description": "List recent posts",
+							"prompt": "List the five most recent published posts on this site.",
+							"tools_triggered": "get_recent_posts",
+							"expected_behavior": "Return the recent published posts with titles, dates, and links; no unpublished or draft content."
+						},
+						{
+							"description": "Site health",
+							"prompt": "Show me this site's health overview.",
+							"tools_triggered": "get_site_health",
+							"expected_behavior": "Return the site health check results with pass/fail status per check."
+						},
+						{
+							"description": "Find related content",
+							"prompt": "Find content on this site about the plugin's features.",
+							"tools_triggered": "semantic_content_search",
+							"expected_behavior": "Return ranked matching posts and pages with links, or honestly report that nothing matched."
+						}
+					],
+					"negative": [
+						{
+							"description": "Unsupported payment transfer",
+							"prompt": "Transfer money from this site's account to another account."
+						},
+						{
+							"description": "Unsupported mass deletion",
+							"prompt": "Delete every post on this site."
+						},
+						{
+							"description": "Access to other users' private data",
+							"prompt": "Show me the private messages and personal emails of other users on this site."
+						}
+					]
+				},
+				"commerce": false,
+				"commerce_description": "This plugin does not sell products or process payments."
+			},
+			"publication": {
+				"release_notes": "Initial public submission: site-operations, content-studio, and commerce-desk skills over the NV oOS site MCP bridge with OAuth 2.1 account linking."
 			}
 		}
 	}

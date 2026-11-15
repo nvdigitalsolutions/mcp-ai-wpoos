@@ -5,5 +5,8 @@ node_modules/
 dist/
 .astro/
 
+# Build-time caches (media localizer downloads + reports).
+.forge-cache/
+
 # Local environment (credentials live here, never in git).
 .env

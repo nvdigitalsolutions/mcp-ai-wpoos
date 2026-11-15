@@ -15,7 +15,17 @@ import { buildAdaptationPlan, type ContentHint } from '../../src/lib/design-impo
 import { renderDesignSource } from '../../src/lib/design-import/render';
 import { emitTheme } from '../../src/lib/design-import/theme';
 import type { DesignAnalysisResult } from '../../src/lib/design-import/types';
-import { TokenService, contrastCheck } from '../../src/lib/tokens/service';
+import {
+	contrastCheck,
+	// The process-wide service lives in the token service so non-MCP
+	// surfaces (the site footer's theme badge) read the SAME instance the
+	// tools mutate. BFF-long-lived: MCP state persists across requests
+	// within the process (not across restarts; the durable path is the
+	// /manage Design tab + NDS round-trip, Proposal 095 Phase 4).
+	defaultTokenService as designService,
+	type TokenService,
+} from '../../src/lib/tokens/service';
+import { generatedPolicyDoc } from '../../src/lib/theme/policy.generated';
 import {
 	DESTRUCTIVE_WRITE_TOOL,
 	IDEMPOTENT_WRITE_TOOL,
@@ -28,10 +38,8 @@ import {
 	text,
 } from './util';
 
-/** Process-wide service — the BFF is long-lived, so MCP state persists
- *  across requests within the process (not across restarts; the durable
- *  path is the /manage Design tab + NDS round-trip, Proposal 095 Phase 4). */
-export const designService = new TokenService();
+/** Process-wide service — see the aliased import above. */
+export { designService };
 
 /** Shared analysis path for every design-import tool (Proposal 098). */
 async function analyzeUrl(url: string, maxStylesheets = 8): Promise<DesignAnalysisResult> {
@@ -202,7 +210,12 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 				active: service.getActiveTheme(),
 				themes: service.listThemes().map((name) => {
 					const descriptor = service.themeDescriptor(name);
-					return { name, description: descriptor?.description ?? null, tokens: descriptor?.tokens ?? {} };
+					return {
+						name,
+						description: descriptor?.description ?? null,
+						version: descriptor?.version ?? null,
+						tokens: descriptor?.tokens ?? {},
+					};
 				}),
 			};
 			return text(JSON.stringify(payload, null, 2), payload);
@@ -236,6 +249,7 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 			inputSchema: z.object({
 				name: z.string(),
 				description: z.string().optional(),
+				version: z.string().optional(),
 				tokens: z.record(z.string(), z.string()),
 			}),
 		},
@@ -243,6 +257,7 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 			const result = service.createTheme({
 				name: args.name,
 				description: args.description,
+				version: args.version,
 				tokens: args.tokens,
 			});
 			const payload = {
@@ -258,16 +273,25 @@ export function registerDesignTools(server: McpServer, service: TokenService = d
 		'theme_apply',
 		{
 			title: 'Apply theme',
-			description: 'Set the active theme by name. Requires a write credential.',
+			description:
+				'Set the active theme by name. Requires a write credential. When a forced bridge theme policy is baked in (Proposal 105) and NVOOS_THEME_PREVIEW is not "1", the apply still succeeds but reports preview:false and the serving policy stays the production authority (preview-only semantics; set NVOOS_THEME_PREVIEW=1 to preview).',
 			annotations: IDEMPOTENT_WRITE_TOOL,
 			inputSchema: z.object({ name: z.string() }),
 		},
 		async (args) => {
 			const result = service.applyTheme(args.name);
+			const preview = envValue('NVOOS_THEME_PREVIEW') === '1';
+			const servedPolicy = generatedPolicyDoc.policy;
+			const policyForces = servedPolicy !== 'auto';
 			const payload = {
 				ok: result.ok,
 				message: result.message,
 				snapshot_id: result.snapshotId ?? null,
+				// Proposal 105 Phase 4: with a forced bridge policy and no preview
+				// flag, the policy remains the serving authority — the apply is a
+				// runtime write that production builds do not honour.
+				preview: !policyForces || preview,
+				servedPolicy: policyForces ? servedPolicy : null,
 			};
 			return text(JSON.stringify(payload), payload);
 		}

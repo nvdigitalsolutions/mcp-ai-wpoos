@@ -1,0 +1,90 @@
+{
+    "tree": {
+        "hub.md": "---\ntype: Index\ntitle: Hub\n---\n[Alpha](alpha.md)\n[Beta](./beta.md)\n[Up](../top.md)\n[Ext](https://example.com/x.md)\n[Anchor](#section)\n[Missing](missing.md)\n",
+        "alpha.md": "---\ntype: Concept\ntitle: Alpha\n---\nBack to [Hub](hub.md).\n",
+        "beta.md": "---\ntype: Concept\ntitle: Beta\n---\nNo outgoing links.\n",
+        "top.md": "---\ntype: Concept\ntitle: Top\n---\nTop level.\n"
+    },
+    "cases": [
+        {
+            "name": "broken-links-report-only-internal-misses",
+            "op": "find_broken_links",
+            "args": {
+                "concept_id": "hub"
+            },
+            "expected": [
+                {
+                    "concept_id": "hub",
+                    "target": "missing.md",
+                    "resolved": "missing"
+                }
+            ]
+        },
+        {
+            "name": "broken-links-empty-when-all-resolve",
+            "op": "find_broken_links",
+            "args": {
+                "concept_id": "alpha"
+            },
+            "expected": []
+        },
+        {
+            "name": "broken-links-unknown-concept",
+            "op": "find_broken_links",
+            "args": {
+                "concept_id": "ghost"
+            },
+            "expected": []
+        },
+        {
+            "name": "traverse-follows-relative-and-absolute",
+            "op": "traverse",
+            "args": {
+                "concept_id": "hub",
+                "max_depth": 2
+            },
+            "expected": {
+                "concept_id": "hub",
+                "frontmatter": {
+                    "type": "Index",
+                    "title": "Hub"
+                },
+                "body": "[Alpha](alpha.md)\n[Beta](./beta.md)\n[Up](../top.md)\n[Ext](https://example.com/x.md)\n[Anchor](#section)\n[Missing](missing.md)",
+                "links": [
+                    {
+                        "concept_id": "alpha",
+                        "frontmatter": {
+                            "type": "Concept",
+                            "title": "Alpha"
+                        },
+                        "body": "Back to [Hub](hub.md).",
+                        "links": []
+                    },
+                    {
+                        "concept_id": "beta",
+                        "frontmatter": {
+                            "type": "Concept",
+                            "title": "Beta"
+                        },
+                        "body": "No outgoing links.",
+                        "links": []
+                    },
+                    {
+                        "concept_id": "top",
+                        "frontmatter": {
+                            "type": "Concept",
+                            "title": "Top"
+                        },
+                        "body": "Top level.",
+                        "links": []
+                    },
+                    {
+                        "concept_id": "missing",
+                        "error": "Concept not found: missing",
+                        "links": []
+                    }
+                ]
+            }
+        }
+    ]
+}

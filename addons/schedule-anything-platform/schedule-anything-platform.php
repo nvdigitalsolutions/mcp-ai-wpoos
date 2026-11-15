@@ -5,7 +5,7 @@
  * Description: Multi-tenant SaaS platform for scheduling and automating work across all NV oOS toolkits. Handles tenant provisioning, cross-tenant security, usage tracking, and platform REST endpoints. Requires NV oOS Base + Pro.
  * Version:     0.1.2
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com

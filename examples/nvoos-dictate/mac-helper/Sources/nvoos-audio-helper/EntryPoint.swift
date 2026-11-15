@@ -17,8 +17,59 @@ struct EntryPoint {
     static func main() async {
         Output.hello()
 
-        if CommandLine.arguments.contains("--check") {
+        let args = CommandLine.arguments
+
+        if args.contains("--check") {
             Output.ready(sampleRate: 16_000, channels: 1)
+            // Snippet OCR smoke (Proposal 100): run the Vision stack against
+            // a generated blank bitmap — proves the OCR path loads on CI
+            // without a real screenshot or TCC grant.
+            do {
+                let (text, _) = try Snipper.smokeCheck()
+                Output.ocrResult(text: text)
+            } catch {
+                Output.error("ocr smoke check failed: \(error.localizedDescription)")
+            }
+            Output.stopped()
+            return
+        }
+
+        // Snippet OCR one-shot: screenshot -> {"type":"image",…} -> stopped.
+        if args.contains("screenshot") {
+            do {
+                let result = try await Snipper.captureScreenshot()
+                Output.image(
+                    png: result.png.base64EncodedString(),
+                    width: result.width,
+                    height: result.height)
+            } catch {
+                Output.error(error.localizedDescription)
+                exit(1)
+            }
+            Output.stopped()
+            return
+        }
+
+        // Snippet OCR one-shot: ocr --png <b64> [--langs en,de].
+        if args.contains("ocr") {
+            guard let pngIdx = args.firstIndex(of: "--png"),
+                pngIdx + 1 < args.count,
+                let data = Data(base64Encoded: args[pngIdx + 1])
+            else {
+                Output.error("usage: ocr --png <base64> [--langs en,de]")
+                exit(2)
+            }
+            var langs: [String] = []
+            if let langsIdx = args.firstIndex(of: "--langs"), langsIdx + 1 < args.count {
+                langs = args[langsIdx + 1].split(separator: ",").map(String.init)
+            }
+            do {
+                let (text, words) = try Snipper.recognize(pngData: data, langs: langs)
+                Output.ocrResult(text: text, words: words)
+            } catch {
+                Output.error(error.localizedDescription)
+                exit(1)
+            }
             Output.stopped()
             return
         }

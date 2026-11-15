@@ -8,6 +8,10 @@
  *
  * @package NV_oOS_Canvas
  * @since   0.1.0
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

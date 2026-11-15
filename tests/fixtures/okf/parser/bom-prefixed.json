@@ -1,0 +1,9 @@
+{
+    "input": "﻿---\ntype: Skill\n---\nBody.\n",
+    "expected": {
+        "frontmatter": {
+            "type": "Skill"
+        },
+        "body": "Body."
+    }
+}

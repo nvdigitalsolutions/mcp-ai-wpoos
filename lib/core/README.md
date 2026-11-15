@@ -29,6 +29,53 @@ defines interfaces (ports) that platform-specific adapters implement:
 | Laravel | `nvoos/laravel-adapter` |
 | Craft CMS | `nvoos/craft-adapter` |
 
+## Typed tool results
+
+Tools have two surfaces. The untyped one (`ToolInterface::execute()`) is the
+legacy contract used by the registry pipeline. The typed one
+(`ToolResultInterface::executeResult()`) returns a `ToolResult` ADT — success
+with a payload, or failure with a `DomainError`. Nothing is optional or
+un-inspectable.
+
+```php
+use Nvoos\Core\Tool\AbstractResultTool;
+use Nvoos\Core\Domain\ValueObject\ToolResult;
+
+final class MyTool extends AbstractResultTool {
+
+	public function getSlug(): string { return 'my_tool'; }
+	public function getName(): string { return 'My Tool'; }
+	public function getDescription(): string { return 'Does one thing.'; }
+	public function getParametersSchema(): array { return array( 'type' => 'object' ); }
+
+	public function executeResult( array $arguments = array(), array $context = array() ): ToolResult {
+		$name = $this->optionParam( $arguments, 'name' )
+			->map( static fn( $v ) => trim( (string) $v ) )
+			->getOrElse( 'world' );
+
+		return ToolResult::success( "Hello, {$name}.", array( 'name' => $name ) );
+	}
+}
+```
+
+`execute()` is inherited and final: it converts the result to the canonical
+envelope on success and to the platform error (`WP_Error` in WordPress) on
+failure, so guards, waterfalls, observers, and the canonical-envelope sniff all
+keep working unchanged.
+
+Typed helpers on the base class:
+
+| Helper | Replaces | Behaviour |
+|---|---|---|
+| `optionParam()` | `requireParam()` | `Option` — distinguishes absent from present-but-falsy |
+| `authorize()` | `requireCapability()` | Throws `AccessDeniedException`; the registry converts it |
+| `validationFailure()` | `errors->validationFailed()` | `ToolResult` failure with the same payload (422 + field errors) |
+| `unwrapResult()` | — | `ToolResult` → legacy envelope/error |
+
+At the registry edge, `ToolRegistry::executeResult()` returns a `ToolResult`
+for any tool (typed or legacy), and `ToolRegistry::toResult()` is the only
+place a platform error becomes a `DomainError`.
+
 ## Usage
 
 ```php

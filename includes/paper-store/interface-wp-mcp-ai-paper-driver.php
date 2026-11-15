@@ -3,13 +3,15 @@
  * Paper Driver Interface — Contract for flat-file format drivers.
  *
  * Each driver handles one file format (JSON, Markdown+YAML, etc.).
- * Base implementations must be PHP 7.4+ compatible.
+ * Base implementations must be PHP 8.1+ compatible.
  *
  * @package WP_MCP_AI
  * @since   1.3.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

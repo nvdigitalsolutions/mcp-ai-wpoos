@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { contrastRatio, parseHex, passesAaText, relativeLuminance } from '../lib/contrast.ts';
+import { auditWarnings, contrastAudit, contrastRatio, parseHex, passesAaNonText, passesAaText, readableInk, relativeLuminance } from '../lib/contrast.ts';
 
 describe('parseHex', () => {
 	it('parses 3/6/8-digit forms and rejects junk', () => {
@@ -51,5 +51,95 @@ describe('passesAaText', () => {
 	it('enforces the 4.5:1 floor', () => {
 		expect(passesAaText(4.49)).toBe(false);
 		expect(passesAaText(4.5)).toBe(true);
+	});
+});
+
+describe('contrastAudit (Proposal 114 §3.5)', () => {
+	it('passes every rendered pair on the template defaults (light + dark + high)', () => {
+		const audit = contrastAudit(
+			{
+				ink: '#1a1a1a',
+				muted: '#6b6b6b',
+			surface: '#ffffff',
+			accent: '#0f6b4f',
+			'accent-ink': '#ffffff',
+			'line-strong': '#767676',
+		},
+		{
+			ink: '#f5f5f4',
+			muted: '#a3a3a3',
+			surface: '#171717',
+			'line-strong': '#6b6b6b',
+		},
+		{ muted: '#1a1a1a', 'line-strong': '#1a1a1a' }
+		);
+		expect(audit.failures).toEqual([]);
+		expect(audit.unparsed).toEqual([]);
+		expect(audit.pairs).toHaveLength(10);
+	});
+
+	it('flags the pilot pair (text #7a7a7a on white) as a light-mode failure with a ratio', () => {
+		const audit = contrastAudit({ ink: '#7a7a7a', muted: '#6b6b6b', surface: '#ffffff', accent: '#0f6b4f', 'accent-ink': '#ffffff', 'line-strong': '#767676' });
+		const failure = audit.failures.find((pair) => pair.token === 'ink' && pair.mode === 'light');
+		expect(failure).toBeDefined();
+		expect(failure?.ratio).toBeCloseTo(4.29, 1);
+		expect(auditWarnings(audit).some((w) => w.includes('4.5:1'))).toBe(true);
+	});
+
+	it('audits the high-contrast axis over the LIGHT theme (not the dark palette)', () => {
+		// Regression: the high-contrast pairs resolved against the dark
+		// surface made default scaffolds fail with ~1:1 ratios.
+		const audit = contrastAudit(
+			{ ink: '#1a1a1a', muted: '#6b6b6b', surface: '#ffffff', accent: '#0f6b4f', 'accent-ink': '#ffffff', 'line-strong': '#767676' },
+			{ ink: '#f5f5f4', muted: '#a3a3a3', surface: '#171717', 'line-strong': '#6b6b6b' },
+			{ muted: '#1a1a1a', 'line-strong': '#1a1a1a' }
+		);
+		const highInk = audit.pairs.find((pair) => pair.token === 'ink' && pair.mode === 'high');
+		expect(highInk?.ratio).toBeGreaterThan(4.5);
+	});
+
+	it('collects unparseable pairs and the non-text 3:1 floor', () => {
+		const audit = contrastAudit({ ink: 'red', muted: '#6b6b6b', surface: '#ffffff', accent: '#0f6b4f', 'accent-ink': '#ffffff', 'line-strong': '#e4e4e2' });
+		expect(audit.unparsed.length).toBeGreaterThan(0);
+		expect(audit.failures.some((pair) => pair.token === 'line-strong')).toBe(true); // hairline fails 3:1
+		expect(passesAaNonText(3)).toBe(true);
+		expect(passesAaNonText(2.99)).toBe(false);
+	});
+});
+
+describe('readableInk', () => {
+	it('never picks an ink that fails AA when the other passes', () => {
+		// #808080 sits between the two: black clears 4.5:1, white only 3.95.
+		// A luminance-threshold rule alone would have said white.
+		expect(contrastRatio('#000000', '#808080')).toBeGreaterThanOrEqual(4.5);
+		expect(contrastRatio('#ffffff', '#808080')).toBeLessThan(4.5);
+		expect(readableInk('#808080')).toBe('#000000');
+	});
+
+	it('prefers light ink on the mid-tone where both options pass', () => {
+		// #dd3333 scores 4.597 on black and 4.568 on white — a 0.03 margin. The
+		// raw max picked black, but the source paints white on this brand red, so
+		// the tie has to resolve to light or the colour gate drifts 100 ΔE00.
+		expect(contrastRatio('#dd3333', '#000000')).toBeGreaterThanOrEqual(4.5);
+		expect(contrastRatio('#dd3333', '#ffffff')).toBeGreaterThanOrEqual(4.5);
+		expect(readableInk('#dd3333')).toBe('#ffffff');
+	});
+
+	it("keeps each caller's own dark and light representation", () => {
+		expect(readableInk('#ededed')).toBe('#000000');
+		expect(readableInk('#ededed', { dark: '#1a1a1a' })).toBe('#1a1a1a');
+		expect(readableInk('#171717', { light: '#f5f5f4' })).toBe('#f5f5f4');
+	});
+
+	it('accepts the rgb() form the analyzer records', () => {
+		// Computed styles arrive as rgb(), so the ink guard must parse them or it
+		// emits nothing and the surface silently keeps the wrong ink.
+		expect(readableInk('rgb(221, 51, 51)')).toBe('#ffffff');
+		expect(readableInk('rgba(240, 240, 240, 1)')).toBe('#000000');
+	});
+
+	it('returns undefined for a colour it cannot parse', () => {
+		expect(readableInk('transparent')).toBeUndefined();
+		expect(readableInk('currentColor')).toBeUndefined();
 	});
 });

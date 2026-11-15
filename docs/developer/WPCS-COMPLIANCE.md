@@ -176,7 +176,7 @@ composer run lint
 # Auto-fix safe violations
 composer run format
 
-# Check PHP compatibility (7.4-8.3)
+# Check PHP compatibility (8.1-8.4)
 composer run lint:compat
 ```
 

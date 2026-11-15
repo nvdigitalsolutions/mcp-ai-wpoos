@@ -4,11 +4,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import {
   buildConsoleRuntime,
   fetchCurrentUser,
   fetchFeatureMap,
+  fetchRuntimeAvailability,
   fetchSessionNonce,
   UnauthorizedError,
 } from '../runtime-config';
@@ -42,7 +45,7 @@ describe('buildConsoleRuntime', () => {
     // of hitting a 403.
     expect(runtime.endpoints.commandCenter).toBe('');
     expect(runtime.endpoints.approvals).toBe('');
-    expect(runtime.endpoints.workflows).toBe('');
+    expect(runtime.endpoints.workflowBuilder).toBe('');
     expect(runtime.endpoints.remoteSites).toBe('');
     expect(runtime.endpoints.mediaCc).toBe('');
     // Logged-in surfaces stay available.
@@ -219,6 +222,159 @@ describe('fetchFeatureMap', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
     await expect(fetchFeatureMap()).resolves.toEqual({});
+    expect(warn).toHaveBeenCalled();
+  });
+});
+
+describe('endpoint availability (090-B)', () => {
+  beforeEach(() => {
+    window.history.replaceState({}, '', '/');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const admin = { id: 7, capabilities: ['manage_options', 'edit_posts'] };
+
+  it('blanks an endpoint the backend reports it cannot serve', () => {
+    const runtime = buildConsoleRuntime({
+      user: admin,
+      endpoints: { workflowBuilder: false, tokenManager: false },
+    });
+
+    expect(runtime.endpoints.workflowBuilder).toBe('');
+    expect(runtime.endpoints.tokenManager).toBe('');
+
+    // Everything the backend did not disclaim still resolves.
+    expect(runtime.endpoints.assistants).toContain('/assistants');
+  });
+
+  it('keeps endpoints when the backend serves them', () => {
+    const runtime = buildConsoleRuntime({
+      user: admin,
+      endpoints: { workflowBuilder: true, approvals: true },
+    });
+
+    expect(runtime.endpoints.workflowBuilder).not.toBe('');
+    expect(runtime.endpoints.approvals).not.toBe('');
+  });
+
+  it('fails open when the backend sends no endpoint map', () => {
+    // Older builds predate the map; hiding every page would be worse than a
+    // page that reports its own unavailable state.
+    const runtime = buildConsoleRuntime({ user: admin });
+
+    expect(runtime.endpoints.workflowBuilder).not.toBe('');
+    expect(runtime.endpoints.tokenManager).not.toBe('');
+  });
+
+  it('covers exactly the shared console endpoint contract', () => {
+    // The backend asserts the same file (EndpointCapabilitiesTest), so a key
+    // added on one side without the other fails on both CIs instead of on a
+    // user's browser.
+    const contractPath = resolve(
+      process.cwd(),
+      '../../docker/laravel/app-skeleton/contracts/console-endpoints.json',
+    );
+
+    const contract = JSON.parse(readFileSync(contractPath, 'utf8')) as {
+      route_backed: string[];
+      asset: string[];
+    };
+
+    const runtime = buildConsoleRuntime({ user: admin });
+
+    expect(Object.keys(runtime.endpoints).sort()).toEqual(
+      [...contract.route_backed, ...contract.asset].sort(),
+    );
+  });
+
+  it('classifies every route-backed key in the shared contract', () => {
+    // The same file the PHP suite asserts. The reason is what lets the console
+    // tell "not built on this backend yet" from "install the plugin" from
+    // "connect a service"; an unclassified key would render as one of those by
+    // accident.
+    const contractPath = resolve(
+      process.cwd(),
+      '../../docker/laravel/app-skeleton/contracts/console-endpoints.json',
+    );
+
+    const contract = JSON.parse(readFileSync(contractPath, 'utf8')) as {
+      route_backed: string[];
+      reasons?: Record<string, string>;
+    };
+
+    const reasons = contract.reasons ?? {};
+
+    expect(Object.keys(reasons).sort()).toEqual([...contract.route_backed].sort());
+
+    const taxonomy = [
+      'route',
+      'runtime-adaptable',
+      'toolkit-shaped',
+      'connected-service',
+      'external-product',
+    ];
+
+    const unknown = Object.entries(reasons)
+      .filter(([, reason]) => !taxonomy.includes(reason))
+      .map(([key, reason]) => `${key}=${reason}`);
+
+    expect(unknown).toEqual([]);
+  });
+});
+
+describe('fetchRuntimeAvailability', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('returns both maps from a single request', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        success: true,
+        data: {
+          features: { docs_hub: false },
+          endpoints: { workflowBuilder: false, assistants: true },
+        },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchRuntimeAvailability('nonce')).resolves.toEqual({
+      features: { docs_hub: false },
+      endpoints: { workflowBuilder: false, assistants: true },
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('fails open to empty maps when the endpoint map is absent', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({ success: true, data: { features: { pro: true } } }),
+      ),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: { pro: true },
+      endpoints: {},
+    });
+  });
+
+  it('fails open to empty maps on HTTP errors', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ code: 'rest_forbidden' }, 403)),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: {},
+      endpoints: {},
+    });
     expect(warn).toHaveBeenCalled();
   });
 });

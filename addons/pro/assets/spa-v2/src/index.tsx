@@ -15,6 +15,7 @@ import { App } from './App';
 import { EmbeddedApp } from './features/embedded/EmbeddedApp';
 import { readProSpaConfig, applyPerInstanceConfig } from './api/config';
 import './styles/main.css';
+import './styles/toolkits.css';
 import './styles/drawers.css';
 import './styles/embedded.css';
 

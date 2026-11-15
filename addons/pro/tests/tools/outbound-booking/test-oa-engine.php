@@ -59,9 +59,22 @@ class Test_OA_Engine extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_OA_Engine::DAY_OPTION );
 		delete_option( WP_MCP_AI_OA_Engine::HISTORY_OPTION );
 
+		// The CRM send window caches its settings statically; another test class
+		// may have left an enabled window in place.
+		if ( class_exists( 'WP_MCP_AI_CRM_Send_Window' ) ) {
+			delete_option( WP_MCP_AI_CRM_Send_Window::OPTION );
+			WP_MCP_AI_CRM_Send_Window::flush_cache();
+		}
+
 		foreach ( array( 'mcp_ai_oa_angle', 'mcp_ai_oa_booking', 'mcp_ai_oa_outbox', 'mcp_ai_lead', 'mcp_ai_sequence' ) as $pt ) {
 			if ( ! post_type_exists( $pt ) ) {
-				register_post_type( $pt, array( 'public' => false, 'label' => $pt ) );
+				register_post_type(
+					$pt,
+					array(
+						'public' => false,
+						'label'  => $pt,
+					)
+				);
 			}
 		}
 
@@ -221,7 +234,13 @@ class Test_OA_Engine extends WP_UnitTestCase {
 				'send_window_end'   => 0, // All-day window.
 			)
 		);
-		update_option( WP_MCP_AI_OA_Engine::DAY_OPTION, array( 'date' => current_time( 'Y-m-d' ), 'sent' => 100 ) );
+		update_option(
+			WP_MCP_AI_OA_Engine::DAY_OPTION,
+			array(
+				'date' => current_time( 'Y-m-d' ),
+				'sent' => 100,
+			)
+		);
 
 		$summary = WP_MCP_AI_OA_Engine::run_tick();
 		$this->assertSame( 'daily_cap', $summary['reason'] );
@@ -311,12 +330,24 @@ class Test_OA_Engine extends WP_UnitTestCase {
 	 */
 	public function test_get_pipeline_stats() {
 		if ( ! post_type_exists( 'mcp_appointment' ) ) {
-			register_post_type( 'mcp_appointment', array( 'public' => false, 'label' => 'Appointments' ) );
+			register_post_type(
+				'mcp_appointment',
+				array(
+					'public' => false,
+					'label'  => 'Appointments',
+				)
+			);
 		}
 		update_post_meta( $this->lead_id, '_oa_status', 'booked' );
 		update_post_meta( $this->lead_id, '_oa_last_message_at', current_time( 'mysql' ) );
 
-		$appointment_id = wp_insert_post( array( 'post_type' => 'mcp_appointment', 'post_title' => 'Jane — Call', 'post_status' => 'publish' ) );
+		$appointment_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_appointment',
+				'post_title'  => 'Jane — Call',
+				'post_status' => 'publish',
+			)
+		);
 		update_post_meta( $appointment_id, '_oa_booking_link_id', $this->booking_link_id );
 		update_post_meta( $appointment_id, '_status', 'confirmed' );
 

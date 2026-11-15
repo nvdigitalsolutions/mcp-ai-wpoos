@@ -14,6 +14,10 @@
  *
  * @package WP_MCP_AI_Pro
  * @since 1.5.0
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -4,8 +4,6 @@ Cloudways Velocity app serving the **full NV oOS Pro SPA (spa-v2) surface** —
 chat, settings, tools, assistants, workflows, analytics, knowledge graph,
 docs, media, documents — for NV oOS Complete customers.
 
-<img width="1618" height="1063" alt="Screenshot 2026-11-09 031344" src="https://github.com/user-attachments/assets/1709869b-0cee-4120-8773-c35417af1a51" />
-
 The console ships its **own Schedule Anything-style shell**
 (`src/console/ConsoleShell.tsx`) instead of mounting spa-v2's three-column
 admin layout: a collapsible left nav, a **Dashboard home page**, one page per
@@ -21,6 +19,8 @@ Cookie-authenticated console (no connection screen): the zero-dependency
 BFF session pattern. spa-v2 sources are compiled in via the
 `@nvoos/pro-spa-v2` Vite alias (**no fork** — tracks
 `addons/pro/assets/spa-v2`).
+
+<img width="75%" height="75%" alt="Screenshot 2026-11-09 031400" src="https://github.com/user-attachments/assets/a439dd01-f669-4f49-9306-80f33f639021" />
 
 Proposal: `docs/project/proposals/083-nvoos-complete-console-app-proposal.md` ·
 Plan: `docs/project/plans/nvoos-complete-console-app-implementation.md` ·
@@ -62,7 +62,13 @@ npm run typecheck    # full spa-v2 import graph must resolve
 npm test             # vitest (host bootstrap)
 npm run lint:a11y
 npm run serve        # node scripts/serve.mjs (needs dist/ + NVOOS_TARGET_SITE)
+npm run test:e2e     # Playwright T0 smoke against the Laravel runtime (see e2e/README.md)
 ```
+
+The T0 smoke builds a Laravel-profile bundle into `.e2e-dist/` and serves it
+through `scripts/serve.mjs`, so the committed `dist/` is never rewritten. It
+needs the Laravel stack up and its origin in `SANCTUM_STATEFUL_DOMAINS` — the
+prerequisites are in [`e2e/README.md`](e2e/README.md).
 
 ## Deploy sync
 

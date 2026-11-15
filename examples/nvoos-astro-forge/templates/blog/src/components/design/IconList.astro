@@ -1,0 +1,141 @@
+---
+// IconList — icon-list sections rebuilt as a card list.
+// `columns` (Proposal 115 §4) drives the grid via per-breakpoint CSS custom
+// properties — the wireframe's captured/inferred collapse behavior.
+//
+// Source-shaped rows: when every item's source layout fact is an icon-LEFT
+// row (aux-ico-pos-left), the list rebuilds as stacked icon rows — the
+// source's rhythm — instead of the icon-above card grid (the default for
+// unclassified/stack-layout lists). Icon markers carry the source glyph
+// classes (auxicon-*, fa fa-*, …); with the source's own icon stylesheet
+// (chrome.iconCss) linked in the layout they draw the real glyphs.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import SectionLinks from './SectionLinks.astro';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SmartImage from '../SmartImage.astro';
+import IconMarker from './IconMarker.astro';
+import SectionTitle from './SectionTitle.astro';
+
+interface Props {
+	section: SemanticSection;
+	columns?: Record< string, number >;
+	theme?: SectionTheme;
+}
+
+const { section, columns, theme } = Astro.props;
+const { title, body, items, media } = section.slots;
+const list = items ?? [];
+const rows = list.length > 0 && list.every((item) => item.layout === 'row');
+const desktop = columns ? Math.min(columns.desktop ?? 4, Math.max(list.length, 1)) : undefined;
+const gridStyle = !rows && columns && desktop
+	? `--ds-cols-desktop: ${desktop}; --ds-cols-tablet: ${Math.min(columns.tablet ?? 2, desktop)}; --ds-cols-mobile: ${Math.min(columns.mobile ?? 1, desktop)};`
+	: undefined;
+// Heading facts (125 §7/§8) — the same rhythm FeatureGrid applies, so a split
+// band does not lose the source's type scale and underline divider.
+const titleVars = [
+	theme?.titleStyle?.size && `--ds-title-size:${ theme.titleStyle.size }`,
+	theme?.titleStyle?.weight && `--ds-title-weight:${ theme.titleStyle.weight }`,
+	theme?.titleStyle?.lineHeight && `--ds-title-lh:${ theme.titleStyle.lineHeight }`,
+	theme?.titleStyle?.tablet?.lineHeight && `--ds-title-lh-md:${ theme.titleStyle.tablet.lineHeight }`,
+	theme?.titleStyle?.mobile?.lineHeight && `--ds-title-lh-sm:${ theme.titleStyle.mobile.lineHeight }`,
+	theme?.titleStyle?.letterSpacing && `--ds-title-ls:${ theme.titleStyle.letterSpacing }`,
+]
+	.filter( Boolean )
+	.join( ';' );
+const dividerStyle = theme?.titleDivider
+	? [
+			`width:${ theme.titleDivider.width }`,
+			`height:${ theme.titleDivider.height }`,
+			`background:${ theme.titleDivider.background }`,
+			theme.titleDivider.shadow && `box-shadow:${ theme.titleDivider.shadow }`,
+		]
+			.filter( Boolean )
+			.join( ';' )
+	: undefined;
+---
+
+<section class:list={['ds-section', 'ds-body', theme?.titleAlign === 'center' && 'ds-body--center']}>
+	{media && media.length > 0 ? (
+		<div class="ds-icon-split">
+			<div class="ds-icon-media">
+				{media.map((entry) => entry.src && <SmartImage src={entry.src} alt={entry.alt ?? title ?? ''} />)}
+			</div>
+			<div class="ds-icon-content">
+				{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
+				{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
+				{body && body.length > 0 && (
+					<div class="ds-lede">
+						{body.map((paragraph) => (
+							<p>{paragraph}</p>
+						))}
+					</div>
+				)}
+				{rows ? (
+					<ul class="ds-icon-rows">
+						{list.map((item) => (
+							<li class="ds-icon-row">
+								<IconMarker item={item} />
+								<div class="ds-icon-row-text">
+									{item.title && <h4>{item.title}</h4>}
+									{item.body && <p>{item.body}</p>}
+								</div>
+							</li>
+						))}
+					</ul>
+				) : (
+					list.length > 0 && (
+						<ul class="ds-grid post-list" style={gridStyle}>
+							{list.map((item) => (
+								<li class="ds-card">
+									<IconMarker item={item} />
+									{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
+									{item.title && <h4>{item.title}</h4>}
+									{item.body && <p>{item.body}</p>}
+								</li>
+							))}
+						</ul>
+					)
+				)}
+			</div>
+		</div>
+	) : (
+		<>
+			{title && <SectionTitle title={title} theme={theme} style={titleVars || undefined} />}
+			{theme?.titleDivider && <span class="ds-title-divider" aria-hidden="true" style={dividerStyle} />}
+			{body && body.length > 0 && (
+				<div class="ds-lede">
+					{body.map((paragraph) => (
+						<p>{paragraph}</p>
+					))}
+				</div>
+			)}
+			{rows ? (
+				<ul class="ds-icon-rows">
+					{list.map((item) => (
+						<li class="ds-icon-row">
+							<IconMarker item={item} />
+							<div class="ds-icon-row-text">
+								{item.title && <h4>{item.title}</h4>}
+								{item.body && <p>{item.body}</p>}
+							</div>
+						</li>
+					))}
+				</ul>
+			) : (
+				list.length > 0 && (
+					<ul class="ds-grid post-list" style={gridStyle}>
+						{list.map((item) => (
+							<li class="ds-card">
+								<IconMarker item={item} />
+								{item.media?.src && <SmartImage src={item.media.src} alt={item.media.alt ?? item.title ?? ''} sizes="(min-width: 1025px) 25vw, (min-width: 768px) 50vw, 100vw" />}
+								{item.title && <h4>{item.title}</h4>}
+								{item.body && <p>{item.body}</p>}
+							</li>
+						))}
+					</ul>
+				)
+			)}
+		</>
+	)}
+	<SectionLinks section={section} />
+</section>

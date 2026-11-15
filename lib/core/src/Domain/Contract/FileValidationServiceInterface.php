@@ -1,4 +1,5 @@
 <?php
+
 /**
  * File Validation Service — domain contract.
  *
@@ -7,7 +8,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -27,7 +30,7 @@ interface FileValidationServiceInterface
      * @param string $filePath Absolute path to file.
      * @param string $purpose   Upload purpose (assistants, fine-tuning, etc.).
      *
-     * @return array{valid: bool, warnings: array<int, string>, recommendations: array<int, string>, file_info: array}
+     * @return array{valid: bool, warnings: array<int, string>, recommendations: array<int, string>, file_info: array<string, mixed>}
      */
     public function validateForVectorStore(string $filePath, string $purpose = 'assistants'): array;
 

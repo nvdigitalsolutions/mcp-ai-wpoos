@@ -50,7 +50,7 @@ two things and should be split.
 | | |
 |---|---|
 | **Distribution** | Base / Pro / Both |
-| **PHP target** | 7.4+ / 8.1+ |
+| **PHP target** | 8.1+ |
 | **Loaded by** | (the bootstrap or registry file that wires this folder in) |
 | **Optional dependencies** | (e.g. JetEngine, WooCommerce — or "none") |
 

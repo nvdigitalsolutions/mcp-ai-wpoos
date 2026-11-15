@@ -1,0 +1,61 @@
+---
+// ---------------------------------------------------------------------------
+// ThemeBadge — the footer's active-theme + version readout.
+//
+// The active theme is a CLIENT choice (localStorage → data-theme), so the
+// server can only bake the version map (theme name → SemVer or null); an
+// inline script resolves the live axis against <html>. Follows the 104/105
+// patterns: a non-executable JSON data block, a hashed inline script (no
+// event-handler attributes), document-delegated sync on ClientRouter swaps,
+// and a MutationObserver for in-place toggles (ThemeToggle sets data-theme
+// without navigating). Versions come from the theme descriptors — static
+// themes declare them in their DTCG source, theme_create accepts them.
+// ---------------------------------------------------------------------------
+
+interface Props {
+	versions: Record<string, string | null>;
+}
+
+const { versions } = Astro.props;
+const payload = JSON.stringify(versions);
+---
+<script type="application/json" data-theme-versions set:html={payload} />
+<span class="theme-badge" data-theme-badge>Theme: light</span>
+<script is:inline>
+	(function () {
+		const readVersions = () => {
+			try {
+				const node = document.querySelector('script[data-theme-versions]');
+				return node ? JSON.parse(node.textContent || '{}') : {};
+			} catch {
+				/* malformed payload */
+			}
+			return {};
+		};
+		const sync = () => {
+			const name = document.documentElement.getAttribute('data-theme') || 'light';
+			const version = readVersions()[name];
+			const badge = document.querySelector('[data-theme-badge]');
+			if (badge) {
+				badge.textContent =
+					'Theme: ' + name + (typeof version === 'string' && version ? ' v' + version : '');
+			}
+		};
+		let observer = null;
+		const attach = () => {
+			sync();
+			if (observer) {
+				observer.disconnect();
+			}
+			// The ClientRouter replaces <html> — the observer dies with the old
+			// element, so re-attach after every swap (the 104 Defect A pattern).
+			observer = new MutationObserver(sync);
+			observer.observe(document.documentElement, {
+				attributes: true,
+				attributeFilter: ['data-theme'],
+			});
+		};
+		attach();
+		document.addEventListener('astro:after-swap', attach);
+	})();
+</script>

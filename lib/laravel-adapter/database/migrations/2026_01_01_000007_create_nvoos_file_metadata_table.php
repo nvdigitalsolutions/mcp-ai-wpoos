@@ -28,7 +28,8 @@ return new class extends Migration {
 
 			$table->index( 'file_id' );
 			$table->index( 'meta_key' );
-			$table->index( array( 'meta_key', 'meta_value' ) );
+			// MySQL cannot index a TEXT column without a key length; the
+			// meta_key index is sufficient for the EAV lookup path.
 
 			$table->foreign( 'file_id' )->references( 'id' )->on( 'nvoos_files' )->onDelete( 'cascade' );
 		} );

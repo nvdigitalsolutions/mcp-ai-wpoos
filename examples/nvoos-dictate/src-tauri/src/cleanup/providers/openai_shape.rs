@@ -135,8 +135,9 @@ pub fn vision_polish_prompt() -> &'static str {
 
 /// Build a multimodal chat-completions body: a text instruction plus a single
 /// base64 data-URI image. `model` is omitted when `None` (LM Studio serves its
-/// single loaded model in that case).
-#[cfg(feature = "vision")]
+/// single loaded model in that case). Pure JSON — shared by the vision polish
+/// (Proposal 076) and OCR polish (Proposal 109) transports.
+#[cfg(any(feature = "vision", feature = "document"))]
 pub fn build_vision_body(
     model: Option<&str>,
     prompt: &str,
@@ -156,6 +157,151 @@ pub fn build_vision_body(
         body["model"] = json!(model);
     }
     body
+}
+
+/// OCR-correction prompt (Proposal 109 §3.8): repair recognition errors
+/// against the page pixels; preserve structure; output only corrected text.
+#[cfg(feature = "document")]
+pub fn ocr_polish_prompt(ocr_text: &str) -> String {
+    format!(
+        "You are a precise OCR corrector. The image is a scanned document page \
+         and the text below is its OCR output, which may contain recognition \
+         errors (wrong glyphs, swapped letters, missing punctuation). Correct \
+         the text using the image. Preserve the original line breaks, reading \
+         order, and structure exactly. Do not summarize, translate, or add \
+         Return ONLY the corrected text.\n\nOCR text:\n{ocr_text}"
+    )
+}
+
+/// Document-understanding prompt (Proposal 111): the official DeepSeek-OCR
+/// prompt family — a plain grounding instruction, no system message (the
+/// DeepWiki/Cohorte guidance: plain prompts outperform chat scaffolding for
+/// this family). The box-level OCR text is offered as weak prior context.
+#[cfg(feature = "document")]
+pub fn document_model_prompt(prior_text: &str) -> String {
+    if prior_text.trim().is_empty() {
+        "<image>\n<|grounding|>Convert the document to markdown.".to_string()
+    } else {
+        format!(
+            "<image>\n<|grounding|>Convert the document to markdown. The text below is weak box-level OCR prior context — correct it against the image and preserve the layout (headings, lists, tables):\n\n{prior_text}"
+        )
+    }
+}
+
+/// Build the document-understanding body (Proposal 111): a single user
+/// message with the grounding prompt + the page image; no system message.
+#[cfg(feature = "document")]
+pub fn build_document_model_body(
+    model: Option<&str>,
+    image_data_uri: &str,
+    prior_text: &str,
+) -> Value {
+    let mut body = json!({
+        "messages": [
+            { "role": "user", "content": [
+                { "type": "text", "text": document_model_prompt(prior_text) },
+                { "type": "image_url", "image_url": { "url": image_data_uri } }
+            ]}
+        ],
+        "temperature": 0.1
+    });
+    if let Some(model) = model {
+        body["model"] = json!(model);
+    }
+    body
+}
+
+/// Strip fenced/prose wrappers from a document-model reply: the first
+/// fenced block's body wins, otherwise the trimmed raw text (the same
+/// contract as `polish::strip_fences`, inlined to keep this module
+/// dependency-free).
+///
+/// Also strips stray chat-template fragments from the reply prefix
+/// (live verification, 2026-11-04): Ollama's deepseekocr preprocessing
+/// occasionally prepends `<|im_start|>…` / `<|grounding|>` / `\\>` tokens
+/// on some page sizes. The content after them is valid — remove the
+/// fragments deterministically instead of fighting the server.
+#[cfg(feature = "document")]
+pub fn parse_document_model_reply(raw: &str) -> String {
+    let mut trimmed = raw.trim();
+    const FRAGMENTS: &[&str] = &[
+        // `\\>` first, then a bare backslash: Ollama sometimes prefixes
+        // the template fragment with a stray escape token
+        // (`\\<|im_start|>user`) or emits a lone `\\>`.
+        "\\>",
+        "\\",
+        "<|im_start|>user",
+        "<|im_start|>assistant",
+        "<|im_start|>system",
+        "<|im_start|>",
+        "<|im_end|>",
+        "</|im_start|>user",
+        "</|im_start|>assistant",
+        "</|im_start|>system",
+        "</|im_start|>",
+        "</|im_end|>",
+        "<|grounding|>",
+        "<image>",
+    ];
+    loop {
+        let mut advanced = false;
+        for frag in FRAGMENTS {
+            if let Some(rest) = trimmed.strip_prefix(frag) {
+                trimmed = rest.trim_start();
+                advanced = true;
+                break;
+            }
+        }
+        if !advanced {
+            break;
+        }
+    }
+    if trimmed.starts_with("```") {
+        let mut lines = trimmed.lines();
+        let _ = lines.next();
+        let inner: Vec<&str> = lines
+            .take_while(|l| !l.trim_start().starts_with("```"))
+            .collect();
+        return inner.join("\n").trim().to_string();
+    }
+    trimmed.to_string()
+}
+
+/// Ollama-native document-understanding body (Proposal 111 live
+/// verification, 2026-11-04): the OpenAI-compat `/v1/chat/completions`
+/// mount non-deterministically drops image features for the `deepseekocr`
+/// architecture (some page sizes derail into `<|im_start|>` template
+/// loops), while the native `/api/chat` endpoint with `images: [b64]` is
+/// reliable at every tested size (600x200 up to 3000x3000).
+#[cfg(feature = "document")]
+pub fn build_document_model_body_native(
+    model: Option<&str>,
+    image_b64: &str,
+    prior_text: &str,
+) -> Value {
+    let mut body = json!({
+        "messages": [
+            { "role": "user", "content": document_model_prompt(prior_text), "images": [image_b64] }
+        ],
+        "stream": false,
+        "options": { "temperature": 0.1 }
+    });
+    if let Some(model) = model {
+        body["model"] = json!(model);
+    }
+    body
+}
+
+/// Parse an Ollama-native `/api/chat` reply: `message.content`, then the
+/// same fence-stripping contract as the OpenAI-compat path.
+#[cfg(feature = "document")]
+pub fn parse_document_model_native_reply(payload: &Value) -> String {
+    let content = payload
+        .get("message")
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_str())
+        .unwrap_or_default();
+    parse_document_model_reply(content)
 }
 
 /// Parse a vision-polish reply into `(label, confidence)`. Tolerates a
@@ -298,5 +444,85 @@ mod tests {
             assert!(label.contains("stapler"));
             assert!(conf > 0.0);
         }
+    }
+}
+
+#[cfg(all(test, feature = "document"))]
+mod document_model_tests {
+    use super::*;
+
+    #[test]
+    fn prompt_uses_official_grounding_contract() {
+        let prompt = document_model_prompt("");
+        assert!(prompt.starts_with("<image>\n<|grounding|>Convert the document to markdown"));
+        assert!(document_model_prompt("weak ocr").contains("weak ocr"));
+    }
+
+    #[test]
+    fn body_has_no_system_message_and_carries_the_image() {
+        let body =
+            build_document_model_body(Some("deepseek-ocr"), "data:image/png;base64,AAAA", "");
+        assert!(body.get("system").is_none());
+        let msgs = body["messages"].as_array().unwrap();
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0]["role"], "user");
+        assert_eq!(body["model"], "deepseek-ocr");
+        assert_eq!(body["temperature"], 0.1);
+    }
+
+    #[test]
+    fn reply_parser_strips_fences() {
+        assert_eq!(
+            parse_document_model_reply("```markdown\n# Title\n```"),
+            "# Title"
+        );
+        assert_eq!(parse_document_model_reply("  plain  "), "plain");
+    }
+
+    #[test]
+    fn reply_parser_strips_stray_template_fragments() {
+        assert_eq!(
+            parse_document_model_reply("<|im_start|>user\nThe quick brown fox"),
+            "The quick brown fox"
+        );
+        assert_eq!(
+            parse_document_model_reply("<|im_start|>assistant\n<|grounding|># Title"),
+            "# Title"
+        );
+        assert_eq!(
+            parse_document_model_reply("\\>image OCR Fixture"),
+            "image OCR Fixture"
+        );
+        assert_eq!(
+            parse_document_model_reply("<|im_end|>  <image>  plain"),
+            "plain"
+        );
+        assert_eq!(
+            parse_document_model_reply("\\<|im_start|>user\nThe quick brown fox"),
+            "The quick brown fox"
+        );
+        assert_eq!(
+            parse_document_model_reply("</|im_start|>user\nThe quick brown fox"),
+            "The quick brown fox"
+        );
+    }
+
+    #[test]
+    fn native_body_carries_the_image_in_images_array() {
+        let body = build_document_model_body_native(Some("deepseek-ocr"), "AAAA", "");
+        let msgs = body["messages"].as_array().unwrap();
+        assert_eq!(msgs.len(), 1);
+        assert_eq!(msgs[0]["images"][0], "AAAA");
+        assert_eq!(body["stream"], false);
+        assert_eq!(body["model"], "deepseek-ocr");
+    }
+
+    #[test]
+    fn native_reply_parser_reads_message_content() {
+        let payload = json!({
+            "message": { "role": "assistant", "content": "```markdown\n# Title\n```" }
+        });
+        assert_eq!(parse_document_model_native_reply(&payload), "# Title");
+        assert_eq!(parse_document_model_native_reply(&json!({})), "");
     }
 }

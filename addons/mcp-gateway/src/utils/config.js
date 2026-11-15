@@ -43,6 +43,18 @@
  *   GATEWAY_OAUTH_RESOURCE         RFC 8707 resource identifier — the
  *                                  canonical audience for access tokens
  *                                  (default https://mcp.nvoos.pro).
+ *   GATEWAY_OAUTH_DEFAULT_SITES    Optional fallback: comma-separated site
+ *                                  slugs granted to a valid OAuth token
+ *                                  that carries no `site:<slug>` scope.
+ *                                  ChatGPT's connector requests only the
+ *                                  AS's OIDC scopes, never resource scopes —
+ *                                  without this fallback such tokens get
+ *                                  403 insufficient_scope. Unset = reject.
+ *   GATEWAY_OPENAI_CHALLENGE_TOKEN OpenAI plugin domain-verification token
+ *                                  served verbatim (text/plain) at
+ *                                  /.well-known/openai-apps-challenge.
+ *                                  Unset = route answers 404. Set it only
+ *                                  while completing a portal submission.
  *   TOOL_QUOTAS                    Per-tool quotas, compact form:
  *                                  `<pattern>:<rate>/<window>:<burst>` —
  *                                  e.g. `delete_post:5/1h:2,woo_*:60/1m:*`.
@@ -103,17 +115,21 @@ export function issuerUrl( issuer, path ) {
  *
  * @param {object} env    Env object.
  * @param {string[]} errors Shared error collector.
- * @return {object} `{ enabled, issuer, jwksUri, resource }`.
+ * @return {object} `{ enabled, issuer, jwksUri, resource, defaultSites }`.
  */
 export function parseOAuthConfig( env, errors ) {
 	const rawIssuer = String( env.GATEWAY_OAUTH_ISSUER || '' ).trim();
 	if ( ! rawIssuer ) {
-		return { enabled: false, issuer: '', jwksUri: '', resource: DEFAULT_OAUTH_RESOURCE };
+		return { enabled: false, issuer: '', jwksUri: '', resource: DEFAULT_OAUTH_RESOURCE, defaultSites: [] };
 	}
 
 	const issuer = normalizeIssuer( rawIssuer );
 	const resource = String( env.GATEWAY_OAUTH_RESOURCE || '' ).trim() || DEFAULT_OAUTH_RESOURCE;
 	const jwksUri = String( env.GATEWAY_OAUTH_JWKS_URI || '' ).trim() || issuerUrl( issuer, '.well-known/jwks.json' );
+	const defaultSites = String( env.GATEWAY_OAUTH_DEFAULT_SITES || '' )
+		.split( ',' )
+		.map( ( slug ) => slug.trim().toLowerCase() )
+		.filter( Boolean );
 
 	for ( const [ label, value ] of [
 		[ 'GATEWAY_OAUTH_ISSUER', issuer ],
@@ -130,7 +146,7 @@ export function parseOAuthConfig( env, errors ) {
 		}
 	}
 
-	return { enabled: true, issuer, jwksUri, resource };
+	return { enabled: true, issuer, jwksUri, resource, defaultSites };
 }
 
 /**
@@ -220,8 +236,8 @@ export function parsePublicSlugs( raw ) {
  * Collects errors rather than throwing so every problem is reported at once.
  *
  * @param {object} env Env object (defaults to process.env).
- * @return {object} `{ keys, previousKeys, sites, publicSlugs, errors,
- *                   warnings }` plus the governance fields.
+ * @return {object} `{ keys, previousKeys, sites, publicSlugs, demoKey,
+ *                   errors, warnings }` plus the governance fields.
  */
 export function loadConfig( env = process.env ) {
 	const errors = [];
@@ -306,6 +322,13 @@ export function loadConfig( env = process.env ) {
 
 	// ── OAuth 2.1 resource server (opt-in, inert unless configured) ──
 	const oauth = parseOAuthConfig( env, errors );
+	if ( oauth.enabled ) {
+		for ( const slug of oauth.defaultSites ) {
+			if ( ! sites.has( slug ) ) {
+				errors.push( `GATEWAY_OAUTH_DEFAULT_SITES references unconfigured site "${ slug }".` );
+			}
+		}
+	}
 
 	// ── Per-tool quotas (Proposal 094, Phase 1) ─────────────────────
 	const quotas = parseToolQuotas( env.TOOL_QUOTAS, errors );
@@ -315,6 +338,10 @@ export function loadConfig( env = process.env ) {
 	const shadowPolicy = parsePolicy( String( env.SHADOW_POLICY || '' ).trim(), errors );
 	const geoMap = parseGeoMap( env.GEO_MAP, errors );
 	const adminToken = String( env.GATEWAY_ADMIN_TOKEN || '' ).trim();
+	const openaiChallengeToken = String( env.GATEWAY_OPENAI_CHALLENGE_TOKEN || '' ).trim();
+	// Operator-published demo credential for the landing page — a scoped,
+	// public-by-design key, not a secret (unset = the page keeps placeholders).
+	const demoKey = String( env.PUBLIC_DEMO_KEY || '' ).trim();
 	const trustProxy = '1' === env.TRUST_PROXY;
 	const siteLifecycle = parseSiteLifecycle( env.SITE_LIFECYCLE, errors );
 	const auditSinkUrl = String( env.AUDIT_SINK_URL || '' ).trim();
@@ -328,12 +355,14 @@ export function loadConfig( env = process.env ) {
 		previousKeys,
 		sites,
 		publicSlugs,
+		demoKey,
 		oauth,
 		quotas,
 		policy,
 		shadowPolicy,
 		geoMap,
 		adminToken,
+		openaiChallengeToken,
 		trustProxy,
 		siteLifecycle,
 		auditSinkUrl,

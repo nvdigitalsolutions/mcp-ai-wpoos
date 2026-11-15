@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -730,7 +732,7 @@ class WP_MCP_AI_Pro_Tool_Validate_Image_For_Product implements WP_MCP_AI_Tool_In
 		$response = $client->create_chat_completion(
 			$messages,
 			array(
-				'model'                 => 'gpt-4.1',
+				'model'                 => 'gpt-6.1-sol',
 				'max_completion_tokens' => 1024,
 				'response_format'       => array( 'type' => 'json_object' ),
 			)

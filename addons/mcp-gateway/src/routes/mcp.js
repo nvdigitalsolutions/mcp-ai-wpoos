@@ -7,7 +7,7 @@
  *   - `initialize` / `ping`          answered gateway-level (stateless).
  *   - `notifications/*`              forwarded to every bound site, no reply.
  *   - `tools/list`                   fan-out to bound sites; tool names
- *                                    prefixed `<site-slug>.`; a failing site
+ *                                    prefixed `<site-slug>_`; a failing site
  *                                    degrades to _meta instead of failing
  *                                    the whole list.
  *   - `tools/call`                   reverse-maps the prefix, forwards to the
@@ -62,6 +62,21 @@ function toolCallTimeoutMs() {
 const TOOL_DESCRIPTION_HINTS = {
 	deep_research:
 		' Long-running: for standard/comprehensive depth prefer run_mode: "background" (returns immediately; results are cached for one hour) — immediate mode may exceed client-side tool timeouts.',
+};
+
+/**
+ * Annotation overrides for tools whose upstream hints misstate side effects.
+ * `deep_research` can schedule background cron work and persist results to
+ * agent memory, so it must not advertise `readOnlyHint: true` — the OpenAI
+ * portal scan rejects read-only claims on tools with user-visible side
+ * effects. Keyed by the unprefixed upstream tool slug.
+ */
+const TOOL_ANNOTATION_OVERRIDES = {
+	deep_research: {
+		readOnlyHint: false,
+		destructiveHint: false,
+		openWorldHint: true,
+	},
 };
 
 /**
@@ -200,7 +215,7 @@ function respondInitialize( req, id, params ) {
 				version: req.app.get( 'gatewayVersion' ),
 			},
 			instructions:
-				'Tools are namespaced as <site-slug>.<tool>. Call tools/list to see the surface bound to your key.',
+				'Tools are namespaced as <site-slug>_<tool>. Call tools/list to see the surface bound to your key.',
 		},
 	};
 }
@@ -272,6 +287,10 @@ async function listTools( ctx, id ) {
 				const hint = TOOL_DESCRIPTION_HINTS[ tool.name ];
 				if ( hint && 'string' === typeof prefixed.description ) {
 					prefixed.description += hint;
+				}
+				const override = TOOL_ANNOTATION_OVERRIDES[ tool.name ];
+				if ( override ) {
+					prefixed.annotations = { ...( prefixed.annotations || {} ), ...override };
 				}
 				tools.push( prefixed );
 			}
@@ -368,7 +387,7 @@ async function dispatch( ctx, msg ) {
 			let slug;
 			let toolName = name;
 			if ( isNamespacedFor( name, boundSlugs ) ) {
-				const parts = splitToolName( name );
+				const parts = splitToolName( name, boundSlugs );
 				slug = parts.slug;
 				toolName = parts.tool;
 			} else if ( 1 === ctx.sites.length ) {
@@ -377,7 +396,7 @@ async function dispatch( ctx, msg ) {
 				return rpcError(
 					id,
 					-32602,
-					`Tool name must be namespaced "<site-slug>.<tool>" — this key is bound to: ${ ctx.sites.join( ', ' ) }.`
+					`Tool name must be namespaced "<site-slug>_<tool>" — this key is bound to: ${ ctx.sites.join( ', ' ) }.`
 				);
 			}
 

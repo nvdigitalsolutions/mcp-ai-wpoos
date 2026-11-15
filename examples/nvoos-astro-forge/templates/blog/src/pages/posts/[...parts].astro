@@ -2,33 +2,55 @@
 // /posts/{id}/{slug}/ — one WordPress post, rendered through the Forge sanitizer.
 import Base from '../../layouts/Base.astro';
 import SmartImage from '../../components/SmartImage.astro';
+import DesignRenderer from '../../components/design/DesignRenderer.astro';
 import { getCollection, render } from 'astro:content';
+import { jsonLdFor, renderJsonLd } from '../../lib/seo.ts';
+import { buildGraph, homeCrumb } from '../../lib/seo-graph.ts';
+import manifest from '../../../nvoos.json';
 
 export async function getStaticPaths() {
 	const posts = await getCollection('posts');
 	// Astro 7 spread params are flat slash-joined strings, not arrays.
 	return posts.map((post) => ({
 		params: { parts: `${post.id}/${post.data.slug}` },
-		props: { post },
+		// The sanitized body HTML is extracted HERE (server context) —
+		// getStaticPaths props are serialized and the store's `rendered`
+		// object does not survive that trip; a plain string prop does.
+		props: { post, body: post.rendered?.html },
 	}));
 }
 
-const { post } = Astro.props;
+const { post, body } = Astro.props;
 const { Content } = await render(post);
 const pageUrl = Astro.site ? new URL(`/posts/${post.id}/${post.data.slug}/`, Astro.site).href : undefined;
-const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'BlogPosting',
-	headline: post.data.title,
-	datePublished: post.data.date,
-	dateModified: post.data.modified,
-	url: pageUrl,
-	...(post.data.author ? { author: { '@type': 'Person', name: post.data.author } } : {}),
-	...(post.data.featuredImage ? { image: post.data.featuredImage } : {}),
-};
+// SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
+const seoTitle = post.data.seoTitle ?? post.data.title;
+const seoDescription = post.data.seoDescription ?? post.data.excerpt;
+const jsonLd = buildGraph(
+	Astro.site,
+	jsonLdFor('BlogPosting', {
+		url: pageUrl,
+		headline: seoTitle,
+		description: seoDescription,
+		datePublished: post.data.date,
+		dateModified: post.data.modified,
+		author: post.data.author,
+		image: post.data.featuredImage,
+	}),
+	[
+		...homeCrumb(Astro.site),
+		...(Astro.site ? [ { name: 'Posts', url: new URL('/posts/', Astro.site).href } ] : []),
+		...(pageUrl ? [ { name: seoTitle, url: pageUrl } ] : []),
+	]
+);
+// og:image points at the build-time card when the ogImages surface is on.
+const ogImage =
+	manifest.surfaces?.ogImages && Astro.site
+		? new URL(`/og/${post.data.slug}.png`, Astro.site).href
+		: undefined;
 ---
 
-<Base title={post.data.title} description={post.data.excerpt} canonical={pageUrl}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl} ogImage={ogImage} seo={post.data.seo} markdownHref={`/posts/${post.id}/${post.data.slug}/index.md`}>
 	<article class="post">
 		<header>
 			<h1>{post.data.title}</h1>
@@ -38,9 +60,13 @@ const jsonLd = {
 		{post.data.featuredImage && (
 			<SmartImage class="featured" src={post.data.featuredImage} sizes="(min-width: 48rem) 72ch, 100vw" />
 		)}
-		<div class="post-body">
-			<Content />
-		</div>
+		{body ? (
+			<DesignRenderer html={body} />
+		) : (
+			<div class="post-body">
+				<Content />
+			</div>
+		)}
 	</article>
-	<script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
+	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
 </Base>

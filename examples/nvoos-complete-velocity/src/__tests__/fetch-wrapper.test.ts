@@ -84,8 +84,67 @@ describe('installFetchWrapper 401 signal', () => {
       { url: 'https://media.example.com/nodes' },
       'Unauthorized',
     ]);
-    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+	    expect(onUnauthorized).toHaveBeenCalledTimes(1);
 
-    restore();
-  });
-});
+	    restore();
+	  });
+	});
+
+	describe('installFetchWrapper CSRF bridge', () => {
+	  afterEach(() => {
+	    vi.unstubAllGlobals();
+	    vi.restoreAllMocks();
+	  });
+
+	  function installedWith(
+	    response: Response = new Response('{}', { status: 200 }),
+	  ): ReturnType< typeof vi.fn > {
+	    const fetchMock = vi.fn().mockResolvedValue(response);
+	    vi.stubGlobal('fetch', fetchMock);
+	    return fetchMock;
+	  }
+
+	  function sentHeaders(fetchMock: ReturnType< typeof vi.fn >): Headers {
+	    const init = fetchMock.mock.calls[0][1] as RequestInit;
+	    return new Headers(init.headers);
+	  }
+
+	  it('mirrors the WordPress nonce into X-CSRF-TOKEN', async () => {
+	    const fetchMock = installedWith();
+	    const restore = installFetchWrapper({ siteOrigin: siteOrigin() });
+
+	    await window.fetch('/wp-json/mcp-ai/v1/session/me', {
+	      headers: { 'X-WP-Nonce': 'token-1' },
+	    });
+
+	    const headers = sentHeaders(fetchMock);
+	    expect(headers.get('X-WP-Nonce')).toBe('token-1');
+	    expect(headers.get('X-CSRF-TOKEN')).toBe('token-1');
+
+	    restore();
+	  });
+
+	  it('does not overwrite an explicit X-CSRF-TOKEN', async () => {
+	    const fetchMock = installedWith();
+	    const restore = installFetchWrapper({ siteOrigin: siteOrigin() });
+
+	    await window.fetch('/wp-json/mcp-ai/v1/session/me', {
+	      headers: { 'X-WP-Nonce': 'wp-token', 'X-CSRF-TOKEN': 'explicit' },
+	    });
+
+	    expect(sentHeaders(fetchMock).get('X-CSRF-TOKEN')).toBe('explicit');
+
+	    restore();
+	  });
+
+	  it('adds no CSRF header when the nonce is absent', async () => {
+	    const fetchMock = installedWith();
+	    const restore = installFetchWrapper({ siteOrigin: siteOrigin() });
+
+	    await window.fetch('/wp-json/mcp-ai/v1/session/me');
+
+	    expect(sentHeaders(fetchMock).has('X-CSRF-TOKEN')).toBe(false);
+
+	    restore();
+	  });
+	});

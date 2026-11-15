@@ -8,6 +8,10 @@
  * @package    WP_MCP_AI
  * @subpackage Admin\Export
  * @since      1.2.0
+ *
+ * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

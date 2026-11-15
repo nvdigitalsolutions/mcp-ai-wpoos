@@ -1,0 +1,10 @@
+{
+    "input": "---\nurl: https://example.com/path?a=1\ntime: 12:30\n---\nBody.\n",
+    "expected": {
+        "frontmatter": {
+            "url": "https://example.com/path?a=1",
+            "time": "12:30"
+        },
+        "body": "Body."
+    }
+}

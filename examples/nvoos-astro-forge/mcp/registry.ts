@@ -14,11 +14,13 @@ import { forgeHome } from '../lib/vault.ts';
 import type { ToolDef, ToolEnv, ToolResult } from './tool-def.ts';
 import { CONTENT_TOOLS } from './tools/content.ts';
 import { DEPLOY_TOOLS } from './tools/deploy.ts';
+import { DESIGN_TOOLS } from './tools/design.ts';
 import { DISCOVERY_TOOLS } from './tools/discovery.ts';
 import { GITHUB_TOOLS } from './tools/github.ts';
 import { REBUILD_TOOLS } from './tools/rebuild.ts';
 import { SCAFFOLD_TOOLS } from './tools/scaffold.ts';
 import { SITE_TOOLS } from './tools/sites.ts';
+import { TRACKING_TOOLS } from './tools/tracking.ts';
 import { envValue, errorResult, READ_ONLY_TOOL, text } from './util.ts';
 
 export const SERVER_NAME = 'nvoos-astro-forge';
@@ -26,6 +28,11 @@ export const SERVER_VERSION = '0.1.0';
 
 /** The router recipe — the ordered tool sequence for a stated goal. */
 const RECIPES: Array<{ match: RegExp; steps: string[]; note: string }> = [
+	{
+		match: /track|analytic|pixel|tag manager|consent|gtag|ga4/i,
+		steps: [ 'site_get', 'tracking_analyze', 'tracking_apply' ],
+		note: 'Detect the source measurement surface, then write the tracking block with every vendor disabled.',
+	},
 	{
 		match: /wizard|from (a )?url|end[- ]to[- ]end|zero[- ]to/i,
 		steps: [ 'setup_wizard' ],
@@ -58,7 +65,9 @@ export const ALL_TOOLS: ToolDef[] = [
 	...SITE_TOOLS,
 	...DISCOVERY_TOOLS,
 	...SCAFFOLD_TOOLS,
+	...DESIGN_TOOLS,
 	...CONTENT_TOOLS,
+	...TRACKING_TOOLS,
 	...REBUILD_TOOLS,
 	...GITHUB_TOOLS,
 	...DEPLOY_TOOLS,

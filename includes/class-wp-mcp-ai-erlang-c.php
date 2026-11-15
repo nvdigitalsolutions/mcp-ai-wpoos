@@ -4,7 +4,7 @@
  *
  * Provides pure-PHP implementations of the Erlang C formula for computing
  * service-level attainment, queue wait probabilities, and minimum staffing.
- * No external dependencies; fully PHP 7.4-compatible.
+ * No external dependencies; fully PHP 8.1-compatible.
  *
  * Formula reference:
  *   A. K. Erlang (1917) — teletraffic engineering model for M/M/c queues.
@@ -14,6 +14,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -60,6 +60,10 @@ final class Plugin {
 		$rebuild->register_routes();
 		$health = new Rest\Health();
 		$health->register_routes();
+		$forms = new Rest\Forms();
+		$forms->register_routes();
+		$redirects = new Rest\Redirects();
+		$redirects->register_routes();
 	}
 
 	/**

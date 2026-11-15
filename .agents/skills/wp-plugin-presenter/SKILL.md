@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: wp-plugin-presenter
-description: Design and review native presenter classes in WordPress plugins without requiring better-data - converting DTOs or domain objects into REST arrays, admin table rows, JS config payloads, email variables, and public view models with allowlisted fields, context methods, redaction by default, locale/date/number formatting, no DTO mutation, and correct WordPress escaping boundaries. Use when adding FooPresenter, response mappers, admin-row arrays, wp_send_json payloads, rest_ensure_response data, wp_add_inline_script config, or when code returns raw DTOs, WP_Post, WC_Order, get_object_vars, json_encode, or unescaped HTML from controllers.
+description: "Design and review native presenter classes in WordPress plugins without better-data: converting DTOs or domain objects into REST arrays, admin table rows, JS config payloads, email variables, and view models with allowlisted fields, context methods, redaction by default, locale/date/number formatting, no DTO mutation, and correct escaping boundaries. Use when adding FooPresenter, response mappers, admin-row arrays, wp_send_json payloads, or rest_ensure_response data, or when code returns raw DTOs, WP_Post, WC_Order, or get_object_vars."
 license: MIT
 metadata:
   type: Skill

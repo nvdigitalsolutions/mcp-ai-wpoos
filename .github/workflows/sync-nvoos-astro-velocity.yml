@@ -125,6 +125,11 @@ jobs:
         env:
           NVOOS_TARGET_SITE: http://localhost:8123
           PORT: '4321'
+          # Q3 revalidation seam (Proposal 104 §4.1): smoke REUSES this
+          # pre-booted BFF, so the token must be set here at boot — the
+          # spawn path inside smoke.mjs never runs in CI. Must match the
+          # bearer used by the smoke checks ('smoke-revalidate-secret').
+          NVOOS_REVALIDATE_TOKEN: 'smoke-revalidate-secret'
           # Dev-mount opt-in: the design-import e2e analyzes a loopback
           # design source. Playwright REUSES this pre-booted server (the
           # playwright.config.ts env never applies on the reuse path — see
@@ -145,7 +150,33 @@ jobs:
           # Covers the non-reuse path (a runner without a pre-booted BFF).
           NVOOS_MCP_FETCH_ALLOW_PRIVATE: '1'
         run: |
-          npx playwright install --with-deps chromium
+          # The browser download does not need the Ubuntu mirrors; `--with-deps`
+          # does, and when they are unreachable apt spends ~10 minutes retrying
+          # DNS before exiting 100 (astro-forge run #231 burned its whole
+          # 20-minute step budget there). Take the fast path first — install the
+          # browser alone and PROVE it launches — and only repair system deps,
+          # under a hard timeout, if that proof fails. `ubuntu-latest` already
+          # carries Chromium's system libraries, so the fast path normally needs
+          # no apt at all.
+          #
+          # A FUNCTION, not an `exit 0` block: this run block also executes the
+          # e2e, so exiting here would skip it. The `if` form matters too — under
+          # `bash -e`, a bare failing `cmd && return 0` aborts the script instead
+          # of reaching the repair.
+          install_chromium() {
+            if npx playwright install chromium && \
+               node -e "require('playwright').chromium.launch().then((b) => b.close()).then(() => console.log('Chromium launches.'))"; then
+              echo "Chromium launches with the preinstalled system libraries."
+              return 0
+            fi
+            echo "::warning::Chromium could not launch; repairing system deps (apt, bounded to 5 minutes)."
+            if ! timeout 300 npx playwright install-deps chromium; then
+              echo "::warning::System dependency repair failed or timed out; relying on the preinstalled libraries."
+            fi
+            npx playwright install chromium
+            node -e "require('playwright').chromium.launch().then((b) => b.close()).then(() => console.log('Chromium launches.'))"
+          }
+          install_chromium
           npm run test:e2e
 
       - name: Lighthouse CI (Phase 2.6)
@@ -166,10 +197,15 @@ jobs:
       - name: Assemble mirror tree
         working-directory: examples/nvoos-astro-velocity
         env:
-          NVOOS_API_BASE: http://localhost:8123/wp-json/nvoos-commerce/v1
           # Canonical host for the production artifact. Overridable per
           # dispatch (client_payload.astro_site) and per repo variable
           # (ASTRO_SITE); defaults to the live storefront host.
+          #
+          # INVARIANT (Proposal 104 §2.5): the prod artifact must never bake
+          # a build-time commerce base — with SSR PDPs the build is fully
+          # hermetic and commerce binds to the runtime /api/* proxy only.
+          # (The 092 prerender model baked the fixture server here, so the
+          # mirror shipped fixture PDPs and every live product URL 404'd.)
           ASTRO_SITE: ${{ github.event.client_payload.astro_site || vars.ASTRO_SITE || 'https://astro.nvoos.cloud' }}
         run: |
           # Production artifact: canonical tags + /_image hrefs must use the

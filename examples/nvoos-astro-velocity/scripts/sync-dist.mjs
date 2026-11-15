@@ -7,7 +7,7 @@
 // by CI (or locally) before this script runs.
 // ---------------------------------------------------------------------------
 
-import { cpSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { cpSync, mkdirSync, readdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -59,6 +59,34 @@ cpSync(join(ROOT, 'LICENSE'), join(STAGE, 'LICENSE'));
 cpSync(join(ROOT, 'NOTICE'), join(STAGE, 'NOTICE'));
 
 console.log(`[sync-dist] mirror tree assembled in ${STAGE}`);
+
+// SSR invariant (2026-11-09): this app is fully SSR, so a correct build emits
+// ZERO .html files. A stray `dist/client/**/*.html` is served as a static file
+// and SHADOWS the SSR route, freezing that page at build time. Velocity also
+// never deletes files that leave the repo, so one bad ship persists forever
+// (the PDP that stayed nine days stale on build-time markup and old inline
+// scripts). Refuse to assemble such a tree.
+{
+	const html = [];
+	const walk = (dir) => {
+		for (const entry of readdirSync(dir, { withFileTypes: true })) {
+			const full = join(dir, entry.name);
+			if (entry.isDirectory()) {
+				walk(full);
+			} else if (entry.name.endsWith('.html')) {
+				html.push(full);
+			}
+		}
+	};
+	walk(join(STAGE, 'dist'));
+	if (html.length > 0) {
+		console.error(
+			`[sync-dist] refusing to ship ${html.length} prerendered HTML file(s) — this app is fully SSR:`
+		);
+		for (const file of html.slice(0, 5)) console.error(`[sync-dist]   ${file}`);
+		process.exit(1);
+	}
+}
 
 // Boot smoke: the assembled tree must start. This catches missing runtime
 // modules in the mirror (storefront 502 incident 2026-10-29 — serve.mjs

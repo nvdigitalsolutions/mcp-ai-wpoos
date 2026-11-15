@@ -22,7 +22,7 @@ Porting the genuinely missing tools as native PHP classes gives us:
   logging, multisite guards, and the chat-client restriction trait.
 - **Base distribution** — everything below uses WordPress core APIs only
   (two SEO tools optionally use the Brave key already consumed by
-  `web_search`), so all 30 tools ship in the Base plugin (PHP 7.4+).
+  `web_search`), so all 30 tools ship in the Base plugin (PHP 8.1+).
 
 ## The 71-tool matrix
 

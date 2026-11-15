@@ -1,0 +1,59 @@
+{
+    "request": {
+        "method": "GET",
+        "uri": "/api/v1/pro/toolkits"
+    },
+    "status": 200,
+    "headers": {
+        "content-type": "application/json"
+    },
+    "body": {
+        "success": true,
+        "data": {
+            "toolkits": [
+                {
+                    "slug": "commerce",
+                    "name": "Commerce",
+                    "version": "1.0.0",
+                    "description": "Catalog and stock operations for a product business.",
+                    "icon": "🛍️",
+                    "feature": "commerce",
+                    "screens": [
+                        "settings",
+                        "entities",
+                        "consolidate",
+                        "dashboard"
+                    ],
+                    "entities": [
+                        {
+                            "key": "product",
+                            "label": "Products",
+                            "icon": "📦"
+                        }
+                    ]
+                },
+                {
+                    "slug": "documents",
+                    "name": "Documents",
+                    "version": "1.0.0",
+                    "description": "Policy and knowledge document register.",
+                    "icon": "📄",
+                    "feature": "documents",
+                    "screens": [
+                        "settings",
+                        "entities",
+                        "dashboard"
+                    ],
+                    "entities": [
+                        {
+                            "key": "document",
+                            "label": "Documents",
+                            "icon": "📘"
+                        }
+                    ]
+                }
+            ],
+            "invalid": []
+        }
+    }
+}

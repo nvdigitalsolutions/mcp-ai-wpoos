@@ -10,9 +10,12 @@ already extracted its design language — the tokens feed the template's
 
 > Phases 0–3 (generation core, Woo collections, SEO/media/search, bridge
 > plugin, vault + deploy + multi-site) and Phase 4 (the `setup_wizard` and
-> the `/mcp` tool surface) are shipped. Remaining: the registry publication
-> (owner action — `server.json` is ready) and the §3.3 long-tail tool
-> slices.
+> the `/mcp` tool surface) are shipped. **Proposal 104 Phase 4** (the
+> storefront runtime-hardening pass) landed the preset wizard, the agent
+> stubs, typed copy tables, the `kind`-typed SEO builder, the theme-module
+> port and the Tailwind token bridge — see “Presets” and “Phase 4 template
+> additions” below. Remaining: the registry publication (owner action —
+> `server.json` is ready) and the §3.3 long-tail tool slices.
 
 ## Layout
 
@@ -22,8 +25,9 @@ already extracted its design language — the tokens feed the template's
 | `lib/wp-client.ts` | WP REST client — pagination via `X-WP-TotalPages`, `_fields` pruning + `_embed`, typed errors, explicit truncation |
 | `lib/wp-loader.ts` | The Astro content-layer loader — wc/v3 commerce extraction, wp/v2 featured-media resolution, optional sources |
 | `lib/sanitize.ts` | Versioned `sanitize-html` allowlist — the XSS gate before `set:html` |
-| `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate + storefront-page pruning |
-| `scripts/forge.mjs` | CLI: `analyze <url> [--write]` (site_analyze) + `node scripts/forge.mjs <site.json> --target <dir> [--template blog] [--check]` (Node ≥ 22.6) |
+| `lib/scaffold.ts` | Template copy + FORGE-marker rewrite + manifest + gitignore gate + storefront-page pruning + preset surfaces + agent stubs + render variant (Q4) + OG endpoint (Q5) |
+| `lib/presets.ts` | 104 §4.3 preset registry — `blog` / `storefront` / `minimal` descriptors (render mode + surfaces incl. `ogImages`), `suggestPreset()`, `applyPresetToProfile()` |
+| `scripts/forge.mjs` | CLI on **commander** + **@clack/prompts**: `analyze`, `wizard [--preset …] [--render …]`, `site`, `vault`, `deploy-config`, `deploy`, scaffold (`--preset`, `--render`, `--og-images`, `--no-agents`) — plain JS, Node ≥ 22.6 |
 | `lib/discovery.ts` | `site_analyze` — root/types/counts/front-page/junk/Woo/SEO probes → draft site.json |
 | `lib/vault.ts` | Phase 3.1 credential store — AES-256-GCM entries under `~/.nvoos-forge/vault.json`, key from `NVOOS_FORGE_VAULT_KEY`, masked output |
 | `lib/sites.ts` | Phase 3.4 multi-site registry — named profile refs + default flag in `~/.nvoos-forge/sites.json` |
@@ -31,7 +35,7 @@ already extracted its design language — the tokens feed the template's
 | `lib/deploy-config.ts` | Phase 3.3 generated pipeline — deploy.yml + rebuild.yml + the fail-closed `verify-dispatch.mjs` |
 | `scripts/wp-fixture-server.mjs` | Hermetic wp/v2 + wc/v3 wire fixture (`:8473`) — stands in for WordPress Playground in CI |
 | `scripts/builtin-template.mjs` | Test fixture generator (nested `main/templates/blog/` tree with a REAL loader) |
-| `templates/blog/` | The production template — posts/pages/products, static front page, RSS, 404, 301 redirect map, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens |
+| `templates/blog/` | The production template — posts/pages/products, static front page, RSS, 404, 301 redirect map, canonical + JSON-LD, sitemap/robots, `--forge-*` tokens, typed copy tables, theme module, `lib/seo.ts`, Tailwind token bridge, the inert `_ssr` product route (Q4) and `_og` card endpoint (Q5) |
 | `lib/contrast.ts` | WCAG 2.2 contrast math — the token gate warns on AA failures at scaffold time |
 | `tests/` | Unit tests (`npm test`) + the exit-gate e2e (`npm run test:e2e`) |
 
@@ -74,6 +78,181 @@ node scripts/forge.mjs site.json --target ./customer-frontend
 cd customer-frontend && npm install && npm run build
 ```
 
+### Design rebuild (Proposal 114)
+
+The forge never replicates a source site's markup — it rebuilds the
+presentation with the NV oOS design system (098 extraction → semantic
+content model → ADS components → token theme → verified parity):
+
+```sh
+# 1. Extract the design language (roles + confidence + unassigned pool,
+#    typography, spacing, radii, adaptation brief — token data only,
+#    never source CSS/assets).
+#    Band surfaces come from the builder adapter when the source is Elementor;
+#    for every other builder (WPBakery/Brando, Divi, Bricks, Gutenberg…) the
+#    vendor-agnostic outline is PROMOTED into the band model and the renderer
+#    themes it positionally — without that a non-Elementor rebuild rendered
+#    template defaults (virtuallyjamaica.com's red #dd3333 hero came out white).
+#    Bot-protected source (Cloudflare 403 on /wp-json)? Add --no-cms: the
+#    design/colour/text baselines only need the rendered homepage.
+node scripts/forge.mjs analyze https://shop.example.com --design --write site.json
+node scripts/forge.mjs analyze https://shop.example.com --no-cms --design --colors --text --write site.json
+
+# 2. Scaffold applies it: the `design` block derives the --forge-* token
+#    theme (explicit `tokens` overrides win), writes
+#    src/lib/design.generated.ts, and audits every rendered pair against
+#    WCAG 2.2 with one-token fix suggestions from the source's own pool.
+node scripts/forge.mjs site.json --target ./customer-frontend
+
+# 3. Build: the vendored semantic classifier (src/forge/semantic.ts)
+#    rebuilds Elementor sections as ADS design components
+#    (src/components/design/ — hero/feature-grid/testimonial/logo-cloud…);
+#    unrecognized content stays on the .post-body path. dist/design-audit.json
+#    ships the contrast audit. --strict-contrast fails the build on failing
+#    pairs (manifest designAudit: strict).
+
+# 4. Verify after a build. EVERY gate runs by default — language parity, token
+#    block, band flow, nav anchors, fact consumption, text, SEO, tracking, box
+#    geometry, interaction states, colour system and pixel — and prints a
+#    scorecard (gate, verdict, pass rate). `--minimal` keeps only the
+#    deterministic, browser-free gates; that is what the CI blocking step uses.
+#    Individual flags still select one gate:
+#    language parity (always on), fact consumption (always on — every fact a
+#    band declares must leave its marker in that band's HTML; --strict-facts
+#    to fail), box geometry (--geometry — measures each band at 1440/834/390
+#    and diffs against the baseline `analyze --geometry` recorded in the
+#    profile), interaction states (--interactions — forces hover / focus /
+#    focus-visible / active on the BUILT page and requires every state the
+#    source declared plus a keyboard focus ring on every control; per-site
+#    `verify.gates` may downgrade it to advisory), content parity (--text — the
+#    build's visible text against the baseline `analyze --text` recorded;
+#    normalised 3-word shingles, coverage of the SOURCE is the gate), the colour
+#    system (--colors — computed background/text of body, header and footer,
+#    diffed with CIEDE2000), and pixel parity (--pixel — deterministic
+#    screenshots diffed with pixelmatch's delta + SSIM). Geometry, interactions,
+#    pixel and colour need Playwright; when the browser is not installed those
+#    gates record `skip` rather than aborting the run (a skip still counts
+#    against 100%). Language/text parity never need a browser.
+#
+#    Scorecard semantics: `pass`/`warn`/`fail` are verdicts, `skip` means a
+#    gate is APPLICABLE but has no baseline (it counts against 100%), and
+#    `n/a` means structurally inapplicable (outline-only site, no tracking
+#    block) and is excluded from the denominator.
+#
+#    Colour is measured per scheme (--colors-modes light,dark, the default) so
+#    a dark header in light mode and an invented dark mode both surface; it now
+#    also measures ONE REGION PER BAND ANCHOR (`band:home`, `band:about`…) using
+#    the COMPOSITED background, so a band surface that stops rendering is a
+#    deviation instead of a silent transparent skip. Bands are read with
+#    `descendantFill` on BOTH sides (the rebuild paints the surface on the
+#    `.ds-section-wrap` or a child), and the painted gradient is a third metric:
+#    a source gradient missing from the build fails, a differing one warns, a
+#    photo url is never compared (the localizer rewrites it). Pixel captures
+#    default to light and take --pixel-mode light|dark|both.
+node scripts/forge.mjs verify site.json --target ./customer-frontend            # every gate
+node scripts/forge.mjs verify site.json --target ./customer-frontend --minimal  # browser-free gates (CI blocking)
+node scripts/forge.mjs verify site.json --target ./customer-frontend --geometry
+node scripts/forge.mjs verify site.json --target ./customer-frontend --text
+node scripts/forge.mjs verify site.json --target ./customer-frontend --colors
+
+# 5. Pixel parity is a REGRESSION gate: record a baseline from a known-good
+#    build, then every later verify diffs against it (0.1% pixels / SSIM 0.98
+#    to fail). --pixel-live compares against the live SOURCE instead — useful
+#    for near-clone work, meaningless for a language-level rebuild.
+node scripts/forge.mjs verify site.json --target ./customer-frontend --pixel --pixel-baseline
+node scripts/forge.mjs verify site.json --target ./customer-frontend --pixel
+node scripts/forge.mjs verify site.json --target ./customer-frontend --pixel --pixel-live
+
+# 6. Capture the geometry, text and colour baselines alongside the design block.
+#    `--geometry` also records each band's measured interaction STATES (hover /
+#    focus / focus-visible / active) and the rest paint they are relative to.
+node scripts/forge.mjs analyze https://customer.example --design --geometry --text --colors \
+  --write site.json
+
+# 7. Every verify run also audits EACH BAND (presence · surface · content · facts ·
+#    text · geometry) and writes <target>/verify-artifacts/bands.json. A check it
+#    cannot evaluate is SKIPPED, never passed; a failing band fails the run
+#    (--bands-warn downgrades, --no-bands opts out).
+node scripts/forge.mjs verify site.json --target ./customer-frontend --minimal
+node scripts/forge.mjs status site.json --target ./customer-frontend   # owner + drift + bands
+
+# 8. When the site is synced and a developer takes over, LOCK it. A locked
+#    project is fail-closed: scaffold/deploy refuse to overwrite it, and the
+#    project's `npm run check` reports hand-edits as expected drift.
+node scripts/forge.mjs lock   site.json --target ./customer-frontend --by "Dev name" --reason "custom dev handoff"
+node scripts/forge.mjs unlock site.json --target ./customer-frontend --yes   # returns it to the forge
+
+# 9. Template CSS fixes that reach a BUILT project (a hand-copied global.css, a
+#    cherry-picked shim) wipe the `--forge-*` token block — only the scaffold
+#    pipeline rewrites it, so the build silently falls back to template defaults.
+#    Re-apply just that span instead of re-scaffolding (which reinstalls deps).
+node scripts/forge.mjs tokens site.json --target ./customer-frontend --check   # drift report, exit 1
+node scripts/forge.mjs tokens site.json --target ./customer-frontend           # rewrite in place
+```
+
+### Environment per site (build time vs runtime)
+
+Two different surfaces, easy to confuse:
+
+| Phase | Who reads it | Variables |
+|---|---|---|
+| Build (`npm run build`, CI) | the content loader fetches the CMS | `WP_SITE_URL`, `ASTRO_SITE`, `WP_FETCH_PROXY`, `WP_APPLICATION_USER` / `WP_APPLICATION_PASSWORD`, `WP_WC_CONSUMER_KEY` / `WP_WC_CONSUMER_SECRET`, `WP_USER_AGENT` |
+| Runtime (managed SSR) | the BFF proxies `/api`, `/media`, `/api/forms/submit` | `NVOOS_TARGET_SITE`, `NVOOS_REVALIDATE_TOKEN`, `MAIL_*`, `BREVO_API_KEY` |
+
+`scaffold` writes `.env.example` with every **non-secret** value already filled
+in from the profile: `WP_SITE_URL` from `url`, `NVOOS_TARGET_SITE` from `url`,
+`NVOOS_FORGE_FORMS_ORIGIN` from `deploy.publicOrigin`, and
+`MAIL_PROVIDER` / `MAIL_FROM` / `MAIL_FROM_NAME` / `MAIL_TO` / `MAIL_SUBJECT`
+from `forms.mail`. Only credentials stay blank, and `.env` is git-ignored.
+
+```sh
+# virtuallyjamaica.com — build time
+WP_SITE_URL=https://virtuallyjamaica.com
+ASTRO_SITE=https://virtuallyjamaica.com      # deploy.publicOrigin; CI sets it
+WP_FETCH_PROXY=http://user:pass@proxy:3128   # the bot-protection workaround
+
+# virtuallyjamaica.com — runtime (deploy.runtime: managed)
+NVOOS_TARGET_SITE=https://virtuallyjamaica.com
+NVOOS_REVALIDATE_TOKEN=…                      # secret; unset disables /api/revalidate
+MAIL_PROVIDER=brevo
+MAIL_FROM=forms@virtuallyjamaica.com
+MAIL_TO=info@virtuallyjamaica.com
+BREVO_API_KEY=…                               # secret
+```
+
+`WP_APPLICATION_*` does **not** fix a Cloudflare 403 — the request is rejected
+before WordPress sees it. Use `WP_FETCH_PROXY`, or allowlist the builder IP.
+Secrets never go in the profile or the manifest; they live in the host
+environment (Velocity's env panel, or the CI secret store).
+
+### Forms — JetFormBuilder + Elementor submissions (114 §3.9)
+
+Forms integrate the way WooCommerce did: **content at build time, behavior
+proxied through WordPress.** The sanitizer keeps a functional form allowlist
+(no `action`/`method`/`on*`/`style`), the classifier rebuilds every source
+`<form>` as the `Form` design component, and the static site posts to the
+bridge plugin's `forms/submit` route — the bridge dispatches to the NATIVE
+JetFormBuilder / Elementor Pro handler, so validation, storage, mail, and
+post-submit actions run exactly as on WordPress.
+
+```jsonc
+// site.json — the forms block (all optional; env vars override at deploy).
+{
+  "forms": {
+    "endpoint": "https://shop.example.com/wp-json/nvoos-forge/v1", // default: <profile.url>/wp-json/nvoos-forge/v1
+    "origin": "https://customer.example.com",                      // the bridge's CORS allowlist entry
+    "searchForms": ["find"]                                        // extra single-input names mapped to /search/
+  }
+}
+```
+
+Rendered behavior:
+
+- **Search forms** (single search-ish input, or per-site `searchForms` names) map onto the site's own `/search/` surface — a GET to `/search/?q=…`.
+- **Submit forms** rebuild with the bridge endpoint as their `action` and carry the WP-side form identifier (`form`), the source `post_id` when the markup carries one, a honeypot, a client timestamp, and progressive-enhancement fetch. No resolvable WP form → the section degrades to a plain title/links band — never a dead endpoint.
+- **The bridge** (`plugins/nvoos-forge-bridge` ≥ 0.2.0) runs the origin allowlist, per-IP rate limit, honeypot/timestamp spam ladder, optional Turnstile (action + hostname pinned), server-side sanitization, and typed 404/501 contracts. The no-JS fallback is an ordinary form POST + redirect back with `?form=ok|error`.
+- **Config** ships in `.env.example` (`NVOOS_FORGE_FORMS_ENDPOINT`, `NVOOS_FORGE_FORMS_ORIGIN`) — never hardcoded; the allowlist is configured in the bridge plugin's settings page.
+
 ### Storefront profiles (Phase 1a)
 
 ```json
@@ -111,6 +290,20 @@ cd customer-frontend && npm install && npm run build
 - `/redirects.json` — the structured 301 map from the WP URL structure to the
   generated one; the post-build step materializes the host-agnostic
   `dist/_redirects` (Netlify/Cloudflare/static-server compatible).
+- SEO meta rides the REST fields: Rank Math (`rank_math_title` /
+  `rank_math_description`) → Yoast (`yoast_head_json`) → the WP
+  title/excerpt fallback, wired into `<title>`, the meta description and
+  the JSON-LD (Proposal 106 §1.2; absent plugins never break a build).
+
+### Hybrid local content (Proposal 106 P2)
+
+Every scaffold ships `src/content/posts/` + `src/content/pages/` — local
+`.mdx` files (frontmatter: `title`, `description`, `date`, `draft`) merge
+under the WP posts/pages collections: **WP wins on collision, local fills
+the gaps, drafts never ship**. The example post makes a forged site
+build-and-render even with **no WordPress connection** — a network-level
+failure degrades to local-only with a loud loader warning (HTTP-level
+errors still fail the build).
 
 ### Media pipeline
 
@@ -185,10 +378,17 @@ fixtures only.
 ## Phase 4 — the wizard and the MCP surface
 
 ```sh
-# One command: URL → analyzed → registered → scaffolded → built → git →
-# deploy pipeline. (Local dev sites need NVOOS_FORGE_ALLOW_LOOPBACK=1.)
+# One command: URL → analyzed → preset → registered → scaffolded → built →
+# git → deploy pipeline. (Local dev sites need NVOOS_FORGE_ALLOW_LOOPBACK=1.)
 node scripts/forge.mjs wizard https://shop.example.com \
   --target ./customer-frontend --build
+
+# …with an explicit preset (otherwise suggested from the analysis),
+# a render variant, and per-post OG cards.
+node scripts/forge.mjs wizard https://shop.example.com \
+  --target ./customer-frontend --preset minimal --no-agents
+node scripts/forge.mjs wizard https://shop.example.com \
+  --target ./customer-frontend --preset storefront --render ssr --og-images
 
 # The MCP server — dual-era Streamable HTTP (team mode) …
 npm run mcp                        # http://127.0.0.1:8472/mcp (FORGE_MCP_PORT to change)
@@ -219,6 +419,99 @@ npx nvoos-forge-mcp-stdio
 - **Registry entry** (061 pattern): `server.json` — the MCP registry
   metadata (`io.github.nvdigitalsolutions/nvoos-astro-forge`); it is NOT
   part of the npm package.
+
+### Presets (Proposal 104 §4.3)
+
+```sh
+node scripts/forge.mjs site.json --target ./customer-frontend --preset blog       # default
+node scripts/forge.mjs site.json --target ./customer-frontend --preset storefront
+node scripts/forge.mjs site.json --target ./customer-frontend --preset minimal
+node scripts/forge.mjs site.json --target ./customer-frontend --theme-policy dark # 105 §4
+```
+
+- `--preset` picks blog/storefront/minimal (collection profile + surface
+  toggles); the wizard suggests one from the site_analyze report (Woo/products
+  detected → storefront; on a TTY it asks via @clack/prompts, in CI/e2e the
+  suggestion applies deterministically).
+- `--theme-policy auto|light|dark|brand:<slug>` (default `auto`) bakes the
+  site-level theme decision into `src/lib/theme/policy.generated.ts` — the
+  layout boot applies the policy before any stored preference (forced modes
+  disable the theme toggle), and the pure ladder lives in
+  `src/lib/theme/policy.ts` (Proposal 105 §4).
+
+| Preset | Template | Collections | Surfaces |
+| --- | --- | --- | --- |
+| `blog` | `blog` | as discovered (the Phase 0 default) | search, feed, sitemap |
+| `storefront` | `blog` | blog + products (`wc/v3`, consumer-key auth) + front page | search, feed, sitemap |
+| `minimal` | `blog` | posts/pages only | feed, sitemap — **no search** (page + Pagefind step + nav link pruned) |
+
+### Render variant (Proposal 104 Q4 — `--render static|ssr`)
+
+```sh
+node scripts/forge.mjs site.json --target ./customer-frontend --render ssr
+# wizard: the storefront preset prompts static-vs-ssr on a TTY; non-TTY stays static
+```
+
+- `static` (default) — today's template, untouched.
+- `ssr` — the static product pages are swapped for the on-demand route
+  (`/products/{id}/{slug}/`), `astro.config.mjs` gets `output: 'server'` +
+  `@astrojs/node` standalone. The route fetches ONE product from the site's
+  REST at request time (same client + auth env as the content layer),
+  sanitizes the description, emits `Product` JSON-LD in the initial HTML,
+  404s unknown ids, 301s slug drift to the canonical URL, and sends
+  `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
+  Everything else (home, posts, pages, PLP, search, SEO endpoints) stays
+  build-time static — mirroring the velocity PDP-on-demand model — so
+  Pagefind/sitemap/robots keep working.
+
+### Per-post OG cards (Proposal 104 §4.8 / Q5 — `--og-images`)
+
+Opt-in surface, OFF by default (default scaffolds stay zero-dep for OG).
+When on, the scaffold ships `src/pages/og/[slug].png.ts` — build-time cards
+for every post (the Cactus pattern) branded from the `--forge-*` tokens,
+rendered with `satori` + `@resvg/resvg-js` + `@fontsource/inter` (deps
+injected into the generated package.json only when the flag is on). Post
+pages point `og:image` at the card; render failures warn and fall back to
+a plain card — never a build failure.
+
+### Surface toggles
+
+`feed` / `sitemap` are declared on every preset (all shipped presets keep
+them on). When toggled off at scaffold time the corresponding endpoints are
+pruned and the chrome adjusts: the nav drops the search link, the head
+drops the RSS link, and `robots.txt` drops its sitemap pointer.
+
+## Research basis
+### Phase 4 template additions (Proposal 104)
+
+Every scaffold ships, unless `--no-agents`:
+
+- **`AGENTS.md` + `.context/README.md`** (4.4) — project layout, commands, the
+  storefront-runtime-contract pointer, “content lives in `src/content/`,
+  config in `nvoos.json`”, plus the customer-context hook directory. Both
+  are collected by `lib/project-files.ts` — CLI deploy and the
+  `github_commit` tool push them.
+- **Typed copy tables** (`src/copy/`) (4.5) — `en.ts` is the reference table
+  (nav labels, footer, aria labels, empty states); a second locale is added
+  as another `Copy`-typed table and a missing key fails `astro check`. The
+  zero-dependency floor; the Paraglide upgrade path is documented in the
+  template README.
+- **`src/lib/seo.ts`** (4.6) — `kind`-typed `jsonLdFor('WebPage'|'BlogPosting'|'Product')`
+  + `breadcrumbList()`, typed with `schema-dts`, with the `<` → `\u003c`
+  escape; the posts/products pages consume it and the e2e gate pins the output.
+- **`src/lib/theme/`** (4.2) — the velocity runtime theme module port
+  (`theme.ts` + `registry.ts`, pure — no Astro imports), the documented port
+  target for runtime theming (104 Q4: define-only, the boot script + toggle
+  land later).
+- **`src/styles/tokens-tailwind.css`** (4.7) — an `@theme inline` bridge over
+  the `--forge-*` tokens; “import only if/when you add Tailwind v4; unused by
+  default”. Ships byte-identical (no FORGE markers).
+
+Generated projects must satisfy the **storefront runtime contract**
+(Proposal 104) — see “Storefront runtime contract” in the template README:
+no-FOUC theming + `astro:after-swap` re-apply + `color-scheme` sync, PDP
+canonical + 301 slug convergence, `Product` JSON-LD in initial HTML, cache
+headers + tags on commerce routes.
 
 ## Research basis
 

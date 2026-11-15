@@ -14,6 +14,10 @@
  * @package WP_MCP_AI
  * @since 1.1.94
  * @see    https://developers.openai.com/plugins/deploy/submission#domain-verification-details
+ *
+ * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

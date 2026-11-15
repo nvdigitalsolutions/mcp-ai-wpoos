@@ -169,6 +169,40 @@ fi
 
 info "Installing test plugins (mode: $MODE)..."
 
+# ── Pinned plugin versions ─────────────────────────────────
+# These plugins come straight from wp.org, so an upstream release can change
+# behaviour underneath the suite without a commit here. Pin the ones whose
+# internals an integration drives, and review the pin when bumping.
+#
+# simple-jwt-login: 4.0.0 rewrote src/Modules/ into src/Jwt + src/Settings and
+# dropped WordPressData::getOptionFromDatabase(), which the 3.x service classes
+# our bridge uses are built around. 3.6.9 is the last 3.x tag. The runtime side
+# of this is the probe in includes/class-wp-mcp-ai-simple-jwt-login-integration.php.
+#
+# Set NVOOS_TEST_PLUGINS_UNPINNED=1 to float back to latest-stable.
+pinned_version_for() {
+	if [ "${NVOOS_TEST_PLUGINS_UNPINNED:-0}" = "1" ]; then
+		return 0
+	fi
+
+	case "$1" in
+		simple-jwt-login) printf '%s' "3.6.9" ;;
+		*)                printf '%s' "" ;;
+	esac
+}
+
+plugin_zip_url() {
+	local slug="$1"
+	local pinned
+	pinned="$(pinned_version_for "$slug")"
+
+	if [ -n "$pinned" ]; then
+		printf 'https://downloads.wordpress.org/plugin/%s.%s.zip' "$slug" "$pinned"
+	else
+		printf 'https://downloads.wordpress.org/plugin/%s.latest-stable.zip' "$slug"
+	fi
+}
+
 # ── Helper: unpack a plugin zip straight onto disk ─────────
 # Used in file-only mode, where there is no WordPress to activate against.
 unpack_plugin_files() {
@@ -180,7 +214,7 @@ unpack_plugin_files() {
 		return 0
 	fi
 
-	if ! curl -fsSL "https://downloads.wordpress.org/plugin/${slug}.latest-stable.zip" -o "$zip_file" 2>/dev/null; then
+	if ! curl -fsSL "$(plugin_zip_url "$slug")" -o "$zip_file" 2>/dev/null; then
 		rm -f "$zip_file"
 		fail "$slug (download failed)"
 		return 1
@@ -212,7 +246,15 @@ install_plugin() {
 		return 0
 	fi
 
-	if run_wp "${WP_PATH_ARG[@]}" plugin install "$slug" --activate 2>/dev/null; then
+	local pinned
+	pinned="$(pinned_version_for "$slug")"
+
+	if [ -n "$pinned" ]; then
+		if run_wp "${WP_PATH_ARG[@]}" plugin install "$slug" --version="$pinned" --activate 2>/dev/null; then
+			ok "$slug $pinned (installed + activated)"
+			return 0
+		fi
+	elif run_wp "${WP_PATH_ARG[@]}" plugin install "$slug" --activate 2>/dev/null; then
 		ok "$slug (installed + activated)"
 		return 0
 	fi
@@ -220,7 +262,7 @@ install_plugin() {
 	# Fallback: some PHP images (e.g. wordpress:cli) lack the ZipArchive
 	# extension that `wp plugin install` needs for extraction. Download the
 	# zip and unpack it with the unzip binary instead.
-	if unpack_plugin_zip "https://downloads.wordpress.org/plugin/${slug}.latest-stable.zip" "$slug" "$activate"; then
+	if unpack_plugin_zip "$(plugin_zip_url "$slug")" "$slug" "$activate"; then
 		return 0
 	fi
 

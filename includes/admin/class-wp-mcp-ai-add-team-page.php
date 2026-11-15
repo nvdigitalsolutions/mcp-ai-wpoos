@@ -8,6 +8,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -297,7 +299,7 @@ class WP_MCP_AI_Add_Team_Page {
 			$knowledge_base   = isset( $profession_meta['_wp_mcp_ai_profession_knowledge_base'][0] ) ? $profession_meta['_wp_mcp_ai_profession_knowledge_base'][0] : '';
 			$memory_files     = isset( $profession_meta['_wp_mcp_ai_profession_memory_files'][0] ) ? maybe_unserialize( $profession_meta['_wp_mcp_ai_profession_memory_files'][0] ) : array();
 			$prof_provider    = isset( $profession_meta['_wp_mcp_ai_profession_default_provider'][0] ) ? $profession_meta['_wp_mcp_ai_profession_default_provider'][0] : 'openai';
-			$prof_model       = isset( $profession_meta['_wp_mcp_ai_profession_default_model'][0] ) ? $profession_meta['_wp_mcp_ai_profession_default_model'][0] : 'gpt-4.1';
+			$prof_model       = isset( $profession_meta['_wp_mcp_ai_profession_default_model'][0] ) ? $profession_meta['_wp_mcp_ai_profession_default_model'][0] : 'gpt-6.1-sol';
 			$prof_temp        = isset( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) ? floatval( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) : 0.7;
 
 			// Team defaults override profession defaults.

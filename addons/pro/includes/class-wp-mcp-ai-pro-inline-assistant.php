@@ -10,6 +10,10 @@
  *
  * @package NV_oOS_Pro
  * @since   1.7.0
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -121,7 +125,7 @@ class WP_MCP_AI_Pro_Inline_Assistant {
 					'model'    => array(
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
-						'default'           => 'gpt-4.1',
+						'default'           => 'gpt-6.1-sol',
 					),
 					'provider' => array(
 						'type'              => 'string',

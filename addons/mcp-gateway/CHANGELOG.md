@@ -1,6 +1,56 @@
 # Changelog — NV oOS MCP Gateway
 
+## [0.3.2] — 2026-11-04
+
+- Publish the demo key on the public landing page (`GET /`): a new
+  optional `PUBLIC_DEMO_KEY` env var renders the operator-published demo
+  credential in a "Try it now" section and substitutes it into the
+  copy-paste client configs (HTML-escaped). Unset, the page behaves
+  exactly as before (`YOUR_KEY` placeholders, no key material). The key is
+  a public-by-design, site-scoped credential — the variable exists so its
+  value never has to live in the repo.
+
+## [0.3.1] — 2026-11-03
+
+- Normalize every advertised tool's annotations to the three explicit
+  safety booleans the OpenAI plugin portal scan requires — `readOnlyHint`,
+  `destructiveHint`, `openWorldHint` — defaulting pessimistically when an
+  upstream omits them (read-only tools advertise `destructiveHint: false`;
+  un-flagged tools `true`, matching the site plugin's own annotation
+  discipline). Upstream-only keys like `idempotentHint` pass through.
+- Override the annotations for `deep_research`: it can schedule background
+  cron work and persist results to agent memory, so it must not advertise
+  `readOnlyHint: true` (the portal scan rejects read-only claims on tools
+  with user-visible side effects). Advertised as read-only: false,
+  destructive: false, open-world: true.
+
+## [0.3.0] — 2026-11-02
+
+- Add the OpenAI plugin domain-verification route:
+  `GET /.well-known/openai-apps-challenge` serves
+  `GATEWAY_OPENAI_CHALLENGE_TOKEN` verbatim as `text/plain` (no JSON, no
+  trailing newline, `Cache-Control: no-store`) and answers 404 while the
+  token is unset — the surface is inert until a portal submission needs it
+  (Proposal 101, Phase A).
+- Align the `VERSION` constant with `package.json` at 0.3.0 — the 0.2.1
+  separator-rename bump updated `package.json` but missed the constant, so
+  `/health` reported 0.2.0 and the mirror health test would have failed.
+
 ## Unreleased
+
+- Claude Code plugin distribution: add `.claude-plugin/marketplace.json`
+  (`nvoos-marketplace`) so the mirror installs by name
+  (`/plugin install nvoos-mcp-gateway@nvoos-marketplace`); bump the
+  manifest version to 0.3.1; document the version-bump release discipline
+  and the slimmer directory-ready plugin (`addons/claude-gateway-plugin`).
+
+- Rename the tool-namespacing separator from `.` to `_`
+  (`demo.get_environment_status` → `demo_get_environment_status`): the MCP
+  tool-name grammar forbids dots, and OpenAI connectors (ChatGPT/Codex)
+  normalize illegal names client-side, silently breaking the call
+  round-trip. `tools/call` still accepts legacy dot-prefixed names from
+  pre-0.2.1 listings (longest configured slug wins on underscore splits).
+  Version bump to 0.2.1.
 
 - Fix the `VERSION` constant in `src/index.js` — the 0.2.0 bump updated
   `package.json` but missed the constant, so `/health` reported 0.1.1 and

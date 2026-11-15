@@ -1,0 +1,17 @@
+---
+// IconMarker — the icon-list item marker (117 §1): an accent disc with a
+// check glyph fallback, or the SOURCE glyph via its font classes
+// (auxicon-*, fa fa-*, dashicons-*, eicon-*). With the source's own icon
+// stylesheet (chrome.iconCss) linked in the layout, the glyph classes draw
+// the real icon — the rebuild never invents the art.
+import type { SectionItem } from '../../forge/semantic.ts';
+
+interface Props {
+	item: SectionItem;
+}
+
+const { item } = Astro.props;
+---
+
+{item.iconClass && <span class:list={['ds-icon-marker', item.iconClass]} aria-hidden="true" />}
+{!item.iconClass && item.icon && <span class="ds-icon-marker" aria-hidden="true">✓</span>}

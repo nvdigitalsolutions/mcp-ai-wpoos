@@ -16,6 +16,16 @@ import ManageGate from '../../islands/ManageGate';
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="robots" content="noindex, nofollow" />
 		<title>Manage store — NV Store</title>
+		<!-- The CMS bundle is multi-MB; preload it so it downloads in
+		     parallel with the auth/me + nonce ladder instead of AFTER it
+		     (ManageGate injects the script once the manager session is
+		     confirmed — a preloaded copy lands straight from cache). -->
+		<link
+			rel="preload"
+			href="/manage-assets/astro-admin.js"
+			as="script"
+			fetchpriority="high"
+		/>
 		<link rel="stylesheet" href="/manage-assets/astro-admin.css" />
 		<style is:global>
 			body {

@@ -1,0 +1,255 @@
+{
+    "list-projects": {
+        "tool": "list_projects",
+        "args": [],
+        "expected": {
+            "success": true,
+            "count": 3,
+            "total": 3,
+            "projects": [
+                {
+                    "id": "<id>",
+                    "name": "Atlas Migration",
+                    "description": "Move the estate to the new platform.",
+                    "status": "active",
+                    "start_date": "<date>",
+                    "end_date": "<date>",
+                    "assigned_to": [
+                        "<id>"
+                    ],
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                },
+                {
+                    "id": "<id>",
+                    "name": "Beacon Audit",
+                    "description": "Accessibility and performance review.",
+                    "status": "planning",
+                    "start_date": "<date>",
+                    "end_date": "<date>",
+                    "assigned_to": [],
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                },
+                {
+                    "id": "<id>",
+                    "name": "Cinder Rebuild",
+                    "description": "Rebuild the storefront.",
+                    "status": "completed",
+                    "start_date": "<date>",
+                    "end_date": "<date>",
+                    "assigned_to": [],
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                }
+            ]
+        }
+    },
+    "list-projects-limit": {
+        "tool": "list_projects",
+        "args": {
+            "limit": 2
+        },
+        "expected": {
+            "success": true,
+            "count": 2,
+            "total": 3,
+            "projects": [
+                {
+                    "id": "<id>",
+                    "name": "Atlas Migration",
+                    "description": "Move the estate to the new platform.",
+                    "status": "active",
+                    "start_date": "<date>",
+                    "end_date": "<date>",
+                    "assigned_to": [
+                        "<id>"
+                    ],
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                },
+                {
+                    "id": "<id>",
+                    "name": "Beacon Audit",
+                    "description": "Accessibility and performance review.",
+                    "status": "planning",
+                    "start_date": "<date>",
+                    "end_date": "<date>",
+                    "assigned_to": [],
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                }
+            ]
+        }
+    },
+    "list-projects-status": {
+        "tool": "list_projects",
+        "args": {
+            "status": "active"
+        },
+        "expected": {
+            "success": true,
+            "count": 1,
+            "total": 1,
+            "projects": [
+                {
+                    "id": "<id>",
+                    "name": "Atlas Migration",
+                    "description": "Move the estate to the new platform.",
+                    "status": "active",
+                    "start_date": "<date>",
+                    "end_date": "<date>",
+                    "assigned_to": [
+                        "<id>"
+                    ],
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                }
+            ]
+        }
+    },
+    "list-tasks": {
+        "tool": "list_tasks",
+        "args": [],
+        "expected": {
+            "success": true,
+            "count": 3,
+            "total": 3,
+            "tasks": [
+                {
+                    "id": "<id>",
+                    "title": "Draft the migration plan",
+                    "description": "Write the cutover plan.",
+                    "project_id": "<id>",
+                    "status": "in-progress",
+                    "priority": "high",
+                    "category": "general",
+                    "tags": "",
+                    "due_date": "<date>",
+                    "assigned_to": "<id>",
+                    "estimated_effort": null,
+                    "actual_effort": null,
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                },
+                {
+                    "id": "<id>",
+                    "title": "Freeze plugin updates",
+                    "description": "Announce and freeze.",
+                    "project_id": "<id>",
+                    "status": "pending",
+                    "priority": "medium",
+                    "category": "general",
+                    "tags": "",
+                    "due_date": "<date>",
+                    "assigned_to": null,
+                    "estimated_effort": null,
+                    "actual_effort": null,
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                },
+                {
+                    "id": "<id>",
+                    "title": "Run the contrast sweep",
+                    "description": "WCAG AA across the top 20 pages.",
+                    "project_id": "<id>",
+                    "status": "completed",
+                    "priority": "low",
+                    "category": "general",
+                    "tags": "",
+                    "due_date": "<date>",
+                    "assigned_to": null,
+                    "estimated_effort": null,
+                    "actual_effort": null,
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                }
+            ]
+        }
+    },
+    "list-tasks-by-project": {
+        "tool": "list_tasks",
+        "args": {
+            "project_id": "<project:atlas>"
+        },
+        "expected": {
+            "success": true,
+            "count": 2,
+            "total": 2,
+            "tasks": [
+                {
+                    "id": "<id>",
+                    "title": "Draft the migration plan",
+                    "description": "Write the cutover plan.",
+                    "project_id": "<id>",
+                    "status": "in-progress",
+                    "priority": "high",
+                    "category": "general",
+                    "tags": "",
+                    "due_date": "<date>",
+                    "assigned_to": "<id>",
+                    "estimated_effort": null,
+                    "actual_effort": null,
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                },
+                {
+                    "id": "<id>",
+                    "title": "Freeze plugin updates",
+                    "description": "Announce and freeze.",
+                    "project_id": "<id>",
+                    "status": "pending",
+                    "priority": "medium",
+                    "category": "general",
+                    "tags": "",
+                    "due_date": "<date>",
+                    "assigned_to": null,
+                    "estimated_effort": null,
+                    "actual_effort": null,
+                    "created_at": "<date>",
+                    "updated_at": "<date>"
+                }
+            ]
+        }
+    },
+    "task-dependencies": {
+        "tool": "get_task_dependencies",
+        "args": {
+            "task_id": "<task:freeze>"
+        },
+        "expected": {
+            "success": true,
+            "task_id": "<id>",
+            "task_title": "Freeze plugin updates",
+            "task_status": "pending",
+            "can_start": false,
+            "depends_on": [
+                {
+                    "task_id": "<id>",
+                    "title": "Draft the migration plan",
+                    "status": "in-progress",
+                    "due_date": "<date>",
+                    "priority": "high"
+                }
+            ],
+            "blocks": [],
+            "summary": "This task depends on 1 task(s) and blocks 0 task(s)."
+        }
+    },
+    "task-dependencies-nested": {
+        "tool": "get_task_dependencies",
+        "args": {
+            "task_id": "<task:plan>"
+        },
+        "expected": {
+            "success": true,
+            "task_id": "<id>",
+            "task_title": "Draft the migration plan",
+            "task_status": "in-progress",
+            "can_start": true,
+            "depends_on": [],
+            "blocks": [],
+            "summary": "This task depends on 0 task(s) and blocks 0 task(s)."
+        }
+    }
+}

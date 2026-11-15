@@ -1,0 +1,189 @@
+---
+// ---------------------------------------------------------------------------
+// ContactForm — the storefront's public enquiry form (Proposal 138).
+//
+// Native first: the markup is a plain form that POSTs to /forms/submit, so it
+// works with JavaScript disabled and needs no island. The bundled <script>
+// below only UPGRADES it (inline status, no navigation). Astro hoists that
+// script into an external chunk (astro.config.mjs sets assetsInlineLimit: 0),
+// so `'self'` covers it and it never joins the per-document inline hash set —
+// the invariant guarded by tests/unit/csp-inline-invariance.test.ts.
+//
+// The no-JS path relies on Astro's checkOrigin (on by default for server
+// output) rejecting a cross-site form post; that is why the form is a real
+// form submission and not a fetch-only surface.
+// ---------------------------------------------------------------------------
+
+interface Props {
+	action?: string;
+	/** Server-rendered result of the no-JS redirect (?sent=1 / ?error=1). */
+	sent?: boolean;
+	error?: boolean;
+}
+
+const { action = '/forms/submit', sent = false, error = false } = Astro.props;
+
+// Server-authoritative baseline for the endpoint's time trap.
+const stamp = Date.now();
+---
+
+<section class="contact-form">
+	{
+		sent && (
+			<p class="contact-form__notice" role="status">
+				Thanks — your message is on its way.
+			</p>
+		)
+	}
+	{
+		error && (
+			<p class="contact-form__notice contact-form__notice--error" role="alert">
+				That did not send. Please try again.
+			</p>
+		)
+	}
+
+	<form method="post" action={action} data-contact-form>
+		<input type="hidden" name="timestamp" value={stamp} />
+
+		{/* Honeypot: invisible to people, filled by naive bots. The endpoint
+		    accepts a filled honeypot SILENTLY — a rejection would teach the
+		    sender which field to change. `hidden` keeps it out of the tab
+		    order and the accessibility tree, so it cannot trip the axe gate. */}
+		<div hidden>
+			<label for="contact-website">Website</label>
+			<input
+				id="contact-website"
+				type="text"
+				name="honeypot"
+				tabindex="-1"
+				autocomplete="off"
+			/>
+		</div>
+
+		<label class="contact-form__field">
+			<span>Name</span>
+			<input type="text" name="name" autocomplete="name" required />
+		</label>
+
+		<label class="contact-form__field">
+			<span>Email</span>
+			<input type="email" name="email" autocomplete="email" required />
+		</label>
+
+		<label class="contact-form__field">
+			<span>Message</span>
+			<textarea name="message" rows="6" required></textarea>
+		</label>
+
+		<button type="submit" class="contact-form__submit">Send message</button>
+
+		<p class="contact-form__status" role="status" aria-live="polite" data-contact-status>
+		</p>
+	</form>
+</section>
+
+<script>
+	// Delegated once on `document`, not bound per navigation: ClientRouter keeps
+	// the document across in-app navigations, so a per-load rebind would stack
+	// listeners and submit twice.
+	async function onSubmit(event: SubmitEvent): Promise<void> {
+		const form = event.target;
+		if (!(form instanceof HTMLFormElement) || !form.matches('[data-contact-form]')) {
+			return;
+		}
+		event.preventDefault();
+
+		const status = form.querySelector<HTMLElement>('[data-contact-status]');
+		const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+		const payload: Record<string, string> = {};
+		for (const [key, value] of new FormData(form).entries()) {
+			if (typeof value === 'string') {
+				payload[key] = value;
+			}
+		}
+
+		if (button) {
+			button.disabled = true;
+		}
+		if (status) {
+			status.textContent = 'Sending…';
+		}
+
+		try {
+			const response = await fetch(form.action, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json', accept: 'application/json' },
+				body: JSON.stringify(payload),
+			});
+			if (!response.ok) {
+				throw new Error(String(response.status));
+			}
+			form.reset();
+			if (status) {
+				status.textContent = 'Thanks — your message is on its way.';
+			}
+		} catch {
+			if (status) {
+				status.textContent = 'That did not send. Please try again.';
+			}
+		} finally {
+			if (button) {
+				button.disabled = false;
+			}
+		}
+	}
+
+	document.addEventListener('submit', onSubmit);
+</script>
+
+<style>
+	.contact-form {
+		max-width: 36rem;
+	}
+
+	.contact-form form {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.contact-form__field {
+		display: grid;
+		gap: 0.35rem;
+	}
+
+	.contact-form input[type='text'],
+	.contact-form input[type='email'],
+	.contact-form textarea {
+		font: inherit;
+		padding: 0.5rem 0.65rem;
+		border: 1px solid currentColor;
+		border-radius: var(--nv-radius, 0.5rem);
+		background: transparent;
+		color: inherit;
+	}
+
+	.contact-form__submit {
+		justify-self: start;
+		font: inherit;
+		padding: 0.55rem 1.1rem;
+		border: 1px solid currentColor;
+		border-radius: var(--nv-radius, 0.5rem);
+		background: transparent;
+		cursor: pointer;
+	}
+
+	.contact-form__submit:disabled {
+		cursor: progress;
+		opacity: 0.6;
+	}
+
+	.contact-form__status,
+	.contact-form__notice {
+		margin: 0;
+	}
+
+	.contact-form__notice--error {
+		font-weight: 600;
+	}
+</style>

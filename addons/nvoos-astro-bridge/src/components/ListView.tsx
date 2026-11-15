@@ -10,7 +10,7 @@
  */
 import { useState, useEffect, useMemo } from '@wordpress/element';
 import { Button } from '@wordpress/components';
-import { useCollection, useDocumentDelete } from '../hooks/useCollection';
+import { useCollection, useDocumentDelete, createPreviewLink } from '../hooks/useCollection';
 import { isCollectionWritable } from '../auth/permissions';
 import type { CollectionConfig } from '../config/collections';
 
@@ -25,12 +25,26 @@ interface SortState {
 	direction: 'asc' | 'desc';
 }
 
+/** Status options for the governed content collections (bridge ?status=). */
+const STATUS_FILTER_OPTIONS = [
+	{ value: 'any', label: 'All statuses' },
+	{ value: 'publish', label: 'Published' },
+	{ value: 'draft', label: 'Draft' },
+	{ value: 'pending', label: 'Pending' },
+	{ value: 'future', label: 'Scheduled' },
+];
+
 export function ListView({ config, onEdit, onCreate }: ListViewProps) {
 	const writable = isCollectionWritable(config.slug);
 	const [page, setPage] = useState(1);
 	const [sort, setSort] = useState<SortState | null>(null);
 	const [searchTerm, setSearchTerm] = useState('');
 	const [debouncedSearch, setDebouncedSearch] = useState('');
+	// Id of the row whose preview link is being minted (disables its button).
+	const [previewingId, setPreviewingId] = useState<number | null>(null);
+	// The content workbench defaults to the full workflow ('any'); the bridge
+	// still enforces publish-only for sessions without the manage cap.
+	const [statusFilter, setStatusFilter] = useState('any');
 
 	// Debounce the search box so every keystroke doesn't hit the backend
 	// (300ms — the standard admin-table trade-off between latency and load).
@@ -54,6 +68,7 @@ export function ListView({ config, onEdit, onCreate }: ListViewProps) {
 		limit: 20,
 		sort: config.sortable?.length ? sortParam : undefined,
 		where: config.searchable ? where : undefined,
+		status: config.statusFilter ? statusFilter : undefined,
 	});
 	const deleteMutation = useDocumentDelete(config.slug);
 
@@ -75,6 +90,40 @@ export function ListView({ config, onEdit, onCreate }: ListViewProps) {
 	const handleDelete = async (id: number) => {
 		if (!confirm('Are you sure you want to delete this item?')) return;
 		deleteMutation.mutate(id);
+	};
+
+	/**
+	 * Open a draft preview (Proposal 135 Phase 5).
+	 *
+	 * The tab is opened BEFORE the request: a window opened after an `await`
+	 * is treated as a popup and blocked. The bridge mints a short-lived,
+	 * single-document token; the public origin's `/api/preview` stores it in a
+	 * host-only cookie and redirects to the real page.
+	 */
+	const handlePreview = async (id: number) => {
+		const tab = window.open('about:blank', '_blank');
+		setPreviewingId(id);
+		try {
+			const link = await createPreviewLink(config.slug, id);
+			if (link.previewUrl) {
+				if (tab) {
+					tab.location.replace(link.previewUrl);
+				} else {
+					window.location.assign(link.previewUrl);
+				}
+				return;
+			}
+			tab?.close();
+			alert(
+				'This site has no public origin configured (Settings → Domains), so there is no preview URL. ' +
+					`The token was minted and expires ${link.expiresAt}.`
+			);
+		} catch {
+			tab?.close();
+			alert('Could not create a preview link. Please try again.');
+		} finally {
+			setPreviewingId(null);
+		}
 	};
 
 	/**
@@ -143,6 +192,27 @@ export function ListView({ config, onEdit, onCreate }: ListViewProps) {
 							Search {config.pluralLabel}
 						</label>
 					)}
+					{config.statusFilter && (
+						<label className="screen-reader-text" htmlFor={`${config.slug}-status`}>
+							Status filter
+						</label>
+					)}
+					{config.statusFilter && (
+						<select
+							id={`${config.slug}-status`}
+							value={statusFilter}
+							onChange={(event) => {
+								setStatusFilter((event.target as HTMLSelectElement).value);
+								setPage(1);
+							}}
+						>
+							{STATUS_FILTER_OPTIONS.map((option) => (
+								<option key={option.value} value={option.value}>
+									{option.label}
+								</option>
+							))}
+						</select>
+					)}
 					{config.searchable && (
 						<input
 							id={`${config.slug}-search`}
@@ -180,7 +250,7 @@ export function ListView({ config, onEdit, onCreate }: ListViewProps) {
 							</th>
 							{config.defaultColumns.map(renderHeader)}
 							{writable && (
-								<th style={{ width: 120 }} scope="col">
+								<th style={{ width: config.previewable ? 260 : 120 }} scope="col">
 									Actions
 								</th>
 							)}
@@ -195,6 +265,16 @@ export function ListView({ config, onEdit, onCreate }: ListViewProps) {
 								))}
 								{writable && (
 									<td>
+										{config.previewable && (
+											<Button
+												variant="secondary"
+												onClick={() => handlePreview(doc.id)}
+												disabled={previewingId === doc.id}
+												style={{ marginRight: 4 }}
+											>
+												{previewingId === doc.id ? 'Opening…' : 'Preview'}
+											</Button>
+										)}
 										<Button variant="secondary" onClick={() => onEdit(doc.id)} style={{ marginRight: 4 }}>
 											Edit
 										</Button>

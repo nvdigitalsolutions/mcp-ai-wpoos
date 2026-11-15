@@ -1,0 +1,3215 @@
+{
+	"url": "https://virtuallysrilanka.com",
+	"name": "Virtually Sri Lanka",
+	"frontPage": "home-v3-2",
+	"shape": "one-pager",
+	"collections": [
+		{
+			"slug": "posts",
+			"restBase": "wp/v2/posts",
+			"fields": [
+				"id",
+				"date_gmt",
+				"modified_gmt",
+				"title",
+				"slug",
+				"link",
+				"content",
+				"excerpt",
+				"rank_math_title",
+				"rank_math_description",
+				"rank_math_canonical_url",
+				"rank_math_robots",
+				"rank_math_facebook_title",
+				"rank_math_facebook_description",
+				"rank_math_facebook_image",
+				"rank_math_twitter_title",
+				"rank_math_twitter_description",
+				"rank_math_twitter_image",
+				"yoast_head_json"
+			],
+			"embed": true,
+			"kind": "post",
+			"optional": false
+		},
+		{
+			"slug": "pages",
+			"restBase": "wp/v2/pages",
+			"fields": [
+				"id",
+				"date_gmt",
+				"modified_gmt",
+				"title",
+				"slug",
+				"link",
+				"content",
+				"excerpt",
+				"rank_math_title",
+				"rank_math_description",
+				"rank_math_canonical_url",
+				"rank_math_robots",
+				"rank_math_facebook_title",
+				"rank_math_facebook_description",
+				"rank_math_facebook_image",
+				"rank_math_twitter_title",
+				"rank_math_twitter_description",
+				"rank_math_twitter_image",
+				"yoast_head_json"
+			],
+			"embed": true,
+			"kind": "page",
+			"optional": false,
+			"exclude": [
+				"login-customizer",
+				"my-account",
+				"checkout",
+				"cart",
+				"shop"
+			]
+		}
+	],
+	"seo": {
+		"description": "Through social WiFi adversising, you can target the right audience, at the right time and at the same time leverage your hotspot to promote your business!"
+	},
+	"design": {
+		"mode": "rebuild",
+		"source": {
+			"url": "https://virtuallysrilanka.com",
+			"analyzedAt": "2026-11-15T08:51:26.143Z"
+		},
+		"concept": "warm accent over light neutrals, montserrat display / eicons body, compact spacing rhythm.",
+		"palette": {
+			"roles": {
+				"accent": "#dd3333",
+				"accent-alt": "#54595f",
+				"text": "#2d3748",
+				"custom-kadence1": "#3182ce",
+				"custom-kadence2": "#2b6cb0",
+				"custom-kadence3": "#1a202c",
+				"custom-kadence4": "#2d3748",
+				"custom-kadence5": "#4a5568",
+				"custom-kadence6": "#718096",
+				"custom-kadence7": "#edf2f7",
+				"custom-kadence8": "#f7fafc",
+				"custom-kadence9": "#ffffff",
+				"cta": "#dd3333",
+				"surface": "#ffffff",
+				"field.border": "#edf2f7"
+			},
+			"unassigned": [
+				"#69727d",
+				"#39b54a",
+				"#090c10",
+				"#32373c",
+				"#ff6900",
+				"#333333",
+				"#5cb85c",
+				"#e5e7eb",
+				"#cf2e2e",
+				"#fcb900",
+				"#0693e3",
+				"#9b51e0"
+			],
+			"confidence": {
+				"accent": "high",
+				"accent-alt": "high",
+				"text": "high",
+				"custom-kadence1": "high",
+				"custom-kadence2": "high",
+				"custom-kadence3": "high",
+				"custom-kadence4": "high",
+				"custom-kadence5": "high",
+				"custom-kadence6": "high",
+				"custom-kadence7": "high",
+				"custom-kadence8": "high",
+				"custom-kadence9": "high",
+				"cta": "high",
+				"surface": "medium",
+				"field.border": "medium"
+			}
+		},
+		"typography": {
+			"display": "montserrat",
+			"body": "montserrat",
+			"scalePx": [
+				11,
+				12,
+				13,
+				29,
+				48,
+				80,
+				160
+			]
+		},
+		"spacing": {
+			"scalePx": [
+				4,
+				10,
+				16,
+				32,
+				80,
+				160
+			]
+		},
+		"radii": {
+			"valuesPx": [
+				2,
+				3,
+				4,
+				5,
+				6,
+				10
+			]
+		},
+		"shadows": {
+			"count": 41
+		},
+		"components": {
+			"header": 63,
+			"footer": 60,
+			"button": 24,
+			"nav": 14,
+			"form": 3,
+			"feature": 24
+		},
+		"modes": {
+			"dark": "auto",
+			"contrast": "auto"
+		},
+		"sections": [
+			{
+				"id": "dbd1518",
+				"bgColor": "#dd3333",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				],
+				"measure": "1140px",
+				"paddingX": "10px",
+				"layout": "split"
+			},
+			{
+				"id": "9c37fd4",
+				"anchor": "about",
+				"marginTop": {
+					"tablet": "100px"
+				},
+				"marginBottom": {
+					"tablet": "100px"
+				},
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				],
+				"measure": "1140px",
+				"paddingX": "10px",
+				"layout": "split"
+			},
+			{
+				"id": "8d6ec26",
+				"anchor": "wifi",
+				"bgImage": "https://virtuallysrilanka.com/wp-content/uploads/2018/11/social-login.jpg",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "bfaba9f",
+				"anchor": "features",
+				"padding": "100px 0px 100px 0px",
+				"marginTop": "200px",
+				"measure": "1140px",
+				"paddingX": "10px"
+			},
+			{
+				"id": "116ce85",
+				"anchor": "services",
+				"marginTop": "100px",
+				"columns": [
+					{
+						"width": 33
+					},
+					{
+						"width": 33
+					},
+					{
+						"width": 33
+					}
+				]
+			},
+			{
+				"id": "a5d0ddc",
+				"anchor": "hardware",
+				"padding": "100px 0px 0px 0px",
+				"marginTop": "150px",
+				"marginBottom": "150px",
+				"measure": "1140px",
+				"paddingX": "10px"
+			},
+			{
+				"id": "ccdbf50",
+				"anchor": "contact",
+				"bgImage": "https://virtuallysrilanka.com/wp-content/uploads/2018/11/contact-us.jpg",
+				"measure": "1140px",
+				"paddingX": "10px"
+			}
+		],
+		"bandSource": "sections",
+		"outline": [
+			{
+				"id": "ba467e5",
+				"via": "elementor",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "6ed68e8",
+				"via": "elementor",
+				"anchor": "about",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "0c34ee7",
+				"via": "elementor",
+				"anchor": "wifi",
+				"columns": [
+					{
+						"width": 50
+					},
+					{
+						"width": 50
+					}
+				]
+			},
+			{
+				"id": "5c622c6",
+				"via": "elementor",
+				"anchor": "features"
+			},
+			{
+				"id": "633c6a9",
+				"via": "elementor",
+				"anchor": "services",
+				"columns": [
+					{
+						"width": 33.33
+					},
+					{
+						"width": 33.33
+					},
+					{
+						"width": 33.33
+					}
+				]
+			},
+			{
+				"id": "f0ef312",
+				"via": "elementor",
+				"anchor": "hardware"
+			},
+			{
+				"id": "4946549",
+				"via": "elementor",
+				"anchor": "contact"
+			}
+		],
+		"builder": "elementor",
+		"chrome": {
+			"logo": {
+				"src": "https://virtuallysrilanka.com/wp-content/uploads/2019/01/VJ-Sri-Lanka-Logo-V5-wht-gry-new.svg",
+				"alt": "Virtually Sri Lanka"
+			},
+			"nav": [
+				{
+					"label": "About",
+					"href": "#about"
+				},
+				{
+					"label": "WiFi Marketing",
+					"href": "#wifi"
+				},
+				{
+					"label": "Features",
+					"href": "#features"
+				},
+				{
+					"label": "Services",
+					"href": "#services"
+				},
+				{
+					"label": "Hardware",
+					"href": "#hardware"
+				},
+				{
+					"label": "Contact",
+					"href": "#contact"
+				}
+			],
+			"navToggle": {
+				"label": "Open menu",
+				"visible": {
+					"desktop": false,
+					"tablet": true,
+					"mobile": true
+				}
+			},
+			"footerBlocks": [
+				{
+					"items": [
+						"© 2026 VIRTUALLY SRI LANKA IS POWERED BY NV DIGITAL SOLUTIONS."
+					]
+				}
+			],
+			"favicon": "https://virtuallysrilanka.com/wp-content/uploads/2019/01/cropped-fav-icon-vj-sri-linka-3-32x32.png",
+			"iconCss": "https://virtuallysrilanka.com/wp-content/plugins/elementor/assets/lib/eicons/css/elementor-icons.min.css?ver=5.54.0",
+			"socialIconCss": "https://virtuallysrilanka.com/wp-content/plugins/elementor/assets/lib/font-awesome/css/fontawesome.min.css?ver=5.15.3",
+			"chromeSize": "14px",
+			"geometry": {
+				"wide": {
+					"measure": 1290,
+					"padX": 24
+				},
+				"desktop": {
+					"measure": 1290,
+					"padX": 24
+				},
+				"tablet": {
+					"padX": 24
+				},
+				"mobile": {
+					"padX": 24
+				}
+			},
+			"footerBrand": {
+				"wide": {
+					"logo": "end",
+					"socials": "start",
+					"logoHeight": "63px"
+				},
+				"desktop": {
+					"logo": "end",
+					"socials": "start",
+					"logoHeight": "63px"
+				},
+				"divider": false,
+				"tablet": {
+					"logo": "start",
+					"socials": "start",
+					"logoHeight": "69px"
+				},
+				"mobile": {
+					"logo": "center",
+					"socials": "center",
+					"logoHeight": "54px"
+				}
+			},
+			"social": [
+				{
+					"label": "Facebook",
+					"href": ""
+				},
+				{
+					"label": "Twitter",
+					"href": ""
+				},
+				{
+					"label": "Instagram",
+					"href": ""
+				}
+			],
+			"mobileNav": {
+				"overlay": false
+			}
+		},
+		"behavior": {
+			"headerSticky": false,
+			"entries": []
+		},
+		"ctaStyle": {
+			"padding": "25px 50px",
+			"radius": "0px 0px 0px 0px"
+		},
+		"adaptation": {
+			"keep": [
+				"The palette roles, type pairing, and spacing rhythm — the design language, not the pixels.",
+				"Component vocabulary hints (buttons, cards, nav) as a checklist, not as markup."
+			],
+			"replace": [
+				"All copy, imagery, logos, and distinctive artwork with the customer's own content.",
+				"Fonts with licensed equivalents unless the source font is verifiably self-hostable."
+			],
+			"remix": [
+				"Shift the accent hue by roughly 10 degrees and pick the customer's own brand neutrals — visibly theirs, not a copy.",
+				"Let the customer's real content (products, posts, pages) drive the layout; apply the language to it."
+			],
+			"licensingNote": "Inspired-by analysis: no source CSS, HTML, copy, or assets were copied. Verify the source license before any closer adaptation.",
+			"attribution": [
+				"Source: https://virtuallysrilanka.com"
+			]
+		}
+	},
+	"inventory": {
+		"shape": "one-pager",
+		"navAnchors": [
+			"about",
+			"contact",
+			"features",
+			"hardware",
+			"services",
+			"wifi"
+		],
+		"navPages": [],
+		"covered": [
+			"/",
+			"/application/",
+			"/blog2/",
+			"/cart/",
+			"/checkout/",
+			"/login-customizer/",
+			"/my-account/",
+			"/shop/"
+		],
+		"excluded": [
+			"/cart/",
+			"/checkout/",
+			"/login-customizer/",
+			"/my-account/"
+		],
+		"missing": [
+			"/locations.kml/",
+			"/www.googletagmanager.com/",
+			"/xmlrpc.php/"
+		],
+		"danglingAnchors": [],
+		"analyzedAt": "2026-11-15T08:51:31.556Z"
+	},
+	"vocabulary": {
+		"widgetRoles": {},
+		"blockRoles": {},
+		"unknownWidgets": [
+			"accordion",
+			"cover__inner-container",
+			"gallery",
+			"latest-posts",
+			"media-carousel",
+			"post-template",
+			"pullquote",
+			"rank-math-related-posts",
+			"term-template"
+		],
+		"unknownBlocks": [],
+		"analyzedAt": "2026-11-15T08:51:32.610Z"
+	},
+	"tracking": {
+		"trackers": [
+			{
+				"vendor": "google-analytics-4",
+				"category": "analytics",
+				"enabled": false,
+				"ids": {},
+				"detectedBy": [
+					"script:www.googletagmanager.com"
+				],
+				"confidence": "low",
+				"detectedVia": "html",
+				"notes": [
+					"Vendor detected but no public id could be extracted — confirm it against the source before enabling."
+				]
+			},
+			{
+				"vendor": "google-tag",
+				"category": "analytics",
+				"enabled": false,
+				"ids": {
+					"tagId": "GT-P826PDV"
+				},
+				"detectedBy": [
+					"script:www.googletagmanager.com"
+				],
+				"confidence": "high",
+				"detectedVia": "html"
+			},
+			{
+				"vendor": "google-tag-manager",
+				"category": "analytics",
+				"enabled": false,
+				"ids": {
+					"containerId": "GTM-T5HFT22"
+				},
+				"detectedBy": [
+					"inline:call-shape"
+				],
+				"confidence": "medium",
+				"detectedVia": "html"
+			}
+		],
+		"consent": {
+			"mode": "none",
+			"default": "denied",
+			"strategy": "basic",
+			"waitForUpdate": 500,
+			"gpc": true
+		},
+		"delivery": {
+			"mode": "deferred"
+		},
+		"csp": {
+			"hosts": []
+		},
+		"analyzedAt": "2026-11-15T08:52:26.189Z",
+		"pagesAnalyzed": [
+			"https://virtuallysrilanka.com"
+		]
+	},
+	"tokens": {
+		"surface": "#ffffff",
+		"ink": "#2d3748",
+		"muted": "#69727d",
+		"line-strong": "#69727d",
+		"accent-ink": "#ffffff",
+		"scale-h1": "55px",
+		"scale-h2": "42px",
+		"scale-body": "17px",
+		"scale-small": "14px"
+	},
+	"pins": [
+		{
+			"path": "palette.roles.accent",
+			"value": "#dd3333",
+			"why": "The hero band and every source button paint #dd3333 (measured); the extractor read an unresolved --e-global-color-accent as #000000."
+		},
+		{
+			"path": "palette.roles.cta",
+			"value": "#dd3333",
+			"why": "Source buttons measure rgb(221,51,51); the extracted #d9534f is the builder default, 12 units off."
+		},
+		{
+			"path": "palette.roles.text",
+			"value": "#2d3748",
+			"why": "Body copy measures #2d3748 (11.44:1 on the #f7fafc page). The extracted #7a7a7a measures 4.10:1 and fails AA 1.4.3."
+		},
+		{
+			"path": "typography.body",
+			"value": "montserrat",
+			"why": "Reading copy and headings both render Montserrat (measured 12 paragraphs + 8 headings at 17px w400). The extracted \"eicons\" is Elementor's icon font, never a body face."
+		},
+		{
+			"path": "sections.dbd1518.bgColor",
+			"value": "#dd3333",
+			"why": "The hero bandbgColor extracts as var( --e-global-color-accent ), which the renderer cannot resolve, so the band painted nothing and its white 55px headline sat on the page background. The band measures rgb(221,51,51)."
+		}
+	],
+	"deploy": {
+		"runtime": "static",
+		"publicOrigin": "https://virtuallysrilanka.com"
+	},
+	"media": {
+		"localize": true,
+		"mode": "local"
+	},
+	"colors": {
+		"light": {
+			"body": {
+				"background": "#f7fafc",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 0.57
+					},
+					{
+						"color": "#7a7a7a",
+						"share": 0.28
+					},
+					{
+						"color": "#000000",
+						"share": 0.13
+					}
+				]
+			},
+			"header": {
+				"background": "transparent",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				]
+			},
+			"footer": {
+				"background": "transparent",
+				"text": "#2d3748",
+				"inks": [
+					{
+						"color": "#2d3748",
+						"share": 0.66
+					},
+					{
+						"color": "#3182ce",
+						"share": 0.34
+					}
+				]
+			},
+			"band:about": {
+				"background": "transparent",
+				"text": "#7a7a7a",
+				"inks": [
+					{
+						"color": "#7a7a7a",
+						"share": 0.79
+					},
+					{
+						"color": "#000000",
+						"share": 0.2
+					}
+				]
+			},
+			"band:wifi": {
+				"background": "transparent",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 0.98
+					}
+				],
+				"image": "url(\"https://virtuallysrilanka.com/wp-content/uploads/2018/11/social-login.jpg\")"
+			},
+			"band:features": {
+				"background": "transparent",
+				"text": "#7a7a7a",
+				"inks": [
+					{
+						"color": "#7a7a7a",
+						"share": 0.58
+					},
+					{
+						"color": "#000000",
+						"share": 0.39
+					}
+				]
+			},
+			"band:services": {
+				"background": "transparent",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 0.65
+					},
+					{
+						"color": "#7a7a7a",
+						"share": 0.34
+					}
+				]
+			},
+			"band:hardware": {
+				"background": "transparent",
+				"text": "#000000",
+				"inks": [
+					{
+						"color": "#000000",
+						"share": 1
+					}
+				]
+			},
+			"band:contact": {
+				"background": "transparent",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				],
+				"image": "url(\"https://virtuallysrilanka.com/wp-content/uploads/2018/11/contact-us.jpg\")"
+			}
+		},
+		"dark": {
+			"body": {
+				"background": "#f7fafc",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 0.57
+					},
+					{
+						"color": "#7a7a7a",
+						"share": 0.28
+					},
+					{
+						"color": "#000000",
+						"share": 0.13
+					}
+				]
+			},
+			"header": {
+				"background": "transparent",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				]
+			},
+			"footer": {
+				"background": "transparent",
+				"text": "#2d3748",
+				"inks": [
+					{
+						"color": "#2d3748",
+						"share": 0.66
+					},
+					{
+						"color": "#3182ce",
+						"share": 0.34
+					}
+				]
+			},
+			"band:about": {
+				"background": "transparent",
+				"text": "#7a7a7a",
+				"inks": [
+					{
+						"color": "#7a7a7a",
+						"share": 0.79
+					},
+					{
+						"color": "#000000",
+						"share": 0.2
+					}
+				]
+			},
+			"band:wifi": {
+				"background": "transparent",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 0.98
+					}
+				],
+				"image": "url(\"https://virtuallysrilanka.com/wp-content/uploads/2018/11/social-login.jpg\")"
+			},
+			"band:features": {
+				"background": "transparent",
+				"text": "#7a7a7a",
+				"inks": [
+					{
+						"color": "#7a7a7a",
+						"share": 0.58
+					},
+					{
+						"color": "#000000",
+						"share": 0.39
+					}
+				]
+			},
+			"band:services": {
+				"background": "transparent",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 0.65
+					},
+					{
+						"color": "#7a7a7a",
+						"share": 0.34
+					}
+				]
+			},
+			"band:hardware": {
+				"background": "transparent",
+				"text": "#000000",
+				"inks": [
+					{
+						"color": "#000000",
+						"share": 1
+					}
+				]
+			},
+			"band:contact": {
+				"background": "transparent",
+				"text": "#ffffff",
+				"inks": [
+					{
+						"color": "#ffffff",
+						"share": 1
+					}
+				],
+				"image": "url(\"https://virtuallysrilanka.com/wp-content/uploads/2018/11/contact-us.jpg\")"
+			}
+		}
+	},
+	"geometry": {
+		"dbd1518": {
+			"desktop": {
+				"height": 900,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0,
+				"columns": [
+					278,
+					634
+				]
+			},
+			"tablet": {
+				"height": 1112,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0,
+				"columns": [
+					336,
+					412
+				]
+			},
+			"mobile": {
+				"height": 686,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0,
+				"columns": [
+					325,
+					361
+				]
+			}
+		},
+		"9c37fd4": {
+			"desktop": {
+				"height": 680,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0,
+				"columns": [
+					433,
+					522
+				]
+			},
+			"tablet": {
+				"height": 921,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 100,
+				"marginBottom": 100,
+				"columns": [
+					454,
+					467
+				]
+			},
+			"mobile": {
+				"height": 947,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 100,
+				"marginBottom": 100,
+				"columns": [
+					217,
+					729
+				]
+			}
+		},
+		"8d6ec26": {
+			"desktop": {
+				"height": 869,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 893,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 1345,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		},
+		"bfaba9f": {
+			"desktop": {
+				"height": 1177,
+				"width": 1440,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 200,
+				"marginBottom": 0,
+				"columns": [
+					24,
+					104,
+					829
+				]
+			},
+			"tablet": {
+				"height": 1000,
+				"width": 834,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 200,
+				"marginBottom": 0,
+				"columns": [
+					24,
+					104,
+					652
+				]
+			},
+			"mobile": {
+				"height": 1543,
+				"width": 390,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 200,
+				"marginBottom": 0,
+				"columns": [
+					24,
+					140,
+					1159
+				]
+			}
+		},
+		"116ce85": {
+			"desktop": {
+				"height": 536,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 100,
+				"marginBottom": 0,
+				"columns": [
+					536,
+					536,
+					536
+				]
+			},
+			"tablet": {
+				"height": 812,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 100,
+				"marginBottom": 0,
+				"columns": [
+					356,
+					456,
+					456
+				]
+			},
+			"mobile": {
+				"height": 1675,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 100,
+				"marginBottom": 0,
+				"columns": [
+					572,
+					419,
+					684
+				]
+			}
+		},
+		"a5d0ddc": {
+			"desktop": {
+				"height": 474,
+				"width": 1440,
+				"paddingTop": 100,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 150,
+				"marginBottom": 150
+			},
+			"tablet": {
+				"height": 388,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 42,
+				"paddingRight": 42,
+				"marginTop": 150,
+				"marginBottom": 150
+			},
+			"mobile": {
+				"height": 458,
+				"width": 390,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 20,
+				"paddingRight": 20,
+				"marginTop": 150,
+				"marginBottom": 150
+			}
+		},
+		"ccdbf50": {
+			"desktop": {
+				"height": 900,
+				"width": 1440,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"tablet": {
+				"height": 1112,
+				"width": 834,
+				"paddingTop": 0,
+				"paddingBottom": 0,
+				"paddingLeft": 0,
+				"paddingRight": 0,
+				"marginTop": 0,
+				"marginBottom": 0
+			},
+			"mobile": {
+				"height": 912,
+				"width": 390,
+				"paddingTop": 100,
+				"paddingBottom": 100,
+				"paddingLeft": 20,
+				"paddingRight": 20,
+				"marginTop": 0,
+				"marginBottom": 0
+			}
+		}
+	},
+	"bandFacts": {
+		"dbd1518": {
+			"containerWidth": 1280,
+			"headings": {
+				"h2": {
+					"size": "55px",
+					"weight": "700",
+					"lineHeight": "70px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "start",
+					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none",
+					"tablet": {
+						"size": "36px",
+						"lineHeight": "39px"
+					},
+					"mobile": {
+						"size": "27px",
+						"lineHeight": "39px"
+					}
+				},
+				"h3": {
+					"size": "20px",
+					"weight": "700",
+					"lineHeight": "20px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "start",
+					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none",
+					"mobile": {
+						"size": "16px",
+						"lineHeight": "16px"
+					}
+				}
+			},
+			"container": {
+				"desktop": {
+					"content": 1280,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
+			},
+			"centeredContent": true,
+			"box": {
+				"elementor-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 80px 0px 80px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column-gap-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 80px 0px 80px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-col-50": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-top-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-element-2d81ba5": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-wrap": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"elementor-element-populated": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"elementor-element-7a18147": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 10px 0px"
+				},
+				"elementor-widget": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-widget-heading": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-widget-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"elementor-heading-title": {
+					"base": "padding:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-size-default": {
+					"base": "padding:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-element-bcb9bb9": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-4fd16dd": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-771cb16": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-image": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"attachment-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"size-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wp-image-5374": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"columns": {
+				"desktop": [
+					{
+						"selector": "elementor-element-2d81ba5",
+						"height": 278
+					},
+					{
+						"selector": "elementor-element-4fd16dd",
+						"height": 634
+					}
+				],
+				"tablet": [
+					{
+						"selector": "elementor-element-2d81ba5",
+						"height": 336
+					},
+					{
+						"selector": "elementor-element-4fd16dd",
+						"height": 412
+					}
+				],
+				"mobile": [
+					{
+						"selector": "elementor-element-2d81ba5",
+						"height": 325
+					},
+					{
+						"selector": "elementor-element-4fd16dd",
+						"height": 361
+					}
+				]
+			},
+			"classes": [
+				"attachment-full",
+				"elementor-col-50",
+				"elementor-column",
+				"elementor-column-gap-default",
+				"elementor-container",
+				"elementor-element",
+				"elementor-element-2d81ba5",
+				"elementor-element-4fd16dd",
+				"elementor-element-771cb16",
+				"elementor-element-7a18147",
+				"elementor-element-bcb9bb9",
+				"elementor-element-dbd1518",
+				"elementor-element-populated",
+				"elementor-heading-title",
+				"elementor-section",
+				"elementor-section-boxed",
+				"elementor-section-height-default",
+				"elementor-section-height-full",
+				"elementor-section-items-middle",
+				"elementor-size-default",
+				"elementor-top-column",
+				"elementor-top-section",
+				"elementor-widget",
+				"elementor-widget-container",
+				"elementor-widget-heading",
+				"elementor-widget-image",
+				"elementor-widget-wrap",
+				"size-full",
+				"wp-image-5374"
+			]
+		},
+		"9c37fd4": {
+			"containerWidth": 1280,
+			"headings": {
+				"h2": {
+					"size": "30px",
+					"weight": "700",
+					"lineHeight": "39px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "start",
+					"family": "Montserrat",
+					"color": "rgb(0, 0, 0)",
+					"maxWidth": "none"
+				}
+			},
+			"body": {
+				"size": "17px",
+				"weight": "400",
+				"lineHeight": "27.2px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "start",
+				"family": "Montserrat",
+				"color": "rgb(122, 122, 122)",
+				"maxWidth": "none"
+			},
+			"container": {
+				"desktop": {
+					"content": 1280,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
+			},
+			"centeredContent": true,
+			"box": {
+				"elementor-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 80px 0px 80px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column-gap-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 80px 0px 80px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-col-50": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-top-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-9d48e3a": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-wrap": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"elementor-element-populated": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"elementor-element-929e366": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-image": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-container": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"attachment-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"size-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wp-image-5380": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-3985a67": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-f66a6fb": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-heading": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-heading-title": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-size-default": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-element-0f8f431": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-176361d": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(122, 122, 122)"
+				},
+				"elementor-widget-text-editor": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(122, 122, 122)"
+				},
+				"text-extra-large": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"margin-15px-bottom": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-element-a7d2217": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-button": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-button-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-button": {
+					"base": "padding:12px 24px 12px 24px;margin:0px 0px 0px 0px;color:rgb(237, 242, 247)"
+				},
+				"elementor-button-link": {
+					"base": "padding:12px 24px 12px 24px;margin:0px 0px 0px 0px;color:rgb(237, 242, 247)"
+				},
+				"elementor-size-sm": {
+					"base": "padding:12px 24px 12px 24px;margin:0px 0px 0px 0px;color:rgb(237, 242, 247)"
+				},
+				"elementor-button-content-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-button-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"columns": {
+				"desktop": [
+					{
+						"selector": "elementor-element-9d48e3a",
+						"height": 433
+					},
+					{
+						"selector": "elementor-element-3985a67",
+						"height": 522
+					}
+				],
+				"tablet": [
+					{
+						"selector": "elementor-element-9d48e3a",
+						"height": 454
+					},
+					{
+						"selector": "elementor-element-3985a67",
+						"height": 467
+					}
+				],
+				"mobile": [
+					{
+						"selector": "elementor-element-9d48e3a",
+						"height": 217
+					},
+					{
+						"selector": "elementor-element-3985a67",
+						"height": 729
+					}
+				]
+			},
+			"classes": [
+				"attachment-full",
+				"elementor-button",
+				"elementor-button-content-wrapper",
+				"elementor-button-link",
+				"elementor-button-text",
+				"elementor-button-wrapper",
+				"elementor-col-50",
+				"elementor-column",
+				"elementor-column-gap-default",
+				"elementor-container",
+				"elementor-element",
+				"elementor-element-0f8f431",
+				"elementor-element-176361d",
+				"elementor-element-3985a67",
+				"elementor-element-929e366",
+				"elementor-element-9c37fd4",
+				"elementor-element-9d48e3a",
+				"elementor-element-a7d2217",
+				"elementor-element-f66a6fb",
+				"elementor-element-populated",
+				"elementor-heading-title",
+				"elementor-section",
+				"elementor-section-boxed",
+				"elementor-section-height-default",
+				"elementor-section-height-min-height",
+				"elementor-section-items-middle",
+				"elementor-size-default",
+				"elementor-size-sm",
+				"elementor-top-column",
+				"elementor-top-section",
+				"elementor-widget",
+				"elementor-widget-button",
+				"elementor-widget-container",
+				"elementor-widget-heading",
+				"elementor-widget-image",
+				"elementor-widget-text-editor",
+				"elementor-widget-wrap",
+				"margin-15px-bottom",
+				"size-full",
+				"text-extra-large",
+				"wp-image-5380"
+			],
+			"interactions": [
+				{
+					"tag": "a",
+					"classes": [
+						"elementor-button",
+						"elementor-button-link",
+						"elementor-size-sm"
+					],
+					"count": 1,
+					"base": "cursor:pointer;color:rgb(237, 242, 247);background-color:rgb(221, 51, 51);text-decoration-line:none;font-weight:500;text-transform:uppercase;display:inline-block;font-size:14px",
+					"transition": "0.3s",
+					"hover": "color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255);box-shadow:rgba(0, 0, 0, 0.1) 0px 15px 25px -7px",
+					"focusVisible": "color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255);box-shadow:rgba(0, 0, 0, 0.1) 0px 15px 25px -7px",
+					"active": "color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255);box-shadow:rgba(0, 0, 0, 0.1) 0px 15px 25px -7px",
+					"children": [
+						{
+							"selector": "span[class~=\"elementor-button-content-wrapper\"]",
+							"transition": "all",
+							"hover": "color:rgb(255, 255, 255);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255)",
+							"focus": "color:rgb(255, 255, 255);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255)",
+							"focusVisible": "color:rgb(255, 255, 255);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255)",
+							"active": "color:rgb(255, 255, 255);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255)"
+						}
+					]
+				}
+			]
+		},
+		"8d6ec26": {
+			"containerWidth": 1440,
+			"headings": {
+				"h2": {
+					"size": "46px",
+					"weight": "700",
+					"lineHeight": "46px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "center",
+					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none"
+				},
+				"h3": {
+					"size": "17px",
+					"weight": "600",
+					"lineHeight": "25.5px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "center",
+					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none"
+				}
+			},
+			"body": {
+				"size": "14px",
+				"weight": "400",
+				"lineHeight": "22.4px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "center",
+				"family": "Montserrat",
+				"color": "rgb(255, 255, 255)",
+				"maxWidth": "none"
+			},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
+			},
+			"centeredContent": true,
+			"box": {
+				"elementor-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column-gap-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-col-50": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-top-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-7218189": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-d18a3a6": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-caed405": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-widget-heading": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-container": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"elementor-heading-title": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-size-default": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-element-7d587ff": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section": {
+					"base": "padding:50px 50px 50px 50px;margin:0px 0px 0px 0px",
+					"mobile": "padding:30px 20px 30px 20px;margin:0px 0px 0px 0px"
+				},
+				"elementor-inner-section": {
+					"base": "padding:50px 50px 50px 50px;margin:0px 0px 0px 0px",
+					"mobile": "padding:30px 20px 30px 20px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-00dc621": {
+					"base": "padding:50px 50px 50px 50px;margin:0px 0px 0px 0px",
+					"mobile": "padding:30px 20px 30px 20px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section-height-min-height": {
+					"base": "padding:50px 50px 50px 50px;margin:0px 0px 0px 0px",
+					"mobile": "padding:30px 20px 30px 20px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section-boxed": {
+					"base": "padding:50px 50px 50px 50px;margin:0px 0px 0px 0px",
+					"mobile": "padding:30px 20px 30px 20px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section-height-default": {
+					"base": "padding:50px 50px 50px 50px;margin:0px 0px 0px 0px",
+					"mobile": "padding:30px 20px 30px 20px;margin:0px 0px 0px 0px"
+				},
+				"elementor-inner-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-204f20a": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-38cb79e": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
+				},
+				"elementor-view-default": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-position-block-start": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-mobile-position-block-start": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-widget-icon-box": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-icon-box-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-icon-box-icon": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-icon": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"far": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fa-flag": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-icon-box-content": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-icon-box-title": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 8.5px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-icon-box-description": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-element-3a6de01": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fas": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fa-bullseye": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-65f7ba3": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-0f0825c": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
+				},
+				"fa-user-friends": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-d95540f": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"classes": [
+				"elementor-col-50",
+				"elementor-column",
+				"elementor-column-gap-default",
+				"elementor-container",
+				"elementor-element",
+				"elementor-element-00dc621",
+				"elementor-element-0f0825c",
+				"elementor-element-204f20a",
+				"elementor-element-38cb79e",
+				"elementor-element-3a6de01",
+				"elementor-element-65f7ba3",
+				"elementor-element-7218189",
+				"elementor-element-7d587ff",
+				"elementor-element-8d6ec26",
+				"elementor-element-caed405",
+				"elementor-element-d18a3a6",
+				"elementor-element-d95540f",
+				"elementor-element-populated",
+				"elementor-heading-title",
+				"elementor-icon",
+				"elementor-icon-box-content",
+				"elementor-icon-box-description",
+				"elementor-icon-box-icon",
+				"elementor-icon-box-title",
+				"elementor-icon-box-wrapper",
+				"elementor-inner-column",
+				"elementor-inner-section",
+				"elementor-mobile-position-block-start",
+				"elementor-position-block-start",
+				"elementor-section",
+				"elementor-section-boxed",
+				"elementor-section-full_width",
+				"elementor-section-height-default",
+				"elementor-section-height-min-height",
+				"elementor-section-items-middle",
+				"elementor-size-default",
+				"elementor-top-column",
+				"elementor-top-section",
+				"elementor-view-default",
+				"elementor-widget",
+				"elementor-widget-container",
+				"elementor-widget-heading",
+				"elementor-widget-icon-box",
+				"elementor-widget-wrap",
+				"fa-bullseye",
+				"fa-flag",
+				"fa-user-friends",
+				"far",
+				"fas"
+			],
+			"interactions": [
+				{
+					"tag": "div",
+					"classes": [
+						"elementor-element",
+						"elementor-element-0f0825c",
+						"elementor-mobile-position-block-start",
+						"elementor-position-block-start",
+						"elementor-view-default",
+						"elementor-widget",
+						"elementor-widget-icon-box"
+					],
+					"count": 1,
+					"focusable": false,
+					"base": "color:rgb(45, 55, 72);text-decoration-line:none;display:block",
+					"transition": "all",
+					"children": [
+						{
+							"selector": "div[class~=\"elementor-widget-container\"]",
+							"transition": "background 0.3s, border 0.3s, border-radius 0.3s, box-shadow 0.3s, transform 0.4s",
+							"hover": "background-color:rgb(0, 0, 0)",
+							"active": "background-color:rgb(0, 0, 0)"
+						}
+					]
+				},
+				{
+					"tag": "div",
+					"classes": [
+						"elementor-element",
+						"elementor-element-38cb79e",
+						"elementor-mobile-position-block-start",
+						"elementor-position-block-start",
+						"elementor-view-default",
+						"elementor-widget",
+						"elementor-widget-icon-box"
+					],
+					"count": 1,
+					"focusable": false,
+					"base": "color:rgb(45, 55, 72);text-decoration-line:none;display:block",
+					"transition": "all",
+					"children": [
+						{
+							"selector": "div[class~=\"elementor-widget-container\"]",
+							"transition": "background 0.3s, border 0.3s, border-radius 0.3s, box-shadow 0.3s, transform 0.4s",
+							"hover": "background-color:rgb(0, 0, 0)",
+							"active": "background-color:rgb(0, 0, 0)"
+						}
+					]
+				},
+				{
+					"tag": "div",
+					"classes": [
+						"elementor-element",
+						"elementor-element-3a6de01",
+						"elementor-mobile-position-block-start",
+						"elementor-position-block-start",
+						"elementor-view-default",
+						"elementor-widget",
+						"elementor-widget-icon-box"
+					],
+					"count": 1,
+					"focusable": false,
+					"base": "color:rgb(45, 55, 72);text-decoration-line:none;display:block",
+					"transition": "all",
+					"children": [
+						{
+							"selector": "div[class~=\"elementor-widget-container\"]",
+							"transition": "background 0.3s, border 0.3s, border-radius 0.3s, box-shadow 0.3s, transform 0.4s",
+							"hover": "background-color:rgb(0, 0, 0)",
+							"active": "background-color:rgb(0, 0, 0)"
+						}
+					]
+				},
+				{
+					"tag": "div",
+					"classes": [
+						"elementor-element",
+						"elementor-element-d95540f",
+						"elementor-mobile-position-block-start",
+						"elementor-position-block-start",
+						"elementor-view-default",
+						"elementor-widget",
+						"elementor-widget-icon-box"
+					],
+					"count": 1,
+					"focusable": false,
+					"base": "color:rgb(45, 55, 72);text-decoration-line:none;display:block",
+					"transition": "all",
+					"children": [
+						{
+							"selector": "div[class~=\"elementor-widget-container\"]",
+							"transition": "background 0.3s, border 0.3s, border-radius 0.3s, box-shadow 0.3s, transform 0.4s",
+							"hover": "background-color:rgb(0, 0, 0)",
+							"active": "background-color:rgb(0, 0, 0)"
+						}
+					]
+				}
+			]
+		},
+		"bfaba9f": {
+			"containerWidth": 1140,
+			"headings": {
+				"h2": {
+					"size": "36px",
+					"weight": "800",
+					"lineHeight": "36px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "center",
+					"family": "Montserrat",
+					"color": "rgb(0, 0, 0)",
+					"maxWidth": "none"
+				}
+			},
+			"body": {
+				"size": "17px",
+				"weight": "400",
+				"lineHeight": "27.2px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "start",
+				"family": "Montserrat",
+				"color": "rgb(122, 122, 122)",
+				"maxWidth": "none"
+			},
+			"container": {
+				"desktop": {
+					"content": 1140,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
+			},
+			"box": {
+				"elementor-container": {
+					"base": "padding:0px 0px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column-gap-default": {
+					"base": "padding:0px 0px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-col-100": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-top-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-fc9465d": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-wrap": {
+					"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-populated": {
+					"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-8bd681a": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-heading": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-container": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"elementor-heading-title": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-size-default": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-element-eed0238": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-inner-section": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-945781e": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section-boxed": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section-height-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-col-50": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-inner-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-e15aef3": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-7f50608": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-image": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"attachment-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"size-full": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"wp-image-5378": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-6ebd723": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-25f40ec": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-accordion": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-accordion": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-accordion-item": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-tab-title": {
+					"base": "padding:15px 20px 15px 20px;margin:0px 0px 0px 0px",
+					"mobile": "padding:12px 15px 12px 15px;margin:0px 0px 0px 0px"
+				},
+				"elementor-active": {
+					"base": "padding:15px 20px 15px 20px;margin:0px 0px 0px 0px",
+					"mobile": "margin:0px 0px 0px 0px"
+				},
+				"elementor-accordion-icon": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-accordion-icon-right": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-accordion-icon-closed": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fas": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fa-plus": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-accordion-icon-opened": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"fa-minus": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-accordion-title": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-tab-content": {
+					"base": "padding:15px 20px 15px 20px;margin:0px 0px 0px 0px;color:rgb(122, 122, 122)",
+					"mobile": "padding:7px 15px 7px 15px;margin:0px 0px 0px 0px;color:rgb(122, 122, 122)"
+				},
+				"elementor-clearfix": {
+					"base": "padding:15px 20px 15px 20px;margin:0px 0px 0px 0px;color:rgb(122, 122, 122)",
+					"mobile": "padding:7px 15px 7px 15px;margin:0px 0px 0px 0px;color:rgb(122, 122, 122)"
+				},
+				"text-medium": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"gray-text": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"padding-six-lr": {
+					"base": "padding:0px 0px 0px 0px"
+				}
+			},
+			"columns": {
+				"desktop": [
+					{
+						"selector": "elementor-element-8bd681a",
+						"height": 24
+					},
+					{
+						"selector": "elementor-element-eed0238",
+						"height": 104
+					},
+					{
+						"selector": "elementor-section",
+						"height": 829
+					}
+				],
+				"tablet": [
+					{
+						"selector": "elementor-element-8bd681a",
+						"height": 24
+					},
+					{
+						"selector": "elementor-element-eed0238",
+						"height": 104
+					},
+					{
+						"selector": "elementor-section",
+						"height": 652
+					}
+				],
+				"mobile": [
+					{
+						"selector": "elementor-element-8bd681a",
+						"height": 24
+					},
+					{
+						"selector": "elementor-element-eed0238",
+						"height": 140
+					},
+					{
+						"selector": "elementor-section",
+						"height": 1159
+					}
+				]
+			},
+			"hidden": [
+				"[class~=\"elementor-clearfix\"][class~=\"elementor-tab-content\"]:not([class~=\"elementor-active\"])"
+			],
+			"classes": [
+				"attachment-full",
+				"elementor-accordion",
+				"elementor-accordion-icon",
+				"elementor-accordion-icon-closed",
+				"elementor-accordion-icon-opened",
+				"elementor-accordion-icon-right",
+				"elementor-accordion-item",
+				"elementor-accordion-title",
+				"elementor-active",
+				"elementor-clearfix",
+				"elementor-col-100",
+				"elementor-col-50",
+				"elementor-column",
+				"elementor-column-gap-default",
+				"elementor-container",
+				"elementor-element",
+				"elementor-element-25f40ec",
+				"elementor-element-6ebd723",
+				"elementor-element-7f50608",
+				"elementor-element-8bd681a",
+				"elementor-element-945781e",
+				"elementor-element-bfaba9f",
+				"elementor-element-e15aef3",
+				"elementor-element-eed0238",
+				"elementor-element-fc9465d",
+				"elementor-element-populated",
+				"elementor-heading-title",
+				"elementor-inner-column",
+				"elementor-inner-section",
+				"elementor-section",
+				"elementor-section-boxed",
+				"elementor-section-height-default",
+				"elementor-size-default",
+				"elementor-tab-content",
+				"elementor-tab-title",
+				"elementor-top-column",
+				"elementor-top-section",
+				"elementor-widget",
+				"elementor-widget-accordion",
+				"elementor-widget-container",
+				"elementor-widget-heading",
+				"elementor-widget-image",
+				"elementor-widget-wrap",
+				"fa-minus",
+				"fa-plus",
+				"fas",
+				"gray-text",
+				"padding-six-lr",
+				"size-full",
+				"text-medium",
+				"wp-image-5378"
+			],
+			"interactions": [
+				{
+					"tag": "div",
+					"classes": [
+						"elementor-active",
+						"elementor-tab-title"
+					],
+					"count": 1,
+					"base": "cursor:pointer;color:rgb(45, 55, 72);text-decoration-line:none;font-weight:700;display:block",
+					"transition": "all"
+				},
+				{
+					"tag": "div",
+					"classes": [
+						"elementor-tab-title"
+					],
+					"count": 7,
+					"focusable": false,
+					"base": "cursor:pointer;color:rgb(45, 55, 72);text-decoration-line:none;font-weight:700;display:block",
+					"transition": "all"
+				}
+			]
+		},
+		"116ce85": {
+			"containerWidth": 1440,
+			"headings": {
+				"h2": {
+					"size": "28px",
+					"weight": "600",
+					"lineHeight": "28px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "start",
+					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none"
+				}
+			},
+			"body": {
+				"size": "15px",
+				"weight": "400",
+				"lineHeight": "24px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "start",
+				"family": "Montserrat",
+				"color": "rgb(122, 122, 122)",
+				"maxWidth": "none"
+			},
+			"container": {
+				"desktop": {
+					"content": 1440,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 390,
+					"padX": 0,
+					"flush": false
+				}
+			},
+			"box": {
+				"elementor-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column-gap-no": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-col-33": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-top-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-element-e0c7fc7": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-c838898": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-widget-heading": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-widget-container": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"elementor-heading-title": {
+					"base": "padding:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-size-default": {
+					"base": "padding:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-element-954853d": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-e2f1a1c": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-spacer": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-spacer": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-spacer-inner": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-ac7a06e": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-inner-section": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-49c2c61": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section-full_width": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-section-height-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column-gap-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-col-100": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-inner-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-c6b9983": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-fa802da": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
+				},
+				"elementor-element-c27cab5": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px;color:rgb(122, 122, 122)"
+				},
+				"elementor-widget-text-editor": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px;color:rgb(122, 122, 122)"
+				},
+				"elementor-element-58dcc46": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px;color:rgb(122, 122, 122)"
+				},
+				"elementor-element-9277ce3": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px;color:rgb(122, 122, 122)"
+				},
+				"elementor-element-38040f4": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px;color:rgb(122, 122, 122)"
+				},
+				"elementor-element-59df5f3": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-button": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-button-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-button": {
+					"base": "padding:12px 24px 12px 24px;margin:0px 0px 0px 0px;color:rgb(237, 242, 247)"
+				},
+				"elementor-button-link": {
+					"base": "padding:12px 24px 12px 24px;margin:0px 0px 0px 0px;color:rgb(237, 242, 247)"
+				},
+				"elementor-size-sm": {
+					"base": "padding:12px 24px 12px 24px;margin:0px 0px 0px 0px;color:rgb(237, 242, 247)"
+				},
+				"elementor-button-content-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-button-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"columns": {
+				"desktop": [
+					{
+						"selector": "elementor-element-e0c7fc7",
+						"height": 536
+					},
+					{
+						"selector": "elementor-element-954853d",
+						"height": 536
+					},
+					{
+						"selector": "elementor-element-ac7a06e",
+						"height": 536
+					}
+				],
+				"tablet": [
+					{
+						"selector": "elementor-element-e0c7fc7",
+						"height": 356
+					},
+					{
+						"selector": "elementor-element-954853d",
+						"height": 456
+					},
+					{
+						"selector": "elementor-element-ac7a06e",
+						"height": 456
+					}
+				],
+				"mobile": [
+					{
+						"selector": "elementor-element-e0c7fc7",
+						"height": 572
+					},
+					{
+						"selector": "elementor-element-954853d",
+						"height": 419
+					},
+					{
+						"selector": "elementor-element-ac7a06e",
+						"height": 684
+					}
+				]
+			},
+			"classes": [
+				"elementor-button",
+				"elementor-button-content-wrapper",
+				"elementor-button-link",
+				"elementor-button-text",
+				"elementor-button-wrapper",
+				"elementor-col-100",
+				"elementor-col-33",
+				"elementor-column",
+				"elementor-column-gap-default",
+				"elementor-column-gap-no",
+				"elementor-container",
+				"elementor-element",
+				"elementor-element-116ce85",
+				"elementor-element-38040f4",
+				"elementor-element-49c2c61",
+				"elementor-element-58dcc46",
+				"elementor-element-59df5f3",
+				"elementor-element-9277ce3",
+				"elementor-element-954853d",
+				"elementor-element-ac7a06e",
+				"elementor-element-c27cab5",
+				"elementor-element-c6b9983",
+				"elementor-element-c838898",
+				"elementor-element-e0c7fc7",
+				"elementor-element-e2f1a1c",
+				"elementor-element-fa802da",
+				"elementor-element-populated",
+				"elementor-heading-title",
+				"elementor-inner-column",
+				"elementor-inner-section",
+				"elementor-section",
+				"elementor-section-full_width",
+				"elementor-section-height-default",
+				"elementor-size-default",
+				"elementor-size-sm",
+				"elementor-spacer",
+				"elementor-spacer-inner",
+				"elementor-top-column",
+				"elementor-top-section",
+				"elementor-widget",
+				"elementor-widget-button",
+				"elementor-widget-container",
+				"elementor-widget-heading",
+				"elementor-widget-spacer",
+				"elementor-widget-text-editor",
+				"elementor-widget-wrap"
+			],
+			"interactions": [
+				{
+					"tag": "a",
+					"classes": [
+						"elementor-button",
+						"elementor-button-link",
+						"elementor-size-sm"
+					],
+					"count": 1,
+					"base": "cursor:pointer;color:rgb(237, 242, 247);background-color:rgb(221, 51, 51);text-decoration-line:none;font-weight:500;text-transform:uppercase;display:inline-block;font-size:14px",
+					"transition": "0.3s",
+					"hover": "color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255);box-shadow:rgba(0, 0, 0, 0.1) 0px 15px 25px -7px",
+					"focusVisible": "color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255);box-shadow:rgba(0, 0, 0, 0.1) 0px 15px 25px -7px",
+					"active": "color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255);box-shadow:rgba(0, 0, 0, 0.1) 0px 15px 25px -7px",
+					"children": [
+						{
+							"selector": "span[class~=\"elementor-button-content-wrapper\"]",
+							"transition": "all",
+							"hover": "color:rgb(255, 255, 255);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255)",
+							"focus": "color:rgb(255, 255, 255);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255)",
+							"focusVisible": "color:rgb(255, 255, 255);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255)",
+							"active": "color:rgb(255, 255, 255);border-top-color:rgb(255, 255, 255);border-right-color:rgb(255, 255, 255);border-bottom-color:rgb(255, 255, 255);border-left-color:rgb(255, 255, 255)"
+						}
+					]
+				}
+			]
+		},
+		"a5d0ddc": {
+			"containerWidth": 1280,
+			"headings": {
+				"h2": {
+					"size": "42px",
+					"weight": "700",
+					"lineHeight": "42px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "center",
+					"family": "Montserrat",
+					"color": "rgb(0, 0, 0)",
+					"maxWidth": "none"
+				}
+			},
+			"container": {
+				"desktop": {
+					"content": 1280,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 751,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 351,
+					"padX": 0,
+					"flush": false
+				}
+			},
+			"box": {
+				"elementor-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 80px 0px 80px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column-gap-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 80px 0px 80px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-col-100": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-top-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-element-1181f8f": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-wrap": {
+					"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-populated": {
+					"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
+				},
+				"e-swiper-container": {
+					"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-2b1ebf3": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
+				},
+				"elementor-widget": {
+					"base": "padding:0px 0px 0px 0px"
+				},
+				"elementor-widget-heading": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
+				},
+				"elementor-widget-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-heading-title": {
+					"base": "padding:0px 0px 0px 0px;color:rgb(0, 0, 0)"
+				},
+				"elementor-size-default": {
+					"base": "padding:0px 0px 0px 0px;color:rgb(0, 0, 0)"
+				},
+				"elementor-element-7d3fbc8": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px"
+				},
+				"elementor-element-1753d68": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-skin-carousel": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-arrows-yes": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-pagination-type-bullets": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-pagination-position-outside": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-media-carousel": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"e-widget-swiper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-swiper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-main-swiper": {
+					"base": "padding:0px 0px 30px 0px;margin:0px 0px 0px 0px"
+				},
+				"swiper": {
+					"base": "padding:0px 0px 30px 0px;margin:0px 0px 0px 0px"
+				},
+				"swiper-initialized": {
+					"base": "padding:0px 0px 30px 0px;margin:0px 0px 0px 0px"
+				},
+				"swiper-horizontal": {
+					"base": "padding:0px 0px 30px 0px;margin:0px 0px 0px 0px"
+				},
+				"swiper-pointer-events": {
+					"base": "padding:0px 0px 30px 0px;margin:0px 0px 0px 0px"
+				},
+				"swiper-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"swiper-slide": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 50px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px"
+				},
+				"swiper-slide-duplicate": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 50px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px"
+				},
+				"elementor-carousel-image": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"swiper-slide-prev": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 50px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px"
+				},
+				"swiper-slide-active": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 50px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px"
+				},
+				"swiper-slide-next": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 50px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px"
+				},
+				"swiper-slide-duplicate-prev": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 50px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px"
+				},
+				"swiper-slide-duplicate-active": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 50px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px"
+				},
+				"swiper-slide-duplicate-next": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 50px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 10px 0px 0px"
+				},
+				"elementor-swiper-button": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgba(237, 237, 237, 0.9)"
+				},
+				"elementor-swiper-button-prev": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgba(237, 237, 237, 0.9)"
+				},
+				"eicon-chevron-left": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-swiper-button-next": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgba(237, 237, 237, 0.9)"
+				},
+				"eicon-chevron-right": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"swiper-pagination": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"swiper-pagination-clickable": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"swiper-pagination-bullets": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"swiper-pagination-horizontal": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"swiper-pagination-bullet": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 6px 0px 6px"
+				},
+				"swiper-pagination-bullet-active": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 6px 0px 6px"
+				},
+				"swiper-notification": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"swiper-backface-hidden": {
+					"mobile": "padding:0px 0px 30px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"classes": [
+				"e-swiper-container",
+				"e-widget-swiper",
+				"eicon-chevron-left",
+				"eicon-chevron-right",
+				"elementor-arrows-yes",
+				"elementor-carousel-image",
+				"elementor-col-100",
+				"elementor-column",
+				"elementor-column-gap-default",
+				"elementor-container",
+				"elementor-element",
+				"elementor-element-1181f8f",
+				"elementor-element-1753d68",
+				"elementor-element-2b1ebf3",
+				"elementor-element-7d3fbc8",
+				"elementor-element-a5d0ddc",
+				"elementor-element-populated",
+				"elementor-heading-title",
+				"elementor-main-swiper",
+				"elementor-pagination-position-outside",
+				"elementor-pagination-type-bullets",
+				"elementor-section",
+				"elementor-section-boxed",
+				"elementor-section-height-default",
+				"elementor-size-default",
+				"elementor-skin-carousel",
+				"elementor-swiper",
+				"elementor-swiper-button",
+				"elementor-swiper-button-next",
+				"elementor-swiper-button-prev",
+				"elementor-top-column",
+				"elementor-top-section",
+				"elementor-widget",
+				"elementor-widget-container",
+				"elementor-widget-heading",
+				"elementor-widget-media-carousel",
+				"elementor-widget-wrap",
+				"swiper",
+				"swiper-backface-hidden",
+				"swiper-horizontal",
+				"swiper-initialized",
+				"swiper-notification",
+				"swiper-pagination",
+				"swiper-pagination-bullet",
+				"swiper-pagination-bullet-active",
+				"swiper-pagination-bullets",
+				"swiper-pagination-clickable",
+				"swiper-pagination-horizontal",
+				"swiper-pointer-events",
+				"swiper-slide",
+				"swiper-slide-active",
+				"swiper-slide-duplicate",
+				"swiper-slide-duplicate-active",
+				"swiper-slide-duplicate-next",
+				"swiper-slide-duplicate-prev",
+				"swiper-slide-next",
+				"swiper-slide-prev",
+				"swiper-wrapper"
+			],
+			"interactions": [
+				{
+					"tag": "div",
+					"classes": [
+						"elementor-swiper-button",
+						"elementor-swiper-button-next"
+					],
+					"count": 1,
+					"base": "cursor:pointer;color:rgba(237, 237, 237, 0.9);text-decoration-line:none;display:flex",
+					"transition": "all"
+				},
+				{
+					"tag": "div",
+					"classes": [
+						"elementor-swiper-button",
+						"elementor-swiper-button-prev"
+					],
+					"count": 1,
+					"base": "cursor:pointer;color:rgba(237, 237, 237, 0.9);text-decoration-line:none;display:flex",
+					"transition": "all"
+				},
+				{
+					"tag": "span",
+					"classes": [
+						"swiper-pagination-bullet"
+					],
+					"count": 6,
+					"base": "cursor:pointer;color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-radius:50%;text-decoration-line:none;display:inline-block;font-size:17px",
+					"transition": "all"
+				},
+				{
+					"tag": "span",
+					"classes": [
+						"swiper-pagination-bullet",
+						"swiper-pagination-bullet-active"
+					],
+					"count": 1,
+					"base": "cursor:pointer;color:rgb(255, 255, 255);background-color:rgb(0, 0, 0);border-radius:50%;text-decoration-line:none;display:inline-block;font-size:17px",
+					"transition": "all"
+				}
+			]
+		},
+		"ccdbf50": {
+			"containerWidth": 1140,
+			"headings": {
+				"h2": {
+					"size": "28px",
+					"weight": "600",
+					"lineHeight": "28px",
+					"letterSpacing": "normal",
+					"transform": "none",
+					"align": "center",
+					"family": "Montserrat",
+					"color": "rgb(255, 255, 255)",
+					"maxWidth": "none"
+				}
+			},
+			"body": {
+				"size": "17px",
+				"weight": "400",
+				"lineHeight": "27.2px",
+				"letterSpacing": "normal",
+				"transform": "none",
+				"align": "center",
+				"family": "Montserrat",
+				"color": "rgb(255, 255, 255)",
+				"maxWidth": "none"
+			},
+			"container": {
+				"desktop": {
+					"content": 1140,
+					"padX": 0,
+					"flush": false
+				},
+				"tablet": {
+					"content": 834,
+					"padX": 0,
+					"flush": false
+				},
+				"mobile": {
+					"content": 350,
+					"padX": 0,
+					"flush": false
+				}
+			},
+			"centeredContent": true,
+			"box": {
+				"elementor-container": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 150px 0px 150px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-column-gap-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 150px 0px 150px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-top-column": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element": {
+					"base": "padding:0px 0px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-ea266e1": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-wrap": {
+					"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 41.69px 0px 41.69px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 17.5px 0px 17.5px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-populated": {
+					"base": "padding:10px 10px 10px 10px;margin:0px 0px 0px 0px",
+					"tablet": "padding:0px 41.69px 0px 41.69px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 17.5px 0px 17.5px;margin:0px 0px 0px 0px"
+				},
+				"elementor-element-6944d5f": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget": {
+					"base": "padding:0px 0px 0px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-heading": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-container": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"elementor-heading-title": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 14px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-size-default": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 14px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-element-6ad5188": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px;color:rgb(255, 255, 255)",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-widget-text-editor": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 20px 0px;color:rgb(255, 255, 255)",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-element-e5eaf5f": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-button-align-stretch": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-widget-form": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-form": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-form-fields-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px -5px -32px -5px"
+				},
+				"elementor-labels-": {
+					"base": "padding:0px 0px 0px 0px;margin:0px -5px -32px -5px"
+				},
+				"elementor-field-type-text": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-field-group": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-field-group-name": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-field-label": {
+					"base": "padding:0px 0px 0px 0px;margin:-1px -1px -1px -1px;color:rgb(122, 122, 122)"
+				},
+				"elementor-screen-only": {
+					"base": "padding:0px 0px 0px 0px;margin:-1px -1px -1px -1px;color:rgb(122, 122, 122)"
+				},
+				"elementor-field": {
+					"base": "margin:0px 0px 0px 0px;color:rgb(122, 122, 122)"
+				},
+				"elementor-size-sm": {
+					"base": "margin:0px 0px 0px 0px"
+				},
+				"elementor-field-textual": {
+					"base": "margin:0px 0px 0px 0px;color:rgb(122, 122, 122)"
+				},
+				"elementor-field-type-email": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-field-group-email": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-field-required": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-field-type-textarea": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-field-group-message": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-field-type-recaptcha": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-field-group-field_467ae2e": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-g-recaptcha": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"g-recaptcha-response": {
+					"base": "padding:0px 0px 0px 0px;margin:10px 25px 10px 25px;color:rgb(45, 55, 72)"
+				},
+				"elementor-field-type-submit": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"e-form__buttons": {
+					"base": "padding:0px 5px 0px 5px;margin:0px 0px 32px 0px"
+				},
+				"elementor-button": {
+					"base": "padding:0px 24px 0px 24px;margin:0px 0px 0px 0px;color:rgb(255, 255, 255)"
+				},
+				"elementor-button-content-wrapper": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				},
+				"elementor-button-text": {
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
+				}
+			},
+			"hidden": [
+				"[class~=\"g-recaptcha-response\"]"
+			],
+			"classes": [
+				"e-form__buttons",
+				"elementor-button",
+				"elementor-button-align-stretch",
+				"elementor-button-content-wrapper",
+				"elementor-button-text",
+				"elementor-col-100",
+				"elementor-column",
+				"elementor-column-gap-default",
+				"elementor-container",
+				"elementor-element",
+				"elementor-element-6944d5f",
+				"elementor-element-6ad5188",
+				"elementor-element-ccdbf50",
+				"elementor-element-e5eaf5f",
+				"elementor-element-ea266e1",
+				"elementor-element-populated",
+				"elementor-field",
+				"elementor-field-group",
+				"elementor-field-group-email",
+				"elementor-field-group-field_467ae2e",
+				"elementor-field-group-message",
+				"elementor-field-group-name",
+				"elementor-field-label",
+				"elementor-field-required",
+				"elementor-field-textual",
+				"elementor-field-type-email",
+				"elementor-field-type-recaptcha",
+				"elementor-field-type-submit",
+				"elementor-field-type-text",
+				"elementor-field-type-textarea",
+				"elementor-form",
+				"elementor-form-fields-wrapper",
+				"elementor-g-recaptcha",
+				"elementor-heading-title",
+				"elementor-labels-",
+				"elementor-screen-only",
+				"elementor-section",
+				"elementor-section-boxed",
+				"elementor-section-height-default",
+				"elementor-section-height-full",
+				"elementor-section-items-middle",
+				"elementor-size-default",
+				"elementor-size-sm",
+				"elementor-top-column",
+				"elementor-top-section",
+				"elementor-widget",
+				"elementor-widget-container",
+				"elementor-widget-form",
+				"elementor-widget-heading",
+				"elementor-widget-text-editor",
+				"elementor-widget-wrap",
+				"g-recaptcha-response"
+			],
+			"interactions": [
+				{
+					"tag": "button",
+					"classes": [
+						"elementor-button",
+						"elementor-size-sm"
+					],
+					"count": 1,
+					"base": "cursor:pointer;color:rgb(255, 255, 255);background-color:rgb(221, 51, 51);text-decoration-line:none;font-weight:500;text-transform:uppercase;display:block;font-size:14px",
+					"transition": "0.3s",
+					"hover": "box-shadow:rgba(0, 0, 0, 0.1) 0px 15px 25px -7px",
+					"focusVisible": "box-shadow:rgba(0, 0, 0, 0.1) 0px 15px 25px -7px",
+					"active": "box-shadow:rgba(0, 0, 0, 0.1) 0px 15px 25px -7px"
+				},
+				{
+					"tag": "input",
+					"classes": [
+						"elementor-field",
+						"elementor-field-textual",
+						"elementor-size-sm"
+					],
+					"type": "email",
+					"count": 1,
+					"base": "cursor:text;color:rgb(122, 122, 122);background-color:rgb(255, 255, 255);border-radius:3px;text-decoration-line:none;display:block;font-size:15px;border-top:1px solid rgb(105, 114, 125);border-right:1px solid rgb(105, 114, 125);border-bottom:1px solid rgb(105, 114, 125);border-left:1px solid rgb(105, 114, 125)",
+					"transition": "all",
+					"focusVisible": "border-top-color:rgb(113, 128, 150);border-right-color:rgb(113, 128, 150);border-bottom-color:rgb(113, 128, 150);border-left-color:rgb(113, 128, 150);box-shadow:rgba(0, 0, 0, 0.1) 0px 0px 0px 1px inset"
+				},
+				{
+					"tag": "input",
+					"classes": [
+						"elementor-field",
+						"elementor-field-textual",
+						"elementor-size-sm"
+					],
+					"type": "text",
+					"count": 1,
+					"base": "cursor:text;color:rgb(122, 122, 122);background-color:rgb(255, 255, 255);border-radius:3px;text-decoration-line:none;display:block;font-size:15px;border-top:1px solid rgb(105, 114, 125);border-right:1px solid rgb(105, 114, 125);border-bottom:1px solid rgb(105, 114, 125);border-left:1px solid rgb(105, 114, 125)",
+					"transition": "all",
+					"focusVisible": "border-top-color:rgb(113, 128, 150);border-right-color:rgb(113, 128, 150);border-bottom-color:rgb(113, 128, 150);border-left-color:rgb(113, 128, 150);box-shadow:rgba(0, 0, 0, 0.1) 0px 0px 0px 1px inset"
+				},
+				{
+					"tag": "textarea",
+					"classes": [
+						"elementor-field",
+						"elementor-field-textual",
+						"elementor-size-sm"
+					],
+					"count": 1,
+					"base": "cursor:text;color:rgb(122, 122, 122);background-color:rgb(255, 255, 255);border-radius:3px;text-decoration-line:none;display:block;font-size:15px;border-top:1px solid rgb(105, 114, 125);border-right:1px solid rgb(105, 114, 125);border-bottom:1px solid rgb(105, 114, 125);border-left:1px solid rgb(105, 114, 125)",
+					"transition": "all",
+					"focusVisible": "box-shadow:rgba(0, 0, 0, 0.1) 0px 0px 0px 1px inset"
+				}
+			]
+		}
+	},
+	"stickyHeader": {
+		"sticky": false
+	},
+	"pageBackground": "rgb(247, 250, 252)",
+	"text": {
+		"capturedAt": "2026-11-15T08:52:22.825Z",
+		"url": "https://virtuallysrilanka.com",
+		"page": "skip to content about wifi marketing features services hardware contact see what we can do for you we specialize in custom solutions for your business social wifi marketing solution the best way to promote your business! having the ability to provide an internet access service to these visitors will give you the opportunity to make your business more competitive. in today's business environment attractions, hotels, cafe's and bars are faced with an increasing pressure to offer their guests internet connectivity. through wifi advertising, you can target the right audience, at the right time and at the same time leverage your hotspot to promote your business for free! learn more wifi social marketing how it works landing page advertise your business with your own wi-fi start page. when people connect to your wi-fi signal, they are redirected automatically to your hotspot splash page. - customize the login page with your company branding and logo for a more professional look and feel. pop-up ads once a user connects to the hotspot you have to ability to display ads/promotion before they are prompted to login in. wi-fi for advertising: show images and youtube video ads to wi-fi social integration while giving out free wi-fi, you can promote your own facebook page, get new \"likes\" and social recommendations from your customers. this increases your business' visibility, customer engagement and eventually sales. in other worlds, this is free advertising. email marketing automated email response - once a customer connects a customized welcome email will be sent with the option to unsubscribe from the email list. wi-fi to build your sales pipeline & nurture your marketing leads. integrate wi-fi with mailchimp, salesforce, hubspot, zendesk, and many others powerful and unlimited design feature highlights custom landing page advertise your business with your own wi-fi start page. when people connect to your wi-fi signal, they are redirected automatically to your hotspot start page (called splash page). - customize the login page with your company branding and logo for a more professional look and feel. capture user metadata data capture - you can specify which questions you want to ask your customers. this can include email, phone number or other personal data that is pertinent to your business. or you can even create a questionnaire that they can fill out (like feedback/survey). multiple login options facebook | instagram | twitter | linkedin | email | phone are just some of the options - while giving out free wi-fi, you can promote your own facebook page, get new \"likes\" and social recommendations from your customers. this increases your business' visibility, customer engagement and eventually sales. in other worlds, this is free advertising. pop-up advretising once a user connects to the hotspot you have to ability to display ads/promotion before they are prompted to login in. this is a good place to upsell any of your current product offering or services. coupon system easy-to-use, multi-role software for paid/no-paid wi-fi. you will be able to configure a coupon template and set the data limit, a quota limit, the duration, and other key metrics. you can also customize texts and how the coupon is printed. then, a front desk operator can easily print tens of unique coupon codes in seconds and distribute or sell them to your guests. the easy-to-use monitoring dashboard allows you to see in real-time if a coupon has been used or not. coupon codes can be customized, to give users a personalized passphrase to access the wi-fi network reditrect page once a user logs into the system you will have the ability to re-direct (send) them to any website you like automated email on signup once a customer connects a customized welcome email will be sent with the option to unsubscribe from the email list. our system integrates directly with such services as mailchimp in order to fully utilize automated responses. remarketing google's audience marketing integrations available in order to track usage and have the ability to create audiences to re-market with google adwords. whether you are thinking of running a hotspot for free or for a fee, you will need a management system to maintain quality of service for your customers, eliminate free-riders, and keep your network secure. our products are custom designed for the environment they will be deployed into. our mission it to create professional web design with a creative, clear-cut approach we endeavor to help web entrepreneurs with hands-on web consulting that fits your needs. we offer professional network solutions, website design, web consulting and web site marketing services we can design or redesign all aspects of your website, from search engine friendly graphic design and layout to information architecture and navigation click here choose the access point that works best for you. or the cheapest one. or ask us to support your favorite brand. supported hardware contact us this deep customer understanding allows our clients to make evidence pased decisions around a number of key business challenges, like space planning, customer relationship management and engagement. please contact us for more information name email message send © 2026 virtually sri lanka is powered by nv digital solutions. about wifi marketing features services hardware contact",
+		"sections": [
+			{
+				"id": "dbd1518",
+				"text": "see what we can do for you we specialize in custom solutions for your business"
+			},
+			{
+				"id": "9c37fd4",
+				"text": "social wifi marketing solution the best way to promote your business! having the ability to provide an internet access service to these visitors will give you the opportunity to make your business more competitive. in today's business environment attractions, hotels, cafe's and bars are faced with an increasing pressure to offer their guests internet connectivity. through wifi advertising, you can target the right audience, at the right time and at the same time leverage your hotspot to promote your business for free! learn more"
+			},
+			{
+				"id": "8d6ec26",
+				"text": "wifi social marketing how it works landing page advertise your business with your own wi-fi start page. when people connect to your wi-fi signal, they are redirected automatically to your hotspot splash page. - customize the login page with your company branding and logo for a more professional look and feel. pop-up ads once a user connects to the hotspot you have to ability to display ads/promotion before they are prompted to login in. wi-fi for advertising: show images and youtube video ads to wi-fi social integration while giving out free wi-fi, you can promote your own facebook page, get new \"likes\" and social recommendations from your customers. this increases your business' visibility, customer engagement and eventually sales. in other worlds, this is free advertising. email marketing automated email response - once a customer connects a customized welcome email will be sent with the option to unsubscribe from the email list. wi-fi to build your sales pipeline & nurture your marketing leads. integrate wi-fi with mailchimp, salesforce, hubspot, zendesk, and many others"
+			},
+			{
+				"id": "bfaba9f",
+				"text": "powerful and unlimited design feature highlights custom landing page advertise your business with your own wi-fi start page. when people connect to your wi-fi signal, they are redirected automatically to your hotspot start page (called splash page). - customize the login page with your company branding and logo for a more professional look and feel. capture user metadata data capture - you can specify which questions you want to ask your customers. this can include email, phone number or other personal data that is pertinent to your business. or you can even create a questionnaire that they can fill out (like feedback/survey). multiple login options facebook | instagram | twitter | linkedin | email | phone are just some of the options - while giving out free wi-fi, you can promote your own facebook page, get new \"likes\" and social recommendations from your customers. this increases your business' visibility, customer engagement and eventually sales. in other worlds, this is free advertising. pop-up advretising once a user connects to the hotspot you have to ability to display ads/promotion before they are prompted to login in. this is a good place to upsell any of your current product offering or services. coupon system easy-to-use, multi-role software for paid/no-paid wi-fi. you will be able to configure a coupon template and set the data limit, a quota limit, the duration, and other key metrics. you can also customize texts and how the coupon is printed. then, a front desk operator can easily print tens of unique coupon codes in seconds and distribute or sell them to your guests. the easy-to-use monitoring dashboard allows you to see in real-time if a coupon has been used or not. coupon codes can be customized, to give users a personalized passphrase to access the wi-fi network reditrect page once a user logs into the system you will have the ability to re-direct (send) them to any website you like automated email on signup once a customer connects a customized welcome email will be sent with the option to unsubscribe from the email list. our system integrates directly with such services as mailchimp in order to fully utilize automated responses. remarketing google's audience marketing integrations available in order to track usage and have the ability to create audiences to re-market with google adwords."
+			},
+			{
+				"id": "116ce85",
+				"text": "whether you are thinking of running a hotspot for free or for a fee, you will need a management system to maintain quality of service for your customers, eliminate free-riders, and keep your network secure. our products are custom designed for the environment they will be deployed into. our mission it to create professional web design with a creative, clear-cut approach we endeavor to help web entrepreneurs with hands-on web consulting that fits your needs. we offer professional network solutions, website design, web consulting and web site marketing services we can design or redesign all aspects of your website, from search engine friendly graphic design and layout to information architecture and navigation click here"
+			},
+			{
+				"id": "a5d0ddc",
+				"text": "choose the access point that works best for you. or the cheapest one. or ask us to support your favorite brand. supported hardware"
+			},
+			{
+				"id": "ccdbf50",
+				"text": "contact us this deep customer understanding allows our clients to make evidence pased decisions around a number of key business challenges, like space planning, customer relationship management and engagement. please contact us for more information name email message send"
+			}
+		],
+		"skipped": []
+	}
+}

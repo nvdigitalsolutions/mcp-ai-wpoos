@@ -1,0 +1,172 @@
+# Forge sites — committed site profiles
+
+One `.json` profile per client site. The profile is the ONLY committed
+artifact of a forged site: the generated Astro project stays disposable
+and is never committed (built assets and `node_modules` are gitignored
+by the generated project itself).
+
+## Convention
+
+| Item | Rule |
+|---|---|
+| Profile | `sites/<name>.json` — `<name>` is lowercase, hostname-derived (e.g. `jayainc`) |
+| Content snapshot | `sites/<name>.content/` — written by `forge materialize`; used by `content.source: materialized` or `content.snapshot: true` |
+| Media snapshot | `sites/<name>.media/` — written by `forge media-snapshot`; used by `media.snapshot: true`. URL-keyed `manifest.json` + the localizer's `media/` files |
+| Mirror branch | `site/<name>` on the shared mirror repo `nvdigitalsolutions/nvoos-forge-sites` (private) |
+| Branch content | The built `dist/` at the branch ROOT (force-pushed, flat history — never commit there directly) |
+| Velocity app | Connect the mirror repo, Branch = `site/<name>`, Root directory = repo root |
+| Runtime tier | `deploy.runtime` — `static` (default, flat files) or `managed` (adds a Node entry + BFF), Proposal 135 |
+
+## The pipeline
+
+`.github/workflows/forge-sites.yml` (monorepo) rebuilds every affected
+site:
+
+- `push` to `alpha-working` touching `sites/**` (or the forge libs/templates)
+- `workflow_dispatch` with an optional `site` input
+- `repository_dispatch` of `nvoos-forge-content-changed` (the
+  `nvoos-forge-bridge` plugin fires this on content changes; the payload's
+  optional `site` field narrows the run, absent = all sites; the HMAC proof
+  is verified before anything builds)
+
+Per site the workflow: scaffold → `deploy-config --to velocity
+--mirror-repo … --site-branch site/<name> --runtime <tier>` → `npm install`
++ `ASTRO_SITE` build → (`managed` only) `sync-deploy-tree` + the
+**blocking** `verify-deploy-tree` boot gate → `node scripts/mirror-push.mjs`
+(force-pushes `dist/` to the site branch).
+
+## Locked sites (handoff)
+
+`forge lock sites/<name>.json --target <dir> --by <name> --reason <text>`
+records the owner on the profile (`locked: { at, by, reason }`) and writes a
+`forge.lock.json` fingerprint into the project. A locked site is **fail-closed**:
+
+- `forge-sites.yml` skips it with a `::warning` + run-summary entry (never a
+  silent green run)
+- `scaffold` / `deploy` refuse to overwrite it (`--unlock` forces, destroying
+  hand-written work)
+- the project's `npm run check` reports hand-edits as expected drift, not failures
+- `forge status` reports the owner record, including a profile-only lock
+
+Return it with `forge unlock sites/<name>.json --target <dir> --yes`; a manual
+dispatch of the workflow may pass `force_unlock: true` for a mistaken lock.
+
+`jayainc` is locked: the frontend is hand-edited from here on and the
+`cms.jayainc.com` CMS connection is retired.
+
+## Runtime tiers (Proposal 135)
+
+| Tier | Profile block | Branch content | Velocity settings |
+|---|---|---|---|
+| `static` (default) | absent, or `"deploy": { "runtime": "static" }` | prebuilt flat files + a no-op `package.json` + `deploy.json` | Output directory `.` |
+| `managed` | `"deploy": { "runtime": "managed", "manage": true, "revalidate": true, "forms": "bff-proxied" }` | the BFF deploy tree (`dist/` + `server.js` + runtime `package.json` **with the project `dependencies` and lockfile**) + `deploy.json` | Entry file `server.js`, Output directory `.` |
+
+`mirror-push.mjs` writes a `deploy.json` manifest at every branch root so
+the Velocity settings are reproducible from the branch itself. A `managed`
+profile **fails the mirror push closed** when the deploy tree has no
+`server.js` **or no `dependencies`** — a branch that cannot boot is never
+published. The node adapter externalizes its runtime (`cookie`, `devalue`,
+`send`, `unstorage`, …), so an empty manifest installs nothing and
+`node server.js` dies at import time; Velocity then keeps serving the last
+good release while CI stays green. `scripts/verify-deploy-tree.mjs` proves
+the tree boots (`npm install --omit=dev` + `node server.js` + an HTTP answer)
+before the push.
+
+A `managed` profile implies server output (an explicit `--render static`
+throws) and emits the proxy routes (`src/pages/api/[...path].ts`,
+`api/forms/submit.ts`, `media/[...path].ts`), the token-gated
+`api/revalidate.ts`, `server.js`, `scripts/sync-deploy-tree.mjs` and
+`scripts/verify-deploy-tree.mjs`; the
+emitted `astro.config.mjs` carries `cache: { provider: memoryCache() }` +
+`routeRules`. Set `NVOOS_TARGET_SITE` (the CMS origin), `NVOOS_REVALIDATE_TOKEN`,
+and `ASTRO_SITE` in the Velocity app.
+
+## Domains (Proposal 135)
+
+WordPress is never the public origin. The profile `url` is the **CMS** host
+(`https://cms.client.com`); the public site is `deploy.publicOrigin` (defaults
+to `url`), which the CLI and the workflow bake into `ASTRO_SITE`
+(`https://client.com`) and mirror on the branch. Set `WP_HOME` / `WP_SITEURL` to
+the CMS host, keep it `noindex`, and allowlist the builder (static tier) or the
+Node server (managed tier).
+
+POST `{ tags }` to the site's `/api/revalidate`. The token must equal the site's
+`NVOOS_REVALIDATE_TOKEN`. Preview deployments: run the workflow manually with
+`preview: true` — it writes `site/<name>-preview` and leaves production alone.
+Post-push smoke is opt-in via the repo variable `NVOOS_FORGE_SMOKE` (warns on a
+non-200 or a `noindex` on the public origin; never fails the job).
+
+## Local content + draft preview (Proposal 135 Phase 5)
+
+### Media snapshots (CMS-less sites)
+
+The content snapshot answers "the CMS is down". A **media snapshot** answers
+the slower failure: the CMS is gone and the CDN copy expires derivative by
+derivative, so every cold rebuild loses a different set of images and fonts
+(virtuallyjamaica, 2026-11-15 — the et-line font and several photos).
+
+```bash
+# 1. Build the site once (any successful build writes the report).
+( cd my-frontend && npm run build )
+
+# 2. Freeze the localizer's work beside the profile.
+node scripts/forge.mjs media-snapshot sites/<name>.json --from ./my-frontend
+# → sites/<name>.media/{manifest.json,media/…}
+
+# 3. Make the snapshot authoritative and rebuild anywhere.
+#    "media": { "snapshot": true } in sites/<name>.json
+node scripts/forge.mjs sites/<name>.json --target ./my-frontend
+```
+
+The manifest is keyed by the **original** asset URL and stores the **source**
+stylesheet text for CSS entries — a second localization pass resolves the
+sheet's relative font URLs again instead of chasing its own `/media/…`
+rewrites. A missing `media/` file is reported, never silently trusted. The
+scaffold refuses `media.snapshot: true` when the directory is absent.
+
+Content the site **owns** (not mirrored from the source WordPress) lives in the
+bridge's local CPT and is read with a normal collection — `restBase` is optional
+for it:
+
+```json
+{ "slug": "posts", "source": "local", "kind": "post", "optional": true }
+```
+
+`optional: true` turns a missing collection into an empty one instead of failing
+the build. Local documents are slug-authoritative: renaming the title does not
+move the URL.
+
+A `managed` site also gets `/api/preview` and `/preview/<slug>/`. The `/manage`
+SPA mints the link (`POST /local/<id>/preview-token`), the forged app stores the
+token in a host-only cookie, and the bridge verifies it — the signing key never
+leaves WordPress, the link expires in 15 minutes, and the preview is
+`noindex` + `no-store`. Set **Settings → Domains → Public site origin** on the
+bridge or the mint returns no `previewUrl`.
+
+The forged app does **not** ship `/manage` (Proposal 135 D7: the bridge SPA is
+proprietary and this template is a separate distribution). Editors use the CMS,
+or the template's collections still read the bridged content.
+
+## Required repo secrets (monorepo)
+
+| Secret | Purpose |
+|---|---|
+| `NVOOS_FORGE_MIRROR_URL` | `https://github.com/nvdigitalsolutions/nvoos-forge-sites.git` |
+| `NVOOS_FORGE_MIRROR_TOKEN` | Repo-scoped deploy token (contents:write on the mirror) |
+| `FORGE_WEBHOOK_SECRET` | Shared HMAC secret with `nvoos-forge-bridge` on the client WP sites |
+
+Repo variable: `NVOOS_FORGE_MIRROR_REPO` = `nvdigitalsolutions/nvoos-forge-sites`
+(not a secret — it is baked into the emitted deploy config).
+
+Unset mirror secrets degrade gracefully: the mirror push skips with a
+warning and the workflow stays green (build-only mode).
+
+## Operator staging path (local, no CI)
+
+```bash
+node scripts/forge.mjs deploy sites/jayainc.json --target ./jayainc-frontend \
+  --to velocity --mirror-repo nvdigitalsolutions/nvoos-forge-sites --site-branch site/jayainc
+# …with GITHUB_TOKEN set and dist/ already built in the target.
+# Managed tier: add --runtime managed (requires the BFF deploy tree — see
+# Proposal 135 Phase 2 before pointing traffic at it).
+```

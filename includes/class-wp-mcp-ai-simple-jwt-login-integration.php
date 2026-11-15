@@ -6,14 +6,16 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Prevent parse errors on PHP < 7.4 by exiting before class definition.
-if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+// Prevent parse errors on PHP < 8.1 by exiting before class definition.
+if ( version_compare( PHP_VERSION, '8.1.0', '<' ) ) {
 	return;
 }
 
@@ -185,20 +187,49 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 		}
 
 		/**
+		 * Whether the installed Simple JWT Login exposes the API this bridge drives.
+		 *
+		 * 4.0.0 rewrote `src/Modules/` into `src/Jwt/` + `src/Settings/` and dropped
+		 * `WordPressData::getOptionFromDatabase()`, which
+		 * `SimpleJWTLoginSettings::__construct()` still calls. Constructing it on a
+		 * 4.x install raises `Error`, not `Exception`, so the old guard fataled
+		 * instead of declining the token.
+		 *
+		 * Declining (returning false) leaves the rest of the authentication stack —
+		 * application passwords, credential tokens, guest tokens — working on a
+		 * site that upgraded the plugin, and lets the JWT integration be ported to
+		 * 4.x separately.
+		 *
+		 * @return bool
+		 */
+		protected function simple_jwt_login_api_is_supported() {
+			if ( ! class_exists( '\SimpleJWTLogin\Modules\SimpleJWTLoginSettings' ) || ! class_exists( '\SimpleJWTLogin\Modules\WordPressData' ) ) {
+				return false;
+			}
+
+			if ( ! method_exists( '\SimpleJWTLogin\Modules\WordPressData', 'getOptionFromDatabase' ) ) {
+				return false;
+			}
+
+			return class_exists( '\SimpleJWTLogin\Services\ValidateTokenService' )
+				&& class_exists( '\SimpleJWTLogin\Helpers\ServerHelper' );
+		}
+
+		/**
 		 * Validate the token using Simple JWT Login services.
 		 *
 		 * @param string $token Raw bearer token.
 		 * @return true|WP_Error|null
 		 */
 		protected function validate_simple_jwt_login_token( $token ) {
-			if ( ! class_exists( '\SimpleJWTLogin\Modules\SimpleJWTLoginSettings' ) || ! class_exists( '\SimpleJWTLogin\Modules\WordPressData' ) ) {
+			if ( ! $this->simple_jwt_login_api_is_supported() ) {
 				return null;
 			}
 
 			try {
 				$wordpress_data = new \SimpleJWTLogin\Modules\WordPressData();
 				$settings       = new \SimpleJWTLogin\Modules\SimpleJWTLoginSettings( $wordpress_data );
-			} catch ( \Exception $exception ) {
+			} catch ( \Throwable $exception ) {
 				return new WP_Error(
 					'wp_mcp_ai_simple_jwt_login_configuration',
 					__( 'Simple JWT Login could not be initialised. Check the plugin configuration and try again.', 'mcp-ai-wpoos' ),
@@ -232,7 +263,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
 					->withCookies( isset( $_COOKIE ) ? map_deep( $_COOKIE, 'sanitize_text_field' ) : array() )
 					->withSession( isset( $_SESSION ) ? map_deep( $_SESSION, 'sanitize_text_field' ) : array() )
 					->makeAction();
-			} catch ( \Exception $exception ) {
+			} catch ( \Throwable $exception ) {
 				$fallback = $this->fallback_validate_token( $token, $settings, $wordpress_data, $exception );
 
 				if ( true === $fallback || $fallback instanceof WP_Error ) {

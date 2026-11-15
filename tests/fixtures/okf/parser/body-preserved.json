@@ -1,0 +1,9 @@
+{
+    "input": "---\ntype: Skill\n---\n# Heading\n\nParagraph with **bold** and a [link](https://example.com).\n\n- a list\n- in the body\n",
+    "expected": {
+        "frontmatter": {
+            "type": "Skill"
+        },
+        "body": "# Heading\n\nParagraph with **bold** and a [link](https://example.com).\n\n- a list\n- in the body"
+    }
+}

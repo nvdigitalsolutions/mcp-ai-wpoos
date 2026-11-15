@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -790,7 +792,7 @@ class WP_MCP_AI_OCR_Service {
 		$response = $client->create_chat_completion(
 			$messages,
 			array(
-				'model'      => 'gpt-4.1',
+				'model'      => 'gpt-6.1-sol',
 				'max_tokens' => 4096,
 			)
 		);
@@ -847,7 +849,7 @@ class WP_MCP_AI_OCR_Service {
 		}
 		$client = self::$gemini_client;
 
-		$model = isset( $settings['default_gemini_model'] ) && '' !== $settings['default_gemini_model'] ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+		$model = isset( $settings['default_gemini_model'] ) && '' !== $settings['default_gemini_model'] ? $settings['default_gemini_model'] : 'gemini-3.5-flash-lite';
 
 		// The client's public API is create_chat_completion() — pass the
 		// image as an inline-base64 segment (format_image_part turns the

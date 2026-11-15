@@ -51,6 +51,13 @@ class MediaController extends BaseController {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'upload_image' ),
 					'permission_callback' => array( $this, 'item_permissions_check' ),
+					'args'                => array(
+						'alt' => array(
+							'required'          => false,
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
 				),
 			)
 		);
@@ -192,6 +199,13 @@ class MediaController extends BaseController {
 
 		$metadata = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
 		wp_update_attachment_metadata( $attachment_id, $metadata );
+
+		// Proposal 107 (G11): an optional alt text rides the multipart form
+		// (field `alt`) and lands in WP's canonical attachment alt meta.
+		$alt = (string) $request->get_param( 'alt' );
+		if ( '' !== $alt ) {
+			update_post_meta( $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( $alt ) );
+		}
 
 		$url = wp_get_attachment_url( $attachment_id );
 		$dir = wp_get_upload_dir();

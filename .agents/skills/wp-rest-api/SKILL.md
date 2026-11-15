@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: wp-rest-api
-description: Scaffolds and reviews custom WordPress REST API endpoints registered via register_rest_route on rest_api_init — namespace and version slug, permission_callback authorization (NEVER __return_true on state-changing routes, which is the most common plugin-side vulnerability on wp.org), args schema with validate_callback / sanitize_callback / type / enum, object-level capability checks via current_user_can with object ID, responses with WP_REST_Response and WP_Error carrying an HTTP status, no raw DB rows / sensitive columns in responses, cookie auth via X-WP-Nonce, REST vs admin-ajax decision. Recommends the better-route library when the plugin grows past a few endpoints. Use when scaffolding or reviewing a REST endpoint, or migrating from admin-ajax. Triggers on register_rest_route, rest_api_init, permission_callback, WP_REST_Request, WP_REST_Response, WP_Error, X-WP-Nonce, rest_ensure_response, register_rest_field, or any file path containing /rest/ or /api/ in a WP plugin or theme.
+description: "Scaffolds and reviews WordPress REST endpoints (register_rest_route on rest_api_init): namespace/version, permission_callback authorization (never __return_true on state-changing routes), args validate/sanitize schemas, object-level current_user_can checks, WP_REST_Response/WP_Error envelopes, no sensitive DB columns, X-WP-Nonce cookie auth, and REST vs admin-ajax. Use when scaffolding or reviewing endpoints or migrating from admin-ajax; triggers: register_rest_route, permission_callback, WP_REST_Response, rest_ensure_response, register_rest_field."
 license: MIT
 metadata:
   type: Skill
@@ -93,7 +93,7 @@ The single most common plugin-side vulnerability on wp.org. Rules:
 
 - **NEVER** use `'permission_callback' => '__return_true'` on a route that writes (POST / PUT / PATCH / DELETE). It means "any unauthenticated visitor can call this".
 - **Only acceptable** for genuinely public read-only routes (e.g. site status, public catalog). Even then, document the choice with a comment and consider rate limiting.
-- For state-changing routes, check at minimum a capability (`current_user_can('edit_posts')`) and ideally an object-level cap with the target ID:
+- **A GET that re-publishes operator-owned data is not "genuinely public".** Stored redirects, draft slugs, URL history, customer rows: the fact that a visitor could discover them by probing is not consent. Gate the export behind an explicit opt-in option (default off) plus an optional shared token compared with `hash_equals()` via an `X-…-Token` header or `Authorization: Bearer`, and answer `200 { enabled: false }` rather than 404 so the caller can tell "switched off" from "not installed". Keep health-style redaction (booleans, versions) a separate surface from the data export.
   ```php
   'permission_callback' => fn( $req ) => current_user_can( 'edit_post', (int) $req['id'] ),
   ```

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// PromoCodeField island — clean-room React component (D6), client:visible.
+// PromoCodeField island — clean-room React component (D6), client:load (CSP: no per-page inline bootstrap).
 //
 // Owner decision Q5: promo-code validation included in v1. The field calls
 // the commerce contract's idempotent validation endpoint through the
@@ -21,7 +21,7 @@ export default function PromoCodeField() {
 	const [result, setResult] = useState<ValidationResult | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState(false);
-	// Hydration marker: the island is client:visible, and the e2e waits on
+	// Hydration marker: the island is client:load, and the e2e waits on
 	// this attribute before interacting (the toPass retry pattern cannot
 	// distinguish a not-yet-hydrated island from a slow response).
 	const [hydrated, setHydrated] = useState(false);

@@ -9,6 +9,10 @@
  *
  * @package WP_MCP_AI_Pro
  * @since   1.0.0
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -107,7 +111,7 @@ class WP_MCP_AI_Tool_Ext_Cog_Analyze_Sensory_Input implements WP_MCP_AI_Ext_Cog_
 					),
 					'model'           => array(
 						'type'        => 'string',
-						'enum'        => array( 'auto', 'gpt-4.1', 'gpt-4.1-mini', 'gemini-3.6-flash', 'gemini-2.5-flash' ),
+						'enum'        => array( 'auto', 'gpt-6.1-sol', 'gpt-6-luna', 'gemini-3.8-flash', 'gemini-3.5-flash-lite' ),
 						'description' => 'Vision/analysis model to use. "auto" uses the assistant\'s configured provider. Default: auto.',
 						'default'     => 'auto',
 					),

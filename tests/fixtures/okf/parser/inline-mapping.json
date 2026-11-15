@@ -1,0 +1,12 @@
+{
+    "input": "---\nmeta: {author: Ada, version: 2}\n---\nBody.\n",
+    "expected": {
+        "frontmatter": {
+            "meta": {
+                "author": "Ada",
+                "version": 2
+            }
+        },
+        "body": "Body."
+    }
+}

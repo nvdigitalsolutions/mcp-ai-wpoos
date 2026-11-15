@@ -3,9 +3,9 @@
  * Laravel adapter: QueueClientInterface implementation.
  *
  * Wraps Laravel's Queue system (Redis, SQS, database, sync, beanstalkd)
- * behind the framework-agnostic QueueClientInterface. Dispatches
- * generic jobs that the oOS core can track via the database queue
- * driver.
+ * behind the framework-agnostic QueueClientInterface. Every job gets a
+ * UUID and a durable `nvoos_jobs` status row so tracking works on
+ * drivers that do not expose a `jobs` table (Redis, SQS).
  *
  * @package Nvoos\Laravel
  * @since   1.0.0
@@ -16,11 +16,13 @@ declare(strict_types=1);
 
 namespace Nvoos\Laravel\Adapter;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Entity\JobStatus;
-use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Nvoos\Laravel\Jobs\NvoosToolJob;
 
 class QueueClient implements QueueClientInterface {
 
@@ -30,12 +32,19 @@ class QueueClient implements QueueClientInterface {
 	private string $connection;
 
 	/**
-	 * @param string $connection  Queue connection name. Defaults to NVOOS_QUEUE_CONNECTION env or 'database'.
+	 * Durable job status store.
 	 */
-	public function __construct( string $connection = '' ) {
+	private JobStatusStore $statuses;
+
+	/**
+	 * @param string                $connection  Queue connection name. Defaults to the oOS config or the app default.
+	 * @param JobStatusStore|null   $statuses    Optional status store (tests).
+	 */
+	public function __construct( string $connection = '', ?JobStatusStore $statuses = null ) {
 		$this->connection = '' !== $connection
 			? $connection
-			: ( env( 'NVOOS_QUEUE_CONNECTION', 'database' ) ?: 'database' );
+			: ( (string) config( 'oos.queue_connection', config( 'queue.default', 'database' ) ) ?: 'database' );
+		$this->statuses   = $statuses ?? new JobStatusStore();
 	}
 
 	/**
@@ -54,8 +63,14 @@ class QueueClient implements QueueClientInterface {
 	public function enqueue( string $handler, array $payload, array $options = array() ): string {
 		$queue = $options['queue'] ?? 'oos';
 		$delay = isset( $options['delay_seconds'] ) ? (int) $options['delay_seconds'] : 0;
+		$jobId = (string) Str::uuid();
 
-		$job = new \Nvoos\Laravel\Jobs\NvoosToolJob(
+		// Record the row before dispatch: a sync driver runs the job inside
+		// push(), so the job lifecycle writes must find the row.
+		$this->statuses->queue( $jobId, $handler, $payload );
+
+		$job = new NvoosToolJob(
+			jobId: $jobId,
 			handler: $handler,
 			payload: $payload,
 		);
@@ -75,34 +90,37 @@ class QueueClient implements QueueClientInterface {
 			);
 		}
 
-		// For database driver, the job ID is available from the jobs table.
-		// For other drivers, return a composite identifier.
-		$jobId = $this->getLastJobId( $queue );
-
-		return $jobId ?? 'job_' . uniqid( '', true );
+		return $jobId;
 	}
 
 	/**
 	 * Get the current status of a queued job.
 	 *
-	 * Queries the database jobs table for status. For non-database
-	 * drivers, job tracking is best-effort.
+	 * Reads the durable status store first. Falls back to Laravel's
+	 * database queue table for legacy jobs when the store has no row.
 	 *
 	 * @param string $jobId  Job identifier.
 	 * @return JobStatus
 	 */
 	public function getStatus( string $jobId ): JobStatus {
-		if ( ! Schema::hasTable( 'jobs' ) ) {
-			return new JobStatus(
-				jobId: $jobId,
-				status: 'completed',
-			);
+		$status = $this->statuses->get( $jobId );
+		if ( null !== $status ) {
+			return $status;
 		}
 
-		$row = DB::table( 'jobs' )->where( 'id', $jobId )->first();
+		if ( Schema::hasTable( 'jobs' ) ) {
+			$row = DB::table( 'jobs' )->where( 'id', $jobId )->first();
 
-		if ( null === $row ) {
-			// Job not in the queue — check failed_jobs table.
+			if ( null !== $row ) {
+				$attempts = $row->attempts ?? 0;
+
+				return new JobStatus(
+					jobId: $jobId,
+					status: ! empty( $row->reserved_at ) ? 'running' : 'queued',
+					attempts: $attempts,
+				);
+			}
+
 			if ( Schema::hasTable( 'failed_jobs' ) ) {
 				$failed = DB::table( 'failed_jobs' )->where( 'uuid', $jobId )->first();
 				if ( null !== $failed ) {
@@ -114,47 +132,36 @@ class QueueClient implements QueueClientInterface {
 					);
 				}
 			}
-
-			return new JobStatus(
-				jobId: $jobId,
-				status: 'completed',
-			);
-		}
-
-		$attempts = $row->attempts ?? 0;
-
-		// If reserved_at is set, the job is currently running.
-		if ( ! empty( $row->reserved_at ) ) {
-			return new JobStatus(
-				jobId: $jobId,
-				status: 'running',
-				attempts: $attempts,
-			);
 		}
 
 		return new JobStatus(
 			jobId: $jobId,
-			status: 'queued',
-			attempts: $attempts,
+			status: 'unknown',
 		);
 	}
 
 	/**
 	 * Cancel a queued but not-yet-running job.
 	 *
-	 * Only works for database driver. Other drivers return false.
+	 * Marks the durable status row cancelled and, for the database
+	 * driver, removes a still-queued row.
 	 *
 	 * @param string $jobId  Job identifier.
 	 * @return bool
 	 */
 	public function cancel( string $jobId ): bool {
-		if ( ! Schema::hasTable( 'jobs' ) ) {
-			return false;
+		$cancelled = $this->statuses->markCancelled( $jobId );
+
+		if ( Schema::hasTable( 'jobs' ) ) {
+			$deleted = DB::table( 'jobs' )
+				->where( 'id', $jobId )
+				->whereNull( 'reserved_at' )
+				->delete();
+
+			$cancelled = $cancelled || $deleted > 0;
 		}
 
-		$deleted = DB::table( 'jobs' )->where( 'id', $jobId )->delete();
-
-		return $deleted > 0;
+		return $cancelled;
 	}
 
 	/**
@@ -200,14 +207,15 @@ class QueueClient implements QueueClientInterface {
 	/**
 	 * List jobs filtered by status and optional constraints.
 	 *
-	 * Queries the database jobs table for queued jobs. Non-database
-	 * drivers return an empty array.
-	 *
-	 * @param array<string, mixed> $filters  Optional: status, queue, limit.
+	 * @param array<string, mixed> $filters  Optional: status, handler, queue, limit.
 	 * @param int                  $limit    Maximum results (1–100).
 	 * @return JobStatus[]
 	 */
 	public function listJobs( array $filters = array(), int $limit = 50 ): array {
+		if ( $this->statuses->isAvailable() ) {
+			return $this->statuses->listJobs( $filters, $limit );
+		}
+
 		if ( ! Schema::hasTable( 'jobs' ) ) {
 			return array();
 		}
@@ -223,8 +231,8 @@ class QueueClient implements QueueClientInterface {
 
 		$jobs = array();
 		foreach ( $rows as $row ) {
-			$status  = ! empty( $row->reserved_at ) ? 'running' : 'queued';
-			$jobs[]  = new JobStatus(
+			$status = ! empty( $row->reserved_at ) ? 'running' : 'queued';
+			$jobs[] = new JobStatus(
 				jobId: (string) $row->id,
 				status: $status,
 				attempts: $row->attempts ?? 0,
@@ -232,24 +240,6 @@ class QueueClient implements QueueClientInterface {
 		}
 
 		return $jobs;
-	}
-
-	// ─── Private helpers ──────────────────────────────────────────────
-
-	/**
-	 * Get the ID of the most recently inserted job for a given queue.
-	 */
-	private function getLastJobId( string $queue ): ?string {
-		if ( ! Schema::hasTable( 'jobs' ) ) {
-			return null;
-		}
-
-		$row = DB::table( 'jobs' )
-			->where( 'queue', $queue )
-			->orderBy( 'id', 'desc' )
-			->first();
-
-		return $row ? (string) $row->id : null;
 	}
 
 	/**

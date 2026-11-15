@@ -18,6 +18,7 @@ const brands = await getAllBrands(Astro.url);
 	description={plainExcerpt('Browse all brands.')}
 >
 	<h1>Brands</h1>
+	<p><a href="/products/">Browse all products</a></p>
 	<ul>
 		{brands.map((brand) => (
 			<li>

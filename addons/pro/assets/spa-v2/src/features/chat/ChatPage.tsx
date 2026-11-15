@@ -25,7 +25,6 @@ import { useChatProfile } from '../../hooks/useChatProfile';
 import { useModelStore } from '../../stores/modelStore';
 import { useAssistantStore } from '../../stores/assistantStore';
 import { useUIStore } from '../../stores/uiStore';
-import { ThreadsClient } from '../../api/threads';
 import { exportConversation } from '../../utils/export-conversation';
 import { AgentPanel } from './AgentPanel';
 import { MemoryDrawer, type MemoryTab } from '../../components/shared/MemoryDrawer';

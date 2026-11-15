@@ -1,0 +1,102 @@
+---
+// Contact — the rebuilt contact band (issue #7549).
+//
+// A forged site used to lose the source's contact block when the band was
+// theme-injected (virtuallyjamaica's `#contact` section never appears in
+// `post_content`), which also left the one-pager nav pointing at nothing. The
+// profile's `contact` block supplies the copy; the FORM posts through
+// Proposal 138's transport:
+//   direct → /api/forms/submit on the site's own runtime (provider API)
+//   bridge → <forms.endpoint>/forms/submit on WordPress
+// With neither, the band renders copy + an email link — never a dead endpoint.
+import manifestJson from '../../../nvoos.json';
+
+const manifest = manifestJson as {
+	contact?: { heading?: string; blurb?: string; email?: string };
+	forms?: { endpoint?: string; delivery?: 'bridge' | 'direct' };
+};
+
+const contact = manifest.contact;
+const configured = (
+	import.meta.env.NVOOS_FORGE_FORMS_ENDPOINT ||
+	manifest.forms?.endpoint ||
+	''
+).replace(/\/+$/, '');
+const action =
+	manifest.forms?.delivery === 'direct' ? '/api/forms/submit' : configured ? `${configured}/forms/submit` : '';
+const email = (contact?.email ?? '').trim();
+const pagePath = Astro.url?.pathname || '/';
+---
+
+{contact && (
+	<section id="contact" class="ds-section ds-hero ds-contact">
+		<h2 class="ds-title">{contact.heading || 'Contact us'}</h2>
+		{contact.blurb && <p>{contact.blurb}</p>}
+		{action ? (
+			<form class="ds-form" method="post" action={action} data-ds-contact>
+				<div class="ds-field">
+					<label class="ds-label" for="ds-contact-name">
+						Name <span class="ds-required" aria-hidden="true">*</span>
+					</label>
+					<input class="ds-input" id="ds-contact-name" name="name" type="text" autocomplete="name" required />
+				</div>
+				<div class="ds-field">
+					<label class="ds-label" for="ds-contact-email">
+						Email <span class="ds-required" aria-hidden="true">*</span>
+					</label>
+					<input class="ds-input" id="ds-contact-email" name="email" type="email" autocomplete="email" required />
+				</div>
+				<div class="ds-field">
+					<label class="ds-label" for="ds-contact-message">
+						Message <span class="ds-required" aria-hidden="true">*</span>
+					</label>
+					<textarea class="ds-input" id="ds-contact-message" name="message" rows="5" required></textarea>
+				</div>
+				<input type="hidden" name="form" value="contact" />
+				<input type="hidden" name="honeypot" class="ds-honeypot" value="" tabindex="-1" autocomplete="off" aria-hidden="true" />
+				<input type="hidden" name="timestamp" value="0" data-ds-timestamp />
+				<input type="hidden" name="_redirect" value={pagePath} />
+				<button class="ds-button" type="submit">Send</button>
+				<p class="ds-form-status" role="status" aria-live="polite" hidden></p>
+			</form>
+		) : email ? (
+			<p><a class="ds-button" href={`mailto:${email}`}>{email}</a></p>
+		) : null}
+	</section>
+)}
+
+<script>
+	// Progressive enhancement only: the native POST still reaches the endpoint
+	// (Proposal 138's guards read form-data too). This adds an inline status so
+	// a JSON reply never replaces the page.
+	document.addEventListener('submit', async (event) => {
+		const formEl = event.target instanceof HTMLElement ? event.target.closest('form[data-ds-contact]') : null;
+		if (!(formEl instanceof HTMLFormElement)) return;
+		event.preventDefault();
+		const stamp = formEl.querySelector('[data-ds-timestamp]') as HTMLInputElement | null;
+		if (stamp) stamp.value = String(Date.now());
+		const status = formEl.querySelector('.ds-form-status') as HTMLParagraphElement | null;
+		if (status) {
+			status.hidden = false;
+			status.textContent = 'Sending…';
+		}
+		try {
+			const response = await fetch(formEl.action, {
+				method: 'POST',
+				body: new FormData(formEl),
+				headers: { Accept: 'application/json' },
+			});
+			const data = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+			if (response.ok && data.ok) {
+				if (status) status.textContent = data.message || 'Thank you — your message was sent.';
+				formEl.reset();
+				const button = formEl.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+				if (button) button.disabled = true;
+			} else if (status) {
+				status.textContent = data.message || 'Something went wrong. Please try again.';
+			}
+		} catch {
+			if (status) status.textContent = 'Something went wrong. Please try again.';
+		}
+	});
+</script>

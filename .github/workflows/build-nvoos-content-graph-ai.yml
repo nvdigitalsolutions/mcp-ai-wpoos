@@ -283,3 +283,36 @@ jobs:
             artifacts/*.sha256
           draft: false
           prerelease: false
+
+  # ===========================================================================
+  # Mirror the release assets into the standalone repo
+  # (nvdigitalsolutions/nvoos-content-graph-ai). See
+  # .github/workflows/mirror-release.yml.
+  # ===========================================================================
+  mirror-release:
+    name: Mirror Release
+    needs: [build, release]
+    if: needs.release.result == 'success'
+    uses: ./.github/workflows/mirror-release.yml
+    with:
+      mirror_repo: nvdigitalsolutions/nvoos-content-graph-ai
+      tag: content-graph-ai-v${{ needs.build.outputs.version }}
+      source_tag: content-graph-ai-v${{ needs.build.outputs.version }}
+      release_name: NV oOS Content Graph AI v${{ needs.build.outputs.version }}
+      version_file: nvoos-content-graph-ai.php
+      body: |
+        ## NV oOS Content Graph AI v${{ needs.build.outputs.version }}
+
+        AI chat assistant addon for NV oOS Content Graph. Adds chat, 13 AI providers, AI tools, embeddings, and agent memory to your knowledge graph. One install, one API key.
+
+        ### Requirements
+
+        - WordPress 6.5+
+        - PHP 8.1+
+        - NV oOS Content Graph plugin active
+
+        ### Checksum
+
+        See the `.sha256` file attached to this release.
+    secrets:
+      MIRROR_TOKEN: ${{ secrets.NVOOS_CONTENT_GRAPH_AI_REPO_TOKEN }}

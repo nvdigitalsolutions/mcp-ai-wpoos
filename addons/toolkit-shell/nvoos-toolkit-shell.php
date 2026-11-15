@@ -5,7 +5,7 @@
  * Description: Manifest-driven React SPA shell for NV oOS Pro toolkits. One bundle, many surfaces — drives CRM, calendar-booking, financial-planner, regulatory-registration, law-firm, cre-debt, multilingual, ecommerce, social-media, and more via per-toolkit JSON manifests under addons/pro/config/spa-manifests/.
  * Version:     0.3.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com

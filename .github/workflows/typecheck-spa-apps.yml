@@ -1,0 +1,75 @@
+name: Typecheck SPA apps
+
+# The two example apps are only built AFTER a merge, by the mirror-sync
+# workflows. Nothing typechecked them on a pull request, so a contract change
+# in addons/pro/assets/spa-v2 could merge clean and then break the mirror on
+# push — twice, most recently when `ProSpaEndpoints` lost the `analytics` key
+# and only one of the two apps was updated.
+#
+# This runs the same `tsc --noEmit` those mirrors run, on the pull request,
+# plus the console's vitest suite where the app has one.
+
+on:
+  pull_request:
+    paths:
+      - 'examples/nvoos-pro-spa-vite/**'
+      - 'examples/nvoos-complete-velocity/**'
+      - 'addons/pro/assets/spa-v2/**'
+      - 'addons/media-studio/assets/dist/**'
+      - 'addons/document-editor/assets/dist/**'
+      - '.github/workflows/typecheck-spa-apps.yml'
+  push:
+    branches: [main, alpha-working]
+    paths:
+      - 'examples/nvoos-pro-spa-vite/**'
+      - 'examples/nvoos-complete-velocity/**'
+      - 'addons/pro/assets/spa-v2/**'
+      - '.github/workflows/typecheck-spa-apps.yml'
+
+concurrency:
+  group: typecheck-spa-apps-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: nvoos-pro-spa-vite
+            app: nvoos-pro-spa-vite
+            unit: false
+          - name: nvoos-complete-velocity
+            app: nvoos-complete-velocity
+            unit: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          # nvoos-complete-velocity declares engines >=20.19.0.
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: examples/${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: examples/${{ matrix.app }}
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        working-directory: examples/${{ matrix.app }}
+        run: npx tsc --noEmit
+
+      - name: Unit tests
+        if: matrix.unit
+        working-directory: examples/${{ matrix.app }}
+        run: npm test

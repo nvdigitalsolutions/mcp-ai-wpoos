@@ -5,7 +5,7 @@
  * Description: Platform-specific canvas native binaries for NV oOS Pro. Enables Tesseract PDF OCR by providing the canvas module's native binaries pre-compiled for your server platform. Requires NV oOS Pro addon to be installed and active.
  * Version:     0.1.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
@@ -34,6 +34,10 @@
  * license; the Cairo graphics library is LGPL-2.1 (dynamically linked at
  * runtime). See `THIRD_PARTY_NOTICES.md` and the repository-wide `CREDITS.md`
  * for the full attribution index.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

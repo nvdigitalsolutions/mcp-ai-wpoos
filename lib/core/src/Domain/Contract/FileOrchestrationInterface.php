@@ -1,4 +1,5 @@
 <?php
+
 /**
  * File Orchestration — domain contract.
  *
@@ -6,7 +7,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -25,7 +28,7 @@ interface FileOrchestrationInterface
      *
      * @param string $filePath  Local file path.
      * @param string $mimeType  MIME type.
-     * @param array  $options   Additional options (display_name, purpose, etc.).
+     * @param array<string, mixed>  $options   Additional options (display_name, purpose, etc.).
      *
      * @return array{success: bool, file_id?: string, uri?: string, error?: string}
      */

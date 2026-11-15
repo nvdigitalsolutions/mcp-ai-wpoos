@@ -1,0 +1,53 @@
+# Reviewed public WRITE REST routes (permission_callback = __return_true).
+#
+# Format: METHOD /namespace/path   (one per line; '#' starts a comment)
+#
+# Key notes:
+#   *        a dynamic fragment (variable-derived namespace/path)
+#   {CONST}  an unresolved class constant
+#
+# Every entry needs a human review of its compensating controls. When a route
+# stops being public, remove its entry — the CI gate fails on stale entries.
+
+# Base plugin — MCP JSON-RPC transport. Authentication is enforced inside the
+# controller (bearer credential / OAuth token); the public surface is the
+# protocol handshake, which must answer unauthenticated probes with a typed 401.
+POST /{REST_NAMESPACE}/mcp
+
+# Base plugin — inbound workflow trigger receiver. HMAC-SHA256 over the exact
+# body is required (fail closed when no secret is configured) and the trigger
+# must be enabled. The trigger CPT is private; drafts are legitimate config
+# records, so `_wp_mcp_ai_trigger_enabled` (not post_status) is the live flag.
+POST /mcp-ai/v1/orchestration/triggers/webhook/(?P<id>\d+)
+
+# Pro + Content Graph Pro — RFC 7591 dynamic client registration. Public by
+# protocol design; DCR only issues a client_id/secret and is rate-limited.
+POST /*/oauth/register
+
+# Pro + Content Graph Pro — RFC 6749 token endpoint. Client authentication plus
+# the PKCE code exchange are the proof.
+POST /*/oauth/token
+
+# Pro + Content Graph Pro — RFC 7009 revocation. Client authentication is the
+# proof; revoking an already-invalid token is a no-op.
+POST /*/oauth/revoke
+
+# Pro — Telegram Mini App initData validation. The callback verifies Telegram's
+# HMAC over the initData payload before trusting any field.
+POST /*/*/validate
+
+# Pro — public booking surface. Honeypot + mandatory consent + per-IP rate
+# limit, and the target link must be active AND published.
+POST /nvoos-outbound/v1/bookings
+
+# Content Graph AI — MCP JSON-RPC transport (same contract as the base route).
+POST /mcp-ai/v1/mcp
+
+# Forge Bridge — anonymous form submissions. Origin allowlist (CSRF gate),
+# per-IP rate limit, honeypot + timestamp ladder, optional Turnstile,
+# published-form visibility check, and routing carriers stripped from fields.
+POST /nvoos-forge/v1/forms/submit
+
+# Forge Bridge — single-use preview-token verification. The bearer token is the
+# proof; constant-time comparison and consumption.
+POST /nvoos-forge/v1/preview-tokens/verify

@@ -1,0 +1,30 @@
+---
+// UiTabsList.astro — the tablist row. Adapted from
+// `accessible-astro-components` (Incluud), MIT; styling re-tokenized.
+interface Props {
+	class?: string;
+	[key: string]: unknown;
+}
+
+const { class: className, ...rest } = Astro.props;
+---
+
+<div class:list={['ui-tabs-list', className]} role="tablist" {...rest}>
+	<slot />
+</div>
+
+<style>
+	:where(.ui-tabs-list) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: stretch;
+		gap: 0.5rem;
+		margin-block-end: 0.5rem;
+	}
+
+	@media (min-width: 31.25rem) {
+		:where(.ui-tabs-list) {
+			margin-block-end: 0;
+		}
+	}
+</style>

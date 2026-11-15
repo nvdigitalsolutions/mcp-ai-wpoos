@@ -1,40 +1,32 @@
-# oOS Engine — Laravel Integration Development Image
+# NV oOS Laravel Spike — FrankenPHP/Octane dev image
 #
-# PHP 8.2 CLI with extensions Laravel needs: pdo_mysql, intl, redis, opcache.
-# Includes Composer. The actual application and oOS packages are set up
-# at container runtime by docker/setup.sh — this image just provides the
-# PHP runtime.
+# The application itself is bind-mounted at /app and bootstrapped by
+# entrypoint.sh from docker/laravel/app-skeleton. This image only provides
+# the PHP runtime, extensions, and Composer.
 
-FROM php:8.2-cli-alpine
+FROM dunglas/frankenphp:1-php8.3
 
-# ── OS dependencies ──────────────────────────
-RUN apk add --no-cache \
-    bash git curl zip unzip \
-    mysql-client \
-    icu-dev libzip-dev
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install -j "$(nproc)" \
-    pdo_mysql intl zip opcache
+RUN install-php-extensions \
+    pdo_mysql \
+    pdo_sqlite \
+    intl \
+    zip \
+    opcache \
+    redis \
+    pcntl \
+    fileinfo
 
-# ── Redis extension ──────────────────────────
-RUN apk add --no-cache --virtual .tmp autoconf gcc g++ make \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && apk del .tmp
-
-# ── Composer ─────────────────────────────────
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# ── Workspace ────────────────────────────────
-RUN mkdir -p /workspace/oos
-RUN mkdir -p /var/www/html
-WORKDIR /var/www/html
+WORKDIR /app
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 8000
-
-# Start script runs composer install (with path repos now mounted)
-# then boots Laravel's dev server.
-COPY docker/laravel/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

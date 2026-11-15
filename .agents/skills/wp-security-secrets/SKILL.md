@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: wp-security-secrets
-description: "Audits WordPress plugin/theme code for secret-handling and credential issues — hardcoded API keys, DB credentials, or signing secrets in source; weak randomness (rand, mt_rand, uniqid) used for security tokens, password reset links, nonces, or session IDs; password storage with md5/sha1/crypt instead of password_hash; insecure cookie flags (missing Secure, HttpOnly, SameSite) on sensitive cookies; secrets logged via error_log / var_dump in production code paths. Use before plugin release, when reviewing auth/registration/login features, when integrating third-party APIs, or when the user mentions \"API key\", \"token\", \"session\", \"password reset\"."
+description: "Audits WordPress plugin/theme code for secret handling and credentials: hardcoded API keys, DB credentials, or signing secrets in source; weak randomness (rand, mt_rand, uniqid) for tokens, password-reset links, nonces, or session IDs; md5/sha1/crypt instead of password_hash; insecure cookie flags (missing Secure, HttpOnly, SameSite); secrets logged via error_log or var_dump. Use before release, when reviewing auth/login/registration, when integrating third-party APIs, or when the user mentions API key, token, session, or password reset."
 license: MIT
 metadata:
   type: Skill
@@ -217,6 +217,30 @@ without a capability check.
 Cross-reference with `wp-security-deep` check #8: any secret
 comparison must use `hash_equals( $stored, (string) $given )`. Never
 `==` or `===`.
+
+### 8. Masked read / restore-on-write (write-only secrets)
+
+A read route that masks a stored secret (`••••••••abcd`, a settings
+placeholder, etc.) must never accept the masked value back on write —
+otherwise an unrelated save persists the mask over the real credential.
+The safe contract, used by `WP_MCP_AI_REST_MCP_Apps_Controller`
+(`addons/pro/includes/mcp-apps/`):
+
+- **Client builders omit secret fields entirely** (`toWritableApp()`); the
+  payload never contains `token`/`oauth_data`/key material.
+- **The write handler drops masked echo-back** before sanitising: unset any
+  string containing the mask characters (`false !== strpos( $value, '••' )`).
+- **The server restores the stored secret by stable identity**
+  (connection ref, record ID, server URL) rather than trusting the body;
+  when no identity matches, fail closed (drop the field or reject) — never
+  persist the mask.
+- **Tests assert the full round-trip:** the write body has no secret keys,
+  and the stored credential still equals its pre-save value after a masked
+  echo.
+
+Review flag: a write handler that calls `sanitize_text_field()` on a
+secret-bearing field and saves it unconditionally — that silently turns a
+mask into the credential.
 
 ## Severity guide
 

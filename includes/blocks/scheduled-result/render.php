@@ -8,6 +8,8 @@
  * @license   GPL-3.0-or-later
  *
  * @var array $attributes Block attributes provided by WordPress.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

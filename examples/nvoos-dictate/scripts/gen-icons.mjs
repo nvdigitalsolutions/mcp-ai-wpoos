@@ -1,6 +1,8 @@
 // Generates placeholder app icons (PNG/ICO/ICNS) with zero dependencies.
-// Real brand icons should replace these via `npm run tauri icon <source.png>`.
-// Usage: node scripts/gen-icons.mjs
+// BOOTSTRAP ONLY: first-time scaffolding art. The committed brand icons
+// (generated from the brand SVG via `npm run tauri icon <source.svg>`)
+// must never be overwritten by this script — do NOT run it in CI or after
+// branding. Usage: node scripts/gen-icons.mjs
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

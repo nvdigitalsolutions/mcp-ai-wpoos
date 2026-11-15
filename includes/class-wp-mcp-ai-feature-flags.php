@@ -12,6 +12,10 @@
  * this map (Proposal 084 / migration plan Phase 0).
  *
  * @package WP_MCP_AI
+ *
+ * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -12,6 +12,9 @@ import { useMemo, useState, type JSX } from 'react';
 import { __ } from '@wordpress/i18n';
 import { useScheduleManager } from '../../hooks/useScheduleManager';
 import { useBootstrap } from '../../hooks/useBootstrap';
+import { ScheduleRunsView } from './ScheduleRunsView';
+import { ScheduleFleetCard } from './ScheduleFleetCard';
+import type { ScheduleItem } from '../../api/schedule-manager';
 import {
 	DataTable,
 	type DataTableColumn,
@@ -37,9 +40,11 @@ export function ScheduleManagerPage(): JSX.Element {
 	const {
 		schedules,
 		presets,
+		fleetStats,
 		loading,
 		error,
 		schedulesError,
+		fleetStatsError,
 		actionError,
 		refresh,
 		createSchedule,
@@ -56,6 +61,8 @@ export function ScheduleManagerPage(): JSX.Element {
 	const [ tab, setTab ] = useState< 'schedules' | 'presets' >( 'schedules' );
 	const [ busy, setBusy ] = useState< string | null >( null );
 	const [ showForm, setShowForm ] = useState< boolean >( false );
+	/** The schedule whose runs are open (null = the list is shown). */
+	const [ runsFor, setRunsFor ] = useState< ScheduleItem | null >( null );
 	const [ form, setForm ] = useState( {
 		name: '',
 		schedule_type: 'assistant_run',
@@ -118,6 +125,14 @@ export function ScheduleManagerPage(): JSX.Element {
 							) }
 						</>,
 						<>
+							<button
+								type="button"
+								className="nvoos-pro-spa-token-manager__action"
+								disabled={ busy !== null }
+								onClick={ () => setRunsFor( schedule ) }
+							>
+								{ __( 'Runs', 'nvoos-pro-spa' ) }
+							</button>
 							<button
 								type="button"
 								className="nvoos-pro-spa-token-manager__action"
@@ -242,6 +257,17 @@ export function ScheduleManagerPage(): JSX.Element {
 		);
 	}
 
+	if ( runsFor ) {
+		return (
+			<ScheduleRunsView
+				schedule={ runsFor }
+				endpoint={ runtime?.endpoints.scheduleManager ?? '' }
+				nonce={ runtime?.nonce ?? '' }
+				onBack={ () => setRunsFor( null ) }
+			/>
+		);
+	}
+
 	const submitForm = async (): Promise< void > => {
 		setBusy( 'create' );
 		const created = await createSchedule( {
@@ -303,7 +329,11 @@ export function ScheduleManagerPage(): JSX.Element {
 			) }
 
 			{ tab === 'schedules' && (
-				<section className="nvoos-pro-spa-diagnostics__card">
+				<>
+					{ fleetStats && (
+						<ScheduleFleetCard stats={ fleetStats } error={ fleetStatsError } />
+					) }
+					<section className="nvoos-pro-spa-diagnostics__card">
 					<h3 className="nvoos-pro-spa-diagnostics__card-title">{ __( 'Schedules', 'nvoos-pro-spa' ) }</h3>
 					<p className="nvoos-pro-spa-diagnostics__muted">
 						<button
@@ -390,7 +420,8 @@ export function ScheduleManagerPage(): JSX.Element {
 							caption={ __( 'Schedules', 'nvoos-pro-spa' ) }
 						/>
 					) }
-				</section>
+					</section>
+				</>
 			) }
 
 			{ tab === 'presets' && (

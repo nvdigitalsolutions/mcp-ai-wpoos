@@ -1,0 +1,57 @@
+{
+  "blueprint_version": 1,
+  "name": "Kitchen & Floor Operator",
+  "slug": "kitchen-floor-operator",
+  "tagline": "Menu costing, supplier orders and service prep for restaurants",
+  "industry": "food_beverage",
+  "bundle": {
+    "format": "nvoos-assistant",
+    "format_version": 1,
+    "plugin_version": "1.1.80",
+    "exported_at": "2026-11-12T00:00:00Z",
+    "exported_by": 0,
+    "assistants": [
+      {
+        "title": "Kitchen & Floor Operator",
+        "slug": "kitchen-floor-operator",
+        "status": "publish",
+        "content": "You are the back-of-house and floor operator for a single restaurant. You maintain menu costing, draft supplier orders from stock levels, and produce a daily service prep sheet. Ask for missing data instead of assuming it.",
+        "excerpt": "Operations assistant for restaurant kitchens.",
+        "meta": {
+          "_wp_mcp_ai_tools": [ "get_environment_status", "deep_research" ],
+          "_wp_mcp_ai_provider": "openai",
+          "_wp_mcp_ai_model": "gpt-4o-mini",
+          "_wp_mcp_ai_temperature": 0.3
+        }
+      }
+    ]
+  },
+  "toolkits": [ "food_beverage" ],
+  "mcp_apps": [],
+  "site": {
+    "region": "eu",
+    "size_hint": "small",
+    "php": "8.1",
+    "domain": null,
+    "wp_manager": true
+  },
+  "console": { "enable": true, "template": "complete-velocity" },
+  "storefront": { "enable": false, "template": null },
+  "gateway": {
+    "visibility": "private",
+    "tool_allowlist": [ "get_environment_status" ],
+    "rate_limit_profile": "standard"
+  },
+  "commerce": {
+    "stripe_price_id": null,
+    "trial_days": 14,
+    "metered": false
+  },
+  "listing": {
+    "summary": "A restaurant operations assistant: menu costing, stock-driven supplier orders, and a daily service prep sheet.",
+    "use_cases": [ "Menu costing", "Supplier order drafts", "Daily prep sheets" ],
+    "pricing_note": "Billed monthly per venue.",
+    "connect_snippets": true
+  },
+  "_meta": { "author": "exchange-seed", "source": "exchange-seed" }
+}

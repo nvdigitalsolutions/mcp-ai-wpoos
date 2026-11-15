@@ -9,11 +9,15 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+require_once dirname( __DIR__ ) . '/research/trait-wp-mcp-ai-tool-research-completion.php';
 
 /**
  * Research Quiz Topic Tool
@@ -23,6 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Usage_Guidance_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Research_Completion;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -669,32 +674,16 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 			return $client;
 		}
 
-		// Make the API call.
-		$result = $client->create_chat_completion(
+		// Make the API call with thinking-model-aware recovery.
+		return $this->perform_research_completion(
+			$client,
 			$messages,
+			$provider,
+			$model,
 			array(
-				'model'       => $model,
 				'temperature' => 0.3, // Low temperature for factual, educational content.
 				'max_tokens'  => 4000, // Allow for more questions.
 			)
-		);
-
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-
-		// Extract the content from the response.
-		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from AI provider.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		return array(
-			'content'  => $result['choices'][0]['message']['content'],
-			'provider' => $provider,
-			'model'    => $model,
 		);
 	}
 
@@ -775,10 +764,10 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 	protected function get_research_model( $provider, $settings ) {
 		switch ( $provider ) {
 			case 'openai':
-				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-4.1';
+				return ! empty( $settings['openai_default_model'] ) ? $settings['openai_default_model'] : 'gpt-6.1-sol';
 
 			case 'gemini':
-				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
+				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-3.5-flash-lite';
 
 			case 'anthropic':
 				return 'claude-sonnet-4-5-20250929';
@@ -808,7 +797,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 				return ! empty( $settings['digitalocean_model'] ) ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct';
 
 			case 'kimi':
-				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k2.7-code';
+				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k3.1-pro';
 
 			case 'baseten':
 				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';
