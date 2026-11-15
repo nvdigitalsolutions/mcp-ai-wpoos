@@ -685,6 +685,91 @@ describe( 'hybrid local content (106 P2)', () => {
 	} );
 } );
 
+describe( 'materialized content — no CMS (2026-11-15)', () => {
+	function localOnlyLoader( entries: Record< string, unknown >[] ) {
+		return createWpLoader( {
+			site: PROFILE,
+			collection: COLLECTION,
+			local: { pattern: '**/*.mdx', base: './src/content/posts' },
+			localOnly: true,
+			localLoaderFactory: () =>
+				( {
+					name: 'fake-local',
+					load: async ( context: { store: { set: ( entry: Record< string, unknown > ) => void } } ) => {
+						for ( const entry of entries ) {
+							context.store.set( entry );
+						}
+					},
+				} as never ),
+		} );
+	}
+
+	it( 'never contacts the dead CMS', async () => {
+		// Run #102 (2026-11-15) died on `Endpoint not found: wp/v2/pages` AFTER the
+		// content had been materialized: a CMS-less profile must not fetch at all.
+		let calls = 0;
+		const originalFetch = globalThis.fetch;
+		( globalThis as { fetch: typeof fetch } ).fetch = ( async () => {
+			calls += 1;
+			throw new Error( 'the CMS is gone — nothing may fetch it' );
+		} ) as typeof fetch;
+
+		try {
+			await localOnlyLoader( [
+				{ id: 'application', data: { title: 'Application' }, digest: 1, body: '' },
+			] ).load( fakeContext( { entries: [], cleared: false } ) );
+		} finally {
+			( globalThis as { fetch: typeof fetch } ).fetch = originalFetch;
+		}
+
+		expect( calls ).toBe( 0 );
+	} );
+
+	it( 'adopts the snapshot body and drops drafts', async () => {
+		const root = await mkdtemp( join( tmpdir(), 'forge-materialized-' ) );
+		const dir = join( root, 'src', 'content', 'posts' );
+		await mkdir( dir, { recursive: true } );
+		await writeFile(
+			join( dir, 'application.html' ),
+			'<section><p>Recovered</p><script>alert(1)</script></section>',
+			'utf8'
+		);
+
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		await localOnlyLoader( [
+			{ id: 'application', data: { title: 'Application' }, digest: 1, body: '' },
+			{ id: 'draft', data: { title: 'Draft', draft: true }, digest: 2, body: '' },
+		] ).load( fakeContext( store, pathToFileURL( root ) ) );
+
+		expect( store.cleared ).toBe( true );
+		expect( store.entries.map( ( entry ) => entry.id ) ).toEqual( [ 'application' ] );
+		expect( store.entries[ 0 ].data.slug ).toBe( 'application' );
+		expect( store.entries[ 0 ].rendered?.html ).toContain( 'Recovered' );
+		expect( store.entries[ 0 ].rendered?.html ).not.toContain( '<script' );
+	} );
+
+	it( 'warns (never fails) when the snapshot carries nothing for a collection', async () => {
+		const store = { entries: [] as StoredEntry[], cleared: false };
+		const warnings: string[] = [];
+		const context = {
+			...fakeContext( store ),
+			logger: { warn: ( message: string ) => warnings.push( message ), info: () => {} },
+		} as unknown as LoaderContext;
+
+		await localOnlyLoader( [] ).load( context );
+
+		expect( store.entries ).toHaveLength( 0 );
+		expect( warnings.join( '\n' ) ).toContain( 'materialized' );
+	} );
+
+	it( 'fails loudly when a materialized collection has no local source', async () => {
+		const loader = createWpLoader( { site: PROFILE, collection: COLLECTION, localOnly: true } );
+		await expect(
+			loader.load( fakeContext( { entries: [], cleared: false } ) )
+		).rejects.toThrow( /materialized.*no local content source/ );
+	} );
+} );
+
 describe( 'slugify (D4 — limax, matches the velocity rule)', () => {
 	it( 'transliterates accents', () => {
 		expect( slugify( 'Café Crème' ) ).toBe( 'cafe-creme' );

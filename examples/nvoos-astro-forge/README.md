@@ -305,6 +305,26 @@ build-and-render even with **no WordPress connection** — a network-level
 failure degrades to local-only with a loud loader warning (HTTP-level
 errors still fail the build).
 
+### Materialized content (a site that outlived its CMS)
+
+`content.source: "materialized"` declares the CMS **gone**. The snapshot
+beside the profile (`sites/<name>.content/`, written by
+`forge materialize`) is then the only source:
+
+- the scaffold copies it into `src/content/`, points **every** collection at
+  its `src/content/<slug>/` glob, emits `localOnly: true`, and marks every
+  collection `optional`;
+- the generated loader **never touches the network** — a dead origin that
+  answers 404, 200 HTML, or nothing at all cannot fail the build;
+- `forge <profile> --check` reports the materialized state instead of
+  probing the dead CMS;
+- the managed env example leaves `NVOOS_TARGET_SITE` blank (the BFF answers
+  503) rather than pointing it at the public origin, which would make `/api`
+  proxy to itself.
+
+`content.snapshot: true` is the opposite promise: the CMS stays authoritative
+and the snapshot is only the outage fallback (WP still runs first).
+
 ### Media pipeline
 
 Same-host WordPress images flow through **Astro Image** (`SmartImage.astro` —

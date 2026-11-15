@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
+import { isMaterializedContent, withMaterializedDefaults } from './content-source.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './geometry.ts';
 import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
@@ -291,6 +292,13 @@ export interface ForgeManifest {
 	 * chrome on these (search/feed links, sitemap pointer, og:image).
 	 */
 	surfaces?: { search: boolean; feed: boolean; sitemap: boolean; ogImages: boolean };
+	/**
+	 * Where the content came from (2026-11-15). `materialized` means the CMS is
+	 * GONE: the scaffolded loader reads the committed snapshot and never touches
+	 * the network, so the generated project is self-describing about it.
+	 * Always emitted so the key is inferable from the JSON.
+	 */
+	contentSource?: 'wordpress' | 'materialized' | 'none';
 	/** The contact band (issue #7549) — copy the front page renders at `#contact`. */
 	contact?: ForgeContact;
 	/** Rendering model (104 Q4) — informational; the project files embody it. */
@@ -639,16 +647,28 @@ export function renderContentConfig(profile: SiteProfile): string {
 	}
 	block.push('');
 	block.push(`export const collections = {`);
+	// A materialized profile (the CMS is gone) reads ONLY the snapshot: every
+	// collection gets its `src/content/<slug>/` glob, and `localOnly` keeps the
+	// loader off the network entirely. `posts`/`pages` keep their canonical
+	// globs; any extra collection (a CPT, a storefront catalogue) resolves the
+	// same way, so `forge materialize` output works for it too.
+	const materialized = isMaterializedContent(profile);
 	for (const collection of profile.collections) {
 		const authVar = collection.authMode === 'wc-consumer' ? 'wcAuth' : 'applicationAuth';
 		// Hybrid local (106 P2): posts/pages merge the local MDX glob under the
 		// WP loader — WP wins on collision, local fills the gaps.
-		const localSource = LOCAL_CONTENT_SOURCES[collection.slug];
+		const localSource = materialized
+			? LOCAL_CONTENT_SOURCES[collection.slug] ?? {
+					pattern: '**/*.mdx',
+					base: `./src/content/${collection.slug}`,
+			  }
+			: LOCAL_CONTENT_SOURCES[collection.slug];
 		const localOption = localSource
 			? `, local: { pattern: ${tsString(localSource.pattern)}, base: ${tsString(localSource.base)} }`
 			: '';
+		const localOnlyOption = materialized ? ', localOnly: true' : '';
 		block.push(
-			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption}, userAgent: import.meta.env.WP_USER_AGENT }) }),`
+			`\t${collection.slug}: defineCollection({ loader: createWpLoader({ site, collection: ${collection.slug}Collection, auth: ${authVar}${localOption}${localOnlyOption}, userAgent: import.meta.env.WP_USER_AGENT }) }),`
 		);
 	}
 	block.push(`};`);
@@ -3416,7 +3436,10 @@ async function scaffoldProject(
 	// The preset's collection-profile half applies here so a preset scaffold
 	// is self-contained (idempotent when the caller already applied it —
 	// applyPresetToProfile re-filters to the same result).
-	const profile = applyPresetToProfile(options.profile, options.preset ?? 'blog');
+	// A materialized profile (the CMS is gone) then makes every collection
+	// absent-tolerant: the snapshot defines what exists, and a collection it
+	// does not carry is EMPTY, not a failed build.
+	const profile = withMaterializedDefaults(applyPresetToProfile(options.profile, options.preset ?? 'blog'));
 	// Proposal 135: the managed tier needs a Node process (the BFF + the
 	// revalidate endpoint), so it requires server output. Infer it from the
 	// runtime tier; an explicit conflicting --render still fails closed BEFORE
@@ -3849,6 +3872,7 @@ async function scaffoldProject(
 		// Always emitted (never omitted): the template reads it directly and a
 		// missing key makes `astro check` fail on the inferred JSON type.
 		seoDescription: profile.seo?.description ?? '',
+		contentSource: profile.content?.source ?? 'wordpress',
 		tokens: profile.tokens,
 		design: profile.design,
 		designAudit: options.strictContrast ? 'strict' : 'warn',
@@ -4016,10 +4040,19 @@ async function scaffoldProject(
 			...(profile.deploy?.runtime === 'managed'
 				? [
 						'',
-						'# Managed runtime (Proposal 135) — the WordPress origin the BFF proxies',
-						'# /api, /media and /api/forms/submit to (server-to-server; the CMS host',
-						'# is never called by a browser).',
-						`NVOOS_TARGET_SITE=${ cmsOrigin }`,
+						...(isMaterializedContent(profile)
+							? [
+									'# Managed runtime (Proposal 135) — this site has NO CMS (its content is',
+									'# materialized), so the BFF has no upstream to proxy. Leave this blank:',
+									'# pointing it at the public origin would make /api proxy to itself.',
+									'NVOOS_TARGET_SITE=',
+							  ]
+							: [
+									'# Managed runtime (Proposal 135) — the WordPress origin the BFF proxies',
+									'# /api, /media and /api/forms/submit to (server-to-server; the CMS host',
+									'# is never called by a browser).',
+									`NVOOS_TARGET_SITE=${ cmsOrigin }`,
+							  ]),
 						'',
 						'# Shared secret for POST /api/revalidate (tag-based cache invalidation).',
 						'# Unset disables the route (503).',
@@ -4074,9 +4107,20 @@ async function scaffoldProject(
 		const source = path.resolve(options.contentDir);
 		if (existsSync(source)) {
 			await cp(source, path.join(targetDir, 'src', 'content'), { recursive: true });
+		} else if (isMaterializedContent(profile)) {
+			// The profile says the CMS is gone. Without the snapshot there is
+			// nothing at all behind the site, so say exactly what is missing and
+			// how to get it — an empty build is otherwise baffling.
+			warnings.push(
+				`content.source is "materialized" but no content snapshot was found at ${source} — the site will build EMPTY. Run "forge materialize <profile> --from <built project>" (or commit the snapshot) first.`
+			);
 		} else {
 			warnings.push(`contentDir not found: ${source}`);
 		}
+	} else if (isMaterializedContent(profile)) {
+		warnings.push(
+			'content.source is "materialized" but no content directory was supplied — the site will build EMPTY. Scaffold through the CLI (it derives sites/<name>.content/ from the profile path) or pass --content <dir>.'
+		);
 	}
 
 	// 4e. Media snapshot (2026-11-15): the CMS-less counterpart to the content

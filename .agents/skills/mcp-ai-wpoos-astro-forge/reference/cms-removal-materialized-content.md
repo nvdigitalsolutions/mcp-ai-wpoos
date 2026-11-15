@@ -72,18 +72,27 @@ Arbitrary WordPress HTML will hit this eventually. Ship the body as a sibling
 
 ```sh
 forge materialize sites/<site>.json --from ./<site>-frontend --out sites/<site>.content
-forge sites/<site>.json --target ./<site>-rebuild --content sites/<site>.content
+forge sites/<site>.json --target ./<site>-rebuild
 cd ./<site>-rebuild && npm install && ASTRO_SITE=https://<public> npm run build
 ```
 
-The profile's collections must be **optional** (`"optional": true`) or the
-build still hard-fails: a *network-level* failure degrades to local-only, but
-an HTTP error (404) is deliberately fatal so a misconfigured source is never
-silent.
+`content.source: 'materialized'` is a **promise**, not a hint: the snapshot is
+the only source, so the scaffold wires every collection to its snapshot glob
+and sets `localOnly: true` — the generated loader never touches the network.
+The dead origin may answer 404, 200 with whatever now serves the domain, or
+hang; none of that can fail the build (run #102 died on exactly that 404 after
+the content had already been recovered).
+
+A materialized profile also makes every collection **optional** by default: a
+collection the snapshot does not carry is an EMPTY collection, not a broken
+source. You do not have to hand-edit `optional: true` into the profile.
 
 Verified end-to-end: 3 materialized pages (28,354 B front-page body, 7
 sections) → `bands 7 pass, 0 warn, 0 skip`, nav anchors 7, media 43 images,
-8/9 gates (the 9th is the informational class-coverage warning).
+8/9 gates (the 9th is the informational class-coverage warning). The 2026-11-15
+CMS-less rebuild adds: no network at all, and `NVOOS_TARGET_SITE` left blank in
+the managed env example (pointing it at the public origin would make `/api`
+proxy to itself — the BFF answers 503 until a CMS returns).
 
 ## Keeping the CMS, with a snapshot as the net (2026-11-15)
 
@@ -119,13 +128,15 @@ cache — and it does not fix a misconfigured CMS, only an absent one.
 
 ## Checklist after a cutover
 
-- Point `profile.url` at the CMS origin — or declare it gone. A stale value
-  silently breaks every future build, and as `NVOOS_TARGET_SITE` it would make
-  the managed BFF proxy to itself.
+- Point `profile.url` at the CMS origin — or declare it gone (`content.source:
+  'materialized'`). A stale value silently breaks every future build, and a
+  materialized profile must never inherit the old CMS as its BFF upstream.
 - Materialize the content **before** deleting the CMS (or keep a backup of
   `dist/server`).
-- Mark collections optional (or drop them) once the CMS is gone.
+- Commit `sites/<name>.content/` beside the profile — the scaffold derives the
+  directory from the profile path, so CI needs no extra flag. A materialized
+  profile with no snapshot scaffolds with a loud warning and builds EMPTY.
 - Decide the media story: the build localizes images, so a fresh rebuild while
-  the CDN cache is cold will fetch 404s.
+  the CDN cache is cold will fetch 404s. `media.snapshot: true` freezes them.
 - Do not write this into a locked profile without a plan: `locked` is an
   ownership record, not a "site is finished" flag.
