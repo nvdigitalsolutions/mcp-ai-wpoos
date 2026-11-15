@@ -15,6 +15,10 @@
 //     fields, featured media resolved by ID when `_embed` has none)
 // ---------------------------------------------------------------------------
 
+import { existsSync, readFileSync } from 'node:fs';
+import { basename, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { glob } from 'astro/loaders';
 import type { Loader, LoaderContext } from 'astro/loaders';
 import { z } from 'astro/zod';
@@ -316,6 +320,13 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 					`[nvoos-wp] ${collection.slug}: WordPress unreachable (${error instanceof Error ? error.message : String(error)}) — serving local content only.`
 				);
 			}
+			// Local content may ship its body BESIDE the MDX. A materialized
+			// WordPress page is arbitrary HTML (nested block tags inside a
+			// paragraph), which MDX parses as JSX and rejects — so `<id>.html`
+			// next to `<id>.mdx` is the body and the MDX carries only frontmatter.
+			const rootUrl = context.config?.root;
+			const baseDir =
+				local.base && rootUrl ? resolve( fileURLToPath( rootUrl ), local.base ) : '';
 			for (const [id, entry] of localEntries) {
 				if (wpIds.has(id)) {
 					continue; // WP wins on collision.
@@ -326,12 +337,33 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 				// digest gets a stable prefix so the store re-writes the
 				// entry once (same-digest re-sets are skipped) and later
 				// incremental builds still dedupe unchanged files.
-				const data = entry.data as Record<string, unknown>;
-				context.store.set({
+				const data = entry.data as Record< string, unknown >;
+				// A glob-loaded MDX entry carries `body`; the WP loader carries
+				// `rendered.html`. Normalise local content into the same shape: the
+				// semantic renderer classifies rendered.html, so without this a
+				// locally-sourced page falls back to unthemed raw markup and a site
+				// rebuilt from local content loses every band.
+				const localBody = ( () => {
+					const inline = typeof entry.body === 'string' ? entry.body.trim() : '';
+					if ( baseDir === '' || basename( id ) !== id ) {
+						return inline;
+					}
+					const sibling = resolve( baseDir, `${ id }.html` );
+					return existsSync( sibling ) ? readFileSync( sibling, 'utf8' ).trim() : inline;
+				} )();
+				const existingRendered = entry.rendered as { html?: unknown } | undefined;
+				const rendered: { html: string } | undefined =
+					typeof existingRendered?.html === 'string'
+						? { html: existingRendered.html }
+						: localBody === ''
+							? undefined
+							: { html: sanitizeHtml( localBody ) };
+				context.store.set( {
 					...entry,
-					digest: entry.digest !== undefined ? `local:${String(entry.digest)}` : undefined,
-					data: { ...data, slug: (typeof data.slug === 'string' && data.slug) || id },
-				});
+					digest: entry.digest !== undefined ? `local:${ String( entry.digest ) }` : undefined,
+					rendered,
+					data: { ...data, slug: ( typeof data.slug === 'string' && data.slug ) || id },
+				} );
 			}
 		},
 	};
