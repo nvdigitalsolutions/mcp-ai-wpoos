@@ -494,9 +494,38 @@ The clusters are done. What is left is either dependency-blocked or deliberately
 
 | Item | Where it surfaced | What it needs |
 |---|---|---|
-| **`PiiFilter` misses AWS keys, JWTs, private keys and connection strings** | §12: the output guardrail detects these, `PiiFilter` does not redact them on the **input** path. Detection and redaction have different precision trade-offs, so this was left alone. | Extend `PiiFilter::patterns()` with the four families and a false-positive test over ordinary prose. |
+| **`PiiFilter` misses AWS keys, JWTs, private keys and connection strings** | §12: the output guardrail detected these, `PiiFilter` did not redact them on the **input** path. | **Closed — cluster 14, see §21.** |
 | **The chat path had no system-prompt handling at all** | §17: guardrail injection had to be added to the orchestrator because nothing assembled a system prompt. | Decide whether the assistant's `system_prompt` is applied server-side (WordPress does) or client-side, and make both runtimes agree. |
 | **`lib/core` has no style gate** | §16: `phpcs-laravel.xml.dist` does not list `lib/core` in its `<file>` set, and `ChatOrchestrator.php` carries 535 PSR-12 spacing errors that no gate reports. | Add `lib/core/src` and `lib/core/tests` to the ruleset and reformat in one whitespace-only commit, or state explicitly that `lib/core` follows WPCS spacing and add the sniffs that enforce it. |
 | **One flaky app test** | §16: `ProjectManagementToolParityTest` failed once at `parent::setUp()` and passed on two subsequent full runs. | Catch it with `--repeat` if it recurs; not reproducible now. |
+
+---
+
+## 21. Cluster 14 result — PII / secret pattern parity
+
+**What shipped.** `PiiFilter::patterns()` and the WordPress `default_patterns()` gained four families: AWS access key IDs (`AKIA` long-term and `ASIA` STS), JWTs, PEM private-key blocks (the whole block, not the header), and connection strings. The two tables are byte-identical and in the same order — verified by reflection over the WordPress table, not by reading them side by side.
+
+**Why the gap mattered more than "missing patterns".** The output guard detected all four shapes; the input path redacted none of them. Probing the old table against real shapes showed the leak was worse than absent: `postgres://user:pass@db.internal:5432/app` came out as `postgres://user:[REDACTED_EMAIL]:5432/app`, because the **email** pattern was matching the `user:pass@host` authority on its own. That accidental partial catch is why the family looked covered. `redis://default:hunter2@cache:6379` matched nothing at all and reached storage intact — a redis URL has no email-shaped authority to borrow.
+
+**Order is load-bearing.** Three orderings changed, each because the pre-existing table would otherwise claim the match first:
+
+- Credential shapes before the credit-card pattern. An AWS key ID is four identifying characters plus sixteen that are frequently all digits, so the card pattern produced `AKIA[REDACTED_CC]` on numeric keys and missed lettered keys entirely.
+- Connection strings before the email pattern, for the reason above.
+- Private-key blocks before the card pattern, because base64 key material carries long digit runs.
+
+**Two deliberate divergences from the detection table.** Redaction and detection have different false-positive budgets, so the tables are intentionally not shared — the class docblock now says so:
+
+- Detection flags the `-----BEGIN … PRIVATE KEY-----` header, which is evidence enough to raise a finding. Redaction matches the **entire block**: replacing only the header would report a redaction while leaving the key material in the text, which is worse than no guard because it looks handled.
+- Detection's `[^\s]+` tail is fine when a false positive costs a warning prefix. Redaction stops before trailing sentence punctuation, so `see postgres://u:p@h/db.` keeps its full stop instead of eating it.
+
+**One pre-existing defect fixed in passing.** The card pattern allowed a trailing separator (`(?:\d[ -]?){13,19}`), which swallowed the space after the run: `order 1234567890123456 confirmed` became `order [REDACTED_CC]confirmed`. It now ends on a digit. Same redaction count, no glue.
+
+**Limitation, documented rather than papered over.** A *truncated* PEM — a BEGIN with no matching END — is not redacted, because the block pattern cannot close. `OutputGuardrail` still detects the header on the output side, so the shape is caught on the half of the pipeline that can see it.
+
+**Test-file cleanup was part of making the change landable.** `tests/test-harness-services.php` carried 40 WPCS errors against a per-file CI budget of 10 (`.github/workflows/php-linting.yml`), so any PR touching it needed three other clean files to pass at all. Thirty-nine were mechanical: 33 missing method docblocks, 2 missing variable docblocks, 2 missing `@var` tags, and one blank line after a trait import. The remaining 4 were `OneObjectStructurePerFile`, resolved with a sniff-scoped exclude-pattern rather than a file split, matching the precedent the ruleset already sets for two other test files that group several classes. The file is now at zero, and the change is pure addition (226 lines, 0 deletions).
+
+**Validation.** `lib/core` **1,667 tests / 5,793 assertions** (23 new); app suite **693 / 4,067**, unchanged; `phpcs-laravel.xml.dist` clean on both changed core files; `phpcs.xml.dist` clean on both changed WordPress files. The adapter suite was not run — nothing under `lib/laravel-adapter/` changed.
+
+The tests pin what a caller receives rather than what the patterns intend: each family is reduced to a single token; an AWS key is never mistaken for a card number; a complete PEM loses its body *and* its END marker while the surrounding prose survives; a truncated PEM is explicitly asserted **not** to be redacted; seven ordinary-prose cases that merely name credentials are asserted untouched; and every default pattern is compiled, so a typo cannot silently disable a family the way `scrub()`'s skip-invalid-pattern behaviour otherwise would.
 
 ---
