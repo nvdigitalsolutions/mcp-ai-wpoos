@@ -1,7 +1,21 @@
-# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.20)
+# NV oOS Plugin Skill - Release Notes (v1.1.66 to v1.2.21)
 
 Moved out of SKILL.md to stay under the Zed 100KB skill-size limit.
 Operational content stays in SKILL.md; append new per-version sections here.
+
+---
+
+## Harness Port, Tool Readiness, Laravel Surfaces (v1.2.21)
+
+- **AI-safety harness in `lib/core` (Proposal 090-K, #7781–#7791, #7797–#7799, #7813, #7815, #7816)** — retrieval, citation verifier, reasoning trace, self-refine loop + `TraceStoreInterface`/`TracePolicy`/`DatabaseTraceStore` (`nvoos_harness_trace_records`), the scored tool router (`fuseWithRrf()`, `RRF_K = 60`, ±5 weight clamp), the output guardrail and the guardrail prompt/block policy. WordPress `includes/harness/*` delegates behind `class_exists` and keeps its hooks and strings. **Four live defects fixed:** `output_guard` never survived `HarnessProfile::sanitize()`, `NecessityGuard` had no delegate, preset weights were unserialised, and the guardrail prompt was never composed. Chat wiring: output guard at `wp_mcp_ai_pre_response_render` priority 10, guardrail prompt injected, `TraceCapture` records runs, scored routing behind `tools.router: scored`.
+- **Tool readiness manifest (090-M, #7821)** — `lib/core/resources/tool-readiness.php` (223 classes, closed vocabulary), `Application\Tool\ToolReadiness`, `ManifestToolRegistrar`, `bin/audit-tool-readiness.php`, the `Tool Readiness` CI job. Registration was an allowlist at 55 of ~223 classes; nineteen prompt-builder stand-ins shared a real tool's slug and returned a synthetic `success`.
+- **AI-safety defaults + posture catalogue (#7817/#7775/#7778/#7812)** — `pii_filter` and `prompt_injection_detector` (log mode) default **on**; `output_guard`, `necessity_gate` and `tools.router: scored` stay **off** by recorded decision. `SecuritySignalCatalogue` (27 signals) + `PostureEvaluator`/`PostureScorer` replace the two incompatible posture vocabularies; five signals stay WordPress-only (true wp-admin primitives). `ChatOrchestrator` applies the assistant `system_prompt` server-side on both paths.
+- **Laravel runtime surfaces (090-b/i/h/j)** — workflow storage/presets, Kahn-order executor + run history + triggers (`nvoos:fire-triggers`), shared MCP handshake/OAuth/envelope policy + MCP Apps, sealed-credential remote sites (`nvoos_remote_sites`) with a QuickBooks Online MCP connection type, command-centre telemetry, token manager (the `manage_oos` gate was undefined — issuance was permanently forbidden), slash commands, read-only skills catalogue, OKF drawer, media health/optimise/sweep, and endpoint availability as a CI-guarded contract (45 keys + reasons + nav gating).
+- **Classroom/ECA + tool ports (090-D/E)** — 13 `lib/core/src/Tool/Classroom/*` tools, `generate_email_template`, `scope_memory`, `list_prompt_cues`, `enable_reasoning_mode`, schedule presets/tick, PM parity fixtures. `ContentStore::likePattern()` fixes the `LIKE` wrapping for every future list tool; `per_page` resets rather than clamps.
+- **`lib/core` quality + dependencies** — PSR-12 reformat (533 files) and the style gate on (799 files 0/0); `tests/support` out of PHPUnit discovery; explicit local file-list runner; hono 4.13.16, basic-ftp 6.2.6, astro 7.4.7, `fast-xml-parser >=5.12.0`.
+- **Astro Forge** — `forge materialize` (recover content from the baked store after a site outlives its CMS), `content.snapshot`, proxy timeout + RFC 9110 504/502, `forms.fallback: "direct"` (Turnstile, clock tolerance, proxy-aware throttle), host-relative links, fill-image geometry, band `minHeight`, the jayainc wave, MDX source bodies, font sheets, Virtually Sri Lanka.
+- **Model defaults (#7824)** — retired `gemini-2.0-*` → `gemini-3.8-flash` / `gemini-3.8-live` / `gemini-3.5-flash-lite` / `gemini-nano-banana-2.1` (catalog unchanged).
+- **Counts** — tools **~360 base + ~1,388 Pro (~1,747 total, unchanged)**; coding-time skills **85** (in-place updates only); addons **32** (unchanged); model catalog **v2026.11.03** (unchanged); security classes **12**; stale **1.2.19** build set removed (30 files); three npm packages published at `0.1.0-alpha.4`.
 
 ---
 

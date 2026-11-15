@@ -194,6 +194,23 @@ weekly (or on demand), independent of any release.
   `build/` ZIPs + `.sha256` pairs **plus** `build/optional-components/` and
   `build/toolkit-addons/` (the v1.1.85 pass's "30 files" shape — 9 + 2 + 19 —
   repeated by the v1.1.87 pass for the 1.1.85 set).
+- **Distribution sync is a three-way check, run every pass.** The release
+  surfaces are not the only thing that drifts: (1) **npm** — compare every
+  `packages/*/package.json` version against `npm view <name> version`; a package
+  bumped in an earlier window but never published is drift (the 1.2.21 pass
+  found `nvoos-audio`, `nvoos-dom-batcher` and `nvoos-slash-commands` at
+  `0.1.0-alpha.4` while the registry still served `alpha.3`, from a security
+  PR two windows earlier). Publish the delta with `npm-publish.yml` and an
+  explicit `packages` + `version` input — the workflow's blank-version path
+  reads the **first** package in `PACKAGES`, which would publish the wrong
+  version. A package outside the alpha set (e.g. `nvoos-design-import` 0.1.0)
+  is **reported, not force-published**. (2) **Rust app** — compare the
+  `examples/nvoos-dictate` commit against the mirror repo's `main` and the
+  latest mirrored release; a zero-diff app means no action, and saying so with
+  the commit SHAs is the evidence. (3) **lockfile consistency** — every
+  `package.json` with a sibling `package-lock.json` must agree on the dependency
+  spec (a script comparing both root dependency maps is enough; the 1.2.21 pass
+  found zero drift across 36 projects).
 - **An introducing PR may pre-stage the readme.txt release entry.** A feature
   PR can add a `= X.Y.Z - Unreleased =` changelog paragraph before the
   catch-up runs (the v1.1.87 window's #6780 did) — the catch-up converts it
