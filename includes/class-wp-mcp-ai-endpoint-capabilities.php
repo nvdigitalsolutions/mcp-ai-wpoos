@@ -156,11 +156,9 @@ class WP_MCP_AI_Endpoint_Capabilities {
 	 * - `mediaCc` is `route` here: the WordPress health snapshot is computed
 	 *   locally (attachments, files, alt text, compression stats, queue), so it
 	 *   does not need a media worker the way the Laravel runtime does.
-	 * - `professions` is `route` here: WordPress serves the catalogue at
-	 *   `mcp-ai/v1/professions` (090-p W1), so it is no longer an override.
-	 * - `orgTeams` is `runtime-adaptable`: WordPress owns users/roles but
-	 *   exposes no team storage or REST route yet, so the console hides the
-	 *   surface without calling it a regression.
+	 * - `professions` and `orgTeams` are `route` here: WordPress serves the
+	 *   catalogue at `mcp-ai/v1/professions` and the org-team contract at
+	 *   `mcp-ai/v1/org/teams` (090-p W1/W7), so neither is an override.
 	 * - `chatChannels` stays `toolkit-shaped`: the admin page points at
 	 *   `mcp-ai-pro/v1/chat-channels`, but no controller registers that route.
 	 *   That is the deferred communications-toolkit family, not a broken route.
@@ -191,7 +189,7 @@ class WP_MCP_AI_Endpoint_Capabilities {
 		'okf'                => self::ROUTE,
 		'operations'         => self::ROUTE,
 		'orchestrationStats' => self::ROUTE,
-		'orgTeams'           => self::RUNTIME_ADAPTABLE,
+		'orgTeams'           => self::ROUTE,
 		'paperStore'         => self::ROUTE,
 		'portability'        => self::ROUTE,
 		'proOps'             => self::ROUTE,

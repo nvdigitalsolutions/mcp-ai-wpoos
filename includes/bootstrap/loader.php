@@ -1760,6 +1760,28 @@ add_action(
 		$controller->register_routes();
 	}
 );
+// Org teams (users with roles) — storage + REST contract (090-p W7).
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/org-teams/class-wp-mcp-ai-org-team-cpt.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/org-teams/class-wp-mcp-ai-org-team-cpt.php';
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/org-teams/class-wp-mcp-ai-org-team-service.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/org-teams/class-wp-mcp-ai-org-team-service.php';
+}
+if ( did_action( 'init' ) ) {
+	WP_MCP_AI_Org_Team_CPT::register();
+} else {
+	add_action( 'init', array( 'WP_MCP_AI_Org_Team_CPT', 'register' ) );
+}
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-org-teams-controller.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-org-teams-controller.php';
+}
+add_action(
+	'rest_api_init',
+	function () {
+		$controller = new WP_MCP_AI_REST_Org_Teams_Controller();
+		$controller->register_routes();
+	}
+);
 // Operations REST surface (cron + DLQ) — Proposal 084 Phase 3: the console's
 // Operations page wraps the cron manager + dead-letter queue services.
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-operations-controller.php' ) ) {

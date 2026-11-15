@@ -72,17 +72,17 @@ describe('backendPaths', () => {
     });
   });
 
-  it('leaves the org-team surface empty on WordPress', () => {
+  it('serves org teams on WordPress', () => {
     const runtime = buildConsoleRuntime({
       backend: 'wordpress',
       nonce: 'nonce-1',
       user: { id: 1, capabilities: ['manage_options'] },
     });
 
-    // WordPress has the agent-team catalogue at `teams`; users-with-roles is
-    // Laravel-only until the contract is ported.
+    // WordPress has the agent-team catalogue at `teams` AND the org-team
+    // contract at `org/teams` (090-p W7) — different primitives.
     expect(runtime.endpoints.teams).toBe(`${origin()}/wp-json/mcp-ai/v1/teams`);
-    expect(runtime.endpoints.orgTeams).toBe('');
+    expect(runtime.endpoints.orgTeams).toBe(`${origin()}/wp-json/mcp-ai/v1/org/teams`);
     // The profession catalogue is served on both runtimes (090-p W1).
     expect(runtime.endpoints.professions).toBe(
       `${origin()}/wp-json/mcp-ai/v1/professions`,
@@ -105,7 +105,7 @@ describe('buildConsoleRuntime (laravel)', () => {
     expect(runtime.endpoints.proOps).toBe(`${origin()}/api/v1/pro/ops`);
     expect(runtime.endpoints.upload).toBe(`${origin()}/api/v1/media`);
     expect(runtime.endpoints.wpBase).toBe(`${origin()}/api/v1/wp`);
-    // Org teams (users + roles) are a Laravel-only contract; the WordPress
+    // Org teams (users + roles) are served by both runtimes; the WordPress
     // agent-team catalogue keeps `/teams`.
     expect(runtime.endpoints.orgTeams).toBe(`${origin()}/api/v1/org/teams`);
     // The assistant editor's profession selector.

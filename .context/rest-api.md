@@ -376,6 +376,9 @@ flush();
 | GET | `/mcp-ai/v1/restrictions` | List active user-restriction records (v1.1.60) |
 | GET/POST | `/mcp-ai/v1/users/{id}/restrictions` | List / add restrictions for a user (v1.1.60, `manage_options` on writes) |
 | DELETE | `/mcp-ai/v1/users/{id}/restrictions/{type}` | Lift a restriction by type (v1.1.60, `manage_options`) |
+| GET | `/mcp-ai/v1/professions` | Admin-gated profession catalogue (090-p W1) — Laravel-shaped `{slug, name, description, …}` entries |
+| GET | `/mcp-ai/v1/professions/{slug}` | One profession record; `404` for an unknown slug |
+| `*` | `/mcp-ai/v1/org/teams` | Org-teams (the tenant's users-with-roles teams, 090-p W7) — `GET\|POST /org/teams`, `GET\|PATCH\|DELETE /org/teams/{team}`, `POST /org/teams/{team}/members`, `PATCH\|DELETE /org/teams/{team}/members/{user}`. Distinct from `/mcp-ai/v1/teams`, the agent-team catalogue |
 | `*` | `/mcp-ai-pro/v1/okf/*` | Pro read-only OKF surface (v1.1.62): bundle list/health stats, concept browse + search, per-assistant skill grants — implemented by `WP_MCP_AI_Pro_REST_OKF` (`addons/pro/includes/rest/`), registered through the Pro module registry |
 
 The cron-status routes are implemented by `WP_MCP_AI_REST_Tools_Controller` and
