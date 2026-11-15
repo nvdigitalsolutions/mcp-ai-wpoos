@@ -97,6 +97,10 @@ describe( 'emitDeployConfig', () => {
 		expect( script ).toContain( "'checkout', '--orphan'" );
 		expect( script ).toContain( "'push', '--force'" );
 		expect( script ).toContain( 'mirror-push: attempt' );
+		// A hand deploy must never look like a publish when the credentials are
+		// missing: refuse unless the skip is deliberate.
+		expect( script ).toContain( 'FORGE_ALLOW_MIRROR_SKIP' );
+		expect( script ).toContain( 'refusing to publish' );
 		// Velocity runs the deploy tree's `npm run build` through `sh -c`,
 		// where an unquoted `(` is a syntax error — the whole deploy failed
 		// with `sh: 1: Syntax error: "(" unexpected`.
@@ -202,10 +206,25 @@ describe( 'emitDeployConfig', () => {
 			} );
 		}
 
-		it( 'skips (exit 0) when the mirror secrets are unset — even for managed', async () => {
+		it( 'refuses (exit 1) when the mirror secrets are unset — even for managed', async () => {
+			// A hand deploy that silently skips is indistinguishable from a
+			// successful publish (2026-11-15: the operator believed a build had
+			// shipped while mirror-push exited 0 without touching the branch).
 			await emitDeployConfig( dir, MIRROR );
-			const { stdout } = await runPush( { MIRROR_URL: '', MIRROR_TOKEN: '', RUNTIME: 'managed' } );
-			expect( stdout ).toContain( 'skipping mirror deploy' );
+			await expect(
+				runPush( { MIRROR_URL: '', MIRROR_TOKEN: '', RUNTIME: 'managed' } )
+			).rejects.toThrow( /refusing to publish/ );
+		} );
+
+		it( 'skips (exit 0) only when the skip is deliberate', async () => {
+			await emitDeployConfig( dir, MIRROR );
+			const { stdout } = await runPush( {
+				MIRROR_URL: '',
+				MIRROR_TOKEN: '',
+				RUNTIME: 'managed',
+				FORGE_ALLOW_MIRROR_SKIP: '1',
+			} );
+			expect( stdout ).toContain( 'skipping' );
 		} );
 
 		it( 'refuses to push a managed tree without server.js', async () => {

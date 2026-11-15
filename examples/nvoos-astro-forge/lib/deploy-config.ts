@@ -347,7 +347,8 @@ function verifyScript(): string {
  * mode. Plain node, no dependencies: clones `main` of the mirror, checks out
  * an ORPHAN site branch (flat single-commit history), replaces the content
  * with the build output, and force-pushes. Unset MIRROR_URL/MIRROR_TOKEN
- * skips with a warning (never a failed build). The CLI runs the same emitted
+ * REFUSES unless FORGE_ALLOW_MIRROR_SKIP=1 is set: a hand deploy that silently
+ * skips looks exactly like a successful publish. The CLI runs the same emitted
  * file for the operator staging path, so workflow and CLI cannot drift.
  */
 function mirrorPushScript( runtime: DeployRuntime = 'static' ): string {
@@ -361,8 +362,9 @@ function mirrorPushScript( runtime: DeployRuntime = 'static' ): string {
 		'//',
 		'// Contract: MIRROR_URL (https URL of the mirror repo), MIRROR_TOKEN',
 		'// (repo-scoped deploy token), SITE_BRANCH (e.g. site/jayainc), and',
-		'// optionally SOURCE_DIR (default: ./dist). Unset URL/token skips with a',
-		'// warning — never a failed build.',
+		'// optionally SOURCE_DIR (default: ./dist). Unset URL/token REFUSES unless',
+		'// FORGE_ALLOW_MIRROR_SKIP=1 — on a hand deploy a silent skip is',
+		'// indistinguishable from a successful publish.',
 		'',
 		"import { execFileSync } from 'node:child_process';",
 		"import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';",
@@ -386,8 +388,12 @@ function mirrorPushScript( runtime: DeployRuntime = 'static' ): string {
 		'}',
 		'',
 		'if ( ! url || ! token ) {',
-		"	console.log( 'mirror-push: MIRROR_URL / MIRROR_TOKEN are not set — skipping mirror deploy.' );",
-		'	process.exit( 0 );',
+		"	if ( process.env.FORGE_ALLOW_MIRROR_SKIP === '1' ) {",
+		"		console.log( 'mirror-push: MIRROR_URL / MIRROR_TOKEN are not set — skipping (FORGE_ALLOW_MIRROR_SKIP=1).' );",
+		'		process.exit( 0 );',
+		'	}',
+		"	console.error( 'mirror-push: MIRROR_URL / MIRROR_TOKEN are not set — refusing to publish. Set them, or pass FORGE_ALLOW_MIRROR_SKIP=1 to skip deliberately.' );",
+		'	process.exit( 1 );',
 		'}',
 		'if ( ! branch ) {',
 		"	console.error( 'mirror-push: SITE_BRANCH is not set — refusing to push.' );",
