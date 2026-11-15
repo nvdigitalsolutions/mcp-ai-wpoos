@@ -166,15 +166,19 @@ final class ProjectManagementWriteTest extends TestCase {
 		$this->assertStringContainsString( 'title is required', $result->getMessage() );
 	}
 
-	public function test_create_task_rejects_an_unknown_status(): void {
+	/**
+	 * Create coerces an unknown status to the default, matching WordPress and
+	 * the project tool; `update_task` is where an unknown status is rejected.
+	 */
+	public function test_create_task_coerces_an_unknown_status_to_the_default(): void {
 		$result = $this->registry->execute(
 			'create_task',
 			array( 'title' => 'X', 'status' => 'doing' ),
 			$this->context
 		);
 
-		$this->assertInstanceOf( \RuntimeException::class, $result );
-		$this->assertStringContainsString( 'Unknown task status', $result->getMessage() );
+		$this->assertIsArray( $result, is_object( $result ) ? $result->getMessage() : '' );
+		$this->assertSame( 'todo', $result['data']['task']['status'] );
 	}
 
 	public function test_create_task_rejects_an_impossible_date(): void {
