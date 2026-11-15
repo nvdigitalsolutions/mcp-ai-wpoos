@@ -124,20 +124,38 @@ const offsetVars = ( index: number ): string | undefined => {
 						style={shapeStyle}
 					/>
 				)}
-				{media.map(
-					(image, index) =>
-						image.src && (
-							<img
-								class="ds-media ds-collage-media"
-								src={image.src}
-								alt={image.alt ?? ''}
-								width="600"
-								height="600"
-								loading="lazy"
-								style={offsetVars(index)}
-							/>
-						)
-				)}
+				{theme.mediaShape || theme.mediaOffsets
+					? media.map(
+							(image, index) =>
+								image.src && (
+									<img
+										class="ds-media ds-collage-media"
+										src={image.src}
+										alt={image.alt ?? ''}
+										width="600"
+										height="600"
+										loading="lazy"
+										style={offsetVars(index)}
+									/>
+								)
+					  )
+					: // A split band whose photos carry no shape and no measured
+					  // offsets is a plain photo COLUMN, not a collage. The absolute
+					  // placement renders at intrinsic size (a 1620px photo pushed
+					  // the document 916px wide), and the 600x600 placeholder
+					  // attributes would squash it square.
+					  media.map(
+							(image, index) =>
+								image.src && (
+									<SmartImage
+										class="ds-media"
+										src={image.src}
+										alt={image.alt ?? ''}
+										sizes="(min-width: 768px) 50vw, 100vw"
+										eager={index === 0}
+									/>
+								)
+					  )}
 			</div>
 		)}
 	</section>
