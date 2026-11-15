@@ -1698,6 +1698,32 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	position: relative;
 }
 
+/* Flatsome's `.section-bg.fill` is the band's background LAYER.
+ *
+ * `.fill` is the vendor's absolute-fill utility, but applying it to every `.fill`
+ * also repositioned the banner internals (the tile copy vanished). The band's
+ * background layer is the one that matters: in flow it added its own height to
+ * every band (a 600px source band rendered 1200 — bg 600 + content 600). */
+.ds-section-wrap .post-body .section {
+	position: relative;
+}
+
+/* The builder's wrapper chain shrink-wraps instead of stretching (the same
+ * collapse that flattened `.post-body` to 47px): an explicit width is the only
+ * deterministic fix, and it is what the shim already means by "the section and
+ * `.section-content` grow". Without it the band's own stage is 47px wide while
+ * the band paints 1065 — the airport-transfer tile grid rendered as a 47px
+ * column and its banners grew past the band. */
+.ds-section-wrap .post-body > .section,
+.ds-section-wrap .post-body .section-content {
+	width: 100%;
+}
+
+.ds-section-wrap .post-body .section-bg.fill {
+	position: absolute;
+	inset: 0;
+}
+
 /* The band's own content column fills the measured band box so a `.banner`
  * set to `is-full-height` can grow into it. A percentage min-height cannot
  * resolve against the wrap's `min-height`, and `min-height: inherit` on the
@@ -1714,6 +1740,17 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	flex-direction: column;
 	flex: 1;
 	min-height: 0;
+}
+
+/* A RAW Flatsome band (`.post-body > section.section`) is the band STAGE, not a
+ * prose column: without an explicit width it shrink-wraps to its content's
+ * min-content (47px on monicarajiv's sub-pages, 438-630px elsewhere) and the
+ * measured `max-width` never applies, so every row renders as a narrow strip
+ * down the middle of a 1440px band. An explicit 100% makes the band's own
+ * measured content width the cap, exactly like the source's container. */
+.ds-section-wrap .post-body.ds-section:has(> .section) {
+	width: 100%;
+	margin-inline: auto;
 }
 
 .ds-section-wrap .post-body.ds-section > .section {
@@ -1750,9 +1787,14 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 
 /* A photo banner inside a column is the column's media panel. The builder sized
  * it with an inline `padding-top: <n>%` in a `<style>` block the sanitizer
- * drops, so the rebuild gives it the builder's default square stage. */
+ * drops, so the rebuild has to fall back — but the fallback must be the
+ * builder's own default shape, not a square: Flatsome's tiles render ~5:3 in
+ * the source (499×301, 469×162 on monicarajiv.com), and a square tile doubles
+ * the height of every row as soon as the content container is measured
+ * correctly (a 1080px column gave a 1080px tile and a 1200px band where the
+ * source is 600). */
 .ds-section-wrap .post-body .col .banner {
-	aspect-ratio: 1 / 1;
+	aspect-ratio: var(--ds-banner-ratio, 5 / 3);
 }
 
 /* The photo is a LAYER behind the copy, not an inline image. */
