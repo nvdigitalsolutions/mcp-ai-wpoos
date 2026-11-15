@@ -1235,6 +1235,8 @@ export const SECTION_KINDS = [
 	'gallery',
 	'text',
 	'form',
+	// Proposal 144 — the disclosure band (native <details>/<summary>).
+	'accordion',
 	'raw',
 	'pricing',
 	'stats',

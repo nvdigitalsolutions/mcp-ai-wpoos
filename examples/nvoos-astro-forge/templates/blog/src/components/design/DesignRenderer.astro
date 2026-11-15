@@ -30,6 +30,7 @@ import FeatureGrid from './FeatureGrid.astro';
 import Form from './Form.astro';
 import Gallery from './Gallery.astro';
 import Hero from './Hero.astro';
+import Accordion from './Accordion.astro';
 import IconList from './IconList.astro';
 import LogoCloud from './LogoCloud.astro';
 import Marquee from './Marquee.astro';
@@ -72,7 +73,21 @@ const { html = '', wireframeSections, bandGeometry = false, bandThemes } = Astro
 const sections: SemanticSection[] = wireframeSections
 	? wireframeSections.map( ( w ) => w.section )
 	: classifyBody( html );
-const columnsFor = ( index: number ): Record<string, number> | undefined => wireframeSections?.[ index ]?.responsive?.columns;
+const columnsFor = ( index: number, theme?: SectionTheme ): Record< string, number > | undefined => {
+	const wireframe = wireframeSections?.[ index ]?.responsive?.columns;
+	if ( wireframe ) {
+		return wireframe;
+	}
+	// No wireframe inventory: the SOURCE band's own column count is still a
+	// measured fact (design.sections[].columns). Without this fallback a
+	// three-column services band rebuilt as a grid with the template's default
+	// four tracks — the source's columns never reached the grid at all.
+	const count = theme?.columns?.length ?? 0;
+	if ( count < 2 ) {
+		return undefined;
+	}
+	return { desktop: count, tablet: count >= 3 ? 2 : count, mobile: 1 };
+};
 /**
  * The source band theme for a rebuilt section. Elementor sites match by the
  * classifier-carried section id. Outline-only sources (WPBakery/Brando…) carry
@@ -903,8 +918,9 @@ const bandParallaxCss = sections
 					) : (
 						<>
 							{section.kind === 'hero' && <Hero section={section} theme={theme} />}
-							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index)} theme={theme} />}
-							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index)} theme={theme} />}
+							{section.kind === 'accordion' && <Accordion section={section} theme={theme} />}
+							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index, theme)} theme={theme} />}
+							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index, theme)} theme={theme} />}
 							{section.kind === 'testimonial' && <Testimonial section={section} theme={theme} />}
 							{section.kind === 'logo-cloud' && <LogoCloud section={section} theme={theme} />}
 							{section.kind === 'cta' && <Cta section={section} theme={theme} />}

@@ -26,8 +26,9 @@ const { section, columns, theme } = Astro.props;
 const { title, body, items, media } = section.slots;
 const list = items ?? [];
 const rows = list.length > 0 && list.every((item) => item.layout === 'row');
-const gridStyle = !rows && columns
-	? `--ds-cols-desktop: ${columns.desktop ?? 4}; --ds-cols-tablet: ${columns.tablet ?? 2}; --ds-cols-mobile: ${columns.mobile ?? 1};`
+const desktop = columns ? Math.min(columns.desktop ?? 4, Math.max(list.length, 1)) : undefined;
+const gridStyle = !rows && columns && desktop
+	? `--ds-cols-desktop: ${desktop}; --ds-cols-tablet: ${Math.min(columns.tablet ?? 2, desktop)}; --ds-cols-mobile: ${Math.min(columns.mobile ?? 1, desktop)};`
 	: undefined;
 // Heading facts (125 §7/§8) — the same rhythm FeatureGrid applies, so a split
 // band does not lose the source's type scale and underline divider.

@@ -27,6 +27,7 @@ export type SectionKind =
 	| 'gallery'
 	| 'text'
 	| 'form'
+	| 'accordion'
 	| 'raw'
 	// Proposal 136 §4.1 — the six kinds decided by STRUCTURAL evidence.
 	| 'pricing'
@@ -233,6 +234,7 @@ export const SECTION_MAP: Record<SectionKind, { component: string; label: string
 	gallery: { component: 'Gallery', label: 'Gallery' },
 	text: { component: 'TextBlock', label: 'Text' },
 	form: { component: 'Form', label: 'Form' },
+	accordion: { component: 'Accordion', label: 'Accordion' },
 	raw: { component: 'RawHtml', label: 'Raw HTML' },
 	pricing: { component: 'Pricing', label: 'Pricing' },
 	stats: { component: 'Stats', label: 'Stats' },
@@ -247,11 +249,14 @@ export const SECTION_MAP: Record<SectionKind, { component: string; label: string
 interface HNode {
 	type: string;
 	name?: string;
-	attribs?: Record<string, string>;
+	attribs?: Record< string, string >;
 	children?: HNode[] | null;
 	data?: string;
 	startIndex?: number | null;
 	endIndex?: number | null;
+	/** domhandler links children back to their parent — the accordion extractor
+	 * needs it because the sanitizer drops the tab's `aria-controls`. */
+	parent?: HNode | null;
 }
 
 /** domhandler children are arrays (possibly null) — normalize defensively. */
@@ -281,7 +286,7 @@ const WPB_ROW = /(^|\s)(?:vc_row|wpb_row)(?:[\s-]|$)/;
  * they classify as `content` (slots merge, the section shape decides the
  * kind) and the operator can pin them per-profile via `widgetRoles`.
  */
-export type WidgetRole = { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' | 'content' };
+export type WidgetRole = { kind: 'title' | 'body' | 'media' | 'links' | 'feature' | 'icon-item' | 'quote' | 'gallery' | 'form' | 'accordion' | 'content' };
 export type BlockRole = { kind: 'title' | 'body' | 'media' | 'links' | 'quote' | 'gallery' | 'container' | 'content' };
 
 /** The seeded widget dictionary (exported for the learn/report surface). */
@@ -307,6 +312,12 @@ export const SEEDED_WIDGET_ROLES: Record<string, WidgetRole> = {
 	// (form nodes are split out BEFORE widget grouping), so the role only
 	// marks the wrapper; the FormInfo carries the payload.
 	form: { kind: 'form' },
+	// An accordion is a COMPONENT, not a heading list: its titles are <a>
+	// elements the flat merge would collect as buttons and its panels as body
+	// copy (virtuallysrilanka's features band: 8 red chips and a 1177px band
+	// expanded to 2987px).
+	accordion: { kind: 'accordion' },
+	'toggle': { kind: 'accordion' },
 	// Phlox Pro / Auxin widget family (jayainc's live vocabulary, 2026-11-06
 	// run) — same Elementor widget-class contract, vendor-prefixed names.
 	aux_modern_heading: { kind: 'title' },
@@ -668,17 +679,134 @@ function elementorId( node: HNode ): string | undefined {
 	return match?.[ 1 ];
 }
 
+/**
+ * An accordion's (title, body) entries — Elementor's tab contract.
+ *
+ * The tab title carries `aria-controls` pointing at its panel, so the pair
+ * survives even when the panels are siblings rather than children.
+ */
+function accordionEntries( node: HNode ): SectionItem[] {
+	const titles = titlesOfAccordion( node );
+	const items: SectionItem[] = [];
+	for ( const titleNode of titles ) {
+		// The wrapper also matches `elementor-accordion-title` on the <a>; take
+		// the element that actually owns the label.
+		const label = trimmed( textOf( titleNode ) );
+		if ( ! label ) {
+			continue;
+		}
+		const panel = accordionPanelOf( node, titleNode );
+		const panelText = panel ? trimmed( textOf( panel ) ) : '';
+		items.push( panelText ? { title: label, body: panelText } : { title: label } );
+	}
+	return items;
+}
+
+function titlesOfAccordion( node: HNode ): HNode[] {
+	// Elementor marks BOTH the tab container (`elementor-tab-title`) and its
+	// inner anchor (`elementor-accordion-title`); matching both counted every
+	// panel twice, so a one-entry accordion looked like a two-item one.
+	const titles = allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).includes( 'elementor-tab-title' ) );
+	if ( titles.length > 0 ) {
+		return titles;
+	}
+	return allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).includes( 'elementor-accordion-title' ) );
+}
+
+/** The panel that belongs to a tab title. */
+function accordionPanelOf( node: HNode, titleNode: HNode ): HNode | undefined {
+	// The sanitizer keeps `id` but drops `aria-controls`, so the id reference
+	// resolves only on unsanitized HTML — the structural walk is the reliable
+	// path (the panel is inside the same `.elementor-accordion-item`).
+	const controls = titleNode.attribs?.[ 'aria-controls' ];
+	if ( controls ) {
+		const byId = findDescendant( node, ( n ) => n.attribs?.id === controls );
+		if ( byId ) {
+			return byId;
+		}
+	}
+	let current = titleNode.parent ?? undefined;
+	while ( current ) {
+		if ( classList( current.attribs ).includes( 'elementor-accordion-item' ) ) {
+			return findDescendant( current, ( n ) => classList( n.attribs ).includes( 'elementor-tab-content' ) );
+		}
+		current = current.parent ?? undefined;
+	}
+	return undefined;
+}
+
+/**
+ * One item per SOURCE COLUMN, when a band spreads its content across columns.
+ *
+ * A multi-column band has no flat equivalent: concatenating the columns gave
+ * one long text band (virtuallysrilanka's services band — a red panel, a photo
+ * and a dark copy panel — rebuilt as a single stacked column with the copy
+ * pushed off the right edge). Returns undefined unless at least two columns
+ * carry content, so an ordinary one-column band keeps its old path.
+ */
+function columnItems( section: HNode ): SectionItem[] | undefined {
+	const container = findDescendant(
+		section,
+		( n ) => n.type === 'tag' && classList( n.attribs ).includes( 'elementor-container' )
+	);
+	if ( ! container ) {
+		return undefined;
+	}
+	const columns = childrenOf( container ).filter(
+		( child ) => child.type === 'tag' && classList( child.attribs ).includes( 'elementor-column' )
+	);
+	if ( columns.length < 2 ) {
+		return undefined;
+	}
+	const items: SectionItem[] = [];
+	for ( const column of columns ) {
+		const collected = collectSlots( column );
+		const item: SectionItem = {};
+		if ( collected.title ) {
+			item.title = collected.title;
+		}
+		if ( ( collected.body ?? [] ).length > 0 ) {
+			item.body = ( collected.body ?? [] ).join( ' ' );
+		}
+		if ( ( collected.media ?? [] ).length > 0 ) {
+			item.media = collected.media?.[ 0 ];
+		}
+		if ( ( collected.links ?? [] ).length > 0 ) {
+			item.links = collected.links;
+		}
+		if ( ! item.title && ! item.body && ! item.media ) {
+			// A column with no copy and no media (a photo painted as a CSS
+			// background, a spacer) has no rebuildable content — the flat model
+			// has no per-column surface to paint it with. Skip it rather than
+			// emitting an empty card.
+			continue;
+		}
+		items.push( item );
+	}
+	return items.length >= 2 ? items : undefined;
+}
+
 /** Merge widget slots into one section draft. */
-function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSection {
+function sectionFromWidgets( widgets: WidgetLike[], index: number, section?: HNode ): SemanticSection {
 	const slots: SemanticSection['slots'] = {};
 	const media: MediaRef[] = [];
 	const links: LinkRef[] = [];
 	const body: string[] = [];
 	const items: SectionItem[] = [];
 	const headingCandidates: HeadingCandidate[] = [];
+	const accordionItems: SectionItem[] = [];
 	const confidence: 'high' | 'medium' | 'low' = 'high';
 
 	for ( const widget of widgets ) {
+		// An accordion owns its own copy: its titles must never become the
+		// band's links and its panels must never join the flat body.
+		if ( widget.role.kind === 'accordion' ) {
+			const entries = accordionEntries( widget.node );
+			if ( entries.length >= 2 ) {
+				accordionItems.push( ...entries );
+			}
+			continue;
+		}
 		// Structured icon-text widgets (an icon/image header + a small heading)
 		// are single-column feature cards — extract them as items BEFORE the
 		// flat slot merge, which loses the captions and flattens the columns.
@@ -767,6 +895,9 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 	// not a recognized vocabulary entry (Proposal 116).
 	const effectiveConfidence = widgets.some( ( widget ) => widget.role.kind === 'content' ) ? 'low' : confidence;
 	const kinds: Array<{ kind: SectionKind; reason: boolean }> = [
+		// An accordion is decided by its own component contract — the band's
+		// headings and media still ride along as the intro.
+		{ kind: 'accordion', reason: accordionItems.length >= 2 },
 		{ kind: 'logo-cloud', reason: media.length >= 3 && ! hasBody && items.length === 0 },
 		{ kind: 'gallery', reason: media.length >= 2 && ! slots.title && ! hasBody },
 		{ kind: 'testimonial', reason: items.length > 0 && items.some( ( item ) => Boolean( item.body ) ) && ! slots.title && ! items.some( ( item ) => Boolean( item.title ) ) },
@@ -781,6 +912,18 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 	// hero. Media-only kinds keep no prose (their slots ignore body).
 	if ( extraHeadings.length > 0 && matched.kind !== 'logo-cloud' && matched.kind !== 'gallery' ) {
 		slots.body = [ ...extraHeadings.filter( ( text ) => ! ( slots.body ?? [] ).includes( text ) ), ...( slots.body ?? [] ) ];
+	}
+	if ( matched.kind === 'accordion' ) {
+		slots.items = accordionItems;
+		return { kind: 'accordion', confidence: effectiveConfidence, slots };
+	}
+	// A band the flat merge could only describe as one text blob, whose source
+	// spreads its copy across columns, rebuilds as a column grid instead.
+	if ( matched.kind === 'text' && section ) {
+		const columns = columnItems( section );
+		if ( columns ) {
+			return { kind: 'feature-grid', confidence: 'low', slots: { items: columns } };
+		}
 	}
 	return { kind: matched.kind, confidence: effectiveConfidence, slots };
 }
@@ -1686,7 +1829,7 @@ function classifyRegion( html: string, nodes: HNode[], fallbackHtml: string, opt
 			}
 			continue;
 		}
-		const built = sectionFromWidgets( widgets, out.length );
+		const built = sectionFromWidgets( widgets, out.length, section );
 		const empty =
 			! built.slots.title &&
 			( built.slots.body?.length ?? 0 ) === 0 &&

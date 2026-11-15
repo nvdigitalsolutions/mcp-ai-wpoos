@@ -346,6 +346,98 @@ describe( 'classifyHtml — two-heading bands (kicker + headline)', () => {
 	} );
 } );
 
+describe( 'classifyHtml — accordion bands', () => {
+	const PANEL = ( n: number, label: string, text: string ) =>
+		`<div class="elementor-accordion-item"><div class="elementor-tab-title" aria-controls="tab-${ n }"><span class="elementor-accordion-icon"><i class="fas fa-plus"></i></span><a class="elementor-accordion-title">${ label }</a></div><div class="elementor-tab-content" id="tab-${ n }"><p>${ text }</p></div></div>`;
+	const ACCORDION = ( entries: Array< [ string, string ] > ) =>
+		`<div class="elementor-accordion">${ entries
+			.map( ( [ label, text ], index ) => PANEL( index + 1, label, text ) )
+			.join( '' ) }</div>`;
+
+	it( 'rebuilds the tabs as one accordion, not as buttons and flat prose', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>FEATURE HIGHLIGHTS</h2>' ) +
+				WIDGET( 'image', '<img src="/wp-content/uploads/a.jpg" alt="" />' ) +
+				WIDGET(
+					'accordion',
+					ACCORDION( [
+						[ 'Custom Landing Page', 'Advertise your business.' ],
+						[ 'Capture user metadata', 'Ask questions.' ],
+					] )
+				)
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'accordion' );
+		expect( sections[ 0 ].slots.title ).toBe( 'FEATURE HIGHLIGHTS' );
+		expect( sections[ 0 ].slots.items ).toHaveLength( 2 );
+		expect( sections[ 0 ].slots.items?.[ 0 ] ).toMatchObject( {
+			title: 'Custom Landing Page',
+			body: 'Advertise your business.',
+		} );
+		// The tab titles are <a> elements — they must never become buttons, and
+		// the closed panels are not the band's own copy.
+		expect( sections[ 0 ].slots.links ?? [] ).toHaveLength( 0 );
+		expect( sections[ 0 ].slots.body ?? [] ).toHaveLength( 0 );
+		expect( sections[ 0 ].slots.media ).toHaveLength( 1 );
+	} );
+
+	it( 'finds each panel without aria-controls (the sanitizer drops it)', () => {
+		const ITEM = ( label: string, text: string ) =>
+			`<div class="elementor-accordion-item"><div class="elementor-tab-title"><a class="elementor-accordion-title">${ label }</a></div><div class="elementor-tab-content"><p>${ text }</p></div></div>`;
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Features</h2>' ) +
+				WIDGET(
+					'accordion',
+					`<div class="elementor-accordion">${ ITEM( 'One', 'First panel.' ) }${ ITEM( 'Two', 'Second panel.' ) }</div>`
+				)
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'accordion' );
+		expect( sections[ 0 ].slots.items?.[ 0 ]?.body ).toBe( 'First panel.' );
+		expect( sections[ 0 ].slots.items?.[ 1 ]?.body ).toBe( 'Second panel.' );
+	} );
+
+	it( 'leaves a one-entry accordion on the flat path', () => {
+		const html = SECTION(
+			WIDGET( 'heading', '<h2>Features</h2>' ) +
+				WIDGET( 'text-editor', '<p>Intro copy.</p>' ) +
+				WIDGET( 'accordion', ACCORDION( [ [ 'Only entry', 'Its body.' ] ] ) )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).not.toBe( 'accordion' );
+	} );
+} );
+
+describe( 'classifyHtml — multi-column bands', () => {
+	const COLUMN = ( inner: string ) =>
+		`<div class="elementor-column elementor-col-33"><div class="elementor-widget-wrap">${ inner }</div></div>`;
+	const ROW = ( columns: string ) =>
+		`<section class="elementor-section elementor-top-section"><div class="elementor-container">${ columns }</div></section>`;
+
+	it( 'rebuilds a copy-only band as one item per source column', () => {
+		const html = ROW(
+			COLUMN( WIDGET( 'text-editor', '<p>Alpha copy.</p>' ) ) +
+				COLUMN( WIDGET( 'text-editor', '<p>Beta copy.</p>' ) ) +
+				COLUMN( WIDGET( 'text-editor', '<p>Gamma copy.</p>' ) )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'feature-grid' );
+		expect( sections[ 0 ].slots.items?.map( ( item ) => item.body ) ).toEqual( [
+			'Alpha copy.',
+			'Beta copy.',
+			'Gamma copy.',
+		] );
+	} );
+
+	it( 'skips a content-less column and leaves a one-column band on the text path', () => {
+		const html = ROW(
+			COLUMN( WIDGET( 'text-editor', '<p>Only copy.</p>' ) ) + COLUMN( '<div class="elementor-spacer"></div>' )
+		);
+		const sections = classifyHtml( html );
+		expect( sections[ 0 ].kind ).toBe( 'text' );
+	} );
+} );
+
 describe( 'classifyHtml — wp-block fallback', () => {
 	it( 'treats plain blocks as a text section (no builder sections detected)', () => {
 		const html = '<h2 class="wp-block-heading">Heading</h2><p class="wp-block-paragraph">Body text.</p>';
