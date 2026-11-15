@@ -154,7 +154,7 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 | 2 | Citation verifier | **done — 2026-11-15** (see §8) |
 | 3 | Reasoning trace | **done — 2026-11-15** (see §9) |
 | 4 | Self-refine loop + trace store | **done — 2026-11-15** (see §10) |
-| 5 | Tool router harness | pending |
+| 5 | Tool router harness | **done — 2026-11-15** (see §11) |
 | 6 | Necessity gate | pending (needs approval queue) |
 | 7 | Harness search engine | **blocked by design** |
 
@@ -228,3 +228,27 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 **Deferred on purpose.** `record_reflection()` stays in WordPress. Its write target is the `store_agent_context` tool and WordPress has no `ToolInvokerInterface` adapter, so porting it needs an invoker bridge plus that tool — memory-track work, not harness-loop work. It is the only remaining method on the class.
 
 **Validation.** `lib/core` **1,519 tests / 5,386 assertions** (35 new); app suite **687 passed / 4,054 assertions** (9 new — this cluster adds a binding, so it carries an app-level test); adapter suite unchanged at 180 / 676 with the same 2 pre-existing project-tool failures; phpcs clean on the laravel and WordPress standards.
+
+---
+
+## 11. Cluster 5 result — tool router harness
+
+**What shipped.** `Domain\Service\Harness\ToolRouterHarness` — `scoreTool()`, `rank()`, `fuseWithRrf()`, `resolveAssistantInputs()`, `buildPresetIndex()`, `clampWeight()`, and the `RRF_K = 60` constant. WordPress delegates all four public methods and keeps its implementations for `lib/`-stripped builds.
+
+**Three dependencies are injected, not imported.** The preset catalogue is a translated WordPress array, so `rank()` takes it as `$options['presets']` (or a prebuilt `$options['preset_index']`, which the WordPress façade passes from its existing static cache). The two hook seams arrive as `$options['score_filter']` and `$options['stage_weight_filter']`; the WordPress layer wraps `wp_mcp_ai_harness_tool_score`, `wp_mcp_ai_harness_rrf_weight_harness` and `wp_mcp_ai_harness_rrf_weight_attention` in closures, so every documented filter still fires with its documented argument list. Tools are duck-typed on `getSlug()`/`get_slug()` and `getCapabilityFlags()`/`get_capability_flags()`, because WordPress and core tools expose different casings.
+
+**The clamp is a deliberate tightening.** `HarnessProfile` clamps `tools.preset_weights` to ±5, but it has **no sanitiser for `tools.preferences` at all**, and either map can be passed straight to `rank()`. The router now clamps every assistant-supplied weight at read time. With in-range weights the behaviour is unchanged — which is what the equivalence run shows.
+
+**Three fidelity details that only a diff could find.**
+
+1. `fuse_with_rrf()` in WordPress never sanitises the task class: `'  QA  '` misses the stage-weight table and falls back to `general`, while `rank()` passes the *sanitised* class to `score_tool()`. Core now keeps the two paths apart — scoring normalises, fusion does not — or a caller's padded task class would silently change the fusion weights.
+2. `resolve_assistant_inputs()` is asymmetric in the original: `preset_weights` keys are returned **verbatim** (including a junk `'  '` key), `preferences` keys are **sanitised** and empty ones dropped. Preserved exactly.
+3. The preset index is genuinely load-bearing: the real catalogue has **70 presets**, **413 tools in two or more families**, and the top tool (`list_openai_files`) sits in **10**. Accumulation therefore fires in practice, not just in the unit test.
+
+**Failure is degraded, not thrown.** A tool that throws while being scored is skipped; a wholesale failure returns an empty ranking, which the caller reads as "use the fixed order". A router that throws takes the chat turn with it.
+
+**Proven equivalent.** 2,184 scenarios — 8 tool shapes × 10 task classes × 4 preference sets × 6 preset sets, plus 6 tool subsets × 10 classes × 3 attention sets, 7 direct fusion cases × 10 classes, 4 profile shapes and 5 filter probes. **2,184 scenarios, 241 differences, all 241 the `over_clamp` cases** — i.e. zero differences anywhere a weight is inside ±5.
+
+**Validation.** `lib/core` **1,544 tests / 5,434 assertions** (25 new); app suite unchanged at **687 / 4,054** because the cluster adds no binding; adapter suite 180 / 676 with the same 2 pre-existing project-tool failures; phpcs clean on the laravel and WordPress standards.
+
+**Still unwired, and that is a separate decision.** Nothing in the chat path calls the router yet — `tools.router: scored` is read only by `Harness_Profile::is_layer_enabled()`. Porting the scorer does not wire it; wiring it would be new behaviour on both runtimes, so it belongs in its own change with its own eval.
