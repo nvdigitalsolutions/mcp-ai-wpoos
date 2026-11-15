@@ -30,6 +30,8 @@
   },
   "type": "module",
   "overrides": {
+    "minimatch@^10": ">=11.0.1 <12",
+    "minimatch@^9": ">=11.0.1 <12",
     "js-yaml": ">=5.4.1",
     "postcss": ">=8.5.18",
         "brace-expansion@^1": ">=1.1.21 <2",

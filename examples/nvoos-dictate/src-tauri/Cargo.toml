@@ -168,7 +168,7 @@ tiff = { version = "0.9", optional = true }
 # Searchable-PDF emitter (feature `snippet-pdf`, Proposal 102 D9 / 109 D10):
 # a battle-tested low-level PDF writer — xref/stream bookkeeping is where
 # hand-rolling fails silently.
-lopdf = { version = "0.36", optional = true }
+lopdf = { version = "0.42", optional = true }
 # Memory layer (Proposal 127): BPE tokenization for the embedder (granite
 # ModernBERT tokenizer.json). 0.23 stable only — the 1.0.0-rc series is a
 # re-export shim under a different internal layout. `onig` is required for
