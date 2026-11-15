@@ -1,0 +1,36 @@
+---
+// ---------------------------------------------------------------------------
+// /contact — the storefront's enquiry surface (Proposal 138).
+//
+// Server-rendered, not prerendered: the no-JS form path returns here with
+// ?sent=1 / ?error=1, so the flags have to be read per request. The response
+// is set to no-store because the page carries a per-render timestamp for the
+// endpoint's time trap — a cached copy would look "too fast to be human" and
+// get silently dropped.
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ContactForm from '../components/ContactForm.astro';
+import { pageTitle, plainExcerpt } from '../lib/seo/meta';
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const sent = Astro.url.searchParams.get('sent') === '1';
+const error = Astro.url.searchParams.get('error') === '1';
+const email = import.meta.env.PUBLIC_CONTACT_EMAIL ?? 'hello@example.com';
+---
+
+<BaseLayout
+	title={pageTitle('Contact')}
+	description={plainExcerpt(
+		'Questions about an order, a product, or a partnership? Send us a message.'
+	)}
+>
+	<h1>Contact</h1>
+	<p class="lede">
+		Questions about an order, a product, or a partnership? Send a message and a person
+		will reply. Prefer email? Write to <a href={`mailto:${email}`}>{email}</a>.
+	</p>
+
+	<ContactForm sent={sent} error={error} />
+</BaseLayout>

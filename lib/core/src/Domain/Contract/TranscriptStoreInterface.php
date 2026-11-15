@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Transcript Store — domain contract for chat transcript persistence.
  *
@@ -9,6 +10,8 @@
  * @package Nvoos\Core
  * @since   2.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -20,7 +23,7 @@ interface TranscriptStoreInterface
     /**
      * Save a chat transcript.
      *
-     * @param array{assistant_id: int|string, session_id: string, messages: array, metadata?: array} $transcript
+     * @param array{assistant_id: int|string, session_id: string, messages: array<int, array<string, mixed>>, metadata?: array<string, mixed>} $transcript
      *
      * @return array{success: bool, transcript_id: string, error?: string}
      */
@@ -29,7 +32,7 @@ interface TranscriptStoreInterface
     /**
      * Retrieve a transcript by ID.
      *
-     * @return array{found: bool, transcript?: array}
+     * @return array{found: bool, transcript?: array<string, mixed>}
      */
     public function get(string $transcriptId): array;
 
@@ -38,7 +41,7 @@ interface TranscriptStoreInterface
      *
      * @param array{assistant_id?: int|string, session_id?: string, limit?: int, offset?: int} $filters
      *
-     * @return array{transcripts: array, total: int}
+     * @return array{transcripts: array<int, array<string, mixed>>, total: int}
      */
     public function list(array $filters = []): array;
 
@@ -61,6 +64,7 @@ interface TranscriptStoreInterface
     /**
      * Get transcript count by assistant or session.
      *
+     * @param array<string, mixed> $filters
      * @return array{total: int, by_assistant?: array<int|string, int>}
      */
     public function getCounts(array $filters = []): array;

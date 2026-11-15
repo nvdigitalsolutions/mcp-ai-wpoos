@@ -1,4 +1,4 @@
-//! Central error type for the NV oOS Dictation core.
+//! Central error type for the NV oOS Cognition core.
 //!
 //! Every fallible core operation returns `AppResult<T>`. IPC handlers map
 //! these to serializable strings — error messages must never carry secrets
@@ -29,6 +29,9 @@ pub enum AppError {
 
     #[error("Audio error: {0}")]
     Audio(String),
+
+    #[error("Document error: {0}")]
+    Document(String),
 
     #[error("Speech engine error: {0}")]
     Engine(String),
@@ -94,7 +97,13 @@ impl From<keyring::Error> for AppError {
     }
 }
 
-#[cfg(feature = "vision")]
+#[cfg(any(
+    feature = "vision",
+    feature = "moonshine",
+    feature = "silero-vad",
+    feature = "snippet-onnx",
+    feature = "memory"
+))]
 impl From<ort::Error> for AppError {
     fn from(e: ort::Error) -> Self {
         AppError::Model(e.to_string())

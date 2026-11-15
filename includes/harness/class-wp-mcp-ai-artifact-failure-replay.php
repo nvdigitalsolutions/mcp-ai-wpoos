@@ -22,6 +22,8 @@
  *
  * @see WP_MCP_AI_Artifact_Verification_Gate Consumer of these cases.
  * @see WP_MCP_AI_Artifact_Replay_Verifier Default verifier.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

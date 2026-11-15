@@ -1,5 +1,12 @@
 # Proposal 092 — Astro Storefront Layer: The NV-Authored Headless Storefront (`nvoos-astro-velocity`)
 
+> **Superseded note (Proposal 104, 2026-11-02):** the §5.4 PDP build-time
+> prerender decision is replaced by on-demand SSR + Astro 7 route caching
+> (the hermetic mirror build baked fixture data — Defect B). The theme
+> runtime, publication predicate, kind-typed JSON-LD, Tailwind token bridge,
+> axe gate and BFF security headers are all specced in the 104 trio +
+> ecosystem repo analysis. Everything else in this proposal stands.
+
 **Status:** In Progress — Phases 0–2 complete (2026-10-29); Phase 3 awaits owner parity review; Phase 4 scheduled for the v1.5 roadmap
 **Date:** 2026-10-27
 **Relates to:** Proposal 085 (Funiq Velocity storefront) + `085-funiq-laravel-standalone-integration-appendix.md` (T1/T2/T3 topologies) · Proposal 090 (Laravel adapter spike) · 085 §3.5 deferred "Storefront SSR/prerender track" · `PROPOSALS_COMPLETION_STATUS.md` (stale register — per-file headers are ground truth)

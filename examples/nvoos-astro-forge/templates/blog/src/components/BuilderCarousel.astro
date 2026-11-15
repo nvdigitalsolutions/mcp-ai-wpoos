@@ -1,0 +1,157 @@
+---
+// BuilderCarousel — a MEASURED builder carousel gets the behaviour its source
+// had: a paged track with pagination dots.
+//
+// The analyzer records slides-per-view, gutter and the source's own dot count
+// (`bandFacts[].carousel`) and the renderer restates them as
+// `--ds-carousel-per` / `--ds-carousel-gap` on the track. That is enough for the
+// LAYOUT: the track scrolls horizontally with scroll-snap, so touch devices can
+// swipe it with no JS at all. What CSS cannot do is the source's DOT CONTROL —
+// Owl rendered it from its own options, and a forged site does not ship Owl.
+//
+// This builds it from the markup's own terms, like `BuilderAccordion`:
+//   - only a MEASURED track (`--ds-carousel-per` present) that actually
+//     overflows gets dots — an unmeasured logo strip keeps its static row;
+//   - the page count is derived from the rendered track (`scrollWidth /
+//     clientWidth`), so it stays right across breakpoints and after a resize;
+//   - a dot scrolls the track by exactly one page, and the active dot follows
+//     the track's own scroll position (so a touch swipe updates it too);
+//   - `aria-current` marks the active dot; each dot is a real `<button>` with a
+//     label, so it is reachable and operable from the keyboard.
+//
+// No JS: the track still scrolls and snaps; only the dots are missing.
+---
+<script>
+	// Chrome/Safari ignore `scrollbar-width`, which global.css sets for the
+	// track: a visible scrollbar under a dotted control is not the source.
+	const DOTS_CLASS = 'ds-carousel-dots';
+	const DOT_CLASS = 'ds-carousel-dot';
+	const SCROLLABLE = '.post-body .owl-carousel';
+
+	const prefersReduced = (): boolean => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	function pagesOf(track: HTMLElement): number {
+		// `scrollWidth` is the slides' full width; `clientWidth` is the visible
+		// track. Their ratio is the number of pages at the CURRENT breakpoint —
+		// measured, not divided by a hand-kept slide count.
+		return Math.max(1, Math.ceil(track.scrollWidth / Math.max(1, track.clientWidth)));
+	}
+
+	/**
+	 * One page's scroll distance.
+	 *
+	 * NOT `clientWidth`: the last page is usually PARTIAL. virtuallyjamaica's
+	 * 7 slides are 5-up at 1440, so page 2 holds 2 slides — 449px of scroll in a
+	 * 1122px track. Stepping a full clientWidth would overshoot (clamped by the
+	 * browser) and dividing the scroll position by clientWidth would read that
+	 * position as page 0.
+	 */
+	function pageWidthOf(track: HTMLElement): number {
+		return Math.max(1, track.scrollWidth / pagesOf(track));
+	}
+
+	function isMeasured(track: HTMLElement): boolean {
+		return getComputedStyle(track).getPropertyValue('--ds-carousel-per').trim() !== '';
+	}
+
+	function indexOfPage(track: HTMLElement): number {
+		const page = Math.round(track.scrollLeft / pageWidthOf(track));
+		return Math.min(pagesOf(track) - 1, Math.max(0, page));
+	}
+
+	function buildDots(track: HTMLElement): HTMLElement | null {
+		const pages = pagesOf(track);
+		// One page is not a carousel, and a track that FITS is a static row.
+		if (pages <= 1 || track.scrollWidth <= track.clientWidth + 1) return null;
+
+		const nav = document.createElement('div');
+		nav.className = DOTS_CLASS;
+		nav.setAttribute('role', 'group');
+		nav.setAttribute('aria-label', 'Slides');
+		for (let page = 0; page < pages; page += 1) {
+			const dot = document.createElement('button');
+			dot.type = 'button';
+			dot.className = DOT_CLASS;
+			dot.setAttribute('aria-label', `Go to slide ${page + 1} of ${pages}`);
+			dot.addEventListener('click', () => {
+				track.scrollTo({
+					left: page * pageWidthOf(track),
+					behavior: prefersReduced() ? 'auto' : 'smooth',
+				});
+			});
+			nav.append(dot);
+		}
+		return nav;
+	}
+
+	function syncDots(track: HTMLElement, nav: HTMLElement): void {
+		const active = indexOfPage(track);
+		[...nav.children].forEach((dot, page) => {
+			if (page === active) dot.setAttribute('aria-current', 'true');
+			else dot.removeAttribute('aria-current');
+		});
+	}
+
+	function enhance(track: HTMLElement): void {
+		if (track.dataset.carouselReady || !isMeasured(track)) return;
+		track.dataset.carouselReady = '1';
+
+		let nav: HTMLElement | null = null;
+
+		// Rebuild whenever the page count changes: virtuallyjamaica is 5-up at
+		// 1440 (2 pages) and 1-up at 390 (7 pages), from the same markup.
+		const rebuild = (): void => {
+			const next = buildDots(track);
+			if (nav && next) {
+				nav.replaceWith(next);
+			} else if (nav && !next) {
+				nav.remove();
+			} else if (!nav && next) {
+				track.after(next);
+			}
+			nav = next;
+			if (nav) syncDots(track, nav);
+		};
+
+		rebuild();
+
+		// A scroll (wheel, touch, dot click, keyboard) moves the active dot.
+		let frame = 0;
+		track.addEventListener(
+			'scroll',
+			() => {
+				if (frame) return;
+				frame = requestAnimationFrame(() => {
+					frame = 0;
+					if (nav) syncDots(track, nav);
+				});
+			},
+			{ passive: true }
+		);
+
+		if ('ResizeObserver' in window) {
+			let width = track.clientWidth;
+			new ResizeObserver(() => {
+				// Only a WIDTH change can change the page count; observing the
+				// height too would rebuild on every image load.
+				if (track.clientWidth === width) return;
+				width = track.clientWidth;
+				rebuild();
+			}).observe(track);
+		}
+	}
+
+	function init(): void {
+		for (const node of document.querySelectorAll(SCROLLABLE)) {
+			if (node instanceof HTMLElement) enhance(node);
+		}
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+	// View transitions swap the document; the listener would not survive it.
+	document.addEventListener('astro:after-swap', init);
+</script>

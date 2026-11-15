@@ -1,4 +1,4 @@
-# NV oOS Dictation — Licensing Notice
+# NV oOS Cognition — Licensing Notice
 
 **This application is proprietary software owned by NV Digital Solutions.**
 
@@ -18,10 +18,31 @@ boundary is maintained.
 The application may download and load third-party model weights at runtime
 (never bundled in the installer); each carries its own license and is
 downloaded at first use: Parakeet (CC-BY-4.0), Whisper (MIT), Moonshine
-(MIT), Silero VAD (MIT), and the YOLO object-detector weights (AGPL-3.0,
-Ultralytics). The optional vision label-polish layer talks to your local
-LM Studio / Ollama server as a separate process — no model code is embedded
-or redistributed by this application.
+(MIT), Silero VAD (MIT), the YOLO object-detector weights (AGPL-3.0,
+Ultralytics), and the optional RapidOCR / PP-OCR screen-OCR weights
+(Apache-2.0, PaddleOCR — see `src-tauri/src/snippet/models.rs`). The
+optional vision label-polish layer talks to your local LM Studio / Ollama
+server as a separate process — no model code is embedded or redistributed
+by this application.
+
+The document pipeline (Proposal 109) loads the **PDFium** library at
+runtime to parse and render PDF files. PDFium is Copyright The PDFium
+Authors, licensed under BSD-3-Clause (a permissive license compatible
+with this application's proprietary boundary); the prebuilt library is
+downloaded from the bblanchon/pdfium-binaries project at build/bundle
+time, never committed to this repository, and is loaded from beside the
+executable at runtime. Text recognition runs through the same on-device
+OCR engines listed above (Windows.Media.Ocr / Apple Vision / RapidOCR
+PP-OCR), and the optional OCR-polish pass talks to your local LM Studio /
+Ollama server as a separate process.
+
+The memory layer (Proposal 127) downloads at runtime (never bundles) the
+**IBM Granite-Embedding-97M-Multilingual r2** encoder (Apache-2.0,
+© IBM — model weights and tokenizer from Hugging Face) and embeds text
+through the ONNX Runtime (MIT). Vector search runs through the
+**sqlite-vec** extension (MIT/Apache-2.0, © Alex Garcia) compiled into the
+binary; tokenization uses the `tokenizers` Rust crate (Apache-2.0,
+© Hugging Face). The optional BGE-small reference embedder is MIT (© BAAI).
 
 For licensing enquiries: licensing@nvdigitalsolutions.com
 

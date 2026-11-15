@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Nvoos\Core\Tests\Integration\Tool;
 
 use Nvoos\Core\Application\Tool\ToolRegistry;
@@ -16,6 +18,7 @@ use Nvoos\Core\Domain\Contract\MemoryStoreInterface;
 use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ToolRegistryIntegrationTest extends TestCase
@@ -63,27 +66,39 @@ final class ToolRegistryIntegrationTest extends TestCase
     public static function allToolClasses(): array
     {
         $toolDir = dirname(__DIR__, 3) . '/src/Tool/';
-        $files   = glob($toolDir . '*Tool.php');
+        $files   = glob($toolDir . '*Tool.php') ?: [];
         $cases   = [];
 
         foreach ($files as $file) {
             $name = basename($file, '.php');
-            if (in_array($name, ['AbstractTool','AbstractClientSideTool','AbstractHuggingFaceTool'], true)) continue;
             $fqcn = "Nvoos\\Core\\Tool\\{$name}";
+
+            if (!class_exists($fqcn)) {
+                continue;
+            }
+
+            // Abstract bases live in this directory too. Reflect instead of
+            // keeping a denylist — the old list silently missed
+            // AbstractResultTool, which failed five tests with "cannot
+            // instantiate abstract class".
+            if (!(new \ReflectionClass($fqcn))->isInstantiable()) {
+                continue;
+            }
+
             $cases[$name] = [$fqcn];
         }
 
         return $cases;
     }
 
-    /** @dataProvider allToolClasses */
+    #[DataProvider('allToolClasses')]
     public function testInstantiation(string $fqcn): void
     {
         $instance = $this->make($fqcn);
         $this->assertInstanceOf($fqcn, $instance);
     }
 
-    /** @dataProvider allToolClasses */
+    #[DataProvider('allToolClasses')]
     public function testRegistration(string $fqcn): void
     {
         $tool = $this->make($fqcn);
@@ -167,12 +182,17 @@ final class ToolRegistryIntegrationTest extends TestCase
     {
         $rc  = new \ReflectionClass($fqcn);
         $ctor = $rc->getConstructor();
-        if (!$ctor) return $rc->newInstance();
+        if (!$ctor) {
+            return $rc->newInstance();
+        }
 
         $args = [];
         foreach ($ctor->getParameters() as $p) {
             $t = $p->getType();
-            if (!$t instanceof \ReflectionNamedType) { $args[] = null; continue; }
+            if (!$t instanceof \ReflectionNamedType) {
+                $args[] = null;
+                continue;
+            }
             $args[] = match ($t->getName()) {
                 ErrorFactoryInterface::class        => $this->errors,
                 EventDispatcherInterface::class     => $this->events,
@@ -187,10 +207,38 @@ final class ToolRegistryIntegrationTest extends TestCase
                 ProfessionRepositoryInterface::class => $this->profs,
                 EmailServiceInterface::class        => $this->email,
                 CronStatusInterface::class          => $this->cron,
-                default                             => $this->createMock($t->getName()),
+                default                             => $this->makeCollaborator($t->getName()),
             };
         }
 
         return $rc->newInstanceArgs($args);
+    }
+
+    /**
+     * Provide a collaborator for a constructor parameter with no canned binding.
+     *
+     * Interfaces and open classes are doubled. A `final` class cannot be — and
+     * doubling a concrete domain service was never the intent — so it is
+     * constructed for real. That only works when it has no required
+     * dependencies of its own, which is the same bar this harness applies to
+     * the tools themselves.
+     */
+    private function makeCollaborator(string $type): object
+    {
+        $rc = new \ReflectionClass($type);
+
+        if ($rc->isFinal()) {
+            $ctor = $rc->getConstructor();
+
+            if ($ctor === null || $ctor->getNumberOfRequiredParameters() === 0) {
+                return $rc->newInstance();
+            }
+
+            throw new \RuntimeException(
+                "{$type} is final and needs constructor arguments; add a binding to make()."
+            );
+        }
+
+        return $this->createMock($type);
     }
 }

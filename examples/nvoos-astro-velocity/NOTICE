@@ -29,6 +29,15 @@ The WordPress packages' source is available from
 https://github.com/WordPress/gutenberg under GPL-2.0-or-later; the MIT
 packages' source is available from their npm package registries.
 
+## Component-library evaluation (2026-11-03)
+
+The following MIT-licensed sources are used by the storefront:
+
+| Source | License | Use |
+|---|---|---|
+| `accessible-astro-components` (Incluud) — https://github.com/incluud/accessible-astro-components | MIT | Behavior + markup of the accordion, tabs, and breadcrumb components adapted into `src/components/ui/` (attribution preserved in each file header; styling re-tokenized onto the ADS system) |
+| Zag.js — https://github.com/chakra-ui/zag (`@zag-js/dialog`, `@zag-js/combobox`, `@zag-js/react`) | MIT | Headless state machines powering `src/islands/UiDialog.tsx` + `src/islands/UiCombobox.tsx` |
+
 ## Not included in this app or the public mirror
 
 The proprietary parts of the NV oOS ecosystem — the nvoos-astro-bridge

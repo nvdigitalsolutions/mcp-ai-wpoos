@@ -46,6 +46,15 @@ impl RingBuffer {
         self.buf.is_empty()
     }
 
+    /// Drop retained samples without resetting the absolute position.
+    ///
+    /// Used when the capture stream is paused (on-demand mode): pre-pause
+    /// audio must never leak into the next utterance through a pre-roll
+    /// window. Ranges that predate the clear return nothing.
+    pub fn clear(&mut self) {
+        self.buf.clear();
+    }
+
     /// Copy the last `n` samples (fewer if the buffer hasn't filled yet).
     pub fn snapshot_last(&self, n: usize) -> Vec<f32> {
         let start = self.buf.len().saturating_sub(n);
@@ -86,6 +95,20 @@ mod tests {
         rb.push(&[4.0, 5.0]); // wraps: drops 1.0
         assert_eq!(rb.snapshot_last(10), vec![2.0, 3.0, 4.0, 5.0]);
         assert_eq!(rb.snapshot_last(2), vec![4.0, 5.0]);
+    }
+
+    #[test]
+    fn clear_keeps_positions_monotonic_and_hides_old_audio() {
+        let mut rb = RingBuffer::new(8);
+        rb.push(&[1.0, 2.0, 3.0, 4.0]);
+        let boundary = rb.position();
+        rb.clear();
+        assert!(rb.is_empty());
+        // A window that ends at the clear boundary has nothing to return.
+        assert_eq!(rb.snapshot_range(0, boundary), Vec::<f32>::new());
+        rb.push(&[5.0, 6.0]);
+        assert_eq!(rb.snapshot_range(0, rb.position()), vec![5.0, 6.0]);
+        assert_eq!(rb.snapshot_range(boundary, rb.position()), vec![5.0, 6.0]);
     }
 
     #[test]

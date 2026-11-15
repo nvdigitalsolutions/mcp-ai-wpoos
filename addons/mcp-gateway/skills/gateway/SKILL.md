@@ -1,6 +1,6 @@
 ---
 name: nvoos-gateway
-description: Operate NV oOS WordPress sites through the NV oOS MCP Gateway — namespaced tools, key scoping, background research, and health checks. Use when working with tools prefixed <site-slug>.<tool> or when asked about the gateway.
+description: Operate NV oOS WordPress sites through the NV oOS MCP Gateway — namespaced tools, key scoping, background research, and health checks. Use when working with tools prefixed <site-slug>_<tool> or when asked about the gateway.
 ---
 
 # NV oOS MCP Gateway
@@ -11,8 +11,8 @@ key authenticates against every site bound to that key.
 
 ## Tool namespacing
 
-Tools are always namespaced `<site-slug>.<tool>` — e.g. `demo.deep_research`,
-`console.create_post`. The site part of the name decides which WordPress
+Tools are always namespaced `<site-slug>_<tool>` — e.g. `demo_deep_research`,
+`console_create_post`. The site part of the name decides which WordPress
 site executes the tool. Call tools with the prefixed name exactly as listed;
 never strip the prefix.
 

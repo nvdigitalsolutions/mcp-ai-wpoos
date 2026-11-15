@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Fired before a tool is executed.
  *
@@ -7,18 +8,25 @@
  * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class BeforeToolExecution {
-
-	public function __construct(
-		public readonly string $toolSlug,
-		public readonly array $arguments,
-		public readonly array $context,
-		public readonly float $startedAtMicros,
-	) {}
+final class BeforeToolExecution
+{
+    /**
+     * @param ToolArgs $arguments
+     * @param ToolContext $context
+     */
+    public function __construct(
+        public readonly string $toolSlug,
+        public readonly array $arguments,
+        public readonly array $context,
+        public readonly float $startedAtMicros,
+    ) {
+    }
 }

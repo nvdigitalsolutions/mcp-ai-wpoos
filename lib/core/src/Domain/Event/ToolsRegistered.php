@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Fired when a tool is registered with the registry.
  *
@@ -7,18 +8,21 @@
  * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class ToolsRegistered {
-
-	/**
-	 * @param string[] $toolSlugs
-	 */
-	public function __construct(
-		public readonly array $toolSlugs,
-	) {}
+final class ToolsRegistered
+{
+    /**
+     * @param string[] $toolSlugs
+     */
+    public function __construct(
+        public readonly array $toolSlugs,
+    ) {
+    }
 }

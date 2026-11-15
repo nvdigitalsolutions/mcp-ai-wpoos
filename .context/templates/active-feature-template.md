@@ -50,7 +50,7 @@ Which parts of NV oOS are affected:
 - [ ] Chat UI — frontend changes in `assets/js/chat.js`
 - [ ] Database schema — CPT/CCT/options changes
 - [ ] External API integration — service: `[service_name]`
-- [ ] Base plugin (`includes/`) — PHP 7.4+ compatible
+- [ ] Base plugin (`includes/`) — PHP 8.1+ compatible
 - [ ] Pro addon (`addons/pro/`) — PHP 8.1+ allowed
 
 ---

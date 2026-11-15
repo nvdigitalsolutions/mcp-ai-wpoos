@@ -7,20 +7,22 @@
 
 ## PHP Compatibility Requirements
 
-NV oOS has **two PHP version targets** — always match the target to the code location:
+NV oOS has **one PHP floor: 8.1**. The base plugin, the Pro addon, and every
+`lib/*` package share the same minimum version.
 
-| Distribution | Minimum PHP | Why |
+| Distribution | Minimum PHP | Notes |
 |-------------|-------------|-----|
-| **Base plugin** (`includes/`, `mcp-ai-wpoos.php`) | **PHP 7.4+** | WordPress.org compatibility; widest host support |
+| **Base plugin** (`includes/`, `mcp-ai-wpoos.php`) | **PHP 8.1+** | WordPress.org compatible; matches the Pro and `lib/*` floors |
 | **Pro addon** (`addons/pro/`) | **PHP 8.1+** | Uses enums, fibers, `readonly` properties, named args, intersection types |
+| **`lib/*` packages** | **PHP 8.1+** | `nvoos/core`, `nvoos/wordpress-adapter`, and the Laravel/Craft adapters |
 
 ### Practical Rules
 
-- **Base plugin code:** must run on PHP 7.4. No enums, no named arguments, no `readonly`, no union types `int|string` (use PHPDoc instead).
-- **Pro addon code:** may use PHP 8.1+ features freely.
-- The `composer run lint:compat` check covers PHP 7.4–8.3 for the base plugin.
-- `CONTRIBUTING.md` asks contributors to have **PHP 8.1+** locally — this is so they can work on both tiers without switching runtimes.
-- When writing a PRD/Architecture Spec, the "Compatibility" field should read **PHP 7.4+** for base features or **PHP 8.1+** for Pro features.
+- **All plugin code** may use PHP 8.1+ features: enums, `readonly` properties, union types `int|string`, named arguments, `never`, first-class callable syntax, intersection types.
+- The `composer run lint:compat` check covers **PHP 8.1–8.4** and is the gate that stops regressions to 7.4-era syntax.
+- **Next floor:** 8.1's own security support ended 2025-12-31. Treat **8.2** as the recommended runtime and the next floor candidate; CI already runs 8.2 and the compat gate accepts up to 8.4.
+- `CONTRIBUTING.md` asks contributors to have **PHP 8.1+** locally; CI runs PHP 8.2.
+- When writing a PRD/Architecture Spec, the "Compatibility" field reads **PHP 8.1+**.
 
 ---
 
@@ -107,7 +109,7 @@ define( 'WP_MCP_AI_BASE_VERSION', true );  // in wp-config.php
 ```bash
 composer run lint:base        # PHPCS – base plugin only
 composer run lint             # PHPCS – full codebase including Pro
-composer run lint:compat      # PHP 7.4–8.3 compatibility
+composer run lint:compat      # PHP 8.1–8.4 compatibility
 composer run format           # PHPCBF – auto-fix style issues
 composer run test:install     # One-time: install WordPress PHPUnit test suite
 composer run test             # PHPUnit – full test suite
@@ -133,7 +135,7 @@ npm test                      # Jest unit tests
 | **Entry point** | `mcp-ai-wpoos.php` | `addons/pro/mcp-ai-wpoos-pro.php` |
 | **Tools** | ~347 core tools | +~1,301 Pro tools = **~1,648 total** |
 | **Control constant** | `WP_MCP_AI_BASE_VERSION=true` | `WP_MCP_AI_BASE_VERSION=false` |
-| **PHP minimum** | 7.4 | 8.1 |
+| **PHP minimum** | 8.1 | 8.1 |
 | **PHP vendor** | `vendor/` (root) | `addons/pro/vendor/` (phpspreadsheet etc.) |
 | **JS build config** | `esbuild.config.js` | `esbuild.config.pro.js` |
 | **React builds** | none | Workflow Builder, TMA templates |

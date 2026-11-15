@@ -77,14 +77,11 @@ export interface ProSpaEndpoints {
 	chatClient: string;
 	transcripts: string;
 	memory: string;
-	threads: string;
 	tools: string;
 	/** WordPress media upload endpoint (v0.9.0). */
 	upload: string;
 	assistants: string;
 	settings: string;
-	workflows: string;
-	analytics: string;
 	approvals: string;
 	/** Workflow triggers REST base (mcp-ai/v1/orchestration/triggers, 2.4.0). */
 	triggers: string;
@@ -126,6 +123,12 @@ export interface ProSpaEndpoints {
 	wpBase: string;
 	/** Records schema REST base (mcp-ai-pro/v1/records/schema, 2.4.0). */
 	recordsSchema: string;
+	/**
+	 * Manifest-driven toolkit engine base (mcp-ai-pro/v1/toolkit-manifests, 2.5.0).
+	 * Empty when the runtime has no toolkit engine — the pages render their
+	 * unavailable state instead of firing requests.
+	 */
+	toolkits: string;
 	/** Dashboards schema REST base (mcp-ai-pro/v1/dashboards/schema, 2.4.0). */
 	dashboardsSchema: string;
 	/** Chat channels REST base (mcp-ai-pro/v1/chat-channels, 2.4.0). */
@@ -136,8 +139,28 @@ export interface ProSpaEndpoints {
 	 * non-admin sessions (the endpoints are manage_options-gated).
 	 */
 	remoteSites: string;
+	/** Installed Agent Skills catalogue (mcp-ai/v1/skills). Empty hides the picker. */
+	skills: string;
+	/** Assistant MCP apps base (mcp-ai/v1/mcp-apps). Pro-only; empty hides the panel. */
+	mcpApps: string;
 	/** Media command-center REST base (mcp-ai-pro/v1/media-cc, 2.4.0). */
 	mediaCc: string;
+	/**
+	 * Profession catalogue base (api/v1/professions, Laravel only).
+	 *
+	 * The assistant editor's primary-profession selector. Empty on runtimes
+	 * without the contract, so the selector is hidden rather than broken.
+	 */
+	professions: string;
+	/**
+	 * Org teams base (api/v1/org/teams, Laravel only).
+	 *
+	 * Distinct from `teams`: that surface is the WordPress agent-team
+	 * catalogue (a collection of professions), while an org team is a set of
+	 * users with roles. Empty on runtimes without the contract, so the page
+	 * renders its unavailable state instead of firing requests.
+	 */
+	orgTeams: string;
 	/**
 	 * Assistant blueprints REST base (mcp-ai-pro/v1/blueprints, 2.4.0) —
 	 * the blueprint catalogue + install flow. Empty for sessions without
@@ -293,7 +316,6 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 		typeof e.chatClient !== 'string' ||
 		typeof e.chat !== 'string' ||
 		typeof e.transcripts !== 'string' ||
-		typeof e.threads !== 'string' ||
 		typeof e.tools !== 'string' ||
 		typeof e.assistants !== 'string' ||
 		typeof e.settings !== 'string'
@@ -310,13 +332,10 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			chatClient: e.chatClient,
 			transcripts: e.transcripts,
 			memory: typeof e.memory === 'string' ? e.memory : '',
-			threads: e.threads,
 			tools: e.tools,
 			upload: typeof e.upload === 'string' ? e.upload : '',
 			assistants: e.assistants,
 			settings: e.settings,
-			workflows: typeof e.workflows === 'string' ? e.workflows : '',
-			analytics: typeof e.analytics === 'string' ? e.analytics : '',
 			approvals: typeof e.approvals === 'string' ? e.approvals : '',
 			triggers: typeof e.triggers === 'string' ? e.triggers : '',
 			teams: typeof e.teams === 'string' ? e.teams : '',
@@ -336,10 +355,15 @@ export function readProSpaConfig(): ProSpaRuntime | null {
 			workflowRuns: typeof e.workflowRuns === 'string' ? e.workflowRuns : '',
 			wpBase: typeof e.wpBase === 'string' ? e.wpBase : '',
 			recordsSchema: typeof e.recordsSchema === 'string' ? e.recordsSchema : '',
+			toolkits: typeof e.toolkits === 'string' ? e.toolkits : '',
 			dashboardsSchema: typeof e.dashboardsSchema === 'string' ? e.dashboardsSchema : '',
 			chatChannels: typeof e.chatChannels === 'string' ? e.chatChannels : '',
 			remoteSites: typeof e.remoteSites === 'string' ? e.remoteSites : '',
+			skills: typeof e.skills === 'string' ? e.skills : '',
+			mcpApps: typeof e.mcpApps === 'string' ? e.mcpApps : '',
 			mediaCc: typeof e.mediaCc === 'string' ? e.mediaCc : '',
+			professions: typeof e.professions === 'string' ? e.professions : '',
+			orgTeams: typeof e.orgTeams === 'string' ? e.orgTeams : '',
 			blueprints: typeof e.blueprints === 'string' ? e.blueprints : '',
 			commandCenter: typeof e.commandCenter === 'string' ? e.commandCenter : '',
 			shortcuts: typeof e.shortcuts === 'string' ? e.shortcuts : '',

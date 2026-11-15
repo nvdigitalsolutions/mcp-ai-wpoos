@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -366,6 +368,24 @@ return array(
 	'deep_research'                      => array(
 		'toolkit'               => 'research_discovery',
 		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'researcher', 'analyst', 'journalist' ),
+		'risk_level'            => 'info',
+	),
+	'research_status'                    => array(
+		'toolkit'               => 'research_discovery',
+		'pattern_compatibility' => array( 'sequential' ),
+		'profession_tags'       => array( 'researcher', 'analyst', 'journalist' ),
+		'risk_level'            => 'info',
+	),
+	'research_result'                    => array(
+		'toolkit'               => 'research_discovery',
+		'pattern_compatibility' => array( 'sequential' ),
+		'profession_tags'       => array( 'researcher', 'analyst', 'journalist' ),
+		'risk_level'            => 'info',
+	),
+	'research_cancel'                    => array(
+		'toolkit'               => 'research_discovery',
+		'pattern_compatibility' => array( 'sequential' ),
 		'profession_tags'       => array( 'researcher', 'analyst', 'journalist' ),
 		'risk_level'            => 'info',
 	),

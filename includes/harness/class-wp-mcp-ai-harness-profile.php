@@ -14,6 +14,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -51,6 +53,13 @@ class WP_MCP_AI_Harness_Profile {
 	 * @return array
 	 */
 	public static function defaults() {
+		// The canonical shape lives in lib/core so both runtimes resolve the same
+		// profile. lib/ is stripped from wp.org base builds, so the local copy
+		// below stays as the self-contained fallback.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\HarnessProfile' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\HarnessProfile::defaults();
+		}
+
 		return array(
 			'enabled'          => false,
 			'cues'             => array(),
@@ -116,6 +125,10 @@ class WP_MCP_AI_Harness_Profile {
 	 * @return array
 	 */
 	public static function sanitize( $raw ) {
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\HarnessProfile' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\HarnessProfile::sanitize( $raw );
+		}
+
 		if ( is_string( $raw ) ) {
 			$decoded = json_decode( $raw, true );
 			$raw     = is_array( $decoded ) ? $decoded : array();
@@ -236,6 +249,17 @@ class WP_MCP_AI_Harness_Profile {
 				}
 				$out['guardrails']['allowed_topics'] = array_values( array_unique( $topics ) );
 			}
+		}
+
+		if ( isset( $raw['output_guard'] ) && is_array( $raw['output_guard'] ) ) {
+			$o                                    = $raw['output_guard'];
+			$out['output_guard']['enabled']       = ! empty( $o['enabled'] );
+			$out['output_guard']['mode']          = isset( $o['mode'] ) && in_array( (string) $o['mode'], array( 'block', 'warn', 'log' ), true )
+				? (string) $o['mode']
+				: 'warn';
+			$out['output_guard']['strictness']    = isset( $o['strictness'] ) && in_array( (string) $o['strictness'], array( 'low', 'medium', 'high' ), true )
+				? (string) $o['strictness']
+				: 'medium';
 		}
 
 		if ( isset( $raw['trace_capture'] ) && is_array( $raw['trace_capture'] ) ) {

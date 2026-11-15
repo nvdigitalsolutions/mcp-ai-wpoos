@@ -5,7 +5,7 @@
  * Description: NV oOS Media Studio — React-based SPA surface for the NV oOS plugin. Generated from the Toolkit SPA Blueprint.
  * Version:     0.6.1
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
  * License: GPLv3 or later

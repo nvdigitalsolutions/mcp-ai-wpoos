@@ -14,6 +14,11 @@
  *   MCP_AI_TOKEN     — Bearer credential token (cred_xxxxx.SECRET or
  *                      op_xxxxx.SECRET)
  *
+ * All environment variables are also read from MCP_AI_ENV_FILE
+ * (default ~/.nvoos-bridge.env; explicit process env wins) — the same
+ * shared loader as bin/hermes-mcp-server.js. Keep secrets in the env
+ * file, not in Zed's settings.json.
+ *
  * Optional environment variables:
  *   MCP_AI_HOST_HEADER  — Override the HTTP Host header. Useful when the
  *                         endpoint is reached through a tunnel/proxy whose
@@ -69,19 +74,44 @@
 const http = require( 'http' );
 const https = require( 'https' );
 const readline = require( 'readline' );
+const { loadEnvFile } = require( './utils/env-file.js' );
 
 // ── Configuration ────────────────────────────────────────────────────────────
+//
+// Read lazily via readConfig() AFTER loadEnvFile() has populated the
+// environment — reading at module scope would capture empty values for
+// env-file-only launches (the exact way Zed spawns this server).
 
-const BASE_URL = ( process.env.MCP_AI_BASE_URL || '' ).replace( /\/+$/, '' );
-const TOKEN = process.env.MCP_AI_TOKEN || '';
-const HOST_HEADER = process.env.MCP_AI_HOST_HEADER || '';
-const BRIDGE_NAME = process.env.MCP_AI_BRIDGE_NAME || '';
+let BASE_URL = '';
+let TOKEN = '';
+let HOST_HEADER = '';
+let BRIDGE_NAME = '';
 
-const LOGIN_URL = ( process.env.MCP_AI_LOGIN_URL || '' ).trim();
-const LOGIN_EMAIL = process.env.MCP_AI_LOGIN_EMAIL || '';
-const LOGIN_PASSWORD = process.env.MCP_AI_LOGIN_PASSWORD || '';
-const LOGIN_BODY = ( process.env.MCP_AI_LOGIN_BODY || '' ).trim();
-const STATIC_COOKIE = process.env.MCP_AI_COOKIE || '';
+let LOGIN_URL = '';
+let LOGIN_EMAIL = '';
+let LOGIN_PASSWORD = '';
+let LOGIN_BODY = '';
+let STATIC_COOKIE = '';
+
+let HTTP_TIMEOUT_MS = 120000;
+
+function readConfig() {
+	BASE_URL = ( process.env.MCP_AI_BASE_URL || '' ).replace( /\/+$/, '' );
+	TOKEN = process.env.MCP_AI_TOKEN || '';
+	HOST_HEADER = process.env.MCP_AI_HOST_HEADER || '';
+	BRIDGE_NAME = process.env.MCP_AI_BRIDGE_NAME || '';
+
+	LOGIN_URL = ( process.env.MCP_AI_LOGIN_URL || '' ).trim();
+	LOGIN_EMAIL = process.env.MCP_AI_LOGIN_EMAIL || '';
+	LOGIN_PASSWORD = process.env.MCP_AI_LOGIN_PASSWORD || '';
+	LOGIN_BODY = ( process.env.MCP_AI_LOGIN_BODY || '' ).trim();
+	STATIC_COOKIE = process.env.MCP_AI_COOKIE || '';
+
+	const timeoutRaw = parseInt( process.env.MCP_AI_HTTP_TIMEOUT || '', 10 );
+	HTTP_TIMEOUT_MS = Number.isFinite( timeoutRaw ) && timeoutRaw >= 100
+		? timeoutRaw
+		: 120000;
+}
 
 // Live session state: { cookie, expiresAt } | null. Replaced by the login
 // bootstrap, the 401/403 retry path, or the static-cookie escape hatch.
@@ -96,11 +126,6 @@ const SESSION_EXPIRY_SLACK_MS = 30 * 1000;
 // Upper bound for the startup bootstrap so a dead login endpoint can never
 // hang the bridge before it serves initialize.
 const SESSION_BOOTSTRAP_TIMEOUT_MS = 10000;
-
-const timeoutRaw = parseInt( process.env.MCP_AI_HTTP_TIMEOUT || '', 10 );
-const HTTP_TIMEOUT_MS = Number.isFinite( timeoutRaw ) && timeoutRaw >= 100
-	? timeoutRaw
-	: 120000;
 
 // ── HTTP helpers ─────────────────────────────────────────────────────────────
 
@@ -423,6 +448,9 @@ function writeResponse( envelope ) {
 }
 
 async function main() {
+	loadEnvFile();
+	readConfig();
+
 	if ( ! BASE_URL ) {
 		process.stderr.write( '[mcp-bridge] ERROR: MCP_AI_BASE_URL is not set.\n' );
 		process.exit( 1 );

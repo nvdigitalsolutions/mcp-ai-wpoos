@@ -16,6 +16,10 @@
  *
  * @package WP_MCP_AI
  * @since   1.2.0
+ *
+ * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -67,6 +71,58 @@ if ( ! class_exists( 'Nvoos\Core\Domain\Contract\ErrorFactoryInterface' ) ) {
 }
 
 // ─── Adapter Wiring ───────────────────────────────────────────────────
+
+/**
+ * Build the shared provider router (once per request).
+ *
+ * Exposed so non-chat consumers use the same provider selection, health
+ * tracking and failover as chat — the Pro toolkit research service is the
+ * first one. Kept separate from the orchestrator so a caller that only needs
+ * a completion does not build the tool registry.
+ *
+ * @return Nvoos\Core\Application\Provider\ProviderRouter
+ */
+function wp_mcp_ai_oos_provider_router() {
+	static $router = null;
+
+	if ( null !== $router ) {
+		return $router;
+	}
+
+	$error_factory = new Nvoos\WordPress\Adapter\ErrorFactory();
+	$settings      = new Nvoos\WordPress\Adapter\SettingsStore();
+	$http_client   = new Nvoos\WordPress\Adapter\HttpClient();
+
+	// Proposal 056 (P1): cascade-aware router. CascadeRouter extends
+	// ProviderRouter and is inert with the default fail-closed adapters —
+	// every request dispatches to the primary provider exactly as before
+	// unless cascade routing is enabled AND classified.
+	$router = new Nvoos\Core\Application\Provider\CascadeRouter(
+		$settings,
+		$error_factory,
+		new Nvoos\WordPress\Adapter\CascadeClassifier(),
+		new Nvoos\WordPress\Adapter\CascadeValidator(),
+	);
+
+	// Attach health tracker for provider failover (Proposal 017, Wave 3).
+	$router->setHealthTracker( new Nvoos\Core\Application\Provider\ProviderHealthTracker() );
+
+	// Register all 12 providers.
+	$router->register( new Nvoos\Core\Infrastructure\Provider\OpenAiClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\GeminiClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\AnthropicClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\DeepSeekClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\OpenRouterClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\KimiClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\OllamaClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\LmStudioClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\DigitalOceanClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\NvidiaNimClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\CloudflareClient( $settings, $http_client, $error_factory ) );
+	$router->register( new Nvoos\Core\Infrastructure\Provider\HuggingFaceClient( $settings, $http_client, $error_factory ) );
+
+	return $router;
+}
 
 /**
  * Build the framework-agnostic ChatOrchestrator using WordPress adapters.
@@ -124,33 +180,7 @@ function wp_mcp_ai_oos_orchestrator() {
 
 	// ─── Provider Clients ──────────────────────────────────────────
 
-	// Proposal 056 (P1): cascade-aware router. CascadeRouter extends
-	// ProviderRouter and is inert with the default fail-closed adapters —
-	// every request dispatches to the primary provider exactly as before
-	// unless cascade routing is enabled AND classified.
-	$router = new Nvoos\Core\Application\Provider\CascadeRouter(
-		$settings,
-		$error_factory,
-		new Nvoos\WordPress\Adapter\CascadeClassifier(),
-		new Nvoos\WordPress\Adapter\CascadeValidator(),
-	);
-
-	// Attach health tracker for provider failover (Proposal 017, Wave 3).
-	$router->setHealthTracker( new Nvoos\Core\Application\Provider\ProviderHealthTracker() );
-
-	// Register all 12 providers.
-	$router->register( new Nvoos\Core\Infrastructure\Provider\OpenAiClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\GeminiClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\AnthropicClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\DeepSeekClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\OpenRouterClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\KimiClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\OllamaClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\LmStudioClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\DigitalOceanClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\NvidiaNimClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\CloudflareClient( $settings, $http_client, $error_factory ) );
-	$router->register( new Nvoos\Core\Infrastructure\Provider\HuggingFaceClient( $settings, $http_client, $error_factory ) );
+	$router = wp_mcp_ai_oos_provider_router();
 
 	// Streaming/realtime providers (separate interface — not registered with text router).
 	// Available for direct instantiation:
@@ -383,11 +413,27 @@ function wp_mcp_ai_oos_orchestrator() {
 	$tool_registry->register( new Nvoos\Core\Tool\GenerateSimpleJWTTokenTool( $error_factory ) );
 
 	// Profession tools.
-	$professions = new Nvoos\WordPress\Adapter\ProfessionRepository();
+	//
+	// The same adapter serves reads and writes: it implements
+	// ProfessionRepositoryInterface plus the optional ProfessionWriteInterface
+	// (CPT + postmeta). Runtimes without a writable catalogue — the Laravel
+	// adapter — implement only the read contract and do not register
+	// save_profession at all.
+	$profession_writer = new Nvoos\WordPress\Adapter\ProfessionRepository();
+
+	// Reads go through a version-keyed cache (090-g Phase 6). Writes stay on the
+	// raw adapter: it owns the CPT and bumps the catalogue version, which is what
+	// makes the cached generation unreachable without a purge.
+	$professions = new Nvoos\Core\Infrastructure\Profession\CachedProfessionRepository(
+		$profession_writer,
+		new Nvoos\WordPress\Adapter\CacheStore(),
+		(int) apply_filters( 'wp_mcp_ai_profession_catalogue_cache_ttl', DAY_IN_SECONDS )
+	);
+
 	$tool_registry->register( new Nvoos\Core\Tool\GetProfessionTool( $error_factory, $professions ) );
 	$tool_registry->register( new Nvoos\Core\Tool\ListProfessionsTool( $error_factory, $professions ) );
 	$tool_registry->register( new Nvoos\Core\Tool\ProfessionStatsTool( $error_factory, $professions ) );
-	$tool_registry->register( new Nvoos\Core\Tool\SaveProfessionTool( $error_factory, $professions ) );
+	$tool_registry->register( new Nvoos\Core\Tool\SaveProfessionTool( $error_factory, $profession_writer ) );
 
 	// Email tools.
 	$email = new Nvoos\WordPress\Adapter\EmailService();

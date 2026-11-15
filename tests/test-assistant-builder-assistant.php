@@ -101,7 +101,7 @@ class Test_Assistant_Builder_Assistant extends WP_UnitTestCase {
 		$this->assertNotEmpty( $config['description'], 'Description should not be empty' );
 		$this->assertNotEmpty( $config['system_prompt'], 'System prompt should not be empty' );
 		$this->assertEquals( 'openai', $config['provider'], 'Provider should be openai' );
-		$this->assertEquals( 'gpt-4.1', $config['model'], 'Model should be gpt-4.1' );
+		$this->assertEquals( 'gpt-6.1-sol', $config['model'], 'Model should be gpt-6.1-sol' );
 		$this->assertEquals( 0.3, $config['temperature'], 'Temperature should be 0.3' );
 
 		// Verify tools.
@@ -186,7 +186,7 @@ class Test_Assistant_Builder_Assistant extends WP_UnitTestCase {
 		$provider = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_PROVIDER, true );
 		$model    = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_MODEL, true );
 		$this->assertEquals( 'openai', $provider, 'Provider should be OpenAI' );
-		$this->assertEquals( 'gpt-4.1', $model, 'Model should be gpt-4.1' );
+		$this->assertEquals( 'gpt-6.1-sol', $model, 'Model should be gpt-6.1-sol' );
 
 		$temperature = get_post_meta( $assistant->ID, WP_MCP_AI_Assistant_CPT::META_TEMPERATURE, true );
 		$this->assertEquals( 0.3, (float) $temperature, 'Temperature should be 0.3' );

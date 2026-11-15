@@ -41,6 +41,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -499,26 +501,7 @@ class WP_MCP_AI_REST_Magic_Login_Controller extends WP_MCP_AI_REST_Controller_Ba
 	 * @return string IP address, '0.0.0.0' when unresolvable.
 	 */
 	private function get_client_ip() {
-		$ip_keys = array(
-			'HTTP_CF_CONNECTING_IP', // Cloudflare.
-			'HTTP_X_FORWARDED_FOR',  // Proxy/load balancer.
-			'HTTP_X_REAL_IP',        // Nginx proxy.
-			'REMOTE_ADDR',           // Direct connection.
-		);
-
-		foreach ( $ip_keys as $key ) {
-			if ( isset( $_SERVER[ $key ] ) ) {
-				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
-				if ( false !== strpos( $ip, ',' ) ) {
-					$ip = trim( explode( ',', $ip )[0] );
-				}
-				if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-					return $ip;
-				}
-			}
-		}
-
-		return '0.0.0.0';
+		return wp_mcp_ai_get_client_ip();
 	}
 }
 

@@ -1,6 +1,6 @@
 # Proposal 053 — ChatGPT Plugin Addon: Implementation Plan
 
-**Status:** ⏳ ACTIVE — Phase 0 shipped ✅; Phase 1 in progress (sync workflow ✅, docs/inventory ✅, mirror repo + PAT secret blocked on GitHub admin credentials); Phase 2 (base+pro OAuth resource-server contract) implemented and green on `addon/chatgpt-plugin` branch, pending review; Phase 3 (public submission) not started
+**Status:** ⏳ ACTIVE — Phases 0–2 shipped ✅ (merged via PR #6871); Phase 3 in progress. Verified 2026-11-02 on the demo site `nvoos.pro`: `auth0_domain` set, the RFC 9728 doc advertises `https://nvoos.us.auth0.com/` (scopes `site:read`, `content:write`), the 401 challenge uses the base contract, and an Auth0 API with Identifier = `https://nvoos.pro/wp-json/mcp-ai/v1/mcp` exists (authorize-endpoint probe). 2026-11-02: submission metadata + assets drafted (0.2.0, `bin/validate.mjs` green; live OpenAI field reference captured in the research doc §7). Remaining: confirm `auth0_audience`, API scopes + Manual CIMD registration in the Auth0 dashboard, purge the stale cached well-known doc (3600s `Cache-Control`), privacy/terms Pages + `demo_recording_url`, portal OAuth registration fields, then the submission loop.
 **Proposal:** [053-chatgpt-plugin-addon-proposal.md](./053-chatgpt-plugin-addon-proposal.md) · **Research:** [053-chatgpt-plugin-addon-research.md](./053-chatgpt-plugin-addon-research.md)
 **Scope:** `addons/chatgpt-plugin/**` (the package + its sync pipeline) and additive base+pro changes for the OAuth resource-server contract (Tier 3)
 
@@ -85,8 +85,8 @@ contract; the addon's `mcp.json` stays unchanged.
 | # | Task | Notes |
 |---|---|---|
 | 3.1 | **Auth0 tenant setup** (per OpenAI's Auth0 guide): create the API (identifier = the demo site's MCP endpoint), enable default audience, enable **Manual CIMD Registration**, import OpenAI's CIMD document (`https://chatgpt.com/oauth/client.json`), configure third-party app grants, create a test user + role with the 2.3 scopes | `authorization_response_iss_parameter_supported` and `code_challenge_methods_supported: S256` come from Auth0; verify with the MCP Inspector OAuth flow. |
-| 3.2 | **Submission metadata in `plugin.json`** — add `interface.supportURL`, final privacy/terms URLs, onboarding skill pointer, `extensions.com.openai.review` (5 positive + 3 negative test cases with `tools_triggered`/`expected_behavior`, `demo_recording_url`, `commerce: false`), `publication` (countries, release notes) | Fields per the submission field reference; reviewer credentials go in the dashboard form only — never the ZIP. |
-| 3.3 | **Assets** — `assets/icon.png`, `logo.png` (square, ≥48px, ≤5MiB), screenshots; brand colors | Fails metadata checks without them. |
+| 3.2 | **Submission metadata in `plugin.json`** — add `interface.supportURL`, final privacy/terms URLs, onboarding skill pointer, `extensions.com.openai.review` (5 positive + 3 negative test cases with `tools_triggered`/`expected_behavior`, `demo_recording_url`, `commerce: false`), `publication` (countries, release notes) | ✅ Drafted 2026-11-02 (0.2.0, live field reference §7 of the research doc). Pending: privacy/terms Pages at the mirror host, `demo_recording_url`, `publication.countries` decision, test-case tool names re-verified after Scan Tools. Reviewer credentials go in the dashboard form only — never the ZIP. |
+| 3.3 | **Assets** — `assets/icon.png`, `logo.png` (square, ≥48px, ≤5MiB), screenshots; brand colors | ✅ Added 2026-11-02: `assets/logo.png` + `assets/icon.png` (512×512 brand mark, reused from the gateway). Screenshots omitted (no UI — per the review doc). Dark variants + `brandColor` optional, not set. |
 | 3.4 | **PII & annotation audit** — run realistic tool calls in developer mode, list every user-related field returned, strip unneeded PII/telemetry or disclose it in the privacy policy; re-verify `readOnlyHint`/`destructiveHint`/`openWorldHint` match behaviour (scanned from the server) | Top rejection reasons per the review doc. |
 | 3.5 | **Submission loop** — org verification (`api.apps.write`/`read`), upload ZIP, connect + domain-verify the demo site's MCP endpoint (challenge from 2.6), resolve automated findings, submit, triage review feedback | One MCP server per plugin; origin changes require a new plugin — pick the demo origin carefully. |
 
@@ -182,7 +182,7 @@ The mirror repo must exist before the first activating push (created in 1.1).
 
 ## 9. Dependencies & decisions
 
-- [ ] Mirror repo + PAT secret (1.1) — GitHub admin
-- [ ] Auth0 tenant for the demo site (3.1) — publisher
+- [x] Mirror repo (1.1) — live + seeded, verified 2026-11-02 (`nvoos-chatgpt-plugin` serves `plugin.json` from `main`); PAT secret not independently re-verified
+- [~] Auth0 tenant for the demo site (3.1) — tenant + demo API identifier exist (verified 2026-11-02); API scopes (`site:read`, `content:write`) + Manual CIMD registration pending dashboard confirmation
 - [ ] Verified developer identity + support/privacy/terms URLs (3.2)
 - [ ] Decide: public directory listing this cycle vs workspace-only (proposal decision 3)

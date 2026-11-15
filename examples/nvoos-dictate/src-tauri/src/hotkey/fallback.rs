@@ -1,9 +1,14 @@
 //! Windows fallback PTT detection via `GetAsyncKeyState` polling.
 //!
 //! Rationale: Windows can silently stop delivering `WH_KEYBOARD_LL` events
-//! while a Chromium window (Chrome, Edge, VSCode, WebView2) has focus. The
-//! hook thread maintains a heartbeat; this poller watches it and only
-//! activates when the hook goes stale, so the two sources never double-fire.
+//! while a Chromium window (Chrome, Edge, VSCode, WebView2) has focus — the
+//! hook thread keeps ticking, but no key events arrive. The poller watches
+//! the hook's **event-driven** liveness (last delivered key event) and only
+//! activates when delivery stops, so the two sources never double-fire:
+//! re-checked at emission time, a just-delivered hook event suppresses the
+//! poller for that same press. The poller never swallows keys — that stays
+//! in the hook — so in the degraded mode the focused app may also see the
+//! PTT key; PTT still works, which is the point.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
@@ -14,13 +19,14 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, VK_ESCAPE, VK_LSHIFT, VK_RSHIFT,
 };
 
-use super::win_hook::{heartbeat_age_ms, vk_for_name};
+use super::win_hook::{last_event_age_ms, vk_for_name};
 use super::{HotkeyEvent, HotkeyListener};
 use crate::config::HotkeyConfig;
 use crate::error::AppResult;
 
-/// Hook staleness threshold: fallback takes over after 1.5 s without a
-/// heartbeat tick (the hook ticks every 50 ms when healthy).
+/// Hook delivery staleness threshold: fallback takes over after 1.5 s
+/// without a DELIVERED key event (measured in the hook callback itself, not
+/// the loop heartbeat — the loop keeps ticking even when LL delivery stops).
 const HOOK_STALE_MS: u64 = 1500;
 const POLL_INTERVAL_MS: u64 = 50;
 
@@ -65,12 +71,15 @@ impl HotkeyListener for WinFallbackListener {
                 let mut was_down = false;
                 while !stop.load(Ordering::SeqCst) {
                     std::thread::sleep(Duration::from_millis(POLL_INTERVAL_MS));
-                    let hook_alive = heartbeat_age_ms() < HOOK_STALE_MS;
-                    if hook_alive {
-                        continue; // primary hook is healthy; stay quiet
-                    }
                     let down = key_down(ptt);
                     if down && !was_down {
+                        // Re-check delivery at emission time: if the hook just
+                        // delivered this very press, its callback refreshed
+                        // the event liveness and we must stay quiet (the hook
+                        // also swallows the key, so it owns the whole pair).
+                        if last_event_age_ms() < HOOK_STALE_MS {
+                            continue;
+                        }
                         was_down = true;
                         tracing::debug!("fallback poller: PTT pressed");
                         let _ = tx.send(HotkeyEvent::Pressed);

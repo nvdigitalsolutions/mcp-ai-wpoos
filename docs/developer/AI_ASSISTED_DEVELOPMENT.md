@@ -51,7 +51,7 @@ CI runs: PHPCS, PHPUnit, composer audit, npm audit, wp plugin-check
 Every AI agent operates under constraints defined in:
 
 1. **[CLAUDE.md](../CLAUDE.md)** — Non-negotiable rules for the primary coding agent:
-   - PHP 7.4 compatibility (no typed properties, no match expressions, no named arguments)
+   - PHP 8.1 compatibility (no typed properties, no match expressions, no named arguments)
    - WordPress naming conventions (`WP_MCP_AI_` prefix, snake_case)
    - Security rules (sanitize input, escape output, check capabilities)
    - Tool implementation patterns (canonical return envelope, two-gate sanitisation)

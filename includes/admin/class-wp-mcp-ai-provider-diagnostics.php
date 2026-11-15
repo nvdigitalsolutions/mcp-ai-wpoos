@@ -9,14 +9,16 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Prevent parse errors on PHP < 7.4 by exiting before class definition.
-if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+// Prevent parse errors on PHP < 8.1 by exiting before class definition.
+if ( version_compare( PHP_VERSION, '8.1.0', '<' ) ) {
 	return;
 }
 
@@ -272,7 +274,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'High Token Fallback Model', 'mcp-ai-wpoos' ); ?></th>
-								<td><code><?php echo esc_html( isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.5-flash' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-3.5-flash-lite' ); ?></code></td>
 							</tr>
 						</tbody>
 					</table>
@@ -1584,7 +1586,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 								<td>
 									<?php if ( ! empty( $settings['enable_high_token_model_switch'] ) ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></span>
-										→ <code><?php echo esc_html( isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.5-flash' ); ?></code>
+										→ <code><?php echo esc_html( isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-3.5-flash-lite' ); ?></code>
 									<?php else : ?>
 										<span style="color: gray;">— <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>

@@ -1,0 +1,29 @@
+---
+// Cta — title + button sections rebuilt as a call-to-action band.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import type { SectionTheme } from '../../lib/sections.generated.ts';
+import SectionTitle from './SectionTitle.astro';
+
+interface Props {
+	section: SemanticSection;
+	theme?: SectionTheme;
+}
+
+const { section, theme } = Astro.props;
+const { title, links } = section.slots;
+---
+
+{(title || (links && links.length > 0)) && (
+	<section class="ds-section ds-hero">
+		<SectionTitle title={title} theme={theme} />
+		{links && links.length > 0 && (
+			<div class="ds-links">
+				{links.map((link) => (
+					<a class="ds-button" href={link.href ?? '#'}>
+						{link.text ?? 'Get started'}
+					</a>
+				))}
+			</div>
+		)}
+	</section>
+)}

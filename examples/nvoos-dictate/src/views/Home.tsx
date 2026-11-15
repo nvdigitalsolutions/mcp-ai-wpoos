@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
   api,
+  onDocumentProgress,
   onMediaProgress,
+  type AskResult,
   type Detection,
   type DictateEvent,
+  type DocumentResult,
   type MediaTranscription,
   type PreviewFrame,
   type SpaCheck,
@@ -102,6 +105,116 @@ function MediaPanel() {
           <h3>Summary</h3>
           <pre className="preview">{summary}</pre>
         </>
+      )}
+    </section>
+  );
+}
+
+/** Document OCR panel (Proposal 109): pick a PDF or TIFF, transcribe it
+ * page-by-page (text-layer extraction or on-device OCR), review with
+ * per-page provenance, copy, and export. */
+function DocumentPanel() {
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [result, setResult] = useState<DocumentResult | null>(null);
+  const [error, setError] = useState('');
+  const [exported, setExported] = useState('');
+
+  useEffect(() => {
+    const unlisten = onDocumentProgress((p) => {
+      if (p.phase === 'extract') setProgress(`Page ${p.page}/${p.page_count} — text layer`);
+      else if (p.phase === 'ocr') setProgress(`Page ${p.page}/${p.page_count} — recognizing`);
+      else if (p.phase === 'model')
+        setProgress(`Page ${p.page}/${p.page_count} — understanding with the local model`);
+      else setProgress(`Page ${p.page}/${p.page_count} — polishing`);
+    });
+    return () => void unlisten.then((fn) => fn());
+  }, []);
+
+  const pick = async () => {
+    setError('');
+    setResult(null);
+    setExported('');
+    const path = await api.pickDocument();
+    if (!path) return;
+    setBusy(true);
+    try {
+      setResult(await api.transcribeDocument(path));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  };
+
+  const copy = () => {
+    if (!result) return;
+    void navigator.clipboard.writeText(result.pages.map((p) => p.text).join('\n\n'));
+  };
+
+  const exportAs = async (format: string) => {
+    setError('');
+    setExported('');
+    try {
+      const dest = await api.exportDocument(format);
+      if (dest) setExported(dest);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
+  return (
+    <section className="card">
+      <h2>Document OCR</h2>
+      <p className="muted">
+        Extract text from a PDF, multi-page TIFF, or an image (PNG, JPEG, WebP). Born-digital
+        pages are read from the document's text layer; scanned pages and images are recognized
+        on-device at 300 DPI. Everything stays on this machine.
+      </p>
+      <div className="btn-row">
+        <button className="btn" disabled={busy} onClick={pick}>
+          {busy ? 'Working…' : 'Choose document…'}
+        </button>
+        {busy && (
+          <button className="btn ghost" onClick={() => void api.cancelDocument()}>
+            Cancel
+          </button>
+        )}
+        {result && !busy && (
+          <>
+            <button className="btn ghost" onClick={copy}>
+              Copy text
+            </button>
+            <button className="btn ghost" onClick={() => void exportAs('txt')}>
+              Export TXT
+            </button>
+            <button className="btn ghost" onClick={() => void exportAs('md')}>
+              Export Markdown
+            </button>
+            <button className="btn ghost" onClick={() => void exportAs('pdf')}>
+              Export searchable PDF
+            </button>
+          </>
+        )}
+      </div>
+      {progress && <p className="muted">{progress}</p>}
+      {error && <p className="warn-text">{error}</p>}
+      {exported && <p className="muted">Exported to {exported}</p>}
+      {result && (
+        <div className="doc-pages">
+          {result.pages.map((p) => (
+            <details key={p.index} open={p.index === 0}>
+              <summary>
+                Page {p.index + 1}
+                <span className={`badge ${['text', 'polished', 'model'].includes(p.provenance) ? 'ok' : 'warn'}`}>
+                  {p.provenance}
+                </span>
+              </summary>
+              <pre className="preview">{p.text}</pre>
+            </details>
+          ))}
+        </div>
       )}
     </section>
   );
@@ -464,6 +577,86 @@ function BrowserAgentPanel() {
   );
 }
 
+/** Memory panel (Proposal 127): ask the corpus — dictations, meetings,
+ *  snippets and document pages — and get cited passages back, optionally
+ *  answered by the Stage-2 provider. Failure-soft by design: a provider
+ *  error still returns passages. */
+function MemoryPanel({ enabled }: { enabled: boolean }) {
+  const [query, setQuery] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<AskResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const ask = async () => {
+    const q = query.trim();
+    if (!q || busy || !enabled) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      setResult(await api.askMemory(q));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copy = (text: string) => {
+    void navigator.clipboard.writeText(text);
+  };
+
+  return (
+    <section className="card">
+      <h2>Ask your words</h2>
+      <p className="muted">
+        {enabled
+          ? 'Search everything you have captured — dictations, meetings, screen grabs and documents. Ask a question or type a phrase; matching passages come back cited.'
+          : 'Memory is off. Enable it in Settings → Memory to start indexing your captures for search.'}
+      </p>
+      <div className="row">
+        <input
+          type="text"
+          style={{ flex: 1 }}
+          value={query}
+          placeholder="What did I say about…?"
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              void ask();
+            }
+          }}
+        />
+        <button className="btn" disabled={busy || !enabled} onClick={() => void ask()}>
+          {busy ? 'Asking…' : 'Ask'}
+        </button>
+      </div>
+      {error && <p className="muted">Error: {error}</p>}
+      {result?.answer && <pre className="preview">{result.answer}</pre>}
+      {result && result.hits.length === 0 && !result.answer && (
+        <p className="muted">No passages found.</p>
+      )}
+      {result && result.hits.length > 0 && (
+        <ul className="hits">
+          {result.hits.map((h) => (
+            <li key={h.chunk_id} className="hit">
+              <span className="row">
+                <span className="badge dim">{h.surface}</span>
+                <span className="muted">{h.score.toFixed(2)}</span>
+                <button className="btn ghost" onClick={() => copy(h.text)}>
+                  Copy
+                </button>
+              </span>
+              <p>{h.text}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export default function Home({ status, dictate, onRefresh }: Props) {
   const [spaChecking, setSpaChecking] = useState(false);
   const [spaCheck, setSpaCheck] = useState<SpaCheck | null>(null);
@@ -520,8 +713,10 @@ export default function Home({ status, dictate, onRefresh }: Props) {
       </section>
 
       <MediaPanel />
+      <DocumentPanel />
       <CameraPanel />
       {status?.agent_available && <BrowserAgentPanel />}
+      {status?.memory_available && <MemoryPanel enabled={status.memory_enabled} />}
 
       <section className="card">
         <h2>System</h2>
@@ -539,7 +734,7 @@ export default function Home({ status, dictate, onRefresh }: Props) {
             </span>
           </li>
           <li>
-            						<span>NV oOS</span>
+            <span>NV oOS</span>
             <span className="row">
               <span className={badge(!!status?.spa_configured)}>
                 {status?.spa_configured ? status?.spa_url || 'configured' : 'not configured'}
@@ -549,7 +744,7 @@ export default function Home({ status, dictate, onRefresh }: Props) {
                   className="btn ghost"
                   disabled={spaChecking}
                   onClick={() => void checkSpa()}
-                  title="Probe whether the configured SPA origin answers"
+                  title="Probe whether the configured Complete Velocity console answers"
                 >
                   {spaChecking ? 'Checking…' : 'Check'}
                 </button>
@@ -558,7 +753,7 @@ export default function Home({ status, dictate, onRefresh }: Props) {
           </li>
           {spaCheck && (
             <li>
-              <span>SPA reachability</span>
+              <span>Complete Velocity reachability</span>
               <span className={badge(spaCheck.ok)}>{spaCheck.message}</span>
             </li>
           )}
@@ -581,6 +776,26 @@ export default function Home({ status, dictate, onRefresh }: Props) {
                 {status?.vision_running
                   ? `running · ${status?.vision_detector ?? 'detector'}`
                   : 'available (start from Camera preview)'}
+              </span>
+            </li>
+          )}
+          {status?.snippet_available && (
+            <li>
+              <span>Screen OCR</span>
+              <span className={badge(!!status?.snippet_hotkey)}>
+                {status?.snippet_hotkey
+                  ? `${status.snippet_hotkey} · ${status.snippet_engine}`
+                  : 'available (no hotkey set)'}
+              </span>
+            </li>
+          )}
+          {status?.memory_available && (
+            <li>
+              <span>Memory</span>
+              <span className={badge(status.memory_enabled)}>
+                {status.memory_enabled
+                  ? `${status.memory_indexed}/${status.memory_chunks} chunks indexed`
+                  : 'off (enable in Settings → Memory)'}
               </span>
             </li>
           )}
@@ -613,7 +828,9 @@ export default function Home({ status, dictate, onRefresh }: Props) {
         <p className="muted">
           Push-to-talk only — no always-on listening. Dictation audio lives in a short in-memory
           window and is never written to disk. Meeting recordings are transcribed then deleted
-          unless you opt into retention. Telemetry is permanently disabled.
+          unless you opt into retention. Screen OCR freezes the screen in memory only — the
+          frame is dropped on selection or cancel and never touches disk. Telemetry is
+          permanently disabled.
         </p>
       </section>
     </div>

@@ -37,4 +37,14 @@ enum Output {
     static func error(_ message: String) {
         send(["type": "error", "message": message])
     }
+
+    // ---- snippet OCR (Proposal 100) — additive one-shot frames ----------
+
+    static func image(png: String, width: Int, height: Int) {
+        send(["type": "image", "png": png, "width": width, "height": height])
+    }
+
+    static func ocrResult(text: String, words: [[String: Any]] = []) {
+        send(["type": "ocr_result", "text": text, "words": words])
+    }
 }

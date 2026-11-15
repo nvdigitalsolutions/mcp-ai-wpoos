@@ -102,6 +102,19 @@ export default function DiagnosticsView() {
             <span>Voice activity detection</span>
             <span>{info.mic.vad_kind}</span>
           </li>
+          <li>
+            <span>Capture mode</span>
+            <span>
+              {info.mic.capture_mode}
+              {info.mic.paused ? ' · paused' : ' · running'}
+            </span>
+          </li>
+          {info.mic.capture_mode === 'on_demand' && (
+            <li>
+              <span>Last resume</span>
+              <span>{info.mic.last_resume_ms} ms</span>
+            </li>
+          )}
         </ul>
         <div className="btn-row">
           <button
@@ -121,6 +134,55 @@ export default function DiagnosticsView() {
             ? ' The level is flat: the app is not hearing this microphone (muted, unplugged, or a different default device).'
             : ' The meter moving means the app is hearing the microphone — if dictation still fails, see Last dictation below.'}
         </p>
+      </section>
+
+      <section className="card">
+        <h2>Clipboard</h2>
+        {info.paste ? (
+          <>
+            <ul className="kv">
+              <li>
+                <span>Backend</span>
+                <span>{info.paste.backend}</span>
+              </li>
+              <li>
+                <span>Previous contents</span>
+                <span>
+                  {info.paste.snapshot_kind === 'formats'
+                    ? 'all formats'
+                    : info.paste.snapshot_kind}
+                </span>
+              </li>
+              {info.paste.partial_formats > 0 && (
+                <li>
+                  <span>Not copyable</span>
+                  <span className="badge warn">
+                    {info.paste.partial_formats} format
+                    {info.paste.partial_formats === 1 ? '' : 's'}
+                  </span>
+                </li>
+              )}
+              <li>
+                <span>Restored</span>
+                <span className={badge(info.paste.restored)}>
+                  {info.paste.restored
+                    ? 'yes'
+                    : `no${info.paste.restore_skipped ? ` (${info.paste.restore_skipped})` : ''}`}
+                </span>
+              </li>
+              <li>
+                <span>Paste time</span>
+                <span>{info.paste.elapsed_ms} ms</span>
+              </li>
+            </ul>
+            <p className="muted small">
+              Last attempt {info.paste.at} UTC. Clipboard contents are never recorded here —
+              only what kind of content was present and whether it was put back.
+            </p>
+          </>
+        ) : (
+          <p className="muted">No dictation has been pasted yet.</p>
+        )}
       </section>
 
       <section className="card">
@@ -305,6 +367,174 @@ export default function DiagnosticsView() {
             <p className="muted">
               Detection runs entirely on-device via ONNX Runtime — camera pixels never leave your
               computer, and no faces or personal identities are stored.
+            </p>
+          </>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Document OCR</h2>
+        {info.document.available ? (
+          <ul className="diag-list">
+            <li>
+              <span>Documents / pages</span>
+              <span>
+                {info.document.documents} / {info.document.pages}
+              </span>
+            </li>
+            <li>
+              <span>Pages by provenance</span>
+              <span>
+                text {info.document.text_pages} · ocr {info.document.ocr_pages} · model{' '}
+                {info.document.model_pages}
+              </span>
+            </li>
+            <li>
+              <span>Model tier (DeepSeek-OCR)</span>
+              <span className={badge(info.document.model_enabled)}>
+                {info.document.model_enabled
+                  ? `${info.document.model_provider} · ${info.document.model_model}`
+                  : 'off'}
+              </span>
+            </li>
+            <li>
+              <span>Last document</span>
+              <span>{info.document.last_ms} ms</span>
+            </li>
+          </ul>
+        ) : (
+          <p className="muted">not compiled into this build</p>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Memory</h2>
+        {info.memory.available ? (
+          <ul className="kv">
+            <li>
+              <span>Compiled / enabled</span>
+              <span className={badge(info.memory.enabled)}>
+                {info.memory.enabled ? 'enabled' : 'compiled, disabled'}
+              </span>
+            </li>
+            <li>
+              <span>Embedder</span>
+              <span className={badge(info.memory.model_installed)}>
+                {info.memory.embedder}
+                {info.memory.model_installed ? '' : ' — not downloaded'}
+              </span>
+            </li>
+            <li>
+              <span>Chunks (indexed / total)</span>
+              <span>
+                {info.memory.chunks_indexed} / {info.memory.chunks_total}
+                {info.memory.chunks_pending > 0 ? ` · ${info.memory.chunks_pending} pending` : ''}
+              </span>
+            </li>
+            <li>
+              <span>Vector width / blend weight</span>
+              <span>
+                {info.memory.dim} · {info.memory.semantic_weight.toFixed(2)}
+              </span>
+            </li>
+            <li>
+              <span>Last worker batch</span>
+              <span>{info.memory.last_batch_ms} ms</span>
+            </li>
+            {info.memory.errors > 0 && (
+              <li>
+                <span>Errors</span>
+                <span className="badge warn">{info.memory.errors}</span>
+              </li>
+            )}
+          </ul>
+        ) : (
+          <p className="muted">not compiled into this build (needs the `memory` feature)</p>
+        )}
+        {info.memory.available && info.memory.recent_ops.length > 0 && (
+          <>
+            <h3>Destructive operation log</h3>
+            <ul className="kv">
+              {info.memory.recent_ops.map((op, i) => (
+                <li key={i}>
+                  <span>{op.created_at}</span>
+                  <span>
+                    {op.action} — {op.detail}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Screen OCR (snippet)</h2>
+        {info.snippet.available ? (
+          <ul className="kv">
+            <li>
+              <span>Compiled / enabled</span>
+              <span className={badge(info.snippet.enabled)}>
+                {info.snippet.enabled ? 'enabled' : 'compiled, disabled'}
+              </span>
+            </li>
+            <li>
+              <span>Hotkey / engine</span>
+              <span>
+                {info.snippet.hotkey || '(disabled)'} · {info.snippet.engine}
+                {info.snippet.language ? ` · ${info.snippet.language}` : ''}
+              </span>
+            </li>
+            <li>
+              <span>State</span>
+              <span className={badge(info.snippet.phase === 'idle')}>
+                {info.snippet.phase}
+              </span>
+            </li>
+            <li>
+              <span>Captures / recognitions</span>
+              <span>
+                {info.snippet.captures} / {info.snippet.recognitions}
+              </span>
+            </li>
+            <li>
+              <span>Last recognition</span>
+              <span>{info.snippet.last_ocr_ms} ms</span>
+            </li>
+            {info.snippet.ocr_languages.length > 0 && (
+              <li>
+                <span>Windows OCR languages</span>
+                <span>{info.snippet.ocr_languages.join(', ')}</span>
+              </li>
+            )}
+            {info.snippet.errors > 0 && (
+              <li>
+                <span>Errors</span>
+                <span className="badge warn">
+                  {info.snippet.errors} — {info.snippet.last_error ?? 'unknown'}
+                </span>
+              </li>
+            )}
+          </ul>
+        ) : (
+          <p className="muted">Screen OCR is not compiled into this build.</p>
+        )}
+        {info.snippet.available && info.snippet.onnx_available && (
+          <>
+            <h3>RapidOCR language packs</h3>
+            <ul className="kv">
+              {info.snippet.models.map((m) => (
+                <li key={m.id}>
+                  <span>{m.label}</span>
+                  <span className={badge(m.installed)}>
+                    {m.installed ? 'installed' : `not installed (${m.size_mb} MB)`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="muted">
+              Snippet OCR runs entirely on-device — the frozen frame never leaves memory and is
+              never written to disk.
             </p>
           </>
         )}

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Erlang C Queuing Theory — pure domain service.
  *
@@ -11,7 +12,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);

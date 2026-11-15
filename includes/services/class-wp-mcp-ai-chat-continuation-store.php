@@ -32,6 +32,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -682,7 +684,7 @@ if ( ! class_exists( 'WP_MCP_AI_Chat_Continuation_Store' ) ) {
 			if ( '' === $session_id ) {
 				// Last-resort fallback if a filter returned something unusable.
 				// `random_bytes()` is available since PHP 7.0; the base plugin
-				// targets PHP 7.4+, so this is safe.
+				// targets PHP 8.1+, so this is safe.
 				$session_id = 'sess_' . bin2hex( random_bytes( 16 ) );
 			}
 			return $session_id;

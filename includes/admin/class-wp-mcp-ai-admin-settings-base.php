@@ -8,14 +8,16 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Prevent parse errors on PHP < 7.4 by exiting before class definition.
-if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+// Prevent parse errors on PHP < 8.1 by exiting before class definition.
+if ( version_compare( PHP_VERSION, '8.1.0', '<' ) ) {
 	return;
 }
 
@@ -81,7 +83,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				$value = $settings[ $key ];
 
 				// Sanitize based on key patterns and types.
-				// Note: Using strpos() for PHP 7.4 compatibility (str_contains() requires PHP 8.0+).
+				// Note: strpos() retained here; str_contains() is available at the 8.1 floor.
 				if ( self::is_sensitive_setting_key( $key ) ) {
 					$current_value     = isset( $current[ $key ] ) ? $current[ $key ] : '';
 					$sanitized[ $key ] = self::sanitize_sensitive_setting_value( $value, $current_value );
@@ -460,7 +462,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'default_assistant'                     => 0,
 				'enable_logging'                        => false,
 				'markup_enabled'                        => true,
-				'default_model'                         => 'gpt-4.1',
+				'default_model'                         => 'gpt-6.1-sol',
 				'default_gemini_model'                  => 'gemini-3.8-flash',
 				'default_provider'                      => 'openai',
 				'provider_priority_list'                => $provider_list,
@@ -604,7 +606,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'openai_transcribe_language'            => '',
 				'openai_transcribe_temperature'         => '',
 				'openai_embedding_model'                => 'text-embedding-3-small',
-				'gemini_image_model'                    => 'gemini-3.1-flash-image',
+				'gemini_image_model'                    => 'gemini-nano-banana-2.1',
 				'gemini_image_aspect_ratio'             => '1:1',
 				'gemini_image_mime_type'                => 'image/png',
 				'max_history_messages'                  => 8,
@@ -668,7 +670,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'rest_enable_assistant_delete'          => false,
 				'sse_enable_post_method'                => false,
 				'enable_high_token_model_switch'        => true,
-				'high_token_fallback_model'             => 'gemini-2.5-flash',
+				'high_token_fallback_model'             => 'gemini-3.5-flash-lite',
 				'openai_fallback_model'                 => '',
 				'anthropic_fallback_model'              => '',
 				'gemini_fallback_model'                 => '',

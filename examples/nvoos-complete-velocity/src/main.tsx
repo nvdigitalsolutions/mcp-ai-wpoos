@@ -15,15 +15,17 @@ import { createRoot } from 'react-dom/client';
 import { lazy, Suspense, useCallback, useEffect, useState, type JSX } from 'react';
 
 import '@nvoos/pro-spa-v2/styles/main.css';
+import '@nvoos/pro-spa-v2/styles/toolkits.css';
 import '@nvoos/pro-spa-v2/styles/drawers.css';
 import '@nvoos/pro-spa-v2/styles/embedded.css';
 import { useUIStore } from '@nvoos/pro-spa-v2/stores/uiStore';
 import './shell.css';
 
 import {
+  assertBackendContract,
   buildConsoleRuntime,
   fetchCurrentUser,
-  fetchFeatureMap,
+  fetchRuntimeAvailability,
   fetchSessionNonce,
   fetchSiteName,
   UnauthorizedError,
@@ -88,10 +90,17 @@ function Console(): JSX.Element {
           ),
       });
 
+      // Fail fast when the console and the backend disagree about the
+      // runtime (Proposal 090-B, ADR-6). WordPress is a no-op.
+      await assertBackendContract();
+
       const nonce = await fetchSessionNonce();
       const { user, nonce: effectiveNonce } = await fetchCurrentUser(nonce);
-      // Feature map fails open — never block boot on optional surfaces.
-      const features = await fetchFeatureMap(effectiveNonce);
+      // Availability map fails open — never block boot on optional surfaces.
+      // One read returns both the feature flags and which routes this
+      // backend serves, so a missing route blanks its endpoint instead of
+      // 404ing when the user opens the page.
+      const { features, endpoints } = await fetchRuntimeAvailability(effectiveNonce);
       // Site title fails open too ('' → branding surfaces fall back to the
       // product name). It also feeds the browser tab title.
       const siteName = await fetchSiteName();
@@ -101,6 +110,7 @@ function Console(): JSX.Element {
         nonce: effectiveNonce,
         user,
         features,
+        endpoints,
         siteName,
       });
       setBoot({ phase: 'ready' });

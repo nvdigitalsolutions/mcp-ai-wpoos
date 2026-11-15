@@ -26,6 +26,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -167,17 +169,6 @@ class WP_MCP_AI_Healthcare_Audit {
 	 * @return string
 	 */
 	protected static function get_client_ip() {
-		$candidates = array( 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR' );
-		foreach ( $candidates as $key ) {
-			if ( ! empty( $_SERVER[ $key ] ) ) {
-				$value = sanitize_text_field( wp_unslash( (string) $_SERVER[ $key ] ) );
-				if ( false !== strpos( $value, ',' ) ) {
-					$parts = explode( ',', $value );
-					$value = trim( $parts[0] );
-				}
-				return $value;
-			}
-		}
-		return '';
+		return wp_mcp_ai_get_client_ip();
 	}
 }

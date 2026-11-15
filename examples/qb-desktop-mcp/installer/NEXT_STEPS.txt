@@ -1,0 +1,32 @@
+QBBridge is installed and registered with Claude Desktop.
+
+ONE MORE STEP - add the QBBridge bookkeeping skill:
+(This step can't be automated by the installer -- Claude Desktop requires
+a manual upload for anything that shapes how it behaves. This is a
+deliberate trust/security boundary, not a missing feature.)
+
+1. Restart Claude Desktop if it was already running (it only reads its
+   MCP server list at startup).
+2. Make sure QuickBooks Desktop is open on the company file you want to
+   work with.
+3. In Claude Desktop, go to Settings > Customize > Skills.
+4. Click the "+" button, then "Create skill".
+5. Upload this file:
+       skill\qbbridge-bookkeeping.zip
+   (in the folder you just installed QBBridge into)
+6. Claude reads the skill automatically once it's uploaded.
+
+Skills are available on all Claude plans, including Free -- you do not
+need a paid plan for this step. (The only prerequisite is that code
+execution is enabled, which is on by default.) If you don't see "Skills"
+under Customize, check for a Claude Desktop app update.
+
+Also, the first time Claude actually uses a QBBridge tool, QuickBooks will
+show a one-time permission popup asking whether to allow the connection --
+click Yes/Allow. If you miss it, QuickBooks Desktop has a preference
+(Edit > Preferences > Integrated Applications) where you can find and
+re-allow it.
+
+Once both steps are done, just ask Claude to import a bank or credit card
+statement into QuickBooks, and it will use the QBBridge connection and
+this skill together.

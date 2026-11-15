@@ -11,6 +11,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -79,7 +81,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		 *
 		 * @var string
 		 */
-		const DEFAULT_MODEL = 'kimi-k3';
+		const DEFAULT_MODEL = 'kimi-k3.1-pro';
 
 		/**
 		 * Models that explicitly support tool/function calling.
@@ -90,6 +92,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		 * @var array
 		 */
 		const MODELS_WITH_TOOL_CALLING = array(
+			'kimi-k3.1-pro',
 			'kimi-k3',
 			'kimi-k2.7-code',
 			'kimi-k2.7-code-highspeed',
@@ -115,6 +118,7 @@ if ( ! class_exists( 'WP_MCP_AI_Kimi_Client' ) ) {
 		 * @var array
 		 */
 		const MODEL_CONTEXT_WINDOWS = array(
+			'kimi-k3.1-pro'  => 1048576,
 			'kimi-k3'        => 1048576,
 			'kimi-k2.7-code' => 256000,
 			'kimi-k2.6'      => 256000,

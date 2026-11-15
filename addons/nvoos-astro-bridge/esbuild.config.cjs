@@ -1,3 +1,10 @@
+/**
+ * The wp-admin page no longer consumes this externals target (bridge 1.1.0):
+ * AdminPage enqueues build/standalone/astro-admin.{js,css} instead — under
+ * WP 7.1.4 the externals + window.React.createElement shim committed an
+ * inconsistent tree (text-only table rows, no td elements). The target is
+ * kept for reference; the standalone target is the shipping artifact.
+ */
 // @ts-check
 const esbuild = require('esbuild');
 

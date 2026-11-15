@@ -15,6 +15,10 @@
  * @package   WP_MCP_AI_Pro
  * @since     2.3.0
  * @since     2.x.x Added PII pseudonymisation of matched contacts.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

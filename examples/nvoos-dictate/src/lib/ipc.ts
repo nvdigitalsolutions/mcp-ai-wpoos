@@ -101,6 +101,39 @@ export interface Settings {
   spa: {
     url: string;
   };
+  snippet: {
+    enabled: boolean;
+    hotkey: string;
+    engine: string; // auto | winrt | sidecar | onnx | vlm_fallback
+    language: string;
+    vlm_fallback: boolean;
+    auto_paste: boolean;
+    cleanup_profile: string; // off | ocr | full_stage1
+    retain_history: boolean;
+  };
+  document: {
+    dpi: number;
+    text_page_min_chars: number;
+    max_pages: number;
+    polish_enabled: boolean;
+    polish_model: string;
+    model: {
+      enabled: boolean;
+      provider: string;
+      model: string;
+      min_confidence: number | null;
+      all_scans: boolean;
+      max_pages: number;
+      load_timeout_ms: number;
+    };
+  };
+  memory: {
+    enabled: boolean;
+    embedder: string;
+    semantic_weight: number;
+    top_k: number;
+    ask_provider_enabled: boolean;
+  };
 }
 
 export interface StatusInfo {
@@ -129,20 +162,20 @@ export interface StatusInfo {
   polish: string;
   spa_configured: boolean;
   spa_url: string;
+  snippet_available: boolean;
+  snippet_engine: string;
+  snippet_hotkey: string;
+  document_available: boolean;
+  memory_available: boolean;
+  memory_enabled: boolean;
+  memory_indexed: number;
+  memory_chunks: number;
 }
 
 export interface SpaCheck {
   ok: boolean;
   status: number | null;
   message: string;
-}
-
-export interface SpaSurface {
-  id: string;
-  title: string;
-  url: string;
-  description: string;
-  route?: string;
 }
 
 export interface TranscriptRow {
@@ -156,6 +189,26 @@ export interface TranscriptRow {
   e2e_ms: number;
   created_at: string;
   media: string;
+}
+
+export interface SnippetRow {
+  id: number;
+  text_raw: string;
+  text_clean: string;
+  engine: string;
+  language: string;
+  region_w: number;
+  region_h: number;
+  ocr_ms: number;
+  created_at: string;
+}
+
+export interface SnippetModelStatus {
+  id: string;
+  label: string;
+  size_mb: number;
+  license: string;
+  installed: boolean;
 }
 
 export interface MeetingRow {
@@ -212,6 +265,46 @@ export interface MediaTranscription {
 
 export interface MediaProgress {
   phase: string; // 'decode' | 'transcribe' | 'done'
+  fraction: number;
+}
+
+export type PageProvenance = 'text' | 'ocr' | 'polished' | 'model';
+
+export interface DocumentWord {
+  text: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface DocumentLine {
+  text: string;
+  words: DocumentWord[];
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface DocumentPage {
+  index: number;
+  text: string;
+  provenance: PageProvenance;
+  lines?: DocumentLine[];
+}
+
+export interface DocumentResult {
+  path: string;
+  pages: DocumentPage[];
+  page_count: number;
+  duration_ms: number;
+}
+
+export interface DocumentProgress {
+  page: number;
+  page_count: number;
+  phase: 'extract' | 'ocr' | 'polish' | 'model';
   fraction: number;
 }
 
@@ -287,7 +380,19 @@ export interface DiagnosticsInfo {
     capture_stall_ms: number;
     capture_errors: number;
     capture_last_error: string | null;
+    capture_mode: string;
+    paused: boolean;
+    last_resume_ms: number;
   };
+  paste: {
+    backend: string;
+    snapshot_kind: string;
+    restored: boolean;
+    restore_skipped: string | null;
+    partial_formats: number;
+    elapsed_ms: number;
+    at: string;
+  } | null;
   engine: {
     configured: string;
     model: string;
@@ -336,6 +441,43 @@ export interface DiagnosticsInfo {
     confirmation_required: boolean;
     last_error: string | null;
   };
+  snippet: {
+    available: boolean;
+    enabled: boolean;
+    hotkey: string;
+    engine: string;
+    language: string;
+    phase: string;
+    ocr_languages: string[];
+    captures: number;
+    recognitions: number;
+    last_ocr_ms: number;
+    errors: number;
+    last_error: string | null;
+    last_region: { x: number; y: number; w: number; h: number } | null;
+    models: SnippetModelStatus[];
+    onnx_available: boolean;
+  };
+  document: {
+    available: boolean;
+    pdf_export_available: boolean;
+    busy: boolean;
+    documents: number;
+    pages: number;
+    text_pages: number;
+    ocr_pages: number;
+    model_pages: number;
+    last_ms: number;
+    errors: number;
+    last_error: string | null;
+    dpi: number;
+    max_pages: number;
+    polish_enabled: boolean;
+    model_enabled: boolean;
+    model_provider: string;
+    model_model: string;
+  };
+  memory: MemoryStatus;
   last_dictation: {
     window_ms: number;
     utterance_ms: number;
@@ -361,12 +503,64 @@ export type DictateEvent =
   | { state: 'error'; message: string }
   | { state: 'cancelled' };
 
+export type SnippetEvent =
+  | {
+      state: 'frame';
+      image: string;
+      frame_w: number;
+      frame_h: number;
+      origin_x: number;
+      origin_y: number;
+      preview_w: number;
+      preview_h: number;
+    }
+  | { state: 'done'; text: string; engine: string; ocr_ms: number; pasted: boolean }
+  | { state: 'error'; message: string }
+  | { state: 'cancelled' }
+  | { state: 'idle' };
+
 export interface PermissionInfo {
   kind: 'microphone' | 'accessibility' | 'input_monitoring' | 'screen_recording';
   label: string;
   explanation: string;
   granted: boolean;
   promptable: boolean;
+}
+
+// ---- memory (Proposal 127) -----------------------------------------------
+
+export interface MemoryHit {
+  chunk_id: number;
+  surface: string; // 'transcript' | 'meeting' | 'snippet'
+  surface_id: number;
+  seq: number;
+  text: string;
+  score: number;
+  matched_terms: number;
+}
+
+export interface MemoryStatus {
+  available: boolean;
+  enabled: boolean;
+  embedder: string;
+  model_installed: boolean;
+  dim: number;
+  semantic_weight: number;
+  chunks_total: number;
+  chunks_indexed: number;
+  chunks_pending: number;
+  last_batch_ms: number;
+  errors: number;
+  recent_ops: {
+    action: string; // 'purge' | 'reindex'
+    detail: string;
+    created_at: string;
+  }[];
+}
+
+export interface AskResult {
+  hits: MemoryHit[];
+  answer: string | null;
 }
 
 /** Whether the webview runs inside the macOS app (permission rows are mac-only). */
@@ -381,7 +575,7 @@ export const api = {
   updateSettings: (settings: Settings) => invoke<Settings>('update_settings', { settings }),
   getStatus: () => invoke<StatusInfo>('get_status'),
   	checkSpa: (url: string) => invoke<SpaCheck>('check_spa', { url }),
-  	listSpaSurfaces: () => invoke<SpaSurface[]>('list_spa_surfaces'),
+  	openNvoosConsole: () => invoke<void>('open_nvoos_console'),
   getDiagnostics: () => invoke<DiagnosticsInfo>('get_diagnostics'),
   listInputDevices: () => invoke<string[]>('list_input_devices'),
   restartMicrophone: () => invoke<DiagnosticsInfo['mic']>('restart_microphone'),
@@ -446,18 +640,51 @@ export const api = {
   transcribeMedia: (path: string) => invoke<MediaTranscription>('transcribe_media', { path }),
   summarizeMedia: (text: string) => invoke<string>('summarize_media', { text }),
   pickMediaFile: () => invoke<string | null>('pick_media_file'),
+
+  documentAvailable: () => invoke<boolean>('document_available'),
+  documentModelAvailable: () => invoke<boolean>('document_model_available'),
+  testDocumentModelConnection: () =>
+    invoke<string>('test_document_model_connection'),
+  pickDocument: () => invoke<string | null>('pick_document'),
+  transcribeDocument: (path: string) =>
+    invoke<DocumentResult>('transcribe_document', { path }),
+  cancelDocument: () => invoke<void>('cancel_document'),
+  exportDocument: (format: string) =>
+    invoke<string | null>('export_document', { format }),
   cancelDictation: () => invoke<void>('cancel_dictation'),
+
+  snippetAvailable: () => invoke<boolean>('snippet_available'),
+  snippetRegionSelected: (x: number, y: number, w: number, h: number) =>
+    invoke<void>('snippet_region_selected', { x, y, w, h }),
+  snippetCancel: () => invoke<void>('snippet_cancel'),
+  listSnippets: (limit = 100, offset = 0) =>
+    invoke<SnippetRow[]>('list_snippets', { limit, offset }),
+  deleteSnippet: (id: number) => invoke<void>('delete_snippet', { id }),
+  getSnippetModels: () => invoke<SnippetModelStatus[]>('get_snippet_models'),
+  downloadSnippetModel: (pack: string, force = false) =>
+    invoke<string>('download_snippet_model', { pack, force }),
+  listOcrLanguages: () => invoke<string[]>('list_ocr_languages'),
 
   getPermissions: () => invoke<PermissionInfo[]>('get_permissions'),
   requestPermission: (kind: string) =>
     invoke<PermissionInfo>('request_permission', { kind }),
   openSystemSettings: (kind: string) => invoke<void>('open_system_settings', { kind }),
+
+  memoryStatus: () => invoke<MemoryStatus>('memory_status'),
+  askMemory: (query: string) => invoke<AskResult>('ask_memory', { query }),
+  reindexMemory: (confirmation: string) => invoke<void>('reindex_memory', { confirmation }),
+  purgeMemory: (confirmation: string) => invoke<void>('purge_memory', { confirmation }),
+  downloadMemoryModel: (force = false) => invoke<void>('download_memory_model', { force }),
 };
 
 // ---- events --------------------------------------------------------------
 
 export function onDictateEvent(handler: (event: DictateEvent) => void): Promise<UnlistenFn> {
   return listen<DictateEvent>('dictate://state', (e) => handler(e.payload));
+}
+
+export function onSnippetEvent(handler: (event: SnippetEvent) => void): Promise<UnlistenFn> {
+  return listen<SnippetEvent>('snippet://state', (e) => handler(e.payload));
 }
 
 export function onModelProgress(
@@ -473,9 +700,17 @@ export function onMediaProgress(handler: (progress: MediaProgress) => void): Pro
   return listen<MediaProgress>('media://progress', (e) => handler(e.payload));
 }
 
-/** Which webview window is this? (overlay = focusless PTT capsule) */
-export function windowKind(): 'main' | 'overlay' {
-  return new URLSearchParams(window.location.search).get('window') === 'overlay'
-    ? 'overlay'
-    : 'main';
+export function onDocumentProgress(
+  handler: (progress: DocumentProgress) => void,
+): Promise<UnlistenFn> {
+  return listen<DocumentProgress>('document://progress', (e) => handler(e.payload));
+}
+
+/** Which webview window is this? (overlay = focusless PTT capsule,
+ * snippet = full-screen OCR selection overlay) */
+export function windowKind(): 'main' | 'overlay' | 'snippet' {
+  const q = new URLSearchParams(window.location.search).get('window');
+  if (q === 'overlay') return 'overlay';
+  if (q === 'snippet') return 'snippet';
+  return 'main';
 }

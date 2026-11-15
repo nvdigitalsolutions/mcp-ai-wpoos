@@ -1,7 +1,7 @@
 [package]
 name = "nvoos-dictate"
-version = "0.2.0"
-description = "NV oOS Dictation — local-first push-to-talk dictation and meeting transcription companion for the NV oOS WordPress plugin."
+version = "0.4.0"
+description = "NV oOS Cognition — local-first push-to-talk dictation, screen OCR and meeting transcription companion for the NV oOS WordPress plugin."
 authors = ["NV Digital Solutions"]
 edition = "2021"
 license = "proprietary"
@@ -31,6 +31,42 @@ name = "agent_probe"
 path = "examples/agent_probe.rs"
 required-features = ["agent"]
 
+# Screenshot-OCR de-risk spike (Proposal 100, M0): WinRT OcrEngine leg
+# (default features) + RapidOCR-ONNX leg (behind `snippet-onnx`).
+[[example]]
+name = "snippet_ocr_probe"
+path = "examples/snippet_ocr_probe.rs"
+required-features = ["snippet"]
+
+# Document-input de-risk spike (Proposal 109, M0): PDF text extraction +
+# 300-DPI rendering via pdfium-render (feature `document`).
+[[example]]
+name = "document_probe"
+path = "examples/document_probe.rs"
+required-features = ["document"]
+
+# Document-model tier probe (Proposal 111): one page -> local DeepSeek-OCR
+# server -> Markdown. Requires the `document` feature (image/pdfium deps).
+[[example]]
+name = "document_model_probe"
+path = "examples/document_model_probe.rs"
+required-features = ["document"]
+
+# Memory-layer de-risk spike (Proposal 127, M0): downloads the pinned granite
+# embedder files, loads tokenizer + ort session, and embeds fixture sentences
+# (dim, RTF, cross-lingual cosine sanity). Requires the `memory` feature.
+[[example]]
+name = "embed_probe"
+path = "examples/embed_probe.rs"
+required-features = ["memory"]
+
+# Capture-residency probe (Proposal 144 §4.3, Phase 0): idle callbacks + process
+# CPU in resident vs paused mode, plus pause -> first-callback latency.
+# Default features only (no model or C toolchain needed).
+[[example]]
+name = "capture_probe"
+path = "examples/capture_probe.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -47,8 +83,17 @@ serde_json = "1"
 thiserror = "2"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "fs", "io-util"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream", "blocking"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.32", features = ["bundled", "load_extension"] }
 rusqlite_migration = "1"
+# Memory layer (Proposal 127): vec0 virtual tables live in the shared SQLite
+# database. NON-optional on purpose — the `chunk_vectors` table is created
+# unconditionally in the migration list, because rusqlite_migration keys
+# migrations by position and a feature-conditional migration would break
+# opening a memory-enabled DB from a feature-off build. The crate is pure C
+# (~a few hundred KB) and loads via `Connection::load_extension("vec0",
+# sqlite3_vec_init)`; pinned exactly because sqlite-vec is pre-v1 and the
+# vec0 API has shifted between 0.1.x releases.
+sqlite-vec = "=0.1.9"
 keyring = "3"
 cpal = "0.15"
 arboard = "3"
@@ -108,6 +153,28 @@ chromiumoxide = { version = "0.9", optional = true, default-features = false }
 # The StreamExt trait used to poll chromiumoxide's Handler (its own `futures`
 # dependency is not re-exported; a direct dep keeps the stream poll in scope).
 futures = { version = "0.3", optional = true }
+# Document input pipeline (Proposal 109): PDF open/extract/render. PDFium is
+# the BSD-3 engine behind Chrome/WebView2 (MuPDF/Poppler/Ghostscript are
+# AGPL/GPL — incompatible with this app's license). Features pinned:
+# `pdfium_7881` (API version, matches the bblanchon prebuilt binary),
+# `image_025` (matches the app's image 0.25 pin — no duplicate image tree),
+# `thread_safe` (Pdfium is not thread-safe; the crate serializes calls).
+# The binary itself is a pinned, checksummed download — never committed (D2).
+pdfium-render = { version = "0.9", default-features = false, features = ["pdfium_7881", "image_025", "thread_safe"], optional = true }
+# Multi-page TIFF page iteration (the `image` crate decodes only the first
+# page). Already transitively present via image-tiff; a direct optional dep
+# exposes the paged Decoder API.
+tiff = { version = "0.9", optional = true }
+# Searchable-PDF emitter (feature `snippet-pdf`, Proposal 102 D9 / 109 D10):
+# a battle-tested low-level PDF writer — xref/stream bookkeeping is where
+# hand-rolling fails silently.
+lopdf = { version = "0.36", optional = true }
+# Memory layer (Proposal 127): BPE tokenization for the embedder (granite
+# ModernBERT tokenizer.json). 0.23 stable only — the 1.0.0-rc series is a
+# re-export shim under a different internal layout. `onig` is required for
+# the `\p{...}` regex the GPT-2/ModernBERT ByteLevel pretokenizer carries;
+# BPE + tokenizer.json deserialization are core in this series.
+tokenizers = { version = "0.23", default-features = false, features = ["onig"], optional = true }
 
 [target.'cfg(windows)'.dependencies]
 # Low-level keyboard hook (WH_KEYBOARD_LL), GetAsyncKeyState fallback, and
@@ -119,6 +186,24 @@ windows = { version = "0.58", features = [
   "Win32_System_Threading",
   "Win32_UI_Input_KeyboardAndMouse",
   "Win32_UI_WindowsAndMessaging",
+  # Snippet OCR (Proposal 100): GDI virtual-screen freeze + the WinRT
+  # Windows.Media.Ocr stack (PowerToys Text Extractor's engine). Feature
+  # names are namespace-derived (Media_Ocr = Windows.Media.Ocr); a missing
+  # feature surfaces as "cannot find module" at compile time.
+  "Win32_Graphics_Gdi",
+  "Win32_System_WinRT",
+  # Clipboard fidelity (Proposal 144 §4.2): format enumeration/restore,
+  # HGLOBAL allocation for clipboard payloads, CF_HDROP file lists, and the
+  # documented history-exclusion formats.
+  "Win32_System_DataExchange",
+  "Win32_System_Memory",
+  "Win32_UI_Shell",
+  "Foundation",
+  "Foundation_Collections",
+  "Globalization",
+  "Graphics_Imaging",
+  "Storage_Streams",
+  "Media_Ocr",
 ] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
@@ -165,6 +250,29 @@ camera = ["dep:nokhwa", "dep:image"]
 vision = ["camera", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
 # Browser agent (dictated web control) — Phase 1 adds the CDP client.
 agent = ["dep:chromiumoxide", "dep:futures"]
+# Screen-to-text snippet OCR (Proposal 100): frozen-screen region capture,
+# the selection overlay, and the platform-native OCR engines (Windows.Media.Ocr
+# on Windows, Apple Vision via the existing mac-helper sidecar). `image`
+# covers the in-memory preview PNG + crop encoding (never written to disk).
+snippet = ["dep:image"]
+# Portable RapidOCR (PP-OCR det+rec) ONNX backend for `snippet` — shares the
+# ort/ort-sys/ndarray16 pins with `vision` (rapid-ocr-rs is NOT used: it pulls
+# its own ort version and would drift the rc.9 pin).
+snippet-onnx = ["snippet", "dep:ort", "dep:ort-sys", "dep:ndarray16"]
+# Document input pipeline (Proposal 109): PDF + multi-page TIFF into the
+# snippet OCR stack. PDFium (BSD-3) is runtime-loaded from a pinned,
+# checksummed binary shipped as a bundle resource; `tiff` adds multi-page
+# decode. The VLM polish pass reuses Proposal 076's transport — no new dep.
+document = ["snippet", "dep:pdfium-render", "dep:tiff"]
+# Memory layer (Proposal 127): local hybrid retrieval (FTS5 + vec0) over the
+# capture corpus, embedded with a bundled ONNX encoder on the pinned ort.
+# sqlite-vec is deliberately NOT feature-gated here (schema stability — see
+# the dependency note); this feature gates the encoder (ort + tokenizers)
+# and the cited-answer provider path only.
+memory = ["dep:ort", "dep:ort-sys", "dep:tokenizers", "dep:ndarray16"]
+# Searchable-PDF export (102 D9/D10 shared emitter): lopdf rebuilds the
+# source PDF with a rendered page image + invisible text layer.
+snippet-pdf = ["snippet", "dep:lopdf"]
 
 [patch.crates-io]
 whisper-rs-sys = { path = "../vendor/whisper-rs-sys" }

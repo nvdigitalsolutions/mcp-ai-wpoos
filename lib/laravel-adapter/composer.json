@@ -3,23 +3,26 @@
     "description": "Laravel adapter implementations for the oOS Core AI orchestration engine.",
     "type": "library",
     "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "require": {
-        "php": "^8.1",
-        "nvoos/core": "^1.0",
-        "illuminate/support": "^10.0 || ^11.0",
-        "illuminate/cache": "^10.0 || ^11.0",
-        "illuminate/config": "^10.0 || ^11.0",
-        "illuminate/database": "^10.0 || ^11.0",
-        "illuminate/events": "^10.0 || ^11.0",
-        "illuminate/filesystem": "^10.0 || ^11.0",
-        "illuminate/queue": "^10.0 || ^11.0",
-        "illuminate/auth": "^10.0 || ^11.0",
-        "illuminate/contracts": "^10.0 || ^11.0"
+        "php": "^8.2",
+        "nvoos/core": "*",
+        "illuminate/support": "^12.41.1 || ^13.0",
+        "illuminate/cache": "^12.41.1 || ^13.0",
+        "illuminate/config": "^12.41.1 || ^13.0",
+        "illuminate/database": "^12.41.1 || ^13.0",
+        "illuminate/events": "^12.41.1 || ^13.0",
+        "illuminate/filesystem": "^12.41.1 || ^13.0",
+        "illuminate/http": "^12.41.1 || ^13.0",
+        "illuminate/queue": "^12.41.1 || ^13.0",
+        "illuminate/auth": "^12.41.1 || ^13.0",
+        "illuminate/contracts": "^12.41.1 || ^13.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.0 || ^11.0",
+        "phpunit/phpunit": "^11.0",
         "mockery/mockery": "^1.6",
-        "orchestra/testbench": "^8.0 || ^9.0"
+        "orchestra/testbench": "^10.8 || ^11.0"
     },
     "autoload": {
         "psr-4": {
@@ -30,6 +33,10 @@
         "psr-4": {
             "Nvoos\\Laravel\\Tests\\": "tests/"
         }
+    },
+    "scripts": {
+        "test": "phpunit --configuration phpunit.xml",
+        "test:coverage": "phpunit --configuration phpunit.xml --coverage-html coverage"
     },
     "extra": {
         "laravel": {

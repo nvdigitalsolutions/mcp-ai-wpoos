@@ -8,6 +8,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 
@@ -97,4 +99,11 @@ class SavePostArguments {
 		message: 'Slug must contain only lowercase letters, numbers, and hyphens.'
 	)]
 	public $slug = null;
+
+	/**
+	 * Describe the write without performing it (Proposal 090-M, ADR M-8).
+	 *
+	 * @var bool
+	 */
+	public $dry_run = false;
 }

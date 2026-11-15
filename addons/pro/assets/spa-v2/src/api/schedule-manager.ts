@@ -36,12 +36,50 @@ export interface SchedulePreset {
 	[ k: string ]: unknown;
 }
 
+/**
+ * One run record from GET /schedules/{id}/history — the server's actual
+ * shape (start_time is an epoch timestamp, duration is float seconds,
+ * action_log is the type-specific structured log trimmed for history).
+ */
 export interface ScheduleHistoryRow {
-	run_id?: string;
 	status?: string;
-	started_at?: string;
-	finished_at?: string;
-	result?: string;
+	start_time?: number;
+	duration?: number;
+	error?: string;
+	action_log?: unknown[];
+	[ k: string ]: unknown;
+}
+
+/**
+ * A captured run result envelope from GET /schedules/{id}/results.
+ * `render` is the capture type ('text' | 'table' | …); `data` is the
+ * structured payload the renderer consumes.
+ */
+export interface ScheduleResultEnvelope {
+	summary?: string;
+	data?: unknown;
+	render?: string;
+	status?: string;
+	error?: string;
+	generated_at?: number;
+	[ k: string ]: unknown;
+}
+
+/**
+ * Fleet-wide run aggregates from GET /schedules/fleet-stats — computed
+ * server-side from the schedules table and the per-schedule history ring
+ * buffers. `last_run` is an epoch timestamp or null when nothing ran yet.
+ */
+export interface FleetStats {
+	total_schedules: number;
+	enabled_schedules: number;
+	total_runs: number;
+	success_runs: number;
+	failure_runs: number;
+	success_rate: number;
+	failures_24h: number;
+	overdue_schedules: number;
+	last_run: number | null;
 	[ k: string ]: unknown;
 }
 
@@ -157,11 +195,33 @@ export class ScheduleManagerClient {
 	}
 
 	/** GET /schedules/{id}/history */
-	async history( id: string ): Promise< ScheduleHistoryRow[] > {
+	async history( id: string, signal?: AbortSignal ): Promise< ScheduleHistoryRow[] > {
 		const body = await this.request< { history?: ScheduleHistoryRow[] } >(
-			`/schedules/${ encodeURIComponent( id ) }/history`
+			`/schedules/${ encodeURIComponent( id ) }/history`,
+			{ signal }
 		);
 		return Array.isArray( body?.history ) ? body.history : [];
+	}
+
+	/** GET /schedules/{id}/results — captured result envelopes, newest first. */
+	async results(
+		id: string,
+		limit = 10,
+		signal?: AbortSignal
+	): Promise< ScheduleResultEnvelope[] > {
+		const body = await this.request< { results?: ScheduleResultEnvelope[] } >(
+			`/schedules/${ encodeURIComponent( id ) }/results?limit=${ Math.max( 1, Math.min( 100, limit ) ) }`,
+			{ signal }
+		);
+		return Array.isArray( body?.results ) ? body.results : [];
+	}
+
+	/** GET /schedules/fleet-stats — fleet-wide aggregates for the ops card. */
+	async fleetStats( signal?: AbortSignal ): Promise< FleetStats | null > {
+		const body = await this.request< { stats?: FleetStats } >( '/schedules/fleet-stats', {
+			signal,
+		} );
+		return body?.stats ?? null;
 	}
 
 	/** GET /presets — SA schedule presets (filters optional). */

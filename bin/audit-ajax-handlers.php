@@ -28,7 +28,8 @@
 
 // phpcs:disable WordPress.WP.AlternativeFunctions, WordPress.PHP.DevelopmentFunctions, WordPress.Security.EscapeOutput, WordPress.NamingConventions.PrefixAllGlobals -- CLI script.
 
-$plugin_root = dirname( __DIR__ );
+$plugin_root      = dirname( __DIR__ );
+$plugin_root_norm = str_replace( '\\', '/', $plugin_root );
 
 $check_mode = in_array( '--check', $argv, true );
 
@@ -44,18 +45,29 @@ foreach ( $scan_dirs as $dir ) {
 		continue;
 	}
 
-	$iter = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ) );
+	// Prune vendor/ and node_modules/ while walking: they are never scanned
+	// and can contain tens of thousands of files, which made the audit
+	// extremely slow on large or bind-mounted checkouts.
+	$directory = new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS );
+	$filter    = new RecursiveCallbackFilterIterator(
+		$directory,
+		static function ( $current ) {
+			return ! in_array( $current->getFilename(), array( 'node_modules', 'vendor' ), true );
+		}
+	);
+	$iter      = new RecursiveIteratorIterator( $filter );
 
 	foreach ( $iter as $file ) {
 		if ( ! $file->isFile() ) {
 			continue;
 		}
-		$path = $file->getPathname();
-		if ( substr( $path, -4 ) !== '.php' ) {
+		$path      = $file->getPathname();
+		$path_norm = str_replace( '\\', '/', $path );
+		if ( substr( $path_norm, -4 ) !== '.php' ) {
 			continue;
 		}
 		// Skip vendor, node_modules and tests inside addons (they're separate).
-		if ( strpos( $path, '/vendor/' ) !== false || strpos( $path, '/node_modules/' ) !== false ) {
+		if ( strpos( $path_norm, '/vendor/' ) !== false || strpos( $path_norm, '/node_modules/' ) !== false ) {
 			continue;
 		}
 
@@ -95,7 +107,7 @@ foreach ( $scan_dirs as $dir ) {
 				$capability = $c_match[1];
 			}
 
-			$rel = ltrim( str_replace( $plugin_root, '', $path ), '/' );
+			$rel = ltrim( str_replace( $plugin_root_norm, '', $path_norm ), '/' );
 
 			$handlers[ $handler_key ][] = array(
 				'action'     => $full_action,

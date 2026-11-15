@@ -48,7 +48,7 @@
 	      "source-map-js": ">=1.2.2 <2",
 	      "compression": ">=1.8.2 <2",
 	      "proxy-addr": ">=2.0.8 <3",
-	      "basic-ftp": ">=6.2.1 <7",
+	      "basic-ftp": ">=6.2.6 <7",
 	      "postcss-selector-parser@^7": ">=7.1.6 <8",
 	      "postcss-selector-parser@^6": ">=6.1.5 <7",
 	      "body-parser@^2": ">=2.4.0 <3"

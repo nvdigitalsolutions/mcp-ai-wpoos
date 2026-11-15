@@ -147,6 +147,16 @@ const PaperStorePage = lazy(() =>
     default: m.PaperStorePage,
   })),
 );
+const ToolkitsPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/toolkits/ToolkitsPage').then((m) => ({
+    default: m.ToolkitsPage,
+  })),
+);
+const ToolkitPage = lazy(() =>
+  import('@nvoos/pro-spa-v2/features/toolkits/ToolkitPage').then((m) => ({
+    default: m.ToolkitPage,
+  })),
+);
 const RecordsPage = lazy(() =>
   import('@nvoos/pro-spa-v2/features/records/RecordsPage').then((m) => ({
     default: m.RecordsPage,
@@ -310,6 +320,7 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
         isChatRoute={isChatRoute}
         user={runtime.user}
         features={features}
+        endpoints={runtime.endpoints}
         onSignOut={onSignOut}
       />
 
@@ -672,6 +683,30 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
               						</RequireGate>
               					}
               				/>
+              <Route
+                path="/toolkits"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/toolkits')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <ToolkitsPage />
+                  </RequireGate>
+                }
+              />
+              <Route
+                path="/toolkits/:slug"
+                element={
+                  <RequireGate
+                    gate={gateForPath('/toolkits')}
+                    features={features}
+                    capabilities={runtime.user.capabilities}
+                  >
+                    <ToolkitPage />
+                  </RequireGate>
+                }
+              />
               <Route
                 path="/portability"
                 element={

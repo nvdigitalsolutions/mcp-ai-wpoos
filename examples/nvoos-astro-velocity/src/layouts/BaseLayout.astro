@@ -6,12 +6,27 @@
 // header (with the cart badge island) and footer. View Transitions use the
 // opt-in ClientRouter; the analytics forwarding hook (R4/D9) fires
 // astro:page-load so tag managers work despite client-side navigation.
+//
+// Proposal 105 §3: the theme-policy doc is inlined as an is:inline JSON data
+// block (data-theme-policy). The boot ladder applies a FORCED policy before
+// storage (forced wins), keeps color-scheme in sync, and re-applies on every
+// astro:after-swap (104 Defect A). The resolution runs server-side (registry
+// known) so the raw boot script stays registry-free.
 // ---------------------------------------------------------------------------
 
 import { ClientRouter } from 'astro:transitions';
 import CartBadge from '../islands/CartBadge';
 import ManageLink from '../islands/ManageLink';
 import ThemeToggle from '../components/ThemeToggle.astro';
+import ContrastToggle from '../components/ContrastToggle.astro';
+import ThemeBadge from '../components/ThemeBadge.astro';
+import { getThemePolicy } from '../lib/commerce/client';
+import { resolvePolicyTheme } from '../lib/theme/policy';
+import { ALL_THEMES } from '../lib/theme/registry';
+import { defaultTokenService } from '../lib/tokens/service';
+import { APP_VERSION } from '../lib/version';
+import { googleFontsUrl, webfontFamilies } from '../lib/webfonts';
+import { semantic } from '../lib/tokens.generated';
 import '../styles/generated/tokens.css';
 import '../styles/global.css';
 
@@ -21,6 +36,12 @@ interface Props {
 	canonical?: string;
 	image?: string;
 	jsonld?: Record<string, unknown>[];
+	/**
+	 * The markdown variant of this page (Proposal 136 §4.4). Emitted as
+	 * `rel="alternate" type="text/markdown"` only for routes that build one —
+	 * a link to a missing file is worse than no link.
+	 */
+	markdownHref?: string;
 }
 
 const {
@@ -29,7 +50,33 @@ const {
 	canonical,
 	image,
 	jsonld = [],
+	markdownHref,
 } = Astro.props;
+
+// Live policy for SSR renders (getThemePolicy falls back to the build-baked
+// policy.generated.ts doc on any failure — never break a render). The
+// resolved result (stored/media = null) carries the FORCED ladder steps; the
+// boot script re-runs the auto ladder against real storage + media.
+const policyDoc = await getThemePolicy(Astro.url);
+const resolved = resolvePolicyTheme(policyDoc, null, null, ALL_THEMES);
+const policyPayload = JSON.stringify({
+	doc: policyDoc,
+	resolved,
+	registry: ALL_THEMES,
+});
+
+// Theme version map for the footer badge — light/dark (no version) plus the
+// static brand themes and any runtime themes in the process-wide service.
+// SSR pages read the live service; prerendered pages bake the build-time map.
+const themeVersions: Record<string, string | null> = {};
+for (const name of defaultTokenService.listThemes()) {
+	const descriptor = defaultTokenService.themeDescriptor(name);
+	themeVersions[name] = typeof descriptor?.version === 'string' ? descriptor.version : null;
+}
+
+// The harvested webfonts (126 §webfonts): the default theme's font tokens —
+// a named family loads from Google Fonts, a system stack loads nothing.
+const webfontUrl = googleFontsUrl(webfontFamilies([semantic.font]));
 ---
 
 <!doctype html>
@@ -45,6 +92,11 @@ const {
 			)
 		}
 		{canonical && <link rel="canonical" href={canonical} />}
+		{/* Proposal 136 §4.4 — discovery for agents: `describedby` points at the
+			llms.txt that covers this path. An agent affordance, never an SEO
+			signal (Google gives llms.txt no ranking effect). */}
+		<link rel="describedby" href="/llms.txt" />
+		{markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} />}
 		{image && <meta property="og:image" content={image} />}
 		{
 			jsonld.map((block) => (
@@ -52,24 +104,100 @@ const {
 			))
 		}
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		{webfontUrl && (
+			<>
+				<link rel="preconnect" href="https://fonts.googleapis.com" />
+				<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+				<link rel="stylesheet" href={webfontUrl} />
+			</>
+		)}
+		<!-- Theme-policy payload (105 §3): JSON data block, no event handlers —
+		     the boot script and the toggles read it via [data-theme-policy]. -->
+		<script type="application/json" data-theme-policy set:html={policyPayload} />
 		<script is:inline>
-			// ADS no-FOUC theme boot (Proposal 095): set data-theme before first
-			// paint so dark/brand themes never flash (Starlight pattern).
+			// ADS no-FOUC theme boot (Proposal 095/104/105): resolve the theme
+			// + contrast axes before first paint, then RE-APPLY on every
+			// client-side navigation — Astro's ClientRouter swaps the <html>
+			// element (attributes included) and head scripts run only once,
+			// so without the after-swap listener the theme resets to light on
+			// page 2 (Proposal 104 Defect A; Astro docs' dark-mode pattern).
+			//
+			// Policy ladder (105 §3): a FORCED policy theme wins over storage;
+			// auto keeps the 104 ladder (storage → media → defaultTheme).
+			// Contrast mirrors it (forced axis or stored → standard).
 			(function () {
-				let stored = null;
-				try {
-					stored = localStorage.getItem('nvoos-theme');
-				} catch { /* storage unavailable */ }
-				const theme =
-					stored ||
-					(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
-						? 'light'
-						: 'dark');
-				if (theme && theme !== 'light') {
-					document.documentElement.setAttribute('data-theme', theme);
-				}
+				const KEY = 'nvoos-theme';
+				const CKEY = 'nvoos-contrast';
+				const stored = (key) => {
+					try {
+						return localStorage.getItem(key);
+					} catch { /* storage unavailable */ }
+					return null;
+				};
+				const readPolicy = () => {
+					try {
+						const node = document.querySelector('script[data-theme-policy]');
+						return node ? JSON.parse(node.textContent || 'null') : null;
+					} catch { /* malformed policy payload */ }
+					return null;
+				};
+				const apply = () => {
+					const policy = readPolicy();
+					const doc = policy && policy.doc ? policy.doc : { defaultTheme: 'dark', contrast: 'auto' };
+					const resolved = policy && policy.resolved ? policy.resolved : null;
+					const registry = policy && Array.isArray(policy.registry) ? policy.registry : [];
+					let theme = null;
+					if (resolved && resolved.forced) {
+						theme = resolved.theme;
+					} else {
+						const saved = stored(KEY);
+						if (saved === 'light' || registry.indexOf(saved) !== -1) {
+							theme = saved;
+						}
+					}
+					if (!theme) {
+						const media = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)');
+						theme = media ? (media.matches ? 'light' : 'dark') : (doc.defaultTheme || 'dark');
+					}
+					if (theme === 'light') {
+						document.documentElement.removeAttribute('data-theme');
+					} else {
+						document.documentElement.setAttribute('data-theme', theme);
+					}
+					document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
+					const contrast =
+						resolved && resolved.contrastForced
+							? resolved.contrast
+							: stored(CKEY) === 'high'
+								? 'high'
+								: 'standard';
+					if (contrast === 'high') {
+						document.documentElement.setAttribute('data-contrast', 'high');
+					} else {
+						document.documentElement.removeAttribute('data-contrast');
+					}
+				};
+				apply();
+				// document survives the swap; the element does not.
+				document.addEventListener('astro:after-swap', apply);
 			})();
 		</script>
+		{/*
+			CSP (Proposal 104 D12) — INLINE SCRIPTS MUST BE PAGE-INVARIANT.
+
+			script-src is hashed per response from this document, and a hash list
+			belongs to the DOCUMENT: ClientRouter keeps it across an in-app
+			navigation, so an inline script that only the TARGET page has is
+			blocked (its own response's CSP is ignored for a fetched fragment).
+
+			Two rules follow:
+			  - bundled/hoisted scripts stay external (vite.build.assetsInlineLimit: 0)
+			    so `'self'` covers them;
+			  - islands use client:load ONLY. client:visible emits a per-page
+			    IntersectionObserver bootstrap and client:idle a per-page
+			    requestIdleCallback bootstrap — both are inline and therefore
+			    page-variant. Guarded by tests/unit/csp-inline-invariance.test.ts.
+		*/}
 		<ClientRouter />
 		<script>
 			// Analytics forwarding (R4/D9): client-side navigations via
@@ -86,14 +214,17 @@ const {
 			<div class="container site-header__inner">
 				<a class="site-header__brand" href="/">NV Store</a>
 				<nav class="site-nav" aria-label="Primary">
+					<a href="/products/">Products</a>
 					<a href="/categories/">Categories</a>
 					<a href="/brands/">Brands</a>
+					<a href="/blog/">Blog</a>
 					<a href="/promotions/">Promotions</a>
 					<a href="/account/">Account</a>
 				</nav>
 				<CartBadge client:load transition:persist />
 				<ThemeToggle />
-				<ManageLink client:load />
+				<ContrastToggle />
+				<ManageLink client:load transition:persist />
 			</div>
 		</header>
 		<main class="container">
@@ -102,8 +233,16 @@ const {
 		<footer class="site-footer">
 			<div class="container">
 				<p>
-					NV Store — an NV-authored, MIT-licensed Astro storefront
-					(Proposal 092). <a href="/about">About</a> · <a href="/terms">Terms</a>
+					NV Store v{APP_VERSION} — an NV-authored, MIT-licensed Astro storefront
+					(Proposal 092). <a href="/about">About</a> · <a href="/terms">Terms</a>{' '}
+					·{' '}
+					<a
+						href="https://github.com/nvdigitalsolutions/nvoos-astro-velocity"
+						rel="noopener noreferrer"
+					>
+						Source
+					</a>{' '}
+					· <ThemeBadge versions={themeVersions} />
 				</p>
 			</div>
 		</footer>

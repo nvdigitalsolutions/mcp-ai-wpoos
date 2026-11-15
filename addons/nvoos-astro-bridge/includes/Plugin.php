@@ -10,7 +10,7 @@
 
 namespace NvoosAstroBridge;
 
-use NvoosAstroBridge\PostTypes\{Product, Promotion, Promocode};
+use NvoosAstroBridge\PostTypes\{ForgeLocal, Product, Promotion, Promocode};
 use NvoosAstroBridge\Taxonomies\{Brand, Category, Color, Status};
 use NvoosAstroBridge\REST\{
 	AuthController,
@@ -18,16 +18,28 @@ use NvoosAstroBridge\REST\{
 	BaseController,
 	BrandsController,
 	CarouselController,
+	CartController,
 	CategoriesController,
+	CheckoutController,
 	ColorsController,
+	LocalController,
 	ManagersController,
 	MediaController,
+	PagesController,
+	PostsController,
 	ProductsController,
 	PromocodesController,
 	PromotionsController,
+	ShopGlobalsController,
 	StatusesController,
+	ThemePolicyController,
+	WooLoginController,
 };
 use NvoosAstroBridge\Admin\AdminPage;
+use NvoosAstroBridge\Admin\SettingsPage;
+use NvoosAstroBridge\CLI\MigrationCommand;
+use NvoosAstroBridge\Woo\NativeCatalogMigrator;
+use NvoosAstroBridge\Woo\ReturnUrlFilter;
 
 /**
  * Plugin composition root.
@@ -107,14 +119,36 @@ final class Plugin {
 		// 3. Seed default options on activation.
 		add_action( 'init', array( $plugin, 'seed_default_options' ) );
 
-		// 4. Admin page (React SPA).
+		// 4. Admin pages (React SPA + the wp-admin settings surface).
 		if ( is_admin() ) {
 			AdminPage::init();
+			SettingsPage::init();
 		}
 
 		// 5. Storefront rebuild webhook (Proposal 092 Phase 2.3 — no-ops
 		// until the operator configures a webhook URL).
 		RebuildWebhook::init();
+
+		// 6. Woo return-URL repoint (108 Phase 3) — the hook only fires
+		// inside Woo's checkout flow, so registration is always safe.
+		( new ReturnUrlFilter() )->register();
+
+		// 7. Proposal 112 — the native→Woo catalog migration. The sweep
+		// callback is registered on EVERY request (never admin-gated) so
+		// the Action Scheduler runner can always find it; the WP-CLI
+		// commands guard their own registration.
+		add_action( Schema::HOOK_MIGRATE_SWEEP, array( $plugin, 'handle_migration_sweep' ), 10, 1 );
+		MigrationCommand::register();
+	}
+
+	/**
+	 * One native-catalog migration sweep chunk (the AS callback).
+	 *
+	 * @param int $offset Products to skip.
+	 * @return void
+	 */
+	public function handle_migration_sweep( int $offset ): void {
+		( new NativeCatalogMigrator() )->handle_sweep( $offset );
 	}
 
 	/**
@@ -128,6 +162,8 @@ final class Plugin {
 		( new Product() )->register();
 		( new Promotion() )->register();
 		( new Promocode() )->register();
+		// Proposal 135 §D4 — CMS-authored content for managed forged sites.
+		( new ForgeLocal() )->register();
 	}
 
 	/**
@@ -174,6 +210,14 @@ final class Plugin {
 			new AuthController(),
 			new MediaController(),
 			new ManagersController(),
+			new PagesController(),
+			new PostsController(),
+			new LocalController(),
+			new ThemePolicyController(),
+			new ShopGlobalsController(),
+			new CartController(),
+			new CheckoutController(),
+			new WooLoginController(),
 		);
 
 		foreach ( $controllers as $controller ) {
@@ -262,6 +306,12 @@ final class Plugin {
 		if ( false === get_option( Schema::OPTION_CAROUSEL ) ) {
 			add_option( Schema::OPTION_CAROUSEL, Schema::carousel_defaults() );
 		}
+		if ( false === get_option( Schema::OPTION_THEME_POLICY ) ) {
+			add_option( Schema::OPTION_THEME_POLICY, Schema::theme_policy_defaults() );
+		}
+		if ( false === get_option( Schema::OPTION_SHOP ) ) {
+			add_option( Schema::OPTION_SHOP, Schema::shop_defaults() );
+		}
 	}
 
 	// -----------------------------------------------------------------------
@@ -306,6 +356,7 @@ final class Plugin {
 		( new Product() )->register();
 		( new Promotion() )->register();
 		( new Promocode() )->register();
+		( new ForgeLocal() )->register();
 		( new Category() )->register();
 		( new Brand() )->register();
 		( new Color() )->register();
@@ -317,6 +368,12 @@ final class Plugin {
 		}
 		if ( false === get_option( Schema::OPTION_CAROUSEL ) ) {
 			add_option( Schema::OPTION_CAROUSEL, Schema::carousel_defaults() );
+		}
+		if ( false === get_option( Schema::OPTION_THEME_POLICY ) ) {
+			add_option( Schema::OPTION_THEME_POLICY, Schema::theme_policy_defaults() );
+		}
+		if ( false === get_option( Schema::OPTION_SHOP ) ) {
+			add_option( Schema::OPTION_SHOP, Schema::shop_defaults() );
 		}
 
 		// Add capabilities.

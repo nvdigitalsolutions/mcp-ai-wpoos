@@ -17,13 +17,41 @@ interface Props {
   status: StatusInfo | null;
 }
 
-type SettingsTab = 'general' | 'engine' | 'nvoos' | 'openai' | 'lmstudio' | 'ollama' | 'agent' | 'privacy' | 'permissions';
+type SettingsTab =
+  | 'general'
+  | 'engine'
+  | 'nvoos'
+  | 'openai'
+  | 'lmstudio'
+  | 'ollama'
+  | 'agent'
+  | 'snippet'
+  | 'documents'
+  | 'memory'
+  | 'privacy'
+  | 'permissions';
 
 export default function SettingsView({ onChanged, status }: Props) {
   const [tab, setTab] = useState<SettingsTab>('general');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  // Typed-confirmation words for the destructive memory ops (Proposal 128).
+  const [reindexConfirm, setReindexConfirm] = useState('');
+  const [purgeConfirm, setPurgeConfirm] = useState('');
+
+  const testDocModel = async () => {
+    setBusy(true);
+    setMessage('');
+    try {
+      const reply = await api.testDocumentModelConnection();
+      setMessage(`Document model connected — reply: ${reply}`);
+    } catch (e) {
+      setMessage(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
   const [loadFailed, setLoadFailed] = useState(false);
   const [devices, setDevices] = useState<string[]>([]);
   const [cameras, setCameras] = useState<string[]>([]);
@@ -33,6 +61,11 @@ export default function SettingsView({ onChanged, status }: Props) {
   const [modelDownloading, setModelDownloading] = useState<string | null>(null);
   const [polishTesting, setPolishTesting] = useState(false);
   const [visionPolishModels, setVisionPolishModels] = useState<string[]>([]);
+  const [snippetModels, setSnippetModels] = useState<
+    { id: string; label: string; size_mb: number; license: string; installed: boolean }[]
+  >([]);
+  const [snippetDownloading, setSnippetDownloading] = useState<string | null>(null);
+  const [ocrLanguages, setOcrLanguages] = useState<string[]>([]);
 
   // Latest settings + a debounce timer: typing must not fire an
   // `update_settings` (which swaps the speech engine) on every keystroke.
@@ -69,6 +102,15 @@ export default function SettingsView({ onChanged, status }: Props) {
       .getVisionModels()
       .then(setVisionModels)
       .catch(() => setVisionModels([]));
+    // Snippet OCR packs + installed Windows OCR languages (Proposal 100).
+    api
+      .getSnippetModels()
+      .then(setSnippetModels)
+      .catch(() => setSnippetModels([]));
+    api
+      .listOcrLanguages()
+      .then(setOcrLanguages)
+      .catch(() => setOcrLanguages([]));
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
@@ -150,6 +192,20 @@ export default function SettingsView({ onChanged, status }: Props) {
     }
   };
 
+  const downloadSnippetModel = async (pack: string) => {
+    setSnippetDownloading(pack);
+    setMessage('');
+    try {
+      await api.downloadSnippetModel(pack);
+      setSnippetModels(await api.getSnippetModels());
+      setMessage('OCR language pack installed.');
+    } catch (e) {
+      setMessage(`Download failed: ${e}`);
+    } finally {
+      setSnippetDownloading(null);
+    }
+  };
+
   return (
     <div className="stack">
       <nav className="sub-tabs">
@@ -173,6 +229,15 @@ export default function SettingsView({ onChanged, status }: Props) {
         </button>
         <button className={tab === 'agent' ? 'tab active' : 'tab'} onClick={() => setTab('agent')}>
           Browser Agent
+        </button>
+        <button className={tab === 'snippet' ? 'tab active' : 'tab'} onClick={() => setTab('snippet')}>
+          Screen OCR
+        </button>
+        <button className={tab === 'documents' ? 'tab active' : 'tab'} onClick={() => setTab('documents')}>
+          Documents
+        </button>
+        <button className={tab === 'memory' ? 'tab active' : 'tab'} onClick={() => setTab('memory')}>
+          Memory
         </button>
         <button className={tab === 'privacy' ? 'tab active' : 'tab'} onClick={() => setTab('privacy')}>
           Privacy
@@ -646,6 +711,440 @@ export default function SettingsView({ onChanged, status }: Props) {
         </section>
       )}
 
+      {tab === 'snippet' && (
+        <section className="card">
+          <h2>Screen OCR</h2>
+          <p className="muted">
+            Press the hotkey anywhere, drag a region over the frozen screen, and the text in
+            it lands on the clipboard (optionally pasted into the focused app) — entirely
+            on-device. The native Windows/macOS engine needs no model download.
+          </p>
+          <label className="row">
+            <span>Enable screen OCR</span>
+            <input
+              type="checkbox"
+              checked={settings.snippet.enabled}
+              onChange={(e) =>
+                patch({ snippet: { ...settings.snippet, enabled: e.target.checked } })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Hotkey</span>
+            <input
+              type="text"
+              value={settings.snippet.hotkey}
+              onChange={(e) =>
+                patch({ snippet: { ...settings.snippet, hotkey: e.target.value } })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Engine</span>
+            <select
+              value={settings.snippet.engine}
+              onChange={(e) =>
+                patch({ snippet: { ...settings.snippet, engine: e.target.value } })
+              }
+            >
+              <option value="auto">Auto (native engine first)</option>
+              <option value="winrt">Windows OCR (built-in)</option>
+              <option value="sidecar">Apple Vision (built-in)</option>
+              <option value="onnx">RapidOCR (ONNX, multilingual)</option>
+            </select>
+          </label>
+          <label className="row">
+            <span>Language (OCR pack or BCP-47 tag; empty = OS default)</span>
+            <input
+              type="text"
+              value={settings.snippet.language}
+              onChange={(e) =>
+                patch({ snippet: { ...settings.snippet, language: e.target.value } })
+              }
+            />
+          </label>
+          {ocrLanguages.length > 0 && (
+            <p className="muted">Installed Windows OCR languages: {ocrLanguages.join(', ')}</p>
+          )}
+          <label className="row">
+            <span>Auto-paste into the focused app</span>
+            <input
+              type="checkbox"
+              checked={settings.snippet.auto_paste}
+              onChange={(e) =>
+                patch({ snippet: { ...settings.snippet, auto_paste: e.target.checked } })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Cleanup profile</span>
+            <select
+              value={settings.snippet.cleanup_profile}
+              onChange={(e) =>
+                patch({ snippet: { ...settings.snippet, cleanup_profile: e.target.value } })
+              }
+            >
+              <option value="ocr">OCR (whitespace + artifacts)</option>
+              <option value="off">Off (raw)</option>
+              <option value="full_stage1">Full speech rules</option>
+            </select>
+          </label>
+          <label className="row">
+            <span>Keep snippet history</span>
+            <input
+              type="checkbox"
+              checked={settings.snippet.retain_history}
+              onChange={(e) =>
+                patch({ snippet: { ...settings.snippet, retain_history: e.target.checked } })
+              }
+            />
+          </label>
+          {status?.snippet_available && snippetModels.length > 0 && (
+            <>
+              <h3>RapidOCR language packs (ONNX)</h3>
+              <ul className="model-list">
+                {snippetModels.map((m) => (
+                  <li key={m.id}>
+                    <span>
+                      {m.label} · {m.size_mb} MB · {m.license}
+                    </span>
+                    <button
+                      className="btn"
+                      disabled={snippetDownloading === m.id}
+                      onClick={() => void downloadSnippetModel(m.id)}
+                    >
+                      {m.installed ? 'Re-download' : 'Download'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {!status?.snippet_available && (
+            <p className="muted">
+              Screen OCR is not compiled into this build — install a build with the `snippet`
+              feature.
+            </p>
+          )}
+        </section>
+      )}
+
+      {tab === 'documents' && (
+        <section className="card">
+          <h2>Documents</h2>
+          <p className="muted">PDF / TIFF / image extraction (Proposal 109).</p>
+          <label className="row">
+            <span>Rasterization DPI</span>
+            <input
+              type="number"
+              value={settings.document.dpi}
+              onChange={(e) =>
+                patch({ document: { ...settings.document, dpi: Number(e.target.value) || 300 } })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Page cap per document</span>
+            <input
+              type="number"
+              value={settings.document.max_pages}
+              onChange={(e) =>
+                patch({
+                  document: { ...settings.document, max_pages: Number(e.target.value) || 200 },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Polish OCR with a local VLM</span>
+            <input
+              type="checkbox"
+              checked={settings.document.polish_enabled}
+              onChange={(e) =>
+                patch({
+                  document: { ...settings.document, polish_enabled: e.target.checked },
+                })
+              }
+            />
+          </label>
+          {settings.document.polish_enabled && (
+            <label className="row">
+              <span>Polish model</span>
+              <input
+                type="text"
+                value={settings.document.polish_model}
+                placeholder="qwen/qwen2.5-vl-7b"
+                onChange={(e) =>
+                  patch({ document: { ...settings.document, polish_model: e.target.value } })
+                }
+              />
+            </label>
+          )}
+          <h3>DeepSeek-OCR model tier</h3>
+          <p className="muted">
+            Optional: pages the box-level OCR handles poorly are sent to a local
+            DeepSeek-OCR-class model (Ollama / LM Studio) which returns structured Markdown.
+            Slow — budgeted per document. Pull the model first (e.g. ollama pull deepseek-ocr,
+            ~6.7 GB).
+          </p>
+          <label className="row">
+            <span>Enable model tier</span>
+            <input
+              type="checkbox"
+              checked={settings.document.model.enabled}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: { ...settings.document.model, enabled: e.target.checked },
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Provider</span>
+            <select
+              value={settings.document.model.provider}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: { ...settings.document.model, provider: e.target.value },
+                  },
+                })
+              }
+            >
+              <option value="ollama">Ollama</option>
+              <option value="lm_studio">LM Studio</option>
+            </select>
+          </label>
+          <label className="row">
+            <span>Model id</span>
+            <input
+              type="text"
+              value={settings.document.model.model}
+              placeholder="deepseek-ocr"
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: { ...settings.document.model, model: e.target.value },
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Use for every scanned page</span>
+            <input
+              type="checkbox"
+              checked={settings.document.model.all_scans}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: { ...settings.document.model, all_scans: e.target.checked },
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Min confidence (0–1, empty = off)</span>
+            <input
+              type="text"
+              value={settings.document.model.min_confidence ?? ''}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: {
+                      ...settings.document.model,
+                      min_confidence: e.target.value === '' ? null : Number(e.target.value),
+                    },
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Model pages per document</span>
+            <input
+              type="number"
+              value={settings.document.model.max_pages}
+              onChange={(e) =>
+                patch({
+                  document: {
+                    ...settings.document,
+                    model: {
+                      ...settings.document.model,
+                      max_pages: Number(e.target.value) || 5,
+                    },
+                  },
+                })
+              }
+            />
+          </label>
+          <div className="btn-row">
+            <button className="btn" disabled={busy} onClick={() => void testDocModel()}>
+              Test connection
+            </button>
+          </div>
+        </section>
+      )}
+
+      {tab === 'memory' && (
+        <section className="card">
+          <h2>Memory</h2>
+          <p className="muted">
+            Searchable corpus over your dictations, meetings and screen captures (Proposal 127).
+            Everything stays on this machine; the embedder runs locally.
+          </p>
+          <label className="row">
+            <span>Enable memory indexing</span>
+            <input
+              type="checkbox"
+              checked={settings.memory.enabled}
+              onChange={(e) =>
+                patch({ memory: { ...settings.memory, enabled: e.target.checked } })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Embedder</span>
+            <select
+              value={settings.memory.embedder}
+              onChange={(e) =>
+                patch({ memory: { ...settings.memory, embedder: e.target.value } })
+              }
+            >
+              <option value="granite-97m-r2-int8">granite-97m-r2-int8 (multilingual, ~118 MB)</option>
+              <option value="granite-97m-r2-fp32">granite-97m-r2-fp32 (fallback, ~372 MB)</option>
+              <option value="bge-small-en-v1.5">bge-small-en-v1.5 (English only, ~64 MB)</option>
+            </select>
+          </label>
+          <label className="row">
+            <span>Semantic weight ({settings.memory.semantic_weight.toFixed(2)})</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={settings.memory.semantic_weight}
+              onChange={(e) =>
+                patch({
+                  memory: { ...settings.memory, semantic_weight: Number(e.target.value) },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Passages per answer</span>
+            <input
+              type="number"
+              value={settings.memory.top_k}
+              onChange={(e) =>
+                patch({
+                  memory: {
+                    ...settings.memory,
+                    top_k: Math.max(1, Math.min(20, Number(e.target.value) || 5)),
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="row">
+            <span>Answer with the Stage-2 provider</span>
+            <input
+              type="checkbox"
+              checked={settings.memory.ask_provider_enabled}
+              onChange={(e) =>
+                patch({
+                  memory: { ...settings.memory, ask_provider_enabled: e.target.checked },
+                })
+              }
+            />
+          </label>
+          <div className="btn-row">
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={() => {
+                setBusy(true);
+                void api
+                  .downloadMemoryModel()
+                  .then(() => setMessage('Embedder installed.'))
+                  .catch((e) => setMessage(String(e)))
+                  .finally(() => setBusy(false));
+              }}
+            >
+              Download embedder model
+            </button>
+          </div>
+          <label className="row">
+            <span>Type REINDEX to rebuild the vector index</span>
+            <input
+              type="text"
+              value={reindexConfirm}
+              placeholder="REINDEX"
+              onChange={(e) => setReindexConfirm(e.target.value)}
+            />
+          </label>
+          <div className="btn-row">
+            <button
+              className="btn ghost"
+              disabled={busy || reindexConfirm !== 'REINDEX'}
+              onClick={() => {
+                setBusy(true);
+                void api
+                  .reindexMemory(reindexConfirm)
+                  .then(() => {
+                    setReindexConfirm('');
+                    setMessage('Reindexing started (runs in the background).');
+                  })
+                  .catch((e) => setMessage(String(e)))
+                  .finally(() => setBusy(false));
+              }}
+            >
+              Reindex
+            </button>
+          </div>
+          <label className="row">
+            <span>Type PURGE to wipe the index (history kept, search lost)</span>
+            <input
+              type="text"
+              value={purgeConfirm}
+              placeholder="PURGE"
+              onChange={(e) => setPurgeConfirm(e.target.value)}
+            />
+          </label>
+          <div className="btn-row">
+            <button
+              className="btn ghost"
+              disabled={busy || purgeConfirm !== 'PURGE'}
+              onClick={() => {
+                setBusy(true);
+                void api
+                  .purgeMemory(purgeConfirm)
+                  .then(() => {
+                    setPurgeConfirm('');
+                    setMessage('Memory corpus wiped (history kept, audit log kept).');
+                  })
+                  .catch((e) => setMessage(String(e)))
+                  .finally(() => setBusy(false));
+              }}
+            >
+              Wipe index
+            </button>
+          </div>
+          <p className="muted">
+            Destructive operations are gated by a typed confirmation and recorded in an
+            append-only audit log (visible on Diagnostics).
+          </p>
+        </section>
+      )}
+
       {tab === 'privacy' && (
         <section className="card">
           <h2>Privacy</h2>
@@ -971,20 +1470,20 @@ function NvoosTab({
           onChange={(e) => patchNvoos(onPatch, settings, { site_url: e.target.value })}
         />
       </label>
-      					<label className="row">
-      						<span>Default SPA URL (legacy fallback)</span>
-      						<input
-      							type="text"
-      							value={settings.spa.url}
-      							placeholder="https://chat.nvoos.cloud — or your site's [nvoos_pro_spa] page"
-      							onChange={(e) => onPatch({ spa: { ...settings.spa, url: e.target.value } })}
-      						/>
-      					</label>
-      					<p className="muted">
-      						The NV oOS tab discovers its surfaces from this site (assistant, chat, toolkit…)
-      						and shows one sub-tab per installed addon. This URL is only used as a fallback when
-      						the site cannot be reached or has no Pro SPA endpoint.
-      					</p>
+      <label className="row">
+        <span>Default Complete Velocity URL</span>
+        <input
+          type="text"
+          value={settings.spa.url}
+          placeholder="https://console.nvoos.cloud"
+          onChange={(e) => onPatch({ spa: { ...settings.spa, url: e.target.value } })}
+        />
+      </label>
+      <p className="muted">
+        The NV oOS tab embeds the Complete Velocity console at this URL. All assistant, chat,
+        toolkit, and addon surfaces live inside it — no separate per-addon URLs or sub-tabs are
+        needed.
+      </p>
       <label className="row">
         <span>Assistant ID (optional — uses site default)</span>
         <input

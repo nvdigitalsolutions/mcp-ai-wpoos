@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Profession Repository — domain contract.
  *
@@ -7,7 +8,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -22,9 +25,25 @@ namespace Nvoos\Core\Domain\Contract;
 interface ProfessionRepositoryInterface
 {
     /**
+     * Catalogue version — the cache epoch for this repository.
+     *
+     * A change to this value invalidates every cached catalogue read without
+     * a purge: cache keys embed it, so the previous generation becomes
+     * unreachable in one constant-time step and expires on its own TTL.
+     *
+     * Read-only runtimes report their manifest version; writable runtimes bump
+     * a counter when the catalogue changes. The value is opaque to consumers.
+     *
+     * @since 2.1.0
+     *
+     * @return string Version string (never empty).
+     */
+    public function catalogueVersion(): string;
+
+    /**
      * Get all available professions.
      *
-     * @return array<string, array{name: string, slug: string, category: string, description: string, recommended_tools: array}>
+     * @return array<string, array{name: string, slug: string, category: string, description: string, recommended_tools: array<int, string>}>
      */
     public function getAll(): array;
 
@@ -33,7 +52,7 @@ interface ProfessionRepositoryInterface
      *
      * @param string $slug Profession slug.
      *
-     * @return array{found: bool, profession?: array}
+     * @return array{found: bool, profession?: array<string, mixed>}
      */
     public function getBySlug(string $slug): array;
 
@@ -42,7 +61,7 @@ interface ProfessionRepositoryInterface
      *
      * @param string $category Category slug.
      *
-     * @return array<string, array>
+     * @return array<string, array<string, mixed>>
      */
     public function getByCategory(string $category): array;
 
@@ -51,7 +70,7 @@ interface ProfessionRepositoryInterface
      *
      * @param string $slug Profession slug.
      *
-     * @return array{knowledge: array, playbook: array}
+     * @return array{knowledge: array<string, mixed>, playbook: array<string, mixed>}
      */
     public function loadKnowledgeBase(string $slug): array;
 
@@ -67,7 +86,7 @@ interface ProfessionRepositoryInterface
     /**
      * Get professions grouped by category.
      *
-     * @return array<string, array<int, array>>
+     * @return array<string, array<int, array<string, mixed>>>
      */
     public function getCategories(): array;
 }

@@ -58,8 +58,12 @@ jobs:
           # Prune build-time-only files: the mirror ships the prebuilt
           # bundle + serve scripts only (no sources vendored — unlike the
           # Pro SPA standalone mirror, this app compiles spa-v2 in at
-          # monorepo build time).
+          # monorepo build time). `e2e/` is the Laravel-runtime smoke: it
+          # needs the spa-v2 sources, Vite and a live Laravel stack, none of
+          # which exist in the mirror.
           rm -rf /tmp/nvoos-complete-velocity/src \
+            /tmp/nvoos-complete-velocity/e2e \
+            /tmp/nvoos-complete-velocity/.env.laravel \
             /tmp/nvoos-complete-velocity/index.html \
             /tmp/nvoos-complete-velocity/vite.config.ts \
             /tmp/nvoos-complete-velocity/tsconfig.json \
@@ -78,17 +82,27 @@ jobs:
           # Dependencies are stripped too — the runtime is zero-dependency
           # Node (node: builtins only), so Velocity's `npm install` becomes
           # a no-op and npm-audit noise never appears in deploy logs.
-          node -e '
+          # Quoted heredoc, not node -e with single quotes: an apostrophe or
+          # a backtick in the JS (even inside a comment) would close the shell
+          # quoting and the remainder would run as commands — that is how the
+          # first version of this block broke the sync. A quoted delimiter
+          # makes the body literal.
+          node - <<'NODE'
             const fs = require("fs");
             const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
             const noop = "node -e \"process.exit(0)\"";
             for (const s of ["build", "dev", "preview", "typecheck", "lint:a11y", "test", "test:watch", "sync:dist"]) {
               p.scripts[s] = noop;
             }
+            // Delete the e2e scripts rather than shimming them: a silent
+            // exit 0 for test:e2e would claim a green smoke that never ran.
+            for (const s of ["build:e2e", "test:e2e", "test:e2e:headed", "report:e2e"]) {
+              delete p.scripts[s];
+            }
             delete p.dependencies;
             delete p.devDependencies;
             fs.writeFileSync("package.json", JSON.stringify(p, null, 2) + "\n");
-          '
+          NODE
           # Pin the initial branch to main: git init alone honours the runner's
           # init.defaultBranch (or falls back to master), which makes the later
           # `git push ... main --force` fail with "src refspec main does not match any".

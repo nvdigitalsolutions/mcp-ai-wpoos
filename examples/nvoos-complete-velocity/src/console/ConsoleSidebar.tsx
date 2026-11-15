@@ -26,6 +26,7 @@ import {
   CONSOLE_NAV_GROUPS,
   isNavItemVisible,
   type ConsoleNavItem,
+  type EndpointMap,
 } from './nav-features';
 
 export interface ConsoleSidebarProps {
@@ -39,6 +40,12 @@ export interface ConsoleSidebarProps {
   user: ProSpaUser;
   /** Server-reported feature availability (absent = fail open). */
   features?: Record<string, boolean>;
+  /**
+   * Runtime endpoint map. An item that declares `endpoint` is hidden when its
+   * URL is blank, which is how `/features` reports a surface this backend does
+   * not serve. Absent = fail open.
+   */
+  endpoints?: EndpointMap;
   /** End the WordPress session (footer action). */
   onSignOut: () => Promise<void> | void;
 }
@@ -76,7 +83,7 @@ function writeGroupPrefs(prefs: Record<string, boolean>): void {
 }
 
 export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
-  const { dockOpen, onToggleDock, isChatRoute, user, features, onSignOut } = props;
+  const { dockOpen, onToggleDock, isChatRoute, user, features, endpoints, onSignOut } = props;
   const [collapsed, setCollapsed] = useState(readCollapsedPref);
   const [groupPrefs, setGroupPrefs] = useState<Record<string, boolean>>(readGroupPrefs);
   const [signingOut, setSigningOut] = useState(false);
@@ -145,7 +152,9 @@ export function ConsoleSidebar(props: ConsoleSidebarProps): JSX.Element {
 
   const visibleGroups = CONSOLE_NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => isNavItemVisible(item, features, user.capabilities)),
+    items: group.items.filter((item) =>
+      isNavItemVisible(item, features, user.capabilities, endpoints),
+    ),
   })).filter((group) => group.items.length > 0);
 
   const flatVisible = visibleGroups.flatMap((group) => group.items);

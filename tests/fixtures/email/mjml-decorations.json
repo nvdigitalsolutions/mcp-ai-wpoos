@@ -1,0 +1,156 @@
+{
+    "header-logo-only": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "logo_url": "https://cdn.example.com/logo.png"
+        },
+        "footer_links": null,
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section background-color=\"#ffffff\" padding=\"20px 0\"><mj-column><mj-image src=\"https://cdn.example.com/logo.png\" alt=\"Logo\" width=\"150px\" align=\"center\" /></mj-column></mj-section><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "header-logo-and-name": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "logo_url": "https://cdn.example.com/logo.png",
+            "company_name": "Acme & Co"
+        },
+        "footer_links": null,
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section background-color=\"#ffffff\" padding=\"20px 0\"><mj-column><mj-image src=\"https://cdn.example.com/logo.png\" alt=\"Acme &amp; Co\" width=\"150px\" align=\"center\" /></mj-column></mj-section><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "header-logo-with-query": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "logo_url": "https://cdn.example.com/logo.png?w=300&h=80"
+        },
+        "footer_links": null,
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section background-color=\"#ffffff\" padding=\"20px 0\"><mj-column><mj-image src=\"https://cdn.example.com/logo.png?w=300&#038;h=80\" alt=\"Logo\" width=\"150px\" align=\"center\" /></mj-column></mj-section><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "header-logo-spaces": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "logo_url": "https://cdn.example.com/my logo.png"
+        },
+        "footer_links": null,
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section background-color=\"#ffffff\" padding=\"20px 0\"><mj-column><mj-image src=\"https://cdn.example.com/my%20logo.png\" alt=\"Logo\" width=\"150px\" align=\"center\" /></mj-column></mj-section><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "header-no-logo": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "company_name": "Acme"
+        },
+        "footer_links": null,
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "header-empty-logo": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "logo_url": ""
+        },
+        "footer_links": null,
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "header-zero-logo": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "logo_url": "0"
+        },
+        "footer_links": null,
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "header-hostile-logo": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "logo_url": "javascript:alert(1)"
+        },
+        "footer_links": null,
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section background-color=\"#ffffff\" padding=\"20px 0\"><mj-column><mj-image src=\"\" alt=\"Logo\" width=\"150px\" align=\"center\" /></mj-column></mj-section><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "footer-company-only": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "company_name": "Acme & Co"
+        },
+        "footer_links": [],
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section><mj-section background-color=\"#333333\" padding=\"20px\"><mj-column><mj-text color=\"#ffffff\" align=\"center\" font-size=\"12px\"><strong>Acme &amp; Co</strong></mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "footer-company-address": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "company_name": "Acme & Co",
+            "company_address": "1 Main St, Springfield"
+        },
+        "footer_links": [],
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section><mj-section background-color=\"#333333\" padding=\"20px\"><mj-column><mj-text color=\"#ffffff\" align=\"center\" font-size=\"12px\"><strong>Acme &amp; Co</strong><br />1 Main St, Springfield</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "footer-links-only": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": [],
+        "footer_links": [
+            {
+                "text": "Unsubscribe",
+                "url": "https://acme.test/u?e=1&t=2"
+            },
+            {
+                "text": "Privacy",
+                "url": "https://acme.test/privacy"
+            }
+        ],
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section><mj-section background-color=\"#333333\" padding=\"20px\"><mj-column><mj-text color=\"#ffffff\" align=\"center\" font-size=\"12px\"><a href=\"https://acme.test/u?e=1&#038;t=2\" style=\"color: #ffffff;\">Unsubscribe</a> | <a href=\"https://acme.test/privacy\" style=\"color: #ffffff;\">Privacy</a></mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "footer-link-missing-url": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": [],
+        "footer_links": [
+            {
+                "text": "No url"
+            },
+            {
+                "text": "Ok",
+                "url": "https://acme.test/ok"
+            }
+        ],
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section><mj-section background-color=\"#333333\" padding=\"20px\"><mj-column><mj-text color=\"#ffffff\" align=\"center\" font-size=\"12px\"><a href=\"https://acme.test/ok\" style=\"color: #ffffff;\">Ok</a></mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "footer-empty-links": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": [],
+        "footer_links": [],
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section><mj-section background-color=\"#333333\" padding=\"20px\"><mj-column></mj-column></mj-section></mj-body></mjml>"
+    },
+    "footer-hostile-link": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": [],
+        "footer_links": [
+            {
+                "text": "Click",
+                "url": "javascript:alert(1)"
+            }
+        ],
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section><mj-section background-color=\"#333333\" padding=\"20px\"><mj-column><mj-text color=\"#ffffff\" align=\"center\" font-size=\"12px\"><a href=\"\" style=\"color: #ffffff;\">Click</a></mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "footer-escaped-text": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": [],
+        "footer_links": [
+            {
+                "text": "Privacy & Terms",
+                "url": "/privacy?x=1&y=2"
+            }
+        ],
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section><mj-section background-color=\"#333333\" padding=\"20px\"><mj-column><mj-text color=\"#ffffff\" align=\"center\" font-size=\"12px\"><a href=\"/privacy?x=1&#038;y=2\" style=\"color: #ffffff;\">Privacy &amp; Terms</a></mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "header-and-footer": {
+        "mjml": "<mjml><mj-head></mj-head><mj-body><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section></mj-body></mjml>",
+        "branding": {
+            "logo_url": "https://cdn.example.com/logo.png",
+            "company_name": "Acme & Co",
+            "company_address": "1 Main St"
+        },
+        "footer_links": [
+            {
+                "text": "Unsubscribe",
+                "url": "https://acme.test/u"
+            }
+        ],
+        "expected": "<mjml><mj-head></mj-head><mj-body><mj-section background-color=\"#ffffff\" padding=\"20px 0\"><mj-column><mj-image src=\"https://cdn.example.com/logo.png\" alt=\"Acme &amp; Co\" width=\"150px\" align=\"center\" /></mj-column></mj-section><mj-section><mj-column><mj-text>Body</mj-text></mj-column></mj-section><mj-section background-color=\"#333333\" padding=\"20px\"><mj-column><mj-text color=\"#ffffff\" align=\"center\" font-size=\"12px\"><strong>Acme &amp; Co</strong><br />1 Main St</mj-text><mj-text color=\"#ffffff\" align=\"center\" font-size=\"12px\"><a href=\"https://acme.test/u\" style=\"color: #ffffff;\">Unsubscribe</a></mj-text></mj-column></mj-section></mj-body></mjml>"
+    }
+}

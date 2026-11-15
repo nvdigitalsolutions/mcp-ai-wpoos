@@ -144,8 +144,22 @@ jobs:
       - name: Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          npm ci
-          echo "✅ Node dependencies installed"
+          # Retry to absorb transient registry faults and corrupted npm cache
+          # entries. A stale/partial ~/.npm/_cacache (restored via actions/cache)
+          # surfaces as "EEXIST rename _cacache/tmp" and fails identically on
+          # retry, so purge the cache before each retry.
+          for i in 1 2 3; do
+            echo "📦 npm ci attempt $i/3..."
+            if npm ci --no-audit --no-fund; then
+              echo "✅ Node dependencies installed"
+              exit 0
+            fi
+            echo "⚠️  npm ci attempt $i failed — clearing npm cache and retrying in 10s..."
+            npm cache clean --force || true
+            sleep 10
+          done
+          echo "❌ npm ci failed after 3 attempts"
+          exit 1
 
       - name: Build plugin distributions
         run: |

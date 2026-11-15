@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-spa-rest-contract
-description: Audit NV oOS console SPA clients (addons/pro/assets/spa-v2/src/api/*.ts) against their WordPress REST controllers and fix contract drift — phantom fields, ignored params, missing routes/methods, admin-gated route registration (front-end SPA gets core 404s), envelope mismatches, field-name drift, settings gates, route collisions (last registrant silently wins), wp/v2 meta-stripping when a CPT lacks custom-fields support, and empty-then-loaded loading-state flashes. Covers the audit path (config key → PHP emission → route → boot path → handler → response shape), the live REST-index route-presence cross-check, fix decision rules, the 2026-10-21 baseline + registration pass, parallel sub-agent delegation, and the validation matrix. Use when a console page shows blank or wrong data, when adding a console surface, or when asked to "audit the REST contracts".
+description: "Audit NV oOS console SPA clients (spa-v2/src/api/*.ts) against their REST controllers and fix contract drift: phantom fields, ignored params, missing routes/methods, admin-gated route registration, envelope mismatches, field-name drift, settings gates, route collisions, wp/v2 meta stripping, empty-then-loaded flashes. Covers the audit path (config key → PHP emission → route → handler → response), the live REST-index cross-check, and the validation matrix. Use when a console page shows blank or wrong data, or when adding a console surface."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -314,6 +314,30 @@ class 15).
   envelope (both mask the outage as "no data"; the canonical-envelope sniff
   flags the latter).
 
+## Same client, two backends — three envelopes
+
+The console is one React app against two runtimes, so a ported controller must
+reproduce the shape **the client reads**, not a house style. Three shapes are
+in use, and the wrong one blanks a page without a 4xx:
+
+| Client | Reads | Laravel controller that matches |
+|---|---|---|
+| `WorkflowBuilderClient` | bare array from `list()`, bare object from `get()`, `message` on error | `WorkflowController` — `response()->json( array_map( … ) )`, i.e. WordPress's `rest_ensure_response()` shape |
+| `WorkflowPresetsClient` | `{ ok, categories, presets }`, `{ ok, preset }`; `ok === false` is a failure | `Pro\WorkflowPresetsController` — unwrapped Pro envelope, 404 with `ok: false` |
+| `DashboardsClient` | top-level `dashboards` / `disabled` / `data` | `Pro\DashboardsController` |
+| every other console client | `{ success, data }` | the default Laravel envelope |
+
+Rule: open the client and copy its reader, then take the **error** shape from
+the WordPress controller (`{ code, message, data: { status } }` for the
+workflow family). A port that looks tidier with `{ success, data }` renders an
+empty page instead of failing visibly.
+
+The inverse also bites: a client that reads a key the server never sends is a
+**phantom endpoint key**. Before porting one, grep for a reader
+(`analytics`, `threads` and `workflows` all sat in the contract with none);
+`workflowNodes` was assumed to feed a node palette that is actually a static
+client-side map.
+
 ## Known-good baseline (2026-10-21 audit)
 
 Verified contract-clean: settings, security, diagnostics, operations,
@@ -471,6 +495,17 @@ sub-agents; keep one coordinator for fixes + final gates.
 - Agents verify with `php -l`, per-file phpcs, narrow `npx vitest run <file>`,
   `npm run typecheck`; they do NOT commit, push, or touch dist/.
 
+## Endpoint availability is part of the contract (v1.2.21)
+
+The console no longer guesses whether a backend serves a surface — it is told, per key.
+
+- **45 route-backed keys.** The console capability manifest enumerates every key; each one reports route-backed vs blank, and a blank key carries a **reason**. `/features` returns the counts (e.g. `34 true / 11 false`).
+- **Nav gating follows the same source.** An item whose endpoint is not served is hidden, so a missing route reads as "not available here", not as an outage.
+- **The contract is guarded on both CIs** (`spa-v2/src/api/config.ts` ↔ `EndpointCapabilities::ROUTES`). Adding a route without flipping its key — or flipping a key without the route — fails the guard.
+- **When auditing a blank page, check the key first.** A `false` key blanks the client-side endpoint before any fetch happens, so DevTools shows *no request at all* — very different from a 401/404, and the reason text names the cause.
+- **Read the response shape from the client, not from the project convention.** The MCP-apps route answers **top-level** (`success`, `assistant_id`, `apps`, `app_count`); wrapping it in `{success, data}` renders an empty panel while unit tests stay green.
+- **Laravel parity work is per-key.** A surface is "done" when its key is route-backed, its envelope matches WordPress field-for-field, and a parity test asserts the wire — not when the controller exists.
+
 ## Validation matrix (coordinator)
 
 - phpcs: `phpcbf <files>` then `phpcs --standard=phpcs.xml.dist
@@ -489,6 +524,16 @@ sub-agents; keep one coordinator for fixes + final gates.
 
 ## Gotchas
 
+- **A contract served behind a frontend BFF is a different auth topology.**
+  When the SPA runs on the public origin and the REST API on a CMS host, the
+  browser must never see a `Domain=` cookie for the CMS — rewrite the proxied
+  `Set-Cookie` to **host-only** (drop `Domain=`, keep `HttpOnly`/`SameSite`/
+  `Secure`). The same rule applies to preview/one-shot tokens: store them in a
+  host-only, `HttpOnly` cookie with a short `Max-Age`, never in
+  `localStorage` (a token in JS is one XSS from exfiltration, and a domain
+  cookie is one sibling subdomain from the same). Verify by asserting the
+  literal `Set-Cookie` header, not just the status: `Domain` absent is the
+  contract.
 - Contract tests that bake in phantom fields **mask** real drift — rewrite
   them from the server's actual response, not the client's types.
 - `_fields` filtering is applied after caching in the assistants/tools list

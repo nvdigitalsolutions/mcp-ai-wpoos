@@ -9,9 +9,18 @@ export interface PostureSignal {
 	label: string;
 	weight: number;
 	passed: boolean;
+	/**
+	 * Whether this control exists on the current runtime. A WordPress-only
+	 * control on Laravel is reported as not applicable and never counts
+	 * towards the score or the quick wins.
+	 */
+	applicable: boolean;
+	status: 'pass' | 'fail' | 'not_applicable';
 	detail: string;
 	subtab: string;
 	anchor: string;
+	/** Standard the control comes from, when the catalogue cites one. */
+	reference?: string;
 }
 
 /** The parsed posture report (defensive — unknown payloads yield null). */
@@ -45,6 +54,41 @@ const SUBTAB_LABELS: Record< string, string > = {
 	ai_safety: 'AI Safety',
 };
 
+/** Parse one signal; null when the shape is unusable. */
+function parseSignal( rawSignal: unknown ): PostureSignal | null {
+	if ( ! rawSignal || typeof rawSignal !== 'object' ) {
+		return null;
+	}
+	const s = rawSignal as Record< string, unknown >;
+	if ( typeof s.id !== 'string' || typeof s.label !== 'string' ) {
+		return null;
+	}
+	// Older backends predate `applicable`; treat their signals as applicable.
+	const applicable = s.applicable !== false;
+	const passed = s.passed === true && applicable;
+	const status =
+		s.status === 'pass' || s.status === 'fail' || s.status === 'not_applicable'
+			? s.status
+			: ! applicable
+				? 'not_applicable'
+				: passed
+					? 'pass'
+					: 'fail';
+
+	return {
+		id: s.id,
+		label: s.label,
+		weight: typeof s.weight === 'number' ? s.weight : 0,
+		passed,
+		applicable,
+		status,
+		detail: typeof s.detail === 'string' ? s.detail : '',
+		subtab: typeof s.subtab === 'string' ? s.subtab : '',
+		anchor: typeof s.anchor === 'string' ? s.anchor : '',
+		reference: typeof s.reference === 'string' ? s.reference : '',
+	};
+}
+
 /** Parse the posture payload defensively; null when the shape is unknown. */
 export function parsePosture( raw: Record< string, unknown > | null ): PostureReport | null {
 	if ( ! raw || typeof raw !== 'object' ) {
@@ -55,45 +99,11 @@ export function parsePosture( raw: Record< string, unknown > | null ): PostureRe
 		return null;
 	}
 	const signals = ( Array.isArray( raw.signals ) ? raw.signals : [] )
-		.map( ( rawSignal ): PostureSignal | null => {
-			if ( ! rawSignal || typeof rawSignal !== 'object' ) {
-				return null;
-			}
-			const s = rawSignal as Record< string, unknown >;
-			if ( typeof s.id !== 'string' || typeof s.label !== 'string' ) {
-				return null;
-			}
-			return {
-				id: s.id,
-				label: s.label,
-				weight: typeof s.weight === 'number' ? s.weight : 0,
-				passed: s.passed === true,
-				detail: typeof s.detail === 'string' ? s.detail : '',
-				subtab: typeof s.subtab === 'string' ? s.subtab : '',
-				anchor: typeof s.anchor === 'string' ? s.anchor : '',
-			};
-		} )
+		.map( parseSignal )
 		.filter( ( s ): s is PostureSignal => s !== null );
 
 	const quickWins = ( Array.isArray( raw.quick_wins ) ? raw.quick_wins : [] )
-		.map( ( rawSignal ): PostureSignal | null => {
-			if ( ! rawSignal || typeof rawSignal !== 'object' ) {
-				return null;
-			}
-			const s = rawSignal as Record< string, unknown >;
-			if ( typeof s.id !== 'string' || typeof s.label !== 'string' ) {
-				return null;
-			}
-			return {
-				id: s.id,
-				label: s.label,
-				weight: typeof s.weight === 'number' ? s.weight : 0,
-				passed: s.passed === true,
-				detail: typeof s.detail === 'string' ? s.detail : '',
-				subtab: typeof s.subtab === 'string' ? s.subtab : '',
-				anchor: typeof s.anchor === 'string' ? s.anchor : '',
-			};
-		} )
+		.map( parseSignal )
 		.filter( ( s ): s is PostureSignal => s !== null );
 
 	return {
@@ -108,10 +118,10 @@ export function parsePosture( raw: Record< string, unknown > | null ): PostureRe
 /** Tone for a letter grade — drives the badge colour. */
 export function gradeTone( grade: string ): 'ok' | 'warning' | 'error' {
 	const g = grade.trim().toUpperCase();
-	if ( g === 'A' || g === 'B' ) {
+	if ( g.startsWith( 'A' ) || g.startsWith( 'B' ) ) {
 		return 'ok';
 	}
-	if ( g === 'C' ) {
+	if ( g.startsWith( 'C' ) ) {
 		return 'warning';
 	}
 	return 'error';

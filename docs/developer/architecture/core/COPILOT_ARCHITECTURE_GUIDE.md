@@ -49,7 +49,7 @@ Open Operator System (NV oOS) is a sophisticated WordPress plugin that provides 
 
 ### Technology Stack
 
-- **Language**: PHP 7.4+ (supports up to PHP 8.3)
+- **Language**: PHP 8.1+ (supports up to PHP 8.3)
 - **Framework**: WordPress 6.0+
 - **Architecture**: MVC-inspired with Service/Repository layers
 - **API Protocol**: REST + Server-Sent Events (SSE)
@@ -68,7 +68,7 @@ Open Operator System (NV oOS) is a sophisticated WordPress plugin that provides 
 **Location**: `/mcp-ai-wpoos.php`
 
 **Responsibilities**:
-- PHP version compatibility check (requires 7.4+)
+- PHP version compatibility check (requires 8.1+)
 - Define plugin constants
 - Load Composer autoloader
 - Define helper functions
@@ -85,7 +85,7 @@ WP_MCP_AI_BASE_VERSION // Boolean flag for base vs full version
 ```
 
 **PHP Version Check**:
-- Checks for PHP 7.4+ before loading any classes
+- Checks for PHP 8.1+ before loading any classes
 - Displays admin notice on incompatible versions
 - Auto-deactivates on incompatible PHP versions
 - Prevents parse errors from modern PHP syntax
@@ -639,7 +639,7 @@ Utility Classes:
 ### Boot Sequence
 
 1. **PHP Version Check** (`mcp-ai-wpoos.php` line 33)
-   - Validates PHP >= 7.4
+   - Validates PHP >= 8.1
    - Registers admin notice if incompatible
    - Deactivates plugin if incompatible
    - Halts execution to prevent parse errors

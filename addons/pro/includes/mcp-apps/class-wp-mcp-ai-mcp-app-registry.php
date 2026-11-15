@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -644,13 +646,17 @@ class WP_MCP_AI_MCP_App_Registry {
 	/**
 	 * Resolve a single `connection_ref` entry against the Remote Sites store.
 	 *
-	 * Accepts `mcp_server` connections, Upwork connections in MCP mode (the
-	 * official Upwork MCP gateway), and FlowHub connections in MCP mode (the
-	 * official FlowHub MCP gateway).
+	 * Accepts `mcp_server` connections, `quickbooks_mcp` connections (the
+	 * official QuickBooks Online hosted endpoint or a self-hosted Streamable
+	 * HTTP wrapper), Upwork connections in MCP mode (the official Upwork MCP
+	 * gateway), and FlowHub connections in MCP mode (the official FlowHub MCP
+	 * gateway).
 	 *
 	 * @since 1.1.85
 	 * @since 1.1.90 Upwork MCP connections resolve against the official gateway.
 	 * @since 1.1.92 FlowHub MCP connections resolve against the official gateway.
+	 * @since 1.2.21 QuickBooks Online MCP connections resolve through their
+	 *              dedicated config builder.
 	 *
 	 * @param array $app Stored MCP App entry with `connection_ref` set.
 	 * @return array|null Resolved runtime config, or null when unresolvable.
@@ -685,6 +691,11 @@ class WP_MCP_AI_MCP_App_Registry {
 
 		if ( 'mcp_server' === $connection_type ) {
 			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_mcp_app_config_from_connection( $connection );
+		} elseif ( 'quickbooks_mcp' === $connection_type ) {
+			// QuickBooks Online MCP: official hosted endpoint or a self-hosted
+			// Streamable HTTP wrapper, both authenticated through the MCP Apps
+			// OAuth flow when oauth is selected.
+			$config = WP_MCP_AI_Pro_Remote_Site_Manager::build_quickbooks_mcp_app_config( $connection );
 		} elseif ( 'upwork' === $connection_type && 'mcp' === ( isset( $connection['upwork_mode'] ) ? $connection['upwork_mode'] : '' ) ) {
 			// Upwork MCP connections authenticate against the official gateway
 			// through the MCP Apps OAuth flow; the token blob lives in the
@@ -876,6 +887,13 @@ class WP_MCP_AI_MCP_App_Registry {
 					'verify_ssl' => isset( $config['verify_ssl'] ) ? (bool) $config['verify_ssl'] : true,
 				);
 
+				// Pre-registered confidential clients (QuickBooks/Intuit) need
+				// the secret for HTTP Basic token/refresh requests. Reference
+				// configs carry it in memory only; it is never persisted to meta.
+				if ( ! empty( $config['client_secret'] ) ) {
+					$oauth_options['client_secret'] = (string) $config['client_secret'];
+				}
+
 				// Mirror the client's outbound proxy onto the OAuth client so
 				// discovery and token refresh honor it too (geo-blocked
 				// gateways such as FlowHub).
@@ -885,11 +903,14 @@ class WP_MCP_AI_MCP_App_Registry {
 				}
 
 				$oauth_client = new WP_MCP_AI_MCP_App_OAuth_Client( $config['server_url'], $oauth_options );
+				if ( ! empty( $config['client_id'] ) ) {
+					$oauth_client->set_client_id( (string) $config['client_id'] );
+				}
 				if ( ! empty( $config['oauth_data'] ) && is_array( $config['oauth_data'] ) ) {
 					$oauth_client->set_token_data( $config['oauth_data'] );
 					// Public clients (e.g. Upwork) require the client ID in
-					// token/refresh requests.
-					if ( ! empty( $config['oauth_data']['client_id'] ) ) {
+					// token/refresh requests. A pre-registered client ID wins.
+					if ( empty( $config['client_id'] ) && ! empty( $config['oauth_data']['client_id'] ) ) {
 						$oauth_client->set_client_id( $config['oauth_data']['client_id'] );
 					}
 				}

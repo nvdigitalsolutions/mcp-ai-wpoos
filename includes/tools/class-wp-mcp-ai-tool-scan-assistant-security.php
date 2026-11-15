@@ -26,6 +26,8 @@
  * @since   1.1.97
  * @author  NV Digital Solutions
  * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

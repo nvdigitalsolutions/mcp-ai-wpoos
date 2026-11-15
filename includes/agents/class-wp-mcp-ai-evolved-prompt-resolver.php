@@ -16,6 +16,8 @@
  * @license   GPL-3.0-or-later
  *
  * @see WP_MCP_AI_Agent_Harness_Evolver Core evolution engine that produces evolved prompts.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

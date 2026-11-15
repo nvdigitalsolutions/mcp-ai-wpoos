@@ -1,17 +1,302 @@
 ---
 import '../styles/global.css';
 import manifest from '../../nvoos.json';
+import { useCopy } from '../copy/index.ts';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import Tracking from '../components/Tracking.astro';
+import ConsentBanner from '../components/ConsentBanner.astro';
+import BuilderAccordion from '../components/BuilderAccordion.astro';
+import BuilderCarousel from '../components/BuilderCarousel.astro';
+import { generatedPolicy } from '../lib/theme/policy.generated.ts';
+import { chrome } from '../lib/chrome.generated.ts';
+import { behaviors } from '../lib/behaviors.generated.ts';
+import { hasInfiniteMotion } from '../lib/animations.generated.ts';
+import { webFonts } from '../lib/design.generated.ts';
+import { canonicalFontFamily } from '../lib/fonts.ts';
+import { repairMediaUrl } from '../lib/media.ts';
+import { composeDocumentTitle } from '../lib/seo.ts';
+
+/**
+ * The source footer's social networks, mapped from ITS icon class to a local
+ * inline glyph. The source ships a Font Awesome sheet we do not load, so the
+ * rebuild draws the four common marks itself — no icon-font dependency, no
+ * remote stylesheet, and an accessible label on every link.
+ */
+const SOCIAL_PATHS: Record<string, string> = {
+	facebook: 'M13.5 22v-8h2.7l.4-3h-3.1V9.1c0-.9.3-1.5 1.6-1.5H17V5c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4V11H8v3h2.6v8h2.9z',
+	twitter: 'M22 5.9a8 8 0 0 1-2.3.6 4 4 0 0 0 1.8-2.2 8 8 0 0 1-2.5 1 4 4 0 0 0-6.9 3.7A11.4 11.4 0 0 1 3.9 4.7a4 4 0 0 0 1.2 5.4 4 4 0 0 1-1.8-.5v.1a4 4 0 0 0 3.2 3.9 4 4 0 0 1-1.8.1 4 4 0 0 0 3.7 2.8A8 8 0 0 1 2 18.3a11.3 11.3 0 0 0 6.1 1.8c7.4 0 11.4-6.1 11.4-11.4v-.5A8 8 0 0 0 22 5.9z',
+	youtube: 'M21.6 7.2a2.5 2.5 0 0 0-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4A2.5 2.5 0 0 0 2.4 7.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8A26 26 0 0 0 22 12a26 26 0 0 0-.4-4.8zM10 15V9l5.2 3-5.2 3z',
+	linkedin: 'M6.9 8.6H3.6V21h3.3V8.6zM5.2 3a1.9 1.9 0 1 0 0 3.8 1.9 1.9 0 0 0 0-3.8zM20.4 21h-3.3v-6.4c0-1.6-.6-2.7-2-2.7-1.1 0-1.8.7-2 1.5v7.6H9.8V8.6h3.1V10c.4-.7 1.4-1.7 3.2-1.7 2.3 0 4.3 1.5 4.3 4.8V21z',
+	instagram: 'M12 2.6c-2.6 0-2.9 0-3.9.1-1 0-1.7.2-2.3.4-.6.3-1.2.6-1.7 1.1-.5.5-.8 1-1.1 1.7-.2.6-.4 1.3-.4 2.3-.1 1-.1 1.3-.1 3.9s0 2.9.1 3.9c0 1 .2 1.7.4 2.3.3.6.6 1.2 1.1 1.7.5.5 1 .8 1.7 1.1.6.2 1.3.4 2.3.4 1 .1 1.3.1 3.9.1s2.9 0 3.9-.1c1 0 1.7-.2 2.3-.4.6-.3 1.2-.6 1.7-1.1.5-.5.8-1 1.1-1.7.2-.6.4-1.3.4-2.3.1-1 .1-1.3.1-3.9s0-2.9-.1-3.9c0-1-.2-1.7-.4-2.3a4.7 4.7 0 0 0-1.1-1.7 4.7 4.7 0 0 0-1.7-1.1c-.6-.2-1.3-.4-2.3-.4-1-.1-1.3-.1-3.9-.1zm0 4.6a4.8 4.8 0 1 0 0 9.6 4.8 4.8 0 0 0 0-9.6zm0 7.9a3.1 3.1 0 1 1 0-6.2 3.1 3.1 0 0 1 0 6.2zm6.1-8.1a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0z',
+};
+
+/** The network a source icon class names (`fab fa-facebook-f` → facebook). */
+const socialNetwork = ( icon?: string ): string | undefined => {
+	const match = icon?.match( /fa-(facebook|twitter|youtube|linkedin|instagram)/i );
+	return match ? match[ 1 ].toLowerCase() : undefined;
+};
+
+/** The normalized SEO head facts the loader carries (Proposal 131). */
+interface SeoHead {
+	title?: string;
+	description?: string;
+	canonical?: string;
+	robots?: string;
+	ogTitle?: string;
+	ogDescription?: string;
+	ogImage?: string;
+	ogType?: string;
+	ogSiteName?: string;
+	twitterCard?: string;
+	twitterTitle?: string;
+	twitterDescription?: string;
+	twitterImage?: string;
+}
 
 interface Props {
 	title: string;
 	description?: string;
 	canonical?: string;
+	ogImage?: string;
+	/** Source SEO head facts (Rank Math → Yoast). Absent = template defaults. */
+	seo?: SeoHead;
+	/**
+	 * The markdown variant of this page (Proposal 136 §4.4). Emitted as
+	 * `rel="alternate" type="text/markdown"` only for routes that actually
+	 * build one — a link to a missing file is worse than no link.
+	 */
+	markdownHref?: string;
 }
 
-const { title, description, canonical } = Astro.props;
+const { title, description, canonical, ogImage, seo, markdownHref } = Astro.props;
+const meta: SeoHead = seo ?? {};
+const copy = useCopy();
 const siteTitle = manifest.name ?? 'Forge';
-const fullTitle = title === 'Home' ? siteTitle : `${title} — ${siteTitle}`;
+// Build identity (2026-11-15): a marker the deploy smoke can compare against
+// the artifact it just pushed. Empty on an unstamped local build — the meta
+// tag is then omitted rather than asserting a build that has no identity.
+const buildId = String( import.meta.env.FORGE_BUILD_ID ?? '' ).trim();
+// 131 §2.1 — never double-brand a title that already carries the site name
+// (Rank Math/Yoast titles are final, usually `${page} - ${site}`).
+const fullTitle = title === 'Home' ? siteTitle : composeDocumentTitle(title, siteTitle);
 const pageUrl = canonical ?? (Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined);
+// The SOURCE canonical is deliberately not rendered: it points at the
+// WordPress origin. `verify --seo` reports a dropped custom canonical.
+// The page's own robots directive wins, except on a staging/preview host: a
+// site built for a temporary origin must never be indexable, or Google
+// attributes the preview domain as the canonical copy of every page.
+// `NVOOS_FORGE_NOINDEX=1` is the deployment-level switch (Cloudways staging,
+// preview branches); the sitemap/robots endpoint follows the same flag.
+const robots = process.env.NVOOS_FORGE_NOINDEX === '1' ? 'noindex, nofollow' : ( meta.robots ?? 'index, follow' );
+// The page's own description wins; the source SEO description fills the gap
+// (the front page passes no explicit description — 131 §2.5).
+const pageDescription = description ?? meta.description;
+const ogTitle = meta.ogTitle ?? fullTitle;
+const ogDescription = meta.ogDescription ?? pageDescription;
+const ogType = meta.ogType ?? 'website';
+const ogSiteName = meta.ogSiteName ?? siteTitle;
+const socialImage = ogImage ?? meta.ogImage ?? meta.twitterImage;
+const twitterCard = meta.twitterCard ?? (socialImage ? 'summary_large_image' : 'summary');
+const twitterTitle = meta.twitterTitle ?? ogTitle;
+const twitterDescription = meta.twitterDescription ?? ogDescription;
+const twitterImage = meta.twitterImage ?? socialImage;
+const hasSearch = manifest.surfaces?.search !== false;
+// One-pager navigation (profile `shape`): the source's own anchor targets, in
+// order. Empty for a multi-page site, so the page-link fallback stays in charge.
+const navAnchors: string[] = manifest.shape === 'one-pager' ? (manifest.navAnchors ?? []) : [];
+/** `#about-us` → `About Us` — the label the source's nav used, without scraping it. */
+const anchorLabel = (anchor: string): string =>
+	anchor
+		.replace(/[-_]+/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim()
+		.replace(/^./, (first: string) => first.toUpperCase());
+/**
+ * The mobile nav disclosure. Presence and breakpoint both come from the source:
+ * `chrome.navToggle` exists only when the source ships a hamburger, and its
+ * measured `visible` map says which widths it appears at (Brando collapses at
+ * 991px, Bootstrap's default at 768px — a guessed breakpoint either strands
+ * links behind a hidden menu or wraps the nav where the source shows a button).
+ */
+const navToggle = chrome?.navToggle;
+const collapseAt: 'all' | 'tablet' | 'mobile' | 'none' = !navToggle
+	? 'none'
+	: navToggle.visible?.desktop
+		? 'all'
+		: navToggle.visible?.tablet
+			? 'tablet'
+			: navToggle.visible?.mobile
+				? 'mobile'
+				: 'none';
+const hasFeed = manifest.surfaces?.feed !== false;
+/**
+ * The source families, canonicalised for Google’s API — which is
+ * case-sensitive where CSS is not (`family=roboto` answers 400 while
+ * `family=Roboto` returns the sheet). A family that canonicalises to nothing
+ * emits no link at all, rather than a request that cannot succeed.
+ */
+const webfontRequests = webFonts
+	.map( ( font ) => ( {
+		family: canonicalFontFamily( font.family ),
+		weights: font.weights,
+	} ) )
+	.filter( ( font ) => font.family.length > 0 );
+// The baked policy rides to the client as inert JSON (Proposal 105 §4) —
+// the boot script and the theme toggle both read this node.
+const policyJson = JSON.stringify(generatedPolicy).replace(/</g, '\\u003c');
+// The chrome typography/shape facts (Proposal 123) ride as CSS custom
+// properties on <body> — global.css reads them with template-default
+// fallbacks, so sites without the facts keep the default chrome.
+//
+// The opened MOBILE MENU's surface. Without one the panel paints its links
+// straight onto whatever band is behind the header — virtuallyjamaica's
+// transparent header over a photo hero made the menu unreadable. Fallback
+// order: the measured panel, the header's own surface when it is a real
+// colour, then (in CSS) the page surface.
+const opaqueHeaderSurface = chrome?.headerBg && chrome.headerTransparent !== true ? chrome.headerBg : undefined;
+const mobileNavBg = chrome?.mobileNav?.background ?? opaqueHeaderSurface;
+const mobileNavInk = chrome?.mobileNav?.ink ?? chrome?.navInk ?? ( opaqueHeaderSurface ? chrome?.headerInk : undefined );
+const chromeVars = [
+	chrome?.chromeSize && `--forge-chrome-size:${chrome.chromeSize}`,
+	chrome?.headerBg && `--forge-header-bg:${chrome.headerBg}`,
+	chrome?.headerInk && `--forge-header-ink:${chrome.headerInk}`,
+	// The nav LINK colour is separate from the chrome ink: the source keeps the
+	// header container at the body ink while its links paint their own colour
+	// (virtuallyjamaica: container #626262, links #ffffff).
+	chrome?.navInk && `--forge-header-nav-ink:${chrome.navInk}`,
+	chrome?.topbarBg && `--forge-topbar-bg:${chrome.topbarBg}`,
+	chrome?.topbarInk && `--forge-topbar-ink:${chrome.topbarInk}`,
+	// The measured top strip (structure + rhythm). Absent → the template
+	// default strip: text lines, left-aligned, no icons.
+	chrome?.topbarHeight && `--forge-topbar-h:${chrome.topbarHeight}`,
+	chrome?.topbarIconSize && `--forge-topbar-icon-size:${chrome.topbarIconSize}`,
+	chrome?.topbarIconInk && `--forge-topbar-icon-ink:${chrome.topbarIconInk}`,
+	chrome?.topbarIconGap && `--forge-topbar-icon-gap:${chrome.topbarIconGap}`,
+	chrome?.topbarItemGap && `--forge-topbar-item-gap:${chrome.topbarItemGap}`,
+	chrome?.navStyle?.transform && `--forge-nav-transform:${chrome.navStyle.transform}`,
+	chrome?.navStyle?.weight && `--forge-nav-weight:${chrome.navStyle.weight}`,
+	chrome?.navStyle?.size && `--forge-nav-size:${chrome.navStyle.size}`,
+	chrome?.navStyle?.letterSpacing && `--forge-nav-letter-spacing:${chrome.navStyle.letterSpacing}`,
+	// The OPENED mobile menu (measured at 390px with the panel open). See
+	// `mobileNavBg` above for the fallback order.
+	mobileNavBg && `--forge-mobile-nav-bg:${mobileNavBg}`,
+	mobileNavInk && `--forge-mobile-nav-ink:${mobileNavInk}`,
+	chrome?.mobileNav?.padX !== undefined && `--forge-mobile-nav-pad-x:${chrome.mobileNav.padX}px`,
+	chrome?.mobileNav?.padY !== undefined && `--forge-mobile-nav-pad-y:${chrome.mobileNav.padY}px`,
+	chrome?.mobileNav?.itemPitch !== undefined && `--forge-mobile-nav-row-h:${chrome.mobileNav.itemPitch}px`,
+	chrome?.call?.style?.padding && `--forge-call-pad:${chrome.call.style.padding}`,
+	chrome?.call?.style?.radius && `--forge-call-radius:${chrome.call.style.radius}`,
+	chrome?.call?.style?.weight && `--forge-call-weight:${chrome.call.style.weight}`,
+	chrome?.call?.style?.transform && `--forge-call-transform:${chrome.call.style.transform}`,
+	chrome?.call?.style?.size && `--forge-call-size:${chrome.call.style.size}`,
+	chrome?.footerHeadingStyle?.weight && `--forge-footer-heading-weight:${chrome.footerHeadingStyle.weight}`,
+	chrome?.footerHeadingStyle?.size && `--forge-footer-heading-size:${chrome.footerHeadingStyle.size}`,
+	chrome?.footerHeadingStyle?.transform && `--forge-footer-heading-transform:${chrome.footerHeadingStyle.transform}`,
+	chrome?.footerBarBg && `--forge-footer-bar-bg:${chrome.footerBarBg}`,
+	chrome?.footerBarInk && `--forge-footer-bar-ink:${chrome.footerBarInk}`,
+	chrome?.footerBg && `--forge-footer-bg:${chrome.footerBg}`,
+	chrome?.footerInk && `--forge-footer-ink:${chrome.footerInk}`,
+	// The measured sticky header (analyze --geometry): the pinned background/ink
+	// and the shrinking header's two heights. Absent → the header keeps its
+	// resting appearance when pinned.
+	behaviors.headerPinnedBg && `--forge-header-pinned-bg:${behaviors.headerPinnedBg}`,
+	behaviors.headerPinnedInk && `--forge-header-pinned-ink:${behaviors.headerPinnedInk}`,
+	behaviors.headerPinnedShadow && `--forge-header-pinned-shadow:${behaviors.headerPinnedShadow}`,
+	behaviors.headerRestHeight && `--forge-header-rest-h:${behaviors.headerRestHeight}`,
+	behaviors.headerPinnedHeight && `--forge-header-pinned-h:${behaviors.headerPinnedHeight}`,
+]
+	.filter(Boolean)
+	.join(';');
+// The header's BOX (P4). A source that constrains its brand/nav row to a
+// container is rebuilt with the same cap and gutter; without that the logo pins
+// to the viewport edge and the bar stretches across a wide monitor (jayainc's
+// 1670px box reads full-bleed at 1440 and only shows at 1920). The values are
+// MEASURED per viewport (`analyze --geometry` → chrome.geometry), so a source
+// that never boxes its header emits nothing and keeps the template default.
+const geometryProps = (box?: { measure?: number; padX?: number }) =>
+	[
+		box?.measure !== undefined && `max-width:${box.measure}px`,
+		box?.padX !== undefined && `padding-inline:${box.padX}px`,
+	]
+		.filter(Boolean)
+		.join(';');
+const boxBase = chrome?.geometry?.wide ?? chrome?.geometry?.desktop;
+const boxDesktop = chrome?.geometry?.desktop ?? boxBase;
+const boxWideRule = geometryProps({
+	measure: boxBase?.measure ?? boxDesktop?.measure,
+	padX: boxDesktop?.padX ?? boxBase?.padX,
+});
+const boxSelector = '.site-header > .site-header-inner, .site-topbar > .site-topbar-inner';
+const boxOverrides = ([
+	['1199px', chrome?.geometry?.tablet],
+	['767px', chrome?.geometry?.mobile],
+] as const)
+	.filter(([, box]) => {
+		if (!box) return false;
+		return (
+			(box.measure !== undefined && box.measure !== boxBase?.measure) ||
+			(box.padX !== undefined && box.padX !== (boxDesktop?.padX ?? boxBase?.padX))
+		);
+	})
+	.map(([width, box]) => `@media (max-width:${width}){${boxSelector}{${geometryProps(box)}}}`);
+const chromeBoxCss = boxWideRule
+	? [`${boxSelector}{${boxWideRule}}`, ...boxOverrides].join('\n')
+	: '';
+// The footer's BRAND ROW. A builder gives the logo its own column
+// (virtuallyjamaica: socials `text-left`, logo `text-right`, both centred at
+// mobile); a rebuild that stacks them left puts the mark on the wrong side. The
+// row's justify-content is derived from the MEASURED group positions, per
+// viewport, so a centred mobile footer stays centred.
+const footerRowJustify = (align?: { logo?: string; socials?: string }) => {
+	if (!align) return undefined;
+	if (align.socials && align.logo) {
+		if (align.socials === 'start' && align.logo === 'end') return 'space-between';
+		if (align.socials === 'center' && align.logo === 'center') return 'center';
+		if (align.socials === 'end' && align.logo === 'start') return 'flex-end';
+		return align.socials === 'end' ? 'flex-end' : align.socials === 'center' ? 'center' : 'space-between';
+	}
+	const only = align.socials ?? align.logo;
+	return only === 'end' ? 'flex-end' : only === 'center' ? 'center' : 'flex-start';
+};
+const footerBase = chrome?.footerBrand?.desktop ?? chrome?.footerBrand?.wide;
+const footerBaseJustify = footerRowJustify(footerBase);
+const footerRowSelector = '.site-footer .site-footer-brand-row';
+const footerOverrides = ([
+	['1199px', chrome?.footerBrand?.tablet],
+	['767px', chrome?.footerBrand?.mobile],
+] as const)
+	.filter(([, align]) => align && footerRowJustify(align) !== footerBaseJustify)
+	.map(
+		([width, align]) =>
+			`@media (max-width:${width}){${footerRowSelector}{justify-content:${footerRowJustify(align)}}}`
+	);
+const footerBrandCss = footerBaseJustify
+	? [
+			`${footerRowSelector}{justify-content:${footerBaseJustify}}`,
+			...footerOverrides,
+			...(chrome?.footerBrand?.divider
+				? [`.site-footer > .site-footer-bar > .site-footer-bar-inner{border-top:1px solid var(--forge-line, currentColor)}`]
+				: []),
+		].join('\n')
+	: chrome?.footerBrand?.divider
+		? `.site-footer > .site-footer-bar > .site-footer-bar-inner{border-top:1px solid var(--forge-line, currentColor)}`
+		: '';
+// The footer mark's RENDERED height (virtuallyjamaica: 62px against the
+// template's 3rem), measured per viewport with the row's alignment.
+const footerLogoHeight = (align?: { logoHeight?: string }) =>
+	align?.logoHeight && /^\d+px$/.test(align.logoHeight) ? align.logoHeight : undefined;
+const footerLogoSelector = '.site-footer .site-footer-logo img';
+const logoBaseHeight = footerLogoHeight(chrome?.footerBrand?.desktop ?? chrome?.footerBrand?.wide);
+const logoOverrides = ([
+	['1199px', chrome?.footerBrand?.tablet],
+	['767px', chrome?.footerBrand?.mobile],
+] as const)
+	.filter(([, align]) => align && footerLogoHeight(align) && footerLogoHeight(align) !== logoBaseHeight)
+	.map(([width, align]) => `@media (max-width:${width}){${footerLogoSelector}{height:${footerLogoHeight(align)}}}`);
+const footerLogoCss = logoBaseHeight
+	? [`${footerLogoSelector}{height:${logoBaseHeight}}`, ...logoOverrides].join('\n')
+	: '';
+const chromeGeneratedCss = [chromeBoxCss, footerBrandCss, footerLogoCss].filter(Boolean).join('\n');
 ---
 
 <!doctype html>
@@ -20,29 +305,489 @@ const pageUrl = canonical ?? (Astro.site ? new URL(Astro.url.pathname, Astro.sit
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content="NV oOS Astro Forge" />
+		{buildId && <meta name="forge-build" content={buildId} />}
 		<title>{fullTitle}</title>
-		{description && <meta name="description" content={description} />}
+		{pageDescription && <meta name="description" content={pageDescription} />}
 		{pageUrl && <link rel="canonical" href={pageUrl} />}
-		<link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />
-		<meta name="robots" content="index, follow" />
+		{/* Proposal 136 §4.4 — discovery for agents: `describedby` points at the
+			llms.txt that covers this path; `alternate` at the markdown variant.
+			These are agent affordances, never an SEO signal (Google gives
+			llms.txt no ranking effect). */}
+		<link rel="describedby" href="/llms.txt" />
+		{markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} />}
+		{hasFeed && <link rel="alternate" type="application/rss+xml" title={siteTitle} href="/feed.xml" />}
+		{chrome?.favicon && <link rel="icon" href={chrome.favicon} />}
+		{chrome?.iconCss && <link rel="stylesheet" href={repairMediaUrl(chrome.iconCss)} media="all" />}
+		{/* The brand-icon sheet (FontAwesome) — draws the footer socials' source
+		 * glyph classes for networks the rebuild has no inline path for. */}
+		{chrome?.socialIconCss && <link rel="stylesheet" href={repairMediaUrl(chrome.socialIconCss)} media="all" />}
+		{/* The source webfonts (125 §2) — the harvested family loads from
+			Google Fonts so the rebuild keeps the source's type rhythm
+			(jayainc: Rubik); system-stack profiles emit no link. */}
+		{webfontRequests.length > 0 && <link rel="preconnect" href="https://fonts.googleapis.com" />}
+		{webfontRequests.length > 0 && <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />}
+		{webfontRequests.map((font) => (
+			<link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.family.replace(/ /g, '+')}:wght@${font.weights.join(';')}&display=swap`} />
+		))}
+		{/* Proposal 131 — the full social head. Values come from the source's
+			Rank Math/Yoast facts when present, else the template defaults. */}
+		<meta property="og:site_name" content={ogSiteName} />
+		<meta property="og:type" content={ogType} />
+		<meta property="og:title" content={ogTitle} />
+		{ogDescription && <meta property="og:description" content={ogDescription} />}
+		{pageUrl && <meta property="og:url" content={pageUrl} />}
+		{socialImage && <meta property="og:image" content={socialImage} />}
+		<meta name="twitter:card" content={twitterCard} />
+		<meta name="twitter:title" content={twitterTitle} />
+		{twitterDescription && <meta name="twitter:description" content={twitterDescription} />}
+		{twitterImage && <meta name="twitter:image" content={twitterImage} />}
+		<meta name="robots" content={robots} />
+		{/* Proposal 130 — verification meta, the inert tracker config, the consent
+			defaults and the deferred loader. Renders nothing on a profile without
+			a tracking block, so this is inert for every existing site. */}
+		<Tracking />
+		<script id="forge-theme-policy" type="application/json" data-theme-policy is:inline set:html={policyJson}></script>
+		<script is:inline>
+			// Proposal 105 §4 no-FOUC policy boot: policy first, storage second.
+			// Forced light/dark/brand skip the stored preference entirely; the
+			// auto ladder runs stored → media → defaultTheme. Mirrors
+			// src/lib/theme/policy.ts (keep the two ladders in sync).
+			(function () {
+				var KEY = 'nvoos-theme';
+				var CKEY = 'nvoos-contrast';
+				// The forge registry: 'light' is implicit, 'dark' is the only
+				// named theme today — brand slugs therefore fail open to auto.
+				var REGISTRY = ['dark'];
+				var node = document.getElementById('forge-theme-policy');
+				var doc = null;
+				try {
+					doc = JSON.parse(node ? node.textContent : 'null');
+				} catch (error) {
+					doc = null;
+				}
+				if (!doc || typeof doc !== 'object') {
+					doc = {};
+				}
+				var policy = typeof doc.policy === 'string' ? doc.policy : 'auto';
+				var contrast = typeof doc.contrast === 'string' ? doc.contrast : 'auto';
+				var defaultTheme = doc.defaultTheme === 'light' ? 'light' : 'dark';
+
+				var stored = function (key) {
+					try {
+						return localStorage.getItem(key);
+					} catch (error) {
+						return null;
+					}
+				};
+
+				var theme = null;
+				var forced = false;
+				if (policy.indexOf('brand:') === 0) {
+					var slug = policy.slice(6);
+					if (REGISTRY.indexOf(slug) !== -1) {
+						theme = slug;
+						forced = true;
+					}
+				}
+				if (!forced && (policy === 'light' || policy === 'dark')) {
+					theme = policy;
+					forced = true;
+				}
+				if (!forced) {
+					var saved = stored(KEY);
+					if (saved && (saved === 'light' || REGISTRY.indexOf(saved) !== -1)) {
+						theme = saved;
+					} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+						theme = 'light';
+					} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+						theme = 'dark';
+					} else {
+						theme = defaultTheme;
+					}
+				}
+
+				var mode = 'standard';
+				if (contrast === 'high' || contrast === 'standard') {
+					mode = contrast;
+				} else if (stored(CKEY) === 'high') {
+					mode = 'high';
+				}
+
+				var apply = function () {
+					var root = document.documentElement;
+					if (theme === 'light') {
+						root.removeAttribute('data-theme');
+					} else if (theme) {
+						root.setAttribute('data-theme', theme);
+					}
+					root.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
+					if (mode === 'high') {
+						root.setAttribute('data-contrast', 'high');
+					} else {
+						root.removeAttribute('data-contrast');
+					}
+				};
+				// Forced mode never writes storage — the policy owns the theme.
+				apply();
+				// The document survives the swap; the element does not.
+				document.addEventListener('astro:after-swap', apply);
+			})();
+		</script>
+		{chromeGeneratedCss && <style is:inline set:html={chromeGeneratedCss}></style>}
 	</head>
-	<body>
-		<header class="site-header">
-			<a class="brand" href="/">{siteTitle}</a>
-			<nav aria-label="Primary">
-				<a href="/">Home</a>
-				{manifest.collections.some((collection) => collection.slug === 'products') && (
-					<a href="/products/">Products</a>
+	<body style={chromeVars || undefined}>
+		{/* WCAG 2.4.1 — the source builder ships its own skip link; a rebuilt
+		    document with chrome needs one too. */}
+		<a class="skip-link" href="#main">Skip to content</a>
+		{chrome?.topbar && chrome.topbar.length > 0 && (
+			<div
+				class:list={[
+					'site-topbar',
+					chrome.topbarAlign === 'end' && 'site-topbar--end',
+					chrome.topbarAlign === 'center' && 'site-topbar--center',
+					chrome.topbarItems && chrome.topbarItems.some((item) => item.icon) && 'site-topbar--icons',
+				]}
+			>
+				{/* The same measured BOX as the header row: the source aligns the strip's
+				 * social glyph and contact group to the header container, not to the
+				 * viewport edge. */}
+				<div class="site-topbar-inner">
+				{chrome.topbarSocials && chrome.topbarSocials.length > 0 && (
+					<div class="site-topbar-socials">
+						{chrome.topbarSocials.map((social) => (
+							<a
+								class="site-topbar-social"
+								href={social.href ?? '#'}
+								aria-label={social.icon.replace(/^auxicon-/, '').replace(/-/g, ' ')}
+							>
+								<i class={social.icon} aria-hidden="true" />
+							</a>
+						))}
+					</div>
 				)}
-				<a href="/posts/">Posts</a>
-				<a href="/search/">Search</a>
+				{chrome.topbarItems && chrome.topbarItems.length > 0
+					? chrome.topbarItems.map((item) => (
+							<div class="site-topbar-item">
+								{item.icon && <i class={item.icon} aria-hidden="true" />}
+								{item.href ? (
+									<a class="site-topbar-link" href={item.href}>
+										{item.text}
+									</a>
+								) : (
+									<p>{item.text}</p>
+								)}
+							</div>
+						))
+					: chrome.topbar.map((line) => (
+							<p>{line}</p>
+						))}
+				</div>
+			</div>
+		)}
+		<header class:list={['site-header', behaviors.headerSticky && 'site-header--sticky', behaviors.headerPosition === 'fixed' && 'site-header--float', chrome?.headerBg && 'site-header--themed', chrome?.headerTransparent && 'site-header--overlay', (behaviors.headerRestHeight || behaviors.headerPinnedHeight) && 'site-header--sized', (behaviors.headerPinnedBg || behaviors.headerPinnedHeight) && 'site-header--pinned']}>
+			{/*
+			 * The BOX (P4). The source constrains its brand/nav row to a container
+			 * (jayainc: 1670px, 35px gutters; virtuallyjamaica: Bootstrap's 1170px,
+			 * 15px). The header keeps the full-bleed surface; this row carries the
+			 * measured cap and gutter, or the template's own when the source runs
+			 * the row full-bleed.
+			 */}
+			<div class="site-header-inner">
+			<div class="brand-block">
+				<a class="brand" href="/">
+					{chrome?.logo?.src ? <img class="brand-logo" src={chrome.logo.src} alt={chrome.logo.alt ?? siteTitle} /> : siteTitle}
+				</a>
+				{chrome?.tagline && <p class="brand-tagline">{chrome.tagline}</p>}
+			</div>
+			<div
+				class="site-nav-shell"
+				data-nav-shell
+				data-collapse={collapseAt}
+				data-collapsed="false"
+				data-open="false"
+			>
+				{/*
+				 * The source's own mobile disclosure (a Bootstrap `navbar-toggle`),
+				 * rebuilt as the APG disclosure pattern: a real <button> carrying
+				 * `aria-expanded` + `aria-controls`, with Escape closing it and
+				 * returning focus, and focus leaving the region closing it. The
+				 * measured `visible` facts decide WHERE it collapses, so a source that
+				 * collapses at 991px is not rebuilt against Bootstrap's 768px default.
+				 * Rendered only when the SOURCE had one — no invention.
+				 */}
+				{navToggle && (
+					<button
+						class="site-nav-toggle"
+						type="button"
+						aria-expanded="false"
+						aria-controls="site-nav"
+						data-nav-toggle
+					>
+						<span class="site-nav-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+						<span class="visually-hidden">{navToggle.label ?? copy.nav.menu}</span>
+					</button>
+				)}
+				<nav id="site-nav" aria-label={copy.nav.primaryLabel}>
+				{chrome?.nav && chrome.nav.length > 0 ? (
+					chrome.nav.map((item) => (
+						<a href={item.href}>{item.label}</a>
+					))
+				) : navAnchors.length > 0 ? (
+					/*
+					 * One-pager (profile `shape`): the source navigates by same-page
+					 * anchor, so link those instead of inventing page routes. The ids
+					 * survive sanitisation for exactly this contract.
+					 */
+					navAnchors.map((anchor) => (
+						<a href={`#${anchor}`}>{anchorLabel(anchor)}</a>
+					))
+				) : (
+					<>
+						<a href="/">{copy.nav.home}</a>
+						{manifest.collections.some((collection) => collection.slug === 'products') && <a href="/products/">{copy.nav.products}</a>}
+						<a href="/posts/">{copy.nav.posts}</a>
+						{hasSearch && <a href="/search/">{copy.nav.search}</a>}
+					</>
+				)}
 			</nav>
+		</div>
+			<div class="header-actions">
+				{/*
+				 * WCAG 2.2.2: an infinite rebuilt animation ships only when this
+				 * control exists. A checkbox is the no-JS pause affordance; CSS
+				 * pauses every generated animation while it is checked.
+				 */}
+				{hasInfiniteMotion && (
+					<label class="motion-toggle">
+						<input type="checkbox" aria-label={copy.nav.pauseMotion} />
+						<span>{copy.nav.pauseMotion}</span>
+					</label>
+				)}
+				{chrome?.call && (
+					<a class="call-button" href={chrome.call.href} style={chrome.call.bg ? `background:${chrome.call.bg};color:${chrome.call.ink ?? '#ffffff'};` : undefined}>
+						{chrome.call.label}
+					</a>
+				)}
+				{/*
+				 * The toggle is an ADDITION: it renders only when the SOURCE exposes a
+				 * theme control. A site with no dark mode gets a stray button otherwise
+				 * (virtuallyjamaica's header carried a floating `light` control). Dark
+				 * mode itself still follows `prefers-color-scheme` via the boot ladder.
+				 */}
+				{chrome?.themeToggle && <ThemeToggle />}
+			</div>
+		</div>
 		</header>
-		<main class="site-main">
+		<main class="site-main" id="main">
 			<slot />
 		</main>
-		<footer class="site-footer">
-			<p>Generated by NV oOS Astro Forge.</p>
+		<footer class:list={['site-footer', (chrome?.footerBg || chrome?.footerBarBg) && 'site-footer--themed']}>
+			<div class="site-footer-sub">
+				<div class="site-footer-sub-inner">
+					{/*
+					 * The brand ROW: the social icons and the standalone brand mark share
+					 * one flex row whose justify-content is the MEASURED group positions
+					 * (`chrome.footerBrand`). The source puts the mark in its own column —
+					 * virtuallyjamaica right-aligns it against a left-aligned social row —
+					 * so stacking them left reads wrong at every width.
+					 */}
+					{((chrome?.social && chrome.social.length > 0) ||
+						(chrome?.footerLogo?.src && chrome.footerLogo.blockIndex === undefined)) && (
+						<div class="site-footer-brand-row">
+							{chrome?.social && chrome.social.length > 0 && (
+								<ul class="site-social">
+									{chrome.social.map((link) => {
+										const network = socialNetwork(link.icon);
+										const path = network ? SOCIAL_PATHS[network] : undefined;
+										return (
+											<li>
+												<a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label ?? network ?? 'Social link'}>
+													{path ? (
+														<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+															<path fill="currentColor" d={path} />
+														</svg>
+													) : chrome?.socialIconCss && link.icon ? (
+														/* No inline glyph for this network — draw the SOURCE's own icon
+														 * class with the source's brand-icon sheet (never a fabricated
+														 * path, and never a bare text label in a round badge). */
+														<i class={link.icon} aria-hidden="true" />
+													) : (
+														(link.label ?? network ?? '')
+													)}
+												</a>
+											</li>
+										);
+									})}
+								</ul>
+							)}
+							{/* The brand-column logo (footerLogo.blockIndex): the source renders it as
+							 * the first widget of a column, above the intro copy — a standalone
+							 * strip above the grid is wrong there. Without the fact it joins the row. */}
+							{chrome?.footerLogo?.src && chrome.footerLogo.blockIndex === undefined && (
+								<div class="site-footer-logo">
+									<img src={chrome.footerLogo.src} alt={chrome.footerLogo.alt ?? siteTitle} />
+								</div>
+							)}
+						</div>
+					)}
+					{chrome?.footerBlocks && chrome.footerBlocks.length > 0 && (
+						<div class="site-footer-blocks">
+							{chrome.footerBlocks.map((block, index) => (
+								<div class="site-footer-block">
+									{chrome?.footerLogo?.src && chrome.footerLogo.blockIndex === index && (
+										<div class="site-footer-logo">
+											<img src={chrome.footerLogo.src} alt={chrome.footerLogo.alt ?? siteTitle} />
+										</div>
+									)}
+									{block.title && <h3>{block.title}</h3>}
+									{block.items.map((item) => (
+										<p>{item}</p>
+									))}
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+			</div>
+			<div class="site-footer-bar">
+				<div class="site-footer-bar-inner">
+					{chrome?.copyright ? (
+						<>
+							<p class="site-copyright">{chrome.copyright}</p>
+							<p class="site-credit">{copy.footer.generatedBy}</p>
+						</>
+					) : (
+						<p>{copy.footer.generatedBy}</p>
+					)}
+				</div>
+			</div>
 		</footer>
+		{/* Proposal 141 follow-up — builder accordions arrive CLOSED (the measured
+				resting state) with no way back open; this restores the toggle. */}
+		<BuilderAccordion />
+		{/* A measured builder carousel keeps its per-view WIDTH from CSS; this adds
+			the source's dot control, which only its slider JS could render. */}
+		<BuilderCarousel />
+		{/* The mobile nav disclosure (APG disclosure pattern). Progressive
+				enhancement: JS-off leaves the nav inline at every width, which is why
+				the stylesheet hides nothing until `data-collapsed` is set here. */}
+		<script>
+			const COLLAPSE_AT: Record<string, string> = {
+				mobile: '(max-width: 767px)',
+				tablet: '(max-width: 1151px)',
+				all: '(max-width: 100000px)',
+				none: '(max-width: 0px)',
+			};
+
+			function initNav(): void {
+				for (const shell of document.querySelectorAll('.site-nav-shell')) {
+					if (!(shell instanceof HTMLElement) || shell.dataset.navReady) continue;
+					shell.dataset.navReady = '1';
+					const toggle = shell.querySelector('.site-nav-toggle');
+					const nav = shell.querySelector('nav');
+					if (!(toggle instanceof HTMLElement) || !nav) continue;
+
+					const query = COLLAPSE_AT[shell.dataset.collapse ?? 'none'] ?? COLLAPSE_AT.none;
+					const mq = window.matchMedia(query);
+					const close = (): void => {
+						shell.dataset.open = 'false';
+						toggle.setAttribute('aria-expanded', 'false');
+					};
+					const sync = (): void => {
+						const collapsed = mq.matches;
+						shell.dataset.collapsed = String(collapsed);
+						if (!collapsed) close();
+						if (collapsed) toggle.setAttribute('aria-expanded', String(shell.dataset.open === 'true'));
+					};
+
+					toggle.addEventListener('click', () => {
+						const open = shell.dataset.open === 'true';
+						shell.dataset.open = String(!open);
+						toggle.setAttribute('aria-expanded', String(!open));
+					});
+
+					// APG: Escape closes and returns focus to the controlling button.
+					shell.addEventListener('keydown', (event) => {
+						if (event.key !== 'Escape' || shell.dataset.open !== 'true') return;
+						event.stopPropagation();
+						close();
+						toggle.focus();
+					});
+
+					// APG / WCAG 1.4.13: moving focus out of the region closes it.
+					shell.addEventListener('focusout', (event) => {
+						const next = event.relatedTarget;
+						if (next instanceof Node && !shell.contains(next)) close();
+					});
+
+					// A same-page anchor leaves the drawer covering the target.
+					nav.addEventListener('click', (event) => {
+						if (event.target instanceof Element && event.target.closest('a')) close();
+					});
+
+					sync();
+					mq.addEventListener('change', sync);
+				}
+			}
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initNav);
+			} else {
+				initNav();
+			}
+			// View transitions swap the document; the listeners would not survive it.
+			document.addEventListener('astro:after-swap', initNav);
+		</script>
+		{/* Proposal 130 — the first-party consent banner (mode: forge only). */}
+		<ConsentBanner />
+		{/* A font family the localizer could not ship renders a neutral marker
+		    instead of a blank box. The markup, classes and CSS selectors all
+		    survive a dropped @font-face, so only the font registry can tell the
+		    difference (virtuallyjamaica, 2026-11-15). The element keeps its
+		    measured slot; the glyph becomes a bullet. */}
+		<script is:inline>
+			(function () {
+				function markMissingIcons() {
+					if (!document.fonts || typeof document.fonts.load !== 'function') return;
+					var nodes = document.querySelectorAll(
+						'i[class*="icon-"], i[class~="fa"], i[class*="fa-"], i[class*="auxicon"], i[class*="dashicons"], i[class*="eicon"], span[class*="icon-"]'
+					);
+					var generic = /^(?:inherit|initial|unset|revert|serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i;
+					nodes.forEach(function (node) {
+						if (node.textContent && node.textContent.trim()) return;
+						var style = getComputedStyle(node);
+						var family = (style.fontFamily.split(',')[0] || '').replace(/["']/g, '').trim();
+						if (!family || generic.test(family)) return;
+						var size = style.fontSize || '16px';
+						var weight = style.fontWeight || '400';
+						var fontStyle = style.fontStyle || 'normal';
+						// `check()` reports an UNLOADED face as false, and marking the
+						// icon missing first would prevent the very face from loading
+						// (FA's 900 face is never requested if the glyph is replaced).
+						// LOAD the matching style/weight, then mark only on an empty or
+						// rejected load.
+						if (typeof document.fonts.load !== 'function') return;
+						document.fonts.load(fontStyle + ' ' + weight + ' ' + size + ' "' + family + '"').then(function (faces) {
+							if (!faces || faces.length === 0) node.classList.add('forge-icon-missing');
+						}).catch(function () {
+							node.classList.add('forge-icon-missing');
+						});
+					});
+				}
+				function run() {
+					if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+						document.fonts.ready.then(markMissingIcons);
+					} else {
+						markMissingIcons();
+					}
+				}
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', run);
+				} else {
+					run();
+				}
+				document.addEventListener('astro:after-swap', run);
+			})();
+		</script>
 	</body>
 </html>

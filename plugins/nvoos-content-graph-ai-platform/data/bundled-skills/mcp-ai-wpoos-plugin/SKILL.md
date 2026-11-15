@@ -5,11 +5,14 @@ description: Complete operational guide for the NV oOS (Open Operator System) Wo
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.15"
-  plugin-version-tested: "1.2.15"
-  last-updated: "2026-11-01"
+  plugin-version: "1.2.21"
+  plugin-version-tested: "1.2.21"
+  last-updated: "2026-11-15"
 ---
 # NV oOS Plugin — Docker/WSL2 Setup & Operational Guide
+
+> **Spec current as of v1.2.21** (last verified 2026-11-15). Version-tagged
+> facts are CI-enforced by `tests/test-knowledge-base-facts-sync.php`.
 
 Complete operational skill for the NV Digital Open Operator System (oOS)
 WordPress plugin running in Docker on Windows/WSL2. Covers the full lifecycle:
@@ -43,7 +46,7 @@ Zed / Claude Desktop / Cursor
                │
      ┌─────────┴──────────┐
      │  WP_MCP_AI_*       │
-     │  Tool Registry     │  ~347 base / ~1,648 full tools
+     │  Tool Registry     │  ~360 base + ~1,388 Pro (~1,747 total; live registry authoritative)
      │  Credentials       │  Token validation
      │  Assistant (CPT)   │  Post type: mcp_ai_assistant
      └────────────────────┘

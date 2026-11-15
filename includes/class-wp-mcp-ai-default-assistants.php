@@ -11,6 +11,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -101,7 +103,7 @@ class WP_MCP_AI_Default_Assistants {
 					) : array()
 				),
 				'provider'      => 'openai',
-				'model'         => 'gpt-4.1',
+				'model'         => 'gpt-6.1-sol',
 				'temperature'   => 0.3,
 				'primary_roles' => array( 'supervisor', 'orchestrator', 'coordinator' ),
 			),
@@ -271,7 +273,7 @@ class WP_MCP_AI_Default_Assistants {
 					) : array()
 				),
 				'provider'      => 'openai',
-				'model'         => 'gpt-4.1',
+				'model'         => 'gpt-6.1-sol',
 				'temperature'   => 0.7,
 				'primary_roles' => array( 'writer', 'content-creator', 'creative' ),
 			),
@@ -965,7 +967,7 @@ class WP_MCP_AI_Default_Assistants {
 				) : array()
 			),
 			'provider'      => 'openai',
-			'model'         => 'gpt-4.1',
+			'model'         => 'gpt-6.1-sol',
 			'temperature'   => 0.3,
 			'primary_roles' => array( 'assistant-builder', 'prompt-engineer', 'meta-agent' ),
 		);
@@ -1323,7 +1325,7 @@ class WP_MCP_AI_Default_Assistants {
 				'search_codebase',
 			),
 			'provider'      => 'openai',
-			'model'         => 'gpt-4.1',
+			'model'         => 'gpt-6.1-sol',
 			'temperature'   => 0.2,
 			'primary_roles' => array( 'architect', 'developer', 'coder' ),
 		);

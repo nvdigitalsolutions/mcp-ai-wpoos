@@ -1,4 +1,5 @@
 <?php
+
 /**
  * AgentTurnStopping — serial notification dispatched before a turn closes.
  *
@@ -8,16 +9,19 @@
  * @package Nvoos\Core
  * @since   1.3.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class AgentTurnStopping {
-
-	public function __construct(
-		public readonly int $assistantId,
-		public readonly int $totalIterations,
-	) {}
+final class AgentTurnStopping
+{
+    public function __construct(
+        public readonly int $assistantId,
+        public readonly int $totalIterations,
+    ) {
+    }
 }

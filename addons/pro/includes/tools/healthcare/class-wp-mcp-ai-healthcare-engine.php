@@ -11,14 +11,15 @@
  *  - Risk-flag heuristics (BMI category, hypertension stage, paediatric percentile).
  *  - Resolved per-toolkit settings (`wp_mcp_ai_healthcare_settings`).
  *
- * Designed to be PHP 7.4-compatible so the helpers can be reused by base or
- * Pro code without refactor.
+ * PHP 8.1-compatible so the helpers can be reused by base or Pro code.
  *
  * @package WP_MCP_AI_Pro
  * @since 1.3.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

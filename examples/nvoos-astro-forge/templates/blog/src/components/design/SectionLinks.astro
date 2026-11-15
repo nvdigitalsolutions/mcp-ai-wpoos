@@ -1,0 +1,37 @@
+---
+// SectionLinks — the band-level CTAs a section component would otherwise drop.
+//
+// The classifier keeps every `<a>`/`<button>` widget in `slots.links`, but a
+// source's button is usually the band's LAST widget, outside any card — so a
+// component that renders only `items` loses it silently. jayainc's products
+// band ("Let our Expert & Trusted Team…") shipped its "ALL SERVICES" button that
+// way: nothing in the content gates noticed, and only the `interaction states`
+// gate did, because a control had disappeared.
+//
+// Links a component already renders INSIDE an item are filtered out here, so
+// mounting this in every section cannot duplicate a card's own CTA.
+import type { SemanticSection } from '../../forge/semantic.ts';
+
+interface Props {
+	section: SemanticSection;
+}
+
+const { section } = Astro.props;
+const items = section.slots.items ?? [];
+const renderedInsideItems = new Set(
+	items.flatMap((item) => (item.links ?? []).map((link) => `${link.href ?? ''}|${link.text ?? ''}`))
+);
+const links = (section.slots.links ?? []).filter(
+	(link) => !renderedInsideItems.has(`${link.href ?? ''}|${link.text ?? ''}`)
+);
+---
+
+{links.length > 0 && (
+	<div class="ds-links ds-section-links">
+		{links.map((link) => (
+			<a class="ds-button" href={link.href ?? '#'}>
+				{link.text ?? 'Learn more'}
+			</a>
+		))}
+	</div>
+)}

@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
 
 test('renders shell and navigates tabs', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.brand')).toContainText('NV oOS Dictation');
+  await expect(page.locator('.brand')).toContainText('NV oOS Cognition');
   await page.getByRole('button', { name: 'History' }).click();
   await expect(page.getByPlaceholder('Search transcripts…')).toBeVisible();
   await page.getByRole('button', { name: 'Meetings' }).click();

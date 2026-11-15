@@ -25,6 +25,8 @@
  * @author  NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license  GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -120,6 +122,13 @@ class WP_MCP_AI_Output_Guardrail {
 			return $content;
 		}
 
+		// The checks live in lib/core so both runtimes see the same findings.
+		// lib/ is stripped from wp.org base builds, so the implementation below
+		// stays as the fallback.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\OutputGuardrail' ) ) {
+			return self::validate_via_core( $content, (int) $assistant_id, $context );
+		}
+
 		// Check if output guardrail is enabled for this assistant.
 		$profile = self::get_profile( $assistant_id );
 		if ( empty( $profile['output_guard']['enabled'] ) ) {
@@ -180,6 +189,51 @@ class WP_MCP_AI_Output_Guardrail {
 				// Pass through but log.
 				return $content;
 		}
+	}
+
+	/**
+	 * Delegate response validation to the shared evaluator.
+	 *
+	 * The profile now resolves through `WP_MCP_AI_Harness_Profile::get()`, not
+	 * the raw post meta this class used to read. `get()` adds the site-wide
+	 * default and applies the `wp_mcp_ai_harness_profile` filter — which is what
+	 * every other layer does, and the only way the sanitised `output_guard`
+	 * block can reach the guardrail at all.
+	 *
+	 * @since 1.1.51
+	 *
+	 * @param string $content      Response text.
+	 * @param int    $assistant_id Assistant post ID.
+	 * @param array  $context      Surface context.
+	 * @return string|WP_Error
+	 */
+	private static function validate_via_core( $content, $assistant_id, array $context ) {
+		$core    = '\Nvoos\Core\Domain\Service\Harness\OutputGuardrail';
+		$profile = class_exists( 'WP_MCP_AI_Harness_Profile' ) ? WP_MCP_AI_Harness_Profile::get( $assistant_id ) : array();
+
+		$evaluation = $core::evaluate(
+			$content,
+			isset( $profile['output_guard'] ) && is_array( $profile['output_guard'] ) ? $profile['output_guard'] : array()
+		);
+
+		if ( ! $evaluation['enabled'] || $evaluation['safe'] ) {
+			return $content;
+		}
+
+		self::log_finding( $assistant_id, $evaluation['findings'], $content, $context );
+
+		if ( $evaluation['blocked'] ) {
+			return new WP_Error(
+				'wp_mcp_ai_output_guard_blocked',
+				sprintf(
+					/* translators: %s: comma-separated finding types */
+					__( 'Response blocked by output guardrail: %s', 'mcp-ai-wpoos' ),
+					implode( ', ', $evaluation['findings'] )
+				)
+			);
+		}
+
+		return $evaluation['content'];
 	}
 
 	/**
@@ -315,13 +369,19 @@ class WP_MCP_AI_Output_Guardrail {
 	 * @param array  $context      Additional context.
 	 */
 	private static function log_finding( $assistant_id, $findings, $content, $context ) {
+		// Deliberately no content preview. The whole point of the sensitive-info
+		// check is that the response may contain a credential or PII, and writing
+		// 200 characters of it into an option is how that leak outlives the
+		// request. The hash identifies the response; the length gives scale; the
+		// surface is the only context worth keeping — the REST sink passes the
+		// request object, which would serialise the user's prompt too.
 		$log_entry = array(
-			'timestamp'    => current_time( 'mysql' ),
-			'assistant_id' => $assistant_id,
-			'findings'     => $findings,
-			'content_hash' => md5( $content ),
-			'content_preview' => substr( $content, 0, 200 ),
-			'context'      => $context,
+			'timestamp'      => current_time( 'mysql' ),
+			'assistant_id'   => $assistant_id,
+			'findings'       => $findings,
+			'content_hash'   => md5( $content ),
+			'content_length' => strlen( $content ),
+			'surface'        => isset( $context['surface'] ) ? (string) $context['surface'] : '',
 		);
 
 		// Log to the standard audit trail if available.

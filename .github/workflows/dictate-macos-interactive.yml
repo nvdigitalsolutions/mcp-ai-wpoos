@@ -13,7 +13,7 @@
 # rent a Mac (MacStadium / MacInCloud / AWS EC2 Mac) and run
 # scripts/macos-matrix-remote.sh there via SSH.
 
-name: NV oOS Dictation — macOS interactive session
+name: NV oOS Cognition — macOS interactive session
 
 on:
   workflow_dispatch:

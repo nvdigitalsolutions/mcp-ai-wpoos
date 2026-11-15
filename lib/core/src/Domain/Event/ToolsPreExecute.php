@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ToolsPreExecute — payload of the tools/pre_execute waterfall.
  *
@@ -8,17 +9,24 @@
  * @package Nvoos\Core
  * @since   1.3.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class ToolsPreExecute {
-
-	public function __construct(
-		public readonly string $slug,
-		public readonly array $arguments,
-		public readonly array $context,
-	) {}
+final class ToolsPreExecute
+{
+    /**
+     * @param ToolArgs $arguments
+     * @param ToolContext $context
+     */
+    public function __construct(
+        public readonly string $slug,
+        public readonly array $arguments,
+        public readonly array $context,
+    ) {
+    }
 }

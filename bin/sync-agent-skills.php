@@ -8,6 +8,14 @@
  * skills. Existing skills are overwritten so a plugin update that changes a
  * bundled SKILL.md is reflected after `composer run skills:sync`.
  *
+ * NON-DESTRUCTIVE GUARD (2026-11-01): the two trees have drifted in both
+ * directions over time — some content exists only in .agents/skills (e.g.
+ * per-session operational notes), some only in the bundled copies. Blindly
+ * overwriting a destination that differs from the bundled source destroys
+ * destination-only content. Files whose destination already differs from
+ * the source are therefore skipped with a warning; reconcile such drift
+ * manually instead of overwriting.
+ *
  * General-purpose skills not starting with "wp-" (e.g. pdf, pptx, code-reviewer)
  * are left alone — those overlap with the community skills.sh registry and
  * developers install them globally in ~/.agents/skills/.
@@ -72,6 +80,7 @@ $project_skills = array(
 
 $copied  = 0;
 $skipped = 0;
+$guard_skipped = 0;
 $failed  = 0;
 
 foreach ( glob( $bundled_dir . '/*', GLOB_ONLYDIR ) as $src_dir ) {
@@ -115,6 +124,17 @@ foreach ( glob( $bundled_dir . '/*', GLOB_ONLYDIR ) as $src_dir ) {
 				$skill_ok = false;
 				break;
 			}
+			continue;
+		}
+
+		// Non-destructive guard: the bundled tree and .agents/skills have
+		// diverged in both directions. Overwriting a destination that differs
+		// from the bundled source destroys destination-only content (committed
+		// or uncommitted). Skip with a warning so drift is reconciled manually.
+		if ( file_exists( $dst_file )
+			&& file_get_contents( $dst_file ) !== file_get_contents( $src_file->getPathname() ) ) {
+			fwrite( STDERR, "Skipped (destination differs from bundled source): {$dst_file}\n" );
+			++$guard_skipped;
 			continue;
 		}
 
@@ -178,9 +198,10 @@ foreach ( glob( $target_dir . '/wp-*', GLOB_ONLYDIR ) as $dst_dir ) {
 }
 
 echo sprintf(
-	"Skills sync complete: %d copied, %d skipped (non-wp), %d failed.\n",
+	"Skills sync complete: %d copied, %d skipped (non-wp), %d skipped (diverged, preserved), %d failed.\n",
 	$copied,
 	$skipped,
+	$guard_skipped,
 	$failed
 );
 

@@ -129,6 +129,20 @@ final class RebuildWebhook {
 	}
 
 	/**
+	 * Public seam (Proposal 105) — schedule the debounced rebuild for theme
+	 * policy changes.
+	 *
+	 * ThemePolicyController calls this after a successful PATCH. It reuses
+	 * the existing debounce/$pending machinery, so no new action wiring is
+	 * needed beyond the content-change hooks registered in init().
+	 *
+	 * @return void
+	 */
+	public static function schedule_for_theme_policy(): void {
+		self::schedule( 'global' );
+	}
+
+	/**
 	 * Debounce + defer the notification to shutdown.
 	 *
 	 * @param string $type Change kind (content|term|global).
@@ -184,6 +198,18 @@ final class RebuildWebhook {
 	 */
 	public static function reset_pending(): void {
 		self::$pending = false;
+	}
+
+	/**
+	 * Test seam — whether a notification is pending for this request.
+	 *
+	 * Lets controller tests assert through the debounce machinery without
+	 * firing the shutdown action or touching the network.
+	 *
+	 * @return bool
+	 */
+	public static function is_pending(): bool {
+		return self::$pending;
 	}
 
 	/**

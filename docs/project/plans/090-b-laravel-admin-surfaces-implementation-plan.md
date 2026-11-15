@@ -1,0 +1,843 @@
+# Proposal 090-B — Laravel Admin Surfaces: Implementation Plan
+
+**Status:** Phases 0–5 implemented and verified — the base console, the Phase 3 Pro surfaces, the manifest-driven toolkit engine (both runtimes), its contract fixture harness, the commercial licence source, the read-only profile, the schema/contract version gate and the 30-minute soak all run on the Laravel adapter (2026-11-13) · Phase 5 delivered in PRs #7664–#7668 · the T0 Playwright smoke is green (2026-11-14, `npm run test:e2e`)
+**Parent proposal:** [`090-b-laravel-admin-surfaces-proposal.md`](../proposals/090-b-laravel-admin-surfaces-proposal.md) (PR #7608)
+**Related:** 083 (Complete Console), 084 (Admin-Surface Console Migration), 085 + Laravel appendix
+(Funiq), 090 (Laravel adapter spike), 143 (Service Exchange)
+**Scope:** Task-level plan for serving the base and Pro admin surfaces from a Laravel backend
+without porting ~290 PHP screens.
+
+---
+
+## 1. Scope and success criteria
+
+The console is the admin UI for both runtimes. Laravel implements the REST contract, the console
+reuses the same `dist/`, and Pro toolkits are described by manifests rather than bespoke pages.
+
+| Phase | Success criterion |
+|---|---|
+| 0 — Contract freeze | The console boots against Laravel, asserts the contract, and exposes features/site/session/tools/ops |
+| 1 — T0 ops console | 5 T0 pages + chat render against Laravel with zero WordPress requests |
+| 2 — T1 assistant studio | Assistant create → export → import round-trip; Service Exchange bundle import works |
+| 3 — T2 core operations | Contract suite green for every core family; auth matrix green |
+| 4 — T3 Pro families | A pilot toolkit installs from a manifest with zero bespoke PHP pages |
+| 5 — GA hardening | Two consecutive releases with no contract drift; commercial entitlement wired |
+
+**Non-goals:** 1:1 parity with all admin files, a second UI, WordPress core/third-party screens,
+multisite network admin, WP-native integrations (Elementor, JetEngine, WooCommerce admin, WPCode,
+Rank Math).
+
+---
+
+## 2. Current status
+
+| Workstream | Status | Evidence |
+|---|---|---|
+| `ProEntitlementInterface` contract | **Done** | `lib/core/src/Domain/Contract/ProEntitlementInterface.php` |
+| Laravel entitlement adapter + config + binding | **Done** | `lib/laravel-adapter/src/Adapter/ProEntitlement.php`, `config/nvoos.php`, `NvoosServiceProvider` |
+| Backend profile + path rewrite | **Done** | `examples/nvoos-complete-velocity/src/backend-profile.ts` |
+| Runtime profile in `buildConsoleRuntime` | **Done** | `src/runtime-config.ts` |
+| Startup contract assertion | **Done** | `assertBackendContract()` + `src/main.tsx` |
+| Proxy backend switch | **Done** | `scripts/serve.mjs` (`NVOOS_BACKEND`) |
+| T0 endpoints | **Done** | `/api/v1/{features,site,session/*,tools,pro/ops/overview}` |
+| CSRF for stateful console requests | **Done** | Laravel `ValidateCsrfToken` + console sends `X-CSRF-TOKEN` (`src/fetch-wrapper.ts`) |
+| Phase 0 tests | **Done** | `Phase0ContractTest`, `AcceptWpNonceTest` |
+| Settings (schema/values/update) | **Done** | `SettingsController`, `SettingsSchema` |
+| Diagnostics overview | **Done** | `DiagnosticsController` |
+| Operations (cron/DLQ/retry/dismiss/timeline) | **Done** | `OperationsController`, `JobStatusStore` |
+| Laravel login/logout (C2) | **Done** | `SessionController`, console `login.ts` |
+| Assistant CRUD + default handling | **Done (Phase 2)** | `AssistantController`, `Assistant` model |
+| Bundle v1 export/import | **Done (Phase 2)** | `AssistantPortabilityController` |
+| Assistant domain contract | **Done (Phase 2)** | `LaravelAssistantService` |
+| Transcripts + memory + session logs | **Done (Phase 3a)** | `TranscriptStore`, `MemoryStore`, `SessionLogStore`, console endpoints |
+| Token usage + cost analytics | **Done (Phase 3a)** | `TokenUsage`, `AnalyticsController` |
+| Rate limiter | **Done (Phase 3a)** | `RateLimiter` adapter |
+| Golden fixtures captured from WordPress | **Partial** | The capture harness and a Laravel-captured set are committed (task 0.13, 🟡); re-capturing from a live Complete site needs an operator token |
+| Playwright T0 smoke (G1) | **Done (2026-11-14)** | `examples/nvoos-complete-velocity/e2e/` — 6 tests / 30.2 s against the built Laravel-profile bundle through the proxy (`npm run test:e2e`) |
+| Blueprints | **Done (Phase 2.4)** | `BlueprintController`, `BlueprintTest` (9 cases), mirror drift gate in the SQLite CI job |
+| Teams (agent teams + org teams) | **Done (Phase 2.5, 090-g)** | `TeamController`, `TeamCatalogueController`, `TeamTest` + `TeamCatalogueTest` |
+| Test-assistant dry run | **Done (Phase 2.7, 2026-11-14)** | `AssistantTestController` at `POST /api/v1/assistants/{id}/test` — resolves the plan and runs one non-streaming turn only when a message is supplied; persists nothing. `AssistantTestTest` (7 cases) |
+| Approvals queue (list/create/approve/deny) | **Done (Phase 3b)** | `ApprovalsController`, `nvoos_approvals` |
+| Workflow triggers (list/create/update/delete) | **Done (Phase 3b)** | `TriggersController`, `nvoos_triggers` — served at `/triggers` and the console's `/orchestration/triggers` |
+| Security posture / header preview / snapshots / self-test | **Done (Phase 3b)** | `SecurityController`, `nvoos_security_snapshots` |
+| Paper Store (collections, record CRUD, search) | **Done (Phase 3b)** | `PaperStoreController`, `nvoos_paper_records` |
+| Schedule Manager (CRUD, toggle, trigger, history, results, fleet stats) | **Done (Phase 3c)** | `Pro\SchedulesController`, `nvoos_schedules` + `nvoos_schedule_runs` |
+| Records schema + `wp/v2` content shim | **Done (Phase 3c)** | `Pro\RecordsController`, `Wp\ContentController` over `nvoos_posts` |
+| Pro entitlement middleware on Pro routes | **Done (Phase 3c)** | `EnsureProEntitlement` (402 typed error, fails closed) |
+| Media library (list, read, multipart upload) | **Done (Phase 3d)** | `MediaController` + `Laravel\Adapter\FileUploadService` over `nvoos_files` |
+| Manifest-driven Pro toolkits | **Done (Phase 4.1/4.3)** | `ToolkitManifest`, `ToolkitManifestLoader`, `Pro\ToolkitsController`, `nvoos_toolkit_records` |
+| Schedule presets, record remote/research, thumbnails | **Presets done (2026-11-14)**; records remote/research + thumbnails pending | §7–§8 remainder |
+| Generic toolkit console screens | **Done (Phase 4.2)** | `spa-v2/src/features/toolkits/**`, `api/toolkits.ts`, `styles/toolkits.css` |
+| Console session/CSRF regression fixes | **Done** | single session store on login (`routes/api.php`), `AcceptWpNonce` header alias, stateful test origin |
+| Endpoint availability map | **Done (2026-11-14)** | `GET /api/v1/features` → `data.endpoints`, derived from the router by `App\Support\EndpointCapabilities`; the console blanks a `false` key in `runtime-config.ts`, so the page renders its existing unavailable state instead of a 404. `EndpointCapabilitiesTest` pins both directions and the key set against `contracts/console-endpoints.json`, which the console's Vitest suite asserts too |
+| Orchestration overview | **Done (2026-11-14)** | `GET /api/v1/orchestration/stats` — `OrchestrationStatsController`. An agent **is** an assistant record here, so the inventory is real. `recent_workflows` lists the last five runs from `nvoos_workflow_runs` with per-run node counts (090-h H3); `patterns`, `last_used` and `workflow_pattern` stay honestly empty because neither has a column. `OrchestrationStatsTest` (8 cases) |
+| Token manager | **Done (2026-11-14)** | `GET /api/v1/token-manager/overview` plus revoke / delete / lift — `TokenManagerController` over `personal_access_tokens` (the tokens `AuthProvider::issueCredential()` mints). The token hash is never selected or returned; revocation **deletes** the row, which Sanctum resolves per request, so a revoked credential stops working immediately. Expired tokens are reported as `revoked`. Revocation is scoped to the assistant in the URL. `TokenManagerTest` (10 cases) |
+| Command centre overview | **Done (2026-11-14)** | `GET /api/v1/pro/command-center/overview` — `CommandCenterController`. Six sourced KPIs: agents from `assistants` (`publish` = online; there is no presence channel), `active_tasks` from the `jobs` queue depth, `pending_approvals` from `nvoos_approvals`, `tokens_today` from `nvoos_token_usage`, `uptime` from the #7748 health samples and `null` until one exists — the console renders an em dash rather than a misleading `0%`. `agent_statuses` is cast to an object because the client iterates `Object.values()`; `last_active` is `updated_at`, stated as such. `restriction_count` is a true zero: no restriction model exists. `CommandCenterTest` (12 cases) |
+| Slash commands | **Done (2026-11-14)** | `GET /api/v1/pro/slash-commands` and `POST /api/v1/pro/slash-commands/execute` — `Pro\SlashCommandsController`. WordPress's contract, exactly: catalogue `{commands, categories}`, execution `{success, command, result, correlation_id}`, and WordPress's flat `{code, message, data}` error shape so the chat composer can show the reason instead of "HTTP 400". A **native subset** of seven commands (`/help`, `/status`, `/model`, `/jobs`, `/tools`, `/cost`, `/workflow`) runs against stores this runtime owns; the base WP-development commands and the nine Pro state-mutating handlers are deliberately absent, so the drawer offers nothing that cannot run. Per-command capability (`edit_posts` or `manage_options`) is enforced at execution as well as filtered in the catalogue. The grammar lives in `Nvoos\Core\Domain\SlashCommand\SlashCommandParser` (22 unit tests); it is not wired into WordPress because the wp.org base build strips `lib/`. `nvoos_slash_command_audit` mirrors the WordPress audit table and records failures too. `SlashCommandsTest` (24 cases) |
+| Console nav honours endpoint availability | **Done (2026-11-14)** | A nav item may declare `endpoint` (a `ProSpaEndpoints` key); a blank URL — how `/features` reports an unserved surface — hides it, and `MediaOpsPage` states that the backend does not serve Media Ops instead of rendering an empty Retry panel. Fail-open when the endpoint map is absent, for the same reason the feature map does. Ten optional surfaces now carry the gate (`toolkits`, `professions`, `orgTeams`, `chatChannels`, `remoteSites`, `mediaCc`, `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor`). The measurement that prompted it: `mediaCc` is a local-library view, not a worker probe — see 090-i §9.6 |
+| Media command centre | **Done (2026-11-14)** | `GET /api/v1/pro/media-cc/health` + `POST /api/v1/pro/media-cc/compression-sweep`, config-gated on `oos.media_worker.url`. Reuses `addons/media-worker` rather than building a PHP image pipeline: local counts/storage/alt/next-gen from `nvoos_files`, worker health from `GET /api/health`, media job queue from `nvoos_jobs`, and `compression` from derivative savings. `PATCH /media/{id}` stores alt text; `App\Jobs\OptimizeMediaFile` posts each image to `/api/image/optimize`, writes `derived/{id}.webp` and a `nvoos_media_derivatives` row. `capabilities.sweep` is true, so the console action appears with no client change. The schedule summary is real too: `NVOOS_MEDIA_SWEEP_SCHEDULE` registers `nvoos:sweep-media`, which writes the `media.sweep` rows that `active`/`ran_today`/`overdue`/`next_run` read. `MediaCcTest` (20 cases) + 4 alt-text cases in `Phase3dTest`. Plan: [`090-j`](090-j-media-processing-plan.md) |
+| Remote-site store | **Done (2026-11-14, step a)** | `nvoos_remote_sites` + `App\Support\RemoteSites\RemoteSiteStore`. Generic row (`config` + sealed `credentials`) rather than WordPress's ~50-field array. No read returns a credential — `has_credentials` plus a uniform mask — and `config` rejects known secret names so a secret cannot ride back on a list. A blank credential on update keeps the stored value. `RemoteSiteStoreTest` (15 cases). The key stays `false` until verification (step c) lands |
+| Remote sites surface | **Done (2026-11-14, steps b–c)** | `GET/POST/DELETE /api/v1/pro/remote-sites` plus `/types` and `/{id}/test` — `Pro\RemoteSitesController`. Catalogue is the two types the runtime can verify: `wordpress` (application password → `wp-json/wp/v2/users/me`) and `mcp_server` (`McpAppClient` handshake + `tools/list`). The wizard's flat payload is split into `config` + sealed `credentials` on the way in and flattened back on the way out, because `openEdit()` reads `connection[field.key]`. A 401 reads as *reached, rejected*, an unimplemented type says so, and vendor types are deliberately absent. `remoteSites` flips to `route`. `RemoteSitesApiTest` (14 cases) |
+| Credential issuance was unreachable | **Fixed (2026-11-14)** | `AuthProvider::issueCredential()` gates on a `manage_oos` ability that was **never defined** anywhere — so no credential could be issued on this runtime at all. Added to the administrator capability set in `CapabilityMap`, matching the WordPress token manager's admin-only gate. Found by writing the token-manager fixture through the real issuance path rather than inserting rows |
+
+**Validation record (2026-11-15, harness profile storage):**
+
+- `HarnessProfile` (defaults + sanitiser) moved to `lib/core` and **proven equivalent** to `WP_MCP_AI_Harness_Profile`: a throwaway harness loaded the real WordPress class with minimal stubs and compared `defaults()` and `sanitize()` over a nine-case corpus (empty/malformed/null/scalar input, full matrix with out-of-range values, JSON string, wrong types, partial blocks) — identical on every case, 15 top-level keys. The harness was deleted after use; the permanent `HarnessProfileTest` (26 cases) pins those derived expectations
+- `HarnessProfileProviderInterface` bound in `NvoosServiceProvider`; `CoreToolCatalogue::build()` takes an optional provider so `scope_memory` gets resolved values while remaining constructible with only the error factory
+- Full app suite (PM fixtures env): **674 passed / 4,023 assertions** (was 668 / 4,009) — `HarnessProfileProviderTest` (6 cases) covers the fallback chain, per-assistant override, assistant 0 ignoring per-assistant keys, malformed JSON degrading to defaults, and the tool reading the stored profile
+- `lib/core`: **1,432 tests / 5,213 assertions** (was 1,406 / 5,170)
+- Adapter suite (host PHP — the container's `vendor/nvoos/core` is a Windows-absolute symlink that does not resolve on Linux): **180 tests / 676 assertions**, 2 failures in the project-management tools (`unknown status` expects a `RuntimeException`, receives an array) that predate this change and touch no file in this diff
+- `phpcs --standard=phpcs-laravel.xml.dist` over the CI-covered trees: clean; `phpcs --standard=phpcs.xml.dist` on `class-wp-mcp-ai-harness-profile.php`: clean
+
+**Validation record (2026-11-15, AI-safety controls shared with Laravel):**
+
+- `lib/core`: **1,406 tests / 5,170 assertions** green — `PiiFilterTest` (8 cases) pins the email/phone/SSN/card/key families, that ordinary prose is untouched, that the pattern table is replaceable, and that an invalid pattern is skipped without a warning; `PromptInjectionDetectorTest` (14 cases) pins the precedence (jailbreak beats injection beats off-topic), the strictness gate, context stuffing, and that ordinary prose stays `safe`; `InputGuardTest` (10 cases) pins `warn` blocking attacks but not diversions, `log` never blocking, `block` blocking anything non-safe, and that disabling a control disables it completely
+- The detector and the filter now live in `lib/core` (`Domain\Service\Harness`), and WordPress delegates to them behind a `class_exists` guard — `lib/` is stripped from wp.org base builds, so the local implementations remain the fallback. WPCS on both harness files: clean
+- The orchestrator takes the guard as an optional collaborator (`setInputGuard`), matching the existing compressor/rate-limiter pattern. It blocks the newest user turn before a provider call and redacts user messages before the session log writes them. WordPress never sets it — its harness layer still owns enforcement, so behaviour there is unchanged
+- Wiring proven end-to-end, not just at unit level: `InputGuardWiringTest` resolves the real `ChatOrchestrator` from the container with `oos.security.prompt_injection_detector` on and asserts a jailbreak returns a 422 error with zero iterations and zero tool results in 0.4 s (no provider call)
+- Catalogue: `prompt_injection_detector` (weight 7) and `pii_filter` (weight 5) moved from WordPress-only to shared, so Laravel went from 18 applicable + 9 N/A to **20 + 7**; both flags default to off, mirroring the WordPress settings, so the cards report honestly rather than scoring a control nothing implements
+- Full app suite (with the PM fixtures env): **668 passed / 4,009 assertions** (was 663 / 4,005) — `SecurityPostureTest` grew three cases: the pair is *evaluated* (not merely declared applicable), the flags are off by default, and enabling them turns both green
+- `phpcs --standard=phpcs-laravel.xml.dist` over the CI-covered trees (`lib/laravel-adapter/src`, `docker/laravel/app-skeleton/app|tests`): 209 files clean; `phpcs --standard=phpcs.xml.dist` on the two WordPress harness files: clean
+
+**Validation record (2026-11-15, shared security-signal catalogue):**
+
+- `lib/core`: **1,369 tests / 5,066 assertions** green — the catalogue test asserts 27 definitions (23 WordPress-evaluable, 18 Laravel-evaluable), unique ids, and that every definition carries a subtab and a weight; the scorer test pins the 13 Observatory bands and the applicable-only denominator
+- Full app suite (with the PM fixtures env): **663 passed / 4,005 assertions** (was 643 / 3,720) — `SecurityPostureTest` (20 cases) asserts the 27-card report, the 9 `not_applicable` controls, that they never reach the score or the quick wins, that `applicable_weight` is the sum of the applicable weights, that the score is `passed_weight / applicable_weight`, and the Observatory band table; `Phase3bTest`'s posture test was rewritten to the same contract
+- Emitter/catalogue id parity checked mechanically on both runtimes: WordPress's `evaluate_signals()` emits exactly the 23 WordPress-evaluable ids and the Laravel controller exactly the 18 Laravel-evaluable ids — no "Not evaluated by this runtime" false failures on either side
+- WordPress fallback path verified without a WordPress install (a stub harness): with `lib/core` loaded the report is 27 signals / 4 `not_applicable` / `applicable_weight` 116; with `lib/` stripped (the wp.org base build) the local scorer returns 23 signals / 0 `not_applicable` / the same 116 weight, so the shared catalogue degrades to the base-build maths instead of breaking
+- Console Vitest: `posture-utils` **18 tests** pass (was 9) — tri-state `parseSignal` (missing `applicable`, derived `not_applicable`, `passed` forced false when inapplicable) and the `A-`/`C+` tone bands; `npm run typecheck` clean
+- `phpcs --standard=phpcs-laravel.xml.dist` on the 8 changed files: clean
+
+**Validation record (2026-11-14, schedule presets + the tick):**
+
+- `--filter="SchedulePresetsTest|ScheduleRunnerTest"`: **18 tests pass** — the catalogue serves 12 presets with WordPress's filters/facets envelope, install is idempotent on the raw overrides, overrides change the schedule and its identity, an unsupported interval is a typed 422, an unknown preset is a 404, an editor is a 403; the runner times untimed rows without firing them, runs a due row once and advances the clock, records an unregistered handler as a failure, skips disabled rows, and `--dry-run` writes nothing
+- Full app suite (with the PM fixtures env): **643 passed / 3,720 assertions** (was 626 / 3,637)
+- `phpcs --standard=phpcs-laravel.xml.dist` on 11 changed files: clean; `php bin/sync-schedule-presets.php --check`: up to date
+
+**Validation record (2026-11-14, task 2.7 — assistant test / dry run):**
+
+- `docker exec -w /app oos-laravel-app php artisan test --filter=AssistantTestTest`: **7 tests pass** — empty body returns the resolved plan without touching a provider; every degraded state is named (`no_provider`, `provider_unavailable`, `no_model`, `no_system_prompt`, `no_tools`, `tool_not_registered:<slug>`); a message runs one turn and writes **zero** transcript rows; a message with no provider is a typed `503 ai_unavailable`; another tenant's assistant is a 404; an editor is a 403; an invalid message role is a 422
+- Full app suite (with the PM fixtures env): **626 passed / 3,637 assertions** (was 619 / 3,599)
+- `phpcs --standard=phpcs-laravel.xml.dist` on the controller, test and route file: clean
+
+**Validation record (2026-11-14, Playwright T0 smoke / gate G1):**
+
+- `cd examples/nvoos-complete-velocity && npm run test:e2e`: **6 tests pass in 30.2 s** — auth setup (branded login → Sanctum session), the `/api/v1/features` contract (`backend: laravel`, `contract: mcp-ai/v1`, empty `endpoint_gaps`, five T0 keys `true`), all five T0 pages rendering, the chat composer, **zero WordPress requests** across a full sweep, and the capability-gated nav
+- Build path: `vite build --mode laravel --outDir .e2e-dist` (`.env.laravel` sets `VITE_NVOOS_BACKEND=laravel`) served by `scripts/serve.mjs` with `NVOOS_BACKEND=laravel`; the committed `dist/` is untouched
+- Console Vitest still **14 files / 159 tests**; `npm run typecheck` clean; `node --check scripts/serve.mjs` clean
+- Enabling change: `SANCTUM_STATEFUL_DOMAINS` now lists the smoke origin (`localhost:4318`) in `docker/docker-compose.laravel.yml`; without it the login answers `419 session_required`
+
+**Validation record (2026-11-12):**
+
+- Adapter PHPUnit: **34 tests, 101 assertions**
+- Console Vitest: **14 files, 159 tests**
+- Console typecheck: clean
+- Laravel app PHPUnit: **619 tests, 3,599 assertions**
+- Console smoke (Laravel runtime, 2026-11-12): login → `/pro/toolkits` catalogue → Commerce settings / workbench create / dashboard aggregates all render against the seeded app at `:8001`
+- Core PHPUnit: **937 tests, 2,017 assertions** — 14 new `ToolkitManifestTest` tests pass; the 5 errors in `ToolRegistryIntegrationTest` are pre-existing (its discovery loop instantiates the abstract `AbstractResultTool`) and unrelated to this work
+- Phase 3b soak (30 min, 2026-11-12): **1,644 iterations / 19,731 requests / 0 violations** — p50 81.9 ms · p95 212.4 ms · p99 338.8 ms · max 982.2 ms at 10.96 req/s; app RSS flat (203 → 194 MiB), DB flat
+- `node --check scripts/serve.mjs`: clean
+
+---
+
+## 3. Workstream map
+
+| ID | Workstream | Owner area | Phases |
+|---|---|---|---|
+| WS-1 | Contract surfaces (`mcp-ai/v1`, `mcp-ai-pro/v1`) | `lib/core`, Laravel app | 0–4 |
+| WS-2 | Console runtime + proxy + nav | `examples/nvoos-complete-velocity` | 0, 5 |
+| WS-3 | Platform adapters (assistant, transcript, memory, tokens, media) | `lib/laravel-adapter` | 2–3 |
+| WS-4 | T0 ops surfaces | Laravel app | 1 |
+| WS-5 | Assistant studio + portability | Laravel app + core | 2 |
+| WS-6 | Core operations | Laravel app + adapters | 3 |
+| WS-7 | Pro manifest engine + toolkit families | Laravel app + console | 4 |
+| WS-8 | Entitlement, CSRF migration, observability, GA | Laravel app + console | 5 |
+
+---
+
+## 4. Phase 0 — Contract freeze (complete)
+
+| ID | Task | Files | Status |
+|---|---|---|---|
+| 0.1 | Define `ProEntitlementInterface` (`allows`, `plan`, `source`, `features`) | `lib/core/src/Domain/Contract/ProEntitlementInterface.php` | ✅ |
+| 0.2 | Implement `allow` / `deny` / `config` drivers; unknown fails closed | `lib/laravel-adapter/src/Adapter/ProEntitlement.php` | ✅ |
+| 0.3 | Add `oos.pro_entitlement` + `oos.features` config; bind as a singleton | `config/nvoos.php`, `NvoosServiceProvider.php` | ✅ |
+| 0.4 | Add `backend-profile.ts`: backend resolution + path matrix | `src/backend-profile.ts` | ✅ |
+| 0.5 | Add `backend` to `buildConsoleRuntime`; rewrite `apiUrl`/`proApi`; empty WP-only addon bases | `src/runtime-config.ts` | ✅ |
+| 0.6 | Add `assertBackendContract()` and call it during boot | `src/runtime-config.ts`, `src/main.tsx` | ✅ |
+| 0.7 | Add `NVOOS_BACKEND` proxy profiles (`wordpress`/`laravel`/`hybrid`) | `scripts/serve.mjs` | ✅ |
+| 0.8 | Add T0 endpoints: features, site, session nonce/me, tools, ops overview | `docker/laravel/app-skeleton/app/Http/Controllers/`, `routes/api.php` | ✅ |
+| 0.9 | Add the `X-WP-Nonce` → `X-CSRF-TOKEN` middleware (matching token only) | `app/Http/Middleware/AcceptWpNonce.php`, `bootstrap/app.php` | ✅ |
+| 0.10 | Enable Sanctum SPA cookie mode (`statefulApi()`) | `bootstrap/app.php` | ✅ |
+| 0.11 | Add `JobStatusStore::counts()` for ops diagnostics | `lib/laravel-adapter/src/Adapter/JobStatusStore.php` | ✅ |
+| 0.12 | Feature/unit tests for all of the above | `tests/Feature/Phase0ContractTest.php`, `tests/Unit/AcceptWpNonceTest.php`, adapter test | ✅ |
+| 0.13 | Capture golden fixtures from a live WordPress Complete site | `docker/laravel/app-skeleton/fixtures/` | 🟡 harness shipped (Laravel-captured); WP capture blocked on 4.6 |
+| 0.14 | Document the env contract and rollback | this document | ✅ |
+
+**Exit gate:** met — console boots against a stub/Laravel backend, fails loudly on a contract
+mismatch, and all suites are green.
+
+---
+
+## 5. Phase 1 — T0 ops console (2 weeks)
+
+| ID | Task | Files | Status |
+|---|---|---|---|
+| 1.1 | Settings: schema, masked values, validated update | `SettingsController`, `SettingsSchema` | ✅ |
+| 1.2 | Diagnostics overview (bindings, versions, providers, queue) | `DiagnosticsController` | ✅ |
+| 1.3 | Operations: cron/DLQ/retry/dismiss/timeline | `OperationsController`, `JobStatusStore` | ✅ |
+| 1.4 | Chat dock against Laravel | existing `ChatStreamController` | ✅ (090 SSE) |
+| 1.5 | Capability-filtered nav | `ConsoleSidebar.tsx`, session payload | ✅ |
+| 1.6 | Laravel login/logout for C2 | `SessionController`, console `login.ts` | ✅ |
+| 1.7 | Playwright smoke: login → 5 pages → chat | `e2e/` | ✅ `examples/nvoos-complete-velocity/e2e/` — login (setup project) → 5 T0 pages + chat, zero WordPress requests, `endpoint_gaps` empty. `npm run test:e2e` (builds `.e2e-dist/`, serves it via `scripts/serve.mjs`) |
+| 1.8 | Feature map → nav keys | `config/nvoos.php`, `features` endpoint | ✅ |
+
+**Gate G1:** 5 T0 pages + chat render against Laravel; the network log shows zero WordPress
+requests.
+
+---
+
+## 6. Phase 2 — T1 assistant studio (4–6 weeks)
+
+| ID | Task | Files | Status |
+|---|---|---|---|
+| 2.1 | Durable assistant model + core contract service | `Assistant`, migration, `LaravelAssistantService` | ✅ |
+| 2.2 | CRUD endpoints + default handling | `AssistantController` | ✅ |
+| 2.3 | Bundle v1 export/import (core fields + full meta) | `AssistantPortabilityController` | ✅ Laravel-native. **Edit-form meta parity shipped** for 16 design-time keys via the additive `advanced` object on both runtimes (skills + progressive disclosure included), plus a base skills catalogue route and a Pro MCP-apps write route for the console — see [`090-b-assistant-edit-field-parity.md`](090-b-assistant-edit-field-parity.md) §4.1–4.2. Credentials, harness profiles, primary-role ID mapping and mesh routing remain explicit deferrals (§6 of that doc); the Laravel runtime hides the skills and MCP-apps pickers until it exposes those endpoints |
+| 2.4 | Blueprints endpoints (catalogue, detail, install) | `BlueprintController` | ✅ `BlueprintTest`, 9 cases; mirror drift gate in the `App suite (SQLite)` job |
+| 2.5 | Teams (basic CRUD + membership) — schema and contract in `090-g` §4.2 | `TeamController` | ✅ |
+| 2.6 | Per-assistant tool assignment | `tools` field on the model | ✅ |
+| 2.7 | Test-assistant dry run | `AssistantTestController` | ✅ `POST /assistants/{id}/test` — empty body returns the resolved plan (provider/prompt/tools/warnings); a message runs one turn; `dry_run` never writes a transcript. `AssistantTestTest` |
+| 2.8 | Contract fixtures + round-trip tests | `AssistantStudioTest` | ✅ (shape/round-trip; WP fixtures ⏳) |
+
+**Gate G2:** assistant create → export → import round-trip; a Service Exchange bundle imports and
+the estate reaches `bundle_imported`.
+
+### 6.1 Task 2.4 — Blueprints on Laravel
+
+The console already ships `BlueprintsPage` and `api/blueprints.ts`; the Laravel
+backend is the only missing half. WordPress serves the same three endpoints from
+`WP_MCP_AI_Pro_Blueprints_REST_Controller`, which delegates to the promoted
+`WP_MCP_AI_Unified_Blueprints_Page` seams:
+
+| Endpoint | Payload |
+|---|---|
+| `GET /blueprints` | `{ total, toolkits: [{ slug, label, blueprints: [{ slug, name, description, tool_count, installed, assistant_id }] }] }` |
+| `GET /blueprints/{toolkit}/{slug}` | `{ toolkit, slug, name, description, instructions, tools[], defaults }` |
+| `POST /blueprints/{toolkit}/{slug}/install` | body `{ overwrite }` → `{ toolkit, slug, assistant_id }` |
+
+**Where the data lives.** A blueprint is a JSON file at
+`addons/pro/includes/tools/<toolkit>/examples/<slug>.json` (69 files today),
+read through `WP_MCP_AI_Blueprint_Installer::list_blueprints()` and
+`load_blueprint()`. A Laravel deployment does not ship `addons/`, and `lib/` is
+excluded from wp.org builds, so neither tree can be the shared home.
+
+Decision: **mirror the JSON into the Laravel app** at
+`docker/laravel/app-skeleton/blueprints/<toolkit>/<slug>.json`, committed, with
+a sync script and a CI drift check that fails when the two trees differ.
+Duplication is explicit and tested rather than implicit.
+
+**Shipped.** `BlueprintController` serves the full surface from
+`App\Services\BlueprintCatalogue` and `App\Services\BlueprintInstaller`, reading
+the committed mirror — 69 blueprints across 27 toolkits, synced by
+`bin/sync-blueprints.php`, whose `--check` runs in the `App suite (SQLite)` job.
+`BlueprintTest` covers 9 cases: catalogue shape, detail normalisation, install,
+the 409 duplicate, overwrite-in-place (same id, no second row) and both 404s.
+
+Three deliberate differences, each stated in the service docblocks: Laravel
+lists **every** mirrored toolkit because it has no `wp_mcp_ai_settings`
+equivalent; the routes sit under `can:manage_options` with the rest of the
+console where WordPress gates on `edit_posts`; and a blueprint's profession
+lands in `meta.primary_role_slugs` (slug identity) rather than
+`_wp_mcp_ai_primary_roles` (post ID), while the model stays at the runtime
+default when the blueprint does not name one — WordPress invents a per-provider
+default out of settings this runtime does not have.
+
+**Sequencing.** Reads first, the same rule the 090-E families follow:
+
+1. `GET /blueprints` and `GET /blueprints/{toolkit}/{slug}` — catalogue loader,
+   toolkit enablement, detail normalisation, `BlueprintTest`.
+2. `POST …/install` — only worth doing once the non-mechanical parts of
+   `WP_MCP_AI_Blueprint_Installer::install()` have a home: profession slug →
+   catalogue lookup (`find_profession_post_id()` becomes an adapter call), CRM
+   meta remapping (`remap_crm_meta_to_canonical()`), `_blueprint_source`
+   bookkeeping, and `overwrite` semantics.
+
+**Installed map.** WordPress keys installed blueprints by assistant *title*
+among assistants carrying `_blueprint_source`. Laravel should record the same
+provenance and derive the map the same way, so both runtimes answer `installed`
+and `assistant_id` identically.
+
+**Tests.** `BlueprintTest` for shape, 404s and the enablement gate, plus a
+contract fixture captured from the WordPress REST responses and replayed on
+Laravel, the way the project-management corpus does it.
+
+### 6.2 Why the performance monitor is parked
+
+Task 3.8 reads "Analytics + performance monitor", and only analytics has a
+surface. Checked before porting:
+
+- `PerformanceMonitorInterface` has exactly one implementation,
+  `lib/wordpress-adapter/src/Adapter/PerformanceMonitor.php`. It delegates to
+  `WP_MCP_AI_Performance_Monitor_Service` and `…_Reporting_Service` inside
+  `class_exists` + `method_exists` guards and returns zeroed aggregates when
+  they are absent, so even on WordPress it is best-effort.
+- Nothing consumes the contract. There is no `PerformanceMonitorInterface`
+  reference in `lib/core/src`, `lib/laravel-adapter/src`, `includes/` or the
+  app providers, no REST route, and no console page or client.
+
+A Laravel adapter written now would have nothing to read (this runtime has no
+metrics store) and nothing to call it — an unused no-op that would look like
+parity work. The unlock is a consumer: either a `performance_metrics` table plus
+a console panel, or folding the metrics into the Analytics page that already
+ships. Until one exists, 3.8 stays parked rather than half-ported.
+
+---
+
+## 7. Phase 3 — T2 core operations (6–8 weeks)
+
+| ID | Task | Contract | Status |
+|---|---|---|---|
+| 3.1 | Transcript store + endpoints | `TranscriptStoreInterface` | ✅ |
+| 3.2 | Memory store (preferences, recall, store, update, delete, audit) | `MemoryStoreInterface` | ✅ |
+| 3.3 | Session log store | `SessionLogStoreInterface` | ✅ (adapter; no console surface yet) |
+| 3.4 | Token usage + cost aggregation | `TokenUsageInterface` | ✅ |
+| 3.5 | Rate limiter adapter | `RateLimiterInterface` | ✅ |
+| 3.6 | Approvals + orchestration control | `OrchestrationControlInterface` | ✅ list/create/approve/deny, 409 on double-resolve |
+| 3.7 | Schedules + triggers | queue + cron status | ✅ trigger CRUD + toggle; ✅ schedule CRUD/toggle/trigger/history/results/fleet-stats |
+| 3.8 | Analytics + performance monitor | `PerformanceMonitorInterface` | ✅ analytics. Performance monitor **parked — no consumer**: the contract has one implementation (best-effort over optional WordPress services) and nothing resolves it — no REST route, no console page, no injection point on either runtime. See §6.2 |
+| 3.9 | Security center + audit log | audit store | ✅ posture/headers/snapshots/self-test (shared 27-signal catalogue — see §14) |
+| 3.10 | Records + paper store | `ContentStoreInterface` + storage | ✅ Paper Store; ✅ content records via the `wp/v2` shim (posts/pages, list/get/create) |
+| 3.11 | File upload/validation | `FileUploadServiceInterface` | ✅ MIME-sniffed, size-capped, media disk + `wp/v2/media`-shaped surface |
+
+**Phase 3b notes**
+
+- **Console limiter split.** Every console CRUD route originally shared
+  `throttle:tools` (60/min). One console page fans out into several reads, so the
+  budget starved the SPA and blocked sustained load tests. Console routes now use a
+  `console` limiter (600/min per user, `NVOOS_CONSOLE_RATE_LIMIT`); actual tool
+  execution keeps `throttle:tools`.
+- **Snapshots never persist secrets.** `SettingsSchema::sensitiveKeys()` replaces
+  provider credentials with the masked placeholder before the payload is stored, and
+  `restore` skips that placeholder — a restore can never write `**************` over
+  a live key.
+- **Posture is a native subset.** The Laravel report ships 8 signals across the same
+  four subtabs. The SPA parser is defensive, so it renders fewer cards rather than
+  breaking; parity is tracked in §14.
+- **Paper Store ids** are slugged and uniquified per collection (`same-title`,
+  `same-title-2`), matching the WordPress store's read shape.
+
+**Phase 3c notes**
+
+- **The console's trigger path is `/orchestration/triggers`.** `runtime-config.ts` maps
+  `triggers` to `${core}/orchestration/triggers`, not `${core}/triggers`. Both paths are
+  now registered from one loop so they cannot drift again.
+- **`wp/v2` is a shim, not an emulation.** The Records pages call `wp/v2/{restBase}`
+  directly and paginate from `X-WP-Total` / `X-WP-TotalPages`. `Wp\ContentController`
+  serves list/get/create for `posts` and `pages` from `nvoos_posts`; every other base
+  answers a WP-style `rest_no_route` 404. Remote browsing and create-from-research
+  answer 501 with a typed message rather than a bare 404.
+- **Schedule runs are a real ledger.** `trigger` executes the schedule's handler through
+  `ToolRegistry` synchronously and writes a `nvoos_schedule_runs` row, so history,
+  results and fleet stats read from recorded runs instead of being synthesised.
+- **Pro routes fail closed.** `EnsureProEntitlement` guards every `/api/v1/pro/*` route;
+  the `deny` driver returns 402 `pro_entitlement_required`.
+- **Octane keeps routes in memory.** After adding routes or classes on the FrankenPHP
+  runtime, run `php artisan octane:reload` — `route:clear` alone leaves the live workers
+  on the old route collection (see §13).
+
+**Gate G3:** the contract suite is green for every enabled family; the auth matrix (admin/editor/
+author/viewer/guest/bearer) passes on every mutating route.
+
+**Phase 3d notes**
+
+- **Uploads are MIME-sniffed, not extension-trusted.** `Laravel\Adapter\FileUploadService`
+  keeps the core's allowlist (no SVG), caps at `NVOOS_UPLOAD_MAX_BYTES` (10 MiB default),
+  and derives the stored extension from the sniffed type, so a renamed `.php` cannot land
+  as executable content.
+- **Media has its own disk.** `NVOOS_MEDIA_DISK` defaults to `public`; the general storage
+  disk is often private. `Storage::url()` is normalised to an app-relative path so the
+  console loads media from its own origin. The entrypoint runs `storage:link`.
+- **Same `wp/v2` shape as content records.** `GET /api/v1/media` returns a JSON array with
+  `X-WP-Total` / `X-WP-TotalPages`; `media_details.sizes` is empty, so the client falls back
+  to `source_url` for every size (no thumbnail pipeline yet).
+- **Config namespace is `oos`, not `nvoos`.** The provider merges the adapter config under
+  `oos`; two Phase 3b/3c reads that used `nvoos.*` were corrected here (storage disk in the
+  security self-test, console rate limit).
+
+---
+
+## 8. Phase 4 — T3 Pro families (engine 4–6 weeks + 2–4 per family)
+
+| ID | Task | Files | Acceptance | Status |
+|---|---|---|---|---|
+| 4.1 | `ToolkitManifest` schema + validator + loader | `lib/core` + `App\Support\Pro` | Invalid manifests fail closed | ✅ |
+| 4.2 | Five generic console screens (settings, entity workbench, research & add, consolidate, dashboard) | `addons/pro/assets/spa-v2/src/features/toolkits` | Screens render from a manifest | ✅ settings / entities / dashboard live; research + consolidate shipped as scaffolds |
+| 4.3 | Generic resource controller + settings schema endpoint | `ToolkitController` | `/api/v1/pro/toolkits/{slug}` | ✅ list/show/settings/dashboard/entity CRUD |
+| 4.4 | Enforce `ProEntitlement` on every Pro route | middleware | `deny` driver returns the typed error | ✅ route middleware + per-manifest feature checks |
+| 4.5 | Pilot families: commerce, media, documents | manifests + services | G4 | 🟡 commerce + documents manifests shipped; **research drafting wired**; media is the built-in library |
+| 4.6 | Migrate one family at a time; keep WP as a peer for T5 | manifests | No bespoke PHP pages | ✅ read surface at parity (6/6 fixtures, 0 drift); `research` ported and verified live |
+| 4.7 | Contract fixtures per family | fixtures | Parity suite | ✅ capture command + 6 fixtures + shape replay + CI job |
+
+**Phase 4 notes**
+
+- **A toolkit is data.** `ToolkitManifest` validates slug/version/screens/settings/entities/
+  dashboard and rejects unknown keys, dangling `entity:` references and unknown types, so a
+  bad manifest is skipped and reported through `GET /api/v1/pro/toolkits` → `invalid`.
+- **One controller, one table.** `nvoos_toolkit_records` stores `{toolkit, entity, external_id,
+  data}`; filters and aggregates run through `json_extract`, which behaves the same on MySQL
+  and SQLite. Entity payloads are validated against the manifest's columns (types, enums,
+  required, unknown-field rejection), and the `id_field` is immutable after create.
+- **Entitlement is per manifest, not per route.** The list filters unentitled families; direct
+  access answers the typed 402 carrying the manifest's `feature`.
+- **Remaining before G4:** the service layer behind the toolkits (4.5–4.7). The five console
+  screens exist; `research` and `consolidate` are deliberate scaffolds (see §14).
+
+**Phase 4.2 notes**
+
+- **One shell, manifest-driven tabs.** `ToolkitPage` renders only the screens the manifest
+  declares, in a fixed order, from a single `SCREEN_META` map — adding a screen to a manifest
+  adds a tab with no host changes.
+- **The client is typed.** `ToolkitsClient` raises `ToolkitsApiError` carrying `code` and `fields`,
+  so the forms surface per-field validation messages from the backend rather than a generic
+  banner. `available` is false when the runtime has no toolkit endpoint (the WordPress runtime
+  today), and the nav entry is capability-gated so it simply does not appear there.
+- **Screens own their data.** The shell owns the manifest and the active tab only; each screen
+  loads its own slice, which keeps the entity table's paging/search independent of the
+  dashboard aggregates.
+
+**Gate G4:** a pilot toolkit installs from a manifest with zero bespoke PHP pages; paid surfaces
+return the typed entitlement error under the `deny` driver.
+
+---
+
+## 9. Phase 5 — GA hardening (3–4 weeks)
+
+| ID | Task | Acceptance |
+|---|---|---|
+| 5.1 | Wire the commercial entitlement source behind `ProEntitlement` (licence server instance ID or gateway/commerce) | ✅ `license` driver + `LicensedProEntitlement`; plan table shared with WordPress via `ProPlanCatalog` |
+| 5.2 | Retire the `X-WP-Nonce` alias; the console sends Laravel's own CSRF header | ✅ Compatibility middleware deleted; console mirrors the token into `X-CSRF-TOKEN` |
+| 5.3 | SSO/cookie-domain decision (same-origin proxy vs shared domain) | ✅ Folded into 5.2 — same-origin, no cookie domain needed |
+| 5.4 | Rate limits, audit parity, observability, read-only profile | ✅ `ReadOnlyToolGuard` + security checklist below |
+| 5.5 | Upgrade/migration path (schema versions, contract versioning) | ✅ `nvoos:doctor` gate + runbook below |
+| 5.6 | 30-minute soak + performance gates | ✅ 22,486 requests, 0 errors; p95 0.587 s |
+
+**Gate G5:** two consecutive releases with no contract drift; the nonce alias is gone.
+
+### 5.1 implementation note — licence server, not a gateway
+
+The blocker was that Pro entitlement looked WordPress-bound. It is not: the plugin's licence is a
+plain HTTP contract, so the Laravel runtime reuses it and swaps the identity field.
+
+| | WordPress | Laravel |
+|---|---|---|
+| Endpoint | `POST {server}/check` | same |
+| Body | `license_key`, `site_url`, `product` | `license_key`, **`site_url` = `instance_id`**, `product` |
+| Verdict | `status === 'valid'` | same, plus an `expires` sanity check |
+| Plans | `compliance` / `professional` / `enterprise` | same table, via `ProPlanCatalog` |
+
+- **One policy table.** `Nvoos\Core\Domain\Service\Entitlement\ProPlanCatalog` now owns the
+  plan → feature map. `WP_MCP_AI_Pro_License::has_feature()` and
+  `LicensedProEntitlement` both read it, so the tiers cannot drift again.
+- **Stale-while-error, never stale-while-deny.** A definitive answer (valid *or* rejected) replaces
+  history. Only a transport failure may re-serve the last known answer, and only from a store entry
+  that outlives its own freshness window — expired cache keys are purged, so freshness is stored in
+  the payload (`fresh_until`) rather than delegated to the store TTL.
+- **Fail closed by default.** No key, no server, an unknown plan, a non-2xx, an unparseable body or
+  a past `expires` all deny. Operator `features` overrides win in both directions but cannot
+  resurrect a denied licence.
+- **Diagnostics.** `LicensedProEntitlement::status()` exposes `plan`, `entitled`, `stale`,
+  `checked_at` and the last error so the ops overview can explain an unavailable surface.
+
+Config: `NVOOS_PRO_ENTITLEMENT_DRIVER=license` plus `NVOOS_PRO_LICENSE_KEY`;
+`NVOOS_PRO_LICENSE_SERVER`, `_INSTANCE_ID`, `_PRODUCT`, `_TTL`, `_DENIED_TTL`, `_GRACE_TTL` and
+`_TIMEOUT` cover the rest. The `allow` / `deny` / `config` drivers are unchanged.
+
+### 5.2 implementation note — `X-CSRF-TOKEN`, not `X-XSRF-TOKEN`
+
+Laravel **decrypts** `X-XSRF-TOKEN`, so that header only accepts the value of the `XSRF-TOKEN`
+cookie. The console obtains its token from a JSON endpoint (`GET /api/v1/session/nonce`), not
+from a cookie, so the correct header is `X-CSRF-TOKEN`, which `ValidateCsrfToken` compares
+directly against the session token. Concretely:
+
+- `AcceptWpNonce` middleware + its unit test deleted; `bootstrap/app.php` no longer registers it.
+- `examples/nvoos-complete-velocity/src/fetch-wrapper.ts` mirrors the fetched nonce into
+  `X-CSRF-TOKEN` (fetch wrapper **and** the jQuery `ajaxPrefilter`), guarded so it only fires when
+  the token is non-empty and `X-CSRF-TOKEN` is absent. WordPress ignores the extra header, so one
+  client build serves both runtimes.
+- Coverage: `Phase1ConsoleTest` proves a bare `X-WP-Nonce` gets `419` and `X-CSRF-TOKEN` gets `200`.
+  Both tests flip `app['env']` for the request because `VerifyCsrfToken::runningUnitTests()`
+  short-circuits validation whenever the app reports `testing` — without the flip the suite can
+  never observe a 419.
+
+**5.3 is folded into 5.2.** The runtime is API-only and the console is served same-origin (Vite dev
+proxy, `scripts/serve.mjs`), so no shared cookie domain or SSO proxy is needed. Revisit only if a
+deployment serves the console from a different origin than the API.
+
+### 5.4 implementation note — read-only profile + security checklist
+
+**Rate limits** were already in place and are unchanged: `chat`, `mcp`, `tools` and `console`
+limiters in `AppServiceProvider`, applied by route group. Pro routes inherit `throttle:console`
+because they sit inside that group.
+
+**Read-only profile** is the piece that was missing. `ReadOnlyToolGuard`
+(`lib/core/src/Application/Tool/`) registers as a **monotonic deny-only guard** on `ToolRegistry`,
+so it runs after every `tools/pre_execute` listener and no listener can undo a denial. Enabled by
+`oos.read_only.enabled` (`NVOOS_READ_ONLY`).
+
+| Knob | Default | Meaning |
+|---|---|---|
+| `gated_flags` | `write`, `state_changing`, `mutating`, `destructive`, `external_side_effect` | Flags that disqualify a tool |
+| `allowed_slugs` | `[]` | Slugs that always run |
+| `block_undeclared` | `true` | Deny tools that declare no flags |
+
+Decision shape mirrors the WordPress `read-only` chat profile
+(`WP_MCP_AI_Read_Only_Profile_Gate::is_tool_allowed()`): allowlist first, then a flag
+intersection. It is deliberately **stricter in one direction** — a tool with no declared flags is
+blocked by default. WordPress can lean on its flag table because the profile is scoped and
+selectable; a runtime-wide switch cannot, and "I could not tell whether this writes" is not a
+reason to let it write. Operators relax it with `block_undeclared: false` or an allowlist.
+
+A blocked call returns the registry's existing `tool_guarded` envelope, so callers need no new
+error handling.
+
+#### Security checklist
+
+Every WordPress control either has a Laravel counterpart or an explicit accepted gap.
+
+| Control | WordPress | Laravel | State |
+|---|---|---|---|
+| Authentication | nonce, credential tokens, Auth0, guest tokens | Sanctum session cookie + bearer | ✅ |
+| CSRF | `X-WP-Nonce` | `X-CSRF-TOKEN` (5.2) | ✅ |
+| Authorization | `current_user_can` | WP-role matrix + `can:` gates per route group | ✅ |
+| Rate limiting | request guard | four named limiters, per user/IP | ✅ |
+| Read-only profile | `Read_Only_Profile_Gate` (profile-scoped) | `ReadOnlyToolGuard` (runtime-wide, 5.4) | ✅ |
+| Cost tracking | cost tracker | `TokenUsage` + `/cost/*` | ✅ |
+| Security posture | 23 applicable of 27 catalogue signals | same 27-card catalogue, 20 applicable + 7 `not_applicable` (`/security/posture`); the AI-safety pair is enforced by the orchestrator | ✅ shared catalogue in `lib/core` |
+| Security headers | CSP headers | `/security/preview-headers` + posture signal | ✅ |
+| Audit trail | audit logger + durable rows | `nvoos_jobs`, `nvoos_approvals` are durable | ⚠️ memory audit is a Phase 3 follow-up |
+| Destructive-ops confirmation | destructive ops gate | not ported — no confirmation UI in the console | ⚠️ accepted (no destructive actions exposed) |
+| Outbound URL guard | URL guard (SSRF) | outbound goes through `HttpClientInterface`; no allowlist | ⚠️ open — tracked separately |
+| CORS | CORS guard | not configured — console is same-origin | ✅ not applicable |
+
+The three ⚠️ rows are the honest remainder. None of them is reachable from a ported surface today;
+if a later phase exposes a destructive action or an operator-supplied URL, its row must move to ✅
+first.
+
+### 5.5 implementation note — version gates and the upgrade runbook
+
+Two version numbers, one gate:
+
+| Version | Lives in | Meaning |
+|---|---|---|
+| `oos.contract_version` | config | The HTTP contract the console speaks. It asserts `mcp-ai/v1` + version 1 on boot and refuses to run otherwise. |
+| `oos.schema_version` | config, mirrored into `nvoos_meta` | What the data means. Written by the migration that changes it. |
+
+Laravel's `migrations` table already records *which* migrations ran. It does not record what the
+data means, so an app pointed at an older database fails later with "column not found" somewhere
+deep in a controller. `nvoos_meta` closes that gap.
+
+`php artisan nvoos:doctor` is the gate. It checks container bindings, tools, providers, **contract
+version**, **pending migrations** and the **schema version**, and exits non-zero on any failure — so
+it can run as a post-deploy step rather than something a human has to read carefully.
+
+#### Upgrade runbook
+
+1. **Back up** the database (`php artisan nvoos:doctor` is read-only; `migrate` is not).
+2. **Deploy the code** (`git pull`, `composer install --no-dev --optimize-autoloader`).
+3. **Migrate**: `php artisan migrate --force`.
+4. **Clear caches**: `php artisan optimize:clear`. Under Octane also run
+   `php artisan octane:reload` — workers keep the old route collection and container in memory.
+5. **Gate**: `php artisan nvoos:doctor` must exit `0`. A schema mismatch means step 3 did not run; a
+   contract mismatch means the console build and the API are from different releases.
+6. **Smoke**: `GET /api/v1/features` returns the expected `contract_version`.
+
+Rolling back is `php artisan migrate:rollback --step=1` followed by redeploying the previous code;
+`nvoos_meta` is dropped by its own `down()`, so a rollback leaves no version row behind to
+confuse the next doctor run.
+
+### 5.6 implementation note — soak and performance gates
+
+The soak harness (`bin/laravel-spike-soak.php`) now records per-request latency, time-to-first-byte
+and the HTTP status histogram, and exits non-zero on any error or on zero completions. TTFB is
+drained when a handle completes — `spl_object_id()` is recycled once a handle is freed, so a probe
+left in place makes every later handle inherit it and silently stop recording.
+
+#### Gates
+
+| Gate | Budget | Rationale |
+|---|---|---|
+| Errors | `0` | Any non-200 is a failure, not a blip |
+| Latency p95 | ≤ 1.0 s | Total SSE stream time at 5 concurrent streams |
+| Latency p99 | ≤ 1.5 s | Tail must not stall the console |
+| TTFB p95 | ≤ 0.75 s | What a user actually feels before the first token |
+| CPU | < 80 % | On the 2 vCPU dev box at 5 streams |
+
+#### Formal run — 2026-11-13
+
+5 concurrent SSE streams for 1800 s against `oos-laravel-app` (`/chat/stream`, spike provider):
+
+```
+started=22491  completed=22486  errors=0
+statuses: 200:22486
+done markers: 22486
+bytes: 26,129,726 (24.9 MiB)
+latency: p50=0.405s p95=0.587s p99=0.672s max=1.387s (n=22486)
+```
+
+The 5 uncompleted requests were in flight at the deadline and torn down by the harness. Every
+completed request carried a `[DONE]` marker — no truncated streams. Container CPU settled at 45 %
+and memory at 297 MiB; Redis and MySQL stayed under 5 %.
+
+A 60 s baseline re-run with the fixed TTFB instrumentation:
+
+```
+latency: p50=0.403s p95=0.562s p99=0.642s max=0.793s (n=749)
+ttfb:    p50=0.277s p95=0.405s p99=0.485s max=0.641s (n=749)
+```
+
+All five gates pass with headroom. Reproduce with:
+
+```sh
+php artisan nvoos:doctor                       # must exit 0 first
+SPIKE_TOKEN=<token> php bin/laravel-spike-soak.php --streams=5 --seconds=1800
+```
+
+---
+
+## 10. Contract fixture harness
+
+Shipped (4.7). Fixtures live beside the skeleton and ship with it:
+
+```
+docker/laravel/app-skeleton/fixtures/
+  mcp-ai-pro-v1/
+    toolkits/index.json
+    toolkits/commerce.json
+    toolkits/commerce.settings.json
+    toolkits/commerce.dashboard.json
+    toolkits/commerce.entities.product.json
+    toolkits/documents.json
+```
+
+- **Capture.** `php artisan fixtures:capture` runs the routes in-process through
+the HTTP kernel with a short-lived Sanctum bearer token — the same path an
+operator token uses — and writes `{ request, status, headers, body }` per route.
+It reuses an existing administrator or creates and deletes a temporary one.
+- **Refresh.** Capture into the runtime copy (`base_path('fixtures')`), then copy
+the files back into `app-skeleton/fixtures/`: the repo mount is read-only inside
+the container.
+- **Replay.** `FixtureReplayTest` asserts the live response's **shape** (keys and
+types, recursively) and its status — not values. Captured rows and totals do not
+need to match the CI database, while a renamed key, a dropped field or a
+stringified number fails.
+- **CI.** `.github/workflows/laravel-app.yml` runs the suite on SQLite with the
+same `phpunit.xml` the container uses, so the replay test gates every change
+under `docker/laravel/**`, `lib/core/**` and `lib/laravel-adapter/**`.
+
+The `mcp-ai-v1/` fixtures and a WordPress-captured set still depend on task 0.13
+(a live site + operator token). Until 4.6 ports the toolkit controller to
+WordPress, the toolkit fixtures are Laravel-captured — they pin the contract the
+engine serves today, and are re-captured from WordPress when the peer lands.
+
+---
+
+## 11. File map (Phases 0–3b implementation)
+
+**Core / adapter**
+
+- `lib/core/src/Domain/Contract/ProEntitlementInterface.php` (new)
+- `lib/laravel-adapter/src/Adapter/ProEntitlement.php` (new)
+- `lib/laravel-adapter/src/Adapter/JobStatusStore.php` (`counts()`, raw rows, retry/dismiss)
+- `lib/laravel-adapter/src/Adapter/{TranscriptStore,MemoryStore,SessionLogStore,TokenUsage,RateLimiter}.php` (new)
+- `lib/core/src/Domain/ValueObject/ToolkitManifest.php` (new)
+- `lib/laravel-adapter/src/Adapter/FileUploadService.php` (new)
+- `lib/laravel-adapter/database/migrations/2026_01_01_000009..000012_*.php` (new)
+- `lib/laravel-adapter/database/migrations/2026_01_01_000013..000016_*.php` (new — approvals, triggers, security snapshots, paper records)
+- `lib/laravel-adapter/database/migrations/2026_01_01_000017..000018_*.php` (new — schedules console columns, schedule runs)
+- `lib/laravel-adapter/database/migrations/2026_01_01_000019_create_nvoos_toolkit_records_table.php` (new)
+- `lib/laravel-adapter/config/nvoos.php` (`pro_entitlement`, `features`)
+- `lib/laravel-adapter/src/ServiceProvider/NvoosServiceProvider.php` (binding)
+- `lib/laravel-adapter/tests/ProEntitlementTest.php` (new)
+
+**Console**
+
+- `examples/nvoos-complete-velocity/src/backend-profile.ts` (new)
+- `examples/nvoos-complete-velocity/src/runtime-config.ts` (Laravel profile + assertion)
+- `examples/nvoos-complete-velocity/src/main.tsx` (startup assertion)
+- `examples/nvoos-complete-velocity/src/login.ts` (Laravel login/logout branch)
+- `examples/nvoos-complete-velocity/scripts/serve.mjs` (`NVOOS_BACKEND`)
+- `examples/nvoos-complete-velocity/src/__tests__/laravel-profile.test.ts` (new)
+- `examples/nvoos-complete-velocity/src/__tests__/laravel-login.test.ts` (new)
+
+**Console — Phase 4.2 toolkit screens**
+
+- `addons/pro/assets/spa-v2/src/api/toolkits.ts` (`ToolkitsClient`, `ToolkitsApiError`)
+- `addons/pro/assets/spa-v2/src/features/toolkits/{ToolkitsPage,ToolkitPage}.tsx`
+- `addons/pro/assets/spa-v2/src/features/toolkits/screens/{Settings,Entities,Dashboard,Research,Consolidate}Screen.tsx`
+- `addons/pro/assets/spa-v2/src/features/toolkits/components/EntityForm.tsx`
+- `addons/pro/assets/spa-v2/src/features/toolkits/format.ts`
+- `addons/pro/assets/spa-v2/src/styles/toolkits.css`
+- `addons/pro/assets/spa-v2/src/{router.tsx,index.tsx,api/config.ts}` (routes, CSS import, endpoint)
+- `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php` (`toolkits` endpoint)
+- `examples/nvoos-complete-velocity/src/console/{ConsoleShell.tsx,nav-features.tsx}` (routes + nav)
+- `examples/nvoos-complete-velocity/src/runtime-config.ts` (Laravel-only endpoint)
+- `examples/nvoos-complete-velocity/src/__tests__/toolkits-{client,format}.test.ts` (new)
+
+**Laravel app skeleton**
+
+- `app/Http/Controllers/{FeaturesController,SessionController,SiteController,ToolsController,OpsController}.php`
+- `app/Http/Controllers/{SettingsController,DiagnosticsController,OperationsController}.php`
+- `app/Http/Controllers/{TranscriptsController,MemoryController,AnalyticsController}.php`
+- `app/Http/Controllers/{ApprovalsController,TriggersController,SecurityController,PaperStoreController}.php`
+- `app/Http/Controllers/Pro/{SchedulesController,PresetsController,RecordsController}.php`
+- `app/Http/Controllers/Wp/ContentController.php` (wp/v2 content shim)
+- `app/Http/Controllers/MediaController.php` (wp/v2/media shim)
+- `app/Support/Pro/ToolkitManifestLoader.php` + `app/Http/Controllers/Pro/ToolkitsController.php`
+- `resources/pro-toolkits/{commerce,documents}.json`
+- `app/Http/Middleware/EnsureProEntitlement.php`
+- `app/Http/Controllers/{AssistantController,AssistantPortabilityController,AssistantTestController}.php`
+- `app/Support/{CapabilityMap,SettingsSchema}.php`
+- `app/Services/LaravelAssistantService.php`
+- `app/Models/Assistant.php` + `database/migrations/2026_01_02_000001_create_assistants_table.php`
+- `app/Http/Middleware/AcceptWpNonce.php`
+- `routes/api.php`
+- `bootstrap/app.php` (`statefulApi()`, CSRF alias)
+- `tests/Feature/{Phase0ContractTest,Phase1ConsoleTest,AssistantStudioTest,AssistantTestTest,CoreOperationsTest,Phase3bTest,Phase3cTest,Phase3dTest,Phase4Test}.php`
+- `tests/Unit/AcceptWpNonceTest.php`
+
+**Runtime plumbing (Phase 4.2)**
+
+- `routes/api.php` — login/logout stay on the `api` group so Sanctum owns a single session;
+  only `/session/nonce` keeps `web` (a GET always needs a session to mint from).
+- `app/Http/Middleware/AcceptWpNonce.php` — pure header alias, registered on both groups. It
+  runs before `StartSession`, so it must not compare against a session token;
+  `ValidateCsrfToken` still performs the comparison.
+- `bootstrap/app.php` — `statefulApi()` plus the alias on `web` and `api`.
+- `scripts/serve.mjs` — keeps `Origin`/`Referer` for the Laravel backend; Sanctum's stateful
+  check reads them (`NVOOS_BACKEND=wordpress` still strips them).
+- `docker/laravel/entrypoint.sh` — idempotent `php artisan storage:link` for media uploads.
+
+---
+
+## 12. Test matrix and commands
+
+| Layer | Command | Current |
+|---|---|---|
+| Adapter | `cd lib/laravel-adapter && php -d extension=fileinfo vendor/bin/phpunit` | 34 pass |
+| Console | `cd examples/nvoos-complete-velocity && npx vitest run` | 14 files / 159 pass |
+| Console types | `npm run typecheck` | clean (also typechecks `e2e/` via `tsc -p e2e/tsconfig.json`) |
+| Console smoke (G1) | `cd examples/nvoos-complete-velocity && npm run test:e2e` | 6 pass / 30.2 s |
+| Laravel app | `docker exec -w /app -e NVOOS_PM_FIXTURE=… -e NVOOS_PM_WRITES_FIXTURE=… oos-laravel-app php artisan test` | 643 pass / 3,720 assertions |
+| Core | `cd lib/core && php -d extension=fileinfo vendor/bin/phpunit` | 937 tests (5 pre-existing `ToolRegistryIntegrationTest` errors) |
+| Proxy syntax | `node --check examples/nvoos-complete-velocity/scripts/serve.mjs` | clean |
+
+CI additions (Phase 1): run the adapter + console suites on PRs touching `lib/**` or the console;
+run the Laravel app suite on PRs touching `docker/laravel/**`. The console smoke needs the full
+stack (MySQL + Redis + Octane + a built SPA), so it stays a local/pre-release gate — see
+`examples/nvoos-complete-velocity/e2e/README.md`.
+
+### Soak harness
+
+`docker/laravel/soak/phase3b-soak.php` exercises every Phase 3b surface for a fixed
+wall-clock duration and exits non-zero on any contract violation or when p95 latency
+exceeds 500 ms.
+
+```bash
+# Mint a bearer token for the soak user
+docker exec oos-laravel-app php artisan tinker \
+  --execute="echo \App\Models\User::first()->createToken('soak')->plainTextToken;"
+
+# 30-minute run at ~1 iteration/second (~10 requests/second)
+php docker/laravel/soak/phase3b-soak.php \
+  --base=http://127.0.0.1:8001 \
+  --token='<sanctum-bearer>' \
+  --minutes=30 --rate=1 \
+  --out=docker/laravel/soak/phase3b-30min-report.json
+
+# Clean up the append-only approval rows afterwards
+docker exec oos-laravel-app php artisan tinker \
+  --execute="\DB::table('nvoos_approvals')->where('session_id','soak')->delete();"
+```
+
+The harness creates and deletes its own paper records and reuses a single trigger,
+so only approval history grows during a run.
+
+---
+
+## 13. Environment and deployment contract
+
+| Variable | Owner | Values |
+|---|---|---|
+| `VITE_NVOOS_BACKEND` | Console build | `wordpress` (default), `laravel`, `hybrid` |
+| `__NVOOS_BACKEND__` | Console runtime | Optional global override (tests, static-host injection); wins over the build env |
+| `NVOOS_BACKEND` | `serve.mjs` | same values; must match the build |
+| `NVOOS_TARGET_SITE` | `serve.mjs` | backend origin (WP or Laravel) |
+| `NVOOS_PRO_ENTITLEMENT_DRIVER` | Laravel adapter | `allow`, `deny`, `config` |
+| `NVOOS_PRO_PLAN` | Laravel adapter | plan label for diagnostics |
+| `NVOOS_PRO_ENTITLEMENT_FEATURES` | Laravel adapter | JSON map for the `config` driver (optional) |
+| `NVOOS_CONSOLE_RATE_LIMIT` | Laravel adapter | Console CRUD requests/minute per user (default `600`); tool execution keeps `throttle:tools` at 60/min |
+| `NVOOS_MEDIA_DISK` | Laravel adapter | Disk for uploads (default `public`); must be publicly served |
+| `NVOOS_UPLOAD_MAX_BYTES` | Laravel adapter | Maximum upload size in bytes (default `10485760`) |
+| `NVOOS_TOOLKIT_MANIFESTS` | Laravel adapter | Directory of toolkit JSON manifests; empty falls back to `resources/pro-toolkits` |
+
+**Deployment:** the Service Exchange deploys the same console artifact; `NVOOS_BACKEND=laravel` plus
+`NVOOS_TARGET_SITE=<laravel-origin>` satisfies `console_deployed`. **Rollback:** flip
+`NVOOS_BACKEND=wordpress` and the console returns to the WordPress estate — no rebuild.
+
+**Runtime reload (Octane/FrankenPHP):** the container serves the app through Octane, which
+keeps the booted application — including the route collection and resolved controllers —
+in worker memory. After deploying new routes or classes, `php artisan octane:reload` is
+required; `config:clear` / `route:clear` alone leave live workers answering from the old
+route table (observed during the Phase 3c smoke: `/pro/schedules` worked while
+`/pro/schedules/{id}/trigger` still 404'd until the reload).
+
+---
+
+## 14. Risks and open items
+
+| Item | Status | Next |
+|---|---|---|
+| Golden fixtures from a live WP site | Harness shipped | Task 0.13; Laravel-captured set committed, re-capture from WordPress when 4.6 lands (needs an operator token) |
+| Laravel login screen / bearer harness for C2 | **Done** | Phase 1; the console branches on the backend |
+| Commercial entitlement source | Resolved in 5.1: licence server, `instance_id` instead of a site URL | Phase 5 task 5.1 ✅ |
+| Pro toolkits as peers | Open (Q4) | Decide per family in Phase 4 |
+| SSO / cookie domain | Open (Q6) | Phase 5 task 5.3 |
+| Pro `mcp-ai-pro/v1` toolkit endpoints | **Done** | WordPress serves `toolkit-manifests` with the same envelope as Laravel (6/6 fixtures, 0 drift); `research` runs through the shared core service — see the last two rows of this table |
+| Laravel posture parity | **Done (2026-11-15)** | One catalogue, two runtimes. `lib/core`'s `Domain\Security\SecuritySignalCatalogue` owns the 27 control definitions (id, label, weight, subtab, anchor, reference, and which runtimes can evaluate them); `PostureEvaluator` builds the card list per runtime and `PostureScorer` divides by **applicable** weight only. The Laravel report went 8 native signals → **20** applicable + **7** `not_applicable`, and WordPress 21 → 23 applicable + 4 `not_applicable`, so both backends render the same 27 cards and neither is penalised for a control it has no primitive for. Weights and grade bands follow the OWASP ASVS 5.0 taxonomy and the Mozilla HTTP Observatory scorer (A+ 100 … F < 25); applicable-only denominators follow AWS Security Hub / CIS-CAT practice. `cors_restricted` became a real check on Laravel: `config/cors.php` defaults to no cross-origin origins (the console is same-origin through the proxy) instead of Laravel's framework `['*']`, so the card passed only once the framework default was corrected |
+| Harness profile storage | **Done (2026-11-15)** | `HarnessProfileProviderInterface` is now bound to `Nvoos\Laravel\Adapter\HarnessProfileProvider`, which resolves `harness_profile:<assistant_id>` → `harness_profile_default` → the all-off profile — the same order and the same sanitiser as WordPress's post-meta → option → defaults. `HarnessProfile` (defaults + clamping) moved into `lib/core` and WordPress delegates to it behind a `class_exists` guard; the port was proven equivalent by running both implementations over a shared corpus. `scope_memory` now reports the stored `pii_filter` instead of a constant. Still deferred: export/import of harness profiles in the assistant bundle (090-b-assistant-edit-field-parity §6) |
+| Records remote proxy + create-from-research | Not ported | Bound to Remote Sites and the Pro `deep_research` pipeline; both answer 501 with a typed message |
+| Schedule presets | **Done (2026-11-14)** | The 12-preset catalogue is mirrored to `resources/schedule-presets.json` (`bin/sync-schedule-presets.php`, drift-checked in CI) and served with WordPress's filters envelope; install is idempotent on the raw overrides (`preset:<id>:h<hash>` → `presets.preset_key`), honours the override whitelist and rejects unsupported intervals with a typed 422. `SchedulePresetsTest` (9 cases) |
+| Schedule execution model | **Timed and synchronous** | `nvoos:run-schedules` (every minute, `ScheduleRunner`) initialises untimed rows, runs due ones, records `nvoos_schedule_runs` and advances `next_run_at`; the `scheduler` container role runs `php artisan schedule:work`. Runs are still inline — move to queued execution when long-running toolkits are ported. A handler that does not exist (e.g. a preset's WordPress hook) is a recorded failure, not a silent skip |
+| Media thumbnails / alt text | Not ported | `media_details.sizes` is empty and `alt_text` is write-once blank; add a thumbnail pipeline and an update route when the media toolkit is ported |
+| WP-native integrations | Non-goal | Deep-link or mark unavailable |
+| Workflow engine on Laravel | **Complete — H1 + H2 + H3 shipped** | WordPress and Laravel are alternatives, not layers (ADR-8), so the four engine keys get a native engine rather than a proxy — a proxied engine would hold only on the `hybrid` profile and break on the other two. Three increments (`090-h-workflow-engine-proposal.md`): **H1** catalogue — `workflowPresets` (all 33 presets, generated from the WordPress catalogue by `bin/generate-laravel-workflow-presets.php`); **H2** graph storage + CRUD — `workflowBuilder`, a `mcp_ai_workflow` content record with WordPress's meta keys, save-time validation (unique ids, resolved edges, no cycle) that the reference does **not** do, and trash-on-delete; **H3** execution + run history — Kahn-order `WorkflowExecutor` in `lib/core`, append-only `nvoos_workflow_runs`, `workflowRuns` + `workflowNodes`, per-node results, and a 200-node / 50-tool-call ceiling. H1 and H2 landed together because the client's preset install needs a selected workflow. All four surfaces are gated `manage_options`, matching `WP_MCP_AI_REST_Workflow_CPT_Controller`. Divergence: WordPress does not walk the graph — it hands a description to an LLM-planned `execute_workflow` tool; the Laravel run is deterministic and names its failing node. **`trigger → execute` is wired**: `POST /orchestration/triggers/{id}/fire` for a manual run, and `php artisan nvoos:fire-triggers` (scheduled every minute) for `cron_schedule` triggers, both through the same `WorkflowRunner`, with `source`/`trigger_id` on the run row |
+| Console endpoints with no Laravel route | **Now visible** | 11 of the console's 45 route-backed keys report `false` from `/features` and are blanked client-side: `mcpApps` (an outbound MCP client plus a connection store — a feature, not a port) and the ten WordPress-only surfaces (`chatChannels`, `remoteSites`, `mediaCc`, `commandCenter`, `shortcuts`, `slashCommands`, `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor`). No workflow key remains false. Three keys left the contract rather than being ported, all for the same reason — no console page reads them: `analytics` (the Analytics page uses `cost`), `threads` (`useThreads` had no callers, `ThreadsClient` was an unused import, `router.tsx` has no threads surface; the console's conversation store is `transcripts`), and `workflows` (`WorkflowsPage` reads the four sub-keys; its local `workflows` is the fetched list). Wiring each remaining key is a page-at-a-time decision with the gap visible in the UI instead of a 404 |
+| Agent Skills catalogue | **Read-only slice shipped** | `GET /api/v1/skills` — `{success, skills, total}` with `{name, description, license, compatibility}` per entry, the WordPress base-controller shape `SkillsClient` reads. Reads `config('oos.skills.path')` (default `storage/app/skills`, `NVOOS_SKILLS_PATH` to override); one folder per skill with a `SKILL.md`; a missing directory is an empty catalogue. Admin-only, matching WordPress. `SkillRegistry::parseSkillMd()` now returns licence and compatibility, which it silently dropped. **Not ported:** the WordPress skill manager (install from raw SKILL.md or a remote catalogue, replace, delete) — those routes are absent rather than stubbed, so a write gets a 404 |
+| OKF knowledge drawer | **Read-only slice shipped** | `GET /api/v1/pro/okf/*` — `bundles`, `bundles/{bundle}/concepts`, `bundles/{bundle}/concepts/{concept}`, `search`, `skills`, all unwrapped because `OkfClient` reads them off the top level. Reads `config('oos.okf.path')` (default `storage/app/knowledge`, `NVOOS_OKF_PATH` to override), one directory per bundle, using core's `OkfReader` + `FilesystemBundleRoot`; `features.okf` is now `true` and the console builds the endpoint on both runtimes. Descriptors are a **summary, not a validation report**: `conformant`/`issue_count` mean "every concept parses and no internal `.md` link is broken" — WordPress builds them from `WP_MCP_AI_OKF_Writer::validate_bundle()`, which is plugin-only. `/skills` is honest-empty because no grant store exists (WordPress resolves grants through `WP_MCP_AI_OKF_Skill_Bridge`). Any authenticated reader, matching WordPress's `read`. Bundle names are route-constrained and path-checked with realpath; concept traversal is guarded by `FilesystemBundleRoot::contains()` and answers 404 |
+| Remaining 11 surfaces | **Strategy recorded** | `090-i-remaining-surfaces-strategy.md` — classification (runtime-adaptable / host-coupled / external product / connected service), capability-manifest v2 that ships a machine-readable **reason** for every `false`, extraction of the Pro MCP Apps stack into core (6,602 lines already exist; the `OkfParser` precedent), and a four-phase plan. Two decisions open: the licence of the extracted MCP stack, and `chatChannels` scope |
+| Pro dashboards | **Route landed, catalogue partial** | `GET /api/v1/pro/dashboards/schema` + `/{id}/data`, unwrapped to match WordPress's `rest_ensure_response()` because `DashboardsClient` reads `dashboards` / `disabled` / `data` at the top level. WordPress dispatches each dashboard to that dashboard's **wp-admin page** gatherer, which does not exist here, so a dashboard is listed only when its store does: `eca` is served (`gatherEca` counts the activity-side enrolment map through `Enrollments`, preferring `_eca_current_enrollment`), and the other nine are reported under `disabled` with the toolkit flag that would enable them — the same shape WordPress uses for a switched-off toolkit, so the console's empty state works unchanged. Adding a dashboard = a `DashboardCatalogue` entry **plus** a gatherer against a ported store |
+| Endpoint-availability matcher | **Corrected** | `EndpointCapabilities` used `str_starts_with()`, so `api/v1/chat` was "served" by `api/v1/chat-transcripts` and `api/v1/chat-memory`. That masked a second defect: `POST /chat/stream` was registered *outside* the `Route::prefix('api/v1')` group (`bootstrap/app.php` sets `apiPrefix: ''`), so it lived at `/chat/stream` while every console URL is built from `/wp-json/mcp-ai/v1`-style roots. Both streaming routes now sit inside the prefix group, and the matcher requires an exact match or a `/` boundary — so `chat` reads true because a chat route exists, not because a transcript route shares four letters |
+| Pro tool catalogue on Laravel | **Decided (option 3)** | Selective port by cluster: 18 tools are dependency-free, 143 need one adapter, 860 stay in the plugin. Tracker + recipe: `090-d-selective-tool-port.md`; regenerate with `bin/classify-tool-portability.php` |
+| Toolkit `research` screen | **Done (4.5)** | `POST /pro/toolkits/{slug}/research` (Laravel) and `POST …/toolkit-manifests/{slug}/research` (WordPress) both call the shared core service: the prompt is built from the manifest's columns and the draft is filtered back to them. The draft is never written by the service — the console saves it through the create endpoint, so one validation path governs writes. No provider → typed `ai_unavailable` 503. |
+| Toolkit `consolidate` screen | Bounded | Scans the first 100 records of each entity (one page) to keep the request O(1). Move to a queued job when a family needs full-catalogue dedupe |
+| `/pro/toolkits` on the WordPress runtime | **Done** | `mcp-ai-pro/v1/toolkit-manifests` serves the same envelope as Laravel — verified route-by-route against the committed fixtures (6/6, 0 drift). `research` is ported too: both runtimes share `Nvoos\Core\Application\Toolkit\ToolkitResearchService`. |
+| Non-stateful session login | Decided | A POST to `/session/login` without a first-party `Referer`/`Origin` answers a typed 419 `session_required` instead of a 500 (browser-only flow) |
+
+---
+
+## 15. Phase checklist
+
+- [x] Phase 0 — contract freeze, runtime profile, assertion, T0 endpoints, CSRF alias
+- [x] Phase 1 — T0 ops console (Playwright smoke green 2026-11-14)
+- [x] Phase 2 foundation — assistant CRUD + bundle export/import, blueprints, teams (test-assistant dry run shipped 2026-11-14)
+- [x] Phase 3a — transcripts, memory, session logs, token usage/cost, rate limiter
+- [x] Phase 3b — approvals, workflow triggers, security center (posture/headers/snapshots/self-test), paper store
+- [x] Phase 3c — schedule manager, records schema, `wp/v2` content shim, Pro entitlement middleware
+- [x] Phase 3d — media library + upload service (task 3.11)
+- [x] Phase 4.1 + 4.3 — toolkit manifest contract, loader, generic engine
+- [x] Phase 4.2 — generic toolkit console screens (settings, workbench, dashboard, consolidate live; research scaffold replaced in 4.5)
+- [x] Phase 4.5 — toolkit research service: draft-from-query endpoint + console wiring (draft only; saving still goes through `storeEntity`)
+- [x] Phase 4.7 — contract fixtures: `fixtures:capture`, per-family fixtures, shape replay, CI job
+- [x] Phase 4.6 — WordPress peer: read surface at parity (6/6 fixtures) and `research` ported through the shared core service
+- [x] Phase 5 — commercial entitlement, CSRF migration, GA gates (residual items live in §14: posture-card parity, presets, thumbnails)

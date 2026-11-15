@@ -80,7 +80,7 @@ graph TD
 ```mermaid
 graph LR
     subgraph "Monorepo"
-        BASE[mcp-ai-wpoos.php<br/>Base Plugin<br/>GPLv3 · PHP 7.4+]
+        BASE[mcp-ai-wpoos.php<br/>Base Plugin<br/>GPLv3 · PHP 8.1+]
         PRO[addons/pro/<br/>Pro Addon<br/>Proprietary · PHP 8.1+]
         ADDONS[addons/*/<br/>15 Addons<br/>Various Licenses]
         CORE[core/<br/>Core Plugin<br/>GPLv3 · Standalone]

@@ -46,12 +46,23 @@ final class Rebuild_Webhook {
 	private static $pending_type = 'content';
 
 	/**
+	 * Cache tags accumulated for the pending notification (Proposal 135).
+	 * Empty means "no targeted invalidation" — the dispatch rebuild is the
+	 * backstop.
+	 *
+	 * @var array<int, string>
+	 */
+	private static $pending_tags = array();
+
+	/**
 	 * Register the change hooks. Called once from Plugin::init().
 	 *
 	 * @return void
 	 */
 	public static function init(): void {
-		add_action( 'save_post', array( self::class, 'on_content_changed' ) );
+		add_action( 'save_post', array( self::class, 'on_post_changed' ), 10, 1 );
+		add_action( 'delete_post', array( self::class, 'on_post_changed' ), 10, 1 );
+		add_action( 'trashed_post', array( self::class, 'on_post_changed' ), 10, 1 );
 		add_action( 'created_term', array( self::class, 'on_content_changed' ) );
 		add_action( 'edited_term', array( self::class, 'on_content_changed' ) );
 		add_action( 'delete_term', array( self::class, 'on_content_changed' ) );
@@ -59,7 +70,25 @@ final class Rebuild_Webhook {
 	}
 
 	/**
-	 * Post/term save hook.
+	 * Post save/delete/trash hook — skips revision, autosave, and auto-draft
+	 * noise so editing never wastes a dispatch on content that does not ship.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return void
+	 */
+	public static function on_post_changed( $post_id ): void {
+		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+			return;
+		}
+		if ( 'auto-draft' === get_post_status( $post_id ) ) {
+			return;
+		}
+		self::note_tags( (string) get_post_type( $post_id ), (int) $post_id );
+		self::schedule( 'content' );
+	}
+
+	/**
+	 * Term save hook.
 	 *
 	 * @return void
 	 */
@@ -92,7 +121,7 @@ final class Rebuild_Webhook {
 		if ( self::$pending ) {
 			return;
 		}
-		if ( ! Settings::rebuild_configured() ) {
+		if ( ! Settings::rebuild_configured() && ! Settings::revalidate_configured() ) {
 			return;
 		}
 		if ( get_transient( self::TRANSIENT_SENT ) ) {
@@ -119,11 +148,79 @@ final class Rebuild_Webhook {
 		}
 		self::$pending = false;
 
-		if ( ! Settings::rebuild_configured() ) {
+		// Two independent consumers: the GitHub dispatch (full rebuild) and
+		// the managed frontend's tag purge (seconds). One failing must never
+		// suppress the other (Proposal 135).
+		if ( Settings::rebuild_configured() ) {
+			self::send( self::$pending_type );
+		}
+		self::send_revalidate();
+	}
+
+	/**
+	 * Note the cache tags a change affects (Proposal 135).
+	 *
+	 * Only post types the frontend actually tags are recorded; an unknown type
+	 * records nothing and relies on the rebuild backstop.
+	 *
+	 * @param string $post_type Post type.
+	 * @param int    $post_id   Post ID.
+	 * @return void
+	 */
+	private static function note_tags( string $post_type, int $post_id ): void {
+		$map = array(
+			'funiq_product'     => 'products',
+			'product'           => 'products',
+			'product_variation' => 'products',
+			'post'              => 'posts',
+			'page'              => 'pages',
+		);
+
+		if ( ! isset( $map[ $post_type ] ) ) {
 			return;
 		}
 
-		self::send( self::$pending_type );
+		$collection           = $map[ $post_type ];
+		self::$pending_tags[] = $collection;
+		self::$pending_tags[] = $collection . ':' . $post_id;
+	}
+
+	/**
+	 * POST the accumulated tags to the managed frontend's /api/revalidate.
+	 *
+	 * Fail-soft: the result is returned (never thrown) and the caller ignores
+	 * it — a revalidation outage must not break the editor's request. The
+	 * token is never logged.
+	 *
+	 * @return array|\WP_Error|null Null when not configured or nothing to tag.
+	 */
+	public static function send_revalidate() {
+		$tags               = array_values( array_unique( array_filter( self::$pending_tags ) ) );
+		self::$pending_tags = array();
+
+		if ( ! Settings::revalidate_configured() || empty( $tags ) ) {
+			return null;
+		}
+
+		$args = array(
+			'timeout' => 5,
+			'headers' => array(
+				'Authorization' => 'Bearer ' . Settings::revalidate_token(),
+				'Content-Type'  => 'application/json',
+				'User-Agent'    => 'nvoos-forge-bridge/' . NVOOS_FORGE_BRIDGE_VERSION,
+			),
+			'body'    => wp_json_encode( array( 'tags' => $tags ) ),
+		);
+
+		/**
+		 * Filter the revalidate request args.
+		 *
+		 * @param array<string, mixed> $args Request args.
+		 * @param array<int, string>   $tags Cache tags.
+		 */
+		$args = apply_filters( 'nvoos_forge_bridge_revalidate_args', $args, $tags );
+
+		return wp_remote_post( Settings::revalidate_url(), $args );
 	}
 
 	/**
@@ -132,7 +229,8 @@ final class Rebuild_Webhook {
 	 * @return void
 	 */
 	public static function reset_pending(): void {
-		self::$pending = false;
+		self::$pending      = false;
+		self::$pending_tags = array();
 	}
 
 	/**
@@ -148,9 +246,13 @@ final class Rebuild_Webhook {
 	 * that payload proof and fails closed.
 	 *
 	 * @param string $type Change kind.
-	 * @return array|\WP_Error wp_remote_post result.
+	 * @return array|\WP_Error wp_remote_post result — `WP_Error` when the
+	 *                         request fails. No declared return type: the
+	 *                         plugin supports PHP 7.4, which has no union
+	 *                         types (declaring `array` made a failed request
+	 *                         raise a TypeError at shutdown).
 	 */
-	public static function send( string $type ): array {
+	public static function send( string $type ) {
 		$url       = Settings::rebuild_url();
 		$time      = time();
 		$nonce     = bin2hex( random_bytes( 12 ) );

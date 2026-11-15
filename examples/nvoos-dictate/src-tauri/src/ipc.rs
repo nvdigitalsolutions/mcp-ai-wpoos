@@ -50,6 +50,22 @@ pub struct StatusInfo {
     pub spa_configured: bool,
     /// The configured Pro SPA URL (empty when unset).
     pub spa_url: String,
+    /// Whether snippet OCR (Proposal 100) is compiled into this build.
+    pub snippet_available: bool,
+    /// The active snippet engine id (`winrt` | `sidecar` | `onnx` | `auto`).
+    pub snippet_engine: String,
+    /// The configured snippet hotkey (empty = disabled).
+    pub snippet_hotkey: String,
+    /// Whether the document pipeline (Proposal 109) is compiled in.
+    pub document_available: bool,
+    /// Whether the memory layer (Proposal 127) is compiled in.
+    pub memory_available: bool,
+    /// Whether the memory layer is turned on in Settings.
+    pub memory_enabled: bool,
+    /// Number of chunks with a stored vector.
+    pub memory_indexed: i64,
+    /// Total number of chunks in the corpus.
+    pub memory_chunks: i64,
 }
 
 /// Reject commands invoked from any window other than the main one.
@@ -100,6 +116,11 @@ pub fn update_settings(state: State<'_, AppState>, settings: Settings) -> AppRes
 pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
     let settings = state.settings_snapshot();
     let engine = state.engine.read().unwrap().clone();
+    let (memory_chunks, memory_indexed) = state
+        .db
+        .memory_counts()
+        .map(|(total, indexed, _)| (total, indexed))
+        .unwrap_or((0, 0));
     Ok(StatusInfo {
         ptt_key: settings.hotkey.ptt_key.clone(),
         ptt_mode: settings.hotkey.ptt_mode.clone(),
@@ -134,6 +155,14 @@ pub fn get_status(state: State<'_, AppState>) -> AppResult<StatusInfo> {
         polish: polish_summary(&settings),
         spa_configured: !settings.spa.url.trim().is_empty(),
         spa_url: settings.spa.url.clone(),
+        snippet_available: crate::snippet::available(),
+        snippet_engine: settings.snippet.engine.clone(),
+        snippet_hotkey: settings.snippet.hotkey.clone(),
+        document_available: crate::document::available(),
+        memory_available: crate::memory::available(),
+        memory_enabled: settings.memory.enabled,
+        memory_indexed,
+        memory_chunks,
     })
 }
 
@@ -176,7 +205,8 @@ fn validate_spa_url(raw: &str) -> AppResult<String> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return Err(AppError::NotConfigured(
-            "No Pro SPA URL is configured (Settings > NV oOS > Assistant tab URL)".into(),
+            "No Complete Velocity URL is configured (Settings → NV oOS → Default Complete Velocity URL)"
+                .into(),
         ));
     }
     let https_ok = trimmed.starts_with("https://");
@@ -184,7 +214,8 @@ fn validate_spa_url(raw: &str) -> AppResult<String> {
         trimmed.starts_with("http://localhost") || trimmed.starts_with("http://127.0.0.1");
     if !https_ok && !localhost_ok {
         return Err(AppError::Other(
-            "Pro SPA URL must use https:// (http://localhost allowed for development)".into(),
+            "Complete Velocity URL must use https:// (http://localhost allowed for development)"
+                .into(),
         ));
     }
     Ok(trimmed.trim_end_matches('/').to_string())
@@ -222,6 +253,25 @@ pub async fn check_spa(url: String) -> AppResult<SpaCheck> {
     }
 }
 
+/// Open (or refocus) the NV oOS Complete Velocity console in its own
+/// first-party window. The console's cookie-based WordPress sign-in needs a
+/// top-level context — WebView2 blocks third-party cookies for cross-site
+/// iframes, so embedding the console in the main window breaks sign-in
+/// (masked by the console as "Invalid username or password").
+///
+/// MUST be async: window creation dispatches to the main thread and waits;
+/// a sync command runs ON the main thread and would deadlock the whole
+/// IPC surface (Settings then hangs on "Loading settings…").
+#[tauri::command]
+pub async fn open_nvoos_console(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> AppResult<()> {
+    let settings = state.settings_snapshot();
+    let url = validate_spa_url(&settings.spa.url)?;
+    crate::ensure_nvoos_console_window(&app, &url)
+}
+
 /// Whether the resident vision loop is currently running.
 fn vision_running(state: &AppState) -> bool {
     state
@@ -247,7 +297,80 @@ pub struct DiagnosticsInfo {
     pub credentials: CredentialDiagnostics,
     pub vision: VisionDiagnostics,
     pub agent: AgentDiagnostics,
+    pub snippet: SnippetDiagnostics,
+    pub document: DocumentDiagnostics,
+    pub memory: crate::memory::MemoryStatus,
     pub last_dictation: Option<crate::dictation::LastDictationStats>,
+    /// Most recent paste attempt (Proposal 144 W4). Never carries clipboard
+    /// contents — only the snapshot kind and the restore outcome.
+    pub paste: Option<PasteDiagnostics>,
+}
+
+/// Result of the most recent paste, for the Diagnostics page.
+#[derive(Debug, Clone, Serialize)]
+pub struct PasteDiagnostics {
+    /// `clipboard_keystroke` | `macos_cgevent`.
+    pub backend: String,
+    /// What was on the clipboard before the transcript write.
+    pub snapshot_kind: String,
+    /// Whether the previous contents were restored.
+    pub restored: bool,
+    /// Why the restore did not run, when it did not.
+    pub restore_skipped: Option<String>,
+    /// Formats present but not copyable as bytes (GDI handles). Non-zero means
+    /// the restore could not be fully faithful.
+    pub partial_formats: usize,
+    /// Total time spent in the paste path, including the settle delay.
+    pub elapsed_ms: u64,
+    /// UTC timestamp of the attempt.
+    pub at: String,
+}
+
+/// Document pipeline health (Proposal 109), mirroring the snippet block.
+#[derive(Debug, Clone, Serialize)]
+pub struct DocumentDiagnostics {
+    pub available: bool,
+    pub pdf_export_available: bool,
+    pub busy: bool,
+    pub documents: u64,
+    pub pages: u64,
+    pub text_pages: u64,
+    pub ocr_pages: u64,
+    pub last_ms: u64,
+    pub errors: u64,
+    pub last_error: Option<String>,
+    pub dpi: u32,
+    pub max_pages: usize,
+    pub polish_enabled: bool,
+    pub model_pages: u64,
+    pub model_enabled: bool,
+    pub model_provider: String,
+    pub model_model: String,
+}
+
+/// Build the document pipeline diagnostics snapshot.
+fn document_diagnostics(state: &AppState, settings: &Settings) -> DocumentDiagnostics {
+    use std::sync::atomic::Ordering;
+    let controller = &state.document;
+    DocumentDiagnostics {
+        available: crate::document::available(),
+        pdf_export_available: crate::document::pdf_export_available(),
+        busy: controller.is_busy(),
+        documents: controller.stats.documents.load(Ordering::Relaxed),
+        pages: controller.stats.pages.load(Ordering::Relaxed),
+        text_pages: controller.stats.text_pages.load(Ordering::Relaxed),
+        ocr_pages: controller.stats.ocr_pages.load(Ordering::Relaxed),
+        last_ms: controller.stats.last_ms.load(Ordering::Relaxed),
+        errors: controller.stats.errors.load(Ordering::Relaxed),
+        last_error: controller.stats.last_error.lock().unwrap().clone(),
+        dpi: settings.document.dpi,
+        max_pages: settings.document.max_pages,
+        polish_enabled: settings.document.polish_enabled,
+        model_pages: controller.stats.model_pages.load(Ordering::Relaxed),
+        model_enabled: settings.document.model.enabled,
+        model_provider: settings.document.model.provider.clone(),
+        model_model: settings.document.model.model.clone(),
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -280,6 +403,13 @@ pub struct MicDiagnostics {
     pub live_peak: f32,
     /// VAD implementation in use: `energy` or `silero`.
     pub vad_kind: &'static str,
+    /// `resident` (continuous) or `on_demand` (paused when idle).
+    pub capture_mode: &'static str,
+    /// Whether the capture stream is paused right now (on-demand at idle).
+    pub paused: bool,
+    /// Measured pause -> first-callback latency of the last resume (0 when the
+    /// stream was already running).
+    pub last_resume_ms: u64,
     /// Capture stream health: callbacks delivered, stall age, errors.
     pub capture_callbacks: u64,
     pub capture_stall_ms: u64,
@@ -347,6 +477,28 @@ pub struct AgentDiagnostics {
     pub last_error: Option<String>,
 }
 
+/// Snippet OCR health (Proposal 100), mirroring the vision block.
+#[derive(Debug, Clone, Serialize)]
+pub struct SnippetDiagnostics {
+    pub available: bool,
+    pub enabled: bool,
+    pub hotkey: String,
+    pub engine: String,
+    pub language: String,
+    pub phase: String,
+    /// Installed Windows OCR languages (winrt) / empty elsewhere.
+    pub ocr_languages: Vec<String>,
+    pub captures: u64,
+    pub recognitions: u64,
+    pub last_ocr_ms: u64,
+    pub errors: u64,
+    pub last_error: Option<String>,
+    pub last_region: Option<crate::snippet::RegionRect>,
+    /// ONNX language packs + install state (empty without `snippet-onnx`).
+    pub models: Vec<crate::snippet::models::SnippetModelStatus>,
+    pub onnx_available: bool,
+}
+
 /// Full troubleshooting snapshot: hook health, capture device + live level,
 /// engine/model install state, credential presence, and the most recent
 /// dictation attempt's measured levels. No secrets ever leave the core.
@@ -368,6 +520,9 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
                 live_rms,
                 live_peak,
                 vad_kind: crate::audio::vad::implementation(),
+                capture_mode: settings.audio.capture_mode.id(),
+                paused: m.is_paused(),
+                last_resume_ms: m.last_resume_ms(),
                 capture_callbacks: m.callback_count(),
                 capture_stall_ms: m.stall_ms(),
                 capture_errors: m.stream_error_count(),
@@ -383,6 +538,9 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
             live_rms: 0.0,
             live_peak: 0.0,
             vad_kind: crate::audio::vad::implementation(),
+            capture_mode: settings.audio.capture_mode.id(),
+            paused: false,
+            last_resume_ms: 0,
             capture_callbacks: 0,
             capture_stall_ms: 0,
             capture_errors: 0,
@@ -415,7 +573,21 @@ pub fn get_diagnostics(state: State<'_, AppState>) -> AppResult<DiagnosticsInfo>
         },
         vision: vision_diagnostics(&state, &settings),
         agent: agent_diagnostics(&state, &settings),
+        snippet: snippet_diagnostics(&state, &settings),
+        document: document_diagnostics(&state, &settings),
+        memory: state
+            .memory
+            .status(&state.db, &settings, &state.models_dir())?,
         last_dictation: crate::dictation::last_dictation_stats(),
+        paste: state.last_paste().map(|p| PasteDiagnostics {
+            backend: p.outcome.backend.to_string(),
+            snapshot_kind: p.outcome.snapshot_kind.to_string(),
+            restored: p.outcome.restored,
+            restore_skipped: p.outcome.restore_skipped.map(|s| s.to_string()),
+            partial_formats: p.outcome.partial_formats,
+            elapsed_ms: p.outcome.elapsed_ms,
+            at: p.at,
+        }),
     })
 }
 
@@ -486,6 +658,33 @@ fn agent_diagnostics(state: &AppState, settings: &Settings) -> AgentDiagnostics 
     }
 }
 
+/// Build the snippet OCR diagnostics snapshot.
+fn snippet_diagnostics(state: &AppState, settings: &Settings) -> SnippetDiagnostics {
+    let controller = &state.snippet;
+    let phase = format!("{:?}", controller.phase()).to_lowercase();
+    #[cfg(all(windows, feature = "snippet"))]
+    let ocr_languages = crate::snippet::ocr_winrt::list_languages();
+    #[cfg(not(all(windows, feature = "snippet")))]
+    let ocr_languages = Vec::new();
+    SnippetDiagnostics {
+        available: crate::snippet::available(),
+        enabled: settings.snippet.enabled,
+        hotkey: settings.snippet.hotkey.clone(),
+        engine: settings.snippet.engine.clone(),
+        language: settings.snippet.language.clone(),
+        phase,
+        ocr_languages,
+        captures: controller.captures(),
+        recognitions: controller.recognitions(),
+        last_ocr_ms: controller.last_ocr_ms(),
+        errors: controller.error_count(),
+        last_error: controller.last_error(),
+        last_region: controller.last_region(),
+        models: crate::snippet::models::status_list(&state.models_dir()),
+        onnx_available: crate::snippet::onnx_available(),
+    }
+}
+
 /// Rebuild the resident capture stream on the configured device (recovery
 /// for a dead/unplugged device without restarting the app or changing
 /// settings).
@@ -506,6 +705,9 @@ pub fn restart_microphone(state: State<'_, AppState>) -> AppResult<MicDiagnostic
         live_rms,
         live_peak,
         vad_kind: crate::audio::vad::implementation(),
+        capture_mode: state.settings_snapshot().audio.capture_mode.id(),
+        paused: m.is_paused(),
+        last_resume_ms: m.last_resume_ms(),
         capture_callbacks: m.callback_count(),
         capture_stall_ms: m.stall_ms(),
         capture_errors: m.stream_error_count(),
@@ -557,6 +759,88 @@ fn hotkey_diagnostics(settings: &Settings) -> HotkeyDiagnostics {
 }
 
 // ---- macOS TCC permissions (P5, phase M1) -------------------------------
+
+// ---- Memory layer (Proposal 127) -----------------------------------------
+
+/// Snapshot of the memory subsystem (Settings/Diagnostics/Home cards).
+#[tauri::command]
+pub fn memory_status(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+) -> AppResult<crate::memory::MemoryStatus> {
+    main_window_only(&window)?;
+    let settings = state.settings_snapshot();
+    state
+        .memory
+        .status(&state.db, &settings, &state.models_dir())
+}
+
+/// Ask the memory corpus: retrieved chunks always, a cited answer when a
+/// Stage-2 provider answered. Failure-soft by contract — a provider error
+/// returns chunks-only, never an error to the user.
+#[tauri::command]
+pub async fn ask_memory(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    query: String,
+) -> AppResult<crate::memory::AskResult> {
+    main_window_only(&window)?;
+    let settings = state.settings_snapshot();
+    state
+        .memory
+        .ask(&state.db, &query, &settings, state.secrets.as_ref())
+        .await
+}
+
+/// Drop every vector row; the worker re-embeds the corpus on its next
+/// polls (the re-embed path for embedder changes). The keyword index keeps
+/// serving throughout. Gated by the typed confirmation (Proposal 128): the
+/// backend is the authority — the UI input merely gathers the word.
+#[tauri::command]
+pub fn reindex_memory(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    confirmation: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.memory.reindex(&state.db, &confirmation)
+}
+
+/// Wipe the search corpus (chunks + vectors + FTS). Capture history is
+/// untouched, but existing history stops being searchable until
+/// re-captured — hence the stricter `PURGE` typed gate.
+#[tauri::command]
+pub fn purge_memory(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    confirmation: String,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.memory.purge(&state.db, &confirmation)
+}
+
+/// Download (or force re-download) the configured embedder's pinned files,
+/// then rebuild the resident encoder.
+#[tauri::command]
+pub async fn download_memory_model(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    force: bool,
+) -> AppResult<()> {
+    main_window_only(&window)?;
+    let settings = state.settings_snapshot();
+    let spec = crate::memory::models::spec_by_id(&settings.memory.embedder).ok_or_else(|| {
+        AppError::Other(format!("unknown embedder '{}'", settings.memory.embedder))
+    })?;
+    // Drop the resident encoder BEFORE replacing files on disk: a loaded
+    // session can hold the model open on Windows (the download-IPC rule).
+    state.memory.drop_encoder();
+    let models_dir = state.models_dir();
+    crate::memory::models::download(spec, &models_dir, force, |_| {}).await?;
+    // Rebuild on the fresh files.
+    state.memory.apply_settings(&settings, &models_dir);
+    Ok(())
+}
 
 /// Permission rows for the Settings wizard. The Microphone row derives its
 /// state from the resident capture (a working stream = granted).
@@ -652,17 +936,6 @@ pub async fn test_nvoos_connection(
 ) -> AppResult<crate::nvoos::ConnectionTest> {
     let client = state.nvoos_client()?;
     client.test_connection().await
-}
-
-/// Discover the active NV oOS SPA surfaces from the configured site.
-/// Feeds the multi-tab NV oOS view; an empty list (site unreachable, no Pro
-/// endpoint, or no credential) degrades to the legacy single configured SPA.
-#[tauri::command]
-pub async fn list_spa_surfaces(
-    state: State<'_, AppState>,
-) -> AppResult<Vec<crate::nvoos::SpaSurface>> {
-    let client = state.nvoos_client()?;
-    Ok(client.list_spa_surfaces().await)
 }
 
 #[tauri::command]
@@ -1272,6 +1545,345 @@ pub async fn pick_media_file(window: tauri::Window) -> AppResult<Option<String>>
 pub fn cancel_dictation() {
     // No-op placeholder: cancellation is driven by the Esc hotkey. Kept as a
     // command so the overlay UI has a stable button surface.
+}
+
+// ---- Snippet OCR (Proposal 100) ------------------------------------------
+
+/// Whether snippet OCR is compiled into this build.
+#[tauri::command]
+pub fn snippet_available() -> bool {
+    crate::snippet::available()
+}
+
+/// The selection overlay reports its region (virtual-screen pixels). Called
+/// **from the snippet window** — deliberately NOT main-window-gated, but
+/// validated: only accepted while a frozen frame is active, and the rect is
+/// clamped inside the controller.
+#[tauri::command]
+pub fn snippet_region_selected(
+    state: State<'_, AppState>,
+    x: i32,
+    y: i32,
+    w: u32,
+    h: u32,
+) -> AppResult<()> {
+    let rect = crate::snippet::RegionRect { x, y, w, h };
+    if rect.w == 0 || rect.h == 0 {
+        return Err(AppError::Other("empty selection".into()));
+    }
+    state.snippet.commit(&state.app, rect)
+}
+
+/// The selection overlay cancels (Esc / right-click). Called from the
+/// snippet window.
+#[tauri::command]
+pub fn snippet_cancel(state: State<'_, AppState>) -> AppResult<()> {
+    state.snippet.cancel(&state.app);
+    Ok(())
+}
+
+/// Snippet OCR history rows (only populated when `retain_history` is on).
+#[tauri::command]
+pub fn list_snippets(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    limit: Option<i64>,
+    offset: Option<i64>,
+) -> AppResult<Vec<crate::storage::db::SnippetRow>> {
+    main_window_only(&window)?;
+    state.db.list_snippets(
+        limit.unwrap_or(100).clamp(1, 500),
+        offset.unwrap_or(0).max(0),
+    )
+}
+
+/// Delete one snippet history row.
+#[tauri::command]
+pub fn delete_snippet(window: tauri::Window, state: State<'_, AppState>, id: i64) -> AppResult<()> {
+    main_window_only(&window)?;
+    state.db.delete_snippet(id)
+}
+
+/// The RapidOCR language-pack catalogue with install state.
+#[tauri::command]
+pub fn get_snippet_models(
+    state: State<'_, AppState>,
+) -> Vec<crate::snippet::models::SnippetModelStatus> {
+    crate::snippet::models::status_list(&state.models_dir())
+}
+
+/// Download a RapidOCR language pack (streaming + SHA-256 verified).
+#[tauri::command]
+pub async fn download_snippet_model(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    pack: String,
+    force: bool,
+) -> AppResult<String> {
+    main_window_only(&window)?;
+    let spec = crate::snippet::models::find(&pack)
+        .ok_or_else(|| AppError::Model(format!("unknown OCR language pack '{pack}'")))?;
+    let dir = state.models_dir();
+    let app = state.app.clone();
+    let pack_id = pack.clone();
+    let progress = move |fraction: f64| {
+        let _ = app.emit(
+            "model://progress",
+            serde_json::json!({ "engine": "snippet_ocr", "model": pack_id, "fraction": fraction }),
+        );
+    };
+    let path = crate::snippet::models::download(spec, &dir, force, progress).await?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// Installed Windows OCR recognizer languages (BCP-47 tags) for the
+/// Settings dropdown. Empty on non-Windows.
+#[tauri::command]
+pub fn list_ocr_languages() -> Vec<String> {
+    #[cfg(all(windows, feature = "snippet"))]
+    {
+        crate::snippet::ocr_winrt::list_languages()
+    }
+    #[cfg(not(all(windows, feature = "snippet")))]
+    {
+        Vec::new()
+    }
+}
+
+// ---- Document OCR (Proposal 109) -----------------------------------------
+
+/// Whether the document pipeline is compiled into this build.
+#[tauri::command]
+pub fn document_available() -> bool {
+    crate::document::available()
+}
+
+/// Whether the document-model tier is compiled in (Proposal 111).
+#[tauri::command]
+pub fn document_model_available() -> bool {
+    crate::document::available()
+}
+
+/// Test the document-model endpoint: builds the worker from the current
+/// settings and sends a one-token ping. Quality is the probe's job — this
+/// proves the local server answers.
+#[cfg(feature = "document")]
+#[tauri::command]
+pub async fn test_document_model_connection(state: State<'_, AppState>) -> AppResult<String> {
+    let settings = state.settings_snapshot();
+    let worker = crate::document::model::build_document_model(&settings, state.secrets.as_ref())
+        .ok_or_else(|| {
+            AppError::NotConfigured(
+                "document model tier is disabled or no local provider is configured".into(),
+            )
+        })?;
+    let outcome = tauri::async_runtime::spawn_blocking(move || worker.test_connection())
+        .await
+        .map_err(|e| AppError::Other(format!("connection test failed: {e}")))?;
+    outcome
+}
+
+/// Stub for builds without the `document` feature (the command surface is
+/// stable; the body fails cleanly).
+#[cfg(not(feature = "document"))]
+#[tauri::command]
+pub async fn test_document_model_connection(_state: State<'_, AppState>) -> AppResult<String> {
+    Err(AppError::NotConfigured(
+        "document pipeline not compiled into this build".into(),
+    ))
+}
+
+/// Pick a document file (PDF, TIFF, or raster image) via the native dialog.
+#[tauri::command]
+pub fn pick_document(window: tauri::Window) -> AppResult<Option<String>> {
+    main_window_only(&window)?;
+    use tauri_plugin_dialog::DialogExt;
+    let picked = window
+        .dialog()
+        .file()
+        .add_filter("Documents", &["pdf", "tif", "tiff"])
+        .add_filter("Images", &["png", "jpg", "jpeg", "webp"])
+        .blocking_pick_file();
+    Ok(picked
+        .and_then(|p| p.into_path().ok())
+        .map(|path| path.to_string_lossy().into_owned()))
+}
+
+/// Run the document pipeline on a picked file. The heavy work runs on a
+/// blocking thread; per-page progress streams on `document://progress` and
+/// the final result is returned to the caller.
+#[tauri::command]
+pub async fn transcribe_document(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    path: String,
+) -> AppResult<crate::document::DocumentResult> {
+    main_window_only(&window)?;
+    let path = std::path::PathBuf::from(path);
+    if !path.is_file() {
+        return Err(AppError::Other("file not found".into()));
+    }
+    let controller = state.document.clone();
+    if controller.is_busy() {
+        return Err(AppError::Other(
+            "a document is already being processed".into(),
+        ));
+    }
+    controller.set_busy(true);
+
+    let settings = state.settings_snapshot();
+    let models_dir = state.models_dir();
+    let secrets = state.secrets.clone();
+    let app = state.app.clone();
+    let path_for_task = path.clone();
+    let controller_task = controller.clone();
+    let settings_task = settings.clone();
+    let outcome = tauri::async_runtime::spawn_blocking(move || {
+        crate::document::controller::run_pipeline(
+            &app,
+            &controller_task,
+            &settings_task,
+            &models_dir,
+            secrets.as_ref(),
+            &path_for_task,
+        )
+    })
+    .await
+    .map_err(|e| AppError::Other(format!("document worker failed: {e}")))?;
+    controller.set_busy(false);
+
+    match outcome {
+        Ok(result) => {
+            if settings.snippet.retain_history {
+                let combined = result.combined_text();
+                let (text_pages, _ocr_pages, _polished, _model_pages) = result.provenance_counts();
+                let engine = if text_pages == 0 {
+                    "document-ocr"
+                } else {
+                    "document"
+                };
+                let _ = state.db.insert_document_snippet(
+                    &combined,
+                    &combined,
+                    engine,
+                    &result.path,
+                    result.page_count as u32,
+                    result.duration_ms as u64,
+                );
+            }
+            Ok(result)
+        }
+        Err(e) => {
+            use std::sync::atomic::Ordering;
+            controller.stats.errors.fetch_add(1, Ordering::Relaxed);
+            *controller.stats.last_error.lock().unwrap() = Some(e.to_string());
+            Err(e)
+        }
+    }
+}
+
+/// Abort the in-flight document run at the next page boundary.
+#[tauri::command]
+pub fn cancel_document(state: State<'_, AppState>) {
+    state.document.cancel();
+}
+
+/// Export the last document result. Text formats (`txt` | `md` | `hocr` |
+/// `alto`) are string emitters; `pdf` rebuilds the source as a searchable
+/// PDF (feature `snippet-pdf`). A save dialog asks for the destination —
+/// exports only ever happen on an explicit user action.
+#[tauri::command]
+pub fn export_document(
+    window: tauri::Window,
+    state: State<'_, AppState>,
+    format: String,
+) -> AppResult<Option<String>> {
+    main_window_only(&window)?;
+    #[cfg(not(feature = "document"))]
+    {
+        let _ = (&window, &format, &state);
+        Err(AppError::NotConfigured(
+            "document pipeline not compiled into this build".into(),
+        ))
+    }
+    #[cfg(feature = "document")]
+    {
+        let result = state
+            .document
+            .last_result()
+            .ok_or_else(|| AppError::Document("no document result to export".into()))?;
+        use tauri_plugin_dialog::DialogExt;
+
+        if format == "pdf" {
+            if !crate::document::pdf_export_available() {
+                return Err(AppError::NotConfigured(
+                    "searchable-PDF export is not compiled into this build (feature snippet-pdf)"
+                        .into(),
+                ));
+            }
+            #[cfg(feature = "snippet-pdf")]
+            {
+                let settings = state.settings_snapshot();
+                let picked = window
+                    .dialog()
+                    .file()
+                    .set_file_name(default_export_name(&result, "pdf"))
+                    .add_filter("PDF", &["pdf"])
+                    .blocking_save_file();
+                let Some(dest) = picked.and_then(|p| p.into_path().ok()) else {
+                    return Ok(None);
+                };
+                crate::document::export_pdf::export_searchable_pdf(
+                    std::path::Path::new(&result.path),
+                    &result,
+                    &dest,
+                    settings.document.dpi,
+                )?;
+                return Ok(Some(dest.to_string_lossy().into_owned()));
+            }
+            #[cfg(not(feature = "snippet-pdf"))]
+            {
+                return Err(AppError::NotConfigured(
+                    "searchable-PDF export is not compiled into this build (feature snippet-pdf)"
+                        .into(),
+                ));
+            }
+        }
+
+        let content = crate::document::export::emit(&format, &result)?;
+        let ext = if format == "md" {
+            "md"
+        } else {
+            format.as_str()
+        };
+        let picked = window
+            .dialog()
+            .file()
+            .set_file_name(default_export_name(&result, ext))
+            .add_filter("Export", &[ext])
+            .blocking_save_file();
+        let Some(dest) = picked.and_then(|p| p.into_path().ok()) else {
+            return Ok(None);
+        };
+        std::fs::write(&dest, content)?;
+        Ok(Some(dest.to_string_lossy().into_owned()))
+    }
+}
+
+/// Default export filename: source stem + suffix.
+#[cfg(feature = "document")]
+fn default_export_name(result: &crate::document::DocumentResult, ext: &str) -> String {
+    let stem = std::path::Path::new(&result.path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("document");
+    match ext {
+        "pdf" => format!("{stem}-searchable.pdf"),
+        "md" => format!("{stem}.md"),
+        "hocr" => format!("{stem}.hocr.html"),
+        "alto" => format!("{stem}.alto.xml"),
+        _ => format!("{stem}.{ext}"),
+    }
 }
 
 #[cfg(test)]

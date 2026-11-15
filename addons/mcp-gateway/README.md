@@ -6,7 +6,7 @@
 A public, fleet-scoped **Model Context Protocol** endpoint for the
 [NV oOS (Open Operator System)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
 WordPress platform. One API key, every bound site — tools appear namespaced
-as `<site-slug>.<tool>`.
+as `<site-slug>_<tool>`.
 
 The gateway is an **MCP aggregating proxy** speaking streamable HTTP
 (MCP 2026-07-28): it authenticates callers with a public API key, forwards
@@ -48,6 +48,7 @@ Deployment target: **Cloudways Velocity** (managed Node hosting) at
 | `GATEWAY_PUBLIC_KEYS` | **yes** | Public keys → site slugs: `key=slug-a,slug-b;key2=slug-c` (or JSON object) |
 | `GATEWAY_PUBLIC_KEYS_PREVIOUS` | no | Rotation overlap — previous key map (warns once on use) |
 | `PUBLIC_SITE_SLUGS` | no | Privacy filter for the public `/health` endpoint: comma-separated slugs visible without auth (`*` or unset = all configured sites). `/health/full` always reports every site. |
+| `PUBLIC_DEMO_KEY` | no | Operator-published demo key rendered on the `GET /` landing page (substituted into the copy-paste configs). A public, site-scoped credential — never a secret. Unset = the page keeps `YOUR_KEY` placeholders. |
 | `NVOOS_SITE_<SLUG>_URL` | per site | Upstream MCP endpoint, full URL incl. `/wp-json/mcp-ai/v1/mcp` |
 | `NVOOS_SITE_<SLUG>_TOKEN` | per site | Fleet Operator token (`op_xxxx.SECRET`); never logged or returned |
 | `AUTH_MODE` | no | `strict` (default) fails closed at boot when no keys are set |
@@ -56,6 +57,7 @@ Deployment target: **Cloudways Velocity** (managed Node hosting) at
 | `GATEWAY_OAUTH_ISSUER` | no | OAuth 2.1 authorization server issuer (e.g. Auth0 tenant). Setting it turns the gateway into an RFC 9728 protected resource — see the OAuth section below |
 | `GATEWAY_OAUTH_JWKS_URI` | no | JWKS override (default: issuer's `/.well-known/jwks.json`) |
 | `GATEWAY_OAUTH_RESOURCE` | no | RFC 8707 resource identifier / token audience (default `https://mcp.nvoos.pro`) |
+| `GATEWAY_OAUTH_DEFAULT_SITES` | no | Fallback slugs for a valid OAuth token that carries no `site:<slug>` scope (ChatGPT's connector requests only AS-level OIDC scopes). Unset = such tokens get 403 `insufficient_scope` |
 | `TRUST_PROXY` | yes on Velocity | `1` — NGINX sets X-Forwarded-For |
 | `ALLOWED_ORIGINS` | no | Comma-separated CORS origins for browser-based clients |
 | `MAX_JSON_BODY` | no | Body limit (default `1mb`) |
@@ -131,10 +133,14 @@ recorded calls (argument keys only) and diffs it against the live policy.
 - `SHADOW_POLICY` evaluates in parallel and logs — never enforces.
 
 ## Tool namespacing
-- `tools/list` merges every site bound to the key and prefixes names:
-  `site-a.create_post`, `site-b.woo_get_products`.
-- `tools/call` accepts the prefixed name (always) or a bare name when the
-  key is bound to exactly one site (passthrough mode).
+- `tools/list` merges every site bound to the key and prefixes names with
+  an underscore separator: `site-a_create_post`, `site-b_woo_get_products`.
+  (The underscore is deliberate — the MCP tool-name grammar forbids dots,
+  and OpenAI connectors normalize illegal names, breaking dot-prefixed
+  round-trips.)
+- `tools/call` accepts the prefixed name (always), a legacy dot-prefixed
+  name from pre-0.2.1 listings, or a bare name when the key is bound to
+  exactly one site (passthrough mode).
 - A failing upstream degrades the list to a `_meta.gateway.errors` entry
   instead of failing the whole call.
 - v1 aggregation limitation: `resources/*` and `prompts/*` use the first
@@ -155,23 +161,34 @@ recorded calls (argument keys only) and diffs it against the live policy.
   budget); upstream tokens are header-only and never appear in responses,
   logs, or errors.
 - Auth: static API keys in v1; OAuth 2.1 (RFC 8414 + dynamic client
-  registration) is the documented upgrade path.
+  registration) is the ChatGPT-connector path — live on the production
+  gateway since 2026-11-01 (Auth0 tenant, Proposal 099).
 
 ## Claude Code plugin
 
 The addon ships a Claude Code plugin (`.claude-plugin/plugin.json`,
-`commands/connect.md`, `skills/gateway/`) that syncs to the mirror repo and
-doubles as the marketplace source:
+`commands/connect.md`, `skills/gateway/`) that syncs to the mirror repo.
+The mirror doubles as the plugin's marketplace (`.claude-plugin/marketplace.json`),
+so it installs by name:
 
 ```
 /plugin marketplace add nvdigitalsolutions/nvoos-mcp-gateway
+/plugin install nvoos-mcp-gateway@nvoos-marketplace
 ```
 
 Enabling the plugin prompts for the gateway API key (stored securely as a
 sensitive `userConfig` option) and substitutes it into the MCP server's
 `Authorization` header.
 
-## OAuth 2.1 resource server (opt-in)
+Release discipline: `version` in `.claude-plugin/plugin.json` must be
+bumped with every gateway release or installed plugins never see updates.
+
+A slimmer, directory-ready distribution (`nvoos-gateway`, plugin-only files
+plus icon) ships in `addons/claude-gateway-plugin/` and syncs to
+`nvdigitalsolutions/nvoos-claude-gateway-plugin` — use that for the
+Anthropic directory submission.
+
+## OAuth 2.1 resource server (opt-in per deployment; live on mcp.nvoos.pro)
 
 With `GATEWAY_OAUTH_ISSUER` set, the gateway acts as an RFC 9728 protected
 resource **alongside** static keys:
@@ -196,6 +213,21 @@ resource **alongside** static keys:
 Authorization server: any OAuth 2.1 AS with RFC 8414 metadata + JWKS
 (Auth0 is the platform convention). Dynamic client registration (RFC 7591)
 belongs to the AS, not the gateway.
+
+**ChatGPT connector notes** (verified against the live production setup,
+2026-11-01):
+
+- The Auth0 API identifier must equal the full MCP server URL, e.g.
+  `https://mcp.nvoos.pro/mcp` — ChatGPT binds `resource` to the
+  path-insertion metadata URL (RFC 9728 §3.3), and Auth0 matches it
+  exactly.
+- ChatGPT requests ALL scopes from the AS `scopes_supported` and expects
+  an exact match in the token response (else `OAUTH_SCOPES_MISMATCH`) —
+  a post-login Action (`api.accessToken.addScope`) grants the OIDC set.
+- None of those scopes are `site:*`, so pair the deployment with
+  `GATEWAY_OAUTH_DEFAULT_SITES=<public-slug>` (e.g. `demo`) or the token
+  is rejected 403 `insufficient_scope`. Explicit `site:<slug>` scopes in a
+  token always win over the fallback.
 
 ## Development
 

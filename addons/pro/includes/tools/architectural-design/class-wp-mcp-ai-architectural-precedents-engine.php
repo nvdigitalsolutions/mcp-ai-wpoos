@@ -19,13 +19,15 @@
  * Keeping the wrapper here means the precedent CPT class stays focused on
  * registration and the tools themselves stay focused on input validation.
  *
- * PHP 7.4 compatible.
+ * PHP 8.1 compatible.
  *
  * @package WP_MCP_AI_Pro
  * @since 1.5.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

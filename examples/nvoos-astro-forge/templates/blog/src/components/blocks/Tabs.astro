@@ -1,0 +1,68 @@
+---
+// Tabs — the tabs content block (Proposal 126 §blocks). The no-JS radio
+// technique: hidden radio inputs + labelled tablist + panels. Semantics
+// ride native label/input association (keyboard, focus, selection); the
+// styling owns the visual switching. Deterministic ids via lib/blocks.ts.
+import { tabId } from '../../lib/blocks.ts';
+
+interface Props {
+	items: Array<{ title: string; content: string }>;
+	heading?: string;
+}
+
+const { items, heading } = Astro.props;
+const group = tabId(items.map((item) => item.title).join('|'));
+---
+
+<section class="nvoos-tabs">
+	{heading && <h2>{heading}</h2>}
+	<div class="nvoos-tabs-shell">
+		{items.map((item, index) => {
+			const id = `${group}-${index + 1}`;
+			return (
+				<>
+					<input class="nvoos-tabs-input" type="radio" name={group} id={id} checked={index === 0} />
+					<label class="nvoos-tabs-tab" for={id}>
+						{item.title}
+					</label>
+					<div class="nvoos-tabs-panel">
+						<p>{item.content}</p>
+					</div>
+				</>
+			);
+		})}
+	</div>
+</section>
+
+<style>
+	.nvoos-tabs-shell {
+		display: flex;
+		flex-wrap: wrap;
+		border: 1px solid var(--forge-line);
+		border-radius: var(--forge-radius);
+		overflow: hidden;
+	}
+	.nvoos-tabs-input {
+		position: absolute;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.nvoos-tabs-tab {
+		padding: var(--forge-space-sm) var(--forge-space);
+		font-weight: 600;
+		cursor: pointer;
+		border-bottom: 2px solid transparent;
+	}
+	.nvoos-tabs-input:checked + .nvoos-tabs-tab {
+		border-bottom-color: var(--forge-accent);
+		color: var(--forge-accent);
+	}
+	.nvoos-tabs-panel {
+		display: none;
+		flex-basis: 100%;
+		padding: 0 var(--forge-space) var(--forge-space);
+	}
+	.nvoos-tabs-input:checked + .nvoos-tabs-tab + .nvoos-tabs-panel {
+		display: block;
+	}
+</style>

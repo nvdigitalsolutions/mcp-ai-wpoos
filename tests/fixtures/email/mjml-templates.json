@@ -1,0 +1,157 @@
+{
+    "text-only": {
+        "components": [
+            {
+                "type": "text",
+                "content": "Hello world"
+            }
+        ],
+        "components_sanitised": [
+            {
+                "type": "text",
+                "content": "Hello world"
+            }
+        ],
+        "options": [],
+        "expected": "<mjml><mj-head><mj-attributes><mj-all font-family=\"Arial, sans-serif\" /><mj-body background-color=\"#f4f4f4\" /><mj-container background-color=\"#ffffff\" width=\"600px\" /></mj-attributes></mj-head><mj-body><mj-section><mj-column><mj-text>Hello world</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "with-head-metadata": {
+        "components": [
+            {
+                "type": "text",
+                "content": "Body copy"
+            }
+        ],
+        "components_sanitised": [
+            {
+                "type": "text",
+                "content": "Body copy"
+            }
+        ],
+        "options": {
+            "title": "Release Notes",
+            "preview_text": "What shipped this week"
+        },
+        "expected": "<mjml><mj-head><mj-title>Release Notes</mj-title><mj-preview>What shipped this week</mj-preview><mj-attributes><mj-all font-family=\"Arial, sans-serif\" /><mj-body background-color=\"#f4f4f4\" /><mj-container background-color=\"#ffffff\" width=\"600px\" /></mj-attributes></mj-head><mj-body><mj-section><mj-column><mj-text>Body copy</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "every-component": {
+        "components": [
+            {
+                "type": "text",
+                "content": "<strong>Bold</strong> &amp; bright"
+            },
+            {
+                "type": "button",
+                "text": "Read more",
+                "attributes": {
+                    "href": "https://example.com/a?b=1&c=2",
+                    "align": "center"
+                }
+            },
+            {
+                "type": "image",
+                "attributes": {
+                    "src": "https://example.com/x.png",
+                    "alt": "Logo"
+                }
+            },
+            {
+                "type": "divider",
+                "attributes": {
+                    "border-color": "#dddddd"
+                }
+            },
+            {
+                "type": "spacer",
+                "attributes": {
+                    "height": "24px"
+                }
+            },
+            {
+                "type": "unknown-type"
+            }
+        ],
+        "components_sanitised": [
+            {
+                "type": "text",
+                "content": "<strong>Bold</strong> &amp; bright"
+            },
+            {
+                "type": "button",
+                "text": "Read more",
+                "attributes": {
+                    "href": "https://example.com/a?b=1&c=2",
+                    "align": "center"
+                }
+            },
+            {
+                "type": "image",
+                "attributes": {
+                    "src": "https://example.com/x.png",
+                    "alt": "Logo"
+                }
+            },
+            {
+                "type": "divider",
+                "attributes": {
+                    "border-color": "#dddddd"
+                }
+            },
+            {
+                "type": "spacer",
+                "attributes": {
+                    "height": "24px"
+                }
+            },
+            {
+                "type": "unknown-type"
+            }
+        ],
+        "options": [],
+        "expected": "<mjml><mj-head><mj-attributes><mj-all font-family=\"Arial, sans-serif\" /><mj-body background-color=\"#f4f4f4\" /><mj-container background-color=\"#ffffff\" width=\"600px\" /></mj-attributes></mj-head><mj-body><mj-section><mj-column><mj-text><strong>Bold</strong> &amp; bright</mj-text><mj-button href=\"https://example.com/a?b=1&amp;c=2\" align=\"center\">Read more</mj-button><mj-image src=\"https://example.com/x.png\" alt=\"Logo\" /><mj-divider border-color=\"#dddddd\" /><mj-spacer height=\"24px\" /></mj-column></mj-section></mj-body></mjml>"
+    },
+    "custom-theme": {
+        "components": [
+            {
+                "type": "text",
+                "content": "Themed"
+            }
+        ],
+        "components_sanitised": [
+            {
+                "type": "text",
+                "content": "Themed"
+            }
+        ],
+        "options": {
+            "font_family": "Georgia, serif",
+            "background_color": "#101010",
+            "container_width": "640px"
+        },
+        "expected": "<mjml><mj-head><mj-attributes><mj-all font-family=\"Georgia, serif\" /><mj-body background-color=\"#101010\" /><mj-container background-color=\"#ffffff\" width=\"640px\" /></mj-attributes></mj-head><mj-body><mj-section><mj-column><mj-text>Themed</mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "script-is-stripped": {
+        "components": [
+            {
+                "type": "text",
+                "content": "Safe <script>alert(1)</script><em>em</em>"
+            }
+        ],
+        "components_sanitised": [
+            {
+                "type": "text",
+                "content": "Safe alert(1)<em>em</em>"
+            }
+        ],
+        "options": [],
+        "expected": "<mjml><mj-head><mj-attributes><mj-all font-family=\"Arial, sans-serif\" /><mj-body background-color=\"#f4f4f4\" /><mj-container background-color=\"#ffffff\" width=\"600px\" /></mj-attributes></mj-head><mj-body><mj-section><mj-column><mj-text>Safe alert(1)<em>em</em></mj-text></mj-column></mj-section></mj-body></mjml>"
+    },
+    "empty-components": {
+        "components": [],
+        "components_sanitised": [],
+        "options": [],
+        "expected": {
+            "error": "wp_mcp_ai_invalid_components"
+        }
+    }
+}

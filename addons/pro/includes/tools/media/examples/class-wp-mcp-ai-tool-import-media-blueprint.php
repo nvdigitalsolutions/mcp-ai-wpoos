@@ -5,6 +5,10 @@
  * @package   WP_MCP_AI_Pro
  * @subpackage Media_Toolkit
  * @since     2.3.1
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

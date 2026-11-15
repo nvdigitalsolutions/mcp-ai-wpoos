@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 // phpcs:disable Universal.Files.SeparateFunctionsFromOO, Generic.Files, PSR1.Files.SideEffects.FoundWithSymbols, Squiz.Commenting.FunctionComment.Missing -- CLI command file with multiple command classes and helper functions.

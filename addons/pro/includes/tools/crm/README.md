@@ -84,6 +84,26 @@ This directory mirrors the [Healthcare Toolkit](../healthcare/README.md) layout:
 | `WP_MCP_AI_Tool_Record_CRM_Reply` | `inbound/class-wp-mcp-ai-tool-record-crm-reply.php` | tool registry (v3.2.0) |
 | `WP_MCP_AI_Tool_Get_Pipeline_Digest` | `analytics/class-wp-mcp-ai-tool-get-pipeline-digest.php` | tool registry (v3.2.0) |
 
+### Outreach Admissibility & Signals (v3.3.0 — Proposal 129)
+
+| Tool | Purpose |
+|---|---|
+| `verify_lead_email` | Infer a domain pattern and verify one address; writes `verified` / `risky` / `guess` / `invalid`. |
+| `check_sending_domain` | Read SPF, DKIM and DMARC and return READY / NOT READY with reasons. |
+| `get_sending_readiness` | Composite readiness score: DNS, warmup, bounce/complaint, verified coverage. |
+| `manage_sending_warmup` | Start, pause, resume or extend the mailbox ramp. |
+| `preview_pre_send_gate` | Dry-run the deterministic gate against a lead and draft. |
+| `collect_prospect_signals` | Free own-site signal collection (booking, schema, ads, stack, hiring, blog). |
+| `explain_prospect_fit` | Evidence card: signal, value, source, confidence, observed date. |
+| `query_signal_cohort` | Must-have / disqualify / numeric-range cohort count and sample. |
+| `export_outreach_csv` | Sequencer-ready CSV with status, timezone, consent basis and evidence. |
+| `review_held_send` | List, approve or reject outbox mail held by the gate or agent guard. |
+
+Engine classes: `WP_MCP_AI_CRM_Pre_Send_Gate`, `WP_MCP_AI_CRM_Deliverability`,
+`WP_MCP_AI_CRM_Send_Window`, `WP_MCP_AI_CRM_Unsubscribe`,
+`WP_MCP_AI_CRM_Opt_Out_Detector`, `WP_MCP_AI_CRM_Signals` (+ `_DB`),
+`WP_MCP_AI_CRM_Agent_Guard`, `WP_MCP_AI_CRM_Sequence_Presets`.
+
 ### Email Hygiene Module
 
 Three new Phase E tools (v2.8.0) provide email list hygiene for WordPress plugin environments:

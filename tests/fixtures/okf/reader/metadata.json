@@ -1,0 +1,312 @@
+{
+    "tree": {
+        "a-human.md": "---\ntype: Concept\ntitle: Human Reviewed\nstatus: stable\ntags: [alpha]\nverified:\n  - by: 'human:ada'\n    at: 2024-01-01\n---\nHuman checked.\n",
+        "b-machine.md": "---\ntype: Concept\ntitle: Machine Confirmed\nstatus: draft\nverified:\n  - by: 'agent:gemini'\n---\nMachine checked.\n",
+        "c-unverified.md": "---\ntype: Concept\ntitle: Unverified Old\nstatus: deprecated\nstale_after: 2000-01-01\n---\nNo verification.\n",
+        "d-fresh.md": "---\ntype: Concept\ntitle: Unverified Fresh\nstale_after: 2999-01-01\ntags: [alpha, beta]\n---\nNo verification, not stale.\n"
+    },
+    "cases": [
+        {
+            "name": "search-by-type",
+            "op": "search",
+            "args": {
+                "criteria": {
+                    "type": "Concept"
+                }
+            },
+            "expected": [
+                {
+                    "concept_id": "a-human",
+                    "type": "Concept",
+                    "title": "Human Reviewed",
+                    "description": "",
+                    "tags": [
+                        "alpha"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "human-reviewed",
+                    "stale": false
+                },
+                {
+                    "concept_id": "b-machine",
+                    "type": "Concept",
+                    "title": "Machine Confirmed",
+                    "description": "",
+                    "tags": [],
+                    "status": "draft",
+                    "trust_tier": "machine-confirmed",
+                    "stale": false
+                },
+                {
+                    "concept_id": "c-unverified",
+                    "type": "Concept",
+                    "title": "Unverified Old",
+                    "description": "",
+                    "tags": [],
+                    "status": "deprecated",
+                    "trust_tier": "unverified",
+                    "stale": true
+                },
+                {
+                    "concept_id": "d-fresh",
+                    "type": "Concept",
+                    "title": "Unverified Fresh",
+                    "description": "",
+                    "tags": [
+                        "alpha",
+                        "beta"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "unverified",
+                    "stale": false
+                }
+            ]
+        },
+        {
+            "name": "search-by-status-draft",
+            "op": "search",
+            "args": {
+                "criteria": {
+                    "status": "draft"
+                }
+            },
+            "expected": [
+                {
+                    "concept_id": "b-machine",
+                    "type": "Concept",
+                    "title": "Machine Confirmed",
+                    "description": "",
+                    "tags": [],
+                    "status": "draft",
+                    "trust_tier": "machine-confirmed",
+                    "stale": false
+                }
+            ]
+        },
+        {
+            "name": "search-by-trust-tier-human",
+            "op": "search",
+            "args": {
+                "criteria": {
+                    "trust_tier": "human-reviewed"
+                }
+            },
+            "expected": [
+                {
+                    "concept_id": "a-human",
+                    "type": "Concept",
+                    "title": "Human Reviewed",
+                    "description": "",
+                    "tags": [
+                        "alpha"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "human-reviewed",
+                    "stale": false
+                }
+            ]
+        },
+        {
+            "name": "search-by-trust-tier-unverified",
+            "op": "search",
+            "args": {
+                "criteria": {
+                    "trust_tier": "unverified"
+                }
+            },
+            "expected": [
+                {
+                    "concept_id": "c-unverified",
+                    "type": "Concept",
+                    "title": "Unverified Old",
+                    "description": "",
+                    "tags": [],
+                    "status": "deprecated",
+                    "trust_tier": "unverified",
+                    "stale": true
+                },
+                {
+                    "concept_id": "d-fresh",
+                    "type": "Concept",
+                    "title": "Unverified Fresh",
+                    "description": "",
+                    "tags": [
+                        "alpha",
+                        "beta"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "unverified",
+                    "stale": false
+                }
+            ]
+        },
+        {
+            "name": "search-excludes-stale",
+            "op": "search",
+            "args": {
+                "criteria": {
+                    "include_stale": false
+                }
+            },
+            "expected": [
+                {
+                    "concept_id": "a-human",
+                    "type": "Concept",
+                    "title": "Human Reviewed",
+                    "description": "",
+                    "tags": [
+                        "alpha"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "human-reviewed",
+                    "stale": false
+                },
+                {
+                    "concept_id": "b-machine",
+                    "type": "Concept",
+                    "title": "Machine Confirmed",
+                    "description": "",
+                    "tags": [],
+                    "status": "draft",
+                    "trust_tier": "machine-confirmed",
+                    "stale": false
+                },
+                {
+                    "concept_id": "d-fresh",
+                    "type": "Concept",
+                    "title": "Unverified Fresh",
+                    "description": "",
+                    "tags": [
+                        "alpha",
+                        "beta"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "unverified",
+                    "stale": false
+                }
+            ]
+        },
+        {
+            "name": "search-by-tag-alpha",
+            "op": "search",
+            "args": {
+                "criteria": {
+                    "tag": "alpha"
+                }
+            },
+            "expected": [
+                {
+                    "concept_id": "a-human",
+                    "type": "Concept",
+                    "title": "Human Reviewed",
+                    "description": "",
+                    "tags": [
+                        "alpha"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "human-reviewed",
+                    "stale": false
+                },
+                {
+                    "concept_id": "d-fresh",
+                    "type": "Concept",
+                    "title": "Unverified Fresh",
+                    "description": "",
+                    "tags": [
+                        "alpha",
+                        "beta"
+                    ],
+                    "status": "stable",
+                    "trust_tier": "unverified",
+                    "stale": false
+                }
+            ]
+        },
+        {
+            "name": "get-types",
+            "op": "get_types",
+            "args": [],
+            "expected": [
+                "Concept"
+            ]
+        },
+        {
+            "name": "trust-tier-human",
+            "op": "get_trust_tier",
+            "args": {
+                "frontmatter": {
+                    "verified": [
+                        {
+                            "by": "human:ada"
+                        }
+                    ]
+                }
+            },
+            "expected": "human-reviewed"
+        },
+        {
+            "name": "trust-tier-machine",
+            "op": "get_trust_tier",
+            "args": {
+                "frontmatter": {
+                    "verified": [
+                        {
+                            "by": "agent:gemini"
+                        }
+                    ]
+                }
+            },
+            "expected": "machine-confirmed"
+        },
+        {
+            "name": "trust-tier-absent",
+            "op": "get_trust_tier",
+            "args": {
+                "frontmatter": {
+                    "title": "Nothing verified"
+                }
+            },
+            "expected": "unverified"
+        },
+        {
+            "name": "is-stale-past",
+            "op": "is_stale",
+            "args": {
+                "frontmatter": {
+                    "stale_after": "2000-01-01"
+                }
+            },
+            "expected": true
+        },
+        {
+            "name": "is-stale-future",
+            "op": "is_stale",
+            "args": {
+                "frontmatter": {
+                    "stale_after": "2999-01-01"
+                }
+            },
+            "expected": false
+        },
+        {
+            "name": "is-stale-absent",
+            "op": "is_stale",
+            "args": {
+                "frontmatter": {
+                    "title": "No deadline"
+                }
+            },
+            "expected": false
+        },
+        {
+            "name": "is-stale-unparseable-date",
+            "op": "is_stale",
+            "args": {
+                "frontmatter": {
+                    "stale_after": "not-a-date"
+                }
+            },
+            "expected": false
+        }
+    ]
+}

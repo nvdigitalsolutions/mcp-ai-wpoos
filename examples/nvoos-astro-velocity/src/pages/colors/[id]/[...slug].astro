@@ -7,7 +7,7 @@ import { getAllColors, getProducts, PAGE_SIZE } from '../../../lib/commerce/clie
 import type { SortValue, WhereClause } from '../../../lib/commerce/types';
 import { normalizeProductMedia } from '../../../lib/commerce/normalize';
 import { colorPath, absoluteUrl } from '../../../lib/url';
-import { breadcrumbJsonLd } from '../../../lib/seo/jsonld';
+import { collectionPageJsonLd } from '../../../lib/seo/jsonld';
 import { pageTitle, plainExcerpt } from '../../../lib/seo/meta';
 
 Astro.response.headers.set(
@@ -40,10 +40,11 @@ const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
 
 const site = Astro.site ?? new URL('https://store.nvoos.cloud');
 const jsonld = [
-	breadcrumbJsonLd([
-		{ name: 'Home', url: absoluteUrl(site, '/') },
-		{ name: color.name, url: canonical },
-	]),
+	collectionPageJsonLd({
+		name: color.name,
+		url: canonical,
+		breadcrumb: [{ name: 'Home', url: absoluteUrl(site, '/') }],
+	}),
 ];
 ---
 

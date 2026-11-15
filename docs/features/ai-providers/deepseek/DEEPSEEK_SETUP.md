@@ -29,7 +29,7 @@
 - NV oOS base plugin active (no Pro addon required).
 - A DeepSeek account and API key — sign up at
   [platform.deepseek.com](https://platform.deepseek.com).
-- PHP 7.4+ (base plugin requirement).
+- PHP 8.1+ (base plugin requirement).
 
 ---
 

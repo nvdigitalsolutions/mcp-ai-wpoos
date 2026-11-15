@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -357,7 +359,7 @@ class WP_MCP_AI_Site_Creator_Toolkit_Settings_Page {
 			<div class="card">
 				<h2><?php esc_html_e( 'Requirements', 'mcp-ai-wpoos-pro' ); ?></h2>
 				<ul>
-					<li><?php esc_html_e( 'PHP 7.4 or higher', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'PHP 8.1 or higher', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'WordPress 6.0 or higher', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'NV oOS Pro addon', 'mcp-ai-wpoos-pro' ); ?></li>
 					<li><?php esc_html_e( 'OpenAI API key (for AI-powered features)', 'mcp-ai-wpoos-pro' ); ?></li>

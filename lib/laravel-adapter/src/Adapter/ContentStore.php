@@ -25,6 +25,7 @@ use Nvoos\Core\Domain\Entity\UpdateContentCommand;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\Error\NotFoundException;
 use Nvoos\Core\Domain\Error\ValidationException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 
@@ -97,15 +98,19 @@ class ContentStore implements ContentStoreInterface {
 			$builder->whereIn( 'type', $query->types );
 		}
 
-		// Filter by status.
-		if ( array() !== $query->statuses ) {
+		// Filter by status. WP_Query's 'any' means "no status filter"; the
+		// Laravel column has no such value, so translating it to whereIn()
+		// would return zero rows.
+		if ( array() !== $query->statuses && ! in_array( 'any', $query->statuses, true ) ) {
 			$builder->whereIn( 'status', $query->statuses );
 		}
 
-		// Full-text search.
-		if ( '' !== $query->search ) {
+		// Full-text search. WP_Query's `s` covers title, excerpt and content;
+		// matching only two of the three changes the result set.
+		if ( null !== $query->search && '' !== $query->search ) {
 			$builder->where( function ( $q ) use ( $query ) {
 				$q->where( 'title', 'like', "%{$query->search}%" )
+				  ->orWhere( 'excerpt', 'like', "%{$query->search}%" )
 				  ->orWhere( 'content', 'like', "%{$query->search}%" );
 			} );
 		}
@@ -123,16 +128,34 @@ class ContentStore implements ContentStoreInterface {
 			$builder->whereNotIn( 'id', $query->exclude );
 		}
 
-		// Ordering.
-		$orderBy    = '' !== $query->orderBy ? $query->orderBy : 'created_at';
-		$order      = in_array( strtoupper( $query->order ), array( 'ASC', 'DESC' ), true )
+		// WP_Query-shaped meta and taxonomy clauses are part of the
+		// ContentQuery contract. Dropping either returns unfiltered rows while
+		// still looking like a successful query, which is worse than failing.
+		if ( array() !== $query->metaQuery ) {
+			$this->applyMetaQuery( $builder, $query->metaQuery );
+		}
+		if ( array() !== $query->taxQuery ) {
+			$this->applyTaxQuery( $builder, $query->taxQuery );
+		}
+
+		// Ordering. ContentQuery speaks WP_Query field names (`date`,
+		// `modified`); the table uses created_at / updated_at.
+		$order = in_array( strtoupper( $query->order ), array( 'ASC', 'DESC' ), true )
 			? strtoupper( $query->order )
 			: 'DESC';
-		$builder->orderBy( $orderBy, $order );
+		$builder->orderBy( $this->orderColumn( $query->orderBy ), $order );
 
-		// Pagination.
-		$perPage = $query->perPage > 0 ? $query->perPage : 15;
-		$page    = $query->page > 0 ? $query->page : 1;
+		// Pagination (documented range is 1–200; 0 means "use the default").
+		// A negative value is WP_Query's "return everything" idiom, which this
+		// contract does not offer — clamping it to one row would be worse than
+		// failing.
+		if ( $query->perPage < 0 ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
+			throw new \InvalidArgumentException( "perPage must be 0-200; got {$query->perPage}." );
+		}
+
+		$perPage = min( 200, max( 1, $query->perPage > 0 ? $query->perPage : 20 ) );
+		$page    = max( 1, $query->page );
 
 		$paginator = $builder->paginate(
 			perPage: $perPage,
@@ -151,6 +174,329 @@ class ContentStore implements ContentStoreInterface {
 			page: $paginator->currentPage(),
 			perPage: $paginator->perPage(),
 			totalPages: $paginator->lastPage(),
+		);
+	}
+
+	/**
+	 * Map a ContentQuery order field to a table column.
+	 *
+	 * @param string $orderBy ContentQuery order field.
+	 * @return string
+	 */
+	private function orderColumn( string $orderBy ): string {
+		switch ( strtolower( trim( $orderBy ) ) ) {
+			case '':
+			case 'date':
+				return 'created_at';
+			case 'modified':
+				return 'updated_at';
+			case 'title':
+				return 'title';
+			case 'id':
+				return 'id';
+			default:
+				// ContentQuery documents exactly four fields. Silently sorting by
+				// created_at for anything else would hide a caller bug.
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
+				throw new \InvalidArgumentException( "Unsupported order field '{$orderBy}'." );
+		}
+	}
+
+	/**
+	 * Apply a WP_Query-style meta clause list.
+	 *
+	 * @param Builder               $builder Builder.
+	 * @param array<string, mixed>  $clauses Clause list, `relation` optional.
+	 * @return void
+	 */
+	private function applyMetaQuery( Builder $builder, array $clauses ): void {
+		$relation = 'or' === strtolower( (string) ( $clauses['relation'] ?? 'AND' ) ) ? 'or' : 'and';
+
+		$builder->where(
+			function ( Builder $group ) use ( $clauses, $relation ): void {
+				foreach ( $clauses as $name => $clause ) {
+					if ( 'relation' === $name || ! is_array( $clause ) ) {
+						continue;
+					}
+
+					if ( $this->isClauseGroup( $clause ) ) {
+						$group->where(
+							function ( Builder $nested ) use ( $clause ): void {
+								$this->applyMetaQuery( $nested, $clause );
+							},
+							null,
+							null,
+							$relation
+						);
+					} else {
+						$this->applyMetaClause( $group, $clause, $relation );
+					}
+				}
+			}
+		);
+	}
+
+	/**
+	 * Whether a meta clause element is a nested clause group.
+	 *
+	 * @param array<string, mixed> $clause Clause element.
+	 * @return bool
+	 */
+	private function isClauseGroup( array $clause ): bool {
+		if ( isset( $clause['key'] ) ) {
+			return false;
+		}
+
+		foreach ( $clause as $value ) {
+			if ( is_array( $value ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Apply one meta clause to a group builder.
+	 *
+	 * @param Builder              $group   Group builder.
+	 * @param array<string, mixed> $clause  Clause (`key`, `value`, `compare`).
+	 * @param string               $boolean `and` or `or`.
+	 * @return void
+	 */
+	private function applyMetaClause( Builder $group, array $clause, string $boolean ): void {
+		$key = isset( $clause['key'] ) ? (string) $clause['key'] : '';
+
+		if ( '' === $key ) {
+			return;
+		}
+
+		// Meta keys become JSON paths; anything else is a programming error.
+		if ( 1 !== preg_match( '/^[A-Za-z0-9_.-]+$/', $key ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
+			throw new \InvalidArgumentException( "Unsupported meta key '{$key}'." );
+		}
+
+		$compare = strtoupper( (string) ( $clause['compare'] ?? '=' ) );
+		$value   = $clause['value'] ?? null;
+		$path    = 'meta->' . $key;
+
+		// WP_Meta_Query casts to a numeric type only when the clause declares
+		// one. An untyped `>` is a CHAR comparison, which is how date ranges
+		// (`2026-01-10` > `2026-03-01`) work.
+		$type    = strtoupper( trim( (string) ( $clause['type'] ?? '' ) ) );
+		$numeric = 1 === preg_match(
+			'/^(?:NUMERIC|SIGNED|UNSIGNED|DECIMAL(?:\(\d+(?:,\s?\d+)?\))?)$/',
+			$type
+		);
+
+		switch ( $compare ) {
+			case 'EXISTS':
+				$group->whereNotNull( $path, $boolean );
+				return;
+
+			case 'NOT EXISTS':
+				$group->whereNull( $path, $boolean );
+				return;
+
+			case 'IN':
+			case 'NOT IN':
+				$values = is_array( $value ) ? array_values( $value ) : array( $value );
+				if ( 'IN' === $compare ) {
+					$group->whereIn( $path, $values, $boolean );
+				} else {
+					$group->whereNotIn( $path, $values, $boolean );
+				}
+				return;
+
+			case 'BETWEEN':
+			case 'NOT BETWEEN':
+				$values = is_array( $value ) ? array_values( $value ) : array();
+				if ( 2 !== count( $values ) ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
+					throw new \InvalidArgumentException( "BETWEEN needs exactly two values for '{$key}'." );
+				}
+				if ( $numeric ) {
+					$this->whereMetaNumeric( $group, $path, $compare, array( $values[0], $values[1] ), $boolean );
+				} elseif ( 'BETWEEN' === $compare ) {
+					$group->whereBetween( $path, array( $values[0], $values[1] ), $boolean );
+				} else {
+					$group->whereNotBetween( $path, array( $values[0], $values[1] ), $boolean );
+				}
+				return;
+
+			case '!=':
+				// WP_Query's documented quirk: a missing key satisfies `!=`.
+				$group->where(
+					function ( Builder $nested ) use ( $path, $value ): void {
+						$nested->whereNull( $path )->orWhere( $path, '!=', $value );
+					},
+					null,
+					null,
+					$boolean
+				);
+				return;
+
+			case 'NOT LIKE':
+				// Plain SQL semantics for a missing key (NULL does not satisfy the
+				// predicate). WP_Query's behaviour here is undocumented; do not guess.
+				$group->where( $path, 'NOT LIKE', $this->likePattern( $value ), $boolean );
+				return;
+
+			default:
+				$supported = array( '=', '>', '>=', '<', '<=', 'LIKE' );
+				if ( ! in_array( $compare, $supported, true ) ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
+					throw new \InvalidArgumentException( "Unsupported meta compare '{$compare}'." );
+				}
+
+				// Ordering operators cast only when the clause declares a numeric
+				// type; untyped comparisons stay lexical, matching WP_Meta_Query.
+				if ( $numeric && in_array( $compare, array( '>', '>=', '<', '<=' ), true ) ) {
+					$this->whereMetaNumeric( $group, $path, $compare, $value, $boolean );
+					return;
+				}
+
+				$operand = 'LIKE' === $compare ? $this->likePattern( $value ) : $value;
+
+				$group->where( $path, $compare, $operand, $boolean );
+			}
+		}
+
+	/**
+	 * Wrap a LIKE operand the way WP_Meta_Query does.
+	 *
+	 * WP_Meta_Query turns `'compare' => 'LIKE'` into `%value%`, so a core tool
+	 * that passes a bare term matches substrings on WordPress. The WordPress
+	 * adapter forwards `metaQuery` straight into `WP_Query`, which means a raw
+	 * SQL `LIKE` here would silently return different rows for the same tool on
+	 * the two runtimes — the exact drift this port exists to prevent.
+	 *
+	 * Values that already carry wildcards keep working; the result is just
+	 * `%%value%%`. The one residual difference is that WP escapes `%` and `_`
+	 * in the operand while this stays plain, because SQLite needs an explicit
+	 * `ESCAPE` clause that the query builder does not emit. A caller that needs
+	 * a literal metacharacter must escape it for the target database.
+	 *
+	 * @param mixed $value Raw clause value.
+	 */
+	private function likePattern( mixed $value ): string {
+		$raw = is_scalar( $value ) ? (string) $value : '';
+
+		return '%' . $raw . '%';
+	}
+
+	/**
+	 * Compare a JSON meta path numerically, the way WP_Meta_Query does.
+	 *
+	 * A plain `where( $path, '>', 19.99 )` binds the operand as text, and SQL
+	 * orders numbers before strings — so every numeric row fails the predicate
+	 * and the query silently returns zero rows. WP_Meta_Query casts the meta
+	 * value to DECIMAL (or SIGNED) for numeric operators; casting both sides
+	 * here restores that behaviour, including numeric strings.
+	 *
+	 * @param Builder      $group    Group builder.
+	 * @param string       $path     JSON path (`meta->key`).
+	 * @param string       $operator One of `>`, `>=`, `<`, `<=`, `BETWEEN`, `NOT BETWEEN`.
+	 * @param mixed        $value    Operand, or `[low, high]` for BETWEEN.
+	 * @param string       $boolean  `and` or `or`.
+	 * @return void
+	 */
+	private function whereMetaNumeric( Builder $group, string $path, string $operator, mixed $value, string $boolean ): void {
+		$allowed = array( '>', '>=', '<', '<=', 'BETWEEN', 'NOT BETWEEN' );
+
+		if ( ! in_array( $operator, $allowed, true ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- developer-facing.
+			throw new \InvalidArgumentException( "Unsupported numeric compare '{$operator}'." );
+		}
+
+		$connection = $group->getConnection();
+		$cast       = $this->numericCastType( $connection->getDriverName() );
+		$selector   = $connection->getQueryGrammar()->wrap( $path );
+
+		$operands = is_array( $value ) ? array_values( $value ) : array( $value );
+		$placeholders = implode( ' AND ', array_fill( 0, count( $operands ), "CAST(? AS {$cast})" ) );
+
+		$group->whereRaw(
+			"CAST({$selector} AS {$cast}) {$operator} {$placeholders}",
+			$operands,
+			$boolean
+		);
+	}
+
+	/**
+	 * Numeric cast type for the active driver.
+	 *
+	 * SQLite is dynamically typed and accepts NUMERIC; MySQL needs a concrete
+	 * DECIMAL precision; Postgres is strict, so a non-numeric meta value fails
+	 * loudly there instead of coercing to zero (the MySQL/SQLite behaviour, and
+	 * what WP_Meta_Query's SIGNED cast does).
+	 */
+	private function numericCastType( string $driver ): string {
+		return match ( $driver ) {
+			'mysql', 'mariadb' => 'DECIMAL(65,10)',
+			'pgsql' => 'DOUBLE PRECISION',
+			default => 'NUMERIC',
+		};
+	}
+
+	/**
+	 * Apply a WP_Query-style taxonomy clause list.
+	 *
+	 * Requires the content model to expose a `terms()` relation.
+	 *
+	 * @param Builder              $builder Builder.
+	 * @param array<string, mixed> $clauses Clause list, `relation` optional.
+	 * @return void
+	 */
+	private function applyTaxQuery( Builder $builder, array $clauses ): void {
+		$relation = 'or' === strtolower( (string) ( $clauses['relation'] ?? 'AND' ) ) ? 'or' : 'and';
+
+		$builder->where(
+			function ( Builder $group ) use ( $clauses, $relation ): void {
+				foreach ( $clauses as $name => $clause ) {
+					if ( 'relation' === $name || ! is_array( $clause ) || ! isset( $clause['taxonomy'] ) ) {
+						continue;
+					}
+
+					$taxonomy = (string) $clause['taxonomy'];
+					$terms    = $clause['terms'] ?? array();
+					$terms    = is_array( $terms ) ? array_values( $terms ) : array( $terms );
+					$field    = (string) ( $clause['field'] ?? 'term_id' );
+					$operator = strtoupper( (string) ( $clause['operator'] ?? 'IN' ) );
+
+					$column = match ( $field ) {
+						'slug' => 'slug',
+						'name' => 'name',
+						default => 'id',
+					};
+
+					$constraint = function ( Builder $q ) use ( $taxonomy, $column, $terms, $operator ): void {
+						$q->where( 'taxonomy', $taxonomy );
+
+						if ( 'AND' === $operator ) {
+							foreach ( $terms as $term ) {
+								$q->where( $column, $term );
+							}
+						} else {
+							$q->whereIn( $column, $terms );
+						}
+					};
+
+					$group->where(
+						function ( Builder $nested ) use ( $constraint, $operator ): void {
+							if ( 'NOT IN' === $operator ) {
+								$nested->whereDoesntHave( 'terms', $constraint );
+							} else {
+								$nested->whereHas( 'terms', $constraint );
+							}
+						},
+						null,
+						null,
+						$relation
+					);
+				}
+			}
 		);
 	}
 

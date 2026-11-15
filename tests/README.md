@@ -76,6 +76,40 @@ vendor/bin/phpunit tests/rest/
 vendor/bin/phpunit --coverage-html coverage/
 ```
 
+### When discovery finds too few tests (Docker Desktop on Windows/macOS)
+
+PHPUnit expands `<directory>` with PHP's `RecursiveDirectoryIterator`. Over a
+Docker Desktop bind mount that iterator only returns part of a large directory:
+in this repository `tests/` holds ~1,200 entries and the iterator sees roughly
+half of them. The suite then reports a fraction of its tests and, worse, looks
+green because the files it never loaded cannot fail.
+
+Check it with a count:
+
+```bash
+# ~20.8k in CI
+docker exec -w /var/www/html/wp-content/plugins/mcp-ai-wpoos oos-wp \
+  vendor/bin/phpunit --list-tests | grep -c '^ - '
+```
+
+If the number is far below CI's, use the explicit-file runner. It reads the same
+`phpunit.xml.dist`, enumerates with `find` (getdents, unaffected by the mount),
+rewrites each testsuite as explicit `<file>` entries, and runs PHPUnit against
+that generated config:
+
+```bash
+php bin/phpunit-local-suite.php                     # whole suite
+php bin/phpunit-local-suite.php --list-tests        # confirm discovery
+php bin/phpunit-local-suite.php --filter Test_PM_Writes_Parity
+php bin/phpunit-local-suite.php --config phpunit-basepro.xml.dist
+```
+
+Any unrecognised argument is forwarded to PHPUnit. Keep using
+`vendor/bin/phpunit` for single files — a file passed by path is loaded
+directly and is not affected. Note that a full local run over a bind mount is
+slow (a few hours rather than CI's ~50 minutes); the script fixes *coverage* of
+the suite, not its speed.
+
 ## Test Organization
 
 ### Test Directory Structure

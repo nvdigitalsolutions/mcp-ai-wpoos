@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -182,8 +184,8 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base imple
 					),
 					'model'              => array(
 						'type'        => 'string',
-						'description' => __( 'Gemini model for AI operations. Default: gemini-2.0-flash-exp', 'mcp-ai-wpoos' ),
-						'default'     => 'gemini-2.0-flash-exp',
+						'description' => __( 'Gemini model for AI operations. Default: gemini-nano-banana-2.1', 'mcp-ai-wpoos' ),
+						'default'     => 'gemini-nano-banana-2.1',
 					),
 					'aspect_ratio'       => array(
 						'type'        => 'string',
@@ -335,7 +337,7 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base imple
 		}
 
 		// Get AI parameters.
-		$model        = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'gemini-2.0-flash-exp';
+		$model        = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : 'gemini-nano-banana-2.1';
 		$aspect_ratio = isset( $arguments['aspect_ratio'] ) ? sanitize_text_field( $arguments['aspect_ratio'] ) : '1:1';
 		$mime_type    = isset( $arguments['output_format'] ) ? 'image/' . sanitize_text_field( $arguments['output_format'] ) : 'image/png';
 

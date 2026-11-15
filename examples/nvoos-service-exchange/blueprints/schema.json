@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nvoos.pro/schemas/service-blueprint/v1.json",
+  "title": "NV oOS Service Blueprint v1",
+  "description": "A deployable expert service: an assistant-portability bundle plus a provisioning/commerce manifest. Secrets never travel in a blueprint.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [ "blueprint_version", "name", "slug", "tagline", "industry", "bundle", "site", "gateway", "listing" ],
+  "properties": {
+    "blueprint_version": { "const": 1 },
+    "name": { "type": "string", "minLength": 3, "maxLength": 80 },
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$" },
+    "tagline": { "type": "string", "minLength": 5, "maxLength": 140 },
+    "industry": {
+      "type": "string",
+      "enum": [ "healthcare", "food_beverage", "professional_services", "ecommerce", "retail", "education", "real_estate", "hospitality", "other" ]
+    },
+    "icon": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "bundle": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [ "format", "format_version", "assistants" ],
+      "properties": {
+        "format": { "const": "nvoos-assistant" },
+        "format_version": { "const": 1 },
+        "plugin_version": { "type": "string" },
+        "exported_at": { "type": "string" },
+        "exported_by": { "type": "integer" },
+        "assistants": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 500,
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [ "title" ],
+            "properties": {
+              "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+              "slug": { "type": "string" },
+              "status": { "type": "string" },
+              "content": { "type": "string" },
+              "excerpt": { "type": "string" },
+              "meta": { "type": "object" },
+              "a2a": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "toolkits": {
+      "type": "array",
+      "maxItems": 50,
+      "items": { "type": "string", "pattern": "^[a-z0-9_]{2,40}$" }
+    },
+    "mcp_apps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [ "connection_ref" ],
+        "properties": {
+          "connection_ref": { "type": "string", "minLength": 3, "maxLength": 200 },
+          "label": { "type": "string", "maxLength": 120 },
+          "position": { "type": "integer", "minimum": 0, "maximum": 50 }
+        }
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "region" ],
+      "properties": {
+        "region": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "size_hint": { "type": "string", "enum": [ "small", "medium", "large" ] },
+        "php": { "type": "string", "pattern": "^8\\.\\d$" },
+        "domain": { "type": [ "string", "null" ], "pattern": "^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,}$" },
+        "wp_manager": { "type": "boolean" }
+      }
+    },
+    "console": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enable": { "type": "boolean" },
+        "template": { "enum": [ "complete-velocity", null ] }
+      }
+    },
+    "storefront": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enable": { "type": "boolean" },
+        "template": { "enum": [ "astro-storefront", "forge", null ] }
+      }
+    },
+    "gateway": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "visibility": { "type": "string", "enum": [ "public", "private" ] },
+        "tool_allowlist": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9_]{2,64}$" }
+        },
+        "rate_limit_profile": { "type": "string", "enum": [ "standard", "elevated" ] }
+      }
+    },
+    "commerce": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stripe_price_id": { "type": [ "string", "null" ], "pattern": "^price_[A-Za-z0-9]{8,}$" },
+        "trial_days": { "type": "integer", "minimum": 0, "maximum": 90 },
+        "metered": { "type": "boolean" }
+      }
+    },
+    "listing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [ "summary" ],
+      "properties": {
+        "summary": { "type": "string", "minLength": 10, "maxLength": 500 },
+        "use_cases": {
+          "type": "array",
+          "maxItems": 12,
+          "items": { "type": "string", "minLength": 3, "maxLength": 160 }
+        },
+        "pricing_note": { "type": "string", "maxLength": 300 },
+        "connect_snippets": { "type": "boolean" }
+      }
+    },
+    "_meta": { "type": "object" }
+  },
+  "not": {
+    "anyOf": [
+      { "required": [ "token" ] },
+      { "required": [ "secret" ] },
+      { "required": [ "password" ] },
+      { "required": [ "api_key" ] },
+      { "required": [ "oauth_data" ] }
+    ]
+  }
+}

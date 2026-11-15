@@ -22,6 +22,10 @@
  * @since   1.9.0
  * @see     https://modelcontextprotocol.io/specification/2025-03-26
  * @see     https://modelcontextprotocol.io/extensions/apps/overview
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -58,6 +62,18 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @var string
 	 */
 	protected $client_id = '';
+
+	/**
+	 * Pre-registered client secret (confidential clients).
+	 *
+	 * Empty for dynamic public clients. QuickBooks/Intuit OAuth apps are
+	 * pre-registered and authenticate the token endpoint with HTTP Basic
+	 * (RFC 6749 §2.3.1), so the secret must ride the token requests.
+	 *
+	 * @since 1.2.21
+	 * @var string
+	 */
+	protected $client_secret = '';
 
 	/**
 	 * Redirect URI for the OAuth callback.
@@ -153,10 +169,11 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @param array  $options {
 	 *     Optional. OAuth client options.
 	 *
-	 *     @type int    $timeout    HTTP request timeout in seconds. Default 30.
-	 *     @type bool   $verify_ssl Whether to verify SSL. Default true.
-	 *     @type string $proxy_url  Optional outbound HTTP proxy (host:port).
-	 *     @type string $proxy_auth Optional proxy credentials (user:pass).
+	 *     @type int    $timeout       HTTP request timeout in seconds. Default 30.
+	 *     @type bool   $verify_ssl    Whether to verify SSL. Default true.
+	 *     @type string $proxy_url     Optional outbound HTTP proxy (host:port).
+	 *     @type string $proxy_auth    Optional proxy credentials (user:pass).
+	 *     @type string $client_secret Optional pre-registered client secret.
 	 * }
 	 */
 	public function __construct( $server_url, array $options = array() ) {
@@ -166,6 +183,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		$this->verify_ssl        = isset( $options['verify_ssl'] ) ? (bool) $options['verify_ssl'] : true;
 		$this->proxy_url         = isset( $options['proxy_url'] ) ? (string) $options['proxy_url'] : '';
 		$this->proxy_auth        = isset( $options['proxy_auth'] ) ? (string) $options['proxy_auth'] : '';
+		$this->client_secret     = isset( $options['client_secret'] ) ? trim( (string) $options['client_secret'] ) : '';
 		$this->redirect_uri      = rest_url( 'mcp-ai/v1/mcp-apps/oauth/callback' );
 	}
 
@@ -335,7 +353,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return bool
 	 */
 	protected function metadata_is_valid( $data ) {
-		return ! empty( $data['authorization_endpoint'] ) && ! empty( $data['token_endpoint'] );
+		return \Nvoos\Core\Domain\Mcp\OAuthDiscoveryCandidates::isAuthorizationServerMetadata( (array) $data );
 	}
 
 	/**
@@ -346,7 +364,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return bool
 	 */
 	protected function prm_is_valid( $data ) {
-		return ! empty( $data['authorization_servers'] );
+		return \Nvoos\Core\Domain\Mcp\OAuthDiscoveryCandidates::isProtectedResourceMetadata( (array) $data );
 	}
 
 	/**
@@ -492,6 +510,16 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return array|WP_Error Client registration response on success.
 	 */
 	public function register_client() {
+		// Pre-registered confidential clients (Intuit OAuth apps) have no
+		// dynamic registration endpoint. Reuse the stored credentials; the
+		// token endpoint authenticates them with HTTP Basic.
+		if ( ! empty( $this->client_id ) && '' !== $this->client_secret ) {
+			return array(
+				'client_id'     => $this->client_id,
+				'client_secret' => $this->client_secret,
+			);
+		}
+
 		$metadata = $this->discover_metadata();
 		if ( is_wp_error( $metadata ) ) {
 			return $metadata;
@@ -995,7 +1023,31 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return void
 	 */
 	public function set_client_id( $client_id ) {
-		$this->client_id = sanitize_key( $client_id );
+		// OAuth client IDs are case-sensitive opaque strings. sanitize_key()
+		// lowercases and strips characters, which breaks pre-registered Intuit
+		// client IDs — preserve the value as supplied.
+		$this->client_id = trim( sanitize_text_field( (string) $client_id ) );
+	}
+
+	/**
+	 * Set the pre-registered client secret.
+	 *
+	 * @since 1.2.21
+	 * @param string $client_secret Client secret.
+	 * @return void
+	 */
+	public function set_client_secret( $client_secret ) {
+		$this->client_secret = trim( (string) $client_secret );
+	}
+
+	/**
+	 * Get the pre-registered client secret.
+	 *
+	 * @since 1.2.21
+	 * @return string
+	 */
+	public function get_client_secret() {
+		return $this->client_secret;
 	}
 
 	/**
@@ -1086,17 +1138,28 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return array|WP_Error Response array or WP_Error from wp_remote_post.
 	 */
 	protected function post_token_endpoint( $endpoint, array $body ) {
+		$headers = array(
+			'Content-Type' => 'application/json',
+			'Accept'       => 'application/json',
+		);
+
+		// Confidential clients (Intuit/QuickBooks OAuth apps) authenticate the
+		// token endpoint with HTTP Basic per RFC 6749 §2.3.1. RFC 6749 forbids
+		// using two client-authentication methods, so drop the body client_id.
+		if ( '' !== $this->client_secret && '' !== $this->client_id ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- HTTP Basic credentials (RFC 7617), not obfuscation.
+			$headers['Authorization'] = 'Basic ' . base64_encode( $this->client_id . ':' . $this->client_secret );
+			unset( $body['client_id'] );
+		}
+
 		$response = $this->run_proxied_request(
-			function () use ( $endpoint, $body ) {
+			function () use ( $endpoint, $body, $headers ) {
 				return wp_remote_post(
 					$endpoint,
 					array(
 						'timeout'   => $this->timeout,
 						'sslverify' => $this->verify_ssl,
-						'headers'   => array(
-							'Content-Type' => 'application/json',
-							'Accept'       => 'application/json',
-						),
+						'headers'   => $headers,
 						'body'      => wp_json_encode( $body ),
 					)
 				);
@@ -1106,17 +1169,17 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 		if ( ! is_wp_error( $response ) && 415 === wp_remote_retrieve_response_code( $response ) ) {
 			// The endpoint does not accept JSON. Retry with form-encoded
 			// parameters, which WordPress encodes from the array body.
+			$form_headers                 = $headers;
+			$form_headers['Content-Type'] = 'application/x-www-form-urlencoded';
+
 			$response = $this->run_proxied_request(
-				function () use ( $endpoint, $body ) {
+				function () use ( $endpoint, $body, $form_headers ) {
 					return wp_remote_post(
 						$endpoint,
 						array(
 							'timeout'   => $this->timeout,
 							'sslverify' => $this->verify_ssl,
-							'headers'   => array(
-								'Content-Type' => 'application/x-www-form-urlencoded',
-								'Accept'       => 'application/json',
-							),
+							'headers'   => $form_headers,
 							'body'      => $body,
 						)
 					);
@@ -1169,26 +1232,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return array Parsed parameters (lowercased keys).
 	 */
 	protected function parse_www_authenticate( $header ) {
-		$params = array();
-
-		foreach ( $this->split_challenges( (string) $header ) as $challenge ) {
-			// Strip the auth-scheme token when present (e.g. "Bearer …").
-			$param_string = $challenge;
-			if ( preg_match( '/^([a-zA-Z0-9._~+\/-]+)\s+(.+)$/', $challenge, $scheme_match ) ) {
-				$param_string = $scheme_match[2];
-			}
-
-			if ( preg_match_all( '/([a-zA-Z_][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/', $param_string, $matches, PREG_SET_ORDER ) ) {
-				foreach ( $matches as $match ) {
-					$key = strtolower( $match[1] );
-					if ( ! isset( $params[ $key ] ) ) {
-						$params[ $key ] = $match[2];
-					}
-				}
-			}
-		}
-
-		return $params;
+		return \Nvoos\Core\Domain\Mcp\WwwAuthenticateChallenge::parse( (string) $header );
 	}
 
 	/**
@@ -1202,30 +1246,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return string[] Non-empty trimmed challenges.
 	 */
 	protected function split_challenges( $header ) {
-		$challenges = array();
-		$current    = '';
-		$in_quotes  = false;
-		$length     = strlen( $header );
-
-		for ( $i = 0; $i < $length; $i++ ) {
-			$char = $header[ $i ];
-
-			if ( '"' === $char ) {
-				$in_quotes = ! $in_quotes;
-			}
-
-			if ( ',' === $char && ! $in_quotes ) {
-				$challenges[] = trim( $current );
-				$current      = '';
-				continue;
-			}
-
-			$current .= $char;
-		}
-
-		$challenges[] = trim( $current );
-
-		return array_values( array_filter( $challenges ) );
+		return \Nvoos\Core\Domain\Mcp\WwwAuthenticateChallenge::split( (string) $header );
 	}
 
 	/**
@@ -1235,16 +1256,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return string Origin, or '' when the URL is malformed.
 	 */
 	protected function get_origin() {
-		$parts = wp_parse_url( $this->server_url );
-		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
-			return '';
-		}
-
-		$scheme = isset( $parts['scheme'] ) ? $parts['scheme'] : 'https';
-		$host   = $parts['host'];
-		$port   = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
-
-		return $scheme . '://' . $host . $port;
+		return \Nvoos\Core\Domain\Mcp\OAuthDiscoveryCandidates::origin( $this->server_url );
 	}
 
 	/**
@@ -1254,14 +1266,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return string Path with leading slash and no trailing slash, or ''.
 	 */
 	protected function get_path() {
-		$parts = wp_parse_url( $this->server_url );
-		if ( ! is_array( $parts ) ) {
-			return '';
-		}
-
-		$path = trim( isset( $parts['path'] ) ? $parts['path'] : '', '/' );
-
-		return '' === $path ? '' : '/' . $path;
+		return \Nvoos\Core\Domain\Mcp\OAuthDiscoveryCandidates::path( $this->server_url );
 	}
 
 	/**
@@ -1272,28 +1277,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return string[] Candidate URLs.
 	 */
 	protected function build_as_metadata_urls() {
-		$origin = $this->get_origin();
-		if ( '' === $origin ) {
-			return array();
-		}
-
-		$urls = $this->build_as_metadata_urls_for_server( $origin );
-
-		// RFC 8414 §3.2 path insertion — insert the resource path after the
-		// well-known segment (e.g. /.well-known/oauth-authorization-server/v1/mcp).
-		$path = $this->get_path();
-		if ( '' !== $path ) {
-			$urls[] = $origin . '/.well-known/oauth-authorization-server' . $path;
-		}
-
-		// Self-hosted WordPress MCP servers expose the same document at the
-		// REST endpoint when the .well-known rewrite rule is not active.
-		$rest_url = $this->build_rest_metadata_url();
-		if ( '' !== $rest_url ) {
-			$urls[] = $rest_url;
-		}
-
-		return array_values( array_unique( $urls ) );
+		return \Nvoos\Core\Domain\Mcp\OAuthDiscoveryCandidates::authorizationServerMetadataUrls( $this->server_url );
 	}
 
 	/**
@@ -1308,36 +1292,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return string[] Candidate URLs.
 	 */
 	protected function build_as_metadata_urls_for_server( $server_url ) {
-		// Some servers advertise the full metadata URL itself in
-		// authorization_servers — fetch it directly in that case.
-		if ( false !== strpos( $server_url, '/.well-known/oauth-authorization-server' ) ) {
-			return array( rtrim( $server_url, '/' ) );
-		}
-
-		$parts = wp_parse_url( $server_url );
-		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
-			return array();
-		}
-
-		$scheme = isset( $parts['scheme'] ) ? $parts['scheme'] : 'https';
-		$origin = $scheme . '://' . $parts['host'] . ( isset( $parts['port'] ) ? ':' . $parts['port'] : '' );
-		$path   = trim( isset( $parts['path'] ) ? $parts['path'] : '', '/' );
-
-		$urls = array( $origin . '/.well-known/oauth-authorization-server' );
-
-		// RFC 8414 §3.2 path insertion — e.g. /.well-known/oauth-authorization-server/v1/mcp.
-		if ( '' !== $path ) {
-			$urls[] = $origin . '/.well-known/oauth-authorization-server/' . $path;
-		}
-
-		// OIDC discovery fallback (see method docblock).
-		$urls[] = $origin . '/.well-known/openid-configuration';
-
-		// Self-hosted WordPress authorization servers expose the document at
-		// the REST endpoint when the .well-known rewrite rule is inactive.
-		$urls[] = $origin . '/wp-json/mcp-ai/v1/oauth/metadata';
-
-		return array_values( array_unique( $urls ) );
+		return \Nvoos\Core\Domain\Mcp\OAuthDiscoveryCandidates::authorizationServerUrlsFor( (string) $server_url );
 	}
 
 	/**
@@ -1347,21 +1302,7 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return string[] Candidate URLs.
 	 */
 	protected function build_prm_urls() {
-		$origin = $this->get_origin();
-		if ( '' === $origin ) {
-			return array();
-		}
-
-		$urls = array( $origin . '/.well-known/oauth-protected-resource' );
-
-		// Path-insertion variant — API gateways commonly serve the document
-		// at /.well-known/oauth-protected-resource/mcp.
-		$path = $this->get_path();
-		if ( '' !== $path ) {
-			$urls[] = $origin . '/.well-known/oauth-protected-resource' . $path;
-		}
-
-		return array_values( array_unique( $urls ) );
+		return \Nvoos\Core\Domain\Mcp\OAuthDiscoveryCandidates::protectedResourceUrls( $this->server_url );
 	}
 
 	/**
@@ -1374,20 +1315,6 @@ class WP_MCP_AI_MCP_App_OAuth_Client {
 	 * @return string
 	 */
 	protected function build_rest_metadata_url() {
-		$parts = wp_parse_url( $this->server_url );
-		if ( ! is_array( $parts ) || empty( $parts['host'] ) ) {
-			return '';
-		}
-
-		$scheme = isset( $parts['scheme'] ) ? $parts['scheme'] : 'https';
-		$host   = $parts['host'];
-		$port   = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
-		$path   = isset( $parts['path'] ) ? $parts['path'] : '';
-
-		// Extract the WP REST prefix from the MCP URL.
-		// e.g. /wp-json/mcp-ai/v1/mcp → /wp-json/mcp-ai/v1/oauth/metadata.
-		$rest_prefix = preg_replace( '#/mcp$#', '', $path );
-
-		return $scheme . '://' . $host . $port . $rest_prefix . '/oauth/metadata';
+		return \Nvoos\Core\Domain\Mcp\OAuthDiscoveryCandidates::restMetadataUrl( $this->server_url );
 	}
 }

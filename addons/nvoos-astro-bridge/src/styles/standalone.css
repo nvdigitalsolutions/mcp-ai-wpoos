@@ -7,6 +7,18 @@
  * no build step beyond esbuild's CSS bundling.
  */
 
+/* --- wp-admin host (the astro-cms admin page) ---
+ *
+ * The Astro CMS is a full-height app shell in BOTH hosts. WP's admin content
+ * column carries a 20px left padding that would indent the dark sidebar off
+ * the screen edge, so bleed this page edge-to-edge. Scoped to the body class
+ * WP adds for top-level pages (toplevel_page_<slug>) — no other admin page
+ * is affected, and the /manage surface never matches the selector.
+ */
+body.toplevel_page_astro-cms #wpcontent {
+	padding-left: 0;
+}
+
 #astro-admin-root {
 	min-height: 100vh;
 }
@@ -36,6 +48,56 @@
 
 .wp-list-table.striped tbody tr:nth-child(odd) {
 	background: #f6f7f7;
+}
+
+/* --- Sidebar sections (APG Disclosure Navigation) --- */
+
+.nav-section-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 10px 16px 6px;
+	border: none;
+	background: transparent;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	opacity: 0.85;
+	cursor: pointer;
+}
+
+.nav-section-toggle:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: -2px;
+}
+
+.nav-section-chevron {
+	font-size: 10px;
+	transition: transform 120ms ease;
+}
+
+.nav-section-toggle[aria-expanded='false'] .nav-section-chevron {
+	transform: rotate(-90deg);
+}
+
+.nav-section-items {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* The `hidden` attribute must win over the display rules above. */
+.nav-section-items[hidden] {
+	display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nav-section-chevron {
+		transition: none;
+	}
 }
 
 /* --- Form field widths (field components reuse the admin class names) --- */

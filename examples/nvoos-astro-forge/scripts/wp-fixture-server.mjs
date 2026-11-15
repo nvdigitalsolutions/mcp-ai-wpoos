@@ -76,6 +76,28 @@ export function createWpFixtureData() {
 				slug: 'care-guide',
 				link: `${ORIGIN}/care-guide/`,
 				excerpt: { rendered: '<p>How to wash, store and repair natural fibres.</p>' },
+				// Yoast-style SEO meta — the loader's fallback path (106 §1.2).
+				yoast_head_json: {
+					title: 'Care guide for wool, cashmere and linen — the studio journal',
+					description: 'Wash, store and repair natural fibres the studio way.',
+					// Proposal 131 — the rest of the Yoast head the rebuild carries:
+					// robots, canonical, Open Graph and the Twitter card.
+					canonical: `${ORIGIN}/care-guide/`,
+					robots: { index: 'index', follow: 'follow', 'max-image-preview': 'max-image-preview:large' },
+					og_title: 'How to care for natural fibres',
+					og_description: 'A studio guide to wool, cashmere and linen.',
+					og_type: 'article',
+					og_site_name: 'Fixture Wares',
+					og_image: [
+						{
+							url: `${ORIGIN}/wp-content/uploads/care.png`,
+							width: 1200,
+							height: 630,
+							type: 'image/png',
+						},
+					],
+					twitter_card: 'summary_large_image',
+				},
 				content: {
 					rendered: [
 						'<figure class="wp-block-image"><img src="https://fixture.test/care.jpg" alt="Folded knits" width="800" height="450" loading="lazy" /><figcaption>Folded knits, ready to store.</figcaption></figure>',
@@ -94,8 +116,24 @@ export function createWpFixtureData() {
 				link: `${ORIGIN}/xss-trap/`,
 				excerpt: { rendered: '<p>This post carries script content the sanitizer must strip.</p>' },
 				content: {
-					rendered:
+					rendered: [
 						'<p>Safe paragraph.</p><script>alert("xss")</script><img src="x" onerror="steal()" alt="trap" /><a href="javascript:alert(1)">click</a>',
+						// Forms (114 §3.9): a search form, an Elementor submit form
+						// with its hidden carriers, and XSS vectors inside form
+						// controls (onfocus + javascript: value) — the sanitizer
+						// keeps the functional allowlist and kills the vectors.
+						'<form role="search"><input type="search" name="s" placeholder="Search the fixture" /><button type="submit">Go</button></form>',
+						'<form class="elementor-form" method="post" action="https://fixture.test/?elementor-pro-forms=submit">' +
+							'<input type="hidden" name="form_id" value="fixture-form-1" />' +
+							'<input type="hidden" name="post_id" value="3" />' +
+							'<label for="trap-name">Name</label>' +
+							'<input type="text" name="form_fields[name]" id="trap-name" required="required" placeholder="Jane" />' +
+							'<label for="trap-msg">Message</label>' +
+							'<textarea name="form_fields[message]" id="trap-msg" rows="4"></textarea>' +
+							'<input type="text" name="evil" onfocus="alert(2)" value="javascript:alert(3)" />' +
+							'<button type="submit">Send</button>' +
+							'</form>',
+					].join( '' ),
 				},
 			},
 			{
@@ -106,6 +144,9 @@ export function createWpFixtureData() {
 				slug: 'studio-notes-autumn',
 				link: `${ORIGIN}/studio-notes-autumn/`,
 				excerpt: { rendered: '<p>Moss, bark and bone: the autumn palette board.</p>' },
+				// Rank Math-style SEO meta — the loader's primary path (106 §1.2).
+				rank_math_title: 'Studio Notes: The Autumn Palette — a curated journal',
+				rank_math_description: 'Moss, bark and bone: the autumn palette, curated by the studio.',
 				content: {
 					rendered:
 						'<p>Moss, bark and bone.</p><iframe src="https://www.youtube-nocookie.com/embed/abc123" title="Palette film" width="560" height="315" frameborder="0" allowfullscreen></iframe>',
@@ -123,6 +164,43 @@ export function createWpFixtureData() {
 					rendered: '<pre class="wp-block-code"><code>Row 1: k1, p1, repeat.</code></pre><p>Repeat rows 1\u20132.</p>',
 				},
 			},
+			{
+				id: 6,
+				date_gmt: '2026-10-15T09:00:00',
+				modified_gmt: '2026-10-15T09:00:00',
+				title: { rendered: 'The elementor landing post (114 fixture)' },
+				slug: 'elementor-landing',
+				link: `${ORIGIN}/elementor-landing/`,
+				excerpt: { rendered: '<p>A builder-built landing section the semantic renderer rebuilds.</p>' },
+				content: {
+					rendered: [
+						'<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">',
+						'<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h2>Ship to the fjords</h2></div></div>',
+						'<div class="elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>Fast and easy.</p></div></div>',
+						'<div class="elementor-widget elementor-widget-button"><div class="elementor-widget-container"><a href="#about">Read More</a></div></div>',
+						'</div></div></div></div>',
+						'<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">',
+						'<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-widget-container"><h3>Wool</h3><p>Merino and cashmere.</p></div></div>',
+						'<div class="elementor-widget elementor-widget-icon-box"><div class="elementor-widget-container"><span class="elementor-icon-box-icon"><img src="' + ORIGIN + '/wp-content/uploads/a.png" alt="Linen" /></span><h3>Linen</h3><p>Washed and relaxed.</p></div></div>',
+						'</div></div></div></div>',
+						// A logo wall carrying a heading + CTA — the LogoCloud
+						// component must render all three, never drop the links.
+						'<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">',
+						'<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h2>Trusted by crews</h2></div></div>',
+						'<div class="elementor-widget elementor-widget-image"><div class="elementor-widget-container"><img src="/wp-content/uploads/a.png" alt="Alpha" /></div></div>',
+						'<div class="elementor-widget elementor-widget-image"><div class="elementor-widget-container"><img src="/wp-content/uploads/b.png" alt="Beta" /></div></div>',
+						'<div class="elementor-widget elementor-widget-image"><div class="elementor-widget-container"><img src="/wp-content/uploads/c.png" alt="Gamma" /></div></div>',
+						'<div class="elementor-widget elementor-widget-button"><div class="elementor-widget-container"><a href="#crews">Meet the crews</a></div></div>',
+						'</div></div></div></div>',
+						// A heading + single image section (a title card) — the
+						// text fallback must render the media too.
+						'<div class="elementor-section elementor-top-section"><div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">',
+						'<div class="elementor-widget elementor-widget-heading"><div class="elementor-widget-container"><h2>Field notes</h2></div></div>',
+						'<div class="elementor-widget elementor-widget-image"><div class="elementor-widget-container"><img src="/wp-content/uploads/notes.png" alt="Field notes" /></div></div>',
+						'</div></div></div></div>',
+					].join( '' ),
+				},
+			},
 		],
 		pages: [
 			{
@@ -133,7 +211,51 @@ export function createWpFixtureData() {
 				slug: 'about',
 				link: `${ORIGIN}/about/`,
 				excerpt: { rendered: '' },
-				content: { rendered: '<p>Fixture Wares is the hermetic test storefront.</p>' },
+				rank_math_title: 'About Fixture Wares',
+				rank_math_description: 'The Fixture Wares studio: fjord-made knitwear and homeware.',
+				content: {
+					rendered:
+						// The split-hero fixture (125 §1): a copy column + a media
+						// collage column. The section id is hex — Elementor's real
+						// id shape; the classifier only extracts [0-9a-f]{4,} —
+						// and the profile's design.sections entry (a1b2c3d) carries
+						// the split facts the rebuilt home must apply.
+						'<section class="elementor-section elementor-top-section elementor-element elementor-element-a1b2c3d">' +
+						'<div class="elementor-container">' +
+						'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap">' +
+						'<div class="elementor-element elementor-element-sf1 elementor-widget elementor-widget-aux_modern_heading"><div class="elementor-widget-container"><h2 class="aux-modern-heading-primary">At Fixture Wares we serve the fjords.</h2><div class="aux-modern-heading-divider"></div></div></div>' +
+						'<div class="elementor-element elementor-element-sf2 elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>Your needs are our top priority.</p></div></div>' +
+						'<div class="elementor-element elementor-element-sf3 elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>We source every major brand.</p></div></div>' +
+						// The icon-font fixture (2026-11-15): the chrome sheet declares TWO
+						// families. `fixture-icons` keeps a mirrored woff2 when its ttf
+						// 404s; `missing-icons` loses its only face while this markup still
+						// uses it, so the localizer must report a USED dropped family.
+						'<div class="elementor-element elementor-element-sf3b elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>Icons: <i class="fixture-icon fixture-icon-flag"></i> and <i class="missing-icon"></i></p></div></div>' +
+						'<div class="elementor-element elementor-element-sf4 elementor-widget elementor-widget-aux_button"><div class="elementor-widget-container"><a href="#products">Our Products</a></div></div>' +
+						'</div></div>' +
+						'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap">' +
+						'<div class="elementor-element elementor-element-sf5 elementor-widget elementor-widget-aux_simple_shape"><div class="elementor-widget-container"><div class="aux-the-shape"></div></div></div>' +
+						// The media URLs are absolute here — the split-hero's SmartImage
+						// pipeline only optimizes same-host WP sources (relative fixture
+						// paths would silently skip the processed-image e2e pin).
+						'<div class="elementor-element elementor-element-sf6 elementor-widget elementor-widget-aux_image"><div class="elementor-widget-container"><div class="aux-media-image"><img src="' + ORIGIN + '/wp-content/uploads/a.png" alt="Ronan" /></div></div></div>' +
+						'<div class="elementor-element elementor-element-sf7 elementor-widget elementor-widget-aux_image"><div class="elementor-widget-container"><div class="aux-media-image"><img src="' + ORIGIN + '/wp-content/uploads/b.png" alt="Elevate" /></div></div></div>' +
+						'</div></div>' +
+						'</div>' +
+						'</section>' +
+						// The flipbook catalog (125 §4): the PDF source lives only
+						// in the dflip script — the profile's design.sections fact
+						// (b4c5d6e) must turn the sanitized empty band into
+						// a titled open-catalogue CTA.
+						'<section class="elementor-section elementor-top-section elementor-element elementor-element-b4c5d6e">' +
+						'<div class="elementor-container"><div class="elementor-column"><div class="elementor-widget-wrap">' +
+						'<div class="elementor-element elementor-element-cf1 elementor-widget elementor-widget-shortcode"><div class="elementor-widget-container"><div class="elementor-shortcode">' +
+						'<div class="_df_book df-lite" id="df_2113" _slug="fiori-digital-catalogue" data-title="fiori-digital-catalogue" wpoptions="true"></div>' +
+						'<script class="df-shortcode-script" type="application/javascript">window.option_df_2113 = {"outline":[],"source":"https://fixture.test/wp-content/uploads/catalog.pdf"}; if(window.DFLIP){window.DFLIP.parseBooks();}</script>' +
+						'</div></div></div>' +
+						'</div></div></div>' +
+						'</section>',
+				},
 			},
 			{
 				id: 12,
@@ -143,7 +265,26 @@ export function createWpFixtureData() {
 				slug: 'contact',
 				link: `${ORIGIN}/contact/`,
 				excerpt: { rendered: '' },
-				content: { rendered: '<p>Write to <a href="mailto:hello@fixture.test">hello@fixture.test</a>.</p>' },
+				// Proposal 131 — the source title already carries the site name (the
+				// double-brand regression) and the page is noindex (it must leave
+				// the sitemap and render the directive).
+				rank_math_title: 'Contact Fixture Wares',
+				rank_math_description: 'Reach the Fixture Wares studio.',
+				rank_math_robots: [ 'noindex', 'follow' ],
+				content: {
+					rendered: [
+						'<p>Write to <a href="mailto:hello@fixture.test">hello@fixture.test</a>.</p>',
+						// A JetFormBuilder form — the hidden carrier gives the WP form id.
+						'<form class="jet-form-builder" method="post">' +
+							'<input type="hidden" name="_jet_engine_booking_form_id" value="9" />' +
+							'<label>Email</label>' +
+							'<input type="email" name="email" required="required" />' +
+							'<label>Message</label>' +
+							'<textarea name="message" rows="5"></textarea>' +
+							'<button type="submit">Ask away</button>' +
+							'</form>',
+					].join( '' ),
+				},
 			},
 		],
 		/** WooCommerce wc/v3 flat documents — prices, stock, images, categories. */
@@ -203,6 +344,25 @@ export function createWpFixtureData() {
 		/** wp/v2 product CPT documents — no commerce fields, featured_media IDs. */
 		wpProducts: [
 			{
+				// The same id as the wc/v3 document below — WooCommerce products
+				// ARE the `product` CPT, so the 131 SEO sidecar matches by id.
+				id: 101,
+				date_gmt: '2026-10-01T00:00:00',
+				modified_gmt: '2026-10-01T00:00:00',
+				title: { rendered: 'Fjord Merino Sweater' },
+				slug: 'fjord-merino-sweater',
+				link: `${ORIGIN}/product/fjord-merino-sweater/`,
+				content: { rendered: '<p>The sweater, from the CPT.</p>' },
+				featured_media: 501,
+				yoast_head_json: {
+					title: 'Fjord Merino Sweater — buy the original | Fixture Wares',
+					description: 'The original expedition-weight fjord merino sweater.',
+					og_title: 'Fjord Merino Sweater',
+					og_image: [ { url: `${ORIGIN}/wp-content/uploads/product-a.png` } ],
+					twitter_card: 'summary_large_image',
+				},
+			},
+			{
 				id: 201,
 				date_gmt: '2026-10-01T00:00:00',
 				modified_gmt: '2026-10-01T00:00:00',
@@ -242,6 +402,28 @@ export function createWpFixtureData() {
 				status: 'publish',
 			},
 		],
+		/**
+		 * Local content (Proposal 135 §D4) — the bridge's nvoos_forge_local CPT,
+		 * served through the same envelope as products. Documents carry an
+		 * explicit `slug` because their URL must survive a title edit.
+		 */
+		payloadLocal: [
+			{
+				id: 401,
+				name: 'Behind The Scenes',
+				slug: 'behind-the-scenes',
+				description: '<p>How the studio builds a collection.</p>',
+				excerpt: 'A studio note.',
+				category: null,
+				featuredImage: null,
+				seoTitle: 'Behind The Scenes — Studio',
+				seoDescription: 'A studio note.',
+				createdAt: '2026-11-01 09:00:00',
+				updatedAt: '2026-11-03 09:00:00',
+				status: 'publish',
+				source: 'local',
+			},
+		],
 		/** Media documents for featured_media resolution. */
 		media: {
 			501: { source_url: `${ORIGIN}/wp-content/uploads/media-501.png` },
@@ -279,6 +461,35 @@ export function createWpFixtureServer(port = PORT) {
 			res.end('ok');
 			return;
 		}
+		// The homepage — the design-import fetch target (114 P1): a minimal
+		// HTML document with an Elementor-style inline <style> so the wizard's
+		// --design step extracts deterministic roles hermetically.
+		if (path === '/') {
+			res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+			res.end(
+				'<!doctype html><html><head><style>' +
+					':root{--e-global-color-primary:#6ec1e4;--e-global-color-text:#444444;' +
+					'--e-global-typography-primary-font-family:"Rubik";--e-global-typography-text-font-family:"Roboto";}' +
+					'.hero{font-size:40px;padding:16px;border-radius:4px}' +
+					'</style>' +
+					// Proposal 130 — the measurement surface the tracking pass must
+					// detect: GA4 (script + inline config), a Meta pixel, a consent
+					// platform, a verification meta, and a <noscript> pixel that must
+					// only ever be WARNED about.
+					'<meta name="google-site-verification" content="fixture-verify-token">' +
+					'<script async src="https://www.googletagmanager.com/gtag/js?id=G-FIXTURE1234"></script>' +
+					'<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}' +
+					'gtag("js",new Date());gtag("config","G-FIXTURE1234");</script>' +
+					'<script src="https://connect.facebook.net/en_US/fbevents.js"></script>' +
+					'<script>fbq("init","111222333444555");fbq("track","PageView");</script>' +
+					'<script src="https://cdn-cookieyes.com/client_data/fixture/script.js"></script>' +
+					'</head><body><h1 class="hero">Fixture Wares</h1>' +
+					'<a class="btn">Buy</a><div class="card"></div>' +
+					'<noscript><img src="https://www.facebook.com/tr?id=1&ev=PageView"></noscript>' +
+					'</body></html>'
+			);
+			return;
+		}
 		if (path === '/wp-json' || path === '/wp-json/') {
 			json(res, data.root);
 			return;
@@ -313,9 +524,54 @@ export function createWpFixtureServer(port = PORT) {
 			json(res, slice, headers);
 			return;
 		}
+		// Single-product detail routes (Proposal 104 Q4 — the SSR product
+		// route fetches one document at request time; the shapes mirror the
+		// collection documents so both render paths stay identical).
+		const wooProductMatch = path.match(/^\/wp-json\/wc\/v3\/products\/(\d+)$/);
+		if (wooProductMatch) {
+			const doc = data.wooProducts.find((product) => product.id === Number(wooProductMatch[1]));
+			if (doc) {
+				json(res, doc);
+			} else {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'woocommerce_rest_product_invalid_id', message: 'Invalid product ID.' }));
+			}
+			return;
+		}
 		if (path === '/wp-json/wp/v2/product') {
 			const { slice, headers } = paginate(data.wpProducts);
 			json(res, slice, headers);
+			return;
+		}
+		const wpProductMatch = path.match(/^\/wp-json\/wp\/v2\/product\/(\d+)$/);
+		if (wpProductMatch) {
+			const doc = data.wpProducts.find((product) => product.id === Number(wpProductMatch[1]));
+			if (doc) {
+				// _embed carries the featured media, mirroring wp/v2 collections.
+				const sourceUrl = data.media[doc.featured_media]?.source_url;
+				json(res, sourceUrl ? { ...doc, _embedded: { 'wp:featuredmedia': [{ source_url: sourceUrl }] } } : doc);
+			} else {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'rest_post_invalid_id', message: 'Invalid product ID.' }));
+			}
+			return;
+		}
+		// Proposal 132 — the Forge Bridge's stored-redirects export. The fixture
+		// carries a 301 and a 302 so the build path proves non-301 statuses flow
+		// through to _redirects unchanged.
+		if (path === '/wp-json/nvoos-forge/v1/redirects') {
+			json(res, {
+				available: true,
+				enabled: true,
+				count: 2,
+				truncated: false,
+				providers: { redirection: 2, rankmath: 0 },
+				skipped: { regex: 0, query: 0, match: 0, action: 0, invalid: 0, duplicate: 0 },
+				redirects: [
+					{ source: '/legacy-fixture/', target: '/posts/1/fjord-merino-sweater/', type: 302 },
+					{ source: '/old-fixture/', target: '/products/101/fjord-merino-sweater/', type: 301 },
+				],
+			});
 			return;
 		}
 		if (path === '/wp-json/nvoos-commerce/v1/products') {
@@ -335,6 +591,40 @@ export function createWpFixtureServer(port = PORT) {
 			});
 			return;
 		}
+		// Local content (Proposal 135 §D4) — the same envelope, plus the
+		// `where[slug][equals]` filter the draft-aware preview page uses.
+		if (path === '/wp-json/nvoos-commerce/v1/local') {
+			const limit = Number(url.searchParams.get('limit') ?? '100');
+			const pageNum = Number(url.searchParams.get('page') ?? '1');
+			const slugFilter = url.searchParams.get('where[slug][equals]');
+			const all = slugFilter
+				? data.payloadLocal.filter((doc) => doc.slug === slugFilter)
+				: data.payloadLocal;
+			const total = all.length;
+			const totalPages = Math.max(1, Math.ceil(total / limit));
+			const slice = all.slice((pageNum - 1) * limit, pageNum * limit);
+			json(res, {
+				docs: slice,
+				totalDocs: total,
+				limit,
+				totalPages,
+				page: pageNum,
+				hasNextPage: pageNum < totalPages,
+				hasPrevPage: pageNum > 1,
+			});
+			return;
+		}
+		const payloadProductMatch = path.match(/^\/wp-json\/nvoos-commerce\/v1\/products\/(\d+)$/);
+		if (payloadProductMatch) {
+			const doc = data.payloadProducts.find((product) => product.id === Number(payloadProductMatch[1]));
+			if (doc) {
+				json(res, doc);
+			} else {
+				res.writeHead(404, { 'content-type': 'application/json' });
+				res.end(JSON.stringify({ code: 'not_found', message: 'Product not found.' }));
+			}
+			return;
+		}
 		const mediaMatch = path.match(/^\/wp-json\/wp\/v2\/media\/(\d+)$/);
 		if (mediaMatch) {
 			const doc = data.media[Number(mediaMatch[1])];
@@ -346,9 +636,36 @@ export function createWpFixtureServer(port = PORT) {
 			}
 			return;
 		}
-		if (path.startsWith('/wp-content/uploads/')) {
-			res.writeHead(200, { 'content-type': 'image/png', 'content-length': String(PIXEL_PNG.length) });
-			res.end(PIXEL_PNG);
+		if ( path.startsWith( '/wp-content/uploads/' ) ) {
+			res.writeHead( 200, { 'content-type': 'image/png', 'content-length': String( PIXEL_PNG.length ) } );
+			res.end( PIXEL_PNG );
+			return;
+		}
+		// Icon-font fixture (2026-11-15): a theme sheet with two families. One
+		// lists a woff2 that exists and a ttf that 404s; the other's only source
+		// is dead. The localizer must prune the dead src, keep the surviving
+		// face, and report the fully-lost family as USED when the page has its
+		// glyph class.
+		if ( path === '/wp-content/themes/fixture/assets/css/icon-font.css' ) {
+			const css = [
+				'@font-face{font-family:"fixture-icons";src:url("../fonts/fixture-icons.woff2") format("woff2"),url("../fonts/fixture-icons.ttf") format("truetype");}',
+				'@font-face{font-family:"missing-icons";src:url("../fonts/missing-icons.woff2") format("woff2");}',
+				'.fixture-icon{font-family:"fixture-icons";font-style:normal}',
+				'.fixture-icon-flag:before{content:"\\e024"}',
+				'.missing-icon{font-family:"missing-icons";font-style:normal}',
+			].join( '\n' );
+			res.writeHead( 200, { 'content-type': 'text/css; charset=utf-8' } );
+			res.end( css );
+			return;
+		}
+		if ( path === '/wp-content/themes/fixture/assets/fonts/fixture-icons.woff2' ) {
+			res.writeHead( 200, { 'content-type': 'font/woff2' } );
+			res.end( Buffer.from( 'fixture-font-bytes' ) );
+			return;
+		}
+		if ( path === '/wp-content/themes/fixture/assets/fonts/fixture-icons.ttf' ) {
+			res.writeHead( 404, { 'content-type': 'text/plain' } );
+			res.end( 'missing ttf' );
 			return;
 		}
 		res.writeHead(404, { 'content-type': 'application/json' });

@@ -228,7 +228,7 @@ AI: Generates comprehensive performance summary with key metrics
 ## Technical Specifications
 
 ### Dependencies
-- **Required:** WordPress 6.0+, PHP 7.4+
+- **Required:** WordPress 6.0+, PHP 8.1+
 - **Optional:** Google Site Kit 1.x+ (free plugin)
 - **No additional:** API keys, paid services, or external dependencies
 

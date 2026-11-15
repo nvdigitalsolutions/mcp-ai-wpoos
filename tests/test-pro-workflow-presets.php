@@ -35,6 +35,21 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-workflow-presets
  */
 class Test_Pro_Workflow_Presets extends WP_UnitTestCase {
 
+	/**
+	 * Tool slugs whose preset nodes legitimately carry no arguments.
+	 *
+	 * These tools read the site's saved sending configuration (domain, DKIM
+	 * selector, warmup state) and therefore take only optional parameters. The
+	 * preset ships an empty arguments array and the tool falls back to the
+	 * saved settings at runtime.
+	 *
+	 * @var string[]
+	 */
+	const NO_ARGUMENT_TOOLS = array(
+		'check_sending_domain',
+		'get_sending_readiness',
+	);
+
 	// -------------------------------------------------------------------------
 	// Preset retrieval
 	// -------------------------------------------------------------------------
@@ -384,6 +399,14 @@ class Test_Pro_Workflow_Presets extends WP_UnitTestCase {
 					$node['data'],
 					"Preset '{$id}' tool node [{$index}] ('{$node['data']['label']}') is missing arguments key."
 				);
+
+				if ( in_array( $node['data']['toolSlug'], self::NO_ARGUMENT_TOOLS, true ) ) {
+					$this->assertIsArray(
+						$node['data']['arguments'],
+						"Preset '{$id}' tool node [{$index}] ('{$node['data']['label']}') arguments must be an array."
+					);
+					continue;
+				}
 
 				$this->assertNotEmpty(
 					$node['data']['arguments'],

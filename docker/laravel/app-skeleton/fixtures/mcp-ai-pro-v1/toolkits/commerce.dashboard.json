@@ -1,0 +1,42 @@
+{
+    "request": {
+        "method": "GET",
+        "uri": "/api/v1/pro/toolkits/commerce/dashboard"
+    },
+    "status": 200,
+    "headers": {
+        "content-type": "application/json"
+    },
+    "body": {
+        "success": true,
+        "data": {
+            "slug": "commerce",
+            "cards": [
+                {
+                    "key": "total_products",
+                    "label": "Products",
+                    "aggregate": "count",
+                    "value": 3
+                },
+                {
+                    "key": "active_products",
+                    "label": "Active products",
+                    "aggregate": "count",
+                    "value": 3
+                },
+                {
+                    "key": "stock_value",
+                    "label": "Units in stock",
+                    "aggregate": "sum",
+                    "value": 55
+                },
+                {
+                    "key": "low_stock",
+                    "label": "Low stock",
+                    "aggregate": "count",
+                    "value": 1
+                }
+            ]
+        }
+    }
+}

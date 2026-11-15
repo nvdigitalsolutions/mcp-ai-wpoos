@@ -8,13 +8,15 @@
  * `check_building_code_compliance` tool and friends can evaluate against
  * Sri Lankan UDA / SLS, Jamaica National Building Code, US IBC/IRC, etc.
  *
- * Designed PHP 7.4-compatible.
+ * Designed for PHP 8.1+.
  *
  * @package WP_MCP_AI_Pro
  * @since 1.2.0
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

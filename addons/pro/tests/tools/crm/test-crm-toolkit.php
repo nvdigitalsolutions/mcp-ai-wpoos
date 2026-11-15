@@ -309,6 +309,12 @@ class Test_WP_MCP_AI_CRM_Toolkit extends WP_UnitTestCase {
 		return file_exists( $alt ) ? $alt : false;
 	}
 
+	/**
+	 * Resolve the file that declares a tool class.
+	 *
+	 * @param string $class_name Tool class name.
+	 * @return string|false Absolute path, or false when no file declares it.
+	 */
 	protected function get_tool_file_path( $class_name ) {
 		return $this->find_tool_file( $class_name );
 	}

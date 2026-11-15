@@ -14,6 +14,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -4185,7 +4187,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 
 			// PHP version check.
 			$php_version            = PHP_VERSION;
-			$php_status             = version_compare( $php_version, '7.4', '>=' ) ? 'healthy' : 'warning';
+			$php_status             = version_compare( $php_version, '8.1', '>=' ) ? 'healthy' : 'warning';
 			$health['indicators'][] = array(
 				'name'   => __( 'PHP Version', 'mcp-ai-wpoos' ),
 				'value'  => $php_version,

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tests for the ToolRegistry execution pipeline — pre-execute waterfall,
  * monotonic guards, around-dispatch wrappers, and post-execute policy.
@@ -25,239 +26,269 @@ use Nvoos\Core\Domain\Decision\PostToolDecision;
 use Nvoos\Core\Tests\Unit\Support\InMemoryDispatcher;
 use PHPUnit\Framework\TestCase;
 
-final class ToolRegistryPipelineTest extends TestCase {
+final class ToolRegistryPipelineTest extends TestCase
+{
+    private InMemoryDispatcher $dispatcher;
 
-	private InMemoryDispatcher $dispatcher;
+    private ErrorFactoryInterface $errors;
 
-	private ErrorFactoryInterface $errors;
+    private ToolRegistry $registry;
 
-	private ToolRegistry $registry;
+    /** @var \stdClass */
+    private object $toolState;
 
-	/** @var \stdClass */
-	private object $toolState;
+    protected function setUp(): void
+    {
+        $this->dispatcher = new InMemoryDispatcher();
 
-	protected function setUp(): void {
-		$this->dispatcher = new InMemoryDispatcher();
+        $this->errors = new class () implements ErrorFactoryInterface {
+            public function create(string $code, string $message, array $data = array()): mixed
+            {
+                return array(
+                    'success' => false,
+                    'error'   => array( 'code' => $code, 'message' => $message, 'data' => $data ),
+                );
+            }
 
-		$this->errors = new class() implements ErrorFactoryInterface {
-			public function create( string $code, string $message, array $data = array() ): mixed {
-				return array(
-					'success' => false,
-					'error'   => array( 'code' => $code, 'message' => $message, 'data' => $data ),
-				);
-			}
+            public function isError(mixed $value): bool
+            {
+                return is_array($value) && isset($value['success']) && false === $value['success'];
+            }
 
-			public function isError( mixed $value ): bool {
-				return is_array( $value ) && isset( $value['success'] ) && false === $value['success'];
-			}
+            public function normalize(mixed $error): array
+            {
+                return is_array($error) && isset($error['error'])
+                    ? $error['error']
+                    : array( 'code' => 'unknown', 'message' => (string) $error, 'data' => array() );
+            }
 
-			public function normalize( mixed $error ): array {
-				return is_array( $error ) && isset( $error['error'] )
-					? $error['error']
-					: array( 'code' => 'unknown', 'message' => (string) $error, 'data' => array() );
-			}
+            public function notFound(string $message = 'Resource not found.', array $data = array()): mixed
+            {
+                return $this->create('not_found', $message, $data);
+            }
 
-			public function notFound( string $message = 'Resource not found.', array $data = array() ): mixed {
-				return $this->create( 'not_found', $message, $data );
-			}
+            public function forbidden(string $message = 'Access denied.', array $data = array()): mixed
+            {
+                return $this->create('forbidden', $message, $data);
+            }
 
-			public function forbidden( string $message = 'Access denied.', array $data = array() ): mixed {
-				return $this->create( 'forbidden', $message, $data );
-			}
+            public function validationFailed(string $message, array $errors = array()): mixed
+            {
+                return $this->create('validation_failed', $message, array( 'errors' => $errors ));
+            }
 
-			public function validationFailed( string $message, array $errors = array() ): mixed {
-				return $this->create( 'validation_failed', $message, array( 'errors' => $errors ) );
-			}
+            public function rateLimited(string $message, int $retryAfterSeconds = 60): mixed
+            {
+                return $this->create('rate_limited', $message, array( 'retry_after' => $retryAfterSeconds ));
+            }
+        };
 
-			public function rateLimited( string $message, int $retryAfterSeconds = 60 ): mixed {
-				return $this->create( 'rate_limited', $message, array( 'retry_after' => $retryAfterSeconds ) );
-			}
-		};
+        $this->registry  = new ToolRegistry($this->dispatcher, $this->errors);
+        $this->toolState = new \stdClass();
+        $this->toolState->runs = 0;
 
-		$this->registry  = new ToolRegistry( $this->dispatcher, $this->errors );
-		$this->toolState = new \stdClass();
-		$this->toolState->runs = 0;
+        $this->registry->register($this->countingTool());
+    }
 
-		$this->registry->register( $this->countingTool() );
-	}
+    private function countingTool(): ToolInterface
+    {
+        $state = $this->toolState;
 
-	private function countingTool(): ToolInterface {
-		$state = $this->toolState;
+        return new class ($state) implements ToolInterface {
+            public function __construct(private readonly \stdClass $state)
+            {
+            }
 
-		return new class( $state ) implements ToolInterface {
-			public function __construct( private readonly \stdClass $state ) {}
+            public function getSlug(): string
+            {
+                return 'probe_tool';
+            }
 
-			public function getSlug(): string {
-				return 'probe_tool';
-			}
+            public function getName(): string
+            {
+                return 'Probe Tool';
+            }
 
-			public function getName(): string {
-				return 'Probe Tool';
-			}
+            public function getDescription(): string
+            {
+                return 'Probe.';
+            }
 
-			public function getDescription(): string {
-				return 'Probe.';
-			}
+            public function getParametersSchema(): array
+            {
+                return array(
+                    'type'       => 'object',
+                    'properties' => array(),
+                );
+            }
 
-			public function getParametersSchema(): array {
-				return array(
-					'type'       => 'object',
-					'properties' => array(),
-				);
-			}
+            public function getRequiredCapability(): string
+            {
+                return '';
+            }
 
-			public function getRequiredCapability(): string {
-				return '';
-			}
+            public function execute(array $arguments = array(), array $context = array()): mixed
+            {
+                ++$this->state->runs;
 
-			public function execute( array $arguments = array(), array $context = array() ): mixed {
-				++$this->state->runs;
+                return array( 'success' => true, 'message' => 'ran', 'data' => array() );
+            }
+        };
+    }
 
-				return array( 'success' => true, 'message' => 'ran', 'data' => array() );
-			}
-		};
-	}
+    private function resultCode(mixed $result): string
+    {
+        return (string) ( $result['error']['code'] ?? '' );
+    }
 
-	private function resultCode( mixed $result ): string {
-		return (string) ( $result['error']['code'] ?? '' );
-	}
+    public function testDefaultAllowExecutesTool(): void
+    {
+        $result = $this->registry->execute('probe_tool');
 
-	public function testDefaultAllowExecutesTool(): void {
-		$result = $this->registry->execute( 'probe_tool' );
+        $this->assertTrue($result['success']);
+        $this->assertSame(1, $this->toolState->runs);
+    }
 
-		$this->assertTrue( $result['success'] );
-		$this->assertSame( 1, $this->toolState->runs );
-	}
+    public function testPreExecuteDenyBlocksExecution(): void
+    {
+        $this->dispatcher->listenWaterfall(
+            'tools/pre_execute',
+            static function (object $event, callable $next): PreToolDecision {
+                return PreToolDecision::deny('Blocked by test policy.');
+            }
+        );
 
-	public function testPreExecuteDenyBlocksExecution(): void {
-		$this->dispatcher->listenWaterfall(
-			'tools/pre_execute',
-			static function ( object $event, callable $next ): PreToolDecision {
-				return PreToolDecision::deny( 'Blocked by test policy.' );
-			}
-		);
+        $result = $this->registry->execute('probe_tool');
 
-		$result = $this->registry->execute( 'probe_tool' );
+        $this->assertSame('tool_denied', $this->resultCode($result));
+        $this->assertSame(0, $this->toolState->runs);
+    }
 
-		$this->assertSame( 'tool_denied', $this->resultCode( $result ) );
-		$this->assertSame( 0, $this->toolState->runs );
-	}
+    public function testPreExecuteAskFailsClosedWithoutApproval(): void
+    {
+        $this->dispatcher->listenWaterfall(
+            'tools/pre_execute',
+            static function (object $event, callable $next): PreToolDecision {
+                return PreToolDecision::ask('Confirmation required.');
+            }
+        );
 
-	public function testPreExecuteAskFailsClosedWithoutApproval(): void {
-		$this->dispatcher->listenWaterfall(
-			'tools/pre_execute',
-			static function ( object $event, callable $next ): PreToolDecision {
-				return PreToolDecision::ask( 'Confirmation required.' );
-			}
-		);
+        $result = $this->registry->execute('probe_tool');
 
-		$result = $this->registry->execute( 'probe_tool' );
+        $this->assertSame('approval_required', $this->resultCode($result));
+        $this->assertSame(0, $this->toolState->runs);
+    }
 
-		$this->assertSame( 'approval_required', $this->resultCode( $result ) );
-		$this->assertSame( 0, $this->toolState->runs );
-	}
+    public function testInvalidPreDecisionFailsClosed(): void
+    {
+        $this->dispatcher->listenWaterfall(
+            'tools/pre_execute',
+            static function (object $event, callable $next): mixed {
+                return 'not-a-decision';
+            }
+        );
 
-	public function testInvalidPreDecisionFailsClosed(): void {
-		$this->dispatcher->listenWaterfall(
-			'tools/pre_execute',
-			static function ( object $event, callable $next ): mixed {
-				return 'not-a-decision';
-			}
-		);
+        $result = $this->registry->execute('probe_tool');
 
-		$result = $this->registry->execute( 'probe_tool' );
+        $this->assertSame('tool_denied', $this->resultCode($result));
+        $this->assertSame(0, $this->toolState->runs);
+    }
 
-		$this->assertSame( 'tool_denied', $this->resultCode( $result ) );
-		$this->assertSame( 0, $this->toolState->runs );
-	}
+    public function testGuardCanDeny(): void
+    {
+        $this->registry->addGuard(
+            new class () implements ToolGuardInterface {
+                public function evaluate(string $slug, array $arguments, array $context): ?string
+                {
+                    return $slug === 'probe_tool' ? 'Guarded by test.' : null;
+                }
+            }
+        );
 
-	public function testGuardCanDeny(): void {
-		$this->registry->addGuard(
-			new class() implements ToolGuardInterface {
-				public function evaluate( string $slug, array $arguments, array $context ): ?string {
-					return $slug === 'probe_tool' ? 'Guarded by test.' : null;
-				}
-			}
-		);
+        $result = $this->registry->execute('probe_tool');
 
-		$result = $this->registry->execute( 'probe_tool' );
+        $this->assertSame('tool_guarded', $this->resultCode($result));
+        $this->assertSame(0, $this->toolState->runs);
+    }
 
-		$this->assertSame( 'tool_guarded', $this->resultCode( $result ) );
-		$this->assertSame( 0, $this->toolState->runs );
-	}
+    public function testGuardReturningNullAllows(): void
+    {
+        $this->registry->addGuard(
+            new class () implements ToolGuardInterface {
+                public function evaluate(string $slug, array $arguments, array $context): ?string
+                {
+                    return null;
+                }
+            }
+        );
 
-	public function testGuardReturningNullAllows(): void {
-		$this->registry->addGuard(
-			new class() implements ToolGuardInterface {
-				public function evaluate( string $slug, array $arguments, array $context ): ?string {
-					return null;
-				}
-			}
-		);
+        $result = $this->registry->execute('probe_tool');
 
-		$result = $this->registry->execute( 'probe_tool' );
+        $this->assertTrue($result['success']);
+        $this->assertSame(1, $this->toolState->runs);
+    }
 
-		$this->assertTrue( $result['success'] );
-		$this->assertSame( 1, $this->toolState->runs );
-	}
+    public function testExecuteWaterfallWrapsResult(): void
+    {
+        $this->dispatcher->listenWaterfall(
+            'tools/execute',
+            static function (object $event, callable $next): mixed {
+                $result          = $next($event);
+                $result['data']['wrapped'] = true;
 
-	public function testExecuteWaterfallWrapsResult(): void {
-		$this->dispatcher->listenWaterfall(
-			'tools/execute',
-			static function ( object $event, callable $next ): mixed {
-				$result          = $next( $event );
-				$result['data']['wrapped'] = true;
+                return $result;
+            }
+        );
 
-				return $result;
-			}
-		);
+        $result = $this->registry->execute('probe_tool');
 
-		$result = $this->registry->execute( 'probe_tool' );
+        $this->assertTrue($result['success']);
+        $this->assertTrue($result['data']['wrapped']);
+    }
 
-		$this->assertTrue( $result['success'] );
-		$this->assertTrue( $result['data']['wrapped'] );
-	}
+    public function testPostExecuteReplaceContent(): void
+    {
+        $this->dispatcher->listenWaterfall(
+            'tools/post_execute',
+            static function (object $event, callable $next): PostToolDecision {
+                return PostToolDecision::replace(array( 'success' => true, 'message' => 'replaced', 'data' => array() ));
+            }
+        );
 
-	public function testPostExecuteReplaceContent(): void {
-		$this->dispatcher->listenWaterfall(
-			'tools/post_execute',
-			static function ( object $event, callable $next ): PostToolDecision {
-				return PostToolDecision::replace( array( 'success' => true, 'message' => 'replaced', 'data' => array() ) );
-			}
-		);
+        $result = $this->registry->execute('probe_tool');
 
-		$result = $this->registry->execute( 'probe_tool' );
+        $this->assertSame('replaced', $result['message']);
+        $this->assertSame(1, $this->toolState->runs);
+    }
 
-		$this->assertSame( 'replaced', $result['message'] );
-		$this->assertSame( 1, $this->toolState->runs );
-	}
+    public function testPostExecuteBlockTurnsResultIntoError(): void
+    {
+        $this->dispatcher->listenWaterfall(
+            'tools/post_execute',
+            static function (object $event, callable $next): PostToolDecision {
+                return PostToolDecision::block('Unsupported output — retry.');
+            }
+        );
 
-	public function testPostExecuteBlockTurnsResultIntoError(): void {
-		$this->dispatcher->listenWaterfall(
-			'tools/post_execute',
-			static function ( object $event, callable $next ): PostToolDecision {
-				return PostToolDecision::block( 'Unsupported output — retry.' );
-			}
-		);
+        $result = $this->registry->execute('probe_tool');
 
-		$result = $this->registry->execute( 'probe_tool' );
+        $this->assertSame('tool_blocked_with_feedback', $this->resultCode($result));
+        $this->assertStringContainsString('Unsupported output', $result['error']['message']);
+    }
 
-		$this->assertSame( 'tool_blocked_with_feedback', $this->resultCode( $result ) );
-		$this->assertStringContainsString( 'Unsupported output', $result['error']['message'] );
-	}
+    public function testPlainDispatcherDegradesToDirectExecution(): void
+    {
+        // A dispatcher without waterfall support (e.g., craft/laravel
+        // adapters) must still execute tools unchanged.
+        $plain     = $this->createMock(EventDispatcherInterface::class);
+        $plain->method('dispatch')->willReturnCallback(static fn(object $event): object => $event);
+        $registry  = new ToolRegistry($plain, $this->errors);
+        $tool      = $this->countingTool();
+        $registry->register($tool);
 
-	public function testPlainDispatcherDegradesToDirectExecution(): void {
-		// A dispatcher without waterfall support (e.g., craft/laravel
-		// adapters) must still execute tools unchanged.
-		$plain     = $this->createMock( EventDispatcherInterface::class );
-		$plain->method( 'dispatch' )->willReturnCallback( static fn( object $event ): object => $event );
-		$registry  = new ToolRegistry( $plain, $this->errors );
-		$tool      = $this->countingTool();
-		$registry->register( $tool );
+        $result = $registry->execute('probe_tool');
 
-		$result = $registry->execute( 'probe_tool' );
-
-		$this->assertTrue( $result['success'] );
-		$this->assertSame( 1, $this->toolState->runs );
-	}
+        $this->assertTrue($result['success']);
+        $this->assertSame(1, $this->toolState->runs);
+    }
 }

@@ -1,0 +1,35 @@
+---
+// ---------------------------------------------------------------------------
+// Blocks.astro — the Portable Text serializer composition (Proposal 107
+// DECISION-2). Standard blocks render through the library defaults; the
+// allowlisted custom types (the commerce components) map to one Astro
+// component each; link marks render through a scheme-safe anchor. Unknown
+// types never reach this component — the schema rejects them at the render
+// boundary (parsePortableText in the routes). The map is shared with
+// TabsBlock.astro (nested tab content renders the same components — 108).
+// ---------------------------------------------------------------------------
+
+import { PortableText } from '@portabletext/astro';
+import { PORTABLE_TEXT_COMPONENTS } from './components';
+import type { PortableTextBlock } from '../../lib/content/portable-text';
+
+interface Props {
+	blocks: PortableTextBlock[];
+}
+
+const { blocks } = Astro.props;
+---
+
+<div class="blocks">
+	<PortableText value={blocks} components={PORTABLE_TEXT_COMPONENTS} />
+</div>
+
+<style>
+	.blocks {
+		max-width: 46rem;
+	}
+
+	.blocks :global(h2) {
+		margin-top: 1.5rem;
+	}
+</style>

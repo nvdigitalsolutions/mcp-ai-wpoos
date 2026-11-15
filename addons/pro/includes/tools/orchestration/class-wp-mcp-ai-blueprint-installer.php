@@ -13,6 +13,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -467,9 +469,9 @@ class WP_MCP_AI_Blueprint_Installer {
 		}
 
 		$fallbacks = array(
-			'openai'      => 'gpt-4.1',
-			'anthropic'   => 'claude-sonnet-5',
-			'gemini'      => 'gemini-3.6-flash',
+			'openai'      => 'gpt-6.1-sol',
+			'anthropic'   => 'claude-sonnet-5-5',
+			'gemini'      => 'gemini-3.8-flash',
 			'ollama'      => 'llama4',
 			'lm_studio'   => 'local',
 			'cloudflare'  => '@cf/meta/llama-4-scout-17b-16e-instruct',
@@ -478,7 +480,7 @@ class WP_MCP_AI_Blueprint_Installer {
 			'embedded'    => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 		);
 
-		return isset( $fallbacks[ $provider ] ) ? $fallbacks[ $provider ] : 'gpt-4.1';
+		return isset( $fallbacks[ $provider ] ) ? $fallbacks[ $provider ] : 'gpt-6.1-sol';
 	}
 
 	/**

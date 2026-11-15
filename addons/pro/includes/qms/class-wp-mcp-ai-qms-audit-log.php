@@ -28,6 +28,10 @@
  *
  * @package WP_MCP_AI_Pro
  * @since   1.2.0
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -243,11 +247,7 @@ class WP_MCP_AI_QMS_Audit_Log {
 	 * @return string
 	 */
 	protected static function get_client_ip() {
-		$ip = '';
-		if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
-			$ip = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-		}
-		return $ip;
+		return wp_mcp_ai_get_client_ip();
 	}
 
 	/**

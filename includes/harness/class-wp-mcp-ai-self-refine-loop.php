@@ -24,6 +24,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -58,6 +60,13 @@ class WP_MCP_AI_Self_Refine_Loop {
 	 * }|WP_Error
 	 */
 	public static function run( $task, callable $generator, callable $critic, array $opts = array() ) {
+		// The loop lives in lib/core so both runtimes cap iterations, honour the
+		// cost ceiling and trace each pass identically. lib/ is stripped from
+		// wp.org base builds, so the implementation below stays.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\SelfRefineLoop' ) ) {
+			return self::run_via_core( (string) $task, $generator, $critic, $opts );
+		}
+
 		$task = (string) $task;
 		if ( '' === trim( $task ) ) {
 			return new WP_Error( 'wp_mcp_ai_self_refine_empty_task', __( 'Self-Refine requires a non-empty task.', 'mcp-ai-wpoos' ) );
@@ -150,6 +159,66 @@ class WP_MCP_AI_Self_Refine_Loop {
 	}
 
 	/**
+	 * Delegate to the shared loop and translate its failure into a WP_Error.
+	 *
+	 * The core loop cannot import WP_Error, so it throws a SelfRefineException
+	 * carrying the reason and, when a callable handed one back, the original
+	 * error object. Returning that object unchanged keeps the delegation
+	 * indistinguishable from the local implementation — callers still get the
+	 * very same WP_Error their generator produced.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param string   $task      Task text.
+	 * @param callable $generator Generator callable.
+	 * @param callable $critic    Critic callable.
+	 * @param array    $opts      Loop options.
+	 * @return array|WP_Error
+	 */
+	private static function run_via_core( $task, callable $generator, callable $critic, array $opts ) {
+		$opts['on_iteration'] = static function ( $iteration ) {
+			if ( class_exists( 'WP_MCP_AI_Harness_Trace_Capture' ) ) {
+				WP_MCP_AI_Harness_Trace_Capture::record_refine_iteration( $iteration );
+			}
+		};
+
+		try {
+			return \Nvoos\Core\Domain\Service\Harness\SelfRefineLoop::run( $task, $generator, $critic, $opts );
+		} catch ( \Nvoos\Core\Domain\Service\Harness\SelfRefineException $e ) {
+			if ( $e->getPlatformError() instanceof WP_Error ) {
+				return $e->getPlatformError();
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_self_refine_' . $e->reason,
+				self::core_failure_message( $e )
+			);
+		}
+	}
+
+	/**
+	 * Localise a core failure reason.
+	 *
+	 * Core messages are English defaults; the two failures the local loop can
+	 * raise are translated here so the delegation does not regress i18n.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @param \Nvoos\Core\Domain\Service\Harness\SelfRefineException $e Failure.
+	 * @return string
+	 */
+	private static function core_failure_message( $e ) {
+		switch ( $e->reason ) {
+			case 'empty_task':
+				return __( 'Self-Refine requires a non-empty task.', 'mcp-ai-wpoos' );
+			case 'cost_exceeded':
+				return __( 'Self-Refine aborted: estimated cost exceeds ceiling.', 'mcp-ai-wpoos' );
+			default:
+				return $e->getMessage();
+		}
+	}
+
+	/**
 	 * Sanitize a critic verdict to the contracted shape.
 	 *
 	 * @param mixed $raw Raw verdict.
@@ -192,6 +261,9 @@ class WP_MCP_AI_Self_Refine_Loop {
 	 * @return array|WP_Error Result from the underlying tool, or WP_Error if storage is unavailable.
 	 */
 	public static function record_reflection( $reflection, $task_class = 'general', array $context = array() ) {
+		// Stays local: the write target is the `store_agent_context` tool, and
+		// WordPress has no ToolInvokerInterface adapter for core to call. Port
+		// this with the memory/blueprint track, not the harness loop.
 		$reflection = (string) $reflection;
 		if ( '' === trim( $reflection ) ) {
 			return new WP_Error( 'wp_mcp_ai_self_refine_empty_reflection', __( 'Reflection text is required.', 'mcp-ai-wpoos' ) );

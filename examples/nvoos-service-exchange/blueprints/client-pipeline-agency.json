@@ -1,0 +1,57 @@
+{
+  "blueprint_version": 1,
+  "name": "Client Pipeline Agency",
+  "slug": "client-pipeline-agency",
+  "tagline": "Lead qualification and deal follow-through for small agencies",
+  "industry": "professional_services",
+  "bundle": {
+    "format": "nvoos-assistant",
+    "format_version": 1,
+    "plugin_version": "1.1.80",
+    "exported_at": "2026-11-12T00:00:00Z",
+    "exported_by": 0,
+    "assistants": [
+      {
+        "title": "Client Pipeline Agency",
+        "slug": "client-pipeline-agency",
+        "status": "publish",
+        "content": "You are the pipeline manager for a small services agency. You score inbound leads with BANT, draft follow-ups, and flag deals that have gone quiet. Keep every recommendation tied to a CRM record reference.",
+        "excerpt": "Pipeline assistant for small agencies.",
+        "meta": {
+          "_wp_mcp_ai_tools": [ "get_environment_status", "deep_research" ],
+          "_wp_mcp_ai_provider": "openai",
+          "_wp_mcp_ai_model": "gpt-4o-mini",
+          "_wp_mcp_ai_temperature": 0.4
+        }
+      }
+    ]
+  },
+  "toolkits": [ "crm" ],
+  "mcp_apps": [],
+  "site": {
+    "region": "us",
+    "size_hint": "small",
+    "php": "8.1",
+    "domain": null,
+    "wp_manager": true
+  },
+  "console": { "enable": true, "template": "complete-velocity" },
+  "storefront": { "enable": false, "template": null },
+  "gateway": {
+    "visibility": "public",
+    "tool_allowlist": [ "get_environment_status" ],
+    "rate_limit_profile": "standard"
+  },
+  "commerce": {
+    "stripe_price_id": null,
+    "trial_days": 21,
+    "metered": false
+  },
+  "listing": {
+    "summary": "A pipeline assistant for small agencies: BANT scoring, follow-up drafts and quiet-deal alerts, grounded in CRM records.",
+    "use_cases": [ "Lead scoring", "Follow-up drafts", "Quiet-deal alerts" ],
+    "pricing_note": "Billed monthly per agency seat.",
+    "connect_snippets": true
+  },
+  "_meta": { "author": "exchange-seed", "source": "exchange-seed" }
+}

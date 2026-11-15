@@ -1,0 +1,7 @@
+{
+	"name": "nvoos-gateway",
+	"version": "0.1.0",
+	"description": "Explore the public NV oOS (Open Operator System) demo site through the NV oOS MCP Gateway in ChatGPT and Codex.",
+	"skills": "./skills/",
+	"mcpServers": "./.mcp.json"
+}

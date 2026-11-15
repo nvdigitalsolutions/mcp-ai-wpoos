@@ -1,9 +1,14 @@
 ---
-// /{slug}/ — one WordPress page. The static front page (manifest.frontPage)
-// renders at `/` instead, so it is skipped here to keep one canonical URL.
+// /{slug}/ — one WordPress page (or a local MDX page from src/content/pages/).
+// The static front page (manifest.frontPage) renders at `/` instead, so it is
+// skipped here to keep one canonical URL.
 import Base from '../layouts/Base.astro';
 import manifest from '../../nvoos.json';
 import { getCollection, render } from 'astro:content';
+import DesignRenderer from '../components/design/DesignRenderer.astro';
+import { pageBands } from '../lib/pages.generated.ts';
+import { jsonLdFor, renderJsonLd } from '../lib/seo.ts';
+import { buildGraph, homeCrumb } from '../lib/seo-graph.ts';
 
 export async function getStaticPaths() {
 	const pages = await getCollection('pages');
@@ -11,20 +16,60 @@ export async function getStaticPaths() {
 		.filter((page) => page.data.slug !== manifest.frontPage)
 		.map((page) => ({
 			params: { slug: page.data.slug },
-			props: { page },
+			// The sanitized body HTML is extracted HERE (server context) —
+			// getStaticPaths props are serialized and the store's `rendered`
+			// object does not survive that trip; a plain string prop does.
+			props: { page, body: page.rendered?.html },
 		}));
 }
 
-const { page } = Astro.props;
+const { page, body } = Astro.props;
 const { Content } = await render(page);
 const pageUrl = Astro.site ? new URL(`/${page.data.slug}/`, Astro.site).href : undefined;
+// SEO meta from the source (Rank Math → Yoast → the WP title/excerpt, 106 §1.2).
+const seoTitle = page.data.seoTitle ?? page.data.title;
+
+/**
+ * Description fallback for source pages that carry neither a Rank Math
+ * description nor an excerpt (Proposal 131 gate: `meta-description-missing`).
+ * Derive one from the sanitized body first — that keeps it UNIQUE per page —
+ * and only then fall back to the site description. Duplicating the site
+ * description across every page would satisfy the gate and hurt the SEO it is
+ * meant to protect.
+ */
+function derivedDescription( html: string | undefined, site: string | undefined ): string | undefined {
+	const text = ( html ?? '' ).replace( /<[^>]+>/g, ' ' ).replace( /\s+/g, ' ' ).trim();
+	if ( ! text ) {
+		return site;
+	}
+	return text.length > 155 ? `${ text.slice( 0, 152 ).replace( /\s+\S*$/, '' ) }…` : text;
+}
+
+const seoDescription =
+	page.data.seoDescription ??
+	page.data.excerpt ??
+	derivedDescription( body, manifest.seoDescription );
+const jsonLd = buildGraph(
+	Astro.site,
+	jsonLdFor('WebPage', {
+		url: pageUrl,
+		title: seoTitle,
+		description: seoDescription,
+	}),
+	[ ...homeCrumb(Astro.site), ...(pageUrl ? [ { name: seoTitle, url: pageUrl } ] : []) ]
+);
 ---
 
-<Base title={page.data.title} canonical={pageUrl}>
+<Base title={seoTitle} description={seoDescription} canonical={pageUrl} seo={page.data.seo} markdownHref={`/${page.data.slug}/index.md`}>
 	<article class="post">
 		<h1>{page.data.title}</h1>
-		<div class="post-body">
-			<Content />
-		</div>
+		{body ? (
+			<DesignRenderer html={body} bandThemes={pageBands[page.data.slug]} />
+		) : (
+			<div class="post-body">
+				<Content />
+			</div>
+		)}
 	</article>
+	<script type="application/ld+json" set:html={renderJsonLd(jsonLd)} />
 </Base>

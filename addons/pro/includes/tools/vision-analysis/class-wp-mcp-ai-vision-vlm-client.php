@@ -9,6 +9,10 @@
  *
  * @package WP_MCP_AI_Pro
  * @since   1.1.68
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -88,7 +92,7 @@ class WP_MCP_AI_Vision_VLM_Client {
 				}
 				return ! empty( $settings['anthropic_model'] ) ? sanitize_text_field( $settings['anthropic_model'] ) : 'claude-sonnet-5';
 			case 'gemini':
-				return ! empty( $settings['default_gemini_model'] ) ? sanitize_text_field( $settings['default_gemini_model'] ) : 'gemini-2.5-flash';
+				return ! empty( $settings['default_gemini_model'] ) ? sanitize_text_field( $settings['default_gemini_model'] ) : 'gemini-3.5-flash-lite';
 			case 'openai':
 			default:
 				return ! empty( $settings['default_model'] ) ? sanitize_text_field( $settings['default_model'] ) : 'gpt-4o-mini';

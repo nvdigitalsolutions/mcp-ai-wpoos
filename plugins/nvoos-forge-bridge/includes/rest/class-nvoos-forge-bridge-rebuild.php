@@ -48,8 +48,12 @@ class Rebuild extends \WP_REST_Controller {
 			self::NS,
 			'/preview-tokens/verify',
 			array(
-				'methods'             => \WP_REST_Server::READABLE,
+				// POST, not GET: verification consumes the token (a state
+				// change), and state-changing routes must not ride on GET.
+				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_verify' ),
+				// Public by design — the single-use bearer token in the body is the
+				// proof; an unauthenticated build has no WordPress capability.
 				'permission_callback' => '__return_true',
 				'args'                => array(
 					'token' => array(
@@ -98,12 +102,12 @@ class Rebuild extends \WP_REST_Controller {
 	}
 
 	/**
-	 * Mint permission callback — any editor can create preview tokens.
+	 * Mint permission callback — editors and above can create preview tokens.
 	 *
 	 * @return true|\WP_Error
 	 */
 	public function can_mint() {
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! current_user_can( 'edit_pages' ) ) {
 			return new \WP_Error(
 				'nvoos_forge_bridge_forbidden',
 				__( 'You are not allowed to create preview tokens.', 'nvoos-forge-bridge' ),

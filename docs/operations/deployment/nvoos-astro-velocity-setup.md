@@ -43,10 +43,13 @@
 | `PORT` | no | **Injected by Velocity** — do not set manually. A committed/manual `.env` `PORT` (observed: 3025) must match the routing target or pages won't be served. |
 | `NVOOS_PROXY_CACHE` / `NVOOS_PROXY_CACHE_MAX_TTL` | no | Micro-cache kill-switch / TTL cap (default enabled, 300 s) |
 
-`NVOOS_API_BASE` is a **build-time only** variable (CI) — the runtime binds
-to the same-origin `/api/*` proxy and needs no origin config. Since PR #7284
-the request URL takes priority over any baked `NVOOS_API_BASE` at runtime
-(regression: SSR pages 500ed fetching the baked fixture origin).
+`NVOOS_API_BASE` is a **build-time only** variable (CI/dev fixture loop) —
+the runtime binds to the same-origin `/api/*` proxy and needs no origin
+config. Since PR #7284 the request URL takes priority over any baked
+`NVOOS_API_BASE` at runtime (regression: SSR pages 500ed fetching the baked
+fixture origin). **Proposal 104:** no route fetches at build anymore (the
+PDP prerender was dropped), so the mirror rebuild runs with NO
+`NVOOS_API_BASE` — `npm run build:prod-sim` is the CI-pinned hermetic gate.
 
 ## `/mcp` assistant surface (Proposal 095)
 
@@ -66,6 +69,7 @@ to stay secure — on Velocity:
 | `NVOOS_SSR_API_ORIGIN` | no | Origin the server uses to verify manager sessions (`/auth/me`) and to resolve contract calls from tools; falls back to `NVOOS_API_BASE` |
 | `NVOOS_MCP_SCREENSHOT` | no | Opt-in `screenshot` tool. Off by default — the browser binary + headless launch cost only makes sense where an assistant does visual verification |
 | `NVOOS_REBUILD_WEBHOOK_URL` (+ `_TOKEN`) | no | Enables the `rebuild_trigger` tool. Point it at the mirror sync `repository_dispatch` URL (repo-scoped PAT as `_TOKEN`) or any rebuild webhook; the tool errors when unset |
+| `NVOOS_REVALIDATE_TOKEN` | no | Shared secret for `POST /internal/revalidate/` — tag-based purge of the in-process Astro route cache (Proposal 104 Q3). Unset disables the route (503). Per-instance only: fleet-wide invalidation remains the mirror redeploy loop |
 | `NVOOS_STOREFRONT_ORIGIN` | no | Override for the origin `preview_url` / `screenshot` render (http/https only). Defaults to the inbound request Host (scheme from `X-Forwarded-Proto`, then socket TLS state), so behind Velocity it usually needs no value; set it only when a proxy rewrites the Host |
 
 Auth model: reads are public; design writes accept the bearer token **or** a
@@ -125,6 +129,65 @@ Prerendered catalog pages update at build. The bridge's `RebuildWebhook`
    re-runs the sync → rebuild + mirror push → Velocity redeploys.
 
 SSR paths (PLP/home) revalidate within `s-maxage` between builds anyway.
+
+Theme policy changes (Proposal 105) ride the same loop: a successful
+`PATCH /globals/theme` fires the rebuild webhook, so prerendered pages
+re-bake the policy; SSR pages pick the new policy up within 60 s
+(`s-maxage=60` on the doc) plus the SSR cache revision (cache entries carry
+`policy.updatedAt`).
+
+## Theme policy (Proposal 105)
+
+The bridge serves the owner-set theming policy at `GET /globals/theme`
+(public) / `PATCH /globals/theme` (`manage_astro`):
+
+```json
+{ "policy": "auto", "contrast": "auto", "defaultTheme": "dark",
+  "updatedAt": "2026-11-03T09:00:00Z", "$extensions": {} }
+```
+
+- `policy`: `auto | light | dark | brand:<slug>` — forced values disable the
+  storefront theme switcher (next-themes/Foxi behaviour); `auto` = visitor
+  preference → system → `defaultTheme`.
+- `contrast`: `auto | standard | high` — governs the high-contrast axis.
+- Unknown `brand:<slug>` fails open to `auto` (never bricks rendering); the
+  slug must exist in the storefront's ADS theme registry (`/mcp` `theme_*`).
+- Edit from the /manage settings ("Theme policy" section) or the REST route.
+- MCP `theme_apply` is preview-only in production under a forced policy
+  (set `NVOOS_THEME_PREVIEW=1` to preview; the policy stays the serving
+  authority).
+
+## Content, variants, checkout (Proposal 106)
+
+- `GET/POST /content/pages` + `GET/POST /content/posts` (writes gated) serve
+  WP pages/posts with `contentRendered` (builder caveat: pages authored in
+  Elementor/WPBakery render only while the builder is active) and Rank
+  Math/Yoast SEO meta passthrough. Storefront routes: `/pages/{id}/{slug}`,
+  `/blog/`, `/blog/{id}/{slug}`. Hybrid local content: `src/content/**`
+  renders when no envelope doc matches (WP wins on slug collision).
+- Variants: Woo variable products carry an additive `variants` array on
+  single-doc GETs (simple products have no key); listings stay flat.
+- Checkout: `GET /globals/shop` (checkout URL + display currency); the cart
+  page links out to Woo's checkout with the comma-form add-to-cart URL
+  (simple products; variant lines show a note until the T1 cart resource).
+
+## Shopify → WP headless migration (Proposal 106 runbook)
+
+1. **P0 Import** — official WooCommerce "Migrate & Import from Shopify" tool
+   (or Shopify Data Migrator for redirects/webhook sync); dry-run first;
+   export the Shopify URL-redirect list.
+2. **P1 Envelope** — set `funiq_bridge_products_source = woo`; run bridge
+   PHPUnit + `sync:bridge-fixtures` (format-only diff).
+3. **P2 Brand** — `design_analyze` the Shopify storefront (Proposal 098) →
+   ADS theme; `PATCH /globals/theme` to force it (or `auto`).
+4. **P3 Redirects** — Shopify redirect export → forge `redirects.json` /
+   Woo redirects; handle-only URLs resolve via the content/products slug
+   lookups; verify with the crawl gate + LHCI.
+5. **P4 Commerce** — `PATCH /globals/shop` with the Woo checkout URL; cart
+   handoff verified end-to-end.
+6. **P5 Content** — pages/blog served via `content/*`; forged site parity.
+7. **P6 Launch** — full gates: JS-disabled crawl spec, axe, LHCI, prod-sim
+   build, mirror rebuild; A/B cutover per the routing section below.
 
 ## A/B coexistence routing (owner decision Q1: keep A/B)
 

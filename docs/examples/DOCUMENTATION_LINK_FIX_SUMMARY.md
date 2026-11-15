@@ -184,7 +184,7 @@ All 10 fixed sections now properly display links to their respective documentati
 
 ### Prerequisites
 - WordPress 6.0+
-- PHP 7.4+
+- PHP 8.1+
 - No additional dependencies required
 
 ### Migration Path

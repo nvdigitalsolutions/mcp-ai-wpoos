@@ -1,0 +1,30 @@
+/* ---------------------------------------------------------------------------
+   Tailwind v4 token bridge (Proposal 104 §4.7, forge side).
+
+   Import this file only if/when you add Tailwind v4 to the project —
+   unused by default (zero build impact, no Tailwind dependency). It maps
+   the `--forge-*` design tokens (src/styles/global.css) onto Tailwind v4
+   `@theme inline` utility tokens, so Tailwind classes consume the same
+   single source of truth the rest of the site renders from. The file
+   carries no FORGE markers on purpose: the scaffold must copy it
+   byte-identical, and token rewrites land in global.css, not here.
+
+   Usage (after `npm install tailwindcss @tailwindcss/vite` + the vite
+   plugin): `@import './tokens-tailwind.css';` from global.css, then use
+   e.g. `bg-forge-surface text-forge-ink border-forge-line`.
+   --------------------------------------------------------------------------- */
+
+@theme inline {
+	--color-forge-ink: var(--forge-ink);
+	--color-forge-muted: var(--forge-muted);
+	--color-forge-surface: var(--forge-surface);
+	--color-forge-surface-alt: var(--forge-surface-alt);
+	--color-forge-line: var(--forge-line);
+	--color-forge-accent: var(--forge-accent);
+	--color-forge-accent-ink: var(--forge-accent-ink);
+
+	--radius-forge: var(--forge-radius);
+	--font-forge: var(--forge-font);
+	--spacing-forge: var(--forge-space);
+	--container-forge-measure: var(--forge-measure);
+}

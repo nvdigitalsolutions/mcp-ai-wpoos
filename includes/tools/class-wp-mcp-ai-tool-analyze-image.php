@@ -6,6 +6,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -475,7 +477,7 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$image_content = base64_encode( wp_remote_retrieve_body( $response ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- base64_encode used to encode binary image data for API transmission, not for obfuscation.
 		}
 
-		$model        = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+		$model        = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-3.5-flash-lite';
 		$request_body = array(
 			'contents' => array(
 				array(

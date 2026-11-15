@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Chat Continuation — domain contract.
  *
@@ -7,7 +8,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -19,6 +22,8 @@ interface ChatContinuationInterface
     /**
      * Save a conversation snapshot for later resumption.
      *
+     * @param array<string, mixed> $conversationState
+     * @param array<string, mixed> $metadata
      * @return array{success: bool, continuation_id: string, error?: string}
      */
     public function save(string $jobId, string $sessionId, array $conversationState, array $metadata = []): array;
@@ -26,13 +31,14 @@ interface ChatContinuationInterface
     /**
      * Load a saved conversation snapshot.
      *
-     * @return array{found: bool, state?: array, metadata?: array}
+     * @return array{found: bool, state?: array<string, mixed>, metadata?: array<string, mixed>}
      */
     public function load(string $continuationId): array;
 
     /**
      * Mark a continuation as completed (job finished, LLM re-engaged).
      *
+     * @param array<string, mixed> $result
      * @return array{success: bool, error?: string}
      */
     public function complete(string $continuationId, array $result = []): array;

@@ -6,6 +6,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -174,6 +176,11 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 					'description' => __( 'Content format for the post. Use "block-editor" for Gutenberg (default), "classic-editor" for plain HTML, "elementor" for Elementor page builder, or "auto" to auto-detect (recommended when updating existing posts).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'block-editor', 'classic-editor', 'elementor', 'auto' ),
 					'default'     => 'auto',
+				),
+				'dry_run'           => array(
+					'type'        => 'boolean',
+					'description' => __( 'Describe the post that would be created or updated without writing it.', 'mcp-ai-wpoos' ),
+					'default'     => false,
 				),
 			),
 			'required'             => array( 'content' ),
@@ -371,6 +378,27 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			$post_data['post_status'] = $post->post_status;
 		} elseif ( ! $post_id ) {
 			$post_data['post_status'] = 'draft';
+		}
+
+		// Proposal 090-M ADR M-8: describe the write without performing it.
+		if ( ! empty( $arguments['dry_run'] ) ) {
+			$is_update = isset( $post_data['ID'] );
+
+			return array(
+				'message'      => $is_update
+					? __( 'Dry run: the post would be updated.', 'mcp-ai-wpoos' )
+					: __( 'Dry run: the post would be created.', 'mcp-ai-wpoos' ),
+				'dry_run'      => true,
+				'action'       => $is_update ? 'update' : 'create',
+				'post_id'      => $is_update ? (int) $post_data['ID'] : 0,
+				'ID'           => $is_update ? (int) $post_data['ID'] : 0,
+				'writes'       => false,
+				'would_change' => array(
+					'title'     => $post_data['post_title'] ?? '',
+					'post_type' => $post_data['post_type'] ?? '',
+					'status'    => $post_data['post_status'] ?? '',
+				),
+			);
 		}
 
 		if ( isset( $post_data['ID'] ) ) {

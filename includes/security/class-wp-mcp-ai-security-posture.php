@@ -15,6 +15,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -68,35 +70,154 @@ class WP_MCP_AI_Security_Posture {
 		}
 
 		$signals = $this->evaluate_signals();
-		$score   = $this->compute_score( $signals );
-		$grade   = $this->score_to_grade( $score );
 
-		// Up to 3 quick wins: unmet signals with highest weight.
+		// The shared catalogue lives in lib/core, which the wp.org base build
+		// strips. When it is present every runtime scores the same vocabulary
+		// with applicable-only denominators; when it is not, the local maths
+		// keeps the plugin self-contained.
+		$report = $this->report_via_core( $signals );
+
+		if ( null === $report ) {
+			$report = $this->report_locally( $signals );
+		}
+
+		set_transient( self::CACHE_KEY, $report, self::CACHE_TTL );
+
+		return $report;
+	}
+
+	/**
+	 * Score through lib/core's shared catalogue and scorer.
+	 *
+	 * Adds the controls this runtime cannot evaluate as `applicable: false`
+	 * (Laravel-only checks) so both runtimes render the same cards, and keeps
+	 * any Pro-added signals that are not in the catalogue.
+	 *
+	 * @param array $signals Raw evaluated signals.
+	 * @return array|null Null when lib/core is unavailable.
+	 */
+	private function report_via_core( $signals ) {
+		if ( ! class_exists( '\Nvoos\Core\Application\Security\PostureScorer' )
+			|| ! class_exists( '\Nvoos\Core\Domain\Security\SecuritySignalCatalogue' ) ) {
+			return null;
+		}
+
+		$by_id = array();
+		foreach ( $signals as $signal ) {
+			if ( isset( $signal['id'] ) ) {
+				$by_id[ (string) $signal['id'] ] = $signal;
+			}
+		}
+
+		$catalogue  = '\Nvoos\Core\Domain\Security\SecuritySignalCatalogue';
+		$definition = '\Nvoos\Core\Domain\Security\SecuritySignalDefinition';
+		$posture    = '\Nvoos\Core\Domain\ValueObject\PostureSignal';
+		$evaluator  = '\Nvoos\Core\Application\Security\PostureEvaluator';
+		$evaluated  = array();
+
+		foreach ( $catalogue::all() as $entry ) {
+			if ( ! $entry->appliesTo( $catalogue::RUNTIME_WORDPRESS ) ) {
+				$evaluated[] = new $posture(
+					definition: $entry,
+					passed: false,
+					applicable: false,
+					detail: $catalogue::NOT_APPLICABLE_DETAIL,
+				);
+				continue;
+			}
+
+			$raw = $by_id[ $entry->id ] ?? null;
+
+			$evaluated[] = new $posture(
+				definition: $entry,
+				passed: ! empty( $raw['passed'] ),
+				applicable: true,
+				detail: isset( $raw['detail'] ) ? (string) $raw['detail'] : $evaluator::UNEVALUATED_DETAIL,
+				label: isset( $raw['label'] ) ? (string) $raw['label'] : '',
+			);
+
+			unset( $by_id[ $entry->id ] );
+		}
+
+		// Pro additions keep their own definition — the catalogue cannot
+		// know about them, but they must keep counting.
+		foreach ( $by_id as $id => $raw ) {
+			$evaluated[] = new $posture(
+				definition: new $definition(
+					id: (string) $id,
+					label: (string) ( $raw['label'] ?? $id ),
+					weight: (int) ( $raw['weight'] ?? 0 ),
+					subtab: (string) ( $raw['subtab'] ?? '' ),
+					anchor: (string) ( $raw['anchor'] ?? '' ),
+					runtimes: array( $catalogue::RUNTIME_WORDPRESS ),
+				),
+				passed: ! empty( $raw['passed'] ),
+				applicable: true,
+				detail: (string) ( $raw['detail'] ?? '' ),
+				label: (string) ( $raw['label'] ?? '' ),
+			);
+		}
+
+		$scorer = '\Nvoos\Core\Application\Security\PostureScorer';
+
+		return ( new $scorer() )->score( $evaluated );
+	}
+
+	/**
+	 * Local scoring for installs without lib/core.
+	 *
+	 * Same output shape as the shared scorer, minus the not-applicable
+	 * entries there is no catalogue to describe.
+	 *
+	 * @param array $signals Raw evaluated signals.
+	 * @return array
+	 */
+	private function report_locally( $signals ) {
+		$total_weight    = 0;
+		$achieved_weight = 0;
+
+		foreach ( $signals as $index => $signal ) {
+			$weight = (int) ( $signal['weight'] ?? 0 );
+			$passed = ! empty( $signal['passed'] );
+
+			$signals[ $index ]['applicable'] = true;
+			$signals[ $index ]['status']     = $passed ? 'pass' : 'fail';
+			$signals[ $index ]['reference']  = '';
+
+			$total_weight += $weight;
+
+			if ( $passed ) {
+				$achieved_weight += $weight;
+			}
+		}
+
+		$score = 0;
+		if ( $total_weight > 0 ) {
+			$score = (int) min( 100, round( $achieved_weight / $total_weight * 100 ) );
+		}
+
 		$unmet = array_filter(
 			$signals,
-			function ( $s ) {
-				return ! $s['passed'];
+			function ( $signal ) {
+				return empty( $signal['passed'] );
 			}
 		);
 		usort(
 			$unmet,
 			function ( $a, $b ) {
-				return $b['weight'] <=> $a['weight'];
+				return (int) $b['weight'] <=> (int) $a['weight'];
 			}
 		);
-		$quick_wins = array_values( array_slice( $unmet, 0, 3 ) );
 
-		$report = array(
-			'score'       => $score,
-			'grade'       => $grade,
-			'signals'     => $signals,
-			'quick_wins'  => $quick_wins,
-			'computed_at' => gmdate( 'c' ),
+		return array(
+			'score'             => $score,
+			'grade'             => $this->score_to_grade( $score ),
+			'passed_weight'     => $achieved_weight,
+			'applicable_weight' => $total_weight,
+			'signals'           => array_values( $signals ),
+			'quick_wins'        => array_values( array_slice( $unmet, 0, 3 ) ),
+			'computed_at'       => gmdate( 'c' ),
 		);
-
-		set_transient( self::CACHE_KEY, $report, self::CACHE_TTL );
-
-		return $report;
 	}
 
 	/**
@@ -138,9 +259,9 @@ class WP_MCP_AI_Security_Posture {
 	 * Build the signal definitions and evaluate each one.
 	 *
 	 * Each signal:
-	 *   id      – unique string key
+	 *   id      – unique string key (matches lib/core's SecuritySignalCatalogue)
 	 *   label   – human-readable description
-	 *   weight  – contribution to the total score (all weights sum to 100)
+	 *   weight  – relative contribution (the scorer divides by applicable weight)
 	 *   passed  – bool result of the check
 	 *   detail  – short explanation shown in the UI
 	 *   subtab  – which Security Center subtab owns the fix
@@ -436,51 +557,37 @@ class WP_MCP_AI_Security_Posture {
 	}
 
 	/**
-	 * Compute aggregate score from evaluated signals.
+	 * Local scoring for installs without lib/core.
+	 * Convert numeric score to a letter grade.
 	 *
-	 * Score = sum of weights of passing signals / total weight × 100, capped at 100.
+	 * Mozilla HTTP Observatory bands, so the grade means the same thing here
+	 * and on the Laravel runtime (both score through the same catalogue).
 	 *
-	 * @param array $signals Evaluated signals.
-	 * @return int 0-100.
+	 * @param int $score 0-100.
+	 * @return string Grade (A+ . . . F).
 	 */
-	private function compute_score( $signals ) {
-		$total_weight    = 0;
-		$achieved_weight = 0;
+	private function score_to_grade( $score ) {
+		$bands = array(
+			array( 100, 'A+' ),
+			array( 90, 'A' ),
+			array( 85, 'A-' ),
+			array( 80, 'B+' ),
+			array( 70, 'B' ),
+			array( 65, 'B-' ),
+			array( 60, 'C+' ),
+			array( 50, 'C' ),
+			array( 45, 'C-' ),
+			array( 40, 'D+' ),
+			array( 30, 'D' ),
+			array( 25, 'D-' ),
+		);
 
-		foreach ( $signals as $signal ) {
-			$w             = (int) ( $signal['weight'] ?? 0 );
-			$total_weight += $w;
-			if ( ! empty( $signal['passed'] ) ) {
-				$achieved_weight += $w;
+		foreach ( $bands as $band ) {
+			if ( $score >= $band[0] ) {
+				return $band[1];
 			}
 		}
 
-		if ( 0 === $total_weight ) {
-			return 0;
-		}
-
-		return (int) min( 100, round( $achieved_weight / $total_weight * 100 ) );
-	}
-
-	/**
-	 * Convert numeric score to letter grade.
-	 *
-	 * @param int $score 0-100.
-	 * @return string A/B/C/D/F.
-	 */
-	private function score_to_grade( $score ) {
-		if ( $score >= 90 ) {
-			return 'A';
-		}
-		if ( $score >= 75 ) {
-			return 'B';
-		}
-		if ( $score >= 60 ) {
-			return 'C';
-		}
-		if ( $score >= 40 ) {
-			return 'D';
-		}
 		return 'F';
 	}
 

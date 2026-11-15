@@ -243,4 +243,207 @@ class Test_REST_MCP_Apps_Connection_Enhancements extends WP_UnitTestCase {
 		$this->assertEquals( 'ok', $entry['last_status'] );
 		$this->assertEquals( 1, $entry['tool_count'] );
 	}
+
+	/**
+	 * Re-saving an app whose masked token was echoed back keeps the stored
+	 * credential (090-B console write path).
+	 */
+	public function test_update_preserves_stored_token_when_masked_echo_is_sent() {
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$registry->save_apps(
+			$this->assistant_id,
+			array(
+				array(
+					'label'      => 'Saved App',
+					'server_url' => 'https://example.com/mcp',
+					'auth_type'  => 'bearer',
+					'token'      => 'stored-secret',
+					'enabled'    => true,
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'PUT', '/mcp-ai/v1/mcp-apps/' . $this->assistant_id );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param(
+			'apps',
+			array(
+				array(
+					'label'      => 'Saved App',
+					'server_url' => 'https://example.com/mcp',
+					'auth_type'  => 'bearer',
+					'token'      => '••••••••cret',
+					'enabled'    => true,
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$response   = $controller->update_assistant_apps( $request );
+
+		$this->assertNotWPError( $response );
+
+		$data = $response->get_data();
+		$this->assertTrue( $data['success'] );
+		$this->assertSame( 1, $data['app_count'] );
+
+		// The response never echoes the real secret.
+		$this->assertStringStartsWith( '••', $data['apps'][0]['token'] );
+
+		// …and the stored credential survives the masked round-trip.
+		$stored = $registry->get_apps( $this->assistant_id );
+		$this->assertSame( 'stored-secret', $stored[0]['token'] );
+	}
+
+	/**
+	 * A connection-backed entry needs no inline URL: the reference resolves the
+	 * endpoint at chat time and no secret is stored here.
+	 */
+	public function test_update_accepts_connection_ref_only_entry() {
+		$request = new WP_REST_Request( 'PUT', '/mcp-ai/v1/mcp-apps/' . $this->assistant_id );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param(
+			'apps',
+			array(
+				array(
+					'label'          => 'Elementor Cloud',
+					'connection_ref' => 'conn-1',
+					'auth_type'      => 'none',
+					'enabled'        => true,
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$response   = $controller->update_assistant_apps( $request );
+
+		$this->assertNotWPError( $response );
+
+		$data = $response->get_data();
+		$this->assertSame( 1, $data['app_count'] );
+		$this->assertSame( 'conn-1', $data['apps'][0]['connection_ref'] );
+		$this->assertSame( '', $data['apps'][0]['server_url'] );
+		$this->assertEmpty( $data['apps'][0]['token'] );
+	}
+
+	/**
+	 * Entries with neither an endpoint nor a connection reference are dropped,
+	 * matching the metabox save rule.
+	 */
+	public function test_update_drops_entries_without_endpoint_or_reference() {
+		$request = new WP_REST_Request( 'PUT', '/mcp-ai/v1/mcp-apps/' . $this->assistant_id );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param(
+			'apps',
+			array(
+				array( 'label' => 'No target' ),
+				array(
+					'label'          => 'Elementor Cloud',
+					'connection_ref' => 'conn-1',
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$response   = $controller->update_assistant_apps( $request );
+
+		$this->assertNotWPError( $response );
+		$this->assertSame( 1, $response->get_data()['app_count'] );
+	}
+
+	/**
+	 * Re-saving an OAuth app keeps the stored token blob when the masked echo
+	 * is sent back.
+	 */
+	public function test_update_preserves_oauth_data_when_masked_echo_is_sent() {
+		$registry = WP_MCP_AI_MCP_App_Registry::get_instance();
+		$registry->save_apps(
+			$this->assistant_id,
+			array(
+				array(
+					'label'      => 'OAuth App',
+					'server_url' => 'https://example.com/mcp',
+					'auth_type'  => 'oauth',
+					'oauth_data' => array(
+						'access_token'  => 'access-123',
+						'refresh_token' => 'refresh-456',
+						'token_type'    => 'Bearer',
+					),
+					'enabled'    => true,
+				),
+			)
+		);
+
+		$request = new WP_REST_Request( 'PUT', '/mcp-ai/v1/mcp-apps/' . $this->assistant_id );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param(
+			'apps',
+			array(
+				array(
+					'label'      => 'OAuth App',
+					'server_url' => 'https://example.com/mcp',
+					'auth_type'  => 'oauth',
+					'oauth_data' => array(
+						'access_token'  => '••••••••',
+						'refresh_token' => '••••••••',
+					),
+					'enabled'    => true,
+				),
+			)
+		);
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$response   = $controller->update_assistant_apps( $request );
+
+		$this->assertNotWPError( $response );
+
+		$data = $response->get_data();
+		$this->assertSame( '••••••••', $data['apps'][0]['oauth_data']['access_token'] );
+
+		$stored = $registry->get_apps( $this->assistant_id );
+		$this->assertSame( 'access-123', $stored[0]['oauth_data']['access_token'] );
+		$this->assertSame( 'refresh-456', $stored[0]['oauth_data']['refresh_token'] );
+	}
+
+	/**
+	 * Unknown assistant IDs are a 404, not a silent write.
+	 */
+	public function test_update_rejects_unknown_assistant() {
+		$request = new WP_REST_Request( 'PUT', '/mcp-ai/v1/mcp-apps/999999' );
+		$request->set_param( 'assistant_id', 999999 );
+		$request->set_param( 'apps', array() );
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$result     = $controller->update_assistant_apps( $request );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_not_found', $result->get_error_code() );
+		$this->assertSame( 404, $result->get_error_data()['status'] );
+	}
+
+	/**
+	 * The registry cap still applies to the console write path.
+	 */
+	public function test_update_enforces_the_per_assistant_cap() {
+		$apps = array();
+		for ( $i = 1; $i <= 12; $i++ ) {
+			$apps[] = array(
+				'label'          => 'App ' . $i,
+				'connection_ref' => 'conn-' . $i,
+			);
+		}
+
+		$request = new WP_REST_Request( 'PUT', '/mcp-ai/v1/mcp-apps/' . $this->assistant_id );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'apps', $apps );
+
+		$controller = new WP_MCP_AI_REST_MCP_Apps_Controller();
+		$response   = $controller->update_assistant_apps( $request );
+
+		$this->assertNotWPError( $response );
+		$this->assertSame(
+			WP_MCP_AI_MCP_App_Registry::MAX_APPS_PER_ASSISTANT,
+			$response->get_data()['app_count']
+		);
+	}
 }

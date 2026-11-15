@@ -164,7 +164,7 @@ test( 'static keys keep working alongside OAuth', async () => {
 	const body = await (
 		await post( baseUrl, { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }, STATIC_KEY )
 	).json();
-	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a.make_site_a' ] );
+	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a_make_site_a' ] );
 
 	await close();
 	await site.close();
@@ -187,7 +187,7 @@ test( 'a valid OAuth token is scoped to its site:<slug> grants', async () => {
 	const body = await (
 		await post( baseUrl, { jsonrpc: '2.0', id: 3, method: 'tools/list', params: {} }, token )
 	).json();
-	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a.make_site_a' ] );
+	assert.deepStrictEqual( body.result.tools.map( ( t ) => t.name ), [ 'site-a_make_site_a' ] );
 
 	await close();
 	await site.close();
@@ -211,6 +211,35 @@ test( 'a token without site scopes gets 403 insufficient_scope', async () => {
 	assert.strictEqual( res.status, 403 );
 	assert.match( res.headers.get( 'www-authenticate' ), /error="insufficient_scope"/ );
 	assert.deepStrictEqual( ( await res.json() ).error, 'insufficient_scope' );
+
+	await close();
+	await site.close();
+	await jwks.close();
+} );
+
+test( 'a token without site scopes falls back to GATEWAY_OAUTH_DEFAULT_SITES when configured', async () => {
+	const site = await startFakeSite();
+	const { publicKey, privateKey } = generateKeyPairSync( 'rsa', { modulusLength: 2048 } );
+	const jwk = publicKey.export( { format: 'jwk' } );
+	jwk.kid = 'oauth-key';
+	jwk.alg = 'RS256';
+	jwk.use = 'sig';
+	const jwks = await startJwksServer( jwk );
+
+	const oauth = {
+		enabled: true,
+		issuer: 'https://auth.example.com/',
+		jwksUri: jwks.jwksUri,
+		resource: 'https://mcp.nvoos.pro',
+		defaultSites: [ 'site-a' ],
+	};
+	const { baseUrl, close } = await startTestServer( createApp( { config: buildConfig( { site, oauth } ) } ) );
+
+	const token = signJwt( validPayload( { scope: 'openid profile' } ), privateKey );
+	const res = await post( baseUrl, { jsonrpc: '2.0', id: 5, method: 'tools/list', params: {} }, token );
+	assert.strictEqual( res.status, 200 );
+	const body = await res.json();
+	assert.match( body.result.tools[ 0 ].name, /make_site_a/ );
 
 	await close();
 	await site.close();

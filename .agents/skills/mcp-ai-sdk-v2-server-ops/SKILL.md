@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-sdk-v2-server-ops
-description: Operational playbook for building and debugging MCP HTTP servers on the @modelcontextprotocol/server v2 SDK — the dual-era wire model (2026-07-28 modern dialect vs the 2025-era stateless fallback), the exact modern request shape (params._meta envelope keys, SEP-2243 MCP-Protocol-Version/Mcp-Method/Mcp-Name headers, server/discover replacing initialize), the validation ladder and its HTTP status mapping, the createMcpHandler + toNodeHandler factory contract (and the registerTool-returns-tool gotcha), layering auth and guards outside the SDK entry, the node:http conformance-test recipe, and how to re-derive shapes from the minified dist sources when the SDK changes. Use when serving MCP over Streamable HTTP with the SDK v2, debugging 400/-32020/-32602/500 responses from an MCP endpoint, writing handshake conformance tests, or upgrading a legacy initialize-only server to dual-era serving.
+description: "Operational playbook for MCP HTTP servers on the @modelcontextprotocol/server v2 SDK: the dual-era wire model (2026-07-28 modern dialect vs the 2025-era stateless fallback), the modern request shape (params._meta envelope keys, SEP-2243 headers, server/discover replacing initialize), the createMcpHandler + toNodeHandler contract, and the node:http conformance-test recipe. Use when serving MCP over Streamable HTTP with SDK v2, debugging 400/-32020/-32602/500 responses, or upgrading an initialize-only server to dual-era serving."
 ---
 
 # MCP SDK v2 Server Ops — dual-era wire playbook
@@ -113,6 +113,16 @@ const nodeHandler = toNodeHandler(handler); // optional 3rd arg: pre-parsed body
   crashes with `TypeError: Cannot read properties of undefined (reading
   '_supportedProtocolVersions')` → silent 500s. Assign to a variable and
   return the server.
+- **A `.refine()`-ed zod schema cannot be `.extend()`-ed at registration.**
+  `z.object(...).refine(...)` returns a `ZodEffects`, which has NO
+  `.extend()`/`.partial()` methods — an `inputSchema` built that way throws
+  at REGISTRATION time (`contentFieldsSchema.extend is not a function`),
+  which kills EVERY tool call on the mount with `-32603 Internal server
+  error` (even unrelated tools). Build variants from the plain
+  `z.object` form and apply the `.refine()` separately per variant
+  (`contentFieldsObject.extend({...}).refine(...)`). Unit-test one call
+  from each family after touching a schema — registration errors surface
+  as opaque -32603s.
 - **Read the body first only if you pass it back:** if your wrapper drains
   the Node stream (auth inspection), pass the parsed body as
   `toNodeHandler(handler)(req, res, parsedBody)` — the SDK would otherwise

@@ -1,0 +1,85 @@
+name: Laravel App
+
+# The Laravel runtime had no CI coverage: `docker exec … php artisan test` was
+# the only way to know it worked, and the fixture replay gate (090-b §10) had
+# nothing enforcing it. This job runs the skeleton's suite on SQLite — the same
+# phpunit.xml the container uses — including FixtureReplayTest.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'docker/laravel/**'
+      - 'lib/core/**'
+      - 'lib/laravel-adapter/**'
+      - '.github/workflows/laravel-app.yml'
+  pull_request:
+    paths:
+      - 'docker/laravel/**'
+      - 'lib/core/**'
+      - 'lib/laravel-adapter/**'
+      - '.github/workflows/laravel-app.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    name: App suite (SQLite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docker/laravel/app-skeleton
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # The lock file needs 8.3: laminas-diactoros 3.10 and pint 1.32 both
+          # require it. The dev container runs 8.3 too.
+          php-version: '8.3'
+          extensions: fileinfo, mbstring, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-laravel-app-${{ hashFiles('docker/laravel/app-skeleton/composer.lock', 'lib/core/composer.json', 'lib/laravel-adapter/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-laravel-app-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Blueprint mirror is current
+        # The app reads a committed copy of the Pro toolkit blueprints
+        # (addons/pro/includes/tools/<toolkit>/examples), because a deployment
+        # does not ship addons/ and lib/ is excluded from wp.org builds. Fail
+        # when that copy has drifted, so the duplication cannot go stale.
+        working-directory: ${{ github.workspace }}
+        run: php bin/sync-blueprints.php --check
+
+      - name: Schedule preset mirror is current
+        # Same contract for the Schedule Anything preset catalogue: the app
+        # serves resources/schedule-presets.json, mirrored from the Pro
+        # catalogue class by bin/sync-schedule-presets.php.
+        working-directory: ${{ github.workspace }}
+        run: php bin/sync-schedule-presets.php --check
+
+      - name: Prepare the application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Run the suite
+        run: php artisan test

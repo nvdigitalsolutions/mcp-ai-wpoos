@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -218,7 +220,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		// Get model.
 		if ( empty( $model ) ) {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
-			$model    = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+			$model    = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-3.5-flash-lite';
 		}
 
 		// Call API.
@@ -360,7 +362,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 
 		// Use GPT-4o or specified model (vision-capable model required).
 		if ( empty( $model ) ) {
-			$model = 'gpt-4.1';
+			$model = 'gpt-6.1-sol';
 		}
 
 		// Send request to OpenAI.

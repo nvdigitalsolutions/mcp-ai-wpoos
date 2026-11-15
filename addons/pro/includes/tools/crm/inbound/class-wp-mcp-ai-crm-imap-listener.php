@@ -11,6 +11,10 @@
  * @package WP_MCP_AI_Pro
  * @since  2.3.0
  * @since  2.4.0 Added pure PHP IMAP client as primary driver; ext-imap is now fallback.
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

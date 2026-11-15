@@ -9,6 +9,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 
@@ -61,7 +63,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		// High resource tools - complex operations, large outputs.
 		'high_resource'      => array(
 			'multiplier'      => 2.0,
-			'preferred_model' => 'gpt-4.1',
+			'preferred_model' => 'gpt-6.1-sol',
 			'description'     => 'Complex operations requiring extensive processing and large outputs',
 			'tools'           => array(
 				'run_crawl4ai_job',
@@ -150,7 +152,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		// Content creation tools - need good quality models.
 		'content_creation'   => array(
 			'multiplier'      => 1.5,
-			'preferred_model' => 'gpt-4.1',
+			'preferred_model' => 'gpt-6.1-sol',
 			'description'     => 'Content creation and management operations',
 			'tools'           => array(
 				'save_post',

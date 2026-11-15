@@ -33,6 +33,9 @@ const ApprovalsPage = lazy( () => import( './features/approvals/ApprovalsPage' )
 const SlashCommandsPage = lazy( () => import( './features/slash-commands/SlashCommandsPage' ).then( ( m ) => ( { default: m.SlashCommandsPage } ) ) );
 const TriggersPage = lazy( () => import( './features/triggers/TriggersPage' ).then( ( m ) => ( { default: m.TriggersPage } ) ) );
 const TeamsPage = lazy( () => import( './features/teams/TeamsPage' ).then( ( m ) => ( { default: m.TeamsPage } ) ) );
+const OrgTeamsPage = lazy( () =>
+	import( './features/org-teams/OrgTeamsPage' ).then( ( m ) => ( { default: m.OrgTeamsPage } ) )
+);
 const PortabilityPage = lazy( () => import( './features/portability/PortabilityPage' ).then( ( m ) => ( { default: m.PortabilityPage } ) ) );
 const SecurityCenterPage = lazy( () => import( './features/security-center/SecurityCenterPage' ).then( ( m ) => ( { default: m.SecurityCenterPage } ) ) );
 const OperationsPage = lazy( () => import( './features/operations/OperationsPage' ).then( ( m ) => ( { default: m.OperationsPage } ) ) );
@@ -47,6 +50,8 @@ const ChatChannelsPage = lazy( () => import( './features/chat-channels/ChatChann
 const MediaOpsPage = lazy( () => import( './features/media-ops/MediaOpsPage' ).then( ( m ) => ( { default: m.MediaOpsPage } ) ) );
 const BlueprintsPage = lazy( () => import( './features/blueprints/BlueprintsPage' ).then( ( m ) => ( { default: m.BlueprintsPage } ) ) );
 const PaperStorePage = lazy( () => import( './features/paper-store/PaperStorePage' ).then( ( m ) => ( { default: m.PaperStorePage } ) ) );
+const ToolkitsPage = lazy( () => import( './features/toolkits/ToolkitsPage' ).then( ( m ) => ( { default: m.ToolkitsPage } ) ) );
+const ToolkitPage = lazy( () => import( './features/toolkits/ToolkitPage' ).then( ( m ) => ( { default: m.ToolkitPage } ) ) );
 
 export interface AppRouterProps {
 	/** Shared transcript hook result from Layout. */
@@ -83,6 +88,7 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/slash-commands" element={ <SlashCommandsPage /> } />
 				<Route path="/triggers" element={ <TriggersPage /> } />
 				<Route path="/teams" element={ <TeamsPage /> } />
+				<Route path="/org-teams" element={ <OrgTeamsPage /> } />
 				<Route path="/crm" element={ <RecordsPage group="crm" /> } />
 				<Route path="/pm" element={ <RecordsPage group="pm" /> } />
 				<Route path="/professions" element={ <RecordsPage group="professions" /> } />
@@ -93,6 +99,8 @@ export function AppRouter( { transcripts }: AppRouterProps ): JSX.Element {
 				<Route path="/media-ops" element={ <MediaOpsPage /> } />
 				<Route path="/blueprints" element={ <BlueprintsPage /> } />
 				<Route path="/paper-store" element={ <PaperStorePage /> } />
+				<Route path="/toolkits" element={ <ToolkitsPage /> } />
+				<Route path="/toolkits/:slug" element={ <ToolkitPage /> } />
 				<Route path="/portability" element={ <PortabilityPage /> } />
 				<Route path="/security-center" element={ <SecurityCenterPage /> } />
 				<Route path="/operations" element={ <OperationsPage /> } />

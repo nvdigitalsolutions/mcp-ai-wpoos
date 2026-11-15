@@ -5,7 +5,7 @@
  * Description: React-based documentation browser for NV oOS. Discovers, indexes, and renders Markdown docs from the base plugin and every addon in a GitBook-style SPA. Shortcode [nvoos_docs] embeds it on any page.
  * Version:     0.5.3
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com
  * License: GPLv3 or later

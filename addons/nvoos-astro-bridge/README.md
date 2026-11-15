@@ -1,4 +1,4 @@
-# Astro Bridge
+# NV oOS Astro Bridge
 
 > The WordPress half of the NV Astro storefront (Proposal 092) — the
 > Payload-compatible `nvoos-commerce/v1` commerce envelope over WordPress +
@@ -29,7 +29,7 @@ You can do this via SFTP, or zip the folder and upload via **Plugins → Add New
 
 ### 2. Activate
 
-Go to **Plugins → Installed Plugins**, find "Astro Bridge", and click **Activate**.
+Go to **Plugins → Installed Plugins**, find "NV oOS Astro Bridge", and click **Activate**.
 
 On activation the plugin:
 - Creates the `manage_astro` capability and grants it to Administrators and Editors (existing installs are migrated automatically from the legacy `manage_funiq` slug on the next page load)
@@ -38,11 +38,11 @@ On activation the plugin:
 
 ### 3. Done — no build step needed
 
-The admin SPA ships pre-compiled in `build/index.js`. After activation, an **Astro CMS** menu item appears in the WordPress admin sidebar immediately. No `npm install` or build step is required on the server.
+The admin SPA ships pre-compiled in `build/standalone/astro-admin.{js,css}` (a self-contained bundle — React and the `@wordpress/*` packages are bundled, so it does not depend on the wp-admin script chain). After activation, an **Astro CMS** menu item appears in the WordPress admin sidebar immediately. No `npm install` or build step is required on the server.
 
 > **For developers:** If you modify the React source in `src/`, rebuild with:
 > ```bash
-> cd addons/nvoos-astro-bridge && npm install && npm run build
+> cd addons/nvoos-astro-bridge && npm install && npm run build:standalone
 > ```
 
 ### 4. Verify it works
@@ -130,6 +130,13 @@ with it.
 | `GET`/`POST`/`PUT`/`DELETE` | `/promotions[/{id}]` | Read public / Write cap |
 | `GET`/`POST`/`PUT`/`DELETE` | `/promocodes[/{id}]` | Read public / Write cap |
 | `GET` | `/promocodes/validate?code=...` | Public (idempotent read) |
+| `GET` | `/content/pages[?page=&limit=&where=...&status=...]` and `/content/posts[...]` | Public — `status=draft|pending|future|any` require `manage_astro` (non-managers are always publish-only) |
+| `GET` | `/content/pages/{id}` and `/content/posts/{id}` | Public — non-published docs 404 unless `manage_astro` (the storefront preview-read path) |
+| `POST`/`PUT`/`PATCH` | `/content/pages[/{id}]` and `/content/posts[/{id}]` | `manage_astro` — publishing/scheduling/unpublishing additionally require `publish_posts` |
+| `DELETE` | `/content/pages/{id}` and `/content/posts/{id}` | `manage_astro` |
+| `GET` | `/content/pages/{id}/revisions` and `/content/posts/{id}/revisions` | `manage_astro` |
+| `POST` | `/content/pages/{id}/restore` and `/content/posts/{id}/restore` (`{"revision": id}`) | `manage_astro` |
+| `POST` | `/media` (multipart `file`, optional form field `alt`) | `manage_astro` |
 | `GET`/`PUT` | `/globals/banner` | Read public / Write cap |
 | `GET`/`PUT` | `/globals/carousel` | Read public / Write cap |
 | `GET` | `/auth/nonce` | Public (CSRF nonce) |
@@ -139,6 +146,38 @@ with it.
 | `GET` | `/auth/me` | Logged-in cookie |
 | `GET` | `/managers[?search=&page=&limit=]` | `manage_astro` |
 | `PUT` | `/managers/{id}` (`{"manage": true|false}`) | `manage_astro` |
+| `GET`/`PATCH` | `/globals/shop` | Read public / Write cap — `checkoutUrl`/`cartUrl`/`returnUrl` are same-site + allowlist validated (108 H1) |
+| `POST` | `/cart/sync` | Public (customer surface) — `X-Nvoos-Cart-Session` header; woo/both product modes only, variants + coupons via the Store API proxy (108 Phase 2) |
+| `GET` | `/checkout` | Public (customer surface) — the merged checkout doc (draft order, items, totals, shipping rates, addresses) for the session cart; `private, no-store` headers (110 Phase A) |
+| `POST` | `/checkout/customer` | Public — validates addresses Woo-side, recalcs totals + rates (110 Phase A) |
+| `POST` | `/checkout/shipping-rate` | Public — selects one shipping rate (110 Phase A) |
+| `POST` | `/checkout/coupon` | Public — applies a coupon to the session cart (110 Phase A) |
+| `POST` | `/checkout` | Public — processes the order + payment through the configured gateway (`payment_method`, addresses, `payment_data`, `expected_total`); rate-limited per session/IP; returns `orderId`/`orderKey`/`paymentResult` (110 Phase A) |
+| `GET` | `/woo-login/{token}` | Public — single-use SSO handoff (108 Phase 3), disabled unless `funiq_bridge_woo_sso_enabled` is `yes` |
+
+**CMS content write surface (Proposal 107):** the `content/pages` + `content/posts`
+collections ride an approval state machine on top of the standard CRUD:
+
+- Creates default to **draft** (no accidental publishes from agent-originated
+  writes). `draft`/`pending` round-trips only need `manage_astro`.
+- `publish`/`future` transitions — and unpublishing a live doc — additionally
+  require `publish_posts`, so a submitting role can never flip a publication
+  state (`403 content_publish_forbidden`). The publish transition records the
+  approver + timestamp (`approvedBy`).
+- `publishAt` schedules via WP `future`; a future `post_date` always wins over
+  an explicit publish (core semantics — never publish early).
+- Documents carry additive `blocks` (Portable Text, stored verbatim — the
+  storefront schema validates), `submittedBy`, `approvedBy`, and `publishAt`
+  (`future` docs only). The raw-HTML `content` field is `wp_kses_post`-ed at
+  entry.
+- `GET .../revisions` lists the WP revision history; `POST .../restore`
+  restores a revision (WP semantics — the restore itself becomes a new
+  revision). Both are `manage_astro`-gated.
+- Single-GET is fail-closed: non-published docs 404 unless the request
+  carries a manager session (the storefront forwards the visitor's cookies
+  on preview reads).
+- `POST /media` accepts an optional `alt` form field that lands in the
+  canonical `_wp_attachment_image_alt` meta.
 
 **Managers:** `GET /managers` lists every user holding the `manage_astro`
 capability (role- or user-granted). `?search=` returns up to 20 matching
@@ -410,7 +449,7 @@ Deleting the plugin via **Plugins → Delete** runs `uninstall.php`, which remov
 - WordPress 6.7+
 - PHP 8.1+
 - Node.js 18+ (dev/build only; not needed by end users)
-- NV oOS base plugin — optional; Astro Bridge is standalone
+- NV oOS base plugin — optional; NV oOS Astro Bridge is standalone
 
 ## License
 

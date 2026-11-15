@@ -15,6 +15,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -278,7 +280,6 @@ class WP_MCP_AI_Slash_Command_Context {
 			'gpt-4o-mini'       => 128000,
 			'gpt-4.1'           => 1000000,
 			'gpt-4.1-mini'      => 1000000,
-			'gpt-4.1-nano'      => 1000000,
 			'gpt-4-turbo'       => 128000,
 			'gpt-3.5-turbo'     => 16385,
 			'gemini-2.5-flash'  => 1048576,

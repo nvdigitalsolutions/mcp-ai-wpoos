@@ -1,4 +1,5 @@
 <?php
+
 /**
  * File Upload Service — domain contract.
  *
@@ -7,7 +8,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -48,7 +51,7 @@ interface FileUploadServiceInterface
      * @param array{name: string, type: string, size: int, tmp_name: string, error: int} $file    File data.
      * @param array{assistant_id?: int, user_id?: int}                                    $context Upload context.
      *
-     * @return array{valid: bool, errors: array<int, string>, file_info: array}
+     * @return array{valid: bool, errors: array<int, string>, file_info: array<string, mixed>}
      */
     public function validate(array $file, array $context = []): array;
 
@@ -67,7 +70,7 @@ interface FileUploadServiceInterface
      *
      * @param string $filePath Absolute path to the file.
      *
-     * @return array{content: string, metadata: array}
+     * @return array{content: string, metadata: array<string, mixed>}
      */
     public function prepareDocument(string $filePath): array;
 

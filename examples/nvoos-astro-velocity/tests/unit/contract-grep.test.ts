@@ -63,4 +63,21 @@ describe('contract gate (D3) — covers src/ and mcp/', () => {
 			expect(offenders).toEqual([]);
 		});
 	}
+
+	// Proposal 104 §5.1 — rendering-model gates: commerce routes are on-demand
+	// SSR; the build is fully hermetic (no build-time catalog fetches).
+	it('product routes never prerender (no getStaticPaths under src/pages/products/)', () => {
+		const offenders = files
+			.filter(({ label }) => label.startsWith(join('src', 'pages', 'products')))
+			.filter(({ file }) => /getStaticPaths/.test(readFileSync(file, 'utf8')))
+			.map(({ label }) => label);
+		expect(offenders).toEqual([]);
+	});
+
+	it('no src/ or mcp/ route opts into build-time prerendering', () => {
+		const offenders = files
+			.filter(({ file }) => /prerender\s*=\s*true/.test(readFileSync(file, 'utf8')))
+			.map(({ label }) => label);
+		expect(offenders).toEqual([]);
+	});
 });

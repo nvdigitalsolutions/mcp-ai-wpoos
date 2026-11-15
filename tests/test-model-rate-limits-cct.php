@@ -62,7 +62,6 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertContains( 'gpt-4o-mini', $model_names );
 		$this->assertContains( 'gpt-4.1', $model_names );
 		$this->assertContains( 'gpt-4.1-mini', $model_names );
-		$this->assertContains( 'gpt-4.1-nano', $model_names );
 		$this->assertContains( 'gpt-4.1-turbo', $model_names );
 		$this->assertContains( 'gpt-5.2', $model_names );
 		$this->assertContains( 'gpt-5.3-codex', $model_names );
@@ -148,7 +147,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertContains( 'meta/llama-3.3-70b-instruct', $model_names );
 		$this->assertContains( 'meta/llama-4-1-maverick-17b-128e-instruct', $model_names );
 		$this->assertContains( 'nvidia/llama-3.1-nemotron-70b-instruct', $model_names );
-		$this->assertContains( 'nvidia/nemotron-3-super-120b-a12b', $model_names );
+		$this->assertContains( 'nvidia/nemotron-3.5-super-vl-120b-a12b', $model_names );
+		$this->assertContains( 'nvidia/nemotron-3.5-lightning-30b-a3b', $model_names );
 		$this->assertContains( 'nvidia/nemotron-4-340b-instruct', $model_names );
 		$this->assertContains( 'mistralai/mistral-large-2-instruct', $model_names );
 		$this->assertContains( 'deepseek-ai/deepseek-r1', $model_names );
@@ -500,13 +500,12 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 			}
 		);
 
-		// Should have exactly 4 GPT-4.1 variants.
-		$this->assertCount( 4, $gpt_41_models, 'Should have 4 GPT-4.1 model variants' );
+		// Should have exactly 3 GPT-4.1 variants (nano was shut down 2026-10-23).
+		$this->assertCount( 3, $gpt_41_models, 'Should have 3 GPT-4.1 model variants' );
 
 		$model_names = array_column( $gpt_41_models, 'model_name' );
 		$this->assertContains( 'gpt-4.1', $model_names );
 		$this->assertContains( 'gpt-4.1-mini', $model_names );
-		$this->assertContains( 'gpt-4.1-nano', $model_names );
 		$this->assertContains( 'gpt-4.1-turbo', $model_names );
 
 		// Verify GPT-4.1 base model properties.

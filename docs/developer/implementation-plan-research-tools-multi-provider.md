@@ -239,7 +239,7 @@ envelope, two-gate sanitisation, `WP_MCP_AI_Tool_Chat_Response`):
 **Validation commands:**
 ```bash
 composer run lint            # WPCS + WPMCPAI sniff compliance
-composer run lint:compat     # PHP 7.4+ syntax
+composer run lint:compat     # PHP 8.1+ syntax
 vendor/bin/phpunit tests/test-mempalace-phase3-embedding-providers.php
 vendor/bin/phpunit tests/test-tool-list-terms.php
 vendor/bin/phpunit --filter '/Deep_Research|Semantic_Content_Search/' tests/
@@ -279,13 +279,13 @@ All workstreams landed together in the working tree (not yet committed):
 |----|-----------|
 | WS-1 | `WP_MCP_AI_Embedding_Provider_Gemini` (`includes/services/embedding/class-wp-mcp-ai-embedding-provider-gemini.php`), loaded via `services-init.php` and `ensure_provider_classes_loaded()`; `resolve_default_provider()` now accepts `gemini` preference + auto-detect chain OpenAI → Ollama → Gemini → DigitalOcean; `semantic_content_search::generate_query_embedding()` routes through `WP_MCP_AI_Vector_Context_Service` with Gemini-only assistant preference; actionable `wp_mcp_ai_no_embedding_provider` error; vector-store failures are skipped, not fatal |
 | WS-2 | Keyword fallback (`fallback_mode: "keyword"`, `semantic_search_enabled: false`, `warning`) behind the `wp_mcp_ai_semantic_search_keyword_fallback` filter; dimension-mismatch skip + `embeddings_checked`/`skipped_dimension_mismatch` counters; vitals-index dimension guard; provider/model reported on success |
-| WS-3 | `analyze_findings()`: non-empty validation, `reasoning_content` fallback, `finish_reason` handling at both response levels, truncated-`length` retry with doubled budget, provider-chain walk with exclusions (max 2 attempts, `wp_mcp_ai_deep_research_max_attempts` filter), `wp_mcp_ai_analysis_exhausted` error carrying sources/queries; empty reports never cached; `used_reasoning_fallback`/`truncated`/`attempts` surfaced in the report |
+| WS-3 | `analyze_findings()`: non-empty validation, `finish_reason` handling at both response levels, truncated-`length` retry with doubled budget, thinking-model budget-extension retries (empty `content` + `reasoning_content` + `length` → ×4 multiplier retry, `wp_mcp_ai_deep_research_reasoning_budget_multiplier`/`_retries`/`wp_mcp_ai_deep_research_max_tokens_ceiling` filters) plus a stop-finish reasoning continuation retry before the `reasoning_content` last-resort fallback, provider-chain walk with exclusions (max 3 attempts, `wp_mcp_ai_deep_research_max_attempts` filter), `wp_mcp_ai_analysis_exhausted` error carrying sources/queries; empty reports never cached; `used_reasoning_fallback`/`truncated`/`attempts` surfaced in the report. DeepSeek synthesis uses temperature 1.0 / top_p 1.0 (vendor V4 guidance, `wp_mcp_ai_deep_research_temperature` filter); validation feedback carries human-readable fix guidance per issue slug |
 | WS-4 | `list_terms` + `list_taxonomies` tools registered (registry map + group map + toolkit metadata), added to Publisher default assistant and the content preset helper |
 | WS-5 | Tests: `tests/test-tool-list-terms.php`, `tests/test-tool-list-taxonomies.php`, `tests/test-tool-semantic-content-search.php`, `tests/test-tool-deep-research.php`, extended `tests/test-mempalace-phase3-embedding-providers.php`; docs: tool reference, tools README, `design-deep-research` + `mcp-ai-wpoos-plugin` skills |
 
 Validation performed: PHP syntax (php -l) on all changed files; PHPCS
 (`phpcs.xml.dist`) clean on all changed source + test files; PHPCompatibility
-7.4–8.3 clean on changed sources; PHPUnit — 82 related tests pass (registry,
+8.1–8.4 clean on changed sources; PHPUnit — 82 related tests pass (registry,
 terms, semantic search, deep research, embedding providers). Pre-existing
 failures in `test-assistant-tool-presets.php` and
 `test-mempalace-memory-enhancements.php`/`test-memory-rrf-fusion-service.php`

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Performance Monitor — domain contract.
  *
@@ -6,7 +7,9 @@
  *
  * @package  Nvoos\Core
  * @since    2.0.0
- * @license  GPL-3.0-or-later
+ * @license  MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -25,7 +28,7 @@ interface PerformanceMonitorInterface
      *
      * @param string $metric    Metric name (e.g., 'chat_latency_ms', 'tool_execution_ms').
      * @param float  $value     Metric value.
-     * @param array  $tags      Optional tags (provider, model, tool, etc.).
+     * @param array<string, mixed>  $tags      Optional tags (provider, model, tool, etc.).
      */
     public function record(string $metric, float $value, array $tags = []): void;
 
@@ -45,7 +48,7 @@ interface PerformanceMonitorInterface
      *
      * @param string $period 'hour', 'day', 'week', or 'month'.
      *
-     * @return array{metrics: array, recommendations: array<int, string>}
+     * @return array{metrics: array<string, mixed>, recommendations: array<int, string>}
      */
     public function getReport(string $period = 'day'): array;
 

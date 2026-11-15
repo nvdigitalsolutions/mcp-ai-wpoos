@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Fired when a single agentic-loop iteration completes.
  *
@@ -7,16 +8,19 @@
  * @package Nvoos\Core
  * @since   1.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class AgenticIterationComplete {
-
-	public function __construct(
-		public readonly int $iteration,
-		public readonly int $assistantId,
-	) {}
+final class AgenticIterationComplete
+{
+    public function __construct(
+        public readonly int $iteration,
+        public readonly int $assistantId,
+    ) {
+    }
 }

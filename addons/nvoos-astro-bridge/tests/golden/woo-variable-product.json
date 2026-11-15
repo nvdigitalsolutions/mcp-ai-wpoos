@@ -1,0 +1,29 @@
+{
+	"fixtureId": 3,
+	"name": "Aurora Sofa",
+	"note": "Variable-product golden (Proposal 106 §1.1) — bridge-local: created manually because sync:bridge-fixtures writes into the velocity app (foreign directory for this cluster). Volatile fields (ids, image URLs) are masked by TestWooProductVariants.",
+	"variants": [
+		{
+			"sku": "AUR-3S-OAK",
+			"price": 1299,
+			"oldPrice": 1499,
+			"stock": 4,
+			"attributes": [
+				{ "name": "Size", "value": "3-Seater" },
+				{ "name": "Color", "value": "Oak" }
+			],
+			"image": ""
+		},
+		{
+			"sku": "AUR-2S-SAGE",
+			"price": 999,
+			"oldPrice": null,
+			"stock": 0,
+			"attributes": [
+				{ "name": "Size", "value": "2-Seater" },
+				{ "name": "Color", "value": "Sage" }
+			],
+			"image": ""
+		}
+	]
+}

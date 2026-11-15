@@ -241,7 +241,22 @@ done
 # bin/ is removed last because the running script lives inside it. Bash has
 # already loaded this script into memory, so deleting the file on disk does
 # not abort execution.
-remove_path "bin"
+#
+# Exception: bin/vectorize-image.js is RUNTIME. The image tools spawn it with
+# `node` to produce SVG output, and both .gitattributes and the packaging
+# scripts keep it, so stripping it would silently break SVG generation on a
+# stripped deployment.
+if [[ -d "$ROOT_DIR/bin" ]]; then
+	if [[ $DRY_RUN -eq 1 ]]; then
+		log "would remove: bin (keeping bin/vectorize-image.js)"
+	else
+		find "$ROOT_DIR/bin" -mindepth 1 -maxdepth 1 ! -name "vectorize-image.js" -exec rm -rf -- {} +
+		log "removed: bin (kept bin/vectorize-image.js)"
+	fi
+	removed=$((removed + 1))
+else
+	skipped=$((skipped + 1))
+fi
 
 if [[ $DRY_RUN -eq 1 ]]; then
 	log ""

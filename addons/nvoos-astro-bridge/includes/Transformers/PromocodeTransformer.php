@@ -35,7 +35,7 @@ class PromocodeTransformer {
 			'discount'  => (int) get_post_meta( $post->ID, Schema::META_PROMOCODE_DISCOUNT, true ),
 			'expiresAt' => $expires ? gmdate( 'M j, Y', strtotime( $expires ) ) : '',
 			'isActive'  => (bool) get_post_meta( $post->ID, Schema::META_PROMOCODE_IS_ACTIVE, true ),
-			'logo'      => $logo_id ? ( wp_get_attachment_url( (int) $logo_id ) ?: '' ) : '',
+			'logo'      => Schema::media_url( $logo_id ),
 		);
 	}
 }

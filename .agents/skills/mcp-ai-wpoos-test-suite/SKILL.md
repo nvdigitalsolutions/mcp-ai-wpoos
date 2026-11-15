@@ -1,11 +1,11 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-test-suite
-description: Repair and triage guide for the NV oOS PHPUnit test suite — Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 85 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, preset-accounting gaps, PHPUnit 11 source-exclude walk hangs, static-registry leaks, fallback-autoloader masking, init-time post-insert $wp_rewrite warnings, wp-phpunit _delete_all_posts boot wiping, queue-worker failure contract, and more — see the patterns section). Covers the cluster-by-cluster PR workflow against alpha-working and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster.
+description: "Repair and triage guide for the NV oOS PHPUnit suite: Docker test environment (incl. cross-worktree one-off runners), CI log triage, and 89 recurring root-cause patterns (hook resets, singleton interference, WP_Error envelope drift, coverage-manifest drift, static-registry leaks, fallback-autoloader masking, queue-worker failure contracts). Covers the cluster-by-cluster PR workflow and validation gates. Use when fixing failing PHPUnit tests, triaging CI logs, repairing test drift, deciding between a production fix and a test fix, or starting a new fix cluster."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  last-updated: "2026-10-30"
+  last-updated: "2026-11-08"
   plugin-version: "1.2.14"
   plugin-version-tested: "1.2.14"
 ---
@@ -54,13 +54,73 @@ MSYS_NO_PATHCONV=1 docker exec -e WP_CORE_DIR=/var/www/html -e WP_DB_HOST=db -e 
 **phpcs (the CI gate counts ERRORS, not warnings):**
 
 ```bash
-MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php vendor/bin/phpcs --standard=phpcs.xml.dist --error-severity=1 --warning-severity=1 --report=summary <paths> 2>&1'
+MSYS_NO_PATHCONV=1 docker exec oos-wp sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php -d memory_limit=1G vendor/bin/phpcs --standard=phpcs.xml.dist --error-severity=1 --warning-severity=1 --report=summary <paths> 2>&1'
 ```
 
 Rules:
 
+- **phpcs/phpcbf need `-d memory_limit=1G`.** The container's CLI default is
+  128M and WPCS tokenising exhausts it even on a handful of files ("Allowed
+  memory size of 134217728 bytes exhausted" in `Tokenizer.php`). Same flag
+  for `phpcbf` (2026-11-13).
 - **Never run two `docker exec phpunit` concurrently** — they collide on the
-  shared `wordpress_test` DB.
+  shared `wordpress_test` DB (the second times out with a connection error
+  rather than failing cleanly).
+- **A `--no-dev` vendor tree has no PHPUnit.** Symptom:
+  `Class "PHPUnit\TextUI\Application" not found` (or `vendor/bin/phpunit`
+  missing) after `vendor/` was installed with `--no-dev`. Run
+  `composer install` (dev included), then restore the tracked bits:
+  `git restore --worktree --source=HEAD -- vendor/composer` — do **not**
+  `git checkout -- vendor/` wholesale in a shared worktree (other agents'
+  work can live there). Note `git checkout -- vendor/composer` can be
+  blocked by the editor's built-in security rule ("too harmful to be
+  allowed"); the `git restore --worktree --source=HEAD --` form above is
+  not blocked and does the same thing.
+- **`composer dump-autoload` does not bring dev packages back.** It rebuilds
+  the maps from `vendor/composer/installed.json`, which the restore above
+  reverts to the committed no-dev list — so PHPUnit stays unmapped and you
+  get `Class "PHPUnit\TextUI\Application" not found` again. Always re-run
+  `composer install` after a vendor restore, never `dump-autoload`.
+- **`composer install` is not always an option (2026-11-12).** `oos-wp` has
+  no `composer` binary (`which composer` → exit 127), and this worktree's
+  **committed** `vendor/composer` map is itself no-dev (`grep -c PHPUnit
+  vendor/composer/autoload_psr4.php` → 0), so the restore route above would
+  re-break PHPUnit even if it ran. Working fallback: a throwaway PSR-4 +
+  classmap autoloader shim that re-registers the dev packages already on
+  disk. Three traps it must handle: `require vendor/autoload.php` does NOT
+  return the ClassLoader (find it via `spl_autoload_functions()`); PHPUnit
+  11 is a `classmap` package whose `src/` is NOT strictly PSR-4
+  (`PHPUnit\Event\DispatchingEmitter` lives in
+  `src/Event/Emitter/DispatchingEmitter.php`), so a PSR-4-only shim dies on
+  the first such class; and the entry point is
+  `( new Application() )->run( $argv )` (`Application::main()` was PHPUnit
+  9). Full recipe: `reference/test-environments.md` § "No-dev vendor shim".
+  Delete the shim before committing.
+- **PHPUnit 11.5 single-file args need the class name to match the
+  basename.** `TestSuiteLoader::load()` requires the test class short name
+  to *end with* the file basename and does not normalise `-` to `_`, so
+  `vendor/bin/phpunit tests/test-foo-bar.php` (class `Test_Foo_Bar`) prints
+  `Class test-foo-bar cannot be found in …` and executes nothing. Run a
+  temp filename-matched copy instead
+  (`cp tests/test-foo-bar.php tests/test_foo_bar.php`, run that path, delete
+  it after). **Do not "fix" this by renaming test files repo-wide:** CI runs
+  20k+ tests on the same PHPUnit version with zero such warnings
+  (2026-11-11: 20,467 tests, `grep -c "cannot be found"` = 0), so this is a
+  local-environment divergence — `TestSuite::addTestFile()` downgrades the
+  exception to a PHPUnit warning, so a full-suite *local* run just skips
+  those files.
+- **phpcs cannot find `WordPress` after a vendor restore.** Symptom:
+  `Referenced sniff "WordPress" does not exist. ERROR: No sniffs were
+  registered.` The `installed_paths` setting lives in
+  `vendor/squizlabs/php_codesniffer/CodeSniffer.conf`, which the composer
+  plugin regenerates on install and which is empty after a restore. Either
+  re-run `composer install`, or point phpcs at the standards for that run:
+  `phpcs --standard=phpcs.xml.dist --runtime-set installed_paths "<abs>/vendor/wp-coding-standards/wpcs,<abs>/vendor/phpcompatibility/php-compatibility,<abs>/vendor/phpcsstandards/phpcsutils,<abs>/vendor/phpcsstandards/phpcsextra"`
+  (absolute paths — relative ones silently resolve to nothing and still
+  report the same error). A 2026-11-11 run from the repo root did succeed
+  with repo-root-relative paths
+  (`vendor/wp-coding-standards/wpcs,vendor/phpcompatibility/…`), so try the
+  relative form first if the absolute one errors.
 - Validate every cluster on **both** WP 6.9 and WP 7.1 before opening the PR.
 - The local bootstrap lacks JetEngine and Graphify; the CI bootstrap loads
   them. A suite skipped locally can still fail in CI — and vice versa.
@@ -76,276 +136,19 @@ Rules:
   `wp-content/` before core is copied), seed the shared volume:
   `docker run --rm -v oos-wp_wp_core:/var/www/html wordpress:6.9-php8.3-apache sh -c 'cp -a /usr/src/wordpress/. /var/www/html/ && chown -R www-data:www-data /var/www/html'`.
 
-### Cross-worktree runs (when `oos-wp` mounts a different worktree)
+### Local suite runner + discovery (2026-11-15)
 
-The `oos-wp` plugin path bind-mounts **one** worktree. Check which one:
+- `bin/phpunit-local-suite.php` runs an **explicit file list** (`php bin/phpunit-local-suite.php <files…>`), so a local batch no longer needs a hand-built `vendor/bin/phpunit <paths>` invocation. It is the companion to the Docker one-off runner above — same files, same `--no-coverage` expectations.
+- `tests/support/` is **excluded from PHPUnit discovery** (#7693). A helper placed there is loaded explicitly (or via the bootstrap), never as a test; do not put test classes there, and do not rely on a `*Test.php` name inside it being collected.
 
-```bash
-docker inspect oos-wp --format "{{json .Mounts}}"
-```
+### Test-environment runbooks (cross-worktree, dual-matrix, standalone suites)
 
-If the mounted path is not the worktree you are editing, `docker exec oos-wp`
-runs the wrong code. Instead run a one-off container on the same network
-sharing the WP-core volume, with your worktree mounted over the plugin path:
-
-```bash
-# 1. Build a Linux vendor into a named volume (the Windows-host vendor/
-#    breaks inside Linux — classmap paths with backslashes →
-#    'Class "PHPUnit\\TextUI\\Application" not found').
-#    REUSE an existing complete volume when present (docker volume ls):
-#    mcp-ai-wpoos-vendor / mcp-ai-wpoos-alpha-vendor / alpha-working-vendor
-#    ship with PHPUnit + wp-phpunit and need no build. On this box
-#    (2026-10-27) only `alpha-working-vendor` exists — verify with
-#    docker volume ls, never assume the name.
-#
-#    Session note (2026-10-17): the main checkout may have no vendor/ at all;
-#    `docker exec oos-wp ... vendor/bin/phpunit` then fails with
-#    "Could not open input file: vendor/bin/phpunit". Use the one-off runner
-#    and mount the existing `mcp-ai-wpoos-alpha-vendor` volume over the
-#    plugin's vendor/. Pass explicit test files, not a directory (see the
-#    PHPUnit 11 suffix trap above).
-docker volume create <worktree>-vendor
-MSYS_NO_PATHCONV=1 docker run --rm \
-  -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos:/app:ro \
-  -v <worktree>-vendor:/app/vendor \
-  composer:2 sh -c 'cd /app && composer install --no-interaction --prefer-dist --no-progress'
-
-# 2. Run the tests (nested mounts: volume over the worktree's vendor/ works).
-MSYS_NO_PATHCONV=1 docker run --rm \
-  -e WP_CORE_DIR=/var/www/html -e WP_DB_HOST=db -e WP_DB_NAME=wordpress_test \
-  -e WP_DB_USER=wordpress -e WP_DB_PASSWORD=wordpress \
-  -v oos-wp_wp_core:/var/www/html \
-  -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos:/var/www/html/wp-content/plugins/mcp-ai-wpoos \
-  -v <worktree>-vendor:/var/www/html/wp-content/plugins/mcp-ai-wpoos/vendor \
-  --network oos-wp_default \
-  wordpress:6.9-php8.2-apache \
-  sh -c 'cd /var/www/html/wp-content/plugins/mcp-ai-wpoos && php -d memory_limit=1G vendor/bin/phpunit <paths> --no-coverage'
-```
-
-**WP 7.1 cross-worktree:** the wp71 core lives in the `oos-wp` container's own
-`/tmp/wp71` (NOT in the shared `oos-wp_wp_core` volume). Copy it out, mount it
-at `/tmp/wp71` in the one-off run, and swap `WP_CORE_DIR=/tmp/wp71` +
-`WP_DB_NAME=wordpress_test_wp71`:
-
-```bash
-docker cp oos-wp:/tmp/wp71 ./docker-tmp-wp71
-# add: -v F:/GITHUB/worktrees/mcp-ai-wpoos/<worktree>/mcp-ai-wpoos/docker-tmp-wp71:/tmp/wp71
-```
-
-**When `/tmp/wp71` is gone** (container restarts wipe it — `docker cp` errors
-with `Could not find the file /tmp/wp71 in container oos-wp`), rebuild a
-reusable named volume instead of polluting the repo:
-
-```bash
-# wordpress:cli runs as www-data — run as root to create the volume,
-# and raise PHP memory or the extractor fatals at 128M:
-docker volume create mf-wp71-core
-docker run --rm --user 0:0 -v mf-wp71-core:/wp wordpress:cli-php8.3 sh -c \
-  'php -d memory_limit=512M /usr/local/bin/wp --allow-root --path=/wp core download --version=7.1.3 --quiet && chown -R 33:33 /wp'
-# then mount it: -v mf-wp71-core:/tmp/wp71 with WP_CORE_DIR=/tmp/wp71 + WP_DB_NAME=wordpress_test_wp71
-```
-
-(`WP_CLI_PHP_ARGS` env is not honoured by the phar shim — pass
-`php -d memory_limit=512M /usr/local/bin/wp` explicitly.)
-
-Clean up afterwards: `rm -rf docker-tmp-wp71` and `docker volume rm <worktree>-vendor`
-— never stage either artifact. The no-concurrent-phpunit rule applies to
-one-off runners too (same shared DB).
-
-**Pruned-vendor carry-over (hit on the 0.4.7 docs-hub pass):** some
-worktrees carry a partial `vendor/` whose
-`vendor/composer/autoload_classmap.php` has **zero** PHPUnit entries —
-`php -r 'require "vendor/autoload.php"; var_dump(class_exists("PHPUnit\\TextUI\\Application"));'`
-prints `false` on BOTH host and container, and `vendor/bin/phpunit` dies
-with `Class "PHPUnit\TextUI\Application" not found`. Quick check:
-`grep -c PHPUnit vendor/composer/autoload_classmap.php` (0 = pruned). The
-Linux vendor volume is the fix for container runs; for host-side runs,
-`composer install` on the host rebuilds a Windows vendor that then breaks
-INSIDE Linux — pick one environment per session.
-
-Also true for the MAIN checkout on this box (2026-10-22, re-verified
-2026-10-27): `vendor/` exists but is pruned, so even a direct
-`docker exec oos-wp … vendor/bin/phpunit` fails the same way. Use the
-one-off runner with the existing **complete** `alpha-working-vendor`
-volume (verified: 934 PHPUnit classmap entries + wp-phpunit present;
-ran the Gmail/Calendar auto-fallback suites green on
-`wordpress:6.9-php8.2-apache`) and, for the WP 7.1 matrix, the reusable
-`wp71-core` named volume mounted at `/tmp/wp71` (DB
-`wordpress_test_wp71`) — no `docker cp` dance needed when `/tmp/wp71` is
-gone from the container.
-
-**Host-side recovery without the volume (2026-10-23, main checkout):**
-the pruned classmap can be fixed in place — run
-`composer install --no-interaction --prefer-dist` on the **host** (the
-plugin dir is bind-mounted into `oos-wp`, so the container sees the same
-vendor), then `bin/run-tests-docker.sh <file>` works again. Two caveats:
-(1) `run-tests-docker.sh` runs its own `composer install` step on the HOST
-and, when it fails, silently falls back to `composer dump-autoload` — that
-fallback regenerates the classmap from the production-only `installed.json`,
-which is precisely what produces the unmapped-dev-packages state, so treat
-the line `WARNING: composer install failed — attempting dump-autoload
-fallback` as the root cause and repair the host install before rerunning.
-(2) `vendor/` is committed — after a host `composer install`, run
-`git --no-optional-locks restore vendor` to drop the unrelated churn
-(guzzle etc.) from the changeset.
-
-**`docker-tmp-logs/` artifact:** running the root suite writes an untracked
-`docker-tmp-logs/` directory into the repo root (random `.jpg` files +
-`chunk8.txt`). Delete it before staging anything (`git status --porcelain`
-will show it as `??`).
-
-### Pro addon dual-matrix runs (nvoos-content-graph-pro)
-
-The `PHPUnit Pro Addon` CI workflow runs the addon suite twice (monolith +
-standalone) — mirror it locally with the same one-off runner:
-
-```bash
-# Standalone matrix (base plugin skipped; add the env var):
--e WP_MCP_AI_PRO_STANDALONE=1 \
-# Config: the addon's own phpunit config (bootstrap loads the ecosystem
-# plugins + honours the env var):
-php -d memory_limit=1G vendor/bin/phpunit -c plugins/nvoos-content-graph-pro/phpunit.xml.dist <paths> --no-coverage
-
-# Monolith matrix: same command WITHOUT the env var.
-```
-
-### Standalone plugin suites (plugins/nvoos-content-graph, -ai, -pro)
-
-`plugins/nvoos-content-graph` ships its **own** composer.json +
-phpunit.xml.dist (PHPUnit 9.6, wp-phpunit 7.0.2, PSR-4-only autoload — no
-Windows classmap hazard, so a host-side `composer install` in the plugin dir
-is safe and works inside the Linux container). **No monorepo CI workflow runs
-its `phpunit.xml.dist`** (phpunit-ai.yml only covers the AI addon's
-`phpunit-ecosystem.xml.dist`), so run it explicitly:
-
-```bash
-# Host: install the plugin's dev deps (creates
-# plugins/nvoos-content-graph/vendor — gitignored):
-cd plugins/nvoos-content-graph && composer install --no-interaction --prefer-dist
-```
-
-**Mount-path caution:** `git rev-parse --show-toplevel` BEFORE mounting —
-the MAIN checkout is `F:/GITHUB/mcp-ai-wpoos` while
-`F:/GITHUB/worktrees/mcp-ai-wpoos` is the PARENT of the git worktrees
-(worktree repos live at `.../mcp-ai-wpoos/<worktree-name>/mcp-ai-wpoos`).
-Mounting the parent silently runs the WRONG code — verify with
-`git worktree list`. The Zed file tools may report the worktrees path as
-the allowed directory even when the terminal's repo root is the main
-checkout; trust `git rev-parse`, not the tool metadata.
-
-# Write the wp-phpunit config the plugin bootstrap expects. wp-phpunit 7.x
-# ships vendor/wp-phpunit/wp-phpunit/wp-tests-config.php as a "DO NOT EDIT"
-# LOADER stub that requires the file named by the WP_PHPUNIT__TESTS_CONFIG
-# env var (and reads WP_PHPUNIT__TABLE_PREFIX). Write the real config to a
-# sibling path and point the env var at it — overwriting the loader with the
-# config also works, but the loader + env-var pattern survives vendor
-# refreshes. vendor/ paths are excluded from repo file tools — use the shell:
-cat > vendor/wp-tests-config.php <<'EOF'
-<?php
-define( 'ABSPATH', '/var/www/html/' );
-define( 'DB_NAME', 'wordpress_test' );
-define( 'DB_USER', 'wordpress' );
-define( 'DB_PASSWORD', 'wordpress' );
-define( 'DB_HOST', 'db' );
-define( 'DB_CHARSET', 'utf8' );
-define( 'DB_COLLATE', '' );
-define( 'WP_TESTS_DOMAIN', 'example.org' );
-define( 'WP_TESTS_EMAIL', 'admin@example.org' );
-define( 'WP_TESTS_TITLE', 'Test Blog' );
-define( 'WP_PHP_BINARY', 'php' );
-$table_prefix = 'wptests_';
-EOF
-
-# Ensure the DB exists (bootstrap auto-runs install.php single-site unless
-# WP_TESTS_SKIP_INSTALL=1):
-docker exec oos-wp-db mysql -uroot -pwordpress -e \
-  "CREATE DATABASE IF NOT EXISTS wordpress_test; GRANT ALL PRIVILEGES ON wordpress_test.* TO 'wordpress'@'%'; FLUSH PRIVILEGES;"
-
-# Run (php:8.2-cli LACKS mysqli — wp_die "missing the MySQL extension"; use
-# wordpress:6.9-php8.2-apache with --entrypoint php, which ships mysqli):
-MSYS_NO_PATHCONV=1 docker run --rm --entrypoint php \
-  -v oos-wp_wp_core:/var/www/html \
-  -v F:/GITHUB/mcp-ai-wpoos:/var/www/html/wp-content/plugins/mcp-ai-wpoos \
-  --network oos-wp_default \
-  -e WP_TESTS_DIR=/var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/wp-phpunit/wp-phpunit \
-  -e WP_PHPUNIT__TESTS_CONFIG=/var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/wp-tests-config.php \
-  -e WP_PHPUNIT__TABLE_PREFIX=wptests_ \
-  wordpress:6.9-php8.2-apache \
-  /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/vendor/bin/phpunit \
-  -c /var/www/html/wp-content/plugins/mcp-ai-wpoos/plugins/nvoos-content-graph/phpunit.xml.dist --testsuite=Unit
-```
-
-- "Full plugin run" = both suites: `--testsuite=Unit` then
-  `--testsuite=Integration` (integration needs only WP + bundled JetEngine
-  stubs). The no-concurrent-phpunit rule still applies (same DB).
-- JS contract checks need no browser: `node scripts/verify-commerce-fallback.js`
-  (purchase-modal fallback redirect contract) and
-  `node scripts/verify-theme-engine.js` run on the host from the plugin dir.
-- When only the client plugin is in scope this is faster than the root suite
-  (which boots the full base+Pro plugin); the root suite covers
-  `addons/checkout-api/tests` via the root phpunit.xml.dist.
-- **Self-guarding addon tests bootstrap (#7134, SA platform):**
-  `addons/schedule-anything-platform/tests/bootstrap.php` guards each test
-  class with `class_exists()` on the addon's plugin class and marks the suite
-  skipped when the addon isn't loaded, then the three platform test files run
-  inside the standard single-site root suite (wired via the root
-  `phpunit.xml.dist`). Use this pattern for any addon whose tests must run
-  in the root run without hard-requiring the addon.
-
-**Shared-DB isolation (cross-worktree clobbering):** every worktree's one-off
-runner hits the SAME `wordpress_test` DB by default — a concurrent worktree's
-`install.php` re-runs wipe your schema mid-suite (mass "Table doesn't exist"
-failures). Isolate per worktree with a dedicated DB:
-
-```bash
-# One-time: create the isolated DB (db container name from docker ps; creds
-# in docker-compose.yml — oos-wp-db / wordpress:wordpress by default):
-docker exec oos-wp-db mysql -uroot -pwordpress -e \
-  "CREATE DATABASE IF NOT EXISTS wordpress_test_pearl; GRANT ALL PRIVILEGES ON wordpress_test_pearl.* TO 'wordpress'@'%'; FLUSH PRIVILEGES;"
-
-# Then point BOTH the schema install and every phpunit run at it:
--e WP_DB_NAME=wordpress_test_pearl \
-# Schema install (once, or after the DB gets dropped):
-php vendor/wp-phpunit/wp-phpunit/includes/install.php tests/wp-tests-config.php
-```
-
-The env var overrides `DB_NAME` in `tests/wp-tests-config.php` (which reads
-`getenv( 'WP_DB_NAME' )`) — never edit the tracked config file.
-
-- Run `--filter Test_X` first, then the full suite — the full run is ~10-20
-  min locally.
-- Sequential monolith + standalone runs may reuse `wordpress_test`; keep the
-  no-concurrent rule.
-- The `<worktree>-vendor` volume is reusable across clusters: re-run the
-  composer step (a no-op when current).
-- Expected skips: standalone ~1 skip; monolith skips every standalone-gated
-test (hundreds — not failures). A summary of "OK, but there were issues"
-with only warnings/deprecations/skips is a pass.
-- phpcs for the addon: `--standard=plugins/nvoos-content-graph-pro/phpcs.xml.dist`
-(phpcbf exit 1 = fixed files, not an error; re-run phpcs to confirm exit 0).
-- **content-graph session notes (1.0.9 → 1.0.12 passes):** the plugin's
-  `vendor/` may be PRUNED of PHPUnit — sometimes partially, with
-  `vendor/bin/phpunit` present while `vendor/phpunit/phpunit/phpunit` is
-  gone (the run then dies with a PHP file-open warning from the bin shim,
-  `Failed to open stream: .../phpunit/phpunit/phpunit`, not "Could not open
-  input file") — a plain `composer install` in the plugin dir restores the
-  locked set (PHPUnit 9.6.35 + wp-phpunit 7.0.2) and the recipe above then
-  works as written. Point the gitignored `vendor/wp-tests-config.php` at an
-  isolated DB (`wordpress_test_cg12` pattern) before the run. Current
-  sizes: Unit 164 tests / 743 assertions (~7 s) and Integration 29 / 80
-  (~10 s) on `wordpress:6.9-php8.2-apache`, green on WP 6.9 AND WP 7.1
-  (for 7.1 mount the `wp71-core` volume at `/tmp/wp71`, set `ABSPATH` to
-  `/tmp/wp71/`, and reuse the same isolated DB).
-- **Do not let local test configs leak into the standalone ZIP.** The
-  config file above lives in the gitignored `vendor/`, and
-  `bin/build-nvoos-content-graph.sh` rsyncs `vendor/` wholesale into the
-  distribution ZIP — DB credentials and all. Delete `vendor/wp-tests-config*.php`
-  before building and verify the built ZIP listing has no `wp-tests-config`
-  entries (hit on the 1.0.12 pass: the first build shipped the scratch
-  config).
+Moved to `reference/test-environments.md` - which worktree `oos-wp` binds and
+how to retarget it, the Pro addon dual-matrix run, and the standalone-plugin
+suites. Read it before running tests outside the default single-worktree
+setup.
 
 ## Cluster → PR workflow
-
 1. `git fetch origin alpha-working` (auto-gc may make this time out — verify
    with `git --no-pager log -1 --oneline origin/alpha-working` and retry).
 2. Create a branch per cluster from `origin/alpha-working`:
@@ -1265,6 +1068,11 @@ the changed files is the substantive gate; plan CI waits accordingly.
         the test docblock instead of pretending they pin it.
 	      - PHPUnit 11 requires data providers to be `public static`; a
 	        non-static provider errors at suite construction, not in the test.
+	      - Providers are evaluated **eagerly, before filtering**: a provider
+	        that reads a missing fixture fails the run even with `--filter`
+	        naming an unrelated test. Pass the fixture env vars
+	        (`NVOOS_PM_FIXTURE`, `NVOOS_PM_WRITES_FIXTURE`) instead of
+	        assuming a filtered run is isolated.
 
 	   76. **Init-time `wp_insert_post()` → "Attempt to read property 'feeds' on
 	      null" (PHP 8, bootstrap logs; 2026-10-24, SSE offload pass).**
@@ -1434,42 +1242,98 @@ the changed files is the substantive gate; plan CI waits accordingly.
       exercisable — but re-running `Plugin::init()` via reflection
       double-registers unguarded hooks (e.g. `RebuildWebhook::init()`); test
       the migration method's behaviour instead of re-booting the plugin.
+  89. **WP 6.9 `rest_parse_date()` returns a Unix timestamp - normalize
+      before `post_date`.** Core 6.9's `rest_parse_date()` ends in
+      `return strtotime( $date )`, while older core returns the
+      `'Y-m-d H:i:s'` string. Passing the integer straight into `post_date`
+      fails `wp_checkdate()` (`invalid_date`), which surfaces as a 500 from
+      any REST callback that returns the raw `WP_Error`. Normalize
+      defensively:
 
- ## CI workflow hardening — setup-php `tools: wp-cli` flakes
+      ```php
+      if ( is_int( $parsed ) && $parsed > 0 ) {
+          $parsed = gmdate( 'Y-m-d H:i:s', $parsed );
+      }
+      ```
 
- `shivammathur/setup-php` `tools: wp-cli` fails intermittently (`✗ wp-cli
- Could not setup wp-cli`) WITHOUT failing the step, so the next `wp core
- download` dies with `wp: command not found` (exit 127) — same code, same
- workflow, alternating green/red runs. Fixed in PR #6998 for
- `.github/workflows/phpunit-content-graph.yml` + the plugin-check job of
- `.github/workflows/build-nvoos-content-graph.yml`:
+  90. **A boot-time admin cookie defeats "anonymous" assertions.** The root
+      bootstrap logs an administrator in and leaves `$_COOKIE[LOGGED_IN_COOKIE]`
+      set for the whole PHPUnit process. Any code path that re-resolves the
+      session from that cookie (the bridge's `AuthSupport::maybe_restore_…`,
+      called from `item_permissions_check()` and from the governed-content
+      read path) silently resurrects the admin *after* `wp_set_current_user(0)`
+      — so a test asserting "a draft 404s publicly" gets **200**. Fix: capture
+      the cookie in `setUp()`, `unset( $_COOKIE[ LOGGED_IN_COOKIE ] )`, and put
+      it back in `tearDown()` so later suites see the environment they expect.
+      (`wp_set_current_user(0)` alone is not enough; the restore runs inside
+      the request, after your setUp.)
+  91. **A standalone-plugin suite whose bootstrap needs `WP_TESTS_*` cannot run
+      in this container.** `plugins/nvoos-forge-bridge` (and similar
+      single-plugin suites) read `WP_TESTS_DOMAIN` / `WP_TESTS_TITLE` /
+      `WP_TESTS_EMAIL` / `WP_PHP_BINARY` and abort without them; this local
+      environment does not define them, CI does. Gates that DO apply locally:
+      `php -l` and `phpcs`. Say "lint only, CI runs the suite" in the PR rather
+      than claiming the tests passed.
+  92. **Shared-state flakes in a parallel JS suite.** `examples/nvoos-astro-forge`
+      `tests/sites.test.ts` reads the shared `~/.nvoos-forge/sites.json`: it
+      fails intermittently in a full parallel `npm test` run and passes in
+      isolation. Re-run the single file before hunting for a real regression —
+      and never write to the registry from another suite.
+  93. **A bundled MCP Adapter copy fails whichever test boots REST first**
+      (2026-11-11 CI full suite: `Test_MCP_App_Chat_Exposure::
+      test_rest_pre_dispatch_registers_bridges_for_tools_route`).
+      WooCommerce/Elementor/Rank Math each ship `wordpress/mcp-adapter` in
+      their vendor dirs. `McpAdapter::init()` (hooked on `rest_api_init` at
+      priority 15) calls `check_plugin_loaded()`, which fires
+      `_deprecated_function( 'WP\MCP\Core\McpAdapter', '0.7.0', '…is
+      currently loaded as a bundled dependency instead of via the canonical
+      MCP Adapter plugin…' )` whenever `WP_MCP_VERSION` is undefined — always
+      true under PHPUnit, where the canonical plugin is never loaded. That
+      method then defines the constant, so the notice fires exactly once per
+      process and the failing test moves with test order. Fix in
+      `tests/bootstrap.php` beside the other MCP kill switches: a
+      `rest_api_init` priority-0 callback that seeds
+      `define( 'WP_MCP_VERSION', \WP\MCP\Core\McpAdapter::VERSION )` when
+      the class is autoloadable — the exact signal the check looks for, read
+      from the bundled copy so it cannot drift. Reproduce locally (no
+      WooCommerce/Elementor on this host) with a throwaway, gitignored
+      `.codex-wordpress/wordpress/wp-content/plugins/woocommerce/woocommerce.php`
+      fixture defining the class and hooking `rest_api_init` at 15; a
+      `--bootstrap tests/bootstrap-nofix.php` copy without the callback
+      reproduces the original failure.
 
- ```yaml
- - name: Ensure WP-CLI is available
-   run: |
-     if ! command -v wp >/dev/null 2>&1; then
-       curl -sSLo wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-       chmod +x wp-cli.phar
-       sudo mv wp-cli.phar /usr/local/bin/wp
-     fi
-     wp --version
- ```
+  94. **`enum_type_mismatch` on a registry schema — numeric-string array
+      keys cast to integers (2026-11-12, `enhance_media_prompt`).**
+      `WP_MCP_AI_Tool_Schema_Contract_Test::test_registry_schema_contract_is_clean`
+      fails with `{tool}: enum_type_mismatch` at
+      `$.properties.<prop>.enum` and `Enum value 4 does not match the
+      declared type "string"` when a `type: string` enum is built from
+      `array_keys()` of a map keyed by numeric strings (`'1.4'`, `'4'`,
+      `'11'` — PHP casts `'4'`/`'11'` to int, so the enum is mixed
+      string/int). Fix at the **vocabulary getter**, not the schema:
+      `array_map( 'strval', array_keys( $map ) )`. The same root cause
+      silently breaks consumers — `in_array( '4', array( '1.4', 4, 11 ),
+      true )` is false, so the tool dropped those values with no error.
+      Pin both layers: the getter's types (`assertIsString` per value)
+      and the value reaching the tool output. Grep every vocabulary
+      getter for `array_keys( self::CONST )` when one instance appears.
 
- Diagnose via `gh run view <id> --log | grep -iE "wp-cli"` — look for the
- red ✗ tool line in the Set up PHP step, not the step that died. Any new
- workflow using setup-php `tools: wp-cli` should include this fallback step.
+  95. **Double-stubbing a PHPUnit mock: the first matcher wins (2026-11-14,
+      Laravel workflow-executor suite).** `$mock->method('isError')`
+      configured to `willReturn(false)` in `setUp()` and re-stubbed with
+      `willReturnCallback(...)` inside one test does **not** override it — both
+      matchers stay registered and the first one answers, so the "failure"
+      test silently runs the success path and fails on an unrelated later
+      assertion (here, an `exactly(2)` call-count expectation tripping on a
+      third call). Configure the behaviour **once**, as a callback that
+      inspects the value (`fn ($v) => $v instanceof \stdClass`), or build a
+      fresh mock per test. Recognition signal: the failure lands on a call
+      count or a downstream assertion rather than on the branch under test.
 
- ## Production fix vs test fix
+## CI workflow hardening — setup-php `tools: wp-cli` flakes
 
-- **Fix production** when the test exposes a genuine bug: unsafe coercion
-  (pattern 11), a latent fatal on a real code path (Graphify admin classes
-  required only under bootstrap `is_admin()`, #6106), or a missing filter seam
-  that blocks deterministic testing (#6097). Keep production edits minimal and
-  behavior-compatible; document the contract change in the PR.
-- **Fix the test** when it documents an outdated contract or an environment
-  assumption. Never weaken a security assertion (nonce/capability) to make a
-  test pass; prefer structural fixes over `setExpectedIncorrectUsage()`
-  (ineffective on WP 7.1).
+Moved to `reference/ci-workflow-hardening.md` (the setup-php flake fix from
+PR #6998: fallback wp-cli install step + the `gh run view` diagnosis).
 
 ## Debugging workflow
 
@@ -1515,6 +1379,13 @@ fwrite( STDERR, 'STATE: ' . wp_json_encode( $data ) . PHP_EOL );
   tests can straddle a progress-line boundary (`FF` at the end of one line
   plus `F` at the start of the next = three consecutive failures).
 
+### Shell harness pitfalls (Windows/Cygwin PTY)
+
+Moved to `reference/shell-harness-pitfalls.md` (PTY output interleaving,
+`/tmp` in Windows Python, heredoc backslash mangling, msys rsync, and the
+unstaged-`.gitattributes` trap - the false failures from the 2026-11-08
+packaging session).
+
 ## Enumerating the suite
 
 Canonical scan dirs: `tests`, `addons/pro/tests`,
@@ -1531,73 +1402,7 @@ suffix index (chunk manifests list files, they are not inputs).
 
 ## Cluster state board
 
-Completed clusters (merged or open against `alpha-working`): #6084 CRM
-toolkit, #6085 CRM data store, #6086 Huggingface, #6087 Veo, #6088 transcript
-mining, #6089 quiz admin pages, #6090 document template pages, #6091
-multi-agent AJAX, #6092 chart JS enqueue, #6093 admin hook suffixes, #6094
-orchestration modes, #6095 REST tools controller, #6096 multi-agent
-orchestration, #6097 NPM notice, #6098 multi-agent dashboard, #6099 slash
-command integration, #6100 profession media vector, #6101 base knowledge
-seeder, #6102 pro dashboard diagnostic, #6103 chat conversation CCT, #6104
-admin test model, #6105 profession team CPT sanitization, #6106 Graphify admin
-classes, #6107 toolkit + hooks registry, #6108 test-suite skill, #6109 Shopify
-sync CCT manager, #6110 semantic compressor, #6111 usage tracker pricing
-drift, #6112 docs catch-up, #6113 Content Graph AI credential encryption,
-#6114 WP 7.1 Woo role resync, #6115 create post taxonomy application, #6116
-site creator tools drift, #6117 toolkit registry singleton drift, #6118
-PHPUnit loader excludes, #6119 credential resolver cache invalidation, #6120
-capability flags model drift, #6121 settings suite test drift, #6122 slash
-command tool mode contract, #6124 crawler job contract, #6125 Crawl4AI tool
-failures, #6126 transcript mining job cluster, #6127 save post content drift,
-#6128 tool slug integrity drift, #6129 tool coverage manifest, #6130 bulk
-auto dispatch inline, #6131 TPM fallback model drift, #6132 async registry
-construct errors, #6133 base version polluters, #6134 cache helper cluster,
-#6135 transcript recorder repository, #6136 translation loading timing,
-#6137 profession playbook seeder, #6138 site health tool, #6139 settings
-dashboard, #6140 slash command sync docs, #6141 REST assistant directory,
-#6143 Pro test autoload, #6144 new regressions, #6145 Graphify connectors,
-#6146 rate limit backoff, #6147 provider subtab settings, #6148 orchestration
-slider settings, #6149 MCP client configuration, #6150 federation test,
-#6153 Google Chat fields (open).
-
-Newer merged clusters (post-#6153, discovered via the PR merge log):
-#6249 Hermes dashboard fleet extensions, #6251 Auth0 toggle, #6252 Auth0
-menu, #6253 docs-hub emoji DOM crash, #6254 auto-categorize, #6255 provider
-defaults, #6256 Pro SPA v2 shortcode, #6257 chart tiers, #6258 theme
-sortable compat, #6259 chat attachments, #6260 count-tokens params, #6262
-continuation seam, #6263 chat SSE handler, #6264 cache helper, #6265
-nefarious rate limiter + chat hook tolerance (open).
-
-Session 2026-09-04/05 wave-5 clusters (runs 91006542428 + 91771001271,
-all merged): #6280 chat transcripts + attachments, #6281 charts + Pro
-dashboard, #6282 professions/teams, #6283 presets/remote connections,
-#6284 Cloudflare, #6285 mesh networking, #6286 memory auto-capture,
-#6287 AI CPT management integration, #6288 PayHere vs Remote
-Connections, #6289 Mubert music contract, #6290 OpenAI classic Images
-API, #6291/#6297 composer metadata drift, #6292 Content Graph AI
-ecosystem, #6293 pro schedule AJAX + curriculum exporter, #6294
-cluster-board docs, #6295 exec-disabled host hardening, #6296
-conversation-import CCT gate, #6298 model routing/complexity routing,
-#6299 Gemini, #6300 JetEngine/Graphify stub isolation + gates, #6301
-OAuth/credentials encryption, #6302 REST + skill-pack registry, #6303
-admin/settings drift, #6304 K10 Elementor, #6305 K11 permission gates
-(acting-user capability checks), #6306 K12 HTTP/provider clients, #6307
-K13 orchestration budget, #6308 K14 logging/events (recent-activity
-allowlist + trace durations), #6311 K16 misc singles (webhook
-round-trip, settings-repository blob fallback, chart HTML attachment
-gating, site-builder heading tags, PSO keyword inflections,
-scheduled-post publish date reset + 16 suite contract updates), #6312
-K15 skill-suite upload isolation (pack normalisation + install action
-landed via direct commit d452a125bf).
-
-Session 2026-09-05 cluster (run 91942465749): #6327 post-K16 singles
-(merged) — chat transcript session-key mock restore, MemPalace wing-scope
-graph leak (production fix in `wake_up_context`), OKF Pro tools lost to
-`clear_tools()` on the shared registry, Site Health provider-key
-isolation, transcript-mining logging cache reset.
-
-Remaining candidates change quickly; re-triage from the latest CI log rather
-than trusting an old list.
+Moved to `reference/cluster-state-board.md` (the merged-cluster PR ledger).
 
 ## References
 

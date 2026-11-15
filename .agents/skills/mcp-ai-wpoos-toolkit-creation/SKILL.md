@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-toolkit-creation
-description: "End-to-end playbook for creating a new NV oOS Pro toolkit under addons/pro/includes/tools/<toolkit> — folder layout, service layer, tool class conventions (canonical envelope, two-gate sanitisation, capability flags), ALL eleven registration surfaces (Pro module registry loader, central registry, admin Tools section + Features subtab, admin settings page/side menu, settings status map, both WP-CLI commands, schedule presets, workflow presets, SA Toolkit Manager, coverage manifests), fixture/oracle testing with a standalone smoke harness, and the phpcs gotcha checklist. Use when asked to build a new Pro toolkit, add a toolkit to the plugin, scaffold toolkit tools, register toolkit presets/toggles, or debug why a new toolkit's tools, toggle, or admin menu don't appear. First case study: food-beverage (F&B Management, 21 tools, 2026-10-08, 20/20 Check-totals oracle verified). Complements mcp-ai-wpoos-toolkit-audit (hardening existing toolkits) and mcp-ai-wpoos-test-suite (repair)."
+description: End-to-end playbook for creating a new NV oOS Pro toolkit under addons/pro/includes/tools/<toolkit> — folder layout, tool class conventions (canonical envelope, two-gate sanitisation), all eleven registration surfaces, fixture/oracle testing + the phpcs gotcha checklist. Use when asked to build a new Pro toolkit, scaffold toolkit tools, register toolkit presets/toggles, or debug why a new toolkit's tools, toggle, or admin menu don't appear. Complements mcp-ai-wpoos-toolkit-audit and mcp-ai-wpoos-test-suite.
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.15"
-  plugin-version-tested: "1.2.15"
-  last-updated: "2026-11-01"
+  plugin-version: "1.2.20"
+  plugin-version-tested: "1.2.20"
+  last-updated: "2026-11-13"
 ---
 
 # NV oOS Pro Toolkit Creation Loop
@@ -28,6 +28,19 @@ page) — both now called out in §4.
 - "The `<toolkit>` tools/presets/toggle don't show up — where do I register them?"
 - Scaffolding `addons/pro/includes/tools/<new-toolkit>/` for the first time
 - A plan/proposal (e.g. `docs/project/proposals/06x-*.md`) is being implemented
+
+## Related: manifest-driven console families (090-B)
+
+The manifest engine (`addons/pro/includes/toolkits/manifests/*.json` +
+`WP_MCP_AI_Pro_Toolkit_Manifests` / `WP_MCP_AI_Pro_Toolkit_Records` / the
+`mcp-ai-pro/v1/toolkit-manifests` controller) is a **different surface** from
+the tool-class toolkits this skill creates. A manifest family is a JSON
+document that declares screens, settings, entities and dashboard cards, and
+one console shell renders it on **both** WordPress and Laravel. If the ask is
+"add a console family" rather than "add tool classes", copy
+`addons/pro/includes/toolkits/manifests/commerce.json` and follow the
+`mcp-ai-wpoos-laravel-runtime` skill §8 / `mcp-ai-wpoos-spa-ui` — do not
+scaffold `addons/pro/includes/tools/<toolkit>/`.
 
 ## 1. Plan first, then build
 
@@ -80,6 +93,12 @@ class WP_MCP_AI_Tool_Foo extends WP_MCP_AI_Foo_Tool_Base // implements WP_MCP_AI
   `get_usage_guidance()` (when_to_use / when_not_to_use / related_tools /
   notes) — give EVERY method a `{@inheritdoc}` or full docblock; WPCS
   WordPress-Docs errors on missing doc comments (the #1 first-pass failure).
+- Schema enums: never build a `'type' => 'string'` `enum` with `array_keys()`
+  over a map keyed by numeric strings (`'4'`, `'11'`, `'1.0'`) — PHP casts
+  those keys to int, so the registry contract test
+  (`tests/test-tool-schema-contract.php`) fails with `enum_type_mismatch`
+  and a strict `in_array()` in `execute()` silently drops the value. Cast at
+  the vocabulary getter: `array_map( 'strval', array_keys( self::MAP ) )`.
 - `get_required_capability()` (`read` for read tools), `requires_base_pro()`
   returns true, `get_capability_flags()` e.g.
   `array( 'pro', 'read-only', 'cacheable', 'local-only', 'idempotent' )`.

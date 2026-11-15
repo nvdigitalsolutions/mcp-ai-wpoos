@@ -161,16 +161,39 @@ pub fn create_engine(
 }
 
 /// Feature banner used in error messages and the UI.
+///
+/// Names are joined with `", "`, so the result never has a leading or trailing
+/// separator. With no speech features compiled this returns an empty string.
 pub fn available_features() -> &'static str {
-    let features = String::new();
-    #[cfg(feature = "parakeet")]
-    let features = features + ", parakeet";
-    #[cfg(feature = "whisper")]
-    let features = features + ", whisper";
-    #[cfg(feature = "moonshine")]
-    let features = features + ", moonshine";
-    #[cfg(feature = "fastconformer")]
-    let features = features + ", fastconformer";
+    let features: &[&str] = &[
+        #[cfg(feature = "parakeet")]
+        "parakeet",
+        #[cfg(feature = "whisper")]
+        "whisper",
+        #[cfg(feature = "moonshine")]
+        "moonshine",
+        #[cfg(feature = "fastconformer")]
+        "fastconformer",
+    ];
     // Leak is fine: static strings, process lifetime.
-    Box::leak(features.into_boxed_str())
+    Box::leak(features.join(", ").into_boxed_str())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn available_features_has_no_dangling_separator() {
+        let features = available_features();
+        assert!(!features.starts_with(','), "leading comma: {features:?}");
+        assert!(!features.starts_with(' '), "leading space: {features:?}");
+        assert!(!features.ends_with(','), "trailing comma: {features:?}");
+        if !features.is_empty() {
+            assert!(
+                features.split(", ").all(|name| !name.is_empty()),
+                "empty feature name: {features:?}"
+            );
+        }
+    }
 }

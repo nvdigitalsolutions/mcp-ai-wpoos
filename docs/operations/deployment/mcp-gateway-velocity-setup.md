@@ -33,6 +33,7 @@ monitoring) as the public, fleet-scoped MCP endpoint at
    | `GATEWAY_PUBLIC_KEYS` | **yes** | `demo-key=site-a,site-b;internal-key=site-c` (see §3) |
    | `GATEWAY_PUBLIC_KEYS_PREVIOUS` | no | Previous key map during rotation (see §3) |
    | `PUBLIC_SITE_SLUGS` | **recommended** | Comma-separated slugs shown on the public `/health` endpoint — e.g. `demo` — so private client sites stay invisible to unauthenticated callers. Unset or `*` = all configured sites. `/health/full` always reports every site. |
+   | `PUBLIC_DEMO_KEY` | no | Demo key rendered on the public landing page (`GET /`) for directory reviewers. Public-by-design and site-scoped — never a secret. Unset = the page shows `YOUR_KEY` placeholders. |
    | `NVOOS_SITE_<SLUG>_URL` | per site | Full upstream URL incl. `/wp-json/mcp-ai/v1/mcp` |
    | `NVOOS_SITE_<SLUG>_TOKEN` | per site | Fleet Operator token (see §2) |
    | `ALLOWED_ORIGINS` | no | Comma-separated origins for browser clients |

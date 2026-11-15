@@ -33,7 +33,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # Depth 1 is enough: the mirror step snapshots HEAD's subtree and
+          # reads only HEAD's commit message — nothing needs history. The
+          # monorepo pack is ~38 GiB (build artifacts committed over time),
+          # so fetch-depth: 0 makes this step clone for ages (2026-11-03:
+          # two dispatches hung in Checkout).
+          fetch-depth: 1
 
       - name: Mirror the subtree with a fast-forward push
         env:

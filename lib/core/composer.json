@@ -41,8 +41,8 @@
         "nvoos/craft-adapter": "Craft CMS integration via the adapter layer"
     },
     "scripts": {
-        "lint": "phpstan analyse --no-progress",
-        "lint:level8": "phpstan analyse --level 8 --no-progress",
+        "lint": "phpstan analyse --no-progress --memory-limit=1G",
+        "lint:level8": "phpstan analyse --level 8 --no-progress --memory-limit=1G",
         "test": "phpunit --no-configuration --bootstrap tests/bootstrap.php tests/Unit/",
         "test:with-config": "phpunit",
         "ci": [

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Streaming Provider — domain contract for realtime/voice AI providers.
  *
@@ -9,6 +10,8 @@
  * @package Nvoos\Core
  * @since   2.0.0
  * @license MIT
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 declare(strict_types=1);
@@ -50,7 +53,7 @@ interface StreamingProviderInterface
      * Send a text message (for interruption, function results, etc.).
      *
      * @param string $connectionId
-     * @param array  $message       Message payload.
+     * @param array<string, mixed>  $message       Message payload.
      *
      * @return array{success: bool, error?: string}
      */

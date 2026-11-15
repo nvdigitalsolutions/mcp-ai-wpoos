@@ -1,0 +1,8 @@
+{
+	"mcpServers": {
+		"nvoos_gateway": {
+			"type": "http",
+			"url": "https://mcp.nvoos.pro/mcp"
+		}
+	}
+}

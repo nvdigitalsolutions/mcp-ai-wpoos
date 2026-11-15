@@ -458,3 +458,35 @@ jobs:
             artifacts/*.sha256
           draft: false
           prerelease: false
+
+  # ===========================================================================
+  # Mirror the release assets into the standalone repo
+  # (nvdigitalsolutions/nvoos-content-graph) so downloads do not require a
+  # trip to the monorepo. See .github/workflows/mirror-release.yml.
+  # ===========================================================================
+  mirror-release:
+    name: Mirror Release
+    needs: [build, release]
+    if: needs.release.result == 'success'
+    uses: ./.github/workflows/mirror-release.yml
+    with:
+      mirror_repo: nvdigitalsolutions/nvoos-content-graph
+      tag: content-graph-v${{ needs.build.outputs.version }}
+      source_tag: content-graph-v${{ needs.build.outputs.version }}
+      release_name: NV oOS Content Graph v${{ needs.build.outputs.version }}
+      version_file: nvoos-content-graph.php
+      body: |
+        ## NV oOS Content Graph v${{ needs.build.outputs.version }}
+
+        Visual knowledge graph for WordPress. Maps your content into an interactive, navigable graph. Zero API keys required.
+
+        ### Requirements
+
+        - WordPress 6.5+
+        - PHP 8.1+
+
+        ### Checksum
+
+        See the `.sha256` file attached to this release.
+    secrets:
+      MIRROR_TOKEN: ${{ secrets.NVOOS_CONTENT_GRAPH_REPO_TOKEN }}

@@ -2,7 +2,7 @@
 
 > **Start here.** This document answers the five questions every new maintainer asks: how the plugin boots, where the code lives, which commands to run, what Pro adds, and which docs to trust.
 >
-> Last reviewed: **November 01, 2026** (v1.2.15)
+> Last reviewed: **November 15, 2026** (v1.2.21)
 
 ### Related Files
 
@@ -186,7 +186,7 @@ mcp-ai-wpoos/
 │   ├─ src/Infrastructure/     ← 12 AI provider clients, SSE handler, cost calculator
 │   └─ src/Tool/               ← 109 framework-agnostic tool classes
 │
-├─ .agents/skills/             ← 52 coding-time agent skills for Zed editor (20 wp-* + 31 design-* + mcp-ai-wpoos-plugin)
+├─ .agents/skills/             ← 85 coding-time agent skills for Zed editor (20 wp-* + 36 design-* + 29 operational guides incl. mcp-ai-wpoos-service-exchange)
 ├─ .bmad/                      ← 6 BMAD workflow agent YAML definitions + team composition
 ├─ .context/                   ← Subsystem context files (8 topics + 5 templates + active/archive)
 │
@@ -230,7 +230,7 @@ The class inside extends a base tool class and must implement `get_slug()`, `get
 composer install                  # Install dependencies (includes PHPUnit + WPCS)
 composer run lint                 # PHPCS – full WordPress coding standards (includes WPMCPAI.Tools.CanonicalReturnEnvelope + WPMCPAI.Tools.SanitizeAtEntry custom sniffs at severity 5 — visible in default lint, current baseline is 2 documented P6 warnings)
 composer run lint:base            # PHPCS – base plugin only (-w8 — silences the two Unix-Theory sniffs and any other severity-5 warnings)
-composer run lint:compat          # PHP 7.4–8.3 compatibility check
+composer run lint:compat          # PHP 8.1–8.4 compatibility check
 composer run format               # PHPCBF – auto-fix style issues
 composer run test:install         # One-time: install WordPress test suite into /tmp
 composer run test                 # PHPUnit – full test suite
@@ -385,7 +385,7 @@ This repository is developed with multiple AI coding agents. Each agent has a de
 | **GitHub Copilot** | [`.github/copilot-instructions.md`](.github/copilot-instructions.md) | Repo-level instructions for Copilot chat and completions |
 | **OpenAI Codex** | [`.codex/startup.sh`](.codex/startup.sh) | Codex sandbox bootstrap script |
 | **BMAD Agents** | [`.bmad/agents/*.yaml`](.bmad/agents/) | Six specialized roles for the GSD × BMAD workflow |
-| **Zed Agent Skills** | [`.agents/skills/*.md`](.agents/skills/) | 52 coding-time skills (20 wp-* WordPress plugin development patterns + 31 design-* skills + mcp-ai-wpoos-plugin operational guide) auto-discovered by Zed |
+| **Zed Agent Skills** | [`.agents/skills/*.md`](.agents/skills/) | 85 coding-time skills (20 wp-* WordPress plugin development patterns + 36 design-* skills + 29 operational guides incl. mcp-ai-wpoos-service-exchange) auto-discovered by Zed |
 
 The full agent inventory, capabilities, and context-loading strategy are documented in [`AGENTS.md`](AGENTS.md).
 

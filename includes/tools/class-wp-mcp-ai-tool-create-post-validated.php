@@ -8,6 +8,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -113,6 +115,7 @@ class WP_MCP_AI_Tool_Create_Post_Validated extends WP_MCP_AI_Validated_Tool impl
 			'content'   => $validated_args->content,
 			'post_type' => $validated_args->post_type,
 			'status'    => $validated_args->status,
+			'dry_run'   => (bool) ( $validated_args->dry_run ?? false ),
 		);
 
 		// Add optional user_id if provided (when null, base tool will use current user from context).

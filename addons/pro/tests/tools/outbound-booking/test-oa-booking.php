@@ -94,6 +94,28 @@ class Test_OA_Booking extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A non-public booking link is treated as unknown — the public endpoint
+	 * must not act on a draft/private/trashed target.
+	 */
+	public function test_create_booking_rejects_non_public_link() {
+		$draft_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_oa_booking',
+				'post_title'  => 'Draft Offer',
+				'post_status' => 'draft',
+			)
+		);
+		update_post_meta( $draft_id, '_oa_booking_active', '1' );
+		update_post_meta( $draft_id, '_oa_booking_mode', 'internal' );
+
+		$slot   = gmdate( 'Y-m-d\TH:i', time() + DAY_IN_SECONDS );
+		$result = WP_MCP_AI_OA_Booking::create_booking( $draft_id, 'Jane Smith', 'jane@example.test', '', $slot );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_link', $result->get_error_code() );
+	}
+
+	/**
 	 * Re-booking the same email + link within a day is idempotent.
 	 */
 	public function test_create_booking_is_idempotent_per_day() {

@@ -1,0 +1,22 @@
+{
+    "input": "---\ntype: Concept\ntitle: Provenance Example\nstatus: current\nstale_after: 2027-01-01\nsources:\n  - name: Google\n    url: https://example.com\n    credibility:\n      author: Ada\n      usage_count: 12\n---\nBody.\n",
+    "expected": {
+        "frontmatter": {
+            "type": "Concept",
+            "title": "Provenance Example",
+            "status": "current",
+            "stale_after": "2027-01-01",
+            "sources": [
+                {
+                    "name": "Google",
+                    "url": "https://example.com",
+                    "credibility": {
+                        "author": "Ada",
+                        "usage_count": 12
+                    }
+                }
+            ]
+        },
+        "body": "Body."
+    }
+}

@@ -11,7 +11,7 @@ This repo is developed by multiple AI agents. Before doing work, be aware of:
 - **`.github/agents/*.agent.md`** — GitHub Custom Agents auto-discovered by Copilot Coding Agent and compatible runtimes. Each file declares one role-specific agent (its scope, tools, triggers). Per the layering rule in [`AGENTS.md` §2](../AGENTS.md), these files are intentionally slim — they **do not** restate naming/security/PHP-compat rules, so always cross-reference `AGENTS.md` + `CLAUDE.md` + `.context/` for those.
 - **`.context/*.md`** — subsystem context files loaded on-demand by all agents (conventions, security checklist, REST API, tool registry, chat UI, testing, Pro vs Base, image identification).
 - **`.bmad/agents/*.yaml`** — internal BMAD workflow agents that run inside NV oOS assistants (not coding-time agents).
-- **`.agents/skills/*.md`** — 81 coding-time agent skills for Zed editor: 20 wp-* WordPress plugin development patterns (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text), 36 design-* skills (incl. design-elementor-mcp-connection, design-figma-to-elementor, design-performance-audit and design-chart-recipes), the mcp-ai-wpoos-plugin operational guide, the mcp-ai-wpoos-test-suite repair guide, the mcp-ai-wpoos-updates maintenance guide, the mcp-ai-wpoos-wporg-submission wp.org readiness guide, the mcp-ai-wpoos-ecosystem-port base+pro→CG Pro port guide, the mcp-ai-wpoos-assistant-portability export/import guide, the mcp-ai-wpoos-playground-demos Playground demo blueprint guide, the mcp-ai-wpoos-dependabot-loop alert-triage guide, the mcp-ai-wpoos-toolkit-audit per-toolkit hardening audit guide, the mcp-ai-wpoos-toolkit-creation new-Pro-toolkit creation guide, the mcp-ai-wpoos-toolkit-universalisation single-tenant→universal rework guide, the mcp-ai-wpoos-toolkit-ingestion open-format data-ingestion playbook, the mcp-ai-wpoos-spa-ui SPA UI stack & testing guide, the mcp-ai-wpoos-spa-rest-contract console REST contract audit guide, the mcp-ai-wpoos-checkout-integration NV oOS Complete purchase-flow client guide, the mcp-ai-wpoos-content-graph-spa Content Graph explorer ↔ SPA port & auth guide, the mcp-ai-wpoos-model-foundry cluster fine-tuning guide, the mcp-ai-wpoos-dictation-app companion-app build/engines/verification guide, the mcp-ai-schedule-anything-ops Schedule Anything SaaS ops guide, the mcp-ai-artcraft-ops ArtCraft MCP operational guide, the mcp-ai-wpoos-astro-storefront Astro storefront & bridge ops guide, the mcp-ai-wpoos-astro-forge Astro Forge WP→Astro generator guide, the mcp-ai-sdk-v2-server-ops MCP SDK v2 dual-era server ops guide, the mcp-ai-wpoos-gateway-ops MCP Gateway (mcp.nvoos.pro) ops & registry-submission guide, and the mcp-ai-wpoos-git-ops repo git/PR workflow guide. Keep each `SKILL.md` under Zed's ~100 KB load limit (larger skills silently fail to load) — split growing sections into `reference/` files.
+- **`.agents/skills/*.md`** — 85 coding-time agent skills for Zed editor: 20 wp-* WordPress plugin development patterns (wp-abilities-api, wp-action-scheduler, wp-html-api, wp-i18n-audit, wp-plugin-*, wp-query-cache, wp-rest-api, wp-security-*, wp-utf8-text), 36 design-* skills (incl. design-elementor-mcp-connection, design-figma-to-elementor, design-performance-audit and design-chart-recipes), the mcp-ai-wpoos-plugin operational guide, the mcp-ai-wpoos-test-suite repair guide, the mcp-ai-wpoos-updates maintenance guide, the mcp-ai-wpoos-wporg-submission wp.org readiness guide, the mcp-ai-wpoos-ecosystem-port base+pro→CG Pro port guide, the mcp-ai-wpoos-assistant-portability export/import guide, the mcp-ai-wpoos-playground-demos Playground demo blueprint guide, the mcp-ai-wpoos-dependabot-loop alert-triage guide, the mcp-ai-wpoos-toolkit-audit per-toolkit hardening audit guide, the mcp-ai-wpoos-toolkit-creation new-Pro-toolkit creation guide, the mcp-ai-wpoos-toolkit-universalisation single-tenant→universal rework guide, the mcp-ai-wpoos-toolkit-ingestion open-format data-ingestion playbook, the mcp-ai-wpoos-spa-ui SPA UI stack & testing guide, the mcp-ai-wpoos-spa-rest-contract console REST contract audit guide, the mcp-ai-wpoos-checkout-integration NV oOS Complete purchase-flow client guide, the mcp-ai-wpoos-content-graph-spa Content Graph explorer ↔ SPA port & auth guide, the mcp-ai-wpoos-model-foundry cluster fine-tuning guide, the mcp-ai-wpoos-dictation-app companion-app build/engines/verification guide, the mcp-ai-wpoos-qb-desktop QuickBooks Desktop MCP ops guide, the mcp-ai-schedule-anything-ops Schedule Anything SaaS ops guide, the mcp-ai-artcraft-ops ArtCraft MCP operational guide, the mcp-ai-wpoos-astro-storefront Astro storefront & bridge ops guide, the mcp-ai-wpoos-astro-forge Astro Forge WP→Astro generator guide, the mcp-ai-sdk-v2-server-ops MCP SDK v2 dual-era server ops guide, the mcp-ai-wpoos-gateway-ops MCP Gateway (mcp.nvoos.pro) ops & registry-submission guide, the mcp-ai-wpoos-service-exchange expert-deployment (Blueprint v1 / estate state machine / Cloudways v2) guide, the mcp-ai-wpoos-laravel-runtime Laravel runtime (app-skeleton, lib packages, container topology) ops guide, and the mcp-ai-wpoos-git-ops repo git/PR workflow guide + nvoos-forge-deploy Velocity deploy & mirror-branch ops guide. Keep each `SKILL.md` under Zed's ~100 KB load limit (larger skills silently fail to load) — split growing sections into `reference/` files. **Keep the sum of all `description:` frontmatter fields across `.agents/skills/` + `~/.agents/skills/` under 46 KB** — enforced by `npm run validate:skills`. Zed's catalog silently omits the alphabetical tail well before its nominal ~50 KB (2026-11-02: `wp-security-secrets` + `wp-utf8-text` dropped; 2026-11-15: `wp-security-deep`, `wp-security-secrets` + `wp-utf8-text` dropped at 47,759–48,279 B; trimmed to 44,375 B). **An unquoted `: ` inside `description:` is invalid YAML and silently drops the skill — quote it; validate with `npm run validate:skills` in `examples/nvoos-service-exchange`.**
 
 When making changes, check `git log` first — another agent may have already addressed part of the task. Do not duplicate scopes that are owned by an agent declared in `.github/agents/` or in the `AGENTS.md` inventory.
 
@@ -25,7 +25,7 @@ mcp-ai-wpoos/
 ├── includes/              # Core plugin classes
 │   ├── admin/            # Admin UI and settings
 │   ├── assistants/       # Assistant CPT and CCT management
-│   ├── tools/            # ~1,692 total built-in tool implementations
+│   ├── tools/            # ~1,747 total built-in tools (~360 base + ~1,388 Pro; live registry authoritative)
 │   ├── security/         # Security infrastructure (12 classes: request guard, security posture, destructive ops gate, URL guard, concurrency guard, cost tracker, API key store, CSP headers, audit logger, load guard, read-only profile gate, CORS guard)
 │   ├── chat/             # Chat-profile system (registry + manager, Proposal 015 — server-enforced read-only mode)
 │   ├── elementor/        # Elementor widget integrations
@@ -41,7 +41,7 @@ mcp-ai-wpoos/
 ├── tests/                # PHPUnit test suite (including tests/security/)
 ├── docs/                 # Comprehensive documentation (~1,600 files)
 ├── bin/                  # Development scripts
-├── .agents/skills/       # 81 coding-time agent skills for Zed editor (20 wp-* + 36 design-* + mcp-ai-wpoos-plugin + mcp-ai-wpoos-test-suite + mcp-ai-wpoos-updates + mcp-ai-wpoos-wporg-submission + mcp-ai-wpoos-ecosystem-port + mcp-ai-wpoos-assistant-portability + mcp-ai-wpoos-playground-demos + mcp-ai-wpoos-dependabot-loop + mcp-ai-wpoos-toolkit-audit + mcp-ai-wpoos-toolkit-creation + mcp-ai-wpoos-toolkit-universalisation + mcp-ai-wpoos-toolkit-ingestion + mcp-ai-wpoos-spa-ui + mcp-ai-wpoos-spa-rest-contract + mcp-ai-wpoos-checkout-integration + mcp-ai-wpoos-content-graph-spa + mcp-ai-wpoos-model-foundry + mcp-ai-wpoos-dictation-app + mcp-ai-schedule-anything-ops + mcp-ai-artcraft-ops + mcp-ai-wpoos-astro-storefront + mcp-ai-wpoos-astro-forge + mcp-ai-sdk-v2-server-ops + mcp-ai-wpoos-gateway-ops + mcp-ai-wpoos-git-ops)
+├── .agents/skills/       # 85 coding-time agent skills for Zed editor (20 wp-* + 36 design-* + mcp-ai-wpoos-plugin + mcp-ai-wpoos-test-suite + mcp-ai-wpoos-updates + mcp-ai-wpoos-wporg-submission + mcp-ai-wpoos-ecosystem-port + mcp-ai-wpoos-assistant-portability + mcp-ai-wpoos-playground-demos + mcp-ai-wpoos-dependabot-loop + mcp-ai-wpoos-toolkit-audit + mcp-ai-wpoos-toolkit-creation + mcp-ai-wpoos-toolkit-universalisation + mcp-ai-wpoos-toolkit-ingestion + mcp-ai-wpoos-spa-ui + mcp-ai-wpoos-spa-rest-contract + mcp-ai-wpoos-checkout-integration + mcp-ai-wpoos-content-graph-spa + mcp-ai-wpoos-model-foundry + mcp-ai-wpoos-dictation-app + mcp-ai-wpoos-qb-desktop + mcp-ai-schedule-anything-ops + mcp-ai-artcraft-ops + mcp-ai-wpoos-astro-storefront + mcp-ai-wpoos-astro-forge + mcp-ai-sdk-v2-server-ops + mcp-ai-wpoos-gateway-ops + mcp-ai-wpoos-service-exchange + mcp-ai-wpoos-laravel-runtime + mcp-ai-wpoos-git-ops + nvoos-forge-deploy)
 ├── .bmad/                # 6 BMAD workflow agent YAML definitions
 ├── .context/             # Subsystem context files for AI agent sessions
 └── languages/            # Translation files
@@ -49,7 +49,7 @@ mcp-ai-wpoos/
 
 ## Key Technologies
 
-- **WordPress Plugin** (PHP 7.4+, WordPress 6.0+)
+- **WordPress Plugin** (PHP 8.1+, WordPress 6.0+)
 - **AI Providers**: OpenAI, Google Gemini, Ollama (local AI), plus TypeSafe Jev (decision-only provider; powers `typesafe_decide`, never a chat provider)
 - **MCP Protocol**: Server-Sent Events, REST API
 - **Optional Integrations**: JetEngine, WooCommerce, Elementor, Rank Math, WPCode
@@ -95,7 +95,7 @@ composer run lint
 # Auto-fix PHP code style issues
 composer run format
 
-# PHP compatibility check (PHP 7.4-8.3)
+# PHP compatibility check (PHP 8.1-8.4)
 composer run lint:compat
 
 # JavaScript linting
@@ -285,8 +285,8 @@ class Test_Feature extends WP_UnitTestCase {
 ### Base Version vs Full Version
 
 The plugin has two modes:
-- **Base Version** (default): ~347 core tools, no third-party dependencies
-- **Full Version**: ~1,692 tools (~353 base + ~1,339 pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
+- **Base Version** (default): ~358 core tools, no third-party dependencies
+- **Full Version**: ~1,747 tools (~360 base + ~1,388 Pro) including WooCommerce, JetEngine, and Pro addons; live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative
 
 Control with: `define( 'WP_MCP_AI_BASE_VERSION', true/false );`
 

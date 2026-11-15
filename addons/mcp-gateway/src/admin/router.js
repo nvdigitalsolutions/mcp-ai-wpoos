@@ -158,7 +158,7 @@ export function adminRouter() {
 				health: health.status,
 				lastOkAt: health.lastOkAt || null,
 				mcpEndpoint: site.url,
-				toolsAreNamespacedAs: `${ slug }.<tool>`,
+				toolsAreNamespacedAs: `${ slug }_<tool>`,
 			} );
 		}
 		res.json( {

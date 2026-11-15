@@ -1,0 +1,1038 @@
+---
+// DesignRenderer — the semantic renderer (Proposal 114 §3.2/§3.4, themed by
+// 117 §2).
+//
+// Takes the ALREADY-sanitized entry body (page.body) and renders it through
+// the semantic content model: classified builder sections rebuild as ADS
+// design components; unclassified content falls back to the .post-body
+// treatment (the sanitized substring, verbatim). No classification happens
+// here — the vendored src/forge/semantic.ts owns that; this component only
+// dispatches sections to components. Text is interpolated (escaped); only
+// sanitized substrings pass through set:html.
+//
+// Theming (117 §2): the classifier carries each section's source Elementor id;
+// sections.generated.ts maps that id to the source band's background facts and
+// resolved theme. Every section renders inside a themed wrapper that
+// re-applies the source band — dark navy bands, gray bands, and the hero
+// photo with its overlay — so the rebuilt page keeps the source's visual
+// rhythm without copying any markup.
+import type { SemanticSection } from '../../forge/semantic.ts';
+import { bandSpacing, bandSource, pageBackground, sections as sectionThemes, type SectionTheme } from '../../lib/sections.generated.ts';
+import { behaviors, type ScrollBehaviorEntry } from '../../lib/behaviors.generated.ts';
+import { animationCss } from '../../lib/animations.generated.ts';
+import { classifyBody } from '../../lib/classify.ts';
+import { wrapperAnchor } from '../../lib/anchor.ts';
+import { parallaxBandCss } from '../../lib/motion.ts';
+import Cta from './Cta.astro';
+import Catalog from './Catalog.astro';
+import Comparison from './Comparison.astro';
+import FeatureGrid from './FeatureGrid.astro';
+import Form from './Form.astro';
+import Gallery from './Gallery.astro';
+import Hero from './Hero.astro';
+import Accordion from './Accordion.astro';
+import IconList from './IconList.astro';
+import LogoCloud from './LogoCloud.astro';
+import Marquee from './Marquee.astro';
+import Pricing from './Pricing.astro';
+import Stats from './Stats.astro';
+import Steps from './Steps.astro';
+import Team from './Team.astro';
+import Testimonial from './Testimonial.astro';
+import TextBlock from './TextBlock.astro';
+
+/** A pre-classified wireframe section (Proposal 115) — the semantic section
+ *  plus its per-breakpoint column behavior. */
+interface WireframeSectionInput {
+	section: SemanticSection;
+	responsive?: { columns?: Record<string, number> };
+}
+
+interface Props {
+	html?: string;
+	/** Pre-classified wireframe sections — take precedence over `html` and
+	 *  carry per-breakpoint column behavior (115 §4). */
+	wireframeSections?: WireframeSectionInput[];
+	/**
+	 * Apply the measured band GEOMETRY (box height, padding, typography). True
+	 * only on the page the facts were measured from — the front page. A
+	 * sub-page reuses `sections.generated.ts` POSITIONALLY for its SURFACES
+	 * only: the homepage's 1800px band height there pinned a 7497px article
+	 * (monicarajiv.com, 2026-11-11).
+	 */
+	bandGeometry?: boolean;
+	/**
+	 * The page's OWN measured band list (`pages.generated.ts`). When present it
+	 * wins over the homepage list and implies `bandGeometry`: the facts were
+	 * measured on this page, so its heights/padding/typography are its own.
+	 */
+	bandThemes?: SectionTheme[];
+}
+
+const { html = '', wireframeSections, bandGeometry = false, bandThemes } = Astro.props;
+const sections: SemanticSection[] = wireframeSections
+	? wireframeSections.map( ( w ) => w.section )
+	: classifyBody( html );
+const columnsFor = ( index: number, theme?: SectionTheme ): Record< string, number > | undefined => {
+	const wireframe = wireframeSections?.[ index ]?.responsive?.columns;
+	if ( wireframe ) {
+		return wireframe;
+	}
+	// No wireframe inventory: the SOURCE band's own column count is still a
+	// measured fact (design.sections[].columns). Without this fallback a
+	// three-column services band rebuilt as a grid with the template's default
+	// four tracks — the source's columns never reached the grid at all.
+	const count = theme?.columns?.length ?? 0;
+	if ( count < 2 ) {
+		return undefined;
+	}
+	return { desktop: count, tablet: count >= 3 ? 2 : count, mobile: 1 };
+};
+/**
+ * The source band theme for a rebuilt section. Elementor sites match by the
+ * classifier-carried section id. Outline-only sources (WPBakery/Brando…) carry
+ * no ids at all, so `bandSource === 'outline'` maps them POSITIONALLY — the
+ * rebuilt sections and the source bands both follow the page flow. Without the
+ * positional pass those bands never themed, so the rebuild rendered template
+ * defaults instead of the source's own surfaces (virtuallyjamaica's red hero).
+ */
+const themeFor = ( section: SemanticSection, index: number ): SectionTheme | undefined => {
+	// The page's OWN measured list wins: its bands were measured on this page,
+	// so position is the identity and every fact applies as-is.
+	if ( bandThemes ) {
+		return ( section.id ? bandThemes.find( ( theme ) => theme.id === section.id ) : undefined ) ?? bandThemes[ index ];
+	}
+	const byId = section.id ? sectionThemes.find( ( theme ) => theme.id === section.id ) : undefined;
+	if ( byId ) {
+		return byId;
+	}
+	if ( bandSource !== 'outline' ) {
+		return undefined;
+	}
+	const positional = sectionThemes[ index ];
+	if ( ! positional || bandGeometry ) {
+		return positional;
+	}
+	// Surfaces only — the geometry facts describe the page they were measured
+	// on, so a sub-page keeps the source's palette and rhythm but not its
+	// homepage box heights.
+	return {
+		id: positional.id,
+		theme: positional.theme,
+		anchor: positional.anchor,
+		bg: positional.bg,
+		bgImage: positional.bgImage,
+		overlay: positional.overlay,
+	};
+};
+/** ALL source behaviors for a section. A band can be BOTH parallax and reveal
+ * (jayainc's about band is); the old single `find` returned whichever entry came
+ * first, so a reveal-first band silently lost its parallax class and range. */
+const behaviorsFor = ( section: SemanticSection ): ScrollBehaviorEntry[] =>
+	section.id ? behaviors.entries.filter( ( behavior ) => behavior.id === section.id ) : [];
+const behaviorClasses = ( list: ScrollBehaviorEntry[] ): string[] => {
+	const classes: string[] = [];
+	if ( list.some( ( behavior ) => behavior.kind === 'parallax' ) ) {
+		classes.push( 'ds-parallax' );
+	}
+	// One reveal per band: the first in source order wins (the generated list can
+	// carry several — the outer heading and each inner widget).
+	const reveal = list.find( ( behavior ) => behavior.kind === 'reveal' );
+	if ( reveal ) {
+		classes.push( 'ds-reveal', `ds-reveal--${ reveal.effect ?? 'fade' }` );
+	}
+	if ( list.some( ( behavior ) => behavior.kind === 'sticky' ) ) {
+		classes.push( 'ds-sticky' );
+	}
+	return classes;
+};
+const parallaxFor = ( list: ScrollBehaviorEntry[] ): ScrollBehaviorEntry | undefined =>
+	list.find( ( behavior ) => behavior.kind === 'parallax' );
+/** The parallax travel range scales with the source's motion_fx speed. */
+const parallaxStyle = ( behavior: ScrollBehaviorEntry | undefined ): string | undefined =>
+	behavior?.speed !== undefined && behavior.speed > 1
+		? `--ds-parallax-range:${ Math.min( behavior.speed, 4 ) * 24 }px`
+		: undefined;
+/** A band length (margin or padding) — one value, or a per-device map
+ * (Elementor's scoped pulls and per-device band padding). */
+type ResponsiveLength = string | { desktop?: string; tablet?: string; mobile?: string } | undefined;
+
+/** The inline half of a band margin — only plain strings go inline. */
+const marginInline = ( value: ResponsiveLength ): string | undefined =>
+	typeof value === 'string' ? value : undefined;
+
+/**
+ * The stylesheet half of a band margin. Elementor scopes a pull to a device
+ * range — jayainc's products band is 0px on desktop, 170px on tablet and 100px
+ * on mobile — so a single inline value is unfaithful. A per-device map is
+ * emitted entirely as CSS: an inline value would outrank the media queries.
+ * Band padding uses the same contract (jayainc's 059421c: 125px desktop,
+ * 100px tablet and mobile). Breakpoints match the template's (1025 desktop /
+ * 768 tablet).
+ */
+const responsiveDeviceCss = ( id: string | undefined, property: string, value: ResponsiveLength ): string => {
+	if ( ! id || typeof value !== 'object' || value === null ) {
+		return '';
+	}
+	const scoped = `[data-section-id="${ id }"]`;
+	return [
+		value.desktop && `${ scoped }{${ property }:${ value.desktop }}`,
+		value.tablet && `@media (max-width: 1024px){${ scoped }{${ property }:${ value.tablet }}}`,
+		value.mobile && `@media (max-width: 767px){${ scoped }{${ property }:${ value.mobile }}}`,
+	]
+		.filter( Boolean )
+		.join( '' );
+};
+// ---------------------------------------------------------------------------
+// A band with no slots renders nothing (the templates only draw what the
+// classifier found); `source` band spacing must not collapse those to 0px.
+const sectionHasContent = ( section: SemanticSection ): boolean => {
+	const { title, body, items, media } = section.slots ?? {};
+	return Boolean(
+		title ||
+			( body && body.length > 0 ) ||
+			( items && items.length > 0 ) ||
+			( media && media.length > 0 ) ||
+			// Proposal 136 structured slots — a kind is content too.
+			( section.pricing?.plans.length ?? 0 ) > 0 ||
+			( section.stats?.items.length ?? 0 ) > 0 ||
+			( section.steps?.items.length ?? 0 ) > 0 ||
+			( section.team?.people.length ?? 0 ) > 0 ||
+			( section.marquee?.items.length ?? 0 ) > 0 ||
+			( section.comparison?.rows.length ?? 0 ) > 0
+	);
+};
+
+const wrapStyle = ( theme: SectionTheme | undefined, hasContent = true ): string | undefined => {
+	if ( ! theme ) {
+		return undefined;
+	}
+	const parts: string[] = [];
+	// The boxed container measure + side gutter (124 §3): the inner column
+	// re-measures to the source's container width, never the site measure — the
+	// band bg stays full-width. Theme-agnostic: hero bands are boxed too.
+	//
+	// A per-device map is emitted as scoped CSS below (see `responsiveBandCss`):
+	// an inline value would outrank its own media queries.
+	if ( typeof theme.measure === 'string' ) {
+		parts.push( `--ds-measure:${ theme.measure }` );
+	}
+	if ( typeof theme.paddingX === 'string' ) {
+		parts.push( `--ds-pad-x:${ theme.paddingX }` );
+	}
+	// The source band's declared padding (jayainc: the 100px bands vs the
+	// flush content-tight bands) — inline wins over the wrap default. This runs
+	// BEFORE the hero's early return: a hero band carries padding facts too.
+	if ( theme.padding ) {
+		// A per-device map is emitted as scoped CSS below (an inline padding
+		// would outrank its media queries); only a plain shorthand goes inline.
+		if ( typeof theme.padding === 'string' ) {
+			parts.push( `padding:${ theme.padding }` );
+		}
+		// The source declares the band's rhythm — suppress the template's
+		// default section padding so the bands meet their neighbors flush
+		// (124 §5, the continuous flow).
+		parts.push( '--ds-pad-y:0' );
+	} else if ( bandSpacing === 'source' ) {
+		// No padding fact = the source band is flush. `source` mode honours that
+		// instead of the template's own rhythm. The wrap's padding comes from a
+		// rule (--forge-space-4), NOT --ds-pad-y, so zero it explicitly.
+		//
+		// An EMPTY band is a spacer (jayainc's dff3f1a is 70px with no padding
+		// fact and no content): zeroing it would render 0px and shift every
+		// band below it. Those keep the wrap's rhythm and lose only the inner
+		// section's, which would otherwise double-count it.
+		parts.push( '--ds-pad-y:0' );
+		if ( hasContent ) {
+			parts.push( 'padding-top:0' );
+			parts.push( 'padding-bottom:0' );
+		}
+	}
+	// The band's MEASURED source height (114 §3.6) — a floor, never a lock: a
+	// band whose rebuilt content is already taller keeps its own height. Placed
+	// BEFORE the hero's early return below, because the hero band is exactly the
+	// one a source height pins (virtuallyjamaica's full-screen contact band).
+	// A per-device map is emitted as scoped CSS; only a plain value goes inline.
+	if ( theme.minHeight && typeof theme.minHeight === 'string' ) {
+		parts.push( `min-height:${ theme.minHeight }` );
+	}
+	// The band's measured typography (see bandTypeCss below): the components that
+	// render a `ds-title` size from the source's own heading, not the token scale.
+	// A source band whose title is 35px must not render at the template's h1.
+	if ( theme.type?.title ) {
+		const title = theme.type.title;
+		if ( title.size ) {
+			parts.push( `--ds-title-size:${ title.size }` );
+		}
+		if ( title.weight ) {
+			parts.push( `--ds-title-weight:${ title.weight }` );
+		}
+		if ( title.lineHeight && title.lineHeight !== 'normal' ) {
+			parts.push( `--ds-title-lh:${ title.lineHeight }` );
+		}
+		if ( title.tablet?.lineHeight && title.tablet.lineHeight !== 'normal' ) {
+			parts.push( `--ds-title-lh-md:${ title.tablet.lineHeight }` );
+		}
+		if ( title.mobile?.lineHeight && title.mobile.lineHeight !== 'normal' ) {
+			parts.push( `--ds-title-lh-sm:${ title.mobile.lineHeight }` );
+		}
+		if ( title.letterSpacing && title.letterSpacing !== 'normal' ) {
+			parts.push( `--ds-title-ls:${ title.letterSpacing }` );
+		}
+		if ( title.align && title.align !== 'start' && title.align !== 'left' ) {
+			parts.push( `--ds-title-align:${ title.align }` );
+		}
+		// The source's own ink. A builder element's colour lives in an inline
+		// `style` the sanitizer drops, so `.ds-title` otherwise inherited the
+		// template's accent — virtuallyjamaica's accordion titles rendered
+		// #fe6c61 where the source is #262626.
+		if ( title.color ) {
+			parts.push( `--ds-title-color:${ title.color }` );
+		}
+		// The source's deliberate heading width (jayainc's services title is
+		// max-width 473px inside a 640px column; full-width it wrapped to two
+		// lines and the band's pinned height showed the shortfall).
+		if ( title.maxWidth && title.maxWidth !== 'none' ) {
+			parts.push( `--ds-title-max:${ title.maxWidth }` );
+		} else if ( title.align === 'center' ) {
+			// A CENTRED title is not narrowed. The hero's own 66% cap is a
+			// per-site heuristic; on a centred heading it shrank the box while
+			// leaving it flush left, so the centred text sat 200px off-centre
+			// (virtuallyjamaica's contact band). The source measured full width.
+			parts.push( '--ds-title-max:none' );
+		}
+	}
+	// The source's crop anchor for the band's cover photos (measured
+	// `object-position`). The vendor writes it in a `<style>` block the
+	// sanitizer drops, so without this every rebuilt photo crops to centre.
+	if ( theme.mediaPosition ) {
+		parts.push( `--ds-media-pos:${ theme.mediaPosition }` );
+	}
+	// The hero track's measured column split. The structural hero rule below
+	// defaults to 1.15fr/0.95fr; a source whose copy column is 60% (691 of 1152
+	// on virtuallyjamaica) otherwise wraps its H1 a line wider than the source.
+	// The measured ratio already excludes the source's own gutter (it lives in
+	// the children's padding, which the band box facts restate), so a measured
+	// split also clears the heuristic gap.
+	if ( theme.split && theme.split.length >= 2 ) {
+		parts.push( `--ds-split:${ theme.split.map( ( fraction ) => `${ fraction }fr` ).join( ' ' ) }` );
+		parts.push( '--ds-split-gap:0' );
+	}
+	// A MEASURED `false` clears the hero wrapper's default centring: a full-height
+	// band the source top-aligns under its own padding must not be centred.
+	if ( theme.centered === false ) {
+		parts.push( '--ds-hero-justify:flex-start' );
+	}
+	if ( theme.theme === 'hero' ) {
+		if ( theme.bgImage ) {
+			parts.push( `background-image:url('${ theme.bgImage }')` );
+		}
+		// A color alongside the photo is the source's UNDERLAY (invisible
+		// beneath an opaque image) — never paint it over the photo.
+		if ( theme.bg && ! theme.bgImage ) {
+			parts.push( `background-color:${ theme.bg }` );
+		}
+		if ( theme.overlay ) {
+			parts.push( `--ds-overlay:${ theme.overlay }` );
+		}
+		return parts.length > 0 ? parts.join( ';' ) : undefined;
+	}
+	if ( theme.bg ) {
+		parts.push( `background:${ theme.bg }` );
+	}
+	// Section-level pull facts (124 §4): negative margins overlap the
+	// neighbor band; z-index stacks the overlap.
+	if ( theme.marginTop ) {
+		const marginTop = marginInline( theme.marginTop );
+		if ( marginTop ) {
+			parts.push( `margin-top:${ marginTop }` );
+		}
+	}
+	if ( theme.marginBottom ) {
+		const marginBottom = marginInline( theme.marginBottom );
+		if ( marginBottom ) {
+			parts.push( `margin-bottom:${ marginBottom }` );
+		}
+	}
+	// The card box model (measured per band): Elementor cards are theme
+	// components, so gap/padding come from measurement rather than any
+	// band-scoped rule. Absent → the template's own card defaults.
+	if ( theme.cardStyle ) {
+		if ( theme.cardStyle.gap ) {
+			parts.push( `--ds-card-gap:${ theme.cardStyle.gap }` );
+		}
+		if ( theme.cardStyle.padding ) {
+			parts.push( `--ds-card-pad:${ theme.cardStyle.padding }` );
+		}
+		if ( theme.cardStyle.textPadding ) {
+			parts.push( `--ds-card-text-pad:${ theme.cardStyle.textPadding }` );
+		}
+	}
+	// The icon-row rhythm (measured per band): the source's list rows carry
+	// their own inner padding, a large leading icon box and their own title
+	// size. Absent → the template's own row defaults. padTop/padBottom/padX can
+	// be per-device maps (75% of the source's desktop rhythm is lost at tablet),
+	// so they go inline only as plain strings; `responsiveBandCss` emits the
+	// media-query half.
+	if ( theme.iconRowStyle ) {
+		const row = theme.iconRowStyle;
+		if ( typeof row.padTop === 'string' ) {
+			parts.push( `--ds-icon-row-pad-top:${ row.padTop }` );
+		}
+		if ( typeof row.padBottom === 'string' ) {
+			parts.push( `--ds-icon-row-pad-bottom:${ row.padBottom }` );
+		}
+		if ( typeof row.padX === 'string' ) {
+			parts.push( `--ds-icon-row-pad-x:${ row.padX }` );
+		}
+		if ( row.rowGap ) {
+			parts.push( `--ds-icon-row-gap:${ row.rowGap }` );
+		}
+		if ( row.titleSize ) {
+			parts.push( `--ds-icon-title-size:${ row.titleSize }` );
+		}
+		if ( row.titleLineHeight ) {
+			parts.push( `--ds-icon-title-lh:${ row.titleLineHeight }` );
+		}
+		if ( row.markerSize ) {
+			parts.push( `--ds-icon-marker-size:${ row.markerSize }` );
+		}
+		if ( row.markerGlyph ) {
+			parts.push( `--ds-icon-marker-glyph:${ row.markerGlyph }` );
+		}
+		if ( row.markerBackground ) {
+			parts.push( `--ds-icon-marker-bg:${ row.markerBackground }` );
+		}
+		if ( row.markerInk ) {
+			parts.push( `--ds-icon-marker-ink:${ row.markerInk }` );
+		}
+	}
+	if ( theme.zIndex ) {
+		parts.push( `z-index:${ theme.zIndex }` );
+	}
+	// The source's heading-block rhythm (measured `box` facts, mapped onto the
+	// rebuilt title/lede): 30px under the title and 37px above the description on
+	// jayainc's services band. Absent → the template's own spacing (0).
+	const titleMarginBottom = boxEdge( theme.box?.[ 'aux-modern-heading-primary' ], 'margin', 'bottom' );
+	if ( titleMarginBottom && titleMarginBottom !== '0px' ) {
+		parts.push( `--ds-title-margin-bottom:${ titleMarginBottom }` );
+		// The source's margin IS the rhythm — the template's grid gap would stack
+		// on it and push a short band past its measured box.
+		parts.push( '--ds-body-gap:0' );
+	}
+	const ledeMarginTop = boxEdge( theme.box?.[ 'aux-modern-heading-description' ], 'margin', 'top' );
+	if ( ledeMarginTop && ledeMarginTop !== '0px' ) {
+		parts.push( `--ds-lede-margin-top:${ ledeMarginTop }` );
+	}
+	// The column responsive facts (124 §6): the split components re-measure
+	// from the source's per-device widths/order instead of the template's
+	// fixed ratio (jayainc's services split is 50/50, not 5fr/7fr).
+	const columns = theme.columns ?? [];
+	// Exactly two: `--ds-split-ratio` feeds a two-lane grid (`.ds-hero-split`).
+	// A three-lane band (services is 3/4/5) used to inherit a truncated
+	// first-two-fr ratio here, which then applied 25/33 to a two-lane grid.
+	if ( columns.length === 2 && columns[ 0 ].width && columns[ 1 ].width ) {
+		parts.push( `--ds-split-ratio:minmax(0,${ columns[ 0 ].width / 100 }fr) minmax(0,${ columns[ 1 ].width / 100 }fr)` );
+	}
+	if ( columns.some( ( column ) => column.reverseMobile ) ) {
+		parts.push( '--ds-icon-media-order:2' );
+	}
+	return parts.length > 0 ? parts.join( ';' ) : undefined;
+};
+
+/**
+ * One edge of a measured `padding`/`margin` shorthand (the `box` facts carry
+ * the source’s computed declaration per class). Used to carry the source’s
+ * HEADING rhythm onto the rebuilt title/lede: Phlox’s modern heading is
+ * `primary { margin-bottom: 30px }` … `description { margin-top: 37px }`, and
+ * both were missing from the rebuild — the band’s pinned height then showed
+ * its shortfall as ~120px of dead space at the bottom.
+ */
+const boxEdge = (
+	fact: { base?: string } | undefined,
+	property: 'margin' | 'padding',
+	side: 'top' | 'right' | 'bottom' | 'left'
+): string | undefined => {
+	const declaration = ( fact?.base ?? '' )
+		.split( ';' )
+		.map( ( part ) => part.trim() )
+		.find( ( part ) => part.startsWith( `${ property }:` ) );
+	if ( ! declaration ) {
+		return undefined;
+	}
+	const values = declaration.slice( property.length + 1 ).trim().split( /\s+/ );
+	const expanded =
+		values.length === 1
+			? [ values[ 0 ], values[ 0 ], values[ 0 ], values[ 0 ] ]
+			: values.length === 2
+				? [ values[ 0 ], values[ 1 ], values[ 0 ], values[ 1 ] ]
+				: values.length === 3
+					? [ values[ 0 ], values[ 1 ], values[ 2 ], values[ 1 ] ]
+					: values;
+	return expanded[ [ 'top', 'right', 'bottom', 'left' ].indexOf( side ) ];
+};
+
+// The per-device half of every band margin AND padding — emitted once, scoped
+// by section id. A padding scoped to a device range needs the same CSS
+// treatment as a scoped pull: an inline value would outrank the media queries.
+// The container measure and side gutter join them for the same reason: both are
+// measured per device (`analyze --geometry`), and a desktop value applied at
+// 390px is what left a fluid band 30px wider than its source on a phone.
+const responsiveBandCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		// The scoped selector must be the SAME id the wrap renders
+		// (`section.id ?? theme.id`). Outline-band sources carry no section id of
+		// their own, so keying off `section.id` alone emitted no rule at all and
+		// every forged band silently fell back to the template's own padding.
+		const id = section.id ?? theme?.id;
+		return (
+			responsiveDeviceCss( id, 'margin-top', theme?.marginTop ) +
+			responsiveDeviceCss( id, 'margin-bottom', theme?.marginBottom ) +
+			responsiveDeviceCss( id, 'padding', theme?.padding ) +
+			responsiveDeviceCss( id, 'min-height', theme?.minHeight ) +
+			responsiveDeviceCss( id, '--ds-measure', theme?.measure ) +
+			responsiveDeviceCss( id, '--ds-pad-x', theme?.paddingX ) +
+			responsiveDeviceCss( id, '--ds-icon-row-pad-top', theme?.iconRowStyle?.padTop ) +
+			responsiveDeviceCss( id, '--ds-icon-row-pad-bottom', theme?.iconRowStyle?.padBottom ) +
+			responsiveDeviceCss( id, '--ds-icon-row-pad-x', theme?.iconRowStyle?.padX )
+		);
+	} )
+	.join( '' );
+
+/**
+ * The band's measured typography (analyze --geometry).
+ *
+ * A band the classifier could not give a structural kind renders its sanitized
+ * source HTML through the raw path, and that path carries NO heading scale — so
+ * the browser's default `h3 { font-size: 1.17em }` scaled the 13px body to
+ * 15.21px against the source's 40px. Every band's hierarchy collapsed while the
+ * box-geometry gate passed. These are the source's COMPUTED styles, emitted per
+ * band id, so a 40px eyebrow-to-title band reads like the source without the
+ * template inventing a scale.
+ *
+ * Scoped to the wrap (`[data-section-id]`) and emitted after global.css, so it
+ * outranks the template's own prose defaults.
+ */
+const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string }, options: { weight?: boolean } = {} ): string =>
+	[
+		fact.size && `font-size:${ fact.size }`,
+		options.weight !== false && fact.weight && `font-weight:${ fact.weight }`,
+		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
+		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
+		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
+		// The measured heading/paragraph RHYTHM. An unclassed heading has no class
+		// for a box fact to hang on, so without this the template's prose defaults
+		// (`h1: 0.67em 0`) replaced the builder's (`0.1em 0`) and every tile grew.
+		fact.marginTop && `margin-top:${ fact.marginTop }`,
+		fact.marginBottom && `margin-bottom:${ fact.marginBottom }`,
+		// Only a POSITIVE alignment is emitted: the source centers a band's copy
+		// from a wrapper class, which the sanitizer drops. `start`/`left` is the
+		// template default and needs no rule.
+		fact.align && fact.align !== 'start' && fact.align !== 'left' && `text-align:${ fact.align }`,
+		// A CENTRED box with a width rule must also be centred in its parent: a
+		// `max-width` alone leaves the box flush left, so the centred text sits
+		// left of the band's centre (virtuallyjamaica's contact heading measured
+		// 772px wide at the container's left edge against the source's full
+		// width). No effect on a full-width box.
+		fact.align === 'center' && 'margin-inline:auto',
+		// The measured ink. Emitted LAST so a band's own colour wins over the
+		// template accent it would otherwise inherit.
+		fact.color && `color:${ fact.color }`,
+	]
+		.filter( Boolean )
+		.join( ';' );
+
+/** A device override, emitted verbatim — `diffTypeFact` already trimmed it to the
+ * properties the source changes, so a reset back to `left` must survive. */
+const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string } ): string =>
+	[
+		fact.size && `font-size:${ fact.size }`,
+		fact.weight && `font-weight:${ fact.weight }`,
+		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
+		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
+		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
+		fact.align && `text-align:${ fact.align }`,
+		fact.marginTop && `margin-top:${ fact.marginTop }`,
+		fact.marginBottom && `margin-bottom:${ fact.marginBottom }`,
+		fact.color && `color:${ fact.color }`,
+	]
+		.filter( Boolean )
+		.join( ';' );
+
+const bandTypeCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const type = theme?.type;
+		if ( ! id || ! type ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		// The source scales its type per device (55px hero → 22px on a phone), so a
+		// desktop-only rule made every band taller than its source at 390px. The
+		// overrides ride the template's own breakpoints.
+		const withDevices = ( selector: string, fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; tablet?: Record< string, string >; mobile?: Record< string, string > }, options: { weight?: boolean } = {} ): string[] => {
+			const out: string[] = [];
+			const declarations = typeDeclarations( fact, options );
+			if ( declarations ) {
+				out.push( `${ scoped } ${ selector }{${ declarations }}` );
+			}
+			for ( const [ device, query ] of [ [ 'tablet', 'max-width: 1024px' ], [ 'mobile', 'max-width: 767px' ] ] as const ) {
+				const override = fact[ device ];
+				if ( ! override ) {
+					continue;
+				}
+				const overridden = overrideDeclarations( override );
+				if ( overridden ) {
+					out.push( `@media (${ query }){${ scoped } ${ selector }{${ overridden }}}` );
+				}
+			}
+			return out;
+		};
+		for ( const [ tag, fact ] of Object.entries( type.headings ?? {} ) ) {
+			rules.push( ...withDevices( tag, fact ) );
+		}
+		if ( type.body ) {
+			// Body copy keeps its size and rhythm; a weight on every paragraph would
+			// also hit emphasized inline copy.
+			rules.push( ...withDevices( 'p', type.body, { weight: false } ) );
+		}
+		return rules.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The subtrees the SOURCE renders hidden at rest (analyze --geometry).
+ *
+ * Builders hide their accordion panels, tab panes, mega-menus and mobile
+ * drawers with a class the sanitizer keeps but the rebuilt stylesheet never
+ * reaches — so every panel rendered open and a band became a wall of text
+ * (virtuallyjamaica's features band: 2352 characters against the source's 486).
+ * The analyzer records the source's resting visibility as ready-made selectors
+ * (already carrying the `:not(.in)` that separates a closed panel from the open
+ * one); this emits them, scoped to the band.
+ *
+ * A hidden panel has no CSS-only way back open — the source toggled it with
+ * JavaScript — so the closed state is the faithful resting state.
+ */
+const bandHiddenCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ! theme?.hidden || theme.hidden.length === 0 ) {
+			return '';
+		}
+		return theme.hidden.map( ( selector ) => `[data-section-id="${ id }"] ${ selector }{display:none}` ).join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The builder's presentation utilities, scoped to the band that uses them
+ * (`text-center`, `padding-four-all`, `font-weight-600`, …).
+ *
+ * The sanitizer keeps the source's class names and the vendor sheet never
+ * ships, so these are inert unless restated: virtuallyjamaica's HOW IT WORKS
+ * steps rendered lower-case and left-aligned, and its coloured panels put the
+ * copy flush against the edge. The table lives on the builder adapter
+ * (`lib/bands.ts`), trimmed to the classes the page measured — so a Divi site
+ * gets Divi's conventions and nothing else.
+ */
+const bandUtilityCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const utilities = theme?.utilities;
+		if ( ! id || ! utilities ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return Object.entries( utilities )
+			.map( ( [ name, utility ] ) => {
+				const rules: string[] = [];
+				if ( utility.base ) {
+					rules.push( `${ scoped } .${ name }{${ utility.base }}` );
+				}
+				// Brando scopes a variant in the class name (`md-text-center`,
+				// `xs-padding-40px-tb`) — re-state it on the template's own breakpoints.
+				if ( utility.tablet ) {
+					rules.push( `@media (max-width: 1024px){${ scoped } .${ name }{${ utility.tablet }}}` );
+				}
+				if ( utility.mobile ) {
+					rules.push( `@media (max-width: 767px){${ scoped } .${ name }{${ utility.mobile }}}` );
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The MEASURED box of the classes a band keeps (`analyze --geometry`), scoped to
+ * that band.
+ *
+ * A builder's spacing scale cannot be transcribed from class names — Brando's
+ * `margin-four-bottom` is 7.8px on an icon and 21.6px on a paragraph, and
+ * `padding-four-all` is 3.4rem on desktop but `40px 15.5938px` at 390px. The
+ * computed padding/margin of each class (recorded only when it agrees across
+ * every instance in the band) is the only faithful source, and the per-column
+ * hashes Brando emits appear once, so the column padding the rebuild otherwise
+ * loses arrives exactly.
+ *
+ * Emitted AFTER the utility pack on purpose: a measured value must outrank a
+ * hand-authored approximation of the same class.
+ */
+/**
+ * Per-ELEMENT surfaces + pinned stage heights (see `ForgeBandElement`).
+ *
+ * Raw builder bands keep the source's markup verbatim, so the structural path
+ * selects the SAME node here — which is the only way to restore what the
+ * vendor stylesheet painted per element (Flatsome's white tile cards, its red
+ * block) and the box a stage was pinned to. `min-height` rather than `height`
+ * keeps the measured stage while still letting copy grow.
+ *
+ * The path's `:nth-child()` segments give these rules a high specificity, so a
+ * deep path outranks the arrangement shim without `!important`.
+ */
+const bandElementCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ! theme?.elements || theme.elements.length === 0 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return theme.elements
+			.map( ( element ) => {
+				const heights =
+					typeof element.height === 'number' ? { desktop: element.height } : ( element.height ?? {} );
+				const base: string[] = [];
+				if ( element.bg ) {
+					base.push( element.bg );
+				}
+				if ( element.fg ) {
+					base.push( `color:${ element.fg }` );
+				}
+				if ( heights.desktop ) {
+					base.push( `min-height:${ heights.desktop }px` );
+					// A pinned stage must beat the generic in-column banner fallback:
+					// `aspect-ratio` resolves the used height from the WIDTH, and a larger
+					// resolved height outranks `min-height`, so the measured 86px banner
+					// inside a `row-full-width` still rendered at the 5:3 default (560px).
+					base.push( 'aspect-ratio:auto' );
+				}
+				const rules: string[] = [];
+				if ( base.length > 0 ) {
+					rules.push( `${ scoped } ${ element.path }{${ base.join( ';' ) }}` );
+				}
+				// The card's ink must reach its TEXT, not just the box: the band's
+				// measured heading rule sets `color` on `h1…h6` directly, which
+				// outranks inheritance and left white headings on a light card.
+				//
+				// `a` and `button` are deliberately NOT forced: this path selector is
+				// (0,3,3), so it outranks a band's measured state rule
+				// `[data-section-id] a:hover` at (0,2,1). Forcing white there made a
+				// link's base `border-color` resolve to `currentColor` — also white —
+				// so hover/active changed nothing and the state gate read them as
+				// lost. Interactive controls take their colour from the measured
+				// base/hover rules instead, inheriting the card ink they sit in.
+				if ( element.fg ) {
+					rules.push(
+						`${ scoped } ${ element.path } :is(h1, h2, h3, h4, h5, h6, p, li, span){color:${ element.fg }}`
+					);
+				}
+				if ( heights.tablet ) {
+					rules.push(
+						`@media (min-width: 768px) and (max-width: 1024px){${ scoped } ${ element.path }{min-height:${ heights.tablet }px}}`
+					);
+				}
+				if ( heights.mobile ) {
+					rules.push(
+						`@media (max-width: 767px){${ scoped } ${ element.path }{min-height:${ heights.mobile }px}}`
+					);
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
+const bandBoxCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ( ! theme?.box && ! theme?.media ) ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		// `media` is the cropped-image height map: an IMAGE-only scope, because a
+		// class can sit on a paragraph too (`padding-six-lr` does both) and the
+		// fixed image height must never reach the text. The `.post-body` variant
+		// exists to outrank the Flatsome shim's `.banner-bg > img { height:100% }`
+		// (3 classes + element): without it a builder banner's measured 420px crop
+		// lost to the shim and the band grew (accommodations, 2026-11-11).
+		const emit = ( facts: Record< string, { base?: string; tablet?: string; mobile?: string } > | undefined, selectorPrefix: string ): string =>
+			Object.entries( facts ?? {} )
+				.map( ( [ name, fact ] ) => {
+					const selectors =
+						selectorPrefix === 'img'
+							? `${ scoped } img.${ name }, ${ scoped } .post-body img.${ name }`
+							: // The `.post-body .section-content .col` form exists to outrank the
+							  // Flatsome shim's arrangement rules (4 classes): a measured box is
+							  // the source's computed truth, so it must win over a fallback the
+							  // shim guessed. Without it `aspect-ratio:auto` never reached the
+							  // banner and the slider kept the 5:3 default.
+							  `${ scoped } ${ selectorPrefix }.${ name }, ${ scoped } .post-body .section-content .col ${ selectorPrefix }.${ name }`;
+					// A TOP-ONLY `padding` is the builder's height placeholder (`padding:350px
+					// 0 0 0`); the shim's in-column aspect fallback would still resolve a
+					// height from the width and outrank it (doomsday's 350px testimonial
+					// slider rendered 630px at the 5:3 default). A measured placeholder
+					// therefore switches the fallback off for that class.
+					const measuredStage = /(^|;)padding:(?!0px )\S+ 0px 0px 0px/.test( fact.base ?? '' );
+					const withStage = ( value: string | undefined ): string | undefined =>
+						value && measuredStage ? `${ value };aspect-ratio:auto` : value;
+					const rules: string[] = [];
+					if ( fact.base ) {
+						rules.push( `${ selectors }{${ withStage( fact.base ) }}` );
+					}
+					if ( fact.tablet ) {
+						rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selectors }{${ withStage( fact.tablet ) }}}` );
+					}
+					if ( fact.mobile ) {
+						rules.push( `@media (max-width: 767px){${ selectors }{${ withStage( fact.mobile ) }}}` );
+					}
+					return rules.join( '' );
+				} )
+				.join( '' );
+		return `${ emit( theme.box, '' ) }${ emit( theme.media, 'img' ) }`;
+	} )
+	.join( '' );
+
+/**
+ * The band's measured COLUMN geometry (`bandFacts.columns` → `columnBox`),
+ * scoped to the band and keyed by the column's own class.
+ *
+ * Two facts the sanitized markup cannot carry: the rendered `min-height` floor
+ * (the sanitizer drops inline layout) and a fixed background photo's
+ * `background-attachment`/`size` (declared by the vendor sheet, which never
+ * ships). virtuallyjamaica's HOW IT WORKS band is a 700px fixed-photo column
+ * beside 948px of copy — without this the image column collapsed to its empty
+ * wrapper and the photo scrolled.
+ */
+const bandColumnCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const columnBox = theme?.columnBox;
+		if ( ! id || ! columnBox ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return Object.entries( columnBox )
+			.map( ( [ name, fact ] ) => {
+				// The `.post-body` form outranks the builder shim's photo-panel
+				// `min-height` clamp (equal specificity today, order-dependent); the
+				// plain form keeps a non-passthrough band working.
+				const selector = `${ scoped } .post-body .${ name }, ${ scoped } .${ name }`;
+				const rules: string[] = [];
+				if ( fact.base ) {
+					rules.push( `${ selector }{${ fact.base }}` );
+				}
+				if ( fact.tablet ) {
+					rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selector }{${ fact.tablet }}}` );
+				}
+				if ( fact.mobile ) {
+					rules.push( `@media (max-width: 767px){${ selector }{${ fact.mobile }}}` );
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The band's measured CAROUSELS (`bandFacts[id].carousel`).
+ *
+ * A vendor slider keeps its geometry in JS options — `items: 5`,
+ * `responsive: { 834: { items: 2 } }` — so the markup cannot say how many
+ * slides are on screen. The shim's guess (`flex: 1 1 0`, one lane of marks) is
+ * right for a logo strip and wrong for a gallery: virtuallyjamaica's seven
+ * slides rendered as seven 129px columns at 1440 where the source shows five at
+ * 222px. These declarations hand the shim the numbers it needs.
+ *
+ * The slide width lives in `--ds-carousel-item-flex`, the property the shim's
+ * item rule reads, so the fallback still works for an unmeasured carousel.
+ */
+const bandCarouselCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const carouselBox = theme?.carouselBox;
+		if ( ! id || ! carouselBox ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return Object.entries( carouselBox )
+			.map( ( [ name, fact ] ) => {
+				const selector = `${ scoped } .post-body .${ name }, ${ scoped } .${ name }`;
+				const rules: string[] = [];
+				if ( fact.base ) {
+					rules.push( `${ selector }{${ fact.base }}` );
+				}
+				if ( fact.tablet ) {
+					rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selector }{${ fact.tablet }}}` );
+				}
+				if ( fact.mobile ) {
+					rules.push( `@media (max-width: 767px){${ selector }{${ fact.mobile }}}` );
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The controls' measured interaction STATES (`analyze` interaction pass), scoped
+ * to the band that owns them.
+ *
+ * A rebuilt band is the source's own markup with the vendor sheet gone, so a
+ * link that underlined on hover, a button that darkened on press and a field
+ * that lit up on focus all went flat. The analyzer forces each pseudo-class in a
+ * real browser (CDP `forcePseudoState`) and records only the declarations that
+ * CHANGED, keyed by a control signature; this re-states them.
+ *
+ * Three deliberately opinionated choices:
+ *   - `:hover` and `:active` live inside `@media (hover: hover)`. Industry
+ *     practice: a touch device emulates hover on tap and then keeps it, so an
+ *     unguarded hover rule leaves a card stuck in its raised state.
+ *   - the source's easing is emitted under
+ *     `@media (prefers-reduced-motion: no-preference)` — the state still
+ *     changes, it just does not animate for a reader who asked it not to.
+ *   - `:focus-visible` (not `:focus`) carries the keyboard ring; `:focus` is
+ *     kept only for what the source really styles on any focus (fields).
+ */
+const bandInteractionCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		const facts = theme?.interactions;
+		if ( ! id || ! facts || facts.length === 0 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		const rules: string[] = [];
+		for ( const fact of facts ) {
+			const selector = `${ scoped } ${ fact.selector }`;
+			if ( fact.base ) {
+				rules.push( `${ selector }{${ fact.base }}` );
+			}
+			if ( fact.transition ) {
+				rules.push( `@media (prefers-reduced-motion: no-preference){${ selector }{transition:${ fact.transition }}}` );
+			}
+			if ( fact.hover ) {
+				rules.push( `@media (hover: hover){${ selector }:hover{${ fact.hover }}}` );
+			}
+			if ( fact.focus ) {
+				rules.push( `${ selector }:focus{${ fact.focus }}` );
+			}
+			if ( fact.focusVisible ) {
+				rules.push( `${ selector }:focus-visible{${ fact.focusVisible }}` );
+			}
+			if ( fact.active ) {
+				rules.push( `@media (hover: hover){${ selector }:active{${ fact.active }}}` );
+			}
+			// A child that only repaints while the CONTROL is in a state (the overlay
+			// button): the selector is `<control>:hover > <child>`. The rest layout —
+			// position/size as a share of the control, so it survives a reflow — and the
+			// `::after` fill come first, or the state would animate nothing.
+			for ( const child of fact.children ?? [] ) {
+				if ( child.base ) {
+					rules.push( `${ selector } > ${ child.selector }{${ child.base }}` );
+				}
+				if ( child.pseudo ) {
+					rules.push( `${ selector } > ${ child.selector }::after{${ child.pseudo }}` );
+				}
+				if ( child.transition ) {
+					rules.push( `@media (prefers-reduced-motion: no-preference){${ selector } > ${ child.selector }{transition:${ child.transition }}}` );
+				}
+				if ( child.hover ) {
+					rules.push( `@media (hover: hover){${ selector }:hover > ${ child.selector }{${ child.hover }}}` );
+				}
+				if ( child.focus ) {
+					rules.push( `${ selector }:focus > ${ child.selector }{${ child.focus }}` );
+				}
+				if ( child.focusVisible ) {
+					rules.push( `${ selector }:focus-visible > ${ child.selector }{${ child.focusVisible }}` );
+				}
+				if ( child.active ) {
+					rules.push( `@media (hover: hover){${ selector }:active > ${ child.selector }{${ child.active }}}` );
+				}
+			}
+		}
+		return rules.join( '' );
+	} )
+	.join( '' );
+
+/**
+ * The band's PIECE-LEVEL parallax (Proposal 121 + the element pass).
+ *
+ * A band is parallax only when the source has real moving pieces. Each piece
+ * carries its own depth/origin/off (Phlox) or direction/speed/range/devices
+ * (Elementor), so one scoped rule sets the keyframe endpoints and the
+ * breakpoint gate per media carrier. The band-level `.ds-parallax` animation in
+ * global.css consumes them; a band without pieces emits nothing (a bare
+ * `aux-parallax-section` container is not motion).
+ */
+const bandParallaxCss = sections
+	.map( ( section ) => parallaxBandCss( { id: section.id, kind: section.kind }, parallaxFor( behaviorsFor( section ) ) ) )
+	.join( '' );
+---
+
+{sections.length > 0 && (
+	<div class="design-sections">
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		)}
+		{sections.map((section, index) => {
+			const theme = themeFor(section, index);
+			const behaviorList = behaviorsFor(section);
+			const behavior = parallaxFor(behaviorList);
+			// The source may already own this id INSIDE the band (`id="wifi"` on a
+			// half-column). Emitting it on the wrapper too duplicates it and makes
+			// `#wifi` resolve to the wrong element — see `lib/anchor.ts`. Only the
+			// kinds that actually RENDER their html can own it: a component band
+			// keeps `section.html` but never emits it, so suppressing there would
+			// drop the anchor entirely.
+			const renderedHtml = section.kind === 'text' || section.kind === 'raw' ? section.html : undefined;
+			const anchor = wrapperAnchor( theme?.anchor ?? section.anchor, renderedHtml );
+			return (
+				<div data-section={section.kind} data-section-id={section.id ?? theme?.id} id={anchor} class:list={['ds-section-wrap', theme && `ds-section-wrap--${theme.theme}`, theme?.fullViewport && 'ds-section-wrap--full', theme?.centered && 'ds-section-wrap--centered', ...behaviorClasses(behaviorList)]} style={[wrapStyle(theme, sectionHasContent(section) || Boolean(theme?.catalog)), parallaxStyle(behavior)].filter(Boolean).join(';')}>
+					{theme?.catalog ? (
+						<Catalog theme={theme} />
+					) : (
+						<>
+							{section.kind === 'hero' && <Hero section={section} theme={theme} />}
+							{section.kind === 'accordion' && <Accordion section={section} theme={theme} />}
+							{section.kind === 'feature-grid' && <FeatureGrid section={section} columns={columnsFor(index, theme)} theme={theme} />}
+							{section.kind === 'icon-list' && <IconList section={section} columns={columnsFor(index, theme)} theme={theme} />}
+							{section.kind === 'testimonial' && <Testimonial section={section} theme={theme} />}
+							{section.kind === 'logo-cloud' && <LogoCloud section={section} theme={theme} />}
+							{section.kind === 'cta' && <Cta section={section} theme={theme} />}
+							{section.kind === 'gallery' && <Gallery section={section} theme={theme} />}
+							{section.kind === 'form' && <Form section={section} theme={theme} />}
+							{section.kind === 'pricing' && <Pricing section={section} theme={theme} />}
+							{section.kind === 'stats' && <Stats section={section} theme={theme} />}
+							{section.kind === 'steps' && <Steps section={section} theme={theme} />}
+							{section.kind === 'team' && <Team section={section} theme={theme} />}
+							{section.kind === 'marquee' && <Marquee section={section} uid={section.id ?? index} />}
+							{section.kind === 'comparison' && <Comparison section={section} theme={theme} />}
+							{section.kind === 'text' && (section.html ? <div class="post-body ds-section" set:html={section.html} /> : <TextBlock section={section} theme={theme} />)}
+							{section.kind === 'raw' && <div class="post-body ds-section" set:html={section.html ?? ''} />}
+						</>
+					)}
+				</div>
+			);
+		})}
+	</div>
+)}

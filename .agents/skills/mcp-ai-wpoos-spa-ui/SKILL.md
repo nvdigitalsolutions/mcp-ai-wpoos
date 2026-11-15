@@ -5,9 +5,9 @@ description: "UI stack, build, and test conventions for NV oOS React SPA addons 
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
-  plugin-version: "1.2.13"
-  plugin-version-tested: "1.2.13"
-  last-updated: "2026-10-27"
+  plugin-version: "1.2.20"
+  plugin-version-tested: "1.2.20"
+  last-updated: "2026-11-13"
 ---
 
 # NV oOS SPA UI Stack & Testing Guide
@@ -176,12 +176,14 @@ app. Read this map when landing in either folder:
 | spa-v2 source | Console mirror / consumer | Sync rule |
 |---|---|---|
 | `addons/pro/assets/spa-v2/src/**` | aliased as `@nvoos/pro-spa-v2` in the console `vite.config.ts` **and** `vitest.config.ts` (the vitest config must repeat every alias + `server.fs.allow: [appRoot, repoRoot]`) | edit spa-v2 once; never copy |
-| `src/api/config.ts` (`ProSpaRuntime` / `ProSpaEndpoints` / `readProSpaConfig`) | `examples/nvoos-complete-velocity/src/runtime-config.ts` `buildConsoleRuntime()` builds the same `window.NVOOS_PRO_SPA` shape; the PHP emitter `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php` is the canonical shape both apps mirror | new endpoint key = 4 wiring points; island PRs must update the console's endpoint VALUES too |
+| spa-v2 **bare imports** (`@xyflow/react`, `jquery`, `cytoscape`, `@ai-sdk/*`, …) | each host app declares them itself: `package.json` + lockfile, `tsconfig` `paths` (needs a `pkg/*` wildcard), and a `vite` alias | a new bare import in spa-v2 is a **three-place change per app, in both apps** — see “The bare-import perimeter” below |
+| `src/api/config.ts` (`ProSpaRuntime` / `ProSpaEndpoints` / `readProSpaConfig`) | `examples/nvoos-complete-velocity/src/runtime-config.ts` `buildConsoleRuntime()` builds the same `window.NVOOS_PRO_SPA` shape; the PHP emitter `addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php` is the canonical shape both apps mirror | new endpoint key = **5** wiring points: the type, the PHP emitter, the Complete console, the normaliser fallback, and **`examples/nvoos-pro-spa-vite/src/runtime-config.ts`** — the standalone mirror's source. Miss that last one and `alpha-working` is green while the mirror's `tsc --noEmit` fails on `TS2739 missing properties from type ProSpaEndpoints` (#7649 → #7653). Island PRs must update the console's endpoint VALUES too |
 | `src/stores/uiStore.ts` | shared by both trees — the console shell renders `data-theme` from `useUIStore().theme`, so spa-v2 pages can follow the console theme | one store instance per app tree (alias forces the same module) |
 | `src/styles/main.css` / `drawers.css` / `embedded.css` | imported by the console `main.tsx`; console-only rules live in `src/shell.css` | never move spa-v2 tokens into shell.css or vice versa |
 | island bundles (`addons/media-studio/assets/dist/*`, `addons/document-editor/assets/dist/*`) | both apps import them via `?url` in their `runtime-config.ts`; the console `vitest.config.ts` needs `fs.allow` for them | `?url` imports are per-app — update BOTH runtime-configs |
 | `src/features/remote-sites/RemoteSitesPage.tsx` (Connections page) + `src/api/remote-sites.ts` | mounted ONLY by the console: `ConsoleShell.tsx` lazy route `/connections` + `nav-features.tsx` item under Command Centers → Channels. Its REST base `mcp-ai-pro/v1/remote-sites` (manage_options-gated controller in `addons/pro/includes/rest/`) is NOT in spa-v2's own router — a page wired this way needs no spa-v2 bundle rebuild (see the churn rule below) | new console-only page = console dist rebuild only |
 | `src/features/commerce/CommerceToolkitPage.tsx` + `src/api/commerce.ts` + `SettingsForm.tsx` extraction | mounted by BOTH apps: spa-v2's router (`/ecommerce` `/ezuite` `/shopify-sync` `/flowhub` `/products` `/content`) AND the console nav (Command Centers group). Backed by `mcp-ai-pro/v1/commerce/sync-runs` (read-only) + the SitePicker proxying through the shared `remoteSites` endpoint (wordpress-type Remote Sites) | commerce pages touch both routers → rebuild BOTH bundles |
+| `src/features/toolkits/` (`ToolkitsPage`, `ToolkitPage`, `screens/{Settings,Entities,Dashboard,Research,Consolidate}Screen`, `components/ImportDialog`, `api/toolkits.ts`) | mounted by both apps; renders whatever JSON manifest the backend serves (`mcp-ai-pro/v1/toolkit-manifests`, identical envelope on WordPress + Laravel). Phase 4.2 of 090-B. | a **new toolkit family is a manifest** (`addons/pro/includes/toolkits/manifests/*.json`) — no JS rebuild; a new *screen type* is a spa-v2 change → rebuild BOTH bundles |
 | `src/features/paper-store/PaperStorePage.tsx` + `src/api/paper-store.ts` | mounted by both apps (`#/paper-store` route in spa-v2's router + guarded console nav; `endpoints.paperStore` = `mcp-ai/v1/paper-store`) | four-point endpoint wiring (see the paperStore rule below) |
 | `src/features/assistants/ToolPicker.tsx` (Proposal 088) | the spa-v2 assistant editor (AssistantsPage — the surface the console mounts); its registry fetch calls `ToolsClient.list(…, scope: 'all')` — the server's new `scope=all` route arg (default assistant resolution unchanged for unscoped requests) | picker is spa-v2-only → spa-v2 dist rebuild suffices; the `scope`/`flags` contract is server-side additive |
 | vendored island (`src/features/docs-hub/upstream/`) | consumed by both apps through spa-v2's DocsPage | byte-identical upstream discipline |
@@ -446,6 +448,45 @@ the lost types). Rules:
 - Verify with the exact gate before pushing:
   `rm -rf node_modules && npm ci && npm run build`.
 
+#### The bare-import perimeter — the lockfile is only half the fix (#7762)
+
+The same `TS2307` also fires when the dependency is declared **nowhere**.
+`npm ci` then installs a perfectly correct tree that simply lacks the
+module, so the lockfile rule above cannot catch it. Every app that aliases
+spa-v2 must independently carry spa-v2's *bare imports* in **three**
+places:
+
+| Place | What |
+|---|---|
+| `package.json` + lockfile | the dependency itself (`npm install`) |
+| `tsconfig.json` → `paths` | the exact key **plus a `pkg/*` wildcard** — the wildcard is what makes a `pkg/dist/style.css` import typecheck |
+| `vite.config.ts` → `resolve.alias` | the console's `nodeModulesAlias('<pkg>')` helper; the alias is a prefix match, so it covers the css subpath too |
+
+The perimeter today: `react`, `react-dom`, `react-router-dom`, `zustand`,
+`@ai-sdk/react`, `@ai-sdk/ui-utils`, `marked`, `dompurify`, `jquery`,
+`cytoscape`, `cytoscape-fcose`, `@xyflow/react` (+ `@xyflow/system`).
+**Both** apps need a new entry — `examples/nvoos-complete-velocity` **and**
+`examples/nvoos-pro-spa-vite`. #7251 gave the xyflow triple to the standalone
+app only; the console kept compiling locally for weeks because vite/tsc
+resolve the bare import from `addons/pro/assets/spa-v2/node_modules`, which
+exists in a developer checkout and in **no** CI checkout.
+
+Diagnostics that separate a real fix from a config that merely stopped
+compiling the files:
+
+- Prove the file is in the program:
+  `npx tsc --noEmit --listFiles | grep 'spa-v2/src/features/workflows/'`
+  (six files; `grep -c 'node_modules/@xyflow/'` should be ~104).
+- Reproduce the CI tree: copy the app + `spa-v2` + **both island `dist/`
+  directories** into a scratch tree (gitignored `tmp/` works), `rm -rf` both
+  `node_modules`, then `npm ci && npm run build`. Omitting the island dists
+  yields four false `UNRESOLVED_IMPORT` errors in `runtime-config.ts`.
+- Verify under `npm ci`, never `npm install` — only the former is what CI runs.
+- A build-config-only change needs **no** `dist/` rebuild when the resolved
+  module version is unchanged: check the committed bundle already contains it
+  (`grep -l 'react-flow__' dist/assets/*.css`) before restoring with
+  `git restore --source=HEAD --worktree <dist>` + `git clean -fdq <dist>`.
+
 ## Porting a plugin JS widget into spa-v2 (vendored-upstream pattern)
 
 Canonical case study: the NV oOS Content Graph explorer ported to the
@@ -535,6 +576,10 @@ AND the standalone Vite app, without forking the widget.
   `Cannot find module '@rolldown/binding-win32-x64-msvc'` (npm bug #4828
   skips optional deps). `npm install` in the addon repairs it — check the
   lockfile stayed untouched before committing.
+- **Windows forks-pool startup hang (2026-11-03, astro bridge):** the default
+  forks pool can time out starting workers for EVERY test file (pre-existing
+  ones included — `[vitest-pool]: Failed to start forks worker`).
+  `npx vitest run --pool=threads` runs the same suites green.
 - jsdom cannot run Cytoscape's canvas — mock the vendored factory + deps;
   test the config hand-off (`window.nvoosContentGraphAdmin` shape) and the
   destroy-on-unmount contract, not the vendored internals.
@@ -909,6 +954,16 @@ it). Full run: ~15 min, mostly `npm ci`
 for saas-controller (2k+ deps). npm on dev machines blocks dependency install
 scripts (esbuild postinstall etc.) — harmless, platform binaries ship via
 optional deps.
+
+**Prove the build carries the new code (learned 2026-11-13, assistant parity
+PR).** Churn-probing only shows the bundle *changed*; it does not show it
+contains your change. Pick a stable literal from the new UI (translatable
+strings survive minification — section legends are ideal) and grep **both**
+artifacts:
+`grep -c "<literal>" addons/pro/assets/spa-v2/assets/dist/pro-spa.js` and
+`grep -lc "<literal>" examples/nvoos-complete-velocity/dist/assets/<Page>-*.js`.
+Zero in either tree means that app was not rebuilt (or is serving a stale
+chunk list).
 
 **Two-bundle rule for spa-v2 (learned 2026-10-20, PR #7158/#7159):** the
 auto `build: update compiled assets [skip ci]` commit covers neither of

@@ -93,7 +93,7 @@ test( 'tools/list filters denied tools out of the catalog', async ( t ) => {
 	const res = await post( baseUrl, { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }, KEY_A );
 	const body = await res.json();
 	const names = body.result.tools.map( ( tool ) => tool.name );
-	assert.deepStrictEqual( names, [ 'site-a.publish_post', 'site-a.get_post' ] );
+	assert.deepStrictEqual( names, [ 'site-a_publish_post', 'site-a_get_post' ] );
 
 	await close();
 	await site.close();

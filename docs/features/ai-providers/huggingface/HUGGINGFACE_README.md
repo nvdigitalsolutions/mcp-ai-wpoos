@@ -208,7 +208,7 @@ This directory contains comprehensive planning documentation for integrating Hug
 - [ ] Acceptance criteria defined
 
 ### Development Setup
-- [ ] PHP 7.4+ environment
+- [ ] PHP 8.1+ environment
 - [ ] WordPress 6.0+ test site
 - [ ] Composer installed
 - [ ] PHPUnit configured

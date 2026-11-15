@@ -14,7 +14,9 @@
  * issued by the authorization server are accepted alongside static keys:
  * the middleware validates signature/issuer/audience/expiry, derives site
  * bindings from `site:<slug>` scopes, and emits RFC 9728 WWW-Authenticate
- * challenges so MCP clients can run the OAuth flow.
+ * challenges so MCP clients can run the OAuth flow. Tokens without
+ * `site:<slug>` scopes fall back to GATEWAY_OAUTH_DEFAULT_SITES when set
+ * (ChatGPT's connector requests only AS-level OIDC scopes).
  *
  * Upstream op_ tokens are NOT accepted here and NEVER appear in responses.
  */
@@ -175,7 +177,13 @@ async function handleOAuthToken( req, res, next, token ) {
 		return res.status( 401 ).json( { error: 'unauthorized', message: `Invalid OAuth access token (${ result.error }).` } );
 	}
 
-	const sites = sitesFromScopes( result.scopes, cfg );
+	let sites = sitesFromScopes( result.scopes, cfg );
+	if ( 0 === sites.length && cfg.oauth.defaultSites && cfg.oauth.defaultSites.length > 0 ) {
+		sites = cfg.oauth.defaultSites;
+		console.warn(
+			`[Auth] OAuth token carries no site:<slug> scopes — granting GATEWAY_OAUTH_DEFAULT_SITES (${ sites.join( ', ' ) }).`
+		);
+	}
 	if ( 0 === sites.length ) {
 		res.setHeader(
 			'WWW-Authenticate',

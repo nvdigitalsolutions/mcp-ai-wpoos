@@ -7,6 +7,10 @@
  *
  * @package WP_MCP_AI
  * @since   1.7.0
+ *
+ * @license GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

@@ -1,13 +1,13 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-wporg-submission
-description: "Operational guide for WordPress.org submission readiness of NV oOS standalone plugins (nvoos-docs-hub live at 0.5.3; nvoos-content-graph live at 1.0.10 with the 1.0.12 upload prep merged — PR #7198; nvoos-design-system next in the pipeline — issue #6811). Covers the 18 wp.org guidelines, the Plugin Check (PCP) gate in CI and Docker, PCP finding triage, the reviewer-reply loop (findings taxonomy from the real 0.4.3 review, related-issue sweep checklist, reply-email template), packaging exclusion tri-sync, readme.txt standards, .wordpress-org listing assets, and the NV oOS Complete checkout-flow disclosure discipline (docs-hub 0.5.3, content-graph). Use when preparing a wp.org submission, responding to a reviewer email, fixing the plugin-check CI job, triaging PCP findings, or capturing listing screenshots."
+description: "WordPress.org submission readiness for NV oOS standalone plugins (docs-hub, content-graph, design-system, forge-bridge): the 18 guidelines, the Plugin Check (PCP) CI/Docker gate, finding triage, reviewer replies (public-endpoint authz, forwarding-header trust, wp_send_json/die), readme.txt + listing assets, packaging tri-sync and git archive parity, and Complete checkout disclosures. Use when preparing a submission, fixing plugin-check, or triaging PCP findings."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
   plugin-version: "1.2.11"
   plugin-version-tested: "1.2.11"
-  last-updated: "2026-10-24"
+  last-updated: "2026-11-10"
 ---
 
 # NV oOS WordPress.org Submission — Readiness Playbook
@@ -268,6 +268,7 @@ submission track, NOT something to allowlist. The docs-hub ZIP is clean
 | `WordPress.WP.I18n.TextDomainMismatch` | Real blocker (base) | Text domain must equal the wp.org slug/dir name; the repo domain is `mcp-ai-wpoos`. Needs the slug migration track — do not allowlist |
 | `no_plugin_readme` | Real or mount artifact | readme.txt must sit at the ZIP root. If it does and PCP still fires, suspect the bind-mount truncation (pitfall 5) |
 | CodeAnalysis — core function newer than the declared `Requires at least` | Real | PCP flags any WP function whose `@since` is newer than the plugin's minimum (e.g. `wp_generate_uuid4()` is WP 6.7+ under `Requires at least: 6.0`). Fix: a `function_exists()`-guarded polyfill (keeps the floor) or bump `Requires at least`. Add the same check for any WP API used by new standalone plugins |
+| **Typed return crossing a `WP_Error`-returning API — INVISIBLE to PCP, phpcs, and `php -l`** | Real runtime fatal (forge-bridge review, 2026-11-05) | `public static function send( string $type ): array { return wp_remote_post( … ); }` passes every static gate (syntax is valid, style is clean, PCP does no type inference) but fatals with a `TypeError` when the request fails. Only two things catch this class: a **failure-path test** (`pre_http_request` returning `WP_Error` — the forge-bridge suite's interceptor only returned success, so 30/30 tests passed with the bug shipped) or a **static analyzer** (Psalm/PHPStan with WP stubs — not currently in any gate). Pre-submission rule: every `wp_remote_*` call site gets a failure-path test, and the raw result never crosses a typed `: array` declaration (PHP 7.4 has no union types — drop the type, keep the `@return array|\WP_Error` docblock). Sweep item 8 in the related-issue checklist |
 
 ### Second plugin in the pipeline (nvoos-design-system, issue #6811)
 
@@ -359,6 +360,121 @@ carries its own review-artifact convention next to the docs-hub one:
   fires on an empty catch even WITH a comment inside (comments count as
   empty tokens). The `phpcs:ignore` must sit on the line ABOVE the
   `} catch (...)` line — the error reports at the `T_CATCH` token.
+
+### forge-bridge — first pre-submission pass (PR #7388, 2026-11-02)
+
+The fourth standalone plugin (`plugins/nvoos-forge-bridge` — Q4 naming:
+`nvoos-astro-bridge` was taken by the velocity storefront addon).
+**Standalone framing:** the signed `repository_dispatch` contract works with
+any CI (GitHub Actions, Netlify, Vercel, custom); the Astro Forge generator
+is the reference consumer, not a requirement. Pass results:
+
+- **PCP: 0 errors / 0 warnings** (no allowlist needed); phpcs 0; `php -l`
+  clean; PHPUnit 30/30 (75 assertions) on WP latest.
+- **Reviewer-proofing applied pre-submission (don't let these regress):**
+  `/preview-tokens/verify` is POST-only (no state-changing GET — pinned by
+  a GET-404 test); the `save_post` handler skips autosaves, revisions, and
+  auto-drafts; `delete_post` + `trashed_post` hooks added (the readme
+  already promised deletions); token minting requires `edit_pages` (matches
+  the documented editors+); tags avoid framework names (`headless, rebuild,
+  webhook, automation, static-site`).
+- **Packaging:** `.distignore` ↔ CI staging tri-sync (incl.
+  `WPORG-REVIEW-*.md`); ZIP built by `bin/build-nvoos-forge-bridge.py`
+  (Python zipfile — forward slashes, top-level folder, shape assertions;
+  the built ZIP is never committed); artwork generated via Gemini +
+  `bin/process-nvoos-forge-bridge-artwork.js`; signoff convention
+  `WPORG-REVIEW-18POINT-SIGNOFF.md` (ZIP-excluded).
+- **Local recipes:** the PCP run reuses the docs-hub isolated variant
+  (small tree, tar-staged on the host); PHPUnit runs in a one-off cli
+  container with the wp-tests-config written into a `/tmp` copy of the
+  plugin (never the bind mount).
+
+### forge-bridge — submission state (2026-11-03)
+
+Readiness PRs merged (#7388 + #7390 standalone framing). The submission ZIP
+is hosted on a GitHub release (no standalone mirror repo yet): tag
+`nvoos-forge-bridge-v0.1.0` → add-form Plugin URL
+`https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download/nvoos-forge-bridge-v0.1.0/nvoos-forge-bridge-v0.1.0.zip`
+(sha256 `491704670abfc781511c9612100ace9b75f0b80a19cf4cd1b3963385f20b21b9`).
+CI evidence: the `plugin-check` job passed on both PRs with
+`Plugin Check ERRORS=0, WARNINGS=0` (runs 41456964217, 41458449391).
+
+Drafted add-form fields:
+
+- **Plugin name:** `NV oOS Forge Bridge` — request slug `nvoos-forge-bridge`
+  (the form derives `nv-oos-forge-bridge` from the name; the slug must match
+  the ZIP folder / text domain — a mismatch is a TextDomainMismatch review
+  category).
+- **Plugin description:** "Signed, debounced rebuild webhook when WordPress
+  content changes: works with GitHub Actions, Netlify, Vercel, or any CI.
+  Mints preview tokens." (under the 150-char limit).
+- **Additional Information:** slug request first; standalone framing (any
+  `repository_dispatch` consumer works, the forge is the reference consumer
+  only); the single server-to-server POST to the GitHub API is sent only
+  after enable + URL + token + secret are saved and nothing is sent to
+  browsers (matches `== External Services ==`); no premium/upsells; validation
+  numbers (PCP 0/0, phpcs 0, PHPUnit 30/30) + source link
+  `github.com/nvdigitalsolutions/mcp-ai-wpoos/tree/alpha-working/plugins/nvoos-forge-bridge`.
+
+**First review came back (2026-11-05, review P0TDX399590HGN):** one finding
+— `Rebuild_Webhook::send()` declared `: array` but `wp_remote_post()`
+returns `array|WP_Error`, so a failed delivery raised an uncaught `TypeError`
+at shutdown. The gate stack shipped it green (PCP 0/0, phpcs 0, 30/30 tests)
+because none of the gates does type inference and the test suite's
+`pre_http_request` interceptor only ever returned success — the failure
+branch was untested (see the triage row + sweep item 8 above). **Fixed in
+0.2.0 (2026-11-06):** return type removed (PHP 7.4 = no union types),
+regression test `test_failed_request_returns_wp_error_without_typeerror`,
+POT regenerated (was stale at 0.1.0 — the 0.2.0 forms-bridge strings were
+missing), changelog bullet, signoff section + `WPORG-REVIEW-FINDINGS.md` /
+`WPORG-REVIEW-REPLY.md` in the plugin dir (ZIP-excluded). Validation: PHPUnit
+48/48 (133 assertions), PCP 0/0, phpcs 0, clean-install activation test with
+`WP_DEBUG` on (activation clean, homepage 200, empty debug.log). Upload ZIP
+`build/nvoos-forge-bridge-v0.2.0.zip` (14 files).
+
+**Second review came back (2026-11-10, review
+`R nvoos-forge-bridge/vsamtani/5Nov26/T2 10Nov26/4.4RC1`):** three findings,
+all in the forms bridge, all shipped green by the same gates:
+
+1. **`__return_true` on `/forms/submit` + non-public forms.** The route is
+   correctly public (anonymous submissions), but it resolved a form by ID/title
+   and dispatched without checking that form's visibility — an attacker past
+   the origin gate could submit to a draft/private/password-protected form and
+   trigger its mail/actions. Fix: resolve only `post_status = publish` + empty
+   `post_password` (JFB by ID and by title; the Elementor `_elementor_data`
+   lookup joins `wp_posts` with both conditions) and return the same 404 as a
+   missing form.
+2. **Rate-limit key trusted `X-Forwarded-For`.** Fix: `REMOTE_ADDR` is
+   authoritative; the header is honored only when the direct peer is in the
+   `nvoos_forge_bridge_trusted_proxies` filter (exact IP/CIDR, empty default),
+   then the chain is walked right-to-left and the first untrusted hop wins.
+3. **`wp_send_json()` terminated the REST request.** In a REST request it
+   echoes and calls `die` (it only routes through `wp_die()` when
+   `wp_doing_ajax()`), so the old `wp_die_json_handler` filter never fired.
+   Fix: filter `wp_doing_ajax` true for the dispatch, swap
+   `wp_die_ajax_handler` + `wp_die_json_handler` for a sentinel-throwing
+   callback, buffer the echoed JSON with `ob_start()`, and restore in `finally`
+   (also suppress the now-bogus `_doing_it_wrong` notice for `wp_send_json`).
+
+Why the gates missed them: PCP/PHPCS are pattern matchers (none of the three is
+one), the `--severity=5` PCP run is a narrow claim, the test suite's
+`nvoos_forge_bridge_forms_*_dispatch` seams return arrays and therefore bypass
+`capture_json()`, and the clean-install validation has neither JFB nor
+Elementor installed, so the native dispatch path never ran. **Fixed in 0.3.1:**
+tests for both visibility gates, spoofed XFF (trusted and untrusted), and native
+`wp_send_json_success()` capture (isolated process). Validation: 71/71 tests,
+204 assertions; phpcs 0.
+
+**Same-class audit the review did not list (fixed in 0.3.1):** a submitted
+field could spoof JFB's routing carriers (`_jet_engine_booking_form_id` /
+`_jet_engine_refer`) and re-target the dispatch to another form → strip the
+handler's carriers from the fields and re-assert them last; `maybe_unserialize`
+on the redirect-provider columns → `unserialize(..., ['allowed_classes' =>
+false])`; control characters in redirect sources/targets → reject; uninstall
+now wildcard-deletes the hashed rate-limit transients. CI gained
+`.github/scripts/check-public-write-routes.php` + a reviewed allowlist
+(`public-write-routes.txt`) that scans `includes/`, `addons/pro/includes/`, and
+`plugins/` (fails on an un-reviewed public write route or a stale entry).
 
 ### Fourth pass: docs-hub 0.5.2 — NV oOS Complete checkout integration (PR #6963)
 
@@ -481,7 +597,12 @@ packaging rule and one WP 6.7+ timing bug:
 
 ### Related-issue sweep checklist (always run after fixing the flagged items)
 
-Each review item is a category — grep the whole plugin for siblings:
+Each review item is a category — grep the whole plugin for siblings. None of
+these is reachable by PHPCS/PHPCompatibilityWP, and PCP only reports
+pattern-level issues (the `--severity=5` run is the highest-severity subset),
+so run this sweep by hand on every release that adds or changes a route — not
+only at first submission. The three forge-bridge T2 findings below (2026-11-10)
+all shipped through a green PCP + phpcs + PHPUnit stack.
 
 1. **Context/sensitive-data leaks** — every surface that serves indexed
    content to guests: REST endpoints, sitemap providers, feeds, shortcode
@@ -519,6 +640,51 @@ Each review item is a category — grep the whole plugin for siblings:
    each render is either on-page (settings screen) or a one-shot
    action-result; grep `$_GET/$_POST/$_REQUEST` and confirm cap + nonce +
    sanitize on every handler.
+8. **Typed return crossing a `WP_Error`-returning API** — grep
+   `wp_remote_(get|post|request)` and check every call site: (a) the
+   enclosing function has no `: array` (or any) return type on the raw
+   result — PHP 7.4 has no union types, so the correct shape is an untyped
+   signature + `@return array|\WP_Error`; (b) a failure-path test exists
+   (`pre_http_request` → `WP_Error`, assert no TypeError and the caller
+   survives). This is the forge-bridge first-review category (2026-11-05,
+   review P0TDX399590HGN): `Rebuild_Webhook::send()` declared `: array` and
+   fataled at shutdown on a failed delivery — shipped with PCP 0/0, phpcs 0,
+   and 30/30 green tests because none of the gates does data-flow analysis
+   and no test exercised the failure branch. Sibling sweep (2026-11-06):
+   docs-hub `checkout-client.php` + `remote-repo.php` and content-graph
+   `Vendor` + `HttpClient` are clean (untyped + `is_wp_error` handled).
+9. **Public write endpoints — authorize the *target*, not just the caller.**
+   Grep `permission_callback.*__return_true` and every `CREATABLE` route. A
+   public-by-design write route (form submit, webhook) still has to prove the
+   object it acts on is public: `post_status = publish`, empty password, not
+   trashed. Check every resolver (by ID, by slug/title, by meta `LIKE` join)
+   and return the same 404 for "non-public" as for "missing" so drafts are not
+   enumerable. An origin allowlist is a CSRF gate, not authorization — it says
+   nothing about which object may be acted on. (forge-bridge T2, 2026-11-10:
+   `/forms/submit` dispatched to draft/private/password-protected JFB and
+   Elementor forms.) `.github/scripts/check-public-write-routes.php`
+   mechanises this repo-wide (`includes/`, `addons/pro/includes/`, `plugins/`) —
+   it fails on an un-reviewed `__return_true` CREATABLE/EDITABLE/DELETABLE
+   route and on a stale allowlist entry. Reviewed entries live in
+   `public-write-routes.txt`, with the compensating controls documented inline.
+10. **Forwarding headers are untrusted input.** Grep `x_forwarded_for`,
+   `cf-connecting-ip`, `x-real-ip`. Default to `REMOTE_ADDR`; honor a chain
+   only when the direct peer is a configured trusted proxy (exact IP/CIDR
+   filter), then walk right-to-left and take the first untrusted hop. Document
+   the filter in the readme — managed hosts/CDNs need it or every visitor
+   shares one rate-limit bucket. Base+Pro: use `wp_mcp_ai_get_client_ip()` +
+   `wp_mcp_ai_trusted_proxies` (the 17 duplicated `get_client_ip()` helpers
+   were folded into it). The standalone Content Graph plugins still carry their
+   own copies and need a separate port — they cannot call a base-owned global.
+11. **`wp_send_json*()` / `wp_die()` from third-party code in a REST callback.**
+   `wp_send_json()` only calls `wp_die()` when `wp_doing_ajax()` is true;
+   otherwise it calls `die` and no `wp_die_*_handler` filter runs. If your
+   callback invokes a native handler that answers with `wp_send_json`, filter
+   `wp_doing_ajax` true for the call, return a sentinel-throwing callback from
+   `wp_die_ajax_handler` + `wp_die_json_handler`, buffer with `ob_start()`, and
+   restore in `finally`. Unit-test the NATIVE path — a test seam that returns an
+   array bypasses the capture code (that is exactly why forge-bridge shipped
+   the bug).
 
 ### Reviewer reply email (template)
 
@@ -594,7 +760,8 @@ vendor/bin/phpunit -c phpunit.xml.dist --no-coverage \
 - `test-fnmatch-polyfill.php` is a **standalone script**, not PHPUnit —
   passing it errors with "Class test-fnmatch-polyfill cannot be found".
 - **Run them through the Docker runner, not the host vendor** — see
-  `.agents/skills/mcp-ai-wpoos-test-suite/SKILL.md` → "Cross-worktree runs".
+  `.agents/skills/mcp-ai-wpoos-test-suite/reference/test-environments.md`
+  → "Cross-worktree runs".
   The host `vendor/` is frequently a pruned copy whose classmap has zero
   PHPUnit entries (`Class "PHPUnit\\TextUI\\Application" not found` on BOTH
   host and container); the Linux vendor volume is the reliable path. The
@@ -628,6 +795,74 @@ in PR #6662: its inline rsync list drifted from `.distignore`, a dev
 file. Playground-demo dev folders and their exclusion checklist live in the
 `mcp-ai-wpoos-playground-demos` skill.
 
+### Main plugin (`mcp-ai-wpoos`): the other tri-sync
+
+The base/complete plugin has its own three lists, and they diverged in
+2026-11 (fixed in `9db73a7cad`):
+
+| List | Consumed by |
+|---|---|
+| `.distignore` | `bin/prepare-wordpress-org-deploy.sh` (rsync `--exclude-from`) |
+| `.gitattributes` (`export-ignore`) | `git archive` -> GitHub "Download ZIP", source tarballs |
+| `bin/strip-dev-files.sh` (`DEV_PATHS`) | post-clone production trees |
+
+`bin/build-plugin-zip.sh` is a *fourth* view - rsync `--exclude` flags - and
+it already had the correct anchored patterns. When the four disagree, the
+build script is usually the reference implementation.
+
+**The anchor rule.** Every one of those matchers is depth-independent unless
+anchored with a leading `/`:
+
+- `src/` matched *every* `src` dir - `lib/*/src`, `vendor/guzzlehttp/*/src`,
+  `vendor/psr/*/src`, `vendor/composer/*/src`, `addons/*/src` - and dropped
+  **5,944 tracked files** from `git archive` plus **3,706 `vendor/**/src`**
+  from the WP.org deploy output (no Composer autoloader in either). Both
+  lists are now `/src/`.
+- A bare `lib/` pruned the extracted engine (`lib/core/src`,
+  `lib/wordpress-adapter/src`), which the combined build ships. Replaced by
+  the same per-path set the build uses: `lib/core/tests`,
+  `phpstan.neon` / `phpstan.neon.dist` / `phpunit.xml.dist`,
+  `lib/core/.gitattributes`, `lib/laravel-adapter/`, `lib/craft-adapter/`.
+
+**`export-ignore` cannot negate a pruned directory.** To keep a runtime file
+inside an otherwise dev-only dir, ignore the children and un-ignore the file:
+
+```
+bin/**                      export-ignore
+bin/vectorize-image.js      -export-ignore
+```
+
+`bin/vectorize-image.js` is runtime - three image tools spawn it via `node`
+for SVG output and the build re-includes it explicitly - so
+`strip-dev-files.sh` must clear `bin/` entry-by-entry rather than delete the
+whole directory.
+
+**Verification (run this, do not eyeball the diff):**
+
+1. **Stage first.** `git archive HEAD` reads `.gitattributes` *from the tree*,
+   so unstaged rules are invisible and the test silently passes. To validate
+   before committing, run `git write-tree` and archive the tree object it
+   prints instead of `HEAD`.
+2. **Parity against the shipped build.** Compare the archive listing with the
+   namelist of `build/mcp-ai-wpoos-*.zip` (Python `zipfile`). The archive may
+   legitimately drop dev files, but **everything it drops must also be absent
+   from the ZIP** (0 divergence). This check is what caught
+   `bin/vectorize-image.js`, which the `bin/` rule had swallowed.
+3. **Smoke the extracted tree.** Require `vendor/autoload.php`, then register
+   the bridge's PSR-4 prefixes (`Nvoos\Core\` -> `lib/core/src/`,
+   `Nvoos\WordPress\` -> `lib/wordpress-adapter/src/`; see
+   `includes/bootstrap/oos-bridge.php`) and assert the classes resolve. The
+   adapter namespace is `Nvoos\WordPress\Tool`, **not**
+   `...\Adapter\Tool` - guessing that name produces a false "broken
+   archive" reading.
+4. **Run rsync from the repo root** (`rsync -nav --exclude-from=.distignore ./ /tmp/x/`).
+   A subdirectory source re-roots the patterns and hides anchoring mistakes.
+   Count `^src/` (must be 0) and `^vendor/.*/src/` (must be non-zero).
+
+Shell/quoted-string hazards that corrupt this output (interleaved PTY,
+`/tmp` in Windows Python, mangled backslashes) are catalogued in
+`mcp-ai-wpoos-test-suite` -> "Shell harness pitfalls".
+
 **Windows local builds** — when the msys `rsync`/`zip` binaries are broken
 (missing DLLs — hit on the docs-hub 0.5.1 trunk build), stage with GNU
 `tar` using the same exclude set and zip with Python `zipfile` (normalize
@@ -635,6 +870,11 @@ entry names to forward slashes, verify the listing, and check `readme.txt`
 sits at the ZIP root) before uploading. Python `zipfile.extractall()` needs
 WINDOWS-style paths (`F:/...`) — msys-style `/f/...` silently resolves to
 `F:\f\...` (hit on the content-graph 1.0.12 pass).
+
+Hit again 2026-11-08 on the main plugin: `rsync.exe: error while loading
+shared libraries: msys-xxhash-0.dll`. Do not repair msys - run the identical
+command in WSL (`wsl -e bash -lc 'cd /mnt/f/GITHUB/mcp-ai-wpoos && rsync ...'`),
+which has a working rsync and reproduces the exclude semantics exactly.
 
 ## .wordpress-org assets
 

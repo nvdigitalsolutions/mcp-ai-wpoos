@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "console",
+  "description": "The NV oOS Complete Velocity console in its own first-party window (its cookie-based WordPress sign-in needs a top-level context — embedded frames are third-party and WebView2 blocks their cookies). Least privilege: core IPC only, no remote IPC access — the console never calls into the app.",
+  "windows": ["nvoos-console"],
+  "permissions": [
+    "core:default"
+  ]
+}

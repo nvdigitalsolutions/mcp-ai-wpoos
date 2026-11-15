@@ -11,6 +11,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -82,7 +84,7 @@ class WP_MCP_AI_Pro_Tool_EZuite_Inventory implements WP_MCP_AI_Tool_Interface, W
 			'properties' => array(
 				'search'       => array(
 					'type'        => 'string',
-					'description' => __( 'Full-text search across item names and SKUs.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Full-text search across item names, SKUs, and printing names.', 'mcp-ai-wpoos-pro' ),
 				),
 				'sku'          => array(
 					'type'        => 'string',
@@ -252,6 +254,9 @@ class WP_MCP_AI_Pro_Tool_EZuite_Inventory implements WP_MCP_AI_Tool_Interface, W
 		$text_fields = array(
 			'sku',
 			'name',
+			'printing_name',
+			'group_name',
+			'remark',
 			'warehouse',
 			'location_name',
 			'supplier',

@@ -5,7 +5,7 @@
  * Description: WordPress Knowledge Graph addon for NV oOS. Extracts entities and relationships from your content, builds a navigable knowledge graph, and exposes it to AI assistants via oOS tools and a REST API. Requires NV oOS base plugin.
  * Version:     0.6.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI:  https://nvdigitalsolutions.com

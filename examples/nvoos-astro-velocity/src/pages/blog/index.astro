@@ -1,0 +1,123 @@
+---
+// ---------------------------------------------------------------------------
+// Blog listing — Proposal 106 §2 (content/posts + hybrid local).
+//
+// PLP-pattern paginated listing over the envelope; local MDX posts merge
+// into page 1 only (L2: envelope wins collisions, local fills gaps, date
+// desc). CollectionPage JSON-LD; s-maxage=300; cache tags ['content','posts']
+// with the policy revision on the entry. The page size is intentionally tiny
+// so the 3-post fixture exercises pagination end to end.
+// ---------------------------------------------------------------------------
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Pagination from '../../components/Pagination.astro';
+import { getPosts, getThemePolicy } from '../../lib/commerce/client';
+import { isPublished } from '../../lib/commerce/publish';
+import { getCollection } from 'astro:content';
+import { mergePostsDesc, type PostEntryLike } from '../../lib/content/merge';
+import { collectionPageJsonLd } from '../../lib/seo/jsonld';
+import { pageTitle, plainExcerpt } from '../../lib/seo/meta';
+import { absoluteUrl } from '../../lib/url';
+
+Astro.response.headers.set(
+	'Cache-Control',
+	'public, s-maxage=300, stale-while-revalidate=60'
+);
+
+// Fixture-sized page: the demo posts fit on one page, so pagination stays
+// exercised end to end (the PLP pattern at a blog-friendly cadence).
+const BLOG_PAGE_SIZE = 2;
+
+const site = Astro.site ?? new URL('https://store.nvoos.cloud');
+const policy = await getThemePolicy(Astro.url);
+
+if (Astro.cache.enabled) {
+	Astro.cache.set({
+		maxAge: 300,
+		swr: 60,
+		tags: ['content', 'posts'],
+		etag: policy.updatedAt,
+	});
+}
+
+const url = Astro.url;
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+
+const envelope = await getPosts(Astro.url, { page, limit: BLOG_PAGE_SIZE });
+const published = envelope.docs.filter(isPublished);
+
+// Local posts merge into page 1 only (documented L2 semantics).
+const localEntries =
+	page === 1
+		? await getCollection('posts', (entry) => !entry.data.draft)
+		: [];
+
+interface BlogListItem extends PostEntryLike {
+	href: string;
+	title: string;
+	excerpt: string;
+}
+
+const envelopeItems: BlogListItem[] = published.map((post) => ({
+	slug: post.slug,
+	date: post.createdAt,
+	href: `/blog/${post.id}/${post.slug}/`,
+	title: post.title,
+	excerpt: plainExcerpt(post.excerpt || post.contentRendered, 200),
+}));
+
+const localItems: BlogListItem[] = localEntries.map((entry) => ({
+	slug: entry.id,
+	date: entry.data.date?.toISOString() ?? '',
+	href: `/blog/0/${entry.id}/`,
+	title: entry.data.title,
+	excerpt: entry.data.description ?? '',
+}));
+
+const items = mergePostsDesc(envelopeItems, localItems);
+
+const canonical = absoluteUrl(site, '/blog/');
+const baseHref = `${url.pathname}?${url.searchParams.toString()}`;
+---
+
+<BaseLayout
+	title={pageTitle('Blog')}
+	description={plainExcerpt('Store news, lookbooks and care guides.')}
+	canonical={canonical}
+	jsonld={[
+		collectionPageJsonLd({
+			name: 'Blog',
+			url: canonical,
+			breadcrumb: [{ name: 'Home', url: absoluteUrl(site, '/') }],
+		}),
+	]}
+>
+	<slot name="head">
+		{page > 1 && <meta name="robots" content="noindex, follow" />}
+	</slot>
+
+	<nav class="breadcrumbs" aria-label="Breadcrumb">
+		<a href="/">Home</a> {' / '} <span>Blog</span>
+	</nav>
+
+	<h1>Blog</h1>
+
+	{
+		items.length === 0 && (
+			<p>No posts yet — check back soon.</p>
+		)
+	}
+
+	<ul class="blog-list">
+		{items.map((item) => (
+			<li>
+				<a href={item.href}>
+					<h2>{item.title}</h2>
+				</a>
+				<p>{item.excerpt}</p>
+			</li>
+		))}
+	</ul>
+
+	<Pagination page={page} totalPages={envelope.totalPages} baseUrl={baseHref} />
+</BaseLayout>

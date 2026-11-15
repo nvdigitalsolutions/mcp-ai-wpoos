@@ -31,14 +31,30 @@ import {
 	type PostureSignal,
 } from './posture-utils';
 
-function PassBadge( { passed }: { passed: boolean } ): JSX.Element {
+/**
+ * Tri-state status badge. "Not applicable" is its own state, not a failure:
+ * a WordPress-only control on the Laravel runtime has no primitive to
+ * evaluate, so flagging it red would misreport the posture.
+ */
+function StatusBadge( { status }: { status: PostureSignal[ 'status' ] } ): JSX.Element {
+	if ( status === 'not_applicable' ) {
+		return (
+			<span
+				className="nvoos-pro-spa-security__badge nvoos-pro-spa-security__badge--muted"
+				title={ __( 'This control does not exist on the current runtime.', 'nvoos-pro-spa' ) }
+			>
+				{ __( 'N/A', 'nvoos-pro-spa' ) }
+			</span>
+		);
+	}
+
+	const passed = status === 'pass';
+
 	return (
 		<span
 			className={
 				'nvoos-pro-spa-security__badge ' +
-				( passed
-					? 'nvoos-pro-spa-security__badge--ok'
-					: 'nvoos-pro-spa-security__badge--error' )
+				( passed ? 'nvoos-pro-spa-security__badge--ok' : 'nvoos-pro-spa-security__badge--error' )
 			}
 		>
 			{ passed ? __( 'Pass', 'nvoos-pro-spa' ) : __( 'Fail', 'nvoos-pro-spa' ) }
@@ -103,7 +119,7 @@ function signalRows( signals: PostureSignal[] ): DataTableRow[] {
 	return signals.map( ( signal ) => ( {
 		id: signal.id,
 		cells: [
-			<PassBadge passed={ signal.passed } />,
+			<StatusBadge status={ signal.status } />,
 			<strong className="nvoos-pro-spa-tools-list__name">{ signal.label }</strong>,
 			<code className="nvoos-pro-spa-tools-list__slug">{ signal.weight }</code>,
 			signal.detail || '—',
@@ -136,10 +152,18 @@ export function SecurityCenterPage(): JSX.Element {
 
 	const posture = useMemo( () => parsePosture( rawPosture ), [ rawPosture ] );
 	const groups = useMemo( () => groupSignals( posture?.signals ?? [] ), [ posture ] );
-	const passedCount = useMemo(
-		() => ( posture?.signals ?? [] ).filter( ( s ) => s.passed ).length,
+	// Applicable-only denominators: a signal the runtime cannot evaluate must
+	// not drag the "X of Y" copy down. The scorer already excludes it from the
+	// score; the header has to agree with the gauge.
+	const applicableSignals = useMemo(
+		() => ( posture?.signals ?? [] ).filter( ( s ) => s.applicable ),
 		[ posture ]
 	);
+	const passedCount = useMemo(
+		() => applicableSignals.filter( ( s ) => s.passed ).length,
+		[ applicableSignals ]
+	);
+	const notApplicableCount = ( posture?.signals.length ?? 0 ) - applicableSignals.length;
 	const actionSummary = useMemo( () => summarizeAction( lastAction ), [ lastAction ] );
 	const dialSpec = useMemo( () => scoreDialSpec( posture?.score ?? 0 ), [ posture ] );
 
@@ -279,10 +303,16 @@ export function SecurityCenterPage(): JSX.Element {
 						<p className="nvoos-pro-spa-security__score-meta">
 							{ sprintf(
 								/* translators: 1: passing count, 2: total count. */
-								__( '%1$d of %2$d signals passing', 'nvoos-pro-spa' ),
+								__( '%1$d of %2$d applicable signals passing', 'nvoos-pro-spa' ),
 								passedCount,
-								posture.signals.length
+								applicableSignals.length
 							) }
+							{ notApplicableCount > 0 &&
+								` · ${ sprintf(
+									/* translators: %d: number of controls that do not exist on this runtime. */
+									__( '%d not applicable', 'nvoos-pro-spa' ),
+									notApplicableCount
+								) }` }
 							{ posture.computedAt &&
 								` · ${ __( 'computed', 'nvoos-pro-spa' ) } ${ formatTimestamp( posture.computedAt ) }` }
 						</p>
@@ -326,7 +356,7 @@ export function SecurityCenterPage(): JSX.Element {
 					aria-label={ __( 'Posture checks', 'nvoos-pro-spa' ) }
 				>
 					<h3 className="nvoos-pro-spa-security__card-title">
-						{ __( 'Posture checks', 'nvoos-pro-spa' ) } ({ passedCount }/{ posture.signals.length })
+						{ __( 'Posture checks', 'nvoos-pro-spa' ) } ({ passedCount }/{ applicableSignals.length })
 					</h3>
 					{ groups.length === 0 ? (
 						<p className="nvoos-pro-spa-security__muted">
@@ -435,7 +465,7 @@ export function SecurityCenterPage(): JSX.Element {
 						<ul className="nvoos-pro-spa-security__checks">
 							{ actionSummary.checks.map( ( check ) => (
 								<li key={ check.id } className="nvoos-pro-spa-security__check">
-									<PassBadge passed={ check.passed } />{' '}
+									<StatusBadge status={ check.passed ? 'pass' : 'fail' } />{' '}
 									<strong className="nvoos-pro-spa-security__check-label">
 										{ check.label }
 									</strong>

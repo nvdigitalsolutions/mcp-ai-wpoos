@@ -9,6 +9,8 @@
 // ---------------------------------------------------------------------------
 
 import { WpClient } from './wp-client.ts';
+import { applyDesignPins } from './pins.ts';
+import { mergeTrackingDraft } from './tracking.ts';
 import type { SiteProfile, WpCollection } from './types.ts';
 
 /** System/auth slugs that never belong in a generated frontend. */
@@ -61,10 +63,33 @@ export interface DiscoveryReport {
 	seoPlugins: string[];
 }
 
-/** Standard field pruning per kind — the anti-N+1 discipline. */
+/** Standard field pruning per kind — the anti-N+1 discipline.
+ * Posts/pages carry the optional SEO-meta fields (Rank Math + Yoast) —
+ * absent plugins/fields are tolerated by the loader (106 §1.2). The Rank
+ * Math extras (canonical/robots/social) feed the 131 SEO head pass. */
+const SEO_FIELDS = [
+	'rank_math_title',
+	'rank_math_description',
+	'rank_math_canonical_url',
+	'rank_math_robots',
+	'rank_math_facebook_title',
+	'rank_math_facebook_description',
+	'rank_math_facebook_image',
+	'rank_math_twitter_title',
+	'rank_math_twitter_description',
+	'rank_math_twitter_image',
+	'yoast_head_json',
+];
+
 const FIELDS: Record<CollectionAnalysis['kind'], string[]> = {
-	post: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
-	page: ['id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt'],
+	post: [
+		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+		...SEO_FIELDS,
+	],
+	page: [
+		'id', 'date_gmt', 'modified_gmt', 'title', 'slug', 'link', 'content', 'excerpt',
+		...SEO_FIELDS,
+	],
 	product: [
 		'id',
 		'name',
@@ -246,6 +271,12 @@ export function profileFromDiscovery(report: DiscoveryReport): SiteProfile {
 		kind: analysis.kind,
 		source: analysis.source,
 		authMode: analysis.kind === 'product' && analysis.restBase.startsWith('wc/') ? 'wc-consumer' : undefined,
+		// Proposal 131 — wc/v3 carries no SEO fields; read them from the product
+		// CPT over wp/v2 in ONE sidecar request (id-keyed merge).
+		seoFrom:
+			analysis.kind === 'product' && analysis.restBase.startsWith('wc/') && report.postTypes.product
+				? `wp/v2/${report.postTypes.product.restBase}`
+				: undefined,
 		optional: analysis.optional,
 		exclude: analysis.kind === 'page' && report.junkPages.length > 0 ? report.junkPages : undefined,
 	}));
@@ -256,6 +287,118 @@ export function profileFromDiscovery(report: DiscoveryReport): SiteProfile {
 		frontPage: report.frontPageSlug,
 		collections,
 	};
+}
+
+/**
+ * Merge a fresh discovery draft into an existing profile (Proposal 118 §3).
+ * The operator's hand-tuned fields survive — collections (excludes, fields,
+ * caps), frontPage, tokens, forms — while the ANALYZED blocks (design,
+ * vocabulary, inventory, wireframes) refresh from the new run. Missing
+ * fields fill from the draft. This is the default `analyze --write`
+ * behavior; `--fresh` bypasses it.
+ *
+ * Operator design pins (`existing.pins`, see `lib/pins.ts`) are re-applied
+ * over the refreshed design so a regenerate cannot silently drop a
+ * hand-tuned fact.
+ */
+/**
+ * Is this a real design analysis (rather than the `{ chrome }` stub the
+ * nav-toggle measurement writes)? A genuine block carries the `mode`
+ * discriminator; fixtures and older profiles may carry bands only.
+ */
+function isAnalyzedDesign( design: NonNullable< SiteProfile[ 'design' ] > ): boolean {
+	return Boolean( design.mode ) || ( design.sections?.length ?? 0 ) > 0 || ( design.outline?.length ?? 0 ) > 0;
+}
+
+export function mergeProfileDraft( existing: SiteProfile, fresh: SiteProfile ): SiteProfile {
+	const merged: SiteProfile = { ...existing };
+	merged.url = existing.url || fresh.url;
+	merged.name = existing.name ?? fresh.name;
+	// Only a REAL analysis replaces the design block. The nav-toggle measurement
+	// writes `{ chrome: { navToggle } }` when no `--design` pass ran, and a stub
+	// like that must never clobber an analyzed design (2026-11-11: a plain
+	// `analyze --geometry --write` left the profile with `design: { chrome }`).
+	if ( fresh.design && isAnalyzedDesign( fresh.design ) ) {
+		merged.design = applyDesignPins( fresh.design, existing.pins );
+	} else if ( fresh.design?.chrome && existing.design?.chrome ) {
+		// A `--geometry` run measures CHROME facts (the top strip, the mobile menu,
+		// the nav disclosure) but carries no design block, so the merge kept the
+		// EXISTING chrome and every fresh chrome measurement was dropped. Those are
+		// measurements, not editorial: take them, and leave the harvest-only fields
+		// (`headerBg`, `navInk`…) alone because they are not in a geometry stub.
+		const chrome = { ...existing.design.chrome, ...fresh.design.chrome };
+		// `navToggle` is BOTH a measured fact (`visible`) and a harvested one
+		// (`label`): replacing the object wholesale dropped the label.
+		if ( existing.design.chrome.navToggle || fresh.design.chrome.navToggle ) {
+			chrome.navToggle = { ...existing.design.chrome.navToggle, ...fresh.design.chrome.navToggle };
+		}
+		merged.design = { ...existing.design, chrome };
+	}
+	if ( fresh.vocabulary ) {
+		merged.vocabulary = fresh.vocabulary;
+	}
+	if ( fresh.inventory ) {
+		merged.inventory = fresh.inventory;
+	}
+	if ( fresh.wireframes ) {
+		merged.wireframes = fresh.wireframes;
+	}
+	if ( fresh.geometry ) {
+		merged.geometry = fresh.geometry;
+	}
+	// Per-page band facts are measured facts too — a re-analysis with --pages
+	// refreshes them wholesale (the front page's own facts are `geometry`).
+	if ( fresh.pageBands ) {
+		merged.pageBands = fresh.pageBands;
+	}
+	// The measured band presentation facts (container width + typography). Like
+	// geometry they describe the SOURCE, so a re-analysis refreshes them whole; an
+	// operator pin on `design.sections[].type` still wins at scaffold time.
+	if ( fresh.bandFacts ) {
+		merged.bandFacts = fresh.bandFacts;
+	}
+	// The body background is a measured source fact too (a builder paints it, and
+	// transparent bands + inter-band margins show it).
+	if ( fresh.pageBackground ) {
+		merged.pageBackground = fresh.pageBackground;
+	}
+	// The measured sticky-header behaviour — also a source fact, refreshed on
+	// re-analysis (an operator pin on `design.behavior` still drives the classes).
+	if ( fresh.stickyHeader ) {
+		merged.stickyHeader = fresh.stickyHeader;
+	}
+	// The animated-effect inventory (142) is a source fact too. Only a draft
+	// that MEASURED it replaces the stored one; a `--geometry` run must not wipe
+	// a previous `--animations` inventory.
+	if ( fresh.animations ) {
+		merged.animations = fresh.animations;
+	}
+	if ( fresh.pageAnimations && Object.keys( fresh.pageAnimations ).length > 0 ) {
+		merged.pageAnimations = fresh.pageAnimations;
+	}
+	if ( fresh.text ) {
+		// The content baseline refreshes wholesale: it describes the SOURCE, and
+		// a re-analysis is exactly when the source's words may have changed.
+		merged.text = fresh.text;
+	}
+	if ( fresh.colors ) {
+		merged.colors = fresh.colors;
+	}
+	if ( ( existing.collections ?? [] ).length === 0 ) {
+		merged.collections = fresh.collections;
+	}
+	if ( ! existing.frontPage && fresh.frontPage ) {
+		merged.frontPage = fresh.frontPage;
+	}
+	if ( ! existing.forms && fresh.forms ) {
+		merged.forms = fresh.forms;
+	}
+	if ( fresh.tracking ) {
+		// Operator decisions survive: enabled flags, the consent block and the
+		// delivery/ecommerce choices are never overwritten by a re-analysis.
+		merged.tracking = mergeTrackingDraft( existing.tracking, fresh.tracking );
+	}
+	return merged;
 }
 
 /** Render the human-readable discovery summary. */

@@ -8,6 +8,10 @@
  *
  * @package WP_MCP_AI_Pro
  * @since   1.1.68
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -176,7 +180,7 @@ class WP_MCP_AI_Vision_Analysis_Settings {
 			'wp_mcp_ai_va_vlm',
 			array(
 				'setting_key' => 'va_vlm_model',
-				'description' => __( 'Optional explicit chat vision model (e.g. "gpt-4o-mini", "claude-sonnet-5", "gemini-2.5-flash"). Empty uses the provider default.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Optional explicit chat vision model (e.g. "gpt-4o-mini", "claude-sonnet-5", "gemini-3.8-flash"). Empty uses the provider default.', 'mcp-ai-wpoos-pro' ),
 				'placeholder' => '',
 			)
 		);

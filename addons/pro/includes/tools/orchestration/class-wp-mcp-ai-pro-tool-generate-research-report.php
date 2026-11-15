@@ -10,6 +10,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions. All rights reserved.
  * @license   Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,12 +19,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once dirname( __DIR__ ) . '/research/trait-wp-mcp-ai-tool-research-completion.php';
 
 /**
  * Generate Research Report Tool Class
  */
 class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Research_Completion;
 
 	/**
 	 * Maximum number of search queries to perform.
@@ -983,44 +987,16 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			return $client;
 		}
 
-		// Make the API call.
-		$result = $client->create_chat_completion(
+		// Make the API call with thinking-model-aware recovery.
+		return $this->perform_research_completion(
+			$client,
 			$messages,
+			$provider,
+			$model,
 			array(
-				'model'       => $model,
 				'temperature' => 0.3, // Low temperature for factual, accurate content.
 				'max_tokens'  => 4000, // Allow for detailed reports.
 			)
-		);
-
-		if ( is_wp_error( $result ) ) {
-			return $result;
-		}
-
-		// Extract the content from the response. Gemini normalizes
-		// message.content as an array of {type,text} parts and
-		// OpenAI-compatible gateways (DeepSeek, vLLM) can do the same, so
-		// flatten it before it reaches the JSON parser below.
-		if ( ! isset( $result['choices'][0]['message']['content'] ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from AI provider.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		$content = $this->flatten_response_content( $result['choices'][0]['message']['content'] );
-
-		if ( '' === $content ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_response',
-				__( 'AI provider returned an empty response.', 'mcp-ai-wpoos-pro' )
-			);
-		}
-
-		return array(
-			'content'  => $content,
-			'provider' => $provider,
-			'model'    => $model,
 		);
 	}
 
@@ -1133,10 +1109,10 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		switch ( $provider ) {
 			case 'openai':
 				// Prefer GPT-4 for research if available.
-				return isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-4.1';
+				return isset( $settings['openai_model'] ) ? $settings['openai_model'] : 'gpt-6.1-sol';
 
 			case 'gemini':
-				return isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.5-flash';
+				return isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-3.5-flash-lite';
 
 			case 'anthropic':
 				return isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-5';
@@ -1166,7 +1142,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 				return ! empty( $settings['digitalocean_model'] ) ? $settings['digitalocean_model'] : 'llama3.3-70b-instruct';
 
 			case 'kimi':
-				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k2.7-code';
+				return ! empty( $settings['kimi_model'] ) ? $settings['kimi_model'] : 'kimi-k3.1-pro';
 
 			case 'baseten':
 				return ! empty( $settings['baseten_model'] ) ? $settings['baseten_model'] : 'deepseek-ai/DeepSeek-V3';

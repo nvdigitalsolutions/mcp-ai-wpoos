@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: wp-i18n-audit
-description: Audits WordPress plugin or theme PHP code for internationalization (i18n) correctness — text-domain consistency, use of escaped translation helpers (esc_html__, esc_attr__, esc_html_e), correct placeholder helpers (sprintf with translator comments, _n for plurals, _x for context), no variable text-domains, no concatenation inside __() calls, presence of load_plugin_textdomain or load_theme_textdomain, and matching declared Text Domain in the plugin/theme header. Use before plugin/theme release, when reviewing contributor PRs, when adding new strings, when migrating to a new text domain, or when a translator reports issues with the .pot file.
+description: "Audits WordPress plugin or theme PHP for i18n correctness: text-domain consistency, escaped translation helpers (esc_html__, esc_attr__, esc_html_e), correct placeholder helpers (sprintf with translator comments, _n plurals, _x context), no variable text domains, no concatenation inside __(), load_plugin_textdomain presence, and a matching Text Domain header. Use before release, when reviewing contributor PRs, when adding strings, or when migrating text domains and translators report .pot issues."
 license: MIT
 metadata:
   type: Skill

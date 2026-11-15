@@ -15,11 +15,13 @@ wp-mcp-ai-calendar-orchestration-optimization
 wp-mcp-ai-chat-channels-optimization
 wp-mcp-ai-composio-tools
 wp-mcp-ai-cre-debt-calculator
+wp-mcp-ai-crm-agent-guard
 wp-mcp-ai-crm-audit
 wp-mcp-ai-crm-capabilities
 wp-mcp-ai-crm-classifier
 wp-mcp-ai-crm-codes
 wp-mcp-ai-crm-consent
+wp-mcp-ai-crm-deliverability
 wp-mcp-ai-crm-email-search-cron
 wp-mcp-ai-crm-engine
 wp-mcp-ai-crm-gmail-listener
@@ -31,11 +33,19 @@ wp-mcp-ai-crm-imap-listener
 wp-mcp-ai-crm-link-tracker
 wp-mcp-ai-crm-message-log
 wp-mcp-ai-crm-optimization
+wp-mcp-ai-crm-opt-out-detector
 wp-mcp-ai-crm-pipeline-stages
+wp-mcp-ai-crm-pre-send-gate
+wp-mcp-ai-crm-send-window
+wp-mcp-ai-crm-sequence-presets
+wp-mcp-ai-crm-signal-collector
+wp-mcp-ai-crm-signals
+wp-mcp-ai-crm-signals-db
 wp-mcp-ai-crm-sms-webhook-listener
 wp-mcp-ai-crm-stage-history
 wp-mcp-ai-crm-ticket-automation
 wp-mcp-ai-crm-ticket-notifications
+wp-mcp-ai-crm-unsubscribe
 wp-mcp-ai-crm-web-form-listener
 wp-mcp-ai-crm-whatsapp-webhook-listener
 wp-mcp-ai-dicomweb-client
@@ -379,6 +389,7 @@ wp-mcp-ai-tool-check-jnbc-hurricane-compliance
 wp-mcp-ai-tool-check-jukebox-status
 wp-mcp-ai-tool-check-member-allergies
 wp-mcp-ai-tool-check-product-compliance
+wp-mcp-ai-tool-check-sending-domain
 wp-mcp-ai-tool-check-tool-compliance
 wp-mcp-ai-tool-check-uda-planning-compliance
 wp-mcp-ai-tool-check-us-ibc-irc-compliance
@@ -463,6 +474,7 @@ wp-mcp-ai-tool-cmbs-special-servicing-tracker
 wp-mcp-ai-tool-cmbs-surveillance-monitor
 wp-mcp-ai-tool-cohort-analysis
 wp-mcp-ai-tool-collect-custom-metrics
+wp-mcp-ai-tool-collect-prospect-signals
 wp-mcp-ai-tool-college-savings-calculator
 wp-mcp-ai-tool-colorize-comic-panel
 wp-mcp-ai-tool-colorize-image
@@ -680,6 +692,7 @@ wp-mcp-ai-tool-excel-data-export
 wp-mcp-ai-tool-excel-data-import
 wp-mcp-ai-tool-execute-shell-command
 wp-mcp-ai-tool-expense-tracker
+wp-mcp-ai-tool-explain-prospect-fit
 wp-mcp-ai-tool-export-analytics-api
 wp-mcp-ai-tool-export-annotation-dataset
 wp-mcp-ai-tool-export-architectural-documents
@@ -692,6 +705,7 @@ wp-mcp-ai-tool-export-dicom-study
 wp-mcp-ai-tool-export-eca-data
 wp-mcp-ai-tool-export-fhir-data
 wp-mcp-ai-tool-export-import-translations
+wp-mcp-ai-tool-export-outreach-csv
 wp-mcp-ai-tool-export-products-report
 wp-mcp-ai-tool-export-products-to-excel
 wp-mcp-ai-tool-export-project-csv
@@ -892,6 +906,7 @@ wp-mcp-ai-tool-get-reg-product
 wp-mcp-ai-tool-get-regulatory-requirements
 wp-mcp-ai-tool-get-regulatory-updates
 wp-mcp-ai-tool-get-resource-utilization
+wp-mcp-ai-tool-get-sending-readiness
 wp-mcp-ai-tool-get-sequence-performance
 wp-mcp-ai-tool-get-service-status
 wp-mcp-ai-tool-get-social-analytics
@@ -1124,6 +1139,7 @@ wp-mcp-ai-tool-manage-icp-profile
 wp-mcp-ai-tool-manage-imaging-studies
 wp-mcp-ai-tool-manage-music-library
 wp-mcp-ai-tool-manage-rfi-log
+wp-mcp-ai-tool-manage-sending-warmup
 wp-mcp-ai-tool-manage-sequence-state
 wp-mcp-ai-tool-manage-submittal-log
 wp-mcp-ai-tool-manage-template-versions
@@ -1178,6 +1194,7 @@ wp-mcp-ai-tool-portfolio-visualizer
 wp-mcp-ai-tool-post-classroom-announcement
 wp-mcp-ai-tool-post-to-multiple-platforms
 wp-mcp-ai-tool-prepare-file-for-vector-store
+wp-mcp-ai-tool-preview-pre-send-gate
 wp-mcp-ai-tool-price-alerts
 wp-mcp-ai-tool-pro-batch-ocr
 wp-mcp-ai-tool-process-collection
@@ -1203,6 +1220,7 @@ wp-mcp-ai-tool-qms-submit-for-review
 wp-mcp-ai-tool-qms-supersede-document
 wp-mcp-ai-tool-qualify-lead-bant
 wp-mcp-ai-tool-qualify-lead-meddic
+wp-mcp-ai-tool-query-signal-cohort
 wp-mcp-ai-tool-real-time-event-tracking
 wp-mcp-ai-tool-rebalancing-analyzer
 wp-mcp-ai-tool-recalculate-engagement-scores
@@ -1242,6 +1260,7 @@ wp-mcp-ai-tool-resolve-incident
 wp-mcp-ai-tool-resolve-support-ticket
 wp-mcp-ai-tool-retirement-calculator
 wp-mcp-ai-tool-revenue-forecast
+wp-mcp-ai-tool-review-held-send
 wp-mcp-ai-tool-revoke-consent
 wp-mcp-ai-tool-rfdetr-detect
 wp-mcp-ai-tool-rotate-leads
@@ -1383,6 +1402,7 @@ wp-mcp-ai-tool-validate-setbacks-and-far
 wp-mcp-ai-tool-validate-tool-schema
 wp-mcp-ai-tool-vehicle-cleaning-estimate
 wp-mcp-ai-tool-vehicle-repair-estimate
+wp-mcp-ai-tool-verify-lead-email
 wp-mcp-ai-tool-verify-prescription-interactions
 wp-mcp-ai-tool-vin-decode
 wp-mcp-ai-tool-watchlist-sync

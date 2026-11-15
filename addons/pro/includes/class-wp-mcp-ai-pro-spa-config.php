@@ -10,6 +10,10 @@
  *
  * @package NV_oOS_Pro
  * @since   2.1.0
+ *
+ * @license Proprietary
+ *
+ * SPDX-License-Identifier: LicenseRef-Proprietary
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -274,7 +278,6 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'chatClient'          => esc_url_raw( rest_url( 'mcp-ai/v1/chat-client' ) ),
 				'transcripts'         => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/chat-transcripts' ) ),
 				'memory'              => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/chat-memory' ) ),
-				'threads'             => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/threads' ) ),
 				'tools'               => esc_url_raw( rest_url( 'mcp-ai/v1/tools' ) ),
 				'assistants'          => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) ),
 				'settings'            => $guest ? '' : esc_url_raw( rest_url( 'mcp-ai/v1/settings' ) ),
@@ -283,12 +286,6 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'upload'              => esc_url_raw( rest_url( 'wp/v2/media' ) ),
 
 				// Pro endpoints (mcp-ai-pro/v1).
-				'workflows'           => $is_admin
-					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/workflows' ) )
-					: '',
-				'analytics'           => $is_admin && ! $guest
-					? esc_url_raw( rest_url( 'mcp-ai/v1/analytics' ) )
-					: '',
 				'cost'                => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/cost' ) )
 					: '',
@@ -344,6 +341,13 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'recordsSchema'       => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/records/schema' ) )
 					: '',
+				// Manifest-driven toolkit engine (Proposal 090-B §8). The generic
+				// screens are shared with the Laravel runtime; the manifests live
+				// in includes/toolkits/manifests/. Base is /toolkit-manifests, not
+				// /toolkits, which the schedule-anything controller owns.
+				'toolkits'            => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/toolkit-manifests' ) )
+					: '',
 				'dashboardsSchema'    => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/dashboards/schema' ) )
 					: '',
@@ -352,6 +356,12 @@ class WP_MCP_AI_Pro_SPA_Config {
 					: '',
 				'remoteSites'         => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/remote-sites' ) )
+					: '',
+				'skills'              => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/skills' ) )
+					: '',
+				'mcpApps'             => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
+					? esc_url_raw( rest_url( 'mcp-ai/v1/mcp-apps' ) )
 					: '',
 				'mediaCc'             => $is_admin && ! $guest && defined( 'WP_MCP_AI_PRO_FILE' )
 					? esc_url_raw( rest_url( 'mcp-ai-pro/v1/media-cc' ) )

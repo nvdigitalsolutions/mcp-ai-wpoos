@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: mcp-ai-wpoos-assistant-portability
-description: Operational guide for the NV oOS assistant export/import track — the canonical nvoos-assistant bundle format (v1), the shared portability engine, its five surfaces (WP-CLI, REST, admin UI, AI tools, backup provider), the Pro blueprint exporter, credential-redaction rules, legacy/blueprint import compatibility, test conventions, and the Content Graph port checklist. Use when extending or debugging assistant export/import, adding a surface, changing the bundle schema, fixing round-trip fidelity, or continuing the portability track ("continue the portability plan", "add assistant export to X").
+description: "Operational guide for the NV oOS assistant export/import track: the canonical nvoos-assistant bundle format (v1), the shared portability engine, its five surfaces (WP-CLI, REST, admin UI, AI tools, backup provider), the Pro blueprint exporter, credential-redaction rules, legacy/blueprint import compatibility, test conventions, and the Content Graph port checklist. Use when extending or debugging assistant export/import, adding a surface, changing the bundle schema, fixing round-trip fidelity, or continuing the portability plan."
 license: Proprietary. See LICENSE.txt
 metadata:
   plugin: mcp-ai-wpoos
@@ -86,9 +86,10 @@ Pro:
    `duplicate_assistant` carry `write`/`state-changing` capability flags, so
    the destructive-ops gate (`confirm_destructive`) applies when enabled.
    REST and admin handlers require `manage_options` + nonce.
-6. **PHP 7.4 in base.** The engine and all base surfaces must not use enums,
-   named args, readonly, or union types. Pro-only code (blueprint exporter)
-   may use PHP 8.1+.
+6. **PHP 8.1 floor (single tier).** As of the 8.1 baseline the base plugin, the
+   engine, and all base surfaces share one floor — enums, `readonly`, union
+   types, and named arguments are permitted everywhere. Prefer PHPDoc shapes
+   and `@phpstan-type` aliases when a value is still a bare `array`.
 
 ## Bundle schema change procedure (format_version bump)
 

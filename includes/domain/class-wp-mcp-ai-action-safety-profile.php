@@ -18,6 +18,8 @@
  * @author    NV Digital Solutions
  * @copyright Copyright (c) 2025-2026 NV Digital Solutions
  * @license   GPL-3.0-or-later
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -258,6 +260,16 @@ class WP_MCP_AI_Action_Safety_Profile {
 	 * @return float Combined risk score (0.0–2.0).
 	 */
 	public static function compute_risk_score( $irreversibility, $necessity ) {
+		// The arithmetic lives in lib/core so both runtimes score identically.
+		// lib/ is stripped from wp.org base builds, hence the guard: the local
+		// body below is the self-contained fallback.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile' ) ) {
+			return \Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile::computeRiskScore(
+				(float) $irreversibility,
+				(string) $necessity
+			);
+		}
+
 		$irreversibility = max( 0.0, min( 1.0, (float) $irreversibility ) );
 
 		$necessity_weights = array(
@@ -290,6 +302,19 @@ class WP_MCP_AI_Action_Safety_Profile {
 	 * @return array{verdict: string, risk_score: float, reason: string, requires_approval: bool}
 	 */
 	public static function determine_verdict( $irreversibility, $necessity ) {
+		// The matrix lives in lib/core: one source of truth for both runtimes.
+		// The translated sentence stays here, keyed by the core reason code.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile' ) ) {
+			$verdict = \Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile::determineVerdict(
+				(float) $irreversibility,
+				(string) $necessity
+			);
+
+			$verdict['reason'] = self::reason_text( (string) $verdict['reason_code'] );
+
+			return $verdict;
+		}
+
 		$irreversibility = max( 0.0, min( 1.0, (float) $irreversibility ) );
 		$risk_score      = self::compute_risk_score( $irreversibility, $necessity );
 
@@ -403,6 +428,12 @@ class WP_MCP_AI_Action_Safety_Profile {
 	 * @return float Irreversibility score (0.0–1.0).
 	 */
 	public static function derive_irreversibility_from_flags( array $flags ) {
+		// Capability flags are lowercase by convention; core normalises them so
+		// a tool that declares READ-ONLY is not silently scored as moderate.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile' ) ) {
+			return \Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile::deriveIrreversibilityFromFlags( $flags );
+		}
+
 		// Explicit irreversible flag takes precedence.
 		if ( in_array( 'irreversible', $flags, true ) ) {
 			return self::IRREVERSIBILITY_PERMANENT;
@@ -447,6 +478,10 @@ class WP_MCP_AI_Action_Safety_Profile {
 	 * @return bool True if the score is a valid irreversibility level.
 	 */
 	public static function is_valid_irreversibility( $score ) {
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile' ) ) {
+			return \Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile::isValidIrreversibility( (float) $score );
+		}
+
 		$valid = array(
 			self::IRREVERSIBILITY_NONE,
 			self::IRREVERSIBILITY_LOW,
@@ -466,6 +501,10 @@ class WP_MCP_AI_Action_Safety_Profile {
 	 * @return bool True if valid.
 	 */
 	public static function is_valid_necessity( $level ) {
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile' ) ) {
+			return \Nvoos\Core\Domain\Service\Safety\ActionSafetyProfile::isValidNecessity( (string) $level );
+		}
+
 		$valid = array(
 			self::NECESSITY_ESSENTIAL,
 			self::NECESSITY_HELPFUL,
@@ -473,5 +512,43 @@ class WP_MCP_AI_Action_Safety_Profile {
 			self::NECESSITY_UNNECESSARY,
 		);
 		return in_array( $level, $valid, true );
+	}
+
+	/**
+	 * Translate a core reason code into the sentence this plugin shows.
+	 *
+	 * The matrix returns a stable code rather than copy, so `lib/core` needs no
+	 * translation domain. This is the one place the two are joined.
+	 *
+	 * @param string $reason_code Stable reason code from the matrix.
+	 * @return string Translated sentence; empty when the code is unknown.
+	 */
+	private static function reason_text( $reason_code ) {
+		switch ( $reason_code ) {
+			case 'unnecessary_irreversible':
+				return __( 'Action is unnecessary and irreversible — blocked.', 'mcp-ai-wpoos' );
+			case 'unnecessary_skipped':
+				return __( 'Action is unnecessary — skipped to save tokens and avoid overeager behavior.', 'mcp-ai-wpoos' );
+			case 'optional_low_risk':
+				return __( 'Action is optional but low-risk — allowed with warning.', 'mcp-ai-wpoos' );
+			case 'optional_high_risk':
+				return __( 'Action is optional and high-risk — blocked.', 'mcp-ai-wpoos' );
+			case 'optional_needs_approval':
+				return __( 'Action is optional with moderate risk — requires human approval.', 'mcp-ai-wpoos' );
+			case 'helpful_within_bounds':
+				return __( 'Action is helpful and within acceptable risk bounds.', 'mcp-ai-wpoos' );
+			case 'helpful_permanent':
+				return __( 'Action is helpful but permanently irreversible — blocked.', 'mcp-ai-wpoos' );
+			case 'helpful_needs_approval':
+				return __( 'Action is helpful but high-risk — requires human approval.', 'mcp-ai-wpoos' );
+			case 'essential_needs_approval':
+				return __( 'Action is essential but permanently irreversible — requires human approval.', 'mcp-ai-wpoos' );
+			case 'essential_high_risk':
+				return __( 'Action is essential but high-risk — allowed with warning.', 'mcp-ai-wpoos' );
+			case 'essential_safe':
+				return __( 'Action is essential and within safe bounds — allowed.', 'mcp-ai-wpoos' );
+			default:
+				return '';
+		}
 	}
 }
