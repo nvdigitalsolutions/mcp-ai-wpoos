@@ -2,8 +2,9 @@
 
 **Status:** Planned 2026-11-16. Shipped in this pass: W1 (professions), W2 (reason
 surfaces), W3 (discovery pinning + auth), W4 (fragment golden file), W5
-(chatChannels decision + dead-page gate), W6 (connected-app proxy), W7 (org
-teams on WordPress). **Deferred with design:** W8 (console e2e in CI).
+(chatChannels decision + dead-page gate), W6 (connected-app proxy), W6b
+(WordPress Class C discovery registry), W7 (org teams on WordPress).
+**Deferred with design:** W8 (console e2e in CI).
 **Predecessor:** `090-n-console-manifest-parity-plan.md` (manifest parity, merged
 as #7831).
 
@@ -19,6 +20,7 @@ This pass covers the P1 and P2 items from the roadmap that followed #7831:
 | P1 | WordPress `professions` REST route | **W1 shipped** |
 | P1 | Connected-apps hardening (DNS pinning, per-app auth) | **W3 shipped** |
 | P1 | Connected-app proxy for the console islands | **W6 shipped** |
+| P1 | WordPress Class C discovery (`endpoint_urls`) | **W6b shipped** |
 | P1 | WordPress `orgTeams` REST route | **W7 shipped** |
 | P2 | One source of truth for endpoint fragments | **W4 shipped** |
 | P2 | Console e2e in CI | **W8 deferred** (needs a service stack; recipe below) |
@@ -223,6 +225,50 @@ allowlist.
 
 ---
 
+## 5.2 W6b — WordPress Class C discovery registry (shipped)
+
+W6 gave the console a place to *mount* a remote product; it still needed a
+source to mount. Laravel had `App\Support\ConnectedApps\ConnectedAppRegistry`
+(090-i Phase 4) but WordPress had nothing — `/features` never emitted
+`endpoint_urls`, so on WordPress the rewrite had no input.
+
+**As built** — `includes/connected-apps/class-wp-mcp-ai-connected-app-registry.php`:
+
+- **Config:** option `wp_mcp_ai_connected_apps`, or the
+  `wp_mcp_ai_connected_apps` filter (which wins). Only the four known keys are
+  read; a malformed descriptor is dropped rather than fatal.
+- **Probe:** one `GET base + probe` per app (`/graph` for Content Graph,
+  `/health` for the others), `redirection => 0`, 2 s timeout, optional
+  per-app bearer token. `2xx/3xx/401/403` mean reached; other 4xx and 5xx mean
+  absent.
+- **SSRF:** HTTPS required except a loopback host in the `local` environment;
+  the hostname is resolved **once** and every address checked against
+  `WP_MCP_AI_Url_Guard`; those same addresses are then pinned with
+  `CURLOPT_RESOLVE`. Resolving once is deliberate — `validate()` followed by a
+  second resolution would leave a rebinding window between them.
+- **Caching:** a transient keyed by a hash of the descriptors, TTL
+  `wp_mcp_ai_connected_apps_ttl` (default 300 s). Failures are cached too, so a
+  dead product cannot slow every boot.
+- **Manifest:** `WP_MCP_AI_Endpoint_Capabilities::apply_connected_apps()` flips
+  the key, publishes `endpoint_urls`, and recomputes `gaps`;
+  `apply_feature_flags()` flips the matching flag so `features` and `endpoints`
+  cannot disagree.
+
+Scope note: this feeds `GET /features`, which is what the Complete Console
+reads. The Pro SPA's localized runtime config still builds endpoints from
+`Feature_Flags` and same-site `rest_url()` values — it has no same-origin proxy,
+so mounting a remote product there is a separate decision.
+
+**Tests:** `tests/connected-apps/test-connected-app-registry.php` (24 cases,
+network-free via `pre_http_request` + a whitelisted host) plus the manifest-merge
+and `/features` wiring cases in `tests/rest-api/test-rest-console-endpoints.php`.
+
+**Acceptance met:** a configured, reachable product publishes its base on
+`/features`; a private, unresolvable, insecure or absent one does not; and
+nothing reaches the network without passing the address check.
+
+---
+
 ## 7. W4 — Fragment golden file (shipped)
 
 The contract now carries `fragments.laravel` and `fragments.wordpress`, mapping
@@ -302,6 +348,7 @@ field, when an endpoint key disappears, or when the console build cannot boot.
 | 5 | W5 decision + gate | PHPUnit (filter default), docs |
 | 6 | W7 org teams | WP PHPUnit (14 cases), console Vitest, live manifest |
 | 7 | W6 connected-app proxy | console Vitest (24 unit + 10 integration), typecheck |
+| 8 | W6b discovery registry | WP PHPUnit (24 cases + `/features` wiring), phpcs |
 
 Validation actually run is recorded in the PR body, not here.
 

@@ -248,6 +248,15 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   `endpoint_urls` behaves exactly as before. The probe accepts 2xx/3xx and
   401/403 as *reached*; a 404/5xx/transport error leaves the key unavailable
   with the `external-product` reason (not a gap).
+  **WordPress has the twin now** (`WP_MCP_AI_Connected_App_Registry`, 090-p
+  W6b): option `wp_mcp_ai_connected_apps` or the same-named filter, transient
+  TTL `wp_mcp_ai_connected_apps_ttl`, HTTPS required (loopback allowed only in
+  the `local` environment), the host resolved **once** and those same addresses
+  pinned with `CURLOPT_RESOLVE`. `/features` merges it with
+  `WP_MCP_AI_Endpoint_Capabilities::apply_connected_apps()`, which also flips
+  the matching `features` flag so the two maps agree. The console-side
+  same-origin mount is `serve.mjs`'s `/connected/<key>/*`, advertised as
+  `connected_proxy: true`.
 - **Response envelopes differ per client — read the client.** Most Laravel
   controllers use `{success, data}`, but `WorkflowBuilderClient` reads bare
   arrays/objects (WordPress's `rest_ensure_response()` shape),

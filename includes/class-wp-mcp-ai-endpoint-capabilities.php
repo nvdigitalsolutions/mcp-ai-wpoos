@@ -263,6 +263,42 @@ class WP_MCP_AI_Endpoint_Capabilities {
 	}
 
 	/**
+	 * Apply discovered connected-app URLs to a manifest.
+	 *
+	 * A product that answered its discovery probe is evidence the surface is
+	 * served, even when no route is registered locally — that is the Class C
+	 * case (a separate product on its own origin). The key is therefore forced
+	 * true and `endpoint_urls` carries the base the console should mount.
+	 *
+	 * `gaps` is recomputed because flipping a key changes the answer; the
+	 * reason map is untouched, so a key flipped here still reports the class
+	 * that explains it when the probe fails.
+	 *
+	 * Public so the merge rule can be unit-tested without a registry.
+	 *
+	 * @since 1.2.23
+	 * @param array{version:int,endpoints:array<string,bool>,reasons:array<string,string>,gaps:string[]} $manifest Manifest.
+	 * @param array<string,string>                                                                       $urls     Reached app key => base URL.
+	 * @return array{version:int,endpoints:array<string,bool>,reasons:array<string,string>,gaps:string[],endpoint_urls?:array<string,string>}
+	 */
+	public static function apply_connected_apps( array $manifest, array $urls ) {
+		if ( array() === $urls ) {
+			return $manifest;
+		}
+
+		foreach ( array_keys( $urls ) as $key ) {
+			if ( isset( $manifest['endpoints'][ $key ] ) ) {
+				$manifest['endpoints'][ $key ] = true;
+			}
+		}
+
+		$manifest['gaps']          = self::gaps( $manifest['endpoints'] );
+		$manifest['endpoint_urls'] = $urls;
+
+		return $manifest;
+	}
+
+	/**
 	 * Resolve every key against the registered REST routes.
 	 *
 	 * @return array<string, bool> Endpoint key => servable.
