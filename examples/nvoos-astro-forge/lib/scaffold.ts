@@ -23,7 +23,7 @@ import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './
 import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
 import { auditWarnings, contrastAudit } from './contrast.ts';
-import { designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
+import { contrast, designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { renderDirectFormsEndpointTs } from './forms-direct.ts';
 import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
 import { readLock } from './lock.ts';
@@ -443,6 +443,65 @@ function tsBandType( type: { headings?: Record< string, BandTypeFact >; body?: B
 		parts.push( `body: ${ tsTypeFact( type.body ) }` );
 	}
 	return parts.length > 0 ? `{ ${ parts.join( ', ' ) } }` : undefined;
+}
+
+/**
+ * Drop a band's measured BODY INK when it would be unreadable on that band's
+ * own surface.
+ *
+ * The measurement reads what the source RENDERS, and on a builder band whose
+ * copy sits inside a card, that ink is the CARD's (black) while the band paints
+ * something else. The rebuild has no card surface — the vendor sets it per
+ * element in a stylesheet that never ships — so the ink landed black-on-black
+ * and every word in those bands disappeared (monicarajiv.com's airport-transfer
+ * tile band). Falling back to the band/theme ink keeps the copy readable; the
+ * colour gate then reports the drift, which is the honest trade.
+ */
+export function readableBandType< T extends { headings?: Record< string, BandTypeFact >; body?: BandTypeFact } >(
+	type: T,
+	section: ForgeSection,
+	profile: SiteProfile
+): T {
+	const flat = section.bgColor && section.bgColor !== 'transparent' ? section.bgColor : undefined;
+	const surface = flat ?? gradientTail( section.bgGradient ) ?? profile.pageBackground ?? '#ffffff';
+	const readable = ( fact: BandTypeFact | undefined ): BandTypeFact | undefined => {
+		if ( ! fact?.color ) {
+			return fact;
+		}
+		const ratio = contrast( fact.color, surface );
+		if ( ratio === undefined || ratio >= 4.5 ) {
+			return fact;
+		}
+		const next = { ...fact };
+		delete next.color;
+		return next;
+	};
+	let changed = false;
+	const headings: Record< string, BandTypeFact > = {};
+	for ( const [ tag, fact ] of Object.entries( type.headings ?? {} ) ) {
+		const next = readable( fact ) ?? fact;
+		if ( next !== fact ) {
+			changed = true;
+		}
+		headings[ tag ] = next;
+	}
+	const body = readable( type.body );
+	if ( body !== type.body ) {
+		changed = true;
+	}
+	if ( ! changed ) {
+		return type;
+	}
+	return { ...type, ...( type.headings ? { headings } : {} ), ...( body ? { body } : {} ) };
+}
+
+/** The end colour of a CSS gradient — the surface a painted card ends on. */
+function gradientTail( gradient: string | undefined ): string | undefined {
+	if ( ! gradient ) {
+		return undefined;
+	}
+	const colors = gradient.match( /(?:#[0-9a-f]{3,8}|rgba?\([^)]*\)|hsla?\([^)]*\))/gi );
+	return colors && colors.length > 0 ? colors[ colors.length - 1 ] : undefined;
 }
 
 /** Serialize one builder utility (base + its device-scoped declarations). */
@@ -1343,8 +1402,9 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 		entry.push( `minHeight: ${ tsLength( value ) }` );
 	}
 	// The band's measured typography (see `tsBandType`). A profile pin on
-	// `design.sections[].type` wins over the measurement.
-	const typeLiteral = tsBandType( section.type ?? bandFacts ?? {} );
+	// `design.sections[].type` wins over the measurement — but never at the cost
+	// of readable copy (see `readableBandType`).
+	const typeLiteral = tsBandType( readableBandType( section.type ?? bandFacts ?? {}, section, profile ) );
 	if ( typeLiteral ) {
 		entry.push( `type: ${ typeLiteral }` );
 	}
