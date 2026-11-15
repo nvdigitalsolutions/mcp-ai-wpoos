@@ -821,6 +821,29 @@ export interface BandBoxDeclaration {
 }
 
 /**
+ * One element inside a RAW builder band — its own surface and its pinned height.
+ *
+ * Keyed by a structural path (`tag:nth-child(n) > …`) relative to the band
+ * wrapper, never by class: raw bands keep the source's markup, so the path
+ * resolves to the same node, while a class name repeats across bands and
+ * elements. Only in-flow elements that PAINT something are recorded — a
+ * background layer is not a box, and a content-height block is not a fact.
+ */
+export interface ForgeBandElement {
+	/** Structural selector relative to the band wrapper (never starts with `>`). */
+	path: string;
+	/**
+	 * The surface the element paints, as a CSS declaration
+	 * (`background-color:#fff` or `background-image:url(…)`).
+	 */
+	bg?: string;
+	/** The ink the element's own surface needs (derived, never measured). */
+	fg?: string;
+	/** The rendered height in px, per device where the source overrides it. */
+	height?: number | { desktop?: number; tablet?: number; mobile?: number };
+}
+
+/**
  * The measured box facts of one band, keyed by a class the band carries.
  *
  * Each entry is recorded only when the class resolves to the SAME padding and
@@ -1052,6 +1075,20 @@ export interface ForgeBandFacts {
 	};
 	/** Heading facts keyed by tag (`h1`…`h6`); the band's LARGEST instance wins. */
 	headings?: Record< string, BandTypeFact >;
+	/**
+	 * Per-ELEMENT surfaces and stage heights inside a raw builder band.
+	 *
+	 * Raw bands keep the source's markup verbatim, so a structural selector
+	 * resolves to the same node in the rebuild — which is what lets us re-apply
+	 * the two facts the vendor stylesheet held and nothing else carries: the
+	 * surface an element paints (Flatsome's white tile cards, its red block) and
+	 * the height a stage was pinned to (its `padding-top` hero panels).
+	 *
+	 * Class-keyed facts cannot do this: a class name repeats across bands and
+	 * elements (monicarajiv's `.section-bg` and `.section-content` are in every
+	 * band, and a class-keyed min-height pinned each tile to the whole band).
+	 */
+	elements?: ForgeBandElement[];
 	/** The band's body-paragraph fact (the body scale as rendered, not declared). */
 	body?: BandTypeFact;
 	/**
@@ -1364,6 +1401,13 @@ export interface ForgeSection {
 	 * emitted as `--ds-media-pos`. A pin here wins over the measurement.
 	 */
 	mediaPosition?: string;
+	/**
+	 * Per-ELEMENT surfaces + pinned stage heights, keyed by a STRUCTURAL path
+	 * relative to the band (see `ForgeBandElement`). Overrides the measured
+	 * `bandFacts.elements` for an operator pin, and reaches the renderer through
+	 * the generated section theme.
+	 */
+	elements?: ForgeBandElement[];
 	/**
 	 * The band's measured interaction states (hover / focus / focus-visible /
 	 * active), per control signature — measured by `analyze --geometry`

@@ -25,6 +25,7 @@ import type {
 	BandTypeFact,
 	BandTypeProperties,
 	ForgeBandContainer,
+	ForgeBandElement,
 	ForgeBandCarouselFact,
 	ForgeBandColumnFact,
 	ForgeBandFacts,
@@ -764,6 +765,51 @@ function collectBandBoxFacts( input: {
 }
 
 /**
+ * Merge the per-device element lists into one entry per structural path.
+ *
+ * Desktop is the base; a device whose height differs becomes an override, so a
+ * band whose tiles are 900px tall on desktop and 700px on a phone carries both
+ * without recording a redundant map for the common case.
+ */
+export function mergeElementFacts(
+	desktop?: Array< { path: string; bg?: string; height?: number } >,
+	tablet?: Array< { path: string; bg?: string; height?: number } >,
+	mobile?: Array< { path: string; bg?: string; height?: number } >
+): ForgeBandElement[] | undefined {
+	if ( ! desktop || desktop.length === 0 ) {
+		return undefined;
+	}
+	const byPath = new Map< string, ForgeBandElement >();
+	for ( const fact of desktop ) {
+		byPath.set( fact.path, {
+			path: fact.path,
+			...( fact.bg ? { bg: fact.bg } : {} ),
+			...( typeof fact.height === 'number' ? { height: fact.height } : {} ),
+		} );
+	}
+	for ( const [ device, list ] of [
+		[ 'tablet', tablet ],
+		[ 'mobile', mobile ],
+	] as const ) {
+		for ( const fact of list ?? [] ) {
+			const entry = byPath.get( fact.path );
+			if ( ! entry || typeof fact.height !== 'number' ) {
+				continue;
+			}
+			const base = typeof entry.height === 'number' ? entry.height : entry.height?.desktop;
+			if ( fact.height === base ) {
+				continue;
+			}
+			entry.height = {
+				...( typeof entry.height === 'object' ? entry.height : entry.height ? { desktop: entry.height } : {} ),
+				[ device ]: fact.height,
+			};
+		}
+	}
+	return [ ...byPath.values() ];
+}
+
+/**
  * Measure each band's grid COLUMNS — the rendered height of every direct child
  * of the band's row, plus a background photo's attachment and size.
  *
@@ -779,6 +825,104 @@ function collectBandBoxFacts( input: {
  * least 90% of the row's width — otherwise a content block with two paragraphs
  * would be read as a grid.
  */
+/**
+ * Measure the elements INSIDE each band: the surface each one paints and the
+ * height a stage was pinned to (see `ForgeBandElement`).
+ *
+ * Class-keyed facts cannot express this — a class repeats across bands and
+ * elements — but a raw band keeps the source's markup verbatim, so a
+ * structural path (`div:nth-child(2) > section:nth-child(1)`) resolves to the
+ * same node in the rebuild.
+ *
+ * Only IN-FLOW elements that paint something are recorded: a background layer
+ * (`section-bg`, `banner-bg`) is positioned absolutely and drives no height,
+ * and a plain text block's height is its content, not a fact. A height is
+ * captured only when the element paints a photo or declares one in px — a
+ * card's height follows its copy and must stay free.
+ */
+function collectBandElementFacts( input: {
+	ids: string[];
+	kind: 'built' | 'source';
+	selectors?: Record< string, string >;
+} ): Record< string, Array< { path: string; bg?: string; height?: number } > > {
+	const pick = ( selector: string ): Element | null => {
+		try {
+			return document.querySelector( selector );
+		} catch {
+			return null;
+		}
+	};
+	const alphaOf = ( value: string ): number => {
+		const match = /rgba?\(([^)]*)\)/.exec( value );
+		if ( ! match ) {
+			return value && value !== 'transparent' ? 1 : 0;
+		}
+		const parts = match[ 1 ].split( /[,/]/ ).map( ( part ) => part.trim() );
+		return parts.length >= 4 ? Number.parseFloat( parts[ 3 ] ) : 1;
+	};
+	const segmentOf = ( element: Element ): string => {
+		const tag = element.tagName.toLowerCase();
+		const parent = element.parentElement;
+		const index = parent ? Array.prototype.indexOf.call( parent.children, element ) + 1 : 1;
+		return `${ tag }:nth-child(${ index })`;
+	};
+	const out: Record< string, Array< { path: string; bg?: string; height?: number } > > = {};
+	for ( const id of input.ids ) {
+		const candidates =
+			input.kind === 'built'
+				? [ `[data-section-id="${ id }"]` ]
+				: [ `.elementor-element-${ id }`, input.selectors?.[ id ] ].filter(
+						( value ): value is string => Boolean( value )
+				  );
+		const band = candidates.map( pick ).find( ( node ): node is Element => Boolean( node ) );
+		if ( ! band ) {
+			continue;
+		}
+		const facts: Array< { path: string; bg?: string; height?: number } > = [];
+		const walk = ( element: Element, depth: number, prefix: string ): void => {
+			if ( depth > 7 || facts.length >= 48 ) {
+				return;
+			}
+			for ( const child of [ ...element.children ] ) {
+				const path = prefix ? `${ prefix } > ${ segmentOf( child ) }` : segmentOf( child );
+				const style = getComputedStyle( child );
+				const rect = child.getBoundingClientRect();
+				const positioned = style.position !== 'static';
+				const visible = style.display !== 'none' && style.visibility !== 'hidden';
+				if ( visible && rect.width >= 40 && rect.height >= 24 ) {
+					const alpha = alphaOf( style.backgroundColor );
+					const hasImage = style.backgroundImage !== 'none';
+					const paintsColor = alpha >= 0.95;
+					if ( paintsColor || hasImage ) {
+						const fact: { path: string; bg?: string; height?: number } = { path };
+						fact.bg = hasImage
+							? `background-image:${ style.backgroundImage.slice( 0, 400 ) }`
+							: `background-color:${ style.backgroundColor }`;
+						// A PINNED stage keeps its box; a card follows its copy. A builder's
+						// tile grid is often ABSOLUTE-positioned (Flatsome's banner mosaic
+						// gives every tile `position:absolute` and sizes it from the row), so
+						// position is the signal that the height is authored, not content.
+						const declared =
+							positioned ||
+							/^\d+(\.\d+)?px$/.test( style.minHeight ) ||
+							( /^\d+(\.\d+)?px$/.test( style.height ) && style.height !== 'auto' );
+						if ( declared ) {
+							fact.height = Math.round( rect.height );
+						}
+						facts.push( fact );
+					}
+				}
+				walk( child, depth + 1, path );
+			}
+		};
+		walk( band, 0, '' );
+		if ( facts.length > 0 ) {
+			out[ id ] = facts;
+		}
+	}
+	return out;
+}
+
 function collectBandColumnFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
@@ -853,15 +997,19 @@ function collectBandColumnFacts( input: {
 			continue;
 		}
 		const rects = kids.map( ( child ) => child.getBoundingClientRect() );
-		const sameTop = rects.every( ( rect ) => Math.abs( rect.top - rects[ 0 ].top ) <= Math.max( 8, rect.height * 0.25 ) );
-		const tiled = rects.reduce( ( sum, rect ) => sum + rect.width, 0 ) >= row.getBoundingClientRect().width * 0.9;
 		// A GRID is a row even when it STACKS (the source's `col-md-12` columns at
 		// tablet/mobile): the class family proves it, and their heights still have
 		// to be recorded per device or a stacked photo panel loses its box.
 		const isGrid =
 			ROW.test( row.getAttribute( 'class' ) ?? '' ) ||
 			kids.some( ( child ) => COLUMN.test( child.getAttribute( 'class' ) ?? '' ) || /column|e-con/i.test( child.getAttribute( 'class' ) ?? '' ) );
-		if ( ! isGrid && ( ! sameTop || ! tiled ) ) {
+		// Only a GRID has columns. A band whose single-child chain lands on a
+		// wrapper (Flatsome's `section > section-bg + section-content`) has two
+		// "children" that happen to tile the row and share a top — they are the
+		// band's background layer and its content stage, not lanes. Recording them
+		// pinned both to the band's full height and every nested tile inherited it
+		// (monicarajiv's 900px quadrant became 1800).
+		if ( ! isGrid ) {
 			continue;
 		}
 		const facts: ForgeBandColumnFact[] = [];
@@ -1505,6 +1653,12 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		// Per-ELEMENT surfaces and pinned stage heights (structural paths).
+		const desktopElements = await page.evaluate( collectBandElementFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		// The band's grid columns (rendered heights + fixed-photo attachment), per
 		// device — read while each device's viewport is still current.
 		const desktopColumns = await page.evaluate( collectBandColumnFacts, {
@@ -1545,6 +1699,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			kind: options.kind,
 			selectors: options.selectors,
 		} );
+		const tabletElements = await page.evaluate( collectBandElementFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
 		const tabletColumns = await page.evaluate( collectBandColumnFacts, {
 			ids: options.ids,
 			kind: options.kind,
@@ -1557,6 +1716,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 		} );
 		const mobile = await measureTypeAt( 'mobile' );
 		const mobileBox = await page.evaluate( collectBandBoxFacts, {
+			ids: options.ids,
+			kind: options.kind,
+			selectors: options.selectors,
+		} );
+		const mobileElements = await page.evaluate( collectBandElementFacts, {
 			ids: options.ids,
 			kind: options.kind,
 			selectors: options.selectors,
@@ -1628,6 +1792,11 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			const media = mergeBoxFacts( desktopBox[ id ]?.media, tabletBox[ id ]?.media, mobileBox[ id ]?.media );
 			if ( media ) {
 				band.media = media;
+			}
+			// Per-element surfaces + pinned stage heights, keyed by structural path.
+			const elements = mergeElementFacts( desktopElements[ id ], tabletElements[ id ], mobileElements[ id ] );
+			if ( elements ) {
+				band.elements = elements;
 			}
 			// The band's grid columns per device: rendered heights and the
 			// background attachment/size of a fixed photo (see

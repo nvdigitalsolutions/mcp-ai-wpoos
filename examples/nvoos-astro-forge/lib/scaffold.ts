@@ -1257,6 +1257,25 @@ function measuredContainer(
  * `profile` passed in, so a per-page view (its own `bandFacts`/`geometry`/
  * builder) renders through exactly the same emitter as the front page.
  */
+/**
+ * The ink a captured ELEMENT surface needs.
+ *
+ * A raw band's copy is painted by the band's own ink, but a card inside it is a
+ * different surface: monicarajiv's tiles are `rgb(240,240,240)`, and the band's
+ * white ink left every word invisible on them. Whichever of black/white reads
+ * better against the captured colour wins.
+ */
+function elementInk( bg: string | undefined ): string | undefined {
+	const prefix = 'background-color:';
+	if ( ! bg || ! bg.startsWith( prefix ) ) {
+		return undefined;
+	}
+	const color = bg.slice( prefix.length );
+	const onBlack = contrast( color, '#000000' ) ?? 0;
+	const onWhite = contrast( color, '#ffffff' ) ?? 0;
+	return onWhite >= onBlack ? '#ffffff' : '#000000';
+}
+
 function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ): string {
 	const theme = resolveSectionTheme( section );
 	const entry: string[] = [];
@@ -1472,6 +1491,38 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 			`media: { ${ mediaEntries
 				.map( ( [ name, media ] ) => `${ tsKey( name ) }: ${ tsUtility( media ) }` )
 				.join( ', ' ) } }`
+		);
+	}
+	// Per-ELEMENT surfaces + pinned stage heights (see `collectBandElementFacts`),
+	// keyed by a structural path because a class name repeats across bands. Raw
+	// bands keep the source markup verbatim, so the path resolves to the same
+	// node in the rebuild.
+	const elementFacts = section.elements ?? bandFacts?.elements ?? [];
+	if ( elementFacts.length > 0 ) {
+		entry.push(
+			`elements: [ ${ elementFacts
+				.map( ( element ) => {
+					const parts = [ `path: ${ tsString( element.path ) }` ];
+					if ( element.bg ) {
+						parts.push( `bg: ${ tsString( element.bg ) }` );
+						const ink = elementInk( element.bg );
+						if ( ink ) {
+							parts.push( `fg: ${ tsString( ink ) }` );
+						}
+					}
+					if ( typeof element.height === 'number' ) {
+						parts.push( `height: ${ element.height }` );
+					} else if ( element.height ) {
+						const map = Object.entries( element.height )
+							.filter( ( [ , value ] ) => typeof value === 'number' )
+							.map( ( [ device, value ] ) => `${ device }: ${ value }` );
+						if ( map.length > 0 ) {
+							parts.push( `height: { ${ map.join( ', ' ) } }` );
+						}
+					}
+					return `{ ${ parts.join( ', ' ) } }`;
+				} )
+				.join( ', ' ) } ]`
 		);
 	}
 	// The band's measured COLUMN geometry (see `collectBandColumnFacts`): the
@@ -1816,6 +1867,11 @@ export function renderSectionsGenerated( profile: SiteProfile ): string {
 		'\tbox?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
 		'\t/** Cropped-media heights, emitted as `img.<class>` only. */',
 		'\tmedia?: Record<string, { base?: string; tablet?: string; mobile?: string }>;',
+		'\t/** Per-ELEMENT surfaces + pinned heights inside a raw builder band,',
+		'\t * keyed by a STRUCTURAL path relative to the band (a class name repeats',
+		'\t * across bands and elements). Raw bands keep the source markup, so the',
+		'\t * path resolves to the same node in the rebuild. */',
+		'\telements?: Array<{ path: string; bg?: string; fg?: string; height?: number | { desktop?: number; tablet?: number; mobile?: number } }>;',
 		'\t/** The band\u2019s measured COLUMN geometry, keyed by the column\u2019s',
 		'\t * unique class: a rendered `min-height` floor plus a fixed background',
 		'\t * photo\u2019s attachment/size. Emitted as band-scoped `.class` rules \u2014 the',

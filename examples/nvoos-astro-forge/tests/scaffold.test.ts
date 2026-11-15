@@ -1264,6 +1264,35 @@ describe( 'scaffold — design rebuild (Proposal 114)', () => {
 		expect( onCanvas.body.color ).toBeUndefined();
 	} );
 
+	it( 'emits per-element surfaces and pinned heights (structural paths)', () => {
+		// Raw bands keep the source markup, so a structural path is the only key
+		// that can carry a per-ELEMENT fact: a class name repeats across bands and
+		// elements (monicarajiv's `.section-bg` is in every band).
+		const design: ForgeDesign = {
+			...DESIGN,
+			sections: [
+				{
+					id: 'a4ad586',
+					bgColor: '#000000',
+					elements: [
+						{ path: 'div:nth-child(1) > section:nth-child(1)', bg: 'background-color:rgb(255, 255, 255)', height: 900 },
+						{
+							path: 'div:nth-child(1) > section:nth-child(1) > div:nth-child(2)',
+							bg: 'background-image:url(https://shop.example.com/tile.jpg)',
+							height: { desktop: 900, tablet: 700 },
+						},
+					],
+				},
+			],
+		};
+		const out = renderSectionsGenerated( { ...PROFILE, design } );
+		// The captured surface also carries the ink it needs: white card -> black copy.
+		expect( out ).toContain(
+			"elements: [ { path: 'div:nth-child(1) > section:nth-child(1)', bg: 'background-color:rgb(255, 255, 255)', fg: '#000000', height: 900 }"
+		);
+		expect( out ).toContain( "height: { desktop: 900, tablet: 700 }" );
+	} );
+
 	it( 'renders the generated section-theme module from the design sections (117 §2)', () => {
 		const design: ForgeDesign = {
 			...DESIGN,

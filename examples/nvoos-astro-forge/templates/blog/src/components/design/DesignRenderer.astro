@@ -676,6 +676,68 @@ const bandUtilityCss = sections
  * Emitted AFTER the utility pack on purpose: a measured value must outrank a
  * hand-authored approximation of the same class.
  */
+/**
+ * Per-ELEMENT surfaces + pinned stage heights (see `ForgeBandElement`).
+ *
+ * Raw builder bands keep the source's markup verbatim, so the structural path
+ * selects the SAME node here — which is the only way to restore what the
+ * vendor stylesheet painted per element (Flatsome's white tile cards, its red
+ * block) and the box a stage was pinned to. `min-height` rather than `height`
+ * keeps the measured stage while still letting copy grow.
+ *
+ * The path's `:nth-child()` segments give these rules a high specificity, so a
+ * deep path outranks the arrangement shim without `!important`.
+ */
+const bandElementCss = sections
+	.map( ( section, index ) => {
+		const theme = themeFor( section, index );
+		const id = section.id ?? theme?.id;
+		if ( ! id || ! theme?.elements || theme.elements.length === 0 ) {
+			return '';
+		}
+		const scoped = `[data-section-id="${ id }"]`;
+		return theme.elements
+			.map( ( element ) => {
+				const heights =
+					typeof element.height === 'number' ? { desktop: element.height } : ( element.height ?? {} );
+				const base: string[] = [];
+				if ( element.bg ) {
+					base.push( element.bg );
+				}
+				if ( element.fg ) {
+					base.push( `color:${ element.fg }` );
+				}
+				if ( heights.desktop ) {
+					base.push( `min-height:${ heights.desktop }px` );
+				}
+				const rules: string[] = [];
+				if ( base.length > 0 ) {
+					rules.push( `${ scoped } ${ element.path }{${ base.join( ';' ) }}` );
+				}
+				// The card's ink must reach its TEXT, not just the box: the band's
+				// measured heading rule sets `color` on `h1…h6` directly, which
+				// outranks inheritance and left white headings on a light card.
+				if ( element.fg ) {
+					rules.push(
+						`${ scoped } ${ element.path } :is(h1, h2, h3, h4, h5, h6, p, li, span, a){color:${ element.fg }}`
+					);
+				}
+				if ( heights.tablet ) {
+					rules.push(
+						`@media (min-width: 768px) and (max-width: 1024px){${ scoped } ${ element.path }{min-height:${ heights.tablet }px}}`
+					);
+				}
+				if ( heights.mobile ) {
+					rules.push(
+						`@media (max-width: 767px){${ scoped } ${ element.path }{min-height:${ heights.mobile }px}}`
+					);
+				}
+				return rules.join( '' );
+			} )
+			.join( '' );
+	} )
+	.join( '' );
+
 const bandBoxCss = sections
 	.map( ( section, index ) => {
 		const theme = themeFor( section, index );
@@ -896,8 +958,8 @@ const bandParallaxCss = sections
 
 {sections.length > 0 && (
 	<div class="design-sections">
-		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandColumnCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
-			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
+		{( responsiveBandCss || bandTypeCss || bandHiddenCss || bandUtilityCss || bandBoxCss || bandElementCss || bandColumnCss || bandCarouselCss || bandInteractionCss || bandParallaxCss || animationCss || pageBackground ) && (
+			<Fragment set:html={ `<style>${ pageBackground ? `body{background:${ pageBackground }}` : '' }${ responsiveBandCss }${ bandTypeCss }${ bandHiddenCss }${ bandUtilityCss }${ bandBoxCss }${ bandElementCss }${ bandColumnCss }${ bandCarouselCss }${ bandInteractionCss }${ bandParallaxCss }${ animationCss }</style>` } />
 		)}
 		{sections.map((section, index) => {
 			const theme = themeFor(section, index);
