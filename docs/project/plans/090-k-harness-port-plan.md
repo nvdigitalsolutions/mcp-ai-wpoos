@@ -157,6 +157,8 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 | 5 | Tool router harness | **done — 2026-11-15** (see §11) |
 | 6 | Necessity gate | pending (needs approval queue) |
 | 7 | Harness search engine | **blocked by design** |
+| 8 | Output guardrail — **scope extension** | **done — 2026-11-15** (see §13) |
+| 9 | Guardrail prompt + block policy — **scope extension** | pending (see §12) |
 
 ---
 
@@ -252,3 +254,71 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 **Validation.** `lib/core` **1,544 tests / 5,434 assertions** (25 new); app suite unchanged at **687 / 4,054** because the cluster adds no binding; adapter suite 180 / 676 with the same 2 pre-existing project-tool failures; phpcs clean on the laravel and WordPress standards.
 
 **Still unwired, and that is a separate decision.** Nothing in the chat path calls the router yet — `tools.router: scored` is read only by `Harness_Profile::is_layer_enabled()`. Porting the scorer does not wire it; wiring it would be new behaviour on both runtimes, so it belongs in its own change with its own eval.
+
+---
+
+## 12. Scope extension — output-side safety (clusters 8 and 9)
+
+**Why the scope grew.** The original seven clusters covered the *harness* classes. Reviewing what was left showed a bigger asymmetry: PR #7778 ported the **input** side of the safety layer (`InputGuard`, `PiiFilter`, `PromptInjectionDetector`), and the **output** side is still WordPress-only. That matters more than the tool router did, because unlike the router the output guard is *live* — `harness-init.php` registers it and `class-wp-mcp-ai-rest.php` applies `wp_mcp_ai_pre_response_render` at priority 10 on every REST chat response. So the console screens what goes in and not what comes out.
+
+**Two classes, two clusters.**
+
+| # | Class | Scope |
+|---|---|---|
+| 8 | `OutputGuardrail` (340 LOC) | Response validation: sensitive-info leakage, unsafe content, injection echoes; block/warn/log modes; strictness tiers |
+| 9 | `Guardrails` remainder (658 LOC, `analyze_message` already ported) | The system-prompt guardrail builder and the block/warn/log decision rule |
+
+**Standards this is aligned to** (checked 2026-11-15):
+
+- **OWASP LLM05:2025 — Improper Output Handling** and **LLM02:2025 — Sensitive Information Disclosure**: validate model output before it reaches a sink. The guardrail sits at a pre-render filter, which is the correct sink boundary for chat.
+- **LLM07:2025 — System Prompt Leakage**: the injection-echo check is the output-side counterpart of the input-side jailbreak detector.
+- **NIST AI RMF — Measure/Manage**: findings must be auditable. That is what the findings log is for.
+- **Guardrail engineering guidance** (multiple 2026 sources): "log *that* a check fired and *which* detector — never the matched text"; and decide fail-open vs fail-closed per check rather than globally.
+- **Streaming reality**: an output check runs after the provider has generated and billed the response, and text already streamed cannot be recalled. The guardrail is a pre-render gate, not a retraction mechanism, and the docs say so.
+
+**Four problems found while reading, and how each is handled.**
+
+1. **`output_guard` never survives the profile sanitiser.** Both the WordPress and the core `HarnessProfile::sanitize()` handle `guardrails` but not `output_guard`, so `HarnessProfile::get()` always reports `output_guard.enabled = false`. That is why the WordPress guardrail reads raw `_wp_mcp_ai_harness_profile` post meta directly — it bypasses the sanitiser *and* the site-default fallback. A Laravel port that reads the profile through `HarnessProfileProvider` could therefore never turn the feature on. **Fix:** add `output_guard` to the sanitiser in both runtimes, with the same enum validation `guardrails` gets, and have the guardrail consume the sanitised profile. No behaviour changes for the default (disabled) profile.
+
+2. **The findings log stores leaked content.** `log_finding()` writes `content_preview => substr( $content, 0, 200 )` into the `wp_mcp_ai_output_guard_findings` option. When the finding *is* sensitive information, the log then persists that sensitive information — the exact anti-pattern the guidance names. **Fix:** keep the hash, the finding types and the content length; drop the preview. Nothing in the repo reads it (§ verified by grep), so this is safe.
+
+3. **Silent pattern failure.** Both classes use `@preg_match` and ignore the return value, so a pattern that fails to compile silently stops detecting — a fail-open on the one check that matters most. The patterns are static, so rather than invent fail-closed semantics the port **asserts that every pattern compiles** in a unit test. That removes the failure mode instead of hiding it.
+
+4. **`OutputGuardrail` needs its own pattern tiers.** `PiiFilter` already detects email, phone, card, SSN and common API keys, but not AWS keys, JWTs, private keys, connection strings, IPv4, long hex, or credential assignments — and its purpose is redaction, not detection, with different precision trade-offs. The output guardrail keeps its own tiered table. (Separately noted, not fixed here: `PiiFilter` does not redact AWS/JWT/private-key material on the **input** path either.)
+
+**Method.** Same loop protocol as §4: core service, WordPress delegation behind `class_exists` with the local implementation intact, throwaway equivalence harness run twice and deleted, core unit tests, an app test only if a binding ships, then the five gates.
+
+---
+
+## 13. Cluster 8 result — output guardrail
+
+**What shipped.** `Domain\Service\Harness\OutputGuardrail` — `evaluate()`, `hasSensitiveInfo()`, `hasUnsafeContent()`, `hasInjectionEcho()`, `sensitivePatterns()`, `normaliseConfig()`, plus the result/mode/strictness constants and `MIN_ECHO_MARKERS = 2`. WordPress delegates `validate_response()` and keeps its local implementation for `lib/`-stripped builds.
+
+The result is **structured**: findings, a `blocked` flag and the content to deliver. Core does not build translated error text and does not log — both are runtime concerns.
+
+**The four problems from §12, resolved.**
+
+1. **`output_guard` now survives the sanitiser** in both runtimes, with the same enum validation `guardrails` gets. Because `WP_MCP_AI_Harness_Profile::sanitize()` delegates to core, the WordPress fix is the core fix plus the local fallback.
+2. **The findings log no longer stores content.** Keys are now `timestamp, assistant_id, findings, content_hash, content_length, surface`. No preview, and no `context` — the REST sink passes a `WP_REST_Request`, so the old `'context' => $context` serialised the user's prompt into an option as well.
+3. **Every pattern compiles** — asserted by a unit test over all three tiers, so the `@preg_match` fail-open has nowhere to hide.
+4. **Separate tiered pattern table**, deliberately not merged with `PiiFilter`: detection over-reports, redaction must not.
+
+**Three deliberate behaviour changes, all narrow.**
+
+| Change | Old | New | Why |
+|---|---|---|---|
+| Profile source | raw `_wp_mcp_ai_harness_profile` post meta | `HarnessProfile::get()` | The raw read bypassed the sanitiser *and* the site-default fallback. It was a workaround for problem 1, and it is what made the Laravel side impossible. Side effect: a site-wide default can now enable output guarding, and the `wp_mcp_ai_harness_profile` filter can adjust it — both as documented for every other layer. |
+| Malformed `mode` | fell through the `switch` to `log` (pass through) | `warn` | Matches the profile sanitiser, and pass-through is the fail-open the guidance warns about. Unreachable through `get()`, which normalises first. |
+| Malformed `strictness` | behaved like `low` | `medium` | Same reason: the sanitiser's default, not an artefact of reading raw meta. |
+
+**Proven equivalent.** 262 scenarios: 23 contents × 8 valid profiles, plus 23 × 3 malformed profiles, plus passthrough and log-shape probes.
+
+- **184 valid-profile scenarios: 0 differences.**
+- **69 malformed-profile scenarios: 30 differences**, confined to `bad_enums` (15) and `junk_values` (15) — exactly the two documented changes above. `output_guard_not_array` produced 0 differences.
+- **9 probes: 0 differences**, and the log payload is proven to contain no `content_preview` and no `context`.
+
+**Validation.** `lib/core` **1,575 tests / 5,541 assertions** (31 new); app suite unchanged at **687 / 4,054** because the cluster adds no binding; adapter suite 180 / 676 with the same 2 pre-existing project-tool failures; phpcs clean on the laravel and WordPress standards.
+
+**Still open.** The guard is live on WordPress but the console does not call it yet — there is no Laravel counterpart to `wp_mcp_ai_pre_response_render` on the chat path. Porting the evaluator is the prerequisite; wiring it into the Laravel response pipeline is a separate change, and it needs the same pre-render sink boundary to be meaningful.
+
+---

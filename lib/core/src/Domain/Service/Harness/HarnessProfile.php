@@ -253,6 +253,17 @@ final class HarnessProfile
 			}
 		}
 
+		if (isset($raw['output_guard']) && is_array($raw['output_guard'])) {
+			$o = $raw['output_guard'];
+			$out['output_guard']['enabled'] = ! empty($o['enabled']);
+			$out['output_guard']['mode'] = isset($o['mode']) && in_array((string) $o['mode'], array( 'block', 'warn', 'log' ), true)
+				? (string) $o['mode']
+				: 'warn';
+			$out['output_guard']['strictness'] = isset($o['strictness']) && in_array((string) $o['strictness'], array( 'low', 'medium', 'high' ), true)
+				? (string) $o['strictness']
+				: 'medium';
+		}
+
 		if (isset($raw['trace_capture']) && is_array($raw['trace_capture'])) {
 			$tc = $raw['trace_capture'];
 			$out['trace_capture']['enabled'] = ! empty($tc['enabled']);
