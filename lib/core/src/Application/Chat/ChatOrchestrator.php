@@ -57,6 +57,7 @@ use Nvoos\Core\Infrastructure\Token\TokenBudgetManager;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SemanticCompressorInterface;
+use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Contract\DataBudgetTrackerInterface;
 use Nvoos\Core\Domain\Contract\ContextCompressionInterface;
 use Nvoos\Core\Domain\ValueObject\CancellationToken;
@@ -196,6 +197,14 @@ class ChatOrchestrator {
 	 * its own harness layer.
 	 */
 	private ?HarnessProfileProviderInterface $harnessProfiles = null;
+
+	/**
+	 * Optional trace store, so a turn can record what it did.
+	 *
+	 * Capture stays opt-in per assistant through `trace_capture.enabled`; a
+	 * runtime that wires a store but leaves the profile off writes nothing.
+	 */
+	private ?TraceStoreInterface $traceStore = null;
 
 	public function __construct(
 		private readonly ToolRegistry $tools,
@@ -431,6 +440,56 @@ class ChatOrchestrator {
 	}
 
 	/**
+	 * Wire the trace store.
+	 *
+	 * Pass null to detach. The profile still gates whether anything is written.
+	 */
+	public function setTraceStore( ?TraceStoreInterface $store ): void {
+		$this->traceStore = $store;
+	}
+
+	/**
+	 * The trace store wired by the runtime, or null.
+	 */
+	public function traceStore(): ?TraceStoreInterface {
+		return $this->traceStore;
+	}
+
+	/**
+	 * Begin a run, or null when capture is off.
+	 *
+	 * @param int                  $assistantId Assistant the turn belongs to.
+	 * @param array<string, mixed> $profile     Resolved harness profile.
+	 * @param array<string, mixed> $options     Request options (model, provider).
+	 */
+	private function startTrace( int $assistantId, ?array $profile, array $options ): ?TraceCapture {
+		if ( null === $this->traceStore ) {
+			return null;
+		}
+
+		return TraceCapture::start(
+			$this->traceStore,
+			$assistantId,
+			$profile ?? array(),
+			array(
+				'model' => (string) ( $options['model'] ?? '' ),
+				'provider' => (string) ( $options['provider'] ?? '' ),
+			)
+		);
+	}
+
+	/**
+	 * Provider finish reason, when the response is a well-formed payload.
+	 */
+	private function finishReason( mixed $response ): string {
+		if ( ! \is_array( $response ) ) {
+			return '';
+		}
+
+		return (string) ( $response['choices'][0]['finish_reason'] ?? '' );
+	}
+
+	/**
 	 * Emit the validated response as a single content chunk.
 	 *
 	 * The client renders assistant text from `choices[0].delta.content` frames
@@ -594,6 +653,8 @@ class ChatOrchestrator {
 		$sessionId = (string) ( $options['session_id'] ?? '' );
 
 		$startedAt = \microtime( true );
+
+		$trace = $this->startTrace( $assistantId, $profile, $options );
 
 		// Before hook.
 		$this->events->dispatch(
@@ -763,6 +824,8 @@ class ChatOrchestrator {
 				'cancel_reason' => '',
 			);
 		}
+
+		$trace?->providerCall( $this->finishReason( $response ), \count( $this->extractToolCalls( $response ) ) );
 
 		// Model-visible facts are logged: the assistant message that just
 		// arrived (with any tool_calls it carries).
@@ -972,6 +1035,7 @@ class ChatOrchestrator {
 					assistantId: $assistantId,
 				)
 			);
+			$trace?->providerCall( $this->finishReason( $response ), \count( $this->extractToolCalls( $response ) ) );
 		}
 
 		$durationMs = ( \microtime( true ) - $startedAt ) * 1000;
@@ -1053,6 +1117,16 @@ class ChatOrchestrator {
 			)
 		);
 
+		$trace?->finish(
+			array(
+				'iterations' => $iteration,
+				'cost' => $cost,
+				'cancelled' => $cancelled,
+				'cancel_reason' => $cancelled ? ( $cancellation?->reason() ?? '' ) : '',
+				'duration_ms' => (int) \round( $durationMs ),
+			)
+		);
+
 		return array(
 			'response'      => $response,
 			'tool_results'  => $toolResultMessages,
@@ -1122,6 +1196,10 @@ class ChatOrchestrator {
 
 		// Session logging is opt-in; the session id arrives via options.
 		$sessionId = (string) ( $options['session_id'] ?? '' );
+
+		$startedAt = \microtime( true );
+
+		$trace = $this->startTrace( $assistantId, $profile, $options );
 
 		// Status: generating.
 		$this->sse->sendEvent(
@@ -1313,6 +1391,8 @@ class ChatOrchestrator {
 				'cancel_reason' => '',
 			);
 		}
+
+		$trace?->providerCall( $this->finishReason( $response ), \count( $this->extractToolCalls( $response ) ) );
 
 		$this->recordSessionEvent(
 			SessionLog::TYPE_ASSISTANT_MESSAGE,
@@ -1533,6 +1613,7 @@ class ChatOrchestrator {
 					assistantId: $assistantId,
 				)
 			);
+			$trace?->providerCall( $this->finishReason( $response ), \count( $this->extractToolCalls( $response ) ) );
 		}
 
 		$limitReached = $iteration >= $maxIterations;
@@ -1619,6 +1700,16 @@ class ChatOrchestrator {
 
 		$this->sse->sendEvent( 'message', $payload );
 		$this->sse->sendDone();
+
+		$trace?->finish(
+			array(
+				'iterations' => $iteration,
+				'cost' => $cost,
+				'cancelled' => $cancelled,
+				'cancel_reason' => $cancelled ? ( $cancellation?->reason() ?? '' ) : '',
+				'duration_ms' => (int) \round( ( \microtime( true ) - $startedAt ) * 1000 ),
+			)
+		);
 
 		return array(
 			'response'      => $response,

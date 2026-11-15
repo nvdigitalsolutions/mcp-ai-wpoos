@@ -426,3 +426,22 @@ Two notes on the gates. `lib/core` is **not** in `phpcs-laravel.xml.dist`'s `<fi
 The tests assert what the provider actually receives, not what the orchestrator thinks it sent: no profile leaves one message, an enabled layer yields `system` first, an existing system turn is prefixed rather than replaced, a disabled layer injects nothing, a pre-injected block is not duplicated, `high` strictness reaches the block, and the streaming path injects too.
 
 ---
+
+## 18. Cluster 12 result — trace capture
+
+**What shipped.** `Application\Chat\TraceCapture` — one run, recorded — plus `ChatOrchestrator::setTraceStore()` / `traceStore()`, a `oos.security.trace_capture` master kill switch, and provider wiring.
+
+A run is a chat turn. It writes three record types to the store's `run.jsonl`: `start` (model, provider, assistant, timestamp), one `iteration` per provider call (finish reason, tool-call count), and `end` (iterations, cost, cancelled, duration, record count). `finish()` then prunes to the profile's window.
+
+**The bug the wiring exposed.** The first cut recorded iterations from the agentic loop's `$iteration` counter. That counter only advances on a *continuation*: a turn that answers immediately breaks out of the loop before `++$iteration` runs, so a one-call turn recorded **zero** iterations — a trace that misreports the exact thing it exists to measure. The counter now belongs to the capture (`providerCall()` auto-numbers, and `end` carries `provider_calls` alongside the orchestrator's own loop count). Four call sites: initial call and loop continuation, on both chat paths.
+
+**Two deliberate limits.**
+
+- **No message text.** Records carry identifiers, counts and timings only — `content` and `prompt` never appear. A trace that copies the conversation into long-lived storage is a liability, and `PiiFilter` elsewhere exists precisely to keep that text out.
+- **Capture is profile-gated, the kill switch is global.** Nothing is written unless `trace_capture.enabled`; `oos.security.trace_capture` is the master switch on top, mirroring WordPress's `wp_mcp_ai_harness_trace_capture_enabled` filter. The retention window comes from the profile and is clamped to 10–200 by `TracePolicy` before the store sees it.
+
+**Validation.** `lib/core` **1,640 tests / 5,714 assertions** (17 new); app suite **693 passed / 4,067 assertions** (3 new); adapter suite 180 / 676 with the same 2 pre-existing project-tool failures; `phpcs-laravel.xml.dist` clean.
+
+**Cost note.** `finish()` prunes on every completed turn, as the WordPress store does. That is one grouped read plus one delete per turn — acceptable against a table indexed on `(assistant_id, run_id)`, and the alternative (a periodic sweep) needs a scheduler this runtime does not have yet.
+
+---

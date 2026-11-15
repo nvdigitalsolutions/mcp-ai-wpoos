@@ -942,6 +942,12 @@ return array(
 		'output_guard'                 => filter_var( env( 'NVOOS_OUTPUT_GUARD', 'false' ), FILTER_VALIDATE_BOOLEAN ),
 		'output_guard_mode'            => (string) env( 'NVOOS_OUTPUT_GUARD_MODE', 'warn' ),
 		'output_guard_strictness'      => (string) env( 'NVOOS_OUTPUT_GUARD_STRICTNESS', 'medium' ),
+
+		// Harness trace capture master switch. On by default so a profile that
+		// asks for traces gets them; the per-assistant `trace_capture.enabled`
+		// is still the gate that decides whether anything is written, and
+		// `trace_capture.retention_runs` (clamped 10-200) bounds the history.
+		'trace_capture'                => filter_var( env( 'NVOOS_TRACE_CAPTURE', 'true' ), FILTER_VALIDATE_BOOLEAN ),
 	),
 
 	'features' => array(
