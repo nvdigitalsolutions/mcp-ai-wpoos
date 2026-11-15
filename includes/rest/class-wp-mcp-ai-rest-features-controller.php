@@ -87,15 +87,29 @@ class WP_MCP_AI_REST_Features_Controller {
 	 * item can lag up to one minute, matching the status endpoints'
 	 * staleness window.
 	 *
+	 * `endpoints` is runtime truth read from the REST router: it lets the
+	 * console degrade a surface with a reason instead of firing a request
+	 * that 404s. `endpoint_reasons` classifies every key (so a `false` reads
+	 * as expected or as a regression) and `endpoint_gaps` lists the subset
+	 * this runtime is meant to serve and does not — it must stay empty.
+	 *
 	 * @since 2.4.0
+	 * @since 1.2.22 Serves the capability manifest (v2) alongside `features`.
 	 * @return WP_REST_Response
 	 */
 	public function get_features() {
+		$manifest = WP_MCP_AI_Endpoint_Capabilities::manifest();
 		$response = rest_ensure_response(
 			array(
 				'success' => true,
 				'data'    => array(
-					'features' => WP_MCP_AI_Feature_Flags::all(),
+					'features'                  => WP_MCP_AI_Feature_Flags::all(),
+					'endpoints'                 => (object) $manifest['endpoints'],
+					'endpoint_contract_version' => $manifest['version'],
+					'endpoint_reasons'          => (object) $manifest['reasons'],
+					'endpoint_gaps'             => $manifest['gaps'],
+					'backend'                   => 'wordpress',
+					'contract'                  => 'mcp-ai/v1',
 				),
 			)
 		);

@@ -1732,6 +1732,12 @@ add_action(
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-feature-flags.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-feature-flags.php';
 }
+// Console endpoint capability manifest — the WordPress twin of the Laravel
+// `EndpointCapabilities` class (Proposal 090-i phase 1). The features
+// controller serves it so the console stops relying on a client-side matrix.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-endpoint-capabilities.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-endpoint-capabilities.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-features-controller.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-features-controller.php';
 }

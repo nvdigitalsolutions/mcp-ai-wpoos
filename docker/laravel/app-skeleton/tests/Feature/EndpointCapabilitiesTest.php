@@ -222,6 +222,37 @@ class EndpointCapabilitiesTest extends TestCase
             $unknown,
             'Unknown reason codes in the contract: '.implode(', ', $unknown)
         );
+
+        // The vocabulary itself is shared with the WordPress runtime and the
+        // console suite, which read `reason_codes` from the same fixture. A
+        // code added on one side only fails here.
+        $declared = (array) ( $contract['reason_codes'] ?? array() );
+        $runtime  = EndpointCapabilities::REASON_CODES;
+
+        sort( $declared );
+        sort( $runtime );
+
+        $this->assertSame(
+            $runtime,
+            $declared,
+            'contracts/console-endpoints.json reason_codes and EndpointCapabilities::REASON_CODES disagree.'
+        );
+    }
+
+    public function test_the_wordpress_overrides_only_reclassify_known_keys(): void
+    {
+        // The WordPress runtime merges `wordpress_reasons` over the canonical
+        // map. An override for a key that does not exist (or a code outside the
+        // vocabulary) is a typo that would silently never apply.
+        $contract    = $this->contract();
+        $routeBacked = (array) ( $contract['route_backed'] ?? array() );
+        $overrides   = (array) ( $contract['wordpress_reasons'] ?? array() );
+        $codes       = (array) ( $contract['reason_codes'] ?? array() );
+
+        foreach ( $overrides as $key => $reason ) {
+            $this->assertContains( $key, $routeBacked, 'wordpress_reasons names an unknown console key: '.$key );
+            $this->assertContains( $reason, $codes, 'wordpress_reasons uses an unknown code for '.$key.': '.$reason );
+        }
     }
 
     public function test_the_contract_reasons_match_the_runtime(): void

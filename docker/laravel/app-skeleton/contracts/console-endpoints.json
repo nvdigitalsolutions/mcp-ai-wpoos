@@ -1,5 +1,5 @@
 {
-  "_comment": "Shared console endpoint contract. Both sides assert against this file so drift fails on both CIs: PHP (EndpointCapabilitiesTest) proves the backend's availability map covers every route-backed key, and Vitest (runtime-config.test.ts) proves the console builds exactly those keys. Add a key here first, then wire it. 'asset' keys are build outputs, not routes, so the backend does not report them. 'reasons' classifies every route-backed key so a false can be read as expected or as a regression: only reason 'route' is meant to be served, so a false 'route' key is a gap.",
+  "_comment": "Shared console endpoint contract. Both sides assert against this file so drift fails on both CIs: PHP proves each runtime's availability map covers every route-backed key and that its reason map matches (`EndpointCapabilitiesTest` on Laravel, `WP_MCP_AI_REST_Console_Endpoints_Test` on WordPress), and Vitest proves the console builds exactly those keys (`runtime-config.test.ts`). Add a key here first, then wire it. 'asset' keys are build outputs, not routes, so the backend does not report them. 'reasons' is the canonical (Laravel) supply class; 'wordpress_reasons' holds only the keys whose class differs on WordPress — merge it over 'reasons' for that runtime. 'reason_codes' is the shared vocabulary: only reason 'route' is meant to be served, so a false 'route' key is a gap. 'not-installed' is applied at runtime when a Pro-supplied route's addon is inactive.",
   "route_backed": [
     "approvals",
     "assistants",
@@ -94,6 +94,19 @@
     "workflowRuns": "route",
     "wpBase": "route"
   },
+  "wordpress_reasons": {
+    "mediaCc": "route",
+    "orgTeams": "runtime-adaptable",
+    "professions": "runtime-adaptable"
+  },
+  "reason_codes": [
+    "route",
+    "runtime-adaptable",
+    "not-installed",
+    "toolkit-shaped",
+    "connected-service",
+    "external-product"
+  ],
   "asset": [
     "mediaStudioAsset",
     "mediaStudioCss",

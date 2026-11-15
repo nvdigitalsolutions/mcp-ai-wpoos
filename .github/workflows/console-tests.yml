@@ -1,0 +1,96 @@
+# NV oOS Complete Console — host tests
+#
+# The console (`examples/nvoos-complete-velocity`) compiles spa-v2 in at build
+# time, so its Vitest suite is the only place that asserts the CONSOLE half of
+# the shared endpoint contract (`docker/laravel/app-skeleton/contracts/
+# console-endpoints.json`). The PHP half runs in `laravel-app.yml`
+# (`EndpointCapabilitiesTest`). Without this gate, a key added to the contract
+# on the backend side, or a console endpoint map that drifts from
+# `WP_MCP_AI_Pro_SPA_Config`, fails only in a browser.
+#
+# The `paths` filters must cover EVERY file the suite reads:
+#   - the console itself (its own tests)
+#   - spa-v2 sources (aliased into the app; its API clients are exercised)
+#   - the shared contract fixture (read directly by runtime-config.test.ts)
+#   - the PHP twin (EndpointCapabilities) — the fixture must match it
+#   - the WordPress endpoint map (the static fallback the console mirrors)
+#   - the WordPress features controller (the manifest it will consume)
+#   - the island bundles imported with `?url` (missing dist = import failure)
+#
+# Deliberately separate from `javascript-tests.yml` (root Jest) and
+# `sync-nvoos-complete-velocity.yml` (mirror assembly + static smoke): those
+# run different suites in different trees and cannot see a contract drift here.
+
+name: Console Tests
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+    paths:
+      - 'examples/nvoos-complete-velocity/**'
+      - 'addons/pro/assets/spa-v2/**'
+      - 'addons/media-studio/assets/dist/**'
+      - 'addons/document-editor/assets/dist/**'
+      - 'docker/laravel/app-skeleton/contracts/console-endpoints.json'
+      - 'docker/laravel/app-skeleton/app/Support/EndpointCapabilities.php'
+      - 'addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php'
+      - 'includes/class-wp-mcp-ai-endpoint-capabilities.php'
+      - 'includes/class-wp-mcp-ai-feature-flags.php'
+      - 'includes/rest/class-wp-mcp-ai-rest-features-controller.php'
+      - '.github/workflows/console-tests.yml'
+  pull_request:
+    paths:
+      - 'examples/nvoos-complete-velocity/**'
+      - 'addons/pro/assets/spa-v2/**'
+      - 'addons/media-studio/assets/dist/**'
+      - 'addons/document-editor/assets/dist/**'
+      - 'docker/laravel/app-skeleton/contracts/console-endpoints.json'
+      - 'docker/laravel/app-skeleton/app/Support/EndpointCapabilities.php'
+      - 'addons/pro/includes/class-wp-mcp-ai-pro-spa-config.php'
+      - 'includes/class-wp-mcp-ai-endpoint-capabilities.php'
+      - 'includes/class-wp-mcp-ai-feature-flags.php'
+      - 'includes/rest/class-wp-mcp-ai-rest-features-controller.php'
+      - '.github/workflows/console-tests.yml'
+
+# A superseded run on the same ref has nothing to say about the new tree.
+concurrency:
+  group: console-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  console:
+    name: Console suite (vitest)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: examples/nvoos-complete-velocity
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # package.json engines: >=20.19.0. Node 22 is the repo's current LTS
+          # pin for app CI (see astro-forge.yml).
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: examples/nvoos-complete-velocity/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # `tsc --noEmit` resolves the whole spa-v2 import graph, plus the e2e
+      # project (Playwright transpiles without typechecking, so else it rots).
+      - name: Typecheck (app + e2e)
+        run: npm run typecheck
+
+      # Includes the contract tests: endpoint-map parity with the shared
+      # fixture, reason-taxonomy coverage, and the toolkits base per backend.
+      - name: Run Vitest suite
+        run: npm test
