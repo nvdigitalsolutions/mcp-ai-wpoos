@@ -351,6 +351,20 @@ parity. Capturing `object-position` as a band fact is the real fix — open.
   (0,2,1) loses to `.ds-section-wrap .post-body .banner-bg > img { height:100% }`
   (0,3,1), so the renderer also emits the `.post-body img.<cls>` variant. A
   measured 420px crop then wins the tie via the inline page `<style>`.
+- **…and a FILL image must carry NO height fact at all.** The mirror of the rule
+  above. An `object-fit: cover` image inside an absolutely-positioned `inset:0`
+  wrapper (Flatsome `.banner-bg.fill` on a `has-parallax` / `is-full-height`
+  banner) has no authored height — the wrapper is `100vh`. Its rendered aspect
+  therefore disagrees with the file's at *every* viewport, so
+  `collectBandBoxFacts` recorded the analyze-time px. Measured on a 900px-tall
+  viewport it emitted `img.bg{height:900px}`, and the built hero covered 900px of
+  a 1277px banner — the image looked "partially loaded" (monicarajiv,
+  2026-11-15). Now skipped when object-fit is `cover`, the parent is `absolute`,
+  and the image's height matches the parent's within 1px. A genuine crop inside
+  a static-flow column still records.
+  - The same 900px also appears as `min-height:900px` on a wrapper `div` from the
+    `elements[]` channel. That is a different mechanism and is harmless — grep
+    for `img.<cls>` to tell the two apart before chasing it.
 - **Copying the template's `global.css` over a project wipes `--forge-*`.** Only
   the scaffold pipeline rewrites the `FORGE:tokens` span; the build then renders
   template defaults (white body, system font). New:

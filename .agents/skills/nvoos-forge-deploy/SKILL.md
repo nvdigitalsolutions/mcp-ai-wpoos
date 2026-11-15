@@ -296,6 +296,33 @@ List the tree instead of guessing: `gh api "repos/.../contents?ref=site/<name>"`
     and `npm run verify-deploy-tree` must print `booted (HTTP 200)`.
     Boot locally: `git clone -b site/<name> … && npm i --omit=dev && node
     server.js` — it must not throw at import time.
+12. **"All the images are missing" is an origin mismatch until proven otherwise.**
+    Every forged image is root-relative `/media/<hash>-<name>`. If the text renders
+    and 100% of images break, the Astro document is being served from a host that
+    does not have `media/` — nearly always the WordPress origin. One request
+    settles it:
+    `curl -o /dev/null -w '%{http_code}' https://<host-in-the-address-bar>/media/<any>.webp`.
+    A 404 returning `text/html` means WordPress answered. Do not rebuild — fix the
+    topology (gotcha 8). Also rule out a cached Astro document in the browser
+    before believing the deploy is broken: `curl` the same URL fresh and compare;
+    if `curl` gets WordPress HTML and the browser shows Astro, it is browser cache.
+    Audit in this order — `<img>` srcs, CSS `url()` refs, then every network
+    request — before touching the build; the first two can both be clean while a
+    third cause (a 403 route, a WAF) is the real failure.
+13. **A route directory holding only `index.md` answers 403, not 404.** The build
+    can emit `<route>/index.md` (the LLM-facing markdown twin) beside
+    `index.html`, but the profile's `frontPage` source page is rendered at `/` —
+    so its own directory keeps only the `.md` and nginx refuses the directory
+    outright. It surfaces as a console `403` on pages that link or prefetch it
+    and looks like a broken asset. Exclude that directory from the artifact; it
+    is a content source, not a route.
+14. **Absolute links to the CMS host survive `ASTRO_SITE`.** Author-written
+    `href="https://client.com/x/"` anchors are *content*, not generated URLs, so
+    a staging build still bounces testers onto production. Count them before
+    blaming the profile:
+    `grep -o 'href="https://<production-host>[^"]*"' dist/index.html | sort -u`.
+    The fix belongs in sanitisation (same-origin absolute → path), so every site
+    becomes host-independent at once.
 
 ## Where the rest lives
 
