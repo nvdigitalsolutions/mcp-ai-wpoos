@@ -35,6 +35,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Service\Harness\GuardrailPrompt;
+use Nvoos\Core\Domain\Service\Harness\ToolPresetCatalogue;
 use Nvoos\Core\Domain\Service\Harness\ToolRouterHarness;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
@@ -1884,7 +1885,14 @@ class ChatOrchestrator
         [ $preferences, $presetWeights ] = ToolRouterHarness::resolveAssistantInputs($profile);
 
         try {
-            $ranked = ToolRouterHarness::rank($resolved, $taskClass, $preferences, $presetWeights);
+            $ranked = ToolRouterHarness::rank(
+                $resolved,
+                $taskClass,
+                $preferences,
+                $presetWeights,
+                array(),
+                array( 'preset_index' => ToolPresetCatalogue::index() )
+            );
         } catch (\Throwable) {
             return $slugs;
         }

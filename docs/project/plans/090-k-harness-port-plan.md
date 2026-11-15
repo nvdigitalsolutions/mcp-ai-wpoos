@@ -166,6 +166,7 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 | 14 | PII / secret pattern parity | **done — 2026-11-15** (see §21) |
 | 15 | `lib/core` PSR-12 reformat + style gate | **done — 2026-11-15** (see §22) |
 | 16 | Server-side system prompt ownership | **done — 2026-11-15** (see §23) |
+| 17 | Tool preset catalogue (generated) | **done — 2026-11-15** (see §25) |
 
 Open work that is *not* a cluster is tracked in §20.
 
@@ -488,7 +489,7 @@ The clusters are done. What is left is either dependency-blocked or deliberately
 
 | Item | Why it is deferred | What "done" looks like |
 |---|---|---|
-| **Tool preset catalogue on Laravel** | `tools.preset_weights` are inert (§19): the catalogue is WordPress's ~3,100-line translated array and Laravel's `presets` endpoints are *schedule* presets. Capability flags and per-slug `tools.preferences` carry the ranking meanwhile. | A tool-preset catalogue in core (data, not translations) plus an index build at boot; parity test asserting the same tool lands in the same families on both runtimes. Belongs with the console's tool-preset UI. |
+| **Tool preset catalogue on Laravel** | `tools.preset_weights` were inert (§19): the catalogue is WordPress's ~3,100-line translated array and Laravel's `presets` endpoints are *schedule* presets. Capability flags and per-slug `tools.preferences` carried the ranking meanwhile. | **Closed — cluster 17, see §25** (generated core catalogue; `preset_weights` are live) |
 | **`tools.router: scored` as default** | The switch is live but off (§19). Changing which tools a model attends to first is a behaviour change that needs measurement. | An eval comparing `fixed` vs `scored` on real assistant tool sets, with a stated tie-break rule for when flags alone are enough. |
 | **Retrieval harness in the chat path** | §7: wiring `retrieve()` changes model input and needs a prompt-budget review. | A budgeted retrieval step with a before/after token and quality comparison. |
 | **`record_reflection()`** | §10: its only write target is `store_agent_context`, and WordPress has no `ToolInvokerInterface` adapter to bridge it. | A WordPress `ToolInvokerInterface` adapter, then the memory-track work that owns `store_agent_context`. |
@@ -623,5 +624,19 @@ Both are recorded here and in the guard's docblock.
 **Wiring.** `oos.necessity_gate.enabled` (env `NVOOS_NECESSITY_GATE`), **off by default** — it changes what the model is allowed to do, so turning it on is a deployment decision, matching `oos.read_only`. Registered as a monotonic guard so an earlier listener cannot re-allow what it denies.
 
 **Validation.** `lib/core` **1,746 tests / 5,967 assertions** (+75 tests, +165 assertions: the full 20-cell matrix, 13 flag derivations, the classification table, and the guard mapping). App suite **693 / 4,067**, unchanged — no app-skeleton binding ships. Adapter suite **180 / 676 with the same 2 pre-existing project-tool failures**. `phpcs-laravel.xml.dist` **804 files, 0 errors**; `phpcs.xml.dist` clean on both changed WordPress files.
+
+---
+
+## 25. Tool preset catalogue
+
+**What shipped.** `Domain\Service\Harness\ToolPresetCatalogue` holds the preset → tool mapping as data: 70 presets, 1,954 tool references. `ChatOrchestrator` now passes its index to `ToolRouterHarness::rank()`, so `tools.preset_weights` are **live** on this runtime — the last inert signal in the router.
+
+**Why a generated file rather than a hand copy.** `lib/core` cannot read the WordPress catalogue at runtime: that class needs `ABSPATH`, `__()` and the admin bootstrap. So `bin/generate-tool-preset-catalogue.php` extracts the tool lists once and checks them in. `--check` exits non-zero when the file is stale, so CI can gate drift, and `tests/test-tool-preset-catalogue-parity.php` asserts the checked-in data still matches `get_presets()` — slugs, tool lists in order, and labels.
+
+**Only data crosses.** Slugs, an English label, and the tool lists. Translated names and descriptions stay in WordPress, because `lib/core` has no translation domain. The label is the untranslated `name`, so a console UI has something to show without WordPress's `.po` files.
+
+**The index is built once per process.** `ToolRouterHarness::buildPresetIndex()` is O(presets × tools); the catalogue memoises it, and `rank()` accepts a prebuilt `preset_index`, so a ranked turn does no rebuild.
+
+**Validation.** `lib/core` **1,751 tests / 6,185 assertions** (+5 / +218). `phpcs-laravel.xml.dist` clean; `phpcs.xml.dist` clean on the new parity test. The generator reports 70 presets / 1,954 references and `--check` passes.
 
 ---
