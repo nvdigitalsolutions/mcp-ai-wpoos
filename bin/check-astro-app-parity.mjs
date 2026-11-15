@@ -143,6 +143,10 @@ const FORGE_ONLY = [
 	'pricing',
 	'marquee',
 	'content',
+	// A builder's accordion band (a repeated title + collapsed panel list). The
+	// forge rebuilds it from the source's own resting visibility; velocity has
+	// no accordion band, so it is forge-only by design.
+	'accordion',
 ];
 
 const VELOCITY_ONLY = ['image', 'faq', 'tabs', 'product-grid', 'promotion'];
