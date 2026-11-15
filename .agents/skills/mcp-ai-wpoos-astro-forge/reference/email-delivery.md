@@ -227,6 +227,61 @@ site key `1x00000000000000000000AA`, secret
 `Form.astro` posts the **bridge** envelope — `{ form, fields: { name, email, …
 }, honeypot, timestamp, page }` — in both delivery modes. A direct endpoint
 that reads only top-level scalars silently delivers an email with no visitor
-values (and no Turnstile token). `readFields()` therefore flattens the nested
-`fields` bag first, then lets the top-level carriers win; any new reserved
-field name has to be filtered **after** that flatten.
+values (and no Turnstile token). `readSubmissionFields()` in `lib/forms.ts`
+therefore flattens the nested `fields` bag first, then lets the top-level
+carriers win; any new reserved field name has to be filtered **after** that
+flatten.
+
+That module is shared with the bridge fallback below, so the two delivery
+paths cannot drift on the message: `submissionMessage()` owns the reserved
+fields, Reply-To and the idempotency digest for both.
+
+## Bridge outages: proxy failures and `forms.fallback` (2026-11-15)
+
+A **bridged** site has three runtime dependencies on the CMS — forms, media and
+the commerce API. All three go through the emitted `proxyToWordPress()`
+(`lib/managed-runtime.ts`), so the gateway semantics live there:
+
+| Upstream outcome | Emitted answer | Body |
+|---|---|---|
+| no `NVOOS_TARGET_SITE` | 503 | plain text |
+| refused / DNS / TLS | 502 | `{ ok: false, code: "upstream_unreachable", … }` |
+| no answer within the budget | 504 | `{ ok: false, code: "upstream_timeout", … }` |
+| any upstream status | passed through unchanged | upstream body |
+
+RFC 9110: 504 is no timely answer (§15.6.5), 502 is no valid answer at all
+(§15.6.3). The budget is `UPSTREAM_TIMEOUT_MS`, 10 s by default, overridable
+with `NVOOS_PROXY_TIMEOUT_MS` inside a 1 s – 60 s band. Without it a hung CMS
+holds the worker until the platform kills it, and a refused connection surfaces
+as an unhandled 500.
+
+`forms.fallback: "direct"` (bridge mode only; requires `forms.mail` and the
+managed runtime) re-delivers the SAME payload through the provider when the
+bridge cannot take it:
+
+| Bridge result | Fallback? |
+|---|---|
+| 2xx / 3xx | no — the bridge took it |
+| 4xx (validation, throttle) | **no** — the answer must reach the visitor |
+| 501 (bridge up, no handler) | **no** — a config fault worth surfacing |
+| other 5xx / 502 / 504 / transport | **yes** |
+
+Rules that keep it honest:
+
+- **One email.** The provider key is the SHA-256 digest of the filtered payload
+  (`submissionMessage()`), so a bridge→fallback handoff, a double-click and a
+  retried request all collapse into one send. That is the `Idempotency-Key`
+  contract (draft-ietf-httpapi-idempotency-key-header): same payload → same
+  key, different payload → different key.
+- **A breaker.** Three consecutive bridge failures open it for 60 s; a
+  submission inside that window skips the bridge and goes straight to the
+  provider, so an outage costs one timeout rather than one per visitor.
+  Success closes it — including the bridge's own 4xx.
+- **Never silent.** Every fallback logs `[forms] direct fallback (<reason>)`,
+  and a failed fallback is a 502 the visitor sees, not a swallowed enquiry.
+- The no-JS floor gets JSON instead of the bridge `?form=ok` redirect: that
+  redirect is allowlist-validated on the WordPress side, and re-implementing it
+  here would duplicate the open-redirect guard.
+
+Media is a separate dial: `media.mode: "local"` mirrors uploads into
+`dist/media`, so images do not depend on the CMS at request time.

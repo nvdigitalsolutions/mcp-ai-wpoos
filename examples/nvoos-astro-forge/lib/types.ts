@@ -117,6 +117,17 @@ export interface ForgeForms {
 	 */
 	delivery?: 'bridge' | 'direct';
 	/**
+	 * `direct` — deliver through the provider when the bridge cannot take the
+	 * submission (unreachable, timeout, 5xx), so a CMS outage costs no enquiry.
+	 *
+	 * Requires `mail` and the managed runtime. The bridge stays authoritative:
+	 * a 4xx (validation, throttle) or a 501 (no handler) is its own answer and
+	 * is never re-delivered elsewhere. A breaker skips the bridge entirely for
+	 * 60 s after three consecutive failures, so an outage does not cost every
+	 * visitor a full timeout.
+	 */
+	fallback?: 'direct';
+	/**
 	 * Direct-delivery settings. Public identifier data only — the provider
 	 * SECRET comes from the environment (BREVO_API_KEY / MAILJET_*), never
 	 * from the profile or the manifest.

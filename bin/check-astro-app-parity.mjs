@@ -185,14 +185,19 @@ check(
 // the other, and the gate stays green.
 //
 // What is NOT gated is the endpoint around it. The forge's is emitted as source
-// (lib/forms-direct.ts); velocity's is hand-written
-// (src/pages/forms/submit.ts). Same guards, different frame — the divergence is
-// declared in reference/email-delivery.md.
+// (lib/forms-direct.ts + the shared lib/forms.ts payload contract); velocity's is
+// hand-written (src/pages/forms/submit.ts + src/lib/forms.ts). Same guards,
+// different frame — the divergence is declared in reference/email-delivery.md.
 // ---------------------------------------------------------------------------
 
 const MAIL_FORGE = 'examples/nvoos-astro-forge/lib/mail.ts';
 const MAIL_VELOCITY = 'examples/nvoos-astro-velocity/src/lib/mail.ts';
-const FORGE_ENDPOINT_SRC = 'examples/nvoos-astro-forge/lib/forms-direct.ts';
+const FORGE_ENDPOINT_SRC = [
+	'examples/nvoos-astro-forge/lib/forms-direct.ts',
+	// The guard markers (body cap, idempotency key, reply-to) live in the
+	// contract both delivery modes share, exactly like velocity's guards file.
+	'examples/nvoos-astro-forge/lib/forms.ts',
+];
 const VELOCITY_ENDPOINT = 'examples/nvoos-astro-velocity/src/pages/forms/submit.ts';
 const VELOCITY_GUARDS = 'examples/nvoos-astro-velocity/src/lib/forms.ts';
 
@@ -243,7 +248,7 @@ const GUARD_MARKERS = [
 
 console.log('form-endpoint guard parity');
 {
-	const forge = readFileSync(new URL(`../${FORGE_ENDPOINT_SRC}`, import.meta.url), 'utf8');
+	const forge = FORGE_ENDPOINT_SRC.map((file) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')).join('\n');
 	const velocity = [
 		readFileSync(new URL(`../${VELOCITY_ENDPOINT}`, import.meta.url), 'utf8'),
 		readFileSync(new URL(`../${VELOCITY_GUARDS}`, import.meta.url), 'utf8'),

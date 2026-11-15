@@ -1625,6 +1625,84 @@ describe( 'scaffold — form delivery mode (direct vs bridge)', () => {
 		).rejects.toThrow( /forms\.mail/ );
 	} );
 
+	it( 'refuses a direct fallback outside the managed runtime', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'fallback-static' );
+		await expect(
+			scaffold( {
+				profile: {
+					...PROFILE,
+					forms: {
+						delivery: 'bridge',
+						fallback: 'direct',
+						mail: { provider: 'brevo', from: 'a@b.c', to: 'd@e.f' },
+					},
+				},
+				targetDir: target,
+				template: 'blog',
+			} )
+		).rejects.toThrow( /forms\.fallback: "direct" requires deploy\.runtime/ );
+	} );
+
+	it( 'refuses a direct fallback without the mail block', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'fallback-nomail' );
+		await expect(
+			scaffold( {
+				profile: {
+					...PROFILE,
+					deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+					forms: { delivery: 'bridge', fallback: 'direct' },
+				},
+				targetDir: target,
+				template: 'blog',
+			} )
+		).rejects.toThrow( /forms\.fallback: "direct" requires forms\.mail/ );
+	} );
+
+	it( 'emits the bridge route with the provider fallback when asked', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'fallback-ok' );
+		await scaffold( {
+			profile: {
+				...PROFILE,
+				deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+				forms: {
+					delivery: 'bridge',
+					fallback: 'direct',
+					mail: { provider: 'brevo', from: 'a@b.c', to: 'd@e.f' },
+				},
+			},
+			targetDir: target,
+			template: 'blog',
+		} );
+
+		const endpoint = await readFile( path.join( target, 'src', 'pages', 'api', 'forms', 'submit.ts' ), 'utf8' );
+		expect( endpoint ).toContain( 'proxyToWordPress' );
+		expect( endpoint ).toContain( 'deliverDirect' );
+		expect( endpoint ).toContain( 'submissionMessage' );
+		// The shared payload contract travels with the project.
+		await expect( stat( path.join( target, 'src', 'forge', 'forms.ts' ) ) ).resolves.toBeTruthy();
+	} );
+
+	it( 'leaves the bridge route alone without the opt-in', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'fallback-off' );
+		await scaffold( {
+			profile: {
+				...PROFILE,
+				deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+				forms: { delivery: 'bridge' },
+			},
+			targetDir: target,
+			template: 'blog',
+		} );
+
+		const endpoint = await readFile( path.join( target, 'src', 'pages', 'api', 'forms', 'submit.ts' ), 'utf8' );
+		expect( endpoint ).toContain( 'proxyToWordPress' );
+		expect( endpoint ).not.toContain( 'deliverDirect' );
+	} );
+
 	it( 'emits the provider endpoint and records the mode', async () => {
 		const root = await tempDir();
 		const target = path.join( root, 'direct-ok' );

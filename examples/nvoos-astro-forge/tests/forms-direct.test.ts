@@ -79,20 +79,20 @@ describe('renderDirectFormsEndpointTs', () => {
 		expect(source).toContain('recent.splice');
 	});
 
-	it('flattens the nested `fields` bag the shared client posts', () => {
-		// Form.astro posts `{ form, fields: { name, email, … }, honeypot,
-		// timestamp }` — the envelope the WordPress bridge reads. Reading only
-		// top-level scalars dropped every visitor value (and would drop the
-		// Turnstile token), so the direct endpoint must flatten it too.
-		expect(source).toContain('const nested = parsed.fields;');
-		expect(source).toContain("if ( key === 'fields' ) {");
-		// The visitor's address survives the flatten, so Reply-To works.
-		expect(source).toContain('fields.email');
+	it('reads the shared client envelope through the shared parser', () => {
+		// The flatten + reserved-field rules live in lib/forms.ts so the bridge
+		// fallback cannot drift from this endpoint; they are unit-tested there.
+		expect(source).toContain(
+			"import { readSubmissionFields, submissionMessage } from '../../../forge/forms.ts';"
+		);
+		expect(source).toContain('const fields = await readSubmissionFields( request );');
 	});
 
-	it('never echoes a form-owned field into the email body', () => {
-		expect(source).toContain("'honeypot', 'timestamp', '_redirect', 'form', 'post_id'");
-		expect(source).toContain('.filter( ( [ key ] ) => ! INTERNAL.has( key ) )');
+	it('builds the email through the shared message builder', () => {
+		// Reserved fields, Reply-To and the idempotency digest are its job — a
+		// second copy here is exactly what would drift.
+		expect(source).toContain('const message = submissionMessage( fields );');
+		expect(source).not.toContain('INTERNAL');
 	});
 });
 
@@ -148,7 +148,9 @@ describe('renderDirectFormsEndpointTs — Turnstile', () => {
 	});
 
 	it('keeps the token out of the email body', () => {
-		expect(turnstileSource).toContain("'cf-turnstile-response' ] );");
+		// cf-turnstile-response is reserved by the shared builder, so the token
+		// cannot reach the body — pinned in tests/forms.test.ts, not duplicated.
+		expect(turnstileSource).toContain('submissionMessage( fields )');
 	});
 
 	it('does not crash when TURNSTILE_SECRET is unset yet', () => {
