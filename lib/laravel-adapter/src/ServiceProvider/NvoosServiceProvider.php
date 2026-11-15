@@ -265,6 +265,14 @@ class NvoosServiceProvider extends ServiceProvider {
 			$orchestrator->setOutputGuard( self::outputGuardFromConfig() );
 			$orchestrator->setHarnessProfileProvider( $app->make( HarnessProfileProviderInterface::class ) );
 
+			// Trace capture is a master kill switch on top of the per-assistant
+			// profile: off here means nothing is written, whatever a profile says.
+			$orchestrator->setTraceStore(
+				(bool) config( 'oos.security.trace_capture', true )
+					? $app->make( TraceStoreInterface::class )
+					: null
+			);
+
 			return $orchestrator;
 		} );
 	}

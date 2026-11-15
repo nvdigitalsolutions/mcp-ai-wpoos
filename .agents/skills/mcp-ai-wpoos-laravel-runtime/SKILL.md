@@ -89,9 +89,9 @@ the fixtures already in place — this is the only CI coverage for `docker/**`.
 
 | Suite | Command (cwd) | Baseline (2026-11-14) |
 |---|---|---|
-| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 690 passed / 4063 assertions (2026-11-15, after the harness port and the output-guard wiring) |
+| App | `docker exec -w /app oos-laravel-app php artisan test` — with `-e NVOOS_PM_FIXTURE=/workspace/oos/tests/fixtures/pm/tools.json -e NVOOS_PM_WRITES_FIXTURE=/workspace/oos/tests/fixtures/pm/writes.json`, or the two PM parity tests fail with "Empty data set" | 693 passed / 4067 assertions (2026-11-15, after the harness port and the chat-path wiring) |
 | Adapter | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/laravel-adapter`) | 180 passed / 676 assertions, 2 pre-existing failures in the project tool family (2026-11-15). Run it with **host** PHP: the container's `vendor/nvoos/core` symlink is Windows-absolute and does not resolve on Linux |
-| Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1623 tests / 5654 assertions (2026-11-15, after the harness port, the output-guard wiring and guardrail prompt injection); green apart from the no-coverage-driver warning |
+| Core | `php -d extension=fileinfo vendor/bin/phpunit` (`lib/core`) | 1640 tests / 5714 assertions (2026-11-15, after the harness port, output-guard wiring, guardrail injection and trace capture); green apart from the no-coverage-driver warning |
 | Console smoke (G1) | `npm run test:e2e` (`examples/nvoos-complete-velocity`) | 6 passed / ~30 s (2026-11-14). Builds `.e2e-dist/` (`--mode laravel`) and serves it through `scripts/serve.mjs`; the committed `dist/` is untouched. Needs the stack up and `localhost:4318` in `SANCTUM_STATEFUL_DOMAINS` |
 
 **The console smoke is the only gate that exercises both halves at once.**

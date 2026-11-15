@@ -25,6 +25,7 @@ use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
+use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Decision\AgentPreStepDecision;
 use Nvoos\Core\Domain\Decision\AgentRequestDecision;
 use Nvoos\Core\Domain\Decision\AgentRequestErrorDecision;
@@ -1151,5 +1152,140 @@ final class ChatOrchestratorTest extends TestCase {
 
 		$this->assertSame( 'system', $sent[0]['role'] );
 		$this->assertStringStartsWith( '[Guardrails — Stay on Target]', $sent[0]['content'] );
+	}
+
+	// ── Trace capture ─────────────────────────────────────────────
+
+	/**
+	 * In-memory trace store, so the orchestration tests can see the shape of a
+	 * run without a database.
+	 */
+	private function traceStore(): TraceStoreInterface {
+		return new class() implements TraceStoreInterface {
+			/** @var array<int, string> */
+			public array $types = array();
+
+			/** @var array<int, array<string, mixed>> */
+			public array $records = array();
+
+			public int $prunes = 0;
+
+			public function append( int $assistantId, string $runId, string $artifact, array $record ): bool {
+				$this->records[] = $record;
+				$this->types[]   = (string) ( $record['type'] ?? '' );
+
+				return true;
+			}
+
+			public function prune( int $assistantId, int $keepRuns ): int {
+				++$this->prunes;
+
+				return 0;
+			}
+		};
+	}
+
+	private function tracedProfile(): HarnessProfileProviderInterface {
+		$profiles = $this->createMock( HarnessProfileProviderInterface::class );
+		$profiles->method( 'getProfile' )->willReturn(
+			array(
+				'enabled' => true,
+				'trace_capture' => array( 'enabled' => true, 'retention_runs' => 30 ),
+			)
+		);
+
+		return $profiles;
+	}
+
+	public function test_no_trace_store_is_wired_by_default(): void {
+		list( $orchestrator ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+
+		$this->assertNull( $orchestrator->traceStore() );
+	}
+
+	public function test_a_turn_writes_start_iteration_and_end(): void {
+		list( $orchestrator ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+		$store = $this->traceStore();
+
+		$orchestrator->setTraceStore( $store );
+		$orchestrator->setHarnessProfileProvider( $this->tracedProfile() );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+			assistantId: 7,
+		);
+
+		$this->assertSame( array( 'start', 'iteration', 'end' ), $store->types );
+		$this->assertSame( 1, $store->prunes, 'The run is swept when it closes.' );
+		$this->assertSame( 'gpt-4o', $store->records[0]['model'] );
+		$this->assertSame( 'stop', $store->records[1]['finish_reason'] );
+		$this->assertSame( 1, $store->records[2]['provider_calls'], 'The capture counts the call even when the loop never increments.' );
+	}
+
+	public function test_capture_is_gated_by_the_profile_even_with_a_store(): void {
+		list( $orchestrator ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+		$store = $this->traceStore();
+
+		$orchestrator->setTraceStore( $store );
+
+		$profiles = $this->createMock( HarnessProfileProviderInterface::class );
+		$profiles->method( 'getProfile' )->willReturn( array( 'enabled' => true ) );
+		$orchestrator->setHarnessProfileProvider( $profiles );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+			assistantId: 7,
+		);
+
+		$this->assertSame( array(), $store->types );
+		$this->assertSame( 0, $store->prunes );
+	}
+
+	public function test_a_trace_records_one_iteration_per_provider_call(): void {
+		list( $orchestrator ) = $this->orchestrator(
+			$this->echoTool()[0],
+			array( $this->toolCallResponse(), $this->finalResponse() )
+		);
+		$store = $this->traceStore();
+
+		$orchestrator->setTraceStore( $store );
+		$orchestrator->setHarnessProfileProvider( $this->tracedProfile() );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Do it.' ) ),
+			array( 'tools' => array( 'echo_tool' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+			assistantId: 7,
+		);
+
+		$this->assertSame( array( 'start', 'iteration', 'iteration', 'end' ), $store->types );
+		$this->assertSame( 'tool_calls', $store->records[1]['finish_reason'] );
+		$this->assertSame( 'stop', $store->records[2]['finish_reason'] );
+		$this->assertSame( 2, $store->records[3]['provider_calls'] );
+		$this->assertSame( 1, $store->records[3]['iterations'], 'The orchestrator loop counted one continuation.' );
+	}
+
+	public function test_the_streaming_path_traces_too(): void {
+		$sse = new SseHandler( $this->createMock( PlatformFlushInterface::class ) );
+		$sse->markHeadersSent();
+
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ), null, $sse );
+		$store = $this->traceStore();
+
+		$orchestrator->setTraceStore( $store );
+		$orchestrator->setHarnessProfileProvider( $this->tracedProfile() );
+		$dispatcher->router->streamChunks = array();
+
+		ob_start();
+		$orchestrator->handleChatStreaming(
+			messages: array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			assistantConfig: array( 'provider' => 'openai', 'model' => 'gpt-4o', 'tools' => array() ),
+			assistantId: 7,
+		);
+		ob_end_clean();
+
+		$this->assertSame( array( 'start', 'iteration', 'end' ), $store->types );
+		$this->assertSame( 1, $store->prunes );
 	}
 }
