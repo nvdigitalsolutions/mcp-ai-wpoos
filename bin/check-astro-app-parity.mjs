@@ -234,6 +234,9 @@ const GUARD_MARKERS = [
 	[/timestamp/, 'time-trap timestamp'],
 	[/64 \* 1024/, '64 KB body cap'],
 	[/429/, 'throttle response'],
+	// The key comes from the proxy-aware client address, not the socket peer:
+	// behind the platform proxy the peer is one address for every visitor.
+	[/x-forwarded-for/i, 'proxy-aware client address'],
 	[/idempotenc/i, 'idempotency key'],
 	[/replyTo/i, 'reply-to'],
 ];

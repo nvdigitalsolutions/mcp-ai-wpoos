@@ -5,6 +5,9 @@
 // round-trip. The endpoint applies them in this order, cheapest first:
 //   body cap → parse → honeypot → time trap → per-IP throttle → send
 //
+// "Per-IP" is `clientIp()` below, not the socket peer: behind the platform
+// proxy the peer is the proxy for every visitor.
+//
 // A bot that trips the honeypot or the time trap is ACCEPTED SILENTLY. A
 // rejection teaches the sender which field to change; silence teaches nothing.
 // ---------------------------------------------------------------------------
@@ -90,6 +93,69 @@ export function isBot(fields: Fields, now: number = Date.now()): boolean {
 	return stamp > 0 && (now - stamp) / 1000 < MIN_SECONDS;
 }
 
+/** How many addresses the throttle will remember before it prunes. */
+const MAX_TRACKED_IPS = 5000;
+
+/** A bare IPv4/IPv6 literal — X-Forwarded-For is attacker-adjacent text. */
+function isIpAddress(value: string): boolean {
+	// Colons first: an IPv4-mapped address (`::ffff:127.0.0.1`) also splits into
+	// four dot-groups, so a dot-count test alone would misread it.
+	if (value.includes(':')) {
+		return /^[0-9a-f:.]+$/i.test(value);
+	}
+	const parts = value.split('.');
+	return (
+		parts.length === 4 &&
+		parts.every((part) => /^[0-9]{1,3}$/.test(part) && Number(part) <= 255)
+	);
+}
+
+/** Loopback / RFC1918 / link-local — i.e. something is proxying for us. */
+function isLocalPeer(address: string): boolean {
+	if (!isIpAddress(address)) {
+		return false;
+	}
+	const mapped = address.startsWith('::ffff:') ? address.slice(7) : address;
+	if (mapped.includes(':')) {
+		return mapped === '::1' || mapped === '::' || /^(?:fc|fd|fe[89ab])/i.test(mapped);
+	}
+	const [a, b] = mapped.split('.').map(Number);
+	return (
+		a === 10 ||
+		a === 127 ||
+		(a === 192 && b === 168) ||
+		(a === 172 && b >= 16 && b <= 31) ||
+		(a === 169 && b === 254)
+	);
+}
+
+/**
+ * The visitor's address, for the per-IP throttle.
+ *
+ * Behind a reverse proxy (Cloudways nginx, the managed tier) the socket peer is
+ * the PROXY, so keying the throttle on `clientAddress` alone silently becomes
+ * one site-wide bucket: the sixth enquiry in ten minutes from anybody is
+ * refused. That is not hypothetical — it was measured on a managed deploy
+ * (2026-11-15).
+ *
+ * The proxy APPENDS the address it saw to X-Forwarded-For, so the RIGHTMOST hop
+ * is the value a client cannot forge: a visitor-supplied header is prepended,
+ * never replaced. Trust that hop only when the peer is itself loopback/private
+ * (proof a proxy is in front); otherwise the peer IS the visitor.
+ */
+export function clientIp(request: Request, clientAddress?: string | null): string {
+	const peer = (clientAddress ?? '').trim();
+	if (peer !== '' && !isLocalPeer(peer)) {
+		return peer;
+	}
+	const hops = (request.headers.get('x-forwarded-for') ?? '')
+		.split(',')
+		.map((hop) => hop.trim())
+		.filter((hop) => hop !== '');
+	const rightmost = hops.length > 0 ? hops[hops.length - 1] : '';
+	return isIpAddress(rightmost) ? rightmost : peer || 'unknown';
+}
+
 /**
  * Per-IP fixed-window throttle.
  *
@@ -105,7 +171,21 @@ export function createThrottle(
 	return (ip: string, now: number = Date.now()): boolean => {
 		const recent = (hits.get(ip) ?? []).filter((at) => now - at < windowMs);
 		recent.push(now);
+		// Keep the newest `limit + 1` stamps: still over the limit (so a flooded
+		// bucket stays closed) without letting one key grow without bound.
+		if (recent.length > limit + 1) {
+			recent.splice(0, recent.length - (limit + 1));
+		}
 		hits.set(ip, recent);
+		// Per-address keys make the map itself unbounded, so a unique-address
+		// flood is pruned once it grows: drop only fully-expired buckets.
+		if (hits.size > MAX_TRACKED_IPS) {
+			for (const [key, stamps] of hits) {
+				if (stamps.every((at) => now - at >= windowMs)) {
+					hits.delete(key);
+				}
+			}
+		}
 		return recent.length > limit;
 	};
 }
