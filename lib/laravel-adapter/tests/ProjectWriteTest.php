@@ -158,15 +158,16 @@ final class ProjectWriteTest extends TestCase {
 		$this->assertStringContainsString( 'name is required', $result->getMessage() );
 	}
 
-	public function test_create_project_rejects_an_unknown_status(): void {
-		$result = $this->registry->execute(
-			'create_project',
-			array( 'name' => 'X', 'status' => 'paused' ),
-			$this->context
-		);
+	/**
+	 * WordPress coerces an unknown status to the default on create rather than
+	 * failing, and echoes what it stored, so the caller still sees the write.
+	 * Rejecting here would make one model transcript valid on one runtime and
+	 * not the other — see the create/update split in `CreateProjectTool`.
+	 */
+	public function test_create_project_coerces_an_unknown_status_to_the_default(): void {
+		$result = $this->create( array( 'name' => 'X', 'status' => 'paused' ) );
 
-		$this->assertInstanceOf( \RuntimeException::class, $result );
-		$this->assertStringContainsString( 'Unknown project status', $result->getMessage() );
+		$this->assertSame( 'planning', $result['data']['project']['status'] );
 	}
 
 	public function test_create_project_rejects_an_impossible_date(): void {
