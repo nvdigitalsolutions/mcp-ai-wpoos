@@ -1,22 +1,15 @@
 /**
  * ESLint flat config for the NV oOS SaaS Controller addon.
  *
- * Why not `wp-scripts lint-js` defaults: @wordpress/scripts@32 detects only
- * flat configs, and its bundled fallback config targets the ESLint-10-era
- * @wordpress/eslint-plugin@25 — running it against this addon's eslint 8
- * tree crashes with a circular-config error. This file pins the stack the
- * addon installs (eslint 8.57 + @wordpress/eslint-plugin 23 +
- * @typescript-eslint 6) and is invoked directly by `npm run lint:js`.
+ * Runs on eslint 9 with @wordpress/eslint-plugin 25 (which ships flat configs
+ * and a typescript-eslint 8 stack). Invoked directly by `npm run lint:js`;
+ * `wp-scripts lint-js` is not used here because the addon pins its own ESLint
+ * stack rather than inheriting the one bundled with @wordpress/scripts.
  */
 
 /* eslint-disable import/no-extraneous-dependencies -- dev-only config file. */
 
-const { FlatCompat } = require( '@eslint/eslintrc' );
-
-const compat = new FlatCompat( {
-	baseDirectory: __dirname,
-	resolvePluginsRelativeTo: __dirname,
-} );
+const wordpress = require( '@wordpress/eslint-plugin' );
 
 const tsFiles = [
 	'assets/src/**/*.ts',
@@ -35,8 +28,8 @@ module.exports = [
 		],
 	},
 
-	// WordPress recommended rules (eslintrc-era configs converted to flat).
-	...compat.extends( 'plugin:@wordpress/eslint-plugin/recommended' ),
+	// WordPress recommended rules (flat configs shipped by the plugin).
+	...wordpress.configs.recommended,
 
 	// Babel defaults for any plain JS/JSX files (mirrors wp-scripts when the
 	// project has no babel.config — this addon does not).
@@ -98,19 +91,20 @@ module.exports = [
 	//    balance_usd, …), so renaming them would fight the wire contract.
 	//  • no-bitwise is off for the Worker: utils.timingSafeEqual compares
 	//    signatures in constant time with `|=`/`^`, which is the point.
+	//
+	// The WordPress preset already registers the typescript-eslint parser and
+	// plugin for `**/*.ts`; re-registering them here would trip ESLint's
+	// "Cannot redefine plugin" error, so this block only adds the type-aware
+	// parserOptions and the addon's rule overrides.
 	{
 		files: tsFiles,
 		languageOptions: {
-			parser: require( '@typescript-eslint/parser' ),
 			parserOptions: {
 				project: './tsconfig.json',
 				ecmaVersion: 2020,
 				sourceType: 'module',
 				ecmaFeatures: { jsx: true },
 			},
-		},
-		plugins: {
-			'@typescript-eslint': require( '@typescript-eslint/eslint-plugin' ),
 		},
 		rules: {
 			camelcase: 'off',
