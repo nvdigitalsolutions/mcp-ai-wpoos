@@ -11,6 +11,7 @@ import {
 	MAX_BYTES,
 	RATE_LIMIT,
 	buildText,
+	clientIp,
 	createThrottle,
 	idempotencyKey,
 	isBot,
@@ -101,11 +102,57 @@ describe('createThrottle', () => {
 		expect(throttled('1.1.1.1', 0)).toBe(true);
 	});
 
+	it('stays blocked through a sustained flood', () => {
+		const throttled = createThrottle(2, 1000);
+		expect(throttled('1.1.1.1', 0)).toBe(false);
+		expect(throttled('1.1.1.1', 0)).toBe(false);
+		expect(throttled('1.1.1.1', 0)).toBe(true);
+		// The bucket is trimmed, so it must stay shut rather than re-open.
+		for (let i = 0; i < 100; i += 1) {
+			expect(throttled('1.1.1.1', 0)).toBe(true);
+		}
+		expect(throttled('1.1.1.1', 5000)).toBe(false);
+	});
+
 	it('forgets hits once the window has passed', () => {
 		const throttled = createThrottle(1, 1000);
 		expect(throttled('1.1.1.1', 0)).toBe(false);
 		expect(throttled('1.1.1.1', 0)).toBe(true);
 		expect(throttled('1.1.1.1', 5000)).toBe(false);
+	});
+});
+
+describe('clientIp', () => {
+	function request(headers: Record<string, string> = {}): Request {
+		return new Request('https://store.example/forms/submit', { method: 'POST', headers });
+	}
+
+	it('uses a public socket peer directly and ignores a forged header', () => {
+		// No proxy in front: the header is unverified, the peer is the truth.
+		expect(clientIp(request({ 'x-forwarded-for': '1.2.3.4' }), '203.0.113.9')).toBe('203.0.113.9');
+	});
+
+	it('takes the rightmost hop when the peer is the local proxy', () => {
+		// A visitor-supplied header is PREPENDED by the proxy, never replaced, so
+		// only the last hop is safe to believe.
+		const req = request({ 'x-forwarded-for': '1.2.3.4, 203.0.113.9' });
+		expect(clientIp(req, '127.0.0.1')).toBe('203.0.113.9');
+	});
+
+	it('treats mapped-loopback and RFC1918 peers as proxies', () => {
+		expect(clientIp(request({ 'x-forwarded-for': '203.0.113.9' }), '::ffff:127.0.0.1')).toBe(
+			'203.0.113.9'
+		);
+		expect(clientIp(request({ 'x-forwarded-for': '203.0.113.9' }), '10.0.0.4')).toBe('203.0.113.9');
+		expect(clientIp(request({ 'x-forwarded-for': '2001:db8::1' }), '::1')).toBe('2001:db8::1');
+	});
+
+	it('falls back to the peer when the header carries nothing usable', () => {
+		expect(clientIp(request({ 'x-forwarded-for': 'not-an-ip' }), '127.0.0.1')).toBe('127.0.0.1');
+	});
+
+	it('degrades to one bucket when nothing identifies the visitor', () => {
+		expect(clientIp(request())).toBe('unknown');
 	});
 });
 

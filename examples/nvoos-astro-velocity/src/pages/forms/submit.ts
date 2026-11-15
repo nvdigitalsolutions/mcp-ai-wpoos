@@ -18,6 +18,7 @@ import type { APIRoute } from 'astro';
 import { readMailConfig, runtimeEnv, sendMail } from '../../lib/mail';
 import {
 	buildText,
+	clientIp,
 	createThrottle,
 	idempotencyKey,
 	isBot,
@@ -70,10 +71,7 @@ export const POST: APIRoute = async ({ request, clientAddress, url }) => {
 		return asDocument ? seeOther(url.origin, `${RETURN_PATH}?sent=1`) : Response.json({ ok: true });
 	}
 
-	const ip =
-		clientAddress ??
-		request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-		'unknown';
+	const ip = clientIp(request, clientAddress);
 	if (throttled(ip)) {
 		return asDocument
 			? seeOther(url.origin, `${RETURN_PATH}?error=1`)
