@@ -338,18 +338,18 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 				// entry once (same-digest re-sets are skipped) and later
 				// incremental builds still dedupe unchanged files.
 				const data = entry.data as Record< string, unknown >;
-				// A glob-loaded MDX entry carries `body`; the WP loader carries
-				// `rendered.html`. Normalise local content into the same shape: the
-				// semantic renderer classifies rendered.html, so without this a
-				// locally-sourced page falls back to unthemed raw markup and a site
-				// rebuilt from local content loses every band.
+				// A local entry has TWO possible bodies and only one of them is HTML:
+				// the sibling `<id>.html` is the rendered body (materialized
+				// WordPress content, `lib/materialize.ts`), while the glob `body` is
+				// the Markdown/MDX SOURCE. Promoting that source to `rendered.html`
+				// shadowed the compiled `<Content />` and rendered a real MDX post as
+				// literal `import` lines and bullets (2026-11-15).
 				const localBody = ( () => {
-					const inline = typeof entry.body === 'string' ? entry.body.trim() : '';
 					if ( baseDir === '' || basename( id ) !== id ) {
-						return inline;
+						return '';
 					}
 					const sibling = resolve( baseDir, `${ id }.html` );
-					return existsSync( sibling ) ? readFileSync( sibling, 'utf8' ).trim() : inline;
+					return existsSync( sibling ) ? readFileSync( sibling, 'utf8' ).trim() : '';
 				} )();
 				const existingRendered = entry.rendered as { html?: unknown } | undefined;
 				const rendered: { html: string } | undefined =
