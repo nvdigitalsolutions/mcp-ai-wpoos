@@ -151,9 +151,9 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 | # | Cluster | Status |
 |---|---|---|
 | 1 | Retrieval harness | **done — 2026-11-15** (see §7) |
-| 2 | Citation verifier | pending (needs 1) |
-| 3 | Reasoning trace + store | pending |
-| 4 | Self-refine loop | pending (needs 3) |
+| 2 | Citation verifier | **done — 2026-11-15** (see §8) |
+| 3 | Reasoning trace | **done — 2026-11-15** (see §9) |
+| 4 | Self-refine loop | pending |
 | 5 | Tool router harness | pending |
 | 6 | Necessity gate | pending (needs approval queue) |
 | 7 | Harness search engine | **blocked by design** |
@@ -178,3 +178,29 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 - Adapter suite (host PHP): 180 tests / 676 assertions, the same 2 pre-existing project-tool failures
 - `phpcs --standard=phpcs-laravel.xml.dist` over the CI-covered trees: clean; `phpcs --standard=phpcs.xml.dist` on the WordPress harness file: clean
 - `WP_MCP_AI_Retrieval_Harness` parses and its delegation is one-way: core is authoritative when present, local implementation otherwise
+
+---
+
+## 8. Cluster 2 result — citation verifier
+
+**What shipped.** `Domain\Service\Harness\CitationVerifier` returns structured results (`claims[]` with `verified`/`similarity`, plus `verified`/`unverified`/`total`). WordPress delegates and keeps its `require_citations` gate, its translated warning text and its `do_action` contract, composing the appendix from the returned claims — so the rendered output is byte-identical.
+
+**Proven equivalent.** The real WordPress class ran twice over a six-case corpus (core hidden vs loaded) and the rendered output plus `do_action` counts were diffed. Five cases are byte-identical. The sixth is an improvement: a passage-shaped source (`['text' => …]`) makes the local path raise `strtolower(): Argument #1 must be of type string, array given`, while core reads `text` — which matters because cluster 1 returns passages.
+
+**Two behaviours pinned by tests**, both caught by a first-draft test being wrong: identical text scores **0.5 not 1.0** (the union concatenates two unique sets, so the ratio is a strict lower bound on overlap), and a sentence needs a number, a year or a copula to be judged at all.
+
+**Validation.** `lib/core` 1,445 tests / 5,234 assertions (13 new); app suite unchanged at 674 / 4,023 because the cluster adds no binding; phpcs clean on both standards.
+
+---
+
+## 9. Cluster 3 result — reasoning trace
+
+**Scope correction.** The plan said "reasoning trace + trace-store contract". The trace schema and the vote primitive are what the WordPress class actually owns; the *store* is a separate class (`Harness_Trace_Capture`) that also owns the retention policy, and its only consumer is cluster 4's self-refine loop. Defining a `TraceStoreInterface` now would produce a contract with no consumer and a Laravel adapter with no table, so the store moved to cluster 4, where it has a caller.
+
+**What shipped.** `Domain\Service\Harness\ReasoningTrace` — `newTrace()`, `sanitize()` (unknown keys dropped, list fields capped at 50, junk degrading to a fresh trace) and `selfConsistencyVote()` (whitespace/case-normalised majority with the agreement ratio, ties to the first candidate). WordPress delegates the three; `persist()`/`fetch()` stay on post meta because storage is a platform concern.
+
+**Proven equivalent.** Both implementations ran over five trace corpora and six vote sets; the only differences were the file path in an `Array to string conversion` warning that both emit, and a one-second clock tick on the case that falls back to "now".
+
+**Validation.** `lib/core` **1,484 tests / 5,320 assertions** (21 new); app suite **678 passed / 4,033 assertions** (unchanged); phpcs clean on both standards.
+
+**No app-level test**, for the same reason as cluster 2: no binding ships here.
