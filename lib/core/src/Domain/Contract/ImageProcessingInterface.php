@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Image Processing — domain contract for server-side image manipulation.
  *

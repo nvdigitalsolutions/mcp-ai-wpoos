@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tool flow stage interface.
  *
@@ -34,10 +35,10 @@ namespace Nvoos\Core\Domain\Contract;
  *  - 'middle':  Only in intermediate iterations
  *  - 'end':     Only in the final iteration
  */
-interface ToolFlowStageInterface {
-
-	/**
-	 * @return string[]  Eligible stage identifiers.
-	 */
-	public function getFlowStages(): array;
+interface ToolFlowStageInterface
+{
+    /**
+     * @return string[]  Eligible stage identifiers.
+     */
+    public function getFlowStages(): array;
 }

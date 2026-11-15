@@ -8,10 +8,13 @@
  *
  * SPDX-License-Identifier: MIT
  */
+
 declare(strict_types=1);
+
 namespace Nvoos\Core\Domain\Contract;
 
-interface ValidationServiceInterface {
+interface ValidationServiceInterface
+{
     /**
      * @return array{valid: bool, error?: string}
      */

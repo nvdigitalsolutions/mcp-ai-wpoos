@@ -1,4 +1,5 @@
 <?php
+
 /**
  * LM Studio provider client (local AI).
  *
@@ -21,35 +22,38 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class LmStudioClient extends OpenAiCompatibleClient {
+class LmStudioClient extends OpenAiCompatibleClient
+{
+    public function __construct(
+        SettingsStoreInterface $settings,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+        parent::__construct($settings, $http, $errors);
+        $this->providerSlug = 'lm_studio';
+    }
 
-	public function __construct(
-		SettingsStoreInterface $settings,
-		HttpClientInterface $http,
-		ErrorFactoryInterface $errors,
-	) {
-		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'lm_studio';
-	}
+    protected function getDefaultBaseUrl(): string
+    {
+        return 'http://localhost:1234/v1';
+    }
 
-	protected function getDefaultBaseUrl(): string {
-		return 'http://localhost:1234/v1';
-	}
+    /**
+     * LM Studio runs locally — never require an API key.
+     */
+    protected function requiresApiKey(): bool
+    {
+        return false;
+    }
 
-	/**
-	 * LM Studio runs locally — never require an API key.
-	 */
-	protected function requiresApiKey(): bool {
-		return false;
-	}
+    protected function buildAuthHeaders(string $apiKey): array
+    {
+        $headers = array( 'Content-Type' => 'application/json' );
 
-	protected function buildAuthHeaders( string $apiKey ): array {
-		$headers = array( 'Content-Type' => 'application/json' );
+        if ('' !== $apiKey) {
+            $headers['Authorization'] = "Bearer {$apiKey}";
+        }
 
-		if ( '' !== $apiKey ) {
-			$headers['Authorization'] = "Bearer {$apiKey}";
-		}
-
-		return $headers;
-	}
+        return $headers;
+    }
 }

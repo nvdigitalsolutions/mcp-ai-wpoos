@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tool execution rules interface.
  *
@@ -31,18 +32,18 @@ namespace Nvoos\Core\Domain\Contract;
  * Rules cover model requirements, parameter constraints, rate limits,
  * timeout constraints, and orchestration hints.
  */
-interface ToolRulesInterface {
-
-	/**
-	 * @return array{
-	 *     model_requirements?: array<string, mixed>,
-	 *     parameter_constraints?: array<string, mixed>,
-	 *     rate_limits?: array<string, mixed>,
-	 *     timeout_constraints?: array<string, mixed>,
-	 *     response_constraints?: array<string, mixed>,
-	 *     dependencies?: array<string, mixed>,
-	 *     orchestration_hints?: array<string, mixed>,
-	 * }
-	 */
-	public function getToolRules(): array;
+interface ToolRulesInterface
+{
+    /**
+     * @return array{
+     *     model_requirements?: array<string, mixed>,
+     *     parameter_constraints?: array<string, mixed>,
+     *     rate_limits?: array<string, mixed>,
+     *     timeout_constraints?: array<string, mixed>,
+     *     response_constraints?: array<string, mixed>,
+     *     dependencies?: array<string, mixed>,
+     *     orchestration_hints?: array<string, mixed>,
+     * }
+     */
+    public function getToolRules(): array;
 }

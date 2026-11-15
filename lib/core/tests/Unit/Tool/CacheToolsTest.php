@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tests for cache tools and DeleteSettingTool.
  *
@@ -21,89 +22,96 @@ use Nvoos\Core\Tool\IncrementCacheTool;
 use Nvoos\Core\Tool\DeleteSettingTool;
 use PHPUnit\Framework\TestCase;
 
-final class CacheToolsTest extends TestCase {
+final class CacheToolsTest extends TestCase
+{
+    // ─── GetCacheTool ───────────────────────────────────────────────
 
-	// ─── GetCacheTool ───────────────────────────────────────────────
+    public function testGetCacheFound(): void
+    {
+        $cache = $this->createMock(CacheStoreInterface::class);
+        $cache->method('getValue')->with('mykey', null)->willReturn('cached_value');
 
-	public function testGetCacheFound(): void {
-		$cache = $this->createMock( CacheStoreInterface::class );
-		$cache->method( 'getValue' )->with( 'mykey', null )->willReturn( 'cached_value' );
+        $tool   = new GetCacheTool($this->stubErrors(), $cache);
+        $result = $tool->execute(array( 'key' => 'mykey' ));
 
-		$tool   = new GetCacheTool( $this->stubErrors(), $cache );
-		$result = $tool->execute( array( 'key' => 'mykey' ) );
+        $this->assertTrue($result['success']);
+        $this->assertSame('cached_value', $result['data']['value']);
+        $this->assertTrue($result['data']['found']);
+    }
 
-		$this->assertTrue( $result['success'] );
-		$this->assertSame( 'cached_value', $result['data']['value'] );
-		$this->assertTrue( $result['data']['found'] );
-	}
+    public function testGetCacheMiss(): void
+    {
+        $cache = $this->createMock(CacheStoreInterface::class);
+        $cache->method('getValue')->willReturn(null);
 
-	public function testGetCacheMiss(): void {
-		$cache = $this->createMock( CacheStoreInterface::class );
-		$cache->method( 'getValue' )->willReturn( null );
+        $tool   = new GetCacheTool($this->stubErrors(), $cache);
+        $result = $tool->execute(array( 'key' => 'missing' ));
 
-		$tool   = new GetCacheTool( $this->stubErrors(), $cache );
-		$result = $tool->execute( array( 'key' => 'missing' ) );
+        $this->assertTrue($result['success']);
+        $this->assertNull($result['data']['value']);
+        $this->assertFalse($result['data']['found']);
+    }
 
-		$this->assertTrue( $result['success'] );
-		$this->assertNull( $result['data']['value'] );
-		$this->assertFalse( $result['data']['found'] );
-	}
+    // ─── SetCacheTool ───────────────────────────────────────────────
 
-	// ─── SetCacheTool ───────────────────────────────────────────────
+    public function testSetCache(): void
+    {
+        $cache = $this->createMock(CacheStoreInterface::class);
+        $cache->expects($this->once())->method('setValue')
+            ->with('mykey', 'myvalue', 3600)
+            ->willReturn(true);
 
-	public function testSetCache(): void {
-		$cache = $this->createMock( CacheStoreInterface::class );
-		$cache->expects( $this->once() )->method( 'setValue' )
-			->with( 'mykey', 'myvalue', 3600 )
-			->willReturn( true );
+        $tool   = new SetCacheTool($this->stubErrors(), $cache);
+        $result = $tool->execute(array( 'key' => 'mykey', 'value' => 'myvalue' ));
 
-		$tool   = new SetCacheTool( $this->stubErrors(), $cache );
-		$result = $tool->execute( array( 'key' => 'mykey', 'value' => 'myvalue' ) );
+        $this->assertTrue($result['success']);
+        $this->assertTrue($result['data']['stored']);
+    }
 
-		$this->assertTrue( $result['success'] );
-		$this->assertTrue( $result['data']['stored'] );
-	}
+    // ─── DeleteCacheTool ────────────────────────────────────────────
 
-	// ─── DeleteCacheTool ────────────────────────────────────────────
+    public function testDeleteCache(): void
+    {
+        $cache = $this->createMock(CacheStoreInterface::class);
+        $cache->method('deleteValue')->with('mykey')->willReturn(true);
 
-	public function testDeleteCache(): void {
-		$cache = $this->createMock( CacheStoreInterface::class );
-		$cache->method( 'deleteValue' )->with( 'mykey' )->willReturn( true );
+        $tool   = new DeleteCacheTool($this->stubErrors(), $cache);
+        $result = $tool->execute(array( 'key' => 'mykey' ));
 
-		$tool   = new DeleteCacheTool( $this->stubErrors(), $cache );
-		$result = $tool->execute( array( 'key' => 'mykey' ) );
+        $this->assertTrue($result['success']);
+        $this->assertTrue($result['data']['deleted']);
+    }
 
-		$this->assertTrue( $result['success'] );
-		$this->assertTrue( $result['data']['deleted'] );
-	}
+    // ─── IncrementCacheTool ─────────────────────────────────────────
 
-	// ─── IncrementCacheTool ─────────────────────────────────────────
+    public function testIncrementCache(): void
+    {
+        $cache = $this->createMock(CacheStoreInterface::class);
+        $cache->method('increment')->with('counter', 1, 3600)->willReturn(42);
 
-	public function testIncrementCache(): void {
-		$cache = $this->createMock( CacheStoreInterface::class );
-		$cache->method( 'increment' )->with( 'counter', 1, 3600 )->willReturn( 42 );
+        $tool   = new IncrementCacheTool($this->stubErrors(), $cache);
+        $result = $tool->execute(array( 'key' => 'counter' ));
 
-		$tool   = new IncrementCacheTool( $this->stubErrors(), $cache );
-		$result = $tool->execute( array( 'key' => 'counter' ) );
+        $this->assertTrue($result['success']);
+        $this->assertSame(42, $result['data']['new_value']);
+    }
 
-		$this->assertTrue( $result['success'] );
-		$this->assertSame( 42, $result['data']['new_value'] );
-	}
+    // ─── DeleteSettingTool ──────────────────────────────────────────
 
-	// ─── DeleteSettingTool ──────────────────────────────────────────
+    public function testDeleteSetting(): void
+    {
+        $settings = $this->createMock(SettingsStoreInterface::class);
+        $settings->expects($this->once())->method('delete')->with('old_key');
 
-	public function testDeleteSetting(): void {
-		$settings = $this->createMock( SettingsStoreInterface::class );
-		$settings->expects( $this->once() )->method( 'delete' )->with( 'old_key' );
+        $tool   = new DeleteSettingTool($this->stubErrors(), $settings);
+        $result = $tool->execute(array( 'key' => 'old_key' ));
 
-		$tool   = new DeleteSettingTool( $this->stubErrors(), $settings );
-		$result = $tool->execute( array( 'key' => 'old_key' ) );
+        $this->assertTrue($result['success']);
+        $this->assertSame('old_key', $result['data']['key']);
+    }
 
-		$this->assertTrue( $result['success'] );
-		$this->assertSame( 'old_key', $result['data']['key'] );
-	}
-
-	private function stubErrors(): ErrorFactoryInterface {
-		return $this->createMock( ErrorFactoryInterface::class );
-	}
+    private function stubErrors(): ErrorFactoryInterface
+    {
+        return $this->createMock(ErrorFactoryInterface::class);
+    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Data Budget Tracker — cumulative byte budget for agentic loops.
  *

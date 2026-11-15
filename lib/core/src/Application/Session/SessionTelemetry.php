@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SessionTelemetry — subscriber tap on the append-only session log.
  *
@@ -23,52 +24,56 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Session;
 
-final class SessionTelemetry {
+final class SessionTelemetry
+{
+    /**
+     * @var array<int, callable>
+     */
+    private array $listeners = array();
 
-	/**
-	 * @var array<int, callable>
-	 */
-	private array $listeners = array();
+    /**
+     * Number of listener failures isolated so far.
+     */
+    private int $failures = 0;
 
-	/**
-	 * Number of listener failures isolated so far.
-	 */
-	private int $failures = 0;
+    /**
+     * Subscribe a listener. Signature: function ( SessionEvent $event ): void.
+     */
+    public function subscribe(callable $listener): void
+    {
+        $this->listeners[] = $listener;
+    }
 
-	/**
-	 * Subscribe a listener. Signature: function ( SessionEvent $event ): void.
-	 */
-	public function subscribe( callable $listener ): void {
-		$this->listeners[] = $listener;
-	}
+    /**
+     * Fan out an appended event to every listener.
+     *
+     * Listener exceptions are caught and counted — telemetry must never
+     * break the conversation it observes.
+     */
+    public function notify(SessionEvent $event): void
+    {
+        foreach ($this->listeners as $listener) {
+            try {
+                $listener($event);
+            } catch (\Throwable $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Failure isolation is the contract; no rethrow.
+                ++$this->failures;
+            }
+        }
+    }
 
-	/**
-	 * Fan out an appended event to every listener.
-	 *
-	 * Listener exceptions are caught and counted — telemetry must never
-	 * break the conversation it observes.
-	 */
-	public function notify( SessionEvent $event ): void {
-		foreach ( $this->listeners as $listener ) {
-			try {
-				$listener( $event );
-			} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Failure isolation is the contract; no rethrow.
-				++$this->failures;
-			}
-		}
-	}
+    /**
+     * Number of subscribed listeners.
+     */
+    public function listenerCount(): int
+    {
+        return \count($this->listeners);
+    }
 
-	/**
-	 * Number of subscribed listeners.
-	 */
-	public function listenerCount(): int {
-		return \count( $this->listeners );
-	}
-
-	/**
-	 * Number of listener failures isolated so far (tests / health checks).
-	 */
-	public function failureCount(): int {
-		return $this->failures;
-	}
+    /**
+     * Number of listener failures isolated so far (tests / health checks).
+     */
+    public function failureCount(): int
+    {
+        return $this->failures;
+    }
 }

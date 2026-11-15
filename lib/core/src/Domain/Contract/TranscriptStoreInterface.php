@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Transcript Store — domain contract for chat transcript persistence.
  *

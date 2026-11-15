@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Baseten provider client.
  *
@@ -20,18 +21,19 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class BasetenClient extends OpenAiCompatibleClient {
+class BasetenClient extends OpenAiCompatibleClient
+{
+    public function __construct(
+        SettingsStoreInterface $settings,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+        parent::__construct($settings, $http, $errors);
+        $this->providerSlug = 'baseten';
+    }
 
-	public function __construct(
-		SettingsStoreInterface $settings,
-		HttpClientInterface $http,
-		ErrorFactoryInterface $errors,
-	) {
-		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'baseten';
-	}
-
-	protected function getDefaultBaseUrl(): string {
-		return 'https://api.baseten.co/v1';
-	}
+    protected function getDefaultBaseUrl(): string
+    {
+        return 'https://api.baseten.co/v1';
+    }
 }

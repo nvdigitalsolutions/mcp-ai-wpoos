@@ -40,72 +40,72 @@ namespace Nvoos\Core\Domain\Service\Harness;
 
 final class GuardrailPolicy
 {
-	public const MODE_BLOCK = 'block';
-	public const MODE_WARN = 'warn';
-	public const MODE_LOG = 'log';
+    public const MODE_BLOCK = 'block';
+    public const MODE_WARN = 'warn';
+    public const MODE_LOG = 'log';
 
-	/** Message keys a runtime maps to its own translated copy. */
-	public const REASON_JAILBREAK = 'jailbreak';
-	public const REASON_INJECTION = 'injection';
-	public const REASON_OFF_TOPIC = 'off_topic';
-	public const REASON_GENERIC = 'generic';
+    /** Message keys a runtime maps to its own translated copy. */
+    public const REASON_JAILBREAK = 'jailbreak';
+    public const REASON_INJECTION = 'injection';
+    public const REASON_OFF_TOPIC = 'off_topic';
+    public const REASON_GENERIC = 'generic';
 
-	/**
-	 * Whether an analysis result should be blocked.
-	 *
-	 * @param array  $analysis   Result from `PromptInjectionDetector::analyze()`.
-	 * @param string $mode       `block`, `warn` or `log`.
-	 * @param string $strictness `low`, `medium` or `high`.
-	 */
-	public static function decide(array $analysis, string $mode, string $strictness): bool
-	{
-		$result = isset($analysis['result']) ? (string) $analysis['result'] : PromptInjectionDetector::RESULT_SAFE;
+    /**
+     * Whether an analysis result should be blocked.
+     *
+     * @param array  $analysis   Result from `PromptInjectionDetector::analyze()`.
+     * @param string $mode       `block`, `warn` or `log`.
+     * @param string $strictness `low`, `medium` or `high`.
+     */
+    public static function decide(array $analysis, string $mode, string $strictness): bool
+    {
+        $result = isset($analysis['result']) ? (string) $analysis['result'] : PromptInjectionDetector::RESULT_SAFE;
 
-		if (PromptInjectionDetector::RESULT_SAFE === $result) {
-			return false;
-		}
+        if (PromptInjectionDetector::RESULT_SAFE === $result) {
+            return false;
+        }
 
-		// Log mode never blocks, whatever the finding.
-		if (self::MODE_LOG === $mode) {
-			return false;
-		}
+        // Log mode never blocks, whatever the finding.
+        if (self::MODE_LOG === $mode) {
+            return false;
+        }
 
-		if (self::MODE_BLOCK === $mode) {
-			return true;
-		}
+        if (self::MODE_BLOCK === $mode) {
+            return true;
+        }
 
-		if (
+        if (
             PromptInjectionDetector::RESULT_JAILBREAK === $result
-			|| PromptInjectionDetector::RESULT_INJECTION === $result
+            || PromptInjectionDetector::RESULT_INJECTION === $result
         ) {
-			return true;
-		}
+            return true;
+        }
 
-		return PromptInjectionDetector::STRICTNESS_HIGH === $strictness
-			&& PromptInjectionDetector::RESULT_OFF_TOPIC === $result;
-	}
+        return PromptInjectionDetector::STRICTNESS_HIGH === $strictness
+            && PromptInjectionDetector::RESULT_OFF_TOPIC === $result;
+    }
 
-	/**
-	 * The message key for a blocked analysis.
-	 *
-	 * Returns the finding's own key rather than a generic one, so a caller that
-	 * chooses to show something reads the right reason.
-	 *
-	 * @param array $analysis Result from `PromptInjectionDetector::analyze()`.
-	 */
-	public static function messageKey(array $analysis): string
-	{
-		$result = isset($analysis['result']) ? (string) $analysis['result'] : '';
+    /**
+     * The message key for a blocked analysis.
+     *
+     * Returns the finding's own key rather than a generic one, so a caller that
+     * chooses to show something reads the right reason.
+     *
+     * @param array $analysis Result from `PromptInjectionDetector::analyze()`.
+     */
+    public static function messageKey(array $analysis): string
+    {
+        $result = isset($analysis['result']) ? (string) $analysis['result'] : '';
 
-		switch ($result) {
-			case PromptInjectionDetector::RESULT_JAILBREAK:
-				return self::REASON_JAILBREAK;
-			case PromptInjectionDetector::RESULT_INJECTION:
-				return self::REASON_INJECTION;
-			case PromptInjectionDetector::RESULT_OFF_TOPIC:
-				return self::REASON_OFF_TOPIC;
-			default:
-				return self::REASON_GENERIC;
-		}
-	}
+        switch ($result) {
+            case PromptInjectionDetector::RESULT_JAILBREAK:
+                return self::REASON_JAILBREAK;
+            case PromptInjectionDetector::RESULT_INJECTION:
+                return self::REASON_INJECTION;
+            case PromptInjectionDetector::RESULT_OFF_TOPIC:
+                return self::REASON_OFF_TOPIC;
+            default:
+                return self::REASON_GENERIC;
+        }
+    }
 }

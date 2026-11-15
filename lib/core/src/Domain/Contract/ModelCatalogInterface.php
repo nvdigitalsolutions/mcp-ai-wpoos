@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Model Catalog — domain contract.
  *

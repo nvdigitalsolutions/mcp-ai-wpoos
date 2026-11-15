@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Rate Limiter — domain contract.
  *

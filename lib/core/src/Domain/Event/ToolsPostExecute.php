@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ToolsPostExecute — payload of the tools/post_execute waterfall.
  *
@@ -17,17 +18,18 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class ToolsPostExecute {
-
-	/**
-	 * @param ToolArgs $arguments
-	 * @param ToolContext $context
-	 */
-	public function __construct(
-		public readonly string $slug,
-		public readonly array $arguments,
-		public readonly array $context,
-		public readonly mixed $result,
-		public readonly bool $isError,
-	) {}
+final class ToolsPostExecute
+{
+    /**
+     * @param ToolArgs $arguments
+     * @param ToolContext $context
+     */
+    public function __construct(
+        public readonly string $slug,
+        public readonly array $arguments,
+        public readonly array $context,
+        public readonly mixed $result,
+        public readonly bool $isError,
+    ) {
+    }
 }

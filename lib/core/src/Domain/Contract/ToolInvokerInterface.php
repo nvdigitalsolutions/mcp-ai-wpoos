@@ -25,13 +25,13 @@ namespace Nvoos\Core\Domain\Contract;
 
 interface ToolInvokerInterface
 {
-	/**
-	 * Invoke a tool by slug.
-	 *
-	 * @param string               $slug      Tool slug.
-	 * @param array<string, mixed> $arguments Tool arguments.
-	 * @param array<string, mixed> $context   Execution context.
-	 * @return mixed Raw tool payload, or null when the tool is unavailable or failed.
-	 */
-	public function invoke(string $slug, array $arguments, array $context): mixed;
+    /**
+     * Invoke a tool by slug.
+     *
+     * @param string               $slug      Tool slug.
+     * @param array<string, mixed> $arguments Tool arguments.
+     * @param array<string, mixed> $context   Execution context.
+     * @return mixed Raw tool payload, or null when the tool is unavailable or failed.
+     */
+    public function invoke(string $slug, array $arguments, array $context): mixed;
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Thrown when an OKF concept cannot be read.
  *
@@ -17,18 +18,18 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Okf;
 
-final class OkfReadException extends \RuntimeException {
-
-	/**
-	 * @param string          $errorCode Machine-readable code, e.g. `okf_not_found`.
-	 * @param string          $message   Human-readable summary.
-	 * @param \Throwable|null $previous  Underlying cause, if any.
-	 */
-	public function __construct(
-		public readonly string $errorCode,
-		string $message,
-		?\Throwable $previous = null,
-	) {
-		parent::__construct( $message, 0, $previous );
-	}
+final class OkfReadException extends \RuntimeException
+{
+    /**
+     * @param string          $errorCode Machine-readable code, e.g. `okf_not_found`.
+     * @param string          $message   Human-readable summary.
+     * @param \Throwable|null $previous  Underlying cause, if any.
+     */
+    public function __construct(
+        public readonly string $errorCode,
+        string $message,
+        ?\Throwable $previous = null,
+    ) {
+        parent::__construct($message, 0, $previous);
+    }
 }

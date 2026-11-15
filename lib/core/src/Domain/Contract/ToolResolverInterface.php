@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ToolResolverInterface — read surface shared by the tool registry and
  * its scoped views.
@@ -19,15 +20,15 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
-interface ToolResolverInterface {
+interface ToolResolverInterface
+{
+    /**
+     * Resolve a tool by slug as this scope sees it.
+     */
+    public function get(string $slug): ?ToolInterface;
 
-	/**
-	 * Resolve a tool by slug as this scope sees it.
-	 */
-	public function get( string $slug ): ?ToolInterface;
-
-	/**
-	 * Whether a tool with the given slug is visible.
-	 */
-	public function has( string $slug ): bool;
+    /**
+     * Whether a tool with the given slug is visible.
+     */
+    public function has(string $slug): bool;
 }

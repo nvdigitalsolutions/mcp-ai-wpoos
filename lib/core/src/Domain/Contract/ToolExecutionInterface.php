@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tool Execution — domain contract.
  *

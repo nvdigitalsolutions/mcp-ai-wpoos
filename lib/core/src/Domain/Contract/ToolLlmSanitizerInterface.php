@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tool LLM sanitizer interface.
  *
@@ -31,16 +32,16 @@ namespace Nvoos\Core\Domain\Contract;
  * The LLM sees a stripped version of tool results (no base64 blobs,
  * no raw HTTP responses). The chat client receives the full result.
  */
-interface ToolLlmSanitizerInterface {
-
-	/**
-	 * Sanitize a tool result for LLM consumption.
-	 *
-	 * Strips verbose metadata, base64 content, duplicate raw API responses,
-	 * and truncates to a reasonable size.
-	 *
-	 * @param mixed $result  The raw tool execution result.
-	 * @return string        Sanitized text suitable for the LLM context window.
-	 */
-	public function sanitizeForLlm( mixed $result ): string;
+interface ToolLlmSanitizerInterface
+{
+    /**
+     * Sanitize a tool result for LLM consumption.
+     *
+     * Strips verbose metadata, base64 content, duplicate raw API responses,
+     * and truncates to a reasonable size.
+     *
+     * @param mixed $result  The raw tool execution result.
+     * @return string        Sanitized text suitable for the LLM context window.
+     */
+    public function sanitizeForLlm(mixed $result): string;
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * RFC 7235 WWW-Authenticate challenge parsing.
  *
@@ -33,74 +34,76 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Mcp;
 
-final class WwwAuthenticateChallenge {
+final class WwwAuthenticateChallenge
+{
+    /**
+     * Parse every challenge into one parameter map.
+     *
+     * First occurrence of a key wins, so a later challenge cannot overwrite a
+     * pointer the earlier one supplied.
+     *
+     * @param string $header Raw WWW-Authenticate value.
+     * @return array<string, string> Lowercased parameter names to values.
+     */
+    public static function parse(string $header): array
+    {
+        $params = array();
 
-	/**
-	 * Parse every challenge into one parameter map.
-	 *
-	 * First occurrence of a key wins, so a later challenge cannot overwrite a
-	 * pointer the earlier one supplied.
-	 *
-	 * @param string $header Raw WWW-Authenticate value.
-	 * @return array<string, string> Lowercased parameter names to values.
-	 */
-	public static function parse( string $header ): array {
-		$params = array();
+        foreach (self::split($header) as $challenge) {
+            $paramString = $challenge;
 
-		foreach ( self::split( $header ) as $challenge ) {
-			$paramString = $challenge;
+            // Strip the auth-scheme token when present (e.g. "Bearer ...").
+            if (preg_match('/^([a-zA-Z0-9._~+\/-]+)\s+(.+)$/', $challenge, $schemeMatch)) {
+                $paramString = $schemeMatch[2];
+            }
 
-			// Strip the auth-scheme token when present (e.g. "Bearer ...").
-			if ( preg_match( '/^([a-zA-Z0-9._~+\/-]+)\s+(.+)$/', $challenge, $schemeMatch ) ) {
-				$paramString = $schemeMatch[2];
-			}
+            if (preg_match_all('/([a-zA-Z_][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/', $paramString, $matches, PREG_SET_ORDER)) {
+                foreach ($matches as $match) {
+                    $key = strtolower($match[1]);
 
-			if ( preg_match_all( '/([a-zA-Z_][a-zA-Z0-9_-]*)\s*=\s*"([^"]*)"/', $paramString, $matches, PREG_SET_ORDER ) ) {
-				foreach ( $matches as $match ) {
-					$key = strtolower( $match[1] );
+                    if (! isset($params[ $key ])) {
+                        $params[ $key ] = $match[2];
+                    }
+                }
+            }
+        }
 
-					if ( ! isset( $params[ $key ] ) ) {
-						$params[ $key ] = $match[2];
-					}
-				}
-			}
-		}
+        return $params;
+    }
 
-		return $params;
-	}
+    /**
+     * Split a header into individual challenges.
+     *
+     * Commas inside quoted strings are data, not separators.
+     *
+     * @param string $header Raw WWW-Authenticate value.
+     * @return string[] Non-empty trimmed challenges.
+     */
+    public static function split(string $header): array
+    {
+        $challenges = array();
+        $current    = '';
+        $inQuotes   = false;
+        $length     = strlen($header);
 
-	/**
-	 * Split a header into individual challenges.
-	 *
-	 * Commas inside quoted strings are data, not separators.
-	 *
-	 * @param string $header Raw WWW-Authenticate value.
-	 * @return string[] Non-empty trimmed challenges.
-	 */
-	public static function split( string $header ): array {
-		$challenges = array();
-		$current    = '';
-		$inQuotes   = false;
-		$length     = strlen( $header );
+        for ($i = 0; $i < $length; $i++) {
+            $char = $header[ $i ];
 
-		for ( $i = 0; $i < $length; $i++ ) {
-			$char = $header[ $i ];
+            if ('"' === $char) {
+                $inQuotes = ! $inQuotes;
+            }
 
-			if ( '"' === $char ) {
-				$inQuotes = ! $inQuotes;
-			}
+            if (',' === $char && ! $inQuotes) {
+                $challenges[] = trim($current);
+                $current      = '';
+                continue;
+            }
 
-			if ( ',' === $char && ! $inQuotes ) {
-				$challenges[] = trim( $current );
-				$current      = '';
-				continue;
-			}
+            $current .= $char;
+        }
 
-			$current .= $char;
-		}
+        $challenges[] = trim($current);
 
-		$challenges[] = trim( $current );
-
-		return array_values( array_filter( $challenges ) );
-	}
+        return array_values(array_filter($challenges));
+    }
 }

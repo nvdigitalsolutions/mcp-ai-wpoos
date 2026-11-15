@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Profession Repository — domain contract.
  *

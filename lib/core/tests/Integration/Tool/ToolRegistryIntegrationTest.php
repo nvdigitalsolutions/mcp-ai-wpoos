@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Nvoos\Core\Tests\Integration\Tool;
 
 use Nvoos\Core\Application\Tool\ToolRegistry;
@@ -180,12 +182,17 @@ final class ToolRegistryIntegrationTest extends TestCase
     {
         $rc  = new \ReflectionClass($fqcn);
         $ctor = $rc->getConstructor();
-        if (!$ctor) return $rc->newInstance();
+        if (!$ctor) {
+            return $rc->newInstance();
+        }
 
         $args = [];
         foreach ($ctor->getParameters() as $p) {
             $t = $p->getType();
-            if (!$t instanceof \ReflectionNamedType) { $args[] = null; continue; }
+            if (!$t instanceof \ReflectionNamedType) {
+                $args[] = null;
+                continue;
+            }
             $args[] = match ($t->getName()) {
                 ErrorFactoryInterface::class        => $this->errors,
                 EventDispatcherInterface::class     => $this->events,

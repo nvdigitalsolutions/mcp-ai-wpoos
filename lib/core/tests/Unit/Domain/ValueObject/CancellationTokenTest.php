@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tests for CancellationToken — cooperative cancellation value object.
  *
@@ -15,115 +16,126 @@ use Nvoos\Core\Domain\Error\CancelledException;
 use Nvoos\Core\Domain\ValueObject\CancellationToken;
 use PHPUnit\Framework\TestCase;
 
-final class CancellationTokenTest extends TestCase {
+final class CancellationTokenTest extends TestCase
+{
+    public function testStartsActive(): void
+    {
+        $token = new CancellationToken();
 
-	public function testStartsActive(): void {
-		$token = new CancellationToken();
+        $this->assertFalse($token->isCancelled());
+        $this->assertSame('', $token->reason());
+    }
 
-		$this->assertFalse( $token->isCancelled() );
-		$this->assertSame( '', $token->reason() );
-	}
+    public function testCancelSetsReason(): void
+    {
+        $token = new CancellationToken();
+        $token->cancel('user_abort');
 
-	public function testCancelSetsReason(): void {
-		$token = new CancellationToken();
-		$token->cancel( 'user_abort' );
+        $this->assertTrue($token->isCancelled());
+        $this->assertSame('user_abort', $token->reason());
+    }
 
-		$this->assertTrue( $token->isCancelled() );
-		$this->assertSame( 'user_abort', $token->reason() );
-	}
+    public function testCancelDefaultsReason(): void
+    {
+        $token = new CancellationToken();
+        $token->cancel();
 
-	public function testCancelDefaultsReason(): void {
-		$token = new CancellationToken();
-		$token->cancel();
+        $this->assertTrue($token->isCancelled());
+        $this->assertSame('cancelled', $token->reason());
+    }
 
-		$this->assertTrue( $token->isCancelled() );
-		$this->assertSame( 'cancelled', $token->reason() );
-	}
+    public function testFirstCancelWins(): void
+    {
+        $token = new CancellationToken();
+        $token->cancel('first');
+        $token->cancel('second');
 
-	public function testFirstCancelWins(): void {
-		$token = new CancellationToken();
-		$token->cancel( 'first' );
-		$token->cancel( 'second' );
+        $this->assertSame('first', $token->reason());
+    }
 
-		$this->assertSame( 'first', $token->reason() );
-	}
+    public function testParentCancellationPropagates(): void
+    {
+        $parent = new CancellationToken();
+        $child  = new CancellationToken($parent);
 
-	public function testParentCancellationPropagates(): void {
-		$parent = new CancellationToken();
-		$child  = new CancellationToken( $parent );
+        $this->assertFalse($child->isCancelled());
 
-		$this->assertFalse( $child->isCancelled() );
+        $parent->cancel('parent_abort');
 
-		$parent->cancel( 'parent_abort' );
+        $this->assertTrue($child->isCancelled());
+        $this->assertSame('parent_abort', $child->reason());
+    }
 
-		$this->assertTrue( $child->isCancelled() );
-		$this->assertSame( 'parent_abort', $child->reason() );
-	}
+    public function testChildCancellationDoesNotAffectParent(): void
+    {
+        $parent = new CancellationToken();
+        $child  = new CancellationToken($parent);
+        $child->cancel('child_abort');
 
-	public function testChildCancellationDoesNotAffectParent(): void {
-		$parent = new CancellationToken();
-		$child  = new CancellationToken( $parent );
-		$child->cancel( 'child_abort' );
+        $this->assertTrue($child->isCancelled());
+        $this->assertFalse($parent->isCancelled());
+    }
 
-		$this->assertTrue( $child->isCancelled() );
-		$this->assertFalse( $parent->isCancelled() );
-	}
+    public function testDeadlineExpiry(): void
+    {
+        $token = CancellationToken::withDeadline(0.05);
 
-	public function testDeadlineExpiry(): void {
-		$token = CancellationToken::withDeadline( 0.05 );
+        $this->assertFalse($token->isCancelled());
 
-		$this->assertFalse( $token->isCancelled() );
+        \usleep(80_000);
 
-		\usleep( 80_000 );
+        $this->assertTrue($token->isCancelled());
+        $this->assertSame(CancellationToken::REASON_DEADLINE, $token->reason());
+    }
 
-		$this->assertTrue( $token->isCancelled() );
-		$this->assertSame( CancellationToken::REASON_DEADLINE, $token->reason() );
-	}
+    public function testProbeBasedCancellation(): void
+    {
+        $cancelled = false;
+        $token     = new CancellationToken(
+            null,
+            static function () use (&$cancelled): bool {
+                return $cancelled;
+            }
+        );
 
-	public function testProbeBasedCancellation(): void {
-		$cancelled = false;
-		$token     = new CancellationToken(
-			null,
-			static function () use ( &$cancelled ): bool {
-				return $cancelled;
-			}
-		);
+        $this->assertFalse($token->isCancelled());
 
-		$this->assertFalse( $token->isCancelled() );
+        $cancelled = true;
 
-		$cancelled = true;
+        $this->assertTrue($token->isCancelled());
+        $this->assertSame('cancelled', $token->reason());
+    }
 
-		$this->assertTrue( $token->isCancelled() );
-		$this->assertSame( 'cancelled', $token->reason() );
-	}
+    public function testThrowingProbeFailsOpen(): void
+    {
+        $token = new CancellationToken(
+            null,
+            static function (): bool {
+                throw new \RuntimeException('probe broken');
+            }
+        );
 
-	public function testThrowingProbeFailsOpen(): void {
-		$token = new CancellationToken(
-			null,
-			static function (): bool {
-				throw new \RuntimeException( 'probe broken' );
-			}
-		);
+        $this->assertFalse($token->isCancelled());
+        $this->assertSame('', $token->reason());
+    }
 
-		$this->assertFalse( $token->isCancelled() );
-		$this->assertSame( '', $token->reason() );
-	}
+    public function testThrowIfCancelledThrowsWithReason(): void
+    {
+        $token = new CancellationToken();
+        $token->cancel('deadline_exceeded');
 
-	public function testThrowIfCancelledThrowsWithReason(): void {
-		$token = new CancellationToken();
-		$token->cancel( 'deadline_exceeded' );
+        $this->expectException(CancelledException::class);
+        $this->expectExceptionMessage('deadline_exceeded');
 
-		$this->expectException( CancelledException::class );
-		$this->expectExceptionMessage( 'deadline_exceeded' );
+        $token->throwIfCancelled();
+    }
 
-		$token->throwIfCancelled();
-	}
+    public function testThrowIfCancelledIsNoopWhenActive(): void
+    {
+        $token = new CancellationToken();
 
-	public function testThrowIfCancelledIsNoopWhenActive(): void {
-		$token = new CancellationToken();
+        $token->throwIfCancelled();
 
-		$token->throwIfCancelled();
-
-		$this->assertFalse( $token->isCancelled() );
-	}
+        $this->assertFalse($token->isCancelled());
+    }
 }

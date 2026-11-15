@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Skill registry — discovers and loads agent skills.
  *
@@ -17,196 +18,204 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Application\Skill;
 
-class SkillRegistry {
+class SkillRegistry
+{
+    /**
+     * Loaded skills keyed by name.
+     *
+     * @var array<string, array{name: string, description: string, body: string}>
+     */
+    private array $skills = array();
 
-	/**
-	 * Loaded skills keyed by name.
-	 *
-	 * @var array<string, array{name: string, description: string, body: string}>
-	 */
-	private array $skills = array();
+    /**
+     * Register a skill from its SKILL.md parsed data.
+     *
+     * `license` and `compatibility` are optional; a registry that only needs
+     * name/description can pass the three required keys alone.
+     *
+     * @param array{name: string, description: string, body: string, license?: string, compatibility?: string} $skill
+     */
+    public function register(array $skill): void
+    {
+        $this->skills[ $skill['name'] ] = $skill;
+    }
 
-	/**
-	 * Register a skill from its SKILL.md parsed data.
-	 *
-	 * `license` and `compatibility` are optional; a registry that only needs
-	 * name/description can pass the three required keys alone.
-	 *
-	 * @param array{name: string, description: string, body: string, license?: string, compatibility?: string} $skill
-	 */
-	public function register( array $skill ): void {
-		$this->skills[ $skill['name'] ] = $skill;
-	}
+    /**
+     * Load a skill by name. Returns the full SKILL.md body.
+     *
+     * @return string|null  Null if skill not found.
+     */
+    public function load(string $name): ?string
+    {
+        $skill = $this->skills[ $name ] ?? null;
 
-	/**
-	 * Load a skill by name. Returns the full SKILL.md body.
-	 *
-	 * @return string|null  Null if skill not found.
-	 */
-	public function load( string $name ): ?string {
-		$skill = $this->skills[ $name ] ?? null;
+        if (null === $skill) {
+            return null;
+        }
 
-		if ( null === $skill ) {
-			return null;
-		}
+        return "# {$skill['name']}\n\n{$skill['description']}\n\n{$skill['body']}";
+    }
 
-		return "# {$skill['name']}\n\n{$skill['description']}\n\n{$skill['body']}";
-	}
+    /**
+     * Get a catalogue of all registered skills (name + description only).
+     *
+     * Used for progressive disclosure — the LLM receives this first,
+     * then calls load_skill({ name }) to get the full body.
+     *
+     * @return array<int, array{name: string, description: string}>
+     */
+    public function catalogue(): array
+    {
+        $entries = array();
 
-	/**
-	 * Get a catalogue of all registered skills (name + description only).
-	 *
-	 * Used for progressive disclosure — the LLM receives this first,
-	 * then calls load_skill({ name }) to get the full body.
-	 *
-	 * @return array<int, array{name: string, description: string}>
-	 */
-	public function catalogue(): array {
-		$entries = array();
+        foreach ($this->skills as $skill) {
+            $entries[] = array(
+                'name'        => $skill['name'],
+                'description' => $skill['description'],
+            );
+        }
 
-		foreach ( $this->skills as $skill ) {
-			$entries[] = array(
-				'name'        => $skill['name'],
-				'description' => $skill['description'],
-			);
-		}
+        \usort($entries, static fn($a, $b) => \strcasecmp($a['name'], $b['name']));
 
-		\usort( $entries, static fn( $a, $b ) => \strcasecmp( $a['name'], $b['name'] ) );
+        return $entries;
+    }
 
-		return $entries;
-	}
+    /**
+     * Build a Markdown catalogue string for inclusion in system prompts.
+     */
+    public function buildPromptCatalogue(): string
+    {
+        $entries = $this->catalogue();
 
-	/**
-	 * Build a Markdown catalogue string for inclusion in system prompts.
-	 */
-	public function buildPromptCatalogue(): string {
-		$entries = $this->catalogue();
+        if (array() === $entries) {
+            return '';
+        }
 
-		if ( array() === $entries ) {
-			return '';
-		}
+        $lines = array( "## Available Skills\n" );
 
-		$lines = array( "## Available Skills\n" );
+        foreach ($entries as $skill) {
+            $lines[] = "- **{$skill['name']}** — {$skill['description']}";
+        }
 
-		foreach ( $entries as $skill ) {
-			$lines[] = "- **{$skill['name']}** — {$skill['description']}";
-		}
+        $lines[] = "\nTo load a skill's full instructions, call the `load_skill` tool with the skill name.";
 
-		$lines[] = "\nTo load a skill's full instructions, call the `load_skill` tool with the skill name.";
+        return \implode("\n", $lines);
+    }
 
-		return \implode( "\n", $lines );
-	}
+    /**
+     * Check if a skill is registered.
+     */
+    public function has(string $name): bool
+    {
+        return isset($this->skills[ $name ]);
+    }
 
-	/**
-	 * Check if a skill is registered.
-	 */
-	public function has( string $name ): bool {
-		return isset( $this->skills[ $name ] );
-	}
+    /**
+     * Get the number of registered skills.
+     */
+    public function count(): int
+    {
+        return \count($this->skills);
+    }
 
-	/**
-	 * Get the number of registered skills.
-	 */
-	public function count(): int {
-		return \count( $this->skills );
-	}
+    /**
+     * Parse a SKILL.md file into its structured components.
+     *
+     * The frontmatter fields are the ones the assistant editor's picker shows:
+     * `name` and `description` are required, `license` and `compatibility` are
+     * optional and default to an empty string — the same contract the WordPress
+     * catalogue route serves.
+     *
+     * @return array{name: string, description: string, license: string, compatibility: string, body: string}|null
+     */
+    public static function parseSkillMd(string $content): ?array
+    {
+        // Parse YAML frontmatter.
+        if (! \preg_match('/^---\s*\n(.*?)\n---\s*\n(.*)$/s', $content, $matches)) {
+            return null;
+        }
 
-	/**
-	 * Parse a SKILL.md file into its structured components.
-	 *
-	 * The frontmatter fields are the ones the assistant editor's picker shows:
-	 * `name` and `description` are required, `license` and `compatibility` are
-	 * optional and default to an empty string — the same contract the WordPress
-	 * catalogue route serves.
-	 *
-	 * @return array{name: string, description: string, license: string, compatibility: string, body: string}|null
-	 */
-	public static function parseSkillMd( string $content ): ?array {
-		// Parse YAML frontmatter.
-		if ( ! \preg_match( '/^---\s*\n(.*?)\n---\s*\n(.*)$/s', $content, $matches ) ) {
-			return null;
-		}
+        $frontmatter = $matches[1];
+        $body        = \trim($matches[2]);
 
-		$frontmatter = $matches[1];
-		$body        = \trim( $matches[2] );
+        $name          = '';
+        $description   = '';
+        $license       = '';
+        $compatibility = '';
 
-		$name          = '';
-		$description   = '';
-		$license       = '';
-		$compatibility = '';
+        foreach (\explode("\n", $frontmatter) as $line) {
+            if (\preg_match('/^name:\s*(.+)$/i', $line, $m)) {
+                $name = \trim($m[1]);
+            }
+            if (\preg_match('/^description:\s*(.+)$/i', $line, $m)) {
+                $description = \trim($m[1]);
+            }
+            if (\preg_match('/^license:\s*(.+)$/i', $line, $m)) {
+                $license = \trim($m[1]);
+            }
+            if (\preg_match('/^compatibility:\s*(.+)$/i', $line, $m)) {
+                $compatibility = \trim($m[1]);
+            }
+        }
 
-		foreach ( \explode( "\n", $frontmatter ) as $line ) {
-			if ( \preg_match( '/^name:\s*(.+)$/i', $line, $m ) ) {
-				$name = \trim( $m[1] );
-			}
-			if ( \preg_match( '/^description:\s*(.+)$/i', $line, $m ) ) {
-				$description = \trim( $m[1] );
-			}
-			if ( \preg_match( '/^license:\s*(.+)$/i', $line, $m ) ) {
-				$license = \trim( $m[1] );
-			}
-			if ( \preg_match( '/^compatibility:\s*(.+)$/i', $line, $m ) ) {
-				$compatibility = \trim( $m[1] );
-			}
-		}
+        if ('' === $name) {
+            return null;
+        }
 
-		if ( '' === $name ) {
-			return null;
-		}
+        return array(
+            'name'          => $name,
+            'description'   => $description,
+            'license'       => $license,
+            'compatibility' => $compatibility,
+            'body'          => $body,
+        );
+    }
 
-		return array(
-			'name'          => $name,
-			'description'   => $description,
-			'license'       => $license,
-			'compatibility' => $compatibility,
-			'body'          => $body,
-		);
-	}
+    /**
+     * Register skills from a directory of SKILL.md files.
+     *
+     * @param string $directory  Path to a directory containing skill subdirectories.
+     * @return int  Number of skills loaded.
+     */
+    public function loadFromDirectory(string $directory): int
+    {
+        if (! \is_dir($directory)) {
+            return 0;
+        }
 
-	/**
-	 * Register skills from a directory of SKILL.md files.
-	 *
-	 * @param string $directory  Path to a directory containing skill subdirectories.
-	 * @return int  Number of skills loaded.
-	 */
-	public function loadFromDirectory( string $directory ): int {
-		if ( ! \is_dir( $directory ) ) {
-			return 0;
-		}
+        $loaded = 0;
 
-		$loaded = 0;
+        $entries = \scandir($directory);
 
-		$entries = \scandir( $directory );
+        if (false === $entries) {
+            return 0;
+        }
 
-		if ( false === $entries ) {
-			return 0;
-		}
+        foreach ($entries as $entry) {
+            if ('.' === $entry || '..' === $entry) {
+                continue;
+            }
 
-		foreach ( $entries as $entry ) {
-			if ( '.' === $entry || '..' === $entry ) {
-				continue;
-			}
+            $skillFile = $directory . '/' . $entry . '/SKILL.md';
 
-			$skillFile = $directory . '/' . $entry . '/SKILL.md';
+            if (! \file_exists($skillFile)) {
+                continue;
+            }
 
-			if ( ! \file_exists( $skillFile ) ) {
-				continue;
-			}
+            $content = \file_get_contents($skillFile);
+            if (false === $content) {
+                continue;
+            }
 
-			$content = \file_get_contents( $skillFile );
-			if ( false === $content ) {
-				continue;
-			}
+            $parsed = self::parseSkillMd($content);
+            if (null === $parsed) {
+                continue;
+            }
 
-			$parsed = self::parseSkillMd( $content );
-			if ( null === $parsed ) {
-				continue;
-			}
+            $this->register($parsed);
+            ++$loaded;
+        }
 
-			$this->register( $parsed );
-			++$loaded;
-		}
-
-		return $loaded;
-	}
+        return $loaded;
+    }
 }

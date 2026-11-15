@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Optional waterfall/serial dispatch contract for event dispatchers.
  *
@@ -28,37 +29,37 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
-interface WaterfallEventDispatcherInterface {
+interface WaterfallEventDispatcherInterface
+{
+    /**
+     * Register a waterfall listener.
+     *
+     * Listener signature: function( object $event, callable $next ): mixed
+     * Higher priorities run first (WordPress convention).
+     */
+    public function listenWaterfall(string $eventName, callable $listener, int $priority = 10): void;
 
-	/**
-	 * Register a waterfall listener.
-	 *
-	 * Listener signature: function( object $event, callable $next ): mixed
-	 * Higher priorities run first (WordPress convention).
-	 */
-	public function listenWaterfall( string $eventName, callable $listener, int $priority = 10 ): void;
+    /**
+     * Dispatch an event through the waterfall chain.
+     *
+     * @param string   $eventName Event name identifying the listener group.
+     * @param object   $event     The event payload passed to each listener.
+     * @param callable $final     Fallback invoked when every listener
+     *                            delegates: function( object $event ): mixed.
+     * @return mixed  The chain result — either a listener short-circuit
+     *                value or the fallback result.
+     */
+    public function waterfall(string $eventName, object $event, callable $final): mixed;
 
-	/**
-	 * Dispatch an event through the waterfall chain.
-	 *
-	 * @param string   $eventName Event name identifying the listener group.
-	 * @param object   $event     The event payload passed to each listener.
-	 * @param callable $final     Fallback invoked when every listener
-	 *                            delegates: function( object $event ): mixed.
-	 * @return mixed  The chain result — either a listener short-circuit
-	 *                value or the fallback result.
-	 */
-	public function waterfall( string $eventName, object $event, callable $final ): mixed;
+    /**
+     * Register a serial (ordered, non-short-circuiting) listener.
+     */
+    public function listenSerial(string $eventName, callable $listener, int $priority = 10): void;
 
-	/**
-	 * Register a serial (ordered, non-short-circuiting) listener.
-	 */
-	public function listenSerial( string $eventName, callable $listener, int $priority = 10 ): void;
-
-	/**
-	 * Dispatch an event serially to every listener in priority order.
-	 *
-	 * Listeners receive the event and return void; exceptions propagate.
-	 */
-	public function serial( string $eventName, object $event ): void;
+    /**
+     * Dispatch an event serially to every listener in priority order.
+     *
+     * Listeners receive the event and return void; exceptions propagate.
+     */
+    public function serial(string $eventName, object $event): void;
 }

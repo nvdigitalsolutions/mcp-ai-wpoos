@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Small text normalisers shared by tool ports.
  *
@@ -19,44 +20,47 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Support;
 
-final class Text {
+final class Text
+{
+    /**
+     * Collapse a value to a single line, the way `sanitize_text_field()` does.
+     *
+     * Tags are removed, runs of whitespace become one space, and the result is
+     * trimmed.
+     */
+    public static function singleLine(string $value): string
+    {
+        $value = strip_tags($value);
+        $value = (string) preg_replace('/[\r\n\t ]+/', ' ', $value);
 
-	/**
-	 * Collapse a value to a single line, the way `sanitize_text_field()` does.
-	 *
-	 * Tags are removed, runs of whitespace become one space, and the result is
-	 * trimmed.
-	 */
-	public static function singleLine( string $value ): string {
-		$value = strip_tags( $value );
-		$value = (string) preg_replace( '/[\r\n\t ]+/', ' ', $value );
+        return trim($value);
+    }
 
-		return trim( $value );
-	}
+    /**
+     * Reduce a value to a lowercase key, the way `sanitize_key()` does.
+     *
+     * Everything outside `a-z0-9_-` is dropped, so `"Math Reasoning"` becomes
+     * `"mathreasoning"` and `"Māth"` becomes `"mth"`.
+     */
+    public static function sanitizeKey(string $value): string
+    {
+        $value = strtolower($value);
 
-	/**
-	 * Reduce a value to a lowercase key, the way `sanitize_key()` does.
-	 *
-	 * Everything outside `a-z0-9_-` is dropped, so `"Math Reasoning"` becomes
-	 * `"mathreasoning"` and `"Māth"` becomes `"mth"`.
-	 */
-	public static function sanitizeKey( string $value ): string {
-		$value = strtolower( $value );
+        return (string) preg_replace('/[^a-z0-9_\-]/', '', $value);
+    }
 
-		return (string) preg_replace( '/[^a-z0-9_\-]/', '', $value );
-	}
+    /**
+     * Strip markup from a value while keeping its line structure.
+     *
+     * Matches `sanitize_textarea_field()`, including the part PHP's `strip_tags()`
+     * does not do: `<script>` and `<style>` blocks are removed with their
+     * contents, not just their tags.
+     */
+    public static function multiline(string $value): string
+    {
+        $value = (string) preg_replace('@<(script|style)[^>]*?>.*?</\\1>@si', '', $value);
+        $value = strip_tags($value);
 
-	/**
-	 * Strip markup from a value while keeping its line structure.
-	 *
-	 * Matches `sanitize_textarea_field()`, including the part PHP's `strip_tags()`
-	 * does not do: `<script>` and `<style>` blocks are removed with their
-	 * contents, not just their tags.
-	 */
-	public static function multiline( string $value ): string {
-		$value = (string) preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $value );
-		$value = strip_tags( $value );
-
-		return trim( $value );
-	}
+        return trim($value);
+    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Streaming Provider — domain contract for realtime/voice AI providers.
  *

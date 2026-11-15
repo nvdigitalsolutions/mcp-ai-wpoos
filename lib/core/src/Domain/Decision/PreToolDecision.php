@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PreToolDecision — outcome of the tools/pre_execute waterfall.
  *
@@ -18,26 +19,30 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Decision;
 
-final class PreToolDecision {
+final class PreToolDecision
+{
+    public const KIND_ALLOW = 'allow';
+    public const KIND_DENY  = 'deny';
+    public const KIND_ASK   = 'ask';
 
-	public const KIND_ALLOW = 'allow';
-	public const KIND_DENY  = 'deny';
-	public const KIND_ASK   = 'ask';
+    public function __construct(
+        public readonly string $kind,
+        public readonly string $reason = '',
+    ) {
+    }
 
-	public function __construct(
-		public readonly string $kind,
-		public readonly string $reason = '',
-	) {}
+    public static function allow(): self
+    {
+        return new self(self::KIND_ALLOW);
+    }
 
-	public static function allow(): self {
-		return new self( self::KIND_ALLOW );
-	}
+    public static function deny(string $reason): self
+    {
+        return new self(self::KIND_DENY, $reason);
+    }
 
-	public static function deny( string $reason ): self {
-		return new self( self::KIND_DENY, $reason );
-	}
-
-	public static function ask( string $reason ): self {
-		return new self( self::KIND_ASK, $reason );
-	}
+    public static function ask(string $reason): self
+    {
+        return new self(self::KIND_ASK, $reason);
+    }
 }

@@ -1,4 +1,8 @@
-<?php declare(strict_types=1); namespace Nvoos\Core\Tool;
+<?php
+
+declare(strict_types=1);
+
+namespace Nvoos\Core\Tool;
 
 /**
  * File header.
@@ -8,4 +12,13 @@
  *
  * SPDX-License-Identifier: MIT
  */
-class GenerateSoraVideoValidatedTool extends GenerateSoraVideoTool { public function getSlug(): string { return 'generate_sora_video_validated'; } public function getName(): string { return 'Generate Sora Video (Validated)'; } }
+class GenerateSoraVideoValidatedTool extends GenerateSoraVideoTool
+{
+    public function getSlug(): string
+    {
+        return 'generate_sora_video_validated';
+    } public function getName(): string
+    {
+        return 'Generate Sora Video (Validated)';
+    }
+}

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Fired when cost data is calculated for a chat response.
  *
@@ -15,16 +16,17 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class CostCalculated {
-
-	/**
-	 * @param array<string, mixed> $costData
-	 * @param array<string, mixed> $response
-	 */
-	public function __construct(
-		public readonly array $costData,
-		public readonly int $assistantId,
-		public readonly int $userId,
-		public readonly array $response,
-	) {}
+final class CostCalculated
+{
+    /**
+     * @param array<string, mixed> $costData
+     * @param array<string, mixed> $response
+     */
+    public function __construct(
+        public readonly array $costData,
+        public readonly int $assistantId,
+        public readonly int $userId,
+        public readonly array $response,
+    ) {
+    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Project row assembler — the `mcp_ai_project` wire shape.
  *
@@ -29,25 +30,26 @@ use Nvoos\Core\Domain\Entity\ContentItem;
  *
  * @since 1.3.0
  */
-final class ProjectRow {
+final class ProjectRow
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public static function from(ContentItem $item): array
+    {
+        $meta     = $item->meta;
+        $assigned = $meta['_project_assigned_to'] ?? array();
 
-	/**
-	 * @return array<string, mixed>
-	 */
-	public static function from( ContentItem $item ): array {
-		$meta     = $item->meta;
-		$assigned = $meta['_project_assigned_to'] ?? array();
-
-		return array(
-			'id'          => $item->id,
-			'name'        => $item->title,
-			'description' => $item->content,
-			'status'      => (string) ( $meta['_project_status'] ?? 'planning' ),
-			'start_date'  => (string) ( $meta['_project_start_date'] ?? '' ),
-			'end_date'    => (string) ( $meta['_project_end_date'] ?? '' ),
-			'assigned_to' => is_array( $assigned ) ? array_values( $assigned ) : array(),
-			'created_at'  => $item->createdAt->format( \DateTimeInterface::ATOM ),
-			'updated_at'  => $item->updatedAt->format( \DateTimeInterface::ATOM ),
-		);
-	}
+        return array(
+            'id'          => $item->id,
+            'name'        => $item->title,
+            'description' => $item->content,
+            'status'      => (string) ( $meta['_project_status'] ?? 'planning' ),
+            'start_date'  => (string) ( $meta['_project_start_date'] ?? '' ),
+            'end_date'    => (string) ( $meta['_project_end_date'] ?? '' ),
+            'assigned_to' => is_array($assigned) ? array_values($assigned) : array(),
+            'created_at'  => $item->createdAt->format(\DateTimeInterface::ATOM),
+            'updated_at'  => $item->updatedAt->format(\DateTimeInterface::ATOM),
+        );
+    }
 }

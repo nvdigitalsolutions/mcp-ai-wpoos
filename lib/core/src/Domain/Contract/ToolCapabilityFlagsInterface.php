@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tool capability flags interface.
  *
@@ -31,12 +32,12 @@ namespace Nvoos\Core\Domain\Contract;
  * Capability flags provide metadata to the orchestrator about tool
  * characteristics (read-only, write, async, external-api, cacheable, etc.).
  */
-interface ToolCapabilityFlagsInterface {
-
-	/**
-	 * @return string[]  Array of capability flag strings.
-	 *
-	 * @see \Nvoos\Core\Domain\Entity\ToolCapabilityFlag  For the canonical flag list.
-	 */
-	public function getCapabilityFlags(): array;
+interface ToolCapabilityFlagsInterface
+{
+    /**
+     * @return string[]  Array of capability flag strings.
+     *
+     * @see \Nvoos\Core\Domain\Entity\ToolCapabilityFlag  For the canonical flag list.
+     */
+    public function getCapabilityFlags(): array;
 }

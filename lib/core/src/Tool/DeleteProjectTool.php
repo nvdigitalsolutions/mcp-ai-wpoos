@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Delete Project tool — removes one mcp_ai_project through the content port.
  *
@@ -25,70 +26,75 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\Error\NotFoundException;
 
-class DeleteProjectTool extends AbstractTool {
+class DeleteProjectTool extends AbstractTool
+{
+    private const TYPE = 'mcp_ai_project';
 
-	private const TYPE = 'mcp_ai_project';
+    public function __construct(
+        ErrorFactoryInterface $errors,
+        private readonly ContentStoreInterface $content,
+    ) {
+        parent::__construct($errors);
+    }
 
-	public function __construct(
-		ErrorFactoryInterface $errors,
-		private readonly ContentStoreInterface $content,
-	) {
-		parent::__construct( $errors );
-	}
+    public function getSlug(): string
+    {
+        return 'delete_project';
+    }
 
-	public function getSlug(): string {
-		return 'delete_project';
-	}
+    public function getName(): string
+    {
+        return 'Delete Project';
+    }
 
-	public function getName(): string {
-		return 'Delete Project';
-	}
+    public function getDescription(): string
+    {
+        return 'Permanently deletes a project by project_id. Tasks that reference it are left untouched.';
+    }
 
-	public function getDescription(): string {
-		return 'Permanently deletes a project by project_id. Tasks that reference it are left untouched.';
-	}
+    public function getParametersSchema(): array
+    {
+        return array(
+            'type'       => 'object',
+            'properties' => array(
+                'project_id' => array(
+                    'type'        => 'integer',
+                    'description' => 'ID of the project to delete.',
+                ),
+            ),
+            'required'   => array( 'project_id' ),
+        );
+    }
 
-	public function getParametersSchema(): array {
-		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'project_id' => array(
-					'type'        => 'integer',
-					'description' => 'ID of the project to delete.',
-				),
-			),
-			'required'   => array( 'project_id' ),
-		);
-	}
+    public function execute(array $arguments = array(), array $context = array()): mixed
+    {
+        $this->authorize($context, 'delete_posts');
 
-	public function execute( array $arguments = array(), array $context = array() ): mixed {
-		$this->authorize( $context, 'delete_posts' );
+        $project_id = $this->intParam($arguments, 'project_id');
 
-		$project_id = $this->intParam( $arguments, 'project_id' );
+        if ($project_id <= 0) {
+            return $this->errors->create('missing_id', 'Project ID is required.');
+        }
 
-		if ( $project_id <= 0 ) {
-			return $this->errors->create( 'missing_id', 'Project ID is required.' );
-		}
+        $existing = $this->content->find($project_id);
 
-		$existing = $this->content->find( $project_id );
+        if (null === $existing || self::TYPE !== $existing->type) {
+            return $this->errors->notFound('Project not found.');
+        }
 
-		if ( null === $existing || self::TYPE !== $existing->type ) {
-			return $this->errors->notFound( 'Project not found.' );
-		}
+        try {
+            $this->content->delete($project_id, isset($context['user_id']) ? (int) $context['user_id'] : 0);
+        } catch (NotFoundException $e) {
+            return $this->errors->notFound($e->getMessage());
+        } catch (AccessDeniedException $e) {
+            return $this->errors->forbidden($e->getMessage());
+        } catch (\Throwable $e) {
+            return $this->errors->create('delete_failed', $e->getMessage());
+        }
 
-		try {
-			$this->content->delete( $project_id, isset( $context['user_id'] ) ? (int) $context['user_id'] : 0 );
-		} catch ( NotFoundException $e ) {
-			return $this->errors->notFound( $e->getMessage() );
-		} catch ( AccessDeniedException $e ) {
-			return $this->errors->forbidden( $e->getMessage() );
-		} catch ( \Throwable $e ) {
-			return $this->errors->create( 'delete_failed', $e->getMessage() );
-		}
-
-		return $this->success(
-			'Project deleted successfully.',
-			array( 'project_id' => $project_id )
-		);
-	}
+        return $this->success(
+            'Project deleted successfully.',
+            array( 'project_id' => $project_id )
+        );
+    }
 }

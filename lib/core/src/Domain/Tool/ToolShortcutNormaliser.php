@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tool-shortcut normalisation.
  *
@@ -31,112 +32,115 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Tool;
 
-final class ToolShortcutNormaliser {
+final class ToolShortcutNormaliser
+{
+    /**
+     * Normalise a raw shortcut list.
+     *
+     * @param array<int, mixed> $raw               Raw entries; non-arrays are skipped.
+     * @param string            $search            Optional case-insensitive filter.
+     * @param string            $fallbackCategory  Category for entries that declare none.
+     * @param string            $fallbackIcon      Icon for entries that declare none.
+     * @return array{shortcuts: array<int, array<string, string>>, categories: string[]}
+     */
+    public static function normalise(
+        array $raw,
+        string $search = '',
+        string $fallbackCategory = 'General',
+        string $fallbackIcon = "\u{26A1}"
+    ): array {
+        $shortcuts  = array();
+        $categories = array();
+        $needle     = self::lower(trim($search));
 
-	/**
-	 * Normalise a raw shortcut list.
-	 *
-	 * @param array<int, mixed> $raw               Raw entries; non-arrays are skipped.
-	 * @param string            $search            Optional case-insensitive filter.
-	 * @param string            $fallbackCategory  Category for entries that declare none.
-	 * @param string            $fallbackIcon      Icon for entries that declare none.
-	 * @return array{shortcuts: array<int, array<string, string>>, categories: string[]}
-	 */
-	public static function normalise(
-		array $raw,
-		string $search = '',
-		string $fallbackCategory = 'General',
-		string $fallbackIcon = "\u{26A1}"
-	): array {
-		$shortcuts  = array();
-		$categories = array();
-		$needle     = self::lower( trim( $search ) );
+        foreach ($raw as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
 
-		foreach ( $raw as $entry ) {
-			if ( ! is_array( $entry ) ) {
-				continue;
-			}
+            $label       = self::text($entry['label'] ?? null);
+            $payload     = self::text($entry['payload'] ?? null);
+            $tool        = self::text($entry['tool'] ?? null);
+            $description = self::text($entry['description'] ?? null);
+            $category    = self::text($entry['category'] ?? null);
+            $icon        = self::text($entry['icon'] ?? null);
 
-			$label       = self::text( $entry['label'] ?? null );
-			$payload     = self::text( $entry['payload'] ?? null );
-			$tool        = self::text( $entry['tool'] ?? null );
-			$description = self::text( $entry['description'] ?? null );
-			$category    = self::text( $entry['category'] ?? null );
-			$icon        = self::text( $entry['icon'] ?? null );
+            if ('' === $label && '' !== $tool) {
+                $label = $tool;
+            }
 
-			if ( '' === $label && '' !== $tool ) {
-				$label = $tool;
-			}
+            if ('' === $payload) {
+                $payload = '' !== $tool ? $tool : $label;
+            }
 
-			if ( '' === $payload ) {
-				$payload = '' !== $tool ? $tool : $label;
-			}
+            if ('' === $label && '' === $payload) {
+                continue;
+            }
 
-			if ( '' === $label && '' === $payload ) {
-				continue;
-			}
+            if ('' === $category) {
+                $category = $fallbackCategory;
+            }
 
-			if ( '' === $category ) {
-				$category = $fallbackCategory;
-			}
+            if ('' === $icon) {
+                $icon = $fallbackIcon;
+            }
 
-			if ( '' === $icon ) {
-				$icon = $fallbackIcon;
-			}
+            if ('' !== $needle && ! str_contains(self::lower($label . ' ' . $description . ' ' . $tool), $needle)) {
+                continue;
+            }
 
-			if ( '' !== $needle && ! str_contains( self::lower( $label . ' ' . $description . ' ' . $tool ), $needle ) ) {
-				continue;
-			}
+            $id     = '' !== $tool ? self::slug($tool) : self::slug($label);
+            $suffix = 1;
+            $base   = $id;
 
-			$id     = '' !== $tool ? self::slug( $tool ) : self::slug( $label );
-			$suffix = 1;
-			$base   = $id;
+            while (isset($shortcuts[ $id ])) {
+                $id = $base . '-' . ( ++$suffix );
+            }
 
-			while ( isset( $shortcuts[ $id ] ) ) {
-				$id = $base . '-' . ( ++$suffix );
-			}
+            $shortcuts[ $id ] = array(
+                'id'          => $id,
+                'label'       => $label,
+                'payload'     => $payload,
+                'tool'        => $tool,
+                'description' => $description,
+                'category'    => $category,
+                'icon'        => $icon,
+            );
 
-			$shortcuts[ $id ] = array(
-				'id'          => $id,
-				'label'       => $label,
-				'payload'     => $payload,
-				'tool'        => $tool,
-				'description' => $description,
-				'category'    => $category,
-				'icon'        => $icon,
-			);
+            if (! in_array($category, $categories, true)) {
+                $categories[] = $category;
+            }
+        }
 
-			if ( ! in_array( $category, $categories, true ) ) {
-				$categories[] = $category;
-			}
-		}
+        sort($categories);
 
-		sort( $categories );
+        return array(
+            'shortcuts'  => array_values($shortcuts),
+            'categories' => $categories,
+        );
+    }
 
-		return array(
-			'shortcuts'  => array_values( $shortcuts ),
-			'categories' => $categories,
-		);
-	}
+    /**
+     * Trimmed string, or '' for anything that is not a scalar.
+     */
+    private static function text(mixed $value): string
+    {
+        return is_scalar($value) ? trim((string) $value) : '';
+    }
 
-	/**
-	 * Trimmed string, or '' for anything that is not a scalar.
-	 */
-	private static function text( mixed $value ): string {
-		return is_scalar( $value ) ? trim( (string) $value ) : '';
-	}
+    /**
+     * Lowercase, multibyte when the extension is present.
+     */
+    private static function lower(string $value): string
+    {
+        return function_exists('mb_strtolower') ? mb_strtolower($value) : strtolower($value);
+    }
 
-	/**
-	 * Lowercase, multibyte when the extension is present.
-	 */
-	private static function lower( string $value ): string {
-		return function_exists( 'mb_strtolower' ) ? mb_strtolower( $value ) : strtolower( $value );
-	}
-
-	/**
-	 * The `sanitize_key()` alphabet: lowercase a-z, digits, underscore, hyphen.
-	 */
-	private static function slug( string $value ): string {
-		return (string) preg_replace( '/[^a-z0-9_\-]/', '', strtolower( $value ) );
-	}
+    /**
+     * The `sanitize_key()` alphabet: lowercase a-z, digits, underscore, hyphen.
+     */
+    private static function slug(string $value): string
+    {
+        return (string) preg_replace('/[^a-z0-9_\-]/', '', strtolower($value));
+    }
 }

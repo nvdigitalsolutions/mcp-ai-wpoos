@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tool data contract interface.
  *
@@ -32,13 +33,13 @@ namespace Nvoos\Core\Domain\Contract;
  * autonomously (e.g., "get_post produces post_object, which
  * update_post_seo consumes").
  */
-interface ToolDataContractInterface {
-
-	/**
-	 * @return array{
-	 *     produces?: string|null,
-	 *     consumes?: string|string[]|null,
-	 * }
-	 */
-	public function getDataContract(): array;
+interface ToolDataContractInterface
+{
+    /**
+     * @return array{
+     *     produces?: string|null,
+     *     consumes?: string|string[]|null,
+     * }
+     */
+    public function getDataContract(): array;
 }

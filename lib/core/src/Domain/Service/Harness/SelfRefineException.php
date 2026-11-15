@@ -21,32 +21,32 @@ namespace Nvoos\Core\Domain\Service\Harness;
 
 final class SelfRefineException extends \RuntimeException
 {
-	/**
-	 * @param string $reason        Machine-readable reason: `empty_task`,
-	 *                              `cost_exceeded`, `generator_failed` or
-	 *                              `critic_failed`.
-	 * @param string $message       Human-readable message.
-	 * @param mixed  $platformError The caller's error object, when the loop
-	 *                              stopped because a callable returned one.
-	 */
-	public function __construct(
-		public readonly string $reason,
-		string $message,
-		private readonly mixed $platformError = null,
-	) {
-		parent::__construct($message);
-	}
+    /**
+     * @param string $reason        Machine-readable reason: `empty_task`,
+     *                              `cost_exceeded`, `generator_failed` or
+     *                              `critic_failed`.
+     * @param string $message       Human-readable message.
+     * @param mixed  $platformError The caller's error object, when the loop
+     *                              stopped because a callable returned one.
+     */
+    public function __construct(
+        public readonly string $reason,
+        string $message,
+        private readonly mixed $platformError = null,
+    ) {
+        parent::__construct($message);
+    }
 
-	/**
-	 * The caller's error object, when the loop stopped because a callable
-	 * returned one.
-	 *
-	 * A getter rather than a public property: the WordPress consumer is
-	 * checked against WPCS, which only accepts snake_case properties, and
-	 * core is camelCase.
-	 */
-	public function getPlatformError(): mixed
-	{
-		return $this->platformError;
-	}
+    /**
+     * The caller's error object, when the loop stopped because a callable
+     * returned one.
+     *
+     * A getter rather than a public property: the WordPress consumer is
+     * checked against WPCS, which only accepts snake_case properties, and
+     * core is camelCase.
+     */
+    public function getPlatformError(): mixed
+    {
+        return $this->platformError;
+    }
 }

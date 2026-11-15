@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tests for the workflow template and condition resolver.
  *

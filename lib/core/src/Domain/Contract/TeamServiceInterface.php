@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Team Service — domain contract.
  *

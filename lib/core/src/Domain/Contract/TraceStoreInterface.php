@@ -27,26 +27,26 @@ namespace Nvoos\Core\Domain\Contract;
 
 interface TraceStoreInterface
 {
-	/**
-	 * Append one record to a named artifact of a run.
-	 *
-	 * @param int    $assistantId Assistant the run belongs to. Pruning is
-	 *                            per-assistant, so a store that forgets it
-	 *                            cannot enforce a retention window.
-	 * @param string $runId       Run identifier.
-	 * @param string $artifact    Artifact name, e.g. `refine.jsonl`.
-	 * @param array  $record      One record — a row, not a whole artifact.
-	 * @return bool True when the record was persisted.
-	 */
-	public function append(int $assistantId, string $runId, string $artifact, array $record): bool;
+    /**
+     * Append one record to a named artifact of a run.
+     *
+     * @param int    $assistantId Assistant the run belongs to. Pruning is
+     *                            per-assistant, so a store that forgets it
+     *                            cannot enforce a retention window.
+     * @param string $runId       Run identifier.
+     * @param string $artifact    Artifact name, e.g. `refine.jsonl`.
+     * @param array  $record      One record — a row, not a whole artifact.
+     * @return bool True when the record was persisted.
+     */
+    public function append(int $assistantId, string $runId, string $artifact, array $record): bool;
 
-	/**
-	 * Drop all but the newest runs for an assistant.
-	 *
-	 * @param int $assistantId Assistant to prune.
-	 * @param int $keepRuns    Requested window; clamped to
-	 *                         `TracePolicy::MIN_RUNS..MAX_RUNS`.
-	 * @return int Number of runs removed, not records.
-	 */
-	public function prune(int $assistantId, int $keepRuns): int;
+    /**
+     * Drop all but the newest runs for an assistant.
+     *
+     * @param int $assistantId Assistant to prune.
+     * @param int $keepRuns    Requested window; clamped to
+     *                         `TracePolicy::MIN_RUNS..MAX_RUNS`.
+     * @return int Number of runs removed, not records.
+     */
+    public function prune(int $assistantId, int $keepRuns): int;
 }

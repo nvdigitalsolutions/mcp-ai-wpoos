@@ -1,4 +1,8 @@
-<?php declare(strict_types=1); namespace Nvoos\Core\Tool;
+<?php
+
+declare(strict_types=1);
+
+namespace Nvoos\Core\Tool;
 
 /**
  * File header.
@@ -8,4 +12,13 @@
  *
  * SPDX-License-Identifier: MIT
  */
-class EditGeminiImageValidatedTool extends EditGeminiImageTool { public function getSlug(): string { return 'edit_gemini_image_validated'; } public function getName(): string { return 'Edit Gemini Image (Validated)'; } }
+class EditGeminiImageValidatedTool extends EditGeminiImageTool
+{
+    public function getSlug(): string
+    {
+        return 'edit_gemini_image_validated';
+    } public function getName(): string
+    {
+        return 'Edit Gemini Image (Validated)';
+    }
+}

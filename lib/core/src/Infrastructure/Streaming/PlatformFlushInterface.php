@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Platform-level output buffer flush contract.
  *
@@ -22,18 +23,18 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Infrastructure\Streaming;
 
-interface PlatformFlushInterface {
-
-	/**
-	 * Flush all platform-level output buffers before streaming begins.
-	 *
-	 * Implementations should clear any output buffering layers that
-	 * sit between PHP's native output and the client. This includes
-	 * framework-level buffers (WordPress wp_ob_end_flush_all),
-	 * compression buffers, and any intermediate proxy buffers.
-	 *
-	 * Called once by SseHandler::sendHeaders() before any SSE events
-	 * are emitted.
-	 */
-	public function flushPlatformBuffers(): void;
+interface PlatformFlushInterface
+{
+    /**
+     * Flush all platform-level output buffers before streaming begins.
+     *
+     * Implementations should clear any output buffering layers that
+     * sit between PHP's native output and the client. This includes
+     * framework-level buffers (WordPress wp_ob_end_flush_all),
+     * compression buffers, and any intermediate proxy buffers.
+     *
+     * Called once by SseHandler::sendHeaders() before any SSE events
+     * are emitted.
+     */
+    public function flushPlatformBuffers(): void;
 }

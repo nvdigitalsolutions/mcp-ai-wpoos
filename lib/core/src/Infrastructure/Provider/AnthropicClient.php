@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Anthropic Claude provider client.
  *
@@ -21,382 +22,388 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class AnthropicClient extends AbstractProviderClient {
+class AnthropicClient extends AbstractProviderClient
+{
+    private const DEFAULT_BASE_URL = 'https://api.anthropic.com/v1';
+    private const API_VERSION      = '2023-06-01';
 
-	private const DEFAULT_BASE_URL = 'https://api.anthropic.com/v1';
-	private const API_VERSION      = '2023-06-01';
+    public function __construct(
+        SettingsStoreInterface $settings,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+        parent::__construct($settings, $http, $errors);
+        $this->providerSlug = 'anthropic';
+    }
 
-	public function __construct(
-		SettingsStoreInterface $settings,
-		HttpClientInterface $http,
-		ErrorFactoryInterface $errors,
-	) {
-		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'anthropic';
-	}
+    protected function getDefaultBaseUrl(): string
+    {
+        return self::DEFAULT_BASE_URL;
+    }
 
-	protected function getDefaultBaseUrl(): string {
-		return self::DEFAULT_BASE_URL;
-	}
+    /**
+     * @param array<int, array<string, mixed>> $messages
+     * @param array<string, mixed> $options
+     */
+    public function chat(array $messages, array $options = array()): mixed
+    {
+        $apiKey = $this->getApiKey();
 
-	/**
-	 * @param array<int, array<string, mixed>> $messages
-	 * @param array<string, mixed> $options
-	 */
-	public function chat( array $messages, array $options = array() ): mixed {
-		$apiKey = $this->getApiKey();
+        if ('' === $apiKey) {
+            return $this->missingApiKeyError();
+        }
 
-		if ( '' === $apiKey ) {
-			return $this->missingApiKeyError();
-		}
+        $model = $this->resolveModel($options);
 
-		$model = $this->resolveModel( $options );
+        // Separate system message from conversation.
+        $system       = '';
+        $convMessages = array();
 
-		// Separate system message from conversation.
-		$system       = '';
-		$convMessages = array();
+        foreach ($messages as $msg) {
+            if ('system' === ( $msg['role'] ?? '' )) {
+                $system = is_string($msg['content'] ?? null) ? $msg['content'] : '';
+            } else {
+                $convMessages[] = $msg;
+            }
+        }
 
-		foreach ( $messages as $msg ) {
-			if ( 'system' === ( $msg['role'] ?? '' ) ) {
-				$system = is_string( $msg['content'] ?? null ) ? $msg['content'] : '';
-			} else {
-				$convMessages[] = $msg;
-			}
-		}
+        $anthropicMessages = $this->convertMessages($convMessages);
 
-		$anthropicMessages = $this->convertMessages( $convMessages );
+        $payload = array(
+            'model'      => $model,
+            'max_tokens' => (int) ( $options['max_tokens'] ?? 4096 ),
+            'messages'   => $anthropicMessages,
+        );
 
-		$payload = array(
-			'model'      => $model,
-			'max_tokens' => (int) ( $options['max_tokens'] ?? 4096 ),
-			'messages'   => $anthropicMessages,
-		);
+        if ('' !== $system) {
+            $payload['system'] = $system;
+        }
 
-		if ( '' !== $system ) {
-			$payload['system'] = $system;
-		}
+        if (isset($options['temperature'])) {
+            $payload['temperature'] = (float) $options['temperature'];
+        }
+        if (isset($options['top_p'])) {
+            $payload['top_p'] = (float) $options['top_p'];
+        }
+        if (! empty($options['tools'])) {
+            $payload['tools'] = $this->convertTools($options['tools']);
+        }
+        if (! empty($options['stop'])) {
+            $payload['stop_sequences'] = (array) $options['stop'];
+        }
 
-		if ( isset( $options['temperature'] ) ) {
-			$payload['temperature'] = (float) $options['temperature'];
-		}
-		if ( isset( $options['top_p'] ) ) {
-			$payload['top_p'] = (float) $options['top_p'];
-		}
-		if ( ! empty( $options['tools'] ) ) {
-			$payload['tools'] = $this->convertTools( $options['tools'] );
-		}
-		if ( ! empty( $options['stop'] ) ) {
-			$payload['stop_sequences'] = (array) $options['stop'];
-		}
+        try {
+            $body = \json_encode($payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            return $this->errors->create('json_encode_failed', $e->getMessage());
+        }
 
-		try {
-			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
-		} catch ( \JsonException $e ) {
-			return $this->errors->create( 'json_encode_failed', $e->getMessage() );
-		}
+        $headers = array(
+            'x-api-key'         => $apiKey,
+            'anthropic-version' => self::API_VERSION,
+            'Content-Type'      => 'application/json',
+        );
 
-		$headers = array(
-			'x-api-key'         => $apiKey,
-			'anthropic-version' => self::API_VERSION,
-			'Content-Type'      => 'application/json',
-		);
+        try {
+            $response   = $this->http->send('POST', $this->getBaseUrl() . '/messages', $headers, $body);
+            $statusCode = $response->statusCode;
+            $respBody   = $response->body;
 
-		try {
-			$response   = $this->http->send( 'POST', $this->getBaseUrl() . '/messages', $headers, $body );
-			$statusCode = $response->statusCode;
-			$respBody   = $response->body;
+            if ($statusCode >= 400) {
+                return $this->parseError($statusCode, $respBody);
+            }
 
-			if ( $statusCode >= 400 ) {
-				return $this->parseError( $statusCode, $respBody );
-			}
+            return $this->normalizeResponse(
+                \json_decode($respBody, true) ?: array(),
+                $model,
+            );
+        } catch (\Exception $e) {
+            return $this->errors->create('http_request_failed', $e->getMessage());
+        }
+    }
 
-			return $this->normalizeResponse(
-				\json_decode( $respBody, true ) ?: array(),
-				$model,
-			);
+    /**
+     * @param array<int, array<string, mixed>> $messages
+     * @param array<string, mixed> $options
+     */
+    public function stream(array $messages, array $options = array(), ?callable $onChunk = null): mixed
+    {
+        $apiKey = $this->getApiKey();
 
-		} catch ( \Exception $e ) {
-			return $this->errors->create( 'http_request_failed', $e->getMessage() );
-		}
-	}
+        if ('' === $apiKey) {
+            return $this->missingApiKeyError();
+        }
 
-	/**
-	 * @param array<int, array<string, mixed>> $messages
-	 * @param array<string, mixed> $options
-	 */
-	public function stream( array $messages, array $options = array(), ?callable $onChunk = null ): mixed {
-		$apiKey = $this->getApiKey();
+        $model = $this->resolveModel($options);
 
-		if ( '' === $apiKey ) {
-			return $this->missingApiKeyError();
-		}
+        // Separate system message from conversation.
+        $system       = '';
+        $convMessages = array();
 
-		$model = $this->resolveModel( $options );
+        foreach ($messages as $msg) {
+            if ('system' === ( $msg['role'] ?? '' )) {
+                $system = is_string($msg['content'] ?? null) ? $msg['content'] : '';
+            } else {
+                $convMessages[] = $msg;
+            }
+        }
 
-		// Separate system message from conversation.
-		$system       = '';
-		$convMessages = array();
+        $anthropicMessages = $this->convertMessages($convMessages);
 
-		foreach ( $messages as $msg ) {
-			if ( 'system' === ( $msg['role'] ?? '' ) ) {
-				$system = is_string( $msg['content'] ?? null ) ? $msg['content'] : '';
-			} else {
-				$convMessages[] = $msg;
-			}
-		}
+        $payload = array(
+            'model'      => $model,
+            'max_tokens' => (int) ( $options['max_tokens'] ?? 4096 ),
+            'messages'   => $anthropicMessages,
+            'stream'     => true,
+        );
 
-		$anthropicMessages = $this->convertMessages( $convMessages );
+        if ('' !== $system) {
+            $payload['system'] = $system;
+        }
 
-		$payload = array(
-			'model'      => $model,
-			'max_tokens' => (int) ( $options['max_tokens'] ?? 4096 ),
-			'messages'   => $anthropicMessages,
-			'stream'     => true,
-		);
+        if (isset($options['temperature'])) {
+            $payload['temperature'] = (float) $options['temperature'];
+        }
+        if (isset($options['top_p'])) {
+            $payload['top_p'] = (float) $options['top_p'];
+        }
+        if (! empty($options['tools'])) {
+            $payload['tools'] = $this->convertTools($options['tools']);
+        }
 
-		if ( '' !== $system ) {
-			$payload['system'] = $system;
-		}
+        try {
+            $body = \json_encode($payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            return $this->errors->create('json_encode_failed', $e->getMessage());
+        }
 
-		if ( isset( $options['temperature'] ) ) {
-			$payload['temperature'] = (float) $options['temperature'];
-		}
-		if ( isset( $options['top_p'] ) ) {
-			$payload['top_p'] = (float) $options['top_p'];
-		}
-		if ( ! empty( $options['tools'] ) ) {
-			$payload['tools'] = $this->convertTools( $options['tools'] );
-		}
+        $headers = array(
+            'x-api-key'         => $apiKey,
+            'anthropic-version' => self::API_VERSION,
+            'Content-Type'      => 'application/json',
+        );
 
-		try {
-			$body = \json_encode( $payload, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR );
-		} catch ( \JsonException $e ) {
-			return $this->errors->create( 'json_encode_failed', $e->getMessage() );
-		}
+        try {
+            $response   = $this->http->send('POST', $this->getBaseUrl() . '/messages', $headers, $body);
+            $statusCode = $response->statusCode;
+            $respBody   = $response->body;
 
-		$headers = array(
-			'x-api-key'         => $apiKey,
-			'anthropic-version' => self::API_VERSION,
-			'Content-Type'      => 'application/json',
-		);
+            if ($statusCode >= 400) {
+                return $this->parseError($statusCode, $respBody);
+            }
 
-		try {
-			$response   = $this->http->send( 'POST', $this->getBaseUrl() . '/messages', $headers, $body );
-			$statusCode = $response->statusCode;
-			$respBody   = $response->body;
+            // Parse Anthropic SSE stream.
+            $assembled = '';
+            $toolUse   = array();
 
-			if ( $statusCode >= 400 ) {
-				return $this->parseError( $statusCode, $respBody );
-			}
+            foreach (( \preg_split("/\r?\n/", $respBody) ?: array() ) as $line) {
+                $line = \trim($line);
+                if ('' === $line || 0 !== \strpos($line, 'data: ')) {
+                    continue;
+                }
+                $data = \substr($line, 6);
+                $chunk = \json_decode($data, true);
+                if (! is_array($chunk)) {
+                    continue;
+                }
 
-			// Parse Anthropic SSE stream.
-			$assembled = '';
-			$toolUse   = array();
+                $type = $chunk['type'] ?? '';
 
-			foreach ( ( \preg_split( "/\r?\n/", $respBody ) ?: array() ) as $line ) {
-				$line = \trim( $line );
-				if ( '' === $line || 0 !== \strpos( $line, 'data: ' ) ) {
-					continue;
-				}
-				$data = \substr( $line, 6 );
-				$chunk = \json_decode( $data, true );
-				if ( ! is_array( $chunk ) ) {
-					continue;
-				}
+                if ('content_block_delta' === $type) {
+                    $delta = $chunk['delta'] ?? array();
+                    if ('text_delta' === ( $delta['type'] ?? '' )) {
+                        $token = $delta['text'] ?? '';
+                        $assembled .= $token;
+                        if (null !== $onChunk) {
+                            $onChunk($token);
+                        }
+                    } elseif ('input_json_delta' === ( $delta['type'] ?? '' )) {
+                        $idx = (int) ( $chunk['index'] ?? 0 );
+                        if (! isset($toolUse[ $idx ])) {
+                            $toolUse[ $idx ] = '';
+                        }
+                        $toolUse[ $idx ] .= $delta['partial_json'] ?? '';
+                    }
+                }
+            }
 
-				$type = $chunk['type'] ?? '';
+            return $this->normalizeResponse(
+                array(
+                    'id'      => '',
+                    'content' => array(
+                        array(
+                            'type' => 'text',
+                            'text' => $assembled,
+                        ),
+                    ),
+                    'stop_reason' => 'end_turn',
+                ),
+                $model,
+            );
+        } catch (\Exception $e) {
+            return $this->errors->create('http_request_failed', $e->getMessage());
+        }
+    }
 
-				if ( 'content_block_delta' === $type ) {
-					$delta = $chunk['delta'] ?? array();
-					if ( 'text_delta' === ( $delta['type'] ?? '' ) ) {
-						$token = $delta['text'] ?? '';
-						$assembled .= $token;
-						if ( null !== $onChunk ) {
-							$onChunk( $token );
-						}
-					} elseif ( 'input_json_delta' === ( $delta['type'] ?? '' ) ) {
-						$idx = (int) ( $chunk['index'] ?? 0 );
-						if ( ! isset( $toolUse[ $idx ] ) ) {
-							$toolUse[ $idx ] = '';
-						}
-						$toolUse[ $idx ] .= $delta['partial_json'] ?? '';
-					}
-				}
-			}
+    public function listModels(): mixed
+    {
+        // Anthropic does not have a public models list endpoint.
+        return array(
+            'claude-opus-4-6',
+            'claude-sonnet-4-6',
+            'claude-haiku-4-6',
+            'claude-3-5-sonnet-latest',
+            'claude-3-5-haiku-latest',
+        );
+    }
 
-			return $this->normalizeResponse(
-				array(
-					'id'      => '',
-					'content' => array(
-						array(
-							'type' => 'text',
-							'text' => $assembled,
-						),
-					),
-					'stop_reason' => 'end_turn',
-				),
-				$model,
-			);
+    // ─── Message conversion ──────────────────────────────────────────
 
-		} catch ( \Exception $e ) {
-			return $this->errors->create( 'http_request_failed', $e->getMessage() );
-		}
-	}
+    /**
+     * @param array<int, array<string, mixed>> $messages
+     * @return array<int, array<string, mixed>>
+     */
+    private function convertMessages(array $messages): array
+    {
+        $converted = array();
 
-	public function listModels(): mixed {
-		// Anthropic does not have a public models list endpoint.
-		return array(
-			'claude-opus-4-6',
-			'claude-sonnet-4-6',
-			'claude-haiku-4-6',
-			'claude-3-5-sonnet-latest',
-			'claude-3-5-haiku-latest',
-		);
-	}
+        foreach ($messages as $msg) {
+            $role = $msg['role'] ?? 'user';
 
-	// ─── Message conversion ──────────────────────────────────────────
+            // Anthropic uses 'user' or 'assistant' roles.
+            if (! in_array($role, array( 'user', 'assistant' ), true)) {
+                $role = 'user';
+            }
 
-	/**
-	 * @param array<int, array<string, mixed>> $messages
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function convertMessages( array $messages ): array {
-		$converted = array();
+            if (is_string($msg['content'] ?? null)) {
+                $converted[] = array(
+                    'role'    => $role,
+                    'content' => $msg['content'],
+                );
+            } elseif (is_array($msg['content'] ?? null)) {
+                $contentBlocks = array();
 
-		foreach ( $messages as $msg ) {
-			$role = $msg['role'] ?? 'user';
+                foreach ($msg['content'] as $segment) {
+                    if (isset($segment['text'])) {
+                        $contentBlocks[] = array(
+                            'type' => 'text',
+                            'text' => $segment['text'],
+                        );
+                    } elseif (isset($segment['image_url']['url'])) {
+                        $url = $segment['image_url']['url'];
+                        // Extract base64 data.
+                        $mediaType = 'image/jpeg';
+                        if (\preg_match('#^data:(image/\w+);base64,#', $url, $m)) {
+                            $mediaType = $m[1];
+                            $url       = \preg_replace('#^data:image/\w+;base64,#', '', $url);
+                        }
+                        $contentBlocks[] = array(
+                            'type'   => 'image',
+                            'source' => array(
+                                'type'       => 'base64',
+                                'media_type' => $mediaType,
+                                'data'       => $url,
+                            ),
+                        );
+                    }
+                }
 
-			// Anthropic uses 'user' or 'assistant' roles.
-			if ( ! in_array( $role, array( 'user', 'assistant' ), true ) ) {
-				$role = 'user';
-			}
+                if (array() !== $contentBlocks) {
+                    $converted[] = array(
+                        'role'    => $role,
+                        'content' => $contentBlocks,
+                    );
+                }
+            }
+        }
 
-			if ( is_string( $msg['content'] ?? null ) ) {
-				$converted[] = array(
-					'role'    => $role,
-					'content' => $msg['content'],
-				);
-			} elseif ( is_array( $msg['content'] ?? null ) ) {
-				$contentBlocks = array();
+        return $converted;
+    }
 
-				foreach ( $msg['content'] as $segment ) {
-					if ( isset( $segment['text'] ) ) {
-						$contentBlocks[] = array(
-							'type' => 'text',
-							'text' => $segment['text'],
-						);
-					} elseif ( isset( $segment['image_url']['url'] ) ) {
-						$url = $segment['image_url']['url'];
-						// Extract base64 data.
-						$mediaType = 'image/jpeg';
-						if ( \preg_match( '#^data:(image/\w+);base64,#', $url, $m ) ) {
-							$mediaType = $m[1];
-							$url       = \preg_replace( '#^data:image/\w+;base64,#', '', $url );
-						}
-						$contentBlocks[] = array(
-							'type'   => 'image',
-							'source' => array(
-								'type'       => 'base64',
-								'media_type' => $mediaType,
-								'data'       => $url,
-							),
-						);
-					}
-				}
+    /**
+     * @param array<int, array<string, mixed>> $tools
+     * @return array<int, array<string, mixed>>
+     */
+    private function convertTools(array $tools): array
+    {
+        $converted = array();
 
-				if ( array() !== $contentBlocks ) {
-					$converted[] = array(
-						'role'    => $role,
-						'content' => $contentBlocks,
-					);
-				}
-			}
-		}
+        foreach ($tools as $tool) {
+            if (isset($tool['function'])) {
+                $converted[] = array(
+                    'name'         => $tool['function']['name'],
+                    'description'  => $tool['function']['description'] ?? '',
+                    'input_schema' => $tool['function']['parameters'] ?? array( 'type' => 'object' ),
+                );
+            }
+        }
 
-		return $converted;
-	}
+        return $converted;
+    }
 
-	/**
-	 * @param array<int, array<string, mixed>> $tools
-	 * @return array<int, array<string, mixed>>
-	 */
-	private function convertTools( array $tools ): array {
-		$converted = array();
+    /**
+     * Normalize Anthropic response to OpenAI-compatible shape.
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function normalizeResponse(array $data, string $model): array
+    {
+        $text      = '';
+        $toolCalls = array();
 
-		foreach ( $tools as $tool ) {
-			if ( isset( $tool['function'] ) ) {
-				$converted[] = array(
-					'name'         => $tool['function']['name'],
-					'description'  => $tool['function']['description'] ?? '',
-					'input_schema' => $tool['function']['parameters'] ?? array( 'type' => 'object' ),
-				);
-			}
-		}
+        foreach ($data['content'] ?? array() as $block) {
+            if ('text' === ( $block['type'] ?? '' )) {
+                $text .= ( $block['text'] ?? '' );
+            } elseif ('tool_use' === ( $block['type'] ?? '' )) {
+                $toolCalls[] = array(
+                    'id'       => $block['id'] ?? '',
+                    'type'     => 'function',
+                    'function' => array(
+                        'name'      => $block['name'] ?? '',
+                        'arguments' => \json_encode($block['input'] ?? array()),
+                    ),
+                );
+            }
+        }
 
-		return $converted;
-	}
+        $message = array(
+            'role'    => 'assistant',
+            'content' => $text,
+        );
+        if (array() !== $toolCalls) {
+            $message['tool_calls'] = $toolCalls;
+        }
 
-	/**
-	 * Normalize Anthropic response to OpenAI-compatible shape.
-	 * @param array<string, mixed> $data
-	 * @return array<string, mixed>
-	 */
-	private function normalizeResponse( array $data, string $model ): array {
-		$text      = '';
-		$toolCalls = array();
+        return array(
+            'id'      => $data['id'] ?? '',
+            'object'  => 'chat.completion',
+            'model'   => $model,
+            'choices' => array(
+                array(
+                    'index'         => 0,
+                    'message'       => $message,
+                    'finish_reason' => ( 'tool_use' === ( $data['stop_reason'] ?? '' ) ) ? 'tool_calls' : 'stop',
+                ),
+            ),
+            'usage'   => array(
+                'prompt_tokens'     => $data['usage']['input_tokens'] ?? 0,
+                'completion_tokens' => $data['usage']['output_tokens'] ?? 0,
+                'total_tokens'      => ( $data['usage']['input_tokens'] ?? 0 ) + ( $data['usage']['output_tokens'] ?? 0 ),
+            ),
+        );
+    }
 
-		foreach ( $data['content'] ?? array() as $block ) {
-			if ( 'text' === ( $block['type'] ?? '' ) ) {
-				$text .= ( $block['text'] ?? '' );
-			} elseif ( 'tool_use' === ( $block['type'] ?? '' ) ) {
-				$toolCalls[] = array(
-					'id'       => $block['id'] ?? '',
-					'type'     => 'function',
-					'function' => array(
-						'name'      => $block['name'] ?? '',
-						'arguments' => \json_encode( $block['input'] ?? array() ),
-					),
-				);
-			}
-		}
+    private function parseError(int $statusCode, string $body): mixed
+    {
+        $data = \json_decode($body, true);
+        $msg  = is_array($data) && isset($data['error']['message'])
+            ? $data['error']['message']
+            : 'Anthropic API returned status ' . $statusCode;
 
-		$message = array(
-			'role'    => 'assistant',
-			'content' => $text,
-		);
-		if ( array() !== $toolCalls ) {
-			$message['tool_calls'] = $toolCalls;
-		}
+        if (429 === $statusCode) {
+            return $this->errors->rateLimited($msg);
+        }
 
-		return array(
-			'id'      => $data['id'] ?? '',
-			'object'  => 'chat.completion',
-			'model'   => $model,
-			'choices' => array(
-				array(
-					'index'         => 0,
-					'message'       => $message,
-					'finish_reason' => ( 'tool_use' === ( $data['stop_reason'] ?? '' ) ) ? 'tool_calls' : 'stop',
-				),
-			),
-			'usage'   => array(
-				'prompt_tokens'     => $data['usage']['input_tokens'] ?? 0,
-				'completion_tokens' => $data['usage']['output_tokens'] ?? 0,
-				'total_tokens'      => ( $data['usage']['input_tokens'] ?? 0 ) + ( $data['usage']['output_tokens'] ?? 0 ),
-			),
-		);
-	}
-
-	private function parseError( int $statusCode, string $body ): mixed {
-		$data = \json_decode( $body, true );
-		$msg  = is_array( $data ) && isset( $data['error']['message'] )
-			? $data['error']['message']
-			: 'Anthropic API returned status ' . $statusCode;
-
-		if ( 429 === $statusCode ) {
-			return $this->errors->rateLimited( $msg );
-		}
-
-		return $this->errors->create( "http_{$statusCode}", $msg, array( 'status' => $statusCode ) );
-	}
+        return $this->errors->create("http_{$statusCode}", $msg, array( 'status' => $statusCode ));
+    }
 }

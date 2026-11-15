@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Read-only tool guard — deny-only policy for read-only deployments.
  *
@@ -36,68 +37,70 @@ use Nvoos\Core\Domain\Contract\ToolResolverInterface;
  *
  * @since 1.3.0
  */
-final class ReadOnlyToolGuard implements ToolGuardInterface {
+final class ReadOnlyToolGuard implements ToolGuardInterface
+{
+    /**
+     * Flags that disqualify a tool while the profile is active.
+     *
+     * @var list<string>
+     */
+    public const DEFAULT_GATED_FLAGS = array(
+        'write',
+        'state_changing',
+        'mutating',
+        'destructive',
+        'external_side_effect',
+    );
 
-	/**
-	 * Flags that disqualify a tool while the profile is active.
-	 *
-	 * @var list<string>
-	 */
-	public const DEFAULT_GATED_FLAGS = array(
-		'write',
-		'state_changing',
-		'mutating',
-		'destructive',
-		'external_side_effect',
-	);
+    /**
+     * @param ToolResolverInterface $tools          Resolver used to read a tool's flags.
+     * @param list<string>          $gatedFlags     Flags that disqualify a tool.
+     * @param list<string>          $allowedSlugs   Slugs that always run.
+     * @param bool                  $blockUndeclared Block tools that declare no flags.
+     */
+    public function __construct(
+        private readonly ToolResolverInterface $tools,
+        private readonly array $gatedFlags = self::DEFAULT_GATED_FLAGS,
+        private readonly array $allowedSlugs = array(),
+        private readonly bool $blockUndeclared = true,
+    ) {
+    }
 
-	/**
-	 * @param ToolResolverInterface $tools          Resolver used to read a tool's flags.
-	 * @param list<string>          $gatedFlags     Flags that disqualify a tool.
-	 * @param list<string>          $allowedSlugs   Slugs that always run.
-	 * @param bool                  $blockUndeclared Block tools that declare no flags.
-	 */
-	public function __construct(
-		private readonly ToolResolverInterface $tools,
-		private readonly array $gatedFlags = self::DEFAULT_GATED_FLAGS,
-		private readonly array $allowedSlugs = array(),
-		private readonly bool $blockUndeclared = true,
-	) {}
+    /**
+     * {@inheritDoc}
+     */
+    public function evaluate(string $slug, array $arguments, array $context): ?string
+    {
+        unset($arguments, $context);
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public function evaluate( string $slug, array $arguments, array $context ): ?string {
-		unset( $arguments, $context );
+        if (in_array($slug, $this->allowedSlugs, true)) {
+            return null;
+        }
 
-		if ( in_array( $slug, $this->allowedSlugs, true ) ) {
-			return null;
-		}
+        $tool = $this->tools->get($slug);
 
-		$tool = $this->tools->get( $slug );
+        if (null === $tool) {
+            // Unknown slugs are the registry's problem, not this guard's.
+            return null;
+        }
 
-		if ( null === $tool ) {
-			// Unknown slugs are the registry's problem, not this guard's.
-			return null;
-		}
+        if (! $tool instanceof ToolCapabilityFlagsInterface) {
+            return $this->blockUndeclared
+                ? sprintf('Tool "%s" is blocked by the read-only profile because it declares no capability flags.', $slug)
+                : null;
+        }
 
-		if ( ! $tool instanceof ToolCapabilityFlagsInterface ) {
-			return $this->blockUndeclared
-				? sprintf( 'Tool "%s" is blocked by the read-only profile because it declares no capability flags.', $slug )
-				: null;
-		}
+        $flags = array_map('strtolower', $tool->getCapabilityFlags());
+        $hit   = array_values(array_intersect($flags, $this->gatedFlags));
 
-		$flags = array_map( 'strtolower', $tool->getCapabilityFlags() );
-		$hit   = array_values( array_intersect( $flags, $this->gatedFlags ) );
+        if (array() === $hit) {
+            return null;
+        }
 
-		if ( array() === $hit ) {
-			return null;
-		}
-
-		return sprintf(
-			'Tool "%s" is blocked by the read-only profile (capability: %s).',
-			$slug,
-			implode( ', ', $hit )
-		);
-	}
+        return sprintf(
+            'Tool "%s" is blocked by the read-only profile (capability: %s).',
+            $slug,
+            implode(', ', $hit)
+        );
+    }
 }

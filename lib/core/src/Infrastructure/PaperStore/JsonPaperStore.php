@@ -1,4 +1,5 @@
 <?php
+
 /**
  * JSON Paper Store — one file per record under a configured root.
  *

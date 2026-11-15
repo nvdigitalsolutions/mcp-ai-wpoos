@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Data Budget Tracker — pure domain service.
  *

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ToolScope — a scoped view over the tool registry.
  *
@@ -28,186 +29,196 @@ use Nvoos\Core\Domain\Contract\ToolInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
 use Nvoos\Core\Domain\ValueObject\ToolRestriction;
 
-final class ToolScope implements ToolResolverInterface {
+final class ToolScope implements ToolResolverInterface
+{
+    /**
+     * Scope-local tools that shadow inherited ones.
+     *
+     * @var array<string, ToolInterface>
+     */
+    private array $local = array();
 
-	/**
-	 * Scope-local tools that shadow inherited ones.
-	 *
-	 * @var array<string, ToolInterface>
-	 */
-	private array $local = array();
+    /**
+     * Restrictions applied to inherited tools (all must admit).
+     *
+     * @var ToolRestriction[]
+     */
+    private array $restrictions = array();
 
-	/**
-	 * Restrictions applied to inherited tools (all must admit).
-	 *
-	 * @var ToolRestriction[]
-	 */
-	private array $restrictions = array();
+    /**
+     * @param string[] $seed_slugs Optional slug universe used when the parent
+     *                             resolver is not enumerable — generic
+     *                             ToolResolverInterface parents are resolved
+     *                             through this list in inheritedTools().
+     */
+    public function __construct(
+        private readonly ToolResolverInterface $parent,
+        private readonly array $seed_slugs = array(),
+    ) {
+    }
 
-	/**
-	 * @param string[] $seed_slugs Optional slug universe used when the parent
-	 *                             resolver is not enumerable — generic
-	 *                             ToolResolverInterface parents are resolved
-	 *                             through this list in inheritedTools().
-	 */
-	public function __construct(
-		private readonly ToolResolverInterface $parent,
-		private readonly array $seed_slugs = array(),
-	) {}
+    /**
+     * Register a tool in this scope only. Shadows any inherited tool with
+     * the same slug and is exempt from restrictions.
+     */
+    public function register(ToolInterface $tool): void
+    {
+        $this->local[ $tool->getSlug() ] = $tool;
+    }
 
-	/**
-	 * Register a tool in this scope only. Shadows any inherited tool with
-	 * the same slug and is exempt from restrictions.
-	 */
-	public function register( ToolInterface $tool ): void {
-		$this->local[ $tool->getSlug() ] = $tool;
-	}
+    /**
+     * Add a restriction for inherited tools (intersects with existing ones).
+     */
+    public function restrict(ToolRestriction $restriction): void
+    {
+        $this->restrictions[] = $restriction;
+    }
 
-	/**
-	 * Add a restriction for inherited tools (intersects with existing ones).
-	 */
-	public function restrict( ToolRestriction $restriction ): void {
-		$this->restrictions[] = $restriction;
-	}
+    public function get(string $slug): ?ToolInterface
+    {
+        // Scope-local tools shadow everything and are restriction-exempt.
+        if (isset($this->local[ $slug ])) {
+            return $this->local[ $slug ];
+        }
 
-	public function get( string $slug ): ?ToolInterface {
-		// Scope-local tools shadow everything and are restriction-exempt.
-		if ( isset( $this->local[ $slug ] ) ) {
-			return $this->local[ $slug ];
-		}
+        $tool = $this->parent->get($slug);
 
-		$tool = $this->parent->get( $slug );
+        if (null === $tool) {
+            return null;
+        }
 
-		if ( null === $tool ) {
-			return null;
-		}
+        // A restricted-away global reads as absent.
+        return $this->isVisible($slug, $tool) ? $tool : null;
+    }
 
-		// A restricted-away global reads as absent.
-		return $this->isVisible( $slug, $tool ) ? $tool : null;
-	}
+    public function has(string $slug): bool
+    {
+        $tool = $this->parent->get($slug);
 
-	public function has( string $slug ): bool {
-		$tool = $this->parent->get( $slug );
+        if (null === $tool) {
+            return false;
+        }
 
-		if ( null === $tool ) {
-			return false;
-		}
+        return $this->isVisible($slug, $tool);
+    }
 
-		return $this->isVisible( $slug, $tool );
-	}
+    /**
+     * Project the visible inherited + local tools onto model-facing schemas.
+     *
+     * @return array<int, array{type: string, function: array<string, mixed>}>
+     */
+    public function schemas(): array
+    {
+        $definitions = array();
 
-	/**
-	 * Project the visible inherited + local tools onto model-facing schemas.
-	 *
-	 * @return array<int, array{type: string, function: array<string, mixed>}>
-	 */
-	public function schemas(): array {
-		$definitions = array();
+        // Inherited tools first (restrictions applied), then scope-local
+        // tools shadow by slug.
+        foreach ($this->inheritedTools() as $slug => $tool) {
+            if ($this->isVisible($slug, $tool)) {
+                $definitions[ $slug ] = $this->schemaFor($slug, $tool);
+            }
+        }
 
-		// Inherited tools first (restrictions applied), then scope-local
-		// tools shadow by slug.
-		foreach ( $this->inheritedTools() as $slug => $tool ) {
-			if ( $this->isVisible( $slug, $tool ) ) {
-				$definitions[ $slug ] = $this->schemaFor( $slug, $tool );
-			}
-		}
+        foreach ($this->local as $slug => $tool) {
+            $definitions[ $slug ] = $this->schemaFor($slug, $tool);
+        }
 
-		foreach ( $this->local as $slug => $tool ) {
-			$definitions[ $slug ] = $this->schemaFor( $slug, $tool );
-		}
+        return array_values($definitions);
+    }
 
-		return array_values( $definitions );
-	}
+    /**
+     * Visible slugs, in inherited-then-local order.
+     *
+     * @return string[]
+     */
+    public function visibleSlugs(): array
+    {
+        $slugs = array();
 
-	/**
-	 * Visible slugs, in inherited-then-local order.
-	 *
-	 * @return string[]
-	 */
-	public function visibleSlugs(): array {
-		$slugs = array();
+        foreach ($this->inheritedTools() as $slug => $tool) {
+            if ($this->isVisible($slug, $tool)) {
+                $slugs[] = $slug;
+            }
+        }
 
-		foreach ( $this->inheritedTools() as $slug => $tool ) {
-			if ( $this->isVisible( $slug, $tool ) ) {
-				$slugs[] = $slug;
-			}
-		}
+        foreach ($this->local as $slug => $tool) {
+            if (! \in_array($slug, $slugs, true)) {
+                $slugs[] = $slug;
+            }
+        }
 
-		foreach ( $this->local as $slug => $tool ) {
-			if ( ! \in_array( $slug, $slugs, true ) ) {
-				$slugs[] = $slug;
-			}
-		}
+        return $slugs;
+    }
 
-		return $slugs;
-	}
+    /**
+     * All tools visible through the parent resolver (slug → instance).
+     *
+     * @return array<string, ToolInterface>
+     */
+    private function inheritedTools(): array
+    {
+        if ($this->parent instanceof ToolRegistry) {
+            return $this->parent->enabled();
+        }
 
-	/**
-	 * All tools visible through the parent resolver (slug → instance).
-	 *
-	 * @return array<string, ToolInterface>
-	 */
-	private function inheritedTools(): array {
-		if ( $this->parent instanceof ToolRegistry ) {
-			return $this->parent->enabled();
-		}
+        if ($this->parent instanceof self) {
+            $tools = array();
+            foreach ($this->parent->visibleSlugs() as $slug) {
+                $tool = $this->parent->get($slug);
+                if (null !== $tool) {
+                    $tools[ $slug ] = $tool;
+                }
+            }
 
-		if ( $this->parent instanceof self ) {
-			$tools = array();
-			foreach ( $this->parent->visibleSlugs() as $slug ) {
-				$tool = $this->parent->get( $slug );
-				if ( null !== $tool ) {
-					$tools[ $slug ] = $tool;
-				}
-			}
+            return $tools;
+        }
 
-			return $tools;
-		}
+        // Generic resolver: enumerate the seeded universe so
+        // non-enumerable parents still produce schemas and slug views.
+        $tools = array();
 
-		// Generic resolver: enumerate the seeded universe so
-		// non-enumerable parents still produce schemas and slug views.
-		$tools = array();
+        foreach ($this->seed_slugs as $slug) {
+            $tool = $this->parent->get($slug);
 
-		foreach ( $this->seed_slugs as $slug ) {
-			$tool = $this->parent->get( $slug );
+            if (null !== $tool) {
+                $tools[ $slug ] = $tool;
+            }
+        }
 
-			if ( null !== $tool ) {
-				$tools[ $slug ] = $tool;
-			}
-		}
+        return $tools;
+    }
 
-		return $tools;
-	}
+    /**
+     * Whether an inherited tool survives every restriction in the chain.
+     */
+    private function isVisible(string $slug, ToolInterface $tool): bool
+    {
+        // Scope-local tools are exempt and shadow everything.
+        if (isset($this->local[ $slug ])) {
+            return true;
+        }
 
-	/**
-	 * Whether an inherited tool survives every restriction in the chain.
-	 */
-	private function isVisible( string $slug, ToolInterface $tool ): bool {
-		// Scope-local tools are exempt and shadow everything.
-		if ( isset( $this->local[ $slug ] ) ) {
-			return true;
-		}
+        foreach ($this->restrictions as $restriction) {
+            if (! $restriction->admits($slug)) {
+                return false;
+            }
+        }
 
-		foreach ( $this->restrictions as $restriction ) {
-			if ( ! $restriction->admits( $slug ) ) {
-				return false;
-			}
-		}
+        return true;
+    }
 
-		return true;
-	}
-
-	/**
-	 * @return array{type: string, function: array<string, mixed>}
-	 */
-	private function schemaFor( string $slug, ToolInterface $tool ): array {
-		return array(
-			'type'     => 'function',
-			'function' => array(
-				'name'        => $slug,
-				'description' => $tool->getDescription(),
-				'parameters'  => $tool->getParametersSchema(),
-			),
-		);
-	}
+    /**
+     * @return array{type: string, function: array<string, mixed>}
+     */
+    private function schemaFor(string $slug, ToolInterface $tool): array
+    {
+        return array(
+            'type'     => 'function',
+            'function' => array(
+                'name'        => $slug,
+                'description' => $tool->getDescription(),
+                'parameters'  => $tool->getParametersSchema(),
+            ),
+        );
+    }
 }
