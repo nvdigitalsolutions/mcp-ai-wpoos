@@ -394,9 +394,69 @@ function allDescendants( node: HNode, predicate: ( node: HNode ) => boolean ): H
 	return out;
 }
 
+/** A heading with its level — the title picker's input. */
+interface HeadingCandidate {
+	level: number;
+	text: string;
+}
+
+/**
+ * Pick a band's title from its headings.
+ *
+ * A builder band routinely carries TWO headings: a small kicker above the real
+ * headline. Taking the first one dropped the headline entirely
+ * (virtuallysrilanka.com: the hero rendered "SEE WHAT WE CAN DO FOR YOU" and
+ * lost the 55px "WE SPECIALIZE IN CUSTOM SOLUTIONS…" sitting right below it;
+ * the "How it Works" band rendered its kicker instead of its title). The most
+ * important LEVEL wins, and a same-level ALL-CAPS kicker yields to the line
+ * under it.
+ */
+function pickHeadingTitle( headings: HeadingCandidate[] ): HeadingCandidate | undefined {
+	if ( headings.length === 0 ) {
+		return undefined;
+	}
+	let index = 0;
+	for ( let i = 1; i < headings.length; i++ ) {
+		if ( headings[ i ].level < headings[ index ].level ) {
+			index = i;
+		}
+	}
+	if (
+		index === 0 &&
+		headings.length > 1 &&
+		headings[ 0 ].level === headings[ 1 ].level &&
+		isKickerLine( headings[ 0 ].text )
+	) {
+		index = 1;
+	}
+	return headings[ index ];
+}
+
+/** An ALL-CAPS short line — the kicker that sits above a band title. */
+function isKickerLine( text: string ): boolean {
+	const letters = text.replace( /[^A-Za-z]/g, '' );
+	return letters.length > 0 && letters === letters.toUpperCase() && text.trim().split( /\s+/ ).length <= 6;
+}
+
+/** Every heading under a node, in document order. */
+function headingCandidatesIn( node: HNode ): HeadingCandidate[] {
+	const isHeading = ( n: HNode ) => n.type === 'tag' && /^h[1-6]$/.test( n.name ?? '' );
+	const out: HeadingCandidate[] = [];
+	for ( const heading of allDescendants( node, isHeading ) ) {
+		const text = trimmed( textOf( heading ) );
+		if ( text ) {
+			out.push( { level: Number( ( heading.name ?? 'h6' ).slice( 1 ) ), text } );
+		}
+	}
+	return out;
+}
+
+/** The collected slots plus the internal title level (never serialized). */
+type CollectedSlots = SemanticSection['slots'] & { titleLevel?: number };
+
 /** Collect imgs/links/headings/paragraphs inside a widget node. */
-function collectSlots( node: HNode ): SemanticSection['slots'] {
-	const slots: SemanticSection['slots'] = {};
+function collectSlots( node: HNode ): CollectedSlots {
+	const slots: CollectedSlots = {};
 	const media: MediaRef[] = [];
 	const links: LinkRef[] = [];
 	const body: string[] = [];
@@ -418,12 +478,21 @@ function collectSlots( node: HNode ): SemanticSection['slots'] {
 	}
 
 	const isHeading = ( n: HNode ) => n.type === 'tag' && /^h[1-6]$/.test( n.name ?? '' );
-	const heading = findDescendant( node, isHeading );
-	const titleText = heading ? trimmed( textOf( heading ) ) : '';
+	const headings = headingCandidatesIn( node );
+	const title = pickHeadingTitle( headings );
+	const titleText = title?.text ?? '';
 	if ( titleText ) {
 		slots.title = titleText;
+		slots.titleLevel = title?.level;
 	}
+	// A second heading in the same widget is copy, not decoration.
+	const extraHeadings = headings.map( ( heading ) => heading.text ).filter( ( text ) => text !== titleText );
 	const isParagraph = ( n: HNode ) => n.type === 'tag' && n.name === 'p';
+	for ( const extra of extraHeadings ) {
+		if ( ! body.includes( extra ) ) {
+			body.push( extra );
+		}
+	}
 	for ( const p of allDescendants( node, isParagraph ) ) {
 		const value = trimmed( textOf( p ) );
 		if ( value && value !== titleText ) {
@@ -537,8 +606,12 @@ function extractStructuredItem( node: HNode ): { title?: string; body?: string; 
 	}
 	// The header-box class match must not hit the widget's own class
 	// (elementor-widget-icon-box contains 'icon') — only real icon containers:
-	// aux's `aux-ico-box` family and Elementor's icon-box internals.
-	const headerBoxes = allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).some( ( c ) => /ico-box|icon-box-icon|icon-box-wrapper/i.test( c ) ) );
+	// aux's `aux-ico-box` family and Elementor's `elementor-icon-box-icon`.
+	// `elementor-icon-box-wrapper` is NOT one of them: it wraps the icon AND the
+	// title AND the description, so treating it as the header dropped every
+	// card's copy (virtuallysrilanka.com's four icon-boxes rendered as bare
+	// titles — band text coverage 1.2%).
+	const headerBoxes = allDescendants( node, ( n ) => n.type === 'tag' && classList( n.attribs ).some( ( c ) => /ico-box|icon-box-icon/i.test( c ) ) );
 	let icon = false;
 	let iconClass: string | undefined;
 	let media: MediaRef | undefined;
@@ -602,6 +675,7 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 	const links: LinkRef[] = [];
 	const body: string[] = [];
 	const items: SectionItem[] = [];
+	const headingCandidates: HeadingCandidate[] = [];
 	const confidence: 'high' | 'medium' | 'low' = 'high';
 
 	for ( const widget of widgets ) {
@@ -633,8 +707,12 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 			continue;
 		}
 		const collected = collectSlots( widget.node );
-		if ( collected.title && ! slots.title ) {
-			slots.title = collected.title;
+		// Item widgets (feature/icon/quote) carry their own headings — those are
+		// card captions, never the band title.
+		const isItemWidget =
+			widget.role.kind === 'feature' || widget.role.kind === 'icon-item' || widget.role.kind === 'quote';
+		if ( collected.title && ! isItemWidget ) {
+			headingCandidates.push( { level: collected.titleLevel ?? 6, text: collected.title } );
 		}
 		for ( const paragraph of collected.body ?? [] ) {
 			if ( ! body.includes( paragraph ) ) {
@@ -675,6 +753,14 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 	if ( items.length > 0 ) {
 		slots.items = items;
 	}
+	const title = pickHeadingTitle( headingCandidates );
+	if ( title ) {
+		slots.title = title.text;
+	}
+	// Every heading that is not the title is still the source's copy — it ships
+	// as the band's intro text so no word is lost (and the title gate stays
+	// green) without changing how the band is classified.
+	const extraHeadings = headingCandidates.map( ( heading ) => heading.text ).filter( ( text ) => text !== title?.text );
 
 	const hasBody = ( slots.body?.length ?? 0 ) > 0;
 	// Unknown-name widgets drop the confidence — the shape decided the kind,
@@ -691,6 +777,11 @@ function sectionFromWidgets( widgets: WidgetLike[], index: number ): SemanticSec
 		{ kind: 'text', reason: true },
 	];
 	const matched = kinds.find( ( entry ) => entry.reason ) ?? kinds[ kinds.length - 1 ];
+	// Extras land AFTER classification, so a kicker never turns a CTA into a
+	// hero. Media-only kinds keep no prose (their slots ignore body).
+	if ( extraHeadings.length > 0 && matched.kind !== 'logo-cloud' && matched.kind !== 'gallery' ) {
+		slots.body = [ ...extraHeadings.filter( ( text ) => ! ( slots.body ?? [] ).includes( text ) ), ...( slots.body ?? [] ) ];
+	}
 	return { kind: matched.kind, confidence: effectiveConfidence, slots };
 }
 
@@ -1408,6 +1499,13 @@ function formSection( html: string, region: HNode, form: HNode, searchForms?: st
 		return undefined;
 	}
 	const section: SemanticSection = { kind: 'form', confidence: 'high', slots: {} };
+	// The source section id — without it the band has no theming key and the
+	// band audit reports the source band as MISSING from the build
+	// (virtuallysrilanka.com's #contact band).
+	const sourceId = elementorId( region );
+	if ( sourceId ) {
+		section.id = sourceId;
+	}
 	// The band's own id is the nav target (a CF7 form inside
 	// `<section id="contact">` must keep that anchor).
 	const anchor = anchorOfNode( region );
@@ -1638,6 +1736,40 @@ function joinSlices( html: string, nodes: HNode[] ): string {
  * the remaining content runs the pre-form pipeline on its own slices.
  * Empty recognized sections are dropped, never rendered.
  */
+/**
+ * Flatten a builder wrapper down to its section boundaries.
+ *
+ * Elementor (and every other builder) wraps the whole page in ONE container
+ * (`data-elementor-type="wp-page"`), so the document's top-level node is that
+ * wrapper rather than a band. The form walk below consumes any node whose
+ * subtree contains a `<form>` — against a wrapped document that means the
+ * ENTIRE page became a single `form` section, and every other band was lost
+ * (virtuallysrilanka.com: 7 bands → 1 form, `verify --bands` 0/7, no anchors).
+ *
+ * The band boundaries are still there, one level down. Descend to the
+ * OUTERMOST boundaries when a wrapper holds several, and leave the node list
+ * alone otherwise so a genuinely single-band page keeps its wrapper.
+ */
+function bandLevelNodes( nodes: HNode[] ): HNode[] {
+	if ( nodes.some( ( node ) => node.type === 'tag' && isSectionBoundary( node ) ) ) {
+		return nodes;
+	}
+	const boundaries: HNode[] = [];
+	const collectOutermost = ( node: HNode ) => {
+		for ( const child of childrenOf( node ) ) {
+			if ( child.type === 'tag' && isSectionBoundary( child ) ) {
+				boundaries.push( child );
+			} else {
+				collectOutermost( child );
+			}
+		}
+	};
+	for ( const node of nodes ) {
+		collectOutermost( node );
+	}
+	return boundaries.length > 1 ? boundaries : nodes;
+}
+
 export function classifyHtml( html: string, options: ClassifyOptions = {} ): SemanticSection[] {
 	const handler = new DomHandler( undefined, { withStartIndices: true, withEndIndices: true } );
 	const parser = new Parser( handler, { decodeEntities: true, lowerCaseTags: true, lowerCaseAttributeNames: true } );
@@ -1655,18 +1787,19 @@ export function classifyHtml( html: string, options: ClassifyOptions = {} ): Sem
 		return classifyRegion( html, nodes, html, options );
 	}
 
-	// Forms present: walk top-level nodes in document order; nodes whose
+	// Forms present: walk the BAND-level nodes in document order; nodes whose
 	// subtree contains a form become form sections, everything else keeps
 	// its order in the regular pipeline.
 	const sections: SemanticSection[] = [];
 	const pending: HNode[] = [];
+	const walk = bandLevelNodes( nodes );
 	const flushPending = () => {
 		if ( pending.length > 0 ) {
 			sections.push( ...classifyRegion( html, pending, joinSlices( html, pending ), options ) );
 			pending.length = 0;
 		}
 	};
-	for ( const child of nodes ) {
+	for ( const child of walk ) {
 		const forms = collectFormNodes( child );
 		if ( forms.length > 0 ) {
 			flushPending();
