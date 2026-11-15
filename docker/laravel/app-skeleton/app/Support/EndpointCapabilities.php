@@ -214,6 +214,19 @@ final class EndpointCapabilities
     );
 
     /**
+     * Endpoint key => route fragment that must exist on this runtime.
+     *
+     * Public so the contract test can assert the golden file
+     * (`fragments.laravel`) without keeping a second copy.
+     *
+     * @return array<string, string>
+     */
+    public static function routes(): array
+    {
+        return self::ROUTES;
+    }
+
+    /**
      * Resolve every key against the registered routes.
      *
      * @return array<string, bool> Endpoint key => servable.

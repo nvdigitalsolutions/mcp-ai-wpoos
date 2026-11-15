@@ -35,6 +35,7 @@ import { ConsoleSidebar } from './ConsoleSidebar';
 import { DashboardPage } from './DashboardPage';
 import { ChatDock } from './ChatDock';
 import { RequireGate, gateForPath } from './nav-features';
+import type { ConsoleRuntimeConfig } from '../runtime-config';
 
 // Route-based code splitting, same recipe as spa-v2's router. Each addon is
 // its own page in the SA-format content area.
@@ -237,7 +238,10 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
   const location = useLocation();
   const isChatRoute = location.pathname === '/chat';
 
-  const runtime = useMemo(() => readProSpaConfig(), []);
+  const runtime = useMemo(
+    () => readProSpaConfig() as ConsoleRuntimeConfig | null,
+    [],
+  );
   if (!runtime) {
     return <MissingConfigScreen />;
   }
@@ -255,6 +259,8 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
 
   // Server-reported feature availability — gates nav + optional routes.
   const features = runtime.features ?? {};
+  // Supply class per endpoint key — operator copy for the dashboard card.
+  const endpointReasons = runtime.endpointReasons ?? {};
 
   // Same fallback chain as spa-v2's Layout so the transcript hook and the
   // chat transport bind to the same assistant.
@@ -337,6 +343,8 @@ function ConsoleApp({ onSignOut }: ConsoleShellProps): JSX.Element {
                     dockOpen={dockOpen}
                     onToggleDock={toggleDock}
                     features={features}
+                    endpoints={runtime.endpoints}
+                    endpointReasons={endpointReasons}
                     commandCenterEndpoint={runtime.endpoints.commandCenter ?? ''}
                     nonce={runtime.nonce}
                   />

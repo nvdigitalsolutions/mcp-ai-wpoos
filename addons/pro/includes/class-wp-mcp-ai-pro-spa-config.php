@@ -298,6 +298,10 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'teams'               => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/teams' ) )
 					: '',
+				// Profession catalogue (090-p W1) — the assistant editor's selector.
+				'professions'         => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/professions' ) )
+					: '',
 				'portability'         => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) )
 					: '',

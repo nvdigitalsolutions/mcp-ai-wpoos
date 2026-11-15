@@ -1,9 +1,9 @@
 /**
  * Professions client — the assistant editor's profession catalogue.
  *
- * Wraps `/api/v1/professions` (Proposal 090-g, Phase 4). Laravel-only: the
- * WordPress runtime has no professions REST route, so callers must handle an
- * empty endpoint and hide the selector.
+ * Wraps `/api/v1/professions` (Laravel) and `/mcp-ai/v1/professions`
+ * (WordPress, 090-p W1) — Proposal 090-g Phase 4. Callers still handle an
+ * empty endpoint (older installs), but both runtimes now serve the catalogue.
  */
 
 import { __ } from '@wordpress/i18n';

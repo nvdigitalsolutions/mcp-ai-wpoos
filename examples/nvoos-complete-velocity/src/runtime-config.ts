@@ -138,10 +138,10 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     // MCP Apps: Pro-only route; empty hides the panel instead of firing 404s.
     mcpApps: isAdmin ? `${core}/mcp-apps` : '',
     mediaCc: isAdmin ? `${pro}/media-cc` : '',
-    // Profession catalogue (assistant editor selector) — Laravel-only; the
-    // WordPress runtime has no professions REST route, so the editor hides
-    // the selector when this is empty.
-    professions: isAdmin && !isWordPress ? `${core}/professions` : '',
+    // Profession catalogue (assistant editor selector) — both runtimes now
+    // serve it (`mcp-ai/v1/professions` on WordPress, `api/v1/professions` on
+    // Laravel), so only the admin capability gates it.
+    professions: isAdmin ? `${core}/professions` : '',
     // Org teams (users + roles) are Laravel-only for now; WordPress has the
     // agent-team catalogue at `teams` instead. Empty disables the page.
     orgTeams: isAdmin && !isWordPress ? `${core}/org/teams` : '',
@@ -204,8 +204,22 @@ export interface ConsoleRuntimeOptions {
    * emit the map behaves exactly as before.
    */
   endpointUrls?: Record<string, string>;
+  /**
+   * Supply class per endpoint key (GET /features → data.endpoint_reasons).
+   * Lets the console explain an unavailable surface instead of only hiding it.
+   */
+  endpointReasons?: Record<string, string>;
   /** WordPress site title (blogname) for branding surfaces. */
   siteName?: string;
+}
+
+export interface ConsoleRuntimeConfig extends ProSpaRuntime {
+  /**
+   * Supply class per endpoint key, read from `/features`. The console uses it
+   * only for operator copy ("external product", "not installed", …) — the
+   * visibility decision is still the blank endpoint.
+   */
+  endpointReasons: Record<string, string>;
 }
 
 /**
@@ -213,7 +227,9 @@ export interface ConsoleRuntimeOptions {
  * Origin is always this app's own origin (viaProxy) — serve.mjs (production)
  * or the Vite dev proxy forwards /wp-json to the WordPress target.
  */
-export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpaRuntime {
+export function buildConsoleRuntime(
+  options: ConsoleRuntimeOptions = {},
+): ConsoleRuntimeConfig {
   const origin =
     typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
   const assistantId = options.assistantId ?? options.defaultAssistantId ?? 0;
@@ -295,6 +311,7 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
     assistants: undefined,
     profiles: undefined,
     features,
+    endpointReasons: options.endpointReasons ?? {},
     siteName: options.siteName ?? '',
   };
 }
@@ -599,6 +616,8 @@ export interface RuntimeAvailability {
   endpoints: Record<string, boolean>;
   /** Connected-app base URLs that answered their discovery probe. */
   endpointUrls: Record<string, string>;
+  /** Supply class per endpoint key, for operator-facing copy. */
+  endpointReasons: Record<string, string>;
 }
 
 /**
@@ -615,7 +634,12 @@ export async function fetchRuntimeAvailability(
   backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
 ): Promise<RuntimeAvailability> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
-  const empty: RuntimeAvailability = { features: {}, endpoints: {}, endpointUrls: {} };
+  const empty: RuntimeAvailability = {
+    features: {},
+    endpoints: {},
+    endpointUrls: {},
+    endpointReasons: {},
+  };
 
   try {
     const headers: Record<string, string> = {};
@@ -638,17 +662,20 @@ export async function fetchRuntimeAvailability(
         features?: Record<string, boolean>;
         endpoints?: Record<string, boolean>;
         endpoint_urls?: Record<string, string>;
+        endpoint_reasons?: Record<string, string>;
       };
     }>(response, 'features endpoint');
 
     const features = data?.data?.features;
     const endpoints = data?.data?.endpoints;
     const endpointUrls = data?.data?.endpoint_urls;
+    const endpointReasons = data?.data?.endpoint_reasons;
 
     return {
       features: isBooleanMap(features) ? features : {},
       endpoints: isBooleanMap(endpoints) ? endpoints : {},
       endpointUrls: isStringMap(endpointUrls) ? endpointUrls : {},
+      endpointReasons: isStringMap(endpointReasons) ? endpointReasons : {},
     };
   } catch (error) {
     console.warn(

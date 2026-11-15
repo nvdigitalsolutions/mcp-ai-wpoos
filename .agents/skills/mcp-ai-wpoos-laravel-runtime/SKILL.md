@@ -230,8 +230,8 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   `endpoint_contract_version: 2`, `endpoint_reasons`, `endpoint_gaps`,
   `backend: wordpress` and `contract: mcp-ai/v1`, computed from
   `rest_get_server()->get_routes()` with a regex-aware literal-head matcher.
-  WordPress overrides three classifications (`mediaCc` → `route`,
-  `professions`/`orgTeams` → `runtime-adaptable`; `chatChannels` stays
+  WordPress overrides two classifications (`mediaCc` → `route`,
+  `orgTeams` → `runtime-adaptable`; `chatChannels` stays
   `toolkit-shaped`) and downgrades Pro-supplied keys to `not-installed` when
   `WP_MCP_AI_PRO_FILE` is undefined, so a Base install has no gaps. The
   console's `isWordPress` matrix is now only a fallback for older backends.
@@ -239,11 +239,15 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   `App\Support\ConnectedApps\ConnectedAppRegistry` probes configured product
   bases (`oos.connected_apps.*`: `contentGraph`, `docsHub`, `mediaStudio`,
   `documentEditor`), caches the result (`oos.connected_apps_ttl`, 300 s),
-  refuses private/reserved IP literals and follow-redirects, and reports the
-  resolved base through `data.endpoint_urls` while flipping the key. Additive:
-  a console that ignores `endpoint_urls` behaves exactly as before. The probe
-  accepts 2xx/3xx and 401/403 as *reached*; a 404/5xx/transport error leaves the
-  key unavailable with the `external-product` reason (not a gap).
+  resolves the hostname and validates **every** address (private/reserved
+  ranges refused; CGNAT/benchmarking/documentation ranges are checked
+  explicitly because PHP's filter flags miss them), pins the validated address
+  with `CURLOPT_RESOLVE`, follows no redirects, and sends an optional per-app
+  `token` as a bearer credential. It reports the resolved base through
+  `data.endpoint_urls` while flipping the key. Additive: a console that ignores
+  `endpoint_urls` behaves exactly as before. The probe accepts 2xx/3xx and
+  401/403 as *reached*; a 404/5xx/transport error leaves the key unavailable
+  with the `external-product` reason (not a gap).
 - **Response envelopes differ per client — read the client.** Most Laravel
   controllers use `{success, data}`, but `WorkflowBuilderClient` reads bare
   arrays/objects (WordPress's `rest_ensure_response()` shape),

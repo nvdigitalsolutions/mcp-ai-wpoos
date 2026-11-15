@@ -264,13 +264,31 @@ class EndpointCapabilitiesTest extends TestCase
         $expected = (array) ( $this->contract()['reasons'] ?? array() );
         $actual   = EndpointCapabilities::reasons();
 
-        ksort($expected);
-        ksort($actual);
+        ksort( $expected );
+        ksort( $actual );
 
         $this->assertSame(
             $expected,
             $actual,
             'EndpointCapabilities::REASONS and contracts/console-endpoints.json disagree.'
+        );
+    }
+
+    public function test_the_contract_fragments_match_the_runtime(): void
+    {
+        // The fixture is the golden copy of the paths. A route moved on one side
+        // (e.g. `/toolkits` vs `/toolkit-manifests`) fails here instead of
+        // blanking a page in a browser.
+        $expected = (array) ( $this->contract()['fragments']['laravel'] ?? array() );
+        $actual   = EndpointCapabilities::routes();
+
+        ksort( $expected );
+        ksort( $actual );
+
+        $this->assertSame(
+            $expected,
+            $actual,
+            'EndpointCapabilities::ROUTES and fragments.laravel disagree.'
         );
     }
 

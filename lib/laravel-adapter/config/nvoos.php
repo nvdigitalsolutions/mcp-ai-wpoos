@@ -1017,27 +1017,34 @@ return array(
 	|
 	| `url` is the product's REST base, e.g.
 	| `https://docs.example.com/wp-json/nvoos-docs/v1`. `probe` is the relative
-	| path appended for the health check (defaults per product). The probe is
-	| GET-only, follows no redirects, refuses private/reserved IP literals and
-	| requires HTTPS for any non-loopback host.
+	| path appended for the health check (defaults per product); `token` is an
+	| optional bearer credential for a protected product. The probe resolves the
+	| hostname and validates every address (refusing private/reserved ranges),
+	| pins the validated address for the request, follows no redirects and
+	| requires HTTPS for any non-loopback host. The token never appears in the
+	| manifest.
 	|
 	*/
 	'connected_apps' => array(
 		'contentGraph' => array(
 			'url' => env( 'NVOOS_CONTENT_GRAPH_URL', '' ),
 			'probe' => '/graph',
+			'token' => env( 'NVOOS_CONTENT_GRAPH_TOKEN', '' ),
 		),
 		'docsHub' => array(
 			'url' => env( 'NVOOS_DOCS_HUB_URL', '' ),
 			'probe' => '/health',
+			'token' => env( 'NVOOS_DOCS_HUB_TOKEN', '' ),
 		),
 		'mediaStudio' => array(
 			'url' => env( 'NVOOS_MEDIA_STUDIO_URL', '' ),
 			'probe' => '/health',
+			'token' => env( 'NVOOS_MEDIA_STUDIO_TOKEN', '' ),
 		),
 		'documentEditor' => array(
 			'url' => env( 'NVOOS_DOCUMENT_EDITOR_URL', '' ),
 			'probe' => '/health',
+			'token' => env( 'NVOOS_DOCUMENT_EDITOR_TOKEN', '' ),
 		),
 	),
 

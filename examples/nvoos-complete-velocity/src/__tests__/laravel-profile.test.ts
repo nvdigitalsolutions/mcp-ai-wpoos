@@ -83,9 +83,10 @@ describe('backendPaths', () => {
     // Laravel-only until the contract is ported.
     expect(runtime.endpoints.teams).toBe(`${origin()}/wp-json/mcp-ai/v1/teams`);
     expect(runtime.endpoints.orgTeams).toBe('');
-    // WordPress has no professions REST route; the assistant editor hides the
-    // selector rather than firing a doomed request.
-    expect(runtime.endpoints.professions).toBe('');
+    // The profession catalogue is served on both runtimes (090-p W1).
+    expect(runtime.endpoints.professions).toBe(
+      `${origin()}/wp-json/mcp-ai/v1/professions`,
+    );
   });
 });
 

@@ -1202,3 +1202,29 @@ body,
 .nvoos-gateway-error {
 	color: #b91c1c;
 }
+
+/* Dashboard — unavailable surfaces (090-p W2). */
+.nvoos-console-unavailable__lede {
+	margin: 0 0 0.75rem;
+	color: var(--nvoos-line);
+	line-height: 1.5;
+}
+.nvoos-console-unavailable {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 0.5rem;
+}
+.nvoos-console-unavailable__item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem 0.75rem;
+	padding: 0.5rem 0.75rem;
+	border: var(--nvoos-border);
+	border-radius: 6px;
+	background: var(--nvoos-bg-secondary);
+}
+.nvoos-console-unavailable__reason {
+	color: var(--nvoos-line);
+}

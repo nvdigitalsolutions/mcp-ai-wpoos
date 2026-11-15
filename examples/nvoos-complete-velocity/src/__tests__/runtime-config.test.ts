@@ -367,6 +367,10 @@ describe('endpoint availability (090-B)', () => {
       reasons?: Record<string, string>;
       wordpress_reasons?: Record<string, string>;
       reason_codes?: string[];
+      fragments?: {
+        laravel?: Record<string, string>;
+        wordpress?: Record<string, string>;
+      };
     };
 
     const reasons = contract.reasons ?? {};
@@ -393,6 +397,20 @@ describe('endpoint availability (090-B)', () => {
     }
 
     expect(unknown).toEqual([]);
+
+    // Both runtimes declare the exact route fragment each key maps to. The
+    // PHP suites assert their constants against these maps, so a path moved on
+    // one side fails on three CIs (the `toolkits` drift class).
+    for (const runtime of ['laravel', 'wordpress'] as const) {
+      const fragments = contract.fragments?.[runtime] ?? {};
+
+      expect(Object.keys(fragments).sort()).toEqual([...contract.route_backed].sort());
+
+      for (const [key, fragment] of Object.entries(fragments)) {
+        expect(typeof fragment, `${runtime}.${key}`).toBe('string');
+        expect(fragment, `${runtime}.${key}`).not.toBe('');
+      }
+    }
   });
 });
 
@@ -417,9 +435,33 @@ describe('fetchRuntimeAvailability', () => {
       features: { docs_hub: false },
       endpoints: { workflowBuilder: false, assistants: true },
       endpointUrls: {},
+      endpointReasons: {},
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns the supply class for every endpoint', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          success: true,
+          data: {
+            features: {},
+            endpoints: { docsHub: false },
+            endpoint_reasons: { docsHub: 'external-product' },
+          },
+        }),
+      ),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: {},
+      endpoints: { docsHub: false },
+      endpointUrls: {},
+      endpointReasons: { docsHub: 'external-product' },
+    });
   });
 
   it('returns resolved connected-app URLs', async () => {
@@ -443,6 +485,7 @@ describe('fetchRuntimeAvailability', () => {
       features: {},
       endpoints: { docsHub: true },
       endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+      endpointReasons: {},
     });
   });
 
@@ -458,6 +501,7 @@ describe('fetchRuntimeAvailability', () => {
       features: { pro: true },
       endpoints: {},
       endpointUrls: {},
+      endpointReasons: {},
     });
   });
 
@@ -472,6 +516,7 @@ describe('fetchRuntimeAvailability', () => {
       features: {},
       endpoints: {},
       endpointUrls: {},
+      endpointReasons: {},
     });
     expect(warn).toHaveBeenCalled();
   });
