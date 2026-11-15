@@ -1192,6 +1192,109 @@ final class ChatOrchestratorTest extends TestCase
         $this->assertSame(1, substr_count($sent[0]['content'], '[Guardrails — Stay on Target]'));
     }
 
+    /**
+     * The console warned when an assistant had no system prompt but never sent
+     * the one it had, so every assistant ran on the user's words alone.
+     */
+    public function test_the_assistant_instructions_reach_the_provider(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+
+        $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array(
+                'tools' => array(),
+                'provider' => 'openai',
+                'model' => 'gpt-4o',
+                'system_prompt' => 'You are a support assistant.',
+            ),
+        );
+
+        $sent = $dispatcher->router->receivedMessages[0];
+
+        $this->assertSame('system', $sent[0]['role'], 'The instructions go first.');
+        $this->assertSame('You are a support assistant.', $sent[0]['content']);
+        $this->assertSame('user', $sent[1]['role'], 'The user turn follows it.');
+    }
+
+    /**
+     * WordPress composes `guardrail . "\n\n" . prompt`; the rails read as a
+     * preamble to the instructions rather than a footnote.
+     */
+    public function test_the_assistant_instructions_follow_the_guardrail_block(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+        $orchestrator->setHarnessProfileProvider($this->guardrailProfile());
+
+        $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array(
+                'tools' => array(),
+                'provider' => 'openai',
+                'model' => 'gpt-4o',
+                'system_prompt' => 'You are a support assistant.',
+            ),
+        );
+
+        $content = $dispatcher->router->receivedMessages[0][0]['content'];
+
+        $this->assertStringStartsWith('[Guardrails — Stay on Target]', $content);
+        $this->assertStringEndsWith('You are a support assistant.', $content);
+        $this->assertSame(1, substr_count($content, 'You are a support assistant.'));
+    }
+
+    /**
+     * A conversation that already carries the instructions must not collect a
+     * second copy: doubling them doubles their weight in the prompt.
+     */
+    public function test_instructions_already_in_the_conversation_are_not_duplicated(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+
+        $orchestrator->handleChat(
+            array(
+                array( 'role' => 'system', 'content' => 'You are a support assistant.' ),
+                array( 'role' => 'user', 'content' => 'Hi.' ),
+            ),
+            array(
+                'tools' => array(),
+                'provider' => 'openai',
+                'model' => 'gpt-4o',
+                'system_prompt' => 'You are a support assistant.',
+            ),
+        );
+
+        $sent = $dispatcher->router->receivedMessages[0];
+
+        $this->assertCount(2, $sent, 'No extra system turn is added.');
+        $this->assertSame(1, substr_count($sent[0]['content'], 'You are a support assistant.'));
+    }
+
+    /**
+     * The instructions are the assistant's own configuration, so turning the
+     * guardrails layer off must not take them with it.
+     */
+    public function test_instructions_survive_with_the_guardrails_off(): void
+    {
+        list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
+
+        $profiles = $this->createMock(HarnessProfileProviderInterface::class);
+        $profiles->method('getProfile')->willReturn(array( 'enabled' => true, 'guardrails' => array( 'enabled' => false ) ));
+        $orchestrator->setHarnessProfileProvider($profiles);
+
+        $orchestrator->handleChat(
+            array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+            array(
+                'tools' => array(),
+                'provider' => 'openai',
+                'model' => 'gpt-4o',
+                'system_prompt' => 'You are a support assistant.',
+            ),
+        );
+
+        $this->assertSame('You are a support assistant.', $dispatcher->router->receivedMessages[0][0]['content']);
+    }
+
     public function test_high_strictness_reaches_the_injected_block(): void
     {
         list( $orchestrator, , $dispatcher ) = $this->orchestrator($this->echoTool()[0], array( $this->finalResponse() ));
