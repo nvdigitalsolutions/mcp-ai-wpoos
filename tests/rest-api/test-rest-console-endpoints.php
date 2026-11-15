@@ -157,8 +157,8 @@ class WP_MCP_AI_REST_Console_Endpoints_Test extends WP_UnitTestCase {
 		$this->assertSame( 'route', $reasons['mediaCc'] );
 		// The catalogue is served on both runtimes (090-p W1).
 		$this->assertSame( 'route', $reasons['professions'] );
-		// The users/roles team API does not exist on WordPress yet.
-		$this->assertSame( 'runtime-adaptable', $reasons['orgTeams'] );
+		// The org-team contract is served on both runtimes (090-p W7).
+		$this->assertSame( 'route', $reasons['orgTeams'] );
 		// The admin page points at a route no controller registers — the
 		// deferred communications-toolkit family, not a broken route.
 		$this->assertSame( 'toolkit-shaped', $reasons['chatChannels'] );

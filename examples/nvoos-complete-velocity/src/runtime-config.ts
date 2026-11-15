@@ -142,9 +142,10 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     // serve it (`mcp-ai/v1/professions` on WordPress, `api/v1/professions` on
     // Laravel), so only the admin capability gates it.
     professions: isAdmin ? `${core}/professions` : '',
-    // Org teams (users + roles) are Laravel-only for now; WordPress has the
-    // agent-team catalogue at `teams` instead. Empty disables the page.
-    orgTeams: isAdmin && !isWordPress ? `${core}/org/teams` : '',
+    // Org teams (users + roles) are served by both runtimes now
+    // (`mcp-ai/v1/org/teams` on WordPress, `api/v1/org/teams` on Laravel);
+    // only the admin capability gates the page.
+    orgTeams: isAdmin ? `${core}/org/teams` : '',
     blueprints: canEdit ? `${pro}/blueprints` : '',
     commandCenter: isAdmin ? `${pro}/command-center` : '',
     shortcuts: `${pro}/tool-shortcuts`,

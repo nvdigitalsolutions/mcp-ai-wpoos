@@ -230,9 +230,9 @@ Two scopes, one vocabulary. **Enforcement is the point:** before the `can:` gate
   `endpoint_contract_version: 2`, `endpoint_reasons`, `endpoint_gaps`,
   `backend: wordpress` and `contract: mcp-ai/v1`, computed from
   `rest_get_server()->get_routes()` with a regex-aware literal-head matcher.
-  WordPress overrides two classifications (`mediaCc` → `route`,
-  `orgTeams` → `runtime-adaptable`; `chatChannels` stays
-  `toolkit-shaped`) and downgrades Pro-supplied keys to `not-installed` when
+  WordPress overrides one classification (`mediaCc` → `route`, because the
+  health snapshot is computed locally; `chatChannels` stays `toolkit-shaped`)
+  and downgrades Pro-supplied keys to `not-installed` when
   `WP_MCP_AI_PRO_FILE` is undefined, so a Base install has no gaps. The
   console's `isWordPress` matrix is now only a fallback for older backends.
 - **Connected apps are discovered, not ported (090-i Phase 4).**

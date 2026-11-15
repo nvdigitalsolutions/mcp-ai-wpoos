@@ -95,8 +95,7 @@
     "wpBase": "route"
   },
   "wordpress_reasons": {
-    "mediaCc": "route",
-    "orgTeams": "runtime-adaptable"
+    "mediaCc": "route"
   },
   "reason_codes": [
     "route",

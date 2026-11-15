@@ -2,8 +2,8 @@
 
 **Status:** Planned 2026-11-16. Shipped in this pass: W1 (professions), W2 (reason
 surfaces), W3 (discovery pinning + auth), W4 (fragment golden file), W5
-(chatChannels decision + dead-page gate). **Deferred with design:** W6
-(connected-app proxy), W7 (org teams), W8 (console e2e in CI).
+(chatChannels decision + dead-page gate), W7 (org teams on WordPress).
+**Deferred with design:** W6 (connected-app proxy), W8 (console e2e in CI).
 **Predecessor:** `090-n-console-manifest-parity-plan.md` (manifest parity, merged
 as #7831).
 
@@ -18,7 +18,7 @@ This pass covers the P1 and P2 items from the roadmap that followed #7831:
 | P1 | Console renders endpoint reasons instead of only hiding surfaces | **W2 shipped** |
 | P1 | WordPress `professions` REST route | **W1 shipped** |
 | P1 | Connected-apps hardening (DNS pinning, per-app auth) | **W3 shipped** |
-| P1 | WordPress `orgTeams` REST route | **W7 deferred** (needs an org-team store decision) |
+| P1 | WordPress `orgTeams` REST route | **W7 shipped** |
 | P2 | One source of truth for endpoint fragments | **W4 shipped** |
 | P2 | Console e2e in CI | **W8 deferred** (needs a service stack; recipe below) |
 | P2 | `chatChannels` decision | **W5 shipped** (defer toolkit; hide the dead admin page) |
@@ -239,13 +239,27 @@ the toolkit ships.
 
 ---
 
-## 9. W7 — orgTeams on WordPress (deferred)
+## 9. W7 — orgTeams on WordPress (shipped)
 
-`orgTeams` needs a real users/roles team API (list/create teams, add/remove
-members) on WordPress. Laravel's `nvoos_org_teams` store is the reference, but
-WordPress's equivalent is a mapping over users/roles, which is a data-model
-decision (roles vs custom caps vs a CPT). It is not a read-only route like
-professions. Design required before code; the key stays `runtime-adaptable`.
+WordPress now serves the same org-team contract Laravel does, so the console
+no longer hides the surface. As built:
+
+- **Store:** a non-public `mcp_ai_org_team` CPT. Membership lives in the
+  `_wp_mcp_ai_org_team_members` meta as `user_id => role`. A CPT beats custom
+  caps because teams are tenant data, not authorization primitives; the roles
+  are validated in the service layer, not registered as WP roles.
+- **Roles:** `owner`, `admin`, `manager`, `member`, `viewer`. The service
+  enforces a last-owner invariant (the final owner cannot be demoted or
+  removed) and per-site slug uniqueness.
+- **Routes:** `mcp-ai/v1/org/teams`, `/{team}`, `/{team}/members`,
+  `/{team}/members/{user}`. `201` on create/member-add, `204` on delete, `404`
+  for a non-member, `403` when the caller lacks the ability.
+- **Manifest:** `orgTeams` moved from `runtime-adaptable` to `route`, and the
+  key left `wordpress_reasons` in the shared contract. Live WordPress manifest
+  is now **41 true / 4 false / `gaps=[]`**.
+
+Remaining `false` keys are all classified: `chatChannels` (toolkit-shaped),
+`contentGraph` / `mediaStudio` / `documentEditor` (external-product).
 
 ---
 
@@ -275,6 +289,7 @@ field, when an endpoint key disappears, or when the console build cannot boot.
 | 3 | W2 reasons | console Vitest, typecheck |
 | 4 | W3 pinning/auth | Laravel feature tests |
 | 5 | W5 decision + gate | PHPUnit (filter default), docs |
+| 6 | W7 org teams | WP PHPUnit (14 cases), console Vitest, live manifest |
 
 Validation actually run is recorded in the PR body, not here.
 

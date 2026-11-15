@@ -302,6 +302,10 @@ class WP_MCP_AI_Pro_SPA_Config {
 				'professions'         => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/professions' ) )
 					: '',
+				// Org teams (users with roles) — 090-p W7.
+				'orgTeams'            => $is_admin && ! $guest
+					? esc_url_raw( rest_url( 'mcp-ai/v1/org/teams' ) )
+					: '',
 				'portability'         => $is_admin && ! $guest
 					? esc_url_raw( rest_url( 'mcp-ai/v1/assistants' ) )
 					: '',

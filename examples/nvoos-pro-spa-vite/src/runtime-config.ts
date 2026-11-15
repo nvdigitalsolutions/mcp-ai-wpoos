@@ -133,9 +133,9 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		// Profession catalogue (090-p W1) — served by the base plugin's REST
 		// surface, so the assistant editor's selector works on WordPress too.
 		professions: `${core}/professions`,
-		// Org-team storage is Laravel-only: WordPress has the agent-team
-		// catalogue at `teams`, so this surface stays hidden.
-		orgTeams: '',
+		// Org teams (users with roles) — served by the base plugin's REST
+		// surface (090-p W7); the agent-team catalogue stays at `teams`.
+		orgTeams: `${core}/org/teams`,
 		portability: `${core}/assistants`,
 		security: `${core}/security`,
 		operations: `${core}/operations`,
