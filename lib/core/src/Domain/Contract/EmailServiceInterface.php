@@ -8,10 +8,13 @@
  *
  * SPDX-License-Identifier: MIT
  */
+
 declare(strict_types=1);
+
 namespace Nvoos\Core\Domain\Contract;
 
-interface EmailServiceInterface {
+interface EmailServiceInterface
+{
     /**
      * @param array<string, mixed> $message
      * @return array<string, mixed>

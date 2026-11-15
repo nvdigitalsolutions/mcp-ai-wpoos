@@ -18,89 +18,89 @@ use PHPUnit\Framework\TestCase;
 
 final class SecuritySignalCatalogueTest extends TestCase
 {
-	public function test_every_definition_is_well_formed(): void
+    public function test_every_definition_is_well_formed(): void
     {
-		$ids = array();
+        $ids = array();
 
-		foreach (SecuritySignalCatalogue::all() as $definition) {
-			$this->assertInstanceOf(SecuritySignalDefinition::class, $definition);
-			$this->assertMatchesRegularExpression('/^[a-z0-9_]+$/', $definition->id);
-			$this->assertNotSame('', $definition->label, "{$definition->id} has no label");
-			$this->assertGreaterThanOrEqual(0, $definition->weight, "{$definition->id} has a negative weight");
-			$this->assertContains($definition->subtab, array( 'network', 'access', 'audit', 'ai_safety' ));
-			$this->assertNotEmpty($definition->runtimes, "{$definition->id} has no runtime");
+        foreach (SecuritySignalCatalogue::all() as $definition) {
+            $this->assertInstanceOf(SecuritySignalDefinition::class, $definition);
+            $this->assertMatchesRegularExpression('/^[a-z0-9_]+$/', $definition->id);
+            $this->assertNotSame('', $definition->label, "{$definition->id} has no label");
+            $this->assertGreaterThanOrEqual(0, $definition->weight, "{$definition->id} has a negative weight");
+            $this->assertContains($definition->subtab, array( 'network', 'access', 'audit', 'ai_safety' ));
+            $this->assertNotEmpty($definition->runtimes, "{$definition->id} has no runtime");
 
-			foreach ($definition->runtimes as $runtime) {
-				$this->assertContains($runtime, array(
-					SecuritySignalCatalogue::RUNTIME_WORDPRESS,
-					SecuritySignalCatalogue::RUNTIME_LARAVEL,
-				));
-			}
+            foreach ($definition->runtimes as $runtime) {
+                $this->assertContains($runtime, array(
+                    SecuritySignalCatalogue::RUNTIME_WORDPRESS,
+                    SecuritySignalCatalogue::RUNTIME_LARAVEL,
+                ));
+            }
 
-			$this->assertArrayNotHasKey($definition->id, $ids, "duplicate id {$definition->id}");
-			$ids[ $definition->id ] = true;
-		}
-	}
+            $this->assertArrayNotHasKey($definition->id, $ids, "duplicate id {$definition->id}");
+            $ids[ $definition->id ] = true;
+        }
+    }
 
-	public function test_the_catalogue_covers_both_runtimes(): void
+    public function test_the_catalogue_covers_both_runtimes(): void
     {
-		$this->assertCount(27, SecuritySignalCatalogue::all());
+        $this->assertCount(27, SecuritySignalCatalogue::all());
 
-		// WordPress keeps its 23 pre-catalogue signals.
-		$this->assertCount(23, SecuritySignalCatalogue::forRuntime(SecuritySignalCatalogue::RUNTIME_WORDPRESS));
+        // WordPress keeps its 23 pre-catalogue signals.
+        $this->assertCount(23, SecuritySignalCatalogue::forRuntime(SecuritySignalCatalogue::RUNTIME_WORDPRESS));
 
-		// Laravel evaluates the 16 shared controls plus its 4 own ones.
-		$this->assertCount(20, SecuritySignalCatalogue::forRuntime(SecuritySignalCatalogue::RUNTIME_LARAVEL));
-	}
+        // Laravel evaluates the 16 shared controls plus its 4 own ones.
+        $this->assertCount(20, SecuritySignalCatalogue::forRuntime(SecuritySignalCatalogue::RUNTIME_LARAVEL));
+    }
 
-	public function test_runtime_specific_controls_are_declared_not_hidden(): void
+    public function test_runtime_specific_controls_are_declared_not_hidden(): void
     {
-		$wordpress_only = array_map(
-			static fn (SecuritySignalDefinition $definition): string => $definition->id,
-			SecuritySignalCatalogue::onlyOn(SecuritySignalCatalogue::RUNTIME_WORDPRESS)
-		);
-		$laravel_only = array_map(
-			static fn (SecuritySignalDefinition $definition): string => $definition->id,
-			SecuritySignalCatalogue::onlyOn(SecuritySignalCatalogue::RUNTIME_LARAVEL)
-		);
+        $wordpress_only = array_map(
+            static fn (SecuritySignalDefinition $definition): string => $definition->id,
+            SecuritySignalCatalogue::onlyOn(SecuritySignalCatalogue::RUNTIME_WORDPRESS)
+        );
+        $laravel_only = array_map(
+            static fn (SecuritySignalDefinition $definition): string => $definition->id,
+            SecuritySignalCatalogue::onlyOn(SecuritySignalCatalogue::RUNTIME_LARAVEL)
+        );
 
-		$this->assertContains('root_key_set', $wordpress_only);
-		$this->assertContains('restriction_registry_on', $wordpress_only);
-		// The AI-safety pair is shared: both runtimes ship the same detector and
-		// filter, so neither reports the other's control as not applicable.
-		$this->assertNotContains('prompt_injection_detector', $wordpress_only);
-		$this->assertNotContains('pii_filter', $wordpress_only);
-		$this->assertContains('secure_cookies', $laravel_only);
-		$this->assertContains('csrf', $laravel_only);
+        $this->assertContains('root_key_set', $wordpress_only);
+        $this->assertContains('restriction_registry_on', $wordpress_only);
+        // The AI-safety pair is shared: both runtimes ship the same detector and
+        // filter, so neither reports the other's control as not applicable.
+        $this->assertNotContains('prompt_injection_detector', $wordpress_only);
+        $this->assertNotContains('pii_filter', $wordpress_only);
+        $this->assertContains('secure_cookies', $laravel_only);
+        $this->assertContains('csrf', $laravel_only);
 
-		// The shared core is genuinely shared.
-		foreach (array( 'https_active', 'hsts_enabled', 'audit_log_on', 'cors_restricted' ) as $id) {
-			$definition = SecuritySignalCatalogue::get($id);
-			$this->assertNotNull($definition, $id);
-			$this->assertCount(2, $definition->runtimes, "{$id} should apply to both runtimes");
-		}
-	}
+        // The shared core is genuinely shared.
+        foreach (array( 'https_active', 'hsts_enabled', 'audit_log_on', 'cors_restricted' ) as $id) {
+            $definition = SecuritySignalCatalogue::get($id);
+            $this->assertNotNull($definition, $id);
+            $this->assertCount(2, $definition->runtimes, "{$id} should apply to both runtimes");
+        }
+    }
 
-	public function test_lookup_and_applicability(): void
+    public function test_lookup_and_applicability(): void
     {
-		$definition = SecuritySignalCatalogue::get('hsts_enabled');
+        $definition = SecuritySignalCatalogue::get('hsts_enabled');
 
-		$this->assertNotNull($definition);
-		$this->assertSame('network', $definition->subtab);
-		$this->assertSame('enable_hsts', $definition->anchor);
-		$this->assertTrue($definition->appliesTo(SecuritySignalCatalogue::RUNTIME_LARAVEL));
-		$this->assertNull(SecuritySignalCatalogue::get('nope'));
-	}
+        $this->assertNotNull($definition);
+        $this->assertSame('network', $definition->subtab);
+        $this->assertSame('enable_hsts', $definition->anchor);
+        $this->assertTrue($definition->appliesTo(SecuritySignalCatalogue::RUNTIME_LARAVEL));
+        $this->assertNull(SecuritySignalCatalogue::get('nope'));
+    }
 
-	public function test_the_catalogue_cites_a_standard_for_most_controls(): void
+    public function test_the_catalogue_cites_a_standard_for_most_controls(): void
     {
-		$with_reference = array_filter(
-			SecuritySignalCatalogue::all(),
-			static fn (SecuritySignalDefinition $definition): bool => '' !== $definition->reference
-		);
+        $with_reference = array_filter(
+            SecuritySignalCatalogue::all(),
+            static fn (SecuritySignalDefinition $definition): bool => '' !== $definition->reference
+        );
 
-		// A handful of internal controls (restriction registry, SSL bypass,
-		// licence-sourced provider keys, memory controls) are product-specific.
-		$this->assertGreaterThanOrEqual(20, count($with_reference));
-	}
+        // A handful of internal controls (restriction registry, SSL bypass,
+        // licence-sourced provider keys, memory controls) are product-specific.
+        $this->assertGreaterThanOrEqual(20, count($with_reference));
+    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * AgentRequest — payload of the agent/request waterfall.
  *
@@ -13,14 +14,15 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class AgentRequest {
-
-	/**
-	 * @param array<string, mixed> $options
-	 */
-	public function __construct(
-		public readonly array $options,
-		public readonly int $assistantId,
-		public readonly int $iteration,
-	) {}
+final class AgentRequest
+{
+    /**
+     * @param array<string, mixed> $options
+     */
+    public function __construct(
+        public readonly array $options,
+        public readonly int $assistantId,
+        public readonly int $iteration,
+    ) {
+    }
 }

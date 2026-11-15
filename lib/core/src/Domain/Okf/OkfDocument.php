@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Parsed OKF document: frontmatter plus body.
  *
@@ -18,29 +19,31 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Okf;
 
-final class OkfDocument {
+final class OkfDocument
+{
+    /**
+     * @param array<string, mixed> $frontmatter Parsed YAML frontmatter.
+     * @param string               $body        Markdown after the closing delimiter.
+     */
+    public function __construct(
+        public readonly array $frontmatter,
+        public readonly string $body,
+    ) {
+    }
 
-	/**
-	 * @param array<string, mixed> $frontmatter Parsed YAML frontmatter.
-	 * @param string               $body        Markdown after the closing delimiter.
-	 */
-	public function __construct(
-		public readonly array $frontmatter,
-		public readonly string $body,
-	) {}
-
-	/**
-	 * Array shape matching the WordPress parser's return value.
-	 *
-	 * Kept explicit so the differential test compares like with like rather
-	 * than relying on property order.
-	 *
-	 * @return array{frontmatter: array<string, mixed>, body: string}
-	 */
-	public function toArray(): array {
-		return array(
-			'frontmatter' => $this->frontmatter,
-			'body'        => $this->body,
-		);
-	}
+    /**
+     * Array shape matching the WordPress parser's return value.
+     *
+     * Kept explicit so the differential test compares like with like rather
+     * than relying on property order.
+     *
+     * @return array{frontmatter: array<string, mixed>, body: string}
+     */
+    public function toArray(): array
+    {
+        return array(
+            'frontmatter' => $this->frontmatter,
+            'body'        => $this->body,
+        );
+    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * DeepSeek provider client.
  *
@@ -20,18 +21,19 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class DeepSeekClient extends OpenAiCompatibleClient {
+class DeepSeekClient extends OpenAiCompatibleClient
+{
+    public function __construct(
+        SettingsStoreInterface $settings,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+        parent::__construct($settings, $http, $errors);
+        $this->providerSlug = 'deepseek';
+    }
 
-	public function __construct(
-		SettingsStoreInterface $settings,
-		HttpClientInterface $http,
-		ErrorFactoryInterface $errors,
-	) {
-		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'deepseek';
-	}
-
-	protected function getDefaultBaseUrl(): string {
-		return 'https://api.deepseek.com/v1';
-	}
+    protected function getDefaultBaseUrl(): string
+    {
+        return 'https://api.deepseek.com/v1';
+    }
 }

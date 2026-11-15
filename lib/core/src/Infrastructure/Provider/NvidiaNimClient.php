@@ -1,4 +1,5 @@
 <?php
+
 /**
  * NVIDIA NIM provider client.
  *
@@ -19,18 +20,19 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class NvidiaNimClient extends OpenAiCompatibleClient {
+class NvidiaNimClient extends OpenAiCompatibleClient
+{
+    public function __construct(
+        SettingsStoreInterface $settings,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+        parent::__construct($settings, $http, $errors);
+        $this->providerSlug = 'nvidia_nim';
+    }
 
-	public function __construct(
-		SettingsStoreInterface $settings,
-		HttpClientInterface $http,
-		ErrorFactoryInterface $errors,
-	) {
-		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'nvidia_nim';
-	}
-
-	protected function getDefaultBaseUrl(): string {
-		return 'https://integrate.api.nvidia.com/v1';
-	}
+    protected function getDefaultBaseUrl(): string
+    {
+        return 'https://integrate.api.nvidia.com/v1';
+    }
 }

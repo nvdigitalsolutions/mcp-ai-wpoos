@@ -1,4 +1,8 @@
-<?php declare(strict_types=1); namespace Nvoos\Core\Tool;
+<?php
+
+declare(strict_types=1);
+
+namespace Nvoos\Core\Tool;
 
 /**
  * File header.
@@ -8,4 +12,13 @@
  *
  * SPDX-License-Identifier: MIT
  */
-class GenerateImageAltTextValidatedTool extends GenerateImageAltTextTool { public function getSlug(): string { return 'generate_image_alt_text_validated'; } public function getName(): string { return 'Generate Image Alt Text (Validated)'; } }
+class GenerateImageAltTextValidatedTool extends GenerateImageAltTextTool
+{
+    public function getSlug(): string
+    {
+        return 'generate_image_alt_text_validated';
+    } public function getName(): string
+    {
+        return 'Generate Image Alt Text (Validated)';
+    }
+}

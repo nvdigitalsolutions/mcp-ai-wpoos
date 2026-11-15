@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Gemini Live provider — bidirectional audio/video streaming via Gemini.
  *
@@ -38,7 +39,8 @@ class GeminiLiveProvider implements StreamingProviderInterface
         private readonly SettingsStoreInterface $settings,
         HttpClientInterface $http,
         ErrorFactoryInterface $errors,
-    ) {}
+    ) {
+    }
 
     public function connect(array $options = []): array
     {

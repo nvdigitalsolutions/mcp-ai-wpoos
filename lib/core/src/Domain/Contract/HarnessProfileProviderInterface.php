@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Harness profile provider contract.
  *
@@ -28,20 +29,20 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
-interface HarnessProfileProviderInterface {
-
-	/**
-	 * Resolve the harness profile for an assistant.
-	 *
-	 * Implementations must return a complete, sanitised profile: every
-	 * top-level key from the canonical defaults, with values already clamped to
-	 * their documented ranges. A partial array is treated by consumers as
-	 * "unset", which is how a profile with no `memory` block reports the PII
-	 * filter as off.
-	 *
-	 * @param int $assistantId Assistant identifier. 0 means the global default.
-	 *
-	 * @return array<string, mixed> Resolved profile.
-	 */
-	public function getProfile( int $assistantId ): array;
+interface HarnessProfileProviderInterface
+{
+    /**
+     * Resolve the harness profile for an assistant.
+     *
+     * Implementations must return a complete, sanitised profile: every
+     * top-level key from the canonical defaults, with values already clamped to
+     * their documented ranges. A partial array is treated by consumers as
+     * "unset", which is how a profile with no `memory` block reports the PII
+     * filter as off.
+     *
+     * @param int $assistantId Assistant identifier. 0 means the global default.
+     *
+     * @return array<string, mixed> Resolved profile.
+     */
+    public function getProfile(int $assistantId): array;
 }

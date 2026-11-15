@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Create Post (Validated) tool — creates content with optional author override.
  *
@@ -23,111 +24,114 @@ use Nvoos\Core\Domain\Entity\CreateContentCommand;
 use Nvoos\Core\Domain\Error\AccessDeniedException;
 use Nvoos\Core\Domain\Error\ValidationException;
 
-class CreatePostValidatedTool extends AbstractTool {
+class CreatePostValidatedTool extends AbstractTool
+{
+    public function __construct(
+        ErrorFactoryInterface $errors,
+        private readonly ContentStoreInterface $content,
+    ) {
+        parent::__construct($errors);
+    }
 
-	public function __construct(
-		ErrorFactoryInterface $errors,
-		private readonly ContentStoreInterface $content,
-	) {
-		parent::__construct( $errors );
-	}
+    public function getSlug(): string
+    {
+        return 'create_post_validated';
+    }
 
-	public function getSlug(): string {
-		return 'create_post_validated';
-	}
+    public function getName(): string
+    {
+        return 'Create Post (Validated)';
+    }
 
-	public function getName(): string {
-		return 'Create Post (Validated)';
-	}
+    public function getDescription(): string
+    {
+        return 'Creates a new content item with validated arguments. Optionally specifies the author via user_id.';
+    }
 
-	public function getDescription(): string {
-		return 'Creates a new content item with validated arguments. Optionally specifies the author via user_id.';
-	}
+    public function getParametersSchema(): array
+    {
+        return array(
+            'type'                 => 'object',
+            'properties'           => array(
+                'title'     => array(
+                    'type'        => 'string',
+                    'description' => 'The title of the new post.',
+                ),
+                'content'   => array(
+                    'type'        => 'string',
+                    'description' => 'The body content of the post.',
+                ),
+                'post_type' => array(
+                    'type'        => 'string',
+                    'description' => 'Content type slug. Default: "post".',
+                    'default'     => 'post',
+                ),
+                'status'    => array(
+                    'type'        => 'string',
+                    'description' => 'Publication status. Default: "draft".',
+                    'enum'        => array( 'publish', 'draft', 'private', 'pending' ),
+                    'default'     => 'draft',
+                ),
+                'user_id'   => array(
+                    'type'        => 'integer',
+                    'description' => 'Optional: User ID to set as the post author. Uses current user when omitted.',
+                    'minimum'     => 1,
+                ),
+            ),
+            'required'             => array( 'title' ),
+            'additionalProperties' => false,
+        );
+    }
 
-	public function getParametersSchema(): array {
-		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'title'     => array(
-					'type'        => 'string',
-					'description' => 'The title of the new post.',
-				),
-				'content'   => array(
-					'type'        => 'string',
-					'description' => 'The body content of the post.',
-				),
-				'post_type' => array(
-					'type'        => 'string',
-					'description' => 'Content type slug. Default: "post".',
-					'default'     => 'post',
-				),
-				'status'    => array(
-					'type'        => 'string',
-					'description' => 'Publication status. Default: "draft".',
-					'enum'        => array( 'publish', 'draft', 'private', 'pending' ),
-					'default'     => 'draft',
-				),
-				'user_id'   => array(
-					'type'        => 'integer',
-					'description' => 'Optional: User ID to set as the post author. Uses current user when omitted.',
-					'minimum'     => 1,
-				),
-			),
-			'required'             => array( 'title' ),
-			'additionalProperties' => false,
-		);
-	}
+    public function getRequiredCapability(): string
+    {
+        return 'edit_posts';
+    }
 
-	public function getRequiredCapability(): string {
-		return 'edit_posts';
-	}
+    public function execute(array $arguments = array(), array $context = array()): mixed
+    {
+        $title = $this->stringParam($arguments, 'title');
+        if ('' === $title) {
+            return $this->errors->validationFailed(
+                'The title parameter is required.',
+                array( 'title' => array( 'A post title is required.' ) ),
+            );
+        }
 
-	public function execute( array $arguments = array(), array $context = array() ): mixed {
-		$title = $this->stringParam( $arguments, 'title' );
-		if ( '' === $title ) {
-			return $this->errors->validationFailed(
-				'The title parameter is required.',
-				array( 'title' => array( 'A post title is required.' ) ),
-			);
-		}
+        $userId = $this->intParam($arguments, 'user_id');
+        if ($userId <= 0) {
+            $userId = $context['user_id'] ?? 0;
+        }
 
-		$userId = $this->intParam( $arguments, 'user_id' );
-		if ( $userId <= 0 ) {
-			$userId = $context['user_id'] ?? 0;
-		}
+        if ($userId <= 0) {
+            return $this->errors->forbidden('You must be logged in to create content.');
+        }
 
-		if ( $userId <= 0 ) {
-			return $this->errors->forbidden( 'You must be logged in to create content.' );
-		}
+        $command = new CreateContentCommand(
+            title: $title,
+            type: $this->stringParam($arguments, 'post_type', 'post'),
+            status: $this->stringParam($arguments, 'status', 'draft'),
+            content: $this->stringParam($arguments, 'content'),
+            authorId: $userId,
+            excerpt: null,
+        );
 
-		$command = new CreateContentCommand(
-			title: $title,
-			type: $this->stringParam( $arguments, 'post_type', 'post' ),
-			status: $this->stringParam( $arguments, 'status', 'draft' ),
-			content: $this->stringParam( $arguments, 'content' ),
-			authorId: $userId,
-			excerpt: null,
-		);
+        try {
+            $item = $this->content->create($command);
 
-		try {
-			$item = $this->content->create( $command );
-
-			return $this->success( 'Post created successfully.', $item->jsonSerialize() );
-
-		} catch ( AccessDeniedException $e ) {
-			return $this->errors->forbidden( $e->getMessage() );
-
-		} catch ( ValidationException $e ) {
-			return $this->errors->validationFailed(
-				$e->getMessage(),
-				$e->hasFieldErrors() ? $e->errors : array(),
-			);
-
-		} catch ( \Throwable $e ) {
-			return $this->errors->create(
-				'create_failed',
-				"Failed to create post: {$e->getMessage()}",
-			);
-		}
-	}
+            return $this->success('Post created successfully.', $item->jsonSerialize());
+        } catch (AccessDeniedException $e) {
+            return $this->errors->forbidden($e->getMessage());
+        } catch (ValidationException $e) {
+            return $this->errors->validationFailed(
+                $e->getMessage(),
+                $e->hasFieldErrors() ? $e->errors : array(),
+            );
+        } catch (\Throwable $e) {
+            return $this->errors->create(
+                'create_failed',
+                "Failed to create post: {$e->getMessage()}",
+            );
+        }
+    }
 }

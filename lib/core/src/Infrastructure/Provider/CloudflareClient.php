@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Cloudflare Workers AI provider client.
  *
@@ -20,25 +21,26 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class CloudflareClient extends OpenAiCompatibleClient {
+class CloudflareClient extends OpenAiCompatibleClient
+{
+    public function __construct(
+        SettingsStoreInterface $settings,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+        parent::__construct($settings, $http, $errors);
+        $this->providerSlug = 'cloudflare';
+    }
 
-	public function __construct(
-		SettingsStoreInterface $settings,
-		HttpClientInterface $http,
-		ErrorFactoryInterface $errors,
-	) {
-		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'cloudflare';
-	}
+    protected function getDefaultBaseUrl(): string
+    {
+        $accountId = $this->settings->get('cloudflare_account_id', '');
 
-	protected function getDefaultBaseUrl(): string {
-		$accountId = $this->settings->get( 'cloudflare_account_id', '' );
+        if ('' !== $accountId) {
+            return 'https://api.cloudflare.com/client/v4/accounts/' . \urlencode($accountId) . '/ai/v1';
+        }
 
-		if ( '' !== $accountId ) {
-			return 'https://api.cloudflare.com/client/v4/accounts/' . \urlencode( $accountId ) . '/ai/v1';
-		}
-
-		// Fallback: use the template URL. Calls will fail until account_id is configured.
-		return 'https://api.cloudflare.com/client/v4/accounts/:account_id/ai/v1';
-	}
+        // Fallback: use the template URL. Calls will fail until account_id is configured.
+        return 'https://api.cloudflare.com/client/v4/accounts/:account_id/ai/v1';
+    }
 }

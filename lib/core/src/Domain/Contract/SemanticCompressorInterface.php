@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Semantic Compressor — Caveman Compression for LLM Contexts.
  *

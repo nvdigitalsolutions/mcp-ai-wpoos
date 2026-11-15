@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Cost Tracking Service — domain contract.
  *

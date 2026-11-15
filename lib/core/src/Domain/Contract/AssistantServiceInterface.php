@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Assistant Service — domain contract.
  *

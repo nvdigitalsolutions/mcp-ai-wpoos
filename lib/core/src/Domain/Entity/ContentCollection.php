@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Immutable content collection (paginated result set).
  *
@@ -16,37 +17,41 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Entity;
 
-final readonly class ContentCollection implements \JsonSerializable {
+final readonly class ContentCollection implements \JsonSerializable
+{
+    /**
+     * @param ContentItem[] $items
+     */
+    public function __construct(
+        public array $items,
+        public int $total,
+        public int $page,
+        public int $perPage,
+        public int $totalPages,
+    ) {
+    }
 
-	/**
-	 * @param ContentItem[] $items
-	 */
-	public function __construct(
-		public array $items,
-		public int $total,
-		public int $page,
-		public int $perPage,
-		public int $totalPages,
-	) {}
+    public function hasItems(): bool
+    {
+        return array() !== $this->items;
+    }
 
-	public function hasItems(): bool {
-		return array() !== $this->items;
-	}
+    public function hasMorePages(): bool
+    {
+        return $this->page < $this->totalPages;
+    }
 
-	public function hasMorePages(): bool {
-		return $this->page < $this->totalPages;
-	}
-
-	/**
-	 * @return array<string, mixed>
-	 */
-	public function jsonSerialize(): array {
-		return array(
-			'items'       => $this->items,
-			'total'       => $this->total,
-			'page'        => $this->page,
-			'per_page'    => $this->perPage,
-			'total_pages' => $this->totalPages,
-		);
-	}
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
+    {
+        return array(
+            'items'       => $this->items,
+            'total'       => $this->total,
+            'page'        => $this->page,
+            'per_page'    => $this->perPage,
+            'total_pages' => $this->totalPages,
+        );
+    }
 }

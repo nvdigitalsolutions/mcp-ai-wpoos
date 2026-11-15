@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Context Compression — domain contract.
  *

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Error Tracking Service — domain contract.
  *

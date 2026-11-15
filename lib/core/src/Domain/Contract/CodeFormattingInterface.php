@@ -8,10 +8,13 @@
  *
  * SPDX-License-Identifier: MIT
  */
+
 declare(strict_types=1);
+
 namespace Nvoos\Core\Domain\Contract;
 
-interface CodeFormattingInterface {
+interface CodeFormattingInterface
+{
     /**
      * @param array<string, mixed> $options
      * @return array<string, mixed>

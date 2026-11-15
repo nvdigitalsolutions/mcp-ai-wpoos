@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ToolRestriction — a per-scope filter over inherited tools.
  *
@@ -19,61 +20,67 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\ValueObject;
 
-final class ToolRestriction {
+final class ToolRestriction
+{
+    /**
+     * @param string[]|null $allow Only these inherited slugs stay visible;
+     *                            null = no allow-list (everything admitted
+     *                            by deny).
+     * @param string[]      $deny  These inherited slugs are removed.
+     */
+    public function __construct(
+        private readonly ?array $allow = null,
+        private readonly array $deny = array(),
+    ) {
+    }
 
-	/**
-	 * @param string[]|null $allow Only these inherited slugs stay visible;
-	 *                            null = no allow-list (everything admitted
-	 *                            by deny).
-	 * @param string[]      $deny  These inherited slugs are removed.
-	 */
-	public function __construct(
-		private readonly ?array $allow = null,
-		private readonly array $deny = array(),
-	) {}
+    /**
+     * @param array<int, string> $slugs Slugs that remain visible.
+     */
+    public static function allowList(array $slugs): self
+    {
+        return new self(allow: array_values($slugs));
+    }
 
-	/**
-	 * @param array<int, string> $slugs Slugs that remain visible.
-	 */
-	public static function allowList( array $slugs ): self {
-		return new self( allow: array_values( $slugs ) );
-	}
+    /**
+     * @param array<int, string> $slugs Slugs that are removed.
+     */
+    public static function denyList(array $slugs): self
+    {
+        return new self(allow: null, deny: array_values($slugs));
+    }
 
-	/**
-	 * @param array<int, string> $slugs Slugs that are removed.
-	 */
-	public static function denyList( array $slugs ): self {
-		return new self( allow: null, deny: array_values( $slugs ) );
-	}
+    /**
+     * Whether an inherited tool with the given slug stays visible.
+     */
+    public function admits(string $slug): bool
+    {
+        if (\in_array($slug, $this->deny, true)) {
+            return false;
+        }
 
-	/**
-	 * Whether an inherited tool with the given slug stays visible.
-	 */
-	public function admits( string $slug ): bool {
-		if ( \in_array( $slug, $this->deny, true ) ) {
-			return false;
-		}
+        if (null !== $this->allow && ! \in_array($slug, $this->allow, true)) {
+            return false;
+        }
 
-		if ( null !== $this->allow && ! \in_array( $slug, $this->allow, true ) ) {
-			return false;
-		}
+        return true;
+    }
 
-		return true;
-	}
+    /**
+     * Allow-list, or null when unrestricted.
+     *
+     * @return array<int, string>|null
+     */
+    public function allow(): ?array
+    {
+        return $this->allow;
+    }
 
-	/**
-	 * Allow-list, or null when unrestricted.
-	 *
-	 * @return array<int, string>|null
-	 */
-	public function allow(): ?array {
-		return $this->allow;
-	}
-
-	/**
-	 * @return array<int, string>
-	 */
-	public function deny(): array {
-		return $this->deny;
-	}
+    /**
+     * @return array<int, string>
+     */
+    public function deny(): array
+    {
+        return $this->deny;
+    }
 }

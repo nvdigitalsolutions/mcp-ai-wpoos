@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Agent Orchestration — domain contract.
  *

@@ -22,66 +22,66 @@ use Nvoos\Core\Domain\Security\SecuritySignalDefinition;
 
 final class PostureSignal
 {
-	public const STATUS_PASS = 'pass';
-	public const STATUS_FAIL = 'fail';
-	public const STATUS_NOT_APPLICABLE = 'not_applicable';
+    public const STATUS_PASS = 'pass';
+    public const STATUS_FAIL = 'fail';
+    public const STATUS_NOT_APPLICABLE = 'not_applicable';
 
-	/**
-	 * @param SecuritySignalDefinition $definition Catalogue entry.
-	 * @param bool                     $passed     Whether the control passes.
-	 * @param bool                     $applicable Whether the control exists on this runtime.
-	 * @param string                   $detail     Human explanation shown in the console.
-	 * @param string                   $label      Runtime-supplied (translated) label; '' uses the catalogue's.
-	 */
-	public function __construct(
-		public readonly SecuritySignalDefinition $definition,
-		public readonly bool $passed,
-		public readonly bool $applicable,
-		public readonly string $detail,
-		public readonly string $label = '',
-	) {
-	}
+    /**
+     * @param SecuritySignalDefinition $definition Catalogue entry.
+     * @param bool                     $passed     Whether the control passes.
+     * @param bool                     $applicable Whether the control exists on this runtime.
+     * @param string                   $detail     Human explanation shown in the console.
+     * @param string                   $label      Runtime-supplied (translated) label; '' uses the catalogue's.
+     */
+    public function __construct(
+        public readonly SecuritySignalDefinition $definition,
+        public readonly bool $passed,
+        public readonly bool $applicable,
+        public readonly string $detail,
+        public readonly string $label = '',
+    ) {
+    }
 
-	public function label(): string
+    public function label(): string
     {
-		return '' !== $this->label ? $this->label : $this->definition->label;
-	}
+        return '' !== $this->label ? $this->label : $this->definition->label;
+    }
 
-	public function weight(): int
+    public function weight(): int
     {
-		return $this->definition->weight;
-	}
+        return $this->definition->weight;
+    }
 
-	public function status(): string
+    public function status(): string
     {
-		if (! $this->applicable) {
-			return self::STATUS_NOT_APPLICABLE;
-		}
+        if (! $this->applicable) {
+            return self::STATUS_NOT_APPLICABLE;
+        }
 
-		return $this->passed ? self::STATUS_PASS : self::STATUS_FAIL;
-	}
+        return $this->passed ? self::STATUS_PASS : self::STATUS_FAIL;
+    }
 
-	/**
-	 * The console's signal shape.
-	 *
-	 * `passed` stays false for a not-applicable control so older clients that
-	 * ignore `applicable` never render it as a passing card.
-	 *
-	 * @return array<string, mixed>
-	 */
-	public function toArray(): array
+    /**
+     * The console's signal shape.
+     *
+     * `passed` stays false for a not-applicable control so older clients that
+     * ignore `applicable` never render it as a passing card.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
     {
-		return array(
-			'id'         => $this->definition->id,
-			'label'      => $this->label(),
-			'weight'     => $this->definition->weight,
-			'passed'     => $this->passed,
-			'applicable' => $this->applicable,
-			'status'     => $this->status(),
-			'detail'     => $this->detail,
-			'subtab'     => $this->definition->subtab,
-			'anchor'     => $this->definition->anchor,
-			'reference'  => $this->definition->reference,
-		);
-	}
+        return array(
+            'id'         => $this->definition->id,
+            'label'      => $this->label(),
+            'weight'     => $this->definition->weight,
+            'passed'     => $this->passed,
+            'applicable' => $this->applicable,
+            'status'     => $this->status(),
+            'detail'     => $this->detail,
+            'subtab'     => $this->definition->subtab,
+            'anchor'     => $this->definition->anchor,
+            'reference'  => $this->definition->reference,
+        );
+    }
 }

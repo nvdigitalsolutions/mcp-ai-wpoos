@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Abstract result tool — base class for tools that return a typed result.
  *
@@ -27,29 +28,30 @@ namespace Nvoos\Core\Tool;
 use Nvoos\Core\Domain\Contract\ToolResultInterface;
 use Nvoos\Core\Domain\ValueObject\ToolResult;
 
-abstract class AbstractResultTool extends AbstractTool implements ToolResultInterface {
+abstract class AbstractResultTool extends AbstractTool implements ToolResultInterface
+{
+    /**
+     * Execute the tool and return the legacy surface.
+     *
+     * Final on purpose: the conversion from `ToolResult` to the untyped
+     * envelope/error shape must be identical for every typed tool, or the
+     * canonical-envelope contract stops being checkable.
+     *
+     * @param ToolArgs    $arguments Parsed tool arguments.
+     * @param ToolContext $context   Execution context.
+     * @return mixed Envelope array on success, platform error on failure.
+     */
+    final public function execute(array $arguments = array(), array $context = array()): mixed
+    {
+        return $this->unwrapResult($this->executeResult($arguments, $context));
+    }
 
-	/**
-	 * Execute the tool and return the legacy surface.
-	 *
-	 * Final on purpose: the conversion from `ToolResult` to the untyped
-	 * envelope/error shape must be identical for every typed tool, or the
-	 * canonical-envelope contract stops being checkable.
-	 *
-	 * @param ToolArgs    $arguments Parsed tool arguments.
-	 * @param ToolContext $context   Execution context.
-	 * @return mixed Envelope array on success, platform error on failure.
-	 */
-	final public function execute( array $arguments = array(), array $context = array() ): mixed {
-		return $this->unwrapResult( $this->executeResult( $arguments, $context ) );
-	}
-
-	/**
-	 * Execute the tool and return a typed result.
-	 *
-	 * @param ToolArgs    $arguments Parsed tool arguments.
-	 * @param ToolContext $context   Execution context.
-	 * @return ToolResult<mixed>
-	 */
-	abstract public function executeResult( array $arguments = array(), array $context = array() ): ToolResult;
+    /**
+     * Execute the tool and return a typed result.
+     *
+     * @param ToolArgs    $arguments Parsed tool arguments.
+     * @param ToolContext $context   Execution context.
+     * @return ToolResult<mixed>
+     */
+    abstract public function executeResult(array $arguments = array(), array $context = array()): ToolResult;
 }

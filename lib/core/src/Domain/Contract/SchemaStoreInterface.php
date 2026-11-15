@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Schema store interface — queries content type and taxonomy metadata.
  *
@@ -21,51 +22,51 @@ namespace Nvoos\Core\Domain\Contract;
 use Nvoos\Core\Domain\Entity\PostTypeSchema;
 use Nvoos\Core\Domain\Entity\TaxonomySchema;
 
-interface SchemaStoreInterface {
+interface SchemaStoreInterface
+{
+    /**
+     * Get the schema for a specific post type.
+     *
+     * @param string $type  Post type slug.
+     * @return PostTypeSchema|null  Null when the post type is not registered.
+     */
+    public function getPostType(string $type): ?PostTypeSchema;
 
-	/**
-	 * Get the schema for a specific post type.
-	 *
-	 * @param string $type  Post type slug.
-	 * @return PostTypeSchema|null  Null when the post type is not registered.
-	 */
-	public function getPostType( string $type ): ?PostTypeSchema;
+    /**
+     * List all registered post types.
+     *
+     * @return PostTypeSchema[]
+     */
+    public function listPostTypes(): array;
 
-	/**
-	 * List all registered post types.
-	 *
-	 * @return PostTypeSchema[]
-	 */
-	public function listPostTypes(): array;
+    /**
+     * Get the schema for a specific taxonomy.
+     *
+     * @param string $taxonomy  Taxonomy slug.
+     * @return TaxonomySchema|null  Null when not registered.
+     */
+    public function getTaxonomy(string $taxonomy): ?TaxonomySchema;
 
-	/**
-	 * Get the schema for a specific taxonomy.
-	 *
-	 * @param string $taxonomy  Taxonomy slug.
-	 * @return TaxonomySchema|null  Null when not registered.
-	 */
-	public function getTaxonomy( string $taxonomy ): ?TaxonomySchema;
+    /**
+     * List taxonomies registered for a given post type.
+     *
+     * @param string $postType  Post type slug.
+     * @return TaxonomySchema[]
+     */
+    public function listTaxonomies(string $postType): array;
 
-	/**
-	 * List taxonomies registered for a given post type.
-	 *
-	 * @param string $postType  Post type slug.
-	 * @return TaxonomySchema[]
-	 */
-	public function listTaxonomies( string $postType ): array;
+    /**
+     * Get all available post statuses with their labels.
+     *
+     * @return array<string, string>  Status slug → label.
+     */
+    public function getPostStatuses(): array;
 
-	/**
-	 * Get all available post statuses with their labels.
-	 *
-	 * @return array<string, string>  Status slug → label.
-	 */
-	public function getPostStatuses(): array;
-
-	/**
-	 * Check whether a post type supports a specific feature.
-	 *
-	 * @param string $postType  Post type slug.
-	 * @param string $feature   Feature name (e.g., 'title', 'editor', 'thumbnail').
-	 */
-	public function postTypeSupports( string $postType, string $feature ): bool;
+    /**
+     * Check whether a post type supports a specific feature.
+     *
+     * @param string $postType  Post type slug.
+     * @param string $feature   Feature name (e.g., 'title', 'editor', 'thumbnail').
+     */
+    public function postTypeSupports(string $postType, string $feature): bool;
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ToolGuard — monotonic, deny-only final pre-dispatch policy.
  *
@@ -18,17 +19,17 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
-interface ToolGuardInterface {
-
-	/**
-	 * Evaluate one pending tool call.
-	 *
-	 * @param string $slug      Canonical tool slug about to execute.
-	 * @param ToolArgs  $arguments Parsed, sanitized tool arguments.
-	 * @param ToolContext  $context   Execution context (user_id, assistant_id, …).
-	 *
-	 * @return string|null  Denial reason to fail the call with, or null to
-	 *                      leave the call allowed.
-	 */
-	public function evaluate( string $slug, array $arguments, array $context ): ?string;
+interface ToolGuardInterface
+{
+    /**
+     * Evaluate one pending tool call.
+     *
+     * @param string $slug      Canonical tool slug about to execute.
+     * @param ToolArgs  $arguments Parsed, sanitized tool arguments.
+     * @param ToolContext  $context   Execution context (user_id, assistant_id, …).
+     *
+     * @return string|null  Denial reason to fail the call with, or null to
+     *                      leave the call allowed.
+     */
+    public function evaluate(string $slug, array $arguments, array $context): ?string;
 }

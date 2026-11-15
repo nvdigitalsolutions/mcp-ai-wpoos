@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenAI Realtime provider — WebSocket-based voice/audio streaming.
  *
@@ -38,7 +39,8 @@ class OpenAIRealtimeProvider implements StreamingProviderInterface
         private readonly SettingsStoreInterface $settings,
         HttpClientInterface $http,
         ErrorFactoryInterface $errors,
-    ) {}
+    ) {
+    }
 
     public function connect(array $options = []): array
     {

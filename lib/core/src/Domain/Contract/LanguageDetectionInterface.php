@@ -8,10 +8,13 @@
  *
  * SPDX-License-Identifier: MIT
  */
+
 declare(strict_types=1);
+
 namespace Nvoos\Core\Domain\Contract;
 
-interface LanguageDetectionInterface {
+interface LanguageDetectionInterface
+{
     /**
      * @return array<string, mixed>
      */

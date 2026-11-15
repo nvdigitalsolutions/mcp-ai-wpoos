@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Timeout Detection — domain contract.
  *

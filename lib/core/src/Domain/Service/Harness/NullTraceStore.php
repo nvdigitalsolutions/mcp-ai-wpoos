@@ -23,13 +23,13 @@ use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 
 final class NullTraceStore implements TraceStoreInterface
 {
-	public function append(int $assistantId, string $runId, string $artifact, array $record): bool
-	{
-		return false;
-	}
+    public function append(int $assistantId, string $runId, string $artifact, array $record): bool
+    {
+        return false;
+    }
 
-	public function prune(int $assistantId, int $keepRuns): int
-	{
-		return 0;
-	}
+    public function prune(int $assistantId, int $keepRuns): int
+    {
+        return 0;
+    }
 }

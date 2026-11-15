@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PostToolDecision — outcome of the tools/post_execute waterfall.
  *
@@ -18,31 +19,35 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Decision;
 
-final class PostToolDecision {
+final class PostToolDecision
+{
+    public const KIND_ACCEPT  = 'accept';
+    public const KIND_REPLACE = 'replace';
+    public const KIND_BLOCK   = 'block';
 
-	public const KIND_ACCEPT  = 'accept';
-	public const KIND_REPLACE = 'replace';
-	public const KIND_BLOCK   = 'block';
+    /**
+     * @param string $kind    One of the KIND_* constants.
+     * @param mixed  $content Replacement content (KIND_REPLACE) or corrective
+     *                        feedback (KIND_BLOCK).
+     */
+    public function __construct(
+        public readonly string $kind,
+        public readonly mixed $content = null,
+    ) {
+    }
 
-	/**
-	 * @param string $kind    One of the KIND_* constants.
-	 * @param mixed  $content Replacement content (KIND_REPLACE) or corrective
-	 *                        feedback (KIND_BLOCK).
-	 */
-	public function __construct(
-		public readonly string $kind,
-		public readonly mixed $content = null,
-	) {}
+    public static function accept(): self
+    {
+        return new self(self::KIND_ACCEPT);
+    }
 
-	public static function accept(): self {
-		return new self( self::KIND_ACCEPT );
-	}
+    public static function replace(mixed $content): self
+    {
+        return new self(self::KIND_REPLACE, $content);
+    }
 
-	public static function replace( mixed $content ): self {
-		return new self( self::KIND_REPLACE, $content );
-	}
-
-	public static function block( mixed $feedback ): self {
-		return new self( self::KIND_BLOCK, $feedback );
-	}
+    public static function block(mixed $feedback): self
+    {
+        return new self(self::KIND_BLOCK, $feedback);
+    }
 }

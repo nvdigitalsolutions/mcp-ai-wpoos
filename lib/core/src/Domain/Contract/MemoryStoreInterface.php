@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Memory Store — domain contract.
  *

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tests for the Agent Skills registry and its SKILL.md parser.
  *
@@ -78,10 +79,10 @@ MD;
 
     public function test_load_from_directory_registers_each_skill_folder(): void
     {
-        $root = sys_get_temp_dir().'/nvoos-skills-'.bin2hex(random_bytes(4));
-        mkdir($root.'/proposal-writer', 0777, true);
-        mkdir($root.'/empty-folder', 0777, true);
-        file_put_contents($root.'/proposal-writer/SKILL.md', self::SKILL);
+        $root = sys_get_temp_dir() . '/nvoos-skills-' . bin2hex(random_bytes(4));
+        mkdir($root . '/proposal-writer', 0777, true);
+        mkdir($root . '/empty-folder', 0777, true);
+        file_put_contents($root . '/proposal-writer/SKILL.md', self::SKILL);
 
         try {
             $registry = new SkillRegistry();
@@ -91,9 +92,9 @@ MD;
             $this->assertTrue($registry->has('proposal-writer'));
             $this->assertFalse($registry->has('empty-folder'));
         } finally {
-            @unlink($root.'/proposal-writer/SKILL.md');
-            @rmdir($root.'/proposal-writer');
-            @rmdir($root.'/empty-folder');
+            @unlink($root . '/proposal-writer/SKILL.md');
+            @rmdir($root . '/proposal-writer');
+            @rmdir($root . '/empty-folder');
             @rmdir($root);
         }
     }
@@ -102,6 +103,6 @@ MD;
     {
         $registry = new SkillRegistry();
 
-        $this->assertSame(0, $registry->loadFromDirectory(sys_get_temp_dir().'/nvoos-skills-missing'));
+        $this->assertSame(0, $registry->loadFromDirectory(sys_get_temp_dir() . '/nvoos-skills-missing'));
     }
 }

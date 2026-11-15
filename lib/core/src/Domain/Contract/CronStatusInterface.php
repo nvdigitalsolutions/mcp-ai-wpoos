@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Cron Status Service — domain contract.
  *

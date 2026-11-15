@@ -1,4 +1,5 @@
 <?php
+
 /**
  * AgentRequestDecision — outcome of the agent/request waterfall.
  *
@@ -16,28 +17,31 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Decision;
 
-final class AgentRequestDecision {
+final class AgentRequestDecision
+{
+    public const KIND_KEEP    = 'keep';
+    public const KIND_REPLACE = 'replace';
 
-	public const KIND_KEEP    = 'keep';
-	public const KIND_REPLACE = 'replace';
+    /**
+     * @param string $kind    One of the KIND_* constants.
+     * @param array<string, mixed>  $options Replacement call options when replacing.
+     */
+    public function __construct(
+        public readonly string $kind,
+        public readonly array $options = array(),
+    ) {
+    }
 
-	/**
-	 * @param string $kind    One of the KIND_* constants.
-	 * @param array<string, mixed>  $options Replacement call options when replacing.
-	 */
-	public function __construct(
-		public readonly string $kind,
-		public readonly array $options = array(),
-	) {}
+    public static function keep(): self
+    {
+        return new self(self::KIND_KEEP);
+    }
 
-	public static function keep(): self {
-		return new self( self::KIND_KEEP );
-	}
-
-	/**
-	 * @param array<string, mixed> $options
-	 */
-	public static function replace( array $options ): self {
-		return new self( self::KIND_REPLACE, $options );
-	}
+    /**
+     * @param array<string, mixed> $options
+     */
+    public static function replace(array $options): self
+    {
+        return new self(self::KIND_REPLACE, $options);
+    }
 }

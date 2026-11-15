@@ -1,4 +1,5 @@
 <?php
+
 /**
  * CancelledException — thrown when cooperative cancellation is observed.
  *
@@ -13,15 +14,16 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Error;
 
-final class CancelledException extends \RuntimeException {
-
-	/**
-	 * @param string $reason Cancellation reason (see CancellationToken::reason()).
-	 */
-	public function __construct( string $reason = 'cancelled' ) {
-		parent::__construct(
-			'' === $reason ? 'Operation cancelled.' : "Operation cancelled: {$reason}",
-			0,
-		);
-	}
+final class CancelledException extends \RuntimeException
+{
+    /**
+     * @param string $reason Cancellation reason (see CancellationToken::reason()).
+     */
+    public function __construct(string $reason = 'cancelled')
+    {
+        parent::__construct(
+            '' === $reason ? 'Operation cancelled.' : "Operation cancelled: {$reason}",
+            0,
+        );
+    }
 }

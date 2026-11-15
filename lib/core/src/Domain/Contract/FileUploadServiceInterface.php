@@ -1,4 +1,5 @@
 <?php
+
 /**
  * File Upload Service — domain contract.
  *

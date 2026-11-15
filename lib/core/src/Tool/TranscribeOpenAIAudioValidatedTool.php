@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Transcribe OpenAI Audio (Validated) — validated transcription variant.
  *
@@ -15,17 +16,26 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Tool;
 
-class TranscribeOpenAIAudioValidatedTool extends TranscribeOpenAIAudioTool {
+class TranscribeOpenAIAudioValidatedTool extends TranscribeOpenAIAudioTool
+{
+    public function __construct(
+        \Nvoos\Core\Domain\Contract\ErrorFactoryInterface $errors,
+        \Nvoos\Core\Domain\Contract\SettingsStoreInterface $settings,
+        \Nvoos\Core\Domain\Contract\HttpClientInterface $http,
+    ) {
+        parent::__construct($errors, $settings, $http);
+    }
 
-	public function __construct(
-		\Nvoos\Core\Domain\Contract\ErrorFactoryInterface $errors,
-		\Nvoos\Core\Domain\Contract\SettingsStoreInterface $settings,
-		\Nvoos\Core\Domain\Contract\HttpClientInterface $http,
-	) {
-		parent::__construct( $errors, $settings, $http );
-	}
-
-	public function getSlug(): string { return 'transcribe_openai_audio_validated'; }
-	public function getName(): string { return 'Transcribe OpenAI Audio (Validated)'; }
-	public function getDescription(): string { return 'Converts audio into text using OpenAI Whisper with validated arguments.'; }
+    public function getSlug(): string
+    {
+        return 'transcribe_openai_audio_validated';
+    }
+    public function getName(): string
+    {
+        return 'Transcribe OpenAI Audio (Validated)';
+    }
+    public function getDescription(): string
+    {
+        return 'Converts audio into text using OpenAI Whisper with validated arguments.';
+    }
 }

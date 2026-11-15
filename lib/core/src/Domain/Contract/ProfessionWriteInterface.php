@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Profession Write — optional domain contract.
  *

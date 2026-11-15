@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Erlang C Queuing Theory — pure domain service.
  *

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Token Budget Service — domain contract.
  *

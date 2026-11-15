@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Embedding Service — domain contract.
  *

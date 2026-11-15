@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Ollama provider client (local AI).
  *
@@ -20,46 +21,50 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class OllamaClient extends OpenAiCompatibleClient {
+class OllamaClient extends OpenAiCompatibleClient
+{
+    public function __construct(
+        SettingsStoreInterface $settings,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+        parent::__construct($settings, $http, $errors);
+        $this->providerSlug = 'ollama';
+    }
 
-	public function __construct(
-		SettingsStoreInterface $settings,
-		HttpClientInterface $http,
-		ErrorFactoryInterface $errors,
-	) {
-		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'ollama';
-	}
+    protected function getDefaultBaseUrl(): string
+    {
+        return 'http://localhost:11434/v1';
+    }
 
-	protected function getDefaultBaseUrl(): string {
-		return 'http://localhost:11434/v1';
-	}
+    /**
+     * Ollama runs locally — never require an API key.
+     */
+    protected function requiresApiKey(): bool
+    {
+        return false;
+    }
 
-	/**
-	 * Ollama runs locally — never require an API key.
-	 */
-	protected function requiresApiKey(): bool {
-		return false;
-	}
+    /**
+     * Ollama may optionally use a bearer token. Return whatever is configured,
+     * but never require one.
+     */
+    protected function getApiKey(): string
+    {
+        return parent::getApiKey();
+    }
 
-	/**
-	 * Ollama may optionally use a bearer token. Return whatever is configured,
-	 * but never require one.
-	 */
-	protected function getApiKey(): string {
-		return parent::getApiKey();
-	}
+    /**
+     * Override: omit Authorization header when no token is configured.
+     */
+    protected function buildAuthHeaders(string $apiKey): array
+    {
+        $headers = array( 'Content-Type' => 'application/json' );
 
-	/**
-	 * Override: omit Authorization header when no token is configured.
-	 */
-	protected function buildAuthHeaders( string $apiKey ): array {
-		$headers = array( 'Content-Type' => 'application/json' );
+        if ('' !== $apiKey) {
+            $headers['Authorization'] = "Bearer {$apiKey}";
+        }
 
-		if ( '' !== $apiKey ) {
-			$headers['Authorization'] = "Bearer {$apiKey}";
-		}
-
-		return $headers;
-	}
+        return $headers;
+    }
 }

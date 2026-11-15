@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SessionLogStoreInterface — persistence contract for session logs.
  *
@@ -17,18 +18,18 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
-interface SessionLogStoreInterface {
+interface SessionLogStoreInterface
+{
+    /**
+     * Persist one entry for the given session.
+     * @param array<string, mixed> $entry
+     */
+    public function append(string $sessionId, array $entry): void;
 
-	/**
-	 * Persist one entry for the given session.
-	 * @param array<string, mixed> $entry
-	 */
-	public function append( string $sessionId, array $entry ): void;
-
-	/**
-	 * Load all persisted entries (exported arrays) for a session.
-	 *
-	 * @return array<int, array<string, mixed>>  Entry arrays in append order.
-	 */
-	public function load( string $sessionId ): array;
+    /**
+     * Load all persisted entries (exported arrays) for a session.
+     *
+     * @return array<int, array<string, mixed>>  Entry arrays in append order.
+     */
+    public function load(string $sessionId): array;
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * HTTP client contract for the oOS AI orchestration core.
  *
@@ -24,20 +25,20 @@ namespace Nvoos\Core\Domain\Contract;
 
 use Nvoos\Core\Domain\Entity\HttpResponse;
 
-interface HttpClientInterface {
-
-	/**
-	 * Send an HTTP request and return the response.
-	 *
-	 * @param string      $method  HTTP method (GET, POST, PUT, DELETE, etc.).
-	 * @param string      $url     Full request URL including query string.
-	 * @param array<string, string>       $headers Request headers as key-value pairs.
-	 * @param string|null $body    Request body (null for GET/HEAD requests).
-	 *
-	 * @return HttpResponse  The response with status code, body, and headers.
-	 *
-	 * @throws \RuntimeException  When the request cannot be completed
-	 *                            (DNS failure, timeout, connection refused, etc.).
-	 */
-	public function send( string $method, string $url, array $headers = array(), ?string $body = null ): HttpResponse;
+interface HttpClientInterface
+{
+    /**
+     * Send an HTTP request and return the response.
+     *
+     * @param string      $method  HTTP method (GET, POST, PUT, DELETE, etc.).
+     * @param string      $url     Full request URL including query string.
+     * @param array<string, string>       $headers Request headers as key-value pairs.
+     * @param string|null $body    Request body (null for GET/HEAD requests).
+     *
+     * @return HttpResponse  The response with status code, body, and headers.
+     *
+     * @throws \RuntimeException  When the request cannot be completed
+     *                            (DNS failure, timeout, connection refused, etc.).
+     */
+    public function send(string $method, string $url, array $headers = array(), ?string $body = null): HttpResponse;
 }

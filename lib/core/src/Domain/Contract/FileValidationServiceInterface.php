@@ -1,4 +1,5 @@
 <?php
+
 /**
  * File Validation Service — domain contract.
  *

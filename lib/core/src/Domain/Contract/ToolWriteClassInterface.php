@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ToolWriteClassInterface — optional safety classification for tools.
  *
@@ -20,10 +21,10 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Contract;
 
-interface ToolWriteClassInterface {
-
-	/**
-	 * Whether this tool mutates state.
-	 */
-	public function isWriteClass(): bool;
+interface ToolWriteClassInterface
+{
+    /**
+     * Whether this tool mutates state.
+     */
+    public function isWriteClass(): bool;
 }

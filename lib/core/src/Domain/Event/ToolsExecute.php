@@ -1,4 +1,5 @@
 <?php
+
 /**
  * ToolsExecute — payload of the tools/execute around-dispatch waterfall.
  *
@@ -18,15 +19,16 @@ declare(strict_types=1);
 
 namespace Nvoos\Core\Domain\Event;
 
-final class ToolsExecute {
-
-	/**
-	 * @param ToolArgs $arguments
-	 * @param ToolContext $context
-	 */
-	public function __construct(
-		public readonly string $slug,
-		public readonly array $arguments,
-		public readonly array $context,
-	) {}
+final class ToolsExecute
+{
+    /**
+     * @param ToolArgs $arguments
+     * @param ToolContext $context
+     */
+    public function __construct(
+        public readonly string $slug,
+        public readonly array $arguments,
+        public readonly array $context,
+    ) {
+    }
 }

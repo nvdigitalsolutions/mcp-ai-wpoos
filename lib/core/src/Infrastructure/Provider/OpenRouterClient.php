@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OpenRouter provider client.
  *
@@ -20,18 +21,19 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HttpClientInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 
-class OpenRouterClient extends OpenAiCompatibleClient {
+class OpenRouterClient extends OpenAiCompatibleClient
+{
+    public function __construct(
+        SettingsStoreInterface $settings,
+        HttpClientInterface $http,
+        ErrorFactoryInterface $errors,
+    ) {
+        parent::__construct($settings, $http, $errors);
+        $this->providerSlug = 'openrouter';
+    }
 
-	public function __construct(
-		SettingsStoreInterface $settings,
-		HttpClientInterface $http,
-		ErrorFactoryInterface $errors,
-	) {
-		parent::__construct( $settings, $http, $errors );
-		$this->providerSlug = 'openrouter';
-	}
-
-	protected function getDefaultBaseUrl(): string {
-		return 'https://openrouter.ai/api/v1';
-	}
+    protected function getDefaultBaseUrl(): string
+    {
+        return 'https://openrouter.ai/api/v1';
+    }
 }

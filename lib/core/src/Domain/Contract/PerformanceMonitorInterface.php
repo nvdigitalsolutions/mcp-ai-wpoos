@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Performance Monitor — domain contract.
  *
