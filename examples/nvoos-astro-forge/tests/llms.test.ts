@@ -9,7 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { composeLlmsTxt, markdownFromHtml, markdownUrl } from '../lib/llms.ts';
+import { composeLlmsTxt, markdownFromHtml, markdownFromSource, markdownUrl } from '../lib/llms.ts';
 
 const base = {
 	name: 'Fixture Wares',
@@ -131,5 +131,80 @@ describe( 'markdownFromHtml', () => {
 
 	it( 'returns an empty string for empty input', () => {
 		expect( markdownFromHtml( '' ) ).toBe( '' );
+	} );
+} );
+
+describe( 'markdownFromSource', () => {
+	it( 'strips the frontmatter fence', () => {
+		const md = markdownFromSource( '---\ntitle: Hello\ndraft: false\n---\n\nProse.\n' );
+		expect( md ).toBe( 'Prose.\n' );
+	} );
+
+	it( 'strips ESM statements, including a multi-line import', () => {
+		const md = markdownFromSource(
+			[
+				"import FaqAccordion from '../../components/blocks/FaqAccordion.astro';",
+				'import {',
+				'  one,',
+				'} from \'./x\';',
+				'export const meta = { a: 1 };',
+				'',
+				'Prose stays.',
+			].join( '\n' )
+		);
+
+		expect( md ).toContain( 'Prose stays.' );
+		expect( md ).not.toContain( 'import' );
+		expect( md ).not.toContain( 'export' );
+		expect( md ).not.toContain( 'from' );
+	} );
+
+	it( 'keeps prose, headings, bullets and inline code', () => {
+		const md = markdownFromSource( '## Care\n\n- Point `WP_SITE_URL` at a site.\n- Add `draft: true`.\n' );
+
+		expect( md ).toContain( '## Care' );
+		expect( md ).toContain( '- Point `WP_SITE_URL` at a site.' );
+		expect( md ).toContain( '- Add `draft: true`.' );
+	} );
+
+	it( 'drops a props-only component without eating the prose', () => {
+		const md = markdownFromSource(
+			'Before <FaqAccordion heading="Shipping" items={[{ question: \'Q\', answer: \'A\' }]} /> after.\n'
+		);
+
+		expect( md ).toContain( 'Before' );
+		expect( md ).toContain( 'after.' );
+		expect( md ).not.toContain( 'FaqAccordion' );
+	} );
+
+	it( 'drops a multi-line self-closing component', () => {
+		const md = markdownFromSource(
+			['Keep me.', '', '<Tabs', '  heading="Care"', '  items={[{ title: \'Wash\' }]}', '/>', '', 'And me.'].join(
+				'\n'
+			)
+		);
+
+		expect( md ).toContain( 'Keep me.' );
+		expect( md ).toContain( 'And me.' );
+		expect( md ).not.toContain( 'Tabs' );
+	} );
+
+	it( 'drops HTML comments and leaves autolinks intact', () => {
+		const md = markdownFromSource( '<!-- internal note -->\n\nSee <https://example.com> for details.\n' );
+
+		expect( md ).not.toContain( 'internal note' );
+		expect( md ).toContain( '<https://example.com>' );
+	} );
+
+	it( 'returns an empty string when the source carries no prose', () => {
+		expect( markdownFromSource( '' ) ).toBe( '' );
+		expect( markdownFromSource( '   \n\n' ) ).toBe( '' );
+		expect( markdownFromSource( '---\ntitle: x\n---\n' ) ).toBe( '' );
+		expect( markdownFromSource( "import x from './y';\n" ) ).toBe( '' );
+	} );
+
+	it( 'is deterministic', () => {
+		const source = '## A\n\nText.\n';
+		expect( markdownFromSource( source ) ).toBe( markdownFromSource( source ) );
 	} );
 } );

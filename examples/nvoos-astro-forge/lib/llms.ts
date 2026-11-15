@@ -306,3 +306,57 @@ export function markdownFromHtml( html: string ): string {
 	const body = blockMarkdown( childrenOf( root ) );
 	return body ? `${ body.replace( /\n{3,}/g, '\n\n' ).trim() }\n` : '';
 }
+
+// ---------------------------------------------------------------------------
+// Source → markdown (local content, 2026-11-15)
+// ---------------------------------------------------------------------------
+
+/**
+ * Project a LOCAL content source (`.md` / `.mdx`) to markdown.
+ *
+ * A glob-loaded entry's `body` is the SOURCE, not output: MDX adds ESM
+ * `import`/`export` statements and JSX tags that must never reach an agent, and
+ * a deferred body can still carry its frontmatter fence. The prose is already
+ * markdown, so this only removes what is not.
+ *
+ * Deliberately lossy, exactly like `markdownFromHtml()`: a component that takes
+ * its content as props (`<FaqAccordion items={…} />`) contributes nothing,
+ * because that content never exists as markdown. The HTML page stays canonical
+ * and carries it.
+ */
+export function markdownFromSource( source: string ): string {
+	if ( ! source.trim() ) {
+		return '';
+	}
+	const withoutFrontmatter = source.replace( /^\uFEFF?\s*---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, '' );
+	const withoutComments = withoutFrontmatter.replace( /<!--[\s\S]*?-->/g, '' );
+
+	// ESM statements: drop the line, and keep dropping while a multi-line
+	// statement is open (`import {` … `} from './x';`). A statement that ends on
+	// its own line closes immediately, so prose is never swallowed.
+	const kept: string[] = [];
+	let openStatement = false;
+	for ( const line of withoutComments.split( /\r?\n/ ) ) {
+		if ( openStatement ) {
+			openStatement = ! /;[ \t]*$/.test( line );
+			continue;
+		}
+		if ( /^[ \t]*(?:import|export)[ \t]/.test( line ) ) {
+			openStatement = ! /;[ \t]*$/.test( line );
+			continue;
+		}
+		kept.push( line );
+	}
+
+	// JSX/HTML tags go, their text children stay. Requiring a tag NAME keeps an
+	// autolink (`<https://example.com>`) intact.
+	const text = kept
+		.join( '\n' )
+		.replace( /<\/?[A-Za-z][A-Za-z0-9.-]*(?:[ \t][^>]*)?\/?>/g, '' )
+		// A multi-line self-closing component (`<Tabs` … `/>`). Anchored at the
+		// line start and bounded by `/>`, so a stray `<` in prose cannot swallow
+		// the rest of the document.
+		.replace( /^[ \t]*<[A-Za-z][A-Za-z0-9.-]*(?:[ \t]|[\r\n])[\s\S]*?\/>[ \t]*$/gm, '' );
+	const body = text.replace( /\n{3,}/g, '\n\n' ).trim();
+	return body ? `${ body }\n` : '';
+}

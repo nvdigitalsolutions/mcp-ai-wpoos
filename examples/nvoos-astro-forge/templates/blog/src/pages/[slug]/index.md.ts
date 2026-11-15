@@ -8,7 +8,7 @@
 // No frontmatter fence: a `.ts` endpoint with a leading `---` is a syntax error.
 import type { APIRoute, GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
-import { markdownFromHtml } from '../../forge/llms.ts';
+import { markdownFromHtml, markdownFromSource } from '../../forge/llms.ts';
 
 export const getStaticPaths: GetStaticPaths = async () => {
 	const pages = await getCollection('pages');
@@ -16,11 +16,17 @@ export const getStaticPaths: GetStaticPaths = async () => {
 	// serialized and the store's `rendered` object does not survive the trip.
 	return pages.map((page) => ({
 		params: { slug: page.data.slug },
-		props: { body: page.rendered?.html },
+		// A local MDX page carries a SOURCE body rather than `rendered.html`;
+		// it is projected to markdown instead of shipped raw.
+		props: { body: page.rendered?.html, source: page.body },
 	}));
 };
 
-export const GET: APIRoute = ({ props }) =>
-	new Response(markdownFromHtml((props.body as string | undefined) ?? ''), {
+export const GET: APIRoute = ({ props }) => {
+	const { body, source } = props as { body?: string; source?: string };
+	const markdown =
+		typeof body === 'string' && body.trim() !== '' ? markdownFromHtml(body) : markdownFromSource(source ?? '');
+	return new Response(markdown, {
 		headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
 	});
+};
