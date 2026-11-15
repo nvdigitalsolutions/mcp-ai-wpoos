@@ -24,6 +24,7 @@ use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
+use Nvoos\Core\Domain\Contract\ToolCapabilityFlagsInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
 use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Decision\AgentPreStepDecision;
@@ -1154,6 +1155,165 @@ final class ChatOrchestratorTest extends TestCase {
 		$this->assertStringStartsWith( '[Guardrails — Stay on Target]', $sent[0]['content'] );
 	}
 
+	// ── Scored tool routing ───────────────────────────────────────
+
+	/**
+	 * A tool with a slug and capability flags, for routing assertions.
+	 *
+	 * @param array<int, string> $flags Capability flags.
+	 */
+	private function flaggedTool( string $slug, array $flags ): ToolInterface {
+		return new class( $slug, $flags ) implements ToolInterface, ToolCapabilityFlagsInterface {
+			/** @param array<int, string> $flags */
+			public function __construct( private string $slug, private array $flags ) {}
+
+			public function getSlug(): string {
+				return $this->slug;
+			}
+
+			public function getName(): string {
+				return $this->slug;
+			}
+
+			public function getDescription(): string {
+				return '';
+			}
+
+			public function getParametersSchema(): array {
+				return array();
+			}
+
+			public function getRequiredCapability(): string {
+				return '';
+			}
+
+			public function execute( array $arguments = array(), array $context = array() ): mixed {
+				return array();
+			}
+
+			/** @return array<int, string> */
+			public function getCapabilityFlags(): array {
+				return $this->flags;
+			}
+		};
+	}
+
+	/**
+	 * An orchestrator with several registered tools.
+	 *
+	 * @param array<int, ToolInterface> $tools
+	 * @return array{0: ChatOrchestrator, 1: InMemoryDispatcher}
+	 */
+	private function orchestratorWithTools( array $tools, array $responses ): array {
+		$errors     = $this->errors();
+		$dispatcher = new InMemoryDispatcher();
+
+		$registry = new ToolRegistry( $dispatcher, $errors );
+		foreach ( $tools as $tool ) {
+			$registry->register( $tool );
+		}
+
+		$orchestrator = new ChatOrchestrator(
+			$registry,
+			$this->router( $responses, $errors, $dispatcher ),
+			$dispatcher,
+			$errors,
+			new CostCalculator(),
+			new SseHandler( $this->createMock( PlatformFlushInterface::class ) ),
+		);
+
+		return array( $orchestrator, $dispatcher );
+	}
+
+	/**
+	 * @return array<int, string>
+	 */
+	private function offeredToolNames( InMemoryDispatcher $dispatcher ): array {
+		return \array_map(
+			static fn ( array $definition ): string => (string) ( $definition['function']['name'] ?? '' ),
+			$dispatcher->router->receivedOptions[0]['tools']
+		);
+	}
+
+	private function routingProfile( string $router, string $taskClass = 'general', bool $trace = false ): HarnessProfileProviderInterface {
+		$profile = array(
+			'enabled' => true,
+			'tools' => array( 'router' => $router ),
+			'memory' => array( 'task_class' => $taskClass ),
+		);
+
+		if ( $trace ) {
+			$profile['trace_capture'] = array( 'enabled' => true, 'retention_runs' => 20 );
+		}
+
+		$profiles = $this->createMock( HarnessProfileProviderInterface::class );
+		$profiles->method( 'getProfile' )->willReturn( $profile );
+
+		return $profiles;
+	}
+
+	private function readerAndWriter(): array {
+		return array(
+			$this->flaggedTool( 'writer', array( 'write', 'state-changing' ) ),
+			$this->flaggedTool( 'reader', array( 'read-only' ) ),
+		);
+	}
+
+	public function test_the_default_router_keeps_the_configured_order(): void {
+		list( $orchestrator, $dispatcher ) = $this->orchestratorWithTools( $this->readerAndWriter(), array( $this->finalResponse() ) );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array( 'writer', 'reader' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( array( 'writer', 'reader' ), $this->offeredToolNames( $dispatcher ) );
+	}
+
+	public function test_a_scored_router_puts_the_read_tool_first_for_a_rag_task(): void {
+		list( $orchestrator, $dispatcher ) = $this->orchestratorWithTools( $this->readerAndWriter(), array( $this->finalResponse() ) );
+		$orchestrator->setHarnessProfileProvider( $this->routingProfile( 'scored', 'rag' ) );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array( 'writer', 'reader' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( array( 'reader', 'writer' ), $this->offeredToolNames( $dispatcher ) );
+	}
+
+	public function test_scoring_reorders_but_never_filters(): void {
+		list( $orchestrator, $dispatcher ) = $this->orchestratorWithTools( $this->readerAndWriter(), array( $this->finalResponse() ) );
+		$orchestrator->setHarnessProfileProvider( $this->routingProfile( 'scored', 'rag' ) );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array( 'writer', 'reader' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertCount( 2, $this->offeredToolNames( $dispatcher ), 'A capability outage is worse than a ranking miss.' );
+	}
+
+	public function test_a_trace_records_the_router_and_the_order(): void {
+		list( $orchestrator ) = $this->orchestratorWithTools( $this->readerAndWriter(), array( $this->finalResponse() ) );
+		$store = $this->traceStore();
+
+		$orchestrator->setTraceStore( $store );
+		$orchestrator->setHarnessProfileProvider( $this->routingProfile( 'scored', 'rag', true ) );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array( 'writer', 'reader' ), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+			assistantId: 7,
+		);
+
+		$routing = $store->records[1];
+
+		$this->assertSame( 'routing', $routing['type'] );
+		$this->assertSame( 'scored', $routing['router'] );
+		$this->assertSame( array( 'reader', 'writer' ), $routing['tools'], 'The trace records the order the model saw.' );
+	}
+
 	// ── Trace capture ─────────────────────────────────────────────
 
 	/**
@@ -1216,11 +1376,12 @@ final class ChatOrchestratorTest extends TestCase {
 			assistantId: 7,
 		);
 
-		$this->assertSame( array( 'start', 'iteration', 'end' ), $store->types );
+		$this->assertSame( array( 'start', 'routing', 'iteration', 'end' ), $store->types );
 		$this->assertSame( 1, $store->prunes, 'The run is swept when it closes.' );
 		$this->assertSame( 'gpt-4o', $store->records[0]['model'] );
-		$this->assertSame( 'stop', $store->records[1]['finish_reason'] );
-		$this->assertSame( 1, $store->records[2]['provider_calls'], 'The capture counts the call even when the loop never increments.' );
+		$this->assertSame( 'fixed', $store->records[1]['router'] );
+		$this->assertSame( 'stop', $store->records[2]['finish_reason'] );
+		$this->assertSame( 1, $store->records[3]['provider_calls'], 'The capture counts the call even when the loop never increments.' );
 	}
 
 	public function test_capture_is_gated_by_the_profile_even_with_a_store(): void {
@@ -1259,11 +1420,11 @@ final class ChatOrchestratorTest extends TestCase {
 			assistantId: 7,
 		);
 
-		$this->assertSame( array( 'start', 'iteration', 'iteration', 'end' ), $store->types );
-		$this->assertSame( 'tool_calls', $store->records[1]['finish_reason'] );
-		$this->assertSame( 'stop', $store->records[2]['finish_reason'] );
-		$this->assertSame( 2, $store->records[3]['provider_calls'] );
-		$this->assertSame( 1, $store->records[3]['iterations'], 'The orchestrator loop counted one continuation.' );
+		$this->assertSame( array( 'start', 'routing', 'iteration', 'iteration', 'end' ), $store->types );
+		$this->assertSame( 'tool_calls', $store->records[2]['finish_reason'] );
+		$this->assertSame( 'stop', $store->records[3]['finish_reason'] );
+		$this->assertSame( 2, $store->records[4]['provider_calls'] );
+		$this->assertSame( 1, $store->records[4]['iterations'], 'The orchestrator loop counted one continuation.' );
 	}
 
 	public function test_the_streaming_path_traces_too(): void {
@@ -1285,7 +1446,7 @@ final class ChatOrchestratorTest extends TestCase {
 		);
 		ob_end_clean();
 
-		$this->assertSame( array( 'start', 'iteration', 'end' ), $store->types );
+		$this->assertSame( array( 'start', 'routing', 'iteration', 'end' ), $store->types );
 		$this->assertSame( 1, $store->prunes );
 	}
 }

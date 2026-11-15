@@ -42,6 +42,7 @@ final class TraceCapture
 	public const ARTIFACT = 'run.jsonl';
 
 	public const TYPE_START = 'start';
+	public const TYPE_ROUTING = 'routing';
 	public const TYPE_ITERATION = 'iteration';
 	public const TYPE_END = 'end';
 
@@ -146,6 +147,28 @@ final class TraceCapture
 		}
 
 		return $stored;
+	}
+
+	/**
+	 * Record what the model was offered, and in what order.
+	 *
+	 * "Which tools did it see?" is the first question asked when a turn goes
+	 * wrong, and with a scored router it is no longer the configured order. Tool
+	 * slugs are identifiers, not message text, so they are safe to record.
+	 *
+	 * @param string             $router `fixed` or `scored`.
+	 * @param array<int, string> $slugs  Slugs in the order they were offered.
+	 */
+	public function routing( string $router, array $slugs ): void
+	{
+		$this->record(
+			self::TYPE_ROUTING,
+			array(
+				'router' => $router,
+				'tool_count' => \count( $slugs ),
+				'tools' => \array_values( $slugs ),
+			)
+		);
 	}
 
 	/**

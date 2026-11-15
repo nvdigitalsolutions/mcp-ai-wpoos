@@ -34,6 +34,7 @@ use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
 use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Service\Harness\GuardrailPrompt;
+use Nvoos\Core\Domain\Service\Harness\ToolRouterHarness;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
@@ -479,6 +480,26 @@ class ChatOrchestrator {
 	}
 
 	/**
+	 * Slugs of the definitions that were handed to the provider, in order.
+	 *
+	 * @param array<int, array<string, mixed>> $definitions Tool definitions.
+	 * @return array<int, string>
+	 */
+	private static function toolSlugs( array $definitions ): array {
+		$slugs = array();
+
+		foreach ( $definitions as $definition ) {
+			$name = $definition['function']['name'] ?? null;
+
+			if ( \is_string( $name ) && '' !== $name ) {
+				$slugs[] = $name;
+			}
+		}
+
+		return $slugs;
+	}
+
+	/**
 	 * Provider finish reason, when the response is a well-formed payload.
 	 */
 	private function finishReason( mixed $response ): string {
@@ -636,7 +657,7 @@ class ChatOrchestrator {
 
 		// Build tool definitions for this assistant.
 		$allowedToolSlugs = $assistantConfig['tools'] ?? array();
-		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs, $assistantId );
+		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs, $assistantId, $profile );
 
 		// Always replace tools with the properly-resolved definitions.
 		// If no tools resolve (e.g., none are registered in the OOS
@@ -655,6 +676,8 @@ class ChatOrchestrator {
 		$startedAt = \microtime( true );
 
 		$trace = $this->startTrace( $assistantId, $profile, $options );
+
+		$trace?->routing( (string) ( $profile['tools']['router'] ?? 'fixed' ), self::toolSlugs( $toolDefinitions ) );
 
 		// Before hook.
 		$this->events->dispatch(
@@ -1182,7 +1205,7 @@ class ChatOrchestrator {
 		);
 
 		$allowedToolSlugs = $assistantConfig['tools'] ?? array();
-		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs, $assistantId );
+		$toolDefinitions  = $this->buildAllowedTools( $allowedToolSlugs, $assistantId, $profile );
 
 		// Always replace tools with the properly-resolved definitions.
 		// If no tools resolve (e.g., none are registered in the OOS
@@ -1200,6 +1223,8 @@ class ChatOrchestrator {
 		$startedAt = \microtime( true );
 
 		$trace = $this->startTrace( $assistantId, $profile, $options );
+
+		$trace?->routing( (string) ( $profile['tools']['router'] ?? 'fixed' ), self::toolSlugs( $toolDefinitions ) );
 
 		// Status: generating.
 		$this->sse->sendEvent(
@@ -1735,13 +1760,13 @@ class ChatOrchestrator {
 	 * @param int      $assistantId  Assistant ID for audit attribution.
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function buildAllowedTools( array $allowedSlugs, int $assistantId = 0 ): array {
+	private function buildAllowedTools( array $allowedSlugs, int $assistantId = 0, ?array $profile = null ): array {
 		if ( array() === $allowedSlugs ) {
 			return array();
 		}
 
-		$definitions = array();
-		$resolver    = $this->toolResolver ?? $this->tools;
+		$resolver = $this->toolResolver ?? $this->tools;
+		$resolved = array();
 
 		foreach ( $allowedSlugs as $slug ) {
 			if ( ! \is_string( $slug ) || '' === $slug ) {
@@ -1760,6 +1785,13 @@ class ChatOrchestrator {
 				continue;
 			}
 
+			$resolved[ $slug ] = $tool;
+		}
+
+		$definitions = array();
+
+		foreach ( $this->orderToolSlugs( \array_keys( $resolved ), $resolved, $profile ) as $slug ) {
+			$tool          = $resolved[ $slug ];
 			$definitions[] = array(
 				'type'     => 'function',
 				'function' => array(
@@ -1771,6 +1803,57 @@ class ChatOrchestrator {
 		}
 
 		return $definitions;
+	}
+
+	/**
+	 * Order the tool slugs the provider will see.
+	 *
+	 * `fixed` keeps the assistant's configured order, which is the default and
+	 * the behaviour every existing install already has. `scored` asks the
+	 * shared router to rank by capability flags and per-slug preferences, which
+	 * matters most when an assistant carries dozens of tools: providers attend
+	 * to earlier definitions more, and some cap the count.
+	 *
+	 * Any failure falls back to the fixed order. A router that cannot score must
+	 * not be able to drop a tool — that would turn a ranking problem into a
+	 * capability outage.
+	 *
+	 * @param array<int, string>                 $slugs    Resolved slugs, in configured order.
+	 * @param array<string, ToolInterface>       $resolved Slug → tool.
+	 * @param array<string, mixed>|null          $profile  Resolved profile, if any.
+	 * @return array<int, string>
+	 */
+	private function orderToolSlugs( array $slugs, array $resolved, ?array $profile ): array {
+		if ( null === $profile || 'scored' !== ( $profile['tools']['router'] ?? 'fixed' ) || count( $slugs ) < 2 ) {
+			return $slugs;
+		}
+
+		// The only task class the profile carries today.
+		$taskClass = (string) ( $profile['memory']['task_class'] ?? 'general' );
+
+		[ $preferences, $presetWeights ] = ToolRouterHarness::resolveAssistantInputs( $profile );
+
+		try {
+			$ranked = ToolRouterHarness::rank( $resolved, $taskClass, $preferences, $presetWeights );
+		} catch ( \Throwable ) {
+			return $slugs;
+		}
+
+		if ( array() === $ranked ) {
+			return $slugs;
+		}
+
+		$ordered = \array_keys( $ranked );
+
+		// Anything the router did not score keeps its configured position at
+		// the end rather than disappearing.
+		foreach ( $slugs as $slug ) {
+			if ( ! \in_array( $slug, $ordered, true ) ) {
+				$ordered[] = $slug;
+			}
+		}
+
+		return $ordered;
 	}
 
 	/**

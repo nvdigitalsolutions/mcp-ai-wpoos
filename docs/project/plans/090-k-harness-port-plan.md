@@ -445,3 +445,21 @@ A run is a chat turn. It writes three record types to the store's `run.jsonl`: `
 **Cost note.** `finish()` prunes on every completed turn, as the WordPress store does. That is one grouped read plus one delete per turn — acceptable against a table indexed on `(assistant_id, run_id)`, and the alternative (a periodic sweep) needs a scheduler this runtime does not have yet.
 
 ---
+
+## 19. Cluster 13 result — scored tool routing
+
+**What shipped.** `buildAllowedTools()` now takes the resolved profile and, when `tools.router` is `scored`, orders the tool definitions through `ToolRouterHarness::rank()` — by capability flags against the profile's task class, plus per-slug preferences. `fixed` (the default) keeps the assistant's configured order, exactly as before.
+
+The trace records the decision: a `routing` record carries the router mode, the tool count and the slugs **in the order the model saw them**. That is the first question asked when a turn goes wrong, and with a scored router it is no longer the configured order.
+
+**Failure is a fallback, not an outage.** `rank()` already returns an empty array rather than throwing; the orchestrator treats an empty ranking, or any Throwable, as "use the fixed order". Anything the router did not score keeps its configured position at the end instead of disappearing. A ranking problem must never become a capability outage.
+
+**What actually scores on this runtime.** Capability flags and per-slug `tools.preferences` work today. `tools.preset_weights` do **not**: the preset catalogue is the WordPress helper's ~3,100-line translated array, and the Laravel runtime has no equivalent — its `presets` endpoints are schedule presets, not tool presets. The router is fed an empty catalogue, so every preset weight is inert by construction. Porting a catalogue belongs with the console's tool-preset UI, not with the router; until then the flag and preference signals carry the ranking.
+
+**Scope discipline.** `scored` stays opt-in and is not the default. Turning it on changes which tools a model attends to first, and that is a behaviour change that needs an eval to justify — the plan's cluster 5 gate said as much. This PR makes the switch real; it does not flip it.
+
+**Validation.** `lib/core` **1,644 tests / 5,721 assertions** (4 new); app suite unchanged at **693 / 4,067** because no binding ships; adapter suite 180 / 676 with the same 2 pre-existing project-tool failures; `phpcs-laravel.xml.dist` clean.
+
+The tests assert the definitions the provider received: the default router keeps `writer, reader`; `scored` with `task_class: rag` produces `reader, writer`; scoring reorders without filtering; and the trace records `scored` with `['reader', 'writer']`.
+
+---
