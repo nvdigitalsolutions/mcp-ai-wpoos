@@ -11,6 +11,30 @@
 // ---------------------------------------------------------------------------
 
 import { describe, expect, it } from 'vitest';
+import {
+	DiagnosticCategory,
+	ModuleKind,
+	ScriptTarget,
+	flattenDiagnosticMessageText,
+	transpileModule,
+} from 'typescript';
+
+/**
+ * Syntax errors in emitted text.
+ *
+ * These files ship into a customer repo verbatim — `astro build` never parses
+ * them at scaffold time — so a broken string only fails later, at
+ * `astro check`, in the generated project.
+ */
+function syntaxErrors( text: string ): string[] {
+	const { diagnostics } = transpileModule( text, {
+		compilerOptions: { target: ScriptTarget.ES2022, module: ModuleKind.ESNext },
+		reportDiagnostics: true,
+	} );
+	return ( diagnostics ?? [] )
+		.filter( ( diagnostic ) => diagnostic.category === DiagnosticCategory.Error )
+		.map( ( diagnostic ) => flattenDiagnosticMessageText( diagnostic.messageText, ' ' ) );
+}
 
 import {
 	renderApiProxyTs,
@@ -58,6 +82,18 @@ describe( 'managed runtime — proxy helper', () => {
 		expect( src ).not.toMatch( /(?:secret|password|api[_-]?key)\s*=/i );
 		expect( src ).not.toMatch( /https?:\/\// );
 	} );
+
+	it( 'bounds every upstream call and types the failure', () => {
+		// A hung CMS must not hold the worker, and a dead one must not surface
+		// as an unhandled 500. RFC 9110: 504 when no timely answer arrived,
+		// 502 when no valid answer arrived at all.
+		expect( src ).toContain( 'AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)' );
+		expect( src ).toContain( 'NVOOS_PROXY_TIMEOUT_MS' );
+		expect( src ).toContain( '} catch (error) {' );
+		expect( src ).toContain( 'proxyFailure' );
+		expect( src ).toContain( 'upstream_timeout' );
+		expect( src ).toContain( 'upstream_unreachable' );
+	} );
 } );
 
 describe( 'managed runtime — proxy routes', () => {
@@ -73,6 +109,45 @@ describe( 'managed runtime — proxy routes', () => {
 		const src = renderFormsProxyTs();
 		expect( src ).toContain( "'/wp-json/nvoos-forge/v1/forms/submit'" );
 		expect( src ).toContain( '../../../lib/managed-proxy' );
+	} );
+
+	it( 'keeps the default bridge route free of the fallback', () => {
+		const src = renderFormsProxyTs();
+		expect( src ).not.toContain( 'deliverDirect' );
+		expect( src ).not.toContain( 'submissionMessage' );
+	} );
+
+	it( 'falls back to provider delivery only when the profile asks', () => {
+		const src = renderFormsProxyTs( { fallback: 'direct' } );
+		// Same bridge route, plus the payload contract both modes share.
+		expect( src ).toContain( "'/wp-json/nvoos-forge/v1/forms/submit'" );
+		expect( src ).toContain( 'deliverDirect' );
+		expect( src ).toContain( 'readSubmissionFields' );
+		expect( src ).toContain( 'submissionMessage' );
+		// The bridge hop consumes the body, so a copy must exist first.
+		expect( src ).toContain( 'const copy = request.clone();' );
+	} );
+
+	it( 'falls back on a fault, never on the bridge own answer', () => {
+		const src = renderFormsProxyTs( { fallback: 'direct' } );
+		// < 500 keeps 2xx/3xx/4xx: validation, the bridge throttle and the no-JS
+		// redirect are answers the visitor must see untouched. 501 is kept too —
+		// the bridge is up but has no handler, which is a config fault.
+		expect( src ).toContain( 'if ( response.status < 500 || response.status === 501 ) {' );
+		expect( src ).toContain( 'return response;' );
+	} );
+
+	it( 'opens a breaker so an outage costs one timeout, not one per visitor', () => {
+		const src = renderFormsProxyTs( { fallback: 'direct' } );
+		expect( src ).toContain( 'BREAKER_THRESHOLD' );
+		expect( src ).toContain( 'BREAKER_OPEN_MS' );
+		expect( src ).toContain( 'circuit open' );
+	} );
+
+	it( 'emits syntactically valid TypeScript in both shapes', () => {
+		expect( syntaxErrors( renderProxyHelperTs() ) ).toEqual( [] );
+		expect( syntaxErrors( renderFormsProxyTs() ) ).toEqual( [] );
+		expect( syntaxErrors( renderFormsProxyTs( { fallback: 'direct' } ) ) ).toEqual( [] );
 	} );
 
 	it( 'maps /media/* onto the uploads directory', () => {

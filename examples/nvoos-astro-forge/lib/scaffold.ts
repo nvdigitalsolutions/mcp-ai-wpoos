@@ -46,6 +46,9 @@ export const FORGE_LIB_FILES = [
 	'sanitize.ts',
 	'wp-loader.ts',
 	'fetch-proxy.ts',
+	// The form payload contract (parse + message + idempotency digest) both
+	// delivery modes share — `forms.fallback` needs both at once.
+	'forms.ts',
 	// Proposal 114: the semantic classifier + the shared contrast math the
 	// generated project's build-time audit endpoint consumes.
 	'semantic.ts',
@@ -3635,6 +3638,19 @@ async function scaffoldProject(
 			'forms.delivery: "direct" requires forms.mail { provider, from, to } so the endpoint knows who sends and who receives.'
 		);
 	}
+	// `forms.fallback` is the bridge-mode companion: the provider key still has
+	// to live on a server, and the fallback cannot name a sender without `mail`.
+	const directFallback = profile.forms?.fallback === 'direct';
+	if (directFallback && !managed) {
+		throw new Error(
+			'forms.fallback: "direct" requires deploy.runtime: "managed" — a static site has nowhere to keep the provider key.'
+		);
+	}
+	if (directFallback && !profile.forms?.mail) {
+		throw new Error(
+			'forms.fallback: "direct" requires forms.mail { provider, from, to } so the fallback knows who sends and who receives.'
+		);
+	}
 
 	if (managed) {
 		await mkdir(path.join(targetDir, 'src', 'lib'), { recursive: true });
@@ -3654,7 +3670,7 @@ async function scaffoldProject(
 						hostname: hostnameOf(profile.deploy?.publicOrigin ?? profile.url),
 						onProviderError: profile.forms?.turnstile?.onProviderError,
 					})
-				: renderFormsProxyTs(),
+				: renderFormsProxyTs({ fallback: profile.forms?.fallback }),
 			'utf8'
 		);
 		await writeFile(path.join(targetDir, 'src', 'pages', 'api', 'revalidate.ts'), renderRevalidateTs(), 'utf8');
