@@ -643,6 +643,11 @@
 			"provider": "brevo",
 			"from": "forms@virtuallyjamaica.com",
 			"to": "info@virtuallyjamaica.com"
+		},
+		"turnstile": {
+			"siteKey": "1x00000000000000000000AA",
+			"action": "contact",
+			"onProviderError": "allow"
 		}
 	},
 	"text": {

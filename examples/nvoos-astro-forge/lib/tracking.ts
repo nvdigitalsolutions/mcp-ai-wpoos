@@ -23,7 +23,7 @@ import type {
 
 // -- vendor vocabulary -------------------------------------------------------
 
-type CspDirective = 'script-src' | 'img-src' | 'connect-src';
+type CspDirective = 'script-src' | 'img-src' | 'connect-src' | 'frame-src';
 
 interface VendorSpec {
 	vendor: string;
@@ -877,7 +877,19 @@ export interface CspDirectives {
 	'script-src': string[];
 	'img-src': string[];
 	'connect-src': string[];
+	/** Only populated by a rendered Turnstile widget — see TURNSTILE_DIRECTIVES. */
+	'frame-src': string[];
 }
+
+/**
+ * Cloudflare Turnstile (2026-11-15) loads the widget script from this origin,
+ * frames its challenge iframe from it, and the endpoint POSTs siteverify to it
+ * — so all three directives need the host, not just script-src.
+ */
+export const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
+
+/** The directives a rendered Turnstile widget requires. */
+export const TURNSTILE_DIRECTIVES: ReadonlyArray< keyof CspDirectives > = [ 'script-src', 'frame-src', 'connect-src' ];
 
 /**
  * Per-directive CSP hosts for the ENABLED vendors only (Proposal 130 §2.11).
@@ -888,7 +900,7 @@ export interface CspDirectives {
  * CDN image passthrough.
  */
 export function cspDirectivesFor( trackers: ForgeTracker[], extraOrigins: string[] = [] ): CspDirectives {
-	const out: CspDirectives = { 'script-src': [], 'img-src': [], 'connect-src': [] };
+	const out: CspDirectives = { 'script-src': [], 'img-src': [], 'connect-src': [], 'frame-src': [] };
 	for ( const tracker of trackers ) {
 		if ( ! tracker.enabled ) {
 			continue;

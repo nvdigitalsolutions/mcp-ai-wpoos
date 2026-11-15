@@ -18,7 +18,7 @@ import SectionTitle from './SectionTitle.astro';
 // The manifest's inferred JSON type has no `forms` key on profiles that
 // omit the block — read it through an explicit shape.
 const manifest = manifestJson as {
-	forms?: { endpoint?: string; searchForms?: string[]; delivery?: 'bridge' | 'direct' };
+	forms?: { endpoint?: string; searchForms?: string[]; delivery?: 'bridge' | 'direct'; turnstile?: { siteKey?: string; action?: string } };
 };
 
 interface Props {
@@ -49,6 +49,8 @@ const pagePath = Astro.url?.pathname || '/';
 const searchField = form?.fields?.[0];
 const isSearch = form?.kind === 'search';
 const isSubmit = form?.kind === 'submit' && Boolean(endpoint) && Boolean(form?.formId || form?.formName);
+const turnstileKey = manifest.forms?.turnstile?.siteKey ?? '';
+const turnstileAction = manifest.forms?.turnstile?.action ?? '';
 const degradeToCta = Boolean(form) && !isSearch && !isSubmit;
 ---
 
@@ -139,6 +141,12 @@ const degradeToCta = Boolean(form) && !isSearch && !isSubmit;
 				<input type="hidden" name="honeypot" class="ds-honeypot" value="" tabindex="-1" autocomplete="off" aria-hidden="true" />
 				<input type="hidden" name="timestamp" value="" data-ds-timestamp />
 				<input type="hidden" name="_redirect" value={pagePath} />
+				{turnstileKey && (
+					<>
+						<div class="cf-turnstile" data-sitekey={turnstileKey} data-action={turnstileAction || undefined} />
+						<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+					</>
+				)}
 				<button class="ds-button" type="submit">{form.submitLabel || 'Send'}</button>
 				<p class="ds-form-status" role="status" aria-live="polite" hidden></p>
 			</form>

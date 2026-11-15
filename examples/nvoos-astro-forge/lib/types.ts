@@ -90,6 +90,23 @@ export interface ForgeForms {
 	/** Extra input names that mark a single-field form as a search form. */
 	searchForms?: string[];
 	/**
+	 * Cloudflare Turnstile on the rebuilt form (2026-11-15).
+	 *
+	 * `siteKey` is PUBLIC — it is rendered into the page. The secret lives in
+	 * `TURNSTILE_SECRET` on the host and never here. Absent or empty `siteKey`
+	 * disables verification entirely.
+	 *
+	 * `onProviderError` decides what happens when siteverify cannot answer
+	 * (timeout, 5xx, DNS): `allow` (default) keeps the enquiry and logs, `block`
+	 * refuses it. A *missing* token is always accepted-unverified with a log, so
+	 * a script/CSP problem can never 400 every real submission.
+	 */
+	turnstile?: {
+		siteKey?: string;
+		action?: string;
+		onProviderError?: 'allow' | 'block';
+	};
+	/**
 	 * How a submission becomes an email.
 	 *
 	 * `bridge` (default) POSTs to WordPress, which owns the handler AND its

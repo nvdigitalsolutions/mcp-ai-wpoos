@@ -138,4 +138,31 @@ describe( 'renderTrackingHeaders', () => {
 		} );
 		expect( renderTrackingHeaders( p ) ).toBeUndefined();
 	} );
+
+	it( 'allows the Turnstile origin — script, iframe and siteverify — when a widget renders', () => {
+		// A Turnstile-only site has no analytics, so the header must exist for the
+		// widget alone; otherwise the first enforcing policy kills the form.
+		const headers =
+			renderTrackingHeaders( {
+				url: 'https://virtuallyjamaica.com',
+				collections: [],
+				forms: { delivery: 'direct', turnstile: { siteKey: '1x00000000000000000000AA', action: 'contact' } },
+			} ) ?? '';
+		expect( headers ).toContain( 'Content-Security-Policy-Report-Only:' );
+		expect( headers ).toMatch( /script-src[^;]*https:\/\/challenges\.cloudflare\.com/ );
+		expect( headers ).toContain( "frame-src 'self' https://challenges.cloudflare.com" );
+		expect( headers ).toMatch( /connect-src[^;]*https:\/\/challenges\.cloudflare\.com/ );
+	} );
+
+	it( 'leaves frame-src out when no widget needs it', () => {
+		// An absent frame-src leaves frames unrestricted; narrowing it for every
+		// site would break embeds the forge cannot enumerate.
+		expect( renderTrackingHeaders( profile() ) ).not.toContain( 'frame-src' );
+	} );
+
+	it( 'still emits nothing without a tracker or a widget', () => {
+		expect(
+			renderTrackingHeaders( { url: 'https://example.com', collections: [], forms: { delivery: 'direct' } } )
+		).toBeUndefined();
+	} );
 } );

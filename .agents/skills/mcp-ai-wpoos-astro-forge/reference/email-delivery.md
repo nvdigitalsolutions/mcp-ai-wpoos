@@ -172,3 +172,61 @@ An endpoint that keys its throttle on `clientAddress` is throttling the
 **proxy**, i.e. the whole site (5 submissions / 10 min for every visitor).
 Behind one reverse proxy the rightmost `X-Forwarded-For` hop is the only value
 a client cannot forge (a client-supplied header is prepended, never replaced).
+
+## Turnstile on a DIRECT endpoint (2026-11-15)
+
+`forms.turnstile` renders the widget; `renderDirectFormsEndpointTs()` emits the
+server half. The widget is chrome — **`siteverify` is the boundary**, because a
+script can POST the endpoint directly and never render a challenge.
+
+```json
+"forms": {
+  "delivery": "direct",
+  "turnstile": { "siteKey": "<public>", "action": "contact", "onProviderError": "allow" }
+}
+```
+
+What the emitted verifier guarantees:
+
+- `POST https://challenges.cloudflare.com/turnstile/v0/siteverify` with
+  `secret`, `response`, and `remoteip` when the client address is a literal.
+- Validate `success` **and** `hostname` **and** `action`. The hostname comes
+  from the profile (`deploy.publicOrigin`), so it is deterministic; the request
+  host is only the fallback, because behind nginx it can be `127.0.0.1:4321`
+  and would reject every real submission.
+- Tokens are **single-use and expire after 300 s**; a replay answers
+  `timeout-or-duplicate`. That is a **rejection** (400), never a transport
+  error — do not retry it as one.
+- **Order: verify → throttle → send.** A token is free to mint, so letting a
+  rejected one consume a real address's slots would let a single bot lock the
+  form for everyone behind the same NAT.
+- A **missing** token is accepted unverified with a loud `console.warn`. A
+  widget that never rendered is a CSP/script fault far more often than a bot,
+  and 400ing on it is the silent-drop failure class this endpoint exists to
+  avoid.
+- `onProviderError: "allow"` keeps the enquiry when siteverify itself is
+  unreachable (timeout / 5xx / DNS); `"block"` refuses it with a 503 so the
+  visitor is not blamed for our outage.
+
+CSP: the widget needs `https://challenges.cloudflare.com` in `script-src`,
+`frame-src` **and** `connect-src`. `renderTrackingHeaders()` adds it whenever
+`forms.turnstile.siteKey` is set, and only then emits `frame-src` at all — an
+absent `frame-src` leaves frames unrestricted, and narrowing it for every site
+would break embeds the forge cannot enumerate. The header is written even on a
+site with no enabled tracker, because the first enforcing policy would
+otherwise silently kill the form.
+
+Secrets: `TURNSTILE_SECRET` lives in the host env, never in the profile or the
+manifest. A missing secret skips verification loudly (a half-configured deploy
+still takes enquiries). Cloudflare's documented **test** pair always passes:
+site key `1x00000000000000000000AA`, secret
+`1x0000000000000000000000000000000AA`.
+
+### The payload-envelope trap
+
+`Form.astro` posts the **bridge** envelope — `{ form, fields: { name, email, …
+}, honeypot, timestamp, page }` — in both delivery modes. A direct endpoint
+that reads only top-level scalars silently delivers an email with no visitor
+values (and no Turnstile token). `readFields()` therefore flattens the nested
+`fields` bag first, then lets the top-level carriers win; any new reserved
+field name has to be filtered **after** that flatten.
