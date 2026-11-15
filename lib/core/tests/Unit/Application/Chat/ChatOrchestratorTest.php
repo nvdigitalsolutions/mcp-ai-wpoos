@@ -1019,4 +1019,137 @@ final class ChatOrchestratorTest extends TestCase {
 		$this->assertSame( 1, substr_count( $output, '"delta"' ), 'The annotated text arrives as a single chunk.' );
 		$this->assertStringContainsString( '⚠️ sensitive', $output );
 	}
+
+	// ── Guardrail prompt injection ─────────────────────────────────
+
+	private function guardrailProfile( string $strictness = 'medium' ): HarnessProfileProviderInterface {
+		$profiles = $this->createMock( HarnessProfileProviderInterface::class );
+		$profiles->method( 'getProfile' )->willReturn(
+			array(
+				'enabled' => true,
+				'guardrails' => array( 'enabled' => true, 'strictness' => $strictness, 'allowed_topics' => array() ),
+			)
+		);
+
+		return $profiles;
+	}
+
+	public function test_no_profile_leaves_the_messages_alone(): void {
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertCount( 1, $dispatcher->router->receivedMessages[0] );
+		$this->assertSame( 'user', $dispatcher->router->receivedMessages[0][0]['role'] );
+	}
+
+	public function test_an_enabled_layer_inserts_a_system_turn(): void {
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+		$orchestrator->setHarnessProfileProvider( $this->guardrailProfile() );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$sent = $dispatcher->router->receivedMessages[0];
+
+		$this->assertSame( 'system', $sent[0]['role'], 'The block goes first.' );
+		$this->assertStringStartsWith( '[Guardrails — Stay on Target]', $sent[0]['content'] );
+		$this->assertSame( 'user', $sent[1]['role'], 'The user turn is preserved after it.' );
+	}
+
+	public function test_an_existing_system_turn_is_prefixed_not_replaced(): void {
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+		$orchestrator->setHarnessProfileProvider( $this->guardrailProfile() );
+
+		$orchestrator->handleChat(
+			array(
+				array( 'role' => 'system', 'content' => 'You are a support assistant.' ),
+				array( 'role' => 'user', 'content' => 'Hi.' ),
+			),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$sent = $dispatcher->router->receivedMessages[0];
+
+		$this->assertCount( 2, $sent, 'No extra system turn is added.' );
+		$this->assertStringStartsWith( '[Guardrails — Stay on Target]', $sent[0]['content'] );
+		$this->assertStringEndsWith( 'You are a support assistant.', $sent[0]['content'] );
+	}
+
+	public function test_a_disabled_guardrails_layer_injects_nothing(): void {
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+
+		$profiles = $this->createMock( HarnessProfileProviderInterface::class );
+		$profiles->method( 'getProfile' )->willReturn( array( 'enabled' => true, 'guardrails' => array( 'enabled' => false ) ) );
+		$orchestrator->setHarnessProfileProvider( $profiles );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertCount( 1, $dispatcher->router->receivedMessages[0] );
+	}
+
+	/**
+	 * A client that already injected the block must not get it twice: doubling
+	 * it doubles its weight in the prompt.
+	 */
+	public function test_injection_is_idempotent(): void {
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+		$orchestrator->setHarnessProfileProvider( $this->guardrailProfile() );
+
+		$preInjected = "[Guardrails — Stay on Target]\nAlready here.";
+
+		$orchestrator->handleChat(
+			array(
+				array( 'role' => 'system', 'content' => $preInjected ),
+				array( 'role' => 'user', 'content' => 'Hi.' ),
+			),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$sent = $dispatcher->router->receivedMessages[0];
+
+		$this->assertSame( $preInjected, $sent[0]['content'] );
+		$this->assertSame( 1, substr_count( $sent[0]['content'], '[Guardrails — Stay on Target]' ) );
+	}
+
+	public function test_high_strictness_reaches_the_injected_block(): void {
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+		$orchestrator->setHarnessProfileProvider( $this->guardrailProfile( 'high' ) );
+
+		$orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertStringContainsString( 'default to declining', $dispatcher->router->receivedMessages[0][0]['content'] );
+	}
+
+	public function test_the_streaming_path_injects_too(): void {
+		$sse = new SseHandler( $this->createMock( PlatformFlushInterface::class ) );
+		$sse->markHeadersSent();
+
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ), null, $sse );
+		$orchestrator->setHarnessProfileProvider( $this->guardrailProfile() );
+		$dispatcher->router->streamChunks = array();
+
+		ob_start();
+		$orchestrator->handleChatStreaming(
+			messages: array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			assistantConfig: array( 'provider' => 'openai', 'model' => 'gpt-4o', 'tools' => array() ),
+		);
+		ob_end_clean();
+
+		$sent = $dispatcher->router->receivedMessages[0];
+
+		$this->assertSame( 'system', $sent[0]['role'] );
+		$this->assertStringStartsWith( '[Guardrails — Stay on Target]', $sent[0]['content'] );
+	}
 }
