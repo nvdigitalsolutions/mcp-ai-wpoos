@@ -179,6 +179,12 @@ export interface ScaffoldOptions {
 	profile: SiteProfile;
 	/** Where the Astro project is written. */
 	targetDir: string;
+	/**
+	 * A materialized content directory (the output of `forge materialize`)
+	 * copied into `src/content/`. A site that outlived its CMS ships its
+	 * content beside the profile.
+	 */
+	contentDir?: string;
 	/** Built-in template name ('blog') or a path to a template directory. */
 	template?: string;
 	/** Fail instead of clobbering an existing target. */
@@ -3867,6 +3873,19 @@ async function scaffoldProject(
 	if (options.demoContent !== true) {
 		for (const relative of ['src/content/posts/hello-world.mdx', 'src/content/pages/README.md']) {
 			await rm(path.join(targetDir, relative), { force: true });
+		}
+	}
+
+	// 4d. Materialized content (2026-11-15): a site whose CMS is gone ships its
+	//     content beside the profile (`sites/<name>.content/`, written by
+	//     `forge materialize`). Copied AFTER the demo removal so real content
+	//     always wins.
+	if (options.contentDir) {
+		const source = path.resolve(options.contentDir);
+		if (existsSync(source)) {
+			await cp(source, path.join(targetDir, 'src', 'content'), { recursive: true });
+		} else {
+			warnings.push(`contentDir not found: ${source}`);
 		}
 	}
 
