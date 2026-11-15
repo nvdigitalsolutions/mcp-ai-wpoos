@@ -347,6 +347,17 @@ describe('forge e2e — emitted site', () => {
 		expect(localPost).toContain('nvoos-tabs-tab');
 		expect(localPost).toContain('nvoos-tabs-panel');
 
+		// The markdown variant of a local MDX post projects its SOURCE (the glob
+		// `body`): the prose survives, the ESM imports and props-only components
+		// do not. Without this the variant shipped raw MDX or nothing.
+		const localMarkdown = await readFile(
+			path.join(workDir, 'dist', 'posts', 'hello-world', 'hello-world', 'index.md'),
+			'utf8'
+		);
+		expect(localMarkdown).toContain('This post lives in');
+		expect(localMarkdown).not.toContain('import FaqAccordion');
+		expect(localMarkdown).not.toContain('<FaqAccordion');
+
 		const sitemap = await readFile(path.join(workDir, 'dist', 'sitemap.xml'), 'utf8');
 		expect(sitemap).toContain('/posts/1/fjord-merino-sweater/');
 		expect(sitemap).toContain('/products/101/fjord-merino-sweater/');
