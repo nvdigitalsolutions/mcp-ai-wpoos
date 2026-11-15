@@ -141,6 +141,20 @@ class WP_MCP_AI_Tool_Router_Harness {
 	 * @return float Score; higher is better.
 	 */
 	public static function score_tool( $tool, $task_class, array $assistant_prefs = array(), array $preset_weights = array(), $attention_score = null ) {
+		// Scoring lives in lib/core so both runtimes weigh a tool the same way.
+		// lib/ is stripped from wp.org base builds, so the body below stays.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\ToolRouterHarness' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\ToolRouterHarness::scoreTool(
+				$tool,
+				(string) $task_class,
+				$assistant_prefs,
+				$preset_weights,
+				null === $attention_score ? null : (float) $attention_score,
+				self::tool_to_presets_index(),
+				self::score_filter()
+			);
+		}
+
 		$task_class = sanitize_key( (string) $task_class );
 		if ( '' === $task_class ) {
 			$task_class = 'general';
@@ -225,6 +239,21 @@ class WP_MCP_AI_Tool_Router_Harness {
 	 * @return array<string,float>
 	 */
 	public static function rank( $tools, $task_class, array $assistant_prefs = array(), array $preset_weights = array(), array $attention_scores = array() ) {
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\ToolRouterHarness' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\ToolRouterHarness::rank(
+				$tools,
+				(string) $task_class,
+				$assistant_prefs,
+				$preset_weights,
+				$attention_scores,
+				array(
+					'preset_index'        => self::tool_to_presets_index(),
+					'score_filter'        => self::score_filter(),
+					'stage_weight_filter' => self::stage_weight_filter(),
+				)
+			);
+		}
+
 		$scored = array();
 		foreach ( $tools as $tool ) {
 			if ( ! $tool instanceof WP_MCP_AI_Tool_Interface ) {
@@ -276,6 +305,15 @@ class WP_MCP_AI_Tool_Router_Harness {
 	 * @return array<string,float> Fused scores, sorted descending.
 	 */
 	public static function fuse_with_rrf( array $harness_scores, array $attention_scores, $task_class ) {
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\ToolRouterHarness' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\ToolRouterHarness::fuseWithRrf(
+				$harness_scores,
+				$attention_scores,
+				(string) $task_class,
+				self::stage_weight_filter()
+			);
+		}
+
 		$k = self::RRF_K;
 
 		// Rank by each scorer independently (descending — rank 0 = highest score).
@@ -335,6 +373,12 @@ class WP_MCP_AI_Tool_Router_Harness {
 	 * @return array{0:array<string,float>,1:array<string,float>}
 	 */
 	public static function resolve_assistant_inputs( $assistant_id ) {
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\ToolRouterHarness' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\ToolRouterHarness::resolveAssistantInputs(
+				WP_MCP_AI_Harness_Profile::get( (int) $assistant_id )
+			);
+		}
+
 		$assistant_id = (int) $assistant_id;
 		$profile      = WP_MCP_AI_Harness_Profile::get( $assistant_id );
 
@@ -357,6 +401,67 @@ class WP_MCP_AI_Tool_Router_Harness {
 		}
 
 		return array( $slug_prefs, $preset_weights );
+	}
+
+	/**
+	 * Wrap the per-tool score filter for the shared scorer.
+	 *
+	 * Core has no `apply_filters`, so the hook is injected as a callable. The
+	 * argument list preserves the documented filter signature exactly.
+	 *
+	 * @since 1.4.0
+	 *
+	 * @return callable
+	 */
+	private static function score_filter() {
+		return static function ( $score, $tool, $task_class, $assistant_prefs, $preset_weights, $attention_score ) {
+			/**
+			 * Filter the harness score for a tool.
+			 *
+			 * @since 1.4.0
+			 *
+			 * @param float                    $score           Default score from the base scoring rules.
+			 * @param WP_MCP_AI_Tool_Interface $tool            Tool instance.
+			 * @param string                   $task_class      Task class slug.
+			 * @param array                    $assistant_prefs Per-assistant slug-level preferences.
+			 * @param array                    $preset_weights  Per-assistant preset-family weights.
+			 * @param float|null               $attention_score Semantic attention score for this tool (0–1), or null if unavailable.
+			 */
+			return (float) apply_filters( 'wp_mcp_ai_harness_tool_score', $score, $tool, $task_class, $assistant_prefs, $preset_weights, $attention_score );
+		};
+	}
+
+	/**
+	 * Wrap the two RRF stage-weight filters for the shared fuser.
+	 *
+	 * @since 1.8.0
+	 *
+	 * @return callable
+	 */
+	private static function stage_weight_filter() {
+		return static function ( $weight, $stage, $task_class ) {
+			if ( 'harness' === $stage ) {
+				/**
+				 * Filter the RRF harness-stage weight.
+				 *
+				 * @since 1.8.0
+				 *
+				 * @param float  $weight     Weight for harness structural scoring.
+				 * @param string $task_class Task class slug.
+				 */
+				return (float) apply_filters( 'wp_mcp_ai_harness_rrf_weight_harness', $weight, $task_class );
+			}
+
+			/**
+			 * Filter the RRF attention-stage weight.
+			 *
+			 * @since 1.8.0
+			 *
+			 * @param float  $weight     Weight for attention semantic scoring.
+			 * @param string $task_class Task class slug.
+			 */
+			return (float) apply_filters( 'wp_mcp_ai_harness_rrf_weight_attention', $weight, $task_class );
+		};
 	}
 
 	/**
