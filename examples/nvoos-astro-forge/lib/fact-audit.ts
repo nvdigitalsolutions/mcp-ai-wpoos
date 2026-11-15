@@ -38,6 +38,9 @@ interface FactMarker {
 	 * `<style>` block, which sits before the band element. */
 	present?: ( ctx: {
 		html: string;
+		/** The WHOLE built page — for facts emitted into a <style> block ahead
+		 * of the band (band typography, device-scoped surfaces). */
+		pageHtml: string;
 		sectionId: string;
 		value: unknown;
 		scopedPadding: Map< string, string >;
@@ -84,9 +87,9 @@ const FACT_MARKERS: FactMarker[] = [
 		key: 'type',
 		label: 'band typography',
 		marker: '[data-section-id] h…{font-size}',
-		present: ( { html, sectionId } ) =>
+		present: ( { pageHtml, sectionId } ) =>
 			new RegExp( `\\[data-section-id="${ sectionId.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }"\\]\\s+h[1-6]\\{` ).test(
-				html
+				pageHtml
 			),
 	},
 	{ key: 'titleDivider', label: 'titleDivider', marker: 'ds-title-divider' },
@@ -151,7 +154,7 @@ export function auditFacts( sections: ForgeSection[], builtHtml: string ): Unren
 				continue;
 			}
 			const rendered = fact.present
-				? fact.present( { html, sectionId: section.id, value, scopedPadding, scopedMeasure } )
+				? fact.present( { html, pageHtml: builtHtml, sectionId: section.id, value, scopedPadding, scopedMeasure } )
 				: html.includes( fact.marker );
 			if ( ! rendered ) {
 				unrendered.push( { sectionId: section.id, fact: fact.label, marker: fact.marker } );

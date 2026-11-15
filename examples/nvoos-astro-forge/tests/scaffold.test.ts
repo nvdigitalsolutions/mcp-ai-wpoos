@@ -12,7 +12,7 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { AGENT_STUB_FILES, collectProjectFiles } from '../lib/project-files.ts';
-import { auditTokenBlock, readableBandType, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
+import { auditTokenBlock, readableBandType, mergeBandType, FORGE_LIB_FILES, FORGE_ROOT, mergeTokens, renderAstroConfig, renderChromeGenerated, renderDesignGenerated, renderPagesGenerated, renderSectionsGenerated, renderTokensDtcg, collectionTitle, rewriteOgTokens, scaffold, renderContentConfig, renderPolicyGenerated, renderTokenBlock, resolveTemplateDir, rewriteContentConfig, rewriteGlobalCss, tokenWarnings } from '../lib/scaffold.ts';
 import type { ForgeDesign, SiteProfile } from '../lib/types.ts';
 import { createBuiltinTemplateFixture } from '../scripts/builtin-template.mjs';
 import { createWpLoader } from '../lib/wp-loader.ts';
@@ -1262,6 +1262,40 @@ describe( 'scaffold — design rebuild (Proposal 114)', () => {
 		// A transparent band shows the page canvas — the comparison has to use it.
 		const onCanvas = readableBandType( black, { id: 'x' }, { ...PROFILE, pageBackground: '#000000' } );
 		expect( onCanvas.body.color ).toBeUndefined();
+	} );
+
+	it( 'keeps an operator type pin even when the measured ink is unreadable on the band', () => {
+		// virtuallyjamaica 1ff4891: the cards sit on a nested #dd3333 column the
+		// build DOES ship, so the measured white ink is right even though the
+		// band's own flat surface is #ededed. The pin is the explicit correction;
+		// the fallback must never drop it a second time.
+		const measured = {
+			headings: { h3: { size: '40px', color: '#ffffff' } },
+			body: { size: '13px', color: '#ffffff' },
+		};
+		const readable = readableBandType( measured, { id: '1ff4891', bgColor: '#ededed' }, PROFILE );
+		expect( readable.headings?.h3.color ).toBeUndefined();
+		expect( readable.body?.color ).toBeUndefined();
+
+		const merged = mergeBandType( readable, {
+			headings: { h3: { color: 'rgb(255, 255, 255)' } },
+			body: { color: 'rgb(255, 255, 255)' },
+		} );
+		expect( merged.headings?.h3 ).toEqual( { size: '40px', color: 'rgb(255, 255, 255)' } );
+		expect( merged.body ).toEqual( { size: '13px', color: 'rgb(255, 255, 255)' } );
+	} );
+
+	it( 'merges a colour-only type pin over the measured facts', () => {
+		const merged = mergeBandType(
+			{ headings: { h2: { size: '36px', weight: '700' } }, body: { size: '16px' } },
+			{ headings: { h2: { color: '#111111' } } }
+		);
+		expect( merged.headings?.h2 ).toEqual( { size: '36px', weight: '700', color: '#111111' } );
+		expect( merged.body ).toEqual( { size: '16px' } );
+
+		// No pin → the measured object is returned untouched.
+		const measured = { body: { size: '13px' } };
+		expect( mergeBandType( measured, undefined ) ).toBe( measured );
 	} );
 
 	it( 'emits per-element surfaces and pinned heights (structural paths)', () => {

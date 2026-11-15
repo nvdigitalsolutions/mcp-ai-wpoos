@@ -509,6 +509,39 @@ export function readableBandType< T extends { headings?: Record< string, BandTyp
 	return { ...type, ...( type.headings ? { headings } : {} ), ...( body ? { body } : {} ) };
 }
 
+/**
+ * Overlay an operator `section.type` pin on the MEASURED band type.
+ *
+ * A pin is an explicit correction, so it must not be re-judged by
+ * `readableBandType`: that fallback compares the measured ink against the
+ * SECTION's flat surface, which is the wrong surface when the copy sits on a
+ * nested one the rebuild DOES ship. virtuallyjamaica's `1ff4891` cards sit on a
+ * red `#dd3333` column (kept inline by the sanitizer): the source's white copy
+ * was measured correctly, then dropped against the `#ededed` band, so the cards
+ * rendered grey-on-red. The pin restores the measured ink; `verify --colors` is
+ * the gate that reports it if the pin is wrong.
+ *
+ * Fields merge per heading level and per property, so a colour-only pin keeps
+ * the measured sizes (a pin used to REPLACE the whole fact block).
+ */
+export function mergeBandType(
+	measured: { headings?: Record< string, BandTypeFact >; body?: BandTypeFact },
+	pinned: { headings?: Record< string, BandTypeFact >; body?: BandTypeFact } | undefined
+): { headings?: Record< string, BandTypeFact >; body?: BandTypeFact } {
+	if ( ! pinned ) {
+		return measured;
+	}
+	const headings: Record< string, BandTypeFact > = { ...( measured.headings ?? {} ) };
+	for ( const [ tag, fact ] of Object.entries( pinned.headings ?? {} ) ) {
+		headings[ tag ] = { ...( headings[ tag ] ?? {} ), ...fact };
+	}
+	const body = pinned.body ? { ...( measured.body ?? {} ), ...pinned.body } : measured.body;
+	return {
+		...( Object.keys( headings ).length > 0 ? { headings } : {} ),
+		...( body ? { body } : {} ),
+	};
+}
+
 /** The end colour of a CSS gradient — the surface a painted card ends on. */
 function gradientTail( gradient: string | undefined ): string | undefined {
 	if ( ! gradient ) {
@@ -1443,10 +1476,12 @@ function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ):
 					};
 		entry.push( `minHeight: ${ tsLength( value ) }` );
 	}
-	// The band's measured typography (see `tsBandType`). A profile pin on
-	// `design.sections[].type` wins over the measurement — but never at the cost
-	// of readable copy (see `readableBandType`).
-	const typeLiteral = tsBandType( readableBandType( section.type ?? bandFacts ?? {}, section, profile ) );
+	// The band's measured typography (see `tsBandType`). The readability
+	// fallback applies to the MEASURED facts only; an operator pin on
+	// `design.sections[].type` then overlays them field by field (see
+	// `mergeBandType`) — an explicit ink choice is never silently dropped.
+	const measuredType = readableBandType( bandFacts ?? {}, section, profile );
+	const typeLiteral = tsBandType( mergeBandType( measuredType, section.type ) );
 	if ( typeLiteral ) {
 		entry.push( `type: ${ typeLiteral }` );
 	}
