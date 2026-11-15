@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-astro-forge
-description: Operational guide for the NV oOS Astro Forge (Proposal 096) — the WP→Astro frontend generator in examples/nvoos-astro-forge (wp-client, Astro content-layer loader, versioned sanitizer, scaffold CLI, blog template, hermetic WP wire fixture, CI exit gate). Use when forging a customer frontend, adding a template or collection, debugging the e2e gate, continuing Phases 1–4 (wc/v3 Woo loader, site_analyze, tokens_apply, MCP tool surface, bridge plugin), running the Proposal 114 design-rebuild loop (design block, semantic sections, contrast audit, forge verify), or working the 114 §3.9 forms bridge (sanitizer form allowlist, Form.astro, bridge forms/submit route).
+description: "Operational guide for the NV oOS Astro Forge (Proposal 096): the WP→Astro frontend generator in examples/nvoos-astro-forge (wp-client, content-layer loader, versioned sanitizer, scaffold CLI, blog template, hermetic WP fixture, CI gate). Use when forging a customer frontend, adding a template or collection, debugging the e2e gate, continuing the wc/v3 Woo loader and MCP tool surface, running the design-rebuild loop (design block, contrast audit, forge verify), or working the forms bridge."
 ---
 
 # NV oOS Astro Forge — ops guide (Proposal 096 Phase 0)

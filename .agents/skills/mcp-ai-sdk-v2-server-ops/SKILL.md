@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-sdk-v2-server-ops
-description: Operational playbook for building and debugging MCP HTTP servers on the @modelcontextprotocol/server v2 SDK — the dual-era wire model (2026-07-28 modern dialect vs the 2025-era stateless fallback), the modern request shape (params._meta envelope keys, SEP-2243 headers, server/discover replacing initialize), the createMcpHandler + toNodeHandler factory contract, and the node:http conformance-test recipe. Use when serving MCP over Streamable HTTP with the SDK v2, debugging 400/-32020/-32602/500 responses from an MCP endpoint, writing handshake conformance tests, or upgrading a legacy initialize-only server to dual-era serving.
+description: "Operational playbook for MCP HTTP servers on the @modelcontextprotocol/server v2 SDK: the dual-era wire model (2026-07-28 modern dialect vs the 2025-era stateless fallback), the modern request shape (params._meta envelope keys, SEP-2243 headers, server/discover replacing initialize), the createMcpHandler + toNodeHandler contract, and the node:http conformance-test recipe. Use when serving MCP over Streamable HTTP with SDK v2, debugging 400/-32020/-32602/500 responses, or upgrading an initialize-only server to dual-era serving."
 ---
 
 # MCP SDK v2 Server Ops — dual-era wire playbook

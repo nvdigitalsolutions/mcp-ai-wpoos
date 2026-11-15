@@ -1,6 +1,6 @@
 ---
 name: mcp-ai-wpoos-astro-storefront
-description: Operational guide for the NV-authored headless storefront (Proposal 092) — the nvoos-astro-bridge Payload-shaped commerce contract (nvoos-commerce/v1), the examples/nvoos-astro-velocity Astro app, its hermetic dev/test loop, the sync workflow + mirror deployment, the ADS design system (DTCG tokens, drift gate, theming), the nvoos-astro-mcp assistant-control surface at /mcp (dual-era Streamable HTTP, fail-closed write auth), and the native→Woo catalog migration. Use when working on the storefront, the bridge contract, image optimization, design tokens/themes, the MCP mount, the catalog migration, or the mirror deploy loop.
+description: "Operational guide for the NV-authored headless storefront: the nvoos-astro-bridge Payload-shaped commerce contract (nvoos-commerce/v1), the examples/nvoos-astro-velocity Astro app, its hermetic dev/test loop, sync workflow and mirror deployment, the ADS design system (DTCG tokens, drift gate, theming), the nvoos-astro-mcp control surface at /mcp (dual-era Streamable HTTP, fail-closed write auth), and the native→Woo catalog migration. Use when working on the storefront, bridge contract, tokens/themes, MCP mount, or catalog migration."
 ---
 
 # NV oOS Astro Storefront — ops guide (Proposal 092)

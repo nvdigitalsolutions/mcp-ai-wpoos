@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-performance-audit
-description: Analyze GTmetrix (and PageSpeed) reports for WordPress sites and produce a prioritized optimization plan, a custom WPCode-ready PHP optimization snippet, and a self-contained HTML summary report. Covers PDF report extraction with pypdf, live-page cross-referencing, WordPress-specific fix mapping (Elementor, WooCommerce, Breeze, reCAPTCHA, Google-tag duplication, WebP conversion), and staging-test discipline. Use when asked to review GTmetrix reports, optimize page speed or Core Web Vitals, create a custom performance optimization snippet, or produce an optimization report for a WordPress site.
+description: "Analyze GTmetrix (and PageSpeed) reports for WordPress sites and produce a prioritized optimization plan, a WPCode-ready PHP snippet, and a self-contained HTML summary report. Covers PDF extraction with pypdf, live-page cross-referencing, WordPress fix mapping (Elementor, WooCommerce, Breeze, reCAPTCHA, duplicate Google tags, WebP), and staging-test discipline. Use when asked to review GTmetrix reports, optimize page speed or Core Web Vitals, or produce an optimization report for a WordPress site."
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill

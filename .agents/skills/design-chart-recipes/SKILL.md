@@ -1,7 +1,7 @@
 ---
 type: Skill
 name: design-chart-recipes
-description: Author and validate nvoos-chart fenced-JSON chart blocks for NV oOS chat surfaces — 29 chart types across distribution, part-to-whole, ranking, change, special and grid families. Covers type selection, the v2 schema (values/series/data.items, mode, sort, direction, unit, animate, table, target), data-shape rules, the create_chart_fence server validator, the a11y checklist, and copy-paste JSON templates. Use when writing chart fences in assistant responses, choosing a chart type for data, validating chart JSON, or deciding between nvoos-chart, create_chart, generate_chart and generate_mermaid.
+description: "Author and validate nvoos-chart fenced-JSON blocks for NV oOS chat surfaces: 29 chart types across distribution, part-to-whole, ranking, change, special and grid families. Covers type selection, the v2 schema (values/series/data.items, mode, sort, direction, unit, animate, table, target), data-shape rules, the create_chart_fence validator, the a11y checklist, and copy-paste templates. Use when writing chart fences, choosing a chart type, validating chart JSON, or choosing between nvoos-chart, create_chart, generate_chart, and generate_mermaid."
 license: Proprietary. See LICENSE.txt
 metadata:
   type: Skill
