@@ -41,9 +41,10 @@ import { Command } from 'commander';
 
 import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasuredHeader, diffDesignFacts, fetchDesignInput, renderableBands, scoreParity, verifyBandFlow } from '../lib/design.ts';
 import { auditBands, formatBandReport } from '../lib/band-audit.ts';
+import { compareBuildIdentity, parseBuildMarker } from '../lib/build-identity.ts';
 import { countAnimations, diffAnimations, measureAnimations, planAnimationRebuild } from '../lib/animations.ts';
 import { auditClassCoverage } from '../lib/class-audit.ts';
-import { resolveContentDir } from '../lib/content-source.ts';
+import { resolveContentDir, resolveMediaDir } from '../lib/content-source.ts';
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
@@ -54,6 +55,7 @@ import { measurePageBands } from '../lib/page-bands.ts';
 import { countInteractionStates, describeInteractionDeviation, diffInteractionStates, measureInteractions } from '../lib/interactions.ts';
 import { measureBandDiff } from '../lib/band-diff.ts';
 import { gateNote, resolveGateMode, resolvePixelMasks, validateVerifyBlock } from '../lib/gate-policy.ts';
+import { measureIconFonts, usedDroppedFamilies } from '../lib/font-audit.ts';
 import { auditFacts } from '../lib/fact-audit.ts';
 import { captureEndpoint, captureRemote, listArtifacts, readArtifact } from '../lib/capture.ts';
 import { comparePngBuffers, encodeDiff } from '../lib/pixel.ts';
@@ -1310,6 +1312,15 @@ async function runScaffold( profileRef, options ) {
 			profilePath: profilePathOf( profileRef ),
 			explicit: options.content,
 		} );
+	// A committed media snapshot (`sites/<name>.media/`, written by
+	// `forge media-snapshot`) resolves the same way: env/flag first, else the
+	// profile's `media.snapshot` flag beside the profile.
+	const mediaDirFor = () =>
+		resolveMediaDir( {
+			media: profile.media,
+			profilePath: profilePathOf( profileRef ),
+			explicit: options.mediaSnapshot,
+		} );
 	const result = await scaffold( {
 		profile,
 		targetDir: options.target,
@@ -1324,6 +1335,7 @@ async function runScaffold( profileRef, options ) {
 		demoContent: options.demoContent === true,
 		unlock: options.unlock === true,
 		contentDir: contentDirFor(),
+		mediaDir: mediaDirFor(),
 		siteSlug,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
@@ -1869,6 +1881,43 @@ async function runMediaBudgetVerify( target ) {
 	return { status: 'warn', note: `${ note }; ${ legacy.length } JPEG/PNG still shipped`, legacy };
 }
 
+/**
+ * Did an icon font the page still uses lose its last face?
+ *
+ * The localizer now records every pruned family and whether a built glyph
+ * class references it (`media-localize.json` → `droppedFontFamilies`). That is
+ * the browser-free half of the font gate: it runs in `verify --minimal`, where
+ * the existing gates used to pass while every icon was a blank box
+ * (virtuallyjamaica, 2026-11-15).
+ *
+ * Warn by default; `--strict-fonts` makes it blocking.
+ *
+ * @param {string} target The forged project root.
+ * @returns {Promise<{status: string, note: string, dropped?: Array}>} The verdict.
+ */
+async function runFontCoverageVerify( target ) {
+	const raw = await readFile( join( target, '.forge-cache', 'media-localize.json' ), 'utf8' ).catch( () => null );
+	if ( ! raw ) {
+		return { status: 'skip', note: 'no localization report (media not localized)' };
+	}
+	let report;
+	try {
+		report = JSON.parse( raw );
+	} catch {
+		return { status: 'skip', note: 'unreadable localization report' };
+	}
+	const dropped = usedDroppedFamilies( report );
+	if ( dropped.length === 0 ) {
+		return { status: 'pass', note: 'no used font family lost its last face' };
+	}
+	const names = dropped.map( ( entry ) => `"${ entry.family }"` ).join( ', ' );
+	return {
+		status: 'warn',
+		note: `${ dropped.length } used font family/families lost every face: ${ names }`,
+		dropped,
+	};
+}
+
 const GATE_ORDER = [
 	'design language',
 	'token block',
@@ -1876,7 +1925,10 @@ const GATE_ORDER = [
 	'nav anchors',
 	'built ids',
 	'fact consumption',
+	'font coverage',
 	'media budget',
+	'font render',
+	'deployed build',
 	'text parity',
 	'colour system',
 	'mobile menu',
@@ -1977,6 +2029,69 @@ async function hasPixelArtifacts( dir ) {
 }
 
 /**
+ * Is the LIVE site the build that was just published?
+ *
+ * Reads the local artifact's `<meta name="forge-build">` and asks the public
+ * URL for the same marker with a cache-buster. The comparison is pure
+ * (`compareBuildIdentity`); this function only does I/O. A stale release, a
+ * page that predates the marker, or an unstamped local build are distinct
+ * verdicts — none of them is a silent pass.
+ *
+ * Never throws: a network failure is a `warn` (the caller decides whether
+ * `--strict` makes it fatal).
+ */
+async function checkDeployedBuild( { target, url, expected, indexHtml, attempts = 1, delayMs = 0 } ) {
+	const html = indexHtml ?? ( await readBuiltHtml( target ) );
+	if ( ! html ) {
+		return { status: 'warn', note: `no built index.html under ${ target }/dist — build first` };
+	}
+	const localMarker = parseBuildMarker( html );
+	const wanted = expected || localMarker || process.env.FORGE_BUILD_ID || '';
+	let probe;
+	try {
+		probe = new URL( url );
+	} catch {
+		return { status: 'warn', note: `invalid deployed URL: ${ url }` };
+	}
+	let verdict;
+	for ( let attempt = 1; attempt <= Math.max( 1, attempts ); attempt++ ) {
+		const attemptUrl = new URL( probe.href );
+		// A cache-buster keeps a CDN from replaying the page this check exists to
+		// detect. The marker is in the HTML, so no special headers are needed.
+		attemptUrl.searchParams.set( 'forge-build-check', String( Date.now() ) );
+		let liveHtml;
+		try {
+			const response = await fetch( attemptUrl, {
+				redirect: 'follow',
+				signal: AbortSignal.timeout( 20_000 ),
+				headers: { accept: 'text/html', 'cache-control': 'no-cache' },
+			} );
+			if ( ! response.ok ) {
+				verdict = { status: 'warn', note: `${ probe.origin } returned HTTP ${ response.status }`, expected: wanted };
+			} else {
+				liveHtml = await response.text();
+				verdict = compareBuildIdentity( wanted, parseBuildMarker( liveHtml ) );
+			}
+		} catch ( error ) {
+			verdict = {
+				status: 'warn',
+				note: `could not fetch ${ probe.origin } (${ error instanceof Error ? error.message : error })`,
+				expected: wanted,
+			};
+		}
+		if ( verdict.status === 'pass' || attempt >= attempts ) {
+			return verdict;
+		}
+		// Velocity auto-deploy is asynchronous: a first read right after the push
+		// can legitimately see the previous release. Poll before calling it stale.
+		if ( delayMs > 0 ) {
+			await sleep( delayMs );
+		}
+	}
+	return verdict;
+}
+
+/**
  * Does a SOURCE seam exist? That is the parity gate's reference — as opposed to
  * a build regression baseline, which cannot prove fidelity (see gate-policy.ts).
  * `pixel parity` resolves `auto` off this answer.
@@ -2003,6 +2118,7 @@ async function runVerify( profileRef, options ) {
 		options.geometry = true;
 		options.interactions = true;
 		options.pixel = true;
+		options.fonts = true;
 	}
 	const gates = [];
 	// `policy` is the human provenance of a DOWNGRADE (e.g. `advisory (default ·
@@ -2106,6 +2222,30 @@ async function runVerify( profileRef, options ) {
 	// band is exactly the failure the source's continuous band flow depends
 	// on (jayainc's gray bridge + flush contact band, pre-124 §5).
 	const indexHtml = await readBuiltHtml( options.target );
+	// Deployed identity (2026-11-15): every other gate judges the BUILD. This
+	// one asks the public origin which build it is actually serving. A stale
+	// release is a warning by default and a failure under --strict-deployed.
+	if ( options.deployed ) {
+		const deployed = await checkDeployedBuild( {
+			target: options.target,
+			url: options.deployed,
+			expected: options.expectBuild,
+			indexHtml,
+		} );
+		if ( deployed.status === 'pass' ) {
+			console.log( `\u2713 Deployed build: ${ deployed.note }.` );
+		} else {
+			console.warn( `\u26a0 Deployed build: ${ deployed.note }.` );
+			if ( deployed.status !== 'skip' && options.strictDeployed ) {
+				process.exitCode = 1;
+			}
+		}
+		record(
+			'deployed build',
+			deployed.status === 'pass' ? 'pass' : deployed.status === 'skip' ? 'skip' : options.strictDeployed ? 'fail' : 'warn',
+			deployed.note
+		);
+	}
 	// The bands a build can render: Elementor sections when present, else the
 	// promoted outline (WPBakery/Divi/Bricks…). Band flow must check the same
 	// set the renderer themes, or an outline-only site passes vacuously.
@@ -2296,6 +2436,27 @@ async function runVerify( profileRef, options ) {
 	// Proposal 140 — what the artifact actually ships. The design gates prove
 	// the site LOOKS like the source; this one proves the bytes are local and
 	// modern, which is what the CMS-independence promise depends on.
+	const fontCoverage = await runFontCoverageVerify( options.target );
+	if ( fontCoverage.status === 'pass' ) {
+		console.log( `\u2713 Font coverage: ${ fontCoverage.note }.` );
+	} else if ( fontCoverage.status === 'warn' ) {
+		console.warn( `\u26a0 Font coverage: ${ fontCoverage.note }.` );
+		for ( const entry of fontCoverage.dropped ?? [] ) {
+			console.warn( `  \u2717 ${ entry.family }${ entry.sheet ? ` (${ entry.sheet })` : '' } — used by ${ ( entry.classes ?? [] ).slice( 0, 4 ).map( ( name ) => `.${ name }` ).join( ', ' ) || 'the page' }` );
+		}
+		if ( options.strictFonts ) {
+			process.exitCode = 1;
+		}
+	} else {
+		record( 'font coverage', 'skip', fontCoverage.note );
+	}
+	if ( fontCoverage.status !== 'skip' ) {
+		record(
+			'font coverage',
+			fontCoverage.status === 'pass' ? 'pass' : options.strictFonts ? 'fail' : 'warn',
+			fontCoverage.note
+		);
+	}
 	const media = await runMediaBudgetVerify( options.target );
 	if ( media.status === 'skip' ) {
 		record( 'media budget', 'skip', media.note );
@@ -3210,6 +3371,44 @@ async function runVerify( profileRef, options ) {
 		);
 	}
 
+	// Font render (Proposal 140 follow-up): the coverage gate reads what the
+	// localizer recorded; this proves the built page's icon markers have a
+	// usable face in a real browser. A missing face still gives the element a
+	// computed `font-family`, so only `document.fonts.check` can tell the two
+	// apart. Browser-backed, like the other Playwright gates.
+	if ( options.fonts && indexHtml && ! ( await browserAvailable() ) ) {
+		console.warn( '\u26a0 Font render: skipped \u2014 Playwright/Chromium is not available in this environment.' );
+		record( 'font render', 'skip', 'browser unavailable' );
+	} else if ( options.fonts && indexHtml ) {
+		const served = await serveDir( await builtStaticRoot( join( options.target, 'dist' ) ) );
+		let fontRender;
+		try {
+			fontRender = await measureIconFonts( { url: served.url } );
+		} catch ( error ) {
+			fail( `Font render measurement failed \u2014 ${ error instanceof Error ? error.message : error }` );
+		} finally {
+			served.server.close();
+		}
+		if ( fontRender.missing.length === 0 ) {
+			console.log( `\u2713 Font render: ${ fontRender.checked } icon marker(s) checked; every referenced icon family has a usable face.` );
+			record( 'font render', 'pass', `${ fontRender.checked } icon marker(s)` );
+		} else {
+			for ( const entry of fontRender.missing ) {
+				console.warn(
+					`\u2717 Font render: ${ entry.family } has no usable face \u2014 ${ entry.elements } marker(s), e.g. ${ entry.sampleClass }${ entry.glyph ? ` (glyph ${ JSON.stringify( entry.glyph ) })` : '' }.`
+				);
+			}
+			if ( options.strictFonts ) {
+				process.exitCode = 1;
+			}
+			record(
+				'font render',
+				options.strictFonts ? 'fail' : 'warn',
+				`${ fontRender.missing.length } family/families without a face`
+			);
+		}
+	}
+
 	// The OPENED mobile menu: a chrome STATE the colour gate cannot see (that
 	// one measures 1440px at rest). The profile carries the source's panel
 	// (`analyze --geometry` → `chrome.mobileNav`); the build is measured the
@@ -3612,7 +3811,7 @@ program
 	.argument( '<profileRef>', 'site.json path or registered site name (must carry a design block)' )
 	.requiredOption( '--target <dir>', 'the built forge project directory (dist/ must exist)' )
 	.option( '--all', 'enable every gate (default \u2014 kept as an explicit alias)' )
-	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, text, SEO, tracking)' )
+	.option( '--minimal', 'run only the deterministic, browser-free gates (language, tokens, band flow, nav anchors, facts, font coverage, text, SEO, tracking)' )
 	.option( '--no-bands', 'skip the per-band audit (presence · surface · content · facts · text · geometry per band)' )
 	.option( '--bands-warn', 'report per-band failures as warnings instead of failing the run' )
 	.option( '--bands-json <path>', 'where to write the per-band report (default <target>/verify-artifacts/bands.json)' )
@@ -3655,6 +3854,11 @@ program
 	.option( '--chrome', 'gate chrome STATES the colour gate cannot see \u2014 the opened mobile menu\u0027s surface and ink, and the header\u0027s container cap and gutter vs the source (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--strict-facts', 'fail when a declared band fact did not reach the built HTML (default: report only)' )
 	.option( '--strict-media', 'fail when the artifact still ships a JPEG/PNG the localizer could not re-encode (Proposal 140)' )
+	.option( '--fonts', 'render-check every icon font family the built page uses (requires Playwright; on by default outside --minimal)' )
+	.option( '--strict-fonts', 'fail when an icon font family used by the page lost every face, or has no usable face in the browser (default: warn)' )
+	.option( '--deployed <url>', 'fetch the live site and compare its forge-build marker to this build (the post-deploy stale-release check)' )
+	.option( '--expect-build <id>', 'with --deployed: the id the live site should serve (default: the local build marker, then FORGE_BUILD_ID)' )
+	.option( '--strict-deployed', 'with --deployed: fail on a missing or mismatched live marker (default: warn)' )
 	.option( '--tracking', 'gate the tracking block: consent ordering, verification tokens/files, event ownership, CSP allowlist (Proposal 130)' )
 	.option( '--strict-tracking', 'with --tracking: treat warnings as failures (a stale CSP host, a double-count risk)' )
 	.option( '--seo', 'gate the SEO head: double-branded titles, robots directives, Open Graph/Twitter tags, JSON-LD graph (Proposal 131)' )
@@ -3669,6 +3873,35 @@ program
 	.option( '--strict-visual', 'fail the command when the visual comparison cannot run or scores below --min-fidelity' )
 	.action( async ( profileRef, options ) => {
 		await runVerify( profileRef, options );
+	} );
+
+program
+	.command( 'deployed' )
+	.description( 'check that the live site serves the build you just published (the forge-build marker)' )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--target <dir>', 'the built forge project directory (its index.html carries the expected marker)' )
+	.option( '--url <url>', 'live URL (default: the profile\u2019s deploy.publicOrigin or url)' )
+	.option( '--expect-build <id>', 'expected marker (default: the local build marker, then FORGE_BUILD_ID)' )
+	.option( '--strict', 'fail on a missing or mismatched live marker (default: warn)' )
+	.action( async ( profileRef, options ) => {
+		const profile = await loadProfile( profileRef );
+		const url = options.url ?? resolveSiteUrl( profile );
+		if ( ! url ) {
+			console.error( 'No live URL \u2014 pass --url or set deploy.publicOrigin/url on the profile.' );
+			process.exit( 1 );
+		}
+		const verdict = await checkDeployedBuild( {
+			target: options.target,
+			url,
+			expected: options.expectBuild,
+			attempts: 6,
+			delayMs: 5_000,
+		} );
+		const mark = verdict.status === 'pass' ? '\u2713' : verdict.status === 'skip' ? '\u2013' : '\u26a0';
+		console.log( `${ mark } Deployed build [${ url }]: ${ verdict.note }.` );
+		if ( verdict.status !== 'pass' && verdict.status !== 'skip' && options.strict ) {
+			process.exitCode = 1;
+		}
 	} );
 
 // -- handoff lock ------------------------------------------------------------
@@ -3910,6 +4143,7 @@ function scaffoldOptions( cmd ) {
 		.option( '--og-images', 'scaffold the per-post OG card endpoint (adds satori/resvg deps)' )
 		.option( '--overwrite', 'replace a non-forge target directory' )
 		.option( '--content <dir>', 'materialized content directory copied into src/content (a site with no CMS)' )
+		.option( '--media-snapshot <dir>', 'committed media snapshot copied into media-snapshot/ (default: sites/<name>.media when media.snapshot is true)' )
 		.option( '--unlock', 're-forge a target that is LOCKED for hand-editing (destroys custom work)' )
 		.option( '--check', 'verify collection sizes against the page caps (no scaffold)' )
 		.option( '--strict-contrast', 'fail the build when a rendered pair fails WCAG (designAudit: strict)' )
@@ -3967,6 +4201,38 @@ program
 			console.log( `  - ${ doc.collection }/${ doc.slug } — ${ doc.htmlBytes } B body` );
 		}
 		console.log( `\nNext: forge <profile> --target <dir> --content ${ outDir }` );
+	} );
+
+program
+	.command( 'media-snapshot' )
+	.description( "freeze a localized build's media beside the profile (a CMS-less site's outage net)" )
+	.argument( '<profileRef>', 'site.json path or registered site name' )
+	.requiredOption( '--from <dir>', 'the built project carrying .forge-cache/media-localize.json' )
+	.option( '--out <dir>', 'where to write (default: <profile>.media beside the profile)' )
+	.action( async ( profileRef, options ) => {
+		const { writeMediaSnapshot } = await import( '../lib/media-snapshot.ts' );
+		const profilePath = profilePathOf( profileRef );
+		const outDir = options.out ?? ( profilePath ? profilePath.replace( /\.json$/, '.media' ) : undefined );
+		if ( ! outDir ) {
+			console.error( 'Could not derive the output directory from the profile — pass --out.' );
+			process.exit( 1 );
+		}
+		try {
+			const result = await writeMediaSnapshot( { projectDir: options.from, outDir } );
+			console.log(
+				`\u2713 Snapshotted ${ result.count } URL(s) / ${ result.files } file(s) (${ ( result.bytes / 1024 / 1024 ).toFixed( 1 ) } MB) into ${ outDir }`
+			);
+			for ( const url of result.missing.slice( 0, 10 ) ) {
+				console.warn( `  \u26a0 missing from the build: ${ url }` );
+			}
+			if ( result.missing.length > 10 ) {
+				console.warn( `  \u2026and ${ result.missing.length - 10 } more (the build report names them).` );
+			}
+			console.log( '\nNext: set "media": { "snapshot": true } on the profile, then rebuild.' );
+		} catch ( error ) {
+			console.error( error instanceof Error ? error.message : error );
+			process.exit( 1 );
+		}
 	} );
 
 await program.parseAsync( process.argv );

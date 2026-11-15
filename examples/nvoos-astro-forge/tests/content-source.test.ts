@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { resolveContentDir } from '../lib/content-source.ts';
+import { resolveContentDir, resolveMediaDir } from '../lib/content-source.ts';
 
 const PROFILE = 'sites/example.json';
 
@@ -50,5 +50,26 @@ describe( 'resolveContentDir', () => {
 		// A programmatic scaffold with no `sites/<name>.json` has nothing to
 		// derive from; the caller passes `contentDir` explicitly instead.
 		expect( resolveContentDir( { content: { snapshot: true } } ) ).toBeUndefined();
+	} );
+} );
+
+describe( 'resolveMediaDir', () => {
+	it( 'resolves the snapshot beside the profile when media.snapshot is on', () => {
+		expect( resolveMediaDir( { media: { snapshot: true }, profilePath: PROFILE } ) ).toBe( 'sites/example.media' );
+	} );
+
+	it( 'ignores a profile that keeps its CMS authoritative', () => {
+		expect( resolveMediaDir( { media: { localize: true }, profilePath: PROFILE } ) ).toBeUndefined();
+		expect( resolveMediaDir( { profilePath: PROFILE } ) ).toBeUndefined();
+	} );
+
+	it( 'lets --media-snapshot override the derived path', () => {
+		expect(
+			resolveMediaDir( { media: { snapshot: true }, profilePath: PROFILE, explicit: '/tmp/media' } )
+		).toBe( '/tmp/media' );
+	} );
+
+	it( 'returns nothing when the profile path is unknown', () => {
+		expect( resolveMediaDir( { media: { snapshot: true } } ) ).toBeUndefined();
 	} );
 } );

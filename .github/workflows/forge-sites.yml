@@ -105,6 +105,9 @@ jobs:
           FORCE_UNLOCK: ${{ github.event.inputs.force_unlock }}
           FORGE_WORK: ${{ runner.temp }}/forge-work
           DISPATCH_PAYLOAD: ${{ toJSON(github.event.client_payload) }}
+          # Build identity (2026-11-15): stamped into every page and deploy.json
+          # so the post-push check can prove the live site is THIS run's build.
+          FORGE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}
         run: |
           set -euo pipefail
           MIRROR_REPO="${MIRROR_REPO:-nvdigitalsolutions/nvoos-forge-sites}"
@@ -226,6 +229,15 @@ jobs:
                 echo "::warning title=Forge smoke::$name returned $code at $PUBLIC_ORIGIN"
               elif grep -Eqi 'name="robots"[^>]*noindex' "$FORGE_WORK/$name.smoke.html"; then
                 echo "::warning title=Forge smoke::$name serves noindex on the public origin"
+              fi
+              # Stale-release check (2026-11-15): the page carries the build id
+              # stamped by this run. A failed or partial deploy that keeps the
+              # last good release looks identical to a successful old one from
+              # the outside; the marker makes it visible. Non-fatal by default
+              # (`if !`), same contract as the rest of the smoke.
+              if ! node scripts/forge.mjs deployed "sites/$name.json" --target "$target" \
+                --url "$PUBLIC_ORIGIN" --expect-build "${FORGE_BUILD_ID:-}" --strict; then
+                echo "::warning title=Forge smoke::$name is not serving this run's build (stale or missing forge-build marker)"
               fi
             fi
           done

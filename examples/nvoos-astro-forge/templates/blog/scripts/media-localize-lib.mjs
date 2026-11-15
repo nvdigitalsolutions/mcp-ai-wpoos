@@ -783,6 +783,93 @@ export function addFontDisplaySwap( css, value = 'swap' ) {
 }
 
 /**
+ * Split a CSS value on a top-level separator.
+ *
+ * A font `src` list uses commas, but `format("woff2")` and `local("…")`
+ * arguments can contain them. Tracking quotes and parentheses is enough for
+ * the value subset a `@font-face` carries.
+ *
+ * @param {string} text CSS value.
+ * @param {string} separator Single character separator.
+ * @returns {string[]} The parts, untrimmed.
+ */
+function splitValue( text, separator ) {
+	const parts = [];
+	let current = '';
+	let depth = 0;
+	let quote = '';
+	for ( let i = 0; i < text.length; i++ ) {
+		const character = text[ i ];
+		if ( quote ) {
+			current += character;
+			if ( character === '\\' && i + 1 < text.length ) {
+				current += text[ ++i ];
+			} else if ( character === quote ) {
+				quote = '';
+			}
+			continue;
+		}
+		if ( character === '"' || character === "'" ) {
+			quote = character;
+			current += character;
+			continue;
+		}
+		if ( character === '(' ) {
+			depth++;
+		}
+		if ( character === ')' ) {
+			depth = Math.max( 0, depth - 1 );
+		}
+		if ( character === separator && depth === 0 ) {
+			parts.push( current );
+			current = '';
+			continue;
+		}
+		current += character;
+	}
+	parts.push( current );
+	return parts;
+}
+
+/**
+ * Drop the unavailable sources from a `@font-face` block, keeping the face.
+ *
+ * A face usually lists several encodings of the SAME font (`eot`, `woff`,
+ * `ttf`, `svg`). One missing derivative is not a missing family: pruning the
+ * whole block because the `.svg` 404'd took the icon glyphs with it, even
+ * though the woff and ttf were mirrored (virtuallyjamaica, 2026-11-15). Only a
+ * block with no usable source left is removed.
+ *
+ * The returned block is the input unchanged when no source was unavailable.
+ *
+ * @param {string} block `@font-face` block text.
+ * @param {Set<string>} missing Absolute URLs that were not mirrored.
+ * @param {(raw: string) => string} reference Resolve a src as written to an absolute URL.
+ * @returns {string} The pruned block, or '' when every source failed.
+ */
+function pruneFontFace( block, missing, reference ) {
+	const urlPattern = /url\(\s*(?:'|")?([^'")]+?)(?:'|")?\s*\)/gi;
+	const refs = [ ...block.matchAll( urlPattern ) ].map( ( match ) => match[ 1 ] ?? '' );
+	if ( ! refs.some( ( raw ) => missing.has( reference( raw ) ) ) ) {
+		return block;
+	}
+	const pruned = block.replace( /\bsrc\s*:\s*([^;{}]+)(;?)/gi, ( declaration, value, semicolon ) => {
+		const kept = splitValue( value, ',' ).filter( ( item ) => {
+			const itemRefs = [ ...item.matchAll( urlPattern ) ].map( ( match ) => match[ 1 ] ?? '' );
+			return ! itemRefs.some( ( raw ) => missing.has( reference( raw ) ) );
+		} );
+		if ( kept.length === 0 ) {
+			return '';
+		}
+		return `src: ${ kept.map( ( item ) => item.trim() ).join( ', ' ) }${ semicolon }`;
+	} );
+	// No `src` declaration left means every encoding was unavailable — the
+	// family cannot load, so the face is honestly dropped. A `local()`-only
+	// face is kept: it never depended on the network.
+	return /\bsrc\s*:/i.test( pruned ) ? pruned : '';
+}
+
+/**
  * Drop `@font-face` blocks whose `src` points at a URL we could not mirror.
  *
  * A mirrored stylesheet must not keep a third-party URL: the point of
@@ -791,9 +878,11 @@ export function addFontDisplaySwap( css, value = 'swap' ) {
  * chain that a build-to-build network blip decides (measured 2026-11-15: one
  * failed woff2 left `fonts.gstatic.com` in an otherwise local sheet).
  *
- * When a face cannot travel, the family falls back to the stack the page
- * already declares, which is a legitimate rendering. The caller reports the
- * loss — this function only keeps the CSS honest.
+ * A face that lists several encodings keeps the ones that travelled: the
+ * family still renders, and the source is never lost to one dead derivative.
+ * When no source remains, the family falls back to the stack the page already
+ * declares, which is a legitimate rendering. The caller reports the loss —
+ * this function only keeps the CSS honest.
  *
  * `@font-face` cannot nest, so a `[^}]*` block match is exact (same rule as
  * `addFontDisplaySwap`). Block references are resolved against `baseUrl` the
@@ -803,7 +892,7 @@ export function addFontDisplaySwap( css, value = 'swap' ) {
  * @param {string} css Stylesheet source.
  * @param {Iterable<string>} urls Absolute URLs that were not mirrored.
  * @param {string} baseUrl The stylesheet's own URL (for relative references).
- * @returns {string} The stylesheet without those faces.
+ * @returns {string} The stylesheet without the unavailable faces or sources.
  */
 export function dropUnavailableFontFaces( css, urls = [], baseUrl = '' ) {
 	const missing = new Set( [ ...urls ].filter( Boolean ) );
@@ -817,13 +906,193 @@ export function dropUnavailableFontFaces( css, urls = [], baseUrl = '' ) {
 		return resolved !== undefined ? resolved : String( raw ?? '' ).trim();
 	};
 	return String( css ?? '' )
-		.replace( /@font-face\s*\{[^}]*\}/gi, ( block ) => {
-			const unavailable = [
-				...block.matchAll( /url\(\s*(?:'|")?([^'")]+?)(?:'|")?\s*\)/gi ),
-			].some( ( match ) => missing.has( reference( match[ 1 ] ?? '' ) ) );
-			return unavailable ? '' : block;
-		} )
+		.replace( /@font-face\s*\{[^}]*\}/gi, ( block ) => pruneFontFace( block, missing, reference ) )
 		.replace( /\n{3,}/g, '\n\n' );
+}
+
+/**
+ * A `font-family` value normalized to a comparable name.
+ *
+ * The first family only: a stack's fallbacks are not the face being named.
+ * Quotes, case and surrounding whitespace are not facts.
+ *
+ * @param {string} raw A `font-family` declaration value.
+ * @returns {string} The normalized family, or '' when the value is not a name.
+ */
+export function normalizeFontFamily( raw ) {
+	const first = String( raw ?? '' ).split( ',' )[ 0 ].trim().replace( /^["']|["']$/g, '' ).trim();
+	if ( ! first || first.startsWith( 'var(' ) || /^(?:inherit|initial|unset|revert|serif|sans-serif|monospace|cursive|fantasy|system-ui)$/i.test( first ) ) {
+		return '';
+	}
+	return first.toLowerCase();
+}
+
+/**
+ * Every `@font-face` family in a sheet, with its face count.
+ *
+ * A family can legitimately declare several faces (weights/styles); the count
+ * is what makes "the family lost its last face" distinguishable from "one
+ * face was pruned".
+ *
+ * @param {string} css Stylesheet source.
+ * @returns {Map<string, number>} Normalized family → face count.
+ */
+export function fontFaceFamilies( css ) {
+	const families = new Map();
+	for ( const match of String( css ?? '' ).matchAll( /@font-face\s*\{([^}]*)\}/gi ) ) {
+		const declared = /font-family\s*:\s*([^;}]+)/i.exec( match[ 1 ] )?.[ 1 ];
+		const family = normalizeFontFamily( declared );
+		if ( family ) {
+			families.set( family, ( families.get( family ) ?? 0 ) + 1 );
+		}
+	}
+	return families;
+}
+
+/**
+ * The top-level rules in a stylesheet, with at-rule bodies recursed into.
+ *
+ * `@media`/`@supports`/`@layer`/`@container` contain ordinary rules; a flat
+ * selector regex would treat their prelude as a selector and miss the nested
+ * rules. `@font-face`/`@keyframes` bodies are not selectors, so they are not
+ * returned.
+ *
+ * @param {string} css Stylesheet source.
+ * @returns {Array<{ selector: string, body: string }>} Rules in cascade order.
+ */
+export function cssRules( css ) {
+	const source = String( css ?? '' ).replace( /\/\*[\s\S]*?\*\//g, '' );
+	const rules = [];
+	const walk = ( text ) => {
+		let prelude = '';
+		let i = 0;
+		while ( i < text.length ) {
+			const character = text[ i ];
+			if ( character === '{' ) {
+				let depth = 1;
+				let quote = '';
+				let j = i + 1;
+				for ( ; j < text.length && depth > 0; j++ ) {
+					const next = text[ j ];
+					if ( quote ) {
+						if ( next === '\\' ) {
+							j++;
+						} else if ( next === quote ) {
+							quote = '';
+						}
+						continue;
+					}
+					if ( next === '"' || next === "'" ) {
+						quote = next;
+					} else if ( next === '{' ) {
+						depth++;
+					} else if ( next === '}' ) {
+						depth--;
+					}
+				}
+				const body = text.slice( i + 1, j - 1 );
+				const selector = prelude.trim();
+				if ( selector.startsWith( '@' ) ) {
+					if ( /^@(?:media|supports|layer|container)\b/i.test( selector ) ) {
+						walk( body );
+					}
+				} else if ( selector ) {
+					rules.push( { selector, body } );
+				}
+				i = j;
+				prelude = '';
+				continue;
+			}
+			if ( character === '}' ) {
+				i++;
+				prelude = '';
+				continue;
+			}
+			prelude += character;
+			i++;
+		}
+	};
+	walk( source );
+	return rules;
+}
+
+/**
+ * The class names a sheet draws with one font family.
+ *
+ * The glyph class is the link between a family and the page: an icon sheet
+ * styles `.icon-flag,.icon-target,…{font-family:et-line}` and a rebuilt `<i>`
+ * carries one of those classes. A dropped family is only a USER-VISIBLE loss
+ * when one of these tokens is actually in the built HTML.
+ *
+ * @param {string} css Stylesheet source.
+ * @param {string} family Normalized or raw family name.
+ * @returns {Set<string>} Class tokens (without the leading dot).
+ */
+export function classesForFontFamily( css, family ) {
+	const wanted = normalizeFontFamily( family );
+	const classes = new Set();
+	if ( ! wanted ) {
+		return classes;
+	}
+	for ( const rule of cssRules( css ) ) {
+		const declared = /font-family\s*:\s*([^;}]+)/i.exec( rule.body )?.[ 1 ];
+		if ( normalizeFontFamily( declared ) !== wanted ) {
+			continue;
+		}
+		for ( const match of rule.selector.matchAll( /\.([A-Za-z_][\w-]*)/g ) ) {
+			classes.add( match[ 1 ] );
+		}
+	}
+	return classes;
+}
+
+/**
+ * Every class token carried by a built document.
+ *
+ * @param {string} html Built HTML.
+ * @returns {Set<string>} Class tokens.
+ */
+export function htmlClassTokens( html ) {
+	const tokens = new Set();
+	for ( const match of String( html ?? '' ).matchAll( /\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')/gi ) ) {
+		for ( const token of ( match[ 1 ] ?? match[ 2 ] ?? '' ).split( /\s+/ ) ) {
+			if ( token ) {
+				tokens.add( token );
+			}
+		}
+	}
+	return tokens;
+}
+
+/**
+ * Font families whose LAST face the prune removed, with their page usage.
+ *
+ * This is the report the verify gate reads: a dropped family that no built
+ * class references is a fallback that costs nothing; a dropped family whose
+ * glyph classes are in the page is blank icons (virtuallyjamaica's et-line,
+ * 2026-11-15).
+ *
+ * @param {string} before The source stylesheet.
+ * @param {string} after The mirrored stylesheet (after prune).
+ * @param {string} html Built HTML used to decide `used`.
+ * @returns {Array<{ family: string, classes: string[], used: boolean }>} Dropped families.
+ */
+export function droppedFontFamilies( before, after, html = '' ) {
+	const remaining = fontFaceFamilies( after );
+	const tokens = htmlClassTokens( html );
+	const dropped = [];
+	for ( const family of fontFaceFamilies( before ).keys() ) {
+		if ( remaining.has( family ) ) {
+			continue;
+		}
+		const classes = [ ...classesForFontFamily( before, family ) ];
+		dropped.push( {
+			family,
+			classes: classes.slice( 0, 12 ),
+			used: classes.some( ( name ) => tokens.has( name ) ),
+		} );
+	}
+	return dropped;
 }
 
 /**

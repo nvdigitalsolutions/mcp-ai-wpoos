@@ -93,6 +93,19 @@ const PROFILE: SiteProfile = {
 		radii: { valuesPx: [ 4 ] },
 		shadows: { count: 0 },
 		components: {},
+		// The icon-font fixture (2026-11-15): the generated Base links this sheet,
+		// the localizer mirrors it, prunes the dead ttf from `fixture-icons`, and
+		// reports `missing-icons` as a used family whose last face was dropped.
+		chrome: {
+			iconCss: 'https://fixture.test/wp-content/themes/fixture/assets/css/icon-font.css',
+			// A topbar is the reliable place for the glyphs: every page renders
+			// the chrome, while a content widget can be folded into a component.
+			topbar: ['Studio'],
+			topbarItems: [
+				{ text: 'Studio', icon: 'fixture-icon fixture-icon-flag' },
+				{ text: 'Directions', icon: 'missing-icon' },
+			],
+		},
 		modes: { dark: 'auto', contrast: 'auto' },
 		adaptation: {
 			keep: [],
@@ -411,6 +424,35 @@ describe('forge e2e — emitted site', () => {
 		const report = JSON.parse(await readFile(path.join(workDir, '.forge-cache', 'media-localize.json'), 'utf8'));
 		expect(Array.isArray(report.localized)).toBe(true);
 		expect(report.localized.length).toBeGreaterThan(0);
+	});
+
+	it('keeps an icon font when one encoding 404s and reports a fully-lost used family', async () => {
+		// The icon-font fixture (2026-11-15): `fixture-icons` lists a woff2 that
+		// exists and a ttf that 404s; `missing-icons` has only a dead face while
+		// the page still carries its glyph class. The old localizer dropped BOTH
+		// whole @font-face blocks, which is how virtuallyjamaica's icons vanished.
+		const index = await readFile(path.join(workDir, 'dist', 'index.html'), 'utf8');
+		expect(index).toContain('fixture-icon');
+		expect(index).toContain('missing-icon');
+
+		const iconSheetHref = /href="(\/media\/[0-9a-f]{12}-icon-font\.css)"/.exec(index)?.[1];
+		expect(iconSheetHref, 'the icon stylesheet was not mirrored').toBeTruthy();
+		const fontCss = await readFile(path.join(workDir, 'dist', iconSheetHref!.slice(1)), 'utf8');
+		expect(fontCss).toContain('fixture-icons');
+		expect(fontCss).toContain('fixture-icons.woff2');
+		expect(fontCss).not.toContain('fixture-icons.ttf');
+		expect(fontCss).not.toMatch(/@font-face\s*\{[^}]*missing-icons/i);
+		expect(fontCss.match(/@font-face/gi) ?? []).toHaveLength(1);
+
+		const report = JSON.parse(await readFile(path.join(workDir, '.forge-cache', 'media-localize.json'), 'utf8'));
+		const dropped = (report.droppedFontFamilies ?? []).find(
+			(entry: { family?: string }) => entry.family === 'missing-icons'
+		);
+		expect(dropped, 'the used, fully-lost family was not reported').toBeTruthy();
+		expect(dropped.used).toBe(true);
+		const font = report.localized.find((entry: { file?: string }) => /fixture-icons\.woff2$/.test(entry.file ?? ''));
+		expect(font, 'the surviving woff2 was not mirrored').toBeTruthy();
+		expect((await stat(path.join(workDir, 'dist', font.file.slice(1)))).size).toBeGreaterThan(0);
 	});
 
 	it('renders product details with commerce data and Product JSON-LD', async () => {

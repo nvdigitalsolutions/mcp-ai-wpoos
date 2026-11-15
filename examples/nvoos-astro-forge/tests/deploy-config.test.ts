@@ -35,6 +35,7 @@ describe( 'emitDeployConfig', () => {
 		expect( files.sort() ).toEqual( [
 			'.github/workflows/deploy.yml',
 			'.github/workflows/rebuild.yml',
+			'scripts/verify-deployed.mjs',
 			'scripts/verify-dispatch.mjs',
 		] );
 		const { deploy, rebuild } = await emitted();
@@ -54,6 +55,7 @@ describe( 'emitDeployConfig', () => {
 			expect( files.sort() ).toEqual( [
 				'.github/workflows/deploy.yml',
 				'.github/workflows/rebuild.yml',
+				'scripts/verify-deployed.mjs',
 				'scripts/verify-dispatch.mjs',
 			] );
 		} finally {
@@ -86,6 +88,7 @@ describe( 'emitDeployConfig', () => {
 			'.github/workflows/deploy.yml',
 			'.github/workflows/rebuild.yml',
 			'scripts/mirror-push.mjs',
+			'scripts/verify-deployed.mjs',
 			'scripts/verify-dispatch.mjs',
 		] );
 		const { deploy } = await emitted();
@@ -114,6 +117,22 @@ describe( 'emitDeployConfig', () => {
 		expect( script ).toContain( 'Velocity-compat' );
 		expect( script ).toContain( "join( tmp, 'package.json' )" );
 		expect( script ).toContain( 'nvoos-forge-site' );
+		expect( script ).toContain( 'buildId: process.env.FORGE_BUILD_ID' );
+	} );
+
+	it( 'emits a non-blocking deployed-build identity check', async () => {
+		await emitDeployConfig( dir, { ...MIRROR, siteUrl: 'https://client.example.com' } );
+		const { deploy } = await emitted();
+		expect( deploy ).toContain( 'Verify the live build id' );
+		expect( deploy ).toContain( 'continue-on-error: true' );
+		expect( deploy ).toContain( 'FORGE_SITE_URL: https://client.example.com' );
+		expect( deploy ).toContain( 'FORGE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}' );
+		expect( deploy ).toContain( 'node scripts/verify-deployed.mjs' );
+		const script = await readFile( join( dir, 'scripts', 'verify-deployed.mjs' ), 'utf8' );
+		expect( script ).toContain( 'forge-build' );
+		expect( script ).toContain( 'FORGE_BUILD_ID' );
+		expect( script ).toContain( 'stale deploy' );
+		expect( script ).toContain( 'forge-build-check' );
 	} );
 
 	it( 'rejects a half-set shared mirror config', async () => {

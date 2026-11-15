@@ -226,6 +226,11 @@ export function createWpFixtureData() {
 						'<div class="elementor-element elementor-element-sf1 elementor-widget elementor-widget-aux_modern_heading"><div class="elementor-widget-container"><h2 class="aux-modern-heading-primary">At Fixture Wares we serve the fjords.</h2><div class="aux-modern-heading-divider"></div></div></div>' +
 						'<div class="elementor-element elementor-element-sf2 elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>Your needs are our top priority.</p></div></div>' +
 						'<div class="elementor-element elementor-element-sf3 elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>We source every major brand.</p></div></div>' +
+						// The icon-font fixture (2026-11-15): the chrome sheet declares TWO
+						// families. `fixture-icons` keeps a mirrored woff2 when its ttf
+						// 404s; `missing-icons` loses its only face while this markup still
+						// uses it, so the localizer must report a USED dropped family.
+						'<div class="elementor-element elementor-element-sf3b elementor-widget elementor-widget-text-editor"><div class="elementor-widget-container"><p>Icons: <i class="fixture-icon fixture-icon-flag"></i> and <i class="missing-icon"></i></p></div></div>' +
 						'<div class="elementor-element elementor-element-sf4 elementor-widget elementor-widget-aux_button"><div class="elementor-widget-container"><a href="#products">Our Products</a></div></div>' +
 						'</div></div>' +
 						'<div class="elementor-column elementor-col-50"><div class="elementor-widget-wrap">' +
@@ -631,9 +636,36 @@ export function createWpFixtureServer(port = PORT) {
 			}
 			return;
 		}
-		if (path.startsWith('/wp-content/uploads/')) {
-			res.writeHead(200, { 'content-type': 'image/png', 'content-length': String(PIXEL_PNG.length) });
-			res.end(PIXEL_PNG);
+		if ( path.startsWith( '/wp-content/uploads/' ) ) {
+			res.writeHead( 200, { 'content-type': 'image/png', 'content-length': String( PIXEL_PNG.length ) } );
+			res.end( PIXEL_PNG );
+			return;
+		}
+		// Icon-font fixture (2026-11-15): a theme sheet with two families. One
+		// lists a woff2 that exists and a ttf that 404s; the other's only source
+		// is dead. The localizer must prune the dead src, keep the surviving
+		// face, and report the fully-lost family as USED when the page has its
+		// glyph class.
+		if ( path === '/wp-content/themes/fixture/assets/css/icon-font.css' ) {
+			const css = [
+				'@font-face{font-family:"fixture-icons";src:url("../fonts/fixture-icons.woff2") format("woff2"),url("../fonts/fixture-icons.ttf") format("truetype");}',
+				'@font-face{font-family:"missing-icons";src:url("../fonts/missing-icons.woff2") format("woff2");}',
+				'.fixture-icon{font-family:"fixture-icons";font-style:normal}',
+				'.fixture-icon-flag:before{content:"\\e024"}',
+				'.missing-icon{font-family:"missing-icons";font-style:normal}',
+			].join( '\n' );
+			res.writeHead( 200, { 'content-type': 'text/css; charset=utf-8' } );
+			res.end( css );
+			return;
+		}
+		if ( path === '/wp-content/themes/fixture/assets/fonts/fixture-icons.woff2' ) {
+			res.writeHead( 200, { 'content-type': 'font/woff2' } );
+			res.end( Buffer.from( 'fixture-font-bytes' ) );
+			return;
+		}
+		if ( path === '/wp-content/themes/fixture/assets/fonts/fixture-icons.ttf' ) {
+			res.writeHead( 404, { 'content-type': 'text/plain' } );
+			res.end( 'missing ttf' );
 			return;
 		}
 		res.writeHead(404, { 'content-type': 'application/json' });

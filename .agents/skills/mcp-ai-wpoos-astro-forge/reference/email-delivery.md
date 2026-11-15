@@ -222,6 +222,14 @@ still takes enquiries). Cloudflare's documented **test** pair always passes:
 site key `1x00000000000000000000AA`, secret
 `1x0000000000000000000000000000000AA`.
 
+For a **live** site the PUBLIC site key goes in
+`forms.turnstile.siteKey` (committed — it is rendered into the page), and the
+paired secret goes in the host's runtime environment as `TURNSTILE_SECRET`
+(Velocity app env / server `.env` — never the profile, manifest or repo). The
+Cloudflare widget's allowed hostnames must include `deploy.publicOrigin`. A
+site key/secret mismatch is a `siteverify` rejection at submit time, not a
+build failure — test a real submission after any rotation.
+
 ### The payload-envelope trap
 
 `Form.astro` posts the **bridge** envelope — `{ form, fields: { name, email, …

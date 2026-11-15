@@ -10,6 +10,8 @@ by the generated project itself).
 | Item | Rule |
 |---|---|
 | Profile | `sites/<name>.json` — `<name>` is lowercase, hostname-derived (e.g. `jayainc`) |
+| Content snapshot | `sites/<name>.content/` — written by `forge materialize`; used by `content.source: materialized` or `content.snapshot: true` |
+| Media snapshot | `sites/<name>.media/` — written by `forge media-snapshot`; used by `media.snapshot: true`. URL-keyed `manifest.json` + the localizer's `media/` files |
 | Mirror branch | `site/<name>` on the shared mirror repo `nvdigitalsolutions/nvoos-forge-sites` (private) |
 | Branch content | The built `dist/` at the branch ROOT (force-pushed, flat history — never commit there directly) |
 | Velocity app | Connect the mirror repo, Branch = `site/<name>`, Root directory = repo root |
@@ -95,6 +97,32 @@ Post-push smoke is opt-in via the repo variable `NVOOS_FORGE_SMOKE` (warns on a
 non-200 or a `noindex` on the public origin; never fails the job).
 
 ## Local content + draft preview (Proposal 135 Phase 5)
+
+### Media snapshots (CMS-less sites)
+
+The content snapshot answers "the CMS is down". A **media snapshot** answers
+the slower failure: the CMS is gone and the CDN copy expires derivative by
+derivative, so every cold rebuild loses a different set of images and fonts
+(virtuallyjamaica, 2026-11-15 — the et-line font and several photos).
+
+```bash
+# 1. Build the site once (any successful build writes the report).
+( cd my-frontend && npm run build )
+
+# 2. Freeze the localizer's work beside the profile.
+node scripts/forge.mjs media-snapshot sites/<name>.json --from ./my-frontend
+# → sites/<name>.media/{manifest.json,media/…}
+
+# 3. Make the snapshot authoritative and rebuild anywhere.
+#    "media": { "snapshot": true } in sites/<name>.json
+node scripts/forge.mjs sites/<name>.json --target ./my-frontend
+```
+
+The manifest is keyed by the **original** asset URL and stores the **source**
+stylesheet text for CSS entries — a second localization pass resolves the
+sheet's relative font URLs again instead of chasing its own `/media/…`
+rewrites. A missing `media/` file is reported, never silently trusted. The
+scaffold refuses `media.snapshot: true` when the directory is absent.
 
 Content the site **owns** (not mirrored from the source WordPress) lives in the
 bridge's local CPT and is read with a normal collection — `restBase` is optional

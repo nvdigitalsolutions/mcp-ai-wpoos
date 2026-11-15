@@ -188,6 +188,12 @@ export interface ScaffoldOptions {
 	 * content beside the profile.
 	 */
 	contentDir?: string;
+	/**
+	 * A committed media snapshot (the output of `forge media-snapshot`) copied
+	 * into `media-snapshot/` so the post-build localizer can replace a dead
+	 * origin derivative instead of dropping it.
+	 */
+	mediaDir?: string;
 	/** Built-in template name ('blog') or a path to a template directory. */
 	template?: string;
 	/** Fail instead of clobbering an existing target. */
@@ -279,7 +285,7 @@ export interface ForgeManifest {
 	 * post-build localizer runs. Read by astro.config.mjs, src/lib/media.ts
 	 * and scripts/localize-media.mjs (env vars override at build time).
 	 */
-	media?: { hosts?: string[]; localize?: boolean; maxFileMb?: number };
+	media?: { hosts?: string[]; localize?: boolean; maxFileMb?: number; mode?: 'local' | 'proxy' | 'off'; snapshot?: boolean };
 	/**
 	 * Surface toggles (104 §4.3 preset output) — the template gates its
 	 * chrome on these (search/feed links, sitemap pointer, og:image).
@@ -3858,6 +3864,7 @@ async function scaffoldProject(
 						...( profile.media.localize !== undefined ? { localize: profile.media.localize } : {} ),
 						...( profile.media.maxFileMb !== undefined ? { maxFileMb: profile.media.maxFileMb } : {} ),
 						...( profile.media.mode !== undefined ? { mode: profile.media.mode } : {} ),
+						...( profile.media.snapshot !== undefined ? { snapshot: profile.media.snapshot } : {} ),
 					},
 			  }
 			: {} ),
@@ -3947,6 +3954,11 @@ async function scaffoldProject(
 			'# files, so the page carries no render-blocking cross-origin chain.',
 			'# Empty (default) = self-host; 0 keeps the remote <link>.',
 			'NVOOS_FORGE_LOCALIZE_FONTS=',
+			'',
+			'# Build identity (2026-11-15) — stamped into <meta name="forge-build"> and',
+			'# deploy.json, so `forge deployed` can prove the live site is this build.',
+			'# CI sets it from the commit + run id; locally use a unique value.',
+			'FORGE_BUILD_ID=',
 			'',
 			'# Optional — WordPress Application Passwords for private content.',
 			'# Never commit real credentials; copy to .env (git-ignored).',
@@ -4064,6 +4076,28 @@ async function scaffoldProject(
 			await cp(source, path.join(targetDir, 'src', 'content'), { recursive: true });
 		} else {
 			warnings.push(`contentDir not found: ${source}`);
+		}
+	}
+
+	// 4e. Media snapshot (2026-11-15): the CMS-less counterpart to the content
+	//     snapshot. A cold rebuild otherwise loses a different set of CDN
+	//     derivatives on every run (virtuallyjamaica's icon font and hero
+	//     photos, measured 2026-11-15). The localizer reads this directory from
+	//     the project root; it is never served.
+	if ( profile.media?.snapshot === true ) {
+		const source = options.mediaDir ? path.resolve( options.mediaDir ) : '';
+		if ( source === '' || ! existsSync( source ) ) {
+			throw new Error(
+				`media.snapshot: true needs a media snapshot beside the profile (sites/<name>.media/, written by "forge media-snapshot") — ${ source || 'none was found' }. Run "forge media-snapshot" first, or drop the flag.`
+			);
+		}
+	}
+	if ( options.mediaDir ) {
+		const source = path.resolve( options.mediaDir );
+		if ( existsSync( source ) ) {
+			await cp( source, path.join( targetDir, 'media-snapshot' ), { recursive: true } );
+		} else {
+			warnings.push( `mediaDir not found: ${ source }` );
 		}
 	}
 

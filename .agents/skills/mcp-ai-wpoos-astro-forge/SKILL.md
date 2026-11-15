@@ -1450,7 +1450,10 @@ Three layers, one contract:
   `NVOOS_FORGE_LOCALIZE_FONTS` is on — the `/media` proxy only matches uploads,
   so leaving the font chain remote kept a render-blocking cross-origin hop in
   a supposedly self-contained artifact). Icon glyphs therefore stop depending
-  on the CMS host — and stop tripping a future enforced CSP. **Linked documents** (an allowlist:
+  on the CMS host — and stop tripping a future enforced CSP. A face lists
+  several encodings of the SAME font: one missing derivative must prune only
+  that `src`, never the whole `@font-face` (a dead `.ttf` dropped et-line and
+  its icons on virtuallyjamaica, 2026-11-15). **Linked documents** (an allowlist:
   pdf/doc/xls/ppt/odt/csv/txt/rtf/epub/ics/zip) are mirrored too, with their
   own cap and `#page=` fragments preserved; executables are never candidates.
   Non-image stored facts (the catalogue CTA, `chrome.iconCss`, the JSON-LD
@@ -1465,7 +1468,28 @@ Three layers, one contract:
   modes and gotchas:
   [`reference/performance-budget.md`](reference/performance-budget.md).
 
-Config: `profile.media { hosts, localize, mode, maxFileMb }` → `nvoos.json` +
+- **Font survival + deployed identity (2026-11-15)** — a mirrored sheet can
+  keep its selectors, classes and markup while losing its `@font-face`, which
+  is invisible to every design gate. Three defences: `.forge-cache/media-localize.json`
+  records `droppedFontFamilies` with `used`; `verify` has a browser-free
+  `font coverage` gate in `--minimal` and a browser `font render` gate (both
+  `--strict-fonts` blocking); `Base.astro` marks a genuinely unusable marker
+  `forge-icon-missing` and `global.css` draws a neutral bullet. A CMS-less
+  site should also freeze its media: `forge media-snapshot <profile> --from
+  <built-project>` writes `sites/<name>.media/` (URL-keyed manifest; CSS entries
+  store the SOURCE sheet, so a second pass does not chase its own `/media/…`
+  rewrites). `media.snapshot: true` makes it authoritative; the scaffold
+  refuses a flag with no directory.
+
+- **Stale releases** — a green build proves the artifact, not the live site.
+  Set `FORGE_BUILD_ID` at build time (CI: `${GITHUB_SHA}-${GITHUB_RUN_ID}`);
+  `Base.astro` stamps `<meta name="forge-build">`, `mirror-push` records it in
+  `deploy.json`, and `forge deployed <profile> --target <dir> [--strict]`
+  compares the live marker (with retries for Velocity's async deploy). The
+  monorepo smoke runs it post-push; the generated pipeline emits
+  `scripts/verify-deployed.mjs` as a non-blocking step.
+
+Config: `profile.media { hosts, localize, mode, snapshot, maxFileMb }` → `nvoos.json` +
 `.env.example`; env wins. `media.mode` (`local|proxy|off`) is how a managed
 site — whose default is the bridge’s same-origin `/media` proxy — opts into a
 fully self-contained artifact: `"media": { "localize": true, "mode": "local" }`.

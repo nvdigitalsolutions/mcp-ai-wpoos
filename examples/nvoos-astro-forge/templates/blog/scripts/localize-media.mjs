@@ -58,6 +58,7 @@ import {
 	collectDocumentUrls,
 	collectStylesheetUrls,
 	documentExtension,
+	droppedFontFamilies,
 	dropUnavailableFontFaces,
 	extensionForContentType,
 	IMAGE_EXTENSIONS,
@@ -137,6 +138,83 @@ function resolveCmsOrigin( manifest ) {
 		return explicit;
 	}
 	return typeof manifest.url === 'string' ? manifest.url.replace( /\/+$/, '' ) : '';
+}
+
+/**
+ * The committed media snapshot (`media-snapshot/manifest.json`).
+ *
+ * Shape: `{ version: 1, entries: { [sourceUrl]: { file, contentType } } }`,
+ * written by `forge media-snapshot` from a localized build. The directory is
+ * copied into the project by the scaffold; it is not served.
+ *
+ * `authoritative` follows the profile's `media.snapshot: true`: the snapshot
+ * is read BEFORE the network, so a CMS-less rebuild is deterministic. Without
+ * the flag it is only a fallback when a download fails.
+ *
+ * FAIL-SOFT: an absent/unreadable snapshot is reported and ignored; a site
+ * that never made one keeps building exactly as before.
+ */
+async function readMediaSnapshot( mediaPolicy ) {
+	const requested = env( 'NVOOS_FORGE_MEDIA_SNAPSHOT' );
+	const dir = requested ? path.resolve( ROOT, requested ) : path.join( ROOT, 'media-snapshot' );
+	const manifestPath = path.join( dir, 'manifest.json' );
+	if ( ! existsSync( manifestPath ) ) {
+		return { dir: undefined, entries: new Map(), authoritative: mediaPolicy?.snapshot === true };
+	}
+	try {
+		const manifest = JSON.parse( await readFile( manifestPath, 'utf8' ) );
+		const entries = new Map( Object.entries( manifest.entries ?? {} ) );
+		return { dir, entries, authoritative: mediaPolicy?.snapshot === true };
+	} catch ( error ) {
+		log( `media snapshot ignored (${ error instanceof Error ? error.message : error }).` );
+		return { dir: undefined, entries: new Map(), authoritative: mediaPolicy?.snapshot === true };
+	}
+}
+
+/** A Content-Type for a snapshot file when its manifest omits one. */
+function contentTypeForExtension( extension ) {
+	const types = {
+		eot: 'application/vnd.ms-fontobject',
+		woff: 'font/woff',
+		woff2: 'font/woff2',
+		ttf: 'font/ttf',
+		otf: 'font/otf',
+		svg: 'image/svg+xml',
+		png: 'image/png',
+		jpg: 'image/jpeg',
+		jpeg: 'image/jpeg',
+		webp: 'image/webp',
+		gif: 'image/gif',
+		avif: 'image/avif',
+		pdf: 'application/pdf',
+		css: 'text/css',
+	};
+	return types[ String( extension ?? '' ).toLowerCase() ] ?? 'application/octet-stream';
+}
+
+/**
+ * Resolve a group of source URLs to ONE snapshot file, or `undefined`.
+ *
+ * Aliases of the same asset (a stale host and the CMS host) must all map to
+ * the same file; if they disagree, the snapshot cannot answer for the group
+ * and the network stays authoritative.
+ */
+function snapshotEntryFor( originals, snapshot ) {
+	if ( ! snapshot.dir || originals.length === 0 ) {
+		return undefined;
+	}
+	const entries = originals.map( ( url ) => snapshot.entries.get( url ) );
+	if ( entries.some( ( entry ) => ! entry || ! entry.file ) ) {
+		return undefined;
+	}
+	if ( new Set( entries.map( ( entry ) => entry.file ) ).size !== 1 ) {
+		return undefined;
+	}
+	const entry = entries[ 0 ];
+	return {
+		...entry,
+		path: path.join( snapshot.dir, entry.file ),
+	};
 }
 
 async function listFiles( dir, extensions, skip = new Set() ) {
@@ -339,6 +417,15 @@ async function main() {
 	}
 
 	const origin = resolveCmsOrigin( manifest );
+	const snapshot = await readMediaSnapshot( mediaPolicy );
+	if ( snapshot.dir ) {
+		log(
+			`media snapshot: ${ snapshot.entries.size } entr${ snapshot.entries.size === 1 ? 'y' : 'ies' } from ${ path.relative( ROOT, snapshot.dir ) } (${ snapshot.authoritative ? 'authoritative' : 'fallback' }).`
+		);
+	}
+	if ( mediaPolicy?.snapshot === true && ! snapshot.dir ) {
+		log( 'WARNING: media.snapshot is true but no media-snapshot/manifest.json was found — this build depends on the origin.' );
+	}
 	let cmsHost = '';
 	try {
 		cmsHost = origin ? new URL( origin ).hostname.toLowerCase() : '';
@@ -394,6 +481,7 @@ async function main() {
 	const localized = [];
 	const skipped = [];
 	const failed = [];
+	const droppedFamilies = [];
 	for ( const file of htmlFiles ) {
 		const html = await readFile( file, 'utf8' );
 		sources.set( file, html );
@@ -425,19 +513,44 @@ async function main() {
 	//    reference (theme icon fonts) as download candidates — the sheet moves
 	//    next to its new neighbours, so its `url()` refs must travel too.
 	const stylesheets = [];
+	const htmlText = [ ...sources ]
+		.filter( ( [ file ] ) => path.extname( file ).toLowerCase() === '.html' )
+		.map( ( [ , text ] ) => text )
+		.join( '\n' );
 	for ( const url of stylesheetUrls ) {
 		try {
-			const result = await download( url, timeoutMs );
-			if ( result.buffer.length > 4 * 1024 * 1024 ) {
-				failed.push( { url, reason: 'stylesheet larger than 4 MB' } );
-				continue;
+			const fromSnapshot = snapshot.authoritative ? snapshotEntryFor( [ url ], snapshot ) : undefined;
+			let text;
+			if ( fromSnapshot ) {
+				text = await readFile( fromSnapshot.path, 'utf8' );
+			} else {
+				const result = await download( url, timeoutMs );
+				if ( result.buffer.length > 4 * 1024 * 1024 ) {
+					failed.push( { url, reason: 'stylesheet larger than 4 MB' } );
+					continue;
+				}
+				text = result.buffer.toString( 'utf8' );
 			}
-			const text = result.buffer.toString( 'utf8' );
-			stylesheets.push( { url, text } );
+			stylesheets.push( { url, text, source: fromSnapshot ? 'snapshot' : 'network' } );
 			for ( const asset of stylesheetAssetUrls( text, url ) ) {
 				candidates.add( asset );
 			}
 		} catch ( error ) {
+			// A non-authoritative snapshot is the CMS outage net: a failed sheet
+			// download falls back to its committed copy before the report is told.
+			const fallback = snapshotEntryFor( [ url ], snapshot );
+			if ( fallback ) {
+				try {
+					const text = await readFile( fallback.path, 'utf8' );
+					stylesheets.push( { url, text, source: 'snapshot' } );
+					for ( const asset of stylesheetAssetUrls( text, url ) ) {
+						candidates.add( asset );
+					}
+					continue;
+				} catch {
+					// Fall through to the failure report.
+				}
+			}
 			failed.push( { url, reason: error instanceof Error ? error.message : String( error ) } );
 		}
 	}
@@ -485,7 +598,7 @@ async function main() {
 
 	if ( wanted.length === 0 && proxyMap.size === 0 ) {
 		log( `nothing to localize in ${ path.relative( ROOT, out ) } (${ htmlFiles.length } page(s) scanned).` );
-		await writeReport( { mode, origin, localized: [], skipped: [], failed: [], bytes: 0 } );
+		await writeReport( { mode, origin, localized: [], skipped: [], failed: [], droppedFontFamilies: [], bytes: 0 } );
 		return;
 	}
 
@@ -509,32 +622,65 @@ async function main() {
 	await mapLimit( [ ...byDownloadUrl.entries() ], CONCURRENCY, async ( [ downloadUrl, originals ] ) => {
 		try {
 			const cacheKey = createHash( 'sha1' ).update( downloadUrl ).digest( 'hex' );
-			const cached = await findCached( cacheKey );
+			const snapshotEntry = snapshotEntryFor( originals, snapshot );
+			const cached = snapshot.authoritative && snapshotEntry ? null : await findCached( cacheKey );
 
 			let buffer;
 			let contentType;
 			let cacheFile;
+			// `source` is a fact for `forge media-snapshot` and for an operator
+			// reading the report: a build that silently served stale bytes is a
+			// different story from one that downloaded them.
+			let source;
 
-			if ( cached ) {
+			if ( snapshot.authoritative && snapshotEntry ) {
+				try {
+					buffer = await readFile( snapshotEntry.path );
+					contentType = snapshotEntry.contentType || contentTypeForExtension( path.extname( snapshotEntry.file ) );
+					source = 'snapshot';
+				} catch {
+					// A manifest that names a missing file is a broken net, not a
+					// reason to fail the build: fall through to cache/network.
+					buffer = undefined;
+				}
+			}
+
+			if ( ! buffer && cached ) {
 				buffer = await readFile( cached.path );
 				contentType = cached.contentType;
 				cacheFile = cached.path;
-			} else {
-				const result = await download( downloadUrl, timeoutMs );
-				buffer = result.buffer;
-				contentType = result.contentType;
-				const capBytes = documentExtension( downloadUrl ) ? maxDocBytes : maxBytes;
-				if ( result.contentLength > capBytes || buffer.length > capBytes ) {
-					skipped.push( { url: downloadUrl, reason: `larger than ${ Math.round( capBytes / 1024 / 1024 ) } MB` } );
-					return;
+				source = 'cache';
+			} else if ( ! buffer ) {
+				try {
+					const result = await download( downloadUrl, timeoutMs );
+					buffer = result.buffer;
+					contentType = result.contentType;
+					source = 'network';
+					const capBytes = documentExtension( downloadUrl ) ? maxDocBytes : maxBytes;
+					if ( result.contentLength > capBytes || buffer.length > capBytes ) {
+						skipped.push( { url: downloadUrl, reason: `larger than ${ Math.round( capBytes / 1024 / 1024 ) } MB` } );
+						return;
+					}
+					if ( totalBytes + buffer.length > maxTotal ) {
+						skipped.push( { url: downloadUrl, reason: 'build-wide media cap reached' } );
+						return;
+					}
+					cacheFile = cachedPathGuess( cacheKey, contentType, downloadUrl );
+					await writeFile( `${ cacheFile }.meta.json`, JSON.stringify( { contentType } ), 'utf8' );
+					await writeFile( cacheFile, buffer );
+				} catch ( error ) {
+					// The CMS is unreachable (or the derivative expired): a committed
+					// snapshot is the outage net. Only a network failure degrades — an
+					// HTTP 404 is handled by `download()` as a normal failure and lands
+					// here too, so the snapshot covers the stale-CDN case.
+					if ( snapshotEntry ) {
+						buffer = await readFile( snapshotEntry.path );
+						contentType = snapshotEntry.contentType || contentTypeForExtension( path.extname( snapshotEntry.file ) );
+						source = 'snapshot';
+					} else {
+						throw error;
+					}
 				}
-				if ( totalBytes + buffer.length > maxTotal ) {
-					skipped.push( { url: downloadUrl, reason: 'build-wide media cap reached' } );
-					return;
-				}
-				cacheFile = cachedPathGuess( cacheKey, contentType, downloadUrl );
-				await writeFile( `${ cacheFile }.meta.json`, JSON.stringify( { contentType } ), 'utf8' );
-				await writeFile( cacheFile, buffer );
 			}
 
 			if ( totalBytes + buffer.length > maxTotal ) {
@@ -580,7 +726,7 @@ async function main() {
 				if ( size ) {
 					sizes.set( publicPath, size );
 				}
-				localized.push( { url: original, file: publicPath, bytes: payload.length } );
+				localized.push( { url: original, file: publicPath, bytes: payload.length, contentType, source } );
 			}
 			totalBytes += payload.length;
 		} catch ( error ) {
@@ -601,12 +747,26 @@ async function main() {
 	const unmirrored = wanted.filter( ( url ) => ! map.has( url ) );
 	const countFontFaces = ( css ) => ( css.match( /@font-face/gi ) ?? [] ).length;
 	let droppedFaces = 0;
+	const sourceStylesheetDir = path.join( CACHE_DIR, 'source-stylesheets' );
+	await mkdir( sourceStylesheetDir, { recursive: true } );
 	for ( const sheet of stylesheets ) {
 		const relative = mediaFileName( sheet.url, 'css' );
 		const destination = path.join( out, relative );
 		await mkdir( path.dirname( destination ), { recursive: true } );
+		// The SNAPSHOT must carry the source sheet, not the rewritten one: a
+		// second localization pass over `/media/...` URLs would look for files
+		// the snapshot never named (measured 2026-11-15 on the first cold
+		// authoritative rebuild). `forge media-snapshot` copies this file.
+		const sourcePath = path.join( sourceStylesheetDir, path.basename( relative ) );
+		await writeFile( sourcePath, sheet.text, 'utf8' );
 		const withoutUnavailable = dropUnavailableFontFaces( sheet.text, unmirrored, sheet.url );
 		droppedFaces += countFontFaces( sheet.text ) - countFontFaces( withoutUnavailable );
+		// A family that lost its LAST face is a real loss when a built glyph class
+		// points at it. Report usage here so the verify gate can warn/fail without
+		// re-parsing the source sheet.
+		for ( const dropped of droppedFontFamilies( sheet.text, withoutUnavailable, htmlText ) ) {
+			droppedFamilies.push( { ...dropped, sheet: sheet.url } );
+		}
 		// 140 §4 — every mirrored sheet gets `font-display` where it was missing:
 		// the theme icon font shipped without it, so the browser held text back
 		// until 129 KB of woff arrived.
@@ -614,12 +774,17 @@ async function main() {
 		await writeFile( destination, rewritten, 'utf8' );
 		const publicPath = `/${ relative.split( path.sep ).join( '/' ) }`;
 		map.set( sheet.url, publicPath );
-		localized.push( { url: sheet.url, file: publicPath, bytes: Buffer.byteLength( rewritten ) } );
+		localized.push( { url: sheet.url, file: publicPath, bytes: Buffer.byteLength( rewritten ), contentType: 'text/css', source: sheet.source ?? 'network', sourceFile: path.relative( ROOT, sourcePath ).split( path.sep ).join( '/' ) } );
 	}
 
 	if ( droppedFaces > 0 ) {
 		log(
 			`  dropped ${ droppedFaces } @font-face block(s) that could not be mirrored (the family falls back to the CSS stack).`
+		);
+	}
+	for ( const dropped of droppedFamilies.filter( ( entry ) => entry.used ) ) {
+		log(
+			`  WARNING: icon font "${ dropped.family }" is used by ${ dropped.classes.slice( 0, 4 ).map( ( name ) => `.${ name }` ).join( ', ' ) }${ dropped.classes.length > 4 ? ', …' : '' } but its last @font-face could not be mirrored — those glyphs will be blank.`
 		);
 	}
 
@@ -664,6 +829,7 @@ async function main() {
 		proxied,
 		skipped: [ ...skipped, ...leftRemote ],
 		failed,
+		droppedFontFamilies: droppedFamilies,
 		bytes: totalBytes,
 	} );
 }

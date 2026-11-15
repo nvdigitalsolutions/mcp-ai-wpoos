@@ -120,6 +120,7 @@ function deploySteps( config: DeployConfig ): string[] {
 			'      - name: Deploy to GitHub Pages',
 			'        id: deployment',
 			'        uses: actions/deploy-pages@v4',
+			...deployedCheckStep( config ),
 		];
 	}
 	if ( config.mode === 'cloudflare-pages' ) {
@@ -131,6 +132,7 @@ function deploySteps( config: DeployConfig ): string[] {
 			'          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}',
 			'          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}',
 			`          command: pages deploy dist --project-name=${ project }`,
+			...deployedCheckStep( config ),
 		];
 	}
 	// velocity — two shapes:
@@ -147,6 +149,7 @@ function deploySteps( config: DeployConfig ): string[] {
 			'        env:',
 			'          MIRROR_URL: ${{ secrets.VELOCITY_MIRROR_URL }}',
 			'          MIRROR_TOKEN: ${{ secrets.VELOCITY_MIRROR_TOKEN }}',
+			'          FORGE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}',
 			`          SITE_BRANCH: ${ config.siteBranch }`,
 			`          RUNTIME: ${ config.runtime ?? 'static' }`,
 		];
@@ -159,9 +162,10 @@ function deploySteps( config: DeployConfig ): string[] {
 				'        run: |',
 				'          node scripts/sync-deploy-tree.mjs',
 				'          node scripts/mirror-push.mjs',
+				...deployedCheckStep( config ),
 			];
 		}
-		return [ ...steps, '        run: node scripts/mirror-push.mjs' ];
+		return [ ...steps, '        run: node scripts/mirror-push.mjs', ...deployedCheckStep( config ) ];
 	}
 	return [
 		'      - name: Mirror dist to the connected repo',
@@ -185,6 +189,7 @@ function deploySteps( config: DeployConfig ): string[] {
 		'          git add -A',
 		'          git commit -m "Forge deploy: ${GITHUB_SHA}" --allow-empty || true',
 		'          git push origin deploy',
+		...deployedCheckStep( config ),
 	];
 }
 
@@ -222,6 +227,7 @@ function buildJob( config: DeployConfig ): string {
 		'      - name: Build',
 		'        run: npm run build',
 		'        env:',
+		'          FORGE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}',
 	];
 	if ( siteEnv ) {
 		lines.push( siteEnv );
@@ -477,7 +483,7 @@ function mirrorPushScript( runtime: DeployRuntime = 'static' ): string {
 		'// deploy.json — the branch-level deploy contract. Documents the Velocity',
 		'// settings (Entry file, Output Directory) next to the code; it cannot',
 		'// apply them (no deployment-settings API) but it makes them reproducible.',
-		"writeFileSync( join( tmp, 'deploy.json' ), JSON.stringify( { runtime, entry: managed ? 'server.js' : null, outputDirectory: '.', generator: 'nvoos-astro-forge', proposal: 135, generatedAt: new Date().toISOString() }, null, 2 ) );",
+		"writeFileSync( join( tmp, 'deploy.json' ), JSON.stringify( { runtime, entry: managed ? 'server.js' : null, outputDirectory: '.', generator: 'nvoos-astro-forge', proposal: 135, buildId: process.env.FORGE_BUILD_ID ?? '', generatedAt: new Date().toISOString() }, null, 2 ) );",
 		"\tgit( [ 'add', '-A' ], tmp );",
 		"	const message = 'Forge deploy: ' + ( process.env.GITHUB_SHA ?? 'local' );",
 		'	try {',
@@ -514,6 +520,86 @@ function mirrorPushScript( runtime: DeployRuntime = 'static' ): string {
 }
 
 /**
+ * verify-deployed.mjs — is the LIVE site the build this run published?
+ *
+ * The mirror push proves the branch; Velocity keeps the last good release when
+ * a deploy fails, so a green job can still serve yesterday's artifact
+ * (2026-11-15: virtuallyjamaica's gray band copy came from an old release while
+ * the local build was correct). The page carries the run's FORGE_BUILD_ID.
+ *
+ * Non-blocking by design (`continue-on-error: true` in the workflow): a DNS
+ * issue must not fail a legitimate deploy, but the warning is visible.
+ */
+function verifyLiveBuildScript() {
+	return [
+		'#!/usr/bin/env node',
+		'// verify-deployed.mjs — compare the live page marker to this build (2026-11-15).',
+		'',
+		"const url = process.env.FORGE_SITE_URL ?? '';",
+		"const expected = ( process.env.FORGE_BUILD_ID ?? '' ).trim();",
+		'',
+		'function parseMarker( html ) {',
+		'\tconst patterns = [',
+		'\t\t/<meta\\b[^>]*\\bname\\s*=\\s*["\']forge-build["\'][^>]*\\bcontent\\s*=\\s*["\']([^"\']*)["\'][^>]*>/i,',
+		'\t\t/<meta\\b[^>]*\\bcontent\\s*=\\s*["\']([^"\']*)["\'][^>]*\\bname\\s*=\\s*["\']forge-build["\'][^>]*>/i,',
+		'\t];',
+		'\tfor ( const pattern of patterns ) {',
+		"\t\tconst match = pattern.exec( String( html ?? '' ) );",
+		'\t\tif ( match ) return match[ 1 ].trim();',
+		'\t}',
+		'\treturn undefined;',
+		'}',
+		'',
+		'if ( ! url || ! expected ) {',
+		"\tconsole.log( 'verify-deployed: skipped (FORGE_SITE_URL or FORGE_BUILD_ID is not set).' );",
+		'\tprocess.exit( 0 );',
+		'}',
+		'',
+		'try {',
+		'\t// Velocity auto-deploy is asynchronous: poll before calling it stale.',
+		'\tfor ( let attempt = 1; attempt <= 6; attempt++ ) {',
+		'\t\tconst probe = new URL( url );',
+		"\t\tprobe.searchParams.set( 'forge-build-check', String( Date.now() ) );",
+		"\t\tconst response = await fetch( probe, { redirect: 'follow', signal: AbortSignal.timeout( 20000 ), headers: { accept: 'text/html', 'cache-control': 'no-cache' } } );",
+		'\t\tif ( response.ok ) {',
+		'\t\t\tconst live = parseMarker( await response.text() );',
+		'\t\t\tif ( live === expected ) {',
+		'\t\t\t\tconsole.log( `verify-deployed: live release ${ live } matches this build.` );',
+		'\t\t\t\tprocess.exit( 0 );',
+		'\t\t\t}',
+		'\t\t\tif ( attempt === 6 ) {',
+		"\t\t\t\tconsole.warn( live ? `::warning title=Forge live build::live release is ${ live }, this build is ${ expected } — stale deploy.` : `::warning title=Forge live build::live page has no forge-build marker (expected ${ expected }) — it predates the marker or serves an older release.` );",
+		'\t\t\t}',
+		'\t\t} else if ( attempt === 6 ) {',
+		'\t\t\tconsole.warn( `::warning title=Forge live build::${ url } returned HTTP ${ response.status }` );',
+		'\t\t}',
+		'\t\tif ( attempt < 6 ) {',
+		'\t\t\tawait new Promise( ( resolve ) => setTimeout( resolve, 5000 ) );',
+		'\t\t}',
+		'\t}',
+		'\tprocess.exit( 1 );',
+		'} catch ( error ) {',
+		"\tconsole.warn( `::warning title=Forge live build::could not verify ${ url } (${ error instanceof Error ? error.message : error }).` );",
+		'\tprocess.exit( 1 );',
+		'}',
+	].join( '\n' );
+}
+
+/** A post-deploy identity step (non-blocking) for the emitted pipeline. */
+function deployedCheckStep( config: DeployConfig ) {
+	const site = config.siteUrl ? `          FORGE_SITE_URL: ${ config.siteUrl }` : '          FORGE_SITE_URL: ${{ vars.FORGE_SITE_URL }}';
+	return [
+		'',
+		'      - name: Verify the live build id',
+		'        continue-on-error: true',
+		'        env:',
+		site,
+		'          FORGE_BUILD_ID: ${{ github.sha }}-${{ github.run_id }}',
+		'        run: node scripts/verify-deployed.mjs',
+	];
+}
+
+/**
  * Emit the deploy pipeline into a forged project directory. Returns the
  * relative paths written. Existing files are overwritten (re-emit is the
  * deploy-config update path).
@@ -534,6 +620,7 @@ export async function emitDeployConfig( dir: string, config: DeployConfig ): Pro
 		{ path: join( workflows, 'deploy.yml' ), content: deployWorkflow( config ) },
 		{ path: join( workflows, 'rebuild.yml' ), content: rebuildWorkflow( config ) },
 		{ path: join( scripts, 'verify-dispatch.mjs' ), content: verifyScript() },
+		{ path: join( scripts, 'verify-deployed.mjs' ), content: verifyLiveBuildScript() },
 	];
 	if ( config.mirrorRepo && config.siteBranch ) {
 		files.push( { path: join( scripts, 'mirror-push.mjs' ), content: mirrorPushScript( config.runtime ) } );
