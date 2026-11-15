@@ -155,14 +155,18 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 | 3 | Reasoning trace | **done — 2026-11-15** (see §9) |
 | 4 | Self-refine loop + trace store | **done — 2026-11-15** (see §10) |
 | 5 | Tool router harness | **done — 2026-11-15** (see §11) |
-| 6 | Necessity gate | pending (needs approval queue) |
-| 7 | Harness search engine | **blocked by design** |
+| 6 | Necessity gate | **done — 2026-11-15** (see §24; was recorded as blocked on the approval queue, which was wrong) |
+| 7 | Harness search engine | **blocked by design** — needs the eval suite and the evolution governor, both WordPress-only |
 | 8 | Output guardrail — **scope extension** | **done — 2026-11-15** (see §13) |
 | 9 | Guardrail prompt + block policy — **scope extension** | **done — 2026-11-15** (see §14) |
 | 10 | Wire the output guard into the chat path | **done — 2026-11-15** (see §16) |
 | 11 | Guardrail prompt injection | **done — 2026-11-15** (see §17) |
 | 12 | Trace capture | **done — 2026-11-15** (see §18) |
 | 13 | Scored tool routing | **done — 2026-11-15** (see §19) |
+| 14 | PII / secret pattern parity | **done — 2026-11-15** (see §21) |
+| 15 | `lib/core` PSR-12 reformat + style gate | **done — 2026-11-15** (see §22) |
+| 16 | Server-side system prompt ownership | **done — 2026-11-15** (see §23) |
+| 17 | Tool preset catalogue (generated) | **done — 2026-11-15** (see §25) |
 
 Open work that is *not* a cluster is tracked in §20.
 
