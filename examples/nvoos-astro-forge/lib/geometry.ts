@@ -645,7 +645,23 @@ function collectBandBoxFacts( input: {
 		// apart on purpose: a class can sit on an image AND on a paragraph
 		// (`padding-six-lr` does both), and a cropped image's fixed height applied
 		// to the paragraph made it 712px tall (virtuallyjamaica, 2026-11-11).
-		const seen = new Map< string, { pads: Set< string >; mars: Set< string >; colors: Set< string > } >();
+		//
+		// `onModule` records whether the class was seen on a NON-scaffolding node.
+		// Every node is counted for CONSISTENCY, including the rows the facts are
+		// not recorded from: Flatsome's `hide-for-small` sits on both a `.row`
+		// (padding 0) and a `.banner` (padding 420px). Skipping the row before
+		// counting left the class looking consistent and emitted
+		// `.hide-for-small{padding-top:420px}` — which then gave every one of the
+		// six elements carrying that class a 420px pad and doubled the band.
+		const seen = new Map<
+			string,
+			{
+				pads: Set< string >;
+				mars: Set< string >;
+				colors: Set< string >;
+				onModule: boolean;
+			}
+		>();
 		const mediaHeights = new Map< string, Set< string > >();
 		// The source's own crop anchor. A builder photo layer is `object-fit: cover`
 		// plus an `object-position` written in a `<style>` block sanitisation drops
@@ -672,9 +688,7 @@ function collectBandBoxFacts( input: {
 			if ( classes.length === 0 ) {
 				continue;
 			}
-			if ( SCAFFOLDING.test( node.getAttribute( 'class' ) ?? '' ) ) {
-				continue;
-			}
+			const scaffolding = SCAFFOLDING.test( node.getAttribute( 'class' ) ?? '' );
 			const pad = boxesOf( node );
 			const mar = marginsOf( node );
 			// The class's OWN ink: a colour that differs from the one the node
@@ -704,13 +718,26 @@ function collectBandBoxFacts( input: {
 			}
 			for ( const name of classes ) {
 				if ( ! seen.has( name ) ) {
-					seen.set( name, { pads: new Set(), mars: new Set(), colors: new Set() } );
+					seen.set( name, {
+						pads: new Set(),
+						mars: new Set(),
+						colors: new Set(),
+						onModule: false,
+					} );
 				}
-				const entry = seen.get( name ) as { pads: Set< string >; mars: Set< string >; colors: Set< string > };
+				const entry = seen.get( name ) as {
+					pads: Set< string >;
+					mars: Set< string >;
+					colors: Set< string >;
+					onModule: boolean;
+				};
 				entry.pads.add( pad );
 				entry.mars.add( mar );
 				entry.colors.add( ownColor );
-				if ( height ) {
+				if ( ! scaffolding ) {
+					entry.onModule = true;
+				}
+				if ( height && ! scaffolding ) {
 					// Recorded against the class but emitted as `img.<class>` ONLY — a
 					// class shared with a paragraph must never carry the image's height.
 					if ( ! mediaHeights.has( name ) ) {
@@ -722,6 +749,11 @@ function collectBandBoxFacts( input: {
 		}
 		const facts: Record< string, MeasuredBox > = {};
 		for ( const [ name, entry ] of seen ) {
+			// A class that only ever appears on scaffolding (a row, a container) is
+			// the template's business, not a measured fact.
+			if ( ! entry.onModule ) {
+				continue;
+			}
 			const box: MeasuredBox = {};
 			const pad = [ ...entry.pads ][ 0 ];
 			// ZERO IS A FACT, not noise: the source's `margin: 0` on a heading must

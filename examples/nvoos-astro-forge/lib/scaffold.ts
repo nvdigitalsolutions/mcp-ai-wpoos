@@ -22,7 +22,7 @@ import { builderUtilitiesFor, type BuilderUtility } from './bands.ts';
 import { DEFAULT_GEOMETRY_VIEWPORTS, carouselBoxFacts, columnBoxFacts } from './geometry.ts';
 import { animationRebuildCss, countAnimations, planAnimationRebuild } from './animations.ts';
 import { interactionSelector } from './interactions.ts';
-import { auditWarnings, contrastAudit } from './contrast.ts';
+import { auditWarnings, contrastAudit, readableInk } from './contrast.ts';
 import { contrast, designToTokens, renderableBands, resolveSectionTheme, suggestContrastFixes } from './design.ts';
 import { renderDirectFormsEndpointTs } from './forms-direct.ts';
 import { resolveSiteShape, siteNavAnchors } from './inventory.ts';
@@ -1270,10 +1270,7 @@ function elementInk( bg: string | undefined ): string | undefined {
 	if ( ! bg || ! bg.startsWith( prefix ) ) {
 		return undefined;
 	}
-	const color = bg.slice( prefix.length );
-	const onBlack = contrast( color, '#000000' ) ?? 0;
-	const onWhite = contrast( color, '#ffffff' ) ?? 0;
-	return onWhite >= onBlack ? '#ffffff' : '#000000';
+	return readableInk( bg.slice( prefix.length ) );
 }
 
 function renderSectionThemeEntry( section: ForgeSection, profile: SiteProfile ): string {

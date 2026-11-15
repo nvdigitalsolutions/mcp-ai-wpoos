@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { auditWarnings, contrastAudit, contrastRatio, parseHex, passesAaNonText, passesAaText, relativeLuminance } from '../lib/contrast.ts';
+import { auditWarnings, contrastAudit, contrastRatio, parseHex, passesAaNonText, passesAaText, readableInk, relativeLuminance } from '../lib/contrast.ts';
 
 describe('parseHex', () => {
 	it('parses 3/6/8-digit forms and rejects junk', () => {
@@ -104,5 +104,42 @@ describe('contrastAudit (Proposal 114 §3.5)', () => {
 		expect(audit.failures.some((pair) => pair.token === 'line-strong')).toBe(true); // hairline fails 3:1
 		expect(passesAaNonText(3)).toBe(true);
 		expect(passesAaNonText(2.99)).toBe(false);
+	});
+});
+
+describe('readableInk', () => {
+	it('never picks an ink that fails AA when the other passes', () => {
+		// #808080 sits between the two: black clears 4.5:1, white only 3.95.
+		// A luminance-threshold rule alone would have said white.
+		expect(contrastRatio('#000000', '#808080')).toBeGreaterThanOrEqual(4.5);
+		expect(contrastRatio('#ffffff', '#808080')).toBeLessThan(4.5);
+		expect(readableInk('#808080')).toBe('#000000');
+	});
+
+	it('prefers light ink on the mid-tone where both options pass', () => {
+		// #dd3333 scores 4.597 on black and 4.568 on white — a 0.03 margin. The
+		// raw max picked black, but the source paints white on this brand red, so
+		// the tie has to resolve to light or the colour gate drifts 100 ΔE00.
+		expect(contrastRatio('#dd3333', '#000000')).toBeGreaterThanOrEqual(4.5);
+		expect(contrastRatio('#dd3333', '#ffffff')).toBeGreaterThanOrEqual(4.5);
+		expect(readableInk('#dd3333')).toBe('#ffffff');
+	});
+
+	it("keeps each caller's own dark and light representation", () => {
+		expect(readableInk('#ededed')).toBe('#000000');
+		expect(readableInk('#ededed', { dark: '#1a1a1a' })).toBe('#1a1a1a');
+		expect(readableInk('#171717', { light: '#f5f5f4' })).toBe('#f5f5f4');
+	});
+
+	it('accepts the rgb() form the analyzer records', () => {
+		// Computed styles arrive as rgb(), so the ink guard must parse them or it
+		// emits nothing and the surface silently keeps the wrong ink.
+		expect(readableInk('rgb(221, 51, 51)')).toBe('#ffffff');
+		expect(readableInk('rgba(240, 240, 240, 1)')).toBe('#000000');
+	});
+
+	it('returns undefined for a colour it cannot parse', () => {
+		expect(readableInk('transparent')).toBeUndefined();
+		expect(readableInk('currentColor')).toBeUndefined();
 	});
 });

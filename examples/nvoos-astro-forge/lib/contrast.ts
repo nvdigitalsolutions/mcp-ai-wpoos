@@ -6,8 +6,21 @@
 // ink/surface (body text) and accent-ink/accent (buttons, accents).
 // ---------------------------------------------------------------------------
 
-/** Parse #rgb / #rrggbb / #rrggbbaa (alpha ignored) into channels. */
+/**
+ * Parse #rgb / #rrggbb / #rrggbbaa (alpha ignored) or rgb()/rgba() into
+ * channels.
+ *
+ * `rgb()` matters: the analyzer records COMPUTED styles, so every measured
+ * surface arrives as `background-color:rgb(221, 51, 51)`. Rejecting that form
+ * made the ink guard return undefined and bake nothing at all — a silent
+ * no-op, not a visible error.
+ */
 export function parseHex(hex: string): { r: number; g: number; b: number } | undefined {
+	const rgb = /^rgba?\(\s*(\d{1,3})[,\s]+(\d{1,3})[,\s]+(\d{1,3})/i.exec(hex.trim());
+	if (rgb) {
+		const [r, g, b] = [rgb[1], rgb[2], rgb[3]].map(Number);
+		return r > 255 || g > 255 || b > 255 ? undefined : { r, g, b };
+	}
 	const match = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(hex.trim());
 	if (!match) {
 		return undefined;
@@ -57,6 +70,49 @@ export function passesAaText( ratio: number ): boolean {
 /** SC 1.4.11 AA pass for non-text UI components (3:1). */
 export function passesAaNonText( ratio: number ): boolean {
 	return ratio >= 3;
+}
+
+/**
+ * The ink a derived surface needs — one of the two options the caller paints.
+ *
+ * WHY a shared rule: the forge derives panel ink in two places (the sanitizer's
+ * kept `background-color` panels and the scaffold's per-element surfaces). When
+ * each picked `Math.max(contrast-on-black, contrast-on-white)` independently,
+ * a saturated brand red landed on the wrong side: #dd3333 scores 4.597 on black
+ * and 4.568 on white, so the raw max chose BLACK while the source renders
+ * white text — a 0.03 margin deciding a 100 ΔE00 colour-gate failure.
+ *
+ * AA decides first, so an illegible option is never chosen. Only the narrow
+ * mid-tone window where BOTH pass (luminance ≈ 0.175–0.183) is genuinely a
+ * toss-up; there the light ink wins, because a surface in that window is a
+ * saturated brand colour, not a near-white one.
+ *
+ * `options` lets each caller keep its own representation: the scaffold matches
+ * the source's pure black, the sanitizer uses a softer near-black for panels.
+ * Swapping one for the other is not free — #000000 → #1a1a1a is ΔE00 5.5.
+ */
+export function readableInk(
+	color: string,
+	options: { light?: string; dark?: string } = {}
+): string | undefined {
+	const light = options.light ?? '#ffffff';
+	const dark = options.dark ?? '#000000';
+	const onBlack = contrastRatio( color, '#000000' );
+	const onWhite = contrastRatio( color, '#ffffff' );
+	if ( onBlack === undefined || onWhite === undefined ) {
+		return undefined;
+	}
+	const blackPasses = passesAaText( onBlack );
+	const whitePasses = passesAaText( onWhite );
+	if ( blackPasses && ! whitePasses ) {
+		return dark;
+	}
+	if ( whitePasses ) {
+		return light;
+	}
+	// Neither clears AA (only possible for a mid-tone just outside the window) —
+	// the better of the two is still the best available choice.
+	return onWhite >= onBlack ? light : dark;
 }
 
 // -- the multi-mode audit (Proposal 114 §3.5) --------------------------------

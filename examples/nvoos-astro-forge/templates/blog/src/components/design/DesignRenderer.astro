@@ -709,6 +709,11 @@ const bandElementCss = sections
 				}
 				if ( heights.desktop ) {
 					base.push( `min-height:${ heights.desktop }px` );
+					// A pinned stage must beat the generic in-column banner fallback:
+					// `aspect-ratio` resolves the used height from the WIDTH, and a larger
+					// resolved height outranks `min-height`, so the measured 86px banner
+					// inside a `row-full-width` still rendered at the 5:3 default (560px).
+					base.push( 'aspect-ratio:auto' );
 				}
 				const rules: string[] = [];
 				if ( base.length > 0 ) {
@@ -717,9 +722,17 @@ const bandElementCss = sections
 				// The card's ink must reach its TEXT, not just the box: the band's
 				// measured heading rule sets `color` on `h1…h6` directly, which
 				// outranks inheritance and left white headings on a light card.
+				//
+				// `a` and `button` are deliberately NOT forced: this path selector is
+				// (0,3,3), so it outranks a band's measured state rule
+				// `[data-section-id] a:hover` at (0,2,1). Forcing white there made a
+				// link's base `border-color` resolve to `currentColor` — also white —
+				// so hover/active changed nothing and the state gate read them as
+				// lost. Interactive controls take their colour from the measured
+				// base/hover rules instead, inheriting the card ink they sit in.
 				if ( element.fg ) {
 					rules.push(
-						`${ scoped } ${ element.path } :is(h1, h2, h3, h4, h5, h6, p, li, span, a){color:${ element.fg }}`
+						`${ scoped } ${ element.path } :is(h1, h2, h3, h4, h5, h6, p, li, span){color:${ element.fg }}`
 					);
 				}
 				if ( heights.tablet ) {
@@ -758,16 +771,29 @@ const bandBoxCss = sections
 					const selectors =
 						selectorPrefix === 'img'
 							? `${ scoped } img.${ name }, ${ scoped } .post-body img.${ name }`
-							: `${ scoped } ${ selectorPrefix }.${ name }`;
+							: // The `.post-body .section-content .col` form exists to outrank the
+							  // Flatsome shim's arrangement rules (4 classes): a measured box is
+							  // the source's computed truth, so it must win over a fallback the
+							  // shim guessed. Without it `aspect-ratio:auto` never reached the
+							  // banner and the slider kept the 5:3 default.
+							  `${ scoped } ${ selectorPrefix }.${ name }, ${ scoped } .post-body .section-content .col ${ selectorPrefix }.${ name }`;
+					// A TOP-ONLY `padding` is the builder's height placeholder (`padding:350px
+					// 0 0 0`); the shim's in-column aspect fallback would still resolve a
+					// height from the width and outrank it (doomsday's 350px testimonial
+					// slider rendered 630px at the 5:3 default). A measured placeholder
+					// therefore switches the fallback off for that class.
+					const measuredStage = /(^|;)padding:(?!0px )\S+ 0px 0px 0px/.test( fact.base ?? '' );
+					const withStage = ( value: string | undefined ): string | undefined =>
+						value && measuredStage ? `${ value };aspect-ratio:auto` : value;
 					const rules: string[] = [];
 					if ( fact.base ) {
-						rules.push( `${ selectors }{${ fact.base }}` );
+						rules.push( `${ selectors }{${ withStage( fact.base ) }}` );
 					}
 					if ( fact.tablet ) {
-						rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selectors }{${ fact.tablet }}}` );
+						rules.push( `@media (min-width: 768px) and (max-width: 1024px){${ selectors }{${ withStage( fact.tablet ) }}}` );
 					}
 					if ( fact.mobile ) {
-						rules.push( `@media (max-width: 767px){${ selectors }{${ fact.mobile }}}` );
+						rules.push( `@media (max-width: 767px){${ selectors }{${ withStage( fact.mobile ) }}}` );
 					}
 					return rules.join( '' );
 				} )

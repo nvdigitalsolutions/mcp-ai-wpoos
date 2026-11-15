@@ -5912,9 +5912,6 @@
 						"has-hover": {
 							"base": "padding:420px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},
-						"hide-for-small": {
-							"base": "padding:420px 0px 0px 0px;margin:0px 0px 0px 0px"
-						},
 						"banner-inner": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						},

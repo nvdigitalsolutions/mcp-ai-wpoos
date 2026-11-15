@@ -1820,6 +1820,25 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	inset: 0;
 }
 
+/* A Flatsome `box` tile crops its photo with a `padding-top` PLACEHOLDER on
+ * `.image-cover`, with the <img> absolutely positioned to fill it. The rebuild
+ * keeps the measured padding but lost the layering, so the image sat in flow on
+ * top of its own placeholder and every tile doubled: the services band's
+ * 200px `image-cover` rendered 406px and the band came out 520px too tall. */
+.ds-section-wrap .post-body .image-cover {
+	position: relative;
+	overflow: hidden;
+}
+
+.ds-section-wrap .post-body .image-cover > img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: var(--ds-media-pos, 50% 50%);
+}
+
 /* The banner's copy is a layer ABOVE the photo, centered in the band. The
  * photo layer is absolute, so the inner stage must fill the banner explicitly
  * or it collapses to 0 and every `top: 50%` layer resolves to 0 and renders
@@ -1883,6 +1902,35 @@ body:has(.motion-toggle input:checked) .design-sections [data-section-id] * {
 	position: static;
 	width: auto;
 	transform: none;
+}
+
+/* Flatsome's responsive VISIBILITY utilities. The source pairs a small-only
+ * row with a desktop-only one (`show-for-small` / `hide-for-small`), so a
+ * rebuild that ignores these renders BOTH at every width and every band with
+ * such a pair comes out roughly twice its source height (accommodations'
+ * 770px band rendered 1540). Values transcribed from flatsome.css 3.20.7 —
+ * they are hide-only rules, so the visible case keeps the element's own
+ * display (`flex` on a row, `block` on a banner). */
+@media ( max-width: 549px ) {
+	.ds-section-wrap .post-body .hide-for-small {
+		display: none !important;
+	}
+}
+@media ( min-width: 550px ) {
+	.ds-section-wrap .post-body .show-for-small {
+		display: none !important;
+	}
+}
+@media ( max-width: 849px ) {
+	.ds-section-wrap .post-body .hide-for-medium {
+		display: none !important;
+	}
+}
+@media ( min-width: 850px ) {
+	.ds-section-wrap .post-body .show-for-medium,
+	.ds-section-wrap .post-body .hide-for-large {
+		display: none !important;
+	}
 }
 
 /* Flatsome's row modifiers: a collapsed row has NO gutters, and `align-middle`
