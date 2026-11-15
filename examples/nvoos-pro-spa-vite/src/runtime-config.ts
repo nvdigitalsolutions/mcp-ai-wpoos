@@ -154,9 +154,9 @@ function buildEndpoints( origin: string ): ProSpaEndpoints {
 		workflowRuns: `${core}/orchestration/runs`,
 		wpBase: `${api}/wp/v2`,
 		recordsSchema: `${pro}/records/schema`,
-		// The manifest-driven toolkit engine is Laravel-only for now; leave the
-		// key empty so the pages render their unavailable state on WordPress.
-		toolkits: '',
+		// The manifest-driven toolkit engine (Proposal 090-B §8) lives at
+		// `/toolkit-manifests`; `/toolkits` is the schedule-anything base.
+		toolkits: `${pro}/toolkit-manifests`,
 		dashboardsSchema: `${pro}/dashboards/schema`,
 		chatChannels: `${pro}/chat-channels`,
 		remoteSites: `${pro}/remote-sites`,

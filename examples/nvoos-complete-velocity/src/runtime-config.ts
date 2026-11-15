@@ -125,9 +125,11 @@ function buildEndpoints(origin: string, capabilities: string[], backend: Console
     workflowRuns: isAdmin ? `${core}/orchestration/runs` : '',
     wpBase: wp,
     recordsSchema: isAdmin ? `${pro}/records/schema` : '',
-    // The manifest engine is Laravel-only for now; the WordPress runtime has
-    // no /toolkits route yet, so the pages render their unavailable state.
-    toolkits: isAdmin && !isWordPress ? `${pro}/toolkits` : '',
+    // The manifest-driven toolkit engine ships on both runtimes. WordPress
+    // serves it at `/toolkit-manifests` (Proposal 090-B §8 — not `/toolkits`,
+    // which the schedule-anything controller owns); Laravel serves
+    // `api/v1/pro/toolkits`. The spa-v2 client is base-agnostic.
+    toolkits: isAdmin ? (isWordPress ? `${pro}/toolkit-manifests` : `${pro}/toolkits`) : '',
     dashboardsSchema: isAdmin ? `${pro}/dashboards/schema` : '',
     chatChannels: isAdmin ? `${pro}/chat-channels` : '',
     remoteSites: isAdmin ? `${pro}/remote-sites` : '',
@@ -196,6 +198,12 @@ export interface ConsoleRuntimeOptions {
    * open (older backends that predate the map).
    */
   endpoints?: Record<string, boolean>;
+  /**
+   * Resolved base URLs for connected apps that answered their discovery probe
+   * (GET /features → data.endpoint_urls). Additive: a backend that does not
+   * emit the map behaves exactly as before.
+   */
+  endpointUrls?: Record<string, string>;
   /** WordPress site title (blogname) for branding surfaces. */
   siteName?: string;
 }
@@ -242,6 +250,19 @@ export function buildConsoleRuntime(options: ConsoleRuntimeOptions = {}): ProSpa
   for (const key of Object.keys(endpoints) as Array<keyof ProSpaEndpoints>) {
     if (available[key] === false) {
       endpoints[key] = '';
+    }
+  }
+
+  // Class C discovery (090-i Phase 4): a configured, reachable product
+  // publishes the base URL the console should mount its island against.
+  // These are admin surfaces on both runtimes, so a non-admin session keeps
+  // them blank rather than being handed a URL it cannot open.
+  if ((options.user?.capabilities ?? []).includes('manage_options')) {
+    for (const [key, url] of Object.entries(options.endpointUrls ?? {})) {
+      if (typeof url !== 'string' || url === '' || !(key in endpoints)) {
+        continue;
+      }
+      (endpoints as unknown as Record<string, string>)[key] = url;
     }
   }
 
@@ -576,6 +597,8 @@ async function mintSessionNonce(): Promise<string> {
 export interface RuntimeAvailability {
   features: Record<string, boolean>;
   endpoints: Record<string, boolean>;
+  /** Connected-app base URLs that answered their discovery probe. */
+  endpointUrls: Record<string, string>;
 }
 
 /**
@@ -592,7 +615,7 @@ export async function fetchRuntimeAvailability(
   backend: ConsoleBackend = resolveBackend(buildTimeBackend()),
 ): Promise<RuntimeAvailability> {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
-  const empty: RuntimeAvailability = { features: {}, endpoints: {} };
+  const empty: RuntimeAvailability = { features: {}, endpoints: {}, endpointUrls: {} };
 
   try {
     const headers: Record<string, string> = {};
@@ -614,15 +637,18 @@ export async function fetchRuntimeAvailability(
       data?: {
         features?: Record<string, boolean>;
         endpoints?: Record<string, boolean>;
+        endpoint_urls?: Record<string, string>;
       };
     }>(response, 'features endpoint');
 
     const features = data?.data?.features;
     const endpoints = data?.data?.endpoints;
+    const endpointUrls = data?.data?.endpoint_urls;
 
     return {
       features: isBooleanMap(features) ? features : {},
       endpoints: isBooleanMap(endpoints) ? endpoints : {},
+      endpointUrls: isStringMap(endpointUrls) ? endpointUrls : {},
     };
   } catch (error) {
     console.warn(
@@ -647,6 +673,16 @@ export async function fetchFeatureMap(
 
 function isBooleanMap(value: unknown): value is Record<string, boolean> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isStringMap(value: unknown): value is Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  return Object.values(value as Record<string, unknown>).every(
+    (entry) => typeof entry === 'string',
+  );
 }
 
 /**

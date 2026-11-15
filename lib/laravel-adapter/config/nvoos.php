@@ -1004,6 +1004,51 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Connected apps (Class C discovery — 090-i Phase 4)
+	|--------------------------------------------------------------------------
+	|
+	| The four console keys that belong to separate NV oOS products —
+	| `contentGraph`, `docsHub`, `mediaStudio`, `documentEditor` — are never
+	| reimplemented on this runtime (ADR-11). Point each at the product's REST
+	| base and the runtime probes it once, caches the answer, and reports the
+	| URL through the capability manifest (`endpoint_urls` + a flipped
+	| `endpoints` entry). An unconfigured key stays unavailable with the
+	| `external-product` reason.
+	|
+	| `url` is the product's REST base, e.g.
+	| `https://docs.example.com/wp-json/nvoos-docs/v1`. `probe` is the relative
+	| path appended for the health check (defaults per product). The probe is
+	| GET-only, follows no redirects, refuses private/reserved IP literals and
+	| requires HTTPS for any non-loopback host.
+	|
+	*/
+	'connected_apps' => array(
+		'contentGraph' => array(
+			'url' => env( 'NVOOS_CONTENT_GRAPH_URL', '' ),
+			'probe' => '/graph',
+		),
+		'docsHub' => array(
+			'url' => env( 'NVOOS_DOCS_HUB_URL', '' ),
+			'probe' => '/health',
+		),
+		'mediaStudio' => array(
+			'url' => env( 'NVOOS_MEDIA_STUDIO_URL', '' ),
+			'probe' => '/health',
+		),
+		'documentEditor' => array(
+			'url' => env( 'NVOOS_DOCUMENT_EDITOR_URL', '' ),
+			'probe' => '/health',
+		),
+	),
+
+	// Probe result cache (seconds) and timeouts. Failures are cached too, so an
+	// unreachable product cannot slow every console boot.
+	'connected_apps_ttl' => (int) env( 'NVOOS_CONNECTED_APPS_TTL', 300 ),
+	'connected_apps_timeout' => (int) env( 'NVOOS_CONNECTED_APPS_TIMEOUT', 2 ),
+	'connected_apps_connect_timeout' => (int) env( 'NVOOS_CONNECTED_APPS_CONNECT_TIMEOUT', 1 ),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Mesh API Key
 	|--------------------------------------------------------------------------
 	|

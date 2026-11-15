@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ConnectedApps\ConnectedAppRegistry;
 use App\Support\EndpointCapabilities;
 use Illuminate\Http\JsonResponse;
 use Nvoos\Core\Domain\Contract\ProEntitlementInterface;
@@ -13,6 +14,18 @@ class FeaturesController
         $features = config('oos.features', array());
         $entitlement = app(ProEntitlementInterface::class);
         $manifest = EndpointCapabilities::manifest();
+
+        // Class C discovery (090-i Phase 4): a configured, reachable product
+        // lights its key and publishes the base URL the console should mount
+        // the island against. The static route map cannot know this — the
+        // product is not part of this router.
+        $connectedUrls = app(ConnectedAppRegistry::class)->available();
+
+        foreach ($connectedUrls as $key => $url) {
+            if (array_key_exists($key, $manifest['endpoints'])) {
+                $manifest['endpoints'][$key] = true;
+            }
+        }
 
         return response()->json(array(
             'success' => true,
@@ -29,6 +42,10 @@ class FeaturesController
                 'endpoint_contract_version' => $manifest['version'],
                 'endpoint_reasons' => (object) $manifest['reasons'],
                 'endpoint_gaps' => $manifest['gaps'],
+                // Additive (v2): the resolved base URL for a connected app that
+                // answered its probe. A client that ignores the field behaves
+                // exactly as it did before discovery existed.
+                'endpoint_urls' => (object) $connectedUrls,
                 'backend' => 'laravel',
                 'contract' => 'mcp-ai/v1',
                 'contract_version' => 1,

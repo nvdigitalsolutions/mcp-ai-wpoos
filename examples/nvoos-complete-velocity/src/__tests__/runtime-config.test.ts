@@ -66,6 +66,33 @@ describe('buildConsoleRuntime', () => {
     expect(runtime.endpoints.blueprints).not.toBe('');
   });
 
+  it('points toolkits at the WordPress manifest base', () => {
+    // WordPress serves the manifest engine at `/toolkit-manifests`; the
+    // console must not blank the key (the earlier Laravel-only assumption).
+    const runtime = buildConsoleRuntime({
+      user: { id: 1, capabilities: ['manage_options'] },
+    });
+
+    expect(runtime.endpoints.toolkits).toBe(
+      `${window.location.origin}/wp-json/mcp-ai-pro/v1/toolkit-manifests`,
+    );
+  });
+
+  it('points toolkits at the Laravel toolkits base', () => {
+    const runtime = buildConsoleRuntime({
+      backend: 'laravel',
+      user: { id: 1, capabilities: ['manage_options'] },
+    });
+
+    expect(runtime.endpoints.toolkits).toBe(`${window.location.origin}/api/v1/pro/toolkits`);
+  });
+
+  it('keeps toolkits blank for non-admin sessions', () => {
+    const runtime = buildConsoleRuntime({ user: { id: 9, capabilities: [] } });
+
+    expect(runtime.endpoints.toolkits).toBe('');
+  });
+
   it('empties edit_posts surfaces for users without the capability', () => {
     const runtime = buildConsoleRuntime({ user: { id: 9, capabilities: [] } });
 
@@ -269,6 +296,40 @@ describe('endpoint availability (090-B)', () => {
     expect(runtime.endpoints.tokenManager).not.toBe('');
   });
 
+  it('mounts a connected app at the URL the backend resolved', () => {
+    // Class C discovery: the product is not on this router, so the backend
+    // publishes its base URL instead of a boolean.
+    const runtime = buildConsoleRuntime({
+      backend: 'laravel',
+      user: admin,
+      endpoints: { docsHub: true },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+    });
+
+    expect(runtime.endpoints.docsHub).toBe(
+      'https://docs.example.com/wp-json/nvoos-docs/v1',
+    );
+  });
+
+  it('keeps connected-app URLs away from non-admin sessions', () => {
+    const runtime = buildConsoleRuntime({
+      backend: 'laravel',
+      user: { id: 9, capabilities: ['edit_posts'] },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+    });
+
+    expect(runtime.endpoints.docsHub).toBe('');
+  });
+
+  it('ignores a connected-app URL for a key the console does not build', () => {
+    const runtime = buildConsoleRuntime({
+      user: admin,
+      endpointUrls: { notAConsoleKey: 'https://example.com' },
+    });
+
+    expect(runtime.endpoints).not.toHaveProperty('notAConsoleKey');
+  });
+
   it('covers exactly the shared console endpoint contract', () => {
     // The backend asserts the same file (EndpointCapabilitiesTest), so a key
     // added on one side without the other fails on both CIs instead of on a
@@ -291,10 +352,11 @@ describe('endpoint availability (090-B)', () => {
   });
 
   it('classifies every route-backed key in the shared contract', () => {
-    // The same file the PHP suite asserts. The reason is what lets the console
+    // The same file the PHP suites assert. The reason is what lets the console
     // tell "not built on this backend yet" from "install the plugin" from
-    // "connect a service"; an unclassified key would render as one of those by
-    // accident.
+    // "connect a service" from "the addon is not active"; an unclassified key
+    // would render as one of those by accident. WordPress overrides are merged
+    // over the canonical (Laravel) map at runtime.
     const contractPath = resolve(
       process.cwd(),
       '../../docker/laravel/app-skeleton/contracts/console-endpoints.json',
@@ -303,23 +365,32 @@ describe('endpoint availability (090-B)', () => {
     const contract = JSON.parse(readFileSync(contractPath, 'utf8')) as {
       route_backed: string[];
       reasons?: Record<string, string>;
+      wordpress_reasons?: Record<string, string>;
+      reason_codes?: string[];
     };
 
     const reasons = contract.reasons ?? {};
+    const overrides = contract.wordpress_reasons ?? {};
+    const codes = contract.reason_codes ?? [];
 
     expect(Object.keys(reasons).sort()).toEqual([...contract.route_backed].sort());
 
-    const taxonomy = [
-      'route',
-      'runtime-adaptable',
-      'toolkit-shaped',
-      'connected-service',
-      'external-product',
-    ];
+    // An override may only reclassify a key the contract already knows.
+    for (const key of Object.keys(overrides)) {
+      expect(contract.route_backed).toContain(key);
+    }
 
-    const unknown = Object.entries(reasons)
-      .filter(([, reason]) => !taxonomy.includes(reason))
-      .map(([key, reason]) => `${key}=${reason}`);
+    // The vocabulary is shared with both PHP runtimes; an empty list means the
+    // fixture forgot to publish it.
+    expect(codes.length).toBeGreaterThan(0);
+
+    const unknown: string[] = [];
+    for (const [key, reason] of Object.entries(reasons)) {
+      if (!codes.includes(reason)) unknown.push(`${key}=${reason}`);
+    }
+    for (const [key, reason] of Object.entries(overrides)) {
+      if (!codes.includes(reason)) unknown.push(`${key}=${reason}`);
+    }
 
     expect(unknown).toEqual([]);
   });
@@ -345,9 +416,34 @@ describe('fetchRuntimeAvailability', () => {
     await expect(fetchRuntimeAvailability('nonce')).resolves.toEqual({
       features: { docs_hub: false },
       endpoints: { workflowBuilder: false, assistants: true },
+      endpointUrls: {},
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns resolved connected-app URLs', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          success: true,
+          data: {
+            features: {},
+            endpoints: { docsHub: true },
+            endpoint_urls: {
+              docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1',
+            },
+          },
+        }),
+      ),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: {},
+      endpoints: { docsHub: true },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+    });
   });
 
   it('fails open to empty maps when the endpoint map is absent', async () => {
@@ -361,6 +457,7 @@ describe('fetchRuntimeAvailability', () => {
     await expect(fetchRuntimeAvailability()).resolves.toEqual({
       features: { pro: true },
       endpoints: {},
+      endpointUrls: {},
     });
   });
 
@@ -374,6 +471,7 @@ describe('fetchRuntimeAvailability', () => {
     await expect(fetchRuntimeAvailability()).resolves.toEqual({
       features: {},
       endpoints: {},
+      endpointUrls: {},
     });
     expect(warn).toHaveBeenCalled();
   });

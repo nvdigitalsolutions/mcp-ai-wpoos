@@ -102,6 +102,15 @@ final class EndpointCapabilities
     /** Portable surface WordPress already has; not ported to this runtime yet. */
     private const RUNTIME_ADAPTABLE = 'runtime-adaptable';
 
+    /**
+     * Supplied by an addon that is not active on this install.
+     *
+     * Part of the shared vocabulary (the WordPress runtime emits it while Pro
+     * is inactive); this runtime always has its own code deployed, so it never
+     * reports the code itself.
+     */
+    private const NOT_INSTALLED = 'not-installed';
+
     /** Supplied by the toolkit manifest engine, which does not exist yet. */
     private const TOOLKIT_SHAPED = 'toolkit-shaped';
 
@@ -122,6 +131,7 @@ final class EndpointCapabilities
     public const REASON_CODES = array(
         self::ROUTE,
         self::RUNTIME_ADAPTABLE,
+        self::NOT_INSTALLED,
         self::TOOLKIT_SHAPED,
         self::CONNECTED_SERVICE,
         self::EXTERNAL_PRODUCT,
