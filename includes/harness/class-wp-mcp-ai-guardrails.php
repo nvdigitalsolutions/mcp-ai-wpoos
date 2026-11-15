@@ -138,6 +138,16 @@ class WP_MCP_AI_Guardrails {
 			return $system_prompt;
 		}
 
+		// The instruction block lives in lib/core so both runtimes prepend the
+		// same rails. lib/ is stripped from wp.org base builds, so the body
+		// below stays.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\GuardrailPrompt' ) ) {
+			return \Nvoos\Core\Domain\Service\Harness\GuardrailPrompt::apply(
+				$system_prompt,
+				WP_MCP_AI_Harness_Profile::get( $assistant_id )
+			);
+		}
+
 		$profile = WP_MCP_AI_Harness_Profile::get( $assistant_id );
 
 		if ( empty( $profile['enabled'] ) || empty( $profile['guardrails']['enabled'] ) ) {
@@ -208,10 +218,18 @@ class WP_MCP_AI_Guardrails {
 		}
 
 		// In 'block' mode or 'warn' mode with a jailbreak/injection, block.
-		$should_block = 'block' === $mode
-			|| ( self::RESULT_JAILBREAK === $analysis['result'] )
-			|| ( self::RESULT_INJECTION === $analysis['result'] )
-			|| ( 'high' === $strictness && self::RESULT_OFF_TOPIC === $analysis['result'] );
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Harness\GuardrailPolicy' ) ) {
+			$should_block = \Nvoos\Core\Domain\Service\Harness\GuardrailPolicy::decide(
+				$analysis,
+				$mode,
+				$strictness
+			);
+		} else {
+			$should_block = 'block' === $mode
+				|| ( self::RESULT_JAILBREAK === $analysis['result'] )
+				|| ( self::RESULT_INJECTION === $analysis['result'] )
+				|| ( 'high' === $strictness && self::RESULT_OFF_TOPIC === $analysis['result'] );
+		}
 
 		if ( ! $should_block ) {
 			return $result;
@@ -595,18 +613,45 @@ class WP_MCP_AI_Guardrails {
 	 * @return string User-facing message.
 	 */
 	private static function build_block_message( $analysis ) {
-		switch ( $analysis['result'] ) {
-			case self::RESULT_JAILBREAK:
+		$key = class_exists( '\Nvoos\Core\Domain\Service\Harness\GuardrailPolicy' )
+			? \Nvoos\Core\Domain\Service\Harness\GuardrailPolicy::messageKey( $analysis )
+			: self::local_message_key( $analysis );
+
+		switch ( $key ) {
+			case 'jailbreak':
 				return __( 'Your message was blocked because it appears to contain an attempt to override or bypass the assistant\'s instructions. Please ask questions that are within the assistant\'s intended scope.', 'mcp-ai-wpoos' );
 
-			case self::RESULT_INJECTION:
+			case 'injection':
 				return __( 'Your message contains patterns that are not allowed for security reasons. Please rephrase your question without special characters or code injection attempts.', 'mcp-ai-wpoos' );
 
-			case self::RESULT_OFF_TOPIC:
+			case 'off_topic':
 				return __( 'Your question appears to be outside the scope of this assistant. Please ask questions related to the assistant\'s purpose.', 'mcp-ai-wpoos' );
 
 			default:
 				return __( 'Your message was blocked by the content guardrail. Please try rephrasing your question.', 'mcp-ai-wpoos' );
+		}
+	}
+
+	/**
+	 * Map an analysis result to a block-message key, for lib/-stripped builds.
+	 *
+	 * Mirrors the shared mapping in `GuardrailPolicy::messageKey()`.
+	 *
+	 * @since 1.12.0
+	 *
+	 * @param array $analysis Analysis from analyze_message().
+	 * @return string
+	 */
+	private static function local_message_key( $analysis ) {
+		switch ( $analysis['result'] ) {
+			case self::RESULT_JAILBREAK:
+				return 'jailbreak';
+			case self::RESULT_INJECTION:
+				return 'injection';
+			case self::RESULT_OFF_TOPIC:
+				return 'off_topic';
+			default:
+				return 'generic';
 		}
 	}
 
