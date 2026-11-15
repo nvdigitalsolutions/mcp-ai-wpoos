@@ -435,11 +435,24 @@ const pick = ( selector: string ): Element | null => {
 		// columns get, so the band's own gutters are subtracted — and recorded,
 		// because the rebuild needs them as its own `--ds-pad-x` (a constant was
 		// wrong at every viewport but desktop).
-		const container =
-			element.querySelector( '.elementor-container, .e-con-inner' ) ??
-			element.querySelector( '.container, .container-fluid' ) ??
-			element.querySelector( '.row, .vc_row, .wpb_row' ) ??
-			element;
+		// The band's content container: the WIDEST `.container`/`.row` it owns,
+		// not the first one in document order. A builder nests rows inside
+		// columns (Flatsome's banner grids, WPBakery's inner rows), and the
+		// first match is routinely a narrow inner row — monicarajiv.com's
+		// accommodations band measured 438px against the source's own 1050px
+		// row, which then clamped the rebuilt band to a strip.
+		const containerPool = [
+			...Array.from( element.querySelectorAll( '.container, .container-fluid' ) ),
+			...Array.from( element.querySelectorAll( '.row, .vc_row, .wpb_row' ) ),
+		];
+		const widest = containerPool.reduce< { node: Element | null; width: number } >(
+			( best, node ) => {
+				const width = node.getBoundingClientRect().width;
+				return width > best.width ? { node, width } : best;
+			},
+			{ node: null, width: 0 }
+		);
+		const container = widest.node ?? element;
 		// Only a DESCENDANT container is a distinct inset. When the band itself is
 		// the container, its padding already reaches the rebuild through the
 		// measured band padding, and emitting it again would double the gutter.
