@@ -27,10 +27,12 @@ namespace Nvoos\Core\Application\Chat;
 
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Security\InputGuard;
+use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Session\SessionLog;
 use Nvoos\Core\Application\Session\SessionTelemetry;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\EventDispatcherInterface;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\ToolResolverInterface;
@@ -179,6 +181,21 @@ class ChatOrchestrator {
 	 */
 	private ?InputGuard $inputGuard = null;
 
+	/**
+	 * Optional output guard (response validation).
+	 *
+	 * Only wired by runtimes that want orchestrator-level enforcement, and only
+	 * once the assistant's profile enables it. See setOutputGuard().
+	 */
+	private ?OutputGuard $outputGuard = null;
+
+	/**
+	 * Optional harness profile provider, so a per-assistant `output_guard` block
+	 * can switch the guard on. Not wired by WordPress, which enforces this in
+	 * its own harness layer.
+	 */
+	private ?HarnessProfileProviderInterface $harnessProfiles = null;
+
 	public function __construct(
 		private readonly ToolRegistry $tools,
 		private readonly ProviderRouter $providers,
@@ -283,6 +300,137 @@ class ChatOrchestrator {
 	 */
 	public function setInputGuard( ?InputGuard $guard ): void {
 		$this->inputGuard = $guard;
+	}
+
+	/**
+	 * Wire the output guard for response validation.
+	 *
+	 * Pass null to detach. While a guard is wired and enabled the streaming path
+	 * buffers instead of emitting token deltas: a guard that runs at the end
+	 * cannot retract text it has already sent, so the only honest choice is to
+	 * send nothing until the response has been validated.
+	 */
+	/**
+	 * Wire the output guard for response validation.
+	 *
+	 * Pass null to detach. While a guard is wired and enabled the streaming path
+	 * buffers instead of emitting token deltas: a guard that runs at the end
+	 * cannot retract text it has already sent, so the only honest choice is to
+	 * send nothing until the response has been validated.
+	 */
+	public function setOutputGuard( ?OutputGuard $guard ): void {
+		$this->outputGuard = $guard;
+	}
+
+	/**
+	 * The guard wired by the runtime, or null.
+	 *
+	 * Exposes the configuration, not the resolution: a per-assistant profile can
+	 * still switch the guard on for a turn. Diagnostics surfaces use this to
+	 * report whether the runtime has an output guard at all.
+	 */
+	public function outputGuard(): ?OutputGuard {
+		return $this->outputGuard;
+	}
+
+	/**
+	 * Wire the profile provider so a per-assistant `output_guard` can turn the
+	 * guard on.
+	 *
+	 * Precedence is deliberate: a profile that enables the block wins, and
+	 * otherwise the guard wired by the runtime stands. A profile can therefore
+	 * switch the guard *on* per assistant but never *off* — a stale or partial
+	 * profile must not be able to silently disable a safety control.
+	 */
+	public function setHarnessProfileProvider( ?HarnessProfileProviderInterface $provider ): void {
+		$this->harnessProfiles = $provider;
+	}
+
+	/**
+	 * Resolve the guard that applies to this turn.
+	 */
+	private function resolveOutputGuard( int $assistantId ): ?OutputGuard {
+		if ( null !== $this->harnessProfiles ) {
+			$fromProfile = OutputGuard::fromProfile( $this->harnessProfiles->getProfile( $assistantId ) );
+
+			if ( null !== $fromProfile ) {
+				return $fromProfile;
+			}
+		}
+
+		return $this->outputGuard;
+	}
+
+	/**
+	 * Emit the validated response as a single content chunk.
+	 *
+	 * The client renders assistant text from `choices[0].delta.content` frames
+	 * only — the trailing payload frame is metadata. So a buffered turn still
+	 * has to send its text as a delta, just once and only after validation;
+	 * suppressing the chunks outright would leave the bubble empty.
+	 *
+	 * @param mixed $response Validated provider response.
+	 */
+	private function emitBufferedContent( mixed $response ): void {
+		if ( ! \is_array( $response ) ) {
+			return;
+		}
+
+		$content = $response['choices'][0]['message']['content'] ?? null;
+
+		if ( ! \is_string( $content ) || '' === $content ) {
+			return;
+		}
+
+		$this->sse->sendEvent(
+			'message',
+			array(
+				'choices' => array(
+					array(
+						'delta' => array( 'content' => $content ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Validate an assembled provider response before it is delivered.
+	 *
+	 * Rewrites `choices[0].message.content` in place and returns the verdict for
+	 * audit. A blocked response is replaced with the withheld notice, never with
+	 * its own text — `OutputGuard::inspect()` hands back an empty string for
+	 * exactly that reason.
+	 *
+	 * @param mixed $response Provider response payload.
+	 * @return array{response: mixed, verdict: array<string, mixed>|null}
+	 */
+	private function applyOutputGuard( mixed $response, ?OutputGuard $guard ): array {
+		if ( null === $guard || ! $guard->enabled() ) {
+			return array( 'response' => $response, 'verdict' => null );
+		}
+
+		if ( ! \is_array( $response ) ) {
+			return array( 'response' => $response, 'verdict' => null );
+		}
+
+		$content = $response['choices'][0]['message']['content'] ?? null;
+
+		if ( ! \is_string( $content ) || '' === $content ) {
+			return array( 'response' => $response, 'verdict' => null );
+		}
+
+		$verdict = $guard->inspect( $content );
+
+		if ( ! $verdict['enabled'] || $verdict['safe'] ) {
+			return array( 'response' => $response, 'verdict' => null );
+		}
+
+		$response['choices'][0]['message']['content'] = $verdict['blocked']
+			? OutputGuard::WITHHELD_NOTICE
+			: $verdict['content'];
+
+		return array( 'response' => $response, 'verdict' => $verdict );
 	}
 
 	/**
@@ -796,6 +944,13 @@ class ChatOrchestrator {
 			$sessionId,
 		);
 
+		// The response guard runs before the cost event so a trace consumer sees
+		// what the caller will actually receive. Cost reads `usage`, which the
+		// rewrite does not touch, so the ordering is safe.
+		$guarded            = $this->applyOutputGuard( $response, $this->resolveOutputGuard( $assistantId ) );
+		$response           = $guarded['response'];
+		$outputGuardVerdict = $guarded['verdict'];
+
 		// Calculate cost from accumulated per-iteration usage.
 		$cost = null;
 		if ( \is_array( $response ) ) {
@@ -831,6 +986,7 @@ class ChatOrchestrator {
 			'cost'          => $cost,
 			'cancelled'     => $cancelled,
 			'cancel_reason' => $cancelled ? ( $cancellation?->reason() ?? '' ) : '',
+			'output_guard'  => $outputGuardVerdict,
 		);
 	}
 
@@ -897,7 +1053,17 @@ class ChatOrchestrator {
 			)
 		);
 
-		$onStreamChunk = function ( string $token ) use ( $cancellation ): void {
+		// A guard that runs at the end cannot retract a token it has already sent,
+		// so an enabled output guard turns the stream into a single final message.
+		// Nothing else changes on the default path.
+		$runtimeOutputGuard   = $this->resolveOutputGuard( $assistantId );
+		$bufferForOutputGuard = null !== $runtimeOutputGuard && $runtimeOutputGuard->enabled();
+
+		$onStreamChunk = function ( string $token ) use ( $cancellation, $bufferForOutputGuard ): void {
+			if ( $bufferForOutputGuard ) {
+				return;
+			}
+
 			// Cooperative cancellation: stop emitting chunks once cancelled.
 			if ( null !== $cancellation && $cancellation->isCancelled() ) {
 				return;
@@ -1344,6 +1510,17 @@ class ChatOrchestrator {
 			}
 		}
 
+		// Validate before the payload is built: this is the only point on the
+		// streaming path where the whole response exists and nothing has been
+		// delivered yet.
+		$guarded            = $this->applyOutputGuard( $response, $runtimeOutputGuard );
+		$response           = $guarded['response'];
+		$outputGuardVerdict = $guarded['verdict'];
+
+		if ( $bufferForOutputGuard ) {
+			$this->emitBufferedContent( $response );
+		}
+
 		$this->events->dispatch(
 			new CostCalculated(
 				costData: $cost ?? array(),
@@ -1358,6 +1535,7 @@ class ChatOrchestrator {
 			'data'         => $response,
 			'tool_results' => $toolResultMessages,
 			'cost'         => $cost,
+			'output_guard' => $outputGuardVerdict,
 		);
 
 		$this->sse->sendEvent( 'message', $payload );
@@ -1370,6 +1548,7 @@ class ChatOrchestrator {
 			'cost'          => $cost,
 			'cancelled'     => $cancelled,
 			'cancel_reason' => $cancelled ? ( $cancellation?->reason() ?? '' ) : '',
+			'output_guard'  => $outputGuardVerdict,
 		);
 	}
 

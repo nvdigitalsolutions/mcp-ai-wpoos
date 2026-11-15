@@ -931,6 +931,17 @@ return array(
 		'prompt_injection_mode'        => (string) env( 'NVOOS_PROMPT_INJECTION_MODE', 'log' ),
 		'prompt_injection_sensitivity' => (string) env( 'NVOOS_PROMPT_INJECTION_SENSITIVITY', 'medium' ),
 		'pii_filter'                   => filter_var( env( 'NVOOS_PII_FILTER', 'false' ), FILTER_VALIDATE_BOOLEAN ),
+
+		// AI-safety output guard. Off by default, matching WordPress. `mode` is
+		// log | warn | block; `warn` prefixes the response, `block` withholds it.
+		//
+		// Cost, stated plainly: while this is on, the chat stream is buffered to
+		// a single final message instead of token deltas. A guard at the end of
+		// a stream cannot retract what it already sent, so this is the only way
+		// the check can actually hold.
+		'output_guard'                 => filter_var( env( 'NVOOS_OUTPUT_GUARD', 'false' ), FILTER_VALIDATE_BOOLEAN ),
+		'output_guard_mode'            => (string) env( 'NVOOS_OUTPUT_GUARD_MODE', 'warn' ),
+		'output_guard_strictness'      => (string) env( 'NVOOS_OUTPUT_GUARD_STRICTNESS', 'medium' ),
 	),
 
 	'features' => array(
