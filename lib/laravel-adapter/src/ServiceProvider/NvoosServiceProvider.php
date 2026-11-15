@@ -22,6 +22,7 @@ use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\NecessityGuard;
 use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
+use Nvoos\Core\Application\Tool\ToolReadiness;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
@@ -79,6 +80,7 @@ use Nvoos\Core\Tool\ListProjectsTool;
 use Nvoos\Core\Tool\ListTasksTool;
 use Nvoos\Core\Tool\ProfessionStatsTool;
 use Nvoos\Laravel\Tool\CoreToolCatalogue;
+use Nvoos\Laravel\Tool\ManifestToolRegistrar;
 use Nvoos\Laravel\Adapter\AuthProvider;
 use Nvoos\Laravel\Adapter\CacheStore;
 use Nvoos\Laravel\Adapter\ContentStore;
@@ -205,6 +207,9 @@ class NvoosServiceProvider extends ServiceProvider {
 			$app->make( EventDispatcherInterface::class ),
 			$app->make( ErrorFactoryInterface::class ),
 		) );
+
+		// Readiness decisions — the manifest is the registration policy.
+		$this->app->singleton( ToolReadiness::class, static fn (): ToolReadiness => new ToolReadiness() );
 
 		// Read-only deployment profile (Phase 5.4). Registered as a monotonic
 		// guard, so it runs after every pre-execute listener and cannot be
@@ -372,6 +377,17 @@ class NvoosServiceProvider extends ServiceProvider {
 	private function registerTools(): void {
 		$registry = $this->app->make( ToolRegistry::class );
 		$errors   = $this->app->make( ErrorFactoryInterface::class );
+
+		// Manifest first: it is the policy, and the catalogue below is now only
+		// a fallback for tools the manifest has not classified.
+		$registrar = new ManifestToolRegistrar( $this->app, $this->app->make( ToolReadiness::class ) );
+		$result    = $registrar->registerInto( $registry );
+
+		if ( array() !== $result['skipped'] ) {
+			// Skipped tools mean the manifest claims `ready` for something the
+			// container cannot build. Surface it in diagnostics, do not fail boot.
+			$this->app->instance( 'nvoos.tools.skipped', $result['skipped'] );
+		}
 
 		foreach ( CoreToolCatalogue::build( $errors, $this->app->make( HarnessProfileProviderInterface::class ) ) as $tool ) {
 			if ( ! $registry->has( $tool->getSlug() ) ) {

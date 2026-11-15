@@ -26,15 +26,15 @@ class GenerateVideoCaptionTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'generate_video_caption';
+        return 'generate_video_caption_prompt';
     }
     public function getName(): string
     {
-        return 'Generate Video Caption';
+        return 'Generate Video Caption (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Generates concise, descriptive captions for videos using AI vision.';
+        return 'Builds a caption prompt for a video. Returns the prompt; generates no caption.';
     }
     public function getParametersSchema(): array
     {

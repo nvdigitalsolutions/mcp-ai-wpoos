@@ -21,15 +21,15 @@ class ValidateReasoningChainTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'validate_reasoning_chain';
+        return 'validate_reasoning_chain_prompt';
     }
     public function getName(): string
     {
-        return 'Validate Reasoning Chain';
+        return 'Validate Reasoning Chain (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Validates a chain of reasoning steps for logical consistency.';
+        return 'Builds a prompt for reviewing a reasoning chain. Returns the prompt; performs no validation.';
     }
     public function getParametersSchema(): array
     {

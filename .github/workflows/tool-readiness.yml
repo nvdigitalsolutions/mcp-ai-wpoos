@@ -1,0 +1,53 @@
+name: Tool Readiness
+
+# Proposal 090-M. Registration is derived from `lib/core/resources/tool-readiness.php`,
+# so the manifest is a policy file and needs a gate:
+#
+#   G1  every tool-contract class in lib/core has a manifest row
+#   G2  every row names a real class, a known readiness value and the same slug
+#       the class declares
+#   O3  a servable core tool that shares a slug with a WordPress tool must carry
+#       a `parity` claim (a deliberate port) rather than shadowing silently
+#
+# The tree is green as of 090-M Phase 2 (61 servable, 19 quarantined, 0 violations).
+# This job is REPORT-ONLY while the gate soaks: `continue-on-error` keeps it from
+# blocking merges, while the JSON report is uploaded for review. Promote it to a
+# hard gate by removing `continue-on-error` — no other change is needed.
+
+on:
+  push:
+    branches: [ main, alpha-working ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    name: Tool readiness manifest
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Audit the manifest
+        run: php bin/audit-tool-readiness.php --json > tool-readiness.json
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tool-readiness
+          path: tool-readiness.json
+          if-no-files-found: ignore
+          retention-days: 14

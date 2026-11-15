@@ -89,6 +89,11 @@ class BulkImportTool extends AbstractTool
                     'description' => 'Count rows whose title already exists as duplicates instead of failing them (default: true).',
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'   => array( 'entity', 'rows' ),
         );
     }
@@ -116,7 +121,7 @@ class BulkImportTool extends AbstractTool
             );
         }
 
-        $preview      = $this->boolParam($arguments, 'preview');
+        $preview      = $this->boolParam($arguments, 'preview') || $this->isDryRun($arguments);
         $skipExisting = $this->boolParam($arguments, 'skip_existing', true);
         $type         = 'tasks' === $entity ? self::TYPE_TASK : self::TYPE_PROJECT;
         $key_field    = 'tasks' === $entity ? 'title' : 'name';
@@ -178,6 +183,12 @@ class BulkImportTool extends AbstractTool
 
         if ($preview) {
             $report['rows'] = $valid;
+
+            if ($this->isDryRun($arguments)) {
+                $report['dry_run'] = true;
+                $report['action']  = 'create';
+                $report['writes']  = false;
+            }
 
             return $this->success(
                 sprintf('Preview: %d of %d rows are importable.', count($valid), count($rows)),

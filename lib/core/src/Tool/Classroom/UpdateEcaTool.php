@@ -222,6 +222,11 @@ class UpdateEcaTool extends AbstractTool
                     'enum'        => self::STATUSES,
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'             => array( 'eca_id' ),
             'additionalProperties' => false,
         );
@@ -335,6 +340,15 @@ class UpdateEcaTool extends AbstractTool
 
         if (array() !== $changes) {
             $meta['_eca_change_history'] = $this->appendHistory($eca, $changes, $user_id);
+        }
+
+        if ($this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'update',
+                $eca_id,
+                array( 'changes' => $changes ),
+                'Dry run: the ECA would be updated.'
+            );
         }
 
         try {

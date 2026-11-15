@@ -119,6 +119,11 @@ class SavePostTool extends AbstractTool
                     'description' => 'Comment status: "open" or "closed".',
                     'enum'        => array( 'open', 'closed' ),
                 ),
+                'dry_run'           => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the post that would be created or updated without writing it.',
+                    'default'     => false,
+                ),
             ),
             'required'             => array( 'content' ),
             'additionalProperties' => false,
@@ -185,6 +190,21 @@ class SavePostTool extends AbstractTool
                     taxonomyInput: $taxonomyInput,
                 );
 
+                if ($this->isDryRun($arguments)) {
+                    return $this->dryRunPlan(
+                        'update',
+                        $postId,
+                        array(
+                            'title'   => $command->title,
+                            'content' => $command->content,
+                            'status'  => $command->status,
+                            'excerpt' => $command->excerpt,
+                            'meta'    => array_keys($command->meta),
+                        ),
+                        'Dry run: the post would be updated.'
+                    );
+                }
+
                 $item = $this->content->update($postId, $command);
 
                 return $this->success('Post updated successfully.', $item->jsonSerialize());
@@ -208,6 +228,23 @@ class SavePostTool extends AbstractTool
                 meta: $meta,
                 taxonomyInput: $taxonomyInput,
             );
+
+            if ($this->isDryRun($arguments)) {
+                return $this->dryRunPlan(
+                    'create',
+                    null,
+                    array(
+                        'title'     => $command->title,
+                        'type'      => $command->type,
+                        'status'    => $command->status,
+                        'content'   => $command->content,
+                        'excerpt'   => $command->excerpt,
+                        'meta'      => array_keys($command->meta),
+                        'author_id' => $command->authorId,
+                    ),
+                    'Dry run: the post would be created.'
+                );
+            }
 
             $item = $this->content->create($command);
 

@@ -21,15 +21,15 @@ class AnalyzeCodeSequenceTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'analyze_code_sequence';
+        return 'analyze_code_sequence_prompt';
     }
     public function getName(): string
     {
-        return 'Analyze Code Sequence';
+        return 'Analyze Code Sequence (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Analyzes code for optimization, validation, and security issues.';
+        return 'Builds a code-review prompt for a code snippet. Returns the prompt; performs no analysis.';
     }
     public function getParametersSchema(): array
     {

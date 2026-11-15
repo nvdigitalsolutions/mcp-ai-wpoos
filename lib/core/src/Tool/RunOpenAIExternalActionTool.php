@@ -23,15 +23,15 @@ class RunOpenAIExternalActionTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'run_openai_external_action';
+        return 'run_openai_external_action_prompt';
     }
     public function getName(): string
     {
-        return 'Run OpenAI External Action';
+        return 'Run OpenAI External Action (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Runs an external action using OpenAI function calling.';
+        return 'Builds a prompt describing an external action. Returns the prompt; performs no action.';
     }
     public function getParametersSchema(): array
     {

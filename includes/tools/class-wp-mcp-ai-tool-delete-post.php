@@ -72,6 +72,11 @@ class WP_MCP_AI_Tool_Delete_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'description' => __( 'When true, permanently deletes the post instead of moving it to the trash. Requires the delete_posts capability.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
+				'dry_run'      => array(
+					'type'        => 'boolean',
+					'description' => __( 'Describe the deletion without performing it.', 'mcp-ai-wpoos' ),
+					'default'     => false,
+				),
 			),
 			'required'             => array( 'post_id' ),
 			'additionalProperties' => false,
@@ -144,6 +149,23 @@ class WP_MCP_AI_Tool_Delete_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 
 		$post_title = get_the_title( $post );
 		$post_type  = $post->post_type;
+
+		// Proposal 090-M ADR M-8: describe the deletion without performing it.
+		if ( ! empty( $arguments['dry_run'] ) ) {
+			return array(
+				'message'      => __( 'Dry run: the post would be deleted.', 'mcp-ai-wpoos' ),
+				'dry_run'      => true,
+				'action'       => 'delete',
+				'post_id'      => (int) $post_id,
+				'ID'           => (int) $post_id,
+				'writes'       => false,
+				'would_change' => array(
+					'id'        => (int) $post_id,
+					'title'     => $post_title,
+					'post_type' => $post_type,
+				),
+			);
+		}
 
 		$result = wp_delete_post( $post_id, $force_delete );
 

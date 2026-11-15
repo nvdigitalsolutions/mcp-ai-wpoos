@@ -21,15 +21,15 @@ class BatchEmbedContentTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'batch_embed_content';
+        return 'batch_embed_content_prompt';
     }
     public function getName(): string
     {
-        return 'Batch Embed Content';
+        return 'Batch Embed Content (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Prepares content for batch embedding generation.';
+        return 'Builds an embedding request prompt for a batch of texts. Returns the prompt; performs no embedding.';
     }
     public function getParametersSchema(): array
     {

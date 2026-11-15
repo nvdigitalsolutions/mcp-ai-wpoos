@@ -21,15 +21,15 @@ class GenerateImageAltTextTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'generate_image_alt_text';
+        return 'generate_image_alt_text_prompt';
     }
     public function getName(): string
     {
-        return 'Generate Image Alt Text';
+        return 'Generate Image Alt Text (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Generates descriptive alt text for images using AI vision for accessibility.';
+        return 'Builds an alt-text prompt for an image. Returns the prompt; generates no text.';
     }
     public function getParametersSchema(): array
     {

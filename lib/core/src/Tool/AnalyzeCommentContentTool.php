@@ -21,15 +21,15 @@ class AnalyzeCommentContentTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'analyze_comment_content';
+        return 'analyze_comment_content_prompt';
     }
     public function getName(): string
     {
-        return 'Analyze Comment Content';
+        return 'Analyze Comment Content (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Analyzes comment content for sentiment, spam detection, and moderation.';
+        return 'Builds a moderation prompt for a comment. Returns the prompt; performs no analysis.';
     }
     public function getParametersSchema(): array
     {

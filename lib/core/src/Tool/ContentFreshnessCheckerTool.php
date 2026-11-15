@@ -74,6 +74,6 @@ class ContentFreshnessCheckerTool extends AbstractTool
         $status = null !== $ageDays ? ($ageDays > $threshold * 2 ? 'outdated' : ($ageDays > $threshold ? 'stale' : ($ageDays > $threshold / 2 ? 'moderate' : 'fresh'))) : null;
         $prompt = "Analyze this content for freshness. Identify time-sensitive references, outdated statistics, or information that may need updating." . ($content ? "\n\nContent: " . substr($content, 0, 2000) : '');
 
-        return $this->success('Freshness analysis prepared.', array( 'prompt' => $prompt, 'age_days' => $ageDays, 'status' => $status, 'time_sensitive_refs' => $timeRefs, 'needs_review' => $timeRefs > 2 || (null !== $ageDays && $ageDays > $threshold) ));
+        return $this->success('Freshness indicators computed.', array( 'prompt' => $prompt, 'age_days' => $ageDays, 'status' => $status, 'time_sensitive_refs' => $timeRefs, 'needs_review' => $timeRefs > 2 || (null !== $ageDays && $ageDays > $threshold) ));
     }
 }

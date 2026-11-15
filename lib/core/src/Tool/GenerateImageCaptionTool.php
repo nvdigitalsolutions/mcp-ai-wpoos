@@ -21,15 +21,15 @@ class GenerateImageCaptionTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'generate_image_caption';
+        return 'generate_image_caption_prompt';
     }
     public function getName(): string
     {
-        return 'Generate Image Caption';
+        return 'Generate Image Caption (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Generates descriptive captions for images using AI vision.';
+        return 'Builds a caption prompt for an image. Returns the prompt; generates no caption.';
     }
     public function getParametersSchema(): array
     {

@@ -77,6 +77,11 @@ class CreatePostTool extends AbstractTool
                     'type'        => 'string',
                     'description' => 'Optional excerpt/summary.',
                 ),
+                'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the post that would be created without writing it.',
+                    'default'     => false,
+                ),
             ),
             'required'             => array( 'title' ),
             'additionalProperties' => false,
@@ -106,6 +111,22 @@ class CreatePostTool extends AbstractTool
             authorId: $userId,
             excerpt: $this->stringParam($arguments, 'excerpt') ?: null,
         );
+
+        if ($this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'create',
+                null,
+                array(
+                    'title'     => $command->title,
+                    'type'      => $command->type,
+                    'status'    => $command->status,
+                    'content'   => $command->content,
+                    'excerpt'   => $command->excerpt,
+                    'author_id' => $command->authorId,
+                ),
+                'Dry run: the post would be created.'
+            );
+        }
 
         try {
             $item = $this->content->create($command);

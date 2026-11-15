@@ -21,15 +21,15 @@ class VisionObjectLocalizationTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'vision_object_localization';
+        return 'vision_object_localization_prompt';
     }
     public function getName(): string
     {
-        return 'Vision Object Localization';
+        return 'Vision Object Localization (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Detects and localizes objects in images using AI vision.';
+        return 'Builds an object-localization prompt for an image. Returns the prompt; detects no objects.';
     }
     public function getParametersSchema(): array
     {

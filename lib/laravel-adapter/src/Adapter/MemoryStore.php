@@ -179,9 +179,20 @@ class MemoryStore implements MemoryStoreInterface {
 	 */
 	private function applyFilters( $builder, array $filters ): void {
 		foreach ( array( 'tier', 'wing', 'room' ) as $field ) {
-			if ( ! empty( $filters[ $field ] ) ) {
-				$builder->where( $field, (string) $filters[ $field ] );
+			if ( empty( $filters[ $field ] ) ) {
+				continue;
 			}
+
+			// `tier` arrives as a list from the tool contract (`include_tiers`
+			// defaults to core + recall), so an array filter has to become a set.
+			// Casting it produced "Array to string conversion" — a 500 the
+			// readiness probe caught (090-M batch 3).
+			if ( is_array( $filters[ $field ] ) ) {
+				$builder->whereIn( $field, array_map( 'strval', $filters[ $field ] ) );
+				continue;
+			}
+
+			$builder->where( $field, (string) $filters[ $field ] );
 		}
 
 		if ( ! empty( $filters['agent_id'] ) ) {

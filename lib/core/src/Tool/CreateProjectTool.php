@@ -101,6 +101,11 @@ class CreateProjectTool extends AbstractTool
                     'items'       => array( 'type' => 'integer' ),
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'             => array( 'name' ),
             'additionalProperties' => false,
         );
@@ -163,6 +168,18 @@ class CreateProjectTool extends AbstractTool
         }
 
         $project_id = $this->intParam($arguments, 'project_id');
+
+        if ($this->isDryRun($arguments)) {
+            $would_change = array(
+                'name'        => $name,
+                'description' => $this->stringParam($arguments, 'description'),
+                'meta'        => array_keys($meta),
+            );
+
+            return $project_id > 0
+                ? $this->dryRunPlan('update', $project_id, $would_change, 'Dry run: the project would be updated.')
+                : $this->dryRunPlan('create', null, $would_change, 'Dry run: the project would be created.');
+        }
 
         return $project_id > 0
             ? $this->update($project_id, $name, $this->stringParam($arguments, 'description'), $meta, $context)

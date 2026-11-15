@@ -43,15 +43,15 @@ final class BatchTwoDToolsTest extends TestCase
     }
     public function testAnalyzeImageSlug(): void
     {
-        $this->assertSame('analyze_image', (new AnalyzeImageTool($this->ef))->getSlug());
+        $this->assertSame('analyze_image_prompt', (new AnalyzeImageTool($this->ef))->getSlug());
     }
     public function testAltTextSlug(): void
     {
-        $this->assertSame('generate_image_alt_text', (new GenerateImageAltTextTool($this->ef))->getSlug());
+        $this->assertSame('generate_image_alt_text_prompt', (new GenerateImageAltTextTool($this->ef))->getSlug());
     }
     public function testImageCaptionSlug(): void
     {
-        $this->assertSame('generate_image_caption', (new GenerateImageCaptionTool($this->ef))->getSlug());
+        $this->assertSame('generate_image_caption_prompt', (new GenerateImageCaptionTool($this->ef))->getSlug());
     }
 
     public function testDalleSuccess(): void

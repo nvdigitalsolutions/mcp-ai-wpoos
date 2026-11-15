@@ -21,15 +21,15 @@ class AnalyzeImageTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'analyze_image';
+        return 'analyze_image_prompt';
     }
     public function getName(): string
     {
-        return 'Analyze Image';
+        return 'Analyze Image (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Analyzes image content using AI vision to extract descriptions, objects, text, and insights.';
+        return 'Builds a vision-analysis prompt for an image. Returns the prompt; performs no analysis.';
     }
     public function getParametersSchema(): array
     {

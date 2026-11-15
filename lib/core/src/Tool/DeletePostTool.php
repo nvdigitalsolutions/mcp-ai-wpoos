@@ -42,6 +42,11 @@ class DeletePostTool extends AbstractTool
                     'description' => 'ID of the post to delete',
                     'minimum'     => 1,
                 ),
+                'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the deletion without performing it.',
+                    'default'     => false,
+                ),
             ),
             'required'             => array( 'post_id' ),
             'additionalProperties' => false,
@@ -62,6 +67,19 @@ class DeletePostTool extends AbstractTool
             return $this->errors->forbidden('You must be logged in.');
         }
         try {
+            if ($this->isDryRun($arguments)) {
+                if (null === $this->c->find($postId, $userId)) {
+                    return $this->errors->notFound('The requested post does not exist or you do not have permission to view it.');
+                }
+
+                return $this->dryRunPlan(
+                    'delete',
+                    $postId,
+                    array( 'id' => $postId ),
+                    'Dry run: the post would be deleted.'
+                );
+            }
+
             $this->c->delete($postId, $userId);
             return $this->success('Post deleted.', array( 'id' => $postId ));
         } catch (\Nvoos\Core\Domain\Error\NotFoundException $e) {

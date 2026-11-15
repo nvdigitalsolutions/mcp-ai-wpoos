@@ -41,11 +41,11 @@ final class BatchTwoBToolsTest extends TestCase
     }
     public function testAnalyzeVideoSlug(): void
     {
-        $this->assertSame('analyze_video', (new AnalyzeVideoTool($this->ef))->getSlug());
+        $this->assertSame('analyze_video_prompt', (new AnalyzeVideoTool($this->ef))->getSlug());
     }
     public function testVideoCaptionSlug(): void
     {
-        $this->assertSame('generate_video_caption', (new GenerateVideoCaptionTool($this->ef))->getSlug());
+        $this->assertSame('generate_video_caption_prompt', (new GenerateVideoCaptionTool($this->ef))->getSlug());
     }
     public function testSoraSlug(): void
     {

@@ -21,15 +21,15 @@ class AnalyzeFileSuitabilityTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'analyze_file_suitability';
+        return 'analyze_file_suitability_prompt';
     }
     public function getName(): string
     {
-        return 'Analyze File Suitability';
+        return 'Analyze File Suitability (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Analyzes file content to determine suitability for AI processing and provides recommendations.';
+        return 'Builds a suitability-assessment prompt for a file. Returns the prompt; performs no analysis.';
     }
     public function getParametersSchema(): array
     {

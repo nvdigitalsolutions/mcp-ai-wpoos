@@ -93,6 +93,11 @@ class UpdateTaskTool extends AbstractTool
                     'description' => 'New assigned user ID (optional).',
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'   => array( 'task_id' ),
         );
     }
@@ -153,6 +158,19 @@ class UpdateTaskTool extends AbstractTool
 
         $title       = $this->stringParam($arguments, 'title');
         $description = $this->stringParam($arguments, 'description');
+
+        if ($this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'update',
+                $task_id,
+                array(
+                    'title'       => '' !== $title ? $title : null,
+                    'description' => '' !== $description ? $description : null,
+                    'meta'        => array_keys($meta),
+                ),
+                'Dry run: the task would be updated.'
+            );
+        }
 
         try {
             $item = $this->content->update(

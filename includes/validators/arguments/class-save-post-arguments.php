@@ -99,4 +99,11 @@ class SavePostArguments {
 		message: 'Slug must contain only lowercase letters, numbers, and hyphens.'
 	)]
 	public $slug = null;
+
+	/**
+	 * Describe the write without performing it (Proposal 090-M, ADR M-8).
+	 *
+	 * @var bool
+	 */
+	public $dry_run = false;
 }

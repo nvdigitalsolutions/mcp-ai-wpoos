@@ -22,6 +22,13 @@ export interface ToolDefinition {
 	flags?: string[];
 	parameters?: Record< string, unknown >;
 	enabled?: boolean;
+	/**
+	 * Readiness class from the 090-M manifest (`ready`, `pure`, `delegated`, …).
+	 * Absent on WordPress, which does not emit the manifest yet.
+	 */
+	readiness?: string;
+	/** MCP tool annotations (`readOnlyHint`, `destructiveHint`, …). */
+	annotations?: Record< string, boolean >;
 }
 
 export interface ToolsListResponse {
@@ -217,6 +224,12 @@ export class ToolsClient {
 						typeof t?.required_capability === 'string' ? t.required_capability : '',
 					flags: Array.isArray( t?.flags ) ? t.flags : [],
 					parameters: t?.inputSchema ?? {},
+					readiness:
+						typeof t?.readiness === 'string' ? t.readiness : undefined,
+					annotations:
+						t?.annotations && typeof t.annotations === 'object'
+							? ( t.annotations as Record< string, boolean > )
+							: undefined,
 				};
 			} ),
 			total:

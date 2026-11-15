@@ -103,6 +103,11 @@ class WithdrawStudentEcaTool extends AbstractTool
                     'default'     => false,
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'             => array( 'student_id', 'eca_id' ),
             'additionalProperties' => false,
         );
@@ -226,6 +231,15 @@ class WithdrawStudentEcaTool extends AbstractTool
         // ── Write student sides first, activity side last ───────────────
 
         $student_enrollments = Enrollments::map($student->meta['_student_eca_enrollments'] ?? array());
+
+        if ($this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'update',
+                $student_id,
+                array( 'student_id' => $student_id, 'eca_id' => $eca_id ),
+                'Dry run: the student would be withdrawn from the ECA.'
+            );
+        }
 
         if (array_key_exists($eca_id, $student_enrollments)) {
             unset($student_enrollments[ $eca_id ]);
