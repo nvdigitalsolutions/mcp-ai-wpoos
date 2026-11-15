@@ -136,6 +136,11 @@ Rules:
   `wp-content/` before core is copied), seed the shared volume:
   `docker run --rm -v oos-wp_wp_core:/var/www/html wordpress:6.9-php8.3-apache sh -c 'cp -a /usr/src/wordpress/. /var/www/html/ && chown -R www-data:www-data /var/www/html'`.
 
+### Local suite runner + discovery (2026-11-15)
+
+- `bin/phpunit-local-suite.php` runs an **explicit file list** (`php bin/phpunit-local-suite.php <files…>`), so a local batch no longer needs a hand-built `vendor/bin/phpunit <paths>` invocation. It is the companion to the Docker one-off runner above — same files, same `--no-coverage` expectations.
+- `tests/support/` is **excluded from PHPUnit discovery** (#7693). A helper placed there is loaded explicitly (or via the bootstrap), never as a test; do not put test classes there, and do not rely on a `*Test.php` name inside it being collected.
+
 ### Test-environment runbooks (cross-worktree, dual-matrix, standalone suites)
 
 Moved to `reference/test-environments.md` - which worktree `oos-wp` binds and
