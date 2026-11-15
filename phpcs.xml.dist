@@ -107,6 +107,11 @@
      stand-in classes for integration-path tests. -->
 <rule ref="Generic.Files.OneObjectStructurePerFile">
 <exclude-pattern>*/addons/pro/tests/class-docs-hub-stubs.php</exclude-pattern>
+<!-- test-harness-services.php groups five short harness suites (PII filter,
+     reasoning trace, self-refine loop, tool router, retrieval) around one
+     shared tool stub. Splitting it would spread a single stub across files;
+     the suites belong together. -->
+<exclude-pattern>test-harness-services\.php$</exclude-pattern>
 </rule>
 
 <!--
