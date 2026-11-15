@@ -54,7 +54,7 @@ class Test_Pro_Schedule_Fleet_Stats_REST extends WP_UnitTestCase {
 	 * - Schedule B's 2 runs form an overdue series (gap 1 000 s, last run
 	 *   99 000 s ago => 99 000 > 2 000).
 	 *
-	 * @return void
+	 * @return int The clock the fixture was seeded against.
 	 */
 	protected function seed_fleet() {
 		$now = time();
@@ -119,6 +119,8 @@ class Test_Pro_Schedule_Fleet_Stats_REST extends WP_UnitTestCase {
 				),
 			)
 		);
+
+		return $now;
 	}
 
 	/**
@@ -137,7 +139,7 @@ class Test_Pro_Schedule_Fleet_Stats_REST extends WP_UnitTestCase {
 	 * Authenticated admin receives the computed aggregates.
 	 */
 	public function test_admin_gets_fleet_stats() {
-		$this->seed_fleet();
+		$seeded_at = $this->seed_fleet();
 
 		$request  = new WP_REST_Request( 'GET', '/mcp-ai-pro/v1/schedules/fleet-stats' );
 		$response = rest_get_server()->dispatch( $request );
@@ -155,7 +157,7 @@ class Test_Pro_Schedule_Fleet_Stats_REST extends WP_UnitTestCase {
 		$this->assertSame( 60, $stats['success_rate'] );
 		$this->assertSame( 1, $stats['failures_24h'] );
 		$this->assertSame( 1, $stats['overdue_schedules'] );
-		$this->assertSame( time() - 100, $stats['last_run'] );
+		$this->assertSame( $seeded_at - 100, $stats['last_run'] );
 	}
 
 	/**
