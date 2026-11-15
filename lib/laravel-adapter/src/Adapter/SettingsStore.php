@@ -42,7 +42,10 @@ class SettingsStore implements SettingsStoreInterface {
 	private const DEFAULTS = array(
 		'default_provider'               => 'openai',
 		'default_model'                  => 'gpt-4o-mini',
-		'default_gemini_model'           => 'gemini-2.0-flash',
+		// Keep in step with the WordPress default
+		// (WP_MCP_AI_Admin_Settings_Base::get_default_settings()). A retired model
+		// here silently breaks every Gemini chat on a fresh install.
+		'default_gemini_model'           => 'gemini-3.8-flash',
 		'request_timeout'                => 60,
 		'enable_rate_limiting'           => false,
 		'rate_limit_requests'            => 100,
@@ -151,7 +154,7 @@ class SettingsStore implements SettingsStoreInterface {
 		$provider = $this->getDefaultProvider();
 
 		if ( 'gemini' === $provider ) {
-			return (string) $this->get( 'default_gemini_model', 'gemini-2.0-flash' );
+			return (string) $this->get( 'default_gemini_model', 'gemini-3.8-flash' );
 		}
 
 		return (string) $this->get( 'default_model', 'gpt-4o-mini' );
