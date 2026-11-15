@@ -1268,6 +1268,19 @@ async function runScaffold( profileRef, options ) {
 		typeof profileRef === 'string'
 			? profileRef.replace( /\\/g, '/' ).split( '/' ).pop().replace( /\.json$/, '' )
 			: undefined;
+	// A materialized profile carries its content beside itself
+	// (`sites/<name>.content/`, written by `forge materialize`): resolve it
+	// automatically so a CI build needs no extra flag.
+	const contentDirFor = () => {
+		if ( options.content ) {
+			return options.content;
+		}
+		if ( profile.content?.source !== 'materialized' ) {
+			return undefined;
+		}
+		const profilePath = profilePathOf( profileRef );
+		return profilePath ? profilePath.replace( /\.json$/, '.content' ) : undefined;
+	};
 	const result = await scaffold( {
 		profile,
 		targetDir: options.target,
@@ -1281,7 +1294,7 @@ async function runScaffold( profileRef, options ) {
 		strictContrast: options.strictContrast === true,
 		demoContent: options.demoContent === true,
 		unlock: options.unlock === true,
-		contentDir: options.content,
+		contentDir: contentDirFor(),
 		siteSlug,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
