@@ -61,7 +61,7 @@ const FIXTURE = `<!doctype html>
 describe.skipIf( ! hasChromium )( 'collectBandBoxFacts (hermetic browser probe)', () => {
 	let server: Server;
 	let browser: Browser;
-	let facts: Record< string, { boxes: Record< string, { pad?: string } > } > = {};
+	let facts: Record< string, { boxes: Record< string, { pad?: string } >; ambiguous?: string[] } > = {};
 
 	beforeAll( async () => {
 		server = createServer( ( _request, response ) => {
@@ -89,6 +89,13 @@ describe.skipIf( ! hasChromium )( 'collectBandBoxFacts (hermetic browser probe)'
 		// The row measures 0, the banner 42px. Recording either one would paint it
 		// onto every instance of the class — the leak that doubled the band.
 		expect( facts.abc.boxes[ 'hide-for-small' ]?.pad ).toBeUndefined();
+	} );
+
+	it( 'names the ambiguous class so a dropped rule is not silent', () => {
+		// The drop is invisible in the rebuild — the band simply has no rule for the
+		// class — so `analyze` reports the name and why instead of leaving the
+		// operator to discover it as a height drift.
+		expect( facts.abc.ambiguous ).toEqual( [ 'hide-for-small' ] );
 	} );
 
 	it( 'drops a class that only ever appears on scaffolding', () => {

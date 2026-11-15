@@ -132,6 +132,37 @@ describe( 'diffGeometry', () => {
 
 		expect( deviations.map( ( deviation ) => deviation.metric ) ).toEqual( [ 'columns' ] );
 	} );
+
+	it( "reports a lane difference as advisory under columns: 'warn'", () => {
+		// The raw-builder sub-page case: a row states its rhythm with padding and
+		// the shim moves that padding onto the band, so a CORRECT rebuild's lanes
+		// sit one padding constant away from the source's. Grading that as a defect
+		// reported 15 failures on a build whose every band matched.
+		const deviations = diffGeometry(
+			geometry( band( { columns: [ 700, 946 ] } ) ),
+			geometry( band( { columns: [ 946, 946 ] } ) ),
+			undefined,
+			{ columns: 'warn' }
+		);
+
+		expect( deviations ).toHaveLength( 1 );
+		expect( deviations[ 0 ] ).toMatchObject( { metric: 'column 1', severity: 'warn' } );
+	} );
+
+	it( "still fails a BAND height mismatch under columns: 'warn'", () => {
+		// The downgrade must reach the lanes only. Band height is what a reader
+		// perceives and the one number a measured-fact defect cannot hide from, so
+		// it keeps the fail cascade or the gate would have no teeth at all.
+		const deviations = diffGeometry(
+			geometry( band() ),
+			geometry( band( { height: 900 } ) ),
+			undefined,
+			{ columns: 'warn' }
+		);
+
+		expect( deviations ).toHaveLength( 1 );
+		expect( deviations[ 0 ] ).toMatchObject( { metric: 'height', severity: 'fail' } );
+	} );
 } );
 
 describe( 'geometry survives analyze --write (118 §3)', () => {

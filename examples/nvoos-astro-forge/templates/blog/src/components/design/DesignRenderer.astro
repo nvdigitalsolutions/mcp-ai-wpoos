@@ -514,13 +514,18 @@ const responsiveBandCss = sections
  * Scoped to the wrap (`[data-section-id]`) and emitted after global.css, so it
  * outranks the template's own prose defaults.
  */
-const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string }, options: { weight?: boolean } = {} ): string =>
+const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string }, options: { weight?: boolean } = {} ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
 		options.weight !== false && fact.weight && `font-weight:${ fact.weight }`,
 		fact.lineHeight && fact.lineHeight !== 'normal' && `line-height:${ fact.lineHeight }`,
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
 		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
+		// The measured heading/paragraph RHYTHM. An unclassed heading has no class
+		// for a box fact to hang on, so without this the template's prose defaults
+		// (`h1: 0.67em 0`) replaced the builder's (`0.1em 0`) and every tile grew.
+		fact.marginTop && `margin-top:${ fact.marginTop }`,
+		fact.marginBottom && `margin-bottom:${ fact.marginBottom }`,
 		// Only a POSITIVE alignment is emitted: the source centers a band's copy
 		// from a wrapper class, which the sanitizer drops. `start`/`left` is the
 		// template default and needs no rule.
@@ -540,7 +545,7 @@ const typeDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: 
 
 /** A device override, emitted verbatim — `diffTypeFact` already trimmed it to the
  * properties the source changes, so a reset back to `left` must survive. */
-const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string } ): string =>
+const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeight?: string; letterSpacing?: string; transform?: string; align?: string; color?: string; marginTop?: string; marginBottom?: string } ): string =>
 	[
 		fact.size && `font-size:${ fact.size }`,
 		fact.weight && `font-weight:${ fact.weight }`,
@@ -548,6 +553,8 @@ const overrideDeclarations = ( fact: { size?: string; weight?: string; lineHeigh
 		fact.letterSpacing && fact.letterSpacing !== 'normal' && `letter-spacing:${ fact.letterSpacing }`,
 		fact.transform && fact.transform !== 'none' && `text-transform:${ fact.transform }`,
 		fact.align && `text-align:${ fact.align }`,
+		fact.marginTop && `margin-top:${ fact.marginTop }`,
+		fact.marginBottom && `margin-bottom:${ fact.marginBottom }`,
 		fact.color && `color:${ fact.color }`,
 	]
 		.filter( Boolean )

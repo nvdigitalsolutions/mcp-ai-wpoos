@@ -82,7 +82,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://monicarajiv.com",
-			"analyzedAt": "2026-11-15T10:35:17.792Z"
+			"analyzedAt": "2026-11-15T11:55:19.504Z"
 		},
 		"concept": "warm accent over light neutrals, karma display / lato body, compact spacing rhythm.",
 		"palette": {
@@ -393,7 +393,7 @@
 		"danglingAnchors": [
 			"endgame"
 		],
-		"analyzedAt": "2026-11-15T10:35:22.220Z"
+		"analyzedAt": "2026-11-15T11:55:24.056Z"
 	},
 	"wireframes": {
 		"save-the-date": {
@@ -475,7 +475,7 @@
 			"timer"
 		],
 		"unknownBlocks": [],
-		"analyzedAt": "2026-11-15T10:35:23.366Z"
+		"analyzedAt": "2026-11-15T11:55:25.174Z"
 	},
 	"geometry": {
 		"834b9c8": {
@@ -905,10 +905,10 @@
 							"selector": ":nth-child(1)",
 							"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
 							"base": "transform:translate(0%, -96.2%) scale(1, 1)",
-							"hover": "opacity:0.156063;transform:translate(0%, -80%) scale(1, 1)",
-							"focus": "opacity:0.156063;transform:translate(0%, -80%) scale(1, 1)",
-							"focusVisible": "opacity:0.176244;transform:translate(0%, -77.9%) scale(1, 1)",
-							"active": "opacity:0.176244;transform:translate(0%, -77.9%) scale(1, 1)"
+							"hover": "opacity:0.423444;transform:translate(0%, -55.3%) scale(1, 1)",
+							"focus": "opacity:0.452079;transform:translate(0%, -53.1%) scale(1, 1)",
+							"focusVisible": "opacity:0.481549;transform:translate(0%, -51%) scale(1, 1)",
+							"active": "opacity:0.511674;transform:translate(0%, -48.9%) scale(1, 1)"
 						}
 					]
 				}
@@ -927,15 +927,21 @@
 					"family": "Karma",
 					"color": "rgb(255, 255, 255)",
 					"maxWidth": "none",
+					"marginTop": "11.2px",
+					"marginBottom": "11.2px",
 					"tablet": {
 						"size": "52.542px",
 						"lineHeight": "52.542px",
-						"letterSpacing": "2.6271px"
+						"letterSpacing": "2.6271px",
+						"marginTop": "10.5084px",
+						"marginBottom": "10.5084px"
 					},
 					"mobile": {
 						"size": "38.5px",
 						"lineHeight": "38.5px",
-						"letterSpacing": "1.925px"
+						"letterSpacing": "1.925px",
+						"marginTop": "7.7px",
+						"marginBottom": "7.7px"
 					}
 				},
 				"h3": {
@@ -948,13 +954,19 @@
 					"family": "Dancing Script",
 					"color": "rgb(255, 255, 255)",
 					"maxWidth": "none",
+					"marginTop": "6.4px",
+					"marginBottom": "6.4px",
 					"tablet": {
 						"size": "30.024px",
-						"lineHeight": "30.024px"
+						"lineHeight": "30.024px",
+						"marginTop": "6.0048px",
+						"marginBottom": "6.0048px"
 					},
 					"mobile": {
 						"size": "22px",
-						"lineHeight": "22px"
+						"lineHeight": "22px",
+						"marginTop": "4.4px",
+						"marginBottom": "4.4px"
 					}
 				}
 			},
@@ -1171,9 +1183,12 @@
 					"family": "Karma",
 					"color": "rgb(255, 255, 255)",
 					"maxWidth": "none",
+					"marginTop": "0px",
+					"marginBottom": "11.1px",
 					"mobile": {
 						"size": "16px",
-						"lineHeight": "25.6px"
+						"lineHeight": "25.6px",
+						"marginBottom": "8px"
 					}
 				}
 			},
@@ -1187,6 +1202,8 @@
 				"family": "Lato",
 				"color": "rgb(241, 241, 241)",
 				"maxWidth": "none",
+				"marginTop": "0px",
+				"marginBottom": "0px",
 				"mobile": {
 					"size": "16px",
 					"lineHeight": "25.6px"
@@ -1431,15 +1448,21 @@
 					"family": "Karma",
 					"color": "rgb(255, 255, 255)",
 					"maxWidth": "none",
+					"marginTop": "9.28px",
+					"marginBottom": "9.28px",
 					"tablet": {
 						"size": "43.5348px",
 						"lineHeight": "43.5348px",
-						"letterSpacing": "2.17674px"
+						"letterSpacing": "2.17674px",
+						"marginTop": "8.70696px",
+						"marginBottom": "8.70696px"
 					},
 					"mobile": {
 						"size": "31.9px",
 						"lineHeight": "31.9px",
-						"letterSpacing": "1.595px"
+						"letterSpacing": "1.595px",
+						"marginTop": "6.38px",
+						"marginBottom": "6.38px"
 					}
 				},
 				"h3": {
@@ -1452,13 +1475,19 @@
 					"family": "Dancing Script",
 					"color": "rgb(255, 255, 255)",
 					"maxWidth": "none",
+					"marginTop": "6.4px",
+					"marginBottom": "6.4px",
 					"tablet": {
 						"size": "30.024px",
-						"lineHeight": "30.024px"
+						"lineHeight": "30.024px",
+						"marginTop": "6.0048px",
+						"marginBottom": "6.0048px"
 					},
 					"mobile": {
 						"size": "22px",
-						"lineHeight": "22px"
+						"lineHeight": "22px",
+						"marginTop": "4.4px",
+						"marginBottom": "4.4px"
 					}
 				}
 			},
@@ -1472,13 +1501,19 @@
 				"family": "Lato",
 				"color": "rgb(241, 241, 241)",
 				"maxWidth": "none",
+				"marginTop": "16px",
+				"marginBottom": "16px",
 				"tablet": {
 					"size": "15.012px",
-					"lineHeight": "24.0192px"
+					"lineHeight": "24.0192px",
+					"marginTop": "15.012px",
+					"marginBottom": "15.012px"
 				},
 				"mobile": {
 					"size": "11px",
-					"lineHeight": "17.6px"
+					"lineHeight": "17.6px",
+					"marginTop": "11px",
+					"marginBottom": "11px"
 				}
 			},
 			"container": {
@@ -1705,7 +1740,7 @@
 		"heightChanged": true
 	},
 	"text": {
-		"capturedAt": "2026-11-15T10:37:17.214Z",
+		"capturedAt": "2026-11-15T11:56:39.610Z",
 		"url": "https://monicarajiv.com",
 		"page": "skip to content welcome to our universe [email protected] welcome to our universe menu menu ... the final episode has begun ... engame monica & rajiv doomsday accomodations sri lanka rajiv hundlani created in sri lanka, with an unstoppable healing power, adamantium claws and a no nonsense attitude, rajiv is one of the most ferocious heroes in the universe. he's the best there is at what he does, untill he met his match ... monica daryanani monica is a member of a subspecies of humans who are born in the philippines with superhuman abilities. she found her soulmate, rajiv, using her telepathic and telekinetic powers. she is a caring, nurturing figure, but she also has to deal with rajiv. this is where her omega-level mutant abilites will be crucial. doomsday clock manu & reshma hundlani rajkumar & sapna daryanani request the pleasure of your company at the wedding ceremony of their children the wedding doomsday accommodations sri lanka copyright 2026 © monica & rajiv home doomsday accommodations cinnamon grand hotel hotel rates salon services airport transfer sri lanka",
 		"sections": [
@@ -1923,7 +1958,7 @@
 		"csp": {
 			"hosts": []
 		},
-		"analyzedAt": "2026-11-15T10:37:21.671Z",
+		"analyzedAt": "2026-11-15T11:56:42.919Z",
 		"pagesAnalyzed": [
 			"https://monicarajiv.com",
 			"https://monicarajiv.com/accommodations/",
@@ -2068,21 +2103,21 @@
 	"pageBands": {
 		"airport-transfer": {
 			"url": "https://monicarajiv.com/airport-transfer/",
-			"measuredAt": "2026-11-15T10:36:43.566Z",
+			"measuredAt": "2026-11-15T11:56:06.320Z",
 			"builder": "gutenberg",
 			"sections": [
 				{
 					"id": "834b9c8",
-					"anchor": "section_1016337065",
+					"anchor": "section_2070688544",
 					"bgColor": "#dd3333"
 				},
 				{
 					"id": "834b9c9",
-					"anchor": "section_72736704"
+					"anchor": "section_612941668"
 				},
 				{
 					"id": "834b9ca",
-					"anchor": "section_1639939216",
+					"anchor": "section_1646426701",
 					"bgColor": "#dd3333",
 					"columns": [
 						{
@@ -2107,7 +2142,7 @@
 				},
 				{
 					"id": "834b9cb",
-					"anchor": "section_1134758253",
+					"anchor": "section_1273790047",
 					"columns": [
 						{
 							"width": 58.33
@@ -2125,7 +2160,7 @@
 				},
 				{
 					"id": "834b9cc",
-					"anchor": "section_327274295",
+					"anchor": "section_1075759761",
 					"bgColor": "#f1dfdc"
 				}
 			],
@@ -2586,9 +2621,12 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "0px",
+							"marginBottom": "15.096px",
 							"mobile": {
 								"size": "22.4px",
-								"lineHeight": "29.12px"
+								"lineHeight": "29.12px",
+								"marginBottom": "11.2px"
 							}
 						}
 					},
@@ -2602,9 +2640,12 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "0px",
+						"marginBottom": "23.088px",
 						"mobile": {
 							"size": "16px",
-							"lineHeight": "25.6px"
+							"lineHeight": "25.6px",
+							"marginBottom": "20.8px"
 						}
 					},
 					"container": {
@@ -2712,10 +2753,13 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "0px",
+							"marginBottom": "14.208px",
 							"mobile": {
 								"size": "19.2px",
 								"lineHeight": "23.04px",
-								"letterSpacing": "0.96px"
+								"letterSpacing": "0.96px",
+								"marginBottom": "9.6px"
 							}
 						},
 						"h3": {
@@ -2728,9 +2772,12 @@
 							"family": "Karma",
 							"color": "rgb(0, 0, 0)",
 							"maxWidth": "none",
+							"marginTop": "0px",
+							"marginBottom": "11.1px",
 							"mobile": {
 								"size": "16px",
-								"lineHeight": "25.6px"
+								"lineHeight": "25.6px",
+								"marginBottom": "8px"
 							}
 						},
 						"h4": {
@@ -2743,9 +2790,12 @@
 							"family": "Karma",
 							"color": "rgb(0, 0, 0)",
 							"maxWidth": "none",
+							"marginTop": "0px",
+							"marginBottom": "9.99px",
 							"mobile": {
 								"size": "16px",
-								"lineHeight": "25.6px"
+								"lineHeight": "25.6px",
+								"marginBottom": "8px"
 							}
 						}
 					},
@@ -2911,10 +2961,14 @@
 							"family": "Karma",
 							"color": "rgb(0, 0, 0)",
 							"maxWidth": "none",
+							"marginTop": "7.7px",
+							"marginBottom": "7.7px",
 							"tablet": {
 								"size": "52.542px",
 								"lineHeight": "52.542px",
-								"letterSpacing": "2.6271px"
+								"letterSpacing": "2.6271px",
+								"marginTop": "10.5084px",
+								"marginBottom": "10.5084px"
 							}
 						}
 					},
@@ -2928,9 +2982,13 @@
 						"family": "Lato",
 						"color": "rgb(0, 0, 0)",
 						"maxWidth": "none",
+						"marginTop": "11px",
+						"marginBottom": "11px",
 						"tablet": {
 							"size": "15.012px",
-							"lineHeight": "24.0192px"
+							"lineHeight": "24.0192px",
+							"marginTop": "15.012px",
+							"marginBottom": "15.012px"
 						}
 					},
 					"container": {
@@ -3206,15 +3264,21 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "6.4px",
+							"marginBottom": "6.4px",
 							"tablet": {
 								"size": "30.024px",
 								"lineHeight": "30.024px",
-								"letterSpacing": "1.5012px"
+								"letterSpacing": "1.5012px",
+								"marginTop": "6.0048px",
+								"marginBottom": "6.0048px"
 							},
 							"mobile": {
 								"size": "22px",
 								"lineHeight": "22px",
-								"letterSpacing": "1.1px"
+								"letterSpacing": "1.1px",
+								"marginTop": "4.4px",
+								"marginBottom": "4.4px"
 							}
 						}
 					},
@@ -3380,7 +3444,7 @@
 		},
 		"sri-lanka": {
 			"url": "https://monicarajiv.com/sri-lanka/",
-			"measuredAt": "2026-11-15T10:36:52.757Z",
+			"measuredAt": "2026-11-15T11:56:14.172Z",
 			"builder": "gutenberg",
 			"sections": [
 				{
@@ -3703,15 +3767,21 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "6px",
+							"marginBottom": "6px",
 							"tablet": {
 								"size": "25.02px",
 								"lineHeight": "25.02px",
-								"letterSpacing": "1.251px"
+								"letterSpacing": "1.251px",
+								"marginTop": "5.004px",
+								"marginBottom": "5.004px"
 							},
 							"mobile": {
 								"size": "22px",
 								"lineHeight": "22px",
-								"letterSpacing": "1.1px"
+								"letterSpacing": "1.1px",
+								"marginTop": "4.4px",
+								"marginBottom": "4.4px"
 							}
 						}
 					},
@@ -3725,13 +3795,19 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "15px",
+						"marginBottom": "15px",
 						"tablet": {
 							"size": "12.51px",
-							"lineHeight": "20.016px"
+							"lineHeight": "20.016px",
+							"marginTop": "12.51px",
+							"marginBottom": "12.51px"
 						},
 						"mobile": {
 							"size": "11px",
-							"lineHeight": "17.6px"
+							"lineHeight": "17.6px",
+							"marginTop": "11px",
+							"marginBottom": "11px"
 						}
 					},
 					"container": {
@@ -4055,7 +4131,7 @@
 		},
 		"accommodations": {
 			"url": "https://monicarajiv.com/accommodations/",
-			"measuredAt": "2026-11-15T10:37:10.703Z",
+			"measuredAt": "2026-11-15T11:56:30.375Z",
 			"builder": "gutenberg",
 			"sections": [
 				{
@@ -4845,10 +4921,13 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "0px",
+							"marginBottom": "15.096px",
 							"mobile": {
 								"size": "22.4px",
 								"lineHeight": "26.88px",
-								"letterSpacing": "1.12px"
+								"letterSpacing": "1.12px",
+								"marginBottom": "11.2px"
 							}
 						}
 					},
@@ -4862,9 +4941,12 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "0px",
+						"marginBottom": "23.088px",
 						"mobile": {
 							"size": "16px",
-							"lineHeight": "25.6px"
+							"lineHeight": "25.6px",
+							"marginBottom": "20.8px"
 						}
 					},
 					"container": {
@@ -5047,10 +5129,13 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "0px",
+							"marginBottom": "14.208px",
 							"mobile": {
 								"size": "19.2px",
 								"lineHeight": "23.04px",
-								"letterSpacing": "0.96px"
+								"letterSpacing": "0.96px",
+								"marginBottom": "9.6px"
 							}
 						}
 					},
@@ -5064,9 +5149,12 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "0px",
+						"marginBottom": "23.088px",
 						"mobile": {
 							"size": "16px",
-							"lineHeight": "25.6px"
+							"lineHeight": "25.6px",
+							"marginBottom": "20.8px"
 						}
 					},
 					"container": {
@@ -5175,15 +5263,21 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "6.3px",
+							"marginBottom": "6.3px",
 							"tablet": {
 								"size": "23.352px",
 								"lineHeight": "23.352px",
-								"letterSpacing": "1.1676px"
+								"letterSpacing": "1.1676px",
+								"marginTop": "4.6704px",
+								"marginBottom": "4.6704px"
 							},
 							"mobile": {
 								"size": "38.5px",
 								"lineHeight": "38.5px",
-								"letterSpacing": "1.925px"
+								"letterSpacing": "1.925px",
+								"marginTop": "7.7px",
+								"marginBottom": "7.7px"
 							}
 						}
 					},
@@ -5197,13 +5291,19 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "9px",
+						"marginBottom": "9px",
 						"tablet": {
 							"size": "6.672px",
-							"lineHeight": "10.6752px"
+							"lineHeight": "10.6752px",
+							"marginTop": "6.672px",
+							"marginBottom": "6.672px"
 						},
 						"mobile": {
 							"size": "11px",
-							"lineHeight": "17.6px"
+							"lineHeight": "17.6px",
+							"marginTop": "11px",
+							"marginBottom": "11px"
 						}
 					},
 					"container": {
@@ -5445,9 +5545,13 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "2.71728px",
+							"marginBottom": "2.71728px",
 							"mobile": {
 								"size": "19.04px",
-								"lineHeight": "24.752px"
+								"lineHeight": "24.752px",
+								"marginTop": "1.904px",
+								"marginBottom": "1.904px"
 							}
 						},
 						"h2": {
@@ -5460,9 +5564,13 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "2.55744px",
+							"marginBottom": "2.55744px",
 							"mobile": {
 								"size": "16.32px",
-								"lineHeight": "21.216px"
+								"lineHeight": "21.216px",
+								"marginTop": "1.632px",
+								"marginBottom": "1.632px"
 							}
 						}
 					},
@@ -5476,9 +5584,13 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "1.5984px",
+						"marginBottom": "1.5984px",
 						"mobile": {
 							"size": "13.6px",
-							"lineHeight": "21.76px"
+							"lineHeight": "21.76px",
+							"marginTop": "1.36px",
+							"marginBottom": "1.36px"
 						}
 					},
 					"container": {
@@ -5610,15 +5722,21 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "11.2px",
+							"marginBottom": "11.2px",
 							"tablet": {
 								"size": "52.542px",
 								"lineHeight": "52.542px",
-								"letterSpacing": "2.6271px"
+								"letterSpacing": "2.6271px",
+								"marginTop": "10.5084px",
+								"marginBottom": "10.5084px"
 							},
 							"mobile": {
 								"size": "38.5px",
 								"lineHeight": "38.5px",
-								"letterSpacing": "1.925px"
+								"letterSpacing": "1.925px",
+								"marginTop": "7.7px",
+								"marginBottom": "7.7px"
 							}
 						}
 					},
@@ -5632,13 +5750,19 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "16px",
+						"marginBottom": "16px",
 						"tablet": {
 							"size": "15.012px",
-							"lineHeight": "24.0192px"
+							"lineHeight": "24.0192px",
+							"marginTop": "15.012px",
+							"marginBottom": "15.012px"
 						},
 						"mobile": {
 							"size": "11px",
-							"lineHeight": "17.6px"
+							"lineHeight": "17.6px",
+							"marginTop": "11px",
+							"marginBottom": "11px"
 						}
 					},
 					"container": {
@@ -5827,15 +5951,21 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "6.3px",
+							"marginBottom": "6.3px",
 							"tablet": {
 								"size": "23.352px",
 								"lineHeight": "23.352px",
-								"letterSpacing": "1.1676px"
+								"letterSpacing": "1.1676px",
+								"marginTop": "4.6704px",
+								"marginBottom": "4.6704px"
 							},
 							"mobile": {
 								"size": "38.5px",
 								"lineHeight": "38.5px",
-								"letterSpacing": "1.925px"
+								"letterSpacing": "1.925px",
+								"marginTop": "7.7px",
+								"marginBottom": "7.7px"
 							}
 						}
 					},
@@ -5849,13 +5979,19 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "9px",
+						"marginBottom": "9px",
 						"tablet": {
 							"size": "6.672px",
-							"lineHeight": "10.6752px"
+							"lineHeight": "10.6752px",
+							"marginTop": "6.672px",
+							"marginBottom": "6.672px"
 						},
 						"mobile": {
 							"size": "11px",
-							"lineHeight": "17.6px"
+							"lineHeight": "17.6px",
+							"marginTop": "11px",
+							"marginBottom": "11px"
 						}
 					},
 					"container": {
@@ -5911,6 +6047,9 @@
 						},
 						"has-hover": {
 							"base": "padding:420px 0px 0px 0px;margin:0px 0px 0px 0px"
+						},
+						"hide-for-small": {
+							"base": "margin:0px 0px 0px 0px"
 						},
 						"banner-inner": {
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
@@ -5993,6 +6132,9 @@
 							"base": "padding:80px 0px 0px 0px;margin:0px 0px 0px 0px"
 						}
 					},
+					"boxWarnings": [
+						"hide-for-small"
+					],
 					"media": {
 						"bg": {
 							"base": "height:420px"
@@ -6079,15 +6221,21 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "11.2px",
+							"marginBottom": "11.2px",
 							"tablet": {
 								"size": "52.542px",
 								"lineHeight": "52.542px",
-								"letterSpacing": "2.6271px"
+								"letterSpacing": "2.6271px",
+								"marginTop": "10.5084px",
+								"marginBottom": "10.5084px"
 							},
 							"mobile": {
 								"size": "38.5px",
 								"lineHeight": "38.5px",
-								"letterSpacing": "1.925px"
+								"letterSpacing": "1.925px",
+								"marginTop": "7.7px",
+								"marginBottom": "7.7px"
 							}
 						}
 					},
@@ -6101,13 +6249,19 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "16px",
+						"marginBottom": "16px",
 						"tablet": {
 							"size": "15.012px",
-							"lineHeight": "24.0192px"
+							"lineHeight": "24.0192px",
+							"marginTop": "15.012px",
+							"marginBottom": "15.012px"
 						},
 						"mobile": {
 							"size": "11px",
-							"lineHeight": "17.6px"
+							"lineHeight": "17.6px",
+							"marginTop": "11px",
+							"marginBottom": "11px"
 						}
 					},
 					"container": {
@@ -6296,10 +6450,13 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "0px",
+							"marginBottom": "15.096px",
 							"mobile": {
 								"size": "22.4px",
 								"lineHeight": "26.88px",
-								"letterSpacing": "1.12px"
+								"letterSpacing": "1.12px",
+								"marginBottom": "11.2px"
 							}
 						},
 						"h4": {
@@ -6312,9 +6469,13 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "2.2977px",
+							"marginBottom": "2.2977px",
 							"mobile": {
 								"size": "16px",
-								"lineHeight": "20.8px"
+								"lineHeight": "20.8px",
+								"marginTop": "1.6px",
+								"marginBottom": "1.6px"
 							}
 						}
 					},
@@ -6328,9 +6489,12 @@
 						"family": "Lato",
 						"color": "rgb(241, 241, 241)",
 						"maxWidth": "none",
+						"marginTop": "0px",
+						"marginBottom": "23.088px",
 						"mobile": {
 							"size": "16px",
-							"lineHeight": "25.6px"
+							"lineHeight": "25.6px",
+							"marginBottom": "20.8px"
 						}
 					},
 					"container": {
@@ -6571,13 +6735,19 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "6.4px",
+							"marginBottom": "6.4px",
 							"tablet": {
 								"size": "30.024px",
-								"lineHeight": "30.024px"
+								"lineHeight": "30.024px",
+								"marginTop": "6.0048px",
+								"marginBottom": "6.0048px"
 							},
 							"mobile": {
 								"size": "22px",
-								"lineHeight": "22px"
+								"lineHeight": "22px",
+								"marginTop": "4.4px",
+								"marginBottom": "4.4px"
 							}
 						}
 					},
@@ -6743,7 +6913,7 @@
 		},
 		"doomsday": {
 			"url": "https://monicarajiv.com/doomsday/",
-			"measuredAt": "2026-11-15T10:37:17.210Z",
+			"measuredAt": "2026-11-15T11:56:39.604Z",
 			"builder": "gutenberg",
 			"sections": [
 				{
@@ -6861,13 +7031,19 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "6.4px",
+							"marginBottom": "6.4px",
 							"tablet": {
 								"size": "30.024px",
-								"lineHeight": "30.024px"
+								"lineHeight": "30.024px",
+								"marginTop": "6.0048px",
+								"marginBottom": "6.0048px"
 							},
 							"mobile": {
 								"size": "22px",
-								"lineHeight": "22px"
+								"lineHeight": "22px",
+								"marginTop": "4.4px",
+								"marginBottom": "4.4px"
 							}
 						}
 					},
@@ -7100,9 +7276,12 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "0px",
+							"marginBottom": "15.096px",
 							"mobile": {
 								"size": "22.4px",
-								"lineHeight": "29.12px"
+								"lineHeight": "29.12px",
+								"marginBottom": "11.2px"
 							}
 						},
 						"h3": {
@@ -7115,13 +7294,19 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "6.4px",
+							"marginBottom": "6.4px",
 							"tablet": {
 								"size": "30.024px",
-								"lineHeight": "30.024px"
+								"lineHeight": "30.024px",
+								"marginTop": "6.0048px",
+								"marginBottom": "6.0048px"
 							},
 							"mobile": {
 								"size": "22px",
-								"lineHeight": "22px"
+								"lineHeight": "22px",
+								"marginTop": "4.4px",
+								"marginBottom": "4.4px"
 							}
 						},
 						"h4": {
@@ -7134,13 +7319,19 @@
 							"family": "Karma",
 							"color": "rgb(255, 255, 255)",
 							"maxWidth": "none",
+							"marginTop": "14.4px",
+							"marginBottom": "14.4px",
 							"tablet": {
 								"size": "22.518px",
-								"lineHeight": "36.0288px"
+								"lineHeight": "36.0288px",
+								"marginTop": "13.5108px",
+								"marginBottom": "13.5108px"
 							},
 							"mobile": {
 								"size": "16.5px",
-								"lineHeight": "26.4px"
+								"lineHeight": "26.4px",
+								"marginTop": "9.9px",
+								"marginBottom": "9.9px"
 							}
 						}
 					},

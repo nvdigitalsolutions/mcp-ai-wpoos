@@ -548,6 +548,18 @@ async function runAnalyze( url, options ) {
 					console.log(
 						`\u2713 Band facts: ${ Object.keys( bandFacts.bands ).length } band(s) — container width + typography.`
 					);
+					// A class whose box was DROPPED for measuring differently on a row and a
+					// module is invisible otherwise: the rebuilt band simply has no rule
+					// for it, and the symptom (a band at twice its source height) points
+					// everywhere except the silent omission.
+					for ( const [ id, band ] of Object.entries( bandFacts.bands ) ) {
+						if ( ! band.boxWarnings || band.boxWarnings.length === 0 ) {
+							continue;
+						}
+						console.warn(
+							`  \u26a0 Band ${ id }: no box fact for ${ band.boxWarnings.map( ( name ) => `\`${ name }\`` ).join( ', ' ) } \u2014 the class sits on a row AND on content with a different box, so no single rule is safe (its padding is the band\u2019s job).`
+						);
+					}
 				} catch ( error ) {
 					console.warn(
 						`\u26a0 Band facts skipped: ${ error instanceof Error ? error.message : error }`
@@ -777,6 +789,24 @@ async function runAnalyze( url, options ) {
 				} );
 				profile.pageBands = measured;
 				console.log( `\u2713 Per-page bands: ${ Object.keys( measured ).length } page(s) measured.` );
+				// A class whose box was dropped is invisible in the rebuild — the band
+				// simply has no rule for it and the symptom (a band at twice its source
+				// height) points everywhere except the silent omission. Named here,
+				// across the SUB-pages too, because that is where a class-keyed box fact
+				// leaks: the front page's four bands are the ones a rebuild is tuned
+				// against, so a shared class usually shows up on an inner page first.
+				for ( const [ slug, page ] of Object.entries( measured ) ) {
+					for ( const [ id, band ] of Object.entries( page.bandFacts ?? {} ) ) {
+						if ( ! band.boxWarnings || band.boxWarnings.length === 0 ) {
+							continue;
+						}
+						console.warn(
+							`  \u26a0 /${ slug }/ band ${ id }: no box fact for ${ band.boxWarnings
+								.map( ( name ) => `\`${ name }\`` )
+								.join( ', ' ) } \u2014 the class sits on a row AND on content with a different box, so no single rule is safe (the band carries its padding).`
+						);
+					}
+				}
 			} catch ( error ) {
 				console.warn( `\u26a0 Per-page bands skipped: ${ error instanceof Error ? error.message : error }` );
 			}
@@ -2452,10 +2482,27 @@ async function runVerify( profileRef, options ) {
 			// Per-page bands (`analyze --pages`): every measured sub-page gets the
 			// same box diff against its OWN recorded geometry — the homepage's boxes
 			// are not a sub-page's (a 7,497px article band, 2026-11-11).
-			if ( options.pages && profile.pageBands ) {
+			//
+			// This gate is ON BY DEFAULT and BAND HEIGHT BLOCKS. It was opt-in and
+			// wholly advisory, and that is precisely how nineteen sub-page bands
+			// drifted (one to 2× its source height) while eight gates reported green:
+			// the homepage has four bands and every one of them was right. A
+			// measured-fact defect shows up on a SUB-page first because the
+			// front page is the one the rebuild was tuned against.
+			//
+			// COLUMNS stay advisory: a builder row states its lanes with `padding`,
+			// and the shim deliberately moves that vertical rhythm onto the band, so
+			// a correct rebuild's lane boxes sit one padding away from the source's
+			// while the band height is exact. Gating on that reported 15 failures on
+			// a pixel-perfect build and buried the real signal.
+			const runsPageBands =
+				profile.pageBands && options.pages !== false && options.bands !== false;
+			if ( runsPageBands ) {
+				const pageBandsPolicy = resolveGateMode( 'page bands', profile.verify );
 				let compared = 0;
 				let pageFailures = 0;
 				let pageWarnings = 0;
+				let columnAdvisories = 0;
 				for ( const [ slug, page ] of Object.entries( profile.pageBands ) ) {
 					const pageIds = Object.keys( page.geometry ?? {} );
 					if ( pageIds.length === 0 ) {
@@ -2463,41 +2510,77 @@ async function runVerify( profileRef, options ) {
 					}
 					try {
 						const builtPage = await measureGeometry( { url: `${ served.url }${ slug }/`, ids: pageIds, kind: 'built' } );
-						const pageDeviations = diffGeometry( page.geometry, builtPage );
+						const pageDeviations = diffGeometry( page.geometry, builtPage, undefined, {
+							columns: options.strictPages ? 'fail' : 'warn',
+						} );
 						compared += pageIds.length;
-						pageFailures += pageDeviations.filter( ( deviation ) => deviation.severity === 'fail' ).length;
-						pageWarnings += pageDeviations.filter( ( deviation ) => deviation.severity === 'warn' ).length;
+						const failures = pageDeviations.filter( ( deviation ) => deviation.severity === 'fail' );
+						const warnings = pageDeviations.filter( ( deviation ) => deviation.severity === 'warn' );
+						const columnWarnings = warnings.filter( ( deviation ) => deviation.metric.startsWith( 'column ' ) );
+						pageFailures += failures.length;
+						pageWarnings += warnings.length - columnWarnings.length;
+						columnAdvisories += columnWarnings.length;
+						// Column advisories are summarised, never listed: they are one
+						// padding constant repeated across every lane of the band.
+						const reported = [ ...failures, ...warnings.filter( ( d ) => ! d.metric.startsWith( 'column ' ) ) ];
 						if ( pageDeviations.length === 0 ) {
-							console.log( `\u2713 Geometry /${ slug }/: every band matches its own source box.` );
+							console.log( `\u2713 Page bands /${ slug }/: every band matches its own source box.` );
 						} else {
-							for ( const deviation of pageDeviations.slice( 0, 6 ) ) {
+							for ( const deviation of reported.slice( 0, 6 ) ) {
 								const mark = deviation.severity === 'fail' ? '\u2717' : '\u26a0';
 								const actual = deviation.actual === null ? 'missing' : `${ deviation.actual }px`;
 								console.warn(
-									`${ mark } Geometry /${ slug }/ band ${ deviation.sectionId } @ ${ deviation.viewport } ${ deviation.metric } \u2014 source ${ deviation.expected }px, build ${ actual }`
+									`${ mark } Page bands /${ slug }/ band ${ deviation.sectionId } @ ${ deviation.viewport } ${ deviation.metric } \u2014 source ${ deviation.expected }px, build ${ actual }`
 								);
+							}
+							if ( reported.length === 0 ) {
+								console.log( `\u2713 Page bands /${ slug }/: every band height matches its own source box.` );
 							}
 						}
 					} catch ( error ) {
-						console.warn( `  \u26a0 Geometry /${ slug }/: skipped (${ error instanceof Error ? error.message : error }).` );
+						console.warn( `  \u26a0 Page bands /${ slug }/: skipped (${ error instanceof Error ? error.message : error }).` );
 					}
 				}
 				if ( compared > 0 ) {
-					console.log( `  per-page geometry: ${ pageFailures } fail, ${ pageWarnings } warn across ${ compared } band(s)` );
-					if ( pageFailures > 0 ) {
-						// A sub-page band that outgrows its source box is usually CONTENT
-						// SCALE (an image gallery rendering a row the source cropped away),
-						// not a missing fact — the homepage gate stays the blocking one and
-						// `--strict-pages` opts into failing here.
-						if ( options.strictPages ) {
-							process.exitCode = 1;
-						} else {
-							console.warn(
-								`  \u2139 Per-page geometry: ${ pageFailures } failure(s) reported ADVISORY (content-scale overshoot) \u2014 pass --strict-pages to fail the run.`
-							);
-						}
+					// Lane advisories ride the NOTE, not the status: the shim moves a raw
+					// row's vertical rhythm onto the band by construction, so every
+					// builder site carries them — a permanent `warn` would make the
+					// warning colour mean nothing. The count stays visible here and the
+					// run prints the explanation line below.
+					const detail = `${ pageFailures } fail, ${ pageWarnings } warn across ${ compared } band(s)${
+						columnAdvisories > 0 ? `, ${ columnAdvisories } lane advisory(ies)` : ''
+					}`;
+					console.log( `  page bands: ${ detail }` );
+					if ( columnAdvisories > 0 && ! options.strictPages ) {
+						console.warn(
+							`  \u2139 Page bands: ${ columnAdvisories } lane-height advisory(ies) \u2014 a builder row's vertical padding is carried by the band here, so lanes differ by that constant while the band height matches. Pass --strict-pages to fail on them.`
+						);
 					}
+					if ( pageFailures > 0 && pageBandsPolicy.mode === 'gate' ) {
+						process.exitCode = 1;
+					} else if ( pageFailures > 0 ) {
+						console.warn(
+							`\u2139 Page bands: ${ pageFailures } failure(s) treated as ADVISORY \u2014 the profile downgraded this gate, so the run is not failed.`
+						);
+					}
+					record(
+						'page bands',
+						pageFailures > 0
+							? pageBandsPolicy.mode === 'advisory'
+								? 'advisory'
+								: 'fail'
+							: pageWarnings > 0
+								? 'warn'
+								: 'pass',
+						detail,
+						gateNote( pageBandsPolicy )
+					);
 				}
+			} else if ( geometryRequested && ! profile.pageBands ) {
+				console.warn(
+					"\u26a0 Page bands: the profile has no per-page baseline \u2014 the homepage's four bands are the only ones this run can vouch for. Re-run `analyze <url> --pages --write <profile>` to measure every sub-page."
+				);
+				record( 'page bands', 'skip', 'no baseline (analyze --pages)' );
 			}
 
 			// -----------------------------------------------------------------
@@ -3539,8 +3622,9 @@ program
 	.option( '--strict-classes', 'fail when any class name in the rebuilt bands matches no stylesheet rule (default: report-only)' )
 	.option( '--threshold <n>', 'parity pass threshold 0-1 (default 0.6)', '0.6' )
 	.option( '--geometry', 'diff the built bands\u0027 boxes against the recorded source geometry (needs `analyze --geometry`; requires Playwright)' )
-	.option( '--pages', 'with --geometry: also diff every page measured by `analyze --pages`' )
-	.option( '--strict-pages', 'with --pages: fail the run on a sub-page band that misses its own source box (default: advisory — content-scale overshoot)' )
+	.option( '--pages', 'diff every page measured by `analyze --pages` (the default whenever the profile carries pageBands; kept as an explicit alias)' )
+	.option( '--no-pages', 'skip the per-page band gate even when the profile carries a per-page baseline' )
+	.option( '--strict-pages', 'with --pages: also fail on LANE-height differences (default: lanes are advisory \u2014 a builder row\u2019s vertical padding is carried by the band in the rebuild)' )
 	.option( '--geometry-limit <n>', 'how many geometry deviations to print (default 12)', '12' )
 	.option( '--interactions', 'verify the rebuilt controls keep the source\'s hover / focus / focus-visible / active states and show a keyboard focus ring (needs `analyze --geometry`; requires Playwright)' )
 	.option( '--interactions-limit <n>', 'how many interaction findings to print (default 12)', '12' )

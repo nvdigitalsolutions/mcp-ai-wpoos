@@ -789,6 +789,20 @@ export interface BandTypeFact {
 	 */
 	maxWidth?: string;
 	/**
+	 * Computed `margin-top` / `margin-bottom`.
+	 *
+	 * A builder sets its heading rhythm in the vendor sheet (Flatsome's box
+	 * headings are `margin: 0.1em 0`), and an UNCLASSSED heading has no class for
+	 * a box fact to hang on, so the rebuilt heading fell back to the template's
+	 * prose defaults (`h1 { margin: 0.67em 0 }`, `p { margin: 1em 0 }`). On
+	 * monicarajiv's services grid that added ~43px of collapsed margin per tile
+	 * and left the band 108px taller than its source.
+	 *
+	 * Measured, so a builder that deliberately sets `margin: 0` keeps it.
+	 */
+	marginTop?: string;
+	marginBottom?: string;
+	/**
 	 * What the source CHANGES at the template's tablet/mobile breakpoints, and
 	 * only that. A 55px hero headline is 22px on a phone — emitting the desktop
 	 * size at every width made every rebuilt band taller than its source at
@@ -1112,6 +1126,16 @@ export interface ForgeBandFacts {
 	 * hand-authored approximation.
 	 */
 	box?: BandBoxFacts;
+	/**
+	 * Classes whose box was DROPPED because the same token measured differently on
+	 * a scaffolding row and on a content module (`collectBandBoxFacts`).
+	 *
+	 * Diagnostic only — nothing renders from it. It exists because the drop is
+	 * otherwise invisible: the rebuilt band simply has no rule for that class, and
+	 * the symptom (a band twice its source height) points at everything except the
+	 * silent omission. Named so `analyze` can say which class and why.
+	 */
+	boxWarnings?: string[];
 	/**
 	 * The band's interactive controls' measured STATE deltas — hover, focus,
 	 * focus-visible, active — plus the source's own pointer cursor and easing.

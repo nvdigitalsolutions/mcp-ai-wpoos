@@ -385,6 +385,12 @@ const pick = ( selector: string ): Element | null => {
 			// lines). Without the fact the rebuild renders it full-width, two lines,
 			// and the band's pinned height shows the shortfall as dead space.
 			maxWidth: style.maxWidth,
+			// The heading/paragraph RHYTHM. A builder writes it in the vendor sheet
+			// (Flatsome's box headings are `margin: 0.1em 0`), and an UNCLASSSED
+			// heading has no class for a box fact to hang on — so the rebuild fell back
+			// to the template's prose defaults and every tile grew.
+			marginTop: style.marginTop,
+			marginBottom: style.marginBottom,
 		};
 	};
 	const facts: Record<
@@ -526,7 +532,20 @@ const pick = ( selector: string ): Element | null => {
 }
 
 /** The typography properties a device override may carry. */
-const TYPE_PROPERTIES = [ 'size', 'weight', 'lineHeight', 'letterSpacing', 'transform', 'align', 'color' ] as const;
+const TYPE_PROPERTIES = [
+	'size',
+	'weight',
+	'lineHeight',
+	'letterSpacing',
+	'transform',
+	'align',
+	'color',
+	// The heading/paragraph rhythm. A builder scales it per device along with the
+	// type (a 0.67em margin on a 55px hero is not the same gap on a 22px phone),
+	// so it belongs in the per-device diff.
+	'marginTop',
+	'marginBottom',
+] as const;
 
 /** One class's measured box, as resolved declarations. */
 export interface MeasuredBox {
@@ -574,7 +593,21 @@ export function collectBandBoxFacts( input: {
 	selectors?: Record< string, string >;
 } ): Record<
 	string,
-	{ boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox >; mediaPosition?: string }
+	{
+		boxes: Record< string, MeasuredBox >;
+		media: Record< string, MeasuredBox >;
+		mediaPosition?: string;
+		/**
+		 * Classes whose padding was DROPPED because the same token measured
+		 * differently on a scaffolding row and on a content module.
+		 *
+		 * This is the shape of defect that silently doubles a band: the class rule
+		 * is band-wide, so whichever box survived would be painted onto every
+		 * element carrying the token. Reporting the drop makes the missing rule
+		 * visible instead of leaving a rebuild to discover it as a height drift.
+		 */
+		ambiguous?: string[];
+	}
 > {
 	const pick = ( selector: string ): Element | null => {
 		try {
@@ -610,7 +643,12 @@ export function collectBandBoxFacts( input: {
 	const SCAFFOLDING = /(^|\s)(container|container-fluid|row|vc_row|wpb_row|vc_row-fluid)(\s|$)/;
 	const out: Record<
 		string,
-		{ boxes: Record< string, MeasuredBox >; media: Record< string, MeasuredBox >; mediaPosition?: string }
+		{
+			boxes: Record< string, MeasuredBox >;
+			media: Record< string, MeasuredBox >;
+			mediaPosition?: string;
+			ambiguous?: string[];
+		}
 	> = {};
 	for ( const id of input.ids ) {
 		// The band root — same ladder as `collectBandTypeFacts`, duplicated because
@@ -660,6 +698,7 @@ export function collectBandBoxFacts( input: {
 				mars: Set< string >;
 				colors: Set< string >;
 				onModule: boolean;
+				onScaffold: boolean;
 			}
 		>();
 		const mediaHeights = new Map< string, Set< string > >();
@@ -723,6 +762,7 @@ export function collectBandBoxFacts( input: {
 						mars: new Set(),
 						colors: new Set(),
 						onModule: false,
+						onScaffold: false,
 					} );
 				}
 				const entry = seen.get( name ) as {
@@ -730,11 +770,14 @@ export function collectBandBoxFacts( input: {
 					mars: Set< string >;
 					colors: Set< string >;
 					onModule: boolean;
+					onScaffold: boolean;
 				};
 				entry.pads.add( pad );
 				entry.mars.add( mar );
 				entry.colors.add( ownColor );
-				if ( ! scaffolding ) {
+				if ( scaffolding ) {
+					entry.onScaffold = true;
+				} else {
 					entry.onModule = true;
 				}
 				if ( height && ! scaffolding ) {
@@ -748,6 +791,7 @@ export function collectBandBoxFacts( input: {
 			}
 		}
 		const facts: Record< string, MeasuredBox > = {};
+		const ambiguous: string[] = [];
 		for ( const [ name, entry ] of seen ) {
 			// A class that only ever appears on scaffolding (a row, a container) is
 			// the template's business, not a measured fact.
@@ -762,6 +806,11 @@ export function collectBandBoxFacts( input: {
 			// class is dropped.
 			if ( entry.pads.size === 1 ) {
 				box.pad = pad;
+			} else if ( entry.onScaffold ) {
+				// Dropped, and the drop is worth naming: the same token sizing both a
+				// row and a module is exactly how a band-wide class rule ends up
+				// painting one element's padding onto every other one.
+				ambiguous.push( name );
 			}
 			const mar = [ ...entry.mars ][ 0 ];
 			if ( entry.mars.size === 1 ) {
@@ -791,6 +840,7 @@ export function collectBandBoxFacts( input: {
 						return best && best[ 0 ] !== '50% 50%' ? { mediaPosition: best[ 0 ] } : {};
 				  } )()
 				: {} ),
+			...( ambiguous.length > 0 ? { ambiguous: ambiguous.sort() } : {} ),
 		};
 	}
 	return out;
@@ -1819,6 +1869,19 @@ export async function measureBandFacts( options: MeasureOptions ): Promise< {
 			const box = mergeBoxFacts( desktopBox[ id ]?.boxes, tabletBox[ id ]?.boxes, mobileBox[ id ]?.boxes );
 			if ( box ) {
 				band.box = box;
+			}
+			// A class dropped for measuring differently on a row and a module. Unioned
+			// across devices: a token can be ambiguous at one width and consistent at
+			// another, and the operator only needs it named once.
+			const ambiguousBoxClasses = [
+				...new Set( [
+					...( desktopBox[ id ]?.ambiguous ?? [] ),
+					...( tabletBox[ id ]?.ambiguous ?? [] ),
+					...( mobileBox[ id ]?.ambiguous ?? [] ),
+				] ),
+			].sort();
+			if ( ambiguousBoxClasses.length > 0 ) {
+				band.boxWarnings = ambiguousBoxClasses;
 			}
 			// Cropped-media heights are their own map, emitted as `img.<class>`.
 			const media = mergeBoxFacts( desktopBox[ id ]?.media, tabletBox[ id ]?.media, mobileBox[ id ]?.media );
@@ -3172,15 +3235,41 @@ const METRICS: Array<{ key: keyof GeometryTolerance; metric: string } > = [
 ];
 
 /**
+ * How a diff treats a band's COLUMNS (the row's lane heights).
+ *
+ * `fail` (the default) keeps the cascade to a failure once a column is more
+ * than 3× the height tolerance out: the reader sees a gap where the source had
+ * a matched pair, which is a real defect on a band whose lanes are deliberately
+ * unequal (virtuallyjamaica's 700px photo beside 948px of copy).
+ *
+ * `warn` is for the RAW-BUILDER sub-page case. A builder row states its lanes
+ * with `padding`, and the shim deliberately moves that vertical rhythm onto the
+ * band (`.post-body.ds-section` is a flex column with the band's padding) — so
+ * a correct rebuild's lane boxes are systematically one padding apart from the
+ * source's while the BAND height is exact. Comparing them as failures made the
+ * per-page gate report 15 "failures" on a build whose every band matched, which
+ * is how the whole gate ended up parked as opt-in advisory.
+ */
+export interface GeometryDiffOptions {
+	columns?: 'fail' | 'warn';
+}
+
+/**
  * Diff the build against the source geometry. Missing bands fail; a metric
  * beyond tolerance warns, beyond 2× tolerance fails — the pass/warn/fail split
  * the geometry-oracle tooling uses, so a real regression is never buried in
  * warnings.
+ *
+ * The BAND metrics (height, width, padding, margin) always keep that cascade:
+ * band height is what a reader perceives, and it is the one number a
+ * measured-fact defect cannot hide from. `options.columns` decides only how a
+ * lane mismatch is graded (see `GeometryDiffOptions`).
  */
 export function diffGeometry(
 	source: ForgeGeometry,
 	built: ForgeGeometry,
-	tolerance: GeometryTolerance = DEFAULT_GEOMETRY_TOLERANCE
+	tolerance: GeometryTolerance = DEFAULT_GEOMETRY_TOLERANCE,
+	options: GeometryDiffOptions = {}
 ): GeometryDeviation[] {
 	const deviations: GeometryDeviation[] = [];
 	for ( const [ id, viewports ] of Object.entries( source ) ) {
@@ -3252,7 +3341,12 @@ export function diffGeometry(
 							expected: height,
 							actual: actualColumns[ index ],
 							delta,
-							severity: Math.abs( delta ) > limit * 3 ? 'fail' : 'warn',
+							severity:
+								options.columns === 'warn'
+									? 'warn'
+									: Math.abs( delta ) > limit * 3
+										? 'fail'
+										: 'warn',
 						} );
 					} );
 				}
