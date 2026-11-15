@@ -77,10 +77,20 @@ asymmetry is deliberate — a plan's price belongs to its plan band, while a
 |---|---|---|
 | `llms.txt` | `lib/llms.ts` → `composeLlmsTxt` | `/llms.txt` |
 | HTML→markdown | `lib/llms.ts` → `markdownFromHtml` | — |
+| Source→markdown | `lib/llms.ts` → `markdownFromSource` | fallback for `/<slug>/index.md` and `/posts/.../index.md` |
 | Page markdown | — | `/<slug>/index.md`, `/posts/.../index.md` |
 | Discovery links | `Base.astro` | `rel="describedby"`, `rel="alternate" type="text/markdown"` |
 | Motion doc | `renderMotionDoc` | `MOTION.md` |
 | Presets | `serializePresets` | `presets.json` — drift-pinned |
+
+A `rendered.html` body wins whenever the entry has one — WordPress content, or
+materialized `<id>.html`. A **local MDX** entry has none: its glob `body` is the
+SOURCE, never HTML (promoting it into `rendered.html` shipped the post as literal
+`import` lines). The two `.md` routes therefore project that source with
+`markdownFromSource`: frontmatter, comments, ESM statements and JSX tags go, the
+prose stays. A props-only component (`<FaqAccordion items={…} />`) contributes
+nothing — that content never exists as markdown, and the HTML page remains
+canonical and carries it.
 
 Products are excluded from the `.md` variants: `getCollection('products')`
 on a pruned storefront breaks `astro check`.
