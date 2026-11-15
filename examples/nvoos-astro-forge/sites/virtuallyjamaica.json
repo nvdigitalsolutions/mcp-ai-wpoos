@@ -379,7 +379,7 @@
 			"footerBg": "#ededed",
 			"footerInk": "#626262",
 			"footerBarInk": "#626262",
-			"copyright": "© 2023 VIRTUALLY JAMAICA IS POWERED BY NV DIGITAL SOLUTIONS.",
+			"copyright": "© 2026 VIRTUALLY JAMAICA IS POWERED BY NV DIGITAL SOLUTIONS.",
 			"social": [
 				{
 					"label": "Facebook",
@@ -1265,7 +1265,8 @@
 				"white-text",
 				"wpb_column",
 				"wpd-innner-wrapper",
-				"xs-home-application-full-screen-auto"
+				"xs-home-application-full-screen-auto",
+				"xs-text-center"
 			]
 		},
 		"1d5804b": {
@@ -1549,9 +1550,9 @@
 					"count": 1,
 					"base": "cursor:pointer;color:rgb(226, 226, 226);background-color:rgb(221, 51, 51);text-decoration-line:none;font-weight:600;letter-spacing:0.26px;text-transform:uppercase;display:inline-block;font-size:11px;border-top:2px solid rgb(221, 51, 51);border-right:2px solid rgb(221, 51, 51);border-bottom:2px solid rgb(221, 51, 51);border-left:2px solid rgb(221, 51, 51)",
 					"transition": "0.2s ease-in-out",
-					"hover": "color:rgb(255, 255, 255);background-color:rgba(0, 0, 0, 0)",
-					"focusVisible": "color:rgb(255, 255, 255);background-color:rgba(0, 0, 0, 0)",
-					"active": "color:rgb(255, 255, 255);background-color:rgba(0, 0, 0, 0);box-shadow:rgba(0, 0, 0, 0.125) 0px 3px 5px 0px inset"
+					"hover": "color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0)",
+					"focusVisible": "color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0)",
+					"active": "color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);box-shadow:rgba(0, 0, 0, 0.125) 0px 3px 5px 0px inset"
 				}
 			]
 		},
@@ -2764,9 +2765,9 @@
 					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 28.19px 0px;color:rgb(0, 0, 0)"
 				},
 				"brando_heading_1526618016-2-95": {
-					"base": "padding:0px 0px 0px 0px;margin:0px 0px 78.53px 0px;color:rgb(0, 0, 0)",
-					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 44.59px 0px;color:rgb(0, 0, 0)",
-					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 28.19px 0px;color:rgb(0, 0, 0)"
+					"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(0, 0, 0)",
+					"tablet": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(0, 0, 0)",
+					"mobile": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px;color:rgb(0, 0, 0)"
 				},
 				"owl-carousel": {
 					"base": "padding:0px 0px 45px 0px;margin:0px 0px 0px 0px"

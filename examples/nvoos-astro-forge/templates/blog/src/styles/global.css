@@ -3353,3 +3353,54 @@ span.forge-icon-missing::before {
 	font-family: var(--forge-font) !important;
 	font-weight: 400;
 }
+
+/* Builder lightbox (BuilderLightbox.astro) — the source's gallery opened a
+ * vendor lightbox; a forged site ships neither the script nor its stylesheet.
+ * A native <dialog> carries the modal semantics (focus trap, Escape, inert
+ * background), so this block is presentation only. */
+.ds-lightbox {
+	max-width: none;
+	max-height: none;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	overflow: visible;
+}
+
+.ds-lightbox::backdrop {
+	background: rgba(0, 0, 0, 0.82);
+}
+
+.ds-lightbox img {
+	display: block;
+	width: auto;
+	height: auto;
+	max-width: min(92vw, 1600px);
+	max-height: 88vh;
+	margin: auto;
+	border-radius: var(--forge-radius, 4px);
+	background: var(--forge-surface, #fff);
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+}
+
+.ds-lightbox__close {
+	position: fixed;
+	top: 1rem;
+	right: 1rem;
+	z-index: 1;
+	width: 2.75rem;
+	height: 2.75rem;
+	padding: 0;
+	border: 0;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.92);
+	color: #111;
+	font: inherit;
+	font-size: 1.75rem;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.ds-lightbox__close:hover {
+	background: #fff;
+}
