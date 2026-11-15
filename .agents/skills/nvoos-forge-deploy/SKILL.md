@@ -150,9 +150,9 @@ Rehearse the merge, not just the edit: a push touching `sites/**` rebuilds
 **every** profile, and the site’s own merge re-forges it with a cold media
 cache. With `content.source: materialized` the CMS is gone, so which
 `/wp-content/` derivatives 404 changes build to build (the CDN copy expires
-piecemeal). Content degrades cleanly (`source not found (marked optional)`) and
-`verify --minimal` still passes; check that no `<img>` loses its last local
-`srcset` candidate before merging.
+piecemeal). Content itself is local-only (the loader never fetches, so the
+build cannot die on the dead origin); `verify --minimal` still passes — check
+that no `<img>` loses its last local `srcset` candidate before merging.
 
 ## Hand deploy without CI (2026-11-15)
 
@@ -178,8 +178,11 @@ node scripts/forge.mjs verify sites/<name>.json --target <dir> --minimal
 - `MIRROR_TOKEN` is a repo-scoped token; locally `gh auth token` works.
 - **Check the artifact before pushing**: `verify-deploy-tree.mjs` is the gate.
   A managed tree that cannot boot is not a deploy.
-- After a cutover the profile's `url` is no longer a CMS, so every build dies at
-  `Endpoint not found: wp/v2/pages` — see the astro-forge reference
+- After a cutover the profile's `url` is no longer a CMS. Declare it gone
+  (`content.source: 'materialized'` + a committed `sites/<name>.content/`):
+  the scaffold then wires every collection local-only and the build never
+  fetches. Without that flag every build dies at `Endpoint not found:
+  wp/v2/pages` — see the astro-forge reference
   `cms-removal-materialized-content.md`.
 
 Hand-edited projects may not carry `scripts/mirror-push.mjs` (the scaffold owns

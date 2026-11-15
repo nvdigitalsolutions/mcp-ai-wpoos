@@ -1861,6 +1861,81 @@ describe( 'scaffold — content snapshot (fallback while the CMS lives)', () => 
 	} );
 } );
 
+describe( 'scaffold — materialized content (the CMS is gone)', () => {
+	it( 'copies the snapshot and makes every collection local-only', async () => {
+		const root = await tempDir();
+		const snapshot = path.join( root, 'site.content' );
+		await mkdir( path.join( snapshot, 'posts' ), { recursive: true } );
+		await writeFile(
+			path.join( snapshot, 'posts', 'application.mdx' ),
+			'---\ntitle: Application\nslug: application\n---\n',
+			'utf8'
+		);
+		await writeFile(
+			path.join( snapshot, 'posts', 'application.html' ),
+			'<section><p>Recovered</p></section>',
+			'utf8'
+		);
+		const target = path.join( root, 'materialized' );
+
+		await scaffold( {
+			profile: { ...PROFILE, content: { source: 'materialized' } },
+			targetDir: target,
+			template: 'blog',
+			contentDir: snapshot,
+		} );
+
+		await expect( stat( path.join( target, 'src', 'content', 'posts', 'application.html' ) ) ).resolves.toBeTruthy();
+
+		// Every collection reads the snapshot and never fetches — posts keeps its
+		// canonical glob, and the extra collection gets the same shape.
+		const config = await readFile( path.join( target, 'src', 'content.config.ts' ), 'utf8' );
+		expect( config ).toContain(
+			"local: { pattern: '**/*.mdx', base: './src/content/posts' }, localOnly: true"
+		);
+		expect( config ).toContain(
+			"local: { pattern: '**/*.mdx', base: './src/content/products' }, localOnly: true"
+		);
+		// A collection the snapshot does not carry is EMPTY, not fatal.
+		expect( config ).toContain( 'optional: true' );
+
+		const manifest = JSON.parse( await readFile( path.join( target, 'nvoos.json' ), 'utf8' ) );
+		expect( manifest.contentSource ).toBe( 'materialized' );
+	} );
+
+	it( 'warns when a materialized profile has no snapshot to copy', async () => {
+		const root = await tempDir();
+		const result = await scaffold( {
+			profile: { ...PROFILE, content: { source: 'materialized' } },
+			targetDir: path.join( root, 'materialized-missing' ),
+			template: 'blog',
+		} );
+
+		// The build would be empty, so the operator must hear it at scaffold time.
+		expect( result.warnings.join( '\n' ) ).toContain( 'the site will build EMPTY' );
+	} );
+
+	it( 'leaves the managed BFF without a target CMS (no self-proxy)', async () => {
+		const root = await tempDir();
+		const target = path.join( root, 'materialized-managed' );
+		await scaffold( {
+			profile: {
+				...PROFILE,
+				content: { source: 'materialized' },
+				deploy: { runtime: 'managed' } as SiteProfile[ 'deploy' ],
+			},
+			targetDir: target,
+			template: 'blog',
+		} );
+
+		// The dead CMS must never become the BFF's upstream: pointing
+		// NVOOS_TARGET_SITE at the public origin makes /api proxy to itself.
+		const env = await readFile( path.join( target, '.env.example' ), 'utf8' );
+		expect( env ).toContain( 'NVOOS_TARGET_SITE=\n' );
+		expect( env ).not.toContain( 'NVOOS_TARGET_SITE=https://shop.example.com' );
+	} );
+} );
+
 describe( 'scaffold — media snapshot (the CMS-less outage net)', () => {
 	it( 'refuses a media snapshot it cannot find', async () => {
 		// Same promise as content.snapshot: a net that is silently absent is

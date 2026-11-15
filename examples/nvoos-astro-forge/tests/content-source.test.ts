@@ -8,7 +8,13 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { resolveContentDir, resolveMediaDir } from '../lib/content-source.ts';
+import {
+	isMaterializedContent,
+	resolveContentDir,
+	resolveMediaDir,
+	withMaterializedDefaults,
+} from '../lib/content-source.ts';
+import type { SiteProfile } from '../lib/types.ts';
 
 const PROFILE = 'sites/example.json';
 
@@ -71,5 +77,41 @@ describe( 'resolveMediaDir', () => {
 
 	it( 'returns nothing when the profile path is unknown', () => {
 		expect( resolveMediaDir( { media: { snapshot: true } } ) ).toBeUndefined();
+	} );
+} );
+
+describe( 'materialized defaults (the CMS is gone)', () => {
+	const PROFILE_WITH_COLLECTIONS: SiteProfile = {
+		url: 'https://site.example.com',
+		collections: [
+			{ slug: 'posts', restBase: 'wp/v2/posts', fields: [ 'id' ] },
+			{ slug: 'pages', restBase: 'wp/v2/pages', fields: [ 'id' ], optional: true },
+		],
+	};
+
+	it( 'recognises only content.source materialized', () => {
+		expect( isMaterializedContent( { content: { source: 'materialized' } } ) ).toBe( true );
+		expect( isMaterializedContent( { content: { snapshot: true } } ) ).toBe( false );
+		expect( isMaterializedContent( { content: { source: 'wordpress' } } ) ).toBe( false );
+		expect( isMaterializedContent( {} ) ).toBe( false );
+	} );
+
+	it( 'marks every collection optional, without mutating the profile', () => {
+		const next = withMaterializedDefaults( {
+			...PROFILE_WITH_COLLECTIONS,
+			content: { source: 'materialized' },
+		} );
+
+		expect( next.collections.every( ( collection ) => collection.optional ) ).toBe( true );
+		// The caller's profile is untouched.
+		expect( PROFILE_WITH_COLLECTIONS.collections[ 0 ].optional ).toBeUndefined();
+	} );
+
+	it( 'returns the same profile when the CMS still lives', () => {
+		// `snapshot: true` keeps WordPress authoritative — it must NOT inherit the
+		// CMS-less defaults.
+		expect( withMaterializedDefaults( PROFILE_WITH_COLLECTIONS ) ).toBe( PROFILE_WITH_COLLECTIONS );
+		const withSnapshot = { ...PROFILE_WITH_COLLECTIONS, content: { snapshot: true } };
+		expect( withMaterializedDefaults( withSnapshot ) ).toBe( withSnapshot );
 	} );
 } );

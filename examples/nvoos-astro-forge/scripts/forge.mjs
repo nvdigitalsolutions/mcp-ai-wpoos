@@ -44,7 +44,7 @@ import { auditBands, formatBandReport } from '../lib/band-audit.ts';
 import { compareBuildIdentity, parseBuildMarker } from '../lib/build-identity.ts';
 import { countAnimations, diffAnimations, measureAnimations, planAnimationRebuild } from '../lib/animations.ts';
 import { auditClassCoverage } from '../lib/class-audit.ts';
-import { resolveContentDir, resolveMediaDir } from '../lib/content-source.ts';
+import { isMaterializedContent, resolveContentDir, resolveMediaDir } from '../lib/content-source.ts';
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
@@ -1339,8 +1339,9 @@ async function runScaffold( profileRef, options ) {
 		siteSlug,
 	} );
 	console.log( `\u2713 Scaffolded ${ result.collections.length } collection(s) into ${ result.targetDir }` );
+	const materialized = isMaterializedContent( profile );
 	for ( const collection of result.manifest.collections ) {
-		console.log( `  - ${ collection.slug } <- ${ collection.restBase }` );
+		console.log( `  - ${ collection.slug } <- ${ materialized ? 'materialized content (no CMS)' : collection.restBase}` );
 	}
 	for ( const warning of result.warnings ) {
 		console.warn( `\u26a0 ${ warning }` );
@@ -1349,6 +1350,14 @@ async function runScaffold( profileRef, options ) {
 }
 
 async function checkProfile( profile ) {
+	// A materialized profile declares the CMS GONE: there is no source to probe.
+	// Hitting the dead origin only produces a confusing 404 — or a 200 carrying
+	// whatever now serves the domain (run #102, 2026-11-15). The build itself
+	// never fetches, so neither does the check.
+	if ( isMaterializedContent( profile ) ) {
+		console.log( `\u2713 ${ profile.url} — content is materialized (no CMS to check; ${ profile.collections.length } collection(s) read the committed snapshot).` );
+		return true;
+	}
 	const client = WpClient.fromProfile( profile );
 	let clean = true;
 	try {
@@ -4190,7 +4199,8 @@ program
 			process.exit( 1 );
 		}
 		const profilePath = profilePathOf( profileRef );
-		const outDir = options.out ?? ( profilePath ? profilePath.replace( /\.json$/, '.content' ) : undefined );
+		const derivedOut = profilePath ? profilePath.replace( /\.json$/, '.content' ) : undefined;
+		const outDir = options.out ?? derivedOut;
 		if ( ! outDir ) {
 			console.error( 'Could not derive the output directory from the profile — pass --out.' );
 			process.exit( 1 );
@@ -4200,7 +4210,10 @@ program
 		for ( const doc of documents ) {
 			console.log( `  - ${ doc.collection }/${ doc.slug } — ${ doc.htmlBytes } B body` );
 		}
-		console.log( `\nNext: forge <profile> --target <dir> --content ${ outDir }` );
+		// The flag is the DECLARATION that the CMS is gone, so the operator makes
+		// it deliberately: setting it turns every collection local-only.
+		console.log( '\nNext: declare "content": { "source": "materialized" } in the profile (every collection then reads the snapshot and never fetches), then:' );
+		console.log( `  forge ${ profileRef } --target <dir>${ outDir === derivedOut ? '' : ` --content ${ outDir }` }` );
 	} );
 
 program

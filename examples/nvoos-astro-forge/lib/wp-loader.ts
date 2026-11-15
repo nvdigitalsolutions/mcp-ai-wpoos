@@ -50,6 +50,18 @@ export interface WpLoaderOptions {
 	 * never silent truncation).
 	 */
 	local?: HybridLocalSource;
+	/**
+	 * The profile declares the CMS GONE (`content.source: 'materialized'`),
+	 * so the snapshot in `local` is the ONLY source.
+	 *
+	 * The loader must not touch the network at all: a dead origin answers 404,
+	 * 200 with whatever now serves the domain, or hangs — every one of those
+	 * is "not a source", and run #102 (2026-11-15) died on exactly that 404
+	 * after `forge materialize` had already recovered the content. A
+	 * materialized collection without a local source fails with a message
+	 * that names the misconfiguration instead of blaming the dead server.
+	 */
+	localOnly?: boolean;
 	/** Test seam — the local loader factory (defaults to astro's glob()). */
 	localLoaderFactory?: (source: HybridLocalSource) => Loader;
 }
@@ -176,10 +188,10 @@ function internalOriginsOf(site: SiteProfile): string[] {
  * Astro content-layer loader over one WordPress/WooCommerce REST collection.
  */
 export function createWpLoader(options: WpLoaderOptions): Loader {
-	const { site, collection, auth, local } = options;
+	const { site, collection, auth, local, localOnly } = options;
 	const internalOrigins = internalOriginsOf(site);
 
-	const loader: Loader = {
+	const wpLoader: Loader = {
 		name: 'nvoos-wp',
 		schema: contentSchema,
 		load: async (context: LoaderContext) => {
@@ -295,14 +307,31 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 		},
 	};
 
-	if (!local) {
-		return loader;
+	if ( ! local ) {
+		if ( localOnly ) {
+			// The profile says the CMS is gone, but nothing replaced it: name the
+			// misconfiguration instead of letting the build die on a dead origin.
+			return {
+				name: 'nvoos-wp',
+				schema: contentSchema,
+				load: async () => {
+					throw new Error(
+						`[nvoos-wp] ${collection.slug}: content.source is "materialized" (the CMS is gone) but the collection has no local content source. ` +
+							'Scaffold it with a local glob (`src/content/' + collection.slug + '/`) or restore the CMS.'
+					);
+				},
+			};
+		}
+		return wpLoader;
 	}
 
 	// Hybrid local (106 P2): the local glob loads first, the WP loader second
 	// (its clear() + re-set leaves the store WP-owned), then local entries are
 	// re-set where WP produced nothing — WP wins on collision, local fills
 	// the gaps. Drafts never ship (the 106 frontmatter contract).
+	//
+	// `localOnly` (a materialized profile) short-circuits the WP half entirely:
+	// there is no CMS to ask, so the snapshot is adopted as the whole store.
 	const localLoader = (options.localLoaderFactory ?? defaultLocalLoader)(local);
 	return {
 		name: 'nvoos-wp',
@@ -312,9 +341,73 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 			const localEntries = context.store
 				.entries()
 				.filter(([, entry]) => !isDraftEntry(entry));
+
+			// Local content may ship its body BESIDE the MDX. A materialized
+			// WordPress page is arbitrary HTML (nested block tags inside a
+			// paragraph), which MDX parses as JSX and rejects — so `<id>.html`
+			// next to `<id>.mdx` is the body and the MDX carries only frontmatter.
+			const rootUrl = context.config?.root;
+			const baseDir =
+				local.base && rootUrl ? resolve( fileURLToPath( rootUrl ), local.base ) : '';
+			const adoptLocal = (wpIds: ReadonlySet<string>): void => {
+				for (const [id, entry] of localEntries) {
+					if (wpIds.has(id)) {
+						continue; // WP wins on collision.
+					}
+					// The schema transform cannot see the store id — local
+					// frontmatter carries no slug, so fill it from the glob id
+					// (the filename slug) to keep the id/slug route shape. The
+					// digest gets a stable prefix so the store re-writes the
+					// entry once (same-digest re-sets are skipped) and later
+					// incremental builds still dedupe unchanged files.
+					const data = entry.data as Record< string, unknown >;
+					// A local entry has TWO possible bodies and only one of them is HTML:
+					// the sibling `<id>.html` is the rendered body (materialized
+					// WordPress content, `lib/materialize.ts`), while the glob `body` is
+					// the Markdown/MDX SOURCE. Promoting that source to `rendered.html`
+					// shadowed the compiled `<Content />` and rendered a real MDX post as
+					// literal `import` lines and bullets (2026-11-15).
+					const localBody = ( () => {
+						if ( baseDir === '' || basename( id ) !== id ) {
+							return '';
+						}
+						const sibling = resolve( baseDir, `${ id }.html` );
+						return existsSync( sibling ) ? readFileSync( sibling, 'utf8' ).trim() : '';
+					} )();
+					const existingRendered = entry.rendered as { html?: unknown } | undefined;
+					const rendered: { html: string } | undefined =
+						typeof existingRendered?.html === 'string'
+							? { html: existingRendered.html }
+							: localBody === ''
+								? undefined
+								: { html: sanitizeHtml(localBody, { internalOrigins }) };
+					context.store.set( {
+						...entry,
+						digest: entry.digest !== undefined ? `local:${ String( entry.digest ) }` : undefined,
+						rendered,
+						data: { ...data, slug: ( typeof data.slug === 'string' && data.slug ) || id },
+					} );
+				}
+			};
+
+			if ( localOnly ) {
+				// The CMS is declared gone — never contact it. The glob loader
+				// already set the entries; clear and re-adopt so drafts disappear
+				// and deleted files cannot linger (the same "clear up front"
+				// contract the WP path honours).
+				context.store.clear();
+				adoptLocal( new Set() );
+				if ( localEntries.length === 0 ) {
+					context.logger.warn(
+						`[nvoos-wp] ${collection.slug}: content.source is "materialized" (the CMS is gone) and ${local.base} has no entries — empty collection.`
+					);
+				}
+				return;
+			}
+
 			let wpIds = new Set<string>();
 			try {
-				await loader.load(context);
+				await wpLoader.load(context);
 				// The ids WP just set — the collision set the merge honours.
 				wpIds = new Set(context.store.entries().map(([id]) => id));
 			} catch (error) {
@@ -329,51 +422,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 					`[nvoos-wp] ${collection.slug}: WordPress unreachable (${error instanceof Error ? error.message : String(error)}) — serving local content only.`
 				);
 			}
-			// Local content may ship its body BESIDE the MDX. A materialized
-			// WordPress page is arbitrary HTML (nested block tags inside a
-			// paragraph), which MDX parses as JSX and rejects — so `<id>.html`
-			// next to `<id>.mdx` is the body and the MDX carries only frontmatter.
-			const rootUrl = context.config?.root;
-			const baseDir =
-				local.base && rootUrl ? resolve( fileURLToPath( rootUrl ), local.base ) : '';
-			for (const [id, entry] of localEntries) {
-				if (wpIds.has(id)) {
-					continue; // WP wins on collision.
-				}
-				// The schema transform cannot see the store id — local
-				// frontmatter carries no slug, so fill it from the glob id
-				// (the filename slug) to keep the id/slug route shape. The
-				// digest gets a stable prefix so the store re-writes the
-				// entry once (same-digest re-sets are skipped) and later
-				// incremental builds still dedupe unchanged files.
-				const data = entry.data as Record< string, unknown >;
-				// A local entry has TWO possible bodies and only one of them is HTML:
-				// the sibling `<id>.html` is the rendered body (materialized
-				// WordPress content, `lib/materialize.ts`), while the glob `body` is
-				// the Markdown/MDX SOURCE. Promoting that source to `rendered.html`
-				// shadowed the compiled `<Content />` and rendered a real MDX post as
-				// literal `import` lines and bullets (2026-11-15).
-				const localBody = ( () => {
-					if ( baseDir === '' || basename( id ) !== id ) {
-						return '';
-					}
-					const sibling = resolve( baseDir, `${ id }.html` );
-					return existsSync( sibling ) ? readFileSync( sibling, 'utf8' ).trim() : '';
-				} )();
-				const existingRendered = entry.rendered as { html?: unknown } | undefined;
-				const rendered: { html: string } | undefined =
-					typeof existingRendered?.html === 'string'
-						? { html: existingRendered.html }
-						: localBody === ''
-							? undefined
-							: { html: sanitizeHtml(localBody, { internalOrigins }) };
-				context.store.set( {
-					...entry,
-					digest: entry.digest !== undefined ? `local:${ String( entry.digest ) }` : undefined,
-					rendered,
-					data: { ...data, slug: ( typeof data.slug === 'string' && data.slug ) || id },
-				} );
-			}
+			adoptLocal( wpIds );
 		},
 	};
 }
