@@ -1772,3 +1772,43 @@ describe( 'scaffold — media policy (Proposal 139/140)', () => {
 		expect( env ).toContain( 'NVOOS_FORGE_LOCALIZE_FONTS=' );
 	} );
 } );
+
+describe( 'scaffold — content snapshot (fallback while the CMS lives)', () => {
+	it( 'refuses a snapshot it cannot find', async () => {
+		// A safety net that is silently absent is worse than none: fail at
+		// scaffold time, not during an outage.
+		const root = await tempDir();
+		const target = path.join( root, 'snapshot-missing' );
+		await expect(
+			scaffold( {
+				profile: { ...PROFILE, content: { snapshot: true } },
+				targetDir: target,
+				template: 'blog',
+			} )
+		).rejects.toThrow( /content\.snapshot: true needs a materialized snapshot/ );
+	} );
+
+	it( 'copies the snapshot and keeps the WP loader authoritative', async () => {
+		const root = await tempDir();
+		const snapshot = path.join( root, 'site.content' );
+		await mkdir( path.join( snapshot, 'posts' ), { recursive: true } );
+		await writeFile( path.join( snapshot, 'posts', 'from-snapshot.mdx' ), '---\ntitle: From the snapshot\nslug: from-snapshot\n---\n', 'utf8' );
+		const target = path.join( root, 'snapshot-ok' );
+
+		await scaffold( {
+			profile: { ...PROFILE, content: { snapshot: true } },
+			targetDir: target,
+			template: 'blog',
+			contentDir: snapshot,
+		} );
+
+		// The snapshot landed where the local glob reads it...
+		await expect( stat( path.join( target, 'src', 'content', 'posts', 'from-snapshot.mdx' ) ) ).resolves.toBeTruthy();
+		// ...the demo post is gone, so a snapshot-only site cannot leak it...
+		await expect( stat( path.join( target, 'src', 'content', 'posts', 'hello-world.mdx' ) ) ).rejects.toThrow();
+		// ...and WordPress still runs FIRST, with the local glob merged under it.
+		const config = await readFile( path.join( target, 'src', 'content.config.ts' ), 'utf8' );
+		expect( config ).toContain( 'createWpLoader' );
+		expect( config ).toContain( "local: { pattern: '**/*.mdx', base: './src/content/posts' }" );
+	} );
+} );

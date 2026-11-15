@@ -386,7 +386,23 @@ export interface SiteProfile {
 	 * `<profile>.content/` — the output of `forge materialize` — is the source;
 	 * the scaffold copies it into `src/content/` automatically.
 	 */
-	content?: { source?: 'wordpress' | 'materialized' | 'none' };
+	content?: {
+		source?: 'wordpress' | 'materialized' | 'none';
+		/**
+		 * Keep `<profile>.content/` as a BUILD-TIME FALLBACK while the CMS stays
+		 * authoritative.
+		 *
+		 * The snapshot is copied into `src/content/` exactly like `materialized`,
+		 * but the WordPress loader still runs first and wins on collision — fresh
+		 * content when the CMS answers, last-known-good when it is unreachable
+		 * (the loader already degrades on a network failure; an HTTP error still
+		 * fails the build on purpose, so a misconfigured source is never silent).
+		 *
+		 * The scaffold REFUSES a profile that asks for a snapshot it cannot find:
+		 * a safety net that is silently absent is worse than none.
+		 */
+		snapshot?: boolean;
+	};
 	/** Root URL (https://…). No trailing slash. */
 	url: string;
 	/** Display name (discovery fills it when absent). */
