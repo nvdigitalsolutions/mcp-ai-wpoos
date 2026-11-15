@@ -17,6 +17,7 @@ import {
 	collectDocumentUrls,
 	collectStylesheetUrls,
 	documentExtension,
+	dropUnavailableFontFaces,
 	extensionForContentType,
 	isReencodableImage,
 	isWebfontUrl,
@@ -488,5 +489,63 @@ describe( 'Proposal 140 — webfont stylesheet collection', () => {
 	it( 'rewrites the encoded link through the map', () => {
 		const map = new Map( [ [ GOOGLE, '/media/x-fonts.css' ] ] );
 		expect( rewriteHtml( ENCODED, map ) ).toContain( 'href="/media/x-fonts.css"' );
+	} );
+} );
+
+describe( 'Proposal 140 — unmirrored webfont faces', () => {
+	// A half-mirrored sheet is the worst outcome: it ships a render-blocking
+	// third-party chain that a build-to-build network blip decides. Measured
+	// 2026-11-15 — one failed woff2 left fonts.gstatic.com in an otherwise
+	// local sheet, and only the e2e gate caught it.
+	const SHEET = [
+		'/* latin */',
+		'@font-face { font-family: "Rubik"; src: url(https://fonts.gstatic.com/s/rubik/latin.woff2) format("woff2"); }',
+		'/* latin-ext */',
+		'@font-face { font-family: "Rubik"; src: url(https://fonts.gstatic.com/s/rubik/latin-ext.woff2) format("woff2"); }',
+	].join( '\n' );
+
+	it( 'drops only the face whose URL could not be mirrored', () => {
+		const css = dropUnavailableFontFaces( SHEET, [ 'https://fonts.gstatic.com/s/rubik/latin-ext.woff2' ] );
+
+		expect( css ).toContain( '/rubik/latin.woff2' );
+		expect( css ).not.toContain( 'latin-ext.woff2' );
+		expect( css.match( /@font-face/g ) ?? [] ).toHaveLength( 1 );
+	} );
+
+	it( 'removes every face when the whole family failed', () => {
+		const css = dropUnavailableFontFaces( SHEET, [
+			'https://fonts.gstatic.com/s/rubik/latin.woff2',
+			'https://fonts.gstatic.com/s/rubik/latin-ext.woff2',
+		] );
+
+		expect( css ).not.toContain( '@font-face' );
+		expect( css ).not.toContain( 'fonts.gstatic.com' );
+	} );
+
+	it( 'is a no-op when nothing is missing', () => {
+		expect( dropUnavailableFontFaces( SHEET, [] ) ).toBe( SHEET );
+		expect( dropUnavailableFontFaces( SHEET ) ).toBe( SHEET );
+	} );
+
+	it( 'resolves a relative src against the sheet URL', () => {
+		// A sheet usually writes `url(fonts/x.woff)` while the caller holds the
+		// ABSOLUTE download key — matching the raw text alone silently missed
+		// every face (this was the first cut of the fix).
+		const css = '@font-face{font-family:X;src:url(fonts/x.woff)}';
+		const out = dropUnavailableFontFaces(
+			css,
+			[ 'https://cms.example.com/theme/fonts/x.woff' ],
+			'https://cms.example.com/theme/style.css'
+		);
+
+		expect( out ).not.toContain( '@font-face' );
+	} );
+
+	it( 'leaves unrelated faces and other rules alone', () => {
+		const css = 'body{color:red}\n@font-face{font-family:X;src:url(https://example.com/x.woff2)}';
+		const out = dropUnavailableFontFaces( css, [ 'https://fonts.gstatic.com/missing.woff2' ] );
+
+		expect( out ).toContain( 'body{color:red}' );
+		expect( out ).toContain( 'example.com/x.woff2' );
 	} );
 } );

@@ -19,7 +19,9 @@
 //     ships, instead of duplicating the media library into every deploy,
 //     (override with NVOOS_FORGE_MEDIA_MODE)
 //   * never fails the build — a failed download keeps the original URL and is
-//     reported (never silent),
+//     reported (never silent), EXCEPT a webfont: a half-mirrored font sheet
+//     ships a third-party chain that a network blip decides, so the face is
+//     dropped (the family falls back to its CSS stack) and reported,
 //   * idempotent — after a pass every reference is relative, so a second run
 //     finds nothing to do,
 //   * respects WP_FETCH_PROXY, exactly like the content layer (bot-protected
@@ -56,6 +58,7 @@ import {
 	collectDocumentUrls,
 	collectStylesheetUrls,
 	documentExtension,
+	dropUnavailableFontFaces,
 	extensionForContentType,
 	IMAGE_EXTENSIONS,
 	isReencodableImage,
@@ -78,6 +81,10 @@ const ROOT = process.cwd();
 const CACHE_DIR = path.join( ROOT, '.forge-cache' );
 const REPORT_PATH = path.join( CACHE_DIR, 'media-localize.json' );
 const CONCURRENCY = 6;
+/** Attempts per asset before its URL is treated as unavailable. */
+const DOWNLOAD_ATTEMPTS = 3;
+/** Linear backoff between attempts (250 ms, 500 ms). */
+const RETRY_DELAY_MS = 250;
 const USER_AGENT =
 	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
@@ -94,6 +101,18 @@ function truthy( value, fallback ) {
 
 function log( message ) {
 	console.log( `[forge-media] ${ message }` );
+}
+
+/** A non-2xx answer — retried only when it looks transient. */
+class HttpStatusError extends Error {
+	constructor( status ) {
+		super( `HTTP ${ status }` );
+		this.status = status;
+	}
+}
+
+function sleep( ms ) {
+	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
 }
 
 /** `dist/client` for server output, `dist` for static. */
@@ -156,7 +175,7 @@ async function mapLimit( items, limit, worker ) {
 	return results;
 }
 
-async function download( url, timeoutMs ) {
+async function downloadOnce( url, timeoutMs ) {
 	const controller = new AbortController();
 	const timer = setTimeout( () => controller.abort(), timeoutMs );
 	try {
@@ -169,7 +188,7 @@ async function download( url, timeoutMs ) {
 			},
 		} );
 		if ( ! response.ok ) {
-			throw new Error( `HTTP ${ response.status }` );
+			throw new HttpStatusError( response.status );
 		}
 		const buffer = Buffer.from( await response.arrayBuffer() );
 		return {
@@ -180,6 +199,34 @@ async function download( url, timeoutMs ) {
 	} finally {
 		clearTimeout( timer );
 	}
+}
+
+/**
+ * Fetch a URL with a bounded retry.
+ *
+ * A cold build mirrors a dozen woff2 files from Google's CDN, and one 429 or a
+ * stalled socket used to leave a half-localised stylesheet behind — a remote
+ * `src` in an otherwise local sheet, which only the e2e gate noticed
+ * (2026-11-15). A 4xx other than 429 is an answer, not a blip, so it is not
+ * retried.
+ */
+async function download( url, timeoutMs ) {
+	let lastError;
+	for ( let attempt = 1; attempt <= DOWNLOAD_ATTEMPTS; attempt += 1 ) {
+		try {
+			return await downloadOnce( url, timeoutMs );
+		} catch ( error ) {
+			lastError = error;
+			const status = error instanceof HttpStatusError ? error.status : undefined;
+			const permanent =
+				typeof status === 'number' && status >= 400 && status < 500 && status !== 429;
+			if ( permanent || attempt === DOWNLOAD_ATTEMPTS ) {
+				break;
+			}
+			await sleep( RETRY_DELAY_MS * attempt );
+		}
+	}
+	throw lastError;
 }
 
 /**
@@ -543,18 +590,37 @@ async function main() {
 	} );
 
 	// 3. Emit the localized stylesheets now that their assets have local paths.
+	//
+	// A reference we could not mirror must not stay remote inside a mirrored
+	// sheet: that ships a third-party URL a build-to-build network blip decides.
+	// `dropUnavailableFontFaces` removes only the `@font-face` blocks that name
+	// such a URL (the family falls back to the CSS stack it already declares),
+	// so an unavailable image never costs typography. Host-agnostic on purpose:
+	// the failing asset in the 2026-11-15 incident was Google's, but a theme font
+	// on the CMS host fails the same way.
+	const unmirrored = wanted.filter( ( url ) => ! map.has( url ) );
+	const countFontFaces = ( css ) => ( css.match( /@font-face/gi ) ?? [] ).length;
+	let droppedFaces = 0;
 	for ( const sheet of stylesheets ) {
 		const relative = mediaFileName( sheet.url, 'css' );
 		const destination = path.join( out, relative );
 		await mkdir( path.dirname( destination ), { recursive: true } );
+		const withoutUnavailable = dropUnavailableFontFaces( sheet.text, unmirrored, sheet.url );
+		droppedFaces += countFontFaces( sheet.text ) - countFontFaces( withoutUnavailable );
 		// 140 §4 — every mirrored sheet gets `font-display` where it was missing:
 		// the theme icon font shipped without it, so the browser held text back
 		// until 129 KB of woff arrived.
-		const rewritten = addFontDisplaySwap( rewriteStylesheet( sheet.text, sheet.url, map ) );
+		const rewritten = addFontDisplaySwap( rewriteStylesheet( withoutUnavailable, sheet.url, map ) );
 		await writeFile( destination, rewritten, 'utf8' );
 		const publicPath = `/${ relative.split( path.sep ).join( '/' ) }`;
 		map.set( sheet.url, publicPath );
 		localized.push( { url: sheet.url, file: publicPath, bytes: Buffer.byteLength( rewritten ) } );
+	}
+
+	if ( droppedFaces > 0 ) {
+		log(
+			`  dropped ${ droppedFaces } @font-face block(s) that could not be mirrored (the family falls back to the CSS stack).`
+		);
 	}
 
 	// 4. Rewrite the sources in place. Any host we now serve ourselves no longer

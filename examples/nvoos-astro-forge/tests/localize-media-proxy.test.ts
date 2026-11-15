@@ -156,4 +156,52 @@ describe( 'localize-media — managed (proxy) tier', () => {
 			await server.close();
 		}
 	} );
+
+	it( 'drops a face it cannot mirror instead of shipping a remote URL', async () => {
+		// The 2026-11-15 CI flake: ONE failed woff2 left the remote URL in an
+		// otherwise local sheet, so the artifact depended on a third party again.
+		// The face goes and the family falls back to the declared CSS stack.
+		const sheet = [
+			'@font-face{font-family:Keep;src:url(fonts/keep.woff)}',
+			'@font-face{font-family:Gone;src:url(fonts/gone.woff)}',
+		].join( '' );
+		const server = await fixtureServer( {
+			'/wp-content/themes/x/faces.css': { body: sheet, type: 'text/css' },
+			'/wp-content/themes/x/fonts/keep.woff': { body: Buffer.from( 'wOF2-keep' ), type: 'font/woff' },
+			// fonts/gone.woff is deliberately absent — the server answers 404.
+		} );
+
+		try {
+			const root = await mkdtemp( path.join( os.tmpdir(), 'forge-fontdrop-' ) );
+			await mkdir( path.join( root, 'dist' ), { recursive: true } );
+			await writeFile(
+				path.join( root, 'nvoos.json' ),
+				JSON.stringify( { url: server.origin, runtime: 'managed', media: { localize: true } } )
+			);
+			await writeFile(
+				path.join( root, 'dist', 'index.html' ),
+				`<link rel="stylesheet" href="${ server.origin }/wp-content/themes/x/faces.css">`
+			);
+
+			const run = await runScript( root, { ...process.env, NVOOS_FORGE_MEDIA_MODE: 'local' } );
+			expect( run.status, `${ run.stdout }\n${ run.stderr }` ).toBe( 0 );
+
+			const html = await readFile( path.join( root, 'dist', 'index.html' ), 'utf8' );
+			const href = /href="(\/media\/[^"]+\.css)"/.exec( html )?.[ 1 ];
+			if ( ! href ) {
+				throw new Error( `expected a mirrored stylesheet in ${ html }` );
+			}
+			const css = await readFile( path.join( root, 'dist', href.slice( 1 ) ), 'utf8' );
+
+			// The face that travelled is local; the face that could not travel is
+			// gone, so the sheet carries no third-party URL at all.
+			expect( css ).toContain( '/media/' );
+			expect( css ).not.toContain( 'gone' );
+			expect( css ).not.toContain( server.origin );
+			// The loss is reported, not silent.
+			expect( run.stdout ).toContain( 'could not be mirrored' );
+		} finally {
+			await server.close();
+		}
+	} );
 } );
