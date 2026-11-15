@@ -24,10 +24,12 @@ class GetOpenAIFileDetailsTool extends AbstractTool
     public function getSlug(): string
     {
         return 'get_openai_file_details';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Get OpenAI File Details';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Retrieves details about a specific file uploaded to OpenAI.';
     }

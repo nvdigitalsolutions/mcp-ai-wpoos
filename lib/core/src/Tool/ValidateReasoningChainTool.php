@@ -22,10 +22,12 @@ class ValidateReasoningChainTool extends AbstractTool
     public function getSlug(): string
     {
         return 'validate_reasoning_chain';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Validate Reasoning Chain';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Validates a chain of reasoning steps for logical consistency.';
     }

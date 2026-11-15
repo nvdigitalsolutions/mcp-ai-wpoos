@@ -17,7 +17,8 @@ class EditGeminiImageValidatedTool extends EditGeminiImageTool
     public function getSlug(): string
     {
         return 'edit_gemini_image_validated';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Edit Gemini Image (Validated)';
     }

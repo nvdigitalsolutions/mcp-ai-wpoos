@@ -23,10 +23,12 @@ class DelegateToAgentTool extends AbstractTool
     public function getSlug(): string
     {
         return 'delegate_to_agent';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Delegate to Agent';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Delegates a subtask to a specific agent within a team.';
     }

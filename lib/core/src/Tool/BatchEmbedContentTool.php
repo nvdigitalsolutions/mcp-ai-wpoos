@@ -22,10 +22,12 @@ class BatchEmbedContentTool extends AbstractTool
     public function getSlug(): string
     {
         return 'batch_embed_content';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Batch Embed Content';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Prepares content for batch embedding generation.';
     }

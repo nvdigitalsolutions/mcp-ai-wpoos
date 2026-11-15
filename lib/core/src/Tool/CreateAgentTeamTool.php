@@ -23,10 +23,12 @@ class CreateAgentTeamTool extends AbstractTool
     public function getSlug(): string
     {
         return 'create_agent_team';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Create Agent Team';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Composes an agent team for a task with specific roles and requirements.';
     }

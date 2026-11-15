@@ -22,10 +22,12 @@ class ValidateWorkflowTool extends AbstractTool
     public function getSlug(): string
     {
         return 'validate_workflow';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Validate Workflow';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Validates a workflow definition for correctness and completeness.';
     }

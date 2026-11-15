@@ -24,10 +24,12 @@ class OpenOpenAILogsTool extends AbstractTool
     public function getSlug(): string
     {
         return 'open_openai_logs';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Open OpenAI Logs';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Retrieves OpenAI API usage logs and activity.';
     }

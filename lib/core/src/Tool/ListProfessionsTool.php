@@ -23,10 +23,12 @@ class ListProfessionsTool extends AbstractTool
     public function getSlug(): string
     {
         return 'list_professions';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'List Professions';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Lists all available professions, optionally filtered by category.';
     }

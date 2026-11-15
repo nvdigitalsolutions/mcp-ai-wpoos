@@ -23,10 +23,12 @@ class ExecuteWorkflowTool extends AbstractTool
     public function getSlug(): string
     {
         return 'execute_workflow';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Execute Workflow';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Executes a workflow with an assembled agent team.';
     }
