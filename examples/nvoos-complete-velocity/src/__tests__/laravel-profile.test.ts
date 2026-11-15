@@ -105,7 +105,7 @@ describe('buildConsoleRuntime (laravel)', () => {
     expect(runtime.endpoints.proOps).toBe(`${origin()}/api/v1/pro/ops`);
     expect(runtime.endpoints.upload).toBe(`${origin()}/api/v1/media`);
     expect(runtime.endpoints.wpBase).toBe(`${origin()}/api/v1/wp`);
-    // Org teams (users + roles) are a Laravel-only contract; the WordPress
+    // Org teams (users + roles) are served by both runtimes; the WordPress
     // agent-team catalogue keeps `/teams`.
     expect(runtime.endpoints.orgTeams).toBe(`${origin()}/api/v1/org/teams`);
     // The assistant editor's profession selector.

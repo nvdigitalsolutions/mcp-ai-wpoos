@@ -154,7 +154,7 @@ export interface ProSpaEndpoints {
 	 */
 	professions: string;
 	/**
-	 * Org teams base (api/v1/org/teams, Laravel only).
+	 * Org teams base (api/v1/org/teams, both runtimes).
 	 *
 	 * Distinct from `teams`: that surface is the WordPress agent-team
 	 * catalogue (a collection of professions), while an org team is a set of

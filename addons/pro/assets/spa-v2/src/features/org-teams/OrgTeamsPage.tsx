@@ -6,9 +6,10 @@
  * a WordPress agent team is a collection of professions, while an org team is
  * a set of users with roles.
  *
- * The surface is Laravel-only until the WordPress runtime grows the same
- * contract, so an empty endpoint renders the standard unavailable state
- * (same pattern as ToolkitsPage) rather than an empty table.
+ * Both runtimes serve the contract (090-p W7 added the WordPress twin at
+ * `mcp-ai/v1/org/teams`); an older install that does not has an empty
+ * endpoint, which renders the standard unavailable state (same pattern as
+ * ToolkitsPage) rather than an empty table.
  */
 
 import { useMemo, useState, type FormEvent, type JSX } from 'react';
