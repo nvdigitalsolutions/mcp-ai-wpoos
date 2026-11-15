@@ -130,6 +130,41 @@ A locked site (`profile.locked` + `forge.lock.json`) is **not** rebuilt by
 source is the gitignored `<site>-frontend` project: edit it, rebuild it, then
 force-push `dist/`.
 
+**Locked with no tree (2026-11-15).** If the profile is locked and no
+`<site>-frontend` exists anywhere, nobody can rebuild: CI skips, `scaffold`
+refuses, and the only remaining artifact is the mirror branch — built output
+with no source. `locked` is an ownership record, not a "site is finished" flag.
+Recover the content first (`forge materialize`; see the astro-forge reference
+`cms-removal-materialized-content.md`) or `forge unlock … --yes` deliberately.
+
+## Hand deploy without CI (2026-11-15)
+
+`forge-sites.yml` is the contract; a hand deploy must reproduce it in order:
+
+```sh
+node scripts/forge.mjs sites/<name>.json --target <dir> [--content <dir>]
+node scripts/forge.mjs deploy-config sites/<name>.json --target <dir> \
+  --to velocity --mirror-repo <owner>/<repo> --site-branch site/<name> \
+  --runtime <managed|static> --site-url <publicOrigin>
+( cd <dir> && npm install && ASTRO_SITE=<publicOrigin> npm run build )
+# demo guard: dist/posts/hello-world must NOT exist
+node scripts/forge.mjs verify sites/<name>.json --target <dir> --minimal
+( cd <dir> && node scripts/sync-deploy-tree.mjs && node scripts/verify-deploy-tree.mjs )
+( cd <dir> && SOURCE_DIR=.deploy RUNTIME=managed SITE_BRANCH=site/<name> \
+    MIRROR_URL=https://github.com/<owner>/<repo> MIRROR_TOKEN=<token> \
+    node scripts/mirror-push.mjs )
+```
+
+- `mirror-push` **refuses** (exit 1) without `MIRROR_URL`/`MIRROR_TOKEN`;
+  `FORGE_ALLOW_MIRROR_SKIP=1` is the explicit opt-out. Before that change it
+  exited 0, so a hand deploy looked identical to a successful publish.
+- `MIRROR_TOKEN` is a repo-scoped token; locally `gh auth token` works.
+- **Check the artifact before pushing**: `verify-deploy-tree.mjs` is the gate.
+  A managed tree that cannot boot is not a deploy.
+- After a cutover the profile's `url` is no longer a CMS, so every build dies at
+  `Endpoint not found: wp/v2/pages` — see the astro-forge reference
+  `cms-removal-materialized-content.md`.
+
 Hand-edited projects may not carry `scripts/mirror-push.mjs` (the scaffold owns
 it). Emit it without touching the source:
 

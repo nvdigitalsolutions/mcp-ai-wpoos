@@ -184,3 +184,21 @@ Cutover checklist: set `ASTRO_SITE` to the production origin, drop
   fails on any drift (Style Dictionary / design-token CI practice).
 - Codegen ownership: declared ownership, generated-only regeneration, never
   overwrite user-owned files.
+
+## 5. Locked with no tree (2026-11-15)
+
+`locked` protects a **tree someone owns**. A profile can be locked while no
+`<site>-frontend` exists anywhere — then nobody can rebuild: CI skips,
+`scaffold` refuses, and the only artifact is the mirror branch (built output,
+no source). This happened on virtuallyjamaica: the lock was set as a handoff
+record, then the CMS was removed, and the site became unbuildable by anyone.
+
+Before locking, confirm the target is real:
+
+```sh
+forge status sites/<name>.json --target ./<name>-frontend
+```
+
+If the tree is missing, either recover the content first (`forge materialize`,
+see `cms-removal-materialized-content.md`) or `forge unlock … --yes` and take
+ownership deliberately.
