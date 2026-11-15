@@ -116,25 +116,25 @@ class SecurityPostureTest extends TestCase
         }
     }
 
-    public function test_the_detector_flags_are_off_by_default_and_reported_honestly(): void
+    public function test_the_detector_flags_are_on_by_default_and_reported_honestly(): void
     {
-        $report = $this->posture();
-
-        $this->assertSame('fail', $this->find($report['signals'], 'prompt_injection_detector')['status']);
-        $this->assertSame('fail', $this->find($report['signals'], 'pii_filter')['status']);
-    }
-
-    public function test_enabling_the_detector_turns_the_signals_green(): void
-    {
-        config([
-            'oos.security.prompt_injection_detector' => true,
-            'oos.security.pii_filter' => true,
-        ]);
-
         $report = $this->posture();
 
         $this->assertSame('pass', $this->find($report['signals'], 'prompt_injection_detector')['status']);
         $this->assertSame('pass', $this->find($report['signals'], 'pii_filter')['status']);
+    }
+
+    public function test_disabling_the_detector_turns_the_signals_red(): void
+    {
+        config([
+            'oos.security.prompt_injection_detector' => false,
+            'oos.security.pii_filter' => false,
+        ]);
+
+        $report = $this->posture();
+
+        $this->assertSame('fail', $this->find($report['signals'], 'prompt_injection_detector')['status']);
+        $this->assertSame('fail', $this->find($report['signals'], 'pii_filter')['status']);
     }
 
     public function test_cors_is_reported_as_restricted_under_the_default_policy(): void

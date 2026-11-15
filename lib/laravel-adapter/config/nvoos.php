@@ -942,21 +942,32 @@ return array(
 		'csp_frame_ancestors'  => (string) env( 'NVOOS_CSP_FRAME_ANCESTORS', '' ),
 		'audit_retention_days' => (int) env( 'NVOOS_AUDIT_RETENTION_DAYS', 30 ),
 
-		// AI-safety input guard. Both controls are off by default, matching the
-		// WordPress settings. `mode` is log (flag only) | warn | block; `warn`
+		// AI-safety input guard. `mode` is log (flag only) | warn | block; `warn`
 		// blocks jailbreak and prompt injection but lets a diversion through.
-		'prompt_injection_detector'    => filter_var( env( 'NVOOS_PROMPT_INJECTION_DETECTOR', 'false' ), FILTER_VALIDATE_BOOLEAN ),
+		//
+		// Both are on by default, and neither changes what the model sees:
+		//  - `pii_filter` redacts user turns as they enter the *session log*. The
+		//    message that reaches the provider is untouched, so a user quoting
+		//    their own phone number still gets an answer. That is narrower than
+		//    WordPress, whose `pii_filter_side` defaults to `both` and scrubs the
+		//    request before the model and the response before the client;
+		//    payload-side redaction is not ported yet.
+		//  - the detector runs in `log` mode, which records a verdict and never
+		//    blocks — the same posture as WordPress's default `flag` action.
+		//    Promote to `warn` per deployment once the log is quiet.
+		// Leaving these off meant a default install wrote raw user PII to the
+		// session log and had no injection telemetry at all.
+		'prompt_injection_detector'    => filter_var( env( 'NVOOS_PROMPT_INJECTION_DETECTOR', 'true' ), FILTER_VALIDATE_BOOLEAN ),
 		'prompt_injection_mode'        => (string) env( 'NVOOS_PROMPT_INJECTION_MODE', 'log' ),
 		'prompt_injection_sensitivity' => (string) env( 'NVOOS_PROMPT_INJECTION_SENSITIVITY', 'medium' ),
-		'pii_filter'                   => filter_var( env( 'NVOOS_PII_FILTER', 'false' ), FILTER_VALIDATE_BOOLEAN ),
+		'pii_filter'                   => filter_var( env( 'NVOOS_PII_FILTER', 'true' ), FILTER_VALIDATE_BOOLEAN ),
 
-		// AI-safety output guard. Off by default, matching WordPress. `mode` is
-		// log | warn | block; `warn` prefixes the response, `block` withholds it.
-		//
-		// Cost, stated plainly: while this is on, the chat stream is buffered to
-		// a single final message instead of token deltas. A guard at the end of
-		// a stream cannot retract what it already sent, so this is the only way
-		// the check can actually hold.
+		// AI-safety output guard. Off by default, and that is a posting decision
+		// rather than an oversight: while this is on the chat stream is buffered
+		// to a single final message instead of token deltas, because a guard at
+		// the end of a stream cannot retract what it already sent. Turning it on
+		// therefore swaps streaming for screening. `mode` is log | warn | block;
+		// `warn` prefixes the response, `block` withholds it.
 		'output_guard'                 => filter_var( env( 'NVOOS_OUTPUT_GUARD', 'false' ), FILTER_VALIDATE_BOOLEAN ),
 		'output_guard_mode'            => (string) env( 'NVOOS_OUTPUT_GUARD_MODE', 'warn' ),
 		'output_guard_strictness'      => (string) env( 'NVOOS_OUTPUT_GUARD_STRICTNESS', 'medium' ),
