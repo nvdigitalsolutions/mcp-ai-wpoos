@@ -112,6 +112,11 @@ class ManageEcaWaitlistTool extends AbstractTool
                     'minimum'     => 1,
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'             => array( 'eca_id', 'action' ),
             'additionalProperties' => false,
         );
@@ -149,6 +154,20 @@ class ManageEcaWaitlistTool extends AbstractTool
 
         if (! in_array($action, self::ACTIONS, true)) {
             return $this->errors->create('invalid_action', 'Invalid waitlist action.');
+        }
+
+        // Proposal 090-M ADR M-8: describe a mutating waitlist action without
+        // performing it. `list` is read-only, so it is left untouched.
+        if ('list' !== $action && $this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'update',
+                $eca_id,
+                array(
+                    'action'     => $action,
+                    'student_id' => $this->intParam($arguments, 'student_id'),
+                ),
+                'Dry run: the waitlist would be updated.'
+            );
         }
 
         $enrollments = Enrollments::map($eca->meta['_eca_student_enrollments'] ?? array());

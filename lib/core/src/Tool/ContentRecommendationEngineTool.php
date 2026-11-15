@@ -21,15 +21,15 @@ class ContentRecommendationEngineTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'content_recommendation_engine';
+        return 'content_recommendation_engine_prompt';
     }
     public function getName(): string
     {
-        return 'Content Recommendation Engine';
+        return 'Content Recommendation Engine (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Recommends content based on user preferences, similarity, and trending topics.';
+        return 'Builds a content-recommendation prompt. Returns the prompt; performs no analysis.';
     }
     public function getParametersSchema(): array
     {

@@ -21,15 +21,15 @@ class AutoCategorizeContentTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'auto_categorize_content';
+        return 'auto_categorize_content_prompt';
     }
     public function getName(): string
     {
-        return 'Auto-Categorize Content';
+        return 'Auto-Categorize Content (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Analyzes content and suggests relevant categories based on context.';
+        return 'Builds a categorization prompt for a piece of content. Returns the prompt; performs no analysis.';
     }
     public function getParametersSchema(): array
     {

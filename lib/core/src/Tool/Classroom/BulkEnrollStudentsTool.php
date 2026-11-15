@@ -128,6 +128,11 @@ class BulkEnrollStudentsTool extends AbstractTool
                                 'default'     => 'pending',
                             ),
                         ),
+                        'dry_run' => array(
+                                'type'        => 'boolean',
+                                'description' => 'Describe the write without performing it.',
+                                'default'     => false,
+                            ),
                         'required'             => array( 'student_id' ),
                         'additionalProperties' => false,
                     ),
@@ -182,6 +187,15 @@ class BulkEnrollStudentsTool extends AbstractTool
         // is a call-level error raised before anything is written.
         if (! $this->content->userCanAccess($eca_id, $user_id, 'edit')) {
             return $this->errors->forbidden('You do not have permission to edit this content.');
+        }
+
+        if ($this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'update',
+                $eca_id,
+                array( 'eca_id' => $eca_id, 'student_rows' => count($students_input) ),
+                'Dry run: students would be enrolled in the ECA.'
+            );
         }
 
         $rows = $this->normaliseRows($students_input);

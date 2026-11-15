@@ -62,6 +62,11 @@ class DeleteProjectTool extends AbstractTool
                     'description' => 'ID of the project to delete.',
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'   => array( 'project_id' ),
         );
     }
@@ -82,15 +87,30 @@ class DeleteProjectTool extends AbstractTool
             return $this->errors->notFound('Project not found.');
         }
 
-        try {
-            $this->content->delete($project_id, isset($context['user_id']) ? (int) $context['user_id'] : 0);
-        } catch (NotFoundException $e) {
+        		if ($this->isDryRun($arguments)) {
+            			$existing = $this->content->find($project_id);
+
+            			if (null === $existing || self::TYPE !== $existing->type) {
+            				return $this->errors->notFound('Project not found.');
+            			}
+
+            			return $this->dryRunPlan(
+            				'delete',
+            				$project_id,
+            				array( 'id' => $project_id, 'title' => $existing->title ),
+            				'Dry run: the project would be deleted.'
+            			);
+                }
+
+            		try {
+            			$this->content->delete($project_id, isset($context['user_id']) ? (int) $context['user_id'] : 0);
+                    } catch (NotFoundException $e) {
             return $this->errors->notFound($e->getMessage());
-        } catch (AccessDeniedException $e) {
+                    } catch (AccessDeniedException $e) {
             return $this->errors->forbidden($e->getMessage());
-        } catch (\Throwable $e) {
+                    } catch (\Throwable $e) {
             return $this->errors->create('delete_failed', $e->getMessage());
-        }
+                    }
 
         return $this->success(
             'Project deleted successfully.',

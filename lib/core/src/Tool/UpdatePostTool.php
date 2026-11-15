@@ -62,6 +62,11 @@ class UpdatePostTool extends AbstractTool
                     'type'        => 'string',
                     'description' => 'New excerpt',
                 ),
+                'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the update that would be applied without writing it.',
+                    'default'     => false,
+                ),
             ),
             'required'             => array( 'post_id' ),
             'additionalProperties' => false,
@@ -91,6 +96,26 @@ class UpdatePostTool extends AbstractTool
             taxonomyInput: array(),
         );
         try {
+            if ($this->isDryRun($arguments)) {
+                // Resolve the target first: a dry run must refuse exactly what
+                // the real call refuses, including a missing post.
+                if (null === $this->c->find($postId, $userId)) {
+                    return $this->errors->notFound('The requested post does not exist or you do not have permission to view it.');
+                }
+
+                return $this->dryRunPlan(
+                    'update',
+                    $postId,
+                    array(
+                        'title'   => $cmd->title,
+                        'content' => $cmd->content,
+                        'status'  => $cmd->status,
+                        'excerpt' => $cmd->excerpt,
+                    ),
+                    'Dry run: the post would be updated.'
+                );
+            }
+
             $item = $this->c->update($postId, $cmd);
             return $this->success('Post updated.', $item->jsonSerialize());
         } catch (NotFoundException $e) {

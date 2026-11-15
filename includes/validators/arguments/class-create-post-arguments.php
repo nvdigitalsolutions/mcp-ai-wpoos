@@ -84,4 +84,11 @@ class CreatePostArguments {
 	#[Assert\Positive( message: 'User ID must be a positive integer.' )]
 	#[WPCapability( capability: 'edit_posts' )]
 	public $user_id = null;
+
+	/**
+	 * Describe the write without performing it (Proposal 090-M, ADR M-8).
+	 *
+	 * @var bool
+	 */
+	public $dry_run = false;
 }

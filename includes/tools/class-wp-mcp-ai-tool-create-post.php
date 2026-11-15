@@ -97,6 +97,11 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 					'type'        => 'string',
 					'description' => __( 'Optional excerpt for the post.', 'mcp-ai-wpoos' ),
 				),
+				'dry_run'           => array(
+					'type'        => 'boolean',
+					'description' => __( 'Describe the post that would be created without writing it.', 'mcp-ai-wpoos' ),
+					'default'     => false,
+				),
 				'slug'              => array(
 					'type'        => 'string',
 					'description' => __( 'Optional slug to use for the post permalink.', 'mcp-ai-wpoos' ),
@@ -366,6 +371,26 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Create the post.
+		// Proposal 090-M ADR M-8: describe the write without performing it. The
+		// plan is returned after every validation and capability check above, so
+		// a dry run refuses exactly what the real call refuses.
+		if ( ! empty( $arguments['dry_run'] ) ) {
+			return array(
+				'message'      => __( 'Dry run: the post would be created.', 'mcp-ai-wpoos' ),
+				'dry_run'      => true,
+				'action'       => 'create',
+				'post_id'      => 0,
+				'ID'           => 0,
+				'writes'       => false,
+				'would_change' => array(
+					'title'     => $post_data['post_title'],
+					'post_type' => $post_data['post_type'],
+					'status'    => $post_data['post_status'],
+					'author_id' => $post_data['post_author'],
+				),
+			);
+		}
+
 		$result = wp_insert_post( wp_slash( $post_data ), true );
 
 		if ( is_wp_error( $result ) ) {

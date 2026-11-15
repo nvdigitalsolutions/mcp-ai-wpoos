@@ -124,6 +124,11 @@ class UpdateStudentTool extends AbstractTool
                     'maxLength'   => 50,
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'             => array( 'student_id' ),
             'additionalProperties' => false,
         );
@@ -195,6 +200,15 @@ class UpdateStudentTool extends AbstractTool
             }
 
             $meta[ $meta_key ] = $value;
+        }
+
+        if ($this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'update',
+                $student_id,
+                array( 'meta' => array_keys($meta) ),
+                'Dry run: the student would be updated.'
+            );
         }
 
         try {

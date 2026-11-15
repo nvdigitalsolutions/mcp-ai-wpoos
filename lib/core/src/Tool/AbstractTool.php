@@ -111,6 +111,55 @@ abstract class AbstractTool implements ToolInterface
         );
     }
 
+    /**
+     * Build a dry-run plan.
+     *
+     * Proposal 090-M, ADR M-8 phase 2. A write tool that honours `dry_run`
+     * returns what it *would* change and performs no write. The shape is fixed
+     * so a client can render a confirmation prompt without tool-specific code:
+     *
+     *     { dry_run: true, action: 'create'|'update'|'delete', id: int|null,
+     *       would_change: array<string, mixed>, writes: false }
+     *
+     * `id` is null for a create and the target id otherwise. `writes` is always
+     * false: it is the assertion the probe checks, and it keeps the payload
+     * self-describing for a model that reasons about side effects.
+     *
+     * The ordering rule still applies — a dry run refuses exactly what the real
+     * call refuses (missing arguments, no authorisation, absent target) and
+     * only then describes the intended change.
+     *
+     * @param string               $action      One of create, update, delete.
+     * @param int|null             $targetId    Target id, null for a create.
+     * @param array<string, mixed> $wouldChange Fields the write would apply.
+     * @param string               $message     Human-readable summary.
+     * @return array
+     */
+    protected function dryRunPlan(string $action, ?int $targetId, array $wouldChange, string $message): array
+    {
+        return $this->success(
+            $message,
+            array(
+                'dry_run'      => true,
+                'action'       => $action,
+                'id'           => $targetId,
+                'would_change' => $wouldChange,
+                'writes'       => false,
+            )
+        );
+    }
+
+    /**
+     * Run a tool only when it is not a dry run, honouring the declared plan.
+     *
+     * Kept as a predicate rather than a wrapper so each tool can place the
+     * check where its own validation has already run.
+     */
+    protected function isDryRun(array $arguments): bool
+    {
+        return $this->boolParam($arguments, 'dry_run');
+    }
+
     // ─── Error helpers ────────────────────────────────────────────────
 
     /**

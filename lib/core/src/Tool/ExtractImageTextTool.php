@@ -21,15 +21,15 @@ class ExtractImageTextTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'extract_image_text';
+        return 'extract_image_text_prompt';
     }
     public function getName(): string
     {
-        return 'Extract Image Text';
+        return 'Extract Image Text (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Extracts text from images using AI vision (OCR).';
+        return 'Builds an OCR prompt for an image. Returns the prompt; performs no extraction.';
     }
     public function getParametersSchema(): array
     {

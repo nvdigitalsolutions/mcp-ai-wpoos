@@ -21,15 +21,15 @@ class SuggestInternalLinksTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'suggest_internal_links';
+        return 'suggest_internal_links_prompt';
     }
     public function getName(): string
     {
-        return 'Suggest Internal Links';
+        return 'Suggest Internal Links (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Analyzes content and suggests relevant internal links for SEO.';
+        return 'Builds an internal-linking prompt. Returns the prompt; suggests no links.';
     }
     public function getParametersSchema(): array
     {

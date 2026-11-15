@@ -99,6 +99,11 @@ class UpdateProjectTool extends AbstractTool
                     'items'       => array( 'type' => 'integer' ),
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'   => array( 'project_id' ),
         );
     }
@@ -176,6 +181,19 @@ class UpdateProjectTool extends AbstractTool
         }
 
         $description = $this->stringParam($arguments, 'description');
+
+        if ($this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'update',
+                $project_id,
+                array(
+                    'name'        => '' !== $name ? $name : null,
+                    'description' => '' !== $description ? $description : null,
+                    'meta'        => array_keys($meta),
+                ),
+                'Dry run: the project would be updated.'
+            );
+        }
 
         try {
             $item = $this->content->update(

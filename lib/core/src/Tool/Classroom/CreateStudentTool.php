@@ -113,6 +113,11 @@ class CreateStudentTool extends AbstractTool
                     'maxLength'   => 50,
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'             => array( 'first_name', 'last_name' ),
             'additionalProperties' => false,
         );
@@ -185,6 +190,18 @@ class CreateStudentTool extends AbstractTool
             if ('' !== $value) {
                 $meta[ $key ] = $value;
             }
+        }
+
+        if ($this->isDryRun($arguments)) {
+            $would_change = array(
+                'first_name' => $first_name,
+                'last_name'  => $last_name,
+                'meta'       => array_keys($meta),
+            );
+
+            return $existing instanceof ContentItem
+                ? $this->dryRunPlan('update', $student_id, $would_change, 'Dry run: the student would be updated.')
+                : $this->dryRunPlan('create', null, $would_change, 'Dry run: the student would be created.');
         }
 
         try {

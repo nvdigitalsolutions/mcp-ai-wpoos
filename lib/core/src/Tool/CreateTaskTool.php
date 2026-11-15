@@ -116,6 +116,11 @@ class CreateTaskTool extends AbstractTool
                     'description' => 'Actual effort in hours (optional).',
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'   => array( 'title' ),
         );
     }
@@ -198,6 +203,18 @@ class CreateTaskTool extends AbstractTool
         }
 
         $task_id = $this->intParam($arguments, 'task_id');
+
+        if ($this->isDryRun($arguments)) {
+            $would_change = array(
+                'title'       => $title,
+                'description' => $this->stringParam($arguments, 'description'),
+                'meta'        => array_keys($meta),
+            );
+
+            return $task_id > 0
+                ? $this->dryRunPlan('update', $task_id, $would_change, 'Dry run: the task would be updated.')
+                : $this->dryRunPlan('create', null, $would_change, 'Dry run: the task would be created.');
+        }
 
         return $task_id > 0
             ? $this->update($task_id, $title, $this->stringParam($arguments, 'description'), $meta, $context)

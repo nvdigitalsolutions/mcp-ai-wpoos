@@ -200,6 +200,11 @@ class CreateEcaTool extends AbstractTool
                     'maxLength'   => 100,
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'             => array( 'name' ),
             'additionalProperties' => false,
         );
@@ -309,6 +314,14 @@ class CreateEcaTool extends AbstractTool
         if ($is_paid && $cost > 0) {
             $meta['_eca_cost']        = $cost;
             $meta['_eca_cost_period'] = $cost_period;
+        }
+
+        if ($this->isDryRun($arguments)) {
+            $would_change = array( 'name' => $name, 'meta' => array_keys($meta) );
+
+            return $existing instanceof ContentItem
+                ? $this->dryRunPlan('update', $eca_id, $would_change, 'Dry run: the ECA would be updated.')
+                : $this->dryRunPlan('create', null, $would_change, 'Dry run: the ECA would be created.');
         }
 
         try {

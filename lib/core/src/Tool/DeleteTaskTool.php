@@ -60,6 +60,11 @@ class DeleteTaskTool extends AbstractTool
                     'description' => 'ID of the task to delete.',
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'   => array( 'task_id' ),
         );
     }
@@ -80,15 +85,30 @@ class DeleteTaskTool extends AbstractTool
             return $this->errors->notFound('Task not found.');
         }
 
-        try {
-            $this->content->delete($task_id, isset($context['user_id']) ? (int) $context['user_id'] : 0);
-        } catch (NotFoundException $e) {
+        		if ($this->isDryRun($arguments)) {
+            			$existing = $this->content->find($task_id);
+
+            			if (null === $existing || self::TYPE !== $existing->type) {
+            				return $this->errors->notFound('Task not found.');
+            			}
+
+            			return $this->dryRunPlan(
+            				'delete',
+            				$task_id,
+            				array( 'id' => $task_id, 'title' => $existing->title ),
+            				'Dry run: the task would be deleted.'
+            			);
+                }
+
+            		try {
+            			$this->content->delete($task_id, isset($context['user_id']) ? (int) $context['user_id'] : 0);
+                    } catch (NotFoundException $e) {
             return $this->errors->notFound($e->getMessage());
-        } catch (AccessDeniedException $e) {
+                    } catch (AccessDeniedException $e) {
             return $this->errors->forbidden($e->getMessage());
-        } catch (\Throwable $e) {
+                    } catch (\Throwable $e) {
             return $this->errors->create('delete_failed', $e->getMessage());
-        }
+                    }
 
         return $this->success(
             'Task deleted successfully.',

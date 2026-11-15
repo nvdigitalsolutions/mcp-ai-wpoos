@@ -114,6 +114,11 @@ class EnrollStudentEcaTool extends AbstractTool
                     'default'     => false,
                 ),
             ),
+            'dry_run' => array(
+                    'type'        => 'boolean',
+                    'description' => 'Describe the write without performing it.',
+                    'default'     => false,
+                ),
             'required'             => array( 'student_id', 'eca_id' ),
             'additionalProperties' => false,
         );
@@ -227,6 +232,15 @@ class EnrollStudentEcaTool extends AbstractTool
             'notes'           => $notes,
             'enrolled_by'     => $user_id,
         );
+
+        if ($this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'update',
+                $student_id,
+                array( 'eca_id' => $eca_id, 'enrollment' => $record ),
+                'Dry run: the student would be enrolled in the ECA.'
+            );
+        }
 
         $student_enrollments[ $eca_id ] = $record;
 

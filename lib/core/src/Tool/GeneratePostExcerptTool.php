@@ -21,15 +21,15 @@ class GeneratePostExcerptTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'generate_post_excerpt';
+        return 'generate_post_excerpt_prompt';
     }
     public function getName(): string
     {
-        return 'Generate Post Excerpt';
+        return 'Generate Post Excerpt (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Generates compelling post excerpts optimized for SEO and engagement.';
+        return 'Builds an excerpt prompt for a post. Returns the prompt; generates no excerpt.';
     }
     public function getParametersSchema(): array
     {

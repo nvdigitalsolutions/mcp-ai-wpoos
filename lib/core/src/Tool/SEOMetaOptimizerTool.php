@@ -21,15 +21,15 @@ class SEOMetaOptimizerTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'seo_meta_optimizer';
+        return 'seo_meta_optimizer_prompt';
     }
     public function getName(): string
     {
-        return 'SEO Meta Optimizer';
+        return 'SEO Meta Optimizer (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Optimizes SEO meta titles and descriptions for content.';
+        return 'Builds an SEO meta optimization prompt. Returns the prompt; performs no optimization.';
     }
     public function getParametersSchema(): array
     {

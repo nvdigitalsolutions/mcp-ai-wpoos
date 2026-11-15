@@ -178,6 +178,17 @@ export function ToolsPage(): JSX.Element {
 						>
 							{ tool.slug }
 						</code>
+						{ tool.readiness ? (
+							<span
+								className="nvoos-pro-spa-tools-list__badge"
+								title={ __(
+									'Readiness reported by this runtime (090-M).',
+									'nvoos-pro-spa'
+								) }
+							>
+								{ tool.readiness }
+							</span>
+						) : null }
 					</>,
 					tool.category ? (
 						<span

@@ -21,15 +21,15 @@ class VisionProductSearchTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'vision_product_search';
+        return 'vision_product_search_prompt';
     }
     public function getName(): string
     {
-        return 'Vision Product Search';
+        return 'Vision Product Search (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Identifies products in images and finds matching or similar products.';
+        return 'Builds a product-search prompt for an image. Returns the prompt; performs no search.';
     }
     public function getParametersSchema(): array
     {

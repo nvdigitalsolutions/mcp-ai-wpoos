@@ -105,6 +105,11 @@ class MarkEcaAttendanceTool extends AbstractTool
                                 'maxLength'   => 500,
                             ),
                         ),
+                        'dry_run' => array(
+                                'type'        => 'boolean',
+                                'description' => 'Describe the write without performing it.',
+                                'default'     => false,
+                            ),
                         'required'             => array( 'student_id', 'status' ),
                         'additionalProperties' => false,
                     ),
@@ -241,6 +246,18 @@ class MarkEcaAttendanceTool extends AbstractTool
             'late_count'    => $counts['late'],
             'excused_count' => $counts['excused'],
         );
+
+        if ($this->isDryRun($arguments)) {
+            return $this->dryRunPlan(
+                'update',
+                $eca_id,
+                array(
+                    'session_date' => $session_date,
+                    'counts'       => $counts,
+                ),
+                'Dry run: attendance would be recorded for this session.'
+            );
+        }
 
         try {
             $this->content->update(

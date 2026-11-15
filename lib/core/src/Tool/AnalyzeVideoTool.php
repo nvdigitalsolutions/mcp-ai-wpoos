@@ -28,15 +28,15 @@ class AnalyzeVideoTool extends AbstractTool
     }
     public function getSlug(): string
     {
-        return 'analyze_video';
+        return 'analyze_video_prompt';
     }
     public function getName(): string
     {
-        return 'Analyze Video';
+        return 'Analyze Video (Prompt)';
     }
     public function getDescription(): string
     {
-        return 'Analyzes video content to extract information, describe scenes, and identify objects using AI vision.';
+        return 'Builds a video-analysis prompt. Returns the prompt; performs no analysis.';
     }
     public function getParametersSchema(): array
     {
