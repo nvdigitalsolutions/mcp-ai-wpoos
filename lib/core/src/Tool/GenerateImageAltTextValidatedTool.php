@@ -17,7 +17,8 @@ class GenerateImageAltTextValidatedTool extends GenerateImageAltTextTool
     public function getSlug(): string
     {
         return 'generate_image_alt_text_validated';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Generate Image Alt Text (Validated)';
     }

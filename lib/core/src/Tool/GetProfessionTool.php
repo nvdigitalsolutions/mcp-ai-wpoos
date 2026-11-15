@@ -23,10 +23,12 @@ class GetProfessionTool extends AbstractTool
     public function getSlug(): string
     {
         return 'get_profession';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Get Profession';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Retrieves a profession definition by slug.';
     }

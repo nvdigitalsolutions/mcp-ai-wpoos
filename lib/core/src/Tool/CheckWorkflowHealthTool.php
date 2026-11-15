@@ -23,10 +23,12 @@ class CheckWorkflowHealthTool extends AbstractTool
     public function getSlug(): string
     {
         return 'check_workflow_health';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Check Workflow Health';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Checks the health and status of an agent team or workflow.';
     }

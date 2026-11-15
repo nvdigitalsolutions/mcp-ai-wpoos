@@ -120,18 +120,18 @@ class ValidateToolSchemaTool extends AbstractTool
         $check_security  = $this->boolParam($arguments, 'check_security', true);
 
         $results = array(
-            'structure'    => $this->validate_structure($schema),
-            'types'        => $this->validate_types($schema),
-            'required'     => $this->validate_required_fields($schema),
-            'descriptions' => $this->validate_descriptions($schema),
+            'structure'    => $this->validateStructure($schema),
+            'types'        => $this->validateTypes($schema),
+            'required'     => $this->validateRequiredFields($schema),
+            'descriptions' => $this->validateDescriptions($schema),
         );
 
         if ($check_wp_compat) {
-            $results['wordpress'] = $this->validate_wordpress_compatibility($schema);
+            $results['wordpress'] = $this->validateWordpressCompatibility($schema);
         }
 
         if ($check_security) {
-            $results['security'] = $this->validate_security_practices($schema);
+            $results['security'] = $this->validateSecurityPractices($schema);
         }
 
         $errors          = array();
@@ -168,7 +168,7 @@ class ValidateToolSchemaTool extends AbstractTool
      * @param array<string, mixed> $schema Schema to validate.
      * @return array{errors: string[], warnings: string[]}
      */
-    private function validate_structure(array $schema): array
+    private function validateStructure(array $schema): array
     {
         $errors   = array();
         $warnings = array();
@@ -199,7 +199,7 @@ class ValidateToolSchemaTool extends AbstractTool
      * @param array<string, mixed> $schema Schema to validate.
      * @return array{errors: string[], warnings: string[]}
      */
-    private function validate_types(array $schema): array
+    private function validateTypes(array $schema): array
     {
         $errors   = array();
         $warnings = array();
@@ -244,7 +244,7 @@ class ValidateToolSchemaTool extends AbstractTool
      * @param array<string, mixed> $schema Schema to validate.
      * @return array{errors: string[], warnings: string[]}
      */
-    private function validate_required_fields(array $schema): array
+    private function validateRequiredFields(array $schema): array
     {
         $errors   = array();
         $warnings = array();
@@ -287,7 +287,7 @@ class ValidateToolSchemaTool extends AbstractTool
      * @param array<string, mixed> $schema Schema to validate.
      * @return array{errors: string[], warnings: string[], recommendations: string[]}
      */
-    private function validate_descriptions(array $schema): array
+    private function validateDescriptions(array $schema): array
     {
         $errors          = array();
         $warnings        = array();
@@ -327,7 +327,7 @@ class ValidateToolSchemaTool extends AbstractTool
      * @param array<string, mixed> $schema Schema to validate.
      * @return array{errors: string[], warnings: string[], recommendations: string[]}
      */
-    private function validate_wordpress_compatibility(array $schema): array
+    private function validateWordpressCompatibility(array $schema): array
     {
         $errors          = array();
         $warnings        = array();
@@ -377,7 +377,7 @@ class ValidateToolSchemaTool extends AbstractTool
      * @param array<string, mixed> $schema Schema to validate.
      * @return array{errors: string[], warnings: string[], recommendations: string[]}
      */
-    private function validate_security_practices(array $schema): array
+    private function validateSecurityPractices(array $schema): array
     {
         $errors          = array();
         $warnings        = array();

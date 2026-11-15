@@ -22,7 +22,8 @@ class WaitForUserTool extends AbstractTool
     public function getSlug(): string
     {
         return 'wait_for_user';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Wait For User';
     }

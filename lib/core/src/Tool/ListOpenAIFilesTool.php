@@ -24,10 +24,12 @@ class ListOpenAIFilesTool extends AbstractTool
     public function getSlug(): string
     {
         return 'list_openai_files';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'List OpenAI Files';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Lists files uploaded to OpenAI for batch processing, fine-tuning, or vector stores.';
     }

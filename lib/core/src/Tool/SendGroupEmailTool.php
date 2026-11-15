@@ -23,10 +23,12 @@ class SendGroupEmailTool extends AbstractTool
     public function getSlug(): string
     {
         return 'send_group_email';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Send Group Email';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Sends an email to a group of recipients.';
     }

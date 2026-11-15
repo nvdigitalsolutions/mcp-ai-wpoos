@@ -17,7 +17,8 @@ class GenerateImageCaptionValidatedTool extends GenerateImageCaptionTool
     public function getSlug(): string
     {
         return 'generate_image_caption_validated';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Generate Image Caption (Validated)';
     }

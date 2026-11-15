@@ -496,7 +496,7 @@ The clusters are done. What is left is either dependency-blocked or deliberately
 |---|---|---|
 | **`PiiFilter` misses AWS keys, JWTs, private keys and connection strings** | §12: the output guardrail detected these, `PiiFilter` did not redact them on the **input** path. | **Closed — cluster 14, see §21.** |
 | **The chat path had no system-prompt handling at all** | §17: guardrail injection had to be added to the orchestrator because nothing assembled a system prompt. | Decide whether the assistant's `system_prompt` is applied server-side (WordPress does) or client-side, and make both runtimes agree. |
-| **`lib/core` has no style gate** | §16: `phpcs-laravel.xml.dist` does not list `lib/core` in its `<file>` set, and `ChatOrchestrator.php` carries 535 PSR-12 spacing errors that no gate reports. | Add `lib/core/src` and `lib/core/tests` to the ruleset and reformat in one whitespace-only commit, or state explicitly that `lib/core` follows WPCS spacing and add the sniffs that enforce it. |
+| **`lib/core` has no style gate** | §16: `phpcs-laravel.xml.dist` did not list `lib/core` in its `<file>` set, and `ChatOrchestrator.php` carried 535 PSR-12 spacing errors that no gate reported. | **Closed — cluster 15, see §22** (79,948 violations, not 535; reformatted in #7805, gate on in this cluster) |
 | **One flaky app test** | §16: `ProjectManagementToolParityTest` failed once at `parent::setUp()` and passed on two subsequent full runs. | Catch it with `--repeat` if it recurs; not reproducible now. |
 
 ---
@@ -527,5 +527,32 @@ The clusters are done. What is left is either dependency-blocked or deliberately
 **Validation.** `lib/core` **1,667 tests / 5,793 assertions** (23 new); app suite **693 / 4,067**, unchanged; `phpcs-laravel.xml.dist` clean on both changed core files; `phpcs.xml.dist` clean on both changed WordPress files. The adapter suite was not run — nothing under `lib/laravel-adapter/` changed.
 
 The tests pin what a caller receives rather than what the patterns intend: each family is reduced to a single token; an AWS key is never mistaken for a card number; a complete PEM loses its body *and* its END marker while the surrounding prose survives; a truncated PEM is explicitly asserted **not** to be redacted; seven ordinary-prose cases that merely name credentials are asserted untouched; and every default pattern is compiled, so a typo cannot silently disable a family the way `scrub()`'s skip-invalid-pattern behaviour otherwise would.
+
+---
+
+## 22. Cluster 15 result — the lib/core style gate
+
+**What shipped.** `phpcs-laravel.xml.dist` now lists `lib/core/src` and `lib/core/tests`, so the largest tree in the Laravel runtime has a style gate for the first time. The ruleset run is **799 files, 0 errors, 0 warnings**. The reformat that made this possible landed separately as #7805 (533 files, +58,454 / −52,254).
+
+**The measurement changed the plan.** The item was recorded as "`ChatOrchestrator.php` carries 535 unreported PSR-12 spacing errors". That was one file. The tree had **79,948** violations across 533 files — 35,368 even with tab indentation exempted — and was internally *mixed*: under `WordPress-Core` it fails 25,536 times, so there was no "declare its existing style" shortcut either.
+
+**Why the tree became spaces.** Roughly 78,000 of the 79,948 were indentation itself: PSR-12 mandates four spaces and `lib/core` used tabs. Exempting the indentation sniffs does not produce a tab-clean tree, because phpcbf's brace fixers insert space-indented lines — the first attempt left methods whose opening brace sat at four spaces over a body indented one space. That is provably token-identical and completely unreadable, and repairing it would mean a re-indent pass over 495 files. Converting the tree is the smaller risk. The adapter keeps tabs; its ruleset says so and that is unchanged.
+
+**The reformat was verified mechanically, not by review.** Every file was compared against `HEAD` as a PHP token stream with whitespace removed: 454 identical, 80 differing only by braces added around single-statement control bodies, **0 differing in any other token**. The brace additions are the one place the change is not whitespace, so they are stated rather than assumed.
+
+**The remaining 60 were four kinds of judgement call.**
+
+| Violation | Count | Resolution |
+|---|---|---|
+| `ClosingBrace.StatementAfter` | 44 in 25 files | Split the line at the brace. Whitespace only. |
+| `MultipleClasses` | 9 in 5 test files | Sniff-scoped `exclude-pattern`, matching the precedent the WPCS ruleset sets for its own stubs. Splitting would spread one fixture across files. |
+| `CamelCapsMethodName` | 6 in `ValidateToolSchemaTool` | Renamed the six private `validate_*` methods and their six call sites. They are private, so no surface changed. |
+| `ValidClassName` | 1 | A `WP_Error` stand-in in a test fixture has to carry WordPress's name. Excluded. |
+
+**A bug worth recording.** The first brace-splitting script matched a member keyword and re-emitted only the matched prefix, silently deleting the method name off 44 lines: `} public function getName(): string` became `} public function` followed by `{`. phpcs did not catch it — the lines it was pointed at were fixed, and the parse errors sat in files the sniff never had to parse to complain. PHPUnit caught it. **A regex "fix" that satisfies a sniff can still destroy the line it was applied to, so lint every touched file with `php -l` before trusting a mechanical pass.** The corrected script splits the line at the brace and keeps the whole remainder.
+
+**A limitation, documented rather than papered over.** `<exclude name="Generic.WhiteSpace.DisallowTabIndent">` is ruleset-wide; PHPCS cannot scope a sniff exclusion by path. That means the two indentation sniffs are off for `lib/core` and the app skeleton as well as the adapter, so nothing stops a future contributor re-tabbing `lib/core`. Attempting a path-scoped `<rule ref>` instead does not work — the `PSR12` inclusion still reports, which turned the adapter red with 6,139 errors. Enforcing indentation per tree needs a second ruleset and a second CI step; that is written here so it is picked up deliberately. Nothing depends on it today, because the tree is already spaces.
+
+**Validation.** Ruleset run: **799 files, 0 errors**. `lib/core` **1,667 tests / 5,793 assertions** — unchanged from before the reformat and the gate. Token comparison of this cluster's changes: 533 of 534 files identical, and the one that differs does so by exactly 12 lines — six `validate_*` declarations and their six call sites.
 
 ---

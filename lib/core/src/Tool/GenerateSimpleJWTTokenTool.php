@@ -22,10 +22,12 @@ class GenerateSimpleJWTTokenTool extends AbstractTool
     public function getSlug(): string
     {
         return 'generate_simple_jwt_token';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Generate Simple JWT Token';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Generates a simple JWT token for testing or development.';
     }

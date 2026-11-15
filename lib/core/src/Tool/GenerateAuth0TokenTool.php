@@ -24,10 +24,12 @@ class GenerateAuth0TokenTool extends AbstractTool
     public function getSlug(): string
     {
         return 'generate_auth0_token';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Generate Auth0 Token';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Generates an Auth0 authentication token.';
     }

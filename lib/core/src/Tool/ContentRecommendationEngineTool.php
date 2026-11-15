@@ -22,10 +22,12 @@ class ContentRecommendationEngineTool extends AbstractTool
     public function getSlug(): string
     {
         return 'content_recommendation_engine';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Content Recommendation Engine';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Recommends content based on user preferences, similarity, and trending topics.';
     }

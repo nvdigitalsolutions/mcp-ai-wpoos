@@ -23,10 +23,12 @@ class ProfessionStatsTool extends AbstractTool
     public function getSlug(): string
     {
         return 'profession_stats';
-    } public function getName(): string
+    }
+    public function getName(): string
     {
         return 'Profession Stats';
-    } public function getDescription(): string
+    }
+    public function getDescription(): string
     {
         return 'Returns statistics about available professions grouped by category.';
     }
