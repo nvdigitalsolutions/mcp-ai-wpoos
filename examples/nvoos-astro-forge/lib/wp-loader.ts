@@ -165,10 +165,19 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promis
 }
 
 /**
+ * Origins that must be relativised in shipped HTML: the CMS itself, so a
+ * hard-coded absolute link still resolves from a staging host.
+ */
+function internalOriginsOf(site: SiteProfile): string[] {
+	return [site.url];
+}
+
+/**
  * Astro content-layer loader over one WordPress/WooCommerce REST collection.
  */
 export function createWpLoader(options: WpLoaderOptions): Loader {
 	const { site, collection, auth, local } = options;
+	const internalOrigins = internalOriginsOf(site);
 
 	const loader: Loader = {
 		name: 'nvoos-wp',
@@ -177,7 +186,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 			const client = WpClient.fromProfile(site, { auth, userAgent: options.userAgent });
 
 			if (collection.source === 'payload' || collection.source === 'local') {
-				await loadPayloadEntries(context, client, collection);
+				await loadPayloadEntries(context, client, collection, internalOrigins);
 				return;
 			}
 
@@ -257,7 +266,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 						slug: raw.slug,
 						date: raw.date,
 						modified,
-						excerpt: raw.excerpt ? sanitizeHtml(raw.excerpt) : undefined,
+						excerpt: raw.excerpt ? sanitizeHtml(raw.excerpt, { internalOrigins }) : undefined,
 						link: raw.link,
 						author: raw.author,
 						featuredImage: featured,
@@ -274,7 +283,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 						truncated: truncated ? true : undefined,
 					},
 					digest: context.generateDigest(modified),
-					rendered: { html: sanitizeHtml(raw.html) },
+					rendered: { html: sanitizeHtml(raw.html, { internalOrigins }) },
 				});
 			}
 
@@ -357,7 +366,7 @@ export function createWpLoader(options: WpLoaderOptions): Loader {
 						? { html: existingRendered.html }
 						: localBody === ''
 							? undefined
-							: { html: sanitizeHtml( localBody ) };
+							: { html: sanitizeHtml(localBody, { internalOrigins }) };
 				context.store.set( {
 					...entry,
 					digest: entry.digest !== undefined ? `local:${ String( entry.digest ) }` : undefined,
@@ -646,7 +655,8 @@ function extractCommerce(entry: Record<string, unknown>, keys: string[]): string
 async function loadPayloadEntries(
 	context: LoaderContext,
 	client: WpClient,
-	collection: WpCollection
+	collection: WpCollection,
+	internalOrigins: string[]
 ): Promise<void> {
 	const restBase = payloadRestBase(collection);
 	const perPage = collection.perPage ?? 100;
@@ -703,7 +713,7 @@ async function loadPayloadEntries(
 				slug: raw.slug,
 				date: raw.date,
 				modified,
-				excerpt: raw.excerpt ? sanitizeHtml(raw.excerpt) : undefined,
+				excerpt: raw.excerpt ? sanitizeHtml(raw.excerpt, { internalOrigins }) : undefined,
 				link: raw.link,
 				author: raw.author,
 				featuredImage: raw.featuredImage,
@@ -719,7 +729,7 @@ async function loadPayloadEntries(
 				truncated: truncated ? true : undefined,
 			},
 			digest: context.generateDigest(modified),
-			rendered: { html: sanitizeHtml(raw.html) },
+			rendered: { html: sanitizeHtml(raw.html, { internalOrigins }) },
 		});
 	}
 
