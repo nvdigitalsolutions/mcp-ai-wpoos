@@ -81,6 +81,14 @@ describe('isBot', () => {
 		expect(isBot({ timestamp: String(now - 5000), name: 'Ada' }, now)).toBe(false);
 	});
 
+	it( 'does not flag a future timestamp — clock skew is not a bot', () => {
+		// The visitor's clock fills `timestamp`; a client running ahead of the
+		// server produced a negative elapsed time and lost every enquiry while
+		// the endpoint answered { ok: true } (2026-11-15).
+		const now = 1_700_000_000_000;
+		expect( isBot( { timestamp: String( now + 60_000 ) }, now ) ).toBe( false );
+	} );
+
 	it('does not flag a missing timestamp — a lost hidden field is not a bot', () => {
 		expect(isBot({ name: 'Ada' })).toBe(false);
 	});

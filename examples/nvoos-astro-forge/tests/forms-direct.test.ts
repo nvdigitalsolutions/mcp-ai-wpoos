@@ -48,6 +48,13 @@ describe('renderDirectFormsEndpointTs', () => {
 		expect(source).toContain('isLocalPeer( peer )');
 	});
 
+	it('treats a future timestamp as clock skew, not a bot', () => {
+		// The page fills `timestamp` from the visitor's clock; a client running
+		// ahead of the server must not be silently dropped (2026-11-15).
+		expect(source).toContain('const elapsed = ( Date.now() - stamp ) / 1000;');
+		expect(source).toContain('elapsed >= 0 && elapsed < MIN_SECONDS');
+	});
+
 	it('keeps the per-address throttle bucket bounded', () => {
 		expect(source).toContain('MAX_TRACKED_IPS');
 		expect(source).toContain('recent.splice');

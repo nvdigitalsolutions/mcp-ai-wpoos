@@ -90,7 +90,11 @@ export function isBot(fields: Fields, now: number = Date.now()): boolean {
 		return true;
 	}
 	const stamp = Number(fields.timestamp ?? 0);
-	return stamp > 0 && (now - stamp) / 1000 < MIN_SECONDS;
+	// A future stamp is clock skew, not a bot. Requiring a non-negative elapsed
+	// keeps a visitor whose clock runs ahead from being silently accepted and
+	// discarded (measured 2026-11-15: a client 60 s ahead lost every enquiry).
+	const elapsed = (now - stamp) / 1000;
+	return stamp > 0 && elapsed >= 0 && elapsed < MIN_SECONDS;
 }
 
 /** How many addresses the throttle will remember before it prunes. */
