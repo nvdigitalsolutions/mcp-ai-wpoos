@@ -85,6 +85,38 @@ Verified end-to-end: 3 materialized pages (28,354 B front-page body, 7
 sections) → `bands 7 pass, 0 warn, 0 skip`, nav anchors 7, media 43 images,
 8/9 gates (the 9th is the informational class-coverage warning).
 
+## Keeping the CMS, with a snapshot as the net (2026-11-15)
+
+A site that still has a CMS can keep the snapshot anyway — not as its source,
+but as the thing it degrades to. Set `content.snapshot: true` and ship
+`sites/<name>.content/` beside the profile:
+
+```json
+"content": { "snapshot": true }
+```
+
+What changes, and what does not:
+
+- The snapshot is copied into `src/content/` exactly like `materialized`, so
+  the local MDX glob reads it. The directory is derived from the profile path
+  (`sites/<name>.json` → `sites/<name>.content`); `--content <dir>` still
+  overrides it.
+- The **WordPress loader still runs first** and wins on collision (hybrid
+  local, 106 P2). A CMS outage yields the last snapshot instead of an empty
+  site; a healthy CMS is always fresh.
+- Only a **network-level** failure degrades: refused, DNS, timeout. An HTTP
+  error (404/5xx) still fails the build on purpose — a reachable but
+  misconfigured source is not something a snapshot should hide.
+- The scaffold **refuses** `snapshot: true` when the directory is missing. A
+  net that is silently absent is worse than none: run `forge materialize`
+  first, or drop the flag.
+- The fallback is announced in the build log, per collection:
+  `[nvoos-wp] <collection>: WordPress unreachable (…) — serving local content only.`
+
+Refresh the snapshot on a schedule (run `forge materialize` against the live
+site), or it quietly becomes a stale copy. It is a rollback target, not a
+cache — and it does not fix a misconfigured CMS, only an absent one.
+
 ## Checklist after a cutover
 
 - Point `profile.url` at the CMS origin — or declare it gone. A stale value

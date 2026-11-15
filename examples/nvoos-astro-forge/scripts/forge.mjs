@@ -43,6 +43,7 @@ import { analyzeBandContinuity, analyzeBuiltCss, analyzeDesignInput, applyMeasur
 import { auditBands, formatBandReport } from '../lib/band-audit.ts';
 import { countAnimations, diffAnimations, measureAnimations, planAnimationRebuild } from '../lib/animations.ts';
 import { auditClassCoverage } from '../lib/class-audit.ts';
+import { resolveContentDir } from '../lib/content-source.ts';
 import { computeLock, describeLock, isLocked, lockDrift, readLock, removeLock, writeLock } from '../lib/lock.ts';
 import { DEPLOY_RUNTIMES, emitDeployConfig, resolveSiteUrl } from '../lib/deploy-config.ts';
 import { analyzeSite, mergeProfileDraft, profileFromDiscovery, renderReport } from '../lib/discovery.ts';
@@ -1270,17 +1271,15 @@ async function runScaffold( profileRef, options ) {
 			: undefined;
 	// A materialized profile carries its content beside itself
 	// (`sites/<name>.content/`, written by `forge materialize`): resolve it
-	// automatically so a CI build needs no extra flag.
-	const contentDirFor = () => {
-		if ( options.content ) {
-			return options.content;
-		}
-		if ( profile.content?.source !== 'materialized' ) {
-			return undefined;
-		}
-		const profilePath = profilePathOf( profileRef );
-		return profilePath ? profilePath.replace( /\.json$/, '.content' ) : undefined;
-	};
+	// automatically so a CI build needs no extra flag. `content.snapshot`
+	// resolves the SAME directory for a site that keeps its CMS — the loader
+	// decides at build time whether the CMS or the snapshot wins.
+	const contentDirFor = () =>
+		resolveContentDir( {
+			content: profile.content,
+			profilePath: profilePathOf( profileRef ),
+			explicit: options.content,
+		} );
 	const result = await scaffold( {
 		profile,
 		targetDir: options.target,

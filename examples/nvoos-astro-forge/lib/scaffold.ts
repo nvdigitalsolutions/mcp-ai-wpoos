@@ -3927,6 +3927,20 @@ async function scaffoldProject(
 		}
 	}
 
+	// A snapshot is a PROMISE: the profile claims the site survives a CMS
+	// outage. Missing content would leave it with nothing at the moment that
+	// matters, so fail here rather than at 3 a.m. during an outage. (A CMS-less
+	// `materialized` profile keeps the softer warning below — it is
+	// bootstrapped by running `forge materialize` right after.)
+	if ( profile.content?.snapshot === true ) {
+		const source = options.contentDir ? path.resolve( options.contentDir ) : '';
+		if ( source === '' || ! existsSync( source ) ) {
+			throw new Error(
+				`content.snapshot: true needs a materialized snapshot beside the profile (sites/<name>.content/, written by "forge materialize") — ${ source || 'none was found' }. Run "forge materialize" first, or drop the flag.`
+			);
+		}
+	}
+
 	// 4d. Materialized content (2026-11-15): a site whose CMS is gone ships its
 	//     content beside the profile (`sites/<name>.content/`, written by
 	//     `forge materialize`). Copied AFTER the demo removal so real content
