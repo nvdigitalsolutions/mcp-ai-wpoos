@@ -112,12 +112,23 @@ describe('renderDirectFormsEndpointTs — Turnstile', () => {
 		expect(throttleAt).toBeGreaterThan(verifyAt);
 	});
 
-	it('binds the token to this site and this widget', () => {
-		expect(turnstileSource).toContain("const TURNSTILE_HOSTNAME = 'virtuallyjamaica.com';");
-		expect(turnstileSource).toContain("const TURNSTILE_ACTION = 'contact';");
+	it( 'binds the token to this site and this widget', () => {
+		expect(turnstileSource).toContain("const TURNSTILE_HOSTNAME: string = 'virtuallyjamaica.com';");
+		expect(turnstileSource).toContain("const TURNSTILE_ACTION: string = 'contact';");
 		expect(turnstileSource).toContain('payload.hostname !== expected');
 		expect(turnstileSource).toContain('payload.action !== TURNSTILE_ACTION');
-	});
+	} );
+
+	it( 'types the baked Turnstile constants as string', () => {
+		// A literal initializer infers a LITERAL type, so the endpoint's own
+		// `TURNSTILE_ACTION !== ''` guard becomes ts(2367) "no overlap" under
+		// `astro check` — exactly the two errors virtuallyjamaica's generated
+		// project reported (2026-11-15). The annotation keeps the guards legal
+		// and lets a profile bake an empty value.
+		expect(turnstileSource).toContain("const TURNSTILE_SITE_KEY: string = '1x00000000000000000000AA';");
+		expect(turnstileSource).toContain("const TURNSTILE_ACTION: string = 'contact';");
+		expect(turnstileSource).toContain("const TURNSTILE_HOSTNAME: string = 'virtuallyjamaica.com';");
+	} );
 
 	it('treats a bad token as a rejection, not a transport error', () => {
 		// Single-use 300 s tokens replay as `timeout-or-duplicate`; that is a

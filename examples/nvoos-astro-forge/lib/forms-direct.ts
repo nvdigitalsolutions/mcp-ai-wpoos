@@ -72,10 +72,13 @@ export function renderDirectFormsEndpointTs( turnstile: DirectFormsTurnstile = {
 				'// the widget is decoration a script happily skips.',
 				'// ---------------------------------------------------------------------------',
 				'/** PUBLIC site key — the secret is TURNSTILE_SECRET on the host. */',
-				`const TURNSTILE_SITE_KEY = ${ literal( siteKey ) };`,
-				`const TURNSTILE_ACTION = ${ literal( action ) };`,
+				// `: string` is load-bearing: a literal initializer infers a LITERAL type,
+				// so the `!== ''` guards below become "no overlap" errors under
+				// `astro check` (virtuallyjamaica's baked site key, 2026-11-15).
+				`const TURNSTILE_SITE_KEY: string = ${ literal( siteKey ) };`,
+				`const TURNSTILE_ACTION: string = ${ literal( action ) };`,
 				'/** The hostname siteverify must echo back (empty compares the request). */',
-				`const TURNSTILE_HOSTNAME = ${ literal( hostname ) };`,
+				`const TURNSTILE_HOSTNAME: string = ${ literal( hostname ) };`,
 				'/** `allow` keeps the enquiry when siteverify cannot answer; `block` refuses. */',
 				`const TURNSTILE_ON_ERROR: 'allow' | 'block' = ${ literal( onProviderError ) };`,
 				"const TURNSTILE_TOKEN_FIELD = 'cf-turnstile-response';",
