@@ -153,7 +153,7 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 | 1 | Retrieval harness | **done — 2026-11-15** (see §7) |
 | 2 | Citation verifier | **done — 2026-11-15** (see §8) |
 | 3 | Reasoning trace | **done — 2026-11-15** (see §9) |
-| 4 | Self-refine loop | pending |
+| 4 | Self-refine loop + trace store | **done — 2026-11-15** (see §10) |
 | 5 | Tool router harness | pending |
 | 6 | Necessity gate | pending (needs approval queue) |
 | 7 | Harness search engine | **blocked by design** |
@@ -204,3 +204,27 @@ Each iteration of the loop is one cluster and must satisfy all of these before t
 **Validation.** `lib/core` **1,484 tests / 5,320 assertions** (21 new); app suite **678 passed / 4,033 assertions** (unchanged); phpcs clean on both standards.
 
 **No app-level test**, for the same reason as cluster 2: no binding ships here.
+
+---
+
+## 10. Cluster 4 result — self-refine loop + trace store
+
+**What shipped.**
+
+- `Domain\Service\Harness\SelfRefineLoop` — the bounded generate → critique → revise loop, with `SelfRefineException` carrying a reason code and the caller's original error object.
+- `Domain\Contract\TraceStoreInterface` — `append()` + `prune()` per assistant, with the retention window enforced by the store rather than trusted from the caller.
+- `Domain\Service\Harness\TracePolicy` — `isEnabled()`, `retentionRuns()` (default 50, mirroring `MAX_RUNS_PER_ASSISTANT`) and `clampRuns()` pinned to 10–200.
+- `Domain\Service\Harness\NullTraceStore` — the no-storage default, so a runtime without trace config still runs the harness.
+- `Nvoos\Laravel\Adapter\DatabaseTraceStore` + `nvoos_harness_trace_records` migration, bound in `NvoosServiceProvider`.
+
+**Why the loop and the store ship together.** Cluster 3 deferred the store because it had no consumer. The loop is that consumer: it emits one record per critique through the `on_iteration` seam, which the WordPress delegation wires to `WP_MCP_AI_Harness_Trace_Capture::record_refine_iteration()`. The seam also keeps core free of any reference to the WordPress class.
+
+**Error translation.** Core must not import `WP_Error`, so the loop throws `SelfRefineException` with `reason ∈ {empty_task, cost_exceeded, generator_failed, critic_failed}` and, when a callable returned one, the original error object. The WordPress delegation returns that object unchanged, so callers still receive the very `WP_Error` their generator produced — not a copy. The two translatable messages are re-localised in the WordPress layer, because core messages are English defaults and the delegation must not regress i18n.
+
+**Two caps, deliberately.** `HarnessProfile` clamps `refine.max_iters`, but a caller can pass `$opts` straight to the loop, so the loop clamps again: `MAX_REFINE_ITERATIONS = 4` holds no matter what the profile says. The cost ceiling is charged *before* each call, so an unaffordable draft is never generated — and the pass that the ceiling cancels is still counted in `estimated_cost_usd`, which is the WordPress behaviour this ports.
+
+**Proven equivalent.** Both implementations ran over 23 scenarios — accept, revise-to-cap, `max_iters` 999 and `-4`, empty feedback, reject, ceiling-before-draft, ceiling-mid-loop, zero-ceiling, empty task, generator error (draft and revision), critic error (first and later pass), uppercase verdict, unknown verdict, missing verdict, bare-string critique, junk critique, and non-string answers (int, null). Output was **byte-identical**, including error codes and the per-pass trace records.
+
+**Deferred on purpose.** `record_reflection()` stays in WordPress. Its write target is the `store_agent_context` tool and WordPress has no `ToolInvokerInterface` adapter, so porting it needs an invoker bridge plus that tool — memory-track work, not harness-loop work. It is the only remaining method on the class.
+
+**Validation.** `lib/core` **1,519 tests / 5,386 assertions** (35 new); app suite **687 passed / 4,054 assertions** (9 new — this cluster adds a binding, so it carries an app-level test); adapter suite unchanged at 180 / 676 with the same 2 pre-existing project-tool failures; phpcs clean on the laravel and WordPress standards.

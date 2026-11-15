@@ -43,6 +43,7 @@ use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\TokenUsageInterface;
 use Nvoos\Core\Domain\Contract\ToolInvokerInterface;
+use Nvoos\Core\Domain\Contract\TraceStoreInterface;
 use Nvoos\Core\Domain\Contract\TranscriptStoreInterface;
 use Nvoos\Core\Infrastructure\Cost\CostCalculator;
 use Nvoos\Core\Infrastructure\Profession\CachedProfessionRepository;
@@ -82,6 +83,7 @@ use Nvoos\Laravel\Adapter\ErrorFactory;
 use Nvoos\Laravel\Adapter\EventDispatcher;
 use Nvoos\Laravel\Adapter\FileStore;
 use Nvoos\Laravel\Adapter\FileUploadService;
+use Nvoos\Laravel\Adapter\DatabaseTraceStore;
 use Nvoos\Laravel\Adapter\HarnessProfileProvider;
 use Nvoos\Laravel\Adapter\HttpClient;
 use Nvoos\Laravel\Adapter\JobStatusStore;
@@ -115,6 +117,7 @@ class NvoosServiceProvider extends ServiceProvider {
 		// Bind domain interfaces → adapter implementations.
 		$this->app->bind( ErrorFactoryInterface::class, ErrorFactory::class );
 		$this->app->bind( HarnessProfileProviderInterface::class, HarnessProfileProvider::class );
+		$this->app->bind( TraceStoreInterface::class, DatabaseTraceStore::class );
 		$this->app->bind( CacheStoreInterface::class, CacheStore::class );
 		$this->app->bind( SettingsStoreInterface::class, SettingsStore::class );
 		$this->app->bind( ToolInvokerInterface::class, RegistryToolInvoker::class );
