@@ -229,8 +229,8 @@ class EndpointCapabilitiesTest extends TestCase
         $declared = (array) ( $contract['reason_codes'] ?? array() );
         $runtime  = EndpointCapabilities::REASON_CODES;
 
-        sort( $declared );
-        sort( $runtime );
+        sort($declared);
+        sort($runtime);
 
         $this->assertSame(
             $runtime,
@@ -250,8 +250,8 @@ class EndpointCapabilitiesTest extends TestCase
         $codes       = (array) ( $contract['reason_codes'] ?? array() );
 
         foreach ( $overrides as $key => $reason ) {
-            $this->assertContains( $key, $routeBacked, 'wordpress_reasons names an unknown console key: '.$key );
-            $this->assertContains( $reason, $codes, 'wordpress_reasons uses an unknown code for '.$key.': '.$reason );
+            $this->assertContains($key, $routeBacked, 'wordpress_reasons names an unknown console key: '.$key);
+            $this->assertContains($reason, $codes, 'wordpress_reasons uses an unknown code for '.$key.': '.$reason);
         }
     }
 
@@ -264,8 +264,8 @@ class EndpointCapabilitiesTest extends TestCase
         $expected = (array) ( $this->contract()['reasons'] ?? array() );
         $actual   = EndpointCapabilities::reasons();
 
-        ksort( $expected );
-        ksort( $actual );
+        ksort($expected);
+        ksort($actual);
 
         $this->assertSame(
             $expected,
@@ -282,8 +282,8 @@ class EndpointCapabilitiesTest extends TestCase
         $expected = (array) ( $this->contract()['fragments']['laravel'] ?? array() );
         $actual   = EndpointCapabilities::routes();
 
-        ksort( $expected );
-        ksort( $actual );
+        ksort($expected);
+        ksort($actual);
 
         $this->assertSame(
             $expected,

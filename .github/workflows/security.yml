@@ -76,7 +76,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          # Keep the audit on a supported runtime: Node 18 is EOL (2025-04-30)
+          # and `engines.node` now declares >=20.19.0. `npm ci` only warns on a
+          # mismatch (.npmrc sets engine-strict=false), so an unbumped 18 here
+          # would run quietly against an unsupported runtime.
+          node-version: '20'
           cache: 'npm'
 
       - name: Install npm dependencies
