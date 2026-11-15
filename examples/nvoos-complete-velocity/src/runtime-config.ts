@@ -206,6 +206,13 @@ export interface ConsoleRuntimeOptions {
    */
   endpointUrls?: Record<string, string>;
   /**
+   * Set when the availability read advertises a same-origin connected-app
+   * proxy (`data.connected_proxy`, 090-p W6). Discovered absolute URLs are
+   * then rewritten to `<origin>/connected/<key>` so a remote product needs no
+   * CORS configuration. Absent = mount the product's absolute URL.
+   */
+  connectedProxy?: boolean;
+  /**
    * Supply class per endpoint key (GET /features → data.endpoint_reasons).
    * Lets the console explain an unavailable surface instead of only hiding it.
    */
@@ -274,12 +281,18 @@ export function buildConsoleRuntime(
   // publishes the base URL the console should mount its island against.
   // These are admin surfaces on both runtimes, so a non-admin session keeps
   // them blank rather than being handed a URL it cannot open.
+  //
+  // When the availability read advertises a same-origin connected-app proxy
+  // (090-p W6), the mount point is <origin>/connected/<key> instead of the
+  // product's absolute URL — that is what removes the CORS requirement.
   if ((options.user?.capabilities ?? []).includes('manage_options')) {
     for (const [key, url] of Object.entries(options.endpointUrls ?? {})) {
       if (typeof url !== 'string' || url === '' || !(key in endpoints)) {
         continue;
       }
-      (endpoints as unknown as Record<string, string>)[key] = url;
+      (endpoints as unknown as Record<string, string>)[key] = options.connectedProxy
+        ? `${origin}/connected/${key}`
+        : url;
     }
   }
 
@@ -619,6 +632,8 @@ export interface RuntimeAvailability {
   endpointUrls: Record<string, string>;
   /** Supply class per endpoint key, for operator-facing copy. */
   endpointReasons: Record<string, string>;
+  /** True when the backend advertises a same-origin connected-app proxy. */
+  connectedProxy: boolean;
 }
 
 /**
@@ -640,6 +655,7 @@ export async function fetchRuntimeAvailability(
     endpoints: {},
     endpointUrls: {},
     endpointReasons: {},
+    connectedProxy: false,
   };
 
   try {
@@ -664,6 +680,7 @@ export async function fetchRuntimeAvailability(
         endpoints?: Record<string, boolean>;
         endpoint_urls?: Record<string, string>;
         endpoint_reasons?: Record<string, string>;
+        connected_proxy?: boolean;
       };
     }>(response, 'features endpoint');
 
@@ -677,6 +694,7 @@ export async function fetchRuntimeAvailability(
       endpoints: isBooleanMap(endpoints) ? endpoints : {},
       endpointUrls: isStringMap(endpointUrls) ? endpointUrls : {},
       endpointReasons: isStringMap(endpointReasons) ? endpointReasons : {},
+      connectedProxy: data?.data?.connected_proxy === true,
     };
   } catch (error) {
     console.warn(

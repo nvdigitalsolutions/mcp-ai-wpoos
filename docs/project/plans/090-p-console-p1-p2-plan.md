@@ -2,8 +2,8 @@
 
 **Status:** Planned 2026-11-16. Shipped in this pass: W1 (professions), W2 (reason
 surfaces), W3 (discovery pinning + auth), W4 (fragment golden file), W5
-(chatChannels decision + dead-page gate), W7 (org teams on WordPress).
-**Deferred with design:** W6 (connected-app proxy), W8 (console e2e in CI).
+(chatChannels decision + dead-page gate), W6 (connected-app proxy), W7 (org
+teams on WordPress). **Deferred with design:** W8 (console e2e in CI).
 **Predecessor:** `090-n-console-manifest-parity-plan.md` (manifest parity, merged
 as #7831).
 
@@ -18,6 +18,7 @@ This pass covers the P1 and P2 items from the roadmap that followed #7831:
 | P1 | Console renders endpoint reasons instead of only hiding surfaces | **W2 shipped** |
 | P1 | WordPress `professions` REST route | **W1 shipped** |
 | P1 | Connected-apps hardening (DNS pinning, per-app auth) | **W3 shipped** |
+| P1 | Connected-app proxy for the console islands | **W6 shipped** |
 | P1 | WordPress `orgTeams` REST route | **W7 shipped** |
 | P2 | One source of truth for endpoint fragments | **W4 shipped** |
 | P2 | Console e2e in CI | **W8 deferred** (needs a service stack; recipe below) |
@@ -182,31 +183,41 @@ renders without the maps; quick actions hide when an endpoint is blank.
 
 ---
 
-## 5.1 W6 — Connected-app proxy (deferred)
+## 5.1 W6 — Connected-app proxy (shipped)
 
-**Why deferred:** the console islands fetch their REST base from the browser.
-A remote product is a different origin, so either the product sends CORS headers
-(and credentials) or the console needs a same-origin proxy. That is a security
-surface (an open proxy) and a product-contract decision, not a console tweak.
+**Why it was deferred:** the console islands fetch their REST base from the
+browser. A remote product is a different origin, so either the product sends
+CORS headers (and credentials) or the console needs a same-origin proxy. That
+is a security surface (an open proxy) and a product-contract decision, not a
+console tweak.
 
-**Design when it is taken up:**
+**As built** — the policy lives in `scripts/connected-apps.mjs` (no I/O, unit
+tested) and the wiring in `scripts/serve.mjs`:
 
-1. `serve.mjs` exposes `/connected/<key>/*` for the four known keys only.
-2. The upstream is resolved server-side from `NVOOS_CONNECTED_APPS` (or the
-   backend's public `/features` `endpoint_urls`, cached 5 min); a request can
-   never name an arbitrary URL.
-3. The forwarded request drops `Cookie`/`Authorization`; a configured per-app
-   token is added server-side. The response drops `Set-Cookie` and is
-   `Cache-Control: no-store` unless the product opted into a public TTL.
-4. Path segments are normalised; `..`, absolute URLs, and encoded separators are
-   rejected.
-5. The console rewrites a discovered URL to `/connected/<key>` only when the
-   proxy advertises itself (a `connected_proxy: true` field on `/features`).
-6. Tests: allowlisted upstream reaches a local fixture server; an unknown key is
-   404; `..` and absolute-URL paths are 400; cookies are not forwarded; a
-   `Set-Cookie` response is stripped.
+1. `/connected/<key>/*` is served for the four known keys only; an unknown
+   key is `404 nvoos_connected_unknown_app`.
+2. The upstream is resolved server-side from `NVOOS_CONNECTED_APPS`; a request
+   can never name a host. A malformed entry drops that app rather than taking
+   the console down.
+3. `Cookie`, `Authorization`, `X-WP-Nonce`, `Origin`, `Referer` and the
+   `X-Forwarded-*` family are dropped. The configured per-app token is added
+   server-side as a bearer credential. The response drops `Set-Cookie`,
+   `Strict-Transport-Security`, `Alt-Svc`, CSP and framing headers, and is
+   `no-store` unless the app opts into `cacheTtl` (capped at 900 s).
+4. Paths are refused (`400 nvoos_connected_path_invalid`) for traversal,
+   percent-encoded dots/separators (checked both before and after decoding,
+   so a double-encoded value cannot slip through), backslashes and
+   protocol-relative forms. Certificate validation stays on;
+   `NVOOS_CONNECTED_INSECURE=1` is the documented opt-out.
+5. `GET /features` gains `connected_proxy: true` and `connected_apps`, and the
+   console rewrites a discovered URL to `<origin>/connected/<key>` only when
+   that flag is present — a deployment without the variable keeps the
+   absolute URL.
+6. Tests: `src/__tests__/connected-apps.test.ts` (24 unit cases) and
+   `src/__tests__/connected-proxy.test.ts` (10 cases against the spawned
+   server + a fixture upstream).
 
-**Acceptance:** the four product keys mount through the proxy with no CORS
+**Acceptance met:** the product keys mount through the proxy with no CORS
 configuration, and the proxy cannot be used to reach a host outside the
 allowlist.
 
@@ -290,6 +301,7 @@ field, when an endpoint key disappears, or when the console build cannot boot.
 | 4 | W3 pinning/auth | Laravel feature tests |
 | 5 | W5 decision + gate | PHPUnit (filter default), docs |
 | 6 | W7 org teams | WP PHPUnit (14 cases), console Vitest, live manifest |
+| 7 | W6 connected-app proxy | console Vitest (24 unit + 10 integration), typecheck |
 
 Validation actually run is recorded in the PR body, not here.
 

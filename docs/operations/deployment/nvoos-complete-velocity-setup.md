@@ -28,6 +28,11 @@ Deploy runbook for the Complete Console on Cloudways Velocity. Companion to
      Node), so the install step is a no-op and npm-audit noise never
      appears in deploy logs.
    - **Env:** `NVOOS_TARGET_SITE=<Complete-bundle WordPress site>`.
+   - **Optional env:** `NVOOS_CONNECTED_APPS` mounts Content Graph / Docs Hub /
+     Media Studio / Document Editor same-origin at `/connected/<key>/*` so the
+     islands need no CORS (090-p W6; JSON `{key: {base, token?, cacheTtl?}}`, see
+     the app README). `NVOOS_CONNECTED_INSECURE=1` disables certificate
+     validation for a product behind an internal CA — leave it unset otherwise.
 
 ## Sync flow
 

@@ -311,6 +311,23 @@ describe('endpoint availability (090-B)', () => {
     );
   });
 
+  it('mounts a connected app on the same-origin proxy when advertised', () => {
+    // 090-p W6: the proxy advertises itself on /features, and the console
+    // prefers the same-origin mount over the product's absolute URL — that is
+    // what removes the CORS requirement.
+    const runtime = buildConsoleRuntime({
+      backend: 'laravel',
+      user: admin,
+      endpoints: { docsHub: true },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+      connectedProxy: true,
+    });
+
+    expect(runtime.endpoints.docsHub).toBe(
+      `${window.location.origin}/connected/docsHub`,
+    );
+  });
+
   it('keeps connected-app URLs away from non-admin sessions', () => {
     const runtime = buildConsoleRuntime({
       backend: 'laravel',
@@ -436,6 +453,7 @@ describe('fetchRuntimeAvailability', () => {
       endpoints: { workflowBuilder: false, assistants: true },
       endpointUrls: {},
       endpointReasons: {},
+      connectedProxy: false,
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -461,6 +479,7 @@ describe('fetchRuntimeAvailability', () => {
       endpoints: { docsHub: false },
       endpointUrls: {},
       endpointReasons: { docsHub: 'external-product' },
+      connectedProxy: false,
     });
   });
 
@@ -486,6 +505,34 @@ describe('fetchRuntimeAvailability', () => {
       endpoints: { docsHub: true },
       endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
       endpointReasons: {},
+      connectedProxy: false,
+    });
+  });
+
+  it('reports an advertised connected-app proxy', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          success: true,
+          data: {
+            features: {},
+            endpoints: { docsHub: true },
+            endpoint_urls: {
+              docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1',
+            },
+            connected_proxy: true,
+          },
+        }),
+      ),
+    );
+
+    await expect(fetchRuntimeAvailability()).resolves.toEqual({
+      features: {},
+      endpoints: { docsHub: true },
+      endpointUrls: { docsHub: 'https://docs.example.com/wp-json/nvoos-docs/v1' },
+      endpointReasons: {},
+      connectedProxy: true,
     });
   });
 
@@ -502,6 +549,7 @@ describe('fetchRuntimeAvailability', () => {
       endpoints: {},
       endpointUrls: {},
       endpointReasons: {},
+      connectedProxy: false,
     });
   });
 
@@ -517,6 +565,7 @@ describe('fetchRuntimeAvailability', () => {
       endpoints: {},
       endpointUrls: {},
       endpointReasons: {},
+      connectedProxy: false,
     });
     expect(warn).toHaveBeenCalled();
   });
