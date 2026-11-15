@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ UPDATED - November 2026 (v1.2.20)
-**Tool Count:** ~360 base tools + ~1,388 Pro tools = ~1,747 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; **+2 base in v1.2.20** — Proposal 141 registers `media_model_capabilities` and `enhance_media_prompt` (#7598). The `lib/core` ports (`verify_information`, `validate_tool_schema`, the project-management write tools) keep their own registry and are never counted in base/Pro totals; the Pro toolkit manifest engine is data + REST, not tool registrations; the forge/storefront/bridge/Cognition surfaces are app-side or sub-project-owned.)
-**Last Updated:** November 13, 2026 (v1.2.20 — +2 base registrations in-window, ~360 base + ~1,388 Pro, ~1,747 total; the media-model catalog is a generative-media registry and is not a chat provider)
+**Status:** ✅ UPDATED - November 2026 (v1.2.21)
+**Tool Count:** ~360 base tools + ~1,388 Pro tools = ~1,747 total (live count via `WP_MCP_AI_Tool_Registry::get_tools()` is authoritative; **zero registrations in v1.2.21** — `includes/class-wp-mcp-ai-tool-registry.php` has no diff. The 090-K harness, the 090-M readiness manifest and the 090-D/E classroom ports are `lib/core` (dual-layer rule), the Pro toolkit engine remains data + REST, and the forge/storefront/bridge/Cognition surfaces are app-side or sub-project-owned.)
+**Last Updated:** November 15, 2026 (v1.2.21 — zero registrations in-window; ~360 base + ~1,388 Pro, ~1,747 total unchanged)
 
 ## Data contracts (ID handoffs between tools)
 
