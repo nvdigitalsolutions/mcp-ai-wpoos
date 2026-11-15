@@ -495,6 +495,17 @@ sub-agents; keep one coordinator for fixes + final gates.
 - Agents verify with `php -l`, per-file phpcs, narrow `npx vitest run <file>`,
   `npm run typecheck`; they do NOT commit, push, or touch dist/.
 
+## Endpoint availability is part of the contract (v1.2.21)
+
+The console no longer guesses whether a backend serves a surface — it is told, per key.
+
+- **45 route-backed keys.** The console capability manifest enumerates every key; each one reports route-backed vs blank, and a blank key carries a **reason**. `/features` returns the counts (e.g. `34 true / 11 false`).
+- **Nav gating follows the same source.** An item whose endpoint is not served is hidden, so a missing route reads as "not available here", not as an outage.
+- **The contract is guarded on both CIs** (`spa-v2/src/api/config.ts` ↔ `EndpointCapabilities::ROUTES`). Adding a route without flipping its key — or flipping a key without the route — fails the guard.
+- **When auditing a blank page, check the key first.** A `false` key blanks the client-side endpoint before any fetch happens, so DevTools shows *no request at all* — very different from a 401/404, and the reason text names the cause.
+- **Read the response shape from the client, not from the project convention.** The MCP-apps route answers **top-level** (`success`, `assistant_id`, `apps`, `app_count`); wrapping it in `{success, data}` renders an empty panel while unit tests stay green.
+- **Laravel parity work is per-key.** A surface is "done" when its key is route-backed, its envelope matches WordPress field-for-field, and a parity test asserts the wire — not when the controller exists.
+
 ## Validation matrix (coordinator)
 
 - phpcs: `phpcbf <files>` then `phpcs --standard=phpcs.xml.dist
