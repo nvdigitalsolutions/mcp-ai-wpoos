@@ -18,6 +18,7 @@ namespace Nvoos\Laravel\ServiceProvider;
 use Illuminate\Support\ServiceProvider;
 use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Application\Security\InputGuard;
+use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Provider\ProviderRouter;
 use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolRegistry;
@@ -38,6 +39,7 @@ use Nvoos\Core\Domain\Contract\ProfessionRepositoryInterface;
 use Nvoos\Core\Domain\Contract\QueueClientInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SchemaStoreInterface;
+use Nvoos\Core\Domain\Service\Harness\OutputGuardrail;
 use Nvoos\Core\Domain\Service\Harness\RetrievalHarness;
 use Nvoos\Core\Domain\Contract\SessionLogStoreInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
@@ -260,6 +262,8 @@ class NvoosServiceProvider extends ServiceProvider {
 			);
 
 			$orchestrator->setInputGuard( self::inputGuardFromConfig() );
+			$orchestrator->setOutputGuard( self::outputGuardFromConfig() );
+			$orchestrator->setHarnessProfileProvider( $app->make( HarnessProfileProviderInterface::class ) );
 
 			return $orchestrator;
 		} );
@@ -285,6 +289,26 @@ class NvoosServiceProvider extends ServiceProvider {
 			strictness: (string) ( $security['prompt_injection_sensitivity'] ?? 'medium' ),
 			piiEnabled: $pii,
 			injectionEnabled: $injection,
+		);
+	}
+
+	/**
+	 * Build the AI-safety output guard from config.
+	 *
+	 * Returns null when the layer is off, so an unconfigured install pays
+	 * nothing — and, importantly, keeps live token streaming.
+	 */
+	private static function outputGuardFromConfig(): ?OutputGuard {
+		$security = (array) config( 'oos.security', array() );
+
+		if ( ! (bool) ( $security['output_guard'] ?? false ) ) {
+			return null;
+		}
+
+		return new OutputGuard(
+			mode: (string) ( $security['output_guard_mode'] ?? OutputGuardrail::MODE_WARN ),
+			strictness: (string) ( $security['output_guard_strictness'] ?? OutputGuardrail::STRICTNESS_MEDIUM ),
+			enabled: true,
 		);
 	}
 

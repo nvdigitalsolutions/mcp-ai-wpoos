@@ -352,3 +352,59 @@ The mode breakdown confirms the policy rather than assuming it: `log` blocked **
 **Where this leaves the harness port.** Every harness class is now either ported, platform-bound (trace capture hooks, logging, translated copy), gated on an unported dependency (cluster 6, the necessity gate — it needs the approval queue), or blocked by design (cluster 7, the search engine). The outstanding *enabling* work is not more porting: it is wiring the four ported services into the Laravel chat path, which no runtime-agnostic service can do for itself.
 
 ---
+
+---
+
+## 15. Cluster 10 — wiring the output guard into the chat path
+
+**The problem.** `OutputGuardrail` is portable and tested, but nothing calls it on the Laravel runtime. WordPress applies `wp_mcp_ai_pre_response_render` on every REST chat response; the console has no equivalent, so the console screens what goes in and not what comes out.
+
+**Where the sink is.** The Laravel console does not assemble the response itself — `ChatStreamController` delegates to `ChatOrchestrator::handleChatStreaming()`, which lives in `lib/core`. So the seam belongs in the orchestrator, not in an adapter, and both runtimes can use it. This is the same shape `InputGuard` already uses: an optional collaborator set by the provider, doing nothing when unconfigured.
+
+**The streaming constraint, stated plainly.** `handleChatStreaming()` emits token deltas as they arrive (`$onStreamChunk` → `message` events carrying `choices[0].delta.content`). Text already sent cannot be recalled, so a whole-response guard applied at the end would annotate a leak the user has already read. The three options were:
+
+| Option | Verdict |
+|---|---|
+| Guard the final payload only | Useless on a stream — the deltas already leaked |
+| Guard per delta | Wrong for the finding that matters: an email or key split across chunks evades a per-chunk scan, and per-chunk scanning of short tokens over-reports |
+| Buffer while the guard is enabled | Correct, and the only one that is honest |
+
+So: **enabling the output guard turns off live token streaming.** When a guard is wired and enabled, the delta callback is suppressed while the model runs, and after validation the response is sent as **one** content chunk followed by the usual payload frame.
+
+It has to be one chunk rather than none: the console's SSE adapter builds assistant text from `choices[0].delta.content` frames only — the trailing payload frame is metadata it ignores. Suppressing the chunks outright would have produced a correct-but-empty bubble. The guarded text is therefore emitted as a single delta, which is the smallest change that both preserves the client contract and never sends unvalidated text.
+
+The default path — no guard configured — is byte-identical to today. That trade-off is the price of a guard that can actually retract, and it is recorded in the config comments so an operator knows what the switch buys and costs.
+
+**A leak-proof return shape.** `OutputGuard::inspect()` returns `content` set to the empty string when the response is blocked, so a caller cannot accidentally render the very text that was blocked. The orchestrator substitutes a fixed withheld notice.
+
+**What ships.**
+
+- `Application\Security\OutputGuard` — a small configured collaborator over `Domain\Service\Harness\OutputGuardrail`, mirroring `InputGuard`.
+- `ChatOrchestrator::setOutputGuard()` plus application in both `handleChat()` and `handleChatStreaming()`, with delta suppression while the guard is enabled.
+- Config keys `oos.security.output_guard`, `_mode`, `_strictness`, and provider wiring built from them.
+- Core unit tests for the collaborator, orchestrator integration tests through the existing scripted-provider harness, and an app-level wiring test.
+
+**Out of scope.** The WordPress side already applies its own filter and keeps doing so; this change does not touch it. Trace capture, the scored router and guardrail prompt injection remain separate items.
+
+---
+
+## 16. Cluster 10 result — output-guard wiring
+
+**What shipped.**
+
+- `Application\Security\OutputGuard` — a configured collaborator over `OutputGuardrail`, mirroring `InputGuard`. `inspect()` returns `content => ''` when a response is blocked, so a caller cannot render what was just blocked.
+- `ChatOrchestrator::setOutputGuard()`, `setHarnessProfileProvider()` and `outputGuard()`, plus application in both `handleChat()` and `handleChatStreaming()`.
+- Config keys `oos.security.output_guard`, `_mode`, `_strictness`, and provider wiring.
+- Core tests (10 for the collaborator, 9 orchestrator integration tests including the streaming path) and an app-level wiring test.
+
+**The bug the wiring exposed.** The first cut suppressed deltas entirely while the guard was enabled. That would have shipped a correct guard and a broken UI: the console's SSE adapter (`spa-v2/src/sse-adapter.ts`) builds assistant text from `choices[0].delta.content` frames only, and the trailing payload frame is metadata it ignores. So a buffered turn now emits its validated text as **one** delta before the payload — the smallest change that keeps the client contract and never sends unvalidated text.
+
+**Precedence, and why it is asymmetric.** A per-assistant profile that enables `output_guard` wins; otherwise the guard wired from config stands. A profile can therefore switch the guard **on** but never **off** — a stale or partial profile must not be able to silently disable a safety control.
+
+**Validation.** `lib/core` **1,616 tests / 5,640 assertions** (19 new); app suite **690 passed / 4,063 assertions** (3 new); adapter suite 180 / 676 with the same 2 pre-existing project-tool failures; `phpcs-laravel.xml.dist` clean across the 264 in-ruleset files.
+
+Two notes on the gates. `lib/core` is **not** in `phpcs-laravel.xml.dist`'s `<file>` list — passing a core file explicitly lints it against PSR-12 and reports the pre-existing WPCS spacing in `ChatOrchestrator.php`, so only the ruleset's own trees are treated as the gate (the new `OutputGuard.php` was brought to PSR-12 anyway). And one full app run failed in `ProjectManagementToolParityTest` at `parent::setUp()` — infrastructure, not an assertion; two subsequent full runs were green.
+
+**What this leaves.** The chat path now enforces, in order: input guard → provider → output guard → buffered or streamed delivery. Trace capture, the scored router and guardrail prompt injection are still unwired, and each is a separate change.
+
+---

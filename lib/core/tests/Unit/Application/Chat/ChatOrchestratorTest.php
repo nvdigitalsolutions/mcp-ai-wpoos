@@ -17,9 +17,11 @@ namespace Nvoos\Core\Tests\Unit\Application\Chat;
 
 use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Domain\Contract\AuthProviderInterface;
 use Nvoos\Core\Domain\Contract\ErrorFactoryInterface;
+use Nvoos\Core\Domain\Contract\HarnessProfileProviderInterface;
 use Nvoos\Core\Domain\Contract\RateLimiterInterface;
 use Nvoos\Core\Domain\Contract\SettingsStoreInterface;
 use Nvoos\Core\Domain\Contract\ToolInterface;
@@ -94,6 +96,9 @@ final class ChatOrchestratorTest extends TestCase {
 			/** @var array<int, array> */
 			public array $receivedOptions = array();
 
+			/** @var array<int, string> */
+			public array $streamChunks = array();
+
 			public function __construct( array $queue, ErrorFactoryInterface $errors, SettingsStoreInterface $settings, ?InMemoryDispatcher $capture ) {
 				parent::__construct( $settings, $errors );
 				$this->queue = array_values( $queue );
@@ -106,6 +111,29 @@ final class ChatOrchestratorTest extends TestCase {
 			public function chat( array $messages, array $options = array(), array $assistantConfig = array() ): mixed {
 				$this->receivedMessages[] = $messages;
 				$this->receivedOptions[] = $options;
+
+				if ( array() === $this->queue ) {
+					return array( 'choices' => array() );
+				}
+
+				return array_shift( $this->queue );
+			}
+
+			/**
+			 * Drive the chunk callback, then return the queued response.
+			 *
+			 * Mirrors a provider that streams tokens and then yields the
+			 * assembled response, which is what the orchestrator expects.
+			 */
+			public function stream( array $messages, array $options = array(), array $assistantConfig = array(), ?callable $onChunk = null ): mixed {
+				$this->receivedMessages[] = $messages;
+				$this->receivedOptions[]  = $options;
+
+				if ( null !== $onChunk ) {
+					foreach ( $this->streamChunks as $chunk ) {
+						$onChunk( $chunk );
+					}
+				}
 
 				if ( array() === $this->queue ) {
 					return array( 'choices' => array() );
@@ -177,12 +205,14 @@ final class ChatOrchestratorTest extends TestCase {
 	/**
 	 * Build an orchestrator with the given tool and scripted responses.
 	 */
-	private function orchestrator( ToolInterface $tool, array $responses, ?AuthProviderInterface $auth = null ): array {
+	private function orchestrator( ToolInterface $tool, array $responses, ?AuthProviderInterface $auth = null, ?SseHandler $sse = null ): array {
 		$errors     = $this->errors();
 		$dispatcher = new InMemoryDispatcher();
 
 		$registry = new ToolRegistry( $dispatcher, $errors );
 		$registry->register( $tool );
+
+		$sse = $sse ?? new SseHandler( $this->createMock( PlatformFlushInterface::class ) );
 
 		$orchestrator = new ChatOrchestrator(
 			$registry,
@@ -190,7 +220,7 @@ final class ChatOrchestratorTest extends TestCase {
 			$dispatcher,
 			$errors,
 			new CostCalculator(),
-			new SseHandler( $this->createMock( PlatformFlushInterface::class ) ),
+			$sse,
 		);
 
 		if ( null !== $auth ) {
@@ -820,5 +850,173 @@ final class ChatOrchestratorTest extends TestCase {
 		$this->assertCount( 1, $capture->isAllowed );
 		$this->assertSame( array( 'chat:7:0', 120, 60 ), $capture->isAllowed[0] );
 		$this->assertSame( array( 'chat:7:0', 60 ), $capture->record[0] );
+	}
+
+	// ── Output guard ──────────────────────────────────────────────
+
+	private function leakResponse(): array {
+		return array(
+			'choices' => array(
+				array(
+					'message'       => array( 'role' => 'assistant', 'content' => 'Reach me at alice@example.com for details.' ),
+					'finish_reason' => 'stop',
+				),
+			),
+			'usage'   => array( 'prompt_tokens' => 10, 'completion_tokens' => 5 ),
+		);
+	}
+
+	private function contentOf( array $result ): mixed {
+		return $result['response']['choices'][0]['message']['content'] ?? null;
+	}
+
+	public function test_without_a_guard_the_response_is_untouched(): void {
+		list( $orchestrator ) = $this->orchestrator( $this->echoTool()[0], array( $this->leakResponse() ) );
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( 'Reach me at alice@example.com for details.', $this->contentOf( $result ) );
+		$this->assertNull( $result['output_guard'] );
+	}
+
+	public function test_warn_mode_annotates_the_delivered_response(): void {
+		list( $orchestrator ) = $this->orchestrator( $this->echoTool()[0], array( $this->leakResponse() ) );
+		$orchestrator->setOutputGuard( new OutputGuard( mode: 'warn' ) );
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( '[⚠️ sensitive] Reach me at alice@example.com for details.', $this->contentOf( $result ) );
+		$this->assertFalse( $result['output_guard']['blocked'] );
+		$this->assertSame( array( 'sensitive' ), $result['output_guard']['findings'] );
+	}
+
+	public function test_block_mode_withholds_the_response(): void {
+		list( $orchestrator ) = $this->orchestrator( $this->echoTool()[0], array( $this->leakResponse() ) );
+		$orchestrator->setOutputGuard( new OutputGuard( mode: 'block' ) );
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( OutputGuard::WITHHELD_NOTICE, $this->contentOf( $result ) );
+		$this->assertStringNotContainsString( 'alice@', (string) $this->contentOf( $result ) );
+		$this->assertTrue( $result['output_guard']['blocked'] );
+	}
+
+	public function test_a_clean_response_is_delivered_and_not_reported(): void {
+		list( $orchestrator ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ) );
+		$orchestrator->setOutputGuard( new OutputGuard( mode: 'block' ) );
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( 'Done.', $this->contentOf( $result ) );
+		$this->assertNull( $result['output_guard'], 'A safe response produces no verdict.' );
+	}
+
+	public function test_a_profile_can_turn_the_guard_on_without_a_wired_guard(): void {
+		list( $orchestrator ) = $this->orchestrator( $this->echoTool()[0], array( $this->leakResponse() ) );
+
+		$profiles = $this->createMock( HarnessProfileProviderInterface::class );
+		$profiles->method( 'getProfile' )->willReturn(
+			array( 'output_guard' => array( 'enabled' => true, 'mode' => 'block', 'strictness' => 'medium' ) )
+		);
+		$orchestrator->setHarnessProfileProvider( $profiles );
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( OutputGuard::WITHHELD_NOTICE, $this->contentOf( $result ) );
+	}
+
+	/**
+	 * A profile may switch the guard on but never off: a stale profile must not
+	 * be able to disable a control the runtime wired.
+	 */
+	public function test_a_profile_with_the_guard_off_leaves_the_wired_guard_active(): void {
+		list( $orchestrator ) = $this->orchestrator( $this->echoTool()[0], array( $this->leakResponse() ) );
+		$orchestrator->setOutputGuard( new OutputGuard( mode: 'block' ) );
+
+		$profiles = $this->createMock( HarnessProfileProviderInterface::class );
+		$profiles->method( 'getProfile' )->willReturn( array( 'output_guard' => array( 'enabled' => false ) ) );
+		$orchestrator->setHarnessProfileProvider( $profiles );
+
+		$result = $orchestrator->handleChat(
+			array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			array( 'tools' => array(), 'provider' => 'openai', 'model' => 'gpt-4o' ),
+		);
+
+		$this->assertSame( OutputGuard::WITHHELD_NOTICE, $this->contentOf( $result ) );
+	}
+
+	public function test_streaming_emits_deltas_when_no_guard_is_wired(): void {
+		$sse = new SseHandler( $this->createMock( PlatformFlushInterface::class ) );
+		$sse->markHeadersSent();
+
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->finalResponse() ), null, $sse );
+		$dispatcher->router->streamChunks = array( 'Do', 'ne', '.' );
+
+		ob_start();
+		$result = $orchestrator->handleChatStreaming(
+			messages: array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			assistantConfig: array( 'provider' => 'openai', 'model' => 'gpt-4o', 'tools' => array() ),
+		);
+		$output = ob_get_clean();
+
+		$this->assertSame( 3, substr_count( (string) $output, '"delta"' ), 'One message event per token.' );
+		$this->assertSame( 'Done.', $this->contentOf( $result ) );
+	}
+
+	public function test_streaming_suppresses_deltas_while_the_guard_is_enabled(): void {
+		$sse = new SseHandler( $this->createMock( PlatformFlushInterface::class ) );
+		$sse->markHeadersSent();
+
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->leakResponse() ), null, $sse );
+		$orchestrator->setOutputGuard( new OutputGuard( mode: 'block' ) );
+		$dispatcher->router->streamChunks = array( 'Reach', ' me', ' at' );
+
+		ob_start();
+		$result = $orchestrator->handleChatStreaming(
+			messages: array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			assistantConfig: array( 'provider' => 'openai', 'model' => 'gpt-4o', 'tools' => array() ),
+		);
+		$output = ob_get_clean();
+
+		$this->assertSame( 1, substr_count( (string) $output, '"delta"' ), 'One chunk, sent after validation.' );
+		$this->assertSame( OutputGuard::WITHHELD_NOTICE, $this->contentOf( $result ) );
+		$this->assertStringNotContainsString( 'alice@', (string) $output );
+		$this->assertStringNotContainsString( 'Reach', (string) $output );
+	}
+
+	public function test_streaming_payload_carries_the_guard_verdict(): void {
+		$sse = new SseHandler( $this->createMock( PlatformFlushInterface::class ) );
+		$sse->markHeadersSent();
+
+		list( $orchestrator, , $dispatcher ) = $this->orchestrator( $this->echoTool()[0], array( $this->leakResponse() ), null, $sse );
+		$orchestrator->setOutputGuard( new OutputGuard( mode: 'warn' ) );
+		$dispatcher->router->streamChunks = array();
+
+		ob_start();
+		$result = $orchestrator->handleChatStreaming(
+			messages: array( array( 'role' => 'user', 'content' => 'Hi.' ) ),
+			assistantConfig: array( 'provider' => 'openai', 'model' => 'gpt-4o', 'tools' => array() ),
+		);
+		$output = (string) ob_get_clean();
+
+		$this->assertSame( '[⚠️ sensitive] Reach me at alice@example.com for details.', $this->contentOf( $result ) );
+		$this->assertStringContainsString( 'output_guard', $output );
+		$this->assertSame( 1, substr_count( $output, '"delta"' ), 'The annotated text arrives as a single chunk.' );
+		$this->assertStringContainsString( '⚠️ sensitive', $output );
 	}
 }
