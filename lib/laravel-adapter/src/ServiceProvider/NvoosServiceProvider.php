@@ -20,6 +20,7 @@ use Nvoos\Core\Application\Chat\ChatOrchestrator;
 use Nvoos\Core\Application\Security\InputGuard;
 use Nvoos\Core\Application\Security\OutputGuard;
 use Nvoos\Core\Application\Provider\ProviderRouter;
+use Nvoos\Core\Application\Tool\NecessityGuard;
 use Nvoos\Core\Application\Tool\ReadOnlyToolGuard;
 use Nvoos\Core\Application\Tool\ToolRegistry;
 use Nvoos\Core\Infrastructure\PaperStore\JsonPaperStore;
@@ -223,6 +224,20 @@ class NvoosServiceProvider extends ServiceProvider {
 					(bool) ( $readOnly['block_undeclared'] ?? true ),
 				)
 			);
+		} );
+
+		// Necessity gate — refuses overeager tool calls: a delete with no
+		// target, mail with no recipient, a search with no query. Registered as
+		// a monotonic guard so an earlier listener cannot re-allow what it
+		// denies. Off unless `oos.necessity_gate.enabled` is set.
+		$this->app->afterResolving( ToolRegistry::class, function ( ToolRegistry $registry, $app ): void {
+			$gate = (array) $app['config']->get( 'oos.necessity_gate', array() );
+
+			if ( empty( $gate['enabled'] ) ) {
+				return;
+			}
+
+			$registry->addGuard( new NecessityGuard( $registry ) );
 		} );
 
 		// Provider router — configured once; holds mutable health/fallback

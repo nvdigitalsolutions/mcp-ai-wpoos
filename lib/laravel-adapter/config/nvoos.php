@@ -885,6 +885,24 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Necessity gate
+	|--------------------------------------------------------------------------
+	|
+	| Refuses tool calls the task does not need: a delete with no target, mail
+	| with no recipient, a search with no query. Read-only tools without
+	| dangerous capability flags pass without being classified.
+	|
+	| Off by default, like the read-only profile — it changes what the model is
+	| allowed to do, so turning it on is a deployment decision. WordPress runs
+	| the same matrix through `WP_MCP_AI_Necessity_Gate`.
+	|
+	*/
+	'necessity_gate' => array(
+		'enabled' => (bool) env( 'NVOOS_NECESSITY_GATE', false ),
+	),
+
+	/*
+	|--------------------------------------------------------------------------
 	| Paper Store root
 	|--------------------------------------------------------------------------
 	|

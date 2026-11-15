@@ -478,7 +478,7 @@ The clusters are done. What is left is either dependency-blocked or deliberately
 
 | Item | Blocked on | What "done" looks like |
 |---|---|---|
-| **Cluster 6 — necessity gate** (652 LOC) | The approval queue, which is WordPress-only. | The gate ports with the queue, not before it: a gate that cannot ask for approval can only auto-approve. |
+| **Cluster 6 — necessity gate** (652 LOC) | *(Recorded as: "the approval queue, which is WordPress-only. A gate that cannot ask for approval can only auto-approve." That was wrong — see §24.)* | **Closed — cluster 17, see §24** (ported; the approval queue is one of five verdict branches and was never the blocker) |
 | **Cluster 7 — harness search engine** (1,324 LOC) | An eval suite/registry **and** the evolution governor. | A parameter search with something to search and a way to judge the result. Until then any port would be a loop over a scoring function nobody can evaluate. |
 
 ### Deferred by decision
@@ -581,5 +581,44 @@ Each rule is pinned by a test. The four guardrail behaviours that existed (inser
 **A copy inaccuracy left alone.** The guardrail block says "directly related to your assigned purpose and instructions **above**", but both runtimes place the block *before* the instructions, so the instructions are below it. This is identical in WordPress (`$guardrail_prompt . "\n\n" . $system_prompt`) — a pre-existing wording fault in shared prompt text, not a porting slip. Changing prompt text alters model behaviour on both runtimes and needs an eval, so it is recorded rather than edited.
 
 **Validation.** `lib/core` **1,671 tests / 5,802 assertions** (4 new, 9 new assertions); the 46 existing orchestrator tests pass unmodified. App suite **693 / 4,067**, unchanged — no binding ships. `phpcs-laravel.xml.dist` clean, which also exercises the gate added in §22 on a real change for the first time.
+
+---
+
+## 24. Cluster 17 result — the necessity gate
+
+**A correction first.** §20 recorded cluster 6 as blocked on *"the approval queue, which is WordPress-only"*, with the argument that "a gate that cannot ask for approval can only auto-approve". Both halves were wrong:
+
+- The approval queue appears in **one of five** verdict branches, and the WordPress code already wraps it in `class_exists` (`require_approval()`). Without a queue the gate still returns `WP_Error('necessity_gate_approval_required')` — it blocks *and says so*, which is the opposite of auto-approving.
+- The real dependency was `WP_MCP_AI_Action_Safety_Profile` (479 lines), and it is essentially pure PHP: constants, `compute_risk_score()`, `determine_verdict()`, and `derive_irreversibility_from_flags()` over plain flag strings. Its only WordPress-isms are `__()` on label tables and a single `update_post_meta`.
+
+The cluster was **unported, not blocked**. Cluster 7 remains genuinely blocked — it is a parameter-search loop whose fitness function is the eval suite, and `Eval_Suite` / `Eval_Runner` / `Eval_Case` / `Eval_Suite_Registry` / `Evolution_Governor` are all WordPress-only.
+
+**What shipped.**
+
+| Layer | Class | Holds |
+|---|---|---|
+| Core rules | `Domain\Service\Safety\ActionSafetyProfile` | The two scales and the necessity × irreversibility matrix. Returns a stable `reason_code`, never copy. |
+| Core decision | `Domain\Service\Safety\NecessityGate` | Tier 1 safe-tool allowlist, tier 2 heuristics, tier 3 matrix. Structured result, no error object. |
+| Core enforcement | `Application\Tool\NecessityGuard` | A monotonic `ToolGuardInterface` that turns block/approval verdicts into denials. |
+| WordPress | `WP_MCP_AI_Action_Safety_Profile`, `WP_MCP_AI_Necessity_Gate` | Delegate the arithmetic, the matrix and the classification to core; keep `evaluate()` (hooks, `WP_Error`, logger, queue) and the translated sentences. |
+
+The reason text stays in WordPress: the matrix returns `reason_code`, and `reason_text()` maps it to `__()`. That is what lets `lib/core` carry the safety rules without a translation domain.
+
+**Parity was proven, not assumed.** A throwaway harness ran the WordPress implementation and the core port over the same inputs and compared outputs:
+
+- **20/20 matrix cells** agree on verdict, risk score and `requires_approval`.
+- All risk scores agree, including the unknown-necessity default.
+- **13/14 flag derivations** agree. The exception is deliberate: core lowercases flags, matching `ReadOnlyToolGuard`'s existing convention, so a tool declaring `READ-ONLY` scores `0.0` rather than WordPress's accidental `0.5`. Every built-in tool declares lowercase, so the practical effect is nil — but it is a real behaviour change on the WordPress side, made to remove a divergence rather than add one.
+
+**Tier 2 is not reachable through the guard, and that is stated rather than hidden.** `ToolGuardInterface` can only allow or deny, so:
+
+- **`skip`** (unnecessary but harmless) is allowed through. Denying it would hand the model an error to recover from, which is worse than running a benign call.
+- **`approval_required`** denies with a reason naming the missing approval service. The registry's own `ask` path fails closed for the same reason, so this is consistent rather than a policy choice.
+
+Both are recorded here and in the guard's docblock.
+
+**Wiring.** `oos.necessity_gate.enabled` (env `NVOOS_NECESSITY_GATE`), **off by default** — it changes what the model is allowed to do, so turning it on is a deployment decision, matching `oos.read_only`. Registered as a monotonic guard so an earlier listener cannot re-allow what it denies.
+
+**Validation.** `lib/core` **1,746 tests / 5,967 assertions** (+75 tests, +165 assertions: the full 20-cell matrix, 13 flag derivations, the classification table, and the guard mapping). App suite **693 / 4,067**, unchanged — no app-skeleton binding ships. Adapter suite **180 / 676 with the same 2 pre-existing project-tool failures**. `phpcs-laravel.xml.dist` **804 files, 0 errors**; `phpcs.xml.dist` clean on both changed WordPress files.
 
 ---

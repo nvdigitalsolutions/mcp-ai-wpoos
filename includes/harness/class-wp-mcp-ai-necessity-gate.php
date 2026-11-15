@@ -398,6 +398,19 @@ class WP_MCP_AI_Necessity_Gate {
 		$tool_slug = sanitize_key( (string) $tool_slug );
 		$arguments = is_array( $arguments ) ? $arguments : array();
 
+		// The heuristics live in lib/core so both runtimes classify alike. The
+		// WP filter stays here and is handed down as the override callable, so
+		// Pro addons and learned classifiers keep working untouched.
+		if ( class_exists( '\Nvoos\Core\Domain\Service\Safety\NecessityGate' ) ) {
+			return \Nvoos\Core\Domain\Service\Safety\NecessityGate::classifyNecessity(
+				$tool_slug,
+				$arguments,
+				static function ( $slug, $args ) {
+					return apply_filters( 'wp_mcp_ai_necessity_gate_classify', null, $slug, $args );
+				}
+			);
+		}
+
 		/**
 		 * Filter the necessity classification for a tool call.
 		 *
