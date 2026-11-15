@@ -81,6 +81,25 @@ class WP_MCP_AI_REST_Console_Endpoints_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The route fragments match the shared golden file.
+	 */
+	public function test_fragments_match_the_contract() {
+		$contract = $this->contract();
+		$expected = (array) ( $contract['fragments']['wordpress'] ?? array() );
+		$actual   = WP_MCP_AI_Endpoint_Capabilities::ROUTES;
+
+		ksort( $expected );
+		ksort( $actual );
+
+		$this->assertSame(
+			$expected,
+			$actual,
+			// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- contract key name.
+			'WP_MCP_AI_Endpoint_Capabilities::ROUTES and fragments.wordpress disagree.'
+		);
+	}
+
+	/**
 	 * Every reason comes from the shared vocabulary.
 	 */
 	public function test_every_key_has_a_known_reason() {
@@ -136,8 +155,9 @@ class WP_MCP_AI_REST_Console_Endpoints_Test extends WP_UnitTestCase {
 
 		// WordPress computes media health locally; it needs no worker.
 		$this->assertSame( 'route', $reasons['mediaCc'] );
-		// The data exists in admin, but there is no REST route yet.
-		$this->assertSame( 'runtime-adaptable', $reasons['professions'] );
+		// The catalogue is served on both runtimes (090-p W1).
+		$this->assertSame( 'route', $reasons['professions'] );
+		// The users/roles team API does not exist on WordPress yet.
 		$this->assertSame( 'runtime-adaptable', $reasons['orgTeams'] );
 		// The admin page points at a route no controller registers — the
 		// deferred communications-toolkit family, not a broken route.

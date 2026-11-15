@@ -146,10 +146,11 @@ export interface ProSpaEndpoints {
 	/** Media command-center REST base (mcp-ai-pro/v1/media-cc, 2.4.0). */
 	mediaCc: string;
 	/**
-	 * Profession catalogue base (api/v1/professions, Laravel only).
+	 * Profession catalogue base (api/v1/professions, both runtimes).
 	 *
-	 * The assistant editor's primary-profession selector. Empty on runtimes
-	 * without the contract, so the selector is hidden rather than broken.
+	 * The assistant editor's primary-profession selector. Still empty for
+	 * sessions without the surface, so the selector is hidden rather than
+	 * broken.
 	 */
 	professions: string;
 	/**

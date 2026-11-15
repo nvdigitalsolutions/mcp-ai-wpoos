@@ -16,7 +16,7 @@ import {
   type CommandCenterOverview,
 } from '@nvoos/pro-spa-v2/api/command-center';
 
-import { isNavItemVisible, type NavGate } from './nav-features';
+import { isNavItemVisible, unavailableNavItems, type EndpointMap, type NavGate } from './nav-features';
 
 export interface DashboardPageProps {
   /** Shared transcript hook result (single source of truth in the shell). */
@@ -29,6 +29,10 @@ export interface DashboardPageProps {
   onToggleDock: () => void;
   /** Server-reported feature availability (absent = fail open). */
   features?: Record<string, boolean>;
+  /** Runtime endpoint map (blank = not served). Absent = fail open. */
+  endpoints?: EndpointMap;
+  /** Supply class per endpoint key, for the unavailable-surfaces card. */
+  endpointReasons?: Record<string, string>;
   /**
    * Command Center REST base (mcp-ai-pro/v1/command-center). Empty for
    * non-admin sessions — the dashboard then skips the section entirely.
@@ -69,6 +73,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: '🕸️',
     capability: 'manage_options',
     feature: 'knowledge_graph',
+    endpoint: 'contentGraph',
   },
   {
     title: 'Docs',
@@ -77,6 +82,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: '📚',
     capability: 'manage_options',
     feature: 'docs_hub',
+    endpoint: 'docsHub',
   },
   {
     title: 'Media Studio',
@@ -85,6 +91,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: '🎨',
     capability: 'manage_options',
     feature: 'media_studio',
+    endpoint: 'mediaStudio',
   },
   {
     title: 'Documents',
@@ -93,6 +100,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: '📄',
     capability: 'manage_options',
     feature: 'document_editor',
+    endpoint: 'documentEditor',
   },
   {
     title: 'Settings',
@@ -122,6 +130,8 @@ export function DashboardPage(props: DashboardPageProps): JSX.Element {
     dockOpen,
     onToggleDock,
     features,
+    endpoints,
+    endpointReasons = {},
     commandCenterEndpoint = '',
     nonce = '',
   } = props;
@@ -166,7 +176,16 @@ export function DashboardPage(props: DashboardPageProps): JSX.Element {
     	}, [commandCenterEndpoint, nonce, canManageCommandCenter]);
 
   const visibleActions = QUICK_ACTIONS.filter((action) =>
-    isNavItemVisible(action, features, user.capabilities),
+    isNavItemVisible(action, features, user.capabilities, endpoints),
+  );
+
+  // Surfaces this session can use but this runtime cannot serve. The helper
+  // reuses the nav gate, so the card and the sidebar cannot disagree.
+  const unavailable = unavailableNavItems(
+    features,
+    user.capabilities,
+    endpoints,
+    endpointReasons,
   );
 
   const kpis = commandCenter?.kpis;
@@ -249,6 +268,24 @@ export function DashboardPage(props: DashboardPageProps): JSX.Element {
           ))}
         </div>
       </section>
+
+      {unavailable.length > 0 ? (
+        <section className="nvoos-console-card" aria-labelledby="nvoos-unavailable-title">
+          <h3 id="nvoos-unavailable-title">Unavailable on this runtime</h3>
+          <p className="nvoos-console-unavailable__lede">
+            These surfaces are not served here. Nothing is broken — each one is
+            unavailable for the reason shown.
+          </p>
+          <ul className="nvoos-console-unavailable">
+            {unavailable.map((surface) => (
+              <li key={surface.path} className="nvoos-console-unavailable__item">
+                <strong>{surface.label}</strong>
+                <span className="nvoos-console-unavailable__reason">{surface.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {kpis ? (
         <section className="nvoos-console-card" aria-label="Command center">

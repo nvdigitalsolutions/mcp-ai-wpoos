@@ -231,6 +231,74 @@ export function isNavItemVisible(
   return true;
 }
 
+/**
+ * Operator-facing copy for a supply class (`endpoint_reasons`).
+ *
+ * One map so the dashboard and any future surface cannot describe the same
+ * code two ways. Unknown codes fall back to the generic sentence below.
+ */
+const REASON_COPY: Record<string, string> = {
+  'external-product': 'Supplied by a separate product that is not connected.',
+  'toolkit-shaped': 'Belongs to a toolkit family that is not built yet.',
+  'connected-service': 'Needs an external service to be configured.',
+  'runtime-adaptable': 'Not exposed as a route on this runtime yet.',
+  'not-installed': 'The addon that supplies this is not active.',
+  'route': 'The route is missing — report this as a regression.',
+};
+
+/** One surface this session could use but this runtime cannot serve. */
+export interface UnavailableSurface {
+  path: string;
+  label: string;
+  reason: string;
+}
+
+/**
+ * Surfaces the current session would otherwise see, hidden because the runtime
+ * (or the site's settings) cannot serve them.
+ *
+ * A capability the session lacks is *not* included: that is a permission, not
+ * a runtime limitation, and advertising it would leak admin-only surfaces.
+ * The endpoint/feature decision reuses {@see isNavItemVisible} so the card and
+ * the sidebar can never disagree.
+ */
+export function unavailableNavItems(
+  features?: Record<string, boolean>,
+  capabilities?: string[],
+  endpoints?: EndpointMap,
+  reasons?: Record<string, string>,
+): UnavailableSurface[] {
+  const caps = capabilities ?? [];
+  const result: UnavailableSurface[] = [];
+
+  for (const item of CONSOLE_NAV_ITEMS) {
+    if (item.capability && !caps.includes(item.capability)) {
+      continue;
+    }
+    if (!item.endpoint && !item.feature) {
+      continue;
+    }
+    if (isNavItemVisible(item, features, caps, endpoints)) {
+      continue;
+    }
+
+    const endpointBlank =
+      !!item.endpoint &&
+      !isNavItemVisible({ endpoint: item.endpoint }, undefined, caps, endpoints);
+    const code = item.endpoint ? reasons?.[item.endpoint] : undefined;
+
+    result.push({
+      path: item.path,
+      label: item.label,
+      reason: endpointBlank
+        ? REASON_COPY[code ?? ''] ?? 'Not available on this runtime.'
+        : 'Disabled on this site.',
+    });
+  }
+
+  return result;
+}
+
 /** Look up the gate for a route path (undefined when the path is unknown). */
 export function gateForPath(path: string): NavGate {
   return CONSOLE_NAV_ITEMS.find((item) => item.path === path) ?? {};
