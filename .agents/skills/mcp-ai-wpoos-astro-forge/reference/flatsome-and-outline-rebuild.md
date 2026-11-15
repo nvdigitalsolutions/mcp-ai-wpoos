@@ -76,7 +76,27 @@ The vendor sheet never ships, so the template carries the arrangement rules
 - `.banner` = the band's full-bleed stage **only as
   `.section-content > .banner`** (`width:100vw; margin-left:50%;
   transform:translateX(-50%)`). A banner **inside a column** is that column's
-  media panel and gets `aspect-ratio: 1/1` (the dropped `padding-top: 100%`).
+  media panel and gets `aspect-ratio: var(--ds-banner-ratio, 5 / 3)` — Flatsome
+  tiles measure ~5:3 (499×301, 469×162); a square fallback doubled every row.
+- **`aspect-ratio` OUTRANKS `min-height`.** The ratio resolves a used height
+  from the WIDTH, and a larger resolved height wins — so a measured 86px banner
+  still rendered at the 560px 5:3 default. Two suppression points are required:
+  `bandElementCss` adds `aspect-ratio:auto` to any element it pins a
+  `min-height` on, and `bandBoxCss` adds it to any class whose measured box is a
+  TOP-ONLY padding (the builder's height placeholder). Without both, doomsday's
+  350px slider rendered 630px.
+- `.image-cover` is a `padding-top` PLACEHOLDER with an absolutely positioned
+  photo (`position:relative; overflow:hidden` + `> img { position:absolute;
+  inset:0; width/height:100%; object-fit:cover }`). Keep the padding but drop
+  the layering and the image adds its own height: a 200px tile rendered 406px.
+- **Flatsome's visibility utilities.** A band pairs a `show-for-small` row with
+  a `hide-for-small` one; with neither class defined BOTH render and the band
+  comes out at ~2× (accommodations' 770px band rendered 1540). Transcribe the
+  hide-only rules from `flatsome.css` (3.20.7 — the visible case keeps the
+  element's own display):
+  `max-width:549px → .hide-for-small:none`, `min-width:550px →
+  .show-for-small:none`, `max-width:849px → .hide-for-medium:none`,
+  `min-width:850px → .show-for-medium, .hide-for-large:none`.
 - `.banner-bg` is `position:absolute; inset:0`; its `img` is
   `width/height:100%; object-fit:cover`; `.overlay` is absolute.
 - `.banner-inner` MUST be `position:absolute; inset:0` or it collapses to 0 and
@@ -112,10 +132,44 @@ article rendered as a 7,497px band. Two fixes shipped:
 
 Measured on this site: doomsday 900/684, airport-transfer 900/535/766/793/420,
 sri-lanka 960/2106 — each band's own box, and the pink `#f1dfdc` band carried
-through. `accommodations` keeps four content-taller bands (image galleries
-render rows the source cropped away): per-page geometry failures are reported
-ADVISORY (`--strict-pages` makes them fail) because a floor that content
-exceeds is not a missing fact.
+through.
+
+### The per-page gate is now DEFAULT-ON and band height BLOCKS
+
+This file previously said `accommodations` "keeps four content-taller bands …
+reported ADVISORY (`--strict-pages`) because a floor that content exceeds is not
+a missing fact". **That was wrong, and it hid a real bug for days.** Those four
+bands were not content-scale overshoot; they were four measured-fact defects,
+and once fixed all nineteen bands landed within 2px:
+
+| Band | Was | Cause |
+| --- | --- | --- |
+| `834b9ce` | 1540 vs 770 | `show-for-small` row also rendered (no visibility utilities) |
+| `834b9cb`, `834b9ce` | doubled | `hide-for-small` got `padding-top:420px` from a class-keyed box fact |
+| `a45195c`, `834b9d0` | +520 / +632 | `.image-cover` placeholder without its absolute image |
+| `a45195c` | +108 | unclassed `h1`/`p` margins fell back to prose defaults |
+
+The lesson is not "galleries overshoot". It is: **a sub-page band that misses
+its own source box is a defect until proven otherwise.** `verify` now gates it
+by default:
+
+- `page bands` is an ADDRESSABLE gate (`resolveGateMode`), so a genuinely
+  unreachable band can be downgraded per site instead of the whole gate parked.
+- Its **band metrics block** (height/width/padding/margin). That is what a
+  reader sees and the one number a measured-fact defect cannot hide from.
+- Its **LANE heights are advisory** (`diffGeometry(…, { columns: 'warn' })`).
+  A builder row states its rhythm with `padding` and the shim deliberately moves
+  that rhythm onto the band, so a CORRECT rebuild's lanes sit one padding
+  constant away from the source's. Gating on them reported **34 failures on a
+  build whose every band was pixel-exact** — which is exactly why the gate had
+  been left opt-in and ignored. `--strict-pages` opts into failing on lanes.
+- `--no-pages` skips it; `--minimal`/`--no-bands` also skip it (no browser).
+
+**Why it went unnoticed:** the homepage has four bands and every one was right.
+A measured-fact defect surfaces on a SUB-page first, because the front page is
+the one the rebuild gets tuned against — so a green homepage scorecard is not
+evidence that the sub-pages are faithful. Check that `page bands` is on the
+scorecard, not just `box geometry`.
 
 ### Surface capture for page bands
 
@@ -177,6 +231,34 @@ inner GROWS (`flex: 1; min-height: 0`), so the total equals the measured box.
 Do not remove the `display: flex; flex-direction: column` on the inner — without
 it every `.section` collapses to 0 and the hero photo disappears.
 
+### Box facts are CLASS-keyed — the shared-class leak
+
+`bandFacts.box` maps a CLASS TOKEN to a declaration string, and the renderer
+emits it as `[data-section-id] .<class>{…}`. That is band-wide, so a class on
+more than one element must not carry a box at all. `collectBandBoxFacts`
+enforced that ("only classes that resolve to the SAME padding on every instance
+are recorded") but skipped SCAFFOLDING rows *before* recording their box — so
+`hide-for-small`, which sits on both a `.row` (padding 0) and a `.banner`
+(padding 420px), only ever looked consistent and emitted
+`padding-top:420px` onto all six elements carrying it. The 770px band rendered
+1540px.
+
+Rules now:
+
+- **Every node counts for CONSISTENCY**, scaffolding included. A class that
+  appears only on scaffolding still yields no fact (`onModule` gate) — the
+  template owns that box.
+- `analyze` names any class it drops for this reason (`bandWarnings` →
+  `boxWarnings`, printed per band on page bands too). Without the name the drop
+  is invisible and the symptom points at everything except the omission.
+- **An UNCLASSED element has no home in this map.** Flatsome's box headings are
+  `margin: 0.1em 0` from the vendor sheet; with no class, the rebuilt `h1` fell
+  back to the template's prose default (`0.67em 0`) and the services grid grew
+  108px. `BandTypeFact` now carries `marginTop`/`marginBottom` (per device, via
+  `TYPE_PROPERTIES` → `diffTypeFact`) so the measured rhythm rides the
+  typography fact instead.
+
+
 ## 5. Sticky headers that clone themselves
 
 Flatsome's `sticky-jump` does **not** change the `<header>`: it injects a fixed
@@ -210,6 +292,34 @@ token-driven theme) said `#fff`: 7 ΔE 100 failures on a visually correct build.
 It now counts the most frequent colour among text-bearing descendants (bounded
 to 1200 nodes) and returns `transparent` for a region with **no text** (the
 hero band is image + chevron) so the ΔE comparison skips it.
+
+### DERIVED ink: AA decides, not the raw contrast maximum
+
+The forge derives ink in two places — the sanitizer's kept `background-color`
+panels and the scaffold's per-element surfaces. Each independently took
+`max(contrast-on-black, contrast-on-white)`. For `#dd3333` that is black at
+4.597 against white at 4.568: a **0.03 margin** chose black while the source
+paints white, and two bands failed the colour gate at ΔE00 100. Both now call
+one rule, `readableInk` in `lib/contrast.ts`: AA (4.5:1) decides first, and
+only the narrow mid-tone window where **both** pass (luminance ≈ 0.175–0.183)
+resolves to light, because a surface there is a saturated brand colour. Callers
+keep their own representation via `{ light, dark }` — the scaffold matches the
+source's pure black, the sanitizer uses `#1a1a1a` for panels, and `#000000 →
+#1a1a1a` is ΔE00 5.5, so they are not interchangeable.
+
+Two traps around it:
+
+- **`parseHex` must accept `rgb()`.** The analyzer records COMPUTED styles, so
+  every measured surface arrives as `background-color:rgb(221, 51, 51)`.
+  Rejecting that form made the ink guard return `undefined` and bake *nothing* —
+  a silent no-op, not an error.
+- **Never force derived ink onto interactive elements.** The per-element rule
+  `${path} :is(h1…h6, p, li, span){color:INK}` is (0,3,3) and outranks a band's
+  measured `[data-section-id] a:hover` at (0,2,1). Forcing white there made a
+  link's base `border-color` resolve to `currentColor` — also white — so hover
+  and active changed nothing and the state gate read them as LOST. `a` and
+  `button` are deliberately excluded and take their colour from the measured
+  base/hover rules, inheriting the card ink they sit in.
 
 ## 7. Photo crop (`object-position`) and pixel parity
 
@@ -260,12 +370,49 @@ parity. Capturing `object-position` as a band fact is the real fix — open.
 - **Full-page screenshots don't load lazy images or trigger scroll animations.**
   Scroll the page in ~700px steps, wait, then return to top before capturing.
 
-## 9. Measured result (this site)
+## 9. Probing traps (how to check a band without fooling yourself)
+
+The forge did not catch the sub-page drift; a throwaway probe did. A probe is
+useful only if it measures the right thing:
+
+- **Band height, not lane height.** `verify --pages` used to compare the
+  `columns` array and reported 34 failures on a build whose every band was
+  exact. A user sees the BAND. Compare `[data-section-id]`
+  `getBoundingClientRect().height` against `pageBands[slug].geometry[id].desktop.height`.
+- **A built page contains each band id more than once.** The markup appears
+  early (embedded data, nav) and again as the real render. `indexOf` picks the
+  short blob — use `lastIndexOf`, or take the segment with the most element tags.
+- **A re-scaffold deletes scratch probes.** The forge swaps the whole target
+directory, so anything you dropped into it (`probe-*.mjs`) is gone; keep the
+  probe outside the target or re-copy it. The swap also fails with `EPERM` when
+  a Windows indexer holds the directory — scaffold to a fresh `*-frontend/`
+  target instead of fighting the lock.
+- **Never read the source's intent off the computed box alone.** Fetch the
+  source and read the same nodes: `.image-cover pt=143.547px pos=relative /
+  img pos=absolute` told us the placeholder was real in a band whose measured
+  padding had been dropped for being inconsistent across tiles.
+	- **The analyze flags do not compose.** A `--design`-only pass DROPS the
+  measured chrome and band facts, so a profile re-written that way silently
+  loses them. Always run the full flag set
+  (`--design --inventory --vocabulary --tracking --text --colors --geometry --pages`).
+
+## 10. Measured result (this site)
 
 Parity 80% · token block ✓ · band flow 4/4 · facts ✓ · media 41 images/3.5MB +
 2 docs · text 81.2% (Cloudflare-obfuscated email caps it; the template's new
 skip link recovered ~2 points) · colour 0 drift (9 compared surfaces × 2
 schemes — band surfaces are gated now, not just chrome) · tracking ✓ · SEO
-1 warn (placeholder page) · geometry 0 fail · interactions 13/13 (3 bands) ·
-pixel advisory · 5 inert classes of 93. Scorecard: **10/14 applicable gates
-pass, 3 warn, 1 skipped** (no pixel baseline).
+1 warn (placeholder page) · geometry 0 fail · **page bands ✓ 19/19 within 2px**
+(34 lane advisories) · interactions 17/17 (3 bands) · pixel advisory · 5 inert
+classes of 95. Scorecard: **12/16 applicable gates pass, 3 warn, 1 skipped**
+(no pixel baseline).
+
+Sub-page band heights after the fidelity pass — every one exact:
+
+```
+home              900 / 600 / 1800 / 900
+airport-transfer  900 / 535 / 766 / 793 / 420
+sri-lanka         960 / 2106
+accommodations    900 / 1329 / 286 / 861 / 805 / 590 / 770 / 740 / 2298 / 420
+doomsday          900 / 684
+```
