@@ -568,7 +568,7 @@ export interface MeasuredBox {
  * an arbitrary one. Brando's per-column/per-module hashes appear once, so the
  * column padding the rebuild otherwise loses is always captured.
  */
-function collectBandBoxFacts( input: {
+export function collectBandBoxFacts( input: {
 	ids: string[];
 	kind: 'built' | 'source';
 	selectors?: Record< string, string >;
