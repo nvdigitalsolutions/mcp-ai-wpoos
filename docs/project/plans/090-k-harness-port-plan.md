@@ -322,3 +322,33 @@ The result is **structured**: findings, a `blocked` flag and the content to deli
 **Still open.** The guard is live on WordPress but the console does not call it yet — there is no Laravel counterpart to `wp_mcp_ai_pre_response_render` on the chat path. Porting the evaluator is the prerequisite; wiring it into the Laravel response pipeline is a separate change, and it needs the same pre-render sink boundary to be meaningful.
 
 ---
+
+## 14. Cluster 9 result — guardrail prompt and block policy
+
+**What shipped.** Two small services rather than one large façade:
+
+- `Domain\Service\Harness\GuardrailPrompt` — `apply()` and `build()`. The "stay on target" instruction block, prepended when the profile *and* the guardrails layer are both enabled.
+- `Domain\Service\Harness\GuardrailPolicy` — `decide()` and `messageKey()`. The block/warn/log rule, separated from detection because "what is this message?" and "what should happen to it?" are different questions.
+
+`Guardrails::analyze_message()` already delegated to `PromptInjectionDetector`; `filter_system_prompt()`, `screen_message()` and `build_block_message()` now delegate too. That completes the class — every method is either ported or platform-bound.
+
+**Why the two sides treat `warn` differently.** The output guardrail's `warn` mode *prefixes and delivers*; the input guardrail's `warn` mode *blocks* the security findings. That asymmetry is deliberate and documented in `GuardrailPolicy`: an unblocked hostile input reaches the model and spends tokens, while a flagged output has already been paid for, so annotating it keeps the turn usable.
+
+**`messageKey()` is wired, not speculative.** The WordPress `build_block_message()` now asks core for the key and maps it to its own translated string, with a local fallback for `lib/`-stripped builds. That keeps the result→key mapping defined once instead of once per runtime — and avoids shipping a helper with no caller, the mistake cluster 3 corrected.
+
+**One quirk pinned rather than fixed.** If `allowed_topics` is a non-empty array whose entries all trim to nothing, the original still emits the list header, leaving a dangling `- ` in the prompt. The profile sanitiser drops such entries before the builder sees them, so it is unreachable — but a test pins it so a future tidy-up does not silently change the prompt.
+
+**Proven equivalent.** 324 scenarios:
+
+- 36 system-prompt cases (9 profile shapes × 4 prompts, including empty, whitespace-only and a 420-word prompt) — **28 injected, 0 differences**.
+- 208 `screen_message` cases (4 modes × 4 strictnesses × 13 messages) — **72 blocked, 0 differences**, including the violation log entry and the `wp_mcp_ai_guardrail_violation` action.
+- 26 gated cases (layer off, profile off) and 2 short-circuit cases — **0 differences**.
+- 52 `analyze_message` cases across four strictness levels — **0 differences**.
+
+The mode breakdown confirms the policy rather than assuming it: `log` blocked **0** of 48 cases, `block` blocked 24, `warn` blocked 24, and the blocked messages were exactly the jailbreak and injection findings.
+
+**Validation.** `lib/core` **1,597 tests / 5,584 assertions** (22 new); app suite unchanged at **687 / 4,054** because the cluster adds no binding; adapter suite 180 / 676 with the same 2 pre-existing project-tool failures; phpcs clean on the laravel and WordPress standards.
+
+**Where this leaves the harness port.** Every harness class is now either ported, platform-bound (trace capture hooks, logging, translated copy), gated on an unported dependency (cluster 6, the necessity gate — it needs the approval queue), or blocked by design (cluster 7, the search engine). The outstanding *enabling* work is not more porting: it is wiring the four ported services into the Laravel chat path, which no runtime-agnostic service can do for itself.
+
+---
