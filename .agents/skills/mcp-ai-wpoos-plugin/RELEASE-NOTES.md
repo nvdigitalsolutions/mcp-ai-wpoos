@@ -15,7 +15,7 @@ Operational content stays in SKILL.md; append new per-version sections here.
 - **`lib/core` quality + dependencies** — PSR-12 reformat (533 files) and the style gate on (799 files 0/0); `tests/support` out of PHPUnit discovery; explicit local file-list runner; hono 4.13.16, basic-ftp 6.2.6, astro 7.4.7, `fast-xml-parser >=5.12.0`.
 - **Astro Forge** — `forge materialize` (recover content from the baked store after a site outlives its CMS), `content.snapshot`, proxy timeout + RFC 9110 504/502, `forms.fallback: "direct"` (Turnstile, clock tolerance, proxy-aware throttle), host-relative links, fill-image geometry, band `minHeight`, the jayainc wave, MDX source bodies, font sheets, Virtually Sri Lanka.
 - **Model defaults (#7824)** — retired `gemini-2.0-*` → `gemini-3.8-flash` / `gemini-3.8-live` / `gemini-3.5-flash-lite` / `gemini-nano-banana-2.1` (catalog unchanged).
-- **Counts** — tools **~360 base + ~1,388 Pro (~1,747 total, unchanged)**; coding-time skills **85** (in-place updates only); addons **32** (unchanged); model catalog **v2026.11.03** (unchanged); security classes **12**; stale **1.2.19** build set removed (30 files); three npm packages published at `0.1.0-alpha.4`.
+- **Counts** — tools **~360 base + ~1,388 Pro (~1,747 total, unchanged)**; coding-time skills **85** (in-place updates only); addons **32** (unchanged); model catalog **v2026.11.03** (unchanged); security classes **12**; stale **1.2.19** build set removed (30 files); npm republish for three drifted packages blocked by registry credentials (E404; OI-11).
 
 ---
 
