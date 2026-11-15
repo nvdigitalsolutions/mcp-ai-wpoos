@@ -3359,10 +3359,5 @@
 		"bgChanged": true,
 		"heightChanged": true
 	},
-	"pageBackground": "rgb(255, 255, 255)",
-	"locked": {
-		"at": "2026-11-15T05:21:47Z",
-		"by": "NV Digital",
-		"reason": "handoff lock - freeze CI re-forge, site owned outside the forge"
-	}
+	"pageBackground": "rgb(255, 255, 255)"
 }

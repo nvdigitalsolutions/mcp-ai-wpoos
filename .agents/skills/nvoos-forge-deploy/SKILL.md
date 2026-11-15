@@ -137,6 +137,23 @@ with no source. `locked` is an ownership record, not a "site is finished" flag.
 Recover the content first (`forge materialize`; see the astro-forge reference
 `cms-removal-materialized-content.md`) or `forge unlock … --yes` deliberately.
 
+**Returning a CMS-less site to the forge.** `forge unlock` needs `--target
+<project>`, and a site handed off with no surviving tree (the mirror branch is
+the only artifact) has none. Clear the flag on the profile instead — that is
+exactly what `unlock` does to it after `removeLock`:
+
+```sh
+node -e 'const fs=require("fs");const p="sites/<name>.json";const o=JSON.parse(fs.readFileSync(p,"utf8"));delete o.locked;fs.writeFileSync(p,JSON.stringify(o,null,"\t")+"\n");'
+```
+
+Rehearse the merge, not just the edit: a push touching `sites/**` rebuilds
+**every** profile, and the site’s own merge re-forges it with a cold media
+cache. With `content.source: materialized` the CMS is gone, so which
+`/wp-content/` derivatives 404 changes build to build (the CDN copy expires
+piecemeal). Content degrades cleanly (`source not found (marked optional)`) and
+`verify --minimal` still passes; check that no `<img>` loses its last local
+`srcset` candidate before merging.
+
 ## Hand deploy without CI (2026-11-15)
 
 `forge-sites.yml` is the contract; a hand deploy must reproduce it in order:
