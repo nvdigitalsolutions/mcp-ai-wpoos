@@ -106,7 +106,7 @@ addons/pro/assets/vendor/** -text
 .wordpress-org/             export-ignore
 .editorconfig               export-ignore
 .eslintrc.json              export-ignore
-.eslintignore               export-ignore
+eslint.config.cjs           export-ignore
 .browserslistrc             export-ignore
 .nvmrc                      export-ignore
 .codecov.yml                export-ignore

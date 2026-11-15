@@ -23,7 +23,7 @@
 .zed
 extensions
 .eslintrc.json
-.eslintignore
+eslint.config.cjs
 .editorconfig
 .browserslistrc
 .nvmrc
