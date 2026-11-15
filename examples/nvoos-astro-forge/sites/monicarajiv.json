@@ -82,7 +82,7 @@
 		"mode": "rebuild",
 		"source": {
 			"url": "https://monicarajiv.com",
-			"analyzedAt": "2026-11-15T10:06:46.172Z"
+			"analyzedAt": "2026-11-15T10:35:17.792Z"
 		},
 		"concept": "warm accent over light neutrals, karma display / lato body, compact spacing rhythm.",
 		"palette": {
@@ -393,7 +393,7 @@
 		"danglingAnchors": [
 			"endgame"
 		],
-		"analyzedAt": "2026-11-15T10:06:50.866Z"
+		"analyzedAt": "2026-11-15T10:35:22.220Z"
 	},
 	"wireframes": {
 		"save-the-date": {
@@ -475,7 +475,7 @@
 			"timer"
 		],
 		"unknownBlocks": [],
-		"analyzedAt": "2026-11-15T10:06:51.950Z"
+		"analyzedAt": "2026-11-15T10:35:23.366Z"
 	},
 	"geometry": {
 		"834b9c8": {
@@ -815,38 +815,17 @@
 					"mobile": "height:844px"
 				}
 			},
-			"columns": {
-				"desktop": [
-					{
-						"selector": "section-bg",
-						"height": 900
-					},
-					{
-						"selector": "section-content",
-						"height": 900
+			"elements": [
+				{
+					"path": "div:nth-child(2) > div:nth-child(1)",
+					"bg": "background-color:rgb(221, 51, 51)",
+					"height": {
+						"desktop": 900,
+						"tablet": 1112,
+						"mobile": 844
 					}
-				],
-				"tablet": [
-					{
-						"selector": "section-bg",
-						"height": 1112
-					},
-					{
-						"selector": "section-content",
-						"height": 1112
-					}
-				],
-				"mobile": [
-					{
-						"selector": "section-bg",
-						"height": 844
-					},
-					{
-						"selector": "section-content",
-						"height": 844
-					}
-				]
-			},
+				}
+			],
 			"mediaPosition": "63% 90%",
 			"classes": [
 				"attachment-large",
@@ -926,10 +905,10 @@
 							"selector": ":nth-child(1)",
 							"transition": "filter 1.3s, transform 1.6s, opacity 0.7s ease-in",
 							"base": "transform:translate(0%, -96.2%) scale(1, 1)",
-							"hover": "opacity:0.118809;transform:translate(0%, -83.9%) scale(1, 1)",
-							"focus": "opacity:0.136928;transform:translate(0%, -82%) scale(1, 1)",
-							"focusVisible": "opacity:0.136928;transform:translate(0%, -82%) scale(1, 1)",
-							"active": "opacity:0.156153;transform:translate(0%, -80%) scale(1, 1)"
+							"hover": "opacity:0.156063;transform:translate(0%, -80%) scale(1, 1)",
+							"focus": "opacity:0.156063;transform:translate(0%, -80%) scale(1, 1)",
+							"focusVisible": "opacity:0.176244;transform:translate(0%, -77.9%) scale(1, 1)",
+							"active": "opacity:0.176244;transform:translate(0%, -77.9%) scale(1, 1)"
 						}
 					]
 				}
@@ -1110,38 +1089,13 @@
 					"mobile": "padding:0px 12.8px 0px 12.8px"
 				}
 			},
-			"columns": {
-				"desktop": [
-					{
-						"selector": "section-bg",
-						"height": 600
-					},
-					{
-						"selector": "section-content",
-						"height": 600
-					}
-				],
-				"tablet": [
-					{
-						"selector": "section-bg",
-						"height": 600
-					},
-					{
-						"selector": "section-content",
-						"height": 600
-					}
-				],
-				"mobile": [
-					{
-						"selector": "section-bg",
-						"height": 600
-					},
-					{
-						"selector": "section-content",
-						"height": 600
-					}
-				]
-			},
+			"elements": [
+				{
+					"path": "div:nth-child(2) > div:nth-child(1)",
+					"bg": "background-color:rgb(221, 51, 51)",
+					"height": 600
+				}
+			],
 			"classes": [
 				"alt-font",
 				"banner",
@@ -1396,38 +1350,26 @@
 					"mobile": "height:844px"
 				}
 			},
-			"columns": {
-				"desktop": [
-					{
-						"selector": "section-bg",
-						"height": 1800
-					},
-					{
-						"selector": "section-content",
-						"height": 1800
+			"elements": [
+				{
+					"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+					"bg": "background-color:rgb(221, 51, 51)",
+					"height": {
+						"desktop": 900,
+						"tablet": 1112,
+						"mobile": 844
 					}
-				],
-				"tablet": [
-					{
-						"selector": "section-bg",
-						"height": 2224
-					},
-					{
-						"selector": "section-content",
-						"height": 2224
+				},
+				{
+					"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+					"bg": "background-color:rgb(221, 51, 51)",
+					"height": {
+						"desktop": 900,
+						"tablet": 1112,
+						"mobile": 844
 					}
-				],
-				"mobile": [
-					{
-						"selector": "section-bg",
-						"height": 2527
-					},
-					{
-						"selector": "section-content",
-						"height": 2527
-					}
-				]
-			},
+				}
+			],
 			"mediaPosition": "65% 100%",
 			"classes": [
 				"align-middle",
@@ -1674,38 +1616,17 @@
 					"mobile": "padding:0px 23.76px 0px 23.76px;margin:9.9px 0px 9.9px 0px"
 				}
 			},
-			"columns": {
-				"desktop": [
-					{
-						"selector": "section-bg",
-						"height": 900
-					},
-					{
-						"selector": "section-content",
-						"height": 900
+			"elements": [
+				{
+					"path": "div:nth-child(2) > div:nth-child(1)",
+					"bg": "background-color:rgb(221, 51, 51)",
+					"height": {
+						"desktop": 900,
+						"tablet": 1112,
+						"mobile": 844
 					}
-				],
-				"tablet": [
-					{
-						"selector": "section-bg",
-						"height": 1112
-					},
-					{
-						"selector": "section-content",
-						"height": 1112
-					}
-				],
-				"mobile": [
-					{
-						"selector": "section-bg",
-						"height": 844
-					},
-					{
-						"selector": "section-content",
-						"height": 844
-					}
-				]
-			},
+				}
+			],
 			"classes": [
 				"alt-font",
 				"banner",
@@ -1784,7 +1705,7 @@
 		"heightChanged": true
 	},
 	"text": {
-		"capturedAt": "2026-11-15T10:08:08.899Z",
+		"capturedAt": "2026-11-15T10:37:17.214Z",
 		"url": "https://monicarajiv.com",
 		"page": "skip to content welcome to our universe [email protected] welcome to our universe menu menu ... the final episode has begun ... engame monica & rajiv doomsday accomodations sri lanka rajiv hundlani created in sri lanka, with an unstoppable healing power, adamantium claws and a no nonsense attitude, rajiv is one of the most ferocious heroes in the universe. he's the best there is at what he does, untill he met his match ... monica daryanani monica is a member of a subspecies of humans who are born in the philippines with superhuman abilities. she found her soulmate, rajiv, using her telepathic and telekinetic powers. she is a caring, nurturing figure, but she also has to deal with rajiv. this is where her omega-level mutant abilites will be crucial. doomsday clock manu & reshma hundlani rajkumar & sapna daryanani request the pleasure of your company at the wedding ceremony of their children the wedding doomsday accommodations sri lanka copyright 2026 © monica & rajiv home doomsday accommodations cinnamon grand hotel hotel rates salon services airport transfer sri lanka",
 		"sections": [
@@ -2002,7 +1923,7 @@
 		"csp": {
 			"hosts": []
 		},
-		"analyzedAt": "2026-11-15T10:08:11.942Z",
+		"analyzedAt": "2026-11-15T10:37:21.671Z",
 		"pagesAnalyzed": [
 			"https://monicarajiv.com",
 			"https://monicarajiv.com/accommodations/",
@@ -2147,7 +2068,7 @@
 	"pageBands": {
 		"airport-transfer": {
 			"url": "https://monicarajiv.com/airport-transfer/",
-			"measuredAt": "2026-11-15T10:07:34.301Z",
+			"measuredAt": "2026-11-15T10:36:43.566Z",
 			"builder": "gutenberg",
 			"sections": [
 				{
@@ -2593,38 +2514,17 @@
 							"mobile": "height:844px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 900
-							},
-							{
-								"selector": "section-content",
-								"height": 900
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": {
+								"desktop": 900,
+								"tablet": 1112,
+								"mobile": 844
 							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 1112
-							},
-							{
-								"selector": "section-content",
-								"height": 1112
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 844
-							},
-							{
-								"selector": "section-content",
-								"height": 844
-							}
-						]
-					},
+						}
+					],
 					"mediaPosition": "76% 7%",
 					"classes": [
 						"attachment-large",
@@ -2776,38 +2676,6 @@
 							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px",
 							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px"
 						}
-					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 535
-							},
-							{
-								"selector": "section-content",
-								"height": 473
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 569
-							},
-							{
-								"selector": "section-content",
-								"height": 507
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 550
-							},
-							{
-								"selector": "section-content",
-								"height": 550
-							}
-						]
 					},
 					"classes": [
 						"align-center",
@@ -2964,38 +2832,44 @@
 							"mobile": "padding:0px 18.62px 0px 18.62px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 766
-							},
-							{
-								"selector": "section-content",
-								"height": 706
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(240, 240, 240)",
+							"height": {
+								"desktop": 448,
+								"tablet": 419,
+								"mobile": 372
 							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 1880
-							},
-							{
-								"selector": "section-content",
-								"height": 1820
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1)",
+							"bg": "background-color:rgb(240, 240, 240)",
+							"height": {
+								"desktop": 448,
+								"tablet": 332,
+								"mobile": 290
 							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 1670
-							},
-							{
-								"selector": "section-content",
-								"height": 1610
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(3) > div:nth-child(1)",
+							"bg": "background-color:rgb(240, 240, 240)",
+							"height": {
+								"desktop": 448,
+								"tablet": 344,
+								"mobile": 290
 							}
-						]
-					},
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(4) > div:nth-child(1)",
+							"bg": "background-color:rgb(240, 240, 240)",
+							"height": {
+								"desktop": 448,
+								"tablet": 376,
+								"mobile": 331
+							}
+						}
+					],
 					"classes": [
 						"align-center",
 						"align-equal",
@@ -3237,38 +3111,28 @@
 							"base": "height:313.73px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 793
-							},
-							{
-								"selector": "section-content",
-								"height": 667
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 1459
-							},
-							{
-								"selector": "section-content",
-								"height": 1333
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 1459
-							},
-							{
-								"selector": "section-content",
-								"height": 1333
-							}
-						]
-					},
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(240, 240, 240)",
+							"height": 314
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 314
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 314
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(240, 240, 240)",
+							"height": 314
+						}
+					],
 					"mediaPosition": "0% 0%",
 					"classes": [
 						"attachment-large",
@@ -3470,38 +3334,13 @@
 							"base": "height:420px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 420
-							},
-							{
-								"selector": "section-content",
-								"height": 420
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 420
-							},
-							{
-								"selector": "section-content",
-								"height": 420
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 420
-							},
-							{
-								"selector": "section-content",
-								"height": 420
-							}
-						]
-					},
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1)",
+							"bg": "background-color:rgb(241, 223, 220)",
+							"height": 420
+						}
+					],
 					"mediaPosition": "100% 0%",
 					"classes": [
 						"attachment-large",
@@ -3541,7 +3380,7 @@
 		},
 		"sri-lanka": {
 			"url": "https://monicarajiv.com/sri-lanka/",
-			"measuredAt": "2026-11-15T10:07:43.462Z",
+			"measuredAt": "2026-11-15T10:36:52.757Z",
 			"builder": "gutenberg",
 			"sections": [
 				{
@@ -3796,38 +3635,17 @@
 							"mobile": "height:844px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 960
-							},
-							{
-								"selector": "section-content",
-								"height": 900
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": {
+								"desktop": 900,
+								"tablet": 1112,
+								"mobile": 844
 							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 1172
-							},
-							{
-								"selector": "section-content",
-								"height": 1112
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 844
-							},
-							{
-								"selector": "section-content",
-								"height": 844
-							}
-						]
-					},
+						}
+					],
 					"classes": [
 						"attachment-large",
 						"banner",
@@ -4119,38 +3937,51 @@
 							"base": "padding:0px 0px 0px 0px;margin:0px 0px 0px 0px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 2106
-							},
-							{
-								"selector": "section-content",
-								"height": 2106
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 500
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(0, 0, 0)",
+							"height": 86
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 420
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 420
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 450
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 450
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 500
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(5) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": {
+								"desktop": 500,
+								"mobile": 420
 							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 2196
-							},
-							{
-								"selector": "section-content",
-								"height": 2106
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 3486
-							},
-							{
-								"selector": "section-content",
-								"height": 3486
-							}
-						]
-					},
+						}
+					],
 					"mediaPosition": "58% 0%",
 					"classes": [
 						"align-center",
@@ -4224,7 +4055,7 @@
 		},
 		"accommodations": {
 			"url": "https://monicarajiv.com/accommodations/",
-			"measuredAt": "2026-11-15T10:08:00.142Z",
+			"measuredAt": "2026-11-15T10:37:10.703Z",
 			"builder": "gutenberg",
 			"sections": [
 				{
@@ -4943,38 +4774,17 @@
 							"mobile": "height:844px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 900
-							},
-							{
-								"selector": "section-content",
-								"height": 900
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": {
+								"desktop": 900,
+								"tablet": 1112,
+								"mobile": 844
 							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 1112
-							},
-							{
-								"selector": "section-content",
-								"height": 1112
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 844
-							},
-							{
-								"selector": "section-content",
-								"height": 844
-							}
-						]
-					},
+						}
+					],
 					"mediaPosition": "60% 54%",
 					"classes": [
 						"attachment-large",
@@ -5178,38 +4988,16 @@
 							"base": "height:440px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 1329
-							},
-							{
-								"selector": "section-content",
-								"height": 1129
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(7)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": {
+								"desktop": 43,
+								"mobile": 39
 							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 1329
-							},
-							{
-								"selector": "section-content",
-								"height": 1129
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 1125
-							},
-							{
-								"selector": "section-content",
-								"height": 1125
-							}
-						]
-					},
+						}
+					],
 					"classes": [
 						"align-center",
 						"alt-font",
@@ -5351,38 +5139,6 @@
 							"base": "padding:0px 20.67px 0px 20.67px;margin:0px 0px 17.23px 0px",
 							"mobile": "padding:0px 18.62px 0px 18.62px;margin:0px 0px 15.52px 0px"
 						}
-					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 286
-							},
-							{
-								"selector": "section-content",
-								"height": 226
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 286
-							},
-							{
-								"selector": "section-content",
-								"height": 226
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 289
-							},
-							{
-								"selector": "section-content",
-								"height": 229
-							}
-						]
 					},
 					"classes": [
 						"align-center",
@@ -5610,38 +5366,18 @@
 							"base": "height:420px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 861
-							},
-							{
-								"selector": "section-content",
-								"height": 661
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 861
-							},
-							{
-								"selector": "section-content",
-								"height": 661
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 1090
-							},
-							{
-								"selector": "section-content",
-								"height": 1090
-							}
-						]
-					},
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 420
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 420
+						}
+					],
 					"mediaPosition": "53% 30%",
 					"classes": [
 						"align-center",
@@ -5834,38 +5570,6 @@
 						"size-": {
 							"base": "height:200px"
 						}
-					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 805
-							},
-							{
-								"selector": "section-content",
-								"height": 745
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 886
-							},
-							{
-								"selector": "section-content",
-								"height": 826
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 2080
-							},
-							{
-								"selector": "section-content",
-								"height": 2020
-							}
-						]
 					},
 					"classes": [
 						"attachment-",
@@ -6063,38 +5767,13 @@
 							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 590
-							},
-							{
-								"selector": "section-content",
-								"height": 530
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 590
-							},
-							{
-								"selector": "section-content",
-								"height": 530
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 590
-							},
-							{
-								"selector": "section-content",
-								"height": 530
-							}
-						]
-					},
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 500
+						}
+					],
 					"classes": [
 						"banner",
 						"banner-bg",
@@ -6328,38 +6007,18 @@
 							"base": "height:420px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 770
-							},
-							{
-								"selector": "section-content",
-								"height": 570
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 770
-							},
-							{
-								"selector": "section-content",
-								"height": 570
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 570
-							},
-							{
-								"selector": "section-content",
-								"height": 570
-							}
-						]
-					},
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 420
+						},
+						{
+							"path": "div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 420
+						}
+					],
 					"mediaPosition": "52% 46%",
 					"classes": [
 						"align-center",
@@ -6580,38 +6239,13 @@
 							"mobile": "padding:0px 12.8px 0px 12.8px;margin:5.34px 0px 5.34px 0px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 740
-							},
-							{
-								"selector": "section-content",
-								"height": 680
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 740
-							},
-							{
-								"selector": "section-content",
-								"height": 680
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 740
-							},
-							{
-								"selector": "section-content",
-								"height": 680
-							}
-						]
-					},
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": 600
+						}
+					],
 					"classes": [
 						"banner",
 						"banner-bg",
@@ -6865,38 +6499,16 @@
 							"base": "height:440px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 2298
-							},
-							{
-								"selector": "section-content",
-								"height": 2098
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(7)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": {
+								"desktop": 43,
+								"mobile": 39
 							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 2287
-							},
-							{
-								"selector": "section-content",
-								"height": 2087
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 4199
-							},
-							{
-								"selector": "section-content",
-								"height": 4199
-							}
-						]
-					},
+						}
+					],
 					"classes": [
 						"align-center",
 						"align-middle",
@@ -7088,38 +6700,13 @@
 							"base": "height:420px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 420
-							},
-							{
-								"selector": "section-content",
-								"height": 420
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 420
-							},
-							{
-								"selector": "section-content",
-								"height": 420
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 420
-							},
-							{
-								"selector": "section-content",
-								"height": 420
-							}
-						]
-					},
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1)",
+							"bg": "background-color:rgb(241, 223, 220)",
+							"height": 420
+						}
+					],
 					"mediaPosition": "23% 37%",
 					"classes": [
 						"attachment-large",
@@ -7159,7 +6746,7 @@
 		},
 		"doomsday": {
 			"url": "https://monicarajiv.com/doomsday/",
-			"measuredAt": "2026-11-15T10:08:08.894Z",
+			"measuredAt": "2026-11-15T10:37:17.210Z",
 			"builder": "gutenberg",
 			"sections": [
 				{
@@ -7447,38 +7034,17 @@
 							"mobile": "height:844px"
 						}
 					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 900
-							},
-							{
-								"selector": "section-content",
-								"height": 900
+					"elements": [
+						{
+							"path": "div:nth-child(2) > div:nth-child(1)",
+							"bg": "background-color:rgb(221, 51, 51)",
+							"height": {
+								"desktop": 900,
+								"tablet": 1112,
+								"mobile": 844
 							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 1112
-							},
-							{
-								"selector": "section-content",
-								"height": 1112
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 844
-							},
-							{
-								"selector": "section-content",
-								"height": 844
-							}
-						]
-					},
+						}
+					],
 					"mediaPosition": "48% 5%",
 					"classes": [
 						"absolute",
@@ -7754,38 +7320,6 @@
 						"centered": {
 							"base": "padding:0px 0px 0px 0px;margin:-15px 0px 0px -15px"
 						}
-					},
-					"columns": {
-						"desktop": [
-							{
-								"selector": "section-bg",
-								"height": 684
-							},
-							{
-								"selector": "section-content",
-								"height": 624
-							}
-						],
-						"tablet": [
-							{
-								"selector": "section-bg",
-								"height": 634
-							},
-							{
-								"selector": "section-content",
-								"height": 574
-							}
-						],
-						"mobile": [
-							{
-								"selector": "section-bg",
-								"height": 565
-							},
-							{
-								"selector": "section-content",
-								"height": 505
-							}
-						]
 					},
 					"hidden": [
 						"[class~=\"centered\"][class~=\"dark\"][class~=\"large\"][class~=\"loading-spin\"]"
