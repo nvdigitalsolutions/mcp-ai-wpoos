@@ -129,7 +129,6 @@ describe('renderDirectFormsEndpointTs — Turnstile', () => {
 		expect(turnstileSource).toContain("const TURNSTILE_ACTION: string = 'contact';");
 		expect(turnstileSource).toContain("const TURNSTILE_HOSTNAME: string = 'virtuallyjamaica.com';");
 	} );
-	});
 
 	it('treats a bad token as a rejection, not a transport error', () => {
 		// Single-use 300 s tokens replay as `timeout-or-duplicate`; that is a
