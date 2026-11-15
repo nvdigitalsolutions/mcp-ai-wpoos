@@ -1738,6 +1738,13 @@ if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-endpoint-capabilities.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-endpoint-capabilities.php';
 }
+// Connected-app discovery (Proposal 090-i Phase 4 / 090-p W6): probes the
+// configured product bases so /features can publish `endpoint_urls` and flip
+// the corresponding key. Needs the URL guard (loaded earlier in this file) for
+// the per-address SSRF check.
+if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/connected-apps/class-wp-mcp-ai-connected-app-registry.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/connected-apps/class-wp-mcp-ai-connected-app-registry.php';
+}
 if ( ! wp_mcp_ai_class_exists_via_autoload( WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-features-controller.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-features-controller.php';
 }

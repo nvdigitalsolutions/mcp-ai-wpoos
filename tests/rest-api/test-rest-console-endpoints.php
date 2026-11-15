@@ -230,4 +230,121 @@ class WP_MCP_AI_REST_Console_Endpoints_Test extends WP_UnitTestCase {
 			'empty fragment'              => array( '/mcp-ai/v1/tools', '', false ),
 		);
 	}
+
+	/**
+	 * A discovered connected app flips its key and publishes its base.
+	 *
+	 * Class C (090-i Phase 4): the product is on its own origin, so no route is
+	 * registered here — the probe answer is the evidence the surface exists.
+	 */
+	public function test_connected_apps_flip_the_key_and_publish_the_url() {
+		$manifest                                = WP_MCP_AI_Endpoint_Capabilities::manifest();
+		$manifest['endpoints']['docsHub']        = false;
+		$manifest['endpoints']['documentEditor'] = false;
+
+		$merged = WP_MCP_AI_Endpoint_Capabilities::apply_connected_apps(
+			$manifest,
+			array( 'docsHub' => 'https://docs.example.test/wp-json/nvoos-docs/v1' )
+		);
+
+		$this->assertTrue( $merged['endpoints']['docsHub'], 'a reached product is served' );
+		$this->assertFalse( $merged['endpoints']['documentEditor'], 'an unprobed key is untouched' );
+		$this->assertSame(
+			array( 'docsHub' => 'https://docs.example.test/wp-json/nvoos-docs/v1' ),
+			$merged['endpoint_urls']
+		);
+		$this->assertSame( array(), $merged['gaps'], 'a flipped key is never a gap' );
+	}
+
+	/**
+	 * With nothing discovered, the manifest is returned untouched.
+	 */
+	public function test_connected_apps_are_a_no_op_when_empty() {
+		$manifest = WP_MCP_AI_Endpoint_Capabilities::manifest();
+		$merged   = WP_MCP_AI_Endpoint_Capabilities::apply_connected_apps( $manifest, array() );
+
+		$this->assertSame( $manifest, $merged );
+		$this->assertArrayNotHasKey( 'endpoint_urls', $merged );
+	}
+
+	/**
+	 * An unknown key cannot be injected into the manifest.
+	 */
+	public function test_connected_apps_cannot_add_an_unknown_key() {
+		$merged = WP_MCP_AI_Endpoint_Capabilities::apply_connected_apps(
+			WP_MCP_AI_Endpoint_Capabilities::manifest(),
+			array( 'evilProduct' => 'https://evil.example.test' )
+		);
+
+		$this->assertArrayNotHasKey( 'evilProduct', $merged['endpoints'] );
+	}
+
+	/**
+	 * GET /features publishes discovery results and keeps both maps in step.
+	 *
+	 * The full wiring: loader → features controller → registry → response.
+	 * HTTP is stubbed and the host whitelisted, so no network runs.
+	 */
+	public function test_features_publishes_discovered_connected_apps() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$allow  = static function ( $hosts ) {
+			$hosts[] = 'docs.example.test';
+			return $hosts;
+		};
+		$config = static function () {
+			return array( 'docsHub' => array( 'base' => 'https://docs.example.test/wp-json/nvoos-docs/v1' ) );
+		};
+		$http   = static function () {
+			return array(
+				'headers'  => array(),
+				'body'     => '{}',
+				'response' => array(
+					'code'    => 200,
+					'message' => '',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+
+		add_filter( 'wp_mcp_ai_http_allowed_host', $allow );
+		add_filter( WP_MCP_AI_Connected_App_Registry::FILTER, $config );
+		add_filter( 'pre_http_request', $http );
+		WP_MCP_AI_Connected_App_Registry::reset_instance();
+
+		try {
+			$response = rest_do_request( new WP_REST_Request( 'GET', '/mcp-ai/v1/features' ) );
+			$data     = $response->get_data()['data'];
+
+			$this->assertSame( 200, $response->get_status() );
+			$this->assertSame(
+				array( 'docsHub' => 'https://docs.example.test/wp-json/nvoos-docs/v1' ),
+				(array) $data['endpoint_urls']
+			);
+			$this->assertTrue( ( (array) $data['endpoints'] )['docsHub'], 'the key flips for a served product' );
+			$this->assertTrue( $data['features']['docs_hub'], 'the feature flag agrees with the endpoint map' );
+			$this->assertSame( array(), $data['endpoint_gaps'] );
+		} finally {
+			remove_filter( 'wp_mcp_ai_http_allowed_host', $allow );
+			remove_filter( WP_MCP_AI_Connected_App_Registry::FILTER, $config );
+			remove_filter( 'pre_http_request', $http );
+			WP_MCP_AI_Connected_App_Registry::reset_instance();
+		}
+	}
+
+	/**
+	 * GET /features is unchanged when nothing is configured.
+	 */
+	public function test_features_has_no_endpoint_urls_when_unconfigured() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		WP_MCP_AI_Connected_App_Registry::reset_instance();
+
+		$response = rest_do_request( new WP_REST_Request( 'GET', '/mcp-ai/v1/features' ) );
+		$data     = $response->get_data()['data'];
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertArrayNotHasKey( 'endpoint_urls', $data );
+		$this->assertSame( array(), $data['endpoint_gaps'] );
+	}
 }
