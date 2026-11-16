@@ -15,6 +15,23 @@ description: "Git/GitHub workflow discipline for the mcp-ai-wpoos repo: PRs agai
   branch** (so the diff is only the delta), and name the parent PR number in
   the body. If the parent merges and its branch is deleted, retarget the child
   to `alpha-working` and rebase the delta.
+- **Prove the base is alive BEFORE merging a stacked child.** Read the child's
+  base, then the parent PR's state:
+
+  ```sh
+  gh pr view <child> --json baseRefName      # base = fix/<parent>
+  gh pr view <parent> --json state,mergedAt  # MERGED already? stop
+  ```
+
+  A base whose parent PR is already `MERGED` is a dead branch: retarget the
+  child to `alpha-working` and rebase the delta instead of merging. A squash
+  merge into a dead base looks green, reports `MERGED`, and the commit is gone
+  (2026-11-12 #7604; recurred 2026-11-16 #7848 — recovered by replaying its
+  commit in #7851, because production ran the code while `alpha-working` did
+  not, so the next scaffold would have regressed it). `delete_branch_on_merge`
+  is ON repo-side since 2026-11-16, so GitHub now retargets a child
+  automatically when the parent's branch is deleted — a base branch that still
+  exists after its parent merged is the warning sign.
 - **Stage explicitly.** Never `git add -A` — the worktree often holds build
   artifacts and local state (e.g. `.lighthouseci/`, `test-results/`). Use
   explicit paths, or pathspec exclusions:
