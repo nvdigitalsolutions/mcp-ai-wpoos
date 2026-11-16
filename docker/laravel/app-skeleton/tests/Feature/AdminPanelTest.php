@@ -33,6 +33,31 @@ class AdminPanelTest extends TestCase
     }
 
     /**
+     * The brand icon, on both panels.
+     *
+     * Two assertions because they fail differently: a panel without
+     * `favicon()` falls back to the browser's `/favicon.ico` probe (a 404 on
+     * this runtime), and a panel pointing at a missing file renders a broken
+     * `<link rel="icon">` — which is what a copy into a second app produces
+     * when the asset is not shipped with it.
+     */
+    public function test_both_panels_serve_the_brand_icon(): void
+    {
+        $this->assertFileExists(
+            public_path('nvoos-icon.svg'),
+            'The brand icon must ship in public/ — panel `favicon()` points at it.'
+        );
+
+        foreach (array('admin', 'operator') as $id) {
+            $this->assertSame(
+                '/nvoos-icon.svg',
+                Filament::getPanel($id)->getFavicon(),
+                "Panel '{$id}' does not point at the brand icon."
+            );
+        }
+    }
+
+    /**
      * The customer panel is the product surface; `/ops` must never be the
      * landing page for a fresh login.
      */
