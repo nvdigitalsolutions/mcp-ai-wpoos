@@ -275,6 +275,9 @@ class WP_MCP_AI_Connected_App_Registry_Test extends WP_UnitTestCase {
 
 	/**
 	 * A configured token is sent as a bearer credential and never published.
+	 *
+	 * The descriptor `token` is the documented fallback for programmatic
+	 * callers; the key store is the preferred home (next test).
 	 */
 	public function test_token_is_sent_but_never_published() {
 		$this->config = array(
@@ -289,6 +292,67 @@ class WP_MCP_AI_Connected_App_Registry_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 'Bearer super-secret', $this->requests[0]['args']['headers']['Authorization'] );
 		$this->assertStringNotContainsString( 'super-secret', (string) wp_json_encode( $urls ) );
+	}
+
+	/**
+	 * The encrypted key store wins over a descriptor token.
+	 *
+	 * Rotating a credential in the store must take effect without editing the
+	 * option, so the store is authoritative and the descriptor is only a
+	 * fallback.
+	 */
+	public function test_key_store_token_wins_over_the_descriptor() {
+		$suffix = WP_MCP_AI_Connected_App_Registry::token_suffix( 'docsHub' );
+		$this->assertSame( 'connected_app_docs_hub_token', $suffix );
+
+		WP_MCP_AI_Api_Key_Store::set( $suffix, 'from-the-store' );
+
+		$this->config = array(
+			'docsHub' => array(
+				'base'  => 'https://products.example.test/wp-json/nvoos-docs/v1',
+				'token' => 'from-the-option',
+			),
+		);
+		$this->stub_http( 200 );
+
+		try {
+			$this->assertSame(
+				array( 'docsHub' => 'https://products.example.test/wp-json/nvoos-docs/v1' ),
+				$this->registry()->available()
+			);
+
+			$this->assertSame( 'Bearer from-the-store', $this->requests[0]['args']['headers']['Authorization'] );
+			$this->assertStringNotContainsString(
+				'from-the-store',
+				get_option( WP_MCP_AI_Api_Key_Store::OPTION_PREFIX . $suffix, '' ),
+				'the credential is not stored in the clear'
+			);
+		} finally {
+			WP_MCP_AI_Api_Key_Store::delete( $suffix );
+		}
+	}
+
+	/**
+	 * Every console key maps to a key-store suffix.
+	 */
+	public function test_every_app_has_a_token_suffix() {
+		foreach ( array_keys( WP_MCP_AI_Connected_App_Registry::DEFAULTS ) as $key ) {
+			$this->assertNotSame( '', WP_MCP_AI_Connected_App_Registry::token_suffix( $key ) );
+		}
+
+		$this->assertSame( '', WP_MCP_AI_Connected_App_Registry::token_suffix( 'evilProduct' ) );
+	}
+
+	/**
+	 * With no token anywhere, the probe sends no Authorization header.
+	 */
+	public function test_no_token_means_no_authorization_header() {
+		$this->config = array( 'docsHub' => $this->descriptor() );
+		$this->stub_http( 200 );
+
+		$this->registry()->available();
+
+		$this->assertArrayNotHasKey( 'Authorization', $this->requests[0]['args']['headers'] );
 	}
 
 	/**

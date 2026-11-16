@@ -76,13 +76,12 @@ were not).
 
 ### 2.4 BFF proxies must be allowlisted, not transparent
 
-For W6 (deferred): a same-origin proxy is the standard way to reach a
-cross-origin product from a browser app, but it must be keyed by a
-server-side allowlist (never an arbitrary URL), must not forward the console's
-cookies to the product, must strip the product's `Set-Cookie`, and must be
-default-deny. The design is recorded in §5.1; it is deferred because it needs a
-product/CORS decision and a security review, and shipping it untested would be
-worse than not having it.
+**Shipped as W6.** A same-origin proxy is the standard way to reach a
+cross-origin product from a browser app, but it must be keyed by a server-side
+allowlist (never an arbitrary URL), must not forward the console's cookies to the
+product, must strip the product's `Set-Cookie`, and must be default-deny. The
+as-built design and its tests are in §5.1; the WordPress discovery half that
+feeds it is §5.2.
 
 ### 2.5 E2E gates are a ladder, not a switch
 
