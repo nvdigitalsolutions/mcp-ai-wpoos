@@ -154,7 +154,7 @@ class AdminWorkflowRunsTest extends TestCase
         $user = User::factory()->admin()->create();
 
         Tenant::query()->findOrFail($tenantId)
-            ->users()->attach($user->id, ['role' => 'owner']);
+            ->users()->syncWithoutDetaching([$user->id => ['role' => 'owner']]);
 
         return $user;
     }

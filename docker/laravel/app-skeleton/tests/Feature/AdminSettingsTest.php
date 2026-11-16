@@ -150,7 +150,7 @@ class AdminSettingsTest extends TestCase
         $user = User::factory()->admin()->create();
 
         Tenant::query()->findOrFail($tenantId)
-            ->users()->attach($user->id, array('role' => 'owner'));
+            ->users()->syncWithoutDetaching([$user->id => array('role' => 'owner')]);
 
         return $user;
     }
@@ -163,7 +163,7 @@ class AdminSettingsTest extends TestCase
         $user = User::factory()->admin()->create();
 
         Tenant::query()->findOrFail(Tenant::OPERATOR_ID)
-            ->users()->attach($user->id, array('role' => 'owner'));
+            ->users()->syncWithoutDetaching([$user->id => array('role' => 'owner')]);
 
         return $user;
     }

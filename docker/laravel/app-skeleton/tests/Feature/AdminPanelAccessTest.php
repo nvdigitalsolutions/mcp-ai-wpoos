@@ -87,7 +87,10 @@ class AdminPanelAccessTest extends TestCase
 
     public function test_a_user_with_no_membership_reaches_nothing(): void
     {
-        $nobody = User::factory()->admin()->create();
+        // `withoutEstate()` is the one state production cannot reach through the
+        // migration, so it is requested explicitly rather than being the factory
+        // default (149 §21).
+        $nobody = User::factory()->admin()->withoutEstate()->create();
 
         $this->assertFalse($this->policy->accessTenantPanel($nobody));
         $this->assertFalse($this->policy->accessOperatorPanel($nobody));
@@ -115,6 +118,6 @@ class AdminPanelAccessTest extends TestCase
     private function join(User $user, string $tenantId, string $role): void
     {
         Tenant::query()->findOrFail($tenantId)
-            ->users()->attach($user->id, ['role' => $role]);
+            ->users()->syncWithoutDetaching([$user->id => ['role' => $role]]);
     }
 }

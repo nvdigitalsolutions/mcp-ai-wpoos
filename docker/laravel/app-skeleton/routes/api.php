@@ -46,6 +46,7 @@ use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowRunController;
 use App\Http\Controllers\Wifi\KpiController as WifiKpisController;
 use App\Http\Controllers\Wp\ContentController as WpContentController;
+use App\Http\Middleware\ResolveApiTenant;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -77,8 +78,13 @@ Route::prefix('api/v1')->group(function (): void {
     Route::post('/session/logout', [SessionController::class, 'logout'])
         ->middleware('auth');
 
-    Route::middleware('auth:sanctum')->group(function (): void {
-        Route::get('/session/me', [SessionController::class, 'me']);
+    // Identity endpoint. Deliberately OUTSIDE tenant resolution: it is how a
+    // client learns who it is and which estates it may select, so requiring a
+    // selection first would leave a multi-estate client with no way to ask.
+    Route::middleware('auth:sanctum')->get('/session/me', [SessionController::class, 'me']);
+
+    // Everything authenticated below acts inside one estate (149 §21).
+    Route::middleware(['auth:sanctum', ResolveApiTenant::class])->group(function (): void {
 
         // Chat streams. Its own limiter, tighter than the console default,
         // because a stream holds the connection open.

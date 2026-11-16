@@ -265,7 +265,7 @@ class AdminTeamsTest extends TestCase
     {
         $viewer = User::factory()->create();
         Tenant::query()->findOrFail(Tenant::DEFAULT_ID)
-            ->users()->attach($viewer->id, array('role' => 'viewer'));
+            ->users()->syncWithoutDetaching([$viewer->id => array('role' => 'viewer')]);
 
         $this->actingAs($viewer)
             ->get('/admin/default/teams')
@@ -297,20 +297,22 @@ class AdminTeamsTest extends TestCase
 
     private function estateAdmin(string $tenantId): User
     {
-        $user = User::factory()->admin()->create();
+        // Belongs ONLY to the estate under test — see the same helper in
+        // AdminAssistantsTest for why (149 §21).
+        $user = User::factory()->admin()->withoutEstate()->create();
 
         Tenant::query()->findOrFail($tenantId)
-            ->users()->attach($user->id, array('role' => 'owner'));
+            ->users()->syncWithoutDetaching([$user->id => array('role' => 'owner')]);
 
         return $user;
     }
 
     private function estateMember(string $tenantId, string $role): User
     {
-        $user = User::factory()->create();
+        $user = User::factory()->withoutEstate()->create();
 
         Tenant::query()->findOrFail($tenantId)
-            ->users()->attach($user->id, array('role' => $role));
+            ->users()->syncWithoutDetaching([$user->id => array('role' => $role)]);
 
         return $user;
     }

@@ -237,21 +237,23 @@ class TokenManagerTest extends TestCase
 
     public function test_the_overview_lists_only_the_current_estates_credentials(): void
     {
-        TenantContext::set(Assistant::DEFAULT_TENANT);
         $this->issue();
 
         $foreignAssistant = $this->assistantIn('estate-b', 'Foreign Agent');
+        $foreignAdmin = User::factory()->admin()->inEstate('estate-b', 'owner')->create();
 
-        TenantContext::set('estate-b');
+        Sanctum::actingAs($foreignAdmin);
         $this->app->make(AuthProviderInterface::class)->issueCredential($foreignAssistant->id);
 
-        TenantContext::set('estate-b');
+        // Each caller resolves its own estate from membership (149 §21), so one
+        // request cannot see the other's credentials.
+        Sanctum::actingAs($foreignAdmin);
         $foreign = $this->overview()['credentials'];
 
         $this->assertCount(1, $foreign);
         $this->assertSame((int) $foreignAssistant->id, (int) $foreign[0]['assistant_id']);
 
-        TenantContext::set(Assistant::DEFAULT_TENANT);
+        Sanctum::actingAs($this->admin);
         $own = $this->overview()['credentials'];
 
         $this->assertCount(1, $own);

@@ -73,9 +73,9 @@ class TenantModelTest extends TestCase
         $user = User::factory()->create();
 
         Tenant::query()->findOrFail(Tenant::DEFAULT_ID)
-            ->users()->attach($user->id, ['role' => 'viewer']);
+            ->users()->syncWithoutDetaching([$user->id => ['role' => 'viewer']]);
         Tenant::query()->findOrFail(Tenant::OPERATOR_ID)
-            ->users()->attach($user->id, ['role' => 'owner']);
+            ->users()->syncWithoutDetaching([$user->id => ['role' => 'owner']]);
 
         $this->assertSame(2, $user->tenants()->count());
         $this->assertTrue($user->isOperatorMember());
