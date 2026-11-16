@@ -60,11 +60,16 @@ async function fetchLaravelNonce(): Promise<string> {
 export async function submitLaravelLogin(input: WpLoginInput): Promise<WpLoginResult> {
   const { username, password, remember = false, signal } = input;
   const nonce = await fetchLaravelNonce();
+  // Laravel validates the raw session token in `X-CSRF-TOKEN`; the
+  // `X-WP-Nonce` translation shim that used to sit in AcceptWpNonce is gone,
+  // and a bare `X-WP-Nonce` is a 419. fetch-wrapper.ts does the same
+  // translation for every other call — this path predates it and uses raw
+  // fetch(), so it has to mirror it.
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
   };
-  if (nonce) headers['X-WP-Nonce'] = nonce;
+  if (nonce) headers['X-CSRF-TOKEN'] = nonce;
 
   let response: Response;
   try {
@@ -90,7 +95,7 @@ export async function submitLaravelLogin(input: WpLoginInput): Promise<WpLoginRe
 async function logoutFromLaravel(): Promise<{ ok: boolean; message: string }> {
   const nonce = await fetchLaravelNonce();
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (nonce) headers['X-WP-Nonce'] = nonce;
+  if (nonce) headers['X-CSRF-TOKEN'] = nonce;
 
   try {
     const response = await fetch('/api/v1/session/logout', {

@@ -40,12 +40,37 @@ Configuration — option `wp_mcp_ai_connected_apps`, or the
 array(
     'contentGraph' => array(
         'base'  => 'https://cg.example.com/wp-json/nvoos-content-graph/v1',
-        'token' => '',        // optional bearer credential, never published
         'probe' => '/graph',  // optional path override
     ),
     'docsHub' => array( 'base' => 'https://docs.example.com/wp-json/nvoos-docs/v1' ),
 )
 ```
+
+### Bearer tokens live in the encrypted key store
+
+A probe credential is a secret that leaves the site, so it is **not** a
+descriptor field. Store it with `WP_MCP_AI_Api_Key_Store` and the registry picks
+it up automatically:
+
+```php
+WP_MCP_AI_Api_Key_Store::set(
+    WP_MCP_AI_Connected_App_Registry::token_suffix( 'docsHub' ),
+    $token,
+);
+
+// CLI:
+// wp option update wp_mcp_ai_connected_app_docs_hub_token '<token>' --autoload=no
+```
+
+Suffixes: `connected_app_content_graph_token`,
+`connected_app_docs_hub_token`, `connected_app_media_studio_token`,
+`connected_app_document_editor_token` — all four are in
+`WP_MCP_AI_Api_Key_Store::MANAGED_KEYS`, so they appear in the admin key list and
+are covered by the plaintext-migration sweep.
+
+The store wins over a descriptor `token`, so rotating a credential takes effect
+without editing the option. A descriptor `token` remains supported as a fallback
+for programmatic callers (a filter that provisions config in code) and for tests.
 
 Constants worth knowing:
 
@@ -53,11 +78,13 @@ Constants worth knowing:
 |---|---|
 | `DEFAULTS` | Console key → default probe path (`/graph` for Content Graph, `/health` for the rest) |
 | `FEATURE_FLAGS` | Console key → `WP_MCP_AI_Feature_Flags` key, so `/features` never contradicts itself |
+| `TOKEN_SUFFIXES` | Console key → encrypted key-store suffix |
 | `FILTER_TTL` | `wp_mcp_ai_connected_apps_ttl`, default 300 s |
 
 ## Inputs / Outputs / Neighbors
 
-- **Reads from:** option `wp_mcp_ai_connected_apps`, the transient
+- **Reads from:** option `wp_mcp_ai_connected_apps`, the encrypted key store
+  (`wp_mcp_ai_connected_app_*_token`), the transient
   `wp_mcp_ai_connected_apps_<hash>`.
 - **Writes to:** that transient only. No options, no post meta.
 - **Upstream callers:** the features controller.
@@ -78,8 +105,9 @@ Constants worth knowing:
   only the other 4xx and 5xx mean absent. A 401 is a product that exists.
 - **Never follow a redirect** (`redirection => 0`) — that is the SSRF pivot
   from an allowed host to an internal one.
-- **Tokens never leave the request.** The bearer credential is added to the
-  probe headers only; it is not in `available()` or the transient.
+- **Tokens never leave the request.** The bearer credential is read from
+  `WP_MCP_AI_Api_Key_Store` (or the descriptor fallback) and added to the probe
+  headers only; it is not in `available()` or the transient.
 - Unknown descriptor keys and malformed entries are dropped, not thrown.
 
 ## Tests

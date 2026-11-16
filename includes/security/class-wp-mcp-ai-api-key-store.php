@@ -46,13 +46,21 @@ if ( ! class_exists( 'WP_MCP_AI_Api_Key_Store' ) ) {
 		 * @var array<string, string>
 		 */
 		const MANAGED_KEYS = array(
-			'openai_api_key'               => 'OpenAI API Key',
-			'stability_api_key'            => 'Stability AI API Key',
-			'google_maps_api_key'          => 'Google Maps API Key',
-			'removebg_api_key'             => 'remove.bg API Key',
-			'yahoo_client_secret'          => 'Yahoo OAuth Client Secret',
-			'webhook_secret'               => 'Webhook HMAC Secret',
-			'pro_chat_continuation_secret' => 'Chat Continuation Webhook Secret',
+			'openai_api_key'                      => 'OpenAI API Key',
+			'stability_api_key'                   => 'Stability AI API Key',
+			'google_maps_api_key'                 => 'Google Maps API Key',
+			'removebg_api_key'                    => 'remove.bg API Key',
+			'yahoo_client_secret'                 => 'Yahoo OAuth Client Secret',
+			'webhook_secret'                      => 'Webhook HMAC Secret',
+			'pro_chat_continuation_secret'        => 'Chat Continuation Webhook Secret',
+			// Connected-app probe credentials (090-p W6b). A product that
+			// requires auth is still "reached", so the probe needs a bearer
+			// token — and a token that leaves the site should not sit in
+			// wp_options in the clear.
+			'connected_app_content_graph_token'   => 'Content Graph App Token',
+			'connected_app_docs_hub_token'        => 'Docs Hub App Token',
+			'connected_app_media_studio_token'    => 'Media Studio App Token',
+			'connected_app_document_editor_token' => 'Document Editor App Token',
 		);
 
 		/**

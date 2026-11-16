@@ -39,8 +39,11 @@ if ( ! class_exists( 'WP_MCP_AI_Connected_App_Registry' ) ) {
 	 *  - a 2xx/3xx, or a 401/403, means *reached* — a product that answers
 	 *    with auth required is present, which is the fact the console needs.
 	 *    404, 5xx and transport errors mean unavailable;
-	 *  - an optional per-app `token` is sent as a bearer credential and never
-	 *    appears in the manifest or the probe result;
+	 *  - an optional per-app `token` is sent as a bearer credential. It is read
+	 *    from {@see WP_MCP_AI_Api_Key_Store} (AES-256-GCM at rest) via
+	 *    {@see token_suffix()}; a descriptor `token` is only a fallback for
+	 *    programmatic callers. It never appears in the manifest or the probe
+	 *    result;
 	 *  - results are cached, including failures, so an unreachable product
 	 *    cannot slow every console boot.
 	 *
@@ -109,6 +112,22 @@ if ( ! class_exists( 'WP_MCP_AI_Connected_App_Registry' ) ) {
 			'docsHub'        => 'docs_hub',
 			'mediaStudio'    => 'media_studio',
 			'documentEditor' => 'document_editor',
+		);
+
+		/**
+		 * Console key => API-key-store suffix for that app's bearer token.
+		 *
+		 * Tokens are credentials that leave the site, so they live in
+		 * {@see WP_MCP_AI_Api_Key_Store} (AES-256-GCM at rest), not in the
+		 * descriptor panel and not in `wp_options` in the clear.
+		 *
+		 * @var array<string,string>
+		 */
+		const TOKEN_SUFFIXES = array(
+			'contentGraph'   => 'connected_app_content_graph_token',
+			'docsHub'        => 'connected_app_docs_hub_token',
+			'mediaStudio'    => 'connected_app_media_studio_token',
+			'documentEditor' => 'connected_app_document_editor_token',
 		);
 
 		/**
@@ -239,6 +258,24 @@ if ( ! class_exists( 'WP_MCP_AI_Connected_App_Registry' ) ) {
 		}
 
 		/**
+		 * The API-key-store suffix holding a given app's bearer token.
+		 *
+		 * Public so an operator or CLI command can store a credential without
+		 * duplicating the naming rule:
+		 *
+		 *     WP_MCP_AI_Api_Key_Store::set(
+		 *         WP_MCP_AI_Connected_App_Registry::token_suffix( 'docsHub' ),
+		 *         $token
+		 *     );
+		 *
+		 * @param string $key Console endpoint key.
+		 * @return string Option suffix, or '' for an unknown key.
+		 */
+		public static function token_suffix( $key ) {
+			return self::TOKEN_SUFFIXES[ $key ] ?? '';
+		}
+
+		/**
 		 * Normalise the operator configuration.
 		 *
 		 * Unknown keys and malformed entries are dropped rather than throwing:
@@ -283,13 +320,39 @@ if ( ! class_exists( 'WP_MCP_AI_Connected_App_Registry' ) ) {
 
 				$out[ $key ] = array(
 					'base'     => untrailingslashit( $base ),
-					'token'    => isset( $entry['token'] ) && is_string( $entry['token'] ) ? $entry['token'] : '',
+					'token'    => $this->token_for( $key, $entry ),
 					'probe'    => $probe,
 					'insecure' => ! empty( $entry['insecure'] ),
 				);
 			}
 
 			return $out;
+		}
+
+		/**
+		 * Resolve one app's bearer token.
+		 *
+		 * The encrypted key store is authoritative. A `token` in the descriptor is
+		 * a fallback for programmatic callers (a filter that provisions config in
+		 * code) and for tests; it is never the preferred home, and a descriptor
+		 * token is ignored when the store already holds one — so rotating a
+		 * credential in the store takes effect without editing the option.
+		 *
+		 * @param string $key   Console endpoint key.
+		 * @param array  $entry Descriptor entry.
+		 * @return string
+		 */
+		protected function token_for( $key, array $entry ) {
+			$suffix = self::token_suffix( $key );
+
+			if ( '' !== $suffix && class_exists( 'WP_MCP_AI_Api_Key_Store' ) ) {
+				$stored = (string) WP_MCP_AI_Api_Key_Store::get( $suffix );
+				if ( '' !== $stored ) {
+					return $stored;
+				}
+			}
+
+			return isset( $entry['token'] ) && is_string( $entry['token'] ) ? $entry['token'] : '';
 		}
 
 		/**

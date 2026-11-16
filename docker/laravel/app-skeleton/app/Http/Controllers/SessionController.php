@@ -19,6 +19,19 @@ class SessionController
      */
     public function nonce(Request $request): JsonResponse
     {
+        // Reached without a session only when the caller is not a first-party
+        // console origin (Sanctum opens the session for those). Answer with the
+        // same shape as login rather than letting `session()` throw.
+        if (! $request->hasSession()) {
+            return response()->json([
+                'success' => false,
+                'error' => [
+                    'code' => 'session_required',
+                    'message' => 'Session nonce requires a first-party console origin.',
+                ],
+            ], 419);
+        }
+
         return response()->json([
             'success' => true,
             'nonce' => (string) $request->session()->token(),

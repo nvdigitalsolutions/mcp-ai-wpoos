@@ -453,6 +453,12 @@ function proxyRequest(req, res) {
   if (isLoginPage || (CONNECTED_ENABLED && isFeaturesPath(incoming.pathname))) {
     delete headers['accept-encoding']; // Identity body, so it can be rewritten.
   }
+  // Keep the declared body length: dropping it makes Node re-frame the request
+  // as chunked, and PHP's built-in server does not read a chunked body, so the
+  // app sees an empty POST.
+  if (req.headers['content-length'] !== undefined) {
+    headers['content-length'] = req.headers['content-length'];
+  }
   headers.host = upstreamUrl.host;
 
   const upstream = transport(
