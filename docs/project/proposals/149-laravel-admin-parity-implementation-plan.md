@@ -1,7 +1,7 @@
 # Proposal 149 — Implementation Plan: Wave 0 (Foundation)
 
 **Parent:** [`149-laravel-admin-parity-proposal.md`](./149-laravel-admin-parity-proposal.md)
-**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). Wave 2 may start.
+**Status:** ✅ **WAVE 0 COMPLETE** (2026-11-16) — T-0.1 … T-0.10 done; Q-4 and Q-6 closed, Q-5 open (commercial). 🟡 **WAVE 2 STARTED** (2026-11-16) — four slices shipped: estates and licences on `/ops` (§8), teams on `/admin` with the deferred cross-tenant 404 test (§9), failed jobs on `/ops/queue` (§10, plus the credential-expiry fix it surfaced), and credential rotation on `/ops/credentials` (§11). **The Wave 2 exit gate (key rotation + DLQ drain) is met.**
 **Date:** 2026-11-16
 **Scope:** ~3–4 weeks, one engineer
 **Owner decisions applied:** D-1 (commercial), D-2 (operator + customer), OQ-6 (tenancy in v1), OQ-7 (Pro stays on WP → this is a port), Q-1 (operator = estate flag), Q-2 (licence = per estate)
@@ -976,3 +976,302 @@ app-level config file.
 **Consequence for §5:** the `/ops` panel's entitlement is the operator estate's
 (vendor) licence; a customer's `/admin` panel reads theirs. The same
 `ProPlanCatalog` answers both.
+
+---
+
+## 8. Wave 2 — first slice: estates and licences (`/ops`)
+
+**State:** shipped 2026-11-16, ahead of the rest of Wave 2. It exists to prove
+the spine (panel → policy → resource → observer → audit) once, on a surface with
+no console equivalent, before twenty more pages copy the pattern.
+
+### 8.1 Why this surface first
+
+Wave 2's `/admin` list (assistants, teams, professions, chat profiles, memory,
+media, transcripts, tool catalogue) is **already built** — in the Complete
+Console's 39 feature areas. Porting those to Filament first would maintain one
+page twice, in two UIs, for no new capability. `/ops` is the opposite: licences,
+key rotation, DLQ and device health have no console page, and licences are the
+commercial spine (D-1/D-2). Estates won because they already had a store
+(`tenants`, T-0.3), an entitlement path (T-0.8) and a policy (T-0.5).
+
+### 8.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Resource + page | `app/Filament/Operator/Resources/Estates/{EstateResource,Pages/ManageEstates}.php` | `/ops/estates`; list + edit modal |
+| Policy | `app/Policies/TenantPolicy.php` | Operator-only; `create`/`delete` denied outright |
+| Record-level audit | `app/Observers/TenantObserver.php` | The T-0.9 debt, filled the moment a resource existed |
+| Audit columns | `database/migrations/2026_11_16_130000_add_record_columns_to_admin_audit.php` | `resource`, `record_id`, `action`, `before`, `after` + composite index |
+| Logger | `AdminAuditLogger::recordResource()` | Same structural redaction as request payloads |
+| Model hardening | `Tenant::$hidden = ['licence_key']` | The `encrypted` cast protects the DB, not `toArray()` |
+
+### 8.3 Decisions worth keeping
+
+- **Two row kinds in `nvoos_admin_audit`.** `resource IS NULL` is a request row
+  (middleware, "who tried"); `resource` set is a record row (observer, "what
+  changed"). A resource write produces one of each. A bulk action cannot be
+  represented by a single request row, which is why the diffs are not folded
+  into it.
+- **No actor, no audit row.** Console seeds and queue jobs mutate estates with
+  nobody signed in; a row with `user_id = null` would name an action nobody
+  took. Those writes are covered by `updated_at`.
+- **`is_operator` is not a form field.** Granting `/ops` is a deploy decision; a
+  mistyped form must not be able to hand a customer the vendor panel. Pinned by
+  a test that posts `is_operator: true` and asserts it is ignored.
+- **The licence key is write-only.** A password input hides characters, not the
+  value: it is still in the HTML and in Livewire's snapshot. The field is
+  blanked via `afterStateHydrated()` and dehydrates only when re-typed, and the
+  table column is computed (`Set` / `Not set`) rather than bound to the column.
+  Two tests assert neither the list nor the edit modal contains the canary.
+- **`plan` is metadata, not authorization.** `TenantEntitlement` resolves from
+  `licence_key` (→ the licence driver) and never reads `tenants.plan`, so the UI
+  says so in the field's helper text rather than implying the label grants
+  features.
+
+### 8.4 Deliberately not done
+
+- **No create / no delete.** An estate is an authorization boundary;
+  provisioning also seeds the first membership. Deleting one would orphan every
+  assistant and team scoped to its `tenant_id`.
+- **No licence verification action.** It needs the licence-server round-trip and
+  a cache-busting story; the entitlement path already has its own suites.
+- **The cross-tenant 404 commitment is still open.** T-0.7 deferred it because no
+  tenant-scoped resource existed; this slice is on the *operator* panel, which
+  is not tenant-scoped. It lands with the first `/admin` resource, and no
+  `/admin` resource may ship without it.
+
+### 8.5 Validation record (2026-11-16)
+
+- `php artisan test --filter=OperatorEstatesTest`: **12 passed / 44 assertions**
+  — operator 200, customer administrator 403, guest redirect to `/ops/login`,
+  the key absent from both the list and the mounted edit form, key set and
+  encrypted at rest, blank field preserving the stored key, a record-level audit
+  row with `[redacted]` licence, no row without an actor, `is_operator`
+  ignored, policy denies create/delete and refuses the customer.
+- Full app suite: **814 passed / 4,497 assertions** (was 802 / 4,453; +12
+  tests), run in a one-off container over `docker/laravel/app` on SQLite
+  in-memory with the compose env (`NVOOS_TOKENS_PATH`, PM fixtures) — the shape
+  of CI's `App suite (SQLite)` job.
+- `phpcs --standard=phpcs-laravel.xml.dist --error-severity=1
+  --warning-severity=8` over the skeleton: **264 files, 0 errors**.
+
+### 8.6 Next slice
+
+One `/admin` resource (tenant-scoped) carrying the deferred cross-tenant 404
+test, so the commitment in §8.4 is discharged before the surface count grows.
+After that, `/ops` continues with key rotation and the DLQ manager — both
+already have services (`AuthProvider::issueCredential()`,
+`OperationsController`) to reuse rather than reimplement.
+
+---
+
+## 9. Wave 2 — second slice: teams (`/admin`)
+
+**State:** shipped 2026-11-16. This is the slice the T-0.7 commitment was
+waiting for.
+
+### 9.1 The commitment, discharged
+
+Wave 0 could not test cross-tenant isolation because no tenant-scoped resource
+existed. `/admin/teams` is the first one, so the rule is now enforced twice:
+
+| Layer | Rule | Test |
+|---|---|---|
+| Tenant route | a member of estate B asking for estate A gets **404** (`canAccessTenant()`) | `test_a_member_of_another_estate_gets_a_404_for_the_tenant` |
+| Record query | a **site administrator** in estate A cannot resolve estate B's team by id | `test_a_team_belonging_to_another_estate_is_not_resolvable` |
+| Action | the edit action is not even offered for a foreign record | same test (`assertTableActionHidden`) |
+
+The second row is the one that matters: `manage_options` is a *site*
+capability, so a predicate built on it alone would cross every estate boundary.
+The policy requires estate ownership of the record in addition.
+
+### 9.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Resource + page | `app/Filament/Admin/Resources/Teams/{TeamResource,Pages/ManageTeams}.php` | `/admin/{estate}/teams`; list + create/edit modals |
+| Policy | `app/Policies/TeamPolicy.php` | estate membership → record ownership → team role |
+| Audit | `app/Observers/TeamObserver.php` + `app/Observers/Concerns/RecordsAdminChanges.php` | one implementation for every administrable model |
+| Writes | `TeamResource::create/update/deleteThroughService()` | `TeamServiceInterface` owns tenant, slug and creator-as-owner |
+
+### 9.3 Decisions worth keeping
+
+- **Writes go through the service, not `Model::create()`.** The service already
+  derives `tenant_id` from `TenantContext`, keeps the slug unique per estate and
+  makes the creator an owner. A form cannot be trusted with any of the three.
+- **Reads apply two scopes.** Filament's tenant scope plus the REST contract's
+  membership rule: a non-administrator sees only their teams, a site
+  administrator sees the estate — matching `TeamController::index()` and
+  `TeamAccess::isMember()`.
+- **The observer logic is one trait.** `RecordsAdminChanges` holds the
+  actor-required, timestamp-excluded, secrets-redacted rules; `TenantObserver`
+  and `TeamObserver` only name their resource, so the two cannot drift.
+- **No bulk delete.** The last-owner rule needs the record, so deletion is
+  per-record only.
+
+### 9.4 Latent Wave 0 defect found by the slice
+
+`AdminAuditLogger::tenantId()` called `Panel::getTenant()` with no argument. In
+Filament 5 that method **resolves a tenant by key**
+(`getTenant(string $key): Model`), so the call is a fatal — and it never fired
+because no tenant-scoped panel had written an audit row before. The correct
+accessor is the facade, `Filament::getTenant()`. Fixed, and the teams audit test
+now pins it.
+
+### 9.5 Validation record (2026-11-16)
+
+- `php artisan test --filter=AdminTeamsTest`: **12 passed / 58 assertions**.
+- Full app suite: **826 passed / 4,555 assertions** (was 814 / 4,497; +12).
+- `phpcs --standard=phpcs-laravel.xml.dist`: **270 files, 0 errors**.
+
+### 9.6 Next slice
+
+`/ops` key rotation and the DLQ manager, both reusing existing services. The
+`/admin` surface count stays at one until the next resource brings its own
+cross-tenant test — the rule is now a pattern with a precedent, not a promise.
+
+---
+
+## 10. Wave 2 — third slice: failed jobs (`/ops/queue`)
+
+**State:** shipped 2026-11-16. This is the other half of the Wave 2 exit gate
+("key rotation and DLQ drain").
+
+### 10.1 Why this is not the console's DLQ
+
+The console's operations page reads `nvoos_jobs` — the durable job-status rows
+this runtime writes itself. `failed_jobs` is Laravel's own dead-letter table,
+written by a worker that exhausted its retries. Different producers, different
+questions: the console answers "what did my submitted job do", the panel answers
+"what is rotting on the worker". Neither is a duplicate.
+
+### 10.2 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Page + table | `app/Filament/Operator/Pages/QueueMonitor.php`, `resources/views/filament/operator/queue.blade.php` | `/ops/queue`; row actions + bulk |
+| Read model | `app/Models/FailedJob.php` | Read-only mapping of `failed_jobs`; the panel never saves it |
+
+### 10.3 Decisions worth keeping
+
+- **Retry is the real requeue, not a delete.** It pushes the original payload
+  back onto the connection that recorded it through `QueueFactory`, then forgets
+  the failed row — the same sequence as `queue:retry`, without a subprocess, so
+  it is testable against the database queue.
+- **Forget and flush never requeue.** Deleting a dead letter must not resurrect
+  it; the tests assert `jobs` stays empty.
+- **The audit row is written by hand.** `AuditAdminRequests` ignores Livewire
+  traffic on purpose, so without an explicit `recordResource()` call an operator
+  could drain the queue and leave no trace. One row per retry/forget; one
+  summarising row (`record_id = all`, `count`) per bulk action.
+- **No payload or stack trace in the audit row.** A failed job's payload can
+  contain user data; the row records queue and connection only, and a test
+  asserts the exception text and job class never appear.
+- **A payload naming a missing class is still retryable.** The panel only pushes
+  the payload; it never deserialises or executes it.
+
+### 10.4 Validation record (2026-11-16)
+
+- `php artisan test --filter=OperatorQueueTest`: **11 passed / 42 assertions**.
+- Full app suite: **840 passed / 4,609 assertions** (+3 from the expiry suite
+  below).
+- `phpcs --standard=phpcs-laravel.xml.dist`: **276 files, 0 errors** (skeleton +
+  the changed adapter file).
+
+### 10.5 Credential expiry — a defect found while scoping rotation
+
+`AuthProvider::issueCredential()` accepted `expires_in_seconds`, computed an
+`expiresAt`, and returned it on the `Credential` entity — but `createToken()`
+takes no expiry and the adapter never wrote one to `personal_access_tokens`.
+A token that *looks* time-limited and never expires is a credential-hygiene
+defect, and it made rotation meaningless: the replacement could not be given a
+lifetime.
+
+Fixed in `lib/laravel-adapter`: the expiry is now written onto the token row,
+and `CredentialExpiryTest` (**3 passed / 12 assertions**) pins that the row and
+the entity agree, that the default stays "no expiry" rather than becoming an
+accidental short token, and that the plaintext is never stored.
+
+### 10.6 Next slice
+
+`/ops` key rotation — the one-time-secret display is the design work: the
+The plaintext has to be shown once and then be unrecoverable, which means choosing
+between a persistent notification and a dedicated post-rotate page rather than
+letting Filament prefill a field (the mistake `EstateResource` documents). The
+issuance and expiry primitives are now correct, so the slice is presentation and
+audit.
+
+---
+
+## 11. Wave 2 — fourth slice: assistant credentials (`/ops/credentials`)
+
+**State:** shipped 2026-11-16. Completes the Wave 2 exit gate ("key rotation and
+DLQ drain").
+
+### 11.1 The design problem, and the answer
+
+A rotated credential must be shown exactly once. Filament's default behaviour is
+the opposite: it prefills a form field from the record, and a password input
+hides characters without removing the value from the HTML or from Livewire's
+snapshot — the same mistake `EstateResource` documents for the licence key.
+
+So the new token never enters a form field. It is held in a public Livewire
+property and rendered in a panel on the page until the operator dismisses it:
+
+- never written to the database (only Sanctum's hash is stored),
+- never written to the audit row (which records the expiry and how many
+  credentials were replaced),
+- never placed in a notification (which would push it through the cache-backed
+  notification mailbox),
+- cleared by `dismissIssued()` or by leaving the page. Losing it is not an
+  incident — rotate again, which the panel says in as many words.
+
+The plaintext does travel in the Livewire snapshot while the panel is visible.
+That is unavoidable for a copy-this-value flow and is bounded to the operator's
+own page.
+
+### 11.2 Rotation semantics: issue first, revoke second
+
+The reverse order would strip an assistant's access whenever issuance throws (a
+licence problem, a missing `manage_oos`), which is the failure that matters.
+Concretely: capture the existing token ids, issue the replacement, then delete
+only those captured ids.
+
+`AuthProvider::issueCredential()` is the only issuance path, so the `manage_oos`
+gate applies automatically — and the expiry it now persists (§10.5) is what
+makes the replacement time-limited.
+
+### 11.3 What shipped
+
+| Piece | Path | Note |
+|---|---|---|
+| Page + table | `app/Filament/Operator/Pages/Credentials.php`, `resources/views/filament/operator/credentials.blade.php` | `/ops/credentials`; rotate (30/90/180/365 days) and revoke |
+| Aggregates | same class, `buildStats()` | One query for the whole table; metadata columns only |
+
+### 11.4 Decisions worth keeping
+
+- **The table lists assistants, not tokens.** An operator rotates a credential
+  *for an assistant*; listing tokens would make the unit of work a row that
+  disappears when rotated.
+- **Only `oos-assistant-*` names are counted.** Another feature's Sanctum token
+  is not this page's business — pinned by a test.
+- **Revoke is hidden when there is nothing to revoke**, and revoking never mints
+  a replacement.
+- **The token hash is never selected**, matching `TokenManagerController`.
+
+### 11.5 Validation record (2026-11-16)
+
+- `php artisan test --filter=OperatorCredentialsTest`: **11 passed / 55 assertions**
+  — including that the shown value resolves through
+  `PersonalAccessToken::findToken()`, carries the requested expiry, is absent
+  from the token row and the audit row, and stops working after the next
+  rotation.
+- Full app suite: **851 passed / 4,664 assertions** (was 840 / 4,609; +11).
+- `phpcs --standard=phpcs-laravel.xml.dist`: **278 files, 0 errors**.
+
+### 11.6 Next slice
+
+Wave 2's exit gate is now met. The remaining `/ops` surfaces with no console
+equivalent are onboarding, Auth0 setup and asset inventory; on `/admin`, one
+tenant-scoped resource at a time, each with its own cross-tenant test (§9.6).
