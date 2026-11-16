@@ -14,7 +14,9 @@ use NvoosWifi\Interfaces\Interface_WiFi_Clock;
  */
 final class FrozenClock implements Interface_WiFi_Clock
 {
-    public function __construct(private readonly int $at) {}
+    public function __construct(private readonly int $at)
+    {
+    }
 
     public function now(): int
     {
